@@ -1,5 +1,5 @@
 [package]
-name = "cybl_game_client"
+name = "cybl_nexus_client"
 version = "0.1.0"
 authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
 workspace = "../.."
@@ -16,9 +16,10 @@ path = "src/lib.rs"
 crate-type = ["cdylib", "rlib"]
 
 [features]
+editor = []
 
 [dependencies]
-cybl_game_proto = { path = "../proto" }
+cybl_nexus_proto = { path = "../proto" }
 naia-bevy-client = { version = "0.20", features = ["transport_webrtc"] }
 
 bevy_a11y = { version = "0.10", default-features=false }

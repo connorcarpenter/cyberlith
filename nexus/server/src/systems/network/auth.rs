@@ -2,7 +2,7 @@ use bevy_ecs::event::EventReader;
 
 use naia_bevy_server::{events::AuthEvents, Server};
 
-use cybl_game_proto::messages::Auth;
+use cybl_nexus_proto::messages::Auth;
 
 pub fn auth_events(mut server: Server, mut event_reader: EventReader<AuthEvents>) {
     for events in event_reader.iter() {

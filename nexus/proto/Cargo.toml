@@ -1,5 +1,5 @@
 [package]
-name = "cybl_game_proto"
+name = "cybl_nexus_proto"
 version = "0.1.0"
 authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
 workspace = "../.."
@@ -7,6 +7,7 @@ edition = "2021"
 publish = false
 
 [features]
+editor = []
 
 [dependencies]
 naia-bevy-shared = { version = "0.20" }

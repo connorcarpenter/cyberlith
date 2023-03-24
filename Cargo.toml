@@ -2,9 +2,9 @@
 resolver = "2"
 # all crates should be listed here
 members = [
-    "game/client",
-    "game/proto",
-    "game/server",
+    "nexus/client",
+    "nexus/proto",
+    "nexus/server",
 ]
 # any crates with conflicting dependencies / feature flags cannot be put here
 default-members = [

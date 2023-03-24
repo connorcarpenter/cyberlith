@@ -15,7 +15,7 @@ use bevy_winit::WinitPlugin;
 
 use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin, ReceiveEvents};
 
-use cybl_game_proto::protocol;
+use cybl_nexus_proto::protocol;
 
 mod components;
 mod resources;
