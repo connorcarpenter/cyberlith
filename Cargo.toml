@@ -5,6 +5,7 @@ members = [
     "nexus/client",
     "nexus/proto",
     "nexus/server",
+    "game/client",
 ]
 # any crates with conflicting dependencies / feature flags cannot be put here
 default-members = [

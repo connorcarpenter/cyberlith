@@ -16,6 +16,7 @@ use bevy_winit::WinitPlugin;
 use naia_bevy_client::{ClientConfig as NaiaClientConfig, Plugin as NaiaClientPlugin, ReceiveEvents};
 
 use cybl_nexus_proto::protocol;
+use cybl_game_client::GameClientPlugin;
 
 mod components;
 mod resources;
@@ -43,8 +44,8 @@ pub fn run() {
         .add_plugin(SpritePlugin::default())
         // Add Naia Client Plugin
         .add_plugin(NaiaClientPlugin::new(NaiaClientConfig::default(), protocol()))
-        // Background Color
-        .insert_resource(ClearColor(Color::BLACK))
+        // Add Game Client Plugin
+        .add_plugin(GameClientPlugin)
         // Startup System
         .add_startup_system(network::init)
         // Receive Client Events

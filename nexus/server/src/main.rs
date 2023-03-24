@@ -21,9 +21,6 @@ fn main() {
     // Build App
     App::default()
         // Plugins
-        .add_plugin(TaskPoolPlugin::default())
-        .add_plugin(TypeRegistrationPlugin::default())
-        .add_plugin(FrameCountPlugin::default())
         .insert_resource(
             // this is needed to avoid running the server at uncapped FPS
             ScheduleRunnerSettings::run_loop(Duration::from_millis(5)),
