@@ -7,7 +7,7 @@ cfg_if! {
         mod app;
 
         fn main() {
-            app::run();
+            app::build().run();
         }
     }
 }

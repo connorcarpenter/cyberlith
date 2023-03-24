@@ -1,4 +1,3 @@
-
 use bevy_app::{App, Plugin};
 use bevy_asset::Assets;
 use bevy_core_pipeline::core_3d::Camera3dBundle;
@@ -6,7 +5,7 @@ use bevy_ecs::system::{Commands, ResMut};
 use bevy_math::Vec3;
 use bevy_pbr::{PbrBundle, PbrPlugin, PointLight, PointLightBundle, StandardMaterial};
 use bevy_render::color::Color;
-use bevy_render::mesh::{Mesh, shape};
+use bevy_render::mesh::{shape, Mesh};
 use bevy_transform::components::Transform;
 
 pub struct GameClientPlugin;
@@ -18,9 +17,11 @@ impl Plugin for GameClientPlugin {
     }
 }
 
-fn setup(mut commands: Commands,
-         mut meshes: ResMut<Assets<Mesh>>,
-         mut materials: ResMut<Assets<StandardMaterial>>,) {
+fn setup(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
     // plane
     commands.spawn(PbrBundle {
         mesh: meshes.add(shape::Plane::from_size(5.0).into()),
