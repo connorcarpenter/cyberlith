@@ -13,7 +13,7 @@ use bevy_transform::TransformPlugin;
 use bevy_window::WindowPlugin;
 use bevy_winit::WinitPlugin;
 
-use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin, ReceiveEvents};
+use naia_bevy_client::{ClientConfig as NaiaClientConfig, Plugin as NaiaClientPlugin, ReceiveEvents};
 
 use cybl_nexus_proto::protocol;
 
@@ -42,7 +42,7 @@ pub fn run() {
         .add_plugin(CorePipelinePlugin::default())
         .add_plugin(SpritePlugin::default())
         // Add Naia Client Plugin
-        .add_plugin(ClientPlugin::new(ClientConfig::default(), protocol()))
+        .add_plugin(NaiaClientPlugin::new(NaiaClientConfig::default(), protocol()))
         // Background Color
         .insert_resource(ClearColor(Color::BLACK))
         // Startup System
