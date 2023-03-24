@@ -3,7 +3,7 @@ use bevy_app::App;
 use bevy_asset::AssetPlugin;
 use bevy_core::{FrameCountPlugin, TaskPoolPlugin, TypeRegistrationPlugin};
 use bevy_core_pipeline::{clear_color::ClearColor, CorePipelinePlugin};
-use bevy_ecs::schedule::SystemSet;
+use bevy_ecs::schedule::IntoSystemConfigs;
 use bevy_input::InputPlugin;
 use bevy_log::LogPlugin;
 use bevy_render::{color::Color, texture::ImagePlugin, RenderPlugin};
@@ -13,20 +13,14 @@ use bevy_transform::TransformPlugin;
 use bevy_window::WindowPlugin;
 use bevy_winit::WinitPlugin;
 
-use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin};
+use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin, ReceiveEvents};
 
 use cybl_nexus_proto::protocol;
 
 mod resources;
 mod systems;
 
-use crate::app::systems::init;
-
-#[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
-struct MainLoop;
-
-#[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
-struct Tick;
+use crate::app::systems::{events, init};
 
 pub fn run() {
     App::default()
@@ -52,6 +46,17 @@ pub fn run() {
         .insert_resource(ClearColor(Color::BLACK))
         // Startup System
         .add_startup_system(init)
+        // Receive Client Events
+        .add_systems(
+            (
+                events::connect_events,
+                events::disconnect_events,
+                events::reject_events,
+                events::error_events,
+            )
+                .chain()
+                .in_set(ReceiveEvents),
+        )
         // Run App
         .run();
 }

@@ -1,6 +1,4 @@
-use naia_bevy_shared::{
-    Protocol, ProtocolPlugin,
-};
+use naia_bevy_shared::{Protocol, ProtocolPlugin};
 
 // Plugin
 pub struct ChannelsPlugin;

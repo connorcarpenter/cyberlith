@@ -8,7 +8,6 @@ pub struct MessagesPlugin;
 
 impl ProtocolPlugin for MessagesPlugin {
     fn build(&self, protocol: &mut Protocol) {
-        protocol
-            .add_message::<Auth>();
+        protocol.add_message::<Auth>();
     }
 }
