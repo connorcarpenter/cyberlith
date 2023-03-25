@@ -3,7 +3,7 @@ use bevy_app::App;
 use bevy_asset::AssetPlugin;
 use bevy_core::{FrameCountPlugin, TaskPoolPlugin, TypeRegistrationPlugin};
 use bevy_core_pipeline::CorePipelinePlugin;
-use bevy_ecs::schedule::IntoSystemConfigs;
+use bevy_ecs::schedule::{apply_system_buffers, IntoSystemConfigs};
 use bevy_input::InputPlugin;
 use bevy_log::LogPlugin;
 use bevy_render::{texture::ImagePlugin, RenderPlugin};
@@ -20,7 +20,7 @@ use naia_bevy_client::{
 use cybl_game_client::GameClientPlugin;
 use cybl_nexus_proto::protocol;
 
-use crate::app::systems::network;
+use crate::app::systems::{context, network};
 
 pub fn build() -> App {
     let mut app = App::default();
@@ -48,6 +48,16 @@ pub fn build() -> App {
         ))
         // Add Game Client Plugin
         .add_plugin(GameClientPlugin)
+        // Add Context
+        .add_plugin(context::ContextPlugin)
+        .add_startup_systems(
+            (
+                cybl_game_client::setup,
+                apply_system_buffers,
+                context::setup,
+            )
+                .chain(),
+        )
         // Startup System
         .add_startup_system(network::init)
         // Receive Client Events
