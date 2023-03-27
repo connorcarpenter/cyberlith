@@ -1,5 +1,6 @@
+use std::default::Default;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Image {
     width: f32,
     height: f32,

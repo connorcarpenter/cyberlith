@@ -1,0 +1,46 @@
+use std::{marker::PhantomData, default::Default};
+use std::cmp::Ordering;
+use std::hash::{Hash, Hasher};
+
+use bevy_ecs::{component::Component, prelude::Resource};
+
+#[derive(Default, Clone, Component)]
+pub struct Handle<T> {
+    id: u64,
+    phantom_t: PhantomData<T>
+}
+
+impl<T> Handle<T> {
+    pub fn new(id: u64) -> Self {
+        Self {
+            id,
+            phantom_t: PhantomData
+        }
+    }
+}
+
+impl<T> Hash for Handle<T> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        Hash::hash(&self.id, state);
+    }
+}
+
+impl<T> PartialEq for Handle<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
+
+impl<T> Eq for Handle<T> {}
+
+impl<T> PartialOrd for Handle<T> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.id.cmp(&other.id))
+    }
+}
+
+impl<T> Ord for Handle<T> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.id.cmp(&other.id)
+    }
+}

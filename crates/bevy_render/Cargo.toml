@@ -7,7 +7,7 @@ publish = false
 
 [features]
 default = [ "editor" ]
-editor = [ "egui", "egui_glow" ]
+editor = [ "three-d/egui-gui" ]
 
 [dependencies]
 bevy_app = { version = "0.10", default-features=false }
@@ -16,5 +16,4 @@ bevy_log = { version = "0.10", default-features=false }
 
 cfg-if = { version = "1.0" }
 
-egui = { version = "0.21", optional = true }
-egui_glow = { version = "0.21", optional = true }
+three-d = { version = "0.15", default-features = false, features = ["window"] }

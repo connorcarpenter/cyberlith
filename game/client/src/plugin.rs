@@ -1,7 +1,7 @@
 use bevy_app::{App, Plugin};
 use bevy_ecs::system::{Query, Commands, ResMut, Res, Resource};
 use bevy_log::info;
-use bevy_render::{shape, math::Vec3, Handle, Assets, Image, Window, Mesh, ClearColorConfig, RenderTarget, StandardMaterial, RenderObjectBundle, PointLightBundle, PointLight, Camera3dBundle, Camera, Camera3d, Color, Transform};
+use bevy_render::{shape, math::Vec3, Handle, Assets, Image, Window, Mesh, ClearColorConfig, RenderTarget, StandardMaterial, OrthographicProjection, RenderObjectBundle, PointLightBundle, PointLight, Camera3dBundle, Camera, Camera3d, Color, Transform};
 
 #[derive(Resource)]
 pub struct GameClientImage(pub Handle<Image>);
@@ -63,7 +63,12 @@ pub fn setup(
             target: RenderTarget::Image(image_handle),
             ..Default::default()
         },
-        transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+        projection: OrthographicProjection {
+            scale: 3.0,
+            ..Default::default()
+        }
+            .into(),
+        transform: Transform::from_xyz(5.0, 5.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..Default::default()
     });
 }
