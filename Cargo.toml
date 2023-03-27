@@ -6,6 +6,7 @@ members = [
     "nexus/proto",
     "nexus/server",
     "game/client",
+    "crates/bevy_render",
 ]
 # any crates with conflicting dependencies / feature flags cannot be put here
 default-members = [

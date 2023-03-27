@@ -1,19 +1,20 @@
 [package]
-name = "game_client"
+name = "bevy_render"
 version = "0.1.0"
-authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
 workspace = "../.."
 edition = "2021"
 publish = false
 
 [features]
 default = [ "editor" ]
-editor = [ "bevy_render/editor" ]
+editor = [ "egui", "egui_glow" ]
 
 [dependencies]
 bevy_app = { version = "0.10", default-features=false }
 bevy_ecs = { version = "0.10", default-features=false }
 bevy_log = { version = "0.10", default-features=false }
-bevy_render = { path = "../../crates/bevy_render" }
 
 cfg-if = { version = "1.0" }
+
+egui = { version = "0.21", optional = true }
+egui_glow = { version = "0.21", optional = true }

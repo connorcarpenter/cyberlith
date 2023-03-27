@@ -1,6 +1,6 @@
 use bevy_log::info;
 
-use cybl_nexus_proto::messages::Auth;
+use nexus_proto::messages::Auth;
 use naia_bevy_client::{transport::webrtc, Client};
 
 pub fn init(mut client: Client) {

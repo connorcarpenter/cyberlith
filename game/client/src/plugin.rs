@@ -1,23 +1,7 @@
 use bevy_app::{App, Plugin};
-use bevy_asset::{Assets, Handle};
-use bevy_core_pipeline::clear_color::ClearColorConfig;
-use bevy_core_pipeline::core_3d::{Camera3d, Camera3dBundle};
-use bevy_ecs::system::Query;
-use bevy_ecs::system::{Commands, ResMut, Resource};
+use bevy_ecs::system::{Query, Commands, ResMut, Res, Resource};
 use bevy_log::info;
-use bevy_math::Vec3;
-use bevy_pbr::{PbrBundle, PbrPlugin, PointLight, PointLightBundle, StandardMaterial};
-use bevy_render::camera::{Camera, RenderTarget};
-use bevy_render::render_resource::{
-    Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
-};
-use bevy_render::{
-    color::Color,
-    mesh::{shape, Mesh},
-    texture::Image,
-};
-use bevy_transform::components::Transform;
-use bevy_window::Window;
+use bevy_render::{shape, math::Vec3, Handle, Assets, Image, Window, Mesh, ClearColorConfig, RenderTarget, StandardMaterial, RenderObjectBundle, PointLightBundle, PointLight, Camera3dBundle, Camera, Camera3d, Color, Transform};
 
 #[derive(Resource)]
 pub struct GameClientImage(pub Handle<Image>);
@@ -25,46 +9,20 @@ pub struct GameClientImage(pub Handle<Image>);
 pub struct GameClientPlugin;
 
 impl Plugin for GameClientPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_plugin(PbrPlugin::default());
+    fn build(&self, _app: &mut App) {
+
     }
 }
 
 pub fn setup(
     mut commands: Commands,
-    windows: Query<&Window>,
+    window: Res<Window>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut images: ResMut<Assets<Image>>,
 ) {
-    let window = windows.single();
-
-    // image
-    let size = Extent3d {
-        width: window.resolution.physical_width(),
-        height: window.resolution.physical_height(),
-        ..Default::default()
-    };
-
     // This is the texture that will be rendered to.
-    let mut image = Image {
-        texture_descriptor: TextureDescriptor {
-            label: None,
-            size,
-            dimension: TextureDimension::D2,
-            format: TextureFormat::Bgra8UnormSrgb,
-            mip_level_count: 1,
-            sample_count: 1,
-            usage: TextureUsages::TEXTURE_BINDING
-                | TextureUsages::COPY_DST
-                | TextureUsages::RENDER_ATTACHMENT,
-            view_formats: &[],
-        },
-        ..Default::default()
-    };
-
-    // fill image.data with zeroes
-    image.resize(size);
+    let mut image = Image::new(window.resolution.physical_width(), window.resolution.physical_height());
 
     let image_handle = images.add(image);
     commands.insert_resource(GameClientImage(image_handle.clone()));
@@ -72,13 +30,13 @@ pub fn setup(
     info!("inserted image!");
 
     // plane
-    commands.spawn(PbrBundle {
+    commands.spawn(RenderObjectBundle {
         mesh: meshes.add(shape::Plane::from_size(5.0).into()),
         material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
         ..Default::default()
     });
     // cube
-    commands.spawn(PbrBundle {
+    commands.spawn(RenderObjectBundle {
         mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
         material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
         transform: Transform::from_xyz(0.0, 0.5, 0.0),
@@ -88,7 +46,6 @@ pub fn setup(
     commands.spawn(PointLightBundle {
         point_light: PointLight {
             intensity: 1500.0,
-            shadows_enabled: true,
             ..Default::default()
         },
         transform: Transform::from_xyz(4.0, 8.0, 4.0),
@@ -97,7 +54,7 @@ pub fn setup(
     // camera
     commands.spawn(Camera3dBundle {
         camera_3d: Camera3d {
-            clear_color: ClearColorConfig::Custom(Color::rgba(0.0, 0.0, 0.0, 1.0)),
+            clear_color: ClearColorConfig::Custom(Color::rgb(0.0, 0.0, 0.0)),
             ..Default::default()
         },
         camera: Camera {

@@ -1,5 +1,5 @@
 [package]
-name = "cybl_nexus_client"
+name = "nexus_client"
 version = "0.1.0"
 authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
 workspace = "../.."
@@ -16,31 +16,21 @@ path = "src/lib.rs"
 crate-type = ["cdylib", "rlib"]
 
 [features]
-editor = [ "bevy_egui" ]
+default = [ "editor" ]
+editor = [ "bevy_render/editor", "game_client/editor" ]
 
 [dependencies]
-cybl_game_client = { path = "../../game/client" }
-cybl_nexus_proto = { path = "../proto" }
+game_client = { path = "../../game/client" }
+nexus_proto = { path = "../proto" }
+bevy_render = { path = "../../crates/bevy_render" }
+
 naia-bevy-client = { version = "0.20", features = ["transport_webrtc"] }
 
-bevy_a11y = { version = "0.10", default-features=false }
 bevy_app = { version = "0.10", default-features=false }
-bevy_asset = { version = "0.10", default-features=false }
-bevy_core = { version = "0.10", default-features=false }
-bevy_core_pipeline = { version = "0.10", default-features=false, features = ["webgl"] }
 bevy_ecs = { version = "0.10", default-features=false }
-bevy_input = { version = "0.10", default-features=false }
 bevy_log = { version = "0.10", default-features=false }
-bevy_math = { version = "0.10", default-features=false }
-bevy_render = { version = "0.10", default-features=false, features = ["webgl"] }
-bevy_sprite = { version = "0.10", default-features=false }
-bevy_time = { version = "0.10", default-features=false }
-bevy_transform = { version = "0.10", default-features=false }
-bevy_winit = { version = "0.10", default-features=false, features = ["x11"] }
-bevy_window = { version = "0.10", default-features=false }
 
 cfg-if = { version = "1.0" }
-bevy_egui = { version = "0.20", default-features=false, features = [ "default_fonts" ], optional = true }
 
 # Editor Only
 

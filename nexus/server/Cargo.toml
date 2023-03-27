@@ -1,5 +1,5 @@
 [package]
-name = "cybl_nexus_server"
+name = "nexus_server"
 version = "0.1.0"
 authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
 workspace = "../.."
@@ -10,10 +10,9 @@ publish = false
 editor = []
 
 [dependencies]
-cybl_nexus_proto = { path = "../proto" }
+nexus_proto = { path = "../proto" }
 naia-bevy-server = { version = "0.20", features = [ "transport_webrtc" ] }
 
 bevy_app = { version = "0.10", default-features=false }
-bevy_core = { version = "0.10", default-features=false }
 bevy_ecs = { version = "0.10", default-features=false }
 bevy_log = { version = "0.10", default-features=false }
