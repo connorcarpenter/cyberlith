@@ -1,6 +1,10 @@
 use bevy_app::{App, Plugin};
 
-use crate::{Assets, Image, Mesh, StandardMaterial, Window, runner::{three_d_runner, ThreeDRunner}};
+use crate::{
+    assets::{Assets, Image, Mesh, StandardMaterial},
+    runner::three_d_runner,
+    Window,
+};
 
 pub struct RenderPlugin;
 
@@ -13,7 +17,6 @@ impl Plugin for RenderPlugin {
             .insert_resource(Assets::<StandardMaterial>::default())
             .insert_resource(Assets::<Image>::default())
             // Runner for Three-D integration
-            .insert_non_send_resource(ThreeDRunner::default())
             .set_runner(three_d_runner);
     }
 }

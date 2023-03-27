@@ -1,11 +1,9 @@
-use std::{marker::PhantomData, default::Default};
-use std::cmp::Ordering;
 use std::collections::HashMap;
-use std::hash::{Hash, Hasher};
+use std::default::Default;
 
-use bevy_ecs::{component::Component, prelude::Resource};
+use bevy_ecs::prelude::Resource;
 
-use crate::Handle;
+use super::Handle;
 
 #[derive(Default, Resource)]
 pub struct Assets<T> {
@@ -14,10 +12,14 @@ pub struct Assets<T> {
 }
 
 impl<T> Assets<T> {
-
     pub fn add(&mut self, t: T) -> Handle<T> {
         let handle = Handle::new(self.last_id);
+        self.assets.insert(self.last_id, t);
         self.last_id += 1;
         handle
+    }
+
+    pub fn get(&self, handle: &Handle<T>) -> Option<&T> {
+        self.assets.get(&handle.id)
     }
 }

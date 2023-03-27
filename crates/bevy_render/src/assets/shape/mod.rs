@@ -1,5 +1,5 @@
-mod plane;
 mod cube;
+mod plane;
 
-pub use plane::Plane;
 pub use cube::Cube;
+pub use plane::Plane;

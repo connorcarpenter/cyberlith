@@ -1,12 +1,10 @@
 use std::default::Default;
 
-use bevy_ecs::component::Component;
 use crate::math::Vec3;
+use bevy_ecs::component::Component;
 
 #[derive(Component, Default)]
-pub struct Transform {
-
-}
+pub struct Transform {}
 
 impl Transform {
     pub fn looking_at(mut self, target: Vec3, up: Vec3) -> Self {

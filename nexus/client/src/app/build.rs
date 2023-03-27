@@ -1,4 +1,3 @@
-
 use bevy_app::App;
 use bevy_ecs::schedule::{apply_system_buffers, IntoSystemConfigs};
 use bevy_log::LogPlugin;
@@ -29,14 +28,7 @@ pub fn build() -> App {
         .add_plugin(GameClientPlugin)
         // Add Context Plugin
         .add_plugin(context::ContextPlugin)
-        .add_startup_systems(
-            (
-                game_client::setup,
-                apply_system_buffers,
-                context::setup,
-            )
-                .chain(),
-        )
+        .add_startup_systems((game_client::setup, apply_system_buffers, context::setup).chain())
         // Startup System
         .add_startup_system(network::init)
         // Receive Client Events

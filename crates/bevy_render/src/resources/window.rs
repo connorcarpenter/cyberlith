@@ -20,10 +20,7 @@ pub struct Resolution {
 
 impl Resolution {
     pub fn new(width: f32, height: f32) -> Self {
-        Self {
-            width,
-            height,
-        }
+        Self { width, height }
     }
 
     pub fn physical_width(&self) -> f32 {

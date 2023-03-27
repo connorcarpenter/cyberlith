@@ -9,29 +9,23 @@ cfg_if! {
     }
 }
 
-pub mod shape;
-pub mod math;
 mod assets;
-mod image;
-mod window;
-mod mesh;
-mod material;
-mod object;
-mod light;
-mod camera;
-mod transform;
-mod color;
+pub use assets::{shape, Assets, ClearColorConfig, Color, Handle, Image, Mesh, StandardMaterial};
+
+mod components;
+pub use components::{
+    Camera, Camera3d, Camera3dBundle, OrthographicProjection, PointLight, PointLightBundle,
+    RenderObjectBundle, RenderTarget, Transform,
+};
+
+mod systems;
+
+mod resources;
+pub use resources::Window;
+
 mod plugin;
+pub use plugin::RenderPlugin;
+
 mod runner;
 
-pub use assets::{Assets, Handle};
-pub use image::Image;
-pub use window::Window;
-pub use mesh::Mesh;
-pub use material::StandardMaterial;
-pub use object::RenderObjectBundle;
-pub use light::{PointLightBundle, PointLight};
-pub use camera::{Camera3dBundle, Camera, Camera3d, RenderTarget, OrthographicProjection};
-pub use color::{Color, ClearColorConfig};
-pub use transform::Transform;
-pub use plugin::RenderPlugin;
+pub mod math;

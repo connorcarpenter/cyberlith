@@ -1,20 +1,23 @@
-use std::{marker::PhantomData, default::Default};
-use std::cmp::Ordering;
-use std::hash::{Hash, Hasher};
+use std::{
+    cmp::Ordering,
+    default::Default,
+    hash::{Hash, Hasher},
+    marker::PhantomData,
+};
 
-use bevy_ecs::{component::Component, prelude::Resource};
+use bevy_ecs::component::Component;
 
 #[derive(Default, Clone, Component)]
 pub struct Handle<T> {
-    id: u64,
-    phantom_t: PhantomData<T>
+    pub id: u64,
+    phantom_t: PhantomData<T>,
 }
 
 impl<T> Handle<T> {
     pub fn new(id: u64) -> Self {
         Self {
             id,
-            phantom_t: PhantomData
+            phantom_t: PhantomData,
         }
     }
 }

@@ -1,7 +1,11 @@
 use bevy_app::{App, Plugin};
-use bevy_ecs::system::{Query, Commands, ResMut, Res, Resource};
+use bevy_ecs::system::{Commands, Res, ResMut, Resource};
 use bevy_log::info;
-use bevy_render::{shape, math::Vec3, Handle, Assets, Image, Window, Mesh, ClearColorConfig, RenderTarget, StandardMaterial, OrthographicProjection, RenderObjectBundle, PointLightBundle, PointLight, Camera3dBundle, Camera, Camera3d, Color, Transform};
+use bevy_render::{
+    math::Vec3, shape, Assets, Camera, Camera3d, Camera3dBundle, ClearColorConfig, Color, Handle,
+    Image, Mesh, OrthographicProjection, PointLight, PointLightBundle, RenderObjectBundle,
+    RenderTarget, StandardMaterial, Transform, Window,
+};
 
 #[derive(Resource)]
 pub struct GameClientImage(pub Handle<Image>);
@@ -9,9 +13,7 @@ pub struct GameClientImage(pub Handle<Image>);
 pub struct GameClientPlugin;
 
 impl Plugin for GameClientPlugin {
-    fn build(&self, _app: &mut App) {
-
-    }
+    fn build(&self, _app: &mut App) {}
 }
 
 pub fn setup(
@@ -22,7 +24,10 @@ pub fn setup(
     mut images: ResMut<Assets<Image>>,
 ) {
     // This is the texture that will be rendered to.
-    let mut image = Image::new(window.resolution.physical_width(), window.resolution.physical_height());
+    let image = Image::new(
+        window.resolution.physical_width(),
+        window.resolution.physical_height(),
+    );
 
     let image_handle = images.add(image);
     commands.insert_resource(GameClientImage(image_handle.clone()));
@@ -67,7 +72,7 @@ pub fn setup(
             scale: 3.0,
             ..Default::default()
         }
-            .into(),
+        .into(),
         transform: Transform::from_xyz(5.0, 5.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..Default::default()
     });

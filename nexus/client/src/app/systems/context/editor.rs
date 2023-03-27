@@ -1,7 +1,7 @@
 use bevy_app::{App, Plugin};
 use bevy_ecs::prelude::*;
 use bevy_log::info;
-use bevy_render::{egui, EguiContext, EguiUserTextures, EguiPlugin, Window, EguiContexts};
+use bevy_render::{egui, EguiContext, EguiContexts, EguiPlugin, EguiUserTextures, Window};
 
 use game_client::GameClientImage;
 
@@ -20,11 +20,7 @@ pub fn setup(
     egui_user_textures.add_image(game_client_image.0.clone());
 }
 
-fn step(
-    game_client_image: Res<GameClientImage>,
-    mut contexts: EguiContexts,
-    window: Res<Window>,
-) {
+fn step(game_client_image: Res<GameClientImage>, mut contexts: EguiContexts, window: Res<Window>) {
     // This assumes we only have a single window
     let width = window.resolution.physical_width() / 4.0;
     let height = window.resolution.physical_height() / 4.0;

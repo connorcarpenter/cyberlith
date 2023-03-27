@@ -2,9 +2,11 @@ use std::default::Default;
 
 use bevy_ecs::{bundle::Bundle, component::Component};
 
-use crate::color::ClearColorConfig;
-use crate::{Handle, Image, Transform};
-use crate::math::Vec2;
+use super::transform::Transform;
+use crate::{
+    assets::{ClearColorConfig, Handle, Image},
+    math::Vec2,
+};
 
 #[derive(Bundle, Default)]
 pub struct Camera3dBundle {

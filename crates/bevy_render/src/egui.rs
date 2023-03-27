@@ -1,18 +1,20 @@
 use std::{collections::HashMap, default::Default};
 
 use bevy_app::{App, Plugin};
-use bevy_ecs::{prelude::Resource, system::{SystemParam, ResMut}};
+use bevy_ecs::{
+    prelude::Resource,
+    system::{ResMut, SystemParam},
+};
 use three_d::egui;
 
-use crate::{Handle, Image};
+use crate::assets::{Handle, Image};
 
 // Plugin
 pub struct EguiPlugin;
 
 impl Plugin for EguiPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .insert_resource(EguiContext::default())
+        app.insert_resource(EguiContext::default())
             .insert_resource(EguiUserTextures::default());
     }
 }
