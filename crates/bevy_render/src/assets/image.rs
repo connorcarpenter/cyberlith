@@ -2,12 +2,12 @@ use std::default::Default;
 
 #[derive(Clone, Default)]
 pub struct Image {
-    width: f32,
-    height: f32,
+    width: u32,
+    height: u32,
 }
 
 impl Image {
-    pub fn new(width: f32, height: f32) -> Self {
+    pub fn new(width: u32, height: u32) -> Self {
         Self { width, height }
     }
 }

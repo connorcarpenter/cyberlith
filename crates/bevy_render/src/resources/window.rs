@@ -6,7 +6,7 @@ pub struct Window {
 }
 
 impl Window {
-    pub fn new(width: f32, height: f32) -> Self {
+    pub fn new(width: u32, height: u32) -> Self {
         Self {
             resolution: Resolution::new(width, height),
         }
@@ -14,20 +14,20 @@ impl Window {
 }
 
 pub struct Resolution {
-    width: f32,
-    height: f32,
+    width: u32,
+    height: u32,
 }
 
 impl Resolution {
-    pub fn new(width: f32, height: f32) -> Self {
+    pub fn new(width: u32, height: u32) -> Self {
         Self { width, height }
     }
 
-    pub fn physical_width(&self) -> f32 {
+    pub fn physical_width(&self) -> u32 {
         self.width
     }
 
-    pub fn physical_height(&self) -> f32 {
+    pub fn physical_height(&self) -> u32 {
         self.height
     }
 }

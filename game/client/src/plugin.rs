@@ -2,9 +2,9 @@ use bevy_app::{App, Plugin};
 use bevy_ecs::system::{Commands, Res, ResMut, Resource};
 use bevy_log::info;
 use bevy_render::{
-    math::Vec3, shape, Assets, Camera, Camera3d, Camera3dBundle, ClearColorConfig, Color, Handle,
-    Image, Mesh, OrthographicProjection, PointLight, PointLightBundle, RenderObjectBundle,
-    RenderTarget, StandardMaterial, Transform, Window,
+    shape, Assets, Camera, ClearColorConfig, Color, Handle,
+    Image, Mesh, PointLight, PointLightBundle, RenderObjectBundle,
+    RenderTarget, StandardMaterial, Transform, Window, InnerCamera, ClearState, Viewport, vec3
 };
 
 #[derive(Resource)]
@@ -23,10 +23,12 @@ pub fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut images: ResMut<Assets<Image>>,
 ) {
+    let width = window.resolution.physical_width();
+    let height = window.resolution.physical_height();
+
     // This is the texture that will be rendered to.
     let image = Image::new(
-        window.resolution.physical_width(),
-        window.resolution.physical_height(),
+        width, height,
     );
 
     let image_handle = images.add(image);
@@ -57,23 +59,20 @@ pub fn setup(
         ..Default::default()
     });
     // camera
-    commands.spawn(Camera3dBundle {
-        camera_3d: Camera3d {
-            clear_color: ClearColorConfig::Custom(Color::rgb(0.0, 0.0, 0.0)),
-            ..Default::default()
-        },
-        camera: Camera {
+    commands.spawn((
+        Camera::new(
             // render before the "main pass" camera
-            order: 0,
-            target: RenderTarget::Image(image_handle),
-            ..Default::default()
-        },
-        projection: OrthographicProjection {
-            scale: 3.0,
-            ..Default::default()
-        }
-        .into(),
-        transform: Transform::from_xyz(5.0, 5.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-        ..Default::default()
-    });
+            0,
+            ClearState::default(),
+            RenderTarget::Image(image_handle),
+            InnerCamera::new_orthographic(
+                Viewport::new_at_origo(width, height),
+                vec3(5.0, 5.0, 5.0),
+                vec3(0.0, 0.0, 0.0),
+                vec3(0.0, 1.0, 0.0),
+                height as f32,
+                0.0,
+                1000.0,
+            ),
+        )));
 }

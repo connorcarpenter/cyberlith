@@ -9,13 +9,15 @@ cfg_if! {
     }
 }
 
+pub use three_d::{ClearState, Viewport, Camera as InnerCamera, vec3, Gm, Object};
+
 mod assets;
 pub use assets::{shape, Assets, ClearColorConfig, Color, Handle, Image, Mesh, StandardMaterial};
 
 mod components;
 pub use components::{
-    Camera, Camera3d, Camera3dBundle, OrthographicProjection, PointLight, PointLightBundle,
-    RenderObjectBundle, RenderTarget, Transform,
+    Camera, PointLight, PointLightBundle,
+    RenderObjectBundle, RenderTarget, Transform, RenderLayers, RenderLayer,
 };
 
 mod systems;

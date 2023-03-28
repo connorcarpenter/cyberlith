@@ -22,8 +22,8 @@ pub fn setup(
 
 fn step(game_client_image: Res<GameClientImage>, mut contexts: EguiContexts, window: Res<Window>) {
     // This assumes we only have a single window
-    let width = window.resolution.physical_width() / 4.0;
-    let height = window.resolution.physical_height() / 4.0;
+    let width = window.resolution.physical_width() / 4;
+    let height = window.resolution.physical_height() / 4;
 
     info!("running system...");
 

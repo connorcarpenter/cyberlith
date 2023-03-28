@@ -1,6 +1,6 @@
 mod camera;
 pub use camera::{
-    Camera, Camera3d, Camera3dBundle, OrthographicProjection, PerspectiveProjection, RenderTarget,
+    Camera, RenderTarget,
 };
 
 mod light;
@@ -11,3 +11,6 @@ pub use object::RenderObjectBundle;
 
 mod transform;
 pub use transform::Transform;
+
+mod render_layer;
+pub use render_layer::{RenderLayer, RenderLayers};
