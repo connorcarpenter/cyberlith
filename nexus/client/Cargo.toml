@@ -17,12 +17,12 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 default = [ "editor" ]
-editor = [ "bevy_render/editor", "game_client/editor" ]
+editor = [ "render_api/editor", "game_client/editor" ]
 
 [dependencies]
 game_client = { path = "../../game/client" }
 nexus_proto = { path = "../proto" }
-bevy_render = { path = "../../crates/bevy_render" }
+render_api = { path = "../../crates/render_api" }
 
 naia-bevy-client = { version = "0.20", features = ["transport_webrtc"] }
 

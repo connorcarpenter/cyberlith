@@ -1,7 +1,7 @@
 use bevy_app::{App, Plugin};
 use bevy_ecs::prelude::*;
 use bevy_log::info;
-use bevy_render::{egui, EguiContext, EguiContexts, EguiPlugin, EguiUserTextures, Window};
+use render_api::{egui, EguiContext, EguiContexts, EguiPlugin, EguiUserTextures, Window};
 
 use game_client::GameClientImage;
 

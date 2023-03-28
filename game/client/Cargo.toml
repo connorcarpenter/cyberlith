@@ -8,12 +8,12 @@ publish = false
 
 [features]
 default = [ "editor" ]
-editor = [ "bevy_render/editor" ]
+editor = [ "render_api/editor" ]
 
 [dependencies]
 bevy_app = { version = "0.10", default-features=false }
 bevy_ecs = { version = "0.10", default-features=false }
 bevy_log = { version = "0.10", default-features=false }
-bevy_render = { path = "../../crates/bevy_render" }
+render_api = { path = "../../crates/render_api" }
 
 cfg-if = { version = "1.0" }

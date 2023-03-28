@@ -1,7 +1,7 @@
 use bevy_app::{App, Plugin};
 use bevy_ecs::system::{Commands, Res, ResMut, Resource};
 use bevy_log::info;
-use bevy_render::{
+use render_api::{
     shape, Assets, Camera, ClearColorConfig, Color, Handle,
     Image, Mesh, PointLight, PointLightBundle, RenderObjectBundle,
     RenderTarget, StandardMaterial, Transform, Window, InnerCamera, ClearState, Viewport, vec3
