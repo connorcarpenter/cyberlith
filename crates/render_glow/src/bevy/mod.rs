@@ -1,5 +1,4 @@
-
-pub use crate::{ClearState, Viewport, Camera as InnerCamera, vec3, Gm, Object};
+pub use crate::{vec3, Camera as InnerCamera, ClearState, Gm, Object, Viewport};
 
 mod systems;
 

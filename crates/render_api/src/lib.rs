@@ -6,8 +6,8 @@ pub use assets::{shape, Assets, ClearColorConfig, Color, Handle, Image, Mesh, St
 
 mod components;
 pub use components::{
-    Camera, PointLight, PointLightBundle,
-    RenderObjectBundle, RenderTarget, Transform, RenderLayers, RenderLayer, ClearOperation,
+    Camera, ClearOperation, PointLight, PointLightBundle, RenderLayer, RenderLayers,
+    RenderObjectBundle, RenderTarget, Transform,
 };
 
 mod resources;

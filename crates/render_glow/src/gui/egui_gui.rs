@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 
-use render_egui::egui as egui;
+use render_egui::egui;
 use render_egui::glow as egui_glow;
 
 use egui_glow::Painter;

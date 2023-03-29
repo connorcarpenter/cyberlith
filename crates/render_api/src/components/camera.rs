@@ -20,8 +20,7 @@ impl Camera {
     pub const MAX_CAMERAS: usize = 32;
 
     pub fn new(order: usize, clear_operation: ClearOperation, target: RenderTarget) -> Self {
-        let mut new_self =
-        Self {
+        let mut new_self = Self {
             order: 0,
             clear_operation,
             target,

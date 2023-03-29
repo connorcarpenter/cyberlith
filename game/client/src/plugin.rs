@@ -2,9 +2,9 @@ use bevy_app::{App, Plugin};
 use bevy_ecs::system::{Commands, Res, ResMut, Resource};
 use bevy_log::info;
 use render_api::{
-    shape, Assets, Camera, ClearColorConfig, Color, Handle,
-    Image, Mesh, PointLight, PointLightBundle, RenderObjectBundle,
-    RenderTarget, StandardMaterial, Transform, Window, ClearOperation,
+    shape, Assets, Camera, ClearColorConfig, ClearOperation, Color, Handle, Image, Mesh,
+    PointLight, PointLightBundle, RenderObjectBundle, RenderTarget, StandardMaterial, Transform,
+    Window,
 };
 
 #[derive(Resource)]
@@ -27,9 +27,7 @@ pub fn setup(
     let height = window.resolution.physical_height();
 
     // This is the texture that will be rendered to.
-    let image = Image::new(
-        width, height,
-    );
+    let image = Image::new(width, height);
 
     let image_handle = images.add(image);
     commands.insert_resource(GameClientImage(image_handle.clone()));
@@ -59,11 +57,12 @@ pub fn setup(
         ..Default::default()
     });
     // camera
-    commands.spawn((
-        Camera::new(
+    commands.spawn(
+        (Camera::new(
             // render before the "main pass" camera
             0,
             ClearOperation::default(),
             RenderTarget::Image(image_handle),
-        )));
+        )),
+    );
 }

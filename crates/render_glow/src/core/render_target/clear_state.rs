@@ -1,5 +1,5 @@
-use render_api::ClearOperation;
 use crate::core::*;
+use render_api::ClearOperation;
 
 ///
 /// Defines which channels (red, green, blue, alpha and depth) to clear when starting to write to a [RenderTarget].

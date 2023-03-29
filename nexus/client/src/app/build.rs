@@ -6,9 +6,9 @@ use naia_bevy_client::{
     ClientConfig as NaiaClientConfig, Plugin as NaiaClientPlugin, ReceiveEvents,
 };
 
-use render_api::RenderApiPlugin;
 use game_client::GameClientPlugin;
 use nexus_proto::protocol;
+use render_api::RenderApiPlugin;
 
 use crate::app::systems::{context, network};
 

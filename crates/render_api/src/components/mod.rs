@@ -1,7 +1,5 @@
 mod camera;
-pub use camera::{
-    Camera, RenderTarget, ClearOperation
-};
+pub use camera::{Camera, ClearOperation, RenderTarget};
 
 mod light;
 pub use light::{PointLight, PointLightBundle};

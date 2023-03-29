@@ -1,8 +1,16 @@
-use bevy_ecs::{entity::Entity, system::{NonSendMut, Query, Res, ResMut}};
+use bevy_ecs::{
+    entity::Entity,
+    system::{NonSendMut, Query, Res, ResMut},
+};
 
-use crate::{Object, Gm, Geometry, Material, Light, PostMaterial, ColorTexture, DepthTexture, AxisAlignedBoundingBox, MaterialType, FrameInput};
+use crate::{
+    AxisAlignedBoundingBox, ColorTexture, DepthTexture, FrameInput, Geometry, Gm, Light, Material,
+    MaterialType, Object, PostMaterial,
+};
 
-use render_api::{Camera, Handle, Mesh, StandardMaterial, Transform, RenderLayer, RenderLayers, Assets};
+use render_api::{
+    Assets, Camera, Handle, Mesh, RenderLayer, RenderLayers, StandardMaterial, Transform,
+};
 
 #[derive(Clone)]
 struct CameraWork {
@@ -15,7 +23,13 @@ pub fn draw(
     materials: Res<Assets<StandardMaterial>>,
     frame_input: NonSendMut<FrameInput<()>>,
     cameras_q: Query<(Entity, &Camera, &RenderLayer)>,
-    objects_q: Query<(Entity, &Handle<Mesh>, &Handle<StandardMaterial>, &Transform, &RenderLayer)>
+    objects_q: Query<(
+        Entity,
+        &Handle<Mesh>,
+        &Handle<StandardMaterial>,
+        &Transform,
+        &RenderLayer,
+    )>,
 ) {
     let mut layer_to_order: Vec<Option<usize>> = vec![None; RenderLayers::TOTAL_LAYERS];
     let mut camera_work: Vec<Option<CameraWork>> = vec![None; Camera::MAX_CAMERAS];
@@ -49,11 +63,17 @@ pub fn draw(
             panic!("Found render object with RenderLayer not associated with any Camera!");
         }
 
-        camera_work[camera_index].as_mut().unwrap().objects.push(entity);
+        camera_work[camera_index]
+            .as_mut()
+            .unwrap()
+            .objects
+            .push(entity);
     }
 
     for work in camera_work {
-        if work.is_none() {continue;}
+        if work.is_none() {
+            continue;
+        }
         let work = work.unwrap();
         let camera_entity = work.camera;
         let object_entities = work.objects;

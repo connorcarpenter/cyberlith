@@ -1,5 +1,5 @@
 use bevy_app::{App, CoreSet, Plugin};
-use bevy_ecs::schedule::{IntoSystemSetConfig, IntoSystemConfig};
+use bevy_ecs::schedule::{IntoSystemConfig, IntoSystemSetConfig};
 
 use crate::{
     assets::{Assets, Image, Mesh, StandardMaterial},
