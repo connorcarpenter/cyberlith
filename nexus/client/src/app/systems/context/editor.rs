@@ -1,7 +1,8 @@
 use bevy_app::{App, Plugin};
 use bevy_ecs::prelude::*;
 use bevy_log::info;
-use render_api::{egui, EguiContext, EguiContexts, EguiPlugin, EguiUserTextures, Window};
+use render_api::Window;
+use render_egui::{egui, EguiContext, EguiContexts, RenderEguiPlugin, EguiUserTextures};
 
 use game_client::GameClientImage;
 
@@ -9,7 +10,7 @@ pub struct ContextPlugin;
 
 impl Plugin for ContextPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(EguiPlugin).add_system(step);
+        app.add_plugin(RenderEguiPlugin).add_system(step);
     }
 }
 

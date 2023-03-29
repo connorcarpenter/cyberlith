@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Client w/ Editor [BUILD]" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-    <option name="command" value="build --features &quot;editor&quot;" />
+    <option name="command" value="build --features &quot;editor, glow_renderer&quot;" />
     <option name="workingDirectory" value="file://$PROJECT_DIR$/nexus/client" />
     <option name="channel" value="DEFAULT" />
     <option name="requiredFeatures" value="false" />

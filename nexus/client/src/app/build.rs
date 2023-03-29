@@ -6,7 +6,7 @@ use naia_bevy_client::{
     ClientConfig as NaiaClientConfig, Plugin as NaiaClientPlugin, ReceiveEvents,
 };
 
-use render_api::RenderPlugin;
+use render_api::RenderApiPlugin;
 use game_client::GameClientPlugin;
 use nexus_proto::protocol;
 
@@ -18,7 +18,7 @@ pub fn build() -> App {
         // Bevy Plugins
         .add_plugin(LogPlugin::default())
         // Render Plugin
-        .add_plugin(RenderPlugin)
+        .add_plugin(RenderApiPlugin)
         // Add Naia Client Plugin
         .add_plugin(NaiaClientPlugin::new(
             NaiaClientConfig::default(),

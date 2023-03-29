@@ -2,7 +2,7 @@ use std::default::Default;
 
 use bevy_app::App;
 
-use three_d::{
+use crate::{
     degrees, vec3,
     window::{FrameOutput, Window, WindowSettings},
     Camera, ClearState, Color, ColorMaterial, CpuMesh, FrameInput, Gm, Mesh, Positions,

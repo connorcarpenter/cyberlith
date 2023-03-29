@@ -5,19 +5,10 @@ use bevy_ecs::{
     prelude::Resource,
     system::{ResMut, SystemParam},
 };
-use three_d::egui;
 
-use crate::assets::{Handle, Image};
+use egui;
 
-// Plugin
-pub struct EguiPlugin;
-
-impl Plugin for EguiPlugin {
-    fn build(&self, app: &mut App) {
-        app.insert_resource(EguiContext::default())
-            .insert_resource(EguiUserTextures::default());
-    }
-}
+use render_api::{Handle, Image};
 
 // Contexts
 #[derive(SystemParam)]

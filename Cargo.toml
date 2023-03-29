@@ -7,6 +7,8 @@ members = [
     "nexus/server",
     "game/client",
     "crates/render_api",
+    "crates/render_glow",
+    "crates/render_egui",
 ]
 # any crates with conflicting dependencies / feature flags cannot be put here
 default-members = [

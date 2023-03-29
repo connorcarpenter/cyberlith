@@ -4,7 +4,7 @@ use bevy_log::info;
 use render_api::{
     shape, Assets, Camera, ClearColorConfig, Color, Handle,
     Image, Mesh, PointLight, PointLightBundle, RenderObjectBundle,
-    RenderTarget, StandardMaterial, Transform, Window, InnerCamera, ClearState, Viewport, vec3
+    RenderTarget, StandardMaterial, Transform, Window, ClearOperation,
 };
 
 #[derive(Resource)]
@@ -63,16 +63,7 @@ pub fn setup(
         Camera::new(
             // render before the "main pass" camera
             0,
-            ClearState::default(),
+            ClearOperation::default(),
             RenderTarget::Image(image_handle),
-            InnerCamera::new_orthographic(
-                Viewport::new_at_origo(width, height),
-                vec3(5.0, 5.0, 5.0),
-                vec3(0.0, 0.0, 0.0),
-                vec3(0.0, 1.0, 0.0),
-                height as f32,
-                0.0,
-                1000.0,
-            ),
         )));
 }

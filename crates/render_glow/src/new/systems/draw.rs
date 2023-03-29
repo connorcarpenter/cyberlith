@@ -1,9 +1,8 @@
-use bevy_ecs::entity::Entity;
-use bevy_ecs::system::{NonSendMut, Query, Res, ResMut};
+use bevy_ecs::{entity::Entity, system::{NonSendMut, Query, Res, ResMut}};
 
-use three_d::{FrameInput, Object, Gm, Geometry, Material, Light, PostMaterial, ColorTexture, DepthTexture, AxisAlignedBoundingBox, MaterialType};
+use crate::{Object, Gm, Geometry, Material, Light, PostMaterial, ColorTexture, DepthTexture, AxisAlignedBoundingBox, MaterialType, FrameInput};
 
-use crate::{Camera, Handle, Mesh, StandardMaterial, Transform, RenderLayer, RenderLayers, Assets};
+use render_api::{Camera, Handle, Mesh, StandardMaterial, Transform, RenderLayer, RenderLayers, Assets};
 
 #[derive(Clone)]
 struct CameraWork {
@@ -67,7 +66,7 @@ pub fn draw(
         };
 
         // Clear the color and depth of the screen render target using the camera's clear color
-        render_target.clear(camera.clear_state);
+        render_target.clear((&camera.clear_operation).into());
 
         let mut objects: Vec<&dyn Object> = Vec::new();
 
@@ -80,50 +79,10 @@ pub fn draw(
             // get mesh
             let mesh = meshes.get(mesh_handle).unwrap();
             let material = materials.get(mat_handle).unwrap();
-            let render_ref = RenderRef::new(mesh, material);
-
             todo!();
 
             // add object ref to list of objects to be rendered
             //objects.push(&render_ref);
         }
-    }
-}
-
-pub struct RenderRef<'a, 'b> {
-    mesh: &'a Mesh,
-    material: &'b StandardMaterial,
-}
-
-impl<'a, 'b> RenderRef<'a, 'b> {
-    pub fn new(mesh: &'a Mesh, material: &'b StandardMaterial) -> Self {
-        Self {
-            mesh,
-            material,
-        }
-    }
-}
-
-impl<'a, 'b> Geometry for RenderRef<'a, 'b> {
-    fn render_with_material(&self, material: &dyn Material, camera: &three_d::Camera, lights: &[&dyn Light]) {
-        todo!()
-    }
-
-    fn render_with_post_material(&self, material: &dyn PostMaterial, camera: &three_d::Camera, lights: &[&dyn Light], color_texture: Option<ColorTexture>, depth_texture: Option<DepthTexture>) {
-        todo!()
-    }
-
-    fn aabb(&self) -> AxisAlignedBoundingBox {
-        todo!()
-    }
-}
-
-impl<'a, 'b> Object for RenderRef<'a, 'b> {
-    fn render(&self, camera: &three_d::Camera, lights: &[&dyn Light]) {
-        todo!()
-    }
-
-    fn material_type(&self) -> MaterialType {
-        todo!()
     }
 }

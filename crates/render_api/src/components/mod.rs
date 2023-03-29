@@ -1,6 +1,6 @@
 mod camera;
 pub use camera::{
-    Camera, RenderTarget,
+    Camera, RenderTarget, ClearOperation
 };
 
 mod light;
