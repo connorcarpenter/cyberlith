@@ -16,13 +16,12 @@ path = "src/lib.rs"
 crate-type = ["cdylib", "rlib"]
 
 [features]
-default = [ "editor" ]
 editor = [ "render_api/editor", "game_client/editor", "render_egui", "render_glow?/editor" ]
 glow_renderer = [ "render_glow", "render_egui?/glow_renderer" ]
 
 [dependencies]
 # Internal Crates
-game_client = { path = "../../game/client" }
+game_client = { path = "../../apps/game/client" }
 os_proto = { path = "../proto" }
 render_api = { path = "../../crates/render_api" }
 render_glow = { path = "../../crates/render_glow", optional = true }

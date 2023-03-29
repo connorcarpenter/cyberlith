@@ -2,18 +2,17 @@
 name = "game_client"
 version = "0.1.0"
 authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
-workspace = "../.."
+workspace = "../../.."
 edition = "2021"
 publish = false
 
 [features]
-default = [ "editor" ]
 editor = [ "render_api/editor" ]
 
 [dependencies]
 # Internal Crates
 # THIS SHOULD *NEVER* include render_glow, render_wgpu, or render_egui
-render_api = { path = "../../crates/render_api" }
+render_api = { path = "../../../crates/render_api" }
 
 # External Crates
 bevy_app = { version = "0.10", default-features=false }
