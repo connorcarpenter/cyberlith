@@ -1,10 +1,12 @@
-use crate::control::*;
-use crate::core::*;
-use egui_glow::Painter;
 use std::cell::RefCell;
 
-#[doc(hidden)]
-pub use egui;
+use render_egui::egui as egui;
+use render_egui::glow as egui_glow;
+
+use egui_glow::Painter;
+
+use crate::control::*;
+use crate::core::*;
 
 ///
 /// Integration of [egui](https://crates.io/crates/egui), an immediate mode GUI.

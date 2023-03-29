@@ -6,7 +6,7 @@ use render_api::{
     Window,
 };
 
-use crate::new::{
+use crate::bevy::{
     runner::three_d_runner,
     systems::{RenderSet, draw},
 };

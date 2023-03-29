@@ -17,7 +17,7 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 default = [ "editor" ]
-editor = [ "render_api/editor", "game_client/editor", "render_egui" ]
+editor = [ "render_api/editor", "game_client/editor", "render_egui", "render_glow?/editor" ]
 glow_renderer = [ "render_glow", "render_egui?/glow_renderer" ]
 
 [dependencies]

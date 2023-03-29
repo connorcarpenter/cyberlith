@@ -1,8 +1,9 @@
-use cfg_if::cfg_if;
+#[macro_use]
+extern crate cfg_if;
 
 cfg_if! {
     if #[cfg(feature = "glow_renderer")] {
-        mod glow {
+        pub mod glow {
             pub use egui_glow::*;
         }
     }

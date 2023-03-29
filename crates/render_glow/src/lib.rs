@@ -1,16 +1,9 @@
-#![cfg_attr(docsrs, feature(doc_cfg))]
-#![warn(clippy::all)]
-#![allow(clippy::too_many_arguments)]
-#![warn(missing_docs)]
-#![warn(unsafe_code)]
-//!
-//! A 3D renderer which enables out-of-the-box build to both desktop and web with the same code.
-//! See the [README](https://crates.io/crates/three-d) for more information and
-//! the [examples](https://github.com/asny/three-d/tree/master/examples) for how to use it.
-//!
 
-mod new;
-pub use new::*;
+#[macro_use]
+extern crate cfg_if;
+
+mod bevy;
+pub use bevy::*;
 
 pub mod context;
 

@@ -1,4 +1,5 @@
-use cfg_if::cfg_if;
+#[macro_use]
+extern crate cfg_if;
 
 mod assets;
 pub use assets::{shape, Assets, ClearColorConfig, Color, Handle, Image, Mesh, StandardMaterial};
