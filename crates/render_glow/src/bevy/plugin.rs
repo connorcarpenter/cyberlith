@@ -1,11 +1,11 @@
 use bevy_app::{App, CoreSet, Plugin};
 use bevy_ecs::schedule::{IntoSystemConfig, IntoSystemSetConfig};
 
-use render_api::{Assets, Image, Mesh, StandardMaterial, Window};
+use render_api::{Assets, Image, Mesh, StandardMaterial, Window, RenderSet};
 
 use crate::bevy::{
     runner::three_d_runner,
-    systems::{draw, RenderSet},
+    systems::draw,
 };
 
 pub struct RenderGlowPlugin;
@@ -15,8 +15,6 @@ impl Plugin for RenderGlowPlugin {
         app
             // Runner for Three-D integration
             .set_runner(three_d_runner)
-            // Base System Set
-            .configure_set(RenderSet::Draw.after(CoreSet::LastFlush))
             // Systems
             .add_system(draw.in_base_set(RenderSet::Draw));
     }

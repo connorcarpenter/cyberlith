@@ -18,6 +18,7 @@ crate-type = ["cdylib", "rlib"]
 [features]
 editor = [ "render_api/editor", "game_client/editor", "render_egui", "render_glow?/editor" ]
 glow_renderer = [ "render_glow", "render_egui?/glow_renderer" ]
+wgpu_renderer = [ "render_egui?/wgpu_renderer" ]
 
 [dependencies]
 # Internal Crates

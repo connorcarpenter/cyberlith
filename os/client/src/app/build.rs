@@ -17,8 +17,13 @@ pub fn build() -> App {
     app
         // Bevy Plugins
         .add_plugin(LogPlugin::default())
-        // Render Plugin
+        // Add Context Plugin
+        .add_plugin(context::ContextPlugin)
+        .add_startup_systems((game_client::setup, apply_system_buffers, context::setup).chain())
+        // Render API Plugin
         .add_plugin(RenderApiPlugin)
+        // Add Renderer Plugin
+        .add_plugin(context::RendererPlugin)
         // Add Naia Client Plugin
         .add_plugin(NaiaClientPlugin::new(
             NaiaClientConfig::default(),
@@ -26,9 +31,6 @@ pub fn build() -> App {
         ))
         // Add Game Client Plugin
         .add_plugin(GameClientPlugin)
-        // Add Context Plugin
-        .add_plugin(context::ContextPlugin)
-        .add_startup_systems((game_client::setup, apply_system_buffers, context::setup).chain())
         // Startup System
         .add_startup_system(network::init)
         // Receive Client Events
