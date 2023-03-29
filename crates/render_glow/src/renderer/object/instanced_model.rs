@@ -1,3 +1,4 @@
+use crate::asset::{AxisAlignedBoundingBox, KeyFrameAnimation, Model as CpuModel, Geometry as CpuGeometry};
 use crate::renderer::*;
 
 ///
@@ -113,10 +114,10 @@ impl<'a, M: Material> IntoIterator for &'a InstancedModel<M> {
     }
 }
 
-impl<M: Material + FromCpuMaterial + Clone + Default> InstancedModel<M> {
+impl<M: Material + FromPbrMaterial + Clone + Default> InstancedModel<M> {
     ///
-    /// Constructs an [InstancedModel] from a [CpuModel] and the given [Instances] attributes, ie. constructs a list of [Gm]s with a [InstancedMesh] as geometry (constructed from the [CpuMesh]es in the [CpuModel]) and
-    /// a [material] type specified by the generic parameter which implement [FromCpuMaterial] (constructed from the [CpuMaterial]s in the [CpuModel]).
+    /// Constructs an [InstancedModel] from a [Model] and the given [Instances] attributes, ie. constructs a list of [Gm]s with a [InstancedMesh] as geometry (constructed from the [TriMesh]es in the [Model]) and
+    /// a [material] type specified by the generic parameter which implement [FromPbrMaterial] (constructed from the [PbrMaterial]s in the [Model]).
     ///
     pub fn new(
         context: &Context,

@@ -21,7 +21,7 @@ bevy_log = { version = "0.10", default-features=false }
 cfg-if = { version = "1.0" }
 glow = "0.12"
 cgmath = "0.18"
-three-d-asset = "0.5"
+half = {version="2", features=["std", "num-traits", "zerocopy"]}
 thiserror = "1"
 winit = { version = "0.28" }
 getrandom = { version = "0.2", features = ["js"], optional = true }

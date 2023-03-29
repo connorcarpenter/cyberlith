@@ -3,14 +3,11 @@ use bevy_ecs::{
     system::{NonSendMut, Query, Res, ResMut},
 };
 
-use crate::{
-    AxisAlignedBoundingBox, ColorTexture, DepthTexture, FrameInput, Geometry, Gm, Light, Material,
-    MaterialType, Object, PostMaterial,
-};
-
 use render_api::{
     Assets, Camera, Handle, Mesh, RenderLayer, RenderLayers, StandardMaterial, Transform,
 };
+
+use crate::{window::FrameInput, renderer::Object};
 
 #[derive(Clone)]
 struct CameraWork {

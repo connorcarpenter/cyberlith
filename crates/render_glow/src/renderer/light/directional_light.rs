@@ -1,5 +1,6 @@
+
+use crate::asset::{AxisAlignedBoundingBox, Camera, Color, Mat4, Vec3, Viewport, Wrapping};
 use crate::core::*;
-use crate::renderer::light::*;
 use crate::renderer::*;
 
 ///
@@ -56,7 +57,7 @@ impl DirectionalLight {
         texture_size: u32,
         geometries: impl IntoIterator<Item = impl Geometry> + Clone,
     ) {
-        let up = compute_up_direction(self.direction);
+        let up = light::compute_up_direction(self.direction);
 
         let viewport = Viewport::new_at_origo(texture_size, texture_size);
         let mut aabb = AxisAlignedBoundingBox::EMPTY;
@@ -106,7 +107,7 @@ impl DirectionalLight {
                 }
             });
         self.shadow_texture = Some(shadow_texture);
-        self.shadow_matrix = shadow_matrix(&shadow_camera);
+        self.shadow_matrix = light::shadow_matrix(&shadow_camera);
     }
 
     ///

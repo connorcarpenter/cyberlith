@@ -1,6 +1,9 @@
+
+use std::sync::Arc;
+
 use crate::core::*;
 use crate::renderer::*;
-use std::sync::Arc;
+use crate::asset::PbrMaterial;
 
 ///
 /// Render the object with colors that reflect its ORM (occlusion, roughness and metallic) values which primarily is used for debug purposes.
@@ -25,8 +28,8 @@ pub struct ORMMaterial {
 }
 
 impl ORMMaterial {
-    /// Constructs a new ORM material from a [CpuMaterial] where only relevant information is used.
-    pub fn new(context: &Context, cpu_material: &CpuMaterial) -> Self {
+    /// Constructs a new ORM material from a [PbrMaterial] where only relevant information is used.
+    pub fn new(context: &Context, cpu_material: &PbrMaterial) -> Self {
         let metallic_roughness_texture =
             if let Some(ref cpu_texture) = cpu_material.occlusion_metallic_roughness_texture {
                 Some(Arc::new(Texture2D::new(context, cpu_texture)).into())
@@ -71,8 +74,8 @@ impl ORMMaterial {
     }
 }
 
-impl FromCpuMaterial for ORMMaterial {
-    fn from_cpu_material(context: &Context, cpu_material: &CpuMaterial) -> Self {
+impl FromPbrMaterial for ORMMaterial {
+    fn from_cpu_material(context: &Context, cpu_material: &PbrMaterial) -> Self {
         Self::new(context, cpu_material)
     }
 }

@@ -1,7 +1,10 @@
-use crate::core::*;
-use crate::renderer::*;
 use std::collections::HashMap;
 
+use cgmath::*;
+use crate::asset::{AxisAlignedBoundingBox, Camera, Color, Mat3, Mat4, TriMesh};
+
+use crate::core::*;
+use crate::renderer::*;
 use super::BaseMesh;
 
 ///
@@ -89,7 +92,7 @@ impl ParticleSystem {
         context: &Context,
         particles: &Particles,
         acceleration: Vec3,
-        cpu_mesh: &CpuMesh,
+        cpu_mesh: &TriMesh,
     ) -> Self {
         #[cfg(debug_assertions)]
         cpu_mesh.validate().expect("invalid cpu mesh");

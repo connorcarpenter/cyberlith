@@ -3,9 +3,7 @@
 //!
 
 mod fog;
-#[doc(inline)]
 pub use fog::*;
 
 mod fxaa;
-#[doc(inline)]
 pub use fxaa::*;

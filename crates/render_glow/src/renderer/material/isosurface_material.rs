@@ -1,10 +1,13 @@
+use cgmath::*;
+
+use crate::asset::{Camera, Color, LightingModel, Vec3};
 use crate::core::*;
 use crate::renderer::*;
 
 ///
 /// A material that renders the isosurface defined by the voxel data in the [IsosurfaceMaterial::voxels] and the [IsosurfaceMaterial::threshold].
 /// The surface is defined by all the points in the volume where the red channel of the voxel data is equal to the threshold.
-/// This material should be applied to a cube with center in origo, for example [CpuMesh::cube].
+/// This material should be applied to a cube with center in origo, for example [TriMesh::cube].
 ///
 #[derive(Clone)]
 pub struct IsosurfaceMaterial {
@@ -65,19 +68,5 @@ impl Material for IsosurfaceMaterial {
     }
     fn material_type(&self) -> MaterialType {
         MaterialType::Transparent
-    }
-}
-
-impl FromCpuVoxelGrid for IsosurfaceMaterial {
-    fn from_cpu_voxel_grid(context: &Context, cpu_voxel_grid: &CpuVoxelGrid) -> Self {
-        Self {
-            voxels: std::sync::Arc::new(Texture3D::new(context, &cpu_voxel_grid.voxels)),
-            lighting_model: LightingModel::Blinn,
-            size: cpu_voxel_grid.size,
-            threshold: 0.15,
-            color: Color::WHITE,
-            roughness: 1.0,
-            metallic: 0.0,
-        }
     }
 }

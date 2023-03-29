@@ -1,3 +1,7 @@
+
+use cgmath::*;
+use crate::asset::{AxisAlignedBoundingBox, Mat3, Mat4, Radians, TriMesh, Vec2};
+
 use crate::renderer::*;
 
 ///
@@ -22,7 +26,7 @@ impl Rectangle {
         width: f32,
         height: f32,
     ) -> Self {
-        let mut mesh = CpuMesh::square();
+        let mut mesh = TriMesh::square();
         mesh.transform(&(Mat4::from_scale(0.5))).unwrap();
         let mut rectangle = Self {
             mesh: Mesh::new(context, &mesh),

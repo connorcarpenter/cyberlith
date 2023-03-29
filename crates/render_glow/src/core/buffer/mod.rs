@@ -1,24 +1,25 @@
 //!
 //! Different types of buffers used for sending data (primarily geometry data) to the GPU.
 //!
+
+use cgmath::*;
+use half::f16;
+use data_type::*;
+
 mod element_buffer;
-#[doc(inline)]
 pub use element_buffer::*;
 
 mod vertex_buffer;
-#[doc(inline)]
 pub use vertex_buffer::*;
 
 mod instance_buffer;
-#[doc(inline)]
 pub use instance_buffer::*;
 
 mod uniform_buffer;
-#[doc(inline)]
 pub use uniform_buffer::*;
 
 use crate::core::*;
-use data_type::*;
+use crate::asset::{Color, Quat};
 
 /// The basic data type used for each element in a [VertexBuffer] or [InstanceBuffer].
 pub trait BufferDataType: DataType {}

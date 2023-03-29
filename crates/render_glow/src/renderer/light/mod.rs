@@ -5,26 +5,21 @@
 //!
 
 mod directional_light;
-#[doc(inline)]
-pub use directional_light::*;
-
 mod spot_light;
-#[doc(inline)]
-pub use spot_light::*;
-
 mod point_light;
-#[doc(inline)]
-pub use point_light::*;
-
 mod ambient_light;
-#[doc(inline)]
-pub use ambient_light::*;
-
 mod environment;
-#[doc(inline)]
+
+pub use directional_light::*;
+pub use spot_light::*;
+pub use point_light::*;
+pub use ambient_light::*;
 pub use environment::*;
 
+use cgmath::*;
+
 use crate::core::*;
+use crate::asset::*;
 
 ///
 /// Specifies how the intensity of a light fades over distance.
@@ -118,8 +113,8 @@ impl<T: Light> Light for std::sync::Arc<std::sync::RwLock<T>> {
 ///
 pub fn lights_shader_source(lights: &[&dyn Light], lighting_model: LightingModel) -> String {
     let mut shader_source = lighting_model_shader(lighting_model).to_string();
-    shader_source.push_str(include_str!("../core/shared.frag"));
-    shader_source.push_str(include_str!("light/shaders/light_shared.frag"));
+    shader_source.push_str(include_str!("../../core/shared.frag"));
+    shader_source.push_str(include_str!("../light/shaders/light_shared.frag"));
     let mut dir_fun = String::new();
     for (i, light) in lights.iter().enumerate() {
         shader_source.push_str(&light.shader_source(i as u32));
@@ -141,7 +136,7 @@ pub fn lights_shader_source(lights: &[&dyn Light], lighting_model: LightingModel
 }
 
 fn shadow_matrix(camera: &Camera) -> Mat4 {
-    let bias_matrix = crate::Mat4::new(
+    let bias_matrix = Mat4::new(
         0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.5, 0.5, 0.5, 1.0,
     );
     bias_matrix * camera.projection() * camera.view()
@@ -155,7 +150,7 @@ fn compute_up_direction(direction: Vec3) -> Vec3 {
     }
 }
 
-use crate::renderer::{LightingModel, NormalDistributionFunction};
+use crate::asset::{LightingModel, NormalDistributionFunction};
 pub(crate) fn lighting_model_shader(lighting_model: LightingModel) -> &'static str {
     match lighting_model {
         LightingModel::Phong => "#define PHONG",

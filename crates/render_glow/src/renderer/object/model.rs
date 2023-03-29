@@ -1,5 +1,5 @@
+use crate::asset::{AxisAlignedBoundingBox, KeyFrameAnimation, Model as CpuModel, Geometry as CpuGeometry};
 use crate::renderer::*;
-pub use three_d_asset::Model as CpuModel;
 
 ///
 /// Part of a [Model] consisting of a [Mesh], some type of [material] and a set of possible animations.
@@ -113,10 +113,10 @@ impl<'a, M: Material> IntoIterator for &'a Model<M> {
     }
 }
 
-impl<M: Material + FromCpuMaterial + Clone + Default> Model<M> {
+impl<M: Material + FromPbrMaterial + Clone + Default> Model<M> {
     ///
-    /// Constructs a [Model] from a [CpuModel], ie. constructs a list of [Gm]s with a [Mesh] as geometry (constructed from the [CpuMesh]es in the [CpuModel]) and
-    /// a [material] type specified by the generic parameter which implement [FromCpuMaterial] (constructed from the [CpuMaterial]s in the [CpuModel]).
+    /// Constructs a [Model] from a [Model], ie. constructs a list of [Gm]s with a [Mesh] as geometry (constructed from the [TriMesh]es in the [Model]) and
+    /// a [material] type specified by the generic parameter which implement [FromPbrMaterial] (constructed from the [PbrMaterial]s in the [Model]).
     ///
     pub fn new(context: &Context, cpu_model: &CpuModel) -> Result<Self, RendererError> {
         let materials = cpu_model

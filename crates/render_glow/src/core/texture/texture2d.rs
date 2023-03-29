@@ -1,4 +1,6 @@
+
 use crate::core::texture::*;
+use crate::asset::{Texture2D as CpuTexture};
 
 ///
 /// A 2D texture, basically an image that is transferred to the GPU.

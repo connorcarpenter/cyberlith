@@ -1,6 +1,9 @@
+
+use std::sync::Arc;
+
 use crate::core::*;
 use crate::renderer::*;
-use std::sync::Arc;
+use crate::asset::PbrMaterial;
 
 ///
 /// Render the object with colors that reflect its normals which primarily is used for debug purposes.
@@ -18,8 +21,8 @@ pub struct NormalMaterial {
 }
 
 impl NormalMaterial {
-    /// Constructs a new normal material from a [CpuMaterial] where only relevant information is used.
-    pub fn new(context: &Context, cpu_material: &CpuMaterial) -> Self {
+    /// Constructs a new normal material from a [PbrMaterial] where only relevant information is used.
+    pub fn new(context: &Context, cpu_material: &PbrMaterial) -> Self {
         let normal_texture = cpu_material
             .normal_texture
             .as_ref()
@@ -45,8 +48,8 @@ impl NormalMaterial {
     }
 }
 
-impl FromCpuMaterial for NormalMaterial {
-    fn from_cpu_material(context: &Context, cpu_material: &CpuMaterial) -> Self {
+impl FromPbrMaterial for NormalMaterial {
+    fn from_cpu_material(context: &Context, cpu_material: &PbrMaterial) -> Self {
         Self::new(context, cpu_material)
     }
 }

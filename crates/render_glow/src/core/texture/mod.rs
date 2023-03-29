@@ -1,46 +1,32 @@
 //!
 //! Different types of textures used by the GPU to read from and write to.
 //!
+
 mod texture2d;
-#[doc(inline)]
-pub use texture2d::*;
-
 mod texture_cube_map;
-#[doc(inline)]
-pub use texture_cube_map::*;
-
 mod depth_texture2d;
-#[doc(inline)]
-pub use depth_texture2d::*;
-
 mod texture2d_array;
-#[doc(inline)]
-pub use texture2d_array::*;
-
 mod texture2d_multisample;
-#[doc(inline)]
-pub(in crate::core) use texture2d_multisample::*;
-
 mod texture3d;
-#[doc(inline)]
-pub use texture3d::*;
-
 mod depth_texture2d_array;
-#[doc(inline)]
-pub use depth_texture2d_array::*;
-
 mod depth_texture_cube_map;
-#[doc(inline)]
-pub use depth_texture_cube_map::*;
-
 mod depth_texture2d_multisample;
-#[doc(inline)]
+
+pub use texture2d::*;
+pub use texture_cube_map::*;
+pub use depth_texture2d::*;
+pub use texture2d_array::*;
+pub(in crate::core) use texture2d_multisample::*;
+pub use texture3d::*;
+pub use depth_texture2d_array::*;
+pub use depth_texture_cube_map::*;
 pub(in crate::core) use depth_texture2d_multisample::*;
 
+use cgmath::*;
+use half::*;
+
+use crate::asset::{Color, Interpolation, Quat, Texture2D as CpuTexture, TextureData, Wrapping};
 use data_type::*;
-pub use three_d_asset::texture::{
-    Interpolation, Texture2D as CpuTexture, Texture3D as CpuTexture3D, TextureData, Wrapping,
-};
 
 /// The basic data type used for each channel of each pixel in a texture.
 pub trait TextureDataType: DataType {}

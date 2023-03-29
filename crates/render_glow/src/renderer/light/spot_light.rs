@@ -1,5 +1,7 @@
+use cgmath::*;
+
+use crate::asset::{Color, Mat4, Radians, Vec3, Viewport, Wrapping};
 use crate::core::*;
-use crate::renderer::light::*;
 use crate::renderer::*;
 
 ///
@@ -69,7 +71,7 @@ impl SpotLight {
     ) {
         let position = self.position;
         let direction = self.direction;
-        let up = compute_up_direction(self.direction);
+        let up = light::compute_up_direction(self.direction);
 
         let viewport = Viewport::new_at_origo(texture_size, texture_size);
 
@@ -92,7 +94,7 @@ impl SpotLight {
             z_near.max(0.01),
             z_far,
         );
-        self.shadow_matrix = shadow_matrix(&shadow_camera);
+        self.shadow_matrix = light::shadow_matrix(&shadow_camera);
 
         let mut shadow_texture = DepthTexture2D::new::<f32>(
             &self.context,

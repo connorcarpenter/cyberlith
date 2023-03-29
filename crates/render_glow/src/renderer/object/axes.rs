@@ -1,3 +1,4 @@
+use crate::asset::{AxisAlignedBoundingBox, Camera, Color, degrees, Mat4, TriMesh};
 use crate::renderer::*;
 
 ///
@@ -16,7 +17,7 @@ impl Axes {
     /// Creates a new axes object consisting of three arrows with the given radius and length.
     ///
     pub fn new(context: &Context, radius: f32, length: f32) -> Self {
-        let mut mesh = CpuMesh::arrow(0.9, 0.6, 16);
+        let mut mesh = TriMesh::arrow(0.9, 0.6, 16);
         mesh.transform(&Mat4::from_nonuniform_scale(length, radius, radius))
             .unwrap();
         let model = Gm::new(Mesh::new(context, &mesh), ColorMaterial::default());

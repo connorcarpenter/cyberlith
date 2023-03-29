@@ -1,3 +1,4 @@
+use crate::asset::{AxisAlignedBoundingBox, Mat3, Mat4, TriMesh};
 use crate::core::*;
 use crate::renderer::*;
 
@@ -17,10 +18,10 @@ pub struct Mesh {
 
 impl Mesh {
     ///
-    /// Creates a new triangle mesh from the given [CpuMesh].
-    /// All data in the [CpuMesh] is transfered to the GPU, so make sure to remove all unnecessary data from the [CpuMesh] before calling this method.
+    /// Creates a new triangle mesh from the given [TriMesh].
+    /// All data in the [TriMesh] is transfered to the GPU, so make sure to remove all unnecessary data from the [TriMesh] before calling this method.
     ///
-    pub fn new(context: &Context, cpu_mesh: &CpuMesh) -> Self {
+    pub fn new(context: &Context, cpu_mesh: &TriMesh) -> Self {
         let aabb = cpu_mesh.compute_aabb();
         Self {
             context: context.clone(),

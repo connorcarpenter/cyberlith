@@ -2,14 +2,7 @@ use std::default::Default;
 
 use bevy_app::App;
 
-use crate::{
-    degrees, vec3,
-    window::{FrameOutput, Window, WindowSettings},
-    Camera, ClearState, Color, ColorMaterial, CpuMesh, FrameInput, Gm, Mesh, Positions,
-};
-
-#[derive(Default)]
-pub struct ThreeDRunner {}
+use crate::window::{FrameInput, FrameOutput, Window, WindowSettings};
 
 pub fn three_d_runner(mut app: App) {
     // Create a Window
@@ -45,7 +38,7 @@ pub fn three_d_runner(mut app: App) {
     //     Color::new(0, 255, 0, 255), // bottom left
     //     Color::new(0, 0, 255, 255), // top
     // ];
-    // let cpu_mesh = CpuMesh {
+    // let cpu_mesh = TriMesh {
     //     positions: Positions::F32(positions),
     //     colors: Some(colors),
     //     ..Default::default()

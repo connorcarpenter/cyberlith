@@ -16,9 +16,26 @@
 //! Geometries can be rendered with a given material using [Geometry::render_with_material] or combined into an object using the [Gm] struct and again used in a render call.
 //!
 
-pub use crate::core::*;
+mod material;
+mod effect;
+mod light;
+mod geometry;
+mod object;
+mod control;
+
+pub use material::*;
+pub use effect::*;
+pub use light::*;
+pub use geometry::*;
+pub use object::*;
+pub use control::*;
 
 use thiserror::Error;
+use cgmath::*;
+
+use crate::core::*;
+use crate::asset::{Camera, Interpolation, Vec3, Viewport, Wrapping};
+
 ///
 /// Error in the [renderer](crate::renderer) module.
 ///
@@ -30,24 +47,6 @@ pub enum RendererError {
     #[error("the material {0} is required by the geometry {1} but could not be found")]
     MissingMaterial(String, String),
 }
-
-pub mod material;
-pub use material::*;
-
-pub mod effect;
-pub use effect::*;
-
-pub mod light;
-pub use light::*;
-
-pub mod geometry;
-pub use geometry::*;
-
-pub mod object;
-pub use object::*;
-
-pub mod control;
-pub use control::*;
 
 macro_rules! impl_render_target_extensions_body {
     () => {
@@ -338,7 +337,7 @@ pub fn cmp_render_order(
 /// The pixel coordinate must be in physical pixels, where (viewport.x, viewport.y) indicate the bottom left corner of the viewport
 /// and (viewport.x + viewport.width, viewport.y + viewport.height) indicate the top right corner.
 /// Returns ```None``` if no geometry was hit between the near (`z_near`) and far (`z_far`) plane for this camera.
-///
+///https://towardsdatascience.com/gpt-4-will-have-100-trillion-parameters-500x-the-size-of-gpt-3-582b98d82253
 pub fn pick(
     context: &Context,
     camera: &Camera,
@@ -414,13 +413,13 @@ pub fn ray_intersect(
         texture.as_color_target(None),
         depth_texture.as_depth_target(),
     )
-    .clear(ClearState::color_and_depth(1.0, 1.0, 1.0, 1.0, 1.0))
-    .write(|| {
-        for geometry in geometries {
-            geometry.render_with_material(&depth_material, &camera, &[]);
-        }
-    })
-    .read_color()[0];
+        .clear(ClearState::color_and_depth(1.0, 1.0, 1.0, 1.0, 1.0))
+        .write(|| {
+            for geometry in geometries {
+                geometry.render_with_material(&depth_material, &camera, &[]);
+            }
+        })
+        .read_color()[0];
     if depth < 1.0 {
         Some(position + direction * depth * max_depth)
     } else {

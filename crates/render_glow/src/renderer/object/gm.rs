@@ -1,3 +1,4 @@
+use crate::asset::AxisAlignedBoundingBox;
 use crate::renderer::*;
 
 ///

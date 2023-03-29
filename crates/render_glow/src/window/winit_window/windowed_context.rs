@@ -1,8 +1,8 @@
-use crate::Context;
-use crate::SurfaceSettings;
-use crate::WindowError;
 use std::sync::Arc;
 use winit::window::Window;
+
+use crate::core::Context;
+use super::{SurfaceSettings, HardwareAcceleration, WindowError};
 
 #[cfg(target_arch = "wasm32")]
 mod inner {
@@ -93,7 +93,7 @@ mod inner {
     /// For a graphics context that is not associated with a window, see [HeadlessContext](crate::HeadlessContext).
     ///
     pub struct WindowedContext {
-        pub(super) context: Context,
+        pub(super) context: crate::core::Context,
         surface: Surface<WindowSurface>,
         glutin_context: glutin::context::PossiblyCurrentContext,
     }
@@ -142,9 +142,9 @@ mod inner {
             };
 
             let hardware_acceleration = match settings.hardware_acceleration {
-                crate::HardwareAcceleration::Required => Some(true),
-                crate::HardwareAcceleration::Preferred => None,
-                crate::HardwareAcceleration::Off => Some(false),
+                HardwareAcceleration::Required => Some(true),
+                HardwareAcceleration::Preferred => None,
+                HardwareAcceleration::Off => Some(false),
             };
             let config_template = glutin::config::ConfigTemplateBuilder::new()
                 .prefer_hardware_accelerated(hardware_acceleration)
@@ -188,7 +188,7 @@ mod inner {
             gl_surface.set_swap_interval(&gl_context, swap_interval)?;
 
             Ok(Self {
-                context: Context::from_gl_context(Arc::new(unsafe {
+                context: crate::core::Context::from_gl_context(Arc::new(unsafe {
                     crate::context::Context::from_loader_function(|s| {
                         let s = std::ffi::CString::new(s)
                             .expect("failed to construct C string from string for gl proc address");

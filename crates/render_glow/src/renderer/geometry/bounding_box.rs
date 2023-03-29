@@ -1,3 +1,7 @@
+
+use cgmath::*;
+use crate::asset::{AxisAlignedBoundingBox, degrees, Mat4, TriMesh};
+
 use crate::renderer::*;
 
 ///
@@ -68,7 +72,7 @@ impl BoundingBox {
                     .collect(),
                 ..Default::default()
             },
-            &CpuMesh::cylinder(16),
+            &TriMesh::cylinder(16),
         );
         Self { mesh, aabb }
     }

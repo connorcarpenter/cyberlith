@@ -1,6 +1,11 @@
+
+use std::sync::Arc;
+
+use cgmath::*;
+use crate::asset::{AxisAlignedBoundingBox, Vec2};
+
 use crate::core::*;
 use crate::renderer::*;
-use std::sync::Arc;
 
 const VERTICES_PER_SIDE: usize = 33;
 /// The maximum number of waves.

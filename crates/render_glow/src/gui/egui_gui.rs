@@ -5,8 +5,9 @@ use render_egui::glow as egui_glow;
 
 use egui_glow::Painter;
 
-use crate::control::*;
+use crate::renderer::*;
 use crate::core::*;
+use crate::asset::*;
 
 ///
 /// Integration of [egui](https://crates.io/crates/egui), an immediate mode GUI.
@@ -258,7 +259,7 @@ impl GUI {
 
 impl From<&Key> for egui::Key {
     fn from(key: &Key) -> Self {
-        use crate::control::Key::*;
+        use crate::renderer::Key::*;
         use egui::Key;
         match key {
             ArrowDown => Key::ArrowDown,

@@ -1,3 +1,7 @@
+
+use cgmath::*;
+
+use crate::asset::{AxisAlignedBoundingBox, Mat3, Mat4, TriMesh, Vec2};
 use crate::renderer::*;
 
 ///
@@ -15,7 +19,7 @@ impl Line {
     /// Constructs a new line geometry.
     ///
     pub fn new(context: &Context, pixel0: Vec2, pixel1: Vec2, thickness: f32) -> Self {
-        let mut mesh = CpuMesh::square();
+        let mut mesh = TriMesh::square();
         mesh.transform(&(Mat4::from_scale(0.5) * Mat4::from_translation(vec3(1.0, 0.0, 0.0))))
             .unwrap();
         let mut line = Self {

@@ -1,6 +1,8 @@
+use std::sync::Arc;
+use crate::asset::{Camera, Color, GeometryFunction, LightingModel, NormalDistributionFunction, PbrMaterial};
+
 use crate::core::*;
 use crate::renderer::*;
-use std::sync::Arc;
 
 ///
 /// Similar to [PhysicalMaterial] except that rendering happens in two stages which produces the same result, but is more efficient for complex scenes.
@@ -50,11 +52,11 @@ pub struct DeferredPhysicalMaterial {
 
 impl DeferredPhysicalMaterial {
     ///
-    /// Constructs a new deferred physical material from a [CpuMaterial].
-    /// If the input contains an [CpuMaterial::occlusion_metallic_roughness_texture], this texture is used for both
-    /// [DeferredPhysicalMaterial::metallic_roughness_texture] and [DeferredPhysicalMaterial::occlusion_texture] while any [CpuMaterial::metallic_roughness_texture] or [CpuMaterial::occlusion_texture] are ignored.
+    /// Constructs a new deferred physical material from a [PbrMaterial].
+    /// If the input contains an [PbrMaterial::occlusion_metallic_roughness_texture], this texture is used for both
+    /// [DeferredPhysicalMaterial::metallic_roughness_texture] and [DeferredPhysicalMaterial::occlusion_texture] while any [PbrMaterial::metallic_roughness_texture] or [PbrMaterial::occlusion_texture] are ignored.
     ///
-    pub fn new(context: &Context, cpu_material: &CpuMaterial) -> Self {
+    pub fn new(context: &Context, cpu_material: &PbrMaterial) -> Self {
         let albedo_texture = cpu_material
             .albedo_texture
             .as_ref()
@@ -175,8 +177,8 @@ impl DeferredPhysicalMaterial {
     }
 }
 
-impl FromCpuMaterial for DeferredPhysicalMaterial {
-    fn from_cpu_material(context: &Context, cpu_material: &CpuMaterial) -> Self {
+impl FromPbrMaterial for DeferredPhysicalMaterial {
+    fn from_cpu_material(context: &Context, cpu_material: &PbrMaterial) -> Self {
         Self::new(context, cpu_material)
     }
 }

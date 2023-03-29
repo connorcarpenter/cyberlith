@@ -13,6 +13,7 @@ editor = []
 # THIS SHOULD *NEVER* include render_glow, render_wgpu, or render_egui
 
 # External Crates
+# should be very light on the number of dependencies
 bevy_app = { version = "0.10", default-features=false }
 bevy_ecs = { version = "0.10", default-features=false }
 bevy_log = { version = "0.10", default-features=false }

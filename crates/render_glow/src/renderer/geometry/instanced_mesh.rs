@@ -1,8 +1,11 @@
-use crate::core::*;
-use crate::renderer::*;
 use std::collections::HashMap;
 use std::sync::RwLock;
 
+use cgmath::*;
+
+use crate::asset::{AxisAlignedBoundingBox, Camera, Color, Mat3, Mat4, PointCloud, TriMesh, Vec3};
+use crate::core::*;
+use crate::renderer::*;
 use super::BaseMesh;
 
 ///
@@ -23,11 +26,11 @@ pub struct InstancedMesh {
 
 impl InstancedMesh {
     ///
-    /// Creates a new instanced 3D mesh from the given [CpuMesh].
-    /// All data in the [CpuMesh] is transfered to the GPU, so make sure to remove all unnecessary data from the [CpuMesh] before calling this method.
+    /// Creates a new instanced 3D mesh from the given [TriMesh].
+    /// All data in the [TriMesh] is transfered to the GPU, so make sure to remove all unnecessary data from the [TriMesh] before calling this method.
     /// The model is rendered in as many instances as there are attributes in [Instances] given as input.
     ///
-    pub fn new(context: &Context, instances: &Instances, cpu_mesh: &CpuMesh) -> Self {
+    pub fn new(context: &Context, instances: &Instances, cpu_mesh: &TriMesh) -> Self {
         let aabb = cpu_mesh.compute_aabb();
         let mut instanced_mesh = Self {
             context: context.clone(),

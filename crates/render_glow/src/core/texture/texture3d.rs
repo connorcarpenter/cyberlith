@@ -1,4 +1,6 @@
+use crate::asset::{Texture3D as CpuTexture3D};
 use crate::core::texture::*;
+
 ///
 /// A 3D color texture.
 ///

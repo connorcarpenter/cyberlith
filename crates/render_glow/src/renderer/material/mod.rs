@@ -5,57 +5,36 @@
 //! A [Material] can also be combined into an [object] (see [Gm]) and be used in a render call, for example [RenderTarget::render].
 //!
 
-use crate::renderer::*;
-
-pub use three_d_asset::material::{
-    GeometryFunction, LightingModel, NormalDistributionFunction, PbrMaterial as CpuMaterial,
-};
-
 mod color_material;
-#[doc(inline)]
-pub use color_material::*;
-
 mod depth_material;
-#[doc(inline)]
-pub use depth_material::*;
-
 mod normal_material;
-#[doc(inline)]
-pub use normal_material::*;
-
 mod orm_material;
-#[doc(inline)]
-pub use orm_material::*;
-
 mod position_material;
-#[doc(inline)]
-pub use position_material::*;
-
 mod uv_material;
-#[doc(inline)]
-pub use uv_material::*;
-
 mod water_material;
-#[doc(inline)]
-pub use water_material::*;
-
 mod physical_material;
-#[doc(inline)]
-pub use physical_material::*;
-
 mod deferred_physical_material;
-#[doc(inline)]
-pub use deferred_physical_material::*;
-
 mod skybox_material;
-#[doc(inline)]
-pub(in crate::renderer) use skybox_material::*;
-
 mod isosurface_material;
-#[doc(inline)]
+
+pub use color_material::*;
+pub use depth_material::*;
+pub use normal_material::*;
+pub use orm_material::*;
+pub use position_material::*;
+pub use uv_material::*;
+pub use water_material::*;
+pub use physical_material::*;
+pub use deferred_physical_material::*;
+pub(in crate::renderer) use skybox_material::*;
 pub use isosurface_material::*;
 
 use std::sync::Arc;
+
+use half::*;
+
+use crate::asset::{Camera, Mat3, PbrMaterial, TextureData};
+use crate::renderer::*;
 
 ///
 /// A reference to a 2D texture and a texture transformation.
@@ -174,23 +153,13 @@ pub trait Material {
 }
 
 ///
-/// Implement this for a [Material] that can be created from a [CpuMaterial].
+/// Implement this for a [Material] that can be created from a [PbrMaterial].
 ///
-pub trait FromCpuMaterial: std::marker::Sized {
+pub trait FromPbrMaterial: std::marker::Sized {
     ///
-    /// Creates a new material that can be used for rendering from a [CpuMaterial].
+    /// Creates a new material that can be used for rendering from a [PbrMaterial].
     ///
-    fn from_cpu_material(context: &Context, cpu_material: &CpuMaterial) -> Self;
-}
-
-///
-/// Implement this for a [Material] that can be created from a [CpuVoxelGrid].
-///
-pub trait FromCpuVoxelGrid: std::marker::Sized {
-    ///
-    /// Creates a new material that can be used for rendering from a [CpuVoxelGrid].
-    ///
-    fn from_cpu_voxel_grid(context: &Context, cpu_voxel_grid: &CpuVoxelGrid) -> Self;
+    fn from_cpu_material(context: &Context, cpu_material: &PbrMaterial) -> Self;
 }
 
 impl<T: Material + ?Sized> Material for &T {
@@ -298,18 +267,18 @@ impl<T: Material> Material for std::sync::RwLock<T> {
     }
 }
 
-fn is_transparent(cpu_material: &CpuMaterial) -> bool {
+fn is_transparent(cpu_material: &PbrMaterial) -> bool {
     cpu_material.albedo.a != 255
         || cpu_material
-            .albedo_texture
-            .as_ref()
-            .map(|t| match &t.data {
-                TextureData::RgbaU8(data) => data.iter().any(|d| d[3] != 255),
-                TextureData::RgbaF16(data) => data.iter().any(|d| d[3] < f16::from_f32(0.99)),
-                TextureData::RgbaF32(data) => data.iter().any(|d| d[3] < 0.99),
-                _ => false,
-            })
-            .unwrap_or(false)
+        .albedo_texture
+        .as_ref()
+        .map(|t| match &t.data {
+            TextureData::RgbaU8(data) => data.iter().any(|d| d[3] != 255),
+            TextureData::RgbaF16(data) => data.iter().any(|d| d[3] < f16::from_f32(0.99)),
+            TextureData::RgbaF32(data) => data.iter().any(|d| d[3] < 0.99),
+            _ => false,
+        })
+        .unwrap_or(false)
 }
 
 impl ColorTexture<'_> {
@@ -324,7 +293,7 @@ impl ColorTexture<'_> {
                 {
                     return texture(colorMap, uv);
                 }"
-            .to_owned(),
+                .to_owned(),
             Self::Array { .. } => "
                 uniform sampler2DArray colorMap;
                 uniform int colorLayers[4];
@@ -336,7 +305,7 @@ impl ColorTexture<'_> {
                 {
                     return texture(colorMap, vec3(uv, colorLayers[index]));
                 }"
-            .to_owned(),
+                .to_owned(),
             Self::CubeMap { .. } => unimplemented!(),
         }
     }
@@ -384,7 +353,7 @@ impl DepthTexture<'_> {
                 {
                     return texture(depthMap, uv).x;
                 }"
-            .to_owned(),
+                .to_owned(),
             Self::Array { .. } => "
                 uniform sampler2DArray depthMap;
                 uniform int depthLayer;
@@ -392,7 +361,7 @@ impl DepthTexture<'_> {
                 {
                     return texture(depthMap, vec3(uv, depthLayer)).x;
                 }"
-            .to_owned(),
+                .to_owned(),
             Self::CubeMap { .. } => {
                 unimplemented!()
             }

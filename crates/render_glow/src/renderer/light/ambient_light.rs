@@ -1,5 +1,6 @@
 use crate::core::*;
 use crate::renderer::*;
+use crate::asset::*;
 
 ///
 /// A light which shines on all surfaces.

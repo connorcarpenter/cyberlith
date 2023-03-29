@@ -2,48 +2,32 @@
 //! Mid-level modular abstractions of common graphics concepts such as buffer, texture, program, render target and so on.
 //! Can be combined with low-level calls in the [context](crate::context) module as well as high-level functionality in the [renderer](crate::renderer) module.
 //!
-#![allow(unsafe_code)]
-
-mod context;
-#[doc(inline)]
-pub use context::*;
-
-pub mod buffer;
-pub use buffer::*;
-
-pub mod texture;
-pub use texture::*;
-
-pub mod render_states;
-pub use render_states::*;
-
-pub mod render_target;
-pub use render_target::*;
-
-mod uniform;
-#[doc(inline)]
-pub use uniform::*;
-
-mod program;
-#[doc(inline)]
-pub use program::*;
-
-mod scissor_box;
-#[doc(inline)]
-pub use scissor_box::*;
-
-pub mod prelude {
-
-    //!
-    //! Basic types used throughout this crate, mostly basic math.
-    //!
-    pub use three_d_asset::prelude::*;
-}
-pub use prelude::*;
-pub use three_d_asset::{Camera, Viewport};
 
 /// A result for this crate.
 use thiserror::Error;
+use cgmath::*;
+
+mod context;
+mod buffer;
+mod texture;
+mod render_states;
+mod render_target;
+mod uniform;
+mod program;
+mod scissor_box;
+mod data_type;
+
+pub use context::*;
+pub use buffer::*;
+pub use texture::*;
+pub use render_states::*;
+pub use render_target::*;
+pub use uniform::*;
+pub use program::*;
+pub use scissor_box::*;
+pub use data_type::*;
+
+use crate::asset::{Camera, Viewport};
 
 ///
 /// Error in the [core](crate::core) module.
@@ -85,7 +69,7 @@ pub fn apply_effect(
                 gl_Position = vec4(position, 1.0);
             }
         "
-            .to_owned(),
+                .to_owned(),
             fragment_shader_source.to_owned(),
             |program| {
                 use_uniforms(program);
@@ -123,7 +107,7 @@ pub fn apply_cube_effect(
                 gl_Position = vec4(position, 1.0);
             }
         "
-            .to_owned(),
+                .to_owned(),
             fragment_shader_source.to_owned(),
             |program| {
                 use_uniforms(program);
@@ -147,8 +131,6 @@ fn full_screen_buffer(context: &Context) -> VertexBuffer {
     )
 }
 
-mod data_type;
-use data_type::DataType;
 fn to_byte_slice<T: DataType>(data: &[T]) -> &[u8] {
     unsafe {
         std::slice::from_raw_parts(

@@ -1,3 +1,7 @@
+
+use cgmath::*;
+
+use crate::asset::{AxisAlignedBoundingBox, Mat3, TriMesh, Vec2};
 use crate::renderer::*;
 
 ///
@@ -14,7 +18,7 @@ impl Circle {
     /// Constructs a new circle geometry.
     ///
     pub fn new(context: &Context, center: Vec2, radius: f32) -> Self {
-        let mesh = CpuMesh::circle(64);
+        let mesh = TriMesh::circle(64);
         let mut circle = Self {
             mesh: Mesh::new(context, &mesh),
             center,

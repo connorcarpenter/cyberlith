@@ -1,3 +1,6 @@
+use cgmath::*;
+
+use crate::asset::{Interpolation, Texture2D as CpuTexture, TextureData, Wrapping, Vec3};
 use crate::core::texture::*;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]

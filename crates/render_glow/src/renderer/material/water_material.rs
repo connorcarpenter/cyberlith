@@ -1,6 +1,10 @@
+use std::sync::Arc;
+
+use cgmath::*;
+
 use crate::core::*;
 use crate::renderer::*;
-use std::sync::Arc;
+use crate::asset::*;
 
 /// The background of the scene.
 #[derive(Clone)]

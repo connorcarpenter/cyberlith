@@ -5,14 +5,10 @@ mod bevy;
 pub use bevy::*;
 
 pub mod context;
-
 pub mod core;
-
 pub mod renderer;
-pub use renderer::*;
-
 pub mod window;
-pub use window::*;
+pub mod asset;
 
 mod gui;
 pub use gui::*;

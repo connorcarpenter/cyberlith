@@ -5,44 +5,28 @@
 //!
 
 mod mesh;
-#[doc(inline)]
-pub use mesh::*;
-
 mod instanced_mesh;
-#[doc(inline)]
-pub use instanced_mesh::*;
-
 mod sprites;
-#[doc(inline)]
-pub use sprites::*;
-
 mod particles;
-#[doc(inline)]
-pub use particles::*;
-
 mod bounding_box;
-#[doc(inline)]
-pub use bounding_box::*;
-
 mod line;
-#[doc(inline)]
-pub use line::*;
-
 mod rectangle;
-#[doc(inline)]
-pub use rectangle::*;
-
 mod circle;
-#[doc(inline)]
+
+pub use mesh::*;
+pub use instanced_mesh::*;
+pub use sprites::*;
+pub use particles::*;
+pub use bounding_box::*;
+pub use line::*;
+pub use rectangle::*;
 pub use circle::*;
+
+use cgmath::*;
 
 use crate::core::*;
 use crate::renderer::*;
-
-pub use three_d_asset::{
-    Geometry as CpuGeometry, Indices, KeyFrameAnimation, KeyFrames, PointCloud, Positions,
-    TriMesh as CpuMesh,
-};
+use crate::asset::*;
 
 ///
 /// Represents a 3D geometry that, together with a [material], can be rendered using [Geometry::render_with_material].
@@ -305,7 +289,7 @@ impl<T: Geometry> Geometry for std::sync::RwLock<T> {
     }
 }
 
-struct BaseMesh {
+pub struct BaseMesh {
     indices: Option<ElementBuffer>,
     positions: VertexBuffer,
     normals: Option<VertexBuffer>,
@@ -315,7 +299,7 @@ struct BaseMesh {
 }
 
 impl BaseMesh {
-    pub fn new(context: &Context, cpu_mesh: &CpuMesh) -> Self {
+    pub fn new(context: &Context, cpu_mesh: &TriMesh) -> Self {
         #[cfg(debug_assertions)]
         cpu_mesh.validate().expect("invalid cpu mesh");
 

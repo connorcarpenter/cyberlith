@@ -6,39 +6,21 @@
 //!
 
 mod gm;
-#[doc(inline)]
-pub use gm::*;
-
 mod model;
-#[doc(inline)]
-pub use model::*;
-
 mod instanced_model;
-#[doc(inline)]
-pub use instanced_model::*;
-
-mod voxel_grid;
-#[doc(inline)]
-pub use voxel_grid::*;
-
 mod skybox;
-#[doc(inline)]
-pub use skybox::*;
-
 mod imposters;
-#[doc(inline)]
-pub use imposters::*;
-
 mod terrain;
-#[doc(inline)]
-pub use terrain::*;
-
 mod water;
-#[doc(inline)]
-pub use water::*;
-
 mod axes;
-#[doc(inline)]
+
+pub use gm::*;
+pub use model::*;
+pub use instanced_model::*;
+pub use skybox::*;
+pub use imposters::*;
+pub use terrain::*;
+pub use water::*;
 pub use axes::*;
 
 use crate::core::*;

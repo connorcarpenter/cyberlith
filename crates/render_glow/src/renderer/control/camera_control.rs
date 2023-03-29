@@ -1,5 +1,6 @@
 use super::*;
 use crate::core::*;
+use crate::asset::*;
 
 ///
 /// A set of possible actions to apply to a camera when recieving input.
