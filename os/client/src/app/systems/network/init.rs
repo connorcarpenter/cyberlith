@@ -1,7 +1,7 @@
 use bevy_log::info;
 
 use naia_bevy_client::{transport::webrtc, Client};
-use nexus_proto::messages::Auth;
+use os_proto::messages::Auth;
 
 pub fn init(mut client: Client) {
     info!("Naia Bevy Client Demo started");

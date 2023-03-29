@@ -2,9 +2,9 @@
 resolver = "2"
 # all crates should be listed here
 members = [
-    "nexus/client",
-    "nexus/proto",
-    "nexus/server",
+    "os/client",
+    "os/proto",
+    "os/server",
     "game/client",
     "crates/render_api",
     "crates/render_glow",

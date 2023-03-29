@@ -3,4 +3,4 @@
 /Cargo.lock
 node_modules
 .idea/*
-/nexus/client/target
+/os/client/target

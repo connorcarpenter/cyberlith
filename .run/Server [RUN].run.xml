@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Server [RUN]" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
     <option name="command" value="run" />
-    <option name="workingDirectory" value="file://$PROJECT_DIR$/nexus/server" />
+    <option name="workingDirectory" value="file://$PROJECT_DIR$/os/server" />
     <option name="channel" value="DEFAULT" />
     <option name="requiredFeatures" value="false" />
     <option name="allFeatures" value="false" />

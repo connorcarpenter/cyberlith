@@ -7,7 +7,7 @@ use naia_bevy_client::{
 };
 
 use game_client::GameClientPlugin;
-use nexus_proto::protocol;
+use os_proto::protocol;
 use render_api::RenderApiPlugin;
 
 use crate::app::systems::{context, network};
