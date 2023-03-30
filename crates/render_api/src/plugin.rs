@@ -14,8 +14,6 @@ impl Plugin for RenderApiPlugin {
     fn build(&self, app: &mut App) {
         app
             // Resources
-            // TODO: find out how to get window height & width
-            .insert_resource(Window::new(1280, 720))
             .insert_resource(Assets::<TriMesh>::default())
             .insert_resource(Assets::<PbrMaterial>::default())
             .insert_resource(Assets::<Texture2D>::default())

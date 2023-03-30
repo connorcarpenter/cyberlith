@@ -8,7 +8,7 @@ use naia_bevy_client::{
 
 use game_client::GameClientPlugin;
 use os_proto::protocol;
-use render_api::RenderApiPlugin;
+use render_api::{RenderApiPlugin, Window};
 
 use crate::app::systems::{context, network};
 
@@ -22,6 +22,8 @@ pub fn build() -> App {
         .add_startup_systems((game_client::setup, apply_system_buffers, context::setup).chain())
         // Render API Plugin
         .add_plugin(RenderApiPlugin)
+        // TODO: find out how to get window height & width
+        .insert_resource(Window::new(1280, 720))
         // Add Renderer Plugin
         .add_plugin(context::RendererPlugin)
         // Add Naia Client Plugin

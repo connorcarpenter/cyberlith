@@ -23,6 +23,16 @@ impl Transform {
         }
     }
 
+    pub fn from_axis_angle(axis: Vec3, angle: f32) -> Self {
+        let rotation = Quat::from_axis_angle(axis.normalize(), cgmath::Deg(angle));
+        let translation = Vec3::new(0.0, 0.0, 0.0);
+
+        Self {
+            translation,
+            rotation,
+        }
+    }
+
     pub fn to_mat4(&self) -> Mat4 {
         // convert translation & rotation into a 4x4 matrix
         let rotation_matrix: Mat4 = self.rotation.into();
