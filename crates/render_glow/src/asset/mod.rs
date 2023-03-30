@@ -11,87 +11,17 @@
 //! - edited and saved again
 //!
 
-mod animation;
 mod camera;
 mod geometry;
 mod material;
 mod prelude;
 mod texture;
-mod volume;
 
-pub use animation::*;
 pub use camera::*;
 pub use geometry::*;
 pub use material::*;
 pub use prelude::*;
 pub use texture::*;
-pub use volume::*;
-
-use cgmath::*;
-
-///
-/// Representation of a set of objects as a scene graph.
-/// Specifically, a [Scene] contains a tree of [Node]s, where the nodes contain the [Geometry] data.
-/// A [Scene] can easily be converted into a [Model], if it is more desirable with a flat arrays instead of a tree structure.
-///
-/// To visualise the [Geometry] in the [Scene] correctly, it is necessary to traverse the scene from the root (the [Scene]) to the leaves
-/// and along the way calculate a transformation.
-/// For each node containing [Geometry], the [Geometry] should be visualised with the calculated transformation applied.
-///
-#[derive(Debug, Clone)]
-pub struct Scene {
-    /// The name. Might not be anything meaningful.
-    pub name: String,
-    /// Children nodes.
-    pub children: Vec<Node>,
-    /// A list of materials used in this scene. The materials are referenced by index in the relevant nodes.
-    pub materials: Vec<PbrMaterial>,
-}
-
-impl Default for Scene {
-    fn default() -> Self {
-        Self {
-            name: "scene".to_owned(),
-            children: Vec::new(),
-            materials: Vec::new(),
-        }
-    }
-}
-
-///
-/// A node in a [Scene] graph. Each node may contain a set of children nodes, hence the whole [Scene] representaion has a tree structure.
-///
-/// Each node may also contain a transformation, animations, geometry and an index to the [Scene::materials].
-///
-#[derive(Debug, Clone)]
-pub struct Node {
-    /// The name. Might not be anything meaningful.
-    pub name: String,
-    /// Children [Node]s.
-    pub children: Vec<Node>,
-    /// A transformation that should be applied to all [Geometry] referenced by this and all children nodes.
-    pub transformation: Mat4,
-    /// Optional animation applied to this node and all of its children.
-    /// A transformation should be computed for a specific time and then multiplied together with [Node::transformation].
-    pub animations: Vec<(Option<String>, KeyFrames)>,
-    /// Optional geometry for this node.
-    pub geometry: Option<Geometry>,
-    /// Optional index into [Scene::materials], indicating which material should be applied to geometry below this node in the tree.
-    pub material_index: Option<usize>,
-}
-
-impl Default for Node {
-    fn default() -> Self {
-        Self {
-            name: "node".to_owned(),
-            children: Vec::new(),
-            transformation: Mat4::identity(),
-            animations: Vec::new(),
-            geometry: None,
-            material_index: None,
-        }
-    }
-}
 
 ///
 /// A [Model] contain the same data as a [Scene], it's just stored in flat arrays instead of in a tree structure.
@@ -117,9 +47,6 @@ pub struct Primitive {
     pub name: String,
     /// A transformation that should be applied to the [Primitive::geometry].
     pub transformation: Mat4,
-    /// Optional animation applied to the [Primitive::geometry].
-    /// A transformation should be computed for a specific time and then multiplied together with [Node::transformation].
-    pub animations: Vec<KeyFrameAnimation>,
     /// The geometry of this primitive.
     pub geometry: Geometry,
     /// Optional index into [Model::materials], indicating which material should be applied to [Primitive::geometry].
@@ -136,56 +63,6 @@ impl std::ops::Deref for Primitive {
 impl std::ops::DerefMut for Primitive {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.geometry
-    }
-}
-
-impl std::convert::From<Scene> for Model {
-    fn from(scene: Scene) -> Self {
-        let mut geometries = Vec::new();
-        for child in scene.children {
-            visit(child, Vec::new(), Mat4::identity(), &mut geometries);
-        }
-        Self {
-            name: scene.name,
-            materials: scene.materials,
-            geometries,
-        }
-    }
-}
-
-fn visit(
-    node: Node,
-    mut animations: Vec<KeyFrameAnimation>,
-    transformation: Mat4,
-    geometries: &mut Vec<Primitive>,
-) {
-    let mut transformation = transformation * node.transformation;
-    if !node.animations.is_empty() {
-        for (animation_name, key_frames) in node.animations {
-            if let Some(i) = animations.iter().position(|a| a.name == animation_name) {
-                animations[i]
-                    .key_frames
-                    .push((transformation, std::sync::Arc::new(key_frames)));
-            } else {
-                animations.push(KeyFrameAnimation {
-                    name: animation_name,
-                    key_frames: vec![(transformation, std::sync::Arc::new(key_frames))],
-                });
-            }
-        }
-        transformation = Mat4::identity();
-    };
-    if let Some(geometry) = node.geometry {
-        geometries.push(Primitive {
-            name: node.name.clone(),
-            transformation,
-            animations: animations.clone(),
-            geometry,
-            material_index: node.material_index,
-        });
-    }
-    for child in node.children {
-        visit(child, animations.clone(), transformation, geometries);
     }
 }
 

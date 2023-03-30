@@ -147,12 +147,6 @@ impl Geometry for Mesh {
         aabb
     }
 
-    fn animate(&mut self, time: f32) {
-        if let Some(animation) = &self.animation {
-            self.current_transformation = self.transformation * animation(time);
-        }
-    }
-
     fn render_with_material(
         &self,
         material: &dyn Material,

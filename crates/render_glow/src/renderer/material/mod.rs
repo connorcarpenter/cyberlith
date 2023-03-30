@@ -123,7 +123,7 @@ pub struct FragmentShader {
 /// Alternatively, a geometry and a material can be combined in a [Gm],
 /// thereby creating an [Object] which can be used in a render call, for example [RenderTarget::render].
 ///
-pub trait Material {
+pub trait Material: Send + Sync {
     ///
     /// Returns a [FragmentShader], ie. the fragment shader source for this material
     /// and a [FragmentAttributes] struct that describes which fragment attributes are required for rendering with this material.
@@ -201,21 +201,6 @@ impl<T: Material> Material for Box<T> {
     }
 }
 
-impl<T: Material> Material for std::rc::Rc<T> {
-    fn fragment_shader(&self, lights: &[&dyn Light]) -> FragmentShader {
-        self.as_ref().fragment_shader(lights)
-    }
-    fn use_uniforms(&self, program: &Program, camera: &Camera, lights: &[&dyn Light]) {
-        self.as_ref().use_uniforms(program, camera, lights)
-    }
-    fn render_states(&self) -> RenderStates {
-        self.as_ref().render_states()
-    }
-    fn material_type(&self) -> MaterialType {
-        self.as_ref().material_type()
-    }
-}
-
 impl<T: Material> Material for std::sync::Arc<T> {
     fn fragment_shader(&self, lights: &[&dyn Light]) -> FragmentShader {
         self.as_ref().fragment_shader(lights)
@@ -228,21 +213,6 @@ impl<T: Material> Material for std::sync::Arc<T> {
     }
     fn material_type(&self) -> MaterialType {
         self.as_ref().material_type()
-    }
-}
-
-impl<T: Material> Material for std::cell::RefCell<T> {
-    fn fragment_shader(&self, lights: &[&dyn Light]) -> FragmentShader {
-        self.borrow().fragment_shader(lights)
-    }
-    fn use_uniforms(&self, program: &Program, camera: &Camera, lights: &[&dyn Light]) {
-        self.borrow().use_uniforms(program, camera, lights)
-    }
-    fn render_states(&self) -> RenderStates {
-        self.borrow().render_states()
-    }
-    fn material_type(&self) -> MaterialType {
-        self.borrow().material_type()
     }
 }
 

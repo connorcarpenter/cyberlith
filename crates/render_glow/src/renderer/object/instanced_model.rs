@@ -1,5 +1,5 @@
 use crate::asset::{
-    AxisAlignedBoundingBox, Geometry as CpuGeometry, KeyFrameAnimation, Model as CpuModel,
+    AxisAlignedBoundingBox, Geometry as CpuGeometry, Model as CpuModel,
 };
 use crate::renderer::*;
 
@@ -8,33 +8,6 @@ use crate::renderer::*;
 ///
 pub struct InstancedModelPart<M: Material> {
     gm: Gm<InstancedMesh, M>,
-    animations: Vec<KeyFrameAnimation>,
-}
-
-impl<M: Material> InstancedModelPart<M> {
-    ///
-    /// Returns a list of unique names for the animations for this model part. Use these names as input to [Self::choose_animation].
-    ///
-    pub fn animations(&self) -> Vec<Option<String>> {
-        self.animations
-            .iter()
-            .map(|animation| animation.name.clone())
-            .collect()
-    }
-
-    ///
-    /// Specifies the animation to use when [Geometry::animate] is called. Use the [Self::animations] method to get a list of possible animations.
-    ///
-    pub fn choose_animation(&mut self, animation_name: Option<&str>) {
-        if let Some(animation) = self
-            .animations
-            .iter()
-            .find(|a| animation_name == a.name.as_deref())
-            .cloned()
-        {
-            self.set_animation(move |time| animation.transformation(time));
-        }
-    }
 }
 
 impl<M: Material> std::ops::Deref for InstancedModelPart<M> {
@@ -74,9 +47,6 @@ impl<M: Material> Geometry for InstancedModelPart<M> {
 
     fn aabb(&self) -> AxisAlignedBoundingBox {
         self.gm.aabb()
-    }
-    fn animate(&mut self, time: f32) {
-        self.gm.animate(time)
     }
 }
 
@@ -154,42 +124,11 @@ impl<M: Material + FromPbrMaterial + Clone + Default> InstancedModel<M> {
                 gm.set_transformation(primitive.transformation);
                 gms.push(InstancedModelPart {
                     gm,
-                    animations: primitive.animations.clone(),
                 });
             }
         }
         let mut model = Self(gms);
-        if let Some(animation_name) = model.animations().first().cloned() {
-            model.choose_animation(animation_name.as_deref());
-        }
         Ok(model)
-    }
-
-    ///
-    /// Returns a list of unique names for the animations in this model. Use these names as input to [Self::choose_animation].
-    ///
-    pub fn animations(&self) -> Vec<Option<String>> {
-        let mut set = std::collections::HashSet::new();
-        for model_part in self.0.iter() {
-            set.extend(model_part.animations());
-        }
-        set.into_iter().collect()
-    }
-
-    ///
-    /// Specifies the animation to use when [Geometry::animate] is called. Use the [Self::animations] method to get a list of possible animations.
-    ///
-    pub fn choose_animation(&mut self, animation_name: Option<&str>) {
-        for part in self.0.iter_mut() {
-            part.choose_animation(animation_name);
-        }
-    }
-
-    ///
-    /// For updating the animation. The time parameter should be some continious time, for example the time since start.
-    ///
-    pub fn animate(&mut self, time: f32) {
-        self.iter_mut().for_each(|m| m.animate(time));
     }
 }
 

@@ -13,7 +13,6 @@ pub use uniform_buffer::*;
 pub use vertex_buffer::*;
 
 use cgmath::*;
-use data_type::*;
 use glow::HasContext;
 use half::f16;
 

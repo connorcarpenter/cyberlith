@@ -9,18 +9,14 @@ mod circle;
 mod instanced_mesh;
 mod line;
 mod mesh;
-mod particles;
 mod rectangle;
-mod sprites;
 
 pub use bounding_box::*;
 pub use circle::*;
 pub use instanced_mesh::*;
 pub use line::*;
 pub use mesh::*;
-pub use particles::*;
 pub use rectangle::*;
-pub use sprites::*;
 
 use cgmath::*;
 
@@ -41,7 +37,7 @@ use crate::renderer::*;
 /// - uv coordinates: `out vec2 uvs;` (must be flipped in v compared to standard uv coordinates, ie. do `uvs = vec2(uvs.x, 1.0 - uvs.y);` in the vertex shader or do the flip before constructing the uv coordinates vertex buffer)
 /// - color: `out vec4 col;`
 ///
-pub trait Geometry {
+pub trait Geometry: Send + Sync {
     ///
     /// Render the geometry with the given [Material].
     /// Must be called in the callback given as input to a [RenderTarget], [ColorTarget] or [DepthTarget] write method.
@@ -67,12 +63,6 @@ pub trait Geometry {
     /// Returns the [AxisAlignedBoundingBox] for this geometry in the global coordinate system.
     ///
     fn aabb(&self) -> AxisAlignedBoundingBox;
-
-    ///
-    /// For updating the animation of this geometry if it is animated, if not, this method does nothing.
-    /// The time parameter should be some continious time, for example the time since start.
-    ///
-    fn animate(&mut self, _time: f32) {}
 }
 
 impl<T: Geometry + ?Sized> Geometry for &T {
@@ -159,38 +149,6 @@ impl<T: Geometry> Geometry for Box<T> {
     }
 }
 
-impl<T: Geometry> Geometry for std::rc::Rc<T> {
-    fn render_with_material(
-        &self,
-        material: &dyn Material,
-        camera: &Camera,
-        lights: &[&dyn Light],
-    ) {
-        self.as_ref().render_with_material(material, camera, lights)
-    }
-
-    fn render_with_post_material(
-        &self,
-        material: &dyn PostMaterial,
-        camera: &Camera,
-        lights: &[&dyn Light],
-        color_texture: Option<ColorTexture>,
-        depth_texture: Option<DepthTexture>,
-    ) {
-        self.as_ref().render_with_post_material(
-            material,
-            camera,
-            lights,
-            color_texture,
-            depth_texture,
-        )
-    }
-
-    fn aabb(&self) -> AxisAlignedBoundingBox {
-        self.as_ref().aabb()
-    }
-}
-
 impl<T: Geometry> Geometry for std::sync::Arc<T> {
     fn render_with_material(
         &self,
@@ -220,38 +178,6 @@ impl<T: Geometry> Geometry for std::sync::Arc<T> {
 
     fn aabb(&self) -> AxisAlignedBoundingBox {
         self.as_ref().aabb()
-    }
-}
-
-impl<T: Geometry> Geometry for std::cell::RefCell<T> {
-    fn render_with_material(
-        &self,
-        material: &dyn Material,
-        camera: &Camera,
-        lights: &[&dyn Light],
-    ) {
-        self.borrow().render_with_material(material, camera, lights)
-    }
-
-    fn render_with_post_material(
-        &self,
-        material: &dyn PostMaterial,
-        camera: &Camera,
-        lights: &[&dyn Light],
-        color_texture: Option<ColorTexture>,
-        depth_texture: Option<DepthTexture>,
-    ) {
-        self.borrow().render_with_post_material(
-            material,
-            camera,
-            lights,
-            color_texture,
-            depth_texture,
-        )
-    }
-
-    fn aabb(&self) -> AxisAlignedBoundingBox {
-        self.borrow().aabb()
     }
 }
 

@@ -1,5 +1,5 @@
 use bevy_app::{App, CoreSet, Plugin};
-use bevy_ecs::schedule::{IntoSystemConfig, IntoSystemSetConfig};
+use bevy_ecs::schedule::{apply_system_buffers, IntoSystemConfig, IntoSystemSetConfig};
 
 use crate::{
     assets::{Assets, Image, Material, Mesh},
@@ -18,9 +18,12 @@ impl Plugin for RenderApiPlugin {
             .insert_resource(Assets::<Mesh>::default())
             .insert_resource(Assets::<Material>::default())
             .insert_resource(Assets::<Image>::default())
-            // Base System Set
+            // Sync
             .configure_set(RenderSet::Sync.after(CoreSet::LastFlush))
+            // SyncFlush
             .configure_set(RenderSet::SyncFlush.after(RenderSet::Sync))
+            .add_system(apply_system_buffers.in_base_set(RenderSet::SyncFlush))
+            // Draw
             .configure_set(RenderSet::Draw.after(RenderSet::SyncFlush));
     }
 }

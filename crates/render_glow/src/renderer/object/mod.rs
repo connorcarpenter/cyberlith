@@ -65,16 +65,6 @@ impl<T: Object> Object for Box<T> {
     }
 }
 
-impl<T: Object> Object for std::rc::Rc<T> {
-    fn render(&self, camera: &Camera, lights: &[&dyn Light]) {
-        self.as_ref().render(camera, lights)
-    }
-
-    fn material_type(&self) -> MaterialType {
-        self.as_ref().material_type()
-    }
-}
-
 impl<T: Object> Object for std::sync::Arc<T> {
     fn render(&self, camera: &Camera, lights: &[&dyn Light]) {
         self.as_ref().render(camera, lights)
@@ -82,16 +72,6 @@ impl<T: Object> Object for std::sync::Arc<T> {
 
     fn material_type(&self) -> MaterialType {
         self.as_ref().material_type()
-    }
-}
-
-impl<T: Object> Object for std::cell::RefCell<T> {
-    fn render(&self, camera: &Camera, lights: &[&dyn Light]) {
-        self.borrow().render(camera, lights)
-    }
-
-    fn material_type(&self) -> MaterialType {
-        self.borrow().material_type()
     }
 }
 
