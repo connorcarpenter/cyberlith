@@ -25,7 +25,7 @@ impl Plugin for SyncPlugin {
     fn build(&self, app: &mut App) {
         app
             // Resources
-            .insert_resource(AssetImpls::<ApiMesh, Box<dyn Geometry>>::default())
+            .insert_resource(AssetImpls::<ApiMesh, BaseMesh>::default())
             .insert_resource(AssetImpls::<ApiMaterial, Box<dyn Material>>::default())
             // Systems
             .add_system(sync_mesh_assets.in_base_set(RenderSet::Sync))
@@ -36,7 +36,7 @@ impl Plugin for SyncPlugin {
 fn sync_mesh_assets(
     frame_input: NonSendMut<FrameInput<()>>,
     mut api_assets: ResMut<Assets<ApiMesh>>,
-    mut asset_impls: ResMut<AssetImpls<ApiMesh, Box<dyn Geometry>>>,
+    mut asset_impls: ResMut<AssetImpls<ApiMesh, BaseMesh>>,
 ) {
     if !api_assets.is_changed() {
         return;
@@ -45,8 +45,8 @@ fn sync_mesh_assets(
     let added_handles = api_assets.flush_added();
     for added_handle in added_handles {
         let api_data = api_assets.get(&added_handle).unwrap();
-        let impl_data = Mesh::new(&frame_input.context, api_data);
-        asset_impls.insert(added_handle, Box::new(impl_data));
+        let impl_data = BaseMesh::new(&frame_input.context, api_data);
+        asset_impls.insert(added_handle, impl_data);
     }
 }
 fn sync_material_assets(

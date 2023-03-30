@@ -78,7 +78,7 @@ impl Geometry for Axes {
         self.model
             .write()
             .unwrap()
-            .set_transformation(self.transformation);
+            .set_transform(self.transformation);
         self.model
             .read()
             .unwrap()
@@ -86,7 +86,7 @@ impl Geometry for Axes {
         self.model
             .write()
             .unwrap()
-            .set_transformation(self.transformation * Mat4::from_angle_z(degrees(90.0)));
+            .set_transform(self.transformation * Mat4::from_angle_z(degrees(90.0)));
         self.model
             .read()
             .unwrap()
@@ -94,7 +94,7 @@ impl Geometry for Axes {
         self.model
             .write()
             .unwrap()
-            .set_transformation(self.transformation * Mat4::from_angle_y(degrees(-90.0)));
+            .set_transform(self.transformation * Mat4::from_angle_y(degrees(-90.0)));
         self.model
             .read()
             .unwrap()
@@ -112,7 +112,7 @@ impl Geometry for Axes {
         self.model
             .write()
             .unwrap()
-            .set_transformation(self.transformation);
+            .set_transform(self.transformation);
         self.model.read().unwrap().render_with_post_material(
             material,
             camera,
@@ -123,7 +123,7 @@ impl Geometry for Axes {
         self.model
             .write()
             .unwrap()
-            .set_transformation(self.transformation * Mat4::from_angle_z(degrees(90.0)));
+            .set_transform(self.transformation * Mat4::from_angle_z(degrees(90.0)));
         self.model.read().unwrap().render_with_post_material(
             material,
             camera,
@@ -134,7 +134,7 @@ impl Geometry for Axes {
         self.model
             .write()
             .unwrap()
-            .set_transformation(self.transformation * Mat4::from_angle_y(degrees(-90.0)));
+            .set_transform(self.transformation * Mat4::from_angle_y(degrees(-90.0)));
         self.model.read().unwrap().render_with_post_material(
             material,
             camera,
@@ -150,7 +150,7 @@ impl Object for Axes {
         self.model
             .write()
             .unwrap()
-            .set_transformation(self.transformation);
+            .set_transform(self.transformation);
         self.model.read().unwrap().render_with_material(
             &ColorMaterial {
                 color: Color::RED,
@@ -162,7 +162,7 @@ impl Object for Axes {
         self.model
             .write()
             .unwrap()
-            .set_transformation(self.transformation * Mat4::from_angle_z(degrees(90.0)));
+            .set_transform(self.transformation * Mat4::from_angle_z(degrees(90.0)));
         self.model.read().unwrap().render_with_material(
             &ColorMaterial {
                 color: Color::GREEN,
@@ -174,7 +174,7 @@ impl Object for Axes {
         self.model
             .write()
             .unwrap()
-            .set_transformation(self.transformation * Mat4::from_angle_y(degrees(-90.0)));
+            .set_transform(self.transformation * Mat4::from_angle_y(degrees(-90.0)));
         self.model.read().unwrap().render_with_material(
             &ColorMaterial {
                 color: Color::BLUE,

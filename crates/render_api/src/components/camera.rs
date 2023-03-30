@@ -77,7 +77,7 @@ impl Default for ClearOperation {
     fn default() -> Self {
         Self {
             red: Some(0.0),
-            green: Some(1.0),
+            green: Some(0.0),
             blue: Some(0.0),
             alpha: Some(1.0),
             depth: Some(1.0),

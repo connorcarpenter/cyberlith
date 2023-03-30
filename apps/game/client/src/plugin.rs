@@ -36,13 +36,13 @@ pub fn setup(
 
     // plane
     commands.spawn(RenderObjectBundle {
-        mesh: meshes.add(shape::Plane::from_size(5.0).into()),
+        mesh: meshes.add(shape::Plane::from_size(500.0).into()),
         material: materials.add(Color::from_rgb_f32(0.3, 0.5, 0.3).into()),
         ..Default::default()
     });
     // cube
     commands.spawn(RenderObjectBundle {
-        mesh: meshes.add(TriMesh::from(shape::Cube { size: 1.0 })),
+        mesh: meshes.add(TriMesh::from(shape::Cube { size: 100.0 })),
         material: materials.add(Color::from_rgb_f32(0.8, 0.7, 0.6).into()),
         transform: Transform::from_xyz(0.0, 0.5, 0.0),
         ..Default::default()
@@ -61,12 +61,12 @@ pub fn setup(
         (CameraComponent::new(
             Camera::new_orthographic(
                 Viewport::new_at_origin(width, height),
-                Vec3::new(5.0, 5.0, 5.0),
+                Vec3::new(1.0, 1.0, 1.0),
                 Vec3::new(0.0, 0.0, 0.0),
                 Vec3::new(0.0, 1.0, 0.0),
                 height as f32,
                 0.0,
-                1000.0,
+                10.0,
             ),
             // render before the "main pass" camera
             0,

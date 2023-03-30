@@ -1,66 +1,44 @@
 use crate::core::*;
 use crate::renderer::*;
-use render_api::base::{AxisAlignedBoundingBox, Mat3, Mat4, TriMesh};
+use render_api::{Transform, base::{AxisAlignedBoundingBox, Mat3, Mat4, TriMesh}};
 
 use super::BaseMesh;
 
 ///
 /// A triangle mesh [Geometry].
 ///
-pub struct Mesh {
-    base_mesh: BaseMesh,
-    context: Context,
-    aabb: AxisAlignedBoundingBox,
+pub struct Mesh<'a> {
+    base_mesh: &'a BaseMesh,
     transform: Mat4,
 }
 
-impl Mesh {
+impl<'a> Mesh<'a> {
     ///
     /// Creates a new triangle mesh from the given [TriMesh].
     /// All data in the [TriMesh] is transfered to the GPU, so make sure to remove all unnecessary data from the [TriMesh] before calling this method.
     ///
     pub fn new(context: &Context, cpu_mesh: &TriMesh) -> Self {
-        let aabb = cpu_mesh.compute_aabb();
-        Self {
-            context: context.clone(),
-            base_mesh: BaseMesh::new(context, cpu_mesh),
-            aabb,
-            transform: Mat4::identity(),
-        }
+        todo!();
     }
 
-    pub(in crate::renderer) fn set_transformation_2d(&mut self, transformation: Mat3) {
-        self.set_transformation(Mat4::new(
-            transformation.x.x,
-            transformation.x.y,
-            0.0,
-            transformation.x.z,
-            transformation.y.x,
-            transformation.y.y,
-            0.0,
-            transformation.y.z,
-            0.0,
-            0.0,
-            1.0,
-            0.0,
-            transformation.z.x,
-            transformation.z.y,
-            0.0,
-            transformation.z.z,
-        ));
+    pub fn compose(base_mesh: &'a BaseMesh, transform: &Transform) -> Self {
+        Self {
+            base_mesh,
+            transform: transform.to_mat4(),
+        }
     }
 
     ///
     /// Returns the local to world transformation applied to this mesh.
     ///
-    pub fn transformation(&self) -> Mat4 {
+    pub fn transform(&self) -> Mat4 {
         self.transform
     }
 
     ///
     /// Set the local to world transformation applied to this mesh.
     ///
-    pub fn set_transformation(&mut self, transformation: Mat4) {
+    pub fn set_transform(&mut self, transformation: Mat4) {
         self.transform = transformation;
     }
 
@@ -116,18 +94,9 @@ impl Mesh {
     }
 }
 
-impl<'a> IntoIterator for &'a Mesh {
-    type Item = &'a dyn Geometry;
-    type IntoIter = std::iter::Once<&'a dyn Geometry>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        std::iter::once(self)
-    }
-}
-
-impl Geometry for Mesh {
+impl<'a> Geometry for Mesh<'a> {
     fn aabb(&self) -> AxisAlignedBoundingBox {
-        let mut aabb = self.aabb;
+        let mut aabb = self.base_mesh.aabb;
         aabb.transform(&self.transform);
         aabb
     }
@@ -140,7 +109,7 @@ impl Geometry for Mesh {
     ) {
         let fragment_shader = material.fragment_shader(lights);
         let vertex_shader_source = self.vertex_shader_source(fragment_shader.attributes);
-        self.context
+        self.base_mesh.context
             .program(vertex_shader_source, fragment_shader.source, |program| {
                 material.use_uniforms(program, camera, lights);
                 self.draw(
@@ -163,7 +132,7 @@ impl Geometry for Mesh {
     ) {
         let fragment_shader = material.fragment_shader(lights, color_texture, depth_texture);
         let vertex_shader_source = self.vertex_shader_source(fragment_shader.attributes);
-        self.context
+        self.base_mesh.context
             .program(vertex_shader_source, fragment_shader.source, |program| {
                 material.use_uniforms(program, camera, lights, color_texture, depth_texture);
                 self.draw(

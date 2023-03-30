@@ -5,18 +5,12 @@
 //!
 
 mod bounding_box;
-mod circle;
 mod instanced_mesh;
-mod line;
 mod mesh;
-mod rectangle;
 
 pub use bounding_box::*;
-pub use circle::*;
 pub use instanced_mesh::*;
-pub use line::*;
 pub use mesh::*;
-pub use rectangle::*;
 
 use cgmath::*;
 
@@ -216,12 +210,14 @@ impl<T: Geometry> Geometry for std::sync::RwLock<T> {
 }
 
 pub struct BaseMesh {
+    context: Context,
     indices: Option<ElementBuffer>,
     positions: VertexBuffer,
     normals: Option<VertexBuffer>,
     tangents: Option<VertexBuffer>,
     uvs: Option<VertexBuffer>,
     colors: Option<VertexBuffer>,
+    pub(crate) aabb: AxisAlignedBoundingBox,
 }
 
 impl BaseMesh {
@@ -229,7 +225,11 @@ impl BaseMesh {
         #[cfg(debug_assertions)]
         cpu_mesh.validate().expect("invalid cpu mesh");
 
+        let aabb = cpu_mesh.compute_aabb();
+
         Self {
+            aabb,
+            context: context.clone(),
             indices: match &cpu_mesh.indices {
                 Indices::U8(ind) => Some(ElementBuffer::new_with_data(context, ind)),
                 Indices::U16(ind) => Some(ElementBuffer::new_with_data(context, ind)),

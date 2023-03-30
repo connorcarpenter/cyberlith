@@ -5,15 +5,15 @@
 //! Use the [Gm] struct to combine any [geometry] and [material] into an [Object].
 //!
 
-mod axes;
+//mod axes;
 mod gm;
 mod instanced_model;
-mod model;
+//mod model;
 
-pub use axes::*;
+//pub use axes::*;
 pub use gm::*;
 pub use instanced_model::*;
-pub use model::*;
+//pub use model::*;
 
 use crate::core::*;
 use crate::renderer::*;

@@ -10,7 +10,7 @@ use render_api::{
 
 use crate::{
     asset_impls::AssetImpls,
-    renderer::{Geometry, Material, Object, RenderObject, RenderPass},
+    renderer::{BaseMesh, Geometry, Material, Object, RenderObject, RenderPass},
     window::FrameInput,
 };
 
@@ -21,7 +21,7 @@ struct CameraWork {
 }
 
 pub fn draw(
-    meshes: Res<AssetImpls<TriMesh, Box<dyn Geometry>>>,
+    meshes: Res<AssetImpls<TriMesh, BaseMesh>>,
     materials: Res<AssetImpls<PbrMaterial, Box<dyn Material>>>,
     frame_input: NonSendMut<FrameInput<()>>,
     cameras_q: Query<(Entity, &CameraComponent, Option<&RenderLayer>)>,

@@ -1,6 +1,6 @@
 use crate::asset_impls::AssetImpls;
 use crate::core::{ColorTexture, DepthTexture};
-use crate::renderer::{Geometry, Light, Material, MaterialType, Object, PostMaterial};
+use crate::renderer::{BaseMesh, Geometry, Light, Material, MaterialType, Mesh, Object, PostMaterial};
 use render_api::base::AxisAlignedBoundingBox;
 use render_api::{
     base::{Camera, PbrMaterial, TriMesh},
@@ -9,7 +9,7 @@ use render_api::{
 
 // Render Pass
 pub struct RenderPass<'a> {
-    pub meshes: &'a AssetImpls<TriMesh, Box<dyn Geometry>>,
+    pub meshes: &'a AssetImpls<TriMesh, BaseMesh>,
     pub materials: &'a AssetImpls<PbrMaterial, Box<dyn Material>>,
     pub camera: &'a Camera,
     pub objects: &'a [RenderObject],
@@ -17,7 +17,7 @@ pub struct RenderPass<'a> {
 
 impl<'a> RenderPass<'a> {
     pub fn new(
-        meshes: &'a AssetImpls<TriMesh, Box<dyn Geometry>>,
+        meshes: &'a AssetImpls<TriMesh, BaseMesh>,
         materials: &'a AssetImpls<PbrMaterial, Box<dyn Material>>,
         camera: &'a Camera,
         objects: &'a [RenderObject],
@@ -50,7 +50,7 @@ impl RenderObject {
 
     pub fn with_assets<'a>(
         &'a self,
-        meshes: &'a AssetImpls<TriMesh, Box<dyn Geometry>>,
+        meshes: &'a AssetImpls<TriMesh, BaseMesh>,
         materials: &'a AssetImpls<PbrMaterial, Box<dyn Material>>,
     ) -> ActiveRenderObject {
         ActiveRenderObject {
@@ -62,7 +62,7 @@ impl RenderObject {
 }
 
 pub struct ActiveRenderObject<'a> {
-    pub meshes: &'a AssetImpls<TriMesh, Box<dyn Geometry>>,
+    pub meshes: &'a AssetImpls<TriMesh, BaseMesh>,
     pub materials: &'a AssetImpls<PbrMaterial, Box<dyn Material>>,
     pub object: &'a RenderObject,
 }
@@ -74,7 +74,8 @@ impl<'a> Geometry for ActiveRenderObject<'a> {
         camera: &Camera,
         lights: &[&dyn Light],
     ) {
-        let mesh = self.meshes.get(&self.object.mesh).unwrap();
+        let base_mesh = self.meshes.get(&self.object.mesh).unwrap();
+        let mesh = Mesh::compose(base_mesh, &self.object.transform);
         mesh.render_with_material(material, camera, lights);
     }
 
@@ -91,7 +92,7 @@ impl<'a> Geometry for ActiveRenderObject<'a> {
 
     fn aabb(&self) -> AxisAlignedBoundingBox {
         let mesh = self.meshes.get(&self.object.mesh).unwrap();
-        mesh.aabb()
+        mesh.aabb
     }
 }
 

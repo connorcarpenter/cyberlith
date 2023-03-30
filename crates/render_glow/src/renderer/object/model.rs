@@ -114,7 +114,7 @@ impl<M: Material + FromPbrMaterial + Clone + Default> Model<M> {
                     geometry: Mesh::new(context, geometry),
                     material,
                 };
-                gm.set_transformation(primitive.transformation);
+                gm.set_transform(primitive.transformation);
                 gms.push(ModelPart { gm });
             }
         }
