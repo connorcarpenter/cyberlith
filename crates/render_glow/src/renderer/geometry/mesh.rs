@@ -11,8 +11,7 @@ pub struct Mesh {
     base_mesh: BaseMesh,
     context: Context,
     aabb: AxisAlignedBoundingBox,
-    transformation: Mat4,
-    current_transformation: Mat4,
+    transform: Mat4,
 }
 
 impl Mesh {
@@ -26,8 +25,7 @@ impl Mesh {
             context: context.clone(),
             base_mesh: BaseMesh::new(context, cpu_mesh),
             aabb,
-            transformation: Mat4::identity(),
-            current_transformation: Mat4::identity(),
+            transform: Mat4::identity(),
         }
     }
 
@@ -56,15 +54,14 @@ impl Mesh {
     /// Returns the local to world transformation applied to this mesh.
     ///
     pub fn transformation(&self) -> Mat4 {
-        self.transformation
+        self.transform
     }
 
     ///
     /// Set the local to world transformation applied to this mesh.
     ///
     pub fn set_transformation(&mut self, transformation: Mat4) {
-        self.transformation = transformation;
-        self.current_transformation = transformation;
+        self.transform = transformation;
     }
 
     fn draw(
@@ -75,7 +72,7 @@ impl Mesh {
         attributes: FragmentAttributes,
     ) {
         if attributes.normal {
-            if let Some(inverse) = self.current_transformation.invert() {
+            if let Some(inverse) = self.transform.invert() {
                 program.use_uniform("normalMatrix", inverse.transpose());
             } else {
                 // determinant is float zero
@@ -84,7 +81,7 @@ impl Mesh {
         }
 
         program.use_uniform("viewProjection", camera.projection() * camera.view());
-        program.use_uniform("modelMatrix", self.current_transformation);
+        program.use_uniform("modelMatrix", self.transform);
 
         self.base_mesh
             .draw(program, render_states, camera, attributes);
@@ -131,7 +128,7 @@ impl<'a> IntoIterator for &'a Mesh {
 impl Geometry for Mesh {
     fn aabb(&self) -> AxisAlignedBoundingBox {
         let mut aabb = self.aabb;
-        aabb.transform(&self.current_transformation);
+        aabb.transform(&self.transform);
         aabb
     }
 

@@ -7,7 +7,7 @@ use std::{
 
 use bevy_ecs::component::Component;
 
-#[derive(Default, Clone, Component)]
+#[derive(Default, Component)]
 pub struct Handle<T> {
     pub id: u64,
     phantom_t: PhantomData<T>,
@@ -21,6 +21,17 @@ impl<T> Handle<T> {
         }
     }
 }
+
+impl<T> Clone for Handle<T> {
+    fn clone(&self) -> Self {
+        Self {
+            id: self.id,
+            phantom_t: PhantomData,
+        }
+    }
+}
+
+impl<T> Copy for Handle<T> {}
 
 impl<T> Hash for Handle<T> {
     fn hash<H: Hasher>(&self, state: &mut H) {

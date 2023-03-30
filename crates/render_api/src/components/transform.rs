@@ -4,7 +4,7 @@ use bevy_ecs::component::Component;
 
 use crate::base::Vec3;
 
-#[derive(Component, Default)]
+#[derive(Clone, Component, Default, Copy)]
 pub struct Transform {}
 
 impl Transform {

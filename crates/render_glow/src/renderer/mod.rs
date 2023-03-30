@@ -22,6 +22,7 @@ mod geometry;
 mod light;
 mod material;
 mod object;
+mod render_pass;
 
 pub use control::*;
 pub use effect::*;
@@ -29,6 +30,7 @@ pub use geometry::*;
 pub use light::*;
 pub use material::*;
 pub use object::*;
+pub use render_pass::*;
 
 use cgmath::*;
 use thiserror::Error;
@@ -55,13 +57,8 @@ macro_rules! impl_render_target_extensions_body {
         /// Use an empty array for the `lights` argument, if the objects does not require lights to be rendered.
         /// Also, objects outside the camera frustum are not rendered and the objects are rendered in the order given by [cmp_render_order].
         ///
-        pub fn render(
-            &self,
-            camera: &Camera,
-            objects: &[&dyn Object],
-            lights: &[&dyn Light],
-        ) -> &Self {
-            self.render_partially(self.scissor_box(), camera, objects, lights)
+        pub fn render(&self, render_pass: RenderPass) -> &Self {
+            self.render_partially(self.scissor_box(), render_pass)
         }
 
         ///
@@ -69,18 +66,24 @@ macro_rules! impl_render_target_extensions_body {
         /// Use an empty array for the `lights` argument, if the objects does not require lights to be rendered.
         /// Also, objects outside the camera frustum are not rendered and the objects are rendered in the order given by [cmp_render_order].
         ///
-        pub fn render_partially(
-            &self,
-            scissor_box: ScissorBox,
-            camera: &Camera,
-            objects: &[&dyn Object],
-            lights: &[&dyn Light],
-        ) -> &Self {
-            let (mut deferred_objects, mut forward_objects): (Vec<&dyn Object>, Vec<&dyn Object>) =
-                objects
-                    .iter()
-                    .filter(|o| camera.in_frustum(&o.aabb()))
-                    .partition(|o| o.material_type() == MaterialType::Deferred);
+        pub fn render_partially(&self, scissor_box: ScissorBox, render_pass: RenderPass) -> &Self {
+            let RenderPass {
+                meshes,
+                materials,
+                camera,
+                objects,
+            } = render_pass;
+            let lights = &[];
+
+            let (mut deferred_objects, mut forward_objects): (
+                Vec<RenderObject>,
+                Vec<RenderObject>,
+            ) = objects
+                .iter()
+                .filter(|o| camera.in_frustum(&o.with_assets(meshes, materials).aabb()))
+                .partition(|o| {
+                    o.with_assets(meshes, materials).material_type() == MaterialType::Deferred
+                });
 
             // Deferred
             if deferred_objects.len() > 0 {
@@ -89,7 +92,13 @@ macro_rules! impl_render_target_extensions_body {
                 let viewport =
                     Viewport::new_at_origin(camera.viewport().width, camera.viewport().height);
                 geometry_pass_camera.set_viewport(viewport);
-                deferred_objects.sort_by(|a, b| cmp_render_order(&geometry_pass_camera, a, b));
+                deferred_objects.sort_by(|a, b| {
+                    cmp_render_order(
+                        &geometry_pass_camera,
+                        a.with_assets(meshes, materials),
+                        b.with_assets(meshes, materials),
+                    )
+                });
                 let mut geometry_pass_texture = Texture2DArray::new_empty::<[u8; 4]>(
                     &self.context,
                     viewport.width,
@@ -116,7 +125,9 @@ macro_rules! impl_render_target_extensions_body {
                 .clear(ClearState::default())
                 .write(|| {
                     for object in deferred_objects {
-                        object.render(&geometry_pass_camera, lights);
+                        object
+                            .with_assets(meshes, materials)
+                            .render(&geometry_pass_camera, lights);
                     }
                 });
 
@@ -136,10 +147,16 @@ macro_rules! impl_render_target_extensions_body {
             }
 
             // Forward
-            forward_objects.sort_by(|a, b| cmp_render_order(camera, a, b));
+            forward_objects.sort_by(|a, b| {
+                cmp_render_order(
+                    camera,
+                    a.with_assets(meshes, materials),
+                    b.with_assets(meshes, materials),
+                )
+            });
             self.write_partially(scissor_box, || {
                 for object in forward_objects {
-                    object.render(camera, lights);
+                    object.with_assets(meshes, materials).render(camera, lights);
                 }
             });
             self
