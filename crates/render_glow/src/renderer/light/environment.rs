@@ -1,6 +1,8 @@
 use half::*;
 
-use crate::asset::{GeometryFunction, Interpolation, LightingModel, NormalDistributionFunction, Viewport, Wrapping};
+use crate::asset::{
+    GeometryFunction, Interpolation, LightingModel, NormalDistributionFunction, Viewport, Wrapping,
+};
 use crate::core::*;
 use crate::renderer::*;
 

@@ -107,8 +107,7 @@ impl UniformBuffer {
                 to_byte_slice(&self.data),
                 glow::STATIC_DRAW,
             );
-            self.context
-                .bind_buffer(glow::UNIFORM_BUFFER, None);
+            self.context.bind_buffer(glow::UNIFORM_BUFFER, None);
         }
     }
 }

@@ -1,5 +1,5 @@
-use crate::core::*;
 use crate::asset::*;
+use crate::core::*;
 
 ///
 /// A multisample render target for depth data. Use this if you want to avoid aliasing, ie. jagged edges, when rendering to a [DepthTarget].

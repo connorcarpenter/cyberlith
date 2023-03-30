@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
-use cgmath::*;
 use crate::asset::{AxisAlignedBoundingBox, Camera, Color, Mat3, Mat4, TriMesh};
+use cgmath::*;
 
+use super::BaseMesh;
 use crate::core::*;
 use crate::renderer::*;
-use super::BaseMesh;
 
 ///
 /// Used for defining the attributes for each particle in a [ParticleSystem], for example its starting position and velocity.

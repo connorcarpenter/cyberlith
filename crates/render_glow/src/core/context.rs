@@ -1,10 +1,9 @@
-
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::RwLock;
 
-use glow::HasContext;
 use super::*;
+use glow::HasContext;
 
 ///
 /// Contains the low-level OpenGL/WebGL graphics context as well as other "global" variables.
@@ -262,9 +261,7 @@ impl Context {
                         glow::INVALID_ENUM => "Invalid enum",
                         glow::INVALID_VALUE => "Invalid value",
                         glow::INVALID_OPERATION => "Invalid operation",
-                        glow::INVALID_FRAMEBUFFER_OPERATION => {
-                            "Invalid framebuffer operation"
-                        }
+                        glow::INVALID_FRAMEBUFFER_OPERATION => "Invalid framebuffer operation",
                         glow::OUT_OF_MEMORY => "Out of memory",
                         glow::STACK_OVERFLOW => "Stack overflow",
                         glow::STACK_UNDERFLOW => "Stack underflow",
@@ -287,11 +284,9 @@ impl Context {
                 glow::FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER => Err(CoreError::ContextError(
                     "FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER".to_string(),
                 )),
-                glow::FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT => {
-                    Err(CoreError::ContextError(
-                        "FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT".to_string(),
-                    ))
-                }
+                glow::FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT => Err(CoreError::ContextError(
+                    "FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT".to_string(),
+                )),
                 glow::FRAMEBUFFER_UNSUPPORTED => Err(CoreError::ContextError(
                     "FRAMEBUFFER_UNSUPPORTED".to_string(),
                 )),
@@ -304,9 +299,9 @@ impl Context {
                 glow::FRAMEBUFFER_INCOMPLETE_MULTISAMPLE => Err(CoreError::ContextError(
                     "FRAMEBUFFER_INCOMPLETE_MULTISAMPLE".to_string(),
                 )),
-                glow::FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS => Err(
-                    CoreError::ContextError("FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS".to_string()),
-                ),
+                glow::FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS => Err(CoreError::ContextError(
+                    "FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS".to_string(),
+                )),
                 _ => Err(CoreError::ContextError(
                     "Unknown framebuffer error".to_string(),
                 )),

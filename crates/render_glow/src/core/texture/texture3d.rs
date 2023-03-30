@@ -1,6 +1,6 @@
 use glow::HasContext;
 
-use crate::asset::{Texture3D as CpuTexture3D};
+use crate::asset::Texture3D as CpuTexture3D;
 use crate::core::texture::*;
 
 ///
@@ -173,8 +173,7 @@ impl Texture3D {
     }
     pub(in crate::core) fn bind(&self) {
         unsafe {
-            self.context
-                .bind_texture(glow::TEXTURE_3D, Some(self.id));
+            self.context.bind_texture(glow::TEXTURE_3D, Some(self.id));
         }
     }
 }

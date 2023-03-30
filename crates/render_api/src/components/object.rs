@@ -2,7 +2,7 @@ use std::default::Default;
 
 use bevy_ecs::bundle::Bundle;
 
-use crate::assets::{Handle, Mesh, Material};
+use crate::assets::{Handle, Material, Mesh};
 
 use super::transform::Transform;
 

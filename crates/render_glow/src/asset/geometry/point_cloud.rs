@@ -1,4 +1,3 @@
-
 use cgmath::*;
 
 use super::Positions;

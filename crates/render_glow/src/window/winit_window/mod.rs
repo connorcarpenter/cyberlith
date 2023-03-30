@@ -1,10 +1,9 @@
-
-mod settings;
 mod frame_io;
+mod settings;
 mod windowed_context;
 
-pub use settings::*;
 pub use frame_io::*;
+pub use settings::*;
 pub use windowed_context::*;
 
 use winit::event::{Event as WinitEvent, TouchPhase, WindowEvent};
@@ -14,9 +13,9 @@ use winit::*;
 
 use thiserror::Error;
 
+use crate::asset::Viewport;
 use crate::core::{Context, CoreError};
 use crate::renderer::{Event, Key, Modifiers, MouseButton};
-use crate::asset::Viewport;
 
 ///
 /// Error associated with a window.
@@ -119,7 +118,7 @@ impl<T: 'static + Clone> Window<T> {
                 .with_decorations(!borderless)
                 .with_maximized(true)
         }
-            .build(&event_loop)?;
+        .build(&event_loop)?;
         Self::from_winit_window(
             winit_window,
             event_loop,
@@ -208,7 +207,7 @@ impl<T: 'static + Clone> Window<T> {
         }
 
         #[cfg(target_arch = "wasm32")]
-            let closure = {
+        let closure = {
             use wasm_bindgen::JsCast;
             use winit::platform::web::WindowExtWebSys;
             let closure =
@@ -237,9 +236,9 @@ impl<T: 'static + Clone> Window<T> {
     ///
     pub fn render_loop<F: 'static + FnMut(FrameInput<T>) -> FrameOutput>(self, mut callback: F) {
         #[cfg(not(target_arch = "wasm32"))]
-            let mut last_time = std::time::Instant::now();
+        let mut last_time = std::time::Instant::now();
         #[cfg(target_arch = "wasm32")]
-            let mut last_time = instant::Instant::now();
+        let mut last_time = instant::Instant::now();
 
         let mut accumulated_time = 0.0;
         let mut events = Vec::new();
@@ -274,9 +273,9 @@ impl<T: 'static + Clone> Window<T> {
                 }
                 WinitEvent::RedrawRequested(_) => {
                     #[cfg(not(target_arch = "wasm32"))]
-                        let now = std::time::Instant::now();
+                    let now = std::time::Instant::now();
                     #[cfg(target_arch = "wasm32")]
-                        let now = instant::Instant::now();
+                    let now = instant::Instant::now();
 
                     let duration = now.duration_since(last_time);
                     last_time = now;

@@ -5,9 +5,9 @@ use render_egui::glow as egui_glow;
 
 use egui_glow::Painter;
 
-use crate::renderer::*;
-use crate::core::*;
 use crate::asset::*;
+use crate::core::*;
+use crate::renderer::*;
 
 ///
 /// Integration of [egui](https://crates.io/crates/egui), an immediate mode GUI.

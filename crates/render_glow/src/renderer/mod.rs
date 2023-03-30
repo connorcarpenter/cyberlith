@@ -16,25 +16,25 @@
 //! Geometries can be rendered with a given material using [Geometry::render_with_material] or combined into an object using the [Gm] struct and again used in a render call.
 //!
 
-mod material;
-mod effect;
-mod light;
-mod geometry;
-mod object;
 mod control;
+mod effect;
+mod geometry;
+mod light;
+mod material;
+mod object;
 
-pub use material::*;
-pub use effect::*;
-pub use light::*;
-pub use geometry::*;
-pub use object::*;
 pub use control::*;
+pub use effect::*;
+pub use geometry::*;
+pub use light::*;
+pub use material::*;
+pub use object::*;
 
-use thiserror::Error;
 use cgmath::*;
+use thiserror::Error;
 
-use crate::core::*;
 use crate::asset::{Camera, Interpolation, Vec3, Viewport, Wrapping};
+use crate::core::*;
 
 ///
 /// Error in the [renderer](crate::renderer) module.
@@ -76,10 +76,11 @@ macro_rules! impl_render_target_extensions_body {
             objects: &[&dyn Object],
             lights: &[&dyn Light],
         ) -> &Self {
-            let (mut deferred_objects, mut forward_objects): (Vec<&dyn Object>, Vec<&dyn Object>) = objects
-                .iter()
-                .filter(|o| camera.in_frustum(&o.aabb()))
-                .partition(|o| o.material_type() == MaterialType::Deferred);
+            let (mut deferred_objects, mut forward_objects): (Vec<&dyn Object>, Vec<&dyn Object>) =
+                objects
+                    .iter()
+                    .filter(|o| camera.in_frustum(&o.aabb()))
+                    .partition(|o| o.material_type() == MaterialType::Deferred);
 
             // Deferred
             if deferred_objects.len() > 0 {
@@ -413,13 +414,13 @@ pub fn ray_intersect(
         texture.as_color_target(None),
         depth_texture.as_depth_target(),
     )
-        .clear(ClearState::color_and_depth(1.0, 1.0, 1.0, 1.0, 1.0))
-        .write(|| {
-            for geometry in geometries {
-                geometry.render_with_material(&depth_material, &camera, &[]);
-            }
-        })
-        .read_color()[0];
+    .clear(ClearState::color_and_depth(1.0, 1.0, 1.0, 1.0, 1.0))
+    .write(|| {
+        for geometry in geometries {
+            geometry.render_with_material(&depth_material, &camera, &[]);
+        }
+    })
+    .read_color()[0];
     if depth < 1.0 {
         Some(position + direction * depth * max_depth)
     } else {

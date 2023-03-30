@@ -2,25 +2,25 @@
 //! Different types of textures used by the GPU to read from and write to.
 //!
 
-mod texture2d;
-mod texture_cube_map;
 mod depth_texture2d;
+mod depth_texture2d_array;
+mod depth_texture2d_multisample;
+mod depth_texture_cube_map;
+mod texture2d;
 mod texture2d_array;
 mod texture2d_multisample;
 mod texture3d;
-mod depth_texture2d_array;
-mod depth_texture_cube_map;
-mod depth_texture2d_multisample;
+mod texture_cube_map;
 
-pub use texture2d::*;
-pub use texture_cube_map::*;
 pub use depth_texture2d::*;
+pub use depth_texture2d_array::*;
+pub(in crate::core) use depth_texture2d_multisample::*;
+pub use depth_texture_cube_map::*;
+pub use texture2d::*;
 pub use texture2d_array::*;
 pub(in crate::core) use texture2d_multisample::*;
 pub use texture3d::*;
-pub use depth_texture2d_array::*;
-pub use depth_texture_cube_map::*;
-pub(in crate::core) use depth_texture2d_multisample::*;
+pub use texture_cube_map::*;
 
 use cgmath::*;
 use glow::HasContext;
@@ -209,16 +209,8 @@ fn set_parameters(
             glow::TEXTURE_MAG_FILTER,
             interpolation_from(mag_filter),
         );
-        context.tex_parameter_i32(
-            target,
-            glow::TEXTURE_WRAP_S,
-            wrapping_from(wrap_s),
-        );
-        context.tex_parameter_i32(
-            target,
-            glow::TEXTURE_WRAP_T,
-            wrapping_from(wrap_t),
-        );
+        context.tex_parameter_i32(target, glow::TEXTURE_WRAP_S, wrapping_from(wrap_s));
+        context.tex_parameter_i32(target, glow::TEXTURE_WRAP_T, wrapping_from(wrap_t));
         if let Some(r) = wrap_r {
             context.tex_parameter_i32(target, glow::TEXTURE_WRAP_R, wrapping_from(r));
         }

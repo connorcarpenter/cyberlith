@@ -1,9 +1,9 @@
-use half::*;
 use cgmath::*;
 use glow::{HasContext, UniformLocation};
+use half::*;
 
-use crate::core::*;
 use crate::asset::*;
+use crate::core::*;
 
 pub enum UniformType {
     Value,

@@ -1,7 +1,7 @@
 use cgmath::*;
 use glow::HasContext;
 
-use crate::asset::{Interpolation, Texture2D as CpuTexture, TextureData, Wrapping, Vec3};
+use crate::asset::{Interpolation, Texture2D as CpuTexture, TextureData, Vec3, Wrapping};
 use crate::core::texture::*;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -531,8 +531,7 @@ impl TextureCubeMap {
         if self.number_of_mip_maps > 1 {
             self.bind();
             unsafe {
-                self.context
-                    .generate_mipmap(glow::TEXTURE_CUBE_MAP);
+                self.context.generate_mipmap(glow::TEXTURE_CUBE_MAP);
             }
         }
     }

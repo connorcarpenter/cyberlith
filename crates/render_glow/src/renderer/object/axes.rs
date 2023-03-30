@@ -1,4 +1,4 @@
-use crate::asset::{AxisAlignedBoundingBox, Camera, Color, degrees, Mat4, TriMesh};
+use crate::asset::{degrees, AxisAlignedBoundingBox, Camera, Color, Mat4, TriMesh};
 use crate::renderer::*;
 
 ///

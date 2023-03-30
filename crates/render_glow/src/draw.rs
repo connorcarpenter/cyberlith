@@ -3,11 +3,9 @@ use bevy_ecs::{
     system::{NonSendMut, Query, Res, ResMut},
 };
 
-use render_api::{
-    Assets, Camera, Handle, Mesh, RenderLayer, RenderLayers, Material, Transform,
-};
+use render_api::{Assets, Camera, Handle, Material, Mesh, RenderLayer, RenderLayers, Transform};
 
-use crate::{window::FrameInput, renderer::Object};
+use crate::{renderer::Object, window::FrameInput};
 
 #[derive(Clone)]
 struct CameraWork {
@@ -20,11 +18,7 @@ pub fn draw(
     meshes: Res<Assets<Mesh>>,
     materials: Res<Assets<Material>>,
     frame_input: NonSendMut<FrameInput<()>>,
-    cameras_q: Query<(
-        Entity,
-        &Camera,
-        Option<&RenderLayer>
-    )>,
+    cameras_q: Query<(Entity, &Camera, Option<&RenderLayer>)>,
     objects_q: Query<(
         Entity,
         &Handle<Mesh>,

@@ -1,4 +1,3 @@
-
 use std::collections::HashMap;
 use std::sync::RwLock;
 
@@ -118,9 +117,7 @@ impl Program {
             let num_uniforms = context.get_active_uniforms(id);
             let mut uniforms = HashMap::new();
             for i in 0..num_uniforms {
-                if let Some(glow::ActiveUniform { name, .. }) =
-                    context.get_active_uniform(id, i)
-                {
+                if let Some(glow::ActiveUniform { name, .. }) = context.get_active_uniform(id, i) {
                     if let Some(location) = context.get_uniform_location(id, &name) {
                         let name = name.split('[').collect::<Vec<_>>()[0].to_string();
                         /*println!(
@@ -292,8 +289,7 @@ impl Program {
         let index = *self.textures.read().unwrap().get(name).unwrap();
         self.use_uniform(name, index as i32);
         unsafe {
-            self.context
-                .active_texture(glow::TEXTURE0 + index);
+            self.context.active_texture(glow::TEXTURE0 + index);
         }
         index
     }
@@ -317,8 +313,7 @@ impl Program {
         unsafe {
             self.context.uniform_block_binding(self.id, location, index);
             buffer.bind(index);
-            self.context
-                .bind_buffer(glow::UNIFORM_BUFFER, None);
+            self.context.bind_buffer(glow::UNIFORM_BUFFER, None);
         }
     }
 
@@ -423,8 +418,7 @@ impl Program {
         self.context.set_render_states(render_states);
         self.use_program();
         unsafe {
-            self.context
-                .draw_arrays(glow::TRIANGLES, 0, count as i32);
+            self.context.draw_arrays(glow::TRIANGLES, 0, count as i32);
             for location in self.attributes.values() {
                 self.context.disable_vertex_attrib_array(*location);
             }
@@ -459,8 +453,7 @@ impl Program {
                 count as i32,
                 instance_count as i32,
             );
-            self.context
-                .bind_buffer(glow::ELEMENT_ARRAY_BUFFER, None);
+            self.context.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, None);
             for location in self.attributes.values() {
                 self.context.disable_vertex_attrib_array(*location);
             }
@@ -518,8 +511,7 @@ impl Program {
                 element_buffer.data_type(),
                 first as i32,
             );
-            self.context
-                .bind_buffer(glow::ELEMENT_ARRAY_BUFFER, None);
+            self.context.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, None);
 
             for location in self.attributes.values() {
                 self.context.disable_vertex_attrib_array(*location);
@@ -580,8 +572,7 @@ impl Program {
                 first as i32,
                 instance_count as i32,
             );
-            self.context
-                .bind_buffer(glow::ELEMENT_ARRAY_BUFFER, None);
+            self.context.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, None);
             for location in self.attributes.values() {
                 self.context.disable_vertex_attrib_array(*location);
             }

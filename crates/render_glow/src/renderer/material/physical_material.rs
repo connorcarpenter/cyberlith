@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
+use crate::asset::{Color, LightingModel, PbrMaterial};
 use crate::core::*;
 use crate::renderer::*;
-use crate::asset::{LightingModel, PbrMaterial, Color};
 
 ///
 /// A physically-based material that renders a [Geometry] in an approximate correct physical manner based on Physically Based Rendering (PBR).

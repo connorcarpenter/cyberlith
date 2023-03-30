@@ -1,13 +1,13 @@
 #[macro_use]
 extern crate cfg_if;
 
-mod bevy;
-pub use bevy::*;
-
-pub mod core;
-pub mod renderer;
-pub mod window;
-pub mod asset;
-
+mod asset;
+mod core;
+mod draw;
 mod gui;
-pub use gui::*;
+mod plugin;
+mod renderer;
+mod runner;
+mod window;
+
+pub use plugin::RenderGlowPlugin;

@@ -6,22 +6,22 @@
 //!
 
 mod color_material;
+mod deferred_physical_material;
 mod depth_material;
 mod normal_material;
 mod orm_material;
+mod physical_material;
 mod position_material;
 mod uv_material;
-mod physical_material;
-mod deferred_physical_material;
 
 pub use color_material::*;
+pub use deferred_physical_material::*;
 pub use depth_material::*;
 pub use normal_material::*;
 pub use orm_material::*;
+pub use physical_material::*;
 pub use position_material::*;
 pub use uv_material::*;
-pub use physical_material::*;
-pub use deferred_physical_material::*;
 
 use std::sync::Arc;
 
@@ -264,15 +264,15 @@ impl<T: Material> Material for std::sync::RwLock<T> {
 fn is_transparent(cpu_material: &PbrMaterial) -> bool {
     cpu_material.albedo.a != 255
         || cpu_material
-        .albedo_texture
-        .as_ref()
-        .map(|t| match &t.data {
-            TextureData::RgbaU8(data) => data.iter().any(|d| d[3] != 255),
-            TextureData::RgbaF16(data) => data.iter().any(|d| d[3] < f16::from_f32(0.99)),
-            TextureData::RgbaF32(data) => data.iter().any(|d| d[3] < 0.99),
-            _ => false,
-        })
-        .unwrap_or(false)
+            .albedo_texture
+            .as_ref()
+            .map(|t| match &t.data {
+                TextureData::RgbaU8(data) => data.iter().any(|d| d[3] != 255),
+                TextureData::RgbaF16(data) => data.iter().any(|d| d[3] < f16::from_f32(0.99)),
+                TextureData::RgbaF32(data) => data.iter().any(|d| d[3] < 0.99),
+                _ => false,
+            })
+            .unwrap_or(false)
 }
 
 impl ColorTexture<'_> {
@@ -287,7 +287,7 @@ impl ColorTexture<'_> {
                 {
                     return texture(colorMap, uv);
                 }"
-                .to_owned(),
+            .to_owned(),
             Self::Array { .. } => "
                 uniform sampler2DArray colorMap;
                 uniform int colorLayers[4];
@@ -299,7 +299,7 @@ impl ColorTexture<'_> {
                 {
                     return texture(colorMap, vec3(uv, colorLayers[index]));
                 }"
-                .to_owned(),
+            .to_owned(),
             Self::CubeMap { .. } => unimplemented!(),
         }
     }
@@ -347,7 +347,7 @@ impl DepthTexture<'_> {
                 {
                     return texture(depthMap, uv).x;
                 }"
-                .to_owned(),
+            .to_owned(),
             Self::Array { .. } => "
                 uniform sampler2DArray depthMap;
                 uniform int depthLayer;
@@ -355,7 +355,7 @@ impl DepthTexture<'_> {
                 {
                     return texture(depthMap, vec3(uv, depthLayer)).x;
                 }"
-                .to_owned(),
+            .to_owned(),
             Self::CubeMap { .. } => {
                 unimplemented!()
             }

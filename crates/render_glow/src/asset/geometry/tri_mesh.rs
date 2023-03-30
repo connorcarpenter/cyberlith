@@ -1,6 +1,5 @@
-
-use cgmath::*;
 use crate::asset::{prelude::*, Error, Indices, Positions, Result};
+use cgmath::*;
 
 ///
 /// A CPU-side version of a triangle mesh.

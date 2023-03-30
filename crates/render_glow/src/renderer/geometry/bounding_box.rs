@@ -1,6 +1,5 @@
-
+use crate::asset::{degrees, AxisAlignedBoundingBox, Mat4, TriMesh};
 use cgmath::*;
-use crate::asset::{AxisAlignedBoundingBox, degrees, Mat4, TriMesh};
 
 use crate::renderer::*;
 

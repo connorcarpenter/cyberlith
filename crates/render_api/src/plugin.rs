@@ -2,8 +2,9 @@ use bevy_app::{App, CoreSet, Plugin};
 use bevy_ecs::schedule::{IntoSystemConfig, IntoSystemSetConfig};
 
 use crate::{
-    assets::{Assets, Image, Mesh, Material},
-    Window, base_set::RenderSet
+    assets::{Assets, Image, Material, Mesh},
+    base_set::RenderSet,
+    Window,
 };
 
 pub struct RenderApiPlugin;

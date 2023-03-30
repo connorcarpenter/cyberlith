@@ -1,4 +1,3 @@
-
 use super::{Interpolation, TextureData, Wrapping};
 
 ///

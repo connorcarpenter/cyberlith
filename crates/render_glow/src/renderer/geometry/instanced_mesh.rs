@@ -3,10 +3,10 @@ use std::sync::RwLock;
 
 use cgmath::*;
 
+use super::BaseMesh;
 use crate::asset::{AxisAlignedBoundingBox, Camera, Color, Mat3, Mat4, PointCloud, TriMesh, Vec3};
 use crate::core::*;
 use crate::renderer::*;
-use super::BaseMesh;
 
 ///
 /// Similar to [Mesh], except it is possible to render many instances of the same mesh efficiently.

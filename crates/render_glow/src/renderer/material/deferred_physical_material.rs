@@ -1,5 +1,7 @@
+use crate::asset::{
+    Camera, Color, GeometryFunction, LightingModel, NormalDistributionFunction, PbrMaterial,
+};
 use std::sync::Arc;
-use crate::asset::{Camera, Color, GeometryFunction, LightingModel, NormalDistributionFunction, PbrMaterial};
 
 use crate::core::*;
 use crate::renderer::*;

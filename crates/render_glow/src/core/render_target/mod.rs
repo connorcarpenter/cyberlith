@@ -4,17 +4,17 @@
 
 mod clear_state;
 mod color_target;
-mod depth_target;
-mod multisample;
 mod color_target_multisample;
+mod depth_target;
 mod depth_target_multisample;
+mod multisample;
 
 pub use clear_state::*;
 pub use color_target::*;
-pub use depth_target::*;
-pub use multisample::*;
 pub use color_target_multisample::*;
+pub use depth_target::*;
 pub use depth_target_multisample::*;
+pub use multisample::*;
 
 use glow::{Framebuffer, HasContext};
 

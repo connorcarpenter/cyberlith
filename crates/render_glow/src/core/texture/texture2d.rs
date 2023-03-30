@@ -1,7 +1,7 @@
 use glow::HasContext;
 
+use crate::asset::Texture2D as CpuTexture;
 use crate::core::texture::*;
-use crate::asset::{Texture2D as CpuTexture};
 
 ///
 /// A 2D texture, basically an image that is transferred to the GPU.
@@ -180,8 +180,7 @@ impl Texture2D {
     }
     pub(in crate::core) fn bind(&self) {
         unsafe {
-            self.context
-                .bind_texture(glow::TEXTURE_2D, Some(self.id));
+            self.context.bind_texture(glow::TEXTURE_2D, Some(self.id));
         }
     }
 }

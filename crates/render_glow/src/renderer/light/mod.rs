@@ -4,22 +4,22 @@
 //! Lights shines onto objects in the scene, note however that some materials are affected by lights, others are not.
 //!
 
-mod directional_light;
-mod spot_light;
-mod point_light;
 mod ambient_light;
+mod directional_light;
 mod environment;
+mod point_light;
+mod spot_light;
 
-pub use directional_light::*;
-pub use spot_light::*;
-pub use point_light::*;
 pub use ambient_light::*;
+pub use directional_light::*;
 pub use environment::*;
+pub use point_light::*;
+pub use spot_light::*;
 
 use cgmath::*;
 
-use crate::core::*;
 use crate::asset::*;
+use crate::core::*;
 
 ///
 /// Specifies how the intensity of a light fades over distance.

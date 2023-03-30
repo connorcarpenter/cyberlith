@@ -2,9 +2,8 @@ use bevy_app::{App, Plugin};
 use bevy_ecs::system::{Commands, Res, ResMut, Resource};
 use bevy_log::info;
 use render_api::{
-    shape, Assets, Camera, ClearColorConfig, ClearOperation, Color, Handle, Image, Mesh,
-    PointLight, PointLightBundle, RenderObjectBundle, RenderTarget, Material, Transform,
-    Window,
+    shape, Assets, Camera, ClearColorConfig, ClearOperation, Color, Handle, Image, Material, Mesh,
+    PointLight, PointLightBundle, RenderObjectBundle, RenderTarget, Transform, Window,
 };
 
 #[derive(Resource)]

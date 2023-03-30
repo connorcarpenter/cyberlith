@@ -1,5 +1,5 @@
-use glow::HasContext;
 use crate::core::*;
+use glow::HasContext;
 use render_api::ClearOperation;
 
 ///

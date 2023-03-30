@@ -1,4 +1,6 @@
-use crate::asset::{AxisAlignedBoundingBox, KeyFrameAnimation, Model as CpuModel, Geometry as CpuGeometry};
+use crate::asset::{
+    AxisAlignedBoundingBox, Geometry as CpuGeometry, KeyFrameAnimation, Model as CpuModel,
+};
 use crate::renderer::*;
 
 ///

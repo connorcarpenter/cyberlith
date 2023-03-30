@@ -1,6 +1,6 @@
 use crate::asset::Viewport;
-use crate::renderer::*;
 use crate::core::*;
+use crate::renderer::*;
 
 ///
 /// Input from the window to the rendering (and whatever else needs it) each frame.

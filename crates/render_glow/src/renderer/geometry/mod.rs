@@ -4,29 +4,29 @@
 //! A geometry together with a [material] can be rendered directly, or combined into an [object] (see [Gm]) that can be used in a render call, for example [RenderTarget::render].
 //!
 
-mod mesh;
-mod instanced_mesh;
-mod sprites;
-mod particles;
 mod bounding_box;
-mod line;
-mod rectangle;
 mod circle;
+mod instanced_mesh;
+mod line;
+mod mesh;
+mod particles;
+mod rectangle;
+mod sprites;
 
-pub use mesh::*;
-pub use instanced_mesh::*;
-pub use sprites::*;
-pub use particles::*;
 pub use bounding_box::*;
-pub use line::*;
-pub use rectangle::*;
 pub use circle::*;
+pub use instanced_mesh::*;
+pub use line::*;
+pub use mesh::*;
+pub use particles::*;
+pub use rectangle::*;
+pub use sprites::*;
 
 use cgmath::*;
 
+use crate::asset::*;
 use crate::core::*;
 use crate::renderer::*;
-use crate::asset::*;
 
 ///
 /// Represents a 3D geometry that, together with a [material], can be rendered using [Geometry::render_with_material].

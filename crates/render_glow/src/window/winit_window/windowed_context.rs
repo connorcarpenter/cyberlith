@@ -1,8 +1,8 @@
 use std::sync::Arc;
 use winit::window::Window;
 
+use super::{HardwareAcceleration, SurfaceSettings, WindowError};
 use crate::core::Context;
-use super::{SurfaceSettings, HardwareAcceleration, WindowError};
 
 #[cfg(target_arch = "wasm32")]
 mod inner {
@@ -67,9 +67,9 @@ mod inner {
                 .map_err(|e| WindowError::OESTextureFloatNotSupported(format!(": {:?}", e)))?;
 
             Ok(Self {
-                context: Context::from_gl_context(Arc::new(
-                    glow::Context::from_webgl2_context(webgl_context),
-                ))?,
+                context: Context::from_gl_context(Arc::new(glow::Context::from_webgl2_context(
+                    webgl_context,
+                )))?,
             })
         }
 

@@ -1,6 +1,6 @@
-use glow::HasContext;
 use crate::asset::{Texture2D as CpuTexture, TextureData};
 use crate::core::texture::*;
+use glow::HasContext;
 
 ///
 /// A array of 2D color textures that can be rendered into.
@@ -282,8 +282,7 @@ impl Texture2DArray {
         if self.number_of_mip_maps > 1 {
             self.bind();
             unsafe {
-                self.context
-                    .generate_mipmap(glow::TEXTURE_2D_ARRAY);
+                self.context.generate_mipmap(glow::TEXTURE_2D_ARRAY);
             }
         }
     }

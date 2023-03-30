@@ -73,8 +73,7 @@ impl ElementBuffer {
                 to_byte_slice(data),
                 glow::STATIC_DRAW,
             );
-            self.context
-                .bind_buffer(glow::ELEMENT_ARRAY_BUFFER, None);
+            self.context.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, None);
         }
         self.count = data.len();
         self.data_type = T::data_type();

@@ -1,8 +1,8 @@
 use cgmath::MetricSpace;
 
 use super::*;
-use crate::core::*;
 use crate::asset::*;
+use crate::core::*;
 
 ///
 /// A control that makes the camera orbit around a target.

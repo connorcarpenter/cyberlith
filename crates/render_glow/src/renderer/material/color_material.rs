@@ -1,9 +1,8 @@
-
 use std::sync::Arc;
 
+use crate::asset::{Color, PbrMaterial};
 use crate::core::*;
 use crate::renderer::*;
-use crate::asset::{Color, PbrMaterial};
 
 ///
 /// A material that renders a [Geometry] in a color defined by multiplying a color with an optional texture and optional per vertex colors.

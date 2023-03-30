@@ -3,22 +3,22 @@
 //!
 
 mod element_buffer;
-mod vertex_buffer;
 mod instance_buffer;
 mod uniform_buffer;
+mod vertex_buffer;
 
 pub use element_buffer::*;
-pub use vertex_buffer::*;
 pub use instance_buffer::*;
 pub use uniform_buffer::*;
+pub use vertex_buffer::*;
 
 use cgmath::*;
+use data_type::*;
 use glow::HasContext;
 use half::f16;
-use data_type::*;
 
-use crate::core::*;
 use crate::asset::{Color, Quat};
+use crate::core::*;
 
 /// The basic data type used for each element in a [VertexBuffer] or [InstanceBuffer].
 pub trait BufferDataType: DataType {}
@@ -95,8 +95,7 @@ impl Buffer {
 
     pub fn bind(&self) {
         unsafe {
-            self.context
-                .bind_buffer(glow::ARRAY_BUFFER, Some(self.id));
+            self.context.bind_buffer(glow::ARRAY_BUFFER, Some(self.id));
         }
     }
 }

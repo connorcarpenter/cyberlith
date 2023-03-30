@@ -3,29 +3,29 @@
 //! Can be combined with low-level calls in the [context](glow) module as well as high-level functionality in the [renderer](crate::renderer) module.
 //!
 
+use cgmath::*;
 /// A result for this crate.
 use thiserror::Error;
-use cgmath::*;
 
-mod context;
 mod buffer;
-mod texture;
+mod context;
+mod data_type;
+mod program;
 mod render_states;
 mod render_target;
-mod uniform;
-mod program;
 mod scissor_box;
-mod data_type;
+mod texture;
+mod uniform;
 
-pub use context::*;
 pub use buffer::*;
-pub use texture::*;
+pub use context::*;
+pub use data_type::*;
+pub use program::*;
 pub use render_states::*;
 pub use render_target::*;
-pub use uniform::*;
-pub use program::*;
 pub use scissor_box::*;
-pub use data_type::*;
+pub use texture::*;
+pub use uniform::*;
 
 use crate::asset::{Camera, Viewport};
 
@@ -69,7 +69,7 @@ pub fn apply_effect(
                 gl_Position = vec4(position, 1.0);
             }
         "
-                .to_owned(),
+            .to_owned(),
             fragment_shader_source.to_owned(),
             |program| {
                 use_uniforms(program);
@@ -107,7 +107,7 @@ pub fn apply_cube_effect(
                 gl_Position = vec4(position, 1.0);
             }
         "
-                .to_owned(),
+            .to_owned(),
             fragment_shader_source.to_owned(),
             |program| {
                 use_uniforms(program);

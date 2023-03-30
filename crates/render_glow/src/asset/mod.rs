@@ -11,21 +11,21 @@
 //! - edited and saved again
 //!
 
-mod prelude;
-mod camera;
-mod texture;
-mod material;
-mod geometry;
-mod volume;
 mod animation;
+mod camera;
+mod geometry;
+mod material;
+mod prelude;
+mod texture;
+mod volume;
 
-pub use prelude::*;
-pub use camera::*;
-pub use texture::*;
-pub use material::*;
-pub use geometry::*;
-pub use volume::*;
 pub use animation::*;
+pub use camera::*;
+pub use geometry::*;
+pub use material::*;
+pub use prelude::*;
+pub use texture::*;
+pub use volume::*;
 
 use cgmath::*;
 

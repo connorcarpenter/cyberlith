@@ -1,6 +1,6 @@
-use glow::HasContext;
 use crate::asset::*;
 use crate::core::texture::*;
+use glow::HasContext;
 
 ///
 /// A 2D depth texture that can be rendered into and read from. See also [RenderTarget] and [DepthTarget].
@@ -85,8 +85,7 @@ impl DepthTexture2D {
 
     pub(in crate::core) fn bind(&self) {
         unsafe {
-            self.context
-                .bind_texture(glow::TEXTURE_2D, Some(self.id));
+            self.context.bind_texture(glow::TEXTURE_2D, Some(self.id));
         }
     }
 }

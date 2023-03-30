@@ -1,9 +1,8 @@
-
 use std::sync::Arc;
 
+use crate::asset::PbrMaterial;
 use crate::core::*;
 use crate::renderer::*;
-use crate::asset::PbrMaterial;
 
 ///
 /// Render the object with colors that reflect its ORM (occlusion, roughness and metallic) values which primarily is used for debug purposes.
