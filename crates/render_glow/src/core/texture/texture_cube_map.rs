@@ -1,8 +1,8 @@
 use cgmath::*;
 use glow::HasContext;
 
-use crate::base::{Interpolation, Texture2D as CpuTexture, TextureData, Vec3, Wrapping};
 use crate::core::texture::*;
+use render_api::base::{Interpolation, Texture2D as CpuTexture, TextureData, Vec3, Wrapping};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 ///
@@ -475,7 +475,7 @@ impl TextureCubeMap {
             }";
 
             for side in CubeMapSide::iter() {
-                let viewport = Viewport::new_at_origo(texture_size, texture_size);
+                let viewport = Viewport::new_at_origin(texture_size, texture_size);
                 texture
                     .as_color_target(&[side], None)
                     .clear(ClearState::default())

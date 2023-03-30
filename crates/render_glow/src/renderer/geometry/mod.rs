@@ -20,9 +20,9 @@ pub use rectangle::*;
 
 use cgmath::*;
 
-use crate::base::*;
 use crate::core::*;
 use crate::renderer::*;
+use render_api::base::*;
 
 ///
 /// Represents a 3D geometry that, together with a [material], can be rendered using [Geometry::render_with_material].

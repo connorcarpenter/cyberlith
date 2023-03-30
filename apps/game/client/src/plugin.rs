@@ -2,12 +2,13 @@ use bevy_app::{App, Plugin};
 use bevy_ecs::system::{Commands, Res, ResMut, Resource};
 use bevy_log::info;
 use render_api::{
-    shape, Assets, Camera, ClearColorConfig, ClearOperation, Color, Handle, Image, Material, Mesh,
-    PointLight, PointLightBundle, RenderObjectBundle, RenderTarget, Transform, Window,
+    base::{Camera, Color, PbrMaterial, Texture2D, TriMesh, Vec3, Viewport},
+    shape, Assets, CameraComponent, ClearOperation, Handle, PointLight, PointLightBundle,
+    RenderObjectBundle, RenderTarget, Transform, Window,
 };
 
 #[derive(Resource)]
-pub struct GameClientImage(pub Handle<Image>);
+pub struct GameClientTexture(pub Handle<Texture2D>);
 
 pub struct GameClientPlugin;
 
@@ -18,31 +19,31 @@ impl Plugin for GameClientPlugin {
 pub fn setup(
     mut commands: Commands,
     window: Res<Window>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<Material>>,
-    mut images: ResMut<Assets<Image>>,
+    mut meshes: ResMut<Assets<TriMesh>>,
+    mut materials: ResMut<Assets<PbrMaterial>>,
+    mut images: ResMut<Assets<Texture2D>>,
 ) {
     let width = window.resolution.physical_width();
     let height = window.resolution.physical_height();
 
     // This is the texture that will be rendered to.
-    let image = Image::new(width, height);
+    let texture = Texture2D::from_size(width, height);
 
-    let image_handle = images.add(image);
-    commands.insert_resource(GameClientImage(image_handle.clone()));
+    let texture_handle = images.add(texture);
+    commands.insert_resource(GameClientTexture(texture_handle.clone()));
 
     info!("inserted image!");
 
     // plane
     commands.spawn(RenderObjectBundle {
         mesh: meshes.add(shape::Plane::from_size(5.0).into()),
-        material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+        material: materials.add(Color::from_rgb_f32(0.3, 0.5, 0.3).into()),
         ..Default::default()
     });
     // cube
     commands.spawn(RenderObjectBundle {
-        mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
-        material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
+        mesh: meshes.add(TriMesh::from(shape::Cube { size: 1.0 })),
+        material: materials.add(Color::from_rgb_f32(0.8, 0.7, 0.6).into()),
         transform: Transform::from_xyz(0.0, 0.5, 0.0),
         ..Default::default()
     });
@@ -57,11 +58,20 @@ pub fn setup(
     });
     // camera
     commands.spawn(
-        (Camera::new(
+        (CameraComponent::new(
+            Camera::new_orthographic(
+                Viewport::new_at_origin(width, height),
+                Vec3::new(5.0, 5.0, 5.0),
+                Vec3::new(0.0, 0.0, 0.0),
+                Vec3::new(0.0, 1.0, 0.0),
+                height as f32,
+                0.0,
+                1000.0,
+            ),
             // render before the "main pass" camera
             0,
             ClearOperation::default(),
-            RenderTarget::Image(image_handle),
+            RenderTarget::Image(texture_handle),
         )),
     );
 }

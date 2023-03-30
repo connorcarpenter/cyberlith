@@ -20,9 +20,9 @@ pub struct Viewport {
 
 impl Viewport {
     ///
-    /// New viewport which starts at origo (x and y are both zero).
+    /// New viewport which starts at origin (x and y are both zero).
     ///
-    pub fn new_at_origo(width: u32, height: u32) -> Self {
+    pub fn new_at_origin(width: u32, height: u32) -> Self {
         Self {
             x: 0,
             y: 0,

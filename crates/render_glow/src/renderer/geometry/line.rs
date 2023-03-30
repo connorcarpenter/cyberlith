@@ -1,7 +1,7 @@
 use cgmath::*;
 
-use crate::base::{AxisAlignedBoundingBox, Mat3, Mat4, TriMesh, Vec2};
 use crate::renderer::*;
+use render_api::base::{AxisAlignedBoundingBox, Mat3, Mat4, TriMesh, Vec2};
 
 ///
 /// A rectangle 2D geometry which can be rendered using the [camera2d] camera.

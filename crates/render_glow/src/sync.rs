@@ -1,11 +1,23 @@
 use bevy_app::{App, Plugin};
-use bevy_ecs::schedule::IntoSystemConfig;
+use bevy_ecs::system::NonSendMut;
+use bevy_ecs::{
+    change_detection::DetectChanges,
+    schedule::IntoSystemConfig,
+    system::{Res, ResMut},
+};
 
-use render_api::{Mesh as ApiMesh, Material as ApiMaterial, Image as ApiImage, RenderSet};
+use render_api::{
+    base::Texture2D,
+    base::{PbrMaterial as ApiMaterial, Texture2D as ApiImage, TriMesh as ApiMesh},
+    Assets, RenderSet,
+};
 
-use crate::base::Texture2D;
-use crate::asset_impls::AssetImpls;
-use crate::renderer::{Geometry, Material, Mesh};
+use crate::renderer::{BaseMesh, ColorMaterial};
+use crate::window::FrameInput;
+use crate::{
+    asset_impls::AssetImpls,
+    renderer::{Geometry, Material, Mesh},
+};
 
 pub struct SyncPlugin;
 
@@ -15,12 +27,41 @@ impl Plugin for SyncPlugin {
             // Resources
             .insert_resource(AssetImpls::<ApiMesh, Box<dyn Geometry>>::default())
             .insert_resource(AssetImpls::<ApiMaterial, Box<dyn Material>>::default())
-            .insert_resource(AssetImpls::<ApiImage, Texture2D>::default())
             // Systems
-            .add_system(sync_image_assets.in_base_set(RenderSet::Sync));
+            .add_system(sync_mesh_assets.in_base_set(RenderSet::Sync))
+            .add_system(sync_material_assets.in_base_set(RenderSet::Sync));
     }
 }
 
-fn sync_image_assets() {
+fn sync_mesh_assets(
+    frame_input: NonSendMut<FrameInput<()>>,
+    mut api_assets: ResMut<Assets<ApiMesh>>,
+    mut asset_impls: ResMut<AssetImpls<ApiMesh, Box<dyn Geometry>>>,
+) {
+    if !api_assets.is_changed() {
+        return;
+    }
 
+    let added_handles = api_assets.flush_added();
+    for added_handle in added_handles {
+        let api_data = api_assets.get(&added_handle).unwrap();
+        let impl_data = Mesh::new(&frame_input.context, api_data);
+        asset_impls.insert(added_handle, Box::new(impl_data));
+    }
+}
+fn sync_material_assets(
+    frame_input: NonSendMut<FrameInput<()>>,
+    mut api_assets: ResMut<Assets<ApiMaterial>>,
+    mut asset_impls: ResMut<AssetImpls<ApiMaterial, Box<dyn Material>>>,
+) {
+    if !api_assets.is_changed() {
+        return;
+    }
+
+    let added_handles = api_assets.flush_added();
+    for added_handle in added_handles {
+        let api_data = api_assets.get(&added_handle).unwrap();
+        let impl_data = ColorMaterial::new(&frame_input.context, api_data);
+        asset_impls.insert(added_handle, Box::new(impl_data));
+    }
 }

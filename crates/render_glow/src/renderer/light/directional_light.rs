@@ -1,6 +1,6 @@
-use crate::base::{AxisAlignedBoundingBox, Camera, Color, Mat4, Vec3, Viewport, Wrapping};
 use crate::core::*;
 use crate::renderer::*;
+use render_api::base::{AxisAlignedBoundingBox, Camera, Color, Mat4, Vec3, Viewport, Wrapping};
 
 ///
 /// A light which shines in the given direction.
@@ -58,7 +58,7 @@ impl DirectionalLight {
     ) {
         let up = light::compute_up_direction(self.direction);
 
-        let viewport = Viewport::new_at_origo(texture_size, texture_size);
+        let viewport = Viewport::new_at_origin(texture_size, texture_size);
         let mut aabb = AxisAlignedBoundingBox::EMPTY;
         for geometry in geometries.clone() {
             aabb.expand_with_aabb(&geometry.aabb());

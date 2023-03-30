@@ -3,24 +3,28 @@ use std::default::Default;
 use bevy_ecs::{bundle::Bundle, component::Component};
 
 use super::transform::Transform;
-use crate::{
-    assets::{Handle, Image},
-    math::Vec2,
-};
+use crate::{assets::Handle, base::Camera, base::Texture2D};
 
 // Camera
 #[derive(Component)]
-pub struct Camera {
+pub struct CameraComponent {
+    pub camera: Camera,
     order: usize,
     pub clear_operation: ClearOperation,
     pub target: RenderTarget,
 }
 
-impl Camera {
+impl CameraComponent {
     pub const MAX_CAMERAS: usize = 32;
 
-    pub fn new(order: usize, clear_operation: ClearOperation, target: RenderTarget) -> Self {
+    pub fn new(
+        camera: Camera,
+        order: usize,
+        clear_operation: ClearOperation,
+        target: RenderTarget,
+    ) -> Self {
         let mut new_self = Self {
+            camera,
             order: 0,
             clear_operation,
             target,
@@ -45,7 +49,7 @@ impl Camera {
 // Render Target
 pub enum RenderTarget {
     Screen,
-    Image(Handle<Image>),
+    Image(Handle<Texture2D>),
 }
 
 // Clear Operation
@@ -80,14 +84,3 @@ impl Default for ClearOperation {
         }
     }
 }
-
-// for later
-//InnerCamera::new_orthographic(
-//                 Viewport::new_at_origo(width, height),
-//                 vec3(5.0, 5.0, 5.0),
-//                 vec3(0.0, 0.0, 0.0),
-//                 vec3(0.0, 1.0, 0.0),
-//                 height as f32,
-//                 0.0,
-//                 1000.0,
-//             ),

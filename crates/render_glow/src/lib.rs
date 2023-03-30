@@ -1,15 +1,14 @@
 #[macro_use]
 extern crate cfg_if;
 
-mod base;
+mod asset_impls;
 mod core;
 mod draw;
 mod plugin;
 mod renderer;
 mod runner;
-mod window;
 mod sync;
-mod asset_impls;
+mod window;
 
 pub use plugin::RenderGlowPlugin;
 

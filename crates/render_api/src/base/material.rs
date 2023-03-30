@@ -76,7 +76,7 @@ pub struct PbrMaterial {
     pub alpha_cutout: Option<f32>,
     /// The lighting model used when rendering this material
     pub lighting_model: LightingModel,
-    /// The index of refraction for this material    
+    /// The index of refraction for this material
     pub index_of_refraction: f32,
     /// A value in the range `[0..1]` specifying how transmissive the material surface is.
     pub transmission: f32,
@@ -105,6 +105,15 @@ impl Default for PbrMaterial {
             transmission_texture: None,
             alpha_cutout: None,
             lighting_model: LightingModel::Blinn,
+        }
+    }
+}
+
+impl From<Color> for PbrMaterial {
+    fn from(color: Color) -> Self {
+        Self {
+            albedo: color,
+            ..Default::default()
         }
     }
 }

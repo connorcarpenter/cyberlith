@@ -26,6 +26,15 @@ pub struct Texture2D {
     pub wrap_t: Wrapping,
 }
 
+impl Texture2D {
+    pub fn from_size(width: u32, height: u32) -> Self {
+        let mut output = Self::default();
+        output.width = width;
+        output.height = height;
+        output
+    }
+}
+
 impl Default for Texture2D {
     fn default() -> Self {
         Self {

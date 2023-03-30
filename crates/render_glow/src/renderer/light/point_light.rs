@@ -1,8 +1,8 @@
 use cgmath::*;
 
-use crate::base::Color;
 use crate::core::*;
 use crate::renderer::*;
+use render_api::base::Color;
 
 ///
 /// A light which shines from the given position in all directions.

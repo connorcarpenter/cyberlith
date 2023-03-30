@@ -1,10 +1,10 @@
 use half::*;
 
-use crate::base::{
-    GeometryFunction, Interpolation, LightingModel, NormalDistributionFunction, Viewport, Wrapping,
-};
 use crate::core::*;
 use crate::renderer::*;
+use render_api::base::{
+    GeometryFunction, Interpolation, LightingModel, NormalDistributionFunction, Viewport, Wrapping,
+};
 
 ///
 /// Precalculations of light shining from an environment map (known as image based lighting - IBL).
@@ -63,7 +63,7 @@ impl Environment {
                 include_str!("../../core/shared.frag"),
                 include_str!("shaders/irradiance.frag")
             );
-            let viewport = Viewport::new_at_origo(irradiance_size, irradiance_size);
+            let viewport = Viewport::new_at_origin(irradiance_size, irradiance_size);
             for side in CubeMapSide::iter() {
                 irradiance_map
                     .as_color_target(&[side], None)
@@ -110,7 +110,7 @@ impl Environment {
                     let sides = [side];
                     let color_target = prefilter_map.as_color_target(&sides, Some(mip));
                     let viewport =
-                        Viewport::new_at_origo(color_target.width(), color_target.height());
+                        Viewport::new_at_origin(color_target.width(), color_target.height());
                     color_target.clear(ClearState::default()).write(|| {
                         apply_cube_effect(
                             context,
@@ -143,7 +143,7 @@ impl Environment {
             Wrapping::ClampToEdge,
             Wrapping::ClampToEdge,
         );
-        let viewport = Viewport::new_at_origo(brdf_map.width(), brdf_map.height());
+        let viewport = Viewport::new_at_origin(brdf_map.width(), brdf_map.height());
         brdf_map
             .as_color_target(None)
             .clear(ClearState::default())

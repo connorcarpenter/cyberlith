@@ -1,8 +1,8 @@
 use cgmath::*;
 
-use crate::base::{Color, Mat4, Radians, Vec3, Viewport, Wrapping};
 use crate::core::*;
 use crate::renderer::*;
+use render_api::base::{Color, Mat4, Radians, Vec3, Viewport, Wrapping};
 
 ///
 /// A light which shines from the given position and in the given direction.
@@ -73,7 +73,7 @@ impl SpotLight {
         let direction = self.direction;
         let up = light::compute_up_direction(self.direction);
 
-        let viewport = Viewport::new_at_origo(texture_size, texture_size);
+        let viewport = Viewport::new_at_origin(texture_size, texture_size);
 
         let mut z_far = 0.0f32;
         let mut z_near = f32::MAX;

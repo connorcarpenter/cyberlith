@@ -27,8 +27,8 @@ use std::sync::Arc;
 
 use half::*;
 
-use crate::base::{Camera, Mat3, PbrMaterial, TextureData};
 use crate::renderer::*;
+use render_api::base::{Camera, Mat3, PbrMaterial, TextureData};
 
 ///
 /// A reference to a 2D texture and a texture transformation.

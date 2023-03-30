@@ -1,5 +1,5 @@
-use crate::base::{degrees, AxisAlignedBoundingBox, Camera, Color, Mat4, TriMesh};
 use crate::renderer::*;
+use render_api::base::{degrees, AxisAlignedBoundingBox, Camera, Color, Mat4, TriMesh};
 
 ///
 /// Three arrows indicating the three main axes; the x-axis (red), the y-axis (green) and the z-axis (blue).

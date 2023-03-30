@@ -1,3 +1,3 @@
 mod plugin;
 
-pub use plugin::{setup, GameClientImage, GameClientPlugin};
+pub use plugin::{setup, GameClientPlugin, GameClientTexture};

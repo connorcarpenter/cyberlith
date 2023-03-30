@@ -1,7 +1,5 @@
-use crate::base::{
-    AxisAlignedBoundingBox, Geometry as CpuGeometry, Model as CpuModel,
-};
 use crate::renderer::*;
+use render_api::base::{AxisAlignedBoundingBox, Geometry as CpuGeometry, Model as CpuModel};
 
 ///
 /// Part of an [InstancedModel] consisting of a [InstancedMesh], some type of [material]
@@ -122,9 +120,7 @@ impl<M: Material + FromPbrMaterial + Clone + Default> InstancedModel<M> {
                     material,
                 };
                 gm.set_transformation(primitive.transformation);
-                gms.push(InstancedModelPart {
-                    gm,
-                });
+                gms.push(InstancedModelPart { gm });
             }
         }
         let mut model = Self(gms);

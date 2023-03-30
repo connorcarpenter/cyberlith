@@ -1,5 +1,5 @@
-use crate::base::{Interpolation, Wrapping};
 use crate::core::*;
+use render_api::base::{Interpolation, Wrapping};
 
 ///
 /// A multisampled render target for color and depth data. Use this if you want to avoid aliasing, ie. jagged edges, when rendering to a [RenderTarget].

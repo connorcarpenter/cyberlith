@@ -13,9 +13,9 @@ use winit::*;
 
 use thiserror::Error;
 
-use crate::base::Viewport;
 use crate::core::{Context, CoreError};
 use crate::renderer::{Event, Key, Modifiers, MouseButton};
+use render_api::base::Viewport;
 
 ///
 /// Error associated with a window.
@@ -312,7 +312,7 @@ impl<T: 'static + Clone> Window<T> {
                         events: events.drain(..).collect(),
                         elapsed_time,
                         accumulated_time,
-                        viewport: Viewport::new_at_origo(physical_width, physical_height),
+                        viewport: Viewport::new_at_origin(physical_width, physical_height),
                         window_width: width,
                         window_height: height,
                         device_pixel_ratio,
@@ -578,7 +578,7 @@ impl<T: 'static + Clone> Window<T> {
     ///
     pub fn viewport(&self) -> Viewport {
         let (w, h): (u32, u32) = self.window.inner_size().into();
-        Viewport::new_at_origo(w, h)
+        Viewport::new_at_origin(w, h)
     }
 
     ///

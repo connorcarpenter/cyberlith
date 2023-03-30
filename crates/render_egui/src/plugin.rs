@@ -8,7 +8,7 @@ use bevy_ecs::{
 
 use egui;
 
-use render_api::{Handle, Image};
+use render_api::Handle;
 
 use crate::{EguiContext, EguiUserTextures};
 

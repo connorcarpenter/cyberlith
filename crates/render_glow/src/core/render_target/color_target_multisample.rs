@@ -1,5 +1,5 @@
-use crate::base::{Interpolation, Wrapping};
 use crate::core::*;
+use render_api::base::{Interpolation, Wrapping};
 
 ///
 /// A multisample render target for color data. Use this if you want to avoid aliasing, ie. jagged edges, when rendering to a [ColorTarget].
@@ -35,7 +35,7 @@ impl<C: TextureDataType> ColorTargetMultisample<C> {
     ///
     pub fn clear(&self, clear_state: ClearState) -> &Self {
         self.clear_partially(
-            ScissorBox::new_at_origo(self.width(), self.height()),
+            ScissorBox::new_at_origin(self.width(), self.height()),
             clear_state,
         )
     }

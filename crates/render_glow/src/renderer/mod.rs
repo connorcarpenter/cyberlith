@@ -33,8 +33,8 @@ pub use object::*;
 use cgmath::*;
 use thiserror::Error;
 
-use crate::base::{Camera, Interpolation, Vec3, Viewport, Wrapping};
 use crate::core::*;
+use render_api::base::{Camera, Interpolation, Vec3, Viewport, Wrapping};
 
 ///
 /// Error in the [renderer](crate::renderer) module.
@@ -87,7 +87,7 @@ macro_rules! impl_render_target_extensions_body {
                 // Geometry pass
                 let mut geometry_pass_camera = camera.clone();
                 let viewport =
-                    Viewport::new_at_origo(camera.viewport().width, camera.viewport().height);
+                    Viewport::new_at_origin(camera.viewport().width, camera.viewport().height);
                 geometry_pass_camera.set_viewport(viewport);
                 deferred_objects.sort_by(|a, b| cmp_render_order(&geometry_pass_camera, a, b));
                 let mut geometry_pass_texture = Texture2DArray::new_empty::<[u8; 4]>(
@@ -368,7 +368,7 @@ pub fn ray_intersect(
     geometries: impl IntoIterator<Item = impl Geometry>,
 ) -> Option<Vec3> {
     use crate::core::*;
-    let viewport = Viewport::new_at_origo(1, 1);
+    let viewport = Viewport::new_at_origin(1, 1);
     let up = if direction.dot(vec3(1.0, 0.0, 0.0)).abs() > 0.99 {
         direction.cross(vec3(0.0, 1.0, 0.0))
     } else {

@@ -1,7 +1,7 @@
 use glow::HasContext;
 
-use crate::base::Texture3D as CpuTexture3D;
 use crate::core::texture::*;
+use render_api::base::Texture3D as CpuTexture3D;
 
 ///
 /// A 3D color texture.

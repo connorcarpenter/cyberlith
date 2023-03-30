@@ -1,7 +1,7 @@
 use glow::HasContext;
 
-use crate::base::Texture2D as CpuTexture;
 use crate::core::texture::*;
+use render_api::base::Texture2D as CpuTexture;
 
 ///
 /// A 2D texture, basically an image that is transferred to the GPU.

@@ -1,7 +1,8 @@
 use std::default::Default;
 
-use crate::math::Vec3;
 use bevy_ecs::component::Component;
+
+use crate::base::Vec3;
 
 #[derive(Component, Default)]
 pub struct Transform {}

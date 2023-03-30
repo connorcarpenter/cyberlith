@@ -1,9 +1,9 @@
 use cgmath::*;
 use half::*;
 
-use crate::base::*;
 use crate::core::*;
 use data_type::*;
+use render_api::base::*;
 
 ///
 /// Possible types that can be send as a uniform to a shader (a variable that is uniformly available when processing all vertices and fragments).

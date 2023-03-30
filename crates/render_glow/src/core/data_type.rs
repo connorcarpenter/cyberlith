@@ -2,8 +2,8 @@ use cgmath::*;
 use glow::{HasContext, UniformLocation};
 use half::*;
 
-use crate::base::*;
 use crate::core::*;
+use render_api::base::*;
 
 pub enum UniformType {
     Value,

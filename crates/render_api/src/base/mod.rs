@@ -1,30 +1,17 @@
-#![cfg_attr(docsrs, feature(doc_cfg))]
-//#![warn(clippy::all)]
-#![warn(missing_docs)]
-
-//!
-//! A set of common assets that are useful when doing graphics, for example [TriMesh], [Texture2D] or [PbrMaterial].
-//! These assets can be loaded using the [io] module or constructed manually.
-//! When in memory, the assets can be for example be
-//! - visualised, for example using the [three-d](https://github.com/asny/three-d) crate or in a CPU ray tracer
-//! - imported into a rust-based game engine
-//! - edited and saved again
-//!
-
+mod aabb;
 mod camera;
+mod color;
 mod geometry;
 mod material;
-mod texture;
 mod math;
-mod aabb;
-mod color;
+mod texture;
 
-pub use color::*;
 pub use aabb::*;
-pub use math::*;
 pub use camera::*;
+pub use color::*;
 pub use geometry::*;
 pub use material::*;
+pub use math::*;
 pub use texture::*;
 
 ///

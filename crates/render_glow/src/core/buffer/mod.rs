@@ -16,8 +16,8 @@ use cgmath::*;
 use glow::HasContext;
 use half::f16;
 
-use crate::base::{Color, Quat};
 use crate::core::*;
+use render_api::base::{Color, Quat};
 
 /// The basic data type used for each element in a [VertexBuffer] or [InstanceBuffer].
 pub trait BufferDataType: DataType {}

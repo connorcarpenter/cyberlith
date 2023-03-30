@@ -5,9 +5,9 @@ use render_egui::glow as egui_glow;
 
 use egui_glow::Painter;
 
-use crate::base::*;
 use crate::core::*;
 use crate::renderer::*;
+use render_api::base::*;
 
 ///
 /// Integration of [egui](https://crates.io/crates/egui), an immediate mode GUI.
@@ -37,7 +37,7 @@ impl GUI {
             egui_context: egui::Context::default(),
             painter: RefCell::new(Painter::new(context, "", None).unwrap()),
             output: RefCell::new(None),
-            viewport: Viewport::new_at_origo(1, 1),
+            viewport: Viewport::new_at_origin(1, 1),
             modifiers: Modifiers::default(),
         }
     }

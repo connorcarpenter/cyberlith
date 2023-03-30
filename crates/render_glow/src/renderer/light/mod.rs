@@ -18,8 +18,8 @@ pub use spot_light::*;
 
 use cgmath::*;
 
-use crate::base::*;
 use crate::core::*;
+use render_api::base::*;
 
 ///
 /// Specifies how the intensity of a light fades over distance.
@@ -150,7 +150,7 @@ fn compute_up_direction(direction: Vec3) -> Vec3 {
     }
 }
 
-use crate::base::{LightingModel, NormalDistributionFunction};
+use render_api::base::{LightingModel, NormalDistributionFunction};
 pub(crate) fn lighting_model_shader(lighting_model: LightingModel) -> &'static str {
     match lighting_model {
         LightingModel::Phong => "#define PHONG",

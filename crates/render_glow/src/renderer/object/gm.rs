@@ -1,5 +1,5 @@
-use crate::base::AxisAlignedBoundingBox;
 use crate::renderer::*;
+use render_api::base::AxisAlignedBoundingBox;
 
 ///
 /// A combination of a [Geometry] and a [Material] which implements [Object].

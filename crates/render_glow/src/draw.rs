@@ -3,7 +3,10 @@ use bevy_ecs::{
     system::{NonSendMut, Query, Res, ResMut},
 };
 
-use render_api::{Assets, Camera, Handle, Material, Mesh, RenderLayer, RenderLayers, Transform};
+use render_api::{
+    base::{PbrMaterial, TriMesh},
+    Assets, CameraComponent, Handle, RenderLayer, RenderLayers, Transform,
+};
 
 use crate::{renderer::Object, window::FrameInput};
 
@@ -15,20 +18,20 @@ struct CameraWork {
 }
 
 pub fn draw(
-    meshes: Res<Assets<Mesh>>,
-    materials: Res<Assets<Material>>,
+    meshes: Res<Assets<TriMesh>>,
+    materials: Res<Assets<PbrMaterial>>,
     frame_input: NonSendMut<FrameInput<()>>,
-    cameras_q: Query<(Entity, &Camera, Option<&RenderLayer>)>,
+    cameras_q: Query<(Entity, &CameraComponent, Option<&RenderLayer>)>,
     objects_q: Query<(
         Entity,
-        &Handle<Mesh>,
-        &Handle<Material>,
+        &Handle<TriMesh>,
+        &Handle<PbrMaterial>,
         &Transform,
         Option<&RenderLayer>,
     )>,
 ) {
     let mut layer_to_order: Vec<Option<usize>> = vec![None; RenderLayers::TOTAL_LAYERS];
-    let mut camera_work: Vec<Option<CameraWork>> = vec![None; Camera::MAX_CAMERAS];
+    let mut camera_work: Vec<Option<CameraWork>> = vec![None; CameraComponent::MAX_CAMERAS];
 
     for (entity, camera, render_layer_wrapper) in cameras_q.iter() {
         let camera_order = camera.order();

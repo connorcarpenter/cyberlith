@@ -1,6 +1,6 @@
-use crate::base::{Texture2D as CpuTexture, TextureData};
 use crate::core::texture::*;
 use glow::HasContext;
+use render_api::base::{Texture2D as CpuTexture, TextureData};
 
 ///
 /// A array of 2D color textures that can be rendered into.

@@ -8,8 +8,8 @@ mod tri_mesh;
 pub use point_cloud::*;
 pub use tri_mesh::*;
 
-use cgmath::*;
 use crate::base::{AxisAlignedBoundingBox, Vec3};
+use cgmath::*;
 
 ///
 /// A CPU-side version of a geometry.
