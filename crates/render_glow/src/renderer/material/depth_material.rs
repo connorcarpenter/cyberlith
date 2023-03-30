@@ -1,4 +1,4 @@
-use crate::asset::PbrMaterial;
+use crate::base::PbrMaterial;
 use crate::core::*;
 use crate::renderer::*;
 

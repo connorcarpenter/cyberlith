@@ -1,6 +1,6 @@
 use cgmath::*;
 
-use crate::asset::{AxisAlignedBoundingBox, Mat3, TriMesh, Vec2};
+use crate::base::{AxisAlignedBoundingBox, Mat3, TriMesh, Vec2};
 use crate::renderer::*;
 
 ///

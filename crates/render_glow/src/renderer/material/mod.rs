@@ -27,7 +27,7 @@ use std::sync::Arc;
 
 use half::*;
 
-use crate::asset::{Camera, Mat3, PbrMaterial, TextureData};
+use crate::base::{Camera, Mat3, PbrMaterial, TextureData};
 use crate::renderer::*;
 
 ///

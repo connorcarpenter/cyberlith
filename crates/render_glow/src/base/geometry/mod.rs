@@ -10,7 +10,7 @@ pub use tri_mesh::*;
 
 use cgmath::*;
 
-use crate::asset::prelude::*;
+use crate::base::prelude::*;
 
 ///
 /// A CPU-side version of a geometry.

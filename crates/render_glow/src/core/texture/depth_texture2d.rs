@@ -1,4 +1,4 @@
-use crate::asset::*;
+use crate::base::*;
 use crate::core::texture::*;
 use glow::HasContext;
 

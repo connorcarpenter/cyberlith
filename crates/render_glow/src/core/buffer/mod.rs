@@ -16,7 +16,7 @@ use cgmath::*;
 use glow::HasContext;
 use half::f16;
 
-use crate::asset::{Color, Quat};
+use crate::base::{Color, Quat};
 use crate::core::*;
 
 /// The basic data type used for each element in a [VertexBuffer] or [InstanceBuffer].

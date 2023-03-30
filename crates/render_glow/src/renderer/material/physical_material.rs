@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::asset::{Color, LightingModel, PbrMaterial};
+use crate::base::{Color, LightingModel, PbrMaterial};
 use crate::core::*;
 use crate::renderer::*;
 

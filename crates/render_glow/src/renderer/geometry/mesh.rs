@@ -1,4 +1,4 @@
-use crate::asset::{AxisAlignedBoundingBox, Mat3, Mat4, TriMesh};
+use crate::base::{AxisAlignedBoundingBox, Mat3, Mat4, TriMesh};
 use crate::core::*;
 use crate::renderer::*;
 

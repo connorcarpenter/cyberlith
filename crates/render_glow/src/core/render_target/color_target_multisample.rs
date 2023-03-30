@@ -1,4 +1,4 @@
-use crate::asset::{Interpolation, Wrapping};
+use crate::base::{Interpolation, Wrapping};
 use crate::core::*;
 
 ///

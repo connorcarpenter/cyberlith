@@ -1,4 +1,4 @@
-use crate::asset::{prelude::*, Error, Indices, Positions, Result};
+use crate::base::{prelude::*, Error, Indices, Positions, Result};
 use cgmath::*;
 
 ///

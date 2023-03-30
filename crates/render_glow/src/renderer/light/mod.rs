@@ -18,7 +18,7 @@ pub use spot_light::*;
 
 use cgmath::*;
 
-use crate::asset::*;
+use crate::base::*;
 use crate::core::*;
 
 ///
@@ -150,7 +150,7 @@ fn compute_up_direction(direction: Vec3) -> Vec3 {
     }
 }
 
-use crate::asset::{LightingModel, NormalDistributionFunction};
+use crate::base::{LightingModel, NormalDistributionFunction};
 pub(crate) fn lighting_model_shader(lighting_model: LightingModel) -> &'static str {
     match lighting_model {
         LightingModel::Phong => "#define PHONG",

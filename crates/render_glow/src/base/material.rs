@@ -2,7 +2,7 @@
 //! Contain material asset definitions.
 //!
 
-use crate::asset::*;
+use crate::base::*;
 
 /// Lighting models which specify how the lighting is computed when rendering a material.
 /// This is a trade-off between how fast the computations are versus how physically correct they look.

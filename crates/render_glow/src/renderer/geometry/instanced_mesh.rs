@@ -4,7 +4,7 @@ use std::sync::RwLock;
 use cgmath::*;
 
 use super::BaseMesh;
-use crate::asset::{AxisAlignedBoundingBox, Camera, Color, Mat3, Mat4, PointCloud, TriMesh, Vec3};
+use crate::base::{AxisAlignedBoundingBox, Camera, Color, Mat3, Mat4, PointCloud, TriMesh, Vec3};
 use crate::core::*;
 use crate::renderer::*;
 

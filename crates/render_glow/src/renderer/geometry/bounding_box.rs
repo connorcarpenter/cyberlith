@@ -1,4 +1,4 @@
-use crate::asset::{degrees, AxisAlignedBoundingBox, Mat4, TriMesh};
+use crate::base::{degrees, AxisAlignedBoundingBox, Mat4, TriMesh};
 use cgmath::*;
 
 use crate::renderer::*;

@@ -26,7 +26,7 @@ use cgmath::*;
 use glow::HasContext;
 use half::*;
 
-use crate::asset::{Color, Interpolation, Quat, Texture2D as CpuTexture, TextureData, Wrapping};
+use crate::base::{Color, Interpolation, Quat, Texture2D as CpuTexture, TextureData, Wrapping};
 
 /// The basic data type used for each channel of each pixel in a texture.
 pub trait TextureDataType: DataType {}

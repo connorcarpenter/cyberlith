@@ -20,7 +20,7 @@ pub use rectangle::*;
 
 use cgmath::*;
 
-use crate::asset::*;
+use crate::base::*;
 use crate::core::*;
 use crate::renderer::*;
 

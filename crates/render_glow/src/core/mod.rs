@@ -27,7 +27,7 @@ pub use scissor_box::*;
 pub use texture::*;
 pub use uniform::*;
 
-use crate::asset::Viewport;
+use crate::base::Viewport;
 
 ///
 /// Error in the [core](crate::core) module.

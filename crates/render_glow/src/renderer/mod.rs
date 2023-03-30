@@ -33,7 +33,7 @@ pub use object::*;
 use cgmath::*;
 use thiserror::Error;
 
-use crate::asset::{Camera, Interpolation, Vec3, Viewport, Wrapping};
+use crate::base::{Camera, Interpolation, Vec3, Viewport, Wrapping};
 use crate::core::*;
 
 ///

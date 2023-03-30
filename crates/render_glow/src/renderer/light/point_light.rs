@@ -1,6 +1,6 @@
 use cgmath::*;
 
-use crate::asset::Color;
+use crate::base::Color;
 use crate::core::*;
 use crate::renderer::*;
 

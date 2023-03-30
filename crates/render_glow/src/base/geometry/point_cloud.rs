@@ -1,7 +1,7 @@
 use cgmath::*;
 
 use super::Positions;
-use crate::asset::prelude::*;
+use crate::base::prelude::*;
 
 ///
 /// Represents a set of points in 3D space, usually created with a scanner.

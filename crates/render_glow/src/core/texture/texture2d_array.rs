@@ -1,4 +1,4 @@
-use crate::asset::{Texture2D as CpuTexture, TextureData};
+use crate::base::{Texture2D as CpuTexture, TextureData};
 use crate::core::texture::*;
 use glow::HasContext;
 

@@ -1,7 +1,7 @@
 use cgmath::*;
 use glow::HasContext;
 
-use crate::asset::{Interpolation, Texture2D as CpuTexture, TextureData, Vec3, Wrapping};
+use crate::base::{Interpolation, Texture2D as CpuTexture, TextureData, Vec3, Wrapping};
 use crate::core::texture::*;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]

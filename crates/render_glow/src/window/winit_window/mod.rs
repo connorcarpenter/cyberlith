@@ -13,7 +13,7 @@ use winit::*;
 
 use thiserror::Error;
 
-use crate::asset::Viewport;
+use crate::base::Viewport;
 use crate::core::{Context, CoreError};
 use crate::renderer::{Event, Key, Modifiers, MouseButton};
 

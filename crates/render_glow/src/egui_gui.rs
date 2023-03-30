@@ -5,7 +5,7 @@ use render_egui::glow as egui_glow;
 
 use egui_glow::Painter;
 
-use crate::asset::*;
+use crate::base::*;
 use crate::core::*;
 use crate::renderer::*;
 

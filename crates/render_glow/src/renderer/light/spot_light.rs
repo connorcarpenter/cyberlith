@@ -1,6 +1,6 @@
 use cgmath::*;
 
-use crate::asset::{Color, Mat4, Radians, Vec3, Viewport, Wrapping};
+use crate::base::{Color, Mat4, Radians, Vec3, Viewport, Wrapping};
 use crate::core::*;
 use crate::renderer::*;
 

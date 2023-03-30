@@ -2,7 +2,7 @@ use cgmath::*;
 use glow::{HasContext, UniformLocation};
 use half::*;
 
-use crate::asset::*;
+use crate::base::*;
 use crate::core::*;
 
 pub enum UniformType {

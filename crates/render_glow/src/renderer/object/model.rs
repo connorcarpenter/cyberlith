@@ -1,4 +1,4 @@
-use crate::asset::{
+use crate::base::{
     AxisAlignedBoundingBox, Geometry as CpuGeometry, Model as CpuModel,
 };
 use crate::renderer::*;
