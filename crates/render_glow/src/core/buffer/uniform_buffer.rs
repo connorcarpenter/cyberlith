@@ -1,3 +1,5 @@
+use glow::HasContext;
+
 use crate::core::*;
 
 ///
@@ -6,7 +8,7 @@ use crate::core::*;
 ///
 pub struct UniformBuffer {
     context: Context,
-    id: crate::context::Buffer,
+    id: glow::Buffer,
     offsets: Vec<usize>,
     data: Vec<f32>,
 }
@@ -40,7 +42,7 @@ impl UniformBuffer {
     pub(crate) fn bind(&self, id: u32) {
         unsafe {
             self.context
-                .bind_buffer_base(crate::context::UNIFORM_BUFFER, id, Some(self.id))
+                .bind_buffer_base(glow::UNIFORM_BUFFER, id, Some(self.id))
         };
     }
 
@@ -99,14 +101,14 @@ impl UniformBuffer {
     fn send(&self) {
         unsafe {
             self.context
-                .bind_buffer(crate::context::UNIFORM_BUFFER, Some(self.id));
+                .bind_buffer(glow::UNIFORM_BUFFER, Some(self.id));
             self.context.buffer_data_u8_slice(
-                crate::context::UNIFORM_BUFFER,
+                glow::UNIFORM_BUFFER,
                 to_byte_slice(&self.data),
-                crate::context::STATIC_DRAW,
+                glow::STATIC_DRAW,
             );
             self.context
-                .bind_buffer(crate::context::UNIFORM_BUFFER, None);
+                .bind_buffer(glow::UNIFORM_BUFFER, None);
         }
     }
 }

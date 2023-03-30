@@ -2,7 +2,7 @@ use bevy_app::{App, CoreSet, Plugin};
 use bevy_ecs::schedule::{IntoSystemConfig, IntoSystemSetConfig};
 
 use crate::{
-    assets::{Assets, Image, Mesh, StandardMaterial},
+    assets::{Assets, Image, Mesh, Material},
     Window, base_set::RenderSet
 };
 
@@ -15,7 +15,7 @@ impl Plugin for RenderApiPlugin {
             // TODO: find out how to get window height & width
             .insert_resource(Window::new(1280, 720))
             .insert_resource(Assets::<Mesh>::default())
-            .insert_resource(Assets::<StandardMaterial>::default())
+            .insert_resource(Assets::<Material>::default())
             .insert_resource(Assets::<Image>::default())
             // Base System Set
             .configure_set(RenderSet::Sync.after(CoreSet::LastFlush))

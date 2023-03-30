@@ -1,6 +1,6 @@
 //!
 //! High-level features for easy rendering of different types of objects with different types of shading.
-//! Can be combined seamlessly with the mid-level features in the [core](crate::core) module as well as functionality in the [context](crate::context) module.
+//! Can be combined seamlessly with the mid-level features in the [core](crate::core) module as well as functionality in the [context](glow) module.
 //!
 //! This module contains five main traits
 //! - [Geometry] - a geometric representation in 3D space
@@ -58,7 +58,7 @@ macro_rules! impl_render_target_extensions_body {
         pub fn render(
             &self,
             camera: &Camera,
-            objects: impl IntoIterator<Item = impl Object>,
+            objects: &[&dyn Object],
             lights: &[&dyn Light],
         ) -> &Self {
             self.render_partially(self.scissor_box(), camera, objects, lights)
@@ -73,11 +73,11 @@ macro_rules! impl_render_target_extensions_body {
             &self,
             scissor_box: ScissorBox,
             camera: &Camera,
-            objects: impl IntoIterator<Item = impl Object>,
+            objects: &[&dyn Object],
             lights: &[&dyn Light],
         ) -> &Self {
-            let (mut deferred_objects, mut forward_objects): (Vec<_>, Vec<_>) = objects
-                .into_iter()
+            let (mut deferred_objects, mut forward_objects): (Vec<&dyn Object>, Vec<&dyn Object>) = objects
+                .iter()
                 .filter(|o| camera.in_frustum(&o.aabb()))
                 .partition(|o| o.material_type() == MaterialType::Deferred);
 

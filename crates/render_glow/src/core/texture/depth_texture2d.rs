@@ -1,3 +1,4 @@
+use glow::HasContext;
 use crate::asset::*;
 use crate::core::texture::*;
 
@@ -6,7 +7,7 @@ use crate::core::texture::*;
 ///
 pub struct DepthTexture2D {
     context: Context,
-    id: crate::context::Texture,
+    id: glow::Texture,
     width: u32,
     height: u32,
 }
@@ -32,7 +33,7 @@ impl DepthTexture2D {
         texture.bind();
         set_parameters(
             context,
-            crate::context::TEXTURE_2D,
+            glow::TEXTURE_2D,
             Interpolation::Nearest,
             Interpolation::Nearest,
             None,
@@ -42,7 +43,7 @@ impl DepthTexture2D {
         );
         unsafe {
             context.tex_storage_2d(
-                crate::context::TEXTURE_2D,
+                glow::TEXTURE_2D,
                 1,
                 T::internal_format(),
                 width as i32,
@@ -73,9 +74,9 @@ impl DepthTexture2D {
     pub(in crate::core) fn bind_as_depth_target(&self) {
         unsafe {
             self.context.framebuffer_texture_2d(
-                crate::context::FRAMEBUFFER,
-                crate::context::DEPTH_ATTACHMENT,
-                crate::context::TEXTURE_2D,
+                glow::FRAMEBUFFER,
+                glow::DEPTH_ATTACHMENT,
+                glow::TEXTURE_2D,
                 Some(self.id),
                 0,
             );
@@ -85,7 +86,7 @@ impl DepthTexture2D {
     pub(in crate::core) fn bind(&self) {
         unsafe {
             self.context
-                .bind_texture(crate::context::TEXTURE_2D, Some(self.id));
+                .bind_texture(glow::TEXTURE_2D, Some(self.id));
         }
     }
 }

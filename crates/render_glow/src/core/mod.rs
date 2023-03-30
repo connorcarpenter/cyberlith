@@ -1,6 +1,6 @@
 //!
 //! Mid-level modular abstractions of common graphics concepts such as buffer, texture, program, render target and so on.
-//! Can be combined with low-level calls in the [context](crate::context) module as well as high-level functionality in the [renderer](crate::renderer) module.
+//! Can be combined with low-level calls in the [context](glow) module as well as high-level functionality in the [renderer](crate::renderer) module.
 //!
 
 /// A result for this crate.
@@ -149,10 +149,10 @@ fn from_byte_slice<T: DataType>(data: &[u8]) -> &[T] {
 
 fn format_from_data_type<T: DataType>() -> u32 {
     match T::size() {
-        1 => crate::context::RED,
-        2 => crate::context::RG,
-        3 => crate::context::RGB,
-        4 => crate::context::RGBA,
+        1 => glow::RED,
+        2 => glow::RG,
+        3 => glow::RGB,
+        4 => glow::RGBA,
         _ => unreachable!(),
     }
 }

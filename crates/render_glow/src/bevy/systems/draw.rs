@@ -4,7 +4,7 @@ use bevy_ecs::{
 };
 
 use render_api::{
-    Assets, Camera, Handle, Mesh, RenderLayer, RenderLayers, StandardMaterial, Transform,
+    Assets, Camera, Handle, Mesh, RenderLayer, RenderLayers, Material, Transform,
 };
 
 use crate::{window::FrameInput, renderer::Object};
@@ -12,20 +12,25 @@ use crate::{window::FrameInput, renderer::Object};
 #[derive(Clone)]
 struct CameraWork {
     pub camera: Entity,
+    pub lights: Vec<Entity>,
     pub objects: Vec<Entity>,
 }
 
 pub fn draw(
     meshes: Res<Assets<Mesh>>,
-    materials: Res<Assets<StandardMaterial>>,
+    materials: Res<Assets<Material>>,
     frame_input: NonSendMut<FrameInput<()>>,
-    cameras_q: Query<(Entity, &Camera, &RenderLayer)>,
+    cameras_q: Query<(
+        Entity,
+        &Camera,
+        Option<&RenderLayer>
+    )>,
     objects_q: Query<(
         Entity,
         &Handle<Mesh>,
-        &Handle<StandardMaterial>,
+        &Handle<Material>,
         &Transform,
-        &RenderLayer,
+        Option<&RenderLayer>,
     )>,
 ) {
     let mut layer_to_order: Vec<Option<usize>> = vec![None; RenderLayers::TOTAL_LAYERS];
@@ -33,17 +38,24 @@ pub fn draw(
 
     for (entity, camera, render_layer_wrapper) in cameras_q.iter() {
         let camera_order = camera.order();
-        if camera_work.get(camera_order).is_some() {
+        if camera_work.get(camera_order).unwrap().is_some() {
             panic!("Each Camera must have a unique `order` value!");
         }
 
-        let render_layer = render_layer_wrapper.0;
-        if layer_to_order.get(render_layer).is_some() {
+        let render_layer = {
+            if let Some(r) = render_layer_wrapper {
+                r.0
+            } else {
+                RenderLayers::DEFAULT
+            }
+        };
+        if layer_to_order.get(render_layer).unwrap().is_some() {
             panic!("Each Camera must have a unique RenderLayer component!");
         }
 
         camera_work[camera_order] = Some(CameraWork {
             camera: entity,
+            lights: Vec::new(),
             objects: Vec::new(),
         });
 
@@ -51,7 +63,13 @@ pub fn draw(
     }
 
     for (entity, _, _, _, render_layer_wrapper) in objects_q.iter() {
-        let render_layer = render_layer_wrapper.0;
+        let render_layer = {
+            if let Some(r) = render_layer_wrapper {
+                r.0
+            } else {
+                RenderLayers::DEFAULT
+            }
+        };
         if layer_to_order.get(render_layer).is_none() {
             panic!("Found render object with RenderLayer not associated with any Camera!");
         }
@@ -96,10 +114,11 @@ pub fn draw(
             // get mesh
             let mesh = meshes.get(mesh_handle).unwrap();
             let material = materials.get(mat_handle).unwrap();
-            todo!();
 
             // add object ref to list of objects to be rendered
             //objects.push(&render_ref);
         }
+
+        //render_target.render()
     }
 }

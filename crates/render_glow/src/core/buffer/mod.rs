@@ -2,21 +2,20 @@
 //! Different types of buffers used for sending data (primarily geometry data) to the GPU.
 //!
 
+mod element_buffer;
+mod vertex_buffer;
+mod instance_buffer;
+mod uniform_buffer;
+
+pub use element_buffer::*;
+pub use vertex_buffer::*;
+pub use instance_buffer::*;
+pub use uniform_buffer::*;
+
 use cgmath::*;
+use glow::HasContext;
 use half::f16;
 use data_type::*;
-
-mod element_buffer;
-pub use element_buffer::*;
-
-mod vertex_buffer;
-pub use vertex_buffer::*;
-
-mod instance_buffer;
-pub use instance_buffer::*;
-
-mod uniform_buffer;
-pub use uniform_buffer::*;
 
 use crate::core::*;
 use crate::asset::{Color, Quat};
@@ -46,7 +45,7 @@ impl<T: BufferDataType + ?Sized> BufferDataType for &T {}
 
 struct Buffer {
     context: Context,
-    id: crate::context::Buffer,
+    id: glow::Buffer,
     attribute_count: u32,
     data_type: u32,
     data_size: u32,
@@ -75,15 +74,15 @@ impl Buffer {
         self.bind();
         unsafe {
             self.context.buffer_data_u8_slice(
-                crate::context::ARRAY_BUFFER,
+                glow::ARRAY_BUFFER,
                 to_byte_slice(data),
                 if self.attribute_count > 0 {
-                    crate::context::DYNAMIC_DRAW
+                    glow::DYNAMIC_DRAW
                 } else {
-                    crate::context::STATIC_DRAW
+                    glow::STATIC_DRAW
                 },
             );
-            self.context.bind_buffer(crate::context::ARRAY_BUFFER, None);
+            self.context.bind_buffer(glow::ARRAY_BUFFER, None);
         }
         self.attribute_count = data.len() as u32;
         self.data_type = T::data_type();
@@ -97,7 +96,7 @@ impl Buffer {
     pub fn bind(&self) {
         unsafe {
             self.context
-                .bind_buffer(crate::context::ARRAY_BUFFER, Some(self.id));
+                .bind_buffer(glow::ARRAY_BUFFER, Some(self.id));
         }
     }
 }

@@ -1,3 +1,5 @@
+use glow::HasContext;
+
 use crate::core::*;
 
 /// The basic data type used for each index in an element buffer.
@@ -30,7 +32,7 @@ impl ElementBufferDataType for u32 {
 ///
 pub struct ElementBuffer {
     context: Context,
-    id: crate::context::Buffer,
+    id: glow::Buffer,
     count: usize,
     data_type: u32,
 }
@@ -67,12 +69,12 @@ impl ElementBuffer {
         self.bind();
         unsafe {
             self.context.buffer_data_u8_slice(
-                crate::context::ELEMENT_ARRAY_BUFFER,
+                glow::ELEMENT_ARRAY_BUFFER,
                 to_byte_slice(data),
-                crate::context::STATIC_DRAW,
+                glow::STATIC_DRAW,
             );
             self.context
-                .bind_buffer(crate::context::ELEMENT_ARRAY_BUFFER, None);
+                .bind_buffer(glow::ELEMENT_ARRAY_BUFFER, None);
         }
         self.count = data.len();
         self.data_type = T::data_type();
@@ -95,7 +97,7 @@ impl ElementBuffer {
     pub(crate) fn bind(&self) {
         unsafe {
             self.context
-                .bind_buffer(crate::context::ELEMENT_ARRAY_BUFFER, Some(self.id));
+                .bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(self.id));
         }
     }
 

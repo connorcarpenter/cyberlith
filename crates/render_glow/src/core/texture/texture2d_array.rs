@@ -1,3 +1,4 @@
+use glow::HasContext;
 use crate::asset::{Texture2D as CpuTexture, TextureData};
 use crate::core::texture::*;
 
@@ -9,7 +10,7 @@ use crate::core::texture::*;
 ///
 pub struct Texture2DArray {
     context: Context,
-    id: crate::context::Texture,
+    id: glow::Texture,
     width: u32,
     height: u32,
     depth: u32,
@@ -171,7 +172,7 @@ impl Texture2DArray {
         texture.bind();
         set_parameters(
             context,
-            crate::context::TEXTURE_2D_ARRAY,
+            glow::TEXTURE_2D_ARRAY,
             min_filter,
             mag_filter,
             if number_of_mip_maps == 1 {
@@ -185,7 +186,7 @@ impl Texture2DArray {
         );
         unsafe {
             context.tex_storage_3d(
-                crate::context::TEXTURE_2D_ARRAY,
+                glow::TEXTURE_2D_ARRAY,
                 number_of_mip_maps as i32,
                 T::internal_format(),
                 width as i32,
@@ -230,7 +231,7 @@ impl Texture2DArray {
         flip_y(&mut data, self.width as usize, self.height as usize);
         unsafe {
             self.context.tex_sub_image_3d(
-                crate::context::TEXTURE_2D_ARRAY,
+                glow::TEXTURE_2D_ARRAY,
                 0,
                 0,
                 0,
@@ -240,7 +241,7 @@ impl Texture2DArray {
                 1,
                 format_from_data_type::<T>(),
                 T::data_type(),
-                crate::context::PixelUnpackData::Slice(to_byte_slice(&data)),
+                glow::PixelUnpackData::Slice(to_byte_slice(&data)),
             );
         }
         self.generate_mip_maps();
@@ -282,7 +283,7 @@ impl Texture2DArray {
             self.bind();
             unsafe {
                 self.context
-                    .generate_mipmap(crate::context::TEXTURE_2D_ARRAY);
+                    .generate_mipmap(glow::TEXTURE_2D_ARRAY);
             }
         }
     }
@@ -290,8 +291,8 @@ impl Texture2DArray {
     pub(in crate::core) fn bind_as_color_target(&self, layer: u32, channel: u32, mip_level: u32) {
         unsafe {
             self.context.framebuffer_texture_layer(
-                crate::context::DRAW_FRAMEBUFFER,
-                crate::context::COLOR_ATTACHMENT0 + channel,
+                glow::DRAW_FRAMEBUFFER,
+                glow::COLOR_ATTACHMENT0 + channel,
                 Some(self.id),
                 mip_level as i32,
                 layer as i32,
@@ -302,7 +303,7 @@ impl Texture2DArray {
     pub(in crate::core) fn bind(&self) {
         unsafe {
             self.context
-                .bind_texture(crate::context::TEXTURE_2D_ARRAY, Some(self.id));
+                .bind_texture(glow::TEXTURE_2D_ARRAY, Some(self.id));
         }
     }
 }

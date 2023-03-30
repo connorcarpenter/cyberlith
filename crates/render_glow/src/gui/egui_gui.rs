@@ -30,9 +30,9 @@ impl GUI {
     }
 
     ///
-    /// Creates a new GUI from a low-level graphics [Context](crate::context::Context).
+    /// Creates a new GUI from a low-level graphics [Context](glow::Context).
     ///
-    pub fn from_gl_context(context: std::sync::Arc<crate::context::Context>) -> Self {
+    pub fn from_gl_context(context: std::sync::Arc<glow::Context>) -> Self {
         GUI {
             egui_context: egui::Context::default(),
             painter: RefCell::new(Painter::new(context, "", None).unwrap()),

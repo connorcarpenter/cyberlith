@@ -68,7 +68,7 @@ mod inner {
 
             Ok(Self {
                 context: Context::from_gl_context(Arc::new(
-                    crate::context::Context::from_webgl2_context(webgl_context),
+                    glow::Context::from_webgl2_context(webgl_context),
                 ))?,
             })
         }
@@ -189,7 +189,7 @@ mod inner {
 
             Ok(Self {
                 context: crate::core::Context::from_gl_context(Arc::new(unsafe {
-                    crate::context::Context::from_loader_function(|s| {
+                    glow::Context::from_loader_function(|s| {
                         let s = std::ffi::CString::new(s)
                             .expect("failed to construct C string from string for gl proc address");
 

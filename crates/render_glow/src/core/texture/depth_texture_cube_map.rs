@@ -1,3 +1,5 @@
+use glow::HasContext;
+
 use crate::asset::*;
 use crate::core::texture::*;
 
@@ -6,7 +8,7 @@ use crate::core::texture::*;
 ///
 pub struct DepthTextureCubeMap {
     context: Context,
-    id: crate::context::Texture,
+    id: glow::Texture,
     width: u32,
     height: u32,
 }
@@ -33,7 +35,7 @@ impl DepthTextureCubeMap {
         texture.bind();
         set_parameters(
             context,
-            crate::context::TEXTURE_CUBE_MAP,
+            glow::TEXTURE_CUBE_MAP,
             Interpolation::Nearest,
             Interpolation::Nearest,
             None,
@@ -43,7 +45,7 @@ impl DepthTextureCubeMap {
         );
         unsafe {
             context.tex_storage_2d(
-                crate::context::TEXTURE_CUBE_MAP,
+                glow::TEXTURE_CUBE_MAP,
                 1,
                 T::internal_format(),
                 width as i32,
@@ -74,8 +76,8 @@ impl DepthTextureCubeMap {
     pub(in crate::core) fn bind_as_depth_target(&self, side: CubeMapSide) {
         unsafe {
             self.context.framebuffer_texture_2d(
-                crate::context::DRAW_FRAMEBUFFER,
-                crate::context::DEPTH_ATTACHMENT,
+                glow::DRAW_FRAMEBUFFER,
+                glow::DEPTH_ATTACHMENT,
                 side.to_const(),
                 Some(self.id),
                 0,
@@ -86,7 +88,7 @@ impl DepthTextureCubeMap {
     pub(in crate::core) fn bind(&self) {
         unsafe {
             self.context
-                .bind_texture(crate::context::TEXTURE_CUBE_MAP, Some(self.id));
+                .bind_texture(glow::TEXTURE_CUBE_MAP, Some(self.id));
         }
     }
 }

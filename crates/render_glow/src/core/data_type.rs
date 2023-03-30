@@ -1,7 +1,7 @@
 use half::*;
 use cgmath::*;
+use glow::{HasContext, UniformLocation};
 
-use crate::context::UniformLocation;
 use crate::core::*;
 use crate::asset::*;
 
@@ -28,10 +28,10 @@ pub trait PrimitiveDataType: DataType + Copy + Default {
 impl PrimitiveDataType for u8 {
     fn internal_format_with_size(size: u32) -> u32 {
         match size {
-            1 => crate::context::R8,
-            2 => crate::context::RG8,
-            3 => crate::context::RGB8,
-            4 => crate::context::RGBA8,
+            1 => glow::R8,
+            2 => glow::RG8,
+            3 => glow::RGB8,
+            4 => glow::RGBA8,
             _ => unreachable!(),
         }
     }
@@ -49,10 +49,10 @@ impl PrimitiveDataType for u8 {
 impl PrimitiveDataType for u16 {
     fn internal_format_with_size(size: u32) -> u32 {
         match size {
-            1 => crate::context::R16UI,
-            2 => crate::context::RG16UI,
-            3 => crate::context::RGB16UI,
-            4 => crate::context::RGBA16UI,
+            1 => glow::R16UI,
+            2 => glow::RG16UI,
+            3 => glow::RGB16UI,
+            4 => glow::RGBA16UI,
             _ => unreachable!(),
         }
     }
@@ -70,10 +70,10 @@ impl PrimitiveDataType for u16 {
 impl PrimitiveDataType for u32 {
     fn internal_format_with_size(size: u32) -> u32 {
         match size {
-            1 => crate::context::R32UI,
-            2 => crate::context::RG32UI,
-            3 => crate::context::RGB32UI,
-            4 => crate::context::RGBA32UI,
+            1 => glow::R32UI,
+            2 => glow::RG32UI,
+            3 => glow::RGB32UI,
+            4 => glow::RGBA32UI,
             _ => unreachable!(),
         }
     }
@@ -98,10 +98,10 @@ impl PrimitiveDataType for u32 {
 impl PrimitiveDataType for i8 {
     fn internal_format_with_size(size: u32) -> u32 {
         match size {
-            1 => crate::context::R8I,
-            2 => crate::context::RG8I,
-            3 => crate::context::RGB8I,
-            4 => crate::context::RGBA8I,
+            1 => glow::R8I,
+            2 => glow::RG8I,
+            3 => glow::RGB8I,
+            4 => glow::RGBA8I,
             _ => unreachable!(),
         }
     }
@@ -119,10 +119,10 @@ impl PrimitiveDataType for i8 {
 impl PrimitiveDataType for i16 {
     fn internal_format_with_size(size: u32) -> u32 {
         match size {
-            1 => crate::context::R16I,
-            2 => crate::context::RG16I,
-            3 => crate::context::RGB16I,
-            4 => crate::context::RGBA16I,
+            1 => glow::R16I,
+            2 => glow::RG16I,
+            3 => glow::RGB16I,
+            4 => glow::RGBA16I,
             _ => unreachable!(),
         }
     }
@@ -140,10 +140,10 @@ impl PrimitiveDataType for i16 {
 impl PrimitiveDataType for i32 {
     fn internal_format_with_size(size: u32) -> u32 {
         match size {
-            1 => crate::context::R32I,
-            2 => crate::context::RG32I,
-            3 => crate::context::RGB32I,
-            4 => crate::context::RGBA32I,
+            1 => glow::R32I,
+            2 => glow::RG32I,
+            3 => glow::RGB32I,
+            4 => glow::RGBA32I,
             _ => unreachable!(),
         }
     }
@@ -168,10 +168,10 @@ impl PrimitiveDataType for i32 {
 impl PrimitiveDataType for f16 {
     fn internal_format_with_size(size: u32) -> u32 {
         match size {
-            1 => crate::context::R16F,
-            2 => crate::context::RG16F,
-            3 => crate::context::RGB16F,
-            4 => crate::context::RGBA16F,
+            1 => glow::R16F,
+            2 => glow::RG16F,
+            3 => glow::RGB16F,
+            4 => glow::RGBA16F,
             _ => unreachable!(),
         }
     }
@@ -189,10 +189,10 @@ impl PrimitiveDataType for f16 {
 impl PrimitiveDataType for f32 {
     fn internal_format_with_size(size: u32) -> u32 {
         match size {
-            1 => crate::context::R32F,
-            2 => crate::context::RG32F,
-            3 => crate::context::RGB32F,
-            4 => crate::context::RGBA32F,
+            1 => glow::R32F,
+            2 => glow::RG32F,
+            3 => glow::RGB32F,
+            4 => glow::RGBA32F,
             _ => unreachable!(),
         }
     }
@@ -256,7 +256,7 @@ impl DataType for u8 {
     }
 
     fn data_type() -> u32 {
-        crate::context::UNSIGNED_BYTE
+        glow::UNSIGNED_BYTE
     }
 
     fn size() -> u32 {
@@ -273,7 +273,7 @@ impl DataType for u16 {
         Self::internal_format_with_size(1)
     }
     fn data_type() -> u32 {
-        crate::context::UNSIGNED_SHORT
+        glow::UNSIGNED_SHORT
     }
 
     fn size() -> u32 {
@@ -291,7 +291,7 @@ impl DataType for u32 {
     }
 
     fn data_type() -> u32 {
-        crate::context::UNSIGNED_INT
+        glow::UNSIGNED_INT
     }
 
     fn size() -> u32 {
@@ -309,7 +309,7 @@ impl DataType for i8 {
     }
 
     fn data_type() -> u32 {
-        crate::context::BYTE
+        glow::BYTE
     }
 
     fn size() -> u32 {
@@ -327,7 +327,7 @@ impl DataType for i16 {
     }
 
     fn data_type() -> u32 {
-        crate::context::SHORT
+        glow::SHORT
     }
 
     fn size() -> u32 {
@@ -345,7 +345,7 @@ impl DataType for i32 {
     }
 
     fn data_type() -> u32 {
-        crate::context::INT
+        glow::INT
     }
 
     fn size() -> u32 {
@@ -362,7 +362,7 @@ impl DataType for f16 {
         Self::internal_format_with_size(1)
     }
     fn data_type() -> u32 {
-        crate::context::HALF_FLOAT
+        glow::HALF_FLOAT
     }
 
     fn size() -> u32 {
@@ -380,7 +380,7 @@ impl DataType for f32 {
     }
 
     fn data_type() -> u32 {
-        crate::context::FLOAT
+        glow::FLOAT
     }
 
     fn size() -> u32 {
@@ -642,16 +642,16 @@ pub trait DepthDataType {
 
 impl DepthDataType for f16 {
     fn internal_format() -> u32 {
-        crate::context::DEPTH_COMPONENT16
+        glow::DEPTH_COMPONENT16
     }
 }
 impl DepthDataType for f24 {
     fn internal_format() -> u32 {
-        crate::context::DEPTH_COMPONENT24
+        glow::DEPTH_COMPONENT24
     }
 }
 impl DepthDataType for f32 {
     fn internal_format() -> u32 {
-        crate::context::DEPTH_COMPONENT32F
+        glow::DEPTH_COMPONENT32F
     }
 }

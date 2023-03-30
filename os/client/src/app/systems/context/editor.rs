@@ -26,8 +26,6 @@ fn step(game_client_image: Res<GameClientImage>, mut contexts: EguiContexts, win
     let width = window.resolution.physical_width() / 4;
     let height = window.resolution.physical_height() / 4;
 
-    info!("running system...");
-
     //TODO: uncomment and make work!
     //
     // let game_client_texture_id = contexts.image_id(&game_client_image.0).unwrap();

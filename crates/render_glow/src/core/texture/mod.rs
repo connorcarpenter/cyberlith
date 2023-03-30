@@ -23,6 +23,7 @@ pub use depth_texture_cube_map::*;
 pub(in crate::core) use depth_texture2d_multisample::*;
 
 use cgmath::*;
+use glow::HasContext;
 use half::*;
 
 use crate::asset::{Color, Interpolation, Quat, Texture2D as CpuTexture, TextureData, Wrapping};
@@ -150,7 +151,7 @@ use crate::core::*;
 
 // COMMON TEXTURE FUNCTIONS
 
-fn generate(context: &Context) -> crate::context::Texture {
+fn generate(context: &Context) -> glow::Texture {
     unsafe { context.create_texture().expect("Failed creating texture") }
 }
 
@@ -168,21 +169,21 @@ fn set_parameters(
         match mip_map_filter {
             None => context.tex_parameter_i32(
                 target,
-                crate::context::TEXTURE_MIN_FILTER,
+                glow::TEXTURE_MIN_FILTER,
                 interpolation_from(min_filter),
             ),
             Some(Interpolation::Nearest) => {
                 if min_filter == Interpolation::Nearest {
                     context.tex_parameter_i32(
                         target,
-                        crate::context::TEXTURE_MIN_FILTER,
-                        crate::context::NEAREST_MIPMAP_NEAREST as i32,
+                        glow::TEXTURE_MIN_FILTER,
+                        glow::NEAREST_MIPMAP_NEAREST as i32,
                     );
                 } else {
                     context.tex_parameter_i32(
                         target,
-                        crate::context::TEXTURE_MIN_FILTER,
-                        crate::context::LINEAR_MIPMAP_NEAREST as i32,
+                        glow::TEXTURE_MIN_FILTER,
+                        glow::LINEAR_MIPMAP_NEAREST as i32,
                     )
                 }
             }
@@ -190,14 +191,14 @@ fn set_parameters(
                 if min_filter == Interpolation::Nearest {
                     context.tex_parameter_i32(
                         target,
-                        crate::context::TEXTURE_MIN_FILTER,
-                        crate::context::NEAREST_MIPMAP_LINEAR as i32,
+                        glow::TEXTURE_MIN_FILTER,
+                        glow::NEAREST_MIPMAP_LINEAR as i32,
                     );
                 } else {
                     context.tex_parameter_i32(
                         target,
-                        crate::context::TEXTURE_MIN_FILTER,
-                        crate::context::LINEAR_MIPMAP_LINEAR as i32,
+                        glow::TEXTURE_MIN_FILTER,
+                        glow::LINEAR_MIPMAP_LINEAR as i32,
                     )
                 }
             }
@@ -205,21 +206,21 @@ fn set_parameters(
         }
         context.tex_parameter_i32(
             target,
-            crate::context::TEXTURE_MAG_FILTER,
+            glow::TEXTURE_MAG_FILTER,
             interpolation_from(mag_filter),
         );
         context.tex_parameter_i32(
             target,
-            crate::context::TEXTURE_WRAP_S,
+            glow::TEXTURE_WRAP_S,
             wrapping_from(wrap_s),
         );
         context.tex_parameter_i32(
             target,
-            crate::context::TEXTURE_WRAP_T,
+            glow::TEXTURE_WRAP_T,
             wrapping_from(wrap_t),
         );
         if let Some(r) = wrap_r {
-            context.tex_parameter_i32(target, crate::context::TEXTURE_WRAP_R, wrapping_from(r));
+            context.tex_parameter_i32(target, glow::TEXTURE_WRAP_R, wrapping_from(r));
         }
     }
 }
@@ -243,16 +244,16 @@ fn calculate_number_of_mip_maps(
 
 fn wrapping_from(wrapping: Wrapping) -> i32 {
     (match wrapping {
-        Wrapping::Repeat => crate::context::REPEAT,
-        Wrapping::MirroredRepeat => crate::context::MIRRORED_REPEAT,
-        Wrapping::ClampToEdge => crate::context::CLAMP_TO_EDGE,
+        Wrapping::Repeat => glow::REPEAT,
+        Wrapping::MirroredRepeat => glow::MIRRORED_REPEAT,
+        Wrapping::ClampToEdge => glow::CLAMP_TO_EDGE,
     }) as i32
 }
 
 fn interpolation_from(interpolation: Interpolation) -> i32 {
     (match interpolation {
-        Interpolation::Nearest => crate::context::NEAREST,
-        Interpolation::Linear => crate::context::LINEAR,
+        Interpolation::Nearest => glow::NEAREST,
+        Interpolation::Linear => glow::LINEAR,
         _ => panic!("Can only sample textures using 'NEAREST' or 'LINEAR' interpolation"),
     }) as i32
 }

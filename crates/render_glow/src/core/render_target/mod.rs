@@ -3,32 +3,23 @@
 //!
 
 mod clear_state;
-#[doc(inline)]
-pub use clear_state::*;
-
 mod color_target;
-#[doc(inline)]
-pub use color_target::*;
-
 mod depth_target;
-#[doc(inline)]
-pub use depth_target::*;
-
 mod multisample;
-#[doc(inline)]
-pub use multisample::*;
-
 mod color_target_multisample;
-#[doc(inline)]
-pub use color_target_multisample::*;
-
 mod depth_target_multisample;
-#[doc(inline)]
+
+pub use clear_state::*;
+pub use color_target::*;
+pub use depth_target::*;
+pub use multisample::*;
+pub use color_target_multisample::*;
 pub use depth_target_multisample::*;
+
+use glow::{Framebuffer, HasContext};
 
 use crate::core::*;
 
-use crate::context::Framebuffer;
 ///
 /// Adds additional functionality to clear, read from and write to the screen (see [RenderTarget::screen]) or a color texture and
 /// a depth texture at the same time (see [RenderTarget::new]).
@@ -98,7 +89,7 @@ impl<'a> RenderTarget<'a> {
     ///
     pub fn clear_partially(&self, scissor_box: ScissorBox, clear_state: ClearState) -> &Self {
         self.context.set_scissor(scissor_box);
-        self.bind(crate::context::DRAW_FRAMEBUFFER);
+        self.bind(glow::DRAW_FRAMEBUFFER);
         clear_state.apply(&self.context);
         self
     }
@@ -115,7 +106,7 @@ impl<'a> RenderTarget<'a> {
     ///
     pub fn write_partially(&self, scissor_box: ScissorBox, render: impl FnOnce()) -> &Self {
         self.context.set_scissor(scissor_box);
-        self.bind(crate::context::DRAW_FRAMEBUFFER);
+        self.bind(glow::DRAW_FRAMEBUFFER);
         render();
         if let Some(ref color) = self.color {
             color.generate_mip_maps();
@@ -143,8 +134,8 @@ impl<'a> RenderTarget<'a> {
         if self.id.is_some() && self.color.is_none() {
             panic!("cannot read color from a render target without a color target");
         }
-        self.bind(crate::context::DRAW_FRAMEBUFFER);
-        self.bind(crate::context::READ_FRAMEBUFFER);
+        self.bind(glow::DRAW_FRAMEBUFFER);
+        self.bind(glow::READ_FRAMEBUFFER);
         let mut data_size = std::mem::size_of::<T>();
         // On web, the format needs to be RGBA if the data type is byte.
         if data_size / T::size() as usize == 1 {
@@ -160,7 +151,7 @@ impl<'a> RenderTarget<'a> {
                 scissor_box.height as i32,
                 format_from_data_type::<T>(),
                 T::data_type(),
-                crate::context::PixelPackData::Slice(&mut bytes),
+                glow::PixelPackData::Slice(&mut bytes),
             );
         }
         let mut pixels = from_byte_slice(&bytes).to_vec();
@@ -188,8 +179,8 @@ impl<'a> RenderTarget<'a> {
         if self.id.is_some() && self.depth.is_none() {
             panic!("cannot read depth from a render target without a depth target");
         }
-        self.bind(crate::context::DRAW_FRAMEBUFFER);
-        self.bind(crate::context::READ_FRAMEBUFFER);
+        self.bind(glow::DRAW_FRAMEBUFFER);
+        self.bind(glow::READ_FRAMEBUFFER);
         let mut pixels = vec![0u8; scissor_box.width as usize * scissor_box.height as usize * 4];
         unsafe {
             self.context.read_pixels(
@@ -197,9 +188,9 @@ impl<'a> RenderTarget<'a> {
                 scissor_box.y,
                 scissor_box.width as i32,
                 scissor_box.height as i32,
-                crate::context::DEPTH_COMPONENT,
-                crate::context::FLOAT,
-                crate::context::PixelPackData::Slice(&mut pixels),
+                glow::DEPTH_COMPONENT,
+                glow::FLOAT,
+                glow::PixelPackData::Slice(&mut pixels),
             );
         }
         from_byte_slice(&pixels).to_vec()
@@ -390,23 +381,23 @@ impl<'a> RenderTarget<'a> {
     }
 
     pub(in crate::core) fn blit_to(&self, target: &RenderTarget) {
-        self.bind(crate::context::DRAW_FRAMEBUFFER);
-        target.bind(crate::context::DRAW_FRAMEBUFFER);
+        self.bind(glow::DRAW_FRAMEBUFFER);
+        target.bind(glow::DRAW_FRAMEBUFFER);
         let target_is_screen = target.color.is_none() && target.depth.is_none();
         let mask = if self.color.is_some() && (target.color.is_some() || target_is_screen) {
-            let mut mask = crate::context::COLOR_BUFFER_BIT;
+            let mut mask = glow::COLOR_BUFFER_BIT;
             if self.depth.is_some() && (target.depth.is_some() || target_is_screen) {
-                mask |= crate::context::DEPTH_BUFFER_BIT;
+                mask |= glow::DEPTH_BUFFER_BIT;
             }
             mask
         } else if self.depth.is_some() && (target.depth.is_some() || target_is_screen) {
-            crate::context::DEPTH_BUFFER_BIT
+            glow::DEPTH_BUFFER_BIT
         } else {
             unreachable!()
         };
         unsafe {
             self.context
-                .bind_framebuffer(crate::context::READ_FRAMEBUFFER, self.id);
+                .bind_framebuffer(glow::READ_FRAMEBUFFER, self.id);
 
             self.context.blit_framebuffer(
                 0,
@@ -418,7 +409,7 @@ impl<'a> RenderTarget<'a> {
                 target.width as i32,
                 target.height as i32,
                 mask,
-                crate::context::NEAREST,
+                glow::NEAREST,
             );
         }
     }
@@ -480,7 +471,7 @@ fn size_with_mip(size: u32, mip: Option<u32>) -> u32 {
     }
 }
 
-fn new_framebuffer(context: &Context) -> crate::context::Framebuffer {
+fn new_framebuffer(context: &Context) -> glow::Framebuffer {
     unsafe {
         context
             .create_framebuffer()
@@ -492,7 +483,7 @@ fn new_framebuffer(context: &Context) -> crate::context::Framebuffer {
 fn multisample_sanity_check(context: &Context, number_of_samples: u32) {
     let max_samples: u32 = unsafe {
         context
-            .get_parameter_i32(crate::context::MAX_SAMPLES)
+            .get_parameter_i32(glow::MAX_SAMPLES)
             .try_into()
             .unwrap()
     };

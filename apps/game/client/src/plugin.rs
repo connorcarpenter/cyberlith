@@ -3,7 +3,7 @@ use bevy_ecs::system::{Commands, Res, ResMut, Resource};
 use bevy_log::info;
 use render_api::{
     shape, Assets, Camera, ClearColorConfig, ClearOperation, Color, Handle, Image, Mesh,
-    PointLight, PointLightBundle, RenderObjectBundle, RenderTarget, StandardMaterial, Transform,
+    PointLight, PointLightBundle, RenderObjectBundle, RenderTarget, Material, Transform,
     Window,
 };
 
@@ -20,7 +20,7 @@ pub fn setup(
     mut commands: Commands,
     window: Res<Window>,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut materials: ResMut<Assets<Material>>,
     mut images: ResMut<Assets<Image>>,
 ) {
     let width = window.resolution.physical_width();

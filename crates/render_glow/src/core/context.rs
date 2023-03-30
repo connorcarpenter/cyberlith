@@ -1,38 +1,38 @@
-use super::*;
+
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::RwLock;
 
-#[doc(hidden)]
-pub use crate::context::HasContext;
+use glow::HasContext;
+use super::*;
 
 ///
 /// Contains the low-level OpenGL/WebGL graphics context as well as other "global" variables.
 /// Implements Deref with the low-level graphics context as target, so you can call low-level functionality
-/// directly on this struct. Use the [context](crate::context) module to get access to low-level constants and structs.
+/// directly on this struct. Use the [context](glow) module to get access to low-level constants and structs.
 ///
 #[derive(Clone)]
 pub struct Context {
-    context: Arc<crate::context::Context>,
-    pub(super) vao: crate::context::VertexArray,
+    context: Arc<glow::Context>,
+    pub(super) vao: glow::VertexArray,
     programs: Arc<RwLock<HashMap<(String, String), Program>>>,
 }
 
 impl Context {
     ///
-    /// Creates a new mid-level context, used in this [core](crate::core) module, from a low-level OpenGL/WebGL context from the [context](crate::context) module.
+    /// Creates a new mid-level context, used in this [core](crate::core) module, from a low-level OpenGL/WebGL context from the [context](glow) module.
     /// This should only be called directly if you are creating a low-level context yourself (ie. not using the features in the [window](crate::window) module).
-    /// Since the content in the [context](crate::context) module is just a re-export of [glow](https://crates.io/crates/glow),
-    /// you can also call this method with a reference counter to a glow context created using glow and not the re-export in [context](crate::context).
+    /// Since the content in the [context](glow) module is just a re-export of [glow](https://crates.io/crates/glow),
+    /// you can also call this method with a reference counter to a glow context created using glow and not the re-export in [context](glow).
     ///
-    pub fn from_gl_context(context: Arc<crate::context::Context>) -> Result<Self, CoreError> {
+    pub fn from_gl_context(context: Arc<glow::Context>) -> Result<Self, CoreError> {
         unsafe {
             if !context.version().is_embedded {
                 // Enable seamless cube map textures - not available on OpenGL ES and WebGL
-                context.enable(crate::context::TEXTURE_CUBE_MAP_SEAMLESS);
+                context.enable(glow::TEXTURE_CUBE_MAP_SEAMLESS);
             }
-            context.pixel_store_i32(crate::context::UNPACK_ALIGNMENT, 1);
-            context.pixel_store_i32(crate::context::PACK_ALIGNMENT, 1);
+            context.pixel_store_i32(glow::UNPACK_ALIGNMENT, 1);
+            context.pixel_store_i32(glow::PACK_ALIGNMENT, 1);
         };
         let c = unsafe {
             // Create one Vertex Array Object which is then reused all the time.
@@ -76,7 +76,7 @@ impl Context {
     pub fn set_scissor(&self, scissor_box: ScissorBox) {
         unsafe {
             if scissor_box.width > 0 && scissor_box.height > 0 {
-                self.enable(crate::context::SCISSOR_TEST);
+                self.enable(glow::SCISSOR_TEST);
                 self.scissor(
                     scissor_box.x,
                     scissor_box.y,
@@ -84,7 +84,7 @@ impl Context {
                     scissor_box.height as i32,
                 );
             } else {
-                self.disable(crate::context::SCISSOR_TEST);
+                self.disable(glow::SCISSOR_TEST);
             }
         }
     }
@@ -110,19 +110,19 @@ impl Context {
         unsafe {
             match cull {
                 Cull::None => {
-                    self.disable(crate::context::CULL_FACE);
+                    self.disable(glow::CULL_FACE);
                 }
                 Cull::Back => {
-                    self.enable(crate::context::CULL_FACE);
-                    self.cull_face(crate::context::BACK);
+                    self.enable(glow::CULL_FACE);
+                    self.cull_face(glow::BACK);
                 }
                 Cull::Front => {
-                    self.enable(crate::context::CULL_FACE);
-                    self.cull_face(crate::context::FRONT);
+                    self.enable(glow::CULL_FACE);
+                    self.cull_face(glow::FRONT);
                 }
                 Cull::FrontAndBack => {
-                    self.enable(crate::context::CULL_FACE);
-                    self.cull_face(crate::context::FRONT_AND_BACK);
+                    self.enable(glow::CULL_FACE);
+                    self.cull_face(glow::FRONT_AND_BACK);
                 }
             }
         }
@@ -148,31 +148,31 @@ impl Context {
     ///
     pub fn set_depth_test(&self, depth_test: DepthTest) {
         unsafe {
-            self.enable(crate::context::DEPTH_TEST);
+            self.enable(glow::DEPTH_TEST);
             match depth_test {
                 DepthTest::Never => {
-                    self.depth_func(crate::context::NEVER);
+                    self.depth_func(glow::NEVER);
                 }
                 DepthTest::Less => {
-                    self.depth_func(crate::context::LESS);
+                    self.depth_func(glow::LESS);
                 }
                 DepthTest::Equal => {
-                    self.depth_func(crate::context::EQUAL);
+                    self.depth_func(glow::EQUAL);
                 }
                 DepthTest::LessOrEqual => {
-                    self.depth_func(crate::context::LEQUAL);
+                    self.depth_func(glow::LEQUAL);
                 }
                 DepthTest::Greater => {
-                    self.depth_func(crate::context::GREATER);
+                    self.depth_func(glow::GREATER);
                 }
                 DepthTest::NotEqual => {
-                    self.depth_func(crate::context::NOTEQUAL);
+                    self.depth_func(glow::NOTEQUAL);
                 }
                 DepthTest::GreaterOrEqual => {
-                    self.depth_func(crate::context::GEQUAL);
+                    self.depth_func(glow::GEQUAL);
                 }
                 DepthTest::Always => {
-                    self.depth_func(crate::context::ALWAYS);
+                    self.depth_func(glow::ALWAYS);
                 }
             }
         }
@@ -192,7 +192,7 @@ impl Context {
                 alpha_equation,
             } = blend
             {
-                self.enable(crate::context::BLEND);
+                self.enable(glow::BLEND);
                 self.blend_func_separate(
                     Self::blend_const_from_multiplier(source_rgb_multiplier),
                     Self::blend_const_from_multiplier(destination_rgb_multiplier),
@@ -204,33 +204,33 @@ impl Context {
                     Self::blend_const_from_equation(alpha_equation),
                 );
             } else {
-                self.disable(crate::context::BLEND);
+                self.disable(glow::BLEND);
             }
         }
     }
 
     fn blend_const_from_multiplier(multiplier: BlendMultiplierType) -> u32 {
         match multiplier {
-            BlendMultiplierType::Zero => crate::context::ZERO,
-            BlendMultiplierType::One => crate::context::ONE,
-            BlendMultiplierType::SrcColor => crate::context::SRC_COLOR,
-            BlendMultiplierType::OneMinusSrcColor => crate::context::ONE_MINUS_SRC_COLOR,
-            BlendMultiplierType::DstColor => crate::context::DST_COLOR,
-            BlendMultiplierType::OneMinusDstColor => crate::context::ONE_MINUS_DST_COLOR,
-            BlendMultiplierType::SrcAlpha => crate::context::SRC_ALPHA,
-            BlendMultiplierType::OneMinusSrcAlpha => crate::context::ONE_MINUS_SRC_ALPHA,
-            BlendMultiplierType::DstAlpha => crate::context::DST_ALPHA,
-            BlendMultiplierType::OneMinusDstAlpha => crate::context::ONE_MINUS_DST_ALPHA,
-            BlendMultiplierType::SrcAlphaSaturate => crate::context::SRC_ALPHA_SATURATE,
+            BlendMultiplierType::Zero => glow::ZERO,
+            BlendMultiplierType::One => glow::ONE,
+            BlendMultiplierType::SrcColor => glow::SRC_COLOR,
+            BlendMultiplierType::OneMinusSrcColor => glow::ONE_MINUS_SRC_COLOR,
+            BlendMultiplierType::DstColor => glow::DST_COLOR,
+            BlendMultiplierType::OneMinusDstColor => glow::ONE_MINUS_DST_COLOR,
+            BlendMultiplierType::SrcAlpha => glow::SRC_ALPHA,
+            BlendMultiplierType::OneMinusSrcAlpha => glow::ONE_MINUS_SRC_ALPHA,
+            BlendMultiplierType::DstAlpha => glow::DST_ALPHA,
+            BlendMultiplierType::OneMinusDstAlpha => glow::ONE_MINUS_DST_ALPHA,
+            BlendMultiplierType::SrcAlphaSaturate => glow::SRC_ALPHA_SATURATE,
         }
     }
     fn blend_const_from_equation(equation: BlendEquationType) -> u32 {
         match equation {
-            BlendEquationType::Add => crate::context::FUNC_ADD,
-            BlendEquationType::Subtract => crate::context::FUNC_SUBTRACT,
-            BlendEquationType::ReverseSubtract => crate::context::FUNC_REVERSE_SUBTRACT,
-            BlendEquationType::Min => crate::context::MIN,
-            BlendEquationType::Max => crate::context::MAX,
+            BlendEquationType::Add => glow::FUNC_ADD,
+            BlendEquationType::Subtract => glow::FUNC_SUBTRACT,
+            BlendEquationType::ReverseSubtract => glow::FUNC_REVERSE_SUBTRACT,
+            BlendEquationType::Min => glow::MIN,
+            BlendEquationType::Max => glow::MAX,
         }
     }
 
@@ -241,7 +241,7 @@ impl Context {
         self.set_cull(render_states.cull);
         self.set_write_mask(render_states.write_mask);
         if !render_states.write_mask.depth && render_states.depth_test == DepthTest::Always {
-            unsafe { self.disable(crate::context::DEPTH_TEST) }
+            unsafe { self.disable(glow::DEPTH_TEST) }
         } else {
             self.set_depth_test(render_states.depth_test);
         }
@@ -256,18 +256,18 @@ impl Context {
         self.framebuffer_check()?;
         unsafe {
             let e = self.get_error();
-            if e != crate::context::NO_ERROR {
+            if e != glow::NO_ERROR {
                 Err(CoreError::ContextError(
                     match e {
-                        crate::context::INVALID_ENUM => "Invalid enum",
-                        crate::context::INVALID_VALUE => "Invalid value",
-                        crate::context::INVALID_OPERATION => "Invalid operation",
-                        crate::context::INVALID_FRAMEBUFFER_OPERATION => {
+                        glow::INVALID_ENUM => "Invalid enum",
+                        glow::INVALID_VALUE => "Invalid value",
+                        glow::INVALID_OPERATION => "Invalid operation",
+                        glow::INVALID_FRAMEBUFFER_OPERATION => {
                             "Invalid framebuffer operation"
                         }
-                        crate::context::OUT_OF_MEMORY => "Out of memory",
-                        crate::context::STACK_OVERFLOW => "Stack overflow",
-                        crate::context::STACK_UNDERFLOW => "Stack underflow",
+                        glow::OUT_OF_MEMORY => "Out of memory",
+                        glow::STACK_OVERFLOW => "Stack overflow",
+                        glow::STACK_UNDERFLOW => "Stack underflow",
                         _ => "Unknown",
                     }
                     .to_string(),
@@ -279,32 +279,32 @@ impl Context {
 
     fn framebuffer_check(&self) -> Result<(), CoreError> {
         unsafe {
-            match self.check_framebuffer_status(crate::context::FRAMEBUFFER) {
-                crate::context::FRAMEBUFFER_COMPLETE => Ok(()),
-                crate::context::FRAMEBUFFER_INCOMPLETE_ATTACHMENT => Err(CoreError::ContextError(
+            match self.check_framebuffer_status(glow::FRAMEBUFFER) {
+                glow::FRAMEBUFFER_COMPLETE => Ok(()),
+                glow::FRAMEBUFFER_INCOMPLETE_ATTACHMENT => Err(CoreError::ContextError(
                     "FRAMEBUFFER_INCOMPLETE_ATTACHMENT".to_string(),
                 )),
-                crate::context::FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER => Err(CoreError::ContextError(
+                glow::FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER => Err(CoreError::ContextError(
                     "FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER".to_string(),
                 )),
-                crate::context::FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT => {
+                glow::FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT => {
                     Err(CoreError::ContextError(
                         "FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT".to_string(),
                     ))
                 }
-                crate::context::FRAMEBUFFER_UNSUPPORTED => Err(CoreError::ContextError(
+                glow::FRAMEBUFFER_UNSUPPORTED => Err(CoreError::ContextError(
                     "FRAMEBUFFER_UNSUPPORTED".to_string(),
                 )),
-                crate::context::FRAMEBUFFER_UNDEFINED => {
+                glow::FRAMEBUFFER_UNDEFINED => {
                     Err(CoreError::ContextError("FRAMEBUFFER_UNDEFINED".to_string()))
                 }
-                crate::context::FRAMEBUFFER_INCOMPLETE_READ_BUFFER => Err(CoreError::ContextError(
+                glow::FRAMEBUFFER_INCOMPLETE_READ_BUFFER => Err(CoreError::ContextError(
                     "FRAMEBUFFER_INCOMPLETE_READ_BUFFER".to_string(),
                 )),
-                crate::context::FRAMEBUFFER_INCOMPLETE_MULTISAMPLE => Err(CoreError::ContextError(
+                glow::FRAMEBUFFER_INCOMPLETE_MULTISAMPLE => Err(CoreError::ContextError(
                     "FRAMEBUFFER_INCOMPLETE_MULTISAMPLE".to_string(),
                 )),
-                crate::context::FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS => Err(
+                glow::FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS => Err(
                     CoreError::ContextError("FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS".to_string()),
                 ),
                 _ => Err(CoreError::ContextError(
@@ -325,7 +325,7 @@ impl std::fmt::Debug for Context {
 }
 
 impl std::ops::Deref for Context {
-    type Target = Arc<crate::context::Context>;
+    type Target = Arc<glow::Context>;
     fn deref(&self) -> &Self::Target {
         &self.context
     }

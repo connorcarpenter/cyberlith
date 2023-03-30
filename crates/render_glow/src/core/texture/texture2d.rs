@@ -1,3 +1,4 @@
+use glow::HasContext;
 
 use crate::core::texture::*;
 use crate::asset::{Texture2D as CpuTexture};
@@ -7,7 +8,7 @@ use crate::asset::{Texture2D as CpuTexture};
 ///
 pub struct Texture2D {
     context: Context,
-    id: crate::context::Texture,
+    id: glow::Texture,
     width: u32,
     height: u32,
     number_of_mip_maps: u32,
@@ -82,7 +83,7 @@ impl Texture2D {
         texture.bind();
         set_parameters(
             context,
-            crate::context::TEXTURE_2D,
+            glow::TEXTURE_2D,
             min_filter,
             mag_filter,
             if number_of_mip_maps == 1 {
@@ -96,7 +97,7 @@ impl Texture2D {
         );
         unsafe {
             context.tex_storage_2d(
-                crate::context::TEXTURE_2D,
+                glow::TEXTURE_2D,
                 number_of_mip_maps as i32,
                 T::internal_format(),
                 width as i32,
@@ -121,7 +122,7 @@ impl Texture2D {
         flip_y(&mut data, self.width as usize, self.height as usize);
         unsafe {
             self.context.tex_sub_image_2d(
-                crate::context::TEXTURE_2D,
+                glow::TEXTURE_2D,
                 0,
                 0,
                 0,
@@ -129,7 +130,7 @@ impl Texture2D {
                 self.height as i32,
                 format_from_data_type::<T>(),
                 T::data_type(),
-                crate::context::PixelUnpackData::Slice(to_byte_slice(&data)),
+                glow::PixelUnpackData::Slice(to_byte_slice(&data)),
             );
         }
         self.generate_mip_maps();
@@ -161,7 +162,7 @@ impl Texture2D {
         if self.number_of_mip_maps > 1 {
             self.bind();
             unsafe {
-                self.context.generate_mipmap(crate::context::TEXTURE_2D);
+                self.context.generate_mipmap(glow::TEXTURE_2D);
             }
         }
     }
@@ -169,9 +170,9 @@ impl Texture2D {
     pub(in crate::core) fn bind_as_color_target(&self, channel: u32, mip_level: u32) {
         unsafe {
             self.context.framebuffer_texture_2d(
-                crate::context::FRAMEBUFFER,
-                crate::context::COLOR_ATTACHMENT0 + channel,
-                crate::context::TEXTURE_2D,
+                glow::FRAMEBUFFER,
+                glow::COLOR_ATTACHMENT0 + channel,
+                glow::TEXTURE_2D,
                 Some(self.id),
                 mip_level as i32,
             );
@@ -180,7 +181,7 @@ impl Texture2D {
     pub(in crate::core) fn bind(&self) {
         unsafe {
             self.context
-                .bind_texture(crate::context::TEXTURE_2D, Some(self.id));
+                .bind_texture(glow::TEXTURE_2D, Some(self.id));
         }
     }
 }

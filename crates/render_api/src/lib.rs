@@ -8,7 +8,7 @@ mod resources;
 mod plugin;
 pub mod math;
 
-pub use assets::{shape, Assets, ClearColorConfig, Color, Handle, Image, Mesh, StandardMaterial};
+pub use assets::{shape, Assets, ClearColorConfig, Color, Handle, Image, Mesh, Material};
 pub use components::{
     Camera, ClearOperation, PointLight, PointLightBundle, RenderLayer, RenderLayers,
     RenderObjectBundle, RenderTarget, Transform,

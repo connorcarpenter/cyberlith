@@ -1,8 +1,10 @@
+use glow::HasContext;
+
 use crate::core::texture::*;
 
 pub struct DepthTexture2DMultisample {
     context: Context,
-    id: crate::context::Renderbuffer,
+    id: glow::Renderbuffer,
     width: u32,
     height: u32,
     number_of_samples: u32,
@@ -31,7 +33,7 @@ impl DepthTexture2DMultisample {
         // CHECK: Omitted `set_parameters` since neither filtering, nor mipmap levels, nor clamping makes sense for multisampled textures.
         unsafe {
             context.renderbuffer_storage_multisample(
-                crate::context::RENDERBUFFER,
+                glow::RENDERBUFFER,
                 number_of_samples as i32,
                 T::internal_format(),
                 width as i32,
@@ -59,9 +61,9 @@ impl DepthTexture2DMultisample {
     pub(in crate::core) fn bind_as_depth_target(&self) {
         unsafe {
             self.context.framebuffer_renderbuffer(
-                crate::context::FRAMEBUFFER,
-                crate::context::DEPTH_ATTACHMENT,
-                crate::context::RENDERBUFFER,
+                glow::FRAMEBUFFER,
+                glow::DEPTH_ATTACHMENT,
+                glow::RENDERBUFFER,
                 Some(self.id),
             );
         }
@@ -70,7 +72,7 @@ impl DepthTexture2DMultisample {
     pub(in crate::core) fn bind(&self) {
         unsafe {
             self.context
-                .bind_renderbuffer(crate::context::RENDERBUFFER, Some(self.id));
+                .bind_renderbuffer(glow::RENDERBUFFER, Some(self.id));
         }
     }
 }

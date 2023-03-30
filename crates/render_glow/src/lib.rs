@@ -4,7 +4,6 @@ extern crate cfg_if;
 mod bevy;
 pub use bevy::*;
 
-pub mod context;
 pub mod core;
 pub mod renderer;
 pub mod window;

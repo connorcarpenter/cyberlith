@@ -1,8 +1,10 @@
+use glow::HasContext;
+
 use crate::core::texture::*;
 
 pub struct Texture2DMultisample {
     context: Context,
-    id: crate::context::Renderbuffer,
+    id: glow::Renderbuffer,
     width: u32,
     height: u32,
     number_of_samples: u32,
@@ -30,7 +32,7 @@ impl Texture2DMultisample {
         texture.bind();
         unsafe {
             context.renderbuffer_storage_multisample(
-                crate::context::RENDERBUFFER,
+                glow::RENDERBUFFER,
                 number_of_samples as i32,
                 T::internal_format(),
                 width as i32,
@@ -58,9 +60,9 @@ impl Texture2DMultisample {
     pub(in crate::core) fn bind_as_color_target(&self, channel: u32) {
         unsafe {
             self.context.framebuffer_renderbuffer(
-                crate::context::FRAMEBUFFER,
-                crate::context::COLOR_ATTACHMENT0 + channel,
-                crate::context::RENDERBUFFER,
+                glow::FRAMEBUFFER,
+                glow::COLOR_ATTACHMENT0 + channel,
+                glow::RENDERBUFFER,
                 Some(self.id),
             );
         }
@@ -68,7 +70,7 @@ impl Texture2DMultisample {
     pub(in crate::core) fn bind(&self) {
         unsafe {
             self.context
-                .bind_renderbuffer(crate::context::RENDERBUFFER, Some(self.id));
+                .bind_renderbuffer(glow::RENDERBUFFER, Some(self.id));
         }
     }
 }

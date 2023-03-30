@@ -8,19 +8,11 @@
 mod gm;
 mod model;
 mod instanced_model;
-mod skybox;
-mod imposters;
-mod terrain;
-mod water;
 mod axes;
 
 pub use gm::*;
 pub use model::*;
 pub use instanced_model::*;
-pub use skybox::*;
-pub use imposters::*;
-pub use terrain::*;
-pub use water::*;
 pub use axes::*;
 
 use crate::core::*;

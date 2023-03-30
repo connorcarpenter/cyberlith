@@ -1,3 +1,5 @@
+use glow::HasContext;
+
 use crate::asset::{Texture3D as CpuTexture3D};
 use crate::core::texture::*;
 
@@ -6,7 +8,7 @@ use crate::core::texture::*;
 ///
 pub struct Texture3D {
     context: Context,
-    id: crate::context::Texture,
+    id: glow::Texture,
     width: u32,
     height: u32,
     depth: u32,
@@ -86,7 +88,7 @@ impl Texture3D {
         texture.bind();
         set_parameters(
             context,
-            crate::context::TEXTURE_3D,
+            glow::TEXTURE_3D,
             min_filter,
             mag_filter,
             if number_of_mip_maps == 1 {
@@ -100,7 +102,7 @@ impl Texture3D {
         );
         unsafe {
             context.tex_storage_3d(
-                crate::context::TEXTURE_3D,
+                glow::TEXTURE_3D,
                 number_of_mip_maps as i32,
                 T::internal_format(),
                 width as i32,
@@ -130,7 +132,7 @@ impl Texture3D {
         self.bind();
         unsafe {
             self.context.tex_sub_image_3d(
-                crate::context::TEXTURE_3D,
+                glow::TEXTURE_3D,
                 0,
                 0,
                 0,
@@ -140,7 +142,7 @@ impl Texture3D {
                 self.depth as i32,
                 format_from_data_type::<T>(),
                 T::data_type(),
-                crate::context::PixelUnpackData::Slice(to_byte_slice(data)),
+                glow::PixelUnpackData::Slice(to_byte_slice(data)),
             );
         }
         self.generate_mip_maps();
@@ -165,14 +167,14 @@ impl Texture3D {
         if self.number_of_mip_maps > 1 {
             self.bind();
             unsafe {
-                self.context.generate_mipmap(crate::context::TEXTURE_3D);
+                self.context.generate_mipmap(glow::TEXTURE_3D);
             }
         }
     }
     pub(in crate::core) fn bind(&self) {
         unsafe {
             self.context
-                .bind_texture(crate::context::TEXTURE_3D, Some(self.id));
+                .bind_texture(glow::TEXTURE_3D, Some(self.id));
         }
     }
 }

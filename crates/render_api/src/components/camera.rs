@@ -49,7 +49,6 @@ pub enum RenderTarget {
 }
 
 // Clear Operation
-#[derive(Default)]
 pub struct ClearOperation {
     pub red: Option<f32>,
     pub green: Option<f32>,
@@ -66,6 +65,18 @@ impl ClearOperation {
             blue: None,
             alpha: None,
             depth: None,
+        }
+    }
+}
+
+impl Default for ClearOperation {
+    fn default() -> Self {
+        Self {
+            red: Some(0.0),
+            green: Some(1.0),
+            blue: Some(0.0),
+            alpha: Some(1.0),
+            depth: Some(1.0),
         }
     }
 }

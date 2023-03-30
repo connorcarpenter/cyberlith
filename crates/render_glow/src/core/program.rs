@@ -1,6 +1,10 @@
-use crate::core::*;
+
 use std::collections::HashMap;
 use std::sync::RwLock;
+
+use glow::HasContext;
+
+use crate::core::*;
 
 ///
 /// A shader program consisting of a programmable vertex shader followed by a programmable fragment shader.
@@ -10,10 +14,10 @@ use std::sync::RwLock;
 ///
 pub struct Program {
     context: Context,
-    id: crate::context::Program,
+    id: glow::Program,
     attributes: HashMap<String, u32>,
     textures: RwLock<HashMap<String, u32>>,
-    uniforms: HashMap<String, crate::context::UniformLocation>,
+    uniforms: HashMap<String, glow::UniformLocation>,
     uniform_blocks: RwLock<HashMap<String, (u32, u32)>>,
 }
 
@@ -28,10 +32,10 @@ impl Program {
     ) -> Result<Self, CoreError> {
         unsafe {
             let vert_shader = context
-                .create_shader(crate::context::VERTEX_SHADER)
+                .create_shader(glow::VERTEX_SHADER)
                 .expect("Failed creating vertex shader");
             let frag_shader = context
-                .create_shader(crate::context::FRAGMENT_SHADER)
+                .create_shader(glow::FRAGMENT_SHADER)
                 .expect("Failed creating fragment shader");
 
             let header: &str = if context.version().is_embedded {
@@ -96,7 +100,7 @@ impl Program {
             let num_attribs = context.get_active_attributes(id);
             let mut attributes = HashMap::new();
             for i in 0..num_attribs {
-                if let Some(crate::context::ActiveAttribute { name, .. }) =
+                if let Some(glow::ActiveAttribute { name, .. }) =
                     context.get_active_attribute(id, i)
                 {
                     let location = context.get_attrib_location(id, &name).unwrap_or_else(|| {
@@ -114,7 +118,7 @@ impl Program {
             let num_uniforms = context.get_active_uniforms(id);
             let mut uniforms = HashMap::new();
             for i in 0..num_uniforms {
-                if let Some(crate::context::ActiveUniform { name, .. }) =
+                if let Some(glow::ActiveUniform { name, .. }) =
                     context.get_active_uniform(id, i)
                 {
                     if let Some(location) = context.get_uniform_location(id, &name) {
@@ -178,7 +182,7 @@ impl Program {
         self.unuse_program();
     }
 
-    fn get_uniform_location(&self, name: &str) -> &crate::context::UniformLocation {
+    fn get_uniform_location(&self, name: &str) -> &glow::UniformLocation {
         self.use_program();
         self.uniforms.get(name).unwrap_or_else(|| {
             panic!(
@@ -289,7 +293,7 @@ impl Program {
         self.use_uniform(name, index as i32);
         unsafe {
             self.context
-                .active_texture(crate::context::TEXTURE0 + index);
+                .active_texture(glow::TEXTURE0 + index);
         }
         index
     }
@@ -314,7 +318,7 @@ impl Program {
             self.context.uniform_block_binding(self.id, location, index);
             buffer.bind(index);
             self.context
-                .bind_buffer(crate::context::UNIFORM_BUFFER, None);
+                .bind_buffer(glow::UNIFORM_BUFFER, None);
         }
     }
 
@@ -334,10 +338,10 @@ impl Program {
             unsafe {
                 self.context.bind_vertex_array(Some(self.context.vao));
                 self.context.enable_vertex_attrib_array(loc);
-                if buffer.data_type() == crate::context::UNSIGNED_SHORT
-                    || buffer.data_type() == crate::context::SHORT
-                    || buffer.data_type() == crate::context::UNSIGNED_INT
-                    || buffer.data_type() == crate::context::INT
+                if buffer.data_type() == glow::UNSIGNED_SHORT
+                    || buffer.data_type() == glow::SHORT
+                    || buffer.data_type() == glow::UNSIGNED_INT
+                    || buffer.data_type() == glow::INT
                 {
                     self.context.vertex_attrib_pointer_i32(
                         loc,
@@ -357,7 +361,7 @@ impl Program {
                     );
                 }
                 self.context.vertex_attrib_divisor(loc, 0);
-                self.context.bind_buffer(crate::context::ARRAY_BUFFER, None);
+                self.context.bind_buffer(glow::ARRAY_BUFFER, None);
             }
             self.unuse_program();
         }
@@ -379,10 +383,10 @@ impl Program {
             unsafe {
                 self.context.bind_vertex_array(Some(self.context.vao));
                 self.context.enable_vertex_attrib_array(loc);
-                if buffer.data_type() == crate::context::UNSIGNED_SHORT
-                    || buffer.data_type() == crate::context::SHORT
-                    || buffer.data_type() == crate::context::UNSIGNED_INT
-                    || buffer.data_type() == crate::context::INT
+                if buffer.data_type() == glow::UNSIGNED_SHORT
+                    || buffer.data_type() == glow::SHORT
+                    || buffer.data_type() == glow::UNSIGNED_INT
+                    || buffer.data_type() == glow::INT
                 {
                     self.context.vertex_attrib_pointer_i32(
                         loc,
@@ -402,7 +406,7 @@ impl Program {
                     );
                 }
                 self.context.vertex_attrib_divisor(loc, 1);
-                self.context.bind_buffer(crate::context::ARRAY_BUFFER, None);
+                self.context.bind_buffer(glow::ARRAY_BUFFER, None);
             }
             self.unuse_program();
         }
@@ -420,7 +424,7 @@ impl Program {
         self.use_program();
         unsafe {
             self.context
-                .draw_arrays(crate::context::TRIANGLES, 0, count as i32);
+                .draw_arrays(glow::TRIANGLES, 0, count as i32);
             for location in self.attributes.values() {
                 self.context.disable_vertex_attrib_array(*location);
             }
@@ -450,13 +454,13 @@ impl Program {
         self.use_program();
         unsafe {
             self.context.draw_arrays_instanced(
-                crate::context::TRIANGLES,
+                glow::TRIANGLES,
                 0,
                 count as i32,
                 instance_count as i32,
             );
             self.context
-                .bind_buffer(crate::context::ELEMENT_ARRAY_BUFFER, None);
+                .bind_buffer(glow::ELEMENT_ARRAY_BUFFER, None);
             for location in self.attributes.values() {
                 self.context.disable_vertex_attrib_array(*location);
             }
@@ -509,13 +513,13 @@ impl Program {
         element_buffer.bind();
         unsafe {
             self.context.draw_elements(
-                crate::context::TRIANGLES,
+                glow::TRIANGLES,
                 count as i32,
                 element_buffer.data_type(),
                 first as i32,
             );
             self.context
-                .bind_buffer(crate::context::ELEMENT_ARRAY_BUFFER, None);
+                .bind_buffer(glow::ELEMENT_ARRAY_BUFFER, None);
 
             for location in self.attributes.values() {
                 self.context.disable_vertex_attrib_array(*location);
@@ -570,14 +574,14 @@ impl Program {
         element_buffer.bind();
         unsafe {
             self.context.draw_elements_instanced(
-                crate::context::TRIANGLES,
+                glow::TRIANGLES,
                 count as i32,
                 element_buffer.data_type(),
                 first as i32,
                 instance_count as i32,
             );
             self.context
-                .bind_buffer(crate::context::ELEMENT_ARRAY_BUFFER, None);
+                .bind_buffer(glow::ELEMENT_ARRAY_BUFFER, None);
             for location in self.attributes.values() {
                 self.context.disable_vertex_attrib_array(*location);
             }
