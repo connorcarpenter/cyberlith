@@ -9,8 +9,7 @@ pub use point_cloud::*;
 pub use tri_mesh::*;
 
 use cgmath::*;
-
-use crate::base::prelude::*;
+use crate::base::{AxisAlignedBoundingBox, Vec3};
 
 ///
 /// A CPU-side version of a geometry.

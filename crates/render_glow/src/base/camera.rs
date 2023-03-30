@@ -1,6 +1,6 @@
 use cgmath::*;
 
-use super::prelude::*;
+use super::*;
 
 ///
 /// Defines the part of the screen/render target that is rendered to.

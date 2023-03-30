@@ -1,5 +1,7 @@
-use crate::base::{prelude::*, Error, Indices, Positions, Result};
+
 use cgmath::*;
+
+use crate::base::{AxisAlignedBoundingBox, Color, Error, Indices, Mat4, Positions, Result, Vec2, Vec3, Vec4};
 
 ///
 /// A CPU-side version of a triangle mesh.
