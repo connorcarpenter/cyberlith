@@ -4,7 +4,7 @@ use crate::base::{
 use crate::renderer::*;
 
 ///
-/// Part of an [InstancedModel] consisting of a [InstancedMesh], some type of [material] and a set of possible animations.
+/// Part of an [InstancedModel] consisting of a [InstancedMesh], some type of [material]
 ///
 pub struct InstancedModelPart<M: Material> {
     gm: Gm<InstancedMesh, M>,

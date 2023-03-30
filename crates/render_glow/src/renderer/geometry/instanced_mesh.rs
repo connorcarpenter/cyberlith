@@ -19,7 +19,6 @@ pub struct InstancedMesh {
     aabb_local: AxisAlignedBoundingBox,
     transformation: Mat4,
     current_transformation: Mat4,
-    animation: Option<Box<dyn Fn(f32) -> Mat4 + Send + Sync>>,
     instance_count: u32,
     instances: Instances,
 }
@@ -40,7 +39,6 @@ impl InstancedMesh {
             aabb_local: aabb,
             transformation: Mat4::identity(),
             current_transformation: Mat4::identity(),
-            animation: None,
             instance_count: 0,
             instances: instances.clone(),
         };
@@ -62,15 +60,6 @@ impl InstancedMesh {
     pub fn set_transformation(&mut self, transformation: Mat4) {
         self.transformation = transformation;
         self.current_transformation = transformation;
-    }
-
-    ///
-    /// Specifies a function which takes a time parameter as input and returns a transformation that should be applied to this mesh at the given time.
-    /// To actually animate this instanced mesh, call [Geometry::animate] at each frame which in turn evaluates the animation function defined by this method.
-    /// This transformation is applied first, then the local to world transformation defined by [Self::set_transformation].
-    ///
-    pub fn set_animation(&mut self, animation: impl Fn(f32) -> Mat4 + Send + Sync + 'static) {
-        self.animation = Some(Box::new(animation));
     }
 
     /// Returns the number of instances that is rendered.
