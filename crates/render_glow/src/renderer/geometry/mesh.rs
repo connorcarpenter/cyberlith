@@ -1,6 +1,9 @@
-use crate::core::*;
-use crate::renderer::*;
-use render_api::{Transform, base::{AxisAlignedBoundingBox, Mat3, Mat4, TriMesh}};
+use render_api::{
+    base::{AxisAlignedBoundingBox, Mat4},
+    Transform,
+};
+
+use crate::{core::*, renderer::*};
 
 use super::BaseMesh;
 
@@ -13,33 +16,11 @@ pub struct Mesh<'a> {
 }
 
 impl<'a> Mesh<'a> {
-    ///
-    /// Creates a new triangle mesh from the given [TriMesh].
-    /// All data in the [TriMesh] is transfered to the GPU, so make sure to remove all unnecessary data from the [TriMesh] before calling this method.
-    ///
-    pub fn new(context: &Context, cpu_mesh: &TriMesh) -> Self {
-        todo!();
-    }
-
     pub fn compose(base_mesh: &'a BaseMesh, transform: &Transform) -> Self {
         Self {
             base_mesh,
             transform: transform.to_mat4(),
         }
-    }
-
-    ///
-    /// Returns the local to world transformation applied to this mesh.
-    ///
-    pub fn transform(&self) -> Mat4 {
-        self.transform
-    }
-
-    ///
-    /// Set the local to world transformation applied to this mesh.
-    ///
-    pub fn set_transform(&mut self, transformation: Mat4) {
-        self.transform = transformation;
     }
 
     fn draw(
@@ -109,7 +90,8 @@ impl<'a> Geometry for Mesh<'a> {
     ) {
         let fragment_shader = material.fragment_shader(lights);
         let vertex_shader_source = self.vertex_shader_source(fragment_shader.attributes);
-        self.base_mesh.context
+        self.base_mesh
+            .context
             .program(vertex_shader_source, fragment_shader.source, |program| {
                 material.use_uniforms(program, camera, lights);
                 self.draw(
@@ -132,7 +114,8 @@ impl<'a> Geometry for Mesh<'a> {
     ) {
         let fragment_shader = material.fragment_shader(lights, color_texture, depth_texture);
         let vertex_shader_source = self.vertex_shader_source(fragment_shader.attributes);
-        self.base_mesh.context
+        self.base_mesh
+            .context
             .program(vertex_shader_source, fragment_shader.source, |program| {
                 material.use_uniforms(program, camera, lights, color_texture, depth_texture);
                 self.draw(

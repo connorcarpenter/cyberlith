@@ -1,4 +1,5 @@
 use cgmath::*;
+use render_api::Attenuation;
 
 use crate::core::*;
 use crate::renderer::*;

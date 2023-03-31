@@ -27,7 +27,7 @@ pub use scissor_box::*;
 pub use texture::*;
 pub use uniform::*;
 
-use render_api::base::Viewport;
+use render_api::base::{CubeMapSide, Viewport};
 
 ///
 /// Error in the [core](crate::core) module.

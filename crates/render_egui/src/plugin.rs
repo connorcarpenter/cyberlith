@@ -1,14 +1,6 @@
-use std::{collections::HashMap, default::Default};
+use std::default::Default;
 
 use bevy_app::{App, Plugin};
-use bevy_ecs::{
-    prelude::Resource,
-    system::{ResMut, SystemParam},
-};
-
-use egui;
-
-use render_api::Handle;
 
 use crate::{EguiContext, EguiUserTextures};
 

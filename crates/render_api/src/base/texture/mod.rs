@@ -4,9 +4,11 @@
 
 mod texture2d;
 mod texture3d;
+mod texture_cube_map;
 
 pub use texture2d::*;
 pub use texture3d::*;
+pub use texture_cube_map::*;
 
 use half::*;
 

@@ -1,6 +1,9 @@
 use bevy_app::{App, Plugin};
 use bevy_ecs::query::With;
-use bevy_ecs::{component::Component, system::{Commands, Local, Query, Res, ResMut, Resource}};
+use bevy_ecs::{
+    component::Component,
+    system::{Commands, Local, Query, Res, ResMut, Resource},
+};
 use bevy_log::info;
 use render_api::{
     base::{Camera, Color, PbrMaterial, Texture2D, TriMesh, Vec3, Viewport},
@@ -47,12 +50,14 @@ pub fn setup(
         ..Default::default()
     });
     // cube
-    commands.spawn(RenderObjectBundle {
-        mesh: meshes.add(TriMesh::from(shape::Cube { size: 10.0 })),
-        material: materials.add(Color::from_rgb_f32(0.8, 0.7, 0.6).into()),
-        transform: Transform::from_xyz(0.0, 5.0, 0.0),
-        ..Default::default()
-    }).insert((CubeMarker));
+    commands
+        .spawn(RenderObjectBundle {
+            mesh: meshes.add(TriMesh::from(shape::Cube { size: 10.0 })),
+            material: materials.add(Color::from_rgb_f32(0.8, 0.7, 0.6).into()),
+            transform: Transform::from_xyz(0.0, 5.0, 0.0),
+            ..Default::default()
+        })
+        .insert(CubeMarker);
     // light
     commands.spawn(PointLightBundle {
         point_light: PointLight {
@@ -63,23 +68,21 @@ pub fn setup(
         ..Default::default()
     });
     // camera
-    commands.spawn(
-        (CameraComponent::new(
-            Camera::new_orthographic(
-                Viewport::new_at_origin(width, height),
-                Vec3::new(50.0, 50.0, 50.0),
-                Vec3::new(0.0, 0.0, 0.0),
-                Vec3::new(0.0, 1.0, 0.0),
-                50.0,
-                0.0,
-                1000.0,
-            ),
-            // render before the "main pass" camera
-            0,
-            ClearOperation::default(),
-            RenderTarget::Image(texture_handle),
-        )),
-    );
+    commands.spawn(CameraComponent::new(
+        Camera::new_orthographic(
+            Viewport::new_at_origin(width, height),
+            Vec3::new(50.0, 50.0, 50.0),
+            Vec3::new(0.0, 0.0, 0.0),
+            Vec3::new(0.0, 1.0, 0.0),
+            50.0,
+            0.0,
+            1000.0,
+        ),
+        // render before the "main pass" camera
+        0,
+        ClearOperation::default(),
+        RenderTarget::Image(texture_handle),
+    ));
 }
 
 fn step(mut cube_q: Query<&mut Transform, With<CubeMarker>>, mut rotation: Local<f32>) {

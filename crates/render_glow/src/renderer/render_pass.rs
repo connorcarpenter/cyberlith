@@ -1,10 +1,12 @@
-use crate::asset_impls::AssetImpls;
-use crate::core::{ColorTexture, DepthTexture};
-use crate::renderer::{BaseMesh, Geometry, Light, Material, MaterialType, Mesh, Object, PostMaterial};
-use render_api::base::AxisAlignedBoundingBox;
 use render_api::{
-    base::{Camera, PbrMaterial, TriMesh},
-    Assets, CameraComponent, Handle, Transform,
+    base::{AxisAlignedBoundingBox, Camera, PbrMaterial, TriMesh},
+    Handle, Transform,
+};
+
+use crate::{
+    asset_impls::AssetImpls,
+    core::{ColorTexture, DepthTexture},
+    renderer::{BaseMesh, Geometry, Light, Material, MaterialType, Mesh, Object, PostMaterial},
 };
 
 // Render Pass
@@ -81,11 +83,11 @@ impl<'a> Geometry for ActiveRenderObject<'a> {
 
     fn render_with_post_material(
         &self,
-        material: &dyn PostMaterial,
-        camera: &Camera,
-        lights: &[&dyn Light],
-        color_texture: Option<ColorTexture>,
-        depth_texture: Option<DepthTexture>,
+        _material: &dyn PostMaterial,
+        _camera: &Camera,
+        _lights: &[&dyn Light],
+        _color_texture: Option<ColorTexture>,
+        _depth_texture: Option<DepthTexture>,
     ) {
         todo!()
     }

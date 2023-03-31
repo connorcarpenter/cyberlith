@@ -2,7 +2,7 @@ mod camera;
 pub use camera::{CameraComponent, ClearOperation, RenderTarget};
 
 mod light;
-pub use light::{PointLight, PointLightBundle};
+pub use light::{AmbientLight, Attenuation, DirectionalLight, PointLight, PointLightBundle};
 
 mod object;
 pub use object::RenderObjectBundle;

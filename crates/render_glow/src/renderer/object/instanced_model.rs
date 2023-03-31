@@ -123,7 +123,7 @@ impl<M: Material + FromPbrMaterial + Clone + Default> InstancedModel<M> {
                 gms.push(InstancedModelPart { gm });
             }
         }
-        let mut model = Self(gms);
+        let model = Self(gms);
         Ok(model)
     }
 }

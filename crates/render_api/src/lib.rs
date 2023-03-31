@@ -1,6 +1,3 @@
-#[macro_use]
-extern crate cfg_if;
-
 mod assets;
 pub mod base;
 mod base_set;
@@ -12,8 +9,8 @@ pub mod shape;
 pub use assets::{Assets, Handle};
 pub use base_set::RenderSet;
 pub use components::{
-    CameraComponent, ClearOperation, PointLight, PointLightBundle, RenderLayer, RenderLayers,
-    RenderObjectBundle, RenderTarget, Transform,
+    Attenuation, CameraComponent, ClearOperation, PointLight, PointLightBundle, RenderLayer,
+    RenderLayers, RenderObjectBundle, RenderTarget, Transform,
 };
 pub use plugin::RenderApiPlugin;
 pub use resources::Window;

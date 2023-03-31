@@ -1,6 +1,5 @@
 use std::{collections::HashMap, default::Default};
 
-use bevy_app::{App, Plugin};
 use bevy_ecs::{
     prelude::Resource,
     system::{ResMut, SystemParam},
@@ -8,8 +7,7 @@ use bevy_ecs::{
 
 use egui;
 
-use render_api::base::Texture2D;
-use render_api::Handle;
+use render_api::{base::Texture2D, Handle};
 
 // Contexts
 #[derive(SystemParam)]

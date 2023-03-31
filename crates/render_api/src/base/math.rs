@@ -3,10 +3,7 @@
 //!
 
 use cgmath::{
-    dot, frustum, ortho, perspective, vec2, vec3, vec4, Angle, Deg, EuclideanSpace, InnerSpace,
-    Matrix, Matrix2, Matrix3, Matrix4, MetricSpace, One, Point2, Point3, Quaternion, Rad, Rotation,
-    Rotation2, Rotation3, SquareMatrix, Transform, Transform2, Transform3, Vector2, Vector3,
-    Vector4, VectorSpace, Zero,
+    Deg, Matrix2, Matrix3, Matrix4, Quaternion, Rad, Rotation, Vector2, Vector3, Vector4,
 };
 
 ///

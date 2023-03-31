@@ -1,7 +1,6 @@
 use cgmath::MetricSpace;
 
 use super::*;
-use crate::core::*;
 use render_api::base::*;
 
 ///

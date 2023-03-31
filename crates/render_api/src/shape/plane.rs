@@ -27,7 +27,9 @@ impl From<Plane> for TriMesh {
             vertex.z *= half_size;
         }
 
-        tri_mesh.transform(&Transform::from_axis_angle(Vec3::new(1.0, 0.0, 0.0), 90.0).to_mat4()).unwrap();
+        tri_mesh
+            .transform(&Transform::from_axis_angle(Vec3::new(1.0, 0.0, 0.0), 90.0).to_mat4())
+            .unwrap();
 
         tri_mesh
     }

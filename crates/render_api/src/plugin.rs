@@ -5,7 +5,6 @@ use crate::{
     assets::Assets,
     base::{PbrMaterial, Texture2D, TriMesh},
     base_set::RenderSet,
-    Window,
 };
 
 pub struct RenderApiPlugin;

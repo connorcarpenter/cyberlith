@@ -1,16 +1,16 @@
 use bevy_ecs::{
     entity::Entity,
-    system::{NonSendMut, Query, Res, ResMut},
+    system::{NonSendMut, Query, Res},
 };
 
 use render_api::{
     base::{PbrMaterial, TriMesh},
-    Assets, CameraComponent, Handle, RenderLayer, RenderLayers, Transform,
+    CameraComponent, Handle, RenderLayer, RenderLayers, Transform,
 };
 
 use crate::{
     asset_impls::AssetImpls,
-    renderer::{BaseMesh, Geometry, Material, Object, RenderObject, RenderPass},
+    renderer::{BaseMesh, Material, RenderObject, RenderPass},
     window::FrameInput,
 };
 

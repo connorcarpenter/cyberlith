@@ -1,4 +1,5 @@
 use super::*;
+use render_api::base::CubeMapSide;
 
 ///
 /// Adds additional functionality to clear, read from and write to a texture.

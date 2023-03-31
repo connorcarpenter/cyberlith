@@ -1,6 +1,6 @@
 use crate::core::*;
 use crate::renderer::*;
-use render_api::base::*;
+use render_api::base::Color;
 
 ///
 /// A light which shines on all surfaces.

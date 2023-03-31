@@ -5,6 +5,8 @@ use std::sync::RwLock;
 use super::*;
 use glow::HasContext;
 
+pub static CONTEXT: Option<Context> = None;
+
 ///
 /// Contains the low-level OpenGL/WebGL graphics context as well as other "global" variables.
 /// Implements Deref with the low-level graphics context as target, so you can call low-level functionality

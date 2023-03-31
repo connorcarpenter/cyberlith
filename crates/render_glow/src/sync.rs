@@ -1,22 +1,19 @@
 use bevy_app::{App, Plugin};
-use bevy_ecs::system::NonSendMut;
 use bevy_ecs::{
     change_detection::DetectChanges,
     schedule::IntoSystemConfig,
-    system::{Res, ResMut},
+    system::{NonSendMut, ResMut},
 };
 
 use render_api::{
-    base::Texture2D,
-    base::{PbrMaterial as ApiMaterial, Texture2D as ApiImage, TriMesh as ApiMesh},
+    base::{PbrMaterial as ApiMaterial, TriMesh as ApiMesh},
     Assets, RenderSet,
 };
 
-use crate::renderer::{BaseMesh, ColorMaterial};
-use crate::window::FrameInput;
 use crate::{
     asset_impls::AssetImpls,
-    renderer::{Geometry, Material, Mesh},
+    renderer::{BaseMesh, ColorMaterial, Material},
+    window::FrameInput,
 };
 
 pub struct SyncPlugin;

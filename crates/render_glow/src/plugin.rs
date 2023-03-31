@@ -1,7 +1,7 @@
-use bevy_app::{App, CoreSet, Plugin};
-use bevy_ecs::schedule::{apply_system_buffers, IntoSystemConfig, IntoSystemSetConfig};
+use bevy_app::{App, Plugin};
+use bevy_ecs::schedule::IntoSystemConfig;
 
-use render_api::{Assets, RenderSet};
+use render_api::RenderSet;
 
 use crate::{draw::draw, runner::three_d_runner, sync::SyncPlugin};
 

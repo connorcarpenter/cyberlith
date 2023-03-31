@@ -27,7 +27,7 @@ use glow::HasContext;
 use half::*;
 
 use render_api::base::{
-    Color, Interpolation, Quat, Texture2D as CpuTexture, TextureData, Wrapping,
+    Color, CubeMapSide, Interpolation, Quat, Texture2D as CpuTexture, TextureData, Wrapping,
 };
 
 /// The basic data type used for each channel of each pixel in a texture.

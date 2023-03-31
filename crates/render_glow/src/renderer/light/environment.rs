@@ -1,10 +1,11 @@
 use half::*;
 
-use crate::core::*;
-use crate::renderer::*;
 use render_api::base::{
-    GeometryFunction, Interpolation, LightingModel, NormalDistributionFunction, Viewport, Wrapping,
+    CubeMapSide, GeometryFunction, Interpolation, LightingModel, NormalDistributionFunction,
+    Viewport, Wrapping,
 };
+
+use crate::core::*;
 
 ///
 /// Precalculations of light shining from an environment map (known as image based lighting - IBL).

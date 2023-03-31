@@ -1,8 +1,7 @@
 use std::default::Default;
 
-use bevy_ecs::{bundle::Bundle, component::Component};
+use bevy_ecs::component::Component;
 
-use super::transform::Transform;
 use crate::{assets::Handle, base::Camera, base::Texture2D};
 
 // Camera
