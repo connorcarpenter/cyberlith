@@ -6,16 +6,18 @@ pub use frame_io::*;
 pub use settings::*;
 pub use windowed_context::*;
 
-use winit::event::{Event as WinitEvent, TouchPhase, WindowEvent};
-use winit::event_loop::{ControlFlow, EventLoop};
-use winit::window::WindowBuilder;
-use winit::*;
+use winit::{
+    event::{Event as WinitEvent, TouchPhase, WindowEvent},
+    event_loop::{ControlFlow, EventLoop},
+    window::WindowBuilder,
+    *,
+};
 
+use render_api::base::Viewport;
 use thiserror::Error;
 
-use crate::core::{Context, CoreError};
+use crate::core::CoreError;
 use crate::renderer::{Event, Key, Modifiers, MouseButton};
-use render_api::base::Viewport;
 
 ///
 /// Error associated with a window.
@@ -317,7 +319,6 @@ impl<T: 'static + Clone> Window<T> {
                         window_height: height,
                         device_pixel_ratio,
                         first_frame,
-                        context: (*self.gl).clone(),
                     };
                     first_frame = false;
                     let frame_output = callback(frame_input);
@@ -579,13 +580,6 @@ impl<T: 'static + Clone> Window<T> {
     pub fn viewport(&self) -> Viewport {
         let (w, h): (u32, u32) = self.window.inner_size().into();
         Viewport::new_at_origin(w, h)
-    }
-
-    ///
-    /// Returns the graphics context for this window.
-    ///
-    pub fn gl(&self) -> Context {
-        (*self.gl).clone()
     }
 
     ///

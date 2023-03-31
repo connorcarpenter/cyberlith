@@ -30,7 +30,6 @@ pub struct RenderTarget<'a> {
     id: Option<Framebuffer>,
     color: Option<ColorTarget<'a>>,
     depth: Option<DepthTarget<'a>>,
-    pub(crate) context: Context,
     width: u32,
     height: u32,
 }
@@ -40,9 +39,8 @@ impl<'a> RenderTarget<'a> {
     /// Returns the screen render target for this context.
     /// Write to this render target to draw something on the screen.
     ///
-    pub fn screen(context: &Context, width: u32, height: u32) -> Self {
+    pub fn screen(width: u32, height: u32) -> Self {
         Self {
-            context: context.clone(),
             id: None,
             color: None,
             depth: None,
@@ -58,8 +56,7 @@ impl<'a> RenderTarget<'a> {
         let width = color.width();
         let height = color.height();
         Self {
-            context: color.context.clone(),
-            id: Some(new_framebuffer(&color.context)),
+            id: Some(new_framebuffer()),
             color: Some(color),
             depth: Some(depth),
             width,
@@ -88,9 +85,9 @@ impl<'a> RenderTarget<'a> {
     /// Clears the color and depth of the part of this render target that is inside the given scissor box.
     ///
     pub fn clear_partially(&self, scissor_box: ScissorBox, clear_state: ClearState) -> &Self {
-        self.context.set_scissor(scissor_box);
+        Context::get().set_scissor(scissor_box);
         self.bind(glow::DRAW_FRAMEBUFFER);
-        clear_state.apply(&self.context);
+        clear_state.apply();
         self
     }
 
@@ -105,7 +102,7 @@ impl<'a> RenderTarget<'a> {
     /// Writes whatever rendered in the `render` closure into the part of this render target defined by the scissor box.
     ///
     pub fn write_partially(&self, scissor_box: ScissorBox, render: impl FnOnce()) -> &Self {
-        self.context.set_scissor(scissor_box);
+        Context::get().set_scissor(scissor_box);
         self.bind(glow::DRAW_FRAMEBUFFER);
         render();
         if let Some(ref color) = self.color {
@@ -144,7 +141,7 @@ impl<'a> RenderTarget<'a> {
         let mut bytes =
             vec![0u8; scissor_box.width as usize * scissor_box.height as usize * data_size];
         unsafe {
-            self.context.read_pixels(
+            Context::get().read_pixels(
                 scissor_box.x,
                 scissor_box.y,
                 scissor_box.width as i32,
@@ -183,7 +180,7 @@ impl<'a> RenderTarget<'a> {
         self.bind(glow::READ_FRAMEBUFFER);
         let mut pixels = vec![0u8; scissor_box.width as usize * scissor_box.height as usize * 4];
         unsafe {
-            self.context.read_pixels(
+            Context::get().read_pixels(
                 scissor_box.x,
                 scissor_box.y,
                 scissor_box.width as i32,
@@ -242,7 +239,6 @@ impl<'a> RenderTarget<'a> {
                 depth_texture.fragment_shader_source()
             );
             apply_effect(
-                &self.context,
                 &fragment_shader_source,
                 RenderStates {
                     depth_test: DepthTest::Always,
@@ -293,7 +289,6 @@ impl<'a> RenderTarget<'a> {
                 color_texture.fragment_shader_source()
             );
             apply_effect(
-                &self.context,
                 &fragment_shader_source,
                 RenderStates {
                     depth_test: DepthTest::Always,
@@ -337,7 +332,6 @@ impl<'a> RenderTarget<'a> {
                 depth_texture.fragment_shader_source(),
             );
             apply_effect(
-                &self.context,
                 &fragment_shader_source,
                 RenderStates {
                     depth_test: DepthTest::Always,
@@ -356,17 +350,11 @@ impl<'a> RenderTarget<'a> {
     /// Creates a [RenderTarget] with the given low-level [Framebuffer]. Should only be used if the [Framebuffer] is used for something else, ie. to be able
     /// to combine this crate with functionality of another crate. Also see [Self::into_framebuffer].
     ///
-    pub fn from_framebuffer(
-        context: &Context,
-        width: u32,
-        height: u32,
-        framebuffer: Framebuffer,
-    ) -> Self {
+    pub fn from_framebuffer(width: u32, height: u32, framebuffer: Framebuffer) -> Self {
         Self {
             id: Some(framebuffer),
             color: None,
             depth: None,
-            context: context.clone(),
             width,
             height,
         }
@@ -396,10 +384,10 @@ impl<'a> RenderTarget<'a> {
             unreachable!()
         };
         unsafe {
-            self.context
-                .bind_framebuffer(glow::READ_FRAMEBUFFER, self.id);
+            let context = Context::get();
+            context.bind_framebuffer(glow::READ_FRAMEBUFFER, self.id);
 
-            self.context.blit_framebuffer(
+            context.blit_framebuffer(
                 0,
                 0,
                 self.width as i32,
@@ -418,8 +406,7 @@ impl<'a> RenderTarget<'a> {
         let width = color.width();
         let height = color.height();
         Self {
-            context: color.context.clone(),
-            id: Some(new_framebuffer(&color.context)),
+            id: Some(new_framebuffer()),
             color: Some(color),
             depth: None,
             width,
@@ -431,8 +418,7 @@ impl<'a> RenderTarget<'a> {
         let width = depth.width();
         let height = depth.height();
         Self {
-            context: depth.context.clone(),
-            id: Some(new_framebuffer(&depth.context)),
+            id: Some(new_framebuffer()),
             depth: Some(depth),
             color: None,
             width,
@@ -442,10 +428,10 @@ impl<'a> RenderTarget<'a> {
 
     fn bind(&self, target: u32) {
         unsafe {
-            self.context.bind_framebuffer(target, self.id);
+            Context::get().bind_framebuffer(target, self.id);
         }
         if let Some(ref color) = self.color {
-            color.bind(&self.context);
+            color.bind();
         }
         if let Some(ref depth) = self.depth {
             depth.bind();
@@ -457,7 +443,7 @@ impl Drop for RenderTarget<'_> {
     fn drop(&mut self) {
         unsafe {
             if let Some(id) = self.id {
-                self.context.delete_framebuffer(id);
+                Context::get().delete_framebuffer(id);
             }
         }
     }
@@ -471,18 +457,18 @@ fn size_with_mip(size: u32, mip: Option<u32>) -> u32 {
     }
 }
 
-fn new_framebuffer(context: &Context) -> glow::Framebuffer {
+fn new_framebuffer() -> glow::Framebuffer {
     unsafe {
-        context
+        Context::get()
             .create_framebuffer()
             .expect("Failed creating frame buffer")
     }
 }
 
 #[cfg(debug_assertions)]
-fn multisample_sanity_check(context: &Context, number_of_samples: u32) {
+fn multisample_sanity_check(number_of_samples: u32) {
     let max_samples: u32 = unsafe {
-        context
+        Context::get()
             .get_parameter_i32(glow::MAX_SAMPLES)
             .try_into()
             .unwrap()

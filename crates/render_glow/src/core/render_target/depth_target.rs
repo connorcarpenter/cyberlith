@@ -9,50 +9,42 @@ use render_api::base::CubeMapSide;
 ///
 #[derive(Clone)]
 pub struct DepthTarget<'a> {
-    pub(crate) context: Context,
     target: Option<DepthTexture<'a>>,
     multisample_target: Option<&'a DepthTexture2DMultisample>,
 }
 
 impl<'a> DepthTarget<'a> {
-    pub(in crate::core) fn new_texture2d(context: &Context, texture: &'a DepthTexture2D) -> Self {
+    pub(in crate::core) fn new_texture2d(texture: &'a DepthTexture2D) -> Self {
         Self {
-            context: context.clone(),
             target: Some(DepthTexture::Single(texture)),
             multisample_target: None,
         }
     }
 
     pub(in crate::core) fn new_texture_cube_map(
-        context: &Context,
         texture: &'a DepthTextureCubeMap,
         side: CubeMapSide,
     ) -> Self {
         Self {
-            context: context.clone(),
             target: Some(DepthTexture::CubeMap { texture, side }),
             multisample_target: None,
         }
     }
 
     pub(in crate::core) fn new_texture_2d_array(
-        context: &Context,
         texture: &'a DepthTexture2DArray,
         layer: u32,
     ) -> Self {
         Self {
-            context: context.clone(),
             target: Some(DepthTexture::Array { texture, layer }),
             multisample_target: None,
         }
     }
 
     pub(in crate::core) fn new_texture_2d_multisample(
-        context: &Context,
         texture: &'a DepthTexture2DMultisample,
     ) -> Self {
         Self {
-            context: context.clone(),
             target: None,
             multisample_target: Some(texture),
         }

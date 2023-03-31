@@ -210,7 +210,6 @@ impl<T: Geometry> Geometry for std::sync::RwLock<T> {
 }
 
 pub struct BaseMesh {
-    context: Context,
     indices: Option<ElementBuffer>,
     positions: VertexBuffer,
     normals: Option<VertexBuffer>,
@@ -221,7 +220,7 @@ pub struct BaseMesh {
 }
 
 impl BaseMesh {
-    pub fn new(context: &Context, cpu_mesh: &TriMesh) -> Self {
+    pub fn new(cpu_mesh: &TriMesh) -> Self {
         #[cfg(debug_assertions)]
         cpu_mesh.validate().expect("invalid cpu mesh");
 
@@ -229,25 +228,23 @@ impl BaseMesh {
 
         Self {
             aabb,
-            context: context.clone(),
             indices: match &cpu_mesh.indices {
-                Indices::U8(ind) => Some(ElementBuffer::new_with_data(context, ind)),
-                Indices::U16(ind) => Some(ElementBuffer::new_with_data(context, ind)),
-                Indices::U32(ind) => Some(ElementBuffer::new_with_data(context, ind)),
+                Indices::U8(ind) => Some(ElementBuffer::new_with_data(ind)),
+                Indices::U16(ind) => Some(ElementBuffer::new_with_data(ind)),
+                Indices::U32(ind) => Some(ElementBuffer::new_with_data(ind)),
                 Indices::None => None,
             },
-            positions: VertexBuffer::new_with_data(context, &cpu_mesh.positions.to_f32()),
+            positions: VertexBuffer::new_with_data(&cpu_mesh.positions.to_f32()),
             normals: cpu_mesh
                 .normals
                 .as_ref()
-                .map(|data| VertexBuffer::new_with_data(context, data)),
+                .map(|data| VertexBuffer::new_with_data(data)),
             tangents: cpu_mesh
                 .tangents
                 .as_ref()
-                .map(|data| VertexBuffer::new_with_data(context, data)),
+                .map(|data| VertexBuffer::new_with_data(data)),
             uvs: cpu_mesh.uvs.as_ref().map(|data| {
                 VertexBuffer::new_with_data(
-                    context,
                     &data
                         .iter()
                         .map(|uv| vec2(uv.x, 1.0 - uv.y))
@@ -257,7 +254,7 @@ impl BaseMesh {
             colors: cpu_mesh
                 .colors
                 .as_ref()
-                .map(|data| VertexBuffer::new_with_data(context, data)),
+                .map(|data| VertexBuffer::new_with_data(data)),
         }
     }
 

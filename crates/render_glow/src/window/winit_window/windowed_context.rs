@@ -67,7 +67,7 @@ mod inner {
                 .map_err(|e| WindowError::OESTextureFloatNotSupported(format!(": {:?}", e)))?;
 
             Ok(Self {
-                context: Context::from_gl_context(Arc::new(glow::Context::from_webgl2_context(
+                context: Context::init_gl_context(Arc::new(glow::Context::from_webgl2_context(
                     webgl_context,
                 )))?,
             })
@@ -93,7 +93,6 @@ mod inner {
     /// For a graphics context that is not associated with a window, see [HeadlessContext](crate::HeadlessContext).
     ///
     pub struct WindowedContext {
-        pub(super) context: crate::core::Context,
         surface: Surface<WindowSurface>,
         glutin_context: glutin::context::PossiblyCurrentContext,
     }
@@ -187,15 +186,16 @@ mod inner {
             let gl_context = gl_context.make_current(&gl_surface)?;
             gl_surface.set_swap_interval(&gl_context, swap_interval)?;
 
-            Ok(Self {
-                context: crate::core::Context::from_gl_context(Arc::new(unsafe {
-                    glow::Context::from_loader_function(|s| {
-                        let s = std::ffi::CString::new(s)
-                            .expect("failed to construct C string from string for gl proc address");
+            Context::init_gl_context(Arc::new(unsafe {
+                glow::Context::from_loader_function(|s| {
+                    let s = std::ffi::CString::new(s)
+                        .expect("failed to construct C string from string for gl proc address");
 
-                        gl_display.get_proc_address(&s)
-                    })
-                }))?,
+                    gl_display.get_proc_address(&s)
+                })
+            }))?;
+
+            Ok(Self {
                 glutin_context: gl_context,
                 surface: gl_surface,
             })
@@ -216,11 +216,3 @@ mod inner {
 }
 
 pub use inner::*;
-
-impl std::ops::Deref for WindowedContext {
-    type Target = Context;
-
-    fn deref(&self) -> &Self::Target {
-        &self.context
-    }
-}

@@ -73,7 +73,8 @@ impl ClearState {
         }
     }
 
-    pub(in crate::core) fn apply(&self, context: &Context) {
+    pub(in crate::core) fn apply(&self) {
+        let context = Context::get();
         context.set_write_mask(WriteMask {
             red: self.red.is_some(),
             green: self.green.is_some(),

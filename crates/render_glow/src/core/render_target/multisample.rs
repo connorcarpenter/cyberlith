@@ -11,7 +11,6 @@ use render_api::base::{Interpolation, Wrapping};
 /// Also see [ColorTargetMultisample] and [DepthTargetMultisample].
 ///
 pub struct RenderTargetMultisample<C: TextureDataType, D: DepthTextureDataType> {
-    pub(crate) context: Context,
     color: Texture2DMultisample,
     depth: DepthTexture2DMultisample,
     _c: std::marker::PhantomData<C>,
@@ -23,13 +22,12 @@ impl<C: TextureDataType, D: DepthTextureDataType> RenderTargetMultisample<C, D> 
     /// Constructs a new multisample render target with the given dimensions and number of samples.
     /// The number of samples must be larger than 0, less than or equal to the maximum number of samples supported by the hardware and power of two.
     ///
-    pub fn new(context: &Context, width: u32, height: u32, number_of_samples: u32) -> Self {
+    pub fn new(width: u32, height: u32, number_of_samples: u32) -> Self {
         #[cfg(debug_assertions)]
-        super::multisample_sanity_check(context, number_of_samples);
+        super::multisample_sanity_check(number_of_samples);
         Self {
-            context: context.clone(),
-            color: Texture2DMultisample::new::<C>(context, width, height, number_of_samples),
-            depth: DepthTexture2DMultisample::new::<D>(context, width, height, number_of_samples),
+            color: Texture2DMultisample::new::<C>(width, height, number_of_samples),
+            depth: DepthTexture2DMultisample::new::<D>(width, height, number_of_samples),
             _c: std::marker::PhantomData,
             _d: std::marker::PhantomData,
         }
@@ -83,8 +81,8 @@ impl<C: TextureDataType, D: DepthTextureDataType> RenderTargetMultisample<C, D> 
 
     pub(super) fn as_render_target(&self) -> RenderTarget<'_> {
         RenderTarget::new(
-            ColorTarget::new_texture_2d_multisample(&self.context, &self.color),
-            DepthTarget::new_texture_2d_multisample(&self.context, &self.depth),
+            ColorTarget::new_texture_2d_multisample(&self.color),
+            DepthTarget::new_texture_2d_multisample(&self.depth),
         )
     }
 
@@ -93,7 +91,7 @@ impl<C: TextureDataType, D: DepthTextureDataType> RenderTargetMultisample<C, D> 
     /// The target must have the same width, height and [TextureDataType] as the color part of this target.
     ///
     pub fn resolve_color_to(&self, target: &ColorTarget<'_>) {
-        ColorTarget::new_texture_2d_multisample(&self.context, &self.color)
+        ColorTarget::new_texture_2d_multisample(&self.color)
             .as_render_target()
             .blit_to(&target.as_render_target());
     }
@@ -103,7 +101,7 @@ impl<C: TextureDataType, D: DepthTextureDataType> RenderTargetMultisample<C, D> 
     /// The target must have the same width, height and [DepthTextureDataType] as the depth part of this target.
     ///
     pub fn resolve_depth_to(&self, target: &DepthTarget<'_>) {
-        DepthTarget::new_texture_2d_multisample(&self.context, &self.depth)
+        DepthTarget::new_texture_2d_multisample(&self.depth)
             .as_render_target()
             .blit_to(&target.as_render_target());
     }
@@ -123,7 +121,6 @@ impl<C: TextureDataType, D: DepthTextureDataType> RenderTargetMultisample<C, D> 
     ///
     pub fn resolve_color(&self) -> Texture2D {
         let mut color_texture = Texture2D::new_empty::<C>(
-            &self.context,
             self.color.width(),
             self.color.height(),
             Interpolation::Linear,
@@ -142,7 +139,6 @@ impl<C: TextureDataType, D: DepthTextureDataType> RenderTargetMultisample<C, D> 
     ///
     pub fn resolve_depth(&self) -> DepthTexture2D {
         let mut depth_texture = DepthTexture2D::new::<D>(
-            &self.context,
             self.width(),
             self.height(),
             Wrapping::ClampToEdge,
@@ -158,7 +154,6 @@ impl<C: TextureDataType, D: DepthTextureDataType> RenderTargetMultisample<C, D> 
     ///
     pub fn resolve(&self) -> (Texture2D, DepthTexture2D) {
         let mut color_texture = Texture2D::new_empty::<C>(
-            &self.context,
             self.color.width(),
             self.color.height(),
             Interpolation::Linear,
@@ -168,7 +163,6 @@ impl<C: TextureDataType, D: DepthTextureDataType> RenderTargetMultisample<C, D> 
             Wrapping::ClampToEdge,
         );
         let mut depth_texture = DepthTexture2D::new::<D>(
-            &self.context,
             self.width(),
             self.height(),
             Wrapping::ClampToEdge,

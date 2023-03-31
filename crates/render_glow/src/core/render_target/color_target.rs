@@ -13,20 +13,14 @@ use super::*;
 ///
 #[derive(Clone)]
 pub struct ColorTarget<'a> {
-    pub(crate) context: Context,
     mip_level: Option<u32>,
     target: Option<ColorTexture<'a>>,
     multisample_target: Option<&'a Texture2DMultisample>,
 }
 
 impl<'a> ColorTarget<'a> {
-    pub(in crate::core) fn new_texture2d(
-        context: &Context,
-        texture: &'a Texture2D,
-        mip_level: Option<u32>,
-    ) -> Self {
+    pub(in crate::core) fn new_texture2d(texture: &'a Texture2D, mip_level: Option<u32>) -> Self {
         ColorTarget {
-            context: context.clone(),
             mip_level,
             target: Some(ColorTexture::Single(texture)),
             multisample_target: None,
@@ -34,13 +28,11 @@ impl<'a> ColorTarget<'a> {
     }
 
     pub(in crate::core) fn new_texture_cube_map(
-        context: &Context,
         texture: &'a TextureCubeMap,
         sides: &'a [CubeMapSide],
         mip_level: Option<u32>,
     ) -> Self {
         ColorTarget {
-            context: context.clone(),
             mip_level,
             target: Some(ColorTexture::CubeMap { texture, sides }),
             multisample_target: None,
@@ -48,25 +40,19 @@ impl<'a> ColorTarget<'a> {
     }
 
     pub(in crate::core) fn new_texture_2d_array(
-        context: &Context,
         texture: &'a Texture2DArray,
         layers: &'a [u32],
         mip_level: Option<u32>,
     ) -> Self {
         ColorTarget {
-            context: context.clone(),
             mip_level,
             target: Some(ColorTexture::Array { texture, layers }),
             multisample_target: None,
         }
     }
 
-    pub(in crate::core) fn new_texture_2d_multisample(
-        context: &Context,
-        texture: &'a Texture2DMultisample,
-    ) -> Self {
+    pub(in crate::core) fn new_texture_2d_multisample(texture: &'a Texture2DMultisample) -> Self {
         ColorTarget {
-            context: context.clone(),
             mip_level: None,
             target: None,
             multisample_target: Some(texture),
@@ -228,7 +214,8 @@ impl<'a> ColorTarget<'a> {
         }
     }
 
-    pub(super) fn bind(&self, context: &Context) {
+    pub(super) fn bind(&self) {
+        let context = Context::get();
         if let Some(target) = self.target {
             match target {
                 ColorTexture::Single(texture) => unsafe {

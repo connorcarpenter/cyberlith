@@ -13,9 +13,9 @@ impl VertexBuffer {
     ///
     /// Creates a new empty vertex buffer.
     ///
-    pub fn new(context: &Context) -> Self {
+    pub fn new() -> Self {
         Self {
-            buffer: Buffer::new(context),
+            buffer: Buffer::new(),
         }
     }
 
@@ -23,9 +23,9 @@ impl VertexBuffer {
     /// Creates a new vertex buffer and fills it with the given data. The data should be in the same format as specified in the shader.
     /// As an example, if specified as `vec3` in the shader it needs to be specified as an array of `Vector3<T>` where `T` is a primitive type that implements [BufferDataType], for example can be f16 or f32.
     ///
-    pub fn new_with_data<T: BufferDataType>(context: &Context, data: &[T]) -> Self {
+    pub fn new_with_data<T: BufferDataType>(data: &[T]) -> Self {
         Self {
-            buffer: Buffer::new_with_data(context, data),
+            buffer: Buffer::new_with_data(data),
         }
     }
 

@@ -10,7 +10,6 @@ use render_api::base::{Interpolation, Wrapping};
 /// Also see [RenderTargetMultisample] and [DepthTargetMultisample].
 ///
 pub struct ColorTargetMultisample<C: TextureDataType> {
-    pub(crate) context: Context,
     color: Texture2DMultisample,
     _c: std::marker::PhantomData<C>,
 }
@@ -20,12 +19,11 @@ impl<C: TextureDataType> ColorTargetMultisample<C> {
     /// Constructs a new multisample color target with the given dimensions and number of samples.
     /// The number of samples must be larger than 0, less than or equal to the maximum number of samples supported by the hardware and power of two.
     ///
-    pub fn new(context: &Context, width: u32, height: u32, number_of_samples: u32) -> Self {
+    pub fn new(width: u32, height: u32, number_of_samples: u32) -> Self {
         #[cfg(debug_assertions)]
-        super::multisample_sanity_check(context, number_of_samples);
+        super::multisample_sanity_check(number_of_samples);
         Self {
-            context: context.clone(),
-            color: Texture2DMultisample::new::<C>(context, width, height, number_of_samples),
+            color: Texture2DMultisample::new::<C>(width, height, number_of_samples),
             _c: std::marker::PhantomData,
         }
     }
@@ -85,7 +83,7 @@ impl<C: TextureDataType> ColorTargetMultisample<C> {
     }
 
     fn as_render_target(&self) -> RenderTarget<'_> {
-        ColorTarget::new_texture_2d_multisample(&self.context, &self.color).as_render_target()
+        ColorTarget::new_texture_2d_multisample(&self.color).as_render_target()
     }
 
     ///
@@ -102,7 +100,6 @@ impl<C: TextureDataType> ColorTargetMultisample<C> {
     ///
     pub fn resolve(&self) -> Texture2D {
         let mut color_texture = Texture2D::new_empty::<C>(
-            &self.context,
             self.width(),
             self.height(),
             Interpolation::Linear,

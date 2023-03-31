@@ -7,7 +7,6 @@ use render_api::base::Texture3D as CpuTexture3D;
 /// A 3D color texture.
 ///
 pub struct Texture3D {
-    context: Context,
     id: glow::Texture,
     width: u32,
     height: u32,
@@ -20,30 +19,25 @@ impl Texture3D {
     ///
     /// Construcs a new 3D texture with the given data.
     ///
-    pub fn new(context: &Context, cpu_texture: &CpuTexture3D) -> Self {
+    pub fn new(cpu_texture: &CpuTexture3D) -> Self {
         match cpu_texture.data {
-            TextureData::RU8(ref data) => Self::new_with_data(context, cpu_texture, data),
-            TextureData::RgU8(ref data) => Self::new_with_data(context, cpu_texture, data),
-            TextureData::RgbU8(ref data) => Self::new_with_data(context, cpu_texture, data),
-            TextureData::RgbaU8(ref data) => Self::new_with_data(context, cpu_texture, data),
-            TextureData::RF16(ref data) => Self::new_with_data(context, cpu_texture, data),
-            TextureData::RgF16(ref data) => Self::new_with_data(context, cpu_texture, data),
-            TextureData::RgbF16(ref data) => Self::new_with_data(context, cpu_texture, data),
-            TextureData::RgbaF16(ref data) => Self::new_with_data(context, cpu_texture, data),
-            TextureData::RF32(ref data) => Self::new_with_data(context, cpu_texture, data),
-            TextureData::RgF32(ref data) => Self::new_with_data(context, cpu_texture, data),
-            TextureData::RgbF32(ref data) => Self::new_with_data(context, cpu_texture, data),
-            TextureData::RgbaF32(ref data) => Self::new_with_data(context, cpu_texture, data),
+            TextureData::RU8(ref data) => Self::new_with_data(cpu_texture, data),
+            TextureData::RgU8(ref data) => Self::new_with_data(cpu_texture, data),
+            TextureData::RgbU8(ref data) => Self::new_with_data(cpu_texture, data),
+            TextureData::RgbaU8(ref data) => Self::new_with_data(cpu_texture, data),
+            TextureData::RF16(ref data) => Self::new_with_data(cpu_texture, data),
+            TextureData::RgF16(ref data) => Self::new_with_data(cpu_texture, data),
+            TextureData::RgbF16(ref data) => Self::new_with_data(cpu_texture, data),
+            TextureData::RgbaF16(ref data) => Self::new_with_data(cpu_texture, data),
+            TextureData::RF32(ref data) => Self::new_with_data(cpu_texture, data),
+            TextureData::RgF32(ref data) => Self::new_with_data(cpu_texture, data),
+            TextureData::RgbF32(ref data) => Self::new_with_data(cpu_texture, data),
+            TextureData::RgbaF32(ref data) => Self::new_with_data(cpu_texture, data),
         }
     }
 
-    fn new_with_data<T: TextureDataType>(
-        context: &Context,
-        cpu_texture: &CpuTexture3D,
-        data: &[T],
-    ) -> Self {
+    fn new_with_data<T: TextureDataType>(cpu_texture: &CpuTexture3D, data: &[T]) -> Self {
         let mut texture = Self::new_empty::<T>(
-            context,
             cpu_texture.width,
             cpu_texture.height,
             cpu_texture.depth,
@@ -62,7 +56,6 @@ impl Texture3D {
     /// Creates a new empty 3D color texture.
     ///
     pub fn new_empty<T: TextureDataType>(
-        context: &Context,
         width: u32,
         height: u32,
         depth: u32,
@@ -73,11 +66,10 @@ impl Texture3D {
         wrap_t: Wrapping,
         wrap_r: Wrapping,
     ) -> Self {
-        let id = generate(context);
+        let id = generate();
         let number_of_mip_maps =
             calculate_number_of_mip_maps(mip_map_filter, width, height, Some(depth));
         let texture = Self {
-            context: context.clone(),
             id,
             width,
             height,
@@ -87,7 +79,6 @@ impl Texture3D {
         };
         texture.bind();
         set_parameters(
-            context,
             glow::TEXTURE_3D,
             min_filter,
             mag_filter,
@@ -101,7 +92,7 @@ impl Texture3D {
             Some(wrap_r),
         );
         unsafe {
-            context.tex_storage_3d(
+            Context::get().tex_storage_3d(
                 glow::TEXTURE_3D,
                 number_of_mip_maps as i32,
                 T::internal_format(),
@@ -131,7 +122,7 @@ impl Texture3D {
         );
         self.bind();
         unsafe {
-            self.context.tex_sub_image_3d(
+            Context::get().tex_sub_image_3d(
                 glow::TEXTURE_3D,
                 0,
                 0,
@@ -167,13 +158,13 @@ impl Texture3D {
         if self.number_of_mip_maps > 1 {
             self.bind();
             unsafe {
-                self.context.generate_mipmap(glow::TEXTURE_3D);
+                Context::get().generate_mipmap(glow::TEXTURE_3D);
             }
         }
     }
     pub(in crate::core) fn bind(&self) {
         unsafe {
-            self.context.bind_texture(glow::TEXTURE_3D, Some(self.id));
+            Context::get().bind_texture(glow::TEXTURE_3D, Some(self.id));
         }
     }
 }
@@ -181,7 +172,7 @@ impl Texture3D {
 impl Drop for Texture3D {
     fn drop(&mut self) {
         unsafe {
-            self.context.delete_texture(self.id);
+            Context::get().delete_texture(self.id);
         }
     }
 }

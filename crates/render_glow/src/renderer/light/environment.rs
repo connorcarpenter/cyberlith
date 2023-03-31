@@ -26,9 +26,8 @@ impl Environment {
     /// Computes the maps needed for physically based rendering with lighting from an environment from the given environment map.
     /// A default Cook-Torrance lighting model is used.
     ///
-    pub fn new(context: &Context, environment_map: &TextureCubeMap) -> Self {
+    pub fn new(environment_map: &TextureCubeMap) -> Self {
         Self::new_with_lighting_model(
-            context,
             environment_map,
             LightingModel::Cook(
                 NormalDistributionFunction::TrowbridgeReitzGGX,
@@ -41,14 +40,12 @@ impl Environment {
     /// Computes the maps needed for physically based rendering with lighting from an environment from the given environment map and with the specified lighting model.
     ///
     pub fn new_with_lighting_model(
-        context: &Context,
         environment_map: &TextureCubeMap,
         lighting_model: LightingModel,
     ) -> Self {
         // Diffuse
         let irradiance_size = 32;
         let mut irradiance_map = TextureCubeMap::new_empty::<[f16; 4]>(
-            context,
             irradiance_size,
             irradiance_size,
             Interpolation::Linear,
@@ -71,7 +68,6 @@ impl Environment {
                     .clear(ClearState::default())
                     .write(|| {
                         apply_cube_effect(
-                            context,
                             side,
                             &fragment_shader_source,
                             RenderStates::default(),
@@ -87,7 +83,6 @@ impl Environment {
         // Prefilter
         let prefilter_size = 128;
         let mut prefilter_map = TextureCubeMap::new_empty::<[f16; 4]>(
-            context,
             prefilter_size,
             prefilter_size,
             Interpolation::Linear,
@@ -114,7 +109,6 @@ impl Environment {
                         Viewport::new_at_origin(color_target.width(), color_target.height());
                     color_target.clear(ClearState::default()).write(|| {
                         apply_cube_effect(
-                            context,
                             side,
                             &fragment_shader_source,
                             RenderStates::default(),
@@ -135,7 +129,6 @@ impl Environment {
 
         // BRDF
         let mut brdf_map = Texture2D::new_empty::<[f32; 2]>(
-            context,
             512,
             512,
             Interpolation::Linear,
@@ -150,7 +143,6 @@ impl Environment {
             .clear(ClearState::default())
             .write(|| {
                 apply_effect(
-                    context,
                     &format!(
                         "{}{}{}{}",
                         super::lighting_model_shader(lighting_model),

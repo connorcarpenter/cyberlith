@@ -26,7 +26,6 @@ impl CubeMapSideExt for CubeMapSide {
 /// A texture that covers all 6 sides of a cube.
 ///
 pub struct TextureCubeMap {
-    context: Context,
     id: glow::Texture,
     width: u32,
     height: u32,
@@ -41,7 +40,6 @@ impl TextureCubeMap {
     /// All of the cpu textures must contain data with the same [TextureDataType].
     ///
     pub fn new(
-        context: &Context,
         right: &CpuTexture,
         left: &CpuTexture,
         top: &CpuTexture,
@@ -51,7 +49,6 @@ impl TextureCubeMap {
     ) -> Self {
         match &front.data {
             TextureData::RU8(front_data) => Self::new_with_data(
-                context,
                 front,
                 right.wrap_s,
                 ru8_data(right),
@@ -62,7 +59,6 @@ impl TextureCubeMap {
                 ru8_data(back),
             ),
             TextureData::RgU8(front_data) => Self::new_with_data(
-                context,
                 front,
                 right.wrap_s,
                 rgu8_data(right),
@@ -73,7 +69,6 @@ impl TextureCubeMap {
                 rgu8_data(back),
             ),
             TextureData::RgbU8(front_data) => Self::new_with_data(
-                context,
                 front,
                 right.wrap_s,
                 rgbu8_data(right),
@@ -84,7 +79,6 @@ impl TextureCubeMap {
                 rgbu8_data(back),
             ),
             TextureData::RgbaU8(front_data) => Self::new_with_data(
-                context,
                 front,
                 right.wrap_s,
                 rgbau8_data(right),
@@ -95,7 +89,6 @@ impl TextureCubeMap {
                 rgbau8_data(back),
             ),
             TextureData::RF16(front_data) => Self::new_with_data(
-                context,
                 front,
                 right.wrap_s,
                 rf16_data(right),
@@ -106,7 +99,6 @@ impl TextureCubeMap {
                 rf16_data(back),
             ),
             TextureData::RgF16(front_data) => Self::new_with_data(
-                context,
                 front,
                 right.wrap_s,
                 rgf16_data(right),
@@ -117,7 +109,6 @@ impl TextureCubeMap {
                 rgf16_data(back),
             ),
             TextureData::RgbF16(front_data) => Self::new_with_data(
-                context,
                 front,
                 right.wrap_s,
                 rgbf16_data(right),
@@ -128,7 +119,6 @@ impl TextureCubeMap {
                 rgbf16_data(back),
             ),
             TextureData::RgbaF16(front_data) => Self::new_with_data(
-                context,
                 front,
                 right.wrap_s,
                 rgbaf16_data(right),
@@ -139,7 +129,6 @@ impl TextureCubeMap {
                 rgbaf16_data(back),
             ),
             TextureData::RF32(front_data) => Self::new_with_data(
-                context,
                 front,
                 right.wrap_s,
                 rf32_data(right),
@@ -150,7 +139,6 @@ impl TextureCubeMap {
                 rf32_data(back),
             ),
             TextureData::RgF32(front_data) => Self::new_with_data(
-                context,
                 front,
                 right.wrap_s,
                 rgf32_data(right),
@@ -161,7 +149,6 @@ impl TextureCubeMap {
                 rgf32_data(back),
             ),
             TextureData::RgbF32(front_data) => Self::new_with_data(
-                context,
                 front,
                 right.wrap_s,
                 rgbf32_data(right),
@@ -172,7 +159,6 @@ impl TextureCubeMap {
                 rgbf32_data(back),
             ),
             TextureData::RgbaF32(front_data) => Self::new_with_data(
-                context,
                 front,
                 right.wrap_s,
                 rgbaf32_data(right),
@@ -186,7 +172,6 @@ impl TextureCubeMap {
     }
 
     fn new_with_data<T: TextureDataType>(
-        context: &Context,
         cpu_texture: &CpuTexture,
         wrap_r: Wrapping,
         right_data: &[T],
@@ -197,7 +182,6 @@ impl TextureCubeMap {
         back_data: &[T],
     ) -> Self {
         let mut texture = Self::new_empty::<T>(
-            context,
             cpu_texture.width,
             cpu_texture.height,
             cpu_texture.min_filter,
@@ -222,7 +206,6 @@ impl TextureCubeMap {
     /// Creates a new texture cube map.
     ///
     pub fn new_empty<T: TextureDataType>(
-        context: &Context,
         width: u32,
         height: u32,
         min_filter: Interpolation,
@@ -232,10 +215,9 @@ impl TextureCubeMap {
         wrap_t: Wrapping,
         wrap_r: Wrapping,
     ) -> Self {
-        let id = generate(context);
+        let id = generate();
         let number_of_mip_maps = calculate_number_of_mip_maps(mip_map_filter, width, height, None);
         let texture = Self {
-            context: context.clone(),
             id,
             width,
             height,
@@ -245,7 +227,6 @@ impl TextureCubeMap {
         };
         texture.bind();
         set_parameters(
-            context,
             glow::TEXTURE_CUBE_MAP,
             min_filter,
             mag_filter,
@@ -259,7 +240,7 @@ impl TextureCubeMap {
             Some(wrap_r),
         );
         unsafe {
-            context.tex_storage_2d(
+            Context::get().tex_storage_2d(
                 glow::TEXTURE_CUBE_MAP,
                 number_of_mip_maps as i32,
                 T::internal_format(),
@@ -341,7 +322,7 @@ impl TextureCubeMap {
                 _ => unreachable!(),
             };
             unsafe {
-                self.context.tex_sub_image_2d(
+                Context::get().tex_sub_image_2d(
                     glow::TEXTURE_CUBE_MAP_POSITIVE_X + i as u32,
                     0,
                     0,
@@ -361,12 +342,10 @@ impl TextureCubeMap {
     /// Creates a new cube texture generated from the equirectangular texture given as input.
     ///
     pub fn new_from_equirectangular<T: PrimitiveDataType + TextureDataType>(
-        context: &Context,
         cpu_texture: &CpuTexture,
     ) -> Self {
         let texture_size = cpu_texture.width / 4;
         let mut texture = Self::new_empty::<[T; 4]>(
-            context,
             texture_size,
             texture_size,
             Interpolation::Linear,
@@ -378,7 +357,7 @@ impl TextureCubeMap {
         );
 
         {
-            let map = Texture2D::new(context, cpu_texture);
+            let map = Texture2D::new(cpu_texture);
             let fragment_shader_source = "
             uniform sampler2D equirectangularMap;
             in vec3 pos;
@@ -398,7 +377,6 @@ impl TextureCubeMap {
                     .clear(ClearState::default())
                     .write(|| {
                         apply_cube_effect(
-                            context,
                             side,
                             fragment_shader_source,
                             RenderStates::default(),
@@ -426,7 +404,7 @@ impl TextureCubeMap {
         sides: &'a [CubeMapSide],
         mip_level: Option<u32>,
     ) -> ColorTarget<'a> {
-        ColorTarget::new_texture_cube_map(&self.context, self, sides, mip_level)
+        ColorTarget::new_texture_cube_map(self, sides, mip_level)
     }
 
     /// The width of this texture.
@@ -448,7 +426,7 @@ impl TextureCubeMap {
         if self.number_of_mip_maps > 1 {
             self.bind();
             unsafe {
-                self.context.generate_mipmap(glow::TEXTURE_CUBE_MAP);
+                Context::get().generate_mipmap(glow::TEXTURE_CUBE_MAP);
             }
         }
     }
@@ -460,7 +438,7 @@ impl TextureCubeMap {
         mip_level: u32,
     ) {
         unsafe {
-            self.context.framebuffer_texture_2d(
+            Context::get().framebuffer_texture_2d(
                 glow::DRAW_FRAMEBUFFER,
                 glow::COLOR_ATTACHMENT0 + channel,
                 side.to_const(),
@@ -472,8 +450,7 @@ impl TextureCubeMap {
 
     pub(in crate::core) fn bind(&self) {
         unsafe {
-            self.context
-                .bind_texture(glow::TEXTURE_CUBE_MAP, Some(self.id));
+            Context::get().bind_texture(glow::TEXTURE_CUBE_MAP, Some(self.id));
         }
     }
 }
@@ -481,7 +458,7 @@ impl TextureCubeMap {
 impl Drop for TextureCubeMap {
     fn drop(&mut self) {
         unsafe {
-            self.context.delete_texture(self.id);
+            Context::get().delete_texture(self.id);
         }
     }
 }

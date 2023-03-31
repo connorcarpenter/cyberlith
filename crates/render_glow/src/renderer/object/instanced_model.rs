@@ -89,15 +89,11 @@ impl<M: Material + FromPbrMaterial + Clone + Default> InstancedModel<M> {
     /// Constructs an [InstancedModel] from a [Model] and the given [Instances] attributes, ie. constructs a list of [Gm]s with a [InstancedMesh] as geometry (constructed from the [TriMesh]es in the [Model]) and
     /// a [material] type specified by the generic parameter which implement [FromPbrMaterial] (constructed from the [PbrMaterial]s in the [Model]).
     ///
-    pub fn new(
-        context: &Context,
-        instances: &Instances,
-        cpu_model: &CpuModel,
-    ) -> Result<Self, RendererError> {
+    pub fn new(instances: &Instances, cpu_model: &CpuModel) -> Result<Self, RendererError> {
         let materials = cpu_model
             .materials
             .iter()
-            .map(|m| M::from_cpu_material(context, m))
+            .map(|m| M::from_cpu_material(m))
             .collect::<Vec<_>>();
         let mut gms = Vec::new();
         for primitive in cpu_model.geometries.iter() {
@@ -116,7 +112,7 @@ impl<M: Material + FromPbrMaterial + Clone + Default> InstancedModel<M> {
                     M::default()
                 };
                 let mut gm = Gm {
-                    geometry: InstancedMesh::new(context, instances, geometry),
+                    geometry: InstancedMesh::new(instances, geometry),
                     material,
                 };
                 gm.set_transformation(primitive.transformation);

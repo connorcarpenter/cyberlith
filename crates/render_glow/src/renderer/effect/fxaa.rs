@@ -14,9 +14,8 @@ impl FxaaEffect {
     /// Applies the FXAA effect to the given color texture.
     /// Must be called in the callback given as input to a [RenderTarget], [ColorTarget] or [DepthTarget] write method.
     ///
-    pub fn apply(&self, context: &Context, color_texture: ColorTexture) {
+    pub fn apply(&self, color_texture: ColorTexture) {
         apply_effect(
-            context,
             &format!(
                 "{}\n{}",
                 color_texture.fragment_shader_source(),

@@ -51,14 +51,13 @@ pub enum CoreError {
 /// where uv coordinates of `(0, 0)` corresponds to the bottom left corner of the viewport and `(1, 1)` to the top right corner.
 ///
 pub fn apply_effect(
-    context: &Context,
     fragment_shader_source: &str,
     render_states: RenderStates,
     viewport: Viewport,
     use_uniforms: impl FnOnce(&Program),
 ) {
-    let position_buffer = full_screen_buffer(context);
-    context
+    let position_buffer = full_screen_buffer();
+    Context::get()
         .program(
             "
             in vec3 position;
@@ -85,15 +84,14 @@ pub fn apply_effect(
 /// The fragment shader get the 3D position (specified by `in vec3 pos;`) of the fragment on the cube with minimum position `(-1, -1, -1)` and maximum position `(1, 1, 1)`.
 ///
 pub fn apply_cube_effect(
-    context: &Context,
     side: CubeMapSide,
     fragment_shader_source: &str,
     render_states: RenderStates,
     viewport: Viewport,
     use_uniforms: impl FnOnce(&Program),
 ) {
-    let position_buffer = full_screen_buffer(context);
-    context
+    let position_buffer = full_screen_buffer();
+    Context::get()
         .program(
             "
             uniform vec3 direction;
@@ -120,15 +118,12 @@ pub fn apply_cube_effect(
         .expect("Failed compiling shader");
 }
 
-fn full_screen_buffer(context: &Context) -> VertexBuffer {
-    VertexBuffer::new_with_data(
-        context,
-        &[
-            vec3(-3.0, -1.0, 0.0),
-            vec3(3.0, -1.0, 0.0),
-            vec3(0.0, 2.0, 0.0),
-        ],
-    )
+fn full_screen_buffer() -> VertexBuffer {
+    VertexBuffer::new_with_data(&[
+        vec3(-3.0, -1.0, 0.0),
+        vec3(3.0, -1.0, 0.0),
+        vec3(0.0, 2.0, 0.0),
+    ])
 }
 
 fn to_byte_slice<T: DataType>(data: &[T]) -> &[u8] {

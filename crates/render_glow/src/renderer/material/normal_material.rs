@@ -21,11 +21,11 @@ pub struct NormalMaterial {
 
 impl NormalMaterial {
     /// Constructs a new normal material from a [PbrMaterial] where only relevant information is used.
-    pub fn new(context: &Context, cpu_material: &PbrMaterial) -> Self {
+    pub fn new(cpu_material: &PbrMaterial) -> Self {
         let normal_texture = cpu_material
             .normal_texture
             .as_ref()
-            .map(|cpu_texture| Arc::new(Texture2D::new(context, cpu_texture)).into());
+            .map(|cpu_texture| Arc::new(Texture2D::new(cpu_texture)).into());
         Self {
             normal_scale: cpu_material.normal_scale,
             normal_texture,
@@ -48,8 +48,8 @@ impl NormalMaterial {
 }
 
 impl FromPbrMaterial for NormalMaterial {
-    fn from_cpu_material(context: &Context, cpu_material: &PbrMaterial) -> Self {
-        Self::new(context, cpu_material)
+    fn from_cpu_material(cpu_material: &PbrMaterial) -> Self {
+        Self::new(cpu_material)
     }
 }
 

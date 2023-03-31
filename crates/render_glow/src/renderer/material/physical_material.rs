@@ -52,37 +52,37 @@ impl PhysicalMaterial {
     /// Tries to infer whether this material is transparent or opaque from the alpha value of the albedo color and the alpha values in the albedo texture.
     /// Since this is not always correct, it is preferred to use [PhysicalMaterial::new_opaque] or [PhysicalMaterial::new_transparent].
     ///
-    pub fn new(context: &Context, cpu_material: &PbrMaterial) -> Self {
-        Self::new_internal(context, cpu_material, super::is_transparent(cpu_material))
+    pub fn new(cpu_material: &PbrMaterial) -> Self {
+        Self::new_internal(cpu_material, super::is_transparent(cpu_material))
     }
 
     /// Constructs a new opaque physical material from a [PbrMaterial].
     /// If the input contains an [PbrMaterial::occlusion_metallic_roughness_texture], this texture is used for both
     /// [PhysicalMaterial::metallic_roughness_texture] and [PhysicalMaterial::occlusion_texture] while any [PbrMaterial::metallic_roughness_texture] or [PbrMaterial::occlusion_texture] are ignored.
-    pub fn new_opaque(context: &Context, cpu_material: &PbrMaterial) -> Self {
-        Self::new_internal(context, cpu_material, false)
+    pub fn new_opaque(cpu_material: &PbrMaterial) -> Self {
+        Self::new_internal(cpu_material, false)
     }
 
     /// Constructs a new transparent physical material from a [PbrMaterial].
     /// If the input contains an [PbrMaterial::occlusion_metallic_roughness_texture], this texture is used for both
     /// [PhysicalMaterial::metallic_roughness_texture] and [PhysicalMaterial::occlusion_texture] while any [PbrMaterial::metallic_roughness_texture] or [PbrMaterial::occlusion_texture] are ignored.
-    pub fn new_transparent(context: &Context, cpu_material: &PbrMaterial) -> Self {
-        Self::new_internal(context, cpu_material, true)
+    pub fn new_transparent(cpu_material: &PbrMaterial) -> Self {
+        Self::new_internal(cpu_material, true)
     }
 
-    fn new_internal(context: &Context, cpu_material: &PbrMaterial, is_transparent: bool) -> Self {
+    fn new_internal(cpu_material: &PbrMaterial, is_transparent: bool) -> Self {
         let albedo_texture = cpu_material
             .albedo_texture
             .as_ref()
-            .map(|cpu_texture| Arc::new(Texture2D::new(context, cpu_texture)).into());
+            .map(|cpu_texture| Arc::new(Texture2D::new(cpu_texture)).into());
         let metallic_roughness_texture =
             if let Some(ref cpu_texture) = cpu_material.occlusion_metallic_roughness_texture {
-                Some(Arc::new(Texture2D::new(context, cpu_texture)).into())
+                Some(Arc::new(Texture2D::new(cpu_texture)).into())
             } else {
                 cpu_material
                     .metallic_roughness_texture
                     .as_ref()
-                    .map(|cpu_texture| Arc::new(Texture2D::new(context, cpu_texture)).into())
+                    .map(|cpu_texture| Arc::new(Texture2D::new(cpu_texture)).into())
             };
         let occlusion_texture = if cpu_material.occlusion_metallic_roughness_texture.is_some() {
             metallic_roughness_texture.clone()
@@ -90,16 +90,16 @@ impl PhysicalMaterial {
             cpu_material
                 .occlusion_texture
                 .as_ref()
-                .map(|cpu_texture| Arc::new(Texture2D::new(context, cpu_texture)).into())
+                .map(|cpu_texture| Arc::new(Texture2D::new(cpu_texture)).into())
         };
         let normal_texture = cpu_material
             .normal_texture
             .as_ref()
-            .map(|cpu_texture| Arc::new(Texture2D::new(context, cpu_texture)).into());
+            .map(|cpu_texture| Arc::new(Texture2D::new(cpu_texture)).into());
         let emissive_texture = cpu_material
             .emissive_texture
             .as_ref()
-            .map(|cpu_texture| Arc::new(Texture2D::new(context, cpu_texture)).into());
+            .map(|cpu_texture| Arc::new(Texture2D::new(cpu_texture)).into());
         Self {
             name: cpu_material.name.clone(),
             albedo: cpu_material.albedo,
@@ -129,8 +129,8 @@ impl PhysicalMaterial {
 }
 
 impl FromPbrMaterial for PhysicalMaterial {
-    fn from_cpu_material(context: &Context, cpu_material: &PbrMaterial) -> Self {
-        Self::new(context, cpu_material)
+    fn from_cpu_material(cpu_material: &PbrMaterial) -> Self {
+        Self::new(cpu_material)
     }
 }
 

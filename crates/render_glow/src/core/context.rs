@@ -5,7 +5,7 @@ use std::sync::RwLock;
 use super::*;
 use glow::HasContext;
 
-pub static CONTEXT: Option<Context> = None;
+pub static mut CONTEXT: Option<Context> = None;
 
 ///
 /// Contains the low-level OpenGL/WebGL graphics context as well as other "global" variables.
@@ -26,7 +26,7 @@ impl Context {
     /// Since the content in the [context](glow) module is just a re-export of [glow](https://crates.io/crates/glow),
     /// you can also call this method with a reference counter to a glow context created using glow and not the re-export in [context](glow).
     ///
-    pub fn from_gl_context(context: Arc<glow::Context>) -> Result<Self, CoreError> {
+    pub fn init_gl_context(context: Arc<glow::Context>) -> Result<(), CoreError> {
         unsafe {
             if !context.version().is_embedded {
                 // Enable seamless cube map textures - not available on OpenGL ES and WebGL
@@ -46,7 +46,21 @@ impl Context {
                 programs: Arc::new(RwLock::new(HashMap::new())),
             }
         };
-        Ok(c)
+
+        unsafe {
+            CONTEXT = Some(c);
+        }
+
+        Ok(())
+    }
+
+    pub fn get() -> Context {
+        unsafe {
+            CONTEXT
+                .as_ref()
+                .expect("have not initialized GL Context yet!")
+                .clone()
+        }
     }
 
     ///

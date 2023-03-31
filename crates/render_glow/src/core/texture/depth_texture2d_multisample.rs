@@ -3,7 +3,6 @@ use glow::HasContext;
 use crate::core::texture::*;
 
 pub struct DepthTexture2DMultisample {
-    context: Context,
     id: glow::Renderbuffer,
     width: u32,
     height: u32,
@@ -11,19 +10,14 @@ pub struct DepthTexture2DMultisample {
 }
 
 impl DepthTexture2DMultisample {
-    pub fn new<T: DepthTextureDataType>(
-        context: &Context,
-        width: u32,
-        height: u32,
-        number_of_samples: u32,
-    ) -> Self {
+    pub fn new<T: DepthTextureDataType>(width: u32, height: u32, number_of_samples: u32) -> Self {
+        let context = Context::get();
         let id = unsafe {
             context
                 .create_renderbuffer()
                 .expect("Failed creating render buffer")
         };
         let texture = Self {
-            context: context.clone(),
             id,
             width,
             height,
@@ -60,7 +54,7 @@ impl DepthTexture2DMultisample {
 
     pub(in crate::core) fn bind_as_depth_target(&self) {
         unsafe {
-            self.context.framebuffer_renderbuffer(
+            Context::get().framebuffer_renderbuffer(
                 glow::FRAMEBUFFER,
                 glow::DEPTH_ATTACHMENT,
                 glow::RENDERBUFFER,
@@ -71,8 +65,7 @@ impl DepthTexture2DMultisample {
 
     pub(in crate::core) fn bind(&self) {
         unsafe {
-            self.context
-                .bind_renderbuffer(glow::RENDERBUFFER, Some(self.id));
+            Context::get().bind_renderbuffer(glow::RENDERBUFFER, Some(self.id));
         }
     }
 }
@@ -80,7 +73,7 @@ impl DepthTexture2DMultisample {
 impl Drop for DepthTexture2DMultisample {
     fn drop(&mut self) {
         unsafe {
-            self.context.delete_renderbuffer(self.id);
+            Context::get().delete_renderbuffer(self.id);
         }
     }
 }

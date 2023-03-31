@@ -14,7 +14,6 @@ use render_api::base::{
 /// Similar to [Mesh], except it is possible to render many instances of the same mesh efficiently.
 ///
 pub struct InstancedMesh {
-    context: Context,
     base_mesh: BaseMesh,
     instance_buffers: RwLock<(HashMap<String, InstanceBuffer>, Vec3)>,
     aabb: AxisAlignedBoundingBox,
@@ -31,11 +30,10 @@ impl InstancedMesh {
     /// All data in the [TriMesh] is transfered to the GPU, so make sure to remove all unnecessary data from the [TriMesh] before calling this method.
     /// The model is rendered in as many instances as there are attributes in [Instances] given as input.
     ///
-    pub fn new(context: &Context, instances: &Instances, cpu_mesh: &TriMesh) -> Self {
+    pub fn new(instances: &Instances, cpu_mesh: &TriMesh) -> Self {
         let aabb = cpu_mesh.compute_aabb();
         let mut instanced_mesh = Self {
-            context: context.clone(),
-            base_mesh: BaseMesh::new(context, cpu_mesh),
+            base_mesh: BaseMesh::new(cpu_mesh),
             instance_buffers: RwLock::new((Default::default(), vec3(0.0, 0.0, 0.0))),
             aabb,
             aabb_local: aabb,
@@ -190,7 +188,6 @@ impl InstancedMesh {
             instance_buffers.insert(
                 "instance_translation".to_string(),
                 InstanceBuffer::new_with_data(
-                    &self.context,
                     &indices
                         .iter()
                         .map(|i| self.instances.transformations[*i])
@@ -208,18 +205,9 @@ impl InstancedMesh {
                 row3.push(transformation.row(2));
             }
 
-            instance_buffers.insert(
-                "row1".to_string(),
-                InstanceBuffer::new_with_data(&self.context, &row1),
-            );
-            instance_buffers.insert(
-                "row2".to_string(),
-                InstanceBuffer::new_with_data(&self.context, &row2),
-            );
-            instance_buffers.insert(
-                "row3".to_string(),
-                InstanceBuffer::new_with_data(&self.context, &row3),
-            );
+            instance_buffers.insert("row1".to_string(), InstanceBuffer::new_with_data(&row1));
+            instance_buffers.insert("row2".to_string(), InstanceBuffer::new_with_data(&row2));
+            instance_buffers.insert("row3".to_string(), InstanceBuffer::new_with_data(&row3));
         }
 
         if let Some(texture_transforms) = &self.instances.texture_transformations {
@@ -239,11 +227,11 @@ impl InstancedMesh {
             }
             instance_buffers.insert(
                 "tex_transform_row1".to_string(),
-                InstanceBuffer::new_with_data(&self.context, &instance_tex_transform1),
+                InstanceBuffer::new_with_data(&instance_tex_transform1),
             );
             instance_buffers.insert(
                 "tex_transform_row2".to_string(),
-                InstanceBuffer::new_with_data(&self.context, &instance_tex_transform2),
+                InstanceBuffer::new_with_data(&instance_tex_transform2),
             );
         }
         if let Some(instance_colors) = &self.instances.colors {
@@ -254,7 +242,7 @@ impl InstancedMesh {
                 .collect::<Vec<Color>>();
             instance_buffers.insert(
                 "instance_color".to_string(),
-                InstanceBuffer::new_with_data(&self.context, &ordered_instance_colors),
+                InstanceBuffer::new_with_data(&ordered_instance_colors),
             );
         }
         instance_buffers
@@ -391,7 +379,7 @@ impl Geometry for InstancedMesh {
         let fragment_shader = material.fragment_shader(lights);
         let vertex_shader_source =
             self.vertex_shader_source(fragment_shader.attributes, instance_buffers);
-        self.context
+        Context::get()
             .program(vertex_shader_source, fragment_shader.source, |program| {
                 material.use_uniforms(program, camera, lights);
                 self.draw(
@@ -430,7 +418,7 @@ impl Geometry for InstancedMesh {
         let fragment_shader = material.fragment_shader(lights, color_texture, depth_texture);
         let vertex_shader_source =
             self.vertex_shader_source(fragment_shader.attributes, instance_buffers);
-        self.context
+        Context::get()
             .program(vertex_shader_source, fragment_shader.source, |program| {
                 material.use_uniforms(program, camera, lights, color_texture, depth_texture);
                 self.draw(

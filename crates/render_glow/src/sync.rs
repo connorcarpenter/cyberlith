@@ -42,7 +42,7 @@ fn sync_mesh_assets(
     let added_handles = api_assets.flush_added();
     for added_handle in added_handles {
         let api_data = api_assets.get(&added_handle).unwrap();
-        let impl_data = BaseMesh::new(&frame_input.context, api_data);
+        let impl_data = BaseMesh::new(api_data);
         asset_impls.insert(added_handle, impl_data);
     }
 }
@@ -58,7 +58,7 @@ fn sync_material_assets(
     let added_handles = api_assets.flush_added();
     for added_handle in added_handles {
         let api_data = api_assets.get(&added_handle).unwrap();
-        let impl_data = ColorMaterial::new(&frame_input.context, api_data);
+        let impl_data = ColorMaterial::new(api_data);
         asset_impls.insert(added_handle, Box::new(impl_data));
     }
 }

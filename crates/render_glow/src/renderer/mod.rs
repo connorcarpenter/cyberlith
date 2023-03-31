@@ -100,7 +100,6 @@ macro_rules! impl_render_target_extensions_body {
                     )
                 });
                 let mut geometry_pass_texture = Texture2DArray::new_empty::<[u8; 4]>(
-                    &self.context,
                     viewport.width,
                     viewport.height,
                     3,
@@ -111,7 +110,6 @@ macro_rules! impl_render_target_extensions_body {
                     Wrapping::ClampToEdge,
                 );
                 let mut geometry_pass_depth_texture = DepthTexture2D::new::<f32>(
-                    &self.context,
                     viewport.width,
                     viewport.height,
                     Wrapping::ClampToEdge,
@@ -134,7 +132,6 @@ macro_rules! impl_render_target_extensions_body {
                 // Lighting pass
                 self.write_partially(scissor_box, || {
                     DeferredPhysicalMaterial::lighting_pass(
-                        &self.context,
                         camera,
                         ColorTexture::Array {
                             texture: &geometry_pass_texture,
@@ -357,7 +354,6 @@ pub fn cmp_render_order(
 /// Returns ```None``` if no geometry was hit between the near (`z_near`) and far (`z_far`) plane for this camera.
 ///https://towardsdatascience.com/gpt-4-will-have-100-trillion-parameters-500x-the-size-of-gpt-3-582b98d82253
 pub fn pick(
-    context: &Context,
     camera: &Camera,
     pixel: (f32, f32),
     geometries: impl IntoIterator<Item = impl Geometry>,
@@ -365,7 +361,6 @@ pub fn pick(
     let pos = camera.position_at_pixel(pixel);
     let dir = camera.view_direction_at_pixel(pixel);
     ray_intersect(
-        context,
         pos + dir * camera.z_near(),
         dir,
         camera.z_far() - camera.z_near(),
@@ -378,7 +373,6 @@ pub fn pick(
 /// Returns ```None``` if no geometry was hit before the given maximum depth.
 ///
 pub fn ray_intersect(
-    context: &Context,
     position: Vec3,
     direction: Vec3,
     max_depth: f32,
@@ -401,7 +395,6 @@ pub fn ray_intersect(
         max_depth,
     );
     let mut texture = Texture2D::new_empty::<f32>(
-        context,
         viewport.width,
         viewport.height,
         Interpolation::Nearest,
@@ -411,7 +404,6 @@ pub fn ray_intersect(
         Wrapping::ClampToEdge,
     );
     let mut depth_texture = DepthTexture2D::new::<f32>(
-        context,
         viewport.width,
         viewport.height,
         Wrapping::ClampToEdge,

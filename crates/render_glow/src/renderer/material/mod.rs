@@ -153,7 +153,7 @@ pub trait FromPbrMaterial: std::marker::Sized {
     ///
     /// Creates a new material that can be used for rendering from a [PbrMaterial].
     ///
-    fn from_cpu_material(context: &Context, cpu_material: &PbrMaterial) -> Self;
+    fn from_cpu_material(cpu_material: &PbrMaterial) -> Self;
 }
 
 impl<T: Material + ?Sized> Material for &T {

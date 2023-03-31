@@ -152,12 +152,15 @@ use crate::core::*;
 
 // COMMON TEXTURE FUNCTIONS
 
-fn generate(context: &Context) -> glow::Texture {
-    unsafe { context.create_texture().expect("Failed creating texture") }
+fn generate() -> glow::Texture {
+    unsafe {
+        Context::get()
+            .create_texture()
+            .expect("Failed creating texture")
+    }
 }
 
 fn set_parameters(
-    context: &Context,
     target: u32,
     min_filter: Interpolation,
     mag_filter: Interpolation,
@@ -167,6 +170,7 @@ fn set_parameters(
     wrap_r: Option<Wrapping>,
 ) {
     unsafe {
+        let context = Context::get();
         match mip_map_filter {
             None => context.tex_parameter_i32(
                 target,

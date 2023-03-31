@@ -10,7 +10,6 @@ use render_api::base::*;
 /// Also see [RenderTargetMultisample] and [ColorTargetMultisample].
 ///
 pub struct DepthTargetMultisample<D: DepthTextureDataType> {
-    pub(crate) context: Context,
     depth: DepthTexture2DMultisample,
     _d: std::marker::PhantomData<D>,
 }
@@ -20,12 +19,11 @@ impl<D: DepthTextureDataType> DepthTargetMultisample<D> {
     /// Constructs a new multisample depth target with the given dimensions and number of samples.
     /// The number of samples must be larger than 0, less than or equal to the maximum number of samples supported by the hardware and power of two.
     ///
-    pub fn new(context: &Context, width: u32, height: u32, number_of_samples: u32) -> Self {
+    pub fn new(width: u32, height: u32, number_of_samples: u32) -> Self {
         #[cfg(debug_assertions)]
-        super::multisample_sanity_check(context, number_of_samples);
+        super::multisample_sanity_check(number_of_samples);
         Self {
-            context: context.clone(),
-            depth: DepthTexture2DMultisample::new::<D>(context, width, height, number_of_samples),
+            depth: DepthTexture2DMultisample::new::<D>(width, height, number_of_samples),
             _d: std::marker::PhantomData,
         }
     }
@@ -82,7 +80,7 @@ impl<D: DepthTextureDataType> DepthTargetMultisample<D> {
     }
 
     fn as_render_target(&self) -> RenderTarget<'_> {
-        DepthTarget::new_texture_2d_multisample(&self.context, &self.depth).as_render_target()
+        DepthTarget::new_texture_2d_multisample(&self.depth).as_render_target()
     }
 
     ///
@@ -99,7 +97,6 @@ impl<D: DepthTextureDataType> DepthTargetMultisample<D> {
     ///
     pub fn resolve(&self) -> DepthTexture2D {
         let mut depth_texture = DepthTexture2D::new::<D>(
-            &self.context,
             self.width(),
             self.height(),
             Wrapping::ClampToEdge,

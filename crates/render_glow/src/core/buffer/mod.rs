@@ -43,7 +43,6 @@ impl BufferDataType for Quat {}
 impl<T: BufferDataType + ?Sized> BufferDataType for &T {}
 
 struct Buffer {
-    context: Context,
     id: glow::Buffer,
     attribute_count: u32,
     data_type: u32,
@@ -51,18 +50,21 @@ struct Buffer {
 }
 
 impl Buffer {
-    pub fn new(context: &Context) -> Self {
+    pub fn new() -> Self {
         Self {
-            context: context.clone(),
-            id: unsafe { context.create_buffer().expect("Failed creating buffer") },
+            id: unsafe {
+                Context::get()
+                    .create_buffer()
+                    .expect("Failed creating buffer")
+            },
             attribute_count: 0,
             data_type: 0,
             data_size: 0,
         }
     }
 
-    pub fn new_with_data<T: BufferDataType>(context: &Context, data: &[T]) -> Self {
-        let mut buffer = Self::new(context);
+    pub fn new_with_data<T: BufferDataType>(data: &[T]) -> Self {
+        let mut buffer = Self::new();
         if !data.is_empty() {
             buffer.fill(data);
         }
@@ -72,7 +74,8 @@ impl Buffer {
     pub fn fill<T: BufferDataType>(&mut self, data: &[T]) {
         self.bind();
         unsafe {
-            self.context.buffer_data_u8_slice(
+            let context = Context::get();
+            context.buffer_data_u8_slice(
                 glow::ARRAY_BUFFER,
                 to_byte_slice(data),
                 if self.attribute_count > 0 {
@@ -81,7 +84,7 @@ impl Buffer {
                     glow::STATIC_DRAW
                 },
             );
-            self.context.bind_buffer(glow::ARRAY_BUFFER, None);
+            context.bind_buffer(glow::ARRAY_BUFFER, None);
         }
         self.attribute_count = data.len() as u32;
         self.data_type = T::data_type();
@@ -94,7 +97,7 @@ impl Buffer {
 
     pub fn bind(&self) {
         unsafe {
-            self.context.bind_buffer(glow::ARRAY_BUFFER, Some(self.id));
+            Context::get().bind_buffer(glow::ARRAY_BUFFER, Some(self.id));
         }
     }
 }
@@ -102,7 +105,7 @@ impl Buffer {
 impl Drop for Buffer {
     fn drop(&mut self) {
         unsafe {
-            self.context.delete_buffer(self.id);
+            Context::get().delete_buffer(self.id);
         }
     }
 }

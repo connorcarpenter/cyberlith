@@ -28,15 +28,15 @@ pub struct ORMMaterial {
 
 impl ORMMaterial {
     /// Constructs a new ORM material from a [PbrMaterial] where only relevant information is used.
-    pub fn new(context: &Context, cpu_material: &PbrMaterial) -> Self {
+    pub fn new(cpu_material: &PbrMaterial) -> Self {
         let metallic_roughness_texture =
             if let Some(ref cpu_texture) = cpu_material.occlusion_metallic_roughness_texture {
-                Some(Arc::new(Texture2D::new(context, cpu_texture)).into())
+                Some(Arc::new(Texture2D::new(cpu_texture)).into())
             } else {
                 cpu_material
                     .metallic_roughness_texture
                     .as_ref()
-                    .map(|cpu_texture| Arc::new(Texture2D::new(context, cpu_texture)).into())
+                    .map(|cpu_texture| Arc::new(Texture2D::new(cpu_texture)).into())
             };
         let occlusion_texture = if cpu_material.occlusion_metallic_roughness_texture.is_some() {
             metallic_roughness_texture.clone()
@@ -44,7 +44,7 @@ impl ORMMaterial {
             cpu_material
                 .occlusion_texture
                 .as_ref()
-                .map(|cpu_texture| Arc::new(Texture2D::new(context, cpu_texture)).into())
+                .map(|cpu_texture| Arc::new(Texture2D::new(cpu_texture)).into())
         };
         Self {
             metallic: cpu_material.metallic,
@@ -74,8 +74,8 @@ impl ORMMaterial {
 }
 
 impl FromPbrMaterial for ORMMaterial {
-    fn from_cpu_material(context: &Context, cpu_material: &PbrMaterial) -> Self {
-        Self::new(context, cpu_material)
+    fn from_cpu_material(cpu_material: &PbrMaterial) -> Self {
+        Self::new(cpu_material)
     }
 }
 

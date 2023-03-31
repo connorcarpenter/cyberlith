@@ -7,7 +7,6 @@ use render_api::base::*;
 /// An array of 2D depth textures that can be rendered into and read from. See also [RenderTarget] and [DepthTarget].
 ///
 pub struct DepthTexture2DArray {
-    context: Context,
     id: glow::Texture,
     width: u32,
     height: u32,
@@ -19,16 +18,14 @@ impl DepthTexture2DArray {
     /// Creates a new array of depth textures.
     ///
     pub fn new<T: DepthTextureDataType>(
-        context: &Context,
         width: u32,
         height: u32,
         depth: u32,
         wrap_s: Wrapping,
         wrap_t: Wrapping,
     ) -> Self {
-        let id = generate(context);
+        let id = generate();
         let texture = Self {
-            context: context.clone(),
             id,
             width,
             height,
@@ -36,7 +33,6 @@ impl DepthTexture2DArray {
         };
         texture.bind();
         set_parameters(
-            context,
             glow::TEXTURE_2D_ARRAY,
             Interpolation::Nearest,
             Interpolation::Nearest,
@@ -46,7 +42,7 @@ impl DepthTexture2DArray {
             None,
         );
         unsafe {
-            context.tex_storage_3d(
+            Context::get().tex_storage_3d(
                 glow::TEXTURE_2D_ARRAY,
                 1,
                 T::internal_format(),
@@ -63,7 +59,7 @@ impl DepthTexture2DArray {
     /// Combine this together with a [ColorTarget] with [RenderTarget::new] to be able to write to both a depth and color target at the same time.
     ///
     pub fn as_depth_target(&mut self, layer: u32) -> DepthTarget<'_> {
-        DepthTarget::new_texture_2d_array(&self.context, self, layer)
+        DepthTarget::new_texture_2d_array(self, layer)
     }
 
     /// The width of this texture.
@@ -83,7 +79,7 @@ impl DepthTexture2DArray {
 
     pub(in crate::core) fn bind_as_depth_target(&self, layer: u32) {
         unsafe {
-            self.context.framebuffer_texture_layer(
+            Context::get().framebuffer_texture_layer(
                 glow::DRAW_FRAMEBUFFER,
                 glow::DEPTH_ATTACHMENT,
                 Some(self.id),
@@ -95,8 +91,7 @@ impl DepthTexture2DArray {
 
     pub(in crate::core) fn bind(&self) {
         unsafe {
-            self.context
-                .bind_texture(glow::TEXTURE_2D_ARRAY, Some(self.id));
+            Context::get().bind_texture(glow::TEXTURE_2D_ARRAY, Some(self.id));
         }
     }
 }
@@ -104,7 +99,7 @@ impl DepthTexture2DArray {
 impl Drop for DepthTexture2DArray {
     fn drop(&mut self) {
         unsafe {
-            self.context.delete_texture(self.id);
+            Context::get().delete_texture(self.id);
         }
     }
 }

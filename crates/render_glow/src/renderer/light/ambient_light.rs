@@ -27,7 +27,6 @@ impl AmbientLight {
 
     /// Constructs an ambient light that shines based on the given environment map.
     pub fn new_with_environment(
-        context: &Context,
         intensity: f32,
         color: Color,
         environment_map: &TextureCubeMap,
@@ -35,7 +34,7 @@ impl AmbientLight {
         Self {
             intensity,
             color,
-            environment: Some(Environment::new(context, environment_map)),
+            environment: Some(Environment::new(environment_map)),
         }
     }
 }

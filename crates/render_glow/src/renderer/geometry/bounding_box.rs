@@ -15,22 +15,18 @@ impl BoundingBox {
     ///
     /// Creates a bounding box geometry from an axis aligned bounding box.
     ///
-    pub fn new(context: &Context, aabb: AxisAlignedBoundingBox) -> Self {
+    pub fn new(aabb: AxisAlignedBoundingBox) -> Self {
         let size = aabb.size();
         let thickness = 0.02 * size.x.max(size.y).max(size.z);
 
-        Self::new_with_thickness(context, aabb, thickness)
+        Self::new_with_thickness(aabb, thickness)
     }
 
     ///
     /// Creates a bounding box object from an axis aligned bounding box with a specified line
     /// thickness.
     ///
-    pub fn new_with_thickness(
-        context: &Context,
-        aabb: AxisAlignedBoundingBox,
-        thickness: f32,
-    ) -> Self {
+    pub fn new_with_thickness(aabb: AxisAlignedBoundingBox, thickness: f32) -> Self {
         let max = aabb.max();
         let min = aabb.min();
         let size = aabb.size();
@@ -50,7 +46,6 @@ impl BoundingBox {
         ];
 
         let mesh = InstancedMesh::new(
-            context,
             &Instances {
                 transformations: (0..12)
                     .map(|i| {

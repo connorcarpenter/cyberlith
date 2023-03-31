@@ -30,9 +30,6 @@ pub struct FrameInput<T: 'static + Clone> {
 
     /// Whether or not this is the first frame.
     pub first_frame: bool,
-
-    /// The graphics context for the window.
-    pub context: Context,
 }
 
 impl<T: 'static + Clone> FrameInput<T> {
@@ -45,7 +42,7 @@ impl<T: 'static + Clone> FrameInput<T> {
     /// ```
     ///
     pub fn screen(&self) -> RenderTarget {
-        RenderTarget::screen(&self.context, self.viewport.width, self.viewport.height)
+        RenderTarget::screen(self.viewport.width, self.viewport.height)
     }
 }
 

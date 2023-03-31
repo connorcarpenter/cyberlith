@@ -17,7 +17,7 @@ pub struct DepthMaterial {
 }
 
 impl FromPbrMaterial for DepthMaterial {
-    fn from_cpu_material(_context: &Context, _cpu_material: &PbrMaterial) -> Self {
+    fn from_cpu_material(_cpu_material: &PbrMaterial) -> Self {
         Self::default()
     }
 }

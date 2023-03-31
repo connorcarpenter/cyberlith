@@ -7,7 +7,6 @@ use render_api::base::Texture2D as CpuTexture;
 /// A 2D texture, basically an image that is transferred to the GPU.
 ///
 pub struct Texture2D {
-    context: Context,
     id: glow::Texture,
     width: u32,
     height: u32,
@@ -19,30 +18,25 @@ impl Texture2D {
     ///
     /// Construcs a new texture with the given data.
     ///
-    pub fn new(context: &Context, cpu_texture: &CpuTexture) -> Self {
+    pub fn new(cpu_texture: &CpuTexture) -> Self {
         match cpu_texture.data {
-            TextureData::RU8(ref data) => Self::new_with_data(context, cpu_texture, data),
-            TextureData::RgU8(ref data) => Self::new_with_data(context, cpu_texture, data),
-            TextureData::RgbU8(ref data) => Self::new_with_data(context, cpu_texture, data),
-            TextureData::RgbaU8(ref data) => Self::new_with_data(context, cpu_texture, data),
-            TextureData::RF16(ref data) => Self::new_with_data(context, cpu_texture, data),
-            TextureData::RgF16(ref data) => Self::new_with_data(context, cpu_texture, data),
-            TextureData::RgbF16(ref data) => Self::new_with_data(context, cpu_texture, data),
-            TextureData::RgbaF16(ref data) => Self::new_with_data(context, cpu_texture, data),
-            TextureData::RF32(ref data) => Self::new_with_data(context, cpu_texture, data),
-            TextureData::RgF32(ref data) => Self::new_with_data(context, cpu_texture, data),
-            TextureData::RgbF32(ref data) => Self::new_with_data(context, cpu_texture, data),
-            TextureData::RgbaF32(ref data) => Self::new_with_data(context, cpu_texture, data),
+            TextureData::RU8(ref data) => Self::new_with_data(cpu_texture, data),
+            TextureData::RgU8(ref data) => Self::new_with_data(cpu_texture, data),
+            TextureData::RgbU8(ref data) => Self::new_with_data(cpu_texture, data),
+            TextureData::RgbaU8(ref data) => Self::new_with_data(cpu_texture, data),
+            TextureData::RF16(ref data) => Self::new_with_data(cpu_texture, data),
+            TextureData::RgF16(ref data) => Self::new_with_data(cpu_texture, data),
+            TextureData::RgbF16(ref data) => Self::new_with_data(cpu_texture, data),
+            TextureData::RgbaF16(ref data) => Self::new_with_data(cpu_texture, data),
+            TextureData::RF32(ref data) => Self::new_with_data(cpu_texture, data),
+            TextureData::RgF32(ref data) => Self::new_with_data(cpu_texture, data),
+            TextureData::RgbF32(ref data) => Self::new_with_data(cpu_texture, data),
+            TextureData::RgbaF32(ref data) => Self::new_with_data(cpu_texture, data),
         }
     }
 
-    fn new_with_data<T: TextureDataType>(
-        context: &Context,
-        cpu_texture: &CpuTexture,
-        data: &[T],
-    ) -> Self {
+    fn new_with_data<T: TextureDataType>(cpu_texture: &CpuTexture, data: &[T]) -> Self {
         let mut texture = Self::new_empty::<T>(
-            context,
             cpu_texture.width,
             cpu_texture.height,
             cpu_texture.min_filter,
@@ -61,7 +55,6 @@ impl Texture2D {
     /// (for example, if [u8; 4] is specified, the format is RGBA and the data type is byte).
     ///
     pub fn new_empty<T: TextureDataType>(
-        context: &Context,
         width: u32,
         height: u32,
         min_filter: Interpolation,
@@ -70,10 +63,9 @@ impl Texture2D {
         wrap_s: Wrapping,
         wrap_t: Wrapping,
     ) -> Self {
-        let id = generate(context);
+        let id = generate();
         let number_of_mip_maps = calculate_number_of_mip_maps(mip_map_filter, width, height, None);
         let texture = Self {
-            context: context.clone(),
             id,
             width,
             height,
@@ -82,7 +74,6 @@ impl Texture2D {
         };
         texture.bind();
         set_parameters(
-            context,
             glow::TEXTURE_2D,
             min_filter,
             mag_filter,
@@ -96,7 +87,7 @@ impl Texture2D {
             None,
         );
         unsafe {
-            context.tex_storage_2d(
+            Context::get().tex_storage_2d(
                 glow::TEXTURE_2D,
                 number_of_mip_maps as i32,
                 T::internal_format(),
@@ -121,7 +112,7 @@ impl Texture2D {
         let mut data = data.to_owned();
         flip_y(&mut data, self.width as usize, self.height as usize);
         unsafe {
-            self.context.tex_sub_image_2d(
+            Context::get().tex_sub_image_2d(
                 glow::TEXTURE_2D,
                 0,
                 0,
@@ -145,7 +136,7 @@ impl Texture2D {
     /// **Note:** [DepthTest] is disabled if not also writing to a depth texture.
     ///
     pub fn as_color_target(&mut self, mip_level: Option<u32>) -> ColorTarget<'_> {
-        ColorTarget::new_texture2d(&self.context, self, mip_level)
+        ColorTarget::new_texture2d(self, mip_level)
     }
 
     /// The width of this texture.
@@ -162,14 +153,14 @@ impl Texture2D {
         if self.number_of_mip_maps > 1 {
             self.bind();
             unsafe {
-                self.context.generate_mipmap(glow::TEXTURE_2D);
+                Context::get().generate_mipmap(glow::TEXTURE_2D);
             }
         }
     }
 
     pub(in crate::core) fn bind_as_color_target(&self, channel: u32, mip_level: u32) {
         unsafe {
-            self.context.framebuffer_texture_2d(
+            Context::get().framebuffer_texture_2d(
                 glow::FRAMEBUFFER,
                 glow::COLOR_ATTACHMENT0 + channel,
                 glow::TEXTURE_2D,
@@ -180,7 +171,7 @@ impl Texture2D {
     }
     pub(in crate::core) fn bind(&self) {
         unsafe {
-            self.context.bind_texture(glow::TEXTURE_2D, Some(self.id));
+            Context::get().bind_texture(glow::TEXTURE_2D, Some(self.id));
         }
     }
 }
@@ -188,7 +179,7 @@ impl Texture2D {
 impl Drop for Texture2D {
     fn drop(&mut self) {
         unsafe {
-            self.context.delete_texture(self.id);
+            Context::get().delete_texture(self.id);
         }
     }
 }

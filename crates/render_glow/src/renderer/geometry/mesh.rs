@@ -90,8 +90,7 @@ impl<'a> Geometry for Mesh<'a> {
     ) {
         let fragment_shader = material.fragment_shader(lights);
         let vertex_shader_source = self.vertex_shader_source(fragment_shader.attributes);
-        self.base_mesh
-            .context
+        Context::get()
             .program(vertex_shader_source, fragment_shader.source, |program| {
                 material.use_uniforms(program, camera, lights);
                 self.draw(
@@ -114,8 +113,7 @@ impl<'a> Geometry for Mesh<'a> {
     ) {
         let fragment_shader = material.fragment_shader(lights, color_texture, depth_texture);
         let vertex_shader_source = self.vertex_shader_source(fragment_shader.attributes);
-        self.base_mesh
-            .context
+        Context::get()
             .program(vertex_shader_source, fragment_shader.source, |program| {
                 material.use_uniforms(program, camera, lights, color_texture, depth_texture);
                 self.draw(

@@ -3,7 +3,6 @@ use glow::HasContext;
 use crate::core::texture::*;
 
 pub struct Texture2DMultisample {
-    context: Context,
     id: glow::Renderbuffer,
     width: u32,
     height: u32,
@@ -11,19 +10,14 @@ pub struct Texture2DMultisample {
 }
 
 impl Texture2DMultisample {
-    pub fn new<T: TextureDataType>(
-        context: &Context,
-        width: u32,
-        height: u32,
-        number_of_samples: u32,
-    ) -> Self {
+    pub fn new<T: TextureDataType>(width: u32, height: u32, number_of_samples: u32) -> Self {
+        let context = Context::get();
         let id = unsafe {
             context
                 .create_renderbuffer()
                 .expect("Failed creating render buffer")
         };
         let texture = Self {
-            context: context.clone(),
             id,
             width,
             height,
@@ -59,7 +53,7 @@ impl Texture2DMultisample {
 
     pub(in crate::core) fn bind_as_color_target(&self, channel: u32) {
         unsafe {
-            self.context.framebuffer_renderbuffer(
+            Context::get().framebuffer_renderbuffer(
                 glow::FRAMEBUFFER,
                 glow::COLOR_ATTACHMENT0 + channel,
                 glow::RENDERBUFFER,
@@ -69,8 +63,7 @@ impl Texture2DMultisample {
     }
     pub(in crate::core) fn bind(&self) {
         unsafe {
-            self.context
-                .bind_renderbuffer(glow::RENDERBUFFER, Some(self.id));
+            Context::get().bind_renderbuffer(glow::RENDERBUFFER, Some(self.id));
         }
     }
 }
@@ -78,7 +71,7 @@ impl Texture2DMultisample {
 impl Drop for Texture2DMultisample {
     fn drop(&mut self) {
         unsafe {
-            self.context.delete_renderbuffer(self.id);
+            Context::get().delete_renderbuffer(self.id);
         }
     }
 }

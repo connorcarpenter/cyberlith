@@ -7,7 +7,6 @@ use render_api::base::*;
 /// A depth texture cube map that can be rendered into and read from. See also [RenderTarget] and [DepthTarget].
 ///
 pub struct DepthTextureCubeMap {
-    context: Context,
     id: glow::Texture,
     width: u32,
     height: u32,
@@ -18,23 +17,16 @@ impl DepthTextureCubeMap {
     /// Creates a new depth texture cube map.
     ///
     pub fn new<T: DepthTextureDataType>(
-        context: &Context,
         width: u32,
         height: u32,
         wrap_s: Wrapping,
         wrap_t: Wrapping,
         wrap_r: Wrapping,
     ) -> Self {
-        let id = generate(context);
-        let texture = Self {
-            context: context.clone(),
-            id,
-            width,
-            height,
-        };
+        let id = generate();
+        let texture = Self { id, width, height };
         texture.bind();
         set_parameters(
-            context,
             glow::TEXTURE_CUBE_MAP,
             Interpolation::Nearest,
             Interpolation::Nearest,
@@ -44,7 +36,7 @@ impl DepthTextureCubeMap {
             Some(wrap_r),
         );
         unsafe {
-            context.tex_storage_2d(
+            Context::get().tex_storage_2d(
                 glow::TEXTURE_CUBE_MAP,
                 1,
                 T::internal_format(),
@@ -60,7 +52,7 @@ impl DepthTextureCubeMap {
     /// Combine this together with a [ColorTarget] with [RenderTarget::new] to be able to write to both a depth and color target at the same time.
     ///
     pub fn as_depth_target(&mut self, side: CubeMapSide) -> DepthTarget<'_> {
-        DepthTarget::new_texture_cube_map(&self.context, self, side)
+        DepthTarget::new_texture_cube_map(self, side)
     }
 
     /// The width of this texture.
@@ -75,7 +67,7 @@ impl DepthTextureCubeMap {
 
     pub(in crate::core) fn bind_as_depth_target(&self, side: CubeMapSide) {
         unsafe {
-            self.context.framebuffer_texture_2d(
+            Context::get().framebuffer_texture_2d(
                 glow::DRAW_FRAMEBUFFER,
                 glow::DEPTH_ATTACHMENT,
                 side.to_const(),
@@ -87,8 +79,7 @@ impl DepthTextureCubeMap {
 
     pub(in crate::core) fn bind(&self) {
         unsafe {
-            self.context
-                .bind_texture(glow::TEXTURE_CUBE_MAP, Some(self.id));
+            Context::get().bind_texture(glow::TEXTURE_CUBE_MAP, Some(self.id));
         }
     }
 }
@@ -96,7 +87,7 @@ impl DepthTextureCubeMap {
 impl Drop for DepthTextureCubeMap {
     fn drop(&mut self) {
         unsafe {
-            self.context.delete_texture(self.id);
+            Context::get().delete_texture(self.id);
         }
     }
 }

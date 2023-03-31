@@ -9,7 +9,6 @@ use render_api::base::{Texture2D as CpuTexture, TextureData};
 /// Use a [RenderTarget] to write to both color and depth.
 ///
 pub struct Texture2DArray {
-    context: Context,
     id: glow::Texture,
     width: u32,
     height: u32,
@@ -23,18 +22,16 @@ impl Texture2DArray {
     /// Creates a new texture array from the given [Texture2D]s.
     /// All of the cpu textures must contain data with the same [TextureDataType] and the same width and height.
     ///
-    pub fn new(context: &Context, cpu_textures: &[&CpuTexture]) -> Self {
+    pub fn new(cpu_textures: &[&CpuTexture]) -> Self {
         let cpu_texture = cpu_textures
             .get(0)
             .expect("Expect at least one texture in a texture array");
         match &cpu_texture.data {
             TextureData::RU8(_) => Self::new_with_data(
-                context,
                 cpu_texture,
                 &cpu_textures.iter().map(|t| ru8_data(t)).collect::<Vec<_>>(),
             ),
             TextureData::RgU8(_) => Self::new_with_data(
-                context,
                 cpu_texture,
                 &cpu_textures
                     .iter()
@@ -42,7 +39,6 @@ impl Texture2DArray {
                     .collect::<Vec<_>>(),
             ),
             TextureData::RgbU8(_) => Self::new_with_data(
-                context,
                 cpu_texture,
                 &cpu_textures
                     .iter()
@@ -50,7 +46,6 @@ impl Texture2DArray {
                     .collect::<Vec<_>>(),
             ),
             TextureData::RgbaU8(_) => Self::new_with_data(
-                context,
                 cpu_texture,
                 &cpu_textures
                     .iter()
@@ -58,7 +53,6 @@ impl Texture2DArray {
                     .collect::<Vec<_>>(),
             ),
             TextureData::RF16(_) => Self::new_with_data(
-                context,
                 cpu_texture,
                 &cpu_textures
                     .iter()
@@ -66,7 +60,6 @@ impl Texture2DArray {
                     .collect::<Vec<_>>(),
             ),
             TextureData::RgF16(_) => Self::new_with_data(
-                context,
                 cpu_texture,
                 &cpu_textures
                     .iter()
@@ -74,7 +67,6 @@ impl Texture2DArray {
                     .collect::<Vec<_>>(),
             ),
             TextureData::RgbF16(_) => Self::new_with_data(
-                context,
                 cpu_texture,
                 &cpu_textures
                     .iter()
@@ -82,7 +74,6 @@ impl Texture2DArray {
                     .collect::<Vec<_>>(),
             ),
             TextureData::RgbaF16(_) => Self::new_with_data(
-                context,
                 cpu_texture,
                 &cpu_textures
                     .iter()
@@ -90,7 +81,6 @@ impl Texture2DArray {
                     .collect::<Vec<_>>(),
             ),
             TextureData::RF32(_) => Self::new_with_data(
-                context,
                 cpu_texture,
                 &cpu_textures
                     .iter()
@@ -98,7 +88,6 @@ impl Texture2DArray {
                     .collect::<Vec<_>>(),
             ),
             TextureData::RgF32(_) => Self::new_with_data(
-                context,
                 cpu_texture,
                 &cpu_textures
                     .iter()
@@ -106,7 +95,6 @@ impl Texture2DArray {
                     .collect::<Vec<_>>(),
             ),
             TextureData::RgbF32(_) => Self::new_with_data(
-                context,
                 cpu_texture,
                 &cpu_textures
                     .iter()
@@ -114,7 +102,6 @@ impl Texture2DArray {
                     .collect::<Vec<_>>(),
             ),
             TextureData::RgbaF32(_) => Self::new_with_data(
-                context,
                 cpu_texture,
                 &cpu_textures
                     .iter()
@@ -124,13 +111,8 @@ impl Texture2DArray {
         }
     }
 
-    fn new_with_data<T: TextureDataType>(
-        context: &Context,
-        cpu_texture: &CpuTexture,
-        data: &[&[T]],
-    ) -> Self {
+    fn new_with_data<T: TextureDataType>(cpu_texture: &CpuTexture, data: &[&[T]]) -> Self {
         let mut texture = Self::new_empty::<T>(
-            context,
             cpu_texture.width,
             cpu_texture.height,
             data.len() as u32,
@@ -148,7 +130,6 @@ impl Texture2DArray {
     /// Creates a new array of 2D textures.
     ///
     pub fn new_empty<T: TextureDataType>(
-        context: &Context,
         width: u32,
         height: u32,
         depth: u32,
@@ -158,10 +139,9 @@ impl Texture2DArray {
         wrap_s: Wrapping,
         wrap_t: Wrapping,
     ) -> Self {
-        let id = generate(context);
+        let id = generate();
         let number_of_mip_maps = calculate_number_of_mip_maps(mip_map_filter, width, height, None);
         let texture = Self {
-            context: context.clone(),
             id,
             width,
             height,
@@ -171,7 +151,6 @@ impl Texture2DArray {
         };
         texture.bind();
         set_parameters(
-            context,
             glow::TEXTURE_2D_ARRAY,
             min_filter,
             mag_filter,
@@ -185,7 +164,7 @@ impl Texture2DArray {
             None,
         );
         unsafe {
-            context.tex_storage_3d(
+            Context::get().tex_storage_3d(
                 glow::TEXTURE_2D_ARRAY,
                 number_of_mip_maps as i32,
                 T::internal_format(),
@@ -230,7 +209,7 @@ impl Texture2DArray {
         let mut data = (*data).to_owned();
         flip_y(&mut data, self.width as usize, self.height as usize);
         unsafe {
-            self.context.tex_sub_image_3d(
+            Context::get().tex_sub_image_3d(
                 glow::TEXTURE_2D_ARRAY,
                 0,
                 0,
@@ -260,7 +239,7 @@ impl Texture2DArray {
         layers: &'a [u32],
         mip_level: Option<u32>,
     ) -> ColorTarget<'a> {
-        ColorTarget::new_texture_2d_array(&self.context, self, layers, mip_level)
+        ColorTarget::new_texture_2d_array(self, layers, mip_level)
     }
 
     /// The width of this texture.
@@ -282,14 +261,14 @@ impl Texture2DArray {
         if self.number_of_mip_maps > 1 {
             self.bind();
             unsafe {
-                self.context.generate_mipmap(glow::TEXTURE_2D_ARRAY);
+                Context::get().generate_mipmap(glow::TEXTURE_2D_ARRAY);
             }
         }
     }
 
     pub(in crate::core) fn bind_as_color_target(&self, layer: u32, channel: u32, mip_level: u32) {
         unsafe {
-            self.context.framebuffer_texture_layer(
+            Context::get().framebuffer_texture_layer(
                 glow::DRAW_FRAMEBUFFER,
                 glow::COLOR_ATTACHMENT0 + channel,
                 Some(self.id),
@@ -301,8 +280,7 @@ impl Texture2DArray {
 
     pub(in crate::core) fn bind(&self) {
         unsafe {
-            self.context
-                .bind_texture(glow::TEXTURE_2D_ARRAY, Some(self.id));
+            Context::get().bind_texture(glow::TEXTURE_2D_ARRAY, Some(self.id));
         }
     }
 }
@@ -310,7 +288,7 @@ impl Texture2DArray {
 impl Drop for Texture2DArray {
     fn drop(&mut self) {
         unsafe {
-            self.context.delete_texture(self.id);
+            Context::get().delete_texture(self.id);
         }
     }
 }

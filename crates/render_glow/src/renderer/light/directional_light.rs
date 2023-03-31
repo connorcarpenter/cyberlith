@@ -7,7 +7,6 @@ use render_api::base::{AxisAlignedBoundingBox, Camera, Color, Mat4, Vec3, Viewpo
 /// The light will cast shadows if you [generate a shadow map](DirectionalLight::generate_shadow_map).
 ///
 pub struct DirectionalLight {
-    context: Context,
     shadow_texture: Option<DepthTexture2D>,
     shadow_matrix: Mat4,
     /// The intensity of the light. This allows for higher intensity than 1 which can be used to simulate high intensity light sources like the sun.
@@ -20,14 +19,8 @@ pub struct DirectionalLight {
 
 impl DirectionalLight {
     /// Creates a new directional light.
-    pub fn new(
-        context: &Context,
-        intensity: f32,
-        color: Color,
-        direction: &Vec3,
-    ) -> DirectionalLight {
+    pub fn new(intensity: f32, color: Color, direction: &Vec3) -> DirectionalLight {
         DirectionalLight {
-            context: context.clone(),
             shadow_matrix: Mat4::identity(),
             shadow_texture: None,
             intensity,
@@ -81,7 +74,6 @@ impl DirectionalLight {
             z_far,
         );
         let mut shadow_texture = DepthTexture2D::new::<f32>(
-            &self.context,
             texture_size,
             texture_size,
             Wrapping::ClampToEdge,

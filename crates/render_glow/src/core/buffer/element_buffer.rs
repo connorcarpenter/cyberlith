@@ -31,7 +31,6 @@ impl ElementBufferDataType for u32 {
 /// See for example [Program::draw_elements] to use this for drawing.
 ///
 pub struct ElementBuffer {
-    context: Context,
     id: glow::Buffer,
     count: usize,
     data_type: u32,
@@ -41,10 +40,13 @@ impl ElementBuffer {
     ///
     /// Creates a new empty element buffer.
     ///
-    pub fn new(context: &Context) -> Self {
-        let id = unsafe { context.create_buffer().expect("Failed creating buffer") };
+    pub fn new() -> Self {
+        let id = unsafe {
+            Context::get()
+                .create_buffer()
+                .expect("Failed creating buffer")
+        };
         Self {
-            context: context.clone(),
             id,
             count: 0,
             data_type: 0,
@@ -54,8 +56,8 @@ impl ElementBuffer {
     ///
     /// Creates a new element buffer and fills it with the given indices which must be divisable by 3.
     ///
-    pub fn new_with_data<T: ElementBufferDataType>(context: &Context, data: &[T]) -> Self {
-        let mut buffer = Self::new(context);
+    pub fn new_with_data<T: ElementBufferDataType>(data: &[T]) -> Self {
+        let mut buffer = Self::new();
         if !data.is_empty() {
             buffer.fill(data);
         }
@@ -68,12 +70,13 @@ impl ElementBuffer {
     pub fn fill<T: ElementBufferDataType>(&mut self, data: &[T]) {
         self.bind();
         unsafe {
-            self.context.buffer_data_u8_slice(
+            let context = Context::get();
+            context.buffer_data_u8_slice(
                 glow::ELEMENT_ARRAY_BUFFER,
                 to_byte_slice(data),
                 glow::STATIC_DRAW,
             );
-            self.context.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, None);
+            context.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, None);
         }
         self.count = data.len();
         self.data_type = T::data_type();
@@ -95,8 +98,7 @@ impl ElementBuffer {
 
     pub(crate) fn bind(&self) {
         unsafe {
-            self.context
-                .bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(self.id));
+            Context::get().bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(self.id));
         }
     }
 
@@ -108,7 +110,7 @@ impl ElementBuffer {
 impl Drop for ElementBuffer {
     fn drop(&mut self) {
         unsafe {
-            self.context.delete_buffer(self.id);
+            Context::get().delete_buffer(self.id);
         }
     }
 }

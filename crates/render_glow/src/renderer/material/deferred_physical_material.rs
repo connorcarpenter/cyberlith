@@ -58,19 +58,19 @@ impl DeferredPhysicalMaterial {
     /// If the input contains an [PbrMaterial::occlusion_metallic_roughness_texture], this texture is used for both
     /// [DeferredPhysicalMaterial::metallic_roughness_texture] and [DeferredPhysicalMaterial::occlusion_texture] while any [PbrMaterial::metallic_roughness_texture] or [PbrMaterial::occlusion_texture] are ignored.
     ///
-    pub fn new(context: &Context, cpu_material: &PbrMaterial) -> Self {
+    pub fn new(cpu_material: &PbrMaterial) -> Self {
         let albedo_texture = cpu_material
             .albedo_texture
             .as_ref()
-            .map(|cpu_texture| Arc::new(Texture2D::new(context, cpu_texture)).into());
+            .map(|cpu_texture| Arc::new(Texture2D::new(cpu_texture)).into());
         let metallic_roughness_texture =
             if let Some(ref cpu_texture) = cpu_material.occlusion_metallic_roughness_texture {
-                Some(Arc::new(Texture2D::new(context, cpu_texture)).into())
+                Some(Arc::new(Texture2D::new(cpu_texture)).into())
             } else {
                 cpu_material
                     .metallic_roughness_texture
                     .as_ref()
-                    .map(|cpu_texture| Arc::new(Texture2D::new(context, cpu_texture)).into())
+                    .map(|cpu_texture| Arc::new(Texture2D::new(cpu_texture)).into())
             };
         let occlusion_texture = if cpu_material.occlusion_metallic_roughness_texture.is_some() {
             metallic_roughness_texture.clone()
@@ -78,16 +78,16 @@ impl DeferredPhysicalMaterial {
             cpu_material
                 .occlusion_texture
                 .as_ref()
-                .map(|cpu_texture| Arc::new(Texture2D::new(context, cpu_texture)).into())
+                .map(|cpu_texture| Arc::new(Texture2D::new(cpu_texture)).into())
         };
         let normal_texture = cpu_material
             .normal_texture
             .as_ref()
-            .map(|cpu_texture| Arc::new(Texture2D::new(context, cpu_texture)).into());
+            .map(|cpu_texture| Arc::new(Texture2D::new(cpu_texture)).into());
         let emissive_texture = cpu_material
             .emissive_texture
             .as_ref()
-            .map(|cpu_texture| Arc::new(Texture2D::new(context, cpu_texture)).into());
+            .map(|cpu_texture| Arc::new(Texture2D::new(cpu_texture)).into());
         Self {
             name: cpu_material.name.clone(),
             albedo: cpu_material.albedo,
@@ -141,7 +141,6 @@ impl DeferredPhysicalMaterial {
     /// See [DeferredPhysicalMaterial] for more information.
     ///
     pub fn lighting_pass(
-        context: &Context,
         camera: &Camera,
         geometry_pass_color_texture: ColorTexture,
         geometry_pass_depth_texture: DepthTexture,
@@ -158,7 +157,6 @@ impl DeferredPhysicalMaterial {
         fragment_shader.push_str(&geometry_pass_depth_texture.fragment_shader_source());
         fragment_shader.push_str(include_str!("shaders/deferred_lighting.frag"));
         apply_effect(
-            context,
             &fragment_shader,
             RenderStates::default(),
             camera.viewport(),
@@ -180,8 +178,8 @@ impl DeferredPhysicalMaterial {
 }
 
 impl FromPbrMaterial for DeferredPhysicalMaterial {
-    fn from_cpu_material(context: &Context, cpu_material: &PbrMaterial) -> Self {
-        Self::new(context, cpu_material)
+    fn from_cpu_material(cpu_material: &PbrMaterial) -> Self {
+        Self::new(cpu_material)
     }
 }
 

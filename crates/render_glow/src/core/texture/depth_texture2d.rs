@@ -6,7 +6,6 @@ use render_api::base::*;
 /// A 2D depth texture that can be rendered into and read from. See also [RenderTarget] and [DepthTarget].
 ///
 pub struct DepthTexture2D {
-    context: Context,
     id: glow::Texture,
     width: u32,
     height: u32,
@@ -17,22 +16,15 @@ impl DepthTexture2D {
     /// Constructs a new 2D depth texture.
     ///
     pub fn new<T: DepthTextureDataType>(
-        context: &Context,
         width: u32,
         height: u32,
         wrap_s: Wrapping,
         wrap_t: Wrapping,
     ) -> Self {
-        let id = generate(context);
-        let texture = Self {
-            context: context.clone(),
-            id,
-            width,
-            height,
-        };
+        let id = generate();
+        let texture = Self { id, width, height };
         texture.bind();
         set_parameters(
-            context,
             glow::TEXTURE_2D,
             Interpolation::Nearest,
             Interpolation::Nearest,
@@ -42,7 +34,7 @@ impl DepthTexture2D {
             None,
         );
         unsafe {
-            context.tex_storage_2d(
+            Context::get().tex_storage_2d(
                 glow::TEXTURE_2D,
                 1,
                 T::internal_format(),
@@ -58,7 +50,7 @@ impl DepthTexture2D {
     /// Combine this together with a [ColorTarget] with [RenderTarget::new] to be able to write to both a depth and color target at the same time.
     ///
     pub fn as_depth_target(&mut self) -> DepthTarget<'_> {
-        DepthTarget::new_texture2d(&self.context, self)
+        DepthTarget::new_texture2d(self)
     }
 
     /// The width of this texture.
@@ -73,7 +65,7 @@ impl DepthTexture2D {
 
     pub(in crate::core) fn bind_as_depth_target(&self) {
         unsafe {
-            self.context.framebuffer_texture_2d(
+            Context::get().framebuffer_texture_2d(
                 glow::FRAMEBUFFER,
                 glow::DEPTH_ATTACHMENT,
                 glow::TEXTURE_2D,
@@ -85,7 +77,7 @@ impl DepthTexture2D {
 
     pub(in crate::core) fn bind(&self) {
         unsafe {
-            self.context.bind_texture(glow::TEXTURE_2D, Some(self.id));
+            Context::get().bind_texture(glow::TEXTURE_2D, Some(self.id));
         }
     }
 }
@@ -93,7 +85,7 @@ impl DepthTexture2D {
 impl Drop for DepthTexture2D {
     fn drop(&mut self) {
         unsafe {
-            self.context.delete_texture(self.id);
+            Context::get().delete_texture(self.id);
         }
     }
 }

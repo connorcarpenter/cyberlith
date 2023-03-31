@@ -10,7 +10,6 @@ use render_api::base::{Color, Mat4, Radians, Vec3, Viewport, Wrapping};
 /// The light will cast shadows if you [generate a shadow map](SpotLight::generate_shadow_map).
 ///
 pub struct SpotLight {
-    context: Context,
     shadow_texture: Option<DepthTexture2D>,
     shadow_matrix: Mat4,
     /// The intensity of the light. This allows for higher intensity than 1 which can be used to simulate high intensity light sources like the sun.
@@ -30,7 +29,6 @@ pub struct SpotLight {
 impl SpotLight {
     /// Constructs a new spot light.
     pub fn new(
-        context: &Context,
         intensity: f32,
         color: Color,
         position: &Vec3,
@@ -39,7 +37,6 @@ impl SpotLight {
         attenuation: Attenuation,
     ) -> SpotLight {
         SpotLight {
-            context: context.clone(),
             shadow_texture: None,
             intensity,
             color,
@@ -98,7 +95,6 @@ impl SpotLight {
         self.shadow_matrix = light::shadow_matrix(&shadow_camera);
 
         let mut shadow_texture = DepthTexture2D::new::<f32>(
-            &self.context,
             texture_size,
             texture_size,
             Wrapping::ClampToEdge,
