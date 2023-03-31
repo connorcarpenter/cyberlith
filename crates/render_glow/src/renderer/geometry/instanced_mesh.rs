@@ -6,9 +6,7 @@ use cgmath::*;
 use super::BaseMesh;
 use crate::core::*;
 use crate::renderer::*;
-use render_api::base::{
-    AxisAlignedBoundingBox, Camera, Color, Mat3, Mat4, PointCloud, TriMesh, Vec3,
-};
+use render_api::base::{AxisAlignedBoundingBox, Camera, Color, Mat3, Mat4, TriMesh, Vec3};
 
 ///
 /// Similar to [Mesh], except it is possible to render many instances of the same mesh efficiently.
@@ -482,21 +480,6 @@ impl Instances {
     /// Returns the number of instances.
     pub fn count(&self) -> u32 {
         self.transformations.len() as u32
-    }
-}
-
-impl From<PointCloud> for Instances {
-    fn from(points: PointCloud) -> Self {
-        Self {
-            transformations: points
-                .positions
-                .to_f32()
-                .into_iter()
-                .map(Mat4::from_translation)
-                .collect(),
-            colors: points.colors,
-            ..Default::default()
-        }
     }
 }
 

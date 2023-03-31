@@ -1,43 +1,20 @@
 use cgmath::*;
-use render_api::Attenuation;
+use render_api::{base::Vec3, PointLight};
 
-use crate::core::*;
-use crate::renderer::*;
-use render_api::base::Color;
+use crate::renderer::{Light, Program};
 
-///
-/// A light which shines from the given position in all directions.
-///
-pub struct PointLight {
-    /// The intensity of the light. This allows for higher intensity than 1 which can be used to simulate high intensity light sources like the sun.
-    pub intensity: f32,
-    /// The base color of the light.
-    pub color: Color,
-    /// The position of the light.
-    pub position: Vec3,
-    /// The [Attenuation] of the light.
-    pub attenuation: Attenuation,
+pub struct PointLightWithPosition<'a> {
+    pub light: &'a PointLight,
+    pub position: &'a Vec3,
 }
 
-impl PointLight {
-    /// Constructs a new point light.
-    pub fn new(
-        _context: &Context,
-        intensity: f32,
-        color: Color,
-        position: &Vec3,
-        attenuation: Attenuation,
-    ) -> PointLight {
-        PointLight {
-            intensity,
-            color,
-            position: *position,
-            attenuation,
-        }
+impl<'a> PointLightWithPosition<'a> {
+    pub fn new(light: &'a PointLight, position: &'a Vec3) -> PointLightWithPosition<'a> {
+        PointLightWithPosition { light, position }
     }
 }
 
-impl Light for PointLight {
+impl<'a> Light for PointLightWithPosition<'a> {
     fn shader_source(&self, i: u32) -> String {
         format!(
         "
@@ -60,14 +37,14 @@ impl Light for PointLight {
     fn use_uniforms(&self, program: &Program, i: u32) {
         program.use_uniform(
             &format!("color{}", i),
-            self.color.to_vec3() * self.intensity,
+            self.light.color.to_vec3() * self.light.intensity,
         );
         program.use_uniform(
             &format!("attenuation{}", i),
             vec3(
-                self.attenuation.constant,
-                self.attenuation.linear,
-                self.attenuation.quadratic,
+                self.light.attenuation.constant,
+                self.light.attenuation.linear,
+                self.light.attenuation.quadratic,
             ),
         );
         program.use_uniform(&format!("position{}", i), self.position);

@@ -1,19 +1,20 @@
 use bevy_app::{App, Plugin};
 use bevy_ecs::{
     change_detection::DetectChanges,
+    query::{Added, Changed},
+    removal_detection::RemovedComponents,
     schedule::IntoSystemConfig,
-    system::{NonSendMut, ResMut},
+    system::{Query, ResMut},
 };
 
 use render_api::{
     base::{PbrMaterial as ApiMaterial, TriMesh as ApiMesh},
-    Assets, RenderSet,
+    Assets, PointLight, RenderSet,
 };
 
 use crate::{
     asset_impls::AssetImpls,
     renderer::{BaseMesh, ColorMaterial, Material},
-    window::FrameInput,
 };
 
 pub struct SyncPlugin;
@@ -26,12 +27,14 @@ impl Plugin for SyncPlugin {
             .insert_resource(AssetImpls::<ApiMaterial, Box<dyn Material>>::default())
             // Systems
             .add_system(sync_mesh_assets.in_base_set(RenderSet::Sync))
-            .add_system(sync_material_assets.in_base_set(RenderSet::Sync));
+            .add_system(sync_material_assets.in_base_set(RenderSet::Sync))
+            .add_system(sync_point_lights_added.in_base_set(RenderSet::Sync))
+            .add_system(sync_point_lights_changed.in_base_set(RenderSet::Sync))
+            .add_system(sync_point_lights_removed.in_base_set(RenderSet::Sync));
     }
 }
 
 fn sync_mesh_assets(
-    frame_input: NonSendMut<FrameInput<()>>,
     mut api_assets: ResMut<Assets<ApiMesh>>,
     mut asset_impls: ResMut<AssetImpls<ApiMesh, BaseMesh>>,
 ) {
@@ -47,7 +50,6 @@ fn sync_mesh_assets(
     }
 }
 fn sync_material_assets(
-    frame_input: NonSendMut<FrameInput<()>>,
     mut api_assets: ResMut<Assets<ApiMaterial>>,
     mut asset_impls: ResMut<AssetImpls<ApiMaterial, Box<dyn Material>>>,
 ) {
@@ -60,5 +62,12 @@ fn sync_material_assets(
         let api_data = api_assets.get(&added_handle).unwrap();
         let impl_data = ColorMaterial::new(api_data);
         asset_impls.insert(added_handle, Box::new(impl_data));
+    }
+}
+fn sync_point_lights_added(query: Query<&PointLight, Added<PointLight>>) {}
+fn sync_point_lights_changed(query: Query<&PointLight, Changed<PointLight>>) {}
+fn sync_point_lights_removed(mut removals: RemovedComponents<PointLight>) {
+    for entity in removals.iter() {
+        // do something with the entity
     }
 }

@@ -16,12 +16,7 @@ pub enum UniformType {
 }
 
 pub trait PrimitiveDataType: DataType + Copy + Default {
-    fn send_uniform_with_type(
-        context: &Context,
-        location: &UniformLocation,
-        data: &[Self],
-        type_: UniformType,
-    );
+    fn send_uniform_with_type(location: &UniformLocation, data: &[Self], type_: UniformType);
     fn internal_format_with_size(size: u32) -> u32;
 }
 
@@ -36,14 +31,9 @@ impl PrimitiveDataType for u8 {
         }
     }
 
-    fn send_uniform_with_type(
-        context: &Context,
-        location: &UniformLocation,
-        data: &[Self],
-        type_: UniformType,
-    ) {
+    fn send_uniform_with_type(location: &UniformLocation, data: &[Self], type_: UniformType) {
         let data = data.iter().map(|v| *v as u32).collect::<Vec<_>>();
-        u32::send_uniform_with_type(context, location, &data, type_)
+        u32::send_uniform_with_type(location, &data, type_)
     }
 }
 impl PrimitiveDataType for u16 {
@@ -57,14 +47,9 @@ impl PrimitiveDataType for u16 {
         }
     }
 
-    fn send_uniform_with_type(
-        context: &Context,
-        location: &UniformLocation,
-        data: &[Self],
-        type_: UniformType,
-    ) {
+    fn send_uniform_with_type(location: &UniformLocation, data: &[Self], type_: UniformType) {
         let data = data.iter().map(|v| *v as u32).collect::<Vec<_>>();
-        u32::send_uniform_with_type(context, location, &data, type_)
+        u32::send_uniform_with_type(location, &data, type_)
     }
 }
 impl PrimitiveDataType for u32 {
@@ -78,13 +63,9 @@ impl PrimitiveDataType for u32 {
         }
     }
 
-    fn send_uniform_with_type(
-        context: &Context,
-        location: &UniformLocation,
-        data: &[Self],
-        type_: UniformType,
-    ) {
+    fn send_uniform_with_type(location: &UniformLocation, data: &[Self], type_: UniformType) {
         unsafe {
+            let context = Context::get();
             match type_ {
                 UniformType::Value => context.uniform_1_u32_slice(Some(location), data),
                 UniformType::Vec2 => context.uniform_2_u32_slice(Some(location), data),
@@ -106,14 +87,9 @@ impl PrimitiveDataType for i8 {
         }
     }
 
-    fn send_uniform_with_type(
-        context: &Context,
-        location: &UniformLocation,
-        data: &[Self],
-        type_: UniformType,
-    ) {
+    fn send_uniform_with_type(location: &UniformLocation, data: &[Self], type_: UniformType) {
         let data = data.iter().map(|v| *v as i32).collect::<Vec<_>>();
-        i32::send_uniform_with_type(context, location, &data, type_)
+        i32::send_uniform_with_type(location, &data, type_)
     }
 }
 impl PrimitiveDataType for i16 {
@@ -127,14 +103,9 @@ impl PrimitiveDataType for i16 {
         }
     }
 
-    fn send_uniform_with_type(
-        context: &Context,
-        location: &UniformLocation,
-        data: &[Self],
-        type_: UniformType,
-    ) {
+    fn send_uniform_with_type(location: &UniformLocation, data: &[Self], type_: UniformType) {
         let data = data.iter().map(|v| *v as i32).collect::<Vec<_>>();
-        i32::send_uniform_with_type(context, location, &data, type_)
+        i32::send_uniform_with_type(location, &data, type_)
     }
 }
 impl PrimitiveDataType for i32 {
@@ -148,13 +119,9 @@ impl PrimitiveDataType for i32 {
         }
     }
 
-    fn send_uniform_with_type(
-        context: &Context,
-        location: &UniformLocation,
-        data: &[Self],
-        type_: UniformType,
-    ) {
+    fn send_uniform_with_type(location: &UniformLocation, data: &[Self], type_: UniformType) {
         unsafe {
+            let context = Context::get();
             match type_ {
                 UniformType::Value => context.uniform_1_i32_slice(Some(location), data),
                 UniformType::Vec2 => context.uniform_2_i32_slice(Some(location), data),
@@ -176,14 +143,9 @@ impl PrimitiveDataType for f16 {
         }
     }
 
-    fn send_uniform_with_type(
-        context: &Context,
-        location: &UniformLocation,
-        data: &[Self],
-        type_: UniformType,
-    ) {
+    fn send_uniform_with_type(location: &UniformLocation, data: &[Self], type_: UniformType) {
         let data = data.iter().map(|v| v.to_f32()).collect::<Vec<_>>();
-        f32::send_uniform_with_type(context, location, &data, type_)
+        f32::send_uniform_with_type(location, &data, type_)
     }
 }
 impl PrimitiveDataType for f32 {
@@ -197,13 +159,9 @@ impl PrimitiveDataType for f32 {
         }
     }
 
-    fn send_uniform_with_type(
-        context: &Context,
-        location: &UniformLocation,
-        data: &[Self],
-        type_: UniformType,
-    ) {
+    fn send_uniform_with_type(location: &UniformLocation, data: &[Self], type_: UniformType) {
         unsafe {
+            let context = Context::get();
             match type_ {
                 UniformType::Value => context.uniform_1_f32_slice(Some(location), data),
                 UniformType::Vec2 => context.uniform_2_f32_slice(Some(location), data),
@@ -227,7 +185,7 @@ pub trait DataType: std::fmt::Debug + Clone {
     fn internal_format() -> u32;
     fn data_type() -> u32;
     fn size() -> u32;
-    fn send_uniform(context: &Context, location: &UniformLocation, data: &[Self]);
+    fn send_uniform(location: &UniformLocation, data: &[Self]);
 }
 
 impl<T: DataType + ?Sized> DataType for &T {
@@ -241,9 +199,8 @@ impl<T: DataType + ?Sized> DataType for &T {
         T::size()
     }
 
-    fn send_uniform(context: &Context, location: &UniformLocation, data: &[Self]) {
+    fn send_uniform(location: &UniformLocation, data: &[Self]) {
         T::send_uniform(
-            context,
             location,
             &data.iter().map(|v| (*v).clone()).collect::<Vec<_>>(),
         )
@@ -263,8 +220,8 @@ impl DataType for u8 {
         1
     }
 
-    fn send_uniform(context: &Context, location: &UniformLocation, data: &[Self]) {
-        Self::send_uniform_with_type(context, location, data, UniformType::Value)
+    fn send_uniform(location: &UniformLocation, data: &[Self]) {
+        Self::send_uniform_with_type(location, data, UniformType::Value)
     }
 }
 
@@ -280,8 +237,8 @@ impl DataType for u16 {
         1
     }
 
-    fn send_uniform(context: &Context, location: &UniformLocation, data: &[Self]) {
-        Self::send_uniform_with_type(context, location, data, UniformType::Value)
+    fn send_uniform(location: &UniformLocation, data: &[Self]) {
+        Self::send_uniform_with_type(location, data, UniformType::Value)
     }
 }
 
@@ -298,8 +255,8 @@ impl DataType for u32 {
         1
     }
 
-    fn send_uniform(context: &Context, location: &UniformLocation, data: &[Self]) {
-        Self::send_uniform_with_type(context, location, data, UniformType::Value)
+    fn send_uniform(location: &UniformLocation, data: &[Self]) {
+        Self::send_uniform_with_type(location, data, UniformType::Value)
     }
 }
 
@@ -316,8 +273,8 @@ impl DataType for i8 {
         1
     }
 
-    fn send_uniform(context: &Context, location: &UniformLocation, data: &[Self]) {
-        Self::send_uniform_with_type(context, location, data, UniformType::Value)
+    fn send_uniform(location: &UniformLocation, data: &[Self]) {
+        Self::send_uniform_with_type(location, data, UniformType::Value)
     }
 }
 
@@ -334,8 +291,8 @@ impl DataType for i16 {
         1
     }
 
-    fn send_uniform(context: &Context, location: &UniformLocation, data: &[Self]) {
-        Self::send_uniform_with_type(context, location, data, UniformType::Value)
+    fn send_uniform(location: &UniformLocation, data: &[Self]) {
+        Self::send_uniform_with_type(location, data, UniformType::Value)
     }
 }
 
@@ -352,8 +309,8 @@ impl DataType for i32 {
         1
     }
 
-    fn send_uniform(context: &Context, location: &UniformLocation, data: &[Self]) {
-        Self::send_uniform_with_type(context, location, data, UniformType::Value)
+    fn send_uniform(location: &UniformLocation, data: &[Self]) {
+        Self::send_uniform_with_type(location, data, UniformType::Value)
     }
 }
 
@@ -369,8 +326,8 @@ impl DataType for f16 {
         1
     }
 
-    fn send_uniform(context: &Context, location: &UniformLocation, data: &[Self]) {
-        Self::send_uniform_with_type(context, location, data, UniformType::Value)
+    fn send_uniform(location: &UniformLocation, data: &[Self]) {
+        Self::send_uniform_with_type(location, data, UniformType::Value)
     }
 }
 
@@ -387,8 +344,8 @@ impl DataType for f32 {
         1
     }
 
-    fn send_uniform(context: &Context, location: &UniformLocation, data: &[Self]) {
-        Self::send_uniform_with_type(context, location, data, UniformType::Value)
+    fn send_uniform(location: &UniformLocation, data: &[Self]) {
+        Self::send_uniform_with_type(location, data, UniformType::Value)
     }
 }
 
@@ -405,9 +362,9 @@ impl<T: PrimitiveDataType> DataType for Vector2<T> {
         2
     }
 
-    fn send_uniform(context: &Context, location: &UniformLocation, data: &[Self]) {
+    fn send_uniform(location: &UniformLocation, data: &[Self]) {
         let data = data.iter().flat_map(|v| [v.x, v.y]).collect::<Vec<_>>();
-        T::send_uniform_with_type(context, location, &data, UniformType::Vec2)
+        T::send_uniform_with_type(location, &data, UniformType::Vec2)
     }
 }
 
@@ -424,9 +381,9 @@ impl<T: PrimitiveDataType> DataType for [T; 2] {
         2
     }
 
-    fn send_uniform(context: &Context, location: &UniformLocation, data: &[Self]) {
+    fn send_uniform(location: &UniformLocation, data: &[Self]) {
         let data = data.iter().flatten().copied().collect::<Vec<_>>();
-        T::send_uniform_with_type(context, location, &data, UniformType::Vec2)
+        T::send_uniform_with_type(location, &data, UniformType::Vec2)
     }
 }
 
@@ -442,12 +399,12 @@ impl<T: PrimitiveDataType> DataType for Vector3<T> {
         3
     }
 
-    fn send_uniform(context: &Context, location: &UniformLocation, data: &[Self]) {
+    fn send_uniform(location: &UniformLocation, data: &[Self]) {
         let data = data
             .iter()
             .flat_map(|v| [v.x, v.y, v.z])
             .collect::<Vec<_>>();
-        T::send_uniform_with_type(context, location, &data, UniformType::Vec3)
+        T::send_uniform_with_type(location, &data, UniformType::Vec3)
     }
 }
 
@@ -463,9 +420,9 @@ impl<T: PrimitiveDataType> DataType for [T; 3] {
         3
     }
 
-    fn send_uniform(context: &Context, location: &UniformLocation, data: &[Self]) {
+    fn send_uniform(location: &UniformLocation, data: &[Self]) {
         let data = data.iter().flatten().copied().collect::<Vec<_>>();
-        T::send_uniform_with_type(context, location, &data, UniformType::Vec3)
+        T::send_uniform_with_type(location, &data, UniformType::Vec3)
     }
 }
 
@@ -482,12 +439,12 @@ impl<T: PrimitiveDataType> DataType for Vector4<T> {
         4
     }
 
-    fn send_uniform(context: &Context, location: &UniformLocation, data: &[Self]) {
+    fn send_uniform(location: &UniformLocation, data: &[Self]) {
         let data = data
             .iter()
             .flat_map(|v| [v.x, v.y, v.z, v.w])
             .collect::<Vec<_>>();
-        T::send_uniform_with_type(context, location, &data, UniformType::Vec4)
+        T::send_uniform_with_type(location, &data, UniformType::Vec4)
     }
 }
 
@@ -504,9 +461,9 @@ impl<T: PrimitiveDataType> DataType for [T; 4] {
         4
     }
 
-    fn send_uniform(context: &Context, location: &UniformLocation, data: &[Self]) {
+    fn send_uniform(location: &UniformLocation, data: &[Self]) {
         let data = data.iter().flatten().copied().collect::<Vec<_>>();
-        T::send_uniform_with_type(context, location, &data, UniformType::Vec4)
+        T::send_uniform_with_type(location, &data, UniformType::Vec4)
     }
 }
 
@@ -523,12 +480,12 @@ impl<T: PrimitiveDataType> DataType for Quaternion<T> {
         4
     }
 
-    fn send_uniform(context: &Context, location: &UniformLocation, data: &[Self]) {
+    fn send_uniform(location: &UniformLocation, data: &[Self]) {
         let data = data
             .iter()
             .flat_map(|v| [v.v.x, v.v.y, v.v.z, v.s])
             .collect::<Vec<_>>();
-        T::send_uniform_with_type(context, location, &data, UniformType::Vec4)
+        T::send_uniform_with_type(location, &data, UniformType::Vec4)
     }
 }
 
@@ -545,7 +502,7 @@ impl DataType for Color {
         4
     }
 
-    fn send_uniform(context: &Context, location: &UniformLocation, data: &[Self]) {
+    fn send_uniform(location: &UniformLocation, data: &[Self]) {
         let data = data
             .iter()
             .flat_map(|v| {
@@ -557,7 +514,7 @@ impl DataType for Color {
                 ]
             })
             .collect::<Vec<_>>();
-        f32::send_uniform_with_type(context, location, &data, UniformType::Vec4)
+        f32::send_uniform_with_type(location, &data, UniformType::Vec4)
     }
 }
 
@@ -574,12 +531,12 @@ impl<T: PrimitiveDataType> DataType for Matrix2<T> {
         4
     }
 
-    fn send_uniform(context: &Context, location: &UniformLocation, data: &[Self]) {
+    fn send_uniform(location: &UniformLocation, data: &[Self]) {
         let data = data
             .iter()
             .flat_map(|v| [v.x.x, v.x.y, v.y.x, v.y.y])
             .collect::<Vec<_>>();
-        T::send_uniform_with_type(context, location, &data, UniformType::Mat2)
+        T::send_uniform_with_type(location, &data, UniformType::Mat2)
     }
 }
 
@@ -596,7 +553,7 @@ impl<T: PrimitiveDataType> DataType for Matrix3<T> {
         9
     }
 
-    fn send_uniform(context: &Context, location: &UniformLocation, data: &[Self]) {
+    fn send_uniform(location: &UniformLocation, data: &[Self]) {
         let data = data
             .iter()
             .flat_map(|v| {
@@ -605,7 +562,7 @@ impl<T: PrimitiveDataType> DataType for Matrix3<T> {
                 ]
             })
             .collect::<Vec<_>>();
-        T::send_uniform_with_type(context, location, &data, UniformType::Mat3)
+        T::send_uniform_with_type(location, &data, UniformType::Mat3)
     }
 }
 
@@ -622,7 +579,7 @@ impl<T: PrimitiveDataType> DataType for Matrix4<T> {
         16
     }
 
-    fn send_uniform(context: &Context, location: &UniformLocation, data: &[Self]) {
+    fn send_uniform(location: &UniformLocation, data: &[Self]) {
         let data = data
             .iter()
             .flat_map(|v| {
@@ -632,7 +589,7 @@ impl<T: PrimitiveDataType> DataType for Matrix4<T> {
                 ]
             })
             .collect::<Vec<_>>();
-        T::send_uniform_with_type(context, location, &data, UniformType::Mat4)
+        T::send_uniform_with_type(location, &data, UniformType::Mat4)
     }
 }
 

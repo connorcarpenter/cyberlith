@@ -30,7 +30,7 @@ pub fn setup(
     window: Res<Window>,
     mut meshes: ResMut<Assets<TriMesh>>,
     mut materials: ResMut<Assets<PbrMaterial>>,
-    mut images: ResMut<Assets<Texture2D>>,
+    mut textures: ResMut<Assets<Texture2D>>,
 ) {
     let width = window.resolution.physical_width();
     let height = window.resolution.physical_height();
@@ -38,7 +38,7 @@ pub fn setup(
     // This is the texture that will be rendered to.
     let texture = Texture2D::from_size(width, height);
 
-    let texture_handle = images.add(texture);
+    let texture_handle = textures.add(texture);
     commands.insert_resource(GameClientTexture(texture_handle.clone()));
 
     info!("inserted image!");

@@ -7,7 +7,6 @@ use crate::core::*;
 /// (see also [use_uniform_block](crate::core::Program::use_uniform_block)).
 ///
 pub struct UniformBuffer {
-    context: Context,
     id: glow::Buffer,
     offsets: Vec<usize>,
     data: Vec<f32>,
@@ -20,8 +19,12 @@ impl UniformBuffer {
     /// The first with 3 elements (a [Vec3]), the second with 1 element (a `f32`), the third with four elements (a [Vec4]) and the last with 16 elements (a [Mat4]).
     /// The variables are initialized to 0.
     ///
-    pub fn new(context: &Context, sizes: &[u32]) -> UniformBuffer {
-        let id = unsafe { context.create_buffer().expect("Failed creating buffer") };
+    pub fn new(sizes: &[u32]) -> UniformBuffer {
+        let id = unsafe {
+            Context::get()
+                .create_buffer()
+                .expect("Failed creating buffer")
+        };
 
         let mut offsets = Vec::new();
         let mut length = 0;
@@ -30,7 +33,6 @@ impl UniformBuffer {
             length += *size as usize;
         }
         let buffer = UniformBuffer {
-            context: context.clone(),
             id,
             offsets,
             data: vec![0.0; length],
@@ -40,10 +42,7 @@ impl UniformBuffer {
     }
 
     pub(crate) fn bind(&self, id: u32) {
-        unsafe {
-            self.context
-                .bind_buffer_base(glow::UNIFORM_BUFFER, id, Some(self.id))
-        };
+        unsafe { Context::get().bind_buffer_base(glow::UNIFORM_BUFFER, id, Some(self.id)) };
     }
 
     ///
@@ -100,14 +99,14 @@ impl UniformBuffer {
 
     fn send(&self) {
         unsafe {
-            self.context
-                .bind_buffer(glow::UNIFORM_BUFFER, Some(self.id));
-            self.context.buffer_data_u8_slice(
+            let context = Context::get();
+            context.bind_buffer(glow::UNIFORM_BUFFER, Some(self.id));
+            context.buffer_data_u8_slice(
                 glow::UNIFORM_BUFFER,
                 to_byte_slice(&self.data),
                 glow::STATIC_DRAW,
             );
-            self.context.bind_buffer(glow::UNIFORM_BUFFER, None);
+            context.bind_buffer(glow::UNIFORM_BUFFER, None);
         }
     }
 }
@@ -115,7 +114,7 @@ impl UniformBuffer {
 impl Drop for UniformBuffer {
     fn drop(&mut self) {
         unsafe {
-            self.context.delete_buffer(self.id);
+            Context::get().delete_buffer(self.id);
         }
     }
 }
