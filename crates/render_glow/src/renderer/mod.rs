@@ -68,18 +68,22 @@ macro_rules! impl_render_target_extensions_body {
         ///
         pub fn render_partially(&self, scissor_box: ScissorBox, render_pass: RenderPass) -> &Self {
             let RenderPass {
+                meshes,
+                materials,
                 camera,
                 objects,
-                lights,
             } = render_pass;
+            let lights = &[];
 
             let (mut deferred_objects, mut forward_objects): (
                 Vec<RenderObject>,
                 Vec<RenderObject>,
             ) = objects
                 .iter()
-                .filter(|o| camera.in_frustum(&o.aabb()))
-                .partition(|o| o.material_type() == MaterialType::Deferred);
+                .filter(|o| camera.in_frustum(&o.with_assets(meshes, materials).aabb()))
+                .partition(|o| {
+                    o.with_assets(meshes, materials).material_type() == MaterialType::Deferred
+                });
 
             // Deferred
             if deferred_objects.len() > 0 {
@@ -88,7 +92,13 @@ macro_rules! impl_render_target_extensions_body {
                 let viewport =
                     Viewport::new_at_origin(camera.viewport().width, camera.viewport().height);
                 geometry_pass_camera.set_viewport(viewport);
-                deferred_objects.sort_by(|a, b| cmp_render_order(&geometry_pass_camera, a, b));
+                deferred_objects.sort_by(|a, b| {
+                    cmp_render_order(
+                        &geometry_pass_camera,
+                        a.with_assets(meshes, materials),
+                        b.with_assets(meshes, materials),
+                    )
+                });
                 let mut geometry_pass_texture = Texture2DArray::new_empty::<[u8; 4]>(
                     viewport.width,
                     viewport.height,
@@ -113,7 +123,9 @@ macro_rules! impl_render_target_extensions_body {
                 .clear(ClearState::default())
                 .write(|| {
                     for object in deferred_objects {
-                        object.render(&geometry_pass_camera, lights);
+                        object
+                            .with_assets(meshes, materials)
+                            .render(&geometry_pass_camera, lights);
                     }
                 });
 
@@ -132,10 +144,16 @@ macro_rules! impl_render_target_extensions_body {
             }
 
             // Forward
-            forward_objects.sort_by(|a, b| cmp_render_order(camera, a, b));
+            forward_objects.sort_by(|a, b| {
+                cmp_render_order(
+                    camera,
+                    a.with_assets(meshes, materials),
+                    b.with_assets(meshes, materials),
+                )
+            });
             self.write_partially(scissor_box, || {
                 for object in forward_objects {
-                    object.render(camera, lights);
+                    object.with_assets(meshes, materials).render(camera, lights);
                 }
             });
             self

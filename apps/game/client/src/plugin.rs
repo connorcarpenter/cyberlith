@@ -7,8 +7,8 @@ use bevy_ecs::{
 use bevy_log::info;
 use render_api::{
     base::{Camera, Color, PbrMaterial, Texture2D, TriMesh, Vec3, Viewport},
-    shape, Assets, CameraComponent, ClearOperation, Handle, PointLight, RenderObjectBundle,
-    RenderTarget, Transform, Window,
+    shape, Assets, CameraComponent, ClearOperation, Handle, PointLight, PointLightBundle,
+    RenderObjectBundle, RenderTarget, Transform, Window,
 };
 
 #[derive(Component)]
@@ -30,7 +30,7 @@ pub fn setup(
     window: Res<Window>,
     mut meshes: ResMut<Assets<TriMesh>>,
     mut materials: ResMut<Assets<PbrMaterial>>,
-    mut textures: ResMut<Assets<Texture2D>>,
+    mut images: ResMut<Assets<Texture2D>>,
 ) {
     let width = window.resolution.physical_width();
     let height = window.resolution.physical_height();
@@ -38,7 +38,7 @@ pub fn setup(
     // This is the texture that will be rendered to.
     let texture = Texture2D::from_size(width, height);
 
-    let texture_handle = textures.add(texture);
+    let texture_handle = images.add(texture);
     commands.insert_resource(GameClientTexture(texture_handle.clone()));
 
     info!("inserted image!");
@@ -59,9 +59,12 @@ pub fn setup(
         })
         .insert(CubeMarker);
     // light
-    commands.spawn(PointLight {
-        position: Vec3::new(4.0, 8.0, 4.0),
-        intensity: 1500.0,
+    commands.spawn(PointLightBundle {
+        point_light: PointLight {
+            intensity: 1500.0,
+            ..Default::default()
+        },
+        transform: Transform::from_xyz(4.0, 8.0, 4.0),
         ..Default::default()
     });
     // camera
@@ -97,8 +100,8 @@ fn step(mut cube_q: Query<&mut Transform, With<CubeMarker>>, mut rotation: Local
 
     let mut transform = cube_q.single_mut();
 
-    transform.position.x = x;
-    transform.position.z = z;
+    transform.translation.x = x;
+    transform.translation.z = z;
 }
 
 fn degrees_to_radians(degrees: f32) -> f32 {
