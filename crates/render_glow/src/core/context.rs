@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::RwLock;
-use bevy_log::info;
 
 use super::*;
 use glow::HasContext;
@@ -28,7 +27,6 @@ impl Context {
     /// you can also call this method with a reference counter to a glow context created using glow and not the re-export in [context](glow).
     ///
     pub fn init_gl_context(context: Arc<glow::Context>) -> Result<(), CoreError> {
-        info!("Initializing GL Context");
         unsafe {
             if !context.version().is_embedded {
                 // Enable seamless cube map textures - not available on OpenGL ES and WebGL
@@ -285,7 +283,7 @@ impl Context {
                         glow::STACK_UNDERFLOW => "Stack underflow",
                         _ => "Unknown",
                     }
-                    .to_string(),
+                        .to_string(),
                 ))?;
             }
         }

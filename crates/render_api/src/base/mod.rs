@@ -39,13 +39,13 @@ pub struct Primitive {
     /// A transformation that should be applied to the [Primitive::geometry].
     pub transformation: Mat4,
     /// The geometry of this primitive.
-    pub geometry: TriMesh,
+    pub geometry: Geometry,
     /// Optional index into [Model::materials], indicating which material should be applied to [Primitive::geometry].
     pub material_index: Option<usize>,
 }
 
 impl std::ops::Deref for Primitive {
-    type Target = TriMesh;
+    type Target = Geometry;
     fn deref(&self) -> &Self::Target {
         &self.geometry
     }

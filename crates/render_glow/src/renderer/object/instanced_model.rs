@@ -1,7 +1,5 @@
-
-use render_api::base::{AxisAlignedBoundingBox, Model as CpuModel};
-
 use crate::renderer::*;
+use render_api::base::{AxisAlignedBoundingBox, Geometry as CpuGeometry, Model as CpuModel};
 
 ///
 /// Part of an [InstancedModel] consisting of a [InstancedMesh], some type of [material]
@@ -99,25 +97,27 @@ impl<M: Material + FromPbrMaterial + Clone + Default> InstancedModel<M> {
             .collect::<Vec<_>>();
         let mut gms = Vec::new();
         for primitive in cpu_model.geometries.iter() {
-            let material = if let Some(material_index) = primitive.material_index {
-                materials
-                    .get(material_index)
-                    .ok_or_else(|| {
-                        RendererError::MissingMaterial(
-                            material_index.to_string(),
-                            primitive.name.clone(),
-                        )
-                    })?
-                    .clone()
-            } else {
-                M::default()
-            };
-            let mut gm = Gm {
-                geometry: InstancedMesh::new(instances, &primitive.geometry),
-                material,
-            };
-            gm.set_transformation(primitive.transformation);
-            gms.push(InstancedModelPart { gm });
+            if let CpuGeometry::Triangles(geometry) = &primitive.geometry {
+                let material = if let Some(material_index) = primitive.material_index {
+                    materials
+                        .get(material_index)
+                        .ok_or_else(|| {
+                            RendererError::MissingMaterial(
+                                material_index.to_string(),
+                                primitive.name.clone(),
+                            )
+                        })?
+                        .clone()
+                } else {
+                    M::default()
+                };
+                let mut gm = Gm {
+                    geometry: InstancedMesh::new(instances, geometry),
+                    material,
+                };
+                gm.set_transformation(primitive.transformation);
+                gms.push(InstancedModelPart { gm });
+            }
         }
         let model = Self(gms);
         Ok(model)

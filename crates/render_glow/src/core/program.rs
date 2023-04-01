@@ -12,6 +12,7 @@ use crate::core::*;
 /// and execute the shader program (see the draw functionality).
 ///
 pub struct Program {
+    context: Context,
     id: glow::Program,
     attributes: HashMap<String, u32>,
     textures: RwLock<HashMap<String, u32>>,
@@ -129,6 +130,7 @@ impl Program {
             }
 
             Ok(Program {
+                context: context.clone(),
                 id,
                 attributes,
                 uniforms,
@@ -149,7 +151,7 @@ impl Program {
     ///
     pub fn use_uniform<T: UniformDataType>(&self, name: &str, data: T) {
         let location = self.get_uniform_location(name);
-        T::send_uniform(location, &[data]);
+        T::send_uniform(&self.context, location, &[data]);
         self.unuse_program();
     }
 
@@ -173,7 +175,7 @@ impl Program {
     ///
     pub fn use_uniform_array<T: UniformDataType>(&self, name: &str, data: &[T]) {
         let location = self.get_uniform_location(name);
-        T::send_uniform(location, data);
+        T::send_uniform(&self.context, location, data);
         self.unuse_program();
     }
 
@@ -287,7 +289,7 @@ impl Program {
         let index = *self.textures.read().unwrap().get(name).unwrap();
         self.use_uniform(name, index as i32);
         unsafe {
-            Context::get().active_texture(glow::TEXTURE0 + index);
+            self.context.active_texture(glow::TEXTURE0 + index);
         }
         index
     }
@@ -296,23 +298,22 @@ impl Program {
     /// Use the given [UniformBuffer] in this shader program and associate it with the given named variable.
     ///
     pub fn use_uniform_block(&self, name: &str, buffer: &UniformBuffer) {
-        let context = Context::get();
         if !self.uniform_blocks.read().unwrap().contains_key(name) {
             let mut map = self.uniform_blocks.write().unwrap();
             let location = unsafe {
-                context
+                self.context
                     .get_uniform_block_index(self.id, name)
                     .unwrap_or_else(|| panic!("the uniform block {} is sent to the shader but not defined or never used",
-                        name))
+                                              name))
             };
             let index = map.len() as u32;
             map.insert(name.to_owned(), (location, index));
         };
         let (location, index) = *self.uniform_blocks.read().unwrap().get(name).unwrap();
         unsafe {
-            context.uniform_block_binding(self.id, location, index);
+            self.context.uniform_block_binding(self.id, location, index);
             buffer.bind(index);
-            context.bind_buffer(glow::UNIFORM_BUFFER, None);
+            self.context.bind_buffer(glow::UNIFORM_BUFFER, None);
         }
     }
 
@@ -326,19 +327,18 @@ impl Program {
     /// In the latter case the variable is removed by the shader compiler.
     ///
     pub fn use_vertex_attribute(&self, name: &str, buffer: &VertexBuffer) {
-        let context = Context::get();
         if buffer.count() > 0 {
             buffer.bind();
             let loc = self.location(name);
             unsafe {
-                context.bind_vertex_array(Some(context.vao));
-                context.enable_vertex_attrib_array(loc);
+                self.context.bind_vertex_array(Some(self.context.vao));
+                self.context.enable_vertex_attrib_array(loc);
                 if buffer.data_type() == glow::UNSIGNED_SHORT
                     || buffer.data_type() == glow::SHORT
                     || buffer.data_type() == glow::UNSIGNED_INT
                     || buffer.data_type() == glow::INT
                 {
-                    context.vertex_attrib_pointer_i32(
+                    self.context.vertex_attrib_pointer_i32(
                         loc,
                         buffer.data_size() as i32,
                         buffer.data_type(),
@@ -346,7 +346,7 @@ impl Program {
                         0,
                     );
                 } else {
-                    context.vertex_attrib_pointer_f32(
+                    self.context.vertex_attrib_pointer_f32(
                         loc,
                         buffer.data_size() as i32,
                         buffer.data_type(),
@@ -355,8 +355,8 @@ impl Program {
                         0,
                     );
                 }
-                context.vertex_attrib_divisor(loc, 0);
-                context.bind_buffer(glow::ARRAY_BUFFER, None);
+                self.context.vertex_attrib_divisor(loc, 0);
+                self.context.bind_buffer(glow::ARRAY_BUFFER, None);
             }
             self.unuse_program();
         }
@@ -372,19 +372,18 @@ impl Program {
     /// In the latter case the variable is removed by the shader compiler.
     ///
     pub fn use_instance_attribute(&self, name: &str, buffer: &InstanceBuffer) {
-        let context = Context::get();
         if buffer.count() > 0 {
             buffer.bind();
             let loc = self.location(name);
             unsafe {
-                context.bind_vertex_array(Some(context.vao));
-                context.enable_vertex_attrib_array(loc);
+                self.context.bind_vertex_array(Some(self.context.vao));
+                self.context.enable_vertex_attrib_array(loc);
                 if buffer.data_type() == glow::UNSIGNED_SHORT
                     || buffer.data_type() == glow::SHORT
                     || buffer.data_type() == glow::UNSIGNED_INT
                     || buffer.data_type() == glow::INT
                 {
-                    context.vertex_attrib_pointer_i32(
+                    self.context.vertex_attrib_pointer_i32(
                         loc,
                         buffer.data_size() as i32,
                         buffer.data_type(),
@@ -392,7 +391,7 @@ impl Program {
                         0,
                     );
                 } else {
-                    context.vertex_attrib_pointer_f32(
+                    self.context.vertex_attrib_pointer_f32(
                         loc,
                         buffer.data_size() as i32,
                         buffer.data_type(),
@@ -401,8 +400,8 @@ impl Program {
                         0,
                     );
                 }
-                context.vertex_attrib_divisor(loc, 1);
-                context.bind_buffer(glow::ARRAY_BUFFER, None);
+                self.context.vertex_attrib_divisor(loc, 1);
+                self.context.bind_buffer(glow::ARRAY_BUFFER, None);
             }
             self.unuse_program();
         }
@@ -415,21 +414,20 @@ impl Program {
     /// If you want to use an [ElementBuffer], see [Program::draw_elements].
     ///
     pub fn draw_arrays(&self, render_states: RenderStates, viewport: Viewport, count: u32) {
-        let context = Context::get();
-        context.set_viewport(viewport);
-        context.set_render_states(render_states);
+        self.context.set_viewport(viewport);
+        self.context.set_render_states(render_states);
         self.use_program();
         unsafe {
-            context.draw_arrays(glow::TRIANGLES, 0, count as i32);
+            self.context.draw_arrays(glow::TRIANGLES, 0, count as i32);
             for location in self.attributes.values() {
-                context.disable_vertex_attrib_array(*location);
+                self.context.disable_vertex_attrib_array(*location);
             }
-            context.bind_vertex_array(None);
+            self.context.bind_vertex_array(None);
         }
         self.unuse_program();
 
         #[cfg(debug_assertions)]
-        context
+        self.context
             .error_check()
             .expect("Unexpected rendering error occured")
     }
@@ -445,22 +443,26 @@ impl Program {
         count: u32,
         instance_count: u32,
     ) {
-        let context = Context::get();
-        context.set_viewport(viewport);
-        context.set_render_states(render_states);
+        self.context.set_viewport(viewport);
+        self.context.set_render_states(render_states);
         self.use_program();
         unsafe {
-            context.draw_arrays_instanced(glow::TRIANGLES, 0, count as i32, instance_count as i32);
-            context.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, None);
+            self.context.draw_arrays_instanced(
+                glow::TRIANGLES,
+                0,
+                count as i32,
+                instance_count as i32,
+            );
+            self.context.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, None);
             for location in self.attributes.values() {
-                context.disable_vertex_attrib_array(*location);
+                self.context.disable_vertex_attrib_array(*location);
             }
-            context.bind_vertex_array(None);
+            self.context.bind_vertex_array(None);
         }
         self.unuse_program();
 
         #[cfg(debug_assertions)]
-        context
+        self.context
             .error_check()
             .expect("Unexpected rendering error occured")
     }
@@ -498,29 +500,28 @@ impl Program {
         first: u32,
         count: u32,
     ) {
-        let context = Context::get();
-        context.set_viewport(viewport);
-        context.set_render_states(render_states);
+        self.context.set_viewport(viewport);
+        self.context.set_render_states(render_states);
         self.use_program();
         element_buffer.bind();
         unsafe {
-            context.draw_elements(
+            self.context.draw_elements(
                 glow::TRIANGLES,
                 count as i32,
                 element_buffer.data_type(),
                 first as i32,
             );
-            context.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, None);
+            self.context.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, None);
 
             for location in self.attributes.values() {
-                context.disable_vertex_attrib_array(*location);
+                self.context.disable_vertex_attrib_array(*location);
             }
-            context.bind_vertex_array(None);
+            self.context.bind_vertex_array(None);
         }
         self.unuse_program();
 
         #[cfg(debug_assertions)]
-        context
+        self.context
             .error_check()
             .expect("Unexpected rendering error occured")
     }
@@ -559,29 +560,28 @@ impl Program {
         count: u32,
         instance_count: u32,
     ) {
-        let context = Context::get();
-        context.set_viewport(viewport);
-        context.set_render_states(render_states);
+        self.context.set_viewport(viewport);
+        self.context.set_render_states(render_states);
         self.use_program();
         element_buffer.bind();
         unsafe {
-            context.draw_elements_instanced(
+            self.context.draw_elements_instanced(
                 glow::TRIANGLES,
                 count as i32,
                 element_buffer.data_type(),
                 first as i32,
                 instance_count as i32,
             );
-            context.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, None);
+            self.context.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, None);
             for location in self.attributes.values() {
-                context.disable_vertex_attrib_array(*location);
+                self.context.disable_vertex_attrib_array(*location);
             }
-            context.bind_vertex_array(None);
+            self.context.bind_vertex_array(None);
         }
         self.unuse_program();
 
         #[cfg(debug_assertions)]
-        context
+        self.context
             .error_check()
             .expect("Unexpected rendering error occured")
     }
@@ -612,13 +612,13 @@ impl Program {
 
     fn use_program(&self) {
         unsafe {
-            Context::get().use_program(Some(self.id));
+            self.context.use_program(Some(self.id));
         }
     }
 
     fn unuse_program(&self) {
         unsafe {
-            Context::get().use_program(None);
+            self.context.use_program(None);
         }
     }
 }
@@ -626,7 +626,7 @@ impl Program {
 impl Drop for Program {
     fn drop(&mut self) {
         unsafe {
-            Context::get().delete_program(self.id);
+            self.context.delete_program(self.id);
         }
     }
 }
