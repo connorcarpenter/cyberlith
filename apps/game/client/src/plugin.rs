@@ -60,8 +60,8 @@ pub fn setup(
         .insert(CubeMarker);
     // light
     commands.spawn(PointLight {
-        position: Vec3::new(4.0, 8.0, 4.0),
-        intensity: 1500.0,
+        position: Vec3::new(40.0, 80.0, 40.0),
+        intensity: 1.0,
         ..Default::default()
     });
     // camera

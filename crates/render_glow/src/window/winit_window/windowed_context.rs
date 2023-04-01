@@ -6,7 +6,7 @@ use crate::core::Context;
 
 #[cfg(target_arch = "wasm32")]
 mod inner {
-    use crate::HardwareAcceleration;
+    use crate::window::HardwareAcceleration;
     use serde::{Deserialize, Serialize};
     use wasm_bindgen::JsCast;
     use winit::platform::web::WindowExtWebSys;
@@ -66,10 +66,12 @@ mod inner {
                 .get_extension("OES_texture_half_float_linear")
                 .map_err(|e| WindowError::OESTextureFloatNotSupported(format!(": {:?}", e)))?;
 
+            Context::init_gl_context(Arc::new(glow::Context::from_webgl2_context(
+                webgl_context,
+            )))?;
+
             Ok(Self {
-                context: Context::init_gl_context(Arc::new(glow::Context::from_webgl2_context(
-                    webgl_context,
-                )))?,
+                context: Context::get(),
             })
         }
 
