@@ -11,73 +11,72 @@ use crate::{
 
 // Render Pass
 pub struct RenderPass<'a> {
-    pub meshes: &'a AssetImpls<TriMesh, BaseMesh>,
-    pub materials: &'a AssetImpls<PbrMaterial, Box<dyn Material>>,
     pub camera: &'a Camera,
-    pub objects: &'a [RenderObject],
+    pub objects: &'a [RenderObject<'a>],
+    pub lights: &'a [&'a dyn Light],
 }
 
 impl<'a> RenderPass<'a> {
     pub fn new(
-        meshes: &'a AssetImpls<TriMesh, BaseMesh>,
-        materials: &'a AssetImpls<PbrMaterial, Box<dyn Material>>,
         camera: &'a Camera,
         objects: &'a [RenderObject],
+        lights: &'a [&'a dyn Light],
     ) -> Self {
         Self {
-            meshes,
-            materials,
             camera,
             objects,
+            lights
         }
     }
 }
 
+// // Render Light
+// pub struct RenderLight {
+//     inner: Box<dyn Light>,
+// }
+//
+// impl RenderLight {
+//     pub fn new<T: Light + 'static>(light: T) -> Self {
+//         Self { inner: Box::new(light) }
+//     }
+// }
+//
+// pub trait AsLights {
+//     fn as_lights(&self) -> &[&dyn Light];
+// }
+//
+// impl AsLights for [RenderLight] {
+//     fn as_lights(&self) -> &[&dyn Light] {
+//         self.iter().map(|light| light.inner.as_ref()).collect::<Vec<_>>().as_slice()
+//     }
+// }
+
 // Render Object
 #[derive(Clone, Copy)]
-pub struct RenderObject {
-    pub mesh: Handle<TriMesh>,
-    pub material: Handle<PbrMaterial>,
-    pub transform: Transform,
+pub struct RenderObject<'a> {
+    pub mesh: &'a BaseMesh,
+    pub material: &'a dyn Material,
+    pub transform: &'a Transform,
 }
 
-impl RenderObject {
-    pub fn new(mesh: Handle<TriMesh>, material: Handle<PbrMaterial>, transform: Transform) -> Self {
+impl<'a> RenderObject<'a> {
+    pub fn new(mesh: &'a BaseMesh, material: &'a dyn Material, transform: &'a Transform) -> Self {
         Self {
             mesh,
             material,
             transform,
         }
     }
-
-    pub fn with_assets<'a>(
-        &'a self,
-        meshes: &'a AssetImpls<TriMesh, BaseMesh>,
-        materials: &'a AssetImpls<PbrMaterial, Box<dyn Material>>,
-    ) -> ActiveRenderObject {
-        ActiveRenderObject {
-            meshes,
-            materials,
-            object: self,
-        }
-    }
 }
 
-pub struct ActiveRenderObject<'a> {
-    pub meshes: &'a AssetImpls<TriMesh, BaseMesh>,
-    pub materials: &'a AssetImpls<PbrMaterial, Box<dyn Material>>,
-    pub object: &'a RenderObject,
-}
-
-impl<'a> Geometry for ActiveRenderObject<'a> {
+impl<'a> Geometry for RenderObject<'a> {
     fn render_with_material(
         &self,
         material: &dyn Material,
         camera: &Camera,
         lights: &[&dyn Light],
     ) {
-        let base_mesh = self.meshes.get(&self.object.mesh).unwrap();
-        let mesh = Mesh::compose(base_mesh, &self.object.transform);
+        let mesh = Mesh::compose(self.mesh, self.transform);
         mesh.render_with_material(material, camera, lights);
     }
 
@@ -93,19 +92,16 @@ impl<'a> Geometry for ActiveRenderObject<'a> {
     }
 
     fn aabb(&self) -> AxisAlignedBoundingBox {
-        let mesh = self.meshes.get(&self.object.mesh).unwrap();
-        mesh.aabb
+        self.mesh.aabb
     }
 }
 
-impl<'a> Object for ActiveRenderObject<'a> {
+impl<'a> Object for RenderObject<'a> {
     fn render(&self, camera: &Camera, lights: &[&dyn Light]) {
-        let material = self.materials.get(&self.object.material).unwrap();
-        self.render_with_material(material.as_ref(), camera, lights);
+        self.render_with_material(self.material, camera, lights);
     }
 
     fn material_type(&self) -> MaterialType {
-        let material = self.materials.get(&self.object.material).unwrap();
-        material.material_type()
+        self.material.material_type()
     }
 }

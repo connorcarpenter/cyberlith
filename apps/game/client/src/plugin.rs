@@ -7,7 +7,7 @@ use bevy_ecs::{
 use bevy_log::info;
 use render_api::{
     base::{Camera, Color, PbrMaterial, Texture2D, TriMesh, Vec3, Viewport},
-    shape, Assets, CameraComponent, ClearOperation, Handle, PointLight, PointLightBundle,
+    shape, Assets, CameraComponent, ClearOperation, Handle, PointLight,
     RenderObjectBundle, RenderTarget, Transform, Window,
 };
 
@@ -59,12 +59,9 @@ pub fn setup(
         })
         .insert(CubeMarker);
     // light
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
-            intensity: 1500.0,
-            ..Default::default()
-        },
-        transform: Transform::from_xyz(4.0, 8.0, 4.0),
+    commands.spawn(PointLight {
+        position: Vec3::new(4.0, 8.0, 4.0),
+        intensity: 1500.0,
         ..Default::default()
     });
     // camera
@@ -100,8 +97,8 @@ fn step(mut cube_q: Query<&mut Transform, With<CubeMarker>>, mut rotation: Local
 
     let mut transform = cube_q.single_mut();
 
-    transform.translation.x = x;
-    transform.translation.z = z;
+    transform.position.x = x;
+    transform.position.z = z;
 }
 
 fn degrees_to_radians(degrees: f32) -> f32 {

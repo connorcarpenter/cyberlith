@@ -3,18 +3,7 @@ use render_api::{base::Vec3, PointLight};
 
 use crate::renderer::{Light, Program};
 
-pub struct PointLightWithPosition<'a> {
-    pub light: &'a PointLight,
-    pub position: &'a Vec3,
-}
-
-impl<'a> PointLightWithPosition<'a> {
-    pub fn new(light: &'a PointLight, position: &'a Vec3) -> PointLightWithPosition<'a> {
-        PointLightWithPosition { light, position }
-    }
-}
-
-impl<'a> Light for PointLightWithPosition<'a> {
+impl Light for PointLight {
     fn shader_source(&self, i: u32) -> String {
         format!(
         "
@@ -37,14 +26,14 @@ impl<'a> Light for PointLightWithPosition<'a> {
     fn use_uniforms(&self, program: &Program, i: u32) {
         program.use_uniform(
             &format!("color{}", i),
-            self.light.color.to_vec3() * self.light.intensity,
+            self.color.to_vec3() * self.intensity,
         );
         program.use_uniform(
             &format!("attenuation{}", i),
             vec3(
-                self.light.attenuation.constant,
-                self.light.attenuation.linear,
-                self.light.attenuation.quadratic,
+                self.attenuation.constant,
+                self.attenuation.linear,
+                self.attenuation.quadratic,
             ),
         );
         program.use_uniform(&format!("position{}", i), self.position);

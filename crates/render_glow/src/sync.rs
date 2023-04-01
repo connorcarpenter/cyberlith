@@ -27,10 +27,10 @@ impl Plugin for SyncPlugin {
             .insert_resource(AssetImpls::<ApiMaterial, Box<dyn Material>>::default())
             // Systems
             .add_system(sync_mesh_assets.in_base_set(RenderSet::Sync))
-            .add_system(sync_material_assets.in_base_set(RenderSet::Sync))
-            .add_system(sync_point_lights_added.in_base_set(RenderSet::Sync))
-            .add_system(sync_point_lights_changed.in_base_set(RenderSet::Sync))
-            .add_system(sync_point_lights_removed.in_base_set(RenderSet::Sync));
+            .add_system(sync_material_assets.in_base_set(RenderSet::Sync));
+            // .add_system(sync_point_lights_added.in_base_set(RenderSet::Sync))
+            // .add_system(sync_point_lights_changed.in_base_set(RenderSet::Sync))
+            // .add_system(sync_point_lights_removed.in_base_set(RenderSet::Sync));
     }
 }
 
@@ -64,10 +64,10 @@ fn sync_material_assets(
         asset_impls.insert(added_handle, Box::new(impl_data));
     }
 }
-fn sync_point_lights_added(query: Query<&PointLight, Added<PointLight>>) {}
-fn sync_point_lights_changed(query: Query<&PointLight, Changed<PointLight>>) {}
-fn sync_point_lights_removed(mut removals: RemovedComponents<PointLight>) {
-    for entity in removals.iter() {
-        // do something with the entity
-    }
-}
+// fn sync_point_lights_added(query: Query<&PointLight, Added<PointLight>>) {}
+// fn sync_point_lights_changed(query: Query<&PointLight, Changed<PointLight>>) {}
+// fn sync_point_lights_removed(mut removals: RemovedComponents<PointLight>) {
+//     for entity in removals.iter() {
+//         // do something with the entity
+//     }
+// }

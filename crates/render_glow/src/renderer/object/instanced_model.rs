@@ -1,5 +1,7 @@
-use crate::renderer::*;
+
 use render_api::base::{AxisAlignedBoundingBox, Model as CpuModel};
+
+use crate::renderer::*;
 
 ///
 /// Part of an [InstancedModel] consisting of a [InstancedMesh], some type of [material]
