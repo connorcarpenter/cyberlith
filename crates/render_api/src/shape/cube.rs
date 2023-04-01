@@ -11,7 +11,9 @@ impl From<Cube> for TriMesh {
 
         let mut tri_mesh = Self::cube();
 
-        let Positions::F32(positions) = &mut tri_mesh.positions;
+        let Positions::F32(positions) = &mut tri_mesh.positions else {
+            panic!("Should not happen");
+        };
         for vertex in positions {
             vertex.x *= half_size;
             vertex.y *= half_size;

@@ -3,19 +3,63 @@
 //!
 
 mod tri_mesh;
+
 pub use tri_mesh::*;
 
+use crate::base::{AxisAlignedBoundingBox, Vec3};
 use cgmath::*;
 
-use crate::base::{AxisAlignedBoundingBox, Vec3};
+///
+/// A CPU-side version of a geometry.
+///
+#[derive(Debug, Clone)]
+pub enum Geometry {
+    /// Triangle geometry
+    Triangles(TriMesh),
+}
+
+impl Geometry {
+    ///
+    /// Computes normals if it is relevant for the geometry.
+    ///
+    pub fn compute_normals(&mut self) {
+        if let Self::Triangles(mesh) = self {
+            mesh.compute_normals()
+        }
+    }
+
+    ///
+    /// Computes tangents if it is relevant for the geometry.
+    ///
+    pub fn compute_tangents(&mut self) {
+        if let Self::Triangles(mesh) = self {
+            mesh.compute_tangents()
+        }
+    }
+
+    ///
+    /// Computes the [AxisAlignedBoundingBox] for this geometry.
+    ///
+    pub fn compute_aabb(&mut self) -> AxisAlignedBoundingBox {
+        match self {
+            Self::Triangles(mesh) => mesh.compute_aabb(),
+        }
+    }
+}
 
 ///
 /// An array of indices. Supports different data types.
 ///
 #[derive(Clone, Debug)]
 pub enum Indices {
+    /// Do not use indices, ie. the faces are all unconnected.
+    None,
+    /// Uses unsigned 8 bit integer for each index.
+    U8(Vec<u8>),
     /// Uses unsigned 16 bit integer for each index.
     U16(Vec<u16>),
+    /// Uses unsigned 32 bit integer for each index.
+    U32(Vec<u32>),
 }
 
 impl Indices {
@@ -24,7 +68,10 @@ impl Indices {
     ///
     pub fn into_u32(self) -> Option<Vec<u32>> {
         match self {
+            Self::None => None,
+            Self::U8(mut values) => Some(values.drain(..).map(|i| i as u32).collect::<Vec<_>>()),
             Self::U16(mut values) => Some(values.drain(..).map(|i| i as u32).collect::<Vec<_>>()),
+            Self::U32(values) => Some(values),
         }
     }
 
@@ -33,7 +80,10 @@ impl Indices {
     ///
     pub fn to_u32(&self) -> Option<Vec<u32>> {
         match self {
+            Self::None => None,
+            Self::U8(values) => Some(values.iter().map(|i| *i as u32).collect::<Vec<_>>()),
             Self::U16(values) => Some(values.iter().map(|i| *i as u32).collect::<Vec<_>>()),
+            Self::U32(values) => Some(values.clone()),
         }
     }
 
@@ -42,7 +92,10 @@ impl Indices {
     ///
     pub fn len(&self) -> Option<usize> {
         match self {
+            Self::None => None,
+            Self::U8(values) => Some(values.len()),
             Self::U16(values) => Some(values.len()),
+            Self::U32(values) => Some(values.len()),
         }
     }
 
@@ -56,7 +109,7 @@ impl Indices {
 
 impl std::default::Default for Indices {
     fn default() -> Self {
-        Self::U16(Vec::new())
+        Self::None
     }
 }
 
@@ -65,7 +118,10 @@ impl std::default::Default for Indices {
 ///
 #[derive(Clone)]
 pub enum Positions {
+    /// Uses 32 bit float for the vertex positions.
     F32(Vec<Vec3>),
+    /// Uses 64 bit float for the vertex positions.
+    F64(Vec<Vector3<f64>>),
 }
 
 impl Positions {
@@ -75,6 +131,10 @@ impl Positions {
     pub fn into_f32(self) -> Vec<Vec3> {
         match self {
             Self::F32(values) => values,
+            Self::F64(mut values) => values
+                .drain(..)
+                .map(|v| Vec3::new(v.x as f32, v.y as f32, v.z as f32))
+                .collect::<Vec<_>>(),
         }
     }
 
@@ -84,6 +144,10 @@ impl Positions {
     pub fn to_f32(&self) -> Vec<Vec3> {
         match self {
             Self::F32(values) => values.clone(),
+            Self::F64(values) => values
+                .iter()
+                .map(|v| Vec3::new(v.x as f32, v.y as f32, v.z as f32))
+                .collect::<Vec<_>>(),
         }
     }
     ///
@@ -95,6 +159,7 @@ impl Positions {
                 .drain(..)
                 .map(|v| Vector3::new(v.x as f64, v.y as f64, v.z as f64))
                 .collect::<Vec<_>>(),
+            Self::F64(values) => values,
         }
     }
 
@@ -107,6 +172,7 @@ impl Positions {
                 .iter()
                 .map(|v| Vector3::new(v.x as f64, v.y as f64, v.z as f64))
                 .collect::<Vec<_>>(),
+            Self::F64(values) => values.clone(),
         }
     }
 
@@ -116,6 +182,7 @@ impl Positions {
     pub fn len(&self) -> usize {
         match self {
             Self::F32(values) => values.len(),
+            Self::F64(values) => values.len(),
         }
     }
 
@@ -133,6 +200,12 @@ impl Positions {
     pub fn compute_aabb(&self) -> AxisAlignedBoundingBox {
         match self {
             Positions::F32(ref positions) => AxisAlignedBoundingBox::new_with_positions(positions),
+            Positions::F64(ref positions) => AxisAlignedBoundingBox::new_with_positions(
+                &positions
+                    .iter()
+                    .map(|v| Vec3::new(v.x as f32, v.y as f32, v.z as f32))
+                    .collect::<Vec<_>>(),
+            ),
         }
     }
 }
@@ -148,6 +221,7 @@ impl std::fmt::Debug for Positions {
         let mut d = f.debug_struct("Positions");
         match self {
             Self::F32(ind) => d.field("f32", &ind.len()),
+            Self::F64(ind) => d.field("f64", &ind.len()),
         };
         d.finish()
     }
