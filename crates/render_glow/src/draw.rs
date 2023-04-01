@@ -34,13 +34,17 @@ pub fn draw(
         Option<&RenderLayer>,
     )>,
 ) {
-    let mut layer_to_order: Vec<Option<usize>> = Vec::with_capacity(RenderLayers::TOTAL_LAYERS); layer_to_order.fill(None);
-    let mut camera_work: Vec<Option<CameraWork>> = Vec::with_capacity(CameraComponent::MAX_CAMERAS); layer_to_order.fill(None);
+    let mut layer_to_order: Vec<Option<usize>> = Vec::with_capacity(RenderLayers::TOTAL_LAYERS);
+    layer_to_order.resize(RenderLayers::TOTAL_LAYERS, None);
+    let mut camera_work: Vec<Option<CameraWork>> = Vec::with_capacity(CameraComponent::MAX_CAMERAS);
+    for _ in 0..CameraComponent::MAX_CAMERAS {
+        camera_work.push(None);
+    }
 
     // Aggregate Cameras
     for (entity, camera, render_layer_wrapper) in cameras_q.iter() {
         let camera_order = camera.order();
-        if camera_work.get(camera_order).unwrap().is_some() {
+        if camera_work[camera_order].is_some() {
             panic!("Each Camera must have a unique `order` value!");
         }
 
