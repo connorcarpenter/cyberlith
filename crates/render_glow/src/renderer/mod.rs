@@ -79,9 +79,7 @@ macro_rules! impl_render_target_extensions_body {
             ) = objects
                 .iter()
                 .filter(|o| camera.in_frustum(&o.aabb()))
-                .partition(|o| {
-                    o.material_type() == MaterialType::Deferred
-                });
+                .partition(|o| o.material_type() == MaterialType::Deferred);
 
             // Deferred
             if deferred_objects.len() > 0 {
@@ -90,13 +88,7 @@ macro_rules! impl_render_target_extensions_body {
                 let viewport =
                     Viewport::new_at_origin(camera.viewport().width, camera.viewport().height);
                 geometry_pass_camera.set_viewport(viewport);
-                deferred_objects.sort_by(|a, b| {
-                    cmp_render_order(
-                        &geometry_pass_camera,
-                        a,
-                        b,
-                    )
-                });
+                deferred_objects.sort_by(|a, b| cmp_render_order(&geometry_pass_camera, a, b));
                 let mut geometry_pass_texture = Texture2DArray::new_empty::<[u8; 4]>(
                     viewport.width,
                     viewport.height,
@@ -121,8 +113,7 @@ macro_rules! impl_render_target_extensions_body {
                 .clear(ClearState::default())
                 .write(|| {
                     for object in deferred_objects {
-                        object
-                            .render(&geometry_pass_camera, lights);
+                        object.render(&geometry_pass_camera, lights);
                     }
                 });
 
@@ -141,13 +132,7 @@ macro_rules! impl_render_target_extensions_body {
             }
 
             // Forward
-            forward_objects.sort_by(|a, b| {
-                cmp_render_order(
-                    camera,
-                    a,
-                    b,
-                )
-            });
+            forward_objects.sort_by(|a, b| cmp_render_order(camera, a, b));
             self.write_partially(scissor_box, || {
                 for object in forward_objects {
                     object.render(camera, lights);

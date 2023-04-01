@@ -7,8 +7,8 @@ use bevy_ecs::{
 use bevy_log::info;
 use render_api::{
     base::{Camera, Color, PbrMaterial, Texture2D, TriMesh, Vec3, Viewport},
-    shape, Assets, CameraComponent, ClearOperation, Handle, PointLight,
-    RenderObjectBundle, RenderTarget, Transform, Window,
+    shape, Assets, CameraComponent, ClearOperation, Handle, PointLight, RenderObjectBundle,
+    RenderTarget, Transform, Window,
 };
 
 #[derive(Component)]

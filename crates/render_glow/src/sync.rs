@@ -28,9 +28,9 @@ impl Plugin for SyncPlugin {
             // Systems
             .add_system(sync_mesh_assets.in_base_set(RenderSet::Sync))
             .add_system(sync_material_assets.in_base_set(RenderSet::Sync));
-            // .add_system(sync_point_lights_added.in_base_set(RenderSet::Sync))
-            // .add_system(sync_point_lights_changed.in_base_set(RenderSet::Sync))
-            // .add_system(sync_point_lights_removed.in_base_set(RenderSet::Sync));
+        // .add_system(sync_point_lights_added.in_base_set(RenderSet::Sync))
+        // .add_system(sync_point_lights_changed.in_base_set(RenderSet::Sync))
+        // .add_system(sync_point_lights_removed.in_base_set(RenderSet::Sync));
     }
 }
 

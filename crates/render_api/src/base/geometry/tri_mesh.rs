@@ -430,7 +430,7 @@ impl TriMesh {
             &(Mat4::from_translation(Vec3::new(tail_length, 0.0, 0.0))
                 * Mat4::from_nonuniform_scale(1.0 - tail_length, 1.0, 1.0)),
         )
-            .unwrap();
+        .unwrap();
         let mut indices = arrow.indices.into_u32().unwrap();
         let cone_indices = cone.indices.into_u32().unwrap();
         let offset = indices.iter().max().unwrap() + 1;

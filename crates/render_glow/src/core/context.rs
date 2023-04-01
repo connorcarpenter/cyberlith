@@ -283,7 +283,7 @@ impl Context {
                         glow::STACK_UNDERFLOW => "Stack underflow",
                         _ => "Unknown",
                     }
-                        .to_string(),
+                    .to_string(),
                 ))?;
             }
         }
