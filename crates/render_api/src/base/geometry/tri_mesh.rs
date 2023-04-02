@@ -76,12 +76,6 @@ impl TriMesh {
                     *pos = (transform * pos.extend(1.0)).truncate();
                 }
             }
-            Positions::F64(ref mut positions) => {
-                let t = transform.cast::<f64>().unwrap();
-                for pos in positions.iter_mut() {
-                    *pos = (t * pos.extend(1.0)).truncate();
-                }
-            }
         };
 
         if self.normals.is_some() || self.tangents.is_some() {
@@ -464,13 +458,6 @@ impl TriMesh {
                     let p2 = positions[i2];
                     (p1 - p0).cross(p2 - p0)
                 }
-                Positions::F64(ref positions) => {
-                    let p0 = positions[i0];
-                    let p1 = positions[i1];
-                    let p2 = positions[i2];
-                    let n = (p1 - p0).cross(p2 - p0);
-                    Vec3::new(n.x as f32, n.y as f32, n.z as f32)
-                }
             };
             normals[i0] += normal;
             normals[i1] += normal;
@@ -497,14 +484,6 @@ impl TriMesh {
         self.for_each_triangle(|i0, i1, i2| {
             let (a, b, c) = match self.positions {
                 Positions::F32(ref positions) => (positions[i0], positions[i1], positions[i2]),
-                Positions::F64(ref positions) => {
-                    let (a, b, c) = (positions[i0], positions[i1], positions[i2]);
-                    (
-                        Vec3::new(a.x as f32, a.y as f32, a.z as f32),
-                        Vec3::new(b.x as f32, b.y as f32, b.z as f32),
-                        Vec3::new(c.x as f32, c.y as f32, c.z as f32),
-                    )
-                }
             };
             let uva = self.uvs.as_ref().unwrap()[i0];
             let uvb = self.uvs.as_ref().unwrap()[i1];
