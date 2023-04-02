@@ -5,12 +5,12 @@ use bevy_ecs::{
 
 use render_api::{
     base::{PbrMaterial, TriMesh},
-    CameraComponent, Handle, PointLight, RenderLayer, RenderLayers, Transform,
+    AmbientLight, CameraComponent, Handle, PointLight, RenderLayer, RenderLayers, Transform,
 };
 
 use crate::{
     asset_impls::AssetImpls,
-    renderer::{BaseMesh, Light, Material, RenderObject, RenderPass},
+    renderer::{AmbientLightImpl, BaseMesh, Light, Material, RenderObject, RenderPass},
     window::FrameInput,
 };
 
@@ -23,6 +23,8 @@ struct CameraWork<'a> {
 pub fn draw(
     meshes: Res<AssetImpls<TriMesh, BaseMesh>>,
     materials: Res<AssetImpls<PbrMaterial, Box<dyn Material>>>,
+    ambient_light: Res<AmbientLight>,
+    ambient_light_impl: Res<AmbientLightImpl>,
     frame_input: NonSendMut<FrameInput<()>>,
     cameras_q: Query<(Entity, &CameraComponent, Option<&RenderLayer>)>,
     objects_q: Query<(
@@ -82,7 +84,7 @@ pub fn draw(
             .push(RenderObject::new(mesh, mat.as_ref(), transform))
     }
 
-    // Aggregate PointLights
+    // Aggregate Point Lights
     for (point_light, render_layer_wrapper) in point_lights_q.iter() {
         let render_layer = convert_wrapper(render_layer_wrapper);
         if layer_to_order.get(render_layer).is_none() {
@@ -100,6 +102,8 @@ pub fn draw(
             .push(point_light);
     }
 
+    // Get Ambient Light
+
     // Draw
     for work in camera_work {
         if work.is_none() {
@@ -108,8 +112,12 @@ pub fn draw(
         let CameraWork {
             camera,
             objects,
-            lights,
+            mut lights,
         } = work.unwrap();
+
+        // add ambient light to lights
+        let ambient_light_tuple = (&*ambient_light, &*ambient_light_impl);
+        lights.push(&ambient_light_tuple);
 
         // TODO: set render target based on camera value ...
         let render_target = frame_input.screen();

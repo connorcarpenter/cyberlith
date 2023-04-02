@@ -1,9 +1,11 @@
 use glow::HasContext;
 
-use crate::core::texture::*;
 use render_api::base::{
-    CubeMapSide, Interpolation, Texture2D as CpuTexture, TextureData, Wrapping,
+    CubeMapSide, Interpolation, Texture2D as CpuTexture, TextureCubeMap as ApiTextureCubeMap,
+    TextureData, Wrapping,
 };
+
+use crate::core::texture::*;
 
 pub trait CubeMapSideExt {
     fn to_const(self) -> u32;
@@ -32,6 +34,19 @@ pub struct TextureCubeMap {
     number_of_mip_maps: u32,
     is_hdr: bool,
     data_byte_size: usize,
+}
+
+impl From<&ApiTextureCubeMap> for TextureCubeMap {
+    fn from(api_texture: &ApiTextureCubeMap) -> Self {
+        Self::new(
+            &api_texture.right,
+            &api_texture.left,
+            &api_texture.top,
+            &api_texture.bottom,
+            &api_texture.front,
+            &api_texture.back,
+        )
+    }
 }
 
 impl TextureCubeMap {

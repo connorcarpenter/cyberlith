@@ -1,9 +1,8 @@
 use cgmath::*;
-use render_api::Attenuation;
 
-use crate::core::*;
-use crate::renderer::*;
-use render_api::base::{Color, Mat4, Radians, Vec3, Viewport, Wrapping};
+use render_api::base::{Attenuation, Color, Mat4, Radians, Vec3, Viewport, Wrapping};
+
+use crate::{core::*, renderer::*};
 
 ///
 /// A light which shines from the given position and in the given direction.

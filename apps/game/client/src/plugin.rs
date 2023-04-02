@@ -1,14 +1,15 @@
 use bevy_app::{App, Plugin};
-use bevy_ecs::query::With;
 use bevy_ecs::{
     component::Component,
+    query::With,
     system::{Commands, Local, Query, Res, ResMut, Resource},
 };
 use bevy_log::info;
+
 use render_api::{
     base::{Camera, Color, PbrMaterial, Texture2D, TriMesh, Vec3, Viewport},
-    shape, Assets, CameraComponent, ClearOperation, Handle, PointLight, RenderObjectBundle,
-    RenderTarget, Transform, Window,
+    shape, AmbientLight, Assets, CameraComponent, ClearOperation, Handle, PointLight,
+    RenderObjectBundle, RenderTarget, Transform, Window,
 };
 
 #[derive(Component)]
@@ -59,6 +60,7 @@ pub fn setup(
         })
         .insert(CubeMarker);
     // light
+    commands.insert_resource(AmbientLight::new(0.3, Color::RED));
     commands.spawn(PointLight {
         position: Vec3::new(40.0, 80.0, 40.0),
         intensity: 1.0,

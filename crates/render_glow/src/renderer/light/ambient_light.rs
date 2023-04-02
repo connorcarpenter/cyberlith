@@ -1,47 +1,33 @@
-use crate::core::*;
-use crate::renderer::*;
-use render_api::base::Color;
+use bevy_ecs::system::Resource;
+
+use render_api::{base::Color, AmbientLight};
+
+use crate::{core::*, renderer::*};
 
 ///
 /// A light which shines on all surfaces.
 /// Can be uniform (a light that shines equally on any surface) or calculated from an environment map using the [Environment] struct.
 ///
-pub struct AmbientLight {
-    /// The intensity of the light. This allows for higher intensity than 1 which can be used to simulate high intensity light sources like the sun.
-    pub intensity: f32,
-    /// The base color of the light.
-    pub color: Color,
+#[derive(Resource)]
+pub struct AmbientLightImpl {
     /// The light shining from the environment. This is calculated based on an environment map.
     pub environment: Option<Environment>,
 }
 
-impl AmbientLight {
-    /// Constructs an ambient light that shines equally on all surfaces.
-    pub fn new(intensity: f32, color: Color) -> Self {
+impl From<&AmbientLight> for AmbientLightImpl {
+    fn from(ambient_light: &AmbientLight) -> Self {
         Self {
-            intensity,
-            color,
-            environment: None,
-        }
-    }
-
-    /// Constructs an ambient light that shines based on the given environment map.
-    pub fn new_with_environment(
-        intensity: f32,
-        color: Color,
-        environment_map: &TextureCubeMap,
-    ) -> Self {
-        Self {
-            intensity,
-            color,
-            environment: Some(Environment::new(environment_map)),
+            environment: ambient_light
+                .environment
+                .as_ref()
+                .map(|environment_map| Environment::new(&environment_map.into())),
         }
     }
 }
 
-impl Light for AmbientLight {
+impl Light for (&AmbientLight, &AmbientLightImpl) {
     fn shader_source(&self, i: u32) -> String {
-        if self.environment.is_some() {
+        if self.1.environment.is_some() {
             format!(
             "
                 uniform samplerCube irradianceMap;
@@ -89,21 +75,17 @@ impl Light for AmbientLight {
         }
     }
     fn use_uniforms(&self, program: &Program, _i: u32) {
-        if let Some(ref environment) = self.environment {
+        if let Some(ref environment) = self.1.environment {
             program.use_texture_cube("irradianceMap", &environment.irradiance_map);
             program.use_texture_cube("prefilterMap", &environment.prefilter_map);
             program.use_texture("brdfLUT", &environment.brdf_map);
         }
-        program.use_uniform("ambientColor", self.color.to_vec3() * self.intensity);
+        program.use_uniform("ambientColor", self.0.color.to_vec3() * self.0.intensity);
     }
 }
 
-impl Default for AmbientLight {
+impl Default for AmbientLightImpl {
     fn default() -> Self {
-        Self {
-            color: Color::WHITE,
-            intensity: 1.0,
-            environment: None,
-        }
+        Self { environment: None }
     }
 }

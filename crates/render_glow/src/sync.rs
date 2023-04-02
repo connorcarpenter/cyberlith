@@ -2,17 +2,17 @@ use bevy_app::{App, Plugin};
 use bevy_ecs::{
     change_detection::DetectChanges,
     schedule::IntoSystemConfig,
-    system::{NonSendMut, ResMut},
+    system::{NonSendMut, Res, ResMut},
 };
 
 use render_api::{
     base::{PbrMaterial as ApiMaterial, TriMesh as ApiMesh},
-    Assets, RenderSet,
+    AmbientLight, Assets, RenderSet,
 };
 
 use crate::{
     asset_impls::AssetImpls,
-    renderer::{BaseMesh, Material, PhysicalMaterial},
+    renderer::{AmbientLightImpl, BaseMesh, Material, PhysicalMaterial},
     window::FrameInput,
 };
 
@@ -24,9 +24,11 @@ impl Plugin for SyncPlugin {
             // Resources
             .insert_resource(AssetImpls::<ApiMesh, BaseMesh>::default())
             .insert_resource(AssetImpls::<ApiMaterial, Box<dyn Material>>::default())
+            .insert_resource(AmbientLightImpl::default())
             // Systems
             .add_system(sync_mesh_assets.in_base_set(RenderSet::Sync))
-            .add_system(sync_material_assets.in_base_set(RenderSet::Sync));
+            .add_system(sync_material_assets.in_base_set(RenderSet::Sync))
+            .add_system(sync_ambient_light.in_base_set(RenderSet::Sync));
     }
 }
 
@@ -46,6 +48,7 @@ fn sync_mesh_assets(
         asset_impls.insert(added_handle, impl_data);
     }
 }
+
 fn sync_material_assets(
     frame_input: NonSendMut<FrameInput<()>>,
     mut api_assets: ResMut<Assets<ApiMaterial>>,
@@ -61,4 +64,16 @@ fn sync_material_assets(
         let impl_data = PhysicalMaterial::new(api_data);
         asset_impls.insert(added_handle, Box::new(impl_data));
     }
+}
+
+fn sync_ambient_light(
+    frame_input: NonSendMut<FrameInput<()>>,
+    api: Res<AmbientLight>,
+    mut i12n: ResMut<AmbientLightImpl>,
+) {
+    if !api.is_changed() {
+        return;
+    }
+
+    *i12n = AmbientLightImpl::from(&*api);
 }

@@ -9,8 +9,8 @@ pub mod shape;
 pub use assets::{Assets, Handle};
 pub use base_set::RenderSet;
 pub use components::{
-    Attenuation, CameraComponent, ClearOperation, PointLight, RenderLayer, RenderLayers,
-    RenderObjectBundle, RenderTarget, Transform,
+    CameraComponent, ClearOperation, PointLight, RenderLayer, RenderLayers, RenderObjectBundle,
+    RenderTarget, Transform,
 };
 pub use plugin::RenderApiPlugin;
-pub use resources::Window;
+pub use resources::{AmbientLight, Window};

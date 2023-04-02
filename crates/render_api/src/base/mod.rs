@@ -1,4 +1,5 @@
 mod aabb;
+mod attenuation;
 mod camera;
 mod color;
 mod geometry;
@@ -7,6 +8,7 @@ mod math;
 mod texture;
 
 pub use aabb::*;
+pub use attenuation::*;
 pub use camera::*;
 pub use color::*;
 pub use geometry::*;
