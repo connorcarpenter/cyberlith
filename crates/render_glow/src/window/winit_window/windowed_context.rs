@@ -64,9 +64,7 @@ mod inner {
                 .get_extension("OES_texture_half_float_linear")
                 .map_err(|e| WindowError::OESTextureFloatNotSupported(format!(": {:?}", e)))?;
 
-            Context::init_gl_context(Arc::new(glow::Context::from_webgl2_context(
-                webgl_context,
-            )))?;
+            Context::init_gl_context(Arc::new(glow::Context::from_webgl2_context(webgl_context)))?;
 
             Ok(Self)
         }
