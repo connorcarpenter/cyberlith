@@ -70,13 +70,10 @@ impl TriMesh {
     /// Transforms the mesh by the given transformation.
     ///
     pub fn transform(&mut self, transform: &Mat4) -> Result<()> {
-        match self.positions {
-            Positions::F32(ref mut positions) => {
-                for pos in positions.iter_mut() {
-                    *pos = (transform * pos.extend(1.0)).truncate();
-                }
-            }
-        };
+        let Positions(positions) = &mut self.positions;
+        for pos in positions.iter_mut() {
+            *pos = (transform * pos.extend(1.0)).truncate();
+        }
 
         if self.normals.is_some() || self.tangents.is_some() {
             let normal_transform = transform
@@ -132,7 +129,7 @@ impl TriMesh {
         ];
         TriMesh {
             indices,
-            positions: Positions::F32(positions),
+            positions: Positions(positions),
             normals: Some(normals),
             tangents: Some(tangents),
             uvs: Some(uvs),
@@ -161,7 +158,7 @@ impl TriMesh {
         }
         TriMesh {
             indices: Indices(Some(indices)),
-            positions: Positions::F32(positions),
+            positions: Positions(positions),
             normals: Some(normals),
             ..Default::default()
         }
@@ -224,7 +221,7 @@ impl TriMesh {
 
         TriMesh {
             indices: Indices(Some(indices)),
-            positions: Positions::F32(positions),
+            positions: Positions(positions),
             normals: Some(normals),
             ..Default::default()
         }
@@ -323,7 +320,7 @@ impl TriMesh {
             Vec2::new(0.25, 2.0 / 3.0),
         ];
         let mut mesh = TriMesh {
-            positions: Positions::F32(positions),
+            positions: Positions(positions),
             uvs: Some(uvs),
             ..Default::default()
         };
@@ -359,7 +356,7 @@ impl TriMesh {
             }
         }
         let mut mesh = Self {
-            positions: Positions::F32(positions),
+            positions: Positions(positions),
             indices: Indices(Some(indices)),
             ..Default::default()
         };
@@ -398,7 +395,7 @@ impl TriMesh {
             }
         }
         let mut mesh = Self {
-            positions: Positions::F32(positions),
+            positions: Positions(positions),
             indices: Indices(Some(indices)),
             ..Default::default()
         };
@@ -424,18 +421,16 @@ impl TriMesh {
             &(Mat4::from_translation(Vec3::new(tail_length, 0.0, 0.0))
                 * Mat4::from_nonuniform_scale(1.0 - tail_length, 1.0, 1.0)),
         )
-            .unwrap();
+        .unwrap();
         let mut indices = arrow.indices.into_u32().unwrap();
         let cone_indices = cone.indices.into_u32().unwrap();
         let offset = indices.iter().max().unwrap() + 1;
         indices.extend(cone_indices.iter().map(|i| i + offset));
         arrow.indices = Indices(Some(indices.iter().map(|i| *i as u16).collect()));
 
-        if let Positions::F32(ref mut p) = arrow.positions {
-            if let Positions::F32(ref p2) = cone.positions {
-                p.extend(p2);
-            }
-        }
+        let Positions(ref mut p) = arrow.positions;
+        let Positions(ref p2) = cone.positions;
+        p.extend(p2);
         arrow
             .normals
             .as_mut()
@@ -451,13 +446,12 @@ impl TriMesh {
     pub fn compute_normals(&mut self) {
         let mut normals = vec![Vec3::new(0.0, 0.0, 0.0); self.positions.len()];
         self.for_each_triangle(|i0, i1, i2| {
-            let normal = match self.positions {
-                Positions::F32(ref positions) => {
-                    let p0 = positions[i0];
-                    let p1 = positions[i1];
-                    let p2 = positions[i2];
-                    (p1 - p0).cross(p2 - p0)
-                }
+            let Positions(ref positions) = self.positions;
+            let normal = {
+                let p0 = positions[i0];
+                let p1 = positions[i1];
+                let p2 = positions[i2];
+                (p1 - p0).cross(p2 - p0)
             };
             normals[i0] += normal;
             normals[i1] += normal;
@@ -482,9 +476,8 @@ impl TriMesh {
         let mut tan2 = vec![Vec3::new(0.0, 0.0, 0.0); self.positions.len()];
 
         self.for_each_triangle(|i0, i1, i2| {
-            let (a, b, c) = match self.positions {
-                Positions::F32(ref positions) => (positions[i0], positions[i1], positions[i2]),
-            };
+            let Positions(positions) = &self.positions;
+            let (a, b, c) = (positions[i0], positions[i1], positions[i2]);
             let uva = self.uvs.as_ref().unwrap()[i0];
             let uvb = self.uvs.as_ref().unwrap()[i1];
             let uvc = self.uvs.as_ref().unwrap()[i2];

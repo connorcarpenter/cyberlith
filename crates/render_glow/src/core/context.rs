@@ -1,7 +1,7 @@
+use bevy_log::info;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::RwLock;
-use bevy_log::info;
 
 use super::*;
 use glow::HasContext;

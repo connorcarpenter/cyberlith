@@ -25,7 +25,7 @@ impl<'a> RenderPass<'a> {
         Self {
             camera,
             objects,
-            lights
+            lights,
         }
     }
 }

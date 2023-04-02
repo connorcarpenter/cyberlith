@@ -18,9 +18,7 @@ impl From<Plane> for TriMesh {
 
         let mut tri_mesh = Self::square();
 
-        let Positions::F32(positions) = &mut tri_mesh.positions else {
-            panic!("Should not happen");
-        };
+        let Positions(positions) = &mut tri_mesh.positions;
         for vertex in positions {
             vertex.x *= half_size;
             vertex.y *= half_size;

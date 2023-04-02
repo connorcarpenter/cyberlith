@@ -16,20 +16,14 @@ impl Transform {
         let position = Vec3::new(x, y, z);
         let rotation = Quat::from_angle_y(cgmath::Deg(0.0));
 
-        Self {
-            position,
-            rotation,
-        }
+        Self { position, rotation }
     }
 
     pub fn from_axis_angle(axis: Vec3, angle: f32) -> Self {
         let rotation = Quat::from_axis_angle(axis.normalize(), cgmath::Deg(angle));
         let position = Vec3::new(0.0, 0.0, 0.0);
 
-        Self {
-            position,
-            rotation,
-        }
+        Self { position, rotation }
     }
 
     pub fn to_mat4(&self) -> Mat4 {

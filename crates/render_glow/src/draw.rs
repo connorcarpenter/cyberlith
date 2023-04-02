@@ -3,11 +3,14 @@ use bevy_ecs::{
     system::{NonSendMut, Query, Res},
 };
 
-use render_api::{base::{PbrMaterial, TriMesh}, CameraComponent, Handle, PointLight, RenderLayer, RenderLayers, Transform};
+use render_api::{
+    base::{PbrMaterial, TriMesh},
+    CameraComponent, Handle, PointLight, RenderLayer, RenderLayers, Transform,
+};
 
 use crate::{
     asset_impls::AssetImpls,
-    renderer::{BaseMesh, Material, RenderObject, RenderPass, Light},
+    renderer::{BaseMesh, Light, Material, RenderObject, RenderPass},
     window::FrameInput,
 };
 
@@ -28,11 +31,7 @@ pub fn draw(
         &Transform,
         Option<&RenderLayer>,
     )>,
-    point_lights_q: Query<(
-        Entity,
-        &PointLight,
-        Option<&RenderLayer>,
-    )>,
+    point_lights_q: Query<(Entity, &PointLight, Option<&RenderLayer>)>,
 ) {
     let mut layer_to_order: Vec<Option<usize>> = Vec::with_capacity(RenderLayers::TOTAL_LAYERS);
     layer_to_order.resize(RenderLayers::TOTAL_LAYERS, None);
@@ -106,7 +105,11 @@ pub fn draw(
         if work.is_none() {
             continue;
         }
-        let CameraWork { camera, objects, lights } = work.unwrap();
+        let CameraWork {
+            camera,
+            objects,
+            lights,
+        } = work.unwrap();
 
         // TODO: set render target based on camera value ...
         let render_target = frame_input.screen();
