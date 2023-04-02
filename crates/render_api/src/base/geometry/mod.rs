@@ -51,21 +51,16 @@ impl Geometry {
 /// An array of indices. Supports different data types.
 ///
 #[derive(Clone, Debug)]
-pub enum Indices {
-    /// Do not use indices, ie. the faces are all unconnected.
-    None,
-    /// Uses unsigned 16 bit integer for each index.
-    U16(Vec<u16>),
-}
+pub struct Indices(pub Option<Vec<u16>>);
 
 impl Indices {
     ///
     /// Converts all the indices as `u32` data type.
     ///
     pub fn into_u32(self) -> Option<Vec<u32>> {
-        match self {
-            Self::None => None,
-            Self::U16(mut values) => Some(values.drain(..).map(|i| i as u32).collect::<Vec<_>>()),
+        match self.0 {
+            None => None,
+            Some(mut values) => Some(values.drain(..).map(|i| i as u32).collect::<Vec<_>>()),
         }
     }
 
@@ -73,9 +68,9 @@ impl Indices {
     /// Clones and converts all the indices as `u32` data type.
     ///
     pub fn to_u32(&self) -> Option<Vec<u32>> {
-        match self {
-            Self::None => None,
-            Self::U16(values) => Some(values.iter().map(|i| *i as u32).collect::<Vec<_>>()),
+        match &self.0 {
+            None => None,
+            Some(values) => Some(values.iter().map(|i| *i as u32).collect::<Vec<_>>()),
         }
     }
 
@@ -84,8 +79,8 @@ impl Indices {
     ///
     pub fn len(&self) -> Option<usize> {
         match self {
-            Self::None => None,
-            Self::U16(values) => Some(values.len()),
+            Self(None) => None,
+            Self(Some(values)) => Some(values.len()),
         }
     }
 
@@ -99,7 +94,7 @@ impl Indices {
 
 impl std::default::Default for Indices {
     fn default() -> Self {
-        Self::None
+        Self(None)
     }
 }
 

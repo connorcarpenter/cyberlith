@@ -30,7 +30,7 @@ impl std::default::Default for TriMesh {
     fn default() -> Self {
         Self {
             positions: Positions::default(),
-            indices: Indices::None,
+            indices: Indices::default(),
             normals: None,
             tangents: None,
             uvs: None,
@@ -104,7 +104,7 @@ impl TriMesh {
     /// Returns a square mesh spanning the xy-plane with positions in the range `[-1..1]` in the x and y axes.
     ///
     pub fn square() -> Self {
-        let indices = vec![0u16, 1, 2, 2, 3, 0];
+        let indices: Indices = Indices(Some(vec![0u16, 1, 2, 2, 3, 0]));
         let halfsize = 1.0;
         let positions = vec![
             Vec3::new(-halfsize, -halfsize, 0.0),
@@ -131,7 +131,7 @@ impl TriMesh {
             Vec2::new(0.0, 0.0),
         ];
         TriMesh {
-            indices: Indices::U16(indices),
+            indices,
             positions: Positions::F32(positions),
             normals: Some(normals),
             tangents: Some(tangents),
@@ -160,7 +160,7 @@ impl TriMesh {
             indices.push(((j + 1) % angle_subdivisions) as u16);
         }
         TriMesh {
-            indices: Indices::U16(indices),
+            indices: Indices(Some(indices)),
             positions: Positions::F32(positions),
             normals: Some(normals),
             ..Default::default()
@@ -223,7 +223,7 @@ impl TriMesh {
         }
 
         TriMesh {
-            indices: Indices::U16(indices),
+            indices: Indices(Some(indices)),
             positions: Positions::F32(positions),
             normals: Some(normals),
             ..Default::default()
@@ -360,7 +360,7 @@ impl TriMesh {
         }
         let mut mesh = Self {
             positions: Positions::F32(positions),
-            indices: Indices::U16(indices),
+            indices: Indices(Some(indices)),
             ..Default::default()
         };
         mesh.compute_normals();
@@ -399,7 +399,7 @@ impl TriMesh {
         }
         let mut mesh = Self {
             positions: Positions::F32(positions),
-            indices: Indices::U16(indices),
+            indices: Indices(Some(indices)),
             ..Default::default()
         };
         mesh.compute_normals();
@@ -429,7 +429,7 @@ impl TriMesh {
         let cone_indices = cone.indices.into_u32().unwrap();
         let offset = indices.iter().max().unwrap() + 1;
         indices.extend(cone_indices.iter().map(|i| i + offset));
-        arrow.indices = Indices::U16(indices.iter().map(|i| *i as u16).collect());
+        arrow.indices = Indices(Some(indices.iter().map(|i| *i as u16).collect()));
 
         if let Positions::F32(ref mut p) = arrow.positions {
             if let Positions::F32(ref p2) = cone.positions {
@@ -539,7 +539,7 @@ impl TriMesh {
     ///
     pub fn for_each_triangle(&self, mut callback: impl FnMut(usize, usize, usize)) {
         match self.indices {
-            Indices::U16(ref indices) => {
+            Indices(Some(ref indices)) => {
                 for face in 0..indices.len() / 3 {
                     let index0 = indices[face * 3] as usize;
                     let index1 = indices[face * 3 + 1] as usize;
@@ -547,7 +547,7 @@ impl TriMesh {
                     callback(index0, index1, index2);
                 }
             }
-            Indices::None => {
+            Indices(None) => {
                 for face in 0..self.triangle_count() {
                     callback(face * 3, face * 3 + 1, face * 3 + 2);
                 }
@@ -571,8 +571,8 @@ impl TriMesh {
         }
         let vertex_count = self.vertex_count();
         let max_index = match &self.indices {
-            Indices::U16(ind) => ind.iter().max().map(|m| *m as usize),
-            Indices::None => None,
+            Indices(Some(ind)) => ind.iter().max().map(|m| *m as usize),
+            Indices(None) => None,
         };
         if max_index.map(|i| i >= vertex_count).unwrap_or(false) {
             Err(Error::InvalidIndices(max_index.unwrap(), vertex_count))?;

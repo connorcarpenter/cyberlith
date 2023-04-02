@@ -229,8 +229,8 @@ impl BaseMesh {
         Self {
             aabb,
             indices: match &cpu_mesh.indices {
-                Indices::U16(ind) => Some(ElementBuffer::new_with_data(ind)),
-                Indices::None => None,
+                Indices(Some(ind)) => Some(ElementBuffer::new_with_data(ind)),
+                Indices(None) => None,
             },
             positions: VertexBuffer::new_with_data(&cpu_mesh.positions.to_f32()),
             normals: cpu_mesh
