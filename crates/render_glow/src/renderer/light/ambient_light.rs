@@ -1,6 +1,6 @@
 use bevy_ecs::system::Resource;
 
-use render_api::{base::Color, AmbientLight};
+use render_api::AmbientLight;
 
 use crate::{core::*, renderer::*};
 
