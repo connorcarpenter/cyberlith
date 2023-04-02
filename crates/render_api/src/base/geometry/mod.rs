@@ -3,49 +3,11 @@
 //!
 
 mod tri_mesh;
-
 pub use tri_mesh::*;
 
-use crate::base::{AxisAlignedBoundingBox, Vec3};
 use cgmath::*;
 
-///
-/// A CPU-side version of a geometry.
-///
-#[derive(Debug, Clone)]
-pub enum Geometry {
-    /// Triangle geometry
-    Triangles(TriMesh),
-}
-
-impl Geometry {
-    ///
-    /// Computes normals if it is relevant for the geometry.
-    ///
-    pub fn compute_normals(&mut self) {
-        if let Self::Triangles(mesh) = self {
-            mesh.compute_normals()
-        }
-    }
-
-    ///
-    /// Computes tangents if it is relevant for the geometry.
-    ///
-    pub fn compute_tangents(&mut self) {
-        if let Self::Triangles(mesh) = self {
-            mesh.compute_tangents()
-        }
-    }
-
-    ///
-    /// Computes the [AxisAlignedBoundingBox] for this geometry.
-    ///
-    pub fn compute_aabb(&mut self) -> AxisAlignedBoundingBox {
-        match self {
-            Self::Triangles(mesh) => mesh.compute_aabb(),
-        }
-    }
-}
+use crate::base::{AxisAlignedBoundingBox, Vec3};
 
 ///
 /// An array of indices. Supports different data types.
