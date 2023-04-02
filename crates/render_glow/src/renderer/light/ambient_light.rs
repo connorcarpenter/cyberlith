@@ -17,7 +17,7 @@ pub struct AmbientLight {
 
 impl AmbientLight {
     /// Constructs an ambient light that shines equally on all surfaces.
-    pub fn new(_context: &Context, intensity: f32, color: Color) -> Self {
+    pub fn new(intensity: f32, color: Color) -> Self {
         Self {
             intensity,
             color,

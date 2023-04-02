@@ -6,10 +6,8 @@
 //!
 
 mod gm;
-mod instanced_model;
 
 pub use gm::*;
-pub use instanced_model::*;
 
 use crate::renderer::*;
 
