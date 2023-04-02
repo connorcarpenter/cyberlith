@@ -104,7 +104,7 @@ impl TriMesh {
     /// Returns a square mesh spanning the xy-plane with positions in the range `[-1..1]` in the x and y axes.
     ///
     pub fn square() -> Self {
-        let indices = vec![0u8, 1, 2, 2, 3, 0];
+        let indices = vec![0u16, 1, 2, 2, 3, 0];
         let halfsize = 1.0;
         let positions = vec![
             Vec3::new(-halfsize, -halfsize, 0.0),
@@ -131,7 +131,7 @@ impl TriMesh {
             Vec2::new(0.0, 0.0),
         ];
         TriMesh {
-            indices: Indices::U8(indices),
+            indices: Indices::U16(indices),
             positions: Positions::F32(positions),
             normals: Some(normals),
             tangents: Some(tangents),
@@ -539,23 +539,7 @@ impl TriMesh {
     ///
     pub fn for_each_triangle(&self, mut callback: impl FnMut(usize, usize, usize)) {
         match self.indices {
-            Indices::U8(ref indices) => {
-                for face in 0..indices.len() / 3 {
-                    let index0 = indices[face * 3] as usize;
-                    let index1 = indices[face * 3 + 1] as usize;
-                    let index2 = indices[face * 3 + 2] as usize;
-                    callback(index0, index1, index2);
-                }
-            }
             Indices::U16(ref indices) => {
-                for face in 0..indices.len() / 3 {
-                    let index0 = indices[face * 3] as usize;
-                    let index1 = indices[face * 3 + 1] as usize;
-                    let index2 = indices[face * 3 + 2] as usize;
-                    callback(index0, index1, index2);
-                }
-            }
-            Indices::U32(ref indices) => {
                 for face in 0..indices.len() / 3 {
                     let index0 = indices[face * 3] as usize;
                     let index1 = indices[face * 3 + 1] as usize;
@@ -587,9 +571,7 @@ impl TriMesh {
         }
         let vertex_count = self.vertex_count();
         let max_index = match &self.indices {
-            Indices::U8(ind) => ind.iter().max().map(|m| *m as usize),
             Indices::U16(ind) => ind.iter().max().map(|m| *m as usize),
-            Indices::U32(ind) => ind.iter().max().map(|m| *m as usize),
             Indices::None => None,
         };
         if max_index.map(|i| i >= vertex_count).unwrap_or(false) {

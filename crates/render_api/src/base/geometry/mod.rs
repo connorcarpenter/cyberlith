@@ -54,12 +54,8 @@ impl Geometry {
 pub enum Indices {
     /// Do not use indices, ie. the faces are all unconnected.
     None,
-    /// Uses unsigned 8 bit integer for each index.
-    U8(Vec<u8>),
     /// Uses unsigned 16 bit integer for each index.
     U16(Vec<u16>),
-    /// Uses unsigned 32 bit integer for each index.
-    U32(Vec<u32>),
 }
 
 impl Indices {
@@ -69,9 +65,7 @@ impl Indices {
     pub fn into_u32(self) -> Option<Vec<u32>> {
         match self {
             Self::None => None,
-            Self::U8(mut values) => Some(values.drain(..).map(|i| i as u32).collect::<Vec<_>>()),
             Self::U16(mut values) => Some(values.drain(..).map(|i| i as u32).collect::<Vec<_>>()),
-            Self::U32(values) => Some(values),
         }
     }
 
@@ -81,9 +75,7 @@ impl Indices {
     pub fn to_u32(&self) -> Option<Vec<u32>> {
         match self {
             Self::None => None,
-            Self::U8(values) => Some(values.iter().map(|i| *i as u32).collect::<Vec<_>>()),
             Self::U16(values) => Some(values.iter().map(|i| *i as u32).collect::<Vec<_>>()),
-            Self::U32(values) => Some(values.clone()),
         }
     }
 
@@ -93,9 +85,7 @@ impl Indices {
     pub fn len(&self) -> Option<usize> {
         match self {
             Self::None => None,
-            Self::U8(values) => Some(values.len()),
             Self::U16(values) => Some(values.len()),
-            Self::U32(values) => Some(values.len()),
         }
     }
 
