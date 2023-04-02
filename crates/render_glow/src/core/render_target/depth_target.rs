@@ -1,5 +1,9 @@
-use super::*;
-use render_api::base::CubeMapSide;
+use render_api::base::{CubeMapSide, Viewport};
+
+use crate::core::{
+    texture::DepthTexture2DMultisample, ClearState, DepthTexture, DepthTexture2D,
+    DepthTexture2DArray, DepthTextureCubeMap, RenderTarget, ScissorBox,
+};
 
 ///
 /// Adds additional functionality to clear, read from and write to a texture.

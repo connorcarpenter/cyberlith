@@ -1,5 +1,6 @@
-use crate::core::*;
 use render_api::base::*;
+
+use crate::core::*;
 
 ///
 /// A multisample render target for depth data. Use this if you want to avoid aliasing, ie. jagged edges, when rendering to a [DepthTarget].
@@ -21,7 +22,7 @@ impl<D: DepthTextureDataType> DepthTargetMultisample<D> {
     ///
     pub fn new(width: u32, height: u32, number_of_samples: u32) -> Self {
         #[cfg(debug_assertions)]
-        super::multisample_sanity_check(number_of_samples);
+        multisample_sanity_check(number_of_samples);
         Self {
             depth: DepthTexture2DMultisample::new::<D>(width, height, number_of_samples),
             _d: std::marker::PhantomData,

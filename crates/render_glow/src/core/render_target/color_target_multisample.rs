@@ -1,5 +1,6 @@
-use crate::core::*;
 use render_api::base::{Interpolation, Wrapping};
+
+use crate::core::*;
 
 ///
 /// A multisample render target for color data. Use this if you want to avoid aliasing, ie. jagged edges, when rendering to a [ColorTarget].
@@ -21,7 +22,7 @@ impl<C: TextureDataType> ColorTargetMultisample<C> {
     ///
     pub fn new(width: u32, height: u32, number_of_samples: u32) -> Self {
         #[cfg(debug_assertions)]
-        super::multisample_sanity_check(number_of_samples);
+        multisample_sanity_check(number_of_samples);
         Self {
             color: Texture2DMultisample::new::<C>(width, height, number_of_samples),
             _c: std::marker::PhantomData,

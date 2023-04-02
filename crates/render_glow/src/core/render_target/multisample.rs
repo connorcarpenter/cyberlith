@@ -1,5 +1,24 @@
-use crate::core::*;
 use render_api::base::{Interpolation, Wrapping};
+
+use glow::HasContext;
+
+use crate::core::*;
+
+#[cfg(debug_assertions)]
+pub fn multisample_sanity_check(number_of_samples: u32) {
+    let max_samples: u32 = unsafe {
+        Context::get()
+            .get_parameter_i32(glow::MAX_SAMPLES)
+            .try_into()
+            .unwrap()
+    };
+    if number_of_samples > max_samples {
+        panic!("number_of_samples ({}) for multisample target is larger than supported number of samples: {}", number_of_samples, max_samples);
+    }
+    if (number_of_samples != 0) && number_of_samples & (number_of_samples - 1) != 0 {
+        panic!("number_of_samples ({}) for multisample target must be a power of 2 (and larger than 0).", number_of_samples);
+    }
+}
 
 ///
 /// A multisampled render target for color and depth data. Use this if you want to avoid aliasing, ie. jagged edges, when rendering to a [RenderTarget].
@@ -24,7 +43,7 @@ impl<C: TextureDataType, D: DepthTextureDataType> RenderTargetMultisample<C, D> 
     ///
     pub fn new(width: u32, height: u32, number_of_samples: u32) -> Self {
         #[cfg(debug_assertions)]
-        super::multisample_sanity_check(number_of_samples);
+        multisample_sanity_check(number_of_samples);
         Self {
             color: Texture2DMultisample::new::<C>(width, height, number_of_samples),
             depth: DepthTexture2DMultisample::new::<D>(width, height, number_of_samples),

@@ -1,7 +1,11 @@
 use glow::HasContext;
-use render_api::base::CubeMapSide;
 
-use super::*;
+use render_api::base::{CubeMapSide, Viewport};
+
+use crate::core::{
+    texture::Texture2DMultisample, ClearState, ColorTexture, Context, RenderTarget, ScissorBox,
+    Texture2D, Texture2DArray, TextureCubeMap, TextureDataType, WriteMask,
+};
 
 ///
 /// Adds additional functionality to clear, read from and write to a texture.
@@ -260,5 +264,13 @@ impl<'a> ColorTarget<'a> {
                     .bind_as_color_target(0);
             }
         }
+    }
+}
+
+fn size_with_mip(size: u32, mip: Option<u32>) -> u32 {
+    if let Some(mip) = mip {
+        size / 2u32.pow(mip)
+    } else {
+        size
     }
 }
