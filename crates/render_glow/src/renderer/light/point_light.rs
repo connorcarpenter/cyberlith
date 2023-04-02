@@ -1,5 +1,5 @@
 use cgmath::*;
-use render_api::{base::Vec3, PointLight};
+use render_api::PointLight;
 
 use crate::renderer::{Light, Program};
 

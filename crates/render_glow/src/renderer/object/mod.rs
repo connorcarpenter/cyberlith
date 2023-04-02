@@ -5,10 +5,6 @@
 //! Use the [Gm] struct to combine any [geometry] and [material] into an [Object].
 //!
 
-mod gm;
-
-pub use gm::*;
-
 use crate::renderer::*;
 
 ///

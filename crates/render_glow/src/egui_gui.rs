@@ -26,7 +26,6 @@ impl GUI {
     /// Creates a new GUI from a mid-level [Context].
     ///
     pub fn new() -> Self {
-        use std::ops::Deref;
         Self::from_gl_context()
     }
 

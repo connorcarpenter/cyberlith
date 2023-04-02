@@ -31,7 +31,7 @@ pub fn draw(
         &Transform,
         Option<&RenderLayer>,
     )>,
-    point_lights_q: Query<(Entity, &PointLight, Option<&RenderLayer>)>,
+    point_lights_q: Query<(&PointLight, Option<&RenderLayer>)>,
 ) {
     let mut layer_to_order: Vec<Option<usize>> = Vec::with_capacity(RenderLayers::TOTAL_LAYERS);
     layer_to_order.resize(RenderLayers::TOTAL_LAYERS, None);
@@ -83,7 +83,7 @@ pub fn draw(
     }
 
     // Aggregate PointLights
-    for (entity, point_light, render_layer_wrapper) in point_lights_q.iter() {
+    for (point_light, render_layer_wrapper) in point_lights_q.iter() {
         let render_layer = convert_wrapper(render_layer_wrapper);
         if layer_to_order.get(render_layer).is_none() {
             panic!("Found render object with RenderLayer not associated with any Camera!");

@@ -12,7 +12,7 @@ use render_api::{
 
 use crate::{
     asset_impls::AssetImpls,
-    renderer::{BaseMesh, ColorMaterial, Material, PhysicalMaterial},
+    renderer::{BaseMesh, Material, PhysicalMaterial},
     window::FrameInput,
 };
 

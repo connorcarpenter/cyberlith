@@ -1,10 +1,9 @@
 use render_api::{
-    base::{AxisAlignedBoundingBox, Camera, PbrMaterial, TriMesh},
-    Handle, Transform,
+    base::{AxisAlignedBoundingBox, Camera},
+    Transform,
 };
 
 use crate::{
-    asset_impls::AssetImpls,
     core::{ColorTexture, DepthTexture},
     renderer::{BaseMesh, Geometry, Light, Material, MaterialType, Mesh, Object, PostMaterial},
 };
