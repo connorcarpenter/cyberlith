@@ -24,11 +24,11 @@ impl Program {
     /// Creates a new shader program from the given vertex and fragment glsl shader source.
     ///
     pub fn from_source(
-        context: &Context,
         vertex_shader_source: &str,
         fragment_shader_source: &str,
     ) -> Result<Self, CoreError> {
         unsafe {
+            let context = Context::get();
             let vert_shader = context
                 .create_shader(glow::VERTEX_SHADER)
                 .expect("Failed creating vertex shader");

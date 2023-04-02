@@ -80,7 +80,7 @@ impl Context {
         if let Some(program) = programs.get(&key) {
             callback(program);
         } else {
-            let program = Program::from_source(self, &key.0, &key.1)?;
+            let program = Program::from_source(&key.0, &key.1)?;
             callback(&program);
             programs.insert(key, program);
         }

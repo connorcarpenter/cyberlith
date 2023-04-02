@@ -23,9 +23,7 @@ mod inner {
     }
 
     /// A context used for rendering
-    pub struct WindowedContext {
-        pub(super) context: Context,
-    }
+    pub struct WindowedContext;
 
     impl WindowedContext {
         /// Creates a new context from a [winit] window.
@@ -70,9 +68,7 @@ mod inner {
                 webgl_context,
             )))?;
 
-            Ok(Self {
-                context: Context::get(),
-            })
+            Ok(Self)
         }
 
         /// Resizes the context

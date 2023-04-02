@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::ops::Deref;
 
 use render_egui::egui;
 use render_egui::glow as egui_glow;
@@ -24,15 +25,16 @@ impl GUI {
     ///
     /// Creates a new GUI from a mid-level [Context].
     ///
-    pub fn new(context: &Context) -> Self {
+    pub fn new() -> Self {
         use std::ops::Deref;
-        Self::from_gl_context(context.deref().clone())
+        Self::from_gl_context()
     }
 
     ///
     /// Creates a new GUI from a low-level graphics [Context](glow::Context).
     ///
-    pub fn from_gl_context(context: std::sync::Arc<glow::Context>) -> Self {
+    pub fn from_gl_context() -> Self {
+        let context = Context::get().deref().clone();
         GUI {
             egui_context: egui::Context::default(),
             painter: RefCell::new(Painter::new(context, "", None).unwrap()),
