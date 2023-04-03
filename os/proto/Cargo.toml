@@ -10,7 +10,7 @@ publish = false
 editor = []
 
 [dependencies]
-naia-bevy-shared = { version = "0.20" }
+naia-bevy-shared = { path = "../../../naia/adapters/bevy/shared" }
 
 cfg-if = { version = "1.0" }
 log = { version = "0.4" }

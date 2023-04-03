@@ -29,7 +29,7 @@ render_glow = { path = "../../crates/render_glow", optional = true }
 render_egui = { path = "../../crates/render_egui", optional = true }
 
 # External Crates
-naia-bevy-client = { version = "0.20", features = ["transport_webrtc"] }
+naia-bevy-client = { path = "../../../naia/adapters/bevy/client", features = ["transport_webrtc"] }
 bevy_app = { version = "0.10", default-features=false }
 bevy_ecs = { version = "0.10", default-features=false }
 bevy_log = { version = "0.10", default-features=false }
