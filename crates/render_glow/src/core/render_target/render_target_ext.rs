@@ -1,3 +1,5 @@
+use render_api::base::Viewport;
+
 use crate::core::*;
 
 macro_rules! impl_render_target_core_extensions_body {

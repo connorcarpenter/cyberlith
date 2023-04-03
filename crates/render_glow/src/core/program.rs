@@ -2,6 +2,8 @@ use std::{collections::HashMap, sync::RwLock};
 
 use glow::HasContext;
 
+use render_api::base::Viewport;
+
 use crate::core::*;
 
 ///

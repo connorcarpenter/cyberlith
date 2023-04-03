@@ -1,10 +1,13 @@
+
+use std::{collections::HashMap, sync::{Arc, RwLock}};
+
+use glow::HasContext;
+
 use bevy_log::info;
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::sync::RwLock;
+
+use render_api::base::Viewport;
 
 use super::*;
-use glow::HasContext;
 
 pub static mut CONTEXT: Option<Context> = None;
 

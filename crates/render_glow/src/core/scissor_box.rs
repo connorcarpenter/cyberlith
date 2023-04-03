@@ -1,3 +1,5 @@
+use render_api::base::Viewport;
+
 ///
 /// Defines the part of the screen or render target that is rendered to.
 /// All pixels outside of the scissor box will not be modified.
@@ -50,8 +52,8 @@ impl ScissorBox {
     }
 }
 
-impl From<crate::core::Viewport> for ScissorBox {
-    fn from(viewport: crate::core::Viewport) -> Self {
+impl From<Viewport> for ScissorBox {
+    fn from(viewport: Viewport) -> Self {
         Self {
             x: viewport.x,
             y: viewport.y,
@@ -61,7 +63,7 @@ impl From<crate::core::Viewport> for ScissorBox {
     }
 }
 
-impl From<crate::core::ScissorBox> for crate::core::Viewport {
+impl From<crate::core::ScissorBox> for Viewport {
     fn from(viewport: crate::core::ScissorBox) -> Self {
         Self {
             x: viewport.x,
