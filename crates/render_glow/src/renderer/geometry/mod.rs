@@ -306,7 +306,7 @@ impl BaseMesh {
         program.use_vertex_attribute("position", &self.positions);
 
         if attributes.normal {
-            program.use_vertex_attribute(
+            program.use_vertex_attribute_if_required(
                 "normal",
                 self.normals.as_ref().unwrap_or_else(|| {
                     panic!(

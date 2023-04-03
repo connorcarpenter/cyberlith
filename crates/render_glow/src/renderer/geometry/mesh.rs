@@ -32,7 +32,7 @@ impl<'a> Mesh<'a> {
     ) {
         if attributes.normal {
             if let Some(inverse) = self.transform.invert() {
-                program.use_uniform("normalMatrix", inverse.transpose());
+                program.use_uniform_if_required("normalMatrix", inverse.transpose());
             } else {
                 // determinant is float zero
                 return;

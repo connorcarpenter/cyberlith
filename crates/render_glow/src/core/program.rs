@@ -361,6 +361,12 @@ impl Program {
         }
     }
 
+    pub fn use_vertex_attribute_if_required(&self, name: &str, buffer: &VertexBuffer) {
+        if self.requires_attribute(name) {
+            self.use_vertex_attribute(name, buffer);
+        }
+    }
+
     ///
     /// Uses the given [InstanceBuffer] data in this shader program and associates it with the given named variable.
     /// Each value in the buffer is used when rendering one instance using the [Program::draw_arrays_instanced] or [Program::draw_elements_instanced] methods.
