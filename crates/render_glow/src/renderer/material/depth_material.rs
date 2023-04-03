@@ -1,6 +1,6 @@
-use crate::core::*;
-use crate::renderer::*;
-use render_api::base::PbrMaterial;
+use render_api::base::{Camera, PbrMaterial};
+
+use crate::{core::*, renderer::*};
 
 ///
 /// Used for rendering the distance from the camera to the object with this material in each pixel.

@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
-use crate::core::*;
-use crate::renderer::*;
-use render_api::base::PbrMaterial;
+use crate::{core::*, renderer::*};
+
+use render_api::base::{Camera, PbrMaterial};
 
 ///
 /// Render the object with colors that reflect its ORM (occlusion, roughness and metallic) values which primarily is used for debug purposes.

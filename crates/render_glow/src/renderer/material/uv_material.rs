@@ -1,6 +1,6 @@
-use crate::core::*;
-use crate::renderer::*;
-use render_api::base::PbrMaterial;
+use crate::{core::*, renderer::*};
+
+use render_api::base::{Camera, PbrMaterial};
 
 ///
 /// Render the object with colors that reflect its uv coordinates which primarily is used for debug purposes.

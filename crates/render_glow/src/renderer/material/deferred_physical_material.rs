@@ -1,10 +1,12 @@
+use std::sync::Arc;
+
+use cgmath::SquareMatrix;
+
 use render_api::base::{
     Camera, Color, GeometryFunction, LightingModel, NormalDistributionFunction, PbrMaterial,
 };
-use std::sync::Arc;
 
-use crate::core::*;
-use crate::renderer::*;
+use crate::{core::*, renderer::*};
 
 ///
 /// Similar to [PhysicalMaterial] except that rendering happens in two stages which produces the same result, but is more efficient for complex scenes.

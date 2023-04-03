@@ -1,8 +1,3 @@
-//!
-//! Mid-level modular abstractions of common graphics concepts such as buffer, texture, program, render target and so on.
-//! Can be combined with low-level calls in the [context](glow) module as well as high-level functionality in the [renderer](crate::renderer) module.
-//!
-
 mod buffer;
 mod context;
 mod data_type;

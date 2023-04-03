@@ -1,7 +1,8 @@
 use cgmath::*;
+
 use render_api::PointLight;
 
-use crate::renderer::{Light, Program};
+use crate::{core::Program, renderer::Light};
 
 impl Light for PointLight {
     fn shader_source(&self, i: u32) -> String {

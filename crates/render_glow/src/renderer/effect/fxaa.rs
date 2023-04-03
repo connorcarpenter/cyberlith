@@ -1,6 +1,8 @@
 use cgmath::*;
 
-use crate::renderer::*;
+use render_api::base::Viewport;
+
+use crate::core::{apply_effect, ColorTexture, Cull, DepthTest, RenderStates, WriteMask};
 
 ///
 /// A simple anti-aliasing approach which smooths otherwise jagged edges (for example lines) but also

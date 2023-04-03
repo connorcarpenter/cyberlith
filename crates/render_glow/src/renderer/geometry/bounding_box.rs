@@ -1,7 +1,11 @@
 use cgmath::*;
-use render_api::base::{degrees, AxisAlignedBoundingBox, Mat4, TriMesh};
 
-use crate::renderer::*;
+use render_api::base::{degrees, AxisAlignedBoundingBox, Camera, Mat4, TriMesh};
+
+use crate::{
+    core::{ColorTexture, DepthTexture},
+    renderer::*,
+};
 
 ///
 /// A bounding box geometry used for visualising an [AxisAlignedBoundingBox].

@@ -5,6 +5,8 @@
 //! Use the [Gm] struct to combine any [geometry] and [material] into an [Object].
 //!
 
+use render_api::base::Camera;
+
 use crate::renderer::*;
 
 ///

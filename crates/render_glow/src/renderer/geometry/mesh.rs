@@ -1,11 +1,11 @@
+use cgmath::{Matrix, SquareMatrix};
+
 use render_api::{
-    base::{AxisAlignedBoundingBox, Mat4},
+    base::{AxisAlignedBoundingBox, Camera, Mat4},
     Transform,
 };
 
 use crate::{core::*, renderer::*};
-
-use super::BaseMesh;
 
 ///
 /// A triangle mesh [Geometry].

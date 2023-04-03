@@ -1,4 +1,5 @@
-use super::*;
+use render_api::base::Camera;
+
 use crate::renderer::*;
 
 ///

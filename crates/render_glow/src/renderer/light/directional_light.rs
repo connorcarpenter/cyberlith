@@ -1,6 +1,8 @@
-use crate::core::*;
-use crate::renderer::*;
+use cgmath::{InnerSpace, MetricSpace, SquareMatrix};
+
 use render_api::base::{AxisAlignedBoundingBox, Camera, Color, Mat4, Vec3, Viewport, Wrapping};
+
+use crate::{core::*, renderer::*};
 
 ///
 /// A light which shines in the given direction.
