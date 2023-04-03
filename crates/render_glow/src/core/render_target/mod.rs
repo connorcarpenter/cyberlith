@@ -1,7 +1,3 @@
-//!
-//! Functionality for rendering to the screen or into textures.
-//!
-
 mod clear_state;
 mod color_target;
 mod color_target_multisample;

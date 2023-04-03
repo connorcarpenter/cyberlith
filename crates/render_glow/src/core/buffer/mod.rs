@@ -1,7 +1,3 @@
-//!
-//! Different types of buffers used for sending data (primarily geometry data) to the GPU.
-//!
-
 mod buffer;
 mod buffer_data;
 mod element_buffer;

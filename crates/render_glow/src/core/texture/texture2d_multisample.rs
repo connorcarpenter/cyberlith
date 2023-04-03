@@ -1,6 +1,6 @@
 use glow::HasContext;
 
-use crate::core::texture::*;
+use crate::core::{texture::*, Context};
 
 pub struct Texture2DMultisample {
     id: glow::Renderbuffer,
