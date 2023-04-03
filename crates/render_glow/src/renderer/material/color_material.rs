@@ -27,7 +27,7 @@ impl ColorMaterial {
     /// Since this is not always correct, it is preferred to use [ColorMaterial::new_opaque] or [ColorMaterial::new_transparent].
     ///
     pub fn new(cpu_material: &PbrMaterial) -> Self {
-        if super::is_transparent(cpu_material) {
+        if is_transparent(cpu_material) {
             Self::new_transparent(cpu_material)
         } else {
             Self::new_opaque(cpu_material)

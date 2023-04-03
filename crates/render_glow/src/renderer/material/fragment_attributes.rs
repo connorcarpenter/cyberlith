@@ -1,0 +1,36 @@
+///
+/// Describes the set of attributes provided by a [geometry] and consumed by a [Material], ie. calculated in the vertex shader and then sent to the fragment shader.
+/// To use an attribute for a material, add the relevant shader code to the fragment shader source (documented for each attribute) and return this struct from [Material::fragment_shader] with the relevant attribute set to true.
+///
+#[derive(Clone, Copy, Debug)]
+pub struct FragmentAttributes {
+    /// Position in world space: `in vec3 pos;`
+    pub position: bool,
+    /// Normal: `in vec3 nor;`,
+    pub normal: bool,
+    /// Tangent and bitangent: `in vec3 tang; in vec3 bitang;`
+    pub tangents: bool,
+    /// UV coordinates: `in vec2 uvs;`
+    pub uv: bool,
+    /// Color: `in vec4 col;`
+    pub color: bool,
+}
+
+impl FragmentAttributes {
+    /// All attributes
+    pub const ALL: Self = Self {
+        position: true,
+        normal: true,
+        tangents: true,
+        uv: true,
+        color: true,
+    };
+    /// No attributes
+    pub const NONE: Self = Self {
+        position: false,
+        normal: false,
+        tangents: false,
+        uv: false,
+        color: false,
+    };
+}
