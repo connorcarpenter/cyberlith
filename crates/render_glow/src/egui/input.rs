@@ -1,8 +1,6 @@
-
 use render_egui::egui;
 
 use crate::renderer::{Key, Modifiers, MouseButton};
-
 
 impl From<&Key> for egui::Key {
     fn from(key: &Key) -> Self {
