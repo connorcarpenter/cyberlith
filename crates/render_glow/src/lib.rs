@@ -14,6 +14,6 @@ pub use plugin::RenderGlowPlugin;
 
 cfg_if! {
     if #[cfg(feature = "editor")] {
-        mod egui_gui;
+        mod egui;
     }
 }
