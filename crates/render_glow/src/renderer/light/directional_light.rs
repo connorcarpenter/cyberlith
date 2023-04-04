@@ -1,39 +1,41 @@
 use cgmath::{InnerSpace, MetricSpace, SquareMatrix};
 
-use render_api::base::{AxisAlignedBoundingBox, Camera, Color, Mat4, Vec3, Viewport, Wrapping};
+use bevy_ecs::component::Component;
+
+use render_api::{
+    base::{AxisAlignedBoundingBox, Camera, Mat4, Viewport, Wrapping},
+    DirectionalLight,
+};
 
 use crate::{core::*, renderer::*};
 
 ///
 /// A light which shines in the given direction.
-/// The light will cast shadows if you [generate a shadow map](DirectionalLight::generate_shadow_map).
+/// The light will cast shadows if you [generate a shadow map](DirectionalLightImpl::generate_shadow_map).
 ///
-pub struct DirectionalLight {
+#[derive(Component)]
+pub struct DirectionalLightImpl {
+    light: DirectionalLight,
     shadow_texture: Option<DepthTexture2D>,
     shadow_matrix: Mat4,
-    /// The intensity of the light. This allows for higher intensity than 1 which can be used to simulate high intensity light sources like the sun.
-    pub intensity: f32,
-    /// The base color of the light.
-    pub color: Color,
-    /// The direction the light shines.
-    pub direction: Vec3,
 }
 
-impl DirectionalLight {
-    /// Creates a new directional light.
-    pub fn new(intensity: f32, color: Color, direction: &Vec3) -> DirectionalLight {
-        DirectionalLight {
+impl DirectionalLightImpl {
+    pub fn new(light: &DirectionalLight) -> Self {
+        Self {
+            light: light.clone(),
             shadow_matrix: Mat4::identity(),
             shadow_texture: None,
-            intensity,
-            color,
-            direction: *direction,
         }
+    }
+
+    pub fn use_light(&mut self, light: &DirectionalLight) {
+        self.light.mirror(light);
     }
 
     ///
     /// Clear the shadow map, effectively disable the shadow.
-    /// Only necessary if you want to disable the shadow, if you want to update the shadow, just use [DirectionalLight::generate_shadow_map].
+    /// Only necessary if you want to disable the shadow, if you want to update the shadow, just use [DirectionalLightImpl::generate_shadow_map].
     ///
     pub fn clear_shadow_map(&mut self) {
         self.shadow_texture = None;
@@ -48,10 +50,11 @@ impl DirectionalLight {
     ///
     pub fn generate_shadow_map(
         &mut self,
+        light: &DirectionalLight,
         texture_size: u32,
         geometries: impl IntoIterator<Item = impl Geometry> + Clone,
     ) {
-        let up = light::compute_up_direction(self.direction);
+        let up = light::compute_up_direction(light.direction);
 
         let viewport = Viewport::new_at_origin(texture_size, texture_size);
         let mut aabb = AxisAlignedBoundingBox::EMPTY;
@@ -62,7 +65,7 @@ impl DirectionalLight {
             return;
         }
         let target = aabb.center();
-        let position = target - aabb.max().distance(aabb.min()) * self.direction;
+        let position = target - aabb.max().distance(aabb.min()) * light.direction;
         let z_far = aabb.distance_max(&position);
         let z_near = aabb.distance(&position);
         let frustum_height = aabb.max().distance(aabb.min()); // TODO: more tight fit
@@ -111,7 +114,7 @@ impl DirectionalLight {
     }
 }
 
-impl Light for DirectionalLight {
+impl Light for DirectionalLightImpl {
     fn shader_source(&self, i: u32) -> String {
         if self.shadow_texture.is_some() {
             format!(
@@ -150,8 +153,8 @@ impl Light for DirectionalLight {
         }
         program.use_uniform(
             &format!("color{}", i),
-            self.color.to_vec3() * self.intensity,
+            self.light.color.to_vec3() * self.light.intensity,
         );
-        program.use_uniform(&format!("direction{}", i), self.direction.normalize());
+        program.use_uniform(&format!("direction{}", i), self.light.direction.normalize());
     }
 }

@@ -1,18 +1,20 @@
 use bevy_app::{App, Plugin};
 use bevy_ecs::{
     change_detection::DetectChanges,
+    entity::Entity,
+    query::{Added, Changed},
     schedule::IntoSystemConfig,
-    system::{NonSendMut, Res, ResMut},
+    system::{Commands, NonSendMut, Query, Res, ResMut},
 };
 
 use render_api::{
     base::{PbrMaterial as ApiMaterial, TriMesh as ApiMesh},
-    AmbientLight, Assets, RenderSet,
+    AmbientLight, Assets, DirectionalLight, RenderSet,
 };
 
 use crate::{
     asset_impls::AssetImpls,
-    renderer::{AmbientLightImpl, BaseMesh, Material, PhysicalMaterial},
+    renderer::{AmbientLightImpl, BaseMesh, DirectionalLightImpl, Material, PhysicalMaterial},
     window::FrameInput,
 };
 
@@ -28,7 +30,9 @@ impl Plugin for SyncPlugin {
             // Systems
             .add_system(sync_mesh_assets.in_base_set(RenderSet::Sync))
             .add_system(sync_material_assets.in_base_set(RenderSet::Sync))
-            .add_system(sync_ambient_light.in_base_set(RenderSet::Sync));
+            .add_system(sync_ambient_light.in_base_set(RenderSet::Sync))
+            .add_system(sync_directional_light_added.in_base_set(RenderSet::Sync))
+            .add_system(sync_directional_light_changed.in_base_set(RenderSet::Sync));
     }
 }
 
@@ -76,4 +80,25 @@ fn sync_ambient_light(
     }
 
     *i12n = AmbientLightImpl::from(&*api);
+}
+
+fn sync_directional_light_added(
+    frame_input: NonSendMut<FrameInput<()>>,
+    mut commands: Commands,
+    mut light_q: Query<(Entity, &DirectionalLight), Added<DirectionalLight>>,
+) {
+    for (entity, light) in light_q.iter_mut() {
+        commands
+            .entity(entity)
+            .insert(DirectionalLightImpl::new(light));
+    }
+}
+
+fn sync_directional_light_changed(
+    frame_input: NonSendMut<FrameInput<()>>,
+    mut light_q: Query<(&DirectionalLight, &mut DirectionalLightImpl), Changed<DirectionalLight>>,
+) {
+    for (light, mut light_impl) in light_q.iter_mut() {
+        light_impl.use_light(light);
+    }
 }

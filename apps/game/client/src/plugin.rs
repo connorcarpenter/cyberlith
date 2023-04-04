@@ -8,8 +8,8 @@ use bevy_log::info;
 
 use render_api::{
     base::{Camera, Color, PbrMaterial, Texture2D, TriMesh, Vec3, Viewport},
-    shape, AmbientLight, Assets, CameraComponent, ClearOperation, Handle, PointLight,
-    RenderObjectBundle, RenderTarget, Transform, Window,
+    shape, AmbientLight, Assets, CameraComponent, ClearOperation, DirectionalLight, Handle,
+    PointLight, RenderObjectBundle, RenderTarget, Transform, Window,
 };
 
 #[derive(Component)]
@@ -65,6 +65,11 @@ pub fn setup(
         position: Vec3::new(40.0, 80.0, 40.0),
         intensity: 1.0,
         ..Default::default()
+    });
+    commands.spawn(DirectionalLight {
+        direction: Vec3::new(0.0, -1.0, -2.0),
+        intensity: 1.0,
+        color: Color::BLUE,
     });
     // camera
     commands.spawn(CameraComponent::new(

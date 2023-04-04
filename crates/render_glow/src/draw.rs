@@ -10,7 +10,9 @@ use render_api::{
 
 use crate::{
     asset_impls::AssetImpls,
-    renderer::{AmbientLightImpl, BaseMesh, Light, Material, RenderObject, RenderPass},
+    renderer::{
+        AmbientLightImpl, BaseMesh, DirectionalLightImpl, Light, Material, RenderObject, RenderPass,
+    },
     window::FrameInput,
 };
 
@@ -34,6 +36,7 @@ pub fn draw(
         Option<&RenderLayer>,
     )>,
     point_lights_q: Query<(&PointLight, Option<&RenderLayer>)>,
+    directional_lights_q: Query<(&DirectionalLightImpl, Option<&RenderLayer>)>,
 ) {
     let mut layer_to_order: Vec<Option<usize>> = Vec::with_capacity(RenderLayers::TOTAL_LAYERS);
     layer_to_order.resize(RenderLayers::TOTAL_LAYERS, None);
@@ -88,11 +91,11 @@ pub fn draw(
     for (point_light, render_layer_wrapper) in point_lights_q.iter() {
         let render_layer = convert_wrapper(render_layer_wrapper);
         if layer_to_order.get(render_layer).is_none() {
-            panic!("Found render object with RenderLayer not associated with any Camera!");
+            panic!("Found PointLight with RenderLayer not associated with any Camera!");
         }
         let camera_index = layer_to_order[render_layer].unwrap();
         if camera_work.get(camera_index).is_none() {
-            panic!("Found render object with RenderLayer not associated with any Camera!");
+            panic!("Found PointLight with RenderLayer not associated with any Camera!");
         }
 
         camera_work[camera_index]
@@ -102,7 +105,23 @@ pub fn draw(
             .push(point_light);
     }
 
-    // Get Ambient Light
+    // Aggregate Directional Lights
+    for (directional_light_impl, render_layer_wrapper) in directional_lights_q.iter() {
+        let render_layer = convert_wrapper(render_layer_wrapper);
+        if layer_to_order.get(render_layer).is_none() {
+            panic!("Found DirectionalLight with RenderLayer not associated with any Camera!");
+        }
+        let camera_index = layer_to_order[render_layer].unwrap();
+        if camera_work.get(camera_index).is_none() {
+            panic!("Found DirectionalLight with RenderLayer not associated with any Camera!");
+        }
+
+        camera_work[camera_index]
+            .as_mut()
+            .unwrap()
+            .lights
+            .push(directional_light_impl);
+    }
 
     // Draw
     for work in camera_work {
