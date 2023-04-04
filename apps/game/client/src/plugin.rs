@@ -2,47 +2,34 @@ use bevy_app::{App, Plugin};
 use bevy_ecs::{
     component::Component,
     query::With,
-    system::{Commands, Local, Query, Res, ResMut, Resource},
+    system::{Commands, Local, Query, Res, ResMut},
 };
-use bevy_log::info;
 
 use render_api::{
-    base::{Camera, Color, PbrMaterial, Texture2D, TriMesh, Vec3, Viewport},
-    shape, AmbientLight, Assets, CameraComponent, ClearOperation, DirectionalLight, Handle,
-    PointLight, RenderObjectBundle, RenderTarget, Transform, Window,
+    base::{Camera, Color, PbrMaterial, TriMesh, Vec3, Viewport},
+    shape, AmbientLight, Assets, CameraComponent, ClearOperation, DirectionalLight, PointLight,
+    RenderObjectBundle, RenderTarget, Transform, Window,
 };
 
 #[derive(Component)]
 pub struct CubeMarker;
 
-#[derive(Resource)]
-pub struct GameClientTexture(pub Handle<Texture2D>);
-
 pub struct GameClientPlugin;
 
 impl Plugin for GameClientPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(step);
+        app.add_startup_system(setup).add_system(step);
     }
 }
 
-pub fn setup(
+fn setup(
     mut commands: Commands,
     window: Res<Window>,
     mut meshes: ResMut<Assets<TriMesh>>,
     mut materials: ResMut<Assets<PbrMaterial>>,
-    mut textures: ResMut<Assets<Texture2D>>,
 ) {
     let width = window.resolution.physical_width();
     let height = window.resolution.physical_height();
-
-    // This is the texture that will be rendered to.
-    let texture = Texture2D::from_size(width, height);
-
-    let texture_handle = textures.add(texture);
-    commands.insert_resource(GameClientTexture(texture_handle.clone()));
-
-    info!("inserted image!");
 
     // plane
     commands.spawn(RenderObjectBundle {
@@ -85,7 +72,7 @@ pub fn setup(
         // render before the "main pass" camera
         0,
         ClearOperation::default(),
-        RenderTarget::Image(texture_handle),
+        RenderTarget::Screen,
     ));
 }
 

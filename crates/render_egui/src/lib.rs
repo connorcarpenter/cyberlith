@@ -13,8 +13,5 @@ pub mod egui {
     pub use egui::*;
 }
 
-mod resources;
-pub use resources::*;
-
 mod plugin;
 pub use plugin::*;

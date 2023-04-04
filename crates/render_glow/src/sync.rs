@@ -67,10 +67,7 @@ fn sync_material_assets(
     }
 }
 
-fn sync_ambient_light(
-    api: Res<AmbientLight>,
-    mut i12n: ResMut<AmbientLightImpl>,
-) {
+fn sync_ambient_light(api: Res<AmbientLight>, mut i12n: ResMut<AmbientLightImpl>) {
     if !api.is_changed() {
         return;
     }

@@ -1,5 +1,5 @@
 use bevy_app::{App, CoreSchedule, Plugin};
-use bevy_ecs::schedule::{apply_system_buffers, ExecutorKind, IntoSystemConfigs, Schedule};
+use bevy_ecs::schedule::{ExecutorKind, IntoSystemConfigs, Schedule};
 use bevy_log::LogPlugin;
 
 use naia_bevy_client::{
@@ -10,7 +10,7 @@ use game_client::GameClientPlugin;
 use os_proto::protocol;
 use render_api::{RenderApiPlugin, Window};
 
-use crate::app::systems::{context, network};
+use crate::app::systems::{network, renderer};
 
 pub fn build() -> App {
     let mut app = App::default();
@@ -19,15 +19,12 @@ pub fn build() -> App {
         .add_plugin(LogPlugin::default())
         // Make all single-threaded
         .add_plugin(SingleThreadedPlugin)
-        // Add Context Plugin
-        .add_plugin(context::ContextPlugin)
-        .add_startup_systems((game_client::setup, apply_system_buffers, context::setup).chain())
         // Render API Plugin
         .add_plugin(RenderApiPlugin)
         // TODO: find out how to get window height & width
         .insert_resource(Window::new(1280, 720))
         // Add Renderer Plugin
-        .add_plugin(context::RendererPlugin)
+        .add_plugin(renderer::RendererPlugin)
         // Add Naia Client Plugin
         .add_plugin(NaiaClientPlugin::new(
             NaiaClientConfig::default(),
