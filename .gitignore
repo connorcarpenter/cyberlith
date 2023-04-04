@@ -3,4 +3,5 @@
 /Cargo.lock
 node_modules
 .idea/*
-/os/client/target
+/apps/game/client/target
+/apps/editor/client/target

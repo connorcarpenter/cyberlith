@@ -3,6 +3,11 @@ use bevy_ecs::{
     component::Component,
     query::With,
     system::{Commands, Local, Query, Res, ResMut},
+    schedule::IntoSystemConfigs
+};
+
+use naia_bevy_client::{
+    ClientConfig as NaiaClientConfig, Plugin as NaiaClientPlugin, ReceiveEvents,
 };
 
 use render_api::{
@@ -11,14 +16,38 @@ use render_api::{
     RenderObjectBundle, RenderTarget, Transform, Window,
 };
 
+use game_proto::protocol;
+
+use crate::app::network;
+
 #[derive(Component)]
 pub struct CubeMarker;
 
-pub struct GameClientPlugin;
+pub struct GamePlugin;
 
-impl Plugin for GameClientPlugin {
+impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(setup).add_system(step);
+        app
+            // Add Naia Client Plugin
+            .add_plugin(NaiaClientPlugin::new(
+                NaiaClientConfig::default(),
+                protocol(),
+            ))
+            // Startup Systems
+            .add_startup_system(network::init)
+            .add_startup_system(setup)
+            // Receive Client Events
+            .add_systems(
+                (
+                    network::connect_events,
+                    network::disconnect_events,
+                    network::reject_events,
+                    network::error_events,
+                )
+                    .chain()
+                    .in_set(ReceiveEvents),
+            )
+            .add_system(step);
     }
 }
 

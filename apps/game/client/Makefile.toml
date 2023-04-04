@@ -11,12 +11,12 @@ install_crate = { crate_name = "wasm-bindgen-cli", binary = "wasm-bindgen", test
 # Cargo Build
 [tasks.cargo-build-wasm]
 command = "cargo"
-args = ["build", "--features", "glow_renderer, editor", "--target", "wasm32-unknown-unknown", "--lib", "--target-dir", "target"]
+args = ["build", "--features", "glow_renderer", "--target", "wasm32-unknown-unknown", "--lib", "--target-dir", "target"]
 dependencies = ["install-target-wasm32-unknown-unknown"]
 
 [tasks.cargo-build-wasm-release]
 command = "cargo"
-args = ["build", "--release", "--features", "glow_renderer, editor", "--target", "wasm32-unknown-unknown", "--lib", "--target-dir", "target"]
+args = ["build", "--release", "--features", "glow_renderer", "--target", "wasm32-unknown-unknown", "--lib", "--target-dir", "target"]
 dependencies = ["install-target-wasm32-unknown-unknown"]
 
 # Wasm-Bindgen
