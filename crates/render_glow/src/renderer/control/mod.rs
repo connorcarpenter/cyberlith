@@ -3,20 +3,14 @@
 //!
 
 mod camera_control;
-#[doc(inline)]
-pub use camera_control::*;
-
-mod orbit_control;
-#[doc(inline)]
-pub use orbit_control::*;
-
 mod first_person_control;
-#[doc(inline)]
-pub use first_person_control::*;
-
 mod fly_control;
-#[doc(inline)]
+mod orbit_control;
+
+pub use camera_control::*;
+pub use first_person_control::*;
 pub use fly_control::*;
+pub use orbit_control::*;
 
 /// Type of mouse button.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Hash)]

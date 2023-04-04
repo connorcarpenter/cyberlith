@@ -2,11 +2,13 @@ use std::{cell::RefCell, ops::Deref};
 
 use egui_glow::Painter;
 
-use render_api::base::*;
-use render_egui::{egui, glow as egui_glow};
+use render_api::base::Viewport;
+use render_egui::egui;
 
-use crate::core::*;
-use crate::renderer::*;
+use crate::{
+    core::Context,
+    renderer::{Event, Key, Modifiers, MouseButton},
+};
 
 ///
 /// Integration of [egui](https://crates.io/crates/egui), an immediate mode GUI.
