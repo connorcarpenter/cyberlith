@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8"/>
+        <title>Cyberlith Mesh Editor Client</title>
+    </head>
+    <body>
+    <canvas id="canvas"></canvas>
+        <script type="module">
+            import app from "./target/app.js";
+            async function start() {
+                await app();
+            }
+            start();
+        </script>
+    </body>
+</html>

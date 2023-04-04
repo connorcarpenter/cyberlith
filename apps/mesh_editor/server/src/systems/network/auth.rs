@@ -2,7 +2,7 @@ use bevy_ecs::event::EventReader;
 
 use naia_bevy_server::{events::AuthEvents, Server};
 
-use os_proto::messages::Auth;
+use mesh_editor_proto::messages::Auth;
 
 pub fn auth_events(mut server: Server, mut event_reader: EventReader<AuthEvents>) {
     for events in event_reader.iter() {

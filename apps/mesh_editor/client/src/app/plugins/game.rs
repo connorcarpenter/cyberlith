@@ -16,7 +16,7 @@ use render_api::{
     RenderObjectBundle, RenderTarget, Transform, Window,
 };
 
-use game_proto::protocol;
+use mesh_editor_proto::protocol;
 
 use crate::app::network;
 

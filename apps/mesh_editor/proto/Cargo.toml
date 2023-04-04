@@ -1,5 +1,5 @@
 [package]
-name = "editor_proto"
+name = "mesh_editor_proto"
 version = "0.1.0"
 authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
 workspace = "../../.."

@@ -1,5 +1,5 @@
-mod renderer;
 mod game;
+mod renderer;
 
-pub use renderer::RendererPlugin;
 pub use game::GamePlugin;
+pub use renderer::RendererPlugin;

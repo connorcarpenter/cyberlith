@@ -6,7 +6,7 @@ use bevy_log::{info, LogPlugin};
 
 use naia_bevy_server::{Plugin as ServerPlugin, ReceiveEvents, ServerConfig};
 
-use os_proto::protocol;
+use mesh_editor_proto::protocol;
 
 mod components;
 mod resources;
