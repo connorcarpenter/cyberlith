@@ -4,7 +4,7 @@ use bevy_ecs::{
     entity::Entity,
     query::{Added, Changed},
     schedule::IntoSystemConfig,
-    system::{Commands, NonSendMut, Query, Res, ResMut},
+    system::{Commands, Query, Res, ResMut},
 };
 
 use render_api::{
@@ -15,7 +15,6 @@ use render_api::{
 use crate::{
     asset_impls::AssetImpls,
     renderer::{AmbientLightImpl, BaseMesh, DirectionalLightImpl, Material, PhysicalMaterial},
-    window::FrameInput,
 };
 
 pub struct SyncPlugin;
@@ -37,7 +36,6 @@ impl Plugin for SyncPlugin {
 }
 
 fn sync_mesh_assets(
-    frame_input: NonSendMut<FrameInput<()>>,
     mut api_assets: ResMut<Assets<ApiMesh>>,
     mut asset_impls: ResMut<AssetImpls<ApiMesh, BaseMesh>>,
 ) {
@@ -54,7 +52,6 @@ fn sync_mesh_assets(
 }
 
 fn sync_material_assets(
-    frame_input: NonSendMut<FrameInput<()>>,
     mut api_assets: ResMut<Assets<ApiMaterial>>,
     mut asset_impls: ResMut<AssetImpls<ApiMaterial, Box<dyn Material>>>,
 ) {
@@ -71,7 +68,6 @@ fn sync_material_assets(
 }
 
 fn sync_ambient_light(
-    frame_input: NonSendMut<FrameInput<()>>,
     api: Res<AmbientLight>,
     mut i12n: ResMut<AmbientLightImpl>,
 ) {
@@ -83,7 +79,6 @@ fn sync_ambient_light(
 }
 
 fn sync_directional_light_added(
-    frame_input: NonSendMut<FrameInput<()>>,
     mut commands: Commands,
     mut light_q: Query<(Entity, &DirectionalLight), Added<DirectionalLight>>,
 ) {
@@ -95,7 +90,6 @@ fn sync_directional_light_added(
 }
 
 fn sync_directional_light_changed(
-    frame_input: NonSendMut<FrameInput<()>>,
     mut light_q: Query<(&DirectionalLight, &mut DirectionalLightImpl), Changed<DirectionalLight>>,
 ) {
     for (light, mut light_impl) in light_q.iter_mut() {

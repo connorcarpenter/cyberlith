@@ -23,18 +23,22 @@ struct CameraWork<'a> {
 }
 
 pub fn draw(
+    frame_input: NonSendMut<FrameInput<()>>,
+    // Resources
     meshes: Res<AssetImpls<TriMesh, BaseMesh>>,
     materials: Res<AssetImpls<PbrMaterial, Box<dyn Material>>>,
-    ambient_light: Res<AmbientLight>,
-    ambient_light_impl: Res<AmbientLightImpl>,
-    frame_input: NonSendMut<FrameInput<()>>,
+    // Cameras
     cameras_q: Query<(Entity, &CameraComponent, Option<&RenderLayer>)>,
+    // Objects
     objects_q: Query<(
         &Handle<TriMesh>,
         &Handle<PbrMaterial>,
         &Transform,
         Option<&RenderLayer>,
     )>,
+    // Lights
+    ambient_light: Res<AmbientLight>,
+    ambient_light_impl: Res<AmbientLightImpl>,
     point_lights_q: Query<(&PointLight, Option<&RenderLayer>)>,
     directional_lights_q: Query<(&DirectionalLightImpl, Option<&RenderLayer>)>,
 ) {

@@ -1,5 +1,5 @@
-use bevy_app::App;
-use bevy_ecs::schedule::{apply_system_buffers, IntoSystemConfigs};
+use bevy_app::{App, CoreSchedule, Plugin};
+use bevy_ecs::schedule::{apply_system_buffers, ExecutorKind, IntoSystemConfigs, Schedule};
 use bevy_log::LogPlugin;
 
 use naia_bevy_client::{
@@ -17,6 +17,8 @@ pub fn build() -> App {
     app
         // Bevy Plugins
         .add_plugin(LogPlugin::default())
+        // Make all single-threaded
+        .add_plugin(SingleThreadedPlugin)
         // Add Context Plugin
         .add_plugin(context::ContextPlugin)
         .add_startup_systems((game_client::setup, apply_system_buffers, context::setup).chain())
@@ -47,4 +49,18 @@ pub fn build() -> App {
                 .in_set(ReceiveEvents),
         );
     app
+}
+
+struct SingleThreadedPlugin;
+
+impl Plugin for SingleThreadedPlugin {
+    fn build(&self, app: &mut App) {
+        let make_single_threaded_fn = |schedule: &mut Schedule| {
+            schedule.set_executor_kind(ExecutorKind::SingleThreaded);
+        };
+        app.edit_schedule(CoreSchedule::Outer, make_single_threaded_fn.clone());
+        app.edit_schedule(CoreSchedule::Startup, make_single_threaded_fn.clone());
+        app.edit_schedule(CoreSchedule::Main, make_single_threaded_fn.clone());
+        app.edit_schedule(CoreSchedule::FixedUpdate, make_single_threaded_fn);
+    }
 }
