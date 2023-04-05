@@ -1,61 +1,71 @@
 use std::{cell::RefCell, ops::Deref};
 
+use bevy_ecs::system::Resource;
+
 use egui_glow::{glow, Painter};
 
 use render_api::base::Viewport;
-
-use crate::{glow_to_egui_key, glow_to_egui_modifiers, glow_to_egui_mouse_button};
+use render_glow::window::FrameInput;
 use render_glow::{
     core::Context,
     renderer::{Event, Modifiers},
 };
+
+use crate::{glow_to_egui_key, glow_to_egui_modifiers, glow_to_egui_mouse_button};
+
+#[derive(Resource)]
+pub struct EguiContext(pub egui::Context);
+
+impl EguiContext {
+    pub fn inner(&self) -> &egui::Context {
+        &self.0
+    }
+}
+
+impl Default for EguiContext {
+    fn default() -> Self {
+        Self(egui::Context::default())
+    }
+}
 
 ///
 /// Integration of [egui](https://crates.io/crates/egui), an immediate mode GUI.
 ///
 pub struct GUI {
     painter: RefCell<Painter>,
-    egui_context: egui::Context,
     output: RefCell<Option<egui::FullOutput>>,
     viewport: Viewport,
     modifiers: Modifiers,
 }
 
-impl GUI {
-    ///
-    /// Creates a new GUI from a mid-level [Context].
-    ///
-    pub fn new() -> Self {
-        Self::from_gl_context()
-    }
-
-    ///
-    /// Creates a new GUI from a low-level graphics [Context](glow::Context).
-    ///
-    pub fn from_gl_context() -> Self {
+impl Default for GUI {
+    fn default() -> Self {
         let context = Context::get().deref().clone();
         GUI {
-            egui_context: egui::Context::default(),
             painter: RefCell::new(Painter::new(context, "", None).unwrap()),
             output: RefCell::new(None),
             viewport: Viewport::new_at_origin(1, 1),
             modifiers: Modifiers::default(),
         }
     }
+}
 
+impl GUI {
     ///
     /// Initialises a new frame of the GUI and handles events.
     /// Construct the GUI (Add panels, widgets etc.) using the [egui::Context] in the callback function.
     /// This function returns whether or not the GUI has changed, ie. if it consumes any events, and therefore needs to be rendered again.
     ///
-    pub fn update<T: 'static + Clone>(
+    pub fn pre_update<T: 'static + Clone>(
         &mut self,
-        events: &mut [Event<T>],
-        accumulated_time_in_ms: f64,
-        viewport: Viewport,
-        device_pixel_ratio: f64,
-        callback: impl FnOnce(&egui::Context),
-    ) -> bool {
+        egui_context: &egui::Context,
+        frame_input: &mut FrameInput<T>,
+    ) {
+        let events: &mut [Event<T>] = frame_input.events.as_mut_slice();
+        let accumulated_time_in_ms: f64 = frame_input.accumulated_time;
+        let viewport: Viewport = frame_input.viewport;
+        let device_pixel_ratio: f64 = frame_input.device_pixel_ratio;
+
         self.viewport = viewport;
         let egui_input = egui::RawInput {
             screen_rect: Some(egui::Rect {
@@ -178,15 +188,26 @@ impl GUI {
             ..Default::default()
         };
 
-        self.egui_context.begin_frame(egui_input);
-        callback(&self.egui_context);
-        *self.output.borrow_mut() = Some(self.egui_context.end_frame());
+        egui_context.begin_frame(egui_input);
+    }
+
+    ///
+    /// Initialises a new frame of the GUI and handles events.
+    /// Construct the GUI (Add panels, widgets etc.) using the [egui::Context] in the callback function.
+    /// This function returns whether or not the GUI has changed, ie. if it consumes any events, and therefore needs to be rendered again.
+    ///
+    pub fn post_update<T: 'static + Clone>(
+        &mut self,
+        egui_context: &egui::Context,
+        events: &mut [Event<T>],
+    ) -> bool {
+        *self.output.borrow_mut() = Some(egui_context.end_frame());
 
         for event in events.iter_mut() {
             if let Event::ModifiersChange { modifiers } = event {
                 self.modifiers = *modifiers;
             }
-            if self.egui_context.wants_pointer_input() {
+            if egui_context.wants_pointer_input() {
                 match event {
                     Event::MousePress {
                         ref mut handled, ..
@@ -212,7 +233,7 @@ impl GUI {
                 }
             }
 
-            if self.egui_context.wants_keyboard_input() {
+            if egui_context.wants_keyboard_input() {
                 match event {
                     Event::KeyRelease {
                         ref mut handled, ..
@@ -228,21 +249,21 @@ impl GUI {
                 }
             }
         }
-        self.egui_context.wants_pointer_input() || self.egui_context.wants_keyboard_input()
+        egui_context.wants_pointer_input() || egui_context.wants_keyboard_input()
     }
 
     ///
     /// Render the GUI defined in the [update](Self::update) function.
     /// Must be called in the callback given as input to a [RenderTarget], [ColorTarget] or [DepthTarget] write method.
     ///
-    pub fn render(&self) {
+    pub fn render(&self, egui_context: &egui::Context) {
         let output = self
             .output
             .borrow_mut()
             .take()
             .expect("need to call GUI::update before GUI::render");
-        let clipped_meshes = self.egui_context.tessellate(output.shapes);
-        let scale = self.egui_context.pixels_per_point();
+        let clipped_meshes = egui_context.tessellate(output.shapes);
+        let scale = egui_context.pixels_per_point();
         self.painter.borrow_mut().paint_and_update_textures(
             [self.viewport.width, self.viewport.height],
             scale,

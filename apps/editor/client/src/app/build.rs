@@ -1,7 +1,6 @@
 use bevy_app::App;
 use bevy_log::LogPlugin;
 
-use input::InputPlugin;
 use render_api::Window;
 use render_egui::EguiPlugin;
 
@@ -12,8 +11,6 @@ pub fn build() -> App {
     app
         // Bevy Plugins
         .add_plugin(LogPlugin::default())
-        // Add Input Plugin
-        .add_plugin(InputPlugin)
         // Add Egui Plugin
         .add_plugin(EguiPlugin)
         // Add Game Plugin

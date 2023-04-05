@@ -4,44 +4,27 @@ use bevy_ecs::schedule::{IntoSystemConfig, IntoSystemSetConfig};
 use render_api::{RenderApiPlugin, RenderSet};
 use render_glow::RenderGlowPlugin;
 
-use crate::resources::{EguiInput, EguiOutput, EguiRenderOutput, WindowSize};
-use crate::{
-    draw,
-    resources::{
-        EguiContext, EguiManagedTextures, EguiMousePosition, EguiSettings, EguiUserTextures,
-    },
-    systems, EguiSet,
-};
+use crate::{systems, EguiContext, EguiSet, GUI};
 
 // Plugin
 pub struct EguiPlugin;
 
 impl Plugin for EguiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(RenderApiPlugin)
+        app
+            // Renderer Specific
+            .add_plugin(RenderApiPlugin)
             .add_plugin(RenderGlowPlugin)
-            // Global
-            .init_resource::<EguiSettings>()
-            .init_resource::<EguiManagedTextures>()
-            .init_resource::<EguiUserTextures>()
-            // Window
-            .init_resource::<EguiContext>()
-            .init_resource::<EguiMousePosition>()
-            .init_resource::<EguiRenderOutput>()
-            .init_resource::<EguiInput>()
-            .init_resource::<EguiOutput>()
-            .init_resource::<WindowSize>()
+            // EGUI Specific
+            .insert_resource(EguiContext::default())
+            // System Sets
+            .configure_set(EguiSet::PreUpdate.before(CoreSet::Update))
+            .configure_set(EguiSet::PostUpdate.after(CoreSet::Update))
+            .configure_set(EguiSet::Draw.after(EguiSet::PostUpdate))
             // Systems
-            .add_system(
-                systems::update_window_context
-                    .in_set(EguiSet::InitContexts)
-                    .in_base_set(CoreSet::PreUpdate),
-            )
-            .add_system(
-                systems::process_input
-                    .in_set(EguiSet::ProcessInput)
-                    .after(EguiSet::InitContexts)
-                    .in_base_set(CoreSet::PreUpdate),
-            );
+            .add_startup_system(systems::startup)
+            .add_system(systems::pre_update.in_base_set(EguiSet::PreUpdate))
+            .add_system(systems::post_update.in_base_set(EguiSet::PostUpdate))
+            .add_system(systems::draw.in_base_set(EguiSet::Draw));
     }
 }

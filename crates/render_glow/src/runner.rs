@@ -6,6 +6,7 @@ use crate::window::{FrameInput, FrameOutput, Window, WindowSettings};
 
 pub fn three_d_runner(mut app: App) {
     // Create a Window
+    // TODO: bring these settings into the app
     let window = Window::new(WindowSettings {
         title: "Triangle!".to_string(),
         max_size: Some((1280, 720)),

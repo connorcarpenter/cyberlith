@@ -10,12 +10,13 @@ use naia_bevy_client::{
     ClientConfig as NaiaClientConfig, Plugin as NaiaClientPlugin, ReceiveEvents,
 };
 
+use math::Vec3;
 use render_api::{
-    base::{Camera, Color, PbrMaterial, TriMesh, Vec3, Viewport},
+    base::{Camera, Color, PbrMaterial, TriMesh, Viewport},
     shape, AmbientLight, Assets, CameraComponent, ClearOperation, DirectionalLight, PointLight,
     RenderObjectBundle, RenderTarget, Transform, Window,
 };
-use render_egui::{egui, resources::EguiContext};
+use render_egui::{egui, EguiContext, GUI};
 
 use editor_proto::protocol;
 
@@ -37,6 +38,7 @@ impl Plugin for EditorPlugin {
             // Startup Systems
             // .add_startup_system(network::init)
             .init_resource::<OccupiedScreenSpace>()
+            .add_startup_system(setup)
             .add_system(ui_example_system)
             // Receive Client Events
             // .add_systems(
@@ -62,13 +64,35 @@ struct OccupiedScreenSpace {
     bottom: f32,
 }
 
+fn setup(mut commands: Commands, window: Res<Window>) {
+    let width = window.resolution.physical_width();
+    let height = window.resolution.physical_height();
+
+    // camera
+    commands.spawn(CameraComponent::new(
+        Camera::new_orthographic(
+            Viewport::new_at_origin(width, height),
+            Vec3::new(50.0, 50.0, 50.0),
+            Vec3::new(0.0, 0.0, 0.0),
+            Vec3::new(0.0, 1.0, 0.0),
+            50.0,
+            0.0,
+            1000.0,
+        ),
+        // render before the "main pass" camera
+        0,
+        ClearOperation::default(),
+        RenderTarget::Screen,
+    ));
+}
+
 fn ui_example_system(
-    mut context: ResMut<EguiContext>,
+    context: Res<EguiContext>,
     mut occupied_screen_space: ResMut<OccupiedScreenSpace>,
 ) {
     occupied_screen_space.left = egui::SidePanel::left("left_panel")
         .resizable(true)
-        .show(context.get_mut(), |ui| {
+        .show(context.inner(), |ui| {
             ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
         })
         .response
@@ -76,7 +100,7 @@ fn ui_example_system(
         .width();
     occupied_screen_space.right = egui::SidePanel::right("right_panel")
         .resizable(true)
-        .show(context.get_mut(), |ui| {
+        .show(context.inner(), |ui| {
             ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
         })
         .response
@@ -84,7 +108,7 @@ fn ui_example_system(
         .width();
     occupied_screen_space.top = egui::TopBottomPanel::top("top_panel")
         .resizable(true)
-        .show(context.get_mut(), |ui| {
+        .show(context.inner(), |ui| {
             ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
         })
         .response
@@ -92,7 +116,7 @@ fn ui_example_system(
         .height();
     occupied_screen_space.bottom = egui::TopBottomPanel::bottom("bottom_panel")
         .resizable(true)
-        .show(context.get_mut(), |ui| {
+        .show(context.inner(), |ui| {
             ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
         })
         .response

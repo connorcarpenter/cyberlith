@@ -1,5 +1,4 @@
-
-use math::{Vec3, radians};
+use math::{radians, Vec3};
 
 use render_api::base::*;
 

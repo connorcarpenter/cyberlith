@@ -25,6 +25,7 @@ impl Plugin for SyncPlugin {
             // Resources
             .insert_resource(AssetImpls::<ApiMesh, BaseMesh>::default())
             .insert_resource(AssetImpls::<ApiMaterial, Box<dyn Material>>::default())
+            .insert_resource(AmbientLight::none())
             .insert_resource(AmbientLightImpl::default())
             // Systems
             .add_system(sync_mesh_assets.in_base_set(RenderSet::Sync))

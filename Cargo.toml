@@ -11,9 +11,7 @@ members = [
     "crates/render_api",
     "crates/render_glow",
     "crates/render_egui",
-    "crates/input",
     "crates/math",
-    "crates/window",
 ]
 # any crates with conflicting dependencies / feature flags cannot be put here
 default-members = [

@@ -9,9 +9,7 @@ publish = false
 # Internal Crates
 render_api = { path = "../render_api" }
 render_glow = { path = "../render_glow" }
-input = { path = "../input" }
 math = { path = "../math" }
-window = { path = "../window" }
 
 # External Crates
 bevy_app = { version = "0.10", default-features=false }
