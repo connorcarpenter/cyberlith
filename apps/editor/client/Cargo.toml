@@ -1,0 +1,34 @@
+[package]
+name = "editor_client"
+version = "0.1.0"
+authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
+workspace = "../../.."
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "app"
+path = "src/main.rs"
+
+[lib]
+name = "app"
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# Internal Crates
+editor_proto = { path = "../proto" }
+render_api = { path = "../../../crates/render_api" }
+render_glow = { path = "../../../crates/render_glow" }
+render_egui = { path = "../../../crates/render_egui" }
+
+# External Crates
+naia-bevy-client = { path = "../../../../naia/adapters/bevy/client", features = ["transport_webrtc"] }
+bevy_app = { version = "0.10", default-features=false }
+bevy_ecs = { version = "0.10", default-features=false }
+bevy_log = { version = "0.10", default-features=false }
+cfg-if = { version = "1.0" }
+
+# Wasm Only
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = { version = "0.2.84", features = [ "serde-serialize" ] }

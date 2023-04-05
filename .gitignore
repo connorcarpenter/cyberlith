@@ -4,4 +4,4 @@
 node_modules
 .idea/*
 /apps/game/client/target
-/apps/mesh_editor/client/target
+/apps/editor/client/target

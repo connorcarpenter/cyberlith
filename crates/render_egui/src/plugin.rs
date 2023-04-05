@@ -1,15 +1,19 @@
 use bevy_app::{App, Plugin};
-use bevy_ecs::schedule::IntoSystemSetConfig;
+use bevy_ecs::schedule::{IntoSystemConfig, IntoSystemSetConfig};
 
-use render_api::RenderSet;
+use render_api::{RenderApiPlugin, RenderSet};
+use render_glow::RenderGlowPlugin;
 
-use crate::EguiDrawSet;
+use crate::{draw, EguiDrawSet};
 
 // Plugin
-pub struct RenderEguiPlugin;
+pub struct EguiPlugin;
 
-impl Plugin for RenderEguiPlugin {
+impl Plugin for EguiPlugin {
     fn build(&self, app: &mut App) {
-        app.configure_set(EguiDrawSet.after(RenderSet::Draw));
+        app.add_plugin(RenderApiPlugin)
+            .add_plugin(RenderGlowPlugin)
+            .configure_set(EguiDrawSet.after(RenderSet::Draw))
+            .add_system(draw.in_base_set(EguiDrawSet));
     }
 }

@@ -6,13 +6,11 @@ edition = "2021"
 publish = false
 
 [features]
-editor = [ "render_egui", "egui_glow", "getrandom" ]
 
 [dependencies]
 # Internal Crates
 # THIS SHOULD *NEVER* include render_wgpu
 render_api = { path = "../render_api" }
-render_egui = { path = "../render_egui", optional = true }
 
 # External Crates
 bevy_app = { version = "0.10", default-features=false }
@@ -20,7 +18,6 @@ bevy_ecs = { version = "0.10", default-features=false }
 bevy_log = { version = "0.10", default-features=false }
 cfg-if = { version = "1.0" }
 glow = { version = "0.12" }
-egui_glow = { version = "0.21", optional = true }
 cgmath = { version = "0.18" }
 half = {version="2", features=["std", "num-traits", "zerocopy"]}
 thiserror = { version = "1" }
