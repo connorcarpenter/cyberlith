@@ -10,9 +10,6 @@ pub fn build() -> App {
     app
         // Bevy Plugins
         .add_plugin(LogPlugin::default())
-        // Insert Window Resource
-        // TODO: find out how to get window height & width
-        .insert_resource(Window::new(1280, 720))
         // Add Render Plugins
         .add_plugin(RenderApiPlugin)
         .add_plugin(RendererPlugin)

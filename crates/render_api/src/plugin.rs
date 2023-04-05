@@ -5,6 +5,7 @@ use crate::{
     assets::Assets,
     base::{PbrMaterial, Texture2D, TriMesh},
     base_set::RenderSet,
+    Window,
 };
 
 pub struct RenderApiPlugin;
@@ -16,6 +17,8 @@ impl Plugin for RenderApiPlugin {
             .insert_resource(Assets::<TriMesh>::default())
             .insert_resource(Assets::<PbrMaterial>::default())
             .insert_resource(Assets::<Texture2D>::default())
+            // TODO: figure out how to set the correct window here ...
+            .insert_resource(Window::default())
             // Sync
             .configure_set(RenderSet::Sync.after(CoreSet::LastFlush))
             // SyncFlush

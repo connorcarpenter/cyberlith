@@ -7,6 +7,8 @@ mod draw;
 mod gui;
 mod input;
 mod plugin;
+pub mod resources;
+pub mod systems;
 
 pub use base_set::*;
 pub use draw::*;
