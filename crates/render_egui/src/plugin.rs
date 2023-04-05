@@ -36,6 +36,12 @@ impl Plugin for EguiPlugin {
                 systems::update_window_context
                     .in_set(EguiSet::InitContexts)
                     .in_base_set(CoreSet::PreUpdate),
+            )
+            .add_system(
+                systems::process_input
+                    .in_set(EguiSet::ProcessInput)
+                    .after(EguiSet::InitContexts)
+                    .in_base_set(CoreSet::PreUpdate),
             );
     }
 }

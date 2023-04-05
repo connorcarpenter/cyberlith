@@ -1,5 +1,9 @@
-use crate::base::{Positions, TriMesh, Vec3};
-use crate::Transform;
+use math::Vec3;
+
+use crate::{
+    base::{Positions, TriMesh},
+    Transform,
+};
 
 pub struct Plane {
     pub size: f32,

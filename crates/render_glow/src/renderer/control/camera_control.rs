@@ -1,5 +1,9 @@
-use super::*;
+
+use math::{Vec3, radians};
+
 use render_api::base::*;
+
+use super::*;
 
 ///
 /// A set of possible actions to apply to a camera when recieving input.

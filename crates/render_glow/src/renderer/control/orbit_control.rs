@@ -1,7 +1,8 @@
-use cgmath::MetricSpace;
+use math::{MetricSpace, Vec3};
+
+use render_api::base::*;
 
 use super::*;
-use render_api::base::*;
 
 ///
 /// A control that makes the camera orbit around a target.

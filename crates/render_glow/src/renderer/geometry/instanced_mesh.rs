@@ -1,12 +1,10 @@
-use std::collections::HashMap;
-use std::sync::RwLock;
+use std::{collections::HashMap, sync::RwLock};
 
-use cgmath::*;
+use math::*;
+use render_api::base::{AxisAlignedBoundingBox, Camera, Color, TriMesh};
 
 use super::BaseMesh;
-use crate::core::*;
-use crate::renderer::*;
-use render_api::base::{AxisAlignedBoundingBox, Camera, Color, Mat3, Mat4, TriMesh, Vec3};
+use crate::{core::*, renderer::*};
 
 ///
 /// Similar to [Mesh], except it is possible to render many instances of the same mesh efficiently.

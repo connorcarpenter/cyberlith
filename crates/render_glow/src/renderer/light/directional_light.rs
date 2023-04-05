@@ -1,9 +1,9 @@
-use cgmath::{InnerSpace, MetricSpace, SquareMatrix};
+use math::{InnerSpace, Mat4, MetricSpace, SquareMatrix};
 
 use bevy_ecs::component::Component;
 
 use render_api::{
-    base::{AxisAlignedBoundingBox, Camera, Mat4, Viewport, Wrapping},
+    base::{AxisAlignedBoundingBox, Camera, Viewport, Wrapping},
     DirectionalLight,
 };
 

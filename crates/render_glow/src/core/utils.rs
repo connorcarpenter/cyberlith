@@ -1,4 +1,4 @@
-use cgmath::vec3;
+use math::vec3;
 
 use render_api::base::{CubeMapSide, Viewport};
 

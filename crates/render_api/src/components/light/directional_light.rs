@@ -2,7 +2,9 @@ use std::default::Default;
 
 use bevy_ecs::component::Component;
 
-use crate::base::{Color, Vec3};
+use math::Vec3;
+
+use crate::base::Color;
 
 ///
 /// A light which shines in the given direction.

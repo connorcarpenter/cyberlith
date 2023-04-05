@@ -1,9 +1,8 @@
 use std::default::Default;
 
 use bevy_ecs::component::Component;
-use cgmath::{InnerSpace, Rotation3};
 
-use crate::base::{Mat3, Mat4, Quat, Vec3};
+use math::{Deg, InnerSpace, Mat3, Mat4, Quat, Rotation3, Vec3};
 
 #[derive(Clone, Component, Copy)]
 pub struct Transform {
@@ -14,13 +13,13 @@ pub struct Transform {
 impl Transform {
     pub fn from_xyz(x: f32, y: f32, z: f32) -> Self {
         let position = Vec3::new(x, y, z);
-        let rotation = Quat::from_angle_y(cgmath::Deg(0.0));
+        let rotation = Quat::from_angle_y(Deg(0.0));
 
         Self { position, rotation }
     }
 
     pub fn from_axis_angle(axis: Vec3, angle: f32) -> Self {
-        let rotation = Quat::from_axis_angle(axis.normalize(), cgmath::Deg(angle));
+        let rotation = Quat::from_axis_angle(axis.normalize(), Deg(angle));
         let position = Vec3::new(0.0, 0.0, 0.0);
 
         Self { position, rotation }
@@ -49,7 +48,7 @@ impl Default for Transform {
     fn default() -> Self {
         Self {
             position: Vec3::new(0.0, 0.0, 0.0),
-            rotation: Quat::from_angle_y(cgmath::Deg(0.0)),
+            rotation: Quat::from_angle_y(Deg(0.0)),
         }
     }
 }

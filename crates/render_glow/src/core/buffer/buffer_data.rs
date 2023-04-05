@@ -1,7 +1,7 @@
-use cgmath::*;
 use half::f16;
+use math::*;
 
-use render_api::base::{Color, Quat};
+use render_api::base::Color;
 
 use crate::core::*;
 

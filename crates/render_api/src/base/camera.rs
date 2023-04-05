@@ -1,4 +1,4 @@
-use cgmath::*;
+use math::*;
 
 use super::*;
 
@@ -149,8 +149,7 @@ impl Camera {
         self.z_far = z_far;
         let field_of_view_y = field_of_view_y.into();
         self.projection_type = ProjectionType::Perspective { field_of_view_y };
-        self.projection =
-            cgmath::perspective(field_of_view_y, self.viewport.aspect(), z_near, z_far);
+        self.projection = math::perspective(field_of_view_y, self.viewport.aspect(), z_near, z_far);
         self.update_screen2ray();
         self.update_frustrum();
     }
@@ -167,7 +166,7 @@ impl Camera {
         self.z_far = z_far;
         let width = height * self.viewport.aspect();
         self.projection_type = ProjectionType::Orthographic { height };
-        self.projection = cgmath::ortho(
+        self.projection = math::ortho(
             -0.5 * width,
             0.5 * width,
             -0.5 * height,

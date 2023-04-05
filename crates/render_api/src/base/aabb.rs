@@ -1,4 +1,4 @@
-use super::math::*;
+use math::*;
 
 ///
 /// A bounding box that aligns with the x, y and z axes.

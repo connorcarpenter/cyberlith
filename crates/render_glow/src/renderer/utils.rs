@@ -1,6 +1,6 @@
-use cgmath::{vec3, InnerSpace, MetricSpace};
+use math::{vec3, InnerSpace, MetricSpace, Vec3};
 
-use render_api::base::{Camera, Interpolation, Vec3, Viewport, Wrapping};
+use render_api::base::{Camera, Interpolation, Viewport, Wrapping};
 
 use crate::renderer::{DepthMaterial, Geometry, MaterialType, Object};
 

@@ -1,4 +1,4 @@
-use cgmath::*;
+use math::*;
 
 use render_api::base::Viewport;
 

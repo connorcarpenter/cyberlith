@@ -1,7 +1,7 @@
-use cgmath::{Matrix, SquareMatrix};
+use math::{Mat4, Matrix, SquareMatrix};
 
 use render_api::{
-    base::{AxisAlignedBoundingBox, Camera, Mat4},
+    base::{AxisAlignedBoundingBox, Camera},
     Transform,
 };
 

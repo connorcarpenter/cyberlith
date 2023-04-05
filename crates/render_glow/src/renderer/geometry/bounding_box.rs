@@ -1,6 +1,6 @@
-use cgmath::*;
+use math::*;
 
-use render_api::base::{degrees, AxisAlignedBoundingBox, Camera, Mat4, TriMesh};
+use render_api::base::{AxisAlignedBoundingBox, Camera, TriMesh};
 
 use crate::{
     core::{ColorTexture, DepthTexture},

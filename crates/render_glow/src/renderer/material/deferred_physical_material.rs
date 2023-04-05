@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use cgmath::SquareMatrix;
+use math::SquareMatrix;
 
 use render_api::base::{
     Camera, Color, GeometryFunction, LightingModel, NormalDistributionFunction, PbrMaterial,

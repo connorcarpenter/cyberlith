@@ -1,10 +1,10 @@
-use cgmath::Zero;
+use math::{Vec3, Zero};
 
 use std::default::Default;
 
 use bevy_ecs::component::Component;
 
-use crate::base::{Attenuation, Color, Vec3};
+use crate::base::{Attenuation, Color};
 
 ///
 /// A light which shines from the given position in all directions.

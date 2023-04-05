@@ -2,9 +2,12 @@
 //! Basic math functionality. Mostly just an re-export of [cgmath](https://crates.io/crates/cgmath).
 //!
 
-use cgmath::{
-    Deg, Matrix2, Matrix3, Matrix4, Quaternion, Rad, Rotation, Vector2, Vector3, Vector4,
+pub use cgmath::{
+    ortho, perspective, vec2, vec3, vec4, Deg, EuclideanSpace, InnerSpace, Matrix, Matrix2, MetricSpace,
+    Point3, Quaternion, Rotation3, SquareMatrix, Vector2, Vector3, Vector4, Zero, Matrix3, Matrix4
 };
+
+use cgmath::{Rad, Rotation};
 
 ///
 /// A [Vector2] with f32 data type.

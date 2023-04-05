@@ -1,6 +1,6 @@
-use cgmath::*;
+use math::*;
 
-use crate::base::{AxisAlignedBoundingBox, Vec3};
+use crate::base::AxisAlignedBoundingBox;
 
 ///
 /// An array of positions. Supports f32 and f64 data types.

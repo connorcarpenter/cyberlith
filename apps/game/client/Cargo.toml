@@ -21,9 +21,11 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 # Internal Crates
-# THIS SHOULD *NEVER* include render_glow, render_wgpu, or render_egui
 game_proto = { path = "../proto" }
+input = { path = "../../../crates/input" }
+math = { path = "../../../crates/math" }
 render_api = { path = "../../../crates/render_api" }
+# `render_glow` and `render_wgpu` SHOULD *ALWAYS* be optional
 render_glow = { path = "../../../crates/render_glow", optional = true }
 
 # External Crates

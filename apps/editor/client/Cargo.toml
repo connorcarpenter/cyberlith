@@ -18,6 +18,9 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 # Internal Crates
 editor_proto = { path = "../proto" }
+input = { path = "../../../crates/input" }
+math = { path = "../../../crates/math" }
+window = { path = "../../../crates/window" }
 render_api = { path = "../../../crates/render_api" }
 render_glow = { path = "../../../crates/render_glow" }
 render_egui = { path = "../../../crates/render_egui" }

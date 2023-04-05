@@ -1,5 +1,8 @@
-use bevy_ecs::change_detection::DetectChanges;
-use bevy_ecs::system::{Res, ResMut};
+use bevy_ecs::{
+    change_detection::DetectChanges,
+    system::{Res, ResMut},
+};
+
 use render_api::Window;
 
 use crate::resources::{
@@ -7,10 +10,7 @@ use crate::resources::{
 };
 
 pub fn update_window_context(
-    context: ResMut<EguiContext>,
     mut egui_input: ResMut<EguiInput>,
-    render_output: ResMut<EguiRenderOutput>,
-    egui_output: ResMut<EguiOutput>,
     mut window_size: ResMut<WindowSize>,
     window: ResMut<Window>,
     egui_settings: Res<EguiSettings>,

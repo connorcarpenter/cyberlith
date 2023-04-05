@@ -1,8 +1,6 @@
 use std::sync::Arc;
 
-use cgmath::SquareMatrix;
-
-use render_api::base::Mat3;
+use math::{Mat3, SquareMatrix};
 
 use crate::core::Texture2D;
 

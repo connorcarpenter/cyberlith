@@ -1,7 +1,7 @@
-use cgmath::*;
 use half::*;
+use math::*;
 
-use render_api::base::{Color, Quat};
+use render_api::base::Color;
 
 use crate::core::{DataType, PrimitiveDataType};
 

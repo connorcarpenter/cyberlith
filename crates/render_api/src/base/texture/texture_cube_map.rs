@@ -1,6 +1,6 @@
-use cgmath::*;
+use math::*;
 
-use crate::base::{Texture2D, Vec3};
+use crate::base::Texture2D;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 ///

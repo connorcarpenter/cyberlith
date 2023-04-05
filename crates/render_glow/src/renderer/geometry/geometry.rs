@@ -1,4 +1,4 @@
-use cgmath::*;
+use math::*;
 
 use crate::core::*;
 use crate::renderer::*;

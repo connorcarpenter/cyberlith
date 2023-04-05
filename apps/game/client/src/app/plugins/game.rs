@@ -10,8 +10,9 @@ use naia_bevy_client::{
     ClientConfig as NaiaClientConfig, Plugin as NaiaClientPlugin, ReceiveEvents,
 };
 
+use math::Vec3;
 use render_api::{
-    base::{Camera, Color, PbrMaterial, TriMesh, Vec3, Viewport},
+    base::{Camera, Color, PbrMaterial, TriMesh, Viewport},
     shape, AmbientLight, Assets, CameraComponent, ClearOperation, DirectionalLight, PointLight,
     RenderObjectBundle, RenderTarget, Transform, Window,
 };

@@ -1,6 +1,6 @@
-use cgmath::*;
 use glow::{HasContext, UniformLocation};
 use half::*;
+use math::*;
 
 use crate::core::*;
 use render_api::base::*;

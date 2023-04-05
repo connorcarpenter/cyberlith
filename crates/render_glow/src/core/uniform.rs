@@ -1,5 +1,5 @@
-use cgmath::*;
 use half::*;
+use math::*;
 
 use crate::core::*;
 use data_type::*;
