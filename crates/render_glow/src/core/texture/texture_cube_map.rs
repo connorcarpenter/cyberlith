@@ -375,7 +375,7 @@ impl TextureCubeMap {
         );
 
         {
-            let map = Texture2D::new(cpu_texture);
+            let map = Texture2DImpl::new(cpu_texture);
             let fragment_shader_source = "
             uniform sampler2D equirectangularMap;
             in vec3 pos;

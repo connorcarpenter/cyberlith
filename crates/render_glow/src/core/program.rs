@@ -189,14 +189,14 @@ impl Program {
     }
 
     ///
-    /// Use the given [Texture2D] in this shader program and associate it with the given named variable.
+    /// Use the given [Texture2DImpl] in this shader program and associate it with the given named variable.
     /// The glsl shader variable must be of type `uniform sampler2D` and can only be accessed in the fragment shader.
     ///
     /// # Panic
     /// Will panic if the texture is not defined in the shader code or not used.
     /// In the latter case the variable is removed by the shader compiler.
     ///
-    pub fn use_texture(&self, name: &str, texture: &Texture2D) {
+    pub fn use_texture(&self, name: &str, texture: &Texture2DImpl) {
         self.use_texture_internal(name);
         texture.bind();
     }

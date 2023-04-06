@@ -64,15 +64,15 @@ impl DeferredPhysicalMaterial {
         let albedo_texture = cpu_material
             .albedo_texture
             .as_ref()
-            .map(|cpu_texture| Arc::new(Texture2D::new(cpu_texture)).into());
+            .map(|cpu_texture| Arc::new(Texture2DImpl::new(cpu_texture)).into());
         let metallic_roughness_texture =
             if let Some(ref cpu_texture) = cpu_material.occlusion_metallic_roughness_texture {
-                Some(Arc::new(Texture2D::new(cpu_texture)).into())
+                Some(Arc::new(Texture2DImpl::new(cpu_texture)).into())
             } else {
                 cpu_material
                     .metallic_roughness_texture
                     .as_ref()
-                    .map(|cpu_texture| Arc::new(Texture2D::new(cpu_texture)).into())
+                    .map(|cpu_texture| Arc::new(Texture2DImpl::new(cpu_texture)).into())
             };
         let occlusion_texture = if cpu_material.occlusion_metallic_roughness_texture.is_some() {
             metallic_roughness_texture.clone()
@@ -80,16 +80,16 @@ impl DeferredPhysicalMaterial {
             cpu_material
                 .occlusion_texture
                 .as_ref()
-                .map(|cpu_texture| Arc::new(Texture2D::new(cpu_texture)).into())
+                .map(|cpu_texture| Arc::new(Texture2DImpl::new(cpu_texture)).into())
         };
         let normal_texture = cpu_material
             .normal_texture
             .as_ref()
-            .map(|cpu_texture| Arc::new(Texture2D::new(cpu_texture)).into());
+            .map(|cpu_texture| Arc::new(Texture2DImpl::new(cpu_texture)).into());
         let emissive_texture = cpu_material
             .emissive_texture
             .as_ref()
-            .map(|cpu_texture| Arc::new(Texture2D::new(cpu_texture)).into());
+            .map(|cpu_texture| Arc::new(Texture2DImpl::new(cpu_texture)).into());
         Self {
             name: cpu_material.name.clone(),
             albedo: cpu_material.albedo,

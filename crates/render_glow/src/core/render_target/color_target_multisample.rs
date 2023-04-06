@@ -96,11 +96,11 @@ impl<C: TextureDataType> ColorTargetMultisample<C> {
     }
 
     ///
-    /// Resolves the multisample color target to a default non-multisample [Texture2D].
+    /// Resolves the multisample color target to a default non-multisample [Texture2DImpl].
     /// Use [ColorTargetMultisample::resolve_to] to resolve to a custom non-multisample texture.
     ///
-    pub fn resolve(&self) -> Texture2D {
-        let mut color_texture = Texture2D::new_empty::<C>(
+    pub fn resolve(&self) -> Texture2DImpl {
+        let mut color_texture = Texture2DImpl::new_empty::<C>(
             self.width(),
             self.height(),
             Interpolation::Linear,

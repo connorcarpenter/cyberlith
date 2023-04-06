@@ -21,7 +21,7 @@ pub struct Texture2DArray {
 
 impl Texture2DArray {
     ///
-    /// Creates a new texture array from the given [Texture2D]s.
+    /// Creates a new texture array from the given [Texture2DImpl]s.
     /// All of the cpu textures must contain data with the same [TextureDataType] and the same width and height.
     ///
     pub fn new(cpu_textures: &[&CpuTexture]) -> Self {

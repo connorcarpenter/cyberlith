@@ -7,7 +7,7 @@ use crate::core::{flip_y, format_from_data_type, texture::*, to_byte_slice, Colo
 ///
 /// A 2D texture, basically an image that is transferred to the GPU.
 ///
-pub struct Texture2D {
+pub struct Texture2DImpl {
     id: glow::Texture,
     width: u32,
     height: u32,
@@ -15,7 +15,7 @@ pub struct Texture2D {
     data_byte_size: usize,
 }
 
-impl Texture2D {
+impl Texture2DImpl {
     ///
     /// Construcs a new texture with the given data.
     ///
@@ -177,7 +177,7 @@ impl Texture2D {
     }
 }
 
-impl Drop for Texture2D {
+impl Drop for Texture2DImpl {
     fn drop(&mut self) {
         unsafe {
             Context::get().delete_texture(self.id);

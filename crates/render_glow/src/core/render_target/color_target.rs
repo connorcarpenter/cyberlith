@@ -4,12 +4,12 @@ use render_api::base::{CubeMapSide, Viewport};
 
 use crate::core::{
     texture::Texture2DMultisample, ClearState, ColorTexture, Context, RenderTarget, ScissorBox,
-    Texture2D, Texture2DArray, TextureCubeMap, TextureDataType, WriteMask,
+    Texture2DImpl, Texture2DArray, TextureCubeMap, TextureDataType, WriteMask,
 };
 
 ///
 /// Adds additional functionality to clear, read from and write to a texture.
-/// Use the `as_color_target` function directly on the texture structs (for example [Texture2D]) to construct a color target.
+/// Use the `as_color_target` function directly on the texture structs (for example [Texture2DImpl]) to construct a color target.
 /// Combine this together with a [DepthTarget] with [RenderTarget::new] to be able to write to both a depth and color target at the same time.
 /// A color target purely adds functionality, so it can be created each time it is needed, the actual data is saved in the texture.
 ///
@@ -23,7 +23,7 @@ pub struct ColorTarget<'a> {
 }
 
 impl<'a> ColorTarget<'a> {
-    pub(in crate::core) fn new_texture2d(texture: &'a Texture2D, mip_level: Option<u32>) -> Self {
+    pub(in crate::core) fn new_texture2d(texture: &'a Texture2DImpl, mip_level: Option<u32>) -> Self {
         ColorTarget {
             mip_level,
             target: Some(ColorTexture::Single(texture)),

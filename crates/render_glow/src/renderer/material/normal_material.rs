@@ -25,7 +25,7 @@ impl NormalMaterial {
         let normal_texture = cpu_material
             .normal_texture
             .as_ref()
-            .map(|cpu_texture| Arc::new(Texture2D::new(cpu_texture)).into());
+            .map(|cpu_texture| Arc::new(Texture2DImpl::new(cpu_texture)).into());
         Self {
             normal_scale: cpu_material.normal_scale,
             normal_texture,

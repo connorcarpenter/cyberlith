@@ -1,6 +1,6 @@
 use render_api::base::CubeMapSide;
 
-use crate::core::{Texture2D, Texture2DArray, TextureCubeMap};
+use crate::core::{Texture2DImpl, Texture2DArray, TextureCubeMap};
 
 ///
 /// A reference to some type of texture containing colors.
@@ -9,7 +9,7 @@ use crate::core::{Texture2D, Texture2DArray, TextureCubeMap};
 #[allow(missing_docs)]
 pub enum ColorTexture<'a> {
     /// A single 2D texture.
-    Single(&'a Texture2D),
+    Single(&'a Texture2DImpl),
     /// An array of 2D textures and a set of indices into the array.
     Array {
         texture: &'a Texture2DArray,

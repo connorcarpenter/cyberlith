@@ -135,11 +135,11 @@ impl<C: TextureDataType, D: DepthTextureDataType> RenderTargetMultisample<C, D> 
     }
 
     ///
-    /// Resolves the color of the multisample render target to a default non-multisample [Texture2D].
+    /// Resolves the color of the multisample render target to a default non-multisample [Texture2DImpl].
     /// Use [RenderTargetMultisample::resolve_color_to] to resolve to a custom non-multisample texture.
     ///
-    pub fn resolve_color(&self) -> Texture2D {
-        let mut color_texture = Texture2D::new_empty::<C>(
+    pub fn resolve_color(&self) -> Texture2DImpl {
+        let mut color_texture = Texture2DImpl::new_empty::<C>(
             self.color.width(),
             self.color.height(),
             Interpolation::Linear,
@@ -168,11 +168,11 @@ impl<C: TextureDataType, D: DepthTextureDataType> RenderTargetMultisample<C, D> 
     }
 
     ///
-    /// Resolves the multisample render target to default non-multisample [Texture2D] and [DepthTexture2D].
+    /// Resolves the multisample render target to default non-multisample [Texture2DImpl] and [DepthTexture2D].
     /// Use [RenderTargetMultisample::resolve_to] to resolve to custom non-multisample textures.
     ///
-    pub fn resolve(&self) -> (Texture2D, DepthTexture2D) {
-        let mut color_texture = Texture2D::new_empty::<C>(
+    pub fn resolve(&self) -> (Texture2DImpl, DepthTexture2D) {
+        let mut color_texture = Texture2DImpl::new_empty::<C>(
             self.color.width(),
             self.color.height(),
             Interpolation::Linear,

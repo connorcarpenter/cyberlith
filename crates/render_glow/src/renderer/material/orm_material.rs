@@ -31,12 +31,12 @@ impl ORMMaterial {
     pub fn new(cpu_material: &PbrMaterial) -> Self {
         let metallic_roughness_texture =
             if let Some(ref cpu_texture) = cpu_material.occlusion_metallic_roughness_texture {
-                Some(Arc::new(Texture2D::new(cpu_texture)).into())
+                Some(Arc::new(Texture2DImpl::new(cpu_texture)).into())
             } else {
                 cpu_material
                     .metallic_roughness_texture
                     .as_ref()
-                    .map(|cpu_texture| Arc::new(Texture2D::new(cpu_texture)).into())
+                    .map(|cpu_texture| Arc::new(Texture2DImpl::new(cpu_texture)).into())
             };
         let occlusion_texture = if cpu_material.occlusion_metallic_roughness_texture.is_some() {
             metallic_roughness_texture.clone()
@@ -44,7 +44,7 @@ impl ORMMaterial {
             cpu_material
                 .occlusion_texture
                 .as_ref()
-                .map(|cpu_texture| Arc::new(Texture2D::new(cpu_texture)).into())
+                .map(|cpu_texture| Arc::new(Texture2DImpl::new(cpu_texture)).into())
         };
         Self {
             metallic: cpu_material.metallic,

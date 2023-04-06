@@ -18,7 +18,7 @@ pub struct Environment {
     /// Each mip-map level contain the prefiltered color for a certain surface roughness.
     pub prefilter_map: TextureCubeMap,
     /// A 2D texture that contain the BRDF lookup tables (LUT).
-    pub brdf_map: Texture2D,
+    pub brdf_map: Texture2DImpl,
 }
 
 impl Environment {
@@ -128,7 +128,7 @@ impl Environment {
         }
 
         // BRDF
-        let mut brdf_map = Texture2D::new_empty::<[f32; 2]>(
+        let mut brdf_map = Texture2DImpl::new_empty::<[f32; 2]>(
             512,
             512,
             Interpolation::Linear,
