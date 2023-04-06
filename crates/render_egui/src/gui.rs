@@ -1,6 +1,7 @@
 use std::{cell::RefCell, ops::Deref, collections::HashMap};
 
 use bevy_ecs::system::Resource;
+use bevy_log::info;
 
 use egui_glow::{glow, Painter};
 
@@ -257,11 +258,13 @@ impl GUI {
     /// Must be called in the callback given as input to a [RenderTarget], [ColorTarget] or [DepthTarget] write method.
     ///
     pub fn render(&self, egui_context: &egui::Context) {
-        let output = self
+        let Some(output) = self
             .output
             .borrow_mut()
-            .take()
-            .expect("need to call GUI::update before GUI::render");
+            .take() else {
+            info!("No output to render");
+            return;
+        };
         let clipped_meshes = egui_context.tessellate(output.shapes);
         let scale = egui_context.pixels_per_point();
         self.painter.borrow_mut().paint_and_update_textures(
@@ -278,11 +281,11 @@ impl GUI {
         }
     }
 
-    pub fn add_image(&mut self, native: glow::Texture) -> egui::TextureId {
+    pub fn add_texture(&mut self, native: glow::Texture) -> egui::TextureId {
         self.painter.borrow_mut().register_native_texture(native)
     }
 
-    pub fn remove_image(&mut self, native_id: egui::TextureId) {
+    pub fn remove_texture(&mut self, native_id: egui::TextureId) {
         self.painter.borrow_mut().free_texture(native_id);
     }
 }

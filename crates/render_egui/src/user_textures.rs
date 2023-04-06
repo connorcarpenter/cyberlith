@@ -40,8 +40,10 @@ impl EguiUserTextures {
         }
     }
 
-    pub fn deregister_texture(&mut self, handle: &Handle<Texture2D>) {
-        if self.textures.remove(handle).is_none() {
+    pub fn deregister_texture(&mut self, handle: &Handle<Texture2D>) -> egui::TextureId {
+        if let Some(id) = self.textures.remove(handle) {
+            egui::TextureId::User(id)
+        } else {
             panic!("Texture {:?} is not registered", handle.id);
         }
     }

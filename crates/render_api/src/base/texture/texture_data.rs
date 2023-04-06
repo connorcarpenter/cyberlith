@@ -102,3 +102,33 @@ impl std::fmt::Debug for TextureData {
         }
     }
 }
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum TextureDataType {
+    /// One byte in the red channel.
+    RU8,
+    /// One byte in the red and green channel.
+    RgU8,
+    /// One byte in the red, green and blue channel.
+    RgbU8,
+    /// One byte in the red, green, blue and alpha channel.
+    RgbaU8,
+
+    /// 16-bit float in the red channel.
+    RF16,
+    /// 16-bit float in the red and green channel.
+    RgF16,
+    /// 16-bit float in the red, green and blue channel.
+    RgbF16,
+    /// 16-bit float in the red, green, blue and alpha channel.
+    RgbaF16,
+
+    /// 32-bit float in the red channel.
+    RF32,
+    /// 32-bit float in the red and green channel.
+    RgF32,
+    /// 32-bit float in the red, green and blue channel.
+    RgbF32,
+    /// 32-bit float in the red, green, blue and alpha channel.
+    RgbaF32,
+}

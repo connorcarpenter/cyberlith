@@ -86,7 +86,7 @@ fn setup(
     // This specifies the layer used for the preview pass, which will be attached to the preview pass camera and cube.
     let preview_pass_layer = RenderLayers::layer(1);
 
-    // Cube
+    // Preview Cube
     commands
         .spawn(RenderObjectBundle {
             mesh: meshes.add(TriMesh::from(shapes::Cube { size: 5.0 })),
@@ -96,13 +96,13 @@ fn setup(
         .insert(PreviewPassCube)
         .insert(preview_pass_layer);
 
-    // Light
+    // Preview Light
     commands.spawn(PointLight {
         position: Vec3::new(0.0, 0.0, 10.0),
         ..Default::default()
-    });
+    }).insert(preview_pass_layer);
 
-    // Camera to Render to Image
+    // Camera to Render Preview to Image
     commands
         .spawn(CameraComponent::new(
             Camera::new_perspective(
@@ -120,7 +120,13 @@ fn setup(
         ))
         .insert(preview_pass_layer);
 
-    // Main pass cube.
+    // Main Pass Light
+    commands.spawn(PointLight {
+        position: Vec3::new(0.0, 0.0, 10.0),
+        ..Default::default()
+    });
+
+    // Main Pass Cube
     commands
         .spawn(RenderObjectBundle {
             mesh: meshes.add(TriMesh::from(shapes::Cube { size: 3.0 })),
@@ -132,11 +138,11 @@ fn setup(
         })
         .insert(MainPassCube);
 
-    // The main pass camera.
+    // Main Pass Camera.
     commands.spawn(CameraComponent::new(
         Camera::new_perspective(
             window.viewport(),
-            vec3(0.0, 0.0, 15.0),
+            vec3(0.0, 0.0, 50.0),
             vec3(0.0, 0.0, 0.0),
             vec3(0.0, 1.0, 0.0),
             degrees(45.0),
@@ -157,7 +163,10 @@ fn render_to_image_example_system(
     context: Res<EguiContext>,
     mut user_textures: ResMut<EguiUserTextures>,
 ) {
-    let cube_preview_texture_id = user_textures.texture_id(&cube_preview_image.0).unwrap();
+    let Some(cube_preview_texture_id) = user_textures.texture_id(&cube_preview_image.0) else {
+        // The user texture may not be synced yet, return early.
+        return;
+    };
     let preview_material_handle = preview_cube_query.single();
     let preview_material = materials.get_mut(preview_material_handle).unwrap();
 

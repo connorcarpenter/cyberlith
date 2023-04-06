@@ -1,3 +1,4 @@
+use crate::base::TextureDataType;
 use super::{Interpolation, TextureData, Wrapping};
 
 ///
@@ -8,7 +9,9 @@ pub struct Texture2D {
     /// Name of this texture.
     name: String,
     /// The pixel data for the image
-    data: TextureData,
+    initial_data: Option<TextureData>,
+    /// The pixel data type
+    data_type: TextureDataType,
     /// The width of the image
     width: u32,
     /// The height of the image
@@ -31,13 +34,15 @@ impl Texture2D {
         let mut output = Self::default();
         output.width = width;
         output.height = height;
-        let data = vec![[0, 0, 0, 0]; (width * height) as usize];
-        output.data = TextureData::RgbaU8(data);
         output
     }
 
-    pub fn data(&self) -> &TextureData {
-        &self.data
+    pub fn initial_data(&self) -> Option<&TextureData> {
+        self.initial_data.as_ref()
+    }
+
+    pub fn data_type(&self) -> &TextureDataType {
+        &self.data_type
     }
 
     pub fn width(&self) -> u32 {
@@ -73,7 +78,8 @@ impl Default for Texture2D {
     fn default() -> Self {
         Self {
             name: "default".to_owned(),
-            data: TextureData::RgbaU8(vec![[0, 0, 0, 0]]),
+            initial_data: None,
+            data_type: TextureDataType::RgbaU8,
             width: 1,
             height: 1,
             min_filter: Interpolation::Linear,

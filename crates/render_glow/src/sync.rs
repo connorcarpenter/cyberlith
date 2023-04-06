@@ -47,6 +47,7 @@ fn sync_mesh_assets(
         return;
     }
 
+    // Handle Added Meshes
     let added_handles = api_assets.flush_added();
     for added_handle in added_handles {
         let api_data = api_assets.get(&added_handle).unwrap();
@@ -63,6 +64,7 @@ fn sync_material_assets(
         return;
     }
 
+    // Handle Added Materials
     let added_handles = api_assets.flush_added();
     for added_handle in added_handles {
         let api_data = api_assets.get(&added_handle).unwrap();
@@ -85,14 +87,6 @@ fn sync_texture_2d_assets(
         let api_data = api_assets.get(&added_handle).unwrap();
         let impl_data = Texture2DImpl::from(api_data);
         asset_impls.insert(added_handle, impl_data);
-    }
-
-    // Handle Changed Textures
-    let changed_handles = api_assets.flush_changed();
-    for changed_handle in changed_handles {
-        let api_data = api_assets.get(&changed_handle).unwrap();
-        let impl_data = asset_impls.get_mut(&changed_handle).unwrap();
-        impl_data.update(api_data);
     }
 }
 

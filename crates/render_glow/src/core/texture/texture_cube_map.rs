@@ -65,8 +65,8 @@ impl TextureCubeMap {
         front: &CpuTexture,
         back: &CpuTexture,
     ) -> Self {
-        match &front.data() {
-            TextureData::RU8(front_data) => Self::new_with_data(
+        match &front.initial_data() {
+            Some(TextureData::RU8(front_data)) => Self::new_with_data(
                 front,
                 right.wrap_s(),
                 ru8_data(right),
@@ -76,7 +76,7 @@ impl TextureCubeMap {
                 front_data,
                 ru8_data(back),
             ),
-            TextureData::RgU8(front_data) => Self::new_with_data(
+            Some(TextureData::RgU8(front_data)) => Self::new_with_data(
                 front,
                 right.wrap_s(),
                 rgu8_data(right),
@@ -86,7 +86,7 @@ impl TextureCubeMap {
                 front_data,
                 rgu8_data(back),
             ),
-            TextureData::RgbU8(front_data) => Self::new_with_data(
+            Some(TextureData::RgbU8(front_data)) => Self::new_with_data(
                 front,
                 right.wrap_s(),
                 rgbu8_data(right),
@@ -96,7 +96,7 @@ impl TextureCubeMap {
                 front_data,
                 rgbu8_data(back),
             ),
-            TextureData::RgbaU8(front_data) => Self::new_with_data(
+            Some(TextureData::RgbaU8(front_data)) => Self::new_with_data(
                 front,
                 right.wrap_s(),
                 rgbau8_data(right),
@@ -106,7 +106,7 @@ impl TextureCubeMap {
                 front_data,
                 rgbau8_data(back),
             ),
-            TextureData::RF16(front_data) => Self::new_with_data(
+            Some(TextureData::RF16(front_data)) => Self::new_with_data(
                 front,
                 right.wrap_s(),
                 rf16_data(right),
@@ -116,7 +116,7 @@ impl TextureCubeMap {
                 front_data,
                 rf16_data(back),
             ),
-            TextureData::RgF16(front_data) => Self::new_with_data(
+            Some(TextureData::RgF16(front_data)) => Self::new_with_data(
                 front,
                 right.wrap_s(),
                 rgf16_data(right),
@@ -126,7 +126,7 @@ impl TextureCubeMap {
                 front_data,
                 rgf16_data(back),
             ),
-            TextureData::RgbF16(front_data) => Self::new_with_data(
+            Some(TextureData::RgbF16(front_data)) => Self::new_with_data(
                 front,
                 right.wrap_s(),
                 rgbf16_data(right),
@@ -136,7 +136,7 @@ impl TextureCubeMap {
                 front_data,
                 rgbf16_data(back),
             ),
-            TextureData::RgbaF16(front_data) => Self::new_with_data(
+            Some(TextureData::RgbaF16(front_data)) => Self::new_with_data(
                 front,
                 right.wrap_s(),
                 rgbaf16_data(right),
@@ -146,7 +146,7 @@ impl TextureCubeMap {
                 front_data,
                 rgbaf16_data(back),
             ),
-            TextureData::RF32(front_data) => Self::new_with_data(
+            Some(TextureData::RF32(front_data)) => Self::new_with_data(
                 front,
                 right.wrap_s(),
                 rf32_data(right),
@@ -156,7 +156,7 @@ impl TextureCubeMap {
                 front_data,
                 rf32_data(back),
             ),
-            TextureData::RgF32(front_data) => Self::new_with_data(
+            Some(TextureData::RgF32(front_data)) => Self::new_with_data(
                 front,
                 right.wrap_s(),
                 rgf32_data(right),
@@ -166,7 +166,7 @@ impl TextureCubeMap {
                 front_data,
                 rgf32_data(back),
             ),
-            TextureData::RgbF32(front_data) => Self::new_with_data(
+            Some(TextureData::RgbF32(front_data)) => Self::new_with_data(
                 front,
                 right.wrap_s(),
                 rgbf32_data(right),
@@ -176,7 +176,7 @@ impl TextureCubeMap {
                 front_data,
                 rgbf32_data(back),
             ),
-            TextureData::RgbaF32(front_data) => Self::new_with_data(
+            Some(TextureData::RgbaF32(front_data)) => Self::new_with_data(
                 front,
                 right.wrap_s(),
                 rgbaf32_data(right),
@@ -186,6 +186,9 @@ impl TextureCubeMap {
                 front_data,
                 rgbaf32_data(back),
             ),
+            _ => {
+                panic!("Unsupported texture data type");
+            }
         }
     }
 

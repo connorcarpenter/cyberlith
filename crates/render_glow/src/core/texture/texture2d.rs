@@ -1,6 +1,7 @@
 use glow::HasContext;
+use half::f16;
 
-use render_api::base::{Interpolation, Texture2D as CpuTexture, TextureData, Wrapping};
+use render_api::base::{Interpolation, Texture2D as CpuTexture, TextureData, TextureDataType as ApiTextureDataType, Wrapping};
 
 use crate::core::{flip_y, format_from_data_type, texture::*, to_byte_slice, ColorTarget, Context};
 
@@ -20,19 +21,22 @@ impl Texture2DImpl {
     /// Construcs a new texture with the given data.
     ///
     pub fn new(cpu_texture: &CpuTexture) -> Self {
-        match cpu_texture.data() {
-            TextureData::RU8(ref data) => Self::new_with_data(cpu_texture, data),
-            TextureData::RgU8(ref data) => Self::new_with_data(cpu_texture, data),
-            TextureData::RgbU8(ref data) => Self::new_with_data(cpu_texture, data),
-            TextureData::RgbaU8(ref data) => Self::new_with_data(cpu_texture, data),
-            TextureData::RF16(ref data) => Self::new_with_data(cpu_texture, data),
-            TextureData::RgF16(ref data) => Self::new_with_data(cpu_texture, data),
-            TextureData::RgbF16(ref data) => Self::new_with_data(cpu_texture, data),
-            TextureData::RgbaF16(ref data) => Self::new_with_data(cpu_texture, data),
-            TextureData::RF32(ref data) => Self::new_with_data(cpu_texture, data),
-            TextureData::RgF32(ref data) => Self::new_with_data(cpu_texture, data),
-            TextureData::RgbF32(ref data) => Self::new_with_data(cpu_texture, data),
-            TextureData::RgbaF32(ref data) => Self::new_with_data(cpu_texture, data),
+        match cpu_texture.initial_data() {
+            Some(TextureData::RU8(ref data)) => Self::new_with_data(cpu_texture, data),
+            Some(TextureData::RgU8(ref data)) => Self::new_with_data(cpu_texture, data),
+            Some(TextureData::RgbU8(ref data)) => Self::new_with_data(cpu_texture, data),
+            Some(TextureData::RgbaU8(ref data)) => Self::new_with_data(cpu_texture, data),
+            Some(TextureData::RF16(ref data)) => Self::new_with_data(cpu_texture, data),
+            Some(TextureData::RgF16(ref data)) => Self::new_with_data(cpu_texture, data),
+            Some(TextureData::RgbF16(ref data)) => Self::new_with_data(cpu_texture, data),
+            Some(TextureData::RgbaF16(ref data)) => Self::new_with_data(cpu_texture, data),
+            Some(TextureData::RF32(ref data)) => Self::new_with_data(cpu_texture, data),
+            Some(TextureData::RgF32(ref data)) => Self::new_with_data(cpu_texture, data),
+            Some(TextureData::RgbF32(ref data)) => Self::new_with_data(cpu_texture, data),
+            Some(TextureData::RgbaF32(ref data)) => Self::new_with_data(cpu_texture, data),
+            None => {
+                Self::new_empty_from_cpu(cpu_texture)
+            }
         }
     }
 
@@ -48,6 +52,35 @@ impl Texture2DImpl {
         );
         texture.fill(data);
         texture
+    }
+
+    fn new_empty_from_cpu(cpu_texture: &CpuTexture) -> Self {
+        match cpu_texture.data_type() {
+            ApiTextureDataType::RU8 => Self::new_empty_from_cpu_typed::<u8>(cpu_texture),
+            ApiTextureDataType::RgU8 => Self::new_empty_from_cpu_typed::<[u8; 2]>(cpu_texture),
+            ApiTextureDataType::RgbU8 => Self::new_empty_from_cpu_typed::<[u8; 3]>(cpu_texture),
+            ApiTextureDataType::RgbaU8 => Self::new_empty_from_cpu_typed::<[u8; 4]>(cpu_texture),
+            ApiTextureDataType::RF16 => Self::new_empty_from_cpu_typed::<f16>(cpu_texture),
+            ApiTextureDataType::RgF16 => Self::new_empty_from_cpu_typed::<[f16; 2]>(cpu_texture),
+            ApiTextureDataType::RgbF16 => Self::new_empty_from_cpu_typed::<[f16; 3]>(cpu_texture),
+            ApiTextureDataType::RgbaF16 => Self::new_empty_from_cpu_typed::<[f16; 4]>(cpu_texture),
+            ApiTextureDataType::RF32 => Self::new_empty_from_cpu_typed::<f32>(cpu_texture),
+            ApiTextureDataType::RgF32 => Self::new_empty_from_cpu_typed::<[f32; 2]>(cpu_texture),
+            ApiTextureDataType::RgbF32 => Self::new_empty_from_cpu_typed::<[f32; 3]>(cpu_texture),
+            ApiTextureDataType::RgbaF32 => Self::new_empty_from_cpu_typed::<[f32; 4]>(cpu_texture),
+        }
+    }
+
+    fn new_empty_from_cpu_typed<T: TextureDataType>(cpu_texture: &CpuTexture) -> Self {
+        Self::new_empty::<T>(
+            cpu_texture.width(),
+            cpu_texture.height(),
+            cpu_texture.min_filter(),
+            cpu_texture.mag_filter(),
+            cpu_texture.mip_map_filter(),
+            cpu_texture.wrap_s(),
+            cpu_texture.wrap_t(),
+        )
     }
 
     ///
@@ -140,6 +173,10 @@ impl Texture2DImpl {
         ColorTarget::new_texture2d(self, mip_level)
     }
 
+    pub fn id(&self) -> glow::Texture {
+        self.id
+    }
+
     /// The width of this texture.
     pub fn width(&self) -> u32 {
         self.width
@@ -174,10 +211,6 @@ impl Texture2DImpl {
         unsafe {
             Context::get().bind_texture(glow::TEXTURE_2D, Some(self.id));
         }
-    }
-
-    pub fn update(&mut self, api_data: &CpuTexture) {
-
     }
 }
 

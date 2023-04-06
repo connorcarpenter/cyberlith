@@ -5,5 +5,6 @@ use bevy_ecs::prelude::SystemSet;
 pub enum EguiSet {
     PreUpdate,
     PostUpdate,
+    Sync,
     Draw,
 }

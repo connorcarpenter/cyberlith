@@ -12,3 +12,4 @@ pub mod renderer;
 pub mod window;
 
 pub use plugin::RenderGlowPlugin;
+pub use asset_impls::AssetImpls;
