@@ -21,8 +21,17 @@ impl<T> Assets<T> {
         handle
     }
 
+    pub fn set(&mut self, handle: &Handle<T>, t: T) -> Handle<T> {
+        self.assets.insert(handle.id, t);
+        handle.clone()
+    }
+
     pub fn get(&self, handle: &Handle<T>) -> Option<&T> {
         self.assets.get(&handle.id)
+    }
+
+    pub fn get_mut(&mut self, handle: &Handle<T>) -> Option<&mut T> {
+        self.assets.get_mut(&handle.id)
     }
 
     pub fn flush_added(&mut self) -> Vec<Handle<T>> {

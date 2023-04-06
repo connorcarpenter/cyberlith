@@ -31,6 +31,8 @@ impl Texture2D {
         let mut output = Self::default();
         output.width = width;
         output.height = height;
+        let data = vec![[0, 0, 0, 0]; (width * height) as usize];
+        output.data = TextureData::RgbaU8(data);
         output
     }
 }

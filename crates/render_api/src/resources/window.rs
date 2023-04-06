@@ -1,5 +1,6 @@
 use std::default::Default;
 
+use crate::base::Viewport;
 use bevy_ecs::prelude::Resource;
 
 #[derive(Resource, Default)]
@@ -26,6 +27,10 @@ impl Window {
 
     pub fn scale_factor(&self) -> f64 {
         self.resolution.scale_factor()
+    }
+
+    pub fn viewport(&self) -> Viewport {
+        Viewport::new_at_origin(self.physical_width(), self.physical_height())
     }
 }
 

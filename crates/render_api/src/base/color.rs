@@ -117,3 +117,9 @@ impl Default for Color {
         Color::WHITE
     }
 }
+
+impl From<[f32; 4]> for Color {
+    fn from(rgba: [f32; 4]) -> Self {
+        Self::from_rgba_slice(&rgba)
+    }
+}

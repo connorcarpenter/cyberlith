@@ -61,6 +61,16 @@ pub struct ClearOperation {
 }
 
 impl ClearOperation {
+    pub fn from_rgba(r: f32, g: f32, b: f32, a: f32) -> Self {
+        Self {
+            red: Some(r),
+            green: Some(g),
+            blue: Some(b),
+            alpha: Some(a),
+            depth: None,
+        }
+    }
+
     pub const fn none() -> Self {
         Self {
             red: None,

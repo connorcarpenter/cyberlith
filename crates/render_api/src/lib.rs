@@ -4,7 +4,7 @@ mod base_set;
 mod components;
 mod plugin;
 mod resources;
-pub mod shape;
+pub mod shapes;
 
 pub use assets::{Assets, Handle};
 pub use base_set::RenderSet;

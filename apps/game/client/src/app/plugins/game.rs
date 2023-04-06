@@ -13,7 +13,7 @@ use naia_bevy_client::{
 use math::Vec3;
 use render_api::{
     base::{Camera, Color, PbrMaterial, TriMesh, Viewport},
-    shape, AmbientLight, Assets, CameraComponent, ClearOperation, DirectionalLight, PointLight,
+    shapes, AmbientLight, Assets, CameraComponent, ClearOperation, DirectionalLight, PointLight,
     RenderObjectBundle, RenderTarget, Transform, Window,
 };
 
@@ -63,14 +63,14 @@ fn setup(
 
     // plane
     commands.spawn(RenderObjectBundle {
-        mesh: meshes.add(shape::Plane::from_size(50.0).into()),
+        mesh: meshes.add(shapes::Plane::from_size(50.0).into()),
         material: materials.add(Color::from_rgb_f32(0.3, 0.5, 0.3).into()),
         ..Default::default()
     });
     // cube
     commands
         .spawn(RenderObjectBundle {
-            mesh: meshes.add(TriMesh::from(shape::Cube { size: 10.0 })),
+            mesh: meshes.add(TriMesh::from(shapes::Cube { size: 10.0 })),
             material: materials.add(Color::from_rgb_f32(0.8, 0.7, 0.6).into()),
             transform: Transform::from_xyz(0.0, 5.0, 0.0),
             ..Default::default()

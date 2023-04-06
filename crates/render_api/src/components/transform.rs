@@ -2,7 +2,7 @@ use std::default::Default;
 
 use bevy_ecs::component::Component;
 
-use math::{Deg, InnerSpace, Mat3, Mat4, Quat, Rotation3, Vec3};
+use math::{Deg, InnerSpace, Mat3, Mat4, Quat, Rad, Rotation3, Vec3};
 
 #[derive(Clone, Component, Copy)]
 pub struct Transform {
@@ -41,6 +41,24 @@ impl Transform {
         self.rotation = Quat::from(basis);
 
         self
+    }
+
+    pub fn rotate_x(&mut self, angle: f32) {
+        let axis = Vec3::unit_x();
+        let rotation = Quat::from_axis_angle(axis, Rad(angle));
+        self.rotation = rotation * self.rotation;
+    }
+
+    pub fn rotate_y(&mut self, angle: f32) {
+        let axis = Vec3::unit_y();
+        let rotation = Quat::from_axis_angle(axis, Rad(angle));
+        self.rotation = rotation * self.rotation;
+    }
+
+    pub fn rotate_z(&mut self, angle: f32) {
+        let axis = Vec3::unit_z();
+        let rotation = Quat::from_axis_angle(axis, Rad(angle));
+        self.rotation = rotation * self.rotation;
     }
 }
 

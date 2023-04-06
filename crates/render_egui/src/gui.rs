@@ -5,10 +5,10 @@ use bevy_ecs::system::Resource;
 use egui_glow::{glow, Painter};
 
 use render_api::base::Viewport;
-use render_glow::window::FrameInput;
 use render_glow::{
     core::Context,
     renderer::{Event, Modifiers},
+    window::FrameInput,
 };
 
 use crate::{glow_to_egui_key, glow_to_egui_modifiers, glow_to_egui_mouse_button};
