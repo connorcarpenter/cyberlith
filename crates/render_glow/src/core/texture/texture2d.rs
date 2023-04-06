@@ -20,7 +20,7 @@ impl Texture2DImpl {
     /// Construcs a new texture with the given data.
     ///
     pub fn new(cpu_texture: &CpuTexture) -> Self {
-        match cpu_texture.data {
+        match cpu_texture.data() {
             TextureData::RU8(ref data) => Self::new_with_data(cpu_texture, data),
             TextureData::RgU8(ref data) => Self::new_with_data(cpu_texture, data),
             TextureData::RgbU8(ref data) => Self::new_with_data(cpu_texture, data),
@@ -38,13 +38,13 @@ impl Texture2DImpl {
 
     fn new_with_data<T: TextureDataType>(cpu_texture: &CpuTexture, data: &[T]) -> Self {
         let mut texture = Self::new_empty::<T>(
-            cpu_texture.width,
-            cpu_texture.height,
-            cpu_texture.min_filter,
-            cpu_texture.mag_filter,
-            cpu_texture.mip_map_filter,
-            cpu_texture.wrap_s,
-            cpu_texture.wrap_t,
+            cpu_texture.width(),
+            cpu_texture.height(),
+            cpu_texture.min_filter(),
+            cpu_texture.mag_filter(),
+            cpu_texture.mip_map_filter(),
+            cpu_texture.wrap_s(),
+            cpu_texture.wrap_t(),
         );
         texture.fill(data);
         texture
@@ -174,6 +174,16 @@ impl Texture2DImpl {
         unsafe {
             Context::get().bind_texture(glow::TEXTURE_2D, Some(self.id));
         }
+    }
+
+    pub fn update(&mut self, api_data: &CpuTexture) {
+
+    }
+}
+
+impl From<&CpuTexture> for Texture2DImpl {
+    fn from(value: &CpuTexture) -> Self {
+        Self::new(value)
     }
 }
 

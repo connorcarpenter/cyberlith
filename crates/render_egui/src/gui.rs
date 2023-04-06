@@ -1,10 +1,10 @@
-use std::{cell::RefCell, ops::Deref};
+use std::{cell::RefCell, ops::Deref, collections::HashMap};
 
 use bevy_ecs::system::Resource;
 
 use egui_glow::{glow, Painter};
 
-use render_api::base::Viewport;
+use render_api::{Handle, base::{Texture2D, Viewport}};
 use render_glow::{
     core::Context,
     renderer::{Event, Modifiers},
@@ -276,5 +276,13 @@ impl GUI {
             use glow::HasContext as _;
             self.painter.borrow().gl().disable(glow::FRAMEBUFFER_SRGB);
         }
+    }
+
+    pub fn add_image(&mut self, native: glow::Texture) -> egui::TextureId {
+        self.painter.borrow_mut().register_native_texture(native)
+    }
+
+    pub fn remove_image(&mut self, native_id: egui::TextureId) {
+        self.painter.borrow_mut().free_texture(native_id);
     }
 }

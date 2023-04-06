@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::system::Resource;
 
@@ -7,38 +7,48 @@ use render_api::{base::Texture2D, Handle};
 /// A resource for storing `bevy_egui` user textures.
 #[derive(Clone, Resource, Default)]
 pub struct EguiUserTextures {
+    added_textures: HashSet<Handle<Texture2D>>,
+    removed_textures: HashSet<Handle<Texture2D>>,
     textures: HashMap<Handle<Texture2D>, u64>,
-    last_texture_id: u64,
 }
 
 impl EguiUserTextures {
-    /// Can accept either a strong or a weak handle.
-    ///
-    /// You may want to pass a weak handle if you control removing texture assets in your
-    /// application manually and you don't want to bother with cleaning up textures in Egui.
-    ///
-    /// You'll want to pass a strong handle if a texture is used only in Egui and there are no
-    /// handle copies stored anywhere else.
-    pub fn add_image(&mut self, image: Handle<Texture2D>) -> egui::TextureId {
-        let id = *self.textures.entry(image.clone()).or_insert_with(|| {
-            let id = self.last_texture_id;
-            self.last_texture_id += 1;
-            id
-        });
-        egui::TextureId::User(id)
+    pub fn add_texture(&mut self, texture_handle: &Handle<Texture2D>) {
+        self.added_textures.insert(texture_handle.clone());
     }
 
-    /// Removes the image handle and an Egui texture id associated with it.
-    pub fn remove_image(&mut self, image: &Handle<Texture2D>) -> Option<egui::TextureId> {
-        let id = self.textures.remove(image);
-        id.map(egui::TextureId::User)
+    pub fn remove_texture(&mut self, texture_handle: &Handle<Texture2D>) {
+        self.removed_textures.insert(texture_handle.clone());
     }
 
-    /// Returns an associated Egui texture id.
-    #[must_use]
-    pub fn image_id(&self, image: &Handle<Texture2D>) -> Option<egui::TextureId> {
+    pub fn flush_added_textures(&mut self) -> Vec<Handle<Texture2D>> {
+        self.added_textures.drain().collect()
+    }
+
+    pub fn flush_removed_textures(&mut self) -> Vec<Handle<Texture2D>> {
+        self.removed_textures.drain().collect()
+    }
+
+    pub fn register_texture(&mut self, handle: Handle<Texture2D>, id: egui::TextureId) {
+        if self.textures.contains_key(&handle) {
+            panic!("Texture {:?} is already registered", handle.id);
+        }
+        if let egui::TextureId::User(inner) = id {
+            self.textures.insert(handle, inner);
+        } else {
+            panic!("Texture {:?} is not a user texture", handle.id);
+        }
+    }
+
+    pub fn deregister_texture(&mut self, handle: &Handle<Texture2D>) {
+        if self.textures.remove(handle).is_none() {
+            panic!("Texture {:?} is not registered", handle.id);
+        }
+    }
+
+    pub fn texture_id(&self, texture_handle: &Handle<Texture2D>) -> Option<egui::TextureId> {
         self.textures
-            .get(image)
+            .get(texture_handle)
             .map(|&id| egui::TextureId::User(id))
     }
 }

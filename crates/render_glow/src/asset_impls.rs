@@ -20,6 +20,10 @@ impl<T, U> AssetImpls<T, U> {
     pub fn get(&self, handle: &Handle<T>) -> Option<&U> {
         self.assets.get(&handle.id)
     }
+
+    pub fn get_mut(&mut self, handle: &Handle<T>) -> Option<&mut U> {
+        self.assets.get_mut(&handle.id)
+    }
 }
 
 impl<T, U> Default for AssetImpls<T, U> {

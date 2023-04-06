@@ -28,7 +28,7 @@ impl Texture2DArray {
         let cpu_texture = cpu_textures
             .get(0)
             .expect("Expect at least one texture in a texture array");
-        match &cpu_texture.data {
+        match &cpu_texture.data() {
             TextureData::RU8(_) => Self::new_with_data(
                 cpu_texture,
                 &cpu_textures.iter().map(|t| ru8_data(t)).collect::<Vec<_>>(),
@@ -115,14 +115,14 @@ impl Texture2DArray {
 
     fn new_with_data<T: TextureDataType>(cpu_texture: &CpuTexture, data: &[&[T]]) -> Self {
         let mut texture = Self::new_empty::<T>(
-            cpu_texture.width,
-            cpu_texture.height,
+            cpu_texture.width(),
+            cpu_texture.height(),
             data.len() as u32,
-            cpu_texture.min_filter,
-            cpu_texture.mag_filter,
-            cpu_texture.mip_map_filter,
-            cpu_texture.wrap_s,
-            cpu_texture.wrap_t,
+            cpu_texture.min_filter(),
+            cpu_texture.mag_filter(),
+            cpu_texture.mip_map_filter(),
+            cpu_texture.wrap_s(),
+            cpu_texture.wrap_t(),
         );
         texture.fill(data);
         texture

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::default::Default;
 
 use bevy_ecs::prelude::Resource;
@@ -10,6 +10,7 @@ pub struct Assets<T> {
     assets: HashMap<u64, T>,
     last_id: u64,
     added_ids: Vec<u64>,
+    changed_ids: HashSet<u64>,
 }
 
 impl<T> Assets<T> {
@@ -22,7 +23,11 @@ impl<T> Assets<T> {
     }
 
     pub fn set(&mut self, handle: &Handle<T>, t: T) -> Handle<T> {
+        if !self.assets.contains_key(&handle.id) {
+            panic!("Asset with id {} does not exist", handle.id);
+        }
         self.assets.insert(handle.id, t);
+        self.changed_ids.insert(handle.id);
         handle.clone()
     }
 
@@ -31,6 +36,7 @@ impl<T> Assets<T> {
     }
 
     pub fn get_mut(&mut self, handle: &Handle<T>) -> Option<&mut T> {
+        self.changed_ids.insert(handle.id);
         self.assets.get_mut(&handle.id)
     }
 
@@ -40,6 +46,15 @@ impl<T> Assets<T> {
             .map(|id| Handle::new(*id))
             .collect();
         self.added_ids.clear();
+        output
+    }
+
+    pub fn flush_changed(&mut self) -> Vec<Handle<T>> {
+        let output = (&self.changed_ids)
+            .into_iter()
+            .map(|id| Handle::new(*id))
+            .collect();
+        self.changed_ids.clear();
         output
     }
 }

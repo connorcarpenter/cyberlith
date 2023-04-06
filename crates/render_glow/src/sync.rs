@@ -8,12 +8,13 @@ use bevy_ecs::{
 };
 
 use render_api::{
-    base::{PbrMaterial as ApiMaterial, TriMesh as ApiMesh},
+    base::{PbrMaterial as ApiMaterial, TriMesh as ApiMesh, Texture2D as ApiTexture},
     AmbientLight, Assets, DirectionalLight, RenderSet,
 };
 
 use crate::{
     asset_impls::AssetImpls,
+    core::Texture2DImpl,
     renderer::{AmbientLightImpl, BaseMesh, DirectionalLightImpl, Material, PhysicalMaterial},
 };
 
@@ -25,11 +26,13 @@ impl Plugin for SyncPlugin {
             // Resources
             .insert_resource(AssetImpls::<ApiMesh, BaseMesh>::default())
             .insert_resource(AssetImpls::<ApiMaterial, Box<dyn Material>>::default())
+            .insert_resource(AssetImpls::<ApiTexture, Texture2DImpl>::default())
             .insert_resource(AmbientLight::none())
             .insert_resource(AmbientLightImpl::default())
             // Systems
             .add_system(sync_mesh_assets.in_base_set(RenderSet::Sync))
             .add_system(sync_material_assets.in_base_set(RenderSet::Sync))
+            .add_system(sync_texture_2d_assets.in_base_set(RenderSet::Sync))
             .add_system(sync_ambient_light.in_base_set(RenderSet::Sync))
             .add_system(sync_directional_light_added.in_base_set(RenderSet::Sync))
             .add_system(sync_directional_light_changed.in_base_set(RenderSet::Sync));
@@ -65,6 +68,31 @@ fn sync_material_assets(
         let api_data = api_assets.get(&added_handle).unwrap();
         let impl_data = PhysicalMaterial::new(api_data);
         asset_impls.insert(added_handle, Box::new(impl_data));
+    }
+}
+
+fn sync_texture_2d_assets(
+    mut api_assets: ResMut<Assets<ApiTexture>>,
+    mut asset_impls: ResMut<AssetImpls<ApiTexture, Texture2DImpl>>,
+) {
+    if !api_assets.is_changed() {
+        return;
+    }
+
+    // Handle Added Textures
+    let added_handles = api_assets.flush_added();
+    for added_handle in added_handles {
+        let api_data = api_assets.get(&added_handle).unwrap();
+        let impl_data = Texture2DImpl::from(api_data);
+        asset_impls.insert(added_handle, impl_data);
+    }
+
+    // Handle Changed Textures
+    let changed_handles = api_assets.flush_changed();
+    for changed_handle in changed_handles {
+        let api_data = api_assets.get(&changed_handle).unwrap();
+        let impl_data = asset_impls.get_mut(&changed_handle).unwrap();
+        impl_data.update(api_data);
     }
 }
 

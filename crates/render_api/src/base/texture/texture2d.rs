@@ -6,24 +6,24 @@ use super::{Interpolation, TextureData, Wrapping};
 #[derive(Clone, Debug, PartialEq)]
 pub struct Texture2D {
     /// Name of this texture.
-    pub name: String,
+    name: String,
     /// The pixel data for the image
-    pub data: TextureData,
+    data: TextureData,
     /// The width of the image
-    pub width: u32,
+    width: u32,
     /// The height of the image
-    pub height: u32,
+    height: u32,
     /// The way the pixel data is interpolated when the texture is far away
-    pub min_filter: Interpolation,
+    min_filter: Interpolation,
     /// The way the pixel data is interpolated when the texture is close
-    pub mag_filter: Interpolation,
+    mag_filter: Interpolation,
     /// Specifies whether mipmaps should be created for this texture and what type of interpolation to use between the two closest mipmaps.
     /// Note, however, that the mipmaps only will be created if the width and height of the texture are power of two.
-    pub mip_map_filter: Option<Interpolation>,
+    mip_map_filter: Option<Interpolation>,
     /// Determines how the texture is sampled outside the [0..1] s coordinate range (the first value of the uv coordinates).
-    pub wrap_s: Wrapping,
+    wrap_s: Wrapping,
     /// Determines how the texture is sampled outside the [0..1] t coordinate range (the second value of the uv coordinates).
-    pub wrap_t: Wrapping,
+    wrap_t: Wrapping,
 }
 
 impl Texture2D {
@@ -34,6 +34,38 @@ impl Texture2D {
         let data = vec![[0, 0, 0, 0]; (width * height) as usize];
         output.data = TextureData::RgbaU8(data);
         output
+    }
+
+    pub fn data(&self) -> &TextureData {
+        &self.data
+    }
+
+    pub fn width(&self) -> u32 {
+        self.width
+    }
+
+    pub fn height(&self) -> u32 {
+        self.height
+    }
+
+    pub fn min_filter(&self) -> Interpolation {
+        self.min_filter
+    }
+
+    pub fn mag_filter(&self) -> Interpolation {
+        self.mag_filter
+    }
+
+    pub fn mip_map_filter(&self) -> Option<Interpolation> {
+        self.mip_map_filter
+    }
+
+    pub fn wrap_s(&self) -> Wrapping {
+        self.wrap_s
+    }
+
+    pub fn wrap_t(&self) -> Wrapping {
+        self.wrap_t
     }
 }
 

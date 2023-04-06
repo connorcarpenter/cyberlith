@@ -17,7 +17,6 @@ impl Plugin for EguiPlugin {
             .add_plugin(RenderGlowPlugin)
             // EGUI Specific
             .insert_resource(EguiContext::default())
-            .insert_resource(EguiUserTextures::default())
             // System Sets
             .configure_set(EguiSet::PreUpdate.before(CoreSet::Update))
             .configure_set(EguiSet::PostUpdate.after(CoreSet::Update))

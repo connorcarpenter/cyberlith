@@ -65,10 +65,10 @@ impl TextureCubeMap {
         front: &CpuTexture,
         back: &CpuTexture,
     ) -> Self {
-        match &front.data {
+        match &front.data() {
             TextureData::RU8(front_data) => Self::new_with_data(
                 front,
-                right.wrap_s,
+                right.wrap_s(),
                 ru8_data(right),
                 ru8_data(left),
                 ru8_data(top),
@@ -78,7 +78,7 @@ impl TextureCubeMap {
             ),
             TextureData::RgU8(front_data) => Self::new_with_data(
                 front,
-                right.wrap_s,
+                right.wrap_s(),
                 rgu8_data(right),
                 rgu8_data(left),
                 rgu8_data(top),
@@ -88,7 +88,7 @@ impl TextureCubeMap {
             ),
             TextureData::RgbU8(front_data) => Self::new_with_data(
                 front,
-                right.wrap_s,
+                right.wrap_s(),
                 rgbu8_data(right),
                 rgbu8_data(left),
                 rgbu8_data(top),
@@ -98,7 +98,7 @@ impl TextureCubeMap {
             ),
             TextureData::RgbaU8(front_data) => Self::new_with_data(
                 front,
-                right.wrap_s,
+                right.wrap_s(),
                 rgbau8_data(right),
                 rgbau8_data(left),
                 rgbau8_data(top),
@@ -108,7 +108,7 @@ impl TextureCubeMap {
             ),
             TextureData::RF16(front_data) => Self::new_with_data(
                 front,
-                right.wrap_s,
+                right.wrap_s(),
                 rf16_data(right),
                 rf16_data(left),
                 rf16_data(top),
@@ -118,7 +118,7 @@ impl TextureCubeMap {
             ),
             TextureData::RgF16(front_data) => Self::new_with_data(
                 front,
-                right.wrap_s,
+                right.wrap_s(),
                 rgf16_data(right),
                 rgf16_data(left),
                 rgf16_data(top),
@@ -128,7 +128,7 @@ impl TextureCubeMap {
             ),
             TextureData::RgbF16(front_data) => Self::new_with_data(
                 front,
-                right.wrap_s,
+                right.wrap_s(),
                 rgbf16_data(right),
                 rgbf16_data(left),
                 rgbf16_data(top),
@@ -138,7 +138,7 @@ impl TextureCubeMap {
             ),
             TextureData::RgbaF16(front_data) => Self::new_with_data(
                 front,
-                right.wrap_s,
+                right.wrap_s(),
                 rgbaf16_data(right),
                 rgbaf16_data(left),
                 rgbaf16_data(top),
@@ -148,7 +148,7 @@ impl TextureCubeMap {
             ),
             TextureData::RF32(front_data) => Self::new_with_data(
                 front,
-                right.wrap_s,
+                right.wrap_s(),
                 rf32_data(right),
                 rf32_data(left),
                 rf32_data(top),
@@ -158,7 +158,7 @@ impl TextureCubeMap {
             ),
             TextureData::RgF32(front_data) => Self::new_with_data(
                 front,
-                right.wrap_s,
+                right.wrap_s(),
                 rgf32_data(right),
                 rgf32_data(left),
                 rgf32_data(top),
@@ -168,7 +168,7 @@ impl TextureCubeMap {
             ),
             TextureData::RgbF32(front_data) => Self::new_with_data(
                 front,
-                right.wrap_s,
+                right.wrap_s(),
                 rgbf32_data(right),
                 rgbf32_data(left),
                 rgbf32_data(top),
@@ -178,7 +178,7 @@ impl TextureCubeMap {
             ),
             TextureData::RgbaF32(front_data) => Self::new_with_data(
                 front,
-                right.wrap_s,
+                right.wrap_s(),
                 rgbaf32_data(right),
                 rgbaf32_data(left),
                 rgbaf32_data(top),
@@ -200,13 +200,13 @@ impl TextureCubeMap {
         back_data: &[T],
     ) -> Self {
         let mut texture = Self::new_empty::<T>(
-            cpu_texture.width,
-            cpu_texture.height,
-            cpu_texture.min_filter,
-            cpu_texture.mag_filter,
-            cpu_texture.mip_map_filter,
-            cpu_texture.wrap_s,
-            cpu_texture.wrap_t,
+            cpu_texture.width(),
+            cpu_texture.height(),
+            cpu_texture.min_filter(),
+            cpu_texture.mag_filter(),
+            cpu_texture.mip_map_filter(),
+            cpu_texture.wrap_s(),
+            cpu_texture.wrap_t(),
             wrap_r,
         );
         texture.fill(
@@ -362,7 +362,7 @@ impl TextureCubeMap {
     pub fn new_from_equirectangular<T: PrimitiveDataType + TextureDataType>(
         cpu_texture: &CpuTexture,
     ) -> Self {
-        let texture_size = cpu_texture.width / 4;
+        let texture_size = cpu_texture.width() / 4;
         let mut texture = Self::new_empty::<[T; 4]>(
             texture_size,
             texture_size,

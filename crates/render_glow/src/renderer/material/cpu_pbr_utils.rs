@@ -17,7 +17,7 @@ pub fn is_transparent(cpu_material: &PbrMaterial) -> bool {
         || cpu_material
             .albedo_texture
             .as_ref()
-            .map(|t| match &t.data {
+            .map(|t| match &t.data() {
                 TextureData::RgbaU8(data) => data.iter().any(|d| d[3] != 255),
                 TextureData::RgbaF16(data) => data.iter().any(|d| d[3] < f16::from_f32(0.99)),
                 TextureData::RgbaF32(data) => data.iter().any(|d| d[3] < 0.99),

@@ -80,7 +80,7 @@ fn setup(
     let mut texture = Texture2D::from_size(texture_width, texture_height);
 
     let texture_handle = images.add(texture);
-    egui_user_textures.add_image(texture_handle.clone());
+    egui_user_textures.add_texture(&texture_handle);
     commands.insert_resource(CubePreviewImage(texture_handle.clone()));
 
     // This specifies the layer used for the preview pass, which will be attached to the preview pass camera and cube.
@@ -157,7 +157,7 @@ fn render_to_image_example_system(
     context: Res<EguiContext>,
     mut user_textures: ResMut<EguiUserTextures>,
 ) {
-    let cube_preview_texture_id = user_textures.image_id(&cube_preview_image.0).unwrap();
+    let cube_preview_texture_id = user_textures.texture_id(&cube_preview_image.0).unwrap();
     let preview_material_handle = preview_cube_query.single();
     let preview_material = materials.get_mut(preview_material_handle).unwrap();
 
