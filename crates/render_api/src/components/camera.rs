@@ -67,7 +67,7 @@ impl ClearOperation {
             green: Some(g),
             blue: Some(b),
             alpha: Some(a),
-            depth: None,
+            depth: Some(1.0),
         }
     }
 

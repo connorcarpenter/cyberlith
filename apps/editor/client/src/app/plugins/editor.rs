@@ -121,15 +121,16 @@ fn setup(
         .insert(preview_pass_layer);
 
     // Main Pass Light
+    commands.insert_resource(AmbientLight::new(0.3, Color::WHITE));
     commands.spawn(PointLight {
-        position: Vec3::new(0.0, 0.0, 10.0),
+        position: Vec3::new(0.0, 0.0, 100.0),
         ..Default::default()
     });
 
     // Main Pass Cube
     commands
         .spawn(RenderObjectBundle {
-            mesh: meshes.add(TriMesh::from(shapes::Cube { size: 3.0 })),
+            mesh: meshes.add(TriMesh::from(shapes::Cube { size: 7.0 })),
             material: materials.add(Color::from_rgb_f32(0.5, 0.7, 0.9).into()),
             transform: Transform {
                 position: Vec3::new(0.0, 0.0, 1.5),
@@ -232,7 +233,7 @@ fn rotator_system(
     mut query: Query<&mut Transform, Or<(With<PreviewPassCube>, With<MainPassCube>)>>,
 ) {
     for mut transform in &mut query {
-        transform.rotate_x(1.5);
-        transform.rotate_z(1.3);
+        transform.rotate_x(0.0015);
+        transform.rotate_z(0.0013);
     }
 }
