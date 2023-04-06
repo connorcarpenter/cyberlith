@@ -19,7 +19,7 @@ impl<'a> Mesh<'a> {
     pub fn compose(base_mesh: &'a BaseMesh, transform: &Transform) -> Self {
         Self {
             base_mesh,
-            transform: transform.to_mat4(),
+            transform: transform.compute_matrix(),
         }
     }
 

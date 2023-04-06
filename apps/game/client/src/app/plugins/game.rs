@@ -48,7 +48,8 @@ impl Plugin for GamePlugin {
                     .chain()
                     .in_set(ReceiveEvents),
             )
-            .add_system(step);
+            .add_system(step)
+            .add_system(rotate);
     }
 }
 
@@ -121,8 +122,17 @@ fn step(mut cube_q: Query<&mut Transform, With<CubeMarker>>, mut rotation: Local
 
     let mut transform = cube_q.single_mut();
 
-    transform.position.x = x;
-    transform.position.z = z;
+    transform.set_position_x(x);
+    transform.set_position_z(z);
+}
+
+fn rotate(
+    mut query: Query<&mut Transform, With<CubeMarker>>,
+) {
+    for mut transform in &mut query {
+        transform.rotate_x(0.015);
+        //transform.rotate_z(0.013);
+    }
 }
 
 fn degrees_to_radians(degrees: f32) -> f32 {

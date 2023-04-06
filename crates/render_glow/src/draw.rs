@@ -3,10 +3,7 @@ use bevy_ecs::{
     system::{NonSendMut, Query, Res},
 };
 
-use render_api::{
-    base::{PbrMaterial, TriMesh},
-    AmbientLight, CameraComponent, Handle, PointLight, RenderLayer, RenderLayers, Transform,
-};
+use render_api::{base::{PbrMaterial, TriMesh}, AmbientLight, CameraComponent, Handle, PointLight, RenderLayer, RenderLayers, Transform, RenderTarget};
 
 use crate::{
     asset_impls::AssetImpls,
@@ -142,18 +139,23 @@ pub fn draw(
         let ambient_light_tuple = (&*ambient_light, &*ambient_light_impl);
         lights.push(&ambient_light_tuple);
 
-        // TODO: set render target based on camera value ...
-        let render_target = frame_input.screen();
-
         let Ok((_, camera_component, _)) = cameras_q.get(camera) else {
             break;
         };
 
-        // Clear the color and depth of the screen render target using the camera's clear color
-        render_target.clear((&camera_component.clear_operation).into());
+        if let RenderTarget::Screen = camera_component.target {
 
-        let render_pass = RenderPass::new(&camera_component.camera, &objects, &lights);
-        render_target.render(render_pass);
+            let render_target = frame_input.screen();
+
+            // Clear the color and depth of the screen render target using the camera's clear color
+            render_target.clear((&camera_component.clear_operation).into());
+
+            let render_pass = RenderPass::new(&camera_component.camera, &objects, &lights);
+            render_target.render(render_pass);
+        } else {
+            // implement later
+            continue;
+        }
     }
 }
 
