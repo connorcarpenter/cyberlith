@@ -1,4 +1,4 @@
-use bevy_log::info;
+
 use math::*;
 
 use super::*;
@@ -130,9 +130,6 @@ impl Camera {
         let mut camera = Camera::new(viewport);
         camera.set_view(position, target, up);
         camera.set_perspective_projection(fov_y_degrees, z_near, z_far);
-
-        info!("Camera View: {}", camera.view);
-        info!("Camera Projection: {}", camera.projection);
 
         camera
     }
@@ -493,9 +490,12 @@ impl Camera {
     }
 
     fn update_screen2ray(&mut self) {
-        let mut w_column = self.view.col_mut(3);
-        *w_column = Vec4::new(0.0, 0.0, 0.0, 1.0);
-        self.screen2ray = (self.projection * self.view).inverse();
+        let mut v = self.view;
+        v.w_axis.x = 0.0;
+        v.w_axis.y = 0.0;
+        v.w_axis.z = 0.0;
+        v.w_axis.w = 1.0;
+        self.screen2ray = (self.projection * v).inverse();
     }
 
     fn update_frustrum(&mut self) {

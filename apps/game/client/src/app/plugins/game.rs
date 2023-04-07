@@ -89,12 +89,12 @@ fn setup(
     });
     // camera
     commands.spawn(CameraComponent::new(
-        Camera::new_perspective(
+        Camera::new_orthographic(
             window.viewport(),
             Vec3::new(50.0, 50.0, 50.0),
             Vec3::new(0.0, 0.0, 0.0),
             Vec3::new(0.0, 1.0, 0.0),
-            45.0,
+            50.0,
             0.1,
             1000.0,
         ),
@@ -127,8 +127,8 @@ fn step(mut cube_q: Query<&mut Transform, With<CubeMarker>>, mut rotation: Local
 fn rotate(
     mut query: Query<&mut Transform, With<CubeMarker>>,
 ) {
-    // for mut transform in &mut query {
-    //     transform.rotate_x(0.015);
-    //     //transform.rotate_z(0.013);
-    // }
+    for mut transform in &mut query {
+        transform.rotate_x(0.015);
+        //transform.rotate_z(0.013);
+    }
 }
