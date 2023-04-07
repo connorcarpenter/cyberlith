@@ -22,25 +22,6 @@ impl Positions {
     pub fn to_f32(&self) -> Vec<Vec3> {
         self.0.clone()
     }
-    ///
-    /// Converts and returns all the positions as `f64` data type.
-    ///
-    pub fn into_f64(mut self) -> Vec<Vector3<f64>> {
-        self.0
-            .drain(..)
-            .map(|v| Vector3::new(v.x as f64, v.y as f64, v.z as f64))
-            .collect::<Vec<_>>()
-    }
-
-    ///
-    /// Clones and converts all the positions as `f64` data type.
-    ///
-    pub fn to_f64(&self) -> Vec<Vector3<f64>> {
-        self.0
-            .iter()
-            .map(|v| Vector3::new(v.x as f64, v.y as f64, v.z as f64))
-            .collect::<Vec<_>>()
-    }
 
     ///
     /// Returns the number of positions.

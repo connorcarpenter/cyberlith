@@ -16,9 +16,9 @@ impl BufferDataType for i32 {}
 impl BufferDataType for f16 {}
 impl BufferDataType for f32 {}
 
-impl<T: BufferDataType + PrimitiveDataType> BufferDataType for Vector2<T> {}
-impl<T: BufferDataType + PrimitiveDataType> BufferDataType for Vector3<T> {}
-impl<T: BufferDataType + PrimitiveDataType> BufferDataType for Vector4<T> {}
+impl BufferDataType for Vec2 {}
+impl BufferDataType for Vec3 {}
+impl BufferDataType for Vec4 {}
 impl<T: BufferDataType + PrimitiveDataType> BufferDataType for [T; 2] {}
 impl<T: BufferDataType + PrimitiveDataType> BufferDataType for [T; 3] {}
 impl<T: BufferDataType + PrimitiveDataType> BufferDataType for [T; 4] {}

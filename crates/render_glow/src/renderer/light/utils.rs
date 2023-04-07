@@ -36,17 +36,20 @@ pub fn lights_shader_source(lights: &[&dyn Light], lighting_model: LightingModel
 }
 
 pub(crate) fn shadow_matrix(camera: &Camera) -> Mat4 {
-    let bias_matrix = Mat4::new(
-        0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.5, 0.5, 0.5, 1.0,
+    let bias_matrix = Mat4::from_cols(
+        Vec4::new(0.5, 0.0, 0.0, 0.0),
+        Vec4::new(0.0, 0.5, 0.0, 0.0),
+        Vec4::new(0.0, 0.0, 0.5, 0.0),
+        Vec4::new(0.5, 0.5, 0.5, 1.0),
     );
-    bias_matrix * camera.projection() * camera.view()
+    bias_matrix * *camera.projection() * *camera.view()
 }
 
 pub(crate) fn compute_up_direction(direction: Vec3) -> Vec3 {
-    if vec3(1.0, 0.0, 0.0).dot(direction).abs() > 0.9 {
-        (vec3(0.0, 1.0, 0.0).cross(direction)).normalize()
+    if Vec3::new(1.0, 0.0, 0.0).dot(direction).abs() > 0.9 {
+        (Vec3::new(0.0, 1.0, 0.0).cross(direction)).normalize()
     } else {
-        (vec3(1.0, 0.0, 0.0).cross(direction)).normalize()
+        (Vec3::new(1.0, 0.0, 0.0).cross(direction)).normalize()
     }
 }
 

@@ -1,6 +1,7 @@
-use math::{Vec3, Zero};
 
 use std::default::Default;
+
+use math::Vec3;
 
 use bevy_ecs::component::Component;
 
@@ -40,7 +41,7 @@ impl PointLight {
 impl Default for PointLight {
     fn default() -> Self {
         Self {
-            position: Vec3::zero(),
+            position: Vec3::ZERO,
             color: Color::WHITE,
             intensity: 1.0,
             attenuation: Attenuation::default(),

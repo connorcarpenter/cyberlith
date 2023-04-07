@@ -1,4 +1,4 @@
-use math::{vec3, InnerSpace, MetricSpace, Vec3};
+use math::Vec3;
 
 use render_api::base::{Camera, Interpolation, Viewport, Wrapping};
 
@@ -10,17 +10,17 @@ use crate::renderer::{DepthMaterial, Geometry, MaterialType, Object};
 pub fn camera2d(viewport: Viewport) -> Camera {
     Camera::new_orthographic(
         viewport,
-        vec3(
+        Vec3::new(
             viewport.width as f32 * 0.5,
             viewport.height as f32 * 0.5,
             -1.0,
         ),
-        vec3(
+        Vec3::new(
             viewport.width as f32 * 0.5,
             viewport.height as f32 * 0.5,
             0.0,
         ),
-        vec3(0.0, -1.0, 0.0),
+        Vec3::new(0.0, -1.0, 0.0),
         viewport.height as f32,
         0.0,
         10.0,
@@ -46,8 +46,8 @@ pub fn cmp_render_order(
     {
         std::cmp::Ordering::Less
     } else {
-        let distance_a = camera.position().distance2(obj0.aabb().center());
-        let distance_b = camera.position().distance2(obj1.aabb().center());
+        let distance_a = camera.position().distance_squared(obj0.aabb().center());
+        let distance_b = camera.position().distance_squared(obj1.aabb().center());
         if distance_a.is_nan() || distance_b.is_nan() {
             distance_a.is_nan().cmp(&distance_b.is_nan()) // whatever - just save us from panicing on unwrap below
         } else if obj0.material_type() == MaterialType::Transparent {
@@ -91,10 +91,10 @@ pub fn ray_intersect(
 ) -> Option<Vec3> {
     use crate::core::*;
     let viewport = Viewport::new_at_origin(1, 1);
-    let up = if direction.dot(vec3(1.0, 0.0, 0.0)).abs() > 0.99 {
-        direction.cross(vec3(0.0, 1.0, 0.0))
+    let up = if direction.dot(Vec3::new(1.0, 0.0, 0.0)).abs() > 0.99 {
+        direction.cross(Vec3::new(0.0, 1.0, 0.0))
     } else {
-        direction.cross(vec3(1.0, 0.0, 0.0))
+        direction.cross(Vec3::new(1.0, 0.0, 0.0))
     };
     let camera = Camera::new_orthographic(
         viewport,
@@ -130,7 +130,7 @@ pub fn ray_intersect(
         },
         ..Default::default()
     };
-    let depth = RenderTarget::new(
+    let depth: f32 = RenderTarget::new(
         texture.as_color_target(None),
         depth_texture.as_depth_target(),
     )

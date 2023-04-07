@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use math::{Mat3, SquareMatrix};
+use math::Mat3;
 
 use crate::core::Texture2DImpl;
 
@@ -27,7 +27,7 @@ impl std::convert::From<Arc<Texture2DImpl>> for Texture2DRef {
     fn from(texture: Arc<Texture2DImpl>) -> Self {
         Self {
             texture,
-            transformation: Mat3::identity(),
+            transformation: Mat3::IDENTITY,
         }
     }
 }

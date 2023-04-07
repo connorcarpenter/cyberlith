@@ -1,4 +1,4 @@
-use math::{radians, Vec3};
+use math::Vec3;
 
 use render_api::base::*;
 
@@ -153,19 +153,19 @@ impl CameraControl {
     fn handle_action(&mut self, camera: &mut Camera, control_type: CameraAction, x: f64) -> bool {
         match control_type {
             CameraAction::Pitch { speed } => {
-                camera.pitch(radians(speed * x as f32));
+                camera.pitch(f32::to_radians(speed * x as f32));
             }
             CameraAction::OrbitUp { speed, target } => {
                 camera.rotate_around_with_fixed_up(&target, 0.0, speed * x as f32);
             }
             CameraAction::Yaw { speed } => {
-                camera.yaw(radians(speed * x as f32));
+                camera.yaw(f32::to_radians(speed * x as f32));
             }
             CameraAction::OrbitLeft { speed, target } => {
                 camera.rotate_around_with_fixed_up(&target, speed * x as f32, 0.0);
             }
             CameraAction::Roll { speed } => {
-                camera.roll(radians(speed * x as f32));
+                camera.roll(f32::to_radians(speed * x as f32));
             }
             CameraAction::Left { speed } => {
                 let change = -camera.right_direction() * x as f32 * speed;

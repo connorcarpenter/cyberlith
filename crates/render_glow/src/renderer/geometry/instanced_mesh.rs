@@ -30,11 +30,11 @@ impl InstancedMesh {
         let aabb = cpu_mesh.compute_aabb();
         let mut instanced_mesh = Self {
             base_mesh: BaseMesh::new(cpu_mesh),
-            instance_buffers: RwLock::new((Default::default(), vec3(0.0, 0.0, 0.0))),
+            instance_buffers: RwLock::new((Default::default(), Vec3::new(0.0, 0.0, 0.0))),
             aabb,
             aabb_local: aabb,
-            transformation: Mat4::identity(),
-            current_transformation: Mat4::identity(),
+            transformation: Mat4::IDENTITY,
+            current_transformation: Mat4::IDENTITY,
             instance_count: 0,
             instances: instances.clone(),
         };
@@ -165,7 +165,7 @@ impl InstancedMesh {
                 .instances
                 .transformations
                 .iter()
-                .map(|m| (self.transformation * m).w.truncate().distance2(position))
+                .map(|m| (self.transformation * *m).w_axis.truncate().distance_squared(position))
                 .collect::<Vec<_>>();
             Self::ordered_indices_back_to_front(self.instance_count as usize, &distances)
         } else {
@@ -179,7 +179,7 @@ impl InstancedMesh {
         if indices
             .iter()
             .map(|i| self.instances.transformations[*i])
-            .all(|t| Mat3::from_cols(t.x.truncate(), t.y.truncate(), t.z.truncate()).is_identity())
+            .all(|t| Mat3::from_cols(t.x_axis.truncate(), t.y_axis.truncate(), t.z_axis.truncate()) == Mat3::IDENTITY)
         {
             instance_buffers.insert(
                 "instance_translation".to_string(),
@@ -187,7 +187,7 @@ impl InstancedMesh {
                     &indices
                         .iter()
                         .map(|i| self.instances.transformations[*i])
-                        .map(|t| t.w.truncate())
+                        .map(|t| t.w_axis.truncate())
                         .collect::<Vec<_>>(),
                 ),
             );
@@ -210,15 +210,15 @@ impl InstancedMesh {
             let mut instance_tex_transform1 = Vec::new();
             let mut instance_tex_transform2 = Vec::new();
             for texture_transform in indices.iter().map(|i| texture_transforms[*i]) {
-                instance_tex_transform1.push(vec3(
-                    texture_transform.x.x,
-                    texture_transform.y.x,
-                    texture_transform.z.x,
+                instance_tex_transform1.push(Vec3::new(
+                    texture_transform.x_axis.x,
+                    texture_transform.y_axis.x,
+                    texture_transform.z_axis.x,
                 ));
-                instance_tex_transform2.push(vec3(
-                    texture_transform.x.y,
-                    texture_transform.y.y,
-                    texture_transform.z.y,
+                instance_tex_transform2.push(Vec3::new(
+                    texture_transform.x_axis.y,
+                    texture_transform.y_axis.y,
+                    texture_transform.z_axis.y,
                 ));
             }
             instance_buffers.insert(
@@ -253,14 +253,10 @@ impl InstancedMesh {
         instance_buffers: &HashMap<String, InstanceBuffer>,
     ) {
         if attributes.normal && instance_buffers.contains_key("instance_translation") {
-            if let Some(inverse) = self.current_transformation.invert() {
-                program.use_uniform("normalMatrix", inverse.transpose());
-            } else {
-                // determinant is float zero
-                return;
-            }
+            let inverse = self.current_transformation.inverse();
+            program.use_uniform("normalMatrix", inverse.transpose());
         }
-        program.use_uniform("viewProjection", camera.projection() * camera.view());
+        program.use_uniform("viewProjection", *camera.projection() * *camera.view());
         program.use_uniform("modelMatrix", self.current_transformation);
 
         for attribute_name in [

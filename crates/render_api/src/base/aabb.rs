@@ -119,7 +119,7 @@ impl AxisAlignedBoundingBox {
         self.expand(
             &positions
                 .iter()
-                .map(|p| (transformation * p.extend(1.0)).truncate())
+                .map(|p| (*transformation * p.extend(1.0)).truncate())
                 .collect::<Vec<_>>(),
         )
     }

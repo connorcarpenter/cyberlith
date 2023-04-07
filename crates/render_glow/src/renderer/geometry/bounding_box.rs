@@ -36,17 +36,17 @@ impl BoundingBox {
         let size = aabb.size();
         let translations = vec![
             min,
-            vec3(min.x, max.y, max.z),
-            vec3(min.x, min.y, max.z),
-            vec3(min.x, max.y, min.z),
+            Vec3::new(min.x, max.y, max.z),
+            Vec3::new(min.x, min.y, max.z),
+            Vec3::new(min.x, max.y, min.z),
             min,
-            vec3(max.x, min.y, max.z),
-            vec3(min.x, min.y, max.z),
-            vec3(max.x, min.y, min.z),
+            Vec3::new(max.x, min.y, max.z),
+            Vec3::new(min.x, min.y, max.z),
+            Vec3::new(max.x, min.y, min.z),
             min,
-            vec3(max.x, max.y, min.z),
-            vec3(min.x, max.y, min.z),
-            vec3(max.x, min.y, min.z),
+            Vec3::new(max.x, max.y, min.z),
+            Vec3::new(min.x, max.y, min.z),
+            Vec3::new(max.x, min.y, min.z),
         ];
 
         let mesh = InstancedMesh::new(
@@ -55,14 +55,14 @@ impl BoundingBox {
                     .map(|i| {
                         Mat4::from_translation(translations[i])
                             * match i {
-                                0..=3 => Mat4::from_nonuniform_scale(size.x, thickness, thickness),
+                                0..=3 => Mat4::from_scale(Vec3::new(size.x, thickness, thickness)),
                                 4..=7 => {
-                                    Mat4::from_angle_z(degrees(90.0))
-                                        * Mat4::from_nonuniform_scale(size.y, thickness, thickness)
+                                    Mat4::from_rotation_z(f32::to_radians(90.0))
+                                        * Mat4::from_scale(Vec3::new(size.y, thickness, thickness))
                                 }
                                 8..=11 => {
-                                    Mat4::from_angle_y(degrees(-90.0))
-                                        * Mat4::from_nonuniform_scale(size.z, thickness, thickness)
+                                    Mat4::from_rotation_y(f32::to_radians(-90.0))
+                                        * Mat4::from_scale(Vec3::new(size.z, thickness, thickness))
                                 }
                                 _ => unreachable!(),
                             }

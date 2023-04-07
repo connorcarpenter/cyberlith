@@ -1,13 +1,12 @@
-use std::default::Default;
-use std::ops::Mul;
+use std::{default::Default, ops::Mul};
 
 use bevy_ecs::component::Component;
 
-use math::{Deg, InnerSpace, Mat3, Mat4, Quat, Rad, Rotation3, Vec3, Zero};
+use math::{Mat3, Mat4, Quat, Vec3};
 
 #[derive(Clone, Component, Copy)]
 pub struct Transform {
-    pub position: Vec3,
+    pub translation: Vec3,
     pub rotation: Quat,
     pub scale: Vec3,
 }
@@ -15,28 +14,28 @@ pub struct Transform {
 impl Transform {
 
     pub const IDENTITY: Self = Transform {
-        position: Vec3::zero(),
-        rotation: Quat::one(),
-        scale: Vec3::one(),
+        translation: Vec3::ZERO,
+        rotation: Quat::IDENTITY,
+        scale: Vec3::ONE,
     };
     
     pub fn from_xyz(x: f32, y: f32, z: f32) -> Self {
-        Self::from_position(Vec3::new(x, y, z))
+        Self::from_translation(Vec3::new(x, y, z))
     }
 
     pub fn from_matrix(matrix: Mat4) -> Self {
-        let (scale, rotation, position) = matrix.to_scale_rotation_position();
+        let (scale, rotation, translation) = matrix.to_scale_rotation_translation();
 
         Transform {
-            position,
+            translation,
             rotation,
             scale,
         }
     }
 
-    pub fn from_position(position: Vec3) -> Self {
+    pub fn from_translation(translation: Vec3) -> Self {
         Transform {
-            position,
+            translation,
             ..Self::IDENTITY
         }
     }
@@ -55,8 +54,13 @@ impl Transform {
         }
     }
 
-    pub const fn with_position(mut self, position: Vec3) -> Self {
-        self.position = position;
+    pub fn from_axis_angle(axis: Vec3, angle_radians: f32) -> Transform {
+        let rotation = Quat::from_axis_angle(axis, angle_radians);
+        Transform::from_rotation(rotation)
+    }
+
+    pub const fn with_translation(mut self, translation: Vec3) -> Self {
+        self.translation = translation;
         self
     }
 
@@ -71,7 +75,7 @@ impl Transform {
     }
 
     pub fn compute_matrix(&self) -> Mat4 {
-        Mat4::from_scale_rotation_position(self.scale, self.rotation, self.position)
+        Mat4::from_scale_rotation_translation(self.scale, self.rotation, self.translation)
     }
 
     pub fn rotate(&mut self, rotation: Quat) {
@@ -105,7 +109,7 @@ impl Transform {
     }
 
     pub fn look_at(&mut self, target: Vec3, up: Vec3) {
-        self.look_to(target - self.position, up);
+        self.look_to(target - self.translation, up);
     }
     
     pub fn look_to(&mut self, direction: Vec3, up: Vec3) {
@@ -116,11 +120,11 @@ impl Transform {
     }
 
     pub fn mul_transform(&self, transform: Transform) -> Self {
-        let position = self.transform_point(transform.translation);
+        let translation = self.transform_point(transform.translation);
         let rotation = self.rotation * transform.rotation;
         let scale = self.scale * transform.scale;
         Transform {
-            position,
+            translation,
             rotation,
             scale,
         }

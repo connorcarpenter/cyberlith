@@ -33,7 +33,7 @@ impl FxaaEffect {
             |program| {
                 color_texture.use_uniforms(program);
                 let (w, h) = color_texture.resolution();
-                program.use_uniform("resolution", vec2(w as f32, h as f32));
+                program.use_uniform("resolution", Vec2::new(w as f32, h as f32));
             },
         )
     }

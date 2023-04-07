@@ -70,24 +70,24 @@ impl CubeMapSide {
     /// The up direction that should be used when rendering into this cube map side.
     pub fn up(&self) -> Vec3 {
         match self {
-            CubeMapSide::Right => vec3(0.0, -1.0, 0.0),
-            CubeMapSide::Left => vec3(0.0, -1.0, 0.0),
-            CubeMapSide::Top => vec3(0.0, 0.0, 1.0),
-            CubeMapSide::Bottom => vec3(0.0, 0.0, -1.0),
-            CubeMapSide::Front => vec3(0.0, -1.0, 0.0),
-            CubeMapSide::Back => vec3(0.0, -1.0, 0.0),
+            CubeMapSide::Right =>  Vec3::new(0.0, -1.0, 0.0),
+            CubeMapSide::Left =>   Vec3::new(0.0, -1.0, 0.0),
+            CubeMapSide::Top =>    Vec3::new(0.0, 0.0, 1.0),
+            CubeMapSide::Bottom => Vec3::new(0.0, 0.0, -1.0),
+            CubeMapSide::Front =>  Vec3::new(0.0, -1.0, 0.0),
+            CubeMapSide::Back =>   Vec3::new(0.0, -1.0, 0.0),
         }
     }
 
     /// The direction from origo towards the center of this cube map side.
     pub fn direction(&self) -> Vec3 {
         match self {
-            CubeMapSide::Right => vec3(1.0, 0.0, 0.0),
-            CubeMapSide::Left => vec3(-1.0, 0.0, 0.0),
-            CubeMapSide::Top => vec3(0.0, 1.0, 0.0),
-            CubeMapSide::Bottom => vec3(0.0, -1.0, 0.0),
-            CubeMapSide::Front => vec3(0.0, 0.0, 1.0),
-            CubeMapSide::Back => vec3(0.0, 0.0, -1.0),
+            CubeMapSide::Right =>  Vec3::new(1.0, 0.0, 0.0),
+            CubeMapSide::Left =>   Vec3::new(-1.0, 0.0, 0.0),
+            CubeMapSide::Top =>    Vec3::new(0.0, 1.0, 0.0),
+            CubeMapSide::Bottom => Vec3::new(0.0, -1.0, 0.0),
+            CubeMapSide::Front =>  Vec3::new(0.0, 0.0, 1.0),
+            CubeMapSide::Back =>   Vec3::new(0.0, 0.0, -1.0),
         }
     }
 }

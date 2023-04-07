@@ -71,13 +71,12 @@ impl TriMesh {
     pub fn transform_mat4(&mut self, mat4: &Mat4) -> Result<()> {
         let Positions(positions) = &mut self.positions;
         for pos in positions.iter_mut() {
-            *pos = (mat4 * pos.extend(1.0)).truncate();
+            *pos = (*mat4 * pos.extend(1.0)).truncate();
         }
 
         if self.normals.is_some() || self.tangents.is_some() {
             let normal_transform = mat4
-                .invert()
-                .ok_or(Error::FailedInvertingTransformationMatrix)?
+                .inverse()
                 .transpose();
 
             if let Some(ref mut normals) = self.normals {
@@ -414,16 +413,16 @@ impl TriMesh {
     pub fn arrow(tail_length: f32, tail_radius: f32, angle_subdivisions: u32) -> Self {
         let mut arrow = Self::cylinder(angle_subdivisions);
         arrow
-            .transform_mat4(&Mat4::from_nonuniform_scale(
+            .transform_mat4(&Mat4::from_scale(Vec3::new(
                 tail_length,
                 tail_radius,
-                tail_radius,
+                tail_radius),
             ))
             .unwrap();
         let mut cone = Self::cone(angle_subdivisions);
         cone.transform_mat4(
             &(Mat4::from_translation(Vec3::new(tail_length, 0.0, 0.0))
-                * Mat4::from_nonuniform_scale(1.0 - tail_length, 1.0, 1.0)),
+                * Mat4::from_scale(Vec3::new(1.0 - tail_length, 1.0, 1.0))),
         )
         .unwrap();
         let mut indices = arrow.indices.into_u32().unwrap();

@@ -231,7 +231,7 @@ impl BaseMesh {
                 VertexBuffer::new_with_data(
                     &data
                         .iter()
-                        .map(|uv| vec2(uv.x, 1.0 - uv.y))
+                        .map(|uv| Vec2::new(uv.x, 1.0 - uv.y))
                         .collect::<Vec<_>>(),
                 )
             }),

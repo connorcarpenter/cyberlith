@@ -1,4 +1,4 @@
-use math::{InnerSpace, Mat4, MetricSpace, SquareMatrix};
+use math::Mat4;
 
 use bevy_ecs::component::Component;
 
@@ -24,7 +24,7 @@ impl DirectionalLightImpl {
     pub fn new(light: &DirectionalLight) -> Self {
         Self {
             light: light.clone(),
-            shadow_matrix: Mat4::identity(),
+            shadow_matrix: Mat4::IDENTITY,
             shadow_texture: None,
         }
     }
@@ -39,7 +39,7 @@ impl DirectionalLightImpl {
     ///
     pub fn clear_shadow_map(&mut self) {
         self.shadow_texture = None;
-        self.shadow_matrix = Mat4::identity();
+        self.shadow_matrix = Mat4::IDENTITY;
     }
 
     ///

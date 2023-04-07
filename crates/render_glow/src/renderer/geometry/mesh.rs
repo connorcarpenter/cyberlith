@@ -1,4 +1,4 @@
-use math::{Mat4, Matrix, SquareMatrix};
+use math::Mat4;
 
 use render_api::{
     base::{AxisAlignedBoundingBox, Camera},
@@ -31,15 +31,11 @@ impl<'a> Mesh<'a> {
         attributes: FragmentAttributes,
     ) {
         if attributes.normal {
-            if let Some(inverse) = self.transform.invert() {
-                program.use_uniform_if_required("normalMatrix", inverse.transpose());
-            } else {
-                // determinant is float zero
-                return;
-            }
+            let inverse = self.transform.inverse();
+            program.use_uniform_if_required("normalMatrix", inverse.transpose());
         }
 
-        program.use_uniform("viewProjection", camera.projection() * camera.view());
+        program.use_uniform("viewProjection", *camera.projection() * *camera.view());
         program.use_uniform("modelMatrix", self.transform);
 
         self.base_mesh

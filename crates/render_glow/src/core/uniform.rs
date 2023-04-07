@@ -19,15 +19,15 @@ impl UniformDataType for i32 {}
 impl UniformDataType for f16 {}
 impl UniformDataType for f32 {}
 
-impl<T: UniformDataType + PrimitiveDataType> UniformDataType for Vector2<T> {}
-impl<T: UniformDataType + PrimitiveDataType> UniformDataType for Vector3<T> {}
-impl<T: UniformDataType + PrimitiveDataType> UniformDataType for Vector4<T> {}
+impl UniformDataType for Vec2 {}
+impl UniformDataType for Vec3 {}
+impl UniformDataType for Vec4 {}
 
 impl UniformDataType for Color {}
 impl UniformDataType for Quat {}
 
-impl<T: UniformDataType + PrimitiveDataType> UniformDataType for Matrix2<T> {}
-impl<T: UniformDataType + PrimitiveDataType> UniformDataType for Matrix3<T> {}
-impl<T: UniformDataType + PrimitiveDataType> UniformDataType for Matrix4<T> {}
+impl UniformDataType for Mat2 {}
+impl UniformDataType for Mat3 {}
+impl UniformDataType for Mat4 {}
 
 impl<T: UniformDataType + ?Sized> UniformDataType for &T {}

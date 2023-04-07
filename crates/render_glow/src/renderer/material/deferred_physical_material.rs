@@ -1,7 +1,5 @@
 use std::sync::Arc;
 
-use math::SquareMatrix;
-
 use render_api::base::{
     Camera, Color, GeometryFunction, LightingModel, NormalDistributionFunction, PbrMaterial,
 };
@@ -171,7 +169,7 @@ impl DeferredPhysicalMaterial {
                 }
                 program.use_uniform_if_required(
                     "viewProjectionInverse",
-                    (camera.projection() * camera.view()).invert().unwrap(),
+                    (*camera.projection() * *camera.view()).inverse(),
                 );
                 program.use_uniform("debug_type", DebugType::None as i32);
             },

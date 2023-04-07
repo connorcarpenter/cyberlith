@@ -1,4 +1,4 @@
-use math::{MetricSpace, Vec3};
+use math::Vec3;
 
 use render_api::base::*;
 

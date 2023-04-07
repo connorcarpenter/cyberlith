@@ -1,8 +1,7 @@
 use bevy_app::{App, Plugin};
-use bevy_ecs::query::Or;
 use bevy_ecs::{
     component::Component,
-    query::With,
+    query::{With, Or},
     schedule::IntoSystemConfigs,
     system::{Commands, Local, Query, Res, ResMut, Resource},
 };
@@ -11,7 +10,7 @@ use naia_bevy_client::{
     ClientConfig as NaiaClientConfig, Plugin as NaiaClientPlugin, ReceiveEvents,
 };
 
-use math::{degrees, vec3, Quat, Vec3};
+use math::{Quat, Vec3};
 use render_api::{
     base::{Camera, Color, PbrMaterial, Texture2D, TriMesh, Viewport},
     shapes, AmbientLight, Assets, CameraComponent, ClearOperation, DirectionalLight, Handle,
@@ -107,10 +106,10 @@ fn setup(
         .spawn(CameraComponent::new(
             Camera::new_perspective(
                 Viewport::new_at_origin(texture_width, texture_height),
-                vec3(0.0, 0.0, 15.0),
-                vec3(0.0, 0.0, 0.0),
-                vec3(0.0, 1.0, 0.0),
-                degrees(45.0),
+                Vec3::new(0.0, 0.0, 15.0),
+                Vec3::new(0.0, 0.0, 0.0),
+                Vec3::new(0.0, 1.0, 0.0),
+                45.0,
                 0.1,
                 5000.0,
             ),
@@ -132,10 +131,9 @@ fn setup(
         .spawn(RenderObjectBundle {
             mesh: meshes.add(TriMesh::from(shapes::Cube { size: 7.0 })),
             material: materials.add(Color::from_rgb_f32(0.5, 0.7, 0.9).into()),
-            transform: Transform {
-                position: Vec3::new(0.0, 0.0, 1.5),
-                rotation: Quat::from_sv(-std::f32::consts::PI / 5.0, Vec3::new(1.0, 0.0, 0.0)),
-            },
+            transform: Transform::IDENTITY
+                .with_translation(Vec3::new(0.0, 0.0, 1.5))
+                .with_rotation(Quat::from_axis_angle(Vec3::new(1.0, 0.0, 0.0), -std::f32::consts::PI / 5.0)),
         })
         .insert(MainPassCube);
 
@@ -143,10 +141,10 @@ fn setup(
     commands.spawn(CameraComponent::new(
         Camera::new_perspective(
             window.viewport(),
-            vec3(0.0, 0.0, 50.0),
-            vec3(0.0, 0.0, 0.0),
-            vec3(0.0, 1.0, 0.0),
-            degrees(45.0),
+            Vec3::new(0.0, 0.0, 50.0),
+            Vec3::new(0.0, 0.0, 0.0),
+            Vec3::new(0.0, 1.0, 0.0),
+            45.0,
             0.1,
             5000.0,
         ),

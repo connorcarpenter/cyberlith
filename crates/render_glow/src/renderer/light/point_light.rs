@@ -31,7 +31,7 @@ impl Light for PointLight {
         );
         program.use_uniform(
             &format!("attenuation{}", i),
-            vec3(
+            Vec3::new(
                 self.attenuation.constant,
                 self.attenuation.linear,
                 self.attenuation.quadratic,

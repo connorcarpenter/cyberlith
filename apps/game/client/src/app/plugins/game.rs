@@ -117,13 +117,13 @@ fn step(mut cube_q: Query<&mut Transform, With<CubeMarker>>, mut rotation: Local
         }
     }
 
-    let x = degrees_to_radians(*rotation).cos() * 10.0;
-    let z = degrees_to_radians(*rotation).sin() * 10.0;
+    let x = f32::to_radians(*rotation).cos() * 10.0;
+    let z = f32::to_radians(*rotation).sin() * 10.0;
 
     let mut transform = cube_q.single_mut();
 
-    transform.set_position_x(x);
-    transform.set_position_z(z);
+    transform.translation.x = x;
+    transform.translation.z = z;
 }
 
 fn rotate(
@@ -133,8 +133,4 @@ fn rotate(
         transform.rotate_x(0.015);
         //transform.rotate_z(0.013);
     }
-}
-
-fn degrees_to_radians(degrees: f32) -> f32 {
-    degrees * std::f32::consts::PI / 180.0
 }

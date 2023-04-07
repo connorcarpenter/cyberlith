@@ -349,13 +349,13 @@ impl DataType for f32 {
     }
 }
 
-impl<T: PrimitiveDataType> DataType for Vector2<T> {
+impl DataType for Vec2 {
     fn internal_format() -> u32 {
-        T::internal_format_with_size(Self::size())
+        f32::internal_format_with_size(Self::size())
     }
 
     fn data_type() -> u32 {
-        T::data_type()
+        f32::data_type()
     }
 
     fn size() -> u32 {
@@ -364,7 +364,7 @@ impl<T: PrimitiveDataType> DataType for Vector2<T> {
 
     fn send_uniform(location: &UniformLocation, data: &[Self]) {
         let data = data.iter().flat_map(|v| [v.x, v.y]).collect::<Vec<_>>();
-        T::send_uniform_with_type(location, &data, UniformType::Vec2)
+        f32::send_uniform_with_type(location, &data, UniformType::Vec2)
     }
 }
 
@@ -387,12 +387,12 @@ impl<T: PrimitiveDataType> DataType for [T; 2] {
     }
 }
 
-impl<T: PrimitiveDataType> DataType for Vector3<T> {
+impl DataType for Vec3 {
     fn internal_format() -> u32 {
-        T::internal_format_with_size(Self::size())
+        f32::internal_format_with_size(Self::size())
     }
     fn data_type() -> u32 {
-        T::data_type()
+        f32::data_type()
     }
 
     fn size() -> u32 {
@@ -404,7 +404,7 @@ impl<T: PrimitiveDataType> DataType for Vector3<T> {
             .iter()
             .flat_map(|v| [v.x, v.y, v.z])
             .collect::<Vec<_>>();
-        T::send_uniform_with_type(location, &data, UniformType::Vec3)
+        f32::send_uniform_with_type(location, &data, UniformType::Vec3)
     }
 }
 
@@ -426,13 +426,13 @@ impl<T: PrimitiveDataType> DataType for [T; 3] {
     }
 }
 
-impl<T: PrimitiveDataType> DataType for Vector4<T> {
+impl DataType for Vec4 {
     fn internal_format() -> u32 {
-        T::internal_format_with_size(Self::size())
+        f32::internal_format_with_size(Self::size())
     }
 
     fn data_type() -> u32 {
-        T::data_type()
+        f32::data_type()
     }
 
     fn size() -> u32 {
@@ -444,7 +444,7 @@ impl<T: PrimitiveDataType> DataType for Vector4<T> {
             .iter()
             .flat_map(|v| [v.x, v.y, v.z, v.w])
             .collect::<Vec<_>>();
-        T::send_uniform_with_type(location, &data, UniformType::Vec4)
+        f32::send_uniform_with_type(location, &data, UniformType::Vec4)
     }
 }
 
@@ -467,13 +467,13 @@ impl<T: PrimitiveDataType> DataType for [T; 4] {
     }
 }
 
-impl<T: PrimitiveDataType> DataType for Quaternion<T> {
+impl DataType for Quat {
     fn internal_format() -> u32 {
-        T::internal_format_with_size(Self::size())
+        f32::internal_format_with_size(Self::size())
     }
 
     fn data_type() -> u32 {
-        T::data_type()
+        f32::data_type()
     }
 
     fn size() -> u32 {
@@ -483,9 +483,9 @@ impl<T: PrimitiveDataType> DataType for Quaternion<T> {
     fn send_uniform(location: &UniformLocation, data: &[Self]) {
         let data = data
             .iter()
-            .flat_map(|v| [v.v.x, v.v.y, v.v.z, v.s])
+            .flat_map(|v| [v.x, v.y, v.z, v.w])
             .collect::<Vec<_>>();
-        T::send_uniform_with_type(location, &data, UniformType::Vec4)
+        f32::send_uniform_with_type(location, &data, UniformType::Vec4)
     }
 }
 
@@ -518,13 +518,13 @@ impl DataType for Color {
     }
 }
 
-impl<T: PrimitiveDataType> DataType for Matrix2<T> {
+impl DataType for Mat2 {
     fn internal_format() -> u32 {
-        T::internal_format_with_size(Self::size())
+        f32::internal_format_with_size(Self::size())
     }
 
     fn data_type() -> u32 {
-        T::data_type()
+        f32::data_type()
     }
 
     fn size() -> u32 {
@@ -534,19 +534,19 @@ impl<T: PrimitiveDataType> DataType for Matrix2<T> {
     fn send_uniform(location: &UniformLocation, data: &[Self]) {
         let data = data
             .iter()
-            .flat_map(|v| [v.x.x, v.x.y, v.y.x, v.y.y])
+            .flat_map(|v| [v.x_axis.x, v.x_axis.y, v.y_axis.x, v.y_axis.y])
             .collect::<Vec<_>>();
-        T::send_uniform_with_type(location, &data, UniformType::Mat2)
+        f32::send_uniform_with_type(location, &data, UniformType::Mat2)
     }
 }
 
-impl<T: PrimitiveDataType> DataType for Matrix3<T> {
+impl DataType for Mat3 {
     fn internal_format() -> u32 {
-        T::internal_format_with_size(Self::size())
+        f32::internal_format_with_size(Self::size())
     }
 
     fn data_type() -> u32 {
-        T::data_type()
+        f32::data_type()
     }
 
     fn size() -> u32 {
@@ -558,21 +558,21 @@ impl<T: PrimitiveDataType> DataType for Matrix3<T> {
             .iter()
             .flat_map(|v| {
                 [
-                    v.x.x, v.x.y, v.x.z, v.y.x, v.y.y, v.y.z, v.z.x, v.z.y, v.z.z,
+                    v.x_axis.x, v.x_axis.y, v.x_axis.z, v.y_axis.x, v.y_axis.y, v.y_axis.z, v.z_axis.x, v.z_axis.y, v.z_axis.z,
                 ]
             })
             .collect::<Vec<_>>();
-        T::send_uniform_with_type(location, &data, UniformType::Mat3)
+        f32::send_uniform_with_type(location, &data, UniformType::Mat3)
     }
 }
 
-impl<T: PrimitiveDataType> DataType for Matrix4<T> {
+impl DataType for Mat4 {
     fn internal_format() -> u32 {
-        T::internal_format_with_size(Self::size())
+        f32::internal_format_with_size(Self::size())
     }
 
     fn data_type() -> u32 {
-        T::data_type()
+        f32::data_type()
     }
 
     fn size() -> u32 {
@@ -584,12 +584,12 @@ impl<T: PrimitiveDataType> DataType for Matrix4<T> {
             .iter()
             .flat_map(|v| {
                 [
-                    v.x.x, v.x.y, v.x.z, v.x.w, v.y.x, v.y.y, v.y.z, v.y.w, v.z.x, v.z.y, v.z.z,
-                    v.z.w, v.w.x, v.w.y, v.w.z, v.w.w,
+                    v.x_axis.x, v.x_axis.y, v.x_axis.z, v.x_axis.w, v.y_axis.x, v.y_axis.y, v.y_axis.z, v.y_axis.w, v.z_axis.x, v.z_axis.y, v.z_axis.z,
+                    v.z_axis.w, v.w_axis.x, v.w_axis.y, v.w_axis.z, v.w_axis.w,
                 ]
             })
             .collect::<Vec<_>>();
-        T::send_uniform_with_type(location, &data, UniformType::Mat4)
+        f32::send_uniform_with_type(location, &data, UniformType::Mat4)
     }
 }
 

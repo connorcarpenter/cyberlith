@@ -20,7 +20,7 @@ pub struct SpotLight {
     /// The direction the light shines.
     pub direction: Vec3,
     /// The cutoff angle for the light.
-    pub cutoff: Radians,
+    pub cutoff_radians: f32,
     /// The [Attenuation] of the light.
     pub attenuation: Attenuation,
 }
@@ -32,7 +32,7 @@ impl SpotLight {
         color: Color,
         position: &Vec3,
         direction: &Vec3,
-        cutoff: impl Into<Radians>,
+        cutoff_radians: f32,
         attenuation: Attenuation,
     ) -> SpotLight {
         SpotLight {
@@ -41,9 +41,9 @@ impl SpotLight {
             color,
             position: *position,
             direction: *direction,
-            cutoff: cutoff.into(),
+            cutoff_radians: cutoff_radians,
             attenuation,
-            shadow_matrix: Mat4::identity(),
+            shadow_matrix: Mat4::IDENTITY,
         }
     }
 
@@ -53,7 +53,7 @@ impl SpotLight {
     ///
     pub fn clear_shadow_map(&mut self) {
         self.shadow_texture = None;
-        self.shadow_matrix = Mat4::identity();
+        self.shadow_matrix = Mat4::IDENTITY;
     }
 
     ///
@@ -87,7 +87,7 @@ impl SpotLight {
             position,
             position + direction,
             up,
-            self.cutoff,
+            self.cutoff_radians,
             z_near.max(0.01),
             z_far,
         );
@@ -201,7 +201,7 @@ impl Light for SpotLight {
         );
         program.use_uniform(
             &format!("attenuation{}", i),
-            vec3(
+            Vec3::new(
                 self.attenuation.constant,
                 self.attenuation.linear,
                 self.attenuation.quadratic,
@@ -209,6 +209,6 @@ impl Light for SpotLight {
         );
         program.use_uniform(&format!("position{}", i), self.position);
         program.use_uniform(&format!("direction{}", i), self.direction.normalize());
-        program.use_uniform(&format!("cutoff{}", i), self.cutoff.0);
+        program.use_uniform(&format!("cutoff{}", i), self.cutoff_radians);
     }
 }

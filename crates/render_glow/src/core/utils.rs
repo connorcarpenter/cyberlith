@@ -1,4 +1,4 @@
-use math::vec3;
+use math::Vec3;
 
 use render_api::base::{CubeMapSide, Viewport};
 
@@ -79,9 +79,9 @@ pub fn apply_cube_effect(
 
 pub fn full_screen_buffer() -> VertexBuffer {
     VertexBuffer::new_with_data(&[
-        vec3(-3.0, -1.0, 0.0),
-        vec3(3.0, -1.0, 0.0),
-        vec3(0.0, 2.0, 0.0),
+        Vec3::new(-3.0, -1.0, 0.0),
+        Vec3::new(3.0, -1.0, 0.0),
+        Vec3::new(0.0, 2.0, 0.0),
     ])
 }
 
