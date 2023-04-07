@@ -72,6 +72,14 @@ fn sync_material_assets(
         let impl_data = PhysicalMaterial::new(api_data);
         asset_impls.insert(added_handle, Box::new(impl_data));
     }
+
+    // Handle Changed Materials
+    let changed_handles = api_assets.flush_changed();
+    for changed_handle in changed_handles {
+        let api_data = api_assets.get(&changed_handle).unwrap();
+        let impl_data = PhysicalMaterial::new(api_data);
+        asset_impls.insert(changed_handle, Box::new(impl_data));
+    }
 }
 
 fn sync_texture_2d_assets(

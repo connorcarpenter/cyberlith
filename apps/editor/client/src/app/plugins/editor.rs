@@ -114,7 +114,7 @@ fn setup(
                 5000.0,
             ),
             0,
-            ClearOperation::from_rgba(1.0, 1.0, 1.0, 0.0),
+            ClearOperation::from_rgba(0.0, 0.0, 0.0, 0.0),
             RenderTarget::Image(texture_handle),
         ))
         .insert(preview_pass_layer);
