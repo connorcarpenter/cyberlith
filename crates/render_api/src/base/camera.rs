@@ -1,3 +1,4 @@
+use bevy_log::info;
 use math::*;
 
 use super::*;
@@ -129,6 +130,10 @@ impl Camera {
         let mut camera = Camera::new(viewport);
         camera.set_view(position, target, up);
         camera.set_perspective_projection(fov_y_degrees, z_near, z_far);
+
+        info!("Camera View: {}", camera.view);
+        info!("Camera Projection: {}", camera.projection);
+
         camera
     }
 
@@ -149,9 +154,24 @@ impl Camera {
         self.z_far = z_far;
         let fov_y_radians = f32::to_radians(fov_y_degrees);
         self.projection_type = ProjectionType::Perspective { fov_y_radians };
-        self.projection = Mat4::perspective_rh(fov_y_radians, self.viewport.aspect(), self.z_near, self.z_far);
+        self.projection = Self::perspective_to_mat4(fov_y_radians, self.viewport.aspect(), self.z_near, self.z_far);
         self.update_screen2ray();
         self.update_frustrum();
+    }
+
+    fn perspective_to_mat4(fov_y_radians: f32, aspect: f32, z_near: f32, z_far: f32) -> Mat4 {
+
+        let a = f32::tan(fov_y_radians / 2.0).recip();
+        let b = a / aspect;
+        let c = (z_far + z_near) / (z_near - z_far);
+        let d = (2.0 * z_far * z_near) / (z_near - z_far);
+
+        Mat4::from_cols(
+            Vec4::new(b, 0.0, 0.0, 0.0),
+            Vec4::new(0.0, a, 0.0, 0.0),
+            Vec4::new(0.0, 0.0, c, -1.0),
+            Vec4::new(0.0, 0.0, d, 0.0),
+        )
     }
 
     ///

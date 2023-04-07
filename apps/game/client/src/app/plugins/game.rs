@@ -18,6 +18,7 @@ use render_api::{
 };
 
 use game_proto::protocol;
+use render_glow::window;
 
 use crate::app::network;
 
@@ -30,24 +31,24 @@ impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app
             // Add Naia Client Plugin
-            .add_plugin(NaiaClientPlugin::new(
-                NaiaClientConfig::default(),
-                protocol(),
-            ))
+            // .add_plugin(NaiaClientPlugin::new(
+            //     NaiaClientConfig::default(),
+            //     protocol(),
+            // ))
             // Startup Systems
-            .add_startup_system(network::init)
+            // .add_startup_system(network::init)
             .add_startup_system(setup)
             // Receive Client Events
-            .add_systems(
-                (
-                    network::connect_events,
-                    network::disconnect_events,
-                    network::reject_events,
-                    network::error_events,
-                )
-                    .chain()
-                    .in_set(ReceiveEvents),
-            )
+            // .add_systems(
+            //     (
+            //         network::connect_events,
+            //         network::disconnect_events,
+            //         network::reject_events,
+            //         network::error_events,
+            //     )
+            //         .chain()
+            //         .in_set(ReceiveEvents),
+            // )
             .add_system(step)
             .add_system(rotate);
     }
@@ -59,9 +60,6 @@ fn setup(
     mut meshes: ResMut<Assets<TriMesh>>,
     mut materials: ResMut<Assets<PbrMaterial>>,
 ) {
-    let width = window.resolution.physical_width();
-    let height = window.resolution.physical_height();
-
     // plane
     commands.spawn(RenderObjectBundle {
         mesh: meshes.add(shapes::Plane::from_size(50.0).into()),
@@ -71,7 +69,7 @@ fn setup(
     // cube
     commands
         .spawn(RenderObjectBundle {
-            mesh: meshes.add(TriMesh::from(shapes::Cube { size: 10.0 })),
+            mesh: meshes.add(TriMesh::from(shapes::Cube { size: 5.0 })),
             material: materials.add(Color::from_rgb_f32(0.8, 0.7, 0.6).into()),
             transform: Transform::from_xyz(0.0, 5.0, 0.0),
             ..Default::default()
@@ -91,13 +89,13 @@ fn setup(
     });
     // camera
     commands.spawn(CameraComponent::new(
-        Camera::new_orthographic(
-            Viewport::new_at_origin(width, height),
+        Camera::new_perspective(
+            window.viewport(),
             Vec3::new(50.0, 50.0, 50.0),
             Vec3::new(0.0, 0.0, 0.0),
             Vec3::new(0.0, 1.0, 0.0),
-            50.0,
-            0.0,
+            45.0,
+            0.1,
             1000.0,
         ),
         // render before the "main pass" camera
@@ -129,8 +127,8 @@ fn step(mut cube_q: Query<&mut Transform, With<CubeMarker>>, mut rotation: Local
 fn rotate(
     mut query: Query<&mut Transform, With<CubeMarker>>,
 ) {
-    for mut transform in &mut query {
-        transform.rotate_x(0.015);
-        //transform.rotate_z(0.013);
-    }
+    // for mut transform in &mut query {
+    //     transform.rotate_x(0.015);
+    //     //transform.rotate_z(0.013);
+    // }
 }
