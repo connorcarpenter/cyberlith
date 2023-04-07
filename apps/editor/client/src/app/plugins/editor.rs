@@ -231,7 +231,7 @@ fn rotator_system(
     mut query: Query<&mut Transform, Or<(With<PreviewPassCube>, With<MainPassCube>)>>,
 ) {
     for mut transform in &mut query {
-        transform.rotate_x(0.0015);
-        transform.rotate_z(0.0013);
+        transform.rotate_x(0.015);
+        transform.rotate_z(0.013);
     }
 }

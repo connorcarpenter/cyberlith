@@ -1,9 +1,9 @@
 use bevy_ecs::{
     entity::Entity,
-    system::{NonSendMut, Query, Res},
+    system::{NonSendMut, Query, Res, ResMut},
 };
 
-use render_api::{base::{PbrMaterial, TriMesh}, AmbientLight, CameraComponent, Handle, PointLight, RenderLayer, RenderLayers, Transform, RenderTarget};
+use render_api::{base::{PbrMaterial, TriMesh, Texture2D}, AmbientLight, CameraComponent, Handle, PointLight, RenderLayer, RenderLayers, Transform, RenderTarget as CameraRenderTarget};
 
 use crate::{
     asset_impls::AssetImpls,
@@ -11,6 +11,7 @@ use crate::{
         AmbientLightImpl, BaseMesh, DirectionalLightImpl, Light, Material, RenderObject, RenderPass,
     },
     window::FrameInput,
+    core::{Texture2DImpl, RenderTarget, DepthTexture2D},
 };
 
 struct CameraWork<'a> {
@@ -24,6 +25,8 @@ pub fn draw(
     // Resources
     meshes: Res<AssetImpls<TriMesh, BaseMesh>>,
     materials: Res<AssetImpls<PbrMaterial, Box<dyn Material>>>,
+    mut textures: ResMut<AssetImpls<Texture2D, Texture2DImpl>>,
+    mut depth_textures: ResMut<AssetImpls<Texture2D, DepthTexture2D>>,
     // Cameras
     cameras_q: Query<(Entity, &CameraComponent, Option<&RenderLayer>)>,
     // Objects
@@ -143,19 +146,28 @@ pub fn draw(
             break;
         };
 
-        if let RenderTarget::Screen = camera_component.target {
+        let render_target = {
+            match &camera_component.target {
+                CameraRenderTarget::Screen => {
+                    frame_input.screen()
+                }
+                CameraRenderTarget::Image(texture_handle) => {
+                    // Render to Image
+                    let mut texture = textures.get_mut(texture_handle).unwrap();
+                    let mut depth_texture = depth_textures.get_mut(texture_handle).unwrap();
+                    RenderTarget::new(
+                        texture.as_color_target(None),
+                        depth_texture.as_depth_target(),
+                    )
+                }
+            }
+        };
 
-            let render_target = frame_input.screen();
+        // Clear the color and depth of the screen render target using the camera's clear color
+        render_target.clear((&camera_component.clear_operation).into());
 
-            // Clear the color and depth of the screen render target using the camera's clear color
-            render_target.clear((&camera_component.clear_operation).into());
-
-            let render_pass = RenderPass::new(&camera_component.camera, &objects, &lights);
-            render_target.render(render_pass);
-        } else {
-            // implement later
-            continue;
-        }
+        let render_pass = RenderPass::new(&camera_component.camera, &objects, &lights);
+        render_target.render(render_pass);
     }
 }
 

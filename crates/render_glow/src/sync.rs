@@ -14,7 +14,7 @@ use render_api::{
 
 use crate::{
     asset_impls::AssetImpls,
-    core::Texture2DImpl,
+    core::{Texture2DImpl, DepthTexture2D},
     renderer::{AmbientLightImpl, BaseMesh, DirectionalLightImpl, Material, PhysicalMaterial},
 };
 
@@ -27,6 +27,7 @@ impl Plugin for SyncPlugin {
             .insert_resource(AssetImpls::<ApiMesh, BaseMesh>::default())
             .insert_resource(AssetImpls::<ApiMaterial, Box<dyn Material>>::default())
             .insert_resource(AssetImpls::<ApiTexture, Texture2DImpl>::default())
+            .insert_resource(AssetImpls::<ApiTexture, DepthTexture2D>::default())
             .insert_resource(AmbientLight::none())
             .insert_resource(AmbientLightImpl::default())
             // Systems
@@ -76,6 +77,7 @@ fn sync_material_assets(
 fn sync_texture_2d_assets(
     mut api_assets: ResMut<Assets<ApiTexture>>,
     mut asset_impls: ResMut<AssetImpls<ApiTexture, Texture2DImpl>>,
+    mut depth_impls: ResMut<AssetImpls<ApiTexture, DepthTexture2D>>,
 ) {
     if !api_assets.is_changed() {
         return;
@@ -87,6 +89,9 @@ fn sync_texture_2d_assets(
         let api_data = api_assets.get(&added_handle).unwrap();
         let impl_data = Texture2DImpl::from(api_data);
         asset_impls.insert(added_handle, impl_data);
+
+        let depth_impl_data = DepthTexture2D::new::<f32>(api_data.width(), api_data.height(), api_data.wrap_s(), api_data.wrap_t());
+        depth_impls.insert(added_handle, depth_impl_data);
     }
 }
 
