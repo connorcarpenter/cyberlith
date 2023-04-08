@@ -69,32 +69,33 @@ fn setup(
     // cube
     commands
         .spawn(RenderObjectBundle {
-            mesh: meshes.add(TriMesh::from(shapes::Cube { size: 5.0 })),
+            mesh: meshes.add(TriMesh::from(shapes::Cube { size: 10.0 })),
             material: materials.add(Color::from_rgb_f32(0.8, 0.7, 0.6).into()),
-            transform: Transform::from_xyz(0.0, 5.0, 0.0),
+            transform: Transform::from_xyz(0.0, 10.0, 0.0),
             ..Default::default()
         })
         .insert(CubeMarker);
     // light
-    commands.insert_resource(AmbientLight::new(0.3, Color::RED));
-    commands.spawn(PointLight {
-        position: Vec3::new(40.0, 80.0, 40.0),
-        intensity: 1.0,
-        ..Default::default()
-    });
+    commands.insert_resource(AmbientLight::new(0.1, Color::WHITE));
+    // commands.spawn(PointLight {
+    //     position: Vec3::new(40.0, 80.0, 40.0),
+    //     intensity: 0.3,
+    //     color: Color::RED,
+    //     ..Default::default()
+    // });
     commands.spawn(DirectionalLight {
         direction: Vec3::new(0.0, -1.0, -2.0),
         intensity: 1.0,
-        color: Color::BLUE,
+        color: Color::WHITE,
     });
     // camera
     commands.spawn(CameraComponent::new(
-        Camera::new_orthographic(
+        Camera::new_perspective(
             window.viewport(),
             Vec3::new(50.0, 50.0, 50.0),
             Vec3::new(0.0, 0.0, 0.0),
             Vec3::new(0.0, 1.0, 0.0),
-            50.0,
+            45.0,
             0.1,
             1000.0,
         ),
@@ -129,6 +130,7 @@ fn rotate(
 ) {
     for mut transform in &mut query {
         transform.rotate_x(0.015);
-        //transform.rotate_z(0.013);
+        transform.rotate_z(0.013);
+        transform.rotate_y(0.011);
     }
 }
