@@ -1,9 +1,10 @@
 mod build;
 mod components;
-mod plugins;
+mod plugin;
 mod resources;
 mod systems;
+pub mod ui;
 
 pub use build::build;
-pub use plugins::*;
+pub use plugin::EditorPlugin;
 pub use systems::*;
