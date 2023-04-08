@@ -1,6 +1,9 @@
-use render_egui::egui;
 
-use crate::app::ui::tab_bar;
+mod tab_bar;
+
+use tab_bar::tab_bar;
+
+use render_egui::egui;
 
 pub fn center_panel(
     context: &egui::Context,
