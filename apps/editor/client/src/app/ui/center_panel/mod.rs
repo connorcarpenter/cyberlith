@@ -15,18 +15,24 @@ pub fn center_panel(
     egui::CentralPanel::default()
         .frame(Frame::none().inner_margin(0.0))
         .show(context, |ui| {
-            tab_bar(ui, world);
-            let state = world.get_resource::<UiState>().unwrap();
-            match state.workspace_type {
-                WorkspaceType::None => {
-                    // nothing
-                }
-                WorkspaceType::SkeletonBuilder => {
-                    skeleton_builder(ui, world);
-                }
-                WorkspaceType::TextEditor => {
-                    text_editor(ui);
-                }
-            }
+            egui::TopBottomPanel::top("tab_bar").show_inside(ui, |ui| {
+                tab_bar(ui, world);
+            });
+            egui::CentralPanel::default() // workspace area
+                .frame(Frame::central_panel(ui.style()).inner_margin(0.0))
+                .show_inside(ui, |ui| {
+                    let state = world.get_resource::<UiState>().unwrap();
+                    match state.workspace_type {
+                        WorkspaceType::None => {
+                            ui.label("-");
+                        }
+                        WorkspaceType::SkeletonBuilder => {
+                            skeleton_builder(ui, world);
+                        }
+                        WorkspaceType::TextEditor => {
+                            text_editor(ui);
+                        }
+                    }
+                });
         });
 }

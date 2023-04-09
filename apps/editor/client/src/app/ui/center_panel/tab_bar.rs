@@ -9,17 +9,15 @@ pub fn tab_bar(
     world: &mut World,
 ) {
     let mut state = world.get_resource_mut::<UiState>().unwrap();
-    egui::TopBottomPanel::top("tab_bar").show_inside(ui, |ui| {
-        egui::menu::bar(ui, |ui| {
-            if ui.add(egui::Button::new("Tab 1")).clicked() {
-                state.workspace_type = WorkspaceType::SkeletonBuilder;
-            }
-            if ui.add(egui::Button::new("Tab 2")).clicked() {
-                state.workspace_type = WorkspaceType::TextEditor;
-            }
-            if ui.add(egui::Button::new("Tab 3")).clicked() {
-                state.workspace_type = WorkspaceType::None;
-            }
-        });
+    egui::menu::bar(ui, |ui| {
+        if ui.add(egui::Button::new("Tab 1")).clicked() {
+            state.workspace_type = WorkspaceType::SkeletonBuilder;
+        }
+        if ui.add(egui::Button::new("Tab 2")).clicked() {
+            state.workspace_type = WorkspaceType::TextEditor;
+        }
+        if ui.add(egui::Button::new("Tab 3")).clicked() {
+            state.workspace_type = WorkspaceType::None;
+        }
     });
 }

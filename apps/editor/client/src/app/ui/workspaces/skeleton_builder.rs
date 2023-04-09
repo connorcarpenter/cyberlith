@@ -8,45 +8,41 @@ pub fn skeleton_builder(
     ui: &mut Ui,
     world: &mut World,
 ) {
-    egui::CentralPanel::default()
-        .frame(Frame::central_panel(ui.style()).inner_margin(0.0))
+    egui::SidePanel::left("left_work")
+        .frame(Frame::side_top_panel(ui.style()).inner_margin(0.0))
+        .resizable(true)
+        .default_width(ui.available_width() * 0.5)
         .show_inside(ui, |ui| {
-            egui::SidePanel::left("left_work")
+            egui::TopBottomPanel::top("left_top_work")
                 .frame(Frame::side_top_panel(ui.style()).inner_margin(0.0))
                 .resizable(true)
-                .default_width(ui.available_width() * 0.5)
+                .default_height(ui.available_height() * 0.5)
                 .show_inside(ui, |ui| {
-                    egui::TopBottomPanel::top("left_top_work")
-                        .frame(Frame::side_top_panel(ui.style()).inner_margin(0.0))
-                        .resizable(true)
-                        .default_height(ui.available_height() * 0.5)
-                        .show_inside(ui, |ui| {
-                            left_top_work(ui, world);
-                        });
-                    egui::CentralPanel::default() // left_bottom_work
-                        .frame(Frame::central_panel(ui.style()).inner_margin(0.0))
-                        .show_inside(ui, |ui| {
-                            left_bottom_work(ui, world);
-                        });
+                    left_top_work(ui, world);
                 });
+            egui::CentralPanel::default() // left_bottom_work
+                .frame(Frame::central_panel(ui.style()).inner_margin(0.0))
+                .show_inside(ui, |ui| {
+                    left_bottom_work(ui, world);
+                });
+        });
 
-            egui::CentralPanel::default() // right work
+    egui::CentralPanel::default() // right work
+        .frame(Frame::side_top_panel(ui.style()).inner_margin(0.0))
+        .show_inside(ui, |ui| {
+            egui::TopBottomPanel::top("right_top_work")
                 .frame(Frame::side_top_panel(ui.style()).inner_margin(0.0))
+                .resizable(true)
+                .default_height(ui.available_height() * 0.5)
                 .show_inside(ui, |ui| {
-                    egui::TopBottomPanel::top("right_top_work")
-                        .frame(Frame::side_top_panel(ui.style()).inner_margin(0.0))
-                        .resizable(true)
-                        .default_height(ui.available_height() * 0.5)
-                        .show_inside(ui, |ui| {
-                            right_top_work(ui, world);
-                        });
-                    egui::CentralPanel::default() // right_bottom_work
-                        .frame(Frame::central_panel(ui.style()).inner_margin(0.0))
-                        .show_inside(ui, |ui| {
-                            right_bottom_work(ui, world);
-                        });
+                    right_top_work(ui, world);
                 });
-    });
+            egui::CentralPanel::default() // right_bottom_work
+                .frame(Frame::central_panel(ui.style()).inner_margin(0.0))
+                .show_inside(ui, |ui| {
+                    right_bottom_work(ui, world);
+                });
+        });
 }
 
 fn left_top_work(
