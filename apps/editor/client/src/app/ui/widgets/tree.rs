@@ -32,13 +32,6 @@ impl Tree {
     }
 
     fn children_ui(&mut self, ui: &mut Ui, depth: usize) -> Action {
-        if depth > 0
-            && ui
-            .button(RichText::new("delete").color(ui.visuals().warn_fg_color))
-            .clicked()
-        {
-            return Action::Delete;
-        }
 
         self.0 = std::mem::take(self)
             .0
@@ -52,10 +45,6 @@ impl Tree {
                 }
             })
             .collect();
-
-        if ui.button("+").clicked() {
-            self.0.push(Tree::default());
-        }
 
         Action::Keep
     }
