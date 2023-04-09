@@ -1,7 +1,10 @@
 use render_egui::{egui, egui::{Ui, Modifiers}};
 
+use crate::app::ui::UiState;
+
 pub fn top_bar(
     context: &egui::Context,
+    state: &mut UiState,
 ) {
     egui::TopBottomPanel::top("top_bar").show(context, |ui| {
         egui::menu::bar(ui, |ui| {

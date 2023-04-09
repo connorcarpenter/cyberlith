@@ -1,7 +1,10 @@
 use render_egui::egui;
 
+use crate::app::ui::UiState;
+
 pub fn left_panel(
     context: &egui::Context,
+    state: &mut UiState,
 ) {
     egui::SidePanel::left("left_panel")
         .resizable(true)

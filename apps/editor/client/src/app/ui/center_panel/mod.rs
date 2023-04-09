@@ -2,17 +2,29 @@
 mod tab_bar;
 use tab_bar::tab_bar;
 
-mod workspace;
-use workspace::workspace;
+use bevy_ecs::change_detection::ResMut;
 
 use render_egui::egui;
 
+use crate::app::ui::{UiState, WorkspaceType, workspaces::{skeleton_builder, text_editor}};
+
 pub fn center_panel(
     context: &egui::Context,
+    state: &mut UiState,
 ) {
     egui::CentralPanel::default()
         .show(context, |ui| {
-            tab_bar(ui);
-            workspace(ui);
+            tab_bar(ui, state);
+            match state.workspace_type {
+                WorkspaceType::None => {
+                    // nothing
+                }
+                WorkspaceType::SkeletonBuilder => {
+                    skeleton_builder(ui);
+                }
+                WorkspaceType::TextEditor => {
+                    text_editor(ui);
+                }
+            }
         });
 }

@@ -21,6 +21,7 @@ use render_egui::{egui, EguiContext, EguiUserTextures, GUI, egui::{Modifiers, Ui
 use editor_proto::protocol;
 
 use crate::app::{network, ui};
+use crate::app::ui::UiState;
 
 pub struct EditorPlugin;
 
@@ -34,6 +35,7 @@ impl Plugin for EditorPlugin {
             // ))
             // Startup Systems
             // .add_startup_system(network::init)
+            .insert_resource(UiState::default())
             .add_startup_system(setup)
             .add_system(ui::main)
         // Receive Client Events

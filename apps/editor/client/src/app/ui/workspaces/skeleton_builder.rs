@@ -1,7 +1,7 @@
 
 use render_egui::{egui, egui::{Ui, Modifiers, Resize}};
 
-pub fn workspace(
+pub fn skeleton_builder(
     ui: &mut Ui,
 ) {
     egui::CentralPanel::default().show_inside(ui, |ui| {
