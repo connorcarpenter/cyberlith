@@ -5,6 +5,7 @@ mod right_panel;
 mod center_panel;
 mod state;
 pub mod workspaces;
+pub mod widgets;
 
 pub use state::*;
 pub use main::*;

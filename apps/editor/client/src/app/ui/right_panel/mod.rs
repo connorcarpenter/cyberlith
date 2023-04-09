@@ -12,14 +12,14 @@ pub fn right_panel(
         .resizable(false)
         .default_width(60.0)
         .show(context, |ui| {
-            ui.vertical_centered(|ui| {
-                ui.heading("Tools");
-            });
+            egui::TopBottomPanel::top("right_panel_header")
+                .show_inside(ui, |ui| {
+                    ui.heading("Tools");
+                });
 
-            ui.separator();
-
-            ui.vertical_centered(|ui| {
-                ui.label("T1");
-            });
+            egui::CentralPanel::default()
+                .show_inside(ui, |ui| {
+                    ui.add(egui::Button::new("tool 1"));
+                });
         });
 }
