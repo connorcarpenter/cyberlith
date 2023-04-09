@@ -17,6 +17,7 @@ pub fn left_panel(
             // Left Top Panel
             egui::TopBottomPanel::top("left_top_panel")
                 .resizable(true)
+                .default_height(ui.available_height() * 0.5)
                 .show_inside(ui, |ui| {
                     ui.heading("Project");
                     ui.separator();
