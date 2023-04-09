@@ -21,7 +21,7 @@ pub fn center_panel(
                     // nothing
                 }
                 WorkspaceType::SkeletonBuilder => {
-                    skeleton_builder(ui);
+                    skeleton_builder(ui, world);
                 }
                 WorkspaceType::TextEditor => {
                     text_editor(ui);
