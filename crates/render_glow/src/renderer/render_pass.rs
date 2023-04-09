@@ -1,106 +1,37 @@
-use render_api::{
-    base::{AxisAlignedBoundingBox, Camera},
-    Transform,
-};
+use render_api::{base::{AxisAlignedBoundingBox, Camera}, CameraComponent, Transform};
 
 use crate::{
     core::{ColorTexture, DepthTexture},
-    renderer::{BaseMesh, Geometry, Light, Material, MaterialType, Mesh, Object, PostMaterial},
+    renderer::{RenderLight, RenderCamera, RenderObject, BaseMesh, Geometry, Light, Material, MaterialType, Mesh, Object, PostMaterial},
 };
 
 // Render Pass
 pub struct RenderPass<'a> {
-    pub camera: &'a Camera,
-    pub objects: &'a [RenderObject<'a>],
-    pub lights: &'a [&'a dyn Light],
+    pub camera: RenderCamera<'a>,
+    pub lights: Vec<RenderLight<'a>>,
+    pub objects: Vec<RenderObject<'a>>,
 }
 
 impl<'a> RenderPass<'a> {
-    pub fn new(
-        camera: &'a Camera,
-        objects: &'a [RenderObject],
-        lights: &'a [&'a dyn Light],
+    pub fn from_camera(
+        camera: &'a CameraComponent,
     ) -> Self {
         Self {
-            camera,
-            objects,
-            lights,
+            camera: RenderCamera::new(camera),
+            lights: Vec::new(),
+            objects: Vec::new(),
         }
     }
-}
 
-// // Render Light
-// pub struct RenderLight {
-//     inner: Box<dyn Light>,
-// }
-//
-// impl RenderLight {
-//     pub fn new<T: Light + 'static>(light: T) -> Self {
-//         Self { inner: Box::new(light) }
-//     }
-// }
-//
-// pub trait AsLights {
-//     fn as_lights(&self) -> &[&dyn Light];
-// }
-//
-// impl AsLights for [RenderLight] {
-//     fn as_lights(&self) -> &[&dyn Light] {
-//         self.iter().map(|light| light.inner.as_ref()).collect::<Vec<_>>().as_slice()
-//     }
-// }
-
-// Render Object
-#[derive(Clone, Copy)]
-pub struct RenderObject<'a> {
-    pub mesh: &'a BaseMesh,
-    pub material: &'a dyn Material,
-    pub transform: &'a Transform,
-}
-
-impl<'a> RenderObject<'a> {
-    pub fn new(mesh: &'a BaseMesh, material: &'a dyn Material, transform: &'a Transform) -> Self {
-        Self {
-            mesh,
-            material,
-            transform,
-        }
-    }
-}
-
-impl<'a> Geometry for RenderObject<'a> {
-    fn render_with_material(
-        &self,
-        material: &dyn Material,
-        camera: &Camera,
-        lights: &[&dyn Light],
-    ) {
-        let mesh = Mesh::compose(self.mesh, self.transform);
-        mesh.render_with_material(material, camera, lights);
+    pub fn take(mut self) -> (RenderCamera<'a>, Vec<RenderLight<'a>>, Vec<RenderObject<'a>>) {
+        (self.camera, self.lights, self.objects)
     }
 
-    fn render_with_post_material(
-        &self,
-        _material: &dyn PostMaterial,
-        _camera: &Camera,
-        _lights: &[&dyn Light],
-        _color_texture: Option<ColorTexture>,
-        _depth_texture: Option<DepthTexture>,
-    ) {
-        todo!()
+    pub fn process_camera(render: &RenderCamera<'a>) -> &'a Camera {
+        &render.camera.camera
     }
 
-    fn aabb(&self) -> AxisAlignedBoundingBox {
-        self.mesh.aabb
-    }
-}
-
-impl<'a> Object for RenderObject<'a> {
-    fn render(&self, camera: &Camera, lights: &[&dyn Light]) {
-        self.render_with_material(self.material, camera, lights);
-    }
-
-    fn material_type(&self) -> MaterialType {
-        self.material.material_type()
+    pub fn process_lights(render: &'a Vec<RenderLight<'a>>) -> Vec<&dyn Light> {
+        render.iter().map(|light| light as &dyn Light).collect()
     }
 }

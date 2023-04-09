@@ -1,4 +1,4 @@
-use bevy_ecs::system::Resource;
+use bevy_ecs::component::Component;
 
 use crate::base::{Color, TextureCubeMap};
 
@@ -6,7 +6,7 @@ use crate::base::{Color, TextureCubeMap};
 /// A light which shines on all surfaces.
 /// Can be uniform (a light that shines equally on any surface) or calculated from an environment map using the [TextureCubeMap] struct.
 ///
-#[derive(Resource)]
+#[derive(Component)]
 pub struct AmbientLight {
     /// The intensity of the light. This allows for higher intensity than 1 which can be used to simulate high intensity light sources like the sun.
     pub intensity: f32,

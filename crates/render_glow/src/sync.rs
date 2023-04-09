@@ -28,13 +28,11 @@ impl Plugin for SyncPlugin {
             .insert_resource(AssetImpls::<ApiMaterial, Box<dyn Material>>::default())
             .insert_resource(AssetImpls::<ApiTexture, Texture2DImpl>::default())
             .insert_resource(AssetImpls::<ApiTexture, DepthTexture2D>::default())
-            .insert_resource(AmbientLight::none())
-            .insert_resource(AmbientLightImpl::default())
             // Systems
             .add_system(sync_mesh_assets.in_base_set(RenderSet::Sync))
             .add_system(sync_material_assets.in_base_set(RenderSet::Sync))
             .add_system(sync_texture_2d_assets.in_base_set(RenderSet::Sync))
-            .add_system(sync_ambient_light.in_base_set(RenderSet::Sync))
+            .add_system(sync_ambient_light_added.in_base_set(RenderSet::Sync))
             .add_system(sync_directional_light_added.in_base_set(RenderSet::Sync))
             .add_system(sync_directional_light_changed.in_base_set(RenderSet::Sync));
     }
@@ -103,12 +101,23 @@ fn sync_texture_2d_assets(
     }
 }
 
-fn sync_ambient_light(api: Res<AmbientLight>, mut i12n: ResMut<AmbientLightImpl>) {
-    if !api.is_changed() {
-        return;
+fn sync_ambient_light_added(
+    mut commands: Commands,
+    mut light_q: Query<(Entity, &AmbientLight), Added<AmbientLight>>,
+) {
+    for (entity, light) in light_q.iter_mut() {
+        commands
+            .entity(entity)
+            .insert(AmbientLightImpl::from(light));
     }
+}
 
-    *i12n = AmbientLightImpl::from(&*api);
+fn sync_ambient_light_changed(
+    mut light_q: Query<(&AmbientLight, &mut AmbientLightImpl), Changed<AmbientLight>>,
+) {
+    for (light, mut light_impl) in light_q.iter_mut() {
+        light_impl.use_light(light);
+    }
 }
 
 fn sync_directional_light_added(

@@ -1,4 +1,4 @@
-use bevy_ecs::system::Resource;
+use bevy_ecs::component::Component;
 
 use render_api::AmbientLight;
 
@@ -8,10 +8,19 @@ use crate::{core::*, renderer::*};
 /// A light which shines on all surfaces.
 /// Can be uniform (a light that shines equally on any surface) or calculated from an environment map using the [Environment] struct.
 ///
-#[derive(Resource)]
+#[derive(Component)]
 pub struct AmbientLightImpl {
     /// The light shining from the environment. This is calculated based on an environment map.
     pub environment: Option<Environment>,
+}
+
+impl AmbientLightImpl {
+    pub fn use_light(&mut self, light: &AmbientLight) {
+        self.environment = light
+            .environment
+            .as_ref()
+            .map(|environment_map| Environment::new(&environment_map.into()));
+    }
 }
 
 impl From<&AmbientLight> for AmbientLightImpl {
@@ -25,9 +34,23 @@ impl From<&AmbientLight> for AmbientLightImpl {
     }
 }
 
-impl Light for (&AmbientLight, &AmbientLightImpl) {
+pub struct RenderAmbientLight<'a> {
+    pub ambient_light: &'a AmbientLight,
+    pub ambient_light_impl: &'a AmbientLightImpl,
+}
+
+impl<'a> RenderAmbientLight<'a> {
+    pub fn new(ambient_light: &'a AmbientLight, ambient_light_impl: &'a AmbientLightImpl) -> Self {
+        Self {
+            ambient_light,
+            ambient_light_impl,
+        }
+    }
+}
+
+impl<'a> Light for RenderAmbientLight<'a> {
     fn shader_source(&self, i: u32) -> String {
-        if self.1.environment.is_some() {
+        if self.ambient_light_impl.environment.is_some() {
             format!(
             "
                 uniform samplerCube irradianceMap;
@@ -75,12 +98,12 @@ impl Light for (&AmbientLight, &AmbientLightImpl) {
         }
     }
     fn use_uniforms(&self, program: &Program, _i: u32) {
-        if let Some(ref environment) = self.1.environment {
+        if let Some(ref environment) = self.ambient_light_impl.environment {
             program.use_texture_cube("irradianceMap", &environment.irradiance_map);
             program.use_texture_cube("prefilterMap", &environment.prefilter_map);
             program.use_texture("brdfLUT", &environment.brdf_map);
         }
-        program.use_uniform("ambientColor", self.0.color.to_vec3() * self.0.intensity);
+        program.use_uniform("ambientColor", self.ambient_light.color.to_vec3() * self.ambient_light.intensity);
     }
 }
 

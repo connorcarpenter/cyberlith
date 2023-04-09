@@ -10,7 +10,7 @@ pub use assets::{Assets, Handle};
 pub use base_set::RenderSet;
 pub use components::{
     CameraComponent, ClearOperation, DirectionalLight, PointLight, RenderLayer, RenderLayers,
-    RenderObjectBundle, RenderTarget, Transform,
+    RenderObjectBundle, RenderTarget, Transform, AmbientLight
 };
 pub use plugin::RenderApiPlugin;
-pub use resources::{AmbientLight, Window};
+pub use resources::Window;

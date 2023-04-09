@@ -28,12 +28,10 @@ macro_rules! impl_render_target_extensions_body {
         /// Use an empty array for the `lights` argument, if the objects does not require lights to be rendered.
         /// Also, objects outside the camera frustum are not rendered and the objects are rendered in the order given by [cmp_render_order].
         ///
-        pub fn render_partially(&self, scissor_box: ScissorBox, render_pass: RenderPass) -> &Self {
-            let RenderPass {
-                camera,
-                objects,
-                lights,
-            } = render_pass;
+        pub fn render_partially(&self, scissor_box: ScissorBox, mut render_pass: RenderPass) -> &Self {
+            let (camera_holder, lights_holder, objects) = render_pass.take();
+            let camera = RenderPass::process_camera(&camera_holder);
+            let lights = &RenderPass::process_lights(&lights_holder);
 
             let (mut deferred_objects, mut forward_objects): (
                 Vec<RenderObject>,

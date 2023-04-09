@@ -76,7 +76,11 @@ fn setup(
         })
         .insert(CubeMarker);
     // light
-    commands.insert_resource(AmbientLight::new(0.1, Color::WHITE));
+    commands.spawn(AmbientLight {
+        intensity: 0.1,
+        color: Color::WHITE,
+        ..Default::default()
+    });
     // commands.spawn(PointLight {
     //     position: Vec3::new(40.0, 80.0, 40.0),
     //     intensity: 0.3,

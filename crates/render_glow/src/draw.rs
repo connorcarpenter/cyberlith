@@ -8,17 +8,12 @@ use render_api::{base::{PbrMaterial, TriMesh, Texture2D}, AmbientLight, CameraCo
 use crate::{
     asset_impls::AssetImpls,
     renderer::{
-        AmbientLightImpl, BaseMesh, DirectionalLightImpl, Light, Material, RenderObject, RenderPass,
+        RenderLight, AmbientLightImpl, BaseMesh, DirectionalLightImpl, Light, Material, RenderObject, RenderPass, RenderCamera
     },
     window::FrameInput,
     core::{Texture2DImpl, RenderTarget, DepthTexture2D},
 };
-
-struct CameraWork<'a> {
-    pub camera: Entity,
-    pub objects: Vec<RenderObject<'a>>,
-    pub lights: Vec<&'a dyn Light>,
-}
+use crate::renderer::RenderAmbientLight;
 
 pub fn draw(
     frame_input: NonSendMut<FrameInput<()>>,
@@ -37,14 +32,13 @@ pub fn draw(
         Option<&RenderLayer>,
     )>,
     // Lights
-    ambient_light: Res<AmbientLight>,
-    ambient_light_impl: Res<AmbientLightImpl>,
+    ambient_lights_q: Query<(&AmbientLight, &AmbientLightImpl, Option<&RenderLayer>)>,
     point_lights_q: Query<(&PointLight, Option<&RenderLayer>)>,
     directional_lights_q: Query<(&DirectionalLightImpl, Option<&RenderLayer>)>,
 ) {
     let mut layer_to_order: Vec<Option<usize>> = Vec::with_capacity(RenderLayers::TOTAL_LAYERS);
     layer_to_order.resize(RenderLayers::TOTAL_LAYERS, None);
-    let mut camera_work: Vec<Option<CameraWork>> = Vec::with_capacity(CameraComponent::MAX_CAMERAS);
+    let mut camera_work: Vec<Option<RenderPass>> = Vec::with_capacity(CameraComponent::MAX_CAMERAS);
     for _ in 0..CameraComponent::MAX_CAMERAS {
         camera_work.push(None);
     }
@@ -61,13 +55,63 @@ pub fn draw(
             panic!("Each Camera must have a unique RenderLayer component!");
         }
 
-        camera_work[camera_order] = Some(CameraWork {
-            camera: entity,
-            objects: Vec::new(),
-            lights: Vec::new(),
-        });
+        camera_work[camera_order] = Some(RenderPass::from_camera(camera));
 
         layer_to_order[render_layer] = Some(camera_order);
+    }
+
+    // Aggregate Point Lights
+    for (point_light, render_layer_wrapper) in point_lights_q.iter() {
+        let render_layer = convert_wrapper(render_layer_wrapper);
+        if layer_to_order.get(render_layer).is_none() {
+            panic!("Found PointLight with RenderLayer not associated with any Camera!");
+        }
+        let camera_index = layer_to_order[render_layer].unwrap();
+        if camera_work.get(camera_index).is_none() {
+            panic!("Found PointLight with RenderLayer not associated with any Camera!");
+        }
+
+        camera_work[camera_index]
+            .as_mut()
+            .unwrap()
+            .lights
+            .push(RenderLight::wrapped(point_light));
+    }
+
+    // Aggregate Directional Lights
+    for (directional_light_impl, render_layer_wrapper) in directional_lights_q.iter() {
+        let render_layer = convert_wrapper(render_layer_wrapper);
+        if layer_to_order.get(render_layer).is_none() {
+            panic!("Found DirectionalLight with RenderLayer not associated with any Camera!");
+        }
+        let camera_index = layer_to_order[render_layer].unwrap();
+        if camera_work.get(camera_index).is_none() {
+            panic!("Found DirectionalLight with RenderLayer not associated with any Camera!");
+        }
+
+        camera_work[camera_index]
+            .as_mut()
+            .unwrap()
+            .lights
+            .push(RenderLight::wrapped(directional_light_impl));
+    }
+
+    // Aggregate Ambient Lights
+    for (ambient_light, ambient_light_impl, render_layer_wrapper) in ambient_lights_q.iter() {
+        let render_layer = convert_wrapper(render_layer_wrapper);
+        if layer_to_order.get(render_layer).is_none() {
+            panic!("Found DirectionalLight with RenderLayer not associated with any Camera!");
+        }
+        let camera_index = layer_to_order[render_layer].unwrap();
+        if camera_work.get(camera_index).is_none() {
+            panic!("Found DirectionalLight with RenderLayer not associated with any Camera!");
+        }
+
+        camera_work[camera_index]
+            .as_mut()
+            .unwrap()
+            .lights
+            .push(RenderLight::ambient(ambient_light, ambient_light_impl));
     }
 
     // Aggregate RenderObjects
@@ -91,63 +135,15 @@ pub fn draw(
             .push(RenderObject::new(mesh, mat.as_ref(), transform))
     }
 
-    // Aggregate Point Lights
-    for (point_light, render_layer_wrapper) in point_lights_q.iter() {
-        let render_layer = convert_wrapper(render_layer_wrapper);
-        if layer_to_order.get(render_layer).is_none() {
-            panic!("Found PointLight with RenderLayer not associated with any Camera!");
-        }
-        let camera_index = layer_to_order[render_layer].unwrap();
-        if camera_work.get(camera_index).is_none() {
-            panic!("Found PointLight with RenderLayer not associated with any Camera!");
-        }
-
-        camera_work[camera_index]
-            .as_mut()
-            .unwrap()
-            .lights
-            .push(point_light);
-    }
-
-    // Aggregate Directional Lights
-    for (directional_light_impl, render_layer_wrapper) in directional_lights_q.iter() {
-        let render_layer = convert_wrapper(render_layer_wrapper);
-        if layer_to_order.get(render_layer).is_none() {
-            panic!("Found DirectionalLight with RenderLayer not associated with any Camera!");
-        }
-        let camera_index = layer_to_order[render_layer].unwrap();
-        if camera_work.get(camera_index).is_none() {
-            panic!("Found DirectionalLight with RenderLayer not associated with any Camera!");
-        }
-
-        camera_work[camera_index]
-            .as_mut()
-            .unwrap()
-            .lights
-            .push(directional_light_impl);
-    }
-
     // Draw
     for work in camera_work {
         if work.is_none() {
             continue;
         }
-        let CameraWork {
-            camera,
-            objects,
-            mut lights,
-        } = work.unwrap();
-
-        // add ambient light to lights
-        let ambient_light_tuple = (&*ambient_light, &*ambient_light_impl);
-        lights.push(&ambient_light_tuple);
-
-        let Ok((_, camera_component, _)) = cameras_q.get(camera) else {
-            break;
-        };
+        let render_pass = work.unwrap();
 
         let render_target = {
-            match &camera_component.target {
+            match &render_pass.camera.camera.target {
                 CameraRenderTarget::Screen => {
                     frame_input.screen()
                 }
@@ -164,9 +160,8 @@ pub fn draw(
         };
 
         // Clear the color and depth of the screen render target using the camera's clear color
-        render_target.clear((&camera_component.clear_operation).into());
+        render_target.clear((&render_pass.camera.camera.clear_operation).into());
 
-        let render_pass = RenderPass::new(&camera_component.camera, &objects, &lights);
         render_target.render(render_pass);
     }
 }

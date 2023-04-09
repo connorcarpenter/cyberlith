@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Game Client [BUILD]" type="CargoCommandRunConfiguration" factoryName="Cargo Command" singleton="false">
+  <configuration default="false" name="Game Client (glow) [BUILD]" type="CargoCommandRunConfiguration" factoryName="Cargo Command" singleton="false">
     <option name="command" value="build --features &quot;glow_renderer&quot;" />
     <option name="workingDirectory" value="file://$PROJECT_DIR$/apps/game/client" />
     <option name="channel" value="DEFAULT" />
