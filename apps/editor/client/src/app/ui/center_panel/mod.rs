@@ -4,7 +4,7 @@ use tab_bar::tab_bar;
 
 use bevy_ecs::{change_detection::ResMut, world::World};
 
-use render_egui::egui;
+use render_egui::{egui, egui::Frame};
 
 use crate::app::ui::{UiState, WorkspaceType, workspaces::{skeleton_builder, text_editor}};
 
@@ -13,6 +13,7 @@ pub fn center_panel(
     world: &mut World,
 ) {
     egui::CentralPanel::default()
+        .frame(Frame::none().inner_margin(0.0))
         .show(context, |ui| {
             tab_bar(ui, world);
             let state = world.get_resource::<UiState>().unwrap();

@@ -1,6 +1,6 @@
 use bevy_ecs::world::World;
 
-use render_egui::egui;
+use render_egui::{egui, egui::Frame};
 
 use crate::app::ui::UiState;
 
@@ -9,6 +9,7 @@ pub fn right_panel(
     world: &mut World,
 ) {
     egui::SidePanel::right("right_panel")
+        .frame(Frame::none().inner_margin(0.0))
         .resizable(false)
         .default_width(60.0)
         .show(context, |ui| {
