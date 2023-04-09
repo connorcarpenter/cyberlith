@@ -1,10 +1,12 @@
+use bevy_ecs::world::World;
+
 use render_egui::egui;
 
 use crate::app::ui::UiState;
 
 pub fn right_panel(
     context: &egui::Context,
-    state: &mut UiState,
+    world: &mut World,
 ) {
     egui::SidePanel::right("right_panel")
         .resizable(false)

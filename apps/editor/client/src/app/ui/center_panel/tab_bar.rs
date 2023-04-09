@@ -1,11 +1,14 @@
+use bevy_ecs::world::World;
+
 use render_egui::{egui, egui::{Ui, Modifiers}};
 
 use crate::app::ui::{UiState, WorkspaceType};
 
 pub fn tab_bar(
-    ui: &mut egui::Ui,
-    state: &mut UiState,
+    ui: &mut Ui,
+    world: &mut World,
 ) {
+    let mut state = world.get_resource_mut::<UiState>().unwrap();
     egui::TopBottomPanel::top("tab_bar").show_inside(ui, |ui| {
         egui::menu::bar(ui, |ui| {
             if ui.add(egui::Button::new("Tab 1")).clicked() {

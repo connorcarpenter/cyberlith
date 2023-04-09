@@ -54,12 +54,45 @@ impl Plugin for EditorPlugin {
     }
 }
 
+// Marks the preview pass cube.
+#[derive(Component)]
+struct PreviewPassCube;
+
+#[derive(Resource)]
+struct CubePreviewImage(Handle<Texture2D>);
+
 fn setup(
-    window: Res<Window>,
     mut commands: Commands,
+    window: Res<Window>,
+    mut images: ResMut<Assets<Texture2D>>,
+    mut egui_user_textures: ResMut<EguiUserTextures>,
+    mut meshes: ResMut<Assets<TriMesh>>,
+    mut materials: ResMut<Assets<PbrMaterial>>,
 ) {
+    // This is the texture that will be rendered to.
+    let texture_width = 512;
+    let texture_height = 512;
+    let mut texture = Texture2D::from_size(texture_width, texture_height);
+
+    let texture_handle = images.add(texture);
+    egui_user_textures.add_texture(&texture_handle);
+    commands.insert_resource(CubePreviewImage(texture_handle.clone()));
+
+    // This specifies the layer used for the preview pass, which will be attached to the preview pass camera and cube.
+    let preview_pass_layer = RenderLayers::layer(1);
+
+    // Cube
+    commands
+        .spawn(RenderObjectBundle {
+            mesh: meshes.add(TriMesh::from(shapes::Cube { size: 5.0 })),
+            material: materials.add(Color::from_rgb_f32(0.8, 0.7, 0.6).into()),
+            transform: Transform::from_xyz(0.0, 0.0, 1.0),
+        })
+        .insert(PreviewPassCube)
+        .insert(preview_pass_layer);
+
     // Ambient Light
-    commands.insert_resource(AmbientLight::new(0.3, Color::WHITE));
+    commands.insert_resource(AmbientLight::new(1.0, Color::WHITE));
 
     // Camera
     commands.spawn(CameraComponent::new(
@@ -69,11 +102,22 @@ fn setup(
             Vec3::new(0.0, 0.0, 0.0),
             Vec3::new(0.0, 1.0, 0.0),
             50.0,
-            0.1,
+            0.0,
             1000.0,
         ),
         0,
         ClearOperation::default(),
-        RenderTarget::Screen,
-    ));
+        RenderTarget::Image(texture_handle),
+    ))
+        .insert(preview_pass_layer);
+}
+
+// Rotates the cubes.
+fn rotator_system(
+    mut query: Query<&mut Transform, With<PreviewPassCube>>,
+) {
+    for mut transform in &mut query {
+        transform.rotate_x(0.015);
+        transform.rotate_z(0.013);
+    }
 }
