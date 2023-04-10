@@ -33,16 +33,16 @@ impl Material for DepthMaterial {
         }
     }
 
-    fn use_uniforms(&self, program: &Program, camera: &Camera, _lights: &[&dyn Light]) {
+    fn use_uniforms(&self, program: &Program, camera: &RenderCamera, _lights: &[&dyn Light]) {
         program.use_uniform(
             "minDistance",
-            self.min_distance.unwrap_or_else(|| camera.z_near()),
+            self.min_distance.unwrap_or_else(|| camera.camera.z_near()),
         );
         program.use_uniform(
             "maxDistance",
-            self.max_distance.unwrap_or_else(|| camera.z_far()),
+            self.max_distance.unwrap_or_else(|| camera.camera.z_far()),
         );
-        program.use_uniform("eye", camera.position());
+        program.use_uniform("eye", camera.transform.translation);
     }
 
     fn render_states(&self) -> RenderStates {

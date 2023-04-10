@@ -175,9 +175,9 @@ impl Material for PhysicalMaterial {
         }
     }
 
-    fn use_uniforms(&self, program: &Program, camera: &Camera, lights: &[&dyn Light]) {
+    fn use_uniforms(&self, program: &Program, camera: &RenderCamera, lights: &[&dyn Light]) {
         if !lights.is_empty() {
-            program.use_uniform_if_required("cameraPosition", camera.position());
+            program.use_uniform_if_required("cameraPosition", camera.transform.translation);
             for (i, light) in lights.iter().enumerate() {
                 light.use_uniforms(program, i as u32);
             }

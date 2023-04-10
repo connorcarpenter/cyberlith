@@ -2,16 +2,6 @@
 //! A collection of controls for example to control the camera.
 //!
 
-mod camera_control;
-mod first_person_control;
-mod fly_control;
-mod orbit_control;
-
-pub use camera_control::*;
-pub use first_person_control::*;
-pub use fly_control::*;
-pub use orbit_control::*;
-
 /// Type of mouse button.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Hash)]
 pub enum MouseButton {

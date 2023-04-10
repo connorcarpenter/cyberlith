@@ -69,7 +69,7 @@ impl Material for NormalMaterial {
         FragmentShader { source, attributes }
     }
 
-    fn use_uniforms(&self, program: &Program, _camera: &Camera, _lights: &[&dyn Light]) {
+    fn use_uniforms(&self, program: &Program, _camera: &RenderCamera, _lights: &[&dyn Light]) {
         if let Some(ref tex) = self.normal_texture {
             program.use_uniform("normalScale", self.normal_scale);
             program.use_uniform("textureTransformation", tex.transformation);

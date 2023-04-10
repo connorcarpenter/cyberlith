@@ -1,6 +1,6 @@
 use render_api::{base::{AxisAlignedBoundingBox, Camera}, Transform};
 
-use crate::{core::{ColorTexture, DepthTexture}, renderer::{BaseMesh, Geometry, Light, Material, MaterialType, Mesh, Object, PostMaterial}};
+use crate::{core::{ColorTexture, DepthTexture}, renderer::{RenderCamera, BaseMesh, Geometry, Light, Material, MaterialType, Mesh, Object}};
 
 // Render Object
 #[derive(Clone, Copy)]
@@ -24,22 +24,11 @@ impl<'a> Geometry for RenderObject<'a> {
     fn render_with_material(
         &self,
         material: &dyn Material,
-        camera: &Camera,
+        camera: &RenderCamera,
         lights: &[&dyn Light],
     ) {
         let mesh = Mesh::compose(self.mesh, self.transform);
         mesh.render_with_material(material, camera, lights);
-    }
-
-    fn render_with_post_material(
-        &self,
-        _material: &dyn PostMaterial,
-        _camera: &Camera,
-        _lights: &[&dyn Light],
-        _color_texture: Option<ColorTexture>,
-        _depth_texture: Option<DepthTexture>,
-    ) {
-        todo!()
     }
 
     fn aabb(&self) -> AxisAlignedBoundingBox {
@@ -48,7 +37,7 @@ impl<'a> Geometry for RenderObject<'a> {
 }
 
 impl<'a> Object for RenderObject<'a> {
-    fn render(&self, camera: &Camera, lights: &[&dyn Light]) {
+    fn render(&self, camera: &RenderCamera, lights: &[&dyn Light]) {
         self.render_with_material(self.material, camera, lights);
     }
 

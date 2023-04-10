@@ -1,8 +1,8 @@
-use render_api::{base::{AxisAlignedBoundingBox, Camera}, CameraComponent, Transform};
+use render_api::{base::{AxisAlignedBoundingBox, Camera}, RenderOperation, Transform};
 
 use crate::{
     core::{ColorTexture, DepthTexture},
-    renderer::{RenderLight, RenderCamera, RenderObject, BaseMesh, Geometry, Light, Material, MaterialType, Mesh, Object, PostMaterial},
+    renderer::{RenderLight, RenderCamera, RenderObject, BaseMesh, Geometry, Light, Material, MaterialType, Mesh, Object},
 };
 
 // Render Pass
@@ -14,10 +14,10 @@ pub struct RenderPass<'a> {
 
 impl<'a> RenderPass<'a> {
     pub fn from_camera(
-        camera: &'a CameraComponent,
+        camera: &'a Camera, transform: &'a Transform, operation: &'a RenderOperation
     ) -> Self {
         Self {
-            camera: RenderCamera::new(camera),
+            camera: RenderCamera::new(camera, transform, operation),
             lights: Vec::new(),
             objects: Vec::new(),
         }
@@ -28,7 +28,7 @@ impl<'a> RenderPass<'a> {
     }
 
     pub fn process_camera(render: &RenderCamera<'a>) -> &'a Camera {
-        &render.camera.camera
+        &render.camera
     }
 
     pub fn process_lights(render: &'a Vec<RenderLight<'a>>) -> Vec<&dyn Light> {

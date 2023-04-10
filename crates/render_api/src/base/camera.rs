@@ -1,4 +1,6 @@
 
+use bevy_ecs::component::Component;
+
 use math::*;
 
 use super::*;
@@ -79,19 +81,13 @@ pub enum ProjectionType {
 ///
 /// Represents a camera used for viewing 3D assets.
 ///
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Component)]
 pub struct Camera {
     viewport: Viewport,
     projection_type: ProjectionType,
     z_near: f32,
     z_far: f32,
-    position: Vec3,
-    target: Vec3,
-    up: Vec3,
-    view: Mat4,
     projection: Mat4,
-    screen2ray: Mat4,
-    frustrum: [Vec4; 6],
 }
 
 impl Camera {
@@ -102,15 +98,11 @@ impl Camera {
     ///
     pub fn new_orthographic(
         viewport: Viewport,
-        position: Vec3,
-        target: Vec3,
-        up: Vec3,
         height: f32,
         z_near: f32,
         z_far: f32,
     ) -> Self {
         let mut camera = Camera::new(viewport);
-        camera.set_view(position, target, up);
         camera.set_orthographic_projection(height, z_near, z_far);
         camera
     }
@@ -120,15 +112,11 @@ impl Camera {
     ///
     pub fn new_perspective(
         viewport: Viewport,
-        position: Vec3,
-        target: Vec3,
-        up: Vec3,
         fov_y_degrees: f32,
         z_near: f32,
         z_far: f32,
     ) -> Self {
         let mut camera = Camera::new(viewport);
-        camera.set_view(position, target, up);
         camera.set_perspective_projection(fov_y_degrees, z_near, z_far);
 
         camera
@@ -152,8 +140,6 @@ impl Camera {
         let fov_y_radians = f32::to_radians(fov_y_degrees);
         self.projection_type = ProjectionType::Perspective { fov_y_radians };
         self.projection = Mat4::perspective_rh(fov_y_radians, self.viewport.aspect(), self.z_near, self.z_far);
-        self.update_screen2ray();
-        self.update_frustrum();
     }
 
     ///
@@ -176,8 +162,6 @@ impl Camera {
             z_near,
             z_far,
         );
-        self.update_screen2ray();
-        self.update_frustrum();
     }
 
     ///
@@ -202,73 +186,11 @@ impl Camera {
     }
 
     ///
-    /// Change the view of the camera.
-    /// The camera is placed at the given position, looking at the given target and with the given up direction.
-    ///
-    pub fn set_view(&mut self, position: Vec3, target: Vec3, up: Vec3) {
-        self.position = position;
-        self.target = target;
-        self.up = up;
-        self.view = Mat4::look_at_rh(
-            self.position,
-            self.target,
-            self.up,
-        );
-        self.update_screen2ray();
-        self.update_frustrum();
-    }
-
-    ///
-    /// Change the camera view such that it is mirrored in the xz-plane.
-    ///
-    pub fn mirror_in_xz_plane(&mut self) {
-        // TODO: verify that this is correct, I have not tested it
-        self.view = self.view * Mat4::from_scale(Vec3::new(1.0, -1.0, 1.0));
-        self.update_screen2ray();
-        self.update_frustrum();
-    }
-
-    ///
     /// Returns whether or not the given bounding box is within the camera frustum.
     /// It returns false if it is fully outside and true if it is inside or intersects.
     ///
     pub fn in_frustum(&self, aabb: &AxisAlignedBoundingBox) -> bool {
-        if aabb.is_infinite() {
-            return true;
-        }
-        // check box outside/inside of frustum
-        for i in 0..6 {
-            let mut out = 0;
-            if self.frustrum[i].dot(Vec4::new(aabb.min().x, aabb.min().y, aabb.min().z, 1.0)) < 0.0 {
-                out += 1
-            };
-            if self.frustrum[i].dot(Vec4::new(aabb.max().x, aabb.min().y, aabb.min().z, 1.0)) < 0.0 {
-                out += 1
-            };
-            if self.frustrum[i].dot(Vec4::new(aabb.min().x, aabb.max().y, aabb.min().z, 1.0)) < 0.0 {
-                out += 1
-            };
-            if self.frustrum[i].dot(Vec4::new(aabb.max().x, aabb.max().y, aabb.min().z, 1.0)) < 0.0 {
-                out += 1
-            };
-            if self.frustrum[i].dot(Vec4::new(aabb.min().x, aabb.min().y, aabb.max().z, 1.0)) < 0.0 {
-                out += 1
-            };
-            if self.frustrum[i].dot(Vec4::new(aabb.max().x, aabb.min().y, aabb.max().z, 1.0)) < 0.0 {
-                out += 1
-            };
-            if self.frustrum[i].dot(Vec4::new(aabb.min().x, aabb.max().y, aabb.max().z, 1.0)) < 0.0 {
-                out += 1
-            };
-            if self.frustrum[i].dot(Vec4::new(aabb.max().x, aabb.max().y, aabb.max().z, 1.0)) < 0.0 {
-                out += 1
-            };
-            if out == 8 {
-                return false;
-            }
-        }
-        // TODO: Test the frustum corners against the box planes (http://www.iquilezles.org/www/articles/frustumcorrect/frustumcorrect.htm)
-
+        // TODO: implement this!
         true
     }
 
@@ -277,13 +199,13 @@ impl Camera {
     /// The pixel coordinate must be in physical pixels, where `(viewport.x, viewport.y)` indicate the bottom left corner of the viewport
     /// and `(viewport.x + viewport.width, viewport.y + viewport.height)` indicate the top right corner.
     ///
-    pub fn position_at_pixel(&self, pixel: (f32, f32)) -> Vec3 {
+    pub fn position_at_pixel(&self, position: &Vec3, pixel: (f32, f32)) -> Vec3 {
         match self.projection_type() {
             ProjectionType::Orthographic { .. } => {
                 let coords = self.uv_coordinates_at_pixel(pixel);
-                self.position_at_uv_coordinates(coords)
+                self.position_at_uv_coordinates(position, coords)
             }
-            ProjectionType::Perspective { .. } => *self.position(),
+            ProjectionType::Perspective { .. } => *position,
         }
     }
 
@@ -292,13 +214,13 @@ impl Camera {
     /// The uv coordinate must be between `(0, 0)` indicating the bottom left corner of the viewport
     /// and `(1, 1)` indicating the top right corner.
     ///
-    pub fn position_at_uv_coordinates(&self, coords: (f32, f32)) -> Vec3 {
+    pub fn position_at_uv_coordinates(&self, position: &Vec3, coords: (f32, f32)) -> Vec3 {
         match self.projection_type() {
             ProjectionType::Orthographic { height } => {
                 let width = height * self.viewport.aspect();
-                *self.position() + Vec3::new((coords.0 - 0.5) * width, (coords.1 - 0.5) * height, 0.0)
+                *position + Vec3::new((coords.0 - 0.5) * width, (coords.1 - 0.5) * height, 0.0)
             }
-            ProjectionType::Perspective { .. } => *self.position(),
+            ProjectionType::Perspective { .. } => *position,
         }
     }
 
@@ -307,12 +229,12 @@ impl Camera {
     /// The pixel coordinate must be in physical pixels, where `(viewport.x, viewport.y)` indicate the bottom left corner of the viewport
     /// and `(viewport.x + viewport.width, viewport.y + viewport.height)` indicate the top right corner.
     ///
-    pub fn view_direction_at_pixel(&self, pixel: (f32, f32)) -> Vec3 {
+    pub fn view_direction_at_pixel(&self, position: &Vec3, target: &Vec3, pixel: (f32, f32)) -> Vec3 {
         match self.projection_type() {
-            ProjectionType::Orthographic { .. } => self.view_direction(),
+            ProjectionType::Orthographic { .. } => Self::view_direction(position, target),
             ProjectionType::Perspective { .. } => {
                 let coords = self.uv_coordinates_at_pixel(pixel);
-                self.view_direction_at_uv_coordinates(coords)
+                self.view_direction_at_uv_coordinates(position, target, coords)
             }
         }
     }
@@ -322,12 +244,11 @@ impl Camera {
     /// The uv coordinate must be between `(0, 0)` indicating the bottom left corner of the viewport
     /// and `(1, 1)` indicating the top right corner.
     ///
-    pub fn view_direction_at_uv_coordinates(&self, coords: (f32, f32)) -> Vec3 {
+    pub fn view_direction_at_uv_coordinates(&self, position: &Vec3, target: &Vec3, coords: (f32, f32)) -> Vec3 {
         match self.projection_type() {
-            ProjectionType::Orthographic { .. } => self.view_direction(),
+            ProjectionType::Orthographic { .. } => Self::view_direction(position, target),
             ProjectionType::Perspective { .. } => {
-                let screen_pos = Vec4::new(2. * coords.0 - 1., 2. * coords.1 - 1.0, 0., 1.);
-                (self.screen2ray * screen_pos).truncate().normalize()
+                todo!()
             }
         }
     }
@@ -351,11 +272,7 @@ impl Camera {
     /// and (1,1) indicate a position that maps to the top right corner.
     ///
     pub fn uv_coordinates_at_position(&self, position: Vec3) -> (f32, f32) {
-        let proj = *self.projection() * *self.view() * position.extend(1.0);
-        (
-            0.5 * (proj.x / proj.w.abs() + 1.0),
-            0.5 * (proj.y / proj.w.abs() + 1.0),
-        )
+        todo!()
     }
 
     ///
@@ -389,13 +306,6 @@ impl Camera {
     }
 
     ///
-    /// Returns the view matrix, ie. the matrix that transforms objects from world space (as placed in the world) to view space (as seen from this camera).
-    ///
-    pub fn view(&self) -> &Mat4 {
-        &self.view
-    }
-
-    ///
     /// Returns the projection matrix, ie. the matrix that projects objects in view space onto this cameras image plane.
     ///
     pub fn projection(&self) -> &Mat4 {
@@ -423,39 +333,19 @@ impl Camera {
         self.z_far
     }
 
-    ///
-    /// Returns the position of this camera.
-    ///
-    pub fn position(&self) -> &Vec3 {
-        &self.position
-    }
-
-    ///
-    /// Returns the target of this camera, ie the point that this camera looks towards.
-    ///
-    pub fn target(&self) -> &Vec3 {
-        &self.target
-    }
-
-    ///
-    /// Returns the up direction of this camera (might not be orthogonal to the view direction).
-    ///
-    pub fn up(&self) -> &Vec3 {
-        &self.up
-    }
 
     ///
     /// Returns the view direction of this camera, ie. the direction the camera is looking.
     ///
-    pub fn view_direction(&self) -> Vec3 {
-        (self.target - self.position).normalize()
+    pub fn view_direction(position: &Vec3, target: &Vec3) -> Vec3 {
+        (*target - *position).normalize()
     }
 
     ///
     /// Returns the right direction of this camera.
     ///
-    pub fn right_direction(&self) -> Vec3 {
-        self.view_direction().cross(self.up)
+    pub fn right_direction(position: &Vec3, target: &Vec3, up: &Vec3) -> Vec3 {
+        Self::view_direction(position, target).cross(*up)
     }
 
     fn new(viewport: Viewport) -> Camera {
@@ -464,35 +354,8 @@ impl Camera {
             projection_type: ProjectionType::Orthographic { height: 1.0 },
             z_near: 0.0,
             z_far: 0.0,
-            frustrum: [Vec4::new(0.0, 0.0, 0.0, 0.0); 6],
-            position: Vec3::new(0.0, 0.0, 5.0),
-            target: Vec3::new(0.0, 0.0, 0.0),
-            up: Vec3::new(0.0, 1.0, 0.0),
-            view: Mat4::IDENTITY,
             projection: Mat4::IDENTITY,
-            screen2ray: Mat4::IDENTITY,
         }
-    }
-
-    fn update_screen2ray(&mut self) {
-        let mut v = self.view;
-        v.w_axis.x = 0.0;
-        v.w_axis.y = 0.0;
-        v.w_axis.z = 0.0;
-        v.w_axis.w = 1.0;
-        self.screen2ray = (self.projection * v).inverse();
-    }
-
-    fn update_frustrum(&mut self) {
-        let m = self.projection * self.view;
-        self.frustrum = [
-            Vec4::new(m.x_axis.w + m.x_axis.x, m.y_axis.w + m.y_axis.x, m.z_axis.w + m.z_axis.x, m.w_axis.w + m.w_axis.x),
-            Vec4::new(m.x_axis.w - m.x_axis.x, m.y_axis.w - m.y_axis.x, m.z_axis.w - m.z_axis.x, m.w_axis.w - m.w_axis.x),
-            Vec4::new(m.x_axis.w + m.x_axis.y, m.y_axis.w + m.y_axis.y, m.z_axis.w + m.z_axis.y, m.w_axis.w + m.w_axis.y),
-            Vec4::new(m.x_axis.w - m.x_axis.y, m.y_axis.w - m.y_axis.y, m.z_axis.w - m.z_axis.y, m.w_axis.w - m.w_axis.y),
-            Vec4::new(m.x_axis.w + m.x_axis.z, m.y_axis.w + m.y_axis.z, m.z_axis.w + m.z_axis.z, m.w_axis.w + m.w_axis.z),
-            Vec4::new(m.x_axis.w - m.x_axis.z, m.y_axis.w - m.y_axis.z, m.z_axis.w - m.z_axis.z, m.w_axis.w - m.w_axis.z),
-        ];
     }
 
     ///
@@ -550,25 +413,12 @@ impl Camera {
         minimum_distance: f32,
         maximum_distance: f32,
     ) {
-        let minimum_distance = minimum_distance.max(0.0);
-        assert!(
-            minimum_distance < maximum_distance,
-            "minimum_distance larger than maximum_distance"
-        );
+        todo!()
+    }
+}
 
-        let position = *self.position();
-        let distance = point.distance(position);
-        let direction = (*point - position).normalize();
-        let target = *self.target();
-        let up = *self.up();
-        let new_distance = (distance - delta).clamp(minimum_distance, maximum_distance);
-        let new_position = *point - direction * new_distance;
-        self.set_view(new_position, new_position + (target - position), up);
-        if let ProjectionType::Orthographic { height } = self.projection_type() {
-            let h = new_distance * height / distance;
-            let z_near = self.z_near();
-            let z_far = self.z_far();
-            self.set_orthographic_projection(h, z_near, z_far);
-        }
+impl Default for Camera {
+    fn default() -> Self {
+        Self::new(Viewport::new_at_origin(1280, 720))
     }
 }

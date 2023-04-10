@@ -1,8 +1,6 @@
 use render_api::{AmbientLight, base::{AxisAlignedBoundingBox, Camera}, Transform};
 
-use crate::{core::{ColorTexture, DepthTexture}, renderer::{BaseMesh, Geometry, Light, Material, MaterialType, Mesh, Object, PostMaterial}};
-use crate::core::Program;
-use crate::renderer::{AmbientLightImpl, RenderAmbientLight};
+use crate::{core::{Program, ColorTexture, DepthTexture}, renderer::{BaseMesh, AmbientLightImpl, RenderAmbientLight, Geometry, Light, Material, MaterialType, Mesh, Object}};
 
 // Render Light
 #[derive(Clone, Copy)]

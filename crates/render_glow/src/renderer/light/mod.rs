@@ -9,7 +9,6 @@ mod directional_light;
 mod environment;
 mod light;
 mod point_light;
-mod spot_light;
 mod utils;
 
 pub use ambient_light::*;
@@ -17,5 +16,4 @@ pub use directional_light::*;
 pub use environment::*;
 pub use light::*;
 pub use point_light::*;
-pub use spot_light::*;
 pub use utils::*;

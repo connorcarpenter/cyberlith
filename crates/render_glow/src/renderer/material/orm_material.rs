@@ -97,7 +97,7 @@ impl Material for ORMMaterial {
         FragmentShader { source, attributes }
     }
 
-    fn use_uniforms(&self, program: &Program, _camera: &Camera, _lights: &[&dyn Light]) {
+    fn use_uniforms(&self, program: &Program, _camera: &RenderCamera, _lights: &[&dyn Light]) {
         program.use_uniform("metallic", self.metallic);
         program.use_uniform("roughness", self.roughness);
         if let Some(ref texture) = self.metallic_roughness_texture {

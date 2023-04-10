@@ -1,8 +1,9 @@
 use math::Vec3;
 
 use render_api::base::{Camera, Interpolation, Viewport, Wrapping};
+use render_api::{RenderOperation, Transform};
 
-use crate::renderer::{DepthMaterial, Geometry, MaterialType, Object};
+use crate::renderer::{DepthMaterial, Geometry, MaterialType, Object, RenderCamera};
 
 ///
 /// Returns a camera for viewing 2D content.
@@ -10,17 +11,6 @@ use crate::renderer::{DepthMaterial, Geometry, MaterialType, Object};
 pub fn camera2d(viewport: Viewport) -> Camera {
     Camera::new_orthographic(
         viewport,
-        Vec3::new(
-            viewport.width as f32 * 0.5,
-            viewport.height as f32 * 0.5,
-            -1.0,
-        ),
-        Vec3::new(
-            viewport.width as f32 * 0.5,
-            viewport.height as f32 * 0.5,
-            0.0,
-        ),
-        Vec3::new(0.0, -1.0, 0.0),
         viewport.height as f32,
         0.0,
         10.0,
@@ -33,7 +23,7 @@ pub fn camera2d(viewport: Viewport) -> Camera {
 /// then transparent objects from farthest away to closest to the camera.
 ///
 pub fn cmp_render_order(
-    camera: &Camera,
+    camera: &RenderCamera,
     obj0: impl Object,
     obj1: impl Object,
 ) -> std::cmp::Ordering {
@@ -46,8 +36,8 @@ pub fn cmp_render_order(
     {
         std::cmp::Ordering::Less
     } else {
-        let distance_a = camera.position().distance_squared(obj0.aabb().center());
-        let distance_b = camera.position().distance_squared(obj1.aabb().center());
+        let distance_a = camera.transform.translation.distance_squared(obj0.aabb().center());
+        let distance_b = camera.transform.translation.distance_squared(obj1.aabb().center());
         if distance_a.is_nan() || distance_b.is_nan() {
             distance_a.is_nan().cmp(&distance_b.is_nan()) // whatever - just save us from panicing on unwrap below
         } else if obj0.material_type() == MaterialType::Transparent {
@@ -66,11 +56,13 @@ pub fn cmp_render_order(
 ///https://towardsdatascience.com/gpt-4-will-have-100-trillion-parameters-500x-the-size-of-gpt-3-582b98d82253
 pub fn pick(
     camera: &Camera,
+    camera_position: &Vec3,
+    camera_target: &Vec3,
     pixel: (f32, f32),
     geometries: impl IntoIterator<Item = impl Geometry>,
 ) -> Option<Vec3> {
-    let pos = camera.position_at_pixel(pixel);
-    let dir = camera.view_direction_at_pixel(pixel);
+    let pos = camera.position_at_pixel(camera_position, pixel);
+    let dir = camera.view_direction_at_pixel(camera_position, camera_target, pixel);
     ray_intersect(
         pos + dir * camera.z_near(),
         dir,
@@ -98,9 +90,6 @@ pub fn ray_intersect(
     };
     let camera = Camera::new_orthographic(
         viewport,
-        position,
-        position + direction * max_depth,
-        up,
         0.01,
         0.0,
         max_depth,
@@ -130,6 +119,9 @@ pub fn ray_intersect(
         },
         ..Default::default()
     };
+    let camera_transform = Transform::from_xyz(position.x, position.y, position.z).looking_to(direction, Vec3::new(0.0, 1.0, 0.0));
+    let camera_op = RenderOperation::default();
+    let render_camera = RenderCamera::new(&camera, &camera_transform, &camera_op);
     let depth: f32 = RenderTarget::new(
         texture.as_color_target(None),
         depth_texture.as_depth_target(),
@@ -137,7 +129,7 @@ pub fn ray_intersect(
     .clear(ClearState::color_and_depth(1.0, 1.0, 1.0, 1.0, 1.0))
     .write(|| {
         for geometry in geometries {
-            geometry.render_with_material(&depth_material, &camera, &[]);
+            geometry.render_with_material(&depth_material, &render_camera, &[]);
         }
     })
     .read_color()[0];

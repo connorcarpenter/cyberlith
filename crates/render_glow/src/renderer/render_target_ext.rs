@@ -7,8 +7,9 @@ use crate::{
         RenderTargetMultisample, ScissorBox, Texture2DArray, TextureDataType,
     },
     renderer::{
-        cmp_render_order, DeferredPhysicalMaterial, Geometry, Light, Material, MaterialType,
-        Object, PostMaterial, RenderObject, RenderPass,
+        cmp_render_order, Geometry, Light, Material, MaterialType,
+        Object, RenderObject, RenderPass,
+        RenderCamera,
     },
 };
 
@@ -29,73 +30,77 @@ macro_rules! impl_render_target_extensions_body {
         /// Also, objects outside the camera frustum are not rendered and the objects are rendered in the order given by [cmp_render_order].
         ///
         pub fn render_partially(&self, scissor_box: ScissorBox, mut render_pass: RenderPass) -> &Self {
-            let (camera_holder, lights_holder, objects) = render_pass.take();
-            let camera = RenderPass::process_camera(&camera_holder);
+            let (camera, lights_holder, objects) = render_pass.take();
             let lights = &RenderPass::process_lights(&lights_holder);
 
-            let (mut deferred_objects, mut forward_objects): (
-                Vec<RenderObject>,
-                Vec<RenderObject>,
-            ) = objects
+            let mut forward_objects: Vec<RenderObject> = objects
                 .iter()
-                .filter(|o| camera.in_frustum(&o.aabb()))
-                .partition(|o| o.material_type() == MaterialType::Deferred);
+                .filter(|o| camera.camera.in_frustum(&o.aabb()))
+                .cloned()
+                .collect();
+            // let (mut deferred_objects, mut forward_objects): (
+            //     Vec<RenderObject>,
+            //     Vec<RenderObject>,
+            // ) = objects
+            //     .iter()
+            //     .filter(|o| camera.in_frustum(&o.aabb()))
+            //     .partition(|o| o.material_type() == MaterialType::Deferred);
 
-            // Deferred
-            if deferred_objects.len() > 0 {
-                // Geometry pass
-                let mut geometry_pass_camera = camera.clone();
-                let viewport =
-                    Viewport::new_at_origin(camera.viewport().width, camera.viewport().height);
-                geometry_pass_camera.set_viewport(viewport);
-                deferred_objects.sort_by(|a, b| cmp_render_order(&geometry_pass_camera, a, b));
-                let mut geometry_pass_texture = Texture2DArray::new_empty::<[u8; 4]>(
-                    viewport.width,
-                    viewport.height,
-                    3,
-                    Interpolation::Nearest,
-                    Interpolation::Nearest,
-                    None,
-                    Wrapping::ClampToEdge,
-                    Wrapping::ClampToEdge,
-                );
-                let mut geometry_pass_depth_texture = DepthTexture2D::new::<f32>(
-                    viewport.width,
-                    viewport.height,
-                    Wrapping::ClampToEdge,
-                    Wrapping::ClampToEdge,
-                );
-                let gbuffer_layers = [0, 1, 2];
-                RenderTarget::new(
-                    geometry_pass_texture.as_color_target(&gbuffer_layers, None),
-                    geometry_pass_depth_texture.as_depth_target(),
-                )
-                .clear(ClearState::default())
-                .write(|| {
-                    for object in deferred_objects {
-                        object.render(&geometry_pass_camera, lights);
-                    }
-                });
-
-                // Lighting pass
-                self.write_partially(scissor_box, || {
-                    DeferredPhysicalMaterial::lighting_pass(
-                        camera,
-                        ColorTexture::Array {
-                            texture: &geometry_pass_texture,
-                            layers: &gbuffer_layers,
-                        },
-                        DepthTexture::Single(&geometry_pass_depth_texture),
-                        lights,
-                    )
-                });
-            }
+            // // Deferred
+            // if deferred_objects.len() > 0 {
+            //     // Geometry pass
+            //     let mut geometry_pass_camera = camera.clone();
+            //     let viewport =
+            //         Viewport::new_at_origin(camera.viewport().width, camera.viewport().height);
+            //     geometry_pass_camera.set_viewport(viewport);
+            //     deferred_objects.sort_by(|a, b| cmp_render_order(&geometry_pass_camera, a, b));
+            //     let mut geometry_pass_texture = Texture2DArray::new_empty::<[u8; 4]>(
+            //         viewport.width,
+            //         viewport.height,
+            //         3,
+            //         Interpolation::Nearest,
+            //         Interpolation::Nearest,
+            //         None,
+            //         Wrapping::ClampToEdge,
+            //         Wrapping::ClampToEdge,
+            //     );
+            //     let mut geometry_pass_depth_texture = DepthTexture2D::new::<f32>(
+            //         viewport.width,
+            //         viewport.height,
+            //         Wrapping::ClampToEdge,
+            //         Wrapping::ClampToEdge,
+            //     );
+            //     let gbuffer_layers = [0, 1, 2];
+            //     RenderTarget::new(
+            //         geometry_pass_texture.as_color_target(&gbuffer_layers, None),
+            //         geometry_pass_depth_texture.as_depth_target(),
+            //     )
+            //     .clear(ClearState::default())
+            //     .write(|| {
+            //         for object in deferred_objects {
+            //             object.render(&geometry_pass_camera, lights);
+            //         }
+            //     });
+            //
+            //     // Lighting pass
+            //     self.write_partially(scissor_box, || {
+            //         DeferredPhysicalMaterial::lighting_pass(
+            //             camera,
+            //             ColorTexture::Array {
+            //                 texture: &geometry_pass_texture,
+            //                 layers: &gbuffer_layers,
+            //             },
+            //             DepthTexture::Single(&geometry_pass_depth_texture),
+            //             lights,
+            //         )
+            //     });
+            // }
 
             // Forward
-            forward_objects.sort_by(|a, b| cmp_render_order(camera, a, b));
+            forward_objects.sort_by(|a, b| cmp_render_order(&camera, a, b));
             self.write_partially(scissor_box, || {
                 for object in forward_objects {
-                    object.render(camera, lights);
+                    object.render(&camera, lights);
                 }
             });
             self
@@ -108,7 +113,7 @@ macro_rules! impl_render_target_extensions_body {
         pub fn render_with_material(
             &self,
             material: &dyn Material,
-            camera: &Camera,
+            camera: &RenderCamera,
             geometries: impl IntoIterator<Item = impl Geometry>,
             lights: &[&dyn Light],
         ) -> &Self {
@@ -129,71 +134,16 @@ macro_rules! impl_render_target_extensions_body {
             &self,
             scissor_box: ScissorBox,
             material: &dyn Material,
-            camera: &Camera,
+            camera: &RenderCamera,
             geometries: impl IntoIterator<Item = impl Geometry>,
             lights: &[&dyn Light],
         ) -> &Self {
             self.write_partially(scissor_box, || {
                 for object in geometries
                     .into_iter()
-                    .filter(|o| camera.in_frustum(&o.aabb()))
+                    .filter(|o| camera.camera.in_frustum(&o.aabb()))
                 {
                     object.render_with_material(material, camera, lights);
-                }
-            });
-            self
-        }
-
-        ///
-        /// Render the geometries with the given [PostMaterial] using the given camera and lights into this render target.
-        /// Use an empty array for the `lights` argument, if the material does not require lights to be rendered.
-        ///
-        pub fn render_with_post_material(
-            &self,
-            material: &dyn PostMaterial,
-            camera: &Camera,
-            geometries: impl IntoIterator<Item = impl Geometry>,
-            lights: &[&dyn Light],
-            color_texture: Option<ColorTexture>,
-            depth_texture: Option<DepthTexture>,
-        ) -> &Self {
-            self.render_partially_with_post_material(
-                self.scissor_box(),
-                material,
-                camera,
-                geometries,
-                lights,
-                color_texture,
-                depth_texture,
-            )
-        }
-
-        ///
-        /// Render the geometries with the given [PostMaterial] using the given camera and lights into the part of this render target defined by the scissor box.
-        /// Use an empty array for the `lights` argument, if the material does not require lights to be rendered.
-        ///
-        pub fn render_partially_with_post_material(
-            &self,
-            scissor_box: ScissorBox,
-            material: &dyn PostMaterial,
-            camera: &Camera,
-            geometries: impl IntoIterator<Item = impl Geometry>,
-            lights: &[&dyn Light],
-            color_texture: Option<ColorTexture>,
-            depth_texture: Option<DepthTexture>,
-        ) -> &Self {
-            self.write_partially(scissor_box, || {
-                for object in geometries
-                    .into_iter()
-                    .filter(|o| camera.in_frustum(&o.aabb()))
-                {
-                    object.render_with_post_material(
-                        material,
-                        camera,
-                        lights,
-                        color_texture,
-                        depth_texture,
-                    );
                 }
             });
             self

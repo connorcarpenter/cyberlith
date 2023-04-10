@@ -2,10 +2,7 @@ use math::Mat4;
 
 use bevy_ecs::component::Component;
 
-use render_api::{
-    base::{AxisAlignedBoundingBox, Camera, Viewport, Wrapping},
-    DirectionalLight,
-};
+use render_api::{base::{AxisAlignedBoundingBox, Camera, Viewport, Wrapping}, DirectionalLight, RenderOperation, Transform};
 
 use crate::{core::*, renderer::*};
 
@@ -71,9 +68,6 @@ impl DirectionalLightImpl {
         let frustum_height = aabb.max().distance(aabb.min()); // TODO: more tight fit
         let shadow_camera = Camera::new_orthographic(
             viewport,
-            position,
-            target,
-            up,
             frustum_height,
             z_near,
             z_far,
@@ -91,6 +85,9 @@ impl DirectionalLightImpl {
             },
             ..Default::default()
         };
+        let shadow_camera_operation = RenderOperation::default();
+        let shadow_camera_transform = Transform::default().with_translation(position).looking_at(target, up);
+        let shadow_render_camera = RenderCamera::new(&shadow_camera, &shadow_camera_transform, &shadow_camera_operation);
         shadow_texture
             .as_depth_target()
             .clear(ClearState::default())
@@ -99,11 +96,11 @@ impl DirectionalLightImpl {
                     .into_iter()
                     .filter(|g| shadow_camera.in_frustum(&g.aabb()))
                 {
-                    geometry.render_with_material(&depth_material, &shadow_camera, &[]);
+                    geometry.render_with_material(&depth_material, &shadow_render_camera, &[]);
                 }
             });
         self.shadow_texture = Some(shadow_texture);
-        self.shadow_matrix = light::shadow_matrix(&shadow_camera);
+        self.shadow_matrix = light::shadow_matrix(&shadow_camera, &shadow_camera_transform);
     }
 
     ///

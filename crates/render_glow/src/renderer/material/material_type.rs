@@ -8,6 +8,6 @@ pub enum MaterialType {
     Opaque,
     /// Forward transparent
     Transparent,
-    /// Deferred opaque
-    Deferred,
+    //Deferred opaque
+    // Deferred,
 }

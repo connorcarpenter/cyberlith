@@ -35,14 +35,14 @@ pub fn lights_shader_source(lights: &[&dyn Light], lighting_model: LightingModel
     shader_source
 }
 
-pub(crate) fn shadow_matrix(camera: &Camera) -> Mat4 {
+pub(crate) fn shadow_matrix(camera: &Camera, transform: &Transform) -> Mat4 {
     let bias_matrix = Mat4::from_cols(
         Vec4::new(0.5, 0.0, 0.0, 0.0),
         Vec4::new(0.0, 0.5, 0.0, 0.0),
         Vec4::new(0.0, 0.0, 0.5, 0.0),
         Vec4::new(0.5, 0.5, 0.5, 1.0),
     );
-    bias_matrix * *camera.projection() * *camera.view()
+    bias_matrix * *camera.projection() * transform.compute_matrix()
 }
 
 pub(crate) fn compute_up_direction(direction: Vec3) -> Vec3 {
@@ -55,6 +55,7 @@ pub(crate) fn compute_up_direction(direction: Vec3) -> Vec3 {
 
 use crate::renderer::Light;
 use render_api::base::{LightingModel, NormalDistributionFunction};
+use render_api::Transform;
 
 pub(crate) fn lighting_model_shader(lighting_model: LightingModel) -> &'static str {
     match lighting_model {

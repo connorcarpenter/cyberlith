@@ -4,26 +4,36 @@ use bevy_ecs::component::Component;
 
 use crate::{assets::Handle, base::Camera, base::Texture2D};
 
-// Camera
-#[derive(Component)]
-pub struct CameraComponent {
+
+use bevy_ecs::bundle::Bundle;
+
+use super::transform::Transform;
+
+// Camera Bundle
+#[derive(Default, Bundle)]
+pub struct CameraBundle {
     pub camera: Camera,
-    order: usize,
+    pub transform: Transform,
+    pub render: RenderOperation,
+}
+
+// Render Operation
+#[derive(Component)]
+pub struct RenderOperation {
+    pub order: usize,
     pub clear_operation: ClearOperation,
     pub target: RenderTarget,
 }
 
-impl CameraComponent {
+impl RenderOperation {
     pub const MAX_CAMERAS: usize = 32;
 
     pub fn new(
-        camera: Camera,
         order: usize,
         clear_operation: ClearOperation,
         target: RenderTarget,
     ) -> Self {
         let mut new_self = Self {
-            camera,
             order: 0,
             clear_operation,
             target,
@@ -42,6 +52,16 @@ impl CameraComponent {
             panic!("Camera order must be less than {}", Self::MAX_CAMERAS);
         }
         self.order = order;
+    }
+}
+
+impl Default for RenderOperation {
+    fn default() -> Self {
+        Self {
+            order: 0,
+            clear_operation: ClearOperation::default(),
+            target: RenderTarget::Screen,
+        }
     }
 }
 

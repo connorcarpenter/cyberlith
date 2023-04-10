@@ -23,21 +23,7 @@ pub trait Geometry: Send + Sync {
     /// Must be called in the callback given as input to a [RenderTarget], [ColorTarget] or [DepthTarget] write method.
     /// Use an empty array for the `lights` argument, if the material does not require lights to be rendered.
     ///
-    fn render_with_material(&self, material: &dyn Material, camera: &Camera, lights: &[&dyn Light]);
-
-    ///
-    /// Render the geometry with the given [PostMaterial].
-    /// Must be called in the callback given as input to a [RenderTarget], [ColorTarget] or [DepthTarget] write method.
-    /// Use an empty array for the `lights` argument, if the material does not require lights to be rendered.
-    ///
-    fn render_with_post_material(
-        &self,
-        material: &dyn PostMaterial,
-        camera: &Camera,
-        lights: &[&dyn Light],
-        color_texture: Option<ColorTexture>,
-        depth_texture: Option<DepthTexture>,
-    );
+    fn render_with_material(&self, material: &dyn Material, camera: &RenderCamera, lights: &[&dyn Light]);
 
     ///
     /// Returns the [AxisAlignedBoundingBox] for this geometry in the global coordinate system.
@@ -49,149 +35,14 @@ impl<T: Geometry + ?Sized> Geometry for &T {
     fn render_with_material(
         &self,
         material: &dyn Material,
-        camera: &Camera,
+        camera: &RenderCamera,
         lights: &[&dyn Light],
     ) {
         (*self).render_with_material(material, camera, lights)
     }
 
-    fn render_with_post_material(
-        &self,
-        material: &dyn PostMaterial,
-        camera: &Camera,
-        lights: &[&dyn Light],
-        color_texture: Option<ColorTexture>,
-        depth_texture: Option<DepthTexture>,
-    ) {
-        (*self).render_with_post_material(material, camera, lights, color_texture, depth_texture)
-    }
-
     fn aabb(&self) -> AxisAlignedBoundingBox {
         (*self).aabb()
-    }
-}
-
-impl<T: Geometry + ?Sized> Geometry for &mut T {
-    fn render_with_material(
-        &self,
-        material: &dyn Material,
-        camera: &Camera,
-        lights: &[&dyn Light],
-    ) {
-        (**self).render_with_material(material, camera, lights)
-    }
-
-    fn render_with_post_material(
-        &self,
-        material: &dyn PostMaterial,
-        camera: &Camera,
-        lights: &[&dyn Light],
-        color_texture: Option<ColorTexture>,
-        depth_texture: Option<DepthTexture>,
-    ) {
-        (**self).render_with_post_material(material, camera, lights, color_texture, depth_texture)
-    }
-
-    fn aabb(&self) -> AxisAlignedBoundingBox {
-        (**self).aabb()
-    }
-}
-
-impl<T: Geometry> Geometry for Box<T> {
-    fn render_with_material(
-        &self,
-        material: &dyn Material,
-        camera: &Camera,
-        lights: &[&dyn Light],
-    ) {
-        self.as_ref().render_with_material(material, camera, lights)
-    }
-
-    fn render_with_post_material(
-        &self,
-        material: &dyn PostMaterial,
-        camera: &Camera,
-        lights: &[&dyn Light],
-        color_texture: Option<ColorTexture>,
-        depth_texture: Option<DepthTexture>,
-    ) {
-        self.as_ref().render_with_post_material(
-            material,
-            camera,
-            lights,
-            color_texture,
-            depth_texture,
-        )
-    }
-
-    fn aabb(&self) -> AxisAlignedBoundingBox {
-        self.as_ref().aabb()
-    }
-}
-
-impl<T: Geometry> Geometry for std::sync::Arc<T> {
-    fn render_with_material(
-        &self,
-        material: &dyn Material,
-        camera: &Camera,
-        lights: &[&dyn Light],
-    ) {
-        self.as_ref().render_with_material(material, camera, lights)
-    }
-
-    fn render_with_post_material(
-        &self,
-        material: &dyn PostMaterial,
-        camera: &Camera,
-        lights: &[&dyn Light],
-        color_texture: Option<ColorTexture>,
-        depth_texture: Option<DepthTexture>,
-    ) {
-        self.as_ref().render_with_post_material(
-            material,
-            camera,
-            lights,
-            color_texture,
-            depth_texture,
-        )
-    }
-
-    fn aabb(&self) -> AxisAlignedBoundingBox {
-        self.as_ref().aabb()
-    }
-}
-
-impl<T: Geometry> Geometry for std::sync::RwLock<T> {
-    fn render_with_material(
-        &self,
-        material: &dyn Material,
-        camera: &Camera,
-        lights: &[&dyn Light],
-    ) {
-        self.read()
-            .unwrap()
-            .render_with_material(material, camera, lights)
-    }
-
-    fn render_with_post_material(
-        &self,
-        material: &dyn PostMaterial,
-        camera: &Camera,
-        lights: &[&dyn Light],
-        color_texture: Option<ColorTexture>,
-        depth_texture: Option<DepthTexture>,
-    ) {
-        self.read().unwrap().render_with_post_material(
-            material,
-            camera,
-            lights,
-            color_texture,
-            depth_texture,
-        )
-    }
-
-    fn aabb(&self) -> AxisAlignedBoundingBox {
-        self.read().unwrap().aabb()
     }
 }
 

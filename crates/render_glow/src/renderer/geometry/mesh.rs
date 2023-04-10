@@ -27,7 +27,7 @@ impl<'a> Mesh<'a> {
         &self,
         program: &Program,
         render_states: RenderStates,
-        camera: &Camera,
+        render_camera: &'a RenderCamera<'a>,
         attributes: FragmentAttributes,
     ) {
         if attributes.normal {
@@ -35,11 +35,11 @@ impl<'a> Mesh<'a> {
             program.use_uniform_if_required("normalMatrix", inverse.transpose());
         }
 
-        program.use_uniform("viewProjection", *camera.projection() * *camera.view());
+        program.use_uniform("viewProjection", *render_camera.camera.projection() * render_camera.transform.view_matrix());
         program.use_uniform("modelMatrix", self.transform);
 
         self.base_mesh
-            .draw(program, render_states, camera, attributes);
+            .draw(program, render_states, render_camera.camera, attributes);
     }
 
     fn vertex_shader_source(&self, required_attributes: FragmentAttributes) -> String {
@@ -81,41 +81,18 @@ impl<'a> Geometry for Mesh<'a> {
     fn render_with_material(
         &self,
         material: &dyn Material,
-        camera: &Camera,
+        render_camera: &RenderCamera,
         lights: &[&dyn Light],
     ) {
         let fragment_shader = material.fragment_shader(lights);
         let vertex_shader_source = self.vertex_shader_source(fragment_shader.attributes);
         Context::get()
             .program(vertex_shader_source, fragment_shader.source, |program| {
-                material.use_uniforms(program, camera, lights);
+                material.use_uniforms(program, render_camera, lights);
                 self.draw(
                     program,
                     material.render_states(),
-                    camera,
-                    fragment_shader.attributes,
-                );
-            })
-            .expect("Failed compiling shader");
-    }
-
-    fn render_with_post_material(
-        &self,
-        material: &dyn PostMaterial,
-        camera: &Camera,
-        lights: &[&dyn Light],
-        color_texture: Option<ColorTexture>,
-        depth_texture: Option<DepthTexture>,
-    ) {
-        let fragment_shader = material.fragment_shader(lights, color_texture, depth_texture);
-        let vertex_shader_source = self.vertex_shader_source(fragment_shader.attributes);
-        Context::get()
-            .program(vertex_shader_source, fragment_shader.source, |program| {
-                material.use_uniforms(program, camera, lights, color_texture, depth_texture);
-                self.draw(
-                    program,
-                    material.render_states(),
-                    camera,
+                    render_camera,
                     fragment_shader.attributes,
                 );
             })

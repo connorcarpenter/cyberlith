@@ -11,11 +11,7 @@ use naia_bevy_client::{
 };
 
 use math::Vec3;
-use render_api::{
-    base::{Camera, Color, PbrMaterial, TriMesh, Viewport},
-    shapes, AmbientLight, Assets, CameraComponent, ClearOperation, DirectionalLight, PointLight,
-    RenderObjectBundle, RenderTarget, Transform, Window,
-};
+use render_api::{base::{Camera, Color, PbrMaterial, TriMesh, Viewport}, shapes, AmbientLight, Assets, ClearOperation, DirectionalLight, PointLight, RenderObjectBundle, RenderTarget, Transform, Window, CameraBundle, RenderOperation};
 
 use game_proto::protocol;
 use render_glow::window;
@@ -93,21 +89,19 @@ fn setup(
         color: Color::WHITE,
     });
     // camera
-    commands.spawn(CameraComponent::new(
-        Camera::new_perspective(
+    commands.spawn(CameraBundle {
+        camera: Camera::new_perspective(
             window.viewport(),
-            Vec3::new(50.0, 50.0, 50.0),
-            Vec3::new(0.0, 0.0, 0.0),
-            Vec3::new(0.0, 1.0, 0.0),
             45.0,
             0.1,
             1000.0,
         ),
-        // render before the "main pass" camera
-        0,
-        ClearOperation::default(),
-        RenderTarget::Screen,
-    ));
+        transform: Transform::from_xyz(50.0, 50.0, 50.0).looking_at(Vec3::ZERO, Vec3::Y),
+
+        render: RenderOperation::new(0,
+                                     ClearOperation::default(),
+                                     RenderTarget::Screen)
+    });
 }
 
 fn step(mut cube_q: Query<&mut Transform, With<CubeMarker>>, mut rotation: Local<f32>) {

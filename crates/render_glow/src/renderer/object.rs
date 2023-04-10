@@ -18,7 +18,7 @@ pub trait Object: Geometry {
     /// Use an empty array for the `lights` argument, if the objects does not require lights to be rendered.
     /// Must be called in the callback given as input to a [RenderTarget], [ColorTarget] or [DepthTarget] write method.
     ///
-    fn render(&self, camera: &Camera, lights: &[&dyn Light]);
+    fn render(&self, camera: &RenderCamera, lights: &[&dyn Light]);
 
     ///
     /// Returns the type of material applied to this object.
@@ -27,51 +27,11 @@ pub trait Object: Geometry {
 }
 
 impl<T: Object + ?Sized> Object for &T {
-    fn render(&self, camera: &Camera, lights: &[&dyn Light]) {
+    fn render(&self, camera: &RenderCamera, lights: &[&dyn Light]) {
         (*self).render(camera, lights)
     }
 
     fn material_type(&self) -> MaterialType {
         (*self).material_type()
-    }
-}
-
-impl<T: Object + ?Sized> Object for &mut T {
-    fn render(&self, camera: &Camera, lights: &[&dyn Light]) {
-        (**self).render(camera, lights)
-    }
-
-    fn material_type(&self) -> MaterialType {
-        (**self).material_type()
-    }
-}
-
-impl<T: Object> Object for Box<T> {
-    fn render(&self, camera: &Camera, lights: &[&dyn Light]) {
-        self.as_ref().render(camera, lights)
-    }
-
-    fn material_type(&self) -> MaterialType {
-        self.as_ref().material_type()
-    }
-}
-
-impl<T: Object> Object for std::sync::Arc<T> {
-    fn render(&self, camera: &Camera, lights: &[&dyn Light]) {
-        self.as_ref().render(camera, lights)
-    }
-
-    fn material_type(&self) -> MaterialType {
-        self.as_ref().material_type()
-    }
-}
-
-impl<T: Object> Object for std::sync::RwLock<T> {
-    fn render(&self, camera: &Camera, lights: &[&dyn Light]) {
-        self.read().unwrap().render(camera, lights)
-    }
-
-    fn material_type(&self) -> MaterialType {
-        self.read().unwrap().material_type()
     }
 }

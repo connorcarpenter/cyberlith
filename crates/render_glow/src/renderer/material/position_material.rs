@@ -29,7 +29,7 @@ impl Material for PositionMaterial {
         }
     }
 
-    fn use_uniforms(&self, _program: &Program, _camera: &Camera, _lights: &[&dyn Light]) {}
+    fn use_uniforms(&self, _program: &Program, _camera: &RenderCamera, _lights: &[&dyn Light]) {}
 
     fn render_states(&self) -> RenderStates {
         self.render_states

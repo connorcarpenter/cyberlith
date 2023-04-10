@@ -3,7 +3,8 @@ use bevy_ecs::{
     system::{NonSendMut, Query, Res, ResMut},
 };
 
-use render_api::{base::{PbrMaterial, TriMesh, Texture2D}, AmbientLight, CameraComponent, Handle, PointLight, RenderLayer, RenderLayers, Transform, RenderTarget as CameraRenderTarget};
+use render_api::{base::{PbrMaterial, TriMesh, Texture2D}, AmbientLight, Handle, PointLight, RenderLayer, RenderLayers, Transform, RenderTarget as CameraRenderTarget, RenderOperation};
+use render_api::base::Camera;
 
 use crate::{
     asset_impls::AssetImpls,
@@ -23,7 +24,7 @@ pub fn draw(
     mut textures: ResMut<AssetImpls<Texture2D, Texture2DImpl>>,
     mut depth_textures: ResMut<AssetImpls<Texture2D, DepthTexture2D>>,
     // Cameras
-    cameras_q: Query<(Entity, &CameraComponent, Option<&RenderLayer>)>,
+    cameras_q: Query<(&Camera, &Transform, &RenderOperation, Option<&RenderLayer>)>,
     // Objects
     objects_q: Query<(
         &Handle<TriMesh>,
@@ -38,14 +39,14 @@ pub fn draw(
 ) {
     let mut layer_to_order: Vec<Option<usize>> = Vec::with_capacity(RenderLayers::TOTAL_LAYERS);
     layer_to_order.resize(RenderLayers::TOTAL_LAYERS, None);
-    let mut camera_work: Vec<Option<RenderPass>> = Vec::with_capacity(CameraComponent::MAX_CAMERAS);
-    for _ in 0..CameraComponent::MAX_CAMERAS {
+    let mut camera_work: Vec<Option<RenderPass>> = Vec::with_capacity(RenderOperation::MAX_CAMERAS);
+    for _ in 0..RenderOperation::MAX_CAMERAS {
         camera_work.push(None);
     }
 
     // Aggregate Cameras
-    for (entity, camera, render_layer_wrapper) in cameras_q.iter() {
-        let camera_order = camera.order();
+    for (camera, transform, operation, render_layer_wrapper) in cameras_q.iter() {
+        let camera_order = operation.order();
         if camera_work[camera_order].is_some() {
             panic!("Each Camera must have a unique `order` value!");
         }
@@ -55,7 +56,7 @@ pub fn draw(
             panic!("Each Camera must have a unique RenderLayer component!");
         }
 
-        camera_work[camera_order] = Some(RenderPass::from_camera(camera));
+        camera_work[camera_order] = Some(RenderPass::from_camera(camera, transform, operation));
 
         layer_to_order[render_layer] = Some(camera_order);
     }
@@ -143,7 +144,7 @@ pub fn draw(
         let render_pass = work.unwrap();
 
         let render_target = {
-            match &render_pass.camera.camera.target {
+            match &render_pass.camera.operation.target {
                 CameraRenderTarget::Screen => {
                     frame_input.screen()
                 }
@@ -160,7 +161,7 @@ pub fn draw(
         };
 
         // Clear the color and depth of the screen render target using the camera's clear color
-        render_target.clear((&render_pass.camera.camera.clear_operation).into());
+        render_target.clear((&render_pass.camera.operation.clear_operation).into());
 
         render_target.render(render_pass);
     }

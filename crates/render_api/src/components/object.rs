@@ -2,8 +2,7 @@ use std::default::Default;
 
 use bevy_ecs::bundle::Bundle;
 
-use crate::assets::Handle;
-use crate::base::{PbrMaterial, TriMesh};
+use crate::{assets::Handle, base::{PbrMaterial, TriMesh}};
 
 use super::transform::Transform;
 

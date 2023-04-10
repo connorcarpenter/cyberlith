@@ -102,7 +102,7 @@ impl Material for ColorMaterial {
         }
     }
 
-    fn use_uniforms(&self, program: &Program, _camera: &Camera, _lights: &[&dyn Light]) {
+    fn use_uniforms(&self, program: &Program, _camera: &RenderCamera, _lights: &[&dyn Light]) {
         program.use_uniform("surfaceColor", self.color);
         if let Some(ref tex) = self.texture {
             program.use_uniform("textureTransformation", tex.transformation);

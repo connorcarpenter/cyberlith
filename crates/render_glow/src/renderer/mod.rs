@@ -19,7 +19,6 @@ pub use geometry::*;
 pub use light::*;
 pub use material::*;
 pub use object::*;
-pub use object::*;
 pub use render_pass::*;
 pub use render_target_ext::*;
 pub use utils::*;

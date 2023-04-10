@@ -119,6 +119,24 @@ impl Transform {
         self.rotation = Quat::from_mat3(&Mat3::from_cols(right, up, forward));
     }
 
+    pub fn view_matrix(&self) -> Mat4 {
+
+        let (position, target, up) = self.get_position_target_up();
+
+        return Mat4::look_at_rh(
+            position,
+            target,
+            up,
+        );
+    }
+
+    pub fn get_position_target_up(&self) -> (Vec3, Vec3, Vec3) {
+        let position = self.translation;
+        let target = self.translation + self.rotation * Vec3::Z;
+        let up = self.rotation * Vec3::Y;
+        (position, target, up)
+    }
+
     pub fn mul_transform(&self, transform: Transform) -> Self {
         let translation = self.transform_point(transform.translation);
         let rotation = self.rotation * transform.rotation;
