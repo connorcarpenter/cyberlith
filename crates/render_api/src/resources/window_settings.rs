@@ -76,10 +76,6 @@ pub struct WindowSettings {
     /// If `None` is specified, the canvas will be resized to the same size as
     /// the owner `Window`'s inner width and height.
     pub max_size: Option<(u32, u32)>,
-    /// An optional [canvas element][web_sys::HtmlCanvasElement] for using as winit window.
-    /// If this is `None`, the DOM (`index.html`) must contain a canvas element
-    #[cfg(target_arch = "wasm32")]
-    pub canvas: Option<web_sys::HtmlCanvasElement>,
 
     /// Settings related to the surface on where to draw.
     pub surface_settings: SurfaceSettings,
@@ -90,8 +86,6 @@ impl Default for WindowSettings {
             title: "".to_string(),
             min_size: (2, 2),
             max_size: None,
-            #[cfg(target_arch = "wasm32")]
-            canvas: None,
             surface_settings: SurfaceSettings::default(),
         }
     }

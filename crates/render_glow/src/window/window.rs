@@ -96,9 +96,7 @@ impl<T: 'static + Clone> Window<T> {
             .document()
             .ok_or(WindowError::DocumentMissing)?;
 
-        let canvas = if let Some(canvas) = window_settings.canvas {
-            canvas
-        } else {
+        let canvas = {
             document
                 .get_elements_by_tag_name("canvas")
                 .item(0)

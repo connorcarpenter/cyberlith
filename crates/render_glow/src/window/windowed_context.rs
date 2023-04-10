@@ -10,7 +10,7 @@ use super::WindowError;
 
 #[cfg(target_arch = "wasm32")]
 mod inner {
-    use crate::window::HardwareAcceleration;
+    use render_api::resources::HardwareAcceleration;
     use serde::{Deserialize, Serialize};
     use wasm_bindgen::JsCast;
     use winit::platform::web::WindowExtWebSys;
