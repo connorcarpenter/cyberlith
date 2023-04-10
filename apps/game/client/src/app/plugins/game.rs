@@ -14,7 +14,6 @@ use math::Vec3;
 use render_api::{base::{Camera, Color, PbrMaterial, TriMesh, Viewport}, shapes, AmbientLight, Assets, ClearOperation, DirectionalLight, PointLight, RenderObjectBundle, RenderTarget, Transform, Window, CameraBundle, RenderOperation};
 
 use game_proto::protocol;
-use render_glow::window;
 
 use crate::app::network;
 
