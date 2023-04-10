@@ -58,10 +58,10 @@ pub(crate) fn shadow_matrix(
 }
 
 pub(crate) fn compute_up_direction(direction: Vec3) -> Vec3 {
-    if Vec3::new(1.0, 0.0, 0.0).dot(direction).abs() > 0.9 {
-        (Vec3::new(0.0, 1.0, 0.0).cross(direction)).normalize()
+    if Vec3::X.dot(direction).abs() > 0.9 {
+        (Vec3::Y.cross(direction)).normalize()
     } else {
-        (Vec3::new(1.0, 0.0, 0.0).cross(direction)).normalize()
+        (Vec3::X.cross(direction)).normalize()
     }
 }
 

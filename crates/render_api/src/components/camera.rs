@@ -77,6 +77,7 @@ pub enum RenderTarget {
 }
 
 // Clear Operation
+#[derive(Clone)]
 pub struct ClearOperation {
     pub red: Option<f32>,
     pub green: Option<f32>,

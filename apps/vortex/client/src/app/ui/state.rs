@@ -17,7 +17,7 @@ pub struct UiState {
 impl Default for UiState {
     fn default() -> Self {
         Self {
-            workspace_type: WorkspaceType::None,
+            workspace_type: WorkspaceType::SkeletonBuilder,
         }
     }
 }

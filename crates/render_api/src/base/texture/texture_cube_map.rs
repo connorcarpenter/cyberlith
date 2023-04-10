@@ -72,7 +72,7 @@ impl CubeMapSide {
         match self {
             CubeMapSide::Right => Vec3::new(0.0, -1.0, 0.0),
             CubeMapSide::Left => Vec3::new(0.0, -1.0, 0.0),
-            CubeMapSide::Top => Vec3::new(0.0, 0.0, 1.0),
+            CubeMapSide::Top => Vec3::Z,
             CubeMapSide::Bottom => Vec3::new(0.0, 0.0, -1.0),
             CubeMapSide::Front => Vec3::new(0.0, -1.0, 0.0),
             CubeMapSide::Back => Vec3::new(0.0, -1.0, 0.0),
@@ -82,11 +82,11 @@ impl CubeMapSide {
     /// The direction from origo towards the center of this cube map side.
     pub fn direction(&self) -> Vec3 {
         match self {
-            CubeMapSide::Right => Vec3::new(1.0, 0.0, 0.0),
+            CubeMapSide::Right => Vec3::X,
             CubeMapSide::Left => Vec3::new(-1.0, 0.0, 0.0),
-            CubeMapSide::Top => Vec3::new(0.0, 1.0, 0.0),
+            CubeMapSide::Top => Vec3::Y,
             CubeMapSide::Bottom => Vec3::new(0.0, -1.0, 0.0),
-            CubeMapSide::Front => Vec3::new(0.0, 0.0, 1.0),
+            CubeMapSide::Front => Vec3::Z,
             CubeMapSide::Back => Vec3::new(0.0, 0.0, -1.0),
         }
     }

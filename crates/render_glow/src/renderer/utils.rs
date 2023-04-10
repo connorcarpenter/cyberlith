@@ -79,10 +79,10 @@ pub fn cmp_render_order(
 // ) -> Option<Vec3> {
 //     use crate::core::*;
 //     let viewport = Viewport::new_at_origin(1, 1);
-//     let up = if direction.dot(Vec3::new(1.0, 0.0, 0.0)).abs() > 0.99 {
-//         direction.cross(Vec3::new(0.0, 1.0, 0.0))
+//     let up = if direction.dot(Vec3::X).abs() > 0.99 {
+//         direction.cross(Vec3::Y)
 //     } else {
-//         direction.cross(Vec3::new(1.0, 0.0, 0.0))
+//         direction.cross(Vec3::X)
 //     };
 //     let camera = Camera::new_orthographic(viewport, 0.01, 0.0, max_depth, 0, ClearOperation::default(), CameraRenderTarget::Screen);
 //     let mut texture = Texture2DImpl::new_empty::<f32>(
@@ -111,7 +111,7 @@ pub fn cmp_render_order(
 //         ..Default::default()
 //     };
 //     let camera_transform = Transform::from_xyz(position.x, position.y, position.z)
-//         .looking_to(direction, Vec3::new(0.0, 1.0, 0.0));
+//         .looking_to(direction, Vec3::Y);
 //     let render_camera = RenderCamera::new(&camera, &camera_transform);
 //     let depth: f32 = RenderTarget::new(
 //         texture.as_color_target(None),

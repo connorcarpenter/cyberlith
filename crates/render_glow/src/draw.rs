@@ -43,8 +43,8 @@ pub fn draw(
     point_lights_q: Query<(&PointLight, Option<&RenderLayer>)>,
     directional_lights_q: Query<(&DirectionalLightImpl, Option<&RenderLayer>)>,
 ) {
-    let mut layer_to_order: Vec<Option<usize>> = Vec::with_capacity(RenderLayers::TOTAL_LAYERS);
-    layer_to_order.resize(RenderLayers::TOTAL_LAYERS, None);
+    let mut layer_to_order: Vec<Vec<usize>> = Vec::with_capacity(RenderLayers::TOTAL_LAYERS);
+    layer_to_order.resize(RenderLayers::TOTAL_LAYERS, Vec::new());
     let mut camera_work: Vec<Option<RenderPass>> = Vec::with_capacity(Camera::MAX_CAMERAS);
     for _ in 0..Camera::MAX_CAMERAS {
         camera_work.push(None);
@@ -61,88 +61,77 @@ pub fn draw(
         }
 
         let render_layer = convert_wrapper(render_layer_wrapper);
-        if layer_to_order[render_layer].is_some() {
-            panic!("Each Camera must have a unique RenderLayer component!");
-        }
 
         camera_work[camera_order] = Some(RenderPass::from_camera(camera, transform, projection));
 
-        layer_to_order[render_layer] = Some(camera_order);
+        layer_to_order[render_layer].push(camera_order);
     }
 
     // Aggregate Point Lights
     for (point_light, render_layer_wrapper) in point_lights_q.iter() {
         let render_layer = convert_wrapper(render_layer_wrapper);
-        if layer_to_order[render_layer].is_none() {
-            continue;
-        }
-        let camera_index = layer_to_order[render_layer].unwrap();
-        if camera_work[camera_index].is_none() {
-            panic!("Found PointLight with RenderLayer not associated with any Camera!");
-        }
+        for camera_index in layer_to_order[render_layer].iter().map(|x| *x) {
+            if camera_work[camera_index].is_none() {
+                panic!("Found PointLight with RenderLayer not associated with any Camera!");
+            }
 
-        camera_work[camera_index]
-            .as_mut()
-            .unwrap()
-            .lights
-            .push(RenderLight::wrapped(point_light));
+            camera_work[camera_index]
+                .as_mut()
+                .unwrap()
+                .lights
+                .push(RenderLight::wrapped(point_light));
+        }
     }
 
     // Aggregate Directional Lights
     for (directional_light_impl, render_layer_wrapper) in directional_lights_q.iter() {
         let render_layer = convert_wrapper(render_layer_wrapper);
-        if layer_to_order[render_layer].is_none() {
-            continue;
-        }
-        let camera_index = layer_to_order[render_layer].unwrap();
-        if camera_work[camera_index].is_none() {
-            panic!("Found DirectionalLight with RenderLayer not associated with any Camera!");
-        }
+        for camera_index in layer_to_order[render_layer].iter().map(|x| *x) {
+            if camera_work[camera_index].is_none() {
+                panic!("Found DirectionalLight with RenderLayer not associated with any Camera!");
+            }
 
-        camera_work[camera_index]
-            .as_mut()
-            .unwrap()
-            .lights
-            .push(RenderLight::wrapped(directional_light_impl));
+            camera_work[camera_index]
+                .as_mut()
+                .unwrap()
+                .lights
+                .push(RenderLight::wrapped(directional_light_impl));
+        }
     }
 
     // Aggregate Ambient Lights
     for (ambient_light, ambient_light_impl, render_layer_wrapper) in ambient_lights_q.iter() {
         let render_layer = convert_wrapper(render_layer_wrapper);
-        if layer_to_order[render_layer].is_none() {
-            continue;
-        }
-        let camera_index = layer_to_order[render_layer].unwrap();
-        if camera_work[camera_index].is_none() {
-            panic!("Found DirectionalLight with RenderLayer not associated with any Camera!");
-        }
+        for camera_index in layer_to_order[render_layer].iter().map(|x| *x) {
+            if camera_work[camera_index].is_none() {
+                panic!("Found DirectionalLight with RenderLayer not associated with any Camera!");
+            }
 
-        camera_work[camera_index]
-            .as_mut()
-            .unwrap()
-            .lights
-            .push(RenderLight::ambient(ambient_light, ambient_light_impl));
+            camera_work[camera_index]
+                .as_mut()
+                .unwrap()
+                .lights
+                .push(RenderLight::ambient(ambient_light, ambient_light_impl));
+        }
     }
 
     // Aggregate RenderObjects
     for (mesh_handle, mat_handle, transform, render_layer_wrapper) in objects_q.iter() {
         let render_layer = convert_wrapper(render_layer_wrapper);
-        if layer_to_order[render_layer].is_none() {
-            continue;
-        }
-        let camera_index: usize = layer_to_order[render_layer].unwrap();
-        if camera_work[camera_index].is_none() {
-            panic!("Found render object with RenderLayer not associated with any Camera!");
-        }
+        for camera_index in layer_to_order[render_layer].iter().map(|x| *x) {
+            if camera_work[camera_index].is_none() {
+                panic!("Found render object with RenderLayer not associated with any Camera!");
+            }
 
-        let mesh = meshes.get(mesh_handle).unwrap();
-        let mat = materials.get(mat_handle).unwrap();
+            let mesh = meshes.get(mesh_handle).unwrap();
+            let mat = materials.get(mat_handle).unwrap();
 
-        camera_work[camera_index]
-            .as_mut()
-            .unwrap()
-            .objects
-            .push(RenderObject::new(mesh, mat.as_ref(), transform))
+            camera_work[camera_index]
+                .as_mut()
+                .unwrap()
+                .objects
+                .push(RenderObject::new(mesh, mat.as_ref(), transform));
+        }
     }
 
     // Draw

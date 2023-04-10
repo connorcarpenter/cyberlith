@@ -113,10 +113,10 @@ impl TriMesh {
             Vec3::new(-halfsize, halfsize, 0.0),
         ];
         let normals = vec![
-            Vec3::new(0.0, 0.0, 1.0),
-            Vec3::new(0.0, 0.0, 1.0),
-            Vec3::new(0.0, 0.0, 1.0),
-            Vec3::new(0.0, 0.0, 1.0),
+            Vec3::Z,
+            Vec3::Z,
+            Vec3::Z,
+            Vec3::Z,
         ];
         let tangents = vec![
             Vec4::new(1.0, 0.0, 0.0, 1.0),
@@ -151,7 +151,7 @@ impl TriMesh {
             let angle = 2.0 * std::f32::consts::PI * j as f32 / angle_subdivisions as f32;
 
             positions.push(Vec3::new(angle.cos(), angle.sin(), 0.0));
-            normals.push(Vec3::new(0.0, 0.0, 1.0));
+            normals.push(Vec3::Z);
         }
 
         for j in 0..angle_subdivisions {
@@ -175,8 +175,8 @@ impl TriMesh {
         let mut indices = Vec::new();
         let mut normals = Vec::new();
 
-        positions.push(Vec3::new(0.0, 0.0, 1.0));
-        normals.push(Vec3::new(0.0, 0.0, 1.0));
+        positions.push(Vec3::Z);
+        normals.push(Vec3::Z);
 
         for j in 0..angle_subdivisions * 2 {
             let j1 = (j + 1) % (angle_subdivisions * 2);
@@ -447,7 +447,7 @@ impl TriMesh {
     /// It will override the current normals if they already exist.
     ///
     pub fn compute_normals(&mut self) {
-        let mut normals = vec![Vec3::new(0.0, 0.0, 0.0); self.positions.len()];
+        let mut normals = vec![Vec3::ZERO; self.positions.len()];
         self.for_each_triangle(|i0, i1, i2| {
             let Positions(ref positions) = self.positions;
             let normal = {
@@ -475,8 +475,8 @@ impl TriMesh {
         if self.normals.is_none() || self.uvs.is_none() {
             panic!("mesh must have both normals and uv coordinates to be able to compute tangents");
         }
-        let mut tan1 = vec![Vec3::new(0.0, 0.0, 0.0); self.positions.len()];
-        let mut tan2 = vec![Vec3::new(0.0, 0.0, 0.0); self.positions.len()];
+        let mut tan1 = vec![Vec3::ZERO; self.positions.len()];
+        let mut tan2 = vec![Vec3::ZERO; self.positions.len()];
 
         self.for_each_triangle(|i0, i1, i2| {
             let Positions(positions) = &self.positions;

@@ -82,7 +82,7 @@ impl AxisAlignedBoundingBox {
     ///
     pub fn center(&self) -> Vec3 {
         if self.is_infinite() {
-            Vec3::new(0.0, 0.0, 0.0)
+            Vec3::ZERO
         } else {
             0.5 * self.max + 0.5 * self.min
         }

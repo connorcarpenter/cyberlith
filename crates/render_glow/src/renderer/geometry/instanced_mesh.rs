@@ -30,7 +30,7 @@
 //         let aabb = cpu_mesh.compute_aabb();
 //         let mut instanced_mesh = Self {
 //             base_mesh: BaseMesh::new(cpu_mesh),
-//             instance_buffers: RwLock::new((Default::default(), Vec3::new(0.0, 0.0, 0.0))),
+//             instance_buffers: RwLock::new((Default::default(), Vec3::ZERO)),
 //             aabb,
 //             aabb_local: aabb,
 //             transformation: Mat4::IDENTITY,

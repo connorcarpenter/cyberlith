@@ -6,7 +6,7 @@ use render_egui::{
     EguiUserTextures,
 };
 
-use crate::app::plugin::LeftTopTexture;
+use crate::app::plugin::{LeftBottomTexture, LeftTopTexture, RightBottomTexture, RightTopTexture};
 
 pub fn skeleton_builder(ui: &mut Ui, world: &mut World) {
     egui::SidePanel::left("left_work")
@@ -57,9 +57,9 @@ fn left_top_work(ui: &mut Ui, world: &mut World) {
 }
 
 fn left_bottom_work(ui: &mut Ui, world: &mut World) {
-    let left_top_texture = world.get_resource::<LeftTopTexture>().unwrap();
+    let left_bottom_texture = world.get_resource::<LeftBottomTexture>().unwrap();
     let user_textures = world.get_resource::<EguiUserTextures>().unwrap();
-    let Some(texture_id) = user_textures.texture_id(&left_top_texture.0) else {
+    let Some(texture_id) = user_textures.texture_id(&left_bottom_texture.0) else {
         // The user texture may not be synced yet, return early.
         return;
     };
@@ -67,9 +67,9 @@ fn left_bottom_work(ui: &mut Ui, world: &mut World) {
 }
 
 fn right_top_work(ui: &mut Ui, world: &mut World) {
-    let left_top_texture = world.get_resource::<LeftTopTexture>().unwrap();
+    let right_top_texture = world.get_resource::<RightTopTexture>().unwrap();
     let user_textures = world.get_resource::<EguiUserTextures>().unwrap();
-    let Some(texture_id) = user_textures.texture_id(&left_top_texture.0) else {
+    let Some(texture_id) = user_textures.texture_id(&right_top_texture.0) else {
         // The user texture may not be synced yet, return early.
         return;
     };
@@ -77,9 +77,9 @@ fn right_top_work(ui: &mut Ui, world: &mut World) {
 }
 
 fn right_bottom_work(ui: &mut Ui, world: &mut World) {
-    let left_top_texture = world.get_resource::<LeftTopTexture>().unwrap();
+    let right_bottom_texture = world.get_resource::<RightBottomTexture>().unwrap();
     let user_textures = world.get_resource::<EguiUserTextures>().unwrap();
-    let Some(texture_id) = user_textures.texture_id(&left_top_texture.0) else {
+    let Some(texture_id) = user_textures.texture_id(&right_bottom_texture.0) else {
         // The user texture may not be synced yet, return early.
         return;
     };

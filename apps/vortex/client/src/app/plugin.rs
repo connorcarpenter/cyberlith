@@ -84,6 +84,15 @@ struct SkeletonCube;
 #[derive(Resource)]
 pub struct LeftTopTexture(pub Handle<Texture2D>);
 
+#[derive(Resource)]
+pub struct LeftBottomTexture(pub Handle<Texture2D>);
+
+#[derive(Resource)]
+pub struct RightTopTexture(pub Handle<Texture2D>);
+
+#[derive(Resource)]
+pub struct RightBottomTexture(pub Handle<Texture2D>);
+
 fn setup(
     mut commands: Commands,
     window: Res<Window>,
@@ -92,24 +101,15 @@ fn setup(
     mut textures: ResMut<Assets<Texture2D>>,
     mut user_textures: ResMut<EguiUserTextures>,
 ) {
-    // This is the texture that will be rendered to.
-    let texture_width = 300;
-    let texture_height = 300;
-    let mut texture = Texture2D::from_size(texture_width, texture_height);
-
-    let texture_handle = textures.add(texture);
-    user_textures.add_texture(&texture_handle);
-    commands.insert_resource(LeftTopTexture(texture_handle.clone()));
-
     // This specifies the layer used for the preview pass, which will be attached to the preview pass camera and cube.
     let preview_pass_layer = RenderLayers::layer(1);
 
     // Cube
     commands
         .spawn(RenderObjectBundle {
-            mesh: meshes.add(TriMesh::from(shapes::Cube { size: 60.0 })),
+            mesh: meshes.add(TriMesh::from(shapes::Cube { size: 50.0 })),
             material: materials.add(Color::from_rgb_f32(0.8, 0.7, 0.6).into()),
-            transform: Transform::from_xyz(0.0, 30.0, 0.0),
+            transform: Transform::from_xyz(0.0, 0.0, 0.0),
         })
         .insert(SkeletonCube)
         .insert(preview_pass_layer);
@@ -127,21 +127,102 @@ fn setup(
         })
         .insert(preview_pass_layer);
 
-    // Camera
+    // Cameras
+    let texture_size = 300;
+    let projection = Projection::Orthographic(OrthographicProjection::default());
+    let clear_op = ClearOperation::from_rgba(0.0, 0.0, 0.0, 1.0);
+    let viewport = Some(Viewport::new_at_origin(texture_size, texture_size));
+    let center_target = Vec3::new(0.0, 0.0, 0.0);
+
+    // LEFT TOP
+    let left_top_texture = new_render_texture(texture_size, &mut textures, &mut user_textures);
+    commands.insert_resource(LeftTopTexture(left_top_texture.clone()));
+
     commands
         .spawn(CameraBundle {
             camera: Camera {
-                viewport: Some(Viewport::new_at_origin(texture_width, texture_height)),
+                viewport: viewport.clone(),
                 order: 0,
-                clear_operation: ClearOperation::from_rgba(0.0, 0.0, 0.0, 1.0),
-                target: RenderTarget::Image(texture_handle),
+                clear_operation: clear_op.clone(),
+                target: RenderTarget::Image(left_top_texture),
                 ..Default::default()
             },
-            transform: Transform::from_xyz(20.0, 60.0, 20.0)
-                .looking_at(Vec3::new(0.0, 30.0, 0.0), Vec3::new(0.0, 1.0, 0.0)),
-            projection: Projection::Orthographic(OrthographicProjection::default()),
+            transform: Transform::from_xyz(60.0, 0.0, 0.0) // cube facing front?
+                .looking_at(center_target, Vec3::Y),
+            projection: projection.clone(),
         })
         .insert(preview_pass_layer);
+
+    // LEFT BOTTOM
+    let left_bottom_texture = new_render_texture(texture_size, &mut textures, &mut user_textures);
+    commands.insert_resource(LeftBottomTexture(left_bottom_texture.clone()));
+
+    commands
+        .spawn(CameraBundle {
+            camera: Camera {
+                viewport: viewport.clone(),
+                order: 1,
+                clear_operation: clear_op.clone(),
+                target: RenderTarget::Image(left_bottom_texture),
+                ..Default::default()
+            },
+            transform: Transform::from_xyz(0.0, 0.0, 60.0) // cube facing right?
+                .looking_at(center_target, Vec3::Y),
+            projection: projection.clone(),
+        })
+        .insert(preview_pass_layer);
+
+    // RIGHT TOP
+    let right_top_texture = new_render_texture(texture_size, &mut textures, &mut user_textures);
+    commands.insert_resource(RightTopTexture(right_top_texture.clone()));
+
+    commands
+        .spawn(CameraBundle {
+            camera: Camera {
+                viewport: viewport.clone(),
+                order: 2,
+                clear_operation: clear_op.clone(),
+                target: RenderTarget::Image(right_top_texture),
+                ..Default::default()
+            },
+            transform: Transform::from_xyz(0.0, 60.0, 1.0) // cube facing top? // NOTE: z-value of 1.0 necessary to render anything
+                .looking_at(center_target, Vec3::Y),
+            projection: projection.clone(),
+        })
+        .insert(preview_pass_layer);
+
+    // RIGHT BOTTOM
+    let right_bottom_texture = new_render_texture(texture_size, &mut textures, &mut user_textures);
+    commands.insert_resource(RightBottomTexture(right_bottom_texture.clone()));
+
+    commands
+        .spawn(CameraBundle {
+            camera: Camera {
+                viewport: viewport.clone(),
+                order: 3,
+                clear_operation: clear_op.clone(),
+                target: RenderTarget::Image(right_bottom_texture),
+                ..Default::default()
+            },
+            transform: Transform::from_xyz(30.0, 60.0, 30.0)
+                .looking_at(center_target, Vec3::Y),
+            projection: projection.clone(),
+        })
+        .insert(preview_pass_layer);
+}
+
+fn new_render_texture(
+    texture_size: u32,
+    textures: &mut Assets<Texture2D>,
+    user_textures: &mut EguiUserTextures
+) -> Handle<Texture2D> {
+    // This is the texture that will be rendered to.
+    let mut texture = Texture2D::from_size(texture_size, texture_size);
+
+    let texture_handle = textures.add(texture);
+    user_textures.add_texture(&texture_handle);
+
+    texture_handle
 }
 
 // Rotates the cubes.
