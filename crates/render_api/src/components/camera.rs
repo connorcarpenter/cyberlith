@@ -13,51 +13,6 @@ use super::transform::Transform;
 pub struct CameraBundle {
     pub camera: Camera,
     pub transform: Transform,
-    pub render: RenderOperation,
-}
-
-// Render Operation
-#[derive(Component)]
-pub struct RenderOperation {
-    pub order: usize,
-    pub clear_operation: ClearOperation,
-    pub target: RenderTarget,
-}
-
-impl RenderOperation {
-    pub const MAX_CAMERAS: usize = 32;
-
-    pub fn new(order: usize, clear_operation: ClearOperation, target: RenderTarget) -> Self {
-        let mut new_self = Self {
-            order: 0,
-            clear_operation,
-            target,
-        };
-        new_self.set_order(order);
-
-        new_self
-    }
-
-    pub fn order(&self) -> usize {
-        self.order
-    }
-
-    pub fn set_order(&mut self, order: usize) {
-        if order > Self::MAX_CAMERAS {
-            panic!("Camera order must be less than {}", Self::MAX_CAMERAS);
-        }
-        self.order = order;
-    }
-}
-
-impl Default for RenderOperation {
-    fn default() -> Self {
-        Self {
-            order: 0,
-            clear_operation: ClearOperation::default(),
-            target: RenderTarget::Screen,
-        }
-    }
 }
 
 // Render Target

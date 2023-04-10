@@ -1,6 +1,9 @@
-use crate::core::*;
+
 use glow::HasContext;
-use render_api::ClearOperation;
+
+use render_api::components::ClearOperation;
+
+use crate::core::*;
 
 ///
 /// Defines which channels (red, green, blue, alpha and depth) to clear when starting to write to a [RenderTarget].

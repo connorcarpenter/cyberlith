@@ -14,8 +14,9 @@ use math::Vec3;
 use render_api::{
     resources::WindowSettings,
     base::{Camera, Color, PbrMaterial, TriMesh, Viewport},
-    shapes, AmbientLight, Assets, CameraBundle, ClearOperation, DirectionalLight, PointLight,
-    RenderObjectBundle, RenderOperation, RenderTarget, Transform, Window,
+    components::{AmbientLight, CameraBundle, ClearOperation, DirectionalLight, PointLight, RenderLayers, RenderObjectBundle, Transform, RenderTarget},
+    shapes, Assets,
+    Window,
 };
 
 use game_proto::protocol;
@@ -100,10 +101,8 @@ fn setup(
     });
     // camera
     commands.spawn(CameraBundle {
-        camera: Camera::new_perspective(window.viewport(), 45.0, 0.1, 1000.0),
+        camera: Camera::new_perspective(window.viewport(), 45.0, 0.1, 1000.0, 0, ClearOperation::default(), RenderTarget::Screen),
         transform: Transform::from_xyz(50.0, 50.0, 50.0).looking_at(Vec3::ZERO, Vec3::Y),
-
-        render: RenderOperation::new(0, ClearOperation::default(), RenderTarget::Screen),
     });
 }
 

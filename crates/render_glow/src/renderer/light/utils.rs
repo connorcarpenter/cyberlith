@@ -1,6 +1,8 @@
 use math::*;
 
-use render_api::base::*;
+use render_api::{base::{Camera, LightingModel, NormalDistributionFunction}, components::Transform};
+
+use crate::renderer::Light;
 
 ///
 /// Returns shader source code with the function `calculate_lighting` which calculate the lighting contribution for the given lights and the given [LightingModel].
@@ -52,10 +54,6 @@ pub(crate) fn compute_up_direction(direction: Vec3) -> Vec3 {
         (Vec3::new(1.0, 0.0, 0.0).cross(direction)).normalize()
     }
 }
-
-use crate::renderer::Light;
-use render_api::base::{LightingModel, NormalDistributionFunction};
-use render_api::Transform;
 
 pub(crate) fn lighting_model_shader(lighting_model: LightingModel) -> &'static str {
     match lighting_model {

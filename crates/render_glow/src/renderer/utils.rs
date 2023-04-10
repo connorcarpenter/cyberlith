@@ -1,16 +1,8 @@
 use math::Vec3;
 
-use render_api::base::{Camera, Interpolation, Viewport, Wrapping};
-use render_api::{RenderOperation, Transform};
+use render_api::{base::{Camera, Interpolation, Viewport, Wrapping}, components::{Transform, ClearOperation, RenderTarget as CameraRenderTarget}};
 
 use crate::renderer::{DepthMaterial, Geometry, MaterialType, Object, RenderCamera};
-
-///
-/// Returns a camera for viewing 2D content.
-///
-pub fn camera2d(viewport: Viewport) -> Camera {
-    Camera::new_orthographic(viewport, viewport.height as f32, 0.0, 10.0)
-}
 
 ///
 /// Compare function for sorting objects based on distance from the camera.
@@ -89,7 +81,7 @@ pub fn ray_intersect(
     } else {
         direction.cross(Vec3::new(1.0, 0.0, 0.0))
     };
-    let camera = Camera::new_orthographic(viewport, 0.01, 0.0, max_depth);
+    let camera = Camera::new_orthographic(viewport, 0.01, 0.0, max_depth, 0, ClearOperation::default(), CameraRenderTarget::Screen);
     let mut texture = Texture2DImpl::new_empty::<f32>(
         viewport.width,
         viewport.height,
@@ -117,8 +109,7 @@ pub fn ray_intersect(
     };
     let camera_transform = Transform::from_xyz(position.x, position.y, position.z)
         .looking_to(direction, Vec3::new(0.0, 1.0, 0.0));
-    let camera_op = RenderOperation::default();
-    let render_camera = RenderCamera::new(&camera, &camera_transform, &camera_op);
+    let render_camera = RenderCamera::new(&camera, &camera_transform);
     let depth: f32 = RenderTarget::new(
         texture.as_color_target(None),
         depth_texture.as_depth_target(),

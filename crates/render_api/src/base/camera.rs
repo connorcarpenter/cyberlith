@@ -2,6 +2,8 @@ use bevy_ecs::component::Component;
 
 use math::*;
 
+use crate::components::{ClearOperation, RenderTarget};
+
 use super::*;
 
 ///
@@ -80,23 +82,29 @@ pub enum ProjectionType {
 ///
 /// Represents a camera used for viewing 3D assets.
 ///
-#[derive(Clone, Debug, Component)]
+#[derive(Component)]
 pub struct Camera {
     viewport: Viewport,
     projection_type: ProjectionType,
     z_near: f32,
     z_far: f32,
     projection: Mat4,
+    order: usize,
+    pub clear_operation: ClearOperation,
+    pub target: RenderTarget,
 }
 
 impl Camera {
+
+    pub const MAX_CAMERAS: usize = 32;
+
     ///
     /// New camera which projects the world with an orthographic projection.
     /// See also [set_view](Self::set_view), [set_perspective_projection](Self::set_perspective_projection) and
     /// [set_orthographic_projection](Self::set_orthographic_projection).
     ///
-    pub fn new_orthographic(viewport: Viewport, height: f32, z_near: f32, z_far: f32) -> Self {
-        let mut camera = Camera::new(viewport);
+    pub fn new_orthographic(viewport: Viewport, height: f32, z_near: f32, z_far: f32, order: usize, clear_op: ClearOperation, target: RenderTarget) -> Self {
+        let mut camera = Camera::new(viewport, order, clear_op, target);
         camera.set_orthographic_projection(height, z_near, z_far);
         camera
     }
@@ -109,8 +117,9 @@ impl Camera {
         fov_y_degrees: f32,
         z_near: f32,
         z_far: f32,
+        order: usize, clear_op: ClearOperation, target: RenderTarget
     ) -> Self {
-        let mut camera = Camera::new(viewport);
+        let mut camera = Camera::new(viewport, order, clear_op, target);
         camera.set_perspective_projection(fov_y_degrees, z_near, z_far);
 
         camera
@@ -179,6 +188,17 @@ impl Camera {
         } else {
             false
         }
+    }
+
+    pub fn order(&self) -> usize {
+        self.order
+    }
+
+    pub fn set_order(&mut self, order: usize) {
+        if order > Self::MAX_CAMERAS {
+            panic!("Camera order must be less than {}", Self::MAX_CAMERAS);
+        }
+        self.order = order;
     }
 
     ///
@@ -353,13 +373,16 @@ impl Camera {
         Self::view_direction(position, target).cross(*up)
     }
 
-    fn new(viewport: Viewport) -> Camera {
+    fn new(viewport: Viewport, order: usize, clear_op: ClearOperation, target: RenderTarget) -> Camera {
         Camera {
             viewport,
             projection_type: ProjectionType::Orthographic { height: 1.0 },
             z_near: 0.0,
             z_far: 0.0,
             projection: Mat4::IDENTITY,
+            order,
+            clear_operation: clear_op,
+            target,
         }
     }
 
@@ -424,6 +447,6 @@ impl Camera {
 
 impl Default for Camera {
     fn default() -> Self {
-        Self::new(Viewport::new_at_origin(1280, 720))
+        Self::new(Viewport::new_at_origin(1280, 720), 0, ClearOperation::default(), RenderTarget::Screen)
     }
 }

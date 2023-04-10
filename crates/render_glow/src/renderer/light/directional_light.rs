@@ -4,7 +4,7 @@ use bevy_ecs::component::Component;
 
 use render_api::{
     base::{AxisAlignedBoundingBox, Camera, Viewport, Wrapping},
-    DirectionalLight, RenderOperation, Transform,
+    components::{DirectionalLight, Transform, ClearOperation, RenderTarget}
 };
 
 use crate::{core::*, renderer::*};
@@ -69,7 +69,7 @@ impl DirectionalLightImpl {
         let z_far = aabb.distance_max(&position);
         let z_near = aabb.distance(&position);
         let frustum_height = aabb.max().distance(aabb.min()); // TODO: more tight fit
-        let shadow_camera = Camera::new_orthographic(viewport, frustum_height, z_near, z_far);
+        let shadow_camera = Camera::new_orthographic(viewport, frustum_height, z_near, z_far, 0, ClearOperation::default(), RenderTarget::Screen);
         let mut shadow_texture = DepthTexture2D::new::<f32>(
             texture_size,
             texture_size,
@@ -83,14 +83,12 @@ impl DirectionalLightImpl {
             },
             ..Default::default()
         };
-        let shadow_camera_operation = RenderOperation::default();
         let shadow_camera_transform = Transform::default()
             .with_translation(position)
             .looking_at(target, up);
         let shadow_render_camera = RenderCamera::new(
             &shadow_camera,
             &shadow_camera_transform,
-            &shadow_camera_operation,
         );
         shadow_texture
             .as_depth_target()

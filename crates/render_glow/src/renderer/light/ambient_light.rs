@@ -1,6 +1,6 @@
 use bevy_ecs::component::Component;
 
-use render_api::AmbientLight;
+use render_api::components::AmbientLight;
 
 use crate::{core::*, renderer::*};
 

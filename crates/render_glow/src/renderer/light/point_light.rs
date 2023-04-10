@@ -1,6 +1,6 @@
 use math::*;
 
-use render_api::PointLight;
+use render_api::components::PointLight;
 
 use crate::{core::Program, renderer::Light};
 

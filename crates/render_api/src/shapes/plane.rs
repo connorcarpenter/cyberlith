@@ -2,7 +2,7 @@ use math::Vec3;
 
 use crate::{
     base::{Positions, TriMesh},
-    Transform,
+    components::Transform,
 };
 
 pub struct Plane {

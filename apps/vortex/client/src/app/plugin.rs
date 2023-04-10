@@ -13,9 +13,10 @@ use naia_bevy_client::{
 use math::{Quat, Vec3};
 use render_api::{
     base::{Camera, Color, PbrMaterial, Texture2D, TriMesh, Viewport},
+    components::{AmbientLight, CameraBundle, ClearOperation, DirectionalLight, PointLight, RenderLayers, RenderObjectBundle, Transform, RenderTarget},
     resources::WindowSettings,
-    shapes, AmbientLight, Assets, CameraBundle, ClearOperation, DirectionalLight, Handle,
-    PointLight, RenderLayers, RenderObjectBundle, RenderOperation, RenderTarget, Transform, Window,
+    shapes, Assets, Handle,
+    Window,
 };
 use render_egui::{
     egui,
@@ -130,14 +131,12 @@ fn setup(
                 50.0,
                 0.0,
                 1000.0,
-            ),
-            transform: Transform::from_xyz(10.0, 20.0, 10.0)
-                .looking_at(Vec3::new(0.0, 10.0, 0.0), Vec3::new(0.0, 1.0, 0.0)),
-            render: RenderOperation::new(
                 0,
                 ClearOperation::from_rgba(0.0, 0.0, 0.0, 1.0),
                 RenderTarget::Image(texture_handle),
             ),
+            transform: Transform::from_xyz(10.0, 20.0, 10.0)
+                .looking_at(Vec3::new(0.0, 10.0, 0.0), Vec3::new(0.0, 1.0, 0.0)),
         })
         .insert(preview_pass_layer);
 }
