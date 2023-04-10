@@ -1,6 +1,6 @@
 use crate::core::*;
 use crate::renderer::*;
-use render_api::base::Viewport;
+use render_api::components::Viewport;
 
 ///
 /// Input from the window to the rendering (and whatever else needs it) each frame.

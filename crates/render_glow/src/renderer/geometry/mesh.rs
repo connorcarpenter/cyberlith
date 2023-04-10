@@ -1,8 +1,8 @@
 use math::Mat4;
 
 use render_api::{
-    base::{AxisAlignedBoundingBox, Camera},
-    components::Transform,
+    base::AxisAlignedBoundingBox,
+    components::{Camera, CameraProjection, Transform},
 };
 
 use crate::{core::*, renderer::*};
@@ -30,6 +30,8 @@ impl<'a> Mesh<'a> {
         render_camera: &'a RenderCamera<'a>,
         attributes: FragmentAttributes,
     ) {
+        let camera = render_camera.camera;
+
         if attributes.normal {
             let inverse = self.transform.inverse();
             program.use_uniform_if_required("normalMatrix", inverse.transpose());
@@ -37,12 +39,15 @@ impl<'a> Mesh<'a> {
 
         program.use_uniform(
             "viewProjection",
-            *render_camera.camera.projection() * render_camera.transform.view_matrix(),
+            render_camera
+                .projection
+                .projection_matrix(&camera.viewport_or_default())
+                * render_camera.transform.view_matrix(),
         );
         program.use_uniform("modelMatrix", self.transform);
 
         self.base_mesh
-            .draw(program, render_states, render_camera.camera, attributes);
+            .draw(program, render_states, camera, attributes);
     }
 
     fn vertex_shader_source(&self, required_attributes: FragmentAttributes) -> String {

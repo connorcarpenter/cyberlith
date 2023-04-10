@@ -1,6 +1,6 @@
 use math::*;
 
-use render_api::base::Viewport;
+use render_api::components::Viewport;
 
 use crate::core::{apply_effect, ColorTexture, Cull, DepthTest, RenderStates, WriteMask};
 

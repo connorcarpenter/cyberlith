@@ -4,17 +4,20 @@ use bevy_ecs::{
 };
 
 use render_api::{
-    base::{PbrMaterial, Texture2D, TriMesh, Camera},
-    components::{AmbientLight, PointLight, RenderLayer, RenderLayers, Transform, RenderTarget as CameraRenderTarget}, Handle,
+    base::{PbrMaterial, Texture2D, TriMesh},
+    components::{
+        AmbientLight, Camera, PointLight, Projection, RenderLayer, RenderLayers,
+        RenderTarget as CameraRenderTarget, Transform,
+    },
+    Handle,
 };
 
 use crate::{
     asset_impls::AssetImpls,
     core::{DepthTexture2D, RenderTarget, Texture2DImpl},
     renderer::{
-        RenderAmbientLight,
-        AmbientLightImpl, BaseMesh, DirectionalLightImpl, Light, Material, RenderCamera,
-        RenderLight, RenderObject, RenderPass,
+        AmbientLightImpl, BaseMesh, DirectionalLightImpl, Light, Material, RenderAmbientLight,
+        RenderCamera, RenderLight, RenderObject, RenderPass,
     },
     window::FrameInput,
 };
@@ -27,7 +30,7 @@ pub fn draw(
     mut textures: ResMut<AssetImpls<Texture2D, Texture2DImpl>>,
     mut depth_textures: ResMut<AssetImpls<Texture2D, DepthTexture2D>>,
     // Cameras
-    cameras_q: Query<(&Camera, &Transform, Option<&RenderLayer>)>,
+    cameras_q: Query<(&Camera, &Transform, &Projection, Option<&RenderLayer>)>,
     // Objects
     objects_q: Query<(
         &Handle<TriMesh>,
@@ -48,7 +51,7 @@ pub fn draw(
     }
 
     // Aggregate Cameras
-    for (camera, transform, render_layer_wrapper) in cameras_q.iter() {
+    for (camera, transform, projection, render_layer_wrapper) in cameras_q.iter() {
         let camera_order = camera.order();
         if camera_work[camera_order].is_some() {
             panic!("Each Camera must have a unique `order` value!");
@@ -59,7 +62,7 @@ pub fn draw(
             panic!("Each Camera must have a unique RenderLayer component!");
         }
 
-        camera_work[camera_order] = Some(RenderPass::from_camera(camera, transform));
+        camera_work[camera_order] = Some(RenderPass::from_camera(camera, transform, projection));
 
         layer_to_order[render_layer] = Some(camera_order);
     }

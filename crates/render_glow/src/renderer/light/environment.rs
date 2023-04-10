@@ -1,8 +1,11 @@
 use half::*;
 
-use render_api::base::{
-    CubeMapSide, GeometryFunction, Interpolation, LightingModel, NormalDistributionFunction,
-    Viewport, Wrapping,
+use render_api::{
+    base::{
+        CubeMapSide, GeometryFunction, Interpolation, LightingModel, NormalDistributionFunction,
+        Wrapping,
+    },
+    components::Viewport,
 };
 
 use crate::core::*;

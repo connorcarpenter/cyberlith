@@ -1,7 +1,7 @@
 use bevy_log::info;
 
-use vortex_proto::messages::Auth;
 use naia_bevy_client::{transport::webrtc, Client};
+use vortex_proto::messages::Auth;
 
 pub fn init(mut client: Client) {
     info!("Naia Bevy Client Demo started");

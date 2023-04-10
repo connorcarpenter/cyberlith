@@ -1,6 +1,6 @@
 use glow::HasContext;
 
-use render_api::base::{CubeMapSide, Viewport};
+use render_api::{base::CubeMapSide, components::Viewport};
 
 use crate::core::{
     texture::Texture2DMultisample, ClearState, ColorTexture, Context, RenderTarget, ScissorBox,

@@ -12,14 +12,17 @@ use naia_bevy_client::{
 
 use math::Vec3;
 use render_api::{
+    base::{Color, PbrMaterial, TriMesh},
+    components::{
+        AmbientLight, Camera, CameraBundle, ClearOperation, DirectionalLight, PointLight,
+        RenderLayers, RenderObjectBundle, RenderTarget, Transform, Viewport,
+    },
     resources::WindowSettings,
-    base::{Camera, Color, PbrMaterial, TriMesh, Viewport},
-    components::{AmbientLight, CameraBundle, ClearOperation, DirectionalLight, PointLight, RenderLayers, RenderObjectBundle, Transform, RenderTarget},
-    shapes, Assets,
-    Window,
+    shapes, Assets, Window,
 };
 
 use game_proto::protocol;
+use render_api::components::{PerspectiveProjection, Projection};
 
 use crate::app::network;
 
@@ -101,8 +104,17 @@ fn setup(
     });
     // camera
     commands.spawn(CameraBundle {
-        camera: Camera::new_perspective(window.viewport(), 45.0, 0.1, 1000.0, 0, ClearOperation::default(), RenderTarget::Screen),
+        camera: Camera {
+            viewport: Some(window.viewport()),
+            ..Default::default()
+        },
         transform: Transform::from_xyz(50.0, 50.0, 50.0).looking_at(Vec3::ZERO, Vec3::Y),
+        projection: Projection::Perspective(PerspectiveProjection {
+            fov: 45.0,
+            near: 0.1,
+            far: 1000.0,
+            ..Default::default()
+        }),
     });
 }
 

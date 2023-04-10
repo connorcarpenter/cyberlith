@@ -1,4 +1,4 @@
-use render_api::base::{CubeMapSide, Viewport};
+use render_api::{base::CubeMapSide, components::Viewport};
 
 use crate::core::{
     texture::DepthTexture2DMultisample, ClearState, DepthTexture, DepthTexture2D,

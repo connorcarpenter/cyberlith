@@ -7,13 +7,11 @@ use render_api::resources::WindowSettings;
 use crate::window::{FrameInput, FrameOutput, Window};
 
 pub fn three_d_runner(mut app: App) {
-
     // Get Window Settings
     let window_settings = app.world.remove_resource::<WindowSettings>().unwrap();
 
     // Create a Window
-    let window = Window::new(window_settings)
-    .unwrap();
+    let window = Window::new(window_settings).unwrap();
 
     // Start the main render loop
     window.render_loop(

@@ -1,4 +1,4 @@
-use render_api::base::Viewport;
+use render_api::components::Viewport;
 
 ///
 /// Defines the part of the screen or render target that is rendered to.

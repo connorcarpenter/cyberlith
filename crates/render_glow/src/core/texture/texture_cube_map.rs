@@ -1,8 +1,11 @@
 use glow::HasContext;
 
-use render_api::base::{
-    CubeMapSide, Interpolation, Texture2D as CpuTexture, TextureCubeMap as ApiTextureCubeMap,
-    TextureData, Viewport, Wrapping,
+use render_api::{
+    base::{
+        CubeMapSide, Interpolation, Texture2D as CpuTexture, TextureCubeMap as ApiTextureCubeMap,
+        TextureData, Wrapping,
+    },
+    components::Viewport,
 };
 
 use crate::core::{

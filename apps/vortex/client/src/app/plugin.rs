@@ -11,12 +11,15 @@ use naia_bevy_client::{
 };
 
 use math::{Quat, Vec3};
+use render_api::components::{OrthographicProjection, Projection};
 use render_api::{
-    base::{Camera, Color, PbrMaterial, Texture2D, TriMesh, Viewport},
-    components::{AmbientLight, CameraBundle, ClearOperation, DirectionalLight, PointLight, RenderLayers, RenderObjectBundle, Transform, RenderTarget},
+    base::{Color, PbrMaterial, Texture2D, TriMesh},
+    components::{
+        AmbientLight, Camera, CameraBundle, ClearOperation, DirectionalLight, PointLight,
+        RenderLayers, RenderObjectBundle, RenderTarget, Transform, Viewport,
+    },
     resources::WindowSettings,
-    shapes, Assets, Handle,
-    Window,
+    shapes, Assets, Handle, Window,
 };
 use render_egui::{
     egui,
@@ -103,9 +106,9 @@ fn setup(
     // Cube
     commands
         .spawn(RenderObjectBundle {
-            mesh: meshes.add(TriMesh::from(shapes::Cube { size: 20.0 })),
+            mesh: meshes.add(TriMesh::from(shapes::Cube { size: 60.0 })),
             material: materials.add(Color::from_rgb_f32(0.8, 0.7, 0.6).into()),
-            transform: Transform::from_xyz(0.0, 10.0, 0.0),
+            transform: Transform::from_xyz(0.0, 30.0, 0.0),
         })
         .insert(SkeletonCube)
         .insert(preview_pass_layer);
@@ -126,17 +129,16 @@ fn setup(
     // Camera
     commands
         .spawn(CameraBundle {
-            camera: Camera::new_orthographic(
-                Viewport::new_at_origin(texture_width, texture_height),
-                50.0,
-                0.0,
-                1000.0,
-                0,
-                ClearOperation::from_rgba(0.0, 0.0, 0.0, 1.0),
-                RenderTarget::Image(texture_handle),
-            ),
-            transform: Transform::from_xyz(10.0, 20.0, 10.0)
-                .looking_at(Vec3::new(0.0, 10.0, 0.0), Vec3::new(0.0, 1.0, 0.0)),
+            camera: Camera {
+                viewport: Some(Viewport::new_at_origin(texture_width, texture_height)),
+                order: 0,
+                clear_operation: ClearOperation::from_rgba(0.0, 0.0, 0.0, 1.0),
+                target: RenderTarget::Image(texture_handle),
+                ..Default::default()
+            },
+            transform: Transform::from_xyz(20.0, 60.0, 20.0)
+                .looking_at(Vec3::new(0.0, 30.0, 0.0), Vec3::new(0.0, 1.0, 0.0)),
+            projection: Projection::Orthographic(OrthographicProjection::default()),
         })
         .insert(preview_pass_layer);
 }

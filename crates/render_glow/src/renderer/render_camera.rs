@@ -1,6 +1,6 @@
 use render_api::{
-    base::{AxisAlignedBoundingBox, Camera},
-    components::Transform,
+    base::AxisAlignedBoundingBox,
+    components::{Camera, Projection, Transform},
 };
 
 use crate::{
@@ -13,16 +13,15 @@ use crate::{
 pub struct RenderCamera<'a> {
     pub camera: &'a Camera,
     pub transform: &'a Transform,
+    pub projection: &'a Projection,
 }
 
 impl<'a> RenderCamera<'a> {
-    pub fn new(
-        camera: &'a Camera,
-        transform: &'a Transform,
-    ) -> Self {
+    pub fn new(camera: &'a Camera, transform: &'a Transform, projection: &'a Projection) -> Self {
         Self {
             camera,
             transform,
+            projection,
         }
     }
 }

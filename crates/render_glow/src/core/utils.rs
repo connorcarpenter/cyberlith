@@ -1,6 +1,6 @@
 use math::Vec3;
 
-use render_api::base::{CubeMapSide, Viewport};
+use render_api::{base::CubeMapSide, components::Viewport};
 
 use crate::core::{Context, DataType, Program, RenderStates, TextureDataType, VertexBuffer};
 

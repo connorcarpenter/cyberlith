@@ -1,6 +1,7 @@
+use render_api::components::Projection;
 use render_api::{
-    base::{AxisAlignedBoundingBox, Camera},
-    components::Transform,
+    base::AxisAlignedBoundingBox,
+    components::{Camera, Transform},
 };
 
 use crate::{
@@ -22,9 +23,10 @@ impl<'a> RenderPass<'a> {
     pub fn from_camera(
         camera: &'a Camera,
         transform: &'a Transform,
+        projection: &'a Projection,
     ) -> Self {
         Self {
-            camera: RenderCamera::new(camera, transform),
+            camera: RenderCamera::new(camera, transform, projection),
             lights: Vec::new(),
             objects: Vec::new(),
         }

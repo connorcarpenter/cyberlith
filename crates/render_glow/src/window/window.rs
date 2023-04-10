@@ -5,13 +5,14 @@ use winit::{
     *,
 };
 
-use render_api::{base::Viewport, resources::{SurfaceSettings, WindowSettings}};
+use render_api::{
+    components::Viewport,
+    resources::{SurfaceSettings, WindowSettings},
+};
 
 use crate::{
     renderer::{Event, Key, Modifiers, MouseButton},
-    window::{
-        FrameInput, FrameOutput, WindowError, WindowedContext,
-    },
+    window::{FrameInput, FrameOutput, WindowError, WindowedContext},
 };
 
 ///

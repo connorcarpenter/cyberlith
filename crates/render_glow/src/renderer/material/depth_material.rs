@@ -1,4 +1,7 @@
-use render_api::base::{Camera, PbrMaterial};
+use render_api::{
+    base::PbrMaterial,
+    components::{Camera, CameraProjection},
+};
 
 use crate::{core::*, renderer::*};
 
@@ -36,11 +39,12 @@ impl Material for DepthMaterial {
     fn use_uniforms(&self, program: &Program, camera: &RenderCamera, _lights: &[&dyn Light]) {
         program.use_uniform(
             "minDistance",
-            self.min_distance.unwrap_or_else(|| camera.camera.z_near()),
+            self.min_distance
+                .unwrap_or_else(|| camera.projection.near()),
         );
         program.use_uniform(
             "maxDistance",
-            self.max_distance.unwrap_or_else(|| camera.camera.z_far()),
+            self.max_distance.unwrap_or_else(|| camera.projection.far()),
         );
         program.use_uniform("eye", camera.transform.translation);
     }

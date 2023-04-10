@@ -7,7 +7,7 @@ use glow::HasContext;
 
 use bevy_log::info;
 
-use render_api::base::Viewport;
+use render_api::components::Viewport;
 
 use super::*;
 

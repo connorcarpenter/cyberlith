@@ -1,4 +1,7 @@
-use render_api::base::{Camera, Interpolation, Viewport, Wrapping};
+use render_api::{
+    base::{Interpolation, Wrapping},
+    components::{Camera, Viewport},
+};
 
 use crate::{
     core::{

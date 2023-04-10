@@ -1,4 +1,3 @@
-
 use glow::HasContext;
 
 use render_api::components::ClearOperation;

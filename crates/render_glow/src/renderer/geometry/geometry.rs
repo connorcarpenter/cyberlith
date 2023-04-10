@@ -1,8 +1,8 @@
 use math::*;
 
-use crate::core::*;
-use crate::renderer::*;
-use render_api::base::*;
+use crate::{core::*, renderer::*};
+
+use render_api::{base::*, components::Camera};
 
 ///
 /// Represents a 3D geometry that, together with a [material], can be rendered using [Geometry::render_with_material].
@@ -107,11 +107,11 @@ impl BaseMesh {
     ) {
         self.use_attributes(program, attributes);
         if let Some(index_buffer) = &self.indices {
-            program.draw_elements(render_states, camera.viewport(), index_buffer)
+            program.draw_elements(render_states, camera.viewport_or_default(), index_buffer)
         } else {
             program.draw_arrays(
                 render_states,
-                camera.viewport(),
+                camera.viewport_or_default(),
                 self.positions.vertex_count(),
             )
         }
@@ -130,14 +130,14 @@ impl BaseMesh {
         if let Some(index_buffer) = &self.indices {
             program.draw_elements_instanced(
                 render_states,
-                camera.viewport(),
+                camera.viewport_or_default(),
                 index_buffer,
                 instance_count,
             )
         } else {
             program.draw_arrays_instanced(
                 render_states,
-                camera.viewport(),
+                camera.viewport_or_default(),
                 self.positions.vertex_count(),
                 instance_count,
             )

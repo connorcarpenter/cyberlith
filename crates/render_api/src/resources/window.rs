@@ -1,7 +1,8 @@
 use std::default::Default;
 
-use crate::base::Viewport;
 use bevy_ecs::prelude::Resource;
+
+use crate::components::Viewport;
 
 #[derive(Resource, Default)]
 pub struct Window {

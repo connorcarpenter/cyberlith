@@ -2,7 +2,7 @@ use std::{collections::HashMap, sync::RwLock};
 
 use glow::HasContext;
 
-use render_api::base::Viewport;
+use render_api::components::Viewport;
 
 use crate::core::*;
 

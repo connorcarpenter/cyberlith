@@ -1,6 +1,6 @@
 use render_api::{
-    base::{AxisAlignedBoundingBox, Camera},
-    components::{AmbientLight, Transform},
+    base::AxisAlignedBoundingBox,
+    components::{AmbientLight, Camera, Transform},
 };
 
 use crate::{

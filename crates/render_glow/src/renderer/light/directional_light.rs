@@ -2,9 +2,10 @@ use math::Mat4;
 
 use bevy_ecs::component::Component;
 
+use render_api::components::{OrthographicProjection, Projection};
 use render_api::{
-    base::{AxisAlignedBoundingBox, Camera, Viewport, Wrapping},
-    components::{DirectionalLight, Transform, ClearOperation, RenderTarget}
+    base::{AxisAlignedBoundingBox, Wrapping},
+    components::{Camera, ClearOperation, DirectionalLight, RenderTarget, Transform, Viewport},
 };
 
 use crate::{core::*, renderer::*};
@@ -68,8 +69,14 @@ impl DirectionalLightImpl {
         let position = target - aabb.max().distance(aabb.min()) * light.direction;
         let z_far = aabb.distance_max(&position);
         let z_near = aabb.distance(&position);
-        let frustum_height = aabb.max().distance(aabb.min()); // TODO: more tight fit
-        let shadow_camera = Camera::new_orthographic(viewport, frustum_height, z_near, z_far, 0, ClearOperation::default(), RenderTarget::Screen);
+        let shadow_camera = Camera {
+            viewport: Some(viewport),
+            ..Default::default()
+        };
+        let shadow_projection: Projection = Projection::Orthographic(OrthographicProjection {
+            near: z_near,
+            far: z_far,
+        });
         let mut shadow_texture = DepthTexture2D::new::<f32>(
             texture_size,
             texture_size,
@@ -86,10 +93,8 @@ impl DirectionalLightImpl {
         let shadow_camera_transform = Transform::default()
             .with_translation(position)
             .looking_at(target, up);
-        let shadow_render_camera = RenderCamera::new(
-            &shadow_camera,
-            &shadow_camera_transform,
-        );
+        let shadow_render_camera =
+            RenderCamera::new(&shadow_camera, &shadow_camera_transform, &shadow_projection);
         shadow_texture
             .as_depth_target()
             .clear(ClearState::default())
@@ -102,7 +107,8 @@ impl DirectionalLightImpl {
                 }
             });
         self.shadow_texture = Some(shadow_texture);
-        self.shadow_matrix = light::shadow_matrix(&shadow_camera, &shadow_camera_transform);
+        self.shadow_matrix =
+            light::shadow_matrix(&shadow_camera, &shadow_projection, &shadow_camera_transform);
     }
 
     ///

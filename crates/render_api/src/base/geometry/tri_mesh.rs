@@ -1,6 +1,9 @@
 use math::*;
 
-use crate::{base::{AxisAlignedBoundingBox, Color, Error, Indices, Positions, Result}, components::Transform};
+use crate::{
+    base::{AxisAlignedBoundingBox, Color, Error, Indices, Positions, Result},
+    components::Transform,
+};
 
 ///
 /// A CPU-side version of a triangle mesh.
