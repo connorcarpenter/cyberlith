@@ -11,12 +11,11 @@ use naia_bevy_client::{
 };
 
 use math::{Quat, Vec3};
-use render_api::components::{OrthographicProjection, Projection};
 use render_api::{
     base::{Color, PbrMaterial, Texture2D, TriMesh},
     components::{
         AmbientLight, Camera, CameraBundle, ClearOperation, DirectionalLight, PointLight,
-        RenderLayers, RenderObjectBundle, RenderTarget, Transform, Viewport,
+        RenderLayers, RenderObjectBundle, RenderTarget, Transform, Viewport, OrthographicProjection, Projection
     },
     resources::WindowSettings,
     shapes, Assets, Handle, Window,
@@ -45,32 +44,31 @@ impl Plugin for VortexPlugin {
                 max_size: Some((1280, 720)),
                 ..Default::default()
             })
-            // Add Naia Client Plugin
-            // .add_plugin(NaiaClientPlugin::new(
-            //     NaiaClientConfig::default(),
-            //     protocol(),
-            // ))
-            // Startup Systems
-            // .add_startup_system(network::init)
+            // Networking Plugin
+            .add_plugin(NaiaClientPlugin::new(
+                NaiaClientConfig::default(),
+                protocol(),
+            ))
+            // Networking Systems
+            .add_startup_system(network::init)
+            .add_systems(
+                (
+                    network::connect_events,
+                    network::disconnect_events,
+                    network::reject_events,
+                    network::error_events,
+                )
+                    .chain()
+                    .in_set(ReceiveEvents),
+            )
+            // UI Configuration
             .insert_resource(UiState::default())
             .insert_resource(ProjectTree(widgets::Tree::new()))
-            .add_startup_system(setup)
-            .add_system(rotate)
             .add_system(ui::main)
             .add_system(ui::sync_ui_to_world)
-        // Receive Client Events
-        // .add_systems(
-        //     (
-        //         network::connect_events,
-        //         network::disconnect_events,
-        //         network::reject_events,
-        //         network::error_events,
-        //     )
-        //         .chain()
-        //         .in_set(ReceiveEvents),
-        // )
-        // .add_system(step);
-        ;
+            // 3D Configuration
+            .add_startup_system(setup)
+            .add_system(rotate);
     }
 }
 
@@ -95,7 +93,6 @@ pub struct RightBottomTexture(pub Handle<Texture2D>);
 
 fn setup(
     mut commands: Commands,
-    window: Res<Window>,
     mut meshes: ResMut<Assets<TriMesh>>,
     mut materials: ResMut<Assets<PbrMaterial>>,
     mut textures: ResMut<Assets<Texture2D>>,
