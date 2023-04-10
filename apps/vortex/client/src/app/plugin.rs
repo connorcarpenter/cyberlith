@@ -7,7 +7,7 @@ use bevy_ecs::{
 };
 
 use naia_bevy_client::{
-    ClientConfig as NaiaClientConfig, Plugin as NaiaClientPlugin, ReceiveEvents,
+    ClientConfig, Plugin as ClientPlugin, ReceiveEvents,
 };
 
 use math::Vec3;
@@ -41,8 +41,8 @@ impl Plugin for VortexPlugin {
                 ..Default::default()
             })
             // Networking Plugin
-            .add_plugin(NaiaClientPlugin::new(
-                NaiaClientConfig::default(),
+            .add_plugin(ClientPlugin::new(
+                ClientConfig::default(),
                 protocol(),
             ))
             // Networking Systems

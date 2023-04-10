@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use bevy_app::{App, ScheduleRunnerPlugin, ScheduleRunnerSettings};
 use bevy_ecs::schedule::IntoSystemConfigs;
+use bevy_ecs::system::ResMut;
 use bevy_log::{info, LogPlugin};
 
 use naia_bevy_server::{Plugin as ServerPlugin, ReceiveEvents, ServerConfig};
@@ -13,6 +14,7 @@ mod resources;
 mod systems;
 
 use systems::network;
+use crate::resources::GitManager;
 
 fn main() {
     info!("Naia Bevy Server Demo starting up");
@@ -27,9 +29,8 @@ fn main() {
         .add_plugin(ScheduleRunnerPlugin::default())
         .add_plugin(LogPlugin::default())
         .add_plugin(ServerPlugin::new(ServerConfig::default(), protocol()))
-        // Startup System
+        // Network Systems
         .add_startup_system(network::init)
-        // Receive Server Events
         .add_systems(
             (
                 network::auth_events,
@@ -40,6 +41,13 @@ fn main() {
                 .chain()
                 .in_set(ReceiveEvents),
         )
+        // Other Systems
+        .insert_resource(GitManager::default())
+        .add_startup_system(setup)
         // Run App
         .run();
+}
+
+fn setup(mut git_manager: ResMut<GitManager>) {
+    git_manager.init();
 }
