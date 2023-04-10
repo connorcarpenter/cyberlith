@@ -1,11 +1,11 @@
-use std::{cell::RefCell, collections::HashMap, ops::Deref};
+use std::{cell::RefCell, ops::Deref};
 
 use bevy_ecs::system::Resource;
 use bevy_log::info;
 
 use egui_glow::{glow, Painter};
 
-use render_api::{base::Texture2D, components::Viewport, Handle};
+use render_api::components::Viewport;
 use render_glow::{
     core::Context,
     renderer::{Event, Modifiers},

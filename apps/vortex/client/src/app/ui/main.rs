@@ -1,14 +1,12 @@
-use std::borrow::BorrowMut;
-
 use bevy_ecs::{
     change_detection::DetectChanges,
-    system::{Query, Res, ResMut},
+    system::{Query, Res},
     world::World,
 };
 use bevy_log::info;
 
 use render_api::components::Camera;
-use render_egui::{egui, EguiContext};
+use render_egui::EguiContext;
 
 use crate::app::ui::{center_panel, left_panel, right_panel, top_bar, UiState, WorkspaceType};
 

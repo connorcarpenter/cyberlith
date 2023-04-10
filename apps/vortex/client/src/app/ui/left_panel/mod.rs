@@ -1,10 +1,8 @@
 use bevy_ecs::world::World;
 
-use crate::app::plugin::ProjectTree;
-use render_egui::egui;
-use render_egui::egui::Frame;
+use render_egui::{egui, egui::Frame};
 
-use crate::app::ui::UiState;
+use crate::app::plugin::ProjectTree;
 
 pub fn left_panel(context: &egui::Context, world: &mut World) {
     egui::SidePanel::left("left_panel")

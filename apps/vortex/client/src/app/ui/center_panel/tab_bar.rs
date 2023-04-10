@@ -1,9 +1,6 @@
 use bevy_ecs::world::World;
 
-use render_egui::{
-    egui,
-    egui::{Modifiers, Ui},
-};
+use render_egui::{egui, egui::Ui};
 
 use crate::app::ui::{UiState, WorkspaceType};
 

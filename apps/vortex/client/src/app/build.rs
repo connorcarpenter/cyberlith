@@ -1,7 +1,6 @@
 use bevy_app::App;
 use bevy_log::LogPlugin;
 
-use render_api::Window;
 use render_egui::EguiPlugin;
 
 use crate::app::VortexPlugin;

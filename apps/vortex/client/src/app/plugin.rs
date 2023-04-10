@@ -1,31 +1,26 @@
 use bevy_app::{App, Plugin};
 use bevy_ecs::{
     component::Component,
-    query::{Or, With},
+    query::With,
     schedule::IntoSystemConfigs,
-    system::{Commands, Local, Query, Res, ResMut, Resource},
+    system::{Commands, Query, ResMut, Resource},
 };
 
 use naia_bevy_client::{
     ClientConfig as NaiaClientConfig, Plugin as NaiaClientPlugin, ReceiveEvents,
 };
 
-use math::{Quat, Vec3};
+use math::Vec3;
 use render_api::{
     base::{Color, PbrMaterial, Texture2D, TriMesh},
     components::{
-        AmbientLight, Camera, CameraBundle, ClearOperation, DirectionalLight,
-        OrthographicProjection, PointLight, Projection, RenderLayers, RenderObjectBundle,
-        RenderTarget, Transform, Viewport,
+        AmbientLight, Camera, CameraBundle, ClearOperation, OrthographicProjection, PointLight,
+        Projection, RenderLayers, RenderObjectBundle, RenderTarget, Transform, Viewport,
     },
     resources::WindowSettings,
-    shapes, Assets, Handle, Window,
+    shapes, Assets, Handle,
 };
-use render_egui::{
-    egui,
-    egui::{Modifiers, Ui, Widget},
-    EguiContext, EguiUserTextures, GUI,
-};
+use render_egui::EguiUserTextures;
 
 use vortex_proto::protocol;
 
@@ -214,7 +209,7 @@ fn new_render_texture(
     user_textures: &mut EguiUserTextures,
 ) -> Handle<Texture2D> {
     // This is the texture that will be rendered to.
-    let mut texture = Texture2D::from_size(texture_size, texture_size);
+    let texture = Texture2D::from_size(texture_size, texture_size);
 
     let texture_handle = textures.add(texture);
     user_textures.add_texture(&texture_handle);

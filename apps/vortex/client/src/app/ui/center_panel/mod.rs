@@ -1,7 +1,7 @@
 mod tab_bar;
 use tab_bar::tab_bar;
 
-use bevy_ecs::{change_detection::ResMut, world::World};
+use bevy_ecs::world::World;
 
 use render_egui::{egui, egui::Frame};
 

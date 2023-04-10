@@ -2,7 +2,7 @@ use bevy_ecs::world::World;
 
 use render_egui::{
     egui,
-    egui::{Frame, Modifiers, Resize, Ui},
+    egui::{Frame, Ui},
     EguiUserTextures,
 };
 

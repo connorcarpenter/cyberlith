@@ -5,9 +5,7 @@ use render_egui::{
     egui::{Modifiers, Ui},
 };
 
-use crate::app::ui::UiState;
-
-pub fn top_bar(context: &egui::Context, world: &mut World) {
+pub fn top_bar(context: &egui::Context, _world: &mut World) {
     egui::TopBottomPanel::top("top_bar").show(context, |ui| {
         egui::menu::bar(ui, |ui| {
             file_menu_button(ui);

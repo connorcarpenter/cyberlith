@@ -30,8 +30,8 @@ pub fn post_update(
 }
 
 pub fn draw(
-    mut frame_input: NonSendMut<FrameInput<()>>,
-    mut gui: NonSendMut<GUI>,
+    frame_input: NonSendMut<FrameInput<()>>,
+    gui: NonSendMut<GUI>,
     egui_context: Res<EguiContext>,
 ) {
     gui.render(egui_context.inner());
@@ -40,7 +40,7 @@ pub fn draw(
 pub fn sync(
     mut gui: NonSendMut<GUI>,
     mut user_textures: ResMut<EguiUserTextures>,
-    mut texture_impls: ResMut<AssetImpls<Texture2D, Texture2DImpl>>,
+    texture_impls: ResMut<AssetImpls<Texture2D, Texture2DImpl>>,
 ) {
     if !user_textures.is_changed() {
         return;

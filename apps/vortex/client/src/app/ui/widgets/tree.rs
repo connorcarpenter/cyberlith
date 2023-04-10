@@ -1,10 +1,4 @@
-use render_egui::egui::{CollapsingHeader, RichText, Ui};
-
-#[derive(Clone, Copy, PartialEq)]
-pub enum Action {
-    Keep,
-    Delete,
-}
+use render_egui::egui::{CollapsingHeader, Ui};
 
 #[derive(Clone, Default)]
 pub struct Tree(Vec<Tree>);
@@ -17,34 +11,21 @@ impl Tree {
         ])
     }
 
-    pub fn ui(&mut self, ui: &mut Ui) -> Action {
+    pub fn ui(&mut self, ui: &mut Ui) {
         self.ui_impl(ui, 0, "root")
     }
 }
 
 impl Tree {
-    fn ui_impl(&mut self, ui: &mut Ui, depth: usize, name: &str) -> Action {
+    fn ui_impl(&mut self, ui: &mut Ui, depth: usize, name: &str) {
         CollapsingHeader::new(name)
             .default_open(depth < 1)
-            .show(ui, |ui| self.children_ui(ui, depth))
-            .body_returned
-            .unwrap_or(Action::Keep)
+            .show(ui, |ui| self.children_ui(ui, depth));
     }
 
-    fn children_ui(&mut self, ui: &mut Ui, depth: usize) -> Action {
-        self.0 = std::mem::take(self)
-            .0
-            .into_iter()
-            .enumerate()
-            .filter_map(|(i, mut tree)| {
-                if tree.ui_impl(ui, depth + 1, &format!("child #{}", i)) == Action::Keep {
-                    Some(tree)
-                } else {
-                    None
-                }
-            })
-            .collect();
-
-        Action::Keep
+    fn children_ui(&mut self, ui: &mut Ui, depth: usize) {
+        for (i, tree) in self.0.iter_mut().enumerate() {
+            tree.ui_impl(ui, depth + 1, &format!("child #{}", i));
+        }
     }
 }
