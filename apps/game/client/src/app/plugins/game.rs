@@ -33,6 +33,7 @@ impl Plugin for GamePlugin {
             // Add Window Settings Plugin
             .insert_resource(WindowSettings {
                 title: "Cyberlith".to_string(),
+                max_size: Some((1280, 720)),
                 ..Default::default()
             })
             // Add Naia Client Plugin

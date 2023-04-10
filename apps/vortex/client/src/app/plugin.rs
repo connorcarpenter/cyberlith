@@ -38,6 +38,7 @@ impl Plugin for VortexPlugin {
             // Add Window Settings Plugin
             .insert_resource(WindowSettings {
                 title: "Vortex".to_string(),
+                max_size: Some((1280, 720)),
                 ..Default::default()
             })
             // Add Naia Client Plugin
