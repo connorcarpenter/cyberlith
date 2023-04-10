@@ -2,7 +2,7 @@ use bevy_ecs::event::EventReader;
 
 use naia_bevy_server::{events::AuthEvents, Server};
 
-use editor_proto::messages::Auth;
+use vortex_proto::messages::Auth;
 
 pub fn auth_events(mut server: Server, mut event_reader: EventReader<AuthEvents>) {
     for events in event_reader.iter() {

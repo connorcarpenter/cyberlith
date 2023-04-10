@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Editor Server [BUILD]" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+  <configuration default="false" name="Vortex Server [BUILD]" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
     <option name="command" value="build" />
-    <option name="workingDirectory" value="file://$PROJECT_DIR$/apps/editor/server" />
+    <option name="workingDirectory" value="file://$PROJECT_DIR$/apps/vortex/server" />
     <option name="channel" value="DEFAULT" />
     <option name="requiredFeatures" value="false" />
     <option name="allFeatures" value="false" />

@@ -6,7 +6,7 @@ use bevy_log::{info, LogPlugin};
 
 use naia_bevy_server::{Plugin as ServerPlugin, ReceiveEvents, ServerConfig};
 
-use editor_proto::protocol;
+use vortex_proto::protocol;
 
 mod components;
 mod resources;

@@ -4,7 +4,7 @@ use bevy_log::LogPlugin;
 use render_api::Window;
 use render_egui::EguiPlugin;
 
-use crate::app::EditorPlugin;
+use crate::app::VortexPlugin;
 
 pub fn build() -> App {
     let mut app = App::default();
@@ -14,6 +14,6 @@ pub fn build() -> App {
         // Add Egui Plugin
         .add_plugin(EguiPlugin)
         // Add Game Plugin
-        .add_plugin(EditorPlugin);
+        .add_plugin(VortexPlugin);
     app
 }

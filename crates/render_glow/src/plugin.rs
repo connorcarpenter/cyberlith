@@ -5,12 +5,6 @@ use render_api::RenderSet;
 
 use crate::{draw::draw, runner::three_d_runner, sync::SyncPlugin};
 
-cfg_if! {
-    if #[cfg(feature = "editor")] {
-        use crate::egui::EguiPlugin;
-    }
-}
-
 pub struct RenderGlowPlugin;
 
 impl Plugin for RenderGlowPlugin {
@@ -23,15 +17,6 @@ impl Plugin for RenderGlowPlugin {
             .set_runner(three_d_runner)
             // Systems
             .add_system(draw.in_base_set(RenderSet::Draw));
-        maybe_editor_plugin(app);
-    }
-}
-
-fn maybe_editor_plugin(app: &mut App) {
-    cfg_if! {
-        if #[cfg(feature = "editor")] {
-            app.add_plugin(EguiPlugin);
-        }
     }
 }
 

@@ -4,4 +4,4 @@
 node_modules
 .idea/*
 /apps/game/client/target
-/apps/editor/client/target
+/apps/vortex/client/target

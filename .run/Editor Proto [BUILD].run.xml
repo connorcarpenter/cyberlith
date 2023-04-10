@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Editor Proto [BUILD]" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+  <configuration default="false" name="Vortex Proto [BUILD]" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
     <option name="command" value="build" />
-    <option name="workingDirectory" value="file://$PROJECT_DIR$/apps/editor/proto" />
+    <option name="workingDirectory" value="file://$PROJECT_DIR$/apps/vortex/proto" />
     <option name="channel" value="DEFAULT" />
     <option name="requiredFeatures" value="false" />
     <option name="allFeatures" value="false" />

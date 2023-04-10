@@ -23,16 +23,16 @@ use render_egui::{
     EguiContext, EguiUserTextures, GUI,
 };
 
-use editor_proto::protocol;
+use vortex_proto::protocol;
 
 use crate::app::{
     network, ui,
     ui::{widgets, UiState},
 };
 
-pub struct EditorPlugin;
+pub struct VortexPlugin;
 
-impl Plugin for EditorPlugin {
+impl Plugin for VortexPlugin {
     fn build(&self, app: &mut App) {
         app
             // Add Window Settings Plugin

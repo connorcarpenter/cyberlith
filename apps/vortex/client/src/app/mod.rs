@@ -6,5 +6,5 @@ mod systems;
 pub mod ui;
 
 pub use build::build;
-pub use plugin::EditorPlugin;
+pub use plugin::VortexPlugin;
 pub use systems::*;

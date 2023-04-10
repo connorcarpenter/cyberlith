@@ -1,5 +1,5 @@
 [package]
-name = "editor_server"
+name = "vortex_server"
 version = "0.1.0"
 authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
 workspace = "../../.."
@@ -7,10 +7,9 @@ edition = "2021"
 publish = false
 
 [features]
-editor = []
 
 [dependencies]
-editor_proto = { path = "../proto" }
+vortex_proto = { path = "../proto" }
 naia-bevy-server = { path = "../../../../naia/adapters/bevy/server", features = [ "transport_webrtc" ] }
 
 # These are the official Bevy crates, we can use them because the Server isn't built for Wasm

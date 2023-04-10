@@ -1,5 +1,5 @@
 [package]
-name = "editor_proto"
+name = "vortex_proto"
 version = "0.1.0"
 authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
 workspace = "../../.."
@@ -7,7 +7,6 @@ edition = "2021"
 publish = false
 
 [features]
-editor = []
 
 [dependencies]
 naia-bevy-shared = { path = "../../../../naia/adapters/bevy/shared" }
