@@ -13,6 +13,7 @@ use naia_bevy_client::{
 use math::{Quat, Vec3};
 use render_api::{
     base::{Camera, Color, PbrMaterial, Texture2D, TriMesh, Viewport},
+    resources::WindowSettings,
     shapes, AmbientLight, Assets, CameraBundle, ClearOperation, DirectionalLight, Handle,
     PointLight, RenderLayers, RenderObjectBundle, RenderOperation, RenderTarget, Transform, Window,
 };
@@ -34,6 +35,11 @@ pub struct EditorPlugin;
 impl Plugin for EditorPlugin {
     fn build(&self, app: &mut App) {
         app
+            // Add Window Settings Plugin
+            .insert_resource(WindowSettings {
+                title: "Vortex".to_string(),
+                ..Default::default()
+            })
             // Add Naia Client Plugin
             // .add_plugin(NaiaClientPlugin::new(
             //     NaiaClientConfig::default(),

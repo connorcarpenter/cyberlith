@@ -2,16 +2,17 @@ use std::default::Default;
 
 use bevy_app::App;
 
-use crate::window::{FrameInput, FrameOutput, Window, WindowSettings};
+use render_api::resources::WindowSettings;
+
+use crate::window::{FrameInput, FrameOutput, Window};
 
 pub fn three_d_runner(mut app: App) {
+
+    // Get Window Settings
+    let window_settings = app.world.remove_resource::<WindowSettings>().unwrap();
+
     // Create a Window
-    // TODO: bring these settings into the app
-    let window = Window::new(WindowSettings {
-        title: "Triangle!".to_string(),
-        max_size: Some((1280, 720)),
-        ..Default::default()
-    })
+    let window = Window::new(window_settings)
     .unwrap();
 
     // Start the main render loop

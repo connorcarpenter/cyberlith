@@ -5,12 +5,12 @@ use winit::{
     *,
 };
 
-use render_api::base::Viewport;
+use render_api::{base::Viewport, resources::{SurfaceSettings, WindowSettings}};
 
 use crate::{
     renderer::{Event, Key, Modifiers, MouseButton},
     window::{
-        FrameInput, FrameOutput, SurfaceSettings, WindowError, WindowSettings, WindowedContext,
+        FrameInput, FrameOutput, WindowError, WindowedContext,
     },
 };
 
@@ -50,7 +50,6 @@ impl<T: 'static + Clone> Window<T> {
         window_settings: WindowSettings,
         event_loop: EventLoop<T>,
     ) -> Result<Self, WindowError> {
-        let borderless = window_settings.borderless;
         let winit_window = if let Some((width, height)) = window_settings.max_size {
             WindowBuilder::new()
                 .with_title(&window_settings.title)
@@ -60,7 +59,6 @@ impl<T: 'static + Clone> Window<T> {
                 ))
                 .with_inner_size(dpi::LogicalSize::new(width as f64, height as f64))
                 .with_max_inner_size(dpi::LogicalSize::new(width as f64, height as f64))
-                .with_decorations(!borderless)
         } else {
             WindowBuilder::new()
                 .with_min_inner_size(dpi::LogicalSize::new(
@@ -68,7 +66,6 @@ impl<T: 'static + Clone> Window<T> {
                     window_settings.min_size.1,
                 ))
                 .with_title(&window_settings.title)
-                .with_decorations(!borderless)
                 .with_maximized(true)
         }
         .build(&event_loop)?;

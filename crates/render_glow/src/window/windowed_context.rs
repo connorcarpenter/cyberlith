@@ -1,8 +1,12 @@
 use std::sync::Arc;
+
 use winit::window::Window;
 
-use super::{HardwareAcceleration, SurfaceSettings, WindowError};
+use render_api::resources::{HardwareAcceleration, SurfaceSettings};
+
 use crate::core::Context;
+
+use super::WindowError;
 
 #[cfg(target_arch = "wasm32")]
 mod inner {

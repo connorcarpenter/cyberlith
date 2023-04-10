@@ -1,9 +1,9 @@
 mod assets;
 pub mod base;
 mod base_set;
-mod components;
+pub mod components;
 mod plugin;
-mod resources;
+pub mod resources;
 pub mod shapes;
 
 pub use assets::{Assets, Handle};

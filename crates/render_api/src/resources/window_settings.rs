@@ -1,3 +1,5 @@
+use bevy_ecs::system::Resource;
+
 /// Selects the level of hardware graphics acceleration.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum HardwareAcceleration {
@@ -48,8 +50,8 @@ impl Default for SurfaceSettings {
             vsync: true,
             depth_buffer: 24,
             stencil_buffer: 0,
-            multisamples: 4,
-            hardware_acceleration: HardwareAcceleration::Preferred,
+            multisamples: 0,
+            hardware_acceleration: HardwareAcceleration::Required,
         }
     }
 }
@@ -57,7 +59,7 @@ impl Default for SurfaceSettings {
 ///
 /// Window settings.
 ///
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Resource)]
 pub struct WindowSettings {
     /// The title of the window.
     ///
@@ -74,10 +76,6 @@ pub struct WindowSettings {
     /// If `None` is specified, the canvas will be resized to the same size as
     /// the owner `Window`'s inner width and height.
     pub max_size: Option<(u32, u32)>,
-    /// Borderless mode.
-    ///
-    /// On web this has no effect.
-    pub borderless: bool,
     /// An optional [canvas element][web_sys::HtmlCanvasElement] for using as winit window.
     /// If this is `None`, the DOM (`index.html`) must contain a canvas element
     #[cfg(target_arch = "wasm32")]
@@ -92,23 +90,9 @@ impl Default for WindowSettings {
             title: "".to_string(),
             min_size: (2, 2),
             max_size: None,
-            borderless: false,
             #[cfg(target_arch = "wasm32")]
             canvas: None,
             surface_settings: SurfaceSettings::default(),
         }
-    }
-}
-
-impl std::ops::Deref for WindowSettings {
-    type Target = SurfaceSettings;
-    fn deref(&self) -> &Self::Target {
-        &self.surface_settings
-    }
-}
-
-impl std::ops::DerefMut for WindowSettings {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.surface_settings
     }
 }

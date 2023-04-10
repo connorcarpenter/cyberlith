@@ -12,6 +12,7 @@ use naia_bevy_client::{
 
 use math::Vec3;
 use render_api::{
+    resources::WindowSettings,
     base::{Camera, Color, PbrMaterial, TriMesh, Viewport},
     shapes, AmbientLight, Assets, CameraBundle, ClearOperation, DirectionalLight, PointLight,
     RenderObjectBundle, RenderOperation, RenderTarget, Transform, Window,
@@ -29,6 +30,11 @@ pub struct GamePlugin;
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app
+            // Add Window Settings Plugin
+            .insert_resource(WindowSettings {
+                title: "Cyberlith".to_string(),
+                ..Default::default()
+            })
             // Add Naia Client Plugin
             // .add_plugin(NaiaClientPlugin::new(
             //     NaiaClientConfig::default(),
