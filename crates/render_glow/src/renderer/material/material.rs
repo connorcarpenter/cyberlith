@@ -2,7 +2,7 @@ use render_api::base::Camera;
 
 use crate::{
     core::{Program, RenderStates},
-    renderer::{RenderCamera, FragmentShader, Light, MaterialType},
+    renderer::{FragmentShader, Light, MaterialType, RenderCamera},
 };
 
 ///

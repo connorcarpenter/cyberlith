@@ -103,7 +103,10 @@ impl<'a> Light for RenderAmbientLight<'a> {
             program.use_texture_cube("prefilterMap", &environment.prefilter_map);
             program.use_texture("brdfLUT", &environment.brdf_map);
         }
-        program.use_uniform("ambientColor", self.ambient_light.color.to_vec3() * self.ambient_light.intensity);
+        program.use_uniform(
+            "ambientColor",
+            self.ambient_light.color.to_vec3() * self.ambient_light.intensity,
+        );
     }
 }
 

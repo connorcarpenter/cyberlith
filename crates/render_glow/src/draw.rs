@@ -3,18 +3,23 @@ use bevy_ecs::{
     system::{NonSendMut, Query, Res, ResMut},
 };
 
-use render_api::{base::{PbrMaterial, TriMesh, Texture2D}, AmbientLight, Handle, PointLight, RenderLayer, RenderLayers, Transform, RenderTarget as CameraRenderTarget, RenderOperation};
 use render_api::base::Camera;
+use render_api::{
+    base::{PbrMaterial, Texture2D, TriMesh},
+    AmbientLight, Handle, PointLight, RenderLayer, RenderLayers, RenderOperation,
+    RenderTarget as CameraRenderTarget, Transform,
+};
 
+use crate::renderer::RenderAmbientLight;
 use crate::{
     asset_impls::AssetImpls,
+    core::{DepthTexture2D, RenderTarget, Texture2DImpl},
     renderer::{
-        RenderLight, AmbientLightImpl, BaseMesh, DirectionalLightImpl, Light, Material, RenderObject, RenderPass, RenderCamera
+        AmbientLightImpl, BaseMesh, DirectionalLightImpl, Light, Material, RenderCamera,
+        RenderLight, RenderObject, RenderPass,
     },
     window::FrameInput,
-    core::{Texture2DImpl, RenderTarget, DepthTexture2D},
 };
-use crate::renderer::RenderAmbientLight;
 
 pub fn draw(
     frame_input: NonSendMut<FrameInput<()>>,
@@ -145,9 +150,7 @@ pub fn draw(
 
         let render_target = {
             match &render_pass.camera.operation.target {
-                CameraRenderTarget::Screen => {
-                    frame_input.screen()
-                }
+                CameraRenderTarget::Screen => frame_input.screen(),
                 CameraRenderTarget::Image(texture_handle) => {
                     // Render to Image
                     let mut texture = textures.get_mut(texture_handle).unwrap();

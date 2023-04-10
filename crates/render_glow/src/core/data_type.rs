@@ -558,7 +558,8 @@ impl DataType for Mat3 {
             .iter()
             .flat_map(|v| {
                 [
-                    v.x_axis.x, v.x_axis.y, v.x_axis.z, v.y_axis.x, v.y_axis.y, v.y_axis.z, v.z_axis.x, v.z_axis.y, v.z_axis.z,
+                    v.x_axis.x, v.x_axis.y, v.x_axis.z, v.y_axis.x, v.y_axis.y, v.y_axis.z,
+                    v.z_axis.x, v.z_axis.y, v.z_axis.z,
                 ]
             })
             .collect::<Vec<_>>();
@@ -584,8 +585,9 @@ impl DataType for Mat4 {
             .iter()
             .flat_map(|v| {
                 [
-                    v.x_axis.x, v.x_axis.y, v.x_axis.z, v.x_axis.w, v.y_axis.x, v.y_axis.y, v.y_axis.z, v.y_axis.w, v.z_axis.x, v.z_axis.y, v.z_axis.z,
-                    v.z_axis.w, v.w_axis.x, v.w_axis.y, v.w_axis.z, v.w_axis.w,
+                    v.x_axis.x, v.x_axis.y, v.x_axis.z, v.x_axis.w, v.y_axis.x, v.y_axis.y,
+                    v.y_axis.z, v.y_axis.w, v.z_axis.x, v.z_axis.y, v.z_axis.z, v.z_axis.w,
+                    v.w_axis.x, v.w_axis.y, v.w_axis.z, v.w_axis.w,
                 ]
             })
             .collect::<Vec<_>>();

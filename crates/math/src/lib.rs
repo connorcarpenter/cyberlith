@@ -10,6 +10,4 @@
 
 // use cgmath::Rotation;
 
-pub use glam::{
-    Vec2, Vec3, Vec4, Mat2, Mat3, Mat4, Quat,
-};
+pub use glam::{Mat2, Mat3, Mat4, Quat, Vec2, Vec3, Vec4};

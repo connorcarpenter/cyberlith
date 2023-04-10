@@ -1,4 +1,3 @@
-
 use bevy_ecs::component::Component;
 
 use math::*;
@@ -96,12 +95,7 @@ impl Camera {
     /// See also [set_view](Self::set_view), [set_perspective_projection](Self::set_perspective_projection) and
     /// [set_orthographic_projection](Self::set_orthographic_projection).
     ///
-    pub fn new_orthographic(
-        viewport: Viewport,
-        height: f32,
-        z_near: f32,
-        z_far: f32,
-    ) -> Self {
+    pub fn new_orthographic(viewport: Viewport, height: f32, z_near: f32, z_far: f32) -> Self {
         let mut camera = Camera::new(viewport);
         camera.set_orthographic_projection(height, z_near, z_far);
         camera
@@ -125,12 +119,7 @@ impl Camera {
     ///
     /// Specify the camera to use perspective projection with the given field of view in the y-direction and near and far plane.
     ///
-    pub fn set_perspective_projection(
-        &mut self,
-        fov_y_degrees: f32,
-        z_near: f32,
-        z_far: f32,
-    ) {
+    pub fn set_perspective_projection(&mut self, fov_y_degrees: f32, z_near: f32, z_far: f32) {
         assert!(
             z_near >= 0.0 || z_near < z_far,
             "Wrong perspective camera parameters"
@@ -139,7 +128,12 @@ impl Camera {
         self.z_far = z_far;
         let fov_y_radians = f32::to_radians(fov_y_degrees);
         self.projection_type = ProjectionType::Perspective { fov_y_radians };
-        self.projection = Mat4::perspective_rh(fov_y_radians, self.viewport.aspect(), self.z_near, self.z_far);
+        self.projection = Mat4::perspective_rh(
+            fov_y_radians,
+            self.viewport.aspect(),
+            self.z_near,
+            self.z_far,
+        );
     }
 
     ///
@@ -175,7 +169,9 @@ impl Camera {
                 ProjectionType::Orthographic { height } => {
                     self.set_orthographic_projection(height, self.z_near, self.z_far);
                 }
-                ProjectionType::Perspective { fov_y_radians: field_of_view_y } => {
+                ProjectionType::Perspective {
+                    fov_y_radians: field_of_view_y,
+                } => {
                     self.set_perspective_projection(field_of_view_y, self.z_near, self.z_far);
                 }
             }
@@ -229,7 +225,12 @@ impl Camera {
     /// The pixel coordinate must be in physical pixels, where `(viewport.x, viewport.y)` indicate the bottom left corner of the viewport
     /// and `(viewport.x + viewport.width, viewport.y + viewport.height)` indicate the top right corner.
     ///
-    pub fn view_direction_at_pixel(&self, position: &Vec3, target: &Vec3, pixel: (f32, f32)) -> Vec3 {
+    pub fn view_direction_at_pixel(
+        &self,
+        position: &Vec3,
+        target: &Vec3,
+        pixel: (f32, f32),
+    ) -> Vec3 {
         match self.projection_type() {
             ProjectionType::Orthographic { .. } => Self::view_direction(position, target),
             ProjectionType::Perspective { .. } => {
@@ -244,7 +245,12 @@ impl Camera {
     /// The uv coordinate must be between `(0, 0)` indicating the bottom left corner of the viewport
     /// and `(1, 1)` indicating the top right corner.
     ///
-    pub fn view_direction_at_uv_coordinates(&self, position: &Vec3, target: &Vec3, coords: (f32, f32)) -> Vec3 {
+    pub fn view_direction_at_uv_coordinates(
+        &self,
+        position: &Vec3,
+        target: &Vec3,
+        coords: (f32, f32),
+    ) -> Vec3 {
         match self.projection_type() {
             ProjectionType::Orthographic { .. } => Self::view_direction(position, target),
             ProjectionType::Perspective { .. } => {
@@ -332,7 +338,6 @@ impl Camera {
     pub fn z_far(&self) -> f32 {
         self.z_far
     }
-
 
     ///
     /// Returns the view direction of this camera, ie. the direction the camera is looking.

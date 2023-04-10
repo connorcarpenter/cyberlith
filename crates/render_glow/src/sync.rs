@@ -8,13 +8,13 @@ use bevy_ecs::{
 };
 
 use render_api::{
-    base::{PbrMaterial as ApiMaterial, TriMesh as ApiMesh, Texture2D as ApiTexture},
+    base::{PbrMaterial as ApiMaterial, Texture2D as ApiTexture, TriMesh as ApiMesh},
     AmbientLight, Assets, DirectionalLight, RenderSet,
 };
 
 use crate::{
     asset_impls::AssetImpls,
-    core::{Texture2DImpl, DepthTexture2D},
+    core::{DepthTexture2D, Texture2DImpl},
     renderer::{AmbientLightImpl, BaseMesh, DirectionalLightImpl, Material, PhysicalMaterial},
 };
 
@@ -96,7 +96,12 @@ fn sync_texture_2d_assets(
         let impl_data = Texture2DImpl::from(api_data);
         asset_impls.insert(added_handle, impl_data);
 
-        let depth_impl_data = DepthTexture2D::new::<f32>(api_data.width(), api_data.height(), api_data.wrap_s(), api_data.wrap_t());
+        let depth_impl_data = DepthTexture2D::new::<f32>(
+            api_data.width(),
+            api_data.height(),
+            api_data.wrap_s(),
+            api_data.wrap_t(),
+        );
         depth_impls.insert(added_handle, depth_impl_data);
     }
 }

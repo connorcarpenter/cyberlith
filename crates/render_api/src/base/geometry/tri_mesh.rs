@@ -75,9 +75,7 @@ impl TriMesh {
         }
 
         if self.normals.is_some() || self.tangents.is_some() {
-            let normal_transform = mat4
-                .inverse()
-                .transpose();
+            let normal_transform = mat4.inverse().transpose();
 
             if let Some(ref mut normals) = self.normals {
                 for n in normals.iter_mut() {
@@ -416,8 +414,8 @@ impl TriMesh {
             .transform_mat4(&Mat4::from_scale(Vec3::new(
                 tail_length,
                 tail_radius,
-                tail_radius),
-            ))
+                tail_radius,
+            )))
             .unwrap();
         let mut cone = Self::cone(angle_subdivisions);
         cone.transform_mat4(

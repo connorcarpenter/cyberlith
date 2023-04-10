@@ -1,6 +1,6 @@
 use render_api::base::CubeMapSide;
 
-use crate::core::{Texture2DImpl, Texture2DArray, TextureCubeMap};
+use crate::core::{Texture2DArray, Texture2DImpl, TextureCubeMap};
 
 ///
 /// A reference to some type of texture containing colors.

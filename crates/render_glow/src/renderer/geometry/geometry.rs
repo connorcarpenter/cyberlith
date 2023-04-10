@@ -23,7 +23,12 @@ pub trait Geometry: Send + Sync {
     /// Must be called in the callback given as input to a [RenderTarget], [ColorTarget] or [DepthTarget] write method.
     /// Use an empty array for the `lights` argument, if the material does not require lights to be rendered.
     ///
-    fn render_with_material(&self, material: &dyn Material, camera: &RenderCamera, lights: &[&dyn Light]);
+    fn render_with_material(
+        &self,
+        material: &dyn Material,
+        camera: &RenderCamera,
+        lights: &[&dyn Light],
+    );
 
     ///
     /// Returns the [AxisAlignedBoundingBox] for this geometry in the global coordinate system.

@@ -35,7 +35,10 @@ impl<'a> Mesh<'a> {
             program.use_uniform_if_required("normalMatrix", inverse.transpose());
         }
 
-        program.use_uniform("viewProjection", *render_camera.camera.projection() * render_camera.transform.view_matrix());
+        program.use_uniform(
+            "viewProjection",
+            *render_camera.camera.projection() * render_camera.transform.view_matrix(),
+        );
         program.use_uniform("modelMatrix", self.transform);
 
         self.base_mesh

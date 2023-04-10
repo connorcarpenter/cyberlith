@@ -1,7 +1,10 @@
 use glow::HasContext;
 use half::f16;
 
-use render_api::base::{Interpolation, Texture2D as CpuTexture, TextureDataType as ApiTextureDataType, TextureData, Wrapping};
+use render_api::base::{
+    Interpolation, Texture2D as CpuTexture, TextureData, TextureDataType as ApiTextureDataType,
+    Wrapping,
+};
 
 use crate::core::{flip_y, format_from_data_type, texture::*, to_byte_slice, ColorTarget, Context};
 
@@ -111,9 +114,7 @@ impl Texture2DArray {
                     .map(|t| rgbaf32_data(t))
                     .collect::<Vec<_>>(),
             ),
-            _ => {
-                Self::new_empty_from_cpu(cpu_texture, cpu_textures.len() as u32)
-            }
+            _ => Self::new_empty_from_cpu(cpu_texture, cpu_textures.len() as u32),
         }
     }
 
@@ -135,17 +136,35 @@ impl Texture2DArray {
     fn new_empty_from_cpu(cpu_texture: &CpuTexture, depth: u32) -> Self {
         match cpu_texture.data_type() {
             ApiTextureDataType::RU8 => Self::new_empty_from_cpu_typed::<u8>(cpu_texture, depth),
-            ApiTextureDataType::RgU8 => Self::new_empty_from_cpu_typed::<[u8; 2]>(cpu_texture, depth),
-            ApiTextureDataType::RgbU8 => Self::new_empty_from_cpu_typed::<[u8; 3]>(cpu_texture, depth),
-            ApiTextureDataType::RgbaU8 => Self::new_empty_from_cpu_typed::<[u8; 4]>(cpu_texture, depth),
+            ApiTextureDataType::RgU8 => {
+                Self::new_empty_from_cpu_typed::<[u8; 2]>(cpu_texture, depth)
+            }
+            ApiTextureDataType::RgbU8 => {
+                Self::new_empty_from_cpu_typed::<[u8; 3]>(cpu_texture, depth)
+            }
+            ApiTextureDataType::RgbaU8 => {
+                Self::new_empty_from_cpu_typed::<[u8; 4]>(cpu_texture, depth)
+            }
             ApiTextureDataType::RF16 => Self::new_empty_from_cpu_typed::<f16>(cpu_texture, depth),
-            ApiTextureDataType::RgF16 => Self::new_empty_from_cpu_typed::<[f16; 2]>(cpu_texture, depth),
-            ApiTextureDataType::RgbF16 => Self::new_empty_from_cpu_typed::<[f16; 3]>(cpu_texture, depth),
-            ApiTextureDataType::RgbaF16 => Self::new_empty_from_cpu_typed::<[f16; 4]>(cpu_texture, depth),
+            ApiTextureDataType::RgF16 => {
+                Self::new_empty_from_cpu_typed::<[f16; 2]>(cpu_texture, depth)
+            }
+            ApiTextureDataType::RgbF16 => {
+                Self::new_empty_from_cpu_typed::<[f16; 3]>(cpu_texture, depth)
+            }
+            ApiTextureDataType::RgbaF16 => {
+                Self::new_empty_from_cpu_typed::<[f16; 4]>(cpu_texture, depth)
+            }
             ApiTextureDataType::RF32 => Self::new_empty_from_cpu_typed::<f32>(cpu_texture, depth),
-            ApiTextureDataType::RgF32 => Self::new_empty_from_cpu_typed::<[f32; 2]>(cpu_texture, depth),
-            ApiTextureDataType::RgbF32 => Self::new_empty_from_cpu_typed::<[f32; 3]>(cpu_texture, depth),
-            ApiTextureDataType::RgbaF32 => Self::new_empty_from_cpu_typed::<[f32; 4]>(cpu_texture, depth),
+            ApiTextureDataType::RgF32 => {
+                Self::new_empty_from_cpu_typed::<[f32; 2]>(cpu_texture, depth)
+            }
+            ApiTextureDataType::RgbF32 => {
+                Self::new_empty_from_cpu_typed::<[f32; 3]>(cpu_texture, depth)
+            }
+            ApiTextureDataType::RgbaF32 => {
+                Self::new_empty_from_cpu_typed::<[f32; 4]>(cpu_texture, depth)
+            }
         }
     }
 

@@ -1,8 +1,14 @@
-use render_api::{base::{AxisAlignedBoundingBox, Camera}, RenderOperation, Transform};
+use render_api::{
+    base::{AxisAlignedBoundingBox, Camera},
+    RenderOperation, Transform,
+};
 
 use crate::{
     core::{ColorTexture, DepthTexture},
-    renderer::{RenderLight, RenderCamera, RenderObject, BaseMesh, Geometry, Light, Material, MaterialType, Mesh, Object},
+    renderer::{
+        BaseMesh, Geometry, Light, Material, MaterialType, Mesh, Object, RenderCamera, RenderLight,
+        RenderObject,
+    },
 };
 
 // Render Pass
@@ -14,7 +20,9 @@ pub struct RenderPass<'a> {
 
 impl<'a> RenderPass<'a> {
     pub fn from_camera(
-        camera: &'a Camera, transform: &'a Transform, operation: &'a RenderOperation
+        camera: &'a Camera,
+        transform: &'a Transform,
+        operation: &'a RenderOperation,
     ) -> Self {
         Self {
             camera: RenderCamera::new(camera, transform, operation),
@@ -23,7 +31,13 @@ impl<'a> RenderPass<'a> {
         }
     }
 
-    pub fn take(mut self) -> (RenderCamera<'a>, Vec<RenderLight<'a>>, Vec<RenderObject<'a>>) {
+    pub fn take(
+        mut self,
+    ) -> (
+        RenderCamera<'a>,
+        Vec<RenderLight<'a>>,
+        Vec<RenderObject<'a>>,
+    ) {
         (self.camera, self.lights, self.objects)
     }
 

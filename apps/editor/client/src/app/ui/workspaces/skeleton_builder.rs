@@ -1,13 +1,14 @@
 use bevy_ecs::world::World;
 
-use render_egui::{egui, egui::{Ui, Modifiers, Resize, Frame}, EguiUserTextures};
+use render_egui::{
+    egui,
+    egui::{Frame, Modifiers, Resize, Ui},
+    EguiUserTextures,
+};
 
 use crate::app::plugin::LeftTopTexture;
 
-pub fn skeleton_builder(
-    ui: &mut Ui,
-    world: &mut World,
-) {
+pub fn skeleton_builder(ui: &mut Ui, world: &mut World) {
     egui::SidePanel::left("left_work")
         .frame(Frame::side_top_panel(ui.style()).inner_margin(0.0))
         .resizable(true)
@@ -45,10 +46,7 @@ pub fn skeleton_builder(
         });
 }
 
-fn left_top_work(
-    ui: &mut Ui,
-    world: &mut World,
-) {
+fn left_top_work(ui: &mut Ui, world: &mut World) {
     let left_top_texture = world.get_resource::<LeftTopTexture>().unwrap();
     let user_textures = world.get_resource::<EguiUserTextures>().unwrap();
     let Some(texture_id) = user_textures.texture_id(&left_top_texture.0) else {
@@ -58,10 +56,7 @@ fn left_top_work(
     ui.image(texture_id, ui.available_size());
 }
 
-fn left_bottom_work(
-    ui: &mut Ui,
-    world: &mut World,
-) {
+fn left_bottom_work(ui: &mut Ui, world: &mut World) {
     let left_top_texture = world.get_resource::<LeftTopTexture>().unwrap();
     let user_textures = world.get_resource::<EguiUserTextures>().unwrap();
     let Some(texture_id) = user_textures.texture_id(&left_top_texture.0) else {
@@ -71,10 +66,7 @@ fn left_bottom_work(
     ui.image(texture_id, ui.available_size());
 }
 
-fn right_top_work(
-    ui: &mut Ui,
-    world: &mut World,
-) {
+fn right_top_work(ui: &mut Ui, world: &mut World) {
     let left_top_texture = world.get_resource::<LeftTopTexture>().unwrap();
     let user_textures = world.get_resource::<EguiUserTextures>().unwrap();
     let Some(texture_id) = user_textures.texture_id(&left_top_texture.0) else {
@@ -84,10 +76,7 @@ fn right_top_work(
     ui.image(texture_id, ui.available_size());
 }
 
-fn right_bottom_work(
-    ui: &mut Ui,
-    world: &mut World,
-) {
+fn right_bottom_work(ui: &mut Ui, world: &mut World) {
     let left_top_texture = world.get_resource::<LeftTopTexture>().unwrap();
     let user_textures = world.get_resource::<EguiUserTextures>().unwrap();
     let Some(texture_id) = user_textures.texture_id(&left_top_texture.0) else {

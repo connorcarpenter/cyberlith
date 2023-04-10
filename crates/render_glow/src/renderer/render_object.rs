@@ -1,6 +1,12 @@
-use render_api::{base::{AxisAlignedBoundingBox, Camera}, Transform};
+use render_api::{
+    base::{AxisAlignedBoundingBox, Camera},
+    Transform,
+};
 
-use crate::{core::{ColorTexture, DepthTexture}, renderer::{RenderCamera, BaseMesh, Geometry, Light, Material, MaterialType, Mesh, Object}};
+use crate::{
+    core::{ColorTexture, DepthTexture},
+    renderer::{BaseMesh, Geometry, Light, Material, MaterialType, Mesh, Object, RenderCamera},
+};
 
 // Render Object
 #[derive(Clone, Copy)]

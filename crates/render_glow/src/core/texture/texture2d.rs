@@ -1,7 +1,10 @@
 use glow::HasContext;
 use half::f16;
 
-use render_api::base::{Interpolation, Texture2D as CpuTexture, TextureData, TextureDataType as ApiTextureDataType, Wrapping};
+use render_api::base::{
+    Interpolation, Texture2D as CpuTexture, TextureData, TextureDataType as ApiTextureDataType,
+    Wrapping,
+};
 
 use crate::core::{flip_y, format_from_data_type, texture::*, to_byte_slice, ColorTarget, Context};
 
@@ -34,9 +37,7 @@ impl Texture2DImpl {
             Some(TextureData::RgF32(ref data)) => Self::new_with_data(cpu_texture, data),
             Some(TextureData::RgbF32(ref data)) => Self::new_with_data(cpu_texture, data),
             Some(TextureData::RgbaF32(ref data)) => Self::new_with_data(cpu_texture, data),
-            None => {
-                Self::new_empty_from_cpu(cpu_texture)
-            }
+            None => Self::new_empty_from_cpu(cpu_texture),
         }
     }
 

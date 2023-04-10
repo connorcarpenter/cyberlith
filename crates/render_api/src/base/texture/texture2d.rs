@@ -1,5 +1,5 @@
-use crate::base::TextureDataType;
 use super::{Interpolation, TextureData, Wrapping};
+use crate::base::TextureDataType;
 
 ///
 /// A CPU-side version of a 2D texture.

@@ -4,7 +4,7 @@ use render_api::base::{CubeMapSide, Viewport};
 
 use crate::core::{
     texture::Texture2DMultisample, ClearState, ColorTexture, Context, RenderTarget, ScissorBox,
-    Texture2DImpl, Texture2DArray, TextureCubeMap, TextureDataType, WriteMask,
+    Texture2DArray, Texture2DImpl, TextureCubeMap, TextureDataType, WriteMask,
 };
 
 ///
@@ -23,7 +23,10 @@ pub struct ColorTarget<'a> {
 }
 
 impl<'a> ColorTarget<'a> {
-    pub(in crate::core) fn new_texture2d(texture: &'a Texture2DImpl, mip_level: Option<u32>) -> Self {
+    pub(in crate::core) fn new_texture2d(
+        texture: &'a Texture2DImpl,
+        mip_level: Option<u32>,
+    ) -> Self {
         ColorTarget {
             mip_level,
             target: Some(ColorTexture::Single(texture)),

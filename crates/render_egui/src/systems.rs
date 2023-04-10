@@ -1,11 +1,11 @@
 use bevy_ecs::{
+    change_detection::DetectChanges,
     system::{NonSendMut, Res, ResMut},
     world::World,
-    change_detection::DetectChanges
 };
 
 use render_api::base::Texture2D;
-use render_glow::{core::Texture2DImpl, AssetImpls, window::FrameInput};
+use render_glow::{core::Texture2DImpl, window::FrameInput, AssetImpls};
 
 use crate::{EguiContext, EguiUserTextures, GUI};
 
@@ -29,7 +29,11 @@ pub fn post_update(
     gui.post_update(egui_context.inner(), &mut frame_input.events);
 }
 
-pub fn draw(mut frame_input: NonSendMut<FrameInput<()>>, mut gui: NonSendMut<GUI>, egui_context: Res<EguiContext>) {
+pub fn draw(
+    mut frame_input: NonSendMut<FrameInput<()>>,
+    mut gui: NonSendMut<GUI>,
+    egui_context: Res<EguiContext>,
+) {
     gui.render(egui_context.inner());
 }
 

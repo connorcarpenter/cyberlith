@@ -12,13 +12,12 @@ pub struct Transform {
 }
 
 impl Transform {
-
     pub const IDENTITY: Self = Transform {
         translation: Vec3::ZERO,
         rotation: Quat::IDENTITY,
         scale: Vec3::ONE,
     };
-    
+
     pub fn from_xyz(x: f32, y: f32, z: f32) -> Self {
         Self::from_translation(Vec3::new(x, y, z))
     }
@@ -89,11 +88,11 @@ impl Transform {
     pub fn rotate_x(&mut self, angle: f32) {
         self.rotate(Quat::from_rotation_x(angle));
     }
-    
+
     pub fn rotate_y(&mut self, angle: f32) {
         self.rotate(Quat::from_rotation_y(angle));
     }
-    
+
     pub fn rotate_z(&mut self, angle: f32) {
         self.rotate(Quat::from_rotation_z(angle));
     }
@@ -111,7 +110,7 @@ impl Transform {
     pub fn look_at(&mut self, target: Vec3, up: Vec3) {
         self.look_to(target - self.translation, up);
     }
-    
+
     pub fn look_to(&mut self, direction: Vec3, up: Vec3) {
         let forward = -direction.normalize();
         let right = up.cross(forward).normalize();

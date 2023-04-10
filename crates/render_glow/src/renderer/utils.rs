@@ -9,12 +9,7 @@ use crate::renderer::{DepthMaterial, Geometry, MaterialType, Object, RenderCamer
 /// Returns a camera for viewing 2D content.
 ///
 pub fn camera2d(viewport: Viewport) -> Camera {
-    Camera::new_orthographic(
-        viewport,
-        viewport.height as f32,
-        0.0,
-        10.0,
-    )
+    Camera::new_orthographic(viewport, viewport.height as f32, 0.0, 10.0)
 }
 
 ///
@@ -36,8 +31,14 @@ pub fn cmp_render_order(
     {
         std::cmp::Ordering::Less
     } else {
-        let distance_a = camera.transform.translation.distance_squared(obj0.aabb().center());
-        let distance_b = camera.transform.translation.distance_squared(obj1.aabb().center());
+        let distance_a = camera
+            .transform
+            .translation
+            .distance_squared(obj0.aabb().center());
+        let distance_b = camera
+            .transform
+            .translation
+            .distance_squared(obj1.aabb().center());
         if distance_a.is_nan() || distance_b.is_nan() {
             distance_a.is_nan().cmp(&distance_b.is_nan()) // whatever - just save us from panicing on unwrap below
         } else if obj0.material_type() == MaterialType::Transparent {
@@ -88,12 +89,7 @@ pub fn ray_intersect(
     } else {
         direction.cross(Vec3::new(1.0, 0.0, 0.0))
     };
-    let camera = Camera::new_orthographic(
-        viewport,
-        0.01,
-        0.0,
-        max_depth,
-    );
+    let camera = Camera::new_orthographic(viewport, 0.01, 0.0, max_depth);
     let mut texture = Texture2DImpl::new_empty::<f32>(
         viewport.width,
         viewport.height,
@@ -119,7 +115,8 @@ pub fn ray_intersect(
         },
         ..Default::default()
     };
-    let camera_transform = Transform::from_xyz(position.x, position.y, position.z).looking_to(direction, Vec3::new(0.0, 1.0, 0.0));
+    let camera_transform = Transform::from_xyz(position.x, position.y, position.z)
+        .looking_to(direction, Vec3::new(0.0, 1.0, 0.0));
     let camera_op = RenderOperation::default();
     let render_camera = RenderCamera::new(&camera, &camera_transform, &camera_op);
     let depth: f32 = RenderTarget::new(

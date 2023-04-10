@@ -4,7 +4,6 @@ use bevy_ecs::component::Component;
 
 use crate::{assets::Handle, base::Camera, base::Texture2D};
 
-
 use bevy_ecs::bundle::Bundle;
 
 use super::transform::Transform;
@@ -28,11 +27,7 @@ pub struct RenderOperation {
 impl RenderOperation {
     pub const MAX_CAMERAS: usize = 32;
 
-    pub fn new(
-        order: usize,
-        clear_operation: ClearOperation,
-        target: RenderTarget,
-    ) -> Self {
+    pub fn new(order: usize, clear_operation: ClearOperation, target: RenderTarget) -> Self {
         let mut new_self = Self {
             order: 0,
             clear_operation,

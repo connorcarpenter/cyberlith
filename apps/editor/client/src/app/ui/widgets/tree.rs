@@ -32,7 +32,6 @@ impl Tree {
     }
 
     fn children_ui(&mut self, ui: &mut Ui, depth: usize) -> Action {
-
         self.0 = std::mem::take(self)
             .0
             .into_iter()

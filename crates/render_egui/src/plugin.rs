@@ -21,7 +21,11 @@ impl Plugin for EguiPlugin {
             // System Sets
             .configure_set(EguiSet::PreUpdate.before(CoreSet::First))
             .configure_set(EguiSet::PostUpdate.after(CoreSet::LastFlush))
-            .configure_set(EguiSet::Sync.after(RenderSet::Sync).before(RenderSet::SyncFlush))
+            .configure_set(
+                EguiSet::Sync
+                    .after(RenderSet::Sync)
+                    .before(RenderSet::SyncFlush),
+            )
             .configure_set(EguiSet::Draw.after(RenderSet::Draw))
             // Systems
             .add_startup_system(systems::startup)

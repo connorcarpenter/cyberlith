@@ -11,7 +11,11 @@ use naia_bevy_client::{
 };
 
 use math::Vec3;
-use render_api::{base::{Camera, Color, PbrMaterial, TriMesh, Viewport}, shapes, AmbientLight, Assets, ClearOperation, DirectionalLight, PointLight, RenderObjectBundle, RenderTarget, Transform, Window, CameraBundle, RenderOperation};
+use render_api::{
+    base::{Camera, Color, PbrMaterial, TriMesh, Viewport},
+    shapes, AmbientLight, Assets, CameraBundle, ClearOperation, DirectionalLight, PointLight,
+    RenderObjectBundle, RenderOperation, RenderTarget, Transform, Window,
+};
 
 use game_proto::protocol;
 
@@ -89,17 +93,10 @@ fn setup(
     });
     // camera
     commands.spawn(CameraBundle {
-        camera: Camera::new_perspective(
-            window.viewport(),
-            45.0,
-            0.1,
-            1000.0,
-        ),
+        camera: Camera::new_perspective(window.viewport(), 45.0, 0.1, 1000.0),
         transform: Transform::from_xyz(50.0, 50.0, 50.0).looking_at(Vec3::ZERO, Vec3::Y),
 
-        render: RenderOperation::new(0,
-                                     ClearOperation::default(),
-                                     RenderTarget::Screen)
+        render: RenderOperation::new(0, ClearOperation::default(), RenderTarget::Screen),
     });
 }
 
@@ -122,9 +119,7 @@ fn step(mut cube_q: Query<&mut Transform, With<CubeMarker>>, mut rotation: Local
     transform.translation.z = z;
 }
 
-fn rotate(
-    mut query: Query<&mut Transform, With<CubeMarker>>,
-) {
+fn rotate(mut query: Query<&mut Transform, With<CubeMarker>>) {
     for mut transform in &mut query {
         transform.rotate_x(0.015);
         transform.rotate_z(0.013);

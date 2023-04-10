@@ -7,9 +7,8 @@ use crate::{
         RenderTargetMultisample, ScissorBox, Texture2DArray, TextureDataType,
     },
     renderer::{
-        cmp_render_order, Geometry, Light, Material, MaterialType,
-        Object, RenderObject, RenderPass,
-        RenderCamera,
+        cmp_render_order, Geometry, Light, Material, MaterialType, Object, RenderCamera,
+        RenderObject, RenderPass,
     },
 };
 
@@ -29,7 +28,11 @@ macro_rules! impl_render_target_extensions_body {
         /// Use an empty array for the `lights` argument, if the objects does not require lights to be rendered.
         /// Also, objects outside the camera frustum are not rendered and the objects are rendered in the order given by [cmp_render_order].
         ///
-        pub fn render_partially(&self, scissor_box: ScissorBox, mut render_pass: RenderPass) -> &Self {
+        pub fn render_partially(
+            &self,
+            scissor_box: ScissorBox,
+            mut render_pass: RenderPass,
+        ) -> &Self {
             let (camera, lights_holder, objects) = render_pass.take();
             let lights = &RenderPass::process_lights(&lights_holder);
 

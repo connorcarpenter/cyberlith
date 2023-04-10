@@ -1,7 +1,7 @@
 use bevy_app::{App, Plugin};
 use bevy_ecs::{
     component::Component,
-    query::{With, Or},
+    query::{Or, With},
     schedule::IntoSystemConfigs,
     system::{Commands, Local, Query, Res, ResMut, Resource},
 };
@@ -13,14 +13,21 @@ use naia_bevy_client::{
 use math::{Quat, Vec3};
 use render_api::{
     base::{Camera, Color, PbrMaterial, Texture2D, TriMesh, Viewport},
-    shapes, AmbientLight, Assets, CameraComponent, ClearOperation, DirectionalLight, Handle,
-    PointLight, RenderLayers, RenderObjectBundle, RenderTarget, Transform, Window,
+    shapes, AmbientLight, Assets, CameraBundle, ClearOperation, DirectionalLight, Handle,
+    PointLight, RenderLayers, RenderObjectBundle, RenderOperation, RenderTarget, Transform, Window,
 };
-use render_egui::{egui, EguiContext, EguiUserTextures, GUI, egui::{Modifiers, Ui, Widget}};
+use render_egui::{
+    egui,
+    egui::{Modifiers, Ui, Widget},
+    EguiContext, EguiUserTextures, GUI,
+};
 
 use editor_proto::protocol;
 
-use crate::app::{network, ui, ui::{UiState, widgets}};
+use crate::app::{
+    network, ui,
+    ui::{widgets, UiState},
+};
 
 pub struct EditorPlugin;
 
@@ -96,36 +103,40 @@ fn setup(
         .insert(preview_pass_layer);
 
     // Ambient Light
-    commands.insert_resource(AmbientLight::new(0.01, Color::WHITE));
-    commands.spawn(PointLight {
-        position: Vec3::new(50.0, 150.0, 100.0),
-        color: Color::WHITE,
-        intensity: 0.1,
-        ..Default::default()
-    }).insert(preview_pass_layer);;
+    commands
+        .spawn(AmbientLight::new(0.01, Color::WHITE))
+        .insert(preview_pass_layer);
+    commands
+        .spawn(PointLight {
+            position: Vec3::new(50.0, 150.0, 100.0),
+            color: Color::WHITE,
+            intensity: 0.1,
+            ..Default::default()
+        })
+        .insert(preview_pass_layer);
 
     // Camera
-    commands.spawn(CameraComponent::new(
-        Camera::new_orthographic(
-            Viewport::new_at_origin(texture_width, texture_height),
-            Vec3::new(10.0, 20.0, 10.0),
-            Vec3::new(0.0, 10.0, 0.0),
-            Vec3::new(0.0, 1.0, 0.0),
-            50.0,
-            0.0,
-            1000.0,
-        ),
-        0,
-        ClearOperation::from_rgba(0.0, 0.0, 0.0, 1.0),
-        RenderTarget::Image(texture_handle),
-    ))
+    commands
+        .spawn(CameraBundle {
+            camera: Camera::new_orthographic(
+                Viewport::new_at_origin(texture_width, texture_height),
+                50.0,
+                0.0,
+                1000.0,
+            ),
+            transform: Transform::from_xyz(10.0, 20.0, 10.0)
+                .looking_at(Vec3::new(0.0, 10.0, 0.0), Vec3::new(0.0, 1.0, 0.0)),
+            render: RenderOperation::new(
+                0,
+                ClearOperation::from_rgba(0.0, 0.0, 0.0, 1.0),
+                RenderTarget::Image(texture_handle),
+            ),
+        })
         .insert(preview_pass_layer);
 }
 
 // Rotates the cubes.
-fn rotate(
-    mut query: Query<&mut Transform, With<SkeletonCube>>,
-) {
+fn rotate(mut query: Query<&mut Transform, With<SkeletonCube>>) {
     for mut transform in &mut query {
         transform.rotate_x(0.015);
         transform.rotate_z(0.013);

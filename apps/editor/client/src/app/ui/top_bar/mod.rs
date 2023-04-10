@@ -1,13 +1,13 @@
 use bevy_ecs::world::World;
 
-use render_egui::{egui, egui::{Ui, Modifiers}};
+use render_egui::{
+    egui,
+    egui::{Modifiers, Ui},
+};
 
 use crate::app::ui::UiState;
 
-pub fn top_bar(
-    context: &egui::Context,
-    world: &mut World,
-) {
+pub fn top_bar(context: &egui::Context, world: &mut World) {
     egui::TopBottomPanel::top("top_bar").show(context, |ui| {
         egui::menu::bar(ui, |ui| {
             file_menu_button(ui);
@@ -67,7 +67,6 @@ fn file_menu_button(ui: &mut Ui) {
 }
 
 fn edit_menu_button(ui: &mut Ui) {
-
     let option_1_shortcut =
         egui::KeyboardShortcut::new(Modifiers::CTRL | Modifiers::SHIFT, egui::Key::A);
     let option_2_shortcut =
@@ -108,7 +107,6 @@ fn edit_menu_button(ui: &mut Ui) {
     });
 }
 fn git_menu_button(ui: &mut Ui) {
-
     let option_1_shortcut =
         egui::KeyboardShortcut::new(Modifiers::CTRL | Modifiers::SHIFT, egui::Key::A);
     let option_2_shortcut =

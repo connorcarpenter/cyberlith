@@ -1,11 +1,14 @@
-use std::{cell::RefCell, ops::Deref, collections::HashMap};
+use std::{cell::RefCell, collections::HashMap, ops::Deref};
 
 use bevy_ecs::system::Resource;
 use bevy_log::info;
 
 use egui_glow::{glow, Painter};
 
-use render_api::{Handle, base::{Texture2D, Viewport}};
+use render_api::{
+    base::{Texture2D, Viewport},
+    Handle,
+};
 use render_glow::{
     core::Context,
     renderer::{Event, Modifiers},

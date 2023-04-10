@@ -1,6 +1,15 @@
-use render_api::{AmbientLight, base::{AxisAlignedBoundingBox, Camera}, Transform};
+use render_api::{
+    base::{AxisAlignedBoundingBox, Camera},
+    AmbientLight, Transform,
+};
 
-use crate::{core::{Program, ColorTexture, DepthTexture}, renderer::{BaseMesh, AmbientLightImpl, RenderAmbientLight, Geometry, Light, Material, MaterialType, Mesh, Object}};
+use crate::{
+    core::{ColorTexture, DepthTexture, Program},
+    renderer::{
+        AmbientLightImpl, BaseMesh, Geometry, Light, Material, MaterialType, Mesh, Object,
+        RenderAmbientLight,
+    },
+};
 
 // Render Light
 #[derive(Clone, Copy)]
@@ -26,7 +35,7 @@ impl<'a> Light for RenderLight<'a> {
             Self::Ambient(light, light_impl) => {
                 let render_light = RenderAmbientLight::new(light, light_impl);
                 render_light.shader_source(i)
-            },
+            }
         }
     }
 
@@ -36,7 +45,7 @@ impl<'a> Light for RenderLight<'a> {
             Self::Ambient(light, light_impl) => {
                 let render_light = RenderAmbientLight::new(light, light_impl);
                 render_light.use_uniforms(program, i)
-            },
+            }
         }
     }
 }

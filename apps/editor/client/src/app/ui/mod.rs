@@ -1,15 +1,15 @@
-mod main;
-mod top_bar;
-mod left_panel;
-mod right_panel;
 mod center_panel;
+mod left_panel;
+mod main;
+mod right_panel;
 mod state;
-pub mod workspaces;
+mod top_bar;
 pub mod widgets;
+pub mod workspaces;
 
-pub use state::*;
-pub use main::*;
-pub use top_bar::*;
-pub use left_panel::*;
-pub use right_panel::*;
 pub use center_panel::*;
+pub use left_panel::*;
+pub use main::*;
+pub use right_panel::*;
+pub use state::*;
+pub use top_bar::*;

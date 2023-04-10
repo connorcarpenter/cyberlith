@@ -1,11 +1,11 @@
 mod camera;
 mod light;
 mod object;
-mod transform;
 mod render_layer;
+mod transform;
 
-pub use camera::{CameraBundle, RenderOperation, ClearOperation, RenderTarget};
-pub use light::{DirectionalLight, PointLight, AmbientLight};
+pub use camera::{CameraBundle, ClearOperation, RenderOperation, RenderTarget};
+pub use light::{AmbientLight, DirectionalLight, PointLight};
 pub use object::RenderObjectBundle;
-pub use transform::Transform;
 pub use render_layer::{RenderLayer, RenderLayers};
+pub use transform::Transform;
