@@ -1,16 +1,6 @@
-use render_api::components::Projection;
-use render_api::{
-    base::AxisAlignedBoundingBox,
-    components::{Camera, Transform},
-};
+use render_api::components::{Camera, Projection, Transform};
 
-use crate::{
-    core::{ColorTexture, DepthTexture},
-    renderer::{
-        BaseMesh, Geometry, Light, Material, MaterialType, Mesh, Object, RenderCamera, RenderLight,
-        RenderObject,
-    },
-};
+use crate::renderer::{Light, RenderCamera, RenderLight, RenderObject};
 
 // Render Pass
 pub struct RenderPass<'a> {
@@ -33,7 +23,7 @@ impl<'a> RenderPass<'a> {
     }
 
     pub fn take(
-        mut self,
+        self,
     ) -> (
         RenderCamera<'a>,
         Vec<RenderLight<'a>>,

@@ -2,10 +2,11 @@ use math::Mat4;
 
 use bevy_ecs::component::Component;
 
-use render_api::components::{OrthographicProjection, Projection};
 use render_api::{
     base::{AxisAlignedBoundingBox, Wrapping},
-    components::{Camera, ClearOperation, DirectionalLight, RenderTarget, Transform, Viewport},
+    components::{
+        Camera, DirectionalLight, OrthographicProjection, Projection, Transform, Viewport,
+    },
 };
 
 use crate::{core::*, renderer::*};
@@ -99,10 +100,7 @@ impl DirectionalLightImpl {
             .as_depth_target()
             .clear(ClearState::default())
             .write(|| {
-                for geometry in geometries
-                    .into_iter()
-                    .filter(|g| shadow_camera.in_frustum(&g.aabb()))
-                {
+                for geometry in geometries.into_iter() {
                     geometry.render_with_material(&depth_material, &shadow_render_camera, &[]);
                 }
             });

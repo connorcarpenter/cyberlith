@@ -1,5 +1,3 @@
-use render_api::components::Camera;
-
 use crate::{
     core::{Program, RenderStates},
     renderer::{FragmentShader, Light, MaterialType, RenderCamera},

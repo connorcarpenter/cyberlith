@@ -1,7 +1,4 @@
-use bevy_ecs::{
-    entity::Entity,
-    system::{NonSendMut, Query, Res, ResMut},
-};
+use bevy_ecs::system::{NonSendMut, Query, Res, ResMut};
 
 use render_api::{
     base::{PbrMaterial, Texture2D, TriMesh},
@@ -16,8 +13,8 @@ use crate::{
     asset_impls::AssetImpls,
     core::{DepthTexture2D, RenderTarget, Texture2DImpl},
     renderer::{
-        AmbientLightImpl, BaseMesh, DirectionalLightImpl, Light, Material, RenderAmbientLight,
-        RenderCamera, RenderLight, RenderObject, RenderPass,
+        AmbientLightImpl, BaseMesh, DirectionalLightImpl, Material, RenderLight, RenderObject,
+        RenderPass,
     },
     window::FrameInput,
 };
@@ -146,8 +143,8 @@ pub fn draw(
                 CameraRenderTarget::Screen => frame_input.screen(),
                 CameraRenderTarget::Image(texture_handle) => {
                     // Render to Image
-                    let mut texture = textures.get_mut(texture_handle).unwrap();
-                    let mut depth_texture = depth_textures.get_mut(texture_handle).unwrap();
+                    let texture = textures.get_mut(texture_handle).unwrap();
+                    let depth_texture = depth_textures.get_mut(texture_handle).unwrap();
                     RenderTarget::new(
                         texture.as_color_target(None),
                         depth_texture.as_depth_target(),

@@ -1,7 +1,4 @@
-use render_api::{
-    base::PbrMaterial,
-    components::{Camera, CameraProjection},
-};
+use render_api::{base::PbrMaterial, components::CameraProjection};
 
 use crate::{core::*, renderer::*};
 

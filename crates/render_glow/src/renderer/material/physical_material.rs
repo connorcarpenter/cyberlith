@@ -2,10 +2,7 @@ use std::sync::Arc;
 
 use crate::{core::*, renderer::*};
 
-use render_api::{
-    base::{Color, LightingModel, PbrMaterial},
-    components::Camera,
-};
+use render_api::base::{Color, LightingModel, PbrMaterial};
 
 ///
 /// A physically-based material that renders a [Geometry] in an approximate correct physical manner based on Physically Based Rendering (PBR).

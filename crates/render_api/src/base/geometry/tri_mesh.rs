@@ -112,12 +112,7 @@ impl TriMesh {
             Vec3::new(halfsize, halfsize, 0.0),
             Vec3::new(-halfsize, halfsize, 0.0),
         ];
-        let normals = vec![
-            Vec3::Z,
-            Vec3::Z,
-            Vec3::Z,
-            Vec3::Z,
-        ];
+        let normals = vec![Vec3::Z, Vec3::Z, Vec3::Z, Vec3::Z];
         let tangents = vec![
             Vec4::new(1.0, 0.0, 0.0, 1.0),
             Vec4::new(1.0, 0.0, 0.0, 1.0),

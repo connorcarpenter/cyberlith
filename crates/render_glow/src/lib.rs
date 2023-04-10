@@ -1,6 +1,3 @@
-#[macro_use]
-extern crate cfg_if;
-
 mod asset_impls;
 mod draw;
 mod plugin;

@@ -1,9 +1,6 @@
 use std::sync::Arc;
 
-use render_api::{
-    base::{Color, PbrMaterial},
-    components::Camera,
-};
+use render_api::base::{Color, PbrMaterial};
 
 use crate::{core::*, renderer::*};
 

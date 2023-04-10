@@ -1,11 +1,4 @@
-use math::Vec3;
-
-use render_api::{
-    base::{Interpolation, Wrapping},
-    components::{Camera, ClearOperation, RenderTarget as CameraRenderTarget, Transform, Viewport},
-};
-
-use crate::renderer::{DepthMaterial, Geometry, MaterialType, Object, RenderCamera};
+use crate::renderer::{MaterialType, Object, RenderCamera};
 
 ///
 /// Compare function for sorting objects based on distance from the camera.

@@ -1,17 +1,10 @@
-use render_api::{
-    base::{Interpolation, Wrapping},
-    components::{Camera, Viewport},
-};
-
 use crate::{
     core::{
-        ClearState, ColorTarget, ColorTargetMultisample, ColorTexture, DepthTarget,
-        DepthTargetMultisample, DepthTexture, DepthTexture2D, DepthTextureDataType, RenderTarget,
-        RenderTargetMultisample, ScissorBox, Texture2DArray, TextureDataType,
+        ColorTarget, ColorTargetMultisample, DepthTarget, DepthTargetMultisample,
+        DepthTextureDataType, RenderTarget, RenderTargetMultisample, ScissorBox, TextureDataType,
     },
     renderer::{
-        cmp_render_order, Geometry, Light, Material, MaterialType, Object, RenderCamera,
-        RenderObject, RenderPass,
+        cmp_render_order, Geometry, Light, Material, Object, RenderCamera, RenderObject, RenderPass,
     },
 };
 
@@ -31,25 +24,16 @@ macro_rules! impl_render_target_extensions_body {
         /// Use an empty array for the `lights` argument, if the objects does not require lights to be rendered.
         /// Also, objects outside the camera frustum are not rendered and the objects are rendered in the order given by [cmp_render_order].
         ///
-        pub fn render_partially(
-            &self,
-            scissor_box: ScissorBox,
-            mut render_pass: RenderPass,
-        ) -> &Self {
+        pub fn render_partially(&self, scissor_box: ScissorBox, render_pass: RenderPass) -> &Self {
             let (camera, lights_holder, objects) = render_pass.take();
             let lights = &RenderPass::process_lights(&lights_holder);
 
-            let mut forward_objects: Vec<RenderObject> = objects
-                .iter()
-                .filter(|o| camera.camera.in_frustum(&o.aabb()))
-                .cloned()
-                .collect();
+            let mut forward_objects: Vec<RenderObject> = objects.iter().cloned().collect();
             // let (mut deferred_objects, mut forward_objects): (
             //     Vec<RenderObject>,
             //     Vec<RenderObject>,
             // ) = objects
             //     .iter()
-            //     .filter(|o| camera.in_frustum(&o.aabb()))
             //     .partition(|o| o.material_type() == MaterialType::Deferred);
 
             // // Deferred
@@ -145,10 +129,7 @@ macro_rules! impl_render_target_extensions_body {
             lights: &[&dyn Light],
         ) -> &Self {
             self.write_partially(scissor_box, || {
-                for object in geometries
-                    .into_iter()
-                    .filter(|o| camera.camera.in_frustum(&o.aabb()))
-                {
+                for object in geometries.into_iter() {
                     object.render_with_material(material, camera, lights);
                 }
             });

@@ -1,14 +1,8 @@
-use render_api::{
-    base::AxisAlignedBoundingBox,
-    components::{AmbientLight, Camera, Transform},
-};
+use render_api::components::AmbientLight;
 
 use crate::{
-    core::{ColorTexture, DepthTexture, Program},
-    renderer::{
-        AmbientLightImpl, BaseMesh, Geometry, Light, Material, MaterialType, Mesh, Object,
-        RenderAmbientLight,
-    },
+    core::Program,
+    renderer::{AmbientLightImpl, Light, RenderAmbientLight},
 };
 
 // Render Light

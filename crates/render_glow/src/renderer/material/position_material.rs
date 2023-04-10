@@ -1,6 +1,6 @@
 use crate::{core::*, renderer::*};
 
-use render_api::{base::PbrMaterial, components::Camera};
+use render_api::base::PbrMaterial;
 
 ///
 /// Render the object with colors that reflect its position which primarily is used for debug purposes.

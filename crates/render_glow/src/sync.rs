@@ -4,7 +4,7 @@ use bevy_ecs::{
     entity::Entity,
     query::{Added, Changed},
     schedule::IntoSystemConfig,
-    system::{Commands, Query, Res, ResMut},
+    system::{Commands, Query, ResMut},
 };
 
 use render_api::{
@@ -34,6 +34,7 @@ impl Plugin for SyncPlugin {
             .add_system(sync_material_assets.in_base_set(RenderSet::Sync))
             .add_system(sync_texture_2d_assets.in_base_set(RenderSet::Sync))
             .add_system(sync_ambient_light_added.in_base_set(RenderSet::Sync))
+            .add_system(sync_ambient_light_changed.in_base_set(RenderSet::Sync))
             .add_system(sync_directional_light_added.in_base_set(RenderSet::Sync))
             .add_system(sync_directional_light_changed.in_base_set(RenderSet::Sync));
     }

@@ -2,7 +2,7 @@ use math::Mat4;
 
 use render_api::{
     base::AxisAlignedBoundingBox,
-    components::{Camera, CameraProjection, Transform},
+    components::{CameraProjection, Transform},
 };
 
 use crate::{core::*, renderer::*};

@@ -1,11 +1,7 @@
-use render_api::{
-    base::AxisAlignedBoundingBox,
-    components::{Camera, Transform},
-};
+use render_api::{base::AxisAlignedBoundingBox, components::Transform};
 
-use crate::{
-    core::{ColorTexture, DepthTexture},
-    renderer::{BaseMesh, Geometry, Light, Material, MaterialType, Mesh, Object, RenderCamera},
+use crate::renderer::{
+    BaseMesh, Geometry, Light, Material, MaterialType, Mesh, Object, RenderCamera,
 };
 
 // Render Object

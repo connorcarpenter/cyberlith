@@ -30,10 +30,7 @@ impl From<Plane> for TriMesh {
         }
 
         tri_mesh
-            .transform(&Transform::from_axis_angle(
-                Vec3::X,
-                f32::to_radians(90.0),
-            ))
+            .transform(&Transform::from_axis_angle(Vec3::X, f32::to_radians(90.0)))
             .unwrap();
 
         tri_mesh

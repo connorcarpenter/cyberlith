@@ -14,8 +14,9 @@ use math::{Quat, Vec3};
 use render_api::{
     base::{Color, PbrMaterial, Texture2D, TriMesh},
     components::{
-        AmbientLight, Camera, CameraBundle, ClearOperation, DirectionalLight, PointLight,
-        RenderLayers, RenderObjectBundle, RenderTarget, Transform, Viewport, OrthographicProjection, Projection
+        AmbientLight, Camera, CameraBundle, ClearOperation, DirectionalLight,
+        OrthographicProjection, PointLight, Projection, RenderLayers, RenderObjectBundle,
+        RenderTarget, Transform, Viewport,
     },
     resources::WindowSettings,
     shapes, Assets, Handle, Window,
@@ -201,8 +202,7 @@ fn setup(
                 target: RenderTarget::Image(right_bottom_texture),
                 ..Default::default()
             },
-            transform: Transform::from_xyz(30.0, 60.0, 30.0)
-                .looking_at(center_target, Vec3::Y),
+            transform: Transform::from_xyz(30.0, 60.0, 30.0).looking_at(center_target, Vec3::Y),
             projection: projection.clone(),
         })
         .insert(preview_pass_layer);
@@ -211,7 +211,7 @@ fn setup(
 fn new_render_texture(
     texture_size: u32,
     textures: &mut Assets<Texture2D>,
-    user_textures: &mut EguiUserTextures
+    user_textures: &mut EguiUserTextures,
 ) -> Handle<Texture2D> {
     // This is the texture that will be rendered to.
     let mut texture = Texture2D::from_size(texture_size, texture_size);

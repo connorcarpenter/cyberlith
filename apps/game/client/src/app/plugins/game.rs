@@ -2,29 +2,19 @@ use bevy_app::{App, Plugin};
 use bevy_ecs::{
     component::Component,
     query::With,
-    schedule::IntoSystemConfigs,
     system::{Commands, Local, Query, Res, ResMut},
-};
-
-use naia_bevy_client::{
-    ClientConfig as NaiaClientConfig, Plugin as NaiaClientPlugin, ReceiveEvents,
 };
 
 use math::Vec3;
 use render_api::{
     base::{Color, PbrMaterial, TriMesh},
     components::{
-        AmbientLight, Camera, CameraBundle, ClearOperation, DirectionalLight, PointLight,
-        RenderLayers, RenderObjectBundle, RenderTarget, Transform, Viewport,
+        AmbientLight, Camera, CameraBundle, DirectionalLight, PerspectiveProjection, Projection,
+        RenderObjectBundle, Transform,
     },
     resources::WindowSettings,
     shapes, Assets, Window,
 };
-
-use game_proto::protocol;
-use render_api::components::{PerspectiveProjection, Projection};
-
-use crate::app::network;
 
 #[derive(Component)]
 pub struct CubeMarker;

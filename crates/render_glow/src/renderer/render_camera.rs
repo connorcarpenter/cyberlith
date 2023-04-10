@@ -1,12 +1,4 @@
-use render_api::{
-    base::AxisAlignedBoundingBox,
-    components::{Camera, Projection, Transform},
-};
-
-use crate::{
-    core::{ColorTexture, DepthTexture},
-    renderer::{BaseMesh, Geometry, Light, Material, MaterialType, Mesh, Object},
-};
+use render_api::components::{Camera, Projection, Transform};
 
 // Render Camera
 #[derive(Clone, Copy)]

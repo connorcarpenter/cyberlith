@@ -3,10 +3,7 @@ use std::default::Default;
 use bevy_ecs::{bundle::Bundle, component::Component};
 use math::Mat4;
 
-use crate::{
-    assets::Handle,
-    base::{AxisAlignedBoundingBox, Texture2D},
-};
+use crate::{assets::Handle, base::Texture2D};
 
 use super::transform::Transform;
 
@@ -46,15 +43,6 @@ impl Camera {
 
     pub fn viewport_or_default(&self) -> Viewport {
         self.viewport.unwrap_or_default()
-    }
-
-    ///
-    /// Returns whether or not the given bounding box is within the camera frustum.
-    /// It returns false if it is fully outside and true if it is inside or intersects.
-    ///
-    pub fn in_frustum(&self, aabb: &AxisAlignedBoundingBox) -> bool {
-        // TODO: implement this!
-        true
     }
 }
 
