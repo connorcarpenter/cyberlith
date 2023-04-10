@@ -57,6 +57,7 @@ impl Plugin for VortexPlugin {
             .add_startup_system(setup)
             .add_system(rotate)
             .add_system(ui::main)
+            .add_system(ui::sync_ui_to_world)
         // Receive Client Events
         // .add_systems(
         //     (

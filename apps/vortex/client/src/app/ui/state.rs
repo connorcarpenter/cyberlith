@@ -2,6 +2,7 @@ use std::default::Default;
 
 use bevy_ecs::system::Resource;
 
+#[derive(PartialEq)]
 pub enum WorkspaceType {
     None,
     SkeletonBuilder,

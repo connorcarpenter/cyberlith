@@ -27,6 +27,7 @@ pub struct Camera {
     pub order: usize,
     pub clear_operation: ClearOperation,
     pub target: RenderTarget,
+    pub is_active: bool,
 }
 
 impl Camera {
@@ -60,6 +61,7 @@ impl Camera {
 impl Default for Camera {
     fn default() -> Self {
         Self {
+            is_active: true,
             viewport: None,
             order: 0,
             clear_operation: ClearOperation::default(),

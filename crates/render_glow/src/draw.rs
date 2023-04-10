@@ -52,13 +52,16 @@ pub fn draw(
 
     // Aggregate Cameras
     for (camera, transform, projection, render_layer_wrapper) in cameras_q.iter() {
+        if !camera.is_active {
+            continue;
+        }
         let camera_order = camera.order();
         if camera_work[camera_order].is_some() {
             panic!("Each Camera must have a unique `order` value!");
         }
 
         let render_layer = convert_wrapper(render_layer_wrapper);
-        if layer_to_order.get(render_layer).unwrap().is_some() {
+        if layer_to_order[render_layer].is_some() {
             panic!("Each Camera must have a unique RenderLayer component!");
         }
 
@@ -70,11 +73,11 @@ pub fn draw(
     // Aggregate Point Lights
     for (point_light, render_layer_wrapper) in point_lights_q.iter() {
         let render_layer = convert_wrapper(render_layer_wrapper);
-        if layer_to_order.get(render_layer).is_none() {
-            panic!("Found PointLight with RenderLayer not associated with any Camera!");
+        if layer_to_order[render_layer].is_none() {
+            continue;
         }
         let camera_index = layer_to_order[render_layer].unwrap();
-        if camera_work.get(camera_index).is_none() {
+        if camera_work[camera_index].is_none() {
             panic!("Found PointLight with RenderLayer not associated with any Camera!");
         }
 
@@ -88,11 +91,11 @@ pub fn draw(
     // Aggregate Directional Lights
     for (directional_light_impl, render_layer_wrapper) in directional_lights_q.iter() {
         let render_layer = convert_wrapper(render_layer_wrapper);
-        if layer_to_order.get(render_layer).is_none() {
-            panic!("Found DirectionalLight with RenderLayer not associated with any Camera!");
+        if layer_to_order[render_layer].is_none() {
+            continue;
         }
         let camera_index = layer_to_order[render_layer].unwrap();
-        if camera_work.get(camera_index).is_none() {
+        if camera_work[camera_index].is_none() {
             panic!("Found DirectionalLight with RenderLayer not associated with any Camera!");
         }
 
@@ -106,11 +109,11 @@ pub fn draw(
     // Aggregate Ambient Lights
     for (ambient_light, ambient_light_impl, render_layer_wrapper) in ambient_lights_q.iter() {
         let render_layer = convert_wrapper(render_layer_wrapper);
-        if layer_to_order.get(render_layer).is_none() {
-            panic!("Found DirectionalLight with RenderLayer not associated with any Camera!");
+        if layer_to_order[render_layer].is_none() {
+            continue;
         }
         let camera_index = layer_to_order[render_layer].unwrap();
-        if camera_work.get(camera_index).is_none() {
+        if camera_work[camera_index].is_none() {
             panic!("Found DirectionalLight with RenderLayer not associated with any Camera!");
         }
 
@@ -124,11 +127,11 @@ pub fn draw(
     // Aggregate RenderObjects
     for (mesh_handle, mat_handle, transform, render_layer_wrapper) in objects_q.iter() {
         let render_layer = convert_wrapper(render_layer_wrapper);
-        if layer_to_order.get(render_layer).is_none() {
-            panic!("Found render object with RenderLayer not associated with any Camera!");
+        if layer_to_order[render_layer].is_none() {
+            continue;
         }
         let camera_index: usize = layer_to_order[render_layer].unwrap();
-        if camera_work.get(camera_index).is_none() {
+        if camera_work[camera_index].is_none() {
             panic!("Found render object with RenderLayer not associated with any Camera!");
         }
 
