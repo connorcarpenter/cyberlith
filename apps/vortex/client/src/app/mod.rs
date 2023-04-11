@@ -6,6 +6,7 @@ mod events;
 mod plugin;
 mod resources;
 mod systems;
+mod config;
 
 pub use build::build;
 pub use plugin::VortexPlugin;

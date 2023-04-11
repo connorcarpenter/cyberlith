@@ -3,8 +3,9 @@ use bevy_ecs::{
     component::Component,
     query::With,
     schedule::IntoSystemConfigs,
-    system::{Commands, Query, ResMut, Resource},
+    system::{Res, Commands, Query, ResMut, Resource},
 };
+use bevy_log::info;
 
 use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin, ReceiveEvents};
 
@@ -26,13 +27,17 @@ use crate::app::{
     events::LoginEvent,
     network, ui,
     ui::{widgets, AxesCamerasVisible, UiState},
+    config::ConfigPlugin
 };
+use crate::app::config::AppConfig;
 
 pub struct VortexPlugin;
 
 impl Plugin for VortexPlugin {
     fn build(&self, app: &mut App) {
         app
+            // Add Config
+            .add_plugin(ConfigPlugin)
             // Add Window Settings Plugin
             .insert_resource(WindowSettings {
                 title: "Vortex".to_string(),
@@ -86,12 +91,15 @@ pub struct RightTopTexture(pub Handle<Texture2D>);
 pub struct RightBottomTexture(pub Handle<Texture2D>);
 
 fn setup(
+    mut config: Res<AppConfig>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<TriMesh>>,
     mut materials: ResMut<Assets<PbrMaterial>>,
     mut textures: ResMut<Assets<Texture2D>>,
     mut user_textures: ResMut<EguiUserTextures>,
 ) {
+    info!("Environment Loaded: {} - {}", config.general.name, config.other);
+
     // This specifies the layer used for the preview pass, which will be attached to the preview pass camera and cube.
     let preview_pass_layer = RenderLayers::layer(1);
 
