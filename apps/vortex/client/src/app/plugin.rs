@@ -46,7 +46,7 @@ impl Plugin for VortexPlugin {
                 protocol(),
             ))
             // Networking Systems
-            .add_startup_system(network::init)
+            //.add_startup_system(network::init)
             .add_systems(
                 (
                     network::connect_events,
