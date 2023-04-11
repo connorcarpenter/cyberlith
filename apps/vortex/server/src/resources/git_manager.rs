@@ -1,10 +1,7 @@
-
 use bevy_ecs::system::Resource;
 
 #[derive(Resource)]
-pub struct GitManager {
-
-}
+pub struct GitManager {}
 
 impl Default for GitManager {
     fn default() -> Self {

@@ -6,9 +6,7 @@ use bevy_ecs::{
     system::{Commands, Query, ResMut, Resource},
 };
 
-use naia_bevy_client::{
-    ClientConfig, Plugin as ClientPlugin, ReceiveEvents,
-};
+use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin, ReceiveEvents};
 
 use math::Vec3;
 use render_api::{
@@ -25,6 +23,7 @@ use render_egui::EguiUserTextures;
 use vortex_proto::protocol;
 
 use crate::app::{
+    events::LoginEvent,
     network, ui,
     ui::{widgets, UiState},
 };
@@ -41,12 +40,10 @@ impl Plugin for VortexPlugin {
                 ..Default::default()
             })
             // Networking Plugin
-            .add_plugin(ClientPlugin::new(
-                ClientConfig::default(),
-                protocol(),
-            ))
+            .add_plugin(ClientPlugin::new(ClientConfig::default(), protocol()))
+            .add_event::<LoginEvent>()
             // Networking Systems
-            //.add_startup_system(network::init)
+            .add_system(network::login)
             .add_systems(
                 (
                     network::connect_events,

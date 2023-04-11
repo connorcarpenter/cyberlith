@@ -7,5 +7,5 @@ mod reject;
 pub use connect::connect_events;
 pub use disconnect::disconnect_events;
 pub use error::error_events;
-pub use init::init;
+pub use init::login;
 pub use reject::reject_events;

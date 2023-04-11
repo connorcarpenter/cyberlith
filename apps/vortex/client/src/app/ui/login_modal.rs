@@ -1,0 +1,63 @@
+use bevy_ecs::{
+    event::{EventWriter, Events},
+    world::World,
+};
+
+use egui_modal::Modal;
+
+use render_egui::{
+    egui,
+    egui::{Align, Layout, Ui},
+};
+
+use crate::app::{events::LoginEvent, ui::UiState};
+
+pub fn login_modal(context: &egui::Context, world: &mut World) {
+    let mut creds: Option<(String, String)> = None;
+
+    {
+        let mut ui_state = world.get_resource_mut::<UiState>().unwrap();
+
+        let modal = Modal::new(context, "login_modal");
+        let margin = 5.0;
+
+        modal.show(|ui| {
+            modal.frame(ui, |ui| {
+                ui.with_layout(Layout::top_down(Align::Min), |ui| {
+                    ui_with_margin(ui, margin, |ui| {
+                        ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
+                            ui_with_margin(ui, margin, |ui| {
+                                ui.label("username: ");
+                                ui.text_edit_singleline(&mut ui_state.username);
+                            })
+                        });
+                        ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
+                            ui_with_margin(ui, margin, |ui| {
+                                ui.label("password: ");
+                                ui.text_edit_singleline(&mut ui_state.password);
+                            })
+                        });
+                    })
+                });
+            });
+            ui.separator();
+            ui.with_layout(Layout::top_down(Align::Center), |ui| {
+                if modal.button(ui, "login").clicked() {
+                    creds = Some((ui_state.username.clone(), ui_state.password.clone()));
+                }
+            });
+        });
+        modal.open();
+    }
+
+    if let Some((username, password)) = creds {
+        let mut login_events = world.get_resource_mut::<Events<LoginEvent>>().unwrap();
+        login_events.send(LoginEvent { username, password });
+    }
+}
+
+fn ui_with_margin<R>(ui: &mut Ui, margin: f32, add_contents: impl FnOnce(&mut Ui) -> R) {
+    egui::Frame::none()
+        .inner_margin(margin)
+        .show(ui, |ui| add_contents(ui));
+}
