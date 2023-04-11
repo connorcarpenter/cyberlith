@@ -3,12 +3,17 @@ use bevy_log::info;
 
 use naia_bevy_client::{events::ConnectEvent, Client};
 
-use crate::app::ui::UiState;
+use crate::app::ui::{LoggingInState, UiState};
 
-pub fn connect_events(client: Client, mut event_reader: EventReader<ConnectEvent>, mut state: ResMut<UiState>) {
+pub fn connect_events(
+    client: Client,
+    mut event_reader: EventReader<ConnectEvent>,
+    mut state: ResMut<UiState>,
+) {
     for _ in event_reader.iter() {
         let server_address = client.server_address().unwrap();
         info!("Client connected to: {}", server_address);
         state.logged_in = true;
+        state.logging_in_state = LoggingInState::NotLoggingIn;
     }
 }

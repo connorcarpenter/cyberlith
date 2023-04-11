@@ -7,7 +7,7 @@ use render_egui::{
     egui::{Align, Layout, Ui},
 };
 
-use crate::app::{events::LoginEvent, ui::UiState};
+use crate::app::{events::LoginEvent, ui::{UiState, LoggingInState}};
 
 pub fn login_modal(context: &egui::Context, world: &mut World) {
     let mut creds: Option<(String, String)> = None;
@@ -37,8 +37,22 @@ pub fn login_modal(context: &egui::Context, world: &mut World) {
                     })
                 });
             });
-            ui.separator();
+
             ui.with_layout(Layout::top_down(Align::Center), |ui| {
+                match ui_state.logging_in_state {
+                    LoggingInState::NotLoggingIn => {
+                        // do nothing
+                    }
+                    LoggingInState::LoggingIn => {
+                        ui.spinner();
+                    }
+                    LoggingInState::LoginFailed => {
+                        ui.label("❌ invalid credentials ❌");
+                    }
+                }
+
+                ui.separator();
+
                 if modal.button(ui, "login").clicked() {
                     creds = Some((ui_state.username.clone(), ui_state.password.clone()));
                 }
@@ -50,6 +64,9 @@ pub fn login_modal(context: &egui::Context, world: &mut World) {
     if let Some((username, password)) = creds {
         let mut login_events = world.get_resource_mut::<Events<LoginEvent>>().unwrap();
         login_events.send(LoginEvent { username, password });
+
+        let mut ui_state = world.get_resource_mut::<UiState>().unwrap();
+        ui_state.logging_in_state = LoggingInState::LoggingIn;
     }
 }
 
