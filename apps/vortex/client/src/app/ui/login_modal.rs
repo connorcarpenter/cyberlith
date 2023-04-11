@@ -25,13 +25,17 @@ pub fn login_modal(context: &egui::Context, world: &mut World) {
                         ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
                             ui_with_margin(ui, margin, |ui| {
                                 ui.label("username: ");
-                                ui.text_edit_singleline(&mut ui_state.username);
+                                if ui.text_edit_singleline(&mut ui_state.username).gained_focus() {
+                                    ui_state.logging_in_state = LoggingInState::NotLoggingIn;
+                                }
                             })
                         });
                         ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
                             ui_with_margin(ui, margin, |ui| {
                                 ui.label("password: ");
-                                ui.text_edit_singleline(&mut ui_state.password);
+                                if ui.text_edit_singleline(&mut ui_state.password).gained_focus() {
+                                    ui_state.logging_in_state = LoggingInState::NotLoggingIn;
+                                }
                             })
                         });
                     })
@@ -55,6 +59,8 @@ pub fn login_modal(context: &egui::Context, world: &mut World) {
 
                 if modal.button(ui, "login").clicked() {
                     creds = Some((ui_state.username.clone(), ui_state.password.clone()));
+                    ui_state.username = String::new();
+                    ui_state.password = String::new();
                 }
             });
         });
