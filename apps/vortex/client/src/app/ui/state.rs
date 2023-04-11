@@ -27,3 +27,6 @@ impl Default for UiState {
         }
     }
 }
+
+#[derive(Resource)]
+pub struct AxesCamerasVisible(pub(crate) bool);

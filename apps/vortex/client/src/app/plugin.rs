@@ -25,7 +25,7 @@ use vortex_proto::protocol;
 use crate::app::{
     events::LoginEvent,
     network, ui,
-    ui::{widgets, UiState},
+    ui::{widgets, AxesCamerasVisible, UiState},
 };
 
 pub struct VortexPlugin;
@@ -56,9 +56,10 @@ impl Plugin for VortexPlugin {
             )
             // UI Configuration
             .insert_resource(UiState::default())
+            .insert_resource(AxesCamerasVisible(false))
             .insert_resource(ProjectTree(widgets::Tree::new()))
             .add_system(ui::main)
-            .add_system(ui::sync_ui_to_world)
+            .add_system(ui::sync_axes_cameras_visibility)
             // 3D Configuration
             .add_startup_system(setup)
             .add_system(rotate);

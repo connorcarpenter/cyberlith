@@ -12,8 +12,8 @@ mod components;
 mod resources;
 mod systems;
 
-use systems::network;
 use resources::GitManager;
+use systems::network;
 
 fn main() {
     info!("Naia Bevy Server Demo starting up");

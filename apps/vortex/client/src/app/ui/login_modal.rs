@@ -1,7 +1,4 @@
-use bevy_ecs::{
-    event::{EventWriter, Events},
-    world::World,
-};
+use bevy_ecs::{event::Events, world::World};
 
 use egui_modal::Modal;
 
