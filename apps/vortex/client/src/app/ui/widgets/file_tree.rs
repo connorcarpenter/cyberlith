@@ -66,7 +66,11 @@ impl FileTree {
     fn render(&mut self, ui: &mut Ui, path: &str) {
         let tree_name = self.name.clone();
         let full_path = format!("{}:{}", path, tree_name);
-        self.selected = CustomCollapsingHeader::show(&full_path, &tree_name, self.selected, ui, |ui| self.render_children(ui, &full_path));
+        if self.trees.len() > 0 {
+            self.selected = Self::render_dir(&full_path, &tree_name, self.selected, ui, |ui| self.render_children(ui, &full_path));
+        } else {
+            self.selected = Self::render_file(&full_path, &tree_name, self.selected, ui);
+        }
     }
 
     fn render_children(&mut self, ui: &mut Ui, path: &str) {
@@ -74,28 +78,33 @@ impl FileTree {
             tree.render(ui, path);
         }
     }
-}
 
-struct CustomCollapsingHeader;
-
-impl CustomCollapsingHeader {
-    pub fn show<ShowRet>(full_path: &str, tree_name: &str, tree_select: bool, ui: &mut Ui, show_body: impl FnOnce(&mut Ui) -> ShowRet) -> bool {
-        let mut selected = tree_select;
-        let id = ui.make_persistent_id(full_path);
-        CollapsingState::load_with_default(ui.ctx(), id, false)
+    pub fn render_dir<ShowRet>(path: &str, name: &str, prev_selected: bool, ui: &mut Ui, show_body: impl FnOnce(&mut Ui) -> ShowRet) -> bool {
+        let mut next_selected = prev_selected;
+        let id = ui.make_persistent_id(path);
+        FileTreeUI::load_with_default(ui.ctx(), id)
             .show_header(ui, |ui| {
-                ui.toggle_value(&mut selected, tree_name);
+                ui.toggle_value(&mut next_selected, name);
             })
             .body(|ui| {
                 return show_body(ui);
             });
-        return selected;
+        return next_selected;
+    }
+
+    pub fn render_file(path: &str, name: &str, prev_selected: bool, ui: &mut Ui) -> bool {
+        let mut next_selected = prev_selected;
+        let id = ui.make_persistent_id(path);
+        ui.indent(id, |ui| {
+            ui.toggle_value(&mut next_selected, name);
+        });
+        return next_selected;
     }
 }
 
 #[derive(Clone, Copy, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-pub(crate) struct InnerState {
+pub(crate) struct InnerFileTreeState {
     open: bool,
 
     /// Height of the region when open. Used for animations
@@ -106,17 +115,17 @@ pub(crate) struct InnerState {
 ///
 /// It is used by [`CollapsingHeader`] and [`Window`], but can also be used on its own.
 ///
-/// See [`CollapsingState::show_header`] for how to show a collapsing header with a custom header.
+/// See [`FileTreeUI::show_header`] for how to show a collapsing header with a custom header.
 #[derive(Clone, Debug)]
-pub struct CollapsingState {
+pub struct FileTreeUI {
     id: Id,
-    state: InnerState,
+    state: InnerFileTreeState,
 }
 
-impl CollapsingState {
+impl FileTreeUI {
     pub fn load(ctx: &Context, id: Id) -> Option<Self> {
         ctx.data_mut(|d| {
-            d.get_persisted::<InnerState>(id)
+            d.get_persisted::<InnerFileTreeState>(id)
                 .map(|state| Self { id, state })
         })
     }
@@ -126,9 +135,9 @@ impl CollapsingState {
     }
 
     pub fn load_with_default(ctx: &Context, id: Id) -> Self {
-        Self::load(ctx, id).unwrap_or(CollapsingState {
+        Self::load(ctx, id).unwrap_or(FileTreeUI {
             id,
-            state: InnerState {
+            state: InnerFileTreeState {
                 open: false,
                 open_height: None,
             },
@@ -296,10 +305,10 @@ impl CollapsingState {
     }
 }
 
-/// From [`CollapsingState::show_header`].
+/// From [`FileTreeUI::show_header`].
 #[must_use = "Remember to show the body"]
 pub struct HeaderResponse<'ui, HeaderRet> {
-    state: CollapsingState,
+    state: FileTreeUI,
     ui: &'ui mut Ui,
     toggle_button_response: Response,
     header_response: InnerResponse<HeaderRet>,
