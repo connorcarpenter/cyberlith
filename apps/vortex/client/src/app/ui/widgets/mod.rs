@@ -1,3 +1,3 @@
-mod tree;
+mod file_tree;
 
-pub use tree::Tree;
+pub use file_tree::FileTree;
