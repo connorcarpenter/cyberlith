@@ -62,7 +62,8 @@ impl Plugin for VortexPlugin {
             // UI Configuration
             .insert_resource(UiState::default())
             .insert_resource(AxesCamerasVisible(false))
-            .insert_resource(ProjectTree(widgets::Tree::new()))
+            .insert_resource(ProjectTree(widgets::Tree::project_test()))
+            .insert_resource(ChangesTree(widgets::Tree::changes_test()))
             .add_system(ui::main)
             .add_system(ui::sync_axes_cameras_visibility)
             // 3D Configuration
@@ -73,6 +74,9 @@ impl Plugin for VortexPlugin {
 
 #[derive(Resource)]
 pub struct ProjectTree(pub widgets::Tree);
+
+#[derive(Resource)]
+pub struct ChangesTree(pub widgets::Tree);
 
 // Marks the preview pass cube.
 #[derive(Component)]
