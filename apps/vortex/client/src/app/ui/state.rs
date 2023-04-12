@@ -9,6 +9,7 @@ pub enum WorkspaceType {
     TextEditor,
 }
 
+#[derive(PartialEq)]
 pub enum LoggingInState {
     NotLoggingIn,
     LoggingIn,

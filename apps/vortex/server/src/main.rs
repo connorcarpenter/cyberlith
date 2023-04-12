@@ -15,6 +15,8 @@ mod systems;
 use resources::GitManager;
 use systems::network;
 
+use crate::resources::UserManager;
+
 fn main() {
     info!("Naia Bevy Server Demo starting up");
 
@@ -28,6 +30,9 @@ fn main() {
         .add_plugin(ScheduleRunnerPlugin::default())
         .add_plugin(LogPlugin::default())
         .add_plugin(ServerPlugin::new(ServerConfig::default(), protocol()))
+        // Resources
+        .init_resource::<UserManager>()
+        .init_resource::<GitManager>()
         // Network Systems
         .add_startup_system(network::init)
         .add_systems(
@@ -41,7 +46,6 @@ fn main() {
                 .in_set(ReceiveEvents),
         )
         // Other Systems
-        .insert_resource(GitManager::default())
         .add_startup_system(setup)
         // Run App
         .run();

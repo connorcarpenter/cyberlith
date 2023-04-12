@@ -91,14 +91,14 @@ pub struct RightTopTexture(pub Handle<Texture2D>);
 pub struct RightBottomTexture(pub Handle<Texture2D>);
 
 fn setup(
-    mut config: Res<AppConfig>,
+    config: Res<AppConfig>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<TriMesh>>,
     mut materials: ResMut<Assets<PbrMaterial>>,
     mut textures: ResMut<Assets<Texture2D>>,
     mut user_textures: ResMut<EguiUserTextures>,
 ) {
-    info!("Environment Loaded: {} - {}", config.general.name, config.other);
+    info!("Environment: {}", config.general.env_name);
 
     // This specifies the layer used for the preview pass, which will be attached to the preview pass camera and cube.
     let preview_pass_layer = RenderLayers::layer(1);

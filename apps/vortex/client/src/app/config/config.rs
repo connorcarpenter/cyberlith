@@ -4,19 +4,29 @@ use std::env;
 use serde::Deserialize;
 use bevy_app::{App, Plugin};
 use bevy_ecs::system::Resource;
-use config_rs::{Config as ConfigRs, ConfigError, File, FileFormat}; //FileFormat needed by Wasm
+use config_rs::{Config as ConfigRs, ConfigError, File};
+
+#[cfg(target_arch = "wasm32")]
+use config_rs::FileFormat;
 
 #[derive(Debug, Deserialize, Default)]
 #[allow(unused)]
 pub struct GeneralConfig {
-    pub name: String,
+    pub env_name: String,
+}
+
+#[derive(Debug, Deserialize, Default)]
+#[allow(unused)]
+pub struct LoginConfig {
+    pub username: String,
+    pub password: String,
 }
 
 #[derive(Debug, Deserialize, Resource, Default)]
 #[allow(unused)]
 pub struct AppConfig {
     pub general: GeneralConfig,
-    pub other: u32,
+    pub login: Option<LoginConfig>,
 }
 
 #[derive(Resource)]

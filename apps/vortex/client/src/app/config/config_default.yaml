@@ -1,3 +1,2 @@
 general:
-  name: "Vortex Default"
-other: 42
+  env_name: "default"
