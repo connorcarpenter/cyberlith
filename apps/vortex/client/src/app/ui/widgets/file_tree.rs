@@ -1,5 +1,6 @@
 
-use render_egui::egui::{remap_clamp, Ui, Shape, Context, emath, Id, InnerResponse, NumExt, pos2, Rect, remap, Response, Sense, Stroke, vec2};
+use render_egui::{egui::{remap_clamp, Ui, Shape, Context, emath, Id, InnerResponse, NumExt, pos2, Rect, remap, Response, Sense, Stroke, vec2, Frame}};
+use render_egui::egui::{Align, Layout, Rounding, TextStyle, Widget, WidgetInfo, WidgetText, WidgetType};
 
 #[derive(Clone)]
 pub struct FileTree {
@@ -60,16 +61,20 @@ impl FileTree {
     }
 
     pub fn render_root(&mut self, ui: &mut Ui) {
-        self.render(ui, "")
+        ui.with_layout(Layout::top_down_justified(Align::LEFT), |ui| {
+            self.render(ui, "", 0);
+        });
     }
 
-    fn render(&mut self, ui: &mut Ui, path: &str) {
-        let tree_name = self.name.clone();
-        let full_path = format!("{}:{}", path, tree_name);
+    fn render(&mut self, ui: &mut Ui, path: &str, depth: usize) {
+        let separator = if path.len() > 0 { ":" } else { "" };
+        let full_path = format!("{}{}{}", path, separator, self.name);
+
         if self.trees.len() > 0 {
-            self.selected = Self::render_dir(&full_path, &tree_name, self.selected, ui, |ui| self.render_children(ui, &full_path));
+            self.render_row(ui, &full_path, true);
+            self.render_children(ui, &full_path);
         } else {
-            self.selected = Self::render_file(&full_path, &tree_name, self.selected, ui);
+            self.render_row(ui, &full_path, false);
         }
     }
 
@@ -79,27 +84,41 @@ impl FileTree {
         }
     }
 
-    pub fn render_dir<ShowRet>(path: &str, name: &str, prev_selected: bool, ui: &mut Ui, show_body: impl FnOnce(&mut Ui) -> ShowRet) -> bool {
-        let mut next_selected = prev_selected;
-        let id = ui.make_persistent_id(path);
-        FileTreeUI::load_with_default(ui.ctx(), id)
-            .show_header(ui, |ui| {
-                ui.toggle_value(&mut next_selected, name);
-            })
-            .body(|ui| {
-                return show_body(ui);
-            });
-        return next_selected;
+    pub fn render_row(&mut self, ui: &mut Ui, path: &str, depth: usize, is_dir: bool) {
+        let wrap_width = ui.available_width();
+        let text = text.into_galley(ui, None, wrap_width, TextStyle::Button);
+
+        let mut desired_size = text.size();
+        desired_size.y = desired_size.y.at_least(ui.spacing().interact_size.y);
+        let (rect, response) = ui.allocate_at_least(desired_size, Sense::click());
+        response.widget_info(|| {
+            WidgetInfo::selected(WidgetType::SelectableLabel, selected, text.text())
+        });
+
+        if ui.is_rect_visible(response.rect) {
+            let text_pos = ui
+                .layout()
+                .align_size_within_rect(text.size(), rect)
+                .min;
+
+            let visuals = ui.style().interact_selectable(&response, selected);
+
+            if selected || response.hovered() || response.highlighted() || response.has_focus() {
+                ui.painter().rect(
+                    rect,
+                    Rounding::none(),
+                    visuals.weak_bg_fill,
+                    Stroke::NONE,
+                );
+            }
+
+            text.paint_with_visuals(ui.painter(), text_pos, &visuals);
+        }
+
+        response
     }
 
-    pub fn render_file(path: &str, name: &str, prev_selected: bool, ui: &mut Ui) -> bool {
-        let mut next_selected = prev_selected;
-        let id = ui.make_persistent_id(path);
-        ui.indent(id, |ui| {
-            ui.toggle_value(&mut next_selected, name);
-        });
-        return next_selected;
-    }
+
 }
 
 #[derive(Clone, Copy, Debug)]
