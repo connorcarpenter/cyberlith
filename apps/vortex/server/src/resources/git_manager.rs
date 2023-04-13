@@ -26,7 +26,7 @@ impl GitManager {
     pub fn init_dir(&mut self, user_key: &UserKey, user_info: &UserInfo) {
 
         // Create User's Working directory if it doesn't already exist
-        let root_dir = "users";
+        let root_dir = "target/users";
         let user_dir_name = &user_info.username;
         let full_path_str = format!("{}/{}", root_dir, user_dir_name);
         let path = Path::new(&full_path_str);
