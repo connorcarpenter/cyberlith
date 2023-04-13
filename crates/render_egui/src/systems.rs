@@ -26,11 +26,11 @@ pub fn post_update(
     mut gui: NonSendMut<GUI>,
     egui_context: Res<EguiContext>,
 ) {
-    gui.post_update(egui_context.inner(), &mut frame_input.events);
+    gui.post_update(egui_context.inner(), frame_input.as_mut());
 }
 
 pub fn draw(
-    frame_input: NonSendMut<FrameInput<()>>,
+    //frame_input: NonSendMut<FrameInput<()>>,
     gui: NonSendMut<GUI>,
     egui_context: Res<EguiContext>,
 ) {

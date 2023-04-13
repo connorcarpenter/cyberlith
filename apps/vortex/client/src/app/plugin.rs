@@ -3,7 +3,7 @@ use bevy_ecs::{
     component::Component,
     query::With,
     schedule::IntoSystemConfigs,
-    system::{Res, Commands, Query, ResMut, Resource},
+    system::{Commands, Query, Res, ResMut, Resource},
 };
 use bevy_log::info;
 
@@ -23,13 +23,13 @@ use render_egui::EguiUserTextures;
 
 use vortex_proto::protocol;
 
+use crate::app::config::AppConfig;
 use crate::app::{
+    config::ConfigPlugin,
     events::LoginEvent,
     network, ui,
     ui::{widgets, AxesCamerasVisible, UiState},
-    config::ConfigPlugin
 };
-use crate::app::config::AppConfig;
 
 pub struct VortexPlugin;
 

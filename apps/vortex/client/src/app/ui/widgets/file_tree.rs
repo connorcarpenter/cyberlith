@@ -1,53 +1,63 @@
-
-use render_egui::{egui::{remap_clamp, Ui, Shape, Context, emath, Id, InnerResponse, NumExt, pos2, Rect, remap, Response, Sense, Stroke, vec2, Frame}};
-use render_egui::egui::{Align, Layout, Rounding, TextStyle, Widget, WidgetInfo, WidgetText, WidgetType};
+use render_egui::egui::{
+    emath, remap, vec2, Align, Color32, Id, Layout, NumExt, Rect, Response, Rounding, Sense, Shape,
+    Stroke, TextStyle, Ui, WidgetText,
+};
 
 #[derive(Clone)]
 pub struct FileTree {
     name: String,
     trees: Vec<FileTree>,
     selected: bool,
+    opened: bool,
 }
 
 impl FileTree {
     pub fn project_test() -> Self {
-        Self::new("Projects", vec![
-            Self::new("dir1", vec![
-                Self::new("file1", vec![]),
-                Self::new("file2", vec![]),
-            ]),
-            Self::new("dir2", vec![
-                Self::new("file1", vec![]),
-            ]),
-            Self::new("dir3", vec![
-                Self::new("file1", vec![]),
-                Self::new("file2", vec![]),
-                Self::new("dir4", vec![
-                    Self::new("file1", vec![]),
-                    Self::new("file2", vec![]),
-                ]),
-            ]),
-        ])
+        Self::new(
+            "Projects",
+            vec![
+                Self::new(
+                    "dir1",
+                    vec![Self::new("file1", vec![]), Self::new("file2", vec![])],
+                ),
+                Self::new("dir2", vec![Self::new("file1", vec![])]),
+                Self::new(
+                    "dir3",
+                    vec![
+                        Self::new("file1", vec![]),
+                        Self::new("file2", vec![]),
+                        Self::new(
+                            "dir4",
+                            vec![Self::new("file1", vec![]), Self::new("file2", vec![])],
+                        ),
+                    ],
+                ),
+            ],
+        )
     }
 
     pub fn changes_test() -> Self {
-        Self::new("Changes", vec![
-            Self::new("dir1", vec![
-                Self::new("file1", vec![]),
-                Self::new("file2", vec![]),
-            ]),
-            Self::new("dir2", vec![
-                Self::new("file1", vec![]),
-            ]),
-            Self::new("dir3", vec![
-                Self::new("file1", vec![]),
-                Self::new("file2", vec![]),
-                Self::new("dir4", vec![
-                    Self::new("file1", vec![]),
-                    Self::new("file2", vec![]),
-                ]),
-            ]),
-        ])
+        Self::new(
+            "Changes",
+            vec![
+                Self::new(
+                    "dir1",
+                    vec![Self::new("file1", vec![]), Self::new("file2", vec![])],
+                ),
+                Self::new("dir2", vec![Self::new("file1", vec![])]),
+                Self::new(
+                    "dir3",
+                    vec![
+                        Self::new("file1", vec![]),
+                        Self::new("file2", vec![]),
+                        Self::new(
+                            "dir4",
+                            vec![Self::new("file1", vec![]), Self::new("file2", vec![])],
+                        ),
+                    ],
+                ),
+            ],
+        )
     }
 }
 
@@ -57,6 +67,7 @@ impl FileTree {
             name: name.to_string(),
             trees,
             selected: false,
+            opened: false,
         }
     }
 
@@ -71,293 +82,118 @@ impl FileTree {
         let full_path = format!("{}{}{}", path, separator, self.name);
 
         if self.trees.len() > 0 {
-            self.render_row(ui, &full_path, true);
-            self.render_children(ui, &full_path);
+            self.render_row(ui, &full_path, depth, true, paint_default_icon);
+            if self.opened {
+                self.render_children(ui, &full_path, depth);
+            }
         } else {
-            self.render_row(ui, &full_path, false);
+            self.render_row(ui, &full_path, depth, false, paint_no_icon);
         }
     }
 
-    fn render_children(&mut self, ui: &mut Ui, path: &str) {
+    fn render_children(&mut self, ui: &mut Ui, path: &str, depth: usize) {
         for tree in self.trees.iter_mut() {
-            tree.render(ui, path);
+            tree.render(ui, path, depth + 1);
         }
     }
 
-    pub fn render_row(&mut self, ui: &mut Ui, path: &str, depth: usize, is_dir: bool) {
+    pub fn render_row(
+        &mut self,
+        ui: &mut Ui,
+        path: &str,
+        depth: usize,
+        is_dir: bool,
+        icon_fn: impl FnOnce(&mut Ui, bool, &Response) + 'static,
+    ) {
         let wrap_width = ui.available_width();
-        let text = text.into_galley(ui, None, wrap_width, TextStyle::Button);
+        let unicode_icon = if is_dir { "📁" } else { "📃" };
+        let text_str: &str = &format!("{} {}", unicode_icon, &self.name);
+        let widget_text: WidgetText = text_str.into();
+        let text = widget_text.into_galley(ui, None, wrap_width, TextStyle::Button);
 
         let mut desired_size = text.size();
         desired_size.y = desired_size.y.at_least(ui.spacing().interact_size.y);
-        let (rect, response) = ui.allocate_at_least(desired_size, Sense::click());
-        response.widget_info(|| {
-            WidgetInfo::selected(WidgetType::SelectableLabel, selected, text.text())
-        });
 
-        if ui.is_rect_visible(response.rect) {
-            let text_pos = ui
-                .layout()
-                .align_size_within_rect(text.size(), rect)
-                .min;
+        let (mut row_rect, row_response) = ui.allocate_at_least(desired_size, Sense::click());
 
-            let visuals = ui.style().interact_selectable(&response, selected);
+        if ui.is_rect_visible(row_response.rect) {
+            let item_spacing = 4.0;
+            let indent_spacing = 14.0;
 
-            if selected || response.hovered() || response.highlighted() || response.has_focus() {
-                ui.painter().rect(
-                    rect,
-                    Rounding::none(),
-                    visuals.weak_bg_fill,
-                    Stroke::NONE,
-                );
-            }
+            let text_size = text.size();
 
-            text.paint_with_visuals(ui.painter(), text_pos, &visuals);
-        }
+            let mut inner_pos = ui.layout().align_size_within_rect(text_size, row_rect).min;
 
-        response
-    }
+            // Add Margin
+            inner_pos.x += (depth as f32 * indent_spacing) + 4.0;
 
+            let icon_response = {
+                let icon_size = vec2(ui.spacing().icon_width, ui.spacing().icon_width);
+                let icon_rect = Rect::from_min_size(inner_pos, icon_size);
 
-}
+                let big_icon_response = ui.interact(icon_rect, Id::new(path), Sense::click());
 
-#[derive(Clone, Copy, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-pub(crate) struct InnerFileTreeState {
-    open: bool,
+                if is_dir {
+                    if big_icon_response.clicked() {
+                        self.opened = !self.opened;
+                    }
+                }
 
-    /// Height of the region when open. Used for animations
-    open_height: Option<f32>,
-}
+                big_icon_response
+            };
 
-/// This is a a building block for building collapsing regions.
-///
-/// It is used by [`CollapsingHeader`] and [`Window`], but can also be used on its own.
-///
-/// See [`FileTreeUI::show_header`] for how to show a collapsing header with a custom header.
-#[derive(Clone, Debug)]
-pub struct FileTreeUI {
-    id: Id,
-    state: InnerFileTreeState,
-}
-
-impl FileTreeUI {
-    pub fn load(ctx: &Context, id: Id) -> Option<Self> {
-        ctx.data_mut(|d| {
-            d.get_persisted::<InnerFileTreeState>(id)
-                .map(|state| Self { id, state })
-        })
-    }
-
-    pub fn store(&self, ctx: &Context) {
-        ctx.data_mut(|d| d.insert_persisted(self.id, self.state));
-    }
-
-    pub fn load_with_default(ctx: &Context, id: Id) -> Self {
-        Self::load(ctx, id).unwrap_or(FileTreeUI {
-            id,
-            state: InnerFileTreeState {
-                open: false,
-                open_height: None,
-            },
-        })
-    }
-
-    //pub fn is_open(&self) -> bool {
-    //    self.state.open
-    //}
-
-    //pub fn set_open(&mut self, open: bool) {
-    //    self.state.open = open;
-    //}
-
-    pub fn toggle(&mut self, ui: &Ui) {
-        self.state.open = !self.state.open;
-        ui.ctx().request_repaint();
-    }
-
-    /// 0 for closed, 1 for open, with tweening
-    pub fn openness(&self, ctx: &Context) -> f32 {
-        if ctx.memory(|mem| mem.everything_is_visible()) {
-            1.0
-        } else {
-            ctx.animate_bool(self.id, self.state.open)
-        }
-    }
-
-    /// Will toggle when clicked, etc.
-    fn show_default_button_indented(&mut self, ui: &mut Ui) -> Response {
-        self.show_button_indented(ui, paint_default_icon)
-    }
-
-    /// Will toggle when clicked, etc.
-    fn show_button_indented(
-        &mut self,
-        ui: &mut Ui,
-        icon_fn: impl FnOnce(&mut Ui, f32, &Response) + 'static,
-    ) -> Response {
-        let size = vec2(ui.spacing().indent, ui.spacing().icon_width);
-        let (_id, rect) = ui.allocate_space(size);
-        let response = ui.interact(rect, self.id, Sense::click());
-        if response.clicked() {
-            self.toggle(ui);
-        }
-
-        let (mut icon_rect, _) = ui.spacing().icon_rectangles(response.rect);
-        icon_rect.set_center(pos2(
-            response.rect.left() + ui.spacing().indent / 2.0,
-            response.rect.center().y,
-        ));
-        let openness = self.openness(ui.ctx());
-        let small_icon_response = response.clone().with_new_rect(icon_rect);
-        icon_fn(ui, openness, &small_icon_response);
-        response
-    }
-
-    /// Shows header and body (if expanded).
-    ///
-    /// The header will start with the default button in a horizontal layout, followed by whatever you add.
-    ///
-    /// Will also store the state.
-    ///
-    /// Returns the response of the collapsing button, the custom header, and the custom body.
-    ///
-    /// ```
-    /// # egui::__run_test_ui(|ui| {
-    /// let id = ui.make_persistent_id("my_collapsing_header");
-    /// egui::collapsing_header::CollapsingState::load_with_default_open(ui.ctx(), id, false)
-    ///     .show_header(ui, |ui| {
-    ///         ui.label("Header"); // you can put checkboxes or whatever here
-    ///     })
-    ///     .body(|ui| ui.label("Body"));
-    /// # });
-    /// ```
-    pub fn show_header<HeaderRet>(
-        mut self,
-        ui: &mut Ui,
-        add_header: impl FnOnce(&mut Ui) -> HeaderRet,
-    ) -> HeaderResponse<'_, HeaderRet> {
-        let header_response = ui.horizontal(|ui| {
-            let prev_item_spacing = ui.spacing_mut().item_spacing;
-            ui.spacing_mut().item_spacing.x = 0.0; // the toggler button uses the full indent width
-            let collapser = self.show_default_button_indented(ui);
-            ui.spacing_mut().item_spacing = prev_item_spacing;
-            (collapser, add_header(ui))
-        });
-        HeaderResponse {
-            state: self,
-            ui,
-            toggle_button_response: header_response.inner.0,
-            header_response: InnerResponse {
-                response: header_response.response,
-                inner: header_response.inner.1,
-            },
-        }
-    }
-
-    /// Show body if we are open, with a nice animation between closed and open.
-    /// Indent the body to show it belongs to the header.
-    ///
-    /// Will also store the state.
-    pub fn show_body_indented<R>(
-        &mut self,
-        header_response: &Response,
-        ui: &mut Ui,
-        add_body: impl FnOnce(&mut Ui) -> R,
-    ) -> Option<InnerResponse<R>> {
-        let id = self.id;
-        self.show_body_unindented(ui, |ui| {
-            ui.indent(id, |ui| {
-                // make as wide as the header:
-                ui.expand_to_include_x(header_response.rect.right());
-                add_body(ui)
-            })
-                .inner
-        })
-    }
-
-    /// Show body if we are open, with a nice animation between closed and open.
-    /// Will also store the state.
-    pub fn show_body_unindented<R>(
-        &mut self,
-        ui: &mut Ui,
-        add_body: impl FnOnce(&mut Ui) -> R,
-    ) -> Option<InnerResponse<R>> {
-        let openness = self.openness(ui.ctx());
-        if openness <= 0.0 {
-            self.store(ui.ctx()); // we store any earlier toggling as promised in the docstring
-            None
-        } else if openness < 1.0 {
-            Some(ui.scope(|child_ui| {
-                let max_height = if self.state.open && self.state.open_height.is_none() {
-                    // First frame of expansion.
-                    // We don't know full height yet, but we will next frame.
-                    // Just use a placeholder value that shows some movement:
-                    10.0
+            // Draw Row
+            {
+                let row_fill = if self.selected {
+                    Some(Color32::from_rgb(0, 92, 128))
                 } else {
-                    let full_height = self.state.open_height.unwrap_or_default();
-                    remap_clamp(openness, 0.0..=1.0, 0.0..=full_height)
+                    if row_response.hovered() || icon_response.hovered() {
+                        Some(Color32::from_gray(70))
+                    } else {
+                        None
+                    }
                 };
 
-                let mut clip_rect = child_ui.clip_rect();
-                clip_rect.max.y = clip_rect.max.y.min(child_ui.max_rect().top() + max_height);
-                child_ui.set_clip_rect(clip_rect);
+                if let Some(fill_color) = row_fill {
+                    row_rect.min.y -= 1.0;
+                    row_rect.max.y += 2.0;
+                    row_rect.max.x -= 2.0;
 
-                let ret = add_body(child_ui);
+                    ui.painter()
+                        .rect(row_rect, Rounding::none(), fill_color, Stroke::NONE);
+                }
+            }
 
-                let mut min_rect = child_ui.min_rect();
-                self.state.open_height = Some(min_rect.height());
-                self.store(child_ui.ctx()); // remember the height
+            // Draw Icon
+            if is_dir {
+                let (small_icon_rect, _) = ui.spacing().icon_rectangles(icon_response.rect);
+                let small_icon_response = icon_response.clone().with_new_rect(small_icon_rect);
 
-                // Pretend children took up at most `max_height` space:
-                min_rect.max.y = min_rect.max.y.at_most(min_rect.top() + max_height);
-                child_ui.set_clip_rect(min_rect);
-                ret
-            }))
-        } else {
-            let ret_response = ui.scope(add_body);
-            let full_size = ret_response.response.rect.size();
-            self.state.open_height = Some(full_size.y);
-            self.store(ui.ctx()); // remember the height
-            Some(ret_response)
+                icon_fn(ui, self.opened, &small_icon_response);
+                inner_pos.x += small_icon_response.rect.width() + item_spacing;
+            } else {
+                inner_pos.x += 14.0;
+            }
+
+            // Draw Text
+            {
+                text.paint_with_visuals(ui.painter(), inner_pos, ui.style().noninteractive());
+                inner_pos.x += text_size.x + item_spacing;
+            }
         }
-    }
-}
 
-/// From [`FileTreeUI::show_header`].
-#[must_use = "Remember to show the body"]
-pub struct HeaderResponse<'ui, HeaderRet> {
-    state: FileTreeUI,
-    ui: &'ui mut Ui,
-    toggle_button_response: Response,
-    header_response: InnerResponse<HeaderRet>,
-}
-
-impl<'ui, HeaderRet> HeaderResponse<'ui, HeaderRet> {
-    /// Returns the response of the collapsing button, the custom header, and the custom body.
-    pub fn body<BodyRet>(
-        mut self,
-        add_body: impl FnOnce(&mut Ui) -> BodyRet,
-    ) -> (
-        Response,
-        InnerResponse<HeaderRet>,
-        Option<InnerResponse<BodyRet>>,
-    ) {
-        let body_response =
-            self.state
-                .show_body_indented(&self.header_response.response, self.ui, add_body);
-        (
-            self.toggle_button_response,
-            self.header_response,
-            body_response,
-        )
+        if row_response.clicked() {
+            self.selected = !self.selected;
+        }
     }
 }
 
 // ----------------------------------------------------------------------------
 
 /// Paint the arrow icon that indicated if the region is open or not
-pub fn paint_default_icon(ui: &mut Ui, openness: f32, response: &Response) {
+pub fn paint_default_icon(ui: &mut Ui, openned: bool, response: &Response) {
+    let openness = if openned { 1.0 } else { 0.0 };
+
     let visuals = ui.style().interact(response);
 
     let rect = response.rect;
@@ -378,3 +214,5 @@ pub fn paint_default_icon(ui: &mut Ui, openness: f32, response: &Response) {
         Stroke::NONE,
     ));
 }
+
+pub fn paint_no_icon(_ui: &mut Ui, _openness: bool, _response: &Response) {}

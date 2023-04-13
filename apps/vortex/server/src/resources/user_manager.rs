@@ -9,20 +9,20 @@ pub struct UserManager {
 
 impl Default for UserManager {
     fn default() -> Self {
-
         let mut users = HashMap::new();
 
         // Connor
         users.insert("connorcarpenter".to_string(), "greattobealive!".to_string());
 
         // Brendon?
-        users.insert("brendoncarpenter".to_string(), "greattobealive!".to_string());
+        users.insert(
+            "brendoncarpenter".to_string(),
+            "greattobealive!".to_string(),
+        );
 
         // TODO: add more users here? get from database?
 
-        Self {
-            inner: users,
-        }
+        Self { inner: users }
     }
 }
 

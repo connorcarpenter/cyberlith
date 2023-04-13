@@ -2,14 +2,15 @@ use std::{cell::RefCell, ops::Deref};
 
 use bevy_ecs::system::Resource;
 use bevy_log::info;
+use egui::{output::OutputEvent, FullOutput, PlatformOutput};
 
 use egui_glow::{glow, Painter};
 
 use render_api::components::Viewport;
 use render_glow::{
     core::Context,
-    renderer::{Event, Modifiers},
-    window::FrameInput,
+    renderer::{IncomingEvent, Modifiers},
+    window::{FrameInput, OutgoingEvent},
 };
 
 use crate::{glow_to_egui_key, glow_to_egui_modifiers, glow_to_egui_mouse_button};
@@ -37,12 +38,14 @@ pub struct GUI {
     output: RefCell<Option<egui::FullOutput>>,
     viewport: Viewport,
     modifiers: Modifiers,
+    last_cursor_icon: egui::CursorIcon,
 }
 
 impl Default for GUI {
     fn default() -> Self {
         let context = Context::get().deref().clone();
         GUI {
+            last_cursor_icon: egui::CursorIcon::Default,
             painter: RefCell::new(Painter::new(context, "", None).unwrap()),
             output: RefCell::new(None),
             viewport: Viewport::new_at_origin(1, 1),
@@ -62,7 +65,7 @@ impl GUI {
         egui_context: &egui::Context,
         frame_input: &mut FrameInput<T>,
     ) {
-        let events: &mut [Event<T>] = frame_input.events.as_mut_slice();
+        let events: &mut [IncomingEvent<T>] = frame_input.incoming_events.as_mut_slice();
         let accumulated_time_in_ms: f64 = frame_input.accumulated_time;
         let viewport: Viewport = frame_input.viewport;
         let device_pixel_ratio: f64 = frame_input.device_pixel_ratio;
@@ -87,7 +90,7 @@ impl GUI {
             events: events
                 .iter()
                 .filter_map(|event| match event {
-                    Event::KeyPress {
+                    IncomingEvent::KeyPress {
                         kind,
                         modifiers,
                         handled,
@@ -103,7 +106,7 @@ impl GUI {
                             None
                         }
                     }
-                    Event::KeyRelease {
+                    IncomingEvent::KeyRelease {
                         kind,
                         modifiers,
                         handled,
@@ -119,7 +122,7 @@ impl GUI {
                             None
                         }
                     }
-                    Event::MousePress {
+                    IncomingEvent::MousePress {
                         button,
                         position,
                         modifiers,
@@ -139,7 +142,7 @@ impl GUI {
                             None
                         }
                     }
-                    Event::MouseRelease {
+                    IncomingEvent::MouseRelease {
                         button,
                         position,
                         modifiers,
@@ -159,7 +162,7 @@ impl GUI {
                             None
                         }
                     }
-                    Event::MouseMotion {
+                    IncomingEvent::MouseMotion {
                         position, handled, ..
                     } => {
                         if !handled {
@@ -171,9 +174,9 @@ impl GUI {
                             None
                         }
                     }
-                    Event::Text(text) => Some(egui::Event::Text(text.clone())),
-                    Event::MouseLeave => Some(egui::Event::PointerGone),
-                    Event::MouseWheel { delta, handled, .. } => {
+                    IncomingEvent::Text(text) => Some(egui::Event::Text(text.clone())),
+                    IncomingEvent::MouseLeave => Some(egui::Event::PointerGone),
+                    IncomingEvent::MouseWheel { delta, handled, .. } => {
                         if !handled {
                             Some(egui::Event::Scroll(egui::Vec2::new(
                                 delta.0 as f32,
@@ -200,32 +203,41 @@ impl GUI {
     pub fn post_update<T: 'static + Clone>(
         &mut self,
         egui_context: &egui::Context,
-        events: &mut [Event<T>],
+        frame_input: &mut FrameInput<T>,
     ) -> bool {
-        *self.output.borrow_mut() = Some(egui_context.end_frame());
+        let mut end_frame = egui_context.end_frame();
 
-        for event in events.iter_mut() {
-            if let Event::ModifiersChange { modifiers } = event {
+        // Output Events
+        self.handle_egui_output(
+            &mut frame_input.outgoing_events,
+            &mut end_frame.platform_output,
+        );
+
+        *self.output.borrow_mut() = Some(end_frame);
+
+        // Input Events
+        for event in frame_input.incoming_events.iter_mut() {
+            if let IncomingEvent::ModifiersChange { modifiers } = event {
                 self.modifiers = *modifiers;
             }
             if egui_context.wants_pointer_input() {
                 match event {
-                    Event::MousePress {
+                    IncomingEvent::MousePress {
                         ref mut handled, ..
                     } => {
                         *handled = true;
                     }
-                    Event::MouseRelease {
+                    IncomingEvent::MouseRelease {
                         ref mut handled, ..
                     } => {
                         *handled = true;
                     }
-                    Event::MouseWheel {
+                    IncomingEvent::MouseWheel {
                         ref mut handled, ..
                     } => {
                         *handled = true;
                     }
-                    Event::MouseMotion {
+                    IncomingEvent::MouseMotion {
                         ref mut handled, ..
                     } => {
                         *handled = true;
@@ -236,12 +248,12 @@ impl GUI {
 
             if egui_context.wants_keyboard_input() {
                 match event {
-                    Event::KeyRelease {
+                    IncomingEvent::KeyRelease {
                         ref mut handled, ..
                     } => {
                         *handled = true;
                     }
-                    Event::KeyPress {
+                    IncomingEvent::KeyPress {
                         ref mut handled, ..
                     } => {
                         *handled = true;
@@ -287,5 +299,84 @@ impl GUI {
 
     pub fn remove_texture(&mut self, native_id: egui::TextureId) {
         self.painter.borrow_mut().free_texture(native_id);
+    }
+
+    fn handle_egui_output(
+        &mut self,
+        outgoing_events: &mut Vec<OutgoingEvent>,
+        egui_output: &mut PlatformOutput,
+    ) {
+        self.set_cursor_icon(outgoing_events, egui_output.cursor_icon);
+    }
+
+    fn set_cursor_icon(
+        &mut self,
+        outgoing_events: &mut Vec<OutgoingEvent>,
+        cursor_icon: egui::CursorIcon,
+    ) {
+        if self.last_cursor_icon != cursor_icon {
+            self.last_cursor_icon = cursor_icon;
+            if let Some(winit_cursor_icon) = Self::translate_cursor(cursor_icon) {
+                outgoing_events.push(OutgoingEvent::CursorChanged(winit_cursor_icon));
+            }
+        }
+
+        // if self.current_cursor_icon == Some(cursor_icon) {
+        //     // Prevent flickering near frame boundary when Windows OS tries to control cursor icon for window resizing.
+        //     // On other platforms: just early-out to save CPU.
+        //     return;
+        // }
+        //
+        // let is_pointer_in_window = self.pointer_pos_in_points.is_some();
+        // if is_pointer_in_window {
+        //     self.current_cursor_icon = Some(cursor_icon);
+        // } else {
+        //     // Remember to set the cursor again once the cursor returns to the screen:
+        //     self.current_cursor_icon = None;
+        // }
+    }
+
+    fn translate_cursor(cursor_icon: egui::CursorIcon) -> Option<winit::window::CursorIcon> {
+        match cursor_icon {
+            egui::CursorIcon::None => None,
+
+            egui::CursorIcon::Alias => Some(winit::window::CursorIcon::Alias),
+            egui::CursorIcon::AllScroll => Some(winit::window::CursorIcon::AllScroll),
+            egui::CursorIcon::Cell => Some(winit::window::CursorIcon::Cell),
+            egui::CursorIcon::ContextMenu => Some(winit::window::CursorIcon::ContextMenu),
+            egui::CursorIcon::Copy => Some(winit::window::CursorIcon::Copy),
+            egui::CursorIcon::Crosshair => Some(winit::window::CursorIcon::Crosshair),
+            egui::CursorIcon::Default => Some(winit::window::CursorIcon::Default),
+            egui::CursorIcon::Grab => Some(winit::window::CursorIcon::Grab),
+            egui::CursorIcon::Grabbing => Some(winit::window::CursorIcon::Grabbing),
+            egui::CursorIcon::Help => Some(winit::window::CursorIcon::Help),
+            egui::CursorIcon::Move => Some(winit::window::CursorIcon::Move),
+            egui::CursorIcon::NoDrop => Some(winit::window::CursorIcon::NoDrop),
+            egui::CursorIcon::NotAllowed => Some(winit::window::CursorIcon::NotAllowed),
+            egui::CursorIcon::PointingHand => Some(winit::window::CursorIcon::Hand),
+            egui::CursorIcon::Progress => Some(winit::window::CursorIcon::Progress),
+
+            egui::CursorIcon::ResizeHorizontal => Some(winit::window::CursorIcon::EwResize),
+            egui::CursorIcon::ResizeNeSw => Some(winit::window::CursorIcon::NeswResize),
+            egui::CursorIcon::ResizeNwSe => Some(winit::window::CursorIcon::NwseResize),
+            egui::CursorIcon::ResizeVertical => Some(winit::window::CursorIcon::NsResize),
+
+            egui::CursorIcon::ResizeEast => Some(winit::window::CursorIcon::EResize),
+            egui::CursorIcon::ResizeSouthEast => Some(winit::window::CursorIcon::SeResize),
+            egui::CursorIcon::ResizeSouth => Some(winit::window::CursorIcon::SResize),
+            egui::CursorIcon::ResizeSouthWest => Some(winit::window::CursorIcon::SwResize),
+            egui::CursorIcon::ResizeWest => Some(winit::window::CursorIcon::WResize),
+            egui::CursorIcon::ResizeNorthWest => Some(winit::window::CursorIcon::NwResize),
+            egui::CursorIcon::ResizeNorth => Some(winit::window::CursorIcon::NResize),
+            egui::CursorIcon::ResizeNorthEast => Some(winit::window::CursorIcon::NeResize),
+            egui::CursorIcon::ResizeColumn => Some(winit::window::CursorIcon::ColResize),
+            egui::CursorIcon::ResizeRow => Some(winit::window::CursorIcon::RowResize),
+
+            egui::CursorIcon::Text => Some(winit::window::CursorIcon::Text),
+            egui::CursorIcon::VerticalText => Some(winit::window::CursorIcon::VerticalText),
+            egui::CursorIcon::Wait => Some(winit::window::CursorIcon::Wait),
+            egui::CursorIcon::ZoomIn => Some(winit::window::CursorIcon::ZoomIn),
+            egui::CursorIcon::ZoomOut => Some(winit::window::CursorIcon::ZoomOut),
+        }
     }
 }

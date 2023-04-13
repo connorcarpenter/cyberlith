@@ -1,10 +1,9 @@
-
 use std::env;
 
-use serde::Deserialize;
 use bevy_app::{App, Plugin};
 use bevy_ecs::system::Resource;
 use config_rs::{Config as ConfigRs, ConfigError, File};
+use serde::Deserialize;
 
 #[cfg(target_arch = "wasm32")]
 use config_rs::FileFormat;
@@ -49,11 +48,16 @@ impl AppConfig {
 
         let c = ConfigRs::builder()
             // Start off by merging in the "default" configuration file
-            .add_source(File::with_name(&format!("{}/config_default", config_folder)))
+            .add_source(File::with_name(&format!(
+                "{}/config_default",
+                config_folder
+            )))
             // Add in the current environment file
             // Default to 'development' env
             // Note that this file is _optional_
-            .add_source(File::with_name(&format!("{}/{}", config_folder, config_env)).required(false))
+            .add_source(
+                File::with_name(&format!("{}/{}", config_folder, config_env)).required(false),
+            )
             .build()?;
 
         c.try_deserialize()
@@ -63,12 +67,19 @@ impl AppConfig {
     fn new() -> Result<Self, ConfigError> {
         let c = ConfigRs::builder()
             // Start off by merging in the "default" configuration file
-            .add_source(File::from_str(include_str!("config_default.yaml"), FileFormat::Yaml))
+            .add_source(File::from_str(
+                include_str!("config_default.yaml"),
+                FileFormat::Yaml,
+            ))
             // Add in the current environment file
             // Default to 'development' env
             // Note that this file is _optional_
             .add_source(
-                File::from_str(include_str!(concat!(std::env!("CONFIG_ENV"), ".yaml")), FileFormat::Yaml).required(false),
+                File::from_str(
+                    include_str!(concat!(std::env!("CONFIG_ENV"), ".yaml")),
+                    FileFormat::Yaml,
+                )
+                .required(false),
             )
             .build()?;
 

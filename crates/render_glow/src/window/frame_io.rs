@@ -1,6 +1,14 @@
+use winit::window::CursorIcon;
+
+use render_api::components::Viewport;
+
 use crate::core::*;
 use crate::renderer::*;
-use render_api::components::Viewport;
+
+#[derive(Clone, Debug)]
+pub enum OutgoingEvent {
+    CursorChanged(CursorIcon),
+}
 
 ///
 /// Input from the window to the rendering (and whatever else needs it) each frame.
@@ -8,7 +16,10 @@ use render_api::components::Viewport;
 #[derive(Clone, Debug)]
 pub struct FrameInput<T: 'static + Clone> {
     /// A list of [events](crate::Event) which has occurred since last frame.
-    pub events: Vec<Event<T>>,
+    pub incoming_events: Vec<IncomingEvent<T>>,
+
+    /// A list of Events which should be sent onwards
+    pub outgoing_events: Vec<OutgoingEvent>,
 
     /// Milliseconds since last frame.
     pub elapsed_time: f64,
@@ -71,14 +82,25 @@ pub struct FrameOutput {
     /// Whether to stop the render loop until next event.
     ///
     pub wait_next_event: bool,
+
+    pub events: Option<Vec<OutgoingEvent>>,
 }
 
 impl Default for FrameOutput {
     fn default() -> Self {
         Self {
+            events: None,
             exit: false,
             swap_buffers: true,
             wait_next_event: false,
         }
+    }
+}
+
+impl From<FrameInput<()>> for FrameOutput {
+    fn from(frame_input: FrameInput<()>) -> Self {
+        let mut output = Self::default();
+        output.events = Some(frame_input.outgoing_events);
+        output
     }
 }

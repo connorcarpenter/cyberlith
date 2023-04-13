@@ -7,7 +7,11 @@ use render_egui::{
     egui::{Align, Layout, Ui},
 };
 
-use crate::app::{events::LoginEvent, ui::{UiState, LoggingInState}, config::AppConfig};
+use crate::app::{
+    config::AppConfig,
+    events::LoginEvent,
+    ui::{LoggingInState, UiState},
+};
 
 pub fn login_modal(context: &egui::Context, world: &mut World) {
     let mut creds: Option<(String, String)> = None;
@@ -33,7 +37,10 @@ pub fn login_modal(context: &egui::Context, world: &mut World) {
                         ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
                             ui_with_margin(ui, margin, |ui| {
                                 ui.label("username: ");
-                                if ui.text_edit_singleline(&mut ui_state.username).gained_focus() {
+                                if ui
+                                    .text_edit_singleline(&mut ui_state.username)
+                                    .gained_focus()
+                                {
                                     ui_state.logging_in_state = LoggingInState::NotLoggingIn;
                                 }
                             })
@@ -41,7 +48,10 @@ pub fn login_modal(context: &egui::Context, world: &mut World) {
                         ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
                             ui_with_margin(ui, margin, |ui| {
                                 ui.label("password: ");
-                                if ui.text_edit_singleline(&mut ui_state.password).gained_focus() {
+                                if ui
+                                    .text_edit_singleline(&mut ui_state.password)
+                                    .gained_focus()
+                                {
                                     ui_state.logging_in_state = LoggingInState::NotLoggingIn;
                                 }
                             })

@@ -11,8 +11,8 @@ use render_api::{
 };
 
 use crate::{
-    renderer::{Event, Key, Modifiers, MouseButton},
-    window::{FrameInput, FrameOutput, WindowError, WindowedContext},
+    renderer::{IncomingEvent, Key, Modifiers, MouseButton},
+    window::{FrameInput, FrameOutput, OutgoingEvent, WindowError, WindowedContext},
 };
 
 ///
@@ -201,7 +201,7 @@ impl<T: 'static + Clone> Window<T> {
         self.event_loop.run(move |event, _, control_flow| {
             match event {
                 WinitEvent::UserEvent(t) => {
-                    events.push(Event::UserEvent(t));
+                    events.push(IncomingEvent::UserEvent(t));
                 }
                 WinitEvent::LoopDestroyed => {
                     #[cfg(target_arch = "wasm32")]
@@ -258,7 +258,8 @@ impl<T: 'static + Clone> Window<T> {
                         .to_logical::<f64>(device_pixel_ratio)
                         .into();
                     let frame_input = FrameInput {
-                        events: events.drain(..).collect(),
+                        incoming_events: events.drain(..).collect(),
+                        outgoing_events: Vec::new(),
                         elapsed_time,
                         accumulated_time,
                         viewport: Viewport::new_at_origin(physical_width, physical_height),
@@ -282,6 +283,13 @@ impl<T: 'static + Clone> Window<T> {
                             *control_flow = ControlFlow::Poll;
                             self.window.request_redraw();
                         }
+                        for event in frame_output.events.unwrap() {
+                            match event {
+                                OutgoingEvent::CursorChanged(cursor_icon) => {
+                                    self.window.set_cursor_icon(cursor_icon);
+                                }
+                            }
+                        }
                     }
                 }
                 WinitEvent::WindowEvent { ref event, .. } => match event {
@@ -295,13 +303,13 @@ impl<T: 'static + Clone> Window<T> {
                             let state = input.state == event::ElementState::Pressed;
                             if let Some(kind) = translate_virtual_key_code(keycode) {
                                 events.push(if state {
-                                    Event::KeyPress {
+                                    IncomingEvent::KeyPress {
                                         kind,
                                         modifiers,
                                         handled: false,
                                     }
                                 } else {
-                                    Event::KeyRelease {
+                                    IncomingEvent::KeyRelease {
                                         kind,
                                         modifiers,
                                         handled: false,
@@ -314,23 +322,23 @@ impl<T: 'static + Clone> Window<T> {
                                 if !cfg!(target_os = "macos") {
                                     modifiers.command = state;
                                 }
-                                events.push(Event::ModifiersChange { modifiers });
+                                events.push(IncomingEvent::ModifiersChange { modifiers });
                             } else if keycode == VirtualKeyCode::LAlt
                                 || keycode == VirtualKeyCode::RAlt
                             {
                                 modifiers.alt = state;
-                                events.push(Event::ModifiersChange { modifiers });
+                                events.push(IncomingEvent::ModifiersChange { modifiers });
                             } else if keycode == VirtualKeyCode::LShift
                                 || keycode == VirtualKeyCode::RShift
                             {
                                 modifiers.shift = state;
-                                events.push(Event::ModifiersChange { modifiers });
+                                events.push(IncomingEvent::ModifiersChange { modifiers });
                             } else if (keycode == VirtualKeyCode::LWin
                                 || keycode == VirtualKeyCode::RWin)
                                 && cfg!(target_os = "macos")
                             {
                                 modifiers.command = state;
-                                events.push(Event::ModifiersChange { modifiers });
+                                events.push(IncomingEvent::ModifiersChange { modifiers });
                             }
                         }
                     }
@@ -339,7 +347,7 @@ impl<T: 'static + Clone> Window<T> {
                             match delta {
                                 winit::event::MouseScrollDelta::LineDelta(x, y) => {
                                     let line_height = 24.0; // TODO
-                                    events.push(Event::MouseWheel {
+                                    events.push(IncomingEvent::MouseWheel {
                                         delta: (
                                             (*x * line_height) as f64,
                                             (*y * line_height) as f64,
@@ -351,7 +359,7 @@ impl<T: 'static + Clone> Window<T> {
                                 }
                                 winit::event::MouseScrollDelta::PixelDelta(delta) => {
                                     let d = delta.to_logical(self.window.scale_factor());
-                                    events.push(Event::MouseWheel {
+                                    events.push(IncomingEvent::MouseWheel {
                                         delta: (d.x, d.y),
                                         position,
                                         modifiers,
@@ -372,7 +380,7 @@ impl<T: 'static + Clone> Window<T> {
                             if let Some(b) = button {
                                 events.push(if *state == event::ElementState::Pressed {
                                     mouse_pressed = Some(b);
-                                    Event::MousePress {
+                                    IncomingEvent::MousePress {
                                         button: b,
                                         position,
                                         modifiers,
@@ -380,7 +388,7 @@ impl<T: 'static + Clone> Window<T> {
                                     }
                                 } else {
                                     mouse_pressed = None;
-                                    Event::MouseRelease {
+                                    IncomingEvent::MouseRelease {
                                         button: b,
                                         position,
                                         modifiers,
@@ -397,7 +405,7 @@ impl<T: 'static + Clone> Window<T> {
                         } else {
                             (0.0, 0.0)
                         };
-                        events.push(Event::MouseMotion {
+                        events.push(IncomingEvent::MouseMotion {
                             button: mouse_pressed,
                             delta,
                             position: (p.x, p.y),
@@ -408,15 +416,15 @@ impl<T: 'static + Clone> Window<T> {
                     }
                     WindowEvent::ReceivedCharacter(ch) => {
                         if is_printable_char(*ch) && !modifiers.ctrl && !modifiers.command {
-                            events.push(Event::Text(ch.to_string()));
+                            events.push(IncomingEvent::Text(ch.to_string()));
                         }
                     }
                     WindowEvent::CursorEntered { .. } => {
-                        events.push(Event::MouseEnter);
+                        events.push(IncomingEvent::MouseEnter);
                     }
                     WindowEvent::CursorLeft { .. } => {
                         mouse_pressed = None;
-                        events.push(Event::MouseLeave);
+                        events.push(IncomingEvent::MouseLeave);
                     }
                     WindowEvent::Touch(touch) => {
                         let position = touch
@@ -426,7 +434,7 @@ impl<T: 'static + Clone> Window<T> {
                         match touch.phase {
                             TouchPhase::Started => {
                                 if finger_id.is_none() {
-                                    events.push(Event::MousePress {
+                                    events.push(IncomingEvent::MousePress {
                                         button: MouseButton::Left,
                                         position,
                                         modifiers,
@@ -441,7 +449,7 @@ impl<T: 'static + Clone> Window<T> {
                             }
                             TouchPhase::Ended | TouchPhase::Cancelled => {
                                 if finger_id.map(|id| id == touch.id).unwrap_or(false) {
-                                    events.push(Event::MouseRelease {
+                                    events.push(IncomingEvent::MouseRelease {
                                         button: MouseButton::Left,
                                         position,
                                         modifiers,
@@ -461,7 +469,7 @@ impl<T: 'static + Clone> Window<T> {
                                 if finger_id.map(|id| id == touch.id).unwrap_or(false) {
                                     let last_pos = cursor_pos.unwrap();
                                     if let Some(p) = secondary_cursor_pos {
-                                        events.push(Event::MouseWheel {
+                                        events.push(IncomingEvent::MouseWheel {
                                             position,
                                             modifiers,
                                             handled: false,
@@ -471,7 +479,7 @@ impl<T: 'static + Clone> Window<T> {
                                             ),
                                         });
                                     } else {
-                                        events.push(Event::MouseMotion {
+                                        events.push(IncomingEvent::MouseMotion {
                                             button: Some(MouseButton::Left),
                                             position,
                                             modifiers,
@@ -489,7 +497,7 @@ impl<T: 'static + Clone> Window<T> {
                                 {
                                     let last_pos = secondary_cursor_pos.unwrap();
                                     if let Some(p) = cursor_pos {
-                                        events.push(Event::MouseWheel {
+                                        events.push(IncomingEvent::MouseWheel {
                                             position: p,
                                             modifiers,
                                             handled: false,

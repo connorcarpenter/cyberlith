@@ -15,23 +15,23 @@ pub fn three_d_runner(mut app: App) {
 
     // Start the main render loop
     window.render_loop(
-        move |frame_input| // Begin a new frame with an updated frame input
+        move |new_frame_input| // Begin a new frame with an updated frame input
             {
                 // Insert FrameInput
                 app
                     .world
-                    .insert_non_send_resource(frame_input);
+                    .insert_non_send_resource(new_frame_input);
 
                 // update app
                 app.update();
 
                 // Remove FrameInput
-                app
+                let mut old_frame_input = app
                     .world
-                    .remove_non_send_resource::<FrameInput<()>>();
+                    .remove_non_send_resource::<FrameInput<()>>().unwrap();
 
                 // Returns default frame output to end the frame
-                FrameOutput::default()
+                FrameOutput::from(old_frame_input)
             },
     );
 }

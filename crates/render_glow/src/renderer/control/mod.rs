@@ -15,7 +15,7 @@ pub enum MouseButton {
 
 /// An input event (from mouse, keyboard or similar).
 #[derive(Clone, Debug)]
-pub enum Event<T: 'static + Clone> {
+pub enum IncomingEvent<T: 'static + Clone> {
     /// Fired when a button is pressed or the screen is touched.
     MousePress {
         /// Type of button
@@ -46,7 +46,7 @@ pub enum Event<T: 'static + Clone> {
     MouseMotion {
         /// Type of button if a button is pressed.
         button: Option<MouseButton>,
-        /// The relative movement of the mouse/finger since last [Event::MouseMotion] event.
+        /// The relative movement of the mouse/finger since last [IncomingEvent::MouseMotion] event.
         delta: (f64, f64),
         /// The screen position in logical pixels, to get it in physical pixels, multiply it with the device pixel ratio.
         /// The first value defines the position on the horizontal axis with zero being at the left border of the window
@@ -59,7 +59,7 @@ pub enum Event<T: 'static + Clone> {
     },
     /// Fired continuously when the mouse wheel or equivalent is applied.
     MouseWheel {
-        /// The relative scrolling since the last [Event::MouseWheel] event.
+        /// The relative scrolling since the last [IncomingEvent::MouseWheel] event.
         delta: (f64, f64),
         /// The screen position in logical pixels, to get it in physical pixels, multiply it with the device pixel ratio.
         /// The first value defines the position on the horizontal axis with zero being at the left border of the window

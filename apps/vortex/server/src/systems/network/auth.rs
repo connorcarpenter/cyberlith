@@ -6,7 +6,11 @@ use vortex_proto::messages::Auth;
 
 use crate::resources::UserManager;
 
-pub fn auth_events(mut server: Server, mut event_reader: EventReader<AuthEvents>, user_manager: Res<UserManager>) {
+pub fn auth_events(
+    mut server: Server,
+    mut event_reader: EventReader<AuthEvents>,
+    user_manager: Res<UserManager>,
+) {
     for events in event_reader.iter() {
         for (user_key, auth) in events.read::<Auth>() {
             if user_manager.validate_user(&auth.username, &auth.password) {
