@@ -1,13 +1,13 @@
 use std::time::Duration;
 
 use bevy_app::{App, ScheduleRunnerPlugin, ScheduleRunnerSettings};
-use bevy_ecs::{schedule::IntoSystemConfigs, system::ResMut};
+use bevy_ecs::{schedule::IntoSystemConfigs, system::{ResMut, Res}};
 use bevy_log::{info, LogPlugin};
-
 use naia_bevy_server::{Plugin as ServerPlugin, ReceiveEvents, ServerConfig};
 
 use vortex_proto::protocol;
 
+mod config;
 mod components;
 mod resources;
 mod systems;
@@ -15,7 +15,8 @@ mod systems;
 use resources::GitManager;
 use systems::network;
 
-use crate::resources::UserManager;
+use crate::{resources::UserManager, config::ConfigPlugin};
+use crate::config::AppConfig;
 
 fn main() {
     info!("Naia Bevy Server Demo starting up");
@@ -23,6 +24,7 @@ fn main() {
     // Build App
     App::default()
         // Plugins
+        .add_plugin(ConfigPlugin)
         .insert_resource(
             // this is needed to avoid running the server at uncapped FPS
             ScheduleRunnerSettings::run_loop(Duration::from_millis(5)),
@@ -51,6 +53,8 @@ fn main() {
         .run();
 }
 
-fn setup(mut git_manager: ResMut<GitManager>) {
-    git_manager.init();
+fn setup(config: Res<AppConfig>, mut git_manager: ResMut<GitManager>) {
+    info!("Environment: {}", config.general.env_name);
+
+    git_manager.use_config(&config.git);
 }

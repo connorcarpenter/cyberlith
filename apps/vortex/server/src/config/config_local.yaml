@@ -1,0 +1,4 @@
+general:
+  env_name: "local"
+git:
+  repo_url: "https://github.com/connorcarpenter/cyberlith_assets.git"

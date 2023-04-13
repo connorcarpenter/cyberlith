@@ -1,36 +1,59 @@
 use std::collections::HashMap;
 
 use bevy_ecs::system::Resource;
+use naia_bevy_server::UserKey;
+
+pub struct UserInfo {
+    pub username: String,
+}
+
+impl UserInfo {
+    pub fn new(username: &str) -> Self {
+        Self { username: username.to_string() }
+    }
+}
 
 #[derive(Resource)]
 pub struct UserManager {
-    inner: HashMap<String, String>,
+    credentials: HashMap<String, String>,
+    users: HashMap<UserKey, UserInfo>
 }
 
 impl Default for UserManager {
     fn default() -> Self {
-        let mut users = HashMap::new();
+        let mut credentials = HashMap::new();
 
         // Connor
-        users.insert("connorcarpenter".to_string(), "greattobealive!".to_string());
+        credentials.insert(
+            "connorcarpenter".to_string(),
+            "greattobealive!".to_string()
+        );
 
         // Brendon?
-        users.insert(
+        credentials.insert(
             "brendoncarpenter".to_string(),
             "greattobealive!".to_string(),
         );
 
         // TODO: add more users here? get from database?
 
-        Self { inner: users }
+        Self { credentials, users: HashMap::new() }
     }
 }
 
 impl UserManager {
     pub fn validate_user(&self, username: &str, password: &str) -> bool {
-        match self.inner.get(username) {
+        match self.credentials.get(username) {
             Some(p) => p == password,
             None => false,
         }
+    }
+
+    pub fn add_user(&mut self, user_key: &UserKey, username: &str) {
+        self.users.insert(*user_key, UserInfo::new(username));
+    }
+
+    pub fn user_info(&self, user_key: &UserKey) -> Option<&UserInfo> {
+        self.users.get(user_key)
     }
 }
