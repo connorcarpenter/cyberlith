@@ -43,6 +43,7 @@ fn main() {
                 network::connect_events,
                 network::disconnect_events,
                 network::error_events,
+                network::tick_events,
             )
                 .chain()
                 .in_set(ReceiveEvents),

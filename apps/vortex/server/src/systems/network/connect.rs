@@ -1,4 +1,4 @@
-use bevy_ecs::{event::EventReader, system::{Commands, ResMut, Res}};
+use bevy_ecs::{event::EventReader, system::{Commands, ResMut}};
 use bevy_log::info;
 
 use naia_bevy_server::{events::ConnectEvent, Server};
@@ -23,6 +23,7 @@ pub fn connect_events(
         // Create new room for user and all their owned entities
         let user_room_key = server.make_room().key();
         user_info.set_room_key(user_room_key);
+        server.user_mut(user_key).enter_room(&user_room_key);
 
         // GitManager initializes new user's working directory
         git_manager.init_dir(&mut commands, &mut server, user_key, user_info);

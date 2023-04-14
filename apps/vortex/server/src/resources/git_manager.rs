@@ -1,11 +1,14 @@
 use std::{fs, path::Path};
+use bevy_ecs::entity::Entity;
 
 use bevy_ecs::system::{Commands, Resource};
 use bevy_log::info;
-use naia_bevy_server::{Server, UserKey};
+use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 use git2::{Cred, Repository, ResetType, Tree};
+use vortex_proto::components::{EntryKind, FileSystemEntry, FileSystemParent, FileSystemRoot};
 
 use crate::{config::GitConfig, resources::user_manager::UserInfo};
+use crate::components::FileSystemOwner;
 
 #[derive(Resource)]
 pub struct GitManager {
@@ -83,25 +86,61 @@ impl GitManager {
 
         let head = repo.head().unwrap();
         let tree = head.peel_to_tree().unwrap();
-        walk_file_tree(commands, &repo, &tree, 0);
+        walk_file_tree(commands, server, &repo, &tree, user_key, user_info.room_key.as_ref().unwrap(), None);
     }
 }
 
-fn walk_file_tree(commands: &mut Commands, repo: &Repository, root: &Tree, depth: u32) {
-    for entry in root.iter() {
+fn walk_file_tree(
+    commands: &mut Commands,
+    server: &mut Server,
+    repo: &Repository,
+    entries: &Tree,
+    user_key: &UserKey,
+    room_key: &RoomKey,
+    parent: Option<Entity>
+) {
+    for entry in entries.iter() {
         let name = entry.name().unwrap().to_string();
-        //let entry_path = path.join(&name);
 
         match entry.kind() {
             Some(git2::ObjectType::Tree) => {
-                println!("{:indent$}{}", "", name, indent = depth as usize);
-                let tree = entry.to_object(repo).unwrap().peel_to_tree().unwrap();
-                walk_file_tree(commands, repo, &tree, depth + 1);
+                let id = spawn_file_system_entry(commands, server, &name, user_key, room_key, &parent);
+
+                let children = entry.to_object(repo).unwrap().peel_to_tree().unwrap();
+                walk_file_tree(commands, server, repo, &children, user_key, room_key,Some(id));
             }
             Some(git2::ObjectType::Blob) => {
-                println!("{:indent$}{}", "", name, indent = depth as usize);
+                let _ = spawn_file_system_entry(commands, server, &name, user_key, room_key, &parent);
             }
             _ => {}
         }
     }
+}
+
+fn spawn_file_system_entry(
+    commands: &mut Commands,
+    server: &mut Server,
+    name: &str,
+    user_key: &UserKey,
+    room_key: &RoomKey,
+    parent: &Option<Entity>
+) -> Entity {
+    let entity_id = commands
+        .spawn_empty()
+        .enable_replication(server)
+        .insert(FileSystemEntry::new(&name, EntryKind::Directory))
+        .insert(FileSystemOwner(*user_key))
+        .id();
+
+    server.room_mut(room_key).add_entity(&entity_id);
+
+    if let Some(parent) = parent {
+        let mut parent_component = FileSystemParent::new();
+        parent_component.id.set(server, parent);
+        commands.entity(entity_id).insert(parent_component);
+    } else {
+        commands.entity(entity_id).insert(FileSystemRoot);
+    }
+
+    entity_id
 }

@@ -38,6 +38,18 @@ pub struct FileSystemParent {
     pub id: EntityProperty,
 }
 
+impl FileSystemParent {
+    pub fn new() -> Self {
+        Self::new_complete()
+    }
+}
+
 // FileSystemRoot
 #[derive(Component, Replicate)]
 pub struct FileSystemRoot;
+
+impl FileSystemRoot {
+    pub fn new() -> Self {
+        Self::new_complete()
+    }
+}

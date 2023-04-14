@@ -1,7 +1,10 @@
 use naia_bevy_shared::{Protocol, ProtocolPlugin};
 
 mod file_system;
-pub use file_system::FileSystemComponentsPlugin;
+
+pub use file_system::{EntryKind, FileSystemEntry, FileSystemParent, FileSystemRoot};
+
+use file_system::FileSystemComponentsPlugin;
 
 // Plugin
 pub struct ComponentsPlugin;

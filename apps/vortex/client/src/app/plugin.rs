@@ -52,6 +52,10 @@ impl Plugin for VortexPlugin {
                     network::disconnect_events,
                     network::reject_events,
                     network::error_events,
+                    network::insert_component_events,
+                    network::remove_component_events,
+                    network::spawn_entity_events,
+                    network::despawn_entity_events,
                 )
                     .chain()
                     .in_set(ReceiveEvents),

@@ -8,7 +8,7 @@ use crate::{channels::ChannelsPlugin, messages::MessagesPlugin, components::Comp
 pub fn protocol() -> Protocol {
     Protocol::builder()
         // Config
-        .tick_interval(Duration::from_millis(40))
+        .tick_interval(Duration::from_millis(100))
         .link_condition(LinkConditionerConfig::good_condition())
         .enable_client_authoritative_entities()
         // Channels
