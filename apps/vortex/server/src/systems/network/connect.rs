@@ -7,9 +7,9 @@ use crate::resources::{GitManager, UserManager};
 
 pub fn connect_events(
     mut commands: Commands,
-    server: Server,
+    mut server: Server,
     mut event_reader: EventReader<ConnectEvent>,
-    user_manager: Res<UserManager>,
+    mut user_manager: ResMut<UserManager>,
     mut git_manager: ResMut<GitManager>
 ) {
     for ConnectEvent(user_key) in event_reader.iter() {
@@ -18,9 +18,13 @@ pub fn connect_events(
         info!("Server connected to: {}", address);
 
         // Get user's username from UserManager
-        let user_info = user_manager.user_info(user_key).unwrap();
+        let user_info = user_manager.user_info_mut(user_key).unwrap();
+
+        // Create new room for user and all their owned entities
+        let user_room_key = server.make_room().key();
+        user_info.set_room_key(user_room_key);
 
         // GitManager initializes new user's working directory
-        git_manager.init_dir(&mut commands, user_key, user_info);
+        git_manager.init_dir(&mut commands, &mut server, user_key, user_info);
     }
 }

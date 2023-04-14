@@ -1,15 +1,20 @@
 use std::collections::HashMap;
 
 use bevy_ecs::system::Resource;
-use naia_bevy_server::UserKey;
+use naia_bevy_server::{RoomKey, UserKey};
 
 pub struct UserInfo {
     pub username: String,
+    pub room_key: Option<RoomKey>,
 }
 
 impl UserInfo {
     pub fn new(username: &str) -> Self {
-        Self { username: username.to_string() }
+        Self { username: username.to_string(), room_key: None }
+    }
+
+    pub(crate) fn set_room_key(&mut self, room_key: RoomKey) {
+        self.room_key = Some(room_key);
     }
 }
 
@@ -55,5 +60,9 @@ impl UserManager {
 
     pub fn user_info(&self, user_key: &UserKey) -> Option<&UserInfo> {
         self.users.get(user_key)
+    }
+
+    pub fn user_info_mut(&mut self, user_key: &UserKey) -> Option<&mut UserInfo> {
+        self.users.get_mut(user_key)
     }
 }

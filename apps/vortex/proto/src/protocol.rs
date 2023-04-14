@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use naia_bevy_shared::{LinkConditionerConfig, Protocol};
 
-use crate::{channels::ChannelsPlugin, messages::MessagesPlugin};
+use crate::{channels::ChannelsPlugin, messages::MessagesPlugin, components::ComponentsPlugin};
 
 // Protocol Build
 pub fn protocol() -> Protocol {
@@ -15,6 +15,8 @@ pub fn protocol() -> Protocol {
         .add_plugin(ChannelsPlugin)
         // Messages
         .add_plugin(MessagesPlugin)
+        // Components
+        .add_plugin(ComponentsPlugin)
         // Build Protocol
         .build()
 }

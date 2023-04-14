@@ -2,7 +2,7 @@ use std::{fs, path::Path};
 
 use bevy_ecs::system::{Commands, Resource};
 use bevy_log::info;
-use naia_bevy_server::UserKey;
+use naia_bevy_server::{Server, UserKey};
 use git2::{Cred, Repository, ResetType, Tree};
 
 use crate::{config::GitConfig, resources::user_manager::UserInfo};
@@ -23,7 +23,7 @@ impl GitManager {
         self.config = Some(config.clone());
     }
 
-    pub fn init_dir(&mut self, commands: &mut Commands, user_key: &UserKey, user_info: &UserInfo) {
+    pub fn init_dir(&mut self, commands: &mut Commands, server: &mut Server, user_key: &UserKey, user_info: &UserInfo) {
 
         // Create User's Working directory if it doesn't already exist
         let root_dir = "target/users";
@@ -81,17 +81,13 @@ impl GitManager {
             repo
         };
 
-        self.convert_repo_to_ecs(commands, user_key, &repo);
-    }
-
-    fn convert_repo_to_ecs(&mut self, commands: &mut Commands, user_key: &UserKey, repo: &Repository) {
         let head = repo.head().unwrap();
         let tree = head.peel_to_tree().unwrap();
-        print_tree(repo, &tree, 0);
+        walk_file_tree(commands, &repo, &tree, 0);
     }
 }
 
-fn print_tree(repo: &Repository, root: &Tree, depth: u32) {
+fn walk_file_tree(commands: &mut Commands, repo: &Repository, root: &Tree, depth: u32) {
     for entry in root.iter() {
         let name = entry.name().unwrap().to_string();
         //let entry_path = path.join(&name);
@@ -100,7 +96,7 @@ fn print_tree(repo: &Repository, root: &Tree, depth: u32) {
             Some(git2::ObjectType::Tree) => {
                 println!("{:indent$}{}", "", name, indent = depth as usize);
                 let tree = entry.to_object(repo).unwrap().peel_to_tree().unwrap();
-                print_tree(repo, &tree, depth + 1);
+                walk_file_tree(commands, repo, &tree, depth + 1);
             }
             Some(git2::ObjectType::Blob) => {
                 println!("{:indent$}{}", "", name, indent = depth as usize);
