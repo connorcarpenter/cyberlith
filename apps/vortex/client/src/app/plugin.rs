@@ -7,7 +7,7 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin, ReceiveEvents};
-
+use math::Vec3;
 use render_api::{
     base::{Color, PbrMaterial, Texture2D, TriMesh},
     components::{
@@ -19,10 +19,9 @@ use render_api::{
 };
 use render_egui::EguiUserTextures;
 use vortex_proto::protocol;
-use math::Vec3;
 
 use crate::app::{
-    config::{ConfigPlugin, AppConfig},
+    config::{AppConfig, ConfigPlugin},
     events::LoginEvent,
     network, ui,
     ui::{widgets, AxesCamerasVisible, UiState},

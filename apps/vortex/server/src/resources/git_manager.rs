@@ -1,14 +1,15 @@
 use std::{fs, path::Path};
-use bevy_ecs::entity::Entity;
 
-use bevy_ecs::system::{Commands, Resource};
+use bevy_ecs::{
+    entity::Entity,
+    system::{Commands, Resource},
+};
 use bevy_log::info;
-use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 use git2::{Cred, Repository, ResetType, Tree};
+use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 use vortex_proto::components::{EntryKind, FileSystemEntry, FileSystemParent, FileSystemRoot};
 
-use crate::{config::GitConfig, resources::user_manager::UserInfo};
-use crate::components::FileSystemOwner;
+use crate::{components::FileSystemOwner, config::GitConfig, resources::user_manager::UserInfo};
 
 #[derive(Resource)]
 pub struct GitManager {
@@ -26,8 +27,13 @@ impl GitManager {
         self.config = Some(config.clone());
     }
 
-    pub fn init_dir(&mut self, commands: &mut Commands, server: &mut Server, user_key: &UserKey, user_info: &UserInfo) {
-
+    pub fn init_dir(
+        &mut self,
+        commands: &mut Commands,
+        server: &mut Server,
+        user_key: &UserKey,
+        user_info: &UserInfo,
+    ) {
         // Create User's Working directory if it doesn't already exist
         let root_dir = "target/users";
         let user_dir_name = &user_info.username;
@@ -67,7 +73,9 @@ impl GitManager {
 
             {
                 let mut remote = repo.find_remote("origin").unwrap();
-                remote.fetch(&["main"], Some(&mut fetch_options), None).unwrap();
+                remote
+                    .fetch(&["main"], Some(&mut fetch_options), None)
+                    .unwrap();
 
                 // Reset local changes
                 let head_obj = repo.revparse_single("HEAD").unwrap();
@@ -86,7 +94,15 @@ impl GitManager {
 
         let head = repo.head().unwrap();
         let tree = head.peel_to_tree().unwrap();
-        walk_file_tree(commands, server, &repo, &tree, user_key, user_info.room_key.as_ref().unwrap(), None);
+        walk_file_tree(
+            commands,
+            server,
+            &repo,
+            &tree,
+            user_key,
+            user_info.room_key.as_ref().unwrap(),
+            None,
+        );
     }
 }
 
@@ -97,20 +113,30 @@ fn walk_file_tree(
     entries: &Tree,
     user_key: &UserKey,
     room_key: &RoomKey,
-    parent: Option<Entity>
+    parent: Option<Entity>,
 ) {
     for entry in entries.iter() {
         let name = entry.name().unwrap().to_string();
 
         match entry.kind() {
             Some(git2::ObjectType::Tree) => {
-                let id = spawn_file_system_entry(commands, server, &name, user_key, room_key, &parent);
+                let id =
+                    spawn_file_system_entry(commands, server, &name, user_key, room_key, &parent);
 
                 let children = entry.to_object(repo).unwrap().peel_to_tree().unwrap();
-                walk_file_tree(commands, server, repo, &children, user_key, room_key,Some(id));
+                walk_file_tree(
+                    commands,
+                    server,
+                    repo,
+                    &children,
+                    user_key,
+                    room_key,
+                    Some(id),
+                );
             }
             Some(git2::ObjectType::Blob) => {
-                let _ = spawn_file_system_entry(commands, server, &name, user_key, room_key, &parent);
+                let _ =
+                    spawn_file_system_entry(commands, server, &name, user_key, room_key, &parent);
             }
             _ => {}
         }
@@ -123,7 +149,7 @@ fn spawn_file_system_entry(
     name: &str,
     user_key: &UserKey,
     room_key: &RoomKey,
-    parent: &Option<Entity>
+    parent: &Option<Entity>,
 ) -> Entity {
     let entity_id = commands
         .spawn_empty()

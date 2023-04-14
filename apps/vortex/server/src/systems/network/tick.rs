@@ -1,10 +1,7 @@
 use bevy_ecs::event::EventReader;
 use naia_bevy_server::{events::TickEvent, Server};
 
-pub fn tick_events(
-    mut server: Server,
-    mut tick_reader: EventReader<TickEvent>,
-) {
+pub fn tick_events(mut server: Server, mut tick_reader: EventReader<TickEvent>) {
     let mut has_ticked = false;
 
     for TickEvent(_server_tick) in tick_reader.iter() {

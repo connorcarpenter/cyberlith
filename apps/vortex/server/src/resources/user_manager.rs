@@ -10,7 +10,10 @@ pub struct UserInfo {
 
 impl UserInfo {
     pub fn new(username: &str) -> Self {
-        Self { username: username.to_string(), room_key: None }
+        Self {
+            username: username.to_string(),
+            room_key: None,
+        }
     }
 
     pub(crate) fn set_room_key(&mut self, room_key: RoomKey) {
@@ -21,7 +24,7 @@ impl UserInfo {
 #[derive(Resource)]
 pub struct UserManager {
     credentials: HashMap<String, String>,
-    users: HashMap<UserKey, UserInfo>
+    users: HashMap<UserKey, UserInfo>,
 }
 
 impl Default for UserManager {
@@ -29,10 +32,7 @@ impl Default for UserManager {
         let mut credentials = HashMap::new();
 
         // Connor
-        credentials.insert(
-            "connorcarpenter".to_string(),
-            "greattobealive!".to_string()
-        );
+        credentials.insert("connorcarpenter".to_string(), "greattobealive!".to_string());
 
         // Brendon?
         credentials.insert(
@@ -42,7 +42,10 @@ impl Default for UserManager {
 
         // TODO: add more users here? get from database?
 
-        Self { credentials, users: HashMap::new() }
+        Self {
+            credentials,
+            users: HashMap::new(),
+        }
     }
 }
 

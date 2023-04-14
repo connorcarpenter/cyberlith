@@ -14,7 +14,6 @@ pub fn auth_events(
     for events in event_reader.iter() {
         for (user_key, auth) in events.read::<Auth>() {
             if user_manager.validate_user(&auth.username, &auth.password) {
-
                 // Store user information
                 user_manager.add_user(&user_key, &auth.username);
 

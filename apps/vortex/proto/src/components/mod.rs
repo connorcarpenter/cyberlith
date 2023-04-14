@@ -11,7 +11,6 @@ pub struct ComponentsPlugin;
 
 impl ProtocolPlugin for ComponentsPlugin {
     fn build(&self, protocol: &mut Protocol) {
-        protocol
-            .add_plugin(FileSystemComponentsPlugin);
+        protocol.add_plugin(FileSystemComponentsPlugin);
     }
 }

@@ -1,6 +1,11 @@
-use bevy_ecs::{event::EventReader, system::{Commands, Query}};
+use bevy_ecs::{
+    event::EventReader,
+    system::{Commands, Query},
+};
 use bevy_log::info;
-use naia_bevy_client::events::{DespawnEntityEvent, InsertComponentEvents, RemoveComponentEvents, SpawnEntityEvent};
+use naia_bevy_client::events::{
+    DespawnEntityEvent, InsertComponentEvents, RemoveComponentEvents, SpawnEntityEvent,
+};
 use vortex_proto::components::FileSystemEntry;
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {

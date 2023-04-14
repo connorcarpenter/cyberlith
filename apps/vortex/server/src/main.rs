@@ -1,22 +1,24 @@
 use std::time::Duration;
 
 use bevy_app::{App, ScheduleRunnerPlugin, ScheduleRunnerSettings};
-use bevy_ecs::{schedule::IntoSystemConfigs, system::{ResMut, Res}};
+use bevy_ecs::{
+    schedule::IntoSystemConfigs,
+    system::{Res, ResMut},
+};
 use bevy_log::{info, LogPlugin};
 use naia_bevy_server::{Plugin as ServerPlugin, ReceiveEvents, ServerConfig};
 
 use vortex_proto::protocol;
 
-mod config;
 mod components;
+mod config;
 mod resources;
 mod systems;
 
 use resources::GitManager;
 use systems::network;
 
-use crate::{resources::UserManager, config::ConfigPlugin};
-use crate::config::AppConfig;
+use crate::{config::{ConfigPlugin, AppConfig}, resources::UserManager};
 
 fn main() {
     info!("Naia Bevy Server Demo starting up");

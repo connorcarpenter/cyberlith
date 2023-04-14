@@ -1,4 +1,7 @@
-use bevy_ecs::{event::EventReader, system::{Commands, ResMut}};
+use bevy_ecs::{
+    event::EventReader,
+    system::{Commands, ResMut},
+};
 use bevy_log::info;
 
 use naia_bevy_server::{events::ConnectEvent, Server};
@@ -10,7 +13,7 @@ pub fn connect_events(
     mut server: Server,
     mut event_reader: EventReader<ConnectEvent>,
     mut user_manager: ResMut<UserManager>,
-    mut git_manager: ResMut<GitManager>
+    mut git_manager: ResMut<GitManager>,
 ) {
     for ConnectEvent(user_key) in event_reader.iter() {
         let address = server.user(user_key).address();
