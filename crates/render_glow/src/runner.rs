@@ -1,4 +1,3 @@
-use std::default::Default;
 
 use bevy_app::App;
 
@@ -26,7 +25,7 @@ pub fn three_d_runner(mut app: App) {
                 app.update();
 
                 // Remove FrameInput
-                let mut old_frame_input = app
+                let old_frame_input = app
                     .world
                     .remove_non_send_resource::<FrameInput<()>>().unwrap();
 

@@ -15,6 +15,7 @@ pub struct GeneralConfig {
 #[allow(unused)]
 pub struct GitConfig {
     pub repo_url: String,
+    pub access_token: String,
 }
 
 #[derive(Debug, Deserialize, Resource, Default)]

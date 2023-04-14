@@ -2,7 +2,7 @@ use std::{cell::RefCell, ops::Deref};
 
 use bevy_ecs::system::Resource;
 use bevy_log::info;
-use egui::{output::OutputEvent, FullOutput, PlatformOutput};
+use egui::PlatformOutput;
 use egui_glow::{glow, Painter};
 
 use render_api::components::Viewport;
