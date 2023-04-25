@@ -70,8 +70,9 @@ pub fn insert_component_events(
         // on FileSystemRootChild Insert Event
         for child_entity in events.read::<FileSystemRootChild>() {
             // Add children to root parent
+            let child_name = (*(entry_query.get(child_entity).unwrap().name)).clone();
             let mut parent = parent_query.get_mut(project_root_entity).unwrap();
-            parent.add_child(child_entity);
+            parent.add_child(child_name, child_entity);
         }
         // on FileSystemChild Insert Event
         for child_entity in events.read::<FileSystemChild>() {
@@ -84,8 +85,9 @@ pub fn insert_component_events(
             let Some(parent_entity) = parent_entity_opt else {
                 panic!("FileSystemChild component has no parent_id");
             };
+            let child_name = (*(entry_query.get(child_entity).unwrap().name)).clone();
             if let Ok(mut parent) = parent_query.get_mut(parent_entity) {
-                parent.add_child(child_entity);
+                parent.add_child(child_name, child_entity);
             } else {
                 let Some(parent_map) = recent_parents.as_mut() else {
                     panic!("FileSystemChild component on entity: `{:?}` has invalid parent_id: `{:?}`", child_entity, parent_entity);
@@ -93,7 +95,7 @@ pub fn insert_component_events(
                 let Some(parent) = parent_map.get_mut(&parent_entity) else {
                     panic!("FileSystemChild component on entity: `{:?}` has invalid parent_id: `{:?}`", child_entity, parent_entity);
                 };
-                parent.add_child(child_entity);
+                parent.add_child(child_name, child_entity);
             };
         }
         // Add all parents now that the children were able to process

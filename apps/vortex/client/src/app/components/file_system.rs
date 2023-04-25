@@ -1,20 +1,22 @@
+
+use std::collections::BTreeMap;
 use bevy_ecs::prelude::{Component, Entity};
 
 // FileSystemParent
 #[derive(Component)]
 pub struct FileSystemParent {
-    children_ids: Vec<Entity>,
+    children_ids: BTreeMap<String, Entity>,
 }
 
 impl FileSystemParent {
     pub fn new() -> Self {
         Self {
-            children_ids: Vec::new(),
+            children_ids: BTreeMap::new(),
         }
     }
 
-    pub fn add_child(&mut self, child_id: Entity) {
-        self.children_ids.push(child_id);
+    pub fn add_child(&mut self, name: String, child_id: Entity) {
+        self.children_ids.insert(name.to_lowercase(), child_id);
     }
 
     // pub fn remove_child(&mut self, child_id: Entity) {
@@ -25,8 +27,12 @@ impl FileSystemParent {
     //     !self.children_ids.is_empty()
     // }
 
-    pub fn get_children(&self) -> &Vec<Entity> {
-        &self.children_ids
+    pub fn get_children(&self) -> Vec<Entity> {
+        let mut output = Vec::new();
+        for (_, v) in self.children_ids.iter() {
+            output.push(*v);
+        }
+        output
     }
 }
 
