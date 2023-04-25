@@ -7,7 +7,7 @@ use bevy_ecs::{
 use bevy_log::info;
 use git2::{Cred, Repository, ResetType, Tree};
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
-use vortex_proto::components::{EntryKind, FileSystemEntry, FileSystemParent, FileSystemRoot};
+use vortex_proto::components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
 
 use crate::{components::FileSystemOwner, config::GitConfig, resources::user_manager::UserInfo};
 
@@ -120,8 +120,9 @@ fn walk_file_tree(
 
         match entry.kind() {
             Some(git2::ObjectType::Tree) => {
-                let id =
-                    spawn_file_system_entry(commands, server, &name, user_key, room_key, &parent);
+                let id = spawn_file_system_entry(
+                    commands, server, &name, user_key, room_key, &parent, true,
+                );
 
                 let children = entry.to_object(repo).unwrap().peel_to_tree().unwrap();
                 walk_file_tree(
@@ -135,8 +136,9 @@ fn walk_file_tree(
                 );
             }
             Some(git2::ObjectType::Blob) => {
-                let _ =
-                    spawn_file_system_entry(commands, server, &name, user_key, room_key, &parent);
+                let _ = spawn_file_system_entry(
+                    commands, server, &name, user_key, room_key, &parent, false,
+                );
             }
             _ => {}
         }
@@ -150,22 +152,28 @@ fn spawn_file_system_entry(
     user_key: &UserKey,
     room_key: &RoomKey,
     parent: &Option<Entity>,
+    is_dir: bool,
 ) -> Entity {
+    let entry_kind = if is_dir {
+        EntryKind::Directory
+    } else {
+        EntryKind::File
+    };
     let entity_id = commands
         .spawn_empty()
         .enable_replication(server)
-        .insert(FileSystemEntry::new(&name, EntryKind::Directory))
+        .insert(FileSystemEntry::new(&name, entry_kind))
         .insert(FileSystemOwner(*user_key))
         .id();
 
     server.room_mut(room_key).add_entity(&entity_id);
 
     if let Some(parent) = parent {
-        let mut parent_component = FileSystemParent::new();
-        parent_component.id.set(server, parent);
+        let mut parent_component = FileSystemChild::new();
+        parent_component.parent_id.set(server, parent);
         commands.entity(entity_id).insert(parent_component);
     } else {
-        commands.entity(entity_id).insert(FileSystemRoot);
+        commands.entity(entity_id).insert(FileSystemRootChild);
     }
 
     entity_id

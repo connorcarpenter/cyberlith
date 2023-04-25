@@ -1,120 +1,83 @@
+use crate::app::components::file_system::{FileSystemParent, FileSystemUiState};
+use crate::app::resources::global::Global;
+use bevy_ecs::{entity::Entity, world::World};
 use render_egui::egui::{
     emath, remap, vec2, Align, Color32, Id, Layout, NumExt, Rect, Response, Rounding, Sense, Shape,
     Stroke, TextStyle, Ui, WidgetText,
 };
+use vortex_proto::components::{EntryKind, FileSystemEntry};
 
-#[derive(Clone)]
-pub struct FileTree {
-    name: String,
-    trees: Vec<FileTree>,
-    selected: bool,
-    opened: bool,
-}
+pub struct FileTreeUiWidget;
 
-impl FileTree {
-    pub fn project_test() -> Self {
-        Self::new(
-            "Projects",
-            vec![
-                Self::new(
-                    "dir1",
-                    vec![Self::new("file1", vec![]), Self::new("file2", vec![])],
-                ),
-                Self::new("dir2", vec![Self::new("file1", vec![])]),
-                Self::new(
-                    "dir3",
-                    vec![
-                        Self::new("file1", vec![]),
-                        Self::new("file2", vec![]),
-                        Self::new(
-                            "dir4",
-                            vec![Self::new("file1", vec![]), Self::new("file2", vec![])],
-                        ),
-                    ],
-                ),
-            ],
-        )
-    }
+impl FileTreeUiWidget {
+    pub fn render_root(ui: &mut Ui, world: &mut World) {
+        let root_entity = world.get_resource::<Global>().unwrap().project_root_entity;
 
-    pub fn changes_test() -> Self {
-        Self::new(
-            "Changes",
-            vec![
-                Self::new(
-                    "dir1",
-                    vec![Self::new("file1", vec![]), Self::new("file2", vec![])],
-                ),
-                Self::new("dir2", vec![Self::new("file1", vec![])]),
-                Self::new(
-                    "dir3",
-                    vec![
-                        Self::new("file1", vec![]),
-                        Self::new("file2", vec![]),
-                        Self::new(
-                            "dir4",
-                            vec![Self::new("file1", vec![]), Self::new("file2", vec![])],
-                        ),
-                    ],
-                ),
-            ],
-        )
-    }
-}
-
-impl FileTree {
-    pub fn new(name: &str, trees: Vec<FileTree>) -> Self {
-        Self {
-            name: name.to_string(),
-            trees,
-            selected: false,
-            opened: false,
-        }
-    }
-
-    pub fn render_root(&mut self, ui: &mut Ui) {
         ui.with_layout(Layout::top_down_justified(Align::LEFT), |ui| {
-            self.render(ui, "", 0);
+            Self::render(ui, world, &root_entity, "", 0);
         });
     }
 
-    fn render(&mut self, ui: &mut Ui, path: &str, depth: usize) {
-        let separator = if path.len() > 0 { ":" } else { "" };
-        let full_path = format!("{}{}{}", path, separator, self.name);
+    fn render(ui: &mut Ui, world: &mut World, entity: &Entity, path: &str, depth: usize) {
+        let is_directory =
+            *(world.entity(*entity).get::<FileSystemEntry>().unwrap().kind) == EntryKind::Directory;
 
-        if self.trees.len() > 0 {
-            self.render_row(ui, &full_path, depth, true, paint_default_icon);
-            if self.opened {
-                self.render_children(ui, &full_path, depth);
+        if is_directory {
+            Self::render_row(ui, world, entity, path, depth, true, paint_default_icon);
+            let opened = world
+                .entity(*entity)
+                .get::<FileSystemUiState>()
+                .unwrap()
+                .opened;
+            if opened {
+                Self::render_children(ui, world, entity, path, depth);
             }
         } else {
-            self.render_row(ui, &full_path, depth, false, paint_no_icon);
+            Self::render_row(ui, world, entity, path, depth, false, paint_no_icon);
         }
     }
 
-    fn render_children(&mut self, ui: &mut Ui, path: &str, depth: usize) {
-        for tree in self.trees.iter_mut() {
-            tree.render(ui, path, depth + 1);
+    fn render_children(ui: &mut Ui, world: &mut World, entity: &Entity, path: &str, depth: usize) {
+        let entry = world.entity(*entity).get::<FileSystemEntry>().unwrap();
+        let name = &*entry.name;
+        let separator = if path.len() > 0 { ":" } else { "" };
+        let full_path = format!("{}{}{}", path, separator, name);
+
+        let parent = world.entity(*entity).get::<FileSystemParent>().unwrap();
+        let child_entities: Vec<Entity> = parent.get_children().clone();
+
+        for child_entity in child_entities {
+            Self::render(ui, world, &child_entity, &full_path, depth + 1);
         }
     }
 
     pub fn render_row(
-        &mut self,
         ui: &mut Ui,
+        world: &mut World,
+        entity: &Entity,
         path: &str,
         depth: usize,
         is_dir: bool,
         icon_fn: impl FnOnce(&mut Ui, bool, &Response) + 'static,
     ) {
-        let wrap_width = ui.available_width();
+        let entry = world.entity(*entity).get::<FileSystemEntry>().unwrap();
+        let name = &*entry.name;
+        let separator = if path.len() > 0 { ":" } else { "" };
+        let full_path = format!("{}{}{}", path, separator, name);
         let unicode_icon = if is_dir { "📁" } else { "📃" };
-        let text_str: &str = &format!("{} {}", unicode_icon, &self.name);
+        let text_str = format!("{} {}", unicode_icon, name);
+
         let widget_text: WidgetText = text_str.into();
+        let wrap_width = ui.available_width();
         let text = widget_text.into_galley(ui, None, wrap_width, TextStyle::Button);
 
         let mut desired_size = text.size();
         desired_size.y = desired_size.y.at_least(ui.spacing().interact_size.y);
 
         let (mut row_rect, row_response) = ui.allocate_at_least(desired_size, Sense::click());
+
+        let mut entity_mut = world.entity_mut(*entity);
+        let mut ui_state = entity_mut.get_mut::<FileSystemUiState>().unwrap();
 
         if ui.is_rect_visible(row_response.rect) {
             let item_spacing = 4.0;
@@ -131,11 +94,11 @@ impl FileTree {
                 let icon_size = vec2(ui.spacing().icon_width, ui.spacing().icon_width);
                 let icon_rect = Rect::from_min_size(inner_pos, icon_size);
 
-                let big_icon_response = ui.interact(icon_rect, Id::new(path), Sense::click());
+                let big_icon_response = ui.interact(icon_rect, Id::new(full_path), Sense::click());
 
                 if is_dir {
                     if big_icon_response.clicked() {
-                        self.opened = !self.opened;
+                        ui_state.opened = !ui_state.opened;
                     }
                 }
 
@@ -144,7 +107,7 @@ impl FileTree {
 
             // Draw Row
             {
-                let row_fill = if self.selected {
+                let row_fill = if ui_state.selected {
                     Some(Color32::from_rgb(0, 92, 128))
                 } else {
                     if row_response.hovered() || icon_response.hovered() {
@@ -169,7 +132,7 @@ impl FileTree {
                 let (small_icon_rect, _) = ui.spacing().icon_rectangles(icon_response.rect);
                 let small_icon_response = icon_response.clone().with_new_rect(small_icon_rect);
 
-                icon_fn(ui, self.opened, &small_icon_response);
+                icon_fn(ui, ui_state.opened, &small_icon_response);
                 inner_pos.x += small_icon_response.rect.width() + item_spacing;
             } else {
                 inner_pos.x += 14.0;
@@ -183,7 +146,7 @@ impl FileTree {
         }
 
         if row_response.clicked() {
-            self.selected = !self.selected;
+            ui_state.selected = !ui_state.selected;
         }
     }
 }
@@ -191,7 +154,7 @@ impl FileTree {
 // ----------------------------------------------------------------------------
 
 /// Paint the arrow icon that indicated if the region is open or not
-pub fn paint_default_icon(ui: &mut Ui, openned: bool, response: &Response) {
+fn paint_default_icon(ui: &mut Ui, openned: bool, response: &Response) {
     let openness = if openned { 1.0 } else { 0.0 };
 
     let visuals = ui.style().interact(response);

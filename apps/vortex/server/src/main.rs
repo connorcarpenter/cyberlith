@@ -18,7 +18,10 @@ mod systems;
 use resources::GitManager;
 use systems::network;
 
-use crate::{config::{ConfigPlugin, AppConfig}, resources::UserManager};
+use crate::{
+    config::{AppConfig, ConfigPlugin},
+    resources::UserManager,
+};
 
 fn main() {
     info!("Naia Bevy Server Demo starting up");

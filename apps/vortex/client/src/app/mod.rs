@@ -1,13 +1,12 @@
 pub mod ui;
 
 mod build;
-mod components;
+pub mod components;
 mod config;
-mod events;
+pub mod events;
 mod plugin;
-mod resources;
-mod systems;
+pub mod resources;
+pub mod systems;
 
 pub use build::build;
 pub use plugin::VortexPlugin;
-pub use systems::*;

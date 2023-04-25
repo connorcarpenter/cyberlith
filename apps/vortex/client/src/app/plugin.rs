@@ -6,8 +6,8 @@ use bevy_ecs::{
     system::{Commands, Query, Res, ResMut, Resource},
 };
 use bevy_log::info;
-use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin, ReceiveEvents};
 use math::Vec3;
+use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin, ReceiveEvents};
 use render_api::{
     base::{Color, PbrMaterial, Texture2D, TriMesh},
     components::{
@@ -18,19 +18,37 @@ use render_api::{
     shapes, Assets, Handle,
 };
 use render_egui::EguiUserTextures;
-use vortex_proto::protocol;
+use vortex_proto::{
+    components::{EntryKind, FileSystemEntry},
+    protocol,
+};
 
 use crate::app::{
+    components::file_system::{FileSystemParent, FileSystemUiState},
     config::{AppConfig, ConfigPlugin},
     events::LoginEvent,
-    network, ui,
-    ui::{widgets, AxesCamerasVisible, UiState},
+    resources::global::Global,
+    systems::network,
+    ui,
+    ui::{AxesCamerasVisible, UiState},
 };
 
 pub struct VortexPlugin;
 
 impl Plugin for VortexPlugin {
     fn build(&self, app: &mut App) {
+        // setup Global
+        let project_root_entity = app
+            .world
+            .spawn_empty()
+            .insert(FileSystemParent::new())
+            .insert(FileSystemUiState::new())
+            .insert(FileSystemEntry::new("Project", EntryKind::Directory))
+            .id();
+        let global_resource = Global {
+            project_root_entity,
+        };
+
         app
             // Add Config
             .add_plugin(ConfigPlugin)
@@ -62,8 +80,7 @@ impl Plugin for VortexPlugin {
             // UI Configuration
             .insert_resource(UiState::default())
             .insert_resource(AxesCamerasVisible(false))
-            .insert_resource(ProjectTree(widgets::FileTree::project_test()))
-            .insert_resource(ChangesTree(widgets::FileTree::changes_test()))
+            .insert_resource(global_resource)
             .add_system(ui::main)
             .add_system(ui::sync_axes_cameras_visibility)
             // 3D Configuration
@@ -71,12 +88,6 @@ impl Plugin for VortexPlugin {
             .add_system(rotate);
     }
 }
-
-#[derive(Resource)]
-pub struct ProjectTree(pub widgets::FileTree);
-
-#[derive(Resource)]
-pub struct ChangesTree(pub widgets::FileTree);
 
 // Marks the preview pass cube.
 #[derive(Component)]

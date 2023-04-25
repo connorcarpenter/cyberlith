@@ -2,7 +2,7 @@ use naia_bevy_shared::{Protocol, ProtocolPlugin};
 
 mod file_system;
 
-pub use file_system::{EntryKind, FileSystemEntry, FileSystemParent, FileSystemRoot};
+pub use file_system::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
 
 use file_system::FileSystemComponentsPlugin;
 

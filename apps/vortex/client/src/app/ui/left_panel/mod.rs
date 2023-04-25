@@ -1,8 +1,7 @@
 use bevy_ecs::world::World;
 
+use crate::app::ui::widgets::FileTreeUiWidget;
 use render_egui::{egui, egui::Frame};
-
-use crate::app::plugin::{ChangesTree, ProjectTree};
 
 pub fn left_panel(context: &egui::Context, world: &mut World) {
     egui::SidePanel::left("left_panel")
@@ -25,8 +24,7 @@ pub fn left_panel(context: &egui::Context, world: &mut World) {
                     egui::ScrollArea::vertical()
                         .auto_shrink([false, false])
                         .show(ui, |ui| {
-                            let mut tree = world.get_resource_mut::<ProjectTree>().unwrap();
-                            tree.0.render_root(ui);
+                            FileTreeUiWidget::render_root(ui, world);
                         });
                 });
             // Left Bottom Panel
@@ -42,8 +40,7 @@ pub fn left_panel(context: &egui::Context, world: &mut World) {
                     egui::ScrollArea::vertical()
                         .auto_shrink([false, false])
                         .show(ui, |ui| {
-                            let mut tree = world.get_resource_mut::<ChangesTree>().unwrap();
-                            tree.0.render_root(ui);
+                            //FileTreeUiWidget::render_root(ui, world);
                             ui.allocate_space(ui.available_size());
                         });
                 });

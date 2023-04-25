@@ -8,8 +8,8 @@ impl ProtocolPlugin for FileSystemComponentsPlugin {
     fn build(&self, protocol: &mut Protocol) {
         protocol
             .add_component::<FileSystemEntry>()
-            .add_component::<FileSystemParent>()
-            .add_component::<FileSystemRoot>();
+            .add_component::<FileSystemChild>()
+            .add_component::<FileSystemRootChild>();
     }
 }
 
@@ -32,23 +32,23 @@ impl FileSystemEntry {
     }
 }
 
-// FileSystemParent
+// FileSystemChild
 #[derive(Component, Replicate)]
-pub struct FileSystemParent {
-    pub id: EntityProperty,
+pub struct FileSystemChild {
+    pub parent_id: EntityProperty,
 }
 
-impl FileSystemParent {
+impl FileSystemChild {
     pub fn new() -> Self {
         Self::new_complete()
     }
 }
 
-// FileSystemRoot
+// FileSystemChildRoot
 #[derive(Component, Replicate)]
-pub struct FileSystemRoot;
+pub struct FileSystemRootChild;
 
-impl FileSystemRoot {
+impl FileSystemRootChild {
     pub fn new() -> Self {
         Self::new_complete()
     }
