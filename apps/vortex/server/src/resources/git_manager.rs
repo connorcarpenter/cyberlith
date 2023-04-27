@@ -77,14 +77,15 @@ impl GitManager {
                     .fetch(&["main"], Some(&mut fetch_options), None)
                     .unwrap();
 
-                // Reset local changes
-                let head_obj = repo.revparse_single("HEAD").unwrap();
-                repo.reset(&head_obj, ResetType::Hard, None).unwrap();
+                let reference = repo.find_reference("FETCH_HEAD").unwrap();
+                let target = reference.peel_to_commit().unwrap();
 
-                // Get head of remote branch, merge into local repo
-                let fetch_head = repo.find_reference("FETCH_HEAD").unwrap();
-                let fetch_commit = repo.reference_to_annotated_commit(&fetch_head).unwrap();
-                repo.merge(&[&fetch_commit], None, None).unwrap();
+                // Set up a CheckoutBuilder to force the working directory to match the target
+                let mut checkout_builder = git2::build::CheckoutBuilder::new();
+                checkout_builder.force();
+
+                // Reset local changes
+                repo.reset(target.as_object(), git2::ResetType::Hard, Some(&mut checkout_builder)).unwrap();
 
                 info!("pulled repo with new changes");
             }
@@ -117,6 +118,7 @@ fn walk_file_tree(
 ) {
     for entry in entries.iter() {
         let name = entry.name().unwrap().to_string();
+        info!("Walking tree for Entry `{:?}`", name);
 
         match entry.kind() {
             Some(git2::ObjectType::Tree) => {
@@ -140,7 +142,9 @@ fn walk_file_tree(
                     commands, server, &name, user_key, room_key, &parent, false,
                 );
             }
-            _ => {}
+            _ => {
+                info!("Unknown file type: {:?}", entry.kind());
+            }
         }
     }
 }
