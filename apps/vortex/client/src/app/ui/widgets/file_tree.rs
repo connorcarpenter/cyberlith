@@ -20,12 +20,28 @@ impl FileTreeUiWidget {
         });
     }
 
-    fn render(ui: &mut Ui, world: &mut World, entity: &Entity, path: &str, name: &str, depth: usize) {
+    fn render(
+        ui: &mut Ui,
+        world: &mut World,
+        entity: &Entity,
+        path: &str,
+        name: &str,
+        depth: usize,
+    ) {
         let is_directory =
             *(world.entity(*entity).get::<FileSystemEntry>().unwrap().kind) == EntryKind::Directory;
 
         if is_directory {
-            Self::render_row(ui, world, entity, path, name, depth, true, paint_default_icon);
+            Self::render_row(
+                ui,
+                world,
+                entity,
+                path,
+                name,
+                depth,
+                true,
+                paint_default_icon,
+            );
             let opened = world
                 .entity(*entity)
                 .get::<FileSystemUiState>()
@@ -39,15 +55,22 @@ impl FileTreeUiWidget {
         }
     }
 
-    fn render_children(ui: &mut Ui, world: &mut World, entity: &Entity, path: &str, name: &str, depth: usize) {
-
+    fn render_children(
+        ui: &mut Ui,
+        world: &mut World,
+        entity: &Entity,
+        path: &str,
+        name: &str,
+        depth: usize,
+    ) {
         let separator = if path.len() > 0 { ":" } else { "" };
         let full_path = format!("{}{}{}", path, separator, name);
 
         let parent = world.entity(*entity).get::<FileSystemParent>().unwrap();
 
         for child_entity in parent.get_children() {
-            let child_name = (*(world.entity(child_entity).get::<FileSystemEntry>().unwrap()).name).clone();
+            let child_name =
+                (*(world.entity(child_entity).get::<FileSystemEntry>().unwrap()).name).clone();
             Self::render(ui, world, &child_entity, &full_path, &child_name, depth + 1);
         }
     }

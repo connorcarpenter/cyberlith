@@ -12,4 +12,5 @@ pub use init::login;
 pub use reject::reject_events;
 pub use world_updates::{
     despawn_entity_events, insert_component_events, remove_component_events, spawn_entity_events,
+    update_component_events,
 };

@@ -5,7 +5,7 @@ use bevy_ecs::{
     system::{Commands, Resource},
 };
 use bevy_log::info;
-use git2::{Cred, Repository, ResetType, Tree};
+use git2::{Cred, Repository, Tree};
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 use vortex_proto::components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
 
@@ -85,7 +85,12 @@ impl GitManager {
                 checkout_builder.force();
 
                 // Reset local changes
-                repo.reset(target.as_object(), git2::ResetType::Hard, Some(&mut checkout_builder)).unwrap();
+                repo.reset(
+                    target.as_object(),
+                    git2::ResetType::Hard,
+                    Some(&mut checkout_builder),
+                )
+                .unwrap();
 
                 info!("pulled repo with new changes");
             }

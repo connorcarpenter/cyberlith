@@ -1,11 +1,13 @@
-
 use std::collections::BTreeMap;
+
 use bevy_ecs::prelude::{Component, Entity};
+
+use vortex_proto::components::EntryKind;
 
 // FileSystemParent
 #[derive(Component)]
 pub struct FileSystemParent {
-    children_ids: BTreeMap<String, Entity>,
+    children_ids: BTreeMap<(EntryKind, String), Entity>,
 }
 
 impl FileSystemParent {
@@ -15,8 +17,9 @@ impl FileSystemParent {
         }
     }
 
-    pub fn add_child(&mut self, name: String, child_id: Entity) {
-        self.children_ids.insert(name.to_lowercase(), child_id);
+    pub fn add_child(&mut self, kind: EntryKind, name: String, child_id: Entity) {
+        self.children_ids
+            .insert((kind, name.to_lowercase()), child_id);
     }
 
     // pub fn remove_child(&mut self, child_id: Entity) {

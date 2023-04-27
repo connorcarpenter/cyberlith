@@ -70,6 +70,7 @@ impl Plugin for VortexPlugin {
                     network::reject_events,
                     network::error_events,
                     network::insert_component_events,
+                    network::update_component_events,
                     network::remove_component_events,
                     network::spawn_entity_events,
                     network::despawn_entity_events,
