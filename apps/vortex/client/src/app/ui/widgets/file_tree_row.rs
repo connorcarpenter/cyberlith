@@ -32,13 +32,14 @@ impl FileTreeRowUiWidget {
         let wrap_width = ui.available_width();
         let text = widget_text.into_galley(ui, None, wrap_width, TextStyle::Button);
 
+        let mut expander_clicked = false;
+
         let mut desired_size = text.size();
         desired_size.y = desired_size.y.at_least(ui.spacing().interact_size.y);
 
         let (mut row_rect, row_response) = ui.allocate_at_least(desired_size, Sense::click());
 
-        let mut entity_mut = world.entity_mut(*entity);
-        let mut ui_state = entity_mut.get_mut::<FileSystemUiState>().unwrap();
+        let ui_state = world.entity(*entity).get::<FileSystemUiState>().unwrap();
 
         if ui.is_rect_visible(row_response.rect) {
             let item_spacing = 4.0;
@@ -59,7 +60,7 @@ impl FileTreeRowUiWidget {
 
                 if is_dir {
                     if big_icon_response.clicked() {
-                        ui_state.opened = !ui_state.opened;
+                        expander_clicked = true;
                     }
                 }
 
@@ -108,7 +109,31 @@ impl FileTreeRowUiWidget {
 
         // Respond to click event
         if row_response.clicked() {
-            ui_state.selected = !ui_state.selected;
+            Self::on_row_click(world, entity);
+        }
+
+        // Respond to expander click event
+        if expander_clicked {
+            Self::on_expander_click(world, entity);
+        }
+    }
+
+    pub fn on_row_click(world: &mut World, row_entity: &Entity) {
+        let mut query = world.query::<(Entity, &mut FileSystemUiState)>();
+        for (item_entity, mut ui_state) in query.iter_mut(world) {
+            if *row_entity == item_entity {
+                ui_state.selected = !ui_state.selected;
+            } else {
+                ui_state.selected = false;
+                // TODO: unless shift/control is pressed
+            }
+        }
+
+    }
+
+    pub fn on_expander_click(world: &mut World, row_entity: &Entity) {
+        if let Some(mut ui_state) = world.get_mut::<FileSystemUiState>(*row_entity) {
+            ui_state.opened = !ui_state.opened;
         }
     }
 }
