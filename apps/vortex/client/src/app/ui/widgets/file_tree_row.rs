@@ -1,4 +1,9 @@
-use bevy_ecs::{entity::Entity, world::World};
+use bevy_ecs::{
+    entity::Entity,
+    system::{Commands, Query, SystemState},
+    world::World,
+};
+use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
 use render_egui::egui::{
     emath, remap, vec2, Color32, Id, NumExt, Rect, Response, Rounding, Sense, Shape, Stroke,
     TextStyle, Ui, WidgetText,
@@ -6,13 +11,39 @@ use render_egui::egui::{
 
 use crate::app::components::file_system::FileSystemUiState;
 
+struct RowColors {
+    available: Option<Color32>,
+    requested: Color32,
+    granted: Color32,
+    denied: Color32,
+}
+
+const UNSELECTED_COLORS: RowColors = RowColors {
+    available: None,
+    requested: Color32::from_rgb(0, 64, 0),
+    granted: Color32::from_rgb(0, 48, 64),
+    denied: Color32::from_rgb(64, 0, 0),
+};
+const HOVER_COLORS: RowColors = RowColors {
+    available: Some(Color32::from_gray(72)),
+    requested: Color32::from_rgb(0, 72, 0),
+    granted: Color32::from_rgb(0, 72, 96),
+    denied: Color32::from_rgb(96, 0, 0),
+};
+const SELECTED_COLORS: RowColors = RowColors {
+    available: Some(Color32::from_gray(128)),
+    requested: Color32::from_rgb(0, 96, 0),
+    granted: Color32::from_rgb(0, 96, 128),
+    denied: Color32::from_rgb(128, 0, 0),
+};
+
 pub struct FileTreeRowUiWidget;
 
 impl FileTreeRowUiWidget {
     pub fn render_row(
         ui: &mut Ui,
         world: &mut World,
-        entity: &Entity,
+        row_entity: &Entity,
         path: &str,
         name: &str,
         depth: usize,
@@ -39,7 +70,12 @@ impl FileTreeRowUiWidget {
 
         let (mut row_rect, row_response) = ui.allocate_at_least(desired_size, Sense::click());
 
-        let ui_state = world.entity(*entity).get::<FileSystemUiState>().unwrap();
+        let mut system_state: SystemState<(Commands, Client, Query<&FileSystemUiState>)> =
+            SystemState::new(world);
+        let (mut commands, client, fs_query) = system_state.get_mut(world);
+        let Ok(ui_state) = fs_query.get(*row_entity) else {
+            return;
+        };
 
         if ui.is_rect_visible(row_response.rect) {
             let item_spacing = 4.0;
@@ -69,23 +105,32 @@ impl FileTreeRowUiWidget {
 
             // Draw Row
             {
-                let row_fill = if ui_state.selected {
-                    Some(Color32::from_rgb(0, 92, 128))
-                } else {
-                    if row_response.hovered() || icon_response.hovered() {
-                        Some(Color32::from_gray(70))
+                let row_fill_colors = {
+                    if ui_state.selected {
+                        SELECTED_COLORS
                     } else {
-                        None
+                        if row_response.hovered() || icon_response.hovered() {
+                            HOVER_COLORS
+                        } else {
+                            UNSELECTED_COLORS
+                        }
                     }
                 };
+                let auth_status = commands.entity(*row_entity).authority(&client);
+                let row_fill_color_opt = match auth_status {
+                    None | Some(EntityAuthStatus::Available) => row_fill_colors.available,
+                    Some(EntityAuthStatus::Requested) => Some(row_fill_colors.requested),
+                    Some(EntityAuthStatus::Granted) => Some(row_fill_colors.granted),
+                    Some(EntityAuthStatus::Denied) => Some(row_fill_colors.denied),
+                };
 
-                if let Some(fill_color) = row_fill {
+                if let Some(row_fill_color) = row_fill_color_opt {
                     row_rect.min.y -= 1.0;
                     row_rect.max.y += 2.0;
                     row_rect.max.x -= 2.0;
 
                     ui.painter()
-                        .rect(row_rect, Rounding::none(), fill_color, Stroke::NONE);
+                        .rect(row_rect, Rounding::none(), row_fill_color, Stroke::NONE);
                 }
             }
 
@@ -107,28 +152,47 @@ impl FileTreeRowUiWidget {
             }
         }
 
-        // Respond to click event
-        if row_response.clicked() {
-            Self::on_row_click(world, entity);
+        // Respond to click event, if not root dir
+        if depth > 0 {
+            if row_response.clicked() {
+                Self::on_row_click(world, row_entity);
+            }
         }
 
         // Respond to expander click event
         if expander_clicked {
-            Self::on_expander_click(world, entity);
+            Self::on_expander_click(world, row_entity);
         }
     }
 
     pub fn on_row_click(world: &mut World, row_entity: &Entity) {
-        let mut query = world.query::<(Entity, &mut FileSystemUiState)>();
-        for (item_entity, mut ui_state) in query.iter_mut(world) {
+        let mut system_state: SystemState<(
+            Commands,
+            Client,
+            Query<(Entity, &mut FileSystemUiState)>,
+        )> = SystemState::new(world);
+        let (mut commands, mut client, mut fs_query) = system_state.get_mut(world);
+        for (item_entity, mut ui_state) in fs_query.iter_mut() {
             if *row_entity == item_entity {
-                ui_state.selected = !ui_state.selected;
+                let was_selected = ui_state.selected;
+                ui_state.selected = true;
+
+                if !was_selected {
+                    // Request Entity Authority
+                    commands.entity(item_entity).request_authority(&mut client);
+                }
             } else {
+                let was_selected = ui_state.selected;
                 ui_state.selected = false;
-                // TODO: unless shift/control is pressed
+
+                // TODO: when shift/control is pressed, select multiple items
+
+                if was_selected {
+                    // Release Entity Authority
+                    commands.entity(item_entity).release_authority(&mut client);
+                }
             }
         }
-
     }
 
     pub fn on_expander_click(world: &mut World, row_entity: &Entity) {

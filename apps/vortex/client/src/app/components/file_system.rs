@@ -53,4 +53,11 @@ impl FileSystemUiState {
             opened: false,
         }
     }
+
+    pub fn new_root() -> Self {
+        Self {
+            selected: false,
+            opened: true,
+        }
+    }
 }

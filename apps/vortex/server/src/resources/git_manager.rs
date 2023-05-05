@@ -1,5 +1,3 @@
-use std::{fs, path::Path};
-
 use bevy_ecs::{
     entity::Entity,
     system::{Commands, Resource},
@@ -7,6 +5,7 @@ use bevy_ecs::{
 use bevy_log::info;
 use git2::{Cred, Repository, Tree};
 use naia_bevy_server::{CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};
+use std::{collections::HashMap, fs, path::Path};
 use vortex_proto::components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
 
 use crate::{components::FileSystemOwner, config::GitConfig, resources::user_manager::UserInfo};
@@ -14,11 +13,15 @@ use crate::{components::FileSystemOwner, config::GitConfig, resources::user_mana
 #[derive(Resource)]
 pub struct GitManager {
     config: Option<GitConfig>,
+    workspaces: HashMap<String, RoomKey>,
 }
 
 impl Default for GitManager {
     fn default() -> Self {
-        Self { config: None }
+        Self {
+            config: None,
+            workspaces: HashMap::new(),
+        }
     }
 }
 
@@ -27,7 +30,19 @@ impl GitManager {
         self.config = Some(config.clone());
     }
 
-    pub fn init_dir(
+    pub fn has_workspace(&mut self, user_info: &UserInfo) -> bool {
+        self.workspaces.contains_key(&user_info.username)
+    }
+
+    pub fn get_workspace_room_key(&self, user_info: &UserInfo) -> Option<RoomKey> {
+        if let Some(room_key) = self.workspaces.get(&user_info.username) {
+            Some(room_key.clone())
+        } else {
+            None
+        }
+    }
+
+    pub fn add_workspace(
         &mut self,
         commands: &mut Commands,
         server: &mut Server,
@@ -35,9 +50,12 @@ impl GitManager {
         user_info: &UserInfo,
     ) {
         // Create User's Working directory if it doesn't already exist
+        let username = &user_info.username;
+        self.workspaces
+            .insert(username.clone(), user_info.workspace_room_key.unwrap());
+
         let root_dir = "target/users";
-        let user_dir_name = &user_info.username;
-        let full_path_str = format!("{}/{}", root_dir, user_dir_name);
+        let full_path_str = format!("{}/{}", root_dir, username);
         let path = Path::new(&full_path_str);
         let repo_url = self.config.as_ref().unwrap().repo_url.as_str();
         let token = self.config.as_ref().unwrap().access_token.clone();
@@ -106,7 +124,7 @@ impl GitManager {
             &repo,
             &tree,
             user_key,
-            user_info.room_key.as_ref().unwrap(),
+            user_info.workspace_room_key.as_ref().unwrap(),
             None,
         );
     }

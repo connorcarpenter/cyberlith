@@ -42,7 +42,7 @@ impl Plugin for VortexPlugin {
             .world
             .spawn_empty()
             .insert(FileSystemParent::new())
-            .insert(FileSystemUiState::new())
+            .insert(FileSystemUiState::new_root())
             .insert(FileSystemEntry::new("Project", EntryKind::Directory))
             .id();
         let global_resource = Global {

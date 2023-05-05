@@ -35,12 +35,12 @@ impl FileTreeUiWidget {
 
         if is_directory {
             FileTreeRowUiWidget::render_row(ui, world, entity, path, name, depth, true);
-            let opened = world
+            let Some(ui_state) = world
                 .entity(*entity)
-                .get::<FileSystemUiState>()
-                .unwrap()
-                .opened;
-            if opened {
+                .get::<FileSystemUiState>() else {
+                return;
+            };
+            if ui_state.opened {
                 Self::render_children(ui, world, entity, path, name, depth);
             }
         } else {

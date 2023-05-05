@@ -5,19 +5,19 @@ use naia_bevy_server::{RoomKey, UserKey};
 
 pub struct UserInfo {
     pub username: String,
-    pub room_key: Option<RoomKey>,
+    pub workspace_room_key: Option<RoomKey>,
 }
 
 impl UserInfo {
     pub fn new(username: &str) -> Self {
         Self {
             username: username.to_string(),
-            room_key: None,
+            workspace_room_key: None,
         }
     }
 
     pub(crate) fn set_room_key(&mut self, room_key: RoomKey) {
-        self.room_key = Some(room_key);
+        self.workspace_room_key = Some(room_key);
     }
 }
 
