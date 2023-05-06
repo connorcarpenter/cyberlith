@@ -18,3 +18,4 @@ pub use right_panel::*;
 pub use state::*;
 pub use systems::*;
 pub use top_bar::*;
+pub use text_input_modal::*;

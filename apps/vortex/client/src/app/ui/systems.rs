@@ -8,7 +8,7 @@ use render_api::components::Camera;
 use render_egui::EguiContext;
 
 use crate::app::ui::{
-    center_panel, left_panel, login_modal, right_panel, top_bar, AxesCamerasVisible, UiState, text_input_modal::show_modal_rename,
+    center_panel, left_panel, login_modal, right_panel, top_bar, AxesCamerasVisible, UiState, text_input_modal::TextInputModal,
 };
 
 pub fn main(world: &mut World) {
@@ -20,7 +20,7 @@ pub fn main(world: &mut World) {
         left_panel(&context, world);
         right_panel(&context, world);
         center_panel(&context, world);
-        show_modal_rename(&context, world);
+        TextInputModal::show(&context, world);
     } else {
         login_modal(&context, world);
     }

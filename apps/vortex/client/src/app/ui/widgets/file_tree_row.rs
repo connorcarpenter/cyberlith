@@ -3,6 +3,7 @@ use bevy_ecs::{
     system::{Commands, Query, SystemState},
     world::World,
 };
+use bevy_ecs::world::Mut;
 use bevy_log::info;
 use egui_modal::Modal;
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
@@ -12,6 +13,7 @@ use render_egui::{egui::{
 }, egui};
 
 use crate::app::{components::file_system::{ContextMenuAction, FileSystemUiState}, ui::UiState};
+use crate::app::components::file_system::ModalRequestType;
 
 struct RowColors {
     available: Option<Color32>,
@@ -154,6 +156,7 @@ impl FileTreeRowUiWidget {
             }
         }
 
+        Self::handle_modal_responses(depth, world, row_entity);
         Self::handle_interactions(depth, world, row_entity, expander_clicked, row_response);
     }
 
@@ -193,91 +196,93 @@ impl FileTreeRowUiWidget {
         expander_clicked: bool,
         row_response: Response,
     ) {
+        // Respond to expander click event
+        if expander_clicked {
+            Self::on_expander_click(world, row_entity);
+            return;
+        }
+
+        // If Root Dir, exit early
+        if depth == 0 {
+            return;
+        }
+
         let Some(mut ui_state) = world.get_mut::<FileSystemUiState>(*row_entity) else {
             return;
         };
 
-        // Respond to click event, if not root dir
-        if depth > 0 {
-            let left_clicked = row_response.clicked();
-            let mut context_menu_response = None;
+        let left_clicked = row_response.clicked();
+        let mut context_menu_response = None;
 
-            // Right-click Context menu
-            row_response.context_menu(|ui| {
-                context_menu_response = Some(ContextMenuAction::None);
+        // Right-click Context menu
+        row_response.context_menu(|ui| {
+            context_menu_response = Some(ContextMenuAction::None);
 
-                if ui.button("Rename").clicked() {
-                    context_menu_response = Some(ContextMenuAction::Rename);
-                    ui.close_menu();
-                }
-                if ui.button("Delete").clicked() {
-                    context_menu_response = Some(ContextMenuAction::Delete);
-                    ui.close_menu();
-                }
-                if ui.button("Cut").clicked() {
-                    context_menu_response = Some(ContextMenuAction::Cut);
-                    ui.close_menu();
-                }
-                if ui.button("Copy").clicked() {
-                    context_menu_response = Some(ContextMenuAction::Copy);
-                    ui.close_menu();
-                }
-                if ui.button("Paste").clicked() {
-                    context_menu_response = Some(ContextMenuAction::Paste);
-                    ui.close_menu();
-                }
-            });
-            if let Some(action) = context_menu_response {
-                let just_opened = ui_state.context_menu_response.is_none();
-                ui_state.context_menu_response = Some(action);
-                if just_opened {
-                    // context menu just opened
-                    info!("Opened");
-                    Self::on_row_click(world, row_entity);
-                }
-            } else {
-                if let Some(action) = ui_state.context_menu_response.clone() {
-                    // context menu just closed
-                    ui_state.context_menu_response = None;
-                    match action {
-                        ContextMenuAction::Rename => {
-                            Self::on_rename(world, row_entity);
-                            return;
-                        }
-                        ContextMenuAction::Delete => {
-                            info!("Delete");
-                            return;
-                        }
-                        ContextMenuAction::Cut => {
-                            info!("Cut");
-                            return;
-                        }
-                        ContextMenuAction::Copy => {
-                            info!("Copy");
-                            return;
-                        }
-                        ContextMenuAction::Paste => {
-                            info!("Paste");
-                            return;
-                        }
-                        ContextMenuAction::None => {
-                            info!("just closed");
-                            return;
-                        }
+            if ui.button("Rename").clicked() {
+                context_menu_response = Some(ContextMenuAction::Rename);
+                ui.close_menu();
+            }
+            if ui.button("Delete").clicked() {
+                context_menu_response = Some(ContextMenuAction::Delete);
+                ui.close_menu();
+            }
+            if ui.button("Cut").clicked() {
+                context_menu_response = Some(ContextMenuAction::Cut);
+                ui.close_menu();
+            }
+            if ui.button("Copy").clicked() {
+                context_menu_response = Some(ContextMenuAction::Copy);
+                ui.close_menu();
+            }
+            if ui.button("Paste").clicked() {
+                context_menu_response = Some(ContextMenuAction::Paste);
+                ui.close_menu();
+            }
+        });
+        if let Some(action) = context_menu_response {
+            let just_opened = ui_state.context_menu_response.is_none();
+            ui_state.context_menu_response = Some(action);
+            if just_opened {
+                // context menu just opened
+                info!("Opened");
+                Self::on_row_click(world, row_entity);
+            }
+        } else {
+            if let Some(action) = ui_state.context_menu_response.clone() {
+                // context menu just closed
+                ui_state.context_menu_response = None;
+                match action {
+                    ContextMenuAction::Rename => {
+                        Self::on_rename_click(world, row_entity);
+                        return;
+                    }
+                    ContextMenuAction::Delete => {
+                        info!("Delete");
+                        return;
+                    }
+                    ContextMenuAction::Cut => {
+                        info!("Cut");
+                        return;
+                    }
+                    ContextMenuAction::Copy => {
+                        info!("Copy");
+                        return;
+                    }
+                    ContextMenuAction::Paste => {
+                        info!("Paste");
+                        return;
+                    }
+                    ContextMenuAction::None => {
+                        info!("just closed");
+                        return;
                     }
                 }
             }
-
-            // Left-button click
-            if left_clicked {
-                Self::on_row_click(world, row_entity);
-                return;
-            }
         }
 
-        // Respond to expander click event
-        if expander_clicked {
-            Self::on_expander_click(world, row_entity);
+        // Left-button click
+        if left_clicked {
+            Self::on_row_click(world, row_entity);
             return;
         }
     }
@@ -318,10 +323,47 @@ impl FileTreeRowUiWidget {
         }
     }
 
-    pub fn on_rename(world: &mut World, row_entity: &Entity) {
+    pub fn on_rename_click(world: &mut World, row_entity: &Entity) {
         let mut ui_state = world.get_resource_mut::<UiState>().unwrap();
-        ui_state.text_input_modal_open = true;
-        ui_state.text_input_modal_entity = Some(*row_entity);
+        if let Some(request_handle) = ui_state.text_input_modal.open(
+            "Rename",
+            "Rename file `some_file.txt` to:",
+            "some_file.txt",
+            "Submit"
+        ) {
+            if let Some(mut ui_state) = world.get_mut::<FileSystemUiState>(*row_entity) {
+                ui_state.modal_request = Some((ModalRequestType::Rename, request_handle));
+            }
+        }
+    }
+
+    pub fn handle_modal_responses(depth: usize, world: &mut World, row_entity: &Entity) {
+        // If Root Dir, exit early
+        if depth == 0 {
+            return;
+        }
+
+        world.resource_scope(|world, mut ui_state: Mut<UiState>| {
+            let Some(mut row_ui_state) = world.get_mut::<FileSystemUiState>(*row_entity) else {
+                return;
+            };
+            let Some((request_type, request_handle)) = row_ui_state.modal_request.clone() else {
+                return;
+            };
+            let Some(response) = ui_state.text_input_modal.take_response(request_handle) else {
+                return;
+            };
+            row_ui_state.modal_request = None;
+            let Some(response_string) = response else {
+                return;
+            };
+            match request_type {
+                ModalRequestType::Rename => {
+                    let new_name = response_string;
+                    info!("  RESPONSE: Rename to {}", new_name);
+                }
+            }
+        });
     }
 }
 

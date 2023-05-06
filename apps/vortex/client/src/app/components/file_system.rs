@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 use bevy_ecs::prelude::{Component, Entity};
 
 use vortex_proto::components::EntryKind;
+use crate::app::ui::ModalRequestHandle;
 
 // FileSystemParent
 #[derive(Component)]
@@ -45,6 +46,7 @@ pub struct FileSystemUiState {
     pub selected: bool,
     pub opened: bool,
     pub context_menu_response: Option<ContextMenuAction>,
+    pub modal_request: Option<(ModalRequestType, ModalRequestHandle)>,
 }
 
 #[derive(Clone)]
@@ -57,12 +59,18 @@ pub enum ContextMenuAction {
     Paste,
 }
 
+#[derive(Clone)]
+pub enum ModalRequestType {
+    Rename,
+}
+
 impl FileSystemUiState {
     pub fn new() -> Self {
         Self {
             selected: false,
             opened: false,
             context_menu_response: None,
+            modal_request: None,
         }
     }
 
