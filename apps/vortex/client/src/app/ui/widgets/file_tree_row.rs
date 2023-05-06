@@ -3,13 +3,12 @@ use bevy_ecs::{
     system::{Commands, Query, SystemState},
     world::World,
 };
+use bevy_log::info;
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
-use render_egui::egui::{
-    emath, remap, vec2, Color32, Id, NumExt, Rect, Response, Rounding, Sense, Shape, Stroke,
-    TextStyle, Ui, WidgetText,
-};
+use render_egui::egui;
+use render_egui::egui::{emath, remap, vec2, Color32, Id, NumExt, Rect, Response, Rounding, Sense, Shape, Stroke, TextStyle, Ui, WidgetText, Modifiers};
 
-use crate::app::components::file_system::FileSystemUiState;
+use crate::app::components::file_system::{FileSystemUiState, ContextMenuAction};
 
 struct RowColors {
     available: Option<Color32>,
@@ -70,10 +69,10 @@ impl FileTreeRowUiWidget {
 
         let (mut row_rect, row_response) = ui.allocate_at_least(desired_size, Sense::click());
 
-        let mut system_state: SystemState<(Commands, Client, Query<&FileSystemUiState>)> =
+        let mut system_state: SystemState<(Commands, Client, Query<&mut FileSystemUiState>)> =
             SystemState::new(world);
-        let (mut commands, client, fs_query) = system_state.get_mut(world);
-        let Ok(ui_state) = fs_query.get(*row_entity) else {
+        let (mut commands, client, mut fs_query) = system_state.get_mut(world);
+        let Ok(mut ui_state) = fs_query.get_mut(*row_entity) else {
             return;
         };
 
@@ -154,7 +153,73 @@ impl FileTreeRowUiWidget {
 
         // Respond to click event, if not root dir
         if depth > 0 {
-            if row_response.clicked() {
+
+            let left_clicked = row_response.clicked();
+            let mut context_menu_response = None;
+
+            // Right-click Context menu
+            row_response.context_menu(|ui| {
+
+                context_menu_response = Some(ContextMenuAction::None);
+
+                if ui.button("Rename").clicked() {
+                    context_menu_response = Some(ContextMenuAction::Rename);
+                    ui.close_menu();
+                }
+                if ui.button("Delete").clicked() {
+                    context_menu_response = Some(ContextMenuAction::Delete);
+                    ui.close_menu();
+                }
+                if ui.button("Cut").clicked() {
+                    context_menu_response = Some(ContextMenuAction::Cut);
+                    ui.close_menu();
+                }
+                if ui.button("Copy").clicked() {
+                    context_menu_response = Some(ContextMenuAction::Copy);
+                    ui.close_menu();
+                }
+                if ui.button("Paste").clicked() {
+                    context_menu_response = Some(ContextMenuAction::Paste);
+                    ui.close_menu();
+                }
+            });
+            if let Some(action) = context_menu_response {
+                let just_opened = ui_state.context_menu_response.is_none();
+                ui_state.context_menu_response = Some(action);
+                if just_opened {
+                    // context menu just opened
+                    info!("Opened");
+                    Self::on_row_click(world, row_entity);
+                }
+            } else {
+                if let Some(action) = ui_state.context_menu_response.clone() {
+                    // context menu just closed
+                    ui_state.context_menu_response = None;
+                    match action {
+                        ContextMenuAction::Rename => {
+                            info!("Rename");
+                        }
+                        ContextMenuAction::Delete => {
+                            info!("Delete");
+                        }
+                        ContextMenuAction::Cut => {
+                            info!("Cut");
+                        }
+                        ContextMenuAction::Copy => {
+                            info!("Copy");
+                        }
+                        ContextMenuAction::Paste => {
+                            info!("Paste");
+                        }
+                        ContextMenuAction::None => {
+                            info!("just closed");
+                        }
+                    }
+                }
+            }
+
+            // Left-button click
+            if left_clicked {
                 Self::on_row_click(world, row_entity);
             }
         }
@@ -230,3 +295,41 @@ fn paint_default_icon(ui: &mut Ui, openned: bool, response: &Response) {
 }
 
 pub fn paint_no_icon(_ui: &mut Ui, _openness: bool, _response: &Response) {}
+
+// fn context_menu(ui: &mut Ui) {
+//     // shortcuts
+//     let rename_shortcut =
+//         egui::KeyboardShortcut::new(Modifiers::CTRL, egui::Key::R);
+//     let delete_shortcut =
+//         egui::KeyboardShortcut::new(Modifiers::NONE, egui::Key::Delete);
+//     let cut_shortcut =
+//         egui::KeyboardShortcut::new(Modifiers::CTRL, egui::Key::X);
+//     let copy_shortcut =
+//         egui::KeyboardShortcut::new(Modifiers::CTRL, egui::Key::C);
+//     let paste_shortcut =
+//         egui::KeyboardShortcut::new(Modifiers::CTRL, egui::Key::V);
+//
+//     // NOTE: we must check the shortcuts OUTSIDE of the actual "File" menu,
+//     // or else they would only be checked if the "File" menu was actually open!
+//
+//     // Rename Shortcut
+//     if ui.input_mut(|i| i.consume_shortcut(&rename_shortcut)) {
+//         // execute some logic
+//     }
+//     // Delete Shortcut
+//     if ui.input_mut(|i| i.consume_shortcut(&delete_shortcut)) {
+//         // execute some logic
+//     }
+//     // Cut Shortcut
+//     if ui.input_mut(|i| i.consume_shortcut(&cut_shortcut)) {
+//         // execute some logic
+//     }
+//     // Copy Shortcut
+//     if ui.input_mut(|i| i.consume_shortcut(&copy_shortcut)) {
+//         // execute some logic
+//     }
+//     // Paste Shortcut
+//     if ui.input_mut(|i| i.consume_shortcut(&paste_shortcut)) {
+//         // execute some logic
+//     }
+// }

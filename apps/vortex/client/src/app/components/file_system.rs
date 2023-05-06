@@ -44,6 +44,17 @@ impl FileSystemParent {
 pub struct FileSystemUiState {
     pub selected: bool,
     pub opened: bool,
+    pub context_menu_response: Option<ContextMenuAction>,
+}
+
+#[derive(Clone)]
+pub enum ContextMenuAction {
+    None,
+    Rename,
+    Delete,
+    Cut,
+    Copy,
+    Paste,
 }
 
 impl FileSystemUiState {
@@ -51,13 +62,13 @@ impl FileSystemUiState {
         Self {
             selected: false,
             opened: false,
+            context_menu_response: None,
         }
     }
 
     pub fn new_root() -> Self {
-        Self {
-            selected: false,
-            opened: true,
-        }
+        let mut new = Self::new();
+        new.opened = true;
+        new
     }
 }

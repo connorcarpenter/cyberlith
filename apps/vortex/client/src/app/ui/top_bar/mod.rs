@@ -38,10 +38,9 @@ fn file_menu_button(ui: &mut Ui) {
 
         if ui
             .add(
-                egui::Button::new("Option 1")
+                egui::Button::new("File Option 1")
                     .shortcut_text(ui.ctx().format_shortcut(&option_1_shortcut)),
             )
-            .on_hover_text("option 1")
             .clicked()
         {
             // execute some logic 1
@@ -51,10 +50,9 @@ fn file_menu_button(ui: &mut Ui) {
 
         if ui
             .add(
-                egui::Button::new("Option 2")
+                egui::Button::new("File Option 2")
                     .shortcut_text(ui.ctx().format_shortcut(&option_2_shortcut)),
             )
-            .on_hover_text("option 2")
             .clicked()
         {
             // execute some logic 2
@@ -79,10 +77,9 @@ fn edit_menu_button(ui: &mut Ui) {
 
         if ui
             .add(
-                egui::Button::new("Option 1")
+                egui::Button::new("Edit Option 1")
                     .shortcut_text(ui.ctx().format_shortcut(&option_1_shortcut)),
             )
-            .on_hover_text("option 1")
             .clicked()
         {
             // execute some logic 1
@@ -92,10 +89,9 @@ fn edit_menu_button(ui: &mut Ui) {
 
         if ui
             .add(
-                egui::Button::new("Option 2")
+                egui::Button::new("Edit Option 2")
                     .shortcut_text(ui.ctx().format_shortcut(&option_2_shortcut)),
             )
-            .on_hover_text("option 2")
             .clicked()
         {
             // execute some logic 2
@@ -119,10 +115,9 @@ fn git_menu_button(ui: &mut Ui) {
 
         if ui
             .add(
-                egui::Button::new("Option 1")
+                egui::Button::new("Git Option 1")
                     .shortcut_text(ui.ctx().format_shortcut(&option_1_shortcut)),
             )
-            .on_hover_text("option 1")
             .clicked()
         {
             // execute some logic 1
@@ -132,10 +127,9 @@ fn git_menu_button(ui: &mut Ui) {
 
         if ui
             .add(
-                egui::Button::new("Option 2")
+                egui::Button::new("Git Option 2")
                     .shortcut_text(ui.ctx().format_shortcut(&option_2_shortcut)),
             )
-            .on_hover_text("option 2")
             .clicked()
         {
             // execute some logic 2
