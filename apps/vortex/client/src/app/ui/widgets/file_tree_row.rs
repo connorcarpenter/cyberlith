@@ -5,9 +5,12 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
-use render_egui::egui::{emath, remap, vec2, Color32, Id, NumExt, Rect, Response, Rounding, Sense, Shape, Stroke, TextStyle, Ui, WidgetText};
+use render_egui::egui::{
+    emath, remap, vec2, Color32, Id, NumExt, Rect, Response, Rounding, Sense, Shape, Stroke,
+    TextStyle, Ui, WidgetText,
+};
 
-use crate::app::components::file_system::{FileSystemUiState, ContextMenuAction};
+use crate::app::components::file_system::{ContextMenuAction, FileSystemUiState};
 
 struct RowColors {
     available: Option<Color32>,
@@ -48,9 +51,9 @@ impl FileTreeRowUiWidget {
         is_dir: bool,
     ) {
         let icon_fn = if is_dir {
-            paint_default_icon
+            Self::paint_default_icon
         } else {
-            paint_no_icon
+            Self::paint_no_icon
         };
         let separator = if path.len() > 0 { ":" } else { "" };
         let full_path = format!("{}{}{}", path, separator, name);
@@ -70,8 +73,8 @@ impl FileTreeRowUiWidget {
 
         let mut system_state: SystemState<(Commands, Client, Query<&mut FileSystemUiState>)> =
             SystemState::new(world);
-        let (mut commands, client, mut fs_query) = system_state.get_mut(world);
-        let Ok(mut ui_state) = fs_query.get_mut(*row_entity) else {
+        let (mut commands, client, fs_query) = system_state.get_mut(world);
+        let Ok(ui_state) = fs_query.get(*row_entity) else {
             return;
         };
 
@@ -150,15 +153,54 @@ impl FileTreeRowUiWidget {
             }
         }
 
+        Self::handle_interactions(depth, world, row_entity, expander_clicked, row_response);
+    }
+
+    /// Paint the arrow icon that indicated if the region is open or not
+    fn paint_default_icon(ui: &mut Ui, openned: bool, response: &Response) {
+        let openness = if openned { 1.0 } else { 0.0 };
+
+        let visuals = ui.style().interact(response);
+
+        let rect = response.rect;
+
+        // Draw a pointy triangle arrow:
+        let rect = Rect::from_center_size(rect.center(), vec2(rect.width(), rect.height()) * 0.75);
+        let rect = rect.expand(visuals.expansion);
+        let mut points = vec![rect.left_top(), rect.right_top(), rect.center_bottom()];
+        use std::f32::consts::TAU;
+        let rotation = emath::Rot2::from_angle(remap(openness, 0.0..=1.0, -TAU / 4.0..=0.0));
+        for p in &mut points {
+            *p = rect.center() + rotation * (*p - rect.center());
+        }
+
+        ui.painter().add(Shape::convex_polygon(
+            points,
+            visuals.fg_stroke.color,
+            Stroke::NONE,
+        ));
+    }
+
+    pub fn paint_no_icon(_ui: &mut Ui, _openness: bool, _response: &Response) {}
+
+    pub fn handle_interactions(
+        depth: usize,
+        world: &mut World,
+        row_entity: &Entity,
+        expander_clicked: bool,
+        row_response: Response,
+    ) {
+        let Some(mut ui_state) = world.get_mut::<FileSystemUiState>(*row_entity) else {
+            return;
+        };
+
         // Respond to click event, if not root dir
         if depth > 0 {
-
             let left_clicked = row_response.clicked();
             let mut context_menu_response = None;
 
             // Right-click Context menu
             row_response.context_menu(|ui| {
-
                 context_menu_response = Some(ContextMenuAction::None);
 
                 if ui.button("Rename").clicked() {
@@ -265,35 +307,6 @@ impl FileTreeRowUiWidget {
         }
     }
 }
-
-// ----------------------------------------------------------------------------
-
-/// Paint the arrow icon that indicated if the region is open or not
-fn paint_default_icon(ui: &mut Ui, openned: bool, response: &Response) {
-    let openness = if openned { 1.0 } else { 0.0 };
-
-    let visuals = ui.style().interact(response);
-
-    let rect = response.rect;
-
-    // Draw a pointy triangle arrow:
-    let rect = Rect::from_center_size(rect.center(), vec2(rect.width(), rect.height()) * 0.75);
-    let rect = rect.expand(visuals.expansion);
-    let mut points = vec![rect.left_top(), rect.right_top(), rect.center_bottom()];
-    use std::f32::consts::TAU;
-    let rotation = emath::Rot2::from_angle(remap(openness, 0.0..=1.0, -TAU / 4.0..=0.0));
-    for p in &mut points {
-        *p = rect.center() + rotation * (*p - rect.center());
-    }
-
-    ui.painter().add(Shape::convex_polygon(
-        points,
-        visuals.fg_stroke.color,
-        Stroke::NONE,
-    ));
-}
-
-pub fn paint_no_icon(_ui: &mut Ui, _openness: bool, _response: &Response) {}
 
 // fn context_menu(ui: &mut Ui) {
 //     // shortcuts
