@@ -23,6 +23,9 @@ pub struct UiState {
     pub username: String,
     pub password: String,
     pub workspace_type: WorkspaceType,
+    pub text_input_modal_open: bool,
+    pub text_input_modal_value: String,
+    pub text_input_modal_entity: Option<bevy_ecs::entity::Entity>,
 }
 
 impl Default for UiState {
@@ -33,6 +36,9 @@ impl Default for UiState {
             username: String::new(),
             password: String::new(),
             workspace_type: WorkspaceType::SkeletonBuilder,
+            text_input_modal_open: false,
+            text_input_modal_value: String::new(),
+            text_input_modal_entity: None,
         }
     }
 }

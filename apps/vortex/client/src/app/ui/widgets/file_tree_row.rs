@@ -4,13 +4,14 @@ use bevy_ecs::{
     world::World,
 };
 use bevy_log::info;
+use egui_modal::Modal;
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
-use render_egui::egui::{
+use render_egui::{egui::{
     emath, remap, vec2, Color32, Id, NumExt, Rect, Response, Rounding, Sense, Shape, Stroke,
     TextStyle, Ui, WidgetText,
-};
+}, egui};
 
-use crate::app::components::file_system::{ContextMenuAction, FileSystemUiState};
+use crate::app::{components::file_system::{ContextMenuAction, FileSystemUiState}, ui::UiState};
 
 struct RowColors {
     available: Option<Color32>,
@@ -183,6 +184,8 @@ impl FileTreeRowUiWidget {
 
     pub fn paint_no_icon(_ui: &mut Ui, _openness: bool, _response: &Response) {}
 
+    // Interactions
+
     pub fn handle_interactions(
         depth: usize,
         world: &mut World,
@@ -238,22 +241,28 @@ impl FileTreeRowUiWidget {
                     ui_state.context_menu_response = None;
                     match action {
                         ContextMenuAction::Rename => {
-                            info!("Rename");
+                            Self::on_rename(world, row_entity);
+                            return;
                         }
                         ContextMenuAction::Delete => {
                             info!("Delete");
+                            return;
                         }
                         ContextMenuAction::Cut => {
                             info!("Cut");
+                            return;
                         }
                         ContextMenuAction::Copy => {
                             info!("Copy");
+                            return;
                         }
                         ContextMenuAction::Paste => {
                             info!("Paste");
+                            return;
                         }
                         ContextMenuAction::None => {
                             info!("just closed");
+                            return;
                         }
                     }
                 }
@@ -262,12 +271,14 @@ impl FileTreeRowUiWidget {
             // Left-button click
             if left_clicked {
                 Self::on_row_click(world, row_entity);
+                return;
             }
         }
 
         // Respond to expander click event
         if expander_clicked {
             Self::on_expander_click(world, row_entity);
+            return;
         }
     }
 
@@ -305,6 +316,12 @@ impl FileTreeRowUiWidget {
         if let Some(mut ui_state) = world.get_mut::<FileSystemUiState>(*row_entity) {
             ui_state.opened = !ui_state.opened;
         }
+    }
+
+    pub fn on_rename(world: &mut World, row_entity: &Entity) {
+        let mut ui_state = world.get_resource_mut::<UiState>().unwrap();
+        ui_state.text_input_modal_open = true;
+        ui_state.text_input_modal_entity = Some(*row_entity);
     }
 }
 

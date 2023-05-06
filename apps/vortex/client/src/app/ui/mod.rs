@@ -4,6 +4,7 @@ pub mod workspaces;
 mod center_panel;
 mod left_panel;
 mod login_modal;
+mod text_input_modal;
 mod right_panel;
 mod state;
 mod systems;
