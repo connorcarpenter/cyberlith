@@ -10,7 +10,7 @@ use render_egui::{
 use crate::app::{
     config::AppConfig,
     events::LoginEvent,
-    ui::{LoggingInState, UiState},
+    ui::{LoggingInState, UiState, utils::ui_with_margin},
 };
 
 pub fn login_modal(context: &egui::Context, world: &mut World) {
@@ -97,10 +97,4 @@ pub fn login_modal(context: &egui::Context, world: &mut World) {
             }
         }
     }
-}
-
-fn ui_with_margin<R>(ui: &mut Ui, margin: f32, add_contents: impl FnOnce(&mut Ui) -> R) {
-    egui::Frame::none()
-        .inner_margin(margin)
-        .show(ui, |ui| add_contents(ui));
 }

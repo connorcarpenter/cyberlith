@@ -79,7 +79,7 @@ impl Plugin for VortexPlugin {
                     .in_set(ReceiveEvents),
             )
             // UI Configuration
-            .insert_resource(UiState::default())
+            .insert_resource(UiState::new())
             .insert_resource(AxesCamerasVisible(false))
             .insert_resource(global_resource)
             .add_system(ui::main)

@@ -1,6 +1,8 @@
 use std::default::Default;
 
 use bevy_ecs::system::Resource;
+use egui_modal::Modal;
+use render_egui::egui;
 
 #[derive(PartialEq)]
 pub enum WorkspaceType {
@@ -28,8 +30,8 @@ pub struct UiState {
     pub text_input_modal_entity: Option<bevy_ecs::entity::Entity>,
 }
 
-impl Default for UiState {
-    fn default() -> Self {
+impl UiState {
+    pub fn new() -> Self {
         Self {
             logged_in: false,
             logging_in_state: LoggingInState::NotLoggingIn,

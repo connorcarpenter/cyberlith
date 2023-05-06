@@ -9,6 +9,7 @@ mod right_panel;
 mod state;
 mod systems;
 mod top_bar;
+mod utils;
 
 pub use center_panel::*;
 pub use left_panel::*;
