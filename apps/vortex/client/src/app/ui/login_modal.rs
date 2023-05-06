@@ -4,7 +4,7 @@ use egui_modal::Modal;
 
 use render_egui::{
     egui,
-    egui::{Align, Layout, Ui},
+    egui::{Align, Layout},
 };
 
 use crate::app::{

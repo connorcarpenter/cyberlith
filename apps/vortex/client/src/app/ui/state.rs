@@ -1,8 +1,6 @@
-use std::default::Default;
 
 use bevy_ecs::system::Resource;
-use egui_modal::Modal;
-use render_egui::egui;
+
 use crate::app::ui::text_input_modal::TextInputModal;
 
 #[derive(PartialEq)]

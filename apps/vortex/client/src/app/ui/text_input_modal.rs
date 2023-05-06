@@ -1,18 +1,13 @@
-use bevy_ecs::{event::Events, world::World};
-use bevy_log::info;
+use bevy_ecs::world::World;
 
 use egui_modal::Modal;
 
 use render_egui::{
     egui,
-    egui::{Align, Layout, Ui},
+    egui::{Align, Layout},
 };
 
-use crate::app::{
-    config::AppConfig,
-    events::LoginEvent,
-    ui::{LoggingInState, UiState, utils::ui_with_margin},
-};
+use crate::app::ui::{UiState, utils::ui_with_margin};
 
 pub type ModalRequestHandle = u16;
 
@@ -83,7 +78,7 @@ impl TextInputModal {
 
         let mut ui_state = world.get_resource_mut::<UiState>().unwrap();
 
-        let mut modal_state = &mut ui_state.text_input_modal;
+        let modal_state = &mut ui_state.text_input_modal;
 
         if !modal_state.open {
             return;

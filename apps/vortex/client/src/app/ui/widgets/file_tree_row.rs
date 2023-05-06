@@ -4,12 +4,11 @@ use bevy_ecs::{
     world::{World, Mut},
 };
 use bevy_log::info;
-use egui_modal::Modal;
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
-use render_egui::{egui::{
+use render_egui::egui::{
     emath, remap, vec2, Color32, Id, NumExt, Rect, Response, Rounding, Sense, Shape, Stroke,
     TextStyle, Ui, WidgetText,
-}, egui};
+};
 use vortex_proto::components::FileSystemEntry;
 
 use crate::app::{components::file_system::{ModalRequestType, ContextMenuAction, FileSystemUiState}, ui::UiState};
@@ -368,14 +367,27 @@ impl FileTreeRowUiWidget {
             };
             match request_type {
                 ModalRequestType::Rename => {
-                    Self::on_rename_response(world, row_entity, &response_string);
+                    Self::on_rename_response(world, row_entity, response_string);
                 }
             }
         });
     }
 
-    pub fn on_rename_response(world: &mut World, row_entity: &Entity, new_name: &str) {
-        info!("  RESPONSE: Rename to {}", new_name);
+    pub fn on_rename_response(world: &mut World, row_entity: &Entity, new_name: String) {
+
+        let mut system_state: SystemState<(Commands, Client, Query<&mut FileSystemEntry>)> =
+            SystemState::new(world);
+        let (mut commands, mut client, mut fs_query) = system_state.get_mut(world);
+        let Some(auth_status) = commands.entity(*row_entity).authority(&mut client) else {
+            panic!("Entity should have authority status");
+        };
+        if !auth_status.can_write() {
+            panic!("Entity should have write authority");
+        }
+        let Ok(mut fs_entry) = fs_query.get_mut(*row_entity) else {
+            return;
+        };
+        *fs_entry.name = new_name;
     }
 }
 
