@@ -24,7 +24,10 @@ use crate::{
 };
 
 fn main() {
-    info!("Naia Bevy Server Demo starting up");
+    info!("Vortex Server starting up");
+
+    let mut server_config = ServerConfig::default();
+    server_config.connection.disconnection_timeout_duration = Duration::from_secs(10);
 
     // Build App
     App::default()
@@ -36,7 +39,7 @@ fn main() {
         )
         .add_plugin(ScheduleRunnerPlugin::default())
         .add_plugin(LogPlugin::default())
-        .add_plugin(ServerPlugin::new(ServerConfig::default(), protocol()))
+        .add_plugin(ServerPlugin::new(server_config, protocol()))
         // Resources
         .init_resource::<UserManager>()
         .init_resource::<GitManager>()

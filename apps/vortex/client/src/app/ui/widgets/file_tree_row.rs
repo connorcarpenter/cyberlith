@@ -5,8 +5,7 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
-use render_egui::egui;
-use render_egui::egui::{emath, remap, vec2, Color32, Id, NumExt, Rect, Response, Rounding, Sense, Shape, Stroke, TextStyle, Ui, WidgetText, Modifiers};
+use render_egui::egui::{emath, remap, vec2, Color32, Id, NumExt, Rect, Response, Rounding, Sense, Shape, Stroke, TextStyle, Ui, WidgetText};
 
 use crate::app::components::file_system::{FileSystemUiState, ContextMenuAction};
 
