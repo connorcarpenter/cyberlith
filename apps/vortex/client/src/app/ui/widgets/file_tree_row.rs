@@ -1,9 +1,8 @@
 use bevy_ecs::{
     entity::Entity,
     system::{Commands, Query, SystemState},
-    world::World,
+    world::{World, Mut},
 };
-use bevy_ecs::world::Mut;
 use bevy_log::info;
 use egui_modal::Modal;
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
@@ -11,9 +10,9 @@ use render_egui::{egui::{
     emath, remap, vec2, Color32, Id, NumExt, Rect, Response, Rounding, Sense, Shape, Stroke,
     TextStyle, Ui, WidgetText,
 }, egui};
+use vortex_proto::components::FileSystemEntry;
 
-use crate::app::{components::file_system::{ContextMenuAction, FileSystemUiState}, ui::UiState};
-use crate::app::components::file_system::ModalRequestType;
+use crate::app::{components::file_system::{ModalRequestType, ContextMenuAction, FileSystemUiState}, ui::UiState};
 
 struct RowColors {
     available: Option<Color32>,
@@ -244,7 +243,6 @@ impl FileTreeRowUiWidget {
             ui_state.context_menu_response = Some(action);
             if just_opened {
                 // context menu just opened
-                info!("Opened");
                 Self::on_row_click(world, row_entity);
             }
         } else {
@@ -324,17 +322,28 @@ impl FileTreeRowUiWidget {
     }
 
     pub fn on_rename_click(world: &mut World, row_entity: &Entity) {
-        let mut ui_state = world.get_resource_mut::<UiState>().unwrap();
-        if let Some(request_handle) = ui_state.text_input_modal.open(
-            "Rename",
-            "Rename file `some_file.txt` to:",
-            "some_file.txt",
-            "Submit"
-        ) {
-            if let Some(mut ui_state) = world.get_mut::<FileSystemUiState>(*row_entity) {
-                ui_state.modal_request = Some((ModalRequestType::Rename, request_handle));
-            }
-        }
+        world.resource_scope(|world, mut ui_state: Mut<UiState>| {
+
+            let mut system_state: SystemState<Query<(&FileSystemEntry, &mut FileSystemUiState)>> =
+                SystemState::new(world);
+            let mut fs_query = system_state.get_mut(world);
+            let Ok((entry, mut entry_ui_state)) = fs_query.get_mut(*row_entity) else {
+                return;
+            };
+
+            let file_name: &str = &*entry.name;
+
+            let Some(request_handle) = ui_state.text_input_modal.open(
+                "Rename",
+                &format!("Rename file `{}` to:", file_name),
+                file_name,
+                "Submit"
+            ) else {
+                return;
+            };
+
+            entry_ui_state.modal_request = Some((ModalRequestType::Rename, request_handle));
+        });
     }
 
     pub fn handle_modal_responses(depth: usize, world: &mut World, row_entity: &Entity) {
@@ -359,11 +368,14 @@ impl FileTreeRowUiWidget {
             };
             match request_type {
                 ModalRequestType::Rename => {
-                    let new_name = response_string;
-                    info!("  RESPONSE: Rename to {}", new_name);
+                    Self::on_rename_response(world, row_entity, &response_string);
                 }
             }
         });
+    }
+
+    pub fn on_rename_response(world: &mut World, row_entity: &Entity, new_name: &str) {
+        info!("  RESPONSE: Rename to {}", new_name);
     }
 }
 

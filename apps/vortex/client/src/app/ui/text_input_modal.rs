@@ -120,10 +120,9 @@ impl TextInputModal {
             });
             modal.buttons(ui, |ui| {
                 if modal.button(ui, "Cancel").clicked() {
-                    info!("Cancel button Clicked!");
+                    // Cancel button clicked..
                 }
                 if modal.suggested_button(ui, &modal_state.button_text).clicked() {
-                    info!("Rename button Clicked!");
                     modal_state.set_response(modal_state.value.clone());
                 }
             });
