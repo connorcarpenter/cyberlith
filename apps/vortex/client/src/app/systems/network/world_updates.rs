@@ -131,7 +131,6 @@ pub fn update_component_events(
                 "received updated FileSystemEntry: `{:?}` ({:?})",
                 entry_entity, entry_name
             );
-            todo!();
         }
         // on FileSystemRootChild Update Event
         for (_, child_entity) in events.read::<FileSystemRootChild>() {

@@ -118,7 +118,7 @@ impl FileTreeRowUiWidget {
                         }
                     }
                 };
-                let auth_status = commands.entity(*row_entity).authority(&client);
+                let auth_status = commands.entity(*row_entity).authority(&client).map(|host_auth| host_auth.status());
                 let row_fill_color_opt = match auth_status {
                     None | Some(EntityAuthStatus::Available) => row_fill_colors.available,
                     Some(EntityAuthStatus::Requested) => Some(row_fill_colors.requested),
