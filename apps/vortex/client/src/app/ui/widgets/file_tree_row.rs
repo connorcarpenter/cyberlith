@@ -5,10 +5,10 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
-use render_egui::egui::{
+use render_egui::{egui::{
     emath, remap, vec2, Color32, Id, NumExt, Rect, Response, Rounding, Sense, Shape, Stroke,
     TextStyle, Ui, WidgetText,
-};
+}, egui};
 use vortex_proto::components::FileSystemEntry;
 
 use crate::app::{components::file_system::{ModalRequestType, ContextMenuAction, FileSystemUiState}, ui::UiState};
@@ -75,6 +75,7 @@ impl FileTreeRowUiWidget {
         let mut system_state: SystemState<(Commands, Client, Query<&mut FileSystemUiState>)> =
             SystemState::new(world);
         let (mut commands, client, fs_query) = system_state.get_mut(world);
+        let auth_status = commands.entity(*row_entity).authority(&client).map(|host_auth| host_auth.status());
         let Ok(ui_state) = fs_query.get(*row_entity) else {
             return;
         };
@@ -118,7 +119,6 @@ impl FileTreeRowUiWidget {
                         }
                     }
                 };
-                let auth_status = commands.entity(*row_entity).authority(&client).map(|host_auth| host_auth.status());
                 let row_fill_color_opt = match auth_status {
                     None | Some(EntityAuthStatus::Available) => row_fill_colors.available,
                     Some(EntityAuthStatus::Requested) => Some(row_fill_colors.requested),
@@ -155,7 +155,7 @@ impl FileTreeRowUiWidget {
         }
 
         Self::handle_modal_responses(depth, world, row_entity);
-        Self::handle_interactions(depth, world, row_entity, expander_clicked, row_response);
+        Self::handle_interactions(depth, world, row_entity, auth_status, expander_clicked, row_response);
     }
 
     /// Paint the arrow icon that indicated if the region is open or not
@@ -191,6 +191,7 @@ impl FileTreeRowUiWidget {
         depth: usize,
         world: &mut World,
         row_entity: &Entity,
+        auth_status: Option<EntityAuthStatus>,
         expander_clicked: bool,
         row_response: Response,
     ) {
@@ -216,23 +217,25 @@ impl FileTreeRowUiWidget {
         row_response.context_menu(|ui| {
             context_menu_response = Some(ContextMenuAction::None);
 
-            if ui.button("Rename").clicked() {
+            let can_mutate = auth_status == Some(EntityAuthStatus::Granted);
+
+            if ui.add_enabled(can_mutate, egui::Button::new("Rename")).clicked() {
                 context_menu_response = Some(ContextMenuAction::Rename);
                 ui.close_menu();
             }
-            if ui.button("Delete").clicked() {
+            if ui.add_enabled(can_mutate, egui::Button::new("Delete")).clicked() {
                 context_menu_response = Some(ContextMenuAction::Delete);
                 ui.close_menu();
             }
-            if ui.button("Cut").clicked() {
+            if ui.add_enabled(can_mutate, egui::Button::new("Cut")).clicked() {
                 context_menu_response = Some(ContextMenuAction::Cut);
                 ui.close_menu();
             }
-            if ui.button("Copy").clicked() {
+            if ui.add_enabled(true, egui::Button::new("Copy")).clicked() {
                 context_menu_response = Some(ContextMenuAction::Copy);
                 ui.close_menu();
             }
-            if ui.button("Paste").clicked() {
+            if ui.add_enabled(true, egui::Button::new("Paste")).clicked() {
                 context_menu_response = Some(ContextMenuAction::Paste);
                 ui.close_menu();
             }
