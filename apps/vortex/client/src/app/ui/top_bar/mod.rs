@@ -4,12 +4,14 @@ use render_egui::{
     egui,
     egui::{Modifiers, Ui},
 };
+use crate::app::resources::action_stack::ActionStack;
+use crate::app::ui::shortcuts::{SHORTCUT_REDO, SHORTCUT_UNDO};
 
-pub fn top_bar(context: &egui::Context, _world: &mut World) {
+pub fn top_bar(context: &egui::Context, world: &mut World) {
     egui::TopBottomPanel::top("top_bar").show(context, |ui| {
         egui::menu::bar(ui, |ui| {
             file_menu_button(ui);
-            edit_menu_button(ui);
+            edit_menu_button(ui, world);
             git_menu_button(ui);
         });
     });
@@ -62,44 +64,40 @@ fn file_menu_button(ui: &mut Ui) {
     });
 }
 
-fn edit_menu_button(ui: &mut Ui) {
-    let option_1_shortcut =
-        egui::KeyboardShortcut::new(Modifiers::CTRL | Modifiers::SHIFT, egui::Key::A);
-    let option_2_shortcut =
-        egui::KeyboardShortcut::new(Modifiers::CTRL | Modifiers::SHIFT, egui::Key::S);
-
-    // NOTE: we must check the shortcuts OUTSIDE of the actual "File" menu,
-    // or else they would only be checked if the "File" menu was actually open!
+fn edit_menu_button(ui: &mut Ui, world: &mut World) {
 
     ui.menu_button("Edit", |ui| {
+
+        let mut action_stack = world.get_resource_mut::<ActionStack>().unwrap();
+
         ui.set_min_width(220.0);
         ui.style_mut().wrap = Some(false);
 
         if ui
-            .add(
-                egui::Button::new("Edit Option 1")
-                    .shortcut_text(ui.ctx().format_shortcut(&option_1_shortcut)),
+            .add_enabled(action_stack.has_undo(),
+                egui::Button::new("⟲ Undo")
+                    .shortcut_text(ui.ctx().format_shortcut(&SHORTCUT_UNDO)),
             )
             .clicked()
         {
-            // execute some logic 1
-
+            action_stack.undo_action();
             ui.close_menu();
         }
 
         if ui
-            .add(
-                egui::Button::new("Edit Option 2")
-                    .shortcut_text(ui.ctx().format_shortcut(&option_2_shortcut)),
+            .add_enabled(
+                action_stack.has_redo(),
+                egui::Button::new("⟳ Redo")
+                    .shortcut_text(ui.ctx().format_shortcut(&SHORTCUT_REDO)),
             )
             .clicked()
         {
-            // execute some logic 2
-
+            action_stack.redo_action();
             ui.close_menu();
         }
     });
 }
+
 fn git_menu_button(ui: &mut Ui) {
     let option_1_shortcut =
         egui::KeyboardShortcut::new(Modifiers::CTRL | Modifiers::SHIFT, egui::Key::A);

@@ -5,10 +5,10 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 use render_api::components::Camera;
-use render_egui::EguiContext;
+use render_egui::{egui, EguiContext};
 
 use crate::app::ui::{
-    center_panel, left_panel, login_modal, right_panel, top_bar, AxesCamerasVisible, UiState, text_input_modal::TextInputModal,
+    center_panel, left_panel, login_modal, right_panel, top_bar, AxesCamerasVisible, UiState, text_input_modal::TextInputModal, shortcuts::consume_shortcuts
 };
 
 pub fn main(world: &mut World) {
@@ -21,6 +21,8 @@ pub fn main(world: &mut World) {
         right_panel(&context, world);
         center_panel(&context, world);
         TextInputModal::show(&context, world);
+
+        consume_shortcuts(&context, world);
     } else {
         login_modal(&context, world);
     }

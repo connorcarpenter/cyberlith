@@ -10,6 +10,7 @@ mod state;
 mod systems;
 mod top_bar;
 mod utils;
+mod shortcuts;
 
 pub use center_panel::*;
 pub use left_panel::*;

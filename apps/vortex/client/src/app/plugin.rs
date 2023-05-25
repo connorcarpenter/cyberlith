@@ -32,6 +32,7 @@ use crate::app::{
     ui,
     ui::{AxesCamerasVisible, UiState},
 };
+use crate::app::resources::action_stack::ActionStack;
 
 pub struct VortexPlugin;
 
@@ -82,6 +83,7 @@ impl Plugin for VortexPlugin {
             .insert_resource(UiState::new())
             .insert_resource(AxesCamerasVisible(false))
             .insert_resource(global_resource)
+            .insert_resource(ActionStack::new())
             .add_system(ui::main)
             .add_system(ui::sync_axes_cameras_visibility)
             // 3D Configuration
