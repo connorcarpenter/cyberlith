@@ -2,14 +2,15 @@ use bevy_ecs::{
     change_detection::DetectChanges,
     system::{Query, Res},
     world::World,
+    prelude::Mut,
 };
 use bevy_log::info;
 use render_api::components::Camera;
 use render_egui::{egui, EguiContext};
 
-use crate::app::ui::{
+use crate::app::{ui::{
     center_panel, left_panel, login_modal, right_panel, top_bar, AxesCamerasVisible, UiState, text_input_modal::TextInputModal, shortcuts::consume_shortcuts
-};
+}, resources::action_stack::ActionStack};
 
 pub fn main(world: &mut World) {
     let context = world.get_resource::<EguiContext>().unwrap().inner().clone();
@@ -23,6 +24,10 @@ pub fn main(world: &mut World) {
         TextInputModal::show(&context, world);
 
         consume_shortcuts(&context, world);
+
+        world.resource_scope(|world, mut action_stack: Mut<ActionStack>| {
+            action_stack.execute_actions(world);
+        });
     } else {
         login_modal(&context, world);
     }
