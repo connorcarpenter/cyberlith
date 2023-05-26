@@ -2,6 +2,7 @@ use bevy_ecs::{
     entity::Entity,
     system::{Commands, Query, SystemState},
     world::{World, Mut},
+    prelude::ResMut,
 };
 use bevy_log::info;
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
@@ -11,7 +12,7 @@ use render_egui::{egui::{
 }, egui};
 use vortex_proto::components::FileSystemEntry;
 
-use crate::app::{components::file_system::{ModalRequestType, ContextMenuAction, FileSystemUiState}, ui::UiState};
+use crate::app::{resources::action_stack::{Action, ActionStack}, components::file_system::{ModalRequestType, ContextMenuAction, FileSystemUiState}, ui::UiState};
 
 struct RowColors {
     available: Option<Color32>,
@@ -378,19 +379,16 @@ impl FileTreeRowUiWidget {
 
     pub fn on_rename_response(world: &mut World, row_entity: &Entity, new_name: String) {
 
-        let mut system_state: SystemState<(Commands, Client, Query<&mut FileSystemEntry>)> =
+        let mut system_state: SystemState<(Commands, Client, ResMut<ActionStack>)> =
             SystemState::new(world);
-        let (mut commands, mut client, mut fs_query) = system_state.get_mut(world);
+        let (mut commands, mut client, mut action_stack) = system_state.get_mut(world);
         let Some(auth_status) = commands.entity(*row_entity).authority(&mut client) else {
             panic!("Entity should have authority status");
         };
         if !auth_status.can_write() {
             panic!("Entity should have write authority");
         }
-        let Ok(mut fs_entry) = fs_query.get_mut(*row_entity) else {
-            return;
-        };
-        *fs_entry.name = new_name;
+        action_stack.buffer_action(Action::RenameFile(*row_entity, new_name.clone()));
     }
 }
 
