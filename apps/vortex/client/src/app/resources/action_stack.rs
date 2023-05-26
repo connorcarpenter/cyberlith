@@ -22,11 +22,15 @@ impl ActionStack {
     }
 
     pub fn execute_actions(&mut self, world: &mut World) {
+        if self.buffered_actions.is_empty() {
+            return;
+        }
         let drained_actions: Vec<Action> = self.buffered_actions.drain(..).collect();
         for action in drained_actions {
             let reversed_action = self.execute_action(world, &action);
             self.executed_actions.push(reversed_action);
         }
+        self.undone_actions.clear();
     }
 
     fn execute_action(&mut self, world: &mut World, action: &Action) -> Action {

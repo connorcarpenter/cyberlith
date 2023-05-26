@@ -52,6 +52,8 @@ pub struct FileSystemUiState {
 #[derive(Clone)]
 pub enum ContextMenuAction {
     None,
+    NewFile,
+    NewDirectory,
     Rename,
     Delete,
     Cut,

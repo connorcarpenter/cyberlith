@@ -220,23 +220,31 @@ impl FileTreeRowUiWidget {
 
             let can_mutate = auth_status == Some(EntityAuthStatus::Granted);
 
-            if ui.add_enabled(can_mutate, egui::Button::new("Rename")).clicked() {
+            if ui.add_enabled(true, egui::Button::new("📃 New File")).clicked() {
+                context_menu_response = Some(ContextMenuAction::NewFile);
+                ui.close_menu();
+            }
+            if ui.add_enabled(true, egui::Button::new("📁 New Directory")).clicked() {
+                context_menu_response = Some(ContextMenuAction::NewDirectory);
+                ui.close_menu();
+            }
+            if ui.add_enabled(can_mutate, egui::Button::new("✏ Rename")).clicked() {
                 context_menu_response = Some(ContextMenuAction::Rename);
                 ui.close_menu();
             }
-            if ui.add_enabled(can_mutate, egui::Button::new("Delete")).clicked() {
+            if ui.add_enabled(can_mutate, egui::Button::new("🗑 Delete")).clicked() {
                 context_menu_response = Some(ContextMenuAction::Delete);
                 ui.close_menu();
             }
-            if ui.add_enabled(can_mutate, egui::Button::new("Cut")).clicked() {
+            if ui.add_enabled(can_mutate, egui::Button::new("✂ Cut")).clicked() {
                 context_menu_response = Some(ContextMenuAction::Cut);
                 ui.close_menu();
             }
-            if ui.add_enabled(true, egui::Button::new("Copy")).clicked() {
+            if ui.add_enabled(true, egui::Button::new("📷 Copy")).clicked() {
                 context_menu_response = Some(ContextMenuAction::Copy);
                 ui.close_menu();
             }
-            if ui.add_enabled(true, egui::Button::new("Paste")).clicked() {
+            if ui.add_enabled(true, egui::Button::new("📋 Paste")).clicked() {
                 context_menu_response = Some(ContextMenuAction::Paste);
                 ui.close_menu();
             }
@@ -253,6 +261,18 @@ impl FileTreeRowUiWidget {
                 // context menu just closed
                 ui_state.context_menu_response = None;
                 match action {
+                    ContextMenuAction::None => {
+                        info!("just closed");
+                        return;
+                    }
+                    ContextMenuAction::NewFile => {
+                        info!("New File");
+                        return;
+                    }
+                    ContextMenuAction::NewDirectory => {
+                        info!("New Directory");
+                        return;
+                    }
                     ContextMenuAction::Rename => {
                         Self::on_rename_click(world, row_entity);
                         return;
@@ -271,10 +291,6 @@ impl FileTreeRowUiWidget {
                     }
                     ContextMenuAction::Paste => {
                         info!("Paste");
-                        return;
-                    }
-                    ContextMenuAction::None => {
-                        info!("just closed");
                         return;
                     }
                 }
