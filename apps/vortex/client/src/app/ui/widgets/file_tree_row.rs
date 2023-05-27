@@ -88,8 +88,7 @@ impl FileTreeRowUiWidget {
         let (mut commands, client, fs_query) = system_state.get_mut(world);
         let auth_status = commands
             .entity(*row_entity)
-            .authority(&client)
-            .map(|host_auth| host_auth.status());
+            .authority(&client);
         let Ok(ui_state) = fs_query.get(*row_entity) else {
             return;
         };
@@ -349,7 +348,7 @@ impl FileTreeRowUiWidget {
             SystemState::new(world);
         let (mut commands, client, mut action_stack) = system_state.get_mut(world);
         if let Some(authority) = commands.entity(*row_entity).authority(&client) {
-            if authority.status().is_available() {
+            if authority.is_available() {
                 let mut entities = Vec::new();
                 entities.push(*row_entity);
                 action_stack.buffer_action(Action::SelectFiles(entities));
@@ -501,15 +500,8 @@ impl FileTreeRowUiWidget {
     }
 
     pub fn on_modal_response_rename(world: &mut World, row_entity: &Entity, new_name: String) {
-        let mut system_state: SystemState<(Commands, Client, ResMut<ActionStack>)> =
-            SystemState::new(world);
-        let (mut commands, mut client, mut action_stack) = system_state.get_mut(world);
-        let Some(auth_status) = commands.entity(*row_entity).authority(&mut client) else {
-            panic!("Entity should have authority status");
-        };
-        if !auth_status.can_write() {
-            panic!("Entity should have write authority");
-        }
+        let mut system_state: SystemState<ResMut<ActionStack>> = SystemState::new(world);
+        let mut action_stack = system_state.get_mut(world);
         action_stack.buffer_action(Action::RenameFile(*row_entity, new_name.clone()));
     }
 }

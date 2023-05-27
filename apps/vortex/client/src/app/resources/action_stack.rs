@@ -2,7 +2,8 @@ use bevy_ecs::{
     prelude::{Commands, Entity, Query, Resource, World},
     system::SystemState,
 };
-use naia_bevy_client::{Client, CommandsExt};
+use bevy_log::info;
+use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
 use vortex_proto::components::FileSystemEntry;
 
 use crate::app::components::file_system::FileSystemUiState;
@@ -21,16 +22,22 @@ pub enum Action {
 #[derive(Resource)]
 pub struct ActionStack {
     buffered_actions: Vec<Action>,
-    executed_actions: Vec<Action>,
-    undone_actions: Vec<Action>,
+    undo_actions: Vec<Action>,
+    redo_actions: Vec<Action>,
+    undo_enabled: bool,
+    redo_enabled: bool,
+    buffered_check: bool,
 }
 
 impl ActionStack {
     pub fn new() -> Self {
         Self {
             buffered_actions: Vec::new(),
-            executed_actions: Vec::new(),
-            undone_actions: Vec::new(),
+            undo_actions: Vec::new(),
+            redo_actions: Vec::new(),
+            undo_enabled: true,
+            redo_enabled: true,
+            buffered_check: false,
         }
     }
 
@@ -39,43 +46,59 @@ impl ActionStack {
     }
 
     pub fn has_undo(&self) -> bool {
-        !self.executed_actions.is_empty()
+        !self.undo_actions.is_empty() && self.undo_enabled
     }
 
     pub fn has_redo(&self) -> bool {
-        !self.undone_actions.is_empty()
+        !self.redo_actions.is_empty() && self.redo_enabled
     }
 
     pub fn undo_action(&mut self, world: &mut World) {
-        let Some(action) = self.executed_actions.pop() else {
+        if !self.undo_enabled {
+            panic!("Undo is disabled!");
+        }
+        let Some(action) = self.undo_actions.pop() else {
             panic!("No executed actions to undo!");
         };
 
         let reversed_action = self.execute_action(world, &action);
 
-        self.undone_actions.push(reversed_action);
+        self.redo_actions.push(reversed_action);
+
+        self.check_top(world);
     }
 
     pub fn redo_action(&mut self, world: &mut World) {
-        let Some(action) = self.undone_actions.pop() else {
+        if !self.redo_enabled {
+            panic!("Redo is disabled!");
+        }
+        let Some(action) = self.redo_actions.pop() else {
             panic!("No undone actions to redo!");
         };
 
         let reversed_action = self.execute_action(world, &action);
 
-        self.executed_actions.push(reversed_action);
+        self.undo_actions.push(reversed_action);
+
+        self.check_top(world);
     }
 
     pub fn execute_actions(&mut self, world: &mut World) {
+        if self.buffered_check {
+            self.check_top(world);
+            self.buffered_check = false;
+        }
         if self.buffered_actions.is_empty() {
             return;
         }
         let drained_actions: Vec<Action> = self.buffered_actions.drain(..).collect();
         for action in drained_actions {
             let reversed_action = self.execute_action(world, &action);
-            self.executed_actions.push(reversed_action);
+            self.undo_actions.push(reversed_action);
         }
-        self.undone_actions.clear();
+        self.redo_actions.clear();
+
+        self.check_top(world);
     }
 
     fn execute_action(&mut self, world: &mut World, action: &Action) -> Action {
@@ -135,5 +158,60 @@ impl ActionStack {
                 return Action::RenameFile(*file_entity, old_name);
             }
         }
+    }
+
+    pub fn entity_update_auth_status(&mut self, entity: &Entity) {
+        // if either the undo or redo stack's top entity is this entity, then we need to enable/disable undo based on new auth status
+
+        if let Some(Action::SelectFiles(file_entities)) = self.undo_actions.last() {
+            if file_entities.contains(entity) {
+                self.buffered_check = true;
+            }
+        }
+
+        if let Some(Action::SelectFiles(file_entities)) = self.redo_actions.last() {
+            if file_entities.contains(entity) {
+                self.buffered_check = true;
+            }
+        }
+    }
+
+    fn check_top(&mut self, world: &mut World) {
+        self.check_top_undo(world);
+        self.check_top_redo(world);
+    }
+
+    fn check_top_undo(&mut self, world: &mut World) {
+        if let Some(Action::SelectFiles(file_entities)) = self.undo_actions.last() {
+            self.undo_enabled = self.should_be_enabled(world, file_entities);
+        } else {
+            self.undo_enabled = true;
+        }
+    }
+
+    fn check_top_redo(&mut self, world: &mut World) {
+        if let Some(Action::SelectFiles(file_entities)) = self.redo_actions.last() {
+            self.redo_enabled = self.should_be_enabled(world, file_entities);
+        } else {
+            self.redo_enabled = true;
+        }
+    }
+
+    fn should_be_enabled(&self, world: &mut World, file_entities: &Vec<Entity>) -> bool {
+        info!("Checking if undo/redo should be enabled");
+        let mut system_state: SystemState<(
+            Commands,
+            Client,
+        )> = SystemState::new(world);
+        let (mut commands, client) = system_state.get_mut(world);
+
+        for file_entity in file_entities {
+            if let Some(EntityAuthStatus::Available) = commands.entity(*file_entity).authority(&client) {
+                // enabled should continue being true
+            } else {
+                return false;
+            }
+        }
+        return true;
     }
 }
