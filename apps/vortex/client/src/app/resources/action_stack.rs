@@ -1,7 +1,11 @@
-use bevy_ecs::{prelude::{Entity, Query, Resource, World}, system::SystemState};
+use bevy_ecs::{prelude::{Commands, Entity, Query, Resource, World}, system::SystemState};
+use naia_bevy_client::{Client, CommandsExt};
 use vortex_proto::components::FileSystemEntry;
 
+use crate::app::components::file_system::FileSystemUiState;
+
 pub enum Action {
+    SelectFiles(Vec<Entity>),
     RenameFile(Entity, String),
 }
 
@@ -45,6 +49,43 @@ impl ActionStack {
                 let old_name: String = fs_entry.name.to_string();
                 *fs_entry.name = new_name.clone();
                 return Action::RenameFile(*row_entity, old_name);
+            }
+            Action::SelectFiles(row_entities) => {
+                let mut old_selected_files = Vec::new();
+                let mut system_state: SystemState<(
+                    Commands,
+                    Client,
+                    Query<(Entity, &mut FileSystemUiState)>,
+                )> = SystemState::new(world);
+                let (mut commands, mut client, mut fs_query) = system_state.get_mut(world);
+
+                // TODO: when shift/control is pressed, select multiple items
+
+                // Deselect all selected files
+                for (item_entity, mut ui_state) in fs_query.iter_mut() {
+                    if ui_state.selected {
+                        ui_state.selected = false;
+
+                        old_selected_files.push(item_entity);
+
+                        // Release Entity Authority
+                        commands.entity(item_entity).release_authority(&mut client);
+                    }
+                }
+
+                // Select all new selected files
+                for row_entity in row_entities {
+                    let Ok((_, mut ui_state)) = fs_query.get_mut(*row_entity) else {
+                        panic!("Failed to get FileSystemUiState for row entity {:?}!", row_entity);
+                    };
+
+                    ui_state.selected = true;
+
+                    // Request Entity Authority
+                    commands.entity(*row_entity).request_authority(&mut client);
+                }
+
+                return Action::SelectFiles(old_selected_files);
             }
         }
     }

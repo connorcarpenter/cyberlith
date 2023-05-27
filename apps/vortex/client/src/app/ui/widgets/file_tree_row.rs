@@ -122,7 +122,7 @@ impl FileTreeRowUiWidget {
                 };
                 let row_fill_color_opt = match auth_status {
                     None | Some(EntityAuthStatus::Available) => row_fill_colors.available,
-                    Some(EntityAuthStatus::Requested) => Some(row_fill_colors.requested),
+                    Some(EntityAuthStatus::Requested) | Some(EntityAuthStatus::Releasing) => Some(row_fill_colors.requested),
                     Some(EntityAuthStatus::Granted) => Some(row_fill_colors.granted),
                     Some(EntityAuthStatus::Denied) => Some(row_fill_colors.denied),
                 };
@@ -305,31 +305,13 @@ impl FileTreeRowUiWidget {
     }
 
     pub fn on_row_click(world: &mut World, row_entity: &Entity) {
-        let mut system_state: SystemState<(
-            Commands,
-            Client,
-            Query<(Entity, &mut FileSystemUiState)>,
-        )> = SystemState::new(world);
-        let (mut commands, mut client, mut fs_query) = system_state.get_mut(world);
-        for (item_entity, mut ui_state) in fs_query.iter_mut() {
-            if *row_entity == item_entity {
-                let was_selected = ui_state.selected;
-                ui_state.selected = true;
-
-                if !was_selected {
-                    // Request Entity Authority
-                    commands.entity(item_entity).request_authority(&mut client);
-                }
-            } else {
-                let was_selected = ui_state.selected;
-                ui_state.selected = false;
-
-                // TODO: when shift/control is pressed, select multiple items
-
-                if was_selected {
-                    // Release Entity Authority
-                    commands.entity(item_entity).release_authority(&mut client);
-                }
+        let mut system_state: SystemState<(Commands, Client, ResMut<ActionStack>)> = SystemState::new(world);
+        let (mut commands, client, mut action_stack) = system_state.get_mut(world);
+        if let Some(authority) = commands.entity(*row_entity).authority(&client) {
+            if authority.status().is_available() {
+                let mut entities = Vec::new();
+                entities.push(*row_entity);
+                action_stack.buffer_action(Action::SelectFiles(entities));
             }
         }
     }
