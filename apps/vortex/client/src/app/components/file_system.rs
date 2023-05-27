@@ -63,6 +63,8 @@ pub enum ContextMenuAction {
 
 #[derive(Clone)]
 pub enum ModalRequestType {
+    NewFile(Entity),
+    Delete(Entity),
     Rename,
 }
 

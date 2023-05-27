@@ -2,7 +2,7 @@ use bevy_ecs::{
     entity::Entity,
     system::{Commands, Query, SystemState},
     world::{World, Mut},
-    prelude::ResMut,
+    prelude::{ResMut, Res},
 };
 use bevy_log::info;
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
@@ -10,9 +10,10 @@ use render_egui::{egui::{
     emath, remap, vec2, Color32, Id, NumExt, Rect, Response, Rounding, Sense, Shape, Stroke,
     TextStyle, Ui, WidgetText,
 }, egui};
-use vortex_proto::components::FileSystemEntry;
+use vortex_proto::components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
 
 use crate::app::{resources::action_stack::{Action, ActionStack}, components::file_system::{ModalRequestType, ContextMenuAction, FileSystemUiState}, ui::UiState};
+use crate::app::resources::global::Global;
 
 struct RowColors {
     available: Option<Color32>,
@@ -266,7 +267,7 @@ impl FileTreeRowUiWidget {
                         return;
                     }
                     ContextMenuAction::NewFile => {
-                        info!("New File");
+                        Self::on_click_new_file(world, row_entity);
                         return;
                     }
                     ContextMenuAction::NewDirectory => {
@@ -274,11 +275,11 @@ impl FileTreeRowUiWidget {
                         return;
                     }
                     ContextMenuAction::Rename => {
-                        Self::on_rename_click(world, row_entity);
+                        Self::on_click_rename(world, row_entity);
                         return;
                     }
                     ContextMenuAction::Delete => {
-                        info!("Delete");
+                        Self::on_click_delete(world, row_entity);
                         return;
                     }
                     ContextMenuAction::Cut => {
@@ -322,7 +323,70 @@ impl FileTreeRowUiWidget {
         }
     }
 
-    pub fn on_rename_click(world: &mut World, row_entity: &Entity) {
+    pub fn on_click_new_file(world: &mut World, row_entity: &Entity) {
+        world.resource_scope(|world, mut ui_state: Mut<UiState>| {
+
+            let mut system_state: SystemState<(Client, Res<Global>, Query<(&FileSystemEntry, Option<&FileSystemChild>, Option<&FileSystemRootChild>, &mut FileSystemUiState)>)> =
+                SystemState::new(world);
+            let (client, global, mut fs_query) = system_state.get_mut(world);
+            let Ok((entry, dir_child_opt, root_child_opt, mut entry_ui_state)) = fs_query.get_mut(*row_entity) else {
+                return;
+            };
+
+            let directory_entity: Entity = match *entry.kind {
+                EntryKind::Directory => {
+                    row_entity.clone()
+                }
+                EntryKind::File => {
+                    if let Some(dir_child) = dir_child_opt {
+                        dir_child.parent_id.get(&client).unwrap().clone()
+                    } else if let Some(root_child) = root_child_opt {
+                        global.project_root_entity
+                    } else {
+                        panic!("File entry has no parent");
+                    }
+                }
+            };
+
+            let Some(request_handle) = ui_state.text_input_modal.open(
+                "New File",
+                "Create new file with name:",
+                Some("file.txt"),
+                "Submit"
+            ) else {
+                return;
+            };
+
+            entry_ui_state.modal_request = Some((ModalRequestType::NewFile(directory_entity), request_handle));
+        });
+    }
+
+    pub fn on_click_delete(world: &mut World, row_entity: &Entity) {
+        world.resource_scope(|world, mut ui_state: Mut<UiState>| {
+
+            let mut system_state: SystemState<Query<(&FileSystemEntry, &FileSystemChild, &mut FileSystemUiState)>> =
+                SystemState::new(world);
+            let mut fs_query = system_state.get_mut(world);
+            let Ok((entry, child, mut entry_ui_state)) = fs_query.get_mut(*row_entity) else {
+                return;
+            };
+
+            let file_name: &str = &*entry.name;
+
+            let Some(request_handle) = ui_state.text_input_modal.open(
+                "Delete File",
+                &format!("Are you sure you want to delete `{}` ?", file_name),
+                None,
+                "Delete"
+            ) else {
+                return;
+            };
+
+            entry_ui_state.modal_request = Some((ModalRequestType::Delete(*row_entity), request_handle));
+        });
+    }
+
+    pub fn on_click_rename(world: &mut World, row_entity: &Entity) {
         world.resource_scope(|world, mut ui_state: Mut<UiState>| {
 
             let mut system_state: SystemState<Query<(&FileSystemEntry, &mut FileSystemUiState)>> =
@@ -337,7 +401,7 @@ impl FileTreeRowUiWidget {
             let Some(request_handle) = ui_state.text_input_modal.open(
                 "Rename",
                 &format!("Rename file `{}` to:", file_name),
-                file_name,
+                Some(file_name),
                 "Submit"
             ) else {
                 return;
@@ -368,14 +432,32 @@ impl FileTreeRowUiWidget {
                 return;
             };
             match request_type {
+                ModalRequestType::NewFile(directory_entity) => {
+                    Self::on_modal_response_new_file(world, &directory_entity, response_string);
+                }
+                ModalRequestType::Delete(row_entity) => {
+                    Self::on_modal_response_delete(world, &row_entity);
+                }
                 ModalRequestType::Rename => {
-                    Self::on_rename_response(world, row_entity, response_string);
+                    Self::on_modal_response_rename(world, row_entity, response_string);
                 }
             }
         });
     }
 
-    pub fn on_rename_response(world: &mut World, row_entity: &Entity, new_name: String) {
+    pub fn on_modal_response_new_file(world: &mut World, directory_entity: &Entity, new_name: String) {
+        let mut system_state: SystemState<ResMut<ActionStack>> = SystemState::new(world);
+        let mut action_stack = system_state.get_mut(world);
+        action_stack.buffer_action(Action::NewFile(*directory_entity, new_name.clone()));
+    }
+
+    pub fn on_modal_response_delete(world: &mut World, row_entity: &Entity) {
+        let mut system_state: SystemState<ResMut<ActionStack>> = SystemState::new(world);
+        let mut action_stack = system_state.get_mut(world);
+        action_stack.buffer_action(Action::DeleteFile(*row_entity));
+    }
+
+    pub fn on_modal_response_rename(world: &mut World, row_entity: &Entity, new_name: String) {
 
         let mut system_state: SystemState<(Commands, Client, ResMut<ActionStack>)> =
             SystemState::new(world);

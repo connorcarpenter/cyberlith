@@ -18,7 +18,7 @@ pub struct TextInputModal {
     current_response: Option<String>,
     title: String,
     text: String,
-    value: String,
+    value: Option<String>,
     button_text: String,
 }
 
@@ -32,12 +32,12 @@ impl TextInputModal {
             current_response: None,
             title: String::new(),
             text: String::new(),
-            value: String::new(),
+            value: None,
             button_text: String::new(),
         }
     }
 
-    pub fn open(&mut self, title: &str, text: &str, default_value: &str, button_text: &str) -> Option<ModalRequestHandle> {
+    pub fn open(&mut self, title: &str, text: &str, default_value: Option<&str>, button_text: &str) -> Option<ModalRequestHandle> {
         if self.open {
             return None;
         }
@@ -45,7 +45,7 @@ impl TextInputModal {
         self.open = true;
         self.title = title.to_string();
         self.text = text.to_string();
-        self.value = default_value.to_string();
+        self.value = default_value.map(|slice| slice.to_string());
         self.button_text = button_text.to_string();
 
         self.current_handle = Some(self.next_handle);
@@ -57,8 +57,8 @@ impl TextInputModal {
         self.open = false;
     }
 
-    pub fn set_response(&mut self, response: String) {
-        self.current_response = Some(response);
+    pub fn set_response(&mut self, response: Option<String>) {
+        self.current_response = response;
     }
 
     pub fn take_response(&mut self, handle: ModalRequestHandle) -> Option<Option<String>> {
@@ -84,7 +84,7 @@ impl TextInputModal {
             return;
         }
 
-        let modal = Modal::new(context, "rename_modal").with_close_on_outside_click(true);
+        let modal = Modal::new(context, "input_modal").with_close_on_outside_click(true);
 
         let was_open = modal.is_open();
         if !was_open {
@@ -105,11 +105,13 @@ impl TextInputModal {
                                 ui.label(&modal_state.text);
                             })
                         });
-                        ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
-                            ui_with_margin(ui, margin, |ui| {
-                                ui.text_edit_singleline(&mut modal_state.value);
-                            })
-                        });
+                        if let Some(inner_value) = &mut modal_state.value {
+                            ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
+                                ui_with_margin(ui, margin, |ui| {
+                                    ui.text_edit_singleline(inner_value);
+                                })
+                            });
+                        }
                     })
                 });
             });
