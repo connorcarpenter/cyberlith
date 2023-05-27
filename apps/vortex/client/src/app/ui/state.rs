@@ -1,4 +1,3 @@
-
 use bevy_ecs::system::Resource;
 
 use crate::app::ui::text_input_modal::TextInputModal;

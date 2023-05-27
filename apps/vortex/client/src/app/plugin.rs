@@ -27,12 +27,11 @@ use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
     config::{AppConfig, ConfigPlugin},
     events::LoginEvent,
-    resources::global::Global,
+    resources::{action_stack::ActionStack, global::Global},
     systems::network,
     ui,
     ui::{AxesCamerasVisible, UiState},
 };
-use crate::app::resources::action_stack::ActionStack;
 
 pub struct VortexPlugin;
 

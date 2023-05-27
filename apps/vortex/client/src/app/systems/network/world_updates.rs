@@ -113,7 +113,7 @@ pub fn insert_component_events(
 pub fn update_component_events(
     //mut commands: Commands,
     //client: Client,
-    global: Res<Global>,
+    //global: Res<Global>,
     mut event_reader: EventReader<UpdateComponentEvents>,
     //mut parent_query: Query<&mut FileSystemParent>,
     //child_query: Query<&FileSystemChild>,

@@ -10,7 +10,7 @@ use render_egui::{
 use crate::app::{
     config::AppConfig,
     events::LoginEvent,
-    ui::{LoggingInState, UiState, utils::ui_with_margin},
+    ui::{utils::ui_with_margin, LoggingInState, UiState},
 };
 
 pub fn login_modal(context: &egui::Context, world: &mut World) {

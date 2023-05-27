@@ -4,7 +4,11 @@ use render_egui::{
     egui,
     egui::{Modifiers, Ui},
 };
-use crate::app::{resources::action_stack::ActionStack, ui::shortcuts::{SHORTCUT_REDO, SHORTCUT_UNDO}};
+
+use crate::app::{
+    resources::action_stack::ActionStack,
+    ui::shortcuts::{SHORTCUT_REDO, SHORTCUT_UNDO},
+};
 
 pub fn top_bar(context: &egui::Context, world: &mut World) {
     egui::TopBottomPanel::top("top_bar").show(context, |ui| {
@@ -64,17 +68,16 @@ fn file_menu_button(ui: &mut Ui) {
 }
 
 fn edit_menu_button(ui: &mut Ui, world: &mut World) {
-
     ui.menu_button("Edit", |ui| {
-
         world.resource_scope(|world, mut action_stack: Mut<ActionStack>| {
             ui.set_min_width(220.0);
             ui.style_mut().wrap = Some(false);
 
             if ui
-                .add_enabled(action_stack.has_undo(),
-                             egui::Button::new("⟲ Undo")
-                                 .shortcut_text(ui.ctx().format_shortcut(&SHORTCUT_UNDO)),
+                .add_enabled(
+                    action_stack.has_undo(),
+                    egui::Button::new("⟲ Undo")
+                        .shortcut_text(ui.ctx().format_shortcut(&SHORTCUT_UNDO)),
                 )
                 .clicked()
             {

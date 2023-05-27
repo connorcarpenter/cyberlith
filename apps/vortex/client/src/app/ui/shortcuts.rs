@@ -1,14 +1,20 @@
 use bevy_ecs::prelude::{Mut, World};
-use render_egui::{egui, egui::{Modifiers, KeyboardShortcut}};
+use render_egui::{
+    egui,
+    egui::{KeyboardShortcut, Modifiers},
+};
 
 use crate::app::resources::action_stack::ActionStack;
 
 pub const SHORTCUT_UNDO: KeyboardShortcut = KeyboardShortcut::new(Modifiers::CTRL, egui::Key::Z);
-pub const SHORTCUT_REDO: KeyboardShortcut = KeyboardShortcut::new(Modifiers {
-    ctrl: true,
-    shift: true,
-    ..Modifiers::NONE
-}, egui::Key::Z);
+pub const SHORTCUT_REDO: KeyboardShortcut = KeyboardShortcut::new(
+    Modifiers {
+        ctrl: true,
+        shift: true,
+        ..Modifiers::NONE
+    },
+    egui::Key::Z,
+);
 
 pub fn consume_shortcuts(context: &egui::Context, world: &mut World) {
     world.resource_scope(|world, mut action_stack: Mut<ActionStack>| {
@@ -23,6 +29,4 @@ pub fn consume_shortcuts(context: &egui::Context, world: &mut World) {
             }
         }
     });
-
-
 }

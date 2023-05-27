@@ -1,19 +1,28 @@
 use bevy_ecs::{
     entity::Entity,
+    prelude::{Res, ResMut},
     system::{Commands, Query, SystemState},
-    world::{World, Mut},
-    prelude::{ResMut, Res},
+    world::{Mut, World},
 };
 use bevy_log::info;
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
-use render_egui::{egui::{
-    emath, remap, vec2, Color32, Id, NumExt, Rect, Response, Rounding, Sense, Shape, Stroke,
-    TextStyle, Ui, WidgetText,
-}, egui};
+use render_egui::{
+    egui,
+    egui::{
+        emath, remap, vec2, Color32, Id, NumExt, Rect, Response, Rounding, Sense, Shape, Stroke,
+        TextStyle, Ui, WidgetText,
+    },
+};
 use vortex_proto::components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
 
-use crate::app::{resources::action_stack::{Action, ActionStack}, components::file_system::{ModalRequestType, ContextMenuAction, FileSystemUiState}, ui::UiState};
-use crate::app::resources::global::Global;
+use crate::app::{
+    components::file_system::{ContextMenuAction, FileSystemUiState, ModalRequestType},
+    resources::{
+        action_stack::{Action, ActionStack},
+        global::Global,
+    },
+    ui::UiState,
+};
 
 struct RowColors {
     available: Option<Color32>,
@@ -77,7 +86,10 @@ impl FileTreeRowUiWidget {
         let mut system_state: SystemState<(Commands, Client, Query<&mut FileSystemUiState>)> =
             SystemState::new(world);
         let (mut commands, client, fs_query) = system_state.get_mut(world);
-        let auth_status = commands.entity(*row_entity).authority(&client).map(|host_auth| host_auth.status());
+        let auth_status = commands
+            .entity(*row_entity)
+            .authority(&client)
+            .map(|host_auth| host_auth.status());
         let Ok(ui_state) = fs_query.get(*row_entity) else {
             return;
         };
@@ -123,7 +135,9 @@ impl FileTreeRowUiWidget {
                 };
                 let row_fill_color_opt = match auth_status {
                     None | Some(EntityAuthStatus::Available) => row_fill_colors.available,
-                    Some(EntityAuthStatus::Requested) | Some(EntityAuthStatus::Releasing) => Some(row_fill_colors.requested),
+                    Some(EntityAuthStatus::Requested) | Some(EntityAuthStatus::Releasing) => {
+                        Some(row_fill_colors.requested)
+                    }
                     Some(EntityAuthStatus::Granted) => Some(row_fill_colors.granted),
                     Some(EntityAuthStatus::Denied) => Some(row_fill_colors.denied),
                 };
@@ -157,7 +171,14 @@ impl FileTreeRowUiWidget {
         }
 
         Self::handle_modal_responses(depth, world, row_entity);
-        Self::handle_interactions(depth, world, row_entity, auth_status, expander_clicked, row_response);
+        Self::handle_interactions(
+            depth,
+            world,
+            row_entity,
+            auth_status,
+            expander_clicked,
+            row_response,
+        );
     }
 
     /// Paint the arrow icon that indicated if the region is open or not
@@ -221,23 +242,38 @@ impl FileTreeRowUiWidget {
 
             let can_mutate = auth_status == Some(EntityAuthStatus::Granted);
 
-            if ui.add_enabled(true, egui::Button::new("📃 New File")).clicked() {
+            if ui
+                .add_enabled(true, egui::Button::new("📃 New File"))
+                .clicked()
+            {
                 context_menu_response = Some(ContextMenuAction::NewFile);
                 ui.close_menu();
             }
-            if ui.add_enabled(true, egui::Button::new("📁 New Directory")).clicked() {
+            if ui
+                .add_enabled(true, egui::Button::new("📁 New Directory"))
+                .clicked()
+            {
                 context_menu_response = Some(ContextMenuAction::NewDirectory);
                 ui.close_menu();
             }
-            if ui.add_enabled(can_mutate, egui::Button::new("✏ Rename")).clicked() {
+            if ui
+                .add_enabled(can_mutate, egui::Button::new("✏ Rename"))
+                .clicked()
+            {
                 context_menu_response = Some(ContextMenuAction::Rename);
                 ui.close_menu();
             }
-            if ui.add_enabled(can_mutate, egui::Button::new("🗑 Delete")).clicked() {
+            if ui
+                .add_enabled(can_mutate, egui::Button::new("🗑 Delete"))
+                .clicked()
+            {
                 context_menu_response = Some(ContextMenuAction::Delete);
                 ui.close_menu();
             }
-            if ui.add_enabled(can_mutate, egui::Button::new("✂ Cut")).clicked() {
+            if ui
+                .add_enabled(can_mutate, egui::Button::new("✂ Cut"))
+                .clicked()
+            {
                 context_menu_response = Some(ContextMenuAction::Cut);
                 ui.close_menu();
             }
@@ -245,7 +281,10 @@ impl FileTreeRowUiWidget {
                 context_menu_response = Some(ContextMenuAction::Copy);
                 ui.close_menu();
             }
-            if ui.add_enabled(true, egui::Button::new("📋 Paste")).clicked() {
+            if ui
+                .add_enabled(true, egui::Button::new("📋 Paste"))
+                .clicked()
+            {
                 context_menu_response = Some(ContextMenuAction::Paste);
                 ui.close_menu();
             }
@@ -306,7 +345,8 @@ impl FileTreeRowUiWidget {
     }
 
     pub fn on_row_click(world: &mut World, row_entity: &Entity) {
-        let mut system_state: SystemState<(Commands, Client, ResMut<ActionStack>)> = SystemState::new(world);
+        let mut system_state: SystemState<(Commands, Client, ResMut<ActionStack>)> =
+            SystemState::new(world);
         let (mut commands, client, mut action_stack) = system_state.get_mut(world);
         if let Some(authority) = commands.entity(*row_entity).authority(&client) {
             if authority.status().is_available() {
@@ -340,7 +380,7 @@ impl FileTreeRowUiWidget {
                 EntryKind::File => {
                     if let Some(dir_child) = dir_child_opt {
                         dir_child.parent_id.get(&client).unwrap().clone()
-                    } else if let Some(root_child) = root_child_opt {
+                    } else if let Some(_root_child) = root_child_opt {
                         global.project_root_entity
                     } else {
                         panic!("File entry has no parent");
@@ -363,11 +403,10 @@ impl FileTreeRowUiWidget {
 
     pub fn on_click_delete(world: &mut World, row_entity: &Entity) {
         world.resource_scope(|world, mut ui_state: Mut<UiState>| {
-
-            let mut system_state: SystemState<Query<(&FileSystemEntry, &FileSystemChild, &mut FileSystemUiState)>> =
+            let mut system_state: SystemState<Query<(&FileSystemEntry, &mut FileSystemUiState)>> =
                 SystemState::new(world);
             let mut fs_query = system_state.get_mut(world);
-            let Ok((entry, child, mut entry_ui_state)) = fs_query.get_mut(*row_entity) else {
+            let Ok((entry, mut entry_ui_state)) = fs_query.get_mut(*row_entity) else {
                 return;
             };
 
@@ -382,13 +421,13 @@ impl FileTreeRowUiWidget {
                 return;
             };
 
-            entry_ui_state.modal_request = Some((ModalRequestType::Delete(*row_entity), request_handle));
+            entry_ui_state.modal_request =
+                Some((ModalRequestType::Delete(*row_entity), request_handle));
         });
     }
 
     pub fn on_click_rename(world: &mut World, row_entity: &Entity) {
         world.resource_scope(|world, mut ui_state: Mut<UiState>| {
-
             let mut system_state: SystemState<Query<(&FileSystemEntry, &mut FileSystemUiState)>> =
                 SystemState::new(world);
             let mut fs_query = system_state.get_mut(world);
@@ -445,7 +484,11 @@ impl FileTreeRowUiWidget {
         });
     }
 
-    pub fn on_modal_response_new_file(world: &mut World, directory_entity: &Entity, new_name: String) {
+    pub fn on_modal_response_new_file(
+        world: &mut World,
+        directory_entity: &Entity,
+        new_name: String,
+    ) {
         let mut system_state: SystemState<ResMut<ActionStack>> = SystemState::new(world);
         let mut action_stack = system_state.get_mut(world);
         action_stack.buffer_action(Action::NewFile(*directory_entity, new_name.clone()));
@@ -458,7 +501,6 @@ impl FileTreeRowUiWidget {
     }
 
     pub fn on_modal_response_rename(world: &mut World, row_entity: &Entity, new_name: String) {
-
         let mut system_state: SystemState<(Commands, Client, ResMut<ActionStack>)> =
             SystemState::new(world);
         let (mut commands, mut client, mut action_stack) = system_state.get_mut(world);

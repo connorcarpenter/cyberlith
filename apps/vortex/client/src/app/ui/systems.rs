@@ -1,16 +1,20 @@
 use bevy_ecs::{
     change_detection::DetectChanges,
+    prelude::Mut,
     system::{Query, Res},
     world::World,
-    prelude::Mut,
 };
 use bevy_log::info;
 use render_api::components::Camera;
-use render_egui::{egui, EguiContext};
+use render_egui::EguiContext;
 
-use crate::app::{ui::{
-    center_panel, left_panel, login_modal, right_panel, top_bar, AxesCamerasVisible, UiState, text_input_modal::TextInputModal, shortcuts::consume_shortcuts
-}, resources::action_stack::ActionStack};
+use crate::app::{
+    resources::action_stack::ActionStack,
+    ui::{
+        center_panel, left_panel, login_modal, right_panel, shortcuts::consume_shortcuts,
+        text_input_modal::TextInputModal, top_bar, AxesCamerasVisible, UiState,
+    },
+};
 
 pub fn main(world: &mut World) {
     let context = world.get_resource::<EguiContext>().unwrap().inner().clone();

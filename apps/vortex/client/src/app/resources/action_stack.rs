@@ -1,4 +1,7 @@
-use bevy_ecs::{prelude::{Commands, Entity, Query, Resource, World}, system::SystemState};
+use bevy_ecs::{
+    prelude::{Commands, Entity, Query, Resource, World},
+    system::SystemState,
+};
 use naia_bevy_client::{Client, CommandsExt};
 use vortex_proto::components::FileSystemEntry;
 

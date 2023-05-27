@@ -7,7 +7,7 @@ use render_egui::{
     egui::{Align, Layout},
 };
 
-use crate::app::ui::{UiState, utils::ui_with_margin};
+use crate::app::ui::{utils::ui_with_margin, UiState};
 
 pub type ModalRequestHandle = u16;
 
@@ -23,7 +23,6 @@ pub struct TextInputModal {
 }
 
 impl TextInputModal {
-
     pub fn new() -> Self {
         Self {
             open: false,
@@ -37,7 +36,13 @@ impl TextInputModal {
         }
     }
 
-    pub fn open(&mut self, title: &str, text: &str, default_value: Option<&str>, button_text: &str) -> Option<ModalRequestHandle> {
+    pub fn open(
+        &mut self,
+        title: &str,
+        text: &str,
+        default_value: Option<&str>,
+        button_text: &str,
+    ) -> Option<ModalRequestHandle> {
         if self.open {
             return None;
         }
@@ -75,7 +80,6 @@ impl TextInputModal {
     }
 
     pub fn show(context: &egui::Context, world: &mut World) {
-
         let mut ui_state = world.get_resource_mut::<UiState>().unwrap();
 
         let modal_state = &mut ui_state.text_input_modal;
@@ -97,7 +101,6 @@ impl TextInputModal {
         modal.show(|ui| {
             modal.title(ui, &modal_state.title);
             modal.frame(ui, |ui| {
-
                 ui.with_layout(Layout::top_down(Align::Min), |ui| {
                     ui_with_margin(ui, margin, |ui| {
                         ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
@@ -119,7 +122,10 @@ impl TextInputModal {
                 if modal.button(ui, "Cancel").clicked() {
                     // Cancel button clicked..
                 }
-                if modal.suggested_button(ui, &modal_state.button_text).clicked() {
+                if modal
+                    .suggested_button(ui, &modal_state.button_text)
+                    .clicked()
+                {
                     modal_state.set_response(modal_state.value.clone());
                 }
             });
@@ -131,4 +137,3 @@ impl TextInputModal {
         }
     }
 }
-
