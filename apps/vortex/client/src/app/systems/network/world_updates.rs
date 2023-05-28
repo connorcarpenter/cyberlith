@@ -15,11 +15,12 @@ use naia_bevy_client::{
     Client,
 };
 
-use vortex_proto::components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
+use vortex_proto::components::{FileSystemChild, FileSystemEntry, FileSystemRootChild};
 
 use crate::app::{
-    components::file_system::{FileSystemParent, FileSystemUiState},
+    components::file_system::{FileSystemParent},
     resources::global::Global,
+    systems::file_post_process
 };
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
@@ -50,46 +51,32 @@ pub fn insert_component_events(
         // on FileSystemEntry Insert Event
         for entry_entity in events.read::<FileSystemEntry>() {
             let entry = entry_query.get(entry_entity).unwrap();
-
-            // Add FileSystemParent to directories
-            if *entry.kind == EntryKind::Directory {
-                if recent_parents.is_none() {
-                    recent_parents = Some(HashMap::new());
-                }
-                let map = recent_parents.as_mut().unwrap();
-                map.insert(entry_entity, FileSystemParent::new());
-            }
-            // Add FileSystemUiState to all entities
-            commands
-                .entity(entry_entity)
-                .insert(FileSystemUiState::new());
+            file_post_process::on_added_entry(&mut commands, entry, entry_entity, &mut recent_parents);
         }
 
         // on FileSystemRootChild Insert Event
         for child_entity in events.read::<FileSystemRootChild>() {
             // Add children to root parent
             let entry = entry_query.get(child_entity).unwrap();
-            let entry_kind = (*(entry.kind)).clone();
-            let child_name = (*(entry.name)).clone();
             let mut parent = parent_query.get_mut(project_root_entity).unwrap();
-            parent.add_child(entry_kind, child_name, child_entity);
+            file_post_process::on_added_child(&mut parent, entry, child_entity);
         }
+
         // on FileSystemChild Insert Event
         for child_entity in events.read::<FileSystemChild>() {
-            // Add children to directories
-            let parent_entity_opt = child_query
+
+            let entry = entry_query.get(child_entity).unwrap();
+
+            // Get parent
+            let parent_entity = child_query
                 .get(child_entity)
                 .unwrap()
                 .parent_id
-                .get(&client);
-            let Some(parent_entity) = parent_entity_opt else {
-                panic!("FileSystemChild component has no parent_id");
-            };
-            let entry = entry_query.get(child_entity).unwrap();
-            let entry_kind = (*(entry.kind)).clone();
-            let child_name = (*(entry.name)).clone();
+                .get(&client)
+                .expect("FileSystemChild component has no parent_id");
+
             if let Ok(mut parent) = parent_query.get_mut(parent_entity) {
-                parent.add_child(entry_kind, child_name, child_entity);
+                file_post_process::on_added_child(&mut parent, entry, child_entity);
             } else {
                 let Some(parent_map) = recent_parents.as_mut() else {
                     panic!("FileSystemChild component on entity: `{:?}` has invalid parent_id: `{:?}`", child_entity, parent_entity);
@@ -97,8 +84,8 @@ pub fn insert_component_events(
                 let Some(parent) = parent_map.get_mut(&parent_entity) else {
                     panic!("FileSystemChild component on entity: `{:?}` has invalid parent_id: `{:?}`", child_entity, parent_entity);
                 };
-                parent.add_child(entry_kind, child_name, child_entity);
-            };
+                file_post_process::on_added_child(parent, entry, child_entity);
+            }
         }
         // Add all parents now that the children were able to process
         // Note that we do it this way because Commands aren't flushed till the end of the system

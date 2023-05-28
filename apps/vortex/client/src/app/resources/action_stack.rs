@@ -2,17 +2,20 @@ use bevy_ecs::{
     prelude::{Commands, Entity, Query, Resource, World},
     system::SystemState,
 };
+use bevy_ecs::system::Res;
 use bevy_log::info;
-use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
-use vortex_proto::components::FileSystemEntry;
+use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus, ReplicationConfig};
+use vortex_proto::components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
 
-use crate::app::components::file_system::FileSystemUiState;
+use crate::app::components::file_system::{FileSystemParent, FileSystemUiState};
+use crate::app::resources::global::Global;
+use crate::app::systems::file_post_process;
 
 pub enum Action {
     // A list of File Row entities to select
     SelectFiles(Vec<Entity>),
     // The directory entity to add the new File to, and the name of the new File
-    NewFile(Entity, String),
+    NewFile(Option<Entity>, String),
     // The File Row entity to delete
     DeleteFile(Entity),
     // The File Row entity to rename, and the new name
@@ -140,11 +143,72 @@ impl ActionStack {
 
                 return Action::SelectFiles(old_selected_files);
             }
-            Action::NewFile(dir_entity, new_file_name) => {
-                todo!();
+            Action::NewFile(parent_entity_opt, new_file_name) => {
+
+                let mut system_state: SystemState<(
+                    Commands,
+                    Client,
+                    Res<Global>,
+                    Query<&mut FileSystemParent>,
+                )> = SystemState::new(world);
+                let (mut commands, mut client, global, mut parent_query) = system_state.get_mut(world);
+
+                let entity_id = commands
+                    .spawn_empty()
+                    .enable_replication(&mut client)
+                    .configure_replication(ReplicationConfig::Delegated)
+                    .id();
+
+                let entry = FileSystemEntry::new(new_file_name, EntryKind::File);
+
+                let mut parent = {
+                    if let Some(parent_entity) = parent_entity_opt {
+                        let mut parent_component = FileSystemChild::new();
+                        parent_component.parent_id.set(&client, parent_entity);
+                        commands.entity(entity_id).insert(parent_component);
+                        parent_query.get_mut(*parent_entity).unwrap()
+                    } else {
+                        commands.entity(entity_id).insert(FileSystemRootChild);
+                        parent_query.get_mut(global.project_root_entity).unwrap()
+                    }
+                };
+
+                // post-process
+                let mut recent_parents = None;
+                file_post_process::on_added_entry(&mut commands, &entry, entity_id, &mut recent_parents);
+                file_post_process::on_added_child(&mut parent, &entry, entity_id);
+
+                commands.entity(entity_id).insert(entry);
+
+                system_state.apply(world);
+
+                return Action::DeleteFile(entity_id);
             }
             Action::DeleteFile(file_entity) => {
-                todo!();
+                let mut system_state: SystemState<(
+                    Commands,
+                    Client,
+                    Query<(&FileSystemEntry, Option<&FileSystemChild>, Option<&FileSystemRootChild>)>,
+                )> = SystemState::new(world);
+                let (mut commands, client, fs_query) = system_state.get_mut(world);
+                let (entry, fs_child_opt, fs_root_child_opt) = fs_query.get(*file_entity).unwrap();
+
+                // get name of file
+                let entry_name = entry.name.to_string();
+
+                // get parent entity
+                let parent_entity_opt: Option<Entity> = if let Some(fs_child) = fs_child_opt {
+                    Some(fs_child.parent_id.get(&client).unwrap())
+                } else if let Some(_) = fs_root_child_opt {
+                    None
+                } else {
+                    panic!("FileSystemEntry {:?} has neither FileSystemChild nor FileSystemRootChild!", file_entity);
+                };
+
+                // actually delete the file
+                commands.entity(*file_entity).despawn();
+
+                return Action::NewFile(parent_entity_opt, entry_name)
             }
             Action::RenameFile(file_entity, new_name) => {
                 let mut system_state: SystemState<Query<&mut FileSystemEntry>> =

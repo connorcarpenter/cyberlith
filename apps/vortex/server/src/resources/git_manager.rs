@@ -31,11 +31,11 @@ impl GitManager {
     }
 
     pub fn has_workspace(&mut self, user_info: &UserInfo) -> bool {
-        self.workspaces.contains_key(&user_info.username)
+        self.workspaces.contains_key(user_info.get_username())
     }
 
     pub fn get_workspace_room_key(&self, user_info: &UserInfo) -> Option<RoomKey> {
-        if let Some(room_key) = self.workspaces.get(&user_info.username) {
+        if let Some(room_key) = self.workspaces.get(user_info.get_username()) {
             Some(room_key.clone())
         } else {
             None
@@ -50,9 +50,9 @@ impl GitManager {
         user_info: &UserInfo,
     ) {
         // Create User's Working directory if it doesn't already exist
-        let username = &user_info.username;
+        let username = user_info.get_username();
         self.workspaces
-            .insert(username.clone(), user_info.workspace_room_key.unwrap());
+            .insert(username.to_string(), user_info.get_room_key().unwrap());
 
         let root_dir = "target/users";
         let full_path_str = format!("{}/{}", root_dir, username);
@@ -124,7 +124,7 @@ impl GitManager {
             &repo,
             &tree,
             user_key,
-            user_info.workspace_room_key.as_ref().unwrap(),
+            user_info.get_room_key().as_ref().unwrap(),
             None,
         );
     }

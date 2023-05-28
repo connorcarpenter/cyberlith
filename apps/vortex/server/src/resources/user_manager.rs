@@ -4,8 +4,8 @@ use bevy_ecs::system::Resource;
 use naia_bevy_server::{RoomKey, UserKey};
 
 pub struct UserInfo {
-    pub username: String,
-    pub workspace_room_key: Option<RoomKey>,
+    username: String,
+    workspace_room_key: Option<RoomKey>,
 }
 
 impl UserInfo {
@@ -16,8 +16,16 @@ impl UserInfo {
         }
     }
 
+    pub(crate) fn get_username(&self) -> &str {
+        &self.username
+    }
+
     pub(crate) fn set_room_key(&mut self, room_key: RoomKey) {
         self.workspace_room_key = Some(room_key);
+    }
+
+    pub(crate) fn get_room_key(&self) -> Option<RoomKey> {
+        self.workspace_room_key
     }
 }
 

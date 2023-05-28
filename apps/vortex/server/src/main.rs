@@ -52,6 +52,8 @@ fn main() {
                 network::disconnect_events,
                 network::error_events,
                 network::tick_events,
+                network::publish_entity_events,
+                network::unpublish_entity_events,
             )
                 .chain()
                 .in_set(ReceiveEvents),
