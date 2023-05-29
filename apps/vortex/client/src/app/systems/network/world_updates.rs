@@ -15,7 +15,7 @@ use naia_bevy_client::{
     Client,
 };
 
-use vortex_proto::components::{FileSystemChild, FileSystemEntry, FileSystemRootChild};
+use vortex_proto::components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
 
 use crate::app::{
     components::file_system::FileSystemParent, resources::global::Global,
@@ -54,9 +54,17 @@ pub fn insert_component_events(
                 &mut commands,
                 entry,
                 entry_entity,
-                &mut recent_parents,
                 false,
             );
+            if *entry.kind == EntryKind::Directory {
+                if recent_parents.is_none() {
+                    recent_parents = Some(HashMap::new());
+                }
+                recent_parents
+                    .as_mut()
+                    .unwrap()
+                    .insert(entry_entity, FileSystemParent::new());
+            }
         }
 
         // on FileSystemRootChild Insert Event

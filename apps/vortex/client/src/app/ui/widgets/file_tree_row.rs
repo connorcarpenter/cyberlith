@@ -527,7 +527,7 @@ impl FileTreeRowUiWidget {
     ) {
         let mut system_state: SystemState<ResMut<ActionStack>> = SystemState::new(world);
         let mut action_stack = system_state.get_mut(world);
-        action_stack.buffer_action(Action::NewEntry(directory_entity, new_name.clone(), EntryKind::File));
+        action_stack.buffer_action(Action::NewEntry(directory_entity, new_name.clone(), EntryKind::File, None));
     }
 
     pub fn on_modal_response_new_directory(
@@ -537,7 +537,7 @@ impl FileTreeRowUiWidget {
     ) {
         let mut system_state: SystemState<ResMut<ActionStack>> = SystemState::new(world);
         let mut action_stack = system_state.get_mut(world);
-        action_stack.buffer_action(Action::NewEntry(directory_entity, new_name.clone(), EntryKind::Directory));
+        action_stack.buffer_action(Action::NewEntry(directory_entity, new_name.clone(), EntryKind::Directory, None));
     }
 
     pub fn on_modal_response_delete(world: &mut World, row_entity: &Entity) {

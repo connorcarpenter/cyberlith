@@ -10,18 +10,8 @@ pub fn on_added_entry(
     commands: &mut Commands,
     entry: &FileSystemEntry,
     entry_entity: Entity,
-    recent_parents: &mut Option<HashMap<Entity, FileSystemParent>>,
     ui_should_select: bool,
 ) {
-    // Add FileSystemParent to directories
-    if *entry.kind == EntryKind::Directory {
-        if recent_parents.is_none() {
-            *recent_parents = Some(HashMap::new());
-        }
-        let map = recent_parents.as_mut().unwrap();
-        map.insert(entry_entity, FileSystemParent::new());
-    }
-
     // Add FileSystemUiState to all entities
     let mut ui_state = FileSystemUiState::new();
     if ui_should_select {
