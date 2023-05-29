@@ -66,6 +66,8 @@ pub enum ContextMenuAction {
 pub enum ModalRequestType {
     // NewFileRequest has an optional parent directory entity, or None if the new file should be at root
     NewFile(Option<Entity>),
+    // NewFileRequest has an optional parent directory entity, or None if the new file should be at root
+    NewDirectory(Option<Entity>),
     // DeleteFileRequest has the file entity to delete
     Delete(Entity),
     Rename,

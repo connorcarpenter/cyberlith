@@ -304,7 +304,7 @@ impl FileTreeRowUiWidget {
                         return;
                     }
                     ContextMenuAction::NewDirectory => {
-                        info!("New Directory");
+                        Self::on_click_new_directory(world, row_entity);
                         return;
                     }
                     ContextMenuAction::Rename => {
@@ -367,20 +367,7 @@ impl FileTreeRowUiWidget {
                 return;
             };
 
-            let directory_entity_opt: Option<Entity> = match *entry.kind {
-                EntryKind::Directory => {
-                    Some(row_entity.clone())
-                }
-                EntryKind::File => {
-                    if let Some(dir_child) = dir_child_opt {
-                        Some(dir_child.parent_id.get(&client).unwrap().clone())
-                    } else if let Some(_root_child) = root_child_opt {
-                        None
-                    } else {
-                        panic!("File entry has no parent");
-                    }
-                }
-            };
+            let directory_entity_opt = Self::get_directory_entity_opt(&client, entry, row_entity, dir_child_opt, root_child_opt);
 
             let Some(request_handle) = ui_state.text_input_modal.open(
                 "New File",
@@ -393,6 +380,54 @@ impl FileTreeRowUiWidget {
 
             entry_ui_state.modal_request = Some((ModalRequestType::NewFile(directory_entity_opt), request_handle));
         });
+    }
+
+    pub fn on_click_new_directory(world: &mut World, row_entity: &Entity) {
+        world.resource_scope(|world, mut ui_state: Mut<UiState>| {
+
+            let mut system_state: SystemState<(Client, Query<(&FileSystemEntry, Option<&FileSystemChild>, Option<&FileSystemRootChild>, &mut FileSystemUiState)>)> =
+                SystemState::new(world);
+            let (client, mut fs_query) = system_state.get_mut(world);
+            let Ok((entry, dir_child_opt, root_child_opt, mut entry_ui_state)) = fs_query.get_mut(*row_entity) else {
+                return;
+            };
+
+            let directory_entity_opt = Self::get_directory_entity_opt(&client, entry, row_entity, dir_child_opt, root_child_opt);
+
+            let Some(request_handle) = ui_state.text_input_modal.open(
+                "New Directory",
+                "Create new directory with name:",
+                Some("my_directory"),
+                "Submit"
+            ) else {
+                return;
+            };
+
+            entry_ui_state.modal_request = Some((ModalRequestType::NewDirectory(directory_entity_opt), request_handle));
+        });
+    }
+
+    fn get_directory_entity_opt(
+        client: &Client,
+        entry: &FileSystemEntry,
+        row_entity: &Entity,
+        dir_child_opt: Option<&FileSystemChild>,
+        root_child_opt: Option<&FileSystemRootChild>
+    ) -> Option<Entity> {
+        match *entry.kind {
+            EntryKind::Directory => {
+                Some(row_entity.clone())
+            }
+            EntryKind::File => {
+                if let Some(dir_child) = dir_child_opt {
+                    Some(dir_child.parent_id.get(client).unwrap().clone())
+                } else if let Some(_root_child) = root_child_opt {
+                    None
+                } else {
+                    panic!("File entry has no parent");
+                }
+            }
+        }
     }
 
     pub fn on_click_delete(world: &mut World, row_entity: &Entity) {
@@ -469,6 +504,12 @@ impl FileTreeRowUiWidget {
                     };
                     Self::on_modal_response_new_file(world, directory_entity_opt, response_string);
                 }
+                ModalRequestType::NewDirectory(directory_entity_opt) => {
+                    let Some(response_string) = response else {
+                        panic!("no response string!");
+                    };
+                    Self::on_modal_response_new_directory(world, directory_entity_opt, response_string);
+                }
                 ModalRequestType::Delete(row_entity) => {
                     Self::on_modal_response_delete(world, &row_entity);
                 }
@@ -489,7 +530,17 @@ impl FileTreeRowUiWidget {
     ) {
         let mut system_state: SystemState<ResMut<ActionStack>> = SystemState::new(world);
         let mut action_stack = system_state.get_mut(world);
-        action_stack.buffer_action(Action::NewFile(directory_entity, new_name.clone()));
+        action_stack.buffer_action(Action::NewFile(directory_entity, new_name.clone(), EntryKind::File));
+    }
+
+    pub fn on_modal_response_new_directory(
+        world: &mut World,
+        directory_entity: Option<Entity>,
+        new_name: String,
+    ) {
+        let mut system_state: SystemState<ResMut<ActionStack>> = SystemState::new(world);
+        let mut action_stack = system_state.get_mut(world);
+        action_stack.buffer_action(Action::NewFile(directory_entity, new_name.clone(), EntryKind::Directory));
     }
 
     pub fn on_modal_response_delete(world: &mut World, row_entity: &Entity) {

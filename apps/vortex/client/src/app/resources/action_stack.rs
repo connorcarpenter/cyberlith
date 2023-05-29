@@ -14,8 +14,8 @@ use crate::app::systems::file_post_process;
 pub enum Action {
     // A list of File Row entities to select
     SelectFiles(Vec<Entity>),
-    // The directory entity to add the new File to, and the name of the new File
-    NewFile(Option<Entity>, String),
+    // The directory entity to add the new File to, and the name of the new File, and whether it is a directory
+    NewFile(Option<Entity>, String, EntryKind),
     // The File Row entity to delete
     DeleteFile(Entity, Option<Vec<Entity>>),
     // The File Row entity to rename, and the new name
@@ -125,7 +125,7 @@ impl ActionStack {
 
                 return Action::SelectFiles(old_selected_files);
             }
-            Action::NewFile(parent_entity_opt, new_file_name) => {
+            Action::NewFile(parent_entity_opt, new_file_name, entry_kind) => {
                 let mut system_state: SystemState<(
                     Commands,
                     Client,
@@ -145,7 +145,7 @@ impl ActionStack {
                     .configure_replication(ReplicationConfig::Delegated)
                     .id();
 
-                let entry = FileSystemEntry::new(new_file_name, EntryKind::File);
+                let entry = FileSystemEntry::new(new_file_name, *entry_kind);
 
                 let mut parent = {
                     if let Some(parent_entity) = parent_entity_opt {
@@ -172,6 +172,14 @@ impl ActionStack {
 
                 commands.entity(entity_id).insert(entry);
 
+                // Add all parents now that the children were able to process
+                // Note that we do it this way because Commands aren't flushed till the end of the system
+                if let Some(parent_map) = recent_parents.as_mut() {
+                    for (entity, parent) in parent_map.drain() {
+                        commands.entity(entity).insert(parent);
+                    }
+                }
+
                 system_state.apply(world);
 
                 return Action::DeleteFile(entity_id, Some(old_selected_files));
@@ -196,6 +204,7 @@ impl ActionStack {
 
                 // get name of file
                 let entry_name = entry.name.to_string();
+                let entry_kind = *entry.kind;
 
                 // get parent entity
                 let parent_entity_opt: Option<Entity> = if let Some(fs_child) = fs_child_opt {
@@ -232,7 +241,7 @@ impl ActionStack {
 
                 system_state.apply(world);
 
-                return Action::NewFile(parent_entity_opt, entry_name);
+                return Action::NewFile(parent_entity_opt, entry_name, entry_kind);
             }
             Action::RenameFile(file_entity, new_name) => {
                 let mut system_state: SystemState<Query<&mut FileSystemEntry>> =

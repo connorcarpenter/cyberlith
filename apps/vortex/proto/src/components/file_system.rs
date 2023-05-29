@@ -13,7 +13,7 @@ impl ProtocolPlugin for FileSystemComponentsPlugin {
     }
 }
 
-#[derive(Serde, PartialEq, Clone, Ord, PartialOrd, Eq)]
+#[derive(Serde, PartialEq, Clone, Ord, PartialOrd, Eq, Copy)]
 pub enum EntryKind {
     Directory,
     File,
