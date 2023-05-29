@@ -493,7 +493,7 @@ impl FileTreeRowUiWidget {
     pub fn on_modal_response_delete(world: &mut World, row_entity: &Entity) {
         let mut system_state: SystemState<ResMut<ActionStack>> = SystemState::new(world);
         let mut action_stack = system_state.get_mut(world);
-        action_stack.buffer_action(Action::DeleteFile(*row_entity));
+        action_stack.buffer_action(Action::DeleteFile(*row_entity, None));
     }
 
     pub fn on_modal_response_rename(world: &mut World, row_entity: &Entity, new_name: String) {

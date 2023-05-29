@@ -51,7 +51,7 @@ pub fn insert_component_events(
         // on FileSystemEntry Insert Event
         for entry_entity in events.read::<FileSystemEntry>() {
             let entry = entry_query.get(entry_entity).unwrap();
-            file_post_process::on_added_entry(&mut commands, entry, entry_entity, &mut recent_parents);
+            file_post_process::on_added_entry(&mut commands, entry, entry_entity, &mut recent_parents, false);
         }
 
         // on FileSystemRootChild Insert Event

@@ -17,7 +17,7 @@ pub enum Action {
     // The directory entity to add the new File to, and the name of the new File
     NewFile(Option<Entity>, String),
     // The File Row entity to delete
-    DeleteFile(Entity),
+    DeleteFile(Entity, Option<Vec<Entity>>),
     // The File Row entity to rename, and the new name
     RenameFile(Entity, String),
 }
@@ -107,39 +107,20 @@ impl ActionStack {
     fn execute_action(&mut self, world: &mut World, action: &Action) -> Action {
         match &action {
             Action::SelectFiles(file_entities) => {
-                let mut old_selected_files = Vec::new();
                 let mut system_state: SystemState<(
                     Commands,
                     Client,
                     Query<(Entity, &mut FileSystemUiState)>,
                 )> = SystemState::new(world);
-                let (mut commands, mut client, mut fs_query) = system_state.get_mut(world);
+                let (mut commands, mut client, mut ui_query) = system_state.get_mut(world);
 
                 // TODO: when shift/control is pressed, select multiple items
 
                 // Deselect all selected files
-                for (item_entity, mut ui_state) in fs_query.iter_mut() {
-                    if ui_state.selected {
-                        ui_state.selected = false;
-
-                        old_selected_files.push(item_entity);
-
-                        // Release Entity Authority
-                        commands.entity(item_entity).release_authority(&mut client);
-                    }
-                }
+                let old_selected_files = Self::deselect_all_selected_files(&mut commands, &mut client, &mut ui_query);
 
                 // Select all new selected files
-                for file_entity in file_entities {
-                    let Ok((_, mut ui_state)) = fs_query.get_mut(*file_entity) else {
-                        panic!("Failed to get FileSystemUiState for row entity {:?}!", file_entity);
-                    };
-
-                    ui_state.selected = true;
-
-                    // Request Entity Authority
-                    commands.entity(*file_entity).request_authority(&mut client);
-                }
+                Self::select_files(&mut commands, &mut client, &mut ui_query, file_entities);
 
                 return Action::SelectFiles(old_selected_files);
             }
@@ -149,9 +130,12 @@ impl ActionStack {
                     Commands,
                     Client,
                     Res<Global>,
+                    Query<(Entity, &mut FileSystemUiState)>,
                     Query<&mut FileSystemParent>,
                 )> = SystemState::new(world);
-                let (mut commands, mut client, global, mut parent_query) = system_state.get_mut(world);
+                let (mut commands, mut client, global, mut ui_query, mut parent_query) = system_state.get_mut(world);
+
+                let old_selected_files = Self::deselect_all_selected_files(&mut commands, &mut client, &mut ui_query);
 
                 let entity_id = commands
                     .spawn_empty()
@@ -175,22 +159,23 @@ impl ActionStack {
 
                 // post-process
                 let mut recent_parents = None;
-                file_post_process::on_added_entry(&mut commands, &entry, entity_id, &mut recent_parents);
+                file_post_process::on_added_entry(&mut commands, &entry, entity_id, &mut recent_parents, true);
                 file_post_process::on_added_child(&mut parent, &entry, entity_id);
 
                 commands.entity(entity_id).insert(entry);
 
                 system_state.apply(world);
 
-                return Action::DeleteFile(entity_id);
+                return Action::DeleteFile(entity_id, Some(old_selected_files));
             }
-            Action::DeleteFile(file_entity) => {
+            Action::DeleteFile(file_entity, files_to_select_opt) => {
                 let mut system_state: SystemState<(
                     Commands,
                     Client,
+                    Query<(Entity, &mut FileSystemUiState)>,
                     Query<(&FileSystemEntry, Option<&FileSystemChild>, Option<&FileSystemRootChild>)>,
                 )> = SystemState::new(world);
-                let (mut commands, client, fs_query) = system_state.get_mut(world);
+                let (mut commands, mut client, mut ui_query, fs_query) = system_state.get_mut(world);
                 let (entry, fs_child_opt, fs_root_child_opt) = fs_query.get(*file_entity).unwrap();
 
                 // get name of file
@@ -208,20 +193,54 @@ impl ActionStack {
                 // actually delete the file
                 commands.entity(*file_entity).despawn();
 
+                if let Some(files_to_select) = files_to_select_opt {
+                    Self::select_files(&mut commands, &mut client, &mut ui_query, files_to_select);
+                }
+
+                system_state.apply(world);
+
                 return Action::NewFile(parent_entity_opt, entry_name)
             }
             Action::RenameFile(file_entity, new_name) => {
                 let mut system_state: SystemState<Query<&mut FileSystemEntry>> =
                     SystemState::new(world);
-                let mut fs_query = system_state.get_mut(world);
-                let Ok(mut fs_entry) = fs_query.get_mut(*file_entity) else {
+                let mut entry_query = system_state.get_mut(world);
+                let Ok(mut file_entry) = entry_query.get_mut(*file_entity) else {
                     panic!("Failed to get FileSystemEntry for row entity {:?}!", file_entity);
                 };
-                let old_name: String = fs_entry.name.to_string();
-                *fs_entry.name = new_name.clone();
+                let old_name: String = file_entry.name.to_string();
+                *file_entry.name = new_name.clone();
                 return Action::RenameFile(*file_entity, old_name);
             }
         }
+    }
+
+    fn select_files(commands: &mut Commands, client: &mut Client, ui_query: &mut Query<(Entity, &mut FileSystemUiState)>, file_entities: &Vec<Entity>) {
+        for file_entity in file_entities {
+            let Ok((_, mut ui_state)) = ui_query.get_mut(*file_entity) else {
+                panic!("Failed to get FileSystemUiState for row entity {:?}!", file_entity);
+            };
+
+            ui_state.selected = true;
+
+            // Request Entity Authority
+            commands.entity(*file_entity).request_authority(client);
+        }
+    }
+
+    fn deselect_all_selected_files(commands: &mut Commands, client: &mut Client, ui_query: &mut Query<(Entity, &mut FileSystemUiState)>) -> Vec<Entity> {
+        let mut old_selected_files = Vec::new();
+        for (item_entity, mut ui_state) in ui_query.iter_mut() {
+            if ui_state.selected {
+                ui_state.selected = false;
+
+                old_selected_files.push(item_entity);
+
+                // Release Entity Authority
+                commands.entity(item_entity).release_authority(client);
+            }
+        }
+        old_selected_files
     }
 
     pub fn entity_update_auth_status(&mut self, entity: &Entity) {

@@ -6,7 +6,7 @@ use vortex_proto::components::{EntryKind, FileSystemEntry};
 
 use crate::app::components::file_system::{FileSystemParent, FileSystemUiState};
 
-pub fn on_added_entry(commands: &mut Commands, entry: &FileSystemEntry, entry_entity: Entity, recent_parents: &mut Option<HashMap<Entity, FileSystemParent>>) {
+pub fn on_added_entry(commands: &mut Commands, entry: &FileSystemEntry, entry_entity: Entity, recent_parents: &mut Option<HashMap<Entity, FileSystemParent>>, ui_should_select: bool) {
 
     // Add FileSystemParent to directories
     if *entry.kind == EntryKind::Directory {
@@ -16,10 +16,15 @@ pub fn on_added_entry(commands: &mut Commands, entry: &FileSystemEntry, entry_en
         let map = recent_parents.as_mut().unwrap();
         map.insert(entry_entity, FileSystemParent::new());
     }
+
     // Add FileSystemUiState to all entities
+    let mut ui_state = FileSystemUiState::new();
+    if ui_should_select {
+        ui_state.selected = true;
+    }
     commands
         .entity(entry_entity)
-        .insert(FileSystemUiState::new());
+        .insert(ui_state);
 }
 
 pub fn on_added_child(parent: &mut FileSystemParent, child_entry: &FileSystemEntry, child_entity: Entity) {
