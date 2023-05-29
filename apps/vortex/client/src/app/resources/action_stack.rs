@@ -1,8 +1,8 @@
+use bevy_ecs::system::Res;
 use bevy_ecs::{
     prelude::{Commands, Entity, Query, Resource, World},
     system::SystemState,
 };
-use bevy_ecs::system::Res;
 use bevy_log::info;
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus, ReplicationConfig};
 use vortex_proto::components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
@@ -117,7 +117,8 @@ impl ActionStack {
                 // TODO: when shift/control is pressed, select multiple items
 
                 // Deselect all selected files
-                let old_selected_files = Self::deselect_all_selected_files(&mut commands, &mut client, &mut ui_query);
+                let old_selected_files =
+                    Self::deselect_all_selected_files(&mut commands, &mut client, &mut ui_query);
 
                 // Select all new selected files
                 Self::select_files(&mut commands, &mut client, &mut ui_query, file_entities);
@@ -125,7 +126,6 @@ impl ActionStack {
                 return Action::SelectFiles(old_selected_files);
             }
             Action::NewFile(parent_entity_opt, new_file_name) => {
-
                 let mut system_state: SystemState<(
                     Commands,
                     Client,
@@ -133,9 +133,11 @@ impl ActionStack {
                     Query<(Entity, &mut FileSystemUiState)>,
                     Query<&mut FileSystemParent>,
                 )> = SystemState::new(world);
-                let (mut commands, mut client, global, mut ui_query, mut parent_query) = system_state.get_mut(world);
+                let (mut commands, mut client, global, mut ui_query, mut parent_query) =
+                    system_state.get_mut(world);
 
-                let old_selected_files = Self::deselect_all_selected_files(&mut commands, &mut client, &mut ui_query);
+                let old_selected_files =
+                    Self::deselect_all_selected_files(&mut commands, &mut client, &mut ui_query);
 
                 let entity_id = commands
                     .spawn_empty()
@@ -159,7 +161,13 @@ impl ActionStack {
 
                 // post-process
                 let mut recent_parents = None;
-                file_post_process::on_added_entry(&mut commands, &entry, entity_id, &mut recent_parents, true);
+                file_post_process::on_added_entry(
+                    &mut commands,
+                    &entry,
+                    entity_id,
+                    &mut recent_parents,
+                    true,
+                );
                 file_post_process::on_added_child(&mut parent, &entry, entity_id);
 
                 commands.entity(entity_id).insert(entry);
@@ -175,10 +183,15 @@ impl ActionStack {
                     Client,
                     Res<Global>,
                     Query<(Entity, &mut FileSystemUiState)>,
-                    Query<(&FileSystemEntry, Option<&FileSystemChild>, Option<&FileSystemRootChild>)>,
+                    Query<(
+                        &FileSystemEntry,
+                        Option<&FileSystemChild>,
+                        Option<&FileSystemRootChild>,
+                    )>,
                     Query<&mut FileSystemParent>,
                 )> = SystemState::new(world);
-                let (mut commands, mut client, global, mut ui_query, fs_query, mut parent_query) = system_state.get_mut(world);
+                let (mut commands, mut client, global, mut ui_query, fs_query, mut parent_query) =
+                    system_state.get_mut(world);
                 let (entry, fs_child_opt, fs_root_child_opt) = fs_query.get(*file_entity).unwrap();
 
                 // get name of file
@@ -189,23 +202,29 @@ impl ActionStack {
                     // get parent entity
                     let parent_entity = fs_child.parent_id.get(&client).unwrap();
                     // remove entity from parent
-                    parent_query.get_mut(parent_entity).unwrap().remove_child(file_entity);
+                    parent_query
+                        .get_mut(parent_entity)
+                        .unwrap()
+                        .remove_child(file_entity);
 
                     Some(parent_entity)
                 } else if let Some(_) = fs_root_child_opt {
-
                     // remove entity from root
-                    parent_query.get_mut(global.project_root_entity).unwrap().remove_child(file_entity);
+                    parent_query
+                        .get_mut(global.project_root_entity)
+                        .unwrap()
+                        .remove_child(file_entity);
 
                     None
                 } else {
-                    panic!("FileSystemEntry {:?} has neither FileSystemChild nor FileSystemRootChild!", file_entity);
+                    panic!(
+                        "FileSystemEntry {:?} has neither FileSystemChild nor FileSystemRootChild!",
+                        file_entity
+                    );
                 };
 
                 // actually delete the file
                 commands.entity(*file_entity).despawn();
-
-
 
                 if let Some(files_to_select) = files_to_select_opt {
                     Self::select_files(&mut commands, &mut client, &mut ui_query, files_to_select);
@@ -213,7 +232,7 @@ impl ActionStack {
 
                 system_state.apply(world);
 
-                return Action::NewFile(parent_entity_opt, entry_name)
+                return Action::NewFile(parent_entity_opt, entry_name);
             }
             Action::RenameFile(file_entity, new_name) => {
                 let mut system_state: SystemState<Query<&mut FileSystemEntry>> =
@@ -229,7 +248,12 @@ impl ActionStack {
         }
     }
 
-    fn select_files(commands: &mut Commands, client: &mut Client, ui_query: &mut Query<(Entity, &mut FileSystemUiState)>, file_entities: &Vec<Entity>) {
+    fn select_files(
+        commands: &mut Commands,
+        client: &mut Client,
+        ui_query: &mut Query<(Entity, &mut FileSystemUiState)>,
+        file_entities: &Vec<Entity>,
+    ) {
         for file_entity in file_entities {
             let Ok((_, mut ui_state)) = ui_query.get_mut(*file_entity) else {
                 panic!("Failed to get FileSystemUiState for row entity {:?}!", file_entity);
@@ -242,7 +266,11 @@ impl ActionStack {
         }
     }
 
-    fn deselect_all_selected_files(commands: &mut Commands, client: &mut Client, ui_query: &mut Query<(Entity, &mut FileSystemUiState)>) -> Vec<Entity> {
+    fn deselect_all_selected_files(
+        commands: &mut Commands,
+        client: &mut Client,
+        ui_query: &mut Query<(Entity, &mut FileSystemUiState)>,
+    ) -> Vec<Entity> {
         let mut old_selected_files = Vec::new();
         for (item_entity, mut ui_state) in ui_query.iter_mut() {
             if ui_state.selected {
@@ -296,14 +324,13 @@ impl ActionStack {
 
     fn should_be_enabled(&self, world: &mut World, file_entities: &Vec<Entity>) -> bool {
         info!("Checking if undo/redo should be enabled");
-        let mut system_state: SystemState<(
-            Commands,
-            Client,
-        )> = SystemState::new(world);
+        let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
         let (mut commands, client) = system_state.get_mut(world);
 
         for file_entity in file_entities {
-            if let Some(EntityAuthStatus::Available) = commands.entity(*file_entity).authority(&client) {
+            if let Some(EntityAuthStatus::Available) =
+                commands.entity(*file_entity).authority(&client)
+            {
                 // enabled should continue being true
             } else {
                 return false;

@@ -1,13 +1,18 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{system::Commands, entity::Entity};
+use bevy_ecs::{entity::Entity, system::Commands};
 
 use vortex_proto::components::{EntryKind, FileSystemEntry};
 
 use crate::app::components::file_system::{FileSystemParent, FileSystemUiState};
 
-pub fn on_added_entry(commands: &mut Commands, entry: &FileSystemEntry, entry_entity: Entity, recent_parents: &mut Option<HashMap<Entity, FileSystemParent>>, ui_should_select: bool) {
-
+pub fn on_added_entry(
+    commands: &mut Commands,
+    entry: &FileSystemEntry,
+    entry_entity: Entity,
+    recent_parents: &mut Option<HashMap<Entity, FileSystemParent>>,
+    ui_should_select: bool,
+) {
     // Add FileSystemParent to directories
     if *entry.kind == EntryKind::Directory {
         if recent_parents.is_none() {
@@ -22,12 +27,14 @@ pub fn on_added_entry(commands: &mut Commands, entry: &FileSystemEntry, entry_en
     if ui_should_select {
         ui_state.selected = true;
     }
-    commands
-        .entity(entry_entity)
-        .insert(ui_state);
+    commands.entity(entry_entity).insert(ui_state);
 }
 
-pub fn on_added_child(parent: &mut FileSystemParent, child_entry: &FileSystemEntry, child_entity: Entity) {
+pub fn on_added_child(
+    parent: &mut FileSystemParent,
+    child_entry: &FileSystemEntry,
+    child_entity: Entity,
+) {
     let entry_kind = (*(child_entry.kind)).clone();
     let child_name = (*(child_entry.name)).clone();
     parent.add_child(entry_kind, child_name, child_entity);

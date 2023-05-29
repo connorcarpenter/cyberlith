@@ -83,9 +83,7 @@ impl FileTreeRowUiWidget {
         let mut system_state: SystemState<(Commands, Client, Query<&mut FileSystemUiState>)> =
             SystemState::new(world);
         let (mut commands, client, fs_query) = system_state.get_mut(world);
-        let auth_status = commands
-            .entity(*row_entity)
-            .authority(&client);
+        let auth_status = commands.entity(*row_entity).authority(&client);
         let Ok(ui_state) = fs_query.get(*row_entity) else {
             return;
         };

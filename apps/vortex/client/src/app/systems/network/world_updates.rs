@@ -18,9 +18,8 @@ use naia_bevy_client::{
 use vortex_proto::components::{FileSystemChild, FileSystemEntry, FileSystemRootChild};
 
 use crate::app::{
-    components::file_system::{FileSystemParent},
-    resources::global::Global,
-    systems::file_post_process
+    components::file_system::FileSystemParent, resources::global::Global,
+    systems::file_post_process,
 };
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
@@ -51,7 +50,13 @@ pub fn insert_component_events(
         // on FileSystemEntry Insert Event
         for entry_entity in events.read::<FileSystemEntry>() {
             let entry = entry_query.get(entry_entity).unwrap();
-            file_post_process::on_added_entry(&mut commands, entry, entry_entity, &mut recent_parents, false);
+            file_post_process::on_added_entry(
+                &mut commands,
+                entry,
+                entry_entity,
+                &mut recent_parents,
+                false,
+            );
         }
 
         // on FileSystemRootChild Insert Event
@@ -64,7 +69,6 @@ pub fn insert_component_events(
 
         // on FileSystemChild Insert Event
         for child_entity in events.read::<FileSystemChild>() {
-
             let entry = entry_query.get(child_entity).unwrap();
 
             // Get parent

@@ -1,10 +1,11 @@
-
 use bevy_ecs::{event::EventReader, system::ResMut};
 use bevy_log::info;
 
-use naia_bevy_server::{events::{PublishEntityEvent, UnpublishEntityEvent}, Server};
 use crate::resources::UserManager;
-
+use naia_bevy_server::{
+    events::{PublishEntityEvent, UnpublishEntityEvent},
+    Server,
+};
 
 pub fn publish_entity_events(
     mut server: Server,
@@ -14,12 +15,14 @@ pub fn publish_entity_events(
     for PublishEntityEvent(user_key, client_entity) in event_reader.iter() {
         info!("client entity has been made public");
 
-        let room_key = user_manager.user_info(user_key).unwrap().get_room_key().unwrap();
+        let room_key = user_manager
+            .user_info(user_key)
+            .unwrap()
+            .get_room_key()
+            .unwrap();
 
         // Add newly public entity to the main Room
-        server
-            .room_mut(&room_key)
-            .add_entity(client_entity);
+        server.room_mut(&room_key).add_entity(client_entity);
     }
 }
 
