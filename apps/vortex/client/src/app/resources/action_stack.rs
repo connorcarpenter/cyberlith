@@ -169,13 +169,16 @@ impl ActionStack {
                 return Action::DeleteFile(entity_id, Some(old_selected_files));
             }
             Action::DeleteFile(file_entity, files_to_select_opt) => {
+                info!("Deleting file");
                 let mut system_state: SystemState<(
                     Commands,
                     Client,
+                    Res<Global>,
                     Query<(Entity, &mut FileSystemUiState)>,
                     Query<(&FileSystemEntry, Option<&FileSystemChild>, Option<&FileSystemRootChild>)>,
+                    Query<&mut FileSystemParent>,
                 )> = SystemState::new(world);
-                let (mut commands, mut client, mut ui_query, fs_query) = system_state.get_mut(world);
+                let (mut commands, mut client, global, mut ui_query, fs_query, mut parent_query) = system_state.get_mut(world);
                 let (entry, fs_child_opt, fs_root_child_opt) = fs_query.get(*file_entity).unwrap();
 
                 // get name of file
@@ -183,8 +186,17 @@ impl ActionStack {
 
                 // get parent entity
                 let parent_entity_opt: Option<Entity> = if let Some(fs_child) = fs_child_opt {
-                    Some(fs_child.parent_id.get(&client).unwrap())
+                    // get parent entity
+                    let parent_entity = fs_child.parent_id.get(&client).unwrap();
+                    // remove entity from parent
+                    parent_query.get_mut(parent_entity).unwrap().remove_child(file_entity);
+
+                    Some(parent_entity)
                 } else if let Some(_) = fs_root_child_opt {
+
+                    // remove entity from root
+                    parent_query.get_mut(global.project_root_entity).unwrap().remove_child(file_entity);
+
                     None
                 } else {
                     panic!("FileSystemEntry {:?} has neither FileSystemChild nor FileSystemRootChild!", file_entity);
@@ -192,6 +204,8 @@ impl ActionStack {
 
                 // actually delete the file
                 commands.entity(*file_entity).despawn();
+
+
 
                 if let Some(files_to_select) = files_to_select_opt {
                     Self::select_files(&mut commands, &mut client, &mut ui_query, files_to_select);

@@ -463,17 +463,21 @@ impl FileTreeRowUiWidget {
                 return;
             };
             row_ui_state.modal_request = None;
-            let Some(response_string) = response else {
-                return;
-            };
+
             match request_type {
                 ModalRequestType::NewFile(directory_entity_opt) => {
+                    let Some(response_string) = response else {
+                        panic!("no response string!");
+                    };
                     Self::on_modal_response_new_file(world, directory_entity_opt, response_string);
                 }
                 ModalRequestType::Delete(row_entity) => {
                     Self::on_modal_response_delete(world, &row_entity);
                 }
                 ModalRequestType::Rename => {
+                    let Some(response_string) = response else {
+                        panic!("no response string!");
+                    };
                     Self::on_modal_response_rename(world, row_entity, response_string);
                 }
             }

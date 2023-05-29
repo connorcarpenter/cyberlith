@@ -24,9 +24,9 @@ impl FileSystemParent {
             .insert((kind, name.to_lowercase()), child_id);
     }
 
-    // pub fn remove_child(&mut self, child_id: Entity) {
-    //     self.children_ids.retain(|&id| id != child_id);
-    // }
+    pub fn remove_child(&mut self, child_id: &Entity) {
+        self.children_ids.retain(|_, id| id != child_id);
+    }
     //
     // pub fn has_children(&self) -> bool {
     //     !self.children_ids.is_empty()
