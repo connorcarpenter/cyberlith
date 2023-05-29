@@ -323,7 +323,6 @@ impl ActionStack {
     }
 
     fn should_be_enabled(&self, world: &mut World, file_entities: &Vec<Entity>) -> bool {
-        info!("Checking if undo/redo should be enabled");
         let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
         let (mut commands, client) = system_state.get_mut(world);
 
