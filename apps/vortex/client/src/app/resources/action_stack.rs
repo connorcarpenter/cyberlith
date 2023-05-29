@@ -13,13 +13,13 @@ use crate::app::systems::file_post_process;
 
 pub enum Action {
     // A list of File Row entities to select
-    SelectFiles(Vec<Entity>),
+    SelectEntries(Vec<Entity>),
     // The directory entity to add the new File to, and the name of the new File, and whether it is a directory
-    NewFile(Option<Entity>, String, EntryKind),
+    NewEntry(Option<Entity>, String, EntryKind),
     // The File Row entity to delete
-    DeleteFile(Entity, Option<Vec<Entity>>),
+    DeleteEntry(Entity, Option<Vec<Entity>>),
     // The File Row entity to rename, and the new name
-    RenameFile(Entity, String),
+    RenameEntry(Entity, String),
 }
 
 #[derive(Resource)]
@@ -106,7 +106,7 @@ impl ActionStack {
 
     fn execute_action(&mut self, world: &mut World, action: &Action) -> Action {
         match &action {
-            Action::SelectFiles(file_entities) => {
+            Action::SelectEntries(file_entities) => {
                 let mut system_state: SystemState<(
                     Commands,
                     Client,
@@ -123,9 +123,9 @@ impl ActionStack {
                 // Select all new selected files
                 Self::select_files(&mut commands, &mut client, &mut ui_query, file_entities);
 
-                return Action::SelectFiles(old_selected_files);
+                return Action::SelectEntries(old_selected_files);
             }
-            Action::NewFile(parent_entity_opt, new_file_name, entry_kind) => {
+            Action::NewEntry(parent_entity_opt, new_file_name, entry_kind) => {
                 let mut system_state: SystemState<(
                     Commands,
                     Client,
@@ -182,10 +182,9 @@ impl ActionStack {
 
                 system_state.apply(world);
 
-                return Action::DeleteFile(entity_id, Some(old_selected_files));
+                return Action::DeleteEntry(entity_id, Some(old_selected_files));
             }
-            Action::DeleteFile(file_entity, files_to_select_opt) => {
-                info!("Deleting file");
+            Action::DeleteEntry(file_entity, files_to_select_opt) => {
                 let mut system_state: SystemState<(
                     Commands,
                     Client,
@@ -241,9 +240,9 @@ impl ActionStack {
 
                 system_state.apply(world);
 
-                return Action::NewFile(parent_entity_opt, entry_name, entry_kind);
+                return Action::NewEntry(parent_entity_opt, entry_name, entry_kind);
             }
-            Action::RenameFile(file_entity, new_name) => {
+            Action::RenameEntry(file_entity, new_name) => {
                 let mut system_state: SystemState<Query<&mut FileSystemEntry>> =
                     SystemState::new(world);
                 let mut entry_query = system_state.get_mut(world);
@@ -252,7 +251,7 @@ impl ActionStack {
                 };
                 let old_name: String = file_entry.name.to_string();
                 *file_entry.name = new_name.clone();
-                return Action::RenameFile(*file_entity, old_name);
+                return Action::RenameEntry(*file_entity, old_name);
             }
         }
     }
@@ -297,13 +296,13 @@ impl ActionStack {
     pub fn entity_update_auth_status(&mut self, entity: &Entity) {
         // if either the undo or redo stack's top entity is this entity, then we need to enable/disable undo based on new auth status
 
-        if let Some(Action::SelectFiles(file_entities)) = self.undo_actions.last() {
+        if let Some(Action::SelectEntries(file_entities)) = self.undo_actions.last() {
             if file_entities.contains(entity) {
                 self.buffered_check = true;
             }
         }
 
-        if let Some(Action::SelectFiles(file_entities)) = self.redo_actions.last() {
+        if let Some(Action::SelectEntries(file_entities)) = self.redo_actions.last() {
             if file_entities.contains(entity) {
                 self.buffered_check = true;
             }
@@ -316,7 +315,7 @@ impl ActionStack {
     }
 
     fn check_top_undo(&mut self, world: &mut World) {
-        if let Some(Action::SelectFiles(file_entities)) = self.undo_actions.last() {
+        if let Some(Action::SelectEntries(file_entities)) = self.undo_actions.last() {
             self.undo_enabled = self.should_be_enabled(world, file_entities);
         } else {
             self.undo_enabled = true;
@@ -324,7 +323,7 @@ impl ActionStack {
     }
 
     fn check_top_redo(&mut self, world: &mut World) {
-        if let Some(Action::SelectFiles(file_entities)) = self.redo_actions.last() {
+        if let Some(Action::SelectEntries(file_entities)) = self.redo_actions.last() {
             self.redo_enabled = self.should_be_enabled(world, file_entities);
         } else {
             self.redo_enabled = true;

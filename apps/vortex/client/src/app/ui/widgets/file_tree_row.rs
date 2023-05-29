@@ -346,7 +346,7 @@ impl FileTreeRowUiWidget {
             if authority.is_available() {
                 let mut entities = Vec::new();
                 entities.push(*row_entity);
-                action_stack.buffer_action(Action::SelectFiles(entities));
+                action_stack.buffer_action(Action::SelectEntries(entities));
             }
         }
     }
@@ -499,25 +499,22 @@ impl FileTreeRowUiWidget {
 
             match request_type {
                 ModalRequestType::NewFile(directory_entity_opt) => {
-                    let Some(response_string) = response else {
-                        panic!("no response string!");
-                    };
-                    Self::on_modal_response_new_file(world, directory_entity_opt, response_string);
+                    if let Some(response_string) = response {
+                        Self::on_modal_response_new_file(world, directory_entity_opt, response_string);
+                    }
                 }
                 ModalRequestType::NewDirectory(directory_entity_opt) => {
-                    let Some(response_string) = response else {
-                        panic!("no response string!");
-                    };
-                    Self::on_modal_response_new_directory(world, directory_entity_opt, response_string);
+                    if let Some(response_string) = response {
+                        Self::on_modal_response_new_directory(world, directory_entity_opt, response_string);
+                    }
                 }
                 ModalRequestType::Delete(row_entity) => {
                     Self::on_modal_response_delete(world, &row_entity);
                 }
                 ModalRequestType::Rename => {
-                    let Some(response_string) = response else {
-                        panic!("no response string!");
-                    };
-                    Self::on_modal_response_rename(world, row_entity, response_string);
+                    if let Some(response_string) = response {
+                        Self::on_modal_response_rename(world, row_entity, response_string);
+                    }
                 }
             }
         });
@@ -530,7 +527,7 @@ impl FileTreeRowUiWidget {
     ) {
         let mut system_state: SystemState<ResMut<ActionStack>> = SystemState::new(world);
         let mut action_stack = system_state.get_mut(world);
-        action_stack.buffer_action(Action::NewFile(directory_entity, new_name.clone(), EntryKind::File));
+        action_stack.buffer_action(Action::NewEntry(directory_entity, new_name.clone(), EntryKind::File));
     }
 
     pub fn on_modal_response_new_directory(
@@ -540,19 +537,19 @@ impl FileTreeRowUiWidget {
     ) {
         let mut system_state: SystemState<ResMut<ActionStack>> = SystemState::new(world);
         let mut action_stack = system_state.get_mut(world);
-        action_stack.buffer_action(Action::NewFile(directory_entity, new_name.clone(), EntryKind::Directory));
+        action_stack.buffer_action(Action::NewEntry(directory_entity, new_name.clone(), EntryKind::Directory));
     }
 
     pub fn on_modal_response_delete(world: &mut World, row_entity: &Entity) {
         let mut system_state: SystemState<ResMut<ActionStack>> = SystemState::new(world);
         let mut action_stack = system_state.get_mut(world);
-        action_stack.buffer_action(Action::DeleteFile(*row_entity, None));
+        action_stack.buffer_action(Action::DeleteEntry(*row_entity, None));
     }
 
     pub fn on_modal_response_rename(world: &mut World, row_entity: &Entity, new_name: String) {
         let mut system_state: SystemState<ResMut<ActionStack>> = SystemState::new(world);
         let mut action_stack = system_state.get_mut(world);
-        action_stack.buffer_action(Action::RenameFile(*row_entity, new_name.clone()));
+        action_stack.buffer_action(Action::RenameEntry(*row_entity, new_name.clone()));
     }
 }
 
