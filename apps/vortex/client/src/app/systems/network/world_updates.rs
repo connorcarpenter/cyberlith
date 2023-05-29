@@ -50,9 +50,8 @@ pub fn insert_component_events(
         // on FileSystemEntry Insert Event
         for entry_entity in events.read::<FileSystemEntry>() {
             let entry = entry_query.get(entry_entity).unwrap();
-            file_post_process::on_added_entry(
+            file_post_process::insert_ui_state_component(
                 &mut commands,
-                entry,
                 entry_entity,
                 false,
             );
@@ -72,7 +71,8 @@ pub fn insert_component_events(
             // Add children to root parent
             let entry = entry_query.get(child_entity).unwrap();
             let mut parent = parent_query.get_mut(project_root_entity).unwrap();
-            file_post_process::on_added_child(&mut parent, entry, child_entity);
+            info!("Received FileSystemRootChild insert event");
+            file_post_process::parent_add_child_entry(&mut parent, entry, child_entity);
         }
 
         // on FileSystemChild Insert Event
@@ -87,8 +87,10 @@ pub fn insert_component_events(
                 .get(&client)
                 .expect("FileSystemChild component has no parent_id");
 
+            info!("Received FileSystemChild insert event");
+
             if let Ok(mut parent) = parent_query.get_mut(parent_entity) {
-                file_post_process::on_added_child(&mut parent, entry, child_entity);
+                file_post_process::parent_add_child_entry(&mut parent, entry, child_entity);
             } else {
                 let Some(parent_map) = recent_parents.as_mut() else {
                     panic!("FileSystemChild component on entity: `{:?}` has invalid parent_id: `{:?}`", child_entity, parent_entity);
@@ -96,7 +98,7 @@ pub fn insert_component_events(
                 let Some(parent) = parent_map.get_mut(&parent_entity) else {
                     panic!("FileSystemChild component on entity: `{:?}` has invalid parent_id: `{:?}`", child_entity, parent_entity);
                 };
-                file_post_process::on_added_child(parent, entry, child_entity);
+                file_post_process::parent_add_child_entry(parent, entry, child_entity);
             }
         }
         // Add all parents now that the children were able to process

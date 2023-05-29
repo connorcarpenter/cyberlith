@@ -1,14 +1,14 @@
 use std::collections::HashMap;
 
 use bevy_ecs::{entity::Entity, system::Commands};
+use bevy_log::info;
 
 use vortex_proto::components::{EntryKind, FileSystemEntry};
 
 use crate::app::components::file_system::{FileSystemParent, FileSystemUiState};
 
-pub fn on_added_entry(
+pub fn insert_ui_state_component(
     commands: &mut Commands,
-    entry: &FileSystemEntry,
     entry_entity: Entity,
     ui_should_select: bool,
 ) {
@@ -20,12 +20,15 @@ pub fn on_added_entry(
     commands.entity(entry_entity).insert(ui_state);
 }
 
-pub fn on_added_child(
+pub fn parent_add_child_entry(
     parent: &mut FileSystemParent,
     child_entry: &FileSystemEntry,
     child_entity: Entity,
 ) {
     let entry_kind = (*(child_entry.kind)).clone();
     let child_name = (*(child_entry.name)).clone();
+
+    info!("added child of name: `{}`, to parent", &child_name);
+
     parent.add_child(entry_kind, child_name, child_entity);
 }

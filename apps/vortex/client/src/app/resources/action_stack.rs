@@ -3,6 +3,7 @@ use bevy_ecs::{
     prelude::{Commands, Entity, Query, Resource, World},
     system::{SystemState, Res},
 };
+use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus, ReplicationConfig};
 use vortex_proto::components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
@@ -12,12 +13,50 @@ use crate::app::{components::file_system::{FileSystemParent, FileSystemUiState},
 pub enum Action {
     // A list of File Row entities to select
     SelectEntries(Vec<Entity>),
-    // The directory entity to add the new File to, and the name of the new File, and whether it is a directory
+    // The directory entity to add the new Entry to, the name of the new Entry, it's Kind, and a list of child Entries to create
     NewEntry(Option<Entity>, String, EntryKind, Option<Vec<SlimTree>>),
-    // The File Row entity to delete
+    // The File Row entity to delete, and a list of entities to select after deleted
     DeleteEntry(Entity, Option<Vec<Entity>>),
     // The File Row entity to rename, and the new name
     RenameEntry(Entity, String),
+}
+
+impl Action {
+    pub(crate) fn migrate_entities(&mut self, old_entity: Entity, new_entity: Entity) {
+        match self {
+            Action::SelectEntries(entities) => {
+                for entity in entities {
+                    if *entity == old_entity {
+                        *entity = new_entity;
+                    }
+                }
+            }
+            Action::NewEntry(entity_opt, _, _, _) => {
+                if let Some(entity) = entity_opt {
+                    if *entity == old_entity {
+                        *entity = new_entity;
+                    }
+                }
+            }
+            Action::DeleteEntry(entity, entities_opt) => {
+                if *entity == old_entity {
+                    *entity = new_entity;
+                }
+                if let Some(entities) = entities_opt {
+                    for entity in entities {
+                        if *entity == old_entity {
+                            *entity = new_entity;
+                        }
+                    }
+                }
+            }
+            Action::RenameEntry(entity, _) => {
+                if *entity == old_entity {
+                    *entity = new_entity;
+                }
+            }
+        }
+    }
 }
 
 #[derive(Resource)]
@@ -144,7 +183,8 @@ impl ActionStack {
                         parent_query.get_mut(global.project_root_entity).unwrap()
                     }
                 };
-                let entity_id = Self::create_fs_entry(&mut commands, &mut client, &mut parent, parent_entity_opt, new_file_name, entry_kind, entry_contents_opt);
+
+                let entity_id = self.create_fs_entry(&mut commands, &mut client, &mut parent, parent_entity_opt, new_file_name, entry_kind, entry_contents_opt, true);
 
                 system_state.apply(world);
 
@@ -280,6 +320,7 @@ impl ActionStack {
     }
 
     fn create_fs_entry(
+        &mut self,
         commands: &mut Commands,
         client: &mut Client,
         parent: &mut FileSystemParent,
@@ -287,7 +328,10 @@ impl ActionStack {
         new_file_name: &str,
         entry_kind: &EntryKind,
         entry_contents_opt: &Option<Vec<SlimTree>>,
+        ui_should_select: bool,
     ) -> Entity {
+        info!("creating new entry: `{}`", new_file_name);
+
         let entity_id = commands
             .spawn_empty()
             .enable_replication(client)
@@ -296,6 +340,7 @@ impl ActionStack {
 
         let entry = FileSystemEntry::new(new_file_name, *entry_kind);
 
+        // add FileSystemChild or FileSystemRootChild component
         if let Some(parent_entity) = parent_entity_opt {
             let mut child_component = FileSystemChild::new();
             child_component.parent_id.set(client, &parent_entity);
@@ -304,34 +349,42 @@ impl ActionStack {
             commands.entity(entity_id).insert(FileSystemRootChild);
         }
 
-        // post-process
-        file_post_process::on_added_entry(
+        // add UiState component
+        file_post_process::insert_ui_state_component(
             commands,
-            &entry,
             entity_id,
-            true,
+            ui_should_select,
         );
+
         if *entry.kind == EntryKind::Directory {
-            let mut child_parent_component = FileSystemParent::new();
+            let mut entry_parent_component = FileSystemParent::new();
 
             if let Some(entry_contents) = entry_contents_opt {
                 for sub_tree in entry_contents {
-                    Self::create_fs_entry(
+
+                    let new_entity = self.create_fs_entry(
                         commands,
                         client,
-                        &mut child_parent_component,
+                        &mut entry_parent_component,
                         &Some(entity_id),
                         &sub_tree.name,
                         &sub_tree.kind,
                         &sub_tree.children,
+                        false,
                     );
+                    let old_entity = sub_tree.entity;
+                    self.migrate_undo_entities(old_entity, new_entity);
                 }
             }
 
-            commands.entity(entity_id).insert(child_parent_component);
+            // add FileSystemParent component
+            commands.entity(entity_id).insert(entry_parent_component);
         }
-        file_post_process::on_added_child(parent, &entry, entity_id);
 
+        // add child to parent
+        file_post_process::parent_add_child_entry(parent, &entry, entity_id);
+
+        // add FileSystemEntry component
         commands.entity(entity_id).insert(entry);
 
         entity_id
@@ -402,11 +455,11 @@ impl ActionStack {
 
         if let Ok(parent) = parent_query.get(*parent_entity) {
             let children_entities = parent.get_children();
-            for children_entity in children_entities {
-                let (child_entry, _, _) = fs_query.get(children_entity).unwrap();
-                let slim_tree = SlimTree::new(child_entry.name.to_string(), *child_entry.kind);
-                trees.push((children_entity, slim_tree));
-                entities_to_delete.push(children_entity);
+            for child_entity in children_entities {
+                let (child_entry, _, _) = fs_query.get(child_entity).unwrap();
+                let slim_tree = SlimTree::new(child_entity, child_entry.name.to_string(), *child_entry.kind);
+                trees.push((child_entity, slim_tree));
+                entities_to_delete.push(child_entity);
             }
 
             for (entry_entity, tree) in trees.iter_mut() {
@@ -419,5 +472,10 @@ impl ActionStack {
         }
 
         (trees, entities_to_delete)
+    }
+    fn migrate_undo_entities(&mut self, old_entity: Entity, new_entity: Entity) {
+        for action in self.undo_actions.iter_mut() {
+            action.migrate_entities(old_entity, new_entity);
+        }
     }
 }
