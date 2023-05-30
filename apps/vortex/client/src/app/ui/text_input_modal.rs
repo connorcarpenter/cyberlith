@@ -123,15 +123,20 @@ impl TextInputModal {
                 });
             });
             modal.buttons(ui, |ui| {
-                if modal.button(ui, &modal_state.other_button_text).clicked() {
+                let escape_pressed = ui.input(|i| i.key_pressed(egui::Key::Escape));
+                let enter_pressed = ui.input(|i| i.key_pressed(egui::Key::Enter));
+
+                if modal.button(ui, &modal_state.other_button_text).clicked() || escape_pressed {
                     // Cancel button clicked..
+                    modal.close();
                 }
                 if let Some(button_text) = &modal_state.suggested_button_text {
                     if modal
                         .suggested_button(ui, button_text)
-                        .clicked()
+                        .clicked() || enter_pressed
                     {
                         modal_state.set_response(modal_state.value.clone());
+                        modal.close();
                     }
                 }
             });

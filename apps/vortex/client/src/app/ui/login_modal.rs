@@ -75,7 +75,8 @@ pub fn login_modal(context: &egui::Context, world: &mut World) {
 
                 ui.separator();
 
-                if modal.button(ui, "login").clicked() {
+                let enter_pressed = ui.input(|i| i.key_pressed(egui::Key::Enter));
+                if modal.button(ui, "login").clicked() || enter_pressed {
                     creds = Some((ui_state.username.clone(), ui_state.password.clone()));
                     ui_state.username = String::new();
                     ui_state.password = String::new();
