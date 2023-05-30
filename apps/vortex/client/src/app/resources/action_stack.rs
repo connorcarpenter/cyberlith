@@ -13,8 +13,8 @@ use crate::app::{components::file_system::{FileSystemParent, FileSystemUiState},
 pub enum Action {
     // A list of File Row entities to select
     SelectEntries(Vec<Entity>),
-    // The directory entity to add the new Entry to, the name of the new Entry, it's Kind, and a list of child Entries to create
-    NewEntry(Option<Entity>, String, EntryKind, Option<Vec<SlimTree>>),
+    // The directory entity to add the new Entry to, the name of the new Entry, it's Kind, an older Entity it was associated with if necessary, and a list of child Entries to create
+    NewEntry(Option<Entity>, String, EntryKind, Option<Entity>, Option<Vec<SlimTree>>),
     // The File Row entity to delete, and a list of entities to select after deleted
     DeleteEntry(Entity, Option<Vec<Entity>>),
     // The File Row entity to rename, and the new name
@@ -31,8 +31,13 @@ impl Action {
                     }
                 }
             }
-            Action::NewEntry(entity_opt, _, _, _) => {
+            Action::NewEntry(entity_opt, _, _, entity_opt_2, _) => {
                 if let Some(entity) = entity_opt {
+                    if *entity == old_entity {
+                        *entity = new_entity;
+                    }
+                }
+                if let Some(entity) = entity_opt_2 {
                     if *entity == old_entity {
                         *entity = new_entity;
                     }
@@ -162,7 +167,7 @@ impl ActionStack {
 
                 return Action::SelectEntries(old_selected_files);
             }
-            Action::NewEntry(parent_entity_opt, new_file_name, entry_kind, entry_contents_opt) => {
+            Action::NewEntry(parent_entity_opt, new_file_name, entry_kind, old_entity_opt, entry_contents_opt) => {
                 let mut system_state: SystemState<(
                     Commands,
                     Client,
@@ -185,6 +190,9 @@ impl ActionStack {
                 };
 
                 let entity_id = self.create_fs_entry(&mut commands, &mut client, &mut parent, parent_entity_opt, new_file_name, entry_kind, entry_contents_opt, true);
+                if let Some(old_entity) = old_entity_opt {
+                    self.migrate_undo_entities(*old_entity, entity_id);
+                }
 
                 system_state.apply(world);
 
@@ -266,6 +274,7 @@ impl ActionStack {
                     parent_entity_opt,
                     entry_name,
                     entry_kind,
+                    Some(*file_entity),
                     entry_contents_opt.map(|entries| entries.into_iter().map(|(_, tree)| tree).collect()));
             }
             Action::RenameEntry(file_entity, new_name) => {
