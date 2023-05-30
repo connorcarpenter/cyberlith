@@ -1,20 +1,30 @@
-
 use bevy_ecs::{
     prelude::{Commands, Entity, Query, Resource, World},
-    system::{SystemState, Res},
+    system::{Res, SystemState},
 };
 use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus, ReplicationConfig};
 use vortex_proto::components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
 
-use crate::app::{components::file_system::{FileSystemParent, FileSystemUiState}, resources::global::Global, slim_tree::SlimTree, systems::file_post_process};
+use crate::app::{
+    components::file_system::{FileSystemParent, FileSystemUiState},
+    resources::global::Global,
+    slim_tree::SlimTree,
+    systems::file_post_process,
+};
 
 pub enum Action {
     // A list of File Row entities to select
     SelectEntries(Vec<Entity>),
     // The directory entity to add the new Entry to, the name of the new Entry, it's Kind, an older Entity it was associated with if necessary, and a list of child Entries to create
-    NewEntry(Option<Entity>, String, EntryKind, Option<Entity>, Option<Vec<SlimTree>>),
+    NewEntry(
+        Option<Entity>,
+        String,
+        EntryKind,
+        Option<Entity>,
+        Option<Vec<SlimTree>>,
+    ),
     // The File Row entity to delete, and a list of entities to select after deleted
     DeleteEntry(Entity, Option<Vec<Entity>>),
     // The File Row entity to rename, and the new name
@@ -167,34 +177,67 @@ impl ActionStack {
 
                 return Action::SelectEntries(old_selected_files);
             }
-            Action::NewEntry(parent_entity_opt, new_file_name, entry_kind, old_entity_opt, entry_contents_opt) => {
-                let mut system_state: SystemState<(
-                    Commands,
-                    Client,
-                    Res<Global>,
-                    Query<(Entity, &mut FileSystemUiState)>,
-                    Query<&mut FileSystemParent>,
-                )> = SystemState::new(world);
-                let (mut commands, mut client, global, mut ui_query, mut parent_query) =
-                    system_state.get_mut(world);
+            Action::NewEntry(
+                parent_entity_opt,
+                new_file_name,
+                entry_kind,
+                old_entity_opt,
+                entry_contents_opt,
+            ) => {
+                let mut old_selected_files: Vec<Entity>;
+                {
+                    let mut system_state: SystemState<(
+                        Commands,
+                        Client,
+                        Res<Global>,
+                        Query<(Entity, &mut FileSystemUiState)>,
+                        Query<&mut FileSystemParent>,
+                    )> = SystemState::new(world);
+                    let (mut commands, mut client, global, mut ui_query, mut parent_query) =
+                        system_state.get_mut(world);
 
-                let old_selected_files =
-                    Self::deselect_all_selected_files(&mut commands, &mut client, &mut ui_query);
+                    old_selected_files = Self::deselect_all_selected_files(
+                        &mut commands,
+                        &mut client,
+                        &mut ui_query,
+                    );
 
-                let mut parent = {
-                    if let Some(parent_entity) = parent_entity_opt {
-                        parent_query.get_mut(*parent_entity).unwrap()
-                    } else {
-                        parent_query.get_mut(global.project_root_entity).unwrap()
+                    let parent_entity = {
+                        if let Some(parent_entity) = parent_entity_opt {
+                            *parent_entity
+                        } else {
+                            global.project_root_entity
+                        }
+                    };
+
+                    // expand parent if it's not expanded
+                    {
+                        let (_, mut ui_state) = ui_query.get_mut(parent_entity).unwrap();
+                        ui_state.opened = true;
                     }
-                };
 
-                let entity_id = self.create_fs_entry(&mut commands, &mut client, &mut parent, parent_entity_opt, new_file_name, entry_kind, entry_contents_opt, true);
-                if let Some(old_entity) = old_entity_opt {
-                    self.migrate_undo_entities(*old_entity, entity_id);
+                    let mut parent = parent_query.get_mut(parent_entity).unwrap();
+
+                    let entity_id = self.create_fs_entry(
+                        &mut commands,
+                        &mut client,
+                        &mut parent,
+                        parent_entity_opt,
+                        new_file_name,
+                        entry_kind,
+                        entry_contents_opt,
+                        true,
+                    );
+                    if let Some(old_entity) = old_entity_opt {
+                        self.migrate_undo_entities(*old_entity, entity_id);
+                    }
+
+                    system_state.apply(world);
                 }
 
-                system_state.apply(world);
+                if entry_contents_opt.is_some() {
+                    todo!()
+                }
 
                 return Action::DeleteEntry(entity_id, Some(old_selected_files));
             }
@@ -249,7 +292,12 @@ impl ActionStack {
                     match entry_kind {
                         EntryKind::File => None,
                         EntryKind::Directory => {
-                            let (entries, entities_to_delete) = Self::convert_contents_to_slim_tree(&client, file_entity, &fs_query, &mut parent_query);
+                            let (entries, entities_to_delete) = Self::convert_contents_to_slim_tree(
+                                &client,
+                                file_entity,
+                                &fs_query,
+                                &mut parent_query,
+                            );
 
                             // delete all children
                             for entity in entities_to_delete {
@@ -257,7 +305,7 @@ impl ActionStack {
                             }
 
                             Some(entries)
-                        },
+                        }
                     }
                 };
 
@@ -275,7 +323,9 @@ impl ActionStack {
                     entry_name,
                     entry_kind,
                     Some(*file_entity),
-                    entry_contents_opt.map(|entries| entries.into_iter().map(|(_, tree)| tree).collect()));
+                    entry_contents_opt
+                        .map(|entries| entries.into_iter().map(|(_, tree)| tree).collect()),
+                );
             }
             Action::RenameEntry(file_entity, new_name) => {
                 let mut system_state: SystemState<Query<&mut FileSystemEntry>> =
@@ -359,18 +409,13 @@ impl ActionStack {
         }
 
         // add UiState component
-        file_post_process::insert_ui_state_component(
-            commands,
-            entity_id,
-            ui_should_select,
-        );
+        file_post_process::insert_ui_state_component(commands, entity_id, ui_should_select);
 
         if *entry.kind == EntryKind::Directory {
             let mut entry_parent_component = FileSystemParent::new();
 
             if let Some(entry_contents) = entry_contents_opt {
                 for sub_tree in entry_contents {
-
                     let new_entity = self.create_fs_entry(
                         commands,
                         client,
@@ -455,10 +500,13 @@ impl ActionStack {
     fn convert_contents_to_slim_tree(
         client: &Client,
         parent_entity: &Entity,
-        fs_query: &Query<(&FileSystemEntry, Option<&FileSystemChild>, Option<&FileSystemRootChild>)>,
-        parent_query: &mut Query<&mut FileSystemParent>
+        fs_query: &Query<(
+            &FileSystemEntry,
+            Option<&FileSystemChild>,
+            Option<&FileSystemRootChild>,
+        )>,
+        parent_query: &mut Query<&mut FileSystemParent>,
     ) -> (Vec<(Entity, SlimTree)>, Vec<Entity>) {
-
         let mut entities_to_delete = Vec::new();
         let mut trees = Vec::new();
 
@@ -466,15 +514,29 @@ impl ActionStack {
             let children_entities = parent.get_children();
             for child_entity in children_entities {
                 let (child_entry, _, _) = fs_query.get(child_entity).unwrap();
-                let slim_tree = SlimTree::new(child_entity, child_entry.name.to_string(), *child_entry.kind);
+                let slim_tree = SlimTree::new(
+                    child_entity,
+                    child_entry.name.to_string(),
+                    *child_entry.kind,
+                );
                 trees.push((child_entity, slim_tree));
                 entities_to_delete.push(child_entity);
             }
 
             for (entry_entity, tree) in trees.iter_mut() {
-                let (subtree, sub_entities_to_delete) = Self::convert_contents_to_slim_tree(client, entry_entity, fs_query, parent_query);
+                let (subtree, sub_entities_to_delete) = Self::convert_contents_to_slim_tree(
+                    client,
+                    entry_entity,
+                    fs_query,
+                    parent_query,
+                );
                 if subtree.len() > 0 {
-                    tree.children = Some(subtree.into_iter().map(|(_, child_tree)| child_tree).collect());
+                    tree.children = Some(
+                        subtree
+                            .into_iter()
+                            .map(|(_, child_tree)| child_tree)
+                            .collect(),
+                    );
                 }
                 entities_to_delete.extend(sub_entities_to_delete);
             }

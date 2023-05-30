@@ -50,11 +50,7 @@ pub fn insert_component_events(
         // on FileSystemEntry Insert Event
         for entry_entity in events.read::<FileSystemEntry>() {
             let entry = entry_query.get(entry_entity).unwrap();
-            file_post_process::insert_ui_state_component(
-                &mut commands,
-                entry_entity,
-                false,
-            );
+            file_post_process::insert_ui_state_component(&mut commands, entry_entity, false);
             if *entry.kind == EntryKind::Directory {
                 if recent_parents.is_none() {
                     recent_parents = Some(HashMap::new());
@@ -160,7 +156,7 @@ pub fn remove_component_events(
     client: Client,
     global: Res<Global>,
     mut parent_query: Query<&mut FileSystemParent>,
-    mut event_reader: EventReader<RemoveComponentEvents>
+    mut event_reader: EventReader<RemoveComponentEvents>,
 ) {
     for events in event_reader.iter() {
         for (_entity, _component) in events.read::<FileSystemEntry>() {
