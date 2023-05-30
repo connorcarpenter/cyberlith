@@ -19,6 +19,10 @@ impl FileSystemParent {
         }
     }
 
+    pub fn has_child(&self, kind: EntryKind, name: &str) -> bool {
+        self.children_ids.contains_key(&(kind, name.to_lowercase()))
+    }
+
     pub fn add_child(&mut self, kind: EntryKind, name: String, child_id: Entity) {
         self.children_ids
             .insert((kind, name.to_lowercase()), child_id);

@@ -1,7 +1,7 @@
 use bevy_ecs::{
     entity::Entity,
     prelude::ResMut,
-    system::{Commands, Query, SystemState},
+    system::{Commands, Query, Res, SystemState},
     world::{Mut, World},
 };
 use bevy_log::info;
@@ -16,8 +16,8 @@ use render_egui::{
 use vortex_proto::components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
 
 use crate::app::{
-    components::file_system::{ContextMenuAction, FileSystemUiState, ModalRequestType},
-    resources::action_stack::{Action, ActionStack},
+    components::file_system::{FileSystemParent, ContextMenuAction, FileSystemUiState, ModalRequestType},
+    resources::{action_stack::{Action, ActionStack}, global::Global},
     ui::UiState,
 };
 
@@ -373,7 +373,8 @@ impl FileTreeRowUiWidget {
                 "New File",
                 "Create new file with name:",
                 Some("file.txt"),
-                "Submit"
+                Some("Submit"),
+                "Cancel",
             ) else {
                 return;
             };
@@ -398,7 +399,8 @@ impl FileTreeRowUiWidget {
                 "New Directory",
                 "Create new directory with name:",
                 Some("my_directory"),
-                "Submit"
+                Some("Submit"),
+                "Cancel",
             ) else {
                 return;
             };
@@ -443,7 +445,8 @@ impl FileTreeRowUiWidget {
                 "Delete File",
                 &format!("Are you sure you want to delete `{}` ?", file_name),
                 None,
-                "Delete"
+                Some("Delete"),
+                "Cancel",
             ) else {
                 return;
             };
@@ -468,7 +471,8 @@ impl FileTreeRowUiWidget {
                 "Rename",
                 &format!("Rename file `{}` to:", file_name),
                 Some(file_name),
-                "Submit"
+                Some("Submit"),
+                "Cancel",
             ) else {
                 return;
             };
@@ -498,19 +502,23 @@ impl FileTreeRowUiWidget {
             match request_type {
                 ModalRequestType::NewFile(directory_entity_opt) => {
                     if let Some(response_string) = response {
-                        Self::on_modal_response_new_file(
+                        Self::on_modal_response_new_entry(
                             world,
+                            &mut ui_state,
                             directory_entity_opt,
-                            response_string,
+                            EntryKind::File,
+                            &response_string,
                         );
                     }
                 }
                 ModalRequestType::NewDirectory(directory_entity_opt) => {
                     if let Some(response_string) = response {
-                        Self::on_modal_response_new_directory(
+                        Self::on_modal_response_new_entry(
                             world,
+                            &mut ui_state,
                             directory_entity_opt,
-                            response_string,
+                            EntryKind::Directory,
+                            &response_string,
                         );
                     }
                 }
@@ -526,33 +534,49 @@ impl FileTreeRowUiWidget {
         });
     }
 
-    pub fn on_modal_response_new_file(
-        world: &mut World,
-        directory_entity: Option<Entity>,
-        new_name: String,
-    ) {
-        let mut system_state: SystemState<ResMut<ActionStack>> = SystemState::new(world);
-        let mut action_stack = system_state.get_mut(world);
-        action_stack.buffer_action(Action::NewEntry(
-            directory_entity,
-            new_name.clone(),
-            EntryKind::File,
-            None,
-            None,
-        ));
+    fn check_for_duplicate_children(
+        ui_state: &mut UiState,
+        global: &Global,
+        directory_entity: &Option<Entity>,
+        parent_query: &Query<&FileSystemParent>,
+        entry_kind: &EntryKind,
+        entry_name: &str
+    ) -> bool {
+        // check for duplicates in parent's children
+        let parent_entity = directory_entity.unwrap_or(global.project_root_entity);
+        let parent = parent_query.get(parent_entity).unwrap();
+        if parent.has_child(*entry_kind, entry_name) {
+            ui_state.text_input_modal.open(
+                "Conflict",
+                &format!("File of name `{}` already exists in this directory!", entry_name),
+                None,
+                None,
+                "Ok",
+            );
+            return true;
+        }
+
+        return false;
     }
 
-    pub fn on_modal_response_new_directory(
+    pub fn on_modal_response_new_entry(
         world: &mut World,
+        ui_state: &mut UiState,
         directory_entity: Option<Entity>,
-        new_name: String,
+        entry_kind: EntryKind,
+        entry_name: &str,
     ) {
-        let mut system_state: SystemState<ResMut<ActionStack>> = SystemState::new(world);
-        let mut action_stack = system_state.get_mut(world);
+        let mut system_state: SystemState<(Res<Global>, ResMut<ActionStack>, Query<&FileSystemParent>)> = SystemState::new(world);
+        let (global, mut action_stack, parent_query) = system_state.get_mut(world);
+
+        if Self::check_for_duplicate_children(ui_state, &global, &directory_entity, &parent_query, &entry_kind, &entry_name) {
+            return;
+        }
+
         action_stack.buffer_action(Action::NewEntry(
             directory_entity,
-            new_name.clone(),
-            EntryKind::Directory,
+            entry_name.to_string(),
+            entry_kind,
             None,
             None,
         ));

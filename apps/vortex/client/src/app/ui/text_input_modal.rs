@@ -19,7 +19,8 @@ pub struct TextInputModal {
     title: String,
     text: String,
     value: Option<String>,
-    button_text: String,
+    suggested_button_text: Option<String>,
+    other_button_text: String,
 }
 
 impl TextInputModal {
@@ -32,7 +33,8 @@ impl TextInputModal {
             title: String::new(),
             text: String::new(),
             value: None,
-            button_text: String::new(),
+            suggested_button_text: None,
+            other_button_text: String::new(),
         }
     }
 
@@ -41,7 +43,8 @@ impl TextInputModal {
         title: &str,
         text: &str,
         default_value: Option<&str>,
-        button_text: &str,
+        suggested_button_text: Option<&str>,
+        other_button_text: &str,
     ) -> Option<ModalRequestHandle> {
         if self.open {
             return None;
@@ -51,7 +54,8 @@ impl TextInputModal {
         self.title = title.to_string();
         self.text = text.to_string();
         self.value = default_value.map(|slice| slice.to_string());
-        self.button_text = button_text.to_string();
+        self.suggested_button_text = suggested_button_text.map(|slice| slice.to_string());
+        self.other_button_text = other_button_text.to_string();
 
         self.current_handle = Some(self.next_handle);
         self.next_handle = self.next_handle.wrapping_add(1);
@@ -119,14 +123,16 @@ impl TextInputModal {
                 });
             });
             modal.buttons(ui, |ui| {
-                if modal.button(ui, "Cancel").clicked() {
+                if modal.button(ui, &modal_state.other_button_text).clicked() {
                     // Cancel button clicked..
                 }
-                if modal
-                    .suggested_button(ui, &modal_state.button_text)
-                    .clicked()
-                {
-                    modal_state.set_response(modal_state.value.clone());
+                if let Some(button_text) = &modal_state.suggested_button_text {
+                    if modal
+                        .suggested_button(ui, button_text)
+                        .clicked()
+                    {
+                        modal_state.set_response(modal_state.value.clone());
+                    }
                 }
             });
         });
