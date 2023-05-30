@@ -9,7 +9,9 @@ impl ProtocolPlugin for FileSystemComponentsPlugin {
         protocol
             .add_component::<FileSystemEntry>()
             .add_component::<FileSystemChild>()
-            .add_component::<FileSystemRootChild>();
+            .add_component::<FileSystemRootChild>()
+            .add_component::<FileSystemInProject>()
+            .add_component::<FileSystemInChangelist>();
     }
 }
 
@@ -49,6 +51,26 @@ impl FileSystemChild {
 pub struct FileSystemRootChild;
 
 impl FileSystemRootChild {
+    pub fn new() -> Self {
+        Self::new_complete()
+    }
+}
+
+// FileSystemInProject
+#[derive(Component, Replicate)]
+pub struct FileSystemInProject;
+
+impl FileSystemInProject {
+    pub fn new() -> Self {
+        Self::new_complete()
+    }
+}
+
+// FileSystemInChangelist
+#[derive(Component, Replicate)]
+pub struct FileSystemInChangelist;
+
+impl FileSystemInChangelist {
     pub fn new() -> Self {
         Self::new_complete()
     }

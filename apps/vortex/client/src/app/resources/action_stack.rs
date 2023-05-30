@@ -5,12 +5,11 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus, ReplicationConfig};
-use vortex_proto::components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
+use vortex_proto::{components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild}, resources::FileTree};
 
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
     resources::global::Global,
-    slim_tree::SlimTree,
     systems::file_post_process,
 };
 
@@ -23,7 +22,7 @@ pub enum Action {
         String,
         EntryKind,
         Option<Entity>,
-        Option<Vec<SlimTree>>,
+        Option<Vec<FileTree>>,
     ),
     // The File Row entity to delete, and a list of entities to select after deleted
     DeleteEntry(Entity, Option<Vec<Entity>>),
@@ -375,7 +374,7 @@ impl ActionStack {
         parent_entity_opt: &Option<Entity>,
         new_file_name: &str,
         entry_kind: &EntryKind,
-        entry_contents_opt: &Option<Vec<SlimTree>>,
+        entry_contents_opt: &Option<Vec<FileTree>>,
     ) -> Entity {
         info!("creating new entry: `{}`", new_file_name);
 
@@ -492,7 +491,7 @@ impl ActionStack {
             Option<&FileSystemRootChild>,
         )>,
         parent_query: &mut Query<&mut FileSystemParent>,
-    ) -> (Vec<(Entity, SlimTree)>, Vec<Entity>) {
+    ) -> (Vec<(Entity, FileTree)>, Vec<Entity>) {
         let mut entities_to_delete = Vec::new();
         let mut trees = Vec::new();
 
@@ -500,7 +499,7 @@ impl ActionStack {
             let children_entities = parent.get_children();
             for child_entity in children_entities {
                 let (child_entry, _, _) = fs_query.get(child_entity).unwrap();
-                let slim_tree = SlimTree::new(
+                let slim_tree = FileTree::new(
                     child_entity,
                     child_entry.name.to_string(),
                     *child_entry.kind,

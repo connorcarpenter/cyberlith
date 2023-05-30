@@ -612,8 +612,8 @@ impl FileTreeRowUiWidget {
             Res<Global>,
             ResMut<ActionStack>,
             Query<&FileSystemParent>,
-            Query<(&FileSystemEntry)>,
-            Query<(&FileSystemChild)>,
+            Query<&FileSystemEntry>,
+            Query<&FileSystemChild>,
         )> = SystemState::new(world);
         let (client, global, mut action_stack, parent_query, entry_query, child_query) =
             system_state.get_mut(world);

@@ -54,6 +54,11 @@ fn main() {
                 network::tick_events,
                 network::publish_entity_events,
                 network::unpublish_entity_events,
+                network::spawn_entity_events,
+                network::despawn_entity_events,
+                network::insert_component_events,
+                network::remove_component_events,
+                network::update_component_events,
             )
                 .chain()
                 .in_set(ReceiveEvents),

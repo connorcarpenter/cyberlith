@@ -1,9 +1,8 @@
-use std::collections::HashMap;
 
 use bevy_ecs::{entity::Entity, system::Commands};
 use bevy_log::info;
 
-use vortex_proto::components::{EntryKind, FileSystemEntry};
+use vortex_proto::components::FileSystemEntry;
 
 use crate::app::components::file_system::{FileSystemParent, FileSystemUiState};
 
