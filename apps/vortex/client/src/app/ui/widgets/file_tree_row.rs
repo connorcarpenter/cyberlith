@@ -532,7 +532,12 @@ impl FileTreeRowUiWidget {
                 }
                 ModalRequestType::Rename => {
                     if let Some(response_string) = response {
-                        Self::on_modal_response_rename(world, &mut ui_state, row_entity, &response_string);
+                        Self::on_modal_response_rename(
+                            world,
+                            &mut ui_state,
+                            row_entity,
+                            &response_string,
+                        );
                     }
                 }
             }

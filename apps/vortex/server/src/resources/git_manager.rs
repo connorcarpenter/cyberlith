@@ -7,13 +7,18 @@ use git2::{Cred, Repository, Tree};
 use naia_bevy_server::{CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};
 use std::{collections::HashMap, fs, path::Path};
 use vortex_proto::components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
+use vortex_proto::resources::FileTree;
 
-use crate::{components::FileSystemOwner, config::GitConfig, resources::user_manager::UserInfo};
+use crate::{
+    components::FileSystemOwner,
+    config::GitConfig,
+    resources::{user_manager::UserInfo, workspace::Workspace},
+};
 
 #[derive(Resource)]
 pub struct GitManager {
     config: Option<GitConfig>,
-    workspaces: HashMap<String, RoomKey>,
+    workspaces: HashMap<String, Workspace>,
 }
 
 impl Default for GitManager {
@@ -35,8 +40,8 @@ impl GitManager {
     }
 
     pub fn get_workspace_room_key(&self, user_info: &UserInfo) -> Option<RoomKey> {
-        if let Some(room_key) = self.workspaces.get(user_info.get_username()) {
-            Some(room_key.clone())
+        if let Some(workspace) = self.workspaces.get(user_info.get_username()) {
+            Some(workspace.room_key.clone())
         } else {
             None
         }
@@ -51,8 +56,6 @@ impl GitManager {
     ) {
         // Create User's Working directory if it doesn't already exist
         let username = user_info.get_username();
-        self.workspaces
-            .insert(username.to_string(), user_info.get_room_key().unwrap());
 
         let root_dir = "target/users";
         let full_path_str = format!("{}/{}", root_dir, username);
@@ -118,91 +121,142 @@ impl GitManager {
 
         let head = repo.head().unwrap();
         let tree = head.peel_to_tree().unwrap();
-        walk_file_tree(
+
+        let file_tree = get_file_tree(commands, server, &repo, &tree);
+
+        let new_workspace = Workspace::new(user_info.get_room_key().unwrap(), file_tree);
+
+        insert_networked_components(
             commands,
             server,
-            &repo,
-            &tree,
+            &new_workspace.file_tree,
             user_key,
-            user_info.get_room_key().as_ref().unwrap(),
+            &new_workspace.room_key,
             None,
         );
+
+        self.workspaces.insert(username.to_string(), new_workspace);
     }
 }
 
-fn walk_file_tree(
+fn get_file_tree(
     commands: &mut Commands,
     server: &mut Server,
     repo: &Repository,
-    entries: &Tree,
+    git_tree: &Tree,
+) -> Vec<FileTree> {
+    let mut output = Vec::new();
+    for git_entry in git_tree.iter() {
+        let name = git_entry.name().unwrap().to_string();
+
+        info!("Git -> Tree: processing Entry `{:?}`", name);
+
+        match git_entry.kind() {
+            Some(git2::ObjectType::Tree) => {
+                let entry_kind = EntryKind::Directory;
+                let id = spawn_file_tree_entity(commands, server);
+
+                let git_children = git_entry.to_object(repo).unwrap().peel_to_tree().unwrap();
+                let children = get_file_tree(commands, server, repo, &git_children);
+
+                let mut file_tree = FileTree::new(id, name, entry_kind);
+                file_tree.children = Some(children);
+                output.push(file_tree);
+            }
+            Some(git2::ObjectType::Blob) => {
+                let entry_kind = EntryKind::File;
+                let id = spawn_file_tree_entity(commands, server);
+
+                let file_tree = FileTree::new(id, name, entry_kind);
+                output.push(file_tree);
+            }
+            _ => {
+                info!("Unknown file type: {:?}", git_entry.kind());
+            }
+        }
+    }
+    output
+}
+
+fn spawn_file_tree_entity(commands: &mut Commands, server: &mut Server) -> Entity {
+    let entity_id = commands
+        .spawn_empty()
+        .enable_replication(server)
+        .configure_replication(ReplicationConfig::Delegated)
+        //.insert(FileSystemEntry::new(&name, entry_kind))
+        //.insert(FileSystemOwner(*user_key))
+        .id();
+
+    //server.room_mut(room_key).add_entity(&entity_id);
+
+    // if let Some(parent) = parent {
+    //     let mut parent_component = FileSystemChild::new();
+    //     parent_component.parent_id.set(server, parent);
+    //     commands.entity(entity_id).insert(parent_component);
+    // } else {
+    //     commands.entity(entity_id).insert(FileSystemRootChild);
+    // }
+
+    entity_id
+}
+
+fn insert_networked_components(
+    commands: &mut Commands,
+    server: &mut Server,
+    file_trees: &Vec<FileTree>,
     user_key: &UserKey,
     room_key: &RoomKey,
     parent: Option<Entity>,
 ) {
-    for entry in entries.iter() {
-        let name = entry.name().unwrap().to_string();
-        info!("Walking tree for Entry `{:?}`", name);
+    for file_tree in file_trees.iter() {
 
-        match entry.kind() {
-            Some(git2::ObjectType::Tree) => {
-                let id = spawn_file_system_entry(
-                    commands, server, &name, user_key, room_key, &parent, true,
+        info!("Networking: walking tree for Entry `{:?}`", file_tree.name);
+
+        match file_tree.kind {
+            EntryKind::Directory => {
+                insert_networked_components_entry(
+                    commands, server, user_key, room_key, &parent, file_tree,
                 );
 
-                let children = entry.to_object(repo).unwrap().peel_to_tree().unwrap();
-                walk_file_tree(
+                insert_networked_components(
                     commands,
                     server,
-                    repo,
-                    &children,
+                    file_tree.children.as_ref().unwrap(),
                     user_key,
                     room_key,
-                    Some(id),
+                    Some(file_tree.entity),
                 );
             }
-            Some(git2::ObjectType::Blob) => {
-                let _ = spawn_file_system_entry(
-                    commands, server, &name, user_key, room_key, &parent, false,
+            EntryKind::File => {
+                insert_networked_components_entry(
+                    commands, server, user_key, room_key, &parent, file_tree,
                 );
-            }
-            _ => {
-                info!("Unknown file type: {:?}", entry.kind());
             }
         }
     }
 }
 
-fn spawn_file_system_entry(
+fn insert_networked_components_entry(
     commands: &mut Commands,
     server: &mut Server,
-    name: &str,
     user_key: &UserKey,
     room_key: &RoomKey,
     parent: &Option<Entity>,
-    is_dir: bool,
-) -> Entity {
-    let entry_kind = if is_dir {
-        EntryKind::Directory
-    } else {
-        EntryKind::File
-    };
-    let entity_id = commands
-        .spawn_empty()
-        .enable_replication(server)
-        .configure_replication(ReplicationConfig::Delegated)
-        .insert(FileSystemEntry::new(&name, entry_kind))
-        .insert(FileSystemOwner(*user_key))
-        .id();
+    entry: &FileTree,
+) {
+    let entry_entitiy = entry.entity;
 
-    server.room_mut(room_key).add_entity(&entity_id);
+    commands.entity(entry_entitiy)
+        .insert(FileSystemEntry::new(&entry.name, entry.kind))
+        .insert(FileSystemOwner(*user_key));
+
+    server.room_mut(room_key).add_entity(&entry_entitiy);
 
     if let Some(parent) = parent {
         let mut parent_component = FileSystemChild::new();
         parent_component.parent_id.set(server, parent);
-        commands.entity(entity_id).insert(parent_component);
+        commands.entity(entry_entitiy).insert(parent_component);
     } else {
-        commands.entity(entity_id).insert(FileSystemRootChild);
+        commands.entity(entry_entitiy).insert(FileSystemRootChild);
     }
-
-    entity_id
 }

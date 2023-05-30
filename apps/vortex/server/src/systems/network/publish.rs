@@ -9,7 +9,7 @@ use naia_bevy_server::{
 
 pub fn publish_entity_events(
     mut server: Server,
-    mut user_manager: ResMut<UserManager>,
+    user_manager: ResMut<UserManager>,
     mut event_reader: EventReader<PublishEntityEvent>,
 ) {
     for PublishEntityEvent(user_key, client_entity) in event_reader.iter() {

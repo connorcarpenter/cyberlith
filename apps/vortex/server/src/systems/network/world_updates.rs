@@ -1,29 +1,14 @@
-use std::collections::HashMap;
-
-use bevy_ecs::{
-    entity::Entity,
-    event::EventReader,
-    system::{Commands, Query, Res},
-};
+use bevy_ecs::event::EventReader;
 use bevy_log::info;
-use naia_bevy_server::events::{DespawnEntityEvent, InsertComponentEvents, RemoveComponentEvents, SpawnEntityEvent, UpdateComponentEvents};
 
-use naia_bevy_client::{
-    events::{
-        DespawnEntityEvent, InsertComponentEvents, RemoveComponentEvents, SpawnEntityEvent,
-        UpdateComponentEvents,
-    },
-    Client,
+use naia_bevy_server::events::{
+    DespawnEntityEvent, InsertComponentEvents, RemoveComponentEvents, SpawnEntityEvent,
+    UpdateComponentEvents,
 };
 
-use vortex_proto::components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
+use vortex_proto::components::{FileSystemChild, FileSystemEntry, FileSystemRootChild};
 
-use crate::app::{
-    components::file_system::FileSystemParent, resources::global::Global,
-    systems::file_post_process,
-};
-
-pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
+pub fn spawn_entity_events(event_reader: EventReader<SpawnEntityEvent>) {
     // unused for now
     // for SpawnEntityEvent(user_key, entity) in event_reader.iter() {
     //     info!("spawned entity");
@@ -36,52 +21,35 @@ pub fn despawn_entity_events(mut event_reader: EventReader<DespawnEntityEvent>) 
     }
 }
 
-pub fn insert_component_events(
-    mut event_reader: EventReader<InsertComponentEvents>,
-) {
+pub fn insert_component_events(mut event_reader: EventReader<InsertComponentEvents>) {
     for events in event_reader.iter() {
         // on FileSystemEntry Insert Event
-        for (user_key, entity) in events.read::<FileSystemEntry>() {
-
-        }
+        for (user_key, entity) in events.read::<FileSystemEntry>() {}
 
         // on FileSystemRootChild Insert Event
-        for (user_key, entity) in events.read::<FileSystemRootChild>() {
-
-        }
+        for (user_key, entity) in events.read::<FileSystemRootChild>() {}
 
         // on FileSystemChild Insert Event
-        for (user_key, entity) in events.read::<FileSystemChild>() {
-
-        }
+        for (user_key, entity) in events.read::<FileSystemChild>() {}
     }
 }
 
-pub fn remove_component_events(
-    mut event_reader: EventReader<RemoveComponentEvents>,
-) {
+pub fn remove_component_events(mut event_reader: EventReader<RemoveComponentEvents>) {
     for events in event_reader.iter() {
-        for (user_key, entity) in events.read::<FileSystemRootChild>() {
+        for (user_key, entity, component) in events.read::<FileSystemRootChild>() {
             info!("removed FileSystemRootChild component from entity");
         }
-        for (entity, component) in events.read::<FileSystemChild>() {
+        for (user_key, entity, component) in events.read::<FileSystemChild>() {
             info!("removed FileSystemChild component from entity");
         }
     }
 }
 
-pub fn update_component_events(
-    mut event_reader: EventReader<UpdateComponentEvents>,
-) {
+pub fn update_component_events(mut event_reader: EventReader<UpdateComponentEvents>) {
     for events in event_reader.iter() {
-
         // on FileSystemEntry Update Event
-        for (user_key, entity) in events.read::<FileSystemEntry>() {
-
-        }
+        for (user_key, entity) in events.read::<FileSystemEntry>() {}
         // on FileSystemChild Update Event
-        for (user_key, entity) in events.read::<FileSystemChild>() {
-
-        }
+        for (user_key, entity) in events.read::<FileSystemChild>() {}
     }
 }
