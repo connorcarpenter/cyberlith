@@ -131,10 +131,7 @@ impl TextInputModal {
                     modal.close();
                 }
                 if let Some(button_text) = &modal_state.suggested_button_text {
-                    if modal
-                        .suggested_button(ui, button_text)
-                        .clicked() || enter_pressed
-                    {
+                    if modal.suggested_button(ui, button_text).clicked() || enter_pressed {
                         modal_state.set_response(modal_state.value.clone());
                         modal.close();
                     }

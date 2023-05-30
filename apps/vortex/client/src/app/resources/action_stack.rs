@@ -194,11 +194,8 @@ impl ActionStack {
                 let (mut commands, mut client, global, mut ui_query, mut parent_query) =
                     system_state.get_mut(world);
 
-                let old_selected_files = Self::deselect_all_selected_files(
-                    &mut commands,
-                    &mut client,
-                    &mut ui_query,
-                );
+                let old_selected_files =
+                    Self::deselect_all_selected_files(&mut commands, &mut client, &mut ui_query);
 
                 let parent_entity = {
                     if let Some(parent_entity) = parent_entity_opt {

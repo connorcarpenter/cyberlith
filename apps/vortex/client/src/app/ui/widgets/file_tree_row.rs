@@ -16,8 +16,13 @@ use render_egui::{
 use vortex_proto::components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
 
 use crate::app::{
-    components::file_system::{FileSystemParent, ContextMenuAction, FileSystemUiState, ModalRequestType},
-    resources::{action_stack::{Action, ActionStack}, global::Global},
+    components::file_system::{
+        ContextMenuAction, FileSystemParent, FileSystemUiState, ModalRequestType,
+    },
+    resources::{
+        action_stack::{Action, ActionStack},
+        global::Global,
+    },
     ui::UiState,
 };
 
@@ -527,7 +532,7 @@ impl FileTreeRowUiWidget {
                 }
                 ModalRequestType::Rename => {
                     if let Some(response_string) = response {
-                        Self::on_modal_response_rename(world, row_entity, response_string);
+                        Self::on_modal_response_rename(world, &mut ui_state, row_entity, &response_string);
                     }
                 }
             }
@@ -536,19 +541,21 @@ impl FileTreeRowUiWidget {
 
     fn check_for_duplicate_children(
         ui_state: &mut UiState,
-        global: &Global,
-        directory_entity: &Option<Entity>,
+        parent_entity: &Entity,
         parent_query: &Query<&FileSystemParent>,
         entry_kind: &EntryKind,
-        entry_name: &str
+        entry_name: &str,
     ) -> bool {
         // check for duplicates in parent's children
-        let parent_entity = directory_entity.unwrap_or(global.project_root_entity);
-        let parent = parent_query.get(parent_entity).unwrap();
+
+        let parent = parent_query.get(*parent_entity).unwrap();
         if parent.has_child(*entry_kind, entry_name) {
             ui_state.text_input_modal.open(
                 "Conflict",
-                &format!("File of name `{}` already exists in this directory!", entry_name),
+                &format!(
+                    "File of name `{}` already exists in this directory!",
+                    entry_name
+                ),
                 None,
                 None,
                 "Ok",
@@ -566,10 +573,22 @@ impl FileTreeRowUiWidget {
         entry_kind: EntryKind,
         entry_name: &str,
     ) {
-        let mut system_state: SystemState<(Res<Global>, ResMut<ActionStack>, Query<&FileSystemParent>)> = SystemState::new(world);
+        let mut system_state: SystemState<(
+            Res<Global>,
+            ResMut<ActionStack>,
+            Query<&FileSystemParent>,
+        )> = SystemState::new(world);
         let (global, mut action_stack, parent_query) = system_state.get_mut(world);
 
-        if Self::check_for_duplicate_children(ui_state, &global, &directory_entity, &parent_query, &entry_kind, &entry_name) {
+        let parent_entity = directory_entity.unwrap_or(global.project_root_entity);
+
+        if Self::check_for_duplicate_children(
+            ui_state,
+            &parent_entity,
+            &parent_query,
+            &entry_kind,
+            &entry_name,
+        ) {
             return;
         }
 
@@ -582,16 +601,50 @@ impl FileTreeRowUiWidget {
         ));
     }
 
+    pub fn on_modal_response_rename(
+        world: &mut World,
+        ui_state: &mut UiState,
+        entry_entity: &Entity,
+        entry_name: &str,
+    ) {
+        let mut system_state: SystemState<(
+            Client,
+            Res<Global>,
+            ResMut<ActionStack>,
+            Query<&FileSystemParent>,
+            Query<(&FileSystemEntry)>,
+            Query<(&FileSystemChild)>,
+        )> = SystemState::new(world);
+        let (client, global, mut action_stack, parent_query, entry_query, child_query) =
+            system_state.get_mut(world);
+
+        let entry_kind = *(entry_query.get(*entry_entity).unwrap().kind);
+
+        let parent_entity: Entity = {
+            if let Ok(child_component) = child_query.get(*entry_entity) {
+                child_component.parent_id.get(&client).unwrap()
+            } else {
+                global.project_root_entity
+            }
+        };
+
+        if Self::check_for_duplicate_children(
+            ui_state,
+            &parent_entity,
+            &parent_query,
+            &entry_kind,
+            &entry_name,
+        ) {
+            return;
+        }
+
+        action_stack.buffer_action(Action::RenameEntry(*entry_entity, entry_name.to_string()));
+    }
+
     pub fn on_modal_response_delete(world: &mut World, row_entity: &Entity) {
         let mut system_state: SystemState<ResMut<ActionStack>> = SystemState::new(world);
         let mut action_stack = system_state.get_mut(world);
         action_stack.buffer_action(Action::DeleteEntry(*row_entity, None));
-    }
-
-    pub fn on_modal_response_rename(world: &mut World, row_entity: &Entity, new_name: String) {
-        let mut system_state: SystemState<ResMut<ActionStack>> = SystemState::new(world);
-        let mut action_stack = system_state.get_mut(world);
-        action_stack.buffer_action(Action::RenameEntry(*row_entity, new_name.clone()));
     }
 }
 
