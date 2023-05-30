@@ -184,60 +184,52 @@ impl ActionStack {
                 old_entity_opt,
                 entry_contents_opt,
             ) => {
-                let mut old_selected_files: Vec<Entity>;
+                let mut system_state: SystemState<(
+                    Commands,
+                    Client,
+                    Res<Global>,
+                    Query<(Entity, &mut FileSystemUiState)>,
+                    Query<&mut FileSystemParent>,
+                )> = SystemState::new(world);
+                let (mut commands, mut client, global, mut ui_query, mut parent_query) =
+                    system_state.get_mut(world);
+
+                let old_selected_files = Self::deselect_all_selected_files(
+                    &mut commands,
+                    &mut client,
+                    &mut ui_query,
+                );
+
+                let parent_entity = {
+                    if let Some(parent_entity) = parent_entity_opt {
+                        *parent_entity
+                    } else {
+                        global.project_root_entity
+                    }
+                };
+
+                // expand parent if it's not expanded
                 {
-                    let mut system_state: SystemState<(
-                        Commands,
-                        Client,
-                        Res<Global>,
-                        Query<(Entity, &mut FileSystemUiState)>,
-                        Query<&mut FileSystemParent>,
-                    )> = SystemState::new(world);
-                    let (mut commands, mut client, global, mut ui_query, mut parent_query) =
-                        system_state.get_mut(world);
-
-                    old_selected_files = Self::deselect_all_selected_files(
-                        &mut commands,
-                        &mut client,
-                        &mut ui_query,
-                    );
-
-                    let parent_entity = {
-                        if let Some(parent_entity) = parent_entity_opt {
-                            *parent_entity
-                        } else {
-                            global.project_root_entity
-                        }
-                    };
-
-                    // expand parent if it's not expanded
-                    {
-                        let (_, mut ui_state) = ui_query.get_mut(parent_entity).unwrap();
-                        ui_state.opened = true;
-                    }
-
-                    let mut parent = parent_query.get_mut(parent_entity).unwrap();
-
-                    let entity_id = self.create_fs_entry(
-                        &mut commands,
-                        &mut client,
-                        &mut parent,
-                        parent_entity_opt,
-                        new_file_name,
-                        entry_kind,
-                        entry_contents_opt,
-                        true,
-                    );
-                    if let Some(old_entity) = old_entity_opt {
-                        self.migrate_undo_entities(*old_entity, entity_id);
-                    }
-
-                    system_state.apply(world);
+                    let (_, mut ui_state) = ui_query.get_mut(parent_entity).unwrap();
+                    ui_state.opened = true;
                 }
 
-                if entry_contents_opt.is_some() {
-                    todo!()
+                let mut parent = parent_query.get_mut(parent_entity).unwrap();
+
+                let entity_id = self.create_fs_entry(
+                    &mut commands,
+                    &mut client,
+                    &mut parent,
+                    parent_entity_opt,
+                    new_file_name,
+                    entry_kind,
+                    entry_contents_opt,
+                );
+                if let Some(old_entity) = old_entity_opt {
+                    self.migrate_undo_entities(*old_entity, entity_id);
                 }
+
+                system_state.apply(world);
 
                 return Action::DeleteEntry(entity_id, Some(old_selected_files));
             }
@@ -387,7 +379,6 @@ impl ActionStack {
         new_file_name: &str,
         entry_kind: &EntryKind,
         entry_contents_opt: &Option<Vec<SlimTree>>,
-        ui_should_select: bool,
     ) -> Entity {
         info!("creating new entry: `{}`", new_file_name);
 
@@ -409,7 +400,7 @@ impl ActionStack {
         }
 
         // add UiState component
-        file_post_process::insert_ui_state_component(commands, entity_id, ui_should_select);
+        file_post_process::insert_ui_state_component(commands, entity_id, true);
 
         if *entry.kind == EntryKind::Directory {
             let mut entry_parent_component = FileSystemParent::new();
@@ -424,7 +415,6 @@ impl ActionStack {
                         &sub_tree.name,
                         &sub_tree.kind,
                         &sub_tree.children,
-                        false,
                     );
                     let old_entity = sub_tree.entity;
                     self.migrate_undo_entities(old_entity, new_entity);
@@ -446,7 +436,6 @@ impl ActionStack {
 
     pub fn entity_update_auth_status(&mut self, entity: &Entity) {
         // if either the undo or redo stack's top entity is this entity, then we need to enable/disable undo based on new auth status
-
         if let Some(Action::SelectEntries(file_entities)) = self.undo_actions.last() {
             if file_entities.contains(entity) {
                 self.buffered_check = true;
