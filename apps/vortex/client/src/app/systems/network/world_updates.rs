@@ -76,12 +76,13 @@ pub fn insert_component_events(
             let entry = entry_query.get(child_entity).unwrap();
 
             // Get parent
-            let parent_entity = child_query
+            let Some(parent_entity) = child_query
                 .get(child_entity)
                 .unwrap()
                 .parent_id
-                .get(&client)
-                .expect("FileSystemChild component has no parent_id");
+                .get(&client) else {
+                panic!("FileSystemChild component of entry: `{}` has no parent component", *entry.name);
+            };
 
             info!("Received FileSystemChild insert event");
 

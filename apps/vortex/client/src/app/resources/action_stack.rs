@@ -283,17 +283,12 @@ impl ActionStack {
                     match entry_kind {
                         EntryKind::File => None,
                         EntryKind::Directory => {
-                            let (entries, entities_to_delete) = Self::convert_contents_to_slim_tree(
+                            let entries = Self::convert_contents_to_slim_tree(
                                 &client,
                                 file_entity,
                                 &fs_query,
                                 &mut parent_query,
                             );
-
-                            // delete all children
-                            for entity in entities_to_delete {
-                                commands.entity(entity).despawn();
-                            }
 
                             Some(entries)
                         }
@@ -494,8 +489,8 @@ impl ActionStack {
             Option<&FileSystemRootChild>,
         )>,
         parent_query: &mut Query<&mut FileSystemParent>,
-    ) -> (Vec<(Entity, FileTree)>, Vec<Entity>) {
-        let mut entities_to_delete = Vec::new();
+    ) -> Vec<(Entity, FileTree)> {
+
         let mut trees = Vec::new();
 
         if let Ok(parent) = parent_query.get(*parent_entity) {
@@ -508,11 +503,10 @@ impl ActionStack {
                     *child_entry.kind,
                 );
                 trees.push((child_entity, slim_tree));
-                entities_to_delete.push(child_entity);
             }
 
             for (entry_entity, tree) in trees.iter_mut() {
-                let (subtree, sub_entities_to_delete) = Self::convert_contents_to_slim_tree(
+                let subtree = Self::convert_contents_to_slim_tree(
                     client,
                     entry_entity,
                     fs_query,
@@ -526,11 +520,10 @@ impl ActionStack {
                             .collect(),
                     );
                 }
-                entities_to_delete.extend(sub_entities_to_delete);
             }
         }
 
-        (trees, entities_to_delete)
+        trees
     }
     fn migrate_undo_entities(&mut self, old_entity: Entity, new_entity: Entity) {
         for action in self.undo_actions.iter_mut() {

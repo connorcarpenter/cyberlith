@@ -47,6 +47,10 @@ impl GitManager {
         }
     }
 
+    pub fn workspace_mut(&mut self, username: &str) -> &mut Workspace {
+        self.workspaces.get_mut(username).unwrap()
+    }
+
     pub fn add_workspace(
         &mut self,
         commands: &mut Commands,
@@ -129,7 +133,7 @@ impl GitManager {
         insert_networked_components(
             commands,
             server,
-            &new_workspace.file_tree,
+            &new_workspace.master_file_tree,
             user_key,
             &new_workspace.room_key,
             None,

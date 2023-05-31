@@ -2,6 +2,7 @@ use bevy_ecs::entity::Entity;
 
 use crate::components::EntryKind;
 
+#[derive(Clone)]
 pub struct FileTree {
     pub entity: Entity,
     pub name: String,
