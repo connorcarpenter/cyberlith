@@ -166,14 +166,20 @@ pub fn remove_component_events(
         for (entity, _component) in events.read::<FileSystemRootChild>() {
             info!("removed FileSystemRootChild component from entity");
 
-            let mut parent = parent_query.get_mut(global.project_root_entity).unwrap();
+            let Ok(mut parent) = parent_query.get_mut(global.project_root_entity) else {
+                continue;
+            };
             parent.remove_child(&entity);
         }
         for (entity, component) in events.read::<FileSystemChild>() {
             info!("removed FileSystemChild component from entity");
 
-            let parent_entity = component.parent_id.get(&client).unwrap();
-            let mut parent = parent_query.get_mut(parent_entity).unwrap();
+            let Some(parent_entity) = component.parent_id.get(&client) else {
+                continue;
+            };
+            let Ok(mut parent) = parent_query.get_mut(parent_entity) else {
+                continue;
+            };
             parent.remove_child(&entity);
         }
     }

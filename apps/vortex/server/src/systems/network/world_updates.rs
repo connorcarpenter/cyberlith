@@ -1,30 +1,28 @@
 use std::collections::HashMap;
-use bevy_ecs::entity::Entity;
-use bevy_ecs::event::EventReader;
-use bevy_ecs::system::{Commands, Local, Query, Res, ResMut};
+
+use bevy_ecs::{entity::Entity, event::EventReader, system::{Commands, Local, Query, Res, ResMut}};
 use bevy_log::{info, warn};
 
-use naia_bevy_server::events::{
+use naia_bevy_server::{events::{
     DespawnEntityEvent, InsertComponentEvents, RemoveComponentEvents, SpawnEntityEvent,
     UpdateComponentEvents,
-};
-use naia_bevy_server::{Server, UserKey};
+}, Server, UserKey, CommandsExt};
 
 use vortex_proto::components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
 
 use crate::resources::{GitManager, UserManager};
 
 pub fn spawn_entity_events(
-    // event_reader: EventReader<SpawnEntityEvent>
+    mut event_reader: EventReader<SpawnEntityEvent>
 ) {
-    // unused for now
-    // for SpawnEntityEvent(user_key, entity) in event_reader.iter() {
-    //     info!("spawned entity");
-    // }
+    for SpawnEntityEvent(user_key, entity) in event_reader.iter() {
+        info!("spawned entity");
+    }
 }
 
 pub fn despawn_entity_events(
     mut commands: Commands,
+    mut server: Server,
     user_manager: Res<UserManager>,
     mut git_manager: ResMut<GitManager>,
     mut event_reader: EventReader<DespawnEntityEvent>,
@@ -38,7 +36,7 @@ pub fn despawn_entity_events(
         let entities_to_despawn = git_manager.workspace_mut(user.get_username()).despawn_entity(entity);
 
         for child_entity in entities_to_despawn {
-            commands.entity(child_entity).despawn();
+            commands.entity(child_entity).take_authority(&mut server).despawn();
             info!("child entity has been despawned");
         }
     }
