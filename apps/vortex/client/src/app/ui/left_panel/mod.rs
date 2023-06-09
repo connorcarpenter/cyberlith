@@ -1,6 +1,6 @@
 use bevy_ecs::world::World;
 
-use crate::app::ui::widgets::FileTreeUiWidget;
+use crate::app::ui::widgets::{ChangelistUiWidget, FileTreeUiWidget};
 use render_egui::{egui, egui::Frame};
 
 pub fn left_panel(context: &egui::Context, world: &mut World) {
@@ -40,7 +40,7 @@ pub fn left_panel(context: &egui::Context, world: &mut World) {
                     egui::ScrollArea::vertical()
                         .auto_shrink([false, false])
                         .show(ui, |ui| {
-                            //FileTreeUiWidget::render_root(ui, world);
+                            ChangelistUiWidget::render_root(ui, world);
                             ui.allocate_space(ui.available_size());
                         });
                 });

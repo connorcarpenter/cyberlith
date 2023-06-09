@@ -65,13 +65,14 @@ impl FileSystemRootChild {
 // ChangelistEntry
 #[derive(Component, Replicate)]
 pub struct ChangelistEntry {
+    pub kind: Property<EntryKind>,
     pub name: Property<String>,
     pub path: Property<String>,
     pub status: Property<ChangelistStatus>,
 }
 
 impl ChangelistEntry {
-    pub fn new(name: &str, path: &str, status: ChangelistStatus) -> Self {
-        Self::new_complete(name.to_string(), path.to_string(), status)
+    pub fn new(kind: EntryKind, name: &str, path: &str, status: ChangelistStatus) -> Self {
+        Self::new_complete(kind, name.to_string(), path.to_string(), status)
     }
 }

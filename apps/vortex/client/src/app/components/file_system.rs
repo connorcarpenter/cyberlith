@@ -54,29 +54,6 @@ pub struct FileSystemUiState {
     pub modal_request: Option<(ModalRequestType, ModalRequestHandle)>,
 }
 
-#[derive(Clone)]
-pub enum ContextMenuAction {
-    None,
-    NewFile,
-    NewDirectory,
-    Rename,
-    Delete,
-    Cut,
-    Copy,
-    Paste,
-}
-
-#[derive(Clone)]
-pub enum ModalRequestType {
-    // NewFileRequest has an optional parent directory entity, or None if the new file should be at root
-    NewFile(Option<Entity>),
-    // NewFileRequest has an optional parent directory entity, or None if the new file should be at root
-    NewDirectory(Option<Entity>),
-    // DeleteFileRequest has the file entity to delete
-    Delete(Entity),
-    Rename,
-}
-
 impl FileSystemUiState {
     pub fn new() -> Self {
         Self {
@@ -92,4 +69,50 @@ impl FileSystemUiState {
         new.opened = true;
         new
     }
+}
+
+// ChangelistUiState
+#[derive(Component)]
+pub struct ChangelistUiState {
+    pub selected: bool,
+    pub context_menu_response: Option<ChangelistContextMenuAction>,
+}
+
+impl ChangelistUiState {
+    pub fn new() -> Self {
+        Self {
+            selected: false,
+            context_menu_response: None,
+        }
+    }
+}
+
+#[derive(Clone)]
+pub enum ContextMenuAction {
+    None,
+    NewFile,
+    NewDirectory,
+    Rename,
+    Delete,
+    Cut,
+    Copy,
+    Paste,
+}
+
+#[derive(Clone)]
+pub enum ChangelistContextMenuAction {
+    None,
+    Rollback,
+    Commit
+}
+
+#[derive(Clone)]
+pub enum ModalRequestType {
+    // NewFileRequest has an optional parent directory entity, or None if the new file should be at root
+    NewFile(Option<Entity>),
+    // NewFileRequest has an optional parent directory entity, or None if the new file should be at root
+    NewDirectory(Option<Entity>),
+    // DeleteFileRequest has the file entity to delete
+    Delete(Entity),
+    Rename,
 }

@@ -5,6 +5,7 @@ use bevy_ecs::{
     event::EventReader,
     system::{Commands, Query, Res},
 };
+use bevy_ecs::system::ResMut;
 use bevy_log::info;
 
 use naia_bevy_client::{
@@ -21,6 +22,7 @@ use crate::app::{
     components::file_system::FileSystemParent, resources::global::Global,
     systems::file_post_process,
 };
+use crate::app::components::file_system::ChangelistUiState;
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
     for SpawnEntityEvent(_entity) in event_reader.iter() {
@@ -37,7 +39,7 @@ pub fn despawn_entity_events(mut event_reader: EventReader<DespawnEntityEvent>) 
 pub fn insert_component_events(
     mut commands: Commands,
     client: Client,
-    global: Res<Global>,
+    mut global: ResMut<Global>,
     mut event_reader: EventReader<InsertComponentEvents>,
     mut parent_query: Query<&mut FileSystemParent>,
     child_query: Query<&FileSystemChild>,
@@ -109,7 +111,11 @@ pub fn insert_component_events(
 
         // on FileSystemChild Insert Event
         for entity in events.read::<ChangelistEntry>() {
+            commands.entity(entity).insert(ChangelistUiState::new());
             let entry = changelist_query.get(entity).unwrap();
+
+            global.changelist.insert((*entry.kind, (*entry.name).clone()), entity);
+
             info!("Received ChangelistEntry insert event. path: `{:?}`, name: `{:?}`", *entry.path, *entry.name);
         }
     }

@@ -28,6 +28,8 @@ pub enum Action {
     DeleteEntry(Entity, Option<Vec<Entity>>),
     // The File Row entity to rename, and the new name
     RenameEntry(Entity, String),
+    // A list of Changelist entities to select
+    SelectChangelistEntries(Vec<Entity>),
 }
 
 impl Action {
@@ -68,6 +70,9 @@ impl Action {
                 if *entity == old_entity {
                     *entity = new_entity;
                 }
+            }
+            Action::SelectChangelistEntries(_) => {
+                todo!();
             }
         }
     }
@@ -320,6 +325,9 @@ impl ActionStack {
                 let old_name: String = file_entry.name.to_string();
                 *file_entry.name = new_name.clone();
                 return Action::RenameEntry(*file_entity, old_name);
+            }
+            Action::SelectChangelistEntries(_) => {
+                todo!();
             }
         }
     }

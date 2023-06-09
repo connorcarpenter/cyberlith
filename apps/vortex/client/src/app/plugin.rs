@@ -45,9 +45,7 @@ impl Plugin for VortexPlugin {
             .insert(FileSystemUiState::new_root())
             .insert(FileSystemEntry::new("Project", EntryKind::Directory))
             .id();
-        let global_resource = Global {
-            project_root_entity,
-        };
+        let global_resource = Global::new(project_root_entity);
 
         app
             // Add Config

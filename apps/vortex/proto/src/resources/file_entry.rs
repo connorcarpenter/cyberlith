@@ -23,7 +23,7 @@ impl FileEntryKey {
             Some(parent_key) => {
                 parent_key.path_for_children()
             },
-            None => "/".to_string(),
+            None => "".to_string(),
         };
 
         Self::new(&path, name, kind)

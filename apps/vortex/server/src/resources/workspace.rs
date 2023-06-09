@@ -50,7 +50,7 @@ impl Workspace {
             let changelist_entity = commands
                 .spawn_empty()
                 .enable_replication(server)
-                .insert(ChangelistEntry::new(file_entry_key.name(), file_entry_key.path(), changelist_status))
+                .insert(ChangelistEntry::new(file_entry_key.kind(), file_entry_key.name(), file_entry_key.path(), changelist_status))
                 .id();
 
             // Add entity to room
@@ -94,7 +94,7 @@ impl Workspace {
             let changelist_entity = commands
                 .spawn_empty()
                 .enable_replication(server)
-                .insert(ChangelistEntry::new(file_entry_key.name(), file_entry_key.path(), changelist_status))
+                .insert(ChangelistEntry::new(file_entry_key.kind(), file_entry_key.name(), file_entry_key.path(), changelist_status))
                 .id();
 
             // Add entity to room
