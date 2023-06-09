@@ -13,7 +13,7 @@ use render_egui::{
         TextStyle, Ui, WidgetText,
     },
 };
-use vortex_proto::components::{ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
+use vortex_proto::components::{ChangelistEntry, ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
 
 use crate::app::{
     components::file_system::{
@@ -69,8 +69,6 @@ impl ChangelistRowUiWidget {
 
         let (mut row_rect, row_response) = ui.allocate_at_least(desired_size, Sense::click());
 
-
-
         if ui.is_rect_visible(row_response.rect) {
             let item_spacing = 4.0;
             let indent_spacing = 14.0;
@@ -111,7 +109,26 @@ impl ChangelistRowUiWidget {
 
             // Draw Name Text
             {
-                text.paint_with_visuals(ui.painter(), inner_pos, ui.style().noninteractive());
+                let text_color = match ui_state.selected {
+                    false => {
+                        match *entry.status {
+                            ChangelistStatus::Modified => {
+                                Color32::from_rgb(0, 72, 96)
+                            }
+                            ChangelistStatus::Added => {
+                                Color32::from_rgb(0, 96, 0)
+                            }
+                            ChangelistStatus::Deleted => {
+                                Color32::from_rgb(96, 0, 0)
+                            }
+                        }
+                    }
+                    true => {
+                        Color32::from_rgb(192, 192, 192)
+                    }
+                };
+
+                text.paint_with_color_override(ui.painter(), inner_pos, text_color);
                 inner_pos.x += text_size.x + item_spacing;
             }
 

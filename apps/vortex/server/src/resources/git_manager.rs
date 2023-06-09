@@ -130,7 +130,7 @@ impl GitManager {
         let tree = head.peel_to_tree().unwrap();
 
         let mut file_entries = HashMap::new();
-        fill_file_entries_from_git(&mut file_entries, commands, server, &repo, &tree, "/", None);
+        fill_file_entries_from_git(&mut file_entries, commands, server, &repo, &tree, "", None);
 
         let new_workspace = Workspace::new(user_info.get_room_key().unwrap(), file_entries);
 
