@@ -1,6 +1,6 @@
 use bevy_ecs::{entity::Entity, component::Component};
 
-use crate::components::EntryKind;
+use crate::components::{ChangelistStatus, EntryKind};
 
 #[derive(Clone, Eq, Hash, PartialEq, Component)]
 pub struct FileEntryKey {
@@ -76,5 +76,28 @@ impl FileEntryValue {
 
     pub fn add_child(&mut self, key: FileEntryKey) {
         self.children.get_or_insert_with(|| Vec::new()).push(key);
+    }
+}
+
+#[derive(Clone)]
+pub struct ChangelistValue {
+    entity: Entity,
+    status: ChangelistStatus,
+}
+
+impl ChangelistValue {
+    pub fn new(entity: Entity, status: ChangelistStatus) -> Self {
+        Self {
+            entity,
+            status
+        }
+    }
+
+    pub fn entity(&self) -> Entity {
+        self.entity
+    }
+
+    pub fn status(&self) -> ChangelistStatus {
+        self.status
     }
 }

@@ -15,7 +15,7 @@ use naia_bevy_client::{
     Client,
 };
 
-use vortex_proto::components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
+use vortex_proto::components::{ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
 
 use crate::app::{
     components::file_system::FileSystemParent, resources::global::Global,
@@ -42,6 +42,7 @@ pub fn insert_component_events(
     mut parent_query: Query<&mut FileSystemParent>,
     child_query: Query<&FileSystemChild>,
     entry_query: Query<&FileSystemEntry>,
+    changelist_query: Query<&ChangelistEntry>,
 ) {
     let project_root_entity = global.project_root_entity;
     let mut recent_parents: Option<HashMap<Entity, FileSystemParent>> = None;
@@ -105,21 +106,19 @@ pub fn insert_component_events(
                 commands.entity(entity).insert(parent);
             }
         }
+
+        // on FileSystemChild Insert Event
+        for entity in events.read::<ChangelistEntry>() {
+            let entry = changelist_query.get(entity).unwrap();
+            info!("Received ChangelistEntry insert event. path: `{:?}`, name: `{:?}`", *entry.path, *entry.name);
+        }
     }
 }
 
 pub fn update_component_events(
-    //mut commands: Commands,
-    //client: Client,
-    //global: Res<Global>,
     mut event_reader: EventReader<UpdateComponentEvents>,
-    //mut parent_query: Query<&mut FileSystemParent>,
-    //child_query: Query<&FileSystemChild>,
     entry_query: Query<&FileSystemEntry>,
 ) {
-    //let project_root_entity = global.project_root_entity;
-    //let mut recent_parents: Option<HashMap<Entity, FileSystemParent>> = None;
-
     for events in event_reader.iter() {
         // on FileSystemEntry Update Event
         for (_, entry_entity) in events.read::<FileSystemEntry>() {

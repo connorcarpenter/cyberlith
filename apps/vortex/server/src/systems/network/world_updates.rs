@@ -33,7 +33,7 @@ pub fn despawn_entity_events(
         let Some(user) = user_manager.user_info(user_key) else {
             panic!("user not found");
         };
-        let entities_to_despawn = git_manager.workspace_mut(user.get_username()).delete_file(entity);
+        let entities_to_despawn = git_manager.workspace_mut(user.get_username()).delete_file(&mut commands, &mut server, entity);
 
         for child_entity in entities_to_despawn {
             commands.entity(child_entity).take_authority(&mut server).despawn();
@@ -81,7 +81,7 @@ impl FSWaitlist {
 
 pub fn insert_component_events(
     mut commands: Commands,
-    server: Server,
+    mut server: Server,
     user_manager: Res<UserManager>,
     mut git_manager: ResMut<GitManager>,
     mut fs_waiting_entities: Local<HashMap<Entity, FSWaitlist>>,
@@ -95,13 +95,13 @@ pub fn insert_component_events(
         for (user_key, entity) in events.read::<FileSystemEntry>() {
             info!("inserted FileSystemEntry");
             let entry = fs_entry_query.get(entity).unwrap();
-            fs_process_insert(&mut commands, FSWaitlistInsert::Entry(*entry.kind, (*entry.name).clone()), &user_manager, &mut git_manager, &mut fs_waiting_entities, &user_key, &entity);
+            fs_process_insert(&mut commands, &mut server, FSWaitlistInsert::Entry(*entry.kind, (*entry.name).clone()), &user_manager, &mut git_manager, &mut fs_waiting_entities, &user_key, &entity);
         }
 
         // on FileSystemRootChild Insert Event
         for (user_key, entity) in events.read::<FileSystemRootChild>() {
             info!("inserted FileSystemRootChild");
-            fs_process_insert(&mut commands, FSWaitlistInsert::Parent(None), &user_manager, &mut git_manager, &mut fs_waiting_entities, &user_key, &entity);
+            fs_process_insert(&mut commands, &mut server, FSWaitlistInsert::Parent(None), &user_manager, &mut git_manager, &mut fs_waiting_entities, &user_key, &entity);
         }
 
         // on FileSystemChild Insert Event
@@ -110,13 +110,14 @@ pub fn insert_component_events(
             let entry = fs_child_query.get(entity).unwrap();
             let parent_entity = entry.parent_id.get(&server).unwrap();
             let parent_key = entry_key_query.get(parent_entity).unwrap();
-            fs_process_insert(&mut commands, FSWaitlistInsert::Parent(Some(parent_key.clone())), &user_manager, &mut git_manager, &mut fs_waiting_entities, &user_key, &entity);
+            fs_process_insert(&mut commands, &mut server, FSWaitlistInsert::Parent(Some(parent_key.clone())), &user_manager, &mut git_manager, &mut fs_waiting_entities, &user_key, &entity);
         }
     }
 }
 
 fn fs_process_insert(
     commands: &mut Commands,
+    server: &mut Server,
     insert: FSWaitlistInsert,
     user_manager: &UserManager,
     git_manager: &mut GitManager,
@@ -141,12 +142,13 @@ fn fs_process_insert(
     if waitlist.is_ready() {
         info!("New Entity is ready to be spawned!");
         let insert = fs_waiting_entities.remove(entity).unwrap();
-        fs_process_insert_complete(commands, user_manager, git_manager, user_key, entity, insert);
+        fs_process_insert_complete(commands, server, user_manager, git_manager, user_key, entity, insert);
     }
 }
 
 fn fs_process_insert_complete(
     commands: &mut Commands,
+    server: &mut Server,
     user_manager: &UserManager,
     git_manager: &mut GitManager,
     user_key: &UserKey,
@@ -157,7 +159,7 @@ fn fs_process_insert_complete(
         panic!("user not found!");
     };
     let (name, kind, parent) = entry.decompose();
-    git_manager.workspace_mut(user.get_username()).create_file(&name, kind, *entity, parent.clone());
+    git_manager.workspace_mut(user.get_username()).create_file(commands, server, &name, kind, *entity, parent.clone());
 
     commands.entity(*entity).insert(FileEntryKey::new_with_parent(parent, &name, kind));
 }
