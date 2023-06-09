@@ -5,14 +5,11 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus, ReplicationConfig};
-use vortex_proto::{
-    components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild},
-    resources::FileTree,
-};
+use vortex_proto::components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
 
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
-    resources::global::Global,
+    resources::{global::Global, file_tree::FileTree},
     systems::file_post_process,
 };
 

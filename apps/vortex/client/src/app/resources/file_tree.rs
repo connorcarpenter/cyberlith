@@ -1,6 +1,6 @@
 use bevy_ecs::entity::Entity;
 
-use crate::components::EntryKind;
+use vortex_proto::components::EntryKind;
 
 #[derive(Clone)]
 pub struct FileTree {

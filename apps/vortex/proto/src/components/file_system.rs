@@ -10,15 +10,21 @@ impl ProtocolPlugin for FileSystemComponentsPlugin {
             .add_component::<FileSystemEntry>()
             .add_component::<FileSystemChild>()
             .add_component::<FileSystemRootChild>()
-            .add_component::<FileSystemInProject>()
-            .add_component::<FileSystemInChangelist>();
+            .add_component::<ChangelistEntry>();
     }
 }
 
-#[derive(Serde, PartialEq, Clone, Ord, PartialOrd, Eq, Copy)]
+#[derive(Serde, PartialEq, Clone, Ord, PartialOrd, Eq, Copy, Hash)]
 pub enum EntryKind {
     Directory,
     File,
+}
+
+#[derive(Serde, PartialEq, Clone, Ord, PartialOrd, Eq, Copy)]
+pub enum ChangelistStatus {
+    Modified,
+    Added,
+    Deleted,
 }
 
 // FileSystemEntry
@@ -56,22 +62,16 @@ impl FileSystemRootChild {
     }
 }
 
-// FileSystemInProject
+// ChangelistEntry
 #[derive(Component, Replicate)]
-pub struct FileSystemInProject;
-
-impl FileSystemInProject {
-    pub fn new() -> Self {
-        Self::new_complete()
-    }
+pub struct ChangelistEntry {
+    pub name: Property<String>,
+    pub path: Property<String>,
+    pub status: Property<ChangelistStatus>,
 }
 
-// FileSystemInChangelist
-#[derive(Component, Replicate)]
-pub struct FileSystemInChangelist;
-
-impl FileSystemInChangelist {
-    pub fn new() -> Self {
-        Self::new_complete()
+impl ChangelistEntry {
+    pub fn new(name: &str, path: &str, status: ChangelistStatus) -> Self {
+        Self::new_complete(name.to_string(), path.to_string(), status)
     }
 }

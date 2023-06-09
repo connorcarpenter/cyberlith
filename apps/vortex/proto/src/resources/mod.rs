@@ -1,3 +1,4 @@
-mod file_tree;
 
-pub use file_tree::FileTree;
+mod file_entry;
+
+pub use file_entry::{FileEntryKey, FileEntryValue};
