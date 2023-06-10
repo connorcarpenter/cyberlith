@@ -87,7 +87,13 @@ impl ChangelistRowUiWidget {
                 row_rect.max.x -= 2.0;
 
                 if let Some(text_color)  = match auth_status {
-                    None | Some(EntityAuthStatus::Available) => row_fill_colors.available,
+                    None => {
+                        match ui_state.selected {
+                            true => Some(row_fill_colors.granted),
+                            false => row_fill_colors.available,
+                        }
+                    }
+                    Some(EntityAuthStatus::Available) => row_fill_colors.available,
                     Some(EntityAuthStatus::Requested) | Some(EntityAuthStatus::Releasing) => {
                         Some(row_fill_colors.requested)
                     }
