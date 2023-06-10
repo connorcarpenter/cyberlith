@@ -194,11 +194,31 @@ impl ChangelistRowUiWidget {
     }
 
     pub fn on_row_click(world: &mut World, row_entity: &Entity) {
-        let mut system_state: SystemState<ResMut<ActionStack>> = SystemState::new(world);
-        let mut action_stack = system_state.get_mut(world);
-        let mut entities = Vec::new();
-        entities.push(*row_entity);
-        action_stack.buffer_action(Action::SelectEntries(entities));
+        let mut system_state: SystemState<(Commands, Client, ResMut<ActionStack>, Query<&ChangelistEntry>)> =
+                    SystemState::new(world);
+        let (mut commands, client, mut action_stack, query) = system_state.get_mut(world);
+
+        let has_auth: bool = {
+            if let Ok(entry) = query.get(*row_entity) {
+                if let Some(file_entity) = entry.file_entity.get(&client) {
+                    if let Some(authority) = commands.entity(file_entity).authority(&client) {
+                        authority.is_available()
+                    } else {
+                        true
+                    }
+                } else {
+                    true
+                }
+            } else {
+                true
+            }
+        };
+
+        if has_auth {
+            let mut entities = Vec::new();
+            entities.push(*row_entity);
+            action_stack.buffer_action(Action::SelectEntries(entities));
+        }
     }
 
     pub fn on_click_commit(world: &mut World, row_entity: &Entity) {
