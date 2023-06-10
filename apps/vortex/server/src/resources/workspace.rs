@@ -60,7 +60,7 @@ impl Workspace {
 
         // if file doesn't exist in master tree and no changelist entry exists, then create a changelist entry
         if !file_exists_in_master && !file_exists_in_changelist {
-            let changelist_status = ChangelistStatus::Added;
+            let changelist_status = ChangelistStatus::Created;
 
             let changelist_entity = commands
                 .spawn_empty()

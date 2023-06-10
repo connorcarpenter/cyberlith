@@ -24,7 +24,7 @@ pub enum EntryKind {
 #[derive(Serde, PartialEq, Clone, Ord, PartialOrd, Eq, Copy)]
 pub enum ChangelistStatus {
     Modified,
-    Added,
+    Created,
     Deleted,
 }
 

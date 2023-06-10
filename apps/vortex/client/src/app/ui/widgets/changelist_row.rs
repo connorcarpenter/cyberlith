@@ -15,18 +15,7 @@ use vortex_proto::components::{ChangelistEntry, ChangelistStatus, EntryKind};
 use crate::app::{
     components::file_system::{ChangelistContextMenuAction, ChangelistUiState},
     resources::action_stack::{Action, ActionStack},
-};
-
-struct RowColors {
-    available: Option<Color32>,
-}
-
-const UNSELECTED_COLORS: RowColors = RowColors { available: None };
-const HOVER_COLORS: RowColors = RowColors {
-    available: Some(Color32::from_gray(72)),
-};
-const SELECTED_COLORS: RowColors = RowColors {
-    available: Some(Color32::from_gray(128)),
+    ui::widgets::colors::{FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED, FILE_ROW_COLORS_UNSELECTED, CHANGELIST_ROW_COLORS_SELECTED, CHANGELIST_ROW_COLORS_HOVER, CHANGELIST_ROW_COLORS_UNSELECTED},
 };
 
 pub struct ChangelistRowUiWidget;
@@ -56,7 +45,6 @@ impl ChangelistRowUiWidget {
 
         if ui.is_rect_visible(row_response.rect) {
             let item_spacing = 4.0;
-            let indent_spacing = 14.0;
 
             let text_size = text.size();
 
@@ -65,27 +53,27 @@ impl ChangelistRowUiWidget {
             // Add Margin
             inner_pos.x += 4.0;
 
+            let (text_colors, row_fill_colors) = {
+                if ui_state.selected {
+                    (TEXT_COLORS_SELECTED, CHANGELIST_ROW_COLORS_SELECTED)
+                } else {
+                    if row_response.hovered() {
+                        (TEXT_COLORS_HOVER, CHANGELIST_ROW_COLORS_HOVER)
+                    } else {
+                        (TEXT_COLORS_UNSELECTED, CHANGELIST_ROW_COLORS_UNSELECTED)
+                    }
+                }
+            };
+
             // Draw Row
             {
-                let row_fill_colors = {
-                    if ui_state.selected {
-                        SELECTED_COLORS
-                    } else {
-                        if row_response.hovered() {
-                            HOVER_COLORS
-                        } else {
-                            UNSELECTED_COLORS
-                        }
-                    }
-                };
-
-                if let Some(row_fill_color) = row_fill_colors.available {
                     row_rect.min.y -= 1.0;
                     row_rect.max.y += 2.0;
                     row_rect.max.x -= 2.0;
 
+                if let Some(color) = row_fill_colors.default {
                     ui.painter()
-                        .rect(row_rect, Rounding::none(), row_fill_color, Stroke::NONE);
+                        .rect(row_rect, Rounding::none(), color, Stroke::NONE);
                 }
             }
 
@@ -94,15 +82,11 @@ impl ChangelistRowUiWidget {
 
             // Draw Name Text
             {
-                let text_color = match ui_state.selected {
-                    false => match *entry.status {
-                        ChangelistStatus::Modified => Color32::from_rgb(0, 72, 96),
-                        ChangelistStatus::Added => Color32::from_rgb(0, 96, 0),
-                        ChangelistStatus::Deleted => Color32::from_rgb(96, 0, 0),
-                    },
-                    true => Color32::from_rgb(192, 192, 192),
+                let text_color = match *entry.status {
+                    ChangelistStatus::Modified => text_colors.modified,
+                    ChangelistStatus::Created => text_colors.created,
+                    ChangelistStatus::Deleted => text_colors.deleted,
                 };
-
                 text.paint_with_color_override(ui.painter(), inner_pos, text_color);
                 inner_pos.x += text_size.x + item_spacing;
             }
@@ -115,7 +99,7 @@ impl ChangelistRowUiWidget {
                     path_widget_text.into_galley(ui, None, path_wrap_width, TextStyle::Button);
                 let path_text_size = path_text.size();
 
-                path_text.paint_with_visuals(ui.painter(), inner_pos, ui.style().noninteractive());
+                path_text.paint_with_color_override(ui.painter(), inner_pos, text_colors.disabled);
                 inner_pos.x += path_text_size.x + item_spacing;
             }
         }
@@ -192,7 +176,7 @@ impl ChangelistRowUiWidget {
         let mut action_stack = system_state.get_mut(world);
         let mut entities = Vec::new();
         entities.push(*row_entity);
-        action_stack.buffer_action(Action::SelectEntries(entities));
+        action_stack.buffer_action(Action::SelectChangelistEntries(entities));
     }
 
     pub fn on_click_commit(world: &mut World, row_entity: &Entity) {

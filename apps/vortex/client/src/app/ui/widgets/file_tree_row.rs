@@ -23,33 +23,7 @@ use crate::app::{
         action_stack::{Action, ActionStack},
         global::Global,
     },
-    ui::UiState,
-};
-
-struct RowColors {
-    available: Option<Color32>,
-    requested: Color32,
-    granted: Color32,
-    denied: Color32,
-}
-
-const UNSELECTED_COLORS: RowColors = RowColors {
-    available: None,
-    requested: Color32::from_rgb(0, 64, 0),
-    granted: Color32::from_rgb(0, 48, 64),
-    denied: Color32::from_rgb(64, 0, 0),
-};
-const HOVER_COLORS: RowColors = RowColors {
-    available: Some(Color32::from_gray(72)),
-    requested: Color32::from_rgb(0, 72, 0),
-    granted: Color32::from_rgb(0, 72, 96),
-    denied: Color32::from_rgb(96, 0, 0),
-};
-const SELECTED_COLORS: RowColors = RowColors {
-    available: Some(Color32::from_gray(128)),
-    requested: Color32::from_rgb(0, 96, 0),
-    granted: Color32::from_rgb(0, 96, 128),
-    denied: Color32::from_rgb(128, 0, 0),
+    ui::{UiState, widgets::colors::{FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED}},
 };
 
 pub struct FileTreeRowUiWidget;
@@ -123,12 +97,12 @@ impl FileTreeRowUiWidget {
             {
                 let row_fill_colors = {
                     if ui_state.selected {
-                        SELECTED_COLORS
+                        FILE_ROW_COLORS_SELECTED
                     } else {
                         if row_response.hovered() || icon_response.hovered() {
-                            HOVER_COLORS
+                            FILE_ROW_COLORS_HOVER
                         } else {
-                            UNSELECTED_COLORS
+                            FILE_ROW_COLORS_UNSELECTED
                         }
                     }
                 };

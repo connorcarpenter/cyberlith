@@ -8,7 +8,7 @@ use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus, ReplicationConfig}
 use vortex_proto::components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
 
 use crate::app::{
-    components::file_system::{FileSystemParent, FileSystemUiState},
+    components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
     resources::{file_tree::FileTree, global::Global},
     systems::file_post_process,
 };
@@ -326,8 +326,19 @@ impl ActionStack {
                 *file_entry.name = new_name.clone();
                 return Action::RenameEntry(*file_entity, old_name);
             }
-            Action::SelectChangelistEntries(_) => {
-                todo!();
+            Action::SelectChangelistEntries(file_entities) => {
+                let mut system_state: SystemState<Query<(Entity, &mut ChangelistUiState)>> = SystemState::new(world);
+                let mut ui_query = system_state.get_mut(world);
+
+                // TODO: when shift/control is pressed, select multiple items
+
+                // Deselect all selected files
+                let old_selected_files = Self::deselect_all_selected_changelist_rows(&mut ui_query);
+
+                // Select all new selected files
+                Self::select_changelist_rows(&mut ui_query, file_entities);
+
+                return Action::SelectEntries(old_selected_files);
             }
         }
     }
@@ -364,6 +375,33 @@ impl ActionStack {
 
                 // Release Entity Authority
                 commands.entity(item_entity).release_authority(client);
+            }
+        }
+        old_selected_files
+    }
+
+    fn select_changelist_rows(
+        ui_query: &mut Query<(Entity, &mut ChangelistUiState)>,
+        file_entities: &Vec<Entity>,
+    ) {
+        for file_entity in file_entities {
+            let Ok((_, mut ui_state)) = ui_query.get_mut(*file_entity) else {
+                panic!("Failed to get ChangelistUiState for row entity {:?}!", file_entity);
+            };
+
+            ui_state.selected = true;
+        }
+    }
+
+    fn deselect_all_selected_changelist_rows(
+        ui_query: &mut Query<(Entity, &mut ChangelistUiState)>,
+    ) -> Vec<Entity> {
+        let mut old_selected_files = Vec::new();
+        for (item_entity, mut ui_state) in ui_query.iter_mut() {
+            if ui_state.selected {
+                ui_state.selected = false;
+
+                old_selected_files.push(item_entity);
             }
         }
         old_selected_files
