@@ -176,7 +176,7 @@ impl ChangelistRowUiWidget {
         let mut action_stack = system_state.get_mut(world);
         let mut entities = Vec::new();
         entities.push(*row_entity);
-        action_stack.buffer_action(Action::SelectChangelistEntries(entities));
+        action_stack.buffer_action(Action::SelectEntries(entities));
     }
 
     pub fn on_click_commit(world: &mut World, row_entity: &Entity) {
