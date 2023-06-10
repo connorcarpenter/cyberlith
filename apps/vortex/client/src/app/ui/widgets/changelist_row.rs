@@ -1,10 +1,12 @@
 use bevy_ecs::{
     entity::Entity,
     prelude::ResMut,
-    system::{Query, SystemState},
+    system::{Commands, Query, SystemState},
     world::World,
 };
 use bevy_log::info;
+
+use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
 
 use render_egui::{
     egui,
@@ -15,16 +17,29 @@ use vortex_proto::components::{ChangelistEntry, ChangelistStatus, EntryKind};
 use crate::app::{
     components::file_system::{ChangelistContextMenuAction, ChangelistUiState},
     resources::action_stack::{Action, ActionStack},
-    ui::widgets::colors::{FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED, FILE_ROW_COLORS_UNSELECTED, CHANGELIST_ROW_COLORS_SELECTED, CHANGELIST_ROW_COLORS_HOVER, CHANGELIST_ROW_COLORS_UNSELECTED},
+    ui::widgets::colors::{FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED, FILE_ROW_COLORS_UNSELECTED},
 };
 
 pub struct ChangelistRowUiWidget;
 
 impl ChangelistRowUiWidget {
     pub fn render_row(ui: &mut Ui, world: &mut World, row_entity: Entity) {
-        let mut system_state: SystemState<Query<(&ChangelistEntry, &ChangelistUiState)>> =
+        let mut system_state: SystemState<(Commands, Client, Query<(&ChangelistEntry, &ChangelistUiState)>)> =
             SystemState::new(world);
-        let query = system_state.get(world);
+        let (mut commands, client, query) = system_state.get_mut(world);
+
+        // get auth status
+        let auth_status: Option<EntityAuthStatus> = {
+            if let Ok((entry, _)) = query.get(row_entity) {
+                if let Some(file_entity) = entry.file_entity.get(&client) {
+                    commands.entity(file_entity).authority(&client)
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        };
         let Ok((entry, ui_state)) = query.get(row_entity) else {
             return;
         };
@@ -55,25 +70,32 @@ impl ChangelistRowUiWidget {
 
             let (text_colors, row_fill_colors) = {
                 if ui_state.selected {
-                    (TEXT_COLORS_SELECTED, CHANGELIST_ROW_COLORS_SELECTED)
+                    (TEXT_COLORS_SELECTED, FILE_ROW_COLORS_SELECTED)
                 } else {
                     if row_response.hovered() {
-                        (TEXT_COLORS_HOVER, CHANGELIST_ROW_COLORS_HOVER)
+                        (TEXT_COLORS_HOVER, FILE_ROW_COLORS_HOVER)
                     } else {
-                        (TEXT_COLORS_UNSELECTED, CHANGELIST_ROW_COLORS_UNSELECTED)
+                        (TEXT_COLORS_UNSELECTED, FILE_ROW_COLORS_UNSELECTED)
                     }
                 }
             };
 
             // Draw Row
             {
-                    row_rect.min.y -= 1.0;
-                    row_rect.max.y += 2.0;
-                    row_rect.max.x -= 2.0;
+                row_rect.min.y -= 1.0;
+                row_rect.max.y += 2.0;
+                row_rect.max.x -= 2.0;
 
-                if let Some(color) = row_fill_colors.default {
+                if let Some(text_color)  = match auth_status {
+                    None | Some(EntityAuthStatus::Available) => row_fill_colors.available,
+                    Some(EntityAuthStatus::Requested) | Some(EntityAuthStatus::Releasing) => {
+                        Some(row_fill_colors.requested)
+                    }
+                    Some(EntityAuthStatus::Granted) => Some(row_fill_colors.granted),
+                    Some(EntityAuthStatus::Denied) => Some(row_fill_colors.denied),
+                } {
                     ui.painter()
-                        .rect(row_rect, Rounding::none(), color, Stroke::NONE);
+                        .rect(row_rect, Rounding::none(), text_color, Stroke::NONE);
                 }
             }
 

@@ -348,6 +348,11 @@ impl ActionStack {
 
                 // Changelist
                 ui_state.selected = true;
+
+                if let Some(file_entity) = cl_entry.file_entity.get(client) {
+                    // Request Entity Authority
+                    commands.entity(file_entity).request_authority(client);
+                }
             }
         }
     }
@@ -377,6 +382,11 @@ impl ActionStack {
                 ui_state.selected = false;
 
                 old_selected_files.push(item_entity);
+
+                if let Some(file_entity) = cl_entry.file_entity.get(client) {
+                    // Release Entity Authority
+                    commands.entity(file_entity).release_authority(client);
+                }
             }
         }
         old_selected_files

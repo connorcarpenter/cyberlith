@@ -29,23 +29,6 @@ pub const FILE_ROW_COLORS_SELECTED: FileRowColors = FileRowColors {
     denied: Color32::from_rgb(128, 0, 0),
 };
 
-// Changelist Row Colors
-pub struct ChangelistRowColors {
-    pub default: Option<Color32>,
-}
-
-pub const CHANGELIST_ROW_COLORS_UNSELECTED: ChangelistRowColors = ChangelistRowColors {
-    default: None,
-};
-
-pub const CHANGELIST_ROW_COLORS_HOVER: ChangelistRowColors = ChangelistRowColors {
-    default: Some(Color32::from_gray(72)),
-};
-
-pub const CHANGELIST_ROW_COLORS_SELECTED: ChangelistRowColors = ChangelistRowColors {
-    default: Some(Color32::from_rgb(0, 96, 128)),
-};
-
 // Text Colors
 pub struct TextColors {
     pub default: Color32,
