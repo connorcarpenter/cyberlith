@@ -1,7 +1,7 @@
 use bevy_ecs::prelude::Component;
 
-use naia_bevy_shared::{EntityProperty, Property, Protocol, ProtocolPlugin, Replicate, Serde};
 use crate::resources::FileEntryKey;
+use naia_bevy_shared::{EntityProperty, Property, Protocol, ProtocolPlugin, Replicate, Serde};
 
 pub struct FileSystemComponentsPlugin;
 
@@ -15,7 +15,7 @@ impl ProtocolPlugin for FileSystemComponentsPlugin {
     }
 }
 
-#[derive(Serde, PartialEq, Clone, Ord, PartialOrd, Eq, Copy, Hash)]
+#[derive(Serde, PartialEq, Clone, Ord, PartialOrd, Eq, Copy, Hash, Debug)]
 pub enum EntryKind {
     Directory,
     File,

@@ -1,20 +1,31 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{entity::Entity, event::EventReader, system::{Commands, Local, Query, Res, ResMut}};
+use bevy_ecs::{
+    entity::Entity,
+    event::EventReader,
+    system::{Commands, Local, Query, Res, ResMut},
+};
 use bevy_log::info;
 
-use naia_bevy_server::{events::{
-    DespawnEntityEvent, InsertComponentEvents, RemoveComponentEvents, SpawnEntityEvent,
-    UpdateComponentEvents,
-}, Server, CommandsExt};
+use naia_bevy_server::{
+    events::{
+        DespawnEntityEvent, InsertComponentEvents, RemoveComponentEvents, SpawnEntityEvent,
+        UpdateComponentEvents,
+    },
+    CommandsExt, Server,
+};
 
-use vortex_proto::{components::{FileSystemChild, FileSystemEntry, FileSystemRootChild}, resources::FileEntryKey};
+use vortex_proto::{
+    components::{FileSystemChild, FileSystemEntry, FileSystemRootChild},
+    resources::FileEntryKey,
+};
 
-use crate::resources::{GitManager, UserManager, fs_waitlist::{FSWaitlist, fs_process_insert, FSWaitlistInsert}};
+use crate::resources::{
+    fs_waitlist::{fs_process_insert, FSWaitlist, FSWaitlistInsert},
+    GitManager, UserManager,
+};
 
-pub fn spawn_entity_events(
-    mut event_reader: EventReader<SpawnEntityEvent>
-) {
+pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
     for SpawnEntityEvent(user_key, entity) in event_reader.iter() {
         info!("spawned entity");
     }
@@ -33,12 +44,11 @@ pub fn despawn_entity_events(
         let Some(user) = user_manager.user_info(user_key) else {
             panic!("user not found");
         };
-        let entities_to_despawn = git_manager.workspace_mut(user.get_username()).delete_file(&mut commands, &mut server, entity);
-
-        for child_entity in entities_to_despawn {
-            commands.entity(child_entity).take_authority(&mut server).despawn();
-            info!("child entity has been despawned");
-        }
+        git_manager.workspace_mut(user.get_username()).delete_file(
+            &mut commands,
+            &mut server,
+            entity,
+        );
     }
 }
 
@@ -58,13 +68,31 @@ pub fn insert_component_events(
         for (user_key, entity) in events.read::<FileSystemEntry>() {
             info!("inserted FileSystemEntry");
             let entry = fs_entry_query.get(entity).unwrap();
-            fs_process_insert(&mut commands, &mut server, FSWaitlistInsert::Entry(*entry.kind, (*entry.name).clone()), &user_manager, &mut git_manager, &mut fs_waiting_entities, &user_key, &entity);
+            fs_process_insert(
+                &mut commands,
+                &mut server,
+                FSWaitlistInsert::Entry(*entry.kind, (*entry.name).clone()),
+                &user_manager,
+                &mut git_manager,
+                &mut fs_waiting_entities,
+                &user_key,
+                &entity,
+            );
         }
 
         // on FileSystemRootChild Insert Event
         for (user_key, entity) in events.read::<FileSystemRootChild>() {
             info!("inserted FileSystemRootChild");
-            fs_process_insert(&mut commands, &mut server, FSWaitlistInsert::Parent(None), &user_manager, &mut git_manager, &mut fs_waiting_entities, &user_key, &entity);
+            fs_process_insert(
+                &mut commands,
+                &mut server,
+                FSWaitlistInsert::Parent(None),
+                &user_manager,
+                &mut git_manager,
+                &mut fs_waiting_entities,
+                &user_key,
+                &entity,
+            );
         }
 
         // on FileSystemChild Insert Event
@@ -73,7 +101,16 @@ pub fn insert_component_events(
             let entry = fs_child_query.get(entity).unwrap();
             let parent_entity = entry.parent_id.get(&server).unwrap();
             let parent_key = entry_key_query.get(parent_entity).unwrap();
-            fs_process_insert(&mut commands, &mut server, FSWaitlistInsert::Parent(Some(parent_key.clone())), &user_manager, &mut git_manager, &mut fs_waiting_entities, &user_key, &entity);
+            fs_process_insert(
+                &mut commands,
+                &mut server,
+                FSWaitlistInsert::Parent(Some(parent_key.clone())),
+                &user_manager,
+                &mut git_manager,
+                &mut fs_waiting_entities,
+                &user_key,
+                &entity,
+            );
         }
     }
 }

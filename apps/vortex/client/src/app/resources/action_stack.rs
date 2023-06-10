@@ -9,7 +9,7 @@ use vortex_proto::components::{EntryKind, FileSystemChild, FileSystemEntry, File
 
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
-    resources::{global::Global, file_tree::FileTree},
+    resources::{file_tree::FileTree, global::Global},
     systems::file_post_process,
 };
 
@@ -495,7 +495,6 @@ impl ActionStack {
         )>,
         parent_query: &mut Query<&mut FileSystemParent>,
     ) -> Vec<(Entity, FileTree)> {
-
         let mut trees = Vec::new();
 
         if let Ok(parent) = parent_query.get(*parent_entity) {

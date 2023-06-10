@@ -4,9 +4,12 @@ use bevy_ecs::{entity::Entity, system::Commands};
 
 use bevy_log::info;
 
-use naia_bevy_server::{RoomKey, CommandsExt, Server};
+use naia_bevy_server::{CommandsExt, RoomKey, Server};
 
-use vortex_proto::{components::{ChangelistEntry, EntryKind, ChangelistStatus}, resources::FileEntryKey};
+use vortex_proto::{
+    components::{ChangelistEntry, ChangelistStatus, EntryKind},
+    resources::FileEntryKey,
+};
 
 use crate::resources::{ChangelistValue, FileEntryValue};
 
@@ -28,13 +31,24 @@ impl Workspace {
         }
     }
 
-    pub fn create_file(&mut self, commands: &mut Commands, server: &mut Server, name: &str, kind: EntryKind, entity: Entity, parent: Option<FileEntryKey>) {
-
+    pub fn create_file(
+        &mut self,
+        commands: &mut Commands,
+        server: &mut Server,
+        name: &str,
+        kind: EntryKind,
+        entity: Entity,
+        parent: Option<FileEntryKey>,
+    ) {
         let file_entry_key = FileEntryKey::new_with_parent(parent.clone(), name, kind);
         let file_entry_val = FileEntryValue::new(entity, parent, None);
 
         // Add new Entity into Working Tree
-        Self::add_to_file_tree(&mut self.working_file_entries, file_entry_key.clone(), file_entry_val);
+        Self::add_to_file_tree(
+            &mut self.working_file_entries,
+            file_entry_key.clone(),
+            file_entry_val,
+        );
 
         // Update changelist
 
@@ -46,20 +60,27 @@ impl Workspace {
 
         // if file doesn't exist in master tree and no changelist entry exists, then create a changelist entry
         if !file_exists_in_master && !file_exists_in_changelist {
-
             let changelist_status = ChangelistStatus::Added;
 
             let changelist_entity = commands
                 .spawn_empty()
                 .enable_replication(server)
-                .insert(ChangelistEntry::new(file_entry_key.kind(), file_entry_key.name(), file_entry_key.path(), changelist_status))
+                .insert(ChangelistEntry::new(
+                    file_entry_key.kind(),
+                    file_entry_key.name(),
+                    file_entry_key.path(),
+                    changelist_status,
+                ))
                 .id();
 
             // Add entity to room
-            server.room_mut(&self.room_key).add_entity(&changelist_entity);
+            server
+                .room_mut(&self.room_key)
+                .add_entity(&changelist_entity);
 
             let changelist_value = ChangelistValue::new(changelist_entity, changelist_status);
-            self.changelist_entries.insert(file_entry_key.clone(), changelist_value);
+            self.changelist_entries
+                .insert(file_entry_key.clone(), changelist_value);
         }
 
         // if file exists in master tree and a changelist entry exists, then delete the changelist entry
@@ -69,11 +90,29 @@ impl Workspace {
         }
     }
 
-    pub fn delete_file(&mut self, commands: &mut Commands, server: &mut Server, entity: &Entity) -> Vec<Entity> {
-
+    pub fn delete_file(&mut self, commands: &mut Commands, server: &mut Server, entity: &Entity) {
         // Remove Entity from Working Tree, returning a list of child entities that should be despawned
-        let (file_entry_key, entities_to_delete) = Self::remove_file_entry(&mut self.working_file_entries, entity);
+        let (file_entry_key, entities_to_delete) =
+            Self::remove_file_entry(&mut self.working_file_entries, entity);
 
+        self.update_changelist_after_despawn(commands, server, &file_entry_key);
+
+        for (child_entity, child_key) in entities_to_delete {
+            commands
+                .entity(child_entity)
+                .take_authority(server)
+                .despawn();
+
+            self.update_changelist_after_despawn(commands, server, &child_key);
+        }
+    }
+
+    fn update_changelist_after_despawn(
+        &mut self,
+        commands: &mut Commands,
+        server: &mut Server,
+        file_entry_key: &FileEntryKey,
+    ) {
         // Update changelist
 
         // check whether newly added file already exists in master tree
@@ -90,27 +129,35 @@ impl Workspace {
 
         // if file exists in master tree and no changelist entry exists, then create a changelist entry
         if file_exists_in_master && !file_exists_in_changelist {
-
             let changelist_status = ChangelistStatus::Deleted;
 
             let changelist_entity = commands
                 .spawn_empty()
                 .enable_replication(server)
-                .insert(ChangelistEntry::new(file_entry_key.kind(), file_entry_key.name(), file_entry_key.path(), changelist_status))
+                .insert(ChangelistEntry::new(
+                    file_entry_key.kind(),
+                    file_entry_key.name(),
+                    file_entry_key.path(),
+                    changelist_status,
+                ))
                 .id();
 
             // Add entity to room
-            server.room_mut(&self.room_key).add_entity(&changelist_entity);
+            server
+                .room_mut(&self.room_key)
+                .add_entity(&changelist_entity);
 
             let changelist_value = ChangelistValue::new(changelist_entity, changelist_status);
-            self.changelist_entries.insert(file_entry_key.clone(), changelist_value);
+            self.changelist_entries
+                .insert(file_entry_key.clone(), changelist_value);
         }
-
-        entities_to_delete
     }
 
-    fn add_to_file_tree(file_entries: &mut HashMap<FileEntryKey, FileEntryValue>, file_entry_key: FileEntryKey, file_entry_value: FileEntryValue) {
-
+    fn add_to_file_tree(
+        file_entries: &mut HashMap<FileEntryKey, FileEntryValue>,
+        file_entry_key: FileEntryKey,
+        file_entry_value: FileEntryValue,
+    ) {
         info!("Added new entity into Working FileTree");
         file_entries.insert(file_entry_key.clone(), file_entry_value.clone());
 
@@ -140,7 +187,11 @@ impl Workspace {
     // }
     //
 
-    fn remove_file_entry(file_entries: &mut HashMap<FileEntryKey, FileEntryValue>, entity: &Entity) -> (FileEntryKey, Vec<Entity>) {
+    fn remove_file_entry(
+        file_entries: &mut HashMap<FileEntryKey, FileEntryValue>,
+        entity: &Entity,
+    ) -> (FileEntryKey, Vec<(Entity, FileEntryKey)>) {
+        let mut entities = Vec::new();
 
         let mut key_opt = None;
         for (entry_key, entry_val) in file_entries.iter() {
@@ -154,24 +205,40 @@ impl Workspace {
         }
         let key = key_opt.unwrap();
 
-        let removed_entry = file_entries.remove(&key).unwrap();
-        if removed_entry.children().is_none() {
-            return (key, Vec::new());
-        }
-        let removed_entry_children = removed_entry.children().unwrap();
-        return (key, Self::collect_entities(file_entries, removed_entry_children));
-    }
+        // remove entry
+        let removed_entry =
+            Self::remove_entry_and_collect_children_entities(file_entries, &key, &mut entities);
 
-    fn collect_entities(file_entries: &mut HashMap<FileEntryKey, FileEntryValue>, children_keys: &Vec<FileEntryKey>) -> Vec<Entity> {
-        let mut entities = Vec::new();
-        for child_key in children_keys {
-            let entry_val = file_entries.get(child_key).expect("entry does not exist").clone();
-            entities.push(entry_val.entity());
-            if let Some(children) = entry_val.children() {
-                let mut children_entities = Self::collect_entities(file_entries, children);
-                entities.append(&mut children_entities);
+        // remove entry from parent's children
+        if let Some(parent_key) = removed_entry.parent() {
+            if let Some(parent) = file_entries.get_mut(&parent_key) {
+                parent.remove_child(&key);
             }
         }
-        return entities;
+
+        return (key, entities);
+    }
+
+    fn remove_entry_and_collect_children_entities(
+        file_entries: &mut HashMap<FileEntryKey, FileEntryValue>,
+        key: &FileEntryKey,
+        entities: &mut Vec<(Entity, FileEntryKey)>,
+    ) -> FileEntryValue {
+        // remove entry
+        let removed_entry = file_entries.remove(key).unwrap();
+
+        // handle children
+        if let Some(removed_entry_children) = removed_entry.children() {
+            for child_key in removed_entry_children {
+                let removed_entry = Self::remove_entry_and_collect_children_entities(
+                    file_entries,
+                    child_key,
+                    entities,
+                );
+                entities.push((removed_entry.entity(), child_key.clone()));
+            }
+        }
+
+        removed_entry
     }
 }

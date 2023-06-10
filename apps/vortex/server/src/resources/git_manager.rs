@@ -1,5 +1,8 @@
-
-use std::{collections::HashMap, fs, path::Path};
+use std::{
+    collections::{HashMap, HashSet},
+    fs,
+    path::Path,
+};
 
 use bevy_ecs::{
     entity::Entity,
@@ -11,7 +14,10 @@ use git2::{Cred, Repository, Tree};
 
 use naia_bevy_server::{CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};
 
-use vortex_proto::{components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild}, resources::FileEntryKey};
+use vortex_proto::{
+    components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild},
+    resources::FileEntryKey,
+};
 
 use crate::{
     components::FileSystemOwner,
@@ -155,9 +161,8 @@ fn fill_file_entries_from_git(
     git_tree: &Tree,
     path: &str,
     parent: Option<FileEntryKey>,
-) -> Vec<FileEntryKey> {
-
-    let mut output = Vec::new();
+) -> HashSet<FileEntryKey> {
+    let mut output = HashSet::new();
 
     for git_entry in git_tree.iter() {
         let name = git_entry.name().unwrap().to_string();
@@ -173,12 +178,20 @@ fn fill_file_entries_from_git(
 
                 let git_children = git_entry.to_object(repo).unwrap().peel_to_tree().unwrap();
                 let new_path = file_entry_key.path_for_children();
-                let children = fill_file_entries_from_git(file_entries, commands, server, repo, &git_children, &new_path, Some(file_entry_key.clone()));
+                let children = fill_file_entries_from_git(
+                    file_entries,
+                    commands,
+                    server,
+                    repo,
+                    &git_children,
+                    &new_path,
+                    Some(file_entry_key.clone()),
+                );
 
                 let file_entry_value = FileEntryValue::new(id, parent.clone(), Some(children));
                 file_entries.insert(file_entry_key.clone(), file_entry_value);
 
-                output.push(file_entry_key.clone());
+                output.insert(file_entry_key.clone());
             }
             Some(git2::ObjectType::Blob) => {
                 let entry_kind = EntryKind::File;
@@ -188,7 +201,7 @@ fn fill_file_entries_from_git(
                 let file_entry_value = FileEntryValue::new(id, parent.clone(), None);
                 file_entries.insert(file_entry_key.clone(), file_entry_value);
 
-                output.push(file_entry_key.clone());
+                output.insert(file_entry_key.clone());
             }
             _ => {
                 info!("Unknown file type: {:?}", git_entry.kind());
@@ -217,18 +230,32 @@ fn insert_networked_components(
     room_key: &RoomKey,
 ) {
     for (file_entry_key, file_entry_value) in file_entries.iter() {
-
-        info!("Networking: walking tree for Entry `{:?}`", file_entry_key.name());
+        info!(
+            "Networking: walking tree for Entry `{:?}`",
+            file_entry_key.name()
+        );
 
         match file_entry_key.kind() {
             EntryKind::Directory => {
                 insert_networked_components_entry(
-                    commands, server, user_key, room_key, file_entries, file_entry_key, file_entry_value
+                    commands,
+                    server,
+                    user_key,
+                    room_key,
+                    file_entries,
+                    file_entry_key,
+                    file_entry_value,
                 );
             }
             EntryKind::File => {
                 insert_networked_components_entry(
-                    commands, server, user_key, room_key, file_entries, file_entry_key, file_entry_value,
+                    commands,
+                    server,
+                    user_key,
+                    room_key,
+                    file_entries,
+                    file_entry_key,
+                    file_entry_value,
                 );
             }
         }
@@ -247,7 +274,8 @@ fn insert_networked_components_entry(
     let entry_entity = entry_val.entity();
 
     // Insert components
-    commands.entity(entry_entity)
+    commands
+        .entity(entry_entity)
         .insert(FileSystemEntry::new(&entry_key.name(), entry_key.kind()))
         .insert(FileSystemOwner(*user_key))
         .insert(entry_key.clone());
@@ -257,7 +285,6 @@ fn insert_networked_components_entry(
 
     // Add parent entity to component
     if let Some(parent_key) = entry_val.parent() {
-
         let parent_entity = file_entries.get(parent_key).unwrap().entity();
 
         let mut parent_component = FileSystemChild::new();

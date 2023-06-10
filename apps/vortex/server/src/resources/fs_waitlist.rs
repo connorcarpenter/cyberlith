@@ -9,7 +9,7 @@ use vortex_proto::{components::EntryKind, resources::FileEntryKey};
 
 use crate::resources::{GitManager, UserManager};
 
-pub enum FSWaitlistInsert{
+pub enum FSWaitlistInsert {
     Entry(EntryKind, String),
     Parent(Option<FileEntryKey>),
 }
@@ -54,7 +54,7 @@ pub fn fs_process_insert(
     git_manager: &mut GitManager,
     fs_waiting_entities: &mut HashMap<Entity, FSWaitlist>,
     user_key: &UserKey,
-    entity: &Entity
+    entity: &Entity,
 ) {
     if !fs_waiting_entities.contains_key(&entity) {
         fs_waiting_entities.insert(*entity, FSWaitlist::new());
@@ -64,16 +64,24 @@ pub fn fs_process_insert(
     match insert {
         FSWaitlistInsert::Entry(kind, name) => {
             waitlist.set_entry(kind, name);
-        },
+        }
         FSWaitlistInsert::Parent(parent) => {
             waitlist.set_parent(parent);
-        },
+        }
     }
 
     if waitlist.is_ready() {
         info!("New Entity is ready to be spawned!");
         let insert = fs_waiting_entities.remove(entity).unwrap();
-        fs_process_insert_complete(commands, server, user_manager, git_manager, user_key, entity, insert);
+        fs_process_insert_complete(
+            commands,
+            server,
+            user_manager,
+            git_manager,
+            user_key,
+            entity,
+            insert,
+        );
     }
 }
 
@@ -84,13 +92,22 @@ fn fs_process_insert_complete(
     git_manager: &mut GitManager,
     user_key: &UserKey,
     entity: &Entity,
-    entry: FSWaitlist
+    entry: FSWaitlist,
 ) {
     let Some(user) = user_manager.user_info(user_key) else {
         panic!("user not found!");
     };
     let (name, kind, parent) = entry.decompose();
-    git_manager.workspace_mut(user.get_username()).create_file(commands, server, &name, kind, *entity, parent.clone());
+    git_manager.workspace_mut(user.get_username()).create_file(
+        commands,
+        server,
+        &name,
+        kind,
+        *entity,
+        parent.clone(),
+    );
 
-    commands.entity(*entity).insert(FileEntryKey::new_with_parent(parent, &name, kind));
+    commands
+        .entity(*entity)
+        .insert(FileEntryKey::new_with_parent(parent, &name, kind));
 }

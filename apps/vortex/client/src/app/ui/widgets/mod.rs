@@ -1,7 +1,7 @@
-mod file_tree;
-mod file_tree_row;
 mod changelist;
 mod changelist_row;
+mod file_tree;
+mod file_tree_row;
 
 pub use changelist::ChangelistUiWidget;
 pub use changelist_row::ChangelistRowUiWidget;

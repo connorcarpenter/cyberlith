@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
+use bevy_ecs::system::ResMut;
 use bevy_ecs::{
     entity::Entity,
     event::EventReader,
     system::{Commands, Query, Res},
 };
-use bevy_ecs::system::ResMut;
 use bevy_log::info;
 
 use naia_bevy_client::{
@@ -16,13 +16,15 @@ use naia_bevy_client::{
     Client,
 };
 
-use vortex_proto::components::{ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
+use vortex_proto::components::{
+    ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
+};
 
+use crate::app::components::file_system::ChangelistUiState;
 use crate::app::{
     components::file_system::FileSystemParent, resources::global::Global,
     systems::file_post_process,
 };
-use crate::app::components::file_system::ChangelistUiState;
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
     for SpawnEntityEvent(_entity) in event_reader.iter() {
@@ -116,7 +118,10 @@ pub fn insert_component_events(
 
             global.changelist.insert(entry.file_entry_key(), entity);
 
-            info!("Received ChangelistEntry insert event. path: `{:?}`, name: `{:?}`", *entry.path, *entry.name);
+            info!(
+                "Received ChangelistEntry insert event. path: `{:?}`, name: `{:?}`",
+                *entry.path, *entry.name
+            );
         }
     }
 }

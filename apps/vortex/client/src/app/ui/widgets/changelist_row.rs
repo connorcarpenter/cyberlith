@@ -1,4 +1,3 @@
-
 use bevy_ecs::{
     entity::Entity,
     prelude::ResMut,
@@ -9,22 +8,20 @@ use bevy_log::info;
 
 use render_egui::{
     egui,
-    egui::{
-        Color32, NumExt, Response, Rounding, Sense, Stroke,
-        TextStyle, Ui, WidgetText,
-    },
+    egui::{Color32, NumExt, Response, Rounding, Sense, Stroke, TextStyle, Ui, WidgetText},
 };
 use vortex_proto::components::{ChangelistEntry, ChangelistStatus, EntryKind};
 
-use crate::app::{resources::action_stack::{Action, ActionStack}, components::file_system::{ChangelistContextMenuAction, ChangelistUiState}};
+use crate::app::{
+    components::file_system::{ChangelistContextMenuAction, ChangelistUiState},
+    resources::action_stack::{Action, ActionStack},
+};
 
 struct RowColors {
     available: Option<Color32>,
 }
 
-const UNSELECTED_COLORS: RowColors = RowColors {
-    available: None,
-};
+const UNSELECTED_COLORS: RowColors = RowColors { available: None };
 const HOVER_COLORS: RowColors = RowColors {
     available: Some(Color32::from_gray(72)),
 };
@@ -35,12 +32,9 @@ const SELECTED_COLORS: RowColors = RowColors {
 pub struct ChangelistRowUiWidget;
 
 impl ChangelistRowUiWidget {
-    pub fn render_row(
-        ui: &mut Ui,
-        world: &mut World,
-        row_entity: Entity,
-    ) {
-        let mut system_state: SystemState<Query<(&ChangelistEntry, &ChangelistUiState)>> = SystemState::new(world);
+    pub fn render_row(ui: &mut Ui, world: &mut World, row_entity: Entity) {
+        let mut system_state: SystemState<Query<(&ChangelistEntry, &ChangelistUiState)>> =
+            SystemState::new(world);
         let query = system_state.get(world);
         let Ok((entry, ui_state)) = query.get(row_entity) else {
             return;
@@ -101,22 +95,12 @@ impl ChangelistRowUiWidget {
             // Draw Name Text
             {
                 let text_color = match ui_state.selected {
-                    false => {
-                        match *entry.status {
-                            ChangelistStatus::Modified => {
-                                Color32::from_rgb(0, 72, 96)
-                            }
-                            ChangelistStatus::Added => {
-                                Color32::from_rgb(0, 96, 0)
-                            }
-                            ChangelistStatus::Deleted => {
-                                Color32::from_rgb(96, 0, 0)
-                            }
-                        }
-                    }
-                    true => {
-                        Color32::from_rgb(192, 192, 192)
-                    }
+                    false => match *entry.status {
+                        ChangelistStatus::Modified => Color32::from_rgb(0, 72, 96),
+                        ChangelistStatus::Added => Color32::from_rgb(0, 96, 0),
+                        ChangelistStatus::Deleted => Color32::from_rgb(96, 0, 0),
+                    },
+                    true => Color32::from_rgb(192, 192, 192),
                 };
 
                 text.paint_with_color_override(ui.painter(), inner_pos, text_color);
@@ -127,7 +111,8 @@ impl ChangelistRowUiWidget {
             {
                 let path_widget_text: WidgetText = (&*entry.path).into();
                 let path_wrap_width = ui.available_width();
-                let path_text = path_widget_text.into_galley(ui, None, path_wrap_width, TextStyle::Button);
+                let path_text =
+                    path_widget_text.into_galley(ui, None, path_wrap_width, TextStyle::Button);
                 let path_text_size = path_text.size();
 
                 path_text.paint_with_visuals(ui.painter(), inner_pos, ui.style().noninteractive());
@@ -135,20 +120,12 @@ impl ChangelistRowUiWidget {
             }
         }
 
-        Self::handle_interactions(
-            world,
-            &row_entity,
-            row_response,
-        );
+        Self::handle_interactions(world, &row_entity, row_response);
     }
 
     // Interactions
 
-    pub fn handle_interactions(
-        world: &mut World,
-        row_entity: &Entity,
-        row_response: Response,
-    ) {
+    pub fn handle_interactions(world: &mut World, row_entity: &Entity, row_response: Response) {
         let Some(mut ui_state) = world.get_mut::<ChangelistUiState>(*row_entity) else {
             return;
         };
@@ -211,8 +188,7 @@ impl ChangelistRowUiWidget {
     }
 
     pub fn on_row_click(world: &mut World, row_entity: &Entity) {
-        let mut system_state: SystemState<ResMut<ActionStack>> =
-            SystemState::new(world);
+        let mut system_state: SystemState<ResMut<ActionStack>> = SystemState::new(world);
         let mut action_stack = system_state.get_mut(world);
         let mut entities = Vec::new();
         entities.push(*row_entity);

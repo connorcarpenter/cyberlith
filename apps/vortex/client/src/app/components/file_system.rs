@@ -103,7 +103,7 @@ pub enum ContextMenuAction {
 pub enum ChangelistContextMenuAction {
     None,
     Rollback,
-    Commit
+    Commit,
 }
 
 #[derive(Clone)]
