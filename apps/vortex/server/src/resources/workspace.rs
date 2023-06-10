@@ -6,7 +6,9 @@ use bevy_log::info;
 
 use naia_bevy_server::{RoomKey, CommandsExt, Server};
 
-use vortex_proto::{components::{ChangelistEntry, EntryKind, ChangelistStatus}, resources::{ChangelistValue, FileEntryKey, FileEntryValue}};
+use vortex_proto::{components::{ChangelistEntry, EntryKind, ChangelistStatus}, resources::FileEntryKey};
+
+use crate::resources::{ChangelistValue, FileEntryValue};
 
 pub struct Workspace {
     pub room_key: RoomKey,
@@ -137,6 +139,7 @@ impl Workspace {
     //     return None;
     // }
     //
+
     fn remove_file_entry(file_entries: &mut HashMap<FileEntryKey, FileEntryValue>, entity: &Entity) -> (FileEntryKey, Vec<Entity>) {
 
         let mut key_opt = None;

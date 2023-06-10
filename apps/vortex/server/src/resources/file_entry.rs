@@ -1,50 +1,6 @@
-use bevy_ecs::{entity::Entity, component::Component};
+use bevy_ecs::entity::Entity;
 
-use crate::components::{ChangelistStatus, EntryKind};
-
-#[derive(Clone, Eq, Hash, PartialEq, Component)]
-pub struct FileEntryKey {
-    name: String,
-    path: String,
-    kind: EntryKind,
-}
-
-impl FileEntryKey {
-    pub fn new(path: &str, name: &str, kind: EntryKind) -> Self {
-        Self {
-            name: name.to_string(),
-            path: path.to_string(),
-            kind,
-        }
-    }
-
-    pub fn new_with_parent(parent: Option<FileEntryKey>, name: &str, kind: EntryKind) -> Self {
-        let path = match &parent {
-            Some(parent_key) => {
-                parent_key.path_for_children()
-            },
-            None => "".to_string(),
-        };
-
-        Self::new(&path, name, kind)
-    }
-
-    pub fn name(&self) -> &str {
-        &self.name
-    }
-
-    pub fn path(&self) -> &str {
-        &self.path
-    }
-
-    pub fn kind(&self) -> EntryKind {
-        self.kind
-    }
-
-    pub fn path_for_children(&self) -> String {
-        format!("{}{}/", self.path, self.name)
-    }
-}
+use vortex_proto::{components::ChangelistStatus, resources::FileEntryKey};
 
 #[derive(Clone)]
 pub struct FileEntryValue {

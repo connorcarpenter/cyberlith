@@ -2,12 +2,12 @@ use std::collections::BTreeMap;
 
 use bevy_ecs::prelude::{Entity, Resource};
 
-use vortex_proto::components::EntryKind;
+use vortex_proto::resources::FileEntryKey;
 
 #[derive(Resource)]
 pub struct Global {
     pub project_root_entity: Entity,
-    pub changelist: BTreeMap<(EntryKind, String), Entity>,
+    pub changelist: BTreeMap<FileEntryKey, Entity>,
 }
 
 impl Global {

@@ -114,7 +114,7 @@ pub fn insert_component_events(
             commands.entity(entity).insert(ChangelistUiState::new());
             let entry = changelist_query.get(entity).unwrap();
 
-            global.changelist.insert((*entry.kind, (*entry.name).clone()), entity);
+            global.changelist.insert(entry.file_entry_key(), entity);
 
             info!("Received ChangelistEntry insert event. path: `{:?}`, name: `{:?}`", *entry.path, *entry.name);
         }

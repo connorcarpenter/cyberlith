@@ -8,14 +8,15 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use git2::{Cred, Repository, Tree};
+
 use naia_bevy_server::{CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};
 
-use vortex_proto::{components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild}, resources::{FileEntryKey, FileEntryValue}};
+use vortex_proto::{components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild}, resources::FileEntryKey};
 
 use crate::{
     components::FileSystemOwner,
     config::GitConfig,
-    resources::{user_manager::UserInfo, workspace::Workspace},
+    resources::{user_manager::UserInfo, workspace::Workspace, FileEntryValue},
 };
 
 #[derive(Resource)]

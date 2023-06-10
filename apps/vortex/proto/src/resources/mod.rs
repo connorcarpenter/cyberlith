@@ -1,4 +1,3 @@
+mod file_entry_key;
 
-mod file_entry;
-
-pub use file_entry::{FileEntryKey, FileEntryValue, ChangelistValue};
+pub use file_entry_key::FileEntryKey;

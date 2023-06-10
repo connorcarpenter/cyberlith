@@ -1,31 +1,22 @@
+
 use bevy_ecs::{
     entity::Entity,
     prelude::ResMut,
-    system::{Commands, Query, Res, SystemState},
-    world::{Mut, World},
+    system::{Query, SystemState},
+    world::World,
 };
 use bevy_log::info;
-use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
+
 use render_egui::{
     egui,
     egui::{
-        emath, remap, vec2, Color32, Id, NumExt, Rect, Response, Rounding, Sense, Shape, Stroke,
+        Color32, NumExt, Response, Rounding, Sense, Stroke,
         TextStyle, Ui, WidgetText,
     },
 };
-use vortex_proto::components::{ChangelistEntry, ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
+use vortex_proto::components::{ChangelistEntry, ChangelistStatus, EntryKind};
 
-use crate::app::{
-    components::file_system::{
-        ContextMenuAction, FileSystemParent, FileSystemUiState, ModalRequestType,
-    },
-    resources::{
-        action_stack::{Action, ActionStack},
-        global::Global,
-    },
-    ui::UiState,
-};
-use crate::app::components::file_system::{ChangelistContextMenuAction, ChangelistUiState};
+use crate::app::{resources::action_stack::{Action, ActionStack}, components::file_system::{ChangelistContextMenuAction, ChangelistUiState}};
 
 struct RowColors {
     available: Option<Color32>,

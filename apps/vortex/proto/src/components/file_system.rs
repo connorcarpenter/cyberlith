@@ -1,6 +1,7 @@
 use bevy_ecs::prelude::Component;
 
 use naia_bevy_shared::{EntityProperty, Property, Protocol, ProtocolPlugin, Replicate, Serde};
+use crate::resources::FileEntryKey;
 
 pub struct FileSystemComponentsPlugin;
 
@@ -74,5 +75,9 @@ pub struct ChangelistEntry {
 impl ChangelistEntry {
     pub fn new(kind: EntryKind, name: &str, path: &str, status: ChangelistStatus) -> Self {
         Self::new_complete(kind, name.to_string(), path.to_string(), status)
+    }
+
+    pub fn file_entry_key(&self) -> FileEntryKey {
+        FileEntryKey::new(&self.path, &self.name, *self.kind)
     }
 }

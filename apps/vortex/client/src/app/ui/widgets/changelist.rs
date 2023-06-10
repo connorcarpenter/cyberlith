@@ -1,13 +1,10 @@
-use bevy_ecs::{entity::Entity, world::World};
-use bevy_ecs::system::{Query, Res, SystemState};
-use render_egui::egui::{Align, Layout, Ui};
+use bevy_ecs::{world::World, system::{Res, SystemState}};
 
-use vortex_proto::components::{ChangelistEntry, EntryKind};
+use render_egui::egui::{Align, Layout, Ui};
 
 use crate::app::{
     resources::global::Global,
     ui::widgets::ChangelistRowUiWidget,
-    components::file_system::ChangelistUiState,
 };
 
 pub struct ChangelistUiWidget;
