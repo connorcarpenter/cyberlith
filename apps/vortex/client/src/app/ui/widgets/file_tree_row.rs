@@ -13,7 +13,7 @@ use render_egui::{
         TextStyle, Ui, WidgetText,
     },
 };
-use vortex_proto::components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
+use vortex_proto::components::{ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
 
 use crate::app::{
     components::file_system::{
@@ -23,7 +23,7 @@ use crate::app::{
         action_stack::{Action, ActionStack},
         global::Global,
     },
-    ui::{UiState, widgets::colors::{FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED}},
+    ui::{UiState, widgets::colors::{FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED, TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED}},
 };
 
 pub struct FileTreeRowUiWidget;
@@ -93,19 +93,20 @@ impl FileTreeRowUiWidget {
                 big_icon_response
             };
 
+            let (text_colors, row_fill_colors) = {
+                if ui_state.selected {
+                    (TEXT_COLORS_SELECTED, FILE_ROW_COLORS_SELECTED)
+                } else {
+                    if row_response.hovered() || icon_response.hovered() {
+                        (TEXT_COLORS_HOVER, FILE_ROW_COLORS_HOVER)
+                    } else {
+                        (TEXT_COLORS_UNSELECTED, FILE_ROW_COLORS_UNSELECTED)
+                    }
+                }
+            };
+
             // Draw Row
             {
-                let row_fill_colors = {
-                    if ui_state.selected {
-                        FILE_ROW_COLORS_SELECTED
-                    } else {
-                        if row_response.hovered() || icon_response.hovered() {
-                            FILE_ROW_COLORS_HOVER
-                        } else {
-                            FILE_ROW_COLORS_UNSELECTED
-                        }
-                    }
-                };
                 let row_fill_color_opt = match auth_status {
                     None | Some(EntityAuthStatus::Available) => row_fill_colors.available,
                     Some(EntityAuthStatus::Requested) | Some(EntityAuthStatus::Releasing) => {
@@ -138,7 +139,12 @@ impl FileTreeRowUiWidget {
 
             // Draw Text
             {
-                text.paint_with_visuals(ui.painter(), inner_pos, ui.style().noninteractive());
+                let text_color = match ui_state.change_status {
+                    Some(ChangelistStatus::Created) => text_colors.created,
+                    Some(ChangelistStatus::Modified) => text_colors.modified,
+                    _ => text_colors.default,
+                };
+                text.paint_with_color_override(ui.painter(), inner_pos, text_color);
                 inner_pos.x += text_size.x + item_spacing;
             }
         }

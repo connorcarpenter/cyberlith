@@ -62,15 +62,18 @@ impl Workspace {
         if !file_exists_in_master && !file_exists_in_changelist {
             let changelist_status = ChangelistStatus::Created;
 
+            let mut changelist_entry = ChangelistEntry::new(
+                file_entry_key.kind(),
+                file_entry_key.name(),
+                file_entry_key.path(),
+                changelist_status,
+            );
+            changelist_entry.file_entity.set(server, &entity);
+
             let changelist_entity = commands
                 .spawn_empty()
                 .enable_replication(server)
-                .insert(ChangelistEntry::new(
-                    file_entry_key.kind(),
-                    file_entry_key.name(),
-                    file_entry_key.path(),
-                    changelist_status,
-                ))
+                .insert(changelist_entry)
                 .id();
 
             // Add entity to room
@@ -131,15 +134,17 @@ impl Workspace {
         if file_exists_in_master && !file_exists_in_changelist {
             let changelist_status = ChangelistStatus::Deleted;
 
+            let changelist_entry = ChangelistEntry::new(
+                file_entry_key.kind(),
+                file_entry_key.name(),
+                file_entry_key.path(),
+                changelist_status,
+            );
+
             let changelist_entity = commands
                 .spawn_empty()
                 .enable_replication(server)
-                .insert(ChangelistEntry::new(
-                    file_entry_key.kind(),
-                    file_entry_key.name(),
-                    file_entry_key.path(),
-                    changelist_status,
-                ))
+                .insert(changelist_entry)
                 .id();
 
             // Add entity to room

@@ -1,10 +1,9 @@
 use std::collections::HashMap;
 
-use bevy_ecs::system::ResMut;
 use bevy_ecs::{
     entity::Entity,
     event::EventReader,
-    system::{Commands, Query, Res},
+    system::{ResMut, Commands, Query, Res},
 };
 use bevy_log::info;
 
@@ -20,9 +19,8 @@ use vortex_proto::components::{
     ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
 };
 
-use crate::app::components::file_system::ChangelistUiState;
 use crate::app::{
-    components::file_system::FileSystemParent, resources::global::Global,
+    components::file_system::{FileSystemParent, ChangelistUiState, FileSystemUiState}, resources::global::Global,
     systems::file_post_process,
 };
 
@@ -47,6 +45,7 @@ pub fn insert_component_events(
     child_query: Query<&FileSystemChild>,
     entry_query: Query<&FileSystemEntry>,
     changelist_query: Query<&ChangelistEntry>,
+    mut fs_state_query: Query<&mut FileSystemUiState>,
 ) {
     let project_root_entity = global.project_root_entity;
     let mut recent_parents: Option<HashMap<Entity, FileSystemParent>> = None;
@@ -111,11 +110,19 @@ pub fn insert_component_events(
             }
         }
 
-        // on FileSystemChild Insert Event
+        // on ChangelistEntry Insert Event
         for entity in events.read::<ChangelistEntry>() {
             commands.entity(entity).insert(ChangelistUiState::new());
+
             let entry = changelist_query.get(entity).unwrap();
 
+            // associate status with file entry
+            if let Some(file_entity) = entry.file_entity.get(&client) {
+                let mut fs_state = fs_state_query.get_mut(file_entity).unwrap();
+                fs_state.change_status = Some(*entry.status);
+            }
+
+            // insert into changelist resource
             global.changelist.insert(entry.file_entry_key(), entity);
 
             info!(

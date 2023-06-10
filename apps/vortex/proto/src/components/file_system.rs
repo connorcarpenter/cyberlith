@@ -70,6 +70,7 @@ pub struct ChangelistEntry {
     pub name: Property<String>,
     pub path: Property<String>,
     pub status: Property<ChangelistStatus>,
+    pub file_entity: EntityProperty,
 }
 
 impl ChangelistEntry {
