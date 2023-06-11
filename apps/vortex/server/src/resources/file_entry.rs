@@ -28,6 +28,10 @@ impl FileEntryValue {
         self.entity
     }
 
+    pub fn set_entity(&mut self, entity: Entity) {
+        self.entity = entity;
+    }
+
     pub fn parent(&self) -> Option<&FileEntryKey> {
         self.parent.as_ref()
     }

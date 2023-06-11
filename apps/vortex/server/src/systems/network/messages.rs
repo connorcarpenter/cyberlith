@@ -8,7 +8,7 @@ use crate::resources::{GitManager, UserManager};
 
 pub fn message_events(
     mut commands: Commands,
-    server: Server,
+    mut server: Server,
     mut event_reader: EventReader<MessageEvents>,
     user_manager: Res<UserManager>,
     mut git_manager: ResMut<GitManager>,
@@ -29,13 +29,22 @@ pub fn message_events(
                     let Some(entity) = message.entity.get(&server) else {
                         panic!("no entity!")
                     };
-                    git_manager.workspace_mut(user.get_username()).commit_changelist_entry(&mut commands, &server, &entity, &query)
+                    git_manager.workspace_mut(user.get_username()).commit_changelist_entry(&mut commands, &mut server, &entity, &query)
                 }
                 ChangelistAction::Rollback => {
                     let Some(entity) = message.entity.get(&server) else {
                         panic!("no entity!")
                     };
-                    git_manager.workspace_mut(user.get_username()).rollback_changelist_entry(&mut commands, &server, &entity, &query)
+                    if let Some((key, value)) = git_manager.workspace_mut(user.get_username()).rollback_changelist_entry(&mut commands, &mut server, &entity, &query) {
+                        git_manager.spawn_networked_entry_into_world(
+                            &mut commands,
+                            &mut server,
+                            &user_key,
+                            user,
+                            &key,
+                            &value,
+                        )
+                    }
                 }
             }
         }

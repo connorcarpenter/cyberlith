@@ -11,7 +11,7 @@ use vortex_proto::{
     resources::FileEntryKey,
 };
 
-use crate::resources::{ChangelistValue, FileEntryValue};
+use crate::resources::{ChangelistValue, FileEntryValue, GitManager};
 
 pub struct Workspace {
     pub room_key: RoomKey,
@@ -97,7 +97,7 @@ impl Workspace {
     pub fn delete_file(&mut self, commands: &mut Commands, server: &mut Server, entity: &Entity) {
         // Remove Entity from Working Tree, returning a list of child entities that should be despawned
         let file_entry_key = Self::find_file_entry_by_entity(&mut self.working_file_entries, entity);
-        let entities_to_delete = Self::remove_file_entry(&mut self.working_file_entries, &file_entry_key);
+        let (entry_value, entities_to_delete) = Self::remove_file_entry(&mut self.working_file_entries, &file_entry_key);
 
         self.update_changelist_after_despawn(commands, server, &file_entry_key);
 
@@ -118,7 +118,7 @@ impl Workspace {
     }
 
     pub fn commit_changelist_entry(
-        &mut self, commands: &mut Commands, server: &Server, cl_entity: &Entity, query: &Query<&ChangelistEntry>,
+        &mut self, commands: &mut Commands, server: &mut Server, cl_entity: &Entity, query: &Query<&ChangelistEntry>,
     ) {
         let changelist_entry = query.get(*cl_entity).unwrap();
         let status = *changelist_entry.status;
@@ -131,6 +131,7 @@ impl Workspace {
             ChangelistStatus::Created => {
 
                 let file_entry_val = self.working_file_entries.get(&file_entry_key).unwrap().clone();
+                let file_entity = file_entry_val.entity();
 
                 // update master tree with new file entry
                 Self::add_to_file_tree(
@@ -140,19 +141,23 @@ impl Workspace {
                 );
 
                 // despawn changelist entity
-                self.cleanup_changelist_entry(commands, cl_entity, &file_entry_key);
+                self.cleanup_changelist_entry(commands, &file_entry_key);
+
+                // remove auth from file entity
+                commands
+                    .entity(file_entity)
+                    .take_authority(server);
 
                 // TODO: sync deletion up with Git repo!
             }
             ChangelistStatus::Deleted => {
 
                 // Remove Entity from Master Tree, returning a list of child entities that should be despawned
-                let entities_to_delete = Self::remove_file_entry(&mut self.master_file_entries, &file_entry_key);
-                self.cleanup_changelist_entry(commands, cl_entity, &file_entry_key);
+                let (entry_value, entities_to_delete) = Self::remove_file_entry(&mut self.master_file_entries, &file_entry_key);
+                self.cleanup_changelist_entry(commands, &file_entry_key);
 
                 for (_, child_key) in entities_to_delete {
-                    self.changelist_entries.remove(&child_key);
-                    self.cleanup_changelist_entry(commands, cl_entity, &child_key);
+                    self.cleanup_changelist_entry(commands, &child_key);
                 }
 
                 // TODO: sync deletion up with Git repo!
@@ -161,8 +166,8 @@ impl Workspace {
     }
 
     pub fn rollback_changelist_entry(
-        &mut self, commands: &mut Commands, server: &Server, cl_entity: &Entity, query: &Query<&ChangelistEntry>,
-    ) {
+        &mut self, commands: &mut Commands, server: &mut Server, cl_entity: &Entity, query: &Query<&ChangelistEntry>,
+    ) -> Option<(FileEntryKey, FileEntryValue)> {
         let changelist_entry = query.get(*cl_entity).unwrap();
         let status = *changelist_entry.status;
         let file_entry_key = changelist_entry.file_entry_key();
@@ -174,34 +179,60 @@ impl Workspace {
             ChangelistStatus::Created => {
 
                 // Remove Entity from Working Tree, returning a list of child entities that should be despawned
-                let entities_to_delete = Self::remove_file_entry(&mut self.working_file_entries, &file_entry_key);
-                self.cleanup_changelist_entry(commands, cl_entity, &file_entry_key);
+                let (entry_value, entities_to_delete) = Self::remove_file_entry(&mut self.working_file_entries, &file_entry_key);
 
-                for (_, child_key) in entities_to_delete {
-                    self.changelist_entries.remove(&child_key);
-                    self.cleanup_changelist_entry(commands, cl_entity, &child_key);
+                // despawn row entity
+                let row_entity = entry_value.entity();
+                commands
+                    .entity(row_entity)
+                    .take_authority(server)
+                    .despawn();
+
+                // cleanup changelist entry
+                self.cleanup_changelist_entry(commands, &file_entry_key);
+
+                // cleanup children
+                for (child_row_entity, child_key) in entities_to_delete {
+
+                    commands
+                        .entity(child_row_entity)
+                        .take_authority(server)
+                        .despawn();
+
+                    self.cleanup_changelist_entry(commands, &child_key);
                 }
             }
             ChangelistStatus::Deleted => {
 
-                let file_entry_val = self.master_file_entries.get(&file_entry_key).unwrap().clone();
+                let new_entity = GitManager::spawn_file_tree_entity(commands, server);
 
-                // update master tree with new file entry
+                let file_entry_value = self.master_file_entries.get_mut(&file_entry_key).unwrap();
+                file_entry_value.set_entity(new_entity);
+                let file_entry_value = file_entry_value.clone();
+
+                // update working tree with old file entry
                 Self::add_to_file_tree(
                     &mut self.working_file_entries,
                     file_entry_key.clone(),
-                    file_entry_val,
+                    file_entry_value.clone(),
                 );
 
                 // despawn changelist entity
-                self.cleanup_changelist_entry(commands, cl_entity, &file_entry_key);
+                self.cleanup_changelist_entry(commands, &file_entry_key);
+
+                return Some((file_entry_key.clone(), file_entry_value));
             }
         }
+
+        return None;
     }
 
-    fn cleanup_changelist_entry(&mut self, commands: &mut Commands, cl_entity: &Entity, file_entry_key: &FileEntryKey) {
-        commands.entity(*cl_entity).despawn();
-        self.changelist_entries.remove(file_entry_key);
+    fn cleanup_changelist_entry(&mut self, commands: &mut Commands, file_entry_key: &FileEntryKey) {
+
+        let Some(changelist_value) = self.changelist_entries.remove(file_entry_key) else {
+            panic!("Changelist entry not found for file entry key");
+        };
+        commands.entity(changelist_value.entity()).despawn();
     }
 
     fn update_changelist_after_despawn(
@@ -307,7 +338,7 @@ impl Workspace {
     fn remove_file_entry(
         file_entries: &mut HashMap<FileEntryKey, FileEntryValue>,
         key: &FileEntryKey,
-    ) -> Vec<(Entity, FileEntryKey)> {
+    ) -> (FileEntryValue, Vec<(Entity, FileEntryKey)>) {
         let mut entities = Vec::new();
 
         // remove entry
@@ -321,7 +352,7 @@ impl Workspace {
             }
         }
 
-        return entities;
+        return (removed_entry, entities);
     }
 
     fn remove_entry_and_collect_children_entities(

@@ -12,9 +12,7 @@ use naia_bevy_client::{events::{
     UpdateComponentEvents,
 }, Client, CommandsExt};
 
-use vortex_proto::components::{
-    ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-};
+use vortex_proto::components::{ChangelistEntry, ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
 
 use crate::app::{
     components::file_system::{FileSystemParent, ChangelistUiState, FileSystemUiState}, resources::global::Global,
@@ -205,13 +203,12 @@ pub fn remove_component_events(
 
             let entry = component.file_entry_key();
             global.changelist.remove(&entry);
+
             if let Some(file_entity) = component.file_entity.get(&client) {
-                let mut fs_state = fs_state_query.get_mut(file_entity).unwrap();
-                fs_state.change_status = None;
-
-                commands.entity(file_entity).release_authority(&mut client);
+                if let Ok(mut fs_state) = fs_state_query.get_mut(file_entity) {
+                    fs_state.change_status = None;
+                }
             }
-
         }
     }
 }

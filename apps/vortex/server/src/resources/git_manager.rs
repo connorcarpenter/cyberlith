@@ -151,6 +151,24 @@ impl GitManager {
 
         self.workspaces.insert(username.to_string(), new_workspace);
     }
+
+    pub fn spawn_networked_entry_into_world(
+        &mut self, commands: &mut Commands, server: &mut Server, user_key: &UserKey, user_info: &UserInfo, entry_key: &FileEntryKey, entry_val: &FileEntryValue
+    ) {
+        let room_key = user_info.get_room_key().unwrap();
+        let workspace = self.workspaces.get(user_info.get_username()).unwrap();
+        insert_networked_components_entry(commands, server, user_key, &room_key, &workspace.working_file_entries, entry_key, entry_val);
+    }
+
+    pub fn spawn_file_tree_entity(commands: &mut Commands, server: &mut Server) -> Entity {
+        let entity_id = commands
+            .spawn_empty()
+            .enable_replication(server)
+            .configure_replication(ReplicationConfig::Delegated)
+            .id();
+
+        entity_id
+    }
 }
 
 fn fill_file_entries_from_git(
@@ -172,7 +190,7 @@ fn fill_file_entries_from_git(
         match git_entry.kind() {
             Some(git2::ObjectType::Tree) => {
                 let entry_kind = EntryKind::Directory;
-                let id = spawn_file_tree_entity(commands, server);
+                let id = GitManager::spawn_file_tree_entity(commands, server);
 
                 let file_entry_key = FileEntryKey::new(path, &name, entry_kind);
 
@@ -195,7 +213,7 @@ fn fill_file_entries_from_git(
             }
             Some(git2::ObjectType::Blob) => {
                 let entry_kind = EntryKind::File;
-                let id = spawn_file_tree_entity(commands, server);
+                let id = GitManager::spawn_file_tree_entity(commands, server);
 
                 let file_entry_key = FileEntryKey::new(path, &name, entry_kind);
                 let file_entry_value = FileEntryValue::new(id, parent.clone(), None);
@@ -212,16 +230,6 @@ fn fill_file_entries_from_git(
     output
 }
 
-fn spawn_file_tree_entity(commands: &mut Commands, server: &mut Server) -> Entity {
-    let entity_id = commands
-        .spawn_empty()
-        .enable_replication(server)
-        .configure_replication(ReplicationConfig::Delegated)
-        .id();
-
-    entity_id
-}
-
 fn insert_networked_components(
     commands: &mut Commands,
     server: &mut Server,
@@ -235,30 +243,15 @@ fn insert_networked_components(
             file_entry_key.name()
         );
 
-        match file_entry_key.kind() {
-            EntryKind::Directory => {
-                insert_networked_components_entry(
-                    commands,
-                    server,
-                    user_key,
-                    room_key,
-                    file_entries,
-                    file_entry_key,
-                    file_entry_value,
-                );
-            }
-            EntryKind::File => {
-                insert_networked_components_entry(
-                    commands,
-                    server,
-                    user_key,
-                    room_key,
-                    file_entries,
-                    file_entry_key,
-                    file_entry_value,
-                );
-            }
-        }
+        insert_networked_components_entry(
+            commands,
+            server,
+            user_key,
+            room_key,
+            file_entries,
+            file_entry_key,
+            file_entry_value,
+        );
     }
 }
 
