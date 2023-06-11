@@ -23,28 +23,19 @@ pub fn message_events(
 
             match message.action {
                 ChangelistAction::CommitAll => {
-                    git_manager.workspace_mut(user.get_username()).commit_entire_changelist(&mut commands, &server, &query)
+                    git_manager.commit_entire_changelist(&mut commands, &mut server, user, &query);
                 }
                 ChangelistAction::CommitSingle => {
                     let Some(entity) = message.entity.get(&server) else {
                         panic!("no entity!")
                     };
-                    git_manager.workspace_mut(user.get_username()).commit_changelist_entry(&mut commands, &mut server, &entity, &query)
+                    git_manager.commit_changelist_entry(&mut commands, &mut server, user, &entity, &query);
                 }
                 ChangelistAction::Rollback => {
                     let Some(entity) = message.entity.get(&server) else {
                         panic!("no entity!")
                     };
-                    if let Some((key, value)) = git_manager.workspace_mut(user.get_username()).rollback_changelist_entry(&mut commands, &mut server, &entity, &query) {
-                        git_manager.spawn_networked_entry_into_world(
-                            &mut commands,
-                            &mut server,
-                            &user_key,
-                            user,
-                            &key,
-                            &value,
-                        )
-                    }
+                    git_manager.rollback_changelist_entry(&mut commands, &mut server, &user_key, user, &entity, &query);
                 }
             }
         }

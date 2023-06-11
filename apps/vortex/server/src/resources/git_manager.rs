@@ -6,7 +6,7 @@ use std::{
 
 use bevy_ecs::{
     entity::Entity,
-    system::{Commands, Resource},
+    system::{Query, Commands, Resource},
 };
 use bevy_log::info;
 
@@ -15,7 +15,7 @@ use git2::{Cred, Repository, Tree};
 use naia_bevy_server::{CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};
 
 use vortex_proto::{
-    components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild},
+    components::{ChangelistEntry, ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild},
     resources::FileEntryKey,
 };
 
@@ -152,6 +152,53 @@ impl GitManager {
         self.workspaces.insert(username.to_string(), new_workspace);
     }
 
+    pub fn commit_entire_changelist(&mut self, commands: &mut Commands, server: &mut Server, user: &UserInfo, query: &Query<&ChangelistEntry>) {
+        if let Some(workspace) = self.workspaces.get_mut(user.get_username()) {
+            workspace.commit_entire_changelist(commands, server, query);
+        }
+    }
+
+    pub fn commit_changelist_entry(&mut self, commands: &mut Commands, server: &mut Server, user: &UserInfo, entity: &Entity, query: &Query<&ChangelistEntry>) {
+        let Some(workspace) = self.workspaces.get_mut(user.get_username()) else {
+            return;
+        };
+        let Some((status, key, value)) = workspace.commit_changelist_entry(commands, server, entity, query) else {
+            return;
+        };
+        match status {
+            ChangelistStatus::Modified => {
+                todo!();
+            }
+            ChangelistStatus::Created => {
+                // sync to git repo!
+                self.git_create_file(key, value);
+                self.git_commit();
+                self.git_push();
+            }
+            ChangelistStatus::Deleted => {
+                // sync to git repo!
+                self.git_delete_file(key, value);
+                self.git_commit();
+                self.git_push();
+            }
+        }
+    }
+
+    pub fn rollback_changelist_entry(&mut self, commands: &mut Commands, server: &mut Server, user_key: &UserKey, user: &UserInfo, entity: &Entity, query: &Query<&ChangelistEntry>) {
+        if let Some(workspace) = self.workspaces.get_mut(user.get_username()) {
+            if let Some((key, value)) = workspace.rollback_changelist_entry(commands, server, entity, query) {
+                self.spawn_networked_entry_into_world(
+                    commands,
+                    server,
+                    user_key,
+                    user,
+                    &key,
+                    &value,
+                )
+            }
+        }
+    }
+
     pub fn spawn_networked_entry_into_world(
         &mut self, commands: &mut Commands, server: &mut Server, user_key: &UserKey, user_info: &UserInfo, entry_key: &FileEntryKey, entry_val: &FileEntryValue
     ) {
@@ -168,6 +215,22 @@ impl GitManager {
             .id();
 
         entity_id
+    }
+
+    pub fn git_create_file(&mut self, key: FileEntryKey, value: FileEntryValue) {
+
+    }
+
+    pub fn git_delete_file(&mut self, key: FileEntryKey, value: FileEntryValue) {
+
+    }
+
+    pub fn git_commit(&mut self) {
+
+    }
+
+    pub fn git_push(&mut self) {
+
     }
 }
 

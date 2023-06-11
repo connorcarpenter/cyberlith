@@ -114,12 +114,12 @@ impl Workspace {
     pub fn commit_entire_changelist(
         &mut self, commands: &mut Commands, server: &Server, query: &Query<&ChangelistEntry>,
     ) {
-
+        todo!();
     }
 
     pub fn commit_changelist_entry(
         &mut self, commands: &mut Commands, server: &mut Server, cl_entity: &Entity, query: &Query<&ChangelistEntry>,
-    ) {
+    ) -> Option<(ChangelistStatus, FileEntryKey, FileEntryValue)> {
         let changelist_entry = query.get(*cl_entity).unwrap();
         let status = *changelist_entry.status;
         let file_entry_key = changelist_entry.file_entry_key();
@@ -137,7 +137,7 @@ impl Workspace {
                 Self::add_to_file_tree(
                     &mut self.master_file_entries,
                     file_entry_key.clone(),
-                    file_entry_val,
+                    file_entry_val.clone(),
                 );
 
                 // despawn changelist entity
@@ -148,7 +148,7 @@ impl Workspace {
                     .entity(file_entity)
                     .take_authority(server);
 
-                // TODO: sync deletion up with Git repo!
+                return Some((ChangelistStatus::Created, file_entry_key, file_entry_val))
             }
             ChangelistStatus::Deleted => {
 
@@ -160,11 +160,14 @@ impl Workspace {
                     self.cleanup_changelist_entry(commands, &child_key);
                 }
 
-                // TODO: sync deletion up with Git repo!
+                return Some((ChangelistStatus::Deleted, file_entry_key, entry_value));
             }
         }
+
+        return None;
     }
 
+    // returns an entity to spawn if delete was rolled back
     pub fn rollback_changelist_entry(
         &mut self, commands: &mut Commands, server: &mut Server, cl_entity: &Entity, query: &Query<&ChangelistEntry>,
     ) -> Option<(FileEntryKey, FileEntryValue)> {
