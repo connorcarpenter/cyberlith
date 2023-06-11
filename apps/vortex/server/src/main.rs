@@ -59,6 +59,7 @@ fn main() {
                 network::insert_component_events,
                 network::remove_component_events,
                 network::update_component_events,
+                network::message_events,
             )
                 .chain()
                 .in_set(ReceiveEvents),

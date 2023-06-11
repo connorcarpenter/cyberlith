@@ -6,6 +6,7 @@ mod init;
 mod publish;
 mod tick;
 mod world_updates;
+mod messages;
 
 pub use auth::auth_events;
 pub use connect::connect_events;
@@ -18,3 +19,4 @@ pub use world_updates::{
     despawn_entity_events, insert_component_events, remove_component_events, spawn_entity_events,
     update_component_events,
 };
+pub use messages::message_events;

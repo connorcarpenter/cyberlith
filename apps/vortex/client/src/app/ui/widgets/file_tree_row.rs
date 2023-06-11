@@ -9,7 +9,7 @@ use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
 use render_egui::{
     egui,
     egui::{
-        emath, remap, vec2, Color32, Id, NumExt, Rect, Response, Rounding, Sense, Shape, Stroke,
+        emath, remap, vec2, Id, NumExt, Rect, Response, Rounding, Sense, Shape, Stroke,
         TextStyle, Ui, WidgetText,
     },
 };

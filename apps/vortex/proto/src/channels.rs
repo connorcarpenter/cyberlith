@@ -1,10 +1,17 @@
-use naia_bevy_shared::{Protocol, ProtocolPlugin};
+use naia_bevy_shared::{ChannelDirection, Channel, ChannelMode, Protocol, ProtocolPlugin, ReliableSettings};
 
 // Plugin
 pub struct ChannelsPlugin;
 
 impl ProtocolPlugin for ChannelsPlugin {
-    fn build(&self, _protocol: &mut Protocol) {
-        // nothing here yet
+    fn build(&self, protocol: &mut Protocol) {
+        protocol.add_channel::<ChangelistActionChannel>(
+            ChannelDirection::ClientToServer,
+            ChannelMode::OrderedReliable(ReliableSettings::default()),
+        );
     }
 }
+
+// ChangelistActionChannel
+#[derive(Channel)]
+pub struct ChangelistActionChannel;

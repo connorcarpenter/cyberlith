@@ -10,12 +10,12 @@ use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
 
 use render_egui::{
     egui,
-    egui::{Color32, NumExt, Response, Rounding, Sense, Stroke, TextStyle, Ui, WidgetText},
+    egui::{NumExt, Response, Rounding, Sense, Stroke, TextStyle, Ui, WidgetText},
 };
-use vortex_proto::components::{ChangelistEntry, ChangelistStatus, EntryKind};
+use vortex_proto::{channels::ChangelistActionChannel, components::{ChangelistEntry, ChangelistStatus, EntryKind}, messages::{ChangelistAction, ChangelistMessage}};
 
 use crate::app::{
-    components::file_system::{ChangelistContextMenuAction, ChangelistUiState},
+    components::file_system::ChangelistUiState,
     resources::action_stack::{Action, ActionStack},
     ui::widgets::colors::{FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED, FILE_ROW_COLORS_UNSELECTED},
 };
@@ -147,20 +147,27 @@ impl ChangelistRowUiWidget {
 
         // Right-click Context menu
         row_response.context_menu(|ui| {
-            context_menu_response = Some(ChangelistContextMenuAction::None);
+            context_menu_response = Some(None);
 
             if ui
-                .add_enabled(true, egui::Button::new("↘ Commit"))
+                .add_enabled(true, egui::Button::new("⬊ Commit All"))
                 .clicked()
             {
-                context_menu_response = Some(ChangelistContextMenuAction::Commit);
+                context_menu_response = Some(Some(ChangelistAction::CommitAll));
+                ui.close_menu();
+            }
+            if ui
+                .add_enabled(true, egui::Button::new("↘ Commit File"))
+                .clicked()
+            {
+                context_menu_response = Some(Some(ChangelistAction::CommitSingle));
                 ui.close_menu();
             }
             if ui
                 .add_enabled(true, egui::Button::new("⟲ Rollback"))
                 .clicked()
             {
-                context_menu_response = Some(ChangelistContextMenuAction::Rollback);
+                context_menu_response = Some(Some(ChangelistAction::Rollback));
                 ui.close_menu();
             }
         });
@@ -176,15 +183,19 @@ impl ChangelistRowUiWidget {
                 // context menu just closed
                 ui_state.context_menu_response = None;
                 match action {
-                    ChangelistContextMenuAction::None => {
+                    None => {
                         info!("just closed");
                         return;
                     }
-                    ChangelistContextMenuAction::Commit => {
-                        Self::on_click_commit(world, row_entity);
+                    Some(ChangelistAction::CommitAll) => {
+                        Self::on_click_commit_all(world, row_entity);
                         return;
                     }
-                    ChangelistContextMenuAction::Rollback => {
+                    Some(ChangelistAction::CommitSingle) => {
+                        Self::on_click_commit_single(world, row_entity);
+                        return;
+                    }
+                    Some(ChangelistAction::Rollback) => {
                         Self::on_click_rollback(world, row_entity);
                         return;
                     }
@@ -227,11 +238,25 @@ impl ChangelistRowUiWidget {
         }
     }
 
-    pub fn on_click_commit(world: &mut World, row_entity: &Entity) {
-        todo!();
+    pub fn on_click_commit_all(world: &mut World, row_entity: &Entity) {
+        Self::send_changelist_message(world, row_entity, ChangelistAction::CommitAll);
+    }
+
+    pub fn on_click_commit_single(world: &mut World, row_entity: &Entity) {
+        Self::send_changelist_message(world, row_entity, ChangelistAction::CommitSingle);
     }
 
     pub fn on_click_rollback(world: &mut World, row_entity: &Entity) {
-        todo!();
+        Self::send_changelist_message(world, row_entity, ChangelistAction::Rollback);
+    }
+
+    fn send_changelist_message(world: &mut World, row_entity: &Entity, action: ChangelistAction) {
+        let mut system_state: SystemState<Client> = SystemState::new(world);
+        let mut client = system_state.get_mut(world);
+
+        let mut message = ChangelistMessage::new(action);
+        message.entity.set(&client, row_entity);
+
+        client.send_message::<ChangelistActionChannel, ChangelistMessage>(&message);
     }
 }

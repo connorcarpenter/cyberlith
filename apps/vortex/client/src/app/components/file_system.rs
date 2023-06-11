@@ -1,8 +1,9 @@
+
 use std::collections::BTreeMap;
 
 use bevy_ecs::prelude::{Component, Entity};
 
-use vortex_proto::components::{ChangelistStatus, EntryKind};
+use vortex_proto::{components::{ChangelistStatus, EntryKind}, messages::ChangelistAction};
 
 use crate::app::ui::ModalRequestHandle;
 
@@ -77,7 +78,9 @@ impl FileSystemUiState {
 #[derive(Component)]
 pub struct ChangelistUiState {
     pub selected: bool,
-    pub context_menu_response: Option<ChangelistContextMenuAction>,
+    // the first Option is for whether there is a response
+    // the second Option is whether there is an Action or a No-Op
+    pub context_menu_response: Option<Option<ChangelistAction>>,
 }
 
 impl ChangelistUiState {
@@ -99,13 +102,6 @@ pub enum ContextMenuAction {
     Cut,
     Copy,
     Paste,
-}
-
-#[derive(Clone)]
-pub enum ChangelistContextMenuAction {
-    None,
-    Rollback,
-    Commit,
 }
 
 #[derive(Clone)]

@@ -12,7 +12,7 @@ use naia_bevy_server::{
         DespawnEntityEvent, InsertComponentEvents, RemoveComponentEvents, SpawnEntityEvent,
         UpdateComponentEvents,
     },
-    CommandsExt, Server,
+    Server,
 };
 
 use vortex_proto::{
