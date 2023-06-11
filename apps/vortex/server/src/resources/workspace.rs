@@ -127,7 +127,7 @@ impl Workspace {
     }
 
     pub fn commit_changelist_entry(
-        &mut self, username: &str, commit_message: &str, commands: &mut Commands, server: &mut Server, cl_entity: &Entity, query: &Query<&ChangelistEntry>,
+        &mut self, username: &str, email: &str, commit_message: &str, commands: &mut Commands, server: &mut Server, cl_entity: &Entity, query: &Query<&ChangelistEntry>,
     ) {
         let changelist_entry = query.get(*cl_entity).unwrap();
         let status = *changelist_entry.status;
@@ -159,7 +159,7 @@ impl Workspace {
 
                 // sync to git repo!
                 self.git_create_file(file_entry_key, file_entry_val);
-                self.git_commit(username, commit_message);
+                self.git_commit(username, email, commit_message);
                 self.git_push();
             }
             ChangelistStatus::Deleted => {
@@ -174,7 +174,7 @@ impl Workspace {
 
                 // sync to git repo!
                 self.git_delete_file(file_entry_key, entry_value);
-                self.git_commit(username, commit_message);
+                self.git_commit(username, email, commit_message);
                 self.git_push();
             }
         }
@@ -266,7 +266,7 @@ impl Workspace {
         todo!();
     }
 
-    pub fn git_commit(&mut self, username: &str, commit_message: &str) {
+    pub fn git_commit(&mut self, username: &str, email: &str, commit_message: &str) {
 
         let repo = self.repo.lock().unwrap();
 
@@ -285,8 +285,8 @@ impl Workspace {
             .expect("Failed to peel HEAD to commit");
 
         // Prepare the commit details
-        let author = Signature::now(username, "placeholder@gmail.com").expect("Failed to create author signature");
-        let committer = Signature::now(username, "placeholder@gmail.com").expect("Failed to create committer signature");
+        let author = Signature::now(username, email).expect("Failed to create author signature");
+        let committer = Signature::now(username, email).expect("Failed to create committer signature");
 
         // Create the commit
         let commit_id = repo

@@ -13,9 +13,9 @@ pub fn auth_events(
 ) {
     for events in event_reader.iter() {
         for (user_key, auth) in events.read::<Auth>() {
-            if user_manager.validate_user(&auth.username, &auth.password) {
+            if let Some(email) = user_manager.validate_user(&auth.username, &auth.password) {
                 // Store user information
-                user_manager.add_user(&user_key, &auth.username);
+                user_manager.add_user(&user_key, &auth.username, &email);
 
                 // Accept incoming connection
                 server.accept_connection(&user_key);

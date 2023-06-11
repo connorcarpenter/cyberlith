@@ -166,10 +166,11 @@ impl GitManager {
 
     pub fn commit_changelist_entry(&mut self, commands: &mut Commands, server: &mut Server, user: &UserInfo, commit_message: &str, entity: &Entity, query: &Query<&ChangelistEntry>) {
         let username = user.get_username();
+        let email = user.get_email();
         let Some(workspace) = self.workspaces.get_mut(username) else {
             return;
         };
-        workspace.commit_changelist_entry(username, commit_message, commands, server, entity, query);
+        workspace.commit_changelist_entry(username, email, commit_message, commands, server, entity, query);
     }
 
     pub fn rollback_changelist_entry(&mut self, commands: &mut Commands, server: &mut Server, user_key: &UserKey, user: &UserInfo, entity: &Entity, query: &Query<&ChangelistEntry>) {

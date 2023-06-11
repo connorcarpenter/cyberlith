@@ -5,19 +5,25 @@ use naia_bevy_server::{RoomKey, UserKey};
 
 pub struct UserInfo {
     username: String,
+    email: String,
     workspace_room_key: Option<RoomKey>,
 }
 
 impl UserInfo {
-    pub fn new(username: &str) -> Self {
+    pub fn new(username: &str, email: &str) -> Self {
         Self {
             username: username.to_string(),
+            email: email.to_string(),
             workspace_room_key: None,
         }
     }
 
     pub(crate) fn get_username(&self) -> &str {
         &self.username
+    }
+
+    pub(crate) fn get_email(&self) -> &str {
+        &self.email
     }
 
     pub(crate) fn set_room_key(&mut self, room_key: RoomKey) {
@@ -31,7 +37,8 @@ impl UserInfo {
 
 #[derive(Resource)]
 pub struct UserManager {
-    credentials: HashMap<String, String>,
+    // HashMap<username, (email, password)>
+    credentials: HashMap<String, (String, String)>,
     users: HashMap<UserKey, UserInfo>,
 }
 
@@ -40,12 +47,19 @@ impl Default for UserManager {
         let mut credentials = HashMap::new();
 
         // Connor
-        credentials.insert("connorcarpenter".to_string(), "greattobealive!".to_string());
+        credentials.insert(
+            "connorcarpenter".to_string(), (
+                "connorcarpenter@gmail.com".to_string(),
+                "greattobealive!".to_string()
+            )
+        );
 
         // Brendon?
         credentials.insert(
-            "brendoncarpenter".to_string(),
-            "greattobealive!".to_string(),
+            "brendoncarpenter".to_string(), (
+                "brendon.e.carpenter@gmail.com".to_string(),
+                "greattobealive!".to_string()
+            )
         );
 
         // TODO: add more users here? get from database?
@@ -58,15 +72,21 @@ impl Default for UserManager {
 }
 
 impl UserManager {
-    pub fn validate_user(&self, username: &str, password: &str) -> bool {
+    pub fn validate_user(&self, username: &str, password: &str) -> Option<String> {
         match self.credentials.get(username) {
-            Some(p) => p == password,
-            None => false,
+            Some((email, p)) => {
+                if p == password {
+                    Some(email.clone())
+                } else {
+                    None
+                }
+            },
+            None => None,
         }
     }
 
-    pub fn add_user(&mut self, user_key: &UserKey, username: &str) {
-        self.users.insert(*user_key, UserInfo::new(username));
+    pub fn add_user(&mut self, user_key: &UserKey, username: &str, email: &str) {
+        self.users.insert(*user_key, UserInfo::new(username, email));
     }
 
     pub fn user_info(&self, user_key: &UserKey) -> Option<&UserInfo> {
