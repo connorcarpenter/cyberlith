@@ -7,13 +7,10 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use naia_bevy_client::{
-    events::{
-        DespawnEntityEvent, InsertComponentEvents, RemoveComponentEvents, SpawnEntityEvent,
-        UpdateComponentEvents,
-    },
-    Client,
-};
+use naia_bevy_client::{events::{
+    DespawnEntityEvent, InsertComponentEvents, RemoveComponentEvents, SpawnEntityEvent,
+    UpdateComponentEvents,
+}, Client, CommandsExt};
 
 use vortex_proto::components::{
     ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
@@ -171,10 +168,12 @@ pub fn update_component_events(
 }
 
 pub fn remove_component_events(
-    client: Client,
-    global: Res<Global>,
+    mut commands: Commands,
+    mut client: Client,
+    mut global: ResMut<Global>,
     mut parent_query: Query<&mut FileSystemParent>,
     mut event_reader: EventReader<RemoveComponentEvents>,
+    mut fs_state_query: Query<&mut FileSystemUiState>,
 ) {
     for events in event_reader.iter() {
         for (_entity, _component) in events.read::<FileSystemEntry>() {
@@ -198,6 +197,19 @@ pub fn remove_component_events(
                 continue;
             };
             parent.remove_child(&entity);
+        }
+        for (entity, component) in events.read::<ChangelistEntry>() {
+            info!("removed ChangelistEntry component from entity");
+
+            let entry = component.file_entry_key();
+            global.changelist.remove(&entry);
+            if let Some(file_entity) = component.file_entity.get(&client) {
+                let mut fs_state = fs_state_query.get_mut(file_entity).unwrap();
+                fs_state.change_status = None;
+
+                commands.entity(file_entity).release_authority(&mut client);
+            }
+
         }
     }
 }

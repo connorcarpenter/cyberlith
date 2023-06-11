@@ -219,7 +219,7 @@ impl ChangelistRowUiWidget {
             if let Ok(entry) = query.get(*row_entity) {
                 if let Some(file_entity) = entry.file_entity.get(&client) {
                     if let Some(authority) = commands.entity(file_entity).authority(&client) {
-                        authority.is_available()
+                        !authority.is_denied()
                     } else {
                         true
                     }

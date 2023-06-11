@@ -328,7 +328,7 @@ impl FileTreeRowUiWidget {
             SystemState::new(world);
         let (mut commands, client, mut action_stack) = system_state.get_mut(world);
         if let Some(authority) = commands.entity(*row_entity).authority(&client) {
-            if authority.is_available() {
+            if !authority.is_denied() {
                 let mut entities = Vec::new();
                 entities.push(*row_entity);
                 action_stack.buffer_action(Action::SelectEntries(entities));

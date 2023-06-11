@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use bevy_ecs::{
     prelude::{Commands, Entity, Query, Resource, World},
     system::{Res, SystemState},
@@ -168,14 +170,17 @@ impl ActionStack {
 
                 // TODO: when shift/control is pressed, select multiple items
 
-                // Deselect all selected files
-                let old_selected_files =
-                    Self::deselect_all_selected_files(&mut commands, &mut client, &mut fs_query, &mut cl_query);
+                // Deselect all selected files, select the new selected files
+                let (deselected_row_entities, mut file_entries_to_release) =
+                    Self::deselect_all_selected_files(&mut client, &mut fs_query, &mut cl_query);
+                let mut file_entries_to_request = Self::select_files(&mut client, &mut fs_query, &mut cl_query, file_entities);
 
-                // Select all new selected files
-                Self::select_files(&mut commands, &mut client, &mut fs_query, &mut cl_query, file_entities);
+                Self::remove_duplicates(&mut file_entries_to_release, &mut file_entries_to_request);
 
-                return Action::SelectEntries(old_selected_files);
+                Self::release_file_entries(&mut commands, &mut client, file_entries_to_release);
+                Self::request_file_entries(&mut commands, &mut client, file_entries_to_request);
+
+                return Action::SelectEntries(deselected_row_entities);
             }
             Action::NewEntry(
                 parent_entity_opt,
@@ -195,8 +200,9 @@ impl ActionStack {
                 let (mut commands, mut client, global, mut fs_query, mut cl_query, mut parent_query) =
                     system_state.get_mut(world);
 
-                let old_selected_files =
-                    Self::deselect_all_selected_files(&mut commands, &mut client, &mut fs_query, &mut cl_query);
+                let (deselected_row_entities, file_entries_to_release) =
+                    Self::deselect_all_selected_files(&mut client, &mut fs_query, &mut cl_query);
+                Self::release_file_entries(&mut commands, &mut client, file_entries_to_release);
 
                 let parent_entity = {
                     if let Some(parent_entity) = parent_entity_opt {
@@ -230,7 +236,7 @@ impl ActionStack {
 
                 system_state.apply(world);
 
-                return Action::DeleteEntry(entity_id, Some(old_selected_files));
+                return Action::DeleteEntry(entity_id, Some(deselected_row_entities));
             }
             Action::DeleteEntry(file_entity, files_to_select_opt) => {
                 let mut system_state: SystemState<(
@@ -300,7 +306,8 @@ impl ActionStack {
                 commands.entity(*file_entity).despawn();
 
                 if let Some(files_to_select) = files_to_select_opt {
-                    Self::select_files(&mut commands, &mut client, &mut ui_query, &mut cl_query, files_to_select);
+                    let file_entries_to_request = Self::select_files(&mut client, &mut ui_query, &mut cl_query, files_to_select);
+                    Self::request_file_entries(&mut commands, &mut client, file_entries_to_request);
                 }
 
                 system_state.apply(world);
@@ -329,51 +336,48 @@ impl ActionStack {
     }
 
     fn select_files(
-        commands: &mut Commands,
         client: &mut Client,
         fs_query: &mut Query<(Entity, &mut FileSystemUiState)>,
         cl_query: &mut Query<(Entity, &ChangelistEntry, &mut ChangelistUiState)>,
-        file_entities: &Vec<Entity>,
-    ) {
-        for file_entity in file_entities {
-            if let Ok((_, mut ui_state)) = fs_query.get_mut(*file_entity) {
+        row_entities: &Vec<Entity>,
+    ) -> HashSet<Entity> {
+        let mut file_entries_to_request = HashSet::new();
+        for row_entity in row_entities {
+            if let Ok((_, mut ui_state)) = fs_query.get_mut(*row_entity) {
 
                 // File System
                 ui_state.selected = true;
 
-                // Request Entity Authority
-                commands.entity(*file_entity).request_authority(client);
+                file_entries_to_request.insert(*row_entity);
             }
-            if let Ok((_, cl_entry, mut ui_state)) = cl_query.get_mut(*file_entity) {
+            if let Ok((_, cl_entry, mut ui_state)) = cl_query.get_mut(*row_entity) {
 
                 // Changelist
                 ui_state.selected = true;
 
                 if let Some(file_entity) = cl_entry.file_entity.get(client) {
-                    // Request Entity Authority
-                    commands.entity(file_entity).request_authority(client);
+                    file_entries_to_request.insert(file_entity);
                 }
             }
         }
+        file_entries_to_request
     }
 
     fn deselect_all_selected_files(
-        commands: &mut Commands,
         client: &mut Client,
         fs_query: &mut Query<(Entity, &mut FileSystemUiState)>,
         cl_query: &mut Query<(Entity, &ChangelistEntry, &mut ChangelistUiState)>,
-    ) -> Vec<Entity> {
-        let mut old_selected_files = Vec::new();
+    ) -> (Vec<Entity>, HashSet<Entity>) {
+        let mut deselected_row_entities = Vec::new();
+        let mut file_entries_to_release = HashSet::new();
         for (item_entity, mut ui_state) in fs_query.iter_mut() {
 
             // FileSystem
             if ui_state.selected {
                 ui_state.selected = false;
 
-                old_selected_files.push(item_entity);
-
-                // Release Entity Authority
-                commands.entity(item_entity).release_authority(client);
+                deselected_row_entities.push(item_entity);
+                file_entries_to_release.insert(item_entity);
             }
         }
         for (item_entity, cl_entry, mut ui_state) in cl_query.iter_mut() {
@@ -381,15 +385,48 @@ impl ActionStack {
             if ui_state.selected {
                 ui_state.selected = false;
 
-                old_selected_files.push(item_entity);
+                deselected_row_entities.push(item_entity);
 
                 if let Some(file_entity) = cl_entry.file_entity.get(client) {
-                    // Release Entity Authority
-                    commands.entity(file_entity).release_authority(client);
+                    file_entries_to_release.insert(file_entity);
                 }
             }
         }
-        old_selected_files
+        (deselected_row_entities, file_entries_to_release)
+    }
+
+    fn request_file_entries(
+        commands: &mut Commands,
+        client: &mut Client,
+        file_entries_to_request: HashSet<Entity>,
+    ) {
+        for file_entity in file_entries_to_request {
+            commands.entity(file_entity).request_authority(client);
+        }
+    }
+
+    fn release_file_entries(
+        commands: &mut Commands,
+        client: &mut Client,
+        file_entries_to_release: HashSet<Entity>,
+    ) {
+        for file_entity in file_entries_to_release {
+            commands.entity(file_entity).release_authority(client);
+        }
+    }
+
+    fn remove_duplicates(
+        set_a: &mut HashSet<Entity>,
+        set_b: &mut HashSet<Entity>,
+    ) {
+        set_a.retain(|item| {
+            if set_b.contains(item) {
+                set_b.remove(item);
+                false // Remove the item from set_a
+            } else {
+                true // Keep the item in set_a
+            }
+        });
     }
 
     fn create_fs_entry(
