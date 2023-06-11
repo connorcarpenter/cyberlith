@@ -239,24 +239,25 @@ impl ChangelistRowUiWidget {
     }
 
     pub fn on_click_commit_all(world: &mut World, row_entity: &Entity) {
-        Self::send_changelist_message(world, row_entity, ChangelistAction::CommitAll);
+        Self::send_changelist_message(world, row_entity, ChangelistAction::CommitAll, Some("placeholder commit message!"));
     }
 
     pub fn on_click_commit_single(world: &mut World, row_entity: &Entity) {
-        Self::send_changelist_message(world, row_entity, ChangelistAction::CommitSingle);
+        Self::send_changelist_message(world, row_entity, ChangelistAction::CommitSingle, Some("placeholder commit message!"));
     }
 
     pub fn on_click_rollback(world: &mut World, row_entity: &Entity) {
-        Self::send_changelist_message(world, row_entity, ChangelistAction::Rollback);
+        Self::send_changelist_message(world, row_entity, ChangelistAction::Rollback, None);
     }
 
-    fn send_changelist_message(world: &mut World, row_entity: &Entity, action: ChangelistAction) {
+    fn send_changelist_message(world: &mut World, row_entity: &Entity, action: ChangelistAction, opt_str: Option<&str>) {
         let mut system_state: SystemState<Client> = SystemState::new(world);
         let mut client = system_state.get_mut(world);
 
-        let mut message = ChangelistMessage::new(action);
+        let mut message = ChangelistMessage::new(action, opt_str);
         message.entity.set(&client, row_entity);
 
+        info!("sent ChangelistMessage");
         client.send_message::<ChangelistActionChannel, ChangelistMessage>(&message);
     }
 }

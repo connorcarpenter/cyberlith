@@ -3,16 +3,16 @@ use std::collections::HashMap;
 use bevy_ecs::{
     entity::Entity,
     event::EventReader,
-    system::{ResMut, Commands, Query, Res},
+    system::{ResMut, Commands, Query},
 };
 use bevy_log::info;
 
 use naia_bevy_client::{events::{
     DespawnEntityEvent, InsertComponentEvents, RemoveComponentEvents, SpawnEntityEvent,
     UpdateComponentEvents,
-}, Client, CommandsExt};
+}, Client};
 
-use vortex_proto::components::{ChangelistEntry, ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
+use vortex_proto::components::{ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
 
 use crate::app::{
     components::file_system::{FileSystemParent, ChangelistUiState, FileSystemUiState}, resources::global::Global,
@@ -166,8 +166,7 @@ pub fn update_component_events(
 }
 
 pub fn remove_component_events(
-    mut commands: Commands,
-    mut client: Client,
+    client: Client,
     mut global: ResMut<Global>,
     mut parent_query: Query<&mut FileSystemParent>,
     mut event_reader: EventReader<RemoveComponentEvents>,

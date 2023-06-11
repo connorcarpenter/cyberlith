@@ -61,6 +61,15 @@ impl GitManager {
         self.workspaces.get_mut(username).unwrap()
     }
 
+    pub fn get_remote_callbacks(access_token: &str) -> git2::RemoteCallbacks {
+        let mut remote_callbacks = git2::RemoteCallbacks::new();
+        remote_callbacks.credentials(move |_url, _username_from_url, _allowed_types| {
+            Cred::userpass_plaintext("token", access_token)
+        });
+
+        remote_callbacks
+    }
+
     pub fn add_workspace(
         &mut self,
         commands: &mut Commands,
@@ -75,16 +84,10 @@ impl GitManager {
         let full_path_str = format!("{}/{}", root_dir, username);
         let path = Path::new(&full_path_str);
         let repo_url = self.config.as_ref().unwrap().repo_url.as_str();
-        let token = self.config.as_ref().unwrap().access_token.clone();
-
-        // Initialize Git credentials
-        let mut callbacks = git2::RemoteCallbacks::new();
-        callbacks.credentials(move |_url, _username_from_url, _allowed_types| {
-            Cred::userpass_plaintext("token", &token)
-        });
+        let access_token = self.config.as_ref().unwrap().access_token.as_str();
 
         let mut fetch_options = git2::FetchOptions::new();
-        fetch_options.remote_callbacks(callbacks);
+        fetch_options.remote_callbacks(Self::get_remote_callbacks(access_token));
 
         let repo = if !path.exists() {
             // Create new directory
@@ -133,13 +136,16 @@ impl GitManager {
             repo
         };
 
-        let head = repo.head().unwrap();
-        let tree = head.peel_to_tree().unwrap();
-
         let mut file_entries = HashMap::new();
-        fill_file_entries_from_git(&mut file_entries, commands, server, &repo, &tree, "", None);
 
-        let new_workspace = Workspace::new(user_info.get_room_key().unwrap(), file_entries);
+        {
+            let head = repo.head().unwrap();
+            let tree = head.peel_to_tree().unwrap();
+
+            fill_file_entries_from_git(&mut file_entries, commands, server, &repo, &tree, "", None);
+        }
+
+        let new_workspace = Workspace::new(user_info.get_room_key().unwrap(), file_entries, repo, access_token, &full_path_str);
 
         insert_networked_components(
             commands,
@@ -158,30 +164,12 @@ impl GitManager {
         }
     }
 
-    pub fn commit_changelist_entry(&mut self, commands: &mut Commands, server: &mut Server, user: &UserInfo, entity: &Entity, query: &Query<&ChangelistEntry>) {
-        let Some(workspace) = self.workspaces.get_mut(user.get_username()) else {
+    pub fn commit_changelist_entry(&mut self, commands: &mut Commands, server: &mut Server, user: &UserInfo, commit_message: &str, entity: &Entity, query: &Query<&ChangelistEntry>) {
+        let username = user.get_username();
+        let Some(workspace) = self.workspaces.get_mut(username) else {
             return;
         };
-        let Some((status, key, value)) = workspace.commit_changelist_entry(commands, server, entity, query) else {
-            return;
-        };
-        match status {
-            ChangelistStatus::Modified => {
-                todo!();
-            }
-            ChangelistStatus::Created => {
-                // sync to git repo!
-                self.git_create_file(key, value);
-                self.git_commit();
-                self.git_push();
-            }
-            ChangelistStatus::Deleted => {
-                // sync to git repo!
-                self.git_delete_file(key, value);
-                self.git_commit();
-                self.git_push();
-            }
-        }
+        workspace.commit_changelist_entry(username, commit_message, commands, server, entity, query);
     }
 
     pub fn rollback_changelist_entry(&mut self, commands: &mut Commands, server: &mut Server, user_key: &UserKey, user: &UserInfo, entity: &Entity, query: &Query<&ChangelistEntry>) {
@@ -215,22 +203,6 @@ impl GitManager {
             .id();
 
         entity_id
-    }
-
-    pub fn git_create_file(&mut self, key: FileEntryKey, value: FileEntryValue) {
-
-    }
-
-    pub fn git_delete_file(&mut self, key: FileEntryKey, value: FileEntryValue) {
-
-    }
-
-    pub fn git_commit(&mut self) {
-
-    }
-
-    pub fn git_push(&mut self) {
-
     }
 }
 

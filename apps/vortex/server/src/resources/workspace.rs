@@ -1,8 +1,9 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fs, path::Path, sync::Mutex};
 
 use bevy_ecs::{entity::Entity, system::{Commands, Query}};
-
 use bevy_log::info;
+
+use git2::{Repository, Signature};
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server};
 
@@ -11,23 +12,31 @@ use vortex_proto::{
     resources::FileEntryKey,
 };
 
-use crate::resources::{ChangelistValue, FileEntryValue, GitManager};
+use crate::resources::{ChangelistValue, FileEntryValue, GitManager, user_manager::UserInfo};
 
 pub struct Workspace {
     pub room_key: RoomKey,
     pub master_file_entries: HashMap<FileEntryKey, FileEntryValue>,
     pub working_file_entries: HashMap<FileEntryKey, FileEntryValue>,
     pub changelist_entries: HashMap<FileEntryKey, ChangelistValue>,
+    repo: Mutex<Repository>,
+    access_token: String,
+    branch: String,
+    internal_path: String,
 }
 
 impl Workspace {
-    pub fn new(room_key: RoomKey, file_entries: HashMap<FileEntryKey, FileEntryValue>) -> Self {
+    pub fn new(room_key: RoomKey, file_entries: HashMap<FileEntryKey, FileEntryValue>, repo: Repository, access_token: &str, internal_path: &str) -> Self {
         let working_file_tree = file_entries.clone();
         Self {
             room_key,
             master_file_entries: file_entries,
             working_file_entries: working_file_tree,
             changelist_entries: HashMap::new(),
+            repo: Mutex::new(repo),
+            access_token: access_token.to_string(),
+            branch: "main".to_string(),
+            internal_path: internal_path.to_string(),
         }
     }
 
@@ -118,8 +127,8 @@ impl Workspace {
     }
 
     pub fn commit_changelist_entry(
-        &mut self, commands: &mut Commands, server: &mut Server, cl_entity: &Entity, query: &Query<&ChangelistEntry>,
-    ) -> Option<(ChangelistStatus, FileEntryKey, FileEntryValue)> {
+        &mut self, username: &str, commit_message: &str, commands: &mut Commands, server: &mut Server, cl_entity: &Entity, query: &Query<&ChangelistEntry>,
+    ) {
         let changelist_entry = query.get(*cl_entity).unwrap();
         let status = *changelist_entry.status;
         let file_entry_key = changelist_entry.file_entry_key();
@@ -148,7 +157,10 @@ impl Workspace {
                     .entity(file_entity)
                     .take_authority(server);
 
-                return Some((ChangelistStatus::Created, file_entry_key, file_entry_val))
+                // sync to git repo!
+                self.git_create_file(file_entry_key, file_entry_val);
+                self.git_commit(username, commit_message);
+                self.git_push();
             }
             ChangelistStatus::Deleted => {
 
@@ -160,11 +172,12 @@ impl Workspace {
                     self.cleanup_changelist_entry(commands, &child_key);
                 }
 
-                return Some((ChangelistStatus::Deleted, file_entry_key, entry_value));
+                // sync to git repo!
+                self.git_delete_file(file_entry_key, entry_value);
+                self.git_commit(username, commit_message);
+                self.git_push();
             }
         }
-
-        return None;
     }
 
     // returns an entity to spawn if delete was rolled back
@@ -228,6 +241,74 @@ impl Workspace {
         }
 
         return None;
+    }
+
+    pub fn git_create_file(&mut self, key: FileEntryKey, value: FileEntryValue) {
+
+        let repo = self.repo.lock().unwrap();
+
+        let file_path = format!("{}{}", key.path(), key.name());
+        let full_path = format!("{}/{}", self.internal_path, file_path);
+        info!("git creating file at: `{}`", full_path);
+
+        let file_content: &[u8] = &[];
+
+        // Create the file with the desired content
+        fs::write(&full_path, file_content).expect("Failed to create file");
+
+        // Add the file to the repository
+        let mut index = repo.index().expect("Failed to open index");
+        index.add_path(Path::new(&file_path)).expect("Failed to add file to index");
+        index.write().expect("Failed to write index");
+    }
+
+    pub fn git_delete_file(&mut self, key: FileEntryKey, value: FileEntryValue) {
+        todo!();
+    }
+
+    pub fn git_commit(&mut self, username: &str, commit_message: &str) {
+
+        let repo = self.repo.lock().unwrap();
+
+        // get index
+        let mut index = repo.index().expect("Failed to open index");
+
+        // Get the updated tree
+        let tree_id = index.write_tree().expect("Failed to write tree");
+
+        // Get the current HEAD reference
+        let head_reference = repo.head().expect("Failed to get HEAD reference");
+
+        // Get the commit that HEAD points to
+        let parent_commit = head_reference
+            .peel_to_commit()
+            .expect("Failed to peel HEAD to commit");
+
+        // Prepare the commit details
+        let author = Signature::now(username, "placeholder@gmail.com").expect("Failed to create author signature");
+        let committer = Signature::now(username, "placeholder@gmail.com").expect("Failed to create committer signature");
+
+        // Create the commit
+        let commit_id = repo
+            .commit(
+                Some("HEAD"),
+                &author,
+                &committer,
+                commit_message,
+                &repo.find_tree(tree_id).expect("Failed to find tree"),
+                &[&parent_commit],
+            )
+            .expect("Failed to create commit");
+    }
+
+    pub fn git_push(&self) {
+        let repo = self.repo.lock().unwrap();
+        let mut remote = repo.find_remote("origin").expect("Failed to find remote 'origin'");
+        let mut options = git2::PushOptions::new();
+        options.remote_callbacks(GitManager::get_remote_callbacks(&self.access_token)); // Set up remote callbacks if needed
+        remote
+            .push(&[format!("refs/heads/{}", self.branch)], Some(&mut options))
+            .expect("Failed to push commit");
     }
 
     fn cleanup_changelist_entry(&mut self, commands: &mut Commands, file_entry_key: &FileEntryKey) {

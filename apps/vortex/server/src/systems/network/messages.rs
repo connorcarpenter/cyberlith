@@ -1,4 +1,5 @@
 use bevy_ecs::{event::EventReader, system::{Query, Res, ResMut, Commands}};
+use bevy_log::info;
 
 use naia_bevy_server::{events::MessageEvents, Server};
 
@@ -17,6 +18,8 @@ pub fn message_events(
     for events in event_reader.iter() {
         for (user_key, message) in events.read::<ChangelistActionChannel, ChangelistMessage>() {
 
+            info!("received ChangelistMessage");
+
             let Some(user) = user_manager.user_info(&user_key) else {
                 panic!("user not found!");
             };
@@ -29,7 +32,10 @@ pub fn message_events(
                     let Some(entity) = message.entity.get(&server) else {
                         panic!("no entity!")
                     };
-                    git_manager.commit_changelist_entry(&mut commands, &mut server, user, &entity, &query);
+                    let Some(commit_message) = message.commit_message else {
+                        panic!("no commit message!")
+                    };
+                    git_manager.commit_changelist_entry(&mut commands, &mut server, user, &commit_message, &entity, &query);
                 }
                 ChangelistAction::Rollback => {
                     let Some(entity) = message.entity.get(&server) else {
