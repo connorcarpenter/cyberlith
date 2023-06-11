@@ -179,6 +179,7 @@ pub fn remove_component_events(
         for (_entity, _component) in events.read::<FileSystemEntry>() {
             info!("removed FileSystemEntry component from entity");
         }
+
         for (entity, _component) in events.read::<FileSystemRootChild>() {
             info!("removed FileSystemRootChild component from entity");
 
@@ -187,6 +188,7 @@ pub fn remove_component_events(
             };
             parent.remove_child(&entity);
         }
+
         for (entity, component) in events.read::<FileSystemChild>() {
             info!("removed FileSystemChild component from entity");
 
