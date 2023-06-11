@@ -150,14 +150,14 @@ impl ChangelistRowUiWidget {
             context_menu_response = Some(None);
 
             if ui
-                .add_enabled(true, egui::Button::new("⬊ Commit All"))
+                .add_enabled(true, egui::Button::new("⬊ Commit All Changes"))
                 .clicked()
             {
                 context_menu_response = Some(Some(ChangelistAction::CommitAll));
                 ui.close_menu();
             }
             if ui
-                .add_enabled(true, egui::Button::new("↘ Commit File"))
+                .add_enabled(true, egui::Button::new("↘ Commit Change"))
                 .clicked()
             {
                 context_menu_response = Some(Some(ChangelistAction::CommitSingle));

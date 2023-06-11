@@ -263,7 +263,19 @@ impl Workspace {
     }
 
     pub fn git_delete_file(&mut self, key: FileEntryKey, value: FileEntryValue) {
-        todo!();
+        let repo = self.repo.lock().unwrap();
+
+        let file_path = format!("{}{}", key.path(), key.name());
+        let full_path = format!("{}/{}", self.internal_path, file_path);
+        info!("git deleting file at: `{}`", full_path);
+
+        // Remove the file from the working directory
+        fs::remove_file(&full_path).expect("Failed to delete file");
+
+        // Remove the file from the repository index
+        let mut index = repo.index().expect("Failed to open index");
+        index.remove_path(Path::new(&file_path)).expect("Failed to remove file from index");
+        index.write().expect("Failed to write index");
     }
 
     pub fn git_commit(&mut self, username: &str, email: &str, commit_message: &str) {
