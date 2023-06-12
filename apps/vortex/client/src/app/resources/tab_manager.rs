@@ -11,11 +11,17 @@ use vortex_proto::components::FileSystemEntry;
 use crate::app::{components::file_system::FileSystemUiState};
 
 #[derive(Clone, Copy)]
-pub struct TabState { pub selected: bool }
+pub struct TabState {
+    pub selected: bool,
+    pub order: usize,
+}
 
 impl TabState {
-    pub fn new() -> Self {
-        Self { selected: false }
+    pub fn new(order: usize) -> Self {
+        Self {
+            selected: false,
+            order,
+        }
     }
 }
 
@@ -41,9 +47,24 @@ impl TabManager {
             self.select_current_tab(row_entity);
         } else {
 
-            self.tab_map.insert(*row_entity, TabState::new());
-            self.tab_order.push(*row_entity);
+            // get current tab order
+            let current_order = if let Some(current_entity) = self.current_tab {
+                let tab_state = self.tab_map.get(&current_entity).unwrap();
+                tab_state.order + 1
+            } else {
+                0
+            };
+
+            // insert new tab
+            self.tab_map.insert(*row_entity, TabState::new(current_order));
+            self.tab_order.insert(current_order, *row_entity);
             self.select_current_tab(row_entity);
+
+            // update tab orders
+            for (i, entity) in self.tab_order.iter_mut().enumerate() {
+                let tab_state = self.tab_map.get_mut(entity).unwrap();
+                tab_state.order = i;
+            }
         }
     }
 
@@ -80,7 +101,7 @@ impl TabManager {
 
             let (entry, ui_state) = query.get(*row_entity).unwrap();
 
-            let text = &*entry.name;
+            let text = format!("📃 {}", &*entry.name);
 
             //TODO: put text on button in color from ui_state
 
@@ -88,9 +109,50 @@ impl TabManager {
             if tab_state.selected {
                 button = button.fill(egui::Color32::from_gray(113));
             }
-            if ui.add(button).clicked() {
+            let button_response = ui.add(button);
+            if button_response.clicked() {
                 clicked_tab = Some(*row_entity);
             }
+
+            // Tab context menu
+            button_response.context_menu(|ui| {
+                if ui
+                    .add(egui::Button::new("Close"))
+                    .clicked()
+                {
+                    // TODO
+                    ui.close_menu();
+                }
+                if ui
+                    .add(egui::Button::new("Close Other Tabs"))
+                    .clicked()
+                {
+                    // TODO
+                    ui.close_menu();
+                }
+                if ui
+                    .add(egui::Button::new("Close All Tabs"))
+                    .clicked()
+                {
+                    // TODO
+                    ui.close_menu();
+                }
+                if ui
+                    .add(egui::Button::new("Close Tabs to the Left"))
+                    .clicked()
+                {
+                    // TODO
+                    ui.close_menu();
+                }
+                if ui
+                    .add(egui::Button::new("Close Tabs to the Right"))
+                    .clicked()
+                {
+                    // TODO
+                    ui.close_menu();
+                }
+            });
+
         }
 
         if let Some(row_entity) = clicked_tab {
