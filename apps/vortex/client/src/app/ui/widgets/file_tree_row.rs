@@ -152,6 +152,7 @@ impl FileTreeRowUiWidget {
 
         Self::handle_modal_responses(depth, world, row_entity);
         Self::handle_interactions(
+            is_dir,
             depth,
             world,
             row_entity,
@@ -191,6 +192,7 @@ impl FileTreeRowUiWidget {
     // Interactions
 
     pub fn handle_interactions(
+        is_dir: bool,
         depth: usize,
         world: &mut World,
         row_entity: &Entity,
@@ -198,8 +200,21 @@ impl FileTreeRowUiWidget {
         expander_clicked: bool,
         row_response: Response,
     ) {
+        // Determine if the row was clicked or double-clicked
+        let (left_clicked, double_clicked) = {
+            if row_response.double_clicked() {
+                (false, true)
+            } else {
+                if row_response.clicked() {
+                    (false, false) //(true, false)
+                } else {
+                    (false, false)
+                }
+            }
+        };
+
         // Respond to expander click event
-        if expander_clicked {
+        if expander_clicked || (is_dir && double_clicked) {
             Self::on_expander_click(world, row_entity);
             return;
         }
@@ -213,17 +228,7 @@ impl FileTreeRowUiWidget {
             return;
         };
 
-        let (left_clicked, double_clicked) = {
-            if row_response.double_clicked() {
-                (false, true)
-            } else {
-                if row_response.clicked() {
-                    (false, false) //(true, false)
-                } else {
-                    (false, false)
-                }
-            }
-        };
+
         let mut context_menu_response = None;
 
         // Right-click Context menu
