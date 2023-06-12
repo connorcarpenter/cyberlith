@@ -4,7 +4,7 @@ use bevy_ecs::{
     system::{Commands, Query, Res, SystemState},
     world::{Mut, World},
 };
-use bevy_log::{info, warn};
+use bevy_log::info;
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
 use render_egui::{
     egui,
@@ -13,7 +13,7 @@ use render_egui::{
         TextStyle, Ui, WidgetText,
     },
 };
-use vortex_proto::{components::{ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild}, resources::FileEntryKey};
+use vortex_proto::components::{ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
 
 use crate::app::{
     components::file_system::{
@@ -22,10 +22,10 @@ use crate::app::{
     resources::{
         action_stack::{Action, ActionStack},
         global::Global,
+        tab_manager::TabManager,
     },
     ui::{UiState, widgets::colors::{FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED, TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED}},
 };
-use crate::app::ui::widgets::tab_bar::TabState;
 
 pub struct FileTreeRowUiWidget;
 
@@ -358,11 +358,11 @@ impl FileTreeRowUiWidget {
         Self::on_row_click(world, row_entity);
 
         // add to tabs
-        let mut system_state: SystemState<ResMut<Global>> =
+        let mut system_state: SystemState<ResMut<TabManager>> =
             SystemState::new(world);
-        let mut global = system_state.get_mut(world);
-        global.deselect_all_tabs();
-        global.tabs.push((*row_entity, TabState::new(true)));
+        let mut tab_manager = system_state.get_mut(world);
+        tab_manager.deselect_all_tabs();
+        tab_manager.new_tab(row_entity);
     }
 
     pub fn on_expander_click(world: &mut World, row_entity: &Entity) {

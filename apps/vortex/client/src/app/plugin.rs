@@ -32,6 +32,7 @@ use crate::app::{
     ui,
     ui::{AxesCamerasVisible, UiState},
 };
+use crate::app::resources::tab_manager::TabManager;
 
 pub struct VortexPlugin;
 
@@ -83,6 +84,7 @@ impl Plugin for VortexPlugin {
             .insert_resource(UiState::new())
             .insert_resource(AxesCamerasVisible(false))
             .insert_resource(global_resource)
+            .insert_resource(TabManager::new())
             .insert_resource(ActionStack::new())
             .add_system(ui::main)
             .add_system(ui::sync_axes_cameras_visibility)
