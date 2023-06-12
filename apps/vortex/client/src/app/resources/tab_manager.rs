@@ -60,11 +60,14 @@ impl TabManager {
             self.tab_order.insert(current_order, *row_entity);
             self.select_current_tab(row_entity);
 
-            // update tab orders
-            for (i, entity) in self.tab_order.iter_mut().enumerate() {
-                let tab_state = self.tab_map.get_mut(entity).unwrap();
-                tab_state.order = i;
-            }
+            self.update_tab_orders();
+        }
+    }
+
+    fn update_tab_orders(&mut self) {
+        for (i, entity) in self.tab_order.iter_mut().enumerate() {
+            let tab_state = self.tab_map.get_mut(entity).unwrap();
+            tab_state.order = i;
         }
     }
 
@@ -82,6 +85,32 @@ impl TabManager {
         tab_state.selected = true;
     }
 
+    fn close_tab(&mut self, row_entity: &Entity) {
+
+            // remove tab
+            let tab_state = self.tab_map.remove(row_entity).unwrap();
+            self.tab_order.remove(tab_state.order);
+
+            self.update_tab_orders();
+
+            // select new tab
+            if let Some(current_entity) = self.current_tab {
+                if current_entity == *row_entity {
+                    let mut new_tab_order = tab_state.order;
+                    if new_tab_order > 0 {
+                        new_tab_order -= 1;
+                    }
+                    if let Some(new_entity) = self.tab_order.get(new_tab_order) {
+                        let new_entity = *new_entity;
+                        self.current_tab = None;
+                        self.select_current_tab(&new_entity);
+                    } else {
+                        self.current_tab = None;
+                    }
+                }
+            }
+    }
+
     pub fn render_root(ui: &mut Ui, world: &mut World) {
         egui::menu::bar(ui, |ui| {
             let mut system_state: SystemState<(ResMut<TabManager>, Query<(&FileSystemEntry, &FileSystemUiState)>)> = SystemState::new(world);
@@ -94,6 +123,7 @@ impl TabManager {
     fn render_tabs(&mut self, ui: &mut Ui, query: &Query<(&FileSystemEntry, &FileSystemUiState)>) {
 
         let mut clicked_tab = None;
+        let mut closed_tab = None;
 
         for row_entity in &self.tab_order {
 
@@ -120,7 +150,7 @@ impl TabManager {
                     .add(egui::Button::new("Close"))
                     .clicked()
                 {
-                    // TODO
+                    closed_tab = Some(*row_entity);
                     ui.close_menu();
                 }
                 if ui
@@ -152,11 +182,14 @@ impl TabManager {
                     ui.close_menu();
                 }
             });
-
         }
 
         if let Some(row_entity) = clicked_tab {
             self.select_current_tab(&row_entity);
+        }
+
+        if let Some(row_entity) = closed_tab {
+            self.close_tab(&row_entity);
         }
     }
 }
