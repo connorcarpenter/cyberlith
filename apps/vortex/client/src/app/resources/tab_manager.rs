@@ -11,7 +11,7 @@ use vortex_proto::components::FileSystemEntry;
 use crate::app::{components::file_system::FileSystemUiState};
 
 #[derive(Clone, Copy)]
-pub struct TabState {
+struct TabState {
     pub selected: bool,
     pub order: usize,
 }
@@ -23,6 +23,15 @@ impl TabState {
             order,
         }
     }
+}
+
+enum TabAction {
+    Select(Entity),
+    Close(Entity),
+    CloseAll,
+    CloseOthers(Entity),
+    CloseLeft(Entity),
+    CloseRight(Entity),
 }
 
 #[derive(Resource)]
@@ -44,7 +53,7 @@ impl TabManager {
     pub fn open_tab(&mut self, row_entity: &Entity) {
 
         if self.tab_map.contains_key(row_entity) {
-            self.select_current_tab(row_entity);
+            self.select_tab(row_entity);
         } else {
 
             // get current tab order
@@ -58,7 +67,7 @@ impl TabManager {
             // insert new tab
             self.tab_map.insert(*row_entity, TabState::new(current_order));
             self.tab_order.insert(current_order, *row_entity);
-            self.select_current_tab(row_entity);
+            self.select_tab(row_entity);
 
             self.update_tab_orders();
         }
@@ -71,7 +80,7 @@ impl TabManager {
         }
     }
 
-    fn select_current_tab(&mut self, row_entity: &Entity) {
+    fn select_tab(&mut self, row_entity: &Entity) {
 
         // deselect current tab
         if let Some(current_entity) = self.current_tab {
@@ -87,28 +96,67 @@ impl TabManager {
 
     fn close_tab(&mut self, row_entity: &Entity) {
 
-            // remove tab
-            let tab_state = self.tab_map.remove(row_entity).unwrap();
-            self.tab_order.remove(tab_state.order);
+        // remove tab
+        let tab_state = self.tab_map.remove(row_entity).unwrap();
+        self.tab_order.remove(tab_state.order);
 
-            self.update_tab_orders();
+        self.update_tab_orders();
 
-            // select new tab
-            if let Some(current_entity) = self.current_tab {
-                if current_entity == *row_entity {
-                    let mut new_tab_order = tab_state.order;
-                    if new_tab_order > 0 {
-                        new_tab_order -= 1;
-                    }
-                    if let Some(new_entity) = self.tab_order.get(new_tab_order) {
-                        let new_entity = *new_entity;
-                        self.current_tab = None;
-                        self.select_current_tab(&new_entity);
-                    } else {
-                        self.current_tab = None;
-                    }
+        // select new tab
+        if let Some(current_entity) = self.current_tab {
+            if current_entity == *row_entity {
+                let mut new_tab_order = tab_state.order;
+                if new_tab_order > 0 {
+                    new_tab_order -= 1;
+                }
+                if let Some(new_entity) = self.tab_order.get(new_tab_order) {
+                    let new_entity = *new_entity;
+                    self.current_tab = None;
+                    self.select_tab(&new_entity);
+                } else {
+                    self.current_tab = None;
                 }
             }
+        }
+    }
+
+    fn close_all_tabs(&mut self) {
+        self.tab_map.clear();
+        self.tab_order.clear();
+        self.current_tab = None;
+    }
+
+    fn close_all_tabs_except(&mut self, row_entity: &Entity) {
+        self.close_all_tabs();
+        self.open_tab(row_entity);
+    }
+
+    fn close_all_tabs_left_of(&mut self, row_entity: &Entity) {
+        let tab_state = self.tab_map.get(row_entity).unwrap();
+        let order = tab_state.order;
+        let mut tabs_to_close: Vec<Entity> = Vec::new();
+        for i in 0..order {
+            let entity = self.tab_order[i];
+            tabs_to_close.push(entity);
+        }
+
+        for entity in tabs_to_close {
+            self.close_tab(&entity);
+        }
+    }
+
+    fn close_all_tabs_right_of(&mut self, row_entity: &Entity) {
+        let tab_state = self.tab_map.get(row_entity).unwrap();
+        let order = tab_state.order;
+        let mut tabs_to_close: Vec<Entity> = Vec::new();
+        for i in order+1..self.tab_order.len() {
+            let entity = self.tab_order[i];
+            tabs_to_close.push(entity);
+        }
+
+        for entity in tabs_to_close {
+            self.close_tab(&entity);
+        }
     }
 
     pub fn render_root(ui: &mut Ui, world: &mut World) {
@@ -122,8 +170,7 @@ impl TabManager {
 
     fn render_tabs(&mut self, ui: &mut Ui, query: &Query<(&FileSystemEntry, &FileSystemUiState)>) {
 
-        let mut clicked_tab = None;
-        let mut closed_tab = None;
+        let mut tab_action = None;
 
         for row_entity in &self.tab_order {
 
@@ -141,7 +188,7 @@ impl TabManager {
             }
             let button_response = ui.add(button);
             if button_response.clicked() {
-                clicked_tab = Some(*row_entity);
+                tab_action = Some(TabAction::Select(*row_entity));
             }
 
             // Tab context menu
@@ -150,46 +197,60 @@ impl TabManager {
                     .add(egui::Button::new("Close"))
                     .clicked()
                 {
-                    closed_tab = Some(*row_entity);
+                    tab_action = Some(TabAction::Close(*row_entity));
                     ui.close_menu();
                 }
                 if ui
                     .add(egui::Button::new("Close Other Tabs"))
                     .clicked()
                 {
-                    // TODO
+                    tab_action = Some(TabAction::CloseOthers(*row_entity));
                     ui.close_menu();
                 }
                 if ui
                     .add(egui::Button::new("Close All Tabs"))
                     .clicked()
                 {
-                    // TODO
+                    tab_action = Some(TabAction::CloseAll);
                     ui.close_menu();
                 }
                 if ui
                     .add(egui::Button::new("Close Tabs to the Left"))
                     .clicked()
                 {
-                    // TODO
+                    tab_action = Some(TabAction::CloseLeft(*row_entity));
                     ui.close_menu();
                 }
                 if ui
                     .add(egui::Button::new("Close Tabs to the Right"))
                     .clicked()
                 {
-                    // TODO
+                    tab_action = Some(TabAction::CloseRight(*row_entity));
                     ui.close_menu();
                 }
             });
         }
 
-        if let Some(row_entity) = clicked_tab {
-            self.select_current_tab(&row_entity);
-        }
-
-        if let Some(row_entity) = closed_tab {
-            self.close_tab(&row_entity);
+        match tab_action {
+            None => {}
+            Some(TabAction::Select(row_entity)) => {
+                self.select_tab(&row_entity);
+            }
+            Some(TabAction::Close(row_entity)) => {
+                self.close_tab(&row_entity);
+            }
+            Some(TabAction::CloseAll) => {
+                self.close_all_tabs();
+            }
+            Some(TabAction::CloseOthers(row_entity)) => {
+                self.close_all_tabs_except(&row_entity);
+            }
+            Some(TabAction::CloseLeft(row_entity)) => {
+                self.close_all_tabs_left_of(&row_entity);
+            }
+            Some(TabAction::CloseRight(row_entity)) => {
+                self.close_all_tabs_right_of(&row_entity);
+            }
         }
     }
 }
