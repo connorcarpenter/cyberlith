@@ -150,21 +150,14 @@ impl ChangelistRowUiWidget {
             context_menu_response = Some(None);
 
             if ui
-                .add_enabled(true, egui::Button::new("⬊ Commit All Changes"))
-                .clicked()
-            {
-                context_menu_response = Some(Some(ChangelistAction::CommitAll));
-                ui.close_menu();
-            }
-            if ui
                 .add_enabled(true, egui::Button::new("↘ Commit Change"))
                 .clicked()
             {
-                context_menu_response = Some(Some(ChangelistAction::CommitSingle));
+                context_menu_response = Some(Some(ChangelistAction::Commit));
                 ui.close_menu();
             }
             if ui
-                .add_enabled(true, egui::Button::new("⟲ Rollback"))
+                .add_enabled(true, egui::Button::new("⟲ Rollback Change"))
                 .clicked()
             {
                 context_menu_response = Some(Some(ChangelistAction::Rollback));
@@ -187,12 +180,8 @@ impl ChangelistRowUiWidget {
                         info!("just closed");
                         return;
                     }
-                    Some(ChangelistAction::CommitAll) => {
-                        Self::on_click_commit_all(world, row_entity);
-                        return;
-                    }
-                    Some(ChangelistAction::CommitSingle) => {
-                        Self::on_click_commit_single(world, row_entity);
+                    Some(ChangelistAction::Commit) => {
+                        Self::on_click_commit(world, row_entity);
                         return;
                     }
                     Some(ChangelistAction::Rollback) => {
@@ -238,12 +227,8 @@ impl ChangelistRowUiWidget {
         }
     }
 
-    pub fn on_click_commit_all(world: &mut World, row_entity: &Entity) {
-        Self::send_changelist_message(world, row_entity, ChangelistAction::CommitAll, Some("placeholder commit message!"));
-    }
-
-    pub fn on_click_commit_single(world: &mut World, row_entity: &Entity) {
-        Self::send_changelist_message(world, row_entity, ChangelistAction::CommitSingle, Some("placeholder commit message!"));
+    pub fn on_click_commit(world: &mut World, row_entity: &Entity) {
+        Self::send_changelist_message(world, row_entity, ChangelistAction::Commit, Some("placeholder commit message!"));
     }
 
     pub fn on_click_rollback(world: &mut World, row_entity: &Entity) {

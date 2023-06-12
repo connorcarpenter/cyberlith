@@ -2,8 +2,7 @@ use naia_bevy_shared::{EntityProperty, Message, Serde};
 
 #[derive(Serde, PartialEq, Clone)]
 pub enum ChangelistAction {
-    CommitAll,
-    CommitSingle,
+    Commit,
     Rollback,
 }
 

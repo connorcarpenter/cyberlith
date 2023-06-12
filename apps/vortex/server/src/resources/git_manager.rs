@@ -158,18 +158,16 @@ impl GitManager {
         self.workspaces.insert(username.to_string(), new_workspace);
     }
 
-    pub fn commit_entire_changelist(&mut self, commands: &mut Commands, server: &mut Server, user: &UserInfo, query: &Query<&ChangelistEntry>) {
-        if let Some(workspace) = self.workspaces.get_mut(user.get_username()) {
-            workspace.commit_entire_changelist(commands, server, query);
-        }
-    }
-
     pub fn commit_changelist_entry(&mut self, commands: &mut Commands, server: &mut Server, user: &UserInfo, commit_message: &str, entity: &Entity, query: &Query<&ChangelistEntry>) {
+
         let username = user.get_username();
-        let email = user.get_email();
+
         let Some(workspace) = self.workspaces.get_mut(username) else {
             return;
         };
+
+        let email = user.get_email();
+
         workspace.commit_changelist_entry(username, email, commit_message, commands, server, entity, query);
     }
 

@@ -25,10 +25,7 @@ pub fn message_events(
             };
 
             match message.action {
-                ChangelistAction::CommitAll => {
-                    git_manager.commit_entire_changelist(&mut commands, &mut server, user, &query);
-                }
-                ChangelistAction::CommitSingle => {
+                ChangelistAction::Commit => {
                     let Some(entity) = message.entity.get(&server) else {
                         panic!("no entity!")
                     };
