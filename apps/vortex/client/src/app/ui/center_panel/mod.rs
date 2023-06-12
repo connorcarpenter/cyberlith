@@ -1,5 +1,3 @@
-mod tab_bar;
-use tab_bar::tab_bar;
 
 use bevy_ecs::world::World;
 
@@ -8,6 +6,7 @@ use render_egui::{egui, egui::Frame};
 use crate::app::ui::{
     workspaces::{skeleton_builder, text_editor},
     UiState, WorkspaceType,
+    widgets::TabBarUiWidget,
 };
 
 pub fn center_panel(context: &egui::Context, world: &mut World) {
@@ -15,7 +14,7 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
         .frame(Frame::none().inner_margin(0.0))
         .show(context, |ui| {
             egui::TopBottomPanel::top("tab_bar").show_inside(ui, |ui| {
-                tab_bar(ui, world);
+                TabBarUiWidget::render_root(ui, world);
             });
             egui::CentralPanel::default() // workspace area
                 .frame(Frame::central_panel(ui.style()).inner_margin(0.0))

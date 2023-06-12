@@ -4,7 +4,7 @@ use bevy_ecs::{
     system::{Commands, Query, Res, SystemState},
     world::{Mut, World},
 };
-use bevy_log::info;
+use bevy_log::{info, warn};
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
 use render_egui::{
     egui,
@@ -13,7 +13,7 @@ use render_egui::{
         TextStyle, Ui, WidgetText,
     },
 };
-use vortex_proto::components::{ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
+use vortex_proto::{components::{ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild}, resources::FileEntryKey};
 
 use crate::app::{
     components::file_system::{
@@ -25,6 +25,7 @@ use crate::app::{
     },
     ui::{UiState, widgets::colors::{FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED, TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED}},
 };
+use crate::app::ui::widgets::tab_bar::TabState;
 
 pub struct FileTreeRowUiWidget;
 
@@ -212,7 +213,17 @@ impl FileTreeRowUiWidget {
             return;
         };
 
-        let left_clicked = row_response.clicked();
+        let (left_clicked, double_clicked) = {
+            if row_response.double_clicked() {
+                (false, true)
+            } else {
+                if row_response.clicked() {
+                    (false, false) //(true, false)
+                } else {
+                    (false, false)
+                }
+            }
+        };
         let mut context_menu_response = None;
 
         // Right-click Context menu
@@ -321,6 +332,12 @@ impl FileTreeRowUiWidget {
             Self::on_row_click(world, row_entity);
             return;
         }
+
+        // Double-click
+        if double_clicked {
+            Self::on_row_double_click(world, row_entity);
+            return;
+        }
     }
 
     pub fn on_row_click(world: &mut World, row_entity: &Entity) {
@@ -334,6 +351,18 @@ impl FileTreeRowUiWidget {
                 action_stack.buffer_action(Action::SelectEntries(entities));
             }
         }
+    }
+
+    pub fn on_row_double_click(world: &mut World, row_entity: &Entity) {
+        // select the row
+        Self::on_row_click(world, row_entity);
+
+        // add to tabs
+        let mut system_state: SystemState<ResMut<Global>> =
+            SystemState::new(world);
+        let mut global = system_state.get_mut(world);
+        global.deselect_all_tabs();
+        global.tabs.push((*row_entity, TabState::new(true)));
     }
 
     pub fn on_expander_click(world: &mut World, row_entity: &Entity) {
