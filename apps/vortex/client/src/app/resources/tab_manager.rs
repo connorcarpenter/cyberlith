@@ -1,4 +1,4 @@
-
+use std::collections::HashMap;
 use bevy_ecs::{
     prelude::{Entity, Resource},
     system::{Query, SystemState, ResMut},
@@ -14,31 +14,51 @@ use crate::app::{components::file_system::FileSystemUiState};
 pub struct TabState { pub selected: bool }
 
 impl TabState {
-    pub fn new(selected: bool) -> Self {
-        Self { selected }
+    pub fn new() -> Self {
+        Self { selected: false }
     }
 }
 
 #[derive(Resource)]
 pub struct TabManager {
-    tabs: Vec<(Entity, TabState)>,
+    current_tab: Option<Entity>,
+    tab_map: HashMap<Entity, TabState>,
+    tab_order: Vec<Entity>,
 }
 
 impl TabManager {
     pub fn new() -> Self {
         Self {
-            tabs: Vec::new(),
+            current_tab: None,
+            tab_map: HashMap::new(),
+            tab_order: Vec::new(),
         }
     }
 
-    pub fn new_tab(&mut self, row_entity: &Entity) {
-        self.tabs.push((*row_entity, TabState::new(true)));
+    pub fn open_tab(&mut self, row_entity: &Entity) {
+
+        if self.tab_map.contains_key(row_entity) {
+            self.select_current_tab(row_entity);
+        } else {
+
+            self.tab_map.insert(*row_entity, TabState::new());
+            self.tab_order.push(*row_entity);
+            self.select_current_tab(row_entity);
+        }
     }
 
-    pub fn deselect_all_tabs(&mut self) {
-        for (_, tab_state) in self.tabs.iter_mut() {
+    fn select_current_tab(&mut self, row_entity: &Entity) {
+
+        // deselect current tab
+        if let Some(current_entity) = self.current_tab {
+            let tab_state = self.tab_map.get_mut(&current_entity).unwrap();
             tab_state.selected = false;
         }
+
+        // select new tab
+        self.current_tab = Some(*row_entity);
+        let tab_state = self.tab_map.get_mut(&row_entity).unwrap();
+        tab_state.selected = true;
     }
 
     pub fn render_root(ui: &mut Ui, world: &mut World) {
@@ -52,13 +72,13 @@ impl TabManager {
 
     fn render_tabs(&mut self, ui: &mut Ui, query: &Query<(&FileSystemEntry, &FileSystemUiState)>) {
 
-        let mut deselect_all = None;
+        let mut clicked_tab = None;
 
-        for i in 0..self.tabs.len() {
+        for row_entity in &self.tab_order {
 
-            let (entity, tab_state) = self.tabs.get_mut(i).unwrap();
+            let tab_state = self.tab_map.get_mut(row_entity).unwrap();
 
-            let (entry, ui_state) = query.get(*entity).unwrap();
+            let (entry, ui_state) = query.get(*row_entity).unwrap();
 
             let text = &*entry.name;
 
@@ -69,14 +89,12 @@ impl TabManager {
                 button = button.fill(egui::Color32::from_gray(113));
             }
             if ui.add(button).clicked() {
-                deselect_all = Some(i);
+                clicked_tab = Some(*row_entity);
             }
         }
 
-        if let Some(i) = deselect_all {
-            self.deselect_all_tabs();
-            let (_, tab_state) = self.tabs.get_mut(i).unwrap();
-            tab_state.selected = true;
+        if let Some(row_entity) = clicked_tab {
+            self.select_current_tab(&row_entity);
         }
     }
 }

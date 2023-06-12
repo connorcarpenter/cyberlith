@@ -361,8 +361,7 @@ impl FileTreeRowUiWidget {
         let mut system_state: SystemState<ResMut<TabManager>> =
             SystemState::new(world);
         let mut tab_manager = system_state.get_mut(world);
-        tab_manager.deselect_all_tabs();
-        tab_manager.new_tab(row_entity);
+        tab_manager.open_tab(row_entity);
     }
 
     pub fn on_expander_click(world: &mut World, row_entity: &Entity) {
