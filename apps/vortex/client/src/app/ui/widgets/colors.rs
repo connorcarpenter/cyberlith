@@ -16,14 +16,14 @@ pub const FILE_ROW_COLORS_UNSELECTED: FileRowColors = FileRowColors {
 };
 
 pub const FILE_ROW_COLORS_HOVER: FileRowColors = FileRowColors {
-    available: Some(Color32::from_gray(72)),
+    available: Some(Color32::from_gray(12)),
     requested: Color32::from_rgb(16, 52, 64),
     granted: Color32::from_rgb(0, 72, 96),
     denied: Color32::from_rgb(96, 0, 0),
 };
 
 pub const FILE_ROW_COLORS_SELECTED: FileRowColors = FileRowColors {
-    available: Some(Color32::from_gray(128)),
+    available: Some(Color32::from_gray(72)),
     requested: Color32::from_rgb(16, 64, 80),
     granted: Color32::from_rgb(0, 96, 128),
     denied: Color32::from_rgb(128, 0, 0),

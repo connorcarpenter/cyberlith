@@ -4,12 +4,12 @@ use bevy_ecs::{
     system::{Query, SystemState, ResMut},
     world::World,
 };
-use render_egui::{egui, egui::{Ui, RichText, WidgetText}};
+use render_egui::{egui, egui::{Ui, RichText, WidgetText, Id, Label, NumExt, Rect, Response, Rounding, Sense, Stroke, TextStyle, vec2}};
 
 use vortex_proto::components::{ChangelistStatus, FileSystemEntry};
 
-use crate::app::{components::file_system::FileSystemUiState, ui::widgets::colors::TEXT_COLORS_SELECTED};
-use crate::app::ui::widgets::colors::TEXT_COLORS_UNSELECTED;
+use crate::app::{components::file_system::FileSystemUiState, ui::widgets::colors::{TEXT_COLORS_SELECTED, FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED, TEXT_COLORS_HOVER, TEXT_COLORS_UNSELECTED}};
+
 
 #[derive(Clone, Copy)]
 struct TabState {
@@ -175,72 +175,196 @@ impl TabManager {
 
         for row_entity in &self.tab_order {
 
-            let tab_state = self.tab_map.get_mut(row_entity).unwrap();
+            let tab_state = self.tab_map.get(row_entity).unwrap();
 
             let (entry, ui_state) = query.get(*row_entity).unwrap();
 
-            let mut text: RichText = format!("📃 {}", &*entry.name).into();
-            text = match ui_state.change_status {
-                Some(ChangelistStatus::Modified) => {
-                    text.color(TEXT_COLORS_UNSELECTED.modified)
+            //let button_response = Self::old_tab_render(ui, row_entity, entry, ui_state, tab_state, &mut tab_action);
+            let button_response = Self::new_tab_render(ui, row_entity, entry, ui_state, tab_state, &mut tab_action);
+
+            Self::tab_context_menu(button_response, row_entity, &mut tab_action);
+        }
+
+        self.execute_tab_action(tab_action);
+    }
+
+    fn old_tab_render(
+        ui: &mut Ui,
+        row_entity: &Entity,
+        entry: &FileSystemEntry,
+        ui_state: &FileSystemUiState,
+        tab_state: &TabState,
+        tab_action: &mut Option<TabAction>
+    ) -> Response {
+        let mut text: RichText = format!("📃 {}", &*entry.name).into();
+        text = match ui_state.change_status {
+            Some(ChangelistStatus::Modified) => {
+                text.color(TEXT_COLORS_UNSELECTED.modified)
+            }
+            Some(ChangelistStatus::Created) => {
+                text.color(TEXT_COLORS_UNSELECTED.created)
+            }
+            _ => {
+                text
+            }
+        };
+
+        let mut button = egui::Button::new(WidgetText::RichText(text));
+        if tab_state.selected {
+            button = button.fill(egui::Color32::from_gray(113));
+        }
+        let button_response = ui.add(button);
+        if button_response.clicked() {
+            *tab_action = Some(TabAction::Select(*row_entity));
+        }
+
+        button_response
+    }
+
+    fn new_tab_render(
+        ui: &mut Ui,
+        row_entity: &Entity,
+        entry: &FileSystemEntry,
+        ui_state: &FileSystemUiState,
+        tab_state: &TabState,
+        tab_action: &mut Option<TabAction>
+    ) -> Response {
+        let x_icon_nohover = "❌";
+        let x_icon_hover = "❎";
+        let file_name = &*entry.name;
+        let full_path = format!("tab_cancel_button:{:?}", row_entity);
+        let file_name_str = format!("📃 {}", file_name);
+
+        let file_name_galley = WidgetText::from(file_name_str).into_galley(ui, Some(false), 1.0, TextStyle::Button);
+
+        let file_name_text_size = file_name_galley.size();
+        let mut desired_tab_size = file_name_text_size;
+        desired_tab_size.x += 22.0; // make room for close button
+        desired_tab_size.y = desired_tab_size.y.at_least(ui.spacing().interact_size.y);
+
+        let (mut tab_rect, tab_response) = ui.allocate_at_least(desired_tab_size, Sense::click());
+
+        if ui.is_rect_visible(tab_response.rect) {
+            let item_spacing = 5.0;
+
+            let mut text_position = tab_rect.min;
+            text_position.y += 2.0;
+            let mut icon_position = text_position;
+            icon_position.x += file_name_text_size.x + item_spacing;
+
+            // adjust tab rect size
+            tab_rect.min.x -= 8.0;
+            tab_rect.min.y -= 2.0;
+            tab_rect.max.y += 2.0;
+
+            let icon_response = {
+                let icon_size = vec2(ui.spacing().icon_width, ui.spacing().icon_width);
+                let icon_rect = Rect::from_min_size(icon_position, icon_size);
+
+                let big_icon_response = ui.interact(icon_rect, Id::new(full_path), Sense::click());
+
+                if big_icon_response.clicked() {
+                    *tab_action = Some(TabAction::Close(*row_entity));
+                } else {
+                    if tab_response.clicked() {
+                        *tab_action = Some(TabAction::Select(*row_entity));
+                    }
                 }
-                Some(ChangelistStatus::Created) => {
-                    text.color(TEXT_COLORS_UNSELECTED.created)
-                }
-                _ => {
-                    text
+
+                big_icon_response
+            };
+
+            let (text_colors, row_fill_colors) = {
+                if tab_state.selected {
+                    (TEXT_COLORS_SELECTED, FILE_ROW_COLORS_SELECTED)
+                } else {
+                    if tab_response.hovered() || icon_response.hovered() {
+                        (TEXT_COLORS_HOVER, FILE_ROW_COLORS_HOVER)
+                    } else {
+                        (TEXT_COLORS_UNSELECTED, FILE_ROW_COLORS_UNSELECTED)
+                    }
                 }
             };
 
-            let mut button = egui::Button::new(WidgetText::RichText(text));
-            if tab_state.selected {
-                button = button.fill(egui::Color32::from_gray(113));
-            }
-            let button_response = ui.add(button);
-            if button_response.clicked() {
-                tab_action = Some(TabAction::Select(*row_entity));
+            // Draw Row
+            {
+                let row_fill_color_opt = row_fill_colors.available;
+
+                if let Some(row_fill_color) = row_fill_color_opt {
+                    ui.painter()
+                        .rect(tab_rect, Rounding::none(), row_fill_color, Stroke::NONE);
+                }
             }
 
-            // Tab context menu
-            button_response.context_menu(|ui| {
-                if ui
-                    .add(egui::Button::new("Close"))
-                    .clicked()
-                {
-                    tab_action = Some(TabAction::Close(*row_entity));
-                    ui.close_menu();
-                }
-                if ui
-                    .add(egui::Button::new("Close Other Tabs"))
-                    .clicked()
-                {
-                    tab_action = Some(TabAction::CloseOthers(*row_entity));
-                    ui.close_menu();
-                }
-                if ui
-                    .add(egui::Button::new("Close All Tabs"))
-                    .clicked()
-                {
-                    tab_action = Some(TabAction::CloseAll);
-                    ui.close_menu();
-                }
-                if ui
-                    .add(egui::Button::new("Close Tabs to the Left"))
-                    .clicked()
-                {
-                    tab_action = Some(TabAction::CloseLeft(*row_entity));
-                    ui.close_menu();
-                }
-                if ui
-                    .add(egui::Button::new("Close Tabs to the Right"))
-                    .clicked()
-                {
-                    tab_action = Some(TabAction::CloseRight(*row_entity));
-                    ui.close_menu();
-                }
-            });
+            // Draw Text
+            {
+                let text_color = match ui_state.change_status {
+                    Some(ChangelistStatus::Created) => text_colors.created,
+                    Some(ChangelistStatus::Modified) => text_colors.modified,
+                    _ => text_colors.default,
+                };
+                file_name_galley.paint_with_color_override(ui.painter(), text_position, text_color);
+            }
+
+            // Draw Icon
+            {
+                let (small_icon_rect, _) = ui.spacing().icon_rectangles(icon_response.rect);
+                let small_icon_response = icon_response.clone().with_new_rect(small_icon_rect);
+                let x_icon_text = match small_icon_response.hovered() {
+                    true => x_icon_hover,
+                    false => x_icon_nohover,
+                };
+
+                let x_icon_galley = WidgetText::from(x_icon_text).into_galley(ui, Some(false), 1.0, TextStyle::Button);
+                x_icon_galley.paint_with_color_override(ui.painter(), icon_position, text_colors.default);
+            }
         }
 
+        tab_response
+    }
+
+    fn tab_context_menu(button_response: Response, row_entity: &Entity, tab_action: &mut Option<TabAction>) {
+        // Tab context menu
+        button_response.context_menu(|ui| {
+            if ui
+                .add(egui::Button::new("Close"))
+                .clicked()
+            {
+                *tab_action = Some(TabAction::Close(*row_entity));
+                ui.close_menu();
+            }
+            if ui
+                .add(egui::Button::new("Close Other Tabs"))
+                .clicked()
+            {
+                *tab_action = Some(TabAction::CloseOthers(*row_entity));
+                ui.close_menu();
+            }
+            if ui
+                .add(egui::Button::new("Close All Tabs"))
+                .clicked()
+            {
+                *tab_action = Some(TabAction::CloseAll);
+                ui.close_menu();
+            }
+            if ui
+                .add(egui::Button::new("Close Tabs to the Left"))
+                .clicked()
+            {
+                *tab_action = Some(TabAction::CloseLeft(*row_entity));
+                ui.close_menu();
+            }
+            if ui
+                .add(egui::Button::new("Close Tabs to the Right"))
+                .clicked()
+            {
+                *tab_action = Some(TabAction::CloseRight(*row_entity));
+                ui.close_menu();
+            }
+        });
+    }
+
+    fn execute_tab_action(&mut self, tab_action: Option<TabAction>) {
         match tab_action {
             None => {}
             Some(TabAction::Select(row_entity)) => {
