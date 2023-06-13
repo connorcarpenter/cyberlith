@@ -101,39 +101,29 @@ fn edit_menu_button(ui: &mut Ui, world: &mut World) {
 }
 
 fn git_menu_button(ui: &mut Ui) {
-    let option_1_shortcut =
-        egui::KeyboardShortcut::new(Modifiers::CTRL | Modifiers::SHIFT, egui::Key::A);
-    let option_2_shortcut =
-        egui::KeyboardShortcut::new(Modifiers::CTRL | Modifiers::SHIFT, egui::Key::S);
-
-    // NOTE: we must check the shortcuts OUTSIDE of the actual "File" menu,
-    // or else they would only be checked if the "File" menu was actually open!
 
     ui.menu_button("Git", |ui| {
         ui.set_min_width(220.0);
         ui.style_mut().wrap = Some(false);
 
-        if ui
-            .add(
-                egui::Button::new("Git Option 1")
-                    .shortcut_text(ui.ctx().format_shortcut(&option_1_shortcut)),
-            )
-            .clicked()
-        {
-            // execute some logic 1
-
+        if ui.add(egui::Button::new("↙ Pull")).clicked() {
+            // TODO!
             ui.close_menu();
         }
-
-        if ui
-            .add(
-                egui::Button::new("Git Option 2")
-                    .shortcut_text(ui.ctx().format_shortcut(&option_2_shortcut)),
-            )
-            .clicked()
-        {
-            // execute some logic 2
-
+        if ui.add(egui::Button::new("↗ Push")).clicked() {
+            // TODO!
+            ui.close_menu();
+        }
+        if ui.add(egui::Button::new("Ч Merge")).clicked() {
+            // TODO!
+            ui.close_menu();
+        }
+        if ui.add(egui::Button::new("🌱 New Branch")).clicked() {
+            // TODO!
+            ui.close_menu();
+        }
+        if ui.add(egui::Button::new("🔀 Switch Branch")).clicked() {
+            // TODO!
             ui.close_menu();
         }
     });
