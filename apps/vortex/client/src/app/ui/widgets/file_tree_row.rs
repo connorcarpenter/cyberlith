@@ -206,7 +206,7 @@ impl FileTreeRowUiWidget {
                 (false, true)
             } else {
                 if row_response.clicked() {
-                    (false, false) //(true, false)
+                    (true, false)
                 } else {
                     (false, false)
                 }
