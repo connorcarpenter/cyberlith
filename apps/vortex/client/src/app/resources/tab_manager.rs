@@ -4,11 +4,12 @@ use bevy_ecs::{
     system::{Query, SystemState, ResMut},
     world::World,
 };
-use render_egui::{egui, egui::Ui};
+use render_egui::{egui, egui::{Ui, RichText, WidgetText}};
 
-use vortex_proto::components::FileSystemEntry;
+use vortex_proto::components::{ChangelistStatus, FileSystemEntry};
 
-use crate::app::{components::file_system::FileSystemUiState};
+use crate::app::{components::file_system::FileSystemUiState, ui::widgets::colors::TEXT_COLORS_SELECTED};
+use crate::app::ui::widgets::colors::TEXT_COLORS_UNSELECTED;
 
 #[derive(Clone, Copy)]
 struct TabState {
@@ -178,11 +179,20 @@ impl TabManager {
 
             let (entry, ui_state) = query.get(*row_entity).unwrap();
 
-            let text = format!("📃 {}", &*entry.name);
+            let mut text: RichText = format!("📃 {}", &*entry.name).into();
+            text = match ui_state.change_status {
+                Some(ChangelistStatus::Modified) => {
+                    text.color(TEXT_COLORS_UNSELECTED.modified)
+                }
+                Some(ChangelistStatus::Created) => {
+                    text.color(TEXT_COLORS_UNSELECTED.created)
+                }
+                _ => {
+                    text
+                }
+            };
 
-            //TODO: put text on button in color from ui_state
-
-            let mut button = egui::Button::new(text);
+            let mut button = egui::Button::new(WidgetText::RichText(text));
             if tab_state.selected {
                 button = button.fill(egui::Color32::from_gray(113));
             }
