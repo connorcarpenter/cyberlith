@@ -298,11 +298,11 @@ impl FileTreeRowUiWidget {
                         return;
                     }
                     ContextMenuAction::NewFile => {
-                        Self::on_click_new_file(world, row_entity);
+                        Self::on_click_new_file(world, row_entity, is_root_dir);
                         return;
                     }
                     ContextMenuAction::NewDirectory => {
-                        Self::on_click_new_directory(world, row_entity);
+                        Self::on_click_new_directory(world, row_entity, is_root_dir);
                         return;
                     }
                     ContextMenuAction::Rename => {
@@ -376,9 +376,8 @@ impl FileTreeRowUiWidget {
         }
     }
 
-    pub fn on_click_new_file(world: &mut World, row_entity: &Entity) {
+    pub fn on_click_new_file(world: &mut World, row_entity: &Entity, is_root_dir: bool) {
         world.resource_scope(|world, mut ui_state: Mut<UiState>| {
-
             let mut system_state: SystemState<(Client, Query<(&FileSystemEntry, Option<&FileSystemChild>, Option<&FileSystemRootChild>, &mut FileSystemUiState)>)> =
                 SystemState::new(world);
             let (client, mut fs_query) = system_state.get_mut(world);
@@ -386,7 +385,7 @@ impl FileTreeRowUiWidget {
                 return;
             };
 
-            let directory_entity_opt = Self::get_directory_entity_opt(&client, entry, row_entity, dir_child_opt, root_child_opt);
+            let directory_entity_opt = if is_root_dir { None } else { Self::get_directory_entity_opt(&client, entry, row_entity, dir_child_opt, root_child_opt) };
 
             let Some(request_handle) = ui_state.text_input_modal.open(
                 "New File",
@@ -402,9 +401,8 @@ impl FileTreeRowUiWidget {
         });
     }
 
-    pub fn on_click_new_directory(world: &mut World, row_entity: &Entity) {
+    pub fn on_click_new_directory(world: &mut World, row_entity: &Entity, is_root_dir: bool) {
         world.resource_scope(|world, mut ui_state: Mut<UiState>| {
-
             let mut system_state: SystemState<(Client, Query<(&FileSystemEntry, Option<&FileSystemChild>, Option<&FileSystemRootChild>, &mut FileSystemUiState)>)> =
                 SystemState::new(world);
             let (client, mut fs_query) = system_state.get_mut(world);
@@ -412,7 +410,7 @@ impl FileTreeRowUiWidget {
                 return;
             };
 
-            let directory_entity_opt = Self::get_directory_entity_opt(&client, entry, row_entity, dir_child_opt, root_child_opt);
+            let directory_entity_opt = if is_root_dir { None } else { Self::get_directory_entity_opt(&client, entry, row_entity, dir_child_opt, root_child_opt) };
 
             let Some(request_handle) = ui_state.text_input_modal.open(
                 "New Directory",
@@ -436,7 +434,9 @@ impl FileTreeRowUiWidget {
         root_child_opt: Option<&FileSystemRootChild>,
     ) -> Option<Entity> {
         match *entry.kind {
-            EntryKind::Directory => Some(row_entity.clone()),
+            EntryKind::Directory => {
+                Some(row_entity.clone())
+            },
             EntryKind::File => {
                 if let Some(dir_child) = dir_child_opt {
                     Some(dir_child.parent_id.get(client).unwrap().clone())
@@ -501,10 +501,6 @@ impl FileTreeRowUiWidget {
     }
 
     pub fn handle_modal_responses(depth: usize, world: &mut World, row_entity: &Entity) {
-        // If Root Dir, exit early
-        if depth == 0 {
-            return;
-        }
 
         world.resource_scope(|world, mut ui_state: Mut<UiState>| {
             let Some(mut row_ui_state) = world.get_mut::<FileSystemUiState>(*row_entity) else {
