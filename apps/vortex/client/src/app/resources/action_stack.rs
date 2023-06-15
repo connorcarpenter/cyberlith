@@ -4,9 +4,10 @@ use bevy_ecs::{
     prelude::{Commands, Entity, Query, Resource, World},
     system::{Res, SystemState},
 };
+use bevy_ecs::system::ResMut;
 use bevy_log::info;
-
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus, ReplicationConfig};
+
 use vortex_proto::components::{ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
 
 use crate::app::{
@@ -14,6 +15,7 @@ use crate::app::{
     resources::{file_tree::FileTree, global::Global},
     systems::file_post_process,
 };
+use crate::app::resources::tab_manager::TabManager;
 
 pub enum Action {
     // A list of File Row entities to select
@@ -193,11 +195,12 @@ impl ActionStack {
                     Commands,
                     Client,
                     Res<Global>,
+                    ResMut<TabManager>,
                     Query<(Entity, &mut FileSystemUiState)>,
                     Query<(Entity, &ChangelistEntry, &mut ChangelistUiState)>,
                     Query<&mut FileSystemParent>,
                 )> = SystemState::new(world);
-                let (mut commands, mut client, global, mut fs_query, mut cl_query, mut parent_query) =
+                let (mut commands, mut client, global, mut tab_manager, mut fs_query, mut cl_query, mut parent_query) =
                     system_state.get_mut(world);
 
                 let (deselected_row_entities, file_entries_to_release) =
@@ -219,6 +222,7 @@ impl ActionStack {
                     }
                 }
 
+                // actually create new entry
                 let mut parent = parent_query.get_mut(parent_entity).unwrap();
 
                 let entity_id = self.create_fs_entry(
@@ -230,9 +234,14 @@ impl ActionStack {
                     entry_kind,
                     entry_contents_opt,
                 );
+
+                // migrate undo entities
                 if let Some(old_entity) = old_entity_opt {
                     self.migrate_undo_entities(*old_entity, entity_id);
                 }
+
+                // open tab for new entry
+                tab_manager.open_tab(&entity_id);
 
                 system_state.apply(world);
 

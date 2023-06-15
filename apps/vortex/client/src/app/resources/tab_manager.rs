@@ -1,15 +1,15 @@
 use std::collections::HashMap;
+
 use bevy_ecs::{
     prelude::{Entity, Resource},
-    system::{Query, SystemState, ResMut},
+    system::{Query, ResMut, SystemState},
     world::World,
 };
-use render_egui::{egui, egui::{Ui, RichText, WidgetText, Id, Label, NumExt, Rect, Response, Rounding, Sense, Stroke, TextStyle, vec2}};
 
+use render_egui::{egui, egui::{Id, Label, NumExt, Rect, Response, RichText, Rounding, Sense, Stroke, TextStyle, Ui, vec2, WidgetText}};
 use vortex_proto::components::{ChangelistStatus, FileSystemEntry};
 
-use crate::app::{components::file_system::FileSystemUiState, ui::widgets::colors::{TEXT_COLORS_SELECTED, FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED, TEXT_COLORS_HOVER, TEXT_COLORS_UNSELECTED}};
-
+use crate::app::{components::file_system::FileSystemUiState, ui::widgets::colors::{FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED, TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED}};
 
 #[derive(Clone, Copy)]
 struct TabState {
@@ -179,8 +179,7 @@ impl TabManager {
 
             let (entry, ui_state) = query.get(*row_entity).unwrap();
 
-            //let button_response = Self::old_tab_render(ui, row_entity, entry, ui_state, tab_state, &mut tab_action);
-            let button_response = Self::new_tab_render(ui, row_entity, entry, ui_state, tab_state, &mut tab_action);
+            let button_response = Self::render_tab(ui, row_entity, entry, ui_state, tab_state, &mut tab_action);
 
             Self::tab_context_menu(button_response, row_entity, &mut tab_action);
         }
@@ -188,46 +187,13 @@ impl TabManager {
         self.execute_tab_action(tab_action);
     }
 
-    fn old_tab_render(
+    fn render_tab(
         ui: &mut Ui,
         row_entity: &Entity,
         entry: &FileSystemEntry,
         ui_state: &FileSystemUiState,
         tab_state: &TabState,
-        tab_action: &mut Option<TabAction>
-    ) -> Response {
-        let mut text: RichText = format!("📃 {}", &*entry.name).into();
-        text = match ui_state.change_status {
-            Some(ChangelistStatus::Modified) => {
-                text.color(TEXT_COLORS_UNSELECTED.modified)
-            }
-            Some(ChangelistStatus::Created) => {
-                text.color(TEXT_COLORS_UNSELECTED.created)
-            }
-            _ => {
-                text
-            }
-        };
-
-        let mut button = egui::Button::new(WidgetText::RichText(text));
-        if tab_state.selected {
-            button = button.fill(egui::Color32::from_gray(113));
-        }
-        let button_response = ui.add(button);
-        if button_response.clicked() {
-            *tab_action = Some(TabAction::Select(*row_entity));
-        }
-
-        button_response
-    }
-
-    fn new_tab_render(
-        ui: &mut Ui,
-        row_entity: &Entity,
-        entry: &FileSystemEntry,
-        ui_state: &FileSystemUiState,
-        tab_state: &TabState,
-        tab_action: &mut Option<TabAction>
+        tab_action: &mut Option<TabAction>,
     ) -> Response {
         let x_icon_nohover = "❌";
         let x_icon_hover = "❎";

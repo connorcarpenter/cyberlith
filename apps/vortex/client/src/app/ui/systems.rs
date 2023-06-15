@@ -5,14 +5,15 @@ use bevy_ecs::{
     world::World,
 };
 use bevy_log::info;
+
 use render_api::components::Camera;
 use render_egui::EguiContext;
 
 use crate::app::{
     resources::action_stack::ActionStack,
     ui::{
-        center_panel, left_panel, login_modal, right_panel, shortcuts::consume_shortcuts,
-        text_input_modal::TextInputModal, top_bar, AxesCamerasVisible, UiState,
+        AxesCamerasVisible, center_panel, left_panel, login_modal,
+        shortcuts::consume_shortcuts, text_input_modal::TextInputModal, top_bar, UiState,
     },
 };
 
@@ -23,7 +24,6 @@ pub fn main(world: &mut World) {
     if ui_state.logged_in {
         top_bar(&context, world);
         left_panel(&context, world);
-        right_panel(&context, world);
         center_panel(&context, world);
         TextInputModal::show(&context, world);
 
