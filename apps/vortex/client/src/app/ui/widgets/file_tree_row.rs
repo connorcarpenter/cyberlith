@@ -6,11 +6,12 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
+
 use render_egui::{
     egui,
     egui::{
-        emath, remap, vec2, Id, NumExt, Rect, Response, Rounding, Sense, Shape, Stroke,
-        TextStyle, Ui, WidgetText,
+        emath, Id, NumExt, Rect, remap, Response, Rounding, Sense, Shape, Stroke, TextStyle,
+        Ui, vec2, WidgetText,
     },
 };
 use vortex_proto::components::{ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
@@ -219,15 +220,11 @@ impl FileTreeRowUiWidget {
             return;
         }
 
-        // If Root Dir, exit early
-        if depth == 0 {
-            return;
-        }
+        let is_root_dir = depth == 0;
 
         let Some(mut ui_state) = world.get_mut::<FileSystemUiState>(*row_entity) else {
             return;
         };
-
 
         let mut context_menu_response = None;
 
@@ -252,27 +249,27 @@ impl FileTreeRowUiWidget {
                 ui.close_menu();
             }
             if ui
-                .add_enabled(can_mutate, egui::Button::new("✏ Rename"))
+                .add_enabled(can_mutate && !is_root_dir, egui::Button::new("✏ Rename"))
                 .clicked()
             {
                 context_menu_response = Some(ContextMenuAction::Rename);
                 ui.close_menu();
             }
             if ui
-                .add_enabled(can_mutate, egui::Button::new("🗑 Delete"))
+                .add_enabled(can_mutate && !is_root_dir, egui::Button::new("🗑 Delete"))
                 .clicked()
             {
                 context_menu_response = Some(ContextMenuAction::Delete);
                 ui.close_menu();
             }
             if ui
-                .add_enabled(can_mutate, egui::Button::new("✂ Cut"))
+                .add_enabled(can_mutate && !is_root_dir, egui::Button::new("✂ Cut"))
                 .clicked()
             {
                 context_menu_response = Some(ContextMenuAction::Cut);
                 ui.close_menu();
             }
-            if ui.add_enabled(true, egui::Button::new("📷 Copy")).clicked() {
+            if ui.add_enabled(!is_root_dir, egui::Button::new("📷 Copy")).clicked() {
                 context_menu_response = Some(ContextMenuAction::Copy);
                 ui.close_menu();
             }
@@ -317,15 +314,15 @@ impl FileTreeRowUiWidget {
                         return;
                     }
                     ContextMenuAction::Cut => {
-                        info!("Cut");
+                        info!("TODO: Cut");
                         return;
                     }
                     ContextMenuAction::Copy => {
-                        info!("Copy");
+                        info!("TODO: Copy");
                         return;
                     }
                     ContextMenuAction::Paste => {
-                        info!("Paste");
+                        info!("TODO: Paste");
                         return;
                     }
                 }
@@ -349,12 +346,16 @@ impl FileTreeRowUiWidget {
         let mut system_state: SystemState<(Commands, Client, ResMut<ActionStack>)> =
             SystemState::new(world);
         let (mut commands, client, mut action_stack) = system_state.get_mut(world);
+        let mut is_denied = false;
         if let Some(authority) = commands.entity(*row_entity).authority(&client) {
-            if !authority.is_denied() {
-                let mut entities = Vec::new();
-                entities.push(*row_entity);
-                action_stack.buffer_action(Action::SelectEntries(entities));
+            if authority.is_denied() {
+                is_denied = true;
             }
+        }
+        if !is_denied {
+            let mut entities = Vec::new();
+            entities.push(*row_entity);
+            action_stack.buffer_action(Action::SelectEntries(entities));
         }
     }
 

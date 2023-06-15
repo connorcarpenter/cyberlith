@@ -2,9 +2,8 @@ use std::collections::HashSet;
 
 use bevy_ecs::{
     prelude::{Commands, Entity, Query, Resource, World},
-    system::{Res, SystemState},
+    system::{Res, ResMut, SystemState},
 };
-use bevy_ecs::system::ResMut;
 use bevy_log::info;
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus, ReplicationConfig};
 
@@ -12,10 +11,9 @@ use vortex_proto::components::{ChangelistEntry, EntryKind, FileSystemChild, File
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
-    resources::{file_tree::FileTree, global::Global},
+    resources::{file_tree::FileTree, global::Global, tab_manager::TabManager},
     systems::file_post_process,
 };
-use crate::app::resources::tab_manager::TabManager;
 
 pub enum Action {
     // A list of File Row entities to select
@@ -410,7 +408,10 @@ impl ActionStack {
         file_entries_to_request: HashSet<Entity>,
     ) {
         for file_entity in file_entries_to_request {
-            commands.entity(file_entity).request_authority(client);
+            let mut entity_mut = commands.entity(file_entity);
+            if entity_mut.authority(client).is_some() {
+                entity_mut.request_authority(client);
+            }
         }
     }
 
@@ -420,7 +421,10 @@ impl ActionStack {
         file_entries_to_release: HashSet<Entity>,
     ) {
         for file_entity in file_entries_to_release {
-            commands.entity(file_entity).release_authority(client);
+            let mut entity_mut = commands.entity(file_entity);
+            if entity_mut.authority(client).is_some() {
+                entity_mut.release_authority(client);
+            }
         }
     }
 
