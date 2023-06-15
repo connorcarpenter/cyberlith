@@ -1,13 +1,14 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 
 use bevy_ecs::{
     prelude::{Entity, Resource},
     system::{Query, ResMut, SystemState},
     world::World,
 };
+use naia_bevy_client::Client;
 
-use render_egui::{egui, egui::{Id, Label, NumExt, Rect, Response, RichText, Rounding, Sense, Stroke, TextStyle, Ui, vec2, WidgetText}};
-use vortex_proto::components::{ChangelistStatus, FileSystemEntry};
+use render_egui::{egui, egui::{Id, NumExt, Rect, Response, Rounding, Sense, Stroke, TextStyle, Ui, vec2, WidgetText}};
+use vortex_proto::{channels::TabActionChannel, components::{ChangelistStatus, FileSystemEntry}, messages::{TabActionMessage, TabActionMessageType, TabOpenMessage}, types::TabId};
 
 use crate::app::{components::file_system::FileSystemUiState, ui::widgets::colors::{FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED, TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED}};
 
@@ -15,13 +16,15 @@ use crate::app::{components::file_system::FileSystemUiState, ui::widgets::colors
 struct TabState {
     pub selected: bool,
     pub order: usize,
+    pub tab_id: TabId,
 }
 
 impl TabState {
-    pub fn new(order: usize) -> Self {
+    pub fn new(id: TabId, order: usize) -> Self {
         Self {
             selected: false,
             order,
+            tab_id: id,
         }
     }
 }
@@ -40,6 +43,8 @@ pub struct TabManager {
     current_tab: Option<Entity>,
     tab_map: HashMap<Entity, TabState>,
     tab_order: Vec<Entity>,
+    new_tab_id: TabId,
+    recycled_tab_ids: VecDeque<TabId>,
 }
 
 impl TabManager {
@@ -48,13 +53,31 @@ impl TabManager {
             current_tab: None,
             tab_map: HashMap::new(),
             tab_order: Vec::new(),
+            new_tab_id: 0,
+            recycled_tab_ids: VecDeque::new(),
         }
     }
 
-    pub fn open_tab(&mut self, row_entity: &Entity) {
+    fn new_tab_id(&mut self) -> TabId {
+        if self.recycled_tab_ids.is_empty() {
+            let id = self.new_tab_id;
+            self.new_tab_id += 1;
+            if self.new_tab_id == TabId::MAX {
+                panic!("ran out of tab ids!");
+            }
+            id
+        } else {
+            self.recycled_tab_ids.pop_front().unwrap()
+        }
+    }
 
+    fn recycle_tab_id(&mut self, id: TabId) {
+        self.recycled_tab_ids.push_back(id);
+    }
+
+    pub fn open_tab(&mut self, client: &mut Client, row_entity: &Entity) {
         if self.tab_map.contains_key(row_entity) {
-            self.select_tab(row_entity);
+            self.select_tab(client, row_entity);
         } else {
 
             // get current tab order
@@ -66,9 +89,16 @@ impl TabManager {
             };
 
             // insert new tab
-            self.tab_map.insert(*row_entity, TabState::new(current_order));
+            let new_tab_id = self.new_tab_id();
+            self.tab_map.insert(*row_entity, TabState::new(new_tab_id, current_order));
             self.tab_order.insert(current_order, *row_entity);
-            self.select_tab(row_entity);
+
+            // send message to server
+            let message = TabOpenMessage::new(client, new_tab_id, row_entity);
+            client.send_message::<TabActionChannel, TabOpenMessage>(&message);
+
+            // select tab
+            self.select_tab(client, row_entity);
 
             self.update_tab_orders();
         }
@@ -81,7 +111,7 @@ impl TabManager {
         }
     }
 
-    fn select_tab(&mut self, row_entity: &Entity) {
+    fn select_tab(&mut self, client: &mut Client, row_entity: &Entity) {
 
         // deselect current tab
         if let Some(current_entity) = self.current_tab {
@@ -93,9 +123,13 @@ impl TabManager {
         self.current_tab = Some(*row_entity);
         let tab_state = self.tab_map.get_mut(&row_entity).unwrap();
         tab_state.selected = true;
+
+        // send message to server
+        let message = TabActionMessage::new(tab_state.tab_id, TabActionMessageType::Select);
+        client.send_message::<TabActionChannel, TabActionMessage>(&message);
     }
 
-    fn close_tab(&mut self, row_entity: &Entity) {
+    fn close_tab(&mut self, client: &mut Client, row_entity: &Entity) {
 
         // remove tab
         let tab_state = self.tab_map.remove(row_entity).unwrap();
@@ -113,26 +147,34 @@ impl TabManager {
                 if let Some(new_entity) = self.tab_order.get(new_tab_order) {
                     let new_entity = *new_entity;
                     self.current_tab = None;
-                    self.select_tab(&new_entity);
+                    self.select_tab(client, &new_entity);
                 } else {
                     self.current_tab = None;
                 }
             }
         }
+
+        // send message to server
+        let message = TabActionMessage::new(tab_state.tab_id, TabActionMessageType::Close);
+        client.send_message::<TabActionChannel, TabActionMessage>(&message);
+
+        // recycle tab id
+        self.recycle_tab_id(tab_state.tab_id);
     }
 
-    fn close_all_tabs(&mut self) {
-        self.tab_map.clear();
-        self.tab_order.clear();
-        self.current_tab = None;
+    fn close_all_tabs(&mut self, client: &mut Client) {
+        let all_tabs = self.tab_order.clone();
+        for entity in all_tabs {
+            self.close_tab(client, &entity);
+        }
     }
 
-    fn close_all_tabs_except(&mut self, row_entity: &Entity) {
-        self.close_all_tabs();
-        self.open_tab(row_entity);
+    fn close_all_tabs_except(&mut self, client: &mut Client, row_entity: &Entity) {
+        self.close_all_tabs(client);
+        self.open_tab(client, row_entity);
     }
 
-    fn close_all_tabs_left_of(&mut self, row_entity: &Entity) {
+    fn close_all_tabs_left_of(&mut self, client: &mut Client, row_entity: &Entity) {
         let tab_state = self.tab_map.get(row_entity).unwrap();
         let order = tab_state.order;
         let mut tabs_to_close: Vec<Entity> = Vec::new();
@@ -142,39 +184,37 @@ impl TabManager {
         }
 
         for entity in tabs_to_close {
-            self.close_tab(&entity);
+            self.close_tab(client, &entity);
         }
     }
 
-    fn close_all_tabs_right_of(&mut self, row_entity: &Entity) {
+    fn close_all_tabs_right_of(&mut self, client: &mut Client, row_entity: &Entity) {
         let tab_state = self.tab_map.get(row_entity).unwrap();
         let order = tab_state.order;
         let mut tabs_to_close: Vec<Entity> = Vec::new();
-        for i in order+1..self.tab_order.len() {
+        for i in order + 1..self.tab_order.len() {
             let entity = self.tab_order[i];
             tabs_to_close.push(entity);
         }
 
         for entity in tabs_to_close {
-            self.close_tab(&entity);
+            self.close_tab(client, &entity);
         }
     }
 
     pub fn render_root(ui: &mut Ui, world: &mut World) {
         egui::menu::bar(ui, |ui| {
-            let mut system_state: SystemState<(ResMut<TabManager>, Query<(&FileSystemEntry, &FileSystemUiState)>)> = SystemState::new(world);
-            let (mut tab_manager, query) = system_state.get_mut(world);
+            let mut system_state: SystemState<(Client, ResMut<TabManager>, Query<(&FileSystemEntry, &FileSystemUiState)>)> = SystemState::new(world);
+            let (mut client, mut tab_manager, query) = system_state.get_mut(world);
 
-            tab_manager.render_tabs(ui, &query);
+            tab_manager.render_tabs(&mut client, ui, &query);
         });
     }
 
-    fn render_tabs(&mut self, ui: &mut Ui, query: &Query<(&FileSystemEntry, &FileSystemUiState)>) {
-
+    fn render_tabs(&mut self, client: &mut Client, ui: &mut Ui, query: &Query<(&FileSystemEntry, &FileSystemUiState)>) {
         let mut tab_action = None;
 
         for row_entity in &self.tab_order {
-
             let tab_state = self.tab_map.get(row_entity).unwrap();
 
             let (entry, ui_state) = query.get(*row_entity).unwrap();
@@ -184,7 +224,7 @@ impl TabManager {
             Self::tab_context_menu(button_response, row_entity, &mut tab_action);
         }
 
-        self.execute_tab_action(tab_action);
+        self.execute_tab_action(client, tab_action);
     }
 
     fn render_tab(
@@ -330,26 +370,26 @@ impl TabManager {
         });
     }
 
-    fn execute_tab_action(&mut self, tab_action: Option<TabAction>) {
+    fn execute_tab_action(&mut self, client: &mut Client, tab_action: Option<TabAction>) {
         match tab_action {
             None => {}
             Some(TabAction::Select(row_entity)) => {
-                self.select_tab(&row_entity);
+                self.select_tab(client, &row_entity);
             }
             Some(TabAction::Close(row_entity)) => {
-                self.close_tab(&row_entity);
+                self.close_tab(client, &row_entity);
             }
             Some(TabAction::CloseAll) => {
-                self.close_all_tabs();
+                self.close_all_tabs(client);
             }
             Some(TabAction::CloseOthers(row_entity)) => {
-                self.close_all_tabs_except(&row_entity);
+                self.close_all_tabs_except(client, &row_entity);
             }
             Some(TabAction::CloseLeft(row_entity)) => {
-                self.close_all_tabs_left_of(&row_entity);
+                self.close_all_tabs_left_of(client, &row_entity);
             }
             Some(TabAction::CloseRight(row_entity)) => {
-                self.close_all_tabs_right_of(&row_entity);
+                self.close_all_tabs_right_of(client, &row_entity);
             }
         }
     }

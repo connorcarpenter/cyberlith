@@ -239,7 +239,7 @@ impl ActionStack {
                 }
 
                 // open tab for new entry
-                tab_manager.open_tab(&entity_id);
+                tab_manager.open_tab(&mut client, &entity_id);
 
                 system_state.apply(world);
 

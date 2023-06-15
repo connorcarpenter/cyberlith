@@ -2,9 +2,7 @@ use std::{collections::HashMap, fs, path::Path, sync::Mutex};
 
 use bevy_ecs::{entity::Entity, system::{Commands, Query}};
 use bevy_log::info;
-
 use git2::{Repository, Signature};
-
 use naia_bevy_server::{CommandsExt, RoomKey, Server};
 
 use vortex_proto::{
@@ -12,7 +10,7 @@ use vortex_proto::{
     resources::FileEntryKey,
 };
 
-use crate::resources::{ChangelistValue, FileEntryValue, GitManager, user_manager::UserInfo};
+use crate::resources::{ChangelistValue, FileEntryValue, GitManager};
 
 pub struct Workspace {
     pub room_key: RoomKey,

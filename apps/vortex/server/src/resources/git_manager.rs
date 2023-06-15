@@ -6,23 +6,21 @@ use std::{
 
 use bevy_ecs::{
     entity::Entity,
-    system::{Query, Commands, Resource},
+    system::{Commands, Query, Resource},
 };
 use bevy_log::info;
-
 use git2::{Cred, Repository, Tree};
-
 use naia_bevy_server::{CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};
 
 use vortex_proto::{
-    components::{ChangelistEntry, ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild},
+    components::{ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild},
     resources::FileEntryKey,
 };
 
 use crate::{
     components::FileSystemOwner,
     config::GitConfig,
-    resources::{user_manager::UserInfo, workspace::Workspace, FileEntryValue},
+    resources::{FileEntryValue, user_manager::UserInfo, workspace::Workspace},
 };
 
 #[derive(Resource)]

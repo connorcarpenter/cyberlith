@@ -8,20 +8,19 @@ use bevy_ecs::{
 use bevy_log::{info, LogPlugin};
 use naia_bevy_server::{Plugin as ServerPlugin, ReceiveEvents, ServerConfig};
 
+use resources::GitManager;
+use systems::network;
 use vortex_proto::protocol;
+
+use crate::{
+    config::{AppConfig, ConfigPlugin},
+    resources::{TabManager, UserManager},
+};
 
 mod components;
 mod config;
 mod resources;
 mod systems;
-
-use resources::GitManager;
-use systems::network;
-
-use crate::{
-    config::{AppConfig, ConfigPlugin},
-    resources::UserManager,
-};
 
 fn main() {
     info!("Vortex Server starting up");
@@ -43,6 +42,7 @@ fn main() {
         // Resources
         .init_resource::<UserManager>()
         .init_resource::<GitManager>()
+        .init_resource::<TabManager>()
         // Network Systems
         .add_startup_system(network::init)
         .add_systems(

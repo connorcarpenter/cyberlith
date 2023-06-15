@@ -151,7 +151,7 @@ impl FileTreeRowUiWidget {
             }
         }
 
-        Self::handle_modal_responses(depth, world, row_entity);
+        Self::handle_modal_responses(world, row_entity);
         Self::handle_interactions(
             is_dir,
             depth,
@@ -364,10 +364,10 @@ impl FileTreeRowUiWidget {
         Self::on_row_click(world, row_entity);
 
         // add to tabs
-        let mut system_state: SystemState<ResMut<TabManager>> =
+        let mut system_state: SystemState<(Client, ResMut<TabManager>)> =
             SystemState::new(world);
-        let mut tab_manager = system_state.get_mut(world);
-        tab_manager.open_tab(row_entity);
+        let (mut client, mut tab_manager) = system_state.get_mut(world);
+        tab_manager.open_tab(&mut client, row_entity);
     }
 
     pub fn on_expander_click(world: &mut World, row_entity: &Entity) {
@@ -500,8 +500,7 @@ impl FileTreeRowUiWidget {
         });
     }
 
-    pub fn handle_modal_responses(depth: usize, world: &mut World, row_entity: &Entity) {
-
+    pub fn handle_modal_responses(world: &mut World, row_entity: &Entity) {
         world.resource_scope(|world, mut ui_state: Mut<UiState>| {
             let Some(mut row_ui_state) = world.get_mut::<FileSystemUiState>(*row_entity) else {
                 return;
@@ -662,41 +661,3 @@ impl FileTreeRowUiWidget {
         action_stack.buffer_action(Action::DeleteEntry(*row_entity, None));
     }
 }
-
-// fn context_menu(ui: &mut Ui) {
-//     // shortcuts
-//     let rename_shortcut =
-//         egui::KeyboardShortcut::new(Modifiers::CTRL, egui::Key::R);
-//     let delete_shortcut =
-//         egui::KeyboardShortcut::new(Modifiers::NONE, egui::Key::Delete);
-//     let cut_shortcut =
-//         egui::KeyboardShortcut::new(Modifiers::CTRL, egui::Key::X);
-//     let copy_shortcut =
-//         egui::KeyboardShortcut::new(Modifiers::CTRL, egui::Key::C);
-//     let paste_shortcut =
-//         egui::KeyboardShortcut::new(Modifiers::CTRL, egui::Key::V);
-//
-//     // NOTE: we must check the shortcuts OUTSIDE of the actual "File" menu,
-//     // or else they would only be checked if the "File" menu was actually open!
-//
-//     // Rename Shortcut
-//     if ui.input_mut(|i| i.consume_shortcut(&rename_shortcut)) {
-//         // execute some logic
-//     }
-//     // Delete Shortcut
-//     if ui.input_mut(|i| i.consume_shortcut(&delete_shortcut)) {
-//         // execute some logic
-//     }
-//     // Cut Shortcut
-//     if ui.input_mut(|i| i.consume_shortcut(&cut_shortcut)) {
-//         // execute some logic
-//     }
-//     // Copy Shortcut
-//     if ui.input_mut(|i| i.consume_shortcut(&copy_shortcut)) {
-//         // execute some logic
-//     }
-//     // Paste Shortcut
-//     if ui.input_mut(|i| i.consume_shortcut(&paste_shortcut)) {
-//         // execute some logic
-//     }
-// }

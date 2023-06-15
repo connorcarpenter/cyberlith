@@ -1,11 +1,10 @@
-use bevy_ecs::{event::EventReader, system::{Query, Res, ResMut, Commands}};
+use bevy_ecs::{event::EventReader, system::{Commands, Query, Res, ResMut}};
 use bevy_log::info;
-
 use naia_bevy_server::{events::MessageEvents, Server};
 
-use vortex_proto::{channels::ChangelistActionChannel, messages::{ChangelistMessage, ChangelistAction}, components::ChangelistEntry};
+use vortex_proto::{channels::{ChangelistActionChannel, TabActionChannel}, components::ChangelistEntry, messages::{ChangelistAction, ChangelistMessage, TabActionMessage, TabActionMessageType, TabOpenMessage}};
 
-use crate::resources::{GitManager, UserManager};
+use crate::resources::{GitManager, TabManager, UserManager};
 
 pub fn message_events(
     mut commands: Commands,
@@ -13,7 +12,8 @@ pub fn message_events(
     mut event_reader: EventReader<MessageEvents>,
     user_manager: Res<UserManager>,
     mut git_manager: ResMut<GitManager>,
-    query: Query<&ChangelistEntry>,
+    mut tab_manager: ResMut<TabManager>,
+    cl_query: Query<&ChangelistEntry>,
 ) {
     for events in event_reader.iter() {
         for (user_key, message) in events.read::<ChangelistActionChannel, ChangelistMessage>() {
@@ -32,13 +32,34 @@ pub fn message_events(
                     let Some(commit_message) = message.commit_message else {
                         panic!("no commit message!")
                     };
-                    git_manager.commit_changelist_entry(&mut commands, &mut server, user, &commit_message, &entity, &query);
+                    git_manager.commit_changelist_entry(&mut commands, &mut server, user, &commit_message, &entity, &cl_query);
                 }
                 ChangelistAction::Rollback => {
                     let Some(entity) = message.entity.get(&server) else {
                         panic!("no entity!")
                     };
-                    git_manager.rollback_changelist_entry(&mut commands, &mut server, &user_key, user, &entity, &query);
+                    git_manager.rollback_changelist_entry(&mut commands, &mut server, &user_key, user, &entity, &cl_query);
+                }
+            }
+        }
+
+        // Tab Open Message
+        for (user_key, message) in events.read::<TabActionChannel, TabOpenMessage>() {
+            let tab_id = message.tab_id;
+            if let Some(file_entity) = message.file_entity.get(&server) {
+                tab_manager.open_tab(&user_key, &tab_id, &file_entity);
+            }
+        }
+
+        // Tab Select & Close Message
+        for (user_key, message) in events.read::<TabActionChannel, TabActionMessage>() {
+            let tab_id = message.tab_id;
+            match message.action {
+                TabActionMessageType::Select => {
+                    tab_manager.select_tab(&user_key, &tab_id);
+                }
+                TabActionMessageType::Close => {
+                    tab_manager.close_tab(&user_key, &tab_id);
                 }
             }
         }
