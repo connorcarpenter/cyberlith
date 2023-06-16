@@ -14,7 +14,7 @@ use naia_bevy_server::{CommandsExt, ReplicationConfig, RoomKey, Server, UserKey}
 
 use vortex_proto::{
     components::{ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild},
-    resources::FileEntryKey,
+    resources::FileEntryKey, types::TabId,
 };
 
 use crate::{
@@ -185,11 +185,31 @@ impl GitManager {
     }
 
     pub fn spawn_networked_entry_into_world(
-        &mut self, commands: &mut Commands, server: &mut Server, user_key: &UserKey, user_info: &UserInfo, entry_key: &FileEntryKey, entry_val: &FileEntryValue
+        &mut self, commands: &mut Commands, server: &mut Server, user_key: &UserKey, user_info: &UserInfo, entry_key: &FileEntryKey, entry_val: &FileEntryValue,
     ) {
         let room_key = user_info.get_room_key().unwrap();
         let workspace = self.workspaces.get(user_info.get_username()).unwrap();
         insert_networked_components_entry(commands, server, user_key, &room_key, &workspace.working_file_entries, entry_key, entry_val);
+    }
+
+    pub(crate) fn load_content_entities(
+        &mut self, commands: &mut Commands, room_key: &RoomKey, file_entity: &Entity, tab_id: &TabId,
+    ) -> Vec<Entity> {
+
+        // spawn Entities from File's contents
+
+        // associate all Entities with the new Room
+
+        // insert Component for all Entities to associate with TabId
+
+        // call "pause_replication" on all Entities (they will be resumed when tab is selected)
+        todo!();
+    }
+
+    pub(crate) fn unload_content_entities(&self, commands: &mut Commands, file_entity: &Entity, tab_id: &TabId, content_entities: Vec<Entity>) {
+        // make sure all content entities are backed up to File
+
+        // despawn content entities
     }
 
     pub fn spawn_file_tree_entity(commands: &mut Commands, server: &mut Server) -> Entity {

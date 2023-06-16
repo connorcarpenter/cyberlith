@@ -47,7 +47,7 @@ pub fn message_events(
         for (user_key, message) in events.read::<TabActionChannel, TabOpenMessage>() {
             let tab_id = message.tab_id;
             if let Some(file_entity) = message.file_entity.get(&server) {
-                tab_manager.open_tab(&user_key, &tab_id, &file_entity);
+                tab_manager.open_tab(&mut commands, &mut server, &mut git_manager, &user_key, &tab_id, &file_entity);
             }
         }
 
@@ -56,10 +56,10 @@ pub fn message_events(
             let tab_id = message.tab_id;
             match message.action {
                 TabActionMessageType::Select => {
-                    tab_manager.select_tab(&user_key, &tab_id);
+                    tab_manager.select_tab(&mut commands, &mut server, &user_key, &tab_id);
                 }
                 TabActionMessageType::Close => {
-                    tab_manager.close_tab(&user_key, &tab_id);
+                    tab_manager.close_tab(&mut commands, &mut server, &mut git_manager, &user_key, &tab_id);
                 }
             }
         }
