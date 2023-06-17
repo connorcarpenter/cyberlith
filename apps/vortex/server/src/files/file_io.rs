@@ -3,7 +3,7 @@ use bevy_ecs::{entity::Entity, system::Commands, world::World};
 use crate::files::{SkelReader, SkelWriter};
 
 pub trait FileWriter: Send + Sync {
-    fn write(&self, world: &World, content_entities: &Vec<Entity>) -> Box<[u8]>;
+    fn write(&self, world: &mut World, content_entities: &Vec<Entity>) -> Box<[u8]>;
 }
 
 pub trait FileReader: Send + Sync {
