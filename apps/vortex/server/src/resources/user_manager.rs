@@ -96,4 +96,8 @@ impl UserManager {
     pub fn user_info_mut(&mut self, user_key: &UserKey) -> Option<&mut UserInfo> {
         self.users.get_mut(user_key)
     }
+
+    pub fn user_name(&self, user_key: &UserKey) -> Option<&str> {
+        self.users.get(user_key).map(|u| u.get_username())
+    }
 }

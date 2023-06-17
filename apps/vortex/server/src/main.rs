@@ -15,12 +15,14 @@ use vortex_proto::protocol;
 use crate::{
     config::{AppConfig, ConfigPlugin},
     resources::{TabManager, UserManager},
+    systems::world_loop,
 };
 
 mod components;
 mod config;
 mod resources;
 mod systems;
+mod files;
 
 fn main() {
     info!("Vortex Server starting up");
@@ -66,6 +68,7 @@ fn main() {
         )
         // Other Systems
         .add_startup_system(setup)
+        .add_system(world_loop)
         // Run App
         .run();
 }

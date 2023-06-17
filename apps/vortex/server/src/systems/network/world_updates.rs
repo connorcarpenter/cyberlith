@@ -6,7 +6,6 @@ use bevy_ecs::{
     system::{Commands, Local, Query, Res, ResMut},
 };
 use bevy_log::info;
-
 use naia_bevy_server::{
     events::{
         DespawnEntityEvent, InsertComponentEvents, RemoveComponentEvents, SpawnEntityEvent,
@@ -26,7 +25,7 @@ use crate::resources::{
 };
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
-    for SpawnEntityEvent(user_key, entity) in event_reader.iter() {
+    for SpawnEntityEvent(_user_key, _entity) in event_reader.iter() {
         info!("spawned entity");
     }
 }
@@ -117,11 +116,11 @@ pub fn insert_component_events(
 
 pub fn remove_component_events(mut event_reader: EventReader<RemoveComponentEvents>) {
     for events in event_reader.iter() {
-        for (user_key, entity, component) in events.read::<FileSystemRootChild>() {
+        for (_user_key, _entity, _component) in events.read::<FileSystemRootChild>() {
             info!("removed FileSystemRootChild component from entity");
             // TODO!
         }
-        for (user_key, entity, component) in events.read::<FileSystemChild>() {
+        for (_user_key, _entity, _component) in events.read::<FileSystemChild>() {
             info!("removed FileSystemChild component from entity");
             // TODO!
         }
@@ -131,11 +130,11 @@ pub fn remove_component_events(mut event_reader: EventReader<RemoveComponentEven
 pub fn update_component_events(mut event_reader: EventReader<UpdateComponentEvents>) {
     for events in event_reader.iter() {
         // on FileSystemEntry Update Event
-        for (user_key, entity) in events.read::<FileSystemEntry>() {
+        for (_user_key, _entity) in events.read::<FileSystemEntry>() {
             // TODO!
         }
         // on FileSystemChild Update Event
-        for (user_key, entity) in events.read::<FileSystemChild>() {
+        for (_user_key, _entity) in events.read::<FileSystemChild>() {
             // TODO!
         }
     }

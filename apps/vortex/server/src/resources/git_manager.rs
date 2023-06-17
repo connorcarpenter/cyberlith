@@ -14,13 +14,14 @@ use naia_bevy_server::{CommandsExt, ReplicationConfig, RoomKey, Server, UserKey}
 
 use vortex_proto::{
     components::{ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild},
-    resources::FileEntryKey, types::TabId,
+    resources::FileEntryKey,
 };
 
 use crate::{
     components::FileSystemOwner,
     config::GitConfig,
-    resources::{FileEntryValue, user_manager::UserInfo, workspace::Workspace},
+    files::{FileExtension, FileWriter},
+    resources::{FileEntryValue, user_manager::UserInfo, workspace::Workspace}
 };
 
 #[derive(Resource)]
@@ -193,23 +194,34 @@ impl GitManager {
     }
 
     pub(crate) fn load_content_entities(
-        &mut self, commands: &mut Commands, room_key: &RoomKey, file_entity: &Entity, tab_id: &TabId,
+        &mut self,
+        commands: &mut Commands,
+        key_query: &Query<&FileEntryKey>,
+        username: &str,
+        file_entity: &Entity,
     ) -> Vec<Entity> {
+        let workspace = self.workspaces.get(username).unwrap();
 
-        // spawn Entities from File's contents
-
-        // associate all Entities with the new Room
-
-        // insert Component for all Entities to associate with TabId
-
-        // call "pause_replication" on all Entities (they will be resumed when tab is selected)
-        todo!();
+        let file_entry_key = key_query.get(*file_entity).unwrap();
+        workspace.load_content_entities(commands, file_entry_key)
     }
 
-    pub(crate) fn unload_content_entities(&self, commands: &mut Commands, file_entity: &Entity, tab_id: &TabId, content_entities: Vec<Entity>) {
-        // make sure all content entities are backed up to File
+    pub(crate) fn init_file_writer(&self, username: &str, key: &FileEntryKey) -> Box<dyn FileWriter> {
+        let extension = self.workspaces.get(username).unwrap().working_file_extension(key);
+        extension.get_writer()
+    }
 
-        // despawn content entities
+    pub(crate) fn new_modified_changelist_entry(
+        &mut self,
+        commands: &mut Commands,
+        server: &mut Server,
+        username: &str,
+        key: &FileEntryKey,
+        bytes: Box<[u8]>,
+    ) {
+        let workspace = self.workspaces.get_mut(username).unwrap();
+
+        workspace.new_modified_changelist_entry(commands, server, key, bytes);
     }
 
     pub fn spawn_file_tree_entity(commands: &mut Commands, server: &mut Server) -> Entity {
@@ -258,7 +270,7 @@ fn fill_file_entries_from_git(
                     Some(file_entry_key.clone()),
                 );
 
-                let file_entry_value = FileEntryValue::new(id, parent.clone(), Some(children));
+                let file_entry_value = FileEntryValue::new(id, parent.clone(), Some(children), None);
                 file_entries.insert(file_entry_key.clone(), file_entry_value);
 
                 output.insert(file_entry_key.clone());
@@ -268,7 +280,8 @@ fn fill_file_entries_from_git(
                 let id = GitManager::spawn_file_tree_entity(commands, server);
 
                 let file_entry_key = FileEntryKey::new(path, &name, entry_kind);
-                let file_entry_value = FileEntryValue::new(id, parent.clone(), None);
+                let file_extension = FileExtension::from_file_name(&name);
+                let file_entry_value = FileEntryValue::new(id, parent.clone(), None, Some(file_extension));
                 file_entries.insert(file_entry_key.clone(), file_entry_value);
 
                 output.insert(file_entry_key.clone());

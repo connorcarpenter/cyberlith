@@ -2,13 +2,16 @@ use std::collections::HashSet;
 
 use bevy_ecs::entity::Entity;
 
-use vortex_proto::{components::ChangelistStatus, resources::FileEntryKey};
+use vortex_proto::resources::FileEntryKey;
+
+use crate::files::FileExtension;
 
 #[derive(Clone)]
 pub struct FileEntryValue {
     entity: Entity,
     parent: Option<FileEntryKey>,
     children: Option<HashSet<FileEntryKey>>,
+    extension: Option<FileExtension>,
 }
 
 impl FileEntryValue {
@@ -16,11 +19,13 @@ impl FileEntryValue {
         entity: Entity,
         parent: Option<FileEntryKey>,
         children: Option<HashSet<FileEntryKey>>,
+        extension: Option<FileExtension>,
     ) -> Self {
         Self {
             entity,
             parent,
             children,
+            extension
         }
     }
 
@@ -51,24 +56,32 @@ impl FileEntryValue {
             children.remove(&key);
         }
     }
+
+    pub fn extension(&self) -> Option<FileExtension> {
+        self.extension
+    }
 }
 
 #[derive(Clone)]
 pub struct ChangelistValue {
     entity: Entity,
-    status: ChangelistStatus,
+    content: Option<Box<[u8]>>
 }
 
 impl ChangelistValue {
-    pub fn new(entity: Entity, status: ChangelistStatus) -> Self {
-        Self { entity, status }
+    pub fn new(entity: Entity) -> Self {
+        Self { entity, content: None }
     }
 
     pub fn entity(&self) -> Entity {
         self.entity
     }
 
-    pub fn status(&self) -> ChangelistStatus {
-        self.status
+    pub fn set_content(&mut self, content: Box<[u8]>) {
+        self.content = Some(content.into());
+    }
+
+    pub fn get_content(&self) -> Option<&[u8]> {
+        self.content.as_ref().map(|c| c.as_ref())
     }
 }

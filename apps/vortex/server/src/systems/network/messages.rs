@@ -2,7 +2,7 @@ use bevy_ecs::{event::EventReader, system::{Commands, Query, Res, ResMut}};
 use bevy_log::info;
 use naia_bevy_server::{events::MessageEvents, Server};
 
-use vortex_proto::{channels::{ChangelistActionChannel, TabActionChannel}, components::ChangelistEntry, messages::{ChangelistAction, ChangelistMessage, TabActionMessage, TabActionMessageType, TabOpenMessage}};
+use vortex_proto::{channels::{ChangelistActionChannel, TabActionChannel}, components::ChangelistEntry, messages::{ChangelistAction, ChangelistMessage, TabActionMessage, TabActionMessageType, TabOpenMessage}, resources::FileEntryKey};
 
 use crate::resources::{GitManager, TabManager, UserManager};
 
@@ -14,6 +14,7 @@ pub fn message_events(
     mut git_manager: ResMut<GitManager>,
     mut tab_manager: ResMut<TabManager>,
     cl_query: Query<&ChangelistEntry>,
+    key_query: Query<&FileEntryKey>,
 ) {
     for events in event_reader.iter() {
         for (user_key, message) in events.read::<ChangelistActionChannel, ChangelistMessage>() {
@@ -47,7 +48,7 @@ pub fn message_events(
         for (user_key, message) in events.read::<TabActionChannel, TabOpenMessage>() {
             let tab_id = message.tab_id;
             if let Some(file_entity) = message.file_entity.get(&server) {
-                tab_manager.open_tab(&mut commands, &mut server, &mut git_manager, &user_key, &tab_id, &file_entity);
+                tab_manager.open_tab(&mut commands, &mut server, &user_manager, &mut git_manager, &key_query, &user_key, &tab_id, &file_entity);
             }
         }
 
@@ -59,7 +60,7 @@ pub fn message_events(
                     tab_manager.select_tab(&mut commands, &mut server, &user_key, &tab_id);
                 }
                 TabActionMessageType::Close => {
-                    tab_manager.close_tab(&mut commands, &mut server, &mut git_manager, &user_key, &tab_id);
+                    tab_manager.queue_close_tab(user_key, tab_id);
                 }
             }
         }

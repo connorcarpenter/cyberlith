@@ -10,7 +10,7 @@ use vortex_proto::{
     resources::FileEntryKey,
 };
 
-use crate::resources::{ChangelistValue, FileEntryValue, GitManager};
+use crate::{files::FileExtension, resources::{ChangelistValue, FileEntryValue, GitManager}};
 
 pub struct Workspace {
     pub room_key: RoomKey,
@@ -48,7 +48,8 @@ impl Workspace {
         parent: Option<FileEntryKey>,
     ) {
         let file_entry_key = FileEntryKey::new_with_parent(parent.clone(), name, kind);
-        let file_entry_val = FileEntryValue::new(entity, parent, None);
+        let file_extension = FileExtension::from_file_name(name);
+        let file_entry_val = FileEntryValue::new(entity, parent, None, Some(file_extension));
 
         // Add new Entity into Working Tree
         info!("Added new entity into Working FileTree");
@@ -68,30 +69,7 @@ impl Workspace {
 
         // if file doesn't exist in master tree and no changelist entry exists, then create a changelist entry
         if !file_exists_in_master && !file_exists_in_changelist {
-            let changelist_status = ChangelistStatus::Created;
-
-            let mut changelist_entry = ChangelistEntry::new(
-                file_entry_key.kind(),
-                file_entry_key.name(),
-                file_entry_key.path(),
-                changelist_status,
-            );
-            changelist_entry.file_entity.set(server, &entity);
-
-            let changelist_entity = commands
-                .spawn_empty()
-                .enable_replication(server)
-                .insert(changelist_entry)
-                .id();
-
-            // Add entity to room
-            server
-                .room_mut(&self.room_key)
-                .add_entity(&changelist_entity);
-
-            let changelist_value = ChangelistValue::new(changelist_entity, changelist_status);
-            self.changelist_entries
-                .insert(file_entry_key.clone(), changelist_value);
+            self.new_changelist_entry(commands, server, &file_entry_key, ChangelistStatus::Created, Some(&entity), None);
         }
 
         // if file exists in master tree and a changelist entry exists, then delete the changelist entry
@@ -104,7 +82,7 @@ impl Workspace {
     pub fn delete_file(&mut self, commands: &mut Commands, server: &mut Server, entity: &Entity) {
         // Remove Entity from Working Tree, returning a list of child entities that should be despawned
         let file_entry_key = Self::find_file_entry_by_entity(&mut self.working_file_entries, entity);
-        let (entry_value, entities_to_delete) = Self::remove_file_entry(&mut self.working_file_entries, &file_entry_key);
+        let (_entry_value, entities_to_delete) = Self::remove_file_entry(&mut self.working_file_entries, &file_entry_key);
 
         self.update_changelist_after_despawn(commands, server, &file_entry_key);
 
@@ -156,7 +134,7 @@ impl Workspace {
                     .take_authority(server);
 
                 // sync to git repo!
-                self.git_create_file(file_entry_key, file_entry_val);
+                self.git_create_file(file_entry_key);
                 self.git_commit(username, email, commit_message);
                 self.git_push();
             }
@@ -171,7 +149,7 @@ impl Workspace {
                 }
 
                 // sync to git repo!
-                self.git_delete_file(file_entry_key, entry_value);
+                self.git_delete_file(file_entry_key);
                 self.git_commit(username, email, commit_message);
                 self.git_push();
             }
@@ -241,15 +219,14 @@ impl Workspace {
         return None;
     }
 
-    pub fn git_create_file(&mut self, key: FileEntryKey, value: FileEntryValue) {
-
+    pub fn git_create_file(&mut self, key: FileEntryKey) {
         let repo = self.repo.lock().unwrap();
 
         let file_path = format!("{}{}", key.path(), key.name());
         let full_path = format!("{}/{}", self.internal_path, file_path);
         info!("git creating file at: `{}`", full_path);
 
-        let file_content: &[u8] = &[];
+        let file_content = self.changelist_entries.get(&key).unwrap().get_content().unwrap();
 
         // Create the file with the desired content
         fs::write(&full_path, file_content).expect("Failed to create file");
@@ -260,7 +237,7 @@ impl Workspace {
         index.write().expect("Failed to write index");
     }
 
-    pub fn git_delete_file(&mut self, key: FileEntryKey, value: FileEntryValue) {
+    pub fn git_delete_file(&mut self, key: FileEntryKey) {
         let repo = self.repo.lock().unwrap();
 
         let file_path = format!("{}{}", key.path(), key.name());
@@ -299,7 +276,7 @@ impl Workspace {
         let committer = Signature::now(username, email).expect("Failed to create committer signature");
 
         // Create the commit
-        let commit_id = repo
+        repo
             .commit(
                 Some("HEAD"),
                 &author,
@@ -351,29 +328,91 @@ impl Workspace {
 
         // if file exists in master tree and no changelist entry exists, then create a changelist entry
         if file_exists_in_master && !file_exists_in_changelist {
-            let changelist_status = ChangelistStatus::Deleted;
+            self.new_changelist_entry(commands, server, file_entry_key, ChangelistStatus::Deleted, None, None);
+        }
+    }
 
-            let changelist_entry = ChangelistEntry::new(
-                file_entry_key.kind(),
-                file_entry_key.name(),
-                file_entry_key.path(),
-                changelist_status,
-            );
+    fn new_changelist_entry(
+        &mut self,
+        commands: &mut Commands,
+        server: &mut Server,
+        file_entry_key: &FileEntryKey,
+        changelist_status: ChangelistStatus,
+        entity_opt: Option<&Entity>,
+        content_opt: Option<Box<[u8]>>,
+    ) {
+        let mut changelist_entry = ChangelistEntry::new(
+            file_entry_key.kind(),
+            file_entry_key.name(),
+            file_entry_key.path(),
+            changelist_status,
+        );
+        if let Some(entity) = entity_opt {
+            changelist_entry.file_entity.set(server, &entity);
+        }
 
-            let changelist_entity = commands
-                .spawn_empty()
-                .enable_replication(server)
-                .insert(changelist_entry)
-                .id();
+        let changelist_entity = commands
+            .spawn_empty()
+            .enable_replication(server)
+            .insert(changelist_entry)
+            .id();
 
-            // Add entity to room
-            server
-                .room_mut(&self.room_key)
-                .add_entity(&changelist_entity);
+        // Add entity to room
+        server
+            .room_mut(&self.room_key)
+            .add_entity(&changelist_entity);
 
-            let changelist_value = ChangelistValue::new(changelist_entity, changelist_status);
-            self.changelist_entries
-                .insert(file_entry_key.clone(), changelist_value);
+        let mut changelist_value = ChangelistValue::new(changelist_entity);
+        if let Some(content) = content_opt {
+            changelist_value.set_content(content);
+        }
+        self.changelist_entries
+            .insert(file_entry_key.clone(), changelist_value);
+    }
+
+    pub(crate) fn load_content_entities(&self, commands: &mut Commands, key: &FileEntryKey) -> Vec<Entity> {
+        // get file extension of file
+        let file_extension = self.working_file_extension(key);
+
+        // get FileReader associated with specific file extension
+        let file_reader = file_extension.get_reader();
+
+        // get contents of file from git
+        let bytes = self.get_blob(key);
+
+        // FileReader reads File's contents and spawns all Entities + Components
+        let content_entities: Vec<Entity> = file_reader.read(commands, &bytes);
+
+        content_entities
+    }
+
+    fn get_blob(&self, key: &FileEntryKey) -> Box<[u8]> {
+        let repo_ref = self.repo.lock().unwrap();
+        let head = repo_ref.head().unwrap();
+        let tree = head.peel_to_tree().unwrap();
+        let file = tree.get_path(Path::new(key.path())).unwrap();
+        let object = file.to_object(&repo_ref).unwrap();
+        let blob = object.as_blob().unwrap();
+        blob.content().into()
+    }
+
+    pub(crate) fn working_file_extension(&self, key: &FileEntryKey) -> FileExtension {
+        let value = self.working_file_entries.get(key).unwrap();
+        value.extension().unwrap()
+    }
+
+    pub(crate) fn new_modified_changelist_entry(
+        &mut self,
+        commands: &mut Commands,
+        server: &mut Server,
+        key: &FileEntryKey,
+        bytes: Box<[u8]>,
+    ) {
+        // update Changelist entry with new bytes
+        if let Some(changelist_entry) = self.changelist_entries.get_mut(key) {
+            changelist_entry.set_content(bytes);
+        } else {
+            self.new_changelist_entry(commands, server, key, ChangelistStatus::Modified, None, Some(bytes));
         }
     }
 
