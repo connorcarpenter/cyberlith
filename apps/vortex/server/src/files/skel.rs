@@ -6,28 +6,50 @@ use vortex_proto::components::Vertex3d;
 
 use crate::files::{FileReader, FileWriter};
 
+// Actions
+enum SkelAction {
+    Vertex(u16, u16, u16)
+}
+
 // Writer
 pub struct SkelWriter;
 
-impl FileWriter for SkelWriter {
-    fn write(&self, world: &mut World, content_entities: &Vec<Entity>) -> Box<[u8]> {
+impl SkelWriter {
+    fn write_to_actions(&self, world: &mut World, content_entities: &Vec<Entity>) -> Vec<SkelAction> {
         let mut system_state: SystemState<Query<&Vertex3d>> = SystemState::new(world);
         let vertex_query = system_state.get(world);
 
-        let mut bit_writer = BitWriter::new();
-
+        let mut output = Vec::new();
         for entity in content_entities {
-
-            // continue bit
-            true.ser(&mut bit_writer);
-
-            // encode X, Y, Z
             let vertex = vertex_query.get(*entity).unwrap();
-            vertex.x.ser(&mut bit_writer);
-            vertex.y.ser(&mut bit_writer);
-            vertex.z.ser(&mut bit_writer);
+            output.push(SkelAction::Vertex(*vertex.x, *vertex.y, *vertex.z));
         }
 
+        output
+    }
+}
+
+impl FileWriter for SkelWriter {
+    fn write(&self, world: &mut World, content_entities: &Vec<Entity>) -> Box<[u8]> {
+        let actions = self.write_to_actions(world, content_entities);
+
+        let mut bit_writer = BitWriter::new();
+
+        for action in actions {
+            match action {
+                SkelAction::Vertex(x, y, z) => {
+                    // continue bit
+                    true.ser(&mut bit_writer);
+
+                    // encode X, Y, Z
+                    x.ser(&mut bit_writer);
+                    y.ser(&mut bit_writer);
+                    z.ser(&mut bit_writer);
+                }
+            }
+        }
+
+        // continue bit
         false.ser(&mut bit_writer);
 
         bit_writer.to_bytes()
@@ -38,12 +60,8 @@ impl FileWriter for SkelWriter {
 pub struct SkelReader;
 
 impl SkelReader {
-    fn read_inner(
-        &self,
-        commands: &mut Commands,
-        bit_reader: &mut BitReader,
-        new_entities: &mut Vec<Entity>,
-    ) -> Result<(), SerdeErr> {
+    fn read_to_actions(bit_reader: &mut BitReader) -> Result<Vec<SkelAction>, SerdeErr> {
+        let mut output = Vec::new();
         loop {
             let continue_bool = bit_reader.read_bit()?;
             if !continue_bool {
@@ -55,12 +73,28 @@ impl SkelReader {
             let y = u16::de(bit_reader)?;
             let z = u16::de(bit_reader)?;
 
-            let entity = commands
-                .spawn_empty()
-                .insert(Vertex3d::new(x, y, z))
-                .id();
+            output.push(SkelAction::Vertex(x, y, z));
+        }
+        Ok(output)
+    }
 
-            new_entities.push(entity);
+    fn read_to_world(
+        commands: &mut Commands,
+        bit_reader: &mut BitReader,
+        new_entities: &mut Vec<Entity>,
+    ) -> Result<(), SerdeErr> {
+        let actions = Self::read_to_actions(bit_reader)?;
+
+        for action in actions {
+            match action {
+                SkelAction::Vertex(x, y, z) => {
+                    let entity = commands
+                        .spawn_empty()
+                        .insert(Vertex3d::new(x, y, z))
+                        .id();
+                    new_entities.push(entity);
+                }
+            }
         }
 
         Ok(())
@@ -71,9 +105,9 @@ impl FileReader for SkelReader {
     fn read(&self, commands: &mut Commands, bytes: &Box<[u8]>) -> Vec<Entity> {
         let mut new_entities = Vec::new();
         let mut bit_reader = BitReader::new(bytes);
-        let result = self.read_inner(commands, &mut bit_reader, &mut new_entities);
+        let result = Self::read_to_world(commands, &mut bit_reader, &mut new_entities);
         if result.is_err() {
-            info!("Error reading skel file");
+            info!("Error reading .skel file");
         }
         new_entities
     }
