@@ -22,7 +22,7 @@ impl SkelWriter {
         let mut output = Vec::new();
         for entity in content_entities {
             let vertex = vertex_query.get(*entity).unwrap();
-            output.push(SkelAction::Vertex(*vertex.x, *vertex.y, *vertex.z));
+            output.push(SkelAction::Vertex(vertex.x(), vertex.y(), vertex.z()));
         }
 
         output
