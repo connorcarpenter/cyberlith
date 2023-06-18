@@ -84,7 +84,7 @@ impl TabManager {
 
         // load from file all Entities in the file of the current tab
         let username = user_manager.user_name(user_key).unwrap();
-        let content_entities = git_manager.load_content_entities(commands, key_query, username, file_entity);
+        let content_entities = git_manager.load_content_entities(commands, server, key_query, username, file_entity);
 
         for entity in content_entities.iter() {
 

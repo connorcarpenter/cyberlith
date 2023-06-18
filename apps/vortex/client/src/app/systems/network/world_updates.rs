@@ -11,7 +11,7 @@ use naia_bevy_client::{Client, events::{
     UpdateComponentEvents,
 }};
 
-use vortex_proto::components::{ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
+use vortex_proto::components::{ChangelistEntry, EntryKind, FileSystemEntry, HasParent, NoParent};
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState}, resources::global::Global,
@@ -36,7 +36,7 @@ pub fn insert_component_events(
     mut global: ResMut<Global>,
     mut event_reader: EventReader<InsertComponentEvents>,
     mut parent_query: Query<&mut FileSystemParent>,
-    child_query: Query<&FileSystemChild>,
+    child_query: Query<&HasParent>,
     entry_query: Query<&FileSystemEntry>,
     changelist_query: Query<&ChangelistEntry>,
     mut fs_state_query: Query<&mut FileSystemUiState>,
@@ -61,7 +61,7 @@ pub fn insert_component_events(
         }
 
         // on FileSystemRootChild Insert Event
-        for child_entity in events.read::<FileSystemRootChild>() {
+        for child_entity in events.read::<NoParent>() {
             // Add children to root parent
             let entry = entry_query.get(child_entity).unwrap();
             let mut parent = parent_query.get_mut(project_root_entity).unwrap();
@@ -70,7 +70,7 @@ pub fn insert_component_events(
         }
 
         // on FileSystemChild Insert Event
-        for child_entity in events.read::<FileSystemChild>() {
+        for child_entity in events.read::<HasParent>() {
             let entry = entry_query.get(child_entity).unwrap();
 
             // Get parent
@@ -142,7 +142,7 @@ pub fn update_component_events(
             );
         }
         // on FileSystemRootChild Update Event
-        for (_, child_entity) in events.read::<FileSystemRootChild>() {
+        for (_, child_entity) in events.read::<NoParent>() {
             let entry = entry_query.get(child_entity).unwrap();
             let entry_name = (*(entry.name)).clone();
             info!(
@@ -152,7 +152,7 @@ pub fn update_component_events(
             todo!();
         }
         // on FileSystemChild Update Event
-        for (_, child_entity) in events.read::<FileSystemChild>() {
+        for (_, child_entity) in events.read::<HasParent>() {
             let entry = entry_query.get(child_entity).unwrap();
             let entry_name = (*(entry.name)).clone();
             info!(
@@ -176,7 +176,7 @@ pub fn remove_component_events(
             info!("removed FileSystemEntry component from entity");
         }
 
-        for (entity, _component) in events.read::<FileSystemRootChild>() {
+        for (entity, _component) in events.read::<NoParent>() {
             info!("removed FileSystemRootChild component from entity");
 
             let Ok(mut parent) = parent_query.get_mut(global.project_root_entity) else {
@@ -185,7 +185,7 @@ pub fn remove_component_events(
             parent.remove_child(&entity);
         }
 
-        for (entity, component) in events.read::<FileSystemChild>() {
+        for (entity, component) in events.read::<HasParent>() {
             info!("removed FileSystemChild component from entity");
 
             let Some(parent_entity) = component.parent_id.get(&client) else {

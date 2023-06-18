@@ -1,4 +1,5 @@
 use bevy_ecs::{entity::Entity, system::Commands, world::World};
+use naia_bevy_server::Server;
 
 use crate::files::{SkelReader, SkelWriter};
 
@@ -7,7 +8,7 @@ pub trait FileWriter: Send + Sync {
 }
 
 pub trait FileReader: Send + Sync {
-    fn read(&self, commands: &mut Commands, bytes: &Box<[u8]>) -> Vec<Entity>;
+    fn read(&self, commands: &mut Commands, server: &Server, bytes: &Box<[u8]>) -> Vec<Entity>;
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
@@ -36,9 +37,9 @@ impl FileExtension {
 }
 
 impl FileReader for FileExtension {
-    fn read(&self, commands: &mut Commands, bytes: &Box<[u8]>) -> Vec<Entity> {
+    fn read(&self, commands: &mut Commands, server: &Server, bytes: &Box<[u8]>) -> Vec<Entity> {
         match self {
-            FileExtension::Skel => SkelReader.read(commands, bytes),
+            FileExtension::Skel => SkelReader.read(commands, server, bytes),
             _ => panic!("File extension {:?} not implemented", self)
         }
     }

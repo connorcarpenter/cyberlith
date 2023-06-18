@@ -7,7 +7,7 @@ use bevy_ecs::{
 use bevy_log::info;
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus, ReplicationConfig};
 
-use vortex_proto::components::{ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
+use vortex_proto::components::{ChangelistEntry, EntryKind, FileSystemEntry, HasParent, NoParent};
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
@@ -254,8 +254,8 @@ impl ActionStack {
                     Query<(Entity, &ChangelistEntry, &mut ChangelistUiState)>,
                     Query<(
                         &FileSystemEntry,
-                        Option<&FileSystemChild>,
-                        Option<&FileSystemRootChild>,
+                        Option<&HasParent>,
+                        Option<&NoParent>,
                     )>,
                     Query<&mut FileSystemParent>,
                 )> = SystemState::new(world);
@@ -464,11 +464,11 @@ impl ActionStack {
 
         // add FileSystemChild or FileSystemRootChild component
         if let Some(parent_entity) = parent_entity_opt {
-            let mut child_component = FileSystemChild::new();
+            let mut child_component = HasParent::new();
             child_component.parent_id.set(client, &parent_entity);
             commands.entity(entity_id).insert(child_component);
         } else {
-            commands.entity(entity_id).insert(FileSystemRootChild);
+            commands.entity(entity_id).insert(NoParent);
         }
 
         // add UiState component
@@ -563,8 +563,8 @@ impl ActionStack {
         parent_entity: &Entity,
         fs_query: &Query<(
             &FileSystemEntry,
-            Option<&FileSystemChild>,
-            Option<&FileSystemRootChild>,
+            Option<&HasParent>,
+            Option<&NoParent>,
         )>,
         parent_query: &mut Query<&mut FileSystemParent>,
     ) -> Vec<(Entity, FileTree)> {

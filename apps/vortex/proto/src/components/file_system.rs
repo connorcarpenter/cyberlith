@@ -1,7 +1,7 @@
 use bevy_ecs::prelude::Component;
+use naia_bevy_shared::{EntityProperty, Property, Protocol, ProtocolPlugin, Replicate, Serde};
 
 use crate::resources::FileEntryKey;
-use naia_bevy_shared::{EntityProperty, Property, Protocol, ProtocolPlugin, Replicate, Serde};
 
 pub struct FileSystemComponentsPlugin;
 
@@ -9,8 +9,8 @@ impl ProtocolPlugin for FileSystemComponentsPlugin {
     fn build(&self, protocol: &mut Protocol) {
         protocol
             .add_component::<FileSystemEntry>()
-            .add_component::<FileSystemChild>()
-            .add_component::<FileSystemRootChild>()
+            .add_component::<HasParent>()
+            .add_component::<NoParent>()
             .add_component::<ChangelistEntry>();
     }
 }
@@ -41,23 +41,23 @@ impl FileSystemEntry {
     }
 }
 
-// FileSystemChild
+// HasParent
 #[derive(Component, Replicate)]
-pub struct FileSystemChild {
+pub struct HasParent {
     pub parent_id: EntityProperty,
 }
 
-impl FileSystemChild {
+impl HasParent {
     pub fn new() -> Self {
         Self::new_complete()
     }
 }
 
-// FileSystemChildRoot
+// NoParent
 #[derive(Component, Replicate)]
-pub struct FileSystemRootChild;
+pub struct NoParent;
 
-impl FileSystemRootChild {
+impl NoParent {
     pub fn new() -> Self {
         Self::new_complete()
     }

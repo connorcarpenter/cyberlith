@@ -141,7 +141,7 @@ impl Workspace {
             ChangelistStatus::Deleted => {
 
                 // Remove Entity from Master Tree, returning a list of child entities that should be despawned
-                let (entry_value, entities_to_delete) = Self::remove_file_entry(&mut self.master_file_entries, &file_entry_key);
+                let (_entry_value, entities_to_delete) = Self::remove_file_entry(&mut self.master_file_entries, &file_entry_key);
                 self.cleanup_changelist_entry(commands, &file_entry_key);
 
                 for (_, child_key) in entities_to_delete {
@@ -370,7 +370,7 @@ impl Workspace {
             .insert(file_entry_key.clone(), changelist_value);
     }
 
-    pub(crate) fn load_content_entities(&self, commands: &mut Commands, key: &FileEntryKey) -> Vec<Entity> {
+    pub(crate) fn load_content_entities(&self, commands: &mut Commands, server: &Server, key: &FileEntryKey) -> Vec<Entity> {
         // get file extension of file
         let file_extension = self.working_file_extension(key);
 
@@ -378,7 +378,7 @@ impl Workspace {
         let bytes = self.get_blob(key);
 
         // FileReader reads File's contents and spawns all Entities + Components
-        let content_entities: Vec<Entity> = file_extension.read(commands, &bytes);
+        let content_entities: Vec<Entity> = file_extension.read(commands, server, &bytes);
 
         content_entities
     }

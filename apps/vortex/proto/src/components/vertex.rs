@@ -14,10 +14,12 @@ impl ProtocolPlugin for VertexComponentsPlugin {
 // Vertex3d
 #[derive(Component, Replicate)]
 pub struct Vertex3d {
-    x: Property<SignedVariableInteger<4>>,
-    y: Property<SignedVariableInteger<4>>,
-    z: Property<SignedVariableInteger<4>>,
+    x: Property<VertexSerdeInt>,
+    y: Property<VertexSerdeInt>,
+    z: Property<VertexSerdeInt>,
 }
+
+pub type VertexSerdeInt = SignedVariableInteger<4>;
 
 impl Vertex3d {
     pub fn new(x: u16, y: u16, z: u16) -> Self {
@@ -52,8 +54,8 @@ impl Vertex3d {
 // Vertex2d
 #[derive(Component, Replicate)]
 pub struct Vertex2d {
-    x: Property<SignedVariableInteger<4>>,
-    y: Property<SignedVariableInteger<4>>,
+    x: Property<VertexSerdeInt>,
+    y: Property<VertexSerdeInt>,
 }
 
 impl Vertex2d {

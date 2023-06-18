@@ -13,7 +13,7 @@ use git2::{Cred, Repository, Tree};
 use naia_bevy_server::{CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};
 
 use vortex_proto::{
-    components::{ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild},
+    components::{ChangelistEntry, EntryKind, FileSystemEntry, HasParent, NoParent},
     resources::FileEntryKey,
 };
 
@@ -196,6 +196,7 @@ impl GitManager {
     pub(crate) fn load_content_entities(
         &mut self,
         commands: &mut Commands,
+        server: &Server,
         key_query: &Query<&FileEntryKey>,
         username: &str,
         file_entity: &Entity,
@@ -203,7 +204,7 @@ impl GitManager {
         let workspace = self.workspaces.get(username).unwrap();
 
         let file_entry_key = key_query.get(*file_entity).unwrap();
-        workspace.load_content_entities(commands, file_entry_key)
+        workspace.load_content_entities(commands, server, file_entry_key)
     }
 
     pub(crate) fn working_file_extension(&self, username: &str, key: &FileEntryKey) -> FileExtension {
@@ -344,10 +345,10 @@ fn insert_networked_components_entry(
     if let Some(parent_key) = entry_val.parent() {
         let parent_entity = file_entries.get(parent_key).unwrap().entity();
 
-        let mut parent_component = FileSystemChild::new();
+        let mut parent_component = HasParent::new();
         parent_component.parent_id.set(server, &parent_entity);
         commands.entity(entry_entity).insert(parent_component);
     } else {
-        commands.entity(entry_entity).insert(FileSystemRootChild);
+        commands.entity(entry_entity).insert(NoParent);
     }
 }

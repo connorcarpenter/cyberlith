@@ -1,56 +1,103 @@
+use std::collections::HashMap;
+
 use bevy_ecs::{entity::Entity, prelude::{Commands, World}, system::{Query, SystemState}};
 use bevy_log::info;
-use naia_bevy_server::{BitReader, BitWriter, Serde, SerdeErr};
+use naia_bevy_server::{BitReader, BitWriter, Serde, SerdeErr, Server, UnsignedVariableInteger};
 
-use vortex_proto::components::Vertex3d;
+use vortex_proto::components::{HasParent, NoParent, Vertex3d, VertexSerdeInt};
 
 use crate::files::{FileReader, FileWriter};
 
 // Actions
 enum SkelAction {
-    Vertex(u16, u16, u16)
+    //////// x,   y,   z, parent_id (0 for none)
+    Vertex(u16, u16, u16, Option<u16>),
 }
 
 // Writer
 pub struct SkelWriter;
 
 impl SkelWriter {
-    fn write_to_actions(&self, world: &mut World, content_entities: &Vec<Entity>) -> Vec<SkelAction> {
-        let mut system_state: SystemState<Query<&Vertex3d>> = SystemState::new(world);
-        let vertex_query = system_state.get(world);
+    fn world_to_actions(&self, world: &mut World, content_entities: &Vec<Entity>) -> Vec<SkelAction> {
+        let mut system_state: SystemState<(Server, Query<(&Vertex3d, Option<&HasParent>)>)> = SystemState::new(world);
+        let (server, vertex_query) = system_state.get_mut(world);
 
         let mut output = Vec::new();
-        for entity in content_entities {
-            let vertex = vertex_query.get(*entity).unwrap();
-            output.push(SkelAction::Vertex(vertex.x(), vertex.y(), vertex.z()));
+
+        /////////////////////////////  id,   x,   y,   z, parent_entity   /////////////////
+        let mut map: HashMap<Entity, (usize, u16, u16, u16, Option<Entity>)> = HashMap::new();
+
+        for (id, entity) in content_entities.iter().enumerate() {
+            let (vertex, has_parent_opt) = vertex_query.get(*entity).unwrap();
+
+            let parent_id: Option<Entity> = {
+                match has_parent_opt {
+                    Some(has_parent) => {
+                        match has_parent.parent_id.get(&server) {
+                            Some(parent_id) => Some(parent_id),
+                            None => None,
+                        }
+                    },
+                    None => None,
+                }
+            };
+
+            map.insert(*entity, (
+                id,
+                vertex.x(),
+                vertex.y(),
+                vertex.z(),
+                parent_id,
+            ));
+        }
+
+        for entity in content_entities.iter() {
+            let (_, x, y, z, parent_entity_opt) = map.get(entity).unwrap();
+            let parent_id = parent_entity_opt.map(|parent_entity| {
+                let (parent_id, _, _, _, _) = map.get(&parent_entity).unwrap();
+                *parent_id as u16
+            });
+            output.push(SkelAction::Vertex(*x, *y, *z, parent_id));
         }
 
         output
     }
-}
 
-impl FileWriter for SkelWriter {
-    fn write(&self, world: &mut World, content_entities: &Vec<Entity>) -> Box<[u8]> {
-        let actions = self.write_to_actions(world, content_entities);
-
-        let mut bit_writer = BitWriter::new();
-
+    fn write_from_actions(&self, bit_writer: &mut BitWriter, actions: Vec<SkelAction>) {
         for action in actions {
             match action {
-                SkelAction::Vertex(x, y, z) => {
+                SkelAction::Vertex(x, y, z, parent_id_opt) => {
                     // continue bit
-                    true.ser(&mut bit_writer);
+                    true.ser(bit_writer);
 
                     // encode X, Y, Z
-                    x.ser(&mut bit_writer);
-                    y.ser(&mut bit_writer);
-                    z.ser(&mut bit_writer);
+                    VertexSerdeInt::from(x).ser(bit_writer);
+                    VertexSerdeInt::from(y).ser(bit_writer);
+                    VertexSerdeInt::from(z).ser(bit_writer);
+                    let parent_id = {
+                        if let Some(parent_id) = parent_id_opt {
+                            parent_id + 1
+                        } else {
+                            0
+                        }
+                    };
+                    UnsignedVariableInteger::<6>::from(parent_id).ser(bit_writer);
                 }
             }
         }
 
         // continue bit
-        false.ser(&mut bit_writer);
+        false.ser(bit_writer);
+    }
+}
+
+impl FileWriter for SkelWriter {
+    fn write(&self, world: &mut World, content_entities: &Vec<Entity>) -> Box<[u8]> {
+        let actions = self.world_to_actions(world, content_entities);
+
+        let mut bit_writer = BitWriter::new();
+
+        self.write_from_actions(&mut bit_writer, actions);
 
         bit_writer.to_bytes()
     }
@@ -69,32 +116,50 @@ impl SkelReader {
             }
 
             // read X, Y, Z
-            let x = u16::de(bit_reader)?;
-            let y = u16::de(bit_reader)?;
-            let z = u16::de(bit_reader)?;
+            let x = VertexSerdeInt::de(bit_reader)?.to();
+            let y = VertexSerdeInt::de(bit_reader)?.to();
+            let z = VertexSerdeInt::de(bit_reader)?.to();
+            let parent_id: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
+            let parent_id_opt = {
+                if parent_id == 0 { None } else { Some(parent_id - 1) }
+            };
 
-            output.push(SkelAction::Vertex(x, y, z));
+            output.push(SkelAction::Vertex(x, y, z, parent_id_opt));
         }
         Ok(output)
     }
 
-    fn read_to_world(
+    fn actions_to_world(
         commands: &mut Commands,
-        bit_reader: &mut BitReader,
+        server: &Server,
         new_entities: &mut Vec<Entity>,
+        actions: Vec<SkelAction>,
     ) -> Result<(), SerdeErr> {
-        let actions = Self::read_to_actions(bit_reader)?;
+        let mut entities: Vec<(Entity, u16, u16, u16, Option<u16>)> = Vec::new();
 
         for action in actions {
             match action {
-                SkelAction::Vertex(x, y, z) => {
-                    let entity = commands
-                        .spawn_empty()
-                        .insert(Vertex3d::new(x, y, z))
-                        .id();
-                    new_entities.push(entity);
+                SkelAction::Vertex(x, y, z, parent_id_opt) => {
+                    let entity = commands.spawn_empty();
+                    entities.push((entity.id(), x, y, z, parent_id_opt));
                 }
             }
+        }
+
+        for (entity, x, y, z, parent_id_opt) in entities.iter() {
+            let mut entity_mut = commands.entity(*entity);
+            entity_mut.insert(Vertex3d::new(*x, *y, *z));
+
+            if let Some(parent_id) = parent_id_opt {
+                let (parent_entity, _, _, _, _) = entities.get(*parent_id as usize).unwrap();
+                let mut parent_component = HasParent::new();
+                parent_component.parent_id.set(server, parent_entity);
+                entity_mut.insert(parent_component);
+            } else {
+                entity_mut.insert(NoParent);
+            }
+
+            new_entities.push(*entity);
         }
 
         Ok(())
@@ -102,13 +167,17 @@ impl SkelReader {
 }
 
 impl FileReader for SkelReader {
-    fn read(&self, commands: &mut Commands, bytes: &Box<[u8]>) -> Vec<Entity> {
+    fn read(&self, commands: &mut Commands, server: &Server, bytes: &Box<[u8]>) -> Vec<Entity> {
         let mut new_entities = Vec::new();
         let mut bit_reader = BitReader::new(bytes);
-        let result = Self::read_to_world(commands, &mut bit_reader, &mut new_entities);
-        if result.is_err() {
-            info!("Error reading .skel file");
-        }
+
+        let Ok(actions) = Self::read_to_actions(&mut bit_reader) else {
+            panic!("Error reading .skel file");
+        };
+
+        let Ok(()) = Self::actions_to_world(commands, server, &mut new_entities, actions) else {
+            panic!("Error reading .skel file");
+        };
         new_entities
     }
 }
