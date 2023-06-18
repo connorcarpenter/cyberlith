@@ -10,7 +10,7 @@ pub trait FileReader: Send + Sync {
     fn read(&self, commands: &mut Commands, bytes: &Box<[u8]>) -> Vec<Entity>;
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum FileExtension {
     Skel,
     Mesh,
@@ -33,22 +33,22 @@ impl FileExtension {
             _ => panic!("Unknown file extension: {}", ext)
         }
     }
+}
 
-    pub(crate) fn get_reader(&self) -> Box<dyn FileReader> {
+impl FileReader for FileExtension {
+    fn read(&self, commands: &mut Commands, bytes: &Box<[u8]>) -> Vec<Entity> {
         match self {
-            FileExtension::Skel => Box::new(SkelReader),
-            FileExtension::Mesh => todo!(),
-            FileExtension::Skin => todo!(),
-            FileExtension::Mask => todo!(),
+            FileExtension::Skel => SkelReader.read(commands, bytes),
+            _ => panic!("File extension {:?} not implemented", self)
         }
     }
+}
 
-    pub(crate) fn get_writer(&self) -> Box<dyn FileWriter> {
+impl FileWriter for FileExtension {
+    fn write(&self, world: &mut World, content_entities: &Vec<Entity>) -> Box<[u8]> {
         match self {
-            FileExtension::Skel => Box::new(SkelWriter),
-            FileExtension::Mesh => todo!(),
-            FileExtension::Skin => todo!(),
-            FileExtension::Mask => todo!(),
+            FileExtension::Skel => SkelWriter.write(world, content_entities),
+            _ => panic!("File extension {:?} not implemented", self)
         }
     }
 }

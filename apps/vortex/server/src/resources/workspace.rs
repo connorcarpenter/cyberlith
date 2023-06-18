@@ -10,7 +10,7 @@ use vortex_proto::{
     resources::FileEntryKey,
 };
 
-use crate::{files::FileExtension, resources::{ChangelistValue, FileEntryValue, GitManager}};
+use crate::{files::{FileExtension, FileReader}, resources::{ChangelistValue, FileEntryValue, GitManager}};
 
 pub struct Workspace {
     pub room_key: RoomKey,
@@ -374,14 +374,11 @@ impl Workspace {
         // get file extension of file
         let file_extension = self.working_file_extension(key);
 
-        // get FileReader associated with specific file extension
-        let file_reader = file_extension.get_reader();
-
         // get contents of file from git
         let bytes = self.get_blob(key);
 
         // FileReader reads File's contents and spawns all Entities + Components
-        let content_entities: Vec<Entity> = file_reader.read(commands, &bytes);
+        let content_entities: Vec<Entity> = file_extension.read(commands, &bytes);
 
         content_entities
     }

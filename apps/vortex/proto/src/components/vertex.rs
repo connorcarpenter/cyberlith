@@ -1,5 +1,5 @@
 use bevy_ecs::component::Component;
-use naia_bevy_shared::{Property, Protocol, ProtocolPlugin, Replicate, SerdeIntegerConversion, SignedVariableInteger};
+use naia_bevy_shared::{Property, Protocol, ProtocolPlugin, Replicate, SignedVariableInteger};
 
 pub struct VertexComponentsPlugin;
 

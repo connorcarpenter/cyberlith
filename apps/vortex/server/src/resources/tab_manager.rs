@@ -6,7 +6,7 @@ use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 
 use vortex_proto::{resources::FileEntryKey, types::TabId};
 
-use crate::resources::{GitManager, UserManager};
+use crate::{files::FileWriter, resources::{GitManager, UserManager}};
 
 struct TabState {
     room_key: RoomKey,
@@ -128,7 +128,7 @@ impl TabManager {
                 for (user_key, closed_state) in closed_states.iter() {
                     let username = world.get_resource::<UserManager>().unwrap().user_name(&user_key).unwrap().to_string();
                     let file_entry_key = world.entity(closed_state.file_entity).get::<FileEntryKey>().unwrap().clone();
-                    let file_writer = git_manager.init_file_writer(&username, &file_entry_key);
+                    let file_writer = git_manager.working_file_extension(&username, &file_entry_key);
                     let bytes = file_writer.write(world, &closed_state.content_entities);
                     output.push((username, file_entry_key, bytes));
                 }

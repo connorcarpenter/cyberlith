@@ -20,8 +20,8 @@ use vortex_proto::{
 use crate::{
     components::FileSystemOwner,
     config::GitConfig,
-    files::{FileExtension, FileWriter},
-    resources::{FileEntryValue, user_manager::UserInfo, workspace::Workspace}
+    files::FileExtension,
+    resources::{FileEntryValue, user_manager::UserInfo, workspace::Workspace},
 };
 
 #[derive(Resource)]
@@ -206,9 +206,8 @@ impl GitManager {
         workspace.load_content_entities(commands, file_entry_key)
     }
 
-    pub(crate) fn init_file_writer(&self, username: &str, key: &FileEntryKey) -> Box<dyn FileWriter> {
-        let extension = self.workspaces.get(username).unwrap().working_file_extension(key);
-        extension.get_writer()
+    pub(crate) fn working_file_extension(&self, username: &str, key: &FileEntryKey) -> FileExtension {
+        self.workspaces.get(username).unwrap().working_file_extension(key)
     }
 
     pub(crate) fn new_modified_changelist_entry(
