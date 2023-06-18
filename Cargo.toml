@@ -2,6 +2,7 @@
 resolver = "2"
 # all crates should be listed here
 members = [
+    "apps/temp_2d",
     "apps/game/client",
     "apps/game/proto",
     "apps/game/server",
