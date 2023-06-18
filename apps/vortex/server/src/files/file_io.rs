@@ -13,6 +13,7 @@ pub trait FileReader: Send + Sync {
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum FileExtension {
+    Unknown,
     Skel,
     Mesh,
     Skin,
@@ -31,7 +32,7 @@ impl FileExtension {
             "mesh" => FileExtension::Mesh,
             "skin" => FileExtension::Skin,
             "mask" => FileExtension::Mask,
-            _ => panic!("Unknown file extension: {}", ext)
+            _ => FileExtension::Unknown,
         }
     }
 }

@@ -10,8 +10,8 @@ use render_api::{
     Assets,
     base::{Color, PbrMaterial, TriMesh},
     components::{
-        AmbientLight, Camera, CameraBundle, DirectionalLight, PerspectiveProjection, Projection,
-        RenderObjectBundle, Transform,
+        AmbientLight, Camera, CameraBundle, DirectionalLight, OrthographicProjection, Projection,
+        RenderObjectBundle, Transform, Viewport,
     },
     resources::WindowSettings, shapes, Window,
 };
@@ -78,16 +78,11 @@ fn setup(
     // camera
     commands.spawn(CameraBundle {
         camera: Camera {
-            viewport: Some(window.viewport()),
+            viewport: Some(Viewport::default()),
             ..Default::default()
         },
         transform: Transform::from_xyz(50.0, 50.0, 50.0).looking_at(Vec3::ZERO, Vec3::Y),
-        projection: Projection::Perspective(PerspectiveProjection {
-            fov: 45.0,
-            near: 0.1,
-            far: 1000.0,
-            ..Default::default()
-        }),
+        projection: Projection::Orthographic(OrthographicProjection::default()),
     });
 }
 
