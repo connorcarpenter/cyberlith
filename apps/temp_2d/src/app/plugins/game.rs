@@ -1,6 +1,7 @@
 use bevy_app::{App, Plugin};
 use bevy_ecs::system::{Commands, Res, ResMut};
 
+use math::{Vec2, Vec3};
 use render_api::{
     Assets,
     base::{Color, PbrMaterial, TriMesh},
@@ -41,7 +42,11 @@ fn setup(
     //     });
 
     commands.spawn(RenderObjectBundle {
-        mesh: meshes.add(shapes::Circle::new(200.0, 20).into()),
+        mesh: meshes.add(shapes::Triangle::new_2d(
+            Vec2::new(0.0, 0.0),
+            Vec2::new(0.0, 100.0),
+            Vec2::new(100.0, 0.0),
+        ).into()),
         material: materials.add(Color::GREEN.into()),
         transform: Transform::from_xy(640.0, 360.0),
         ..Default::default()

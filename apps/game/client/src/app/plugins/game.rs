@@ -7,13 +7,13 @@ use bevy_ecs::{
 
 use math::Vec3;
 use render_api::{
+    Assets,
     base::{Color, PbrMaterial, TriMesh},
     components::{
         AmbientLight, Camera, CameraBundle, DirectionalLight, PerspectiveProjection, Projection,
         RenderObjectBundle, Transform,
     },
-    resources::WindowSettings,
-    shapes, Assets, Window,
+    resources::WindowSettings, shapes, Window,
 };
 
 #[derive(Component)]
@@ -62,7 +62,7 @@ fn setup(
 ) {
     // plane
     commands.spawn(RenderObjectBundle {
-        mesh: meshes.add(shapes::Plane::from_size(50.0).into()),
+        mesh: meshes.add(shapes::Rectangle::from_size(50.0).into()),
         material: materials.add(Color::from_rgb_f32(0.3, 0.5, 0.3).into()),
         ..Default::default()
     });

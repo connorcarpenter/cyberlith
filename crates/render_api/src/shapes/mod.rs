@@ -1,9 +1,20 @@
 pub use circle::Circle;
+pub use cone::Cone;
 pub use cube::Cube;
-pub use plane::Plane;
+pub use cylinder::Cylinder;
+pub use rectangle::Rectangle;
+pub use sphere::Sphere;
+pub use square::Square;
+pub use triangle::Triangle;
 
 pub use crate::base::AxisAlignedBoundingBox as Box;
 
 mod circle;
 mod cube;
-mod plane;
+mod rectangle;
+mod square;
+mod sphere;
+mod cylinder;
+mod cone;
+mod triangle;
+
