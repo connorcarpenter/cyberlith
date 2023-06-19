@@ -1,7 +1,6 @@
-use math::Mat4;
-
 use bevy_ecs::component::Component;
 
+use math::Mat4;
 use render_api::{
     base::{AxisAlignedBoundingBox, Wrapping},
     components::{
@@ -70,11 +69,13 @@ impl DirectionalLightImpl {
         let position = target - aabb.max().distance(aabb.min()) * light.direction;
         let z_far = aabb.distance_max(&position);
         let z_near = aabb.distance(&position);
+        let frustum_height = aabb.max().distance(aabb.min()); // TODO: more tight fit
         let shadow_camera = Camera {
             viewport: Some(viewport),
             ..Default::default()
         };
         let shadow_projection: Projection = Projection::Orthographic(OrthographicProjection {
+            height: frustum_height,
             near: z_near,
             far: z_far,
         });

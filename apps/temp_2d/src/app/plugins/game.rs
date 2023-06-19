@@ -11,7 +11,7 @@ use render_api::{
     base::{Color, PbrMaterial, TriMesh},
     components::{
         AmbientLight, Camera, CameraBundle, DirectionalLight, OrthographicProjection, Projection,
-        RenderObjectBundle, Transform, Viewport,
+        RenderObjectBundle, Transform,
     },
     resources::WindowSettings, shapes, Window,
 };
@@ -78,7 +78,7 @@ fn setup(
     // camera
     commands.spawn(CameraBundle {
         camera: Camera {
-            viewport: Some(Viewport::default()),
+            viewport: Some(window.viewport()),
             ..Default::default()
         },
         transform: Transform::from_xyz(50.0, 50.0, 50.0).looking_at(Vec3::ZERO, Vec3::Y),

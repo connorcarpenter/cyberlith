@@ -106,6 +106,7 @@ impl Default for PerspectiveProjection {
 
 #[derive(Clone)]
 pub struct OrthographicProjection {
+    pub height: f32,
     /// The distance of the near clipping plane in world units.
     ///
     /// Objects closer than this will not be rendered.
@@ -122,11 +123,14 @@ pub struct OrthographicProjection {
 
 impl CameraProjection for OrthographicProjection {
     fn projection_matrix(&self, viewport: &Viewport) -> Mat4 {
+        let aspect_ratio = viewport.aspect();
+        let width = self.height * aspect_ratio;
+        let height = self.height;
         Mat4::orthographic_rh(
-            -0.5 * viewport.width as f32,
-            0.5 * viewport.width as f32,
-            -0.5 * viewport.height as f32,
-            0.5 * viewport.height as f32,
+            -0.5 * width as f32,
+            0.5 * width as f32,
+            -0.5 * height as f32,
+            0.5 * height as f32,
             self.near,
             self.far,
         )
@@ -144,6 +148,7 @@ impl CameraProjection for OrthographicProjection {
 impl Default for OrthographicProjection {
     fn default() -> Self {
         OrthographicProjection {
+            height: 50.0,
             near: 0.0,
             far: 1000.0,
         }
