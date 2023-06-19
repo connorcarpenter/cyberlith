@@ -1,7 +1,10 @@
-mod cube;
-mod plane;
-
+pub use circle::Circle;
 pub use cube::Cube;
 pub use plane::Plane;
 
 pub use crate::base::AxisAlignedBoundingBox as Box;
+
+mod cube;
+mod plane;
+mod circle;
+

@@ -18,6 +18,10 @@ impl Transform {
         scale: Vec3::ONE,
     };
 
+    pub fn from_xy(x: f32, y: f32) -> Self {
+        Self::from_translation(Vec3::new(x, y, 0.0))
+    }
+
     pub fn from_xyz(x: f32, y: f32, z: f32) -> Self {
         Self::from_translation(Vec3::new(x, y, z))
     }
