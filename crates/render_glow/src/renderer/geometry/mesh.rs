@@ -1,5 +1,4 @@
 use math::Mat4;
-
 use render_api::{
     base::AxisAlignedBoundingBox,
     components::{CameraProjection, Transform},
@@ -52,14 +51,9 @@ impl<'a> Mesh<'a> {
 
     fn vertex_shader_source(&self, required_attributes: FragmentAttributes) -> String {
         format!(
-            "{}{}{}{}{}{}",
+            "{}{}{}{}{}",
             if required_attributes.normal {
                 "#define USE_NORMALS\n"
-            } else {
-                ""
-            },
-            if required_attributes.tangents {
-                "#define USE_TANGENTS\n"
             } else {
                 ""
             },

@@ -64,10 +64,6 @@ pub struct PbrMaterial {
     /// The occlusion values are sampled from the red channel.
     /// Can be combined with metallic and roughness into one texture, see [Self::occlusion_metallic_roughness_texture].
     pub occlusion_texture: Option<Texture2D>,
-    /// A scalar multiplier applied to each normal vector of the [Self::normal_texture].
-    pub normal_scale: f32,
-    /// A tangent space normal map, also known as bump map.
-    pub normal_texture: Option<Texture2D>,
     /// Color of light shining from an object.
     pub emissive: Color,
     /// Texture with color of light shining from an object.
@@ -96,8 +92,6 @@ impl Default for PbrMaterial {
             metallic: 0.0,
             roughness: 1.0,
             occlusion_strength: 1.0,
-            normal_texture: None,
-            normal_scale: 1.0,
             emissive: Color::BLACK,
             emissive_texture: None,
             index_of_refraction: 1.5,

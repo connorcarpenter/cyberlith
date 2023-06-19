@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
-use crate::{core::*, renderer::*};
-
 use render_api::base::{Color, LightingModel, PbrMaterial};
+
+use crate::{core::*, renderer::*};
 
 ///
 /// A physically-based material that renders a [Geometry] in an approximate correct physical manner based on Physically Based Rendering (PBR).
@@ -28,10 +28,6 @@ pub struct PhysicalMaterial {
     /// An occlusion map. Higher values indicate areas that should receive full indirect lighting and lower values indicate no indirect lighting.
     /// The occlusion values are sampled from the red channel.
     pub occlusion_texture: Option<Texture2DRef>,
-    /// A scalar multiplier applied to each normal vector of the [Self::normal_texture].
-    pub normal_scale: f32,
-    /// A tangent space normal map, also known as bump map.
-    pub normal_texture: Option<Texture2DRef>,
     /// Render states.
     pub render_states: RenderStates,
     /// Whether this material should be treated as a transparent material (An object needs to be rendered differently depending on whether it is transparent or opaque).
@@ -92,10 +88,6 @@ impl PhysicalMaterial {
                 .as_ref()
                 .map(|cpu_texture| Arc::new(Texture2DImpl::new(cpu_texture)).into())
         };
-        let normal_texture = cpu_material
-            .normal_texture
-            .as_ref()
-            .map(|cpu_texture| Arc::new(Texture2DImpl::new(cpu_texture)).into());
         let emissive_texture = cpu_material
             .emissive_texture
             .as_ref()
@@ -107,8 +99,6 @@ impl PhysicalMaterial {
             metallic: cpu_material.metallic,
             roughness: cpu_material.roughness,
             metallic_roughness_texture,
-            normal_texture,
-            normal_scale: cpu_material.normal_scale,
             occlusion_texture,
             occlusion_strength: cpu_material.occlusion_strength,
             render_states: if is_transparent {
@@ -145,7 +135,6 @@ impl Material for PhysicalMaterial {
         let mut output = lights_shader_source(lights, self.lighting_model);
         if self.albedo_texture.is_some()
             || self.metallic_roughness_texture.is_some()
-            || self.normal_texture.is_some()
             || self.occlusion_texture.is_some()
             || self.emissive_texture.is_some()
         {
@@ -159,10 +148,6 @@ impl Material for PhysicalMaterial {
             }
             if self.occlusion_texture.is_some() {
                 output.push_str("#define USE_OCCLUSION_TEXTURE;\n");
-            }
-            if self.normal_texture.is_some() {
-                attributes.tangents = true;
-                output.push_str("#define USE_NORMAL_TEXTURE;\nin vec3 tang;\nin vec3 bitang;\n");
             }
             if self.emissive_texture.is_some() {
                 output.push_str("#define USE_EMISSIVE_TEXTURE;\n");
@@ -202,13 +187,6 @@ impl Material for PhysicalMaterial {
                     program.use_texture("occlusionTexture", texture);
                 }
             }
-            if program.requires_uniform("normalTexture") {
-                if let Some(ref texture) = self.normal_texture {
-                    program.use_uniform("normalTexTransform", texture.transformation);
-                    program.use_uniform("normalScale", self.normal_scale);
-                    program.use_texture("normalTexture", texture);
-                }
-            }
         }
         program.use_uniform("albedo", self.albedo);
         program.use_uniform("emissive", self.emissive);
@@ -241,8 +219,6 @@ impl Default for PhysicalMaterial {
             metallic: 0.0,
             roughness: 1.0,
             metallic_roughness_texture: None,
-            normal_texture: None,
-            normal_scale: 1.0,
             occlusion_texture: None,
             occlusion_strength: 1.0,
             render_states: RenderStates::default(),

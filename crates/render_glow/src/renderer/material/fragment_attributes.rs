@@ -8,8 +8,6 @@ pub struct FragmentAttributes {
     pub position: bool,
     /// Normal: `in vec3 nor;`,
     pub normal: bool,
-    /// Tangent and bitangent: `in vec3 tang; in vec3 bitang;`
-    pub tangents: bool,
     /// UV coordinates: `in vec2 uvs;`
     pub uv: bool,
     /// Color: `in vec4 col;`
@@ -21,7 +19,6 @@ impl FragmentAttributes {
     pub const ALL: Self = Self {
         position: true,
         normal: true,
-        tangents: true,
         uv: true,
         color: true,
     };
@@ -29,7 +26,6 @@ impl FragmentAttributes {
     pub const NONE: Self = Self {
         position: false,
         normal: false,
-        tangents: false,
         uv: false,
         color: false,
     };

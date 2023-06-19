@@ -27,12 +27,6 @@ uniform mat4 normalMatrix;
 in vec3 normal;
 out vec3 nor;
 
-#ifdef USE_TANGENTS 
-in vec4 tangent;
-out vec3 tang;
-out vec3 bitang;
-#endif
-
 #endif
 
 
@@ -88,11 +82,6 @@ void main()
     mat3 normalMat = mat3(normalMatrix);
 #endif
     nor = normalize(normalMat * normal);
-
-#ifdef USE_TANGENTS 
-    tang = normalize(normalMat * tangent.xyz);
-    bitang = normalize(cross(nor, tang) * tangent.w);
-#endif
 
 #endif
 

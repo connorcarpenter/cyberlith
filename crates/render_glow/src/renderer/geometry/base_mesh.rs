@@ -7,7 +7,6 @@ pub struct BaseMesh {
     indices: Option<ElementBuffer>,
     positions: VertexBuffer,
     normals: Option<VertexBuffer>,
-    tangents: Option<VertexBuffer>,
     uvs: Option<VertexBuffer>,
     pub(crate) colors: Option<VertexBuffer>,
     pub(crate) aabb: AxisAlignedBoundingBox,
@@ -29,10 +28,6 @@ impl BaseMesh {
             positions: VertexBuffer::new_with_data(&cpu_mesh.positions.to_f32()),
             normals: cpu_mesh
                 .normals
-                .as_ref()
-                .map(|data| VertexBuffer::new_with_data(data)),
-            tangents: cpu_mesh
-                .tangents
                 .as_ref()
                 .map(|data| VertexBuffer::new_with_data(data)),
             uvs: cpu_mesh.uvs.as_ref().map(|data| {
@@ -105,17 +100,6 @@ impl BaseMesh {
                 self.normals.as_ref().unwrap_or_else(|| {
                     panic!(
                         "the material requires normal attributes but the geometry did not provide it"
-                    )
-                }),
-            );
-        }
-
-        if attributes.tangents {
-            program.use_vertex_attribute(
-                "tangent",
-                self.tangents.as_ref().unwrap_or_else(|| {
-                    panic!(
-                        "the material requires tangent attributes but the geometry did not provide it"
                     )
                 }),
             );

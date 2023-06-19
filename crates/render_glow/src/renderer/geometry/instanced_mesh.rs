@@ -302,11 +302,6 @@
 //             } else {
 //                 ""
 //             },
-//             if required_attributes.tangents {
-//                 "#define USE_TANGENTS\n"
-//             } else {
-//                 ""
-//             },
 //             if required_attributes.uv {
 //                 "#define USE_UVS\n"
 //             } else {

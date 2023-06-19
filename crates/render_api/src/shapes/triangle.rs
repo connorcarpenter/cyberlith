@@ -1,4 +1,4 @@
-use math::{Vec2, Vec3, Vec4};
+use math::{Vec2, Vec3};
 
 use crate::base::{Indices, Positions, TriMesh};
 
@@ -27,11 +27,6 @@ impl From<Triangle> for TriMesh {
             tri.c,
         ];
         let normals = vec![Vec3::Z, Vec3::Z, Vec3::Z];
-        let tangents = vec![
-            Vec4::new(1.0, 0.0, 0.0, 1.0),
-            Vec4::new(1.0, 0.0, 0.0, 1.0),
-            Vec4::new(1.0, 0.0, 0.0, 1.0),
-        ];
         let uvs = vec![
             Vec2::new(0.0, 1.0),
             Vec2::new(1.0, 1.0),
@@ -41,7 +36,6 @@ impl From<Triangle> for TriMesh {
             indices,
             positions: Positions(positions),
             normals: Some(normals),
-            tangents: Some(tangents),
             uvs: Some(uvs),
             ..Default::default()
         }

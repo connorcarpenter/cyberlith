@@ -36,10 +36,6 @@
 //     /// An occlusion map. Higher values indicate areas that should receive full indirect lighting and lower values indicate no indirect lighting.
 //     /// The occlusion values are sampled from the red channel.
 //     pub occlusion_texture: Option<Texture2DRef>,
-//     /// A scalar multiplier applied to each normal vector of the [Self::normal_texture].
-//     pub normal_scale: f32,
-//     /// A tangent space normal map, also known as bump map.
-//     pub normal_texture: Option<Texture2DRef>,
 //     /// Render states
 //     pub render_states: RenderStates,
 //     /// Color of light shining from an object.
@@ -209,10 +205,6 @@
 //             }
 //             if self.occlusion_texture.is_some() {
 //                 output.push_str("#define USE_OCCLUSION_TEXTURE;\n");
-//             }
-//             if self.normal_texture.is_some() {
-//                 attributes.tangents = true;
-//                 output.push_str("#define USE_NORMAL_TEXTURE;\nin vec3 tang;\nin vec3 bitang;\n");
 //             }
 //             if self.emissive_texture.is_some() {
 //                 output.push_str("#define USE_EMISSIVE_TEXTURE;\n");
