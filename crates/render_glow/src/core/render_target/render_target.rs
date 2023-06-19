@@ -89,9 +89,6 @@ impl<'a> RenderTarget<'a> {
         Context::get().set_scissor(scissor_box);
         self.bind(glow::DRAW_FRAMEBUFFER);
         render();
-        if let Some(ref color) = self.color {
-            color.generate_mip_maps();
-        }
         self
     }
 
@@ -350,40 +347,6 @@ impl<'a> RenderTarget<'a> {
     ///
     pub fn into_framebuffer(mut self) -> Option<Framebuffer> {
         self.id.take()
-    }
-
-    pub(in crate::core) fn blit_to(&self, target: &RenderTarget) {
-        self.bind(glow::DRAW_FRAMEBUFFER);
-        target.bind(glow::DRAW_FRAMEBUFFER);
-        let target_is_screen = target.color.is_none() && target.depth.is_none();
-        let mask = if self.color.is_some() && (target.color.is_some() || target_is_screen) {
-            let mut mask = glow::COLOR_BUFFER_BIT;
-            if self.depth.is_some() && (target.depth.is_some() || target_is_screen) {
-                mask |= glow::DEPTH_BUFFER_BIT;
-            }
-            mask
-        } else if self.depth.is_some() && (target.depth.is_some() || target_is_screen) {
-            glow::DEPTH_BUFFER_BIT
-        } else {
-            unreachable!()
-        };
-        unsafe {
-            let context = Context::get();
-            context.bind_framebuffer(glow::READ_FRAMEBUFFER, self.id);
-
-            context.blit_framebuffer(
-                0,
-                0,
-                self.width as i32,
-                self.height as i32,
-                0,
-                0,
-                target.width as i32,
-                target.height as i32,
-                mask,
-                glow::NEAREST,
-            );
-        }
     }
 
     pub(crate) fn new_color(color: ColorTarget<'a>) -> Self {

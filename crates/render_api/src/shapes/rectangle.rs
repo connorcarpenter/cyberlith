@@ -1,9 +1,6 @@
 use math::{Vec2, Vec3, Vec4};
 
-use crate::{
-    base::{Indices, Positions, TriMesh},
-    components::Transform,
-};
+use crate::base::{Indices, Positions, TriMesh};
 
 pub struct Rectangle {
     pub width: f32,

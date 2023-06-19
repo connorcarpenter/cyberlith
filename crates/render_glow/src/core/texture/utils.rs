@@ -19,51 +19,17 @@ pub fn set_parameters(
     target: u32,
     min_filter: Interpolation,
     mag_filter: Interpolation,
-    mip_map_filter: Option<Interpolation>,
     wrap_s: Wrapping,
     wrap_t: Wrapping,
     wrap_r: Option<Wrapping>,
 ) {
     unsafe {
         let context = Context::get();
-        match mip_map_filter {
-            None => context.tex_parameter_i32(
-                target,
-                glow::TEXTURE_MIN_FILTER,
-                interpolation_from(min_filter),
-            ),
-            Some(Interpolation::Nearest) => {
-                if min_filter == Interpolation::Nearest {
-                    context.tex_parameter_i32(
-                        target,
-                        glow::TEXTURE_MIN_FILTER,
-                        glow::NEAREST_MIPMAP_NEAREST as i32,
-                    );
-                } else {
-                    context.tex_parameter_i32(
-                        target,
-                        glow::TEXTURE_MIN_FILTER,
-                        glow::LINEAR_MIPMAP_NEAREST as i32,
-                    )
-                }
-            }
-            Some(Interpolation::Linear) => {
-                if min_filter == Interpolation::Nearest {
-                    context.tex_parameter_i32(
-                        target,
-                        glow::TEXTURE_MIN_FILTER,
-                        glow::NEAREST_MIPMAP_LINEAR as i32,
-                    );
-                } else {
-                    context.tex_parameter_i32(
-                        target,
-                        glow::TEXTURE_MIN_FILTER,
-                        glow::LINEAR_MIPMAP_LINEAR as i32,
-                    )
-                }
-            }
-            _ => panic!("Can only sample textures using 'NEAREST' or 'LINEAR' interpolation"),
-        }
+        context.tex_parameter_i32(
+            target,
+            glow::TEXTURE_MIN_FILTER,
+            interpolation_from(min_filter),
+        );
         context.tex_parameter_i32(
             target,
             glow::TEXTURE_MAG_FILTER,
@@ -74,23 +40,6 @@ pub fn set_parameters(
         if let Some(r) = wrap_r {
             context.tex_parameter_i32(target, glow::TEXTURE_WRAP_R, wrapping_from(r));
         }
-    }
-}
-
-pub fn calculate_number_of_mip_maps(
-    mip_map_filter: Option<Interpolation>,
-    width: u32,
-    height: u32,
-    depth: Option<u32>,
-) -> u32 {
-    if mip_map_filter.is_some()
-        && width == height
-        && depth.map(|d| d == width).unwrap_or(true)
-        && width.is_power_of_two()
-    {
-        (width as f64).log2() as u32 + 1
-    } else {
-        1
     }
 }
 

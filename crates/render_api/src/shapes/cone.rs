@@ -1,10 +1,6 @@
-use math::{Vec2, Vec3, Vec4};
+use math::Vec3;
 
-use crate::{
-    base::{Indices, Positions, TriMesh},
-    components::Transform,
-    shapes::Rectangle,
-};
+use crate::base::{Indices, Positions, TriMesh};
 
 pub struct Cone {
     pub angle_subdivisions: u32,

@@ -1,8 +1,9 @@
 use math::*;
-
 use render_api::components::Viewport;
 
 use crate::core::{apply_effect, ColorTexture, Cull, DepthTest, RenderStates, WriteMask};
+
+/// Connor: we're keeping this around to see if it can be used to implement other post-processing effects
 
 ///
 /// A simple anti-aliasing approach which smooths otherwise jagged edges (for example lines) but also

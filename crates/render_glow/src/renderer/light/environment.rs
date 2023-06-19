@@ -53,7 +53,6 @@ impl Environment {
             irradiance_size,
             Interpolation::Linear,
             Interpolation::Linear,
-            Some(Interpolation::Linear),
             Wrapping::ClampToEdge,
             Wrapping::ClampToEdge,
             Wrapping::ClampToEdge,
@@ -67,7 +66,7 @@ impl Environment {
             let viewport = Viewport::new_at_origin(irradiance_size, irradiance_size);
             for side in CubeMapSide::iter() {
                 irradiance_map
-                    .as_color_target(&[side], None)
+                    .as_color_target(&[side])
                     .clear(ClearState::default())
                     .write(|| {
                         apply_cube_effect(
@@ -90,7 +89,6 @@ impl Environment {
             prefilter_size,
             Interpolation::Linear,
             Interpolation::Linear,
-            Some(Interpolation::Linear),
             Wrapping::ClampToEdge,
             Wrapping::ClampToEdge,
             Wrapping::ClampToEdge,
@@ -103,11 +101,11 @@ impl Environment {
                 include_str!("shaders/light_shared.frag"),
                 include_str!("shaders/prefilter.frag")
             );
-            let max_mip_levels = 5;
+            let max_mip_levels = 1;
             for mip in 0..max_mip_levels {
                 for side in CubeMapSide::iter() {
                     let sides = [side];
-                    let color_target = prefilter_map.as_color_target(&sides, Some(mip));
+                    let color_target = prefilter_map.as_color_target(&sides);
                     let viewport =
                         Viewport::new_at_origin(color_target.width(), color_target.height());
                     color_target.clear(ClearState::default()).write(|| {
@@ -136,13 +134,12 @@ impl Environment {
             512,
             Interpolation::Linear,
             Interpolation::Linear,
-            None,
             Wrapping::ClampToEdge,
             Wrapping::ClampToEdge,
         );
         let viewport = Viewport::new_at_origin(brdf_map.width(), brdf_map.height());
         brdf_map
-            .as_color_target(None)
+            .as_color_target()
             .clear(ClearState::default())
             .write(|| {
                 apply_effect(

@@ -2,7 +2,7 @@ use glow::HasContext;
 
 use render_api::base::{Interpolation, Texture3D as CpuTexture3D, TextureData, Wrapping};
 
-use crate::core::{format_from_data_type, texture::*, to_byte_slice, Context};
+use crate::core::{Context, format_from_data_type, texture::*, to_byte_slice};
 
 ///
 /// A 3D color texture.
@@ -12,7 +12,6 @@ pub struct Texture3D {
     width: u32,
     height: u32,
     depth: u32,
-    number_of_mip_maps: u32,
     data_byte_size: usize,
 }
 
@@ -44,7 +43,6 @@ impl Texture3D {
             cpu_texture.depth,
             cpu_texture.min_filter,
             cpu_texture.mag_filter,
-            cpu_texture.mip_map_filter,
             cpu_texture.wrap_s,
             cpu_texture.wrap_t,
             cpu_texture.wrap_r,
@@ -62,20 +60,16 @@ impl Texture3D {
         depth: u32,
         min_filter: Interpolation,
         mag_filter: Interpolation,
-        mip_map_filter: Option<Interpolation>,
         wrap_s: Wrapping,
         wrap_t: Wrapping,
         wrap_r: Wrapping,
     ) -> Self {
         let id = generate();
-        let number_of_mip_maps =
-            calculate_number_of_mip_maps(mip_map_filter, width, height, Some(depth));
         let texture = Self {
             id,
             width,
             height,
             depth,
-            number_of_mip_maps,
             data_byte_size: std::mem::size_of::<T>(),
         };
         texture.bind();
@@ -83,11 +77,6 @@ impl Texture3D {
             glow::TEXTURE_3D,
             min_filter,
             mag_filter,
-            if number_of_mip_maps == 1 {
-                None
-            } else {
-                mip_map_filter
-            },
             wrap_s,
             wrap_t,
             Some(wrap_r),
@@ -95,14 +84,13 @@ impl Texture3D {
         unsafe {
             Context::get().tex_storage_3d(
                 glow::TEXTURE_3D,
-                number_of_mip_maps as i32,
+                1,
                 T::internal_format(),
                 width as i32,
                 height as i32,
                 depth as i32,
             );
         }
-        texture.generate_mip_maps();
         texture
     }
 
@@ -137,7 +125,6 @@ impl Texture3D {
                 glow::PixelUnpackData::Slice(to_byte_slice(data)),
             );
         }
-        self.generate_mip_maps();
     }
 
     /// The width of this texture.
@@ -155,14 +142,6 @@ impl Texture3D {
         self.depth
     }
 
-    fn generate_mip_maps(&self) {
-        if self.number_of_mip_maps > 1 {
-            self.bind();
-            unsafe {
-                Context::get().generate_mipmap(glow::TEXTURE_3D);
-            }
-        }
-    }
     pub(in crate::core) fn bind(&self) {
         unsafe {
             Context::get().bind_texture(glow::TEXTURE_3D, Some(self.id));

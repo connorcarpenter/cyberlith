@@ -1,7 +1,7 @@
 use render_api::{base::CubeMapSide, components::Viewport};
 
 use crate::core::{
-    texture::DepthTexture2DMultisample, ClearState, DepthTexture, DepthTexture2D,
+    ClearState, DepthTexture, DepthTexture2D,
     DepthTexture2DArray, DepthTextureCubeMap, RenderTarget, ScissorBox,
 };
 
@@ -13,15 +13,13 @@ use crate::core::{
 ///
 #[derive(Clone)]
 pub struct DepthTarget<'a> {
-    target: Option<DepthTexture<'a>>,
-    multisample_target: Option<&'a DepthTexture2DMultisample>,
+    target: DepthTexture<'a>,
 }
 
 impl<'a> DepthTarget<'a> {
     pub(in crate::core) fn new_texture2d(texture: &'a DepthTexture2D) -> Self {
         Self {
-            target: Some(DepthTexture::Single(texture)),
-            multisample_target: None,
+            target: DepthTexture::Single(texture),
         }
     }
 
@@ -30,8 +28,7 @@ impl<'a> DepthTarget<'a> {
         side: CubeMapSide,
     ) -> Self {
         Self {
-            target: Some(DepthTexture::CubeMap { texture, side }),
-            multisample_target: None,
+            target: DepthTexture::CubeMap { texture, side },
         }
     }
 
@@ -40,17 +37,7 @@ impl<'a> DepthTarget<'a> {
         layer: u32,
     ) -> Self {
         Self {
-            target: Some(DepthTexture::Array { texture, layer }),
-            multisample_target: None,
-        }
-    }
-
-    pub(in crate::core) fn new_texture_2d_multisample(
-        texture: &'a DepthTexture2DMultisample,
-    ) -> Self {
-        Self {
-            target: None,
-            multisample_target: Some(texture),
+            target: DepthTexture::Array { texture, layer },
         }
     }
 
@@ -137,14 +124,10 @@ impl<'a> DepthTarget<'a> {
     /// Returns the width of the depth target in texels, which is simply the width of the underlying texture.
     ///
     pub fn width(&self) -> u32 {
-        if let Some(target) = &self.target {
-            match target {
-                DepthTexture::Single(texture) => texture.width(),
-                DepthTexture::Array { texture, .. } => texture.width(),
-                DepthTexture::CubeMap { texture, .. } => texture.width(),
-            }
-        } else {
-            self.multisample_target.as_ref().unwrap().width()
+        match &self.target {
+            DepthTexture::Single(texture) => texture.width(),
+            DepthTexture::Array { texture, .. } => texture.width(),
+            DepthTexture::CubeMap { texture, .. } => texture.width(),
         }
     }
 
@@ -152,35 +135,24 @@ impl<'a> DepthTarget<'a> {
     /// Returns the height of the depth target in texels, which is simply the height of the underlying texture.
     ///
     pub fn height(&self) -> u32 {
-        if let Some(target) = &self.target {
-            match target {
-                DepthTexture::Single(texture) => texture.height(),
-                DepthTexture::Array { texture, .. } => texture.height(),
-                DepthTexture::CubeMap { texture, .. } => texture.height(),
-            }
-        } else {
-            self.multisample_target.as_ref().unwrap().height()
+        match &self.target {
+            DepthTexture::Single(texture) => texture.height(),
+            DepthTexture::Array { texture, .. } => texture.height(),
+            DepthTexture::CubeMap { texture, .. } => texture.height(),
         }
     }
 
     pub(super) fn bind(&self) {
-        if let Some(target) = &self.target {
-            match target {
-                DepthTexture::Single(texture) => {
-                    texture.bind_as_depth_target();
-                }
-                DepthTexture::Array { texture, layer } => {
-                    texture.bind_as_depth_target(*layer);
-                }
-                DepthTexture::CubeMap { texture, side } => {
-                    texture.bind_as_depth_target(*side);
-                }
+        match &self.target {
+            DepthTexture::Single(texture) => {
+                texture.bind_as_depth_target();
             }
-        } else {
-            self.multisample_target
-                .as_ref()
-                .unwrap()
-                .bind_as_depth_target()
+            DepthTexture::Array { texture, layer } => {
+                texture.bind_as_depth_target(*layer);
+            }
+            DepthTexture::CubeMap { texture, side } => {
+                texture.bind_as_depth_target(*side);
+            }
         }
     }
 }

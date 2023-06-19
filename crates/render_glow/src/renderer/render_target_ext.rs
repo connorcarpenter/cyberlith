@@ -1,7 +1,7 @@
 use crate::{
     core::{
-        ColorTarget, ColorTargetMultisample, DepthTarget, DepthTargetMultisample,
-        DepthTextureDataType, RenderTarget, RenderTargetMultisample, ScissorBox, TextureDataType,
+        ColorTarget, DepthTarget,
+        RenderTarget, ScissorBox,
     },
     renderer::{
         cmp_render_order, Geometry, Light, Material, Object, RenderCamera, RenderObject, RenderPass,
@@ -87,7 +87,10 @@ macro_rules! impl_render_target_extensions_body {
             // }
 
             // Forward
+
+            // we sort here front->back in order to take advantage of depth-test culling
             forward_objects.sort_by(|a, b| cmp_render_order(&camera, a, b));
+
             self.write_partially(scissor_box, || {
                 for object in forward_objects {
                     object.render(&camera, lights);
@@ -168,6 +171,3 @@ macro_rules! impl_render_target_extensions {
 impl_render_target_extensions!(RenderTarget<'a>);
 impl_render_target_extensions!(ColorTarget<'a>);
 impl_render_target_extensions!(DepthTarget<'a>);
-impl_render_target_extensions!(RenderTargetMultisample<C: TextureDataType, D: DepthTextureDataType>);
-impl_render_target_extensions!(ColorTargetMultisample<C: TextureDataType>);
-impl_render_target_extensions!(DepthTargetMultisample<D: DepthTextureDataType>);

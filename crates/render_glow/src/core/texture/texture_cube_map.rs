@@ -9,8 +9,8 @@ use render_api::{
 };
 
 use crate::core::{
-    apply_cube_effect, format_from_data_type, texture::*, to_byte_slice, ClearState, ColorTarget,
-    Context, PrimitiveDataType, RenderStates,
+    apply_cube_effect, ClearState, ColorTarget, Context, format_from_data_type, PrimitiveDataType,
+    RenderStates, texture::*, to_byte_slice,
 };
 
 pub trait CubeMapSideExt {
@@ -37,7 +37,6 @@ pub struct TextureCubeMap {
     id: glow::Texture,
     width: u32,
     height: u32,
-    number_of_mip_maps: u32,
     is_hdr: bool,
     data_byte_size: usize,
 }
@@ -210,7 +209,6 @@ impl TextureCubeMap {
             cpu_texture.height(),
             cpu_texture.min_filter(),
             cpu_texture.mag_filter(),
-            cpu_texture.mip_map_filter(),
             cpu_texture.wrap_s(),
             cpu_texture.wrap_t(),
             wrap_r,
@@ -234,18 +232,15 @@ impl TextureCubeMap {
         height: u32,
         min_filter: Interpolation,
         mag_filter: Interpolation,
-        mip_map_filter: Option<Interpolation>,
         wrap_s: Wrapping,
         wrap_t: Wrapping,
         wrap_r: Wrapping,
     ) -> Self {
         let id = generate();
-        let number_of_mip_maps = calculate_number_of_mip_maps(mip_map_filter, width, height, None);
         let texture = Self {
             id,
             width,
             height,
-            number_of_mip_maps,
             is_hdr: std::mem::size_of::<T>() as u32 / T::size() > 1,
             data_byte_size: std::mem::size_of::<T>(),
         };
@@ -254,11 +249,6 @@ impl TextureCubeMap {
             glow::TEXTURE_CUBE_MAP,
             min_filter,
             mag_filter,
-            if number_of_mip_maps == 1 {
-                None
-            } else {
-                mip_map_filter
-            },
             wrap_s,
             wrap_t,
             Some(wrap_r),
@@ -266,13 +256,12 @@ impl TextureCubeMap {
         unsafe {
             Context::get().tex_storage_2d(
                 glow::TEXTURE_CUBE_MAP,
-                number_of_mip_maps as i32,
+                1,
                 T::internal_format(),
                 width as i32,
                 height as i32,
             );
         }
-        texture.generate_mip_maps();
         texture
     }
 
@@ -359,7 +348,6 @@ impl TextureCubeMap {
                 );
             }
         }
-        self.generate_mip_maps();
     }
 
     ///
@@ -374,7 +362,6 @@ impl TextureCubeMap {
             texture_size,
             Interpolation::Linear,
             Interpolation::Linear,
-            Some(Interpolation::Linear),
             Wrapping::ClampToEdge,
             Wrapping::ClampToEdge,
             Wrapping::ClampToEdge,
@@ -397,7 +384,7 @@ impl TextureCubeMap {
             for side in CubeMapSide::iter() {
                 let viewport = Viewport::new_at_origin(texture_size, texture_size);
                 texture
-                    .as_color_target(&[side], None)
+                    .as_color_target(&[side])
                     .clear(ClearState::default())
                     .write(|| {
                         apply_cube_effect(
@@ -426,9 +413,8 @@ impl TextureCubeMap {
     pub fn as_color_target<'a>(
         &'a mut self,
         sides: &'a [CubeMapSide],
-        mip_level: Option<u32>,
     ) -> ColorTarget<'a> {
-        ColorTarget::new_texture_cube_map(self, sides, mip_level)
+        ColorTarget::new_texture_cube_map(self, sides)
     }
 
     /// The width of this texture.
@@ -444,15 +430,6 @@ impl TextureCubeMap {
     /// Whether this cube map contain HDR (high dynamic range) data.
     pub fn is_hdr(&self) -> bool {
         self.is_hdr
-    }
-
-    pub(in crate::core) fn generate_mip_maps(&self) {
-        if self.number_of_mip_maps > 1 {
-            self.bind();
-            unsafe {
-                Context::get().generate_mipmap(glow::TEXTURE_CUBE_MAP);
-            }
-        }
     }
 
     pub(in crate::core) fn bind_as_color_target(

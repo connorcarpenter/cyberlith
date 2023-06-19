@@ -1,7 +1,7 @@
 use bevy_app::{App, Plugin};
 use bevy_ecs::system::{Commands, Res, ResMut};
 
-use math::{Vec2, Vec3};
+use math::Vec2;
 use render_api::{
     Assets,
     base::{Color, PbrMaterial, TriMesh},

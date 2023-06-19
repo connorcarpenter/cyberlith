@@ -1,8 +1,5 @@
-use math::{Vec2, Vec3, Vec4};
-
 use crate::{
-    base::{Indices, Positions, TriMesh},
-    components::Transform,
+    base::TriMesh,
     shapes::Rectangle,
 };
 

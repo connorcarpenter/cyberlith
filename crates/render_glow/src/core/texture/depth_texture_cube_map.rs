@@ -2,7 +2,7 @@ use glow::HasContext;
 
 use render_api::base::*;
 
-use crate::core::{texture::*, Context, DepthTarget};
+use crate::core::{Context, DepthTarget, texture::*};
 
 ///
 /// A depth texture cube map that can be rendered into and read from. See also [RenderTarget] and [DepthTarget].
@@ -31,7 +31,6 @@ impl DepthTextureCubeMap {
             glow::TEXTURE_CUBE_MAP,
             Interpolation::Nearest,
             Interpolation::Nearest,
-            None,
             wrap_s,
             wrap_t,
             Some(wrap_r),

@@ -6,7 +6,7 @@ use render_api::base::{
     Wrapping,
 };
 
-use crate::core::{flip_y, format_from_data_type, texture::*, to_byte_slice, ColorTarget, Context};
+use crate::core::{ColorTarget, Context, flip_y, format_from_data_type, texture::*, to_byte_slice};
 
 ///
 /// A array of 2D color textures that can be rendered into.
@@ -19,7 +19,6 @@ pub struct Texture2DArray {
     width: u32,
     height: u32,
     depth: u32,
-    number_of_mip_maps: u32,
     data_byte_size: usize,
 }
 
@@ -125,7 +124,6 @@ impl Texture2DArray {
             data.len() as u32,
             cpu_texture.min_filter(),
             cpu_texture.mag_filter(),
-            cpu_texture.mip_map_filter(),
             cpu_texture.wrap_s(),
             cpu_texture.wrap_t(),
         );
@@ -175,7 +173,6 @@ impl Texture2DArray {
             depth,
             cpu_texture.min_filter(),
             cpu_texture.mag_filter(),
-            cpu_texture.mip_map_filter(),
             cpu_texture.wrap_s(),
             cpu_texture.wrap_t(),
         )
@@ -190,18 +187,15 @@ impl Texture2DArray {
         depth: u32,
         min_filter: Interpolation,
         mag_filter: Interpolation,
-        mip_map_filter: Option<Interpolation>,
         wrap_s: Wrapping,
         wrap_t: Wrapping,
     ) -> Self {
         let id = generate();
-        let number_of_mip_maps = calculate_number_of_mip_maps(mip_map_filter, width, height, None);
         let texture = Self {
             id,
             width,
             height,
             depth,
-            number_of_mip_maps,
             data_byte_size: std::mem::size_of::<T>(),
         };
         texture.bind();
@@ -209,11 +203,6 @@ impl Texture2DArray {
             glow::TEXTURE_2D_ARRAY,
             min_filter,
             mag_filter,
-            if number_of_mip_maps == 1 {
-                None
-            } else {
-                mip_map_filter
-            },
             wrap_s,
             wrap_t,
             None,
@@ -221,14 +210,13 @@ impl Texture2DArray {
         unsafe {
             Context::get().tex_storage_3d(
                 glow::TEXTURE_2D_ARRAY,
-                number_of_mip_maps as i32,
+                1,
                 T::internal_format(),
                 width as i32,
                 height as i32,
                 depth as i32,
             );
         }
-        texture.generate_mip_maps();
         texture
     }
 
@@ -278,7 +266,6 @@ impl Texture2DArray {
                 glow::PixelUnpackData::Slice(to_byte_slice(&data)),
             );
         }
-        self.generate_mip_maps();
     }
 
     ///
@@ -292,9 +279,8 @@ impl Texture2DArray {
     pub fn as_color_target<'a>(
         &'a mut self,
         layers: &'a [u32],
-        mip_level: Option<u32>,
     ) -> ColorTarget<'a> {
-        ColorTarget::new_texture_2d_array(self, layers, mip_level)
+        ColorTarget::new_texture_2d_array(self, layers)
     }
 
     /// The width of this texture.
@@ -310,15 +296,6 @@ impl Texture2DArray {
     /// The number of layers.
     pub fn depth(&self) -> u32 {
         self.depth
-    }
-
-    pub(in crate::core) fn generate_mip_maps(&self) {
-        if self.number_of_mip_maps > 1 {
-            self.bind();
-            unsafe {
-                Context::get().generate_mipmap(glow::TEXTURE_2D_ARRAY);
-            }
-        }
     }
 
     pub(in crate::core) fn bind_as_color_target(&self, layer: u32, channel: u32, mip_level: u32) {

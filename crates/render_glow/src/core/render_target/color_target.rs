@@ -3,7 +3,7 @@ use glow::HasContext;
 use render_api::{base::CubeMapSide, components::Viewport};
 
 use crate::core::{
-    texture::Texture2DMultisample, ClearState, ColorTexture, Context, RenderTarget, ScissorBox,
+    ClearState, ColorTexture, Context, RenderTarget, ScissorBox,
     Texture2DArray, Texture2DImpl, TextureCubeMap, TextureDataType, WriteMask,
 };
 
@@ -17,52 +17,33 @@ use crate::core::{
 ///
 #[derive(Clone)]
 pub struct ColorTarget<'a> {
-    mip_level: Option<u32>,
-    target: Option<ColorTexture<'a>>,
-    multisample_target: Option<&'a Texture2DMultisample>,
+    target: ColorTexture<'a>,
 }
 
 impl<'a> ColorTarget<'a> {
     pub(in crate::core) fn new_texture2d(
         texture: &'a Texture2DImpl,
-        mip_level: Option<u32>,
     ) -> Self {
         ColorTarget {
-            mip_level,
-            target: Some(ColorTexture::Single(texture)),
-            multisample_target: None,
+            target: ColorTexture::Single(texture),
         }
     }
 
     pub(in crate::core) fn new_texture_cube_map(
         texture: &'a TextureCubeMap,
         sides: &'a [CubeMapSide],
-        mip_level: Option<u32>,
     ) -> Self {
         ColorTarget {
-            mip_level,
-            target: Some(ColorTexture::CubeMap { texture, sides }),
-            multisample_target: None,
+            target: ColorTexture::CubeMap { texture, sides },
         }
     }
 
     pub(in crate::core) fn new_texture_2d_array(
         texture: &'a Texture2DArray,
         layers: &'a [u32],
-        mip_level: Option<u32>,
     ) -> Self {
         ColorTarget {
-            mip_level,
-            target: Some(ColorTexture::Array { texture, layers }),
-            multisample_target: None,
-        }
-    }
-
-    pub(in crate::core) fn new_texture_2d_multisample(texture: &'a Texture2DMultisample) -> Self {
-        ColorTarget {
-            mip_level: None,
-            target: None,
-            multisample_target: Some(texture),
+            target: ColorTexture::Array { texture, layers },
         }
     }
 
@@ -160,18 +141,14 @@ impl<'a> ColorTarget<'a> {
     /// If using the zero mip level of the underlying texture, then this is simply the width of that texture, otherwise it is the width of the given mip level.
     ///
     pub fn width(&self) -> u32 {
-        if let Some(target) = self.target {
-            match target {
-                ColorTexture::Single(texture) => size_with_mip(texture.width(), self.mip_level),
-                ColorTexture::Array { texture, .. } => {
-                    size_with_mip(texture.width(), self.mip_level)
-                }
-                ColorTexture::CubeMap { texture, .. } => {
-                    size_with_mip(texture.width(), self.mip_level)
-                }
+        match self.target {
+            ColorTexture::Single(texture) => texture.width(),
+            ColorTexture::Array { texture, .. } => {
+                texture.width()
             }
-        } else {
-            self.multisample_target.as_ref().unwrap().width()
+            ColorTexture::CubeMap { texture, .. } => {
+                texture.width()
+            }
         }
     }
 
@@ -180,18 +157,14 @@ impl<'a> ColorTarget<'a> {
     /// If using the zero mip level of the underlying texture, then this is simply the height of that texture, otherwise it is the height of the given mip level.
     ///
     pub fn height(&self) -> u32 {
-        if let Some(target) = self.target {
-            match target {
-                ColorTexture::Single(texture) => size_with_mip(texture.height(), self.mip_level),
-                ColorTexture::Array { texture, .. } => {
-                    size_with_mip(texture.height(), self.mip_level)
-                }
-                ColorTexture::CubeMap { texture, .. } => {
-                    size_with_mip(texture.height(), self.mip_level)
-                }
+        match self.target {
+            ColorTexture::Single(texture) => texture.height(),
+            ColorTexture::Array { texture, .. } => {
+                texture.height()
             }
-        } else {
-            self.multisample_target.as_ref().unwrap().height()
+            ColorTexture::CubeMap { texture, .. } => {
+                texture.height()
+            }
         }
     }
 
@@ -199,81 +172,41 @@ impl<'a> ColorTarget<'a> {
         RenderTarget::new_color(self.clone())
     }
 
-    pub(super) fn generate_mip_maps(&self) {
-        if let Some(target) = self.target {
-            match target {
-                ColorTexture::Single(texture) => {
-                    if self.mip_level.is_none() {
-                        texture.generate_mip_maps()
-                    }
-                }
-                ColorTexture::Array { texture, .. } => {
-                    if self.mip_level.is_none() {
-                        texture.generate_mip_maps()
-                    }
-                }
-                ColorTexture::CubeMap { texture, .. } => {
-                    if self.mip_level.is_none() {
-                        texture.generate_mip_maps()
-                    }
-                }
-            }
-        }
-    }
-
     pub(super) fn bind(&self) {
         let context = Context::get();
-        if let Some(target) = self.target {
-            match target {
-                ColorTexture::Single(texture) => unsafe {
-                    context.draw_buffers(&[glow::COLOR_ATTACHMENT0]);
-                    texture.bind_as_color_target(0, self.mip_level.unwrap_or(0));
-                },
-                ColorTexture::Array { texture, layers } => unsafe {
-                    context.draw_buffers(
-                        &(0..layers.len())
-                            .map(|i| glow::COLOR_ATTACHMENT0 + i as u32)
-                            .collect::<Vec<u32>>(),
-                    );
-                    (0..layers.len()).for_each(|channel| {
-                        texture.bind_as_color_target(
-                            layers[channel],
-                            channel as u32,
-                            self.mip_level.unwrap_or(0),
-                        );
-                    });
-                },
-                ColorTexture::CubeMap { texture, sides } => unsafe {
-                    context.draw_buffers(
-                        &(0..sides.len())
-                            .map(|i| glow::COLOR_ATTACHMENT0 + i as u32)
-                            .collect::<Vec<u32>>(),
-                    );
-                    (0..sides.len()).for_each(|channel| {
-                        texture.bind_as_color_target(
-                            sides[channel],
-                            channel as u32,
-                            self.mip_level.unwrap_or(0),
-                        );
-                    });
-                },
-            }
-        } else {
-            unsafe {
+        match self.target {
+            ColorTexture::Single(texture) => unsafe {
                 context.draw_buffers(&[glow::COLOR_ATTACHMENT0]);
-                self.multisample_target
-                    .as_ref()
-                    .unwrap()
-                    .bind_as_color_target(0);
-            }
+                texture.bind_as_color_target(0, 0);
+            },
+            ColorTexture::Array { texture, layers } => unsafe {
+                context.draw_buffers(
+                    &(0..layers.len())
+                        .map(|i| glow::COLOR_ATTACHMENT0 + i as u32)
+                        .collect::<Vec<u32>>(),
+                );
+                (0..layers.len()).for_each(|channel| {
+                    texture.bind_as_color_target(
+                        layers[channel],
+                        channel as u32,
+                        0,
+                    );
+                });
+            },
+            ColorTexture::CubeMap { texture, sides } => unsafe {
+                context.draw_buffers(
+                    &(0..sides.len())
+                        .map(|i| glow::COLOR_ATTACHMENT0 + i as u32)
+                        .collect::<Vec<u32>>(),
+                );
+                (0..sides.len()).for_each(|channel| {
+                    texture.bind_as_color_target(
+                        sides[channel],
+                        channel as u32,
+                        0,
+                    );
+                });
+            },
         }
-    }
-}
-
-fn size_with_mip(size: u32, mip: Option<u32>) -> u32 {
-    if let Some(mip) = mip {
-        size / 2u32.pow(mip)
-    } else {
-        size
     }
 }
