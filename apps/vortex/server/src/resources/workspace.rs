@@ -1,6 +1,9 @@
 use std::{collections::HashMap, fs, path::Path, sync::Mutex};
 
-use bevy_ecs::{entity::Entity, system::{Commands, Query}};
+use bevy_ecs::{
+    entity::Entity,
+    system::{Commands, Query},
+};
 use bevy_log::info;
 use git2::{Repository, Signature};
 use naia_bevy_server::{CommandsExt, RoomKey, Server};
@@ -10,7 +13,10 @@ use vortex_proto::{
     resources::FileEntryKey,
 };
 
-use crate::{files::{FileExtension, FileReader}, resources::{ChangelistValue, FileEntryValue, GitManager}};
+use crate::{
+    files::{FileExtension, FileReader},
+    resources::{ChangelistValue, FileEntryValue, GitManager},
+};
 
 pub struct Workspace {
     pub room_key: RoomKey,
@@ -24,7 +30,13 @@ pub struct Workspace {
 }
 
 impl Workspace {
-    pub fn new(room_key: RoomKey, file_entries: HashMap<FileEntryKey, FileEntryValue>, repo: Repository, access_token: &str, internal_path: &str) -> Self {
+    pub fn new(
+        room_key: RoomKey,
+        file_entries: HashMap<FileEntryKey, FileEntryValue>,
+        repo: Repository,
+        access_token: &str,
+        internal_path: &str,
+    ) -> Self {
         let working_file_tree = file_entries.clone();
         Self {
             room_key,
@@ -69,7 +81,14 @@ impl Workspace {
 
         // if file doesn't exist in master tree and no changelist entry exists, then create a changelist entry
         if !file_exists_in_master && !file_exists_in_changelist {
-            self.new_changelist_entry(commands, server, &file_entry_key, ChangelistStatus::Created, Some(&entity), None);
+            self.new_changelist_entry(
+                commands,
+                server,
+                &file_entry_key,
+                ChangelistStatus::Created,
+                Some(&entity),
+                None,
+            );
         }
 
         // if file exists in master tree and a changelist entry exists, then delete the changelist entry
@@ -81,8 +100,10 @@ impl Workspace {
 
     pub fn delete_file(&mut self, commands: &mut Commands, server: &mut Server, entity: &Entity) {
         // Remove Entity from Working Tree, returning a list of child entities that should be despawned
-        let file_entry_key = Self::find_file_entry_by_entity(&mut self.working_file_entries, entity);
-        let (_entry_value, entities_to_delete) = Self::remove_file_entry(&mut self.working_file_entries, &file_entry_key);
+        let file_entry_key =
+            Self::find_file_entry_by_entity(&mut self.working_file_entries, entity);
+        let (_entry_value, entities_to_delete) =
+            Self::remove_file_entry(&mut self.working_file_entries, &file_entry_key);
 
         self.update_changelist_after_despawn(commands, server, &file_entry_key);
 
@@ -97,13 +118,23 @@ impl Workspace {
     }
 
     pub fn commit_entire_changelist(
-        &mut self, commands: &mut Commands, server: &Server, query: &Query<&ChangelistEntry>,
+        &mut self,
+        commands: &mut Commands,
+        server: &Server,
+        query: &Query<&ChangelistEntry>,
     ) {
         todo!();
     }
 
     pub fn commit_changelist_entry(
-        &mut self, username: &str, email: &str, commit_message: &str, commands: &mut Commands, server: &mut Server, cl_entity: &Entity, query: &Query<&ChangelistEntry>,
+        &mut self,
+        username: &str,
+        email: &str,
+        commit_message: &str,
+        commands: &mut Commands,
+        server: &mut Server,
+        cl_entity: &Entity,
+        query: &Query<&ChangelistEntry>,
     ) {
         let changelist_entry = query.get(*cl_entity).unwrap();
         let status = *changelist_entry.status;
@@ -114,8 +145,11 @@ impl Workspace {
                 todo!();
             }
             ChangelistStatus::Created => {
-
-                let file_entry_val = self.working_file_entries.get(&file_entry_key).unwrap().clone();
+                let file_entry_val = self
+                    .working_file_entries
+                    .get(&file_entry_key)
+                    .unwrap()
+                    .clone();
                 let file_entity = file_entry_val.entity();
 
                 // update master tree with new file entry
@@ -129,9 +163,7 @@ impl Workspace {
                 self.cleanup_changelist_entry(commands, &file_entry_key);
 
                 // remove auth from file entity
-                commands
-                    .entity(file_entity)
-                    .take_authority(server);
+                commands.entity(file_entity).take_authority(server);
 
                 // sync to git repo!
                 self.git_create_file(file_entry_key);
@@ -139,9 +171,9 @@ impl Workspace {
                 self.git_push();
             }
             ChangelistStatus::Deleted => {
-
                 // Remove Entity from Master Tree, returning a list of child entities that should be despawned
-                let (_entry_value, entities_to_delete) = Self::remove_file_entry(&mut self.master_file_entries, &file_entry_key);
+                let (_entry_value, entities_to_delete) =
+                    Self::remove_file_entry(&mut self.master_file_entries, &file_entry_key);
                 self.cleanup_changelist_entry(commands, &file_entry_key);
 
                 for (_, child_key) in entities_to_delete {
@@ -158,7 +190,11 @@ impl Workspace {
 
     // returns an entity to spawn if delete was rolled back
     pub fn rollback_changelist_entry(
-        &mut self, commands: &mut Commands, server: &mut Server, cl_entity: &Entity, query: &Query<&ChangelistEntry>,
+        &mut self,
+        commands: &mut Commands,
+        server: &mut Server,
+        cl_entity: &Entity,
+        query: &Query<&ChangelistEntry>,
     ) -> Option<(FileEntryKey, FileEntryValue)> {
         let changelist_entry = query.get(*cl_entity).unwrap();
         let status = *changelist_entry.status;
@@ -169,23 +205,19 @@ impl Workspace {
                 todo!();
             }
             ChangelistStatus::Created => {
-
                 // Remove Entity from Working Tree, returning a list of child entities that should be despawned
-                let (entry_value, entities_to_delete) = Self::remove_file_entry(&mut self.working_file_entries, &file_entry_key);
+                let (entry_value, entities_to_delete) =
+                    Self::remove_file_entry(&mut self.working_file_entries, &file_entry_key);
 
                 // despawn row entity
                 let row_entity = entry_value.entity();
-                commands
-                    .entity(row_entity)
-                    .take_authority(server)
-                    .despawn();
+                commands.entity(row_entity).take_authority(server).despawn();
 
                 // cleanup changelist entry
                 self.cleanup_changelist_entry(commands, &file_entry_key);
 
                 // cleanup children
                 for (child_row_entity, child_key) in entities_to_delete {
-
                     commands
                         .entity(child_row_entity)
                         .take_authority(server)
@@ -195,7 +227,6 @@ impl Workspace {
                 }
             }
             ChangelistStatus::Deleted => {
-
                 let new_entity = GitManager::spawn_file_tree_entity(commands, server);
 
                 let file_entry_value = self.master_file_entries.get_mut(&file_entry_key).unwrap();
@@ -226,14 +257,21 @@ impl Workspace {
         let full_path = format!("{}/{}", self.internal_path, file_path);
         info!("git creating file at: `{}`", full_path);
 
-        let file_content = self.changelist_entries.get(&key).unwrap().get_content().unwrap();
+        let file_content = self
+            .changelist_entries
+            .get(&key)
+            .unwrap()
+            .get_content()
+            .unwrap();
 
         // Create the file with the desired content
         fs::write(&full_path, file_content).expect("Failed to create file");
 
         // Add the file to the repository
         let mut index = repo.index().expect("Failed to open index");
-        index.add_path(Path::new(&file_path)).expect("Failed to add file to index");
+        index
+            .add_path(Path::new(&file_path))
+            .expect("Failed to add file to index");
         index.write().expect("Failed to write index");
     }
 
@@ -249,12 +287,13 @@ impl Workspace {
 
         // Remove the file from the repository index
         let mut index = repo.index().expect("Failed to open index");
-        index.remove_path(Path::new(&file_path)).expect("Failed to remove file from index");
+        index
+            .remove_path(Path::new(&file_path))
+            .expect("Failed to remove file from index");
         index.write().expect("Failed to write index");
     }
 
     pub fn git_commit(&mut self, username: &str, email: &str, commit_message: &str) {
-
         let repo = self.repo.lock().unwrap();
 
         // get index
@@ -273,24 +312,26 @@ impl Workspace {
 
         // Prepare the commit details
         let author = Signature::now(username, email).expect("Failed to create author signature");
-        let committer = Signature::now(username, email).expect("Failed to create committer signature");
+        let committer =
+            Signature::now(username, email).expect("Failed to create committer signature");
 
         // Create the commit
-        repo
-            .commit(
-                Some("HEAD"),
-                &author,
-                &committer,
-                commit_message,
-                &repo.find_tree(tree_id).expect("Failed to find tree"),
-                &[&parent_commit],
-            )
+        repo.commit(
+            Some("HEAD"),
+            &author,
+            &committer,
+            commit_message,
+            &repo.find_tree(tree_id).expect("Failed to find tree"),
+            &[&parent_commit],
+        )
             .expect("Failed to create commit");
     }
 
     pub fn git_push(&self) {
         let repo = self.repo.lock().unwrap();
-        let mut remote = repo.find_remote("origin").expect("Failed to find remote 'origin'");
+        let mut remote = repo
+            .find_remote("origin")
+            .expect("Failed to find remote 'origin'");
         let mut options = git2::PushOptions::new();
         options.remote_callbacks(GitManager::get_remote_callbacks(&self.access_token)); // Set up remote callbacks if needed
         remote
@@ -299,7 +340,6 @@ impl Workspace {
     }
 
     fn cleanup_changelist_entry(&mut self, commands: &mut Commands, file_entry_key: &FileEntryKey) {
-
         let Some(changelist_value) = self.changelist_entries.remove(file_entry_key) else {
             panic!("Changelist entry not found for file entry key");
         };
@@ -328,7 +368,14 @@ impl Workspace {
 
         // if file exists in master tree and no changelist entry exists, then create a changelist entry
         if file_exists_in_master && !file_exists_in_changelist {
-            self.new_changelist_entry(commands, server, file_entry_key, ChangelistStatus::Deleted, None, None);
+            self.new_changelist_entry(
+                commands,
+                server,
+                file_entry_key,
+                ChangelistStatus::Deleted,
+                None,
+                None,
+            );
         }
     }
 
@@ -370,7 +417,12 @@ impl Workspace {
             .insert(file_entry_key.clone(), changelist_value);
     }
 
-    pub(crate) fn load_content_entities(&self, commands: &mut Commands, server: &Server, key: &FileEntryKey) -> Vec<Entity> {
+    pub(crate) fn load_content_entities(
+        &self,
+        commands: &mut Commands,
+        server: &Server,
+        key: &FileEntryKey,
+    ) -> Vec<Entity> {
         // get file extension of file
         let file_extension = self.working_file_extension(key);
 
@@ -409,7 +461,14 @@ impl Workspace {
         if let Some(changelist_entry) = self.changelist_entries.get_mut(key) {
             changelist_entry.set_content(bytes);
         } else {
-            self.new_changelist_entry(commands, server, key, ChangelistStatus::Modified, None, Some(bytes));
+            self.new_changelist_entry(
+                commands,
+                server,
+                key,
+                ChangelistStatus::Modified,
+                None,
+                Some(bytes),
+            );
         }
     }
 

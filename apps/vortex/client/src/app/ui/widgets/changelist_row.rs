@@ -5,27 +5,36 @@ use bevy_ecs::{
     world::World,
 };
 use bevy_log::info;
-
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
 
 use render_egui::{
     egui,
     egui::{NumExt, Response, Rounding, Sense, Stroke, TextStyle, Ui, WidgetText},
 };
-use vortex_proto::{channels::ChangelistActionChannel, components::{ChangelistEntry, ChangelistStatus, EntryKind}, messages::{ChangelistAction, ChangelistMessage}};
+use vortex_proto::{
+    channels::ChangelistActionChannel,
+    components::{ChangelistEntry, ChangelistStatus, EntryKind},
+    messages::{ChangelistAction, ChangelistMessage},
+};
 
 use crate::app::{
     components::file_system::ChangelistUiState,
     resources::action_stack::{Action, ActionStack},
-    ui::widgets::colors::{FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED, FILE_ROW_COLORS_UNSELECTED},
+    ui::widgets::colors::{
+        FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
+        TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED,
+    },
 };
 
 pub struct ChangelistRowUiWidget;
 
 impl ChangelistRowUiWidget {
     pub fn render_row(ui: &mut Ui, world: &mut World, row_entity: Entity) {
-        let mut system_state: SystemState<(Commands, Client, Query<(&ChangelistEntry, &ChangelistUiState)>)> =
-            SystemState::new(world);
+        let mut system_state: SystemState<(
+            Commands,
+            Client,
+            Query<(&ChangelistEntry, &ChangelistUiState)>,
+        )> = SystemState::new(world);
         let (mut commands, client, query) = system_state.get_mut(world);
 
         // get auth status
@@ -86,13 +95,11 @@ impl ChangelistRowUiWidget {
                 row_rect.max.y += 2.0;
                 row_rect.max.x -= 2.0;
 
-                if let Some(text_color)  = match auth_status {
-                    None => {
-                        match ui_state.selected {
-                            true => Some(row_fill_colors.granted),
-                            false => row_fill_colors.available,
-                        }
-                    }
+                if let Some(text_color) = match auth_status {
+                    None => match ui_state.selected {
+                        true => Some(row_fill_colors.granted),
+                        false => row_fill_colors.available,
+                    },
                     Some(EntityAuthStatus::Available) => row_fill_colors.available,
                     Some(EntityAuthStatus::Requested) | Some(EntityAuthStatus::Releasing) => {
                         Some(row_fill_colors.requested)
@@ -200,8 +207,12 @@ impl ChangelistRowUiWidget {
     }
 
     pub fn on_row_click(world: &mut World, row_entity: &Entity) {
-        let mut system_state: SystemState<(Commands, Client, ResMut<ActionStack>, Query<&ChangelistEntry>)> =
-                    SystemState::new(world);
+        let mut system_state: SystemState<(
+            Commands,
+            Client,
+            ResMut<ActionStack>,
+            Query<&ChangelistEntry>,
+        )> = SystemState::new(world);
         let (mut commands, client, mut action_stack, query) = system_state.get_mut(world);
 
         let has_auth: bool = {
@@ -228,14 +239,24 @@ impl ChangelistRowUiWidget {
     }
 
     pub fn on_click_commit(world: &mut World, row_entity: &Entity) {
-        Self::send_changelist_message(world, row_entity, ChangelistAction::Commit, Some("placeholder commit message!"));
+        Self::send_changelist_message(
+            world,
+            row_entity,
+            ChangelistAction::Commit,
+            Some("placeholder commit message!"),
+        );
     }
 
     pub fn on_click_rollback(world: &mut World, row_entity: &Entity) {
         Self::send_changelist_message(world, row_entity, ChangelistAction::Rollback, None);
     }
 
-    fn send_changelist_message(world: &mut World, row_entity: &Entity, action: ChangelistAction, opt_str: Option<&str>) {
+    fn send_changelist_message(
+        world: &mut World,
+        row_entity: &Entity,
+        action: ChangelistAction,
+        opt_str: Option<&str>,
+    ) {
         let mut system_state: SystemState<Client> = SystemState::new(world);
         let mut client = system_state.get_mut(world);
 

@@ -166,14 +166,16 @@ impl ActionStack {
                     Query<(Entity, &mut FileSystemUiState)>,
                     Query<(Entity, &ChangelistEntry, &mut ChangelistUiState)>,
                 )> = SystemState::new(world);
-                let (mut commands, mut client, mut fs_query, mut cl_query) = system_state.get_mut(world);
+                let (mut commands, mut client, mut fs_query, mut cl_query) =
+                    system_state.get_mut(world);
 
                 // TODO: when shift/control is pressed, select multiple items
 
                 // Deselect all selected files, select the new selected files
                 let (deselected_row_entities, mut file_entries_to_release) =
                     Self::deselect_all_selected_files(&mut client, &mut fs_query, &mut cl_query);
-                let mut file_entries_to_request = Self::select_files(&mut client, &mut fs_query, &mut cl_query, file_entities);
+                let mut file_entries_to_request =
+                    Self::select_files(&mut client, &mut fs_query, &mut cl_query, file_entities);
 
                 Self::remove_duplicates(&mut file_entries_to_release, &mut file_entries_to_request);
 
@@ -198,8 +200,15 @@ impl ActionStack {
                     Query<(Entity, &ChangelistEntry, &mut ChangelistUiState)>,
                     Query<&mut FileSystemParent>,
                 )> = SystemState::new(world);
-                let (mut commands, mut client, global, mut tab_manager, mut fs_query, mut cl_query, mut parent_query) =
-                    system_state.get_mut(world);
+                let (
+                    mut commands,
+                    mut client,
+                    global,
+                    mut tab_manager,
+                    mut fs_query,
+                    mut cl_query,
+                    mut parent_query,
+                ) = system_state.get_mut(world);
 
                 let (deselected_row_entities, file_entries_to_release) =
                     Self::deselect_all_selected_files(&mut client, &mut fs_query, &mut cl_query);
@@ -252,15 +261,18 @@ impl ActionStack {
                     Res<Global>,
                     Query<(Entity, &mut FileSystemUiState)>,
                     Query<(Entity, &ChangelistEntry, &mut ChangelistUiState)>,
-                    Query<(
-                        &FileSystemEntry,
-                        Option<&HasParent>,
-                        Option<&NoParent>,
-                    )>,
+                    Query<(&FileSystemEntry, Option<&HasParent>, Option<&NoParent>)>,
                     Query<&mut FileSystemParent>,
                 )> = SystemState::new(world);
-                let (mut commands, mut client, global, mut ui_query, mut cl_query, fs_query, mut parent_query) =
-                    system_state.get_mut(world);
+                let (
+                    mut commands,
+                    mut client,
+                    global,
+                    mut ui_query,
+                    mut cl_query,
+                    fs_query,
+                    mut parent_query,
+                ) = system_state.get_mut(world);
                 let (entry, fs_child_opt, fs_root_child_opt) = fs_query.get(*file_entity).unwrap();
 
                 // get name of file
@@ -313,7 +325,12 @@ impl ActionStack {
                 commands.entity(*file_entity).despawn();
 
                 if let Some(files_to_select) = files_to_select_opt {
-                    let file_entries_to_request = Self::select_files(&mut client, &mut ui_query, &mut cl_query, files_to_select);
+                    let file_entries_to_request = Self::select_files(
+                        &mut client,
+                        &mut ui_query,
+                        &mut cl_query,
+                        files_to_select,
+                    );
                     Self::request_file_entries(&mut commands, &mut client, file_entries_to_request);
                 }
 
@@ -351,14 +368,12 @@ impl ActionStack {
         let mut file_entries_to_request = HashSet::new();
         for row_entity in row_entities {
             if let Ok((_, mut ui_state)) = fs_query.get_mut(*row_entity) {
-
                 // File System
                 ui_state.selected = true;
 
                 file_entries_to_request.insert(*row_entity);
             }
             if let Ok((_, cl_entry, mut ui_state)) = cl_query.get_mut(*row_entity) {
-
                 // Changelist
                 ui_state.selected = true;
 
@@ -378,7 +393,6 @@ impl ActionStack {
         let mut deselected_row_entities = Vec::new();
         let mut file_entries_to_release = HashSet::new();
         for (item_entity, mut ui_state) in fs_query.iter_mut() {
-
             // FileSystem
             if ui_state.selected {
                 ui_state.selected = false;
@@ -428,10 +442,7 @@ impl ActionStack {
         }
     }
 
-    fn remove_duplicates(
-        set_a: &mut HashSet<Entity>,
-        set_b: &mut HashSet<Entity>,
-    ) {
+    fn remove_duplicates(set_a: &mut HashSet<Entity>, set_b: &mut HashSet<Entity>) {
         set_a.retain(|item| {
             if set_b.contains(item) {
                 set_b.remove(item);
@@ -561,11 +572,7 @@ impl ActionStack {
     fn convert_contents_to_slim_tree(
         client: &Client,
         parent_entity: &Entity,
-        fs_query: &Query<(
-            &FileSystemEntry,
-            Option<&HasParent>,
-            Option<&NoParent>,
-        )>,
+        fs_query: &Query<(&FileSystemEntry, Option<&HasParent>, Option<&NoParent>)>,
         parent_query: &mut Query<&mut FileSystemParent>,
     ) -> Vec<(Entity, FileTree)> {
         let mut trees = Vec::new();

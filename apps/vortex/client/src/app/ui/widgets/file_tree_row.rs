@@ -10,8 +10,8 @@ use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
 use render_egui::{
     egui,
     egui::{
-        emath, Id, NumExt, Rect, remap, Response, Rounding, Sense, Shape, Stroke, TextStyle,
-        Ui, vec2, WidgetText,
+        emath, Id, NumExt, Rect, remap, Response, Rounding, Sense, Shape, Stroke, TextStyle, Ui,
+        vec2, WidgetText,
     },
 };
 use vortex_proto::components::{ChangelistStatus, EntryKind, FileSystemEntry, HasParent, NoParent};
@@ -25,7 +25,13 @@ use crate::app::{
         global::Global,
         tab_manager::TabManager,
     },
-    ui::{UiState, widgets::colors::{FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED, TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED}},
+    ui::{
+        UiState,
+        widgets::colors::{
+            FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
+            TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED,
+        },
+    },
 };
 
 pub struct FileTreeRowUiWidget;
@@ -269,7 +275,10 @@ impl FileTreeRowUiWidget {
                 context_menu_response = Some(ContextMenuAction::Cut);
                 ui.close_menu();
             }
-            if ui.add_enabled(!is_root_dir, egui::Button::new("📷 Copy")).clicked() {
+            if ui
+                .add_enabled(!is_root_dir, egui::Button::new("📷 Copy"))
+                .clicked()
+            {
                 context_menu_response = Some(ContextMenuAction::Copy);
                 ui.close_menu();
             }
@@ -364,8 +373,7 @@ impl FileTreeRowUiWidget {
         Self::on_row_click(world, row_entity);
 
         // add to tabs
-        let mut system_state: SystemState<(Client, ResMut<TabManager>)> =
-            SystemState::new(world);
+        let mut system_state: SystemState<(Client, ResMut<TabManager>)> = SystemState::new(world);
         let (mut client, mut tab_manager) = system_state.get_mut(world);
         tab_manager.open_tab(&mut client, row_entity);
     }
@@ -434,9 +442,7 @@ impl FileTreeRowUiWidget {
         root_child_opt: Option<&NoParent>,
     ) -> Option<Entity> {
         match *entry.kind {
-            EntryKind::Directory => {
-                Some(row_entity.clone())
-            },
+            EntryKind::Directory => Some(row_entity.clone()),
             EntryKind::File => {
                 if let Some(dir_child) = dir_child_opt {
                     Some(dir_child.parent_id.get(client).unwrap().clone())

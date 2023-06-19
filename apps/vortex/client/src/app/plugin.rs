@@ -6,16 +6,17 @@ use bevy_ecs::{
     system::{Commands, Query, Res, ResMut, Resource},
 };
 use bevy_log::info;
-use math::Vec3;
 use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin, ReceiveEvents};
+
+use math::Vec3;
 use render_api::{
+    Assets,
     base::{Color, PbrMaterial, Texture2D, TriMesh},
     components::{
         AmbientLight, Camera, CameraBundle, ClearOperation, OrthographicProjection, PointLight,
         Projection, RenderLayers, RenderObjectBundle, RenderTarget, Transform, Viewport,
     },
-    resources::WindowSettings,
-    shapes, Assets, Handle,
+    Handle, resources::WindowSettings, shapes,
 };
 use render_egui::EguiUserTextures;
 use vortex_proto::{

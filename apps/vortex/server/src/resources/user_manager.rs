@@ -48,18 +48,20 @@ impl Default for UserManager {
 
         // Connor
         credentials.insert(
-            "connorcarpenter".to_string(), (
+            "connorcarpenter".to_string(),
+            (
                 "connorcarpenter@gmail.com".to_string(),
-                "greattobealive!".to_string()
-            )
+                "greattobealive!".to_string(),
+            ),
         );
 
         // Brendon?
         credentials.insert(
-            "brendoncarpenter".to_string(), (
+            "brendoncarpenter".to_string(),
+            (
                 "brendon.e.carpenter@gmail.com".to_string(),
-                "greattobealive!".to_string()
-            )
+                "greattobealive!".to_string(),
+            ),
         );
 
         // TODO: add more users here? get from database?
@@ -80,7 +82,7 @@ impl UserManager {
                 } else {
                     None
                 }
-            },
+            }
             None => None,
         }
     }

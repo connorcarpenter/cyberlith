@@ -10,7 +10,11 @@ pub struct TabOpenMessage {
 }
 
 impl TabOpenMessage {
-    pub fn new(converter: &dyn EntityAndGlobalEntityConverter<Entity>, tab_id: TabId, entity: &Entity) -> Self {
+    pub fn new(
+        converter: &dyn EntityAndGlobalEntityConverter<Entity>,
+        tab_id: TabId,
+        entity: &Entity,
+    ) -> Self {
         let mut new = Self {
             file_entity: EntityProperty::new(),
             tab_id,
@@ -34,9 +38,6 @@ pub struct TabActionMessage {
 
 impl TabActionMessage {
     pub fn new(tab_id: TabId, action: TabActionMessageType) -> Self {
-        Self {
-            tab_id,
-            action,
-        }
+        Self { tab_id, action }
     }
 }

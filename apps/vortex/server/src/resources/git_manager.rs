@@ -144,7 +144,13 @@ impl GitManager {
             fill_file_entries_from_git(&mut file_entries, commands, server, &repo, &tree, "", None);
         }
 
-        let new_workspace = Workspace::new(user_info.get_room_key().unwrap(), file_entries, repo, access_token, &full_path_str);
+        let new_workspace = Workspace::new(
+            user_info.get_room_key().unwrap(),
+            file_entries,
+            repo,
+            access_token,
+            &full_path_str,
+        );
 
         insert_networked_components(
             commands,
@@ -157,8 +163,15 @@ impl GitManager {
         self.workspaces.insert(username.to_string(), new_workspace);
     }
 
-    pub fn commit_changelist_entry(&mut self, commands: &mut Commands, server: &mut Server, user: &UserInfo, commit_message: &str, entity: &Entity, query: &Query<&ChangelistEntry>) {
-
+    pub fn commit_changelist_entry(
+        &mut self,
+        commands: &mut Commands,
+        server: &mut Server,
+        user: &UserInfo,
+        commit_message: &str,
+        entity: &Entity,
+        query: &Query<&ChangelistEntry>,
+    ) {
         let username = user.get_username();
 
         let Some(workspace) = self.workspaces.get_mut(username) else {
@@ -167,30 +180,57 @@ impl GitManager {
 
         let email = user.get_email();
 
-        workspace.commit_changelist_entry(username, email, commit_message, commands, server, entity, query);
+        workspace.commit_changelist_entry(
+            username,
+            email,
+            commit_message,
+            commands,
+            server,
+            entity,
+            query,
+        );
     }
 
-    pub fn rollback_changelist_entry(&mut self, commands: &mut Commands, server: &mut Server, user_key: &UserKey, user: &UserInfo, entity: &Entity, query: &Query<&ChangelistEntry>) {
+    pub fn rollback_changelist_entry(
+        &mut self,
+        commands: &mut Commands,
+        server: &mut Server,
+        user_key: &UserKey,
+        user: &UserInfo,
+        entity: &Entity,
+        query: &Query<&ChangelistEntry>,
+    ) {
         if let Some(workspace) = self.workspaces.get_mut(user.get_username()) {
-            if let Some((key, value)) = workspace.rollback_changelist_entry(commands, server, entity, query) {
+            if let Some((key, value)) =
+                workspace.rollback_changelist_entry(commands, server, entity, query)
+            {
                 self.spawn_networked_entry_into_world(
-                    commands,
-                    server,
-                    user_key,
-                    user,
-                    &key,
-                    &value,
+                    commands, server, user_key, user, &key, &value,
                 )
             }
         }
     }
 
     pub fn spawn_networked_entry_into_world(
-        &mut self, commands: &mut Commands, server: &mut Server, user_key: &UserKey, user_info: &UserInfo, entry_key: &FileEntryKey, entry_val: &FileEntryValue,
+        &mut self,
+        commands: &mut Commands,
+        server: &mut Server,
+        user_key: &UserKey,
+        user_info: &UserInfo,
+        entry_key: &FileEntryKey,
+        entry_val: &FileEntryValue,
     ) {
         let room_key = user_info.get_room_key().unwrap();
         let workspace = self.workspaces.get(user_info.get_username()).unwrap();
-        insert_networked_components_entry(commands, server, user_key, &room_key, &workspace.working_file_entries, entry_key, entry_val);
+        insert_networked_components_entry(
+            commands,
+            server,
+            user_key,
+            &room_key,
+            &workspace.working_file_entries,
+            entry_key,
+            entry_val,
+        );
     }
 
     pub(crate) fn load_content_entities(
@@ -207,8 +247,15 @@ impl GitManager {
         workspace.load_content_entities(commands, server, file_entry_key)
     }
 
-    pub(crate) fn working_file_extension(&self, username: &str, key: &FileEntryKey) -> FileExtension {
-        self.workspaces.get(username).unwrap().working_file_extension(key)
+    pub(crate) fn working_file_extension(
+        &self,
+        username: &str,
+        key: &FileEntryKey,
+    ) -> FileExtension {
+        self.workspaces
+            .get(username)
+            .unwrap()
+            .working_file_extension(key)
     }
 
     pub(crate) fn new_modified_changelist_entry(
@@ -270,7 +317,8 @@ fn fill_file_entries_from_git(
                     Some(file_entry_key.clone()),
                 );
 
-                let file_entry_value = FileEntryValue::new(id, parent.clone(), Some(children), None);
+                let file_entry_value =
+                    FileEntryValue::new(id, parent.clone(), Some(children), None);
                 file_entries.insert(file_entry_key.clone(), file_entry_value);
 
                 output.insert(file_entry_key.clone());
@@ -281,7 +329,8 @@ fn fill_file_entries_from_git(
 
                 let file_entry_key = FileEntryKey::new(path, &name, entry_kind);
                 let file_extension = FileExtension::from_file_name(&name);
-                let file_entry_value = FileEntryValue::new(id, parent.clone(), None, Some(file_extension));
+                let file_entry_value =
+                    FileEntryValue::new(id, parent.clone(), None, Some(file_extension));
                 file_entries.insert(file_entry_key.clone(), file_entry_value);
 
                 output.insert(file_entry_key.clone());

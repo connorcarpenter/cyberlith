@@ -7,10 +7,24 @@ use bevy_ecs::{
 };
 use naia_bevy_client::Client;
 
-use render_egui::{egui, egui::{Id, NumExt, Rect, Response, Rounding, Sense, Stroke, TextStyle, Ui, vec2, WidgetText}};
-use vortex_proto::{channels::TabActionChannel, components::{ChangelistStatus, FileSystemEntry}, messages::{TabActionMessage, TabActionMessageType, TabOpenMessage}, types::TabId};
+use render_egui::{
+    egui,
+    egui::{Id, NumExt, Rect, Response, Rounding, Sense, Stroke, TextStyle, Ui, vec2, WidgetText},
+};
+use vortex_proto::{
+    channels::TabActionChannel,
+    components::{ChangelistStatus, FileSystemEntry},
+    messages::{TabActionMessage, TabActionMessageType, TabOpenMessage},
+    types::TabId,
+};
 
-use crate::app::{components::file_system::FileSystemUiState, ui::widgets::colors::{FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED, TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED}};
+use crate::app::{
+    components::file_system::FileSystemUiState,
+    ui::widgets::colors::{
+        FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
+        TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED,
+    },
+};
 
 #[derive(Clone, Copy)]
 struct TabState {
@@ -79,7 +93,6 @@ impl TabManager {
         if self.tab_map.contains_key(row_entity) {
             self.select_tab(client, row_entity);
         } else {
-
             // get current tab order
             let current_order = if let Some(current_entity) = self.current_tab {
                 let tab_state = self.tab_map.get(&current_entity).unwrap();
@@ -90,7 +103,8 @@ impl TabManager {
 
             // insert new tab
             let new_tab_id = self.new_tab_id();
-            self.tab_map.insert(*row_entity, TabState::new(new_tab_id, current_order));
+            self.tab_map
+                .insert(*row_entity, TabState::new(new_tab_id, current_order));
             self.tab_order.insert(current_order, *row_entity);
 
             // send message to server
@@ -112,7 +126,6 @@ impl TabManager {
     }
 
     fn select_tab(&mut self, client: &mut Client, row_entity: &Entity) {
-
         // deselect current tab
         if let Some(current_entity) = self.current_tab {
             let tab_state = self.tab_map.get_mut(&current_entity).unwrap();
@@ -130,7 +143,6 @@ impl TabManager {
     }
 
     fn close_tab(&mut self, client: &mut Client, row_entity: &Entity) {
-
         // remove tab
         let tab_state = self.tab_map.remove(row_entity).unwrap();
         self.tab_order.remove(tab_state.order);
@@ -204,14 +216,23 @@ impl TabManager {
 
     pub fn render_root(ui: &mut Ui, world: &mut World) {
         egui::menu::bar(ui, |ui| {
-            let mut system_state: SystemState<(Client, ResMut<TabManager>, Query<(&FileSystemEntry, &FileSystemUiState)>)> = SystemState::new(world);
+            let mut system_state: SystemState<(
+                Client,
+                ResMut<TabManager>,
+                Query<(&FileSystemEntry, &FileSystemUiState)>,
+            )> = SystemState::new(world);
             let (mut client, mut tab_manager, query) = system_state.get_mut(world);
 
             tab_manager.render_tabs(&mut client, ui, &query);
         });
     }
 
-    fn render_tabs(&mut self, client: &mut Client, ui: &mut Ui, query: &Query<(&FileSystemEntry, &FileSystemUiState)>) {
+    fn render_tabs(
+        &mut self,
+        client: &mut Client,
+        ui: &mut Ui,
+        query: &Query<(&FileSystemEntry, &FileSystemUiState)>,
+    ) {
         let mut tab_action = None;
 
         for row_entity in &self.tab_order {
@@ -219,7 +240,8 @@ impl TabManager {
 
             let (entry, ui_state) = query.get(*row_entity).unwrap();
 
-            let button_response = Self::render_tab(ui, row_entity, entry, ui_state, tab_state, &mut tab_action);
+            let button_response =
+                Self::render_tab(ui, row_entity, entry, ui_state, tab_state, &mut tab_action);
 
             Self::tab_context_menu(button_response, row_entity, &mut tab_action);
         }
@@ -241,7 +263,8 @@ impl TabManager {
         let full_path = format!("tab_cancel_button:{:?}", row_entity);
         let file_name_str = format!("📃 {}", file_name);
 
-        let file_name_galley = WidgetText::from(file_name_str).into_galley(ui, Some(false), 1.0, TextStyle::Button);
+        let file_name_galley =
+            WidgetText::from(file_name_str).into_galley(ui, Some(false), 1.0, TextStyle::Button);
 
         let file_name_text_size = file_name_galley.size();
         let mut desired_tab_size = file_name_text_size;
@@ -321,35 +344,39 @@ impl TabManager {
                     false => x_icon_nohover,
                 };
 
-                let x_icon_galley = WidgetText::from(x_icon_text).into_galley(ui, Some(false), 1.0, TextStyle::Button);
-                x_icon_galley.paint_with_color_override(ui.painter(), icon_position, text_colors.default);
+                let x_icon_galley = WidgetText::from(x_icon_text).into_galley(
+                    ui,
+                    Some(false),
+                    1.0,
+                    TextStyle::Button,
+                );
+                x_icon_galley.paint_with_color_override(
+                    ui.painter(),
+                    icon_position,
+                    text_colors.default,
+                );
             }
         }
 
         tab_response
     }
 
-    fn tab_context_menu(button_response: Response, row_entity: &Entity, tab_action: &mut Option<TabAction>) {
+    fn tab_context_menu(
+        button_response: Response,
+        row_entity: &Entity,
+        tab_action: &mut Option<TabAction>,
+    ) {
         // Tab context menu
         button_response.context_menu(|ui| {
-            if ui
-                .add(egui::Button::new("Close"))
-                .clicked()
-            {
+            if ui.add(egui::Button::new("Close")).clicked() {
                 *tab_action = Some(TabAction::Close(*row_entity));
                 ui.close_menu();
             }
-            if ui
-                .add(egui::Button::new("Close Other Tabs"))
-                .clicked()
-            {
+            if ui.add(egui::Button::new("Close Other Tabs")).clicked() {
                 *tab_action = Some(TabAction::CloseOthers(*row_entity));
                 ui.close_menu();
             }
-            if ui
-                .add(egui::Button::new("Close All Tabs"))
-                .clicked()
-            {
+            if ui.add(egui::Button::new("Close All Tabs")).clicked() {
                 *tab_action = Some(TabAction::CloseAll);
                 ui.close_menu();
             }

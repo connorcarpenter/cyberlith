@@ -1,9 +1,11 @@
-
 use std::collections::BTreeMap;
 
 use bevy_ecs::prelude::{Component, Entity};
 
-use vortex_proto::{components::{ChangelistStatus, EntryKind}, messages::ChangelistAction};
+use vortex_proto::{
+    components::{ChangelistStatus, EntryKind},
+    messages::ChangelistAction,
+};
 
 use crate::app::ui::ModalRequestHandle;
 
@@ -53,7 +55,7 @@ pub struct FileSystemUiState {
     pub opened: bool,
     pub context_menu_response: Option<ContextMenuAction>,
     pub modal_request: Option<(ModalRequestType, ModalRequestHandle)>,
-    pub change_status: Option<ChangelistStatus>
+    pub change_status: Option<ChangelistStatus>,
 }
 
 impl FileSystemUiState {

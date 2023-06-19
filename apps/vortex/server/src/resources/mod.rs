@@ -6,7 +6,6 @@ pub use user_manager::UserManager;
 mod file_entry;
 pub mod fs_waitlist;
 mod git_manager;
+mod tab_manager;
 mod user_manager;
 mod workspace;
-mod tab_manager;
-

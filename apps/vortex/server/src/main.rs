@@ -20,9 +20,9 @@ use crate::{
 
 mod components;
 mod config;
+mod files;
 mod resources;
 mod systems;
-mod files;
 
 fn main() {
     info!("Vortex Server starting up");

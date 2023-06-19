@@ -101,7 +101,6 @@ fn edit_menu_button(ui: &mut Ui, world: &mut World) {
 }
 
 fn git_menu_button(ui: &mut Ui) {
-
     ui.menu_button("Git", |ui| {
         ui.set_min_width(220.0);
         ui.style_mut().wrap = Some(false);

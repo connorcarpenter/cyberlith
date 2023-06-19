@@ -1,6 +1,10 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{entity::Entity, prelude::{Commands, World}, system::{Query, SystemState}};
+use bevy_ecs::{
+    entity::Entity,
+    prelude::{Commands, World},
+    system::{Query, SystemState},
+};
 use bevy_log::info;
 use naia_bevy_server::{BitReader, BitWriter, Serde, SerdeErr, Server, UnsignedVariableInteger};
 
@@ -18,8 +22,13 @@ enum SkelAction {
 pub struct SkelWriter;
 
 impl SkelWriter {
-    fn world_to_actions(&self, world: &mut World, content_entities: &Vec<Entity>) -> Vec<SkelAction> {
-        let mut system_state: SystemState<(Server, Query<(&Vertex3d, Option<&HasParent>)>)> = SystemState::new(world);
+    fn world_to_actions(
+        &self,
+        world: &mut World,
+        content_entities: &Vec<Entity>,
+    ) -> Vec<SkelAction> {
+        let mut system_state: SystemState<(Server, Query<(&Vertex3d, Option<&HasParent>)>)> =
+            SystemState::new(world);
         let (server, vertex_query) = system_state.get_mut(world);
 
         let mut output = Vec::new();
@@ -32,23 +41,15 @@ impl SkelWriter {
 
             let parent_id: Option<Entity> = {
                 match has_parent_opt {
-                    Some(has_parent) => {
-                        match has_parent.parent_id.get(&server) {
-                            Some(parent_id) => Some(parent_id),
-                            None => None,
-                        }
+                    Some(has_parent) => match has_parent.parent_id.get(&server) {
+                        Some(parent_id) => Some(parent_id),
+                        None => None,
                     },
                     None => None,
                 }
             };
 
-            map.insert(*entity, (
-                id,
-                vertex.x(),
-                vertex.y(),
-                vertex.z(),
-                parent_id,
-            ));
+            map.insert(*entity, (id, vertex.x(), vertex.y(), vertex.z(), parent_id));
         }
 
         for entity in content_entities.iter() {
@@ -121,7 +122,11 @@ impl SkelReader {
             let z = VertexSerdeInt::de(bit_reader)?.to();
             let parent_id: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
             let parent_id_opt = {
-                if parent_id == 0 { None } else { Some(parent_id - 1) }
+                if parent_id == 0 {
+                    None
+                } else {
+                    Some(parent_id - 1)
+                }
             };
 
             output.push(SkelAction::Vertex(x, y, z, parent_id_opt));

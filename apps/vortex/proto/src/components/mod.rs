@@ -1,8 +1,7 @@
 use naia_bevy_shared::{Protocol, ProtocolPlugin};
 
 pub use file_system::{
-    ChangelistEntry, ChangelistStatus, EntryKind, FileSystemEntry, HasParent,
-    NoParent,
+    ChangelistEntry, ChangelistStatus, EntryKind, FileSystemEntry, HasParent, NoParent,
 };
 use file_system::FileSystemComponentsPlugin;
 pub use vertex::{Vertex2d, Vertex3d, VertexSerdeInt};

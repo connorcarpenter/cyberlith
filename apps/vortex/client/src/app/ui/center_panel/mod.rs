@@ -1,12 +1,14 @@
-
 use bevy_ecs::world::World;
 
 use render_egui::{egui, egui::Frame};
 
-use crate::app::{ui::{
-    workspaces::{skeleton_builder, text_editor},
-    UiState, WorkspaceType,
-}, resources::tab_manager::TabManager};
+use crate::app::{
+    resources::tab_manager::TabManager,
+    ui::{
+        UiState,
+        workspaces::{skeleton_builder, text_editor}, WorkspaceType,
+    },
+};
 
 pub fn center_panel(context: &egui::Context, world: &mut World) {
     egui::CentralPanel::default()

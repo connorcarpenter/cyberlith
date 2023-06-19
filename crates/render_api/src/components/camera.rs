@@ -4,7 +4,9 @@ use bevy_ecs::{bundle::Bundle, component::Component};
 
 use math::Vec3;
 
-use crate::{components::{ClearOperation, OrthographicProjection, Projection, RenderTarget, Transform, Viewport}};
+use crate::components::{
+    ClearOperation, OrthographicProjection, Projection, RenderTarget, Transform, Viewport,
+};
 
 // Camera Bundle
 #[derive(Default, Bundle)]
@@ -21,12 +23,19 @@ impl CameraBundle {
                 viewport: Some(*viewport),
                 ..Default::default()
             },
-            transform: Transform::from_xyz(viewport.width as f32 * 0.5,
-                                           viewport.height as f32 * 0.5,
-                                           -1.0)
-                .looking_at(Vec3::new(viewport.width as f32 * 0.5,
-                                      viewport.height as f32 * 0.5,
-                                      0.0), Vec3::Y),
+            transform: Transform::from_xyz(
+                viewport.width as f32 * 0.5,
+                viewport.height as f32 * 0.5,
+                -1.0,
+            )
+                .looking_at(
+                    Vec3::new(
+                        viewport.width as f32 * 0.5,
+                        viewport.height as f32 * 0.5,
+                        0.0,
+                    ),
+                    Vec3::Y,
+                ),
             projection: Projection::Orthographic(OrthographicProjection {
                 height: viewport.height as f32,
                 near: 0.0,

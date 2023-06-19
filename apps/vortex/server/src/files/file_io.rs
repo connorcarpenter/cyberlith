@@ -41,7 +41,7 @@ impl FileReader for FileExtension {
     fn read(&self, commands: &mut Commands, server: &Server, bytes: &Box<[u8]>) -> Vec<Entity> {
         match self {
             FileExtension::Skel => SkelReader.read(commands, server, bytes),
-            _ => panic!("File extension {:?} not implemented", self)
+            _ => panic!("File extension {:?} not implemented", self),
         }
     }
 }
@@ -50,7 +50,7 @@ impl FileWriter for FileExtension {
     fn write(&self, world: &mut World, content_entities: &Vec<Entity>) -> Box<[u8]> {
         match self {
             FileExtension::Skel => SkelWriter.write(world, content_entities),
-            _ => panic!("File extension {:?} not implemented", self)
+            _ => panic!("File extension {:?} not implemented", self),
         }
     }
 }

@@ -1,12 +1,19 @@
 use std::collections::{HashMap, VecDeque};
 
-use bevy_ecs::{entity::Entity, system::{Commands, Query, ResMut, Resource, SystemState}, world::{Mut, World}};
+use bevy_ecs::{
+    entity::Entity,
+    system::{Commands, Query, ResMut, Resource, SystemState},
+    world::{Mut, World},
+};
 use bevy_log::info;
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 
 use vortex_proto::{resources::FileEntryKey, types::TabId};
 
-use crate::{files::FileWriter, resources::{GitManager, UserManager}};
+use crate::{
+    files::FileWriter,
+    resources::{GitManager, UserManager},
+};
 
 struct TabState {
     room_key: RoomKey,
@@ -84,14 +91,15 @@ impl TabManager {
 
         // load from file all Entities in the file of the current tab
         let username = user_manager.user_name(user_key).unwrap();
-        let content_entities = git_manager.load_content_entities(commands, server, key_query, username, file_entity);
+        let content_entities =
+            git_manager.load_content_entities(commands, server, key_query, username, file_entity);
 
         for entity in content_entities.iter() {
-
             // associate all new Entities with the new Room
             server.room_mut(&new_room_key).add_entity(entity);
 
-            commands.entity(*entity)
+            commands
+                .entity(*entity)
                 .enable_replication(server)
                 // call "pause_replication" on all Entities (they will be resumed when tab is selected)
                 .pause_replication(server);
@@ -108,10 +116,8 @@ impl TabManager {
 
     pub fn process_queued_actions(world: &mut World) {
         let closed_states = {
-            let mut system_state: SystemState<(
-                Server,
-                ResMut<TabManager>,
-            )> = SystemState::new(world);
+            let mut system_state: SystemState<(Server, ResMut<TabManager>)> =
+                SystemState::new(world);
             let (mut server, mut tab_manager) = system_state.get_mut(world);
 
             tab_manager.process_queued_actions_inner(&mut server)
@@ -126,28 +132,40 @@ impl TabManager {
                 let mut output = Vec::new();
 
                 for (user_key, closed_state) in closed_states.iter() {
-                    let username = world.get_resource::<UserManager>().unwrap().user_name(&user_key).unwrap().to_string();
-                    let file_entry_key = world.entity(closed_state.file_entity).get::<FileEntryKey>().unwrap().clone();
-                    let file_writer = git_manager.working_file_extension(&username, &file_entry_key);
+                    let username = world
+                        .get_resource::<UserManager>()
+                        .unwrap()
+                        .user_name(&user_key)
+                        .unwrap()
+                        .to_string();
+                    let file_entry_key = world
+                        .entity(closed_state.file_entity)
+                        .get::<FileEntryKey>()
+                        .unwrap()
+                        .clone();
+                    let file_writer =
+                        git_manager.working_file_extension(&username, &file_entry_key);
                     let bytes = file_writer.write(world, &closed_state.content_entities);
                     output.push((username, file_entry_key, bytes));
                 }
 
-                let mut system_state: SystemState<(
-                    Commands,
-                    Server,
-                )> = SystemState::new(world);
+                let mut system_state: SystemState<(Commands, Server)> = SystemState::new(world);
                 let (mut commands, mut server) = system_state.get_mut(world);
 
                 for (username, key, bytes) in output {
-                    git_manager.new_modified_changelist_entry(&mut commands, &mut server, &username, &key, bytes);
+                    git_manager.new_modified_changelist_entry(
+                        &mut commands,
+                        &mut server,
+                        &username,
+                        &key,
+                        bytes,
+                    );
                 }
             });
         }
 
         {
             for (_user_key, closed_state) in closed_states.iter() {
-
                 // despawn content entities
                 for entity in closed_state.content_entities.iter() {
                     world.entity_mut(*entity).despawn();
@@ -165,12 +183,7 @@ impl TabManager {
         output
     }
 
-    fn close_tab(
-        &mut self,
-        server: &mut Server,
-        user_key: &UserKey,
-        tab_id: &TabId,
-    ) -> TabState {
+    fn close_tab(&mut self, server: &mut Server, user_key: &UserKey, tab_id: &TabId) -> TabState {
         let mut remove = false;
         let Some(user_state) = self.users.get_mut(user_key) else {
             panic!("User does not exist!");
@@ -211,7 +224,6 @@ impl TabManager {
         }
 
         info!("Select Tab!");
-
 
         if let Some(current_tab_id) = user_state.current_tab {
             let Some(current_tab_state) = user_state.tabs.get_mut(&current_tab_id) else {

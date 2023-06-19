@@ -4,10 +4,7 @@ use bevy_ecs::system::{Commands, Res, ResMut};
 use render_api::{
     Assets,
     base::{Color, PbrMaterial, TriMesh},
-    components::{
-        AmbientLight, CameraBundle,
-        RenderObjectBundle, Transform,
-    },
+    components::{AmbientLight, CameraBundle, RenderObjectBundle, Transform},
     resources::WindowSettings, shapes, Window,
 };
 
@@ -43,13 +40,12 @@ fn setup(
     //         ..default()
     //     });
 
-    commands
-        .spawn(RenderObjectBundle {
-            mesh: meshes.add(shapes::Circle::new(200.0, 20).into()),
-            material: materials.add(Color::GREEN.into()),
-            transform: Transform::from_xy(640.0, 360.0),
-            ..Default::default()
-        });
+    commands.spawn(RenderObjectBundle {
+        mesh: meshes.add(shapes::Circle::new(200.0, 20).into()),
+        material: materials.add(Color::GREEN.into()),
+        transform: Transform::from_xy(640.0, 360.0),
+        ..Default::default()
+    });
     // light
     commands.spawn(AmbientLight {
         intensity: 1.0,

@@ -25,7 +25,7 @@ impl FileEntryValue {
             entity,
             parent,
             children,
-            extension
+            extension,
         }
     }
 
@@ -65,12 +65,15 @@ impl FileEntryValue {
 #[derive(Clone)]
 pub struct ChangelistValue {
     entity: Entity,
-    content: Option<Box<[u8]>>
+    content: Option<Box<[u8]>>,
 }
 
 impl ChangelistValue {
     pub fn new(entity: Entity) -> Self {
-        Self { entity, content: None }
+        Self {
+            entity,
+            content: None,
+        }
     }
 
     pub fn entity(&self) -> Entity {

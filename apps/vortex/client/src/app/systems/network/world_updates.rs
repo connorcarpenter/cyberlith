@@ -6,15 +6,19 @@ use bevy_ecs::{
     system::{Commands, Query, ResMut},
 };
 use bevy_log::info;
-use naia_bevy_client::{Client, events::{
-    DespawnEntityEvent, InsertComponentEvents, RemoveComponentEvents, SpawnEntityEvent,
-    UpdateComponentEvents,
-}};
+use naia_bevy_client::{
+    Client,
+    events::{
+        DespawnEntityEvent, InsertComponentEvents, RemoveComponentEvents, SpawnEntityEvent,
+        UpdateComponentEvents,
+    },
+};
 
 use vortex_proto::components::{ChangelistEntry, EntryKind, FileSystemEntry, HasParent, NoParent};
 
 use crate::app::{
-    components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState}, resources::global::Global,
+    components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
+    resources::global::Global,
     systems::file_post_process,
 };
 

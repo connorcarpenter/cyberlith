@@ -4,7 +4,6 @@ pub use plane::Plane;
 
 pub use crate::base::AxisAlignedBoundingBox as Box;
 
+mod circle;
 mod cube;
 mod plane;
-mod circle;
-
