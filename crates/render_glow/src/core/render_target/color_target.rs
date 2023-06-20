@@ -23,6 +23,30 @@ pub struct ColorTarget<'a> {
 
 impl<'a> RenderTargetExt for ColorTarget<'a> {
     ///
+    /// Returns the width of the color target in texels.
+    /// If using the zero mip level of the underlying texture, then this is simply the width of that texture, otherwise it is the width of the given mip level.
+    ///
+    fn width(&self) -> u32 {
+        match self.target {
+            ColorTexture::Single(texture) => texture.width(),
+            ColorTexture::Array { texture, .. } => texture.width(),
+            ColorTexture::CubeMap { texture, .. } => texture.width(),
+        }
+    }
+
+    ///
+    /// Returns the height of the color target in texels.
+    /// If using the zero mip level of the underlying texture, then this is simply the height of that texture, otherwise it is the height of the given mip level.
+    ///
+    fn height(&self) -> u32 {
+        match self.target {
+            ColorTexture::Single(texture) => texture.height(),
+            ColorTexture::Array { texture, .. } => texture.height(),
+            ColorTexture::CubeMap { texture, .. } => texture.height(),
+        }
+    }
+
+    ///
     /// Writes whatever rendered in the `render` closure into this color target.
     ///
     fn write(&self, render: impl FnOnce()) -> &Self {
@@ -90,30 +114,6 @@ impl<'a> ColorTarget<'a> {
         self.as_render_target()
             .copy_from_color(color_texture, viewport, write_mask);
         self
-    }
-
-    ///
-    /// Returns the width of the color target in texels.
-    /// If using the zero mip level of the underlying texture, then this is simply the width of that texture, otherwise it is the width of the given mip level.
-    ///
-    pub fn width(&self) -> u32 {
-        match self.target {
-            ColorTexture::Single(texture) => texture.width(),
-            ColorTexture::Array { texture, .. } => texture.width(),
-            ColorTexture::CubeMap { texture, .. } => texture.width(),
-        }
-    }
-
-    ///
-    /// Returns the height of the color target in texels.
-    /// If using the zero mip level of the underlying texture, then this is simply the height of that texture, otherwise it is the height of the given mip level.
-    ///
-    pub fn height(&self) -> u32 {
-        match self.target {
-            ColorTexture::Single(texture) => texture.height(),
-            ColorTexture::Array { texture, .. } => texture.height(),
-            ColorTexture::CubeMap { texture, .. } => texture.height(),
-        }
     }
 
     pub(super) fn as_render_target(&self) -> RenderTarget<'a> {

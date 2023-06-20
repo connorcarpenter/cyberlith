@@ -16,6 +16,27 @@ pub struct DepthTarget<'a> {
 
 impl<'a> RenderTargetExt for DepthTarget<'a> {
     ///
+    /// Returns the width of the depth target in texels, which is simply the width of the underlying texture.
+    ///
+    fn width(&self) -> u32 {
+        match &self.target {
+            DepthTexture::Single(texture) => texture.width(),
+            DepthTexture::Array { texture, .. } => texture.width(),
+            DepthTexture::CubeMap { texture, .. } => texture.width(),
+        }
+    }
+
+    ///
+    /// Returns the height of the depth target in texels, which is simply the height of the underlying texture.
+    ///
+    fn height(&self) -> u32 {
+        match &self.target {
+            DepthTexture::Single(texture) => texture.height(),
+            DepthTexture::Array { texture, .. } => texture.height(),
+            DepthTexture::CubeMap { texture, .. } => texture.height(),
+        }
+    }
+    ///
     /// Writes whatever rendered in the `render` closure into this depth target.
     ///
     fn write(&self, render: impl FnOnce()) -> &Self {
@@ -80,28 +101,6 @@ impl<'a> DepthTarget<'a> {
 
     pub(super) fn as_render_target(&self) -> RenderTarget<'a> {
         RenderTarget::new_depth(self.clone())
-    }
-
-    ///
-    /// Returns the width of the depth target in texels, which is simply the width of the underlying texture.
-    ///
-    pub fn width(&self) -> u32 {
-        match &self.target {
-            DepthTexture::Single(texture) => texture.width(),
-            DepthTexture::Array { texture, .. } => texture.width(),
-            DepthTexture::CubeMap { texture, .. } => texture.width(),
-        }
-    }
-
-    ///
-    /// Returns the height of the depth target in texels, which is simply the height of the underlying texture.
-    ///
-    pub fn height(&self) -> u32 {
-        match &self.target {
-            DepthTexture::Single(texture) => texture.height(),
-            DepthTexture::Array { texture, .. } => texture.height(),
-            DepthTexture::CubeMap { texture, .. } => texture.height(),
-        }
     }
 
     pub(super) fn bind(&self) {

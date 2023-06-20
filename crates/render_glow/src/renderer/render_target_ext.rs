@@ -1,6 +1,10 @@
+use render_api::components::Viewport;
+
 use crate::renderer::{cmp_render_order, RenderPass};
 
 pub trait RenderTargetExt {
+    fn width(&self) -> u32;
+    fn height(&self) -> u32;
     fn write(&self, render: impl FnOnce()) -> &Self;
 
     ///
@@ -23,5 +27,12 @@ pub trait RenderTargetExt {
             }
         });
         self
+    }
+
+    ///
+    /// Returns the viewport that encloses the entire target.
+    ///
+    fn viewport(&self) -> Viewport {
+        Viewport::new_at_origin(self.width(), self.height())
     }
 }

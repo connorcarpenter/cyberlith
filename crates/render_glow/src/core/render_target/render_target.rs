@@ -20,6 +20,16 @@ pub struct RenderTarget<'a> {
 }
 
 impl<'a> RenderTargetExt for RenderTarget<'a> {
+    /// The width of this target.
+    fn width(&self) -> u32 {
+        self.width
+    }
+
+    /// The height of this target.
+    fn height(&self) -> u32 {
+        self.height
+    }
+
     ///
     /// Writes whatever rendered in the `render` closure into the part of this render target
     ///
@@ -58,16 +68,6 @@ impl<'a> RenderTarget<'a> {
             width,
             height,
         }
-    }
-
-    /// The width of this target.
-    pub fn width(&self) -> u32 {
-        self.width
-    }
-
-    /// The height of this target.
-    pub fn height(&self) -> u32 {
-        self.height
     }
 
     ///
