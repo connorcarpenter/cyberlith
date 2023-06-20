@@ -2,7 +2,7 @@ use render_api::{base::CubeMapSide, components::Viewport};
 
 use crate::core::{
     ClearState, DepthTexture, DepthTexture2D,
-    DepthTexture2DArray, DepthTextureCubeMap, RenderTarget, ScissorBox,
+    DepthTexture2DArray, DepthTextureCubeMap, RenderTarget,
 };
 
 ///
@@ -45,15 +45,7 @@ impl<'a> DepthTarget<'a> {
     /// Clears the depth of this depth target as defined by the given clear state.
     ///
     pub fn clear(&self, clear_state: ClearState) -> &Self {
-        self.clear_partially(self.scissor_box(), clear_state)
-    }
-
-    ///
-    /// Clears the depth of the part of this depth target that is inside the given scissor box.
-    ///
-    pub fn clear_partially(&self, scissor_box: ScissorBox, clear_state: ClearState) -> &Self {
-        self.as_render_target().clear_partially(
-            scissor_box,
+        self.as_render_target().clear(
             ClearState {
                 depth: clear_state.depth,
                 ..ClearState::none()
@@ -66,14 +58,7 @@ impl<'a> DepthTarget<'a> {
     /// Writes whatever rendered in the `render` closure into this depth target.
     ///
     pub fn write(&self, render: impl FnOnce()) -> &Self {
-        self.write_partially(self.scissor_box(), render)
-    }
-
-    ///
-    /// Writes whatever rendered in the `render` closure into the part of this depth target defined by the scissor box.
-    ///
-    pub fn write_partially(&self, scissor_box: ScissorBox, render: impl FnOnce()) -> &Self {
-        self.as_render_target().write_partially(scissor_box, render);
+        self.as_render_target().write(render);
         self
     }
 
@@ -82,15 +67,7 @@ impl<'a> DepthTarget<'a> {
     ///
     #[cfg(not(target_arch = "wasm32"))]
     pub fn read(&self) -> Vec<f32> {
-        self.read_partially(self.scissor_box())
-    }
-
-    ///
-    /// Returns the depth values in this depth target inside the given scissor box.
-    ///
-    #[cfg(not(target_arch = "wasm32"))]
-    pub fn read_partially(&self, scissor_box: ScissorBox) -> Vec<f32> {
-        self.as_render_target().read_depth_partially(scissor_box)
+        self.as_render_target().read_depth()
     }
 
     ///
@@ -98,21 +75,8 @@ impl<'a> DepthTarget<'a> {
     /// to the part of this depth target specified by the [Viewport].
     ///
     pub fn copy_from(&self, depth_texture: DepthTexture, viewport: Viewport) -> &Self {
-        self.copy_partially_from(self.scissor_box(), depth_texture, viewport)
-    }
-
-    ///
-    /// Copies the content of the depth texture as limited by the [ScissorBox]
-    /// to the part of this depth target specified by the [Viewport].
-    ///
-    pub fn copy_partially_from(
-        &self,
-        scissor_box: ScissorBox,
-        depth_texture: DepthTexture,
-        viewport: Viewport,
-    ) -> &Self {
         self.as_render_target()
-            .copy_partially_from_depth(scissor_box, depth_texture, viewport);
+            .copy_from_depth(depth_texture, viewport);
         self
     }
 

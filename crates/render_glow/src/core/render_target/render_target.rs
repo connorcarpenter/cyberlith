@@ -59,34 +59,18 @@ impl<'a> RenderTarget<'a> {
     }
 
     ///
-    /// Clears the color and depth of this render target as defined by the given clear state.
+    /// Clears the color and depth of the part of this render target
     ///
     pub fn clear(&self, clear_state: ClearState) -> &Self {
-        self.clear_partially(self.scissor_box(), clear_state)
-    }
-
-    ///
-    /// Clears the color and depth of the part of this render target that is inside the given scissor box.
-    ///
-    pub fn clear_partially(&self, scissor_box: ScissorBox, clear_state: ClearState) -> &Self {
-        Context::get().set_scissor(scissor_box);
         self.bind(glow::DRAW_FRAMEBUFFER);
         clear_state.apply();
         self
     }
 
     ///
-    /// Writes whatever rendered in the `render` closure into this render target.
+    /// Writes whatever rendered in the `render` closure into the part of this render target
     ///
     pub fn write(&self, render: impl FnOnce()) -> &Self {
-        self.write_partially(self.scissor_box(), render)
-    }
-
-    ///
-    /// Writes whatever rendered in the `render` closure into the part of this render target defined by the scissor box.
-    ///
-    pub fn write_partially(&self, scissor_box: ScissorBox, render: impl FnOnce()) -> &Self {
-        Context::get().set_scissor(scissor_box);
         self.bind(glow::DRAW_FRAMEBUFFER);
         render();
         self
@@ -99,16 +83,6 @@ impl<'a> RenderTarget<'a> {
     /// **Note:** On web, the data format needs to match the data format of the color texture.
     ///
     pub fn read_color<T: TextureDataType>(&self) -> Vec<T> {
-        self.read_color_partially(self.scissor_box())
-    }
-
-    ///
-    /// Returns the colors of the pixels in this render target inside the given scissor box.
-    /// The number of channels per pixel and the data format for each channel is specified by the generic parameter.
-    ///
-    /// **Note:** On web, the data format needs to match the data format of the color texture.
-    ///
-    pub fn read_color_partially<T: TextureDataType>(&self, scissor_box: ScissorBox) -> Vec<T> {
         if self.id.is_some() && self.color.is_none() {
             panic!("cannot read color from a render target without a color target");
         }
@@ -120,13 +94,13 @@ impl<'a> RenderTarget<'a> {
             data_size *= 4 / T::size() as usize
         }
         let mut bytes =
-            vec![0u8; scissor_box.width as usize * scissor_box.height as usize * data_size];
+            vec![0u8; self.width as usize * self.height as usize * data_size];
         unsafe {
             Context::get().read_pixels(
-                scissor_box.x,
-                scissor_box.y,
-                scissor_box.width as i32,
-                scissor_box.height as i32,
+                0,
+                0,
+                self.width as i32,
+                self.height as i32,
                 format_from_data_type::<T>(),
                 T::data_type(),
                 glow::PixelPackData::Slice(&mut bytes),
@@ -135,8 +109,8 @@ impl<'a> RenderTarget<'a> {
         let mut pixels = from_byte_slice(&bytes).to_vec();
         flip_y(
             &mut pixels,
-            scissor_box.width as usize,
-            scissor_box.height as usize,
+            self.width as usize,
+            self.height as usize,
         );
         pixels
     }
@@ -146,26 +120,18 @@ impl<'a> RenderTarget<'a> {
     ///
     #[cfg(not(target_arch = "wasm32"))]
     pub fn read_depth(&self) -> Vec<f32> {
-        self.read_depth_partially(self.scissor_box())
-    }
-
-    ///
-    /// Returns the depth values in this render target inside the given scissor box.
-    ///
-    #[cfg(not(target_arch = "wasm32"))]
-    pub fn read_depth_partially(&self, scissor_box: ScissorBox) -> Vec<f32> {
         if self.id.is_some() && self.depth.is_none() {
             panic!("cannot read depth from a render target without a depth target");
         }
         self.bind(glow::DRAW_FRAMEBUFFER);
         self.bind(glow::READ_FRAMEBUFFER);
-        let mut pixels = vec![0u8; scissor_box.width as usize * scissor_box.height as usize * 4];
+        let mut pixels = vec![0u8; self.width as usize * self.height as usize * 4];
         unsafe {
             Context::get().read_pixels(
-                scissor_box.x,
-                scissor_box.y,
-                scissor_box.width as i32,
-                scissor_box.height as i32,
+                0,
+                0,
+                self.width as i32,
+                self.height as i32,
                 glow::DEPTH_COMPONENT,
                 glow::FLOAT,
                 glow::PixelPackData::Slice(&mut pixels),
@@ -185,28 +151,7 @@ impl<'a> RenderTarget<'a> {
         viewport: Viewport,
         write_mask: WriteMask,
     ) -> &Self {
-        self.copy_partially_from(
-            self.scissor_box(),
-            color_texture,
-            depth_texture,
-            viewport,
-            write_mask,
-        )
-    }
-
-    ///
-    /// Copies the content of the color and depth texture as limited by the [ScissorBox] and [WriteMask]
-    /// to the part of this render target specified by the [Viewport].
-    ///
-    pub fn copy_partially_from(
-        &self,
-        scissor_box: ScissorBox,
-        color_texture: ColorTexture,
-        depth_texture: DepthTexture,
-        viewport: Viewport,
-        write_mask: WriteMask,
-    ) -> &Self {
-        self.write_partially(scissor_box, || {
+        self.write(|| {
             let fragment_shader_source = format!(
                 "{}\n{}\n
                 in vec2 uvs;
@@ -245,21 +190,7 @@ impl<'a> RenderTarget<'a> {
         viewport: Viewport,
         write_mask: WriteMask,
     ) -> &Self {
-        self.copy_partially_from_color(self.scissor_box(), color_texture, viewport, write_mask)
-    }
-
-    ///
-    /// Copies the content of the color texture as limited by the [ScissorBox] and [WriteMask]
-    /// to the part of this render target specified by the [Viewport].
-    ///
-    pub fn copy_partially_from_color(
-        &self,
-        scissor_box: ScissorBox,
-        color_texture: ColorTexture,
-        viewport: Viewport,
-        write_mask: WriteMask,
-    ) -> &Self {
-        self.write_partially(scissor_box, || {
+        self.write(|| {
             let fragment_shader_source = format!(
                 "{}\nin vec2 uvs;
                 layout (location = 0) out vec4 color;
@@ -289,20 +220,7 @@ impl<'a> RenderTarget<'a> {
     /// to the part of this render target specified by the [Viewport].
     ///
     pub fn copy_from_depth(&self, depth_texture: DepthTexture, viewport: Viewport) -> &Self {
-        self.copy_partially_from_depth(self.scissor_box(), depth_texture, viewport)
-    }
-
-    ///
-    /// Copies the content of the depth texture as limited by the [ScissorBox]
-    /// to the part of this render target specified by the [Viewport].
-    ///
-    pub fn copy_partially_from_depth(
-        &self,
-        scissor_box: ScissorBox,
-        depth_texture: DepthTexture,
-        viewport: Viewport,
-    ) -> &Self {
-        self.write_partially(scissor_box, || {
+        self.write(|| {
             let fragment_shader_source = format!(
                 "{}\n
                     in vec2 uvs;

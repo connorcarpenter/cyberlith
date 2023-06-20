@@ -3,7 +3,7 @@ use glow::HasContext;
 use render_api::{base::CubeMapSide, components::Viewport};
 
 use crate::core::{
-    ClearState, ColorTexture, Context, RenderTarget, ScissorBox,
+    ClearState, ColorTexture, Context, RenderTarget,
     Texture2DArray, Texture2DImpl, TextureCubeMap, TextureDataType, WriteMask,
 };
 
@@ -51,15 +51,7 @@ impl<'a> ColorTarget<'a> {
     /// Clears the color of this color target as defined by the given clear state.
     ///
     pub fn clear(&self, clear_state: ClearState) -> &Self {
-        self.clear_partially(self.scissor_box(), clear_state)
-    }
-
-    ///
-    /// Clears the color of the part of this color target that is inside the given scissor box.
-    ///
-    pub fn clear_partially(&self, scissor_box: ScissorBox, clear_state: ClearState) -> &Self {
-        self.as_render_target().clear_partially(
-            scissor_box,
+        self.as_render_target().clear(
             ClearState {
                 depth: None,
                 ..clear_state
@@ -72,14 +64,7 @@ impl<'a> ColorTarget<'a> {
     /// Writes whatever rendered in the `render` closure into this color target.
     ///
     pub fn write(&self, render: impl FnOnce()) -> &Self {
-        self.write_partially(self.scissor_box(), render)
-    }
-
-    ///
-    /// Writes whatever rendered in the `render` closure into the part of this color target defined by the scissor box.
-    ///
-    pub fn write_partially(&self, scissor_box: ScissorBox, render: impl FnOnce()) -> &Self {
-        self.as_render_target().write_partially(scissor_box, render);
+        self.as_render_target().write(render);
         self
     }
 
@@ -90,17 +75,7 @@ impl<'a> ColorTarget<'a> {
     /// **Note:** On web, the data format needs to match the data format of the color texture.
     ///
     pub fn read<T: TextureDataType>(&self) -> Vec<T> {
-        self.read_partially(self.scissor_box())
-    }
-
-    ///
-    /// Returns the colors of the pixels in this color target inside the given scissor box.
-    /// The number of channels per pixel and the data format for each channel is specified by the generic parameter.
-    ///
-    /// **Note:** On web, the data format needs to match the data format of the color texture.
-    ///
-    pub fn read_partially<T: TextureDataType>(&self, scissor_box: ScissorBox) -> Vec<T> {
-        self.as_render_target().read_color_partially(scissor_box)
+        self.as_render_target().read_color()
     }
 
     ///
@@ -113,22 +88,7 @@ impl<'a> ColorTarget<'a> {
         viewport: Viewport,
         write_mask: WriteMask,
     ) -> &Self {
-        self.copy_partially_from(self.scissor_box(), color_texture, viewport, write_mask)
-    }
-
-    ///
-    /// Copies the content of the color texture as limited by the [ScissorBox] and [WriteMask]
-    /// to the part of this color target specified by the [Viewport].
-    ///
-    pub fn copy_partially_from(
-        &self,
-        scissor_box: ScissorBox,
-        color_texture: ColorTexture,
-        viewport: Viewport,
-        write_mask: WriteMask,
-    ) -> &Self {
-        self.as_render_target().copy_partially_from_color(
-            scissor_box,
+        self.as_render_target().copy_from_color(
             color_texture,
             viewport,
             write_mask,

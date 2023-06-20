@@ -3,9 +3,8 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-use glow::HasContext;
-
 use bevy_log::info;
+use glow::HasContext;
 
 use render_api::components::Viewport;
 
@@ -90,25 +89,6 @@ impl Context {
             programs.insert(key, program);
         }
         Ok(())
-    }
-
-    ///
-    /// Set the scissor test for this context (see [ScissorBox]).
-    ///
-    pub fn set_scissor(&self, scissor_box: ScissorBox) {
-        unsafe {
-            if scissor_box.width > 0 && scissor_box.height > 0 {
-                self.enable(glow::SCISSOR_TEST);
-                self.scissor(
-                    scissor_box.x,
-                    scissor_box.y,
-                    scissor_box.width as i32,
-                    scissor_box.height as i32,
-                );
-            } else {
-                self.disable(glow::SCISSOR_TEST);
-            }
-        }
     }
 
     ///

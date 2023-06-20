@@ -5,13 +5,6 @@ use crate::core::*;
 macro_rules! impl_render_target_core_extensions_body {
     () => {
         ///
-        /// Returns the scissor box that encloses the entire target.
-        ///
-        pub fn scissor_box(&self) -> ScissorBox {
-            ScissorBox::new_at_origin(self.width(), self.height())
-        }
-
-        ///
         /// Returns the viewport that encloses the entire target.
         ///
         pub fn viewport(&self) -> Viewport {
