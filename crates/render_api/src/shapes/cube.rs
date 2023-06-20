@@ -2,21 +2,12 @@ use math::{Vec2, Vec3};
 
 use crate::base::{Positions, TriMesh};
 
-pub struct Cube {
-    pub size: f32,
-}
-
-impl Cube {
-    pub fn new(size: f32) -> Self {
-        Self { size }
-    }
-}
+pub struct Cube;
 
 impl From<Cube> for TriMesh {
-    fn from(cube: Cube) -> Self {
-        let size = cube.size;
-        let half_size = size / 2.0;
-        let neg_half_size = -half_size;
+    fn from(_cube: Cube) -> Self {
+        let half_size = 1.0;
+        let neg_half_size = -1.0;
 
         let tri_mesh = {
             let positions = vec![
