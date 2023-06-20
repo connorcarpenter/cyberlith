@@ -6,10 +6,8 @@
 //!
 
 pub use color_material::*;
-pub use color_texture::*;
 pub use cpu_pbr_utils::*;
 pub use depth_material::*;
-pub use depth_texture::*;
 pub use fragment_attributes::*;
 pub use fragment_shader::*;
 pub use material::*;
@@ -20,10 +18,8 @@ pub use texture_2d_ref::*;
 pub use uv_material::*;
 
 mod color_material;
-mod color_texture;
 mod cpu_pbr_utils;
 mod depth_material;
-mod depth_texture;
 mod fragment_attributes;
 mod fragment_shader;
 mod material;
@@ -32,3 +28,4 @@ mod physical_material;
 mod position_material;
 mod texture_2d_ref;
 mod uv_material;
+

@@ -1,15 +1,3 @@
-mod buffer;
-mod context;
-mod data_type;
-mod error;
-mod program;
-mod render_states;
-mod render_target;
-mod scissor_box;
-mod texture;
-mod uniform;
-mod utils;
-
 pub use buffer::*;
 pub use context::*;
 pub use data_type::*;
@@ -17,7 +5,18 @@ pub use error::*;
 pub use program::*;
 pub use render_states::*;
 pub use render_target::*;
-pub use scissor_box::*;
 pub use texture::*;
 pub use uniform::*;
 pub use utils::*;
+
+mod buffer;
+mod context;
+mod data_type;
+mod error;
+mod program;
+mod render_states;
+mod render_target;
+mod texture;
+mod uniform;
+mod utils;
+
