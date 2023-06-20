@@ -12,6 +12,7 @@ use crate::core::{
     apply_cube_effect, ClearState, ColorTarget, Context, format_from_data_type, PrimitiveDataType,
     RenderStates, texture::*, to_byte_slice,
 };
+use crate::renderer::RenderTargetExt;
 
 pub trait CubeMapSideExt {
     fn to_const(self) -> u32;

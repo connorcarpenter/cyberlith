@@ -3,6 +3,7 @@ use glow::{Framebuffer, HasContext};
 use render_api::components::Viewport;
 
 use crate::core::*;
+use crate::renderer::RenderTargetExt;
 
 ///
 /// Adds additional functionality to clear, read from and write to the screen (see [RenderTarget::screen]) or a color texture and
@@ -16,6 +17,17 @@ pub struct RenderTarget<'a> {
     depth: Option<DepthTarget<'a>>,
     width: u32,
     height: u32,
+}
+
+impl<'a> RenderTargetExt for RenderTarget<'a> {
+    ///
+    /// Writes whatever rendered in the `render` closure into the part of this render target
+    ///
+    fn write(&self, render: impl FnOnce()) -> &Self {
+        self.bind(glow::DRAW_FRAMEBUFFER);
+        render();
+        self
+    }
 }
 
 impl<'a> RenderTarget<'a> {
@@ -64,15 +76,6 @@ impl<'a> RenderTarget<'a> {
     pub fn clear(&self, clear_state: ClearState) -> &Self {
         self.bind(glow::DRAW_FRAMEBUFFER);
         clear_state.apply();
-        self
-    }
-
-    ///
-    /// Writes whatever rendered in the `render` closure into the part of this render target
-    ///
-    pub fn write(&self, render: impl FnOnce()) -> &Self {
-        self.bind(glow::DRAW_FRAMEBUFFER);
-        render();
         self
     }
 

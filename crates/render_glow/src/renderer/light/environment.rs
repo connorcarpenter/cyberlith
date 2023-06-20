@@ -9,6 +9,7 @@ use render_api::{
 };
 
 use crate::core::*;
+use crate::renderer::RenderTargetExt;
 
 ///
 /// Precalculations of light shining from an environment map (known as image based lighting - IBL).

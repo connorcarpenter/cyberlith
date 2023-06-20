@@ -6,6 +6,7 @@ use crate::core::{
     ClearState, ColorTexture, Context, RenderTarget, Texture2DArray, Texture2DImpl, TextureCubeMap,
     TextureDataType, WriteMask,
 };
+use crate::renderer::RenderTargetExt;
 
 ///
 /// Adds additional functionality to clear, read from and write to a texture.
@@ -18,6 +19,16 @@ use crate::core::{
 #[derive(Clone)]
 pub struct ColorTarget<'a> {
     target: ColorTexture<'a>,
+}
+
+impl<'a> RenderTargetExt for ColorTarget<'a> {
+    ///
+    /// Writes whatever rendered in the `render` closure into this color target.
+    ///
+    fn write(&self, render: impl FnOnce()) -> &Self {
+        self.as_render_target().write(render);
+        self
+    }
 }
 
 impl<'a> ColorTarget<'a> {
@@ -53,14 +64,6 @@ impl<'a> ColorTarget<'a> {
             depth: None,
             ..clear_state
         });
-        self
-    }
-
-    ///
-    /// Writes whatever rendered in the `render` closure into this color target.
-    ///
-    pub fn write(&self, render: impl FnOnce()) -> &Self {
-        self.as_render_target().write(render);
         self
     }
 

@@ -18,6 +18,7 @@ use crate::{
     },
     window::FrameInput,
 };
+use crate::renderer::RenderTargetExt;
 
 pub fn draw(
     frame_input: NonSendMut<FrameInput<()>>,

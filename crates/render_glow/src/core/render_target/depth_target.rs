@@ -1,9 +1,7 @@
 use render_api::{base::CubeMapSide, components::Viewport};
 
-use crate::core::{
-    ClearState, DepthTexture, DepthTexture2D, DepthTexture2DArray, DepthTextureCubeMap,
-    RenderTarget,
-};
+use crate::core::{ClearState, DepthTexture, DepthTexture2D, DepthTexture2DArray, DepthTextureCubeMap, RenderTarget};
+use crate::renderer::RenderTargetExt;
 
 ///
 /// Adds additional functionality to clear, read from and write to a texture.
@@ -14,6 +12,16 @@ use crate::core::{
 #[derive(Clone)]
 pub struct DepthTarget<'a> {
     target: DepthTexture<'a>,
+}
+
+impl<'a> RenderTargetExt for DepthTarget<'a> {
+    ///
+    /// Writes whatever rendered in the `render` closure into this depth target.
+    ///
+    fn write(&self, render: impl FnOnce()) -> &Self {
+        self.as_render_target().write(render);
+        self
+    }
 }
 
 impl<'a> DepthTarget<'a> {
@@ -49,14 +57,6 @@ impl<'a> DepthTarget<'a> {
             depth: clear_state.depth,
             ..ClearState::none()
         });
-        self
-    }
-
-    ///
-    /// Writes whatever rendered in the `render` closure into this depth target.
-    ///
-    pub fn write(&self, render: impl FnOnce()) -> &Self {
-        self.as_render_target().write(render);
         self
     }
 
