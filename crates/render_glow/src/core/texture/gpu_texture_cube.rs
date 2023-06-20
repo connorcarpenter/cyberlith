@@ -2,8 +2,8 @@ use glow::HasContext;
 
 use render_api::{
     base::{
-        CpuTexture2D as CpuTexture, CpuTextureCube as ApiTextureCubeMap, CubeSide, Interpolation,
-        TextureData, Wrapping,
+        CpuTexture2D, CpuTextureCube, CpuTextureData, CubeSide,
+        Interpolation, Wrapping,
     },
     components::Viewport,
 };
@@ -42,8 +42,8 @@ pub struct GpuTextureCube {
     data_byte_size: usize,
 }
 
-impl From<&ApiTextureCubeMap> for GpuTextureCube {
-    fn from(api_texture: &ApiTextureCubeMap) -> Self {
+impl From<&CpuTextureCube> for GpuTextureCube {
+    fn from(api_texture: &CpuTextureCube) -> Self {
         Self::new(
             &api_texture.right,
             &api_texture.left,
@@ -61,15 +61,15 @@ impl GpuTextureCube {
     /// All of the cpu textures must contain data with the same [TextureDataType].
     ///
     pub fn new(
-        right: &CpuTexture,
-        left: &CpuTexture,
-        top: &CpuTexture,
-        bottom: &CpuTexture,
-        front: &CpuTexture,
-        back: &CpuTexture,
+        right: &CpuTexture2D,
+        left: &CpuTexture2D,
+        top: &CpuTexture2D,
+        bottom: &CpuTexture2D,
+        front: &CpuTexture2D,
+        back: &CpuTexture2D,
     ) -> Self {
         match &front.initial_data() {
-            Some(TextureData::RU8(front_data)) => Self::new_with_data(
+            Some(CpuTextureData::RU8(front_data)) => Self::new_with_data(
                 front,
                 right.wrap_s(),
                 ru8_data(right),
@@ -79,7 +79,7 @@ impl GpuTextureCube {
                 front_data,
                 ru8_data(back),
             ),
-            Some(TextureData::RgU8(front_data)) => Self::new_with_data(
+            Some(CpuTextureData::RgU8(front_data)) => Self::new_with_data(
                 front,
                 right.wrap_s(),
                 rgu8_data(right),
@@ -89,7 +89,7 @@ impl GpuTextureCube {
                 front_data,
                 rgu8_data(back),
             ),
-            Some(TextureData::RgbU8(front_data)) => Self::new_with_data(
+            Some(CpuTextureData::RgbU8(front_data)) => Self::new_with_data(
                 front,
                 right.wrap_s(),
                 rgbu8_data(right),
@@ -99,7 +99,7 @@ impl GpuTextureCube {
                 front_data,
                 rgbu8_data(back),
             ),
-            Some(TextureData::RgbaU8(front_data)) => Self::new_with_data(
+            Some(CpuTextureData::RgbaU8(front_data)) => Self::new_with_data(
                 front,
                 right.wrap_s(),
                 rgbau8_data(right),
@@ -109,7 +109,7 @@ impl GpuTextureCube {
                 front_data,
                 rgbau8_data(back),
             ),
-            Some(TextureData::RF16(front_data)) => Self::new_with_data(
+            Some(CpuTextureData::RF16(front_data)) => Self::new_with_data(
                 front,
                 right.wrap_s(),
                 rf16_data(right),
@@ -119,7 +119,7 @@ impl GpuTextureCube {
                 front_data,
                 rf16_data(back),
             ),
-            Some(TextureData::RgF16(front_data)) => Self::new_with_data(
+            Some(CpuTextureData::RgF16(front_data)) => Self::new_with_data(
                 front,
                 right.wrap_s(),
                 rgf16_data(right),
@@ -129,7 +129,7 @@ impl GpuTextureCube {
                 front_data,
                 rgf16_data(back),
             ),
-            Some(TextureData::RgbF16(front_data)) => Self::new_with_data(
+            Some(CpuTextureData::RgbF16(front_data)) => Self::new_with_data(
                 front,
                 right.wrap_s(),
                 rgbf16_data(right),
@@ -139,7 +139,7 @@ impl GpuTextureCube {
                 front_data,
                 rgbf16_data(back),
             ),
-            Some(TextureData::RgbaF16(front_data)) => Self::new_with_data(
+            Some(CpuTextureData::RgbaF16(front_data)) => Self::new_with_data(
                 front,
                 right.wrap_s(),
                 rgbaf16_data(right),
@@ -149,7 +149,7 @@ impl GpuTextureCube {
                 front_data,
                 rgbaf16_data(back),
             ),
-            Some(TextureData::RF32(front_data)) => Self::new_with_data(
+            Some(CpuTextureData::RF32(front_data)) => Self::new_with_data(
                 front,
                 right.wrap_s(),
                 rf32_data(right),
@@ -159,7 +159,7 @@ impl GpuTextureCube {
                 front_data,
                 rf32_data(back),
             ),
-            Some(TextureData::RgF32(front_data)) => Self::new_with_data(
+            Some(CpuTextureData::RgF32(front_data)) => Self::new_with_data(
                 front,
                 right.wrap_s(),
                 rgf32_data(right),
@@ -169,7 +169,7 @@ impl GpuTextureCube {
                 front_data,
                 rgf32_data(back),
             ),
-            Some(TextureData::RgbF32(front_data)) => Self::new_with_data(
+            Some(CpuTextureData::RgbF32(front_data)) => Self::new_with_data(
                 front,
                 right.wrap_s(),
                 rgbf32_data(right),
@@ -179,7 +179,7 @@ impl GpuTextureCube {
                 front_data,
                 rgbf32_data(back),
             ),
-            Some(TextureData::RgbaF32(front_data)) => Self::new_with_data(
+            Some(CpuTextureData::RgbaF32(front_data)) => Self::new_with_data(
                 front,
                 right.wrap_s(),
                 rgbaf32_data(right),
@@ -196,7 +196,7 @@ impl GpuTextureCube {
     }
 
     fn new_with_data<T: TextureDataType>(
-        cpu_texture: &CpuTexture,
+        cpu_texture: &CpuTexture2D,
         wrap_r: Wrapping,
         right_data: &[T],
         left_data: &[T],
@@ -355,7 +355,7 @@ impl GpuTextureCube {
     /// Creates a new cube texture generated from the equirectangular texture given as input.
     ///
     pub fn new_from_equirectangular<T: PrimitiveDataType + TextureDataType>(
-        cpu_texture: &CpuTexture,
+        cpu_texture: &CpuTexture2D,
     ) -> Self {
         let texture_size = cpu_texture.width() / 4;
         let mut texture = Self::new_empty::<[T; 4]>(

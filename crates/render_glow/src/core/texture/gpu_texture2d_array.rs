@@ -2,11 +2,16 @@ use glow::HasContext;
 use half::f16;
 
 use render_api::base::{
-    CpuTexture2D as CpuTexture, Interpolation, TextureData, TextureDataType as ApiTextureDataType,
+    CpuTexture2D, CpuTextureData, CpuTextureDataType, Interpolation,
     Wrapping,
 };
 
-use crate::core::{ColorTarget, Context, flip_y, format_from_data_type, texture::*, to_byte_slice};
+use crate::core::{
+    check_data_length, ColorTarget, Context, flip_y, format_from_data_type,
+    generate, rf16_data, rf32_data, rgbaf16_data, rgbaf32_data, rgbau8_data,
+    rgbf16_data, rgbf32_data, rgbu8_data, rgf16_data, rgf32_data, rgu8_data,
+    ru8_data, set_parameters, TextureDataType, to_byte_slice,
+};
 
 ///
 /// A array of 2D color textures that can be rendered into.
@@ -27,86 +32,86 @@ impl GpuTexture2DArray {
     /// Creates a new texture array from the given [GpuTexture2D]s.
     /// All of the cpu textures must contain data with the same [TextureDataType] and the same width and height.
     ///
-    pub fn new(cpu_textures: &[&CpuTexture]) -> Self {
+    pub fn new(cpu_textures: &[&CpuTexture2D]) -> Self {
         let cpu_texture = cpu_textures
             .get(0)
             .expect("Expect at least one texture in a texture array");
         match &cpu_texture.initial_data() {
-            Some(TextureData::RU8(_)) => Self::new_with_data(
+            Some(CpuTextureData::RU8(_)) => Self::new_with_data(
                 cpu_texture,
                 &cpu_textures.iter().map(|t| ru8_data(t)).collect::<Vec<_>>(),
             ),
-            Some(TextureData::RgU8(_)) => Self::new_with_data(
+            Some(CpuTextureData::RgU8(_)) => Self::new_with_data(
                 cpu_texture,
                 &cpu_textures
                     .iter()
                     .map(|t| rgu8_data(t))
                     .collect::<Vec<_>>(),
             ),
-            Some(TextureData::RgbU8(_)) => Self::new_with_data(
+            Some(CpuTextureData::RgbU8(_)) => Self::new_with_data(
                 cpu_texture,
                 &cpu_textures
                     .iter()
                     .map(|t| rgbu8_data(t))
                     .collect::<Vec<_>>(),
             ),
-            Some(TextureData::RgbaU8(_)) => Self::new_with_data(
+            Some(CpuTextureData::RgbaU8(_)) => Self::new_with_data(
                 cpu_texture,
                 &cpu_textures
                     .iter()
                     .map(|t| rgbau8_data(t))
                     .collect::<Vec<_>>(),
             ),
-            Some(TextureData::RF16(_)) => Self::new_with_data(
+            Some(CpuTextureData::RF16(_)) => Self::new_with_data(
                 cpu_texture,
                 &cpu_textures
                     .iter()
                     .map(|t| rf16_data(t))
                     .collect::<Vec<_>>(),
             ),
-            Some(TextureData::RgF16(_)) => Self::new_with_data(
+            Some(CpuTextureData::RgF16(_)) => Self::new_with_data(
                 cpu_texture,
                 &cpu_textures
                     .iter()
                     .map(|t| rgf16_data(t))
                     .collect::<Vec<_>>(),
             ),
-            Some(TextureData::RgbF16(_)) => Self::new_with_data(
+            Some(CpuTextureData::RgbF16(_)) => Self::new_with_data(
                 cpu_texture,
                 &cpu_textures
                     .iter()
                     .map(|t| rgbf16_data(t))
                     .collect::<Vec<_>>(),
             ),
-            Some(TextureData::RgbaF16(_)) => Self::new_with_data(
+            Some(CpuTextureData::RgbaF16(_)) => Self::new_with_data(
                 cpu_texture,
                 &cpu_textures
                     .iter()
                     .map(|t| rgbaf16_data(t))
                     .collect::<Vec<_>>(),
             ),
-            Some(TextureData::RF32(_)) => Self::new_with_data(
+            Some(CpuTextureData::RF32(_)) => Self::new_with_data(
                 cpu_texture,
                 &cpu_textures
                     .iter()
                     .map(|t| rf32_data(t))
                     .collect::<Vec<_>>(),
             ),
-            Some(TextureData::RgF32(_)) => Self::new_with_data(
+            Some(CpuTextureData::RgF32(_)) => Self::new_with_data(
                 cpu_texture,
                 &cpu_textures
                     .iter()
                     .map(|t| rgf32_data(t))
                     .collect::<Vec<_>>(),
             ),
-            Some(TextureData::RgbF32(_)) => Self::new_with_data(
+            Some(CpuTextureData::RgbF32(_)) => Self::new_with_data(
                 cpu_texture,
                 &cpu_textures
                     .iter()
                     .map(|t| rgbf32_data(t))
                     .collect::<Vec<_>>(),
             ),
-            Some(TextureData::RgbaF32(_)) => Self::new_with_data(
+            Some(CpuTextureData::RgbaF32(_)) => Self::new_with_data(
                 cpu_texture,
                 &cpu_textures
                     .iter()
@@ -117,7 +122,7 @@ impl GpuTexture2DArray {
         }
     }
 
-    fn new_with_data<T: TextureDataType>(cpu_texture: &CpuTexture, data: &[&[T]]) -> Self {
+    fn new_with_data<T: TextureDataType>(cpu_texture: &CpuTexture2D, data: &[&[T]]) -> Self {
         let mut texture = Self::new_empty::<T>(
             cpu_texture.width(),
             cpu_texture.height(),
@@ -131,42 +136,42 @@ impl GpuTexture2DArray {
         texture
     }
 
-    fn new_empty_from_cpu(cpu_texture: &CpuTexture, depth: u32) -> Self {
+    fn new_empty_from_cpu(cpu_texture: &CpuTexture2D, depth: u32) -> Self {
         match cpu_texture.data_type() {
-            ApiTextureDataType::RU8 => Self::new_empty_from_cpu_typed::<u8>(cpu_texture, depth),
-            ApiTextureDataType::RgU8 => {
+            CpuTextureDataType::RU8 => Self::new_empty_from_cpu_typed::<u8>(cpu_texture, depth),
+            CpuTextureDataType::RgU8 => {
                 Self::new_empty_from_cpu_typed::<[u8; 2]>(cpu_texture, depth)
             }
-            ApiTextureDataType::RgbU8 => {
+            CpuTextureDataType::RgbU8 => {
                 Self::new_empty_from_cpu_typed::<[u8; 3]>(cpu_texture, depth)
             }
-            ApiTextureDataType::RgbaU8 => {
+            CpuTextureDataType::RgbaU8 => {
                 Self::new_empty_from_cpu_typed::<[u8; 4]>(cpu_texture, depth)
             }
-            ApiTextureDataType::RF16 => Self::new_empty_from_cpu_typed::<f16>(cpu_texture, depth),
-            ApiTextureDataType::RgF16 => {
+            CpuTextureDataType::RF16 => Self::new_empty_from_cpu_typed::<f16>(cpu_texture, depth),
+            CpuTextureDataType::RgF16 => {
                 Self::new_empty_from_cpu_typed::<[f16; 2]>(cpu_texture, depth)
             }
-            ApiTextureDataType::RgbF16 => {
+            CpuTextureDataType::RgbF16 => {
                 Self::new_empty_from_cpu_typed::<[f16; 3]>(cpu_texture, depth)
             }
-            ApiTextureDataType::RgbaF16 => {
+            CpuTextureDataType::RgbaF16 => {
                 Self::new_empty_from_cpu_typed::<[f16; 4]>(cpu_texture, depth)
             }
-            ApiTextureDataType::RF32 => Self::new_empty_from_cpu_typed::<f32>(cpu_texture, depth),
-            ApiTextureDataType::RgF32 => {
+            CpuTextureDataType::RF32 => Self::new_empty_from_cpu_typed::<f32>(cpu_texture, depth),
+            CpuTextureDataType::RgF32 => {
                 Self::new_empty_from_cpu_typed::<[f32; 2]>(cpu_texture, depth)
             }
-            ApiTextureDataType::RgbF32 => {
+            CpuTextureDataType::RgbF32 => {
                 Self::new_empty_from_cpu_typed::<[f32; 3]>(cpu_texture, depth)
             }
-            ApiTextureDataType::RgbaF32 => {
+            CpuTextureDataType::RgbaF32 => {
                 Self::new_empty_from_cpu_typed::<[f32; 4]>(cpu_texture, depth)
             }
         }
     }
 
-    fn new_empty_from_cpu_typed<T: TextureDataType>(cpu_texture: &CpuTexture, depth: u32) -> Self {
+    fn new_empty_from_cpu_typed<T: TextureDataType>(cpu_texture: &CpuTexture2D, depth: u32) -> Self {
         Self::new_empty::<T>(
             cpu_texture.width(),
             cpu_texture.height(),

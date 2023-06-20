@@ -1,6 +1,6 @@
-use crate::base::TextureDataType;
+use crate::base::CpuTextureDataType;
 
-use super::{Interpolation, TextureData, Wrapping};
+use super::{CpuTextureData, Interpolation, Wrapping};
 
 ///
 /// A CPU-side version of a 2D texture.
@@ -10,9 +10,9 @@ pub struct CpuTexture2D {
     /// Name of this texture.
     name: String,
     /// The pixel data for the image
-    initial_data: Option<TextureData>,
+    initial_data: Option<CpuTextureData>,
     /// The pixel data type
-    data_type: TextureDataType,
+    data_type: CpuTextureDataType,
     /// The width of the image
     width: u32,
     /// The height of the image
@@ -35,11 +35,11 @@ impl CpuTexture2D {
         output
     }
 
-    pub fn initial_data(&self) -> Option<&TextureData> {
+    pub fn initial_data(&self) -> Option<&CpuTextureData> {
         self.initial_data.as_ref()
     }
 
-    pub fn data_type(&self) -> &TextureDataType {
+    pub fn data_type(&self) -> &CpuTextureDataType {
         &self.data_type
     }
 
@@ -73,7 +73,7 @@ impl Default for CpuTexture2D {
         Self {
             name: "default".to_owned(),
             initial_data: None,
-            data_type: TextureDataType::RgbaU8,
+            data_type: CpuTextureDataType::RgbaU8,
             width: 1,
             height: 1,
             min_filter: Interpolation::Linear,

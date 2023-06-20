@@ -1,6 +1,6 @@
 use glow::HasContext;
 
-use render_api::base::{CpuTexture3D as CpuTexture3D, Interpolation, TextureData, Wrapping};
+use render_api::base::{CpuTexture3D, CpuTextureData, Interpolation, Wrapping};
 
 use crate::core::{Context, format_from_data_type, texture::*, to_byte_slice};
 
@@ -21,18 +21,18 @@ impl GpuTexture3D {
     ///
     pub fn new(cpu_texture: &CpuTexture3D) -> Self {
         match cpu_texture.data {
-            TextureData::RU8(ref data) => Self::new_with_data(cpu_texture, data),
-            TextureData::RgU8(ref data) => Self::new_with_data(cpu_texture, data),
-            TextureData::RgbU8(ref data) => Self::new_with_data(cpu_texture, data),
-            TextureData::RgbaU8(ref data) => Self::new_with_data(cpu_texture, data),
-            TextureData::RF16(ref data) => Self::new_with_data(cpu_texture, data),
-            TextureData::RgF16(ref data) => Self::new_with_data(cpu_texture, data),
-            TextureData::RgbF16(ref data) => Self::new_with_data(cpu_texture, data),
-            TextureData::RgbaF16(ref data) => Self::new_with_data(cpu_texture, data),
-            TextureData::RF32(ref data) => Self::new_with_data(cpu_texture, data),
-            TextureData::RgF32(ref data) => Self::new_with_data(cpu_texture, data),
-            TextureData::RgbF32(ref data) => Self::new_with_data(cpu_texture, data),
-            TextureData::RgbaF32(ref data) => Self::new_with_data(cpu_texture, data),
+            CpuTextureData::RU8(ref data) => Self::new_with_data(cpu_texture, data),
+            CpuTextureData::RgU8(ref data) => Self::new_with_data(cpu_texture, data),
+            CpuTextureData::RgbU8(ref data) => Self::new_with_data(cpu_texture, data),
+            CpuTextureData::RgbaU8(ref data) => Self::new_with_data(cpu_texture, data),
+            CpuTextureData::RF16(ref data) => Self::new_with_data(cpu_texture, data),
+            CpuTextureData::RgF16(ref data) => Self::new_with_data(cpu_texture, data),
+            CpuTextureData::RgbF16(ref data) => Self::new_with_data(cpu_texture, data),
+            CpuTextureData::RgbaF16(ref data) => Self::new_with_data(cpu_texture, data),
+            CpuTextureData::RF32(ref data) => Self::new_with_data(cpu_texture, data),
+            CpuTextureData::RgF32(ref data) => Self::new_with_data(cpu_texture, data),
+            CpuTextureData::RgbF32(ref data) => Self::new_with_data(cpu_texture, data),
+            CpuTextureData::RgbaF32(ref data) => Self::new_with_data(cpu_texture, data),
         }
     }
 

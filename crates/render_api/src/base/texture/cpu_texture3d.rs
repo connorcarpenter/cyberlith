@@ -1,4 +1,4 @@
-use super::{Interpolation, TextureData, Wrapping};
+use super::{CpuTextureData, Interpolation, Wrapping};
 
 ///
 /// A CPU-side version of a 3D texture.
@@ -8,7 +8,7 @@ pub struct CpuTexture3D {
     /// Name of this texture.
     pub name: String,
     /// The pixel data for the image
-    pub data: TextureData,
+    pub data: CpuTextureData,
     /// The width of the image
     pub width: u32,
     /// The height of the image
@@ -31,7 +31,7 @@ impl Default for CpuTexture3D {
     fn default() -> Self {
         Self {
             name: "default".to_owned(),
-            data: TextureData::RgbaU8(vec![[0, 0, 0, 0]]),
+            data: CpuTextureData::RgbaU8(vec![[0, 0, 0, 0]]),
             width: 1,
             height: 1,
             depth: 1,

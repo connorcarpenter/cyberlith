@@ -55,7 +55,7 @@ pub enum Wrapping {
 /// ```
 ///
 #[derive(Clone, PartialEq)]
-pub enum TextureData {
+pub enum CpuTextureData {
     /// One byte in the red channel.
     RU8(Vec<u8>),
     /// One byte in the red and green channel.
@@ -84,7 +84,7 @@ pub enum TextureData {
     RgbaF32(Vec<[f32; 4]>),
 }
 
-impl std::fmt::Debug for TextureData {
+impl std::fmt::Debug for CpuTextureData {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::RU8(values) => write!(f, "R u8 ({:?})", values.len()),
@@ -104,7 +104,7 @@ impl std::fmt::Debug for TextureData {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum TextureDataType {
+pub enum CpuTextureDataType {
     /// One byte in the red channel.
     RU8,
     /// One byte in the red and green channel.
