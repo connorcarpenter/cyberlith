@@ -1,12 +1,11 @@
 use bevy_app::{App, Plugin};
 use bevy_ecs::system::{Commands, Res, ResMut};
 
-use math::Vec2;
 use render_api::{
     Assets,
     base::{Color, CpuMaterial, CpuMesh},
-    components::{AmbientLight, CameraBundle, RenderObjectBundle, Transform},
-    resources::WindowSettings, shapes, Window,
+    components::{AmbientLight, CameraBundle, RenderObjectBundle},
+    resources::WindowSettings, Window,
 };
 
 pub struct GamePlugin;
@@ -34,43 +33,16 @@ fn setup(
 ) {
     // circle
 
-    //commands.spawn(MaterialMesh2dBundle {
-    //         mesh: meshes.add(shape::Circle::new(50.).into()).into(),
-    //         material: materials.add(ColorMaterial::from(Color::PURPLE)),
-    //         transform: Transform::from_translation(Vec3::new(-150., 0., 0.)),
-    //         ..default()
-    //     });
+    commands.spawn(RenderObjectBundle::circle(&mut meshes, &mut materials, 640.0, 360.0, 50.0, 20, Color::GREEN));
+    commands.spawn(RenderObjectBundle::circle(&mut meshes, &mut materials, 480.0, 240.0, 20.0, 20, Color::GREEN));
+    commands.spawn(RenderObjectBundle::circle(&mut meshes, &mut materials, 560.0, 480.0, 30.0, 20, Color::GREEN));
 
-    commands.spawn(RenderObjectBundle {
-        mesh: meshes.add(
-            shapes::Triangle::new_2d(
-                Vec2::new(0.0, 0.0),
-                Vec2::new(0.0, 100.0),
-                Vec2::new(100.0, 0.0),
-            )
-                .into(),
-        ),
-        material: materials.add(Color::GREEN.into()),
-        transform: Transform::from_xy(640.0, 360.0),
-        ..Default::default()
-    });
     // light
     commands.spawn(AmbientLight {
         intensity: 1.0,
         color: Color::WHITE,
         ..Default::default()
     });
-    // commands.spawn(PointLight {
-    //     position: Vec3::new(40.0, 80.0, 40.0),
-    //     intensity: 0.3,
-    //     color: Color::RED,
-    //     ..Default::default()
-    // });
-    // commands.spawn(DirectionalLight {
-    //     direction: Vec3::new(0.0, -1.0, -2.0),
-    //     intensity: 1.0,
-    //     color: Color::WHITE,
-    // });
     // camera
     commands.spawn(CameraBundle::new_2d(&window.viewport()));
 }

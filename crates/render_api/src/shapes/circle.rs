@@ -1,10 +1,13 @@
 use math::Vec3;
 
-use crate::base::{CpuMesh, Indices, Positions};
+use crate::{assets::AssetHash, base::{CpuMesh, Indices, Positions}};
 
+#[derive(Hash)]
 pub struct Circle {
     pub angle_subdivisions: u32,
 }
+
+impl AssetHash<CpuMesh> for Circle {}
 
 impl Circle {
     pub fn new(angle_subdivisions: u32) -> Self {

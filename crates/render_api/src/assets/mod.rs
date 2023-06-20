@@ -1,5 +1,6 @@
+pub use assets::*;
+pub use handle::*;
+
 mod assets;
 mod handle;
 
-pub use assets::Assets;
-pub use handle::Handle;

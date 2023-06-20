@@ -1,5 +1,7 @@
 use math::*;
 
+use crate::{assets::AssetHash, base::CpuMaterial};
+
 /// Represents a color composed of a red, green and blue component.
 /// In addition, the alpha value determines the how transparent the color is (0 is fully transparent and 255 is fully opaque).
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
@@ -13,6 +15,8 @@ pub struct Color {
     /// Alpha component
     pub a: u8,
 }
+
+impl AssetHash<CpuMaterial> for Color {}
 
 impl Color {
     ///

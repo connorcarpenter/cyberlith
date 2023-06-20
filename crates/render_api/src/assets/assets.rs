@@ -1,5 +1,4 @@
-use std::collections::{HashMap, HashSet};
-use std::default::Default;
+use std::{any::{Any, TypeId}, collections::{hash_map::DefaultHasher, HashMap, HashSet}, default::Default, hash::{Hash, Hasher}};
 
 use bevy_ecs::prelude::Resource;
 
@@ -7,14 +6,37 @@ use super::Handle;
 
 #[derive(Default, Resource)]
 pub struct Assets<T> {
+    keys: HashMap<(TypeId, u64), Handle<T>>,
     assets: HashMap<u64, T>,
     last_id: u64,
     added_ids: Vec<u64>,
     changed_ids: HashSet<u64>,
 }
 
+pub trait AssetHash<T>: Any + Hash + Into<T> {
+    fn get_key(&self) -> (TypeId, u64) {
+        let mut hasher = DefaultHasher::new();
+        self.hash(&mut hasher);
+        (self.type_id(), hasher.finish())
+    }
+}
+
 impl<T> Assets<T> {
-    pub fn add(&mut self, t: T) -> Handle<T> {
+    pub fn add<L: AssetHash<T>>(&mut self, l: L) -> Handle<T> {
+        let key = l.get_key();
+
+        if let Some(old_handle) = self.keys.get(&key) {
+            //info!("getting old handle");
+            return old_handle.clone();
+        }
+
+        //info!("making new handle");
+        let new_handle = self.add_inner(l.into());
+        self.keys.insert(key, new_handle.clone());
+        new_handle
+    }
+
+    fn add_inner(&mut self, t: T) -> Handle<T> {
         let handle = Handle::new(self.last_id);
         self.assets.insert(self.last_id, t);
         self.added_ids.push(self.last_id);
