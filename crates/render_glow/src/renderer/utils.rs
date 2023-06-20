@@ -7,8 +7,8 @@ use crate::renderer::{Object, RenderCamera};
 ///
 pub fn cmp_render_order(
     camera: &RenderCamera,
-    obj0: impl Object,
-    obj1: impl Object,
+    obj0: &dyn Object,
+    obj1: &dyn Object,
 ) -> std::cmp::Ordering {
     let distance_a = camera
         .transform

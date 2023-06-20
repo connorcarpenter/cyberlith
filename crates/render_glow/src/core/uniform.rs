@@ -1,9 +1,10 @@
 use half::*;
+
+use data_type::*;
 use math::*;
+use render_api::base::*;
 
 use crate::core::*;
-use data_type::*;
-use render_api::base::*;
 
 ///
 /// Possible types that can be send as a uniform to a shader (a variable that is uniformly available when processing all vertices and fragments).
@@ -29,5 +30,3 @@ impl UniformDataType for Quat {}
 impl UniformDataType for Mat2 {}
 impl UniformDataType for Mat3 {}
 impl UniformDataType for Mat4 {}
-
-impl<T: UniformDataType + ?Sized> UniformDataType for &T {}

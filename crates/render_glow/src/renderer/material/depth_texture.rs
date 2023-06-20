@@ -34,7 +34,7 @@ impl DepthTexture<'_> {
         match self {
             Self::Single(texture) => program.use_depth_texture("depthMap", texture),
             Self::Array { texture, layer } => {
-                program.use_uniform("depthLayer", layer);
+                program.use_uniform("depthLayer", *layer);
                 program.use_depth_texture_array("depthMap", texture);
             }
             Self::CubeMap { .. } => unimplemented!(),

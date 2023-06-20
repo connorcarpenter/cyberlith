@@ -1,6 +1,6 @@
 use half::*;
-use math::*;
 
+use math::*;
 use render_api::base::Color;
 
 use crate::core::{DataType, PrimitiveDataType};
@@ -20,5 +20,3 @@ impl<T: TextureDataType + PrimitiveDataType> TextureDataType for [T; 4] {}
 
 impl TextureDataType for Color {}
 impl TextureDataType for Quat {}
-
-impl<T: TextureDataType + ?Sized> TextureDataType for &T {}

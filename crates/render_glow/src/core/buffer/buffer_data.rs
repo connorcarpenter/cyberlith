@@ -1,6 +1,6 @@
 use half::f16;
-use math::*;
 
+use math::*;
 use render_api::base::Color;
 
 use crate::core::*;
@@ -25,5 +25,3 @@ impl<T: BufferDataType + PrimitiveDataType> BufferDataType for [T; 4] {}
 
 impl BufferDataType for Color {}
 impl BufferDataType for Quat {}
-
-impl<T: BufferDataType + ?Sized> BufferDataType for &T {}

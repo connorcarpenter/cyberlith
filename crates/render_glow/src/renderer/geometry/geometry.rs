@@ -31,18 +31,3 @@ pub trait Geometry: Send + Sync {
     ///
     fn aabb(&self) -> AxisAlignedBoundingBox;
 }
-
-impl<T: Geometry + ?Sized> Geometry for &T {
-    fn render_with_material(
-        &self,
-        material: &dyn Material,
-        camera: &RenderCamera,
-        lights: &[&dyn Light],
-    ) {
-        (*self).render_with_material(material, camera, lights)
-    }
-
-    fn aabb(&self) -> AxisAlignedBoundingBox {
-        (*self).aabb()
-    }
-}

@@ -1,9 +1,10 @@
 use glow::{HasContext, UniformLocation};
 use half::*;
+
 use math::*;
+use render_api::base::*;
 
 use crate::core::*;
-use render_api::base::*;
 
 pub enum UniformType {
     Value,
@@ -186,25 +187,6 @@ pub trait DataType: std::fmt::Debug + Clone {
     fn data_type() -> u32;
     fn size() -> u32;
     fn send_uniform(location: &UniformLocation, data: &[Self]);
-}
-
-impl<T: DataType + ?Sized> DataType for &T {
-    fn internal_format() -> u32 {
-        T::internal_format()
-    }
-    fn data_type() -> u32 {
-        T::data_type()
-    }
-    fn size() -> u32 {
-        T::size()
-    }
-
-    fn send_uniform(location: &UniformLocation, data: &[Self]) {
-        T::send_uniform(
-            location,
-            &data.iter().map(|v| (*v).clone()).collect::<Vec<_>>(),
-        )
-    }
 }
 
 impl DataType for u8 {

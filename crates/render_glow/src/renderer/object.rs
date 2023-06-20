@@ -18,9 +18,3 @@ pub trait Object: Geometry {
     ///
     fn render(&self, camera: &RenderCamera, lights: &[&dyn Light]);
 }
-
-impl<T: Object + ?Sized> Object for &T {
-    fn render(&self, camera: &RenderCamera, lights: &[&dyn Light]) {
-        (*self).render(camera, lights)
-    }
-}
