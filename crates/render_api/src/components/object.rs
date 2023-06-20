@@ -4,7 +4,11 @@ use bevy_ecs::{bundle::Bundle, change_detection::ResMut};
 
 use math::Vec3;
 
-use crate::{Assets, assets::Handle, base::{Color, CpuMaterial, CpuMesh}, shapes};
+use crate::{
+    Assets,
+    assets::Handle,
+    base::{Color, CpuMaterial, CpuMesh}, shapes,
+};
 
 use super::transform::Transform;
 
@@ -16,7 +20,15 @@ pub struct RenderObjectBundle {
 }
 
 impl RenderObjectBundle {
-    pub fn circle(meshes: &mut ResMut<Assets<CpuMesh>>, materials: &mut ResMut<Assets<CpuMaterial>>, x: f32, y: f32, radius: f32, subdivisions: u32, color: Color) -> Self {
+    pub fn circle(
+        meshes: &mut ResMut<Assets<CpuMesh>>,
+        materials: &mut ResMut<Assets<CpuMaterial>>,
+        x: f32,
+        y: f32,
+        radius: f32,
+        subdivisions: u32,
+        color: Color,
+    ) -> Self {
         Self {
             mesh: meshes.add(shapes::Circle::new(subdivisions)),
             material: materials.add(color),

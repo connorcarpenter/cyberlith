@@ -1,10 +1,7 @@
 use glow::HasContext;
 
 use render_api::{
-    base::{
-        CpuTexture2D, CpuTextureCube, CpuTextureData, CubeSide,
-        Interpolation, Wrapping,
-    },
+    base::{CpuTexture2D, CpuTextureCube, CpuTextureData, CubeSide, Interpolation, Wrapping},
     components::Viewport,
 };
 

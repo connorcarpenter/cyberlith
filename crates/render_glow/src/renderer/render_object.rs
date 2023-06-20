@@ -1,7 +1,13 @@
 use math::Mat4;
-use render_api::{base::AxisAlignedBoundingBox, components::{CameraProjection, Transform}};
+use render_api::{
+    base::AxisAlignedBoundingBox,
+    components::{CameraProjection, Transform},
+};
 
-use crate::{core::{Context, Program, RenderStates}, renderer::{FragmentAttributes, Geometry, GpuMesh, Light, Material, RenderCamera}};
+use crate::{
+    core::{Context, Program, RenderStates},
+    renderer::{FragmentAttributes, Geometry, GpuMesh, Light, Material, RenderCamera},
+};
 
 // Render Object
 #[derive(Clone, Copy)]
@@ -47,8 +53,7 @@ impl<'a> RenderObject<'a> {
         );
         program.use_uniform("modelMatrix", self.transform);
 
-        self.mesh
-            .draw(program, render_states, camera, attributes);
+        self.mesh.draw(program, render_states, camera, attributes);
     }
 
     fn vertex_shader_source(&self, required_attributes: FragmentAttributes) -> String {

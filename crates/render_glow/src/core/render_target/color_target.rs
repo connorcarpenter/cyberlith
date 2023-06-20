@@ -3,8 +3,8 @@ use glow::HasContext;
 use render_api::{base::CubeSide, components::Viewport};
 
 use crate::core::{
-    ClearState, Context, GpuColorTexture, GpuTexture2D, GpuTexture2DArray, GpuTextureCube, RenderTarget,
-    TextureDataType, WriteMask,
+    ClearState, Context, GpuColorTexture, GpuTexture2D, GpuTexture2DArray, GpuTextureCube,
+    RenderTarget, TextureDataType, WriteMask,
 };
 use crate::renderer::RenderTargetExt;
 

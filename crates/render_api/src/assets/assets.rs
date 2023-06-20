@@ -1,4 +1,9 @@
-use std::{any::{Any, TypeId}, collections::{hash_map::DefaultHasher, HashMap, HashSet}, default::Default, hash::{Hash, Hasher}};
+use std::{
+    any::{Any, TypeId},
+    collections::{hash_map::DefaultHasher, HashMap, HashSet},
+    default::Default,
+    hash::{Hash, Hasher},
+};
 
 use bevy_ecs::prelude::Resource;
 

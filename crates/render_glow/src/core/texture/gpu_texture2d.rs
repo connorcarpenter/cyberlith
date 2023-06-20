@@ -1,10 +1,7 @@
 use glow::HasContext;
 use half::f16;
 
-use render_api::base::{
-    CpuTexture2D, CpuTextureData, CpuTextureDataType, Interpolation,
-    Wrapping,
-};
+use render_api::base::{CpuTexture2D, CpuTextureData, CpuTextureDataType, Interpolation, Wrapping};
 
 use crate::core::{ColorTarget, Context, flip_y, format_from_data_type, texture::*, to_byte_slice};
 

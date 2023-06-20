@@ -1,16 +1,12 @@
 use glow::HasContext;
 use half::f16;
 
-use render_api::base::{
-    CpuTexture2D, CpuTextureData, CpuTextureDataType, Interpolation,
-    Wrapping,
-};
+use render_api::base::{CpuTexture2D, CpuTextureData, CpuTextureDataType, Interpolation, Wrapping};
 
 use crate::core::{
-    check_data_length, ColorTarget, Context, flip_y, format_from_data_type,
-    generate, rf16_data, rf32_data, rgbaf16_data, rgbaf32_data, rgbau8_data,
-    rgbf16_data, rgbf32_data, rgbu8_data, rgf16_data, rgf32_data, rgu8_data,
-    ru8_data, set_parameters, TextureDataType, to_byte_slice,
+    check_data_length, ColorTarget, Context, flip_y, format_from_data_type, generate, rf16_data,
+    rf32_data, rgbaf16_data, rgbaf32_data, rgbau8_data, rgbf16_data, rgbf32_data, rgbu8_data,
+    rgf16_data, rgf32_data, rgu8_data, ru8_data, set_parameters, TextureDataType, to_byte_slice,
 };
 
 ///
@@ -171,7 +167,10 @@ impl GpuTexture2DArray {
         }
     }
 
-    fn new_empty_from_cpu_typed<T: TextureDataType>(cpu_texture: &CpuTexture2D, depth: u32) -> Self {
+    fn new_empty_from_cpu_typed<T: TextureDataType>(
+        cpu_texture: &CpuTexture2D,
+        depth: u32,
+    ) -> Self {
         Self::new_empty::<T>(
             cpu_texture.width(),
             cpu_texture.height(),

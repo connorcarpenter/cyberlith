@@ -1,6 +1,9 @@
 use render_api::{base::CubeSide, components::Viewport};
 
-use crate::core::{ClearState, GpuDepthTexture, GpuDepthTexture2D, GpuDepthTexture2DArray, GpuDepthTextureCube, RenderTarget};
+use crate::core::{
+    ClearState, GpuDepthTexture, GpuDepthTexture2D, GpuDepthTexture2DArray, GpuDepthTextureCube,
+    RenderTarget,
+};
 use crate::renderer::RenderTargetExt;
 
 ///

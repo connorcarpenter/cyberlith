@@ -9,8 +9,7 @@ pub use texture::*;
 mod aabb;
 mod attenuation;
 mod color;
+mod cpu_material;
 mod error;
 mod geometry;
-mod cpu_material;
 mod texture;
-

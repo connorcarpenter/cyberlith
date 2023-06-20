@@ -8,6 +8,6 @@ pub use geometry::*;
 pub use gpu_mesh::*;
 pub use instanced_mesh::*;
 
-mod gpu_mesh;
 mod geometry;
+mod gpu_mesh;
 mod instanced_mesh;

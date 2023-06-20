@@ -11,12 +11,12 @@ pub use gpu_texture_cube::*;
 pub use texture_data_type::*;
 pub use utils::*;
 
+mod depth_texture_data_type;
 mod gpu_color_texture;
 mod gpu_depth_texture;
 mod gpu_depth_texture2d;
 mod gpu_depth_texture2d_array;
 mod gpu_depth_texture_cube;
-mod depth_texture_data_type;
 mod gpu_texture2d;
 mod gpu_texture2d_array;
 mod gpu_texture3d;
