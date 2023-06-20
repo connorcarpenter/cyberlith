@@ -13,7 +13,7 @@ use crate::{
     asset_impls::AssetImpls,
     core::{DepthTexture2D, RenderTarget, Texture2DImpl},
     renderer::{
-        AmbientLightImpl, BaseMesh, DirectionalLightImpl, Material, RenderLight, RenderObject,
+        AmbientLightImpl, DirectionalLightImpl, GpuMesh, Material, RenderLight, RenderObject,
         RenderPass,
     },
     window::FrameInput,
@@ -23,7 +23,7 @@ use crate::renderer::RenderTargetExt;
 pub fn draw(
     frame_input: NonSendMut<FrameInput<()>>,
     // Resources
-    meshes: Res<AssetImpls<CpuMesh, BaseMesh>>,
+    meshes: Res<AssetImpls<CpuMesh, GpuMesh>>,
     materials: Res<AssetImpls<PbrMaterial, Box<dyn Material>>>,
     mut textures: ResMut<AssetImpls<Texture2D, Texture2DImpl>>,
     mut depth_textures: ResMut<AssetImpls<Texture2D, DepthTexture2D>>,

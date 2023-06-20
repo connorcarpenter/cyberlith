@@ -6,23 +6,23 @@ use render_api::components::CameraProjection;
 
 use crate::{core::*, renderer::*};
 
-use super::BaseMesh;
+use super::GpuMesh;
 
 ///
 /// Similar to [Mesh], except it is possible to render many instances of the same mesh efficiently.
 ///
 pub struct InstancedMesh<'a> {
-    base_mesh: &'a BaseMesh,
+    gpu_mesh: &'a GpuMesh,
     aabb: AxisAlignedBoundingBox,
     instances: &'a Instances,
     instance_buffers: RwLock<(HashMap<String, InstanceBuffer>, Vec3)>,
 }
 
 impl<'a> InstancedMesh<'a> {
-    pub fn compose(base_mesh: &'a BaseMesh, instances: &'a Instances) -> Self {
-        let aabb = base_mesh.aabb;
+    pub fn compose(gpu_mesh: &'a GpuMesh, instances: &'a Instances) -> Self {
+        let aabb = gpu_mesh.aabb;
         let mut new_mesh = Self {
-            base_mesh,
+            gpu_mesh,
             instances,
             instance_buffers: RwLock::new((Default::default(), Vec3::ZERO)),
             aabb,
@@ -57,7 +57,7 @@ impl<'a> InstancedMesh<'a> {
     fn update_aabb(&mut self) {
         let mut aabb = AxisAlignedBoundingBox::EMPTY;
         for i in 0..self.instance_count() as usize {
-            let mut aabb2 = self.base_mesh.aabb;
+            let mut aabb2 = self.gpu_mesh.aabb;
             aabb2.transform(&(self.instances.transformations[i]));
             aabb.expand_with_aabb(&aabb2);
         }
@@ -215,7 +215,7 @@ impl<'a> InstancedMesh<'a> {
                 );
             }
         }
-        self.base_mesh.draw_instanced(
+        self.gpu_mesh.draw_instanced(
             program,
             render_states,
             camera,
@@ -246,11 +246,11 @@ impl<'a> InstancedMesh<'a> {
             } else {
                 ""
             },
-            if instance_buffers.contains_key("instance_color") && self.base_mesh.colors.is_some() {
+            if instance_buffers.contains_key("instance_color") && self.gpu_mesh.colors.is_some() {
                 "#define USE_VERTEX_COLORS\n#define USE_INSTANCE_COLORS\n"
             } else if instance_buffers.contains_key("instance_color") {
                 "#define USE_INSTANCE_COLORS\n"
-            } else if self.base_mesh.colors.is_some() {
+            } else if self.gpu_mesh.colors.is_some() {
                 "#define USE_VERTEX_COLORS\n"
             } else {
                 ""

@@ -3,7 +3,7 @@ use render_api::{base::*, components::Camera};
 
 use crate::{core::*, renderer::*};
 
-pub struct BaseMesh {
+pub struct GpuMesh {
     indices: Option<ElementBuffer>,
     positions: VertexBuffer,
     normals: Option<VertexBuffer>,
@@ -12,7 +12,7 @@ pub struct BaseMesh {
     pub(crate) aabb: AxisAlignedBoundingBox,
 }
 
-impl BaseMesh {
+impl GpuMesh {
     pub fn new(cpu_mesh: &CpuMesh) -> Self {
         #[cfg(debug_assertions)]
         cpu_mesh.validate().expect("invalid cpu mesh");

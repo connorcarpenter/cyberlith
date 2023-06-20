@@ -1,18 +1,18 @@
 use math::Mat4;
 use render_api::{base::AxisAlignedBoundingBox, components::{CameraProjection, Transform}};
 
-use crate::{core::{Context, Program, RenderStates}, renderer::{BaseMesh, FragmentAttributes, Geometry, Light, Material, RenderCamera}};
+use crate::{core::{Context, Program, RenderStates}, renderer::{FragmentAttributes, Geometry, GpuMesh, Light, Material, RenderCamera}};
 
 // Render Object
 #[derive(Clone, Copy)]
 pub struct RenderObject<'a> {
-    pub mesh: &'a BaseMesh,
+    pub mesh: &'a GpuMesh,
     pub material: &'a dyn Material,
     pub transform: Mat4,
 }
 
 impl<'a> RenderObject<'a> {
-    pub fn new(mesh: &'a BaseMesh, material: &'a dyn Material, transform: &'a Transform) -> Self {
+    pub fn new(mesh: &'a GpuMesh, material: &'a dyn Material, transform: &'a Transform) -> Self {
         Self {
             mesh,
             material,

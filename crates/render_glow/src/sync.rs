@@ -16,7 +16,7 @@ use render_api::{
 use crate::{
     asset_impls::AssetImpls,
     core::{DepthTexture2D, Texture2DImpl},
-    renderer::{AmbientLightImpl, BaseMesh, DirectionalLightImpl, Material, PhysicalMaterial},
+    renderer::{AmbientLightImpl, DirectionalLightImpl, GpuMesh, Material, PhysicalMaterial},
 };
 
 pub struct SyncPlugin;
@@ -25,7 +25,7 @@ impl Plugin for SyncPlugin {
     fn build(&self, app: &mut App) {
         app
             // Resources
-            .insert_resource(AssetImpls::<ApiMesh, BaseMesh>::default())
+            .insert_resource(AssetImpls::<ApiMesh, GpuMesh>::default())
             .insert_resource(AssetImpls::<ApiMaterial, Box<dyn Material>>::default())
             .insert_resource(AssetImpls::<ApiTexture, Texture2DImpl>::default())
             .insert_resource(AssetImpls::<ApiTexture, DepthTexture2D>::default())
@@ -42,7 +42,7 @@ impl Plugin for SyncPlugin {
 
 fn sync_mesh_assets(
     mut api_assets: ResMut<Assets<ApiMesh>>,
-    mut asset_impls: ResMut<AssetImpls<ApiMesh, BaseMesh>>,
+    mut asset_impls: ResMut<AssetImpls<ApiMesh, GpuMesh>>,
 ) {
     if !api_assets.is_changed() {
         return;
@@ -52,7 +52,7 @@ fn sync_mesh_assets(
     let added_handles = api_assets.flush_added();
     for added_handle in added_handles {
         let api_data = api_assets.get(&added_handle).unwrap();
-        let impl_data = BaseMesh::new(api_data);
+        let impl_data = GpuMesh::new(api_data);
         asset_impls.insert(added_handle, impl_data);
     }
 }
