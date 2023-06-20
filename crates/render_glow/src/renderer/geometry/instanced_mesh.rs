@@ -73,7 +73,6 @@ impl<'a> InstancedMesh<'a> {
                 .expect("failed acquiring read accesss");
 
             // Update is always needed if the instance buffers is empty; Opaque materials only.
-            // Or, for transparent materials, if the camera moved or if the instance count changed.
             s.0.is_empty()
         };
 
@@ -98,6 +97,8 @@ impl<'a> InstancedMesh<'a> {
         // Next, we can compute the instance buffers with that ordering.
         let mut instance_buffers: HashMap<String, InstanceBuffer> = Default::default();
 
+        // this is checking whether or not any rotations or scaling is applied to any instance
+        // this is a pretty nice approach, I can imagine that this is a common case
         if indices
             .iter()
             .map(|i| self.instances.transformations[*i])
@@ -109,6 +110,7 @@ impl<'a> InstancedMesh<'a> {
                 ) == Mat3::IDENTITY
             })
         {
+            // if there is no rotation or scaling, just use "instance_translation" to store the position
             instance_buffers.insert(
                 "instance_translation".to_string(),
                 InstanceBuffer::new_with_data(
