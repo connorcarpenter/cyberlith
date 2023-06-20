@@ -1,4 +1,4 @@
-use crate::renderer::{Object, RenderCamera};
+use crate::renderer::{Geometry, RenderCamera};
 
 ///
 /// Compare function for sorting objects based on distance from the camera.
@@ -7,8 +7,8 @@ use crate::renderer::{Object, RenderCamera};
 ///
 pub fn cmp_render_order(
     camera: &RenderCamera,
-    obj0: &dyn Object,
-    obj1: &dyn Object,
+    obj0: &dyn Geometry,
+    obj1: &dyn Geometry,
 ) -> std::cmp::Ordering {
     let distance_a = camera
         .transform

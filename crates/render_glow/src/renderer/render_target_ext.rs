@@ -4,7 +4,7 @@ use crate::{
         RenderTarget,
     },
     renderer::{
-        cmp_render_order, Geometry, Light, Material, Object, RenderCamera, RenderObject, RenderPass,
+        cmp_render_order, Geometry, Light, Material, RenderCamera, RenderObject, RenderPass,
     },
 };
 

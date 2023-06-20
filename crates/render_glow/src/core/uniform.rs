@@ -1,6 +1,5 @@
 use half::*;
 
-use data_type::*;
 use math::*;
 use render_api::base::*;
 

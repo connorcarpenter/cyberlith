@@ -1,7 +1,7 @@
 use render_api::{base::AxisAlignedBoundingBox, components::Transform};
 
 use crate::renderer::{
-    BaseMesh, Geometry, Light, Material, Mesh, Object, RenderCamera,
+    BaseMesh, Geometry, Light, Material, Mesh, RenderCamera,
 };
 
 // Render Object
@@ -20,6 +20,10 @@ impl<'a> RenderObject<'a> {
             transform,
         }
     }
+
+    pub fn render(&self, camera: &RenderCamera, lights: &[&dyn Light]) {
+        self.render_with_material(self.material, camera, lights);
+    }
 }
 
 impl<'a> Geometry for RenderObject<'a> {
@@ -35,11 +39,5 @@ impl<'a> Geometry for RenderObject<'a> {
 
     fn aabb(&self) -> AxisAlignedBoundingBox {
         self.mesh.aabb
-    }
-}
-
-impl<'a> Object for RenderObject<'a> {
-    fn render(&self, camera: &RenderCamera, lights: &[&dyn Light]) {
-        self.render_with_material(self.material, camera, lights);
     }
 }
