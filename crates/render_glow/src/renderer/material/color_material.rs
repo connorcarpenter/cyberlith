@@ -16,8 +16,6 @@ pub struct ColorMaterial {
     pub texture: Option<Texture2DRef>,
     /// Render states.
     pub render_states: RenderStates,
-    /// Whether this material should be treated as a transparent material (An object needs to be rendered differently depending on whether it is transparent or opaque).
-    pub is_transparent: bool,
 }
 
 impl ColorMaterial {
@@ -43,7 +41,6 @@ impl ColorMaterial {
         Self {
             color: cpu_material.albedo,
             texture,
-            is_transparent: false,
             render_states: RenderStates::default(),
         }
     }
@@ -57,7 +54,6 @@ impl ColorMaterial {
         Self {
             color: cpu_material.albedo,
             texture,
-            is_transparent: true,
             render_states: RenderStates {
                 write_mask: WriteMask::COLOR,
                 blend: Blend::TRANSPARENCY,
@@ -72,7 +68,6 @@ impl ColorMaterial {
             color: physical_material.albedo,
             texture: physical_material.albedo_texture.clone(),
             render_states: physical_material.render_states,
-            is_transparent: physical_material.is_transparent,
         }
     }
 }
@@ -113,10 +108,6 @@ impl Material for ColorMaterial {
         self.render_states
     }
     fn material_type(&self) -> MaterialType {
-        if self.is_transparent {
-            MaterialType::Transparent
-        } else {
-            MaterialType::Opaque
-        }
+        MaterialType::Opaque
     }
 }

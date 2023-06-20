@@ -30,8 +30,6 @@ pub struct PhysicalMaterial {
     pub occlusion_texture: Option<Texture2DRef>,
     /// Render states.
     pub render_states: RenderStates,
-    /// Whether this material should be treated as a transparent material (An object needs to be rendered differently depending on whether it is transparent or opaque).
-    pub is_transparent: bool,
     /// Color of light shining from an object.
     pub emissive: Color,
     /// Texture with color of light shining from an object.
@@ -110,7 +108,6 @@ impl PhysicalMaterial {
             } else {
                 RenderStates::default()
             },
-            is_transparent,
             emissive: cpu_material.emissive,
             emissive_texture,
             lighting_model: cpu_material.lighting_model,
@@ -202,11 +199,7 @@ impl Material for PhysicalMaterial {
         self.render_states
     }
     fn material_type(&self) -> MaterialType {
-        if self.is_transparent {
-            MaterialType::Transparent
-        } else {
-            MaterialType::Opaque
-        }
+        MaterialType::Opaque
     }
 }
 
@@ -222,7 +215,6 @@ impl Default for PhysicalMaterial {
             occlusion_texture: None,
             occlusion_strength: 1.0,
             render_states: RenderStates::default(),
-            is_transparent: false,
             emissive: Color::BLACK,
             emissive_texture: None,
             lighting_model: LightingModel::Blinn,

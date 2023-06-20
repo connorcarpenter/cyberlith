@@ -1,4 +1,4 @@
-use crate::renderer::{MaterialType, Object, RenderCamera};
+use crate::renderer::{Object, RenderCamera};
 
 ///
 /// Compare function for sorting objects based on distance from the camera.
@@ -10,30 +10,18 @@ pub fn cmp_render_order(
     obj0: impl Object,
     obj1: impl Object,
 ) -> std::cmp::Ordering {
-    if obj0.material_type() == MaterialType::Transparent
-        && obj1.material_type() != MaterialType::Transparent
-    {
-        std::cmp::Ordering::Greater
-    } else if obj0.material_type() != MaterialType::Transparent
-        && obj1.material_type() == MaterialType::Transparent
-    {
-        std::cmp::Ordering::Less
+    let distance_a = camera
+        .transform
+        .translation
+        .distance_squared(obj0.aabb().center());
+    let distance_b = camera
+        .transform
+        .translation
+        .distance_squared(obj1.aabb().center());
+    if distance_a.is_nan() || distance_b.is_nan() {
+        distance_a.is_nan().cmp(&distance_b.is_nan()) // whatever - just save us from panicing on unwrap below
     } else {
-        let distance_a = camera
-            .transform
-            .translation
-            .distance_squared(obj0.aabb().center());
-        let distance_b = camera
-            .transform
-            .translation
-            .distance_squared(obj1.aabb().center());
-        if distance_a.is_nan() || distance_b.is_nan() {
-            distance_a.is_nan().cmp(&distance_b.is_nan()) // whatever - just save us from panicing on unwrap below
-        } else if obj0.material_type() == MaterialType::Transparent {
-            distance_b.partial_cmp(&distance_a).unwrap()
-        } else {
-            distance_a.partial_cmp(&distance_b).unwrap()
-        }
+        distance_a.partial_cmp(&distance_b).unwrap()
     }
 }
 
