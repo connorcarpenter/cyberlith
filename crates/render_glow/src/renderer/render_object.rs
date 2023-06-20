@@ -6,15 +6,15 @@ use render_api::{
 
 use crate::{
     core::{Context, Program, RenderStates},
-    renderer::{FragmentAttributes, Geometry, GpuMesh, Light, Material, RenderCamera},
+    renderer::{FragmentAttributes, GpuMesh, Light, Material, RenderCamera},
 };
 
 // Render Object
 #[derive(Clone, Copy)]
 pub struct RenderObject<'a> {
-    pub mesh: &'a GpuMesh,
-    pub material: &'a dyn Material,
-    pub transform: Mat4,
+    mesh: &'a GpuMesh,
+    material: &'a dyn Material,
+    transform: Mat4,
 }
 
 impl<'a> RenderObject<'a> {
@@ -78,10 +78,14 @@ impl<'a> RenderObject<'a> {
             include_str!("geometry/shaders/mesh.vert"),
         )
     }
-}
 
-impl<'a> Geometry for RenderObject<'a> {
-    fn render_with_material(
+    pub fn aabb(&self) -> AxisAlignedBoundingBox {
+        let mut aabb = self.mesh.aabb;
+        aabb.transform(&self.transform);
+        aabb
+    }
+
+    pub fn render_with_material(
         &self,
         material: &dyn Material,
         render_camera: &RenderCamera,
@@ -100,11 +104,5 @@ impl<'a> Geometry for RenderObject<'a> {
                 );
             })
             .expect("Failed compiling shader");
-    }
-
-    fn aabb(&self) -> AxisAlignedBoundingBox {
-        let mut aabb = self.mesh.aabb;
-        aabb.transform(&self.transform);
-        aabb
     }
 }

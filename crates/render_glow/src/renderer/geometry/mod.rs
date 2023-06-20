@@ -4,10 +4,9 @@
 //! A geometry together with a [material] can be rendered directly, or combined into an [object] (see [Gm]) that can be used in a render call, for example [RenderTarget::render].
 //!
 
-pub use geometry::*;
 pub use gpu_mesh::*;
 pub use instanced_mesh::*;
 
-mod geometry;
 mod gpu_mesh;
 mod instanced_mesh;
+

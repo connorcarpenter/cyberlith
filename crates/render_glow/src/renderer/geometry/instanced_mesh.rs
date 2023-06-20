@@ -264,14 +264,12 @@ impl<'a> InstancedMesh<'a> {
             include_str!("shaders/mesh.vert"),
         )
     }
-}
 
-impl<'a> Geometry for InstancedMesh<'a> {
-    fn aabb(&self) -> AxisAlignedBoundingBox {
+    pub fn aabb(&self) -> AxisAlignedBoundingBox {
         self.aabb
     }
 
-    fn render_with_material(
+    pub fn render_with_material(
         &self,
         material: &dyn Material,
         render_camera: &RenderCamera,
