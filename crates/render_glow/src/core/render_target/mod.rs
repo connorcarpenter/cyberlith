@@ -9,4 +9,3 @@ mod color_target;
 mod depth_target;
 mod render_target;
 mod render_target_ext;
-

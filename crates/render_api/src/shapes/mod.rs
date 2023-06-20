@@ -9,10 +9,9 @@ pub use triangle::Triangle;
 pub use crate::base::AxisAlignedBoundingBox as Box;
 
 mod circle;
-mod cube;
-mod square;
-mod sphere;
-mod cylinder;
 mod cone;
+mod cube;
+mod cylinder;
+mod sphere;
+mod square;
 mod triangle;
-

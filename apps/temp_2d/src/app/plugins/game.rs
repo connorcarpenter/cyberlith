@@ -42,11 +42,14 @@ fn setup(
     //     });
 
     commands.spawn(RenderObjectBundle {
-        mesh: meshes.add(shapes::Triangle::new_2d(
-            Vec2::new(0.0, 0.0),
-            Vec2::new(0.0, 100.0),
-            Vec2::new(100.0, 0.0),
-        ).into()),
+        mesh: meshes.add(
+            shapes::Triangle::new_2d(
+                Vec2::new(0.0, 0.0),
+                Vec2::new(0.0, 100.0),
+                Vec2::new(100.0, 0.0),
+            )
+                .into(),
+        ),
         material: materials.add(Color::GREEN.into()),
         transform: Transform::from_xy(640.0, 360.0),
         ..Default::default()

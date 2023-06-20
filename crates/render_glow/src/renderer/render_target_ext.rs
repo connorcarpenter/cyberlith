@@ -1,8 +1,5 @@
 use crate::{
-    core::{
-        ColorTarget, DepthTarget,
-        RenderTarget,
-    },
+    core::{ColorTarget, DepthTarget, RenderTarget},
     renderer::{
         cmp_render_order, Geometry, Light, Material, RenderCamera, RenderObject, RenderPass,
     },

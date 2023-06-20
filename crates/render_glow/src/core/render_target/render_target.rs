@@ -93,8 +93,7 @@ impl<'a> RenderTarget<'a> {
         if data_size / T::size() as usize == 1 {
             data_size *= 4 / T::size() as usize
         }
-        let mut bytes =
-            vec![0u8; self.width as usize * self.height as usize * data_size];
+        let mut bytes = vec![0u8; self.width as usize * self.height as usize * data_size];
         unsafe {
             Context::get().read_pixels(
                 0,
@@ -107,11 +106,7 @@ impl<'a> RenderTarget<'a> {
             );
         }
         let mut pixels = from_byte_slice(&bytes).to_vec();
-        flip_y(
-            &mut pixels,
-            self.width as usize,
-            self.height as usize,
-        );
+        flip_y(&mut pixels, self.width as usize, self.height as usize);
         pixels
     }
 

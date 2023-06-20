@@ -3,8 +3,8 @@ use glow::HasContext;
 use render_api::{base::CubeMapSide, components::Viewport};
 
 use crate::core::{
-    ClearState, ColorTexture, Context, RenderTarget,
-    Texture2DArray, Texture2DImpl, TextureCubeMap, TextureDataType, WriteMask,
+    ClearState, ColorTexture, Context, RenderTarget, Texture2DArray, Texture2DImpl, TextureCubeMap,
+    TextureDataType, WriteMask,
 };
 
 ///
@@ -21,9 +21,7 @@ pub struct ColorTarget<'a> {
 }
 
 impl<'a> ColorTarget<'a> {
-    pub(in crate::core) fn new_texture2d(
-        texture: &'a Texture2DImpl,
-    ) -> Self {
+    pub(in crate::core) fn new_texture2d(texture: &'a Texture2DImpl) -> Self {
         ColorTarget {
             target: ColorTexture::Single(texture),
         }
@@ -51,12 +49,10 @@ impl<'a> ColorTarget<'a> {
     /// Clears the color of this color target as defined by the given clear state.
     ///
     pub fn clear(&self, clear_state: ClearState) -> &Self {
-        self.as_render_target().clear(
-            ClearState {
-                depth: None,
-                ..clear_state
-            },
-        );
+        self.as_render_target().clear(ClearState {
+            depth: None,
+            ..clear_state
+        });
         self
     }
 
@@ -88,11 +84,8 @@ impl<'a> ColorTarget<'a> {
         viewport: Viewport,
         write_mask: WriteMask,
     ) -> &Self {
-        self.as_render_target().copy_from_color(
-            color_texture,
-            viewport,
-            write_mask,
-        );
+        self.as_render_target()
+            .copy_from_color(color_texture, viewport, write_mask);
         self
     }
 
@@ -103,12 +96,8 @@ impl<'a> ColorTarget<'a> {
     pub fn width(&self) -> u32 {
         match self.target {
             ColorTexture::Single(texture) => texture.width(),
-            ColorTexture::Array { texture, .. } => {
-                texture.width()
-            }
-            ColorTexture::CubeMap { texture, .. } => {
-                texture.width()
-            }
+            ColorTexture::Array { texture, .. } => texture.width(),
+            ColorTexture::CubeMap { texture, .. } => texture.width(),
         }
     }
 
@@ -119,12 +108,8 @@ impl<'a> ColorTarget<'a> {
     pub fn height(&self) -> u32 {
         match self.target {
             ColorTexture::Single(texture) => texture.height(),
-            ColorTexture::Array { texture, .. } => {
-                texture.height()
-            }
-            ColorTexture::CubeMap { texture, .. } => {
-                texture.height()
-            }
+            ColorTexture::Array { texture, .. } => texture.height(),
+            ColorTexture::CubeMap { texture, .. } => texture.height(),
         }
     }
 
@@ -146,11 +131,7 @@ impl<'a> ColorTarget<'a> {
                         .collect::<Vec<u32>>(),
                 );
                 (0..layers.len()).for_each(|channel| {
-                    texture.bind_as_color_target(
-                        layers[channel],
-                        channel as u32,
-                        0,
-                    );
+                    texture.bind_as_color_target(layers[channel], channel as u32, 0);
                 });
             },
             ColorTexture::CubeMap { texture, sides } => unsafe {
@@ -160,11 +141,7 @@ impl<'a> ColorTarget<'a> {
                         .collect::<Vec<u32>>(),
                 );
                 (0..sides.len()).for_each(|channel| {
-                    texture.bind_as_color_target(
-                        sides[channel],
-                        channel as u32,
-                        0,
-                    );
+                    texture.bind_as_color_target(sides[channel], channel as u32, 0);
                 });
             },
         }

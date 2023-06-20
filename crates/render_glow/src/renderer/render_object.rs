@@ -1,8 +1,6 @@
 use render_api::{base::AxisAlignedBoundingBox, components::Transform};
 
-use crate::renderer::{
-    BaseMesh, Geometry, Light, Material, Mesh, RenderCamera,
-};
+use crate::renderer::{BaseMesh, Geometry, Light, Material, Mesh, RenderCamera};
 
 // Render Object
 #[derive(Clone, Copy)]

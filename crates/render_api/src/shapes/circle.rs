@@ -8,9 +8,7 @@ pub struct Circle {
 
 impl Circle {
     pub fn new(angle_subdivisions: u32) -> Self {
-        Self {
-            angle_subdivisions,
-        }
+        Self { angle_subdivisions }
     }
 }
 

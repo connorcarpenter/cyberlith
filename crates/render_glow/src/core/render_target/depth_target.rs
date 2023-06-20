@@ -1,8 +1,8 @@
 use render_api::{base::CubeMapSide, components::Viewport};
 
 use crate::core::{
-    ClearState, DepthTexture, DepthTexture2D,
-    DepthTexture2DArray, DepthTextureCubeMap, RenderTarget,
+    ClearState, DepthTexture, DepthTexture2D, DepthTexture2DArray, DepthTextureCubeMap,
+    RenderTarget,
 };
 
 ///
@@ -45,12 +45,10 @@ impl<'a> DepthTarget<'a> {
     /// Clears the depth of this depth target as defined by the given clear state.
     ///
     pub fn clear(&self, clear_state: ClearState) -> &Self {
-        self.as_render_target().clear(
-            ClearState {
-                depth: clear_state.depth,
-                ..ClearState::none()
-            },
-        );
+        self.as_render_target().clear(ClearState {
+            depth: clear_state.depth,
+            ..ClearState::none()
+        });
         self
     }
 

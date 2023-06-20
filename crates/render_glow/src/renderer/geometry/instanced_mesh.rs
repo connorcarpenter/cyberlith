@@ -64,8 +64,7 @@ impl<'a> InstancedMesh<'a> {
         self.aabb = aabb;
     }
 
-    /// Update the instance buffers, if depth_ordering_pose is populated depth ordering is performed
-    /// using this position.
+    /// Update the instance buffers
     fn update_instance_buffers(&self) {
         let needs_update = {
             let s = self
@@ -90,9 +89,7 @@ impl<'a> InstancedMesh<'a> {
     ///
     /// This function creates the instance buffers, ordering them by distance to the camera
     ///
-    fn create_instance_buffers(
-        &self,
-    ) -> HashMap<String, InstanceBuffer> {
+    fn create_instance_buffers(&self) -> HashMap<String, InstanceBuffer> {
         let indices = {
             // No need to order, just return the indices as is.
             (0..self.instances.transformations.len()).collect::<Vec<usize>>()
@@ -104,7 +101,13 @@ impl<'a> InstancedMesh<'a> {
         if indices
             .iter()
             .map(|i| self.instances.transformations[*i])
-            .all(|t| Mat3::from_cols(t.x_axis.truncate(), t.y_axis.truncate(), t.z_axis.truncate()) == Mat3::IDENTITY)
+            .all(|t| {
+                Mat3::from_cols(
+                    t.x_axis.truncate(),
+                    t.y_axis.truncate(),
+                    t.z_axis.truncate(),
+                ) == Mat3::IDENTITY
+            })
         {
             instance_buffers.insert(
                 "instance_translation".to_string(),

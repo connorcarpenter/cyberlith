@@ -9,8 +9,7 @@ pub use geometry::*;
 pub use instanced_mesh::*;
 pub use mesh::*;
 
-mod geometry;
-mod mesh;
 mod base_mesh;
+mod geometry;
 mod instanced_mesh;
-
+mod mesh;

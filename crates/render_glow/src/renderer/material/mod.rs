@@ -32,4 +32,3 @@ mod physical_material;
 mod position_material;
 mod texture_2d_ref;
 mod uv_material;
-

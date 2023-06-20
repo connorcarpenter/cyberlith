@@ -21,11 +21,7 @@ impl Triangle {
 impl From<Triangle> for TriMesh {
     fn from(tri: Triangle) -> Self {
         let indices: Indices = Indices(Some(vec![0u16, 1, 2]));
-        let positions = vec![
-            tri.a,
-            tri.b,
-            tri.c,
-        ];
+        let positions = vec![tri.a, tri.b, tri.c];
         let normals = vec![Vec3::Z, Vec3::Z, Vec3::Z];
         let uvs = vec![
             Vec2::new(0.0, 1.0),

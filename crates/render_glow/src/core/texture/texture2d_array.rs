@@ -276,10 +276,7 @@ impl Texture2DArray {
     ///
     /// **Note:** [DepthTest] is disabled if not also writing to a depth texture.
     ///
-    pub fn as_color_target<'a>(
-        &'a mut self,
-        layers: &'a [u32],
-    ) -> ColorTarget<'a> {
+    pub fn as_color_target<'a>(&'a mut self, layers: &'a [u32]) -> ColorTarget<'a> {
         ColorTarget::new_texture_2d_array(self, layers)
     }
 

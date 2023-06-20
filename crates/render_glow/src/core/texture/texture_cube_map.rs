@@ -410,10 +410,7 @@ impl TextureCubeMap {
     ///
     /// **Note:** [DepthTest] is disabled if not also writing to a depth texture.
     ///
-    pub fn as_color_target<'a>(
-        &'a mut self,
-        sides: &'a [CubeMapSide],
-    ) -> ColorTarget<'a> {
+    pub fn as_color_target<'a>(&'a mut self, sides: &'a [CubeMapSide]) -> ColorTarget<'a> {
         ColorTarget::new_texture_cube_map(self, sides)
     }
 

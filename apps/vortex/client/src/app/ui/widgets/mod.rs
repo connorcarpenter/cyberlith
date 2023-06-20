@@ -8,4 +8,3 @@ mod changelist_row;
 pub mod colors;
 mod file_tree;
 mod file_tree_row;
-

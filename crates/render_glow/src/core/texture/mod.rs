@@ -23,4 +23,3 @@ mod texture3d;
 mod texture_cube_map;
 mod texture_data_type;
 mod utils;
-
