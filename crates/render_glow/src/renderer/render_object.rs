@@ -1,7 +1,7 @@
 use render_api::{base::AxisAlignedBoundingBox, components::Transform};
 
 use crate::renderer::{
-    BaseMesh, Geometry, Light, Material, MaterialType, Mesh, Object, RenderCamera,
+    BaseMesh, Geometry, Light, Material, Mesh, Object, RenderCamera,
 };
 
 // Render Object
@@ -41,9 +41,5 @@ impl<'a> Geometry for RenderObject<'a> {
 impl<'a> Object for RenderObject<'a> {
     fn render(&self, camera: &RenderCamera, lights: &[&dyn Light]) {
         self.render_with_material(self.material, camera, lights);
-    }
-
-    fn material_type(&self) -> MaterialType {
-        self.material.material_type()
     }
 }

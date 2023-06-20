@@ -198,9 +198,6 @@ impl Material for PhysicalMaterial {
     fn render_states(&self) -> RenderStates {
         self.render_states
     }
-    fn material_type(&self) -> MaterialType {
-        MaterialType::Opaque
-    }
 }
 
 impl Default for PhysicalMaterial {

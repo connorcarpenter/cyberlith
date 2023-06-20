@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
-use crate::{core::*, renderer::*};
-
 use render_api::base::PbrMaterial;
+
+use crate::{core::*, renderer::*};
 
 ///
 /// Render the object with colors that reflect its ORM (occlusion, roughness and metallic) values which primarily is used for debug purposes.
@@ -113,10 +113,6 @@ impl Material for ORMMaterial {
 
     fn render_states(&self) -> RenderStates {
         self.render_states
-    }
-
-    fn material_type(&self) -> MaterialType {
-        MaterialType::Opaque
     }
 }
 

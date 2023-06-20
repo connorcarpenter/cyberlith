@@ -17,19 +17,10 @@ pub trait Object: Geometry {
     /// Must be called in the callback given as input to a [RenderTarget], [ColorTarget] or [DepthTarget] write method.
     ///
     fn render(&self, camera: &RenderCamera, lights: &[&dyn Light]);
-
-    ///
-    /// Returns the type of material applied to this object.
-    ///
-    fn material_type(&self) -> MaterialType;
 }
 
 impl<T: Object + ?Sized> Object for &T {
     fn render(&self, camera: &RenderCamera, lights: &[&dyn Light]) {
         (*self).render(camera, lights)
-    }
-
-    fn material_type(&self) -> MaterialType {
-        (*self).material_type()
     }
 }

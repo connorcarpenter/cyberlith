@@ -1,6 +1,6 @@
 use crate::{
     core::{Program, RenderStates},
-    renderer::{FragmentShader, Light, MaterialType, RenderCamera},
+    renderer::{FragmentShader, Light, RenderCamera},
 };
 
 ///
@@ -24,9 +24,4 @@ pub trait Material: Send + Sync {
     /// Returns the render states needed to render with this material.
     ///
     fn render_states(&self) -> RenderStates;
-
-    ///
-    /// Returns the type of material.
-    ///
-    fn material_type(&self) -> MaterialType;
 }

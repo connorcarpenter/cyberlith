@@ -1,6 +1,6 @@
-use crate::{core::*, renderer::*};
-
 use render_api::base::PbrMaterial;
+
+use crate::{core::*, renderer::*};
 
 ///
 /// Render the object with colors that reflect its uv coordinates which primarily is used for debug purposes.
@@ -33,9 +33,5 @@ impl Material for UVMaterial {
 
     fn render_states(&self) -> RenderStates {
         self.render_states
-    }
-
-    fn material_type(&self) -> MaterialType {
-        MaterialType::Opaque
     }
 }

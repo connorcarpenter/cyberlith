@@ -107,7 +107,4 @@ impl Material for ColorMaterial {
     fn render_states(&self) -> RenderStates {
         self.render_states
     }
-    fn material_type(&self) -> MaterialType {
-        MaterialType::Opaque
-    }
 }
