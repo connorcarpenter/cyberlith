@@ -2,7 +2,7 @@ use glow::HasContext;
 use half::f16;
 
 use render_api::base::{
-    Interpolation, Texture2D as CpuTexture, TextureData, TextureDataType as ApiTextureDataType,
+    CpuTexture2D as CpuTexture, Interpolation, TextureData, TextureDataType as ApiTextureDataType,
     Wrapping,
 };
 
@@ -14,7 +14,7 @@ use crate::core::{ColorTarget, Context, flip_y, format_from_data_type, texture::
 /// **Note:** [DepthTest] is disabled if not also writing to a [DepthTarget].
 /// Use a [RenderTarget] to write to both color and depth.
 ///
-pub struct Texture2DArray {
+pub struct GpuTexture2DArray {
     id: glow::Texture,
     width: u32,
     height: u32,
@@ -22,9 +22,9 @@ pub struct Texture2DArray {
     data_byte_size: usize,
 }
 
-impl Texture2DArray {
+impl GpuTexture2DArray {
     ///
-    /// Creates a new texture array from the given [Texture2DImpl]s.
+    /// Creates a new texture array from the given [GpuTexture2D]s.
     /// All of the cpu textures must contain data with the same [TextureDataType] and the same width and height.
     ///
     pub fn new(cpu_textures: &[&CpuTexture]) -> Self {
@@ -314,7 +314,7 @@ impl Texture2DArray {
     }
 }
 
-impl Drop for Texture2DArray {
+impl Drop for GpuTexture2DArray {
     fn drop(&mut self) {
         unsafe {
             Context::get().delete_texture(self.id);

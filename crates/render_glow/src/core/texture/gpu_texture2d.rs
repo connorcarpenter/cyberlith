@@ -2,7 +2,7 @@ use glow::HasContext;
 use half::f16;
 
 use render_api::base::{
-    Interpolation, Texture2D as CpuTexture, TextureData, TextureDataType as ApiTextureDataType,
+    CpuTexture2D as CpuTexture, Interpolation, TextureData, TextureDataType as ApiTextureDataType,
     Wrapping,
 };
 
@@ -11,14 +11,15 @@ use crate::core::{ColorTarget, Context, flip_y, format_from_data_type, texture::
 ///
 /// A 2D texture, basically an image that is transferred to the GPU.
 ///
-pub struct Texture2DImpl {
+#[derive(Clone)]
+pub struct GpuTexture2D {
     id: glow::Texture,
     width: u32,
     height: u32,
     data_byte_size: usize,
 }
 
-impl Texture2DImpl {
+impl GpuTexture2D {
     ///
     /// Construcs a new texture with the given data.
     ///
@@ -193,13 +194,13 @@ impl Texture2DImpl {
     }
 }
 
-impl From<&CpuTexture> for Texture2DImpl {
+impl From<&CpuTexture> for GpuTexture2D {
     fn from(value: &CpuTexture) -> Self {
         Self::new(value)
     }
 }
 
-impl Drop for Texture2DImpl {
+impl Drop for GpuTexture2D {
     fn drop(&mut self) {
         unsafe {
             Context::get().delete_texture(self.id);

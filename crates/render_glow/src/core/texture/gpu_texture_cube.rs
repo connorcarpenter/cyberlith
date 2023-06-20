@@ -2,7 +2,7 @@ use glow::HasContext;
 
 use render_api::{
     base::{
-        CubeMapSide, Interpolation, Texture2D as CpuTexture, TextureCubeMap as ApiTextureCubeMap,
+        CpuTexture2D as CpuTexture, CpuTextureCube as ApiTextureCubeMap, CubeSide, Interpolation,
         TextureData, Wrapping,
     },
     components::Viewport,
@@ -18,15 +18,15 @@ pub trait CubeMapSideExt {
     fn to_const(self) -> u32;
 }
 
-impl CubeMapSideExt for CubeMapSide {
+impl CubeMapSideExt for CubeSide {
     fn to_const(self) -> u32 {
         match self {
-            CubeMapSide::Right => glow::TEXTURE_CUBE_MAP_POSITIVE_X,
-            CubeMapSide::Left => glow::TEXTURE_CUBE_MAP_NEGATIVE_X,
-            CubeMapSide::Top => glow::TEXTURE_CUBE_MAP_POSITIVE_Y,
-            CubeMapSide::Bottom => glow::TEXTURE_CUBE_MAP_NEGATIVE_Y,
-            CubeMapSide::Front => glow::TEXTURE_CUBE_MAP_POSITIVE_Z,
-            CubeMapSide::Back => glow::TEXTURE_CUBE_MAP_NEGATIVE_Z,
+            CubeSide::Right => glow::TEXTURE_CUBE_MAP_POSITIVE_X,
+            CubeSide::Left => glow::TEXTURE_CUBE_MAP_NEGATIVE_X,
+            CubeSide::Top => glow::TEXTURE_CUBE_MAP_POSITIVE_Y,
+            CubeSide::Bottom => glow::TEXTURE_CUBE_MAP_NEGATIVE_Y,
+            CubeSide::Front => glow::TEXTURE_CUBE_MAP_POSITIVE_Z,
+            CubeSide::Back => glow::TEXTURE_CUBE_MAP_NEGATIVE_Z,
         }
     }
 }
@@ -34,7 +34,7 @@ impl CubeMapSideExt for CubeMapSide {
 ///
 /// A texture that covers all 6 sides of a cube.
 ///
-pub struct TextureCubeMap {
+pub struct GpuTextureCube {
     id: glow::Texture,
     width: u32,
     height: u32,
@@ -42,7 +42,7 @@ pub struct TextureCubeMap {
     data_byte_size: usize,
 }
 
-impl From<&ApiTextureCubeMap> for TextureCubeMap {
+impl From<&ApiTextureCubeMap> for GpuTextureCube {
     fn from(api_texture: &ApiTextureCubeMap) -> Self {
         Self::new(
             &api_texture.right,
@@ -55,7 +55,7 @@ impl From<&ApiTextureCubeMap> for TextureCubeMap {
     }
 }
 
-impl TextureCubeMap {
+impl GpuTextureCube {
     ///
     /// Creates a new cube map texture from the given [CpuTexture]s.
     /// All of the cpu textures must contain data with the same [TextureDataType].
@@ -369,7 +369,7 @@ impl TextureCubeMap {
         );
 
         {
-            let map = Texture2DImpl::new(cpu_texture);
+            let map = GpuTexture2D::new(cpu_texture);
             let fragment_shader_source = "
             uniform sampler2D equirectangularMap;
             in vec3 pos;
@@ -382,7 +382,7 @@ impl TextureCubeMap {
                 outColor = texture(equirectangularMap, uv);
             }";
 
-            for side in CubeMapSide::iter() {
+            for side in CubeSide::iter() {
                 let viewport = Viewport::new_at_origin(texture_size, texture_size);
                 texture
                     .as_color_target(&[side])
@@ -411,7 +411,7 @@ impl TextureCubeMap {
     ///
     /// **Note:** [DepthTest] is disabled if not also writing to a depth texture.
     ///
-    pub fn as_color_target<'a>(&'a mut self, sides: &'a [CubeMapSide]) -> ColorTarget<'a> {
+    pub fn as_color_target<'a>(&'a mut self, sides: &'a [CubeSide]) -> ColorTarget<'a> {
         ColorTarget::new_texture_cube_map(self, sides)
     }
 
@@ -432,7 +432,7 @@ impl TextureCubeMap {
 
     pub(in crate::core) fn bind_as_color_target(
         &self,
-        side: CubeMapSide,
+        side: CubeSide,
         channel: u32,
         mip_level: u32,
     ) {
@@ -454,7 +454,7 @@ impl TextureCubeMap {
     }
 }
 
-impl Drop for TextureCubeMap {
+impl Drop for GpuTextureCube {
     fn drop(&mut self) {
         unsafe {
             Context::get().delete_texture(self.id);

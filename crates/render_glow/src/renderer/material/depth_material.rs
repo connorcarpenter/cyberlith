@@ -1,4 +1,4 @@
-use render_api::{base::PbrMaterial, components::CameraProjection};
+use render_api::{base::CpuMaterial, components::CameraProjection};
 
 use crate::{core::*, renderer::*};
 
@@ -17,7 +17,7 @@ pub struct DepthMaterial {
 }
 
 impl FromPbrMaterial for DepthMaterial {
-    fn from_cpu_material(_cpu_material: &PbrMaterial) -> Self {
+    fn from_cpu_material(_cpu_material: &CpuMaterial) -> Self {
         Self::default()
     }
 }

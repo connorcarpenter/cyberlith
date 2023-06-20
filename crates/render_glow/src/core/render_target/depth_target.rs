@@ -1,17 +1,17 @@
-use render_api::{base::CubeMapSide, components::Viewport};
+use render_api::{base::CubeSide, components::Viewport};
 
-use crate::core::{ClearState, DepthTexture, DepthTexture2D, DepthTexture2DArray, DepthTextureCubeMap, RenderTarget};
+use crate::core::{ClearState, GpuDepthTexture, GpuDepthTexture2D, GpuDepthTexture2DArray, GpuDepthTextureCube, RenderTarget};
 use crate::renderer::RenderTargetExt;
 
 ///
 /// Adds additional functionality to clear, read from and write to a texture.
-/// Use the `as_depth_target` function directly on the texture structs (for example [DepthTexture2D]) to construct a depth target.
+/// Use the `as_depth_target` function directly on the texture structs (for example [GpuDepthTexture2D]) to construct a depth target.
 /// Combine this together with a [ColorTarget] with [RenderTarget::new] to be able to write to both a depth and color target at the same time.
 /// A depth target purely adds functionality, so it can be created each time it is needed, the actual data is saved in the texture.
 ///
 #[derive(Clone)]
 pub struct DepthTarget<'a> {
-    target: DepthTexture<'a>,
+    target: GpuDepthTexture<'a>,
 }
 
 impl<'a> RenderTargetExt for DepthTarget<'a> {
@@ -20,9 +20,9 @@ impl<'a> RenderTargetExt for DepthTarget<'a> {
     ///
     fn width(&self) -> u32 {
         match &self.target {
-            DepthTexture::Single(texture) => texture.width(),
-            DepthTexture::Array { texture, .. } => texture.width(),
-            DepthTexture::CubeMap { texture, .. } => texture.width(),
+            GpuDepthTexture::Single(texture) => texture.width(),
+            GpuDepthTexture::Array { texture, .. } => texture.width(),
+            GpuDepthTexture::CubeMap { texture, .. } => texture.width(),
         }
     }
 
@@ -31,9 +31,9 @@ impl<'a> RenderTargetExt for DepthTarget<'a> {
     ///
     fn height(&self) -> u32 {
         match &self.target {
-            DepthTexture::Single(texture) => texture.height(),
-            DepthTexture::Array { texture, .. } => texture.height(),
-            DepthTexture::CubeMap { texture, .. } => texture.height(),
+            GpuDepthTexture::Single(texture) => texture.height(),
+            GpuDepthTexture::Array { texture, .. } => texture.height(),
+            GpuDepthTexture::CubeMap { texture, .. } => texture.height(),
         }
     }
     ///
@@ -46,27 +46,27 @@ impl<'a> RenderTargetExt for DepthTarget<'a> {
 }
 
 impl<'a> DepthTarget<'a> {
-    pub(in crate::core) fn new_texture2d(texture: &'a DepthTexture2D) -> Self {
+    pub(in crate::core) fn new_texture2d(texture: &'a GpuDepthTexture2D) -> Self {
         Self {
-            target: DepthTexture::Single(texture),
+            target: GpuDepthTexture::Single(texture),
         }
     }
 
     pub(in crate::core) fn new_texture_cube_map(
-        texture: &'a DepthTextureCubeMap,
-        side: CubeMapSide,
+        texture: &'a GpuDepthTextureCube,
+        side: CubeSide,
     ) -> Self {
         Self {
-            target: DepthTexture::CubeMap { texture, side },
+            target: GpuDepthTexture::CubeMap { texture, side },
         }
     }
 
     pub(in crate::core) fn new_texture_2d_array(
-        texture: &'a DepthTexture2DArray,
+        texture: &'a GpuDepthTexture2DArray,
         layer: u32,
     ) -> Self {
         Self {
-            target: DepthTexture::Array { texture, layer },
+            target: GpuDepthTexture::Array { texture, layer },
         }
     }
 
@@ -93,7 +93,7 @@ impl<'a> DepthTarget<'a> {
     /// Copies the content of the depth texture
     /// to the part of this depth target specified by the [Viewport].
     ///
-    pub fn copy_from(&self, depth_texture: DepthTexture, viewport: Viewport) -> &Self {
+    pub fn copy_from(&self, depth_texture: GpuDepthTexture, viewport: Viewport) -> &Self {
         self.as_render_target()
             .copy_from_depth(depth_texture, viewport);
         self
@@ -105,13 +105,13 @@ impl<'a> DepthTarget<'a> {
 
     pub(super) fn bind(&self) {
         match &self.target {
-            DepthTexture::Single(texture) => {
+            GpuDepthTexture::Single(texture) => {
                 texture.bind_as_depth_target();
             }
-            DepthTexture::Array { texture, layer } => {
+            GpuDepthTexture::Array { texture, layer } => {
                 texture.bind_as_depth_target(*layer);
             }
-            DepthTexture::CubeMap { texture, side } => {
+            GpuDepthTexture::CubeMap { texture, side } => {
                 texture.bind_as_depth_target(*side);
             }
         }

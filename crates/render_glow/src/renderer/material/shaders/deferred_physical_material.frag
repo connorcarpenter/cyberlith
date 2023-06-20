@@ -5,23 +5,19 @@ uniform float roughness;
 uniform vec4 albedo;
 #ifdef USE_ALBEDO_TEXTURE
 uniform sampler2D albedoTexture;
-uniform mat3 albedoTexTransform;
 #endif
 
 uniform vec4 emissive;
 #ifdef USE_EMISSIVE_TEXTURE
 uniform sampler2D emissiveTexture;
-uniform mat3 emissiveTexTransform;
 #endif
 
 #ifdef USE_METALLIC_ROUGHNESS_TEXTURE
 uniform sampler2D metallicRoughnessTexture;
-uniform mat3 metallicRoughnessTexTransform;
 #endif
 
 #ifdef USE_OCCLUSION_TEXTURE
 uniform sampler2D occlusionTexture;
-uniform mat3 occlusionTexTransform;
 uniform float occlusionStrength;
 #endif
 
@@ -43,7 +39,7 @@ void main()
 {
     vec4 surface_color = albedo * col;
 #ifdef USE_ALBEDO_TEXTURE
-    vec4 c = texture(albedoTexture, (albedoTexTransform * vec3(uvs, 1.0)).xy);
+    vec4 c = texture(albedoTexture, uvs);
     #ifdef ALPHACUT
         if (c.a < acut) discard;
     #endif
@@ -53,14 +49,14 @@ void main()
     float metallic_factor = metallic;
     float roughness_factor = roughness;
 #ifdef USE_METALLIC_ROUGHNESS_TEXTURE
-    vec2 t = texture(metallicRoughnessTexture, (metallicRoughnessTexTransform * vec3(uvs, 1.0)).xy).gb;
+    vec2 t = texture(metallicRoughnessTexture, uvs).gb;
     roughness_factor *= t.x;
     metallic_factor *= t.y;
 #endif
 
     float occlusion = 1.0;
 #ifdef USE_OCCLUSION_TEXTURE
-    occlusion = mix(1.0, texture(occlusionTexture, (occlusionTexTransform * vec3(uvs, 1.0)).xy).r, occlusionStrength);
+    occlusion = mix(1.0, texture(occlusionTexture, uvs).r, occlusionStrength);
 #endif
 
     vec3 normal = normalize(gl_FrontFacing ? nor : -nor);
@@ -73,7 +69,7 @@ void main()
 
     vec3 total_emissive = emissive.rgb;
 #ifdef USE_EMISSIVE_TEXTURE
-    vec4 e = texture(emissiveTexture, (emissiveTexTransform * vec3(uvs, 1.0)).xy);
+    vec4 e = texture(emissiveTexture, uvs);
     total_emissive *= rgb_from_srgb(e.rgb);
 #endif
 

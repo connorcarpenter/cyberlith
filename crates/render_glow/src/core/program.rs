@@ -189,27 +189,27 @@ impl Program {
     }
 
     ///
-    /// Use the given [Texture2DImpl] in this shader program and associate it with the given named variable.
+    /// Use the given [GpuTexture2D] in this shader program and associate it with the given named variable.
     /// The glsl shader variable must be of type `uniform sampler2D` and can only be accessed in the fragment shader.
     ///
     /// # Panic
     /// Will panic if the texture is not defined in the shader code or not used.
     /// In the latter case the variable is removed by the shader compiler.
     ///
-    pub fn use_texture(&self, name: &str, texture: &Texture2DImpl) {
+    pub fn use_texture(&self, name: &str, texture: &GpuTexture2D) {
         self.use_texture_internal(name);
         texture.bind();
     }
 
     ///
-    /// Use the given [DepthTexture2D] in this shader program and associate it with the given named variable.
+    /// Use the given [GpuDepthTexture2D] in this shader program and associate it with the given named variable.
     /// The glsl shader variable must be of type `uniform sampler2D` and can only be accessed in the fragment shader.
     ///
     /// # Panic
     /// Will panic if the texture is not defined in the shader code or not used.
     /// In the latter case the variable is removed by the shader compiler.
     ///
-    pub fn use_depth_texture(&self, name: &str, texture: &DepthTexture2D) {
+    pub fn use_depth_texture(&self, name: &str, texture: &GpuDepthTexture2D) {
         self.use_texture_internal(name);
         texture.bind();
     }
@@ -222,7 +222,7 @@ impl Program {
     /// Will panic if the texture is not defined in the shader code or not used.
     /// In the latter case the variable is removed by the shader compiler.
     ///
-    pub fn use_texture_array(&self, name: &str, texture: &Texture2DArray) {
+    pub fn use_texture_array(&self, name: &str, texture: &GpuTexture2DArray) {
         self.use_texture_internal(name);
         texture.bind();
     }
@@ -235,7 +235,7 @@ impl Program {
     /// Will panic if the texture is not defined in the shader code or not used.
     /// In the latter case the variable is removed by the shader compiler.
     ///
-    pub fn use_depth_texture_array(&self, name: &str, texture: &DepthTexture2DArray) {
+    pub fn use_depth_texture_array(&self, name: &str, texture: &GpuDepthTexture2DArray) {
         self.use_texture_internal(name);
         texture.bind();
     }
@@ -248,7 +248,7 @@ impl Program {
     /// Will panic if the texture is not defined in the shader code or not used.
     /// In the latter case the variable is removed by the shader compiler.
     ///
-    pub fn use_texture_cube(&self, name: &str, texture: &TextureCubeMap) {
+    pub fn use_texture_cube(&self, name: &str, texture: &GpuTextureCube) {
         self.use_texture_internal(name);
         texture.bind();
     }
@@ -261,7 +261,7 @@ impl Program {
     /// Will panic if the texture is not defined in the shader code or not used.
     /// In the latter case the variable is removed by the shader compiler.
     ///
-    pub fn use_depth_texture_cube(&self, name: &str, texture: &DepthTextureCubeMap) {
+    pub fn use_depth_texture_cube(&self, name: &str, texture: &GpuDepthTextureCube) {
         self.use_texture_internal(name);
         texture.bind();
     }
@@ -274,7 +274,7 @@ impl Program {
     /// Will panic if the texture is not defined in the shader code or not used.
     /// In the latter case the variable is removed by the shader compiler.
     ///
-    pub fn use_texture_3d(&self, name: &str, texture: &Texture3D) {
+    pub fn use_texture_3d(&self, name: &str, texture: &GpuTexture3D) {
         self.use_texture_internal(name);
         texture.bind();
     }

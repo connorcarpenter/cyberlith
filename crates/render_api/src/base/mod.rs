@@ -1,15 +1,16 @@
+pub use aabb::*;
+pub use attenuation::*;
+pub use color::*;
+pub use cpu_material::*;
+pub use error::*;
+pub use geometry::*;
+pub use texture::*;
+
 mod aabb;
 mod attenuation;
 mod color;
 mod error;
 mod geometry;
-mod material;
+mod cpu_material;
 mod texture;
 
-pub use aabb::*;
-pub use attenuation::*;
-pub use color::*;
-pub use error::*;
-pub use geometry::*;
-pub use material::*;
-pub use texture::*;

@@ -1,7 +1,7 @@
 use bevy_ecs::system::{NonSendMut, Query, Res, ResMut};
 
 use render_api::{
-    base::{CpuMesh, PbrMaterial, Texture2D},
+    base::{CpuMaterial, CpuMesh, CpuTexture2D},
     components::{
         AmbientLight, Camera, PointLight, Projection, RenderLayer, RenderLayers,
         RenderTarget as CameraRenderTarget, Transform,
@@ -11,7 +11,7 @@ use render_api::{
 
 use crate::{
     asset_impls::AssetImpls,
-    core::{DepthTexture2D, RenderTarget, Texture2DImpl},
+    core::{GpuDepthTexture2D, GpuTexture2D, RenderTarget},
     renderer::{
         AmbientLightImpl, DirectionalLightImpl, GpuMesh, Material, RenderLight, RenderObject,
         RenderPass,
@@ -24,15 +24,15 @@ pub fn draw(
     frame_input: NonSendMut<FrameInput<()>>,
     // Resources
     meshes: Res<AssetImpls<CpuMesh, GpuMesh>>,
-    materials: Res<AssetImpls<PbrMaterial, Box<dyn Material>>>,
-    mut textures: ResMut<AssetImpls<Texture2D, Texture2DImpl>>,
-    mut depth_textures: ResMut<AssetImpls<Texture2D, DepthTexture2D>>,
+    materials: Res<AssetImpls<CpuMaterial, Box<dyn Material>>>,
+    mut textures: ResMut<AssetImpls<CpuTexture2D, GpuTexture2D>>,
+    mut depth_textures: ResMut<AssetImpls<CpuTexture2D, GpuDepthTexture2D>>,
     // Cameras
     cameras_q: Query<(&Camera, &Transform, &Projection, Option<&RenderLayer>)>,
     // Objects
     objects_q: Query<(
         &Handle<CpuMesh>,
-        &Handle<PbrMaterial>,
+        &Handle<CpuMaterial>,
         &Transform,
         Option<&RenderLayer>,
     )>,

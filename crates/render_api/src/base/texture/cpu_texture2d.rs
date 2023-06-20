@@ -6,7 +6,7 @@ use super::{Interpolation, TextureData, Wrapping};
 /// A CPU-side version of a 2D texture.
 ///
 #[derive(Clone, Debug, PartialEq)]
-pub struct Texture2D {
+pub struct CpuTexture2D {
     /// Name of this texture.
     name: String,
     /// The pixel data for the image
@@ -27,7 +27,7 @@ pub struct Texture2D {
     wrap_t: Wrapping,
 }
 
-impl Texture2D {
+impl CpuTexture2D {
     pub fn from_size(width: u32, height: u32) -> Self {
         let mut output = Self::default();
         output.width = width;
@@ -68,7 +68,7 @@ impl Texture2D {
     }
 }
 
-impl Default for Texture2D {
+impl Default for CpuTexture2D {
     fn default() -> Self {
         Self {
             name: "default".to_owned(),

@@ -1,13 +1,13 @@
 use glow::HasContext;
 
-use render_api::base::{Interpolation, Texture3D as CpuTexture3D, TextureData, Wrapping};
+use render_api::base::{CpuTexture3D as CpuTexture3D, Interpolation, TextureData, Wrapping};
 
 use crate::core::{Context, format_from_data_type, texture::*, to_byte_slice};
 
 ///
 /// A 3D color texture.
 ///
-pub struct Texture3D {
+pub struct GpuTexture3D {
     id: glow::Texture,
     width: u32,
     height: u32,
@@ -15,7 +15,7 @@ pub struct Texture3D {
     data_byte_size: usize,
 }
 
-impl Texture3D {
+impl GpuTexture3D {
     ///
     /// Construcs a new 3D texture with the given data.
     ///
@@ -149,7 +149,7 @@ impl Texture3D {
     }
 }
 
-impl Drop for Texture3D {
+impl Drop for GpuTexture3D {
     fn drop(&mut self) {
         unsafe {
             Context::get().delete_texture(self.id);

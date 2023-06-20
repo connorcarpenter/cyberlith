@@ -11,7 +11,7 @@ use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin, ReceiveEvents};
 use math::Vec3;
 use render_api::{
     Assets,
-    base::{Color, CpuMesh, PbrMaterial, Texture2D},
+    base::{Color, CpuMaterial, CpuMesh, CpuTexture2D},
     components::{
         AmbientLight, Camera, CameraBundle, ClearOperation, OrthographicProjection, PointLight,
         Projection, RenderLayers, RenderObjectBundle, RenderTarget, Transform, Viewport,
@@ -100,23 +100,23 @@ impl Plugin for VortexPlugin {
 struct SkeletonCube;
 
 #[derive(Resource)]
-pub struct LeftTopTexture(pub Handle<Texture2D>);
+pub struct LeftTopTexture(pub Handle<CpuTexture2D>);
 
 #[derive(Resource)]
-pub struct LeftBottomTexture(pub Handle<Texture2D>);
+pub struct LeftBottomTexture(pub Handle<CpuTexture2D>);
 
 #[derive(Resource)]
-pub struct RightTopTexture(pub Handle<Texture2D>);
+pub struct RightTopTexture(pub Handle<CpuTexture2D>);
 
 #[derive(Resource)]
-pub struct RightBottomTexture(pub Handle<Texture2D>);
+pub struct RightBottomTexture(pub Handle<CpuTexture2D>);
 
 fn setup(
     config: Res<AppConfig>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<CpuMesh>>,
-    mut materials: ResMut<Assets<PbrMaterial>>,
-    mut textures: ResMut<Assets<Texture2D>>,
+    mut materials: ResMut<Assets<CpuMaterial>>,
+    mut textures: ResMut<Assets<CpuTexture2D>>,
     mut user_textures: ResMut<EguiUserTextures>,
 ) {
     info!("Environment: {}", config.general.env_name);
@@ -232,11 +232,11 @@ fn setup(
 
 fn new_render_texture(
     texture_size: u32,
-    textures: &mut Assets<Texture2D>,
+    textures: &mut Assets<CpuTexture2D>,
     user_textures: &mut EguiUserTextures,
-) -> Handle<Texture2D> {
+) -> Handle<CpuTexture2D> {
     // This is the texture that will be rendered to.
-    let texture = Texture2D::from_size(texture_size, texture_size);
+    let texture = CpuTexture2D::from_size(texture_size, texture_size);
 
     let texture_handle = textures.add(texture);
     user_textures.add_texture(&texture_handle);

@@ -3,7 +3,7 @@ use bevy_ecs::schedule::{apply_system_buffers, IntoSystemConfig, IntoSystemSetCo
 
 use crate::{
     assets::Assets,
-    base::{CpuMesh, PbrMaterial, Texture2D},
+    base::{CpuMaterial, CpuMesh, CpuTexture2D},
     base_set::RenderSet,
     Window,
 };
@@ -15,8 +15,8 @@ impl Plugin for RenderApiPlugin {
         app
             // Resources
             .insert_resource(Assets::<CpuMesh>::default())
-            .insert_resource(Assets::<PbrMaterial>::default())
-            .insert_resource(Assets::<Texture2D>::default())
+            .insert_resource(Assets::<CpuMaterial>::default())
+            .insert_resource(Assets::<CpuTexture2D>::default())
             // TODO: figure out how to set the correct window here ...
             .insert_resource(Window::default())
             // Sync

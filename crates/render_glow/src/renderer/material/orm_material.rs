@@ -1,6 +1,4 @@
-use std::sync::Arc;
-
-use render_api::base::PbrMaterial;
+use render_api::base::CpuMaterial;
 
 use crate::{core::*, renderer::*};
 
@@ -16,27 +14,27 @@ pub struct ORMMaterial {
     pub roughness: f32,
     /// Texture containing the metallic and roughness parameters which are multiplied with the [Self::metallic] and [Self::roughness] values in the shader.
     /// The metallic values are sampled from the blue channel and the roughness from the green channel.
-    pub metallic_roughness_texture: Option<Texture2DRef>,
+    pub metallic_roughness_texture: Option<GpuTexture2D>,
     /// A scalar multiplier controlling the amount of occlusion applied from the [Self::occlusion_texture]. A value of 0.0 means no occlusion. A value of 1.0 means full occlusion.
     pub occlusion_strength: f32,
     /// An occlusion map. Higher values indicate areas that should receive full indirect lighting and lower values indicate no indirect lighting.
     /// The occlusion values are sampled from the red channel.
-    pub occlusion_texture: Option<Texture2DRef>,
+    pub occlusion_texture: Option<GpuTexture2D>,
     /// Render states.
     pub render_states: RenderStates,
 }
 
 impl ORMMaterial {
-    /// Constructs a new ORM material from a [PbrMaterial] where only relevant information is used.
-    pub fn new(cpu_material: &PbrMaterial) -> Self {
+    /// Constructs a new ORM material from a [CpuMaterial] where only relevant information is used.
+    pub fn new(cpu_material: &CpuMaterial) -> Self {
         let metallic_roughness_texture =
             if let Some(ref cpu_texture) = cpu_material.occlusion_metallic_roughness_texture {
-                Some(Arc::new(Texture2DImpl::new(cpu_texture)).into())
+                Some(GpuTexture2D::new(cpu_texture).into())
             } else {
                 cpu_material
                     .metallic_roughness_texture
                     .as_ref()
-                    .map(|cpu_texture| Arc::new(Texture2DImpl::new(cpu_texture)).into())
+                    .map(|cpu_texture| GpuTexture2D::new(cpu_texture).into())
             };
         let occlusion_texture = if cpu_material.occlusion_metallic_roughness_texture.is_some() {
             metallic_roughness_texture.clone()
@@ -44,7 +42,7 @@ impl ORMMaterial {
             cpu_material
                 .occlusion_texture
                 .as_ref()
-                .map(|cpu_texture| Arc::new(Texture2DImpl::new(cpu_texture)).into())
+                .map(|cpu_texture| GpuTexture2D::new(cpu_texture).into())
         };
         Self {
             metallic: cpu_material.metallic,
@@ -74,7 +72,7 @@ impl ORMMaterial {
 }
 
 impl FromPbrMaterial for ORMMaterial {
-    fn from_cpu_material(cpu_material: &PbrMaterial) -> Self {
+    fn from_cpu_material(cpu_material: &CpuMaterial) -> Self {
         Self::new(cpu_material)
     }
 }
@@ -102,12 +100,10 @@ impl Material for ORMMaterial {
         program.use_uniform("roughness", self.roughness);
         if let Some(ref texture) = self.metallic_roughness_texture {
             program.use_texture("metallicRoughnessTexture", texture);
-            program.use_uniform("metallicRoughnessTexTransform", texture.transformation);
         }
         if let Some(ref texture) = self.occlusion_texture {
             program.use_uniform("occlusionStrength", self.occlusion_strength);
             program.use_texture("occlusionTexture", texture);
-            program.use_uniform("occlusionTexTransform", texture.transformation);
         }
     }
 

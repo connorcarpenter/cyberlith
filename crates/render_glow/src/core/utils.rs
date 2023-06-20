@@ -1,6 +1,5 @@
 use math::Vec3;
-
-use render_api::{base::CubeMapSide, components::Viewport};
+use render_api::{base::CubeSide, components::Viewport};
 
 use crate::core::{Context, DataType, Program, RenderStates, TextureDataType, VertexBuffer};
 
@@ -43,7 +42,7 @@ pub fn apply_effect(
 /// The fragment shader get the 3D position (specified by `in vec3 pos;`) of the fragment on the cube with minimum position `(-1, -1, -1)` and maximum position `(1, 1, 1)`.
 ///
 pub fn apply_cube_effect(
-    side: CubeMapSide,
+    side: CubeSide,
     fragment_shader_source: &str,
     render_states: RenderStates,
     viewport: Viewport,

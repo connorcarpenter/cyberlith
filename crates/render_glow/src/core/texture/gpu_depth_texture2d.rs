@@ -5,36 +5,29 @@ use render_api::base::*;
 use crate::core::{Context, DepthTarget, texture::*};
 
 ///
-/// An array of 2D depth textures that can be rendered into and read from. See also [RenderTarget] and [DepthTarget].
+/// A 2D depth texture that can be rendered into and read from. See also [RenderTarget] and [DepthTarget].
 ///
-pub struct DepthTexture2DArray {
+pub struct GpuDepthTexture2D {
     id: glow::Texture,
     width: u32,
     height: u32,
-    depth: u32,
 }
 
-impl DepthTexture2DArray {
+impl GpuDepthTexture2D {
     ///
-    /// Creates a new array of depth textures.
+    /// Constructs a new 2D depth texture.
     ///
     pub fn new<T: DepthTextureDataType>(
         width: u32,
         height: u32,
-        depth: u32,
         wrap_s: Wrapping,
         wrap_t: Wrapping,
     ) -> Self {
         let id = generate();
-        let texture = Self {
-            id,
-            width,
-            height,
-            depth,
-        };
+        let texture = Self { id, width, height };
         texture.bind();
         set_parameters(
-            glow::TEXTURE_2D_ARRAY,
+            glow::TEXTURE_2D,
             Interpolation::Nearest,
             Interpolation::Nearest,
             wrap_s,
@@ -42,24 +35,23 @@ impl DepthTexture2DArray {
             None,
         );
         unsafe {
-            Context::get().tex_storage_3d(
-                glow::TEXTURE_2D_ARRAY,
+            Context::get().tex_storage_2d(
+                glow::TEXTURE_2D,
                 1,
                 T::internal_format(),
                 width as i32,
                 height as i32,
-                depth as i32,
             );
         }
         texture
     }
 
     ///
-    /// Returns a [DepthTarget] which can be used to clear, write to and read from the given layer of this texture.
+    /// Returns a [DepthTarget] which can be used to clear, write to and read from this texture.
     /// Combine this together with a [ColorTarget] with [RenderTarget::new] to be able to write to both a depth and color target at the same time.
     ///
-    pub fn as_depth_target(&mut self, layer: u32) -> DepthTarget<'_> {
-        DepthTarget::new_texture_2d_array(self, layer)
+    pub fn as_depth_target(&mut self) -> DepthTarget<'_> {
+        DepthTarget::new_texture2d(self)
     }
 
     /// The width of this texture.
@@ -72,31 +64,26 @@ impl DepthTexture2DArray {
         self.height
     }
 
-    /// The number of layers.
-    pub fn depth(&self) -> u32 {
-        self.depth
-    }
-
-    pub(in crate::core) fn bind_as_depth_target(&self, layer: u32) {
+    pub(in crate::core) fn bind_as_depth_target(&self) {
         unsafe {
-            Context::get().framebuffer_texture_layer(
-                glow::DRAW_FRAMEBUFFER,
+            Context::get().framebuffer_texture_2d(
+                glow::FRAMEBUFFER,
                 glow::DEPTH_ATTACHMENT,
+                glow::TEXTURE_2D,
                 Some(self.id),
                 0,
-                layer as i32,
             );
         }
     }
 
     pub(in crate::core) fn bind(&self) {
         unsafe {
-            Context::get().bind_texture(glow::TEXTURE_2D_ARRAY, Some(self.id));
+            Context::get().bind_texture(glow::TEXTURE_2D, Some(self.id));
         }
     }
 }
 
-impl Drop for DepthTexture2DArray {
+impl Drop for GpuDepthTexture2D {
     fn drop(&mut self) {
         unsafe {
             Context::get().delete_texture(self.id);

@@ -1,7 +1,7 @@
 use glow::HasContext;
 use half::*;
 
-use render_api::base::{Interpolation, Texture2D as CpuTexture, TextureData, Wrapping};
+use render_api::base::{CpuTexture2D as CpuTexture, Interpolation, TextureData, Wrapping};
 
 use crate::core::*;
 

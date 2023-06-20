@@ -17,7 +17,7 @@ use crate::{core::*, renderer::*};
 #[derive(Component)]
 pub struct DirectionalLightImpl {
     light: DirectionalLight,
-    shadow_texture: Option<DepthTexture2D>,
+    shadow_texture: Option<GpuDepthTexture2D>,
     shadow_matrix: Mat4,
 }
 
@@ -79,7 +79,7 @@ impl DirectionalLightImpl {
             near: z_near,
             far: z_far,
         });
-        let mut shadow_texture = DepthTexture2D::new::<f32>(
+        let mut shadow_texture = GpuDepthTexture2D::new::<f32>(
             texture_size,
             texture_size,
             Wrapping::ClampToEdge,
@@ -113,7 +113,7 @@ impl DirectionalLightImpl {
     ///
     /// Returns a reference to the shadow map if it has been generated.
     ///
-    pub fn shadow_map(&self) -> Option<&DepthTexture2D> {
+    pub fn shadow_map(&self) -> Option<&GpuDepthTexture2D> {
         self.shadow_texture.as_ref()
     }
 }

@@ -1,6 +1,4 @@
-use std::sync::Arc;
-
-use render_api::base::{Color, LightingModel, PbrMaterial};
+use render_api::base::{Color, CpuMaterial, LightingModel};
 
 use crate::{core::*, renderer::*};
 
@@ -15,68 +13,68 @@ pub struct PhysicalMaterial {
     /// Albedo base color, also called diffuse color. Assumed to be in linear color space.
     pub albedo: Color,
     /// Texture with albedo base colors, also called diffuse color. Assumed to be in sRGB with or without an alpha channel.
-    pub albedo_texture: Option<Texture2DRef>,
+    pub albedo_texture: Option<GpuTexture2D>,
     /// A value in the range `[0..1]` specifying how metallic the surface is.
     pub metallic: f32,
     /// A value in the range `[0..1]` specifying how rough the surface is.
     pub roughness: f32,
     /// Texture containing the metallic and roughness parameters which are multiplied with the [Self::metallic] and [Self::roughness] values in the shader.
     /// The metallic values are sampled from the blue channel and the roughness from the green channel.
-    pub metallic_roughness_texture: Option<Texture2DRef>,
+    pub metallic_roughness_texture: Option<GpuTexture2D>,
     /// A scalar multiplier controlling the amount of occlusion applied from the [Self::occlusion_texture]. A value of 0.0 means no occlusion. A value of 1.0 means full occlusion.
     pub occlusion_strength: f32,
     /// An occlusion map. Higher values indicate areas that should receive full indirect lighting and lower values indicate no indirect lighting.
     /// The occlusion values are sampled from the red channel.
-    pub occlusion_texture: Option<Texture2DRef>,
+    pub occlusion_texture: Option<GpuTexture2D>,
     /// Render states.
     pub render_states: RenderStates,
     /// Color of light shining from an object.
     pub emissive: Color,
     /// Texture with color of light shining from an object.
-    pub emissive_texture: Option<Texture2DRef>,
+    pub emissive_texture: Option<GpuTexture2D>,
     /// The lighting model used when rendering this material
     pub lighting_model: LightingModel,
 }
 
 impl PhysicalMaterial {
     ///
-    /// Constructs a new physical material from a [PbrMaterial].
-    /// If the input contains an [PbrMaterial::occlusion_metallic_roughness_texture], this texture is used for both
-    /// [PhysicalMaterial::metallic_roughness_texture] and [PhysicalMaterial::occlusion_texture] while any [PbrMaterial::metallic_roughness_texture] or [PbrMaterial::occlusion_texture] are ignored.
+    /// Constructs a new physical material from a [CpuMaterial].
+    /// If the input contains an [CpuMaterial::occlusion_metallic_roughness_texture], this texture is used for both
+    /// [PhysicalMaterial::metallic_roughness_texture] and [PhysicalMaterial::occlusion_texture] while any [CpuMaterial::metallic_roughness_texture] or [CpuMaterial::occlusion_texture] are ignored.
     /// Tries to infer whether this material is transparent or opaque from the alpha value of the albedo color and the alpha values in the albedo texture.
     /// Since this is not always correct, it is preferred to use [PhysicalMaterial::new_opaque] or [PhysicalMaterial::new_transparent].
     ///
-    pub fn new(cpu_material: &PbrMaterial) -> Self {
+    pub fn new(cpu_material: &CpuMaterial) -> Self {
         Self::new_internal(cpu_material, super::is_transparent(cpu_material))
     }
 
-    /// Constructs a new opaque physical material from a [PbrMaterial].
-    /// If the input contains an [PbrMaterial::occlusion_metallic_roughness_texture], this texture is used for both
-    /// [PhysicalMaterial::metallic_roughness_texture] and [PhysicalMaterial::occlusion_texture] while any [PbrMaterial::metallic_roughness_texture] or [PbrMaterial::occlusion_texture] are ignored.
-    pub fn new_opaque(cpu_material: &PbrMaterial) -> Self {
+    /// Constructs a new opaque physical material from a [CpuMaterial].
+    /// If the input contains an [CpuMaterial::occlusion_metallic_roughness_texture], this texture is used for both
+    /// [PhysicalMaterial::metallic_roughness_texture] and [PhysicalMaterial::occlusion_texture] while any [CpuMaterial::metallic_roughness_texture] or [CpuMaterial::occlusion_texture] are ignored.
+    pub fn new_opaque(cpu_material: &CpuMaterial) -> Self {
         Self::new_internal(cpu_material, false)
     }
 
-    /// Constructs a new transparent physical material from a [PbrMaterial].
-    /// If the input contains an [PbrMaterial::occlusion_metallic_roughness_texture], this texture is used for both
-    /// [PhysicalMaterial::metallic_roughness_texture] and [PhysicalMaterial::occlusion_texture] while any [PbrMaterial::metallic_roughness_texture] or [PbrMaterial::occlusion_texture] are ignored.
-    pub fn new_transparent(cpu_material: &PbrMaterial) -> Self {
+    /// Constructs a new transparent physical material from a [CpuMaterial].
+    /// If the input contains an [CpuMaterial::occlusion_metallic_roughness_texture], this texture is used for both
+    /// [PhysicalMaterial::metallic_roughness_texture] and [PhysicalMaterial::occlusion_texture] while any [CpuMaterial::metallic_roughness_texture] or [CpuMaterial::occlusion_texture] are ignored.
+    pub fn new_transparent(cpu_material: &CpuMaterial) -> Self {
         Self::new_internal(cpu_material, true)
     }
 
-    fn new_internal(cpu_material: &PbrMaterial, is_transparent: bool) -> Self {
+    fn new_internal(cpu_material: &CpuMaterial, is_transparent: bool) -> Self {
         let albedo_texture = cpu_material
             .albedo_texture
             .as_ref()
-            .map(|cpu_texture| Arc::new(Texture2DImpl::new(cpu_texture)).into());
+            .map(|cpu_texture| GpuTexture2D::new(cpu_texture).into());
         let metallic_roughness_texture =
             if let Some(ref cpu_texture) = cpu_material.occlusion_metallic_roughness_texture {
-                Some(Arc::new(Texture2DImpl::new(cpu_texture)).into())
+                Some(cpu_texture.into())
             } else {
                 cpu_material
                     .metallic_roughness_texture
                     .as_ref()
-                    .map(|cpu_texture| Arc::new(Texture2DImpl::new(cpu_texture)).into())
+                    .map(|cpu_texture| GpuTexture2D::new(cpu_texture).into())
             };
         let occlusion_texture = if cpu_material.occlusion_metallic_roughness_texture.is_some() {
             metallic_roughness_texture.clone()
@@ -84,12 +82,12 @@ impl PhysicalMaterial {
             cpu_material
                 .occlusion_texture
                 .as_ref()
-                .map(|cpu_texture| Arc::new(Texture2DImpl::new(cpu_texture)).into())
+                .map(|cpu_texture| GpuTexture2D::new(cpu_texture).into())
         };
         let emissive_texture = cpu_material
             .emissive_texture
             .as_ref()
-            .map(|cpu_texture| Arc::new(Texture2DImpl::new(cpu_texture)).into());
+            .map(|cpu_texture| GpuTexture2D::new(cpu_texture).into());
         Self {
             name: cpu_material.name.clone(),
             albedo: cpu_material.albedo,
@@ -116,7 +114,7 @@ impl PhysicalMaterial {
 }
 
 impl FromPbrMaterial for PhysicalMaterial {
-    fn from_cpu_material(cpu_material: &PbrMaterial) -> Self {
+    fn from_cpu_material(cpu_material: &CpuMaterial) -> Self {
         Self::new(cpu_material)
     }
 }
@@ -167,19 +165,16 @@ impl Material for PhysicalMaterial {
             program.use_uniform_if_required("roughness", self.roughness);
             if program.requires_uniform("albedoTexture") {
                 if let Some(ref texture) = self.albedo_texture {
-                    program.use_uniform("albedoTexTransform", texture.transformation);
                     program.use_texture("albedoTexture", texture);
                 }
             }
             if program.requires_uniform("metallicRoughnessTexture") {
                 if let Some(ref texture) = self.metallic_roughness_texture {
-                    program.use_uniform("metallicRoughnessTexTransform", texture.transformation);
                     program.use_texture("metallicRoughnessTexture", texture);
                 }
             }
             if program.requires_uniform("occlusionTexture") {
                 if let Some(ref texture) = self.occlusion_texture {
-                    program.use_uniform("occlusionTexTransform", texture.transformation);
                     program.use_uniform("occlusionStrength", self.occlusion_strength);
                     program.use_texture("occlusionTexture", texture);
                 }
@@ -189,7 +184,6 @@ impl Material for PhysicalMaterial {
         program.use_uniform("emissive", self.emissive);
         if program.requires_uniform("emissiveTexture") {
             if let Some(ref texture) = self.emissive_texture {
-                program.use_uniform("emissiveTexTransform", texture.transformation);
                 program.use_texture("emissiveTexture", texture);
             }
         }

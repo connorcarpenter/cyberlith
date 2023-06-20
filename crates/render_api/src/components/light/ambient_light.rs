@@ -1,10 +1,10 @@
 use bevy_ecs::component::Component;
 
-use crate::base::{Color, TextureCubeMap};
+use crate::base::{Color, CpuTextureCube};
 
 ///
 /// A light which shines on all surfaces.
-/// Can be uniform (a light that shines equally on any surface) or calculated from an environment map using the [TextureCubeMap] struct.
+/// Can be uniform (a light that shines equally on any surface) or calculated from an environment map using the [CpuTextureCube] struct.
 ///
 #[derive(Component)]
 pub struct AmbientLight {
@@ -13,7 +13,7 @@ pub struct AmbientLight {
     /// The base color of the light.
     pub color: Color,
     /// The light shining from the environment. This is calculated based on an environment map.
-    pub environment: Option<TextureCubeMap>,
+    pub environment: Option<CpuTextureCube>,
 }
 
 impl AmbientLight {
@@ -38,7 +38,7 @@ impl AmbientLight {
     pub fn new_with_environment(
         intensity: f32,
         color: Color,
-        environment_map: TextureCubeMap,
+        environment_map: CpuTextureCube,
     ) -> Self {
         Self {
             intensity,

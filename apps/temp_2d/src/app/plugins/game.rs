@@ -4,7 +4,7 @@ use bevy_ecs::system::{Commands, Res, ResMut};
 use math::Vec2;
 use render_api::{
     Assets,
-    base::{Color, CpuMesh, PbrMaterial},
+    base::{Color, CpuMaterial, CpuMesh},
     components::{AmbientLight, CameraBundle, RenderObjectBundle, Transform},
     resources::WindowSettings, shapes, Window,
 };
@@ -30,7 +30,7 @@ fn setup(
     mut commands: Commands,
     window: Res<Window>,
     mut meshes: ResMut<Assets<CpuMesh>>,
-    mut materials: ResMut<Assets<PbrMaterial>>,
+    mut materials: ResMut<Assets<CpuMaterial>>,
 ) {
     // circle
 

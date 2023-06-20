@@ -4,7 +4,7 @@ use super::{Interpolation, TextureData, Wrapping};
 /// A CPU-side version of a 3D texture.
 ///
 #[derive(Clone, Debug)]
-pub struct Texture3D {
+pub struct CpuTexture3D {
     /// Name of this texture.
     pub name: String,
     /// The pixel data for the image
@@ -27,7 +27,7 @@ pub struct Texture3D {
     pub wrap_r: Wrapping,
 }
 
-impl Default for Texture3D {
+impl Default for CpuTexture3D {
     fn default() -> Self {
         Self {
             name: "default".to_owned(),

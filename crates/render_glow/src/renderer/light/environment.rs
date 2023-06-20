@@ -2,7 +2,7 @@ use half::*;
 
 use render_api::{
     base::{
-        CubeMapSide, GeometryFunction, Interpolation, LightingModel, NormalDistributionFunction,
+        CubeSide, GeometryFunction, Interpolation, LightingModel, NormalDistributionFunction,
         Wrapping,
     },
     components::Viewport,
@@ -17,12 +17,12 @@ use crate::renderer::RenderTargetExt;
 ///
 pub struct Environment {
     /// A cube map used to calculate the diffuse contribution from the environment.
-    pub irradiance_map: TextureCubeMap,
+    pub irradiance_map: GpuTextureCube,
     /// A cube map used to calculate the specular contribution from the environment.
     /// Each mip-map level contain the prefiltered color for a certain surface roughness.
-    pub prefilter_map: TextureCubeMap,
+    pub prefilter_map: GpuTextureCube,
     /// A 2D texture that contain the BRDF lookup tables (LUT).
-    pub brdf_map: Texture2DImpl,
+    pub brdf_map: GpuTexture2D,
 }
 
 impl Environment {
@@ -30,7 +30,7 @@ impl Environment {
     /// Computes the maps needed for physically based rendering with lighting from an environment from the given environment map.
     /// A default Cook-Torrance lighting model is used.
     ///
-    pub fn new(environment_map: &TextureCubeMap) -> Self {
+    pub fn new(environment_map: &GpuTextureCube) -> Self {
         Self::new_with_lighting_model(
             environment_map,
             LightingModel::Cook(
@@ -44,12 +44,12 @@ impl Environment {
     /// Computes the maps needed for physically based rendering with lighting from an environment from the given environment map and with the specified lighting model.
     ///
     pub fn new_with_lighting_model(
-        environment_map: &TextureCubeMap,
+        environment_map: &GpuTextureCube,
         lighting_model: LightingModel,
     ) -> Self {
         // Diffuse
         let irradiance_size = 32;
-        let mut irradiance_map = TextureCubeMap::new_empty::<[f16; 4]>(
+        let mut irradiance_map = GpuTextureCube::new_empty::<[f16; 4]>(
             irradiance_size,
             irradiance_size,
             Interpolation::Linear,
@@ -65,7 +65,7 @@ impl Environment {
                 include_str!("shaders/irradiance.frag")
             );
             let viewport = Viewport::new_at_origin(irradiance_size, irradiance_size);
-            for side in CubeMapSide::iter() {
+            for side in CubeSide::iter() {
                 irradiance_map
                     .as_color_target(&[side])
                     .clear(ClearState::default())
@@ -85,7 +85,7 @@ impl Environment {
 
         // Prefilter
         let prefilter_size = 128;
-        let mut prefilter_map = TextureCubeMap::new_empty::<[f16; 4]>(
+        let mut prefilter_map = GpuTextureCube::new_empty::<[f16; 4]>(
             prefilter_size,
             prefilter_size,
             Interpolation::Linear,
@@ -104,7 +104,7 @@ impl Environment {
             );
             let max_mip_levels = 1;
             for mip in 0..max_mip_levels {
-                for side in CubeMapSide::iter() {
+                for side in CubeSide::iter() {
                     let sides = [side];
                     let color_target = prefilter_map.as_color_target(&sides);
                     let viewport =
@@ -130,7 +130,7 @@ impl Environment {
         }
 
         // BRDF
-        let mut brdf_map = Texture2DImpl::new_empty::<[f32; 2]>(
+        let mut brdf_map = GpuTexture2D::new_empty::<[f32; 2]>(
             512,
             512,
             Interpolation::Linear,

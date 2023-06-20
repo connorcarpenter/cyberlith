@@ -1,6 +1,4 @@
-use std::sync::Arc;
-
-use render_api::base::{Color, PbrMaterial};
+use render_api::base::{Color, CpuMaterial};
 
 use crate::{core::*, renderer::*};
 
@@ -13,18 +11,18 @@ pub struct ColorMaterial {
     /// Base surface color. Assumed to be in linear color space.
     pub color: Color,
     /// An optional texture which is samples using uv coordinates (requires that the [Geometry] supports uv coordinates).
-    pub texture: Option<Texture2DRef>,
+    pub texture: Option<GpuTexture2D>,
     /// Render states.
     pub render_states: RenderStates,
 }
 
 impl ColorMaterial {
     ///
-    /// Constructs a new color material from a [PbrMaterial].
+    /// Constructs a new color material from a [CpuMaterial].
     /// Tries to infer whether this material is transparent or opaque from the alpha value of the albedo color and the alpha values in the albedo texture.
     /// Since this is not always correct, it is preferred to use [ColorMaterial::new_opaque] or [ColorMaterial::new_transparent].
     ///
-    pub fn new(cpu_material: &PbrMaterial) -> Self {
+    pub fn new(cpu_material: &CpuMaterial) -> Self {
         if is_transparent(cpu_material) {
             Self::new_transparent(cpu_material)
         } else {
@@ -32,12 +30,12 @@ impl ColorMaterial {
         }
     }
 
-    /// Constructs a new opaque color material from a [PbrMaterial].
-    pub fn new_opaque(cpu_material: &PbrMaterial) -> Self {
+    /// Constructs a new opaque color material from a [CpuMaterial].
+    pub fn new_opaque(cpu_material: &CpuMaterial) -> Self {
         let texture = cpu_material
             .albedo_texture
             .as_ref()
-            .map(|cpu_texture| Arc::new(Texture2DImpl::new(cpu_texture)).into());
+            .map(|cpu_texture| GpuTexture2D::new(cpu_texture).into());
         Self {
             color: cpu_material.albedo,
             texture,
@@ -45,12 +43,12 @@ impl ColorMaterial {
         }
     }
 
-    /// Constructs a new transparent color material from a [PbrMaterial].
-    pub fn new_transparent(cpu_material: &PbrMaterial) -> Self {
+    /// Constructs a new transparent color material from a [CpuMaterial].
+    pub fn new_transparent(cpu_material: &CpuMaterial) -> Self {
         let texture = cpu_material
             .albedo_texture
             .as_ref()
-            .map(|cpu_texture| Arc::new(Texture2DImpl::new(cpu_texture)).into());
+            .map(|cpu_texture| GpuTexture2D::new(cpu_texture).into());
         Self {
             color: cpu_material.albedo,
             texture,
@@ -73,7 +71,7 @@ impl ColorMaterial {
 }
 
 impl FromPbrMaterial for ColorMaterial {
-    fn from_cpu_material(cpu_material: &PbrMaterial) -> Self {
+    fn from_cpu_material(cpu_material: &CpuMaterial) -> Self {
         Self::new(cpu_material)
     }
 }
@@ -100,7 +98,6 @@ impl Material for ColorMaterial {
     fn use_uniforms(&self, program: &Program, _camera: &RenderCamera, _lights: &[&dyn Light]) {
         program.use_uniform("surfaceColor", self.color);
         if let Some(ref tex) = self.texture {
-            program.use_uniform("textureTransformation", tex.transformation);
             program.use_texture("tex", tex);
         }
     }

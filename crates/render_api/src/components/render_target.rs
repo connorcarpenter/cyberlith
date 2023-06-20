@@ -1,7 +1,7 @@
-use crate::{base::Texture2D, Handle};
+use crate::{base::CpuTexture2D, Handle};
 
 // Render Target
 pub enum RenderTarget {
     Screen,
-    Image(Handle<Texture2D>),
+    Image(Handle<CpuTexture2D>),
 }

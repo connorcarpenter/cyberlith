@@ -1,36 +1,36 @@
-use render_api::base::CubeMapSide;
+use render_api::base::CubeSide;
 
-use crate::core::{DepthTexture2D, DepthTexture2DArray, DepthTextureCubeMap, Program};
+use crate::core::{GpuDepthTexture2D, GpuDepthTexture2DArray, GpuDepthTextureCube, Program};
 
 ///
 /// A reference to some type of texture containing depths.
 ///
 #[derive(Clone, Copy)]
 #[allow(missing_docs)]
-pub enum DepthTexture<'a> {
+pub enum GpuDepthTexture<'a> {
     /// A single 2D texture.
-    Single(&'a DepthTexture2D),
+    Single(&'a GpuDepthTexture2D),
     /// An array of 2D textures and an index into the array.
     Array {
-        texture: &'a DepthTexture2DArray,
+        texture: &'a GpuDepthTexture2DArray,
         layer: u32,
     },
-    /// A cube map texture and a [CubeMapSide] indicating the side to use.
+    /// A cube map texture and a [CubeSide] indicating the side to use.
     CubeMap {
-        texture: &'a DepthTextureCubeMap,
-        side: CubeMapSide,
+        texture: &'a GpuDepthTextureCube,
+        side: CubeSide,
     },
 }
 
-impl DepthTexture<'_> {
+impl GpuDepthTexture<'_> {
     ///
     /// Returns the width of the depth texture in texels.
     ///
     pub fn width(&self) -> u32 {
         match self {
-            DepthTexture::Single(texture) => texture.width(),
-            DepthTexture::Array { texture, .. } => texture.width(),
-            DepthTexture::CubeMap { texture, .. } => texture.width(),
+            GpuDepthTexture::Single(texture) => texture.width(),
+            GpuDepthTexture::Array { texture, .. } => texture.width(),
+            GpuDepthTexture::CubeMap { texture, .. } => texture.width(),
         }
     }
 
@@ -39,9 +39,9 @@ impl DepthTexture<'_> {
     ///
     pub fn height(&self) -> u32 {
         match self {
-            DepthTexture::Single(texture) => texture.height(),
-            DepthTexture::Array { texture, .. } => texture.height(),
-            DepthTexture::CubeMap { texture, .. } => texture.height(),
+            GpuDepthTexture::Single(texture) => texture.height(),
+            GpuDepthTexture::Array { texture, .. } => texture.height(),
+            GpuDepthTexture::CubeMap { texture, .. } => texture.height(),
         }
     }
 

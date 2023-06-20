@@ -14,7 +14,6 @@ pub use material::*;
 pub use orm_material::*;
 pub use physical_material::*;
 pub use position_material::*;
-pub use texture_2d_ref::*;
 pub use uv_material::*;
 
 mod color_material;
@@ -26,6 +25,5 @@ mod material;
 mod orm_material;
 mod physical_material;
 mod position_material;
-mod texture_2d_ref;
 mod uv_material;
 

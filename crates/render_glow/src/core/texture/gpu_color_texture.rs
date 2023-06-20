@@ -1,36 +1,36 @@
-use render_api::base::CubeMapSide;
+use render_api::base::CubeSide;
 
-use crate::core::{Program, Texture2DArray, Texture2DImpl, TextureCubeMap};
+use crate::core::{GpuTexture2D, GpuTexture2DArray, GpuTextureCube, Program};
 
 ///
 /// A reference to some type of texture containing colors.
 ///
 #[derive(Clone, Copy)]
 #[allow(missing_docs)]
-pub enum ColorTexture<'a> {
+pub enum GpuColorTexture<'a> {
     /// A single 2D texture.
-    Single(&'a Texture2DImpl),
+    Single(&'a GpuTexture2D),
     /// An array of 2D textures and a set of indices into the array.
     Array {
-        texture: &'a Texture2DArray,
+        texture: &'a GpuTexture2DArray,
         layers: &'a [u32],
     },
-    /// A cube map texture and a set of [CubeMapSide]s indicating the sides to use.
+    /// A cube map texture and a set of [CubeSide]s indicating the sides to use.
     CubeMap {
-        texture: &'a TextureCubeMap,
-        sides: &'a [CubeMapSide],
+        texture: &'a GpuTextureCube,
+        sides: &'a [CubeSide],
     },
 }
 
-impl ColorTexture<'_> {
+impl GpuColorTexture<'_> {
     ///
     /// Returns the width of the color texture in texels.
     ///
     pub fn width(&self) -> u32 {
         match self {
-            ColorTexture::Single(texture) => texture.width(),
-            ColorTexture::Array { texture, .. } => texture.width(),
-            ColorTexture::CubeMap { texture, .. } => texture.width(),
+            GpuColorTexture::Single(texture) => texture.width(),
+            GpuColorTexture::Array { texture, .. } => texture.width(),
+            GpuColorTexture::CubeMap { texture, .. } => texture.width(),
         }
     }
 
@@ -39,9 +39,9 @@ impl ColorTexture<'_> {
     ///
     pub fn height(&self) -> u32 {
         match self {
-            ColorTexture::Single(texture) => texture.height(),
-            ColorTexture::Array { texture, .. } => texture.height(),
-            ColorTexture::CubeMap { texture, .. } => texture.height(),
+            GpuColorTexture::Single(texture) => texture.height(),
+            GpuColorTexture::Array { texture, .. } => texture.height(),
+            GpuColorTexture::CubeMap { texture, .. } => texture.height(),
         }
     }
 

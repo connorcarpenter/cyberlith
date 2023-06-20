@@ -8,7 +8,7 @@ use bevy_ecs::{
 use math::Vec3;
 use render_api::{
     Assets,
-    base::{Color, CpuMesh, PbrMaterial},
+    base::{Color, CpuMaterial, CpuMesh},
     components::{
         AmbientLight, Camera, CameraBundle, DirectionalLight, PerspectiveProjection, Projection,
         RenderObjectBundle, Transform,
@@ -58,7 +58,7 @@ fn setup(
     mut commands: Commands,
     window: Res<Window>,
     mut meshes: ResMut<Assets<CpuMesh>>,
-    mut materials: ResMut<Assets<PbrMaterial>>,
+    mut materials: ResMut<Assets<CpuMaterial>>,
 ) {
     // plane
     commands.spawn(RenderObjectBundle {

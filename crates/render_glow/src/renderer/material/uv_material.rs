@@ -1,4 +1,4 @@
-use render_api::base::PbrMaterial;
+use render_api::base::CpuMaterial;
 
 use crate::{core::*, renderer::*};
 
@@ -13,7 +13,7 @@ pub struct UVMaterial {
 }
 
 impl FromPbrMaterial for UVMaterial {
-    fn from_cpu_material(_cpu_material: &PbrMaterial) -> Self {
+    fn from_cpu_material(_cpu_material: &CpuMaterial) -> Self {
         Self::default()
     }
 }

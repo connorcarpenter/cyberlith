@@ -4,7 +4,7 @@ use bevy_ecs::bundle::Bundle;
 
 use crate::{
     assets::Handle,
-    base::{CpuMesh, PbrMaterial},
+    base::{CpuMaterial, CpuMesh},
 };
 
 use super::transform::Transform;
@@ -12,6 +12,6 @@ use super::transform::Transform;
 #[derive(Default, Bundle)]
 pub struct RenderObjectBundle {
     pub mesh: Handle<CpuMesh>,
-    pub material: Handle<PbrMaterial>,
+    pub material: Handle<CpuMaterial>,
     pub transform: Transform,
 }

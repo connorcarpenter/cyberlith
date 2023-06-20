@@ -9,13 +9,13 @@ use bevy_ecs::{
 
 use render_api::{
     Assets,
-    base::{CpuMesh as ApiMesh, PbrMaterial as ApiMaterial, Texture2D as ApiTexture},
+    base::{CpuMaterial as ApiMaterial, CpuMesh as ApiMesh, CpuTexture2D as ApiTexture},
     components::{AmbientLight, DirectionalLight}, RenderSet,
 };
 
 use crate::{
     asset_impls::AssetImpls,
-    core::{DepthTexture2D, Texture2DImpl},
+    core::{GpuDepthTexture2D, GpuTexture2D},
     renderer::{AmbientLightImpl, DirectionalLightImpl, GpuMesh, Material, PhysicalMaterial},
 };
 
@@ -27,8 +27,8 @@ impl Plugin for SyncPlugin {
             // Resources
             .insert_resource(AssetImpls::<ApiMesh, GpuMesh>::default())
             .insert_resource(AssetImpls::<ApiMaterial, Box<dyn Material>>::default())
-            .insert_resource(AssetImpls::<ApiTexture, Texture2DImpl>::default())
-            .insert_resource(AssetImpls::<ApiTexture, DepthTexture2D>::default())
+            .insert_resource(AssetImpls::<ApiTexture, GpuTexture2D>::default())
+            .insert_resource(AssetImpls::<ApiTexture, GpuDepthTexture2D>::default())
             // Systems
             .add_system(sync_mesh_assets.in_base_set(RenderSet::Sync))
             .add_system(sync_material_assets.in_base_set(RenderSet::Sync))
@@ -84,8 +84,8 @@ fn sync_material_assets(
 
 fn sync_texture_2d_assets(
     mut api_assets: ResMut<Assets<ApiTexture>>,
-    mut asset_impls: ResMut<AssetImpls<ApiTexture, Texture2DImpl>>,
-    mut depth_impls: ResMut<AssetImpls<ApiTexture, DepthTexture2D>>,
+    mut asset_impls: ResMut<AssetImpls<ApiTexture, GpuTexture2D>>,
+    mut depth_impls: ResMut<AssetImpls<ApiTexture, GpuDepthTexture2D>>,
 ) {
     if !api_assets.is_changed() {
         return;
@@ -95,10 +95,10 @@ fn sync_texture_2d_assets(
     let added_handles = api_assets.flush_added();
     for added_handle in added_handles {
         let api_data = api_assets.get(&added_handle).unwrap();
-        let impl_data = Texture2DImpl::from(api_data);
+        let impl_data = GpuTexture2D::from(api_data);
         asset_impls.insert(added_handle, impl_data);
 
-        let depth_impl_data = DepthTexture2D::new::<f32>(
+        let depth_impl_data = GpuDepthTexture2D::new::<f32>(
             api_data.width(),
             api_data.height(),
             api_data.wrap_s(),
