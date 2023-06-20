@@ -9,7 +9,7 @@ use bevy_ecs::{
 
 use render_api::{
     Assets,
-    base::{CpuMaterial as ApiMaterial, CpuMesh as ApiMesh, CpuTexture2D as ApiTexture},
+    base::{CpuMaterial, CpuMesh, CpuTexture2D},
     components::{AmbientLight, DirectionalLight}, RenderSet,
 };
 
@@ -25,10 +25,10 @@ impl Plugin for SyncPlugin {
     fn build(&self, app: &mut App) {
         app
             // Resources
-            .insert_resource(AssetImpls::<ApiMesh, GpuMesh>::default())
-            .insert_resource(AssetImpls::<ApiMaterial, Box<dyn Material>>::default())
-            .insert_resource(AssetImpls::<ApiTexture, GpuTexture2D>::default())
-            .insert_resource(AssetImpls::<ApiTexture, GpuDepthTexture2D>::default())
+            .insert_resource(AssetImpls::<CpuMesh, GpuMesh>::default())
+            .insert_resource(AssetImpls::<CpuMaterial, Box<dyn Material>>::default())
+            .insert_resource(AssetImpls::<CpuTexture2D, GpuTexture2D>::default())
+            .insert_resource(AssetImpls::<CpuTexture2D, GpuDepthTexture2D>::default())
             // Systems
             .add_system(sync_mesh_assets.in_base_set(RenderSet::Sync))
             .add_system(sync_material_assets.in_base_set(RenderSet::Sync))
@@ -41,8 +41,8 @@ impl Plugin for SyncPlugin {
 }
 
 fn sync_mesh_assets(
-    mut api_assets: ResMut<Assets<ApiMesh>>,
-    mut asset_impls: ResMut<AssetImpls<ApiMesh, GpuMesh>>,
+    mut api_assets: ResMut<Assets<CpuMesh>>,
+    mut asset_impls: ResMut<AssetImpls<CpuMesh, GpuMesh>>,
 ) {
     if !api_assets.is_changed() {
         return;
@@ -58,8 +58,8 @@ fn sync_mesh_assets(
 }
 
 fn sync_material_assets(
-    mut api_assets: ResMut<Assets<ApiMaterial>>,
-    mut asset_impls: ResMut<AssetImpls<ApiMaterial, Box<dyn Material>>>,
+    mut api_assets: ResMut<Assets<CpuMaterial>>,
+    mut asset_impls: ResMut<AssetImpls<CpuMaterial, Box<dyn Material>>>,
 ) {
     if !api_assets.is_changed() {
         return;
@@ -83,9 +83,9 @@ fn sync_material_assets(
 }
 
 fn sync_texture_2d_assets(
-    mut api_assets: ResMut<Assets<ApiTexture>>,
-    mut asset_impls: ResMut<AssetImpls<ApiTexture, GpuTexture2D>>,
-    mut depth_impls: ResMut<AssetImpls<ApiTexture, GpuDepthTexture2D>>,
+    mut api_assets: ResMut<Assets<CpuTexture2D>>,
+    mut asset_impls: ResMut<AssetImpls<CpuTexture2D, GpuTexture2D>>,
+    mut depth_impls: ResMut<AssetImpls<CpuTexture2D, GpuDepthTexture2D>>,
 ) {
     if !api_assets.is_changed() {
         return;
