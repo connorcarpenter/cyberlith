@@ -60,8 +60,8 @@ impl ColorMaterial {
         }
     }
 
-    /// Creates a color material from a [PhysicalMaterial].
-    pub fn from_physical_material(physical_material: &PhysicalMaterial) -> Self {
+    /// Creates a color material from a [PbrMaterial].
+    pub fn from_physical_material(physical_material: &PbrMaterial) -> Self {
         Self {
             color: physical_material.albedo,
             texture: physical_material.albedo_texture.clone(),

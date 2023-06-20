@@ -12,7 +12,7 @@ pub use fragment_attributes::*;
 pub use fragment_shader::*;
 pub use material::*;
 pub use orm_material::*;
-pub use physical_material::*;
+pub use pbr_material::*;
 pub use position_material::*;
 pub use uv_material::*;
 
@@ -23,7 +23,7 @@ mod fragment_attributes;
 mod fragment_shader;
 mod material;
 mod orm_material;
-mod physical_material;
+mod pbr_material;
 mod position_material;
 mod uv_material;
 

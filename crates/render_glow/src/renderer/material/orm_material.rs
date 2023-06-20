@@ -54,8 +54,8 @@ impl ORMMaterial {
         }
     }
 
-    /// Creates a ORM material from a [PhysicalMaterial].
-    pub fn from_physical_material(physical_material: &PhysicalMaterial) -> Self {
+    /// Creates a ORM material from a [PbrMaterial].
+    pub fn from_physical_material(physical_material: &PbrMaterial) -> Self {
         Self {
             metallic: physical_material.metallic,
             roughness: physical_material.roughness,

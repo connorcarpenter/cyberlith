@@ -10,7 +10,7 @@ use render_api::{
 };
 
 use crate::{
-    asset_impls::AssetImpls,
+    asset_mapping::AssetMapping,
     core::{GpuDepthTexture2D, GpuTexture2D, RenderTarget},
     renderer::{
         AmbientLightImpl, DirectionalLightImpl, GpuMesh, Material, RenderLight, RenderObject,
@@ -23,10 +23,10 @@ use crate::renderer::RenderTargetExt;
 pub fn draw(
     frame_input: NonSendMut<FrameInput<()>>,
     // Resources
-    meshes: Res<AssetImpls<CpuMesh, GpuMesh>>,
-    materials: Res<AssetImpls<CpuMaterial, Box<dyn Material>>>,
-    mut textures: ResMut<AssetImpls<CpuTexture2D, GpuTexture2D>>,
-    mut depth_textures: ResMut<AssetImpls<CpuTexture2D, GpuDepthTexture2D>>,
+    meshes: Res<AssetMapping<CpuMesh, GpuMesh>>,
+    materials: Res<AssetMapping<CpuMaterial, Box<dyn Material>>>,
+    mut textures: ResMut<AssetMapping<CpuTexture2D, GpuTexture2D>>,
+    mut depth_textures: ResMut<AssetMapping<CpuTexture2D, GpuDepthTexture2D>>,
     // Cameras
     cameras_q: Query<(&Camera, &Transform, &Projection, Option<&RenderLayer>)>,
     // Objects

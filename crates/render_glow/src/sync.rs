@@ -14,9 +14,9 @@ use render_api::{
 };
 
 use crate::{
-    asset_impls::AssetImpls,
+    asset_mapping::AssetMapping,
     core::{GpuDepthTexture2D, GpuTexture2D},
-    renderer::{AmbientLightImpl, DirectionalLightImpl, GpuMesh, Material, PhysicalMaterial},
+    renderer::{AmbientLightImpl, DirectionalLightImpl, GpuMesh, Material, PbrMaterial},
 };
 
 pub struct SyncPlugin;
@@ -25,10 +25,10 @@ impl Plugin for SyncPlugin {
     fn build(&self, app: &mut App) {
         app
             // Resources
-            .insert_resource(AssetImpls::<CpuMesh, GpuMesh>::default())
-            .insert_resource(AssetImpls::<CpuMaterial, Box<dyn Material>>::default())
-            .insert_resource(AssetImpls::<CpuTexture2D, GpuTexture2D>::default())
-            .insert_resource(AssetImpls::<CpuTexture2D, GpuDepthTexture2D>::default())
+            .insert_resource(AssetMapping::<CpuMesh, GpuMesh>::default())
+            .insert_resource(AssetMapping::<CpuMaterial, Box<dyn Material>>::default())
+            .insert_resource(AssetMapping::<CpuTexture2D, GpuTexture2D>::default())
+            .insert_resource(AssetMapping::<CpuTexture2D, GpuDepthTexture2D>::default())
             // Systems
             .add_system(sync_mesh_assets.in_base_set(RenderSet::Sync))
             .add_system(sync_material_assets.in_base_set(RenderSet::Sync))
@@ -41,70 +41,70 @@ impl Plugin for SyncPlugin {
 }
 
 fn sync_mesh_assets(
-    mut api_assets: ResMut<Assets<CpuMesh>>,
-    mut asset_impls: ResMut<AssetImpls<CpuMesh, GpuMesh>>,
+    mut cpu_assets: ResMut<Assets<CpuMesh>>,
+    mut gpu_assets: ResMut<AssetMapping<CpuMesh, GpuMesh>>,
 ) {
-    if !api_assets.is_changed() {
+    if !cpu_assets.is_changed() {
         return;
     }
 
     // Handle Added Meshes
-    let added_handles = api_assets.flush_added();
+    let added_handles = cpu_assets.flush_added();
     for added_handle in added_handles {
-        let api_data = api_assets.get(&added_handle).unwrap();
-        let impl_data = GpuMesh::new(api_data);
-        asset_impls.insert(added_handle, impl_data);
+        let cpu_data = cpu_assets.get(&added_handle).unwrap();
+        let gpu_data = GpuMesh::new(cpu_data);
+        gpu_assets.insert(added_handle, gpu_data);
     }
 }
 
 fn sync_material_assets(
-    mut api_assets: ResMut<Assets<CpuMaterial>>,
-    mut asset_impls: ResMut<AssetImpls<CpuMaterial, Box<dyn Material>>>,
+    mut cpu_assets: ResMut<Assets<CpuMaterial>>,
+    mut gpu_assets: ResMut<AssetMapping<CpuMaterial, Box<dyn Material>>>,
 ) {
-    if !api_assets.is_changed() {
+    if !cpu_assets.is_changed() {
         return;
     }
 
     // Handle Added Materials
-    let added_handles = api_assets.flush_added();
+    let added_handles = cpu_assets.flush_added();
     for added_handle in added_handles {
-        let api_data = api_assets.get(&added_handle).unwrap();
-        let impl_data = PhysicalMaterial::new(api_data);
-        asset_impls.insert(added_handle, Box::new(impl_data));
+        let cpu_data = cpu_assets.get(&added_handle).unwrap();
+        let gpu_data = PbrMaterial::new(cpu_data);
+        gpu_assets.insert(added_handle, Box::new(gpu_data));
     }
 
     // Handle Changed Materials
-    let changed_handles = api_assets.flush_changed();
+    let changed_handles = cpu_assets.flush_changed();
     for changed_handle in changed_handles {
-        let api_data = api_assets.get(&changed_handle).unwrap();
-        let impl_data = PhysicalMaterial::new(api_data);
-        asset_impls.insert(changed_handle, Box::new(impl_data));
+        let cpu_data = cpu_assets.get(&changed_handle).unwrap();
+        let gpu_data = PbrMaterial::new(cpu_data);
+        gpu_assets.insert(changed_handle, Box::new(gpu_data));
     }
 }
 
 fn sync_texture_2d_assets(
-    mut api_assets: ResMut<Assets<CpuTexture2D>>,
-    mut asset_impls: ResMut<AssetImpls<CpuTexture2D, GpuTexture2D>>,
-    mut depth_impls: ResMut<AssetImpls<CpuTexture2D, GpuDepthTexture2D>>,
+    mut cpu_assets: ResMut<Assets<CpuTexture2D>>,
+    mut gpu_assets: ResMut<AssetMapping<CpuTexture2D, GpuTexture2D>>,
+    mut gpu_depth_assets: ResMut<AssetMapping<CpuTexture2D, GpuDepthTexture2D>>,
 ) {
-    if !api_assets.is_changed() {
+    if !cpu_assets.is_changed() {
         return;
     }
 
     // Handle Added Textures
-    let added_handles = api_assets.flush_added();
+    let added_handles = cpu_assets.flush_added();
     for added_handle in added_handles {
-        let api_data = api_assets.get(&added_handle).unwrap();
-        let impl_data = GpuTexture2D::from(api_data);
-        asset_impls.insert(added_handle, impl_data);
+        let cpu_data = cpu_assets.get(&added_handle).unwrap();
+        let gpu_data = GpuTexture2D::from(cpu_data);
+        gpu_assets.insert(added_handle, gpu_data);
 
         let depth_impl_data = GpuDepthTexture2D::new::<f32>(
-            api_data.width(),
-            api_data.height(),
-            api_data.wrap_s(),
-            api_data.wrap_t(),
+            cpu_data.width(),
+            cpu_data.height(),
+            cpu_data.wrap_s(),
+            cpu_data.wrap_t(),
         );
-        depth_impls.insert(added_handle, depth_impl_data);
+        gpu_depth_assets.insert(added_handle, depth_impl_data);
     }
 }
 

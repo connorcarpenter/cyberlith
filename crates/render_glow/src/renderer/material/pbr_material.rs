@@ -7,7 +7,7 @@ use crate::{core::*, renderer::*};
 /// This material is affected by lights.
 ///
 #[derive(Clone)]
-pub struct PhysicalMaterial {
+pub struct PbrMaterial {
     /// Name.
     pub name: String,
     /// Albedo base color, also called diffuse color. Assumed to be in linear color space.
@@ -36,13 +36,13 @@ pub struct PhysicalMaterial {
     pub lighting_model: LightingModel,
 }
 
-impl PhysicalMaterial {
+impl PbrMaterial {
     ///
     /// Constructs a new physical material from a [CpuMaterial].
     /// If the input contains an [CpuMaterial::occlusion_metallic_roughness_texture], this texture is used for both
-    /// [PhysicalMaterial::metallic_roughness_texture] and [PhysicalMaterial::occlusion_texture] while any [CpuMaterial::metallic_roughness_texture] or [CpuMaterial::occlusion_texture] are ignored.
+    /// [PbrMaterial::metallic_roughness_texture] and [PbrMaterial::occlusion_texture] while any [CpuMaterial::metallic_roughness_texture] or [CpuMaterial::occlusion_texture] are ignored.
     /// Tries to infer whether this material is transparent or opaque from the alpha value of the albedo color and the alpha values in the albedo texture.
-    /// Since this is not always correct, it is preferred to use [PhysicalMaterial::new_opaque] or [PhysicalMaterial::new_transparent].
+    /// Since this is not always correct, it is preferred to use [PbrMaterial::new_opaque] or [PbrMaterial::new_transparent].
     ///
     pub fn new(cpu_material: &CpuMaterial) -> Self {
         Self::new_internal(cpu_material, super::is_transparent(cpu_material))
@@ -50,14 +50,14 @@ impl PhysicalMaterial {
 
     /// Constructs a new opaque physical material from a [CpuMaterial].
     /// If the input contains an [CpuMaterial::occlusion_metallic_roughness_texture], this texture is used for both
-    /// [PhysicalMaterial::metallic_roughness_texture] and [PhysicalMaterial::occlusion_texture] while any [CpuMaterial::metallic_roughness_texture] or [CpuMaterial::occlusion_texture] are ignored.
+    /// [PbrMaterial::metallic_roughness_texture] and [PbrMaterial::occlusion_texture] while any [CpuMaterial::metallic_roughness_texture] or [CpuMaterial::occlusion_texture] are ignored.
     pub fn new_opaque(cpu_material: &CpuMaterial) -> Self {
         Self::new_internal(cpu_material, false)
     }
 
     /// Constructs a new transparent physical material from a [CpuMaterial].
     /// If the input contains an [CpuMaterial::occlusion_metallic_roughness_texture], this texture is used for both
-    /// [PhysicalMaterial::metallic_roughness_texture] and [PhysicalMaterial::occlusion_texture] while any [CpuMaterial::metallic_roughness_texture] or [CpuMaterial::occlusion_texture] are ignored.
+    /// [PbrMaterial::metallic_roughness_texture] and [PbrMaterial::occlusion_texture] while any [CpuMaterial::metallic_roughness_texture] or [CpuMaterial::occlusion_texture] are ignored.
     pub fn new_transparent(cpu_material: &CpuMaterial) -> Self {
         Self::new_internal(cpu_material, true)
     }
@@ -113,13 +113,13 @@ impl PhysicalMaterial {
     }
 }
 
-impl FromPbrMaterial for PhysicalMaterial {
+impl FromPbrMaterial for PbrMaterial {
     fn from_cpu_material(cpu_material: &CpuMaterial) -> Self {
         Self::new(cpu_material)
     }
 }
 
-impl Material for PhysicalMaterial {
+impl Material for PbrMaterial {
     fn fragment_shader(&self, lights: &[&dyn Light]) -> FragmentShader {
         let mut attributes = FragmentAttributes {
             position: true,
@@ -194,7 +194,7 @@ impl Material for PhysicalMaterial {
     }
 }
 
-impl Default for PhysicalMaterial {
+impl Default for PbrMaterial {
     fn default() -> Self {
         Self {
             name: "default".to_string(),

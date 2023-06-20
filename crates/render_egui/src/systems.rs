@@ -5,7 +5,7 @@ use bevy_ecs::{
 };
 
 use render_api::base::CpuTexture2D;
-use render_glow::{AssetImpls, core::GpuTexture2D, window::FrameInput};
+use render_glow::{AssetMapping, core::GpuTexture2D, window::FrameInput};
 
 use crate::{EguiContext, EguiUserTextures, GUI};
 
@@ -40,7 +40,7 @@ pub fn draw(
 pub fn sync(
     mut gui: NonSendMut<GUI>,
     mut user_textures: ResMut<EguiUserTextures>,
-    texture_impls: ResMut<AssetImpls<CpuTexture2D, GpuTexture2D>>,
+    texture_impls: ResMut<AssetMapping<CpuTexture2D, GpuTexture2D>>,
 ) {
     if !user_textures.is_changed() {
         return;
