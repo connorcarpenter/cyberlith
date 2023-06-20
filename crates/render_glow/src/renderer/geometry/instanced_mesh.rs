@@ -33,14 +33,14 @@ impl<'a> InstancedMesh<'a> {
     }
 
     /// Returns the number of instances that is rendered.
-    pub fn instance_count(&self) -> u32 {
+    fn instance_count(&self) -> u32 {
         self.instances.transformations.len() as u32
     }
 
     ///
-    /// Update the instances.
+    /// Reset the instances.
     ///
-    pub fn reset_instances(&mut self) {
+    fn reset_instances(&mut self) {
         #[cfg(debug_assertions)]
         self.instances.validate().expect("invalid instances");
         self.update_aabb();
@@ -318,6 +318,14 @@ pub struct Instances {
 }
 
 impl Instances {
+    pub fn new(transforms: Vec<Mat4>) -> Self {
+        Self {
+            transformations: transforms,
+            texture_transformations: None,
+            colors: None,
+        }
+    }
+
     ///
     /// Returns an error if the instances is not valid.
     ///

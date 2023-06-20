@@ -6,7 +6,7 @@ use render_api::{
 
 use crate::{
     core::{Context, Program, RenderStates},
-    renderer::{FragmentAttributes, GpuMesh, Light, Material, RenderCamera},
+    renderer::{FragmentAttributes, FragmentShader, GpuMesh, Light, Material, RenderCamera},
 };
 
 // Render Object
@@ -15,6 +15,8 @@ pub struct RenderObject<'a> {
     mesh: &'a GpuMesh,
     material: &'a dyn Material,
     transforms: Vec<Mat4>,
+    will_instance: bool,
+    instanced_aabb: Option<AxisAlignedBoundingBox>,
 }
 
 impl<'a> RenderObject<'a> {
@@ -23,40 +25,91 @@ impl<'a> RenderObject<'a> {
             mesh,
             material,
             transforms: Vec::new(),
+            will_instance: false,
+            instanced_aabb: None,
         }
     }
 
     pub fn add_transform(&mut self, transform: &'a Transform) {
         self.transforms.push(transform.compute_matrix());
+        if self.transforms.len() > 1 {
+            self.will_instance = true;
+        }
     }
 
-    pub fn render(&self, render_camera: &RenderCamera, lights: &[&dyn Light]) {
-        let fragment_shader = self.material.fragment_shader(lights);
-        let vertex_shader_source = self.vertex_shader_source(fragment_shader.attributes);
+    pub fn render(&self, render_camera: &'a RenderCamera<'a>, lights: &[&dyn Light]) {
+        if self.will_instance {
+            // instancing!
+            todo!();
+        } else {
+            RenderObjectSingle::render(
+                render_camera,
+                lights,
+                self.mesh,
+                self.material,
+                self.transforms[0],
+            );
+        }
+    }
+
+    pub fn aabb(&self) -> AxisAlignedBoundingBox {
+        if self.will_instance {
+            if self.instanced_aabb.is_none() {
+                panic!("must call 'finalize()' on an instanced render object before calling 'aabb()'!");
+            }
+            self.instanced_aabb.unwrap()
+        } else {
+            let mut aabb = self.mesh.aabb;
+            aabb.transform(&self.transforms[0]);
+            aabb
+        }
+    }
+
+    pub fn finalize(&mut self) {
+        //todo!()
+    }
+}
+
+struct RenderObjectSingle;
+
+impl RenderObjectSingle {
+    fn render<'a>(
+        render_camera: &'a RenderCamera<'a>,
+        lights: &[&dyn Light],
+        mesh: &'a GpuMesh,
+        material: &'a dyn Material,
+        transform: Mat4,
+    ) {
+        let fragment_shader = material.fragment_shader(lights);
+        let vertex_shader = Self::vertex_shader_source(mesh, fragment_shader.attributes);
+
         Context::get()
-            .program(vertex_shader_source, fragment_shader.source, |program| {
-                self.material.use_uniforms(program, render_camera, lights);
-                self.draw(
+            .program(vertex_shader, fragment_shader.source, |program| {
+                material.use_uniforms(program, render_camera, lights);
+                Self::draw(
                     program,
-                    self.material.render_states(),
+                    material.render_states(),
                     render_camera,
                     fragment_shader.attributes,
+                    mesh,
+                    transform,
                 );
             })
             .expect("Failed compiling shader");
     }
 
-    fn draw(
-        &self,
+    fn draw<'a>(
         program: &Program,
         render_states: RenderStates,
         render_camera: &'a RenderCamera<'a>,
         attributes: FragmentAttributes,
+        mesh: &'a GpuMesh,
+        transform: Mat4,
     ) {
         let camera = render_camera.camera;
 
         if attributes.normal {
-            let inverse = self.transforms[0].inverse();
+            let inverse = transform.inverse();
             program.use_uniform_if_required("normalMatrix", inverse.transpose());
         }
 
@@ -67,12 +120,12 @@ impl<'a> RenderObject<'a> {
                 .projection_matrix(&camera.viewport_or_default())
                 * render_camera.transform.view_matrix(),
         );
-        program.use_uniform("modelMatrix", self.transforms[0]);
+        program.use_uniform("modelMatrix", transform);
 
-        self.mesh.draw(program, render_states, camera, attributes);
+        mesh.draw(program, render_states, camera, attributes);
     }
 
-    fn vertex_shader_source(&self, required_attributes: FragmentAttributes) -> String {
+    fn vertex_shader_source(mesh: &GpuMesh, required_attributes: FragmentAttributes) -> String {
         format!(
             "{}{}{}{}{}",
             if required_attributes.normal {
@@ -85,7 +138,7 @@ impl<'a> RenderObject<'a> {
             } else {
                 ""
             },
-            if self.mesh.colors.is_some() {
+            if mesh.colors.is_some() {
                 "#define USE_VERTEX_COLORS\n"
             } else {
                 ""
@@ -93,11 +146,5 @@ impl<'a> RenderObject<'a> {
             include_str!("../core/shared.frag"),
             include_str!("geometry/shaders/mesh.vert"),
         )
-    }
-
-    pub fn aabb(&self) -> AxisAlignedBoundingBox {
-        let mut aabb = self.mesh.aabb;
-        aabb.transform(&self.transforms[0]);
-        aabb
     }
 }

@@ -17,6 +17,9 @@ pub trait RenderTargetExt {
         let lights = &RenderPass::process_lights(&lights_holder);
 
         // Forward
+        for object in objects.iter_mut() {
+            object.finalize();
+        }
 
         // we sort here front->back in order to take advantage of depth-test culling
         objects.sort_by(|a, b| cmp_render_order(&camera, a, b));
