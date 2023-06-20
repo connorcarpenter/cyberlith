@@ -1,12 +1,7 @@
 use bevy_ecs::component::Component;
 
 use math::Mat4;
-use render_api::{
-    base::{AxisAlignedBoundingBox, Wrapping},
-    components::{
-        Camera, DirectionalLight, OrthographicProjection, Projection, Transform, Viewport,
-    },
-};
+use render_api::components::DirectionalLight;
 
 use crate::{core::*, renderer::*};
 
@@ -51,63 +46,65 @@ impl DirectionalLightImpl {
     ///
     pub fn generate_shadow_map<'a>(
         &mut self,
-        light: &DirectionalLight,
-        texture_size: u32,
-        geometries: impl IntoIterator<Item=RenderObject<'a>> + Clone,
+        _light: &DirectionalLight,
+        _texture_size: u32,
+        _geometries: impl IntoIterator<Item=RenderObject<'a>> + Clone,
     ) {
-        let up = light::compute_up_direction(light.direction);
+        // TODO fix this
 
-        let viewport = Viewport::new_at_origin(texture_size, texture_size);
-        let mut aabb = AxisAlignedBoundingBox::EMPTY;
-        for geometry in geometries.clone() {
-            aabb.expand_with_aabb(&geometry.aabb());
-        }
-        if aabb.is_empty() {
-            return;
-        }
-        let target = aabb.center();
-        let position = target - aabb.max().distance(aabb.min()) * light.direction;
-        let z_far = aabb.distance_max(&position);
-        let z_near = aabb.distance(&position);
-        let frustum_height = aabb.max().distance(aabb.min()); // TODO: more tight fit
-        let shadow_camera = Camera {
-            viewport: Some(viewport),
-            ..Default::default()
-        };
-        let shadow_projection: Projection = Projection::Orthographic(OrthographicProjection {
-            height: frustum_height,
-            near: z_near,
-            far: z_far,
-        });
-        let mut shadow_texture = GpuDepthTexture2D::new::<f32>(
-            texture_size,
-            texture_size,
-            Wrapping::ClampToEdge,
-            Wrapping::ClampToEdge,
-        );
-        let depth_material = DepthMaterial {
-            render_states: RenderStates {
-                write_mask: WriteMask::DEPTH,
-                ..Default::default()
-            },
-            ..Default::default()
-        };
-        let shadow_camera_transform = Transform::default()
-            .with_translation(position)
-            .looking_at(target, up);
-        let shadow_render_camera =
-            RenderCamera::new(&shadow_camera, &shadow_camera_transform, &shadow_projection);
-        shadow_texture
-            .as_depth_target()
-            .clear(ClearState::default())
-            .write(|| {
-                for geometry in geometries.into_iter() {
-                    geometry.render_with_material(&depth_material, &shadow_render_camera, &[]);
-                }
-            });
-        self.shadow_texture = Some(shadow_texture);
-        self.shadow_matrix =
-            light::shadow_matrix(&shadow_camera, &shadow_projection, &shadow_camera_transform);
+        // let up = light::compute_up_direction(light.direction);
+        //
+        // let viewport = Viewport::new_at_origin(texture_size, texture_size);
+        // let mut aabb = AxisAlignedBoundingBox::EMPTY;
+        // for geometry in geometries.clone() {
+        //     aabb.expand_with_aabb(&geometry.aabb());
+        // }
+        // if aabb.is_empty() {
+        //     return;
+        // }
+        // let target = aabb.center();
+        // let position = target - aabb.max().distance(aabb.min()) * light.direction;
+        // let z_far = aabb.distance_max(&position);
+        // let z_near = aabb.distance(&position);
+        // let frustum_height = aabb.max().distance(aabb.min()); // TODO: more tight fit
+        // let shadow_camera = Camera {
+        //     viewport: Some(viewport),
+        //     ..Default::default()
+        // };
+        // let shadow_projection: Projection = Projection::Orthographic(OrthographicProjection {
+        //     height: frustum_height,
+        //     near: z_near,
+        //     far: z_far,
+        // });
+        // let mut shadow_texture = GpuDepthTexture2D::new::<f32>(
+        //     texture_size,
+        //     texture_size,
+        //     Wrapping::ClampToEdge,
+        //     Wrapping::ClampToEdge,
+        // );
+        // let depth_material = DepthMaterial {
+        //     render_states: RenderStates {
+        //         write_mask: WriteMask::DEPTH,
+        //         ..Default::default()
+        //     },
+        //     ..Default::default()
+        // };
+        // let shadow_camera_transform = Transform::default()
+        //     .with_translation(position)
+        //     .looking_at(target, up);
+        // let shadow_render_camera =
+        //     RenderCamera::new(&shadow_camera, &shadow_camera_transform, &shadow_projection);
+        // shadow_texture
+        //     .as_depth_target()
+        //     .clear(ClearState::default())
+        //     .write(|| {
+        //         for geometry in geometries.into_iter() {
+        //             geometry.render_with_material(&depth_material, &shadow_render_camera, &[]);
+        //         }
+        //     });
+        // self.shadow_texture = Some(shadow_texture);
+        // self.shadow_matrix =
+        //     light::shadow_matrix(&shadow_camera, &shadow_projection, &shadow_camera_transform);
     }
 
     ///

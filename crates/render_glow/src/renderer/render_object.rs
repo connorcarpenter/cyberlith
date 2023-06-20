@@ -10,24 +10,40 @@ use crate::{
 };
 
 // Render Object
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct RenderObject<'a> {
     mesh: &'a GpuMesh,
     material: &'a dyn Material,
-    transform: Mat4,
+    transforms: Vec<Mat4>,
 }
 
 impl<'a> RenderObject<'a> {
-    pub fn new(mesh: &'a GpuMesh, material: &'a dyn Material, transform: &'a Transform) -> Self {
+    pub fn new(mesh: &'a GpuMesh, material: &'a dyn Material) -> Self {
         Self {
             mesh,
             material,
-            transform: transform.compute_matrix(),
+            transforms: Vec::new(),
         }
     }
 
-    pub fn render(&self, camera: &RenderCamera, lights: &[&dyn Light]) {
-        self.render_with_material(self.material, camera, lights);
+    pub fn add_transform(&mut self, transform: &'a Transform) {
+        self.transforms.push(transform.compute_matrix());
+    }
+
+    pub fn render(&self, render_camera: &RenderCamera, lights: &[&dyn Light]) {
+        let fragment_shader = self.material.fragment_shader(lights);
+        let vertex_shader_source = self.vertex_shader_source(fragment_shader.attributes);
+        Context::get()
+            .program(vertex_shader_source, fragment_shader.source, |program| {
+                self.material.use_uniforms(program, render_camera, lights);
+                self.draw(
+                    program,
+                    self.material.render_states(),
+                    render_camera,
+                    fragment_shader.attributes,
+                );
+            })
+            .expect("Failed compiling shader");
     }
 
     fn draw(
@@ -40,7 +56,7 @@ impl<'a> RenderObject<'a> {
         let camera = render_camera.camera;
 
         if attributes.normal {
-            let inverse = self.transform.inverse();
+            let inverse = self.transforms[0].inverse();
             program.use_uniform_if_required("normalMatrix", inverse.transpose());
         }
 
@@ -51,7 +67,7 @@ impl<'a> RenderObject<'a> {
                 .projection_matrix(&camera.viewport_or_default())
                 * render_camera.transform.view_matrix(),
         );
-        program.use_uniform("modelMatrix", self.transform);
+        program.use_uniform("modelMatrix", self.transforms[0]);
 
         self.mesh.draw(program, render_states, camera, attributes);
     }
@@ -81,28 +97,7 @@ impl<'a> RenderObject<'a> {
 
     pub fn aabb(&self) -> AxisAlignedBoundingBox {
         let mut aabb = self.mesh.aabb;
-        aabb.transform(&self.transform);
+        aabb.transform(&self.transforms[0]);
         aabb
-    }
-
-    pub fn render_with_material(
-        &self,
-        material: &dyn Material,
-        render_camera: &RenderCamera,
-        lights: &[&dyn Light],
-    ) {
-        let fragment_shader = material.fragment_shader(lights);
-        let vertex_shader_source = self.vertex_shader_source(fragment_shader.attributes);
-        Context::get()
-            .program(vertex_shader_source, fragment_shader.source, |program| {
-                material.use_uniforms(program, render_camera, lights);
-                self.draw(
-                    program,
-                    material.render_states(),
-                    render_camera,
-                    fragment_shader.attributes,
-                );
-            })
-            .expect("Failed compiling shader");
     }
 }

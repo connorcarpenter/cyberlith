@@ -1,10 +1,4 @@
-use math::*;
-
-use render_api::components::{CameraProjection, Projection};
-use render_api::{
-    base::{LightingModel, NormalDistributionFunction},
-    components::{Camera, Transform},
-};
+use render_api::base::{LightingModel, NormalDistributionFunction};
 
 use crate::renderer::Light;
 
@@ -41,29 +35,29 @@ pub fn lights_shader_source(lights: &[&dyn Light], lighting_model: LightingModel
     shader_source
 }
 
-pub(crate) fn shadow_matrix(
-    camera: &Camera,
-    projection: &Projection,
-    transform: &Transform,
-) -> Mat4 {
-    let bias_matrix = Mat4::from_cols(
-        Vec4::new(0.5, 0.0, 0.0, 0.0),
-        Vec4::new(0.0, 0.5, 0.0, 0.0),
-        Vec4::new(0.0, 0.0, 0.5, 0.0),
-        Vec4::new(0.5, 0.5, 0.5, 1.0),
-    );
-    bias_matrix
-        * projection.projection_matrix(&camera.viewport_or_default())
-        * transform.compute_matrix()
-}
+// pub(crate) fn shadow_matrix(
+//     camera: &Camera,
+//     projection: &Projection,
+//     transform: &Transform,
+// ) -> Mat4 {
+//     let bias_matrix = Mat4::from_cols(
+//         Vec4::new(0.5, 0.0, 0.0, 0.0),
+//         Vec4::new(0.0, 0.5, 0.0, 0.0),
+//         Vec4::new(0.0, 0.0, 0.5, 0.0),
+//         Vec4::new(0.5, 0.5, 0.5, 1.0),
+//     );
+//     bias_matrix
+//         * projection.projection_matrix(&camera.viewport_or_default())
+//         * transform.compute_matrix()
+// }
 
-pub(crate) fn compute_up_direction(direction: Vec3) -> Vec3 {
-    if Vec3::X.dot(direction).abs() > 0.9 {
-        (Vec3::Y.cross(direction)).normalize()
-    } else {
-        (Vec3::X.cross(direction)).normalize()
-    }
-}
+// pub(crate) fn compute_up_direction(direction: Vec3) -> Vec3 {
+//     if Vec3::X.dot(direction).abs() > 0.9 {
+//         (Vec3::Y.cross(direction)).normalize()
+//     } else {
+//         (Vec3::X.cross(direction)).normalize()
+//     }
+// }
 
 pub(crate) fn lighting_model_shader(lighting_model: LightingModel) -> &'static str {
     match lighting_model {
