@@ -1,10 +1,10 @@
 use math::{Vec2, Vec3};
 
-use crate::base::{Indices, Positions, TriMesh};
+use crate::base::{CpuMesh, Indices, Positions};
 
 pub struct Square;
 
-impl From<Square> for TriMesh {
+impl From<Square> for CpuMesh {
     fn from(_square: Square) -> Self {
         let half_width = 1.0;
         let half_height = 1.0;
@@ -25,7 +25,7 @@ impl From<Square> for TriMesh {
             Vec2::new(1.0, 0.0),
             Vec2::new(0.0, 0.0),
         ];
-        TriMesh {
+        CpuMesh {
             indices,
             positions: Positions(positions),
             normals: Some(normals),

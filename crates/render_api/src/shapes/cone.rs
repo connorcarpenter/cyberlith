@@ -1,6 +1,6 @@
 use math::Vec3;
 
-use crate::base::{Indices, Positions, TriMesh};
+use crate::base::{CpuMesh, Indices, Positions};
 
 pub struct Cone {
     pub angle_subdivisions: u32,
@@ -12,7 +12,7 @@ impl Cone {
     }
 }
 
-impl From<Cone> for TriMesh {
+impl From<Cone> for CpuMesh {
     fn from(cone: Cone) -> Self {
         // TODO: this method creates `angle_subdivisions` + 1 vertices at the top of the cone
         // change this to a single vertex at the top of the cone

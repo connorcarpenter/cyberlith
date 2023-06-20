@@ -1,7 +1,7 @@
 use bevy_ecs::system::{NonSendMut, Query, Res, ResMut};
 
 use render_api::{
-    base::{PbrMaterial, Texture2D, TriMesh},
+    base::{CpuMesh, PbrMaterial, Texture2D},
     components::{
         AmbientLight, Camera, PointLight, Projection, RenderLayer, RenderLayers,
         RenderTarget as CameraRenderTarget, Transform,
@@ -23,7 +23,7 @@ use crate::renderer::RenderTargetExt;
 pub fn draw(
     frame_input: NonSendMut<FrameInput<()>>,
     // Resources
-    meshes: Res<AssetImpls<TriMesh, BaseMesh>>,
+    meshes: Res<AssetImpls<CpuMesh, BaseMesh>>,
     materials: Res<AssetImpls<PbrMaterial, Box<dyn Material>>>,
     mut textures: ResMut<AssetImpls<Texture2D, Texture2DImpl>>,
     mut depth_textures: ResMut<AssetImpls<Texture2D, DepthTexture2D>>,
@@ -31,7 +31,7 @@ pub fn draw(
     cameras_q: Query<(&Camera, &Transform, &Projection, Option<&RenderLayer>)>,
     // Objects
     objects_q: Query<(
-        &Handle<TriMesh>,
+        &Handle<CpuMesh>,
         &Handle<PbrMaterial>,
         &Transform,
         Option<&RenderLayer>,

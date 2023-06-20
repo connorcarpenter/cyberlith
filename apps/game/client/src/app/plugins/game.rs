@@ -8,7 +8,7 @@ use bevy_ecs::{
 use math::Vec3;
 use render_api::{
     Assets,
-    base::{Color, PbrMaterial, TriMesh},
+    base::{Color, CpuMesh, PbrMaterial},
     components::{
         AmbientLight, Camera, CameraBundle, DirectionalLight, PerspectiveProjection, Projection,
         RenderObjectBundle, Transform,
@@ -57,7 +57,7 @@ impl Plugin for GamePlugin {
 fn setup(
     mut commands: Commands,
     window: Res<Window>,
-    mut meshes: ResMut<Assets<TriMesh>>,
+    mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<PbrMaterial>>,
 ) {
     // plane
@@ -69,7 +69,7 @@ fn setup(
     // cube
     commands
         .spawn(RenderObjectBundle {
-            mesh: meshes.add(TriMesh::from(shapes::Cube { size: 10.0 })),
+            mesh: meshes.add(CpuMesh::from(shapes::Cube { size: 10.0 })),
             material: materials.add(Color::from_rgb_f32(0.8, 0.7, 0.6).into()),
             transform: Transform::from_xyz(0.0, 10.0, 0.0),
             ..Default::default()

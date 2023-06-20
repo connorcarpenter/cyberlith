@@ -2,10 +2,11 @@
 //! Contain geometry asset definitions.
 //!
 
-mod indices;
-mod positions;
-mod tri_mesh;
-
+pub use cpu_mesh::*;
 pub use indices::*;
 pub use positions::*;
-pub use tri_mesh::*;
+
+mod indices;
+mod positions;
+mod cpu_mesh;
+

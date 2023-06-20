@@ -13,7 +13,7 @@ pub struct BaseMesh {
 }
 
 impl BaseMesh {
-    pub fn new(cpu_mesh: &TriMesh) -> Self {
+    pub fn new(cpu_mesh: &CpuMesh) -> Self {
         #[cfg(debug_assertions)]
         cpu_mesh.validate().expect("invalid cpu mesh");
 

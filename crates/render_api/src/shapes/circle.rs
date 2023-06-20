@@ -1,6 +1,6 @@
 use math::Vec3;
 
-use crate::base::{Indices, Positions, TriMesh};
+use crate::base::{CpuMesh, Indices, Positions};
 
 pub struct Circle {
     pub angle_subdivisions: u32,
@@ -12,7 +12,7 @@ impl Circle {
     }
 }
 
-impl From<Circle> for TriMesh {
+impl From<Circle> for CpuMesh {
     fn from(circle: Circle) -> Self {
         let angle_subdivisions = circle.angle_subdivisions;
 
@@ -31,7 +31,7 @@ impl From<Circle> for TriMesh {
             indices.push(j as u16);
             indices.push(((j + 1) % angle_subdivisions) as u16);
         }
-        TriMesh {
+        CpuMesh {
             indices: Indices(Some(indices)),
             positions: Positions(positions),
             normals: Some(normals),

@@ -1,6 +1,6 @@
 use math::Vec3;
 
-use crate::base::{Indices, Positions, TriMesh};
+use crate::base::{CpuMesh, Indices, Positions};
 
 pub struct Cylinder {
     pub angle_subdivisions: u32,
@@ -12,7 +12,7 @@ impl Cylinder {
     }
 }
 
-impl From<Cylinder> for TriMesh {
+impl From<Cylinder> for CpuMesh {
     fn from(cylinder: Cylinder) -> Self {
         let angle_subdivisions = cylinder.angle_subdivisions;
         let length_subdivisions = 1;

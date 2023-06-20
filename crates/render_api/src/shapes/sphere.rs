@@ -1,6 +1,6 @@
 use math::Vec3;
 
-use crate::base::{Indices, Positions, TriMesh};
+use crate::base::{CpuMesh, Indices, Positions};
 
 pub struct Sphere {
     pub angle_subdivisions: u32,
@@ -12,7 +12,7 @@ impl Sphere {
     }
 }
 
-impl From<Sphere> for TriMesh {
+impl From<Sphere> for CpuMesh {
     fn from(sphere: Sphere) -> Self {
         let angle_subdivisions = sphere.angle_subdivisions;
 
@@ -67,7 +67,7 @@ impl From<Sphere> for TriMesh {
             indices.push((i + j1) as u16);
         }
 
-        TriMesh {
+        CpuMesh {
             indices: Indices(Some(indices)),
             positions: Positions(positions),
             normals: Some(normals),

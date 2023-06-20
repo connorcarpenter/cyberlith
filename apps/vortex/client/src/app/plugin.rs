@@ -11,7 +11,7 @@ use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin, ReceiveEvents};
 use math::Vec3;
 use render_api::{
     Assets,
-    base::{Color, PbrMaterial, Texture2D, TriMesh},
+    base::{Color, CpuMesh, PbrMaterial, Texture2D},
     components::{
         AmbientLight, Camera, CameraBundle, ClearOperation, OrthographicProjection, PointLight,
         Projection, RenderLayers, RenderObjectBundle, RenderTarget, Transform, Viewport,
@@ -114,7 +114,7 @@ pub struct RightBottomTexture(pub Handle<Texture2D>);
 fn setup(
     config: Res<AppConfig>,
     mut commands: Commands,
-    mut meshes: ResMut<Assets<TriMesh>>,
+    mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<PbrMaterial>>,
     mut textures: ResMut<Assets<Texture2D>>,
     mut user_textures: ResMut<EguiUserTextures>,
@@ -127,7 +127,7 @@ fn setup(
     // Cube
     commands
         .spawn(RenderObjectBundle {
-            mesh: meshes.add(TriMesh::from(shapes::Cube { size: 50.0 })),
+            mesh: meshes.add(CpuMesh::from(shapes::Cube { size: 50.0 })),
             material: materials.add(Color::from_rgb_f32(0.8, 0.7, 0.6).into()),
             transform: Transform::from_xyz(0.0, 0.0, 0.0),
         })

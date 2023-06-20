@@ -1,6 +1,6 @@
 // use math::*;
 //
-// use render_api::base::{AxisAlignedBoundingBox, Camera, TriMesh};
+// use render_api::base::{AxisAlignedBoundingBox, Camera};
 //
 // use crate::{
 //     core::{ColorTexture, DepthTexture},
@@ -70,7 +70,7 @@
 //                     .collect(),
 //                 ..Default::default()
 //             },
-//             &TriMesh::cylinder(16),
+//             &CpuMesh::cylinder(16),
 //         );
 //         Self { mesh, aabb }
 //     }

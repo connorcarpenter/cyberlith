@@ -6,7 +6,7 @@ use crate::base::{AxisAlignedBoundingBox, Color, Error, Indices, Positions, Resu
 /// A CPU-side version of a triangle mesh.
 ///
 #[derive(Clone)]
-pub struct TriMesh {
+pub struct CpuMesh {
     /// The positions of the vertices.
     /// If there is no indices associated with this mesh, three contiguous positions defines a triangle, in that case, the length must be divisable by 3.
     pub positions: Positions,
@@ -21,7 +21,7 @@ pub struct TriMesh {
     pub colors: Option<Vec<Color>>,
 }
 
-impl std::default::Default for TriMesh {
+impl std::default::Default for CpuMesh {
     fn default() -> Self {
         Self {
             positions: Positions::default(),
@@ -33,7 +33,7 @@ impl std::default::Default for TriMesh {
     }
 }
 
-impl std::fmt::Debug for TriMesh {
+impl std::fmt::Debug for CpuMesh {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut d = f.debug_struct("Mesh");
         d.field("positions", &self.positions.len());
@@ -45,7 +45,7 @@ impl std::fmt::Debug for TriMesh {
     }
 }
 
-impl TriMesh {
+impl CpuMesh {
     /// Returns the number of vertices in this mesh.
     pub fn vertex_count(&self) -> usize {
         self.positions.len()

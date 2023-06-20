@@ -8,9 +8,9 @@ use bevy_ecs::{
 };
 
 use render_api::{
-    base::{PbrMaterial as ApiMaterial, Texture2D as ApiTexture, TriMesh as ApiMesh},
-    components::{AmbientLight, DirectionalLight},
-    Assets, RenderSet,
+    Assets,
+    base::{CpuMesh as ApiMesh, PbrMaterial as ApiMaterial, Texture2D as ApiTexture},
+    components::{AmbientLight, DirectionalLight}, RenderSet,
 };
 
 use crate::{

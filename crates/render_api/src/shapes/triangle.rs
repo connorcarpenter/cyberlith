@@ -1,6 +1,6 @@
 use math::{Vec2, Vec3};
 
-use crate::base::{Indices, Positions, TriMesh};
+use crate::base::{CpuMesh, Indices, Positions};
 
 pub struct Triangle {
     pub a: Vec3,
@@ -18,7 +18,7 @@ impl Triangle {
     }
 }
 
-impl From<Triangle> for TriMesh {
+impl From<Triangle> for CpuMesh {
     fn from(tri: Triangle) -> Self {
         let indices: Indices = Indices(Some(vec![0u16, 1, 2]));
         let positions = vec![tri.a, tri.b, tri.c];
@@ -28,7 +28,7 @@ impl From<Triangle> for TriMesh {
             Vec2::new(1.0, 1.0),
             Vec2::new(1.0, 0.0),
         ];
-        TriMesh {
+        CpuMesh {
             indices,
             positions: Positions(positions),
             normals: Some(normals),
