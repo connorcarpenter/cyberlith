@@ -13,8 +13,8 @@ use crate::{
     asset_mapping::AssetMapping,
     core::{GpuDepthTexture2D, GpuTexture2D, RenderTarget},
     renderer::{
-        AmbientLightImpl, DirectionalLightImpl, GpuMesh, Material, RenderLight, RenderObject, RenderPass,
-        RenderTargetExt,
+        AmbientLightImpl, DirectionalLightImpl, GpuMesh, Material, RenderLight, RenderObject,
+        RenderPass, RenderTargetExt,
     },
     window::FrameInput,
 };
@@ -123,10 +123,13 @@ pub fn draw(
             let mesh = meshes.get(mesh_handle).unwrap();
             let mat = materials.get(mat_handle).unwrap();
 
-            camera_work[camera_index]
-                .as_mut()
-                .unwrap()
-                .add_object(mesh_handle, mat_handle, mesh, mat.as_ref(), transform);
+            camera_work[camera_index].as_mut().unwrap().add_object(
+                mesh_handle,
+                mat_handle,
+                mesh,
+                mat.as_ref(),
+                transform,
+            );
         }
     }
 

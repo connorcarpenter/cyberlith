@@ -1,6 +1,10 @@
 use std::collections::HashMap;
 
-use render_api::{base::{CpuMaterial, CpuMesh}, components::{Camera, Projection, Transform}, Handle};
+use render_api::{
+    base::{CpuMaterial, CpuMesh},
+    components::{Camera, Projection, Transform},
+    Handle,
+};
 
 use crate::renderer::{GpuMesh, Light, Material, RenderCamera, RenderLight, RenderObject};
 
@@ -24,7 +28,14 @@ impl<'a> RenderPass<'a> {
         }
     }
 
-    pub fn add_object(&mut self, mesh_handle: &Handle<CpuMesh>, mat_handle: &Handle<CpuMaterial>, mesh: &'a GpuMesh, mat: &'a dyn Material, transform: &'a Transform) {
+    pub fn add_object(
+        &mut self,
+        mesh_handle: &Handle<CpuMesh>,
+        mat_handle: &Handle<CpuMaterial>,
+        mesh: &'a GpuMesh,
+        mat: &'a dyn Material,
+        transform: &'a Transform,
+    ) {
         let key = (*mesh_handle, *mat_handle);
         if let Some(object) = self.objects.get_mut(&key) {
             object.add_transform(transform);
@@ -44,7 +55,8 @@ impl<'a> RenderPass<'a> {
         Vec<RenderLight<'a>>,
         Vec<RenderObject<'a>>,
     ) {
-        let objects: Vec<RenderObject<'a>> = self.objects.into_iter().map(|(_, object)| object).collect();
+        let objects: Vec<RenderObject<'a>> =
+            self.objects.into_iter().map(|(_, object)| object).collect();
         (self.camera, self.lights, objects)
     }
 

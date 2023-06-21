@@ -62,7 +62,9 @@ impl<'a> RenderObject<'a> {
     pub fn aabb(&self) -> AxisAlignedBoundingBox {
         if self.will_instance {
             if self.instanced_aabb.is_none() {
-                panic!("must call 'finalize()' on an instanced render object before calling 'aabb()'!");
+                panic!(
+                    "must call 'finalize()' on an instanced render object before calling 'aabb()'!"
+                );
             }
             self.instanced_aabb.unwrap()
         } else {
@@ -252,13 +254,7 @@ impl RenderObjectInstanced {
                 );
             }
         }
-        mesh.draw_instanced(
-            program,
-            render_states,
-            camera,
-            attributes,
-            instance_count,
-        );
+        mesh.draw_instanced(program, render_states, camera, attributes, instance_count);
     }
 
     fn vertex_shader_source(
