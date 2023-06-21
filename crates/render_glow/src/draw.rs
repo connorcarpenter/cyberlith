@@ -123,14 +123,10 @@ pub fn draw(
             let mesh = meshes.get(mesh_handle).unwrap();
             let mat = materials.get(mat_handle).unwrap();
 
-            let mut render_object = RenderObject::new(mesh, mat.as_ref());
-            render_object.add_transform(transform);
-
             camera_work[camera_index]
                 .as_mut()
                 .unwrap()
-                .objects
-                .push(render_object);
+                .add_object(mesh_handle, mat_handle, mesh, mat.as_ref(), transform);
         }
     }
 

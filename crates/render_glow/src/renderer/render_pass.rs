@@ -1,12 +1,14 @@
-use render_api::components::{Camera, Projection, Transform};
+use std::collections::HashMap;
 
-use crate::renderer::{Light, RenderCamera, RenderLight, RenderObject};
+use render_api::{base::{CpuMaterial, CpuMesh}, components::{Camera, Projection, Transform}, Handle};
+
+use crate::renderer::{GpuMesh, Light, Material, RenderCamera, RenderLight, RenderObject};
 
 // Render Pass
 pub struct RenderPass<'a> {
     pub camera: RenderCamera<'a>,
     pub lights: Vec<RenderLight<'a>>,
-    pub objects: Vec<RenderObject<'a>>,
+    objects: HashMap<(Handle<CpuMesh>, Handle<CpuMaterial>), RenderObject<'a>>,
 }
 
 impl<'a> RenderPass<'a> {
@@ -18,7 +20,20 @@ impl<'a> RenderPass<'a> {
         Self {
             camera: RenderCamera::new(camera, transform, projection),
             lights: Vec::new(),
-            objects: Vec::new(),
+            objects: HashMap::new(),
+        }
+    }
+
+    pub fn add_object(&mut self, mesh_handle: &Handle<CpuMesh>, mat_handle: &Handle<CpuMaterial>, mesh: &'a GpuMesh, mat: &'a dyn Material, transform: &'a Transform) {
+        let key = (*mesh_handle, *mat_handle);
+        if let Some(object) = self.objects.get_mut(&key) {
+            object.add_transform(transform);
+            return;
+        } else {
+            let mut object = RenderObject::new(mesh, mat);
+            object.add_transform(transform);
+            self.objects.insert(key, object);
+            return;
         }
     }
 
@@ -29,7 +44,8 @@ impl<'a> RenderPass<'a> {
         Vec<RenderLight<'a>>,
         Vec<RenderObject<'a>>,
     ) {
-        (self.camera, self.lights, self.objects)
+        let objects: Vec<RenderObject<'a>> = self.objects.into_iter().map(|(_, object)| object).collect();
+        (self.camera, self.lights, objects)
     }
 
     pub fn process_camera(render: &RenderCamera<'a>) -> &'a Camera {
