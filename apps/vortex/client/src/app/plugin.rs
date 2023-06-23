@@ -127,8 +127,8 @@ fn setup(
     // Cube
     commands
         .spawn(RenderObjectBundle {
-            mesh: meshes.add(CpuMesh::from(shapes::Cube { size: 50.0 })),
-            material: materials.add(Color::from_rgb_f32(0.8, 0.7, 0.6).into()),
+            mesh: meshes.add(shapes::Cube),
+            material: materials.add(Color::from_rgb_f32(0.8, 0.7, 0.6)),
             transform: Transform::from_xyz(0.0, 0.0, 0.0),
         })
         .insert(SkeletonCube)

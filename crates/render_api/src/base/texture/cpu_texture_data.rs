@@ -1,3 +1,5 @@
+use std::hash::{Hash, Hasher};
+
 use half::*;
 
 ///
@@ -84,6 +86,16 @@ pub enum CpuTextureData {
     RgbaF32(Vec<[f32; 4]>),
 }
 
+impl Hash for CpuTextureData {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            _ => {
+                todo!()
+            }
+        }
+    }
+}
+
 impl std::fmt::Debug for CpuTextureData {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -103,7 +115,7 @@ impl std::fmt::Debug for CpuTextureData {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Hash, Clone, Debug, PartialEq)]
 pub enum CpuTextureDataType {
     /// One byte in the red channel.
     RU8,

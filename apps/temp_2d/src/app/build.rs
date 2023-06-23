@@ -2,6 +2,7 @@ use bevy_app::App;
 use bevy_log::LogPlugin;
 
 use render_api::RenderApiPlugin;
+use render_glow::RenderGlowPlugin;
 
 use crate::app::{GamePlugin, RendererPlugin};
 
@@ -12,7 +13,7 @@ pub fn build() -> App {
         .add_plugin(LogPlugin::default())
         // Add Render Plugins
         .add_plugin(RenderApiPlugin)
-        .add_plugin(RendererPlugin)
+        .add_plugin(RenderGlowPlugin)
         // Add Game Plugin
         .add_plugin(GamePlugin);
     app

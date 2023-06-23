@@ -4,7 +4,7 @@ use render_api::resources::WindowSettings;
 
 use crate::window::{FrameInput, FrameOutput, Window};
 
-pub fn three_d_runner(mut app: App) {
+pub fn runner_func(mut app: App) {
     // Get Window Settings
     let window_settings = app.world.remove_resource::<WindowSettings>().unwrap();
 

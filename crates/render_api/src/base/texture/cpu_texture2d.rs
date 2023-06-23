@@ -1,3 +1,4 @@
+use crate::assets::AssetHash;
 use crate::base::CpuTextureDataType;
 
 use super::{CpuTextureData, Interpolation, Wrapping};
@@ -5,7 +6,7 @@ use super::{CpuTextureData, Interpolation, Wrapping};
 ///
 /// A CPU-side version of a 2D texture.
 ///
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Hash)]
 pub struct CpuTexture2D {
     /// Name of this texture.
     name: String,
@@ -26,6 +27,8 @@ pub struct CpuTexture2D {
     /// Determines how the texture is sampled outside the [0..1] t coordinate range (the second value of the uv coordinates).
     wrap_t: Wrapping,
 }
+
+impl AssetHash<CpuTexture2D> for CpuTexture2D {}
 
 impl CpuTexture2D {
     pub fn from_size(width: u32, height: u32) -> Self {

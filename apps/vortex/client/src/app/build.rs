@@ -1,7 +1,9 @@
 use bevy_app::App;
 use bevy_log::LogPlugin;
 
+use render_api::RenderApiPlugin;
 use render_egui::EguiPlugin;
+use render_glow::RenderGlowPlugin;
 
 use crate::app::VortexPlugin;
 
@@ -10,9 +12,12 @@ pub fn build() -> App {
     app
         // Bevy Plugins
         .add_plugin(LogPlugin::default())
+        // Add Render Plugins
+        .add_plugin(RenderApiPlugin)
+        .add_plugin(RenderGlowPlugin)
         // Add Egui Plugin
         .add_plugin(EguiPlugin)
-        // Add Game Plugin
+        // Add Vortex Plugin
         .add_plugin(VortexPlugin);
     app
 }

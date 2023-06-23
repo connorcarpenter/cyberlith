@@ -1,6 +1,3 @@
-//!
-//! A collection of controls for example to control the camera.
-//!
 
 /// Type of mouse button.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Hash)]

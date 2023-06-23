@@ -3,7 +3,7 @@ use bevy_ecs::schedule::{ExecutorKind, IntoSystemConfig, Schedule};
 
 use render_api::RenderSet;
 
-use crate::{draw::draw, runner::three_d_runner, sync::SyncPlugin};
+use crate::{draw::draw, runner::runner_func, sync::SyncPlugin};
 
 pub struct RenderGlowPlugin;
 
@@ -13,8 +13,8 @@ impl Plugin for RenderGlowPlugin {
             // Plugins
             .add_plugin(SyncPlugin)
             .add_plugin(SingleThreadedPlugin)
-            // Runner for Three-D integration
-            .set_runner(three_d_runner)
+            // Runner
+            .set_runner(runner_func)
             // Systems
             .add_system(draw.in_base_set(RenderSet::Draw));
     }

@@ -1,8 +1,12 @@
 use math::{Vec2, Vec3};
 
+use crate::assets::AssetHash;
 use crate::base::{CpuMesh, Positions};
 
+#[derive(Hash)]
 pub struct Cube;
+
+impl AssetHash<CpuMesh> for Cube {}
 
 impl From<Cube> for CpuMesh {
     fn from(_cube: Cube) -> Self {

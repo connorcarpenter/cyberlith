@@ -4,7 +4,7 @@ use bevy_ecs::schedule::{IntoSystemConfig, IntoSystemSetConfig};
 use render_api::{RenderApiPlugin, RenderSet};
 use render_glow::RenderGlowPlugin;
 
-use crate::{systems, EguiContext, EguiSet, EguiUserTextures};
+use crate::{EguiContext, EguiSet, EguiUserTextures, systems};
 
 // Plugin
 pub struct EguiPlugin;
@@ -12,9 +12,6 @@ pub struct EguiPlugin;
 impl Plugin for EguiPlugin {
     fn build(&self, app: &mut App) {
         app
-            // Renderer Specific
-            .add_plugin(RenderApiPlugin)
-            .add_plugin(RenderGlowPlugin)
             // EGUI Specific
             .insert_resource(EguiContext::default())
             .insert_resource(EguiUserTextures::default())

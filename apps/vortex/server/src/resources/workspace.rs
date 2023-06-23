@@ -439,7 +439,9 @@ impl Workspace {
         let repo_ref = self.repo.lock().unwrap();
         let head = repo_ref.head().unwrap();
         let tree = head.peel_to_tree().unwrap();
-        let file = tree.get_path(Path::new(key.path())).unwrap();
+        let Ok(file) = tree.get_path(Path::new(key.path())) else {
+            panic!("Failed to get file from tree, path: {}", key.path());
+        };
         let object = file.to_object(&repo_ref).unwrap();
         let blob = object.as_blob().unwrap();
         blob.content().into()
