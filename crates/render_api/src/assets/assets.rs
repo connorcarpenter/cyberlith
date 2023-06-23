@@ -49,23 +49,23 @@ impl<T> Assets<T> {
         handle
     }
 
-    pub fn set(&mut self, handle: &Handle<T>, t: T) -> Handle<T> {
-        if !self.assets.contains_key(&handle.id) {
-            panic!("Asset with id {} does not exist", handle.id);
-        }
-        self.assets.insert(handle.id, t);
-        self.changed_ids.insert(handle.id);
-        handle.clone()
-    }
+    // pub fn set(&mut self, handle: &Handle<T>, t: T) -> Handle<T> {
+    //     if !self.assets.contains_key(&handle.id) {
+    //         panic!("Asset with id {} does not exist", handle.id);
+    //     }
+    //     self.assets.insert(handle.id, t);
+    //     self.changed_ids.insert(handle.id);
+    //     handle.clone()
+    // }
 
     pub fn get(&self, handle: &Handle<T>) -> Option<&T> {
         self.assets.get(&handle.id)
     }
 
-    pub fn get_mut(&mut self, handle: &Handle<T>) -> Option<&mut T> {
-        self.changed_ids.insert(handle.id);
-        self.assets.get_mut(&handle.id)
-    }
+    // pub fn get_mut(&mut self, handle: &Handle<T>) -> Option<&mut T> {
+    //     self.changed_ids.insert(handle.id);
+    //     self.assets.get_mut(&handle.id)
+    // }
 
     pub fn flush_added(&mut self) -> Vec<Handle<T>> {
         let output = (&self.added_ids)

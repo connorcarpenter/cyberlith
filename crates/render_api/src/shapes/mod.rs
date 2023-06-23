@@ -1,10 +1,10 @@
-pub use circle::Circle;
-pub use cone::Cone;
-pub use cube::Cube;
-pub use cylinder::Cylinder;
-pub use sphere::Sphere;
-pub use square::Square;
-pub use triangle::Triangle;
+pub use circle::*;
+pub use cone::*;
+pub use cube::*;
+pub use cylinder::*;
+pub use sphere::*;
+pub use square::*;
+pub use triangle::*;
 
 pub use crate::base::AxisAlignedBoundingBox as Box;
 

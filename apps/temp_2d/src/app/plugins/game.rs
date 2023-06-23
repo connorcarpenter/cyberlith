@@ -33,32 +33,25 @@ fn setup(
 ) {
     // circle
 
-    commands.spawn(RenderObjectBundle::circle(
-        &mut meshes,
-        &mut materials,
-        640.0,
-        360.0,
-        50.0,
-        20,
-        Color::GREEN,
-    ));
-    commands.spawn(RenderObjectBundle::circle(
+    commands.spawn(RenderObjectBundle::rectangle(
         &mut meshes,
         &mut materials,
         480.0,
         240.0,
-        20.0,
-        20,
+        4.0,
+        4.0,
         Color::GREEN,
+        false,
     ));
-    commands.spawn(RenderObjectBundle::circle(
+    commands.spawn(RenderObjectBundle::rectangle(
         &mut meshes,
         &mut materials,
-        560.0,
         480.0,
-        30.0,
-        20,
+        240.0,
+        7.5,
+        7.5,
         Color::GREEN,
+        true,
     ));
 
     // light

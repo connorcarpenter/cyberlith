@@ -1,24 +1,32 @@
 use math::{Vec2, Vec3};
 
+use crate::assets::AssetHash;
 use crate::base::{CpuMesh, Indices, Positions};
 
+#[derive(Hash)]
 pub struct Square;
+
+impl Square {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+impl AssetHash<CpuMesh> for Square {}
 
 impl From<Square> for CpuMesh {
     fn from(_square: Square) -> Self {
-        let half_width = 1.0;
-        let half_height = 1.0;
-        let neg_half_width = -1.0;
-        let neg_half_height = -1.0;
+        let half_size = 1.0;
+        let neg_half_size = -1.0;
 
         let indices: Indices = Indices(Some(vec![0u16, 1, 2, 2, 3, 0]));
         let positions = vec![
-            Vec3::new(neg_half_width, neg_half_height, 0.0),
-            Vec3::new(half_width, neg_half_height, 0.0),
-            Vec3::new(half_width, half_height, 0.0),
-            Vec3::new(neg_half_width, half_height, 0.0),
+            Vec3::new(neg_half_size, neg_half_size, 0.0),
+            Vec3::new(half_size, neg_half_size, 0.0),
+            Vec3::new(half_size, half_size, 0.0),
+            Vec3::new(neg_half_size, half_size, 0.0),
         ];
-        let normals = vec![Vec3::Z, Vec3::Z, Vec3::Z, Vec3::Z];
+        let normals = vec![Vec3::Z; 4];
         let uvs = vec![
             Vec2::new(0.0, 1.0),
             Vec2::new(1.0, 1.0),
@@ -30,6 +38,82 @@ impl From<Square> for CpuMesh {
             positions: Positions(positions),
             normals: Some(normals),
             uvs: Some(uvs),
+            ..Default::default()
+        }
+    }
+}
+
+// HollowSquare
+#[derive(Hash)]
+pub struct HollowRectangle {
+    pub width_thousandths: u32,
+    pub height_thousandths: u32,
+}
+
+impl HollowRectangle {
+    pub fn new(width_thousandths: u32, height_thousandths: u32) -> Self {
+        Self {
+            width_thousandths,
+            height_thousandths,
+        }
+    }
+}
+
+impl AssetHash<CpuMesh> for HollowRectangle {}
+
+impl From<HollowRectangle> for CpuMesh {
+    fn from(square: HollowRectangle) -> Self {
+        let width = square.width_thousandths as f32 / 1000.0;
+        let height = square.height_thousandths as f32 / 1000.0;
+        let line_thickness = 0.5;
+
+        let outer_half_width = width + line_thickness;
+        let outer_neg_half_width = outer_half_width * -1.0;
+
+        let inner_half_width = width - line_thickness;
+        let inner_neg_half_width = inner_half_width * -1.0;
+
+        let outer_half_height = height + line_thickness;
+        let outer_neg_half_height = outer_half_height * -1.0;
+
+        let inner_half_height = height - line_thickness;
+        let inner_neg_half_height = inner_half_height * -1.0;
+
+        let positions = vec![
+            Vec3::new(inner_neg_half_width, inner_neg_half_height, 0.0),
+            Vec3::new(outer_neg_half_width, outer_neg_half_height, 0.0),
+            Vec3::new(inner_half_width, inner_neg_half_height, 0.0),
+            Vec3::new(outer_half_width, outer_neg_half_height, 0.0),
+            Vec3::new(inner_half_width, inner_half_height, 0.0),
+            Vec3::new(outer_half_width, outer_half_height, 0.0),
+            Vec3::new(inner_neg_half_width, inner_half_height, 0.0),
+            Vec3::new(outer_neg_half_width, outer_half_height, 0.0),
+        ];
+
+        let mut indices = Vec::new();
+
+        for j in 0u16..4 {
+            let a = j * 2;
+            let b = j * 2 + 1;
+            let i = (j + 1) % 4;
+            let c = i * 2;
+            let d = i * 2 + 1;
+
+            indices.push(a);
+            indices.push(b);
+            indices.push(c);
+
+            indices.push(c);
+            indices.push(b);
+            indices.push(d);
+        }
+
+        let normals = vec![Vec3::Z; 8];
+
+        CpuMesh {
+            indices: Indices(Some(indices)),
+            positions: Positions(positions),
+            normals: Some(normals),
             ..Default::default()
         }
     }
