@@ -87,7 +87,7 @@ pub enum CpuTextureData {
 }
 
 impl Hash for CpuTextureData {
-    fn hash<H: Hasher>(&self, state: &mut H) {
+    fn hash<H: Hasher>(&self, _state: &mut H) {
         match self {
             _ => {
                 todo!()

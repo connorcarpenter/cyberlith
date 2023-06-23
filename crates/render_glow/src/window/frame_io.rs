@@ -1,9 +1,9 @@
 use winit::window::CursorIcon;
 
+use input::IncomingEvent;
 use render_api::components::Viewport;
 
 use crate::core::*;
-use crate::renderer::*;
 
 #[derive(Clone, Debug)]
 pub enum OutgoingEvent {

@@ -5,10 +5,10 @@ use bevy_log::info;
 use egui::PlatformOutput;
 use egui_glow::{glow, Painter};
 
+use input::{IncomingEvent, Modifiers};
 use render_api::components::Viewport;
 use render_glow::{
     core::Context,
-    renderer::{IncomingEvent, Modifiers},
     window::{FrameInput, OutgoingEvent},
 };
 

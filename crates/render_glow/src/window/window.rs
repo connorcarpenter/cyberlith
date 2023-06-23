@@ -1,19 +1,17 @@
 use winit::{
+    *,
     event::{Event as WinitEvent, TouchPhase, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::WindowBuilder,
-    *,
 };
 
+use input::{IncomingEvent, Key, Modifiers, MouseButton};
 use render_api::{
     components::Viewport,
     resources::{SurfaceSettings, WindowSettings},
 };
 
-use crate::{
-    renderer::{IncomingEvent, Key, Modifiers, MouseButton},
-    window::{FrameInput, FrameOutput, OutgoingEvent, WindowError, WindowedContext},
-};
+use crate::window::{FrameInput, FrameOutput, OutgoingEvent, WindowedContext, WindowError};
 
 ///
 /// Window and event handling.

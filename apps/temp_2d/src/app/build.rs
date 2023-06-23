@@ -4,7 +4,7 @@ use bevy_log::LogPlugin;
 use render_api::RenderApiPlugin;
 use render_glow::RenderGlowPlugin;
 
-use crate::app::{GamePlugin, RendererPlugin};
+use crate::app::GamePlugin;
 
 pub fn build() -> App {
     let mut app = App::default();

@@ -1,10 +1,10 @@
-use render_glow::renderer::{
+use input::{
     Key as RenderGlowKey, Modifiers as RenderGlowModifiers, MouseButton as RenderGlowMouseButton,
 };
 
 pub fn glow_to_egui_key(key: &RenderGlowKey) -> egui::Key {
     use egui::Key;
-    use render_glow::renderer::Key::*;
+    use input::Key::*;
     match key {
         ArrowDown => Key::ArrowDown,
         ArrowLeft => Key::ArrowLeft,

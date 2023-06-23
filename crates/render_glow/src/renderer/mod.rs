@@ -1,4 +1,3 @@
-pub use control::*;
 pub use effect::*;
 pub use error::*;
 pub use geometry::*;
@@ -11,7 +10,6 @@ pub use render_pass::*;
 pub use render_target_ext::*;
 pub use utils::*;
 
-mod control;
 mod effect;
 mod error;
 mod geometry;
@@ -23,3 +21,4 @@ mod render_object;
 mod render_pass;
 mod render_target_ext;
 mod utils;
+
