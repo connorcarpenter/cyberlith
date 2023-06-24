@@ -24,6 +24,7 @@ pub struct UiState {
     pub password: String,
     pub workspace_type: WorkspaceType,
     pub text_input_modal: TextInputModal,
+    pub dragging_side_panel: bool,
 }
 
 impl UiState {
@@ -35,6 +36,7 @@ impl UiState {
             password: String::new(),
             workspace_type: WorkspaceType::SkeletonBuilder,
             text_input_modal: TextInputModal::new(),
+            dragging_side_panel: false,
         }
     }
 }
