@@ -22,6 +22,7 @@ math = { path = "../../../crates/math" }
 render_api = { path = "../../../crates/render_api" }
 render_glow = { path = "../../../crates/render_glow" }
 render_egui = { path = "../../../crates/render_egui" }
+input = { path = "../../../crates/input" }
 
 # External Crates
 naia-bevy-client = { path = "../../../../naia/adapters/bevy/client", features = ["transport_webrtc"] }

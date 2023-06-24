@@ -83,7 +83,7 @@ impl Plugin for VortexPlugin {
             )
             // UI Configuration
             .insert_resource(UiState::new())
-            .insert_resource(AxesCamerasVisible(false))
+            .insert_resource(AxesCamerasVisible(true))
             .insert_resource(global_resource)
             .insert_resource(TabManager::new())
             .insert_resource(ActionStack::new())
@@ -169,62 +169,6 @@ fn setup(
             },
             transform: Transform::from_xyz(60.0, 0.0, 0.0) // cube facing front?
                 .looking_at(center_target, Vec3::Y),
-            projection: projection.clone(),
-        })
-        .insert(preview_pass_layer);
-
-    // LEFT BOTTOM
-    let left_bottom_texture = new_render_texture(texture_size, &mut textures, &mut user_textures);
-    commands.insert_resource(LeftBottomTexture(left_bottom_texture.clone()));
-
-    commands
-        .spawn(CameraBundle {
-            camera: Camera {
-                viewport: viewport.clone(),
-                order: 1,
-                clear_operation: clear_op.clone(),
-                target: RenderTarget::Image(left_bottom_texture),
-                ..Default::default()
-            },
-            transform: Transform::from_xyz(0.0, 0.0, 60.0) // cube facing right?
-                .looking_at(center_target, Vec3::Y),
-            projection: projection.clone(),
-        })
-        .insert(preview_pass_layer);
-
-    // RIGHT TOP
-    let right_top_texture = new_render_texture(texture_size, &mut textures, &mut user_textures);
-    commands.insert_resource(RightTopTexture(right_top_texture.clone()));
-
-    commands
-        .spawn(CameraBundle {
-            camera: Camera {
-                viewport: viewport.clone(),
-                order: 2,
-                clear_operation: clear_op.clone(),
-                target: RenderTarget::Image(right_top_texture),
-                ..Default::default()
-            },
-            transform: Transform::from_xyz(0.0, 60.0, 1.0) // cube facing top? // NOTE: z-value of 1.0 necessary to render anything
-                .looking_at(center_target, Vec3::Y),
-            projection: projection.clone(),
-        })
-        .insert(preview_pass_layer);
-
-    // RIGHT BOTTOM
-    let right_bottom_texture = new_render_texture(texture_size, &mut textures, &mut user_textures);
-    commands.insert_resource(RightBottomTexture(right_bottom_texture.clone()));
-
-    commands
-        .spawn(CameraBundle {
-            camera: Camera {
-                viewport: viewport.clone(),
-                order: 3,
-                clear_operation: clear_op.clone(),
-                target: RenderTarget::Image(right_bottom_texture),
-                ..Default::default()
-            },
-            transform: Transform::from_xyz(30.0, 60.0, 30.0).looking_at(center_target, Vec3::Y),
             projection: projection.clone(),
         })
         .insert(preview_pass_layer);

@@ -17,8 +17,8 @@ impl Plugin for EguiPlugin {
             // System Sets
             .configure_set(
                 EguiSet::PreUpdate
-                    .after(CoreSet::FirstFlush)
-                    .before(CoreSet::First))
+                    .after(CoreSet::First)
+                    .before(CoreSet::FirstFlush))
             .configure_set(
                 EguiSet::PostUpdate
                     .after(CoreSet::PostUpdate)
