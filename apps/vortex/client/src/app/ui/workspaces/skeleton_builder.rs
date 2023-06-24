@@ -1,15 +1,14 @@
-use bevy_ecs::world::World;
+use bevy_ecs::{system::{Res, ResMut, SystemState}, world::World};
 use bevy_log::info;
 
+use render_api::{Assets, base::CpuTexture2D};
 use render_egui::{
     egui,
-    egui::{Frame, Ui},
+    egui::{Frame, Id, Ui},
     EguiUserTextures,
 };
-use render_egui::egui::Id;
 
-use crate::app::plugin::WorkspaceTexture;
-use crate::app::ui::UiState;
+use crate::app::{plugin::WorkspaceTexture, ui::UiState};
 
 pub fn skeleton_builder(ui: &mut Ui, world: &mut World) {
     egui::CentralPanel::default()
@@ -20,16 +19,31 @@ pub fn skeleton_builder(ui: &mut Ui, world: &mut World) {
 }
 
 fn work_panel(ui: &mut Ui, world: &mut World) {
-    let workspace_texture = world.get_resource::<WorkspaceTexture>().unwrap();
-    let user_textures = world.get_resource::<EguiUserTextures>().unwrap();
-    let Some(texture_id) = user_textures.texture_id(&workspace_texture.0) else {
+    let did_resize = resize_finished(ui, world, "left_panel");
+
+    let mut system_state: SystemState<(
+        ResMut<Assets<CpuTexture2D>>,
+        ResMut<EguiUserTextures>,
+        Res<WorkspaceTexture>,
+    )> = SystemState::new(world);
+    let (mut textures, mut user_textures, workspace_texture) = system_state.get_mut(world);
+
+    let texture_handle = workspace_texture.0;
+    let Some(texture_id) = user_textures.texture_id(&texture_handle) else {
         // The user texture may not be synced yet, return early.
         return;
     };
-    ui.image(texture_id, ui.available_size());
+    let texture_size = ui.available_size();
+    ui.image(texture_id, texture_size);
 
-    if resize_finished(ui, world, "left_panel") {
+    if did_resize {
         info!("Resize panel finished!");
+
+        // This is the texture that will be rendered to.
+        let new_texture = CpuTexture2D::from_size(texture_size.x as u32, texture_size.y as u32);
+
+        textures.set(&texture_handle, new_texture);
+        user_textures.mark_texture_changed(&texture_handle);
     }
 }
 

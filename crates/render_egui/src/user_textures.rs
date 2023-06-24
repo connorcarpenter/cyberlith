@@ -9,6 +9,7 @@ use render_api::{base::CpuTexture2D, Handle};
 pub struct EguiUserTextures {
     added_textures: HashSet<Handle<CpuTexture2D>>,
     removed_textures: HashSet<Handle<CpuTexture2D>>,
+    changed_textures: HashSet<Handle<CpuTexture2D>>,
     textures: HashMap<Handle<CpuTexture2D>, u64>,
 }
 
@@ -21,12 +22,20 @@ impl EguiUserTextures {
         self.removed_textures.insert(texture_handle.clone());
     }
 
+    pub fn mark_texture_changed(&mut self, texture_handle: &Handle<CpuTexture2D>) {
+        self.changed_textures.insert(texture_handle.clone());
+    }
+
     pub fn flush_added_textures(&mut self) -> Vec<Handle<CpuTexture2D>> {
         self.added_textures.drain().collect()
     }
 
     pub fn flush_removed_textures(&mut self) -> Vec<Handle<CpuTexture2D>> {
         self.removed_textures.drain().collect()
+    }
+
+    pub fn flush_changed_textures(&mut self) -> Vec<Handle<CpuTexture2D>> {
+        self.changed_textures.drain().collect()
     }
 
     pub fn register_texture(&mut self, handle: Handle<CpuTexture2D>, id: egui::TextureId) {

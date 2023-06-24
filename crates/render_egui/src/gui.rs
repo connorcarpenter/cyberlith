@@ -300,6 +300,10 @@ impl GUI {
         self.painter.borrow_mut().free_texture(native_id);
     }
 
+    pub fn replace_texture(&mut self, id: egui::TextureId, texture: glow::Texture) {
+        self.painter.borrow_mut().replace_native_texture(id, texture);
+    }
+
     fn handle_egui_output(
         &mut self,
         outgoing_events: &mut Vec<OutgoingEvent>,

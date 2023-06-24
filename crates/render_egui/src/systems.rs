@@ -60,4 +60,12 @@ pub fn sync(
         let egui_id = user_textures.deregister_texture(&handle);
         gui.remove_texture(egui_id);
     }
+
+    // Sync Changed Textures
+    let changed_handles = user_textures.flush_changed_textures();
+    for handle in changed_handles {
+        let texture_impl = asset_mapping.get(&handle).unwrap();
+        let egui_id = user_textures.texture_id(&handle).unwrap();
+        gui.replace_texture(egui_id, texture_impl.id());
+    }
 }
