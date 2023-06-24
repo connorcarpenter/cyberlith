@@ -21,8 +21,8 @@ pub struct RenderObjectBundle {
 
 impl RenderObjectBundle {
     pub fn circle(
-        meshes: &mut ResMut<Assets<CpuMesh>>,
-        materials: &mut ResMut<Assets<CpuMaterial>>,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
         x: f32,
         y: f32,
         radius: f32,

@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
 use bevy_ecs::prelude::Resource;
+use bevy_log::info;
 
 use math::Vec2;
 
@@ -8,6 +9,7 @@ use crate::{IncomingEvent, is_button::IsButton, Key, MouseButton};
 
 #[derive(Resource)]
 pub struct Input {
+    mouse_offset: Vec2,
     mouse_coords: Vec2,
     mouse_buttons: HashSet<MouseButton>,
     keys: HashSet<Key>,
@@ -19,7 +21,13 @@ impl Input {
             mouse_coords: Vec2::ZERO,
             mouse_buttons: HashSet::new(),
             keys: HashSet::new(),
+            mouse_offset: Vec2::ZERO,
         }
+    }
+
+    pub fn set_mouse_offset(&mut self, x: f32, y: f32) {
+        self.mouse_offset.x = x;
+        self.mouse_offset.y = y;
     }
 
     pub fn mouse(&self) -> &Vec2 {
@@ -51,8 +59,9 @@ impl Input {
                     if *handled {
                         continue;
                     }
-                    self.mouse_coords.x = position.0 as f32;
-                    self.mouse_coords.y = position.1 as f32;
+                    self.mouse_coords.x = (position.0 as f32) - self.mouse_offset.x;
+                    self.mouse_coords.y = (position.1 as f32) - self.mouse_offset.y;
+                    info!("Mouse coords: {:?}", self.mouse_coords);
                 }
                 IncomingEvent::MouseWheel { .. } => {}
                 IncomingEvent::MouseEnter => {}

@@ -8,6 +8,7 @@ use bevy_ecs::{
 use bevy_log::info;
 use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin, ReceiveEvents};
 
+use input::{Input, MouseButton};
 use math::Vec3;
 use render_api::{
     Assets,
@@ -91,7 +92,7 @@ impl Plugin for VortexPlugin {
             .add_system(ui::sync_axes_cameras_visibility)
             // 3D Configuration
             .add_startup_system(setup)
-            .add_system(rotate);
+            .add_system(step_2d);
     }
 }
 
@@ -118,7 +119,57 @@ fn setup(
     let workspace_texture_handle = new_render_texture(texture_size, &mut textures, &mut user_textures);
     commands.insert_resource(WorkspaceTexture(workspace_texture_handle.clone()));
 
-    setup_3d_scene(&mut commands, &mut global, &mut meshes, &mut materials, texture_size, workspace_texture_handle);
+    //setup_3d_scene(&mut commands, &mut global, &mut meshes, &mut materials, texture_size, workspace_texture_handle);
+    setup_2d_scene(&mut commands, &mut global, &mut meshes, &mut materials, texture_size, workspace_texture_handle);
+}
+
+fn setup_2d_scene(
+    commands: &mut Commands,
+    global: &mut Global,
+    meshes: &mut Assets<CpuMesh>,
+    materials: &mut Assets<CpuMaterial>,
+    texture_size: u32,
+    workspace_texture_handle: Handle<CpuTexture2D>,
+) {
+    // circle
+
+    let solid_circle = commands.spawn(RenderObjectBundle::circle(
+        meshes,
+        materials,
+        150.0,
+        150.0,
+        4.0,
+        12,
+        Color::GREEN,
+        false,
+    )).id();
+    global.solid_circle = Some(solid_circle);
+
+    let hollow_circle = commands.spawn(RenderObjectBundle::circle(
+        meshes,
+        materials,
+        150.0,
+        150.0,
+        7.5,
+        12,
+        Color::GREEN,
+        true,
+    )).id();
+    global.hollow_circle = Some(hollow_circle);
+
+    // light
+    commands.spawn(AmbientLight {
+        intensity: 1.0,
+        color: Color::WHITE,
+        ..Default::default()
+    });
+
+    // camera
+    let mut camera_bundle = CameraBundle::new_2d(&Viewport::new_at_origin(texture_size, texture_size));
+    camera_bundle.camera.target = RenderTarget::Image(workspace_texture_handle);
+    let camera_entity = commands.spawn(camera_bundle).id();
+
+    global.workspace_camera = Some(camera_entity);
 }
 
 fn setup_3d_scene(
@@ -188,10 +239,33 @@ fn new_render_texture(
     texture_handle
 }
 
-// Rotates the cubes.
-fn rotate(mut query: Query<&mut Transform, With<SkeletonCube>>) {
+fn step_3d(mut query: Query<&mut Transform, With<SkeletonCube>>) {
+    // Rotates the cubes.
     for mut transform in &mut query {
         transform.rotate_x(0.015);
         transform.rotate_z(0.013);
+    }
+}
+
+fn step_2d(
+    global: Res<Global>,
+    mut query: Query<&mut Transform>,
+    input: Res<Input>,
+) {
+    let mouse_coords = input.mouse();
+    if input.is_pressed(MouseButton::Left) {
+        if let Some(hollow_circle_id) = global.hollow_circle {
+            if let Ok(mut transform) = query.get_mut(hollow_circle_id) {
+                transform.translation.x = mouse_coords.x;
+                transform.translation.y = mouse_coords.y;
+            }
+        }
+    }
+
+    if let Some(solid_circle_id) = global.solid_circle {
+        if let Ok(mut transform) = query.get_mut(solid_circle_id) {
+            transform.translation.x = mouse_coords.x;
+            transform.translation.y = mouse_coords.y;
+        }
     }
 }

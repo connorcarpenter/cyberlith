@@ -1,10 +1,11 @@
 use bevy_ecs::{system::{Query, Res, ResMut, SystemState}, world::World};
 use bevy_log::info;
 
+use input::Input;
 use render_api::{Assets, base::CpuTexture2D, components::{Camera, Viewport}};
 use render_egui::{
     egui,
-    egui::{Frame, Id, Ui},
+    egui::{Frame, Id, Image, pos2, Rect, Ui, Vec2},
     EguiUserTextures,
 };
 
@@ -26,20 +27,32 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
         ResMut<Assets<CpuTexture2D>>,
         ResMut<EguiUserTextures>,
         Res<WorkspaceTexture>,
+        ResMut<UiState>,
+        ResMut<Input>,
         Query<&mut Camera>,
     )> = SystemState::new(world);
-    let (global, mut textures, mut user_textures, workspace_texture, mut camera_query) = system_state.get_mut(world);
+    let (global, mut textures, mut user_textures, workspace_texture, mut ui_state, mut input, mut camera_query) = system_state.get_mut(world);
 
     let texture_handle = workspace_texture.0;
     let Some(texture_id) = user_textures.texture_id(&texture_handle) else {
         // The user texture may not be synced yet, return early.
         return;
     };
+    let top_left = ui.min_rect().min;
+    if ui_state.workspace_coords.is_none() {
+        ui_state.workspace_coords = Some(top_left);
+        input.set_mouse_offset(top_left.x, top_left.y);
+    }
     let texture_size = ui.available_size();
-    ui.image(texture_id, texture_size);
+    let image = Image::new(texture_id, texture_size)
+        .uv(Rect::from_min_max(pos2(0.0, 1.0), pos2(1.0, 0.0)));
+    ui.add(image);
 
     if did_resize {
-        info!("Resize panel finished!");
+        info!("Resize panel finished! New size: {:?}", texture_size);
+
+        ui_state.workspace_coords = Some(top_left);
+        input.set_mouse_offset(top_left.x, top_left.y);
 
         // This is the texture that will be rendered to.
         let texture_width = texture_size.x as u32;

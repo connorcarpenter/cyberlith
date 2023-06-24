@@ -9,6 +9,8 @@ pub struct Global {
     pub project_root_entity: Entity,
     pub changelist: BTreeMap<FileEntryKey, Entity>,
     pub workspace_camera: Option<Entity>,
+    pub solid_circle: Option<Entity>,
+    pub hollow_circle: Option<Entity>,
 }
 
 impl Global {
@@ -19,6 +21,8 @@ impl Global {
             project_root_entity,
             changelist: BTreeMap::new(),
             workspace_camera: None,
+            solid_circle: None,
+            hollow_circle: None,
         }
     }
 }
