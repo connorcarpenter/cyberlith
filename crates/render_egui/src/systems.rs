@@ -40,7 +40,7 @@ pub fn draw(
 pub fn sync(
     mut gui: NonSendMut<GUI>,
     mut user_textures: ResMut<EguiUserTextures>,
-    texture_impls: ResMut<AssetMapping<CpuTexture2D, GpuTexture2D>>,
+    asset_mapping: ResMut<AssetMapping<CpuTexture2D, GpuTexture2D>>,
 ) {
     if !user_textures.is_changed() {
         return;
@@ -49,7 +49,7 @@ pub fn sync(
     // Sync Added Textures
     let added_handles = user_textures.flush_added_textures();
     for handle in added_handles {
-        let texture_impl = texture_impls.get(&handle).unwrap();
+        let texture_impl = asset_mapping.get(&handle).unwrap();
         let egui_id = gui.add_texture(texture_impl.id());
         user_textures.register_texture(handle, egui_id);
     }

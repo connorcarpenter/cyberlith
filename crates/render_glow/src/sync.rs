@@ -55,6 +55,20 @@ fn sync_mesh_assets(
         let gpu_data = GpuMesh::new(cpu_data);
         gpu_assets.insert(added_handle, gpu_data);
     }
+
+    // Handle Changed Meshes
+    let changed_handles = cpu_assets.flush_changed();
+    for changed_handle in changed_handles {
+        let cpu_data = cpu_assets.get(&changed_handle).unwrap();
+        let gpu_data = GpuMesh::new(cpu_data);
+        gpu_assets.insert(changed_handle, gpu_data);
+    }
+
+    // Handle Removed Meshes
+    let removed_handles = cpu_assets.flush_removed();
+    for removed_handle in removed_handles {
+        gpu_assets.remove(&removed_handle);
+    }
 }
 
 fn sync_material_assets(
@@ -80,6 +94,12 @@ fn sync_material_assets(
         let gpu_data = PbrMaterial::new(cpu_data);
         gpu_assets.insert(changed_handle, Box::new(gpu_data));
     }
+
+    // Handle Removed Materials
+    let removed_handles = cpu_assets.flush_removed();
+    for removed_handle in removed_handles {
+        gpu_assets.remove(&removed_handle);
+    }
 }
 
 fn sync_texture_2d_assets(
@@ -98,13 +118,26 @@ fn sync_texture_2d_assets(
         let gpu_data = GpuTexture2D::from(cpu_data);
         gpu_assets.insert(added_handle, gpu_data);
 
-        let depth_impl_data = GpuDepthTexture2D::new::<f32>(
-            cpu_data.width(),
-            cpu_data.height(),
-            cpu_data.wrap_s(),
-            cpu_data.wrap_t(),
-        );
+        let depth_impl_data = GpuDepthTexture2D::from(cpu_data);
         gpu_depth_assets.insert(added_handle, depth_impl_data);
+    }
+
+    // Handle Changed Textures
+    let changed_handles = cpu_assets.flush_changed();
+    for changed_handle in changed_handles {
+        let cpu_data = cpu_assets.get(&changed_handle).unwrap();
+        let gpu_data = GpuTexture2D::from(cpu_data);
+        gpu_assets.insert(changed_handle, gpu_data);
+
+        let depth_impl_data = GpuDepthTexture2D::from(cpu_data);
+        gpu_depth_assets.insert(changed_handle, depth_impl_data);
+    }
+
+    // Handle Deleted Textures
+    let removed_handles = cpu_assets.flush_removed();
+    for removed_handle in removed_handles {
+        gpu_assets.remove(&removed_handle);
+        gpu_depth_assets.remove(&removed_handle);
     }
 }
 

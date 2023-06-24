@@ -147,8 +147,8 @@ pub fn draw(
                 }
                 CameraRenderTarget::Image(texture_handle) => {
                     // Render to Image
-                    let texture = textures.get_mut(texture_handle).unwrap();
-                    let depth_texture = depth_textures.get_mut(texture_handle).unwrap();
+                    let texture = textures.get(texture_handle).unwrap();
+                    let depth_texture = depth_textures.get(texture_handle).unwrap();
                     RenderTarget::new(texture.as_color_target(), depth_texture.as_depth_target())
                 }
             }

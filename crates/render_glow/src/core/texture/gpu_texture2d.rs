@@ -155,7 +155,7 @@ impl GpuTexture2D {
     ///
     /// **Note:** [DepthTest] is disabled if not also writing to a depth texture.
     ///
-    pub fn as_color_target(&mut self) -> ColorTarget<'_> {
+    pub fn as_color_target(&self) -> ColorTarget<'_> {
         ColorTarget::new_texture2d(self)
     }
 

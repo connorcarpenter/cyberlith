@@ -21,8 +21,8 @@ impl<T, U> AssetMapping<T, U> {
         self.assets.get(&handle)
     }
 
-    pub fn get_mut(&mut self, handle: &Handle<T>) -> Option<&mut U> {
-        self.assets.get_mut(&handle)
+    pub fn remove(&mut self, handle: &Handle<T>) -> Option<U> {
+        self.assets.remove(handle)
     }
 }
 

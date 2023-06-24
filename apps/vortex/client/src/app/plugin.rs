@@ -100,16 +100,7 @@ impl Plugin for VortexPlugin {
 struct SkeletonCube;
 
 #[derive(Resource)]
-pub struct LeftTopTexture(pub Handle<CpuTexture2D>);
-
-#[derive(Resource)]
-pub struct LeftBottomTexture(pub Handle<CpuTexture2D>);
-
-#[derive(Resource)]
-pub struct RightTopTexture(pub Handle<CpuTexture2D>);
-
-#[derive(Resource)]
-pub struct RightBottomTexture(pub Handle<CpuTexture2D>);
+pub struct WorkspaceTexture(pub Handle<CpuTexture2D>);
 
 fn setup(
     config: Res<AppConfig>,
@@ -155,8 +146,8 @@ fn setup(
     let center_target = Vec3::new(0.0, 0.0, 0.0);
 
     // LEFT TOP
-    let left_top_texture = new_render_texture(texture_size, &mut textures, &mut user_textures);
-    commands.insert_resource(LeftTopTexture(left_top_texture.clone()));
+    let workspace_texture_handle = new_render_texture(texture_size, &mut textures, &mut user_textures);
+    commands.insert_resource(WorkspaceTexture(workspace_texture_handle.clone()));
 
     commands
         .spawn(CameraBundle {
@@ -164,7 +155,7 @@ fn setup(
                 viewport: viewport.clone(),
                 order: 0,
                 clear_operation: clear_op.clone(),
-                target: RenderTarget::Image(left_top_texture),
+                target: RenderTarget::Image(workspace_texture_handle),
                 ..Default::default()
             },
             transform: Transform::from_xyz(60.0, 0.0, 0.0) // cube facing front?
