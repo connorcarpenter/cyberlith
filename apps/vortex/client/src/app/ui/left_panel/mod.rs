@@ -1,11 +1,8 @@
 use bevy_ecs::world::World;
-use bevy_log::info;
 
 use render_egui::{egui, egui::Frame};
-use render_egui::egui::{Id, Ui};
 
-use crate::app::ui::UiState;
-use crate::app::ui::widgets::{ChangelistUiWidget, FileTreeUiWidget};
+use crate::app::ui::{widgets::{ChangelistUiWidget, FileTreeUiWidget}};
 
 pub fn left_panel(context: &egui::Context, world: &mut World) {
     egui::SidePanel::left("left_panel")

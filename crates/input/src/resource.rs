@@ -1,12 +1,10 @@
 use std::collections::HashSet;
 
 use bevy_ecs::prelude::Resource;
-use bevy_log::info;
 
 use math::Vec2;
 
-use crate::{IncomingEvent, Key, MouseButton};
-use crate::is_button::IsButton;
+use crate::{IncomingEvent, is_button::IsButton, Key, MouseButton};
 
 #[derive(Resource)]
 pub struct Input {

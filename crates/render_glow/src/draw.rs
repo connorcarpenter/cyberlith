@@ -24,8 +24,8 @@ pub fn draw(
     // Resources
     meshes: Res<AssetMapping<CpuMesh, GpuMesh>>,
     materials: Res<AssetMapping<CpuMaterial, Box<dyn Material>>>,
-    mut textures: ResMut<AssetMapping<CpuTexture2D, GpuTexture2D>>,
-    mut depth_textures: ResMut<AssetMapping<CpuTexture2D, GpuDepthTexture2D>>,
+    textures: ResMut<AssetMapping<CpuTexture2D, GpuTexture2D>>,
+    depth_textures: ResMut<AssetMapping<CpuTexture2D, GpuDepthTexture2D>>,
     // Cameras
     cameras_q: Query<(&Camera, &Transform, &Projection, Option<&RenderLayer>)>,
     // Objects

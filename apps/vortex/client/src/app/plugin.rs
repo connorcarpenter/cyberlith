@@ -113,6 +113,22 @@ fn setup(
 ) {
     info!("Environment: {}", config.general.env_name);
 
+    // Workspace Texture
+    let texture_size = 300;
+    let workspace_texture_handle = new_render_texture(texture_size, &mut textures, &mut user_textures);
+    commands.insert_resource(WorkspaceTexture(workspace_texture_handle.clone()));
+
+    setup_3d_scene(&mut commands, &mut global, &mut meshes, &mut materials, texture_size, workspace_texture_handle);
+}
+
+fn setup_3d_scene(
+    commands: &mut Commands,
+    global: &mut Global,
+    meshes: &mut Assets<CpuMesh>,
+    materials: &mut Assets<CpuMaterial>,
+    texture_size: u32,
+    workspace_texture_handle: Handle<CpuTexture2D>,
+) {
     // This specifies the layer used for the preview pass, which will be attached to the preview pass camera and cube.
     let preview_pass_layer = RenderLayers::layer(1);
 
@@ -139,30 +155,19 @@ fn setup(
         })
         .insert(preview_pass_layer);
 
-    // Cameras
-    let texture_size = 300;
-    let projection = Projection::Orthographic(OrthographicProjection::default());
-    let clear_op = ClearOperation::from_rgba(0.0, 0.0, 0.0, 1.0);
-    let viewport = Some(Viewport::new_at_origin(texture_size, texture_size));
-    let center_target = Vec3::new(0.0, 0.0, 0.0);
-
-    // Workspace Texture
-    let workspace_texture_handle = new_render_texture(texture_size, &mut textures, &mut user_textures);
-    commands.insert_resource(WorkspaceTexture(workspace_texture_handle.clone()));
-
     // Camera
     let camera_entity = commands
         .spawn(CameraBundle {
             camera: Camera {
-                viewport: viewport.clone(),
+                viewport: Some(Viewport::new_at_origin(texture_size, texture_size)),
                 order: 0,
-                clear_operation: clear_op.clone(),
+                clear_operation: ClearOperation::from_rgba(0.0, 0.0, 0.0, 1.0),
                 target: RenderTarget::Image(workspace_texture_handle),
                 ..Default::default()
             },
             transform: Transform::from_xyz(60.0, 0.0, 0.0) // cube facing front?
-                .looking_at(center_target, Vec3::Y),
-            projection: projection.clone(),
+                .looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y),
+            projection: Projection::Orthographic(OrthographicProjection::default()),
         })
         .insert(preview_pass_layer)
         .id();

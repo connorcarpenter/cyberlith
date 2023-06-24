@@ -130,7 +130,7 @@ impl Environment {
         }
 
         // BRDF
-        let mut brdf_map = GpuTexture2D::new_empty::<[f32; 2]>(
+        let brdf_map = GpuTexture2D::new_empty::<[f32; 2]>(
             512,
             512,
             Interpolation::Linear,
