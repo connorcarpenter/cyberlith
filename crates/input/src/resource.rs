@@ -55,7 +55,6 @@ impl Input {
                     }
                     self.mouse_coords.x = position.0 as f32;
                     self.mouse_coords.y = position.1 as f32;
-                    info!("mouse moved, new coords: {:?}", self.mouse_coords);
                 }
                 IncomingEvent::MouseWheel { .. } => {}
                 IncomingEvent::MouseEnter => {}

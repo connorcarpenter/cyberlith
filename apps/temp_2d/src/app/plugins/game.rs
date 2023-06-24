@@ -1,7 +1,7 @@
 use bevy_app::{App, Plugin};
 use bevy_ecs::system::{Commands, Query, Res, ResMut};
 
-use input::Input;
+use input::{Input, MouseButton};
 use render_api::{
     Assets,
     base::{Color, CpuMaterial, CpuMesh},
@@ -78,17 +78,20 @@ fn step(
     mut query: Query<&mut Transform>,
     input: Res<Input>,
 ) {
-    // if let Some(hollow_circle_id) = global.hollow_circle {
-    //     if let Ok(mut transform) = query.get_mut(hollow_circle_id) {
-    //         transform.translation.x = input.mouse_x();
-    //         transform.translation.y = input.mouse_y();
-    //     }
-    // }
+    let mouse_coords = input.mouse();
+    if input.is_pressed(MouseButton::Left) {
+        if let Some(hollow_circle_id) = global.hollow_circle {
+            if let Ok(mut transform) = query.get_mut(hollow_circle_id) {
+                transform.translation.x = mouse_coords.x;
+                transform.translation.y = mouse_coords.y;
+            }
+        }
+    }
 
     if let Some(solid_circle_id) = global.solid_circle {
         if let Ok(mut transform) = query.get_mut(solid_circle_id) {
-            transform.translation.x = input.mouse().x;
-            transform.translation.y = input.mouse().y;
+            transform.translation.x = mouse_coords.x;
+            transform.translation.y = mouse_coords.y;
         }
     }
 }
