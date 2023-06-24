@@ -1,12 +1,15 @@
 use bevy_app::{App, Plugin};
-use bevy_ecs::system::{Commands, Res, ResMut};
+use bevy_ecs::system::{Commands, Query, Res, ResMut};
 
+use input::Input;
 use render_api::{
     Assets,
     base::{Color, CpuMaterial, CpuMesh},
-    components::{AmbientLight, CameraBundle, RenderObjectBundle},
+    components::{AmbientLight, CameraBundle, RenderObjectBundle, Transform},
     resources::WindowSettings, Window,
 };
+
+use crate::app::resources::Global;
 
 pub struct GamePlugin;
 
@@ -19,6 +22,8 @@ impl Plugin for GamePlugin {
                 max_size: Some((1280, 720)),
                 ..Default::default()
             })
+            // Add Global Resource
+            .insert_resource(Global::new())
             // Startup Systems
             .add_startup_system(setup)
             .add_system(step);
@@ -30,29 +35,33 @@ fn setup(
     window: Res<Window>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
+    mut global: ResMut<Global>,
 ) {
     // circle
 
-    commands.spawn(RenderObjectBundle::rectangle(
+    let solid_circle = commands.spawn(RenderObjectBundle::circle(
         &mut meshes,
         &mut materials,
         480.0,
         240.0,
         4.0,
-        4.0,
+        12,
         Color::GREEN,
         false,
-    ));
-    commands.spawn(RenderObjectBundle::rectangle(
+    )).id();
+    global.solid_circle = Some(solid_circle);
+
+    let hollow_circle = commands.spawn(RenderObjectBundle::circle(
         &mut meshes,
         &mut materials,
         480.0,
         240.0,
         7.5,
-        7.5,
+        12,
         Color::GREEN,
         true,
-    ));
+    )).id();
+    global.hollow_circle = Some(hollow_circle);
 
     // light
     commands.spawn(AmbientLight {
@@ -64,4 +73,22 @@ fn setup(
     commands.spawn(CameraBundle::new_2d(&window.viewport()));
 }
 
-fn step() {}
+fn step(
+    global: Res<Global>,
+    mut query: Query<&mut Transform>,
+    input: Res<Input>,
+) {
+    // if let Some(hollow_circle_id) = global.hollow_circle {
+    //     if let Ok(mut transform) = query.get_mut(hollow_circle_id) {
+    //         transform.translation.x = input.mouse_x();
+    //         transform.translation.y = input.mouse_y();
+    //     }
+    // }
+
+    if let Some(solid_circle_id) = global.solid_circle {
+        if let Ok(mut transform) = query.get_mut(solid_circle_id) {
+            transform.translation.x = input.mouse_x();
+            transform.translation.y = input.mouse_y();
+        }
+    }
+}

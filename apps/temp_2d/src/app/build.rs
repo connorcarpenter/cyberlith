@@ -1,6 +1,7 @@
 use bevy_app::App;
 use bevy_log::LogPlugin;
 
+use input::InputPlugin;
 use render_api::RenderApiPlugin;
 use render_glow::RenderGlowPlugin;
 
@@ -14,6 +15,8 @@ pub fn build() -> App {
         // Add Render Plugins
         .add_plugin(RenderApiPlugin)
         .add_plugin(RenderGlowPlugin)
+        // Add Input Plugin
+        .add_plugin(InputPlugin)
         // Add Game Plugin
         .add_plugin(GamePlugin);
     app

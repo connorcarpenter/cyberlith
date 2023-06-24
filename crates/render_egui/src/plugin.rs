@@ -16,14 +16,22 @@ impl Plugin for EguiPlugin {
             .insert_resource(EguiContext::default())
             .insert_resource(EguiUserTextures::default())
             // System Sets
-            .configure_set(EguiSet::PreUpdate.before(CoreSet::First))
-            .configure_set(EguiSet::PostUpdate.after(CoreSet::LastFlush))
+            .configure_set(
+                EguiSet::PreUpdate
+                    .after(CoreSet::FirstFlush)
+                    .before(CoreSet::First))
+            .configure_set(
+                EguiSet::PostUpdate
+                    .after(CoreSet::PostUpdate)
+                    .before(CoreSet::PostUpdateFlush))
             .configure_set(
                 EguiSet::Sync
                     .after(RenderSet::Sync)
                     .before(RenderSet::SyncFlush),
             )
-            .configure_set(EguiSet::Draw.after(RenderSet::Draw))
+            .configure_set(
+                EguiSet::Draw
+                    .after(RenderSet::Draw))
             // Systems
             .add_startup_system(systems::startup)
             .add_system(systems::pre_update.in_base_set(EguiSet::PreUpdate))
