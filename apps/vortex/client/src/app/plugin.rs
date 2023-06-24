@@ -101,7 +101,7 @@ impl Plugin for VortexPlugin {
 struct SkeletonCube;
 
 #[derive(Resource)]
-pub struct WorkspaceTexture(pub Handle<CpuTexture2D>);
+pub struct CanvasTexture(pub Handle<CpuTexture2D>);
 
 fn setup(
     config: Res<AppConfig>,
@@ -114,13 +114,13 @@ fn setup(
 ) {
     info!("Environment: {}", config.general.env_name);
 
-    // Workspace Texture
+    // Canvas Texture
     let texture_size = 300;
-    let workspace_texture_handle = new_render_texture(texture_size, &mut textures, &mut user_textures);
-    commands.insert_resource(WorkspaceTexture(workspace_texture_handle.clone()));
+    let canvas_texture_handle = new_render_texture(texture_size, &mut textures, &mut user_textures);
+    commands.insert_resource(CanvasTexture(canvas_texture_handle.clone()));
 
     //setup_3d_scene(&mut commands, &mut global, &mut meshes, &mut materials, texture_size, workspace_texture_handle);
-    setup_2d_scene(&mut commands, &mut global, &mut meshes, &mut materials, texture_size, workspace_texture_handle);
+    setup_2d_scene(&mut commands, &mut global, &mut meshes, &mut materials, texture_size, canvas_texture_handle);
 }
 
 fn setup_2d_scene(
@@ -129,7 +129,7 @@ fn setup_2d_scene(
     meshes: &mut Assets<CpuMesh>,
     materials: &mut Assets<CpuMaterial>,
     texture_size: u32,
-    workspace_texture_handle: Handle<CpuTexture2D>,
+    canvas_texture_handle: Handle<CpuTexture2D>,
 ) {
     // circle
 
@@ -166,10 +166,10 @@ fn setup_2d_scene(
 
     // camera
     let mut camera_bundle = CameraBundle::new_2d(&Viewport::new_at_origin(texture_size, texture_size));
-    camera_bundle.camera.target = RenderTarget::Image(workspace_texture_handle);
+    camera_bundle.camera.target = RenderTarget::Image(canvas_texture_handle);
     let camera_entity = commands.spawn(camera_bundle).id();
 
-    global.workspace_camera = Some(camera_entity);
+    global.canvas_camera = Some(camera_entity);
 }
 
 fn setup_3d_scene(
@@ -178,7 +178,7 @@ fn setup_3d_scene(
     meshes: &mut Assets<CpuMesh>,
     materials: &mut Assets<CpuMaterial>,
     texture_size: u32,
-    workspace_texture_handle: Handle<CpuTexture2D>,
+    canvas_texture_handle: Handle<CpuTexture2D>,
 ) {
     // This specifies the layer used for the preview pass, which will be attached to the preview pass camera and cube.
     let preview_pass_layer = RenderLayers::layer(1);
@@ -213,7 +213,7 @@ fn setup_3d_scene(
                 viewport: Some(Viewport::new_at_origin(texture_size, texture_size)),
                 order: 0,
                 clear_operation: ClearOperation::from_rgba(0.0, 0.0, 0.0, 1.0),
-                target: RenderTarget::Image(workspace_texture_handle),
+                target: RenderTarget::Image(canvas_texture_handle),
                 ..Default::default()
             },
             transform: Transform::from_xyz(60.0, 0.0, 0.0) // cube facing front?
@@ -222,7 +222,7 @@ fn setup_3d_scene(
         })
         .insert(preview_pass_layer)
         .id();
-    global.workspace_camera = Some(camera_entity);
+    global.canvas_camera = Some(camera_entity);
 }
 
 fn new_render_texture(

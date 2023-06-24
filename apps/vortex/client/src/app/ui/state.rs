@@ -5,13 +5,6 @@ use render_egui::egui::Pos2;
 use crate::app::ui::text_input_modal::TextInputModal;
 
 #[derive(PartialEq)]
-pub enum WorkspaceType {
-    None,
-    SkeletonBuilder,
-    TextEditor,
-}
-
-#[derive(PartialEq)]
 pub enum LoggingInState {
     NotLoggingIn,
     LoggingIn,
@@ -24,10 +17,9 @@ pub struct UiState {
     pub logging_in_state: LoggingInState,
     pub username: String,
     pub password: String,
-    pub workspace_type: WorkspaceType,
     pub text_input_modal: TextInputModal,
     pub dragging_side_panel: bool,
-    pub workspace_coords: Option<Pos2>,
+    pub canvas_coords: Option<Pos2>,
 }
 
 impl UiState {
@@ -37,10 +29,9 @@ impl UiState {
             logging_in_state: LoggingInState::NotLoggingIn,
             username: String::new(),
             password: String::new(),
-            workspace_type: WorkspaceType::SkeletonBuilder,
             text_input_modal: TextInputModal::new(),
             dragging_side_panel: false,
-            workspace_coords: None,
+            canvas_coords: None,
         }
     }
 }

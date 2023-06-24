@@ -8,7 +8,7 @@ use vortex_proto::resources::FileEntryKey;
 pub struct Global {
     pub project_root_entity: Entity,
     pub changelist: BTreeMap<FileEntryKey, Entity>,
-    pub workspace_camera: Option<Entity>,
+    pub canvas_camera: Option<Entity>,
     pub solid_circle: Option<Entity>,
     pub hollow_circle: Option<Entity>,
 }
@@ -20,7 +20,7 @@ impl Global {
         Self {
             project_root_entity,
             changelist: BTreeMap::new(),
-            workspace_camera: None,
+            canvas_camera: None,
             solid_circle: None,
             hollow_circle: None,
         }

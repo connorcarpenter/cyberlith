@@ -1,14 +1,14 @@
 use bevy_ecs::world::World;
 
+use canvas::show_canvas;
 use render_egui::{egui, egui::Frame};
 
 use crate::app::{
     resources::tab_manager::TabManager,
-    ui::{
-        UiState,
-        workspaces::{skeleton_builder, text_editor}, WorkspaceType,
-    },
+    ui::UiState,
 };
+
+mod canvas;
 
 pub fn center_panel(context: &egui::Context, world: &mut World) {
     egui::CentralPanel::default()
@@ -17,21 +17,10 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
             egui::TopBottomPanel::top("tab_bar").show_inside(ui, |ui| {
                 TabManager::render_root(ui, world);
             });
-            egui::CentralPanel::default() // workspace area
+            egui::CentralPanel::default() // canvas area
                 .frame(Frame::central_panel(ui.style()).inner_margin(0.0))
                 .show_inside(ui, |ui| {
-                    let state = world.get_resource::<UiState>().unwrap();
-                    match state.workspace_type {
-                        WorkspaceType::None => {
-                            ui.label("-");
-                        }
-                        WorkspaceType::SkeletonBuilder => {
-                            skeleton_builder(ui, world);
-                        }
-                        WorkspaceType::TextEditor => {
-                            text_editor(ui);
-                        }
-                    }
+                    show_canvas(ui, world);
                 });
         });
 }

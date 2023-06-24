@@ -11,9 +11,9 @@ use render_egui::{
     EguiUserTextures,
 };
 
-use crate::app::{plugin::WorkspaceTexture, resources::global::Global, ui::UiState};
+use crate::app::{plugin::CanvasTexture, resources::global::Global, ui::UiState};
 
-pub fn skeleton_builder(ui: &mut Ui, world: &mut World) {
+pub fn show_canvas(ui: &mut Ui, world: &mut World) {
     egui::CentralPanel::default()
         .frame(Frame::central_panel(ui.style()).inner_margin(0.0))
         .show_inside(ui, |ui| {
@@ -28,21 +28,21 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
         Res<Global>,
         ResMut<Assets<CpuTexture2D>>,
         ResMut<EguiUserTextures>,
-        Res<WorkspaceTexture>,
+        Res<CanvasTexture>,
         ResMut<UiState>,
         ResMut<Input>,
         Query<(&mut Camera, &mut Transform, &mut Projection)>,
     )> = SystemState::new(world);
-    let (global, mut textures, mut user_textures, workspace_texture, mut ui_state, mut input, mut camera_query) = system_state.get_mut(world);
+    let (global, mut textures, mut user_textures, canvas_texture, mut ui_state, mut input, mut camera_query) = system_state.get_mut(world);
 
-    let texture_handle = workspace_texture.0;
+    let texture_handle = canvas_texture.0;
     let Some(texture_id) = user_textures.texture_id(&texture_handle) else {
         // The user texture may not be synced yet, return early.
         return;
     };
     let top_left = ui.min_rect().min;
-    if ui_state.workspace_coords.is_none() {
-        ui_state.workspace_coords = Some(top_left);
+    if ui_state.canvas_coords.is_none() {
+        ui_state.canvas_coords = Some(top_left);
         input.set_mouse_offset(top_left.x, top_left.y);
     }
     let texture_size = ui.available_size();
@@ -53,7 +53,7 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
     if did_resize {
         info!("Resize panel finished! New size: {:?}", texture_size);
 
-        ui_state.workspace_coords = Some(top_left);
+        ui_state.canvas_coords = Some(top_left);
         input.set_mouse_offset(top_left.x + 1.0, top_left.y + 1.0);
 
         // This is the texture that will be rendered to.
@@ -65,7 +65,7 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
         user_textures.mark_texture_changed(&texture_handle);
 
         // Update the camera to match the new texture size.
-        let Some(camera_entity) = global.workspace_camera else {
+        let Some(camera_entity) = global.canvas_camera else {
             return;
         };
         let Ok((mut camera, mut transform, mut projection)) = camera_query.get_mut(camera_entity) else {

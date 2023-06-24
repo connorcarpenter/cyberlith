@@ -7,7 +7,6 @@ pub use text_input_modal::*;
 pub use top_bar::*;
 
 pub mod widgets;
-pub mod workspaces;
 
 mod center_panel;
 mod left_panel;
