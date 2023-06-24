@@ -1,14 +1,14 @@
-use bevy_ecs::{system::{Res, ResMut, SystemState}, world::World};
+use bevy_ecs::{system::{Query, Res, ResMut, SystemState}, world::World};
 use bevy_log::info;
 
-use render_api::{Assets, base::CpuTexture2D};
+use render_api::{Assets, base::CpuTexture2D, components::{Camera, Viewport}};
 use render_egui::{
     egui,
     egui::{Frame, Id, Ui},
     EguiUserTextures,
 };
 
-use crate::app::{plugin::WorkspaceTexture, ui::UiState};
+use crate::app::{plugin::WorkspaceTexture, resources::global::Global, ui::UiState};
 
 pub fn skeleton_builder(ui: &mut Ui, world: &mut World) {
     egui::CentralPanel::default()
@@ -22,11 +22,13 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
     let did_resize = resize_finished(ui, world, "left_panel");
 
     let mut system_state: SystemState<(
+        Res<Global>,
         ResMut<Assets<CpuTexture2D>>,
         ResMut<EguiUserTextures>,
         Res<WorkspaceTexture>,
+        Query<&mut Camera>,
     )> = SystemState::new(world);
-    let (mut textures, mut user_textures, workspace_texture) = system_state.get_mut(world);
+    let (global, mut textures, mut user_textures, workspace_texture, mut camera_query) = system_state.get_mut(world);
 
     let texture_handle = workspace_texture.0;
     let Some(texture_id) = user_textures.texture_id(&texture_handle) else {
@@ -40,10 +42,21 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
         info!("Resize panel finished!");
 
         // This is the texture that will be rendered to.
-        let new_texture = CpuTexture2D::from_size(texture_size.x as u32, texture_size.y as u32);
+        let texture_width = texture_size.x as u32;
+        let texture_height = texture_size.y as u32;
+        let new_texture = CpuTexture2D::from_size(texture_width, texture_height);
 
         textures.set(&texture_handle, new_texture);
         user_textures.mark_texture_changed(&texture_handle);
+
+        // Update the camera to match the new texture size.
+        let Some(camera_entity) = global.workspace_camera else {
+            return;
+        };
+        let Ok(mut camera) = camera_query.get_mut(camera_entity) else {
+            return;
+        };
+        camera.viewport = Some(Viewport::new_at_origin(texture_width, texture_height));
     }
 }
 

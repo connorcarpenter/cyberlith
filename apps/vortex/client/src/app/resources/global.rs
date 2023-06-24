@@ -8,13 +8,17 @@ use vortex_proto::resources::FileEntryKey;
 pub struct Global {
     pub project_root_entity: Entity,
     pub changelist: BTreeMap<FileEntryKey, Entity>,
+    pub workspace_camera: Option<Entity>,
 }
 
 impl Global {
-    pub fn new(project_root_entity: Entity) -> Self {
+    pub fn new(
+        project_root_entity: Entity,
+    ) -> Self {
         Self {
             project_root_entity,
             changelist: BTreeMap::new(),
+            workspace_camera: None,
         }
     }
 }

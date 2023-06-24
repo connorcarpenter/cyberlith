@@ -105,6 +105,7 @@ pub struct WorkspaceTexture(pub Handle<CpuTexture2D>);
 fn setup(
     config: Res<AppConfig>,
     mut commands: Commands,
+    mut global: ResMut<Global>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
     mut textures: ResMut<Assets<CpuTexture2D>>,
@@ -145,11 +146,12 @@ fn setup(
     let viewport = Some(Viewport::new_at_origin(texture_size, texture_size));
     let center_target = Vec3::new(0.0, 0.0, 0.0);
 
-    // LEFT TOP
+    // Workspace Texture
     let workspace_texture_handle = new_render_texture(texture_size, &mut textures, &mut user_textures);
     commands.insert_resource(WorkspaceTexture(workspace_texture_handle.clone()));
 
-    commands
+    // Camera
+    let camera_entity = commands
         .spawn(CameraBundle {
             camera: Camera {
                 viewport: viewport.clone(),
@@ -162,7 +164,9 @@ fn setup(
                 .looking_at(center_target, Vec3::Y),
             projection: projection.clone(),
         })
-        .insert(preview_pass_layer);
+        .insert(preview_pass_layer)
+        .id();
+    global.workspace_camera = Some(camera_entity);
 }
 
 fn new_render_texture(
