@@ -1,9 +1,10 @@
-use bevy_app::{App, CoreSchedule, Plugin};
-use bevy_ecs::schedule::{ExecutorKind, IntoSystemConfig, Schedule};
+use bevy_app::{App, CoreSchedule, CoreSet, Plugin};
+use bevy_ecs::schedule::{ExecutorKind, IntoSystemConfig, IntoSystemSetConfig, Schedule};
 
 use render_api::RenderSet;
 
-use crate::{draw::draw, runner::runner_func, sync::SyncPlugin};
+use crate::{draw::draw, input, runner::runner_func, sync::SyncPlugin};
+use crate::base_set::GlowSet;
 
 pub struct RenderGlowPlugin;
 
@@ -15,7 +16,15 @@ impl Plugin for RenderGlowPlugin {
             .add_plugin(SingleThreadedPlugin)
             // Runner
             .set_runner(runner_func)
+            // Sets
+            // System Sets
+            .configure_set(
+                GlowSet::Input
+                    .after(CoreSet::Last)
+                    .before(CoreSet::LastFlush)
+            )
             // Systems
+            .add_system(input::run.in_base_set(GlowSet::Input))
             .add_system(draw.in_base_set(RenderSet::Draw));
     }
 }

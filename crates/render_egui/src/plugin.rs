@@ -1,8 +1,7 @@
 use bevy_app::{App, CoreSet, Plugin};
 use bevy_ecs::schedule::{IntoSystemConfig, IntoSystemSetConfig};
 
-use render_api::{RenderApiPlugin, RenderSet};
-use render_glow::RenderGlowPlugin;
+use render_api::RenderSet;
 
 use crate::{EguiContext, EguiSet, EguiUserTextures, systems};
 

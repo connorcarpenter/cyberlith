@@ -142,7 +142,9 @@ pub fn draw(
 
         let render_target = {
             match &render_pass.camera.camera.target {
-                CameraRenderTarget::Screen => frame_input.screen(),
+                CameraRenderTarget::Screen => {
+                    RenderTarget::screen(frame_input.viewport.width, frame_input.viewport.height)
+                }
                 CameraRenderTarget::Image(texture_handle) => {
                     // Render to Image
                     let texture = textures.get_mut(texture_handle).unwrap();

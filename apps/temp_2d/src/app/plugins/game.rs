@@ -87,8 +87,8 @@ fn step(
 
     if let Some(solid_circle_id) = global.solid_circle {
         if let Ok(mut transform) = query.get_mut(solid_circle_id) {
-            transform.translation.x = input.mouse_x();
-            transform.translation.y = input.mouse_y();
+            transform.translation.x = input.mouse().x;
+            transform.translation.y = input.mouse().y;
         }
     }
 }
