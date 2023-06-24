@@ -29,12 +29,11 @@ use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
     config::{AppConfig, ConfigPlugin},
     events::LoginEvent,
-    resources::{action_stack::ActionStack, global::Global},
+    resources::{action_stack::ActionStack, global::Global, tab_manager::TabManager},
     systems::network,
     ui,
     ui::{AxesCamerasVisible, UiState},
 };
-use crate::app::resources::tab_manager::TabManager;
 
 pub struct VortexPlugin;
 
@@ -92,9 +91,17 @@ impl Plugin for VortexPlugin {
             .add_system(ui::sync_axes_cameras_visibility)
             // 3D Configuration
             .add_startup_system(setup)
-            .add_system(step_2d);
+            .add_system(step);
     }
 }
+
+#[derive(Component)]
+struct Vertex2d {
+    depth: f32,
+}
+
+#[derive(Component)]
+struct Vertex3d;
 
 // Marks the preview pass cube.
 #[derive(Component)]
@@ -119,7 +126,7 @@ fn setup(
     let canvas_texture_handle = new_render_texture(texture_size, &mut textures, &mut user_textures);
     commands.insert_resource(CanvasTexture(canvas_texture_handle.clone()));
 
-    //setup_3d_scene(&mut commands, &mut global, &mut meshes, &mut materials, texture_size, workspace_texture_handle);
+    setup_3d_scene(&mut commands, &mut global, &mut meshes, &mut materials, texture_size, canvas_texture_handle);
     setup_2d_scene(&mut commands, &mut global, &mut meshes, &mut materials, texture_size, canvas_texture_handle);
 }
 
@@ -131,6 +138,8 @@ fn setup_2d_scene(
     texture_size: u32,
     canvas_texture_handle: Handle<CpuTexture2D>,
 ) {
+    let layer_2d = RenderLayers::layer(2);
+
     // circle
 
     let solid_circle = commands.spawn(RenderObjectBundle::circle(
@@ -142,7 +151,7 @@ fn setup_2d_scene(
         12,
         Color::GREEN,
         false,
-    )).id();
+    )).insert(layer_2d).id();
     global.solid_circle = Some(solid_circle);
 
     let hollow_circle = commands.spawn(RenderObjectBundle::circle(
@@ -154,7 +163,7 @@ fn setup_2d_scene(
         12,
         Color::GREEN,
         true,
-    )).id();
+    )).insert(layer_2d).id();
     global.hollow_circle = Some(hollow_circle);
 
     // light
@@ -162,14 +171,16 @@ fn setup_2d_scene(
         intensity: 1.0,
         color: Color::WHITE,
         ..Default::default()
-    });
+    }).insert(layer_2d);
 
     // camera
     let mut camera_bundle = CameraBundle::new_2d(&Viewport::new_at_origin(texture_size, texture_size));
     camera_bundle.camera.target = RenderTarget::Image(canvas_texture_handle);
-    let camera_entity = commands.spawn(camera_bundle).id();
+    camera_bundle.camera.is_active = false;
+    camera_bundle.camera.order = 1;
+    let camera_entity = commands.spawn(camera_bundle).insert(layer_2d).id();
 
-    global.canvas_camera = Some(camera_entity);
+    global.camera_2d = Some(camera_entity);
 }
 
 fn setup_3d_scene(
@@ -180,23 +191,22 @@ fn setup_3d_scene(
     texture_size: u32,
     canvas_texture_handle: Handle<CpuTexture2D>,
 ) {
-    // This specifies the layer used for the preview pass, which will be attached to the preview pass camera and cube.
-    let preview_pass_layer = RenderLayers::layer(1);
+    let layer_3d = RenderLayers::layer(3);
 
     // Cube
     commands
         .spawn(RenderObjectBundle {
             mesh: meshes.add(shapes::Cube),
             material: materials.add(Color::from_rgb_f32(0.8, 0.7, 0.6)),
-            transform: Transform::from_xyz(0.0, 0.0, 0.0),
+            transform: Transform::IDENTITY.with_scale(Vec3::splat(10.0)),
         })
         .insert(SkeletonCube)
-        .insert(preview_pass_layer);
+        .insert(layer_3d);
 
     // Ambient Light
     commands
         .spawn(AmbientLight::new(0.01, Color::WHITE))
-        .insert(preview_pass_layer);
+        .insert(layer_3d);
     commands
         .spawn(PointLight {
             position: Vec3::new(50.0, 150.0, 100.0),
@@ -204,7 +214,7 @@ fn setup_3d_scene(
             intensity: 0.1,
             ..Default::default()
         })
-        .insert(preview_pass_layer);
+        .insert(layer_3d);
 
     // Camera
     let camera_entity = commands
@@ -216,13 +226,13 @@ fn setup_3d_scene(
                 target: RenderTarget::Image(canvas_texture_handle),
                 ..Default::default()
             },
-            transform: Transform::from_xyz(60.0, 0.0, 0.0) // cube facing front?
-                .looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y),
+            transform: Transform::from_xyz(60.0, 30.0, 60.0) // isometric-ish
+                .looking_at(Vec3::ZERO, Vec3::Y),
             projection: Projection::Orthographic(OrthographicProjection::default()),
         })
-        .insert(preview_pass_layer)
+        .insert(layer_3d)
         .id();
-    global.canvas_camera = Some(camera_entity);
+    global.camera_3d = Some(camera_entity);
 }
 
 fn new_render_texture(
@@ -239,33 +249,12 @@ fn new_render_texture(
     texture_handle
 }
 
-fn step_3d(mut query: Query<&mut Transform, With<SkeletonCube>>) {
-    // Rotates the cubes.
-    for mut transform in &mut query {
+fn step(
+    mut cube_query: Query<(&Handle<CpuMesh>, &mut Transform), With<SkeletonCube>>
+) {
+    // Rotates the cube
+    for (mesh_handle, mut transform) in &mut cube_query {
         transform.rotate_x(0.015);
         transform.rotate_z(0.013);
-    }
-}
-
-fn step_2d(
-    global: Res<Global>,
-    mut query: Query<&mut Transform>,
-    input: Res<Input>,
-) {
-    let mouse_coords = input.mouse();
-    if input.is_pressed(MouseButton::Left) {
-        if let Some(hollow_circle_id) = global.hollow_circle {
-            if let Ok(mut transform) = query.get_mut(hollow_circle_id) {
-                transform.translation.x = mouse_coords.x;
-                transform.translation.y = mouse_coords.y;
-            }
-        }
-    }
-
-    if let Some(solid_circle_id) = global.solid_circle {
-        if let Ok(mut transform) = query.get_mut(solid_circle_id) {
-            transform.translation.x = mouse_coords.x;
-            transform.translation.y = mouse_coords.y;
-        }
     }
 }

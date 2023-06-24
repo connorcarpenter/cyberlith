@@ -1,13 +1,12 @@
 use bevy_ecs::{system::{Query, Res, ResMut, SystemState}, world::World};
 use bevy_log::info;
 
-use input::Input;
+use input::{Input, Key};
 use math::Vec3;
-use render_api::{Assets, base::CpuTexture2D, components::{Camera, Viewport}};
-use render_api::components::{OrthographicProjection, Projection, Transform};
+use render_api::{Assets, base::CpuTexture2D, components::{Camera, OrthographicProjection, Projection, Transform, Viewport}};
 use render_egui::{
     egui,
-    egui::{Frame, Id, Image, pos2, Rect, Ui, Vec2},
+    egui::{Frame, Id, Image, pos2, Rect, Ui},
     EguiUserTextures,
 };
 
@@ -35,6 +34,32 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
     )> = SystemState::new(world);
     let (global, mut textures, mut user_textures, canvas_texture, mut ui_state, mut input, mut camera_query) = system_state.get_mut(world);
 
+    // check input
+    if input.is_pressed(Key::Q) {
+        if let Some(camera_2d) = global.camera_2d {
+            if let Ok((mut camera, _, _)) = camera_query.get_mut(camera_2d) {
+                camera.is_active = true;
+            };
+        }
+        if let Some(camera_3d) = global.camera_3d {
+            if let Ok((mut camera, _, _)) = camera_query.get_mut(camera_3d) {
+                camera.is_active = false;
+            };
+        }
+    } else if input.is_pressed(Key::E) {
+        if let Some(camera_2d) = global.camera_2d {
+            if let Ok((mut camera, _, _)) = camera_query.get_mut(camera_2d) {
+                camera.is_active = false;
+            };
+        }
+        if let Some(camera_3d) = global.camera_3d {
+            if let Ok((mut camera, _, _)) = camera_query.get_mut(camera_3d) {
+                camera.is_active = true;
+            };
+        }
+    }
+
+    // change textures
     let texture_handle = canvas_texture.0;
     let Some(texture_id) = user_textures.texture_id(&texture_handle) else {
         // The user texture may not be synced yet, return early.
@@ -65,32 +90,57 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
         user_textures.mark_texture_changed(&texture_handle);
 
         // Update the camera to match the new texture size.
-        let Some(camera_entity) = global.canvas_camera else {
-            return;
-        };
-        let Ok((mut camera, mut transform, mut projection)) = camera_query.get_mut(camera_entity) else {
-            return;
-        };
-        camera.viewport = Some(Viewport::new_at_origin(texture_width, texture_height));
-        *transform = Transform::from_xyz(
-            texture_width as f32 * 0.5,
-            texture_height as f32 * 0.5,
-            -1.0,
-        )
-            .looking_at(
-                Vec3::new(
-                    texture_width as f32 * 0.5,
-                    texture_height as f32 * 0.5,
-                    0.0,
-                ),
-                Vec3::NEG_Y,
-            );
-        *projection = Projection::Orthographic(OrthographicProjection {
-            height: texture_height as f32,
-            near: 0.0,
-            far: 10.0,
-        });
+        update_2d_camera(&global, texture_width, texture_height, &mut camera_query);
+        update_3d_camera(&global, texture_width, texture_height, &mut camera_query);
     }
+}
+
+fn update_2d_camera(
+    global: &Global,
+    texture_width: u32,
+    texture_height: u32,
+    camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>,
+) {
+    let Some(camera_entity) = global.camera_2d else {
+        return;
+    };
+    let Ok((mut camera, mut transform, mut projection)) = camera_query.get_mut(camera_entity) else {
+        return;
+    };
+    camera.viewport = Some(Viewport::new_at_origin(texture_width, texture_height));
+    *transform = Transform::from_xyz(
+        texture_width as f32 * 0.5,
+        texture_height as f32 * 0.5,
+        -1.0,
+    )
+        .looking_at(
+            Vec3::new(
+                texture_width as f32 * 0.5,
+                texture_height as f32 * 0.5,
+                0.0,
+            ),
+            Vec3::NEG_Y,
+        );
+    *projection = Projection::Orthographic(OrthographicProjection {
+        height: texture_height as f32,
+        near: 0.0,
+        far: 10.0,
+    });
+}
+
+fn update_3d_camera(
+    global: &Global,
+    texture_width: u32,
+    texture_height: u32,
+    camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>,
+) {
+    let Some(camera_entity) = global.camera_3d else {
+        return;
+    };
+    let Ok((mut camera, _, _)) = camera_query.get_mut(camera_entity) else {
+        return;
+    };
+    camera.viewport = Some(Viewport::new_at_origin(texture_width, texture_height));
 }
 
 fn resize_finished(ui: &Ui, world: &mut World, id_impl: impl Into<Id>) -> bool {

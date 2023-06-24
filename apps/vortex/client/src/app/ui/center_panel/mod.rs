@@ -3,10 +3,7 @@ use bevy_ecs::world::World;
 use canvas::show_canvas;
 use render_egui::{egui, egui::Frame};
 
-use crate::app::{
-    resources::tab_manager::TabManager,
-    ui::UiState,
-};
+use crate::app::resources::tab_manager::TabManager;
 
 mod canvas;
 
