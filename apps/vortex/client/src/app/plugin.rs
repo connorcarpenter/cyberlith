@@ -182,7 +182,7 @@ fn setup_3d_scene(
     let main_cube = commands
         .spawn(RenderObjectBundle {
             mesh: meshes.add(shapes::Cube),
-            material: materials.add(Color::from_rgb_f32(0.8, 0.7, 0.6)),
+            material: materials.add(Color::RED),
             transform: Transform::IDENTITY.with_scale(Vec3::splat(10.0)),
         })
         .insert(MainCube)
@@ -195,9 +195,9 @@ fn setup_3d_scene(
         .insert(global.layer_3d);
     commands
         .spawn(PointLight {
-            position: Vec3::new(50.0, 150.0, 100.0),
+            position: Vec3::new(60.0, 60.0, 90.0),
             color: Color::WHITE,
-            intensity: 0.1,
+            intensity: 0.2,
             ..Default::default()
         })
         .insert(global.layer_3d);
@@ -308,15 +308,14 @@ fn step(
         for i in 0..mesh_vertex_count {
             info!("spawning 3d vertex: {:?}", i);
             let vertex_entity = commands
-                .spawn(RenderObjectBundle::sphere(
+                .spawn(RenderObjectBundle::cube(
                     &mut meshes,
                     &mut materials,
                     0.0,
                     0.0,
                     0.0,
-                    4.0,
-                    12,
-                    Color::GREEN,
+                    1.0,
+                    Color::BLUE,
                 ))
                 .id();
 
@@ -348,7 +347,7 @@ fn step(
         let vertex_entity = global.vertices_2d[index];
 
         if let Ok(mut vertex_transform) = transform_query.get_mut(vertex_entity) {
-            let screen_pos = convert_3d_to_2d(
+            let (screen_pos, depth) = convert_3d_to_2d(
                 &camera_3d_view_matrix,
                 &camera_3d_proj_matrix,
                 &camera_2d_viewport_size,
@@ -357,12 +356,12 @@ fn step(
             vertex_transform.translation.x = screen_pos.x;
             vertex_transform.translation.y = screen_pos.y;
 
-            output_2d.push((index, screen_pos));
+            output_2d.push((index, screen_pos, depth));
         }
     }
 
     // converting 2d screen space coord + depth to a 3d sphere position
-    for (index, screen_pos) in output_2d {
+    for (index, screen_pos, depth) in output_2d {
         let vertex_entity = global.vertices_3d[index];
 
         if let Ok(mut vertex_transform) = transform_query.get_mut(vertex_entity) {
@@ -371,6 +370,7 @@ fn step(
                 &camera_3d_proj_matrix,
                 &camera_2d_viewport_size,
                 &screen_pos,
+                depth,
             );
             vertex_transform.translation.x = world_pos.x;
             vertex_transform.translation.y = world_pos.y;

@@ -115,4 +115,22 @@ impl RenderObjectBundle {
             ..Default::default()
         }
     }
+
+    pub fn cube(
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+        x: f32,
+        y: f32,
+        z: f32,
+        size: f32,
+        color: Color,
+    ) -> Self {
+        let mesh = meshes.add(shapes::Cube);
+        Self {
+            mesh,
+            material: materials.add(color),
+            transform: Transform::from_xyz(x, y, z).with_scale(Vec3::splat(size)),
+            ..Default::default()
+        }
+    }
 }

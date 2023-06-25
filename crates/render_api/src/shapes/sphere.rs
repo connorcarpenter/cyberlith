@@ -51,12 +51,12 @@ impl From<Sphere> for CpuMesh {
 
                 if i != angle_subdivisions - 2 {
                     let j1 = (j + 1) % (angle_subdivisions * 2);
-                    indices.push((i0 + j));
-                    indices.push((i1 + j1));
-                    indices.push((i0 + j1));
-                    indices.push((i1 + j1));
-                    indices.push((i0 + j));
-                    indices.push((i1 + j));
+                    indices.push(i0 + j);
+                    indices.push(i1 + j1);
+                    indices.push(i0 + j1);
+                    indices.push(i1 + j1);
+                    indices.push(i0 + j);
+                    indices.push(i1 + j);
                 }
             }
         }
@@ -66,9 +66,9 @@ impl From<Sphere> for CpuMesh {
         let i = 1 + (angle_subdivisions - 2) * angle_subdivisions * 2;
         for j in 0..angle_subdivisions * 2 {
             let j1 = (j + 1) % (angle_subdivisions * 2);
-            indices.push((i + j));
-            indices.push(((angle_subdivisions - 1) * angle_subdivisions * 2 + 1));
-            indices.push((i + j1));
+            indices.push(i + j);
+            indices.push((angle_subdivisions - 1) * angle_subdivisions * 2 + 1);
+            indices.push(i + j1);
         }
 
         CpuMesh {
