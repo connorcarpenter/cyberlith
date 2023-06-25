@@ -11,12 +11,8 @@ pub struct Global {
     pub changelist: BTreeMap<FileEntryKey, Entity>,
     pub camera_2d: Option<Entity>,
     pub camera_3d: Option<Entity>,
-    pub vertices_2d: Vec<Entity>,
-    pub vertices_3d: Vec<Entity>,
     pub layer_2d: RenderLayer,
     pub layer_3d: RenderLayer,
-    pub layer_norender: RenderLayer,
-    pub main_cube: Option<Entity>,
 }
 
 impl Global {
@@ -26,12 +22,8 @@ impl Global {
             changelist: BTreeMap::new(),
             camera_2d: None,
             camera_3d: None,
-            vertices_2d: Vec::new(),
-            vertices_3d: Vec::new(),
             layer_2d: RenderLayer::default(),
             layer_3d: RenderLayer::default(),
-            layer_norender: RenderLayer::default(),
-            main_cube: None,
         }
     }
 }

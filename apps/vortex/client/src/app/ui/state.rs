@@ -37,4 +37,4 @@ impl UiState {
 }
 
 #[derive(Resource)]
-pub struct AxesCamerasVisible(pub(crate) bool);
+pub struct AllCamerasVisible(pub(crate) bool);

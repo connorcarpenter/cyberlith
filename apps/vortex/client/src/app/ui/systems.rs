@@ -12,7 +12,7 @@ use render_egui::EguiContext;
 use crate::app::{
     resources::action_stack::ActionStack,
     ui::{
-        AxesCamerasVisible, center_panel, left_panel, login_modal,
+        AllCamerasVisible, center_panel, left_panel, login_modal,
         shortcuts::consume_shortcuts, text_input_modal::TextInputModal, top_bar, UiState,
     },
 };
@@ -37,8 +37,8 @@ pub fn main(world: &mut World) {
     }
 }
 
-pub fn sync_axes_cameras_visibility(
-    cameras_visible: Res<AxesCamerasVisible>,
+pub fn sync_all_cameras_visibility(
+    cameras_visible: Res<AllCamerasVisible>,
     mut camera_q: Query<&mut Camera>,
 ) {
     if !cameras_visible.is_changed() {

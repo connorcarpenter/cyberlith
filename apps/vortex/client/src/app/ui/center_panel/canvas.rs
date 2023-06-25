@@ -1,15 +1,14 @@
 use bevy_ecs::{
-    system::{Commands, Query, Res, ResMut, SystemState},
+    system::{Query, Res, ResMut, SystemState},
     world::World,
 };
-use bevy_log::info;
 
-use input::{Input, Key};
-use math::Vec3;
+use input::Input;
+use math::Vec2;
 use render_api::{
     Assets,
     base::CpuTexture2D,
-    components::{Camera, OrthographicProjection, Projection, Transform, Viewport},
+    components::{Camera, Projection, Transform},
 };
 use render_egui::{
     egui,
@@ -17,7 +16,11 @@ use render_egui::{
     EguiUserTextures,
 };
 
-use crate::app::{plugin::CanvasTexture, resources::global::Global, ui::UiState};
+use crate::app::{
+    resources::global::Global,
+    systems::canvas::{CanvasTexture, update_2d_camera, update_3d_camera},
+    ui::UiState,
+};
 
 pub fn show_canvas(ui: &mut Ui, world: &mut World) {
     egui::CentralPanel::default()
@@ -27,41 +30,10 @@ pub fn show_canvas(ui: &mut Ui, world: &mut World) {
         });
 }
 
-fn enable_cameras(global: &Global, camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>, enable_2d: bool, enable_3d: bool) {
-    if let Some(camera_2d) = global.camera_2d {
-        if let Ok((mut camera, _, _)) = camera_query.get_mut(camera_2d) {
-            camera.is_active = enable_2d;
-        };
-    }
-    if let Some(camera_3d) = global.camera_3d {
-        if let Ok((mut camera, _, _)) = camera_query.get_mut(camera_3d) {
-            camera.is_active = enable_3d;
-        };
-    }
-}
-
-fn enable_3d_shapes(global: &Global, commands: &mut Commands, enable_cube: bool, enable_vertices: bool) {
-    if let Some(cube) = global.main_cube {
-        if enable_cube {
-            commands.entity(cube).insert(global.layer_3d);
-        } else {
-            commands.entity(cube).insert(global.layer_norender);
-        }
-    }
-    for vertex_3d in global.vertices_3d.iter() {
-        if enable_vertices {
-            commands.entity(*vertex_3d).insert(global.layer_3d);
-        } else {
-            commands.entity(*vertex_3d).insert(global.layer_norender);
-        }
-    }
-}
-
 fn work_panel(ui: &mut Ui, world: &mut World) {
     let did_resize = resize_finished(ui, world, "left_panel");
 
     let mut system_state: SystemState<(
-        Commands,
         Res<Global>,
         ResMut<Assets<CpuTexture2D>>,
         ResMut<EguiUserTextures>,
@@ -71,7 +43,6 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
         Query<(&mut Camera, &mut Transform, &mut Projection)>,
     )> = SystemState::new(world);
     let (
-        mut commands,
         global,
         mut textures,
         mut user_textures,
@@ -80,27 +51,6 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
         mut input,
         mut camera_query,
     ) = system_state.get_mut(world);
-
-    // check input
-    if input.is_pressed(Key::Q) {
-
-        // disable 2d camera, enable 3d camera
-        enable_cameras(&global, &mut camera_query, false, true);
-
-        // disable 3d vertices, enable main cube
-        enable_3d_shapes(&global, &mut commands, true, false);
-    } else if input.is_pressed(Key::W) {
-
-        // disable 3d camera, enable 2d camera
-        enable_cameras(&global, &mut camera_query, true, false);
-    } else if input.is_pressed(Key::E) {
-
-        // disable 2d camera, enable 3d camera
-        enable_cameras(&global, &mut camera_query, false, true);
-
-        // disable main cube, enable 3d vertices
-        enable_3d_shapes(&global, &mut commands, false, true);
-    }
 
     // change textures
     let texture_handle = canvas_texture.0;
@@ -131,55 +81,12 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
         user_textures.mark_texture_changed(&texture_handle);
 
         // Update the camera to match the new texture size.
-        update_2d_camera(&global, texture_width, texture_height, &mut camera_query);
-        update_3d_camera(&global, texture_width, texture_height, &mut camera_query);
+        let native_texture_size = Vec2::new(texture_size.x, texture_size.y);
+        update_2d_camera(&global, native_texture_size, &mut camera_query);
+        update_3d_camera(&global, native_texture_size, &mut camera_query);
     }
 
     system_state.apply(world);
-}
-
-fn update_2d_camera(
-    global: &Global,
-    texture_width: u32,
-    texture_height: u32,
-    camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>,
-) {
-    let Some(camera_entity) = global.camera_2d else {
-        return;
-    };
-    let Ok((mut camera, mut transform, mut projection)) = camera_query.get_mut(camera_entity) else {
-        return;
-    };
-    camera.viewport = Some(Viewport::new_at_origin(texture_width, texture_height));
-    *transform = Transform::from_xyz(
-        texture_width as f32 * 0.5,
-        texture_height as f32 * 0.5,
-        -1.0,
-    )
-        .looking_at(
-            Vec3::new(texture_width as f32 * 0.5, texture_height as f32 * 0.5, 0.0),
-            Vec3::NEG_Y,
-        );
-    *projection = Projection::Orthographic(OrthographicProjection {
-        height: texture_height as f32,
-        near: 0.0,
-        far: 10.0,
-    });
-}
-
-fn update_3d_camera(
-    global: &Global,
-    texture_width: u32,
-    texture_height: u32,
-    camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>,
-) {
-    let Some(camera_entity) = global.camera_3d else {
-        return;
-    };
-    let Ok((mut camera, _, _)) = camera_query.get_mut(camera_entity) else {
-        return;
-    };
-    camera.viewport = Some(Viewport::new_at_origin(texture_width, texture_height));
 }
 
 fn resize_finished(ui: &Ui, world: &mut World, id_impl: impl Into<Id>) -> bool {
