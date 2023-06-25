@@ -1,16 +1,20 @@
 use math::Vec3;
 
+use crate::assets::AssetHash;
 use crate::base::{CpuMesh, Indices, Positions};
 
+#[derive(Hash)]
 pub struct Sphere {
-    pub angle_subdivisions: u32,
+    pub angle_subdivisions: u16,
 }
 
 impl Sphere {
-    pub fn new(angle_subdivisions: u32) -> Self {
+    pub fn new(angle_subdivisions: u16) -> Self {
         Self { angle_subdivisions }
     }
 }
+
+impl AssetHash<CpuMesh> for Sphere {}
 
 impl From<Sphere> for CpuMesh {
     fn from(sphere: Sphere) -> Self {
@@ -26,8 +30,8 @@ impl From<Sphere> for CpuMesh {
         for j in 0..angle_subdivisions * 2 {
             let j1 = (j + 1) % (angle_subdivisions * 2);
             indices.push(0);
-            indices.push((1 + j) as u16);
-            indices.push((1 + j1) as u16);
+            indices.push(1 + j);
+            indices.push(1 + j1);
         }
 
         for i in 0..angle_subdivisions - 1 {
@@ -47,12 +51,12 @@ impl From<Sphere> for CpuMesh {
 
                 if i != angle_subdivisions - 2 {
                     let j1 = (j + 1) % (angle_subdivisions * 2);
-                    indices.push((i0 + j) as u16);
-                    indices.push((i1 + j1) as u16);
-                    indices.push((i0 + j1) as u16);
-                    indices.push((i1 + j1) as u16);
-                    indices.push((i0 + j) as u16);
-                    indices.push((i1 + j) as u16);
+                    indices.push((i0 + j));
+                    indices.push((i1 + j1));
+                    indices.push((i0 + j1));
+                    indices.push((i1 + j1));
+                    indices.push((i0 + j));
+                    indices.push((i1 + j));
                 }
             }
         }
@@ -62,9 +66,9 @@ impl From<Sphere> for CpuMesh {
         let i = 1 + (angle_subdivisions - 2) * angle_subdivisions * 2;
         for j in 0..angle_subdivisions * 2 {
             let j1 = (j + 1) % (angle_subdivisions * 2);
-            indices.push((i + j) as u16);
-            indices.push(((angle_subdivisions - 1) * angle_subdivisions * 2 + 1) as u16);
-            indices.push((i + j1) as u16);
+            indices.push((i + j));
+            indices.push(((angle_subdivisions - 1) * angle_subdivisions * 2 + 1));
+            indices.push((i + j1));
         }
 
         CpuMesh {

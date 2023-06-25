@@ -2,6 +2,7 @@ use bevy_ecs::{
     system::{Query, Res, ResMut, SystemState},
     world::World,
 };
+use bevy_ecs::system::Commands;
 use bevy_log::info;
 
 use input::{Input, Key};
@@ -27,10 +28,41 @@ pub fn show_canvas(ui: &mut Ui, world: &mut World) {
         });
 }
 
+fn enable_cameras(global: &Global, camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>, enable_2d: bool, enable_3d: bool) {
+    if let Some(camera_2d) = global.camera_2d {
+        if let Ok((mut camera, _, _)) = camera_query.get_mut(camera_2d) {
+            camera.is_active = enable_2d;
+        };
+    }
+    if let Some(camera_3d) = global.camera_3d {
+        if let Ok((mut camera, _, _)) = camera_query.get_mut(camera_3d) {
+            camera.is_active = enable_3d;
+        };
+    }
+}
+
+fn enable_3d_shapes(global: &Global, commands: &mut Commands, enable_cube: bool, enable_vertices: bool) {
+    if let Some(cube) = global.main_cube {
+        if enable_cube {
+            commands.entity(cube).insert(global.layer_3d);
+        } else {
+            commands.entity(cube).insert(global.layer_norender);
+        }
+    }
+    for vertex_3d in global.vertices_3d.iter() {
+        if enable_vertices {
+            commands.entity(*vertex_3d).insert(global.layer_3d);
+        } else {
+            commands.entity(*vertex_3d).insert(global.layer_norender);
+        }
+    }
+}
+
 fn work_panel(ui: &mut Ui, world: &mut World) {
     let did_resize = resize_finished(ui, world, "left_panel");
 
     let mut system_state: SystemState<(
+        Commands,
         Res<Global>,
         ResMut<Assets<CpuTexture2D>>,
         ResMut<EguiUserTextures>,
@@ -40,6 +72,7 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
         Query<(&mut Camera, &mut Transform, &mut Projection)>,
     )> = SystemState::new(world);
     let (
+        mut commands,
         global,
         mut textures,
         mut user_textures,
@@ -51,27 +84,23 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
 
     // check input
     if input.is_pressed(Key::Q) {
-        if let Some(camera_2d) = global.camera_2d {
-            if let Ok((mut camera, _, _)) = camera_query.get_mut(camera_2d) {
-                camera.is_active = true;
-            };
-        }
-        if let Some(camera_3d) = global.camera_3d {
-            if let Ok((mut camera, _, _)) = camera_query.get_mut(camera_3d) {
-                camera.is_active = false;
-            };
-        }
+
+        // disable 2d camera, enable 3d camera
+        enable_cameras(&global, &mut camera_query, false, true);
+
+        // disable 3d vertices, enable main cube
+        enable_3d_shapes(&global, &mut commands, true, false);
+    } else if input.is_pressed(Key::W) {
+
+        // disable 3d camera, enable 2d camera
+        enable_cameras(&global, &mut camera_query, true, false);
     } else if input.is_pressed(Key::E) {
-        if let Some(camera_2d) = global.camera_2d {
-            if let Ok((mut camera, _, _)) = camera_query.get_mut(camera_2d) {
-                camera.is_active = false;
-            };
-        }
-        if let Some(camera_3d) = global.camera_3d {
-            if let Ok((mut camera, _, _)) = camera_query.get_mut(camera_3d) {
-                camera.is_active = true;
-            };
-        }
+
+        // disable 2d camera, enable 3d camera
+        enable_cameras(&global, &mut camera_query, false, true);
+
+        // disable main cube, enable 3d vertices
+        enable_3d_shapes(&global, &mut commands, false, true);
     }
 
     // change textures
@@ -106,6 +135,8 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
         update_2d_camera(&global, texture_width, texture_height, &mut camera_query);
         update_3d_camera(&global, texture_width, texture_height, &mut camera_query);
     }
+
+    system_state.apply(world);
 }
 
 fn update_2d_camera(

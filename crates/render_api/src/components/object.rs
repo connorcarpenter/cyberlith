@@ -96,4 +96,23 @@ impl RenderObjectBundle {
             }
         }
     }
+
+    pub fn sphere(
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+        x: f32,
+        y: f32,
+        z: f32,
+        radius: f32,
+        subdivisions: u16,
+        color: Color,
+    ) -> Self {
+        let mesh = meshes.add(shapes::Sphere::new(subdivisions));
+        Self {
+            mesh,
+            material: materials.add(color),
+            transform: Transform::from_xyz(x, y, z).with_scale(Vec3::splat(radius)),
+            ..Default::default()
+        }
+    }
 }
