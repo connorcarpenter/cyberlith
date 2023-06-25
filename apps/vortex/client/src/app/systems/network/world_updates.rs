@@ -69,7 +69,6 @@ pub fn insert_component_events(
             // Add children to root parent
             let entry = entry_query.get(child_entity).unwrap();
             let mut parent = parent_query.get_mut(project_root_entity).unwrap();
-            info!("Received FileSystemRootChild insert event");
             file_post_process::parent_add_child_entry(&mut parent, entry, child_entity);
         }
 
@@ -85,8 +84,6 @@ pub fn insert_component_events(
                 .get(&client) else {
                 panic!("FileSystemChild component of entry: `{}` has no parent component", *entry.name);
             };
-
-            info!("Received FileSystemChild insert event");
 
             if let Ok(mut parent) = parent_query.get_mut(parent_entity) {
                 file_post_process::parent_add_child_entry(&mut parent, entry, child_entity);

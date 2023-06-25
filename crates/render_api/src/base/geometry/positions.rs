@@ -3,7 +3,7 @@ use math::*;
 use crate::base::AxisAlignedBoundingBox;
 
 ///
-/// An array of positions. Supports f32 and f64 data types.
+/// An array of positions
 ///
 #[derive(Clone)]
 pub struct Positions(pub Vec<Vec3>);

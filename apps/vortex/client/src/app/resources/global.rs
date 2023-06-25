@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 
 use bevy_ecs::prelude::{Entity, Resource};
 
+use render_api::components::RenderLayer;
 use vortex_proto::resources::FileEntryKey;
 
 #[derive(Resource)]
@@ -12,6 +13,8 @@ pub struct Global {
     pub camera_3d: Option<Entity>,
     pub vertices_2d: Vec<Entity>,
     pub vertices_3d: Vec<Entity>,
+    pub layer_2d: RenderLayer,
+    pub layer_3d: RenderLayer,
 }
 
 impl Global {
@@ -25,6 +28,8 @@ impl Global {
             camera_3d: None,
             vertices_2d: Vec::new(),
             vertices_3d: Vec::new(),
+            layer_2d: RenderLayer::default(),
+            layer_3d: RenderLayer::default(),
         }
     }
 }

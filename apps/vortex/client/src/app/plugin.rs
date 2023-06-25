@@ -5,11 +5,12 @@ use bevy_ecs::{
     schedule::IntoSystemConfigs,
     system::{Commands, Query, Res, ResMut, Resource},
 };
+use bevy_ecs::query::Without;
 use bevy_log::info;
 use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin, ReceiveEvents};
 
 use input::{Input, MouseButton};
-use math::Vec3;
+use math::{Mat4, Vec2, Vec3, Vec4};
 use render_api::{
     Assets,
     base::{Color, CpuMaterial, CpuMesh, CpuTexture2D},
@@ -19,6 +20,7 @@ use render_api::{
     },
     Handle, resources::WindowSettings, shapes,
 };
+use render_api::components::CameraProjection;
 use render_egui::EguiUserTextures;
 use vortex_proto::{
     components::{EntryKind, FileSystemEntry},
@@ -138,47 +140,21 @@ fn setup_2d_scene(
     texture_size: u32,
     canvas_texture_handle: Handle<CpuTexture2D>,
 ) {
-    let layer_2d = RenderLayers::layer(2);
-
-    // circle
-
-    let solid_circle = commands.spawn(RenderObjectBundle::circle(
-        meshes,
-        materials,
-        150.0,
-        150.0,
-        4.0,
-        12,
-        Color::GREEN,
-        false,
-    )).insert(layer_2d).id();
-    global.solid_circle = Some(solid_circle);
-
-    let hollow_circle = commands.spawn(RenderObjectBundle::circle(
-        meshes,
-        materials,
-        150.0,
-        150.0,
-        7.5,
-        12,
-        Color::GREEN,
-        true,
-    )).insert(layer_2d).id();
-    global.hollow_circle = Some(hollow_circle);
+    global.layer_2d = RenderLayers::layer(2);
 
     // light
     commands.spawn(AmbientLight {
         intensity: 1.0,
         color: Color::WHITE,
         ..Default::default()
-    }).insert(layer_2d);
+    }).insert(global.layer_2d);
 
     // camera
     let mut camera_bundle = CameraBundle::new_2d(&Viewport::new_at_origin(texture_size, texture_size));
     camera_bundle.camera.target = RenderTarget::Image(canvas_texture_handle);
     camera_bundle.camera.is_active = false;
     camera_bundle.camera.order = 1;
-    let camera_entity = commands.spawn(camera_bundle).insert(layer_2d).id();
+    let camera_entity = commands.spawn(camera_bundle).insert(global.layer_2d).id();
 
     global.camera_2d = Some(camera_entity);
 }
@@ -191,7 +167,7 @@ fn setup_3d_scene(
     texture_size: u32,
     canvas_texture_handle: Handle<CpuTexture2D>,
 ) {
-    let layer_3d = RenderLayers::layer(3);
+    global.layer_3d = RenderLayers::layer(3);
 
     // Cube
     commands
@@ -201,12 +177,12 @@ fn setup_3d_scene(
             transform: Transform::IDENTITY.with_scale(Vec3::splat(10.0)),
         })
         .insert(SkeletonCube)
-        .insert(layer_3d);
+        .insert(global.layer_3d);
 
     // Ambient Light
     commands
         .spawn(AmbientLight::new(0.01, Color::WHITE))
-        .insert(layer_3d);
+        .insert(global.layer_3d);
     commands
         .spawn(PointLight {
             position: Vec3::new(50.0, 150.0, 100.0),
@@ -214,7 +190,7 @@ fn setup_3d_scene(
             intensity: 0.1,
             ..Default::default()
         })
-        .insert(layer_3d);
+        .insert(global.layer_3d);
 
     // Camera
     let camera_entity = commands
@@ -230,7 +206,7 @@ fn setup_3d_scene(
                 .looking_at(Vec3::ZERO, Vec3::Y),
             projection: Projection::Orthographic(OrthographicProjection::default()),
         })
-        .insert(layer_3d)
+        .insert(global.layer_3d)
         .id();
     global.camera_3d = Some(camera_entity);
 }
@@ -250,11 +226,114 @@ fn new_render_texture(
 }
 
 fn step(
-    mut cube_query: Query<(&Handle<CpuMesh>, &mut Transform), With<SkeletonCube>>
+    mut commands: Commands,
+    mut global: ResMut<Global>,
+    mut meshes: ResMut<Assets<CpuMesh>>,
+    mut materials: ResMut<Assets<CpuMaterial>>,
+    mut cube_query: Query<(&Handle<CpuMesh>, &mut Transform), With<SkeletonCube>>,
+    mut transform_query: Query<&mut Transform, (Without<SkeletonCube>, With<Handle<CpuMesh>>)>,
+    camera_query: Query<(&Camera, &Transform, &Projection), Without<Handle<CpuMesh>>>,
 ) {
+    let mut cube: Option<(Handle<CpuMesh>, Transform)> = None;
+
     // Rotates the cube
     for (mesh_handle, mut transform) in &mut cube_query {
         transform.rotate_x(0.015);
         transform.rotate_z(0.013);
+        if cube.is_some() {
+            panic!("should only be one cube..");
+        }
+        cube = Some((mesh_handle.clone(), transform.clone()));
     }
+
+    // Get mesh
+    let Some((mesh_handle, transform)) = cube else {
+        panic!("no cube found");
+    };
+
+    let mesh = meshes.get(&mesh_handle).unwrap();
+    let mut rotated_mesh = mesh.clone();
+
+    // get number of vertices
+    let mesh_vertex_count = mesh.vertex_count();
+    let loaded_vertex_count = global.vertices_2d.len();
+
+    if loaded_vertex_count != mesh_vertex_count {
+        for loaded_vertex in global.vertices_2d.iter() {
+            commands.entity(*loaded_vertex).despawn();
+        }
+
+        global.vertices_2d.clear();
+
+        for i in 0..mesh_vertex_count {
+            info!("spawning vertex: {:?}", i);
+            let vertex_entity = commands.spawn(RenderObjectBundle::circle(
+                &mut meshes,
+                &mut materials,
+                0.0,
+                0.0,
+                4.0,
+                12,
+                Color::GREEN,
+                false,
+            )).insert(global.layer_2d).id();
+
+            global.vertices_2d.push(vertex_entity);
+        }
+    }
+
+    // rotate mesh
+    rotated_mesh.transform(&transform.compute_matrix());
+
+    // update positions
+    if global.camera_2d.is_none() || global.camera_3d.is_none() {
+        return;
+    }
+    let (camera_2d, _, _) = camera_query.get(global.camera_2d.unwrap()).unwrap();
+    let (camera_3d, camera_3d_transform, camera_3d_proj) = camera_query.get(global.camera_3d.unwrap()).unwrap();
+    let camera_2d_viewport = camera_2d.viewport.unwrap();
+    let camera_3d_viewport = camera_3d.viewport.unwrap();
+    let camera_3d_proj_matrix = camera_3d_proj.projection_matrix(&camera_3d_viewport);
+
+    for (index, pos) in rotated_mesh.positions.0.iter().enumerate() {
+        let vertex_entity = global.vertices_2d[index];
+
+        if let Ok(mut vertex_transform) = transform_query.get_mut(vertex_entity) {
+
+            // todo: change this to convert from 3d to 2d
+            let point_2d = convert_3d_to_2d(
+                &camera_3d_transform,
+                &camera_3d_proj_matrix,
+                &camera_2d_viewport,
+                pos,
+            );
+            vertex_transform.translation.x = point_2d.x;
+            vertex_transform.translation.y = point_2d.y;
+        }
+    }
+}
+
+fn convert_3d_to_2d(
+    camera_3d_transform: &Transform,
+    camera_3d_proj: &Mat4,
+    camera_2d_viewport: &Viewport,
+    point_3d: &Vec3,
+) -> Vec2 {
+    let view_matrix = camera_3d_transform.view_matrix();
+    let viewport_width = camera_2d_viewport.width as f32;
+    let viewport_height = camera_2d_viewport.height as f32;
+
+    // Calculate the clip space coordinate
+    let clip_space_coordinate = *camera_3d_proj * view_matrix * point_3d.extend(1.0);
+
+    // Normalize the clip space coordinate
+    let clip_space_vec3 = Vec3::new(clip_space_coordinate.x, clip_space_coordinate.y, clip_space_coordinate.z);
+    let normalized_device_coordinate = clip_space_vec3 / clip_space_coordinate.w;
+
+    // Convert the normalized device coordinate to screen space coordinate
+    let screen_space_x = (normalized_device_coordinate.x + 1.0) * 0.5 * viewport_width;
+    let screen_space_y = (1.0 - normalized_device_coordinate.y) * 0.5 * viewport_height;
+
+    // The resulting screen space coordinates
+    Vec2::new(screen_space_x, screen_space_y)
 }

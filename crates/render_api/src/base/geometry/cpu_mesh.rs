@@ -85,15 +85,6 @@ impl CpuMesh {
     }
 
     ///
-    ///  Iterates over all vertices in this mesh and calls the callback function with the index for each vertex.
-    ///
-    pub fn for_each_vertex(&self, mut callback: impl FnMut(usize)) {
-        for i in 0..self.positions.len() {
-            callback(i);
-        }
-    }
-
-    ///
     /// Iterates over all triangles in this mesh and calls the callback function with the three indices, one for each vertex in the triangle.
     ///
     pub fn for_each_triangle(&self, mut callback: impl FnMut(usize, usize, usize)) {
@@ -155,5 +146,26 @@ impl CpuMesh {
         buffer_check(self.uvs.as_ref().map(|b| b.len()), "uv coordinate")?;
 
         Ok(())
+    }
+
+    ///
+    /// Transforms the mesh by the given transformation.
+    ///
+    pub fn transform(&mut self, transform: &Mat4) {
+        for pos in self.positions.0.iter_mut() {
+            *pos = (*transform * pos.extend(1.0)).truncate();
+        }
+
+        if self.normals.is_some() {
+            let normal_transform = transform
+                .inverse()
+                .transpose();
+
+            if let Some(ref mut normals) = self.normals {
+                for n in normals.iter_mut() {
+                    *n = (normal_transform * n.extend(1.0)).truncate();
+                }
+            }
+        }
     }
 }

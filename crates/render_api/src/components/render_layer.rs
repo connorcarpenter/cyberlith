@@ -13,3 +13,9 @@ impl RenderLayers {
 
 #[derive(Component, Clone, Copy, Eq, PartialEq)]
 pub struct RenderLayer(pub usize);
+
+impl Default for RenderLayer {
+    fn default() -> Self {
+        RenderLayer(RenderLayers::DEFAULT)
+    }
+}

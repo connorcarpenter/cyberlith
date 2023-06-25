@@ -76,7 +76,6 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
     ui.add(image);
 
     if did_resize {
-        info!("Resize panel finished! New size: {:?}", texture_size);
 
         ui_state.canvas_coords = Some(top_left);
         input.set_mouse_offset(top_left.x + 1.0, top_left.y + 1.0);
