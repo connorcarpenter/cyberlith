@@ -18,9 +18,7 @@ pub struct Global {
 }
 
 impl Global {
-    pub fn new(
-        project_root_entity: Entity,
-    ) -> Self {
+    pub fn new(project_root_entity: Entity) -> Self {
         Self {
             project_root_entity,
             changelist: BTreeMap::new(),

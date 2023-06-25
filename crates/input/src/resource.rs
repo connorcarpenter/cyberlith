@@ -41,13 +41,17 @@ impl Input {
     pub fn recv_events(&mut self, events: &Vec<IncomingEvent<()>>) {
         for event in events {
             match event {
-                IncomingEvent::MousePress { button, handled, .. } => {
+                IncomingEvent::MousePress {
+                    button, handled, ..
+                } => {
                     if *handled {
                         continue;
                     }
                     self.mouse_buttons.insert(*button);
                 }
-                IncomingEvent::MouseRelease { button, handled, .. } => {
+                IncomingEvent::MouseRelease {
+                    button, handled, ..
+                } => {
                     if *handled {
                         continue;
                     }

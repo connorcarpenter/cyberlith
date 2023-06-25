@@ -6,12 +6,11 @@ pub use mouse_button::*;
 pub use plugin::*;
 pub use resource::*;
 
+mod cursor_icon;
 mod incoming_event;
+mod is_button;
 mod key;
 mod modifiers;
 mod mouse_button;
 mod plugin;
 mod resource;
-mod cursor_icon;
-mod is_button;
-

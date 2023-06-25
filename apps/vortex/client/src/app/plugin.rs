@@ -119,8 +119,20 @@ fn setup(
     let canvas_texture_handle = new_render_texture(texture_size, &mut textures, &mut user_textures);
     commands.insert_resource(CanvasTexture(canvas_texture_handle.clone()));
 
-    setup_3d_scene(&mut commands, &mut global, &mut meshes, &mut materials, texture_size, canvas_texture_handle);
-    setup_2d_scene(&mut commands, &mut global, texture_size, canvas_texture_handle);
+    setup_3d_scene(
+        &mut commands,
+        &mut global,
+        &mut meshes,
+        &mut materials,
+        texture_size,
+        canvas_texture_handle,
+    );
+    setup_2d_scene(
+        &mut commands,
+        &mut global,
+        texture_size,
+        canvas_texture_handle,
+    );
 }
 
 fn setup_2d_scene(
@@ -132,14 +144,17 @@ fn setup_2d_scene(
     global.layer_2d = RenderLayers::layer(2);
 
     // light
-    commands.spawn(AmbientLight {
-        intensity: 1.0,
-        color: Color::WHITE,
-        ..Default::default()
-    }).insert(global.layer_2d);
+    commands
+        .spawn(AmbientLight {
+            intensity: 1.0,
+            color: Color::WHITE,
+            ..Default::default()
+        })
+        .insert(global.layer_2d);
 
     // camera
-    let mut camera_bundle = CameraBundle::new_2d(&Viewport::new_at_origin(texture_size, texture_size));
+    let mut camera_bundle =
+        CameraBundle::new_2d(&Viewport::new_at_origin(texture_size, texture_size));
     camera_bundle.camera.target = RenderTarget::Image(canvas_texture_handle);
     camera_bundle.camera.is_active = false;
     camera_bundle.camera.order = 1;
@@ -256,16 +271,19 @@ fn step(
 
         for i in 0..mesh_vertex_count {
             info!("spawning vertex: {:?}", i);
-            let vertex_entity = commands.spawn(RenderObjectBundle::circle(
-                &mut meshes,
-                &mut materials,
-                0.0,
-                0.0,
-                4.0,
-                12,
-                Color::GREEN,
-                false,
-            )).insert(global.layer_2d).id();
+            let vertex_entity = commands
+                .spawn(RenderObjectBundle::circle(
+                    &mut meshes,
+                    &mut materials,
+                    0.0,
+                    0.0,
+                    4.0,
+                    12,
+                    Color::GREEN,
+                    false,
+                ))
+                .insert(global.layer_2d)
+                .id();
 
             global.vertices_2d.push(vertex_entity);
         }
@@ -279,7 +297,8 @@ fn step(
         return;
     }
     let (camera_2d, _, _) = camera_query.get(global.camera_2d.unwrap()).unwrap();
-    let (camera_3d, camera_3d_transform, camera_3d_proj) = camera_query.get(global.camera_3d.unwrap()).unwrap();
+    let (camera_3d, camera_3d_transform, camera_3d_proj) =
+        camera_query.get(global.camera_3d.unwrap()).unwrap();
     let camera_2d_viewport = camera_2d.viewport.unwrap();
     let camera_3d_viewport = camera_3d.viewport.unwrap();
     let camera_3d_proj_matrix = camera_3d_proj.projection_matrix(&camera_3d_viewport);
@@ -288,7 +307,6 @@ fn step(
         let vertex_entity = global.vertices_2d[index];
 
         if let Ok(mut vertex_transform) = transform_query.get_mut(vertex_entity) {
-
             // todo: change this to convert from 3d to 2d
             let point_2d = convert_3d_to_2d(
                 &camera_3d_transform.view_matrix(),
@@ -315,7 +333,11 @@ fn convert_3d_to_2d(
     let clip_space_coordinate = *projection_matrix * *view_matrix * point_3d.extend(1.0);
 
     // Normalize the clip space coordinate
-    let clip_space_vec3 = Vec3::new(clip_space_coordinate.x, clip_space_coordinate.y, clip_space_coordinate.z);
+    let clip_space_vec3 = Vec3::new(
+        clip_space_coordinate.x,
+        clip_space_coordinate.y,
+        clip_space_coordinate.z,
+    );
     let normalized_device_coordinate = clip_space_vec3 / clip_space_coordinate.w;
 
     // Convert the normalized device coordinate to screen space coordinate

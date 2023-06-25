@@ -21,7 +21,7 @@ impl Plugin for RenderGlowPlugin {
             .configure_set(
                 GlowSet::Input
                     .after(CoreSet::Last)
-                    .before(CoreSet::LastFlush)
+                    .before(CoreSet::LastFlush),
             )
             // Systems
             .add_system(input::run.in_base_set(GlowSet::Input))

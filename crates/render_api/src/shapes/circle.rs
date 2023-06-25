@@ -57,7 +57,10 @@ impl AssetHash<CpuMesh> for HollowCircle {}
 
 impl HollowCircle {
     pub fn new(angle_subdivisions: u16, radius_thousandths: u32) -> Self {
-        Self { angle_subdivisions, radius_thousandths }
+        Self {
+            angle_subdivisions,
+            radius_thousandths,
+        }
     }
 }
 
@@ -78,11 +81,19 @@ impl From<HollowCircle> for CpuMesh {
             let angle = 2.0 * std::f32::consts::PI * j as f32 / angle_subdivisions as f32;
 
             // inner
-            positions.push(Vec3::new(angle.cos() * inner_radius, angle.sin() * inner_radius, 0.0));
+            positions.push(Vec3::new(
+                angle.cos() * inner_radius,
+                angle.sin() * inner_radius,
+                0.0,
+            ));
             normals.push(Vec3::Z);
 
             // outer
-            positions.push(Vec3::new(angle.cos() * outer_radius, angle.sin() * outer_radius, 0.0));
+            positions.push(Vec3::new(
+                angle.cos() * outer_radius,
+                angle.sin() * outer_radius,
+                0.0,
+            ));
             normals.push(Vec3::Z);
         }
 

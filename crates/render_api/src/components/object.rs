@@ -31,7 +31,10 @@ impl RenderObjectBundle {
         outline_only: bool,
     ) -> Self {
         if outline_only {
-            let mesh = meshes.add(shapes::HollowCircle::new(subdivisions, (radius * 1000.0) as u32));
+            let mesh = meshes.add(shapes::HollowCircle::new(
+                subdivisions,
+                (radius * 1000.0) as u32,
+            ));
             Self {
                 mesh,
                 material: materials.add(color),
@@ -72,7 +75,10 @@ impl RenderObjectBundle {
         outline_only: bool,
     ) -> Self {
         if outline_only {
-            let mesh = meshes.add(shapes::HollowRectangle::new((width * 1000.0) as u32, (height * 1000.0) as u32));
+            let mesh = meshes.add(shapes::HollowRectangle::new(
+                (width * 1000.0) as u32,
+                (height * 1000.0) as u32,
+            ));
             Self {
                 mesh,
                 material: materials.add(color),
@@ -84,7 +90,8 @@ impl RenderObjectBundle {
             Self {
                 mesh,
                 material: materials.add(color),
-                transform: Transform::from_xy(x, y).with_scale(Vec2::new(width, height).extend(0.0)),
+                transform: Transform::from_xy(x, y)
+                    .with_scale(Vec2::new(width, height).extend(0.0)),
                 ..Default::default()
             }
         }

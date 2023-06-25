@@ -18,4 +18,3 @@ mod input_utils;
 mod plugin;
 pub mod systems;
 mod user_textures;
-

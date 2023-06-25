@@ -2,7 +2,7 @@ use bevy_ecs::world::World;
 
 use render_egui::{egui, egui::Frame};
 
-use crate::app::ui::{widgets::{ChangelistUiWidget, FileTreeUiWidget}};
+use crate::app::ui::widgets::{ChangelistUiWidget, FileTreeUiWidget};
 
 pub fn left_panel(context: &egui::Context, world: &mut World) {
     egui::SidePanel::left("left_panel")
@@ -47,4 +47,3 @@ pub fn left_panel(context: &egui::Context, world: &mut World) {
                 });
         });
 }
-

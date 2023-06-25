@@ -157,9 +157,7 @@ impl CpuMesh {
         }
 
         if self.normals.is_some() {
-            let normal_transform = transform
-                .inverse()
-                .transpose();
+            let normal_transform = transform.inverse().transpose();
 
             if let Some(ref mut normals) = self.normals {
                 for n in normals.iter_mut() {

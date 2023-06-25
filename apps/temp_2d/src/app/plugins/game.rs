@@ -39,28 +39,32 @@ fn setup(
 ) {
     // circle
 
-    let solid_circle = commands.spawn(RenderObjectBundle::circle(
-        &mut meshes,
-        &mut materials,
-        480.0,
-        240.0,
-        4.0,
-        12,
-        Color::GREEN,
-        false,
-    )).id();
+    let solid_circle = commands
+        .spawn(RenderObjectBundle::circle(
+            &mut meshes,
+            &mut materials,
+            480.0,
+            240.0,
+            4.0,
+            12,
+            Color::GREEN,
+            false,
+        ))
+        .id();
     global.solid_circle = Some(solid_circle);
 
-    let hollow_circle = commands.spawn(RenderObjectBundle::circle(
-        &mut meshes,
-        &mut materials,
-        480.0,
-        240.0,
-        7.5,
-        12,
-        Color::GREEN,
-        true,
-    )).id();
+    let hollow_circle = commands
+        .spawn(RenderObjectBundle::circle(
+            &mut meshes,
+            &mut materials,
+            480.0,
+            240.0,
+            7.5,
+            12,
+            Color::GREEN,
+            true,
+        ))
+        .id();
     global.hollow_circle = Some(hollow_circle);
 
     // light
@@ -73,11 +77,7 @@ fn setup(
     commands.spawn(CameraBundle::new_2d(&window.viewport()));
 }
 
-fn step(
-    global: Res<Global>,
-    mut query: Query<&mut Transform>,
-    input: Res<Input>,
-) {
+fn step(global: Res<Global>, mut query: Query<&mut Transform>, input: Res<Input>) {
     let mouse_coords = input.mouse();
     if input.is_pressed(MouseButton::Left) {
         if let Some(hollow_circle_id) = global.hollow_circle {

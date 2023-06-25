@@ -13,8 +13,8 @@ use crate::{
     asset_mapping::AssetMapping,
     core::{GpuDepthTexture2D, GpuTexture2D, RenderTarget},
     renderer::{
-        AmbientLightImpl, DirectionalLightImpl, GpuMesh, Material, RenderLight,
-        RenderPass, RenderTargetExt,
+        AmbientLightImpl, DirectionalLightImpl, GpuMesh, Material, RenderLight, RenderPass,
+        RenderTargetExt,
     },
     window::FrameInput,
 };

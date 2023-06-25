@@ -301,7 +301,9 @@ impl GUI {
     }
 
     pub fn replace_texture(&mut self, id: egui::TextureId, texture: glow::Texture) {
-        self.painter.borrow_mut().replace_native_texture(id, texture);
+        self.painter
+            .borrow_mut()
+            .replace_native_texture(id, texture);
     }
 
     fn handle_egui_output(

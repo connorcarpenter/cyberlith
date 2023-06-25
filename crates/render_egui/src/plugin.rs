@@ -18,19 +18,19 @@ impl Plugin for EguiPlugin {
             .configure_set(
                 EguiSet::PreUpdate
                     .after(CoreSet::First)
-                    .before(CoreSet::FirstFlush))
+                    .before(CoreSet::FirstFlush),
+            )
             .configure_set(
                 EguiSet::PostUpdate
                     .after(CoreSet::PostUpdate)
-                    .before(CoreSet::PostUpdateFlush))
+                    .before(CoreSet::PostUpdateFlush),
+            )
             .configure_set(
                 EguiSet::Sync
                     .after(RenderSet::Sync)
                     .before(RenderSet::SyncFlush),
             )
-            .configure_set(
-                EguiSet::Draw
-                    .after(RenderSet::Draw))
+            .configure_set(EguiSet::Draw.after(RenderSet::Draw))
             // Systems
             .add_startup_system(systems::startup)
             .add_system(systems::pre_update.in_base_set(EguiSet::PreUpdate))
