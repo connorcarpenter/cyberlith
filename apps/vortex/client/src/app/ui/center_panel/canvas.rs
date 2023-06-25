@@ -1,8 +1,7 @@
 use bevy_ecs::{
-    system::{Query, Res, ResMut, SystemState},
+    system::{Commands, Query, Res, ResMut, SystemState},
     world::World,
 };
-use bevy_ecs::system::Commands;
 use bevy_log::info;
 
 use input::{Input, Key};

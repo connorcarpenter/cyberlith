@@ -46,7 +46,6 @@ impl Plugin for GamePlugin {
             //         network::reject_events,
             //         network::error_events,
             //     )
-            //         .chain()
             //         .in_set(ReceiveEvents),
             // )
             .add_system(step)

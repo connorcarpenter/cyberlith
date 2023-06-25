@@ -35,6 +35,13 @@ impl FileExtension {
             _ => FileExtension::Unknown,
         }
     }
+
+    pub(crate) fn can_io(&self) -> bool {
+        match self {
+            FileExtension::Skel => true,
+            _ => false,
+        }
+    }
 }
 
 impl FileReader for FileExtension {

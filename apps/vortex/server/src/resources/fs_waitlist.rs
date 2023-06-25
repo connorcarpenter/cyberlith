@@ -1,13 +1,12 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{entity::Entity, system::Commands};
+use bevy_ecs::{entity::Entity, system::{Commands, Query}};
 use bevy_log::info;
-
 use naia_bevy_server::{Server, UserKey};
 
 use vortex_proto::{components::EntryKind, resources::FileEntryKey};
 
-use crate::resources::{GitManager, UserManager};
+use crate::resources::{GitManager, TabManager, UserManager};
 
 pub enum FSWaitlistInsert {
     Entry(EntryKind, String),
@@ -52,9 +51,11 @@ pub fn fs_process_insert(
     insert: FSWaitlistInsert,
     user_manager: &UserManager,
     git_manager: &mut GitManager,
+    tab_manager: &mut TabManager,
     fs_waiting_entities: &mut HashMap<Entity, FSWaitlist>,
     user_key: &UserKey,
     entity: &Entity,
+    key_query: &Query<&FileEntryKey>,
 ) {
     if !fs_waiting_entities.contains_key(&entity) {
         fs_waiting_entities.insert(*entity, FSWaitlist::new());
@@ -82,6 +83,10 @@ pub fn fs_process_insert(
             entity,
             insert,
         );
+
+        if let Some(tab_id) = tab_manager.remove_waiting_open(user_key, entity) {
+            tab_manager.open_tab(commands, server, user_manager, git_manager, key_query, user_key, &tab_id, entity);
+        }
     }
 }
 
@@ -91,23 +96,25 @@ fn fs_process_insert_complete(
     user_manager: &UserManager,
     git_manager: &mut GitManager,
     user_key: &UserKey,
-    entity: &Entity,
+    file_entity: &Entity,
     entry: FSWaitlist,
 ) {
     let Some(user) = user_manager.user_info(user_key) else {
         panic!("user not found!");
     };
     let (name, kind, parent) = entry.decompose();
+    info!("creating file: {}", name);
+    let key = FileEntryKey::new_with_parent(parent.clone(), &name, kind);
     git_manager.workspace_mut(user.get_username()).create_file(
         commands,
         server,
         &name,
-        kind,
-        *entity,
-        parent.clone(),
+        *file_entity,
+        parent,
+        &key,
     );
 
     commands
-        .entity(*entity)
-        .insert(FileEntryKey::new_with_parent(parent, &name, kind));
+        .entity(*file_entity)
+        .insert(key);
 }

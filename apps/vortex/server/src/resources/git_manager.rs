@@ -7,6 +7,7 @@ use std::{
 use bevy_ecs::{
     entity::Entity,
     system::{Commands, Query, Resource},
+    world::World,
 };
 use bevy_log::info;
 use git2::{Cred, Repository, Tree};
@@ -23,6 +24,7 @@ use crate::{
     files::FileExtension,
     resources::{FileEntryValue, user_manager::UserInfo, workspace::Workspace},
 };
+use crate::files::FileWriter;
 
 #[derive(Resource)]
 pub struct GitManager {
@@ -237,17 +239,29 @@ impl GitManager {
         &mut self,
         commands: &mut Commands,
         server: &Server,
-        key_query: &Query<&FileEntryKey>,
+        file_entry_key: &FileEntryKey,
         username: &str,
-        file_entity: &Entity,
     ) -> Vec<Entity> {
         let workspace = self.workspaces.get(username).unwrap();
-
-        let file_entry_key = key_query.get(*file_entity).unwrap();
         workspace.load_content_entities(commands, server, file_entry_key)
     }
 
-    pub(crate) fn working_file_extension(
+    pub(crate) fn can_read(&self, username: &str, key: &FileEntryKey) -> bool {
+        let ext = self.working_file_extension(username, key);
+        return ext.can_io();
+    }
+
+    pub(crate) fn can_write(&self, username: &str, key: &FileEntryKey) -> bool {
+        let ext = self.working_file_extension(username, key);
+        return ext.can_io();
+    }
+
+    pub(crate) fn write(&self, username: &str, key: &FileEntryKey, world: &mut World, content_entities: &Vec<Entity>) -> Box<[u8]> {
+        let ext = self.working_file_extension(username, key);
+        return ext.write(world, content_entities);
+    }
+
+    fn working_file_extension(
         &self,
         username: &str,
         key: &FileEntryKey,

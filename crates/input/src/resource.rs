@@ -1,7 +1,6 @@
 use std::collections::HashSet;
 
 use bevy_ecs::prelude::Resource;
-use bevy_log::info;
 
 use math::Vec2;
 

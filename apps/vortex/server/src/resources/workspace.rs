@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs, path::Path, sync::Mutex};
+use std::{collections::HashMap, fs, fs::File, io::Read, path::Path, sync::Mutex};
 
 use bevy_ecs::{
     entity::Entity,
@@ -9,7 +9,7 @@ use git2::{Repository, Signature};
 use naia_bevy_server::{CommandsExt, RoomKey, Server};
 
 use vortex_proto::{
-    components::{ChangelistEntry, ChangelistStatus, EntryKind},
+    components::{ChangelistEntry, ChangelistStatus},
     resources::FileEntryKey,
 };
 
@@ -55,11 +55,10 @@ impl Workspace {
         commands: &mut Commands,
         server: &mut Server,
         name: &str,
-        kind: EntryKind,
         entity: Entity,
         parent: Option<FileEntryKey>,
+        file_entry_key: &FileEntryKey,
     ) {
-        let file_entry_key = FileEntryKey::new_with_parent(parent.clone(), name, kind);
         let file_extension = FileExtension::from_file_name(name);
         let file_entry_val = FileEntryValue::new(entity, parent, None, Some(file_extension));
 
@@ -96,6 +95,9 @@ impl Workspace {
             let changelist_entry = self.changelist_entries.remove(&file_entry_key).unwrap();
             commands.entity(changelist_entry.entity()).despawn();
         }
+
+        // actually create the file locally
+        self.git_create_file(file_entry_key);
     }
 
     pub fn delete_file(&mut self, commands: &mut Commands, server: &mut Server, entity: &Entity) {
@@ -115,6 +117,8 @@ impl Workspace {
 
             self.update_changelist_after_despawn(commands, server, &child_key);
         }
+
+        // TODO: delete file from repo!
     }
 
     pub fn commit_entire_changelist(
@@ -166,7 +170,6 @@ impl Workspace {
                 commands.entity(file_entity).take_authority(server);
 
                 // sync to git repo!
-                self.git_create_file(file_entry_key);
                 self.git_commit(username, email, commit_message);
                 self.git_push();
             }
@@ -250,22 +253,15 @@ impl Workspace {
         return None;
     }
 
-    pub fn git_create_file(&mut self, key: FileEntryKey) {
+    pub fn git_create_file(&mut self, key: &FileEntryKey) {
         let repo = self.repo.lock().unwrap();
 
         let file_path = format!("{}{}", key.path(), key.name());
         let full_path = format!("{}/{}", self.internal_path, file_path);
         info!("git creating file at: `{}`", full_path);
 
-        let file_content = self
-            .changelist_entries
-            .get(&key)
-            .unwrap()
-            .get_content()
-            .unwrap();
-
         // Create the file with the desired content
-        fs::write(&full_path, file_content).expect("Failed to create file");
+        fs::write(&full_path, &[]).expect("Failed to create file");
 
         // Add the file to the repository
         let mut index = repo.index().expect("Failed to open index");
@@ -426,8 +422,8 @@ impl Workspace {
         // get file extension of file
         let file_extension = self.working_file_extension(key);
 
-        // get contents of file from git
-        let bytes = self.get_blob(key);
+        // get contents of file from file system
+        let bytes = self.get_file_contents(key);
 
         // FileReader reads File's contents and spawns all Entities + Components
         let content_entities: Vec<Entity> = file_extension.read(commands, server, &bytes);
@@ -435,16 +431,21 @@ impl Workspace {
         content_entities
     }
 
-    fn get_blob(&self, key: &FileEntryKey) -> Box<[u8]> {
-        let repo_ref = self.repo.lock().unwrap();
-        let head = repo_ref.head().unwrap();
-        let tree = head.peel_to_tree().unwrap();
-        let Ok(file) = tree.get_path(Path::new(key.path())) else {
-            panic!("Failed to get file from tree, path: {}", key.path());
+    fn get_file_contents(&self, key: &FileEntryKey) -> Box<[u8]> {
+        let file_path = format!("{}{}", key.path(), key.name());
+        let full_path = format!("{}/{}", self.internal_path, file_path);
+        info!("Getting blob for file: {}", full_path);
+        let path = Path::new(full_path.as_str());
+        let mut file = match File::open(path) {
+            Ok(file) => file,
+            Err(err) => panic!("Failed to open file: {}", err),
         };
-        let object = file.to_object(&repo_ref).unwrap();
-        let blob = object.as_blob().unwrap();
-        blob.content().into()
+
+        let mut contents = Vec::new();
+        match file.read_to_end(&mut contents) {
+            Ok(_) => Box::from(contents),
+            Err(err) => panic!("Failed to read file: {}", err),
+        }
     }
 
     pub(crate) fn working_file_extension(&self, key: &FileEntryKey) -> FileExtension {

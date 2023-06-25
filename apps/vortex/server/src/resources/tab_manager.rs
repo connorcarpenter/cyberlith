@@ -5,15 +5,12 @@ use bevy_ecs::{
     system::{Commands, Query, ResMut, Resource, SystemState},
     world::{Mut, World},
 };
-use bevy_log::info;
+use bevy_log::{info, warn};
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 
 use vortex_proto::{resources::FileEntryKey, types::TabId};
 
-use crate::{
-    files::FileWriter,
-    resources::{GitManager, UserManager},
-};
+use crate::resources::{GitManager, UserManager};
 
 struct TabState {
     room_key: RoomKey,
@@ -57,6 +54,7 @@ impl Default for UserTabState {
 pub struct TabManager {
     users: HashMap<UserKey, UserTabState>,
     queued_closes: VecDeque<(UserKey, TabId)>,
+    waiting_opens: HashMap<(UserKey, Entity), TabId>
 }
 
 impl Default for TabManager {
@@ -64,6 +62,7 @@ impl Default for TabManager {
         Self {
             users: HashMap::new(),
             queued_closes: VecDeque::new(),
+            waiting_opens: HashMap::new(),
         }
     }
 }
@@ -80,6 +79,20 @@ impl TabManager {
         tab_id: &TabId,
         file_entity: &Entity,
     ) {
+        let Ok(file_entry_key) = key_query.get(*file_entity) else {
+            self.waiting_opens.insert((*user_key, *file_entity), *tab_id);
+            return;
+        };
+
+        // load from file all Entities in the file of the current tab
+        let username = user_manager.user_name(user_key).unwrap();
+
+        if !git_manager.can_read(username, &file_entry_key) {
+            warn!("can't read file: `{:?}`", file_entry_key.name());
+            return;
+        }
+
+        // initialize user tab state if necessary
         if !self.users.contains_key(user_key) {
             self.users.insert(user_key.clone(), UserTabState::default());
         }
@@ -89,10 +102,8 @@ impl TabManager {
         // create new Room for entities which are in the new tab
         let new_room_key = server.make_room().key();
 
-        // load from file all Entities in the file of the current tab
-        let username = user_manager.user_name(user_key).unwrap();
         let content_entities =
-            git_manager.load_content_entities(commands, server, key_query, username, file_entity);
+            git_manager.load_content_entities(commands, server, &file_entry_key, username);
 
         for entity in content_entities.iter() {
             // associate all new Entities with the new Room
@@ -110,11 +121,16 @@ impl TabManager {
         user_state.tabs.insert(tab_id.clone(), tab_state);
     }
 
+    pub fn remove_waiting_open(&mut self, user_key: &UserKey, file_entity: &Entity) -> Option<TabId> {
+        self.waiting_opens.remove(&(*user_key, *file_entity))
+    }
+
     pub fn queue_close_tab(&mut self, user_key: UserKey, tab_id: TabId) {
         self.queued_closes.push_back((user_key, tab_id));
     }
 
     pub fn process_queued_actions(world: &mut World) {
+        // closed tabs
         let closed_states = {
             let mut system_state: SystemState<(Server, ResMut<TabManager>)> =
                 SystemState::new(world);
@@ -143,9 +159,10 @@ impl TabManager {
                         .get::<FileEntryKey>()
                         .unwrap()
                         .clone();
-                    let file_writer =
-                        git_manager.working_file_extension(&username, &file_entry_key);
-                    let bytes = file_writer.write(world, &closed_state.content_entities);
+                    if !git_manager.can_write(&username, &file_entry_key) {
+                        panic!("can't write file: `{:?}`", file_entry_key.name());
+                    }
+                    let bytes = git_manager.write(&username, &file_entry_key, world, &closed_state.content_entities);
                     output.push((username, file_entry_key, bytes));
                 }
 
@@ -217,7 +234,8 @@ impl TabManager {
         tab_id: &TabId,
     ) {
         let Some(user_state) = self.users.get_mut(user_key) else {
-            panic!("User does not exist!");
+            warn!("select_tab(): user_tab_state has not been initialized!");
+            return;
         };
         if !user_state.tabs.contains_key(tab_id) {
             panic!("User does not have tab {}", tab_id);

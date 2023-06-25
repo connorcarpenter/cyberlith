@@ -5,7 +5,6 @@ use bevy_ecs::{
     prelude::{Commands, World},
     system::{Query, SystemState},
 };
-use bevy_log::info;
 use naia_bevy_server::{BitReader, BitWriter, Serde, SerdeErr, Server, UnsignedVariableInteger};
 
 use vortex_proto::components::{HasParent, NoParent, Vertex3d, VertexSerdeInt};
@@ -110,6 +109,13 @@ pub struct SkelReader;
 impl SkelReader {
     fn read_to_actions(bit_reader: &mut BitReader) -> Result<Vec<SkelAction>, SerdeErr> {
         let mut output = Vec::new();
+
+        // handle empty file
+        if bit_reader.bytes_len() == 0 {
+            return Ok(output);
+        }
+
+        // read loop
         loop {
             let continue_bool = bit_reader.read_bit()?;
             if !continue_bool {

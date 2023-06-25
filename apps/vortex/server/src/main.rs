@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use bevy_app::{App, ScheduleRunnerPlugin, ScheduleRunnerSettings};
 use bevy_ecs::{
+    prelude::apply_system_buffers,
     schedule::IntoSystemConfigs,
     system::{Res, ResMut},
 };
@@ -61,10 +62,15 @@ fn main() {
                 network::insert_component_events,
                 network::remove_component_events,
                 network::update_component_events,
-                network::message_events,
             )
-                .chain()
                 .in_set(ReceiveEvents),
+        )
+        .add_systems(
+            (
+                network::insert_component_events,
+                apply_system_buffers,
+                network::message_events,
+            ).chain().in_set(ReceiveEvents),
         )
         // Other Systems
         .add_startup_system(setup)

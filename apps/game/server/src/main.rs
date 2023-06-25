@@ -3,16 +3,14 @@ use std::time::Duration;
 use bevy_app::{App, ScheduleRunnerPlugin, ScheduleRunnerSettings};
 use bevy_ecs::schedule::IntoSystemConfigs;
 use bevy_log::{info, LogPlugin};
-
 use naia_bevy_server::{Plugin as ServerPlugin, ReceiveEvents, ServerConfig};
 
 use game_proto::protocol;
+use systems::network;
 
 mod components;
 mod resources;
 mod systems;
-
-use systems::network;
 
 fn main() {
     info!("Naia Bevy Server Demo starting up");
@@ -37,7 +35,6 @@ fn main() {
                 network::disconnect_events,
                 network::error_events,
             )
-                .chain()
                 .in_set(ReceiveEvents),
         )
         // Run App

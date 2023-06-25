@@ -19,10 +19,7 @@ use vortex_proto::{
     resources::FileEntryKey,
 };
 
-use crate::resources::{
-    fs_waitlist::{fs_process_insert, FSWaitlist, FSWaitlistInsert},
-    GitManager, UserManager,
-};
+use crate::resources::{fs_waitlist::{fs_process_insert, FSWaitlist, FSWaitlistInsert}, GitManager, TabManager, UserManager};
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
     for SpawnEntityEvent(_user_key, _entity) in event_reader.iter() {
@@ -56,6 +53,7 @@ pub fn insert_component_events(
     mut server: Server,
     user_manager: Res<UserManager>,
     mut git_manager: ResMut<GitManager>,
+    mut tab_manager: ResMut<TabManager>,
     mut fs_waiting_entities: Local<HashMap<Entity, FSWaitlist>>,
     mut event_reader: EventReader<InsertComponentEvents>,
     fs_entry_query: Query<&FileSystemEntry>,
@@ -73,9 +71,11 @@ pub fn insert_component_events(
                 FSWaitlistInsert::Entry(*entry.kind, (*entry.name).clone()),
                 &user_manager,
                 &mut git_manager,
+                &mut tab_manager,
                 &mut fs_waiting_entities,
                 &user_key,
                 &entity,
+                &entry_key_query,
             );
         }
 
@@ -88,9 +88,11 @@ pub fn insert_component_events(
                 FSWaitlistInsert::Parent(None),
                 &user_manager,
                 &mut git_manager,
+                &mut tab_manager,
                 &mut fs_waiting_entities,
                 &user_key,
                 &entity,
+                &entry_key_query,
             );
         }
 
@@ -106,9 +108,11 @@ pub fn insert_component_events(
                 FSWaitlistInsert::Parent(Some(parent_key.clone())),
                 &user_manager,
                 &mut git_manager,
+                &mut tab_manager,
                 &mut fs_waiting_entities,
                 &user_key,
                 &entity,
+                &entry_key_query,
             );
         }
     }
