@@ -247,7 +247,8 @@ impl TabManager {
             return;
         };
         if !user_state.tabs.contains_key(tab_id) {
-            panic!("User does not have tab {}", tab_id);
+            warn!("User does not have tab {}", tab_id);
+            return;
         }
 
         info!("Select Tab!");

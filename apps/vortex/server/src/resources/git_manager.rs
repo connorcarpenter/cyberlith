@@ -13,18 +13,14 @@ use bevy_log::info;
 use git2::{Cred, Repository, Tree};
 use naia_bevy_server::{CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};
 
-use vortex_proto::{
-    components::{ChangelistEntry, EntryKind, FileSystemEntry, HasParent, NoParent},
-    resources::FileEntryKey,
-};
+use vortex_proto::{components::{ChangelistEntry, EntryKind, FileSystemEntry, HasParent, NoParent}, FileExtension, resources::FileEntryKey};
 
 use crate::{
     components::FileSystemOwner,
     config::GitConfig,
-    files::FileExtension,
-    resources::{FileEntryValue, user_manager::UserInfo, workspace::Workspace},
+    files::FileWriter,
+    resources::{FileEntryValue, user_manager::UserInfo, workspace::Workspace}
 };
-use crate::files::FileWriter;
 
 #[derive(Resource)]
 pub struct GitManager {

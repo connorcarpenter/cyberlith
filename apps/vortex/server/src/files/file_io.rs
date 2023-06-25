@@ -1,6 +1,8 @@
 use bevy_ecs::{entity::Entity, system::Commands, world::World};
 use naia_bevy_server::Server;
 
+use vortex_proto::FileExtension;
+
 use crate::files::{SkelReader, SkelWriter};
 
 pub trait FileWriter: Send + Sync {
@@ -9,39 +11,6 @@ pub trait FileWriter: Send + Sync {
 
 pub trait FileReader: Send + Sync {
     fn read(&self, commands: &mut Commands, server: &Server, bytes: &Box<[u8]>) -> Vec<Entity>;
-}
-
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub enum FileExtension {
-    Unknown,
-    Skel,
-    Mesh,
-    Skin,
-    Mask,
-}
-
-impl FileExtension {
-    pub(crate) fn from_file_name(file_name: &str) -> Self {
-        // split file name by '.'
-        let split: Vec<_> = file_name.split('.').collect();
-        let ext: &str = split.last().unwrap();
-
-        // match file extension to enum
-        match ext {
-            "skel" => FileExtension::Skel,
-            "mesh" => FileExtension::Mesh,
-            "skin" => FileExtension::Skin,
-            "mask" => FileExtension::Mask,
-            _ => FileExtension::Unknown,
-        }
-    }
-
-    pub(crate) fn can_io(&self) -> bool {
-        match self {
-            FileExtension::Skel => true,
-            _ => false,
-        }
-    }
 }
 
 impl FileReader for FileExtension {

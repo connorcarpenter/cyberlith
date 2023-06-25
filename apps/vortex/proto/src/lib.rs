@@ -1,3 +1,4 @@
+pub use file_extension::*;
 pub use protocol::protocol;
 
 pub mod channels;
@@ -7,3 +8,5 @@ pub mod resources;
 pub mod types;
 
 mod protocol;
+mod file_extension;
+

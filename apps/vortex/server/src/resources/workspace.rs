@@ -8,13 +8,10 @@ use bevy_log::info;
 use git2::{Repository, Signature};
 use naia_bevy_server::{CommandsExt, RoomKey, Server};
 
-use vortex_proto::{
-    components::{ChangelistEntry, ChangelistStatus},
-    resources::FileEntryKey,
-};
+use vortex_proto::{components::{ChangelistEntry, ChangelistStatus}, FileExtension, resources::FileEntryKey};
 
 use crate::{
-    files::{FileExtension, FileReader},
+    files::FileReader,
     resources::{ChangelistValue, FileEntryValue, GitManager},
 };
 

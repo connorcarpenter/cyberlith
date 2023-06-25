@@ -14,7 +14,7 @@ use render_egui::{
         vec2, WidgetText,
     },
 };
-use vortex_proto::components::{ChangelistStatus, EntryKind, FileSystemEntry, HasParent, NoParent};
+use vortex_proto::{components::{ChangelistStatus, EntryKind, FileSystemEntry, HasParent, NoParent}, FileExtension};
 
 use crate::app::{
     components::file_system::{
@@ -51,6 +51,7 @@ impl FileTreeRowUiWidget {
         } else {
             Self::paint_no_icon
         };
+        let file_extension = FileExtension::from_file_name(name);
         let separator = if path.len() > 0 { ":" } else { "" };
         let full_path = format!("{}{}{}", path, separator, name);
         let unicode_icon = if is_dir { "📁" } else { "📃" };
@@ -160,6 +161,7 @@ impl FileTreeRowUiWidget {
         Self::handle_modal_responses(world, row_entity);
         Self::handle_interactions(
             is_dir,
+            file_extension,
             depth,
             world,
             row_entity,
@@ -200,6 +202,7 @@ impl FileTreeRowUiWidget {
 
     pub fn handle_interactions(
         is_dir: bool,
+        file_extension: FileExtension,
         depth: usize,
         world: &mut World,
         row_entity: &Entity,
@@ -346,7 +349,7 @@ impl FileTreeRowUiWidget {
 
         // Double-click
         if double_clicked {
-            Self::on_row_double_click(world, row_entity);
+            Self::on_row_double_click(world, file_extension, row_entity);
             return;
         }
     }
@@ -368,14 +371,16 @@ impl FileTreeRowUiWidget {
         }
     }
 
-    pub fn on_row_double_click(world: &mut World, row_entity: &Entity) {
+    pub fn on_row_double_click(world: &mut World, file_ext: FileExtension, row_entity: &Entity) {
         // select the row
         Self::on_row_click(world, row_entity);
 
         // add to tabs
-        let mut system_state: SystemState<(Client, ResMut<TabManager>)> = SystemState::new(world);
-        let (mut client, mut tab_manager) = system_state.get_mut(world);
-        tab_manager.open_tab(&mut client, row_entity);
+        if file_ext.can_io() {
+            let mut system_state: SystemState<(Client, ResMut<TabManager>)> = SystemState::new(world);
+            let (mut client, mut tab_manager) = system_state.get_mut(world);
+            tab_manager.open_tab(&mut client, row_entity);
+        }
     }
 
     pub fn on_expander_click(world: &mut World, row_entity: &Entity) {
