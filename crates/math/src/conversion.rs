@@ -67,8 +67,5 @@ pub fn convert_2d_to_3d(
     let world_space_vec4 = inv_view_matrix * clip_space_vec4;
 
     // Return the resulting 3D world coordinate
-    Vec3::new(
-        world_space_vec4.x,
-        world_space_vec4.y,
-        world_space_vec4.z)
+    Vec3::new(world_space_vec4.x, world_space_vec4.y, world_space_vec4.z)
 }

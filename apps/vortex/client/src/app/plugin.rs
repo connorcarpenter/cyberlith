@@ -120,7 +120,8 @@ fn setup(
 
     // Canvas Texture
     let texture_size = Vec2::new(1130.0, 672.0);
-    let canvas_texture_handle = new_render_texture(&texture_size, &mut textures, &mut user_textures);
+    let canvas_texture_handle =
+        new_render_texture(&texture_size, &mut textures, &mut user_textures);
     commands.insert_resource(CanvasTexture(canvas_texture_handle.clone()));
 
     setup_3d_scene(
@@ -157,8 +158,10 @@ fn setup_2d_scene(
         .insert(global.layer_2d);
 
     // camera
-    let mut camera_bundle =
-        CameraBundle::new_2d(&Viewport::new_at_origin(texture_size.x as u32, texture_size.y as u32));
+    let mut camera_bundle = CameraBundle::new_2d(&Viewport::new_at_origin(
+        texture_size.x as u32,
+        texture_size.y as u32,
+    ));
     camera_bundle.camera.target = RenderTarget::Image(canvas_texture_handle);
     camera_bundle.camera.is_active = false;
     camera_bundle.camera.order = 1;
@@ -205,7 +208,10 @@ fn setup_3d_scene(
     let camera_entity = commands
         .spawn(CameraBundle {
             camera: Camera {
-                viewport: Some(Viewport::new_at_origin(texture_size.x as u32, texture_size.y as u32)),
+                viewport: Some(Viewport::new_at_origin(
+                    texture_size.x as u32,
+                    texture_size.y as u32,
+                )),
                 order: 0,
                 clear_operation: ClearOperation::from_rgba(0.0, 0.0, 0.0, 1.0),
                 target: RenderTarget::Image(canvas_texture_handle),
@@ -334,7 +340,10 @@ fn step(
         camera_query.get(global.camera_3d.unwrap()).unwrap();
 
     let camera_2d_viewport = camera_2d.viewport.unwrap();
-    let camera_2d_viewport_size = Vec2::new(camera_2d_viewport.width as f32, camera_2d_viewport.height as f32);
+    let camera_2d_viewport_size = Vec2::new(
+        camera_2d_viewport.width as f32,
+        camera_2d_viewport.height as f32,
+    );
     let camera_3d_viewport = camera_3d.viewport.unwrap();
     let camera_3d_proj_matrix = camera_3d_proj.projection_matrix(&camera_3d_viewport);
     let camera_3d_view_matrix = camera_3d_transform.view_matrix();

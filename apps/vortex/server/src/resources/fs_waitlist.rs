@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{entity::Entity, system::{Commands, Query}};
+use bevy_ecs::{
+    entity::Entity,
+    system::{Commands, Query},
+};
 use bevy_log::info;
 use naia_bevy_server::{Server, UserKey};
 
@@ -85,7 +88,16 @@ pub fn fs_process_insert(
         );
 
         if let Some(tab_id) = tab_manager.remove_waiting_open(user_key, entity) {
-            tab_manager.open_tab(commands, server, user_manager, git_manager, key_query, user_key, &tab_id, entity);
+            tab_manager.open_tab(
+                commands,
+                server,
+                user_manager,
+                git_manager,
+                key_query,
+                user_key,
+                &tab_id,
+                entity,
+            );
         }
     }
 }
@@ -114,7 +126,5 @@ fn fs_process_insert_complete(
         &key,
     );
 
-    commands
-        .entity(*file_entity)
-        .insert(key);
+    commands.entity(*file_entity).insert(key);
 }

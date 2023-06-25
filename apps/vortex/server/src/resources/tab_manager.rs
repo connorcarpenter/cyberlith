@@ -54,7 +54,7 @@ impl Default for UserTabState {
 pub struct TabManager {
     users: HashMap<UserKey, UserTabState>,
     queued_closes: VecDeque<(UserKey, TabId)>,
-    waiting_opens: HashMap<(UserKey, Entity), TabId>
+    waiting_opens: HashMap<(UserKey, Entity), TabId>,
 }
 
 impl Default for TabManager {
@@ -121,7 +121,11 @@ impl TabManager {
         user_state.tabs.insert(tab_id.clone(), tab_state);
     }
 
-    pub fn remove_waiting_open(&mut self, user_key: &UserKey, file_entity: &Entity) -> Option<TabId> {
+    pub fn remove_waiting_open(
+        &mut self,
+        user_key: &UserKey,
+        file_entity: &Entity,
+    ) -> Option<TabId> {
         self.waiting_opens.remove(&(*user_key, *file_entity))
     }
 
@@ -162,7 +166,12 @@ impl TabManager {
                     if !git_manager.can_write(&username, &file_entry_key) {
                         panic!("can't write file: `{:?}`", file_entry_key.name());
                     }
-                    let bytes = git_manager.write(&username, &file_entry_key, world, &closed_state.content_entities);
+                    let bytes = git_manager.write(
+                        &username,
+                        &file_entry_key,
+                        world,
+                        &closed_state.content_entities,
+                    );
                     output.push((username, file_entry_key, bytes));
                 }
 

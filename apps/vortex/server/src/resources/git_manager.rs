@@ -256,16 +256,18 @@ impl GitManager {
         return ext.can_io();
     }
 
-    pub(crate) fn write(&self, username: &str, key: &FileEntryKey, world: &mut World, content_entities: &Vec<Entity>) -> Box<[u8]> {
+    pub(crate) fn write(
+        &self,
+        username: &str,
+        key: &FileEntryKey,
+        world: &mut World,
+        content_entities: &Vec<Entity>,
+    ) -> Box<[u8]> {
         let ext = self.working_file_extension(username, key);
         return ext.write(world, content_entities);
     }
 
-    fn working_file_extension(
-        &self,
-        username: &str,
-        key: &FileEntryKey,
-    ) -> FileExtension {
+    fn working_file_extension(&self, username: &str, key: &FileEntryKey) -> FileExtension {
         self.workspaces
             .get(username)
             .unwrap()

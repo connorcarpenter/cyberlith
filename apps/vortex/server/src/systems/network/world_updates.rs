@@ -19,7 +19,10 @@ use vortex_proto::{
     resources::FileEntryKey,
 };
 
-use crate::resources::{fs_waitlist::{fs_process_insert, FSWaitlist, FSWaitlistInsert}, GitManager, TabManager, UserManager};
+use crate::resources::{
+    fs_waitlist::{fs_process_insert, FSWaitlist, FSWaitlistInsert},
+    GitManager, TabManager, UserManager,
+};
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
     for SpawnEntityEvent(_user_key, _entity) in event_reader.iter() {

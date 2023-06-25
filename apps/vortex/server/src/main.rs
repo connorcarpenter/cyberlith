@@ -70,7 +70,9 @@ fn main() {
                 network::insert_component_events,
                 apply_system_buffers,
                 network::message_events,
-            ).chain().in_set(ReceiveEvents),
+            )
+                .chain()
+                .in_set(ReceiveEvents),
         )
         // Other Systems
         .add_startup_system(setup)
