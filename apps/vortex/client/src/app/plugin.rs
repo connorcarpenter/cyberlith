@@ -9,8 +9,7 @@ use bevy_ecs::query::Without;
 use bevy_log::info;
 use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin, ReceiveEvents};
 
-use input::{Input, MouseButton};
-use math::{Mat4, Vec2, Vec3, Vec4};
+use math::{Mat4, Vec3};
 use render_api::{
     Assets,
     base::{Color, CpuMaterial, CpuMesh, CpuTexture2D},
@@ -97,14 +96,6 @@ impl Plugin for VortexPlugin {
     }
 }
 
-#[derive(Component)]
-struct Vertex2d {
-    depth: f32,
-}
-
-#[derive(Component)]
-struct Vertex3d;
-
 // Marks the preview pass cube.
 #[derive(Component)]
 struct SkeletonCube;
@@ -129,14 +120,12 @@ fn setup(
     commands.insert_resource(CanvasTexture(canvas_texture_handle.clone()));
 
     setup_3d_scene(&mut commands, &mut global, &mut meshes, &mut materials, texture_size, canvas_texture_handle);
-    setup_2d_scene(&mut commands, &mut global, &mut meshes, &mut materials, texture_size, canvas_texture_handle);
+    setup_2d_scene(&mut commands, &mut global, texture_size, canvas_texture_handle);
 }
 
 fn setup_2d_scene(
     commands: &mut Commands,
     global: &mut Global,
-    meshes: &mut Assets<CpuMesh>,
-    materials: &mut Assets<CpuMaterial>,
     texture_size: u32,
     canvas_texture_handle: Handle<CpuTexture2D>,
 ) {
@@ -302,7 +291,7 @@ fn step(
 
             // todo: change this to convert from 3d to 2d
             let point_2d = convert_3d_to_2d(
-                &camera_3d_transform,
+                &camera_3d_transform.view_matrix(),
                 &camera_3d_proj_matrix,
                 &camera_2d_viewport,
                 pos,
@@ -314,17 +303,16 @@ fn step(
 }
 
 fn convert_3d_to_2d(
-    camera_3d_transform: &Transform,
-    camera_3d_proj: &Mat4,
-    camera_2d_viewport: &Viewport,
+    view_matrix: &Mat4,
+    projection_matrix: &Mat4,
+    viewport: &Viewport,
     point_3d: &Vec3,
-) -> Vec2 {
-    let view_matrix = camera_3d_transform.view_matrix();
-    let viewport_width = camera_2d_viewport.width as f32;
-    let viewport_height = camera_2d_viewport.height as f32;
+) -> Vec3 {
+    let viewport_width = viewport.width as f32;
+    let viewport_height = viewport.height as f32;
 
     // Calculate the clip space coordinate
-    let clip_space_coordinate = *camera_3d_proj * view_matrix * point_3d.extend(1.0);
+    let clip_space_coordinate = *projection_matrix * *view_matrix * point_3d.extend(1.0);
 
     // Normalize the clip space coordinate
     let clip_space_vec3 = Vec3::new(clip_space_coordinate.x, clip_space_coordinate.y, clip_space_coordinate.z);
@@ -333,7 +321,8 @@ fn convert_3d_to_2d(
     // Convert the normalized device coordinate to screen space coordinate
     let screen_space_x = (normalized_device_coordinate.x + 1.0) * 0.5 * viewport_width;
     let screen_space_y = (1.0 - normalized_device_coordinate.y) * 0.5 * viewport_height;
+    let screen_space_d = normalized_device_coordinate.z; // -1.0 -> 1.0 (near -> far)
 
     // The resulting screen space coordinates
-    Vec2::new(screen_space_x, screen_space_y)
+    Vec3::new(screen_space_x, screen_space_y, screen_space_d)
 }
