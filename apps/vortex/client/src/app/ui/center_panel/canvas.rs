@@ -17,7 +17,7 @@ use render_egui::{
 };
 
 use crate::app::{
-    resources::global::Global,
+    resources::canvas_state::CanvasState,
     systems::canvas::{CanvasTexture, update_2d_camera, update_3d_camera},
     ui::UiState,
 };
@@ -34,7 +34,7 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
     let did_resize = resize_finished(ui, world, "left_panel");
 
     let mut system_state: SystemState<(
-        Res<Global>,
+        Res<CanvasState>,
         ResMut<Assets<CpuTexture2D>>,
         ResMut<EguiUserTextures>,
         Res<CanvasTexture>,
@@ -43,7 +43,7 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
         Query<(&mut Camera, &mut Transform, &mut Projection)>,
     )> = SystemState::new(world);
     let (
-        global,
+        canvas_state,
         mut textures,
         mut user_textures,
         canvas_texture,
@@ -82,8 +82,8 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
 
         // Update the camera to match the new texture size.
         let native_texture_size = Vec2::new(texture_size.x, texture_size.y);
-        update_2d_camera(&global, native_texture_size, &mut camera_query);
-        update_3d_camera(&global, native_texture_size, &mut camera_query);
+        update_2d_camera(&canvas_state, native_texture_size, &mut camera_query);
+        update_3d_camera(&canvas_state, native_texture_size, &mut camera_query);
     }
 
     system_state.apply(world);

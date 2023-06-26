@@ -13,10 +13,10 @@ use crate::app::{
     config::ConfigPlugin,
     events::LoginEvent,
     resources::{action_stack::ActionStack, global::Global, tab_manager::TabManager},
-    systems::{canvas, network},
-    ui,
-    ui::{AllCamerasVisible, UiState},
+    systems::{canvas, network, ui},
+    ui::UiState,
 };
+use crate::app::resources::canvas_state::CanvasState;
 
 pub struct VortexPlugin;
 
@@ -65,15 +65,15 @@ impl Plugin for VortexPlugin {
             )
             // UI Configuration
             .insert_resource(UiState::new())
-            .insert_resource(AllCamerasVisible(true))
             .insert_resource(global_resource)
             .insert_resource(TabManager::new())
             .insert_resource(ActionStack::new())
-            .add_system(ui::main)
-            .add_system(ui::sync_all_cameras_visibility)
-            // 3D Configuration
+            .add_system(ui::update)
+            // Canvas Config
+            .insert_resource(CanvasState::default())
             .add_startup_system(canvas::setup)
             .add_system(canvas::step)
-            .add_system(canvas::input);
+            .add_system(canvas::input)
+            .add_system(canvas::sync_all_cameras_visibility);
     }
 }

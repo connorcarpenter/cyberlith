@@ -35,6 +35,3 @@ impl UiState {
         }
     }
 }
-
-#[derive(Resource)]
-pub struct AllCamerasVisible(pub(crate) bool);

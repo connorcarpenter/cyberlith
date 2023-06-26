@@ -12,7 +12,7 @@ use render_api::{
 };
 use render_egui::EguiUserTextures;
 
-use crate::app::{config::AppConfig, resources::global::Global};
+use crate::app::{config::AppConfig, resources::canvas_state::CanvasState};
 
 #[derive(Resource)]
 pub struct CanvasTexture(pub Handle<CpuTexture2D>);
@@ -20,7 +20,7 @@ pub struct CanvasTexture(pub Handle<CpuTexture2D>);
 pub fn setup(
     config: Res<AppConfig>,
     mut commands: Commands,
-    mut global: ResMut<Global>,
+    mut canvas_state: ResMut<CanvasState>,
     mut textures: ResMut<Assets<CpuTexture2D>>,
     mut user_textures: ResMut<EguiUserTextures>,
 ) {
@@ -34,13 +34,13 @@ pub fn setup(
 
     setup_3d_scene(
         &mut commands,
-        &mut global,
+        &mut canvas_state,
         &texture_size,
         canvas_texture_handle,
     );
     setup_2d_scene(
         &mut commands,
-        &mut global,
+        &mut canvas_state,
         &texture_size,
         canvas_texture_handle,
     );
@@ -48,11 +48,11 @@ pub fn setup(
 
 fn setup_2d_scene(
     commands: &mut Commands,
-    global: &mut Global,
+    canvas_state: &mut CanvasState,
     texture_size: &Vec2,
     canvas_texture_handle: Handle<CpuTexture2D>,
 ) {
-    global.layer_2d = RenderLayers::layer(2);
+    canvas_state.layer_2d = RenderLayers::layer(2);
 
     // light
     commands
@@ -61,7 +61,7 @@ fn setup_2d_scene(
             color: Color::WHITE,
             ..Default::default()
         })
-        .insert(global.layer_2d);
+        .insert(canvas_state.layer_2d);
 
     // camera
     let mut camera_bundle = CameraBundle::new_2d(&Viewport::new_at_origin(
@@ -71,23 +71,23 @@ fn setup_2d_scene(
     camera_bundle.camera.target = RenderTarget::Image(canvas_texture_handle);
     camera_bundle.camera.is_active = false;
     camera_bundle.camera.order = 1;
-    let camera_entity = commands.spawn(camera_bundle).insert(global.layer_2d).id();
+    let camera_entity = commands.spawn(camera_bundle).insert(canvas_state.layer_2d).id();
 
-    global.camera_2d = Some(camera_entity);
+    canvas_state.camera_2d = Some(camera_entity);
 }
 
 fn setup_3d_scene(
     commands: &mut Commands,
-    global: &mut Global,
+    canvas_state: &mut CanvasState,
     texture_size: &Vec2,
     canvas_texture_handle: Handle<CpuTexture2D>,
 ) {
-    global.layer_3d = RenderLayers::layer(3);
+    canvas_state.layer_3d = RenderLayers::layer(3);
 
     // Ambient Light
     commands
         .spawn(AmbientLight::new(0.01, Color::WHITE))
-        .insert(global.layer_3d);
+        .insert(canvas_state.layer_3d);
     commands
         .spawn(PointLight {
             position: Vec3::new(60.0, 60.0, 90.0),
@@ -95,7 +95,7 @@ fn setup_3d_scene(
             intensity: 0.2,
             ..Default::default()
         })
-        .insert(global.layer_3d);
+        .insert(canvas_state.layer_3d);
 
     // Camera
     let camera_entity = commands
@@ -114,9 +114,9 @@ fn setup_3d_scene(
                 .looking_at(Vec3::ZERO, Vec3::Y),
             projection: Projection::Orthographic(OrthographicProjection::default()),
         })
-        .insert(global.layer_3d)
+        .insert(canvas_state.layer_3d)
         .id();
-    global.camera_3d = Some(camera_entity);
+    canvas_state.camera_3d = Some(camera_entity);
 }
 
 fn new_render_texture(
