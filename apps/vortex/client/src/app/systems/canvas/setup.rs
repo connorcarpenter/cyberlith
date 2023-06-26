@@ -1,4 +1,4 @@
-use bevy_ecs::system::{Commands, Res, ResMut, Resource};
+use bevy_ecs::system::{Commands, Res, ResMut};
 use bevy_log::info;
 
 use math::{Vec2, Vec3};
@@ -14,9 +14,6 @@ use render_egui::EguiUserTextures;
 
 use crate::app::{config::AppConfig, resources::canvas_state::CanvasState};
 
-#[derive(Resource)]
-pub struct CanvasTexture(pub Handle<CpuTexture2D>);
-
 pub fn setup(
     config: Res<AppConfig>,
     mut commands: Commands,
@@ -30,7 +27,7 @@ pub fn setup(
     let texture_size = Vec2::new(1130.0, 672.0);
     let canvas_texture_handle =
         new_render_texture(&texture_size, &mut textures, &mut user_textures);
-    commands.insert_resource(CanvasTexture(canvas_texture_handle.clone()));
+    canvas_state.set_canvas_texture(canvas_texture_handle.clone());
 
     setup_3d_scene(
         &mut commands,

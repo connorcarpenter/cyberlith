@@ -18,7 +18,6 @@ use render_egui::{
 
 use crate::app::{
     resources::canvas_state::CanvasState,
-    systems::canvas::{CanvasTexture, update_2d_camera, update_3d_camera},
     ui::UiState,
 };
 
@@ -37,7 +36,6 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
         Res<CanvasState>,
         ResMut<Assets<CpuTexture2D>>,
         ResMut<EguiUserTextures>,
-        Res<CanvasTexture>,
         ResMut<UiState>,
         ResMut<Input>,
         Query<(&mut Camera, &mut Transform, &mut Projection)>,
@@ -46,14 +44,13 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
         canvas_state,
         mut textures,
         mut user_textures,
-        canvas_texture,
         mut ui_state,
         mut input,
         mut camera_query,
     ) = system_state.get_mut(world);
 
     // change textures
-    let texture_handle = canvas_texture.0;
+    let texture_handle = canvas_state.canvas_texture();
     let Some(texture_id) = user_textures.texture_id(&texture_handle) else {
         // The user texture may not be synced yet, return early.
         return;
@@ -82,8 +79,7 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
 
         // Update the camera to match the new texture size.
         let native_texture_size = Vec2::new(texture_size.x, texture_size.y);
-        update_2d_camera(&canvas_state, native_texture_size, &mut camera_query);
-        update_3d_camera(&canvas_state, native_texture_size, &mut camera_query);
+        canvas_state.update_camera_viewports(native_texture_size, &mut camera_query);
     }
 
     system_state.apply(world);

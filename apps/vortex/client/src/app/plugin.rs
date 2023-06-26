@@ -74,6 +74,6 @@ impl Plugin for VortexPlugin {
             .add_startup_system(canvas::setup)
             .add_system(canvas::step)
             .add_system(canvas::input)
-            .add_system(canvas::sync_all_cameras_visibility);
+            .add_system(canvas::update_cameras);
     }
 }

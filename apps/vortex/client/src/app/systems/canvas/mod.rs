@@ -1,5 +1,5 @@
-pub use resize_camera::*;
-pub use setup::{CanvasTexture, setup};
+pub use camera::*;
+pub use setup::setup;
 pub use step::step;
 
 pub use self::input::input;
@@ -10,5 +10,5 @@ mod setup;
 
 mod step;
 
-mod resize_camera;
+mod camera;
 
