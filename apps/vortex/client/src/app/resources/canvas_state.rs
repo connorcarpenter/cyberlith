@@ -7,6 +7,7 @@ use render_api::{base::CpuTexture2D, components::{Camera, OrthographicProjection
 #[derive(Resource)]
 pub struct CanvasState {
     is_visible: bool,
+    next_visible: bool,
     is_2d: bool,
     canvas_texture: Option<Handle<CpuTexture2D>>,
     pub camera_2d: Option<Entity>,
@@ -18,6 +19,7 @@ pub struct CanvasState {
 impl Default for CanvasState {
     fn default() -> Self {
         Self {
+            next_visible: false,
             is_visible: false,
             is_2d: true,
             canvas_texture: None,
@@ -30,7 +32,12 @@ impl Default for CanvasState {
 }
 
 impl CanvasState {
-    pub fn update_all_camera_visibility(&self, camera_q: &mut Query<&mut Camera>) {
+    pub fn update(&mut self, camera_q: &mut Query<&mut Camera>) {
+        if self.is_visible == self.next_visible {
+            return;
+        }
+        self.is_visible = self.next_visible;
+
         let cameras_enabled = self.is_visible;
 
         if cameras_enabled {
@@ -59,6 +66,50 @@ impl CanvasState {
 
     pub fn set_canvas_texture(&mut self, texture: Handle<CpuTexture2D>) {
         self.canvas_texture = Some(texture);
+    }
+
+    pub fn is_visible(&self) -> bool {
+        self.is_visible
+    }
+
+    pub fn set_visibility(&mut self, visible: bool) {
+        self.next_visible = visible;
+    }
+
+    pub fn set_2d_mode(&mut self, camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>) {
+        if self.is_2d {
+            return;
+        }
+        info!("Switched to Solid mode");
+        self.is_2d = true;
+        self.enable_cameras(camera_query, true, false);
+    }
+
+    pub fn set_3d_mode(&mut self, camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>) {
+        if !self.is_2d {
+            return;
+        }
+        info!("Switched to Wireframe mode");
+        self.is_2d = false;
+        self.enable_cameras(camera_query, false, true);
+    }
+
+    fn enable_cameras(
+        &self,
+        camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>,
+        enable_2d: bool,
+        enable_3d: bool,
+    ) {
+        if let Some(camera_2d) = self.camera_2d {
+            if let Ok((mut camera, _, _)) = camera_query.get_mut(camera_2d) {
+                camera.is_active = enable_2d;
+            };
+        }
+        if let Some(camera_3d) = self.camera_3d {
+            if let Ok((mut camera, _, _)) = camera_query.get_mut(camera_3d) {
+                camera.is_active = enable_3d;
+            };
+        }
     }
 
     fn update_2d_camera_viewport(

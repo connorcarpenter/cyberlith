@@ -61,9 +61,6 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
         input.set_mouse_offset(top_left.x, top_left.y);
     }
     let texture_size = ui.available_size();
-    let image =
-        Image::new(texture_id, texture_size).uv(Rect::from_min_max(pos2(0.0, 1.0), pos2(1.0, 0.0)));
-    ui.add(image);
 
     if did_resize {
         ui_state.canvas_coords = Some(top_left);
@@ -80,6 +77,12 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
         // Update the camera to match the new texture size.
         let native_texture_size = Vec2::new(texture_size.x, texture_size.y);
         canvas_state.update_camera_viewports(native_texture_size, &mut camera_query);
+    }
+
+    if canvas_state.is_visible() {
+        let image =
+            Image::new(texture_id, texture_size).uv(Rect::from_min_max(pos2(0.0, 1.0), pos2(1.0, 0.0)));
+        ui.add(image);
     }
 
     system_state.apply(world);

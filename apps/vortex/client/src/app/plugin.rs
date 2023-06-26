@@ -73,7 +73,6 @@ impl Plugin for VortexPlugin {
             .insert_resource(CanvasState::default())
             .add_startup_system(canvas::setup)
             .add_system(canvas::step)
-            .add_system(canvas::input)
-            .add_system(canvas::update_cameras);
+            .add_system(canvas::input);
     }
 }
