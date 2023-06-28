@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use bevy_ecs::{
     entity::Entity,
     event::EventReader,
-    system::{Commands, Query, ResMut},
+    system::{Commands, Query, Res, ResMut},
 };
 use bevy_log::info;
 use naia_bevy_client::{
@@ -14,11 +14,12 @@ use naia_bevy_client::{
     },
 };
 
+use render_api::{Assets, base::{Color, CpuMaterial, CpuMesh}, components::RenderObjectBundle};
 use vortex_proto::components::{ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild, Vertex3d, VertexChild, VertexRootChild};
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
-    resources::global::Global,
+    resources::{canvas_state::CanvasState, global::Global},
     systems::file_post_process,
 };
 
@@ -38,12 +39,16 @@ pub fn insert_component_events(
     mut commands: Commands,
     client: Client,
     mut global: ResMut<Global>,
+    canvas_state: Res<CanvasState>,
+    mut meshes: ResMut<Assets<CpuMesh>>,
+    mut materials: ResMut<Assets<CpuMaterial>>,
     mut event_reader: EventReader<InsertComponentEvents>,
     mut parent_query: Query<&mut FileSystemParent>,
     child_query: Query<&FileSystemChild>,
     entry_query: Query<&FileSystemEntry>,
     changelist_query: Query<&ChangelistEntry>,
     mut fs_state_query: Query<&mut FileSystemUiState>,
+    vertex_query: Query<&Vertex3d>,
 ) {
     let project_root_entity = global.project_root_entity;
     let mut recent_parents: Option<HashMap<Entity, FileSystemParent>> = None;
@@ -127,8 +132,22 @@ pub fn insert_component_events(
         }
 
         // on Vertex Insert Event
-        for child_entity in events.read::<Vertex3d>() {
-            info!("received inserted Vertex3d: `{:?}`", child_entity);
+        for entity in events.read::<Vertex3d>() {
+            info!("received inserted Vertex3d: `{:?}`", entity);
+            let vertex_3d = vertex_query.get(entity).unwrap();
+
+            commands
+                .spawn(RenderObjectBundle::sphere(
+                    &mut meshes,
+                    &mut materials,
+                    vertex_3d.x() as f32,
+                    vertex_3d.y() as f32,
+                    vertex_3d.z() as f32,
+                    4.0,
+                    12,
+                    Color::GREEN,
+                ))
+                .insert(canvas_state.layer_3d);
         }
 
         // on Vertex Child Insert Event

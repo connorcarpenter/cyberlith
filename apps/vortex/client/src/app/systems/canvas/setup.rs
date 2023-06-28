@@ -107,7 +107,7 @@ fn setup_3d_scene(
                 target: RenderTarget::Image(canvas_texture_handle),
                 ..Default::default()
             },
-            transform: Transform::from_xyz(60.0, 30.0, 60.0) // isometric-ish
+            transform: Transform::from_xyz(50.0, 0.0, 0.0) // from front
                 .looking_at(Vec3::ZERO, Vec3::Y),
             projection: Projection::Orthographic(OrthographicProjection::default()),
         })

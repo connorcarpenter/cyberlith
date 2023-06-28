@@ -80,7 +80,7 @@ impl CanvasState {
         if self.is_2d {
             return;
         }
-        info!("Switched to Solid mode");
+        info!("Switched to Wireframe mode");
         self.is_2d = true;
         self.enable_cameras(camera_query, true, false);
     }
@@ -89,7 +89,7 @@ impl CanvasState {
         if !self.is_2d {
             return;
         }
-        info!("Switched to Wireframe mode");
+        info!("Switched to Solid mode");
         self.is_2d = false;
         self.enable_cameras(camera_query, false, true);
     }
