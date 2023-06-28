@@ -117,7 +117,7 @@ fn fs_process_insert_complete(
     let (name, kind, parent) = entry.decompose();
     info!("creating file: {}", name);
     let key = FileEntryKey::new_with_parent(parent.clone(), &name, kind);
-    git_manager.workspace_mut(user.get_username()).create_file(
+    git_manager.workspace_mut(user.get_username()).on_client_create_file(
         commands,
         server,
         &name,

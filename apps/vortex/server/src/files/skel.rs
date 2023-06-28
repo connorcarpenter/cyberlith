@@ -21,6 +21,12 @@ enum SkelAction {
 pub struct SkelWriter;
 
 impl SkelWriter {
+    fn new_default_actions(&self) -> Vec<SkelAction> {
+        let mut output = Vec::new();
+        output.push(SkelAction::Vertex(0, 0, 0, None));
+        output
+    }
+
     fn world_to_actions(
         &self,
         world: &mut World,
@@ -63,17 +69,19 @@ impl SkelWriter {
         output
     }
 
-    fn write_from_actions(&self, bit_writer: &mut BitWriter, actions: Vec<SkelAction>) {
+    fn write_from_actions(&self, actions: Vec<SkelAction>) -> Box<[u8]> {
+        let mut bit_writer = BitWriter::new();
+
         for action in actions {
             match action {
                 SkelAction::Vertex(x, y, z, parent_id_opt) => {
                     // continue bit
-                    true.ser(bit_writer);
+                    true.ser(&mut bit_writer);
 
                     // encode X, Y, Z
-                    VertexSerdeInt::from(x).ser(bit_writer);
-                    VertexSerdeInt::from(y).ser(bit_writer);
-                    VertexSerdeInt::from(z).ser(bit_writer);
+                    VertexSerdeInt::from(x).ser(&mut bit_writer);
+                    VertexSerdeInt::from(y).ser(&mut bit_writer);
+                    VertexSerdeInt::from(z).ser(&mut bit_writer);
                     let parent_id = {
                         if let Some(parent_id) = parent_id_opt {
                             parent_id + 1
@@ -81,25 +89,27 @@ impl SkelWriter {
                             0
                         }
                     };
-                    UnsignedVariableInteger::<6>::from(parent_id).ser(bit_writer);
+                    UnsignedVariableInteger::<6>::from(parent_id).ser(&mut bit_writer);
                 }
             }
         }
 
         // continue bit
-        false.ser(bit_writer);
+        false.ser(&mut bit_writer);
+
+        bit_writer.to_bytes()
     }
 }
 
 impl FileWriter for SkelWriter {
     fn write(&self, world: &mut World, content_entities: &Vec<Entity>) -> Box<[u8]> {
         let actions = self.world_to_actions(world, content_entities);
+        self.write_from_actions(actions)
+    }
 
-        let mut bit_writer = BitWriter::new();
-
-        self.write_from_actions(&mut bit_writer, actions);
-
-        bit_writer.to_bytes()
+    fn write_new_default(&self) -> Box<[u8]> {
+        let actions = self.new_default_actions();
+        self.write_from_actions(actions)
     }
 }
 

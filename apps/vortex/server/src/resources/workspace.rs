@@ -11,7 +11,7 @@ use naia_bevy_server::{CommandsExt, RoomKey, Server};
 use vortex_proto::{components::{ChangelistEntry, ChangelistStatus}, FileExtension, resources::FileEntryKey};
 
 use crate::{
-    files::FileReader,
+    files::{FileReader, FileWriter},
     resources::{ChangelistValue, FileEntryValue, GitManager},
 };
 
@@ -47,7 +47,7 @@ impl Workspace {
         }
     }
 
-    pub fn create_file(
+    pub fn on_client_create_file(
         &mut self,
         commands: &mut Commands,
         server: &mut Server,
@@ -77,13 +77,14 @@ impl Workspace {
 
         // if file doesn't exist in master tree and no changelist entry exists, then create a changelist entry
         if !file_exists_in_master && !file_exists_in_changelist {
+            let default_file_contents = file_extension.write_new_default();
             self.new_changelist_entry(
                 commands,
                 server,
                 &file_entry_key,
                 ChangelistStatus::Created,
                 Some(&entity),
-                None,
+                Some(default_file_contents),
             );
         }
 
@@ -92,12 +93,9 @@ impl Workspace {
             let changelist_entry = self.changelist_entries.remove(&file_entry_key).unwrap();
             commands.entity(changelist_entry.entity()).despawn();
         }
-
-        // actually create the file locally
-        self.git_create_file(file_entry_key);
     }
 
-    pub fn delete_file(&mut self, commands: &mut Commands, server: &mut Server, entity: &Entity) {
+    pub fn on_client_delete_file(&mut self, commands: &mut Commands, server: &mut Server, entity: &Entity) {
         // Remove Entity from Working Tree, returning a list of child entities that should be despawned
         let file_entry_key =
             Self::find_file_entry_by_entity(&mut self.working_file_entries, entity);
@@ -166,7 +164,8 @@ impl Workspace {
                 // remove auth from file entity
                 commands.entity(file_entity).take_authority(server);
 
-                // sync to git repo!
+                // sync to git repo
+                self.fs_create_file(&file_entry_key);
                 self.git_commit(username, email, commit_message);
                 self.git_push();
             }
@@ -180,8 +179,8 @@ impl Workspace {
                     self.cleanup_changelist_entry(commands, &child_key);
                 }
 
-                // sync to git repo!
-                self.git_delete_file(file_entry_key);
+                // sync to git repo
+                self.fs_delete_file(file_entry_key);
                 self.git_commit(username, email, commit_message);
                 self.git_push();
             }
@@ -250,15 +249,22 @@ impl Workspace {
         return None;
     }
 
-    pub fn git_create_file(&mut self, key: &FileEntryKey) {
+    pub fn fs_create_file(&mut self, key: &FileEntryKey) {
         let repo = self.repo.lock().unwrap();
 
         let file_path = format!("{}{}", key.path(), key.name());
         let full_path = format!("{}/{}", self.internal_path, file_path);
         info!("git creating file at: `{}`", full_path);
 
+        let file_content = self
+            .changelist_entries
+            .get(&key)
+            .unwrap()
+            .get_content()
+            .unwrap();
+
         // Create the file with the desired content
-        fs::write(&full_path, &[]).expect("Failed to create file");
+        fs::write(&full_path, file_content).expect("Failed to create file");
 
         // Add the file to the repository
         let mut index = repo.index().expect("Failed to open index");
@@ -268,7 +274,7 @@ impl Workspace {
         index.write().expect("Failed to write index");
     }
 
-    pub fn git_delete_file(&mut self, key: FileEntryKey) {
+    pub fn fs_delete_file(&mut self, key: FileEntryKey) {
         let repo = self.repo.lock().unwrap();
 
         let file_path = format!("{}{}", key.path(), key.name());
@@ -419,8 +425,14 @@ impl Workspace {
         // get file extension of file
         let file_extension = self.working_file_extension(key);
 
-        // get contents of file from file system
-        let bytes = self.get_file_contents(key);
+        // get file contents from either the changelist or the file system
+        let bytes = if self.changelist_entries.contains_key(key) {
+            // get contents of file from changelist
+            Box::from(self.changelist_entries.get(key).unwrap().get_content().unwrap())
+        } else {
+            // get contents of file from file system
+            self.get_file_contents(key)
+        };
 
         // FileReader reads File's contents and spawns all Entities + Components
         let content_entities: Vec<Entity> = file_extension.read(commands, server, &bytes);

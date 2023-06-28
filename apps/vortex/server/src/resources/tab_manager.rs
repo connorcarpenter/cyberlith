@@ -140,7 +140,7 @@ impl TabManager {
                 SystemState::new(world);
             let (mut server, mut tab_manager) = system_state.get_mut(world);
 
-            tab_manager.process_queued_actions_inner(&mut server)
+            Self::process_queued_actions_inner(&mut tab_manager, &mut server)
         };
 
         if closed_states.is_empty() {
