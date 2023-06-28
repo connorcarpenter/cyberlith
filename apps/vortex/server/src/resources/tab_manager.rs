@@ -119,6 +119,11 @@ impl TabManager {
         // insert TabState into collection
         let tab_state = TabState::new(new_room_key, file_entity.clone(), content_entities);
         user_state.tabs.insert(tab_id.clone(), tab_state);
+
+        // put user in new room
+        server
+            .room_mut(&new_room_key)
+            .add_user(user_key);
     }
 
     pub fn remove_waiting_open(

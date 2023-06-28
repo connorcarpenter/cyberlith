@@ -158,6 +158,8 @@ impl Workspace {
                     file_entry_val.clone(),
                 );
 
+                self.fs_create_file(&file_entry_key);
+
                 // despawn changelist entity
                 self.cleanup_changelist_entry(commands, &file_entry_key);
 
@@ -165,7 +167,6 @@ impl Workspace {
                 commands.entity(file_entity).take_authority(server);
 
                 // sync to git repo
-                self.fs_create_file(&file_entry_key);
                 self.git_commit(username, email, commit_message);
                 self.git_push();
             }

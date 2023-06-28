@@ -7,7 +7,7 @@ use bevy_ecs::{
 use bevy_log::info;
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus, ReplicationConfig};
 
-use vortex_proto::components::{ChangelistEntry, EntryKind, FileSystemEntry, HasParent, NoParent};
+use vortex_proto::components::{ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
@@ -263,7 +263,7 @@ impl ActionStack {
                     Res<Global>,
                     Query<(Entity, &mut FileSystemUiState)>,
                     Query<(Entity, &ChangelistEntry, &mut ChangelistUiState)>,
-                    Query<(&FileSystemEntry, Option<&HasParent>, Option<&NoParent>)>,
+                    Query<(&FileSystemEntry, Option<&FileSystemChild>, Option<&FileSystemRootChild>)>,
                     Query<&mut FileSystemParent>,
                 )> = SystemState::new(world);
                 let (
@@ -477,11 +477,11 @@ impl ActionStack {
 
         // add FileSystemChild or FileSystemRootChild component
         if let Some(parent_entity) = parent_entity_opt {
-            let mut child_component = HasParent::new();
+            let mut child_component = FileSystemChild::new();
             child_component.parent_id.set(client, &parent_entity);
             commands.entity(entity_id).insert(child_component);
         } else {
-            commands.entity(entity_id).insert(NoParent);
+            commands.entity(entity_id).insert(FileSystemRootChild);
         }
 
         // add UiState component
@@ -574,7 +574,7 @@ impl ActionStack {
     fn convert_contents_to_slim_tree(
         client: &Client,
         parent_entity: &Entity,
-        fs_query: &Query<(&FileSystemEntry, Option<&HasParent>, Option<&NoParent>)>,
+        fs_query: &Query<(&FileSystemEntry, Option<&FileSystemChild>, Option<&FileSystemRootChild>)>,
         parent_query: &mut Query<&mut FileSystemParent>,
     ) -> Vec<(Entity, FileTree)> {
         let mut trees = Vec::new();

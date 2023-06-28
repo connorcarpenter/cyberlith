@@ -14,7 +14,7 @@ use naia_bevy_client::{
     },
 };
 
-use vortex_proto::components::{ChangelistEntry, EntryKind, FileSystemEntry, HasParent, NoParent};
+use vortex_proto::components::{ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild, Vertex3d, VertexChild, VertexRootChild};
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
@@ -40,7 +40,7 @@ pub fn insert_component_events(
     mut global: ResMut<Global>,
     mut event_reader: EventReader<InsertComponentEvents>,
     mut parent_query: Query<&mut FileSystemParent>,
-    child_query: Query<&HasParent>,
+    child_query: Query<&FileSystemChild>,
     entry_query: Query<&FileSystemEntry>,
     changelist_query: Query<&ChangelistEntry>,
     mut fs_state_query: Query<&mut FileSystemUiState>,
@@ -65,7 +65,7 @@ pub fn insert_component_events(
         }
 
         // on FileSystemRootChild Insert Event
-        for child_entity in events.read::<NoParent>() {
+        for child_entity in events.read::<FileSystemRootChild>() {
             // Add children to root parent
             let entry = entry_query.get(child_entity).unwrap();
             let mut parent = parent_query.get_mut(project_root_entity).unwrap();
@@ -73,7 +73,7 @@ pub fn insert_component_events(
         }
 
         // on FileSystemChild Insert Event
-        for child_entity in events.read::<HasParent>() {
+        for child_entity in events.read::<FileSystemChild>() {
             let entry = entry_query.get(child_entity).unwrap();
 
             // Get parent
@@ -125,6 +125,21 @@ pub fn insert_component_events(
                 *entry.path, *entry.name
             );
         }
+
+        // on Vertex Insert Event
+        for child_entity in events.read::<Vertex3d>() {
+            info!("received inserted Vertex3d: `{:?}`", child_entity);
+        }
+
+        // on Vertex Child Insert Event
+        for child_entity in events.read::<VertexChild>() {
+            info!("received inserted VertexChild: `{:?}`", child_entity);
+        }
+
+        // on Vertex Root Child Event
+        for child_entity in events.read::<VertexRootChild>() {
+            info!("received inserted VertexRootChild: `{:?}`", child_entity);
+        }
     }
 }
 
@@ -143,7 +158,7 @@ pub fn update_component_events(
             );
         }
         // on FileSystemRootChild Update Event
-        for (_, child_entity) in events.read::<NoParent>() {
+        for (_, child_entity) in events.read::<FileSystemRootChild>() {
             let entry = entry_query.get(child_entity).unwrap();
             let entry_name = (*(entry.name)).clone();
             info!(
@@ -153,7 +168,7 @@ pub fn update_component_events(
             todo!();
         }
         // on FileSystemChild Update Event
-        for (_, child_entity) in events.read::<HasParent>() {
+        for (_, child_entity) in events.read::<FileSystemChild>() {
             let entry = entry_query.get(child_entity).unwrap();
             let entry_name = (*(entry.name)).clone();
             info!(
@@ -177,7 +192,7 @@ pub fn remove_component_events(
             info!("removed FileSystemEntry component from entity");
         }
 
-        for (entity, _component) in events.read::<NoParent>() {
+        for (entity, _component) in events.read::<FileSystemRootChild>() {
             info!("removed FileSystemRootChild component from entity");
 
             let Ok(mut parent) = parent_query.get_mut(global.project_root_entity) else {
@@ -186,7 +201,7 @@ pub fn remove_component_events(
             parent.remove_child(&entity);
         }
 
-        for (entity, component) in events.read::<HasParent>() {
+        for (entity, component) in events.read::<FileSystemChild>() {
             info!("removed FileSystemChild component from entity");
 
             let Some(parent_entity) = component.parent_id.get(&client) else {

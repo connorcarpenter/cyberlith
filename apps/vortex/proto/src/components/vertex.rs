@@ -1,5 +1,5 @@
 use bevy_ecs::component::Component;
-use naia_bevy_shared::{Property, Protocol, ProtocolPlugin, Replicate, SignedVariableInteger};
+use naia_bevy_shared::{EntityProperty, Property, Protocol, ProtocolPlugin, Replicate, SignedVariableInteger};
 
 pub struct VertexComponentsPlugin;
 
@@ -7,7 +7,31 @@ impl ProtocolPlugin for VertexComponentsPlugin {
     fn build(&self, protocol: &mut Protocol) {
         protocol
             .add_component::<Vertex3d>()
-            .add_component::<Vertex2d>();
+            .add_component::<Vertex2d>()
+            .add_component::<VertexChild>()
+            .add_component::<VertexRootChild>();
+    }
+}
+
+// HasParent
+#[derive(Component, Replicate)]
+pub struct VertexChild {
+    pub parent_id: EntityProperty,
+}
+
+impl VertexChild {
+    pub fn new() -> Self {
+        Self::new_complete()
+    }
+}
+
+// NoParent
+#[derive(Component, Replicate)]
+pub struct VertexRootChild;
+
+impl VertexRootChild {
+    pub fn new() -> Self {
+        Self::new_complete()
     }
 }
 

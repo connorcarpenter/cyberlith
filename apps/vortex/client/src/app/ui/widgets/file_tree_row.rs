@@ -14,7 +14,7 @@ use render_egui::{
         vec2, WidgetText,
     },
 };
-use vortex_proto::{components::{ChangelistStatus, EntryKind, FileSystemEntry, HasParent, NoParent}, FileExtension};
+use vortex_proto::{components::{ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild}, FileExtension};
 
 use crate::app::{
     components::file_system::{
@@ -392,7 +392,7 @@ impl FileTreeRowUiWidget {
 
     pub fn on_click_new_file(world: &mut World, row_entity: &Entity, is_root_dir: bool) {
         world.resource_scope(|world, mut ui_state: Mut<UiState>| {
-            let mut system_state: SystemState<(Client, Query<(&FileSystemEntry, Option<&HasParent>, Option<&NoParent>, &mut FileSystemUiState)>)> =
+            let mut system_state: SystemState<(Client, Query<(&FileSystemEntry, Option<&FileSystemChild>, Option<&FileSystemRootChild>, &mut FileSystemUiState)>)> =
                 SystemState::new(world);
             let (client, mut fs_query) = system_state.get_mut(world);
             let Ok((entry, dir_child_opt, root_child_opt, mut entry_ui_state)) = fs_query.get_mut(*row_entity) else {
@@ -417,7 +417,7 @@ impl FileTreeRowUiWidget {
 
     pub fn on_click_new_directory(world: &mut World, row_entity: &Entity, is_root_dir: bool) {
         world.resource_scope(|world, mut ui_state: Mut<UiState>| {
-            let mut system_state: SystemState<(Client, Query<(&FileSystemEntry, Option<&HasParent>, Option<&NoParent>, &mut FileSystemUiState)>)> =
+            let mut system_state: SystemState<(Client, Query<(&FileSystemEntry, Option<&FileSystemChild>, Option<&FileSystemRootChild>, &mut FileSystemUiState)>)> =
                 SystemState::new(world);
             let (client, mut fs_query) = system_state.get_mut(world);
             let Ok((entry, dir_child_opt, root_child_opt, mut entry_ui_state)) = fs_query.get_mut(*row_entity) else {
@@ -444,8 +444,8 @@ impl FileTreeRowUiWidget {
         client: &Client,
         entry: &FileSystemEntry,
         row_entity: &Entity,
-        dir_child_opt: Option<&HasParent>,
-        root_child_opt: Option<&NoParent>,
+        dir_child_opt: Option<&FileSystemChild>,
+        root_child_opt: Option<&FileSystemRootChild>,
     ) -> Option<Entity> {
         match *entry.kind {
             EntryKind::Directory => Some(row_entity.clone()),
@@ -639,7 +639,7 @@ impl FileTreeRowUiWidget {
             ResMut<ActionStack>,
             Query<&FileSystemParent>,
             Query<&FileSystemEntry>,
-            Query<&HasParent>,
+            Query<&FileSystemChild>,
         )> = SystemState::new(world);
         let (client, global, mut action_stack, parent_query, entry_query, child_query) =
             system_state.get_mut(world);

@@ -7,7 +7,7 @@ use bevy_ecs::{
 };
 use naia_bevy_server::{BitReader, BitWriter, Serde, SerdeErr, Server, UnsignedVariableInteger};
 
-use vortex_proto::components::{HasParent, NoParent, Vertex3d, VertexSerdeInt};
+use vortex_proto::components::{FileSystemChild, FileSystemRootChild, Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt};
 
 use crate::files::{FileReader, FileWriter};
 
@@ -32,7 +32,7 @@ impl SkelWriter {
         world: &mut World,
         content_entities: &Vec<Entity>,
     ) -> Vec<SkelAction> {
-        let mut system_state: SystemState<(Server, Query<(&Vertex3d, Option<&HasParent>)>)> =
+        let mut system_state: SystemState<(Server, Query<(&Vertex3d, Option<&FileSystemChild>)>)> =
             SystemState::new(world);
         let (server, vertex_query) = system_state.get_mut(world);
 
@@ -173,11 +173,11 @@ impl SkelReader {
 
             if let Some(parent_id) = parent_id_opt {
                 let (parent_entity, _, _, _, _) = entities.get(*parent_id as usize).unwrap();
-                let mut parent_component = HasParent::new();
+                let mut parent_component = VertexChild::new();
                 parent_component.parent_id.set(server, parent_entity);
                 entity_mut.insert(parent_component);
             } else {
-                entity_mut.insert(NoParent);
+                entity_mut.insert(VertexRootChild);
             }
 
             new_entities.push(*entity);

@@ -15,7 +15,7 @@ use naia_bevy_server::{
 };
 
 use vortex_proto::{
-    components::{FileSystemEntry, HasParent, NoParent},
+    components::{FileSystemChild, FileSystemEntry, FileSystemRootChild},
     resources::FileEntryKey,
 };
 
@@ -60,7 +60,7 @@ pub fn insert_component_events(
     mut fs_waiting_entities: Local<HashMap<Entity, FSWaitlist>>,
     mut event_reader: EventReader<InsertComponentEvents>,
     fs_entry_query: Query<&FileSystemEntry>,
-    fs_child_query: Query<&HasParent>,
+    fs_child_query: Query<&FileSystemChild>,
     entry_key_query: Query<&FileEntryKey>,
 ) {
     for events in event_reader.iter() {
@@ -83,7 +83,7 @@ pub fn insert_component_events(
         }
 
         // on FileSystemRootChild Insert Event
-        for (user_key, entity) in events.read::<NoParent>() {
+        for (user_key, entity) in events.read::<FileSystemRootChild>() {
             info!("inserted FileSystemRootChild");
             fs_process_insert(
                 &mut commands,
@@ -100,7 +100,7 @@ pub fn insert_component_events(
         }
 
         // on FileSystemChild Insert Event
-        for (user_key, entity) in events.read::<HasParent>() {
+        for (user_key, entity) in events.read::<FileSystemChild>() {
             info!("inserted FileSystemChild");
             let entry = fs_child_query.get(entity).unwrap();
             let parent_entity = entry.parent_id.get(&server).unwrap();
@@ -123,11 +123,11 @@ pub fn insert_component_events(
 
 pub fn remove_component_events(mut event_reader: EventReader<RemoveComponentEvents>) {
     for events in event_reader.iter() {
-        for (_user_key, _entity, _component) in events.read::<NoParent>() {
+        for (_user_key, _entity, _component) in events.read::<FileSystemRootChild>() {
             info!("removed FileSystemRootChild component from entity");
             // TODO!
         }
-        for (_user_key, _entity, _component) in events.read::<HasParent>() {
+        for (_user_key, _entity, _component) in events.read::<FileSystemChild>() {
             info!("removed FileSystemChild component from entity");
             // TODO!
         }
@@ -141,7 +141,7 @@ pub fn update_component_events(mut event_reader: EventReader<UpdateComponentEven
             // TODO!
         }
         // on FileSystemChild Update Event
-        for (_user_key, _entity) in events.read::<HasParent>() {
+        for (_user_key, _entity) in events.read::<FileSystemChild>() {
             // TODO!
         }
     }

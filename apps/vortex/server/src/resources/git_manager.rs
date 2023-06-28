@@ -13,7 +13,7 @@ use bevy_log::info;
 use git2::{Cred, Repository, Tree};
 use naia_bevy_server::{CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};
 
-use vortex_proto::{components::{ChangelistEntry, EntryKind, FileSystemEntry, HasParent, NoParent}, FileExtension, resources::FileEntryKey};
+use vortex_proto::{components::{ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild}, FileExtension, resources::FileEntryKey};
 
 use crate::{
     components::FileSystemOwner,
@@ -406,10 +406,10 @@ fn insert_networked_components_entry(
     if let Some(parent_key) = entry_val.parent() {
         let parent_entity = file_entries.get(parent_key).unwrap().entity();
 
-        let mut parent_component = HasParent::new();
+        let mut parent_component = FileSystemChild::new();
         parent_component.parent_id.set(server, &parent_entity);
         commands.entity(entry_entity).insert(parent_component);
     } else {
-        commands.entity(entry_entity).insert(NoParent);
+        commands.entity(entry_entity).insert(FileSystemRootChild);
     }
 }
