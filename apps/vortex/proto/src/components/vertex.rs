@@ -7,13 +7,12 @@ impl ProtocolPlugin for VertexComponentsPlugin {
     fn build(&self, protocol: &mut Protocol) {
         protocol
             .add_component::<Vertex3d>()
-            .add_component::<Vertex2d>()
             .add_component::<VertexChild>()
             .add_component::<VertexRootChild>();
     }
 }
 
-// HasParent
+// VertexChild
 #[derive(Component, Replicate)]
 pub struct VertexChild {
     pub parent_id: EntityProperty,
@@ -25,7 +24,7 @@ impl VertexChild {
     }
 }
 
-// NoParent
+// VertexRootChild
 #[derive(Component, Replicate)]
 pub struct VertexRootChild;
 
@@ -72,34 +71,5 @@ impl Vertex3d {
 
     pub fn set_z(&mut self, z: u16) {
         *self.z = z.into();
-    }
-}
-
-// Vertex2d
-#[derive(Component, Replicate)]
-pub struct Vertex2d {
-    x: Property<VertexSerdeInt>,
-    y: Property<VertexSerdeInt>,
-}
-
-impl Vertex2d {
-    pub fn new(x: u16, y: u16) -> Self {
-        Self::new_complete(x.into(), y.into())
-    }
-
-    pub fn x(&self) -> u16 {
-        self.x.to()
-    }
-
-    pub fn y(&self) -> u16 {
-        self.y.to()
-    }
-
-    pub fn set_x(&mut self, x: u16) {
-        *self.x = x.into();
-    }
-
-    pub fn set_y(&mut self, y: u16) {
-        *self.y = y.into();
     }
 }

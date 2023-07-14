@@ -39,7 +39,7 @@ pub fn insert_component_events(
     mut commands: Commands,
     client: Client,
     mut global: ResMut<Global>,
-    canvas_state: Res<CanvasState>,
+    mut canvas_state: ResMut<CanvasState>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
     mut event_reader: EventReader<InsertComponentEvents>,
@@ -136,7 +136,7 @@ pub fn insert_component_events(
             info!("received inserted Vertex3d: `{:?}`", entity);
             let vertex_3d = vertex_query.get(entity).unwrap();
 
-            commands
+            let vertex_3d_entity = commands
                 .spawn(RenderObjectBundle::sphere(
                     &mut meshes,
                     &mut materials,
@@ -147,7 +147,24 @@ pub fn insert_component_events(
                     12,
                     Color::GREEN,
                 ))
-                .insert(canvas_state.layer_3d);
+                .insert(canvas_state.layer_3d)
+                .id();
+
+            let vertex_2d_entity = commands
+                .spawn(RenderObjectBundle::circle(
+                    &mut meshes,
+                    &mut materials,
+                    vertex_3d.x() as f32,
+                    vertex_3d.y() as f32,
+                    4.0,
+                    12,
+                    Color::GREEN,
+                    false,
+                ))
+                .insert(canvas_state.layer_2d)
+                .id();
+
+            canvas_state.register_3d_vertex(vertex_3d_entity, vertex_2d_entity);
         }
 
         // on Vertex Child Insert Event
@@ -202,6 +219,7 @@ pub fn update_component_events(
 pub fn remove_component_events(
     client: Client,
     mut global: ResMut<Global>,
+    mut canvas_state: ResMut<CanvasState>,
     mut parent_query: Query<&mut FileSystemParent>,
     mut event_reader: EventReader<RemoveComponentEvents>,
     mut fs_state_query: Query<&mut FileSystemUiState>,
@@ -242,6 +260,9 @@ pub fn remove_component_events(
                     fs_state.change_status = None;
                 }
             }
+        }
+        for (entity, _) in events.read::<Vertex3d>() {
+            canvas_state.unregister_3d_vertex(&entity);
         }
     }
 }

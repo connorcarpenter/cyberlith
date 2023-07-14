@@ -8,5 +8,5 @@ pub fn step(
     mut canvas_state: ResMut<CanvasState>,
     mut camera_q: Query<&mut Camera>,
 ) {
-    canvas_state.update(&mut camera_q);
+    canvas_state.update_visibility(&mut camera_q);
 }

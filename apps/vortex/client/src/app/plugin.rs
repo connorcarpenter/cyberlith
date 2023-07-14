@@ -73,6 +73,7 @@ impl Plugin for VortexPlugin {
             .insert_resource(CanvasState::default())
             .add_startup_system(canvas::setup)
             .add_system(canvas::step)
+            .add_system(canvas::sync)
             .add_system(canvas::input);
     }
 }

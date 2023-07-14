@@ -4,7 +4,7 @@ pub use file_system::{
     ChangelistEntry, ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
 };
 use file_system::FileSystemComponentsPlugin;
-pub use vertex::{Vertex2d, Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt};
+pub use vertex::{Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt};
 use vertex::VertexComponentsPlugin;
 
 mod file_system;

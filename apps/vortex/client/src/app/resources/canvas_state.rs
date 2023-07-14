@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use bevy_ecs::{entity::Entity, prelude::Resource, system::Query};
 use bevy_log::info;
 
@@ -14,6 +16,7 @@ pub struct CanvasState {
     pub camera_3d: Option<Entity>,
     pub layer_2d: RenderLayer,
     pub layer_3d: RenderLayer,
+    vertices_3d_to_2d: HashMap<Entity, Entity>,
 }
 
 impl Default for CanvasState {
@@ -27,12 +30,13 @@ impl Default for CanvasState {
             camera_3d: None,
             layer_2d: RenderLayer::default(),
             layer_3d: RenderLayer::default(),
+            vertices_3d_to_2d: HashMap::new(),
         }
     }
 }
 
 impl CanvasState {
-    pub fn update(&mut self, camera_q: &mut Query<&mut Camera>) {
+    pub fn update_visibility(&mut self, camera_q: &mut Query<&mut Camera>) {
         if self.is_visible == self.next_visible {
             return;
         }
@@ -82,7 +86,7 @@ impl CanvasState {
         }
         info!("Switched to Wireframe mode");
         self.is_2d = true;
-        self.enable_cameras(camera_query, true, false);
+        self.enable_cameras(camera_query, true);
     }
 
     pub fn set_3d_mode(&mut self, camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>) {
@@ -91,15 +95,16 @@ impl CanvasState {
         }
         info!("Switched to Solid mode");
         self.is_2d = false;
-        self.enable_cameras(camera_query, false, true);
+        self.enable_cameras(camera_query, false);
     }
 
     fn enable_cameras(
         &self,
         camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>,
         enable_2d: bool,
-        enable_3d: bool,
     ) {
+        let enable_3d = !enable_2d;
+
         if let Some(camera_2d) = self.camera_2d {
             if let Ok((mut camera, _, _)) = camera_query.get_mut(camera_2d) {
                 camera.is_active = enable_2d;
@@ -154,5 +159,17 @@ impl CanvasState {
             texture_size.x as u32,
             texture_size.y as u32,
         ));
+    }
+
+    pub fn register_3d_vertex(&mut self, entity_3d: Entity, entity_2d: Entity) {
+        self.vertices_3d_to_2d.insert(entity_3d, entity_2d);
+    }
+
+    pub fn unregister_3d_vertex(&mut self, entity_3d: &Entity) {
+        self.vertices_3d_to_2d.remove(entity_3d);
+    }
+
+    pub fn vertex_entity_3d_to_2d(&self, entity_3d: &Entity) -> Option<&Entity> {
+        self.vertices_3d_to_2d.get(entity_3d)
     }
 }

@@ -1,5 +1,4 @@
 use bevy_ecs::system::{Query, Res, ResMut};
-use bevy_log::info;
 
 use input::{Input, Key};
 use render_api::components::{Camera, Projection, Transform};
