@@ -22,7 +22,7 @@ use crate::app::{
     },
     resources::{
         action_stack::{Action, ActionStack},
-        canvas_state::CanvasState,
+        canvas_manager::CanvasManager,
         global::Global,
         tab_manager::TabManager,
     },
@@ -378,7 +378,7 @@ impl FileTreeRowUiWidget {
 
         // add to tabs
         if file_ext.can_io() {
-            let mut system_state: SystemState<(Client, ResMut<CanvasState>, ResMut<TabManager>)> = SystemState::new(world);
+            let mut system_state: SystemState<(Client, ResMut<CanvasManager>, ResMut<TabManager>)> = SystemState::new(world);
             let (mut client, mut canvas_state, mut tab_manager) = system_state.get_mut(world);
             tab_manager.open_tab(&mut client, &mut canvas_state, row_entity);
         }

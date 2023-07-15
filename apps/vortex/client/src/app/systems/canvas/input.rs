@@ -1,21 +1,73 @@
 use bevy_ecs::system::{Query, Res, ResMut};
 
-use input::{Input, Key};
+use input::{Input, Key, MouseButton};
 use render_api::components::{Camera, Projection, Transform};
 
-use crate::app::resources::canvas_state::CanvasState;
+use crate::app::resources::canvas_manager::{CanvasManager, ClickType};
 
 pub fn input(
-    mut canvas_state: ResMut<CanvasState>,
-    input: Res<Input>,
+    mut canvas_manager: ResMut<CanvasManager>,
+    mut input: ResMut<Input>,
     mut camera_query: Query<(&mut Camera, &mut Transform, &mut Projection)>,
 ) {
-    // check input
+    // check keyboard input
+
+    // (S)olid 3D View
     if input.is_pressed(Key::S) {
         // disable 2d camera, enable 3d camera
-        canvas_state.set_3d_mode(&mut camera_query);
-    } else if input.is_pressed(Key::W) {
+        canvas_manager.set_3d_mode(&mut camera_query);
+    }
+    // (W)ireframe 2D View
+    else if input.is_pressed(Key::W) {
         // disable 3d camera, enable 2d camera
-        canvas_state.set_2d_mode(&mut camera_query);
+        canvas_manager.set_2d_mode(&mut camera_query);
+    }
+
+    // Mouse wheel zoom..
+    let scroll_y = input.consume_mouse_scroll();
+    canvas_manager.camera_zoom(&mut camera_query, scroll_y);
+
+    // is a vertex currently selected?
+    let vertex_is_selected = false;
+    // is the cursor hovering over anything?
+    let cursor_is_hovering = false;
+
+    if !vertex_is_selected && !cursor_is_hovering {
+        let left_button_pressed = input.is_pressed(MouseButton::Left);
+        let right_button_pressed = input.is_pressed(MouseButton::Right);
+        let mouse_button_pressed = left_button_pressed || right_button_pressed;
+
+        if mouse_button_pressed {
+            if left_button_pressed {
+                canvas_manager.click_type = ClickType::Left;
+            }
+            if right_button_pressed {
+                canvas_manager.click_type = ClickType::Right;
+            }
+
+            if canvas_manager.click_down {
+                // already clicking
+                let mouse = *input.mouse_pos();
+                let delta = mouse - canvas_manager.click_start;
+                canvas_manager.click_start = mouse;
+                match canvas_manager.click_type {
+                    ClickType::Left => {
+                        canvas_manager.camera_pan(&mut camera_query, delta);
+                    }
+                    ClickType::Right => {
+                        canvas_manager.camera_orbit(&mut camera_query, delta);
+                    }
+                }
+            } else {
+                // haven't clicked yet
+                canvas_manager.click_down = true;
+                canvas_manager.click_start = *input.mouse_pos();
+            }
+        } else {
+            if canvas_manager.click_down {
+                // release click
+                canvas_manager.click_down = false;
+            }
+        }
     }
 }

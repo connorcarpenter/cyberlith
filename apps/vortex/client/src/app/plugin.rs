@@ -16,7 +16,7 @@ use crate::app::{
     systems::{canvas, network, ui},
     ui::UiState,
 };
-use crate::app::resources::canvas_state::CanvasState;
+use crate::app::resources::canvas_manager::CanvasManager;
 
 pub struct VortexPlugin;
 
@@ -70,7 +70,7 @@ impl Plugin for VortexPlugin {
             .insert_resource(ActionStack::new())
             .add_system(ui::update)
             // Canvas Config
-            .insert_resource(CanvasState::default())
+            .insert_resource(CanvasManager::default())
             .add_startup_system(canvas::setup)
             .add_system(canvas::step)
             .add_system(canvas::sync)

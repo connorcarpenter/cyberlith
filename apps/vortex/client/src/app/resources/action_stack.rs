@@ -11,7 +11,7 @@ use vortex_proto::components::{ChangelistEntry, EntryKind, FileSystemChild, File
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
-    resources::{canvas_state::CanvasState, file_tree::FileTree, global::Global, tab_manager::TabManager},
+    resources::{canvas_manager::CanvasManager, file_tree::FileTree, global::Global, tab_manager::TabManager},
     systems::file_post_process,
 };
 
@@ -195,7 +195,7 @@ impl ActionStack {
                     Commands,
                     Client,
                     Res<Global>,
-                    ResMut<CanvasState>,
+                    ResMut<CanvasManager>,
                     ResMut<TabManager>,
                     Query<(Entity, &mut FileSystemUiState)>,
                     Query<(Entity, &ChangelistEntry, &mut ChangelistUiState)>,

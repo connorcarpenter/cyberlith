@@ -19,7 +19,7 @@ use vortex_proto::components::{ChangelistEntry, EntryKind, FileSystemChild, File
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
-    resources::{canvas_state::CanvasState, global::Global},
+    resources::{canvas_manager::CanvasManager, global::Global},
     systems::file_post_process,
 };
 
@@ -39,7 +39,7 @@ pub fn insert_component_events(
     mut commands: Commands,
     client: Client,
     mut global: ResMut<Global>,
-    mut canvas_state: ResMut<CanvasState>,
+    mut canvas_state: ResMut<CanvasManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
     mut event_reader: EventReader<InsertComponentEvents>,
@@ -219,7 +219,7 @@ pub fn update_component_events(
 pub fn remove_component_events(
     client: Client,
     mut global: ResMut<Global>,
-    mut canvas_state: ResMut<CanvasState>,
+    mut canvas_state: ResMut<CanvasManager>,
     mut parent_query: Query<&mut FileSystemParent>,
     mut event_reader: EventReader<RemoveComponentEvents>,
     mut fs_state_query: Query<&mut FileSystemUiState>,

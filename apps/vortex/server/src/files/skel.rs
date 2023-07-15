@@ -24,6 +24,9 @@ impl SkelWriter {
     fn new_default_actions(&self) -> Vec<SkelAction> {
         let mut output = Vec::new();
         output.push(SkelAction::Vertex(0, 0, 0, None));
+        output.push(SkelAction::Vertex(10, 0, 0, Some(0)));
+        output.push(SkelAction::Vertex(0, 10, 0, Some(0)));
+        output.push(SkelAction::Vertex(0, 0, 10, Some(0)));
         output
     }
 

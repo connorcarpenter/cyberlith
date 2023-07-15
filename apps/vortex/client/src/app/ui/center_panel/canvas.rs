@@ -17,7 +17,7 @@ use render_egui::{
 };
 
 use crate::app::{
-    resources::canvas_state::CanvasState,
+    resources::canvas_manager::CanvasManager,
     ui::UiState,
 };
 
@@ -33,7 +33,7 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
     let did_resize = resize_finished(ui, world, "left_panel");
 
     let mut system_state: SystemState<(
-        Res<CanvasState>,
+        Res<CanvasManager>,
         ResMut<Assets<CpuTexture2D>>,
         ResMut<EguiUserTextures>,
         ResMut<UiState>,

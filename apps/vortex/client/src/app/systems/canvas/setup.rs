@@ -12,12 +12,12 @@ use render_api::{
 };
 use render_egui::EguiUserTextures;
 
-use crate::app::{config::AppConfig, resources::canvas_state::CanvasState};
+use crate::app::{config::AppConfig, resources::canvas_manager::CanvasManager};
 
 pub fn setup(
     config: Res<AppConfig>,
     mut commands: Commands,
-    mut canvas_state: ResMut<CanvasState>,
+    mut canvas_state: ResMut<CanvasManager>,
     mut textures: ResMut<Assets<CpuTexture2D>>,
     mut user_textures: ResMut<EguiUserTextures>,
 ) {
@@ -45,7 +45,7 @@ pub fn setup(
 
 fn setup_2d_scene(
     commands: &mut Commands,
-    canvas_state: &mut CanvasState,
+    canvas_state: &mut CanvasManager,
     texture_size: &Vec2,
     canvas_texture_handle: Handle<CpuTexture2D>,
 ) {
@@ -75,7 +75,7 @@ fn setup_2d_scene(
 
 fn setup_3d_scene(
     commands: &mut Commands,
-    canvas_state: &mut CanvasState,
+    canvas_state: &mut CanvasManager,
     texture_size: &Vec2,
     canvas_texture_handle: Handle<CpuTexture2D>,
 ) {

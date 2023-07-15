@@ -20,11 +20,11 @@ use vortex_proto::{
 
 use crate::app::{
     components::file_system::FileSystemUiState,
-    resources::canvas_state::CanvasState,
+    resources::canvas_manager::CanvasManager,
     ui::widgets::colors::{
         FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
         TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED,
-    }
+    },
 };
 
 #[derive(Clone, Copy)]
@@ -73,7 +73,7 @@ impl TabManager {
         }
     }
 
-    pub fn open_tab(&mut self, client: &mut Client, canvas_state: &mut CanvasState, row_entity: &Entity) {
+    pub fn open_tab(&mut self, client: &mut Client, canvas_state: &mut CanvasManager, row_entity: &Entity) {
         if self.tab_map.contains_key(row_entity) {
             self.select_tab(client, canvas_state, row_entity);
         } else {
@@ -106,7 +106,7 @@ impl TabManager {
         egui::menu::bar(ui, |ui| {
             let mut system_state: SystemState<(
                 Client,
-                ResMut<CanvasState>,
+                ResMut<CanvasManager>,
                 ResMut<TabManager>,
                 Query<(&FileSystemEntry, &FileSystemUiState)>,
             )> = SystemState::new(world);
@@ -140,7 +140,7 @@ impl TabManager {
         }
     }
 
-    fn select_tab(&mut self, client: &mut Client, canvas_state: &mut CanvasState, row_entity: &Entity) {
+    fn select_tab(&mut self, client: &mut Client, canvas_state: &mut CanvasManager, row_entity: &Entity) {
         // deselect current tab
         if let Some(current_entity) = self.current_tab {
             let tab_state = self.tab_map.get_mut(&current_entity).unwrap();
@@ -157,7 +157,7 @@ impl TabManager {
         client.send_message::<TabActionChannel, TabActionMessage>(&message);
     }
 
-    fn set_current_tab(&mut self, canvas_state: &mut CanvasState, val: Option<Entity>) {
+    fn set_current_tab(&mut self, canvas_state: &mut CanvasManager, val: Option<Entity>) {
         self.current_tab = val;
         if val.is_none() {
             canvas_state.set_visibility(false);
@@ -166,7 +166,7 @@ impl TabManager {
         }
     }
 
-    fn close_tab(&mut self, client: &mut Client, canvas_state: &mut CanvasState, row_entity: &Entity) {
+    fn close_tab(&mut self, client: &mut Client, canvas_state: &mut CanvasManager, row_entity: &Entity) {
         // remove tab
         let tab_state = self.tab_map.remove(row_entity).unwrap();
         self.tab_order.remove(tab_state.order);
@@ -198,19 +198,19 @@ impl TabManager {
         self.recycle_tab_id(tab_state.tab_id);
     }
 
-    fn close_all_tabs(&mut self, client: &mut Client, canvas_state: &mut CanvasState) {
+    fn close_all_tabs(&mut self, client: &mut Client, canvas_state: &mut CanvasManager) {
         let all_tabs = self.tab_order.clone();
         for entity in all_tabs {
             self.close_tab(client, canvas_state, &entity);
         }
     }
 
-    fn close_all_tabs_except(&mut self, client: &mut Client, canvas_state: &mut CanvasState, row_entity: &Entity) {
+    fn close_all_tabs_except(&mut self, client: &mut Client, canvas_state: &mut CanvasManager, row_entity: &Entity) {
         self.close_all_tabs(client, canvas_state);
         self.open_tab(client, canvas_state, row_entity);
     }
 
-    fn close_all_tabs_left_of(&mut self, client: &mut Client, canvas_state: &mut CanvasState, row_entity: &Entity) {
+    fn close_all_tabs_left_of(&mut self, client: &mut Client, canvas_state: &mut CanvasManager, row_entity: &Entity) {
         let tab_state = self.tab_map.get(row_entity).unwrap();
         let order = tab_state.order;
         let mut tabs_to_close: Vec<Entity> = Vec::new();
@@ -224,7 +224,7 @@ impl TabManager {
         }
     }
 
-    fn close_all_tabs_right_of(&mut self, client: &mut Client, canvas_state: &mut CanvasState, row_entity: &Entity) {
+    fn close_all_tabs_right_of(&mut self, client: &mut Client, canvas_state: &mut CanvasManager, row_entity: &Entity) {
         let tab_state = self.tab_map.get(row_entity).unwrap();
         let order = tab_state.order;
         let mut tabs_to_close: Vec<Entity> = Vec::new();
@@ -241,7 +241,7 @@ impl TabManager {
     fn render_tabs(
         &mut self,
         client: &mut Client,
-        canvas_state: &mut CanvasState,
+        canvas_state: &mut CanvasManager,
         ui: &mut Ui,
         query: &Query<(&FileSystemEntry, &FileSystemUiState)>,
     ) {
@@ -409,7 +409,7 @@ impl TabManager {
         });
     }
 
-    fn execute_tab_action(&mut self, client: &mut Client, canvas_state: &mut CanvasState, tab_action: Option<TabAction>) {
+    fn execute_tab_action(&mut self, client: &mut Client, canvas_state: &mut CanvasManager, tab_action: Option<TabAction>) {
         match tab_action {
             None => {}
             Some(TabAction::Select(row_entity)) => {

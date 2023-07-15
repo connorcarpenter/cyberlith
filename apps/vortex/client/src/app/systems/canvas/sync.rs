@@ -3,10 +3,10 @@ use bevy_ecs::{entity::Entity, query::{With, Without}, system::{Query, ResMut}};
 use render_api::components::{Camera, Transform};
 use vortex_proto::components::Vertex3d;
 
-use crate::app::{components::Vertex2d, resources::canvas_state::CanvasState};
+use crate::app::{components::Vertex2d, resources::canvas_manager::CanvasManager};
 
 pub fn sync(
-    mut canvas_state: ResMut<CanvasState>,
+    mut canvas_state: ResMut<CanvasManager>,
     mut vertex_3d_query: Query<(Entity, &Vertex3d, &mut Transform), Without<Vertex2d>>,
     mut vertex_2d_query: Query<&mut Transform, With<Vertex2d>>,
 ) {
