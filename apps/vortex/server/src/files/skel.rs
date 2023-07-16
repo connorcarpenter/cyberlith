@@ -14,7 +14,7 @@ use crate::files::{FileReader, FileWriter};
 // Actions
 enum SkelAction {
     //////// x,   y,   z, parent_id (0 for none)
-    Vertex(u16, u16, u16, Option<u16>),
+    Vertex(i16, i16, i16, Option<u16>),
 }
 
 // Writer
@@ -23,10 +23,28 @@ pub struct SkelWriter;
 impl SkelWriter {
     fn new_default_actions(&self) -> Vec<SkelAction> {
         let mut output = Vec::new();
+
+        // waist
         output.push(SkelAction::Vertex(0, 0, 0, None));
-        output.push(SkelAction::Vertex(10, 0, 0, Some(0)));
-        output.push(SkelAction::Vertex(0, 10, 0, Some(0)));
-        output.push(SkelAction::Vertex(0, 0, 10, Some(0)));
+
+        // neck
+        output.push(SkelAction::Vertex(0, 70, 0, Some(0)));
+
+        // head
+        output.push(SkelAction::Vertex(0, 90, 0, Some(1)));
+
+        // left arm
+        output.push(SkelAction::Vertex(25, 5, 0, Some(1)));
+
+        // right arm
+        output.push(SkelAction::Vertex(-25, 5, 0, Some(1)));
+
+        // left leg
+        output.push(SkelAction::Vertex(20, -90, 0, Some(0)));
+
+        // right leg
+        output.push(SkelAction::Vertex(-20, -90, 0, Some(0)));
+
         output
     }
 
@@ -42,7 +60,7 @@ impl SkelWriter {
         let mut output = Vec::new();
 
         /////////////////////////////  id,   x,   y,   z, parent_entity   /////////////////
-        let mut map: HashMap<Entity, (usize, u16, u16, u16, Option<Entity>)> = HashMap::new();
+        let mut map: HashMap<Entity, (usize, i16, i16, i16, Option<Entity>)> = HashMap::new();
 
         for (id, entity) in content_entities.iter().enumerate() {
             let (vertex, has_parent_opt) = vertex_query.get(*entity).unwrap();
@@ -159,7 +177,7 @@ impl SkelReader {
         new_entities: &mut Vec<Entity>,
         actions: Vec<SkelAction>,
     ) -> Result<(), SerdeErr> {
-        let mut entities: Vec<(Entity, u16, u16, u16, Option<u16>)> = Vec::new();
+        let mut entities: Vec<(Entity, i16, i16, i16, Option<u16>)> = Vec::new();
 
         for action in actions {
             match action {

@@ -22,6 +22,22 @@ pub fn input(
         // disable 3d camera, enable 2d camera
         canvas_manager.set_2d_mode(&mut camera_query);
     }
+    // (G)ame Camera View
+    else if input.is_pressed(Key::G) {
+        canvas_manager.set_camera_angle_ingame();
+    }
+    // Si(d)e Camera View
+    else if input.is_pressed(Key::D) {
+        canvas_manager.set_camera_angle_side();
+    }
+    // (F)ront Camera View
+    else if input.is_pressed(Key::F) {
+        canvas_manager.set_camera_angle_front();
+    }
+    // (T)op Camera View
+    else if input.is_pressed(Key::T) {
+        canvas_manager.set_camera_angle_top();
+    }
 
     // Mouse wheel zoom..
     let scroll_y = input.consume_mouse_scroll();

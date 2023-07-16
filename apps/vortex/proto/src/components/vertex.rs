@@ -45,31 +45,31 @@ pub struct Vertex3d {
 pub type VertexSerdeInt = SignedVariableInteger<4>;
 
 impl Vertex3d {
-    pub fn new(x: u16, y: u16, z: u16) -> Self {
+    pub fn new(x: i16, y: i16, z: i16) -> Self {
         Self::new_complete(x.into(), y.into(), z.into())
     }
 
-    pub fn x(&self) -> u16 {
+    pub fn x(&self) -> i16 {
         self.x.to()
     }
 
-    pub fn y(&self) -> u16 {
+    pub fn y(&self) -> i16 {
         self.y.to()
     }
 
-    pub fn z(&self) -> u16 {
+    pub fn z(&self) -> i16 {
         self.z.to()
     }
 
-    pub fn set_x(&mut self, x: u16) {
+    pub fn set_x(&mut self, x: i16) {
         *self.x = x.into();
     }
 
-    pub fn set_y(&mut self, y: u16) {
+    pub fn set_y(&mut self, y: i16) {
         *self.y = y.into();
     }
 
-    pub fn set_z(&mut self, z: u16) {
+    pub fn set_z(&mut self, z: i16) {
         *self.z = z.into();
     }
 }

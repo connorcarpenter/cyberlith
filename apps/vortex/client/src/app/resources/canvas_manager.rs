@@ -31,8 +31,8 @@ pub struct CanvasManager {
     pub camera_3d: Option<Entity>,
     pub layer_3d: RenderLayer,
 
-    camera_3d_offset: Vec2,
     camera_3d_recalc: bool,
+    camera_3d_offset: Vec2,
     camera_3d_rotation: Option<Quat>,
     camera_3d_scale: f32,
 }
@@ -203,6 +203,45 @@ impl CanvasManager {
         info!("Switched to Solid mode");
         self.is_2d = false;
         self.enable_cameras(camera_query, false);
+    }
+
+    pub fn set_camera_angle_ingame(&mut self) {
+        let mut rotation = Quat::from_rotation_y(f32::to_radians(0.0));
+
+        // -60 seems to be 2:1 diablo isometric angle
+        // -71.8 seems to be 3:2 warcraft angle
+        // -64.849 seems to be the 7:4 angle we're looking for..
+        rotation *= Quat::from_rotation_x(f32::to_radians(-64.849));
+
+        self.camera_3d_rotation = Some(rotation);
+        self.camera_3d_offset = Vec2::ZERO;
+        self.camera_3d_scale = 1.0;
+
+        self.camera_3d_recalc = true;
+    }
+
+    pub fn set_camera_angle_side(&mut self) {
+        self.camera_3d_rotation = Some(Quat::from_rotation_y(f32::to_radians(90.0)));
+        self.camera_3d_offset = Vec2::ZERO;
+        self.camera_3d_scale = 1.0;
+
+        self.camera_3d_recalc = true;
+    }
+
+    pub fn set_camera_angle_front(&mut self) {
+        self.camera_3d_rotation = Some(Quat::from_rotation_y(f32::to_radians(0.0)));
+        self.camera_3d_offset = Vec2::ZERO;
+        self.camera_3d_scale = 1.0;
+
+        self.camera_3d_recalc = true;
+    }
+
+    pub fn set_camera_angle_top(&mut self) {
+        self.camera_3d_rotation = Some(Quat::from_rotation_x(f32::to_radians(-90.0)));
+        self.camera_3d_offset = Vec2::ZERO;
+        self.camera_3d_scale = 1.0;
+
+        self.camera_3d_recalc = true;
     }
 
     fn enable_cameras(
