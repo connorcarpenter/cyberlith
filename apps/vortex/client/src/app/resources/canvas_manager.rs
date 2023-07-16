@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use bevy_ecs::{entity::Entity, prelude::Resource, system::Query};
 use bevy_log::info;
 
-use math::{Vec2, Vec3};
+use math::{Quat, Vec2, Vec3};
 use render_api::{base::CpuTexture2D, components::{Camera, OrthographicProjection, Projection, RenderLayer, Transform, Viewport}, Handle};
 
 pub enum ClickType {
@@ -29,9 +29,11 @@ pub struct CanvasManager {
 
     pub camera_3d: Option<Entity>,
     pub layer_3d: RenderLayer,
-    camera_3d_target: Vec3,
-    camera_3d_target_distance: f32,
+
+    camera_3d_offset: Vec2,
     camera_3d_recalc: bool,
+    camera_3d_rotation: Option<Quat>,
+    camera_3d_scale: f32,
 }
 
 impl Default for CanvasManager {
@@ -53,48 +55,38 @@ impl Default for CanvasManager {
 
             camera_3d: None,
             layer_3d: RenderLayer::default(),
-            camera_3d_target: Vec3::ZERO,
-            camera_3d_target_distance: 100.0,
+
             camera_3d_recalc: false,
+            camera_3d_rotation: None,
+            camera_3d_scale: 1.0,
+            camera_3d_offset: Vec2::ZERO,
         }
     }
 }
 
 impl CanvasManager {
-    pub fn camera_pan(&mut self, camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>, delta: Vec2) {
-        let Some(camera_3d) = self.camera_3d else {
-            return;
-        };
+    pub fn camera_pan(&mut self, delta: Vec2) {
+        let speed = 0.7375;
 
-        let (_, mut transform, _) = camera_query.get_mut(camera_3d).unwrap();
-
-        let speed = 0.1;
-
-        let right = transform.right_direction();
-        let up = right.cross(transform.view_direction());
-
-        self.camera_3d_target += right * delta.x * speed;
-        self.camera_3d_target += up * delta.y * speed;
+        self.camera_3d_offset += delta * speed / self.camera_3d_scale;
 
         self.camera_3d_recalc = true;
     }
 
-    pub fn camera_orbit(&mut self, camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>, delta: Vec2) {
-        let Some(camera_3d) = self.camera_3d else {
+    pub fn camera_orbit(&mut self, delta: Vec2) {
+        let Some(rotation) = self.camera_3d_rotation else {
             return;
         };
 
-        let (_, mut transform, _) = camera_query.get_mut(camera_3d).unwrap();
+        let speed = -0.01;
 
-        let speed = 1.0;
-
-        transform.orbit_rotate(delta * speed);
+        self.camera_3d_rotation = Some(rotation * Quat::from_rotation_y(delta.x * speed) * Quat::from_rotation_x(delta.y * speed));
 
         self.camera_3d_recalc = true;
     }
 
     pub fn camera_zoom(&mut self, delta: f32) {
-        self.camera_3d_target_distance = (self.camera_3d_target_distance + delta).min(200.0).max(10.0);
+        self.camera_3d_scale = (self.camera_3d_scale + (delta * 0.01)).min(6.0).max(0.6);
 
         self.camera_3d_recalc = true;
     }
@@ -119,19 +111,40 @@ impl CanvasManager {
     }
 
     pub fn update_3d_camera(&mut self, camera_q: &mut Query<(&mut Camera, &mut Transform)>) {
-        if !self.camera_3d_recalc {
-            return;
+        if self.camera_3d_rotation.is_none() {
+            let Some(camera_3d) = self.camera_3d else {
+                return;
+            };
+
+            let Ok((_, transform)) = camera_q.get(camera_3d) else {
+                return;
+            };
+
+            self.camera_3d_rotation = Some(transform.rotation.clone());
         }
-        self.camera_3d_recalc = false;
 
-        let Some(camera_3d) = self.camera_3d else {
-            return;
-        };
+        if self.camera_3d_recalc {
+            self.camera_3d_recalc = false;
 
-        let (_, mut transform) = camera_q.get_mut(camera_3d).unwrap();
+            let Some(camera_3d) = self.camera_3d else {
+                return;
+            };
 
-        // keep Transform's rotation and scale the same, but base the position on self.camera_3d_target and self.camera_3d_target_distance
-        transform.translation = self.camera_3d_target + transform.view_direction() * self.camera_3d_target_distance;
+            let Ok((_, mut transform)) = camera_q.get_mut(camera_3d) else {
+                return;
+            };
+
+            // keep Transform's rotation and scale the same, but base the position on self.camera_3d_target and self.camera_3d_target_distance
+            transform.rotation = self.camera_3d_rotation.unwrap();
+            transform.scale = Vec3::splat(1.0 / self.camera_3d_scale);
+
+            let right = transform.right_direction();
+            let up = right.cross(transform.view_direction());
+
+            transform.translation = (transform.view_direction() * -100.0); // 100 units away from where looking
+            transform.translation += right * self.camera_3d_offset.x;
+            transform.translation += up * self.camera_3d_offset.y;
+        }
     }
 
     pub fn update_camera_viewports(

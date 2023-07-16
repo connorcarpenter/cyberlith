@@ -25,7 +25,9 @@ pub fn input(
 
     // Mouse wheel zoom..
     let scroll_y = input.consume_mouse_scroll();
-    canvas_manager.camera_zoom(scroll_y);
+    if scroll_y > 0.1 || scroll_y < -0.1 {
+        canvas_manager.camera_zoom(scroll_y);
+    }
 
     // is a vertex currently selected?
     let vertex_is_selected = false;
@@ -52,10 +54,10 @@ pub fn input(
                 canvas_manager.click_start = mouse;
                 match canvas_manager.click_type {
                     ClickType::Left => {
-                        canvas_manager.camera_pan(&mut camera_query, delta);
+                        canvas_manager.camera_pan(delta);
                     }
                     ClickType::Right => {
-                        canvas_manager.camera_orbit(&mut camera_query, delta);
+                        canvas_manager.camera_orbit(delta);
                     }
                 }
             } else {

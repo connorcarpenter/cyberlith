@@ -150,13 +150,11 @@ impl Transform {
     }
 
     pub fn up_direction(&self) -> Vec3 {
-        // todo: make sure this is right!
-        self.rotation * Vec3::Y
+        self.rotation.mul_vec3(Vec3::Y).normalize()
     }
 
     pub fn view_direction(&self) -> Vec3 {
-        // todo: make sure this is right!
-        self.rotation * Vec3::Z
+        self.rotation.mul_vec3(Vec3::Z).normalize()
     }
 
     pub fn right_direction(&self) -> Vec3 {
