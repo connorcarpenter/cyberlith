@@ -82,7 +82,7 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
     if canvas_state.is_visible() {
         let image =
             Image::new(texture_id, texture_size).uv(Rect::from_min_max(pos2(0.0, 1.0), pos2(1.0, 0.0)));
-        ui.add(image);
+        ui.add_enabled(false, image);
     }
 
     system_state.apply(world);

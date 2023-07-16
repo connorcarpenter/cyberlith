@@ -25,7 +25,7 @@ pub fn input(
 
     // Mouse wheel zoom..
     let scroll_y = input.consume_mouse_scroll();
-    canvas_manager.camera_zoom(&mut camera_query, scroll_y);
+    canvas_manager.camera_zoom(scroll_y);
 
     // is a vertex currently selected?
     let vertex_is_selected = false;

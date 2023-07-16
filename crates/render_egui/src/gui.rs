@@ -215,11 +215,14 @@ impl GUI {
         *self.output.borrow_mut() = Some(end_frame);
 
         // Input Events
+        let ctx_wants_ptr_input = egui_context.wants_pointer_input();
+        let ctx_wants_kb_input = egui_context.wants_keyboard_input();
+
         for event in frame_input.incoming_events.iter_mut() {
             if let IncomingEvent::ModifiersChange { modifiers } = event {
                 self.modifiers = *modifiers;
             }
-            if egui_context.wants_pointer_input() {
+            if ctx_wants_ptr_input {
                 match event {
                     IncomingEvent::MousePress {
                         ref mut handled, ..
@@ -245,7 +248,7 @@ impl GUI {
                 }
             }
 
-            if egui_context.wants_keyboard_input() {
+            if ctx_wants_kb_input {
                 match event {
                     IncomingEvent::KeyRelease {
                         ref mut handled, ..
@@ -261,7 +264,7 @@ impl GUI {
                 }
             }
         }
-        egui_context.wants_pointer_input() || egui_context.wants_keyboard_input()
+        ctx_wants_ptr_input || ctx_wants_kb_input
     }
 
     ///

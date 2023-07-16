@@ -6,37 +6,100 @@ use bevy_log::info;
 use math::{Vec2, Vec3};
 use render_api::{base::CpuTexture2D, components::{Camera, OrthographicProjection, Projection, RenderLayer, Transform, Viewport}, Handle};
 
+pub enum ClickType {
+    Left,
+    Right,
+}
+
 #[derive(Resource)]
-pub struct CanvasState {
+pub struct CanvasManager {
     is_visible: bool,
     next_visible: bool,
     is_2d: bool,
+
     canvas_texture: Option<Handle<CpuTexture2D>>,
-    pub camera_2d: Option<Entity>,
-    pub camera_3d: Option<Entity>,
-    pub layer_2d: RenderLayer,
-    pub layer_3d: RenderLayer,
     vertices_3d_to_2d: HashMap<Entity, Entity>,
+
+    pub click_type: ClickType,
+    pub click_start: Vec2,
+    pub click_down: bool,
+
+    pub camera_2d: Option<Entity>,
+    pub layer_2d: RenderLayer,
+
+    pub camera_3d: Option<Entity>,
+    pub layer_3d: RenderLayer,
+    camera_3d_target: Vec3,
+    camera_3d_target_distance: f32,
+    camera_3d_recalc: bool,
 }
 
-impl Default for CanvasState {
+impl Default for CanvasManager {
     fn default() -> Self {
         Self {
             next_visible: false,
             is_visible: false,
             is_2d: true,
+
             canvas_texture: None,
-            camera_2d: None,
-            camera_3d: None,
-            layer_2d: RenderLayer::default(),
-            layer_3d: RenderLayer::default(),
             vertices_3d_to_2d: HashMap::new(),
+
+            click_type: ClickType::Left,
+            click_start: Vec2::ZERO,
+            click_down: false,
+
+            camera_2d: None,
+            layer_2d: RenderLayer::default(),
+
+            camera_3d: None,
+            layer_3d: RenderLayer::default(),
+            camera_3d_target: Vec3::ZERO,
+            camera_3d_target_distance: 100.0,
+            camera_3d_recalc: false,
         }
     }
 }
 
-impl CanvasState {
-    pub fn update_visibility(&mut self, camera_q: &mut Query<&mut Camera>) {
+impl CanvasManager {
+    pub fn camera_pan(&mut self, camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>, delta: Vec2) {
+        let Some(camera_3d) = self.camera_3d else {
+            return;
+        };
+
+        let (_, mut transform, _) = camera_query.get_mut(camera_3d).unwrap();
+
+        let speed = 0.1;
+
+        let right = transform.right_direction();
+        let up = right.cross(transform.view_direction());
+
+        self.camera_3d_target += right * delta.x * speed;
+        self.camera_3d_target += up * delta.y * speed;
+
+        self.camera_3d_recalc = true;
+    }
+
+    pub fn camera_orbit(&mut self, camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>, delta: Vec2) {
+        let Some(camera_3d) = self.camera_3d else {
+            return;
+        };
+
+        let (_, mut transform, _) = camera_query.get_mut(camera_3d).unwrap();
+
+        let speed = 1.0;
+
+        transform.orbit_rotate(delta * speed);
+
+        self.camera_3d_recalc = true;
+    }
+
+    pub fn camera_zoom(&mut self, delta: f32) {
+        self.camera_3d_target_distance = (self.camera_3d_target_distance + delta).min(200.0).max(10.0);
+
+        self.camera_3d_recalc = true;
+    }
+
+    pub fn update_visibility(&mut self, camera_q: &mut Query<(&mut Camera, &mut Transform)>) {
         if self.is_visible == self.next_visible {
             return;
         }
@@ -50,9 +113,25 @@ impl CanvasState {
             info!("Camera are DISABLED");
         }
 
-        for mut camera in camera_q.iter_mut() {
+        for (mut camera, _) in camera_q.iter_mut() {
             camera.is_active = cameras_enabled;
         }
+    }
+
+    pub fn update_3d_camera(&mut self, camera_q: &mut Query<(&mut Camera, &mut Transform)>) {
+        if !self.camera_3d_recalc {
+            return;
+        }
+        self.camera_3d_recalc = false;
+
+        let Some(camera_3d) = self.camera_3d else {
+            return;
+        };
+
+        let (_, mut transform) = camera_q.get_mut(camera_3d).unwrap();
+
+        // keep Transform's rotation and scale the same, but base the position on self.camera_3d_target and self.camera_3d_target_distance
+        transform.translation = self.camera_3d_target + transform.view_direction() * self.camera_3d_target_distance;
     }
 
     pub fn update_camera_viewports(

@@ -2,7 +2,7 @@ use std::{default::Default, ops::Mul};
 
 use bevy_ecs::component::Component;
 
-use math::{Mat3, Mat4, Quat, Vec3};
+use math::{Mat3, Mat4, Quat, Vec2, Vec3};
 
 #[derive(Clone, Component, Copy)]
 pub struct Transform {
@@ -81,6 +81,11 @@ impl Transform {
         Mat4::from_scale_rotation_translation(self.scale, self.rotation, self.translation)
     }
 
+    pub fn orbit_rotate(&mut self, delta: Vec2) {
+        self.rotate_y(delta.y);
+        self.rotate_x(delta.x);
+    }
+
     pub fn rotate(&mut self, rotation: Quat) {
         self.rotation = rotation * self.rotation;
     }
@@ -142,6 +147,20 @@ impl Transform {
         point = self.rotation * point;
         point += self.translation;
         point
+    }
+
+    pub fn up_direction(&self) -> Vec3 {
+        // todo: make sure this is right!
+        self.rotation * Vec3::Y
+    }
+
+    pub fn view_direction(&self) -> Vec3 {
+        // todo: make sure this is right!
+        self.rotation * Vec3::Z
+    }
+
+    pub fn right_direction(&self) -> Vec3 {
+        self.view_direction().cross(self.up_direction())
     }
 }
 

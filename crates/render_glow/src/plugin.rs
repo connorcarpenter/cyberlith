@@ -20,8 +20,8 @@ impl Plugin for RenderGlowPlugin {
             // System Sets
             .configure_set(
                 GlowSet::Input
-                    .after(CoreSet::Last)
-                    .before(CoreSet::LastFlush),
+                    .after(CoreSet::PreUpdate)
+                    .before(CoreSet::PreUpdateFlush),
             )
             // Systems
             .add_system(input::run.in_base_set(GlowSet::Input))
