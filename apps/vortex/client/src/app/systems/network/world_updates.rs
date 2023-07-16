@@ -18,7 +18,7 @@ use render_api::{Assets, base::{Color, CpuMaterial, CpuMesh}, components::Render
 use vortex_proto::components::{ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild, Vertex3d, VertexChild, VertexRootChild};
 
 use crate::app::{
-    components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
+    components::{file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState}, Vertex2d},
     resources::{canvas_manager::CanvasManager, global::Global},
     systems::file_post_process,
 };
@@ -39,7 +39,7 @@ pub fn insert_component_events(
     mut commands: Commands,
     client: Client,
     mut global: ResMut<Global>,
-    mut canvas_state: ResMut<CanvasManager>,
+    mut canvas_manager: ResMut<CanvasManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
     mut event_reader: EventReader<InsertComponentEvents>,
@@ -132,12 +132,12 @@ pub fn insert_component_events(
         }
 
         // on Vertex Insert Event
-        for entity in events.read::<Vertex3d>() {
-            info!("received inserted Vertex3d: `{:?}`", entity);
-            let vertex_3d = vertex_query.get(entity).unwrap();
+        for vertex_3d_entity in events.read::<Vertex3d>() {
+            info!("received inserted Vertex3d: `{:?}`", vertex_3d_entity);
+            let vertex_3d = vertex_query.get(vertex_3d_entity).unwrap();
 
-            let vertex_3d_entity = commands
-                .spawn(RenderObjectBundle::sphere(
+            commands.entity(vertex_3d_entity)
+                .insert(RenderObjectBundle::sphere(
                     &mut meshes,
                     &mut materials,
                     vertex_3d.x() as f32,
@@ -147,8 +147,7 @@ pub fn insert_component_events(
                     12,
                     Color::GREEN,
                 ))
-                .insert(canvas_state.layer_3d)
-                .id();
+                .insert(canvas_manager.layer_3d);
 
             let vertex_2d_entity = commands
                 .spawn(RenderObjectBundle::circle(
@@ -161,10 +160,13 @@ pub fn insert_component_events(
                     Color::GREEN,
                     false,
                 ))
-                .insert(canvas_state.layer_2d)
+                .insert(canvas_manager.layer_2d)
+                .insert(Vertex2d)
                 .id();
 
-            canvas_state.register_3d_vertex(vertex_3d_entity, vertex_2d_entity);
+            info!("received inserted Vertex3d: `{:?}`, created 2d entity: {:?}", vertex_3d_entity, vertex_2d_entity);
+
+            canvas_manager.register_3d_vertex(vertex_3d_entity, vertex_2d_entity);
         }
 
         // on Vertex Child Insert Event
@@ -217,9 +219,10 @@ pub fn update_component_events(
 }
 
 pub fn remove_component_events(
+    mut commands: Commands,
     client: Client,
     mut global: ResMut<Global>,
-    mut canvas_state: ResMut<CanvasManager>,
+    mut canvas_manager: ResMut<CanvasManager>,
     mut parent_query: Query<&mut FileSystemParent>,
     mut event_reader: EventReader<RemoveComponentEvents>,
     mut fs_state_query: Query<&mut FileSystemUiState>,
@@ -262,7 +265,9 @@ pub fn remove_component_events(
             }
         }
         for (entity, _) in events.read::<Vertex3d>() {
-            canvas_state.unregister_3d_vertex(&entity);
+            if let Some(vertex_2d_entity) = canvas_manager.unregister_3d_vertex(&entity) {
+                commands.entity(vertex_2d_entity).despawn();
+            }
         }
     }
 }

@@ -135,11 +135,6 @@ impl RenderObjectSingle {
     ) {
         let camera = render_camera.camera;
 
-        if attributes.normal {
-            let inverse = transform.inverse();
-            program.use_uniform_if_required("normalMatrix", inverse.transpose());
-        }
-
         program.use_uniform(
             "viewProjection",
             render_camera
@@ -224,10 +219,6 @@ impl RenderObjectInstanced {
         let camera = render_camera.camera;
         let transform = Mat4::IDENTITY;
 
-        if attributes.normal && instance_buffers.contains_key("instance_translation") {
-            let inverse = transform.inverse();
-            program.use_uniform("normalMatrix", inverse.transpose());
-        }
         program.use_uniform(
             "viewProjection",
             render_camera
@@ -238,7 +229,6 @@ impl RenderObjectInstanced {
         program.use_uniform("modelMatrix", transform);
 
         for attribute_name in [
-            "instance_translation",
             "row1",
             "row2",
             "row3",
@@ -263,12 +253,7 @@ impl RenderObjectInstanced {
         instance_buffers: &HashMap<String, InstanceBuffer>,
     ) -> String {
         format!(
-            "{}{}{}{}{}{}{}",
-            if instance_buffers.contains_key("instance_translation") {
-                "#define USE_INSTANCE_TRANSLATIONS\n"
-            } else {
-                "#define USE_INSTANCE_TRANSFORMS\n"
-            },
+            "{}{}{}{}{}{}",
             if required_attributes.normal {
                 "#define USE_NORMALS\n"
             } else {
@@ -310,31 +295,7 @@ impl RenderObjectInstanced {
         // Next, we can compute the instance buffers with that ordering.
         let mut instance_buffers: HashMap<String, InstanceBuffer> = Default::default();
 
-        // this is checking whether or not any rotations or scaling is applied to any instance
-        // this is a pretty nice approach, I can imagine that this is a common case
-        if indices
-            .iter()
-            .map(|i| instances.transformations[*i])
-            .all(|t| {
-                Mat3::from_cols(
-                    t.x_axis.truncate(),
-                    t.y_axis.truncate(),
-                    t.z_axis.truncate(),
-                ) == Mat3::IDENTITY
-            })
         {
-            // if there is no rotation or scaling, just use "instance_translation" to store the position
-            instance_buffers.insert(
-                "instance_translation".to_string(),
-                InstanceBuffer::new_with_data(
-                    &indices
-                        .iter()
-                        .map(|i| instances.transformations[*i])
-                        .map(|t| t.w_axis.truncate())
-                        .collect::<Vec<_>>(),
-                ),
-            );
-        } else {
             let mut row1 = Vec::new();
             let mut row2 = Vec::new();
             let mut row3 = Vec::new();
