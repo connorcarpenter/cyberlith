@@ -52,12 +52,15 @@ pub fn input(
                 let mouse = *input.mouse_pos();
                 let delta = mouse - canvas_manager.click_start;
                 canvas_manager.click_start = mouse;
-                match canvas_manager.click_type {
-                    ClickType::Left => {
-                        canvas_manager.camera_pan(delta);
-                    }
-                    ClickType::Right => {
-                        canvas_manager.camera_orbit(delta);
+
+                if delta.length() > 0.0 {
+                    match canvas_manager.click_type {
+                        ClickType::Left => {
+                            canvas_manager.camera_pan(&camera_query, delta);
+                        }
+                        ClickType::Right => {
+                            canvas_manager.camera_orbit(delta);
+                        }
                     }
                 }
             } else {

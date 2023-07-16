@@ -148,7 +148,7 @@ impl CameraProjection for OrthographicProjection {
 impl Default for OrthographicProjection {
     fn default() -> Self {
         OrthographicProjection {
-            height: 500.0,
+            height: 720.0,
             near: 0.0,
             far: 1000.0,
         }

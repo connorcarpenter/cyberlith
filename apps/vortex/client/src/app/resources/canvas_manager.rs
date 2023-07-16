@@ -18,6 +18,7 @@ pub struct CanvasManager {
     is_2d: bool,
 
     canvas_texture: Option<Handle<CpuTexture2D>>,
+    canvas_texture_size: Vec2,
     vertices_3d_to_2d: HashMap<Entity, Entity>,
 
     pub click_type: ClickType,
@@ -44,6 +45,7 @@ impl Default for CanvasManager {
             is_2d: true,
 
             canvas_texture: None,
+            canvas_texture_size: Vec2::new(1280.0, 720.0),
             vertices_3d_to_2d: HashMap::new(),
 
             click_type: ClickType::Left,
@@ -65,8 +67,19 @@ impl Default for CanvasManager {
 }
 
 impl CanvasManager {
-    pub fn camera_pan(&mut self, delta: Vec2) {
-        let speed = 0.7375;
+    pub fn camera_pan(&mut self, camera_query: &Query<(&mut Camera, &mut Transform, &mut Projection)>, delta: Vec2) {
+        let Some(camera_3d) = self.camera_3d else {
+            return;
+        };
+
+        let Ok((_, _, Projection::Orthographic(proj))) = camera_query.get(camera_3d) else {
+            return;
+        };
+
+        let camera_height = proj.height;
+
+        let texture_height = self.canvas_texture_size.y;
+        let speed = camera_height / texture_height;
 
         self.camera_3d_offset += delta * speed / self.camera_3d_scale;
 
@@ -86,28 +99,9 @@ impl CanvasManager {
     }
 
     pub fn camera_zoom(&mut self, delta: f32) {
-        self.camera_3d_scale = (self.camera_3d_scale + (delta * 0.01)).min(6.0).max(0.6);
+        self.camera_3d_scale = (self.camera_3d_scale + (delta * 0.01)).min(5.0).max(1.0);
 
         self.camera_3d_recalc = true;
-    }
-
-    pub fn update_visibility(&mut self, camera_q: &mut Query<(&mut Camera, &mut Transform)>) {
-        if self.is_visible == self.next_visible {
-            return;
-        }
-        self.is_visible = self.next_visible;
-
-        let cameras_enabled = self.is_visible;
-
-        if cameras_enabled {
-            info!("Camera are ENABLED");
-        } else {
-            info!("Camera are DISABLED");
-        }
-
-        for (mut camera, _) in camera_q.iter_mut() {
-            camera.is_active = cameras_enabled;
-        }
     }
 
     pub fn update_3d_camera(&mut self, camera_q: &mut Query<(&mut Camera, &mut Transform)>) {
@@ -147,11 +141,31 @@ impl CanvasManager {
         }
     }
 
+    pub fn update_visibility(&mut self, camera_q: &mut Query<(&mut Camera, &mut Transform)>) {
+        if self.is_visible == self.next_visible {
+            return;
+        }
+        self.is_visible = self.next_visible;
+
+        let cameras_enabled = self.is_visible;
+
+        if cameras_enabled {
+            info!("Camera are ENABLED");
+        } else {
+            info!("Camera are DISABLED");
+        }
+
+        for (mut camera, _) in camera_q.iter_mut() {
+            camera.is_active = cameras_enabled;
+        }
+    }
+
     pub fn update_camera_viewports(
-        &self,
+        &mut self,
         texture_size: Vec2,
         camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>,
     ) {
+        self.canvas_texture_size = texture_size;
         self.update_2d_camera_viewport(texture_size, camera_query);
         self.update_3d_camera_viewport(texture_size, camera_query);
     }
@@ -160,8 +174,9 @@ impl CanvasManager {
         self.canvas_texture.unwrap()
     }
 
-    pub fn set_canvas_texture(&mut self, texture: Handle<CpuTexture2D>) {
+    pub fn set_canvas_texture(&mut self, texture_size: Vec2, texture: Handle<CpuTexture2D>) {
         self.canvas_texture = Some(texture);
+        self.canvas_texture_size = texture_size;
     }
 
     pub fn is_visible(&self) -> bool {

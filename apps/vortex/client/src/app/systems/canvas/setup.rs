@@ -27,7 +27,7 @@ pub fn setup(
     let texture_size = Vec2::new(1130.0, 672.0);
     let canvas_texture_handle =
         new_render_texture(&texture_size, &mut textures, &mut user_textures);
-    canvas_state.set_canvas_texture(canvas_texture_handle.clone());
+    canvas_state.set_canvas_texture(texture_size, canvas_texture_handle.clone());
 
     setup_3d_scene(
         &mut commands,

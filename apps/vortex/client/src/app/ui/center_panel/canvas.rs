@@ -33,7 +33,7 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
     let did_resize = resize_finished(ui, world, "left_panel");
 
     let mut system_state: SystemState<(
-        Res<CanvasManager>,
+        ResMut<CanvasManager>,
         ResMut<Assets<CpuTexture2D>>,
         ResMut<EguiUserTextures>,
         ResMut<UiState>,
@@ -41,7 +41,7 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
         Query<(&mut Camera, &mut Transform, &mut Projection)>,
     )> = SystemState::new(world);
     let (
-        canvas_state,
+        mut canvas_manager,
         mut textures,
         mut user_textures,
         mut ui_state,
@@ -50,7 +50,7 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
     ) = system_state.get_mut(world);
 
     // change textures
-    let texture_handle = canvas_state.canvas_texture();
+    let texture_handle = canvas_manager.canvas_texture();
     let Some(texture_id) = user_textures.texture_id(&texture_handle) else {
         // The user texture may not be synced yet, return early.
         return;
@@ -76,10 +76,10 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
 
         // Update the camera to match the new texture size.
         let native_texture_size = Vec2::new(texture_size.x, texture_size.y);
-        canvas_state.update_camera_viewports(native_texture_size, &mut camera_query);
+        canvas_manager.update_camera_viewports(native_texture_size, &mut camera_query);
     }
 
-    if canvas_state.is_visible() {
+    if canvas_manager.is_visible() {
         let image =
             Image::new(texture_id, texture_size).uv(Rect::from_min_max(pos2(0.0, 1.0), pos2(1.0, 0.0)));
         ui.add_enabled(false, image);
