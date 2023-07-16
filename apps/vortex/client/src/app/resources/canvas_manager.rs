@@ -67,26 +67,14 @@ impl Default for CanvasManager {
 }
 
 impl CanvasManager {
-    pub fn camera_pan(&mut self, camera_query: &Query<(&mut Camera, &mut Transform, &mut Projection)>, delta: Vec2) {
-        let Some(camera_3d) = self.camera_3d else {
-            return;
-        };
-
-        let Ok((_, _, Projection::Orthographic(proj))) = camera_query.get(camera_3d) else {
-            return;
-        };
-
-        let camera_height = proj.height;
-
-        let texture_height = self.canvas_texture_size.y;
-        let speed = camera_height / texture_height;
-
-        self.camera_3d_offset += delta * speed / self.camera_3d_scale;
+    pub fn camera_pan(&mut self, delta: Vec2) {
+        self.camera_3d_offset += delta / self.camera_3d_scale;
 
         self.camera_3d_recalc = true;
     }
 
     pub fn camera_orbit(&mut self, delta: Vec2) {
+
         let Some(rotation) = self.camera_3d_rotation else {
             return;
         };
@@ -98,8 +86,20 @@ impl CanvasManager {
         self.camera_3d_recalc = true;
     }
 
-    pub fn camera_zoom(&mut self, delta: f32) {
-        self.camera_3d_scale = (self.camera_3d_scale + (delta * 0.01)).min(5.0).max(1.0);
+    pub fn camera_zoom(&mut self, zoom_delta: f32) {
+        let old_scale = self.camera_3d_scale;
+        let new_scale = (old_scale + (zoom_delta * 0.01)).min(5.0).max(1.0);
+        let scale_diff = new_scale - old_scale;
+        self.camera_3d_scale = new_scale;
+
+        if scale_diff.abs() > 0.0 {
+            let old_screen_offset = self.camera_3d_offset * old_scale;
+            let new_screen_offset = self.camera_3d_offset * new_scale;
+
+            let offset_diff = new_screen_offset - old_screen_offset;
+
+            self.camera_3d_offset -= offset_diff / new_scale;
+        }
 
         self.camera_3d_recalc = true;
     }
@@ -244,11 +244,11 @@ impl CanvasManager {
 
         *transform = Transform::from_xyz(center.x, center.y, -1.0)
             .looking_at(Vec3::new(center.x, center.y, 0.0), Vec3::NEG_Y);
-        *projection = Projection::Orthographic(OrthographicProjection {
-            height: texture_size.y,
-            near: 0.0,
-            far: 10.0,
-        });
+        *projection = Projection::Orthographic(OrthographicProjection::new(
+            texture_size.y,
+            0.0,
+            10.0,
+        ));
     }
 
     fn update_3d_camera_viewport(
@@ -259,12 +259,19 @@ impl CanvasManager {
         let Some(camera_entity) = self.camera_3d else {
             return;
         };
-        let Ok((mut camera, _, _)) = camera_query.get_mut(camera_entity) else {
+        let Ok((mut camera, _, mut projection)) = camera_query.get_mut(camera_entity) else {
             return;
         };
+
         camera.viewport = Some(Viewport::new_at_origin(
             texture_size.x as u32,
             texture_size.y as u32,
+        ));
+
+        *projection = Projection::Orthographic(OrthographicProjection::new(
+            texture_size.y,
+            0.0,
+            1000.0,
         ));
     }
 

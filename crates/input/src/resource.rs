@@ -31,7 +31,7 @@ impl Input {
         self.mouse_offset.y = y;
     }
 
-    pub fn mouse_pos(&self) -> &Vec2 {
+    pub fn mouse_position(&self) -> &Vec2 {
         &self.mouse_coords
     }
 

@@ -78,7 +78,7 @@ fn setup(
 }
 
 fn step(global: Res<Global>, mut query: Query<&mut Transform>, input: Res<Input>) {
-    let mouse_coords = input.mouse_pos();
+    let mouse_coords = input.mouse_position();
     if input.is_pressed(MouseButton::Left) {
         if let Some(hollow_circle_id) = global.hollow_circle {
             if let Ok(mut transform) = query.get_mut(hollow_circle_id) {

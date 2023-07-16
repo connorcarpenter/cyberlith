@@ -45,11 +45,11 @@ pub fn setup(
 
 fn setup_2d_scene(
     commands: &mut Commands,
-    canvas_state: &mut CanvasManager,
+    canvas_manager: &mut CanvasManager,
     texture_size: &Vec2,
     canvas_texture_handle: Handle<CpuTexture2D>,
 ) {
-    canvas_state.layer_2d = RenderLayers::layer(2);
+    canvas_manager.layer_2d = RenderLayers::layer(2);
 
     // light
     commands
@@ -58,7 +58,7 @@ fn setup_2d_scene(
             color: Color::WHITE,
             ..Default::default()
         })
-        .insert(canvas_state.layer_2d);
+        .insert(canvas_manager.layer_2d);
 
     // camera
     let mut camera_bundle = CameraBundle::new_2d(&Viewport::new_at_origin(
@@ -68,23 +68,23 @@ fn setup_2d_scene(
     camera_bundle.camera.target = RenderTarget::Image(canvas_texture_handle);
     camera_bundle.camera.is_active = false;
     camera_bundle.camera.order = 1;
-    let camera_entity = commands.spawn(camera_bundle).insert(canvas_state.layer_2d).id();
+    let camera_entity = commands.spawn(camera_bundle).insert(canvas_manager.layer_2d).id();
 
-    canvas_state.camera_2d = Some(camera_entity);
+    canvas_manager.camera_2d = Some(camera_entity);
 }
 
 fn setup_3d_scene(
     commands: &mut Commands,
-    canvas_state: &mut CanvasManager,
+    canvas_manager: &mut CanvasManager,
     texture_size: &Vec2,
     canvas_texture_handle: Handle<CpuTexture2D>,
 ) {
-    canvas_state.layer_3d = RenderLayers::layer(3);
+    canvas_manager.layer_3d = RenderLayers::layer(3);
 
     // Ambient Light
     commands
         .spawn(AmbientLight::new(0.01, Color::WHITE))
-        .insert(canvas_state.layer_3d);
+        .insert(canvas_manager.layer_3d);
     commands
         .spawn(PointLight {
             position: Vec3::new(60.0, 60.0, 90.0),
@@ -92,7 +92,7 @@ fn setup_3d_scene(
             intensity: 0.2,
             ..Default::default()
         })
-        .insert(canvas_state.layer_3d);
+        .insert(canvas_manager.layer_3d);
 
     // Camera
     let camera_entity = commands
@@ -109,11 +109,11 @@ fn setup_3d_scene(
             },
             transform: Transform::from_xyz(50.0, 0.0, 0.0) // from front
                 .looking_at(Vec3::ZERO, Vec3::Y),
-            projection: Projection::Orthographic(OrthographicProjection::default()),
+            projection: Projection::Orthographic(OrthographicProjection::new(texture_size.y, 0.0, 1000.0)),
         })
-        .insert(canvas_state.layer_3d)
+        .insert(canvas_manager.layer_3d)
         .id();
-    canvas_state.camera_3d = Some(camera_entity);
+    canvas_manager.camera_3d = Some(camera_entity);
 }
 
 fn new_render_texture(
