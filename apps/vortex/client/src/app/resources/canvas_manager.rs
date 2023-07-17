@@ -8,8 +8,9 @@ use math::{convert_3d_to_2d, Quat, Vec2, Vec3};
 use render_api::{base::CpuTexture2D, components::{Camera, CameraProjection, OrthographicProjection, Projection, RenderLayer, Transform, Viewport, Visibility}, Handle};
 use vortex_proto::components::Vertex3d;
 
-use crate::app::components::{HoverCircle, Vertex2d};
+use crate::app::components::{HoverCircle, SelectCircle, Vertex2d};
 
+#[derive(Clone, Copy)]
 pub enum ClickType {
     Left,
     Right,
@@ -87,11 +88,13 @@ impl Default for CanvasManager {
 }
 
 impl CanvasManager {
+
     pub fn update_input(
         &mut self,
         input: &mut ResMut<Input>,
-        camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection), (Without<HoverCircle>, Without<Vertex2d>)>,
-        hover_query: &mut Query<(&mut Transform, &mut Visibility), (With<HoverCircle>, Without<Vertex2d>)>,
+        camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection), (Without<SelectCircle>, Without<HoverCircle>, Without<Vertex2d>)>,
+        hover_circle_query: &mut Query<(&mut Transform, &mut Visibility), (With<HoverCircle>, Without<SelectCircle>, Without<Vertex2d>)>,
+        select_circle_query: &mut Query<(&mut Transform, &mut Visibility), (With<SelectCircle>, Without<HoverCircle>, Without<Vertex2d>)>,
         vertex_2d_query: &Query<(Entity, &Transform), With<Vertex2d>>,
     ) {
         // check keyboard input
@@ -130,52 +133,39 @@ impl CanvasManager {
         }
 
         // Mouse over
-        self.update_mouse_hover(input.mouse_position(), hover_query, vertex_2d_query);
+        self.update_mouse_hover(input.mouse_position(), hover_circle_query, vertex_2d_query);
 
-        // is a vertex currently selected?
-        let vertex_is_selected = self.selected_vertex.is_some();
-        // is the cursor hovering over anything?
-        let cursor_is_hovering = self.hovered_vertex.is_some();
+        let left_button_pressed = input.is_pressed(MouseButton::Left);
+        let right_button_pressed = input.is_pressed(MouseButton::Right);
+        let mouse_button_pressed = left_button_pressed || right_button_pressed;
 
-        if !vertex_is_selected && !cursor_is_hovering {
-            let left_button_pressed = input.is_pressed(MouseButton::Left);
-            let right_button_pressed = input.is_pressed(MouseButton::Right);
-            let mouse_button_pressed = left_button_pressed || right_button_pressed;
+        if mouse_button_pressed {
+            if left_button_pressed {
+                self.click_type = ClickType::Left;
+            }
+            if right_button_pressed {
+                self.click_type = ClickType::Right;
+            }
 
-            if mouse_button_pressed {
-                if left_button_pressed {
-                    self.click_type = ClickType::Left;
-                }
-                if right_button_pressed {
-                    self.click_type = ClickType::Right;
-                }
+            if self.click_down {
+                // already clicking
+                let mouse = *input.mouse_position();
+                let delta = mouse - self.click_start;
+                self.click_start = mouse;
 
-                if self.click_down {
-                    // already clicking
-                    let mouse = *input.mouse_position();
-                    let delta = mouse - self.click_start;
-                    self.click_start = mouse;
-
-                    if delta.length() > 0.0 {
-                        match self.click_type {
-                            ClickType::Left => {
-                                self.camera_pan(delta);
-                            }
-                            ClickType::Right => {
-                                self.camera_orbit(delta);
-                            }
-                        }
-                    }
-                } else {
-                    // haven't clicked yet
-                    self.click_down = true;
-                    self.click_start = *input.mouse_position();
+                if delta.length() > 0.0 {
+                    self.handle_mouse_drag(self.click_type, delta);
                 }
             } else {
-                if self.click_down {
-                    // release click
-                    self.click_down = false;
-                }
+                // haven't clicked yet
+                self.click_down = true;
+                self.click_start = *input.mouse_position();
+                self.handle_mouse_click(self.click_type);
+            }
+        } else {
+            if self.click_down {
+                // release click
+                self.click_down = false;
             }
         }
     }
@@ -220,9 +210,10 @@ impl CanvasManager {
 
     pub fn sync_vertices(
         &mut self,
-        camera_q: &Query<(&Camera, &Transform, &Projection), (Without<Vertex3d>, Without<Vertex2d>)>,
-        vertex_3d_q: &mut Query<(Entity, &Vertex3d, &mut Transform), Without<Vertex2d>>,
-        vertex_2d_q: &mut Query<&mut Transform, With<Vertex2d>>,
+        camera_q: &Query<(&Camera, &Transform, &Projection), (Without<Vertex3d>, Without<Vertex2d>, Without<SelectCircle>)>,
+        vertex_3d_q: &mut Query<(Entity, &Vertex3d, &mut Transform), (Without<Vertex2d>, Without<SelectCircle>)>,
+        vertex_2d_q: &mut Query<&mut Transform, (With<Vertex2d>, Without<Vertex3d>, Without<SelectCircle>)>,
+        select_circle_q: &mut Query<(&mut Transform, &mut Visibility), (With<SelectCircle>, Without<Vertex3d>, Without<Vertex2d>)>,
     ) {
         if !self.camera_2d_recalc {
             return;
@@ -268,6 +259,24 @@ impl CanvasManager {
 
             let scale_2d = self.camera_3d_scale * Vertex2d::RADIUS;
             vertex_2d_transform.scale = Vec3::splat(scale_2d);
+        }
+
+        // updated selected vertex
+
+        let Ok((mut select_circle_transform, mut select_circle_visibility)) = select_circle_q.get_mut(self.select_circle_entity.unwrap()) else {
+            panic!("SelectCircle entity has no Transform or Visibility");
+        };
+
+        if let Some(selected_vertex_entity) = self.selected_vertex {
+            let Ok(vertex_transform) = vertex_2d_q.get(selected_vertex_entity) else {
+                return;
+            };
+
+            select_circle_transform.translation = vertex_transform.translation;
+            select_circle_transform.scale = Vec3::splat(SelectCircle::RADIUS * self.camera_3d_scale);
+            select_circle_visibility.visible = true;
+        } else {
+            select_circle_visibility.visible = false;
         }
     }
 
@@ -320,7 +329,7 @@ impl CanvasManager {
     fn update_mouse_hover(
         &mut self,
         mouse_position: &Vec2,
-        hover_query: &mut Query<(&mut Transform, &mut Visibility), (With<HoverCircle>, Without<Vertex2d>)>,
+        hover_query: &mut Query<(&mut Transform, &mut Visibility), (With<HoverCircle>, Without<SelectCircle>, Without<Vertex2d>)>,
         vertex_2d_query: &Query<(Entity, &Transform), With<Vertex2d>>,
     ) {
         if mouse_position.x as i16 != self.last_mouse_position.x as i16 || mouse_position.y as i16 != self.last_mouse_position.y as i16 {
@@ -351,7 +360,7 @@ impl CanvasManager {
         let is_hovered = least_distance <= radius;
 
         let Ok((mut hover_transform, mut hover_visibility)) = hover_query.get_mut(self.hover_circle_entity.unwrap()) else {
-            panic!("HoverCircle entity {:?} has no Transform or Visibility", self.hover_circle_entity.unwrap());
+            panic!("HoverCircle entity has no Transform or Visibility");
         };
 
         if is_hovered {
@@ -368,7 +377,54 @@ impl CanvasManager {
         hover_transform.scale = Vec3::splat(radius);
     }
 
-    fn set_2d_mode(&mut self, camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection), (Without<HoverCircle>, Without<Vertex2d>)>) {
+    fn handle_mouse_drag(&mut self, click_type: ClickType, delta: Vec2) {
+        let vertex_is_selected = self.selected_vertex.is_some();
+        let cursor_is_hovering = self.hovered_vertex.is_some();
+
+        if vertex_is_selected || cursor_is_hovering {
+            // TODO: move vertex?
+            return;
+        } else {
+            match click_type {
+                ClickType::Left => {
+                    self.camera_pan(delta);
+                }
+                ClickType::Right => {
+                    self.camera_orbit(delta);
+                }
+            }
+        }
+    }
+
+    fn handle_mouse_click(
+        &mut self,
+        click_type: ClickType,
+    ) {
+        // let vertex_is_selected = self.selected_vertex.is_some();
+        let cursor_is_hovering = self.hovered_vertex.is_some();
+
+        if cursor_is_hovering {
+            match click_type {
+                ClickType::Left => {
+                    // select vertex
+
+                    if self.hovered_vertex == self.selected_vertex {
+                        // do nothing, already selected
+                        return;
+                    }
+
+                    self.selected_vertex = self.hovered_vertex;
+
+                    self.camera_2d_recalc = true;
+                }
+                ClickType::Right => {
+                    // TODO: delete vertex?
+                }
+            }
+        }
+    }
+
+    fn set_2d_mode(&mut self, camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection), (Without<SelectCircle>, Without<HoverCircle>, Without<Vertex2d>)>) {
         if self.is_2d {
             return;
         }
@@ -378,7 +434,7 @@ impl CanvasManager {
         self.enable_cameras(camera_query, true);
     }
 
-    fn set_3d_mode(&mut self, camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection), (Without<HoverCircle>, Without<Vertex2d>)>) {
+    fn set_3d_mode(&mut self, camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection), (Without<SelectCircle>, Without<HoverCircle>, Without<Vertex2d>)>) {
         if !self.is_2d {
             return;
         }
@@ -455,7 +511,7 @@ impl CanvasManager {
 
     fn enable_cameras(
         &self,
-        camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection), (Without<HoverCircle>, Without<Vertex2d>)>,
+        camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection), (Without<SelectCircle>, Without<HoverCircle>, Without<Vertex2d>)>,
         enable_2d: bool,
     ) {
         let enable_3d = !enable_2d;

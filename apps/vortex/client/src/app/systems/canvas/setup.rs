@@ -12,7 +12,7 @@ use render_api::{
 };
 use render_egui::EguiUserTextures;
 
-use crate::app::{components::{HoverCircle, SelectCircle}, config::AppConfig, resources::canvas_manager::CanvasManager};
+use crate::app::{components::{HoverCircle, SelectCircle, Vertex2d}, config::AppConfig, resources::canvas_manager::CanvasManager};
 
 pub fn setup(
     config: Res<AppConfig>,
@@ -85,7 +85,7 @@ fn setup_2d_scene(
         480.0,
         240.0,
         HoverCircle::RADIUS,
-        12,
+        Vertex2d::SUBDIVISIONS,
         Color::GREEN,
         Some(1),
     );
@@ -104,7 +104,7 @@ fn setup_2d_scene(
         480.0,
         240.0,
         SelectCircle::RADIUS,
-        12,
+        Vertex2d::SUBDIVISIONS,
         Color::WHITE,
         Some(1),
     );
