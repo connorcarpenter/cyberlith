@@ -135,6 +135,11 @@ impl RenderObjectSingle {
     ) {
         let camera = render_camera.camera;
 
+        if attributes.normal {
+            let inverse = transform.inverse();
+            program.use_uniform_if_required("normalMatrix", inverse.transpose());
+        }
+
         program.use_uniform(
             "viewProjection",
             render_camera
@@ -253,7 +258,8 @@ impl RenderObjectInstanced {
         instance_buffers: &HashMap<String, InstanceBuffer>,
     ) -> String {
         format!(
-            "{}{}{}{}{}{}",
+            "{}{}{}{}{}{}{}",
+            "#define USE_INSTANCE_TRANSFORMS\n",
             if required_attributes.normal {
                 "#define USE_NORMALS\n"
             } else {

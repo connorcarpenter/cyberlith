@@ -32,8 +32,8 @@ impl RenderObjectBundle {
         outline: Option<u8>,
     ) -> Self {
         let mesh = if let Some(thickness) = outline {
-            let mesh = meshes.add(shapes::Circle::new(
-                13,
+            let mesh = meshes.add(shapes::HollowCircle::new(
+                subdivisions
             ));
             info!("hollow mesh: {:?}", mesh.id);
             mesh

@@ -64,15 +64,7 @@ impl HollowCircle {
 
 impl From<HollowCircle> for CpuMesh {
     fn from(circle: HollowCircle) -> Self {
-        From::<Circle>::from(Circle::new(circle.angle_subdivisions))
-    }
-}
-
-
-// HollowCircle
-/*
-
-        let radius = HollowCircle::RADIUS;
+        let radius = 1.0;
         let line_thickness_half = 0.1;
 
         let angle_subdivisions = circle.angle_subdivisions;
@@ -125,4 +117,12 @@ impl From<HollowCircle> for CpuMesh {
             normals: Some(normals),
             ..Default::default()
         }
+    }
+}
+
+
+// HollowCircle
+/*
+
+
  */
