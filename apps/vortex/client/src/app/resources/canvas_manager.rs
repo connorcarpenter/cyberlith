@@ -4,10 +4,10 @@ use bevy_ecs::{entity::Entity, prelude::Resource, query::{With, Without}, system
 use bevy_log::info;
 
 use math::{convert_3d_to_2d, Quat, Vec2, Vec3};
-use render_api::{base::CpuTexture2D, components::{Camera, CameraProjection, OrthographicProjection, Projection, RenderLayer, Transform, Viewport}, Handle};
+use render_api::{base::CpuTexture2D, components::{Camera, CameraProjection, OrthographicProjection, Projection, RenderLayer, Transform, Viewport, Visibility}, Handle};
 use vortex_proto::components::Vertex3d;
 
-use crate::app::components::Vertex2d;
+use crate::app::components::{HoverCircle, Vertex2d};
 
 pub enum ClickType {
     Left,
@@ -40,6 +40,8 @@ pub struct CanvasManager {
     camera_3d_scale: f32,
 
     pub hover_entity: Option<Entity>,
+    mouse_hover_recalc: bool,
+    last_mouse_position: Vec2,
 }
 
 impl Default for CanvasManager {
@@ -69,12 +71,14 @@ impl Default for CanvasManager {
             camera_3d_offset: Vec2::ZERO,
 
             hover_entity: None,
+            mouse_hover_recalc: false,
+            last_mouse_position: Vec2::ZERO,
         }
     }
 }
 
 impl CanvasManager {
-    pub fn set_2d_mode(&mut self, camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>) {
+    pub fn set_2d_mode(&mut self, camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection), (Without<HoverCircle>, Without<Vertex2d>)>) {
         if self.is_2d {
             return;
         }
@@ -84,20 +88,13 @@ impl CanvasManager {
         self.enable_cameras(camera_query, true);
     }
 
-    pub fn set_3d_mode(&mut self, camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>) {
+    pub fn set_3d_mode(&mut self, camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection), (Without<HoverCircle>, Without<Vertex2d>)>) {
         if !self.is_2d {
             return;
         }
         info!("Switched to Solid mode");
         self.is_2d = false;
         self.enable_cameras(camera_query, false);
-    }
-
-    fn set_camera_angle(&mut self, angle: Quat) {
-        self.camera_3d_rotation = Some(angle);
-        self.camera_3d_offset = Vec2::ZERO;
-        self.camera_3d_scale = 1.0;
-        self.camera_3d_recalc = true;
     }
 
     pub fn set_camera_angle_ingame(&mut self) {
@@ -207,6 +204,7 @@ impl CanvasManager {
             return;
         }
         self.camera_2d_recalc = false;
+        self.mouse_hover_recalc = true;
 
         let Some(camera_3d) = self.camera_3d else {
             return;
@@ -295,9 +293,62 @@ impl CanvasManager {
         self.next_visible = visible;
     }
 
+    pub fn update_mouse_hover(
+        &mut self,
+        mouse_position: &Vec2,
+        hover_query: &mut Query<(&mut Transform, &mut Visibility), (With<HoverCircle>, Without<Vertex2d>)>,
+        vertex_2d_query: &Query<&Transform, With<Vertex2d>>,
+    ) {
+        if mouse_position.x as i16 != self.last_mouse_position.x as i16 || mouse_position.y as i16 != self.last_mouse_position.y as i16 {
+            self.mouse_hover_recalc = true;
+            self.last_mouse_position = *mouse_position;
+        }
+
+        if !self.mouse_hover_recalc {
+            return;
+        }
+
+        self.mouse_hover_recalc = false;
+
+        let radius = HoverCircle::RADIUS * self.camera_3d_scale;
+        let mut least_distance = f32::MAX;
+        let mut least_coords = Vec2::ZERO;
+        for vertex_transform in vertex_2d_query.iter() {
+            let vertex_position = vertex_transform.translation.truncate();
+            let distance = vertex_position.distance(*mouse_position);
+            if distance < least_distance {
+                least_distance = distance;
+                least_coords = vertex_position;
+            }
+        }
+
+        let is_hovered = least_distance <= radius;
+
+        let Ok((mut hover_transform, mut hover_visibility)) = hover_query.get_mut(self.hover_entity.unwrap()) else {
+            panic!("HoverCircle entity {:?} has no Transform or Visibility", self.hover_entity.unwrap());
+        };
+
+        if is_hovered {
+            hover_transform.translation.x = least_coords.x;
+            hover_transform.translation.y = least_coords.y;
+            hover_visibility.visible = true;
+        } else {
+            hover_visibility.visible = false;
+        }
+
+        hover_transform.scale = Vec3::splat(radius);
+    }
+
+    fn set_camera_angle(&mut self, angle: Quat) {
+        self.camera_3d_rotation = Some(angle);
+        self.camera_3d_offset = Vec2::ZERO;
+        self.camera_3d_scale = 1.0;
+        self.camera_3d_recalc = true;
+    }
+
     fn enable_cameras(
         &self,
-        camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>,
+        camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection), (Without<HoverCircle>, Without<Vertex2d>)>,
         enable_2d: bool,
     ) {
         let enable_3d = !enable_2d;

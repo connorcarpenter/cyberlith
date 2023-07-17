@@ -1,14 +1,16 @@
-use bevy_ecs::system::{Query, ResMut};
+use bevy_ecs::{query::{With, Without}, system::{Query, ResMut}};
 
 use input::{Input, Key, MouseButton};
-use render_api::components::{Camera, Projection, Transform};
+use render_api::components::{Camera, Projection, Transform, Visibility};
 
-use crate::app::resources::canvas_manager::{CanvasManager, ClickType};
+use crate::app::{components::{HoverCircle, Vertex2d}, resources::canvas_manager::{CanvasManager, ClickType}};
 
 pub fn input(
     mut canvas_manager: ResMut<CanvasManager>,
     mut input: ResMut<Input>,
-    mut camera_query: Query<(&mut Camera, &mut Transform, &mut Projection)>,
+    mut camera_query: Query<(&mut Camera, &mut Transform, &mut Projection), (Without<HoverCircle>, Without<Vertex2d>)>,
+    mut hover_query: Query<(&mut Transform, &mut Visibility), (With<HoverCircle>, Without<Vertex2d>)>,
+    vertex_2d_query: Query<&Transform, With<Vertex2d>>,
 ) {
     // check keyboard input
 
@@ -44,6 +46,9 @@ pub fn input(
     if scroll_y > 0.1 || scroll_y < -0.1 {
         canvas_manager.camera_zoom(scroll_y);
     }
+
+    // Mouse over
+    canvas_manager.update_mouse_hover(input.mouse_position(), &mut hover_query, &vertex_2d_query);
 
     // is a vertex currently selected?
     let vertex_is_selected = false;

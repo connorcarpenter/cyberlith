@@ -5,6 +5,6 @@ use bevy_ecs::prelude::Component;
 pub struct Vertex2d;
 
 impl Vertex2d {
-    pub const RADIUS: f32 = 4.0;
+    pub const RADIUS: f32 = 5.0;
     pub const SUBDIVISIONS: u16 = 12;
 }

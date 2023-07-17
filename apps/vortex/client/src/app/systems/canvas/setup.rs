@@ -12,7 +12,7 @@ use render_api::{
 };
 use render_egui::EguiUserTextures;
 
-use crate::app::{config::AppConfig, resources::canvas_manager::CanvasManager};
+use crate::app::{components::HoverCircle, config::AppConfig, resources::canvas_manager::CanvasManager};
 
 pub fn setup(
     config: Res<AppConfig>,
@@ -84,7 +84,7 @@ fn setup_2d_scene(
         materials,
         480.0,
         240.0,
-        8.0,
+        HoverCircle::RADIUS,
         12,
         Color::GREEN,
         Some(1),
@@ -93,6 +93,7 @@ fn setup_2d_scene(
     let hover_circle_entity = commands
         .spawn(hover_circle_components)
         .insert(canvas_manager.layer_2d)
+        .insert(HoverCircle)
         .id();
     canvas_manager.hover_entity = Some(hover_circle_entity);
 }
