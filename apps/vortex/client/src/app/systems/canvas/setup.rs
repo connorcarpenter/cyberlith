@@ -4,10 +4,10 @@ use bevy_log::info;
 use math::{Vec2, Vec3};
 use render_api::{
     Assets,
-    base::{Color, CpuTexture2D},
+    base::{Color, CpuMaterial, CpuMesh, CpuTexture2D},
     components::{
         AmbientLight, Camera, CameraBundle, ClearOperation, OrthographicProjection, PointLight,
-        Projection, RenderLayers, RenderTarget, Transform, Viewport,
+        Projection, RenderLayers, RenderObjectBundle, RenderTarget, Transform, Viewport,
     }, Handle,
 };
 use render_egui::EguiUserTextures;
@@ -17,9 +17,11 @@ use crate::app::{config::AppConfig, resources::canvas_manager::CanvasManager};
 pub fn setup(
     config: Res<AppConfig>,
     mut commands: Commands,
-    mut canvas_state: ResMut<CanvasManager>,
+    mut canvas_manager: ResMut<CanvasManager>,
     mut textures: ResMut<Assets<CpuTexture2D>>,
     mut user_textures: ResMut<EguiUserTextures>,
+    mut meshes: ResMut<Assets<CpuMesh>>,
+    mut materials: ResMut<Assets<CpuMaterial>>,
 ) {
     info!("Environment: {}", config.general.env_name);
 
@@ -27,17 +29,19 @@ pub fn setup(
     let texture_size = Vec2::new(1130.0, 672.0);
     let canvas_texture_handle =
         new_render_texture(&texture_size, &mut textures, &mut user_textures);
-    canvas_state.set_canvas_texture(texture_size, canvas_texture_handle.clone());
+    canvas_manager.set_canvas_texture(texture_size, canvas_texture_handle.clone());
 
     setup_3d_scene(
         &mut commands,
-        &mut canvas_state,
+        &mut canvas_manager,
         &texture_size,
         canvas_texture_handle,
     );
     setup_2d_scene(
         &mut commands,
-        &mut canvas_state,
+        &mut canvas_manager,
+        &mut meshes,
+        &mut materials,
         &texture_size,
         canvas_texture_handle,
     );
@@ -46,6 +50,8 @@ pub fn setup(
 fn setup_2d_scene(
     commands: &mut Commands,
     canvas_manager: &mut CanvasManager,
+    meshes: &mut Assets<CpuMesh>,
+    materials: &mut Assets<CpuMaterial>,
     texture_size: &Vec2,
     canvas_texture_handle: Handle<CpuTexture2D>,
 ) {
@@ -71,6 +77,24 @@ fn setup_2d_scene(
     let camera_entity = commands.spawn(camera_bundle).insert(canvas_manager.layer_2d).id();
 
     canvas_manager.camera_2d = Some(camera_entity);
+
+    // hover circle
+    let mut hover_circle_components = RenderObjectBundle::circle(
+        meshes,
+        materials,
+        480.0,
+        240.0,
+        8.0,
+        12,
+        Color::GREEN,
+        Some(1),
+    );
+    hover_circle_components.visibility.visible = false;
+    let hover_circle_entity = commands
+        .spawn(hover_circle_components)
+        .insert(canvas_manager.layer_2d)
+        .id();
+    canvas_manager.hover_entity = Some(hover_circle_entity);
 }
 
 fn setup_3d_scene(

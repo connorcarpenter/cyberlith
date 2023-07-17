@@ -35,7 +35,7 @@ impl From<Circle> for CpuMesh {
         for j in 0..angle_subdivisions {
             indices.push(0);
             indices.push(j);
-            indices.push(((j + 1) % angle_subdivisions));
+            indices.push((j + 1) % angle_subdivisions);
         }
         CpuMesh {
             indices: Indices(Some(indices)),

@@ -5,8 +5,7 @@ use bevy_log::info;
 
 use math::{convert_3d_to_2d, Quat, Vec2, Vec3};
 use render_api::{base::CpuTexture2D, components::{Camera, CameraProjection, OrthographicProjection, Projection, RenderLayer, Transform, Viewport}, Handle};
-use render_api::shapes::HollowCircle;
-use vortex_proto::components::{Vertex3d, VertexRootChild};
+use vortex_proto::components::Vertex3d;
 
 use crate::app::components::Vertex2d;
 
@@ -39,6 +38,8 @@ pub struct CanvasManager {
     camera_3d_offset: Vec2,
     camera_3d_rotation: Option<Quat>,
     camera_3d_scale: f32,
+
+    pub hover_entity: Option<Entity>,
 }
 
 impl Default for CanvasManager {
@@ -66,6 +67,8 @@ impl Default for CanvasManager {
             camera_3d_rotation: None,
             camera_3d_scale: 1.0,
             camera_3d_offset: Vec2::ZERO,
+
+            hover_entity: None,
         }
     }
 }
@@ -241,7 +244,7 @@ impl CanvasManager {
             vertex_2d_transform.translation.y = coords.y;
             vertex_2d_transform.translation.z = depth;
 
-            let mut scale_2d = self.camera_3d_scale * Vertex2d::RADIUS;
+            let scale_2d = self.camera_3d_scale * Vertex2d::RADIUS;
             vertex_2d_transform.scale = Vec3::splat(scale_2d);
         }
     }

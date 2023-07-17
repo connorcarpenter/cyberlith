@@ -3,8 +3,8 @@ use bevy_ecs::system::{NonSendMut, Query, Res, ResMut};
 use render_api::{
     base::{CpuMaterial, CpuMesh, CpuTexture2D},
     components::{
-        AmbientLight, Camera, PointLight, Projection, RenderLayer, RenderLayers,
-        RenderTarget as CameraRenderTarget, Transform,
+        AmbientLight, Camera, PointLight, Projection, RenderLayer, RenderLayers, RenderTarget as CameraRenderTarget,
+        Transform, Visibility,
     },
     Handle,
 };
@@ -33,6 +33,7 @@ pub fn draw(
         &Handle<CpuMesh>,
         &Handle<CpuMaterial>,
         &Transform,
+        &Visibility,
         Option<&RenderLayer>,
     )>,
     // Lights
@@ -113,7 +114,10 @@ pub fn draw(
     }
 
     // Aggregate RenderObjects
-    for (mesh_handle, mat_handle, transform, render_layer_wrapper) in objects_q.iter() {
+    for (mesh_handle, mat_handle, transform, visibility, render_layer_wrapper) in objects_q.iter() {
+        if !visibility.visible {
+            continue;
+        }
         let render_layer = convert_wrapper(render_layer_wrapper);
         for camera_index in layer_to_order[render_layer].iter().map(|x| *x) {
             if camera_work[camera_index].is_none() {

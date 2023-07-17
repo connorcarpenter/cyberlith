@@ -7,6 +7,7 @@ pub use render_layer::*;
 pub use render_target::*;
 pub use transform::*;
 pub use viewport::*;
+pub use visibility::*;
 
 mod camera;
 mod clear_operation;
@@ -17,3 +18,5 @@ mod render_layer;
 mod render_target;
 mod transform;
 mod viewport;
+mod visibility;
+

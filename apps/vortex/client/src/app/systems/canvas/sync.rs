@@ -1,7 +1,7 @@
 use bevy_ecs::{entity::Entity, query::{With, Without}, system::{Query, ResMut}};
 
 use render_api::components::{Camera, Projection, Transform};
-use vortex_proto::components::{Vertex3d, VertexRootChild};
+use vortex_proto::components::Vertex3d;
 
 use crate::app::{components::Vertex2d, resources::canvas_manager::CanvasManager};
 

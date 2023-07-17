@@ -8,7 +8,8 @@ use math::{Vec2, Vec3};
 use crate::{
     Assets,
     assets::Handle,
-    base::{Color, CpuMaterial, CpuMesh}, shapes,
+    base::{Color, CpuMaterial, CpuMesh}, components::Visibility,
+    shapes
 };
 
 use super::transform::Transform;
@@ -18,6 +19,7 @@ pub struct RenderObjectBundle {
     pub mesh: Handle<CpuMesh>,
     pub material: Handle<CpuMaterial>,
     pub transform: Transform,
+    pub visibility: Visibility,
 }
 
 impl RenderObjectBundle {
@@ -31,7 +33,7 @@ impl RenderObjectBundle {
         color: Color,
         outline: Option<u8>,
     ) -> Self {
-        let mesh = if let Some(thickness) = outline {
+        let mesh = if let Some(_thickness) = outline {
             let mesh = meshes.add(shapes::HollowCircle::new(
                 subdivisions
             ));
