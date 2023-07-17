@@ -48,7 +48,7 @@ fn setup(
             4.0,
             12,
             Color::GREEN,
-            false,
+            None,
         ))
         .id();
     global.solid_circle = Some(solid_circle);
@@ -62,7 +62,7 @@ fn setup(
             7.5,
             12,
             Color::GREEN,
-            true,
+            Some(1),
         ))
         .id();
     global.hollow_circle = Some(hollow_circle);

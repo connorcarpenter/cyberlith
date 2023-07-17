@@ -1,6 +1,7 @@
 use std::default::Default;
 
 use bevy_ecs::{bundle::Bundle, change_detection::ResMut};
+use bevy_log::info;
 
 use math::{Vec2, Vec3};
 
@@ -28,27 +29,25 @@ impl RenderObjectBundle {
         radius: f32,
         subdivisions: u16,
         color: Color,
-        outline_only: bool,
+        outline: Option<u8>,
     ) -> Self {
-        if outline_only {
-            let mesh = meshes.add(shapes::HollowCircle::new(
-                subdivisions,
-                (radius * 1000.0) as u32,
+        let mesh = if let Some(thickness) = outline {
+            let mesh = meshes.add(shapes::Circle::new(
+                13,
             ));
-            Self {
-                mesh,
-                material: materials.add(color),
-                transform: Transform::from_xy(x, y),
-                ..Default::default()
-            }
+            info!("hollow mesh: {:?}", mesh.id);
+            mesh
         } else {
             let mesh = meshes.add(shapes::Circle::new(subdivisions));
-            Self {
-                mesh,
-                material: materials.add(color),
-                transform: Transform::from_xy(x, y).with_scale(Vec3::splat(radius)),
-                ..Default::default()
-            }
+            info!("solid mesh: {:?}", mesh.id);
+            mesh
+        };
+
+        Self {
+            mesh,
+            material: materials.add(color),
+            transform: Transform::from_xy(x, y).with_scale(Vec3::splat(radius)),
+            ..Default::default()
         }
     }
 

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use math::{Mat3, Mat4, Vec3};
+use math::{Mat4, Vec3};
 use render_api::{
     base::{AxisAlignedBoundingBox, Color},
     components::{CameraProjection, Transform},

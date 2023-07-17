@@ -34,8 +34,8 @@ impl From<Circle> for CpuMesh {
 
         for j in 0..angle_subdivisions {
             indices.push(0);
-            indices.push(j as u16);
-            indices.push(((j + 1) % angle_subdivisions) as u16);
+            indices.push(j);
+            indices.push(((j + 1) % angle_subdivisions));
         }
         CpuMesh {
             indices: Indices(Some(indices)),
@@ -50,26 +50,33 @@ impl From<Circle> for CpuMesh {
 #[derive(Hash)]
 pub struct HollowCircle {
     pub angle_subdivisions: u16,
-    pub radius_thousandths: u32,
 }
 
 impl AssetHash<CpuMesh> for HollowCircle {}
 
 impl HollowCircle {
-    pub fn new(angle_subdivisions: u16, radius_thousandths: u32) -> Self {
+    pub fn new(angle_subdivisions: u16) -> Self {
         Self {
             angle_subdivisions,
-            radius_thousandths,
         }
     }
 }
 
 impl From<HollowCircle> for CpuMesh {
     fn from(circle: HollowCircle) -> Self {
+        From::<Circle>::from(Circle::new(circle.angle_subdivisions))
+    }
+}
+
+
+// HollowCircle
+/*
+
+        let radius = HollowCircle::RADIUS;
+        let line_thickness_half = 0.1;
+
         let angle_subdivisions = circle.angle_subdivisions;
 
-        let radius = circle.radius_thousandths as f32 / 1000.0;
-        let line_thickness_half = 0.5;
         let outer_radius = radius + line_thickness_half;
         let inner_radius = radius - line_thickness_half;
 
@@ -118,5 +125,4 @@ impl From<HollowCircle> for CpuMesh {
             normals: Some(normals),
             ..Default::default()
         }
-    }
-}
+ */

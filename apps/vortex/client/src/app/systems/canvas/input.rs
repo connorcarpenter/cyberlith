@@ -1,4 +1,4 @@
-use bevy_ecs::system::{Query, Res, ResMut};
+use bevy_ecs::system::{Query, ResMut};
 
 use input::{Input, Key, MouseButton};
 use render_api::components::{Camera, Projection, Transform};

@@ -3,8 +3,9 @@ use std::collections::HashMap;
 use bevy_ecs::{
     entity::Entity,
     event::EventReader,
-    system::{Commands, Query, Res, ResMut},
+    system::{Commands, Query, ResMut},
 };
+use bevy_ecs::system::Local;
 use bevy_log::info;
 use naia_bevy_client::{
     Client,
@@ -14,14 +15,15 @@ use naia_bevy_client::{
     },
 };
 
-use render_api::{Assets, base::{Color, CpuMaterial, CpuMesh}, components::RenderObjectBundle};
+use render_api::{Assets, base::{CpuMaterial, CpuMesh}};
 use vortex_proto::components::{ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild, Vertex3d, VertexChild, VertexRootChild};
 
 use crate::app::{
-    components::{file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState}, Vertex2d},
+    components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
     resources::{canvas_manager::CanvasManager, global::Global},
     systems::file_post_process,
 };
+use crate::app::systems::network::vertex_waitlist::{vertex_process_insert, VertexWaitlistEntry, VertexWaitlistInsert};
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
     for SpawnEntityEvent(_entity) in event_reader.iter() {
@@ -39,16 +41,21 @@ pub fn insert_component_events(
     mut commands: Commands,
     client: Client,
     mut global: ResMut<Global>,
+    mut event_reader: EventReader<InsertComponentEvents>,
+
+    // for vertices
     mut canvas_manager: ResMut<CanvasManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
-    mut event_reader: EventReader<InsertComponentEvents>,
+    vertex_query: Query<&Vertex3d>,
+    mut waiting_vertices: Local<HashMap<Entity, VertexWaitlistEntry>>,
+
+    // for filesystem
     mut parent_query: Query<&mut FileSystemParent>,
     child_query: Query<&FileSystemChild>,
     entry_query: Query<&FileSystemEntry>,
     changelist_query: Query<&ChangelistEntry>,
     mut fs_state_query: Query<&mut FileSystemUiState>,
-    vertex_query: Query<&Vertex3d>,
 ) {
     let project_root_entity = global.project_root_entity;
     let mut recent_parents: Option<HashMap<Entity, FileSystemParent>> = None;
@@ -133,50 +140,44 @@ pub fn insert_component_events(
 
         // on Vertex Insert Event
         for vertex_3d_entity in events.read::<Vertex3d>() {
-            info!("received inserted Vertex3d: `{:?}`", vertex_3d_entity);
-            let vertex_3d = vertex_query.get(vertex_3d_entity).unwrap();
-
-            commands.entity(vertex_3d_entity)
-                .insert(RenderObjectBundle::sphere(
-                    &mut meshes,
-                    &mut materials,
-                    vertex_3d.x() as f32,
-                    vertex_3d.y() as f32,
-                    vertex_3d.z() as f32,
-                    4.0,
-                    12,
-                    Color::GREEN,
-                ))
-                .insert(canvas_manager.layer_3d);
-
-            let vertex_2d_entity = commands
-                .spawn(RenderObjectBundle::circle(
-                    &mut meshes,
-                    &mut materials,
-                    vertex_3d.x() as f32,
-                    vertex_3d.y() as f32,
-                    4.0,
-                    12,
-                    Color::GREEN,
-                    false,
-                ))
-                .insert(canvas_manager.layer_2d)
-                .insert(Vertex2d)
-                .id();
-
-            info!("received inserted Vertex3d: `{:?}`, created 2d entity: {:?}", vertex_3d_entity, vertex_2d_entity);
-
-            canvas_manager.register_3d_vertex(vertex_3d_entity, vertex_2d_entity);
+            vertex_process_insert(
+                &mut waiting_vertices,
+                &mut commands,
+                VertexWaitlistInsert::Position,
+                &vertex_3d_entity,
+                &mut canvas_manager,
+                &mut meshes,
+                &mut materials,
+                &vertex_query,
+            );
         }
 
         // on Vertex Child Insert Event
-        for child_entity in events.read::<VertexChild>() {
-            info!("received inserted VertexChild: `{:?}`", child_entity);
+        for vertex_3d_entity in events.read::<VertexChild>() {
+            vertex_process_insert(
+                &mut waiting_vertices,
+                &mut commands,
+                VertexWaitlistInsert::Parent(false),
+                &vertex_3d_entity,
+                &mut canvas_manager,
+                &mut meshes,
+                &mut materials,
+                &vertex_query,
+            );
         }
 
         // on Vertex Root Child Event
-        for child_entity in events.read::<VertexRootChild>() {
-            info!("received inserted VertexRootChild: `{:?}`", child_entity);
+        for vertex_3d_entity in events.read::<VertexRootChild>() {
+            vertex_process_insert(
+                &mut waiting_vertices,
+                &mut commands,
+                VertexWaitlistInsert::Parent(true),
+                &vertex_3d_entity,
+                &mut canvas_manager,
+                &mut meshes,
+                &mut materials,
+                &vertex_query,
+            );
         }
     }
 }

@@ -5,7 +5,8 @@ use bevy_log::info;
 
 use math::{convert_3d_to_2d, Quat, Vec2, Vec3};
 use render_api::{base::CpuTexture2D, components::{Camera, CameraProjection, OrthographicProjection, Projection, RenderLayer, Transform, Viewport}, Handle};
-use vortex_proto::components::Vertex3d;
+use render_api::shapes::HollowCircle;
+use vortex_proto::components::{Vertex3d, VertexRootChild};
 
 use crate::app::components::Vertex2d;
 
@@ -187,7 +188,7 @@ impl CanvasManager {
             let right = transform.right_direction();
             let up = right.cross(transform.view_direction());
 
-            transform.translation = (transform.view_direction() * -100.0); // 100 units away from where looking
+            transform.translation = transform.view_direction() * -100.0; // 100 units away from where looking
             transform.translation += right * self.camera_3d_offset.x;
             transform.translation += up * self.camera_3d_offset.y;
         }
@@ -239,7 +240,9 @@ impl CanvasManager {
             vertex_2d_transform.translation.x = coords.x;
             vertex_2d_transform.translation.y = coords.y;
             vertex_2d_transform.translation.z = depth;
-            vertex_2d_transform.scale = Vec3::splat(self.camera_3d_scale * 4.0);
+
+            let mut scale_2d = self.camera_3d_scale * Vertex2d::RADIUS;
+            vertex_2d_transform.scale = Vec3::splat(scale_2d);
         }
     }
 

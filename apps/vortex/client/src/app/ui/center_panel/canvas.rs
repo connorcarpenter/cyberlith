@@ -1,5 +1,5 @@
 use bevy_ecs::{
-    system::{Query, Res, ResMut, SystemState},
+    system::{Query, ResMut, SystemState},
     world::World,
 };
 
