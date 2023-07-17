@@ -12,7 +12,7 @@ use render_api::{
 };
 use render_egui::EguiUserTextures;
 
-use crate::app::{components::HoverCircle, config::AppConfig, resources::canvas_manager::CanvasManager};
+use crate::app::{components::{HoverCircle, SelectCircle}, config::AppConfig, resources::canvas_manager::CanvasManager};
 
 pub fn setup(
     config: Res<AppConfig>,
@@ -95,7 +95,26 @@ fn setup_2d_scene(
         .insert(canvas_manager.layer_2d)
         .insert(HoverCircle)
         .id();
-    canvas_manager.hover_entity = Some(hover_circle_entity);
+    canvas_manager.hover_circle_entity = Some(hover_circle_entity);
+
+    // select circle
+    let mut select_circle_components = RenderObjectBundle::circle(
+        meshes,
+        materials,
+        480.0,
+        240.0,
+        SelectCircle::RADIUS,
+        12,
+        Color::WHITE,
+        Some(1),
+    );
+    select_circle_components.visibility.visible = false;
+    let select_circle_entity = commands
+        .spawn(select_circle_components)
+        .insert(canvas_manager.layer_2d)
+        .insert(SelectCircle)
+        .id();
+    canvas_manager.select_circle_entity = Some(select_circle_entity);
 }
 
 fn setup_3d_scene(
