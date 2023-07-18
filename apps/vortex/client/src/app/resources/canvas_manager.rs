@@ -421,6 +421,19 @@ impl CanvasManager {
                     // TODO: delete vertex?
                 }
             }
+        } else {
+            match click_type {
+                ClickType::Left => {
+                    // TODO: create new vertex
+                }
+                ClickType::Right => {
+                    // deselect vertex
+                    if self.selected_vertex.is_some() {
+                        self.selected_vertex = None;
+                        self.camera_2d_recalc = true;
+                    }
+                }
+            }
         }
     }
 
