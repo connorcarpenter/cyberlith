@@ -6,7 +6,7 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use math::Vec2;
+use math::{Vec2, Vec3};
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
     components::RenderObjectBundle,
@@ -15,9 +15,10 @@ use render_api::{
 use vortex_proto::components::{Vertex3d, VertexRootChild};
 
 use crate::app::{
-    components::{LineEntities, Vertex2d},
+    components::{Edge2d, Vertex2d},
     resources::canvas_manager::CanvasManager,
 };
+use crate::app::components::{create_3d_edge_diamond, Edge3d};
 
 pub enum VertexWaitlistInsert {
     Position,
@@ -132,7 +133,7 @@ fn vertex_process_insert_complete(
         .id();
 
     if let Some(parent_3d_entity) = parent_opt {
-        // create edge entity
+        // create 2d edge entity
         commands
             .spawn(RenderObjectBundle::line(
                 meshes,
@@ -142,7 +143,19 @@ fn vertex_process_insert_complete(
                 Color::GREEN,
             ))
             .insert(canvas_manager.layer_2d)
-            .insert(LineEntities::new(vertex_2d_entity, parent_3d_entity));
+            .insert(Edge2d::new(vertex_2d_entity, parent_3d_entity));
+
+        // create 3d edge entity
+        commands
+            .spawn(create_3d_edge_diamond(
+                meshes,
+                materials,
+                Vec3::ZERO,
+                Vec3::X,
+                Color::GREEN,
+            ))
+            .insert(canvas_manager.layer_3d)
+            .insert(Edge3d::new(vertex_3d_entity, parent_3d_entity));
     } else {
         commands.entity(vertex_2d_entity).insert(VertexRootChild);
     }

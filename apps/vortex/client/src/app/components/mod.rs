@@ -1,11 +1,11 @@
 pub use hover::*;
-pub use line::*;
+pub use edge::*;
 pub use select::*;
-pub use vertex_2d::*;
+pub use vertex::*;
 
 pub mod file_system;
 
 mod hover;
-mod line;
+mod edge;
 mod select;
-mod vertex_2d;
+mod vertex;

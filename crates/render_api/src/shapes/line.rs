@@ -44,7 +44,7 @@ impl From<Line> for CpuMesh {
             Vec3::new(0.0, 0.5, 0.0),
         ];
         let normals = vec![Vec3::Z; 4];
-        CpuMesh {
+        Self {
             indices,
             positions: Positions(positions),
             normals: Some(normals),

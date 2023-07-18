@@ -35,16 +35,10 @@ impl From<Triangle> for CpuMesh {
             Vec3::new(tri.c.0 as f32, tri.c.1 as f32, tri.c.2 as f32),
         ];
         let normals = vec![Vec3::Z, Vec3::Z, Vec3::Z];
-        let uvs = vec![
-            Vec2::new(0.0, 1.0),
-            Vec2::new(1.0, 1.0),
-            Vec2::new(1.0, 0.0),
-        ];
         CpuMesh {
             indices,
             positions: Positions(positions),
             normals: Some(normals),
-            uvs: Some(uvs),
             ..Default::default()
         }
     }

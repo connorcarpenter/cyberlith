@@ -18,7 +18,7 @@ use render_api::{
 };
 use vortex_proto::components::Vertex3d;
 
-use crate::app::components::{HoverCircle, LineEntities, SelectCircle, Vertex2d};
+use crate::app::components::{HoverCircle, Edge2d, SelectCircle, Vertex2d};
 
 #[derive(Clone, Copy)]
 pub enum ClickType {
@@ -233,7 +233,7 @@ impl CanvasManager {
         camera_q: &Query<(&Camera, &Projection)>,
         vertex_3d_q: &Query<(Entity, &Vertex3d)>,
         visibility_q: &mut Query<&mut Visibility>,
-        edge_q: &Query<(Entity, &LineEntities)>,
+        edge_q: &Query<(Entity, &Edge2d)>,
     ) {
         if !self.camera_2d_recalc {
             return;
