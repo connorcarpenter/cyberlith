@@ -9,7 +9,7 @@ use crate::{
     Assets,
     assets::Handle,
     base::{Color, CpuMaterial, CpuMesh}, components::Visibility,
-    shapes
+    shapes, shapes::set_line_transform,
 };
 
 use super::transform::Transform;
@@ -95,6 +95,24 @@ impl RenderObjectBundle {
                     .with_scale(Vec2::new(width, height).extend(0.0)),
                 ..Default::default()
             }
+        }
+    }
+
+    pub fn line(
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+        start: &Vec2,
+        end: &Vec2,
+        color: Color,
+    ) -> Self {
+        let mesh = meshes.add(shapes::Line::new());
+        let mut transform = Transform::default();
+        set_line_transform(&mut transform, start, end);
+        Self {
+            mesh,
+            material: materials.add(color),
+            transform,
+            ..Default::default()
         }
     }
 

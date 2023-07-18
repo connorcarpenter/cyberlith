@@ -111,7 +111,6 @@ impl TabManager {
 
             commands
                 .entity(*entity)
-                .enable_replication(server)
                 // call "pause_replication" on all Entities (they will be resumed when tab is selected)
                 .pause_replication(server);
         }

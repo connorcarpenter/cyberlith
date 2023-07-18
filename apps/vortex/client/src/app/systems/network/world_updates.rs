@@ -3,10 +3,9 @@ use std::collections::HashMap;
 use bevy_ecs::{
     entity::Entity,
     event::EventReader,
-    system::{Commands, Query, ResMut},
+    system::{Commands, Local, Query, ResMut},
 };
-use bevy_ecs::system::Local;
-use bevy_log::info;
+use bevy_log::{info, warn};
 use naia_bevy_client::{
     Client,
     events::{
@@ -21,9 +20,8 @@ use vortex_proto::components::{ChangelistEntry, EntryKind, FileSystemChild, File
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
     resources::{canvas_manager::CanvasManager, global::Global},
-    systems::file_post_process,
+    systems::{file_post_process, network::vertex_waitlist::{vertex_process_insert, VertexWaitlistEntry, VertexWaitlistInsert}},
 };
-use crate::app::systems::network::vertex_waitlist::{vertex_process_insert, VertexWaitlistEntry, VertexWaitlistInsert};
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
     for SpawnEntityEvent(_entity) in event_reader.iter() {
@@ -43,19 +41,20 @@ pub fn insert_component_events(
     mut global: ResMut<Global>,
     mut event_reader: EventReader<InsertComponentEvents>,
 
-    // for vertices
-    mut canvas_manager: ResMut<CanvasManager>,
-    mut meshes: ResMut<Assets<CpuMesh>>,
-    mut materials: ResMut<Assets<CpuMaterial>>,
-    vertex_query: Query<&Vertex3d>,
-    mut waiting_vertices: Local<HashMap<Entity, VertexWaitlistEntry>>,
-
     // for filesystem
     mut parent_query: Query<&mut FileSystemParent>,
     child_query: Query<&FileSystemChild>,
     entry_query: Query<&FileSystemEntry>,
     changelist_query: Query<&ChangelistEntry>,
     mut fs_state_query: Query<&mut FileSystemUiState>,
+
+    // for vertices
+    mut canvas_manager: ResMut<CanvasManager>,
+    mut meshes: ResMut<Assets<CpuMesh>>,
+    mut materials: ResMut<Assets<CpuMaterial>>,
+    vertex_query: Query<&Vertex3d>,
+    vertex_child_query: Query<&VertexChild>,
+    mut waiting_vertices: Local<HashMap<Entity, VertexWaitlistEntry>>,
 ) {
     let project_root_entity = global.project_root_entity;
     let mut recent_parents: Option<HashMap<Entity, FileSystemParent>> = None;
@@ -153,12 +152,19 @@ pub fn insert_component_events(
         }
 
         // on Vertex Child Insert Event
-        for vertex_3d_entity in events.read::<VertexChild>() {
+        for vertex_child_entity in events.read::<VertexChild>() {
+            let vertex_child = vertex_child_query.get(vertex_child_entity).unwrap();
+            let Some(parent_entity) = vertex_child.parent_id.get(&client) else {
+                warn!("VertexChild component of entity: `{:?}` has no parent component", vertex_child_entity);
+                continue;
+            };
+            info!("VertexChild success!");
+
             vertex_process_insert(
                 &mut waiting_vertices,
                 &mut commands,
-                VertexWaitlistInsert::Parent(false),
-                &vertex_3d_entity,
+                VertexWaitlistInsert::Parent(Some(parent_entity)),
+                &vertex_child_entity,
                 &mut canvas_manager,
                 &mut meshes,
                 &mut materials,
@@ -171,7 +177,7 @@ pub fn insert_component_events(
             vertex_process_insert(
                 &mut waiting_vertices,
                 &mut commands,
-                VertexWaitlistInsert::Parent(true),
+                VertexWaitlistInsert::Parent(None),
                 &vertex_3d_entity,
                 &mut canvas_manager,
                 &mut meshes,

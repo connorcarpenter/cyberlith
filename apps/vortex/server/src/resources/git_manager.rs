@@ -234,7 +234,7 @@ impl GitManager {
     pub(crate) fn load_content_entities(
         &mut self,
         commands: &mut Commands,
-        server: &Server,
+        server: &mut Server,
         file_entry_key: &FileEntryKey,
         username: &str,
     ) -> Vec<Entity> {

@@ -118,9 +118,9 @@ impl Workspace {
 
     pub fn commit_entire_changelist(
         &mut self,
-        commands: &mut Commands,
-        server: &Server,
-        query: &Query<&ChangelistEntry>,
+        _commands: &mut Commands,
+        _server: &Server,
+        _query: &Query<&ChangelistEntry>,
     ) {
         todo!();
     }
@@ -420,7 +420,7 @@ impl Workspace {
     pub(crate) fn load_content_entities(
         &self,
         commands: &mut Commands,
-        server: &Server,
+        server: &mut Server,
         key: &FileEntryKey,
     ) -> Vec<Entity> {
         // get file extension of file

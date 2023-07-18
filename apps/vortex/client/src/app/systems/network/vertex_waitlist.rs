@@ -6,19 +6,20 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
+use math::Vec2;
 use render_api::{Assets, base::{Color, CpuMaterial, CpuMesh}, components::RenderObjectBundle};
 use vortex_proto::components::{Vertex3d, VertexRootChild};
 
-use crate::app::{components::Vertex2d, resources::canvas_manager::CanvasManager};
+use crate::app::{components::{LineEntities, Vertex2d}, resources::canvas_manager::CanvasManager};
 
 pub enum VertexWaitlistInsert {
     Position,
-    Parent(bool),
+    Parent(Option<Entity>),
 }
 
 pub struct VertexWaitlistEntry {
     has_pos: bool,
-    parent: Option<bool>,
+    parent: Option<Option<Entity>>,
 }
 
 impl VertexWaitlistEntry {
@@ -33,15 +34,15 @@ impl VertexWaitlistEntry {
         self.has_pos && self.parent.is_some()
     }
 
-    fn set_parent(&mut self, is_root: bool) {
-        self.parent = Some(is_root);
+    fn set_parent(&mut self, parent: Option<Entity>) {
+        self.parent = Some(parent);
     }
 
     fn set_pos(&mut self) {
         self.has_pos = true;
     }
 
-    pub(crate) fn decompose(self) -> bool {
+    pub(crate) fn decompose(self) -> Option<Entity> {
         return self.parent.unwrap();
     }
 }
@@ -65,8 +66,8 @@ pub fn vertex_process_insert(
         VertexWaitlistInsert::Position => {
             waitlist.set_pos();
         }
-        VertexWaitlistInsert::Parent(is_root) => {
-            waitlist.set_parent(is_root);
+        VertexWaitlistInsert::Parent(parent) => {
+            waitlist.set_parent(parent);
         }
     }
 
@@ -93,7 +94,7 @@ fn vertex_process_insert_complete(
     materials: &mut Assets<CpuMaterial>,
     vertex_query: &Query<&Vertex3d>,
 ) {
-    let is_root = entry.decompose();
+    let parent_opt = entry.decompose();
 
     let vertex_3d = vertex_query.get(vertex_3d_entity).unwrap();
 
@@ -119,17 +120,30 @@ fn vertex_process_insert_complete(
             Vertex2d::RADIUS,
             Vertex2d::SUBDIVISIONS,
             Color::GREEN,
-            if is_root { Some(1) } else { None },
+            if parent_opt.is_none() { Some(1) } else { None }, // makes root vertex hollow
         ))
         .insert(canvas_manager.layer_2d)
         .insert(Vertex2d)
         .id();
 
-    if is_root {
+    if let Some(parent_3d_entity) = parent_opt {
+
+        // create edge entity
+        commands
+            .spawn(RenderObjectBundle::line(
+                meshes,
+                materials,
+                &Vec2::ZERO,
+                &Vec2::X,
+                Color::GREEN,
+            ))
+            .insert(canvas_manager.layer_2d)
+            .insert(LineEntities::new(vertex_2d_entity, parent_3d_entity));
+    } else {
         commands.entity(vertex_2d_entity).insert(VertexRootChild);
     }
 
-    info!("created Vertex3d: `{:?}`, created 2d entity: {:?}, is_root: {:?}", vertex_3d_entity, vertex_2d_entity, is_root);
+    info!("created Vertex3d: `{:?}`, created 2d entity: {:?}, is_root: {:?}", vertex_3d_entity, vertex_2d_entity, parent_opt);
 
     canvas_manager.register_3d_vertex(vertex_3d_entity, vertex_2d_entity);
 }

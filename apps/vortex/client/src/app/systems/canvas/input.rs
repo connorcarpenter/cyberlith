@@ -1,9 +1,9 @@
-use bevy_ecs::{entity::Entity, query::{With, Without}, system::{Query, ResMut}};
+use bevy_ecs::{entity::Entity, query::With, system::{Query, ResMut}};
 
 use input::Input;
 use render_api::components::{Camera, Projection, Transform, Visibility};
 
-use crate::app::{components::{HoverCircle, SelectCircle, Vertex2d}, resources::canvas_manager::CanvasManager};
+use crate::app::{components::Vertex2d, resources::canvas_manager::CanvasManager};
 
 pub fn input(
     mut canvas_manager: ResMut<CanvasManager>,

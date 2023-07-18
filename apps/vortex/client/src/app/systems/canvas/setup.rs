@@ -117,14 +117,12 @@ fn setup_2d_scene(
     canvas_manager.select_circle_entity = Some(select_circle_entity);
 
     // select line
-    let mut select_line_components = RenderObjectBundle::square(
+    let mut select_line_components = RenderObjectBundle::line(
         meshes,
         materials,
-        0.0,
-        0.0,
-        1.0,
+        &Vec2::ZERO,
+        &Vec2::X,
         Color::WHITE,
-        false,
     );
     select_line_components.visibility.visible = false;
     let select_line_entity = commands

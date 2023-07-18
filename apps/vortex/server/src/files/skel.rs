@@ -5,9 +5,9 @@ use bevy_ecs::{
     prelude::{Commands, World},
     system::{Query, SystemState},
 };
-use naia_bevy_server::{BitReader, BitWriter, Serde, SerdeErr, Server, UnsignedVariableInteger};
+use naia_bevy_server::{BitReader, BitWriter, CommandsExt, Serde, SerdeErr, Server, UnsignedVariableInteger};
 
-use vortex_proto::components::{FileSystemChild, FileSystemRootChild, Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt};
+use vortex_proto::components::{FileSystemChild, Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt};
 
 use crate::files::{FileReader, FileWriter};
 
@@ -173,7 +173,7 @@ impl SkelReader {
 
     fn actions_to_world(
         commands: &mut Commands,
-        server: &Server,
+        server: &mut Server,
         new_entities: &mut Vec<Entity>,
         actions: Vec<SkelAction>,
     ) -> Result<(), SerdeErr> {
@@ -182,8 +182,11 @@ impl SkelReader {
         for action in actions {
             match action {
                 SkelAction::Vertex(x, y, z, parent_id_opt) => {
-                    let entity = commands.spawn_empty();
-                    entities.push((entity.id(), x, y, z, parent_id_opt));
+                    let entity_id = commands
+                        .spawn_empty()
+                        .enable_replication(server)
+                        .id();
+                    entities.push((entity_id, x, y, z, parent_id_opt));
                 }
             }
         }
@@ -209,7 +212,7 @@ impl SkelReader {
 }
 
 impl FileReader for SkelReader {
-    fn read(&self, commands: &mut Commands, server: &Server, bytes: &Box<[u8]>) -> Vec<Entity> {
+    fn read(&self, commands: &mut Commands, server: &mut Server, bytes: &Box<[u8]>) -> Vec<Entity> {
         let mut new_entities = Vec::new();
         let mut bit_reader = BitReader::new(bytes);
 

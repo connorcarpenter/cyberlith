@@ -1,14 +1,14 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{change_detection::ResMut, entity::Entity, prelude::Resource, query::{With, Without}, system::Query};
-use bevy_log::info;
+use bevy_ecs::{change_detection::ResMut, entity::Entity, prelude::Resource, query::With, system::Query};
+use bevy_log::{info, warn};
 
 use input::{Input, Key, MouseButton};
 use math::{convert_3d_to_2d, Quat, Vec2, Vec3};
 use render_api::{base::CpuTexture2D, components::{Camera, CameraProjection, OrthographicProjection, Projection, RenderLayer, Transform, Viewport, Visibility}, Handle, shapes::set_line_transform};
 use vortex_proto::components::Vertex3d;
 
-use crate::app::components::{HoverCircle, SelectCircle, Vertex2d};
+use crate::app::components::{HoverCircle, LineEntities, SelectCircle, Vertex2d};
 
 #[derive(Clone, Copy)]
 pub enum ClickType {
@@ -219,6 +219,7 @@ impl CanvasManager {
         camera_q: &Query<(&Camera, &Projection)>,
         vertex_3d_q: &Query<(Entity, &Vertex3d)>,
         visibility_q: &mut Query<&mut Visibility>,
+        edge_q: &Query<(Entity, &LineEntities)>,
     ) {
         if !self.camera_2d_recalc {
             return;
@@ -244,9 +245,11 @@ impl CanvasManager {
         let view_matrix = camera_transform.view_matrix();
         let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
 
+        // update verticies
         for (vertex_3d_entity, vertex_3d) in vertex_3d_q.iter() {
             let Ok(mut vertex_3d_transform) = transform_q.get_mut(vertex_3d_entity) else {
-                panic!("Vertex3d entity {:?} has no Transform", vertex_3d_entity);
+                warn!("Vertex3d entity {:?} has no Transform", vertex_3d_entity);
+                continue;
             };
 
             vertex_3d_transform.translation.x = vertex_3d.x().into();
@@ -273,6 +276,20 @@ impl CanvasManager {
 
             let scale_2d = self.camera_3d_scale * Vertex2d::RADIUS;
             vertex_2d_transform.scale = Vec3::splat(scale_2d);
+        }
+
+        // update edges
+        for (edge_entity, edge_endpoints) in edge_q.iter() {
+            let Some(end_entity) = self.vertex_entity_3d_to_2d(&edge_endpoints.end_3d) else {
+                warn!("Edge entity {:?} has no endpoint entity", edge_entity);
+                continue;
+            };
+
+            let start_pos = transform_q.get(edge_endpoints.start).unwrap().translation.truncate();
+
+            let end_pos = transform_q.get(*end_entity).unwrap().translation.truncate();
+            let mut edge_transform = transform_q.get_mut(edge_entity).unwrap();
+            set_line_transform(&mut edge_transform, &start_pos, &end_pos);
         }
 
         // update selected vertex circle & line
