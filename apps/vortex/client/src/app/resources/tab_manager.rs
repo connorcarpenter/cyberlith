@@ -9,7 +9,7 @@ use naia_bevy_client::Client;
 
 use render_egui::{
     egui,
-    egui::{Id, NumExt, Rect, Response, Rounding, Sense, Stroke, TextStyle, Ui, vec2, WidgetText},
+    egui::{vec2, Id, NumExt, Rect, Response, Rounding, Sense, Stroke, TextStyle, Ui, WidgetText},
 };
 use vortex_proto::{
     channels::TabActionChannel,
@@ -73,7 +73,12 @@ impl TabManager {
         }
     }
 
-    pub fn open_tab(&mut self, client: &mut Client, canvas_state: &mut CanvasManager, row_entity: &Entity) {
+    pub fn open_tab(
+        &mut self,
+        client: &mut Client,
+        canvas_state: &mut CanvasManager,
+        row_entity: &Entity,
+    ) {
         if self.tab_map.contains_key(row_entity) {
             self.select_tab(client, canvas_state, row_entity);
         } else {
@@ -110,7 +115,8 @@ impl TabManager {
                 ResMut<TabManager>,
                 Query<(&FileSystemEntry, &FileSystemUiState)>,
             )> = SystemState::new(world);
-            let (mut client, mut canvas_state, mut tab_manager, query) = system_state.get_mut(world);
+            let (mut client, mut canvas_state, mut tab_manager, query) =
+                system_state.get_mut(world);
 
             tab_manager.render_tabs(&mut client, &mut canvas_state, ui, &query);
         });
@@ -140,7 +146,12 @@ impl TabManager {
         }
     }
 
-    fn select_tab(&mut self, client: &mut Client, canvas_state: &mut CanvasManager, row_entity: &Entity) {
+    fn select_tab(
+        &mut self,
+        client: &mut Client,
+        canvas_state: &mut CanvasManager,
+        row_entity: &Entity,
+    ) {
         // deselect current tab
         if let Some(current_entity) = self.current_tab {
             let tab_state = self.tab_map.get_mut(&current_entity).unwrap();
@@ -166,7 +177,12 @@ impl TabManager {
         }
     }
 
-    fn close_tab(&mut self, client: &mut Client, canvas_state: &mut CanvasManager, row_entity: &Entity) {
+    fn close_tab(
+        &mut self,
+        client: &mut Client,
+        canvas_state: &mut CanvasManager,
+        row_entity: &Entity,
+    ) {
         // remove tab
         let tab_state = self.tab_map.remove(row_entity).unwrap();
         self.tab_order.remove(tab_state.order);
@@ -205,12 +221,22 @@ impl TabManager {
         }
     }
 
-    fn close_all_tabs_except(&mut self, client: &mut Client, canvas_state: &mut CanvasManager, row_entity: &Entity) {
+    fn close_all_tabs_except(
+        &mut self,
+        client: &mut Client,
+        canvas_state: &mut CanvasManager,
+        row_entity: &Entity,
+    ) {
         self.close_all_tabs(client, canvas_state);
         self.open_tab(client, canvas_state, row_entity);
     }
 
-    fn close_all_tabs_left_of(&mut self, client: &mut Client, canvas_state: &mut CanvasManager, row_entity: &Entity) {
+    fn close_all_tabs_left_of(
+        &mut self,
+        client: &mut Client,
+        canvas_state: &mut CanvasManager,
+        row_entity: &Entity,
+    ) {
         let tab_state = self.tab_map.get(row_entity).unwrap();
         let order = tab_state.order;
         let mut tabs_to_close: Vec<Entity> = Vec::new();
@@ -224,7 +250,12 @@ impl TabManager {
         }
     }
 
-    fn close_all_tabs_right_of(&mut self, client: &mut Client, canvas_state: &mut CanvasManager, row_entity: &Entity) {
+    fn close_all_tabs_right_of(
+        &mut self,
+        client: &mut Client,
+        canvas_state: &mut CanvasManager,
+        row_entity: &Entity,
+    ) {
         let tab_state = self.tab_map.get(row_entity).unwrap();
         let order = tab_state.order;
         let mut tabs_to_close: Vec<Entity> = Vec::new();
@@ -409,7 +440,12 @@ impl TabManager {
         });
     }
 
-    fn execute_tab_action(&mut self, client: &mut Client, canvas_state: &mut CanvasManager, tab_action: Option<TabAction>) {
+    fn execute_tab_action(
+        &mut self,
+        client: &mut Client,
+        canvas_state: &mut CanvasManager,
+        tab_action: Option<TabAction>,
+    ) {
         match tab_action {
             None => {}
             Some(TabAction::Select(row_entity)) => {

@@ -10,11 +10,16 @@ use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
 use render_egui::{
     egui,
     egui::{
-        emath, Id, NumExt, Rect, remap, Response, Rounding, Sense, Shape, Stroke, TextStyle, Ui,
-        vec2, WidgetText,
+        emath, remap, vec2, Id, NumExt, Rect, Response, Rounding, Sense, Shape, Stroke, TextStyle,
+        Ui, WidgetText,
     },
 };
-use vortex_proto::{components::{ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild}, FileExtension};
+use vortex_proto::{
+    components::{
+        ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
+    },
+    FileExtension,
+};
 
 use crate::app::{
     components::file_system::{
@@ -27,11 +32,11 @@ use crate::app::{
         tab_manager::TabManager,
     },
     ui::{
-        UiState,
         widgets::colors::{
             FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
             TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED,
         },
+        UiState,
     },
 };
 
@@ -378,7 +383,8 @@ impl FileTreeRowUiWidget {
 
         // add to tabs
         if file_ext.can_io() {
-            let mut system_state: SystemState<(Client, ResMut<CanvasManager>, ResMut<TabManager>)> = SystemState::new(world);
+            let mut system_state: SystemState<(Client, ResMut<CanvasManager>, ResMut<TabManager>)> =
+                SystemState::new(world);
             let (mut client, mut canvas_state, mut tab_manager) = system_state.get_mut(world);
             tab_manager.open_tab(&mut client, &mut canvas_state, row_entity);
         }

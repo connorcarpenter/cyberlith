@@ -6,10 +6,12 @@ use bevy_log::info;
 use math::{Vec2, Vec3};
 
 use crate::{
-    Assets,
     assets::Handle,
-    base::{Color, CpuMaterial, CpuMesh}, components::Visibility,
-    shapes, shapes::set_line_transform,
+    base::{Color, CpuMaterial, CpuMesh},
+    components::Visibility,
+    shapes,
+    shapes::set_line_transform,
+    Assets,
 };
 
 use super::transform::Transform;
@@ -33,9 +35,7 @@ impl RenderObjectBundle {
         outline: Option<u8>,
     ) -> Self {
         let mesh = if let Some(_thickness) = outline {
-            let mesh = meshes.add(shapes::HollowCircle::new(
-                subdivisions
-            ));
+            let mesh = meshes.add(shapes::HollowCircle::new(subdivisions));
             info!("hollow mesh: {:?}", mesh.id);
             mesh
         } else {
@@ -60,7 +60,14 @@ impl RenderObjectBundle {
         color: Color,
         outline_only: bool,
     ) -> Self {
-        Self::rectangle(meshes, materials, position, Vec2::splat(size), color, outline_only)
+        Self::rectangle(
+            meshes,
+            materials,
+            position,
+            Vec2::splat(size),
+            color,
+            outline_only,
+        )
     }
 
     pub fn rectangle(
@@ -87,8 +94,7 @@ impl RenderObjectBundle {
             Self {
                 mesh,
                 material: materials.add(color),
-                transform: Transform::from_translation_2d(position)
-                    .with_scale(size.extend(0.0)),
+                transform: Transform::from_translation_2d(position).with_scale(size.extend(0.0)),
                 ..Default::default()
             }
         }

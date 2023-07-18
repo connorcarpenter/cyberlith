@@ -3,10 +3,10 @@ use bevy_ecs::system::{Commands, Query, Res, ResMut};
 
 use input::{Input, MouseButton};
 use render_api::{
-    Assets,
     base::{Color, CpuMaterial, CpuMesh},
     components::{AmbientLight, CameraBundle, RenderObjectBundle, Transform},
-    resources::WindowSettings, Window,
+    resources::WindowSettings,
+    Assets, Window,
 };
 
 use crate::app::resources::Global;

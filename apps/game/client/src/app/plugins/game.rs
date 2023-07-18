@@ -7,13 +7,13 @@ use bevy_ecs::{
 
 use math::Vec3;
 use render_api::{
-    Assets,
     base::{Color, CpuMaterial, CpuMesh},
     components::{
         AmbientLight, Camera, CameraBundle, DirectionalLight, PerspectiveProjection, Projection,
         RenderObjectBundle, Transform,
     },
-    resources::WindowSettings, shapes, Window,
+    resources::WindowSettings,
+    shapes, Assets, Window,
 };
 
 #[derive(Component)]

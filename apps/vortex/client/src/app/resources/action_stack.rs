@@ -7,11 +7,15 @@ use bevy_ecs::{
 use bevy_log::info;
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus, ReplicationConfig};
 
-use vortex_proto::components::{ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild};
+use vortex_proto::components::{
+    ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
+};
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
-    resources::{canvas_manager::CanvasManager, file_tree::FileTree, global::Global, tab_manager::TabManager},
+    resources::{
+        canvas_manager::CanvasManager, file_tree::FileTree, global::Global, tab_manager::TabManager,
+    },
     systems::file_post_process,
 };
 
@@ -263,7 +267,11 @@ impl ActionStack {
                     Res<Global>,
                     Query<(Entity, &mut FileSystemUiState)>,
                     Query<(Entity, &ChangelistEntry, &mut ChangelistUiState)>,
-                    Query<(&FileSystemEntry, Option<&FileSystemChild>, Option<&FileSystemRootChild>)>,
+                    Query<(
+                        &FileSystemEntry,
+                        Option<&FileSystemChild>,
+                        Option<&FileSystemRootChild>,
+                    )>,
                     Query<&mut FileSystemParent>,
                 )> = SystemState::new(world);
                 let (
@@ -574,7 +582,11 @@ impl ActionStack {
     fn convert_contents_to_slim_tree(
         client: &Client,
         parent_entity: &Entity,
-        fs_query: &Query<(&FileSystemEntry, Option<&FileSystemChild>, Option<&FileSystemRootChild>)>,
+        fs_query: &Query<(
+            &FileSystemEntry,
+            Option<&FileSystemChild>,
+            Option<&FileSystemRootChild>,
+        )>,
         parent_query: &mut Query<&mut FileSystemParent>,
     ) -> Vec<(Entity, FileTree)> {
         let mut trees = Vec::new();

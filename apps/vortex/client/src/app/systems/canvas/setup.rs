@@ -3,16 +3,20 @@ use bevy_log::info;
 
 use math::{Vec2, Vec3};
 use render_api::{
-    Assets,
     base::{Color, CpuMaterial, CpuMesh, CpuTexture2D},
     components::{
         AmbientLight, Camera, CameraBundle, ClearOperation, OrthographicProjection, PointLight,
         Projection, RenderLayers, RenderObjectBundle, RenderTarget, Transform, Viewport,
-    }, Handle,
+    },
+    Assets, Handle,
 };
 use render_egui::EguiUserTextures;
 
-use crate::app::{components::{HoverCircle, SelectCircle, SelectLine, Vertex2d}, config::AppConfig, resources::canvas_manager::CanvasManager};
+use crate::app::{
+    components::{HoverCircle, SelectCircle, SelectLine, Vertex2d},
+    config::AppConfig,
+    resources::canvas_manager::CanvasManager,
+};
 
 pub fn setup(
     config: Res<AppConfig>,
@@ -74,7 +78,10 @@ fn setup_2d_scene(
     camera_bundle.camera.target = RenderTarget::Image(canvas_texture_handle);
     camera_bundle.camera.is_active = false;
     camera_bundle.camera.order = 1;
-    let camera_entity = commands.spawn(camera_bundle).insert(canvas_manager.layer_2d).id();
+    let camera_entity = commands
+        .spawn(camera_bundle)
+        .insert(canvas_manager.layer_2d)
+        .id();
 
     canvas_manager.camera_2d = Some(camera_entity);
 
@@ -115,13 +122,8 @@ fn setup_2d_scene(
     canvas_manager.select_circle_entity = Some(select_circle_entity);
 
     // select line
-    let mut select_line_components = RenderObjectBundle::line(
-        meshes,
-        materials,
-        Vec2::ZERO,
-        Vec2::X,
-        Color::WHITE,
-    );
+    let mut select_line_components =
+        RenderObjectBundle::line(meshes, materials, Vec2::ZERO, Vec2::X, Color::WHITE);
     select_line_components.visibility.visible = false;
     let select_line_entity = commands
         .spawn(select_line_components)
@@ -167,7 +169,11 @@ fn setup_3d_scene(
             },
             transform: Transform::from_xyz(50.0, 0.0, 0.0) // from front
                 .looking_at(Vec3::ZERO, Vec3::Y),
-            projection: Projection::Orthographic(OrthographicProjection::new(texture_size.y, 0.0, 1000.0)),
+            projection: Projection::Orthographic(OrthographicProjection::new(
+                texture_size.y,
+                0.0,
+                1000.0,
+            )),
         })
         .insert(canvas_manager.layer_3d)
         .id();

@@ -56,7 +56,7 @@ impl GpuDepthTexture<'_> {
                 {
                     return texture(depthMap, uv).x;
                 }"
-                .to_owned(),
+            .to_owned(),
             Self::Array { .. } => "
                 uniform sampler2DArray depthMap;
                 uniform int depthLayer;
@@ -64,7 +64,7 @@ impl GpuDepthTexture<'_> {
                 {
                     return texture(depthMap, vec3(uv, depthLayer)).x;
                 }"
-                .to_owned(),
+            .to_owned(),
             Self::CubeMap { .. } => {
                 unimplemented!()
             }

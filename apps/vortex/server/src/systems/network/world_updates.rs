@@ -43,11 +43,9 @@ pub fn despawn_entity_events(
         let Some(user) = user_manager.user_info(user_key) else {
             panic!("user not found");
         };
-        git_manager.workspace_mut(user.get_username()).on_client_delete_file(
-            &mut commands,
-            &mut server,
-            entity,
-        );
+        git_manager
+            .workspace_mut(user.get_username())
+            .on_client_delete_file(&mut commands, &mut server, entity);
     }
 }
 

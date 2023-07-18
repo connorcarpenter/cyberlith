@@ -3,7 +3,7 @@ use bevy_ecs::schedule::{IntoSystemConfig, IntoSystemSetConfig};
 
 use render_api::RenderSet;
 
-use crate::{EguiContext, EguiSet, EguiUserTextures, systems};
+use crate::{systems, EguiContext, EguiSet, EguiUserTextures};
 
 // Plugin
 pub struct EguiPlugin;

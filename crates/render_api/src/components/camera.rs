@@ -28,14 +28,14 @@ impl CameraBundle {
                 viewport.height as f32 * 0.5,
                 -1.0,
             )
-                .looking_at(
-                    Vec3::new(
-                        viewport.width as f32 * 0.5,
-                        viewport.height as f32 * 0.5,
-                        0.0,
-                    ),
-                    Vec3::NEG_Y,
+            .looking_at(
+                Vec3::new(
+                    viewport.width as f32 * 0.5,
+                    viewport.height as f32 * 0.5,
+                    0.0,
                 ),
+                Vec3::NEG_Y,
+            ),
             projection: Projection::Orthographic(OrthographicProjection {
                 height: viewport.height as f32,
                 near: 0.0,

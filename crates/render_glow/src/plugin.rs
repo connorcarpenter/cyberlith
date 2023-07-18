@@ -3,8 +3,7 @@ use bevy_ecs::schedule::{ExecutorKind, IntoSystemConfig, IntoSystemSetConfig, Sc
 
 use render_api::RenderSet;
 
-use crate::{draw::draw, input, runner::runner_func, sync::SyncPlugin};
-use crate::base_set::GlowSet;
+use crate::{base_set::GlowSet, draw::draw, input, runner::runner_func, sync::SyncPlugin};
 
 pub struct RenderGlowPlugin;
 

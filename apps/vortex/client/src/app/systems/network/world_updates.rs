@@ -7,20 +7,31 @@ use bevy_ecs::{
 };
 use bevy_log::{info, warn};
 use naia_bevy_client::{
-    Client,
     events::{
         DespawnEntityEvent, InsertComponentEvents, RemoveComponentEvents, SpawnEntityEvent,
         UpdateComponentEvents,
     },
+    Client,
 };
 
-use render_api::{Assets, base::{CpuMaterial, CpuMesh}};
-use vortex_proto::components::{ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild, Vertex3d, VertexChild, VertexRootChild};
+use render_api::{
+    base::{CpuMaterial, CpuMesh},
+    Assets,
+};
+use vortex_proto::components::{
+    ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild, Vertex3d,
+    VertexChild, VertexRootChild,
+};
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
     resources::{canvas_manager::CanvasManager, global::Global},
-    systems::{file_post_process, network::vertex_waitlist::{vertex_process_insert, VertexWaitlistEntry, VertexWaitlistInsert}},
+    systems::{
+        file_post_process,
+        network::vertex_waitlist::{
+            vertex_process_insert, VertexWaitlistEntry, VertexWaitlistInsert,
+        },
+    },
 };
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {

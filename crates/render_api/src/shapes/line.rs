@@ -2,7 +2,11 @@ use std::f32::consts::PI;
 
 use math::{Quat, Vec2, Vec3};
 
-use crate::{assets::AssetHash, base::{CpuMesh, Indices, Positions}, components::Transform};
+use crate::{
+    assets::AssetHash,
+    base::{CpuMesh, Indices, Positions},
+    components::Transform,
+};
 
 pub fn set_line_transform(transform: &mut Transform, start: Vec2, end: Vec2) {
     let angle = angle_between(&start, &end);

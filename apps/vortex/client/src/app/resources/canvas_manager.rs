@@ -1,11 +1,21 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{change_detection::ResMut, entity::Entity, prelude::Resource, query::With, system::Query};
+use bevy_ecs::{
+    change_detection::ResMut, entity::Entity, prelude::Resource, query::With, system::Query,
+};
 use bevy_log::{info, warn};
 
 use input::{Input, Key, MouseButton};
 use math::{convert_3d_to_2d, Quat, Vec2, Vec3};
-use render_api::{base::CpuTexture2D, components::{Camera, CameraProjection, OrthographicProjection, Projection, RenderLayer, Transform, Viewport, Visibility}, Handle, shapes::set_line_transform};
+use render_api::{
+    base::CpuTexture2D,
+    components::{
+        Camera, CameraProjection, OrthographicProjection, Projection, RenderLayer, Transform,
+        Viewport, Visibility,
+    },
+    shapes::set_line_transform,
+    Handle,
+};
 use vortex_proto::components::Vertex3d;
 
 use crate::app::components::{HoverCircle, LineEntities, SelectCircle, Vertex2d};
@@ -92,7 +102,6 @@ impl Default for CanvasManager {
 }
 
 impl CanvasManager {
-
     pub fn update_input(
         &mut self,
         input: &mut ResMut<Input>,
@@ -137,7 +146,12 @@ impl CanvasManager {
         }
 
         // Mouse over
-        self.update_mouse_hover(input.mouse_position(), transform_q, visibility_q, vertex_2d_q);
+        self.update_mouse_hover(
+            input.mouse_position(),
+            transform_q,
+            visibility_q,
+            vertex_2d_q,
+        );
         self.update_select_line(input.mouse_position(), transform_q);
 
         let left_button_pressed = input.is_pressed(MouseButton::Left);
@@ -241,7 +255,8 @@ impl CanvasManager {
         };
 
         let camera_viewport = camera.viewport.unwrap();
-        let camera_viewport_size = Vec2::new(camera_viewport.width as f32, camera_viewport.height as f32);
+        let camera_viewport_size =
+            Vec2::new(camera_viewport.width as f32, camera_viewport.height as f32);
         let view_matrix = camera_transform.view_matrix();
         let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
 
@@ -285,7 +300,11 @@ impl CanvasManager {
                 continue;
             };
 
-            let start_pos = transform_q.get(edge_endpoints.start).unwrap().translation.truncate();
+            let start_pos = transform_q
+                .get(edge_endpoints.start)
+                .unwrap()
+                .translation
+                .truncate();
 
             let end_pos = transform_q.get(*end_entity).unwrap().translation.truncate();
             let mut edge_transform = transform_q.get_mut(edge_entity).unwrap();
@@ -311,7 +330,8 @@ impl CanvasManager {
             };
 
             select_circle_transform.translation = vertex_transform.translation;
-            select_circle_transform.scale = Vec3::splat(SelectCircle::RADIUS * self.camera_3d_scale);
+            select_circle_transform.scale =
+                Vec3::splat(SelectCircle::RADIUS * self.camera_3d_scale);
 
             select_shape_visibilities[0].visible = true;
             select_shape_visibilities[1].visible = true;
@@ -374,7 +394,9 @@ impl CanvasManager {
         visibility_q: &mut Query<&mut Visibility>,
         vertex_2d_q: &Query<Entity, With<Vertex2d>>,
     ) {
-        if mouse_position.x as i16 != self.last_mouse_position.x as i16 || mouse_position.y as i16 != self.last_mouse_position.y as i16 {
+        if mouse_position.x as i16 != self.last_mouse_position.x as i16
+            || mouse_position.y as i16 != self.last_mouse_position.y as i16
+        {
             // mouse moved!
             self.mouse_hover_recalc = true;
             self.select_line_recalc = true;
@@ -426,7 +448,11 @@ impl CanvasManager {
         hover_transform.scale = Vec3::splat(radius);
     }
 
-    fn update_select_line(&mut self, mouse_position: &Vec2, transform_q: &mut Query<&mut Transform>) {
+    fn update_select_line(
+        &mut self,
+        mouse_position: &Vec2,
+        transform_q: &mut Query<&mut Transform>,
+    ) {
         // update selected vertex circle & line
 
         if let Some(selected_vertex_entity) = self.selected_vertex {
@@ -443,7 +469,11 @@ impl CanvasManager {
                 panic!("Select line entity has no Transform");
             };
 
-            set_line_transform(&mut select_line_transform, vertex_transform.translation.truncate(), *mouse_position);
+            set_line_transform(
+                &mut select_line_transform,
+                vertex_transform.translation.truncate(),
+                *mouse_position,
+            );
         }
     }
 
@@ -466,10 +496,7 @@ impl CanvasManager {
         }
     }
 
-    fn handle_mouse_click(
-        &mut self,
-        click_type: ClickType,
-    ) {
+    fn handle_mouse_click(&mut self, click_type: ClickType) {
         // let vertex_is_selected = self.selected_vertex.is_some();
         let cursor_is_hovering = self.hovered_vertex.is_some();
 
@@ -562,7 +589,11 @@ impl CanvasManager {
 
         let speed = -0.01;
 
-        self.camera_3d_rotation = Some(rotation * Quat::from_rotation_y(delta.x * speed) * Quat::from_rotation_x(delta.y * speed));
+        self.camera_3d_rotation = Some(
+            rotation
+                * Quat::from_rotation_y(delta.x * speed)
+                * Quat::from_rotation_x(delta.y * speed),
+        );
 
         self.camera_3d_recalc = true;
     }
@@ -631,11 +662,8 @@ impl CanvasManager {
 
         *transform = Transform::from_xyz(center.x, center.y, -1.0)
             .looking_at(Vec3::new(center.x, center.y, 0.0), Vec3::NEG_Y);
-        *projection = Projection::Orthographic(OrthographicProjection::new(
-            texture_size.y,
-            0.0,
-            10.0,
-        ));
+        *projection =
+            Projection::Orthographic(OrthographicProjection::new(texture_size.y, 0.0, 10.0));
     }
 
     fn update_3d_camera_viewport(
@@ -655,11 +683,8 @@ impl CanvasManager {
             texture_size.y as u32,
         ));
 
-        *projection = Projection::Orthographic(OrthographicProjection::new(
-            texture_size.y,
-            0.0,
-            1000.0,
-        ));
+        *projection =
+            Projection::Orthographic(OrthographicProjection::new(texture_size.y, 0.0, 1000.0));
     }
 
     pub fn register_3d_vertex(&mut self, entity_3d: Entity, entity_2d: Entity) {

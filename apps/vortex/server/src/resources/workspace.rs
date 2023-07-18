@@ -8,7 +8,11 @@ use bevy_log::info;
 use git2::{Repository, Signature};
 use naia_bevy_server::{CommandsExt, RoomKey, Server};
 
-use vortex_proto::{components::{ChangelistEntry, ChangelistStatus}, FileExtension, resources::FileEntryKey};
+use vortex_proto::{
+    components::{ChangelistEntry, ChangelistStatus},
+    resources::FileEntryKey,
+    FileExtension,
+};
 
 use crate::{
     files::{FileReader, FileWriter},
@@ -95,7 +99,12 @@ impl Workspace {
         }
     }
 
-    pub fn on_client_delete_file(&mut self, commands: &mut Commands, server: &mut Server, entity: &Entity) {
+    pub fn on_client_delete_file(
+        &mut self,
+        commands: &mut Commands,
+        server: &mut Server,
+        entity: &Entity,
+    ) {
         // Remove Entity from Working Tree, returning a list of child entities that should be despawned
         let file_entry_key =
             Self::find_file_entry_by_entity(&mut self.working_file_entries, entity);
@@ -324,7 +333,7 @@ impl Workspace {
             &repo.find_tree(tree_id).expect("Failed to find tree"),
             &[&parent_commit],
         )
-            .expect("Failed to create commit");
+        .expect("Failed to create commit");
     }
 
     pub fn git_push(&self) {
@@ -429,7 +438,13 @@ impl Workspace {
         // get file contents from either the changelist or the file system
         let bytes = if self.changelist_entries.contains_key(key) {
             // get contents of file from changelist
-            Box::from(self.changelist_entries.get(key).unwrap().get_content().unwrap())
+            Box::from(
+                self.changelist_entries
+                    .get(key)
+                    .unwrap()
+                    .get_content()
+                    .unwrap(),
+            )
         } else {
             // get contents of file from file system
             self.get_file_contents(key)

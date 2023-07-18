@@ -1,11 +1,13 @@
 use naia_bevy_shared::{Protocol, ProtocolPlugin};
 
-pub use file_system::{
-    ChangelistEntry, ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-};
 use file_system::FileSystemComponentsPlugin;
-pub use vertex::{Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt};
+pub use file_system::{
+    ChangelistEntry, ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry,
+    FileSystemRootChild,
+};
+
 use vertex::VertexComponentsPlugin;
+pub use vertex::{Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt};
 
 mod file_system;
 mod vertex;

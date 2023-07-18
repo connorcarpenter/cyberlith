@@ -7,6 +7,5 @@ pub mod messages;
 pub mod resources;
 pub mod types;
 
-mod protocol;
 mod file_extension;
-
+mod protocol;

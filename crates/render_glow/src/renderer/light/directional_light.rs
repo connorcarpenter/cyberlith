@@ -48,7 +48,7 @@ impl DirectionalLightImpl {
         &mut self,
         _light: &DirectionalLight,
         _texture_size: u32,
-        _geometries: impl IntoIterator<Item=RenderObject<'a>> + Clone,
+        _geometries: impl IntoIterator<Item = RenderObject<'a>> + Clone,
     ) {
         // TODO fix this
 

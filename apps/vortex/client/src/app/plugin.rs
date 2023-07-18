@@ -12,11 +12,10 @@ use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
     config::ConfigPlugin,
     events::LoginEvent,
-    resources::{action_stack::ActionStack, global::Global, tab_manager::TabManager},
+    resources::{canvas_manager::CanvasManager, action_stack::ActionStack, global::Global, tab_manager::TabManager},
     systems::{canvas, network, ui},
     ui::UiState,
 };
-use crate::app::resources::canvas_manager::CanvasManager;
 
 pub struct VortexPlugin;
 

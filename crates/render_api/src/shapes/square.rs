@@ -1,6 +1,9 @@
 use math::{Vec2, Vec3};
 
-use crate::{assets::AssetHash, base::{CpuMesh, Indices, Positions}};
+use crate::{
+    assets::AssetHash,
+    base::{CpuMesh, Indices, Positions},
+};
 
 #[derive(Hash)]
 pub struct Square;

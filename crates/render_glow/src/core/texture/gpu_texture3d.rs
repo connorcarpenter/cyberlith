@@ -2,7 +2,7 @@ use glow::HasContext;
 
 use render_api::base::{CpuTexture3D, CpuTextureData, Interpolation, Wrapping};
 
-use crate::core::{Context, format_from_data_type, texture::*, to_byte_slice};
+use crate::core::{format_from_data_type, texture::*, to_byte_slice, Context};
 
 ///
 /// A 3D color texture.

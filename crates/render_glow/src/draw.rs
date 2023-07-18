@@ -3,8 +3,8 @@ use bevy_ecs::system::{NonSendMut, Query, Res, ResMut};
 use render_api::{
     base::{CpuMaterial, CpuMesh, CpuTexture2D},
     components::{
-        AmbientLight, Camera, PointLight, Projection, RenderLayer, RenderLayers, RenderTarget as CameraRenderTarget,
-        Transform, Visibility,
+        AmbientLight, Camera, PointLight, Projection, RenderLayer, RenderLayers,
+        RenderTarget as CameraRenderTarget, Transform, Visibility,
     },
     Handle,
 };

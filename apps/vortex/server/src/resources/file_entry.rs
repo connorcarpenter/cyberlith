@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use bevy_ecs::entity::Entity;
 
-use vortex_proto::{FileExtension, resources::FileEntryKey};
+use vortex_proto::{resources::FileEntryKey, FileExtension};
 
 #[derive(Clone)]
 pub struct FileEntryValue {

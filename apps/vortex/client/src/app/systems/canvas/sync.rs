@@ -1,4 +1,7 @@
-use bevy_ecs::{entity::Entity, system::{Query, ResMut}};
+use bevy_ecs::{
+    entity::Entity,
+    system::{Query, ResMut},
+};
 
 use render_api::components::{Camera, Projection, Transform, Visibility};
 use vortex_proto::components::Vertex3d;
@@ -13,5 +16,11 @@ pub fn sync(
     mut visibility_q: Query<&mut Visibility>,
     edge_q: Query<(Entity, &LineEntities)>,
 ) {
-    canvas_manager.sync_vertices(&mut transform_q, &camera_q, &vertex_3d_q, &mut visibility_q, &edge_q);
+    canvas_manager.sync_vertices(
+        &mut transform_q,
+        &camera_q,
+        &vertex_3d_q,
+        &mut visibility_q,
+        &edge_q,
+    );
 }

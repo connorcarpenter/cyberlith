@@ -1,4 +1,4 @@
-use bevy_ecs::{system::{Query, ResMut}};
+use bevy_ecs::system::{Query, ResMut};
 
 use render_api::components::{Camera, Transform};
 

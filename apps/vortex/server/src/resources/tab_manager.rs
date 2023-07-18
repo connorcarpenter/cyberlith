@@ -120,9 +120,7 @@ impl TabManager {
         user_state.tabs.insert(tab_id.clone(), tab_state);
 
         // put user in new room
-        server
-            .room_mut(&new_room_key)
-            .add_user(user_key);
+        server.room_mut(&new_room_key).add_user(user_key);
     }
 
     pub fn remove_waiting_open(

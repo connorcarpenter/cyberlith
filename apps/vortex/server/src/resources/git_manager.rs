@@ -13,13 +13,19 @@ use bevy_log::info;
 use git2::{Cred, Repository, Tree};
 use naia_bevy_server::{CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};
 
-use vortex_proto::{components::{ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild}, FileExtension, resources::FileEntryKey};
+use vortex_proto::{
+    components::{
+        ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
+    },
+    resources::FileEntryKey,
+    FileExtension,
+};
 
 use crate::{
     components::FileSystemOwner,
     config::GitConfig,
     files::FileWriter,
-    resources::{FileEntryValue, user_manager::UserInfo, workspace::Workspace}
+    resources::{user_manager::UserInfo, workspace::Workspace, FileEntryValue},
 };
 
 #[derive(Resource)]

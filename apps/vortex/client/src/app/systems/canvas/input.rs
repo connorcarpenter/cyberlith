@@ -1,4 +1,8 @@
-use bevy_ecs::{entity::Entity, query::With, system::{Query, ResMut}};
+use bevy_ecs::{
+    entity::Entity,
+    query::With,
+    system::{Query, ResMut},
+};
 
 use input::Input;
 use render_api::components::{Camera, Projection, Transform, Visibility};
@@ -13,5 +17,11 @@ pub fn input(
     mut visibility_q: Query<&mut Visibility>,
     vertex_2d_q: Query<Entity, With<Vertex2d>>,
 ) {
-    canvas_manager.update_input(&mut input, &mut transform_q, &mut camera_q, &mut visibility_q, &vertex_2d_q);
+    canvas_manager.update_input(
+        &mut input,
+        &mut transform_q,
+        &mut camera_q,
+        &mut visibility_q,
+        &vertex_2d_q,
+    );
 }

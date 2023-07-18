@@ -7,10 +7,17 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use math::Vec2;
-use render_api::{Assets, base::{Color, CpuMaterial, CpuMesh}, components::RenderObjectBundle};
+use render_api::{
+    base::{Color, CpuMaterial, CpuMesh},
+    components::RenderObjectBundle,
+    Assets,
+};
 use vortex_proto::components::{Vertex3d, VertexRootChild};
 
-use crate::app::{components::{LineEntities, Vertex2d}, resources::canvas_manager::CanvasManager};
+use crate::app::{
+    components::{LineEntities, Vertex2d},
+    resources::canvas_manager::CanvasManager,
+};
 
 pub enum VertexWaitlistInsert {
     Position,
@@ -98,7 +105,8 @@ fn vertex_process_insert_complete(
 
     let vertex_3d = vertex_query.get(vertex_3d_entity).unwrap();
 
-    commands.entity(vertex_3d_entity)
+    commands
+        .entity(vertex_3d_entity)
         .insert(RenderObjectBundle::sphere(
             meshes,
             materials,
@@ -124,7 +132,6 @@ fn vertex_process_insert_complete(
         .id();
 
     if let Some(parent_3d_entity) = parent_opt {
-
         // create edge entity
         commands
             .spawn(RenderObjectBundle::line(
@@ -140,7 +147,10 @@ fn vertex_process_insert_complete(
         commands.entity(vertex_2d_entity).insert(VertexRootChild);
     }
 
-    info!("created Vertex3d: `{:?}`, created 2d entity: {:?}, is_root: {:?}", vertex_3d_entity, vertex_2d_entity, parent_opt);
+    info!(
+        "created Vertex3d: `{:?}`, created 2d entity: {:?}, is_root: {:?}",
+        vertex_3d_entity, vertex_2d_entity, parent_opt
+    );
 
     canvas_manager.register_3d_vertex(vertex_3d_entity, vertex_2d_entity);
 }

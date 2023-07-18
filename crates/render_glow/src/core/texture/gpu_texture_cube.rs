@@ -6,8 +6,8 @@ use render_api::{
 };
 
 use crate::core::{
-    apply_cube_effect, ClearState, ColorTarget, Context, format_from_data_type, PrimitiveDataType,
-    RenderStates, texture::*, to_byte_slice,
+    apply_cube_effect, format_from_data_type, texture::*, to_byte_slice, ClearState, ColorTarget,
+    Context, PrimitiveDataType, RenderStates,
 };
 use crate::renderer::RenderTargetExt;
 

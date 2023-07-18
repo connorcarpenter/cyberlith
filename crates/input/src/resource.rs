@@ -4,7 +4,7 @@ use bevy_ecs::prelude::Resource;
 
 use math::Vec2;
 
-use crate::{IncomingEvent, is_button::IsButton, Key, MouseButton};
+use crate::{is_button::IsButton, IncomingEvent, Key, MouseButton};
 
 #[derive(Resource)]
 pub struct Input {
@@ -12,7 +12,7 @@ pub struct Input {
     mouse_coords: Vec2,
     mouse_buttons: HashSet<MouseButton>,
     keys: HashSet<Key>,
-    mouse_scroll_y: f32
+    mouse_scroll_y: f32,
 }
 
 impl Input {

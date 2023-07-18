@@ -8,9 +8,9 @@ use bevy_ecs::{
 };
 
 use render_api::{
-    Assets,
     base::{CpuMaterial, CpuMesh, CpuTexture2D},
-    components::{AmbientLight, DirectionalLight}, RenderSet,
+    components::{AmbientLight, DirectionalLight},
+    Assets, RenderSet,
 };
 
 use crate::{

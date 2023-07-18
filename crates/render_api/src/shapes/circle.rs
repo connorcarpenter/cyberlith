@@ -56,9 +56,7 @@ impl AssetHash<CpuMesh> for HollowCircle {}
 
 impl HollowCircle {
     pub fn new(angle_subdivisions: u16) -> Self {
-        Self {
-            angle_subdivisions,
-        }
+        Self { angle_subdivisions }
     }
 }
 
@@ -120,9 +118,8 @@ impl From<HollowCircle> for CpuMesh {
     }
 }
 
-
 // HollowCircle
 /*
 
 
- */
+*/

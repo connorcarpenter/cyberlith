@@ -1,11 +1,13 @@
-use bevy_ecs::{
-    prelude::Mut,
-    world::World,
-};
+use bevy_ecs::{prelude::Mut, world::World};
 
 use render_egui::EguiContext;
 
-use crate::app::{resources::action_stack::ActionStack, ui::{center_panel, consume_shortcuts, left_panel, login_modal, TextInputModal, top_bar, UiState}};
+use crate::app::{
+    resources::action_stack::ActionStack,
+    ui::{
+        center_panel, consume_shortcuts, left_panel, login_modal, top_bar, TextInputModal, UiState,
+    },
+};
 
 pub fn update(world: &mut World) {
     let context = world.get_resource::<EguiContext>().unwrap().inner().clone();

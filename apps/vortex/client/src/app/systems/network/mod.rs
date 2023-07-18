@@ -15,6 +15,5 @@ mod disconnect;
 mod error;
 mod init;
 mod reject;
-mod world_updates;
 mod vertex_waitlist;
-
+mod world_updates;

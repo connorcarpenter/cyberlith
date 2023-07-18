@@ -6,20 +6,17 @@ use bevy_ecs::{
 use input::Input;
 use math::Vec2;
 use render_api::{
-    Assets,
     base::CpuTexture2D,
     components::{Camera, Projection, Transform},
+    Assets,
 };
 use render_egui::{
     egui,
-    egui::{Frame, Id, Image, pos2, Rect, Ui},
+    egui::{pos2, Frame, Id, Image, Rect, Ui},
     EguiUserTextures,
 };
 
-use crate::app::{
-    resources::canvas_manager::CanvasManager,
-    ui::UiState,
-};
+use crate::app::{resources::canvas_manager::CanvasManager, ui::UiState};
 
 pub fn show_canvas(ui: &mut Ui, world: &mut World) {
     egui::CentralPanel::default()
@@ -80,8 +77,8 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
     }
 
     if canvas_manager.is_visible() {
-        let image =
-            Image::new(texture_id, texture_size).uv(Rect::from_min_max(pos2(0.0, 1.0), pos2(1.0, 0.0)));
+        let image = Image::new(texture_id, texture_size)
+            .uv(Rect::from_min_max(pos2(0.0, 1.0), pos2(1.0, 0.0)));
         ui.add_enabled(false, image);
     }
 

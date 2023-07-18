@@ -157,10 +157,6 @@ impl Default for OrthographicProjection {
 
 impl OrthographicProjection {
     pub fn new(height: f32, near: f32, far: f32) -> Self {
-        Self {
-            height,
-            near,
-            far,
-        }
+        Self { height, near, far }
     }
 }

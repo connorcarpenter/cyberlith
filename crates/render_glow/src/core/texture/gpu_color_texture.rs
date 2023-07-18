@@ -56,7 +56,7 @@ impl GpuColorTexture<'_> {
                 {
                     return texture(colorMap, uv);
                 }"
-                .to_owned(),
+            .to_owned(),
             Self::Array { .. } => "
                 uniform sampler2DArray colorMap;
                 uniform int colorLayers[4];
@@ -68,7 +68,7 @@ impl GpuColorTexture<'_> {
                 {
                     return texture(colorMap, vec3(uv, colorLayers[index]));
                 }"
-                .to_owned(),
+            .to_owned(),
             Self::CubeMap { .. } => unimplemented!(),
         }
     }
