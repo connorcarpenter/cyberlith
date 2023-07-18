@@ -12,7 +12,7 @@ use render_api::{
 };
 use render_egui::EguiUserTextures;
 
-use crate::app::{components::{HoverCircle, SelectCircle, Vertex2d}, config::AppConfig, resources::canvas_manager::CanvasManager};
+use crate::app::{components::{HoverCircle, SelectCircle, SelectLine, Vertex2d}, config::AppConfig, resources::canvas_manager::CanvasManager};
 
 pub fn setup(
     config: Res<AppConfig>,
@@ -82,8 +82,8 @@ fn setup_2d_scene(
     let mut hover_circle_components = RenderObjectBundle::circle(
         meshes,
         materials,
-        480.0,
-        240.0,
+        0.0,
+        0.0,
         HoverCircle::RADIUS,
         Vertex2d::SUBDIVISIONS,
         Color::GREEN,
@@ -101,8 +101,8 @@ fn setup_2d_scene(
     let mut select_circle_components = RenderObjectBundle::circle(
         meshes,
         materials,
-        480.0,
-        240.0,
+        0.0,
+        0.0,
         SelectCircle::RADIUS,
         Vertex2d::SUBDIVISIONS,
         Color::WHITE,
@@ -115,6 +115,24 @@ fn setup_2d_scene(
         .insert(SelectCircle)
         .id();
     canvas_manager.select_circle_entity = Some(select_circle_entity);
+
+    // select line
+    let mut select_line_components = RenderObjectBundle::square(
+        meshes,
+        materials,
+        0.0,
+        0.0,
+        1.0,
+        Color::WHITE,
+        false,
+    );
+    select_line_components.visibility.visible = false;
+    let select_line_entity = commands
+        .spawn(select_line_components)
+        .insert(canvas_manager.layer_2d)
+        .insert(SelectLine)
+        .id();
+    canvas_manager.select_line_entity = Some(select_line_entity);
 }
 
 fn setup_3d_scene(

@@ -8,10 +8,10 @@ use crate::app::{components::{HoverCircle, SelectCircle, Vertex2d}, resources::c
 pub fn input(
     mut canvas_manager: ResMut<CanvasManager>,
     mut input: ResMut<Input>,
-    mut camera_query: Query<(&mut Camera, &mut Transform, &mut Projection), (Without<SelectCircle>, Without<HoverCircle>, Without<Vertex2d>)>,
-    mut hover_circle_query: Query<(&mut Transform, &mut Visibility), (With<HoverCircle>, Without<SelectCircle>, Without<Vertex2d>)>,
-    mut select_circle_query: Query<(&mut Transform, &mut Visibility), (With<SelectCircle>, Without<HoverCircle>, Without<Vertex2d>)>,
-    vertex_2d_query: Query<(Entity, &Transform), With<Vertex2d>>,
+    mut transform_q: Query<&mut Transform>,
+    mut camera_q: Query<(&mut Camera, &mut Projection)>,
+    mut visibility_q: Query<&mut Visibility>,
+    vertex_2d_q: Query<Entity, With<Vertex2d>>,
 ) {
-    canvas_manager.update_input(&mut input, &mut camera_query, &mut hover_circle_query, &mut select_circle_query, &vertex_2d_query);
+    canvas_manager.update_input(&mut input, &mut transform_q, &mut camera_q, &mut visibility_q, &vertex_2d_q);
 }

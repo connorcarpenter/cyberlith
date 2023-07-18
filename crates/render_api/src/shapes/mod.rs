@@ -2,6 +2,7 @@ pub use circle::*;
 pub use cone::*;
 pub use cube::*;
 pub use cylinder::*;
+pub use line::*;
 pub use sphere::*;
 pub use square::*;
 pub use triangle::*;
@@ -15,3 +16,5 @@ mod cylinder;
 mod sphere;
 mod square;
 mod triangle;
+mod line;
+

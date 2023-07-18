@@ -5,7 +5,7 @@ use bevy_log::info;
 
 use input::{Input, Key, MouseButton};
 use math::{convert_3d_to_2d, Quat, Vec2, Vec3};
-use render_api::{base::CpuTexture2D, components::{Camera, CameraProjection, OrthographicProjection, Projection, RenderLayer, Transform, Viewport, Visibility}, Handle};
+use render_api::{base::CpuTexture2D, components::{Camera, CameraProjection, OrthographicProjection, Projection, RenderLayer, Transform, Viewport, Visibility}, Handle, shapes::set_line_transform};
 use vortex_proto::components::Vertex3d;
 
 use crate::app::components::{HoverCircle, SelectCircle, Vertex2d};
@@ -47,7 +47,9 @@ pub struct CanvasManager {
     hovered_vertex: Option<Entity>,
 
     pub select_circle_entity: Option<Entity>,
+    pub select_line_entity: Option<Entity>,
     selected_vertex: Option<Entity>,
+    select_line_recalc: bool,
 }
 
 impl Default for CanvasManager {
@@ -82,7 +84,9 @@ impl Default for CanvasManager {
             hovered_vertex: None,
 
             select_circle_entity: None,
+            select_line_entity: None,
             selected_vertex: None,
+            select_line_recalc: false,
         }
     }
 }
@@ -92,22 +96,22 @@ impl CanvasManager {
     pub fn update_input(
         &mut self,
         input: &mut ResMut<Input>,
-        camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection), (Without<SelectCircle>, Without<HoverCircle>, Without<Vertex2d>)>,
-        hover_circle_query: &mut Query<(&mut Transform, &mut Visibility), (With<HoverCircle>, Without<SelectCircle>, Without<Vertex2d>)>,
-        select_circle_query: &mut Query<(&mut Transform, &mut Visibility), (With<SelectCircle>, Without<HoverCircle>, Without<Vertex2d>)>,
-        vertex_2d_query: &Query<(Entity, &Transform), With<Vertex2d>>,
+        transform_q: &mut Query<&mut Transform>,
+        camera_q: &mut Query<(&mut Camera, &mut Projection)>,
+        visibility_q: &mut Query<&mut Visibility>,
+        vertex_2d_q: &Query<Entity, With<Vertex2d>>,
     ) {
         // check keyboard input
 
         // (S)olid 3D View
         if input.is_pressed(Key::S) {
             // disable 2d camera, enable 3d camera
-            self.set_3d_mode(camera_query);
+            self.set_3d_mode(camera_q);
         }
         // (W)ireframe 2D View
         else if input.is_pressed(Key::W) {
             // disable 3d camera, enable 2d camera
-            self.set_2d_mode(camera_query);
+            self.set_2d_mode(camera_q);
         }
         // (G)ame Camera View
         else if input.is_pressed(Key::G) {
@@ -133,7 +137,8 @@ impl CanvasManager {
         }
 
         // Mouse over
-        self.update_mouse_hover(input.mouse_position(), hover_circle_query, vertex_2d_query);
+        self.update_mouse_hover(input.mouse_position(), transform_q, visibility_q, vertex_2d_q);
+        self.update_select_line(input.mouse_position(), transform_q);
 
         let left_button_pressed = input.is_pressed(MouseButton::Left);
         let right_button_pressed = input.is_pressed(MouseButton::Right);
@@ -210,22 +215,27 @@ impl CanvasManager {
 
     pub fn sync_vertices(
         &mut self,
-        camera_q: &Query<(&Camera, &Transform, &Projection), (Without<Vertex3d>, Without<Vertex2d>, Without<SelectCircle>)>,
-        vertex_3d_q: &mut Query<(Entity, &Vertex3d, &mut Transform), (Without<Vertex2d>, Without<SelectCircle>)>,
-        vertex_2d_q: &mut Query<&mut Transform, (With<Vertex2d>, Without<Vertex3d>, Without<SelectCircle>)>,
-        select_circle_q: &mut Query<(&mut Transform, &mut Visibility), (With<SelectCircle>, Without<Vertex3d>, Without<Vertex2d>)>,
+        transform_q: &mut Query<&mut Transform>,
+        camera_q: &Query<(&Camera, &Projection)>,
+        vertex_3d_q: &Query<(Entity, &Vertex3d)>,
+        visibility_q: &mut Query<&mut Visibility>,
     ) {
         if !self.camera_2d_recalc {
             return;
         }
         self.camera_2d_recalc = false;
+
         self.mouse_hover_recalc = true;
+        self.select_line_recalc = true;
 
         let Some(camera_3d) = self.camera_3d else {
             return;
         };
 
-        let Ok((camera, camera_transform, camera_projection)) = camera_q.get(camera_3d) else {
+        let Ok(camera_transform) = transform_q.get(camera_3d) else {
+            return;
+        };
+        let Ok((camera, camera_projection)) = camera_q.get(camera_3d) else {
             return;
         };
 
@@ -234,18 +244,14 @@ impl CanvasManager {
         let view_matrix = camera_transform.view_matrix();
         let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
 
-        for (vertex_3d_entity, vertex_3d, mut vertex_3d_transform) in vertex_3d_q.iter_mut() {
+        for (vertex_3d_entity, vertex_3d) in vertex_3d_q.iter() {
+            let Ok(mut vertex_3d_transform) = transform_q.get_mut(vertex_3d_entity) else {
+                panic!("Vertex3d entity {:?} has no Transform", vertex_3d_entity);
+            };
+
             vertex_3d_transform.translation.x = vertex_3d.x().into();
             vertex_3d_transform.translation.y = vertex_3d.y().into();
             vertex_3d_transform.translation.z = vertex_3d.z().into();
-
-            let Some(vertex_2d_entity) = self.vertex_entity_3d_to_2d(&vertex_3d_entity) else {
-                panic!("Vertex3d entity {:?} has no corresponding Vertex2d entity", vertex_3d_entity);
-            };
-            let Ok(mut vertex_2d_transform) = vertex_2d_q.get_mut(*vertex_2d_entity) else {
-                info!("Vertex2d entity {:?} has no Transform", vertex_2d_entity);
-                continue;
-            };
 
             let (coords, depth) = convert_3d_to_2d(
                 &view_matrix,
@@ -253,6 +259,14 @@ impl CanvasManager {
                 &camera_viewport_size,
                 &vertex_3d_transform.translation,
             );
+
+            let Some(vertex_2d_entity) = self.vertex_entity_3d_to_2d(&vertex_3d_entity) else {
+                panic!("Vertex3d entity {:?} has no corresponding Vertex2d entity", vertex_3d_entity);
+            };
+            let Ok(mut vertex_2d_transform) = transform_q.get_mut(*vertex_2d_entity) else {
+                panic!("Vertex2d entity {:?} has no Transform", vertex_2d_entity);
+            };
+
             vertex_2d_transform.translation.x = coords.x;
             vertex_2d_transform.translation.y = coords.y;
             vertex_2d_transform.translation.z = depth;
@@ -261,22 +275,32 @@ impl CanvasManager {
             vertex_2d_transform.scale = Vec3::splat(scale_2d);
         }
 
-        // updated selected vertex
+        // update selected vertex circle & line
 
-        let Ok((mut select_circle_transform, mut select_circle_visibility)) = select_circle_q.get_mut(self.select_circle_entity.unwrap()) else {
-            panic!("SelectCircle entity has no Transform or Visibility");
+        let Ok(mut select_shape_visibilities) = visibility_q.get_many_mut([self.select_circle_entity.unwrap(), self.select_line_entity.unwrap()]) else {
+            panic!("Select shape entities has no Visibility");
         };
 
         if let Some(selected_vertex_entity) = self.selected_vertex {
-            let Ok(vertex_transform) = vertex_2d_q.get(selected_vertex_entity) else {
-                return;
+            let vertex_transform = {
+                let Ok(vertex_transform) = transform_q.get(selected_vertex_entity) else {
+                    return;
+                };
+                *vertex_transform
+            };
+
+            let Ok(mut select_circle_transform) = transform_q.get_mut(self.select_circle_entity.unwrap()) else {
+                panic!("Select shape entities has no Transform");
             };
 
             select_circle_transform.translation = vertex_transform.translation;
             select_circle_transform.scale = Vec3::splat(SelectCircle::RADIUS * self.camera_3d_scale);
-            select_circle_visibility.visible = true;
+
+            select_shape_visibilities[0].visible = true;
+            select_shape_visibilities[1].visible = true;
         } else {
-            select_circle_visibility.visible = false;
+            select_shape_visibilities[0].visible = false;
+            select_shape_visibilities[1].visible = false;
         }
     }
 
@@ -329,11 +353,14 @@ impl CanvasManager {
     fn update_mouse_hover(
         &mut self,
         mouse_position: &Vec2,
-        hover_query: &mut Query<(&mut Transform, &mut Visibility), (With<HoverCircle>, Without<SelectCircle>, Without<Vertex2d>)>,
-        vertex_2d_query: &Query<(Entity, &Transform), With<Vertex2d>>,
+        transform_q: &mut Query<&mut Transform>,
+        visibility_q: &mut Query<&mut Visibility>,
+        vertex_2d_q: &Query<Entity, With<Vertex2d>>,
     ) {
         if mouse_position.x as i16 != self.last_mouse_position.x as i16 || mouse_position.y as i16 != self.last_mouse_position.y as i16 {
+            // mouse moved!
             self.mouse_hover_recalc = true;
+            self.select_line_recalc = true;
             self.last_mouse_position = *mouse_position;
         }
 
@@ -347,7 +374,8 @@ impl CanvasManager {
         let mut least_distance = f32::MAX;
         let mut least_coords = Vec2::ZERO;
         let mut least_entity = None;
-        for (vertex_entity, vertex_transform) in vertex_2d_query.iter() {
+        for vertex_entity in vertex_2d_q.iter() {
+            let vertex_transform = transform_q.get(vertex_entity).unwrap();
             let vertex_position = vertex_transform.translation.truncate();
             let distance = vertex_position.distance(*mouse_position);
             if distance < least_distance {
@@ -359,7 +387,11 @@ impl CanvasManager {
 
         let is_hovered = least_distance <= radius;
 
-        let Ok((mut hover_transform, mut hover_visibility)) = hover_query.get_mut(self.hover_circle_entity.unwrap()) else {
+        let hover_circle_entity = self.hover_circle_entity.unwrap();
+        let Ok(mut hover_transform) = transform_q.get_mut(hover_circle_entity) else {
+            panic!("HoverCircle entity has no Transform or Visibility");
+        };
+        let Ok(mut hover_visibility) = visibility_q.get_mut(hover_circle_entity) else {
             panic!("HoverCircle entity has no Transform or Visibility");
         };
 
@@ -375,6 +407,27 @@ impl CanvasManager {
         }
 
         hover_transform.scale = Vec3::splat(radius);
+    }
+
+    fn update_select_line(&mut self, mouse_position: &Vec2, transform_q: &mut Query<&mut Transform>) {
+        // update selected vertex circle & line
+
+        if let Some(selected_vertex_entity) = self.selected_vertex {
+            let select_line_entity = self.select_line_entity.unwrap();
+
+            let vertex_transform = {
+                let Ok(vertex_transform) = transform_q.get(selected_vertex_entity) else {
+                    return;
+                };
+                *vertex_transform
+            };
+
+            let Ok(mut select_line_transform) = transform_q.get_mut(select_line_entity) else {
+                panic!("Select line entity has no Transform");
+            };
+
+            set_line_transform(&mut select_line_transform, &vertex_transform.translation.truncate(), mouse_position);
+        }
     }
 
     fn handle_mouse_drag(&mut self, click_type: ClickType, delta: Vec2) {
@@ -437,7 +490,7 @@ impl CanvasManager {
         }
     }
 
-    fn set_2d_mode(&mut self, camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection), (Without<SelectCircle>, Without<HoverCircle>, Without<Vertex2d>)>) {
+    fn set_2d_mode(&mut self, camera_query: &mut Query<(&mut Camera, &mut Projection)>) {
         if self.is_2d {
             return;
         }
@@ -447,7 +500,7 @@ impl CanvasManager {
         self.enable_cameras(camera_query, true);
     }
 
-    fn set_3d_mode(&mut self, camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection), (Without<SelectCircle>, Without<HoverCircle>, Without<Vertex2d>)>) {
+    fn set_3d_mode(&mut self, camera_query: &mut Query<(&mut Camera, &mut Projection)>) {
         if !self.is_2d {
             return;
         }
@@ -524,18 +577,18 @@ impl CanvasManager {
 
     fn enable_cameras(
         &self,
-        camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection), (Without<SelectCircle>, Without<HoverCircle>, Without<Vertex2d>)>,
+        camera_query: &mut Query<(&mut Camera, &mut Projection)>,
         enable_2d: bool,
     ) {
         let enable_3d = !enable_2d;
 
         if let Some(camera_2d) = self.camera_2d {
-            if let Ok((mut camera, _, _)) = camera_query.get_mut(camera_2d) {
+            if let Ok((mut camera, _)) = camera_query.get_mut(camera_2d) {
                 camera.is_active = enable_2d;
             };
         }
         if let Some(camera_3d) = self.camera_3d {
-            if let Ok((mut camera, _, _)) = camera_query.get_mut(camera_3d) {
+            if let Ok((mut camera, _)) = camera_query.get_mut(camera_3d) {
                 camera.is_active = enable_3d;
             };
         }

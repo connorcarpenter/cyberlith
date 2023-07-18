@@ -1,16 +1,17 @@
-use bevy_ecs::{entity::Entity, query::{With, Without}, system::{Query, ResMut}};
+use bevy_ecs::{entity::Entity, system::{Query, Res, ResMut}};
 
+use input::Input;
 use render_api::components::{Camera, Projection, Transform, Visibility};
 use vortex_proto::components::Vertex3d;
 
-use crate::app::{components::{SelectCircle, Vertex2d}, resources::canvas_manager::CanvasManager};
+use crate::app::resources::canvas_manager::CanvasManager;
 
 pub fn sync(
     mut canvas_manager: ResMut<CanvasManager>,
-    camera_q: Query<(&Camera, &Transform, &Projection), (Without<Vertex3d>, Without<Vertex2d>, Without<SelectCircle>)>,
-    mut vertex_3d_q: Query<(Entity, &Vertex3d, &mut Transform), (Without<Vertex2d>, Without<SelectCircle>)>,
-    mut vertex_2d_q: Query<&mut Transform, (With<Vertex2d>, Without<Vertex3d>, Without<SelectCircle>)>,
-    mut select_circle_q: Query<(&mut Transform, &mut Visibility), (With<SelectCircle>, Without<Vertex3d>, Without<Vertex2d>)>,
+    mut transform_q: Query<&mut Transform>,
+    camera_q: Query<(&Camera, &Projection)>,
+    vertex_3d_q: Query<(Entity, &Vertex3d)>,
+    mut visibility_q: Query<&mut Visibility>,
 ) {
-    canvas_manager.sync_vertices(&camera_q, &mut vertex_3d_q, &mut vertex_2d_q, &mut select_circle_q);
+    canvas_manager.sync_vertices(&mut transform_q, &camera_q, &vertex_3d_q, &mut visibility_q);
 }

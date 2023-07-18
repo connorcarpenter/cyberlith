@@ -1,6 +1,6 @@
 use std::default::Default;
 
-use bevy_ecs::{bundle::Bundle, change_detection::ResMut};
+use bevy_ecs::bundle::Bundle;
 use bevy_log::info;
 
 use math::{Vec2, Vec3};
@@ -54,8 +54,8 @@ impl RenderObjectBundle {
     }
 
     pub fn square(
-        meshes: &mut ResMut<Assets<CpuMesh>>,
-        materials: &mut ResMut<Assets<CpuMaterial>>,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
         x: f32,
         y: f32,
         size: f32,
@@ -66,8 +66,8 @@ impl RenderObjectBundle {
     }
 
     pub fn rectangle(
-        meshes: &mut ResMut<Assets<CpuMesh>>,
-        materials: &mut ResMut<Assets<CpuMaterial>>,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
         x: f32,
         y: f32,
         width: f32,

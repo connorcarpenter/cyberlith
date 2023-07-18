@@ -8,3 +8,6 @@ pub struct SelectCircle;
 impl SelectCircle {
     pub const RADIUS: f32 = 8.0;
 }
+
+#[derive(Component)]
+pub struct SelectLine;
