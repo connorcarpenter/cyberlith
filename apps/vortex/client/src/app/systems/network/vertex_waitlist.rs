@@ -102,9 +102,7 @@ fn vertex_process_insert_complete(
         .insert(RenderObjectBundle::sphere(
             meshes,
             materials,
-            vertex_3d.x() as f32,
-            vertex_3d.y() as f32,
-            vertex_3d.z() as f32,
+            vertex_3d.as_vec3(),
             Vertex2d::RADIUS,
             Vertex2d::SUBDIVISIONS,
             Color::GREEN,
@@ -115,8 +113,7 @@ fn vertex_process_insert_complete(
         .spawn(RenderObjectBundle::circle(
             meshes,
             materials,
-            vertex_3d.x() as f32,
-            vertex_3d.y() as f32,
+            Vec2::ZERO,
             Vertex2d::RADIUS,
             Vertex2d::SUBDIVISIONS,
             Color::GREEN,
@@ -133,8 +130,8 @@ fn vertex_process_insert_complete(
             .spawn(RenderObjectBundle::line(
                 meshes,
                 materials,
-                &Vec2::ZERO,
-                &Vec2::X,
+                Vec2::ZERO,
+                Vec2::X,
                 Color::GREEN,
             ))
             .insert(canvas_manager.layer_2d)

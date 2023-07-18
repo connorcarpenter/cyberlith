@@ -289,7 +289,7 @@ impl CanvasManager {
 
             let end_pos = transform_q.get(*end_entity).unwrap().translation.truncate();
             let mut edge_transform = transform_q.get_mut(edge_entity).unwrap();
-            set_line_transform(&mut edge_transform, &start_pos, &end_pos);
+            set_line_transform(&mut edge_transform, start_pos, end_pos);
         }
 
         // update selected vertex circle & line
@@ -443,7 +443,7 @@ impl CanvasManager {
                 panic!("Select line entity has no Transform");
             };
 
-            set_line_transform(&mut select_line_transform, &vertex_transform.translation.truncate(), mouse_position);
+            set_line_transform(&mut select_line_transform, vertex_transform.translation.truncate(), *mouse_position);
         }
     }
 

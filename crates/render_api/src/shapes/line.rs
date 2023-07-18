@@ -4,12 +4,12 @@ use math::{Quat, Vec2, Vec3};
 
 use crate::{assets::AssetHash, base::{CpuMesh, Indices, Positions}, components::Transform};
 
-pub fn set_line_transform(transform: &mut Transform, start: &Vec2, end: &Vec2) {
-    let angle = angle_between(start, end);
+pub fn set_line_transform(transform: &mut Transform, start: Vec2, end: Vec2) {
+    let angle = angle_between(&start, &end);
     transform.translation.x = start.x;
     transform.translation.y = start.y;
     transform.rotation = Quat::from_rotation_z(angle);
-    transform.scale.x = start.distance(*end);
+    transform.scale.x = start.distance(end);
     transform.scale.y = 1.0;
 }
 

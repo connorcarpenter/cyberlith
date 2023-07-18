@@ -1,6 +1,8 @@
 use bevy_ecs::component::Component;
 use naia_bevy_shared::{EntityProperty, Property, Protocol, ProtocolPlugin, Replicate, SignedVariableInteger};
 
+use math::Vec3;
+
 pub struct VertexComponentsPlugin;
 
 impl ProtocolPlugin for VertexComponentsPlugin {
@@ -71,5 +73,9 @@ impl Vertex3d {
 
     pub fn set_z(&mut self, z: i16) {
         *self.z = z.into();
+    }
+
+    pub fn as_vec3(&self) -> Vec3 {
+        Vec3::new(self.x() as f32, self.y() as f32, self.z() as f32)
     }
 }

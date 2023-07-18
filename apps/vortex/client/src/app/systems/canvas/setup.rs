@@ -82,8 +82,7 @@ fn setup_2d_scene(
     let mut hover_circle_components = RenderObjectBundle::circle(
         meshes,
         materials,
-        0.0,
-        0.0,
+        Vec2::ZERO,
         HoverCircle::RADIUS,
         Vertex2d::SUBDIVISIONS,
         Color::GREEN,
@@ -101,8 +100,7 @@ fn setup_2d_scene(
     let mut select_circle_components = RenderObjectBundle::circle(
         meshes,
         materials,
-        0.0,
-        0.0,
+        Vec2::ZERO,
         SelectCircle::RADIUS,
         Vertex2d::SUBDIVISIONS,
         Color::WHITE,
@@ -120,8 +118,8 @@ fn setup_2d_scene(
     let mut select_line_components = RenderObjectBundle::line(
         meshes,
         materials,
-        &Vec2::ZERO,
-        &Vec2::X,
+        Vec2::ZERO,
+        Vec2::X,
         Color::WHITE,
     );
     select_line_components.visibility.visible = false;

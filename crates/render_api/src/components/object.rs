@@ -26,8 +26,7 @@ impl RenderObjectBundle {
     pub fn circle(
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
-        x: f32,
-        y: f32,
+        position: Vec2,
         radius: f32,
         subdivisions: u16,
         color: Color,
@@ -48,7 +47,7 @@ impl RenderObjectBundle {
         Self {
             mesh,
             material: materials.add(color),
-            transform: Transform::from_xy(x, y).with_scale(Vec3::splat(radius)),
+            transform: Transform::from_translation_2d(position).with_scale(Vec3::splat(radius)),
             ..Default::default()
         }
     }
@@ -56,34 +55,31 @@ impl RenderObjectBundle {
     pub fn square(
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
-        x: f32,
-        y: f32,
+        position: Vec2,
         size: f32,
         color: Color,
         outline_only: bool,
     ) -> Self {
-        Self::rectangle(meshes, materials, x, y, size, size, color, outline_only)
+        Self::rectangle(meshes, materials, position, Vec2::splat(size), color, outline_only)
     }
 
     pub fn rectangle(
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
-        x: f32,
-        y: f32,
-        width: f32,
-        height: f32,
+        position: Vec2,
+        size: Vec2,
         color: Color,
         outline_only: bool,
     ) -> Self {
         if outline_only {
             let mesh = meshes.add(shapes::HollowRectangle::new(
-                (width * 1000.0) as u32,
-                (height * 1000.0) as u32,
+                (size.x * 1000.0) as u32,
+                (size.y * 1000.0) as u32,
             ));
             Self {
                 mesh,
                 material: materials.add(color),
-                transform: Transform::from_xy(x, y),
+                transform: Transform::from_translation_2d(position),
                 ..Default::default()
             }
         } else {
@@ -91,8 +87,8 @@ impl RenderObjectBundle {
             Self {
                 mesh,
                 material: materials.add(color),
-                transform: Transform::from_xy(x, y)
-                    .with_scale(Vec2::new(width, height).extend(0.0)),
+                transform: Transform::from_translation_2d(position)
+                    .with_scale(size.extend(0.0)),
                 ..Default::default()
             }
         }
@@ -101,8 +97,8 @@ impl RenderObjectBundle {
     pub fn line(
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
-        start: &Vec2,
-        end: &Vec2,
+        start: Vec2,
+        end: Vec2,
         color: Color,
     ) -> Self {
         let mesh = meshes.add(shapes::Line::new());
@@ -119,9 +115,7 @@ impl RenderObjectBundle {
     pub fn sphere(
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
-        x: f32,
-        y: f32,
-        z: f32,
+        position: Vec3,
         radius: f32,
         subdivisions: u16,
         color: Color,
@@ -130,7 +124,7 @@ impl RenderObjectBundle {
         Self {
             mesh,
             material: materials.add(color),
-            transform: Transform::from_xyz(x, y, z).with_scale(Vec3::splat(radius)),
+            transform: Transform::from_translation(position).with_scale(Vec3::splat(radius)),
             ..Default::default()
         }
     }
@@ -138,9 +132,7 @@ impl RenderObjectBundle {
     pub fn cube(
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
-        x: f32,
-        y: f32,
-        z: f32,
+        position: Vec3,
         size: f32,
         color: Color,
     ) -> Self {
@@ -148,7 +140,7 @@ impl RenderObjectBundle {
         Self {
             mesh,
             material: materials.add(color),
-            transform: Transform::from_xyz(x, y, z).with_scale(Vec3::splat(size)),
+            transform: Transform::from_translation(position).with_scale(Vec3::splat(size)),
             ..Default::default()
         }
     }

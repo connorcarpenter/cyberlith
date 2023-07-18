@@ -43,6 +43,13 @@ impl Transform {
         }
     }
 
+    pub fn from_translation_2d(translation: Vec2) -> Self {
+        Transform {
+            translation: translation.extend(0.0),
+            ..Self::IDENTITY
+        }
+    }
+
     pub fn from_rotation(rotation: Quat) -> Self {
         Transform {
             rotation,
