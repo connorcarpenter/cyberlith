@@ -16,6 +16,7 @@ use render_api::{
     shapes::set_2d_line_transform,
     Handle,
 };
+use render_api::shapes::{distance_to_2d_line, get_2d_line_transform_endpoint};
 use vortex_proto::components::Vertex3d;
 
 use crate::app::components::{HoverCircle, Edge2d, SelectCircle, Vertex2d, Edge3d, set_3d_line_transform};
@@ -24,6 +25,13 @@ use crate::app::components::{HoverCircle, Edge2d, SelectCircle, Vertex2d, Edge3d
 pub enum ClickType {
     Left,
     Right,
+}
+
+#[derive(Clone, Copy)]
+pub enum CanvasShape {
+    Vertex,
+    Edge,
+    // Face,
 }
 
 #[derive(Resource)]
@@ -54,7 +62,8 @@ pub struct CanvasManager {
     pub hover_circle_entity: Option<Entity>,
     mouse_hover_recalc: bool,
     last_mouse_position: Vec2,
-    hovered_vertex: Option<Entity>,
+    hovered_entity: Option<Entity>,
+    hover_type: CanvasShape,
 
     pub select_circle_entity: Option<Entity>,
     pub select_line_entity: Option<Entity>,
@@ -91,7 +100,8 @@ impl Default for CanvasManager {
             hover_circle_entity: None,
             mouse_hover_recalc: false,
             last_mouse_position: Vec2::ZERO,
-            hovered_vertex: None,
+            hovered_entity: None,
+            hover_type: CanvasShape::Vertex,
 
             select_circle_entity: None,
             select_line_entity: None,
@@ -109,6 +119,7 @@ impl CanvasManager {
         camera_q: &mut Query<(&mut Camera, &mut Projection)>,
         visibility_q: &mut Query<&mut Visibility>,
         vertex_2d_q: &Query<Entity, With<Vertex2d>>,
+        edge_2d_q: &Query<Entity, With<Edge2d>>,
     ) {
         // check keyboard input
 
@@ -151,6 +162,7 @@ impl CanvasManager {
             transform_q,
             visibility_q,
             vertex_2d_q,
+            edge_2d_q,
         );
         self.update_select_line(input.mouse_position(), transform_q);
 
@@ -312,6 +324,12 @@ impl CanvasManager {
             let end_pos = transform_q.get(*end_entity).unwrap().translation.truncate();
             let mut edge_transform = transform_q.get_mut(edge_entity).unwrap();
             set_2d_line_transform(&mut edge_transform, start_pos, end_pos);
+
+            if let Some(hover_entity) = self.hovered_entity {
+                if hover_entity == edge_entity {
+                    edge_transform.scale.y = 3.0;
+                }
+            }
         }
 
         // update 3d edges
@@ -409,6 +427,7 @@ impl CanvasManager {
         transform_q: &mut Query<&mut Transform>,
         visibility_q: &mut Query<&mut Visibility>,
         vertex_2d_q: &Query<Entity, With<Vertex2d>>,
+        edge_2d_q: &Query<Entity, With<Edge2d>>,
     ) {
         if mouse_position.x as i16 != self.last_mouse_position.x as i16
             || mouse_position.y as i16 != self.last_mouse_position.y as i16
@@ -425,10 +444,12 @@ impl CanvasManager {
 
         self.mouse_hover_recalc = false;
 
-        let radius = HoverCircle::RADIUS * self.camera_3d_scale;
+
         let mut least_distance = f32::MAX;
         let mut least_coords = Vec2::ZERO;
         let mut least_entity = None;
+        let mut hover_type = None;
+
         for vertex_entity in vertex_2d_q.iter() {
             let vertex_transform = transform_q.get(vertex_entity).unwrap();
             let vertex_position = vertex_transform.translation.truncate();
@@ -437,31 +458,72 @@ impl CanvasManager {
                 least_distance = distance;
                 least_coords = vertex_position;
                 least_entity = Some(vertex_entity);
+                hover_type = Some(CanvasShape::Vertex);
             }
         }
 
-        let is_hovered = least_distance <= radius;
+        let mut is_hovering = least_distance <= (HoverCircle::DETECT_RADIUS * self.camera_3d_scale);
 
-        let hover_circle_entity = self.hover_circle_entity.unwrap();
-        let Ok(mut hover_transform) = transform_q.get_mut(hover_circle_entity) else {
-            panic!("HoverCircle entity has no Transform or Visibility");
-        };
-        let Ok(mut hover_visibility) = visibility_q.get_mut(hover_circle_entity) else {
-            panic!("HoverCircle entity has no Transform or Visibility");
-        };
-
-        if is_hovered {
-            self.hovered_vertex = least_entity;
-
-            hover_transform.translation.x = least_coords.x;
-            hover_transform.translation.y = least_coords.y;
-            hover_visibility.visible = true;
-        } else {
-            self.hovered_vertex = None;
-            hover_visibility.visible = false;
+        // just setting edge thickness back to normal ... better way to do this?
+        for edge_entity in edge_2d_q.iter() {
+            let mut edge_transform = transform_q.get_mut(edge_entity).unwrap();
+            edge_transform.scale.y = self.camera_3d_scale;
         }
 
-        hover_transform.scale = Vec3::splat(radius);
+        if !is_hovering {
+            for edge_entity in edge_2d_q.iter() {
+                let edge_transform = transform_q.get(edge_entity).unwrap();
+                let edge_start = edge_transform.translation.truncate();
+                let edge_end = get_2d_line_transform_endpoint(&edge_transform);
+
+                let distance = distance_to_2d_line(*mouse_position, edge_start, edge_end);
+                if distance < least_distance {
+                    least_distance = distance;
+                    least_entity = Some(edge_entity);
+                    hover_type = Some(CanvasShape::Edge);
+                }
+            }
+
+            is_hovering = least_distance <= (Edge2d::HOVER_THICKNESS * self.camera_3d_scale);
+        }
+
+        let hover_circle_entity = self.hover_circle_entity.unwrap();
+        let Ok(mut hover_circle_visibility) = visibility_q.get_mut(hover_circle_entity) else {
+            panic!("HoverCircle entity has no Transform or Visibility");
+        };
+
+        if is_hovering {
+            self.hovered_entity = least_entity;
+            self.hover_type = hover_type.unwrap();
+
+            match hover_type {
+                Some(CanvasShape::Vertex) => {
+                    // hovering over vertex
+                    let Ok(mut hover_circle_transform) = transform_q.get_mut(hover_circle_entity) else {
+                        panic!("HoverCircle entity has no Transform");
+                    };
+                    hover_circle_transform.translation.x = least_coords.x;
+                    hover_circle_transform.translation.y = least_coords.y;
+                    hover_circle_transform.scale = Vec3::splat(HoverCircle::DISPLAY_RADIUS * self.camera_3d_scale);
+
+                    hover_circle_visibility.visible = true;
+                }
+                Some(CanvasShape::Edge) => {
+                    // hovering over edge
+                    let Ok(mut edge_transform) = transform_q.get_mut(least_entity.unwrap()) else {
+                        panic!("Edge entity has no Transform");
+                    };
+                    edge_transform.scale.y = Edge2d::HOVER_THICKNESS * self.camera_3d_scale;
+
+                    hover_circle_visibility.visible = false;
+
+                }
+                _ => {}
+            }
+        } else {
+            self.hovered_entity = None;
+            hover_circle_visibility.visible = false;
+        }
     }
 
     fn update_select_line(
@@ -495,7 +557,7 @@ impl CanvasManager {
 
     fn handle_mouse_drag(&mut self, click_type: ClickType, delta: Vec2) {
         let vertex_is_selected = self.selected_vertex.is_some();
-        let cursor_is_hovering = self.hovered_vertex.is_some();
+        let cursor_is_hovering = self.hovered_entity.is_some();
 
         if vertex_is_selected || cursor_is_hovering {
             // TODO: move vertex?
@@ -514,19 +576,19 @@ impl CanvasManager {
 
     fn handle_mouse_click(&mut self, click_type: ClickType) {
         // let vertex_is_selected = self.selected_vertex.is_some();
-        let cursor_is_hovering = self.hovered_vertex.is_some();
+        let cursor_is_hovering = self.hovered_entity.is_some();
 
         if cursor_is_hovering {
             match click_type {
                 ClickType::Left => {
                     // select vertex
 
-                    if self.hovered_vertex == self.selected_vertex {
+                    if self.hovered_entity == self.selected_vertex {
                         // do nothing, already selected
                         return;
                     }
 
-                    self.selected_vertex = self.hovered_vertex;
+                    self.selected_vertex = self.hovered_entity;
 
                     self.camera_2d_recalc = true;
                 }

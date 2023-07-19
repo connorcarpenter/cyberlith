@@ -10,6 +10,7 @@ pub struct Edge2d {
 }
 
 impl Edge2d {
+    pub const HOVER_THICKNESS: f32 = 3.0;
     pub fn new(start: Entity, end: Entity) -> Self {
         Self { start, end_3d: end }
     }
@@ -36,7 +37,7 @@ pub fn create_3d_edge_diamond(
 ) -> RenderObjectBundle {
     let mesh = meshes.add(Edge3dMesh);
     let distance = start.distance(end);
-    let mut transform = Transform::from_translation(start)
+    let transform = Transform::from_translation(start)
         .looking_at(end, Vec3::Y)
         .with_scale(Vec3::new(distance, 1.0, 1.0));
     RenderObjectBundle {

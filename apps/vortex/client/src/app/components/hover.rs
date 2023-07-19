@@ -1,10 +1,13 @@
 use bevy_ecs::prelude::Component;
 
+use crate::app::components::Vertex2d;
+
 // Just a marker for the hover circle
 
 #[derive(Component)]
 pub struct HoverCircle;
 
 impl HoverCircle {
-    pub const RADIUS: f32 = 11.0;
+    pub const DISPLAY_RADIUS: f32 = 10.0;
+    pub const DETECT_RADIUS: f32 = Vertex2d::RADIUS + 1.0;
 }

@@ -90,7 +90,7 @@ fn setup_2d_scene(
         meshes,
         materials,
         Vec2::ZERO,
-        HoverCircle::RADIUS,
+        HoverCircle::DISPLAY_RADIUS,
         Vertex2d::SUBDIVISIONS,
         Color::GREEN,
         Some(1),

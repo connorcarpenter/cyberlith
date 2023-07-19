@@ -7,7 +7,7 @@ use bevy_ecs::{
 use input::Input;
 use render_api::components::{Camera, Projection, Transform, Visibility};
 
-use crate::app::{components::Vertex2d, resources::canvas_manager::CanvasManager};
+use crate::app::{components::{Vertex2d, Edge2d}, resources::canvas_manager::CanvasManager};
 
 pub fn input(
     mut canvas_manager: ResMut<CanvasManager>,
@@ -16,6 +16,7 @@ pub fn input(
     mut camera_q: Query<(&mut Camera, &mut Projection)>,
     mut visibility_q: Query<&mut Visibility>,
     vertex_2d_q: Query<Entity, With<Vertex2d>>,
+    edge_2d_q: Query<Entity, With<Edge2d>>,
 ) {
     canvas_manager.update_input(
         &mut input,
@@ -23,5 +24,6 @@ pub fn input(
         &mut camera_q,
         &mut visibility_q,
         &vertex_2d_q,
+        &edge_2d_q,
     );
 }

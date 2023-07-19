@@ -1,7 +1,6 @@
-use math::{Vec2, Vec3};
+use math::Vec3;
 
-use crate::assets::AssetHash;
-use crate::base::{CpuMesh, Positions};
+use crate::{assets::AssetHash, base::{CpuMesh, Positions}};
 
 #[derive(Hash)]
 pub struct Cube;
