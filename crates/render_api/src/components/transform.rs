@@ -128,7 +128,7 @@ impl Transform {
     }
 
     pub fn look_to(&mut self, direction: Vec3, up: Vec3) {
-        let forward = -direction.normalize();
+        let forward = direction.normalize();
         let right = up.cross(forward).normalize();
         let up = forward.cross(right);
         self.rotation = Quat::from_mat3(&Mat3::from_cols(right, up, forward));

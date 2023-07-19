@@ -169,7 +169,6 @@ pub fn insert_component_events(
                 warn!("VertexChild component of entity: `{:?}` has no parent component", vertex_child_entity);
                 continue;
             };
-            info!("VertexChild success!");
 
             vertex_process_insert(
                 &mut waiting_vertices,

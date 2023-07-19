@@ -10,7 +10,7 @@ use crate::{
     base::{Color, CpuMaterial, CpuMesh},
     components::Visibility,
     shapes,
-    shapes::set_line_transform,
+    shapes::set_2d_line_transform,
     Assets,
 };
 
@@ -36,11 +36,9 @@ impl RenderObjectBundle {
     ) -> Self {
         let mesh = if let Some(_thickness) = outline {
             let mesh = meshes.add(shapes::HollowCircle::new(subdivisions));
-            info!("hollow mesh: {:?}", mesh.id);
             mesh
         } else {
             let mesh = meshes.add(shapes::Circle::new(subdivisions));
-            info!("solid mesh: {:?}", mesh.id);
             mesh
         };
 
@@ -109,7 +107,7 @@ impl RenderObjectBundle {
     ) -> Self {
         let mesh = meshes.add(shapes::Line::new());
         let mut transform = Transform::default();
-        set_line_transform(&mut transform, start, end);
+        set_2d_line_transform(&mut transform, start, end);
         Self {
             mesh,
             material: materials.add(color),

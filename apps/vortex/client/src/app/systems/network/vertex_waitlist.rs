@@ -161,7 +161,7 @@ fn vertex_process_insert_complete(
     }
 
     info!(
-        "created Vertex3d: `{:?}`, created 2d entity: {:?}, is_root: {:?}",
+        "created Vertex3d: `{:?}`, created 2d entity: {:?}, parent: {:?}",
         vertex_3d_entity, vertex_2d_entity, parent_opt
     );
 

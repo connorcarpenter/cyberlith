@@ -13,12 +13,12 @@ use render_api::{
         Camera, CameraProjection, OrthographicProjection, Projection, RenderLayer, Transform,
         Viewport, Visibility,
     },
-    shapes::set_line_transform,
+    shapes::set_2d_line_transform,
     Handle,
 };
 use vortex_proto::components::Vertex3d;
 
-use crate::app::components::{HoverCircle, Edge2d, SelectCircle, Vertex2d};
+use crate::app::components::{HoverCircle, Edge2d, SelectCircle, Vertex2d, Edge3d, set_3d_line_transform};
 
 #[derive(Clone, Copy)]
 pub enum ClickType {
@@ -210,20 +210,20 @@ impl CanvasManager {
                 return;
             };
 
-            let Ok((_, mut transform)) = camera_q.get_mut(camera_3d) else {
+            let Ok((_, mut camera_transform)) = camera_q.get_mut(camera_3d) else {
                 return;
             };
 
             // keep Transform's rotation and scale the same, but base the position on self.camera_3d_target and self.camera_3d_target_distance
-            transform.rotation = self.camera_3d_rotation.unwrap();
-            transform.scale = Vec3::splat(1.0 / self.camera_3d_scale);
+            camera_transform.rotation = self.camera_3d_rotation.unwrap();
+            camera_transform.scale = Vec3::splat(1.0 / self.camera_3d_scale);
 
-            let right = transform.right_direction();
-            let up = right.cross(transform.view_direction());
+            let right = camera_transform.right_direction();
+            let up = right.cross(camera_transform.view_direction());
 
-            transform.translation = transform.view_direction() * -100.0; // 100 units away from where looking
-            transform.translation += right * self.camera_3d_offset.x;
-            transform.translation += up * self.camera_3d_offset.y;
+            camera_transform.translation = camera_transform.view_direction() * -100.0; // 100 units away from where looking
+            camera_transform.translation += right * self.camera_3d_offset.x;
+            camera_transform.translation += up * self.camera_3d_offset.y;
         }
     }
 
@@ -233,7 +233,8 @@ impl CanvasManager {
         camera_q: &Query<(&Camera, &Projection)>,
         vertex_3d_q: &Query<(Entity, &Vertex3d)>,
         visibility_q: &mut Query<&mut Visibility>,
-        edge_q: &Query<(Entity, &Edge2d)>,
+        edge_2d_q: &Query<(Entity, &Edge2d)>,
+        edge_3d_q: &Query<(Entity, &Edge3d)>,
     ) {
         if !self.camera_2d_recalc {
             return;
@@ -260,13 +261,14 @@ impl CanvasManager {
         let view_matrix = camera_transform.view_matrix();
         let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
 
-        // update verticies
+        // update vertices
         for (vertex_3d_entity, vertex_3d) in vertex_3d_q.iter() {
             let Ok(mut vertex_3d_transform) = transform_q.get_mut(vertex_3d_entity) else {
                 warn!("Vertex3d entity {:?} has no Transform", vertex_3d_entity);
                 continue;
             };
 
+            // 3d vertices
             vertex_3d_transform.translation.x = vertex_3d.x().into();
             vertex_3d_transform.translation.y = vertex_3d.y().into();
             vertex_3d_transform.translation.z = vertex_3d.z().into();
@@ -285,6 +287,7 @@ impl CanvasManager {
                 panic!("Vertex2d entity {:?} has no Transform", vertex_2d_entity);
             };
 
+            // 2d vertices
             vertex_2d_transform.translation.x = coords.x;
             vertex_2d_transform.translation.y = coords.y;
             vertex_2d_transform.translation.z = depth;
@@ -293,8 +296,8 @@ impl CanvasManager {
             vertex_2d_transform.scale = Vec3::splat(scale_2d);
         }
 
-        // update edges
-        for (edge_entity, edge_endpoints) in edge_q.iter() {
+        // update 2d edges
+        for (edge_entity, edge_endpoints) in edge_2d_q.iter() {
             let Some(end_entity) = self.vertex_entity_3d_to_2d(&edge_endpoints.end_3d) else {
                 warn!("Edge entity {:?} has no endpoint entity", edge_entity);
                 continue;
@@ -308,7 +311,20 @@ impl CanvasManager {
 
             let end_pos = transform_q.get(*end_entity).unwrap().translation.truncate();
             let mut edge_transform = transform_q.get_mut(edge_entity).unwrap();
-            set_line_transform(&mut edge_transform, start_pos, end_pos);
+            set_2d_line_transform(&mut edge_transform, start_pos, end_pos);
+        }
+
+        // update 3d edges
+        for (edge_entity, edge_endpoints) in edge_3d_q.iter() {
+
+            let start_pos = transform_q
+                .get(edge_endpoints.start)
+                .unwrap()
+                .translation;
+
+            let end_pos = transform_q.get(edge_endpoints.end).unwrap().translation;
+            let mut edge_transform = transform_q.get_mut(edge_entity).unwrap();
+            set_3d_line_transform(&mut edge_transform, start_pos, end_pos);
         }
 
         // update selected vertex circle & line
@@ -469,7 +485,7 @@ impl CanvasManager {
                 panic!("Select line entity has no Transform");
             };
 
-            set_line_transform(
+            set_2d_line_transform(
                 &mut select_line_transform,
                 vertex_transform.translation.truncate(),
                 *mouse_position,
@@ -660,7 +676,7 @@ impl CanvasManager {
 
         let center = texture_size * 0.5;
 
-        *transform = Transform::from_xyz(center.x, center.y, -1.0)
+        *transform = Transform::from_xyz(center.x, center.y, 1.0)
             .looking_at(Vec3::new(center.x, center.y, 0.0), Vec3::NEG_Y);
         *projection =
             Projection::Orthographic(OrthographicProjection::new(texture_size.y, 0.0, 10.0));
