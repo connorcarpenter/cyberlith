@@ -7,6 +7,7 @@ use bevy_log::{info, warn};
 
 use input::{Input, Key, MouseButton};
 use math::{convert_3d_to_2d, Quat, Vec2, Vec3};
+use render_api::shapes::{distance_to_2d_line, get_2d_line_transform_endpoint};
 use render_api::{
     base::CpuTexture2D,
     components::{
@@ -16,10 +17,11 @@ use render_api::{
     shapes::set_2d_line_transform,
     Handle,
 };
-use render_api::shapes::{distance_to_2d_line, get_2d_line_transform_endpoint};
 use vortex_proto::components::Vertex3d;
 
-use crate::app::components::{HoverCircle, Edge2d, SelectCircle, Vertex2d, Edge3d, set_3d_line_transform};
+use crate::app::components::{
+    set_3d_line_transform, Edge2d, Edge3d, HoverCircle, SelectCircle, Vertex2d,
+};
 
 #[derive(Clone, Copy)]
 pub enum ClickType {
@@ -334,11 +336,7 @@ impl CanvasManager {
 
         // update 3d edges
         for (edge_entity, edge_endpoints) in edge_3d_q.iter() {
-
-            let start_pos = transform_q
-                .get(edge_endpoints.start)
-                .unwrap()
-                .translation;
+            let start_pos = transform_q.get(edge_endpoints.start).unwrap().translation;
 
             let end_pos = transform_q.get(edge_endpoints.end).unwrap().translation;
             let mut edge_transform = transform_q.get_mut(edge_entity).unwrap();
@@ -444,7 +442,6 @@ impl CanvasManager {
 
         self.mouse_hover_recalc = false;
 
-
         let mut least_distance = f32::MAX;
         let mut least_coords = Vec2::ZERO;
         let mut least_entity = None;
@@ -504,7 +501,8 @@ impl CanvasManager {
                     };
                     hover_circle_transform.translation.x = least_coords.x;
                     hover_circle_transform.translation.y = least_coords.y;
-                    hover_circle_transform.scale = Vec3::splat(HoverCircle::DISPLAY_RADIUS * self.camera_3d_scale);
+                    hover_circle_transform.scale =
+                        Vec3::splat(HoverCircle::DISPLAY_RADIUS * self.camera_3d_scale);
 
                     hover_circle_visibility.visible = true;
                 }
@@ -516,7 +514,6 @@ impl CanvasManager {
                     edge_transform.scale.y = Edge2d::HOVER_THICKNESS * self.camera_3d_scale;
 
                     hover_circle_visibility.visible = false;
-
                 }
                 _ => {}
             }
@@ -555,25 +552,6 @@ impl CanvasManager {
         }
     }
 
-    fn handle_mouse_drag(&mut self, click_type: ClickType, delta: Vec2) {
-        let vertex_is_selected = self.selected_vertex.is_some();
-        let cursor_is_hovering = self.hovered_entity.is_some();
-
-        if vertex_is_selected || cursor_is_hovering {
-            // TODO: move vertex?
-            return;
-        } else {
-            match click_type {
-                ClickType::Left => {
-                    self.camera_pan(delta);
-                }
-                ClickType::Right => {
-                    self.camera_orbit(delta);
-                }
-            }
-        }
-    }
-
     fn handle_mouse_click(&mut self, click_type: ClickType) {
         // let vertex_is_selected = self.selected_vertex.is_some();
         let cursor_is_hovering = self.hovered_entity.is_some();
@@ -607,6 +585,25 @@ impl CanvasManager {
                         self.selected_vertex = None;
                         self.camera_2d_recalc = true;
                     }
+                }
+            }
+        }
+    }
+
+    fn handle_mouse_drag(&mut self, click_type: ClickType, delta: Vec2) {
+        let vertex_is_selected = self.selected_vertex.is_some();
+        let cursor_is_hovering = self.hovered_entity.is_some();
+
+        if vertex_is_selected || cursor_is_hovering {
+            // TODO: move vertex?
+            return;
+        } else {
+            match click_type {
+                ClickType::Left => {
+                    self.camera_pan(delta);
+                }
+                ClickType::Right => {
+                    self.camera_orbit(delta);
                 }
             }
         }

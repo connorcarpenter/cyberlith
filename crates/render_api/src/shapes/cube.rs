@@ -1,6 +1,9 @@
 use math::Vec3;
 
-use crate::{assets::AssetHash, base::{CpuMesh, Positions}};
+use crate::{
+    assets::AssetHash,
+    base::{CpuMesh, Positions},
+};
 
 #[derive(Hash)]
 pub struct Cube;

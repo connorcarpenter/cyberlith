@@ -18,8 +18,12 @@ pub fn set_2d_line_transform(transform: &mut Transform, start: Vec2, end: Vec2) 
 }
 
 pub fn get_2d_line_transform_endpoint(transform: &Transform) -> Vec2 {
-    let unit_vector = transform.rotation.mul_vec3(Vec3::X).normalize().truncate() * transform.scale.x;
-    return Vec2::new(transform.translation.x + unit_vector.x, transform.translation.y + unit_vector.y);
+    let unit_vector =
+        transform.rotation.mul_vec3(Vec3::X).normalize().truncate() * transform.scale.x;
+    return Vec2::new(
+        transform.translation.x + unit_vector.x,
+        transform.translation.y + unit_vector.y,
+    );
 }
 
 pub fn distance_to_2d_line(point: Vec2, line_start: Vec2, line_end: Vec2) -> f32 {

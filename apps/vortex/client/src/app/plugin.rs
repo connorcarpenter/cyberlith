@@ -12,7 +12,10 @@ use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
     config::ConfigPlugin,
     events::LoginEvent,
-    resources::{canvas_manager::CanvasManager, action_stack::ActionStack, global::Global, tab_manager::TabManager},
+    resources::{
+        action_stack::ActionStack, canvas_manager::CanvasManager, global::Global,
+        tab_manager::TabManager,
+    },
     systems::{canvas, network, ui},
     ui::UiState,
 };

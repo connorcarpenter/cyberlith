@@ -7,7 +7,10 @@ use bevy_ecs::{
 use input::Input;
 use render_api::components::{Camera, Projection, Transform, Visibility};
 
-use crate::app::{components::{Vertex2d, Edge2d}, resources::canvas_manager::CanvasManager};
+use crate::app::{
+    components::{Edge2d, Vertex2d},
+    resources::canvas_manager::CanvasManager,
+};
 
 pub fn input(
     mut canvas_manager: ResMut<CanvasManager>,

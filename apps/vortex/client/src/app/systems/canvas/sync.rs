@@ -6,7 +6,10 @@ use bevy_ecs::{
 use render_api::components::{Camera, Projection, Transform, Visibility};
 use vortex_proto::components::Vertex3d;
 
-use crate::app::{components::{Edge2d, Edge3d}, resources::canvas_manager::CanvasManager};
+use crate::app::{
+    components::{Edge2d, Edge3d},
+    resources::canvas_manager::CanvasManager,
+};
 
 pub fn sync(
     mut canvas_manager: ResMut<CanvasManager>,

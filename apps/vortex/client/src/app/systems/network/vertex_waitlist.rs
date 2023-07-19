@@ -14,11 +14,11 @@ use render_api::{
 };
 use vortex_proto::components::{Vertex3d, VertexRootChild};
 
+use crate::app::components::{create_3d_edge_diamond, Edge3d};
 use crate::app::{
     components::{Edge2d, Vertex2d},
     resources::canvas_manager::CanvasManager,
 };
-use crate::app::components::{create_3d_edge_diamond, Edge3d};
 
 pub enum VertexWaitlistInsert {
     Position,
