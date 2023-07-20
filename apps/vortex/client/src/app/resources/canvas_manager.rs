@@ -41,6 +41,7 @@ pub struct CanvasManager {
     canvas_texture_size: Vec2,
     vertices_3d_to_2d: HashMap<Entity, Entity>,
     vertices_2d_to_3d: HashMap<Entity, Entity>,
+    vertex_3d_entities_to_delete: Vec<Entity>,
 
     click_type: ClickType,
     click_start: Vec2,
@@ -80,6 +81,7 @@ impl Default for CanvasManager {
             canvas_texture_size: Vec2::new(1280.0, 720.0),
             vertices_3d_to_2d: HashMap::new(),
             vertices_2d_to_3d: HashMap::new(),
+            vertex_3d_entities_to_delete: Vec::new(),
 
             click_type: ClickType::Left,
             click_start: Vec2::ZERO,
@@ -404,6 +406,22 @@ impl CanvasManager {
         }
     }
 
+    pub fn poll_buffered_actions(&mut self, commands: &mut Commands, client: &Client) {
+        if self.vertex_3d_entities_to_delete.len() == 0 {
+            return;
+        }
+
+        let mut new_list = Vec::new();
+        for vertex_3d_entity in self.vertex_3d_entities_to_delete.iter() {
+            if commands.entity(*vertex_3d_entity).authority(client).unwrap().is_granted() {
+                commands.entity(*vertex_3d_entity).despawn();
+            } else {
+                new_list.push(*vertex_3d_entity);
+            }
+        }
+        self.vertex_3d_entities_to_delete = new_list;
+    }
+
     pub fn update_camera_viewports(
         &mut self,
         texture_size: Vec2,
@@ -577,44 +595,13 @@ impl CanvasManager {
         materials: &mut Assets<CpuMaterial>,
     ) {
         let cursor_is_hovering = self.hovered_entity.is_some();
+        let vertex_is_selected = self.selected_vertex.is_some();
 
-        if cursor_is_hovering {
-            let vertex_3d_entity = self.vertex_entity_2d_to_3d(&self.hovered_entity.unwrap()).unwrap();
-
-            match (self.hover_type, click_type) {
-                (CanvasShape::Vertex, ClickType::Left) => {
-                    // select vertex
-
-                    if self.hovered_entity == self.selected_vertex {
-                        // do nothing, already selected
-                        return;
-                    }
-
-                    {
-                        if commands.entity(*vertex_3d_entity).authority(client).unwrap() != EntityAuthStatus::Available {
-                            // do nothing, vertex is not available
-                            return;
-                        }
-                        commands.entity(*vertex_3d_entity).request_authority(client);
-                    }
-
-                    self.selected_vertex = self.hovered_entity;
-
-                    self.camera_2d_recalc = true;
-                }
-                (CanvasShape::Vertex, ClickType::Right) => {
-                    // TODO: delete vertex?
-                }
-                (CanvasShape::Edge, ClickType::Left) => { /* ? */ }
-                (CanvasShape::Edge, ClickType::Right) => {
-                    // TODO: delete edge?
-                }
-            }
-        } else {
+        if vertex_is_selected {
             match click_type {
                 ClickType::Left => {
 
-                    if self.selected_vertex.is_none() {
+                    if cursor_is_hovering {
                         return;
                     }
 
@@ -683,7 +670,46 @@ impl CanvasManager {
                     self.camera_2d_recalc = true;
                 }
             }
+        } else {
+            if cursor_is_hovering {
+                let vertex_3d_entity = self.vertex_entity_2d_to_3d(&self.hovered_entity.unwrap()).unwrap();
+
+                match (self.hover_type, click_type) {
+                    (CanvasShape::Vertex, ClickType::Left) => {
+                        // select vertex
+
+                        if commands.entity(*vertex_3d_entity).authority(client).unwrap() != EntityAuthStatus::Available {
+                            // do nothing, vertex is not available
+                            return;
+                        }
+                        commands.entity(*vertex_3d_entity).request_authority(client);
+
+
+                        self.selected_vertex = self.hovered_entity;
+
+                        self.camera_2d_recalc = true;
+                    }
+                    (CanvasShape::Vertex, ClickType::Right) => {
+                        // delete vertex
+                        if commands.entity(*vertex_3d_entity).authority(client).unwrap() != EntityAuthStatus::Available {
+                            // do nothing, vertex is not available
+                            return;
+                        }
+                        commands.entity(*vertex_3d_entity).request_authority(client);
+
+                        self.mark_vertex_3d_entity_for_deletion(*vertex_3d_entity);
+                    }
+                    (CanvasShape::Edge, ClickType::Left) => { /* ? */ }
+                    (CanvasShape::Edge, ClickType::Right) => {
+                        // TODO: delete edge?
+                    }
+                }
+            }
         }
+    }
+
+    fn mark_vertex_3d_entity_for_deletion(&mut self, vertex_3d_entity: Entity) {
+        self.vertex_3d_entities_to_delete.push(vertex_3d_entity);
     }
 
     fn deselect_current_vertex(&mut self, commands: &mut Commands, client: &mut Client) {
