@@ -6,7 +6,7 @@ use bevy_ecs::prelude::Component;
 pub struct SelectCircle;
 
 impl SelectCircle {
-    pub const RADIUS: f32 = 7.0;
+    pub const RADIUS: f32 = 5.0;
 }
 
 #[derive(Component)]

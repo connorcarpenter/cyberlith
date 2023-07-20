@@ -19,9 +19,9 @@ use render_api::{
 };
 use vortex_proto::components::Vertex3d;
 
-use crate::app::components::{
-    set_3d_line_transform, Edge2d, Edge3d, HoverCircle, SelectCircle, Vertex2d,
-};
+use crate::app::{components::{
+    Edge2d, Edge3d, HoverCircle, SelectCircle, Vertex2d,
+}, set_3d_line_transform};
 
 #[derive(Clone, Copy)]
 pub enum ClickType {
@@ -242,8 +242,9 @@ impl CanvasManager {
             let up = right.cross(camera_transform.view_direction());
 
             camera_transform.translation = camera_transform.view_direction() * -100.0; // 100 units away from where looking
-            camera_transform.translation += right * self.camera_3d_offset.x;
-            camera_transform.translation += up * self.camera_3d_offset.y;
+            let rounded_offset = self.camera_3d_offset.round();
+            camera_transform.translation += right * rounded_offset.x;
+            camera_transform.translation += up *    rounded_offset.y;
         }
     }
 
@@ -562,6 +563,7 @@ impl CanvasManager {
                 vertex_transform.translation.truncate(),
                 *mouse_position,
             );
+            select_line_transform.scale.y = self.camera_3d_scale;
         }
     }
 

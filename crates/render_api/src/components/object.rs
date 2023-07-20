@@ -104,7 +104,7 @@ impl RenderObjectBundle {
         end: Vec2,
         color: Color,
     ) -> Self {
-        let mesh = meshes.add(shapes::Line::new());
+        let mesh = meshes.add(shapes::Line);
         let mut transform = Transform::default();
         set_2d_line_transform(&mut transform, start, end);
         Self {

@@ -14,10 +14,10 @@ use render_api::{
 };
 use vortex_proto::components::{Vertex3d, VertexRootChild};
 
-use crate::app::components::{create_3d_edge_diamond, Edge3d};
 use crate::app::{
-    components::{Edge2d, Vertex2d},
+    components::{Edge2d, Edge3d, Vertex2d},
     resources::canvas_manager::CanvasManager,
+    shapes::{create_3d_edge_diamond, create_2d_edge_arrow}
 };
 
 pub enum VertexWaitlistInsert {
@@ -126,7 +126,7 @@ fn vertex_process_insert_complete(
             Vertex2d::RADIUS,
             Vertex2d::SUBDIVISIONS,
             Color::GREEN,
-            if parent_opt.is_none() { Some(1) } else { None }, // makes root vertex hollow
+            None,
         ))
         .insert(canvas_manager.layer_2d)
         .insert(Vertex2d)
@@ -135,7 +135,7 @@ fn vertex_process_insert_complete(
     if let Some(parent_3d_entity) = parent_opt {
         // create 2d edge entity
         commands
-            .spawn(RenderObjectBundle::line(
+            .spawn(create_2d_edge_arrow(
                 meshes,
                 materials,
                 Vec2::ZERO,

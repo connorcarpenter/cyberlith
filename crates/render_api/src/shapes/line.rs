@@ -14,7 +14,6 @@ pub fn set_2d_line_transform(transform: &mut Transform, start: Vec2, end: Vec2) 
     transform.translation.y = start.y;
     transform.rotation = Quat::from_rotation_z(angle);
     transform.scale.x = start.distance(end);
-    transform.scale.y = 1.0;
 }
 
 pub fn get_2d_line_transform_endpoint(transform: &Transform) -> Vec2 {
@@ -53,12 +52,6 @@ fn angle_between(a: &Vec2, b: &Vec2) -> f32 {
 
 #[derive(Hash)]
 pub struct Line;
-
-impl Line {
-    pub fn new() -> Self {
-        Self
-    }
-}
 
 impl AssetHash<CpuMesh> for Line {}
 
