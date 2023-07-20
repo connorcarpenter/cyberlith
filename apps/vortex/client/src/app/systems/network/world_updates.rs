@@ -63,7 +63,6 @@ pub fn insert_component_events(
     mut canvas_manager: ResMut<CanvasManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
-    vertex_query: Query<&Vertex3d>,
     vertex_child_query: Query<&VertexChild>,
     mut waiting_vertices: Local<HashMap<Entity, VertexWaitlistEntry>>,
 ) {
@@ -158,7 +157,6 @@ pub fn insert_component_events(
                 &mut canvas_manager,
                 &mut meshes,
                 &mut materials,
-                &vertex_query,
             );
         }
 
@@ -178,7 +176,6 @@ pub fn insert_component_events(
                 &mut canvas_manager,
                 &mut meshes,
                 &mut materials,
-                &vertex_query,
             );
         }
 
@@ -192,7 +189,6 @@ pub fn insert_component_events(
                 &mut canvas_manager,
                 &mut meshes,
                 &mut materials,
-                &vertex_query,
             );
         }
     }

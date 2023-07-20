@@ -81,4 +81,8 @@ impl Vertex3d {
     pub fn as_vec3(&self) -> Vec3 {
         Vec3::new(self.x() as f32, self.y() as f32, self.z() as f32)
     }
+
+    pub fn from_vec3(vec3: Vec3) -> Self {
+        Self::new(vec3.x as i16, vec3.y as i16, vec3.z as i16)
+    }
 }

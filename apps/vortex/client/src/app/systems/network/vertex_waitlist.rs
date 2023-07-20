@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use bevy_ecs::{
     entity::Entity,
-    system::{Commands, Query},
+    system::Commands,
 };
 use bevy_log::info;
 
@@ -12,7 +12,7 @@ use render_api::{
     components::RenderObjectBundle,
     Assets,
 };
-use vortex_proto::components::{Vertex3d, VertexRootChild};
+use vortex_proto::components::VertexRootChild;
 
 use crate::app::{
     components::{Edge2d, Edge3d, Vertex2d},
@@ -46,7 +46,7 @@ impl VertexWaitlistEntry {
         self.parent = Some(parent);
     }
 
-    fn set_pos(&mut self) {
+    fn set_position(&mut self) {
         self.has_pos = true;
     }
 
@@ -63,7 +63,6 @@ pub fn vertex_process_insert(
     canvas_manager: &mut CanvasManager,
     meshes: &mut Assets<CpuMesh>,
     materials: &mut Assets<CpuMaterial>,
-    vertex_query: &Query<&Vertex3d>,
 ) {
     if !vertex_waiting_entities.contains_key(&entity) {
         vertex_waiting_entities.insert(*entity, VertexWaitlistEntry::new());
@@ -72,7 +71,7 @@ pub fn vertex_process_insert(
 
     match insert {
         VertexWaitlistInsert::Position => {
-            waitlist.set_pos();
+            waitlist.set_position();
         }
         VertexWaitlistInsert::Parent(parent) => {
             waitlist.set_parent(parent);
@@ -88,7 +87,6 @@ pub fn vertex_process_insert(
             canvas_manager,
             meshes,
             materials,
-            vertex_query,
         );
     }
 }
@@ -100,18 +98,33 @@ fn vertex_process_insert_complete(
     canvas_manager: &mut CanvasManager,
     meshes: &mut Assets<CpuMesh>,
     materials: &mut Assets<CpuMaterial>,
-    vertex_query: &Query<&Vertex3d>,
 ) {
     let parent_opt = entry.decompose();
 
-    let vertex_3d = vertex_query.get(vertex_3d_entity).unwrap();
+    vertex_3d_postprocess(
+        commands,
+        parent_opt,
+        vertex_3d_entity,
+        canvas_manager,
+        meshes,
+        materials,
+    );
+}
 
+pub fn vertex_3d_postprocess(
+    commands: &mut Commands,
+    parent_entity_opt: Option<Entity>,
+    vertex_3d_entity: Entity,
+    canvas_manager: &mut CanvasManager,
+    meshes: &mut Assets<CpuMesh>,
+    materials: &mut Assets<CpuMaterial>,
+) -> Entity {
     commands
         .entity(vertex_3d_entity)
         .insert(RenderObjectBundle::sphere(
             meshes,
             materials,
-            vertex_3d.as_vec3(),
+            Vec3::ZERO,
             Vertex2d::RADIUS,
             Vertex2d::SUBDIVISIONS,
             Color::GREEN,
@@ -132,7 +145,7 @@ fn vertex_process_insert_complete(
         .insert(Vertex2d)
         .id();
 
-    if let Some(parent_3d_entity) = parent_opt {
+    if let Some(parent_3d_entity) = parent_entity_opt {
         // create 2d edge entity
         commands
             .spawn(create_2d_edge_arrow(
@@ -162,8 +175,10 @@ fn vertex_process_insert_complete(
 
     info!(
         "created Vertex3d: `{:?}`, created 2d entity: {:?}, parent: {:?}",
-        vertex_3d_entity, vertex_2d_entity, parent_opt
+        vertex_3d_entity, vertex_2d_entity, parent_entity_opt
     );
 
     canvas_manager.register_3d_vertex(vertex_3d_entity, vertex_2d_entity);
+
+    vertex_2d_entity
 }

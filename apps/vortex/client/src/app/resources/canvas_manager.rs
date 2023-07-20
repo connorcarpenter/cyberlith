@@ -4,22 +4,17 @@ use bevy_ecs::{
     change_detection::ResMut, entity::Entity, prelude::Resource, query::With, system::{Query, Commands},
 };
 use bevy_log::{info, warn};
-use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
+use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus, ReplicationConfig};
 
 use input::{Input, Key, MouseButton};
 use math::{convert_2d_to_3d, convert_3d_to_2d, Quat, Vec2, Vec3};
-use render_api::{
-    base::CpuTexture2D,
-    components::{
-        Camera, CameraProjection, OrthographicProjection, Projection, RenderLayer, Transform,
-        Viewport, Visibility,
-    },
-    shapes::{distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform},
-    Handle,
-};
-use vortex_proto::components::Vertex3d;
+use render_api::{base::{CpuTexture2D, CpuMaterial, CpuMesh}, components::{
+    Camera, CameraProjection, OrthographicProjection, Projection, RenderLayer, Transform,
+    Viewport, Visibility,
+}, shapes::{distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform}, Handle, Assets};
+use vortex_proto::components::{Vertex3d, VertexChild};
 
-use crate::app::{components::{
+use crate::app::{systems::network::vertex_3d_postprocess, components::{
     Edge2d, Edge3d, HoverCircle, SelectCircle, Vertex2d,
 }, set_3d_line_transform};
 
@@ -127,6 +122,8 @@ impl CanvasManager {
         vertex_3d_q: &mut Query<&mut Vertex3d>,
         vertex_2d_q: &Query<Entity, With<Vertex2d>>,
         edge_2d_q: &Query<Entity, With<Edge2d>>,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
     ) {
         // check keyboard input
 
@@ -198,9 +195,10 @@ impl CanvasManager {
                 }
             } else {
                 // haven't clicked yet
+                let mouse = *input.mouse_position();
                 self.click_down = true;
-                self.click_start = *input.mouse_position();
-                self.handle_mouse_click(commands, client, self.click_type);
+                self.click_start = mouse;
+                self.handle_mouse_click(commands, client, self.click_type, &mouse, camera_q, transform_q, meshes, materials);
             }
         } else {
             if self.click_down {
@@ -572,6 +570,11 @@ impl CanvasManager {
         commands: &mut Commands,
         client: &mut Client,
         click_type: ClickType,
+        mouse_position: &Vec2,
+        camera_q: &Query<(&mut Camera, &mut Projection)>,
+        transform_q: &Query<&mut Transform>,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
     ) {
         let cursor_is_hovering = self.hovered_entity.is_some();
 
@@ -610,21 +613,83 @@ impl CanvasManager {
         } else {
             match click_type {
                 ClickType::Left => {
-                    // TODO: create new vertex
+
+                    if self.selected_vertex.is_none() {
+                        return;
+                    }
+
+                    // create new vertex
+
+                    // get camera
+                    let camera_3d = self.camera_3d.unwrap();
+                    let camera_transform: Transform = *transform_q.get(camera_3d).unwrap();
+                    let (camera, camera_projection) = camera_q.get(camera_3d).unwrap();
+
+                    let camera_viewport = camera.viewport.unwrap();
+                    let view_matrix = camera_transform.view_matrix();
+                    let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
+
+                    // get 2d vertex transform
+                    let vertex_2d_entity = self.selected_vertex.unwrap();
+                    let vertex_2d_transform = transform_q.get(vertex_2d_entity).unwrap();
+
+                    // convert 2d to 3d
+                    let new_3d_position = convert_2d_to_3d(
+                        &view_matrix,
+                        &projection_matrix,
+                        &camera_viewport.size_vec2(),
+                        &mouse_position,
+                        vertex_2d_transform.translation.z,
+                    );
+
+                    // get 3d vertex transform
+                    let vertex_3d_entity = self.vertex_entity_2d_to_3d(&vertex_2d_entity).unwrap();
+
+                    // spawn new entity
+                    let mut vertex_child = VertexChild::new();
+                    vertex_child.parent_id.set(client, vertex_3d_entity);
+                    let new_vertex_3d_entity = commands
+                        .spawn_empty()
+                        .enable_replication(client)
+                        .configure_replication(ReplicationConfig::Delegated)
+                        .insert(Vertex3d::from_vec3(new_3d_position))
+                        .insert(vertex_child)
+                        .id();
+
+                    let new_vertex_2d_entity = vertex_3d_postprocess(
+                        commands,
+                        Some(*vertex_3d_entity),
+                        new_vertex_3d_entity,
+                        self,
+                        meshes,
+                        materials,
+                    );
+
+                    self.deselect_current_vertex(commands, client);
+
+                    self.selected_vertex = Some(new_vertex_2d_entity);
+                    self.hovered_entity = self.selected_vertex;
                 }
                 ClickType::Right => {
 
-                    if self.selected_vertex.is_some() {
-                        // deselect vertex
-                        let vertex_3d_entity = self.vertex_entity_2d_to_3d(&self.selected_vertex.unwrap()).unwrap();
-                        commands.entity(*vertex_3d_entity).release_authority(client);
-
-                        self.selected_vertex = None;
-                        self.camera_2d_recalc = true;
+                    if self.selected_vertex.is_none() {
+                        return;
                     }
+
+                    // deselect vertex
+
+                    self.deselect_current_vertex(commands, client);
+
+                    self.camera_2d_recalc = true;
                 }
             }
         }
+    }
+
+    fn deselect_current_vertex(&mut self, commands: &mut Commands, client: &mut Client) {
+        let vertex_3d_entity = self.vertex_entity_2d_to_3d(&self.selected_vertex.unwrap()).unwrap();
+        commands.entity(*vertex_3d_entity).release_authority(client);
+        self.selected_vertex = None;
     }
 
     fn handle_mouse_drag(

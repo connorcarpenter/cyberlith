@@ -6,7 +6,7 @@ use bevy_ecs::{
 use naia_bevy_client::Client;
 
 use input::Input;
-use render_api::components::{Camera, Projection, Transform, Visibility};
+use render_api::{Assets, base::{CpuMaterial, CpuMesh}, components::{Camera, Projection, Transform, Visibility}};
 use vortex_proto::components::Vertex3d;
 
 use crate::app::{
@@ -25,6 +25,8 @@ pub fn input(
     mut vertex_3d_q: Query<&mut Vertex3d>,
     vertex_2d_q: Query<Entity, With<Vertex2d>>,
     edge_2d_q: Query<Entity, With<Edge2d>>,
+    mut meshes: ResMut<Assets<CpuMesh>>,
+    mut materials: ResMut<Assets<CpuMaterial>>,
 ) {
     canvas_manager.update_input(
         &mut commands,
@@ -36,5 +38,7 @@ pub fn input(
         &mut vertex_3d_q,
         &vertex_2d_q,
         &edge_2d_q,
+        &mut meshes,
+        &mut materials,
     );
 }
