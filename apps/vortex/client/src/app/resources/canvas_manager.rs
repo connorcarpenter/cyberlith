@@ -1,20 +1,20 @@
 use std::collections::HashMap;
 
 use bevy_ecs::{
-    change_detection::ResMut, entity::Entity, prelude::Resource, query::With, system::Query,
+    change_detection::ResMut, entity::Entity, prelude::Resource, query::With, system::{Query, Commands},
 };
 use bevy_log::{info, warn};
+use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
 
 use input::{Input, Key, MouseButton};
-use math::{convert_3d_to_2d, Quat, Vec2, Vec3};
-use render_api::shapes::{distance_to_2d_line, get_2d_line_transform_endpoint};
+use math::{convert_2d_to_3d, convert_3d_to_2d, Quat, Vec2, Vec3};
 use render_api::{
     base::CpuTexture2D,
     components::{
         Camera, CameraProjection, OrthographicProjection, Projection, RenderLayer, Transform,
         Viewport, Visibility,
     },
-    shapes::set_2d_line_transform,
+    shapes::{distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform},
     Handle,
 };
 use vortex_proto::components::Vertex3d;
@@ -29,7 +29,7 @@ pub enum ClickType {
     Right,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 pub enum CanvasShape {
     Vertex,
     Edge,
@@ -45,6 +45,7 @@ pub struct CanvasManager {
     canvas_texture: Option<Handle<CpuTexture2D>>,
     canvas_texture_size: Vec2,
     vertices_3d_to_2d: HashMap<Entity, Entity>,
+    vertices_2d_to_3d: HashMap<Entity, Entity>,
 
     click_type: ClickType,
     click_start: Vec2,
@@ -83,6 +84,7 @@ impl Default for CanvasManager {
             canvas_texture: None,
             canvas_texture_size: Vec2::new(1280.0, 720.0),
             vertices_3d_to_2d: HashMap::new(),
+            vertices_2d_to_3d: HashMap::new(),
 
             click_type: ClickType::Left,
             click_start: Vec2::ZERO,
@@ -116,10 +118,13 @@ impl Default for CanvasManager {
 impl CanvasManager {
     pub fn update_input(
         &mut self,
+        commands: &mut Commands,
+        client: &mut Client,
         input: &mut ResMut<Input>,
         transform_q: &mut Query<&mut Transform>,
         camera_q: &mut Query<(&mut Camera, &mut Projection)>,
         visibility_q: &mut Query<&mut Visibility>,
+        vertex_3d_q: &mut Query<&mut Vertex3d>,
         vertex_2d_q: &Query<Entity, With<Vertex2d>>,
         edge_2d_q: &Query<Entity, With<Edge2d>>,
     ) {
@@ -159,13 +164,15 @@ impl CanvasManager {
         }
 
         // Mouse over
-        self.update_mouse_hover(
-            input.mouse_position(),
-            transform_q,
-            visibility_q,
-            vertex_2d_q,
-            edge_2d_q,
-        );
+        if !self.click_down {
+            self.update_mouse_hover(
+                input.mouse_position(),
+                transform_q,
+                visibility_q,
+                vertex_2d_q,
+                edge_2d_q,
+            );
+        }
         self.update_select_line(input.mouse_position(), transform_q);
 
         let left_button_pressed = input.is_pressed(MouseButton::Left);
@@ -187,13 +194,13 @@ impl CanvasManager {
                 self.click_start = mouse;
 
                 if delta.length() > 0.0 {
-                    self.handle_mouse_drag(self.click_type, delta);
+                    self.handle_mouse_drag(commands, client, self.click_type, mouse, delta, camera_q, transform_q, vertex_3d_q);
                 }
             } else {
                 // haven't clicked yet
                 self.click_down = true;
                 self.click_start = *input.mouse_position();
-                self.handle_mouse_click(self.click_type);
+                self.handle_mouse_click(commands, client, self.click_type);
             }
         } else {
             if self.click_down {
@@ -228,7 +235,6 @@ impl CanvasManager {
                 return;
             };
 
-            // keep Transform's rotation and scale the same, but base the position on self.camera_3d_target and self.camera_3d_target_distance
             camera_transform.rotation = self.camera_3d_rotation.unwrap();
             camera_transform.scale = Vec3::splat(1.0 / self.camera_3d_scale);
 
@@ -270,8 +276,6 @@ impl CanvasManager {
         };
 
         let camera_viewport = camera.viewport.unwrap();
-        let camera_viewport_size =
-            Vec2::new(camera_viewport.width as f32, camera_viewport.height as f32);
         let view_matrix = camera_transform.view_matrix();
         let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
 
@@ -290,7 +294,7 @@ impl CanvasManager {
             let (coords, depth) = convert_3d_to_2d(
                 &view_matrix,
                 &projection_matrix,
-                &camera_viewport_size,
+                &camera_viewport.size_vec2(),
                 &vertex_3d_transform.translation,
             );
 
@@ -552,13 +556,23 @@ impl CanvasManager {
         }
     }
 
-    fn handle_mouse_click(&mut self, click_type: ClickType) {
-        // let vertex_is_selected = self.selected_vertex.is_some();
+    fn handle_mouse_click(
+        &mut self,
+        commands: &mut Commands,
+        client: &mut Client,
+        click_type: ClickType,
+    ) {
         let cursor_is_hovering = self.hovered_entity.is_some();
 
+        if self.hover_type == CanvasShape::Edge {
+            return;
+        }
+
         if cursor_is_hovering {
-            match click_type {
-                ClickType::Left => {
+            let vertex_3d_entity = self.vertex_entity_2d_to_3d(&self.hovered_entity.unwrap()).unwrap();
+
+            match (self.hover_type, click_type) {
+                (CanvasShape::Vertex, ClickType::Left) => {
                     // select vertex
 
                     if self.hovered_entity == self.selected_vertex {
@@ -566,12 +580,24 @@ impl CanvasManager {
                         return;
                     }
 
+                    {
+                        if commands.entity(*vertex_3d_entity).authority(client).unwrap() != EntityAuthStatus::Available {
+                            // do nothing, vertex is not available
+                            return;
+                        }
+                        commands.entity(*vertex_3d_entity).request_authority(client);
+                    }
+
                     self.selected_vertex = self.hovered_entity;
 
                     self.camera_2d_recalc = true;
                 }
-                ClickType::Right => {
+                (CanvasShape::Vertex, ClickType::Right) => {
                     // TODO: delete vertex?
+                }
+                (CanvasShape::Edge, ClickType::Left) => { /* ? */ }
+                (CanvasShape::Edge, ClickType::Right) => {
+                    // TODO: delete edge?
                 }
             }
         } else {
@@ -580,8 +606,12 @@ impl CanvasManager {
                     // TODO: create new vertex
                 }
                 ClickType::Right => {
-                    // deselect vertex
+
                     if self.selected_vertex.is_some() {
+                        // deselect vertex
+                        let vertex_3d_entity = self.vertex_entity_2d_to_3d(&self.selected_vertex.unwrap()).unwrap();
+                        commands.entity(*vertex_3d_entity).release_authority(client);
+
                         self.selected_vertex = None;
                         self.camera_2d_recalc = true;
                     }
@@ -590,13 +620,68 @@ impl CanvasManager {
         }
     }
 
-    fn handle_mouse_drag(&mut self, click_type: ClickType, delta: Vec2) {
+    fn handle_mouse_drag(
+        &mut self,
+        commands: &mut Commands,
+        client: &Client,
+        click_type: ClickType,
+        mouse_position: Vec2,
+        delta: Vec2,
+        camera_q: &Query<(&mut Camera, &mut Projection)>,
+        transform_q: &Query<&mut Transform>,
+        vertex_3d_q: &mut Query<&mut Vertex3d>
+    ) {
         let vertex_is_selected = self.selected_vertex.is_some();
-        let cursor_is_hovering = self.hovered_entity.is_some();
 
-        if vertex_is_selected || cursor_is_hovering {
-            // TODO: move vertex?
-            return;
+        if vertex_is_selected {
+
+            match click_type {
+                ClickType::Left => {
+
+                    // move vertex
+                    let vertex_2d_entity = self.selected_vertex.unwrap();
+                    let vertex_3d_entity = self.vertex_entity_2d_to_3d(&vertex_2d_entity).unwrap();
+
+                    let auth_status = commands.entity(*vertex_3d_entity).authority(client).unwrap();
+                    if !(auth_status.is_requested() || auth_status.is_granted()) {
+                        // only continue to mutate if requested or granted authority over vertex
+                        return;
+                    }
+
+                    // get camera
+                    let camera_3d = self.camera_3d.unwrap();
+                    let camera_transform: Transform = *transform_q.get(camera_3d).unwrap();
+                    let (camera, camera_projection) = camera_q.get(camera_3d).unwrap();
+
+                    let camera_viewport = camera.viewport.unwrap();
+                    let view_matrix = camera_transform.view_matrix();
+                    let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
+
+                    // get 2d vertex transform
+                    let vertex_2d_transform = transform_q.get(vertex_2d_entity).unwrap();
+
+                    // convert 2d to 3d
+                    let new_3d_position = convert_2d_to_3d(
+                        &view_matrix,
+                        &projection_matrix,
+                        &camera_viewport.size_vec2(),
+                        &mouse_position,
+                        vertex_2d_transform.translation.z,
+                    );
+
+                    // set networked 3d vertex
+                    let mut vertex_3d = vertex_3d_q.get_mut(*vertex_3d_entity).unwrap();
+                    vertex_3d.set_x(new_3d_position.x as i16);
+                    vertex_3d.set_y(new_3d_position.y as i16);
+                    vertex_3d.set_z(new_3d_position.z as i16);
+
+                    // redraw
+                    self.camera_2d_recalc = true;
+                }
+                ClickType::Right => {
+                    // TODO: dunno if this is possible? shouldn't the vertex be deselected?
+                }
+            }
         } else {
             match click_type {
                 ClickType::Left => {
@@ -764,14 +849,23 @@ impl CanvasManager {
 
     pub fn register_3d_vertex(&mut self, entity_3d: Entity, entity_2d: Entity) {
         self.vertices_3d_to_2d.insert(entity_3d, entity_2d);
+        self.vertices_2d_to_3d.insert(entity_2d, entity_3d);
         self.camera_2d_recalc = true;
     }
 
     pub fn unregister_3d_vertex(&mut self, entity_3d: &Entity) -> Option<Entity> {
-        self.vertices_3d_to_2d.remove(entity_3d)
+        if let Some(entity_2d) = self.vertices_3d_to_2d.remove(entity_3d) {
+            self.vertices_2d_to_3d.remove(&entity_2d);
+            return Some(entity_2d);
+        }
+        return None;
     }
 
-    pub fn vertex_entity_3d_to_2d(&self, entity_3d: &Entity) -> Option<&Entity> {
+    fn vertex_entity_3d_to_2d(&self, entity_3d: &Entity) -> Option<&Entity> {
         self.vertices_3d_to_2d.get(entity_3d)
+    }
+
+    fn vertex_entity_2d_to_3d(&self, entity_2d: &Entity) -> Option<&Entity> {
+        self.vertices_2d_to_3d.get(entity_2d)
     }
 }

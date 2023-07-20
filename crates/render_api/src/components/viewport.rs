@@ -1,3 +1,5 @@
+use math::Vec2;
+
 ///
 /// Defines the part of the screen/render target that is rendered to.
 /// All values should be given in physical pixels.
@@ -51,6 +53,14 @@ impl Viewport {
             width,
             height,
         }
+    }
+
+    pub fn size_vec2(&self) -> Vec2 {
+        Vec2::new(self.width as f32, self.height as f32)
+    }
+
+    pub fn position_vec2(&self) -> Vec2 {
+        Vec2::new(self.x as f32, self.y as f32)
     }
 }
 
