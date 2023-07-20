@@ -117,15 +117,16 @@ impl CanvasManager {
         &mut self,
         commands: &mut Commands,
         client: &mut Client,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
         input: &mut ResMut<Input>,
         transform_q: &mut Query<&mut Transform>,
         camera_q: &mut Query<(&mut Camera, &mut Projection)>,
         visibility_q: &mut Query<&mut Visibility>,
         vertex_3d_q: &mut Query<&mut Vertex3d>,
         vertex_2d_q: &Query<Entity, With<Vertex2d>>,
-        edge_2d_q: &Query<Entity, With<Edge2d>>,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        edge_3d_q: &Query<(Entity, &Edge3d)>,
+        edge_2d_q: &Query<(Entity, &Edge2d)>,
     ) {
         // check keyboard input
 
@@ -200,7 +201,18 @@ impl CanvasManager {
                 let mouse = *input.mouse_position();
                 self.click_down = true;
                 self.click_start = mouse;
-                self.handle_mouse_click(commands, client, self.click_type, &mouse, camera_q, transform_q, meshes, materials);
+                self.handle_mouse_click(
+                    commands,
+                    client,
+                    meshes,
+                    materials,
+                    self.click_type,
+                    &mouse,
+                    camera_q,
+                    transform_q,
+                    edge_3d_q,
+                    edge_2d_q,
+                );
             }
         } else {
             if self.click_down {
@@ -455,7 +467,7 @@ impl CanvasManager {
         transform_q: &mut Query<&mut Transform>,
         visibility_q: &mut Query<&mut Visibility>,
         vertex_2d_q: &Query<Entity, With<Vertex2d>>,
-        edge_2d_q: &Query<Entity, With<Edge2d>>,
+        edge_2d_q: &Query<(Entity, &Edge2d)>,
     ) {
         if mouse_position.x as i16 != self.last_mouse_position.x as i16
             || mouse_position.y as i16 != self.last_mouse_position.y as i16
@@ -492,13 +504,13 @@ impl CanvasManager {
         let mut is_hovering = least_distance <= (HoverCircle::DETECT_RADIUS * self.camera_3d_scale);
 
         // just setting edge thickness back to normal ... better way to do this?
-        for edge_entity in edge_2d_q.iter() {
+        for (edge_entity, _) in edge_2d_q.iter() {
             let mut edge_transform = transform_q.get_mut(edge_entity).unwrap();
             edge_transform.scale.y = self.camera_3d_scale;
         }
 
         if !is_hovering {
-            for edge_entity in edge_2d_q.iter() {
+            for (edge_entity, _) in edge_2d_q.iter() {
                 let edge_transform = transform_q.get(edge_entity).unwrap();
                 let edge_start = edge_transform.translation.truncate();
                 let edge_end = get_2d_line_transform_endpoint(&edge_transform);
@@ -587,12 +599,14 @@ impl CanvasManager {
         &mut self,
         commands: &mut Commands,
         client: &mut Client,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
         click_type: ClickType,
         mouse_position: &Vec2,
         camera_q: &Query<(&mut Camera, &mut Projection)>,
         transform_q: &Query<&mut Transform>,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
+        edge_3d_q: &Query<(Entity, &Edge3d)>,
+        edge_2d_q: &Query<(Entity, &Edge2d)>,
     ) {
         let cursor_is_hovering = self.hovered_entity.is_some();
         let vertex_is_selected = self.selected_vertex.is_some();
@@ -672,17 +686,17 @@ impl CanvasManager {
             }
         } else {
             if cursor_is_hovering {
-                let vertex_3d_entity = self.vertex_entity_2d_to_3d(&self.hovered_entity.unwrap()).unwrap();
+                let target_vertex_3d_entity = self.vertex_entity_2d_to_3d(&self.hovered_entity.unwrap()).unwrap();
 
                 match (self.hover_type, click_type) {
                     (CanvasShape::Vertex, ClickType::Left) => {
                         // select vertex
 
-                        if commands.entity(*vertex_3d_entity).authority(client).unwrap() != EntityAuthStatus::Available {
+                        if commands.entity(*target_vertex_3d_entity).authority(client).unwrap() != EntityAuthStatus::Available {
                             // do nothing, vertex is not available
                             return;
                         }
-                        commands.entity(*vertex_3d_entity).request_authority(client);
+                        commands.entity(*target_vertex_3d_entity).request_authority(client);
 
 
                         self.selected_vertex = self.hovered_entity;
@@ -690,14 +704,44 @@ impl CanvasManager {
                         self.camera_2d_recalc = true;
                     }
                     (CanvasShape::Vertex, ClickType::Right) => {
-                        // delete vertex
-                        if commands.entity(*vertex_3d_entity).authority(client).unwrap() != EntityAuthStatus::Available {
-                            // do nothing, vertex is not available
-                            return;
-                        }
-                        commands.entity(*vertex_3d_entity).request_authority(client);
 
-                        self.mark_vertex_3d_entity_for_deletion(*vertex_3d_entity);
+                        // delete vertex
+
+                        // make list of all children vertices
+                        let mut vertices_3d_to_delete = vec![*target_vertex_3d_entity];
+                        vertices_3d_to_delete_recurse(&mut vertices_3d_to_delete, target_vertex_3d_entity, edge_3d_q);
+
+                        for vertex_3d_entity in vertices_3d_to_delete {
+                            if commands.entity(vertex_3d_entity).authority(client).unwrap() != EntityAuthStatus::Available {
+                                // do nothing, vertex is not available
+                                // TODO: queue for deletion? check before this?
+                                return;
+                            }
+                            commands.entity(vertex_3d_entity).request_authority(client);
+
+                            self.mark_vertex_3d_entity_for_deletion(vertex_3d_entity);
+
+                            // delete 2d vertex
+                            let vertex_2d_entity = self.vertex_entity_3d_to_2d(&vertex_3d_entity).unwrap();
+                            commands.entity(*vertex_2d_entity).despawn();
+
+                            // delete 2d edge
+                            for (edge_2d_entity, edge_2d) in edge_2d_q.iter() {
+                                if edge_2d.start == *vertex_2d_entity {
+                                    commands.entity(edge_2d_entity).despawn();
+                                }
+                            }
+
+                            // delete 3d edge
+                            for (edge_3d_entity, edge_3d) in edge_3d_q.iter() {
+                                if edge_3d.start == vertex_3d_entity {
+                                    commands.entity(edge_3d_entity).despawn();
+                                }
+                            }
+
+                            // undo hover
+                            self.mouse_hover_recalc = true;
+                        }
                     }
                     (CanvasShape::Edge, ClickType::Left) => { /* ? */ }
                     (CanvasShape::Edge, ClickType::Right) => {
@@ -965,5 +1009,14 @@ impl CanvasManager {
 
     fn vertex_entity_2d_to_3d(&self, entity_2d: &Entity) -> Option<&Entity> {
         self.vertices_2d_to_3d.get(entity_2d)
+    }
+}
+
+fn vertices_3d_to_delete_recurse(list: &mut Vec<Entity>, parent_entity: &Entity, edge_3d_q: &Query<(Entity, &Edge3d)>) {
+    for (_, edge_3d) in edge_3d_q.iter() {
+        if edge_3d.end == *parent_entity {
+            list.push(edge_3d.start);
+            vertices_3d_to_delete_recurse(list, &edge_3d.start, edge_3d_q);
+        }
     }
 }
