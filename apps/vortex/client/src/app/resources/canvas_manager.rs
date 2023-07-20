@@ -312,6 +312,16 @@ impl CanvasManager {
 
             let scale_2d = self.camera_3d_scale * Vertex2d::RADIUS;
             vertex_2d_transform.scale = Vec3::splat(scale_2d);
+
+            // update hover circle
+            if let Some(hover_entity) = self.hovered_entity {
+                if hover_entity == *vertex_2d_entity {
+                    let hover_circle_entity = self.hover_circle_entity.unwrap();
+                    let mut hover_circle_transform = transform_q.get_mut(hover_circle_entity).unwrap();
+                    hover_circle_transform.translation.x = coords.x;
+                    hover_circle_transform.translation.y = coords.y;
+                }
+            }
         }
 
         // update 2d edges
@@ -348,7 +358,6 @@ impl CanvasManager {
         }
 
         // update selected vertex circle & line
-
         let Ok(mut select_shape_visibilities) = visibility_q.get_many_mut([self.select_circle_entity.unwrap(), self.select_line_entity.unwrap()]) else {
             panic!("Select shape entities has no Visibility");
         };
@@ -563,10 +572,6 @@ impl CanvasManager {
         click_type: ClickType,
     ) {
         let cursor_is_hovering = self.hovered_entity.is_some();
-
-        if self.hover_type == CanvasShape::Edge {
-            return;
-        }
 
         if cursor_is_hovering {
             let vertex_3d_entity = self.vertex_entity_2d_to_3d(&self.hovered_entity.unwrap()).unwrap();
