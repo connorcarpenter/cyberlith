@@ -99,6 +99,10 @@ impl Workspace {
         }
     }
 
+    pub fn entity_is_file(&self, entity: &Entity) -> bool {
+        Self::find_file_entry_by_entity(&self.working_file_entries, entity).is_some()
+    }
+
     pub fn on_client_delete_file(
         &mut self,
         commands: &mut Commands,
@@ -107,7 +111,7 @@ impl Workspace {
     ) {
         // Remove Entity from Working Tree, returning a list of child entities that should be despawned
         let file_entry_key =
-            Self::find_file_entry_by_entity(&mut self.working_file_entries, entity);
+            Self::find_file_entry_by_entity(&self.working_file_entries, entity).unwrap();
         let (_entry_value, entities_to_delete) =
             Self::remove_file_entry(&mut self.working_file_entries, &file_entry_key);
 
@@ -534,9 +538,9 @@ impl Workspace {
     //
 
     fn find_file_entry_by_entity(
-        file_entries: &mut HashMap<FileEntryKey, FileEntryValue>,
+        file_entries: &HashMap<FileEntryKey, FileEntryValue>,
         entity: &Entity,
-    ) -> FileEntryKey {
+    ) -> Option<FileEntryKey> {
         let mut key_opt = None;
         for (entry_key, entry_val) in file_entries.iter() {
             if entry_val.entity() == *entity {
@@ -545,11 +549,11 @@ impl Workspace {
             }
         }
         if key_opt.is_none() {
-            panic!("entity does not exist in Working FileTree!");
+            return None;
         }
         let key = key_opt.unwrap();
 
-        key
+        Some(key)
     }
 
     fn remove_file_entry(
