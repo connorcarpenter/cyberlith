@@ -156,6 +156,10 @@ impl CanvasManager {
         else if input.is_pressed(Key::T) {
             self.set_camera_angle_top();
         }
+        // Delete
+        else if input.is_pressed(Key::Delete) {
+            self.handle_delete_key_press(commands, client, edge_3d_q, edge_2d_q);
+        }
 
         // Mouse wheel zoom..
         let scroll_y = input.consume_mouse_scroll();
@@ -210,8 +214,6 @@ impl CanvasManager {
                     &mouse,
                     camera_q,
                     transform_q,
-                    edge_3d_q,
-                    edge_2d_q,
                 );
             }
         } else {
@@ -461,6 +463,67 @@ impl CanvasManager {
         self.next_visible = visible;
     }
 
+    fn handle_delete_key_press(
+        &mut self,
+        commands: &mut Commands,
+        client: &mut Client,
+        edge_3d_q: &Query<(Entity, &Edge3d)>,
+        edge_2d_q: &Query<(Entity, &Edge2d)>
+    ) {
+        if self.selected_vertex.is_none() {
+            return;
+        }
+
+        // delete vertex
+
+        let target_vertex_3d_entity = self.vertex_entity_2d_to_3d(&self.selected_vertex.unwrap()).unwrap();
+
+        // make list of all children vertices
+        let mut vertices_3d_to_delete = vec![];
+        vertices_3d_to_delete_recurse(&mut vertices_3d_to_delete, target_vertex_3d_entity, edge_3d_q);
+
+        for vertex_3d_entity in vertices_3d_to_delete {
+            let auth_status = commands.entity(vertex_3d_entity).authority(client).unwrap();
+            if !auth_status.is_granted() {
+                if !auth_status.is_available() {
+                    // do nothing, vertex is not available
+                    // TODO: queue for deletion? check before this?
+                    panic!("Vertex {:?} authority is not available for deletion!", vertex_3d_entity);
+                }
+
+                // request authority if needed
+                commands.entity(vertex_3d_entity).request_authority(client);
+            }
+
+            self.mark_vertex_3d_entity_for_deletion(vertex_3d_entity);
+
+            // delete 2d vertex
+            let vertex_2d_entity = self.vertex_entity_3d_to_2d(&vertex_3d_entity).unwrap();
+            commands.entity(*vertex_2d_entity).despawn();
+
+            // delete 2d edge
+            for (edge_2d_entity, edge_2d) in edge_2d_q.iter() {
+                if edge_2d.start == *vertex_2d_entity {
+                    commands.entity(edge_2d_entity).despawn();
+                }
+            }
+
+            // delete 3d edge
+            for (edge_3d_entity, edge_3d) in edge_3d_q.iter() {
+                if edge_3d.start == vertex_3d_entity {
+                    commands.entity(edge_3d_entity).despawn();
+                }
+            }
+        }
+
+        // undo hover
+        self.mouse_hover_recalc = true;
+
+        // empty selection
+        self.selected_vertex = None;
+        self.select_line_recalc = true;
+    }
+
     fn update_mouse_hover(
         &mut self,
         mouse_position: &Vec2,
@@ -605,8 +668,6 @@ impl CanvasManager {
         mouse_position: &Vec2,
         camera_q: &Query<(&mut Camera, &mut Projection)>,
         transform_q: &Query<&mut Transform>,
-        edge_3d_q: &Query<(Entity, &Edge3d)>,
-        edge_2d_q: &Query<(Entity, &Edge2d)>,
     ) {
         let cursor_is_hovering = self.hovered_entity.is_some();
         let vertex_is_selected = self.selected_vertex.is_some();
@@ -704,44 +765,7 @@ impl CanvasManager {
                         self.camera_2d_recalc = true;
                     }
                     (CanvasShape::Vertex, ClickType::Right) => {
-
-                        // delete vertex
-
-                        // make list of all children vertices
-                        let mut vertices_3d_to_delete = vec![*target_vertex_3d_entity];
-                        vertices_3d_to_delete_recurse(&mut vertices_3d_to_delete, target_vertex_3d_entity, edge_3d_q);
-
-                        for vertex_3d_entity in vertices_3d_to_delete {
-                            if commands.entity(vertex_3d_entity).authority(client).unwrap() != EntityAuthStatus::Available {
-                                // do nothing, vertex is not available
-                                // TODO: queue for deletion? check before this?
-                                return;
-                            }
-                            commands.entity(vertex_3d_entity).request_authority(client);
-
-                            self.mark_vertex_3d_entity_for_deletion(vertex_3d_entity);
-
-                            // delete 2d vertex
-                            let vertex_2d_entity = self.vertex_entity_3d_to_2d(&vertex_3d_entity).unwrap();
-                            commands.entity(*vertex_2d_entity).despawn();
-
-                            // delete 2d edge
-                            for (edge_2d_entity, edge_2d) in edge_2d_q.iter() {
-                                if edge_2d.start == *vertex_2d_entity {
-                                    commands.entity(edge_2d_entity).despawn();
-                                }
-                            }
-
-                            // delete 3d edge
-                            for (edge_3d_entity, edge_3d) in edge_3d_q.iter() {
-                                if edge_3d.start == vertex_3d_entity {
-                                    commands.entity(edge_3d_entity).despawn();
-                                }
-                            }
-
-                            // undo hover
-                            self.mouse_hover_recalc = true;
-                        }
+                        todo!("should deselect! never should get here!");
                     }
                     (CanvasShape::Edge, ClickType::Left) => { /* ? */ }
                     (CanvasShape::Edge, ClickType::Right) => {
@@ -1013,9 +1037,12 @@ impl CanvasManager {
 }
 
 fn vertices_3d_to_delete_recurse(list: &mut Vec<Entity>, parent_entity: &Entity, edge_3d_q: &Query<(Entity, &Edge3d)>) {
+
+    info!("queuing {:?} for deletion", parent_entity);
+    list.push(*parent_entity);
+
     for (_, edge_3d) in edge_3d_q.iter() {
         if edge_3d.end == *parent_entity {
-            list.push(edge_3d.start);
             vertices_3d_to_delete_recurse(list, &edge_3d.start, edge_3d_q);
         }
     }
