@@ -747,14 +747,19 @@ impl CanvasManager {
             }
         } else {
             if cursor_is_hovering {
-                let target_vertex_3d_entity = self.vertex_entity_2d_to_3d(&self.hovered_entity.unwrap()).unwrap();
+                let Some(target_vertex_3d_entity) = self.vertex_entity_2d_to_3d(&self.hovered_entity.unwrap()) else {
+                    panic!("Hovered entity does not have a 3d vertex! {:?}", self.hovered_entity.unwrap());
+                };
 
                 match (self.hover_type, click_type) {
                     (CanvasShape::Vertex, ClickType::Left) => {
+
                         // select vertex
 
-                        if commands.entity(*target_vertex_3d_entity).authority(client).unwrap() != EntityAuthStatus::Available {
+                        let auth_status = commands.entity(*target_vertex_3d_entity).authority(client).unwrap();
+                        if !auth_status.is_available() {
                             // do nothing, vertex is not available
+                            info!("Vertex auth is not available. Current status: {:?}", auth_status);
                             return;
                         }
                         commands.entity(*target_vertex_3d_entity).request_authority(client);
