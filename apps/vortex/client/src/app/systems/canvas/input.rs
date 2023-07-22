@@ -6,11 +6,15 @@ use bevy_ecs::{
 use naia_bevy_client::Client;
 
 use input::Input;
-use render_api::{Assets, base::{CpuMaterial, CpuMesh}, components::{Camera, Projection, Transform, Visibility}};
+use render_api::{
+    base::{CpuMaterial, CpuMesh},
+    components::{Camera, Projection, Transform, Visibility},
+    Assets,
+};
 use vortex_proto::components::Vertex3d;
 
 use crate::app::{
-    components::{Edge3d, Edge2d, Vertex2d},
+    components::{Edge2d, Edge3d, Vertex2d},
     resources::canvas_manager::CanvasManager,
 };
 

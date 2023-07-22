@@ -1,9 +1,6 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{
-    entity::Entity,
-    system::Commands,
-};
+use bevy_ecs::{entity::Entity, system::Commands};
 use bevy_log::info;
 
 use math::{Vec2, Vec3};
@@ -17,7 +14,7 @@ use vortex_proto::components::VertexRootChild;
 use crate::app::{
     components::{Edge2d, Edge3d, Vertex2d},
     resources::canvas_manager::CanvasManager,
-    shapes::{create_3d_edge_diamond, create_2d_edge_arrow}
+    shapes::{create_2d_edge_arrow, create_3d_edge_diamond},
 };
 
 pub enum VertexWaitlistInsert {
@@ -80,14 +77,7 @@ pub fn vertex_process_insert(
 
     if waitlist.is_ready() {
         let entry = vertex_waiting_entities.remove(entity).unwrap();
-        vertex_process_insert_complete(
-            commands,
-            entry,
-            *entity,
-            canvas_manager,
-            meshes,
-            materials,
-        );
+        vertex_process_insert_complete(commands, entry, *entity, canvas_manager, meshes, materials);
     }
 }
 

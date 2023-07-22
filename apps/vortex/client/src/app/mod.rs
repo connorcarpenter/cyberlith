@@ -6,8 +6,8 @@ mod config;
 pub mod events;
 mod plugin;
 pub mod resources;
-pub mod systems;
 pub mod shapes;
+pub mod systems;
 mod utils;
 
 pub use build::build;

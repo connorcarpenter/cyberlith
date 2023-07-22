@@ -1,22 +1,33 @@
 use std::collections::HashMap;
 
 use bevy_ecs::{
-    change_detection::ResMut, entity::Entity, prelude::Resource, query::With, system::{Query, Commands},
+    change_detection::ResMut,
+    entity::Entity,
+    prelude::Resource,
+    query::With,
+    system::{Commands, Query},
 };
 use bevy_log::{info, warn};
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
 use input::{Input, Key, MouseButton};
 use math::{convert_2d_to_3d, convert_3d_to_2d, Quat, Vec2, Vec3};
-use render_api::{base::{CpuTexture2D, CpuMaterial, CpuMesh}, components::{
-    Camera, CameraProjection, OrthographicProjection, Projection, RenderLayer, Transform,
-    Viewport, Visibility,
-}, shapes::{distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform}, Handle, Assets};
+use render_api::{
+    base::{CpuMaterial, CpuMesh, CpuTexture2D},
+    components::{
+        Camera, CameraProjection, OrthographicProjection, Projection, RenderLayer, Transform,
+        Viewport, Visibility,
+    },
+    shapes::{distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform},
+    Assets, Handle,
+};
 use vortex_proto::components::{Vertex3d, VertexChild};
 
-use crate::app::{systems::network::vertex_3d_postprocess, components::{
-    Edge2d, Edge3d, HoverCircle, SelectCircle, Vertex2d,
-}, set_3d_line_transform};
+use crate::app::{
+    components::{Edge2d, Edge3d, HoverCircle, SelectCircle, Vertex2d},
+    set_3d_line_transform,
+    systems::network::vertex_3d_postprocess,
+};
 
 #[derive(Clone, Copy)]
 pub enum ClickType {
@@ -200,7 +211,16 @@ impl CanvasManager {
                 self.click_start = mouse;
 
                 if delta.length() > 0.0 {
-                    self.handle_mouse_drag(commands, client, self.click_type, mouse, delta, camera_q, transform_q, vertex_3d_q);
+                    self.handle_mouse_drag(
+                        commands,
+                        client,
+                        self.click_type,
+                        mouse,
+                        delta,
+                        camera_q,
+                        transform_q,
+                        vertex_3d_q,
+                    );
                 }
             } else {
                 // haven't clicked yet
@@ -260,7 +280,7 @@ impl CanvasManager {
             camera_transform.translation = camera_transform.view_direction() * -100.0; // 100 units away from where looking
             let rounded_offset = self.camera_3d_offset.round();
             camera_transform.translation += right * rounded_offset.x;
-            camera_transform.translation += up *    rounded_offset.y;
+            camera_transform.translation += up * rounded_offset.y;
         }
     }
 
@@ -333,7 +353,8 @@ impl CanvasManager {
             if let Some(hover_entity) = self.hovered_entity {
                 if hover_entity == *vertex_2d_entity {
                     let hover_circle_entity = self.hover_circle_entity.unwrap();
-                    let mut hover_circle_transform = transform_q.get_mut(hover_circle_entity).unwrap();
+                    let mut hover_circle_transform =
+                        transform_q.get_mut(hover_circle_entity).unwrap();
                     hover_circle_transform.translation.x = coords.x;
                     hover_circle_transform.translation.y = coords.y;
                 }
@@ -400,7 +421,12 @@ impl CanvasManager {
 
         let mut new_list = Vec::new();
         for vertex_3d_entity in self.vertex_3d_entities_to_delete.iter() {
-            if commands.entity(*vertex_3d_entity).authority(client).unwrap().is_granted() {
+            if commands
+                .entity(*vertex_3d_entity)
+                .authority(client)
+                .unwrap()
+                .is_granted()
+            {
                 commands.entity(*vertex_3d_entity).despawn();
             } else {
                 new_list.push(*vertex_3d_entity);
@@ -441,7 +467,7 @@ impl CanvasManager {
         commands: &mut Commands,
         client: &mut Client,
         edge_3d_q: &Query<(Entity, &Edge3d)>,
-        edge_2d_q: &Query<(Entity, &Edge2d)>
+        edge_2d_q: &Query<(Entity, &Edge2d)>,
     ) {
         if self.selected_vertex.is_none() {
             return;
@@ -449,11 +475,17 @@ impl CanvasManager {
 
         // delete vertex
 
-        let target_vertex_3d_entity = self.vertex_entity_2d_to_3d(&self.selected_vertex.unwrap()).unwrap();
+        let target_vertex_3d_entity = self
+            .vertex_entity_2d_to_3d(&self.selected_vertex.unwrap())
+            .unwrap();
 
         // make list of all children vertices
         let mut vertices_3d_to_delete = vec![];
-        vertices_3d_to_delete_recurse(&mut vertices_3d_to_delete, target_vertex_3d_entity, edge_3d_q);
+        vertices_3d_to_delete_recurse(
+            &mut vertices_3d_to_delete,
+            target_vertex_3d_entity,
+            edge_3d_q,
+        );
 
         for vertex_3d_entity in vertices_3d_to_delete {
             let auth_status = commands.entity(vertex_3d_entity).authority(client).unwrap();
@@ -461,7 +493,10 @@ impl CanvasManager {
                 if !auth_status.is_available() {
                     // do nothing, vertex is not available
                     // TODO: queue for deletion? check before this?
-                    panic!("Vertex {:?} authority is not available for deletion!", vertex_3d_entity);
+                    panic!(
+                        "Vertex {:?} authority is not available for deletion!",
+                        vertex_3d_entity
+                    );
                 }
 
                 // request authority if needed
@@ -669,7 +704,6 @@ impl CanvasManager {
         //
 
         if let Some(selected_vertex_entity) = self.selected_vertex {
-
             let vertex_transform = {
                 let Ok(vertex_transform) = transform_q.get(selected_vertex_entity) else {
                     return;
@@ -710,7 +744,6 @@ impl CanvasManager {
         if vertex_is_selected {
             match click_type {
                 ClickType::Left => {
-
                     if cursor_is_hovering {
                         return;
                     }
@@ -768,7 +801,6 @@ impl CanvasManager {
                     self.hovered_entity = self.selected_vertex;
                 }
                 ClickType::Right => {
-
                     if self.selected_vertex.is_none() {
                         return;
                     }
@@ -782,24 +814,29 @@ impl CanvasManager {
             }
         } else {
             if cursor_is_hovering {
-
                 match (self.hover_type, click_type) {
                     (CanvasShape::Vertex, ClickType::Left) => {
-
                         let Some(target_vertex_3d_entity) = self.vertex_entity_2d_to_3d(&self.hovered_entity.unwrap()) else {
                             panic!("Hovered entity does not have a 3d vertex! {:?}", self.hovered_entity.unwrap());
                         };
 
                         // select vertex
 
-                        let auth_status = commands.entity(*target_vertex_3d_entity).authority(client).unwrap();
+                        let auth_status = commands
+                            .entity(*target_vertex_3d_entity)
+                            .authority(client)
+                            .unwrap();
                         if !auth_status.is_available() {
                             // do nothing, vertex is not available
-                            info!("Vertex auth is not available. Current status: {:?}", auth_status);
+                            info!(
+                                "Vertex auth is not available. Current status: {:?}",
+                                auth_status
+                            );
                             return;
                         }
-                        commands.entity(*target_vertex_3d_entity).request_authority(client);
-
+                        commands
+                            .entity(*target_vertex_3d_entity)
+                            .request_authority(client);
 
                         self.selected_vertex = self.hovered_entity;
 
@@ -822,7 +859,9 @@ impl CanvasManager {
     }
 
     fn deselect_current_vertex(&mut self, commands: &mut Commands, client: &mut Client) {
-        let vertex_3d_entity = self.vertex_entity_2d_to_3d(&self.selected_vertex.unwrap()).unwrap();
+        let vertex_3d_entity = self
+            .vertex_entity_2d_to_3d(&self.selected_vertex.unwrap())
+            .unwrap();
         commands.entity(*vertex_3d_entity).release_authority(client);
         self.selected_vertex = None;
     }
@@ -836,20 +875,21 @@ impl CanvasManager {
         delta: Vec2,
         camera_q: &Query<(&mut Camera, &mut Projection)>,
         transform_q: &Query<&mut Transform>,
-        vertex_3d_q: &mut Query<&mut Vertex3d>
+        vertex_3d_q: &mut Query<&mut Vertex3d>,
     ) {
         let vertex_is_selected = self.selected_vertex.is_some();
 
         if vertex_is_selected {
-
             match click_type {
                 ClickType::Left => {
-
                     // move vertex
                     let vertex_2d_entity = self.selected_vertex.unwrap();
                     let vertex_3d_entity = self.vertex_entity_2d_to_3d(&vertex_2d_entity).unwrap();
 
-                    let auth_status = commands.entity(*vertex_3d_entity).authority(client).unwrap();
+                    let auth_status = commands
+                        .entity(*vertex_3d_entity)
+                        .authority(client)
+                        .unwrap();
                     if !(auth_status.is_requested() || auth_status.is_granted()) {
                         // only continue to mutate if requested or granted authority over vertex
                         return;
@@ -1077,8 +1117,11 @@ impl CanvasManager {
     }
 }
 
-fn vertices_3d_to_delete_recurse(list: &mut Vec<Entity>, parent_entity: &Entity, edge_3d_q: &Query<(Entity, &Edge3d)>) {
-
+fn vertices_3d_to_delete_recurse(
+    list: &mut Vec<Entity>,
+    parent_entity: &Entity,
+    edge_3d_q: &Query<(Entity, &Edge3d)>,
+) {
     info!("queuing {:?} for deletion", parent_entity);
     list.push(*parent_entity);
 

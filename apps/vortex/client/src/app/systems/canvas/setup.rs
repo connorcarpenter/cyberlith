@@ -15,7 +15,8 @@ use render_egui::EguiUserTextures;
 use crate::app::{
     components::{HoverCircle, SelectCircle, SelectLine, Vertex2d},
     config::AppConfig,
-    resources::canvas_manager::CanvasManager, shapes::create_2d_edge_arrow
+    resources::canvas_manager::CanvasManager,
+    shapes::create_2d_edge_arrow,
 };
 
 pub fn setup(
@@ -122,7 +123,8 @@ fn setup_2d_scene(
     canvas_manager.select_circle_entity = Some(select_circle_entity);
 
     // select line
-    let mut select_line_components = create_2d_edge_arrow(meshes, materials, Vec2::ZERO, Vec2::X, Color::WHITE);
+    let mut select_line_components =
+        create_2d_edge_arrow(meshes, materials, Vec2::ZERO, Vec2::X, Color::WHITE);
     select_line_components.visibility.visible = false;
     let select_line_entity = commands
         .spawn(select_line_components)

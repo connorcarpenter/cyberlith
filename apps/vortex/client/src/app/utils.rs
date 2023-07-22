@@ -1,4 +1,3 @@
-
 use math::Vec3;
 use render_api::components::Transform;
 

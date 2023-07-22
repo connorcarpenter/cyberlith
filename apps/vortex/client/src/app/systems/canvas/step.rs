@@ -1,4 +1,7 @@
-use bevy_ecs::{prelude::Commands, system::{Query, ResMut}};
+use bevy_ecs::{
+    prelude::Commands,
+    system::{Query, ResMut},
+};
 
 use naia_bevy_client::Client;
 

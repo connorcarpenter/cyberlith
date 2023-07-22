@@ -5,7 +5,10 @@ use bevy_ecs::{
     prelude::{Commands, World},
     system::{Query, SystemState},
 };
-use naia_bevy_server::{BitReader, BitWriter, CommandsExt, ReplicationConfig, Serde, SerdeErr, Server, UnsignedVariableInteger};
+use naia_bevy_server::{
+    BitReader, BitWriter, CommandsExt, ReplicationConfig, Serde, SerdeErr, Server,
+    UnsignedVariableInteger,
+};
 
 use vortex_proto::components::{
     FileSystemChild, Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt,
