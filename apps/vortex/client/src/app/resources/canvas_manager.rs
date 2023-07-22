@@ -4,7 +4,7 @@ use bevy_ecs::{
     change_detection::ResMut, entity::Entity, prelude::Resource, query::With, system::{Query, Commands},
 };
 use bevy_log::{info, warn};
-use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus, ReplicationConfig};
+use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
 use input::{Input, Key, MouseButton};
 use math::{convert_2d_to_3d, convert_3d_to_2d, Quat, Vec2, Vec3};
@@ -128,6 +128,24 @@ impl CanvasManager {
         edge_3d_q: &Query<(Entity, &Edge3d)>,
         edge_2d_q: &Query<(Entity, &Edge2d)>,
     ) {
+        // Mouse wheel zoom..
+        let scroll_y = input.consume_mouse_scroll();
+        if scroll_y > 0.1 || scroll_y < -0.1 {
+            self.camera_zoom(scroll_y);
+        }
+
+        // Mouse over
+        if !self.click_down {
+            self.update_mouse_hover(
+                input.mouse_position(),
+                transform_q,
+                visibility_q,
+                vertex_2d_q,
+                edge_2d_q,
+            );
+        }
+        self.update_select_line(input.mouse_position(), transform_q, visibility_q);
+
         // check keyboard input
 
         // (S)olid 3D View
@@ -161,23 +179,7 @@ impl CanvasManager {
             self.handle_delete_key_press(commands, client, edge_3d_q, edge_2d_q);
         }
 
-        // Mouse wheel zoom..
-        let scroll_y = input.consume_mouse_scroll();
-        if scroll_y > 0.1 || scroll_y < -0.1 {
-            self.camera_zoom(scroll_y);
-        }
-
-        // Mouse over
-        if !self.click_down {
-            self.update_mouse_hover(
-                input.mouse_position(),
-                transform_q,
-                visibility_q,
-                vertex_2d_q,
-                edge_2d_q,
-            );
-        }
-        self.update_select_line(input.mouse_position(), transform_q);
+        // mouse clicks
 
         let left_button_pressed = input.is_pressed(MouseButton::Left);
         let right_button_pressed = input.is_pressed(MouseButton::Right);
@@ -267,7 +269,6 @@ impl CanvasManager {
         transform_q: &mut Query<&mut Transform>,
         camera_q: &Query<(&Camera, &Projection)>,
         vertex_3d_q: &Query<(Entity, &Vertex3d)>,
-        visibility_q: &mut Query<&mut Visibility>,
         edge_2d_q: &Query<(Entity, &Edge2d)>,
         edge_3d_q: &Query<(Entity, &Edge3d)>,
     ) {
@@ -370,34 +371,6 @@ impl CanvasManager {
             let end_pos = transform_q.get(edge_endpoints.end).unwrap().translation;
             let mut edge_transform = transform_q.get_mut(edge_entity).unwrap();
             set_3d_line_transform(&mut edge_transform, start_pos, end_pos);
-        }
-
-        // update selected vertex circle & line
-        let Ok(mut select_shape_visibilities) = visibility_q.get_many_mut([self.select_circle_entity.unwrap(), self.select_line_entity.unwrap()]) else {
-            panic!("Select shape entities has no Visibility");
-        };
-
-        if let Some(selected_vertex_entity) = self.selected_vertex {
-            let vertex_transform = {
-                let Ok(vertex_transform) = transform_q.get(selected_vertex_entity) else {
-                    return;
-                };
-                *vertex_transform
-            };
-
-            let Ok(mut select_circle_transform) = transform_q.get_mut(self.select_circle_entity.unwrap()) else {
-                panic!("Select shape entities has no Transform");
-            };
-
-            select_circle_transform.translation = vertex_transform.translation;
-            select_circle_transform.scale =
-                Vec3::splat(SelectCircle::RADIUS * self.camera_3d_scale);
-
-            select_shape_visibilities[0].visible = true;
-            select_shape_visibilities[1].visible = true;
-        } else {
-            select_shape_visibilities[0].visible = false;
-            select_shape_visibilities[1].visible = false;
         }
     }
 
@@ -620,7 +593,9 @@ impl CanvasManager {
 
                     hover_circle_visibility.visible = false;
                 }
-                _ => {}
+                None => {
+                    todo!();
+                }
             }
         } else {
             self.hovered_entity = None;
@@ -632,11 +607,68 @@ impl CanvasManager {
         &mut self,
         mouse_position: &Vec2,
         transform_q: &mut Query<&mut Transform>,
+        visibility_q: &mut Query<&mut Visibility>,
     ) {
+        if !self.select_line_recalc {
+            return;
+        }
+        self.select_line_recalc = false;
+
+        // update selected vertex line
+
+        let select_line_entity = self.select_line_entity.unwrap();
+        let select_circle_entity = self.select_circle_entity.unwrap();
+
+        //
+
         // update selected vertex circle & line
+        let Ok(mut select_shape_visibilities) = visibility_q.get_many_mut([select_circle_entity, select_line_entity]) else {
+            panic!("Select shape entities has no Visibility");
+        };
 
         if let Some(selected_vertex_entity) = self.selected_vertex {
-            let select_line_entity = self.select_line_entity.unwrap();
+            let vertex_transform = {
+                let Ok(vertex_transform) = transform_q.get(selected_vertex_entity) else {
+                    return;
+                };
+                *vertex_transform
+            };
+
+            // sync select line transform
+            {
+                let Ok(mut select_line_transform) = transform_q.get_mut(select_line_entity) else {
+                    panic!("Select line entity has no Transform");
+                };
+
+                set_2d_line_transform(
+                    &mut select_line_transform,
+                    vertex_transform.translation.truncate(),
+                    *mouse_position,
+                );
+                select_line_transform.scale.y = self.camera_3d_scale;
+            }
+
+            // sync select circle transform
+            {
+                let Ok(mut select_circle_transform) = transform_q.get_mut(select_circle_entity) else {
+                    panic!("Select shape entities has no Transform");
+                };
+
+                select_circle_transform.translation = vertex_transform.translation;
+                select_circle_transform.scale =
+                    Vec3::splat(SelectCircle::RADIUS * self.camera_3d_scale);
+            }
+
+            select_shape_visibilities[0].visible = true;
+            select_shape_visibilities[1].visible = true;
+        } else {
+            select_shape_visibilities[0].visible = false;
+            select_shape_visibilities[1].visible = false;
+        }
+
+        //
+
+        if let Some(selected_vertex_entity) = self.selected_vertex {
 
             let vertex_transform = {
                 let Ok(vertex_transform) = transform_q.get(selected_vertex_entity) else {
@@ -655,6 +687,9 @@ impl CanvasManager {
                 *mouse_position,
             );
             select_line_transform.scale.y = self.camera_3d_scale;
+        } else {
+            let mut select_line_visibility = visibility_q.get_mut(select_line_entity).unwrap();
+            select_line_visibility.visible = false;
         }
     }
 
@@ -747,12 +782,13 @@ impl CanvasManager {
             }
         } else {
             if cursor_is_hovering {
-                let Some(target_vertex_3d_entity) = self.vertex_entity_2d_to_3d(&self.hovered_entity.unwrap()) else {
-                    panic!("Hovered entity does not have a 3d vertex! {:?}", self.hovered_entity.unwrap());
-                };
 
                 match (self.hover_type, click_type) {
                     (CanvasShape::Vertex, ClickType::Left) => {
+
+                        let Some(target_vertex_3d_entity) = self.vertex_entity_2d_to_3d(&self.hovered_entity.unwrap()) else {
+                            panic!("Hovered entity does not have a 3d vertex! {:?}", self.hovered_entity.unwrap());
+                        };
 
                         // select vertex
 
@@ -770,7 +806,7 @@ impl CanvasManager {
                         self.camera_2d_recalc = true;
                     }
                     (CanvasShape::Vertex, ClickType::Right) => {
-                        todo!("should deselect! never should get here!");
+                        // do nothing, vertex deselection happens above
                     }
                     (CanvasShape::Edge, ClickType::Left) => { /* ? */ }
                     (CanvasShape::Edge, ClickType::Right) => {
