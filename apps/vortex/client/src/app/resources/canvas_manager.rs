@@ -187,7 +187,7 @@ impl CanvasManager {
         }
         // Delete
         else if input.is_pressed(Key::Delete) {
-            self.handle_delete_key_press(commands, client, edge_3d_q, edge_2d_q);
+            self.handle_delete_key_press(commands, client, edge_3d_q);
         }
 
         // mouse clicks
@@ -414,7 +414,13 @@ impl CanvasManager {
         }
     }
 
-    pub fn poll_buffered_actions(&mut self, commands: &mut Commands, client: &Client) {
+    pub fn poll_buffered_actions(
+        &mut self,
+        commands: &mut Commands,
+        client: &Client,
+        edge_3d_q: &Query<(Entity, &Edge3d)>,
+        edge_2d_q: &Query<(Entity, &Edge2d)>,
+    ) {
         if self.vertex_3d_entities_to_delete.len() == 0 {
             return;
         }
@@ -427,7 +433,32 @@ impl CanvasManager {
                 .unwrap()
                 .is_granted()
             {
+                info!("deleting entity {:?}", vertex_3d_entity);
+
+                // delete 3d vertex
                 commands.entity(*vertex_3d_entity).despawn();
+
+                // delete 2d vertex
+                let vertex_2d_entity = self.vertex_entity_3d_to_2d(vertex_3d_entity).unwrap();
+                commands.entity(*vertex_2d_entity).despawn();
+
+                // delete 2d edge
+                for (edge_2d_entity, edge_2d) in edge_2d_q.iter() {
+                    if edge_2d.start == *vertex_2d_entity {
+                        commands.entity(edge_2d_entity).despawn();
+                    }
+                }
+
+                // delete 3d edge
+                for (edge_3d_entity, edge_3d) in edge_3d_q.iter() {
+                    if edge_3d.start == *vertex_3d_entity {
+                        commands.entity(edge_3d_entity).despawn();
+                    }
+                }
+
+                // undo hover
+                self.mouse_hover_recalc = true;
+
             } else {
                 new_list.push(*vertex_3d_entity);
             }
@@ -467,7 +498,6 @@ impl CanvasManager {
         commands: &mut Commands,
         client: &mut Client,
         edge_3d_q: &Query<(Entity, &Edge3d)>,
-        edge_2d_q: &Query<(Entity, &Edge2d)>,
     ) {
         if self.selected_vertex.is_none() {
             return;
@@ -487,45 +517,31 @@ impl CanvasManager {
             edge_3d_q,
         );
 
+        // check whether we can delete all vertices
+        for vertex_3d_entity in vertices_3d_to_delete.iter() {
+            let auth_status = commands.entity(*vertex_3d_entity).authority(client).unwrap();
+            if !auth_status.is_granted() && !auth_status.is_available() {
+                // do nothing, vertex is not available
+                // TODO: queue for deletion? check before this?
+                warn!(
+                    "Vertex {:?} is not available for deletion!",
+                    vertex_3d_entity
+                );
+                return;
+            }
+        }
+
+        // delete them all!
         for vertex_3d_entity in vertices_3d_to_delete {
+
             let auth_status = commands.entity(vertex_3d_entity).authority(client).unwrap();
             if !auth_status.is_granted() {
-                if !auth_status.is_available() {
-                    // do nothing, vertex is not available
-                    // TODO: queue for deletion? check before this?
-                    panic!(
-                        "Vertex {:?} authority is not available for deletion!",
-                        vertex_3d_entity
-                    );
-                }
-
                 // request authority if needed
                 commands.entity(vertex_3d_entity).request_authority(client);
             }
 
             self.mark_vertex_3d_entity_for_deletion(vertex_3d_entity);
-
-            // delete 2d vertex
-            let vertex_2d_entity = self.vertex_entity_3d_to_2d(&vertex_3d_entity).unwrap();
-            commands.entity(*vertex_2d_entity).despawn();
-
-            // delete 2d edge
-            for (edge_2d_entity, edge_2d) in edge_2d_q.iter() {
-                if edge_2d.start == *vertex_2d_entity {
-                    commands.entity(edge_2d_entity).despawn();
-                }
-            }
-
-            // delete 3d edge
-            for (edge_3d_entity, edge_3d) in edge_3d_q.iter() {
-                if edge_3d.start == vertex_3d_entity {
-                    commands.entity(edge_3d_entity).despawn();
-                }
-            }
         }
-
-        // undo hover
-        self.mouse_hover_recalc = true;
 
         // empty selection
         self.selected_vertex = None;
