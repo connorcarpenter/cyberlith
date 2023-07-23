@@ -13,7 +13,7 @@ pub fn publish_entity_events(
     mut event_reader: EventReader<PublishEntityEvent>,
 ) {
     for PublishEntityEvent(user_key, client_entity) in event_reader.iter() {
-        info!("client entity has been made public");
+        info!("client entity has been made public: {:?}", client_entity);
 
         let room_key = user_manager
             .user_info(user_key)
@@ -27,7 +27,7 @@ pub fn publish_entity_events(
 }
 
 pub fn unpublish_entity_events(mut event_reader: EventReader<UnpublishEntityEvent>) {
-    for UnpublishEntityEvent(_user_key, _client_entity) in event_reader.iter() {
-        info!("client entity has been unpublished");
+    for UnpublishEntityEvent(_user_key, client_entity) in event_reader.iter() {
+        info!("client entity has been unpublished: {:?}", client_entity);
     }
 }

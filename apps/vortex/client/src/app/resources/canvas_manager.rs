@@ -845,7 +845,8 @@ impl CanvasManager {
                         if !auth_status.is_available() {
                             // do nothing, vertex is not available
                             info!(
-                                "Vertex auth is not available. Current status: {:?}",
+                                "Vertex auth is not available for entity: {:?}. Current status: {:?}",
+                                *target_vertex_3d_entity,
                                 auth_status
                             );
                             return;

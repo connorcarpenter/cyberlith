@@ -457,7 +457,10 @@ impl FileTreeRowUiWidget {
             EntryKind::Directory => Some(row_entity.clone()),
             EntryKind::File => {
                 if let Some(dir_child) = dir_child_opt {
-                    Some(dir_child.parent_id.get(client).unwrap().clone())
+                    let Some(other_entity) = dir_child.parent_id.get(client) else {
+                        panic!("File entry has no parent");
+                    };
+                    Some(other_entity)
                 } else if let Some(_root_child) = root_child_opt {
                     None
                 } else {
@@ -654,7 +657,10 @@ impl FileTreeRowUiWidget {
 
         let parent_entity: Entity = {
             if let Ok(child_component) = child_query.get(*entry_entity) {
-                child_component.parent_id.get(&client).unwrap()
+                let Some(child_entity) = child_component.parent_id.get(&client) else {
+                    panic!("File entry has no parent");
+                };
+                child_entity
             } else {
                 global.project_root_entity
             }

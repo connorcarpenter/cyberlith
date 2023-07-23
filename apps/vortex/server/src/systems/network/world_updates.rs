@@ -25,8 +25,8 @@ use crate::resources::{
 };
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
-    for SpawnEntityEvent(_user_key, _entity) in event_reader.iter() {
-        info!("spawned entity");
+    for SpawnEntityEvent(_user_key, entity) in event_reader.iter() {
+        info!("spawned entity: {:?}", entity);
     }
 }
 
@@ -38,7 +38,7 @@ pub fn despawn_entity_events(
     mut event_reader: EventReader<DespawnEntityEvent>,
 ) {
     for DespawnEntityEvent(user_key, entity) in event_reader.iter() {
-        info!("despawned entity");
+        info!("despawned entity: {:?}", entity);
 
         let Some(user) = user_manager.user_info(user_key) else {
             panic!("user not found");
@@ -102,7 +102,9 @@ pub fn insert_component_events(
         for (user_key, entity) in events.read::<FileSystemChild>() {
             info!("inserted FileSystemChild");
             let entry = fs_child_query.get(entity).unwrap();
-            let parent_entity = entry.parent_id.get(&server).unwrap();
+            let Some(parent_entity) = entry.parent_id.get(&server) else {
+                panic!("no parent entity!")
+            };
             let parent_key = entry_key_query.get(parent_entity).unwrap();
             fs_process_insert(
                 &mut commands,

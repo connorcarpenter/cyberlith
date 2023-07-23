@@ -292,7 +292,9 @@ impl ActionStack {
                 // get parent entity
                 let parent_entity_opt: Option<Entity> = if let Some(fs_child) = fs_child_opt {
                     // get parent entity
-                    let parent_entity = fs_child.parent_id.get(&client).unwrap();
+                    let Some(parent_entity) = fs_child.parent_id.get(&client) else {
+                        panic!("FileSystemChild {:?} has no parent!", file_entity);
+                    };
                     // remove entity from parent
                     parent_query
                         .get_mut(parent_entity)
