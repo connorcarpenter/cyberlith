@@ -8,7 +8,10 @@ use naia_bevy_client::Client;
 
 use render_api::components::{Camera, Transform};
 
-use crate::app::{components::{Edge2d, Edge3d}, resources::canvas_manager::CanvasManager};
+use crate::app::{
+    components::{Edge2d, Edge3d},
+    resources::canvas_manager::CanvasManager,
+};
 
 pub fn step(
     mut commands: Commands,

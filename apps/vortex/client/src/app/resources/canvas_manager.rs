@@ -458,7 +458,6 @@ impl CanvasManager {
 
                 // undo hover
                 self.mouse_hover_recalc = true;
-
             } else {
                 new_list.push(*vertex_3d_entity);
             }
@@ -519,7 +518,10 @@ impl CanvasManager {
 
         // check whether we can delete all vertices
         for vertex_3d_entity in vertices_3d_to_delete.iter() {
-            let auth_status = commands.entity(*vertex_3d_entity).authority(client).unwrap();
+            let auth_status = commands
+                .entity(*vertex_3d_entity)
+                .authority(client)
+                .unwrap();
             if !auth_status.is_granted() && !auth_status.is_available() {
                 // do nothing, vertex is not available
                 // TODO: queue for deletion? check before this?
@@ -533,7 +535,6 @@ impl CanvasManager {
 
         // delete them all!
         for vertex_3d_entity in vertices_3d_to_delete {
-
             let auth_status = commands.entity(vertex_3d_entity).authority(client).unwrap();
             if !auth_status.is_granted() {
                 // request authority if needed
