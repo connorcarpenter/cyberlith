@@ -6,7 +6,7 @@ use std::{
 
 use bevy_ecs::{
     entity::Entity,
-    system::{Commands, Query, Resource},
+    system::{SystemState, Commands, Resource},
     world::World,
 };
 use bevy_log::info;
@@ -14,19 +14,19 @@ use git2::{Cred, Repository, Tree};
 use naia_bevy_server::{CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};
 
 use vortex_proto::{
+    messages::ChangelistMessage,
     components::{
-        ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
+        EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
     },
     resources::FileEntryKey,
     FileExtension,
 };
-use vortex_proto::messages::ChangelistMessage;
 
 use crate::{
     components::FileSystemOwner,
     config::GitConfig,
     files::FileWriter,
-    resources::{user_manager::UserInfo, workspace::Workspace, FileEntryValue},
+    resources::{UserManager, user_manager::UserInfo, workspace::Workspace, FileEntryValue},
 };
 
 #[derive(Resource)]
@@ -171,67 +171,75 @@ impl GitManager {
     pub fn commit_changelist_entry(
         &mut self,
         world: &mut World,
-        git_manager: &mut GitManager,
         user_key: UserKey,
-        message: ChangelistMessage,
+        message: ChangelistMessage
     ) {
-        let username = user_info.get_username();
+        let user_manager = world.get_resource::<UserManager>().unwrap();
+        let user_info = user_manager.user_info(&user_key).unwrap();
+        let username = user_info.get_username().to_string();
+        let email = user_info.get_email().to_string();
 
-        let Some(workspace) = self.workspaces.get_mut(username) else {
-            return;
+        let Some(workspace) = self.workspaces.get_mut(&username) else {
+            panic!("Could not find workspace for user: `{}`", username);
         };
 
-        let email = user_info.get_email();
-
         workspace.commit_changelist_entry(
-            commands,
-            server,
-            username,
-            email,
-            commit_message,
-            entity,
-            query,
+            world,
+            &user_key,
+            &username,
+            &email,
+            message
         );
     }
 
     pub fn rollback_changelist_entry(
         &mut self,
         world: &mut World,
-        git_manager: &mut GitManager,
         user_key: UserKey,
         message: ChangelistMessage,
     ) {
-        if let Some(workspace) = self.workspaces.get_mut(user.get_username()) {
-            if let Some((key, value)) =
-                workspace.rollback_changelist_entry(commands, server, entity, query)
-            {
-                self.spawn_networked_entry_into_world(
-                    commands, server, user_key, user, &key, &value,
-                )
-            }
+        let user_manager = world.get_resource::<UserManager>().unwrap();
+        let user_info = user_manager.user_info(&user_key).unwrap();
+        let user_name = user_info.get_username().to_string();
+        let user_room_key = user_info.get_room_key().unwrap();
+
+        let Some(workspace) = self.workspaces.get_mut(&user_name) else {
+            panic!("Could not find workspace for user: `{}`", user_name);
+        };
+
+        if let Some((key, value)) = workspace.rollback_changelist_entry(world, message) {
+            self.spawn_networked_entry_into_world(
+                world, &user_key, &user_name, &user_room_key, &key, &value,
+            )
         }
     }
 
-    pub fn spawn_networked_entry_into_world(
+    fn spawn_networked_entry_into_world(
         &mut self,
-        commands: &mut Commands,
-        server: &mut Server,
+        world: &mut World,
         user_key: &UserKey,
-        user_info: &UserInfo,
+        user_name: &str,
+        user_room_key: &RoomKey,
         entry_key: &FileEntryKey,
         entry_val: &FileEntryValue,
     ) {
-        let room_key = user_info.get_room_key().unwrap();
-        let workspace = self.workspaces.get(user_info.get_username()).unwrap();
+        let workspace = self.workspaces.get(user_name).unwrap();
+
+        let mut system_state: SystemState<(Commands, Server)> = SystemState::new(world);
+        let (mut commands, mut server) = system_state.get_mut(world);
+
         insert_networked_components_entry(
-            commands,
-            server,
+            &mut commands,
+            &mut server,
             user_key,
-            &room_key,
+
+            user_room_key,
             &workspace.working_file_entries,
             entry_key,
             entry_val,
         );
+
+        system_state.apply(world);
     }
 
     pub(crate) fn load_content_entities(

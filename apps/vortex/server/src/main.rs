@@ -7,15 +7,15 @@ use bevy_ecs::{
     system::{Res, ResMut},
 };
 use bevy_log::{info, LogPlugin};
-use naia_bevy_server::{Plugin as ServerPlugin, ReceiveEvents, ServerConfig};
 
+use naia_bevy_server::{Plugin as ServerPlugin, ReceiveEvents, ServerConfig};
 use resources::GitManager;
 use systems::network;
 use vortex_proto::protocol;
 
 use crate::{
     config::{AppConfig, ConfigPlugin},
-    resources::{TabManager, UserManager},
+    resources::{TabManager, UserManager, changelist_manager_process, ChangelistManager},
     systems::world_loop,
 };
 
@@ -78,6 +78,7 @@ fn main() {
         // Other Systems
         .add_startup_system(setup)
         .add_system(world_loop)
+        .add_system(changelist_manager_process)
         // Run App
         .run();
 }

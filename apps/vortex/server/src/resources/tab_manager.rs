@@ -1,4 +1,4 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 
 use bevy_ecs::{
     entity::Entity,
@@ -221,6 +221,10 @@ impl TabManager {
 
     pub(crate) fn user_current_tab_file_entity(&self, user_key: &UserKey) -> Entity {
         self.user_tab_state(user_key).current_tab_file_entity().unwrap()
+    }
+
+    pub(crate) fn user_current_tab_content_entities(&self, user_key: &UserKey) -> &HashSet<Entity> {
+        self.user_tab_state(user_key).current_tab_entities().unwrap()
     }
 
     fn user_tab_state(&self, user_key: &UserKey) -> &UserTabState {

@@ -2,24 +2,24 @@ use std::{collections::{HashMap, HashSet}, fs, fs::File, io::Read, path::Path, s
 
 use bevy_ecs::{
     entity::Entity,
-    system::{Commands, Query},
+    world::World,
+    system::{SystemState, Commands, Query},
 };
-use bevy_ecs::world::World;
 use bevy_log::info;
 use git2::{Repository, Signature};
-use naia_bevy_server::{CommandsExt, RoomKey, Server};
 
+use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 use vortex_proto::{
     components::{ChangelistEntry, ChangelistStatus},
     resources::FileEntryKey,
     FileExtension,
+    messages::ChangelistMessage,
 };
 
 use crate::{
     files::{FileReader, FileWriter},
-    resources::{ChangelistValue, FileEntryValue, GitManager},
+    resources::{TabManager, ChangelistValue, FileEntryValue, GitManager},
 };
-use crate::resources::TabManager;
 
 pub struct Workspace {
     pub room_key: RoomKey,
@@ -168,17 +168,32 @@ impl Workspace {
     pub fn commit_changelist_entry(
         &mut self,
         world: &mut World,
+        user_key: &UserKey,
         username: &str,
         email: &str,
-        commit_message: &str,
-        cl_entity: &Entity,
-        query: &Query<&ChangelistEntry>,
+        message: ChangelistMessage,
     ) {
-        let changelist_entry = query.get(*cl_entity).unwrap();
-        let status = *changelist_entry.status;
-        let file_entry_key = changelist_entry.file_entry_key();
+        let action_status: ChangelistStatus;
+        let file_entry_key: FileEntryKey;
+        {
+            let mut system_state: SystemState<(Server, Query<&ChangelistEntry>)> = SystemState::new(world);
+            let (server, cl_query) = system_state.get_mut(world);
 
-        match status {
+            let cl_entity: Entity = message.entity.get(&server).unwrap();
+
+            let changelist_entry = cl_query.get(cl_entity).unwrap();
+            action_status = *changelist_entry.status;
+            file_entry_key = changelist_entry.file_entry_key();
+
+            self.changelist_entry_finalize_content(world, user_key, &action_status, &file_entry_key);
+        }
+
+        let commit_message = message.commit_message.unwrap();
+
+        let mut system_state: SystemState<(Commands, Server)> = SystemState::new(world);
+        let (mut commands, mut server) = system_state.get_mut(world);
+
+        match action_status {
             ChangelistStatus::Modified => {
                 todo!();
             }
@@ -197,51 +212,55 @@ impl Workspace {
                     file_entry_val.clone(),
                 );
 
-                self.changelist_entry_finalize_content(world, tab_manager, &status, &file_entry_key);
-
                 self.fs_create_file(&file_entry_key);
 
                 // despawn changelist entity
-                self.cleanup_changelist_entry(commands, &file_entry_key);
+                self.cleanup_changelist_entry(&mut commands, &file_entry_key);
 
                 // remove auth from file entity
-                commands.entity(file_entity).take_authority(server);
+                commands.entity(file_entity).take_authority(&mut server);
 
                 // sync to git repo
-                self.git_commit(username, email, commit_message);
+                self.git_commit(username, email, &commit_message);
                 self.git_push();
             }
             ChangelistStatus::Deleted => {
                 // Remove Entity from Master Tree, returning a list of child entities that should be despawned
                 let (_entry_value, entities_to_delete) =
                     Self::remove_file_entry(&mut self.master_file_entries, &file_entry_key);
-                self.cleanup_changelist_entry(commands, &file_entry_key);
+                self.cleanup_changelist_entry(&mut commands, &file_entry_key);
 
                 for (_, child_key) in entities_to_delete {
-                    self.cleanup_changelist_entry(commands, &child_key);
+                    self.cleanup_changelist_entry(&mut commands, &child_key);
                 }
 
                 // sync to git repo
                 self.fs_delete_file(file_entry_key);
-                self.git_commit(username, email, commit_message);
+                self.git_commit(username, email, &commit_message);
                 self.git_push();
             }
         }
+
+        system_state.apply(world);
     }
 
     // returns an entity to spawn if delete was rolled back
     pub fn rollback_changelist_entry(
         &mut self,
-        commands: &mut Commands,
-        server: &mut Server,
-        cl_entity: &Entity,
-        query: &Query<&ChangelistEntry>,
+        world: &mut World,
+        message: ChangelistMessage,
     ) -> Option<(FileEntryKey, FileEntryValue)> {
-        let changelist_entry = query.get(*cl_entity).unwrap();
+
+        let mut system_state: SystemState<(Commands, Server, Query<&ChangelistEntry>)> = SystemState::new(world);
+        let (mut commands, mut server, cl_query) = system_state.get_mut(world);
+
+        let cl_entity: Entity = message.entity.get(&server).unwrap();
+        let changelist_entry = cl_query.get(cl_entity).unwrap();
+
         let status = *changelist_entry.status;
         let file_entry_key = changelist_entry.file_entry_key();
 
-        match status {
+        let output = match status {
             ChangelistStatus::Modified => {
                 todo!();
             }
@@ -252,23 +271,25 @@ impl Workspace {
 
                 // despawn row entity
                 let row_entity = entry_value.entity();
-                commands.entity(row_entity).take_authority(server).despawn();
+                commands.entity(row_entity).take_authority(&mut server).despawn();
 
                 // cleanup changelist entry
-                self.cleanup_changelist_entry(commands, &file_entry_key);
+                self.cleanup_changelist_entry(&mut commands, &file_entry_key);
 
                 // cleanup children
                 for (child_row_entity, child_key) in entities_to_delete {
                     commands
                         .entity(child_row_entity)
-                        .take_authority(server)
+                        .take_authority(&mut server)
                         .despawn();
 
-                    self.cleanup_changelist_entry(commands, &child_key);
+                    self.cleanup_changelist_entry(&mut commands, &child_key);
                 }
+
+                None
             }
             ChangelistStatus::Deleted => {
-                let new_entity = GitManager::spawn_file_tree_entity(commands, server);
+                let new_entity = GitManager::spawn_file_tree_entity(&mut commands, &mut server);
 
                 let file_entry_value = self.master_file_entries.get_mut(&file_entry_key).unwrap();
                 file_entry_value.set_entity(new_entity);
@@ -282,13 +303,15 @@ impl Workspace {
                 );
 
                 // despawn changelist entity
-                self.cleanup_changelist_entry(commands, &file_entry_key);
+                self.cleanup_changelist_entry(&mut commands, &file_entry_key);
 
-                return Some((file_entry_key.clone(), file_entry_value));
+                Some((file_entry_key.clone(), file_entry_value))
             }
-        }
+        };
 
-        return None;
+        system_state.apply(world);
+
+        output
     }
 
     fn fs_create_file(&mut self, key: &FileEntryKey) {
@@ -631,16 +654,15 @@ impl Workspace {
     fn changelist_entry_finalize_content(
         &mut self,
         world: &mut World,
-        tab_manager: &TabManager,
+        user_key: &UserKey,
         status: &ChangelistStatus,
-        key: &FileEntryKey
+        file_entry_key: &FileEntryKey
     ) {
-
-        info!("Finalizing content for changelist file `{}` of status: {:?}", key.name(), status);
-
+        info!("Finalizing content for changelist file `{}` of status: {:?}", file_entry_key.name(), status);
+        let extension = self.working_file_extension(file_entry_key);
         let changelist_value = self
             .changelist_entries
-            .get_mut(&key)
+            .get_mut(&file_entry_key)
             .unwrap();
         if changelist_value.has_content() {
             // changelist entry already has content, backed up last time tab closed
@@ -651,17 +673,18 @@ impl Workspace {
             info!("Changelist entry has no content, meaning some data has been mutated. Need to generate content from entities in world.");
 
             // get extension and check we can write
-            let ext = self.working_file_extension(key);
-            if !ext.can_io() {
-                panic!("can't write file: `{:?}`", key.name());
+
+            if !extension.can_io() {
+                panic!("can't write file: `{:?}`", file_entry_key.name());
             }
 
-            // get entities from TabManager
+            // get entities from TabManager's current tab
+            let content_entities = world.get_resource::<TabManager>().unwrap().user_current_tab_content_entities(user_key).clone();
 
             // write
-            let bytes = ext.write(
+            let bytes = extension.write(
                 world,
-                content_entities,
+                &content_entities,
             );
             changelist_value.set_content(bytes);
         }

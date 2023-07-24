@@ -1,9 +1,10 @@
-use bevy_ecs::system::Resource;
-use bevy_ecs::world::{Mut, World};
+use bevy_ecs::{system::Resource, world::{Mut, World}};
+
 use naia_bevy_server::UserKey;
+
 use vortex_proto::messages::{ChangelistAction, ChangelistMessage};
-use crate::resources::user_manager::UserInfo;
-use crate::resources::{GitManager, UserManager};
+
+use crate::resources::GitManager;
 
 #[derive(Resource)]
 pub struct ChangelistManager {
@@ -24,7 +25,8 @@ impl ChangelistManager {
     }
 
     pub fn process_messages(&mut self, world: &mut World, git_manager: &mut GitManager) {
-        for (user_key, message) in self.messages.drain(..) {
+        let messages = std::mem::take(&mut self.messages);
+        for (user_key, message) in messages {
             self.process_message(world, git_manager, user_key, message);
         }
     }

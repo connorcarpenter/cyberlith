@@ -14,4 +14,4 @@ pub use git_manager::GitManager;
 pub use tab_manager::TabManager;
 pub use user_manager::UserManager;
 pub use user_tab_state::UserTabState;
-pub use changelist_manager::ChangelistManager;
+pub use changelist_manager::{ChangelistManager, changelist_manager_process};
