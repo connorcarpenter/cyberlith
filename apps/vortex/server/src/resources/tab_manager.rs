@@ -1,4 +1,4 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 
 use bevy_ecs::{
     entity::Entity,
@@ -15,11 +15,11 @@ use crate::resources::{GitManager, UserManager};
 struct TabState {
     room_key: RoomKey,
     file_entity: Entity,
-    content_entities: Vec<Entity>,
+    content_entities: HashSet<Entity>,
 }
 
 impl TabState {
-    fn new(room_key: RoomKey, file_entity: Entity, content_entities: Vec<Entity>) -> Self {
+    fn new(room_key: RoomKey, file_entity: Entity, content_entities: HashSet<Entity>) -> Self {
         Self {
             room_key,
             file_entity,
@@ -28,11 +28,11 @@ impl TabState {
     }
 
     fn add_content_entity(&mut self, entity: Entity) {
-        self.content_entities.push(entity);
+        self.content_entities.insert(entity);
     }
 
     fn remove_content_entity(&mut self, entity: &Entity) {
-        self.content_entities.retain(|e| e != entity);
+        self.content_entities.remove(entity);
     }
 }
 
@@ -123,120 +123,6 @@ impl TabManager {
         server.room_mut(&new_room_key).add_user(user_key);
     }
 
-    pub fn remove_waiting_open(
-        &mut self,
-        user_key: &UserKey,
-        file_entity: &Entity,
-    ) -> Option<TabId> {
-        self.waiting_opens.remove(&(*user_key, *file_entity))
-    }
-
-    pub fn queue_close_tab(&mut self, user_key: UserKey, tab_id: TabId) {
-        self.queued_closes.push_back((user_key, tab_id));
-    }
-
-    pub fn process_queued_actions(world: &mut World) {
-        // closed tabs
-        let closed_states = {
-            let mut system_state: SystemState<(Server, ResMut<TabManager>)> =
-                SystemState::new(world);
-            let (mut server, mut tab_manager) = system_state.get_mut(world);
-
-            Self::process_queued_actions_inner(&mut tab_manager, &mut server)
-        };
-
-        if closed_states.is_empty() {
-            return;
-        }
-
-        {
-            world.resource_scope(|world, mut git_manager: Mut<GitManager>| {
-                let mut output = Vec::new();
-
-                for (user_key, closed_state) in closed_states.iter() {
-                    let username = world
-                        .get_resource::<UserManager>()
-                        .unwrap()
-                        .user_name(&user_key)
-                        .unwrap()
-                        .to_string();
-                    let file_entry_key = world
-                        .entity(closed_state.file_entity)
-                        .get::<FileEntryKey>()
-                        .unwrap()
-                        .clone();
-                    if !git_manager.can_write(&username, &file_entry_key) {
-                        panic!("can't write file: `{:?}`", file_entry_key.name());
-                    }
-                    let bytes = git_manager.write(
-                        &username,
-                        &file_entry_key,
-                        world,
-                        &closed_state.content_entities,
-                    );
-                    output.push((username, file_entry_key, bytes));
-                }
-
-                let mut system_state: SystemState<(Commands, Server)> = SystemState::new(world);
-                let (mut commands, mut server) = system_state.get_mut(world);
-
-                for (username, key, bytes) in output {
-                    git_manager.new_modified_changelist_entry(
-                        &mut commands,
-                        &mut server,
-                        &username,
-                        &key,
-                        bytes,
-                    );
-                }
-            });
-        }
-
-        {
-            for (_user_key, closed_state) in closed_states.iter() {
-                // despawn content entities
-                for entity in closed_state.content_entities.iter() {
-                    world.entity_mut(*entity).despawn();
-                }
-            }
-        }
-    }
-
-    fn process_queued_actions_inner(&mut self, server: &mut Server) -> Vec<(UserKey, TabState)> {
-        let mut output = Vec::new();
-        while let Some((user_key, tab_id)) = self.queued_closes.pop_front() {
-            let closed_state = self.close_tab(server, &user_key, &tab_id);
-            output.push((user_key, closed_state));
-        }
-        output
-    }
-
-    fn close_tab(&mut self, server: &mut Server, user_key: &UserKey, tab_id: &TabId) -> TabState {
-        let mut remove = false;
-        let Some(user_state) = self.users.get_mut(user_key) else {
-            panic!("User does not exist!");
-        };
-        if user_state.current_tab == Some(tab_id.clone()) {
-            user_state.current_tab = None;
-        }
-
-        let Some(tab_state) = user_state.tabs.remove(tab_id) else {
-            panic!("User does not have tab {}", tab_id);
-        };
-
-        if user_state.tabs.is_empty() {
-            remove = true;
-        }
-        if remove {
-            self.users.remove(user_key);
-        }
-
-        // remove the Room
-        server.room_mut(&tab_state.room_key).destroy();
-
-        tab_state
-    }
-
     pub fn select_tab(
         &mut self,
         commands: &mut Commands,
@@ -273,5 +159,170 @@ impl TabManager {
         for entity in new_tab_state.content_entities.iter() {
             commands.entity(*entity).resume_replication(server);
         }
+    }
+
+    pub fn remove_waiting_open(
+        &mut self,
+        user_key: &UserKey,
+        file_entity: &Entity,
+    ) -> Option<TabId> {
+        self.waiting_opens.remove(&(*user_key, *file_entity))
+    }
+
+    pub fn queue_close_tab(&mut self, user_key: UserKey, tab_id: TabId) {
+        self.queued_closes.push_back((user_key, tab_id));
+    }
+
+    pub fn process_queued_actions(world: &mut World) {
+        // closed tabs
+        let closed_states = {
+            let mut system_state: SystemState<(Server, ResMut<TabManager>)> =
+                SystemState::new(world);
+            let (mut server, mut tab_manager) = system_state.get_mut(world);
+
+            Self::process_queued_actions_inner(&mut tab_manager, &mut server)
+        };
+
+        if closed_states.is_empty() {
+            return;
+        }
+
+        // we need to despawn entities associated with tab, so before that,
+        // backup the data to the changelist entry
+        {
+            world.resource_scope(|world, mut git_manager: Mut<GitManager>| {
+                let mut output = Vec::new();
+
+                for (user_key, closed_state) in closed_states.iter() {
+                    let username = world
+                        .get_resource::<UserManager>()
+                        .unwrap()
+                        .user_name(&user_key)
+                        .unwrap()
+                        .to_string();
+                    let file_entry_key = world
+                        .entity(closed_state.file_entity)
+                        .get::<FileEntryKey>()
+                        .unwrap()
+                        .clone();
+                    if !git_manager.can_write(&username, &file_entry_key) {
+                        panic!("can't write file: `{:?}`", file_entry_key.name());
+                    }
+                    let bytes = git_manager.write(
+                        &username,
+                        &file_entry_key,
+                        world,
+                        &closed_state.content_entities,
+                    );
+                    output.push((username, file_entry_key, bytes));
+                }
+
+                let mut system_state: SystemState<(Commands, Server)> = SystemState::new(world);
+                let (mut commands, mut server) = system_state.get_mut(world);
+
+                for (username, key, bytes) in output {
+                    git_manager.set_changelist_entry_content(
+                        &mut commands,
+                        &mut server,
+                        &username,
+                        &key,
+                        bytes,
+                    );
+                }
+            });
+        }
+
+        // actually despawn entities associated with tab
+        {
+            for (_user_key, closed_state) in closed_states.iter() {
+                // despawn content entities
+                for entity in closed_state.content_entities.iter() {
+                    world.entity_mut(*entity).despawn();
+                }
+            }
+        }
+    }
+
+    pub fn on_insert_vertex(&mut self, user_key: &UserKey, vertex_entity: &Entity) {
+        self.current_tab_state_mut(user_key).add_content_entity(*vertex_entity);
+    }
+
+    pub fn on_remove_vertex(&mut self, user_key: &UserKey, vertex_entity: &Entity) {
+        self.current_tab_state_mut(user_key).remove_content_entity(vertex_entity);
+    }
+
+    pub(crate) fn user_current_tab_has_entity(&self, user_key: &UserKey, entity: &Entity) -> bool {
+        self.current_tab_state(user_key).content_entities.contains(entity)
+    }
+
+    pub(crate) fn user_current_tab_file_entity(&self, user_key: &UserKey) -> Entity {
+        self.current_tab_state(user_key).file_entity
+    }
+
+    fn current_tab_state(&self, user_key: &UserKey) -> &TabState {
+        let Some(user_state) = self.users.get(user_key) else {
+            panic!("user_tab_state has not been initialized!");
+        };
+
+        let Some(user_tab_id) = user_state.current_tab else {
+            panic!("user does not have a current tab!");
+        };
+
+        let Some(user_tab_state) = user_state.tabs.get(&user_tab_id) else {
+            panic!("user does not have tab {}", user_tab_id);
+        };
+
+        user_tab_state
+    }
+
+    fn current_tab_state_mut(&mut self, user_key: &UserKey) -> &mut TabState {
+        let Some(user_state) = self.users.get_mut(user_key) else {
+            panic!("user_tab_state has not been initialized!");
+        };
+
+        let Some(user_tab_id) = user_state.current_tab else {
+            panic!("user does not have a current tab!");
+        };
+
+        let Some(user_tab_state) = user_state.tabs.get_mut(&user_tab_id) else {
+            panic!("user does not have tab {}", user_tab_id);
+        };
+
+        user_tab_state
+    }
+
+    fn process_queued_actions_inner(&mut self, server: &mut Server) -> Vec<(UserKey, TabState)> {
+        let mut output = Vec::new();
+        while let Some((user_key, tab_id)) = self.queued_closes.pop_front() {
+            let closed_state = self.close_tab(server, &user_key, &tab_id);
+            output.push((user_key, closed_state));
+        }
+        output
+    }
+
+    fn close_tab(&mut self, server: &mut Server, user_key: &UserKey, tab_id: &TabId) -> TabState {
+        let mut remove = false;
+        let Some(user_state) = self.users.get_mut(user_key) else {
+            panic!("User does not exist!");
+        };
+        if user_state.current_tab == Some(tab_id.clone()) {
+            user_state.current_tab = None;
+        }
+
+        let Some(tab_state) = user_state.tabs.remove(tab_id) else {
+            panic!("User does not have tab {}", tab_id);
+        };
+
+        if user_state.tabs.is_empty() {
+            remove = true;
+        }
+        if remove {
+            self.users.remove(user_key);
+        }
+
+        // remove the Room
+        server.room_mut(&tab_state.room_key).destroy();
+
+        tab_state
     }
 }

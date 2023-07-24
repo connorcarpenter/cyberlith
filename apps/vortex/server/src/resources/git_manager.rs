@@ -243,7 +243,7 @@ impl GitManager {
         server: &mut Server,
         file_entry_key: &FileEntryKey,
         username: &str,
-    ) -> Vec<Entity> {
+    ) -> HashSet<Entity> {
         let workspace = self.workspaces.get(username).unwrap();
         workspace.load_content_entities(commands, server, file_entry_key)
     }
@@ -263,7 +263,7 @@ impl GitManager {
         username: &str,
         key: &FileEntryKey,
         world: &mut World,
-        content_entities: &Vec<Entity>,
+        content_entities: &HashSet<Entity>,
     ) -> Box<[u8]> {
         let ext = self.working_file_extension(username, key);
         return ext.write(world, content_entities);
@@ -276,7 +276,7 @@ impl GitManager {
             .working_file_extension(key)
     }
 
-    pub(crate) fn new_modified_changelist_entry(
+    pub(crate) fn set_changelist_entry_content(
         &mut self,
         commands: &mut Commands,
         server: &mut Server,
@@ -286,7 +286,7 @@ impl GitManager {
     ) {
         let workspace = self.workspaces.get_mut(username).unwrap();
 
-        workspace.new_modified_changelist_entry(commands, server, key, bytes);
+        workspace.set_changelist_entry_content(commands, server, key, bytes);
     }
 
     pub fn spawn_file_tree_entity(commands: &mut Commands, server: &mut Server) -> Entity {

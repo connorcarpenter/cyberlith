@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs, fs::File, io::Read, path::Path, sync::Mutex};
+use std::{collections::{HashMap, HashSet}, fs, fs::File, io::Read, path::Path, sync::Mutex};
 
 use bevy_ecs::{
     entity::Entity,
@@ -51,6 +51,10 @@ impl Workspace {
         }
     }
 
+    pub fn entity_is_file(&self, entity: &Entity) -> bool {
+        Self::find_file_entry_by_entity(&self.working_file_entries, entity).is_some()
+    }
+
     pub fn on_client_create_file(
         &mut self,
         commands: &mut Commands,
@@ -99,10 +103,6 @@ impl Workspace {
         }
     }
 
-    pub fn entity_is_file(&self, entity: &Entity) -> bool {
-        Self::find_file_entry_by_entity(&self.working_file_entries, entity).is_some()
-    }
-
     pub fn on_client_delete_file(
         &mut self,
         commands: &mut Commands,
@@ -125,8 +125,33 @@ impl Workspace {
 
             self.update_changelist_after_despawn(commands, server, &child_key);
         }
+    }
 
-        // TODO: delete file from repo!
+    pub fn on_client_modify_file(
+        &mut self,
+        commands: &mut Commands,
+        server: &mut Server,
+        file_entry_key: &FileEntryKey,
+        file_entity: &Entity,
+    ) {
+        // check whether a changelist entry already exists for this file
+        let file_exists_in_changelist = self.changelist_entries.contains_key(&file_entry_key);
+
+        if file_exists_in_changelist {
+            // For Modified Changelist entries, if there is no content, then it will be written on Commit
+            let entry = self.changelist_entries.get_mut(&file_entry_key).unwrap();
+            entry.delete_content();
+        } else {
+            // create a changelist entry
+            self.new_changelist_entry(
+                commands,
+                server,
+                file_entry_key,
+                ChangelistStatus::Modified,
+                Some(file_entity),
+                None,
+            );
+        }
     }
 
     pub fn commit_entire_changelist(
@@ -435,7 +460,7 @@ impl Workspace {
         commands: &mut Commands,
         server: &mut Server,
         key: &FileEntryKey,
-    ) -> Vec<Entity> {
+    ) -> HashSet<Entity> {
         // get file extension of file
         let file_extension = self.working_file_extension(key);
 
@@ -455,7 +480,7 @@ impl Workspace {
         };
 
         // FileReader reads File's contents and spawns all Entities + Components
-        let content_entities: Vec<Entity> = file_extension.read(commands, server, &bytes);
+        let content_entities: HashSet<Entity> = file_extension.read(commands, server, &bytes);
 
         content_entities
     }
@@ -482,7 +507,7 @@ impl Workspace {
         value.extension().unwrap()
     }
 
-    pub(crate) fn new_modified_changelist_entry(
+    pub(crate) fn set_changelist_entry_content(
         &mut self,
         commands: &mut Commands,
         server: &mut Server,
@@ -493,6 +518,7 @@ impl Workspace {
         if let Some(changelist_entry) = self.changelist_entries.get_mut(key) {
             changelist_entry.set_content(bytes);
         } else {
+            // no changelist entry exists, so create a new one with Modified status
             self.new_changelist_entry(
                 commands,
                 server,

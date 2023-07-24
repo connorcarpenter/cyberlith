@@ -76,11 +76,11 @@ impl TabManager {
     pub fn open_tab(
         &mut self,
         client: &mut Client,
-        canvas_state: &mut CanvasManager,
+        canvas_manager: &mut CanvasManager,
         row_entity: &Entity,
     ) {
         if self.tab_map.contains_key(row_entity) {
-            self.select_tab(client, canvas_state, row_entity);
+            self.select_tab(client, canvas_manager, row_entity);
         } else {
             // get current tab order
             let current_order = if let Some(current_entity) = self.current_tab {
@@ -101,7 +101,7 @@ impl TabManager {
             client.send_message::<TabActionChannel, TabOpenMessage>(&message);
 
             // select tab
-            self.select_tab(client, canvas_state, row_entity);
+            self.select_tab(client, canvas_manager, row_entity);
 
             self.update_tab_orders();
         }
@@ -149,7 +149,7 @@ impl TabManager {
     fn select_tab(
         &mut self,
         client: &mut Client,
-        canvas_state: &mut CanvasManager,
+        canvas_manager: &mut CanvasManager,
         row_entity: &Entity,
     ) {
         // deselect current tab
@@ -159,7 +159,7 @@ impl TabManager {
         }
 
         // select new tab
-        self.set_current_tab(canvas_state, Some(*row_entity));
+        self.set_current_tab(canvas_manager, Some(*row_entity));
         let tab_state = self.tab_map.get_mut(&row_entity).unwrap();
         tab_state.selected = true;
 
@@ -168,19 +168,19 @@ impl TabManager {
         client.send_message::<TabActionChannel, TabActionMessage>(&message);
     }
 
-    fn set_current_tab(&mut self, canvas_state: &mut CanvasManager, val: Option<Entity>) {
+    fn set_current_tab(&mut self, canvas_manager: &mut CanvasManager, val: Option<Entity>) {
         self.current_tab = val;
         if val.is_none() {
-            canvas_state.set_visibility(false);
+            canvas_manager.set_visibility(false);
         } else {
-            canvas_state.set_visibility(true);
+            canvas_manager.set_visibility(true);
         }
     }
 
     fn close_tab(
         &mut self,
         client: &mut Client,
-        canvas_state: &mut CanvasManager,
+        canvas_manager: &mut CanvasManager,
         row_entity: &Entity,
     ) {
         // remove tab
@@ -198,10 +198,10 @@ impl TabManager {
                 }
                 if let Some(new_entity) = self.tab_order.get(new_tab_order) {
                     let new_entity = *new_entity;
-                    self.set_current_tab(canvas_state, None);
-                    self.select_tab(client, canvas_state, &new_entity);
+                    self.set_current_tab(canvas_manager, None);
+                    self.select_tab(client, canvas_manager, &new_entity);
                 } else {
-                    self.set_current_tab(canvas_state, None);
+                    self.set_current_tab(canvas_manager, None);
                 }
             }
         }
@@ -214,21 +214,21 @@ impl TabManager {
         self.recycle_tab_id(tab_state.tab_id);
     }
 
-    fn close_all_tabs(&mut self, client: &mut Client, canvas_state: &mut CanvasManager) {
+    fn close_all_tabs(&mut self, client: &mut Client, canvas_manager: &mut CanvasManager) {
         let all_tabs = self.tab_order.clone();
         for entity in all_tabs {
-            self.close_tab(client, canvas_state, &entity);
+            self.close_tab(client, canvas_manager, &entity);
         }
     }
 
     fn close_all_tabs_except(
         &mut self,
         client: &mut Client,
-        canvas_state: &mut CanvasManager,
+        canvas_manager: &mut CanvasManager,
         row_entity: &Entity,
     ) {
-        self.close_all_tabs(client, canvas_state);
-        self.open_tab(client, canvas_state, row_entity);
+        self.close_all_tabs(client, canvas_manager);
+        self.open_tab(client, canvas_manager, row_entity);
     }
 
     fn close_all_tabs_left_of(

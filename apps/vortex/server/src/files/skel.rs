@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{
     entity::Entity,
@@ -29,26 +29,7 @@ impl SkelWriter {
     fn new_default_actions(&self) -> Vec<SkelAction> {
         let mut output = Vec::new();
 
-        // waist
         output.push(SkelAction::Vertex(0, 0, 0, None));
-
-        // neck
-        output.push(SkelAction::Vertex(0, 70, 0, Some(0)));
-
-        // head
-        output.push(SkelAction::Vertex(0, 90, 0, Some(1)));
-
-        // left arm
-        output.push(SkelAction::Vertex(25, 5, 0, Some(1)));
-
-        // right arm
-        output.push(SkelAction::Vertex(-25, 5, 0, Some(1)));
-
-        // left leg
-        output.push(SkelAction::Vertex(20, -90, 0, Some(0)));
-
-        // right leg
-        output.push(SkelAction::Vertex(-20, -90, 0, Some(0)));
 
         output
     }
@@ -56,7 +37,7 @@ impl SkelWriter {
     fn world_to_actions(
         &self,
         world: &mut World,
-        content_entities: &Vec<Entity>,
+        content_entities: &HashSet<Entity>,
     ) -> Vec<SkelAction> {
         let mut system_state: SystemState<(Server, Query<(&Vertex3d, Option<&FileSystemChild>)>)> =
             SystemState::new(world);
@@ -128,7 +109,7 @@ impl SkelWriter {
 }
 
 impl FileWriter for SkelWriter {
-    fn write(&self, world: &mut World, content_entities: &Vec<Entity>) -> Box<[u8]> {
+    fn write(&self, world: &mut World, content_entities: &HashSet<Entity>) -> Box<[u8]> {
         let actions = self.world_to_actions(world, content_entities);
         self.write_from_actions(actions)
     }
@@ -179,7 +160,7 @@ impl SkelReader {
     fn actions_to_world(
         commands: &mut Commands,
         server: &mut Server,
-        new_entities: &mut Vec<Entity>,
+        new_entities: &mut HashSet<Entity>,
         actions: Vec<SkelAction>,
     ) -> Result<(), SerdeErr> {
         let mut entities: Vec<(Entity, i16, i16, i16, Option<u16>)> = Vec::new();
@@ -210,7 +191,7 @@ impl SkelReader {
                 entity_mut.insert(VertexRootChild);
             }
 
-            new_entities.push(*entity);
+            new_entities.insert(*entity);
         }
 
         Ok(())
@@ -218,8 +199,8 @@ impl SkelReader {
 }
 
 impl FileReader for SkelReader {
-    fn read(&self, commands: &mut Commands, server: &mut Server, bytes: &Box<[u8]>) -> Vec<Entity> {
-        let mut new_entities = Vec::new();
+    fn read(&self, commands: &mut Commands, server: &mut Server, bytes: &Box<[u8]>) -> HashSet<Entity> {
+        let mut new_entities = HashSet::new();
         let mut bit_reader = BitReader::new(bytes);
 
         let Ok(actions) = Self::read_to_actions(&mut bit_reader) else {

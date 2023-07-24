@@ -15,14 +15,14 @@ use naia_bevy_server::{
 };
 
 use vortex_proto::{
-    components::{FileSystemChild, FileSystemEntry, FileSystemRootChild},
+    components::{Vertex3d, FileSystemChild, FileSystemEntry, FileSystemRootChild},
     resources::FileEntryKey,
 };
 
-use crate::resources::{
+use crate::{resources::{
     fs_waitlist::{fs_process_insert, FSWaitlist, FSWaitlistInsert},
     GitManager, TabManager, UserManager,
-};
+}, files::handle_file_modify};
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
     for SpawnEntityEvent(_user_key, entity) in event_reader.iter() {
@@ -119,10 +119,34 @@ pub fn insert_component_events(
                 &entry_key_query,
             );
         }
+
+        // on Vertex3D Insert Event
+        for (user_key, entity) in events.read::<Vertex3d>() {
+            info!("inserted Vertex3d");
+            tab_manager.on_insert_vertex(&user_key, &entity);
+            handle_file_modify(
+                &mut commands,
+                &mut server,
+                &user_manager,
+                &mut git_manager,
+                &mut tab_manager,
+                &user_key,
+                &entity,
+                &entry_key_query,
+            );
+        }
     }
 }
 
-pub fn remove_component_events(mut event_reader: EventReader<RemoveComponentEvents>) {
+pub fn remove_component_events(
+    mut event_reader: EventReader<RemoveComponentEvents>,
+    mut commands: Commands,
+    mut server: Server,
+    user_manager: Res<UserManager>,
+    mut git_manager: ResMut<GitManager>,
+    mut tab_manager: ResMut<TabManager>,
+    entry_key_query: Query<&FileEntryKey>,
+) {
     for events in event_reader.iter() {
         for (_user_key, _entity, _component) in events.read::<FileSystemRootChild>() {
             info!("removed FileSystemRootChild component from entity");
@@ -132,10 +156,33 @@ pub fn remove_component_events(mut event_reader: EventReader<RemoveComponentEven
             info!("removed FileSystemChild component from entity");
             // TODO!
         }
+        // on Vertex3D Remove Event
+        for (user_key, entity, _component) in events.read::<Vertex3d>() {
+            info!("removed Vertex3d");
+            tab_manager.on_remove_vertex(&user_key, &entity);
+            handle_file_modify(
+                &mut commands,
+                &mut server,
+                &user_manager,
+                &mut git_manager,
+                &mut tab_manager,
+                &user_key,
+                &entity,
+                &entry_key_query,
+            );
+        }
     }
 }
 
-pub fn update_component_events(mut event_reader: EventReader<UpdateComponentEvents>) {
+pub fn update_component_events(
+    mut event_reader: EventReader<UpdateComponentEvents>,
+    mut commands: Commands,
+    mut server: Server,
+    user_manager: Res<UserManager>,
+    mut git_manager: ResMut<GitManager>,
+    mut tab_manager: ResMut<TabManager>,
+    entry_key_query: Query<&FileEntryKey>,
+) {
     for events in event_reader.iter() {
         // on FileSystemEntry Update Event
         for (_user_key, _entity) in events.read::<FileSystemEntry>() {
@@ -144,6 +191,20 @@ pub fn update_component_events(mut event_reader: EventReader<UpdateComponentEven
         // on FileSystemChild Update Event
         for (_user_key, _entity) in events.read::<FileSystemChild>() {
             // TODO!
+        }
+        // on Vertex3D Update Event
+        for (user_key, entity) in events.read::<Vertex3d>() {
+            info!("update Vertex3d");
+            handle_file_modify(
+                &mut commands,
+                &mut server,
+                &user_manager,
+                &mut git_manager,
+                &mut tab_manager,
+                &user_key,
+                &entity,
+                &entry_key_query,
+            );
         }
     }
 }

@@ -85,4 +85,8 @@ impl ChangelistValue {
     pub fn get_content(&self) -> Option<&[u8]> {
         self.content.as_ref().map(|c| c.as_ref())
     }
+
+    pub fn delete_content(&mut self) {
+        self.content = None;
+    }
 }
