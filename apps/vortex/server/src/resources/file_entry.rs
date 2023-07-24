@@ -78,6 +78,10 @@ impl ChangelistValue {
         self.entity
     }
 
+    pub fn has_content(&self) -> bool {
+        self.content.is_some()
+    }
+
     pub fn set_content(&mut self, content: Box<[u8]>) {
         self.content = Some(content.into());
     }

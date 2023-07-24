@@ -46,6 +46,7 @@ fn main() {
         .init_resource::<UserManager>()
         .init_resource::<GitManager>()
         .init_resource::<TabManager>()
+        .init_resource::<ChangelistManager>()
         // Network Systems
         .add_startup_system(network::init)
         .add_systems(

@@ -14,7 +14,7 @@ use vortex_proto::{
     resources::FileEntryKey,
 };
 
-use crate::resources::{GitManager, TabManager, UserManager};
+use crate::resources::{ChangelistManager, GitManager, TabManager, UserManager};
 
 pub fn message_events(
     mut commands: Commands,
@@ -23,6 +23,7 @@ pub fn message_events(
     user_manager: Res<UserManager>,
     mut git_manager: ResMut<GitManager>,
     mut tab_manager: ResMut<TabManager>,
+    mut cl_manager: ResMut<ChangelistManager>,
     cl_query: Query<&ChangelistEntry>,
     key_query: Query<&FileEntryKey>,
 ) {
@@ -30,41 +31,7 @@ pub fn message_events(
         for (user_key, message) in events.read::<ChangelistActionChannel, ChangelistMessage>() {
             info!("received ChangelistMessage");
 
-            let Some(user) = user_manager.user_info(&user_key) else {
-                panic!("user not found!");
-            };
-
-            match message.action {
-                ChangelistAction::Commit => {
-                    let Some(entity) = message.entity.get(&server) else {
-                        panic!("no entity!")
-                    };
-                    let Some(commit_message) = message.commit_message else {
-                        panic!("no commit message!")
-                    };
-                    git_manager.commit_changelist_entry(
-                        &mut commands,
-                        &mut server,
-                        user,
-                        &commit_message,
-                        &entity,
-                        &cl_query,
-                    );
-                }
-                ChangelistAction::Rollback => {
-                    let Some(entity) = message.entity.get(&server) else {
-                        panic!("no entity!")
-                    };
-                    git_manager.rollback_changelist_entry(
-                        &mut commands,
-                        &mut server,
-                        &user_key,
-                        user,
-                        &entity,
-                        &cl_query,
-                    );
-                }
-            }
+            cl_manager.queue_changelist_message(user_key, message);
         }
 
         // Tab Open Message

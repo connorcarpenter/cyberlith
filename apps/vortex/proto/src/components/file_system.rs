@@ -21,7 +21,7 @@ pub enum EntryKind {
     File,
 }
 
-#[derive(Serde, PartialEq, Clone, Ord, PartialOrd, Eq, Copy)]
+#[derive(Serde, PartialEq, Clone, Ord, PartialOrd, Eq, Copy, Debug)]
 pub enum ChangelistStatus {
     Modified,
     Created,

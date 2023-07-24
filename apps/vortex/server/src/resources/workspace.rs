@@ -4,6 +4,7 @@ use bevy_ecs::{
     entity::Entity,
     system::{Commands, Query},
 };
+use bevy_ecs::world::World;
 use bevy_log::info;
 use git2::{Repository, Signature};
 use naia_bevy_server::{CommandsExt, RoomKey, Server};
@@ -18,6 +19,7 @@ use crate::{
     files::{FileReader, FileWriter},
     resources::{ChangelistValue, FileEntryValue, GitManager},
 };
+use crate::resources::TabManager;
 
 pub struct Workspace {
     pub room_key: RoomKey,
@@ -165,11 +167,10 @@ impl Workspace {
 
     pub fn commit_changelist_entry(
         &mut self,
+        world: &mut World,
         username: &str,
         email: &str,
         commit_message: &str,
-        commands: &mut Commands,
-        server: &mut Server,
         cl_entity: &Entity,
         query: &Query<&ChangelistEntry>,
     ) {
@@ -195,6 +196,8 @@ impl Workspace {
                     file_entry_key.clone(),
                     file_entry_val.clone(),
                 );
+
+                self.changelist_entry_finalize_content(world, tab_manager, &status, &file_entry_key);
 
                 self.fs_create_file(&file_entry_key);
 
@@ -288,7 +291,7 @@ impl Workspace {
         return None;
     }
 
-    pub fn fs_create_file(&mut self, key: &FileEntryKey) {
+    fn fs_create_file(&mut self, key: &FileEntryKey) {
         let repo = self.repo.lock().unwrap();
 
         let file_path = format!("{}{}", key.path(), key.name());
@@ -313,7 +316,7 @@ impl Workspace {
         index.write().expect("Failed to write index");
     }
 
-    pub fn fs_delete_file(&mut self, key: FileEntryKey) {
+    fn fs_delete_file(&mut self, key: FileEntryKey) {
         let repo = self.repo.lock().unwrap();
 
         let file_path = format!("{}{}", key.path(), key.name());
@@ -331,7 +334,7 @@ impl Workspace {
         index.write().expect("Failed to write index");
     }
 
-    pub fn git_commit(&mut self, username: &str, email: &str, commit_message: &str) {
+    fn git_commit(&mut self, username: &str, email: &str, commit_message: &str) {
         let repo = self.repo.lock().unwrap();
 
         // get index
@@ -365,7 +368,7 @@ impl Workspace {
         .expect("Failed to create commit");
     }
 
-    pub fn git_push(&self) {
+    fn git_push(&self) {
         let repo = self.repo.lock().unwrap();
         let mut remote = repo
             .find_remote("origin")
@@ -623,5 +626,44 @@ impl Workspace {
         }
 
         removed_entry
+    }
+
+    fn changelist_entry_finalize_content(
+        &mut self,
+        world: &mut World,
+        tab_manager: &TabManager,
+        status: &ChangelistStatus,
+        key: &FileEntryKey
+    ) {
+
+        info!("Finalizing content for changelist file `{}` of status: {:?}", key.name(), status);
+
+        let changelist_value = self
+            .changelist_entries
+            .get_mut(&key)
+            .unwrap();
+        if changelist_value.has_content() {
+            // changelist entry already has content, backed up last time tab closed
+            // nothing left to do here
+            info!("Changelist entry already has content, nothing left to do here");
+            return;
+        } else {
+            info!("Changelist entry has no content, meaning some data has been mutated. Need to generate content from entities in world.");
+
+            // get extension and check we can write
+            let ext = self.working_file_extension(key);
+            if !ext.can_io() {
+                panic!("can't write file: `{:?}`", key.name());
+            }
+
+            // get entities from TabManager
+
+            // write
+            let bytes = ext.write(
+                world,
+                content_entities,
+            );
+            changelist_value.set_content(bytes);
+        }
     }
 }

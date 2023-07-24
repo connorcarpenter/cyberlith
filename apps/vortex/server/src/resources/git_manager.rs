@@ -20,6 +20,7 @@ use vortex_proto::{
     resources::FileEntryKey,
     FileExtension,
 };
+use vortex_proto::messages::ChangelistMessage;
 
 use crate::{
     components::FileSystemOwner,
@@ -169,27 +170,25 @@ impl GitManager {
 
     pub fn commit_changelist_entry(
         &mut self,
-        commands: &mut Commands,
-        server: &mut Server,
-        user: &UserInfo,
-        commit_message: &str,
-        entity: &Entity,
-        query: &Query<&ChangelistEntry>,
+        world: &mut World,
+        git_manager: &mut GitManager,
+        user_key: UserKey,
+        message: ChangelistMessage,
     ) {
-        let username = user.get_username();
+        let username = user_info.get_username();
 
         let Some(workspace) = self.workspaces.get_mut(username) else {
             return;
         };
 
-        let email = user.get_email();
+        let email = user_info.get_email();
 
         workspace.commit_changelist_entry(
+            commands,
+            server,
             username,
             email,
             commit_message,
-            commands,
-            server,
             entity,
             query,
         );
@@ -197,12 +196,10 @@ impl GitManager {
 
     pub fn rollback_changelist_entry(
         &mut self,
-        commands: &mut Commands,
-        server: &mut Server,
-        user_key: &UserKey,
-        user: &UserInfo,
-        entity: &Entity,
-        query: &Query<&ChangelistEntry>,
+        world: &mut World,
+        git_manager: &mut GitManager,
+        user_key: UserKey,
+        message: ChangelistMessage,
     ) {
         if let Some(workspace) = self.workspaces.get_mut(user.get_username()) {
             if let Some((key, value)) =
