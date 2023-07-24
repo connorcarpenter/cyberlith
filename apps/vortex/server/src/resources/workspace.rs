@@ -185,7 +185,12 @@ impl Workspace {
             action_status = *changelist_entry.status;
             file_entry_key = changelist_entry.file_entry_key();
 
-            self.changelist_entry_finalize_content(world, user_key, &action_status, &file_entry_key);
+            match action_status {
+                ChangelistStatus::Modified | ChangelistStatus::Created => {
+                    self.changelist_entry_finalize_content(world, user_key, &action_status, &file_entry_key);
+                }
+                ChangelistStatus::Deleted => {}
+            }
         }
 
         let commit_message = message.commit_message.unwrap();
@@ -195,7 +200,25 @@ impl Workspace {
 
         match action_status {
             ChangelistStatus::Modified => {
-                todo!();
+                let file_entry_val = self
+                    .working_file_entries
+                    .get(&file_entry_key)
+                    .unwrap()
+                    .clone();
+                let file_entity = file_entry_val.entity();
+
+                info!("git modify file");
+                self.fs_create_or_update_file(&file_entry_key);
+
+                // despawn changelist entity
+                self.cleanup_changelist_entry(&mut commands, &file_entry_key);
+
+                // remove auth from file entity
+                commands.entity(file_entity).take_authority(&mut server);
+
+                // sync to git repo
+                self.git_commit(username, email, &commit_message);
+                self.git_push();
             }
             ChangelistStatus::Created => {
                 let file_entry_val = self
@@ -212,7 +235,8 @@ impl Workspace {
                     file_entry_val.clone(),
                 );
 
-                self.fs_create_file(&file_entry_key);
+                info!("git create file");
+                self.fs_create_or_update_file(&file_entry_key);
 
                 // despawn changelist entity
                 self.cleanup_changelist_entry(&mut commands, &file_entry_key);
@@ -234,8 +258,10 @@ impl Workspace {
                     self.cleanup_changelist_entry(&mut commands, &child_key);
                 }
 
-                // sync to git repo
+                // delete file
                 self.fs_delete_file(file_entry_key);
+
+                // sync to git repo
                 self.git_commit(username, email, &commit_message);
                 self.git_push();
             }
@@ -314,29 +340,20 @@ impl Workspace {
         output
     }
 
-    fn fs_create_file(&mut self, key: &FileEntryKey) {
+    fn fs_update_index(&mut self, path: &str) {
         let repo = self.repo.lock().unwrap();
-
-        let file_path = format!("{}{}", key.path(), key.name());
-        let full_path = format!("{}/{}", self.internal_path, file_path);
-        info!("git creating file at: `{}`", full_path);
-
-        let file_content = self
-            .changelist_entries
-            .get(&key)
-            .unwrap()
-            .get_content()
-            .unwrap();
-
-        // Create the file with the desired content
-        fs::write(&full_path, file_content).expect("Failed to create file");
 
         // Add the file to the repository
         let mut index = repo.index().expect("Failed to open index");
         index
-            .add_path(Path::new(&file_path))
+            .add_path(Path::new(path))
             .expect("Failed to add file to index");
         index.write().expect("Failed to write index");
+    }
+
+    fn fs_create_or_update_file(&mut self, key: &FileEntryKey) {
+        let file_path = self.fs_write_file(key);
+        self.fs_update_index(&file_path);
     }
 
     fn fs_delete_file(&mut self, key: FileEntryKey) {
@@ -355,6 +372,24 @@ impl Workspace {
             .remove_path(Path::new(&file_path))
             .expect("Failed to remove file from index");
         index.write().expect("Failed to write index");
+    }
+
+    fn fs_write_file(&mut self, key: &FileEntryKey) -> String {
+        let file_path = format!("{}{}", key.path(), key.name());
+        let full_path = format!("{}/{}", self.internal_path, file_path);
+        info!("git writing file at: `{}`", full_path);
+
+        let file_content = self
+            .changelist_entries
+            .get(&key)
+            .unwrap()
+            .get_content()
+            .unwrap();
+
+        // Write the file with the desired content
+        fs::write(&full_path, file_content).expect("Failed to write file");
+
+        file_path
     }
 
     fn git_commit(&mut self, username: &str, email: &str, commit_message: &str) {
@@ -682,6 +717,7 @@ impl Workspace {
             let content_entities = world.get_resource::<TabManager>().unwrap().user_current_tab_content_entities(user_key).clone();
 
             // write
+            info!("... Generating content ...");
             let bytes = extension.write(
                 world,
                 &content_entities,

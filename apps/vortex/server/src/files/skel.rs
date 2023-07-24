@@ -5,18 +5,20 @@ use bevy_ecs::{
     prelude::{Commands, World},
     system::{Query, SystemState},
 };
+
 use naia_bevy_server::{
     BitReader, BitWriter, CommandsExt, ReplicationConfig, Serde, SerdeErr, Server,
     UnsignedVariableInteger,
 };
 
 use vortex_proto::components::{
-    FileSystemChild, Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt,
+    Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt,
 };
 
 use crate::files::{FileReader, FileWriter};
 
 // Actions
+#[derive(Debug)]
 enum SkelAction {
     //////// x,   y,   z, parent_id (0 for none)
     Vertex(i16, i16, i16, Option<u16>),
@@ -37,9 +39,9 @@ impl SkelWriter {
     fn world_to_actions(
         &self,
         world: &mut World,
-        content_entities: &HashSet<Entity>,
+        content_entities: &Vec<Entity>,
     ) -> Vec<SkelAction> {
-        let mut system_state: SystemState<(Server, Query<(&Vertex3d, Option<&FileSystemChild>)>)> =
+        let mut system_state: SystemState<(Server, Query<(&Vertex3d, Option<&VertexChild>)>)> =
             SystemState::new(world);
         let (server, vertex_query) = system_state.get_mut(world);
 
@@ -54,14 +56,21 @@ impl SkelWriter {
             let parent_id: Option<Entity> = {
                 match has_parent_opt {
                     Some(has_parent) => match has_parent.parent_id.get(&server) {
-                        Some(parent_id) => Some(parent_id),
-                        None => None,
+                        Some(parent_id) => {
+                            Some(parent_id)
+                        },
+                        None => {
+                            None
+                        },
                     },
-                    None => None,
+                    None => {
+                        None
+                    },
                 }
             };
 
-            map.insert(*entity, (id, vertex.x(), vertex.y(), vertex.z(), parent_id));
+            let vertex_info = (id, vertex.x(), vertex.y(), vertex.z(), parent_id);
+            map.insert(*entity, vertex_info);
         }
 
         for entity in content_entities.iter() {
@@ -70,7 +79,8 @@ impl SkelWriter {
                 let (parent_id, _, _, _, _) = map.get(&parent_entity).unwrap();
                 *parent_id as u16
             });
-            output.push(SkelAction::Vertex(*x, *y, *z, parent_id));
+            let vertex_info = SkelAction::Vertex(*x, *y, *z, parent_id);
+            output.push(vertex_info);
         }
 
         output
@@ -110,7 +120,8 @@ impl SkelWriter {
 
 impl FileWriter for SkelWriter {
     fn write(&self, world: &mut World, content_entities: &HashSet<Entity>) -> Box<[u8]> {
-        let actions = self.world_to_actions(world, content_entities);
+        let content_entities_vec: Vec<Entity> = content_entities.iter().map(|e| *e).collect();
+        let actions = self.world_to_actions(world, &content_entities_vec);
         self.write_from_actions(actions)
     }
 

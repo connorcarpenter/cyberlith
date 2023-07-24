@@ -163,10 +163,10 @@ pub fn vertex_3d_postprocess(
         commands.entity(vertex_2d_entity).insert(VertexRootChild);
     }
 
-    info!(
-        "created Vertex3d: `{:?}`, created 2d entity: {:?}, parent: {:?}",
-        vertex_3d_entity, vertex_2d_entity, parent_entity_opt
-    );
+    // info!(
+    //     "created Vertex3d: `{:?}`, created 2d entity: {:?}, parent: {:?}",
+    //     vertex_3d_entity, vertex_2d_entity, parent_entity_opt
+    // );
 
     canvas_manager.register_3d_vertex(vertex_3d_entity, vertex_2d_entity);
 

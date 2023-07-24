@@ -1,5 +1,7 @@
 use std::collections::{HashMap, HashSet};
+
 use bevy_ecs::entity::Entity;
+
 use naia_bevy_server::RoomKey;
 use vortex_proto::types::TabId;
 
@@ -114,10 +116,12 @@ impl TabState {
     }
 
     pub fn add_content_entity(&mut self, entity: Entity) {
+        // info!("TabState adding entity: {:?}", entity);
         self.content_entities.insert(entity);
     }
 
     pub fn remove_content_entity(&mut self, entity: &Entity) {
+        // info!("TabState removing entity: {:?}", entity);
         self.content_entities.remove(entity);
     }
 

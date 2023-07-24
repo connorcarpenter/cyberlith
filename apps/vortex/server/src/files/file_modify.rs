@@ -18,6 +18,8 @@ pub fn handle_file_modify(
     // we must assume the modification has been done to the currently opened file
     // check this now
     if !tab_manager.user_current_tab_has_entity(user_key, vertex_entity) {
+        // info!("vertex_entity: {:?}", vertex_entity);
+        // tab_manager.user_current_tab_print_entities(user_key);
         panic!("somehow the user is modifying a file that is not their current tab ..");
     }
 

@@ -15,7 +15,7 @@ use naia_bevy_server::{
 };
 
 use vortex_proto::{
-    components::{Vertex3d, FileSystemChild, FileSystemEntry, FileSystemRootChild},
+    components::{VertexChild, VertexRootChild, Vertex3d, FileSystemChild, FileSystemEntry, FileSystemRootChild},
     resources::FileEntryKey,
 };
 
@@ -135,6 +135,16 @@ pub fn insert_component_events(
                 &entry_key_query,
             );
         }
+
+        // on VertexChild Insert Event
+        for (_, _) in events.read::<VertexChild>() {
+            info!("inserted VertexChild");
+        }
+
+        // on VertexRootChild Insert Event
+        for (_, _) in events.read::<VertexRootChild>() {
+            info!("inserted VertexRootChild");
+        }
     }
 }
 
@@ -159,7 +169,7 @@ pub fn remove_component_events(
         // on Vertex3D Remove Event
         for (user_key, entity, _component) in events.read::<Vertex3d>() {
             info!("removed Vertex3d");
-            tab_manager.on_remove_vertex(&user_key, &entity);
+
             handle_file_modify(
                 &mut commands,
                 &mut server,
@@ -170,6 +180,17 @@ pub fn remove_component_events(
                 &entity,
                 &entry_key_query,
             );
+
+            tab_manager.on_remove_vertex(&user_key, &entity);
+        }
+        // on VertexChild Remove Event
+        for (_, _, _) in events.read::<VertexChild>() {
+            info!("removed VertexChild");
+        }
+
+        // on VertexRootChild Remove Event
+        for (_, _, _) in events.read::<VertexRootChild>() {
+            info!("removed VertexRootChild");
         }
     }
 }
@@ -194,7 +215,7 @@ pub fn update_component_events(
         }
         // on Vertex3D Update Event
         for (user_key, entity) in events.read::<Vertex3d>() {
-            info!("update Vertex3d");
+
             handle_file_modify(
                 &mut commands,
                 &mut server,

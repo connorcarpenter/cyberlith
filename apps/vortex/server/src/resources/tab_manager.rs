@@ -219,6 +219,14 @@ impl TabManager {
         }
     }
 
+    // pub(crate) fn user_current_tab_print_entities(&self, user_key: &UserKey) {
+    //     if let Some(entities) = self.user_tab_state(user_key).current_tab_entities() {
+    //         info!("user_current_tab_print_entities: {:?}", entities);
+    //     } else {
+    //         info!("user_current_tab_print_entities: None");
+    //     }
+    // }
+
     pub(crate) fn user_current_tab_file_entity(&self, user_key: &UserKey) -> Entity {
         self.user_tab_state(user_key).current_tab_file_entity().unwrap()
     }
