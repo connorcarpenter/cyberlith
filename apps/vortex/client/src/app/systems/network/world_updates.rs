@@ -6,6 +6,7 @@ use bevy_ecs::{
     system::{Commands, Local, Query, ResMut},
 };
 use bevy_log::{info, warn};
+
 use naia_bevy_client::{
     events::{
         DespawnEntityEvent, InsertComponentEvents, RemoveComponentEvents, SpawnEntityEvent,
@@ -24,7 +25,7 @@ use vortex_proto::components::{
 };
 
 use crate::app::{
-    components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
+    components::{file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState}, Edge2d, Edge3d},
     resources::{canvas_manager::CanvasManager, global::Global},
     systems::{
         file_post_process,
@@ -235,10 +236,12 @@ pub fn remove_component_events(
     mut commands: Commands,
     client: Client,
     mut global: ResMut<Global>,
-    mut canvas_manager: ResMut<CanvasManager>,
-    mut parent_query: Query<&mut FileSystemParent>,
     mut event_reader: EventReader<RemoveComponentEvents>,
-    mut fs_state_query: Query<&mut FileSystemUiState>,
+    mut canvas_manager: ResMut<CanvasManager>,
+    mut parent_q: Query<&mut FileSystemParent>,
+    mut fs_state_q: Query<&mut FileSystemUiState>,
+    edge_2d_q: Query<(Entity, &Edge2d)>,
+    edge_3d_q: Query<(Entity, &Edge3d)>,
 ) {
     for events in event_reader.iter() {
         for (_entity, _component) in events.read::<FileSystemEntry>() {
@@ -248,7 +251,7 @@ pub fn remove_component_events(
         for (entity, _component) in events.read::<FileSystemRootChild>() {
             info!("removed FileSystemRootChild component from entity");
 
-            let Ok(mut parent) = parent_query.get_mut(global.project_root_entity) else {
+            let Ok(mut parent) = parent_q.get_mut(global.project_root_entity) else {
                 continue;
             };
             parent.remove_child(&entity);
@@ -260,7 +263,7 @@ pub fn remove_component_events(
             let Some(parent_entity) = component.parent_id.get(&client) else {
                 continue;
             };
-            let Ok(mut parent) = parent_query.get_mut(parent_entity) else {
+            let Ok(mut parent) = parent_q.get_mut(parent_entity) else {
                 continue;
             };
             parent.remove_child(&entity);
@@ -272,14 +275,31 @@ pub fn remove_component_events(
             global.changelist.remove(&entry);
 
             if let Some(file_entity) = component.file_entity.get(&client) {
-                if let Ok(mut fs_state) = fs_state_query.get_mut(file_entity) {
+                if let Ok(mut fs_state) = fs_state_q.get_mut(file_entity) {
                     fs_state.change_status = None;
                 }
             }
         }
-        for (entity, _) in events.read::<Vertex3d>() {
-            if let Some(vertex_2d_entity) = canvas_manager.unregister_3d_vertex(&entity) {
+        for (vertex_3d_entity, _) in events.read::<Vertex3d>() {
+            info!("removed Vertex3d component from entity: {:?}", vertex_3d_entity);
+
+            // despawn 3d edge
+            for (edge_3d_entity, edge_3d) in edge_3d_q.iter() {
+                if edge_3d.start == vertex_3d_entity {
+                    commands.entity(edge_3d_entity).despawn();
+                }
+            }
+
+            if let Some(vertex_2d_entity) = canvas_manager.unregister_3d_vertex(&vertex_3d_entity) {
+                // despawn 2d vertex
                 commands.entity(vertex_2d_entity).despawn();
+
+                // despawn 2d edge
+                for (edge_2d_entity, edge_2d) in edge_2d_q.iter() {
+                    if edge_2d.start == vertex_2d_entity {
+                        commands.entity(edge_2d_entity).despawn();
+                    }
+                }
             }
         }
     }

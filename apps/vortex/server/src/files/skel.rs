@@ -5,6 +5,7 @@ use bevy_ecs::{
     prelude::{Commands, World},
     system::{Query, SystemState},
 };
+use bevy_log::info;
 
 use naia_bevy_server::{
     BitReader, BitWriter, CommandsExt, ReplicationConfig, Serde, SerdeErr, Server,
@@ -179,11 +180,13 @@ impl SkelReader {
         for action in actions {
             match action {
                 SkelAction::Vertex(x, y, z, parent_id_opt) => {
+
                     let entity_id = commands
                         .spawn_empty()
                         .enable_replication(server)
                         .configure_replication(ReplicationConfig::Delegated)
                         .id();
+                    info!("spawning vertex entity {:?}", entity_id);
                     entities.push((entity_id, x, y, z, parent_id_opt));
                 }
             }

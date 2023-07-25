@@ -10,7 +10,7 @@ use naia_bevy_server::{CommandsExt, Server, UserKey};
 
 use vortex_proto::{resources::FileEntryKey, types::TabId};
 
-use crate::resources::{user_tab_state::TabState, GitManager, UserManager, UserTabState};
+use crate::resources::{workspace::Workspace, user_tab_state::TabState, GitManager, UserManager, UserTabState};
 
 #[derive(Resource)]
 pub struct TabManager {
@@ -79,7 +79,7 @@ impl TabManager {
 
         // insert TabState into collection
         let tab_state = TabState::new(new_room_key, file_entity.clone(), content_entities);
-        user_state.state_tabs_insert(tab_id.clone(), tab_state);
+        user_state.insert_tab_state(tab_id.clone(), tab_state);
 
         // put user in new room
         server.room_mut(&new_room_key).add_user(user_key);
@@ -235,6 +235,26 @@ impl TabManager {
         self.user_tab_state(user_key).current_tab_entities().unwrap()
     }
 
+    pub(crate) fn respawn_tab_content_entities(
+        &mut self,
+        commands: &mut Commands,
+        server: &mut Server,
+        workspace: &Workspace,
+        user_key: &UserKey,
+        file_entity: &Entity,
+        file_entry_key: &FileEntryKey,
+    ) {
+        if let Some(user_tab_state) = self.users.get_mut(user_key) {
+            user_tab_state.respawn_tab_content_entities(
+                commands,
+                server,
+                workspace,
+                file_entity,
+                file_entry_key
+            );
+        }
+    }
+
     fn user_tab_state(&self, user_key: &UserKey) -> &UserTabState {
         let Some(user_state) = self.users.get(user_key) else {
             panic!("user_tab_state has not been initialized!");
@@ -269,7 +289,7 @@ impl TabManager {
             user_state.set_current_tab(None);
         }
 
-        let Some(tab_state) = user_state.state_tabs_remove(tab_id) else {
+        let Some(tab_state) = user_state.remove_tab_state(tab_id) else {
             panic!("User does not have tab {}", tab_id);
         };
 

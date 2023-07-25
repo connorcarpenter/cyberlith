@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use bevy_ecs::{entity::Entity, system::Commands};
-use bevy_log::info;
 
 use math::{Vec2, Vec3};
 use render_api::{

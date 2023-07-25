@@ -207,7 +207,7 @@ impl GitManager {
             panic!("Could not find workspace for user: `{}`", user_name);
         };
 
-        if let Some((key, value)) = workspace.rollback_changelist_entry(world, message) {
+        if let Some((key, value)) = workspace.rollback_changelist_entry(&user_key, world, message) {
             self.spawn_networked_entry_into_world(
                 world, &user_key, &user_name, &user_room_key, &key, &value,
             )
@@ -243,7 +243,7 @@ impl GitManager {
     }
 
     pub(crate) fn load_content_entities(
-        &mut self,
+        &self,
         commands: &mut Commands,
         server: &mut Server,
         file_entry_key: &FileEntryKey,

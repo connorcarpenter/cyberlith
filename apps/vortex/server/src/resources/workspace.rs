@@ -3,7 +3,7 @@ use std::{collections::{HashMap, HashSet}, fs, fs::File, io::Read, path::Path, s
 use bevy_ecs::{
     entity::Entity,
     world::World,
-    system::{SystemState, Commands, Query},
+    system::{ResMut, SystemState, Commands, Query},
 };
 use bevy_log::info;
 use git2::{Repository, Signature};
@@ -273,12 +273,13 @@ impl Workspace {
     // returns an entity to spawn if delete was rolled back
     pub fn rollback_changelist_entry(
         &mut self,
+        user_key: &UserKey,
         world: &mut World,
         message: ChangelistMessage,
     ) -> Option<(FileEntryKey, FileEntryValue)> {
 
-        let mut system_state: SystemState<(Commands, Server, Query<&ChangelistEntry>)> = SystemState::new(world);
-        let (mut commands, mut server, cl_query) = system_state.get_mut(world);
+        let mut system_state: SystemState<(Commands, Server, ResMut<TabManager>, Query<&ChangelistEntry>)> = SystemState::new(world);
+        let (mut commands, mut server, mut tab_manager, cl_query) = system_state.get_mut(world);
 
         let cl_entity: Entity = message.entity.get(&server).unwrap();
         let changelist_entry = cl_query.get(cl_entity).unwrap();
@@ -288,7 +289,23 @@ impl Workspace {
 
         let output = match status {
             ChangelistStatus::Modified => {
-                todo!();
+
+                let file_entity = changelist_entry.file_entity.get(&server).unwrap();
+
+                // cleanup changelist entry
+                self.cleanup_changelist_entry(&mut commands, &file_entry_key);
+
+                // if tab is open, respawn content entities within to previous state
+                tab_manager.respawn_tab_content_entities(
+                    &mut commands,
+                    &mut server,
+                    self,
+                    user_key,
+                    &file_entity,
+                    &file_entry_key,
+                );
+
+                None
             }
             ChangelistStatus::Created => {
                 // Remove Entity from Working Tree, returning a list of child entities that should be despawned
