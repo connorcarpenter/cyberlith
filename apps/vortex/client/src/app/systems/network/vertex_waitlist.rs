@@ -168,6 +168,7 @@ pub fn vertex_3d_postprocess(
     // );
 
     canvas_manager.register_3d_vertex(vertex_3d_entity, vertex_2d_entity);
+    canvas_manager.recalculate_3d_view();
 
     vertex_2d_entity
 }

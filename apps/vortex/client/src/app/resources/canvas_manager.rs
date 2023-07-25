@@ -492,6 +492,10 @@ impl CanvasManager {
         self.next_visible = visible;
     }
 
+    pub fn recalculate_3d_view(&mut self) {
+        self.camera_3d_recalc = true;
+    }
+
     fn handle_delete_key_press(
         &mut self,
         commands: &mut Commands,
@@ -1004,7 +1008,7 @@ impl CanvasManager {
     fn camera_pan(&mut self, delta: Vec2) {
         self.camera_3d_offset += delta / self.camera_3d_scale;
 
-        self.camera_3d_recalc = true;
+        self.recalculate_3d_view();
     }
 
     fn camera_orbit(&mut self, delta: Vec2) {
@@ -1020,7 +1024,7 @@ impl CanvasManager {
                 * Quat::from_rotation_x(delta.y * speed),
         );
 
-        self.camera_3d_recalc = true;
+        self.recalculate_3d_view();
     }
 
     fn camera_zoom(&mut self, zoom_delta: f32) {
@@ -1038,14 +1042,14 @@ impl CanvasManager {
             self.camera_3d_offset -= offset_diff / new_scale;
         }
 
-        self.camera_3d_recalc = true;
+        self.recalculate_3d_view();
     }
 
     fn set_camera_angle(&mut self, angle: Quat) {
         self.camera_3d_rotation = Some(angle);
         self.camera_3d_offset = Vec2::ZERO;
         self.camera_3d_scale = 1.0;
-        self.camera_3d_recalc = true;
+        self.recalculate_3d_view();
     }
 
     fn enable_cameras(
@@ -1115,7 +1119,6 @@ impl CanvasManager {
     pub fn register_3d_vertex(&mut self, entity_3d: Entity, entity_2d: Entity) {
         self.vertices_3d_to_2d.insert(entity_3d, entity_2d);
         self.vertices_2d_to_3d.insert(entity_2d, entity_3d);
-        self.camera_2d_recalc = true;
     }
 
     pub fn unregister_3d_vertex(&mut self, entity_3d: &Entity) -> Option<Entity> {
