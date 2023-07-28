@@ -10,7 +10,9 @@ use naia_bevy_server::{CommandsExt, Server, UserKey};
 
 use vortex_proto::{resources::FileEntryKey, types::TabId};
 
-use crate::resources::{workspace::Workspace, user_tab_state::TabState, GitManager, UserManager, UserTabState};
+use crate::resources::{
+    user_tab_state::TabState, workspace::Workspace, GitManager, UserManager, UserTabState,
+};
 
 #[derive(Resource)]
 pub struct TabManager {
@@ -204,11 +206,13 @@ impl TabManager {
     }
 
     pub fn on_insert_vertex(&mut self, user_key: &UserKey, vertex_entity: &Entity) {
-        self.user_tab_state_mut(user_key).current_tab_add_entity(vertex_entity);
+        self.user_tab_state_mut(user_key)
+            .current_tab_add_entity(vertex_entity);
     }
 
     pub fn on_remove_vertex(&mut self, user_key: &UserKey, vertex_entity: &Entity) {
-        self.user_tab_state_mut(user_key).current_tab_remove_entity(vertex_entity);
+        self.user_tab_state_mut(user_key)
+            .current_tab_remove_entity(vertex_entity);
     }
 
     pub(crate) fn user_current_tab_has_entity(&self, user_key: &UserKey, entity: &Entity) -> bool {
@@ -228,11 +232,15 @@ impl TabManager {
     // }
 
     pub(crate) fn user_current_tab_file_entity(&self, user_key: &UserKey) -> Entity {
-        self.user_tab_state(user_key).current_tab_file_entity().unwrap()
+        self.user_tab_state(user_key)
+            .current_tab_file_entity()
+            .unwrap()
     }
 
     pub(crate) fn user_current_tab_content_entities(&self, user_key: &UserKey) -> &HashSet<Entity> {
-        self.user_tab_state(user_key).current_tab_entities().unwrap()
+        self.user_tab_state(user_key)
+            .current_tab_entities()
+            .unwrap()
     }
 
     pub(crate) fn respawn_tab_content_entities(
@@ -250,7 +258,7 @@ impl TabManager {
                 server,
                 workspace,
                 file_entity,
-                file_entry_key
+                file_entry_key,
             );
         }
     }

@@ -11,7 +11,7 @@ use vortex_proto::components::Vertex3d;
 
 use crate::app::{
     components::{Edge2d, Edge3d, Vertex2d},
-    resources::{canvas_manager::CanvasManager, action_stack::ActionStack},
+    resources::{action_stack::ActionStack, canvas_manager::CanvasManager},
 };
 
 pub fn input(

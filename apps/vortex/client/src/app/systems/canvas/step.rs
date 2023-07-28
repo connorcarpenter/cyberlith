@@ -7,7 +7,7 @@ use naia_bevy_client::Client;
 
 use render_api::components::{Camera, Transform};
 
-use crate::app::resources::{canvas_manager::CanvasManager, action_stack::ActionStack};
+use crate::app::resources::{action_stack::ActionStack, canvas_manager::CanvasManager};
 
 pub fn step(
     mut commands: Commands,

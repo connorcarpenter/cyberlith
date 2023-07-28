@@ -15,14 +15,20 @@ use naia_bevy_server::{
 };
 
 use vortex_proto::{
-    components::{VertexChild, VertexRootChild, Vertex3d, FileSystemChild, FileSystemEntry, FileSystemRootChild},
+    components::{
+        FileSystemChild, FileSystemEntry, FileSystemRootChild, Vertex3d, VertexChild,
+        VertexRootChild,
+    },
     resources::FileEntryKey,
 };
 
-use crate::{resources::{
-    fs_waitlist::{fs_process_insert, FSWaitlist, FSWaitlistInsert},
-    GitManager, TabManager, UserManager,
-}, files::handle_file_modify};
+use crate::{
+    files::handle_file_modify,
+    resources::{
+        fs_waitlist::{fs_process_insert, FSWaitlist, FSWaitlistInsert},
+        GitManager, TabManager, UserManager,
+    },
+};
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
     for SpawnEntityEvent(_user_key, entity) in event_reader.iter() {
@@ -215,7 +221,6 @@ pub fn update_component_events(
         }
         // on Vertex3D Update Event
         for (user_key, entity) in events.read::<Vertex3d>() {
-
             handle_file_modify(
                 &mut commands,
                 &mut server,

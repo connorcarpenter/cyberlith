@@ -12,9 +12,7 @@ use naia_bevy_server::{
     UnsignedVariableInteger,
 };
 
-use vortex_proto::components::{
-    Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt,
-};
+use vortex_proto::components::{Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt};
 
 use crate::files::{FileReader, FileWriter};
 
@@ -57,16 +55,10 @@ impl SkelWriter {
             let parent_id: Option<Entity> = {
                 match has_parent_opt {
                     Some(has_parent) => match has_parent.parent_id.get(&server) {
-                        Some(parent_id) => {
-                            Some(parent_id)
-                        },
-                        None => {
-                            None
-                        },
+                        Some(parent_id) => Some(parent_id),
+                        None => None,
                     },
-                    None => {
-                        None
-                    },
+                    None => None,
                 }
             };
 
@@ -180,7 +172,6 @@ impl SkelReader {
         for action in actions {
             match action {
                 SkelAction::Vertex(x, y, z, parent_id_opt) => {
-
                     let entity_id = commands
                         .spawn_empty()
                         .enable_replication(server)
@@ -213,7 +204,12 @@ impl SkelReader {
 }
 
 impl FileReader for SkelReader {
-    fn read(&self, commands: &mut Commands, server: &mut Server, bytes: &Box<[u8]>) -> HashSet<Entity> {
+    fn read(
+        &self,
+        commands: &mut Commands,
+        server: &mut Server,
+        bytes: &Box<[u8]>,
+    ) -> HashSet<Entity> {
         let mut new_entities = HashSet::new();
         let mut bit_reader = BitReader::new(bytes);
 

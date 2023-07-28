@@ -1,4 +1,7 @@
-use bevy_ecs::{entity::Entity, system::{Query, Commands}};
+use bevy_ecs::{
+    entity::Entity,
+    system::{Commands, Query},
+};
 
 use naia_bevy_server::{Server, UserKey};
 use vortex_proto::resources::FileEntryKey;

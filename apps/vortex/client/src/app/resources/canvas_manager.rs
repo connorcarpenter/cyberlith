@@ -12,7 +12,7 @@ use naia_bevy_client::{Client, CommandsExt};
 use input::{Input, Key, MouseButton};
 use math::{convert_2d_to_3d, convert_3d_to_2d, Quat, Vec2, Vec3};
 use render_api::{
-    base::{CpuTexture2D},
+    base::CpuTexture2D,
     components::{
         Camera, CameraProjection, OrthographicProjection, Projection, RenderLayer, Transform,
         Viewport, Visibility,
@@ -24,8 +24,8 @@ use vortex_proto::components::Vertex3d;
 
 use crate::app::{
     components::{Edge2d, Edge3d, HoverCircle, SelectCircle, Vertex2d},
+    resources::action_stack::{Action, ActionStack},
     set_3d_line_transform,
-    resources::action_stack::{Action, ActionStack}
 };
 
 #[derive(Clone, Copy)]
@@ -480,7 +480,6 @@ impl CanvasManager {
     pub fn select_and_hover(&mut self, entity: &Entity) {
         self.selected_vertex = Some(*entity);
         self.hovered_entity = Some(*entity);
-
     }
 
     fn handle_delete_key_press(
@@ -783,7 +782,8 @@ impl CanvasManager {
                     let vertex_3d_entity = self.vertex_entity_2d_to_3d(&vertex_2d_entity).unwrap();
 
                     // spawn new vertex
-                    action_stack.buffer_action(Action::CreateVertex(*vertex_3d_entity, new_3d_position));
+                    action_stack
+                        .buffer_action(Action::CreateVertex(*vertex_3d_entity, new_3d_position));
 
                     self.deselect_current_vertex(commands, client);
                 }
@@ -908,14 +908,12 @@ impl CanvasManager {
                     let mut vertex_3d = vertex_3d_q.get_mut(*vertex_3d_entity).unwrap();
 
                     if let Some((_, old_3d_position, _)) = self.last_vertex_dragged {
-                        self.last_vertex_dragged = Some((
-                            *vertex_3d_entity,
-                            old_3d_position,
-                            new_3d_position,
-                        ));
+                        self.last_vertex_dragged =
+                            Some((*vertex_3d_entity, old_3d_position, new_3d_position));
                     } else {
                         let old_3d_position = vertex_3d.as_vec3();
-                        self.last_vertex_dragged = Some((*vertex_3d_entity, old_3d_position, new_3d_position));
+                        self.last_vertex_dragged =
+                            Some((*vertex_3d_entity, old_3d_position, new_3d_position));
                     }
 
                     vertex_3d.set_x(new_3d_position.x as i16);
@@ -1107,7 +1105,13 @@ impl CanvasManager {
         return None;
     }
 
-    pub fn cleanup_deleted_vertex(&mut self, entity_3d: &Entity, commands: &mut Commands, edge_2d_q: &Query<(Entity, &Edge2d)>, edge_3d_q: &Query<(Entity, &Edge3d)>) {
+    pub fn cleanup_deleted_vertex(
+        &mut self,
+        entity_3d: &Entity,
+        commands: &mut Commands,
+        edge_2d_q: &Query<(Entity, &Edge2d)>,
+        edge_3d_q: &Query<(Entity, &Edge3d)>,
+    ) {
         // despawn 3d edge
         for (edge_3d_entity, edge_3d) in edge_3d_q.iter() {
             if edge_3d.start == *entity_3d {
@@ -1126,7 +1130,10 @@ impl CanvasManager {
                 }
             }
         } else {
-            panic!("Vertex3d entity: `{:?}` has no corresponding Vertex2d entity", entity_3d);
+            panic!(
+                "Vertex3d entity: `{:?}` has no corresponding Vertex2d entity",
+                entity_3d
+            );
         }
     }
 

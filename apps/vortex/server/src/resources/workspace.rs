@@ -1,9 +1,16 @@
-use std::{collections::{HashMap, HashSet}, fs, fs::File, io::Read, path::Path, sync::Mutex};
+use std::{
+    collections::{HashMap, HashSet},
+    fs,
+    fs::File,
+    io::Read,
+    path::Path,
+    sync::Mutex,
+};
 
 use bevy_ecs::{
     entity::Entity,
+    system::{Commands, Query, ResMut, SystemState},
     world::World,
-    system::{ResMut, SystemState, Commands, Query},
 };
 use bevy_log::info;
 use git2::{Repository, Signature};
@@ -11,14 +18,14 @@ use git2::{Repository, Signature};
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 use vortex_proto::{
     components::{ChangelistEntry, ChangelistStatus},
+    messages::ChangelistMessage,
     resources::FileEntryKey,
     FileExtension,
-    messages::ChangelistMessage,
 };
 
 use crate::{
     files::{FileReader, FileWriter},
-    resources::{TabManager, ChangelistValue, FileEntryValue, GitManager},
+    resources::{ChangelistValue, FileEntryValue, GitManager, TabManager},
 };
 
 pub struct Workspace {
@@ -176,7 +183,8 @@ impl Workspace {
         let action_status: ChangelistStatus;
         let file_entry_key: FileEntryKey;
         {
-            let mut system_state: SystemState<(Server, Query<&ChangelistEntry>)> = SystemState::new(world);
+            let mut system_state: SystemState<(Server, Query<&ChangelistEntry>)> =
+                SystemState::new(world);
             let (server, cl_query) = system_state.get_mut(world);
 
             let cl_entity: Entity = message.entity.get(&server).unwrap();
@@ -187,7 +195,12 @@ impl Workspace {
 
             match action_status {
                 ChangelistStatus::Modified | ChangelistStatus::Created => {
-                    self.changelist_entry_finalize_content(world, user_key, &action_status, &file_entry_key);
+                    self.changelist_entry_finalize_content(
+                        world,
+                        user_key,
+                        &action_status,
+                        &file_entry_key,
+                    );
                 }
                 ChangelistStatus::Deleted => {}
             }
@@ -277,8 +290,12 @@ impl Workspace {
         world: &mut World,
         message: ChangelistMessage,
     ) -> Option<(FileEntryKey, FileEntryValue)> {
-
-        let mut system_state: SystemState<(Commands, Server, ResMut<TabManager>, Query<&ChangelistEntry>)> = SystemState::new(world);
+        let mut system_state: SystemState<(
+            Commands,
+            Server,
+            ResMut<TabManager>,
+            Query<&ChangelistEntry>,
+        )> = SystemState::new(world);
         let (mut commands, mut server, mut tab_manager, cl_query) = system_state.get_mut(world);
 
         let cl_entity: Entity = message.entity.get(&server).unwrap();
@@ -289,7 +306,6 @@ impl Workspace {
 
         let output = match status {
             ChangelistStatus::Modified => {
-
                 let file_entity = changelist_entry.file_entity.get(&server).unwrap();
 
                 // cleanup changelist entry
@@ -314,7 +330,10 @@ impl Workspace {
 
                 // despawn row entity
                 let row_entity = entry_value.entity();
-                commands.entity(row_entity).take_authority(&mut server).despawn();
+                commands
+                    .entity(row_entity)
+                    .take_authority(&mut server)
+                    .despawn();
 
                 // cleanup changelist entry
                 self.cleanup_changelist_entry(&mut commands, &file_entry_key);
@@ -708,14 +727,15 @@ impl Workspace {
         world: &mut World,
         user_key: &UserKey,
         status: &ChangelistStatus,
-        file_entry_key: &FileEntryKey
+        file_entry_key: &FileEntryKey,
     ) {
-        info!("Finalizing content for changelist file `{}` of status: {:?}", file_entry_key.name(), status);
+        info!(
+            "Finalizing content for changelist file `{}` of status: {:?}",
+            file_entry_key.name(),
+            status
+        );
         let extension = self.working_file_extension(file_entry_key);
-        let changelist_value = self
-            .changelist_entries
-            .get_mut(&file_entry_key)
-            .unwrap();
+        let changelist_value = self.changelist_entries.get_mut(&file_entry_key).unwrap();
         if changelist_value.has_content() {
             // changelist entry already has content, backed up last time tab closed
             // nothing left to do here
@@ -731,14 +751,15 @@ impl Workspace {
             }
 
             // get entities from TabManager's current tab
-            let content_entities = world.get_resource::<TabManager>().unwrap().user_current_tab_content_entities(user_key).clone();
+            let content_entities = world
+                .get_resource::<TabManager>()
+                .unwrap()
+                .user_current_tab_content_entities(user_key)
+                .clone();
 
             // write
             info!("... Generating content ...");
-            let bytes = extension.write(
-                world,
-                &content_entities,
-            );
+            let bytes = extension.write(world, &content_entities);
             changelist_value.set_content(bytes);
         }
     }

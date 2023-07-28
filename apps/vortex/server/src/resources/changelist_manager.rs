@@ -1,4 +1,7 @@
-use bevy_ecs::{system::Resource, world::{Mut, World}};
+use bevy_ecs::{
+    system::Resource,
+    world::{Mut, World},
+};
 
 use naia_bevy_server::UserKey;
 
@@ -36,22 +39,14 @@ impl ChangelistManager {
         world: &mut World,
         git_manager: &mut GitManager,
         user_key: UserKey,
-        message: ChangelistMessage
+        message: ChangelistMessage,
     ) {
         match message.action {
             ChangelistAction::Commit => {
-                git_manager.commit_changelist_entry(
-                    world,
-                    user_key,
-                    message,
-                );
+                git_manager.commit_changelist_entry(world, user_key, message);
             }
             ChangelistAction::Rollback => {
-                git_manager.rollback_changelist_entry(
-                    world,
-                    user_key,
-                    message,
-                );
+                git_manager.rollback_changelist_entry(world, user_key, message);
             }
         }
     }

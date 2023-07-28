@@ -7,9 +7,7 @@ use naia_bevy_server::{events::MessageEvents, Server};
 
 use vortex_proto::{
     channels::{ChangelistActionChannel, TabActionChannel},
-    messages::{
-        ChangelistMessage, TabActionMessage, TabActionMessageType, TabOpenMessage,
-    },
+    messages::{ChangelistMessage, TabActionMessage, TabActionMessageType, TabOpenMessage},
     resources::FileEntryKey,
 };
 

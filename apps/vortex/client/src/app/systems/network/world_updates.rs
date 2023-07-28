@@ -25,7 +25,10 @@ use vortex_proto::components::{
 };
 
 use crate::app::{
-    components::{file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState}, Edge2d, Edge3d},
+    components::{
+        file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
+        Edge2d, Edge3d,
+    },
     resources::{canvas_manager::CanvasManager, global::Global},
     systems::{
         file_post_process,
@@ -281,9 +284,17 @@ pub fn remove_component_events(
             }
         }
         for (vertex_3d_entity, _) in events.read::<Vertex3d>() {
-            info!("removed Vertex3d component from entity: {:?}", vertex_3d_entity);
+            info!(
+                "removed Vertex3d component from entity: {:?}",
+                vertex_3d_entity
+            );
 
-            canvas_manager.cleanup_deleted_vertex(&vertex_3d_entity, &mut commands, &edge_2d_q, &edge_3d_q);
+            canvas_manager.cleanup_deleted_vertex(
+                &vertex_3d_entity,
+                &mut commands,
+                &edge_2d_q,
+                &edge_3d_q,
+            );
         }
     }
 }

@@ -13,11 +13,21 @@ pub trait FileWriter: Send + Sync {
 }
 
 pub trait FileReader: Send + Sync {
-    fn read(&self, commands: &mut Commands, server: &mut Server, bytes: &Box<[u8]>) -> HashSet<Entity>;
+    fn read(
+        &self,
+        commands: &mut Commands,
+        server: &mut Server,
+        bytes: &Box<[u8]>,
+    ) -> HashSet<Entity>;
 }
 
 impl FileReader for FileExtension {
-    fn read(&self, commands: &mut Commands, server: &mut Server, bytes: &Box<[u8]>) -> HashSet<Entity> {
+    fn read(
+        &self,
+        commands: &mut Commands,
+        server: &mut Server,
+        bytes: &Box<[u8]>,
+    ) -> HashSet<Entity> {
         match self {
             FileExtension::Skel => SkelReader.read(commands, server, bytes),
             _ => panic!("File extension {:?} not implemented", self),

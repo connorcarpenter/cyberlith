@@ -25,7 +25,6 @@ impl Default for UserTabState {
 }
 
 impl UserTabState {
-
     pub fn has_tabs(&self) -> bool {
         !self.tabs.is_empty()
     }
@@ -182,7 +181,8 @@ impl TabState {
         }
 
         // respawn all entities
-        let new_content_entities = workspace.load_content_entities(commands, server, &file_entry_key);
+        let new_content_entities =
+            workspace.load_content_entities(commands, server, &file_entry_key);
 
         for entity in new_content_entities.iter() {
             // associate all new Entities with the new Room

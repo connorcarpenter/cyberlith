@@ -6,7 +6,7 @@ use std::{
 
 use bevy_ecs::{
     entity::Entity,
-    system::{SystemState, Commands, Resource},
+    system::{Commands, Resource, SystemState},
     world::World,
 };
 use bevy_log::info;
@@ -14,10 +14,8 @@ use git2::{Cred, Repository, Tree};
 use naia_bevy_server::{CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};
 
 use vortex_proto::{
+    components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild},
     messages::ChangelistMessage,
-    components::{
-        EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-    },
     resources::FileEntryKey,
     FileExtension,
 };
@@ -26,7 +24,7 @@ use crate::{
     components::FileSystemOwner,
     config::GitConfig,
     files::FileWriter,
-    resources::{UserManager, user_manager::UserInfo, workspace::Workspace, FileEntryValue},
+    resources::{user_manager::UserInfo, workspace::Workspace, FileEntryValue, UserManager},
 };
 
 #[derive(Resource)]
@@ -172,7 +170,7 @@ impl GitManager {
         &mut self,
         world: &mut World,
         user_key: UserKey,
-        message: ChangelistMessage
+        message: ChangelistMessage,
     ) {
         let user_manager = world.get_resource::<UserManager>().unwrap();
         let user_info = user_manager.user_info(&user_key).unwrap();
@@ -183,13 +181,7 @@ impl GitManager {
             panic!("Could not find workspace for user: `{}`", username);
         };
 
-        workspace.commit_changelist_entry(
-            world,
-            &user_key,
-            &username,
-            &email,
-            message
-        );
+        workspace.commit_changelist_entry(world, &user_key, &username, &email, message);
     }
 
     pub fn rollback_changelist_entry(
@@ -209,7 +201,12 @@ impl GitManager {
 
         if let Some((key, value)) = workspace.rollback_changelist_entry(&user_key, world, message) {
             self.spawn_networked_entry_into_world(
-                world, &user_key, &user_name, &user_room_key, &key, &value,
+                world,
+                &user_key,
+                &user_name,
+                &user_room_key,
+                &key,
+                &value,
             )
         }
     }
@@ -232,7 +229,6 @@ impl GitManager {
             &mut commands,
             &mut server,
             user_key,
-
             user_room_key,
             &workspace.working_file_entries,
             entry_key,

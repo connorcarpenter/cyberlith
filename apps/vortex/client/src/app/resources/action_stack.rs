@@ -5,13 +5,18 @@ use bevy_ecs::{
     system::{Res, ResMut, SystemState},
 };
 use bevy_log::info;
-use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus, ReplicationConfig};
 use math::Vec3;
-use render_api::Assets;
+use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus, ReplicationConfig};
 use render_api::base::{CpuMaterial, CpuMesh};
+use render_api::Assets;
 
-use vortex_proto::components::{ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild, Vertex3d, VertexChild};
+use vortex_proto::components::{
+    ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild, Vertex3d,
+    VertexChild,
+};
 
+use crate::app::components::{Edge2d, Edge3d};
+use crate::app::systems::network::vertex_3d_postprocess;
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
     resources::{
@@ -19,8 +24,6 @@ use crate::app::{
     },
     systems::file_post_process,
 };
-use crate::app::components::{Edge2d, Edge3d};
-use crate::app::systems::network::vertex_3d_postprocess;
 
 pub enum Action {
     // A list of File Row entities to select
@@ -413,10 +416,15 @@ impl ActionStack {
                 return Action::RenameEntry(*file_entity, old_name);
             }
             Action::CreateVertex(parent_entity, position) => {
-
-                let mut system_state: SystemState<(Commands, Client, ResMut<CanvasManager>, ResMut<Assets<CpuMesh>>, ResMut<Assets<CpuMaterial>>)> =
-                    SystemState::new(world);
-                let (mut commands, mut client, mut canvas_manager, mut meshes, mut materials) = system_state.get_mut(world);
+                let mut system_state: SystemState<(
+                    Commands,
+                    Client,
+                    ResMut<CanvasManager>,
+                    ResMut<Assets<CpuMesh>>,
+                    ResMut<Assets<CpuMaterial>>,
+                )> = SystemState::new(world);
+                let (mut commands, mut client, mut canvas_manager, mut meshes, mut materials) =
+                    system_state.get_mut(world);
 
                 let mut vertex_child = VertexChild::new();
                 vertex_child.parent_id.set(&client, parent_entity);
@@ -444,16 +452,16 @@ impl ActionStack {
                 return Action::DeleteVertex(new_vertex_3d_entity);
             }
             Action::DeleteVertex(vertex_3d_entity) => {
-
                 let mut system_state: SystemState<(
                     Commands,
                     Client,
                     ResMut<CanvasManager>,
                     Query<(&Vertex3d, &VertexChild)>,
                     Query<(Entity, &Edge2d)>,
-                    Query<(Entity, &Edge3d)>
+                    Query<(Entity, &Edge3d)>,
                 )> = SystemState::new(world);
-                let (mut commands, client, mut canvas_manager, vertex_q, edge_2d_q, edge_3d_q) = system_state.get_mut(world);
+                let (mut commands, client, mut canvas_manager, vertex_q, edge_2d_q, edge_3d_q) =
+                    system_state.get_mut(world);
 
                 info!("deleting entity {:?}", vertex_3d_entity);
 
@@ -468,14 +476,18 @@ impl ActionStack {
                 commands.entity(*vertex_3d_entity).despawn();
 
                 // cleanup mappings
-                canvas_manager.cleanup_deleted_vertex(vertex_3d_entity, &mut commands, &edge_2d_q, &edge_3d_q);
+                canvas_manager.cleanup_deleted_vertex(
+                    vertex_3d_entity,
+                    &mut commands,
+                    &edge_2d_q,
+                    &edge_3d_q,
+                );
 
                 system_state.apply(world);
 
                 return Action::CreateVertex(parent_entity, vertex_3d_position);
             }
             Action::MoveVertex(vertex_entity, old_position, new_position) => {
-
                 let mut system_state: SystemState<Query<&mut Vertex3d>> = SystemState::new(world);
                 let mut vertex_3d_q = system_state.get_mut(world);
 
