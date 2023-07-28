@@ -6,10 +6,11 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus, ReplicationConfig};
+use math::Vec3;
+use render_api::Assets;
+use render_api::base::{CpuMaterial, CpuMesh};
 
-use vortex_proto::components::{
-    ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-};
+use vortex_proto::components::{ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild, Vertex3d, VertexChild};
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
@@ -18,6 +19,8 @@ use crate::app::{
     },
     systems::file_post_process,
 };
+use crate::app::components::{Edge2d, Edge3d};
+use crate::app::systems::network::vertex_3d_postprocess;
 
 pub enum Action {
     // A list of File Row entities to select
@@ -34,6 +37,12 @@ pub enum Action {
     DeleteEntry(Entity, Option<Vec<Entity>>),
     // The File Row entity to rename, and the new name
     RenameEntry(Entity, String),
+    // Create Vertex (Parent Entity, X, Y, Z)
+    CreateVertex(Entity, Vec3),
+    // Delete Vertex
+    DeleteVertex(Entity),
+    // Move Vertex (Entity, Old Position, New Position)
+    MoveVertex(Entity, Vec3, Vec3),
 }
 
 impl Action {
@@ -71,6 +80,21 @@ impl Action {
                 }
             }
             Action::RenameEntry(entity, _) => {
+                if *entity == old_entity {
+                    *entity = new_entity;
+                }
+            }
+            Action::CreateVertex(entity, _) => {
+                if *entity == old_entity {
+                    *entity = new_entity;
+                }
+            }
+            Action::DeleteVertex(entity) => {
+                if *entity == old_entity {
+                    *entity = new_entity;
+                }
+            }
+            Action::MoveVertex(entity, _, _) => {
                 if *entity == old_entity {
                     *entity = new_entity;
                 }
@@ -161,6 +185,21 @@ impl ActionStack {
         self.check_top(world);
     }
 
+    pub fn entity_update_auth_status(&mut self, entity: &Entity) {
+        // if either the undo or redo stack's top entity is this entity, then we need to enable/disable undo based on new auth status
+        if let Some(Action::SelectEntries(file_entities)) = self.undo_actions.last() {
+            if file_entities.contains(entity) {
+                self.buffered_check = true;
+            }
+        }
+
+        if let Some(Action::SelectEntries(file_entities)) = self.redo_actions.last() {
+            if file_entities.contains(entity) {
+                self.buffered_check = true;
+            }
+        }
+    }
+
     fn execute_action(&mut self, world: &mut World, action: &Action) -> Action {
         match &action {
             Action::SelectEntries(file_entities) => {
@@ -185,6 +224,8 @@ impl ActionStack {
 
                 Self::release_file_entries(&mut commands, &mut client, file_entries_to_release);
                 Self::request_file_entries(&mut commands, &mut client, file_entries_to_request);
+
+                system_state.apply(world);
 
                 return Action::SelectEntries(deselected_row_entities);
             }
@@ -366,7 +407,86 @@ impl ActionStack {
                 };
                 let old_name: String = file_entry.name.to_string();
                 *file_entry.name = new_name.clone();
+
+                system_state.apply(world);
+
                 return Action::RenameEntry(*file_entity, old_name);
+            }
+            Action::CreateVertex(parent_entity, position) => {
+
+                let mut system_state: SystemState<(Commands, Client, ResMut<CanvasManager>, ResMut<Assets<CpuMesh>>, ResMut<Assets<CpuMaterial>>)> =
+                    SystemState::new(world);
+                let (mut commands, mut client, mut canvas_manager, mut meshes, mut materials) = system_state.get_mut(world);
+
+                let mut vertex_child = VertexChild::new();
+                vertex_child.parent_id.set(&client, parent_entity);
+                let new_vertex_3d_entity = commands
+                    .spawn_empty()
+                    .enable_replication(&mut client)
+                    .configure_replication(ReplicationConfig::Delegated)
+                    .insert(Vertex3d::from_vec3(*position))
+                    .insert(vertex_child)
+                    .id();
+
+                let new_vertex_2d_entity = vertex_3d_postprocess(
+                    &mut commands,
+                    Some(*parent_entity),
+                    new_vertex_3d_entity,
+                    &mut canvas_manager,
+                    &mut meshes,
+                    &mut materials,
+                );
+
+                canvas_manager.select_and_hover(&new_vertex_2d_entity);
+
+                system_state.apply(world);
+
+                return Action::DeleteVertex(new_vertex_3d_entity);
+            }
+            Action::DeleteVertex(vertex_3d_entity) => {
+
+                let mut system_state: SystemState<(
+                    Commands,
+                    Client,
+                    ResMut<CanvasManager>,
+                    Query<(&Vertex3d, &VertexChild)>,
+                    Query<(Entity, &Edge2d)>,
+                    Query<(Entity, &Edge3d)>
+                )> = SystemState::new(world);
+                let (mut commands, client, mut canvas_manager, vertex_q, edge_2d_q, edge_3d_q) = system_state.get_mut(world);
+
+                info!("deleting entity {:?}", vertex_3d_entity);
+
+                // get parent entity
+                let Ok((vertex_3d, vertex_child)) = vertex_q.get(*vertex_3d_entity) else {
+                    panic!("Failed to get VertexChild for vertex entity {:?}!", vertex_3d_entity);
+                };
+                let parent_entity = vertex_child.parent_id.get(&client).unwrap();
+                let vertex_3d_position = vertex_3d.as_vec3();
+
+                // delete 3d vertex
+                commands.entity(*vertex_3d_entity).despawn();
+
+                // cleanup mappings
+                canvas_manager.cleanup_deleted_vertex(vertex_3d_entity, &mut commands, &edge_2d_q, &edge_3d_q);
+
+                system_state.apply(world);
+
+                return Action::CreateVertex(parent_entity, vertex_3d_position);
+            }
+            Action::MoveVertex(vertex_entity, old_position, new_position) => {
+
+                let mut system_state: SystemState<Query<&mut Vertex3d>> = SystemState::new(world);
+                let mut vertex_3d_q = system_state.get_mut(world);
+
+                let Ok(mut vertex_3d) = vertex_3d_q.get_mut(*vertex_entity) else {
+                    panic!("Failed to get Vertex3d for vertex entity {:?}!", vertex_entity);
+                };
+                vertex_3d.set_vec3(new_position);
+
+                system_state.apply(world);
+
+                return Action::MoveVertex(*vertex_entity, *new_position, *old_position);
             }
         }
     }
@@ -529,21 +649,6 @@ impl ActionStack {
         entity_id
     }
 
-    pub fn entity_update_auth_status(&mut self, entity: &Entity) {
-        // if either the undo or redo stack's top entity is this entity, then we need to enable/disable undo based on new auth status
-        if let Some(Action::SelectEntries(file_entities)) = self.undo_actions.last() {
-            if file_entities.contains(entity) {
-                self.buffered_check = true;
-            }
-        }
-
-        if let Some(Action::SelectEntries(file_entities)) = self.redo_actions.last() {
-            if file_entities.contains(entity) {
-                self.buffered_check = true;
-            }
-        }
-    }
-
     fn check_top(&mut self, world: &mut World) {
         self.check_top_undo(world);
         self.check_top_redo(world);
@@ -625,6 +730,7 @@ impl ActionStack {
 
         trees
     }
+
     fn migrate_undo_entities(&mut self, old_entity: Entity, new_entity: Entity) {
         for action in self.undo_actions.iter_mut() {
             action.migrate_entities(old_entity, new_entity);

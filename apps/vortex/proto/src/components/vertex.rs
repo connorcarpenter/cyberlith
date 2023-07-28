@@ -82,6 +82,12 @@ impl Vertex3d {
         Vec3::new(self.x() as f32, self.y() as f32, self.z() as f32)
     }
 
+    pub fn set_vec3(&mut self, vec3: &Vec3) {
+        self.set_x(vec3.x as i16);
+        self.set_y(vec3.y as i16);
+        self.set_z(vec3.z as i16);
+    }
+
     pub fn from_vec3(vec3: Vec3) -> Self {
         Self::new(vec3.x as i16, vec3.y as i16, vec3.z as i16)
     }

@@ -283,24 +283,7 @@ pub fn remove_component_events(
         for (vertex_3d_entity, _) in events.read::<Vertex3d>() {
             info!("removed Vertex3d component from entity: {:?}", vertex_3d_entity);
 
-            // despawn 3d edge
-            for (edge_3d_entity, edge_3d) in edge_3d_q.iter() {
-                if edge_3d.start == vertex_3d_entity {
-                    commands.entity(edge_3d_entity).despawn();
-                }
-            }
-
-            if let Some(vertex_2d_entity) = canvas_manager.unregister_3d_vertex(&vertex_3d_entity) {
-                // despawn 2d vertex
-                commands.entity(vertex_2d_entity).despawn();
-
-                // despawn 2d edge
-                for (edge_2d_entity, edge_2d) in edge_2d_q.iter() {
-                    if edge_2d.start == vertex_2d_entity {
-                        commands.entity(edge_2d_entity).despawn();
-                    }
-                }
-            }
+            canvas_manager.cleanup_deleted_vertex(&vertex_3d_entity, &mut commands, &edge_2d_q, &edge_3d_q);
         }
     }
 }
