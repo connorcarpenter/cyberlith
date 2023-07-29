@@ -562,18 +562,22 @@ impl Workspace {
         let file_extension = self.working_file_extension(key);
 
         // get file contents from either the changelist or the file system
-        let bytes = if self.changelist_entries.contains_key(key) {
-            // get contents of file from changelist
-            Box::from(
-                self.changelist_entries
+        let bytes = {
+            if self.changelist_entries.contains_key(key) {
+                // get contents of file from changelist
+                if let Some(content) = self.changelist_entries
                     .get(key)
                     .unwrap()
                     .get_content()
-                    .unwrap(),
-            )
-        } else {
-            // get contents of file from file system
-            self.get_file_contents(key)
+                {
+                    Box::from(content)
+                } else {
+                    self.get_file_contents(key)
+                }
+            } else {
+                // get contents of file from file system
+                self.get_file_contents(key)
+            }
         };
 
         // FileReader reads File's contents and spawns all Entities + Components

@@ -88,11 +88,11 @@ fn vertex_process_insert_complete(
     meshes: &mut Assets<CpuMesh>,
     materials: &mut Assets<CpuMaterial>,
 ) {
-    let parent_opt = entry.decompose();
+    let parent_3d_entity_opt = entry.decompose();
 
     vertex_3d_postprocess(
         commands,
-        parent_opt,
+        parent_3d_entity_opt,
         vertex_3d_entity,
         canvas_manager,
         meshes,
@@ -102,7 +102,7 @@ fn vertex_process_insert_complete(
 
 pub fn vertex_3d_postprocess(
     commands: &mut Commands,
-    parent_entity_opt: Option<Entity>,
+    parent_3d_entity_opt: Option<Entity>,
     vertex_3d_entity: Entity,
     canvas_manager: &mut CanvasManager,
     meshes: &mut Assets<CpuMesh>,
@@ -134,7 +134,7 @@ pub fn vertex_3d_postprocess(
         .insert(Vertex2d)
         .id();
 
-    if let Some(parent_3d_entity) = parent_entity_opt {
+    if let Some(parent_3d_entity) = parent_3d_entity_opt {
         // create 2d edge entity
         commands
             .spawn(create_2d_edge_arrow(

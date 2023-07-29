@@ -51,7 +51,6 @@ pub struct CanvasManager {
     canvas_texture_size: Vec2,
     vertices_3d_to_2d: HashMap<Entity, Entity>,
     vertices_2d_to_3d: HashMap<Entity, Entity>,
-    vertex_3d_entities_to_delete: Vec<Entity>,
 
     click_type: ClickType,
     click_start: Vec2,
@@ -92,7 +91,6 @@ impl Default for CanvasManager {
             canvas_texture_size: Vec2::new(1280.0, 720.0),
             vertices_3d_to_2d: HashMap::new(),
             vertices_2d_to_3d: HashMap::new(),
-            vertex_3d_entities_to_delete: Vec::new(),
 
             click_type: ClickType::Left,
             click_start: Vec2::ZERO,
@@ -187,7 +185,7 @@ impl CanvasManager {
         }
         // Delete
         else if input.is_pressed(Key::Delete) {
-            self.handle_delete_key_press(commands, client, edge_3d_q);
+            self.handle_delete_key_press(commands, client, action_stack, edge_3d_q);
         }
 
         // mouse clicks
@@ -228,8 +226,6 @@ impl CanvasManager {
                 self.click_down = true;
                 self.click_start = mouse;
                 self.handle_mouse_click(
-                    commands,
-                    client,
                     action_stack,
                     self.click_type,
                     &mouse,
@@ -242,8 +238,8 @@ impl CanvasManager {
                 // release click
                 self.click_down = false;
 
-                if let Some((entity, old_pos, new_pos)) = self.last_vertex_dragged.take() {
-                    action_stack.buffer_action(Action::MoveVertex(entity, old_pos, new_pos));
+                if let Some((vertex_2d_entity, old_pos, new_pos)) = self.last_vertex_dragged.take() {
+                    action_stack.buffer_action(Action::MoveVertex(vertex_2d_entity, old_pos, new_pos));
                 }
             }
         }
@@ -392,9 +388,13 @@ impl CanvasManager {
         for (edge_entity, edge_endpoints) in edge_3d_q.iter() {
             let start_pos = transform_q.get(edge_endpoints.start).unwrap().translation;
 
-            let end_pos = transform_q.get(edge_endpoints.end).unwrap().translation;
-            let mut edge_transform = transform_q.get_mut(edge_entity).unwrap();
-            set_3d_line_transform(&mut edge_transform, start_pos, end_pos);
+            if let Ok(end_transform) = transform_q.get(edge_endpoints.end) {
+                let end_pos = end_transform.translation;
+                let mut edge_transform = transform_q.get_mut(edge_entity).unwrap();
+                set_3d_line_transform(&mut edge_transform, start_pos, end_pos);
+            } else {
+                warn!("3d Edge end entity {:?} has no transform", edge_endpoints.end);
+            }
         }
     }
 
@@ -415,35 +415,6 @@ impl CanvasManager {
         for (mut camera, _) in camera_q.iter_mut() {
             camera.is_active = cameras_enabled;
         }
-    }
-
-    pub fn poll_buffered_actions(
-        &mut self,
-        commands: &mut Commands,
-        client: &Client,
-        action_stack: &mut ActionStack,
-    ) {
-        if self.vertex_3d_entities_to_delete.len() == 0 {
-            return;
-        }
-
-        let mut new_list = Vec::new();
-        for vertex_3d_entity in self.vertex_3d_entities_to_delete.iter() {
-            if commands
-                .entity(*vertex_3d_entity)
-                .authority(client)
-                .unwrap()
-                .is_granted()
-            {
-                // delete vertex
-                action_stack.buffer_action(Action::DeleteVertex(*vertex_3d_entity));
-
-                self.mouse_hover_recalc = true;
-            } else {
-                new_list.push(*vertex_3d_entity);
-            }
-        }
-        self.vertex_3d_entities_to_delete = new_list;
     }
 
     pub fn update_camera_viewports(
@@ -477,15 +448,31 @@ impl CanvasManager {
         self.camera_3d_recalc = true;
     }
 
-    pub fn select_and_hover(&mut self, entity: &Entity) {
-        self.selected_vertex = Some(*entity);
+    pub fn hover_vertex(&mut self, entity: &Entity) {
         self.hovered_entity = Some(*entity);
+    }
+
+    pub fn select_vertex(&mut self, entity: &Entity) {
+        self.selected_vertex = Some(*entity);
+
+        self.select_line_recalc = true;
+    }
+
+    pub fn deselect_vertex(&mut self) {
+        self.selected_vertex = None;
+
+        self.select_line_recalc = true;
+    }
+
+    pub fn selected_vertex_2d(&self) -> Option<Entity> {
+        self.selected_vertex
     }
 
     fn handle_delete_key_press(
         &mut self,
         commands: &mut Commands,
         client: &mut Client,
+        action_stack: &mut ActionStack,
         edge_3d_q: &Query<(Entity, &Edge3d)>,
     ) {
         if self.selected_vertex.is_none() {
@@ -524,19 +511,19 @@ impl CanvasManager {
         }
 
         // delete them all!
-        for vertex_3d_entity in vertices_3d_to_delete {
-            let auth_status = commands.entity(vertex_3d_entity).authority(client).unwrap();
+        for vertex_3d_entity in vertices_3d_to_delete.iter().rev() {
+            let auth_status = commands.entity(*vertex_3d_entity).authority(client).unwrap();
             if !auth_status.is_granted() {
                 // request authority if needed
-                commands.entity(vertex_3d_entity).request_authority(client);
+                commands.entity(*vertex_3d_entity).request_authority(client);
             }
 
-            self.mark_vertex_3d_entity_for_deletion(vertex_3d_entity);
+            let vertex_2d_entity = self.vertex_entity_3d_to_2d(vertex_3d_entity).unwrap();
+
+            action_stack.buffer_action(Action::DeleteVertex(*vertex_2d_entity, None));
         }
 
-        // empty selection
         self.selected_vertex = None;
-        self.select_line_recalc = true;
     }
 
     fn update_mouse_hover(
@@ -736,8 +723,6 @@ impl CanvasManager {
 
     fn handle_mouse_click(
         &mut self,
-        commands: &mut Commands,
-        client: &mut Client,
         action_stack: &mut ActionStack,
         click_type: ClickType,
         mouse_position: &Vec2,
@@ -778,14 +763,9 @@ impl CanvasManager {
                         vertex_2d_transform.translation.z,
                     );
 
-                    // get 3d vertex transform
-                    let vertex_3d_entity = self.vertex_entity_2d_to_3d(&vertex_2d_entity).unwrap();
-
                     // spawn new vertex
                     action_stack
-                        .buffer_action(Action::CreateVertex(*vertex_3d_entity, new_3d_position));
-
-                    self.deselect_current_vertex(commands, client);
+                        .buffer_action(Action::CreateVertex(vertex_2d_entity, new_3d_position, None, None));
                 }
                 ClickType::Right => {
                     if self.selected_vertex.is_none() {
@@ -793,42 +773,14 @@ impl CanvasManager {
                     }
 
                     // deselect vertex
-
-                    self.deselect_current_vertex(commands, client);
-
-                    self.camera_2d_recalc = true;
+                    action_stack.buffer_action(Action::SelectVertex(None));
                 }
             }
         } else {
             if cursor_is_hovering {
                 match (self.hover_type, click_type) {
                     (CanvasShape::Vertex, ClickType::Left) => {
-                        let Some(target_vertex_3d_entity) = self.vertex_entity_2d_to_3d(&self.hovered_entity.unwrap()) else {
-                            panic!("Hovered entity does not have a 3d vertex! {:?}", self.hovered_entity.unwrap());
-                        };
-
-                        // select vertex
-
-                        let auth_status = commands
-                            .entity(*target_vertex_3d_entity)
-                            .authority(client)
-                            .unwrap();
-                        if !auth_status.is_available() {
-                            // do nothing, vertex is not available
-                            info!(
-                                "Vertex auth is not available for entity: {:?}. Current status: {:?}",
-                                *target_vertex_3d_entity,
-                                auth_status
-                            );
-                            return;
-                        }
-                        commands
-                            .entity(*target_vertex_3d_entity)
-                            .request_authority(client);
-
-                        self.selected_vertex = self.hovered_entity;
-
-                        self.camera_2d_recalc = true;
+                        action_stack.buffer_action(Action::SelectVertex(Some(self.hovered_entity.unwrap())))
                     }
                     (CanvasShape::Vertex, ClickType::Right) => {
                         // do nothing, vertex deselection happens above
@@ -840,18 +792,6 @@ impl CanvasManager {
                 }
             }
         }
-    }
-
-    fn mark_vertex_3d_entity_for_deletion(&mut self, vertex_3d_entity: Entity) {
-        self.vertex_3d_entities_to_delete.push(vertex_3d_entity);
-    }
-
-    fn deselect_current_vertex(&mut self, commands: &mut Commands, client: &mut Client) {
-        let vertex_3d_entity = self
-            .vertex_entity_2d_to_3d(&self.selected_vertex.unwrap())
-            .unwrap();
-        commands.entity(*vertex_3d_entity).release_authority(client);
-        self.selected_vertex = None;
     }
 
     fn handle_mouse_drag(
@@ -909,11 +849,11 @@ impl CanvasManager {
 
                     if let Some((_, old_3d_position, _)) = self.last_vertex_dragged {
                         self.last_vertex_dragged =
-                            Some((*vertex_3d_entity, old_3d_position, new_3d_position));
+                            Some((vertex_2d_entity, old_3d_position, new_3d_position));
                     } else {
                         let old_3d_position = vertex_3d.as_vec3();
                         self.last_vertex_dragged =
-                            Some((*vertex_3d_entity, old_3d_position, new_3d_position));
+                            Some((vertex_2d_entity, old_3d_position, new_3d_position));
                     }
 
                     vertex_3d.set_x(new_3d_position.x as i16);
@@ -1141,7 +1081,7 @@ impl CanvasManager {
         self.vertices_3d_to_2d.get(entity_3d)
     }
 
-    fn vertex_entity_2d_to_3d(&self, entity_2d: &Entity) -> Option<&Entity> {
+    pub(crate) fn vertex_entity_2d_to_3d(&self, entity_2d: &Entity) -> Option<&Entity> {
         self.vertices_2d_to_3d.get(entity_2d)
     }
 }
