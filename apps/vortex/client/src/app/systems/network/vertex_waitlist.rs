@@ -108,6 +108,13 @@ pub fn vertex_3d_postprocess(
     meshes: &mut Assets<CpuMesh>,
     materials: &mut Assets<CpuMaterial>,
 ) -> Entity {
+
+    let color = if parent_3d_entity_opt.is_some() {
+        Color::GREEN
+    } else {
+        Color::LIGHT_GREEN
+    };
+
     commands
         .entity(vertex_3d_entity)
         .insert(RenderObjectBundle::sphere(
@@ -116,7 +123,7 @@ pub fn vertex_3d_postprocess(
             Vec3::ZERO,
             Vertex2d::RADIUS,
             Vertex2d::SUBDIVISIONS,
-            Color::GREEN,
+            color,
         ))
         .insert(canvas_manager.layer_3d);
 
@@ -127,7 +134,7 @@ pub fn vertex_3d_postprocess(
             Vec2::ZERO,
             Vertex2d::RADIUS,
             Vertex2d::SUBDIVISIONS,
-            Color::GREEN,
+            color,
             None,
         ))
         .insert(canvas_manager.layer_2d)
@@ -142,7 +149,7 @@ pub fn vertex_3d_postprocess(
                 materials,
                 Vec2::ZERO,
                 Vec2::X,
-                Color::GREEN,
+                color,
             ))
             .insert(canvas_manager.layer_2d)
             .insert(Edge2d::new(vertex_2d_entity, parent_3d_entity));
@@ -154,7 +161,7 @@ pub fn vertex_3d_postprocess(
                 materials,
                 Vec3::ZERO,
                 Vec3::X,
-                Color::GREEN,
+                color,
             ))
             .insert(canvas_manager.layer_3d)
             .insert(Edge3d::new(vertex_3d_entity, parent_3d_entity));

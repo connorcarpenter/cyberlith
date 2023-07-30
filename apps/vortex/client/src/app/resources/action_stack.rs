@@ -19,6 +19,7 @@ use crate::app::{
     systems::{file_post_process, network::vertex_3d_postprocess},
     resources::{canvas_manager::CanvasManager, file_tree::FileTree, global::Global, tab_manager::TabManager}
 };
+use crate::app::resources::canvas_manager::CanvasShape;
 
 #[derive(Clone)]
 pub enum Action {
@@ -37,11 +38,11 @@ pub enum Action {
     // The File Row entity to rename, and the new name
     RenameEntry(Entity, String),
     // The 2D vertex entity to deselect (or None for deselect)
-    SelectVertex(Option<Entity>),
+    SelectVertex(Option<(Entity, CanvasShape)>),
     // Create Vertex (Parent 2d vertex Entity, Position, older vertex 2d entity & 3d entity it was associated with, and a list of children to create)
     CreateVertex(Entity, Vec3, Option<(Entity, Entity)>, Option<Vec<VertexEntry>>),
     // Delete Vertex (2d vertex entities, optional vertex 2d entity to select after delete)
-    DeleteVertex(Entity, Option<Entity>),
+    DeleteVertex(Entity, Option<(Entity, CanvasShape)>),
     // Move Vertex (2d vertex Entity, Old Position, New Position)
     MoveVertex(Entity, Vec3, Vec3),
 }
@@ -92,7 +93,7 @@ impl Action {
     pub(crate) fn migrate_vertex_entities(&mut self, old_2d_entity: Entity, new_2d_entity: Entity, old_3d_entity: Entity, new_3d_entity: Entity) {
         match self {
             Action::SelectVertex(entity_opt) => {
-                if let Some(entity) = entity_opt {
+                if let Some((entity, _)) = entity_opt {
                     if *entity == old_2d_entity {
                         *entity = new_2d_entity;
                     }
@@ -116,7 +117,7 @@ impl Action {
                 if *entity == old_2d_entity {
                     *entity = new_2d_entity;
                 }
-                if let Some(other_entity) = entity_opt {
+                if let Some((other_entity, _)) = entity_opt {
                     if *other_entity == old_2d_entity {
                         *other_entity = new_2d_entity;
                     }
@@ -456,7 +457,7 @@ impl ActionStack {
 
                 // Deselect all selected vertices, select the new selected vertices
                 let (deselected_entity, entity_to_release) = Self::deselect_all_selected_vertices(&mut canvas_manager);
-                let entity_to_request = Self::select_vertex(&mut canvas_manager, *vertex_2d_entity_opt);
+                let entity_to_request = Self::select_vertex(&mut canvas_manager, vertex_2d_entity_opt.map(|v| v));
 
                 if entity_to_request != entity_to_release {
                     if let Some(entity) = entity_to_release {
@@ -528,7 +529,7 @@ impl ActionStack {
                     }
 
                     // select vertex
-                    canvas_manager.select_vertex(&new_vertex_2d_entity);
+                    canvas_manager.select_vertex(&new_vertex_2d_entity, CanvasShape::Vertex);
                     selected_vertex = new_vertex_2d_entity;
 
                     system_state.apply(world);
@@ -601,10 +602,10 @@ impl ActionStack {
                 );
 
                 // select entities as needed
-                if let Some(vertex_2d_to_select) = vertex_2d_to_select_opt {
+                if let Some((vertex_2d_to_select, vertex_type)) = vertex_2d_to_select_opt {
                     if let Some(vertex_3d_entity_to_request) = Self::select_vertex(
                         &mut canvas_manager,
-                        Some(*vertex_2d_to_select),
+                        Some((*vertex_2d_to_select, *vertex_type)),
                     ) {
                         info!("request_entities({:?})", vertex_3d_entity_to_request);
                         let mut entity_mut = commands.entity(vertex_3d_entity_to_request);
@@ -699,29 +700,35 @@ impl ActionStack {
         (deselected_row_entities, file_entries_to_release)
     }
 
-
+    // returns entity to request auth for
     fn select_vertex(
         canvas_manager: &mut CanvasManager,
-        vertex_2d_entity_opt: Option<Entity>,
+        vertex_2d_entity_opt: Option<(Entity, CanvasShape)>,
     ) -> Option<Entity> {
-        if let Some(vertex_2d_entity) = vertex_2d_entity_opt {
-            canvas_manager.select_vertex(&vertex_2d_entity);
-            let vertex_3d_entity = canvas_manager.vertex_entity_2d_to_3d(&vertex_2d_entity).unwrap();
-            return Some(*vertex_3d_entity);
+        if let Some((vertex_2d_entity, shape)) = vertex_2d_entity_opt {
+            canvas_manager.select_vertex(&vertex_2d_entity, shape);
+            if shape == CanvasShape::Vertex {
+                let vertex_3d_entity = canvas_manager.vertex_entity_2d_to_3d(&vertex_2d_entity).unwrap();
+                return Some(*vertex_3d_entity);
+            } else {
+                return None;
+            }
         }
         return None;
     }
 
     fn deselect_all_selected_vertices(
         canvas_manager: &mut CanvasManager,
-    ) -> (Option<Entity>, Option<Entity>) {
+    ) -> (Option<(Entity, CanvasShape)>, Option<Entity>) {
         let mut entity_to_deselect = None;
         let mut entity_to_release = None;
-        if let Some(vertex_2d_entity) = canvas_manager.selected_vertex_2d() {
+        if let Some((vertex_2d_entity, vertex_2d_type)) = canvas_manager.selected_vertex_2d() {
             canvas_manager.deselect_vertex();
-            entity_to_deselect = Some(vertex_2d_entity);
-            let vertex_3d_entity = canvas_manager.vertex_entity_2d_to_3d(&vertex_2d_entity).unwrap();
-            entity_to_release = Some(*vertex_3d_entity);
+            entity_to_deselect = Some((vertex_2d_entity, vertex_2d_type));
+            if vertex_2d_type == CanvasShape::Vertex {
+                let vertex_3d_entity = canvas_manager.vertex_entity_2d_to_3d(&vertex_2d_entity).unwrap();
+                entity_to_release = Some(*vertex_3d_entity);
+            }
         }
         (entity_to_deselect, entity_to_release)
     }
@@ -909,7 +916,7 @@ impl ActionStack {
                 }
             }
             Some(Action::SelectVertex(vertex_2d_entity_opt)) => {
-                if let Some(vertex_2d_entity) = vertex_2d_entity_opt {
+                if let Some((vertex_2d_entity, CanvasShape::Vertex)) = vertex_2d_entity_opt {
                     let vertex_3d_entity = canvas_manager.vertex_entity_2d_to_3d(vertex_2d_entity).unwrap();
                     if *vertex_3d_entity == *entity {
                         *buffered_check = true;
@@ -935,7 +942,7 @@ impl ActionStack {
             Some(Action::SelectVertex(vertex_2d_entity_opt)) => {
                 let mut entities = Vec::new();
 
-                if let Some(vertex_2d_entity) = vertex_2d_entity_opt {
+                if let Some((vertex_2d_entity, CanvasShape::Vertex)) = vertex_2d_entity_opt {
                     let vertex_3d_entity = world.get_resource::<CanvasManager>().unwrap().vertex_entity_2d_to_3d(vertex_2d_entity).unwrap();
                     entities.push(*vertex_3d_entity);
                 }

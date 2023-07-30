@@ -7,7 +7,7 @@ use naia_bevy_client::Client;
 
 use input::Input;
 use render_api::components::{Camera, Projection, Transform, Visibility};
-use vortex_proto::components::Vertex3d;
+use vortex_proto::components::{Vertex3d, VertexRootChild};
 
 use crate::app::{
     components::{Edge2d, Vertex2d},
@@ -24,7 +24,7 @@ pub fn input(
     mut camera_q: Query<(&mut Camera, &mut Projection)>,
     mut visibility_q: Query<&mut Visibility>,
     mut vertex_3d_q: Query<&mut Vertex3d>,
-    vertex_2d_q: Query<Entity, With<Vertex2d>>,
+    vertex_2d_q: Query<(Entity, Option<&VertexRootChild>), With<Vertex2d>>,
     edge_2d_q: Query<(Entity, &Edge2d)>,
 ) {
     canvas_manager.update_input(

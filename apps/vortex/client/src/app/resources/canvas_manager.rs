@@ -20,7 +20,7 @@ use render_api::{
     shapes::{distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform},
     Handle,
 };
-use vortex_proto::components::Vertex3d;
+use vortex_proto::components::{Vertex3d, VertexRootChild};
 
 use crate::app::{
     components::{Edge2d, Edge3d, HoverCircle, SelectCircle, Vertex2d},
@@ -34,8 +34,9 @@ pub enum ClickType {
     Right,
 }
 
-#[derive(Clone, Copy, Eq, PartialEq)]
+#[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub enum CanvasShape {
+    RootVertex,
     Vertex,
     Edge,
     // Face,
@@ -70,13 +71,12 @@ pub struct CanvasManager {
     pub hover_circle_entity: Option<Entity>,
     mouse_hover_recalc: bool,
     last_mouse_position: Vec2,
-    hovered_entity: Option<Entity>,
-    hover_type: CanvasShape,
+    hovered_entity: Option<(Entity, CanvasShape)>,
     last_vertex_dragged: Option<(Entity, Vec3, Vec3)>,
 
     pub select_circle_entity: Option<Entity>,
     pub select_line_entity: Option<Entity>,
-    selected_vertex: Option<Entity>,
+    selected_vertex: Option<(Entity, CanvasShape)>,
     select_line_recalc: bool,
 }
 
@@ -111,7 +111,6 @@ impl Default for CanvasManager {
             mouse_hover_recalc: false,
             last_mouse_position: Vec2::ZERO,
             hovered_entity: None,
-            hover_type: CanvasShape::Vertex,
             last_vertex_dragged: None,
 
             select_circle_entity: None,
@@ -133,7 +132,7 @@ impl CanvasManager {
         camera_q: &mut Query<(&mut Camera, &mut Projection)>,
         visibility_q: &mut Query<&mut Visibility>,
         vertex_3d_q: &mut Query<&mut Vertex3d>,
-        vertex_2d_q: &Query<Entity, With<Vertex2d>>,
+        vertex_2d_q: &Query<(Entity, Option<&VertexRootChild>), With<Vertex2d>>,
         edge_2d_q: &Query<(Entity, &Edge2d)>,
     ) {
         // Mouse wheel zoom..
@@ -337,7 +336,7 @@ impl CanvasManager {
             vertex_2d_transform.scale = Vec3::splat(scale_2d);
 
             // update hover circle
-            if let Some(hover_entity) = self.hovered_entity {
+            if let Some((hover_entity, _)) = self.hovered_entity {
                 if hover_entity == *vertex_2d_entity {
                     let hover_circle_entity = self.hover_circle_entity.unwrap();
                     let mut hover_circle_transform =
@@ -365,7 +364,7 @@ impl CanvasManager {
             let mut edge_transform = transform_q.get_mut(edge_entity).unwrap();
             set_2d_line_transform(&mut edge_transform, start_pos, end_pos);
 
-            if let Some(hover_entity) = self.hovered_entity {
+            if let Some((hover_entity, CanvasShape::Edge)) = self.hovered_entity {
                 if hover_entity == edge_entity {
                     edge_transform.scale.y = 3.0;
                 }
@@ -439,12 +438,8 @@ impl CanvasManager {
         self.camera_3d_recalc = true;
     }
 
-    pub fn hover_vertex(&mut self, entity: &Entity) {
-        self.hovered_entity = Some(*entity);
-    }
-
-    pub fn select_vertex(&mut self, entity: &Entity) {
-        self.selected_vertex = Some(*entity);
+    pub fn select_vertex(&mut self, entity: &Entity, shape: CanvasShape) {
+        self.selected_vertex = Some((*entity, shape));
 
         self.select_line_recalc = true;
     }
@@ -455,7 +450,7 @@ impl CanvasManager {
         self.select_line_recalc = true;
     }
 
-    pub fn selected_vertex_2d(&self) -> Option<Entity> {
+    pub fn selected_vertex_2d(&self) -> Option<(Entity, CanvasShape)> {
         self.selected_vertex
     }
 
@@ -470,7 +465,12 @@ impl CanvasManager {
         }
 
         // delete vertex
-        let vertex_2d_entity = self.selected_vertex.unwrap();
+        let (vertex_2d_entity, shape) = self.selected_vertex.unwrap();
+
+        if shape == CanvasShape::RootVertex {
+            return;
+        }
+
         let vertex_3d_entity = self
             .vertex_entity_2d_to_3d(&vertex_2d_entity)
             .unwrap();
@@ -506,7 +506,7 @@ impl CanvasManager {
         mouse_position: &Vec2,
         transform_q: &mut Query<&mut Transform>,
         visibility_q: &mut Query<&mut Visibility>,
-        vertex_2d_q: &Query<Entity, With<Vertex2d>>,
+        vertex_2d_q: &Query<(Entity, Option<&VertexRootChild>), With<Vertex2d>>,
         edge_2d_q: &Query<(Entity, &Edge2d)>,
     ) {
         if mouse_position.x as i16 != self.last_mouse_position.x as i16
@@ -527,17 +527,21 @@ impl CanvasManager {
         let mut least_distance = f32::MAX;
         let mut least_coords = Vec2::ZERO;
         let mut least_entity = None;
-        let mut hover_type = None;
 
-        for vertex_entity in vertex_2d_q.iter() {
+        for (vertex_entity, root_opt) in vertex_2d_q.iter() {
             let vertex_transform = transform_q.get(vertex_entity).unwrap();
             let vertex_position = vertex_transform.translation.truncate();
             let distance = vertex_position.distance(*mouse_position);
             if distance < least_distance {
                 least_distance = distance;
                 least_coords = vertex_position;
-                least_entity = Some(vertex_entity);
-                hover_type = Some(CanvasShape::Vertex);
+
+                let shape = match root_opt {
+                    Some(_) => CanvasShape::RootVertex,
+                    None => CanvasShape::Vertex,
+                };
+
+                least_entity = Some((vertex_entity, shape));
             }
         }
 
@@ -558,8 +562,7 @@ impl CanvasManager {
                 let distance = distance_to_2d_line(*mouse_position, edge_start, edge_end);
                 if distance < least_distance {
                     least_distance = distance;
-                    least_entity = Some(edge_entity);
-                    hover_type = Some(CanvasShape::Edge);
+                    least_entity = Some((edge_entity, CanvasShape::Edge));
                 }
             }
 
@@ -573,10 +576,9 @@ impl CanvasManager {
 
         if is_hovering {
             self.hovered_entity = least_entity;
-            self.hover_type = hover_type.unwrap();
 
-            match hover_type {
-                Some(CanvasShape::Vertex) => {
+            match self.hovered_entity {
+                Some((_, CanvasShape::Vertex)) | Some((_, CanvasShape::RootVertex)) => {
                     // hovering over vertex
                     let Ok(mut hover_circle_transform) = transform_q.get_mut(hover_circle_entity) else {
                         panic!("HoverCircle entity has no Transform");
@@ -588,9 +590,9 @@ impl CanvasManager {
 
                     hover_circle_visibility.visible = true;
                 }
-                Some(CanvasShape::Edge) => {
+                Some((entity, CanvasShape::Edge)) => {
                     // hovering over edge
-                    let Ok(mut edge_transform) = transform_q.get_mut(least_entity.unwrap()) else {
+                    let Ok(mut edge_transform) = transform_q.get_mut(entity) else {
                         panic!("Edge entity has no Transform");
                     };
                     edge_transform.scale.y = Edge2d::HOVER_THICKNESS * self.camera_3d_scale;
@@ -630,7 +632,7 @@ impl CanvasManager {
             panic!("Select shape entities has no Visibility");
         };
 
-        if let Some(selected_vertex_entity) = self.selected_vertex {
+        if let Some((selected_vertex_entity, _)) = self.selected_vertex {
             let vertex_transform = {
                 let Ok(vertex_transform) = transform_q.get(selected_vertex_entity) else {
                     return;
@@ -672,7 +674,7 @@ impl CanvasManager {
 
         //
 
-        if let Some(selected_vertex_entity) = self.selected_vertex {
+        if let Some((selected_vertex_entity, _)) = self.selected_vertex {
             let vertex_transform = {
                 let Ok(vertex_transform) = transform_q.get(selected_vertex_entity) else {
                     return;
@@ -726,7 +728,7 @@ impl CanvasManager {
                     let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
 
                     // get 2d vertex transform
-                    let vertex_2d_entity = self.selected_vertex.unwrap();
+                    let (vertex_2d_entity, _) = self.selected_vertex.unwrap();
                     if let Ok(vertex_2d_transform) = transform_q.get(vertex_2d_entity) {
 
                         // convert 2d to 3d
@@ -755,11 +757,11 @@ impl CanvasManager {
             }
         } else {
             if cursor_is_hovering {
-                match (self.hover_type, click_type) {
-                    (CanvasShape::Vertex, ClickType::Left) => {
-                        action_stack.buffer_action(Action::SelectVertex(Some(self.hovered_entity.unwrap())))
+                match (self.hovered_entity.map(|(_, s)| s).unwrap(), click_type) {
+                    (CanvasShape::Vertex, ClickType::Left) | (CanvasShape::RootVertex, ClickType::Left) => {
+                        action_stack.buffer_action(Action::SelectVertex(self.hovered_entity));
                     }
-                    (CanvasShape::Vertex, ClickType::Right) => {
+                    (CanvasShape::Vertex, ClickType::Right) | (CanvasShape::RootVertex, ClickType::Right) => {
                         // do nothing, vertex deselection happens above
                     }
                     (CanvasShape::Edge, ClickType::Left) => { /* ? */ }
@@ -783,12 +785,14 @@ impl CanvasManager {
         vertex_3d_q: &mut Query<&mut Vertex3d>,
     ) {
         let vertex_is_selected = self.selected_vertex.is_some();
+        let vertex_is_root_vertex = vertex_is_selected && self.selected_vertex.unwrap().1 == CanvasShape::RootVertex;
 
-        if vertex_is_selected {
+        if vertex_is_selected && !vertex_is_root_vertex {
             match click_type {
                 ClickType::Left => {
                     // move vertex
-                    let vertex_2d_entity = self.selected_vertex.unwrap();
+                    let (vertex_2d_entity, _) = self.selected_vertex.unwrap();
+
                     if let Some(vertex_3d_entity) = self.vertex_entity_2d_to_3d(&vertex_2d_entity) {
                         let auth_status = commands
                             .entity(*vertex_3d_entity)

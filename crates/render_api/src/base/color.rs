@@ -61,6 +61,8 @@ impl Color {
     pub const RED: Color = Color::new_opaque(255, 0, 0);
     /// Opaque green
     pub const GREEN: Color = Color::new_opaque(0, 255, 0);
+    /// Opaque light green
+    pub const LIGHT_GREEN: Color = Color::new_opaque(16, 255, 16);
     /// Opaque blue
     pub const BLUE: Color = Color::new_opaque(0, 0, 255);
     /// Opaque white

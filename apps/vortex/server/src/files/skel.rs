@@ -175,10 +175,15 @@ impl SkelReader {
                     let entity_id = commands
                         .spawn_empty()
                         .enable_replication(server)
-                        .configure_replication(ReplicationConfig::Delegated)
                         .id();
                     info!("spawning vertex entity {:?}", entity_id);
-                    entities.push((entity_id, x, y, z, parent_id_opt));
+                    if parent_id_opt.is_some() {
+                        commands.entity(entity_id).configure_replication(ReplicationConfig::Delegated);
+                        entities.push((entity_id, x, y, z, parent_id_opt));
+                    } else {
+                        // root node should always be at 0,0,0 ... you can refactor these files later
+                        entities.push((entity_id, 0, 0, 0, parent_id_opt));
+                    }
                 }
             }
         }
