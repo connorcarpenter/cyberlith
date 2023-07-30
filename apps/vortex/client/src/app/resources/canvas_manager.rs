@@ -10,7 +10,7 @@ use bevy_log::{info, warn};
 use naia_bevy_client::{Client, CommandsExt};
 
 use input::{Input, Key, MouseButton};
-use math::{convert_2d_to_3d, convert_3d_to_2d, Quat, Vec2, Vec3};
+use math::{convert_2d_to_3d, convert_3d_to_2d, Quat, Vec2, Vec3, EulerRot};
 use render_api::{
     base::CpuTexture2D,
     components::{
@@ -64,7 +64,7 @@ pub struct CanvasManager {
     pub layer_3d: RenderLayer,
     camera_3d_recalc: bool,
     camera_3d_offset: Vec2,
-    camera_3d_rotation: Option<Quat>,
+    camera_3d_rotation: Vec2,
     camera_3d_scale: f32,
 
     pub hover_circle_entity: Option<Entity>,
@@ -103,7 +103,7 @@ impl Default for CanvasManager {
             camera_3d: None,
             layer_3d: RenderLayer::default(),
             camera_3d_recalc: false,
-            camera_3d_rotation: None,
+            camera_3d_rotation: Vec2::ZERO,
             camera_3d_scale: 1.0,
             camera_3d_offset: Vec2::ZERO,
 
@@ -245,17 +245,6 @@ impl CanvasManager {
     }
 
     pub fn update_3d_camera(&mut self, camera_q: &mut Query<(&mut Camera, &mut Transform)>) {
-        if self.camera_3d_rotation.is_none() {
-            let Some(camera_3d) = self.camera_3d else {
-                return;
-            };
-
-            let Ok((_, transform)) = camera_q.get(camera_3d) else {
-                return;
-            };
-
-            self.camera_3d_rotation = Some(transform.rotation.clone());
-        }
 
         if self.camera_3d_recalc {
             self.camera_3d_recalc = false;
@@ -269,7 +258,7 @@ impl CanvasManager {
                 return;
             };
 
-            camera_transform.rotation = self.camera_3d_rotation.unwrap();
+            camera_transform.rotation = Quat::from_euler(EulerRot::YXZ, f32::to_radians(self.camera_3d_rotation.x), f32::to_radians(self.camera_3d_rotation.y), 0.0);
             camera_transform.scale = Vec3::splat(1.0 / self.camera_3d_scale);
 
             let right = camera_transform.right_direction();
@@ -889,26 +878,22 @@ impl CanvasManager {
     }
 
     fn set_camera_angle_ingame(&mut self) {
-        let mut rotation = Quat::from_rotation_y(f32::to_radians(0.0));
-
-        // -60 seems to be 2:1 diablo isometric angle
-        // -71.8 seems to be 3:2 warcraft angle
-        // -64.849 seems to be the 7:4 angle we're looking for..
-        rotation *= Quat::from_rotation_x(f32::to_radians(-64.849));
-
-        self.set_camera_angle(rotation);
+        // 60 seems to be 2:1 diablo isometric angle
+        // 71.8 seems to be 3:2 warcraft angle
+        // 64.849 seems to be the 7:4 angle we're looking for..
+        self.set_camera_angle(Vec2::new(64.849, 0.0));
     }
 
     fn set_camera_angle_side(&mut self) {
-        self.set_camera_angle(Quat::from_rotation_y(f32::to_radians(90.0)));
+        self.set_camera_angle(Vec2::new(90.0, 0.0));
     }
 
     fn set_camera_angle_front(&mut self) {
-        self.set_camera_angle(Quat::from_rotation_y(f32::to_radians(0.0)));
+        self.set_camera_angle(Vec2::new(0.0, 0.0));
     }
 
     fn set_camera_angle_top(&mut self) {
-        self.set_camera_angle(Quat::from_rotation_x(f32::to_radians(-90.0)));
+        self.set_camera_angle(Vec2::new(0.0, 90.0));
     }
 
     fn camera_pan(&mut self, delta: Vec2) {
@@ -918,17 +903,20 @@ impl CanvasManager {
     }
 
     fn camera_orbit(&mut self, delta: Vec2) {
-        let Some(rotation) = self.camera_3d_rotation else {
-            return;
-        };
 
-        let speed = -0.01;
+        self.camera_3d_rotation.x += delta.x * 0.5;
+        if self.camera_3d_rotation.x > 360.0 {
+            self.camera_3d_rotation.x -= 360.0;
+        } else if self.camera_3d_rotation.x < 0.0 {
+            self.camera_3d_rotation.x += 360.0;
+        }
 
-        self.camera_3d_rotation = Some(
-            rotation
-                * Quat::from_rotation_y(delta.x * speed)
-                * Quat::from_rotation_x(delta.y * speed),
-        );
+        self.camera_3d_rotation.y += delta.y * 0.5;
+        if self.camera_3d_rotation.y > 90.0 {
+            self.camera_3d_rotation.y = 90.0;
+        } else if self.camera_3d_rotation.y < 0.0 {
+            self.camera_3d_rotation.y = 0.0;
+        }
 
         self.recalculate_3d_view();
     }
@@ -951,8 +939,8 @@ impl CanvasManager {
         self.recalculate_3d_view();
     }
 
-    fn set_camera_angle(&mut self, angle: Quat) {
-        self.camera_3d_rotation = Some(angle);
+    fn set_camera_angle(&mut self, angle: Vec2) {
+        self.camera_3d_rotation = angle;
         self.camera_3d_offset = Vec2::ZERO;
         self.camera_3d_scale = 1.0;
         self.recalculate_3d_view();
