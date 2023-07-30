@@ -881,7 +881,7 @@ impl CanvasManager {
         // 60 seems to be 2:1 diablo isometric angle
         // 71.8 seems to be 3:2 warcraft angle
         // 64.849 seems to be the 7:4 angle we're looking for..
-        self.set_camera_angle(Vec2::new(64.849, 0.0));
+        self.set_camera_angle(Vec2::new(0.0, -64.849));
     }
 
     fn set_camera_angle_side(&mut self) {
@@ -893,7 +893,7 @@ impl CanvasManager {
     }
 
     fn set_camera_angle_top(&mut self) {
-        self.set_camera_angle(Vec2::new(0.0, 90.0));
+        self.set_camera_angle(Vec2::new(0.0, -90.0));
     }
 
     fn camera_pan(&mut self, delta: Vec2) {
@@ -904,18 +904,18 @@ impl CanvasManager {
 
     fn camera_orbit(&mut self, delta: Vec2) {
 
-        self.camera_3d_rotation.x += delta.x * 0.5;
+        self.camera_3d_rotation.x += delta.x * -0.5;
         if self.camera_3d_rotation.x > 360.0 {
             self.camera_3d_rotation.x -= 360.0;
         } else if self.camera_3d_rotation.x < 0.0 {
             self.camera_3d_rotation.x += 360.0;
         }
 
-        self.camera_3d_rotation.y += delta.y * 0.5;
-        if self.camera_3d_rotation.y > 90.0 {
-            self.camera_3d_rotation.y = 90.0;
-        } else if self.camera_3d_rotation.y < 0.0 {
+        self.camera_3d_rotation.y += delta.y * -0.5;
+        if self.camera_3d_rotation.y > 0.0 {
             self.camera_3d_rotation.y = 0.0;
+        } else if self.camera_3d_rotation.y < -90.0 {
+            self.camera_3d_rotation.y = -90.0;
         }
 
         self.recalculate_3d_view();
