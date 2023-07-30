@@ -38,16 +38,16 @@ pub enum Action {
     RenameEntry(Entity, String),
     // The 2D vertex entity to deselect (or None for deselect)
     SelectVertex(Option<Entity>),
-    // Create Vertex (Parent 2d vertex Entity, Position, an older vertex 2d entity it was associated with if necessary, and a list of children to create)
-    CreateVertex(Entity, Vec3, Option<Entity>, Option<Vec<VertexEntry>>),
-    // Delete Vertex (2d vertex entity, optional vertex 2d entity to select after delete)
+    // Create Vertex (Parent 2d vertex Entity, Position, older vertex 2d entity & 3d entity it was associated with, and a list of children to create)
+    CreateVertex(Entity, Vec3, Option<(Entity, Entity)>, Option<Vec<VertexEntry>>),
+    // Delete Vertex (2d vertex entities, optional vertex 2d entity to select after delete)
     DeleteVertex(Entity, Option<Entity>),
     // Move Vertex (2d vertex Entity, Old Position, New Position)
     MoveVertex(Entity, Vec3, Vec3),
 }
 
 impl Action {
-    pub(crate) fn migrate_entities(&mut self, old_entity: Entity, new_entity: Entity) {
+    pub(crate) fn migrate_file_entities(&mut self, old_entity: Entity, new_entity: Entity) {
         match self {
             Action::SelectEntries(entities) => {
                 for entity in entities {
@@ -85,38 +85,69 @@ impl Action {
                     *entity = new_entity;
                 }
             }
+            _ => {}
+        }
+    }
+
+    pub(crate) fn migrate_vertex_entities(&mut self, old_2d_entity: Entity, new_2d_entity: Entity, old_3d_entity: Entity, new_3d_entity: Entity) {
+        match self {
             Action::SelectVertex(entity_opt) => {
                 if let Some(entity) = entity_opt {
-                    if *entity == old_entity {
-                        *entity = new_entity;
+                    if *entity == old_2d_entity {
+                        *entity = new_2d_entity;
                     }
                 }
             }
-            Action::CreateVertex(entity, _, entity_opt, _) => {
-                if *entity == old_entity {
-                    *entity = new_entity;
+            Action::CreateVertex(entity, _, entity_opt, entity_tree_opt) => {
+                if *entity == old_2d_entity {
+                    *entity = new_2d_entity;
                 }
-                if let Some(other_entity) = entity_opt {
-                    if *other_entity == old_entity {
-                        *other_entity = new_entity;
+                if let Some((other_2d_entity, other_3d_entity)) = entity_opt {
+                    if *other_2d_entity == old_2d_entity {
+                        *other_2d_entity = new_2d_entity;
+                    }
+                    if *other_3d_entity == old_3d_entity {
+                        *other_3d_entity = new_3d_entity;
                     }
                 }
+                migrate_vertex_trees(entity_tree_opt, old_2d_entity, new_2d_entity, old_3d_entity, new_3d_entity);
             }
             Action::DeleteVertex(entity, entity_opt) => {
-                if *entity == old_entity {
-                    *entity = new_entity;
+                if *entity == old_2d_entity {
+                    *entity = new_2d_entity;
                 }
                 if let Some(other_entity) = entity_opt {
-                    if *other_entity == old_entity {
-                        *other_entity = new_entity;
+                    if *other_entity == old_2d_entity {
+                        *other_entity = new_2d_entity;
                     }
                 }
             }
             Action::MoveVertex(entity, _, _) => {
-                if *entity == old_entity {
-                    *entity = new_entity;
+                if *entity == old_2d_entity {
+                    *entity = new_2d_entity;
                 }
             }
+            _ => {}
+        }
+    }
+}
+
+fn migrate_vertex_trees(
+    vertex_trees_opt: &mut Option<Vec<VertexEntry>>,
+    old_2d_entity: Entity,
+    new_2d_entity: Entity,
+    old_3d_entity: Entity,
+    new_3d_entity: Entity,
+) {
+    if let Some(vertex_trees) = vertex_trees_opt {
+        for vertex_tree in vertex_trees {
+            if vertex_tree.entity_2d == old_2d_entity {
+                vertex_tree.entity_2d = new_2d_entity;
+            }
+            if vertex_tree.entity_3d == old_3d_entity {
+                vertex_tree.entity_3d = new_3d_entity;
+            }
+            migrate_vertex_trees(&mut vertex_tree.children, old_2d_entity, new_2d_entity, old_3d_entity, new_3d_entity);
         }
     }
 }
@@ -294,7 +325,7 @@ impl ActionStack {
 
                 // migrate undo entities
                 if let Some(old_entity) = old_entity_opt {
-                    self.migrate_undo_entities(*old_entity, entity_id);
+                    self.migrate_file_entities(*old_entity, entity_id);
                 }
 
                 // open tab for new entry
@@ -418,73 +449,110 @@ impl ActionStack {
             }
             Action::SelectVertex(vertex_2d_entity_opt) => {
 
-                info!("SelectVertex");
+                info!("SelectVertex({:?})", vertex_2d_entity_opt);
 
                 let mut system_state: SystemState<(Commands, Client, ResMut<CanvasManager>)> = SystemState::new(world);
                 let (mut commands, mut client, mut canvas_manager) = system_state.get_mut(world);
 
-                //
                 // Deselect all selected vertices, select the new selected vertices
-                let (deselected_entity, mut entities_to_release) = Self::deselect_all_selected_vertices(&mut canvas_manager);
-                let mut entities_to_request = Self::select_vertices(&mut canvas_manager, *vertex_2d_entity_opt);
+                let (deselected_entity, entity_to_release) = Self::deselect_all_selected_vertices(&mut canvas_manager);
+                let entity_to_request = Self::select_vertex(&mut canvas_manager, *vertex_2d_entity_opt);
 
-                Self::remove_duplicates(&mut entities_to_release, &mut entities_to_request);
-
-                Self::release_entities(&mut commands, &mut client, entities_to_release);
-                Self::request_entities(&mut commands, &mut client, entities_to_request);
+                if entity_to_request != entity_to_release {
+                    if let Some(entity) = entity_to_release {
+                        let mut entity_mut = commands.entity(entity);
+                        if entity_mut.authority(&client).is_some() {
+                            entity_mut.release_authority(&mut client);
+                        }
+                    }
+                    if let Some(entity) = entity_to_request {
+                        info!("request_entity({:?})", entity);
+                        let mut entity_mut = commands.entity(entity);
+                        if entity_mut.authority(&client).is_some() {
+                            entity_mut.request_authority(&mut client);
+                        }
+                    }
+                }
 
                 system_state.apply(world);
 
                 return Action::SelectVertex(deselected_entity);
             }
-            Action::CreateVertex(
-                parent_vertex_2d_entity,
-                position,
-                old_vertex_2d_entity_opt,
-                children_opt
-            ) => {
+            Action::CreateVertex(parent_vertex_2d_entity,
+                                 position,
+                                 old_vertex_entities_opt,
+                                 children_opt) => {
+
+                let mut new_3d_vertices = Vec::new();
+                let deselected_vertex_2d_entity_store;
+                let selected_vertex;
 
                 info!("CreateVertex");
 
-                let mut system_state: SystemState<(
-                    Commands,
-                    Client,
-                    ResMut<CanvasManager>,
-                    ResMut<Assets<CpuMesh>>,
-                    ResMut<Assets<CpuMaterial>>,
-                )> = SystemState::new(world);
-                let (mut commands, mut client, mut canvas_manager, mut meshes, mut materials) =
-                    system_state.get_mut(world);
+                {
+                    let mut system_state: SystemState<(
+                        Commands,
+                        Client,
+                        ResMut<CanvasManager>,
+                        ResMut<Assets<CpuMesh>>,
+                        ResMut<Assets<CpuMaterial>>,
+                    )> = SystemState::new(world);
+                    let (mut commands, mut client, mut canvas_manager, mut meshes, mut materials) =
+                        system_state.get_mut(world);
 
-                let (deselected_vertex_2d_entity, vertex_3d_entities_to_release) =
-                    Self::deselect_all_selected_vertices(&mut canvas_manager);
-                Self::release_entities(&mut commands, &mut client, vertex_3d_entities_to_release);
+                    let (deselected_vertex_2d_entity, vertex_3d_entity_to_release) =
+                        Self::deselect_all_selected_vertices(&mut canvas_manager);
+                    deselected_vertex_2d_entity_store = deselected_vertex_2d_entity;
+                    if let Some(entity) = vertex_3d_entity_to_release {
+                        let mut entity_mut = commands.entity(entity);
+                        if entity_mut.authority(&client).is_some() {
+                            entity_mut.release_authority(&mut client);
+                        }
+                    }
 
-                let new_vertex_2d_entity = self.create_vertex_entity(
-                    &mut commands,
-                    &mut client,
-                    &mut canvas_manager,
-                    &mut meshes,
-                    &mut materials,
-                    parent_vertex_2d_entity,
-                    position,
-                    children_opt,
-                );
+                    let (new_vertex_2d_entity, new_vertex_3d_entity) = self.create_vertex_entity(
+                        &mut commands,
+                        &mut client,
+                        &mut canvas_manager,
+                        &mut meshes,
+                        &mut materials,
+                        &parent_vertex_2d_entity,
+                        &position,
+                        &children_opt,
+                        &mut new_3d_vertices,
+                    );
 
-                // migrate undo entities
-                if let Some(old_vertex_2d_entity) = old_vertex_2d_entity_opt {
-                    self.migrate_undo_entities(*old_vertex_2d_entity, new_vertex_2d_entity);
+                    // migrate undo entities
+                    if let Some((old_vertex_2d_entity, old_vertex_3d_entity)) = old_vertex_entities_opt {
+                        self.migrate_vertex_entities(*old_vertex_2d_entity, new_vertex_2d_entity, *old_vertex_3d_entity, new_vertex_3d_entity);
+                    }
+
+                    // select vertex
+                    canvas_manager.select_vertex(&new_vertex_2d_entity);
+                    selected_vertex = new_vertex_2d_entity;
+
+                    system_state.apply(world);
                 }
 
-                canvas_manager.select_vertex(&new_vertex_2d_entity);
+                // release all non-selected vertices
+                {
+                    let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+                    let (mut commands, mut client) = system_state.get_mut(world);
 
-                system_state.apply(world);
+                    for vertex_to_release in new_3d_vertices {
+                        if vertex_to_release != selected_vertex {
+                            commands.entity(vertex_to_release).release_authority(&mut client);
+                        }
+                    }
 
-                return Action::DeleteVertex(new_vertex_2d_entity, deselected_vertex_2d_entity);
+                    system_state.apply(world);
+                }
+
+                return Action::DeleteVertex(selected_vertex, deselected_vertex_2d_entity_store);
             }
             Action::DeleteVertex(vertex_2d_entity, vertex_2d_to_select_opt) => {
 
-                info!("DeleteVertex");
+                info!("DeleteVertex({:?})", vertex_2d_entity);
 
                 let mut system_state: SystemState<(
                     Commands,
@@ -511,6 +579,7 @@ impl ActionStack {
                 let entry_contents_opt = {
                     let entries = Self::convert_vertices_to_tree(
                         &client,
+                        &mut canvas_manager,
                         &vertex_3d_entity,
                         &vertex_q,
                     );
@@ -518,6 +587,8 @@ impl ActionStack {
                     Some(entries)
                 };
 
+                // actually despawn entities
+                info!("commands.entity({:?}).despawn()", vertex_3d_entity);
                 // delete 3d vertex
                 commands.entity(vertex_3d_entity).despawn();
 
@@ -531,16 +602,23 @@ impl ActionStack {
 
                 // select entities as needed
                 if let Some(vertex_2d_to_select) = vertex_2d_to_select_opt {
-                    let vertex_3d_entities_to_request = Self::select_vertices(
+                    if let Some(vertex_3d_entity_to_request) = Self::select_vertex(
                         &mut canvas_manager,
-                    Some(*vertex_2d_to_select),
-                    );
-                    Self::request_entities(&mut commands, &mut client, vertex_3d_entities_to_request);
+                        Some(*vertex_2d_to_select),
+                    ) {
+                        info!("request_entities({:?})", vertex_3d_entity_to_request);
+                        let mut entity_mut = commands.entity(vertex_3d_entity_to_request);
+                        if entity_mut.authority(&client).is_some() {
+                            entity_mut.request_authority(&mut client);
+                        }
+                    }
+                } else {
+                    canvas_manager.deselect_vertex();
                 }
 
                 system_state.apply(world);
 
-                return Action::CreateVertex(parent_vertex_2d_entity, vertex_3d_position, Some(*vertex_2d_entity), entry_contents_opt
+                return Action::CreateVertex(parent_vertex_2d_entity, vertex_3d_position, Some((*vertex_2d_entity, vertex_3d_entity)), entry_contents_opt
                     .map(|entries| entries.into_iter().map(|(_, entry)| entry).collect()));
             }
             Action::MoveVertex(vertex_2d_entity, old_position, new_position) => {
@@ -622,31 +700,30 @@ impl ActionStack {
     }
 
 
-    fn select_vertices(
+    fn select_vertex(
         canvas_manager: &mut CanvasManager,
         vertex_2d_entity_opt: Option<Entity>,
-    ) -> HashSet<Entity> {
-        let mut output = HashSet::new();
+    ) -> Option<Entity> {
         if let Some(vertex_2d_entity) = vertex_2d_entity_opt {
             canvas_manager.select_vertex(&vertex_2d_entity);
             let vertex_3d_entity = canvas_manager.vertex_entity_2d_to_3d(&vertex_2d_entity).unwrap();
-            output.insert(*vertex_3d_entity);
+            return Some(*vertex_3d_entity);
         }
-        output
+        return None;
     }
 
     fn deselect_all_selected_vertices(
         canvas_manager: &mut CanvasManager,
-    ) -> (Option<Entity>, HashSet<Entity>) {
+    ) -> (Option<Entity>, Option<Entity>) {
         let mut entity_to_deselect = None;
-        let mut entities_to_release = HashSet::new();
+        let mut entity_to_release = None;
         if let Some(vertex_2d_entity) = canvas_manager.selected_vertex_2d() {
             canvas_manager.deselect_vertex();
             entity_to_deselect = Some(vertex_2d_entity);
             let vertex_3d_entity = canvas_manager.vertex_entity_2d_to_3d(&vertex_2d_entity).unwrap();
-            entities_to_release.insert(*vertex_3d_entity);
+            entity_to_release = Some(*vertex_3d_entity);
         }
-        (entity_to_deselect, entities_to_release)
+        (entity_to_deselect, entity_to_release)
     }
 
     fn request_entities(
@@ -655,6 +732,7 @@ impl ActionStack {
         entities_to_request: HashSet<Entity>,
     ) {
         for file_entity in entities_to_request {
+            info!("request_entities({:?})", file_entity);
             let mut entity_mut = commands.entity(file_entity);
             if entity_mut.authority(client).is_some() {
                 entity_mut.request_authority(client);
@@ -733,7 +811,7 @@ impl ActionStack {
                         &sub_tree.children,
                     );
                     let old_entity = sub_tree.entity;
-                    self.migrate_undo_entities(old_entity, new_entity);
+                    self.migrate_file_entities(old_entity, new_entity);
                 }
             }
 
@@ -760,14 +838,14 @@ impl ActionStack {
         parent_vertex_2d_entity: &Entity,
         position: &Vec3,
         children_opt: &Option<Vec<VertexEntry>>,
-    ) -> Entity {
+        new_3d_entities: &mut Vec<Entity>,
+    ) -> (Entity, Entity) {
 
         let parent_vertex_3d_entity = canvas_manager.vertex_entity_2d_to_3d(parent_vertex_2d_entity).unwrap();
 
         let mut vertex_child = VertexChild::new();
         vertex_child.parent_id.set(client, parent_vertex_3d_entity);
-        let new_vertex_3d_entity = commands
-            .spawn_empty()
+        let new_vertex_3d_entity = commands.spawn_empty()
             .enable_replication(client)
             .configure_replication(ReplicationConfig::Delegated)
             .insert(Vertex3d::from_vec3(*position))
@@ -785,7 +863,7 @@ impl ActionStack {
 
         if let Some(children) = children_opt {
             for child in children {
-                let new_child_vertex_2d_entity = self.create_vertex_entity(
+                let (new_child_vertex_2d_entity, new_child_vertex_3d_entity) = self.create_vertex_entity(
                     commands,
                     client,
                     canvas_manager,
@@ -794,14 +872,22 @@ impl ActionStack {
                     &new_vertex_2d_entity,
                     &child.position,
                     &child.children,
+                    new_3d_entities,
                 );
-                let old_vertex_3d_entity = child.entity;
-                let old_vertex_2d_entity = canvas_manager.vertex_entity_3d_to_2d(&old_vertex_3d_entity).unwrap();
-                self.migrate_undo_entities(*old_vertex_2d_entity, new_child_vertex_2d_entity);
+                let old_child_vertex_3d_entity = child.entity_3d;
+                let old_child_vertex_2d_entity = child.entity_2d;
+                self.migrate_vertex_entities(
+                    old_child_vertex_2d_entity,
+                    new_child_vertex_2d_entity,
+                    old_child_vertex_3d_entity,
+                    new_child_vertex_3d_entity,
+                );
             }
         }
 
-        return new_vertex_2d_entity;
+        new_3d_entities.push(new_vertex_3d_entity);
+
+        return (new_vertex_2d_entity, new_vertex_3d_entity);
     }
 
     pub fn entity_update_auth_status(&mut self, canvas_manager: &mut CanvasManager, entity: &Entity) {
@@ -925,24 +1011,28 @@ impl ActionStack {
 
     fn convert_vertices_to_tree(
         client: &Client,
+        canvas_manager: &mut CanvasManager,
         parent_3d_entity: &Entity,
         vertex_3d_q: &Query<(Entity, &Vertex3d, &VertexChild)>,
     ) -> Vec<(Entity, VertexEntry)> {
         let mut output = Vec::new();
 
-        for (entity, position, child) in vertex_3d_q.iter() {
+        for (entity_3d, position, child) in vertex_3d_q.iter() {
             if child.parent_id.get(client).unwrap() == *parent_3d_entity {
+                let entity_2d = canvas_manager.vertex_entity_3d_to_2d(&entity_3d).unwrap();
                 let child_entry = VertexEntry::new(
-                    entity,
+                    *entity_2d,
+                    entity_3d,
                     position.as_vec3(),
                 );
-                output.push((entity, child_entry));
+                output.push((entity_3d, child_entry));
             }
         }
 
         for (entry_entity, entry) in output.iter_mut() {
             let children = Self::convert_vertices_to_tree(
                 client,
+                canvas_manager,
                 entry_entity,
                 vertex_3d_q,
             );
@@ -959,12 +1049,27 @@ impl ActionStack {
         output
     }
 
-    fn migrate_undo_entities(&mut self, old_entity: Entity, new_entity: Entity) {
+    fn migrate_file_entities(&mut self, old_entity: Entity, new_entity: Entity) {
         for action in self.undo_actions.iter_mut() {
-            action.migrate_entities(old_entity, new_entity);
+            action.migrate_file_entities(old_entity, new_entity);
         }
         for action in self.redo_actions.iter_mut() {
-            action.migrate_entities(old_entity, new_entity);
+            action.migrate_file_entities(old_entity, new_entity);
+        }
+    }
+
+    fn migrate_vertex_entities(
+        &mut self,
+        old_2d_entity: Entity,
+        new_2d_entity: Entity,
+        old_3d_entity: Entity,
+        new_3d_entity: Entity,
+    ) {
+        for action in self.undo_actions.iter_mut() {
+            action.migrate_vertex_entities(old_2d_entity, new_2d_entity, old_3d_entity, new_3d_entity);
+        }
+        for action in self.redo_actions.iter_mut() {
+            action.migrate_vertex_entities(old_2d_entity, new_2d_entity, old_3d_entity, new_3d_entity);
         }
     }
 }

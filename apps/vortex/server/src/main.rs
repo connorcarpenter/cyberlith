@@ -15,7 +15,7 @@ use vortex_proto::protocol;
 
 use crate::{
     config::{AppConfig, ConfigPlugin},
-    resources::{changelist_manager_process, ChangelistManager, TabManager, UserManager},
+    resources::{VertexManager, changelist_manager_process, ChangelistManager, TabManager, UserManager},
     systems::world_loop,
 };
 
@@ -47,6 +47,7 @@ fn main() {
         .init_resource::<GitManager>()
         .init_resource::<TabManager>()
         .init_resource::<ChangelistManager>()
+        .init_resource::<VertexManager>()
         // Network Systems
         .add_startup_system(network::init)
         .add_systems(

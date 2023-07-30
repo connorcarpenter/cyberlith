@@ -134,7 +134,6 @@ impl CanvasManager {
         visibility_q: &mut Query<&mut Visibility>,
         vertex_3d_q: &mut Query<&mut Vertex3d>,
         vertex_2d_q: &Query<Entity, With<Vertex2d>>,
-        edge_3d_q: &Query<(Entity, &Edge3d)>,
         edge_2d_q: &Query<(Entity, &Edge2d)>,
     ) {
         // Mouse wheel zoom..
@@ -185,7 +184,7 @@ impl CanvasManager {
         }
         // Delete
         else if input.is_pressed(Key::Delete) {
-            self.handle_delete_key_press(commands, client, action_stack, edge_3d_q);
+            self.handle_delete_key_press(commands, client, action_stack);
         }
 
         // mouse clicks
@@ -386,14 +385,17 @@ impl CanvasManager {
 
         // update 3d edges
         for (edge_entity, edge_endpoints) in edge_3d_q.iter() {
-            let start_pos = transform_q.get(edge_endpoints.start).unwrap().translation;
-
-            if let Ok(end_transform) = transform_q.get(edge_endpoints.end) {
-                let end_pos = end_transform.translation;
-                let mut edge_transform = transform_q.get_mut(edge_entity).unwrap();
-                set_3d_line_transform(&mut edge_transform, start_pos, end_pos);
+            if let Ok(start_transform) = transform_q.get(edge_endpoints.start) {
+                let start_pos = start_transform.translation;
+                if let Ok(end_transform) = transform_q.get(edge_endpoints.end) {
+                    let end_pos = end_transform.translation;
+                    let mut edge_transform = transform_q.get_mut(edge_entity).unwrap();
+                    set_3d_line_transform(&mut edge_transform, start_pos, end_pos);
+                } else {
+                    warn!("3d Edge end entity {:?} has no transform", edge_endpoints.end);
+                }
             } else {
-                warn!("3d Edge end entity {:?} has no transform", edge_endpoints.end);
+                warn!("3d Edge start entity {:?} has no transform", edge_endpoints.start);
             }
         }
     }
@@ -473,55 +475,39 @@ impl CanvasManager {
         commands: &mut Commands,
         client: &mut Client,
         action_stack: &mut ActionStack,
-        edge_3d_q: &Query<(Entity, &Edge3d)>,
     ) {
         if self.selected_vertex.is_none() {
             return;
         }
 
         // delete vertex
-
-        let target_vertex_3d_entity = self
-            .vertex_entity_2d_to_3d(&self.selected_vertex.unwrap())
+        let vertex_2d_entity = self.selected_vertex.unwrap();
+        let vertex_3d_entity = self
+            .vertex_entity_2d_to_3d(&vertex_2d_entity)
             .unwrap();
 
-        // make list of all children vertices
-        let mut vertices_3d_to_delete = vec![];
-        vertices_3d_to_delete_recurse(
-            &mut vertices_3d_to_delete,
-            target_vertex_3d_entity,
-            edge_3d_q,
-        );
-
-        // check whether we can delete all vertices
-        for vertex_3d_entity in vertices_3d_to_delete.iter() {
-            let auth_status = commands
-                .entity(*vertex_3d_entity)
-                .authority(client)
-                .unwrap();
-            if !auth_status.is_granted() && !auth_status.is_available() {
-                // do nothing, vertex is not available
-                // TODO: queue for deletion? check before this?
-                warn!(
-                    "Vertex {:?} is not available for deletion!",
-                    vertex_3d_entity
-                );
-                return;
-            }
+        // check whether we can delete vertex
+        let auth_status = commands
+            .entity(*vertex_3d_entity)
+            .authority(client)
+            .unwrap();
+        if !auth_status.is_granted() && !auth_status.is_available() {
+            // do nothing, vertex is not available
+            // TODO: queue for deletion? check before this?
+            warn!(
+                "Vertex {:?} is not available for deletion!",
+                vertex_3d_entity
+            );
+            return;
         }
 
-        // delete them all!
-        for vertex_3d_entity in vertices_3d_to_delete.iter().rev() {
-            let auth_status = commands.entity(*vertex_3d_entity).authority(client).unwrap();
-            if !auth_status.is_granted() {
-                // request authority if needed
-                commands.entity(*vertex_3d_entity).request_authority(client);
-            }
-
-            let vertex_2d_entity = self.vertex_entity_3d_to_2d(vertex_3d_entity).unwrap();
-
-            action_stack.buffer_action(Action::DeleteVertex(*vertex_2d_entity, None));
+        let auth_status = commands.entity(*vertex_3d_entity).authority(client).unwrap();
+        if !auth_status.is_granted() {
+            // request authority if needed
+            commands.entity(*vertex_3d_entity).request_authority(client);
         }
+
+        action_stack.buffer_action(Action::DeleteVertex(vertex_2d_entity, None));
 
         self.selected_vertex = None;
     }
@@ -752,20 +738,22 @@ impl CanvasManager {
 
                     // get 2d vertex transform
                     let vertex_2d_entity = self.selected_vertex.unwrap();
-                    let vertex_2d_transform = transform_q.get(vertex_2d_entity).unwrap();
+                    if let Ok(vertex_2d_transform) = transform_q.get(vertex_2d_entity) {
 
-                    // convert 2d to 3d
-                    let new_3d_position = convert_2d_to_3d(
-                        &view_matrix,
-                        &projection_matrix,
-                        &camera_viewport.size_vec2(),
-                        &mouse_position,
-                        vertex_2d_transform.translation.z,
-                    );
+                        // convert 2d to 3d
+                        let new_3d_position = convert_2d_to_3d(
+                            &view_matrix,
+                            &projection_matrix,
+                            &camera_viewport.size_vec2(),
+                            &mouse_position,
+                            vertex_2d_transform.translation.z,
+                        );
 
-                    // spawn new vertex
-                    action_stack
-                        .buffer_action(Action::CreateVertex(vertex_2d_entity, new_3d_position, None, None));
+                        // spawn new vertex
+                        action_stack.buffer_action(Action::CreateVertex(vertex_2d_entity, new_3d_position, None, None));
+                    } else {
+                        warn!("Selected vertex entity: {:?} has no Transform", vertex_2d_entity);
+                    }
                 }
                 ClickType::Right => {
                     if self.selected_vertex.is_none() {
@@ -812,56 +800,58 @@ impl CanvasManager {
                 ClickType::Left => {
                     // move vertex
                     let vertex_2d_entity = self.selected_vertex.unwrap();
-                    let vertex_3d_entity = self.vertex_entity_2d_to_3d(&vertex_2d_entity).unwrap();
+                    if let Some(vertex_3d_entity) = self.vertex_entity_2d_to_3d(&vertex_2d_entity) {
+                        let auth_status = commands
+                            .entity(*vertex_3d_entity)
+                            .authority(client)
+                            .unwrap();
+                        if !(auth_status.is_requested() || auth_status.is_granted()) {
+                            // only continue to mutate if requested or granted authority over vertex
+                            return;
+                        }
 
-                    let auth_status = commands
-                        .entity(*vertex_3d_entity)
-                        .authority(client)
-                        .unwrap();
-                    if !(auth_status.is_requested() || auth_status.is_granted()) {
-                        // only continue to mutate if requested or granted authority over vertex
-                        return;
-                    }
+                        // get camera
+                        let camera_3d = self.camera_3d.unwrap();
+                        let camera_transform: Transform = *transform_q.get(camera_3d).unwrap();
+                        let (camera, camera_projection) = camera_q.get(camera_3d).unwrap();
 
-                    // get camera
-                    let camera_3d = self.camera_3d.unwrap();
-                    let camera_transform: Transform = *transform_q.get(camera_3d).unwrap();
-                    let (camera, camera_projection) = camera_q.get(camera_3d).unwrap();
+                        let camera_viewport = camera.viewport.unwrap();
+                        let view_matrix = camera_transform.view_matrix();
+                        let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
 
-                    let camera_viewport = camera.viewport.unwrap();
-                    let view_matrix = camera_transform.view_matrix();
-                    let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
+                        // get 2d vertex transform
+                        let vertex_2d_transform = transform_q.get(vertex_2d_entity).unwrap();
 
-                    // get 2d vertex transform
-                    let vertex_2d_transform = transform_q.get(vertex_2d_entity).unwrap();
+                        // convert 2d to 3d
+                        let new_3d_position = convert_2d_to_3d(
+                            &view_matrix,
+                            &projection_matrix,
+                            &camera_viewport.size_vec2(),
+                            &mouse_position,
+                            vertex_2d_transform.translation.z,
+                        );
 
-                    // convert 2d to 3d
-                    let new_3d_position = convert_2d_to_3d(
-                        &view_matrix,
-                        &projection_matrix,
-                        &camera_viewport.size_vec2(),
-                        &mouse_position,
-                        vertex_2d_transform.translation.z,
-                    );
+                        // set networked 3d vertex position
+                        let mut vertex_3d = vertex_3d_q.get_mut(*vertex_3d_entity).unwrap();
 
-                    // set networked 3d vertex position
-                    let mut vertex_3d = vertex_3d_q.get_mut(*vertex_3d_entity).unwrap();
+                        if let Some((_, old_3d_position, _)) = self.last_vertex_dragged {
+                            self.last_vertex_dragged =
+                                Some((vertex_2d_entity, old_3d_position, new_3d_position));
+                        } else {
+                            let old_3d_position = vertex_3d.as_vec3();
+                            self.last_vertex_dragged =
+                                Some((vertex_2d_entity, old_3d_position, new_3d_position));
+                        }
 
-                    if let Some((_, old_3d_position, _)) = self.last_vertex_dragged {
-                        self.last_vertex_dragged =
-                            Some((vertex_2d_entity, old_3d_position, new_3d_position));
+                        vertex_3d.set_x(new_3d_position.x as i16);
+                        vertex_3d.set_y(new_3d_position.y as i16);
+                        vertex_3d.set_z(new_3d_position.z as i16);
+
+                        // redraw
+                        self.camera_2d_recalc = true;
                     } else {
-                        let old_3d_position = vertex_3d.as_vec3();
-                        self.last_vertex_dragged =
-                            Some((vertex_2d_entity, old_3d_position, new_3d_position));
+                        warn!("Selected vertex entity: {:?} has no 3d counterpart", vertex_2d_entity);
                     }
-
-                    vertex_3d.set_x(new_3d_position.x as i16);
-                    vertex_3d.set_y(new_3d_position.y as i16);
-                    vertex_3d.set_z(new_3d_position.z as i16);
-
-                    // redraw
-                    self.camera_2d_recalc = true;
                 }
                 ClickType::Right => {
                     // TODO: dunno if this is possible? shouldn't the vertex be deselected?
@@ -1055,17 +1045,20 @@ impl CanvasManager {
         // despawn 3d edge
         for (edge_3d_entity, edge_3d) in edge_3d_q.iter() {
             if edge_3d.start == *entity_3d {
+                info!("despawn 3d edge {:?}", edge_3d_entity);
                 commands.entity(edge_3d_entity).despawn();
             }
         }
 
         if let Some(vertex_2d_entity) = self.unregister_3d_vertex(entity_3d) {
             // despawn 2d vertex
+            info!("despawn 2d vertex {:?}", vertex_2d_entity);
             commands.entity(vertex_2d_entity).despawn();
 
             // despawn 2d edge
             for (edge_2d_entity, edge_2d) in edge_2d_q.iter() {
                 if edge_2d.start == vertex_2d_entity {
+                    info!("despawn 2d edge {:?}", edge_2d_entity);
                     commands.entity(edge_2d_entity).despawn();
                 }
             }
@@ -1075,6 +1068,8 @@ impl CanvasManager {
                 entity_3d
             );
         }
+
+        self.camera_2d_recalc = true;
     }
 
     pub(crate) fn vertex_entity_3d_to_2d(&self, entity_3d: &Entity) -> Option<&Entity> {
@@ -1083,20 +1078,5 @@ impl CanvasManager {
 
     pub(crate) fn vertex_entity_2d_to_3d(&self, entity_2d: &Entity) -> Option<&Entity> {
         self.vertices_2d_to_3d.get(entity_2d)
-    }
-}
-
-fn vertices_3d_to_delete_recurse(
-    list: &mut Vec<Entity>,
-    parent_entity: &Entity,
-    edge_3d_q: &Query<(Entity, &Edge3d)>,
-) {
-    info!("queuing {:?} for deletion", parent_entity);
-    list.push(*parent_entity);
-
-    for (_, edge_3d) in edge_3d_q.iter() {
-        if edge_3d.end == *parent_entity {
-            vertices_3d_to_delete_recurse(list, &edge_3d.start, edge_3d_q);
-        }
     }
 }

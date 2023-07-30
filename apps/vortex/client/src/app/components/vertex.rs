@@ -14,15 +14,17 @@ impl Vertex2d {
 // for stored children vertexes undo/redo ...
 #[derive(Clone)]
 pub struct VertexEntry {
-    pub entity: Entity,
+    pub entity_2d: Entity,
+    pub entity_3d: Entity,
     pub position: Vec3,
     pub children: Option<Vec<VertexEntry>>,
 }
 
 impl VertexEntry {
-    pub fn new(entity: Entity, position: Vec3) -> Self {
+    pub fn new(entity_2d: Entity, entity_3d: Entity, position: Vec3) -> Self {
         Self {
-            entity,
+            entity_2d,
+            entity_3d,
             position,
             children: None,
         }

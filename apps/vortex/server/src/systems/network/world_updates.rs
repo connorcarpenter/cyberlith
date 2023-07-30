@@ -29,6 +29,7 @@ use crate::{
         GitManager, TabManager, UserManager,
     },
 };
+use crate::resources::VertexManager;
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
     for SpawnEntityEvent(_user_key, entity) in event_reader.iter() {
@@ -41,6 +42,7 @@ pub fn despawn_entity_events(
     mut server: Server,
     user_manager: Res<UserManager>,
     mut git_manager: ResMut<GitManager>,
+    mut vertex_manager: ResMut<VertexManager>,
     mut event_reader: EventReader<DespawnEntityEvent>,
 ) {
     for DespawnEntityEvent(user_key, entity) in event_reader.iter() {
@@ -52,6 +54,8 @@ pub fn despawn_entity_events(
         let workspace = git_manager.workspace_mut(user.get_username());
         if workspace.entity_is_file(entity) {
             workspace.on_client_delete_file(&mut commands, &mut server, entity);
+        } else if vertex_manager.entity_is_vertex(entity) {
+            vertex_manager.on_client_delete_vertex(&mut commands, &mut server, entity);
         }
     }
 }
@@ -62,11 +66,13 @@ pub fn insert_component_events(
     user_manager: Res<UserManager>,
     mut git_manager: ResMut<GitManager>,
     mut tab_manager: ResMut<TabManager>,
+    mut vertex_manager: ResMut<VertexManager>,
     mut fs_waiting_entities: Local<HashMap<Entity, FSWaitlist>>,
     mut event_reader: EventReader<InsertComponentEvents>,
     fs_entry_query: Query<&FileSystemEntry>,
     fs_child_query: Query<&FileSystemChild>,
     entry_key_query: Query<&FileEntryKey>,
+    vert_query: Query<&VertexChild>,
 ) {
     for events in event_reader.iter() {
         // on FileSystemEntry Insert Event
@@ -143,13 +149,19 @@ pub fn insert_component_events(
         }
 
         // on VertexChild Insert Event
-        for (_, _) in events.read::<VertexChild>() {
+        for (_user_key, entity) in events.read::<VertexChild>() {
             info!("inserted VertexChild");
+            let child = vert_query.get(entity).unwrap();
+            let Some(parent_entity) = child.parent_id.get(&server) else {
+                panic!("no parent entity!")
+            };
+            vertex_manager.on_client_create_vertex(&entity, Some(parent_entity));
         }
 
         // on VertexRootChild Insert Event
-        for (_, _) in events.read::<VertexRootChild>() {
+        for (_user_key, entity) in events.read::<VertexRootChild>() {
             info!("inserted VertexRootChild");
+            vertex_manager.on_client_create_vertex(&entity, None);
         }
     }
 }
