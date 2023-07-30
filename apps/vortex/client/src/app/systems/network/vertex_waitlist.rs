@@ -92,23 +92,22 @@ fn vertex_process_insert_complete(
 
     vertex_3d_postprocess(
         commands,
-        parent_3d_entity_opt,
-        vertex_3d_entity,
         canvas_manager,
         meshes,
         materials,
+        parent_3d_entity_opt,
+        vertex_3d_entity,
     );
 }
 
 pub fn vertex_3d_postprocess(
     commands: &mut Commands,
-    parent_3d_entity_opt: Option<Entity>,
-    vertex_3d_entity: Entity,
     canvas_manager: &mut CanvasManager,
     meshes: &mut Assets<CpuMesh>,
     materials: &mut Assets<CpuMaterial>,
+    parent_3d_entity_opt: Option<Entity>,
+    vertex_3d_entity: Entity,
 ) -> Entity {
-
     let color = if parent_3d_entity_opt.is_some() {
         Color::GREEN
     } else {

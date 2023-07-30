@@ -565,11 +565,7 @@ impl Workspace {
         let bytes = {
             if self.changelist_entries.contains_key(key) {
                 // get contents of file from changelist
-                if let Some(content) = self.changelist_entries
-                    .get(key)
-                    .unwrap()
-                    .get_content()
-                {
+                if let Some(content) = self.changelist_entries.get(key).unwrap().get_content() {
                     Box::from(content)
                 } else {
                     self.get_file_contents(key)

@@ -59,8 +59,12 @@ impl VertexManager {
         }
     }
 
-    pub fn on_client_delete_vertex(&mut self, commands: &mut Commands, server: &mut Server, entity: &Entity) {
-
+    pub fn on_client_delete_vertex(
+        &mut self,
+        commands: &mut Commands,
+        server: &mut Server,
+        entity: &Entity,
+    ) {
         let entities_to_delete = Self::remove_entity(&mut self.vertices, entity);
 
         for child_entity in entities_to_delete {
@@ -71,14 +75,12 @@ impl VertexManager {
         }
     }
 
-    fn remove_entity(
-        entities: &mut HashMap<Entity, VertexValue>,
-        entity: &Entity,
-    ) -> Vec<Entity> {
+    fn remove_entity(entities: &mut HashMap<Entity, VertexValue>, entity: &Entity) -> Vec<Entity> {
         let mut output = Vec::new();
 
         // remove entry
-        let removed_entry = Self::remove_entity_and_collect_children_entities(entities, entity, &mut output);
+        let removed_entry =
+            Self::remove_entity_and_collect_children_entities(entities, entity, &mut output);
 
         // remove entry from parent's children
         if let Some(parent_key) = removed_entry.parent {
@@ -95,17 +97,12 @@ impl VertexManager {
         entity: &Entity,
         output: &mut Vec<Entity>,
     ) -> VertexValue {
-
         let removed_entry = entities.remove(entity).unwrap();
 
         // handle children
         if let Some(removed_entry_children) = &removed_entry.children {
             for child_entity in removed_entry_children {
-                Self::remove_entity_and_collect_children_entities(
-                    entities,
-                    &child_entity,
-                    output,
-                );
+                Self::remove_entity_and_collect_children_entities(entities, &child_entity, output);
                 output.push(*child_entity);
             }
         }

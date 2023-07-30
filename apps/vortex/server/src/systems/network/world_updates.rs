@@ -22,6 +22,7 @@ use vortex_proto::{
     resources::FileEntryKey,
 };
 
+use crate::resources::VertexManager;
 use crate::{
     files::handle_file_modify,
     resources::{
@@ -29,7 +30,6 @@ use crate::{
         GitManager, TabManager, UserManager,
     },
 };
-use crate::resources::VertexManager;
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
     for SpawnEntityEvent(_user_key, entity) in event_reader.iter() {

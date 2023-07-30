@@ -5,8 +5,8 @@ mod git_manager;
 mod tab_manager;
 mod user_manager;
 mod user_tab_state;
-mod workspace;
 mod vertex_manager;
+mod workspace;
 
 pub use changelist_manager::{changelist_manager_process, ChangelistManager};
 pub use file_entry::{ChangelistValue, FileEntryValue};

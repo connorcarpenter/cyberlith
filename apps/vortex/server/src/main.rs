@@ -15,7 +15,9 @@ use vortex_proto::protocol;
 
 use crate::{
     config::{AppConfig, ConfigPlugin},
-    resources::{VertexManager, changelist_manager_process, ChangelistManager, TabManager, UserManager},
+    resources::{
+        changelist_manager_process, ChangelistManager, TabManager, UserManager, VertexManager,
+    },
     systems::world_loop,
 };
 
