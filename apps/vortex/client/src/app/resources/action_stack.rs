@@ -28,6 +28,7 @@ use crate::app::{
     },
     systems::{file_post_process, network::vertex_3d_postprocess},
 };
+use crate::app::components::Vertex2d;
 
 #[derive(Clone)]
 pub enum Action {
@@ -926,6 +927,7 @@ impl ActionStack {
             materials,
             Some(*parent_vertex_3d_entity),
             new_vertex_3d_entity,
+            Vertex2d::CHILD_COLOR,
         );
 
         if let Some(children) = children_opt {

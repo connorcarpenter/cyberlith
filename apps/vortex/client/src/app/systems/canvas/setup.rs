@@ -1,3 +1,4 @@
+use bevy_ecs::entity::Entity;
 use bevy_ecs::system::{Commands, Res, ResMut};
 use bevy_log::info;
 
@@ -11,6 +12,7 @@ use render_api::{
     Assets, Handle,
 };
 use render_egui::EguiUserTextures;
+use vortex_proto::components::Vertex3d;
 
 use crate::app::{
     components::{HoverCircle, SelectCircle, SelectLine, Vertex2d},
@@ -18,6 +20,7 @@ use crate::app::{
     resources::canvas_manager::CanvasManager,
     shapes::create_2d_edge_arrow,
 };
+use crate::app::systems::network::vertex_3d_postprocess;
 
 pub fn setup(
     config: Res<AppConfig>,
@@ -50,6 +53,7 @@ pub fn setup(
         &texture_size,
         canvas_texture_handle,
     );
+    setup_compass(&mut commands, &mut canvas_manager, &mut meshes, &mut materials);
 }
 
 fn setup_2d_scene(
@@ -193,4 +197,81 @@ fn new_render_texture(
     user_textures.add_texture(&texture_handle);
 
     texture_handle
+}
+
+fn setup_compass(
+    commands: &mut Commands,
+    canvas_manager: &mut CanvasManager,
+    meshes: &mut Assets<CpuMesh>,
+    materials: &mut Assets<CpuMaterial>,
+) {
+    let (root_vertex_2d_entity, _) = new_local_vertex(
+        commands,
+        canvas_manager,
+        meshes,
+        materials,
+        None,
+        Vec3::ZERO,
+        Color::WHITE,
+    );
+    new_local_vertex(
+        commands,
+        canvas_manager,
+        meshes,
+        materials,
+        Some(root_vertex_2d_entity),
+        Vec3::new(100.0, 0.0, 0.0),
+        Color::RED,
+    );
+    new_local_vertex(
+        commands,
+        canvas_manager,
+        meshes,
+        materials,
+        Some(root_vertex_2d_entity),
+        Vec3::new(0.0, 100.0, 0.0),
+        Color::GREEN,
+    );
+    new_local_vertex(
+        commands,
+        canvas_manager,
+        meshes,
+        materials,
+        Some(root_vertex_2d_entity),
+        Vec3::new(0.0, 0.0, 100.0),
+        Color::BLUE,
+    );
+}
+
+fn new_local_vertex(
+    commands: &mut Commands,
+    canvas_manager: &mut CanvasManager,
+    meshes: &mut Assets<CpuMesh>,
+    materials: &mut Assets<CpuMaterial>,
+    parent_vertex_2d_entity_opt: Option<Entity>,
+    position: Vec3,
+    color: Color,
+) -> (Entity, Entity) {
+    let parent_vertex_3d_entity_opt = parent_vertex_2d_entity_opt.map(|parent_vertex_2d_entity| {
+        *canvas_manager
+            .vertex_entity_2d_to_3d(&parent_vertex_2d_entity)
+            .unwrap()
+    });
+
+    let new_vertex_3d_entity = commands
+        .spawn_empty()
+        .insert(Vertex3d::from_vec3(position))
+        .id();
+
+    let new_vertex_2d_entity = vertex_3d_postprocess(
+        commands,
+        canvas_manager,
+        meshes,
+        materials,
+        parent_vertex_3d_entity_opt,
+        new_vertex_3d_entity,
+        color,
+    );
+
+    return (new_vertex_2d_entity, new_vertex_3d_entity);
 }

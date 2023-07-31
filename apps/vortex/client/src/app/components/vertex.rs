@@ -1,6 +1,7 @@
 use bevy_ecs::{entity::Entity, prelude::Component};
 
 use math::Vec3;
+use render_api::base::Color;
 
 // Just a marker, to distinguish from 3d version
 #[derive(Component)]
@@ -9,6 +10,8 @@ pub struct Vertex2d;
 impl Vertex2d {
     pub const RADIUS: f32 = 3.0;
     pub const SUBDIVISIONS: u16 = 12;
+    pub const CHILD_COLOR: Color = Color::GREEN;
+    pub const ROOT_COLOR: Color = Color::LIGHT_GREEN;
 }
 
 // for stored children vertexes undo/redo ...

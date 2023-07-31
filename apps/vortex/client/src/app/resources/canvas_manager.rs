@@ -919,7 +919,7 @@ impl CanvasManager {
     }
 
     fn set_camera_angle_side(&mut self) {
-        self.set_camera_angle(Vec2::new(90.0, 0.0));
+        self.set_camera_angle(Vec2::new(-90.0, 0.0));
     }
 
     fn set_camera_angle_front(&mut self) {

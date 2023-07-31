@@ -90,6 +90,11 @@ fn vertex_process_insert_complete(
 ) {
     let parent_3d_entity_opt = entry.decompose();
 
+    let color = match parent_3d_entity_opt {
+        Some(_) => Vertex2d::CHILD_COLOR,
+        None => Vertex2d::ROOT_COLOR,
+    };
+
     vertex_3d_postprocess(
         commands,
         canvas_manager,
@@ -97,6 +102,7 @@ fn vertex_process_insert_complete(
         materials,
         parent_3d_entity_opt,
         vertex_3d_entity,
+        color,
     );
 }
 
@@ -107,12 +113,8 @@ pub fn vertex_3d_postprocess(
     materials: &mut Assets<CpuMaterial>,
     parent_3d_entity_opt: Option<Entity>,
     vertex_3d_entity: Entity,
+    color: Color,
 ) -> Entity {
-    let color = if parent_3d_entity_opt.is_some() {
-        Color::GREEN
-    } else {
-        Color::LIGHT_GREEN
-    };
 
     commands
         .entity(vertex_3d_entity)
