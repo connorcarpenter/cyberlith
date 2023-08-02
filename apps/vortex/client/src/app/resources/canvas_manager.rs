@@ -55,6 +55,8 @@ pub struct CanvasManager {
     canvas_texture: Option<Handle<CpuTexture2D>>,
     canvas_texture_size: Vec2,
 
+    rotating_hack: bool,
+
     // camera
     pub camera_2d: Option<Entity>,
     pub layer_2d: RenderLayer,
@@ -95,6 +97,7 @@ impl Default for CanvasManager {
             next_visible: false,
             is_visible: false,
             is_2d: true,
+            rotating_hack: false,
 
             canvas_texture: None,
             canvas_texture_size: Vec2::new(1280.0, 720.0),
@@ -175,9 +178,17 @@ impl CanvasManager {
             // disable 3d camera, enable 2d camera
             self.set_2d_mode(camera_q);
         }
-        // (G)ame Camera View
-        else if input.is_pressed(Key::G) {
-            self.set_camera_angle_ingame();
+        // 1 Game Camera View
+        else if input.is_pressed(Key::Num1) {
+            self.set_camera_angle_ingame(1);
+        }
+        // 2 Game Camera View
+        else if input.is_pressed(Key::Num2) {
+            self.set_camera_angle_ingame(2);
+        }
+        // 3 Game Camera View
+        else if input.is_pressed(Key::Num3) {
+            self.set_camera_angle_ingame(3);
         }
         // Si(d)e Camera View
         else if input.is_pressed(Key::D) {
@@ -194,6 +205,23 @@ impl CanvasManager {
         // Delete
         else if input.is_pressed(Key::Delete) {
             self.handle_delete_key_press(commands, client, action_stack);
+        }
+
+        if !self.rotating_hack {
+            // Rotate Yaw 45 degrees
+            if input.is_pressed(Key::PageUp) {
+                self.set_camera_angle_yaw_rotate(true);
+                self.rotating_hack = true;
+            }
+            // Rotate Yaw 45 degrees
+            else if input.is_pressed(Key::PageDown) {
+                self.set_camera_angle_yaw_rotate(false);
+                self.rotating_hack = true;
+            }
+        } else {
+            if !input.is_pressed(Key::PageUp) && !input.is_pressed(Key::PageDown) {
+                self.rotating_hack = false;
+            }
         }
 
         // mouse clicks
@@ -943,11 +971,44 @@ impl CanvasManager {
         self.enable_cameras(camera_query, false);
     }
 
-    fn set_camera_angle_ingame(&mut self) {
-        // 60 seems to be 2:1 diablo isometric angle
+    fn set_camera_angle_ingame(&mut self, game_index: u8) {
+
+        let angle = match game_index {
+            1 => { 30.0 } // seems to be 2:1 diablo isometric angle ?
+            2 => { 52.98187825 }
+            3 => { 75.9637565 } // seems to be 4:3 warcraft angle ?
+            _ => {
+                warn!("Invalid game index: {}", game_index);
+                return;
+            }
+        };
+
         // 71.8 seems to be 3:2 warcraft angle
-        // 64.849 seems to be the 7:4 angle we're looking for..
-        self.set_camera_angle(Vec2::new(0.0, -64.849));
+        // 64.849 seems to be the 7:4 angle we're looking for..?
+        let mut rotation = self.camera_3d_rotation;
+        rotation.y = angle * -1.0;
+        self.set_camera_angle(rotation);
+    }
+
+    fn set_camera_angle_yaw_rotate(&mut self, counter: bool) {
+
+        let mut rotation = self.camera_3d_rotation;
+        match counter {
+            true => {
+                rotation.x += 45.0;
+                if rotation.x > 360.0 {
+                    rotation.x -= 360.0;
+                }
+            }
+            false => {
+                rotation.x -= 45.0;
+                if rotation.x < 0.0 {
+                    rotation.x += 360.0;
+                }
+            }
+        }
+
+        self.set_camera_angle(rotation);
     }
 
     fn set_camera_angle_side(&mut self) {
