@@ -113,8 +113,8 @@ impl Default for CanvasManager {
             layer_3d: RenderLayer::default(),
             camera_3d_recalc: false,
             camera_3d_rotation: Vec2::ZERO,
-            camera_3d_scale: 1.0,
-            camera_3d_offset: Vec2::ZERO,
+            camera_3d_scale: 2.5,
+            camera_3d_offset: Vec2::new(0.0, 100.0),
 
             hover_circle_entity: None,
             mouse_hover_recalc: false,
@@ -988,7 +988,7 @@ impl CanvasManager {
 
     fn camera_zoom(&mut self, zoom_delta: f32) {
         let old_scale = self.camera_3d_scale;
-        let new_scale = (old_scale + (zoom_delta * 0.01)).min(5.0).max(1.0);
+        let new_scale = (old_scale + (zoom_delta * 0.01)).min(8.0).max(1.0);
         let scale_diff = new_scale - old_scale;
         self.camera_3d_scale = new_scale;
 
@@ -1191,6 +1191,58 @@ impl CanvasManager {
         commands.entity(vertex_3d_entity).insert(Compass);
         commands.entity(edge_2d_entity).insert(Compass);
         commands.entity(edge_3d_entity).insert(Compass);
+    }
+
+    pub(crate) fn setup_grid(
+        &mut self,
+        commands: &mut Commands,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+    ) {
+        self.new_grid_corner(commands, meshes, materials, true, true, true);
+        self.new_grid_corner(commands, meshes, materials, true, false, false);
+
+        self.new_grid_corner(commands, meshes, materials, false, true, false);
+        self.new_grid_corner(commands, meshes, materials, false, false, true);
+    }
+
+    fn new_grid_corner(&mut self, commands: &mut Commands,
+                       meshes: &mut Assets<CpuMesh>,
+                       materials: &mut Assets<CpuMaterial>, x: bool, y: bool, z: bool) {
+
+        let xf = if x { 1.0 } else { -1.0 };
+        let yf = if y { 1.0 } else { -1.0 };
+        let zf = if z { 1.0 } else { -1.0 };
+
+        let grid_size: f32 = 100.0;
+        let neg_grid_size: f32 = -grid_size;
+
+        let (root_vertex_2d_entity, _, _, _) =
+            self.new_local_vertex(commands, meshes, materials, None, Vec3::new(grid_size * xf, (grid_size * yf) + grid_size, grid_size * zf), Color::DARK_GRAY);
+        commands.entity(root_vertex_2d_entity).insert(Compass);
+
+        self.new_grid_vertex(commands, meshes, materials, root_vertex_2d_entity, Vec3::new(neg_grid_size * xf, (grid_size * yf) + grid_size, grid_size * zf));
+        self.new_grid_vertex(commands, meshes, materials, root_vertex_2d_entity, Vec3::new(grid_size * xf, (neg_grid_size * yf) + grid_size, grid_size * zf));
+        self.new_grid_vertex(commands, meshes, materials, root_vertex_2d_entity, Vec3::new(grid_size * xf, (grid_size * yf) + grid_size, neg_grid_size * zf));
+    }
+
+    fn new_grid_vertex(&mut self, commands: &mut Commands,
+                       meshes: &mut Assets<CpuMesh>,
+                       materials: &mut Assets<CpuMaterial>,
+                       parent_vertex_2d_entity: Entity,
+                       position: Vec3) {
+        let (vertex_2d_entity, _, Some(edge_2d_entity), _) = self.new_local_vertex(
+            commands,
+            meshes,
+            materials,
+            Some(parent_vertex_2d_entity),
+            position,
+            Color::DARK_GRAY,
+        ) else {
+            panic!("No edges?");
+        };
+        commands.entity(vertex_2d_entity).insert(Compass);
+        commands.entity(edge_2d_entity).insert(Compass);
     }
 
     fn new_local_vertex(

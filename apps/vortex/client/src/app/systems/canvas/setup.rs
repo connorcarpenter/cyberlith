@@ -51,6 +51,7 @@ pub fn setup(
         canvas_texture_handle,
     );
     canvas_manager.setup_compass(&mut commands, &mut meshes, &mut materials);
+    canvas_manager.setup_grid(&mut commands, &mut meshes, &mut materials);
 }
 
 fn setup_2d_scene(
