@@ -928,6 +928,7 @@ impl ActionStack {
             Some(*parent_vertex_3d_entity),
             new_vertex_3d_entity,
             Vertex2d::CHILD_COLOR,
+            true,
         );
 
         if let Some(children) = children_opt {

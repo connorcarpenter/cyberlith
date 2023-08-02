@@ -11,21 +11,17 @@ use naia_bevy_client::{Client, CommandsExt};
 
 use input::{Input, Key, MouseButton};
 use math::{convert_2d_to_3d, convert_3d_to_2d, EulerRot, Quat, Vec2, Vec3};
-use render_api::{
-    base::CpuTexture2D,
-    components::{
-        Camera, CameraProjection, OrthographicProjection, Projection, RenderLayer, Transform,
-        Viewport, Visibility,
-    },
-    shapes::{distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform},
-    Handle,
-};
+use render_api::{base::{CpuTexture2D, Color, CpuMaterial, CpuMesh}, components::{
+    Camera, CameraProjection, OrthographicProjection, Projection, RenderLayer, Transform,
+    Viewport, Visibility,
+}, shapes::{distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform}, Handle, Assets};
 use vortex_proto::components::{Vertex3d, VertexRootChild};
 
 use crate::app::{
     components::{Edge2d, Edge3d, HoverCircle, SelectCircle, Vertex2d},
     resources::action_stack::{Action, ActionStack},
     set_3d_line_transform,
+    systems::network::vertex_3d_postprocess
 };
 
 #[derive(Clone, Copy)]
@@ -44,19 +40,16 @@ pub enum CanvasShape {
 
 #[derive(Resource)]
 pub struct CanvasManager {
+
+    // scene?
     is_visible: bool,
     next_visible: bool,
     is_2d: bool,
 
     canvas_texture: Option<Handle<CpuTexture2D>>,
     canvas_texture_size: Vec2,
-    vertices_3d_to_2d: HashMap<Entity, Entity>,
-    vertices_2d_to_3d: HashMap<Entity, Entity>,
 
-    click_type: ClickType,
-    click_start: Vec2,
-    click_down: bool,
-
+    // camera
     pub camera_2d: Option<Entity>,
     pub layer_2d: RenderLayer,
     camera_2d_recalc: bool,
@@ -68,9 +61,18 @@ pub struct CanvasManager {
     camera_3d_rotation: Vec2,
     camera_3d_scale: f32,
 
-    pub hover_circle_entity: Option<Entity>,
+    // input
+    click_type: ClickType,
+    click_start: Vec2,
+    click_down: bool,
     mouse_hover_recalc: bool,
     last_mouse_position: Vec2,
+
+    // vertices
+    vertices_3d_to_2d: HashMap<Entity, Entity>,
+    vertices_2d_to_3d: HashMap<Entity, Entity>,
+
+    pub hover_circle_entity: Option<Entity>,
     hovered_entity: Option<(Entity, CanvasShape)>,
     last_vertex_dragged: Option<(Entity, Vec3, Vec3)>,
 
@@ -78,6 +80,7 @@ pub struct CanvasManager {
     pub select_line_entity: Option<Entity>,
     selected_vertex: Option<(Entity, CanvasShape)>,
     select_line_recalc: bool,
+    compass_vertices: Vec<Entity>,
 }
 
 impl Default for CanvasManager {
@@ -117,6 +120,7 @@ impl Default for CanvasManager {
             select_line_entity: None,
             selected_vertex: None,
             select_line_recalc: false,
+            compass_vertices: Vec::new(),
         }
     }
 }
@@ -1099,5 +1103,83 @@ impl CanvasManager {
 
     pub(crate) fn vertex_entity_2d_to_3d(&self, entity_2d: &Entity) -> Option<&Entity> {
         self.vertices_2d_to_3d.get(entity_2d)
+    }
+
+    pub(crate) fn setup_compass(
+        &mut self,
+        commands: &mut Commands,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+    ) {
+        let (root_vertex_2d_entity, vertex_3d_entity) = self.new_local_vertex(
+            commands,
+            meshes,
+            materials,
+            None,
+            Vec3::ZERO,
+            Color::WHITE,
+        );
+        self.compass_vertices.push(vertex_3d_entity);
+        let (_, vertex_3d_entity) = self.new_local_vertex(
+            commands,
+            meshes,
+            materials,
+            Some(root_vertex_2d_entity),
+            Vec3::new(100.0, 0.0, 0.0),
+            Color::RED,
+        );
+        self.compass_vertices.push(vertex_3d_entity);
+        let (_, vertex_3d_entity) = self.new_local_vertex(
+            commands,
+            meshes,
+            materials,
+            Some(root_vertex_2d_entity),
+            Vec3::new(0.0, 100.0, 0.0),
+            Color::GREEN,
+        );
+        self.compass_vertices.push(vertex_3d_entity);
+        let (_, vertex_3d_entity) = self.new_local_vertex(
+            commands,
+            meshes,
+            materials,
+            Some(root_vertex_2d_entity),
+            Vec3::new(0.0, 0.0, 100.0),
+            Color::BLUE,
+        );
+        self.compass_vertices.push(vertex_3d_entity);
+    }
+
+    fn new_local_vertex(
+        &mut self,
+        commands: &mut Commands,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+        parent_vertex_2d_entity_opt: Option<Entity>,
+        position: Vec3,
+        color: Color,
+    ) -> (Entity, Entity) {
+        let parent_vertex_3d_entity_opt = parent_vertex_2d_entity_opt.map(|parent_vertex_2d_entity| {
+            *self
+                .vertex_entity_2d_to_3d(&parent_vertex_2d_entity)
+                .unwrap()
+        });
+
+        let new_vertex_3d_entity = commands
+            .spawn_empty()
+            .insert(Vertex3d::from_vec3(position))
+            .id();
+
+        let new_vertex_2d_entity = vertex_3d_postprocess(
+            commands,
+            self,
+            meshes,
+            materials,
+            parent_vertex_3d_entity_opt,
+            new_vertex_3d_entity,
+            color,
+            false,
+        );
+
+        return (new_vertex_2d_entity, new_vertex_3d_entity);
     }
 }

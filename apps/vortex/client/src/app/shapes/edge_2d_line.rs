@@ -6,14 +6,14 @@ use render_api::{
     AssetHash, Assets,
 };
 
-pub fn create_2d_edge_arrow(
+pub fn create_2d_edge_line(
     meshes: &mut Assets<CpuMesh>,
     materials: &mut Assets<CpuMaterial>,
     start: Vec2,
     end: Vec2,
     color: Color,
 ) -> RenderObjectBundle {
-    let mesh = meshes.add(Arrow2d);
+    let mesh = meshes.add(Line2d);
     let mut transform = Transform::default();
     set_2d_line_transform(&mut transform, start, end);
     RenderObjectBundle {
@@ -25,30 +25,23 @@ pub fn create_2d_edge_arrow(
 }
 
 #[derive(Hash)]
-pub struct Arrow2d;
+pub struct Line2d;
 
-impl AssetHash<CpuMesh> for Arrow2d {}
+impl AssetHash<CpuMesh> for Line2d {}
 
-impl From<Arrow2d> for CpuMesh {
-    fn from(_: Arrow2d) -> Self {
-        let head_base_x = 0.85;
-        let head_point_x = 0.84;
-        let head_width = 2.5;
-        let neg_head_width = head_width * -1.0;
+impl From<Line2d> for CpuMesh {
+    fn from(_: Line2d) -> Self {
 
         let positions = vec![
             Vec3::new(0.0, -0.5, 0.0),
-            Vec3::new(head_base_x, -0.5, 0.0),
-            Vec3::new(head_base_x, 0.5, 0.0),
+            Vec3::new(1.0, -0.5, 0.0),
+            Vec3::new(1.0, 0.5, 0.0),
             Vec3::new(0.0, 0.5, 0.0),
-            Vec3::new(1.0, 0.0, 0.0),
-            Vec3::new(head_point_x, neg_head_width, 0.0),
-            Vec3::new(head_point_x, head_width, 0.0),
         ];
 
-        let indices: Indices = Indices(Some(vec![0u16, 1, 2, 2, 3, 0, 4, 1, 2, 4, 1, 5, 4, 2, 6]));
+        let indices: Indices = Indices(Some(vec![0u16, 1, 2, 2, 3, 0]));
 
-        let normals = vec![Vec3::Z; 7];
+        let normals = vec![Vec3::Z; 4];
 
         Self {
             indices,

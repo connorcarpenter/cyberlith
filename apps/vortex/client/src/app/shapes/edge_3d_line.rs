@@ -5,14 +5,14 @@ use render_api::{
     AssetHash, Assets,
 };
 
-pub fn create_3d_edge_diamond(
+pub fn create_3d_edge_line(
     meshes: &mut Assets<CpuMesh>,
     materials: &mut Assets<CpuMaterial>,
     start: Vec3,
     end: Vec3,
     color: Color,
 ) -> RenderObjectBundle {
-    let mesh = meshes.add(Diamond3d);
+    let mesh = meshes.add(Line3d);
     let distance = start.distance(end);
     let transform = Transform::from_translation(start)
         .looking_at(end, Vec3::Y)
@@ -26,14 +26,13 @@ pub fn create_3d_edge_diamond(
 }
 
 #[derive(Hash)]
-struct Diamond3d;
+struct Line3d;
 
-impl AssetHash<CpuMesh> for Diamond3d {}
+impl AssetHash<CpuMesh> for Line3d {}
 
-impl From<Diamond3d> for CpuMesh {
-    fn from(_: Diamond3d) -> Self {
-        let girth = 6.0;
-        let waist_height = 0.9;
+impl From<Line3d> for CpuMesh {
+    fn from(_: Line3d) -> Self {
+        let girth = 2.0;
 
         let ax = f32::to_radians(  0.0).cos() * girth;
         let ay = f32::to_radians(  0.0).sin() * girth;
@@ -45,15 +44,23 @@ impl From<Diamond3d> for CpuMesh {
         let cy = f32::to_radians(240.0).sin() * girth;
 
         let positions = vec![
-            Vec3::new(0.0, 0.0, 0.0),
-            Vec3::new(ax, ay, waist_height),
-            Vec3::new(bx, by, waist_height),
-            Vec3::new(cx, cy, waist_height),
-            Vec3::new(0.0, 0.0, 1.0),
+            Vec3::new(ax, ay, 0.0),
+            Vec3::new(bx, by, 0.0),
+            Vec3::new(cx, cy, 0.0),
+            Vec3::new(ax, ay, 1.0),
+            Vec3::new(bx, by, 1.0),
+            Vec3::new(cx, cy, 1.0),
         ];
 
         let indices: Indices = Indices(Some(vec![
-            0u16, 2, 1, 0, 3, 1, 0, 2, 3, 4, 1, 2, 4, 1, 3, 4, 3, 2,
+            0u16, 1, 2,
+            3, 4, 5,
+            0, 3, 1,
+            3, 4, 1,
+            1, 4, 2,
+            4, 5, 2,
+            2, 5, 0,
+            5, 3, 0,
         ]));
 
         let mut mesh = CpuMesh {

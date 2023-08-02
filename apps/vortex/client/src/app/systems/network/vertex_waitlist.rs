@@ -13,7 +13,7 @@ use vortex_proto::components::VertexRootChild;
 use crate::app::{
     components::{Edge2d, Edge3d, Vertex2d},
     resources::canvas_manager::CanvasManager,
-    shapes::{create_2d_edge_arrow, create_3d_edge_diamond},
+    shapes::{create_2d_edge_line, create_3d_edge_line, create_2d_edge_arrow, create_3d_edge_diamond},
 };
 
 pub enum VertexWaitlistInsert {
@@ -103,6 +103,7 @@ fn vertex_process_insert_complete(
         parent_3d_entity_opt,
         vertex_3d_entity,
         color,
+        true,
     );
 }
 
@@ -114,6 +115,7 @@ pub fn vertex_3d_postprocess(
     parent_3d_entity_opt: Option<Entity>,
     vertex_3d_entity: Entity,
     color: Color,
+    arrows_not_lines: bool,
 ) -> Entity {
 
     commands
@@ -144,26 +146,44 @@ pub fn vertex_3d_postprocess(
 
     if let Some(parent_3d_entity) = parent_3d_entity_opt {
         // create 2d edge entity
-        commands
-            .spawn(create_2d_edge_arrow(
+        let shape_components = if arrows_not_lines { create_2d_edge_arrow(
+            meshes,
+            materials,
+            Vec2::ZERO,
+            Vec2::X,
+            color,
+        ) } else {
+            create_2d_edge_line(
                 meshes,
                 materials,
                 Vec2::ZERO,
                 Vec2::X,
                 color,
-            ))
+            )
+        };
+        commands
+            .spawn(shape_components)
             .insert(canvas_manager.layer_2d)
             .insert(Edge2d::new(vertex_2d_entity, parent_3d_entity));
 
         // create 3d edge entity
-        commands
-            .spawn(create_3d_edge_diamond(
+        let shape_components = if arrows_not_lines { create_3d_edge_diamond(
+            meshes,
+            materials,
+            Vec3::ZERO,
+            Vec3::X,
+            color,
+        ) } else {
+            create_3d_edge_line(
                 meshes,
                 materials,
                 Vec3::ZERO,
                 Vec3::X,
                 color,
-            ))
+            )
+        };
+        commands
+            .spawn(shape_components)
             .insert(canvas_manager.layer_3d)
             .insert(Edge3d::new(vertex_3d_entity, parent_3d_entity));
     } else {
