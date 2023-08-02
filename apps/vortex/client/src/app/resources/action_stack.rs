@@ -17,18 +17,19 @@ use vortex_proto::components::{
     VertexChild,
 };
 
-use crate::app::resources::canvas_manager::CanvasShape;
 use crate::app::{
     components::{
         file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
-        Edge2d, Edge3d, VertexEntry,
+        Edge2d, Edge3d, Vertex2d, VertexEntry,
     },
     resources::{
-        canvas_manager::CanvasManager, file_tree::FileTree, global::Global, tab_manager::TabManager,
+        canvas_manager::{CanvasManager, CanvasShape},
+        file_tree::FileTree,
+        global::Global,
+        tab_manager::TabManager,
     },
     systems::{file_post_process, network::vertex_3d_postprocess},
 };
-use crate::app::components::Vertex2d;
 
 #[derive(Clone)]
 pub enum Action {

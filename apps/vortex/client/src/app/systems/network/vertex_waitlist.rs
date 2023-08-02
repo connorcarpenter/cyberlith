@@ -13,7 +13,9 @@ use vortex_proto::components::VertexRootChild;
 use crate::app::{
     components::{Edge2d, Edge3d, Vertex2d},
     resources::canvas_manager::CanvasManager,
-    shapes::{create_2d_edge_line, create_3d_edge_line, create_2d_edge_arrow, create_3d_edge_diamond},
+    shapes::{
+        create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,
+    },
 };
 
 pub enum VertexWaitlistInsert {
@@ -117,7 +119,6 @@ pub fn vertex_3d_postprocess(
     color: Color,
     arrows_not_lines: bool,
 ) -> Entity {
-
     commands
         .entity(vertex_3d_entity)
         .insert(RenderObjectBundle::sphere(
@@ -146,20 +147,10 @@ pub fn vertex_3d_postprocess(
 
     if let Some(parent_3d_entity) = parent_3d_entity_opt {
         // create 2d edge entity
-        let shape_components = if arrows_not_lines { create_2d_edge_arrow(
-            meshes,
-            materials,
-            Vec2::ZERO,
-            Vec2::X,
-            color,
-        ) } else {
-            create_2d_edge_line(
-                meshes,
-                materials,
-                Vec2::ZERO,
-                Vec2::X,
-                color,
-            )
+        let shape_components = if arrows_not_lines {
+            create_2d_edge_arrow(meshes, materials, Vec2::ZERO, Vec2::X, color)
+        } else {
+            create_2d_edge_line(meshes, materials, Vec2::ZERO, Vec2::X, color)
         };
         commands
             .spawn(shape_components)
@@ -167,20 +158,10 @@ pub fn vertex_3d_postprocess(
             .insert(Edge2d::new(vertex_2d_entity, parent_3d_entity));
 
         // create 3d edge entity
-        let shape_components = if arrows_not_lines { create_3d_edge_diamond(
-            meshes,
-            materials,
-            Vec3::ZERO,
-            Vec3::X,
-            color,
-        ) } else {
-            create_3d_edge_line(
-                meshes,
-                materials,
-                Vec3::ZERO,
-                Vec3::X,
-                color,
-            )
+        let shape_components = if arrows_not_lines {
+            create_3d_edge_diamond(meshes, materials, Vec3::ZERO, Vec3::X, color)
+        } else {
+            create_3d_edge_line(meshes, materials, Vec3::ZERO, Vec3::X, color)
         };
         commands
             .spawn(shape_components)

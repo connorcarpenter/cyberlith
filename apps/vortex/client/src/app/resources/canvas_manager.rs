@@ -11,17 +11,22 @@ use naia_bevy_client::{Client, CommandsExt};
 
 use input::{Input, Key, MouseButton};
 use math::{convert_2d_to_3d, convert_3d_to_2d, EulerRot, Quat, Vec2, Vec3};
-use render_api::{base::{CpuTexture2D, Color, CpuMaterial, CpuMesh}, components::{
-    Camera, CameraProjection, OrthographicProjection, Projection, RenderLayer, Transform,
-    Viewport, Visibility,
-}, shapes::{distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform}, Handle, Assets};
+use render_api::{
+    base::{Color, CpuMaterial, CpuMesh, CpuTexture2D},
+    components::{
+        Camera, CameraProjection, OrthographicProjection, Projection, RenderLayer, Transform,
+        Viewport, Visibility,
+    },
+    shapes::{distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform},
+    Assets, Handle,
+};
 use vortex_proto::components::{Vertex3d, VertexRootChild};
 
 use crate::app::{
     components::{Edge2d, Edge3d, HoverCircle, SelectCircle, Vertex2d},
     resources::action_stack::{Action, ActionStack},
     set_3d_line_transform,
-    systems::network::vertex_3d_postprocess
+    systems::network::vertex_3d_postprocess,
 };
 
 #[derive(Clone, Copy)]
@@ -40,7 +45,6 @@ pub enum CanvasShape {
 
 #[derive(Resource)]
 pub struct CanvasManager {
-
     // scene?
     is_visible: bool,
     next_visible: bool,
@@ -1111,14 +1115,8 @@ impl CanvasManager {
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
     ) {
-        let (root_vertex_2d_entity, vertex_3d_entity) = self.new_local_vertex(
-            commands,
-            meshes,
-            materials,
-            None,
-            Vec3::ZERO,
-            Color::WHITE,
-        );
+        let (root_vertex_2d_entity, vertex_3d_entity) =
+            self.new_local_vertex(commands, meshes, materials, None, Vec3::ZERO, Color::WHITE);
         self.compass_vertices.push(vertex_3d_entity);
         let (_, vertex_3d_entity) = self.new_local_vertex(
             commands,
@@ -1158,11 +1156,12 @@ impl CanvasManager {
         position: Vec3,
         color: Color,
     ) -> (Entity, Entity) {
-        let parent_vertex_3d_entity_opt = parent_vertex_2d_entity_opt.map(|parent_vertex_2d_entity| {
-            *self
-                .vertex_entity_2d_to_3d(&parent_vertex_2d_entity)
-                .unwrap()
-        });
+        let parent_vertex_3d_entity_opt =
+            parent_vertex_2d_entity_opt.map(|parent_vertex_2d_entity| {
+                *self
+                    .vertex_entity_2d_to_3d(&parent_vertex_2d_entity)
+                    .unwrap()
+            });
 
         let new_vertex_3d_entity = commands
             .spawn_empty()

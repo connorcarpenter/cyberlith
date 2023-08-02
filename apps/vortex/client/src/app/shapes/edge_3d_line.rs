@@ -34,8 +34,8 @@ impl From<Line3d> for CpuMesh {
     fn from(_: Line3d) -> Self {
         let girth = 2.0;
 
-        let ax = f32::to_radians(  0.0).cos() * girth;
-        let ay = f32::to_radians(  0.0).sin() * girth;
+        let ax = f32::to_radians(0.0).cos() * girth;
+        let ay = f32::to_radians(0.0).sin() * girth;
 
         let bx = f32::to_radians(120.0).cos() * girth;
         let by = f32::to_radians(120.0).sin() * girth;
@@ -53,14 +53,7 @@ impl From<Line3d> for CpuMesh {
         ];
 
         let indices: Indices = Indices(Some(vec![
-            0u16, 1, 2,
-            3, 4, 5,
-            0, 3, 1,
-            3, 4, 1,
-            1, 4, 2,
-            4, 5, 2,
-            2, 5, 0,
-            5, 3, 0,
+            0u16, 1, 2, 3, 4, 5, 0, 3, 1, 3, 4, 1, 1, 4, 2, 4, 5, 2, 2, 5, 0, 5, 3, 0,
         ]));
 
         let mut mesh = CpuMesh {

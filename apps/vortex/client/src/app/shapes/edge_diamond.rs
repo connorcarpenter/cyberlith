@@ -35,8 +35,8 @@ impl From<Diamond3d> for CpuMesh {
         let girth = 6.0;
         let waist_height = 0.9;
 
-        let ax = f32::to_radians(  0.0).cos() * girth;
-        let ay = f32::to_radians(  0.0).sin() * girth;
+        let ax = f32::to_radians(0.0).cos() * girth;
+        let ay = f32::to_radians(0.0).sin() * girth;
 
         let bx = f32::to_radians(120.0).cos() * girth;
         let by = f32::to_radians(120.0).sin() * girth;
