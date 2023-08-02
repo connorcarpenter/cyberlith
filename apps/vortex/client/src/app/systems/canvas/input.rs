@@ -1,6 +1,6 @@
 use bevy_ecs::{
     entity::Entity,
-    query::With,
+    query::{With, Without},
     system::{Commands, Query, ResMut},
 };
 use naia_bevy_client::Client;
@@ -10,7 +10,7 @@ use render_api::components::{Camera, Projection, Transform, Visibility};
 use vortex_proto::components::{Vertex3d, VertexRootChild};
 
 use crate::app::{
-    components::{Edge2d, Vertex2d},
+    components::{Compass, Edge2d, Vertex2d},
     resources::{action_stack::ActionStack, canvas_manager::CanvasManager},
 };
 
@@ -24,8 +24,8 @@ pub fn input(
     mut camera_q: Query<(&mut Camera, &mut Projection)>,
     mut visibility_q: Query<&mut Visibility>,
     mut vertex_3d_q: Query<&mut Vertex3d>,
-    vertex_2d_q: Query<(Entity, Option<&VertexRootChild>), With<Vertex2d>>,
-    edge_2d_q: Query<(Entity, &Edge2d)>,
+    vertex_2d_q: Query<(Entity, Option<&VertexRootChild>), (With<Vertex2d>, Without<Compass>)>,
+    edge_2d_q: Query<(Entity, &Edge2d), Without<Compass>>,
 ) {
     canvas_manager.update_input(
         &mut commands,

@@ -7,13 +7,13 @@ use render_api::components::{Camera, Projection, Transform};
 use vortex_proto::components::Vertex3d;
 
 use crate::app::{
-    components::{Edge2d, Edge3d},
+    components::{Compass, Edge2d, Edge3d},
     resources::canvas_manager::CanvasManager,
 };
 
 pub fn sync(
     mut canvas_manager: ResMut<CanvasManager>,
-    mut transform_q: Query<&mut Transform>,
+    mut transform_q: Query<(&mut Transform, Option<&Compass>)>,
     camera_q: Query<(&Camera, &Projection)>,
     vertex_3d_q: Query<(Entity, &Vertex3d)>,
     edge_2d_q: Query<(Entity, &Edge2d)>,

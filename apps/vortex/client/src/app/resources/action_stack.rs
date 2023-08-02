@@ -921,7 +921,7 @@ impl ActionStack {
             .insert(vertex_child)
             .id();
 
-        let new_vertex_2d_entity = vertex_3d_postprocess(
+        let (new_vertex_2d_entity, _, _) = vertex_3d_postprocess(
             commands,
             canvas_manager,
             meshes,

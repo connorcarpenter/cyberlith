@@ -65,6 +65,10 @@ impl Color {
     pub const LIGHT_GREEN: Color = Color::new_opaque(16, 255, 16);
     /// Opaque blue
     pub const BLUE: Color = Color::new_opaque(0, 0, 255);
+    /// Opaque light blue
+    pub const LIGHT_BLUE: Color = Color::new_opaque(0, 32, 255);
+    /// Opaque aqua
+    pub const AQUA: Color = Color::new_opaque(0, 255, 255);
     /// Opaque white
     pub const WHITE: Color = Color::new_opaque(255, 255, 255);
     /// Opaque black

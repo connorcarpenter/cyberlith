@@ -6,8 +6,9 @@ use bevy_ecs::{
     query::With,
     system::{Commands, Query},
 };
+use bevy_ecs::query::Without;
 use bevy_log::{info, warn};
-use naia_bevy_client::{Client, CommandsExt};
+use naia_bevy_client::{Client, CommandsExt, Replicate};
 
 use input::{Input, Key, MouseButton};
 use math::{convert_2d_to_3d, convert_3d_to_2d, EulerRot, Quat, Vec2, Vec3};
@@ -28,6 +29,7 @@ use crate::app::{
     set_3d_line_transform,
     systems::network::vertex_3d_postprocess,
 };
+use crate::app::components::Compass;
 
 #[derive(Clone, Copy)]
 pub enum ClickType {
@@ -140,8 +142,8 @@ impl CanvasManager {
         camera_q: &mut Query<(&mut Camera, &mut Projection)>,
         visibility_q: &mut Query<&mut Visibility>,
         vertex_3d_q: &mut Query<&mut Vertex3d>,
-        vertex_2d_q: &Query<(Entity, Option<&VertexRootChild>), With<Vertex2d>>,
-        edge_2d_q: &Query<(Entity, &Edge2d)>,
+        vertex_2d_q: &Query<(Entity, Option<&VertexRootChild>), (With<Vertex2d>, Without<Compass>)>,
+        edge_2d_q: &Query<(Entity, &Edge2d), Without<Compass>>,
     ) {
         // Mouse wheel zoom..
         let scroll_y = input.consume_mouse_scroll();
@@ -256,40 +258,47 @@ impl CanvasManager {
         }
     }
 
-    pub fn update_3d_camera(&mut self, camera_q: &mut Query<(&mut Camera, &mut Transform)>) {
-        if self.camera_3d_recalc {
-            self.camera_3d_recalc = false;
-            self.camera_2d_recalc = true;
-
-            let Some(camera_3d) = self.camera_3d else {
-                return;
-            };
-
-            let Ok((_, mut camera_transform)) = camera_q.get_mut(camera_3d) else {
-                return;
-            };
-
-            camera_transform.rotation = Quat::from_euler(
-                EulerRot::YXZ,
-                f32::to_radians(self.camera_3d_rotation.x),
-                f32::to_radians(self.camera_3d_rotation.y),
-                0.0,
-            );
-            camera_transform.scale = Vec3::splat(1.0 / self.camera_3d_scale);
-
-            let right = camera_transform.right_direction();
-            let up = right.cross(camera_transform.view_direction());
-
-            camera_transform.translation = camera_transform.view_direction() * -100.0; // 100 units away from where looking
-            let rounded_offset = self.camera_3d_offset.round();
-            camera_transform.translation += right * rounded_offset.x;
-            camera_transform.translation += up * rounded_offset.y;
+    pub fn update_3d_camera(
+        &mut self,
+        camera_q: &mut Query<(&mut Camera, &mut Transform)>,
+        vertex_3d_q: &mut Query<&mut Vertex3d>,
+    ) {
+        if !self.camera_3d_recalc {
+            return;
         }
+        self.camera_3d_recalc = false;
+        self.camera_2d_recalc = true;
+
+        let Some(camera_3d) = self.camera_3d else {
+            return;
+        };
+
+        let Ok((_, mut camera_transform)) = camera_q.get_mut(camera_3d) else {
+            return;
+        };
+
+        camera_transform.rotation = Quat::from_euler(
+            EulerRot::YXZ,
+            f32::to_radians(self.camera_3d_rotation.x),
+            f32::to_radians(self.camera_3d_rotation.y),
+            0.0,
+        );
+        camera_transform.scale = Vec3::splat(1.0 / self.camera_3d_scale);
+
+        let right = camera_transform.right_direction();
+        let up = right.cross(camera_transform.view_direction());
+
+        camera_transform.translation = camera_transform.view_direction() * -100.0; // 100 units away from where looking
+        let rounded_offset = self.camera_3d_offset.round();
+        camera_transform.translation += right * rounded_offset.x;
+        camera_transform.translation += up * rounded_offset.y;
+
+        self.compass_recalc(vertex_3d_q, right, up);
     }
 
     pub fn sync_vertices(
         &mut self,
-        transform_q: &mut Query<&mut Transform>,
+        transform_q: &mut Query<(&mut Transform, Option<&Compass>)>,
         camera_q: &Query<(&Camera, &Projection)>,
         vertex_3d_q: &Query<(Entity, &Vertex3d)>,
         edge_2d_q: &Query<(Entity, &Edge2d)>,
@@ -307,7 +316,7 @@ impl CanvasManager {
             return;
         };
 
-        let Ok(camera_transform) = transform_q.get(camera_3d) else {
+        let Ok((camera_transform, _)) = transform_q.get(camera_3d) else {
             return;
         };
         let Ok((camera, camera_projection)) = camera_q.get(camera_3d) else {
@@ -320,15 +329,20 @@ impl CanvasManager {
 
         // update vertices
         for (vertex_3d_entity, vertex_3d) in vertex_3d_q.iter() {
-            let Ok(mut vertex_3d_transform) = transform_q.get_mut(vertex_3d_entity) else {
+            let Ok((mut vertex_3d_transform, compass_opt)) = transform_q.get_mut(vertex_3d_entity) else {
                 warn!("Vertex3d entity {:?} has no Transform", vertex_3d_entity);
                 continue;
             };
 
-            // 3d vertices
+            // update 3d vertices
             vertex_3d_transform.translation.x = vertex_3d.x().into();
             vertex_3d_transform.translation.y = vertex_3d.y().into();
             vertex_3d_transform.translation.z = vertex_3d.z().into();
+
+            if compass_opt.is_some() {
+                let scale_3d = Vertex2d::RADIUS / self.camera_3d_scale;
+                vertex_3d_transform.scale = Vec3::splat(scale_3d);
+            }
 
             let (coords, depth) = convert_3d_to_2d(
                 &view_matrix,
@@ -340,23 +354,25 @@ impl CanvasManager {
             let Some(vertex_2d_entity) = self.vertex_entity_3d_to_2d(&vertex_3d_entity) else {
                 panic!("Vertex3d entity {:?} has no corresponding Vertex2d entity", vertex_3d_entity);
             };
-            let Ok(mut vertex_2d_transform) = transform_q.get_mut(*vertex_2d_entity) else {
+            let Ok((mut vertex_2d_transform, compass_opt)) = transform_q.get_mut(*vertex_2d_entity) else {
                 panic!("Vertex2d entity {:?} has no Transform", vertex_2d_entity);
             };
 
-            // 2d vertices
+            // update 2d vertices
             vertex_2d_transform.translation.x = coords.x;
             vertex_2d_transform.translation.y = coords.y;
             vertex_2d_transform.translation.z = depth;
 
-            let scale_2d = self.camera_3d_scale * Vertex2d::RADIUS;
-            vertex_2d_transform.scale = Vec3::splat(scale_2d);
+            if compass_opt.is_none() {
+                let scale_2d = self.camera_3d_scale * Vertex2d::RADIUS;
+                vertex_2d_transform.scale = Vec3::splat(scale_2d);
+            }
 
             // update hover circle
             if let Some((hover_entity, _)) = self.hovered_entity {
                 if hover_entity == *vertex_2d_entity {
                     let hover_circle_entity = self.hover_circle_entity.unwrap();
-                    let mut hover_circle_transform =
+                    let (mut hover_circle_transform, _) =
                         transform_q.get_mut(hover_circle_entity).unwrap();
                     hover_circle_transform.translation.x = coords.x;
                     hover_circle_transform.translation.y = coords.y;
@@ -371,14 +387,17 @@ impl CanvasManager {
                 continue;
             };
 
-            let start_pos = transform_q
+            let (start_transform, _) = transform_q
                 .get(edge_endpoints.start)
-                .unwrap()
+                .unwrap();
+            let start_pos = start_transform
                 .translation
                 .truncate();
 
-            let end_pos = transform_q.get(*end_entity).unwrap().translation.truncate();
-            let mut edge_transform = transform_q.get_mut(edge_entity).unwrap();
+            let (end_transform, _) = transform_q.get(*end_entity).unwrap();
+            let end_pos = end_transform.translation.truncate();
+
+            let (mut edge_transform, _) = transform_q.get_mut(edge_entity).unwrap();
             set_2d_line_transform(&mut edge_transform, start_pos, end_pos);
 
             if let Some((hover_entity, CanvasShape::Edge)) = self.hovered_entity {
@@ -390,12 +409,17 @@ impl CanvasManager {
 
         // update 3d edges
         for (edge_entity, edge_endpoints) in edge_3d_q.iter() {
-            if let Ok(start_transform) = transform_q.get(edge_endpoints.start) {
+            if let Ok((start_transform, _)) = transform_q.get(edge_endpoints.start) {
                 let start_pos = start_transform.translation;
-                if let Ok(end_transform) = transform_q.get(edge_endpoints.end) {
+                if let Ok((end_transform, _)) = transform_q.get(edge_endpoints.end) {
                     let end_pos = end_transform.translation;
-                    let mut edge_transform = transform_q.get_mut(edge_entity).unwrap();
+                    let (mut edge_transform, compass_opt) = transform_q.get_mut(edge_entity).unwrap();
                     set_3d_line_transform(&mut edge_transform, start_pos, end_pos);
+                    if compass_opt.is_some() {
+                        let scale_3d = 1.0 / self.camera_3d_scale;
+                        edge_transform.scale.x = scale_3d;
+                        edge_transform.scale.y = scale_3d;
+                    }
                 } else {
                     warn!(
                         "3d Edge end entity {:?} has no transform",
@@ -530,8 +554,8 @@ impl CanvasManager {
         mouse_position: &Vec2,
         transform_q: &mut Query<&mut Transform>,
         visibility_q: &mut Query<&mut Visibility>,
-        vertex_2d_q: &Query<(Entity, Option<&VertexRootChild>), With<Vertex2d>>,
-        edge_2d_q: &Query<(Entity, &Edge2d)>,
+        vertex_2d_q: &Query<(Entity, Option<&VertexRootChild>), (With<Vertex2d>, Without<Compass>)>,
+        edge_2d_q: &Query<(Entity, &Edge2d), Without<Compass>>,
     ) {
         if mouse_position.x as i16 != self.last_mouse_position.x as i16
             || mouse_position.y as i16 != self.last_mouse_position.y as i16
@@ -982,8 +1006,7 @@ impl CanvasManager {
 
     fn set_camera_angle(&mut self, angle: Vec2) {
         self.camera_3d_rotation = angle;
-        self.camera_3d_offset = Vec2::ZERO;
-        self.camera_3d_scale = 1.0;
+
         self.recalculate_3d_view();
     }
 
@@ -1115,36 +1138,59 @@ impl CanvasManager {
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
     ) {
-        let (root_vertex_2d_entity, vertex_3d_entity) =
+        let (root_vertex_2d_entity, vertex_3d_entity, _, _) =
             self.new_local_vertex(commands, meshes, materials, None, Vec3::ZERO, Color::WHITE);
         self.compass_vertices.push(vertex_3d_entity);
-        let (_, vertex_3d_entity) = self.new_local_vertex(
+        commands.entity(root_vertex_2d_entity).insert(Compass);
+        commands.entity(vertex_3d_entity).insert(Compass);
+
+        let (vertex_2d_entity, vertex_3d_entity, Some(edge_2d_entity), Some(edge_3d_entity)) = self.new_local_vertex(
             commands,
             meshes,
             materials,
             Some(root_vertex_2d_entity),
             Vec3::new(100.0, 0.0, 0.0),
             Color::RED,
-        );
+        ) else {
+            panic!("No edges?");
+        };
         self.compass_vertices.push(vertex_3d_entity);
-        let (_, vertex_3d_entity) = self.new_local_vertex(
+        commands.entity(vertex_2d_entity).insert(Compass);
+        commands.entity(vertex_3d_entity).insert(Compass);
+        commands.entity(edge_2d_entity).insert(Compass);
+        commands.entity(edge_3d_entity).insert(Compass);
+
+        let (vertex_2d_entity, vertex_3d_entity, Some(edge_2d_entity), Some(edge_3d_entity)) = self.new_local_vertex(
             commands,
             meshes,
             materials,
             Some(root_vertex_2d_entity),
             Vec3::new(0.0, 100.0, 0.0),
             Color::GREEN,
-        );
+        ) else {
+            panic!("No edges?");
+        };
         self.compass_vertices.push(vertex_3d_entity);
-        let (_, vertex_3d_entity) = self.new_local_vertex(
+        commands.entity(vertex_2d_entity).insert(Compass);
+        commands.entity(vertex_3d_entity).insert(Compass);
+        commands.entity(edge_2d_entity).insert(Compass);
+        commands.entity(edge_3d_entity).insert(Compass);
+
+        let (vertex_2d_entity, vertex_3d_entity, Some(edge_2d_entity), Some(edge_3d_entity)) = self.new_local_vertex(
             commands,
             meshes,
             materials,
             Some(root_vertex_2d_entity),
             Vec3::new(0.0, 0.0, 100.0),
-            Color::BLUE,
-        );
+            Color::LIGHT_BLUE,
+        ) else {
+            panic!("No edges?");
+        };
         self.compass_vertices.push(vertex_3d_entity);
+        commands.entity(vertex_2d_entity).insert(Compass);
+        commands.entity(vertex_3d_entity).insert(Compass);
+        commands.entity(edge_2d_entity).insert(Compass);
+        commands.entity(edge_3d_entity).insert(Compass);
     }
 
     fn new_local_vertex(
@@ -1155,7 +1201,7 @@ impl CanvasManager {
         parent_vertex_2d_entity_opt: Option<Entity>,
         position: Vec3,
         color: Color,
-    ) -> (Entity, Entity) {
+    ) -> (Entity, Entity, Option<Entity>, Option<Entity>) {
         let parent_vertex_3d_entity_opt =
             parent_vertex_2d_entity_opt.map(|parent_vertex_2d_entity| {
                 *self
@@ -1163,12 +1209,15 @@ impl CanvasManager {
                     .unwrap()
             });
 
+        let mut vertex_3d_component = Vertex3d::new(0,0,0);
+        vertex_3d_component.localize();
+        vertex_3d_component.set_vec3(&position);
         let new_vertex_3d_entity = commands
             .spawn_empty()
-            .insert(Vertex3d::from_vec3(position))
+            .insert(vertex_3d_component)
             .id();
 
-        let new_vertex_2d_entity = vertex_3d_postprocess(
+        let (new_vertex_2d_entity, new_edge_2d_entity, new_edge_3d_entity) = vertex_3d_postprocess(
             commands,
             self,
             meshes,
@@ -1179,6 +1228,34 @@ impl CanvasManager {
             false,
         );
 
-        return (new_vertex_2d_entity, new_vertex_3d_entity);
+        return (new_vertex_2d_entity, new_vertex_3d_entity, new_edge_2d_entity, new_edge_3d_entity);
+    }
+
+    fn compass_recalc(
+        &mut self,
+        vertex_3d_q: &mut Query<&mut Vertex3d>,
+        right: Vec3,
+        up: Vec3
+    ) {
+        if let Ok(mut vertex_3d) = vertex_3d_q.get_mut(self.compass_vertices[0]) {
+
+            let unit_length = 1.0 / self.camera_3d_scale;
+            const COMPASS_POS: Vec2 = Vec2::new(530.0, 300.0);
+            let offset_2d = self.camera_3d_offset.round() + Vec2::new(unit_length * -1.0 * COMPASS_POS.x, unit_length * COMPASS_POS.y);
+            let offset_3d = (right * offset_2d.x) + (up * offset_2d.y);
+
+            let vert_offset_3d = Vec3::ZERO + offset_3d;
+            vertex_3d.set_vec3(&vert_offset_3d);
+
+            let compass_length = unit_length * 25.0;
+            let vert_offset_3d = Vec3::new(compass_length, 0.0, 0.0) + offset_3d;
+            vertex_3d_q.get_mut(self.compass_vertices[1]).unwrap().set_vec3(&vert_offset_3d);
+
+            let vert_offset_3d = Vec3::new(0.0, compass_length, 0.0) + offset_3d;
+            vertex_3d_q.get_mut(self.compass_vertices[2]).unwrap().set_vec3(&vert_offset_3d);
+
+            let vert_offset_3d = Vec3::new(0.0, 0.0, compass_length) + offset_3d;
+            vertex_3d_q.get_mut(self.compass_vertices[3]).unwrap().set_vec3(&vert_offset_3d);
+        }
     }
 }

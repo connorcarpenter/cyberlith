@@ -118,7 +118,11 @@ pub fn vertex_3d_postprocess(
     vertex_3d_entity: Entity,
     color: Color,
     arrows_not_lines: bool,
-) -> Entity {
+) -> (Entity, Option<Entity>, Option<Entity>) {
+
+    let mut edge_2d_entity = None;
+    let mut edge_3d_entity = None;
+
     commands
         .entity(vertex_3d_entity)
         .insert(RenderObjectBundle::sphere(
@@ -152,10 +156,12 @@ pub fn vertex_3d_postprocess(
         } else {
             create_2d_edge_line(meshes, materials, Vec2::ZERO, Vec2::X, color)
         };
-        commands
+        let new_entity = commands
             .spawn(shape_components)
             .insert(canvas_manager.layer_2d)
-            .insert(Edge2d::new(vertex_2d_entity, parent_3d_entity));
+            .insert(Edge2d::new(vertex_2d_entity, parent_3d_entity))
+            .id();
+        edge_2d_entity = Some(new_entity);
 
         // create 3d edge entity
         let shape_components = if arrows_not_lines {
@@ -163,10 +169,12 @@ pub fn vertex_3d_postprocess(
         } else {
             create_3d_edge_line(meshes, materials, Vec3::ZERO, Vec3::X, color)
         };
-        commands
+        let new_entity = commands
             .spawn(shape_components)
             .insert(canvas_manager.layer_3d)
-            .insert(Edge3d::new(vertex_3d_entity, parent_3d_entity));
+            .insert(Edge3d::new(vertex_3d_entity, parent_3d_entity))
+            .id();
+        edge_3d_entity = Some(new_entity);
     } else {
         commands.entity(vertex_2d_entity).insert(VertexRootChild);
     }
@@ -179,5 +187,5 @@ pub fn vertex_3d_postprocess(
     canvas_manager.register_3d_vertex(vertex_3d_entity, vertex_2d_entity);
     canvas_manager.recalculate_3d_view();
 
-    vertex_2d_entity
+    (vertex_2d_entity, edge_2d_entity, edge_3d_entity)
 }

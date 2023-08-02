@@ -33,3 +33,7 @@ impl VertexEntry {
         }
     }
 }
+
+// for the editor compass
+#[derive(Component)]
+pub struct Compass;

@@ -10,5 +10,5 @@ pub fn set_3d_line_transform(transform: &mut Transform, start: Vec3, end: Vec3) 
         transform.look_at(end, Vec3::Y);
     }
 
-    transform.scale = Vec3::new(1.0, 1.0, start.distance(end));
+    transform.scale.z = start.distance(end);
 }
