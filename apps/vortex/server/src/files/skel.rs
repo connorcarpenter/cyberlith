@@ -14,7 +14,7 @@ use naia_bevy_server::{
 
 use vortex_proto::components::{Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt};
 
-use crate::files::{FileReader, FileWriter};
+use crate::files::{FileReader, FileReadOutput, FileWriter};
 
 // Actions
 #[derive(Debug)]
@@ -164,9 +164,11 @@ impl SkelReader {
     fn actions_to_world(
         commands: &mut Commands,
         server: &mut Server,
-        new_entities: &mut HashSet<Entity>,
         actions: Vec<SkelAction>,
-    ) -> Result<(), SerdeErr> {
+    ) -> Result<FileReadOutput, SerdeErr> {
+
+        let mut output = Vec::new();
+
         let mut entities: Vec<(Entity, i16, i16, i16, Option<u16>)> = Vec::new();
 
         for action in actions {
@@ -196,14 +198,14 @@ impl SkelReader {
                 let mut parent_component = VertexChild::new();
                 parent_component.parent_id.set(server, parent_entity);
                 entity_mut.insert(parent_component);
+                output.push((*entity, Some(*parent_entity)));
             } else {
                 entity_mut.insert(VertexRootChild);
+                output.push((*entity, None));
             }
-
-            new_entities.insert(*entity);
         }
 
-        Ok(())
+        Ok(FileReadOutput::Skel(output))
     }
 }
 
@@ -213,17 +215,17 @@ impl FileReader for SkelReader {
         commands: &mut Commands,
         server: &mut Server,
         bytes: &Box<[u8]>,
-    ) -> HashSet<Entity> {
-        let mut new_entities = HashSet::new();
+    ) -> FileReadOutput {
         let mut bit_reader = BitReader::new(bytes);
 
         let Ok(actions) = Self::read_to_actions(&mut bit_reader) else {
             panic!("Error reading .skel file");
         };
 
-        let Ok(()) = Self::actions_to_world(commands, server, &mut new_entities, actions) else {
+        let Ok(result) = Self::actions_to_world(commands, server, actions) else {
             panic!("Error reading .skel file");
         };
-        new_entities
+
+        result
     }
 }

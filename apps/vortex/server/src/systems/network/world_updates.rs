@@ -22,10 +22,10 @@ use vortex_proto::{
     resources::FileEntryKey,
 };
 
-use crate::resources::VertexManager;
 use crate::{
     files::handle_file_modify,
     resources::{
+        VertexManager,
         fs_waitlist::{fs_process_insert, FSWaitlist, FSWaitlistInsert},
         GitManager, TabManager, UserManager,
     },
@@ -55,7 +55,8 @@ pub fn despawn_entity_events(
         if workspace.entity_is_file(entity) {
             workspace.on_client_delete_file(&mut commands, &mut server, entity);
         } else if vertex_manager.entity_is_vertex(entity) {
-            vertex_manager.on_client_delete_vertex(&mut commands, &mut server, entity);
+            info!("despawned entity is a vertex!");
+            vertex_manager.on_delete_vertex(&mut commands, &mut server, entity);
         }
     }
 }
@@ -86,6 +87,7 @@ pub fn insert_component_events(
                 &user_manager,
                 &mut git_manager,
                 &mut tab_manager,
+                &mut vertex_manager,
                 &mut fs_waiting_entities,
                 &user_key,
                 &entity,
@@ -103,6 +105,7 @@ pub fn insert_component_events(
                 &user_manager,
                 &mut git_manager,
                 &mut tab_manager,
+                &mut vertex_manager,
                 &mut fs_waiting_entities,
                 &user_key,
                 &entity,
@@ -125,6 +128,7 @@ pub fn insert_component_events(
                 &user_manager,
                 &mut git_manager,
                 &mut tab_manager,
+                &mut vertex_manager,
                 &mut fs_waiting_entities,
                 &user_key,
                 &entity,
@@ -155,13 +159,15 @@ pub fn insert_component_events(
             let Some(parent_entity) = child.parent_id.get(&server) else {
                 panic!("no parent entity!")
             };
-            vertex_manager.on_client_create_vertex(&entity, Some(parent_entity));
+            vertex_manager.on_create_vertex(&entity, Some(parent_entity));
+            vertex_manager.finalize_vertex_creation();
         }
 
         // on VertexRootChild Insert Event
         for (_user_key, entity) in events.read::<VertexRootChild>() {
             info!("inserted VertexRootChild");
-            vertex_manager.on_client_create_vertex(&entity, None);
+            vertex_manager.on_create_vertex(&entity, None);
+            vertex_manager.finalize_vertex_creation();
         }
     }
 }

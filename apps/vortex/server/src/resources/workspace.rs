@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashMap, HashSet},
+    collections::HashMap,
     fs,
     fs::File,
     io::Read,
@@ -24,8 +24,8 @@ use vortex_proto::{
 };
 
 use crate::{
-    files::{FileReader, FileWriter},
-    resources::{ChangelistValue, FileEntryValue, GitManager, TabManager},
+    files::{FileReadOutput, FileReader, FileWriter},
+    resources::{VertexManager, ChangelistValue, FileEntryValue, GitManager, TabManager},
 };
 
 pub struct Workspace {
@@ -294,9 +294,10 @@ impl Workspace {
             Commands,
             Server,
             ResMut<TabManager>,
+            ResMut<VertexManager>,
             Query<&ChangelistEntry>,
         )> = SystemState::new(world);
-        let (mut commands, mut server, mut tab_manager, cl_query) = system_state.get_mut(world);
+        let (mut commands, mut server, mut tab_manager, mut vertex_manager, cl_query) = system_state.get_mut(world);
 
         let cl_entity: Entity = message.entity.get(&server).unwrap();
         let changelist_entry = cl_query.get(cl_entity).unwrap();
@@ -316,6 +317,7 @@ impl Workspace {
                     &mut commands,
                     &mut server,
                     self,
+                    &mut vertex_manager,
                     user_key,
                     &file_entity,
                     &file_entry_key,
@@ -557,7 +559,7 @@ impl Workspace {
         commands: &mut Commands,
         server: &mut Server,
         key: &FileEntryKey,
-    ) -> HashSet<Entity> {
+    ) -> FileReadOutput {
         // get file extension of file
         let file_extension = self.working_file_extension(key);
 
@@ -577,9 +579,9 @@ impl Workspace {
         };
 
         // FileReader reads File's contents and spawns all Entities + Components
-        let content_entities: HashSet<Entity> = file_extension.read(commands, server, &bytes);
+        let read_output = file_extension.read(commands, server, &bytes);
 
-        content_entities
+        read_output
     }
 
     fn get_file_contents(&self, key: &FileEntryKey) -> Box<[u8]> {

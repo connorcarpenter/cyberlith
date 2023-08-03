@@ -26,6 +26,8 @@ use crate::{
     files::FileWriter,
     resources::{user_manager::UserInfo, workspace::Workspace, FileEntryValue, UserManager},
 };
+use crate::files::FileReadOutput;
+use crate::resources::VertexManager;
 
 #[derive(Resource)]
 pub struct GitManager {
@@ -242,11 +244,25 @@ impl GitManager {
         &self,
         commands: &mut Commands,
         server: &mut Server,
-        file_entry_key: &FileEntryKey,
+        vertex_manager: &mut VertexManager,
         username: &str,
+        file_entry_key: &FileEntryKey,
     ) -> HashSet<Entity> {
         let workspace = self.workspaces.get(username).unwrap();
-        workspace.load_content_entities(commands, server, file_entry_key)
+        let output = workspace.load_content_entities(commands, server, file_entry_key);
+        let mut new_entities = HashSet::new();
+
+        match output {
+            FileReadOutput::Skel(entities) => {
+                for (entity, parent_opt) in entities {
+                    new_entities.insert(entity);
+                    vertex_manager.on_create_vertex(&entity, parent_opt);
+                }
+                vertex_manager.finalize_vertex_creation();
+            }
+        }
+
+        new_entities
     }
 
     pub(crate) fn can_read(&self, username: &str, key: &FileEntryKey) -> bool {
@@ -270,7 +286,7 @@ impl GitManager {
         return ext.write(world, content_entities);
     }
 
-    fn working_file_extension(&self, username: &str, key: &FileEntryKey) -> FileExtension {
+    pub fn working_file_extension(&self, username: &str, key: &FileEntryKey) -> FileExtension {
         self.workspaces
             .get(username)
             .unwrap()

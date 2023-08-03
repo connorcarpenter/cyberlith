@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::entity::Entity;
 use bevy_ecs::system::{Commands, Resource};
+use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, Server};
 
@@ -34,12 +35,14 @@ impl VertexValue {
 #[derive(Resource)]
 pub struct VertexManager {
     vertices: HashMap<Entity, VertexValue>,
+    waiting_for_parent: HashMap<Entity, Vec<(Entity, Option<Entity>)>>,
 }
 
 impl Default for VertexManager {
     fn default() -> Self {
         Self {
             vertices: HashMap::new(),
+            waiting_for_parent: HashMap::new(),
         }
     }
 }
@@ -49,23 +52,74 @@ impl VertexManager {
         self.vertices.contains_key(entity)
     }
 
-    pub fn on_client_create_vertex(&mut self, entity: &Entity, parent: Option<Entity>) {
-        self.vertices.insert(*entity, VertexValue::new(parent));
+    pub fn on_create_vertex(&mut self, entity: &Entity, parent_opt: Option<Entity>) {
+        // info!("on_create_vertex: {:?} {:?}", entity, parent_opt);
 
-        if let Some(parent) = parent {
-            if let Some(parent_value) = self.vertices.get_mut(&parent) {
-                parent_value.add_child(*entity);
+        let mut success;
+
+        if let Some(parent_entity) = parent_opt {
+            if self.vertices.contains_key(&parent_entity) {
+                // success!
+                success = true;
+            } else {
+                // waiting on parent
+                success = false;
+
+                if !self.waiting_for_parent.contains_key(&parent_entity) {
+                    self.waiting_for_parent.insert(parent_entity, Vec::new());
+                }
+
+                let Some(list) = self.waiting_for_parent.get_mut(&parent_entity) else {
+                    panic!("shouldn't be able to happen!");
+                };
+
+                list.push((*entity, parent_opt));
+                info!("waiting on parent .. entity: {:?}, parent is {:?}", entity, parent_entity)
+            }
+        } else {
+            // success!
+            success = true;
+        }
+
+        if success {
+            self.insert_vertex(*entity, parent_opt);
+        }
+    }
+
+    fn insert_vertex(&mut self, entity: Entity, parent_opt: Option<Entity>) {
+        info!("inserting entity: {:?}, parent is {:?}", entity, parent_opt);
+        self.vertices.insert(entity, VertexValue::new(parent_opt));
+
+        if let Some(parent_entity) = parent_opt {
+            let Some(parent_value) = self.vertices.get_mut(&parent_entity) else {
+                panic!("shouldn't be able to happen!");
+            };
+            parent_value.add_child(entity);
+        }
+
+        if let Some(list) = self.waiting_for_parent.remove(&entity) {
+            for (child_entity, child_value) in list {
+                info!("child {:?} was waiting on parent {:?}!", child_entity, entity);
+                self.insert_vertex(child_entity, child_value);
             }
         }
     }
 
-    pub fn on_client_delete_vertex(
+    pub fn finalize_vertex_creation(&self) {
+        if !self.waiting_for_parent.is_empty() {
+            panic!("finalize_vertex_creation: waiting_for_parent is not empty!");
+        }
+    }
+
+    pub fn on_delete_vertex(
         &mut self,
         commands: &mut Commands,
         server: &mut Server,
         entity: &Entity,
     ) {
+        info!("on_delete_vertex: {:?}", entity);
         let entities_to_delete = Self::remove_entity(&mut self.vertices, entity);
+        info!("on_delete_vertex: entities_to_delete: {:?}", entities_to_delete);
 
         for child_entity in entities_to_delete {
             commands

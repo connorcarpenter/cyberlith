@@ -10,9 +10,7 @@ use naia_bevy_server::{CommandsExt, Server, UserKey};
 
 use vortex_proto::{resources::FileEntryKey, types::TabId};
 
-use crate::resources::{
-    user_tab_state::TabState, workspace::Workspace, GitManager, UserManager, UserTabState,
-};
+use crate::resources::{user_tab_state::TabState, workspace::Workspace, GitManager, UserManager, UserTabState, VertexManager};
 
 #[derive(Resource)]
 pub struct TabManager {
@@ -38,6 +36,7 @@ impl TabManager {
         server: &mut Server,
         user_manager: &UserManager,
         git_manager: &mut GitManager,
+        vertex_manager: &mut VertexManager,
         key_query: &Query<&FileEntryKey>,
         user_key: &UserKey,
         tab_id: &TabId,
@@ -67,7 +66,7 @@ impl TabManager {
         let new_room_key = server.make_room().key();
 
         let content_entities =
-            git_manager.load_content_entities(commands, server, &file_entry_key, username);
+            git_manager.load_content_entities(commands, server, vertex_manager, username, &file_entry_key);
 
         for entity in content_entities.iter() {
             // associate all new Entities with the new Room
@@ -248,6 +247,7 @@ impl TabManager {
         commands: &mut Commands,
         server: &mut Server,
         workspace: &Workspace,
+        vertex_manager: &mut VertexManager,
         user_key: &UserKey,
         file_entity: &Entity,
         file_entry_key: &FileEntryKey,
@@ -257,6 +257,7 @@ impl TabManager {
                 commands,
                 server,
                 workspace,
+                vertex_manager,
                 file_entity,
                 file_entry_key,
             );

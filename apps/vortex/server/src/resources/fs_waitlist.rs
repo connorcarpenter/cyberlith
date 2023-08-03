@@ -9,7 +9,7 @@ use naia_bevy_server::{Server, UserKey};
 
 use vortex_proto::{components::EntryKind, resources::FileEntryKey};
 
-use crate::resources::{GitManager, TabManager, UserManager};
+use crate::resources::{GitManager, TabManager, UserManager, VertexManager};
 
 pub enum FSWaitlistInsert {
     Entry(EntryKind, String),
@@ -55,6 +55,7 @@ pub fn fs_process_insert(
     user_manager: &UserManager,
     git_manager: &mut GitManager,
     tab_manager: &mut TabManager,
+    vertex_manager: &mut VertexManager,
     fs_waiting_entities: &mut HashMap<Entity, FSWaitlist>,
     user_key: &UserKey,
     entity: &Entity,
@@ -93,6 +94,7 @@ pub fn fs_process_insert(
                 server,
                 user_manager,
                 git_manager,
+                vertex_manager,
                 key_query,
                 user_key,
                 &tab_id,

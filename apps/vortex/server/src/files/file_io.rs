@@ -18,7 +18,7 @@ pub trait FileReader: Send + Sync {
         commands: &mut Commands,
         server: &mut Server,
         bytes: &Box<[u8]>,
-    ) -> HashSet<Entity>;
+    ) -> FileReadOutput;
 }
 
 impl FileReader for FileExtension {
@@ -27,7 +27,7 @@ impl FileReader for FileExtension {
         commands: &mut Commands,
         server: &mut Server,
         bytes: &Box<[u8]>,
-    ) -> HashSet<Entity> {
+    ) -> FileReadOutput {
         match self {
             FileExtension::Skel => SkelReader.read(commands, server, bytes),
             _ => panic!("File extension {:?} not implemented", self),
@@ -49,4 +49,9 @@ impl FileWriter for FileExtension {
             _ => panic!("File extension {:?} not implemented", self),
         }
     }
+}
+
+pub enum FileReadOutput {
+    // Skel file, list of entities and an optional parent per
+    Skel(Vec<(Entity, Option<Entity>)>)
 }

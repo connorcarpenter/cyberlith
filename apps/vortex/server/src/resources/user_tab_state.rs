@@ -5,6 +5,8 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server};
 use vortex_proto::{resources::FileEntryKey, types::TabId};
+use crate::files::FileReadOutput;
+use crate::resources::VertexManager;
 
 use crate::resources::workspace::Workspace;
 
@@ -106,6 +108,7 @@ impl UserTabState {
         commands: &mut Commands,
         server: &mut Server,
         workspace: &Workspace,
+        vertex_manager: &mut VertexManager,
         file_entity: &Entity,
         file_entry_key: &FileEntryKey,
     ) {
@@ -118,6 +121,7 @@ impl UserTabState {
                 commands,
                 server,
                 workspace,
+                vertex_manager,
                 file_entry_key,
                 tab_is_selected,
             );
@@ -167,6 +171,7 @@ impl TabState {
         commands: &mut Commands,
         server: &mut Server,
         workspace: &Workspace,
+        vertex_manager: &mut VertexManager,
         file_entry_key: &FileEntryKey,
         tab_is_selected: bool,
     ) {
@@ -178,11 +183,23 @@ impl TabState {
         for entity in self.content_entities.iter() {
             info!("despawning entity: {:?}", entity);
             commands.entity(*entity).take_authority(server).despawn();
+            vertex_manager.on_delete_vertex(commands, server, entity);
         }
 
         // respawn all entities
-        let new_content_entities =
+        let read_output =
             workspace.load_content_entities(commands, server, &file_entry_key);
+
+        let mut new_content_entities = HashSet::new();
+        match read_output {
+            FileReadOutput::Skel(entities) => {
+                for (entity, parent_opt) in entities {
+                    new_content_entities.insert(entity);
+                    vertex_manager.on_create_vertex(&entity, parent_opt);
+                }
+                vertex_manager.finalize_vertex_creation();
+            }
+        }
 
         for entity in new_content_entities.iter() {
             // associate all new Entities with the new Room

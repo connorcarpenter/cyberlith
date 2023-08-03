@@ -11,7 +11,7 @@ use vortex_proto::{
     resources::FileEntryKey,
 };
 
-use crate::resources::{ChangelistManager, GitManager, TabManager, UserManager};
+use crate::resources::{ChangelistManager, GitManager, TabManager, UserManager, VertexManager};
 
 pub fn message_events(
     mut commands: Commands,
@@ -21,6 +21,7 @@ pub fn message_events(
     mut git_manager: ResMut<GitManager>,
     mut tab_manager: ResMut<TabManager>,
     mut cl_manager: ResMut<ChangelistManager>,
+    mut vertex_manager: ResMut<VertexManager>,
     key_query: Query<&FileEntryKey>,
 ) {
     for events in event_reader.iter() {
@@ -39,6 +40,7 @@ pub fn message_events(
                     &mut server,
                     &user_manager,
                     &mut git_manager,
+                    &mut vertex_manager,
                     &key_query,
                     &user_key,
                     &tab_id,
