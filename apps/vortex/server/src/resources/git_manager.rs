@@ -17,7 +17,7 @@ use vortex_proto::{
     components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild},
     messages::ChangelistMessage,
     resources::FileEntryKey,
-    FileExtension,
+    FileExtension, types::TabId
 };
 
 use crate::{
@@ -246,6 +246,7 @@ impl GitManager {
         username: &str,
         file_entry_key: &FileEntryKey,
         room_key: &RoomKey,
+        tab_id: TabId,
         pause_replication: bool,
     ) -> HashSet<Entity> {
 
@@ -256,7 +257,7 @@ impl GitManager {
 
         let new_entities = match output {
             FileReadOutput::Skel(entities) => {
-                SkelReader::post_process_entities(commands, server, vertex_manager, room_key, entities, pause_replication)
+                SkelReader::post_process_entities(commands, server, vertex_manager, room_key, entities, tab_id, pause_replication)
             }
         };
 

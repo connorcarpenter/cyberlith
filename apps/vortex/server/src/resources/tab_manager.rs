@@ -76,7 +76,7 @@ impl TabManager {
         let new_room_key = server.make_room().key();
 
         let content_entities =
-            git_manager.load_content_entities(commands, server, vertex_manager, username, &file_entry_key, &new_room_key, true);
+            git_manager.load_content_entities(commands, server, vertex_manager, username, &file_entry_key, &new_room_key, *tab_id, true);
 
         // insert TabState into collection
         let tab_state = TabState::new(new_room_key, file_entity.clone(), content_entities);

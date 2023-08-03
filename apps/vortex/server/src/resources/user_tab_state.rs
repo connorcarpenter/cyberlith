@@ -125,6 +125,7 @@ impl UserTabState {
                 workspace,
                 vertex_manager,
                 file_entry_key,
+                *tab_id,
                 tab_is_selected,
             );
         }
@@ -175,6 +176,7 @@ impl TabState {
         workspace: &Workspace,
         vertex_manager: &mut VertexManager,
         file_entry_key: &FileEntryKey,
+        tab_id: TabId,
         tab_is_selected: bool,
     ) {
         if !workspace.working_file_extension(file_entry_key).can_io() {
@@ -194,7 +196,7 @@ impl TabState {
 
         let new_content_entities = match output {
             FileReadOutput::Skel(entities) => {
-                SkelReader::post_process_entities(commands, server, vertex_manager, &self.room_key, entities, !tab_is_selected)
+                SkelReader::post_process_entities(commands, server, vertex_manager, &self.room_key, entities, tab_id,!tab_is_selected)
             }
         };
 

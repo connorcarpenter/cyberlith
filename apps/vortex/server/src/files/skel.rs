@@ -9,7 +9,7 @@ use bevy_log::info;
 
 use naia_bevy_server::{BitReader, BitWriter, CommandsExt, ReplicationConfig, RoomKey, Serde, SerdeErr, Server, UnsignedVariableInteger};
 
-use vortex_proto::components::{Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt};
+use vortex_proto::{components::{OwnedByTab, Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt}, types::TabId};
 
 use crate::{files::{FileReader, FileReadOutput, FileWriter}, resources::VertexManager};
 
@@ -211,6 +211,7 @@ impl SkelReader {
         vertex_manager: &mut VertexManager,
         room_key: &RoomKey,
         entities: Vec<(Entity, Option<Entity>)>,
+        tab_id: TabId,
         pause_replication: bool,
     ) -> HashSet<Entity> {
         let mut new_content_entities = HashSet::new();
@@ -225,6 +226,10 @@ impl SkelReader {
             // associate all new Entities with the new Room
             server.room_mut(room_key).add_entity(entity);
 
+            // add tab ownership
+            commands.entity(*entity).insert(OwnedByTab::new(tab_id));
+
+            // pause replication if indicated
             if pause_replication {
                 commands
                     .entity(*entity)
