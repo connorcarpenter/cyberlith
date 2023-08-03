@@ -76,7 +76,6 @@ pub fn fs_process_insert(
     }
 
     if waitlist.is_ready() {
-        info!("New Entity is ready to be spawned!");
         let insert = fs_waiting_entities.remove(entity).unwrap();
         fs_process_insert_complete(
             commands,
@@ -88,19 +87,7 @@ pub fn fs_process_insert(
             insert,
         );
 
-        if let Some(tab_id) = tab_manager.remove_waiting_open(user_key, entity) {
-            tab_manager.open_tab(
-                commands,
-                server,
-                user_manager,
-                git_manager,
-                vertex_manager,
-                key_query,
-                user_key,
-                &tab_id,
-                entity,
-            );
-        }
+        tab_manager.complete_waiting_open(user_key, entity);
     }
 }
 
@@ -117,11 +104,12 @@ fn fs_process_insert_complete(
         panic!("user not found!");
     };
     let (name, kind, parent) = entry.decompose();
-    info!("creating file: {}", name);
+
     let key = FileEntryKey::new_with_parent(parent.clone(), &name, kind);
     git_manager
         .workspace_mut(user.get_username())
         .on_client_create_file(commands, server, &name, *file_entity, parent, &key);
 
+    info!("inserting FileEntryKey for entity: {:?}", file_entity);
     commands.entity(*file_entity).insert(key);
 }

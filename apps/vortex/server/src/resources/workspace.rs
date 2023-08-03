@@ -73,11 +73,12 @@ impl Workspace {
         parent: Option<FileEntryKey>,
         file_entry_key: &FileEntryKey,
     ) {
+        info!("creating file: {}", name);
+
         let file_extension = FileExtension::from_file_name(name);
         let file_entry_val = FileEntryValue::new(entity, parent, None, Some(file_extension));
 
         // Add new Entity into Working Tree
-        info!("Added new entity into Working FileTree");
         Self::add_to_file_tree(
             &mut self.working_file_entries,
             file_entry_key.clone(),

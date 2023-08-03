@@ -5,6 +5,7 @@ use bevy_ecs::{
     system::{Commands, Query, ResMut, Resource, SystemState},
     world::{Mut, World},
 };
+use bevy_ecs::system::Res;
 use bevy_log::{info, warn};
 use naia_bevy_server::{CommandsExt, Server, UserKey};
 
@@ -16,7 +17,10 @@ use crate::resources::{user_tab_state::TabState, workspace::Workspace, GitManage
 pub struct TabManager {
     users: HashMap<UserKey, UserTabState>,
     queued_closes: VecDeque<(UserKey, TabId)>,
+    queued_opens: VecDeque<(UserKey, TabId, Entity)>,
+    queued_selects: VecDeque<(UserKey, TabId)>,
     waiting_opens: HashMap<(UserKey, Entity), TabId>,
+    waiting_selects: HashMap<UserKey, TabId>,
 }
 
 impl Default for TabManager {
@@ -24,7 +28,10 @@ impl Default for TabManager {
         Self {
             users: HashMap::new(),
             queued_closes: VecDeque::new(),
+            queued_opens: VecDeque::new(),
+            queued_selects: VecDeque::new(),
             waiting_opens: HashMap::new(),
+            waiting_selects: HashMap::new(),
         }
     }
 }
@@ -42,8 +49,11 @@ impl TabManager {
         tab_id: &TabId,
         file_entity: &Entity,
     ) {
+        info!("open tab");
+
         let Ok(file_entry_key) = key_query.get(*file_entity) else {
             self.waiting_opens.insert((*user_key, *file_entity), *tab_id);
+            info!("no FileEntryKey for entity: {:?}, queuing open tab", file_entity);
             return;
         };
 
@@ -84,6 +94,11 @@ impl TabManager {
 
         // put user in new room
         server.room_mut(&new_room_key).add_user(user_key);
+
+        // if there is a selection waiting, queue it
+        if let Some(tab_id) = self.waiting_selects.remove(user_key) {
+            self.queued_selects.push_back((*user_key, tab_id));
+        }
     }
 
     pub fn select_tab(
@@ -94,7 +109,8 @@ impl TabManager {
         tab_id: &TabId,
     ) {
         let Some(user_state) = self.users.get_mut(user_key) else {
-            warn!("select_tab(): user_tab_state has not been initialized!");
+            info!("select_tab(): user_tab_state has not been initialized, queuing for later.");
+            self.waiting_selects.insert(*user_key, *tab_id);
             return;
         };
         if !user_state.has_tab_id(tab_id) {
@@ -121,12 +137,14 @@ impl TabManager {
         }
     }
 
-    pub fn remove_waiting_open(
+    pub fn complete_waiting_open(
         &mut self,
         user_key: &UserKey,
         file_entity: &Entity,
-    ) -> Option<TabId> {
-        self.waiting_opens.remove(&(*user_key, *file_entity))
+    ) {
+        if let Some(tab_id) = self.waiting_opens.remove(&(*user_key, *file_entity)) {
+            self.queued_opens.push_back((*user_key, tab_id, *file_entity));
+        }
     }
 
     pub fn queue_close_tab(&mut self, user_key: UserKey, tab_id: TabId) {
@@ -134,13 +152,51 @@ impl TabManager {
     }
 
     pub fn process_queued_actions(world: &mut World) {
+        Self::process_queued_opens(world);
+        Self::process_queued_closes(world);
+        Self::process_queued_selects(world);
+    }
+
+    fn process_queued_opens(world: &mut World) {
+        let mut system_state: SystemState<(Commands, Server, ResMut<TabManager>, Res<UserManager>, ResMut<GitManager>, ResMut<VertexManager>, Query<&FileEntryKey>)> =
+            SystemState::new(world);
+        let (mut commands, mut server, mut tab_manager, user_manager, mut git_manager, mut vertex_manager, key_query) = system_state.get_mut(world);
+
+        let opens = tab_manager.take_queued_opens();
+
+        for (user_key, tab_id, file_entity) in opens {
+            tab_manager.open_tab(
+                &mut commands,
+                &mut server,
+                &user_manager,
+                &mut git_manager,
+                &mut vertex_manager,
+                &key_query,
+                &user_key,
+                &tab_id,
+                &file_entity
+            );
+        }
+
+        system_state.apply(world);
+    }
+
+    fn take_queued_opens(&mut self) -> VecDeque<(UserKey, TabId, Entity)> {
+        std::mem::take(&mut self.queued_opens)
+    }
+
+    fn process_queued_closes(world: &mut World) {
         // closed tabs
         let closed_states = {
             let mut system_state: SystemState<(Server, ResMut<TabManager>)> =
                 SystemState::new(world);
             let (mut server, mut tab_manager) = system_state.get_mut(world);
 
-            Self::process_queued_actions_inner(&mut tab_manager, &mut server)
+            let output = Self::process_queued_closes_inner(&mut tab_manager, &mut server);
+
+            system_state.apply(world);
+
+            output
         };
 
         if closed_states.is_empty() {
@@ -189,6 +245,8 @@ impl TabManager {
                         bytes,
                     );
                 }
+
+                system_state.apply(world);
             });
         }
 
@@ -202,6 +260,29 @@ impl TabManager {
                 }
             }
         }
+    }
+
+    fn process_queued_selects(world: &mut World) {
+        let mut system_state: SystemState<(Commands, Server, ResMut<TabManager>)> =
+            SystemState::new(world);
+        let (mut commands, mut server, mut tab_manager) = system_state.get_mut(world);
+
+        let selects = tab_manager.take_queued_selects();
+
+        for (user_key, tab_id) in selects {
+            tab_manager.select_tab(
+                &mut commands,
+                &mut server,
+                &user_key,
+                &tab_id,
+            );
+        }
+
+        system_state.apply(world);
+    }
+
+    fn take_queued_selects(&mut self) -> VecDeque<(UserKey, TabId)> {
+        std::mem::take(&mut self.queued_selects)
     }
 
     pub fn on_insert_vertex(&mut self, user_key: &UserKey, vertex_entity: &Entity) {
@@ -280,7 +361,7 @@ impl TabManager {
         user_state
     }
 
-    fn process_queued_actions_inner(&mut self, server: &mut Server) -> Vec<(UserKey, TabState)> {
+    fn process_queued_closes_inner(&mut self, server: &mut Server) -> Vec<(UserKey, TabState)> {
         let mut output = Vec::new();
         while let Some((user_key, tab_id)) = self.queued_closes.pop_front() {
             let closed_state = self.close_tab(server, &user_key, &tab_id);

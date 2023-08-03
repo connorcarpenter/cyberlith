@@ -6,6 +6,7 @@ use bevy_ecs::{
     schedule::IntoSystemConfigs,
     system::{Res, ResMut},
 };
+use bevy_ecs::schedule::IntoSystemConfig;
 use bevy_log::{info, LogPlugin};
 
 use naia_bevy_server::{Plugin as ServerPlugin, ReceiveEvents, ServerConfig};
@@ -63,7 +64,6 @@ fn main() {
                 network::unpublish_entity_events,
                 network::spawn_entity_events,
                 network::despawn_entity_events,
-                network::insert_component_events,
                 network::remove_component_events,
                 network::update_component_events,
             )
@@ -80,7 +80,7 @@ fn main() {
         )
         // Other Systems
         .add_startup_system(setup)
-        .add_system(world_loop)
+        .add_system(world_loop.after(ReceiveEvents))
         .add_system(changelist_manager_process)
         // Run App
         .run();

@@ -138,7 +138,7 @@ pub fn insert_component_events(
 
         // on Vertex3D Insert Event
         for (user_key, entity) in events.read::<Vertex3d>() {
-            info!("inserted Vertex3d");
+            info!("inserted Vertex3d for entity: {:?}", entity);
             tab_manager.on_insert_vertex(&user_key, &entity);
             handle_file_modify(
                 &mut commands,

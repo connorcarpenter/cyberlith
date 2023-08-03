@@ -23,7 +23,7 @@ pub fn handle_file_modify(
     if !tab_manager.user_current_tab_has_entity(user_key, vertex_entity) {
         // info!("vertex_entity: {:?}", vertex_entity);
         // tab_manager.user_current_tab_print_entities(user_key);
-        panic!("somehow the user is modifying a file that is not their current tab ..");
+        panic!("somehow the user is modifying a file that is not their current tab .. vertex entity: {:?}", vertex_entity);
     }
 
     // get FileEntryKey associated with current tab

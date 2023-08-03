@@ -248,6 +248,9 @@ impl GitManager {
         username: &str,
         file_entry_key: &FileEntryKey,
     ) -> HashSet<Entity> {
+
+        info!("loading content entities");
+
         let workspace = self.workspaces.get(username).unwrap();
         let output = workspace.load_content_entities(commands, server, file_entry_key);
         let mut new_entities = HashSet::new();

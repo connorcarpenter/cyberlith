@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{entity::Entity, system::Commands};
-use bevy_log::info;
+use bevy_log::{info, warn};
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server};
 use vortex_proto::{resources::FileEntryKey, types::TabId};
@@ -91,7 +91,11 @@ impl UserTabState {
         if let Some(tab_id) = self.current_tab {
             if let Some(state) = self.tabs.get_mut(&tab_id) {
                 state.add_content_entity(*entity);
+            } else {
+                warn!("tab_id {:?} has no state", tab_id);
             }
+        } else {
+            warn!("no current tab!")
         }
     }
 
@@ -145,7 +149,7 @@ impl TabState {
     }
 
     pub fn add_content_entity(&mut self, entity: Entity) {
-        // info!("TabState adding entity: {:?}", entity);
+        info!("TabState adding entity: {:?}", entity);
         self.content_entities.insert(entity);
     }
 
