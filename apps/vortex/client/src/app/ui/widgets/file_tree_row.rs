@@ -7,6 +7,7 @@ use bevy_ecs::{
 use bevy_log::info;
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
 
+use render_api::components::Visibility;
 use render_egui::{
     egui,
     egui::{
@@ -16,7 +17,7 @@ use render_egui::{
 };
 use vortex_proto::{
     components::{
-        ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
+        OwnedByTab, ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
     },
     FileExtension,
 };
@@ -383,10 +384,10 @@ impl FileTreeRowUiWidget {
 
         // add to tabs
         if file_ext.can_io() {
-            let mut system_state: SystemState<(Client, ResMut<CanvasManager>, ResMut<TabManager>)> =
+            let mut system_state: SystemState<(Client, ResMut<CanvasManager>, ResMut<TabManager>, Query<(&mut Visibility, &OwnedByTab)>)> =
                 SystemState::new(world);
-            let (mut client, mut canvas_state, mut tab_manager) = system_state.get_mut(world);
-            tab_manager.open_tab(&mut client, &mut canvas_state, row_entity);
+            let (mut client, mut canvas_state, mut tab_manager, mut visibility_q) = system_state.get_mut(world);
+            tab_manager.open_tab(&mut client, &mut canvas_state, &mut visibility_q, row_entity);
         }
     }
 

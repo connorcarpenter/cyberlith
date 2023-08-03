@@ -8,7 +8,7 @@ use render_api::{
     components::RenderObjectBundle,
     Assets,
 };
-use vortex_proto::components::VertexRootChild;
+use vortex_proto::{components::{OwnedByTab, VertexRootChild}, types::TabId};
 
 use crate::app::{
     components::{Edge2d, Edge3d, Vertex2d},
@@ -21,11 +21,13 @@ use crate::app::{
 pub enum VertexWaitlistInsert {
     Position,
     Parent(Option<Entity>),
+    OwnedByTab(TabId),
 }
 
 pub struct VertexWaitlistEntry {
     has_pos: bool,
     parent: Option<Option<Entity>>,
+    tab_id: Option<TabId>,
 }
 
 impl VertexWaitlistEntry {
@@ -33,11 +35,12 @@ impl VertexWaitlistEntry {
         Self {
             has_pos: false,
             parent: None,
+            tab_id: None,
         }
     }
 
     fn is_ready(&self) -> bool {
-        self.has_pos && self.parent.is_some()
+        self.has_pos && self.parent.is_some() && self.tab_id.is_some()
     }
 
     fn set_parent(&mut self, parent: Option<Entity>) {
@@ -48,8 +51,12 @@ impl VertexWaitlistEntry {
         self.has_pos = true;
     }
 
-    pub(crate) fn decompose(self) -> Option<Entity> {
-        return self.parent.unwrap();
+    fn set_tab_id(&mut self, tab_id: TabId) {
+        self.tab_id = Some(tab_id);
+    }
+
+    pub(crate) fn decompose(self) -> (Option<Entity>, TabId) {
+        return (self.parent.unwrap(), self.tab_id.unwrap());
     }
 }
 
@@ -74,6 +81,9 @@ pub fn vertex_process_insert(
         VertexWaitlistInsert::Parent(parent) => {
             waitlist.set_parent(parent);
         }
+        VertexWaitlistInsert::OwnedByTab(tab_id) => {
+            waitlist.set_tab_id(tab_id);
+        }
     }
 
     if waitlist.is_ready() {
@@ -90,7 +100,7 @@ fn vertex_process_insert_complete(
     meshes: &mut Assets<CpuMesh>,
     materials: &mut Assets<CpuMaterial>,
 ) {
-    let parent_3d_entity_opt = entry.decompose();
+    let (parent_3d_entity_opt, tab_id) = entry.decompose();
 
     let color = match parent_3d_entity_opt {
         Some(_) => Vertex2d::CHILD_COLOR,
@@ -104,6 +114,7 @@ fn vertex_process_insert_complete(
         materials,
         parent_3d_entity_opt,
         vertex_3d_entity,
+        Some(tab_id),
         color,
         true,
     );
@@ -116,6 +127,7 @@ pub fn vertex_3d_postprocess(
     materials: &mut Assets<CpuMaterial>,
     parent_3d_entity_opt: Option<Entity>,
     vertex_3d_entity: Entity,
+    tab_id_opt: Option<TabId>,
     color: Color,
     arrows_not_lines: bool,
 ) -> (Entity, Option<Entity>, Option<Entity>) {
@@ -148,6 +160,9 @@ pub fn vertex_3d_postprocess(
         .insert(canvas_manager.layer_2d)
         .insert(Vertex2d)
         .id();
+    if let Some(tab_id) = tab_id_opt {
+        commands.entity(vertex_2d_entity).insert(OwnedByTab::new(tab_id));
+    }
 
     if let Some(parent_3d_entity) = parent_3d_entity_opt {
         // create 2d edge entity
@@ -161,6 +176,9 @@ pub fn vertex_3d_postprocess(
             .insert(canvas_manager.layer_2d)
             .insert(Edge2d::new(vertex_2d_entity, parent_3d_entity))
             .id();
+        if let Some(tab_id) = tab_id_opt {
+            commands.entity(new_entity).insert(OwnedByTab::new(tab_id));
+        }
         edge_2d_entity = Some(new_entity);
 
         // create 3d edge entity
@@ -174,6 +192,9 @@ pub fn vertex_3d_postprocess(
             .insert(canvas_manager.layer_3d)
             .insert(Edge3d::new(vertex_3d_entity, parent_3d_entity))
             .id();
+        if let Some(tab_id) = tab_id_opt {
+            commands.entity(new_entity).insert(OwnedByTab::new(tab_id));
+        }
         edge_3d_entity = Some(new_entity);
     } else {
         commands.entity(vertex_2d_entity).insert(VertexRootChild);

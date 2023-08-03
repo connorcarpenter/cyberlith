@@ -10,12 +10,10 @@ use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus, ReplicationConfig}
 use render_api::{
     base::{CpuMaterial, CpuMesh},
     Assets,
+    components::Visibility
 };
 
-use vortex_proto::components::{
-    ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild, Vertex3d,
-    VertexChild,
-};
+use vortex_proto::{components::{ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild, OwnedByTab, Vertex3d, VertexChild}, types::TabId};
 
 use crate::app::{
     components::{
@@ -313,6 +311,7 @@ impl ActionStack {
                     Query<(Entity, &mut FileSystemUiState)>,
                     Query<(Entity, &ChangelistEntry, &mut ChangelistUiState)>,
                     Query<&mut FileSystemParent>,
+                    Query<(&mut Visibility, &OwnedByTab)>,
                 )> = SystemState::new(world);
                 let (
                     mut commands,
@@ -323,6 +322,7 @@ impl ActionStack {
                     mut fs_query,
                     mut cl_query,
                     mut parent_query,
+                    mut visibility_q,
                 ) = system_state.get_mut(world);
 
                 let (deselected_row_entities, file_entries_to_release) =
@@ -363,7 +363,7 @@ impl ActionStack {
                 }
 
                 // open tab for new entry
-                tab_manager.open_tab(&mut client, &mut canvas_state, &entity_id);
+                tab_manager.open_tab(&mut client, &mut canvas_state, &mut visibility_q, &entity_id);
 
                 system_state.apply(world);
 
@@ -531,10 +531,11 @@ impl ActionStack {
                         Commands,
                         Client,
                         ResMut<CanvasManager>,
+                        Res<TabManager>,
                         ResMut<Assets<CpuMesh>>,
                         ResMut<Assets<CpuMaterial>>,
                     )> = SystemState::new(world);
-                    let (mut commands, mut client, mut canvas_manager, mut meshes, mut materials) =
+                    let (mut commands, mut client, mut canvas_manager, tab_manager, mut meshes, mut materials) =
                         system_state.get_mut(world);
 
                     let (deselected_vertex_2d_entity, vertex_3d_entity_to_release) =
@@ -556,6 +557,7 @@ impl ActionStack {
                         &parent_vertex_2d_entity,
                         &position,
                         &children_opt,
+                        tab_manager.current_tab_id(),
                         &mut new_3d_vertices,
                     );
 
@@ -905,6 +907,7 @@ impl ActionStack {
         parent_vertex_2d_entity: &Entity,
         position: &Vec3,
         children_opt: &Option<Vec<VertexEntry>>,
+        tab_id: TabId,
         new_3d_entities: &mut Vec<Entity>,
     ) -> (Entity, Entity) {
         let parent_vertex_3d_entity = canvas_manager
@@ -928,6 +931,7 @@ impl ActionStack {
             materials,
             Some(*parent_vertex_3d_entity),
             new_vertex_3d_entity,
+            Some(tab_id),
             Vertex2d::CHILD_COLOR,
             true,
         );
@@ -944,6 +948,7 @@ impl ActionStack {
                         &new_vertex_2d_entity,
                         &child.position,
                         &child.children,
+                        tab_id,
                         new_3d_entities,
                     );
                 let old_child_vertex_3d_entity = child.entity_3d;

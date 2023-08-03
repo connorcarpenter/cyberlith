@@ -3,10 +3,9 @@ use std::collections::HashMap;
 use bevy_ecs::{
     entity::Entity,
     prelude::Resource,
-    query::With,
+    query::{With, Without},
     system::{Commands, Query},
 };
-use bevy_ecs::query::Without;
 use bevy_log::{info, warn};
 use naia_bevy_client::{Client, CommandsExt, Replicate};
 
@@ -1345,6 +1344,7 @@ impl CanvasManager {
             materials,
             parent_vertex_3d_entity_opt,
             new_vertex_3d_entity,
+            None,
             color,
             false,
         );

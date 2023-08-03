@@ -19,10 +19,7 @@ use render_api::{
     base::{CpuMaterial, CpuMesh},
     Assets,
 };
-use vortex_proto::components::{
-    ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild, Vertex3d,
-    VertexChild, VertexRootChild,
-};
+use vortex_proto::components::{ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild, OwnedByTab, Vertex3d, VertexChild, VertexRootChild};
 
 use crate::app::{
     components::{
@@ -68,6 +65,7 @@ pub fn insert_component_events(
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
     vertex_child_query: Query<&VertexChild>,
+    owned_by_tab_q: Query<&OwnedByTab>,
     mut waiting_vertices: Local<HashMap<Entity, VertexWaitlistEntry>>,
 ) {
     let project_root_entity = global.project_root_entity;
@@ -189,6 +187,23 @@ pub fn insert_component_events(
                 &mut waiting_vertices,
                 &mut commands,
                 VertexWaitlistInsert::Parent(None),
+                &vertex_3d_entity,
+                &mut canvas_manager,
+                &mut meshes,
+                &mut materials,
+            );
+        }
+
+        // on OwnedByTab Insert Event
+        for vertex_3d_entity in events.read::<OwnedByTab>() {
+
+            let owned_by_tab = owned_by_tab_q.get(vertex_3d_entity).unwrap();
+            let tab_id = *owned_by_tab.tab_id;
+
+            vertex_process_insert(
+                &mut waiting_vertices,
+                &mut commands,
+                VertexWaitlistInsert::OwnedByTab(tab_id),
                 &vertex_3d_entity,
                 &mut canvas_manager,
                 &mut meshes,
