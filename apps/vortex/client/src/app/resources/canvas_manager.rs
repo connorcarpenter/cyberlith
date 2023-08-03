@@ -190,6 +190,14 @@ impl CanvasManager {
         else if input.is_pressed(Key::Num3) {
             self.set_camera_angle_ingame(3);
         }
+        // 4 Game Camera View
+        else if input.is_pressed(Key::Num4) {
+            self.set_camera_angle_ingame(4);
+        }
+        // 5 Game Camera View
+        else if input.is_pressed(Key::Num5) {
+            self.set_camera_angle_ingame(5);
+        }
         // Si(d)e Camera View
         else if input.is_pressed(Key::D) {
             self.set_camera_angle_side();
@@ -975,16 +983,16 @@ impl CanvasManager {
 
         let angle = match game_index {
             1 => { 30.0 } // seems to be 2:1 diablo isometric angle ?
-            2 => { 52.98187825 }
-            3 => { 75.9637565 } // seems to be 4:3 warcraft angle ?
+            2 => { 63.43 } // 90 - arctan(1/2)
+            3 => { 69.91 }
+            4 => { 76.39 } // seems to be 4:3 warcraft angle ?
+            5 => { 82.87 } // 90 - arctan(1/8)
             _ => {
                 warn!("Invalid game index: {}", game_index);
                 return;
             }
         };
 
-        // 71.8 seems to be 3:2 warcraft angle
-        // 64.849 seems to be the 7:4 angle we're looking for..?
         let mut rotation = self.camera_3d_rotation;
         rotation.y = angle * -1.0;
         self.set_camera_angle(rotation);
@@ -992,23 +1000,23 @@ impl CanvasManager {
 
     fn set_camera_angle_yaw_rotate(&mut self, counter: bool) {
 
-        let mut rotation = self.camera_3d_rotation;
+        let mut rotation = (self.camera_3d_rotation.x/45.0).round()*45.0;
         match counter {
             true => {
-                rotation.x += 45.0;
-                if rotation.x > 360.0 {
-                    rotation.x -= 360.0;
+                rotation += 45.0;
+                if rotation > 360.0 {
+                    rotation -= 360.0;
                 }
             }
             false => {
-                rotation.x -= 45.0;
-                if rotation.x < 0.0 {
-                    rotation.x += 360.0;
+                rotation -= 45.0;
+                if rotation < 0.0 {
+                    rotation += 360.0;
                 }
             }
         }
 
-        self.set_camera_angle(rotation);
+        self.set_camera_angle(Vec2::new(rotation, self.camera_3d_rotation.y));
     }
 
     fn set_camera_angle_side(&mut self) {
