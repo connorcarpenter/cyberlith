@@ -87,11 +87,9 @@ pub fn insert_component_events(
                 &user_manager,
                 &mut git_manager,
                 &mut tab_manager,
-                &mut vertex_manager,
                 &mut fs_waiting_entities,
                 &user_key,
                 &entity,
-                &entry_key_query,
             );
         }
 
@@ -105,11 +103,9 @@ pub fn insert_component_events(
                 &user_manager,
                 &mut git_manager,
                 &mut tab_manager,
-                &mut vertex_manager,
                 &mut fs_waiting_entities,
                 &user_key,
                 &entity,
-                &entry_key_query,
             );
         }
 
@@ -128,11 +124,9 @@ pub fn insert_component_events(
                 &user_manager,
                 &mut git_manager,
                 &mut tab_manager,
-                &mut vertex_manager,
                 &mut fs_waiting_entities,
                 &user_key,
                 &entity,
-                &entry_key_query,
             );
         }
 

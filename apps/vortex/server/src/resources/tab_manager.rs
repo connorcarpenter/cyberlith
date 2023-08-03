@@ -76,17 +76,7 @@ impl TabManager {
         let new_room_key = server.make_room().key();
 
         let content_entities =
-            git_manager.load_content_entities(commands, server, vertex_manager, username, &file_entry_key);
-
-        for entity in content_entities.iter() {
-            // associate all new Entities with the new Room
-            server.room_mut(&new_room_key).add_entity(entity);
-
-            commands
-                .entity(*entity)
-                // call "pause_replication" on all Entities (they will be resumed when tab is selected)
-                .pause_replication(server);
-        }
+            git_manager.load_content_entities(commands, server, vertex_manager, username, &file_entry_key, &new_room_key, true);
 
         // insert TabState into collection
         let tab_state = TabState::new(new_room_key, file_entity.clone(), content_entities);

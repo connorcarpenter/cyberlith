@@ -2,14 +2,14 @@ use std::collections::HashMap;
 
 use bevy_ecs::{
     entity::Entity,
-    system::{Commands, Query},
+    system::Commands,
 };
 use bevy_log::info;
 use naia_bevy_server::{Server, UserKey};
 
 use vortex_proto::{components::EntryKind, resources::FileEntryKey};
 
-use crate::resources::{GitManager, TabManager, UserManager, VertexManager};
+use crate::resources::{GitManager, TabManager, UserManager};
 
 pub enum FSWaitlistInsert {
     Entry(EntryKind, String),
@@ -55,11 +55,9 @@ pub fn fs_process_insert(
     user_manager: &UserManager,
     git_manager: &mut GitManager,
     tab_manager: &mut TabManager,
-    vertex_manager: &mut VertexManager,
     fs_waiting_entities: &mut HashMap<Entity, FSWaitlist>,
     user_key: &UserKey,
     entity: &Entity,
-    key_query: &Query<&FileEntryKey>,
 ) {
     if !fs_waiting_entities.contains_key(&entity) {
         fs_waiting_entities.insert(*entity, FSWaitlist::new());

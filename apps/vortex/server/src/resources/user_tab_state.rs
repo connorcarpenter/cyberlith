@@ -5,10 +5,8 @@ use bevy_log::{info, warn};
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server};
 use vortex_proto::{resources::FileEntryKey, types::TabId};
-use crate::files::FileReadOutput;
-use crate::resources::VertexManager;
 
-use crate::resources::workspace::Workspace;
+use crate::{files::{FileReadOutput, SkelReader}, resources::{VertexManager, workspace::Workspace}};
 
 pub struct UserTabState {
     current_tab: Option<TabId>,
@@ -191,31 +189,14 @@ impl TabState {
         }
 
         // respawn all entities
-        let read_output =
+        let output =
             workspace.load_content_entities(commands, server, &file_entry_key);
 
-        let mut new_content_entities = HashSet::new();
-        match read_output {
+        let new_content_entities = match output {
             FileReadOutput::Skel(entities) => {
-                for (entity, parent_opt) in entities {
-                    new_content_entities.insert(entity);
-                    vertex_manager.on_create_vertex(&entity, parent_opt);
-                }
-                vertex_manager.finalize_vertex_creation();
+                SkelReader::post_process_entities(commands, server, vertex_manager, &self.room_key, entities, !tab_is_selected)
             }
-        }
-
-        for entity in new_content_entities.iter() {
-            // associate all new Entities with the new Room
-            server.room_mut(&self.room_key).add_entity(entity);
-
-            if !tab_is_selected {
-                commands
-                    .entity(*entity)
-                    // call "pause_replication" on all Entities (they will be resumed when tab is selected)
-                    .pause_replication(server);
-            }
-        }
+        };
 
         // update content entities in TabState
         self.content_entities = new_content_entities;

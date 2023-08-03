@@ -7,14 +7,11 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use naia_bevy_server::{
-    BitReader, BitWriter, CommandsExt, ReplicationConfig, Serde, SerdeErr, Server,
-    UnsignedVariableInteger,
-};
+use naia_bevy_server::{BitReader, BitWriter, CommandsExt, ReplicationConfig, RoomKey, Serde, SerdeErr, Server, UnsignedVariableInteger};
 
 use vortex_proto::components::{Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt};
 
-use crate::files::{FileReader, FileReadOutput, FileWriter};
+use crate::{files::{FileReader, FileReadOutput, FileWriter}, resources::VertexManager};
 
 // Actions
 #[derive(Debug)]
@@ -206,6 +203,37 @@ impl SkelReader {
         }
 
         Ok(FileReadOutput::Skel(output))
+    }
+
+    pub fn post_process_entities(
+        commands: &mut Commands,
+        server: &mut Server,
+        vertex_manager: &mut VertexManager,
+        room_key: &RoomKey,
+        entities: Vec<(Entity, Option<Entity>)>,
+        pause_replication: bool,
+    ) -> HashSet<Entity> {
+        let mut new_content_entities = HashSet::new();
+
+        for (entity, parent_opt) in entities {
+            new_content_entities.insert(entity);
+            vertex_manager.on_create_vertex(&entity, parent_opt);
+        }
+        vertex_manager.finalize_vertex_creation();
+
+        for entity in new_content_entities.iter() {
+            // associate all new Entities with the new Room
+            server.room_mut(room_key).add_entity(entity);
+
+            if pause_replication {
+                commands
+                    .entity(*entity)
+                    // call "pause_replication" on all Entities (they will be resumed when tab is selected)
+                    .pause_replication(server);
+            }
+        }
+
+        new_content_entities
     }
 }
 

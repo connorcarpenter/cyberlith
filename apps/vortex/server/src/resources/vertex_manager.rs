@@ -55,7 +55,7 @@ impl VertexManager {
     pub fn on_create_vertex(&mut self, entity: &Entity, parent_opt: Option<Entity>) {
         // info!("on_create_vertex: {:?} {:?}", entity, parent_opt);
 
-        let mut success;
+        let success: bool;
 
         if let Some(parent_entity) = parent_opt {
             if self.vertices.contains_key(&parent_entity) {

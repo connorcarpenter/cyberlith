@@ -6,6 +6,8 @@ use naia_bevy_shared::{
 
 use math::Vec3;
 
+use crate::types::TabId;
+
 pub struct VertexComponentsPlugin;
 
 impl ProtocolPlugin for VertexComponentsPlugin {
@@ -13,7 +15,8 @@ impl ProtocolPlugin for VertexComponentsPlugin {
         protocol
             .add_component::<Vertex3d>()
             .add_component::<VertexChild>()
-            .add_component::<VertexRootChild>();
+            .add_component::<VertexRootChild>()
+            .add_component::<OwnedByTab>();
     }
 }
 
@@ -90,5 +93,17 @@ impl Vertex3d {
 
     pub fn from_vec3(vec3: Vec3) -> Self {
         Self::new(vec3.x as i16, vec3.y as i16, vec3.z as i16)
+    }
+}
+
+// TabOwnership
+#[derive(Component, Replicate)]
+pub struct OwnedByTab {
+    pub tab_id: Property<TabId>,
+}
+
+impl OwnedByTab {
+    pub fn new(tab_id: TabId) -> Self {
+        Self::new_complete(tab_id)
     }
 }
