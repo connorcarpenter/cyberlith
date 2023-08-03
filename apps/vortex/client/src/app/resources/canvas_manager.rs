@@ -20,7 +20,7 @@ use render_api::{
     shapes::{distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform},
     Assets, Handle,
 };
-use vortex_proto::components::{Vertex3d, VertexRootChild};
+use vortex_proto::{components::{OwnedByTab, Vertex3d, VertexRootChild}, types::TabId};
 
 use crate::app::{
     components::{Edge2d, Edge3d, HoverCircle, SelectCircle, Vertex2d},
@@ -140,9 +140,11 @@ impl CanvasManager {
         client: &mut Client,
         input: &mut Input,
         action_stack: &mut ActionStack,
+        current_tab_id: TabId,
         transform_q: &mut Query<&mut Transform>,
         camera_q: &mut Query<(&mut Camera, &mut Projection)>,
         visibility_q: &mut Query<&mut Visibility>,
+        owned_by_q: &Query<&OwnedByTab>,
         vertex_3d_q: &mut Query<&mut Vertex3d>,
         vertex_2d_q: &Query<(Entity, Option<&VertexRootChild>), (With<Vertex2d>, Without<Compass>)>,
         edge_2d_q: &Query<(Entity, &Edge2d), Without<Compass>>,
@@ -156,9 +158,11 @@ impl CanvasManager {
         // Mouse over
         if !self.click_down {
             self.update_mouse_hover(
+                current_tab_id,
                 input.mouse_position(),
                 transform_q,
                 visibility_q,
+                owned_by_q,
                 vertex_2d_q,
                 edge_2d_q,
             );
@@ -333,11 +337,13 @@ impl CanvasManager {
 
     pub fn sync_vertices(
         &mut self,
+        current_tab_id: TabId,
         transform_q: &mut Query<(&mut Transform, Option<&Compass>)>,
         camera_q: &Query<(&Camera, &Projection)>,
         vertex_3d_q: &Query<(Entity, &Vertex3d)>,
         edge_2d_q: &Query<(Entity, &Edge2d)>,
         edge_3d_q: &Query<(Entity, &Edge3d)>,
+        owned_by_q: &Query<&OwnedByTab>,
     ) {
         if !self.camera_2d_recalc {
             return;
@@ -364,6 +370,13 @@ impl CanvasManager {
 
         // update vertices
         for (vertex_3d_entity, vertex_3d) in vertex_3d_q.iter() {
+
+            // check if vertex is owned by the current tab
+            if !Self::is_owned_by_tab_or_unowned(current_tab_id, owned_by_q, vertex_3d_entity) {
+                continue;
+            }
+
+            // get transform
             let Ok((mut vertex_3d_transform, compass_opt)) = transform_q.get_mut(vertex_3d_entity) else {
                 warn!("Vertex3d entity {:?} has no Transform", vertex_3d_entity);
                 continue;
@@ -398,6 +411,7 @@ impl CanvasManager {
             vertex_2d_transform.translation.y = coords.y;
             vertex_2d_transform.translation.z = depth;
 
+            // update 2d compass
             if compass_opt.is_none() {
                 let scale_2d = self.camera_3d_scale * Vertex2d::RADIUS;
                 vertex_2d_transform.scale = Vec3::splat(scale_2d);
@@ -422,6 +436,11 @@ impl CanvasManager {
                 continue;
             };
 
+            // check if vertex is owned by the current tab
+            if !Self::is_owned_by_tab_or_unowned(current_tab_id, owned_by_q, *end_entity) {
+                continue;
+            }
+
             let (start_transform, _) = transform_q
                 .get(edge_endpoints.start)
                 .unwrap();
@@ -444,6 +463,12 @@ impl CanvasManager {
 
         // update 3d edges
         for (edge_entity, edge_endpoints) in edge_3d_q.iter() {
+
+            // check if vertex is owned by the current tab
+            if !Self::is_owned_by_tab_or_unowned(current_tab_id, owned_by_q, edge_entity) {
+                continue;
+            }
+
             if let Ok((start_transform, _)) = transform_q.get(edge_endpoints.start) {
                 let start_pos = start_transform.translation;
                 if let Ok((end_transform, _)) = transform_q.get(edge_endpoints.end) {
@@ -586,9 +611,11 @@ impl CanvasManager {
 
     fn update_mouse_hover(
         &mut self,
+        current_tab_id: TabId,
         mouse_position: &Vec2,
         transform_q: &mut Query<&mut Transform>,
         visibility_q: &mut Query<&mut Visibility>,
+        owned_by_q: &Query<&OwnedByTab>,
         vertex_2d_q: &Query<(Entity, Option<&VertexRootChild>), (With<Vertex2d>, Without<Compass>)>,
         edge_2d_q: &Query<(Entity, &Edge2d), Without<Compass>>,
     ) {
@@ -612,6 +639,12 @@ impl CanvasManager {
         let mut least_entity = None;
 
         for (vertex_entity, root_opt) in vertex_2d_q.iter() {
+
+            // check tab ownership, skip vertices from other tabs
+            if !Self::is_owned_by_tab(current_tab_id, owned_by_q, vertex_entity) {
+                continue;
+            }
+
             let vertex_transform = transform_q.get(vertex_entity).unwrap();
             let vertex_position = vertex_transform.translation.truncate();
             let distance = vertex_position.distance(*mouse_position);
@@ -638,6 +671,12 @@ impl CanvasManager {
 
         if !is_hovering {
             for (edge_entity, _) in edge_2d_q.iter() {
+
+                // check tab ownership, skip edges from other tabs
+                if !Self::is_owned_by_tab(current_tab_id, owned_by_q, edge_entity) {
+                    continue;
+                }
+
                 let edge_transform = transform_q.get(edge_entity).unwrap();
                 let edge_start = edge_transform.translation.truncate();
                 let edge_end = get_2d_line_transform_endpoint(&edge_transform);
@@ -1378,5 +1417,27 @@ impl CanvasManager {
             let vert_offset_3d = Vec3::new(0.0, 0.0, compass_length) + offset_3d;
             vertex_3d_q.get_mut(self.compass_vertices[3]).unwrap().set_vec3(&vert_offset_3d);
         }
+    }
+
+    // returns true if vertex is owned by tab or unowned
+    fn is_owned_by_tab_or_unowned(current_tab_id: TabId, owned_by_tab_q: &Query<&OwnedByTab>, entity: Entity) -> bool {
+        if let Ok(owned_by_tab) = owned_by_tab_q.get(entity) {
+            if *owned_by_tab.tab_id == current_tab_id {
+                return true;
+            }
+        } else {
+            return true;
+        }
+        return false;
+    }
+
+    // returns true if vertex is owned by tab
+    fn is_owned_by_tab(current_tab_id: TabId, owned_by_tab_q: &Query<&OwnedByTab>, entity: Entity) -> bool {
+        if let Ok(owned_by_tab) = owned_by_tab_q.get(entity) {
+            if *owned_by_tab.tab_id == current_tab_id {
+                return true;
+            }
+        }
+        return false;
     }
 }
