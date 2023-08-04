@@ -1,4 +1,3 @@
-
 use bevy_ecs::prelude::Resource;
 
 use input::{Input, Key, MouseButton};
@@ -47,11 +46,7 @@ pub enum InputAction {
 }
 
 impl InputManager {
-    pub fn update_input(
-        &mut self,
-        input: &mut Input,
-    ) -> Vec<InputAction> {
-
+    pub fn update_input(&mut self, input: &mut Input) -> Vec<InputAction> {
         let mut output = Vec::new();
 
         let mouse_position = *input.mouse_position();
@@ -157,7 +152,11 @@ impl InputManager {
                 self.click_start = mouse_position;
 
                 if delta.length() > 0.0 {
-                    output.push(InputAction::MouseDragged(self.click_type, mouse_position, delta));
+                    output.push(InputAction::MouseDragged(
+                        self.click_type,
+                        mouse_position,
+                        delta,
+                    ));
                 }
             } else {
                 // haven't clicked yet

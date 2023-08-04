@@ -29,7 +29,7 @@ use crate::app::{
         file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
         Edge2d, Edge3d,
     },
-    resources::{camera_manager::CameraManager, vertex_manager::VertexManager, global::Global},
+    resources::{camera_manager::CameraManager, global::Global, vertex_manager::VertexManager},
     systems::{
         file_post_process,
         network::vertex_waitlist::{

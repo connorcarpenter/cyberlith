@@ -25,8 +25,8 @@ use crate::app::{
     components::{Compass, Edge2d, Edge3d, HoverCircle, SelectCircle, Vertex2d},
     resources::{
         action_stack::{Action, ActionStack},
-        camera_manager::{CameraManager, CameraAngle},
-        input_manager::{InputAction, ClickType},
+        camera_manager::{CameraAngle, CameraManager},
+        input_manager::{ClickType, InputAction},
     },
     set_3d_line_transform,
     systems::network::vertex_3d_postprocess,
@@ -42,7 +42,6 @@ pub enum CanvasShape {
 
 #[derive(Resource)]
 pub struct VertexManager {
-
     // vertices
     vertices_3d_to_2d: HashMap<Entity, Entity>,
     vertices_2d_to_3d: HashMap<Entity, Entity>,
@@ -64,7 +63,6 @@ pub struct VertexManager {
 impl Default for VertexManager {
     fn default() -> Self {
         Self {
-
             // vertices
             vertices_3d_to_2d: HashMap::new(),
             vertices_2d_to_3d: HashMap::new(),
@@ -109,7 +107,6 @@ impl VertexManager {
         vertex_2d_q: &Query<(Entity, Option<&VertexRootChild>), (With<Vertex2d>, Without<Compass>)>,
         edge_2d_q: &Query<(Entity, &Edge2d), Without<Compass>>,
     ) {
-
         for input_action in &input_actions {
             match input_action {
                 InputAction::MiddleMouseScroll(scroll_y) => {
@@ -129,22 +126,20 @@ impl VertexManager {
                     camera_manager.set_2d_mode(camera_q);
                     self.recalculate_vertices();
                 }
-                InputAction::SetCameraAngleFixed(camera_angle) => {
-                    match camera_angle {
-                        CameraAngle::Side => {
-                            camera_manager.set_camera_angle_side();
-                        }
-                        CameraAngle::Front => {
-                            camera_manager.set_camera_angle_front();
-                        }
-                        CameraAngle::Top => {
-                            camera_manager.set_camera_angle_top();
-                        }
-                        CameraAngle::Ingame(angle_index) => {
-                            camera_manager.set_camera_angle_ingame(*angle_index);
-                        }
+                InputAction::SetCameraAngleFixed(camera_angle) => match camera_angle {
+                    CameraAngle::Side => {
+                        camera_manager.set_camera_angle_side();
                     }
-                }
+                    CameraAngle::Front => {
+                        camera_manager.set_camera_angle_front();
+                    }
+                    CameraAngle::Top => {
+                        camera_manager.set_camera_angle_top();
+                    }
+                    CameraAngle::Ingame(angle_index) => {
+                        camera_manager.set_camera_angle_ingame(*angle_index);
+                    }
+                },
                 InputAction::DeleteKeyPress => {
                     self.handle_delete_key_press(commands, client, action_stack);
                 }
@@ -175,7 +170,8 @@ impl VertexManager {
                     );
                 }
                 InputAction::MouseRelease => {
-                    if let Some((vertex_2d_entity, old_pos, new_pos)) = self.last_vertex_dragged.take()
+                    if let Some((vertex_2d_entity, old_pos, new_pos)) =
+                        self.last_vertex_dragged.take()
                     {
                         action_stack.buffer_action(Action::MoveVertex(
                             vertex_2d_entity,
@@ -197,12 +193,7 @@ impl VertexManager {
             vertex_2d_q,
             edge_2d_q,
         );
-        self.update_select_line(
-            mouse_position,
-            camera_manager,
-            transform_q,
-            visibility_q,
-        );
+        self.update_select_line(mouse_position, camera_manager, transform_q, visibility_q);
     }
 
     pub fn sync_vertices(

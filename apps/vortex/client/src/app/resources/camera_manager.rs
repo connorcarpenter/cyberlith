@@ -1,4 +1,3 @@
-
 use bevy_ecs::{entity::Entity, prelude::Resource, system::Query};
 use bevy_log::{info, warn};
 
@@ -8,7 +7,10 @@ use render_api::components::{
 };
 
 pub enum CameraAngle {
-    Side, Front, Top, Ingame(u8),
+    Side,
+    Front,
+    Top,
+    Ingame(u8),
 }
 
 #[derive(Resource)]

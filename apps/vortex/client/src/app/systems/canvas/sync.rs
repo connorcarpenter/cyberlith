@@ -9,8 +9,8 @@ use vortex_proto::components::{OwnedByTab, Vertex3d};
 use crate::app::{
     components::{Compass, Edge2d, Edge3d},
     resources::{
-        camera_manager::CameraManager, canvas::Canvas, vertex_manager::VertexManager,
-        tab_manager::TabManager,
+        camera_manager::CameraManager, canvas::Canvas, tab_manager::TabManager,
+        vertex_manager::VertexManager,
     },
 };
 

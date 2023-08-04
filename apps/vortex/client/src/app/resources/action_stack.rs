@@ -29,10 +29,10 @@ use crate::app::{
     resources::{
         camera_manager::CameraManager,
         canvas::Canvas,
-        vertex_manager::{VertexManager, CanvasShape},
         file_tree::FileTree,
         global::Global,
         tab_manager::TabManager,
+        vertex_manager::{CanvasShape, VertexManager},
     },
     systems::{file_post_process, network::vertex_3d_postprocess},
 };

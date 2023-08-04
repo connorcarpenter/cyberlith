@@ -13,7 +13,7 @@ use crate::app::{
     components::{Compass, Edge2d, Vertex2d},
     resources::{
         action_stack::ActionStack, camera_manager::CameraManager, canvas::Canvas,
-        vertex_manager::VertexManager, tab_manager::TabManager, input_manager::InputManager,
+        input_manager::InputManager, tab_manager::TabManager, vertex_manager::VertexManager,
     },
 };
 
@@ -44,12 +44,10 @@ pub fn input(
             input_actions,
             tab_manager.current_tab_id(),
             input.mouse_position(),
-
             &mut commands,
             &mut client,
             &mut camera_manager,
             &mut action_stack,
-
             &mut transform_q,
             &mut camera_q,
             &mut visibility_q,
