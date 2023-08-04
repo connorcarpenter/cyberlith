@@ -15,7 +15,7 @@ use crate::app::{
     resources::{
         input_manager::InputManager,
         action_stack::ActionStack, camera_manager::CameraManager, canvas::Canvas,
-        canvas_manager::CanvasManager, global::Global, tab_manager::TabManager,
+        vertex_manager::VertexManager, global::Global, tab_manager::TabManager,
     },
     systems::{canvas, network, ui},
     ui::UiState,
@@ -73,7 +73,7 @@ impl Plugin for VortexPlugin {
             .insert_resource(ActionStack::new())
             .add_system(ui::update)
             // Canvas Config
-            .init_resource::<CanvasManager>()
+            .init_resource::<VertexManager>()
             .init_resource::<Canvas>()
             .init_resource::<CameraManager>()
             .init_resource::<InputManager>()

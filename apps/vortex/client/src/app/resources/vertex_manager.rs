@@ -41,7 +41,7 @@ pub enum CanvasShape {
 }
 
 #[derive(Resource)]
-pub struct CanvasManager {
+pub struct VertexManager {
 
     // vertices
     vertices_3d_to_2d: HashMap<Entity, Entity>,
@@ -61,7 +61,7 @@ pub struct CanvasManager {
     mouse_hover_recalc: bool,
 }
 
-impl Default for CanvasManager {
+impl Default for VertexManager {
     fn default() -> Self {
         Self {
 
@@ -85,7 +85,7 @@ impl Default for CanvasManager {
     }
 }
 
-impl CanvasManager {
+impl VertexManager {
     pub fn update_input(
         &mut self,
 

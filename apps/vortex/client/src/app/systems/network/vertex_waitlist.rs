@@ -15,7 +15,7 @@ use vortex_proto::{
 
 use crate::app::{
     components::{Edge2d, Edge3d, Vertex2d},
-    resources::{camera_manager::CameraManager, canvas_manager::CanvasManager},
+    resources::{camera_manager::CameraManager, vertex_manager::VertexManager},
     shapes::{
         create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,
     },
@@ -69,7 +69,7 @@ pub fn vertex_process_insert(
     insert: VertexWaitlistInsert,
     entity: &Entity,
     camera_manager: &mut CameraManager,
-    canvas_manager: &mut CanvasManager,
+    vertex_manager: &mut VertexManager,
     meshes: &mut Assets<CpuMesh>,
     materials: &mut Assets<CpuMaterial>,
 ) {
@@ -97,7 +97,7 @@ pub fn vertex_process_insert(
             entry,
             *entity,
             camera_manager,
-            canvas_manager,
+            vertex_manager,
             meshes,
             materials,
         );
@@ -109,7 +109,7 @@ fn vertex_process_insert_complete(
     entry: VertexWaitlistEntry,
     vertex_3d_entity: Entity,
     camera_manager: &mut CameraManager,
-    canvas_manager: &mut CanvasManager,
+    vertex_manager: &mut VertexManager,
     meshes: &mut Assets<CpuMesh>,
     materials: &mut Assets<CpuMaterial>,
 ) {
@@ -123,7 +123,7 @@ fn vertex_process_insert_complete(
     vertex_3d_postprocess(
         commands,
         camera_manager,
-        canvas_manager,
+        vertex_manager,
         meshes,
         materials,
         parent_3d_entity_opt,
@@ -137,7 +137,7 @@ fn vertex_process_insert_complete(
 pub fn vertex_3d_postprocess(
     commands: &mut Commands,
     camera_manager: &mut CameraManager,
-    canvas_manager: &mut CanvasManager,
+    vertex_manager: &mut VertexManager,
     meshes: &mut Assets<CpuMesh>,
     materials: &mut Assets<CpuMaterial>,
     parent_3d_entity_opt: Option<Entity>,
@@ -221,7 +221,7 @@ pub fn vertex_3d_postprocess(
     //     vertex_3d_entity, vertex_2d_entity, parent_entity_opt
     // );
 
-    canvas_manager.register_3d_vertex(vertex_3d_entity, vertex_2d_entity);
+    vertex_manager.register_3d_vertex(vertex_3d_entity, vertex_2d_entity);
     camera_manager.recalculate_3d_view();
 
     (vertex_2d_entity, edge_2d_entity, edge_3d_entity)

@@ -29,7 +29,7 @@ use crate::app::{
         file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
         Edge2d, Edge3d,
     },
-    resources::{camera_manager::CameraManager, canvas_manager::CanvasManager, global::Global},
+    resources::{camera_manager::CameraManager, vertex_manager::VertexManager, global::Global},
     systems::{
         file_post_process,
         network::vertex_waitlist::{
@@ -65,7 +65,7 @@ pub fn insert_component_events(
 
     // for vertices
     mut camera_manager: ResMut<CameraManager>,
-    mut canvas_manager: ResMut<CanvasManager>,
+    mut vertex_manager: ResMut<VertexManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
     vertex_child_query: Query<&VertexChild>,
@@ -161,7 +161,7 @@ pub fn insert_component_events(
                 VertexWaitlistInsert::Position,
                 &vertex_3d_entity,
                 &mut camera_manager,
-                &mut canvas_manager,
+                &mut vertex_manager,
                 &mut meshes,
                 &mut materials,
             );
@@ -181,7 +181,7 @@ pub fn insert_component_events(
                 VertexWaitlistInsert::Parent(Some(parent_entity)),
                 &vertex_child_entity,
                 &mut camera_manager,
-                &mut canvas_manager,
+                &mut vertex_manager,
                 &mut meshes,
                 &mut materials,
             );
@@ -195,7 +195,7 @@ pub fn insert_component_events(
                 VertexWaitlistInsert::Parent(None),
                 &vertex_3d_entity,
                 &mut camera_manager,
-                &mut canvas_manager,
+                &mut vertex_manager,
                 &mut meshes,
                 &mut materials,
             );
@@ -212,7 +212,7 @@ pub fn insert_component_events(
                 VertexWaitlistInsert::OwnedByTab(tab_id),
                 &vertex_3d_entity,
                 &mut camera_manager,
-                &mut canvas_manager,
+                &mut vertex_manager,
                 &mut meshes,
                 &mut materials,
             );
@@ -262,7 +262,7 @@ pub fn remove_component_events(
     client: Client,
     mut global: ResMut<Global>,
     mut event_reader: EventReader<RemoveComponentEvents>,
-    mut canvas_manager: ResMut<CanvasManager>,
+    mut vertex_manager: ResMut<VertexManager>,
     mut parent_q: Query<&mut FileSystemParent>,
     mut fs_state_q: Query<&mut FileSystemUiState>,
     edge_2d_q: Query<(Entity, &Edge2d)>,
@@ -311,7 +311,7 @@ pub fn remove_component_events(
                 vertex_3d_entity
             );
 
-            canvas_manager.cleanup_deleted_vertex(
+            vertex_manager.cleanup_deleted_vertex(
                 &vertex_3d_entity,
                 &mut commands,
                 &edge_2d_q,

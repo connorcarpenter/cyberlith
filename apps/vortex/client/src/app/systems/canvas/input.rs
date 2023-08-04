@@ -13,7 +13,7 @@ use crate::app::{
     components::{Compass, Edge2d, Vertex2d},
     resources::{
         action_stack::ActionStack, camera_manager::CameraManager, canvas::Canvas,
-        canvas_manager::CanvasManager, tab_manager::TabManager, input_manager::InputManager,
+        vertex_manager::VertexManager, tab_manager::TabManager, input_manager::InputManager,
     },
 };
 
@@ -22,7 +22,7 @@ pub fn input(
     mut client: Client,
     mut camera_manager: ResMut<CameraManager>,
     canvas: Res<Canvas>,
-    mut canvas_manager: ResMut<CanvasManager>,
+    mut vertex_manager: ResMut<VertexManager>,
     mut input_manager: ResMut<InputManager>,
     mut input: ResMut<Input>,
     mut action_stack: ResMut<ActionStack>,
@@ -40,7 +40,7 @@ pub fn input(
     }
     let input_actions = input_manager.update_input(&mut input);
     if !input_actions.is_empty() {
-        canvas_manager.update_input(
+        vertex_manager.update_input(
             input_actions,
             tab_manager.current_tab_id(),
             input.mouse_position(),
