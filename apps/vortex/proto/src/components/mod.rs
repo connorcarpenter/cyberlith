@@ -7,7 +7,7 @@ pub use file_system::{
 };
 
 use vertex::VertexComponentsPlugin;
-pub use vertex::{Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt, OwnedByTab};
+pub use vertex::{OwnedByTab, Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt};
 
 mod file_system;
 mod vertex;

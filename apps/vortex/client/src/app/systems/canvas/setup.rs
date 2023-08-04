@@ -15,7 +15,7 @@ use render_egui::EguiUserTextures;
 use crate::app::{
     components::{HoverCircle, SelectCircle, SelectLine, Vertex2d},
     config::AppConfig,
-    resources::{camera_manager::CameraManager, canvas_manager::CanvasManager, canvas::Canvas},
+    resources::{camera_manager::CameraManager, canvas::Canvas, canvas_manager::CanvasManager},
     shapes::create_2d_edge_arrow,
 };
 
@@ -53,8 +53,18 @@ pub fn setup(
         &texture_size,
         canvas_texture_handle,
     );
-    canvas_manager.setup_compass(&mut commands, &mut camera_manager, &mut meshes, &mut materials);
-    canvas_manager.setup_grid(&mut commands, &mut camera_manager, &mut meshes, &mut materials);
+    canvas_manager.setup_compass(
+        &mut commands,
+        &mut camera_manager,
+        &mut meshes,
+        &mut materials,
+    );
+    canvas_manager.setup_grid(
+        &mut commands,
+        &mut camera_manager,
+        &mut meshes,
+        &mut materials,
+    );
 }
 
 fn setup_2d_scene(

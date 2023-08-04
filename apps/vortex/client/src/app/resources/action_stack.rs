@@ -9,11 +9,17 @@ use math::Vec3;
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus, ReplicationConfig};
 use render_api::{
     base::{CpuMaterial, CpuMesh},
+    components::Visibility,
     Assets,
-    components::Visibility
 };
 
-use vortex_proto::{components::{ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild, OwnedByTab, Vertex3d, VertexChild}, types::TabId};
+use vortex_proto::{
+    components::{
+        ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
+        OwnedByTab, Vertex3d, VertexChild,
+    },
+    types::TabId,
+};
 
 use crate::app::{
     components::{
@@ -367,7 +373,13 @@ impl ActionStack {
                 }
 
                 // open tab for new entry
-                tab_manager.open_tab(&mut client, &mut canvas, &mut camera_manager, &mut visibility_q, &entity_id);
+                tab_manager.open_tab(
+                    &mut client,
+                    &mut canvas,
+                    &mut camera_manager,
+                    &mut visibility_q,
+                    &entity_id,
+                );
 
                 system_state.apply(world);
 
@@ -540,8 +552,15 @@ impl ActionStack {
                         ResMut<Assets<CpuMesh>>,
                         ResMut<Assets<CpuMaterial>>,
                     )> = SystemState::new(world);
-                    let (mut commands, mut client, mut camera_manager, mut canvas_manager, tab_manager, mut meshes, mut materials) =
-                        system_state.get_mut(world);
+                    let (
+                        mut commands,
+                        mut client,
+                        mut camera_manager,
+                        mut canvas_manager,
+                        tab_manager,
+                        mut meshes,
+                        mut materials,
+                    ) = system_state.get_mut(world);
 
                     let (deselected_vertex_2d_entity, vertex_3d_entity_to_release) =
                         Self::deselect_all_selected_vertices(&mut canvas_manager);
@@ -685,9 +704,13 @@ impl ActionStack {
             }
             Action::MoveVertex(vertex_2d_entity, old_position, new_position) => {
                 info!("MoveVertex");
-                let mut system_state: SystemState<(ResMut<CanvasManager>, ResMut<CameraManager>, Query<&mut Vertex3d>)> =
-                    SystemState::new(world);
-                let (canvas_manager, mut camera_manager, mut vertex_3d_q) = system_state.get_mut(world);
+                let mut system_state: SystemState<(
+                    ResMut<CanvasManager>,
+                    ResMut<CameraManager>,
+                    Query<&mut Vertex3d>,
+                )> = SystemState::new(world);
+                let (canvas_manager, mut camera_manager, mut vertex_3d_q) =
+                    system_state.get_mut(world);
 
                 let vertex_3d_entity = *canvas_manager
                     .vertex_entity_2d_to_3d(vertex_2d_entity)

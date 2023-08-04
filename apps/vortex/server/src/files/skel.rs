@@ -7,11 +7,20 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use naia_bevy_server::{BitReader, BitWriter, CommandsExt, ReplicationConfig, RoomKey, Serde, SerdeErr, Server, UnsignedVariableInteger};
+use naia_bevy_server::{
+    BitReader, BitWriter, CommandsExt, ReplicationConfig, RoomKey, Serde, SerdeErr, Server,
+    UnsignedVariableInteger,
+};
 
-use vortex_proto::{components::{OwnedByTab, Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt}, types::TabId};
+use vortex_proto::{
+    components::{OwnedByTab, Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt},
+    types::TabId,
+};
 
-use crate::{files::{FileReader, FileReadOutput, FileWriter}, resources::VertexManager};
+use crate::{
+    files::{FileReadOutput, FileReader, FileWriter},
+    resources::VertexManager,
+};
 
 // Actions
 #[derive(Debug)]
@@ -163,7 +172,6 @@ impl SkelReader {
         server: &mut Server,
         actions: Vec<SkelAction>,
     ) -> Result<FileReadOutput, SerdeErr> {
-
         let mut output = Vec::new();
 
         let mut entities: Vec<(Entity, i16, i16, i16, Option<u16>)> = Vec::new();

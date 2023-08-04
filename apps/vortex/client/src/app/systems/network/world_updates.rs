@@ -19,7 +19,10 @@ use render_api::{
     base::{CpuMaterial, CpuMesh},
     Assets,
 };
-use vortex_proto::components::{ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild, OwnedByTab, Vertex3d, VertexChild, VertexRootChild};
+use vortex_proto::components::{
+    ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild, OwnedByTab,
+    Vertex3d, VertexChild, VertexRootChild,
+};
 
 use crate::app::{
     components::{
@@ -200,7 +203,6 @@ pub fn insert_component_events(
 
         // on OwnedByTab Insert Event
         for vertex_3d_entity in events.read::<OwnedByTab>() {
-
             let owned_by_tab = owned_by_tab_q.get(vertex_3d_entity).unwrap();
             let tab_id = *owned_by_tab.tab_id;
 

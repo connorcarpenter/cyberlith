@@ -74,7 +74,10 @@ impl VertexManager {
                 };
 
                 list.push((*entity, parent_opt));
-                info!("waiting on parent .. entity: {:?}, parent is {:?}", entity, parent_entity)
+                info!(
+                    "waiting on parent .. entity: {:?}, parent is {:?}",
+                    entity, parent_entity
+                )
             }
         } else {
             // success!
@@ -99,7 +102,10 @@ impl VertexManager {
 
         if let Some(list) = self.waiting_for_parent.remove(&entity) {
             for (child_entity, child_value) in list {
-                info!("child {:?} was waiting on parent {:?}!", child_entity, entity);
+                info!(
+                    "child {:?} was waiting on parent {:?}!",
+                    child_entity, entity
+                );
                 self.insert_vertex(child_entity, child_value);
             }
         }
@@ -119,7 +125,10 @@ impl VertexManager {
     ) {
         info!("on_delete_vertex: {:?}", entity);
         let entities_to_delete = Self::remove_entity(&mut self.vertices, entity);
-        info!("on_delete_vertex: entities_to_delete: {:?}", entities_to_delete);
+        info!(
+            "on_delete_vertex: entities_to_delete: {:?}",
+            entities_to_delete
+        );
 
         for child_entity in entities_to_delete {
             commands

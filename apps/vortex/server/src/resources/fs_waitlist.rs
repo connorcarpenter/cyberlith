@@ -1,9 +1,6 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{
-    entity::Entity,
-    system::Commands,
-};
+use bevy_ecs::{entity::Entity, system::Commands};
 use bevy_log::info;
 use naia_bevy_server::{Server, UserKey};
 

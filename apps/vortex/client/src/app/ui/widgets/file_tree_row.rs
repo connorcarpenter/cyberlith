@@ -17,18 +17,20 @@ use render_egui::{
 };
 use vortex_proto::{
     components::{
-        OwnedByTab, ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
+        ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
+        OwnedByTab,
     },
     FileExtension,
 };
 
+use crate::app::resources::camera_manager::CameraManager;
 use crate::app::{
     components::file_system::{
         ContextMenuAction, FileSystemParent, FileSystemUiState, ModalRequestType,
     },
     resources::{
-        canvas::Canvas,
         action_stack::{Action, ActionStack},
+        canvas::Canvas,
         global::Global,
         tab_manager::TabManager,
     },
@@ -40,7 +42,6 @@ use crate::app::{
         UiState,
     },
 };
-use crate::app::resources::camera_manager::CameraManager;
 
 pub struct FileTreeRowUiWidget;
 
@@ -385,10 +386,22 @@ impl FileTreeRowUiWidget {
 
         // add to tabs
         if file_ext.can_io() {
-            let mut system_state: SystemState<(Client, ResMut<Canvas>, ResMut<CameraManager>, ResMut<TabManager>, Query<(&mut Visibility, &OwnedByTab)>)> =
-                SystemState::new(world);
-            let (mut client, mut canvas, mut camera_manager, mut tab_manager, mut visibility_q) = system_state.get_mut(world);
-            tab_manager.open_tab(&mut client, &mut canvas, &mut camera_manager, &mut visibility_q, row_entity);
+            let mut system_state: SystemState<(
+                Client,
+                ResMut<Canvas>,
+                ResMut<CameraManager>,
+                ResMut<TabManager>,
+                Query<(&mut Visibility, &OwnedByTab)>,
+            )> = SystemState::new(world);
+            let (mut client, mut canvas, mut camera_manager, mut tab_manager, mut visibility_q) =
+                system_state.get_mut(world);
+            tab_manager.open_tab(
+                &mut client,
+                &mut canvas,
+                &mut camera_manager,
+                &mut visibility_q,
+                row_entity,
+            );
             system_state.apply(world);
         }
     }

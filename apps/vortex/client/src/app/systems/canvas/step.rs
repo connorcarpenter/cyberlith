@@ -2,7 +2,9 @@ use bevy_ecs::system::{Query, ResMut};
 
 use render_api::components::{Camera, Transform};
 
-use crate::app::resources::{camera_manager::CameraManager, canvas::Canvas, canvas_manager::CanvasManager};
+use crate::app::resources::{
+    camera_manager::CameraManager, canvas::Canvas, canvas_manager::CanvasManager,
+};
 
 pub fn step(
     mut canvas: ResMut<Canvas>,

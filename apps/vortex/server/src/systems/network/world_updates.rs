@@ -25,9 +25,8 @@ use vortex_proto::{
 use crate::{
     files::handle_file_modify,
     resources::{
-        VertexManager,
         fs_waitlist::{fs_process_insert, FSWaitlist, FSWaitlistInsert},
-        GitManager, TabManager, UserManager,
+        GitManager, TabManager, UserManager, VertexManager,
     },
 };
 

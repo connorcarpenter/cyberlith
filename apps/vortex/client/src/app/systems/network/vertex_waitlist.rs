@@ -8,11 +8,14 @@ use render_api::{
     components::RenderObjectBundle,
     Assets,
 };
-use vortex_proto::{components::{OwnedByTab, VertexRootChild}, types::TabId};
+use vortex_proto::{
+    components::{OwnedByTab, VertexRootChild},
+    types::TabId,
+};
 
 use crate::app::{
     components::{Edge2d, Edge3d, Vertex2d},
-    resources::{canvas_manager::CanvasManager, camera_manager::CameraManager},
+    resources::{camera_manager::CameraManager, canvas_manager::CanvasManager},
     shapes::{
         create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,
     },
@@ -89,7 +92,15 @@ pub fn vertex_process_insert(
 
     if waitlist.is_ready() {
         let entry = vertex_waiting_entities.remove(entity).unwrap();
-        vertex_process_insert_complete(commands, entry, *entity, camera_manager, canvas_manager, meshes, materials);
+        vertex_process_insert_complete(
+            commands,
+            entry,
+            *entity,
+            camera_manager,
+            canvas_manager,
+            meshes,
+            materials,
+        );
     }
 }
 
@@ -135,7 +146,6 @@ pub fn vertex_3d_postprocess(
     color: Color,
     arrows_not_lines: bool,
 ) -> (Entity, Option<Entity>, Option<Entity>) {
-
     let mut edge_2d_entity = None;
     let mut edge_3d_entity = None;
 
@@ -165,7 +175,9 @@ pub fn vertex_3d_postprocess(
         .insert(Vertex2d)
         .id();
     if let Some(tab_id) = tab_id_opt {
-        commands.entity(vertex_2d_entity).insert(OwnedByTab::new(tab_id));
+        commands
+            .entity(vertex_2d_entity)
+            .insert(OwnedByTab::new(tab_id));
     }
 
     if let Some(parent_3d_entity) = parent_3d_entity_opt {

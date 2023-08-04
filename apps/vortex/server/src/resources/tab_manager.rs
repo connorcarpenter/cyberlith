@@ -1,17 +1,20 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 
+use bevy_ecs::system::Res;
 use bevy_ecs::{
     entity::Entity,
     system::{Commands, Query, ResMut, Resource, SystemState},
     world::{Mut, World},
 };
-use bevy_ecs::system::Res;
 use bevy_log::{info, warn};
 use naia_bevy_server::{CommandsExt, Server, UserKey};
 
 use vortex_proto::{resources::FileEntryKey, types::TabId};
 
-use crate::resources::{user_tab_state::TabState, workspace::Workspace, GitManager, UserManager, UserTabState, VertexManager};
+use crate::resources::{
+    user_tab_state::TabState, workspace::Workspace, GitManager, UserManager, UserTabState,
+    VertexManager,
+};
 
 #[derive(Resource)]
 pub struct TabManager {
@@ -75,8 +78,16 @@ impl TabManager {
         // create new Room for entities which are in the new tab
         let new_room_key = server.make_room().key();
 
-        let content_entities =
-            git_manager.load_content_entities(commands, server, vertex_manager, username, &file_entry_key, &new_room_key, *tab_id, true);
+        let content_entities = git_manager.load_content_entities(
+            commands,
+            server,
+            vertex_manager,
+            username,
+            &file_entry_key,
+            &new_room_key,
+            *tab_id,
+            true,
+        );
 
         // insert TabState into collection
         let tab_state = TabState::new(new_room_key, file_entity.clone(), content_entities);
@@ -127,13 +138,10 @@ impl TabManager {
         }
     }
 
-    pub fn complete_waiting_open(
-        &mut self,
-        user_key: &UserKey,
-        file_entity: &Entity,
-    ) {
+    pub fn complete_waiting_open(&mut self, user_key: &UserKey, file_entity: &Entity) {
         if let Some(tab_id) = self.waiting_opens.remove(&(*user_key, *file_entity)) {
-            self.queued_opens.push_back((*user_key, tab_id, *file_entity));
+            self.queued_opens
+                .push_back((*user_key, tab_id, *file_entity));
         }
     }
 
@@ -148,9 +156,24 @@ impl TabManager {
     }
 
     fn process_queued_opens(world: &mut World) {
-        let mut system_state: SystemState<(Commands, Server, ResMut<TabManager>, Res<UserManager>, ResMut<GitManager>, ResMut<VertexManager>, Query<&FileEntryKey>)> =
-            SystemState::new(world);
-        let (mut commands, mut server, mut tab_manager, user_manager, mut git_manager, mut vertex_manager, key_query) = system_state.get_mut(world);
+        let mut system_state: SystemState<(
+            Commands,
+            Server,
+            ResMut<TabManager>,
+            Res<UserManager>,
+            ResMut<GitManager>,
+            ResMut<VertexManager>,
+            Query<&FileEntryKey>,
+        )> = SystemState::new(world);
+        let (
+            mut commands,
+            mut server,
+            mut tab_manager,
+            user_manager,
+            mut git_manager,
+            mut vertex_manager,
+            key_query,
+        ) = system_state.get_mut(world);
 
         let opens = tab_manager.take_queued_opens();
 
@@ -164,7 +187,7 @@ impl TabManager {
                 &key_query,
                 &user_key,
                 &tab_id,
-                &file_entity
+                &file_entity,
             );
         }
 
@@ -260,12 +283,7 @@ impl TabManager {
         let selects = tab_manager.take_queued_selects();
 
         for (user_key, tab_id) in selects {
-            tab_manager.select_tab(
-                &mut commands,
-                &mut server,
-                &user_key,
-                &tab_id,
-            );
+            tab_manager.select_tab(&mut commands, &mut server, &user_key, &tab_id);
         }
 
         system_state.apply(world);

@@ -1,12 +1,12 @@
 use std::time::Duration;
 
 use bevy_app::{App, ScheduleRunnerPlugin, ScheduleRunnerSettings};
+use bevy_ecs::schedule::IntoSystemConfig;
 use bevy_ecs::{
     prelude::apply_system_buffers,
     schedule::IntoSystemConfigs,
     system::{Res, ResMut},
 };
-use bevy_ecs::schedule::IntoSystemConfig;
 use bevy_log::{info, LogPlugin};
 
 use naia_bevy_server::{Plugin as ServerPlugin, ReceiveEvents, ServerConfig};

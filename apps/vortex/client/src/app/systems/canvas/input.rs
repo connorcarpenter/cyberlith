@@ -4,14 +4,17 @@ use bevy_ecs::{
     system::{Commands, Query, Res, ResMut},
 };
 
-use naia_bevy_client::Client;
 use input::Input;
+use naia_bevy_client::Client;
 use render_api::components::{Camera, Projection, Transform, Visibility};
 use vortex_proto::components::{OwnedByTab, Vertex3d, VertexRootChild};
 
 use crate::app::{
     components::{Compass, Edge2d, Vertex2d},
-    resources::{camera_manager::CameraManager, canvas::Canvas, tab_manager::TabManager, action_stack::ActionStack, canvas_manager::CanvasManager},
+    resources::{
+        action_stack::ActionStack, camera_manager::CameraManager, canvas::Canvas,
+        canvas_manager::CanvasManager, tab_manager::TabManager,
+    },
 };
 
 pub fn input(

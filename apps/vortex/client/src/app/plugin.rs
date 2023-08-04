@@ -13,10 +13,8 @@ use crate::app::{
     config::ConfigPlugin,
     events::LoginEvent,
     resources::{
-        camera_manager::CameraManager,
-        canvas::Canvas,
-        action_stack::ActionStack, canvas_manager::CanvasManager, global::Global,
-        tab_manager::TabManager,
+        action_stack::ActionStack, camera_manager::CameraManager, canvas::Canvas,
+        canvas_manager::CanvasManager, global::Global, tab_manager::TabManager,
     },
     systems::{canvas, network, ui},
     ui::UiState,

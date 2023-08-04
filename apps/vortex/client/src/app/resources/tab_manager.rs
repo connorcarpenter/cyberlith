@@ -14,14 +14,14 @@ use render_egui::{
 };
 use vortex_proto::{
     channels::TabActionChannel,
-    components::{OwnedByTab, ChangelistStatus, FileSystemEntry},
+    components::{ChangelistStatus, FileSystemEntry, OwnedByTab},
     messages::{TabActionMessage, TabActionMessageType, TabOpenMessage},
     types::TabId,
 };
 
 use crate::app::{
     components::file_system::FileSystemUiState,
-    resources::{canvas::Canvas, camera_manager::CameraManager},
+    resources::{camera_manager::CameraManager, canvas::Canvas},
     ui::widgets::colors::{
         FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
         TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED,
@@ -120,10 +120,23 @@ impl TabManager {
                 Query<(&FileSystemEntry, &FileSystemUiState)>,
                 Query<(&mut Visibility, &OwnedByTab)>,
             )> = SystemState::new(world);
-            let (mut client, mut canvas, mut camera_manager, mut tab_manager, file_q, mut visibility_q) =
-                system_state.get_mut(world);
+            let (
+                mut client,
+                mut canvas,
+                mut camera_manager,
+                mut tab_manager,
+                file_q,
+                mut visibility_q,
+            ) = system_state.get_mut(world);
 
-            tab_manager.render_tabs(&mut client, &mut canvas, &mut camera_manager, ui, &file_q, &mut visibility_q);
+            tab_manager.render_tabs(
+                &mut client,
+                &mut canvas,
+                &mut camera_manager,
+                ui,
+                &file_q,
+                &mut visibility_q,
+            );
 
             system_state.apply(world);
         });
@@ -182,8 +195,8 @@ impl TabManager {
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
-        val: Option<Entity>)
-    {
+        val: Option<Entity>,
+    ) {
         self.current_tab = val;
 
         if val.is_none() {
@@ -247,7 +260,13 @@ impl TabManager {
         self.recycle_tab_id(tab_state.tab_id);
     }
 
-    fn close_all_tabs(&mut self, client: &mut Client, canvas: &mut Canvas, camera_manager: &mut CameraManager, visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>) {
+    fn close_all_tabs(
+        &mut self,
+        client: &mut Client,
+        canvas: &mut Canvas,
+        camera_manager: &mut CameraManager,
+        visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
+    ) {
         let all_tabs = self.tab_order.clone();
         for entity in all_tabs {
             self.close_tab(client, canvas, camera_manager, visibility_q, &entity);
@@ -501,13 +520,31 @@ impl TabManager {
                 self.close_all_tabs(client, canvas, camera_manager, visibility_q);
             }
             Some(TabAction::CloseOthers(row_entity)) => {
-                self.close_all_tabs_except(client, canvas, camera_manager, visibility_q, &row_entity);
+                self.close_all_tabs_except(
+                    client,
+                    canvas,
+                    camera_manager,
+                    visibility_q,
+                    &row_entity,
+                );
             }
             Some(TabAction::CloseLeft(row_entity)) => {
-                self.close_all_tabs_left_of(client, canvas, camera_manager, visibility_q, &row_entity);
+                self.close_all_tabs_left_of(
+                    client,
+                    canvas,
+                    camera_manager,
+                    visibility_q,
+                    &row_entity,
+                );
             }
             Some(TabAction::CloseRight(row_entity)) => {
-                self.close_all_tabs_right_of(client, canvas, camera_manager, visibility_q, &row_entity);
+                self.close_all_tabs_right_of(
+                    client,
+                    canvas,
+                    camera_manager,
+                    visibility_q,
+                    &row_entity,
+                );
             }
         }
     }

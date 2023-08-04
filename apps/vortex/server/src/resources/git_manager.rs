@@ -17,14 +17,17 @@ use vortex_proto::{
     components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild},
     messages::ChangelistMessage,
     resources::FileEntryKey,
-    FileExtension, types::TabId
+    types::TabId,
+    FileExtension,
 };
 
 use crate::{
     components::FileSystemOwner,
     config::GitConfig,
-    files::{FileWriter, FileReadOutput, SkelReader},
-    resources::{VertexManager, user_manager::UserInfo, workspace::Workspace, FileEntryValue, UserManager},
+    files::{FileReadOutput, FileWriter, SkelReader},
+    resources::{
+        user_manager::UserInfo, workspace::Workspace, FileEntryValue, UserManager, VertexManager,
+    },
 };
 
 #[derive(Resource)]
@@ -249,16 +252,21 @@ impl GitManager {
         tab_id: TabId,
         pause_replication: bool,
     ) -> HashSet<Entity> {
-
         info!("loading content entities");
 
         let workspace = self.workspaces.get(username).unwrap();
         let output = workspace.load_content_entities(commands, server, file_entry_key);
 
         let new_entities = match output {
-            FileReadOutput::Skel(entities) => {
-                SkelReader::post_process_entities(commands, server, vertex_manager, room_key, entities, tab_id, pause_replication)
-            }
+            FileReadOutput::Skel(entities) => SkelReader::post_process_entities(
+                commands,
+                server,
+                vertex_manager,
+                room_key,
+                entities,
+                tab_id,
+                pause_replication,
+            ),
         };
 
         new_entities

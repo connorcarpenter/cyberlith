@@ -1,6 +1,6 @@
 use bevy_ecs::{
     entity::Entity,
-    system::{Query, ResMut, Res},
+    system::{Query, Res, ResMut},
 };
 
 use render_api::components::{Camera, Projection, Transform};
@@ -8,7 +8,10 @@ use vortex_proto::components::{OwnedByTab, Vertex3d};
 
 use crate::app::{
     components::{Compass, Edge2d, Edge3d},
-    resources::{camera_manager::CameraManager, canvas::Canvas, canvas_manager::CanvasManager, tab_manager::TabManager},
+    resources::{
+        camera_manager::CameraManager, canvas::Canvas, canvas_manager::CanvasManager,
+        tab_manager::TabManager,
+    },
 };
 
 pub fn sync(

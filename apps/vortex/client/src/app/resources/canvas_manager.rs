@@ -8,23 +8,26 @@ use bevy_ecs::{
 };
 use bevy_log::{info, warn};
 
-use naia_bevy_client::{Client, CommandsExt, Replicate};
 use input::{Input, Key, MouseButton};
 use math::{convert_2d_to_3d, convert_3d_to_2d, Vec2, Vec3};
+use naia_bevy_client::{Client, CommandsExt, Replicate};
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
-    components::{
-        Camera, CameraProjection, Projection, Transform,
-        Visibility,
-    },
+    components::{Camera, CameraProjection, Projection, Transform, Visibility},
     shapes::{distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform},
     Assets,
 };
-use vortex_proto::{components::{OwnedByTab, Vertex3d, VertexRootChild}, types::TabId};
+use vortex_proto::{
+    components::{OwnedByTab, Vertex3d, VertexRootChild},
+    types::TabId,
+};
 
 use crate::app::{
     components::{Compass, Edge2d, Edge3d, HoverCircle, SelectCircle, Vertex2d},
-    resources::{action_stack::{Action, ActionStack}, camera_manager::CameraManager},
+    resources::{
+        action_stack::{Action, ActionStack},
+        camera_manager::CameraManager,
+    },
     set_3d_line_transform,
     systems::network::vertex_3d_postprocess,
 };
@@ -45,7 +48,6 @@ pub enum CanvasShape {
 
 #[derive(Resource)]
 pub struct CanvasManager {
-
     // input
     rotate_key_down: bool,
     click_type: ClickType,
@@ -73,7 +75,6 @@ pub struct CanvasManager {
 impl Default for CanvasManager {
     fn default() -> Self {
         Self {
-
             // input
             click_type: ClickType::Left,
             click_start: Vec2::ZERO,
@@ -136,7 +137,12 @@ impl CanvasManager {
                 edge_2d_q,
             );
         }
-        self.update_select_line(input.mouse_position(), camera_manager, transform_q, visibility_q);
+        self.update_select_line(
+            input.mouse_position(),
+            camera_manager,
+            transform_q,
+            visibility_q,
+        );
 
         // check keyboard input
 
@@ -309,7 +315,6 @@ impl CanvasManager {
 
         // update vertices
         for (vertex_3d_entity, vertex_3d) in vertex_3d_q.iter() {
-
             // check if vertex is owned by the current tab
             if !Self::is_owned_by_tab_or_unowned(current_tab_id, owned_by_q, vertex_3d_entity) {
                 continue;
@@ -380,12 +385,8 @@ impl CanvasManager {
                 continue;
             }
 
-            let (start_transform, _) = transform_q
-                .get(edge_endpoints.start)
-                .unwrap();
-            let start_pos = start_transform
-                .translation
-                .truncate();
+            let (start_transform, _) = transform_q.get(edge_endpoints.start).unwrap();
+            let start_pos = start_transform.translation.truncate();
 
             let (end_transform, _) = transform_q.get(*end_entity).unwrap();
             let end_pos = end_transform.translation.truncate();
@@ -402,7 +403,6 @@ impl CanvasManager {
 
         // update 3d edges
         for (edge_entity, edge_endpoints) in edge_3d_q.iter() {
-
             // check if vertex is owned by the current tab
             if !Self::is_owned_by_tab_or_unowned(current_tab_id, owned_by_q, edge_entity) {
                 continue;
@@ -412,7 +412,8 @@ impl CanvasManager {
                 let start_pos = start_transform.translation;
                 if let Ok((end_transform, _)) = transform_q.get(edge_endpoints.end) {
                     let end_pos = end_transform.translation;
-                    let (mut edge_transform, compass_opt) = transform_q.get_mut(edge_entity).unwrap();
+                    let (mut edge_transform, compass_opt) =
+                        transform_q.get_mut(edge_entity).unwrap();
                     set_3d_line_transform(&mut edge_transform, start_pos, end_pos);
                     if compass_opt.is_some() {
                         let scale_3d = 1.0 / camera_manager.camera_3d_scale();
@@ -533,7 +534,6 @@ impl CanvasManager {
         let mut least_entity = None;
 
         for (vertex_entity, root_opt) in vertex_2d_q.iter() {
-
             // check tab ownership, skip vertices from other tabs
             if !Self::is_owned_by_tab(current_tab_id, owned_by_q, vertex_entity) {
                 continue;
@@ -555,7 +555,8 @@ impl CanvasManager {
             }
         }
 
-        let mut is_hovering = least_distance <= (HoverCircle::DETECT_RADIUS * camera_manager.camera_3d_scale());
+        let mut is_hovering =
+            least_distance <= (HoverCircle::DETECT_RADIUS * camera_manager.camera_3d_scale());
 
         // just setting edge thickness back to normal ... better way to do this?
         for (edge_entity, _) in edge_2d_q.iter() {
@@ -565,7 +566,6 @@ impl CanvasManager {
 
         if !is_hovering {
             for (edge_entity, _) in edge_2d_q.iter() {
-
                 // check tab ownership, skip edges from other tabs
                 if !Self::is_owned_by_tab(current_tab_id, owned_by_q, edge_entity) {
                     continue;
@@ -582,7 +582,8 @@ impl CanvasManager {
                 }
             }
 
-            is_hovering = least_distance <= (Edge2d::HOVER_THICKNESS * camera_manager.camera_3d_scale());
+            is_hovering =
+                least_distance <= (Edge2d::HOVER_THICKNESS * camera_manager.camera_3d_scale());
         }
 
         let hover_circle_entity = self.hover_circle_entity.unwrap();
@@ -611,7 +612,8 @@ impl CanvasManager {
                     let Ok(mut edge_transform) = transform_q.get_mut(entity) else {
                         panic!("Edge entity has no Transform");
                     };
-                    edge_transform.scale.y = Edge2d::HOVER_THICKNESS * camera_manager.camera_3d_scale();
+                    edge_transform.scale.y =
+                        Edge2d::HOVER_THICKNESS * camera_manager.camera_3d_scale();
 
                     hover_circle_visibility.visible = false;
                 }
@@ -960,8 +962,15 @@ impl CanvasManager {
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
     ) {
-        let (root_vertex_2d_entity, vertex_3d_entity, _, _) =
-            self.new_local_vertex(commands, camera_manager, meshes, materials, None, Vec3::ZERO, Color::WHITE);
+        let (root_vertex_2d_entity, vertex_3d_entity, _, _) = self.new_local_vertex(
+            commands,
+            camera_manager,
+            meshes,
+            materials,
+            None,
+            Vec3::ZERO,
+            Color::WHITE,
+        );
         self.compass_vertices.push(vertex_3d_entity);
         commands.entity(root_vertex_2d_entity).insert(Compass);
         commands.entity(vertex_3d_entity).insert(Compass);
@@ -1025,18 +1034,55 @@ impl CanvasManager {
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
     ) {
-        self.new_grid_corner(commands, camera_manager, meshes, materials, true, true, true);
-        self.new_grid_corner(commands, camera_manager, meshes, materials, true, false, false);
+        self.new_grid_corner(
+            commands,
+            camera_manager,
+            meshes,
+            materials,
+            true,
+            true,
+            true,
+        );
+        self.new_grid_corner(
+            commands,
+            camera_manager,
+            meshes,
+            materials,
+            true,
+            false,
+            false,
+        );
 
-        self.new_grid_corner(commands, camera_manager, meshes, materials, false, true, false);
-        self.new_grid_corner(commands, camera_manager, meshes, materials, false, false, true);
+        self.new_grid_corner(
+            commands,
+            camera_manager,
+            meshes,
+            materials,
+            false,
+            true,
+            false,
+        );
+        self.new_grid_corner(
+            commands,
+            camera_manager,
+            meshes,
+            materials,
+            false,
+            false,
+            true,
+        );
     }
 
-    fn new_grid_corner(&mut self, commands: &mut Commands,
-                       camera_manager: &mut CameraManager,
-                       meshes: &mut Assets<CpuMesh>,
-                       materials: &mut Assets<CpuMaterial>, x: bool, y: bool, z: bool) {
-
+    fn new_grid_corner(
+        &mut self,
+        commands: &mut Commands,
+        camera_manager: &mut CameraManager,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+        x: bool,
+        y: bool,
+        z: bool,
+    ) {
         let xf = if x { 1.0 } else { -1.0 };
         let yf = if y { 1.0 } else { -1.0 };
         let zf = if z { 1.0 } else { -1.0 };
@@ -1044,21 +1090,64 @@ impl CanvasManager {
         let grid_size: f32 = 100.0;
         let neg_grid_size: f32 = -grid_size;
 
-        let (root_vertex_2d_entity, _, _, _) =
-            self.new_local_vertex(commands, camera_manager, meshes, materials, None, Vec3::new(grid_size * xf, (grid_size * yf) + grid_size, grid_size * zf), Color::DARK_GRAY);
+        let (root_vertex_2d_entity, _, _, _) = self.new_local_vertex(
+            commands,
+            camera_manager,
+            meshes,
+            materials,
+            None,
+            Vec3::new(grid_size * xf, (grid_size * yf) + grid_size, grid_size * zf),
+            Color::DARK_GRAY,
+        );
         commands.entity(root_vertex_2d_entity).insert(Compass);
 
-        self.new_grid_vertex(commands, camera_manager, meshes, materials, root_vertex_2d_entity, Vec3::new(neg_grid_size * xf, (grid_size * yf) + grid_size, grid_size * zf));
-        self.new_grid_vertex(commands, camera_manager, meshes, materials, root_vertex_2d_entity, Vec3::new(grid_size * xf, (neg_grid_size * yf) + grid_size, grid_size * zf));
-        self.new_grid_vertex(commands, camera_manager, meshes, materials, root_vertex_2d_entity, Vec3::new(grid_size * xf, (grid_size * yf) + grid_size, neg_grid_size * zf));
+        self.new_grid_vertex(
+            commands,
+            camera_manager,
+            meshes,
+            materials,
+            root_vertex_2d_entity,
+            Vec3::new(
+                neg_grid_size * xf,
+                (grid_size * yf) + grid_size,
+                grid_size * zf,
+            ),
+        );
+        self.new_grid_vertex(
+            commands,
+            camera_manager,
+            meshes,
+            materials,
+            root_vertex_2d_entity,
+            Vec3::new(
+                grid_size * xf,
+                (neg_grid_size * yf) + grid_size,
+                grid_size * zf,
+            ),
+        );
+        self.new_grid_vertex(
+            commands,
+            camera_manager,
+            meshes,
+            materials,
+            root_vertex_2d_entity,
+            Vec3::new(
+                grid_size * xf,
+                (grid_size * yf) + grid_size,
+                neg_grid_size * zf,
+            ),
+        );
     }
 
-    fn new_grid_vertex(&mut self, commands: &mut Commands,
-                       camera_manager: &mut CameraManager,
-                       meshes: &mut Assets<CpuMesh>,
-                       materials: &mut Assets<CpuMaterial>,
-                       parent_vertex_2d_entity: Entity,
-                       position: Vec3) {
+    fn new_grid_vertex(
+        &mut self,
+        commands: &mut Commands,
+        camera_manager: &mut CameraManager,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+        parent_vertex_2d_entity: Entity,
+        position: Vec3,
+    ) {
         let (vertex_2d_entity, _, Some(edge_2d_entity), _) = self.new_local_vertex(
             commands,
             camera_manager,
@@ -1091,13 +1180,10 @@ impl CanvasManager {
                     .unwrap()
             });
 
-        let mut vertex_3d_component = Vertex3d::new(0,0,0);
+        let mut vertex_3d_component = Vertex3d::new(0, 0, 0);
         vertex_3d_component.localize();
         vertex_3d_component.set_vec3(&position);
-        let new_vertex_3d_entity = commands
-            .spawn_empty()
-            .insert(vertex_3d_component)
-            .id();
+        let new_vertex_3d_entity = commands.spawn_empty().insert(vertex_3d_component).id();
 
         let (new_vertex_2d_entity, new_edge_2d_entity, new_edge_3d_entity) = vertex_3d_postprocess(
             commands,
@@ -1112,7 +1198,12 @@ impl CanvasManager {
             false,
         );
 
-        return (new_vertex_2d_entity, new_vertex_3d_entity, new_edge_2d_entity, new_edge_3d_entity);
+        return (
+            new_vertex_2d_entity,
+            new_vertex_3d_entity,
+            new_edge_2d_entity,
+            new_edge_3d_entity,
+        );
     }
 
     fn compass_recalc(
@@ -1122,13 +1213,16 @@ impl CanvasManager {
         camera_transform: &Transform,
     ) {
         if let Ok((_, mut vertex_3d)) = vertex_3d_q.get_mut(self.compass_vertices[0]) {
-
             let right = camera_transform.right_direction();
             let up = right.cross(camera_transform.view_direction());
 
             let unit_length = 1.0 / camera_manager.camera_3d_scale();
             const COMPASS_POS: Vec2 = Vec2::new(530.0, 300.0);
-            let offset_2d = camera_manager.camera_3d_offset().round() + Vec2::new(unit_length * -1.0 * COMPASS_POS.x, unit_length * COMPASS_POS.y);
+            let offset_2d = camera_manager.camera_3d_offset().round()
+                + Vec2::new(
+                    unit_length * -1.0 * COMPASS_POS.x,
+                    unit_length * COMPASS_POS.y,
+                );
             let offset_3d = (right * offset_2d.x) + (up * offset_2d.y);
 
             let vert_offset_3d = Vec3::ZERO + offset_3d;
@@ -1150,7 +1244,11 @@ impl CanvasManager {
     }
 
     // returns true if vertex is owned by tab or unowned
-    fn is_owned_by_tab_or_unowned(current_tab_id: TabId, owned_by_tab_q: &Query<&OwnedByTab>, entity: Entity) -> bool {
+    fn is_owned_by_tab_or_unowned(
+        current_tab_id: TabId,
+        owned_by_tab_q: &Query<&OwnedByTab>,
+        entity: Entity,
+    ) -> bool {
         if let Ok(owned_by_tab) = owned_by_tab_q.get(entity) {
             if *owned_by_tab.tab_id == current_tab_id {
                 return true;
@@ -1162,7 +1260,11 @@ impl CanvasManager {
     }
 
     // returns true if vertex is owned by tab
-    fn is_owned_by_tab(current_tab_id: TabId, owned_by_tab_q: &Query<&OwnedByTab>, entity: Entity) -> bool {
+    fn is_owned_by_tab(
+        current_tab_id: TabId,
+        owned_by_tab_q: &Query<&OwnedByTab>,
+        entity: Entity,
+    ) -> bool {
         if let Ok(owned_by_tab) = owned_by_tab_q.get(entity) {
             if *owned_by_tab.tab_id == current_tab_id {
                 return true;

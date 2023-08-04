@@ -1,11 +1,4 @@
-use std::{
-    collections::HashMap,
-    fs,
-    fs::File,
-    io::Read,
-    path::Path,
-    sync::Mutex,
-};
+use std::{collections::HashMap, fs, fs::File, io::Read, path::Path, sync::Mutex};
 
 use bevy_ecs::{
     entity::Entity,
@@ -25,7 +18,7 @@ use vortex_proto::{
 
 use crate::{
     files::{FileReadOutput, FileReader, FileWriter},
-    resources::{VertexManager, ChangelistValue, FileEntryValue, GitManager, TabManager},
+    resources::{ChangelistValue, FileEntryValue, GitManager, TabManager, VertexManager},
 };
 
 pub struct Workspace {
@@ -298,7 +291,8 @@ impl Workspace {
             ResMut<VertexManager>,
             Query<&ChangelistEntry>,
         )> = SystemState::new(world);
-        let (mut commands, mut server, mut tab_manager, mut vertex_manager, cl_query) = system_state.get_mut(world);
+        let (mut commands, mut server, mut tab_manager, mut vertex_manager, cl_query) =
+            system_state.get_mut(world);
 
         let cl_entity: Entity = message.entity.get(&server).unwrap();
         let changelist_entry = cl_query.get(cl_entity).unwrap();

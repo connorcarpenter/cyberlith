@@ -1,9 +1,10 @@
-
-use bevy_ecs::{prelude::Resource, entity::Entity, system::Query};
+use bevy_ecs::{entity::Entity, prelude::Resource, system::Query};
 use bevy_log::{info, warn};
 
 use math::{EulerRot, Quat, Vec2, Vec3};
-use render_api::components::{Camera, OrthographicProjection, Projection, RenderLayer, Transform, Viewport};
+use render_api::components::{
+    Camera, OrthographicProjection, Projection, RenderLayer, Transform, Viewport,
+};
 
 #[derive(Resource)]
 pub struct CameraManager {
@@ -35,7 +36,6 @@ impl Default for CameraManager {
 }
 
 impl CameraManager {
-
     pub fn camera_3d_entity(&self) -> Option<Entity> {
         self.camera_3d
     }
@@ -107,13 +107,12 @@ impl CameraManager {
     }
 
     pub fn set_camera_angle_ingame(&mut self, game_index: u8) {
-
         let angle = match game_index {
-            1 => { 30.0 } // seems to be 2:1 diablo isometric angle ?
-            2 => { 63.43 } // 90 - arctan(1/2)
-            3 => { 69.91 }
-            4 => { 76.39 } // seems to be 4:3 warcraft angle ?
-            5 => { 82.87 } // 90 - arctan(1/8)
+            1 => 30.0,  // seems to be 2:1 diablo isometric angle ?
+            2 => 63.43, // 90 - arctan(1/2)
+            3 => 69.91,
+            4 => 76.39, // seems to be 4:3 warcraft angle ?
+            5 => 82.87, // 90 - arctan(1/8)
             _ => {
                 warn!("Invalid game index: {}", game_index);
                 return;
@@ -126,8 +125,7 @@ impl CameraManager {
     }
 
     pub fn set_camera_angle_yaw_rotate(&mut self, counter: bool) {
-
-        let mut rotation = (self.camera_3d_rotation.x/45.0).round()*45.0;
+        let mut rotation = (self.camera_3d_rotation.x / 45.0).round() * 45.0;
         match counter {
             true => {
                 rotation += 45.0;

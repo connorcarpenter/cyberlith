@@ -16,7 +16,10 @@ use render_egui::{
     EguiUserTextures,
 };
 
-use crate::app::{resources::{camera_manager::CameraManager, canvas::Canvas}, ui::UiState};
+use crate::app::{
+    resources::{camera_manager::CameraManager, canvas::Canvas},
+    ui::UiState,
+};
 
 pub fn show_canvas(ui: &mut Ui, world: &mut World) {
     egui::CentralPanel::default()

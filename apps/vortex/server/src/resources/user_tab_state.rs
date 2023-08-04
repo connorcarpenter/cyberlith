@@ -6,7 +6,10 @@ use bevy_log::{info, warn};
 use naia_bevy_server::{CommandsExt, RoomKey, Server};
 use vortex_proto::{resources::FileEntryKey, types::TabId};
 
-use crate::{files::{FileReadOutput, SkelReader}, resources::{VertexManager, workspace::Workspace}};
+use crate::{
+    files::{FileReadOutput, SkelReader},
+    resources::{workspace::Workspace, VertexManager},
+};
 
 pub struct UserTabState {
     current_tab: Option<TabId>,
@@ -191,13 +194,18 @@ impl TabState {
         }
 
         // respawn all entities
-        let output =
-            workspace.load_content_entities(commands, server, &file_entry_key);
+        let output = workspace.load_content_entities(commands, server, &file_entry_key);
 
         let new_content_entities = match output {
-            FileReadOutput::Skel(entities) => {
-                SkelReader::post_process_entities(commands, server, vertex_manager, &self.room_key, entities, tab_id,!tab_is_selected)
-            }
+            FileReadOutput::Skel(entities) => SkelReader::post_process_entities(
+                commands,
+                server,
+                vertex_manager,
+                &self.room_key,
+                entities,
+                tab_id,
+                !tab_is_selected,
+            ),
         };
 
         // update content entities in TabState

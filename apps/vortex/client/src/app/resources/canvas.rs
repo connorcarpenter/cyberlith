@@ -1,4 +1,3 @@
-
 use bevy_ecs::prelude::Resource;
 
 use math::Vec2;
@@ -34,10 +33,7 @@ impl Canvas {
         return true;
     }
 
-    pub fn update_canvas_size(
-        &mut self,
-        texture_size: Vec2,
-    ) {
+    pub fn update_canvas_size(&mut self, texture_size: Vec2) {
         self.canvas_texture_size = texture_size;
     }
 

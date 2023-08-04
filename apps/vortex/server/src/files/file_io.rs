@@ -53,5 +53,5 @@ impl FileWriter for FileExtension {
 
 pub enum FileReadOutput {
     // Skel file, list of entities and an optional parent per
-    Skel(Vec<(Entity, Option<Entity>)>)
+    Skel(Vec<(Entity, Option<Entity>)>),
 }
