@@ -185,6 +185,7 @@ impl TabManager {
         } else {
             canvas_manager.set_visibility(true);
         }
+        canvas_manager.recalculate_3d_view();
 
         let current_tab_id = self.current_tab_id();
         for (mut visibility, owned_by_tab) in visibility_q.iter_mut() {
