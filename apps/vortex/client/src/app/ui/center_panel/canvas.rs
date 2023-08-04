@@ -16,7 +16,7 @@ use render_egui::{
     EguiUserTextures,
 };
 
-use crate::app::{resources::{canvas_manager::CanvasManager, canvas::Canvas}, ui::UiState};
+use crate::app::{resources::{camera_manager::CameraManager, canvas::Canvas}, ui::UiState};
 
 pub fn show_canvas(ui: &mut Ui, world: &mut World) {
     egui::CentralPanel::default()
@@ -31,7 +31,7 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
 
     let mut system_state: SystemState<(
         ResMut<Canvas>,
-        ResMut<CanvasManager>,
+        ResMut<CameraManager>,
         ResMut<Assets<CpuTexture2D>>,
         ResMut<EguiUserTextures>,
         ResMut<UiState>,
@@ -40,7 +40,7 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
     )> = SystemState::new(world);
     let (
         mut canvas,
-        mut canvas_manager,
+        mut camera_manager,
         mut textures,
         mut user_textures,
         mut ui_state,
@@ -76,7 +76,7 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
         // Update the camera to match the new texture size.
         let native_texture_size = Vec2::new(texture_size.x, texture_size.y);
         canvas.update_canvas_size(native_texture_size);
-        canvas_manager.update_camera_viewports(native_texture_size, &mut camera_query);
+        camera_manager.update_camera_viewports(native_texture_size, &mut camera_query);
     }
 
     if canvas.is_visible() {

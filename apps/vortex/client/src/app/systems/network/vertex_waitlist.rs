@@ -12,7 +12,7 @@ use vortex_proto::{components::{OwnedByTab, VertexRootChild}, types::TabId};
 
 use crate::app::{
     components::{Edge2d, Edge3d, Vertex2d},
-    resources::canvas_manager::CanvasManager,
+    resources::{canvas_manager::CanvasManager, camera_manager::CameraManager},
     shapes::{
         create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,
     },
@@ -65,6 +65,7 @@ pub fn vertex_process_insert(
     commands: &mut Commands,
     insert: VertexWaitlistInsert,
     entity: &Entity,
+    camera_manager: &mut CameraManager,
     canvas_manager: &mut CanvasManager,
     meshes: &mut Assets<CpuMesh>,
     materials: &mut Assets<CpuMaterial>,
@@ -88,7 +89,7 @@ pub fn vertex_process_insert(
 
     if waitlist.is_ready() {
         let entry = vertex_waiting_entities.remove(entity).unwrap();
-        vertex_process_insert_complete(commands, entry, *entity, canvas_manager, meshes, materials);
+        vertex_process_insert_complete(commands, entry, *entity, camera_manager, canvas_manager, meshes, materials);
     }
 }
 
@@ -96,6 +97,7 @@ fn vertex_process_insert_complete(
     commands: &mut Commands,
     entry: VertexWaitlistEntry,
     vertex_3d_entity: Entity,
+    camera_manager: &mut CameraManager,
     canvas_manager: &mut CanvasManager,
     meshes: &mut Assets<CpuMesh>,
     materials: &mut Assets<CpuMaterial>,
@@ -109,6 +111,7 @@ fn vertex_process_insert_complete(
 
     vertex_3d_postprocess(
         commands,
+        camera_manager,
         canvas_manager,
         meshes,
         materials,
@@ -122,6 +125,7 @@ fn vertex_process_insert_complete(
 
 pub fn vertex_3d_postprocess(
     commands: &mut Commands,
+    camera_manager: &mut CameraManager,
     canvas_manager: &mut CanvasManager,
     meshes: &mut Assets<CpuMesh>,
     materials: &mut Assets<CpuMaterial>,
@@ -145,7 +149,7 @@ pub fn vertex_3d_postprocess(
             Vertex2d::SUBDIVISIONS,
             color,
         ))
-        .insert(canvas_manager.layer_3d);
+        .insert(camera_manager.layer_3d);
 
     let vertex_2d_entity = commands
         .spawn(RenderObjectBundle::circle(
@@ -157,7 +161,7 @@ pub fn vertex_3d_postprocess(
             color,
             None,
         ))
-        .insert(canvas_manager.layer_2d)
+        .insert(camera_manager.layer_2d)
         .insert(Vertex2d)
         .id();
     if let Some(tab_id) = tab_id_opt {
@@ -173,7 +177,7 @@ pub fn vertex_3d_postprocess(
         };
         let new_entity = commands
             .spawn(shape_components)
-            .insert(canvas_manager.layer_2d)
+            .insert(camera_manager.layer_2d)
             .insert(Edge2d::new(vertex_2d_entity, parent_3d_entity))
             .id();
         if let Some(tab_id) = tab_id_opt {
@@ -189,7 +193,7 @@ pub fn vertex_3d_postprocess(
         };
         let new_entity = commands
             .spawn(shape_components)
-            .insert(canvas_manager.layer_3d)
+            .insert(camera_manager.layer_3d)
             .insert(Edge3d::new(vertex_3d_entity, parent_3d_entity))
             .id();
         if let Some(tab_id) = tab_id_opt {
@@ -206,7 +210,7 @@ pub fn vertex_3d_postprocess(
     // );
 
     canvas_manager.register_3d_vertex(vertex_3d_entity, vertex_2d_entity);
-    canvas_manager.recalculate_3d_view();
+    camera_manager.recalculate_3d_view();
 
     (vertex_2d_entity, edge_2d_entity, edge_3d_entity)
 }

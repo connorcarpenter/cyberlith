@@ -15,7 +15,7 @@ use render_egui::EguiUserTextures;
 use crate::app::{
     components::{HoverCircle, SelectCircle, SelectLine, Vertex2d},
     config::AppConfig,
-    resources::{canvas_manager::CanvasManager, canvas::Canvas},
+    resources::{camera_manager::CameraManager, canvas_manager::CanvasManager, canvas::Canvas},
     shapes::create_2d_edge_arrow,
 };
 
@@ -24,6 +24,7 @@ pub fn setup(
     mut commands: Commands,
     mut canvas: ResMut<Canvas>,
     mut canvas_manager: ResMut<CanvasManager>,
+    mut camera_manager: ResMut<CameraManager>,
     mut textures: ResMut<Assets<CpuTexture2D>>,
     mut user_textures: ResMut<EguiUserTextures>,
     mut meshes: ResMut<Assets<CpuMesh>>,
@@ -39,31 +40,33 @@ pub fn setup(
 
     setup_3d_scene(
         &mut commands,
-        &mut canvas_manager,
+        &mut camera_manager,
         &texture_size,
         canvas_texture_handle,
     );
     setup_2d_scene(
         &mut commands,
+        &mut camera_manager,
         &mut canvas_manager,
         &mut meshes,
         &mut materials,
         &texture_size,
         canvas_texture_handle,
     );
-    canvas_manager.setup_compass(&mut commands, &mut meshes, &mut materials);
-    canvas_manager.setup_grid(&mut commands, &mut meshes, &mut materials);
+    canvas_manager.setup_compass(&mut commands, &mut camera_manager, &mut meshes, &mut materials);
+    canvas_manager.setup_grid(&mut commands, &mut camera_manager, &mut meshes, &mut materials);
 }
 
 fn setup_2d_scene(
     commands: &mut Commands,
+    camera_manager: &mut CameraManager,
     canvas_manager: &mut CanvasManager,
     meshes: &mut Assets<CpuMesh>,
     materials: &mut Assets<CpuMaterial>,
     texture_size: &Vec2,
     canvas_texture_handle: Handle<CpuTexture2D>,
 ) {
-    canvas_manager.layer_2d = RenderLayers::layer(2);
+    camera_manager.layer_2d = RenderLayers::layer(2);
 
     // light
     commands
@@ -72,7 +75,7 @@ fn setup_2d_scene(
             color: Color::WHITE,
             ..Default::default()
         })
-        .insert(canvas_manager.layer_2d);
+        .insert(camera_manager.layer_2d);
 
     // camera
     let mut camera_bundle = CameraBundle::new_2d(&Viewport::new_at_origin(
@@ -84,10 +87,10 @@ fn setup_2d_scene(
     camera_bundle.camera.order = 1;
     let camera_entity = commands
         .spawn(camera_bundle)
-        .insert(canvas_manager.layer_2d)
+        .insert(camera_manager.layer_2d)
         .id();
 
-    canvas_manager.camera_2d = Some(camera_entity);
+    camera_manager.camera_2d = Some(camera_entity);
 
     // hover circle
     let mut hover_circle_components = RenderObjectBundle::circle(
@@ -102,7 +105,7 @@ fn setup_2d_scene(
     hover_circle_components.visibility.visible = false;
     let hover_circle_entity = commands
         .spawn(hover_circle_components)
-        .insert(canvas_manager.layer_2d)
+        .insert(camera_manager.layer_2d)
         .insert(HoverCircle)
         .id();
     canvas_manager.hover_circle_entity = Some(hover_circle_entity);
@@ -120,7 +123,7 @@ fn setup_2d_scene(
     select_circle_components.visibility.visible = false;
     let select_circle_entity = commands
         .spawn(select_circle_components)
-        .insert(canvas_manager.layer_2d)
+        .insert(camera_manager.layer_2d)
         .insert(SelectCircle)
         .id();
     canvas_manager.select_circle_entity = Some(select_circle_entity);
@@ -131,7 +134,7 @@ fn setup_2d_scene(
     select_line_components.visibility.visible = false;
     let select_line_entity = commands
         .spawn(select_line_components)
-        .insert(canvas_manager.layer_2d)
+        .insert(camera_manager.layer_2d)
         .insert(SelectLine)
         .id();
     canvas_manager.select_line_entity = Some(select_line_entity);
@@ -139,16 +142,16 @@ fn setup_2d_scene(
 
 fn setup_3d_scene(
     commands: &mut Commands,
-    canvas_manager: &mut CanvasManager,
+    camera_manager: &mut CameraManager,
     texture_size: &Vec2,
     canvas_texture_handle: Handle<CpuTexture2D>,
 ) {
-    canvas_manager.layer_3d = RenderLayers::layer(3);
+    camera_manager.layer_3d = RenderLayers::layer(3);
 
     // Ambient Light
     commands
         .spawn(AmbientLight::new(0.01, Color::WHITE))
-        .insert(canvas_manager.layer_3d);
+        .insert(camera_manager.layer_3d);
     commands
         .spawn(PointLight {
             position: Vec3::new(60.0, 60.0, 90.0),
@@ -156,7 +159,7 @@ fn setup_3d_scene(
             intensity: 0.2,
             ..Default::default()
         })
-        .insert(canvas_manager.layer_3d);
+        .insert(camera_manager.layer_3d);
 
     // Camera
     let camera_entity = commands
@@ -179,9 +182,9 @@ fn setup_3d_scene(
                 1000.0,
             )),
         })
-        .insert(canvas_manager.layer_3d)
+        .insert(camera_manager.layer_3d)
         .id();
-    canvas_manager.camera_3d = Some(camera_entity);
+    camera_manager.camera_3d = Some(camera_entity);
 }
 
 fn new_render_texture(

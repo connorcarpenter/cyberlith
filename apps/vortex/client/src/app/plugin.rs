@@ -1,7 +1,7 @@
 use bevy_app::{App, Plugin};
 use bevy_ecs::schedule::IntoSystemConfigs;
-use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin, ReceiveEvents};
 
+use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin, ReceiveEvents};
 use render_api::resources::WindowSettings;
 use vortex_proto::{
     components::{EntryKind, FileSystemEntry},
@@ -13,6 +13,7 @@ use crate::app::{
     config::ConfigPlugin,
     events::LoginEvent,
     resources::{
+        camera_manager::CameraManager,
         canvas::Canvas,
         action_stack::ActionStack, canvas_manager::CanvasManager, global::Global,
         tab_manager::TabManager,
@@ -75,6 +76,7 @@ impl Plugin for VortexPlugin {
             // Canvas Config
             .init_resource::<CanvasManager>()
             .init_resource::<Canvas>()
+            .init_resource::<CameraManager>()
             .add_startup_system(canvas::setup)
             .add_system(canvas::step)
             .add_system(canvas::sync)

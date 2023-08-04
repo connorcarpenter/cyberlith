@@ -7,15 +7,15 @@ use bevy_ecs::{
     system::{Commands, Query},
 };
 use bevy_log::{info, warn};
-use naia_bevy_client::{Client, CommandsExt, Replicate};
 
+use naia_bevy_client::{Client, CommandsExt, Replicate};
 use input::{Input, Key, MouseButton};
-use math::{convert_2d_to_3d, convert_3d_to_2d, EulerRot, Quat, Vec2, Vec3};
+use math::{convert_2d_to_3d, convert_3d_to_2d, Vec2, Vec3};
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
     components::{
-        Camera, CameraProjection, OrthographicProjection, Projection, RenderLayer, Transform,
-        Viewport, Visibility,
+        Camera, CameraProjection, Projection, Transform,
+        Visibility,
     },
     shapes::{distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform},
     Assets,
@@ -23,12 +23,11 @@ use render_api::{
 use vortex_proto::{components::{OwnedByTab, Vertex3d, VertexRootChild}, types::TabId};
 
 use crate::app::{
-    components::{Edge2d, Edge3d, HoverCircle, SelectCircle, Vertex2d},
-    resources::action_stack::{Action, ActionStack},
+    components::{Compass, Edge2d, Edge3d, HoverCircle, SelectCircle, Vertex2d},
+    resources::{action_stack::{Action, ActionStack}, camera_manager::CameraManager},
     set_3d_line_transform,
     systems::network::vertex_3d_postprocess,
 };
-use crate::app::components::Compass;
 
 #[derive(Clone, Copy)]
 pub enum ClickType {
@@ -46,23 +45,9 @@ pub enum CanvasShape {
 
 #[derive(Resource)]
 pub struct CanvasManager {
-    // scene?
-    is_2d: bool,
-    rotating_hack: bool,
-
-    // camera
-    pub camera_2d: Option<Entity>,
-    pub layer_2d: RenderLayer,
-    camera_2d_recalc: bool,
-
-    pub camera_3d: Option<Entity>,
-    pub layer_3d: RenderLayer,
-    camera_3d_recalc: bool,
-    camera_3d_offset: Vec2,
-    camera_3d_rotation: Vec2,
-    camera_3d_scale: f32,
 
     // input
+    rotate_key_down: bool,
     click_type: ClickType,
     click_start: Vec2,
     click_down: bool,
@@ -73,6 +58,7 @@ pub struct CanvasManager {
     vertices_3d_to_2d: HashMap<Entity, Entity>,
     vertices_2d_to_3d: HashMap<Entity, Entity>,
 
+    vertices_recalc: bool,
     pub hover_circle_entity: Option<Entity>,
     hovered_entity: Option<(Entity, CanvasShape)>,
     last_vertex_dragged: Option<(Entity, Vec3, Vec3)>,
@@ -87,33 +73,24 @@ pub struct CanvasManager {
 impl Default for CanvasManager {
     fn default() -> Self {
         Self {
-            is_2d: true,
-            rotating_hack: false,
 
-            vertices_3d_to_2d: HashMap::new(),
-            vertices_2d_to_3d: HashMap::new(),
-
+            // input
             click_type: ClickType::Left,
             click_start: Vec2::ZERO,
             click_down: false,
-
-            camera_2d: None,
-            layer_2d: RenderLayer::default(),
-            camera_2d_recalc: false,
-
-            camera_3d: None,
-            layer_3d: RenderLayer::default(),
-            camera_3d_recalc: false,
-            camera_3d_rotation: Vec2::ZERO,
-            camera_3d_scale: 2.5,
-            camera_3d_offset: Vec2::new(0.0, 100.0),
-
-            hover_circle_entity: None,
+            rotate_key_down: false,
             mouse_hover_recalc: false,
             last_mouse_position: Vec2::ZERO,
+
+            // vertices
+            vertices_3d_to_2d: HashMap::new(),
+            vertices_2d_to_3d: HashMap::new(),
+
+            vertices_recalc: false,
+
+            hover_circle_entity: None,
             hovered_entity: None,
             last_vertex_dragged: None,
-
             select_circle_entity: None,
             select_line_entity: None,
             selected_vertex: None,
@@ -128,6 +105,7 @@ impl CanvasManager {
         &mut self,
         commands: &mut Commands,
         client: &mut Client,
+        camera_manager: &mut CameraManager,
         input: &mut Input,
         action_stack: &mut ActionStack,
         current_tab_id: TabId,
@@ -142,12 +120,13 @@ impl CanvasManager {
         // Mouse wheel zoom..
         let scroll_y = input.consume_mouse_scroll();
         if scroll_y > 0.1 || scroll_y < -0.1 {
-            self.camera_zoom(scroll_y);
+            camera_manager.camera_zoom(scroll_y);
         }
 
         // Mouse over
         if !self.click_down {
             self.update_mouse_hover(
+                camera_manager,
                 current_tab_id,
                 input.mouse_position(),
                 transform_q,
@@ -157,71 +136,73 @@ impl CanvasManager {
                 edge_2d_q,
             );
         }
-        self.update_select_line(input.mouse_position(), transform_q, visibility_q);
+        self.update_select_line(input.mouse_position(), camera_manager, transform_q, visibility_q);
 
         // check keyboard input
 
         // (S)olid 3D View
         if input.is_pressed(Key::S) {
             // disable 2d camera, enable 3d camera
-            self.set_3d_mode(camera_q);
+            camera_manager.set_3d_mode(camera_q);
+            self.recalculate_vertices();
         }
         // (W)ireframe 2D View
         else if input.is_pressed(Key::W) {
             // disable 3d camera, enable 2d camera
-            self.set_2d_mode(camera_q);
+            camera_manager.set_2d_mode(camera_q);
+            self.recalculate_vertices();
         }
         // 1 Game Camera View
         else if input.is_pressed(Key::Num1) {
-            self.set_camera_angle_ingame(1);
+            camera_manager.set_camera_angle_ingame(1);
         }
         // 2 Game Camera View
         else if input.is_pressed(Key::Num2) {
-            self.set_camera_angle_ingame(2);
+            camera_manager.set_camera_angle_ingame(2);
         }
         // 3 Game Camera View
         else if input.is_pressed(Key::Num3) {
-            self.set_camera_angle_ingame(3);
+            camera_manager.set_camera_angle_ingame(3);
         }
         // 4 Game Camera View
         else if input.is_pressed(Key::Num4) {
-            self.set_camera_angle_ingame(4);
+            camera_manager.set_camera_angle_ingame(4);
         }
         // 5 Game Camera View
         else if input.is_pressed(Key::Num5) {
-            self.set_camera_angle_ingame(5);
+            camera_manager.set_camera_angle_ingame(5);
         }
         // Si(d)e Camera View
         else if input.is_pressed(Key::D) {
-            self.set_camera_angle_side();
+            camera_manager.set_camera_angle_side();
         }
         // (F)ront Camera View
         else if input.is_pressed(Key::F) {
-            self.set_camera_angle_front();
+            camera_manager.set_camera_angle_front();
         }
         // (T)op Camera View
         else if input.is_pressed(Key::T) {
-            self.set_camera_angle_top();
+            camera_manager.set_camera_angle_top();
         }
         // Delete
         else if input.is_pressed(Key::Delete) {
             self.handle_delete_key_press(commands, client, action_stack);
         }
 
-        if !self.rotating_hack {
+        if !self.rotate_key_down {
             // Rotate Yaw 45 degrees
             if input.is_pressed(Key::PageUp) {
-                self.set_camera_angle_yaw_rotate(true);
-                self.rotating_hack = true;
+                camera_manager.set_camera_angle_yaw_rotate(true);
+                self.rotate_key_down = true;
             }
             // Rotate Yaw 45 degrees
             else if input.is_pressed(Key::PageDown) {
-                self.set_camera_angle_yaw_rotate(false);
-                self.rotating_hack = true;
+                camera_manager.set_camera_angle_yaw_rotate(false);
+                self.rotate_key_down = true;
             }
         } else {
             if !input.is_pressed(Key::PageUp) && !input.is_pressed(Key::PageDown) {
-                self.rotating_hack = false;
+                self.rotate_key_down = false;
             }
         }
 
@@ -249,6 +230,7 @@ impl CanvasManager {
                     self.handle_mouse_drag(
                         commands,
                         client,
+                        camera_manager,
                         self.click_type,
                         mouse,
                         delta,
@@ -263,6 +245,7 @@ impl CanvasManager {
                 self.click_down = true;
                 self.click_start = mouse;
                 self.handle_mouse_click(
+                    camera_manager,
                     action_stack,
                     self.click_type,
                     &mouse,
@@ -287,83 +270,35 @@ impl CanvasManager {
         }
     }
 
-    pub fn update_visibility(visible: bool, camera_q: &mut Query<(&mut Camera, &mut Transform)>) {
-        let cameras_enabled = visible;
-
-        if cameras_enabled {
-            info!("Camera are ENABLED");
-        } else {
-            info!("Camera are DISABLED");
-        }
-
-        for (mut camera, _) in camera_q.iter_mut() {
-            camera.is_active = cameras_enabled;
-        }
-    }
-
-    pub fn update_3d_camera(
-        &mut self,
-        camera_q: &mut Query<(&mut Camera, &mut Transform)>,
-        vertex_3d_q: &mut Query<&mut Vertex3d>,
-    ) {
-        if !self.camera_3d_recalc {
-            return;
-        }
-        self.camera_3d_recalc = false;
-        self.camera_2d_recalc = true;
-
-        let Some(camera_3d) = self.camera_3d else {
-            return;
-        };
-
-        let Ok((_, mut camera_transform)) = camera_q.get_mut(camera_3d) else {
-            return;
-        };
-
-        camera_transform.rotation = Quat::from_euler(
-            EulerRot::YXZ,
-            f32::to_radians(self.camera_3d_rotation.x),
-            f32::to_radians(self.camera_3d_rotation.y),
-            0.0,
-        );
-        camera_transform.scale = Vec3::splat(1.0 / self.camera_3d_scale);
-
-        let right = camera_transform.right_direction();
-        let up = right.cross(camera_transform.view_direction());
-
-        camera_transform.translation = camera_transform.view_direction() * -100.0; // 100 units away from where looking
-        let rounded_offset = self.camera_3d_offset.round();
-        camera_transform.translation += right * rounded_offset.x;
-        camera_transform.translation += up * rounded_offset.y;
-
-        self.compass_recalc(vertex_3d_q, right, up);
-    }
-
     pub fn sync_vertices(
         &mut self,
+        camera_manager: &CameraManager,
         current_tab_id: TabId,
         transform_q: &mut Query<(&mut Transform, Option<&Compass>)>,
         camera_q: &Query<(&Camera, &Projection)>,
-        vertex_3d_q: &Query<(Entity, &Vertex3d)>,
+        vertex_3d_q: &mut Query<(Entity, &mut Vertex3d)>,
         edge_2d_q: &Query<(Entity, &Edge2d)>,
         edge_3d_q: &Query<(Entity, &Edge3d)>,
         owned_by_q: &Query<&OwnedByTab>,
     ) {
-        if !self.camera_2d_recalc {
+        if !self.vertices_recalc {
             return;
         }
-        self.camera_2d_recalc = false;
+        self.vertices_recalc = false;
 
         self.mouse_hover_recalc = true;
         self.select_line_recalc = true;
 
-        let Some(camera_3d) = self.camera_3d else {
+        let Some(camera_3d) = camera_manager.camera_3d_entity() else {
             return;
         };
 
         let Ok((camera_transform, _)) = transform_q.get(camera_3d) else {
             return;
         };
+
+        self.compass_recalc(camera_manager, vertex_3d_q, &camera_transform);
+
         let Ok((camera, camera_projection)) = camera_q.get(camera_3d) else {
             return;
         };
@@ -392,7 +327,7 @@ impl CanvasManager {
             vertex_3d_transform.translation.z = vertex_3d.z().into();
 
             if compass_opt.is_some() {
-                let scale_3d = Vertex2d::RADIUS / self.camera_3d_scale;
+                let scale_3d = Vertex2d::RADIUS / camera_manager.camera_3d_scale();
                 vertex_3d_transform.scale = Vec3::splat(scale_3d);
             }
 
@@ -417,7 +352,7 @@ impl CanvasManager {
 
             // update 2d compass
             if compass_opt.is_none() {
-                let scale_2d = self.camera_3d_scale * Vertex2d::RADIUS;
+                let scale_2d = camera_manager.camera_3d_scale() * Vertex2d::RADIUS;
                 vertex_2d_transform.scale = Vec3::splat(scale_2d);
             }
 
@@ -480,7 +415,7 @@ impl CanvasManager {
                     let (mut edge_transform, compass_opt) = transform_q.get_mut(edge_entity).unwrap();
                     set_3d_line_transform(&mut edge_transform, start_pos, end_pos);
                     if compass_opt.is_some() {
-                        let scale_3d = 1.0 / self.camera_3d_scale;
+                        let scale_3d = 1.0 / camera_manager.camera_3d_scale();
                         edge_transform.scale.x = scale_3d;
                         edge_transform.scale.y = scale_3d;
                     }
@@ -499,8 +434,8 @@ impl CanvasManager {
         }
     }
 
-    pub fn recalculate_3d_view(&mut self) {
-        self.camera_3d_recalc = true;
+    pub fn recalculate_vertices(&mut self) {
+        self.vertices_recalc = true;
     }
 
     pub fn select_vertex(&mut self, entity: &Entity, shape: CanvasShape) {
@@ -569,6 +504,7 @@ impl CanvasManager {
 
     fn update_mouse_hover(
         &mut self,
+        camera_manager: &CameraManager,
         current_tab_id: TabId,
         mouse_position: &Vec2,
         transform_q: &mut Query<&mut Transform>,
@@ -619,12 +555,12 @@ impl CanvasManager {
             }
         }
 
-        let mut is_hovering = least_distance <= (HoverCircle::DETECT_RADIUS * self.camera_3d_scale);
+        let mut is_hovering = least_distance <= (HoverCircle::DETECT_RADIUS * camera_manager.camera_3d_scale());
 
         // just setting edge thickness back to normal ... better way to do this?
         for (edge_entity, _) in edge_2d_q.iter() {
             let mut edge_transform = transform_q.get_mut(edge_entity).unwrap();
-            edge_transform.scale.y = self.camera_3d_scale;
+            edge_transform.scale.y = camera_manager.camera_3d_scale();
         }
 
         if !is_hovering {
@@ -646,7 +582,7 @@ impl CanvasManager {
                 }
             }
 
-            is_hovering = least_distance <= (Edge2d::HOVER_THICKNESS * self.camera_3d_scale);
+            is_hovering = least_distance <= (Edge2d::HOVER_THICKNESS * camera_manager.camera_3d_scale());
         }
 
         let hover_circle_entity = self.hover_circle_entity.unwrap();
@@ -666,7 +602,7 @@ impl CanvasManager {
                     hover_circle_transform.translation.x = least_coords.x;
                     hover_circle_transform.translation.y = least_coords.y;
                     hover_circle_transform.scale =
-                        Vec3::splat(HoverCircle::DISPLAY_RADIUS * self.camera_3d_scale);
+                        Vec3::splat(HoverCircle::DISPLAY_RADIUS * camera_manager.camera_3d_scale());
 
                     hover_circle_visibility.visible = true;
                 }
@@ -675,7 +611,7 @@ impl CanvasManager {
                     let Ok(mut edge_transform) = transform_q.get_mut(entity) else {
                         panic!("Edge entity has no Transform");
                     };
-                    edge_transform.scale.y = Edge2d::HOVER_THICKNESS * self.camera_3d_scale;
+                    edge_transform.scale.y = Edge2d::HOVER_THICKNESS * camera_manager.camera_3d_scale();
 
                     hover_circle_visibility.visible = false;
                 }
@@ -692,6 +628,7 @@ impl CanvasManager {
     fn update_select_line(
         &mut self,
         mouse_position: &Vec2,
+        camera_manager: &CameraManager,
         transform_q: &mut Query<&mut Transform>,
         visibility_q: &mut Query<&mut Visibility>,
     ) {
@@ -731,7 +668,7 @@ impl CanvasManager {
                     vertex_transform.translation.truncate(),
                     *mouse_position,
                 );
-                select_line_transform.scale.y = self.camera_3d_scale;
+                select_line_transform.scale.y = camera_manager.camera_3d_scale();
             }
 
             // sync select circle transform
@@ -742,7 +679,7 @@ impl CanvasManager {
 
                 select_circle_transform.translation = vertex_transform.translation;
                 select_circle_transform.scale =
-                    Vec3::splat(SelectCircle::RADIUS * self.camera_3d_scale);
+                    Vec3::splat(SelectCircle::RADIUS * camera_manager.camera_3d_scale());
             }
 
             select_shape_visibilities[0].visible = true;
@@ -771,7 +708,7 @@ impl CanvasManager {
                 vertex_transform.translation.truncate(),
                 *mouse_position,
             );
-            select_line_transform.scale.y = self.camera_3d_scale;
+            select_line_transform.scale.y = camera_manager.camera_3d_scale();
         } else {
             let mut select_line_visibility = visibility_q.get_mut(select_line_entity).unwrap();
             select_line_visibility.visible = false;
@@ -780,6 +717,7 @@ impl CanvasManager {
 
     fn handle_mouse_click(
         &mut self,
+        camera_manager: &CameraManager,
         action_stack: &mut ActionStack,
         click_type: ClickType,
         mouse_position: &Vec2,
@@ -799,7 +737,7 @@ impl CanvasManager {
                     // create new vertex
 
                     // get camera
-                    let camera_3d = self.camera_3d.unwrap();
+                    let camera_3d = camera_manager.camera_3d_entity().unwrap();
                     let camera_transform: Transform = *transform_q.get(camera_3d).unwrap();
                     let (camera, camera_projection) = camera_q.get(camera_3d).unwrap();
 
@@ -866,6 +804,7 @@ impl CanvasManager {
         &mut self,
         commands: &mut Commands,
         client: &Client,
+        camera_manager: &mut CameraManager,
         click_type: ClickType,
         mouse_position: Vec2,
         delta: Vec2,
@@ -894,7 +833,7 @@ impl CanvasManager {
                         }
 
                         // get camera
-                        let camera_3d = self.camera_3d.unwrap();
+                        let camera_3d = camera_manager.camera_3d_entity().unwrap();
                         let camera_transform: Transform = *transform_q.get(camera_3d).unwrap();
                         let (camera, camera_projection) = camera_q.get(camera_3d).unwrap();
 
@@ -932,7 +871,7 @@ impl CanvasManager {
                         vertex_3d.set_z(new_3d_position.z as i16);
 
                         // redraw
-                        self.camera_2d_recalc = true;
+                        self.recalculate_vertices();
                     } else {
                         warn!(
                             "Selected vertex entity: {:?} has no 3d counterpart",
@@ -947,205 +886,13 @@ impl CanvasManager {
         } else {
             match click_type {
                 ClickType::Left => {
-                    self.camera_pan(delta);
+                    camera_manager.camera_pan(delta);
                 }
                 ClickType::Right => {
-                    self.camera_orbit(delta);
+                    camera_manager.camera_orbit(delta);
                 }
             }
         }
-    }
-
-    fn set_2d_mode(&mut self, camera_query: &mut Query<(&mut Camera, &mut Projection)>) {
-        if self.is_2d {
-            return;
-        }
-        info!("Switched to Wireframe mode");
-        self.is_2d = true;
-        self.camera_2d_recalc = true;
-        self.enable_cameras(camera_query, true);
-    }
-
-    fn set_3d_mode(&mut self, camera_query: &mut Query<(&mut Camera, &mut Projection)>) {
-        if !self.is_2d {
-            return;
-        }
-        info!("Switched to Solid mode");
-        self.is_2d = false;
-        self.enable_cameras(camera_query, false);
-    }
-
-    fn set_camera_angle_ingame(&mut self, game_index: u8) {
-
-        let angle = match game_index {
-            1 => { 30.0 } // seems to be 2:1 diablo isometric angle ?
-            2 => { 63.43 } // 90 - arctan(1/2)
-            3 => { 69.91 }
-            4 => { 76.39 } // seems to be 4:3 warcraft angle ?
-            5 => { 82.87 } // 90 - arctan(1/8)
-            _ => {
-                warn!("Invalid game index: {}", game_index);
-                return;
-            }
-        };
-
-        let mut rotation = self.camera_3d_rotation;
-        rotation.y = angle * -1.0;
-        self.set_camera_angle(rotation);
-    }
-
-    fn set_camera_angle_yaw_rotate(&mut self, counter: bool) {
-
-        let mut rotation = (self.camera_3d_rotation.x/45.0).round()*45.0;
-        match counter {
-            true => {
-                rotation += 45.0;
-                if rotation > 360.0 {
-                    rotation -= 360.0;
-                }
-            }
-            false => {
-                rotation -= 45.0;
-                if rotation < 0.0 {
-                    rotation += 360.0;
-                }
-            }
-        }
-
-        self.set_camera_angle(Vec2::new(rotation, self.camera_3d_rotation.y));
-    }
-
-    fn set_camera_angle_side(&mut self) {
-        self.set_camera_angle(Vec2::new(-90.0, 0.0));
-    }
-
-    fn set_camera_angle_front(&mut self) {
-        self.set_camera_angle(Vec2::new(0.0, 0.0));
-    }
-
-    fn set_camera_angle_top(&mut self) {
-        self.set_camera_angle(Vec2::new(0.0, -90.0));
-    }
-
-    fn camera_pan(&mut self, delta: Vec2) {
-        self.camera_3d_offset += delta / self.camera_3d_scale;
-
-        self.recalculate_3d_view();
-    }
-
-    fn camera_orbit(&mut self, delta: Vec2) {
-        self.camera_3d_rotation.x += delta.x * -0.5;
-        if self.camera_3d_rotation.x > 360.0 {
-            self.camera_3d_rotation.x -= 360.0;
-        } else if self.camera_3d_rotation.x < 0.0 {
-            self.camera_3d_rotation.x += 360.0;
-        }
-
-        self.camera_3d_rotation.y += delta.y * -0.5;
-        if self.camera_3d_rotation.y > 0.0 {
-            self.camera_3d_rotation.y = 0.0;
-        } else if self.camera_3d_rotation.y < -90.0 {
-            self.camera_3d_rotation.y = -90.0;
-        }
-
-        self.recalculate_3d_view();
-    }
-
-    fn camera_zoom(&mut self, zoom_delta: f32) {
-        let old_scale = self.camera_3d_scale;
-        let new_scale = (old_scale + (zoom_delta * 0.01)).min(8.0).max(1.0);
-        let scale_diff = new_scale - old_scale;
-        self.camera_3d_scale = new_scale;
-
-        if scale_diff.abs() > 0.0 {
-            let old_screen_offset = self.camera_3d_offset * old_scale;
-            let new_screen_offset = self.camera_3d_offset * new_scale;
-
-            let offset_diff = new_screen_offset - old_screen_offset;
-
-            self.camera_3d_offset -= offset_diff / new_scale;
-        }
-
-        self.recalculate_3d_view();
-    }
-
-    fn set_camera_angle(&mut self, angle: Vec2) {
-        self.camera_3d_rotation = angle;
-
-        self.recalculate_3d_view();
-    }
-
-    fn enable_cameras(
-        &self,
-        camera_query: &mut Query<(&mut Camera, &mut Projection)>,
-        enable_2d: bool,
-    ) {
-        let enable_3d = !enable_2d;
-
-        if let Some(camera_2d) = self.camera_2d {
-            if let Ok((mut camera, _)) = camera_query.get_mut(camera_2d) {
-                camera.is_active = enable_2d;
-            };
-        }
-        if let Some(camera_3d) = self.camera_3d {
-            if let Ok((mut camera, _)) = camera_query.get_mut(camera_3d) {
-                camera.is_active = enable_3d;
-            };
-        }
-    }
-
-    pub fn update_camera_viewports(
-        &mut self,
-        texture_size: Vec2,
-        camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>,
-    ) {
-        self.update_2d_camera_viewport(texture_size, camera_query);
-        self.update_3d_camera_viewport(texture_size, camera_query);
-    }
-
-    fn update_2d_camera_viewport(
-        &self,
-        texture_size: Vec2,
-        camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>,
-    ) {
-        let Some(camera_entity) = self.camera_2d else {
-            return;
-        };
-        let Ok((mut camera, mut transform, mut projection)) = camera_query.get_mut(camera_entity) else {
-            return;
-        };
-        camera.viewport = Some(Viewport::new_at_origin(
-            texture_size.x as u32,
-            texture_size.y as u32,
-        ));
-
-        let center = texture_size * 0.5;
-
-        *transform = Transform::from_xyz(center.x, center.y, 1.0)
-            .looking_at(Vec3::new(center.x, center.y, 0.0), Vec3::NEG_Y);
-        *projection =
-            Projection::Orthographic(OrthographicProjection::new(texture_size.y, 0.0, 10.0));
-    }
-
-    fn update_3d_camera_viewport(
-        &self,
-        texture_size: Vec2,
-        camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>,
-    ) {
-        let Some(camera_entity) = self.camera_3d else {
-            return;
-        };
-        let Ok((mut camera, _, mut projection)) = camera_query.get_mut(camera_entity) else {
-            return;
-        };
-
-        camera.viewport = Some(Viewport::new_at_origin(
-            texture_size.x as u32,
-            texture_size.y as u32,
-        ));
-
-        *projection =
-            Projection::Orthographic(OrthographicProjection::new(texture_size.y, 0.0, 1000.0));
     }
 
     pub fn register_3d_vertex(&mut self, entity_3d: Entity, entity_2d: Entity) {
@@ -1195,7 +942,7 @@ impl CanvasManager {
             );
         }
 
-        self.camera_2d_recalc = true;
+        self.recalculate_vertices();
     }
 
     pub(crate) fn vertex_entity_3d_to_2d(&self, entity_3d: &Entity) -> Option<&Entity> {
@@ -1209,17 +956,19 @@ impl CanvasManager {
     pub(crate) fn setup_compass(
         &mut self,
         commands: &mut Commands,
+        camera_manager: &mut CameraManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
     ) {
         let (root_vertex_2d_entity, vertex_3d_entity, _, _) =
-            self.new_local_vertex(commands, meshes, materials, None, Vec3::ZERO, Color::WHITE);
+            self.new_local_vertex(commands, camera_manager, meshes, materials, None, Vec3::ZERO, Color::WHITE);
         self.compass_vertices.push(vertex_3d_entity);
         commands.entity(root_vertex_2d_entity).insert(Compass);
         commands.entity(vertex_3d_entity).insert(Compass);
 
         let (vertex_2d_entity, vertex_3d_entity, Some(edge_2d_entity), Some(edge_3d_entity)) = self.new_local_vertex(
             commands,
+            camera_manager,
             meshes,
             materials,
             Some(root_vertex_2d_entity),
@@ -1236,6 +985,7 @@ impl CanvasManager {
 
         let (vertex_2d_entity, vertex_3d_entity, Some(edge_2d_entity), Some(edge_3d_entity)) = self.new_local_vertex(
             commands,
+            camera_manager,
             meshes,
             materials,
             Some(root_vertex_2d_entity),
@@ -1252,6 +1002,7 @@ impl CanvasManager {
 
         let (vertex_2d_entity, vertex_3d_entity, Some(edge_2d_entity), Some(edge_3d_entity)) = self.new_local_vertex(
             commands,
+            camera_manager,
             meshes,
             materials,
             Some(root_vertex_2d_entity),
@@ -1270,17 +1021,19 @@ impl CanvasManager {
     pub(crate) fn setup_grid(
         &mut self,
         commands: &mut Commands,
+        camera_manager: &mut CameraManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
     ) {
-        self.new_grid_corner(commands, meshes, materials, true, true, true);
-        self.new_grid_corner(commands, meshes, materials, true, false, false);
+        self.new_grid_corner(commands, camera_manager, meshes, materials, true, true, true);
+        self.new_grid_corner(commands, camera_manager, meshes, materials, true, false, false);
 
-        self.new_grid_corner(commands, meshes, materials, false, true, false);
-        self.new_grid_corner(commands, meshes, materials, false, false, true);
+        self.new_grid_corner(commands, camera_manager, meshes, materials, false, true, false);
+        self.new_grid_corner(commands, camera_manager, meshes, materials, false, false, true);
     }
 
     fn new_grid_corner(&mut self, commands: &mut Commands,
+                       camera_manager: &mut CameraManager,
                        meshes: &mut Assets<CpuMesh>,
                        materials: &mut Assets<CpuMaterial>, x: bool, y: bool, z: bool) {
 
@@ -1292,21 +1045,23 @@ impl CanvasManager {
         let neg_grid_size: f32 = -grid_size;
 
         let (root_vertex_2d_entity, _, _, _) =
-            self.new_local_vertex(commands, meshes, materials, None, Vec3::new(grid_size * xf, (grid_size * yf) + grid_size, grid_size * zf), Color::DARK_GRAY);
+            self.new_local_vertex(commands, camera_manager, meshes, materials, None, Vec3::new(grid_size * xf, (grid_size * yf) + grid_size, grid_size * zf), Color::DARK_GRAY);
         commands.entity(root_vertex_2d_entity).insert(Compass);
 
-        self.new_grid_vertex(commands, meshes, materials, root_vertex_2d_entity, Vec3::new(neg_grid_size * xf, (grid_size * yf) + grid_size, grid_size * zf));
-        self.new_grid_vertex(commands, meshes, materials, root_vertex_2d_entity, Vec3::new(grid_size * xf, (neg_grid_size * yf) + grid_size, grid_size * zf));
-        self.new_grid_vertex(commands, meshes, materials, root_vertex_2d_entity, Vec3::new(grid_size * xf, (grid_size * yf) + grid_size, neg_grid_size * zf));
+        self.new_grid_vertex(commands, camera_manager, meshes, materials, root_vertex_2d_entity, Vec3::new(neg_grid_size * xf, (grid_size * yf) + grid_size, grid_size * zf));
+        self.new_grid_vertex(commands, camera_manager, meshes, materials, root_vertex_2d_entity, Vec3::new(grid_size * xf, (neg_grid_size * yf) + grid_size, grid_size * zf));
+        self.new_grid_vertex(commands, camera_manager, meshes, materials, root_vertex_2d_entity, Vec3::new(grid_size * xf, (grid_size * yf) + grid_size, neg_grid_size * zf));
     }
 
     fn new_grid_vertex(&mut self, commands: &mut Commands,
+                       camera_manager: &mut CameraManager,
                        meshes: &mut Assets<CpuMesh>,
                        materials: &mut Assets<CpuMaterial>,
                        parent_vertex_2d_entity: Entity,
                        position: Vec3) {
         let (vertex_2d_entity, _, Some(edge_2d_entity), _) = self.new_local_vertex(
             commands,
+            camera_manager,
             meshes,
             materials,
             Some(parent_vertex_2d_entity),
@@ -1322,6 +1077,7 @@ impl CanvasManager {
     fn new_local_vertex(
         &mut self,
         commands: &mut Commands,
+        camera_manager: &mut CameraManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         parent_vertex_2d_entity_opt: Option<Entity>,
@@ -1345,6 +1101,7 @@ impl CanvasManager {
 
         let (new_vertex_2d_entity, new_edge_2d_entity, new_edge_3d_entity) = vertex_3d_postprocess(
             commands,
+            camera_manager,
             self,
             meshes,
             materials,
@@ -1360,15 +1117,18 @@ impl CanvasManager {
 
     fn compass_recalc(
         &mut self,
-        vertex_3d_q: &mut Query<&mut Vertex3d>,
-        right: Vec3,
-        up: Vec3
+        camera_manager: &CameraManager,
+        vertex_3d_q: &mut Query<(Entity, &mut Vertex3d)>,
+        camera_transform: &Transform,
     ) {
-        if let Ok(mut vertex_3d) = vertex_3d_q.get_mut(self.compass_vertices[0]) {
+        if let Ok((_, mut vertex_3d)) = vertex_3d_q.get_mut(self.compass_vertices[0]) {
 
-            let unit_length = 1.0 / self.camera_3d_scale;
+            let right = camera_transform.right_direction();
+            let up = right.cross(camera_transform.view_direction());
+
+            let unit_length = 1.0 / camera_manager.camera_3d_scale();
             const COMPASS_POS: Vec2 = Vec2::new(530.0, 300.0);
-            let offset_2d = self.camera_3d_offset.round() + Vec2::new(unit_length * -1.0 * COMPASS_POS.x, unit_length * COMPASS_POS.y);
+            let offset_2d = camera_manager.camera_3d_offset().round() + Vec2::new(unit_length * -1.0 * COMPASS_POS.x, unit_length * COMPASS_POS.y);
             let offset_3d = (right * offset_2d.x) + (up * offset_2d.y);
 
             let vert_offset_3d = Vec3::ZERO + offset_3d;
@@ -1376,13 +1136,16 @@ impl CanvasManager {
 
             let compass_length = unit_length * 25.0;
             let vert_offset_3d = Vec3::new(compass_length, 0.0, 0.0) + offset_3d;
-            vertex_3d_q.get_mut(self.compass_vertices[1]).unwrap().set_vec3(&vert_offset_3d);
+            let (_, mut vertex_3d) = vertex_3d_q.get_mut(self.compass_vertices[1]).unwrap();
+            vertex_3d.set_vec3(&vert_offset_3d);
 
             let vert_offset_3d = Vec3::new(0.0, compass_length, 0.0) + offset_3d;
-            vertex_3d_q.get_mut(self.compass_vertices[2]).unwrap().set_vec3(&vert_offset_3d);
+            let (_, mut vertex_3d) = vertex_3d_q.get_mut(self.compass_vertices[2]).unwrap();
+            vertex_3d.set_vec3(&vert_offset_3d);
 
             let vert_offset_3d = Vec3::new(0.0, 0.0, compass_length) + offset_3d;
-            vertex_3d_q.get_mut(self.compass_vertices[3]).unwrap().set_vec3(&vert_offset_3d);
+            let (_, mut vertex_3d) = vertex_3d_q.get_mut(self.compass_vertices[3]).unwrap();
+            vertex_3d.set_vec3(&vert_offset_3d);
         }
     }
 

@@ -11,12 +11,13 @@ use vortex_proto::components::{OwnedByTab, Vertex3d, VertexRootChild};
 
 use crate::app::{
     components::{Compass, Edge2d, Vertex2d},
-    resources::{canvas::Canvas, tab_manager::TabManager, action_stack::ActionStack, canvas_manager::CanvasManager},
+    resources::{camera_manager::CameraManager, canvas::Canvas, tab_manager::TabManager, action_stack::ActionStack, canvas_manager::CanvasManager},
 };
 
 pub fn input(
     mut commands: Commands,
     mut client: Client,
+    mut camera_manager: ResMut<CameraManager>,
     canvas: Res<Canvas>,
     mut canvas_manager: ResMut<CanvasManager>,
     mut input: ResMut<Input>,
@@ -36,6 +37,7 @@ pub fn input(
     canvas_manager.update_input(
         &mut commands,
         &mut client,
+        &mut camera_manager,
         &mut input,
         &mut action_stack,
         tab_manager.current_tab_id(),

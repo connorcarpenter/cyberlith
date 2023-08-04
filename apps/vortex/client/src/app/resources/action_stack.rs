@@ -21,6 +21,7 @@ use crate::app::{
         Edge2d, Edge3d, Vertex2d, VertexEntry,
     },
     resources::{
+        camera_manager::CameraManager,
         canvas::Canvas,
         canvas_manager::{CanvasManager, CanvasShape},
         file_tree::FileTree,
@@ -308,7 +309,7 @@ impl ActionStack {
                     Client,
                     Res<Global>,
                     ResMut<Canvas>,
-                    ResMut<CanvasManager>,
+                    ResMut<CameraManager>,
                     ResMut<TabManager>,
                     Query<(Entity, &mut FileSystemUiState)>,
                     Query<(Entity, &ChangelistEntry, &mut ChangelistUiState)>,
@@ -320,7 +321,7 @@ impl ActionStack {
                     mut client,
                     global,
                     mut canvas,
-                    mut canvas_state,
+                    mut camera_manager,
                     mut tab_manager,
                     mut fs_query,
                     mut cl_query,
@@ -366,7 +367,7 @@ impl ActionStack {
                 }
 
                 // open tab for new entry
-                tab_manager.open_tab(&mut client, &mut canvas, &mut canvas_state, &mut visibility_q, &entity_id);
+                tab_manager.open_tab(&mut client, &mut canvas, &mut camera_manager, &mut visibility_q, &entity_id);
 
                 system_state.apply(world);
 
@@ -533,12 +534,13 @@ impl ActionStack {
                     let mut system_state: SystemState<(
                         Commands,
                         Client,
+                        ResMut<CameraManager>,
                         ResMut<CanvasManager>,
                         Res<TabManager>,
                         ResMut<Assets<CpuMesh>>,
                         ResMut<Assets<CpuMaterial>>,
                     )> = SystemState::new(world);
-                    let (mut commands, mut client, mut canvas_manager, tab_manager, mut meshes, mut materials) =
+                    let (mut commands, mut client, mut camera_manager, mut canvas_manager, tab_manager, mut meshes, mut materials) =
                         system_state.get_mut(world);
 
                     let (deselected_vertex_2d_entity, vertex_3d_entity_to_release) =
@@ -554,6 +556,7 @@ impl ActionStack {
                     let (new_vertex_2d_entity, new_vertex_3d_entity) = self.create_vertex_entity(
                         &mut commands,
                         &mut client,
+                        &mut camera_manager,
                         &mut canvas_manager,
                         &mut meshes,
                         &mut materials,
@@ -682,9 +685,9 @@ impl ActionStack {
             }
             Action::MoveVertex(vertex_2d_entity, old_position, new_position) => {
                 info!("MoveVertex");
-                let mut system_state: SystemState<(ResMut<CanvasManager>, Query<&mut Vertex3d>)> =
+                let mut system_state: SystemState<(ResMut<CanvasManager>, ResMut<CameraManager>, Query<&mut Vertex3d>)> =
                     SystemState::new(world);
-                let (mut canvas_manager, mut vertex_3d_q) = system_state.get_mut(world);
+                let (canvas_manager, mut camera_manager, mut vertex_3d_q) = system_state.get_mut(world);
 
                 let vertex_3d_entity = *canvas_manager
                     .vertex_entity_2d_to_3d(vertex_2d_entity)
@@ -695,7 +698,7 @@ impl ActionStack {
                 };
                 vertex_3d.set_vec3(new_position);
 
-                canvas_manager.recalculate_3d_view();
+                camera_manager.recalculate_3d_view();
 
                 system_state.apply(world);
 
@@ -904,6 +907,7 @@ impl ActionStack {
         &mut self,
         commands: &mut Commands,
         client: &mut Client,
+        camera_manager: &mut CameraManager,
         canvas_manager: &mut CanvasManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
@@ -929,6 +933,7 @@ impl ActionStack {
 
         let (new_vertex_2d_entity, _, _) = vertex_3d_postprocess(
             commands,
+            camera_manager,
             canvas_manager,
             meshes,
             materials,
@@ -945,6 +950,7 @@ impl ActionStack {
                     .create_vertex_entity(
                         commands,
                         client,
+                        camera_manager,
                         canvas_manager,
                         meshes,
                         materials,

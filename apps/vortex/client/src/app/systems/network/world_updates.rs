@@ -26,7 +26,7 @@ use crate::app::{
         file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
         Edge2d, Edge3d,
     },
-    resources::{canvas_manager::CanvasManager, global::Global},
+    resources::{camera_manager::CameraManager, canvas_manager::CanvasManager, global::Global},
     systems::{
         file_post_process,
         network::vertex_waitlist::{
@@ -61,6 +61,7 @@ pub fn insert_component_events(
     mut fs_state_query: Query<&mut FileSystemUiState>,
 
     // for vertices
+    mut camera_manager: ResMut<CameraManager>,
     mut canvas_manager: ResMut<CanvasManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
@@ -156,6 +157,7 @@ pub fn insert_component_events(
                 &mut commands,
                 VertexWaitlistInsert::Position,
                 &vertex_3d_entity,
+                &mut camera_manager,
                 &mut canvas_manager,
                 &mut meshes,
                 &mut materials,
@@ -175,6 +177,7 @@ pub fn insert_component_events(
                 &mut commands,
                 VertexWaitlistInsert::Parent(Some(parent_entity)),
                 &vertex_child_entity,
+                &mut camera_manager,
                 &mut canvas_manager,
                 &mut meshes,
                 &mut materials,
@@ -188,6 +191,7 @@ pub fn insert_component_events(
                 &mut commands,
                 VertexWaitlistInsert::Parent(None),
                 &vertex_3d_entity,
+                &mut camera_manager,
                 &mut canvas_manager,
                 &mut meshes,
                 &mut materials,
@@ -205,6 +209,7 @@ pub fn insert_component_events(
                 &mut commands,
                 VertexWaitlistInsert::OwnedByTab(tab_id),
                 &vertex_3d_entity,
+                &mut camera_manager,
                 &mut canvas_manager,
                 &mut meshes,
                 &mut materials,

@@ -4,3 +4,4 @@ pub mod file_tree;
 pub mod global;
 pub mod tab_manager;
 pub mod canvas;
+pub mod camera_manager;
