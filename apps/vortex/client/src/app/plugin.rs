@@ -13,6 +13,7 @@ use crate::app::{
     config::ConfigPlugin,
     events::LoginEvent,
     resources::{
+        canvas::Canvas,
         action_stack::ActionStack, canvas_manager::CanvasManager, global::Global,
         tab_manager::TabManager,
     },
@@ -72,7 +73,8 @@ impl Plugin for VortexPlugin {
             .insert_resource(ActionStack::new())
             .add_system(ui::update)
             // Canvas Config
-            .insert_resource(CanvasManager::default())
+            .init_resource::<CanvasManager>()
+            .init_resource::<Canvas>()
             .add_startup_system(canvas::setup)
             .add_system(canvas::step)
             .add_system(canvas::sync)

@@ -15,13 +15,14 @@ use render_egui::EguiUserTextures;
 use crate::app::{
     components::{HoverCircle, SelectCircle, SelectLine, Vertex2d},
     config::AppConfig,
-    resources::canvas_manager::CanvasManager,
+    resources::{canvas_manager::CanvasManager, canvas::Canvas},
     shapes::create_2d_edge_arrow,
 };
 
 pub fn setup(
     config: Res<AppConfig>,
     mut commands: Commands,
+    mut canvas: ResMut<Canvas>,
     mut canvas_manager: ResMut<CanvasManager>,
     mut textures: ResMut<Assets<CpuTexture2D>>,
     mut user_textures: ResMut<EguiUserTextures>,
@@ -34,7 +35,7 @@ pub fn setup(
     let texture_size = Vec2::new(1130.0, 672.0);
     let canvas_texture_handle =
         new_render_texture(&texture_size, &mut textures, &mut user_textures);
-    canvas_manager.set_canvas_texture(texture_size, canvas_texture_handle.clone());
+    canvas.set_canvas_texture(texture_size, canvas_texture_handle.clone());
 
     setup_3d_scene(
         &mut commands,

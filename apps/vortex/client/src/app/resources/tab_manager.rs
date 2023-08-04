@@ -21,7 +21,7 @@ use vortex_proto::{
 
 use crate::app::{
     components::file_system::FileSystemUiState,
-    resources::canvas_manager::CanvasManager,
+    resources::{canvas_manager::CanvasManager, canvas::Canvas},
     ui::widgets::colors::{
         FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
         TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED,
@@ -77,12 +77,13 @@ impl TabManager {
     pub fn open_tab(
         &mut self,
         client: &mut Client,
+        canvas: &mut Canvas,
         canvas_manager: &mut CanvasManager,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
         row_entity: &Entity,
     ) {
         if self.tab_map.contains_key(row_entity) {
-            self.select_tab(client, canvas_manager, visibility_q, row_entity);
+            self.select_tab(client, canvas, canvas_manager, visibility_q, row_entity);
         } else {
             // get current tab order
             let current_order = if let Some(current_entity) = self.current_tab {
@@ -103,7 +104,7 @@ impl TabManager {
             client.send_message::<TabActionChannel, TabOpenMessage>(&message);
 
             // select tab
-            self.select_tab(client, canvas_manager, visibility_q, row_entity);
+            self.select_tab(client, canvas, canvas_manager, visibility_q, row_entity);
 
             self.update_tab_orders();
         }
@@ -113,15 +114,18 @@ impl TabManager {
         egui::menu::bar(ui, |ui| {
             let mut system_state: SystemState<(
                 Client,
+                ResMut<Canvas>,
                 ResMut<CanvasManager>,
                 ResMut<TabManager>,
                 Query<(&FileSystemEntry, &FileSystemUiState)>,
                 Query<(&mut Visibility, &OwnedByTab)>,
             )> = SystemState::new(world);
-            let (mut client, mut canvas_state, mut tab_manager, file_q, mut visibility_q) =
+            let (mut client, mut canvas, mut canvas_state, mut tab_manager, file_q, mut visibility_q) =
                 system_state.get_mut(world);
 
-            tab_manager.render_tabs(&mut client, &mut canvas_state, ui, &file_q, &mut visibility_q);
+            tab_manager.render_tabs(&mut client, &mut canvas, &mut canvas_state, ui, &file_q, &mut visibility_q);
+
+            system_state.apply(world);
         });
     }
 
@@ -152,6 +156,7 @@ impl TabManager {
     fn select_tab(
         &mut self,
         client: &mut Client,
+        canvas: &mut Canvas,
         canvas_manager: &mut CanvasManager,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
         row_entity: &Entity,
@@ -163,7 +168,7 @@ impl TabManager {
         }
 
         // select new tab
-        self.set_current_tab(canvas_manager, visibility_q, Some(*row_entity));
+        self.set_current_tab(canvas, canvas_manager, visibility_q, Some(*row_entity));
         let tab_state = self.tab_map.get_mut(&row_entity).unwrap();
         tab_state.selected = true;
 
@@ -174,6 +179,7 @@ impl TabManager {
 
     fn set_current_tab(
         &mut self,
+        canvas: &mut Canvas,
         canvas_manager: &mut CanvasManager,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
         val: Option<Entity>)
@@ -181,9 +187,9 @@ impl TabManager {
         self.current_tab = val;
 
         if val.is_none() {
-            canvas_manager.set_visibility(false);
+            canvas.set_visibility(false);
         } else {
-            canvas_manager.set_visibility(true);
+            canvas.set_visibility(true);
         }
         canvas_manager.recalculate_3d_view();
 
@@ -205,6 +211,7 @@ impl TabManager {
     fn close_tab(
         &mut self,
         client: &mut Client,
+        canvas: &mut Canvas,
         canvas_manager: &mut CanvasManager,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
         row_entity: &Entity,
@@ -224,10 +231,10 @@ impl TabManager {
                 }
                 if let Some(new_entity) = self.tab_order.get(new_tab_order) {
                     let new_entity = *new_entity;
-                    self.set_current_tab(canvas_manager, visibility_q, None);
-                    self.select_tab(client, canvas_manager, visibility_q, &new_entity);
+                    self.set_current_tab(canvas, canvas_manager, visibility_q, None);
+                    self.select_tab(client, canvas, canvas_manager, visibility_q, &new_entity);
                 } else {
-                    self.set_current_tab(canvas_manager, visibility_q, None);
+                    self.set_current_tab(canvas, canvas_manager, visibility_q, None);
                 }
             }
         }
@@ -240,27 +247,29 @@ impl TabManager {
         self.recycle_tab_id(tab_state.tab_id);
     }
 
-    fn close_all_tabs(&mut self, client: &mut Client, canvas_manager: &mut CanvasManager, visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>) {
+    fn close_all_tabs(&mut self, client: &mut Client, canvas: &mut Canvas, canvas_manager: &mut CanvasManager, visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>) {
         let all_tabs = self.tab_order.clone();
         for entity in all_tabs {
-            self.close_tab(client, canvas_manager, visibility_q, &entity);
+            self.close_tab(client, canvas, canvas_manager, visibility_q, &entity);
         }
     }
 
     fn close_all_tabs_except(
         &mut self,
         client: &mut Client,
+        canvas: &mut Canvas,
         canvas_manager: &mut CanvasManager,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
         row_entity: &Entity,
     ) {
-        self.close_all_tabs(client, canvas_manager, visibility_q);
-        self.open_tab(client, canvas_manager, visibility_q, row_entity);
+        self.close_all_tabs(client, canvas, canvas_manager, visibility_q);
+        self.open_tab(client, canvas, canvas_manager, visibility_q, row_entity);
     }
 
     fn close_all_tabs_left_of(
         &mut self,
         client: &mut Client,
+        canvas: &mut Canvas,
         canvas_state: &mut CanvasManager,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
         row_entity: &Entity,
@@ -274,13 +283,14 @@ impl TabManager {
         }
 
         for entity in tabs_to_close {
-            self.close_tab(client, canvas_state, visibility_q, &entity);
+            self.close_tab(client, canvas, canvas_state, visibility_q, &entity);
         }
     }
 
     fn close_all_tabs_right_of(
         &mut self,
         client: &mut Client,
+        canvas: &mut Canvas,
         canvas_state: &mut CanvasManager,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
         row_entity: &Entity,
@@ -294,13 +304,14 @@ impl TabManager {
         }
 
         for entity in tabs_to_close {
-            self.close_tab(client, canvas_state, visibility_q, &entity);
+            self.close_tab(client, canvas, canvas_state, visibility_q, &entity);
         }
     }
 
     fn render_tabs(
         &mut self,
         client: &mut Client,
+        canvas: &mut Canvas,
         canvas_state: &mut CanvasManager,
         ui: &mut Ui,
         file_q: &Query<(&FileSystemEntry, &FileSystemUiState)>,
@@ -319,7 +330,7 @@ impl TabManager {
             Self::tab_context_menu(button_response, row_entity, &mut tab_action);
         }
 
-        self.execute_tab_action(client, canvas_state, visibility_q, tab_action);
+        self.execute_tab_action(client, canvas, canvas_state, visibility_q, tab_action);
     }
 
     fn render_tab(
@@ -473,6 +484,7 @@ impl TabManager {
     fn execute_tab_action(
         &mut self,
         client: &mut Client,
+        canvas: &mut Canvas,
         canvas_state: &mut CanvasManager,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
         tab_action: Option<TabAction>,
@@ -480,22 +492,22 @@ impl TabManager {
         match tab_action {
             None => {}
             Some(TabAction::Select(row_entity)) => {
-                self.select_tab(client, canvas_state, visibility_q, &row_entity);
+                self.select_tab(client, canvas, canvas_state, visibility_q, &row_entity);
             }
             Some(TabAction::Close(row_entity)) => {
-                self.close_tab(client, canvas_state, visibility_q, &row_entity);
+                self.close_tab(client, canvas, canvas_state, visibility_q, &row_entity);
             }
             Some(TabAction::CloseAll) => {
-                self.close_all_tabs(client, canvas_state, visibility_q);
+                self.close_all_tabs(client, canvas, canvas_state, visibility_q);
             }
             Some(TabAction::CloseOthers(row_entity)) => {
-                self.close_all_tabs_except(client, canvas_state, visibility_q, &row_entity);
+                self.close_all_tabs_except(client, canvas, canvas_state, visibility_q, &row_entity);
             }
             Some(TabAction::CloseLeft(row_entity)) => {
-                self.close_all_tabs_left_of(client, canvas_state, visibility_q, &row_entity);
+                self.close_all_tabs_left_of(client, canvas, canvas_state, visibility_q, &row_entity);
             }
             Some(TabAction::CloseRight(row_entity)) => {
-                self.close_all_tabs_right_of(client, canvas_state, visibility_q, &row_entity);
+                self.close_all_tabs_right_of(client, canvas, canvas_state, visibility_q, &row_entity);
             }
         }
     }

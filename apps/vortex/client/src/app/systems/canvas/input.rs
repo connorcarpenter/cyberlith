@@ -4,7 +4,6 @@ use bevy_ecs::{
     system::{Commands, Query, Res, ResMut},
 };
 
-
 use naia_bevy_client::Client;
 use input::Input;
 use render_api::components::{Camera, Projection, Transform, Visibility};
@@ -12,12 +11,13 @@ use vortex_proto::components::{OwnedByTab, Vertex3d, VertexRootChild};
 
 use crate::app::{
     components::{Compass, Edge2d, Vertex2d},
-    resources::{tab_manager::TabManager, action_stack::ActionStack, canvas_manager::CanvasManager},
+    resources::{canvas::Canvas, tab_manager::TabManager, action_stack::ActionStack, canvas_manager::CanvasManager},
 };
 
 pub fn input(
     mut commands: Commands,
     mut client: Client,
+    canvas: Res<Canvas>,
     mut canvas_manager: ResMut<CanvasManager>,
     mut input: ResMut<Input>,
     mut action_stack: ResMut<ActionStack>,
@@ -30,7 +30,7 @@ pub fn input(
     vertex_2d_q: Query<(Entity, Option<&VertexRootChild>), (With<Vertex2d>, Without<Compass>)>,
     edge_2d_q: Query<(Entity, &Edge2d), Without<Compass>>,
 ) {
-    if !canvas_manager.is_visible() {
+    if !canvas.is_visible() {
         return;
     }
     canvas_manager.update_input(

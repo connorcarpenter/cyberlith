@@ -12,13 +12,13 @@ use naia_bevy_client::{Client, CommandsExt, Replicate};
 use input::{Input, Key, MouseButton};
 use math::{convert_2d_to_3d, convert_3d_to_2d, EulerRot, Quat, Vec2, Vec3};
 use render_api::{
-    base::{Color, CpuMaterial, CpuMesh, CpuTexture2D},
+    base::{Color, CpuMaterial, CpuMesh},
     components::{
         Camera, CameraProjection, OrthographicProjection, Projection, RenderLayer, Transform,
         Viewport, Visibility,
     },
     shapes::{distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform},
-    Assets, Handle,
+    Assets,
 };
 use vortex_proto::{components::{OwnedByTab, Vertex3d, VertexRootChild}, types::TabId};
 
@@ -47,13 +47,7 @@ pub enum CanvasShape {
 #[derive(Resource)]
 pub struct CanvasManager {
     // scene?
-    is_visible: bool,
-    next_visible: bool,
     is_2d: bool,
-
-    canvas_texture: Option<Handle<CpuTexture2D>>,
-    canvas_texture_size: Vec2,
-
     rotating_hack: bool,
 
     // camera
@@ -93,13 +87,9 @@ pub struct CanvasManager {
 impl Default for CanvasManager {
     fn default() -> Self {
         Self {
-            next_visible: false,
-            is_visible: false,
             is_2d: true,
             rotating_hack: false,
 
-            canvas_texture: None,
-            canvas_texture_size: Vec2::new(1280.0, 720.0),
             vertices_3d_to_2d: HashMap::new(),
             vertices_2d_to_3d: HashMap::new(),
 
@@ -294,6 +284,20 @@ impl CanvasManager {
                     ));
                 }
             }
+        }
+    }
+
+    pub fn update_visibility(visible: bool, camera_q: &mut Query<(&mut Camera, &mut Transform)>) {
+        let cameras_enabled = visible;
+
+        if cameras_enabled {
+            info!("Camera are ENABLED");
+        } else {
+            info!("Camera are DISABLED");
+        }
+
+        for (mut camera, _) in camera_q.iter_mut() {
+            camera.is_active = cameras_enabled;
         }
     }
 
@@ -493,52 +497,6 @@ impl CanvasManager {
                 );
             }
         }
-    }
-
-    pub fn update_visibility(&mut self, camera_q: &mut Query<(&mut Camera, &mut Transform)>) {
-        if self.is_visible == self.next_visible {
-            return;
-        }
-        self.is_visible = self.next_visible;
-
-        let cameras_enabled = self.is_visible;
-
-        if cameras_enabled {
-            info!("Camera are ENABLED");
-        } else {
-            info!("Camera are DISABLED");
-        }
-
-        for (mut camera, _) in camera_q.iter_mut() {
-            camera.is_active = cameras_enabled;
-        }
-    }
-
-    pub fn update_camera_viewports(
-        &mut self,
-        texture_size: Vec2,
-        camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>,
-    ) {
-        self.canvas_texture_size = texture_size;
-        self.update_2d_camera_viewport(texture_size, camera_query);
-        self.update_3d_camera_viewport(texture_size, camera_query);
-    }
-
-    pub fn canvas_texture(&self) -> Handle<CpuTexture2D> {
-        self.canvas_texture.unwrap()
-    }
-
-    pub fn set_canvas_texture(&mut self, texture_size: Vec2, texture: Handle<CpuTexture2D>) {
-        self.canvas_texture = Some(texture);
-        self.canvas_texture_size = texture_size;
-    }
-
-    pub fn is_visible(&self) -> bool {
-        self.is_visible
-    }
-
-    pub fn set_visibility(&mut self, visible: bool) {
-        self.next_visible = visible;
     }
 
     pub fn recalculate_3d_view(&mut self) {
@@ -1134,6 +1092,15 @@ impl CanvasManager {
                 camera.is_active = enable_3d;
             };
         }
+    }
+
+    pub fn update_camera_viewports(
+        &mut self,
+        texture_size: Vec2,
+        camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>,
+    ) {
+        self.update_2d_camera_viewport(texture_size, camera_query);
+        self.update_3d_camera_viewport(texture_size, camera_query);
     }
 
     fn update_2d_camera_viewport(

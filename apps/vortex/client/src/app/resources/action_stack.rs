@@ -21,6 +21,7 @@ use crate::app::{
         Edge2d, Edge3d, Vertex2d, VertexEntry,
     },
     resources::{
+        canvas::Canvas,
         canvas_manager::{CanvasManager, CanvasShape},
         file_tree::FileTree,
         global::Global,
@@ -306,6 +307,7 @@ impl ActionStack {
                     Commands,
                     Client,
                     Res<Global>,
+                    ResMut<Canvas>,
                     ResMut<CanvasManager>,
                     ResMut<TabManager>,
                     Query<(Entity, &mut FileSystemUiState)>,
@@ -317,6 +319,7 @@ impl ActionStack {
                     mut commands,
                     mut client,
                     global,
+                    mut canvas,
                     mut canvas_state,
                     mut tab_manager,
                     mut fs_query,
@@ -363,7 +366,7 @@ impl ActionStack {
                 }
 
                 // open tab for new entry
-                tab_manager.open_tab(&mut client, &mut canvas_state, &mut visibility_q, &entity_id);
+                tab_manager.open_tab(&mut client, &mut canvas, &mut canvas_state, &mut visibility_q, &entity_id);
 
                 system_state.apply(world);
 
