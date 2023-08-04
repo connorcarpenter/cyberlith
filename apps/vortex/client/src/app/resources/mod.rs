@@ -5,3 +5,4 @@ pub mod canvas_manager;
 pub mod file_tree;
 pub mod global;
 pub mod tab_manager;
+pub mod input_manager;

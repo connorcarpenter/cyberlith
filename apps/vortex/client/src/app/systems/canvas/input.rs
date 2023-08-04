@@ -13,7 +13,7 @@ use crate::app::{
     components::{Compass, Edge2d, Vertex2d},
     resources::{
         action_stack::ActionStack, camera_manager::CameraManager, canvas::Canvas,
-        canvas_manager::CanvasManager, tab_manager::TabManager,
+        canvas_manager::CanvasManager, tab_manager::TabManager, input_manager::InputManager,
     },
 };
 
@@ -23,6 +23,7 @@ pub fn input(
     mut camera_manager: ResMut<CameraManager>,
     canvas: Res<Canvas>,
     mut canvas_manager: ResMut<CanvasManager>,
+    mut input_manager: ResMut<InputManager>,
     mut input: ResMut<Input>,
     mut action_stack: ResMut<ActionStack>,
     tab_manager: Res<TabManager>,
@@ -37,19 +38,25 @@ pub fn input(
     if !canvas.is_visible() {
         return;
     }
-    canvas_manager.update_input(
-        &mut commands,
-        &mut client,
-        &mut camera_manager,
-        &mut input,
-        &mut action_stack,
-        tab_manager.current_tab_id(),
-        &mut transform_q,
-        &mut camera_q,
-        &mut visibility_q,
-        &owned_by_tab_q,
-        &mut vertex_3d_q,
-        &vertex_2d_q,
-        &edge_2d_q,
-    );
+    let input_actions = input_manager.update_input(&mut input);
+    if !input_actions.is_empty() {
+        canvas_manager.update_input(
+            input_actions,
+            tab_manager.current_tab_id(),
+            input.mouse_position(),
+
+            &mut commands,
+            &mut client,
+            &mut camera_manager,
+            &mut action_stack,
+
+            &mut transform_q,
+            &mut camera_q,
+            &mut visibility_q,
+            &owned_by_tab_q,
+            &mut vertex_3d_q,
+            &vertex_2d_q,
+            &edge_2d_q,
+        );
+    }
 }

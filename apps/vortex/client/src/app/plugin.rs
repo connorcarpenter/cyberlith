@@ -13,6 +13,7 @@ use crate::app::{
     config::ConfigPlugin,
     events::LoginEvent,
     resources::{
+        input_manager::InputManager,
         action_stack::ActionStack, camera_manager::CameraManager, canvas::Canvas,
         canvas_manager::CanvasManager, global::Global, tab_manager::TabManager,
     },
@@ -75,6 +76,7 @@ impl Plugin for VortexPlugin {
             .init_resource::<CanvasManager>()
             .init_resource::<Canvas>()
             .init_resource::<CameraManager>()
+            .init_resource::<InputManager>()
             .add_startup_system(canvas::setup)
             .add_system(canvas::step)
             .add_system(canvas::sync)

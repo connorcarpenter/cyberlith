@@ -8,7 +8,6 @@ use bevy_ecs::{
 };
 use bevy_log::{info, warn};
 
-use input::{Input, Key, MouseButton};
 use math::{convert_2d_to_3d, convert_3d_to_2d, Vec2, Vec3};
 use naia_bevy_client::{Client, CommandsExt, Replicate};
 use render_api::{
@@ -26,17 +25,12 @@ use crate::app::{
     components::{Compass, Edge2d, Edge3d, HoverCircle, SelectCircle, Vertex2d},
     resources::{
         action_stack::{Action, ActionStack},
-        camera_manager::CameraManager,
+        camera_manager::{CameraManager, CameraAngle},
+        input_manager::{InputAction, ClickType},
     },
     set_3d_line_transform,
     systems::network::vertex_3d_postprocess,
 };
-
-#[derive(Clone, Copy)]
-pub enum ClickType {
-    Left,
-    Right,
-}
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub enum CanvasShape {
@@ -48,13 +42,6 @@ pub enum CanvasShape {
 
 #[derive(Resource)]
 pub struct CanvasManager {
-    // input
-    rotate_key_down: bool,
-    click_type: ClickType,
-    click_start: Vec2,
-    click_down: bool,
-    mouse_hover_recalc: bool,
-    last_mouse_position: Vec2,
 
     // vertices
     vertices_3d_to_2d: HashMap<Entity, Entity>,
@@ -70,18 +57,13 @@ pub struct CanvasManager {
     selected_vertex: Option<(Entity, CanvasShape)>,
     select_line_recalc: bool,
     compass_vertices: Vec<Entity>,
+
+    mouse_hover_recalc: bool,
 }
 
 impl Default for CanvasManager {
     fn default() -> Self {
         Self {
-            // input
-            click_type: ClickType::Left,
-            click_start: Vec2::ZERO,
-            click_down: false,
-            rotate_key_down: false,
-            mouse_hover_recalc: false,
-            last_mouse_position: Vec2::ZERO,
 
             // vertices
             vertices_3d_to_2d: HashMap::new(),
@@ -97,6 +79,8 @@ impl Default for CanvasManager {
             selected_vertex: None,
             select_line_recalc: false,
             compass_vertices: Vec::new(),
+
+            mouse_hover_recalc: false,
         }
     }
 }
@@ -104,12 +88,19 @@ impl Default for CanvasManager {
 impl CanvasManager {
     pub fn update_input(
         &mut self,
+
+        // input
+        input_actions: Vec<InputAction>,
+        current_tab_id: TabId,
+        mouse_position: &Vec2,
+
+        // resources
         commands: &mut Commands,
         client: &mut Client,
         camera_manager: &mut CameraManager,
-        input: &mut Input,
         action_stack: &mut ActionStack,
-        current_tab_id: TabId,
+
+        // queries
         transform_q: &mut Query<&mut Transform>,
         camera_q: &mut Query<(&mut Camera, &mut Projection)>,
         visibility_q: &mut Query<&mut Visibility>,
@@ -118,162 +109,100 @@ impl CanvasManager {
         vertex_2d_q: &Query<(Entity, Option<&VertexRootChild>), (With<Vertex2d>, Without<Compass>)>,
         edge_2d_q: &Query<(Entity, &Edge2d), Without<Compass>>,
     ) {
-        // Mouse wheel zoom..
-        let scroll_y = input.consume_mouse_scroll();
-        if scroll_y > 0.1 || scroll_y < -0.1 {
-            camera_manager.camera_zoom(scroll_y);
-        }
 
-        // Mouse over
-        if !self.click_down {
-            self.update_mouse_hover(
-                camera_manager,
-                current_tab_id,
-                input.mouse_position(),
-                transform_q,
-                visibility_q,
-                owned_by_q,
-                vertex_2d_q,
-                edge_2d_q,
-            );
-        }
-        self.update_select_line(
-            input.mouse_position(),
-            camera_manager,
-            transform_q,
-            visibility_q,
-        );
-
-        // check keyboard input
-
-        // (S)olid 3D View
-        if input.is_pressed(Key::S) {
-            // disable 2d camera, enable 3d camera
-            camera_manager.set_3d_mode(camera_q);
-            self.recalculate_vertices();
-        }
-        // (W)ireframe 2D View
-        else if input.is_pressed(Key::W) {
-            // disable 3d camera, enable 2d camera
-            camera_manager.set_2d_mode(camera_q);
-            self.recalculate_vertices();
-        }
-        // 1 Game Camera View
-        else if input.is_pressed(Key::Num1) {
-            camera_manager.set_camera_angle_ingame(1);
-        }
-        // 2 Game Camera View
-        else if input.is_pressed(Key::Num2) {
-            camera_manager.set_camera_angle_ingame(2);
-        }
-        // 3 Game Camera View
-        else if input.is_pressed(Key::Num3) {
-            camera_manager.set_camera_angle_ingame(3);
-        }
-        // 4 Game Camera View
-        else if input.is_pressed(Key::Num4) {
-            camera_manager.set_camera_angle_ingame(4);
-        }
-        // 5 Game Camera View
-        else if input.is_pressed(Key::Num5) {
-            camera_manager.set_camera_angle_ingame(5);
-        }
-        // Si(d)e Camera View
-        else if input.is_pressed(Key::D) {
-            camera_manager.set_camera_angle_side();
-        }
-        // (F)ront Camera View
-        else if input.is_pressed(Key::F) {
-            camera_manager.set_camera_angle_front();
-        }
-        // (T)op Camera View
-        else if input.is_pressed(Key::T) {
-            camera_manager.set_camera_angle_top();
-        }
-        // Delete
-        else if input.is_pressed(Key::Delete) {
-            self.handle_delete_key_press(commands, client, action_stack);
-        }
-
-        if !self.rotate_key_down {
-            // Rotate Yaw 45 degrees
-            if input.is_pressed(Key::PageUp) {
-                camera_manager.set_camera_angle_yaw_rotate(true);
-                self.rotate_key_down = true;
-            }
-            // Rotate Yaw 45 degrees
-            else if input.is_pressed(Key::PageDown) {
-                camera_manager.set_camera_angle_yaw_rotate(false);
-                self.rotate_key_down = true;
-            }
-        } else {
-            if !input.is_pressed(Key::PageUp) && !input.is_pressed(Key::PageDown) {
-                self.rotate_key_down = false;
-            }
-        }
-
-        // mouse clicks
-
-        let left_button_pressed = input.is_pressed(MouseButton::Left);
-        let right_button_pressed = input.is_pressed(MouseButton::Right);
-        let mouse_button_pressed = left_button_pressed || right_button_pressed;
-
-        if mouse_button_pressed {
-            if left_button_pressed {
-                self.click_type = ClickType::Left;
-            }
-            if right_button_pressed {
-                self.click_type = ClickType::Right;
-            }
-
-            if self.click_down {
-                // already clicking
-                let mouse = *input.mouse_position();
-                let delta = mouse - self.click_start;
-                self.click_start = mouse;
-
-                if delta.length() > 0.0 {
+        for input_action in &input_actions {
+            match input_action {
+                InputAction::MiddleMouseScroll(scroll_y) => {
+                    camera_manager.camera_zoom(*scroll_y);
+                }
+                InputAction::MouseMoved => {
+                    self.mouse_hover_recalc = true;
+                    self.select_line_recalc = true;
+                }
+                InputAction::SwitchTo3dMode => {
+                    // disable 2d camera, enable 3d camera
+                    camera_manager.set_3d_mode(camera_q);
+                    self.recalculate_vertices();
+                }
+                InputAction::SwitchTo2dMode => {
+                    // disable 3d camera, enable 2d camera
+                    camera_manager.set_2d_mode(camera_q);
+                    self.recalculate_vertices();
+                }
+                InputAction::SetCameraAngleFixed(camera_angle) => {
+                    match camera_angle {
+                        CameraAngle::Side => {
+                            camera_manager.set_camera_angle_side();
+                        }
+                        CameraAngle::Front => {
+                            camera_manager.set_camera_angle_front();
+                        }
+                        CameraAngle::Top => {
+                            camera_manager.set_camera_angle_top();
+                        }
+                        CameraAngle::Ingame(angle_index) => {
+                            camera_manager.set_camera_angle_ingame(*angle_index);
+                        }
+                    }
+                }
+                InputAction::DeleteKeyPress => {
+                    self.handle_delete_key_press(commands, client, action_stack);
+                }
+                InputAction::CameraAngleYawRotate(clockwise) => {
+                    camera_manager.set_camera_angle_yaw_rotate(*clockwise);
+                }
+                InputAction::MouseDragged(click_type, mouse_position, delta) => {
                     self.handle_mouse_drag(
                         commands,
                         client,
                         camera_manager,
-                        self.click_type,
-                        mouse,
-                        delta,
+                        *click_type,
+                        *mouse_position,
+                        *delta,
                         camera_q,
                         transform_q,
                         vertex_3d_q,
                     );
                 }
-            } else {
-                // haven't clicked yet
-                let mouse = *input.mouse_position();
-                self.click_down = true;
-                self.click_start = mouse;
-                self.handle_mouse_click(
-                    camera_manager,
-                    action_stack,
-                    self.click_type,
-                    &mouse,
-                    camera_q,
-                    transform_q,
-                );
-            }
-        } else {
-            if self.click_down {
-                // release click
-                self.click_down = false;
-
-                if let Some((vertex_2d_entity, old_pos, new_pos)) = self.last_vertex_dragged.take()
-                {
-                    action_stack.buffer_action(Action::MoveVertex(
-                        vertex_2d_entity,
-                        old_pos,
-                        new_pos,
-                    ));
+                InputAction::MouseClick(click_type, mouse_position) => {
+                    self.handle_mouse_click(
+                        camera_manager,
+                        action_stack,
+                        *click_type,
+                        mouse_position,
+                        camera_q,
+                        transform_q,
+                    );
+                }
+                InputAction::MouseRelease => {
+                    if let Some((vertex_2d_entity, old_pos, new_pos)) = self.last_vertex_dragged.take()
+                    {
+                        action_stack.buffer_action(Action::MoveVertex(
+                            vertex_2d_entity,
+                            old_pos,
+                            new_pos,
+                        ));
+                    }
                 }
             }
         }
+
+        self.update_mouse_hover(
+            camera_manager,
+            current_tab_id,
+            mouse_position,
+            transform_q,
+            visibility_q,
+            owned_by_q,
+            vertex_2d_q,
+            edge_2d_q,
+        );
+        self.update_select_line(
+            mouse_position,
+            camera_manager,
+            transform_q,
+            visibility_q,
+        );
     }
 
     pub fn sync_vertices(
@@ -514,15 +443,6 @@ impl CanvasManager {
         vertex_2d_q: &Query<(Entity, Option<&VertexRootChild>), (With<Vertex2d>, Without<Compass>)>,
         edge_2d_q: &Query<(Entity, &Edge2d), Without<Compass>>,
     ) {
-        if mouse_position.x as i16 != self.last_mouse_position.x as i16
-            || mouse_position.y as i16 != self.last_mouse_position.y as i16
-        {
-            // mouse moved!
-            self.mouse_hover_recalc = true;
-            self.select_line_recalc = true;
-            self.last_mouse_position = *mouse_position;
-        }
-
         if !self.mouse_hover_recalc {
             return;
         }

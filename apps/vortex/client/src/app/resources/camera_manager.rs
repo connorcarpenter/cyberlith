@@ -1,3 +1,4 @@
+
 use bevy_ecs::{entity::Entity, prelude::Resource, system::Query};
 use bevy_log::{info, warn};
 
@@ -5,6 +6,10 @@ use math::{EulerRot, Quat, Vec2, Vec3};
 use render_api::components::{
     Camera, OrthographicProjection, Projection, RenderLayer, Transform, Viewport,
 };
+
+pub enum CameraAngle {
+    Side, Front, Top, Ingame(u8),
+}
 
 #[derive(Resource)]
 pub struct CameraManager {
