@@ -3,7 +3,6 @@ pub enum FileExtension {
     Unknown,
     Skel,
     Mesh,
-    Skin,
     Mask,
 }
 
@@ -17,7 +16,6 @@ impl FileExtension {
         match ext {
             "skel" => FileExtension::Skel,
             "mesh" => FileExtension::Mesh,
-            "skin" => FileExtension::Skin,
             "mask" => FileExtension::Mask,
             _ => FileExtension::Unknown,
         }
@@ -25,7 +23,7 @@ impl FileExtension {
 
     pub fn can_io(&self) -> bool {
         match self {
-            FileExtension::Skel => true,
+            FileExtension::Skel | FileExtension::Mesh => true,
             _ => false,
         }
     }

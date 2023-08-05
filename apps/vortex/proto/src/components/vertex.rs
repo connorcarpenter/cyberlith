@@ -16,29 +16,8 @@ impl ProtocolPlugin for VertexComponentsPlugin {
             .add_component::<Vertex3d>()
             .add_component::<VertexChild>()
             .add_component::<VertexRootChild>()
-            .add_component::<OwnedByTab>();
-    }
-}
-
-// VertexChild
-#[derive(Component, Replicate)]
-pub struct VertexChild {
-    pub parent_id: EntityProperty,
-}
-
-impl VertexChild {
-    pub fn new() -> Self {
-        Self::new_complete()
-    }
-}
-
-// VertexRootChild
-#[derive(Component, Replicate)]
-pub struct VertexRootChild;
-
-impl VertexRootChild {
-    pub fn new() -> Self {
-        Self::new_complete()
+            .add_component::<OwnedByTab>()
+            .add_component::<IsMesh>();
     }
 }
 
@@ -95,6 +74,26 @@ impl Vertex3d {
         Self::new(vec3.x as i16, vec3.y as i16, vec3.z as i16)
     }
 }
+
+// VertexChild
+#[derive(Component, Replicate)]
+pub struct VertexChild {
+    pub parent_id: EntityProperty,
+}
+
+impl VertexChild {
+    pub fn new() -> Self {
+        Self::new_complete()
+    }
+}
+
+// VertexRootChild
+#[derive(Component, Replicate)]
+pub struct VertexRootChild;
+
+// IsMesh
+#[derive(Component, Replicate)]
+pub struct IsMesh;
 
 // TabOwnership
 #[derive(Component, Replicate)]

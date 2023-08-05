@@ -4,18 +4,16 @@ use bevy_ecs::{
     entity::Entity,
     prelude::{Commands, World},
     system::{Query, SystemState},
+    query::Without,
 };
 use bevy_log::info;
 
 use naia_bevy_server::{
-    BitReader, BitWriter, CommandsExt, ReplicationConfig, RoomKey, Serde, SerdeErr, Server,
+    BitReader, BitWriter, CommandsExt, ReplicationConfig, Serde, SerdeErr, Server,
     UnsignedVariableInteger,
 };
 
-use vortex_proto::{
-    components::{OwnedByTab, Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt},
-    types::TabId,
-};
+use vortex_proto::components::{IsMesh, Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt};
 
 use crate::{
     files::{FileReadOutput, FileReader, FileWriter},
@@ -46,7 +44,7 @@ impl SkelWriter {
         world: &mut World,
         content_entities: &Vec<Entity>,
     ) -> Vec<SkelAction> {
-        let mut system_state: SystemState<(Server, Query<(&Vertex3d, Option<&VertexChild>)>)> =
+        let mut system_state: SystemState<(Server, Query<(&Vertex3d, Option<&VertexChild>), Without<IsMesh>>)> =
             SystemState::new(world);
         let (server, vertex_query) = system_state.get_mut(world);
 
@@ -214,13 +212,8 @@ impl SkelReader {
     }
 
     pub fn post_process_entities(
-        commands: &mut Commands,
-        server: &mut Server,
         vertex_manager: &mut VertexManager,
-        room_key: &RoomKey,
         entities: Vec<(Entity, Option<Entity>)>,
-        tab_id: TabId,
-        pause_replication: bool,
     ) -> HashSet<Entity> {
         let mut new_content_entities = HashSet::new();
 
@@ -229,22 +222,6 @@ impl SkelReader {
             vertex_manager.on_create_vertex(&entity, parent_opt);
         }
         vertex_manager.finalize_vertex_creation();
-
-        for entity in new_content_entities.iter() {
-            // associate all new Entities with the new Room
-            server.room_mut(room_key).add_entity(entity);
-
-            // add tab ownership
-            commands.entity(*entity).insert(OwnedByTab::new(tab_id));
-
-            // pause replication if indicated
-            if pause_replication {
-                commands
-                    .entity(*entity)
-                    // call "pause_replication" on all Entities (they will be resumed when tab is selected)
-                    .pause_replication(server);
-            }
-        }
 
         new_content_entities
     }

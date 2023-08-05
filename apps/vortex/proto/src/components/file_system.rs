@@ -1,4 +1,5 @@
 use bevy_ecs::prelude::Component;
+
 use naia_bevy_shared::{EntityProperty, Property, Protocol, ProtocolPlugin, Replicate, Serde};
 
 use crate::resources::FileEntryKey;

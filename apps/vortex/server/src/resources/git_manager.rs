@@ -24,7 +24,7 @@ use vortex_proto::{
 use crate::{
     components::FileSystemOwner,
     config::GitConfig,
-    files::{FileReadOutput, FileWriter, SkelReader},
+    files::{MeshReader, post_process_networked_entities, FileReadOutput, FileWriter, SkelReader},
     resources::{
         user_manager::UserInfo, workspace::Workspace, FileEntryValue, UserManager, VertexManager,
     },
@@ -259,15 +259,22 @@ impl GitManager {
 
         let new_entities = match output {
             FileReadOutput::Skel(entities) => SkelReader::post_process_entities(
-                commands,
-                server,
                 vertex_manager,
-                room_key,
                 entities,
-                tab_id,
-                pause_replication,
+            ),
+            FileReadOutput::Mesh(vertex_entities, edge_entities, face_entities) => MeshReader::post_process_entities(
+                vertex_entities,
+                edge_entities,
+                face_entities,
             ),
         };
+
+        post_process_networked_entities(commands,
+                                        server,
+                                        room_key,
+                                        &new_entities,
+                                        tab_id,
+                                        pause_replication);
 
         new_entities
     }
