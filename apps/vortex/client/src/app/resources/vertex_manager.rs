@@ -422,6 +422,10 @@ impl VertexManager {
         self.recalculate_vertices();
     }
 
+    pub(crate) fn has_vertex_entity_3d(&self, entity_3d: &Entity) -> bool {
+        self.vertices_3d_to_2d.contains_key(entity_3d)
+    }
+
     pub(crate) fn vertex_entity_3d_to_2d(&self, entity_3d: &Entity) -> Option<&Entity> {
         self.vertices_3d_to_2d.get(entity_3d)
     }
@@ -1111,32 +1115,34 @@ impl VertexManager {
 
         let new_vertex_2d_entity = vertex_3d_postprocess(
             commands,
-            camera_manager,
-            self,
             meshes,
             materials,
-            parent_vertex_3d_entity_opt.is_none(),
+            camera_manager,
+            self,
             new_vertex_3d_entity,
+            parent_vertex_3d_entity_opt.is_none(),
             None,
             color,
         );
-        let new_edge_2d_entity = None;
-        let new_edge_3d_entity = None;
+        let mut new_edge_2d_entity = None;
+        let mut new_edge_3d_entity = None;
         if let Some(parent_vertex_3d_entity) = parent_vertex_3d_entity_opt {
             let parent_vertex_2d_entity = parent_vertex_2d_entity_opt.unwrap();
-            edge_3d_postprocess(
+            let (edge_2d_entity, edge_3d_entity) = edge_3d_postprocess(
                 commands,
-                camera_manager,
                 meshes,
                 materials,
+                camera_manager,
                 new_vertex_3d_entity,
                 new_vertex_2d_entity,
                 parent_vertex_3d_entity,
                 parent_vertex_2d_entity,
                 None,
-                Vertex2d::CHILD_COLOR,
-                true,
+                color,
+                false,
             );
+            new_edge_2d_entity = Some(edge_2d_entity);
+            new_edge_3d_entity = Some(edge_3d_entity);
         }
 
         return (

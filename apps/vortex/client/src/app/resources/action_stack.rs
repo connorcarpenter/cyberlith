@@ -961,20 +961,20 @@ impl ActionStack {
 
         let new_vertex_2d_entity = vertex_3d_postprocess(
             commands,
-            camera_manager,
-            vertex_manager,
             meshes,
             materials,
-            false,
+            camera_manager,
+            vertex_manager,
             new_vertex_3d_entity,
+            false,
             Some(tab_id),
             Vertex2d::CHILD_COLOR,
         );
         edge_3d_postprocess(
             commands,
-            camera_manager,
             meshes,
             materials,
+            camera_manager,
             new_vertex_3d_entity,
             new_vertex_2d_entity,
             parent_vertex_3d_entity,

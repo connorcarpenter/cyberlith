@@ -33,9 +33,9 @@ use crate::app::{
     resources::{camera_manager::CameraManager, global::Global, vertex_manager::VertexManager},
     systems::{
         file_post_process,
-        network::vertex_waitlist::{
-            vertex_process_insert, VertexWaitlistEntry, VertexWaitlistInsert,
-        },
+        network::{vertex_waitlist::{
+            vertex_process_insert, VertexWaitlistInsert,
+        }, VertexWaitlist},
     },
 };
 
@@ -236,20 +236,20 @@ pub fn insert_vertex_events(
     vertex_child_q: Query<&VertexChild>,
     owned_by_tab_q: Query<&OwnedByTab>,
     vertex_type_q: Query<&VertexType>,
-    mut waiting_vertices: Local<HashMap<Entity, VertexWaitlistEntry>>,
+    mut waiting_vertices: Local<VertexWaitlist>,
 ) {
     // on Vertex Insert Event
     for event in vertex_3d_events.iter() {
         let entity = event.entity;
         vertex_process_insert(
-            &mut waiting_vertices,
             &mut commands,
-            VertexWaitlistInsert::Position,
-            &entity,
-            &mut camera_manager,
-            &mut vertex_manager,
             &mut meshes,
             &mut materials,
+            &mut camera_manager,
+            &mut vertex_manager,
+            &mut waiting_vertices,
+            &entity,
+            VertexWaitlistInsert::Position,
         );
     }
 
@@ -263,14 +263,14 @@ pub fn insert_vertex_events(
         };
 
         vertex_process_insert(
-            &mut waiting_vertices,
             &mut commands,
-            VertexWaitlistInsert::Parent(Some(parent_entity)),
-            &entity,
-            &mut camera_manager,
-            &mut vertex_manager,
             &mut meshes,
             &mut materials,
+            &mut camera_manager,
+            &mut vertex_manager,
+            &mut waiting_vertices,
+            &entity,
+            VertexWaitlistInsert::Parent(Some(parent_entity)),
         );
     }
 
@@ -278,14 +278,14 @@ pub fn insert_vertex_events(
     for event in vertex_root_events.iter() {
         let entity = event.entity;
         vertex_process_insert(
-            &mut waiting_vertices,
             &mut commands,
-            VertexWaitlistInsert::Parent(None),
-            &entity,
-            &mut camera_manager,
-            &mut vertex_manager,
             &mut meshes,
             &mut materials,
+            &mut camera_manager,
+            &mut vertex_manager,
+            &mut waiting_vertices,
+            &entity,
+            VertexWaitlistInsert::Parent(None),
         );
     }
 
@@ -296,31 +296,31 @@ pub fn insert_vertex_events(
         let tab_id = *owned_by_tab.tab_id;
 
         vertex_process_insert(
-            &mut waiting_vertices,
             &mut commands,
-            VertexWaitlistInsert::OwnedByTab(tab_id),
-            &entity,
-            &mut camera_manager,
-            &mut vertex_manager,
             &mut meshes,
             &mut materials,
+            &mut camera_manager,
+            &mut vertex_manager,
+            &mut waiting_vertices,
+            &entity,
+            VertexWaitlistInsert::OwnedByTab(tab_id),
         );
     }
 
-    // on IsMesh Insert Event
+    // on VertexType Insert Event
     for event in vertex_type_events.iter() {
         let entity = event.entity;
         let vertex_type = *vertex_type_q.get(entity).unwrap().value;
 
         vertex_process_insert(
-            &mut waiting_vertices,
             &mut commands,
-            VertexWaitlistInsert::Type(vertex_type),
-            &entity,
-            &mut camera_manager,
-            &mut vertex_manager,
             &mut meshes,
             &mut materials,
+            &mut camera_manager,
+            &mut vertex_manager,
+            &mut waiting_vertices,
+            &entity,
+            VertexWaitlistInsert::Type(vertex_type),
         );
     }
 }

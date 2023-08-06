@@ -53,6 +53,17 @@ impl VertexWaitlistEntry {
         self.parent = Some(parent);
     }
 
+    fn get_parent(&self) -> Option<Entity> {
+        self.parent.unwrap()
+    }
+
+    fn has_parent(&self) -> bool {
+        if let Some(parent_opt) = &self.parent {
+            return parent_opt.is_some();
+        }
+        return false;
+    }
+
     fn set_position(&mut self) {
         self.has_pos = true;
     }
@@ -74,59 +85,122 @@ impl VertexWaitlistEntry {
     }
 }
 
+pub struct VertexWaitlist {
+    incomplete_entries: HashMap<Entity, VertexWaitlistEntry>,
+    waiting_on_parent: HashMap<Entity, Vec<(Entity, VertexWaitlistEntry)>>,
+}
+
+impl Default for VertexWaitlist {
+    fn default() -> Self {
+        Self {
+            incomplete_entries: HashMap::new(),
+            waiting_on_parent: HashMap::new(),
+        }
+    }
+}
+
+impl VertexWaitlist {
+
+    fn contains_key(&self, entity: &Entity) -> bool {
+        self.incomplete_entries.contains_key(entity)
+    }
+
+    fn insert_incomplete(&mut self, entity: Entity, entry: VertexWaitlistEntry) {
+        self.incomplete_entries.insert(entity, entry);
+    }
+
+    fn get_mut(&mut self, entity: &Entity) -> Option<&mut VertexWaitlistEntry> {
+        self.incomplete_entries.get_mut(entity)
+    }
+
+    fn remove(&mut self, entity: &Entity) -> Option<VertexWaitlistEntry> {
+        self.incomplete_entries.remove(entity)
+    }
+
+    fn insert_parent_waiting(&mut self, parent_entity: Entity, child_entity: Entity, child_entry: VertexWaitlistEntry) {
+        if !self.waiting_on_parent.contains_key(&parent_entity) {
+            self.waiting_on_parent.insert(parent_entity, Vec::new());
+        }
+        let entries = self.waiting_on_parent.get_mut(&parent_entity).unwrap();
+        entries.push((child_entity, child_entry));
+    }
+
+    fn on_vertex_complete(&mut self, entity: Entity) -> Option<Vec<(Entity, VertexWaitlistEntry)>> {
+        self.waiting_on_parent.remove(&entity)
+    }
+}
+
 pub fn vertex_process_insert(
-    vertex_waiting_entities: &mut HashMap<Entity, VertexWaitlistEntry>,
     commands: &mut Commands,
-    insert: VertexWaitlistInsert,
-    entity: &Entity,
-    camera_manager: &mut CameraManager,
-    vertex_manager: &mut VertexManager,
     meshes: &mut Assets<CpuMesh>,
     materials: &mut Assets<CpuMaterial>,
+    camera_manager: &mut CameraManager,
+    vertex_manager: &mut VertexManager,
+    vertex_waitlist: &mut VertexWaitlist,
+    entity: &Entity,
+    insert: VertexWaitlistInsert,
 ) {
-    if !vertex_waiting_entities.contains_key(&entity) {
-        vertex_waiting_entities.insert(*entity, VertexWaitlistEntry::new());
+    if !vertex_waitlist.contains_key(&entity) {
+        vertex_waitlist.insert_incomplete(*entity, VertexWaitlistEntry::new());
     }
-    let waitlist = vertex_waiting_entities.get_mut(&entity).unwrap();
+    let entry = vertex_waitlist.get_mut(&entity).unwrap();
 
     match insert {
         VertexWaitlistInsert::Position => {
-            waitlist.set_position();
+            entry.set_position();
         }
         VertexWaitlistInsert::Parent(parent) => {
-            waitlist.set_parent(parent);
+            entry.set_parent(parent);
         }
         VertexWaitlistInsert::OwnedByTab(tab_id) => {
-            waitlist.set_tab_id(tab_id);
+            entry.set_tab_id(tab_id);
         }
         VertexWaitlistInsert::Type(value) => {
-            waitlist.set_type(value);
+            entry.set_type(value);
         }
     }
 
-    if waitlist.is_ready() {
-        let entry = vertex_waiting_entities.remove(entity).unwrap();
+    if entry.is_ready() {
+        let entry = vertex_waitlist.remove(entity).unwrap();
+
+        if entry.has_parent() {
+            let parent_entity = entry.get_parent().unwrap();
+            if !vertex_manager.has_vertex_entity_3d(&parent_entity) {
+                // need to put in parent waitlist
+                // info!(
+                //     "entity {:?} requires parent {:?}. putting in parent waitlist",
+                //     entity,
+                //     parent_entity
+                // );
+                vertex_waitlist.insert_parent_waiting(parent_entity, *entity, entry);
+                return;
+            }
+        }
         vertex_process_insert_complete(
             commands,
-            entry,
-            *entity,
-            camera_manager,
-            vertex_manager,
             meshes,
             materials,
+            camera_manager,
+            vertex_manager,
+            vertex_waitlist,
+            *entity,
+            entry,
         );
     }
 }
 
 fn vertex_process_insert_complete(
     commands: &mut Commands,
-    entry: VertexWaitlistEntry,
-    vertex_3d_entity: Entity,
-    camera_manager: &mut CameraManager,
-    vertex_manager: &mut VertexManager,
     meshes: &mut Assets<CpuMesh>,
     materials: &mut Assets<CpuMaterial>,
+    camera_manager: &mut CameraManager,
+    vertex_manager: &mut VertexManager,
+    vertex_waitlist: &mut VertexWaitlist,
+    entity: Entity,
+    entry: VertexWaitlistEntry,
 ) {
+    // info!("processing complete vertex {:?}", entity);
+
     let (parent_3d_entity_opt, tab_id, type_value) = entry.decompose();
 
     let color = match parent_3d_entity_opt {
@@ -136,25 +210,28 @@ fn vertex_process_insert_complete(
 
     let new_vertex_2d_entity = vertex_3d_postprocess(
         commands,
-        camera_manager,
-        vertex_manager,
         meshes,
         materials,
+        camera_manager,
+        vertex_manager,
+        entity,
         parent_3d_entity_opt.is_none(),
-        vertex_3d_entity,
         Some(tab_id),
         color,
     );
+
+    // if vertex has parent, create an edge
     if let Some(parent_3d_entity) = parent_3d_entity_opt {
-        let parent_2d_entity = vertex_manager
-            .vertex_entity_3d_to_2d(&parent_3d_entity)
-            .unwrap();
+        let Some(parent_2d_entity) = vertex_manager
+            .vertex_entity_3d_to_2d(&parent_3d_entity) else {
+            panic!("Parent 3d entity {:?} has no 2d entity", parent_3d_entity);
+        };
         edge_3d_postprocess(
             commands,
-            camera_manager,
             meshes,
             materials,
-            vertex_3d_entity,
+            camera_manager,
+            entity,
             new_vertex_2d_entity,
             parent_3d_entity,
             *parent_2d_entity,
@@ -163,16 +240,33 @@ fn vertex_process_insert_complete(
             type_value == VertexTypeValue::Skel,
         );
     }
+
+    // if the waitlist has any children entities of this one, process them
+    if let Some(child_entries) = vertex_waitlist.on_vertex_complete(entity) {
+        for (child_entity, child_entry) in child_entries {
+            // info!("entity {:?} was waiting on parent {:?}. processing!", child_entity, entity);
+            vertex_process_insert_complete(
+                commands,
+                meshes,
+                materials,
+                camera_manager,
+                vertex_manager,
+                vertex_waitlist,
+                child_entity,
+                child_entry,
+            );
+        }
+    }
 }
 
 pub fn vertex_3d_postprocess(
     commands: &mut Commands,
-    camera_manager: &mut CameraManager,
-    vertex_manager: &mut VertexManager,
     meshes: &mut Assets<CpuMesh>,
     materials: &mut Assets<CpuMaterial>,
-    is_root: bool,
+    camera_manager: &mut CameraManager,
+    vertex_manager: &mut VertexManager,
     vertex_3d_entity: Entity,
+    is_root: bool,
     tab_id_opt: Option<TabId>,
     color: Color,
 ) -> Entity {
@@ -213,8 +307,8 @@ pub fn vertex_3d_postprocess(
     }
 
     // info!(
-    //     "created Vertex3d: `{:?}`, created 2d entity: {:?}, parent: {:?}",
-    //     vertex_3d_entity, vertex_2d_entity, parent_entity_opt
+    //     "created Vertex3d: `{:?}`, created 2d entity: {:?}",
+    //     vertex_3d_entity, vertex_2d_entity,
     // );
 
     vertex_manager.register_3d_vertex(vertex_3d_entity, vertex_2d_entity);
@@ -225,9 +319,9 @@ pub fn vertex_3d_postprocess(
 
 pub fn edge_3d_postprocess(
     commands: &mut Commands,
-    camera_manager: &mut CameraManager,
     meshes: &mut Assets<CpuMesh>,
     materials: &mut Assets<CpuMaterial>,
+    camera_manager: &mut CameraManager,
     vertex_a_3d_entity: Entity,
     vertex_a_2d_entity: Entity,
     vertex_b_3d_entity: Entity,
