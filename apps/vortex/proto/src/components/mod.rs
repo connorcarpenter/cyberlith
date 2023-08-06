@@ -10,11 +10,7 @@ pub use file_system::{
 
 mod vertex;
 use vertex::VertexComponentsPlugin;
-pub use vertex::{OwnedByTab, Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt};
-
-mod mesh;
-use mesh::MeshComponentsPlugin;
-pub use mesh::{IsMesh, MeshEdge, MeshFace};
+pub use vertex::{OwnedByTab, Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt, VertexType, VertexTypeValue, MeshEdge, MeshFace};
 
 // Plugin
 pub struct ComponentsPlugin;
@@ -23,7 +19,6 @@ impl ProtocolPlugin for ComponentsPlugin {
     fn build(&self, protocol: &mut Protocol) {
         protocol
             .add_plugin(FileSystemComponentsPlugin)
-            .add_plugin(VertexComponentsPlugin)
-            .add_plugin(MeshComponentsPlugin);
+            .add_plugin(VertexComponentsPlugin);
     }
 }

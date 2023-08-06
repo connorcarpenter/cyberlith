@@ -63,8 +63,8 @@ pub struct TabManager {
     recycled_tab_ids: VecDeque<TabId>,
 }
 
-impl TabManager {
-    pub fn new() -> Self {
+impl Default for TabManager {
+    fn default() -> Self {
         Self {
             current_tab: None,
             tab_map: HashMap::new(),
@@ -73,6 +73,9 @@ impl TabManager {
             recycled_tab_ids: VecDeque::new(),
         }
     }
+}
+
+impl TabManager {
 
     pub fn open_tab(
         &mut self,

@@ -22,8 +22,8 @@ pub struct UiState {
     pub canvas_coords: Option<Pos2>,
 }
 
-impl UiState {
-    pub fn new() -> Self {
+impl Default for UiState {
+    fn default() -> Self {
         Self {
             logged_in: false,
             logging_in_state: LoggingInState::NotLoggingIn,

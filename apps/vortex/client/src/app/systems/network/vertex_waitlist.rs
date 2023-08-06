@@ -9,12 +9,12 @@ use render_api::{
     Assets,
 };
 use vortex_proto::{
-    components::{OwnedByTab, VertexRootChild},
+    components::{OwnedByTab, VertexRootChild, VertexTypeValue},
     types::TabId,
 };
 
 use crate::app::{
-    components::{Edge2d, Edge3d, Vertex2d},
+    components::{Edge2dLocal, Edge3dLocal, Vertex2d},
     resources::{camera_manager::CameraManager, vertex_manager::VertexManager},
     shapes::{
         create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,
@@ -25,12 +25,14 @@ pub enum VertexWaitlistInsert {
     Position,
     Parent(Option<Entity>),
     OwnedByTab(TabId),
+    Type(VertexTypeValue),
 }
 
 pub struct VertexWaitlistEntry {
     has_pos: bool,
     parent: Option<Option<Entity>>,
     tab_id: Option<TabId>,
+    vertex_type: Option<VertexTypeValue>,
 }
 
 impl VertexWaitlistEntry {
@@ -39,11 +41,12 @@ impl VertexWaitlistEntry {
             has_pos: false,
             parent: None,
             tab_id: None,
+            vertex_type: None,
         }
     }
 
     fn is_ready(&self) -> bool {
-        self.has_pos && self.parent.is_some() && self.tab_id.is_some()
+        self.has_pos && self.parent.is_some() && self.tab_id.is_some() && self.vertex_type.is_some()
     }
 
     fn set_parent(&mut self, parent: Option<Entity>) {
@@ -58,8 +61,12 @@ impl VertexWaitlistEntry {
         self.tab_id = Some(tab_id);
     }
 
-    pub(crate) fn decompose(self) -> (Option<Entity>, TabId) {
-        return (self.parent.unwrap(), self.tab_id.unwrap());
+    fn set_type(&mut self, value: VertexTypeValue) {
+        self.vertex_type = Some(value);
+    }
+
+    pub(crate) fn decompose(self) -> (Option<Entity>, TabId, VertexTypeValue) {
+        return (self.parent.unwrap(), self.tab_id.unwrap(), self.vertex_type.unwrap());
     }
 }
 
@@ -88,6 +95,9 @@ pub fn vertex_process_insert(
         VertexWaitlistInsert::OwnedByTab(tab_id) => {
             waitlist.set_tab_id(tab_id);
         }
+        VertexWaitlistInsert::Type(value) => {
+            waitlist.set_type(value);
+        }
     }
 
     if waitlist.is_ready() {
@@ -113,25 +123,40 @@ fn vertex_process_insert_complete(
     meshes: &mut Assets<CpuMesh>,
     materials: &mut Assets<CpuMaterial>,
 ) {
-    let (parent_3d_entity_opt, tab_id) = entry.decompose();
+    let (parent_3d_entity_opt, tab_id, type_value) = entry.decompose();
 
     let color = match parent_3d_entity_opt {
         Some(_) => Vertex2d::CHILD_COLOR,
         None => Vertex2d::ROOT_COLOR,
     };
 
-    vertex_3d_postprocess(
+    let new_vertex_2d_entity = vertex_3d_postprocess(
         commands,
         camera_manager,
         vertex_manager,
         meshes,
         materials,
-        parent_3d_entity_opt,
+        parent_3d_entity_opt.is_none(),
         vertex_3d_entity,
         Some(tab_id),
         color,
-        true,
     );
+    if let Some(parent_3d_entity) = parent_3d_entity_opt {
+        let parent_2d_entity = vertex_manager.vertex_entity_3d_to_2d(&parent_3d_entity).unwrap();
+        edge_3d_postprocess(
+            commands,
+            camera_manager,
+            meshes,
+            materials,
+            vertex_3d_entity,
+            new_vertex_2d_entity,
+            parent_3d_entity,
+            *parent_2d_entity,
+            Some(tab_id),
+            Vertex2d::CHILD_COLOR,
+            type_value == VertexTypeValue::Skel,
+        );
+    }
 }
 
 pub fn vertex_3d_postprocess(
@@ -140,14 +165,11 @@ pub fn vertex_3d_postprocess(
     vertex_manager: &mut VertexManager,
     meshes: &mut Assets<CpuMesh>,
     materials: &mut Assets<CpuMaterial>,
-    parent_3d_entity_opt: Option<Entity>,
+    is_root: bool,
     vertex_3d_entity: Entity,
     tab_id_opt: Option<TabId>,
     color: Color,
-    arrows_not_lines: bool,
-) -> (Entity, Option<Entity>, Option<Entity>) {
-    let mut edge_2d_entity = None;
-    let mut edge_3d_entity = None;
+) -> Entity {
 
     commands
         .entity(vertex_3d_entity)
@@ -174,45 +196,14 @@ pub fn vertex_3d_postprocess(
         .insert(camera_manager.layer_2d)
         .insert(Vertex2d)
         .id();
+
     if let Some(tab_id) = tab_id_opt {
         commands
             .entity(vertex_2d_entity)
             .insert(OwnedByTab::new(tab_id));
     }
 
-    if let Some(parent_3d_entity) = parent_3d_entity_opt {
-        // create 2d edge entity
-        let shape_components = if arrows_not_lines {
-            create_2d_edge_arrow(meshes, materials, Vec2::ZERO, Vec2::X, color)
-        } else {
-            create_2d_edge_line(meshes, materials, Vec2::ZERO, Vec2::X, color)
-        };
-        let new_entity = commands
-            .spawn(shape_components)
-            .insert(camera_manager.layer_2d)
-            .insert(Edge2d::new(vertex_2d_entity, parent_3d_entity))
-            .id();
-        if let Some(tab_id) = tab_id_opt {
-            commands.entity(new_entity).insert(OwnedByTab::new(tab_id));
-        }
-        edge_2d_entity = Some(new_entity);
-
-        // create 3d edge entity
-        let shape_components = if arrows_not_lines {
-            create_3d_edge_diamond(meshes, materials, Vec3::ZERO, Vec3::X, color)
-        } else {
-            create_3d_edge_line(meshes, materials, Vec3::ZERO, Vec3::X, color)
-        };
-        let new_entity = commands
-            .spawn(shape_components)
-            .insert(camera_manager.layer_3d)
-            .insert(Edge3d::new(vertex_3d_entity, parent_3d_entity))
-            .id();
-        if let Some(tab_id) = tab_id_opt {
-            commands.entity(new_entity).insert(OwnedByTab::new(tab_id));
-        }
-        edge_3d_entity = Some(new_entity);
-    } else {
+    if is_root {
         commands.entity(vertex_2d_entity).insert(VertexRootChild);
     }
 
@@ -224,5 +215,56 @@ pub fn vertex_3d_postprocess(
     vertex_manager.register_3d_vertex(vertex_3d_entity, vertex_2d_entity);
     camera_manager.recalculate_3d_view();
 
-    (vertex_2d_entity, edge_2d_entity, edge_3d_entity)
+    vertex_2d_entity
+}
+
+pub fn edge_3d_postprocess(
+    commands: &mut Commands,
+    camera_manager: &mut CameraManager,
+    meshes: &mut Assets<CpuMesh>,
+    materials: &mut Assets<CpuMaterial>,
+    vertex_a_3d_entity: Entity,
+    vertex_a_2d_entity: Entity,
+    vertex_b_3d_entity: Entity,
+    vertex_b_2d_entity: Entity,
+    tab_id_opt: Option<TabId>,
+    color: Color,
+    arrows_not_lines: bool,
+) -> (Entity, Entity) {
+
+    // create 2d edge entity
+    let shape_components = if arrows_not_lines {
+        create_2d_edge_arrow(meshes, materials, Vec2::ZERO, Vec2::X, color)
+    } else {
+        create_2d_edge_line(meshes, materials, Vec2::ZERO, Vec2::X, color)
+    };
+    let new_entity = commands
+        .spawn(shape_components)
+        .insert(camera_manager.layer_2d)
+        .insert(Edge2dLocal::new(vertex_a_2d_entity, vertex_b_2d_entity))
+        .id();
+    if let Some(tab_id) = tab_id_opt {
+        commands.entity(new_entity).insert(OwnedByTab::new(tab_id));
+    }
+    let edge_2d_entity = new_entity;
+
+    // create 3d edge entity
+    let shape_components = if arrows_not_lines {
+        create_3d_edge_diamond(meshes, materials, Vec3::ZERO, Vec3::X, color)
+    } else {
+        create_3d_edge_line(meshes, materials, Vec3::ZERO, Vec3::X, color)
+    };
+    let new_entity = commands
+        .spawn(shape_components)
+        .insert(camera_manager.layer_3d)
+        .insert(Edge3dLocal::new(vertex_a_3d_entity, vertex_b_3d_entity))
+        .id();
+    if let Some(tab_id) = tab_id_opt {
+        commands.entity(new_entity).insert(OwnedByTab::new(tab_id));
+    }
+    let edge_3d_entity = new_entity;
+
+    camera_manager.recalculate_3d_view();
+
+    (edge_2d_entity, edge_3d_entity)
 }

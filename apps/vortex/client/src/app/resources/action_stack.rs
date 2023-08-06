@@ -24,7 +24,7 @@ use vortex_proto::{
 use crate::app::{
     components::{
         file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
-        Edge2d, Edge3d, Vertex2d, VertexEntry,
+        Edge2dLocal, Edge3dLocal, Vertex2d, VertexEntry,
     },
     resources::{
         camera_manager::CameraManager,
@@ -34,7 +34,7 @@ use crate::app::{
         tab_manager::TabManager,
         vertex_manager::{CanvasShape, VertexManager},
     },
-    systems::{file_post_process, network::vertex_3d_postprocess},
+    systems::{file_post_process, network::{vertex_3d_postprocess, edge_3d_postprocess}},
 };
 
 #[derive(Clone)]
@@ -202,8 +202,8 @@ pub struct ActionStack {
     buffered_check: bool,
 }
 
-impl ActionStack {
-    pub fn new() -> Self {
+impl Default for ActionStack {
+    fn default() -> Self {
         Self {
             buffered_actions: Vec::new(),
             undo_actions: Vec::new(),
@@ -213,6 +213,9 @@ impl ActionStack {
             buffered_check: false,
         }
     }
+}
+
+impl ActionStack {
 
     pub fn buffer_action(&mut self, action: Action) {
         self.buffered_actions.push(action);
@@ -631,8 +634,8 @@ impl ActionStack {
                     Client,
                     ResMut<VertexManager>,
                     Query<(Entity, &Vertex3d, &VertexChild)>,
-                    Query<(Entity, &Edge2d)>,
-                    Query<(Entity, &Edge3d)>,
+                    Query<(Entity, &Edge2dLocal)>,
+                    Query<(Entity, &Edge3dLocal)>,
                 )> = SystemState::new(world);
                 let (mut commands, mut client, mut vertex_manager, vertex_q, edge_2d_q, edge_3d_q) =
                     system_state.get_mut(world);
@@ -940,12 +943,12 @@ impl ActionStack {
         tab_id: TabId,
         new_3d_entities: &mut Vec<Entity>,
     ) -> (Entity, Entity) {
-        let parent_vertex_3d_entity = vertex_manager
+        let parent_vertex_3d_entity = *vertex_manager
             .vertex_entity_2d_to_3d(parent_vertex_2d_entity)
             .unwrap();
 
         let mut vertex_child = VertexChild::new();
-        vertex_child.parent_id.set(client, parent_vertex_3d_entity);
+        vertex_child.parent_id.set(client, &parent_vertex_3d_entity);
         let new_vertex_3d_entity = commands
             .spawn_empty()
             .enable_replication(client)
@@ -954,14 +957,26 @@ impl ActionStack {
             .insert(vertex_child)
             .id();
 
-        let (new_vertex_2d_entity, _, _) = vertex_3d_postprocess(
+        let new_vertex_2d_entity = vertex_3d_postprocess(
             commands,
             camera_manager,
             vertex_manager,
             meshes,
             materials,
-            Some(*parent_vertex_3d_entity),
+            false,
             new_vertex_3d_entity,
+            Some(tab_id),
+            Vertex2d::CHILD_COLOR,
+        );
+        edge_3d_postprocess(
+            commands,
+            camera_manager,
+            meshes,
+            materials,
+            new_vertex_3d_entity,
+            new_vertex_2d_entity,
+            parent_vertex_3d_entity,
+            *parent_vertex_2d_entity,
             Some(tab_id),
             Vertex2d::CHILD_COLOR,
             true,

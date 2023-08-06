@@ -8,8 +8,9 @@ use bevy_ecs::{
 };
 use bevy_log::{info, warn};
 
-use math::{convert_2d_to_3d, convert_3d_to_2d, Vec2, Vec3};
 use naia_bevy_client::{Client, CommandsExt, Replicate};
+
+use math::{convert_2d_to_3d, convert_3d_to_2d, Vec2, Vec3};
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
     components::{Camera, CameraProjection, Projection, Transform, Visibility},
@@ -22,14 +23,14 @@ use vortex_proto::{
 };
 
 use crate::app::{
-    components::{Compass, Edge2d, Edge3d, HoverCircle, SelectCircle, Vertex2d},
+    components::{Compass, Edge2dLocal, Edge3dLocal, HoverCircle, SelectCircle, Vertex2d},
     resources::{
         action_stack::{Action, ActionStack},
         camera_manager::{CameraAngle, CameraManager},
         input_manager::{ClickType, InputAction},
     },
     set_3d_line_transform,
-    systems::network::vertex_3d_postprocess,
+    systems::network::{vertex_3d_postprocess, edge_3d_postprocess},
 };
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
@@ -42,43 +43,49 @@ pub enum CanvasShape {
 
 #[derive(Resource)]
 pub struct VertexManager {
+    editing_skel: bool,
+
     // vertices
     vertices_3d_to_2d: HashMap<Entity, Entity>,
     vertices_2d_to_3d: HashMap<Entity, Entity>,
 
     vertices_recalc: bool,
+    select_line_recalc: bool,
+    mouse_hover_recalc: bool,
+
     pub hover_circle_entity: Option<Entity>,
     hovered_entity: Option<(Entity, CanvasShape)>,
-    last_vertex_dragged: Option<(Entity, Vec3, Vec3)>,
 
     pub select_circle_entity: Option<Entity>,
     pub select_line_entity: Option<Entity>,
     selected_vertex: Option<(Entity, CanvasShape)>,
-    select_line_recalc: bool,
-    compass_vertices: Vec<Entity>,
 
-    mouse_hover_recalc: bool,
+    last_vertex_dragged: Option<(Entity, Vec3, Vec3)>,
+    compass_vertices: Vec<Entity>,
 }
 
 impl Default for VertexManager {
     fn default() -> Self {
         Self {
+            editing_skel: false,
+
             // vertices
             vertices_3d_to_2d: HashMap::new(),
             vertices_2d_to_3d: HashMap::new(),
 
             vertices_recalc: false,
+            select_line_recalc: false,
+            mouse_hover_recalc: false,
 
             hover_circle_entity: None,
             hovered_entity: None,
-            last_vertex_dragged: None,
+
             select_circle_entity: None,
             select_line_entity: None,
             selected_vertex: None,
-            select_line_recalc: false,
-            compass_vertices: Vec::new(),
 
-            mouse_hover_recalc: false,
+            last_vertex_dragged: None,
+            compass_vertices: Vec::new(),
         }
     }
 }
@@ -105,7 +112,7 @@ impl VertexManager {
         owned_by_q: &Query<&OwnedByTab>,
         vertex_3d_q: &mut Query<&mut Vertex3d>,
         vertex_2d_q: &Query<(Entity, Option<&VertexRootChild>), (With<Vertex2d>, Without<Compass>)>,
-        edge_2d_q: &Query<(Entity, &Edge2d), Without<Compass>>,
+        edge_2d_q: &Query<(Entity, &Edge2dLocal), Without<Compass>>,
     ) {
         for input_action in &input_actions {
             match input_action {
@@ -203,8 +210,8 @@ impl VertexManager {
         transform_q: &mut Query<(&mut Transform, Option<&Compass>)>,
         camera_q: &Query<(&Camera, &Projection)>,
         vertex_3d_q: &mut Query<(Entity, &mut Vertex3d)>,
-        edge_2d_q: &Query<(Entity, &Edge2d)>,
-        edge_3d_q: &Query<(Entity, &Edge3d)>,
+        edge_2d_q: &Query<(Entity, &Edge2dLocal)>,
+        edge_3d_q: &Query<(Entity, &Edge3dLocal)>,
         owned_by_q: &Query<&OwnedByTab>,
     ) {
         if !self.vertices_recalc {
@@ -295,20 +302,20 @@ impl VertexManager {
 
         // update 2d edges
         for (edge_entity, edge_endpoints) in edge_2d_q.iter() {
-            let Some(end_entity) = self.vertex_entity_3d_to_2d(&edge_endpoints.end_3d) else {
-                warn!("Edge entity {:?} has no endpoint entity", edge_entity);
+            let Some(end_3d_entity) = self.vertex_entity_2d_to_3d(&edge_endpoints.end) else {
+                warn!("Edge entity {:?} has no 3d endpoint entity", edge_entity);
                 continue;
             };
 
             // check if vertex is owned by the current tab
-            if !Self::is_owned_by_tab_or_unowned(current_tab_id, owned_by_q, *end_entity) {
+            if !Self::is_owned_by_tab_or_unowned(current_tab_id, owned_by_q, *end_3d_entity) {
                 continue;
             }
 
             let (start_transform, _) = transform_q.get(edge_endpoints.start).unwrap();
             let start_pos = start_transform.translation.truncate();
 
-            let (end_transform, _) = transform_q.get(*end_entity).unwrap();
+            let (end_transform, _) = transform_q.get(edge_endpoints.end).unwrap();
             let end_pos = end_transform.translation.truncate();
 
             let (mut edge_transform, _) = transform_q.get_mut(edge_entity).unwrap();
@@ -361,18 +368,75 @@ impl VertexManager {
 
     pub fn select_vertex(&mut self, entity: &Entity, shape: CanvasShape) {
         self.selected_vertex = Some((*entity, shape));
-
         self.select_line_recalc = true;
     }
 
     pub fn deselect_vertex(&mut self) {
         self.selected_vertex = None;
-
         self.select_line_recalc = true;
     }
 
     pub fn selected_vertex_2d(&self) -> Option<(Entity, CanvasShape)> {
         self.selected_vertex
+    }
+
+
+    pub fn register_3d_vertex(&mut self, entity_3d: Entity, entity_2d: Entity) {
+        self.vertices_3d_to_2d.insert(entity_3d, entity_2d);
+        self.vertices_2d_to_3d.insert(entity_2d, entity_3d);
+    }
+
+    pub fn cleanup_deleted_vertex(
+        &mut self,
+        entity_3d: &Entity,
+        commands: &mut Commands,
+        edge_2d_q: &Query<(Entity, &Edge2dLocal)>,
+        edge_3d_q: &Query<(Entity, &Edge3dLocal)>,
+    ) {
+        // despawn 3d edge
+        for (edge_3d_entity, edge_3d) in edge_3d_q.iter() {
+            if edge_3d.start == *entity_3d {
+                info!("despawn 3d edge {:?}", edge_3d_entity);
+                commands.entity(edge_3d_entity).despawn();
+            }
+        }
+
+        if let Some(vertex_2d_entity) = self.unregister_3d_vertex(entity_3d) {
+            // despawn 2d vertex
+            info!("despawn 2d vertex {:?}", vertex_2d_entity);
+            commands.entity(vertex_2d_entity).despawn();
+
+            // despawn 2d edge
+            for (edge_2d_entity, edge_2d) in edge_2d_q.iter() {
+                if edge_2d.start == vertex_2d_entity {
+                    info!("despawn 2d edge {:?}", edge_2d_entity);
+                    commands.entity(edge_2d_entity).despawn();
+                }
+            }
+        } else {
+            panic!(
+                "Vertex3d entity: `{:?}` has no corresponding Vertex2d entity",
+                entity_3d
+            );
+        }
+
+        self.recalculate_vertices();
+    }
+
+    pub(crate) fn vertex_entity_3d_to_2d(&self, entity_3d: &Entity) -> Option<&Entity> {
+        self.vertices_3d_to_2d.get(entity_3d)
+    }
+
+    pub(crate) fn vertex_entity_2d_to_3d(&self, entity_2d: &Entity) -> Option<&Entity> {
+        self.vertices_2d_to_3d.get(entity_2d)
+    }
+
+    pub fn switch_to_skel_mode(&mut self) {
+        self.editing_skel = true;
+    }
+
+    pub fn switch_to_mesh_mode(&mut self) {
+        self.editing_skel = false;
     }
 
     fn handle_delete_key_press(
@@ -432,7 +496,7 @@ impl VertexManager {
         visibility_q: &mut Query<&mut Visibility>,
         owned_by_q: &Query<&OwnedByTab>,
         vertex_2d_q: &Query<(Entity, Option<&VertexRootChild>), (With<Vertex2d>, Without<Compass>)>,
-        edge_2d_q: &Query<(Entity, &Edge2d), Without<Compass>>,
+        edge_2d_q: &Query<(Entity, &Edge2dLocal), Without<Compass>>,
     ) {
         if !self.mouse_hover_recalc {
             return;
@@ -494,7 +558,7 @@ impl VertexManager {
             }
 
             is_hovering =
-                least_distance <= (Edge2d::HOVER_THICKNESS * camera_manager.camera_3d_scale());
+                least_distance <= (Edge2dLocal::HOVER_THICKNESS * camera_manager.camera_3d_scale());
         }
 
         let hover_circle_entity = self.hover_circle_entity.unwrap();
@@ -524,7 +588,7 @@ impl VertexManager {
                         panic!("Edge entity has no Transform");
                     };
                     edge_transform.scale.y =
-                        Edge2d::HOVER_THICKNESS * camera_manager.camera_3d_scale();
+                        Edge2dLocal::HOVER_THICKNESS * camera_manager.camera_3d_scale();
 
                     hover_circle_visibility.visible = false;
                 }
@@ -808,62 +872,12 @@ impl VertexManager {
         }
     }
 
-    pub fn register_3d_vertex(&mut self, entity_3d: Entity, entity_2d: Entity) {
-        self.vertices_3d_to_2d.insert(entity_3d, entity_2d);
-        self.vertices_2d_to_3d.insert(entity_2d, entity_3d);
-    }
-
     fn unregister_3d_vertex(&mut self, entity_3d: &Entity) -> Option<Entity> {
         if let Some(entity_2d) = self.vertices_3d_to_2d.remove(entity_3d) {
             self.vertices_2d_to_3d.remove(&entity_2d);
             return Some(entity_2d);
         }
         return None;
-    }
-
-    pub fn cleanup_deleted_vertex(
-        &mut self,
-        entity_3d: &Entity,
-        commands: &mut Commands,
-        edge_2d_q: &Query<(Entity, &Edge2d)>,
-        edge_3d_q: &Query<(Entity, &Edge3d)>,
-    ) {
-        // despawn 3d edge
-        for (edge_3d_entity, edge_3d) in edge_3d_q.iter() {
-            if edge_3d.start == *entity_3d {
-                info!("despawn 3d edge {:?}", edge_3d_entity);
-                commands.entity(edge_3d_entity).despawn();
-            }
-        }
-
-        if let Some(vertex_2d_entity) = self.unregister_3d_vertex(entity_3d) {
-            // despawn 2d vertex
-            info!("despawn 2d vertex {:?}", vertex_2d_entity);
-            commands.entity(vertex_2d_entity).despawn();
-
-            // despawn 2d edge
-            for (edge_2d_entity, edge_2d) in edge_2d_q.iter() {
-                if edge_2d.start == vertex_2d_entity {
-                    info!("despawn 2d edge {:?}", edge_2d_entity);
-                    commands.entity(edge_2d_entity).despawn();
-                }
-            }
-        } else {
-            panic!(
-                "Vertex3d entity: `{:?}` has no corresponding Vertex2d entity",
-                entity_3d
-            );
-        }
-
-        self.recalculate_vertices();
-    }
-
-    pub(crate) fn vertex_entity_3d_to_2d(&self, entity_3d: &Entity) -> Option<&Entity> {
-        self.vertices_3d_to_2d.get(entity_3d)
-    }
-
-    pub(crate) fn vertex_entity_2d_to_3d(&self, entity_2d: &Entity) -> Option<&Entity> {
-        self.vertices_2d_to_3d.get(entity_2d)
     }
 
     pub(crate) fn setup_compass(
@@ -1096,18 +1110,35 @@ impl VertexManager {
         vertex_3d_component.set_vec3(&position);
         let new_vertex_3d_entity = commands.spawn_empty().insert(vertex_3d_component).id();
 
-        let (new_vertex_2d_entity, new_edge_2d_entity, new_edge_3d_entity) = vertex_3d_postprocess(
+        let new_vertex_2d_entity = vertex_3d_postprocess(
             commands,
             camera_manager,
             self,
             meshes,
             materials,
-            parent_vertex_3d_entity_opt,
+            parent_vertex_3d_entity_opt.is_none(),
             new_vertex_3d_entity,
             None,
             color,
-            false,
         );
+        let new_edge_2d_entity = None;
+        let new_edge_3d_entity = None;
+        if let Some(parent_vertex_3d_entity) = parent_vertex_3d_entity_opt {
+            let parent_vertex_2d_entity = parent_vertex_2d_entity_opt.unwrap();
+            edge_3d_postprocess(
+                commands,
+                camera_manager,
+                meshes,
+                materials,
+                new_vertex_3d_entity,
+                new_vertex_2d_entity,
+                parent_vertex_3d_entity,
+                parent_vertex_2d_entity,
+                None,
+                Vertex2d::CHILD_COLOR,
+                true,
+            );
+        }
 
         return (
             new_vertex_2d_entity,

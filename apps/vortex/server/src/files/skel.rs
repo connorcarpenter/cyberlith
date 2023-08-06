@@ -4,7 +4,6 @@ use bevy_ecs::{
     entity::Entity,
     prelude::{Commands, World},
     system::{Query, SystemState},
-    query::Without,
 };
 use bevy_log::info;
 
@@ -13,7 +12,7 @@ use naia_bevy_server::{
     UnsignedVariableInteger,
 };
 
-use vortex_proto::components::{IsMesh, Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt};
+use vortex_proto::components::{VertexTypeValue, VertexType, Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt};
 
 use crate::{
     files::{FileReadOutput, FileReader, FileWriter},
@@ -44,7 +43,7 @@ impl SkelWriter {
         world: &mut World,
         content_entities: &Vec<Entity>,
     ) -> Vec<SkelAction> {
-        let mut system_state: SystemState<(Server, Query<(&Vertex3d, Option<&VertexChild>), Without<IsMesh>>)> =
+        let mut system_state: SystemState<(Server, Query<(&Vertex3d, &VertexType, Option<&VertexChild>)>)> =
             SystemState::new(world);
         let (server, vertex_query) = system_state.get_mut(world);
 
@@ -54,7 +53,10 @@ impl SkelWriter {
         let mut map: HashMap<Entity, (usize, i16, i16, i16, Option<Entity>)> = HashMap::new();
 
         for (id, entity) in content_entities.iter().enumerate() {
-            let (vertex, has_parent_opt) = vertex_query.get(*entity).unwrap();
+            let (vertex, vertex_type, has_parent_opt) = vertex_query.get(*entity).unwrap();
+            if *vertex_type.value != VertexTypeValue::Skel {
+                panic!("Vertex type is not Skel");
+            }
 
             let parent_id: Option<Entity> = {
                 match has_parent_opt {

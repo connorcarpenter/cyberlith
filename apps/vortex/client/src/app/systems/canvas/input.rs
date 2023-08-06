@@ -10,7 +10,7 @@ use render_api::components::{Camera, Projection, Transform, Visibility};
 use vortex_proto::components::{OwnedByTab, Vertex3d, VertexRootChild};
 
 use crate::app::{
-    components::{Compass, Edge2d, Vertex2d},
+    components::{Compass, Edge2dLocal, Vertex2d},
     resources::{
         action_stack::ActionStack, camera_manager::CameraManager, canvas::Canvas,
         input_manager::InputManager, tab_manager::TabManager, vertex_manager::VertexManager,
@@ -33,7 +33,7 @@ pub fn input(
     owned_by_tab_q: Query<&OwnedByTab>,
     mut vertex_3d_q: Query<&mut Vertex3d>,
     vertex_2d_q: Query<(Entity, Option<&VertexRootChild>), (With<Vertex2d>, Without<Compass>)>,
-    edge_2d_q: Query<(Entity, &Edge2d), Without<Compass>>,
+    edge_2d_q: Query<(Entity, &Edge2dLocal), Without<Compass>>,
 ) {
     if !canvas.is_visible() {
         return;

@@ -4,14 +4,14 @@ use bevy_ecs::schedule::IntoSystemConfigs;
 use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin, ReceiveEvents};
 use render_api::resources::WindowSettings;
 use vortex_proto::{
-    components::{EntryKind, FileSystemEntry},
+    components::{EntryKind, FileSystemRootChild, FileSystemEntry, ChangelistEntry, FileSystemChild, VertexType, OwnedByTab, Vertex3d, VertexChild, VertexRootChild},
     protocol,
 };
 
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
     config::ConfigPlugin,
-    events::LoginEvent,
+    events::{LoginEvent, InsertComponentEvent},
     resources::{
         action_stack::ActionStack, camera_manager::CameraManager, canvas::Canvas, global::Global,
         input_manager::InputManager, tab_manager::TabManager, vertex_manager::VertexManager,
@@ -65,11 +65,24 @@ impl Plugin for VortexPlugin {
                 )
                     .in_set(ReceiveEvents),
             )
+            // Insert Component Events
+            .add_event::<InsertComponentEvent<FileSystemEntry>>()
+            .add_event::<InsertComponentEvent<FileSystemRootChild>>()
+            .add_event::<InsertComponentEvent<FileSystemChild>>()
+            .add_event::<InsertComponentEvent<ChangelistEntry>>()
+            .add_event::<InsertComponentEvent<Vertex3d>>()
+            .add_event::<InsertComponentEvent<VertexChild>>()
+            .add_event::<InsertComponentEvent<VertexRootChild>>()
+            .add_event::<InsertComponentEvent<OwnedByTab>>()
+            .add_event::<InsertComponentEvent<VertexType>>()
+            .add_system(network::insert_fs_component_events)
+            .add_system(network::insert_changelist_entry_events)
+            .add_system(network::insert_vertex_events)
             // UI Configuration
-            .insert_resource(UiState::new())
+            .init_resource::<UiState>()
             .insert_resource(global_resource)
-            .insert_resource(TabManager::new())
-            .insert_resource(ActionStack::new())
+            .init_resource::<TabManager>()
+            .init_resource::<ActionStack>()
             .add_system(ui::update)
             // Canvas Config
             .init_resource::<VertexManager>()

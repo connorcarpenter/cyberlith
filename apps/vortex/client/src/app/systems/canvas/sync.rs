@@ -7,7 +7,7 @@ use render_api::components::{Camera, Projection, Transform};
 use vortex_proto::components::{OwnedByTab, Vertex3d};
 
 use crate::app::{
-    components::{Compass, Edge2d, Edge3d},
+    components::{Compass, Edge2dLocal, Edge3dLocal},
     resources::{
         camera_manager::CameraManager, canvas::Canvas, tab_manager::TabManager,
         vertex_manager::VertexManager,
@@ -22,8 +22,8 @@ pub fn sync(
     mut transform_q: Query<(&mut Transform, Option<&Compass>)>,
     camera_q: Query<(&Camera, &Projection)>,
     mut vertex_3d_q: Query<(Entity, &mut Vertex3d)>,
-    edge_2d_q: Query<(Entity, &Edge2d)>,
-    edge_3d_q: Query<(Entity, &Edge3d)>,
+    edge_2d_q: Query<(Entity, &Edge2dLocal)>,
+    edge_3d_q: Query<(Entity, &Edge3dLocal)>,
     owned_by_tab_q: Query<&OwnedByTab>,
 ) {
     if !canvas.is_visible() {

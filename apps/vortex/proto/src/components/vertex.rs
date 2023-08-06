@@ -1,8 +1,6 @@
 use bevy_ecs::component::Component;
 
-use naia_bevy_shared::{
-    EntityProperty, Property, Protocol, ProtocolPlugin, Replicate, SignedVariableInteger,
-};
+use naia_bevy_shared::{EntityProperty, Property, Protocol, ProtocolPlugin, Replicate, Serde, SignedVariableInteger};
 
 use math::Vec3;
 
@@ -17,7 +15,9 @@ impl ProtocolPlugin for VertexComponentsPlugin {
             .add_component::<VertexChild>()
             .add_component::<VertexRootChild>()
             .add_component::<OwnedByTab>()
-            .add_component::<IsMesh>();
+            .add_component::<VertexType>()
+            .add_component::<MeshEdge>()
+            .add_component::<MeshFace>();
     }
 }
 
@@ -91,10 +91,6 @@ impl VertexChild {
 #[derive(Component, Replicate)]
 pub struct VertexRootChild;
 
-// IsMesh
-#[derive(Component, Replicate)]
-pub struct IsMesh;
-
 // TabOwnership
 #[derive(Component, Replicate)]
 pub struct OwnedByTab {
@@ -104,5 +100,50 @@ pub struct OwnedByTab {
 impl OwnedByTab {
     pub fn new(tab_id: TabId) -> Self {
         Self::new_complete(tab_id)
+    }
+}
+
+#[derive(Serde, PartialEq, Clone, Copy)]
+pub enum VertexTypeValue {
+    Mesh,
+    Skel,
+}
+
+// VertexType
+#[derive(Component, Replicate)]
+pub struct VertexType {
+    pub value: Property<VertexTypeValue>,
+}
+
+impl VertexType {
+    pub fn new(value: VertexTypeValue) -> Self {
+        Self::new_complete(value)
+    }
+}
+
+// MeshEdge
+#[derive(Component, Replicate)]
+pub struct MeshEdge {
+    pub vertex_a: EntityProperty,
+    pub vertex_b: EntityProperty,
+}
+
+impl MeshEdge {
+    pub fn new() -> Self {
+        Self::new_complete()
+    }
+}
+
+// MeshFace
+#[derive(Component, Replicate)]
+pub struct MeshFace {
+    pub vertex_a: EntityProperty,
+    pub vertex_b: EntityProperty,
+    pub vertex_c: EntityProperty,
+}
+
+impl MeshFace {
+    pub fn new() -> Self {
+        Self::new_complete()
     }
 }
