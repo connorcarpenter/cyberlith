@@ -1,6 +1,8 @@
 use bevy_ecs::component::Component;
 
-use naia_bevy_shared::{EntityProperty, Property, Protocol, ProtocolPlugin, Replicate, Serde, SignedVariableInteger};
+use naia_bevy_shared::{
+    EntityProperty, Property, Protocol, ProtocolPlugin, Replicate, Serde, SignedVariableInteger,
+};
 
 use math::Vec3;
 

@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use bevy_ecs::{entity::Entity, system::Commands, world::World};
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server};
-use vortex_proto::{components::OwnedByTab, FileExtension, types::TabId};
+use vortex_proto::{components::OwnedByTab, types::TabId, FileExtension};
 
 use crate::files::{MeshWriter, SkelReader, SkelWriter};
 

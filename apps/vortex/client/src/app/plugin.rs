@@ -4,14 +4,17 @@ use bevy_ecs::schedule::IntoSystemConfigs;
 use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin, ReceiveEvents};
 use render_api::resources::WindowSettings;
 use vortex_proto::{
-    components::{EntryKind, FileSystemRootChild, FileSystemEntry, ChangelistEntry, FileSystemChild, VertexType, OwnedByTab, Vertex3d, VertexChild, VertexRootChild},
+    components::{
+        ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
+        OwnedByTab, Vertex3d, VertexChild, VertexRootChild, VertexType,
+    },
     protocol,
 };
 
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
     config::ConfigPlugin,
-    events::{LoginEvent, InsertComponentEvent},
+    events::{InsertComponentEvent, LoginEvent},
     resources::{
         action_stack::ActionStack, camera_manager::CameraManager, canvas::Canvas, global::Global,
         input_manager::InputManager, tab_manager::TabManager, vertex_manager::VertexManager,

@@ -30,7 +30,7 @@ use crate::app::{
         input_manager::{ClickType, InputAction},
     },
     set_3d_line_transform,
-    systems::network::{vertex_3d_postprocess, edge_3d_postprocess},
+    systems::network::{edge_3d_postprocess, vertex_3d_postprocess},
 };
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
@@ -379,7 +379,6 @@ impl VertexManager {
     pub fn selected_vertex_2d(&self) -> Option<(Entity, CanvasShape)> {
         self.selected_vertex
     }
-
 
     pub fn register_3d_vertex(&mut self, entity_3d: Entity, entity_2d: Entity) {
         self.vertices_3d_to_2d.insert(entity_3d, entity_2d);

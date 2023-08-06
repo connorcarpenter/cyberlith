@@ -9,6 +9,9 @@ pub struct InsertComponentEvent<T: Replicate> {
 
 impl<T: Replicate> InsertComponentEvent<T> {
     pub fn new(entity: Entity) -> Self {
-        Self { entity, phantom_t: std::marker::PhantomData }
+        Self {
+            entity,
+            phantom_t: std::marker::PhantomData,
+        }
     }
 }

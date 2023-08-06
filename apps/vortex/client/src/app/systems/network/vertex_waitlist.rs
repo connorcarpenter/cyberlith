@@ -66,7 +66,11 @@ impl VertexWaitlistEntry {
     }
 
     pub(crate) fn decompose(self) -> (Option<Entity>, TabId, VertexTypeValue) {
-        return (self.parent.unwrap(), self.tab_id.unwrap(), self.vertex_type.unwrap());
+        return (
+            self.parent.unwrap(),
+            self.tab_id.unwrap(),
+            self.vertex_type.unwrap(),
+        );
     }
 }
 
@@ -142,7 +146,9 @@ fn vertex_process_insert_complete(
         color,
     );
     if let Some(parent_3d_entity) = parent_3d_entity_opt {
-        let parent_2d_entity = vertex_manager.vertex_entity_3d_to_2d(&parent_3d_entity).unwrap();
+        let parent_2d_entity = vertex_manager
+            .vertex_entity_3d_to_2d(&parent_3d_entity)
+            .unwrap();
         edge_3d_postprocess(
             commands,
             camera_manager,
@@ -170,7 +176,6 @@ pub fn vertex_3d_postprocess(
     tab_id_opt: Option<TabId>,
     color: Color,
 ) -> Entity {
-
     commands
         .entity(vertex_3d_entity)
         .insert(RenderObjectBundle::sphere(
@@ -231,7 +236,6 @@ pub fn edge_3d_postprocess(
     color: Color,
     arrows_not_lines: bool,
 ) -> (Entity, Entity) {
-
     // create 2d edge entity
     let shape_components = if arrows_not_lines {
         create_2d_edge_arrow(meshes, materials, Vec2::ZERO, Vec2::X, color)

@@ -76,7 +76,6 @@ impl Default for TabManager {
 }
 
 impl TabManager {
-
     pub fn open_tab(
         &mut self,
         client: &mut Client,

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use bevy_ecs::{
     entity::Entity,
     event::{EventReader, EventWriter},
-    system::{Commands,Res, Local, Query, ResMut},
+    system::{Commands, Local, Query, Res, ResMut},
 };
 use bevy_log::{info, warn};
 
@@ -19,13 +19,17 @@ use render_api::{
     base::{CpuMaterial, CpuMesh},
     Assets,
 };
-use vortex_proto::components::{ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild, OwnedByTab, Vertex3d, VertexChild, VertexRootChild, VertexType};
+use vortex_proto::components::{
+    ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild, OwnedByTab,
+    Vertex3d, VertexChild, VertexRootChild, VertexType,
+};
 
 use crate::app::{
     components::{
         file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
         Edge2dLocal, Edge3dLocal,
     },
+    events::InsertComponentEvent,
     resources::{camera_manager::CameraManager, global::Global, vertex_manager::VertexManager},
     systems::{
         file_post_process,
@@ -33,7 +37,6 @@ use crate::app::{
             vertex_process_insert, VertexWaitlistEntry, VertexWaitlistInsert,
         },
     },
-    events::InsertComponentEvent,
 };
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
@@ -72,7 +75,8 @@ pub fn insert_component_events(
 
         // on FileSystemRootChild Insert Event
         for entity in events.read::<FileSystemRootChild>() {
-            insert_fs_root_event_writer.send(InsertComponentEvent::<FileSystemRootChild>::new(entity));
+            insert_fs_root_event_writer
+                .send(InsertComponentEvent::<FileSystemRootChild>::new(entity));
         }
 
         // on FileSystemChild Insert Event
@@ -97,7 +101,8 @@ pub fn insert_component_events(
 
         // on Vertex Root Child Event
         for entity in events.read::<VertexRootChild>() {
-            insert_vertex_root_event_writer.send(InsertComponentEvent::<VertexRootChild>::new(entity));
+            insert_vertex_root_event_writer
+                .send(InsertComponentEvent::<VertexRootChild>::new(entity));
         }
 
         // on OwnedByTab Insert Event
@@ -152,8 +157,8 @@ pub fn insert_fs_component_events(
     for event in child_events.iter() {
         let entity = event.entity;
         let entry = entry_q.get(entity).unwrap();
-            // Get parent
-            let Some(parent_entity) = child_q
+        // Get parent
+        let Some(parent_entity) = child_q
                 .get(entity)
                 .unwrap()
                 .parent_id
@@ -161,17 +166,17 @@ pub fn insert_fs_component_events(
                 panic!("FileSystemChild component of entry: `{}` has no parent component", *entry.name);
             };
 
-            if let Ok(mut parent) = parent_q.get_mut(parent_entity) {
-                file_post_process::parent_add_child_entry(&mut parent, entry, entity);
-            } else {
-                let Some(parent_map) = recent_parents.as_mut() else {
+        if let Ok(mut parent) = parent_q.get_mut(parent_entity) {
+            file_post_process::parent_add_child_entry(&mut parent, entry, entity);
+        } else {
+            let Some(parent_map) = recent_parents.as_mut() else {
                     panic!("FileSystemChild component on entity: `{:?}` has invalid parent_id: `{:?}`", entity, parent_entity);
                 };
-                let Some(parent) = parent_map.get_mut(&parent_entity) else {
+            let Some(parent) = parent_map.get_mut(&parent_entity) else {
                     panic!("FileSystemChild component on entity: `{:?}` has invalid parent_id: `{:?}`", entity, parent_entity);
                 };
-                file_post_process::parent_add_child_entry(parent, entry, entity);
-            }
+            file_post_process::parent_add_child_entry(parent, entry, entity);
+        }
     }
 
     // Add all parents now that the children were able to process

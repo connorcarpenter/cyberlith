@@ -34,7 +34,10 @@ use crate::app::{
         tab_manager::TabManager,
         vertex_manager::{CanvasShape, VertexManager},
     },
-    systems::{file_post_process, network::{vertex_3d_postprocess, edge_3d_postprocess}},
+    systems::{
+        file_post_process,
+        network::{edge_3d_postprocess, vertex_3d_postprocess},
+    },
 };
 
 #[derive(Clone)]
@@ -216,7 +219,6 @@ impl Default for ActionStack {
 }
 
 impl ActionStack {
-
     pub fn buffer_action(&mut self, action: Action) {
         self.buffered_actions.push(action);
     }

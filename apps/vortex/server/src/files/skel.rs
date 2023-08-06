@@ -12,7 +12,9 @@ use naia_bevy_server::{
     UnsignedVariableInteger,
 };
 
-use vortex_proto::components::{VertexTypeValue, VertexType, Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt};
+use vortex_proto::components::{
+    Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt, VertexType, VertexTypeValue,
+};
 
 use crate::{
     files::{FileReadOutput, FileReader, FileWriter},
@@ -43,8 +45,10 @@ impl SkelWriter {
         world: &mut World,
         content_entities: &Vec<Entity>,
     ) -> Vec<SkelAction> {
-        let mut system_state: SystemState<(Server, Query<(&Vertex3d, &VertexType, Option<&VertexChild>)>)> =
-            SystemState::new(world);
+        let mut system_state: SystemState<(
+            Server,
+            Query<(&Vertex3d, &VertexType, Option<&VertexChild>)>,
+        )> = SystemState::new(world);
         let (server, vertex_query) = system_state.get_mut(world);
 
         let mut output = Vec::new();

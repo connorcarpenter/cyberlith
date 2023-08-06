@@ -1,4 +1,3 @@
-
 use naia_bevy_shared::{Protocol, ProtocolPlugin};
 
 mod file_system;
@@ -10,7 +9,10 @@ pub use file_system::{
 
 mod vertex;
 use vertex::VertexComponentsPlugin;
-pub use vertex::{OwnedByTab, Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt, VertexType, VertexTypeValue, MeshEdge, MeshFace};
+pub use vertex::{
+    MeshEdge, MeshFace, OwnedByTab, Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt,
+    VertexType, VertexTypeValue,
+};
 
 // Plugin
 pub struct ComponentsPlugin;

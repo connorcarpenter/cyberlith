@@ -12,7 +12,9 @@ use naia_bevy_server::{
     UnsignedVariableInteger,
 };
 
-use vortex_proto::components::{Vertex3d, VertexSerdeInt, MeshEdge, MeshFace, VertexType, VertexTypeValue};
+use vortex_proto::components::{
+    MeshEdge, MeshFace, Vertex3d, VertexSerdeInt, VertexType, VertexTypeValue,
+};
 
 use crate::files::{FileReadOutput, FileReader, FileWriter};
 
@@ -39,7 +41,6 @@ enum MeshActionType {
 pub struct MeshWriter;
 
 impl MeshWriter {
-
     fn world_to_actions(
         &self,
         world: &mut World,
@@ -50,8 +51,7 @@ impl MeshWriter {
             Query<(&Vertex3d, &VertexType)>,
             Query<&MeshEdge>,
             Query<&MeshFace>,
-        )> =
-            SystemState::new(world);
+        )> = SystemState::new(world);
         let (server, vertex_q, edge_q, face_q) = system_state.get_mut(world);
 
         let mut output = Vec::new();
@@ -85,7 +85,6 @@ impl MeshWriter {
                 let vertex_b_id = *vertex_map.get(&vertex_b_entity).unwrap();
                 let edge_info = MeshAction::Edge(vertex_a_id as u16, vertex_b_id as u16);
                 output.push(edge_info);
-
             } else if let Ok(face) = face_q.get(*entity) {
                 // entity is a face
                 let vertex_a_entity = face.vertex_a.get(&server).unwrap();
@@ -94,7 +93,8 @@ impl MeshWriter {
                 let vertex_a_id = *vertex_map.get(&vertex_a_entity).unwrap();
                 let vertex_b_id = *vertex_map.get(&vertex_b_entity).unwrap();
                 let vertex_c_id = *vertex_map.get(&vertex_c_entity).unwrap();
-                let face_info = MeshAction::Face(vertex_a_id as u16, vertex_b_id as u16, vertex_c_id as u16);
+                let face_info =
+                    MeshAction::Face(vertex_a_id as u16, vertex_b_id as u16, vertex_c_id as u16);
                 output.push(face_info);
             } else {
                 panic!("entity is not a vertex, edge, or face");
@@ -180,20 +180,20 @@ impl MeshReader {
                     let z = VertexSerdeInt::de(bit_reader)?.to();
 
                     output.push(MeshAction::Vertex(x, y, z));
-                },
+                }
                 MeshActionType::Edge => {
                     let vertex_a: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
                     let vertex_b: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
 
                     output.push(MeshAction::Edge(vertex_a, vertex_b));
-                },
+                }
                 MeshActionType::Face => {
                     let vertex_a: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
                     let vertex_b: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
                     let vertex_c: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
 
                     output.push(MeshAction::Face(vertex_a, vertex_b, vertex_c));
-                },
+                }
             }
         }
         Ok(output)
@@ -283,9 +283,12 @@ impl FileReader for MeshReader {
     }
 }
 
-
 impl MeshReader {
-    pub fn post_process_entities(vertex_entities: Vec<Entity>, edge_entities: Vec<Entity>, face_entities: Vec<Entity>) -> HashSet<Entity> {
+    pub fn post_process_entities(
+        vertex_entities: Vec<Entity>,
+        edge_entities: Vec<Entity>,
+        face_entities: Vec<Entity>,
+    ) -> HashSet<Entity> {
         let mut entities = HashSet::new();
         for entity in vertex_entities {
             entities.insert(entity);

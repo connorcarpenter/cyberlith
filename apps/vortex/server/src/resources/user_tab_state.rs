@@ -7,7 +7,7 @@ use naia_bevy_server::{CommandsExt, RoomKey, Server};
 use vortex_proto::{resources::FileEntryKey, types::TabId};
 
 use crate::{
-    files::{FileReadOutput, SkelReader, MeshReader, post_process_networked_entities},
+    files::{post_process_networked_entities, FileReadOutput, MeshReader, SkelReader},
     resources::{workspace::Workspace, VertexManager},
 };
 
@@ -197,22 +197,22 @@ impl TabState {
         let output = workspace.load_content_entities(commands, server, &file_entry_key);
 
         let new_content_entities = match output {
-            FileReadOutput::Skel(entities) => SkelReader::post_process_entities(
-                vertex_manager,
-                entities,
-            ),
-            FileReadOutput::Mesh(vertex_entities, edge_entities, face_entities) => MeshReader::post_process_entities(
-                vertex_entities,
-                edge_entities,
-                face_entities)
+            FileReadOutput::Skel(entities) => {
+                SkelReader::post_process_entities(vertex_manager, entities)
+            }
+            FileReadOutput::Mesh(vertex_entities, edge_entities, face_entities) => {
+                MeshReader::post_process_entities(vertex_entities, edge_entities, face_entities)
+            }
         };
 
-        post_process_networked_entities(commands,
-                                        server,
-                                        &self.room_key,
-                                        &new_content_entities,
-                                        tab_id,
-                                        !tab_is_selected);
+        post_process_networked_entities(
+            commands,
+            server,
+            &self.room_key,
+            &new_content_entities,
+            tab_id,
+            !tab_is_selected,
+        );
 
         // update content entities in TabState
         self.content_entities = new_content_entities;
