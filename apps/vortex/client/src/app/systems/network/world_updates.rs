@@ -33,9 +33,10 @@ use crate::app::{
     resources::{camera_manager::CameraManager, global::Global, vertex_manager::VertexManager},
     systems::{
         file_post_process,
-        network::{vertex_waitlist::{
-            vertex_process_insert, VertexWaitlistInsert,
-        }, VertexWaitlist},
+        network::{
+            vertex_waitlist::{vertex_process_insert, VertexWaitlistInsert},
+            VertexWaitlist,
+        },
     },
 };
 

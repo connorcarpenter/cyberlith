@@ -100,7 +100,6 @@ impl Default for VertexWaitlist {
 }
 
 impl VertexWaitlist {
-
     fn contains_key(&self, entity: &Entity) -> bool {
         self.incomplete_entries.contains_key(entity)
     }
@@ -117,7 +116,12 @@ impl VertexWaitlist {
         self.incomplete_entries.remove(entity)
     }
 
-    fn insert_parent_waiting(&mut self, parent_entity: Entity, child_entity: Entity, child_entry: VertexWaitlistEntry) {
+    fn insert_parent_waiting(
+        &mut self,
+        parent_entity: Entity,
+        child_entity: Entity,
+        child_entry: VertexWaitlistEntry,
+    ) {
         if !self.waiting_on_parent.contains_key(&parent_entity) {
             self.waiting_on_parent.insert(parent_entity, Vec::new());
         }

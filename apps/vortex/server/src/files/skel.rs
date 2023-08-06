@@ -183,10 +183,7 @@ impl SkelReader {
         for action in actions {
             match action {
                 SkelAction::Vertex(x, y, z, parent_id_opt) => {
-                    let entity_id = commands
-                        .spawn_empty()
-                        .enable_replication(server)
-                        .id();
+                    let entity_id = commands.spawn_empty().enable_replication(server).id();
                     info!("spawning vertex entity {:?}", entity_id);
                     if parent_id_opt.is_some() {
                         commands
