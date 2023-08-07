@@ -31,9 +31,9 @@ impl AssetHash<CpuMesh> for Arrow2d {}
 
 impl From<Arrow2d> for CpuMesh {
     fn from(_: Arrow2d) -> Self {
-        let head_base_x = 0.85;
-        let head_point_x = 0.84;
-        let head_width = 2.5;
+        let head_base_x = 0.8;
+        let head_point_x = 0.79;
+        let head_width = 2.0;
         let neg_head_width = head_width * -1.0;
 
         let positions = vec![

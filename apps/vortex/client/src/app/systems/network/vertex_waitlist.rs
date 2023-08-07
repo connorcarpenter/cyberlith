@@ -259,6 +259,9 @@ fn vertex_process_insert_complete(
             );
         }
     }
+
+    camera_manager.recalculate_3d_view();
+    vertex_manager.recalculate_vertices();
 }
 
 pub fn edge_3d_postprocess(

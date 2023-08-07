@@ -93,8 +93,10 @@ impl Plugin for VortexPlugin {
             .init_resource::<CameraManager>()
             .init_resource::<InputManager>()
             .add_startup_system(canvas::setup)
-            .add_system(canvas::step)
-            .add_system(canvas::sync)
-            .add_system(canvas::input);
+            .add_system(canvas::update_camera)
+            .add_system(canvas::sync_vertices)
+            .add_system(canvas::update_select_line)
+            .add_system(canvas::input)
+            .add_system(canvas::update_mouse_hover);
     }
 }

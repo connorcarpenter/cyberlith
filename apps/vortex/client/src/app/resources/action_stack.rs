@@ -59,10 +59,9 @@ pub enum Action {
     SelectVertex(Option<(Entity, CanvasShape)>),
     // Create Vertex (Parent 2d vertex Entity, Position, older vertex 2d entity & 3d entity it was associated with, and a list of children to create)
     CreateVertex(
-        Option<Entity>,
+        VertexTypeData,
         Vec3,
         Option<(Entity, Entity)>,
-        Option<Vec<VertexEntry>>,
     ),
     // Delete Vertex (2d vertex entities, optional vertex 2d entity to select after delete)
     DeleteVertex(Entity, Option<(Entity, CanvasShape)>),
@@ -128,13 +127,10 @@ impl Action {
                     }
                 }
             }
-            Action::CreateVertex(entity_opt_a, _, entity_opt_b, entity_tree_opt) => {
-                if let Some(entity) = entity_opt_a {
-                    if *entity == old_2d_entity {
-                        *entity = new_2d_entity;
-                    }
-                }
-                if let Some((other_2d_entity, other_3d_entity)) = entity_opt_b {
+            Action::CreateVertex(vertex_type_data, _, entity_opt) => {
+                vertex_type_data.migrate_vertex_entities(old_2d_entity, new_2d_entity, old_3d_entity, new_3d_entity);
+
+                if let Some((other_2d_entity, other_3d_entity)) = entity_opt {
                     if *other_2d_entity == old_2d_entity {
                         *other_2d_entity = new_2d_entity;
                     }
@@ -142,13 +138,6 @@ impl Action {
                         *other_3d_entity = new_3d_entity;
                     }
                 }
-                migrate_vertex_trees(
-                    entity_tree_opt,
-                    old_2d_entity,
-                    new_2d_entity,
-                    old_3d_entity,
-                    new_3d_entity,
-                );
             }
             Action::DeleteVertex(entity, entity_opt) => {
                 if *entity == old_2d_entity {
@@ -166,32 +155,6 @@ impl Action {
                 }
             }
             _ => {}
-        }
-    }
-}
-
-fn migrate_vertex_trees(
-    vertex_trees_opt: &mut Option<Vec<VertexEntry>>,
-    old_2d_entity: Entity,
-    new_2d_entity: Entity,
-    old_3d_entity: Entity,
-    new_3d_entity: Entity,
-) {
-    if let Some(vertex_trees) = vertex_trees_opt {
-        for vertex_tree in vertex_trees {
-            if vertex_tree.entity_2d == old_2d_entity {
-                vertex_tree.entity_2d = new_2d_entity;
-            }
-            if vertex_tree.entity_3d == old_3d_entity {
-                vertex_tree.entity_3d = new_3d_entity;
-            }
-            migrate_vertex_trees(
-                &mut vertex_tree.children,
-                old_2d_entity,
-                new_2d_entity,
-                old_3d_entity,
-                new_3d_entity,
-            );
         }
     }
 }
@@ -240,7 +203,7 @@ impl ActionStack {
             panic!("No executed actions to undo!");
         };
 
-        let reversed_action = self.execute_action(world, &action);
+        let reversed_action = self.execute_action(world, action);
 
         self.redo_actions.push(reversed_action);
 
@@ -255,7 +218,7 @@ impl ActionStack {
             panic!("No undone actions to redo!");
         };
 
-        let reversed_action = self.execute_action(world, &action);
+        let reversed_action = self.execute_action(world, action);
 
         self.undo_actions.push(reversed_action);
 
@@ -272,7 +235,7 @@ impl ActionStack {
         }
         let drained_actions: Vec<Action> = self.buffered_actions.drain(..).collect();
         for action in drained_actions {
-            let reversed_action = self.execute_action(world, &action);
+            let reversed_action = self.execute_action(world, action);
             self.undo_actions.push(reversed_action);
         }
         self.redo_actions.clear();
@@ -280,8 +243,8 @@ impl ActionStack {
         self.enable_top(world);
     }
 
-    fn execute_action(&mut self, world: &mut World, action: &Action) -> Action {
-        match &action {
+    fn execute_action(&mut self, world: &mut World, action: Action) -> Action {
+        match action {
             Action::SelectEntries(file_entities) => {
                 let mut system_state: SystemState<(
                     Commands,
@@ -298,7 +261,7 @@ impl ActionStack {
                 let (deselected_row_entities, mut file_entries_to_release) =
                     Self::deselect_all_selected_files(&mut client, &mut fs_query, &mut cl_query);
                 let mut file_entries_to_request =
-                    Self::select_files(&mut client, &mut fs_query, &mut cl_query, file_entities);
+                    Self::select_files(&mut client, &mut fs_query, &mut cl_query, &file_entities);
 
                 Self::remove_duplicates(&mut file_entries_to_release, &mut file_entries_to_request);
 
@@ -349,7 +312,7 @@ impl ActionStack {
 
                 let parent_entity = {
                     if let Some(parent_entity) = parent_entity_opt {
-                        *parent_entity
+                        parent_entity
                     } else {
                         global.project_root_entity
                     }
@@ -370,14 +333,14 @@ impl ActionStack {
                     &mut client,
                     &mut parent,
                     parent_entity_opt,
-                    new_file_name,
+                    &new_file_name,
                     entry_kind,
                     entry_contents_opt,
                 );
 
                 // migrate undo entities
                 if let Some(old_entity) = old_entity_opt {
-                    self.migrate_file_entities(*old_entity, entity_id);
+                    self.migrate_file_entities(old_entity, entity_id);
                 }
 
                 // open tab for new entry
@@ -388,7 +351,7 @@ impl ActionStack {
                     &mut vertex_manager,
                     &mut visibility_q,
                     &entity_id,
-                    FileExtension::from_file_name(new_file_name),
+                    FileExtension::from_file_name(&new_file_name),
                 );
 
                 system_state.apply(world);
@@ -418,7 +381,7 @@ impl ActionStack {
                     fs_query,
                     mut parent_query,
                 ) = system_state.get_mut(world);
-                let (entry, fs_child_opt, fs_root_child_opt) = fs_query.get(*file_entity).unwrap();
+                let (entry, fs_child_opt, fs_root_child_opt) = fs_query.get(file_entity).unwrap();
 
                 // get name of file
                 let entry_name = entry.name.to_string();
@@ -434,7 +397,7 @@ impl ActionStack {
                     parent_query
                         .get_mut(parent_entity)
                         .unwrap()
-                        .remove_child(file_entity);
+                        .remove_child(&file_entity);
 
                     Some(parent_entity)
                 } else if let Some(_) = fs_root_child_opt {
@@ -442,7 +405,7 @@ impl ActionStack {
                     parent_query
                         .get_mut(global.project_root_entity)
                         .unwrap()
-                        .remove_child(file_entity);
+                        .remove_child(&file_entity);
 
                     None
                 } else {
@@ -458,7 +421,7 @@ impl ActionStack {
                         EntryKind::Directory => {
                             let entries = Self::convert_contents_to_slim_tree(
                                 &client,
-                                file_entity,
+                                &file_entity,
                                 &fs_query,
                                 &mut parent_query,
                             );
@@ -469,7 +432,7 @@ impl ActionStack {
                 };
 
                 // actually delete the entry
-                commands.entity(*file_entity).despawn();
+                commands.entity(file_entity).despawn();
 
                 // select files as needed
                 if let Some(files_to_select) = files_to_select_opt {
@@ -477,7 +440,7 @@ impl ActionStack {
                         &mut client,
                         &mut ui_query,
                         &mut cl_query,
-                        files_to_select,
+                        &files_to_select,
                     );
                     Self::request_entities(&mut commands, &mut client, file_entries_to_request);
                 }
@@ -488,7 +451,7 @@ impl ActionStack {
                     parent_entity_opt,
                     entry_name,
                     entry_kind,
-                    Some(*file_entity),
+                    Some(file_entity),
                     entry_contents_opt
                         .map(|entries| entries.into_iter().map(|(_, tree)| tree).collect()),
                 );
@@ -497,7 +460,7 @@ impl ActionStack {
                 let mut system_state: SystemState<Query<&mut FileSystemEntry>> =
                     SystemState::new(world);
                 let mut entry_query = system_state.get_mut(world);
-                let Ok(mut file_entry) = entry_query.get_mut(*file_entity) else {
+                let Ok(mut file_entry) = entry_query.get_mut(file_entity) else {
                     panic!("Failed to get FileSystemEntry for row entity {:?}!", file_entity);
                 };
                 let old_name: String = file_entry.name.to_string();
@@ -505,7 +468,7 @@ impl ActionStack {
 
                 system_state.apply(world);
 
-                return Action::RenameEntry(*file_entity, old_name);
+                return Action::RenameEntry(file_entity, old_name);
             }
             Action::SelectVertex(vertex_2d_entity_opt) => {
                 info!("SelectVertex({:?})", vertex_2d_entity_opt);
@@ -541,10 +504,9 @@ impl ActionStack {
                 return Action::SelectVertex(deselected_entity);
             }
             Action::CreateVertex(
-                parent_vertex_2d_entity_opt,
+                vertex_type_data,
                 position,
                 old_vertex_entities_opt,
-                children_opt,
             ) => {
                 let mut new_3d_vertices = Vec::new();
                 let deselected_vertex_2d_entity_store;
@@ -589,9 +551,8 @@ impl ActionStack {
                         &mut vertex_manager,
                         &mut meshes,
                         &mut materials,
-                        &parent_vertex_2d_entity_opt.unwrap(),
+                        vertex_type_data,
                         &position,
-                        &children_opt,
                         tab_manager.current_tab_id(),
                         &mut new_3d_vertices,
                     );
@@ -601,9 +562,9 @@ impl ActionStack {
                         old_vertex_entities_opt
                     {
                         self.migrate_vertex_entities(
-                            *old_vertex_2d_entity,
+                            old_vertex_2d_entity,
                             new_vertex_2d_entity,
-                            *old_vertex_3d_entity,
+                            old_vertex_3d_entity,
                             new_vertex_3d_entity,
                         );
                     }
@@ -640,7 +601,7 @@ impl ActionStack {
                     Commands,
                     Client,
                     ResMut<VertexManager>,
-                    Query<(Entity, &Vertex3d, &VertexChild)>,
+                    Query<(Entity, &Vertex3d, &VertexChild, &VertexType)>,
                     Query<(Entity, &Edge2dLocal)>,
                     Query<(Entity, &Edge3dLocal)>,
                 )> = SystemState::new(world);
@@ -648,11 +609,11 @@ impl ActionStack {
                     system_state.get_mut(world);
 
                 let vertex_3d_entity = *vertex_manager
-                    .vertex_entity_2d_to_3d(vertex_2d_entity)
+                    .vertex_entity_2d_to_3d(&vertex_2d_entity)
                     .unwrap();
 
                 // get parent entity
-                let Ok((_, vertex_3d, vertex_child)) = vertex_q.get(vertex_3d_entity) else {
+                let Ok((_, vertex_3d, vertex_child, vertex_type)) = vertex_q.get(vertex_3d_entity) else {
                     panic!("Failed to get VertexChild for vertex entity {:?}!", vertex_3d_entity);
                 };
                 let parent_vertex_3d_entity = vertex_child.parent_id.get(&client).unwrap();
@@ -690,7 +651,7 @@ impl ActionStack {
                 if let Some((vertex_2d_to_select, vertex_type)) = vertex_2d_to_select_opt {
                     if let Some(vertex_3d_entity_to_request) = Self::select_vertex(
                         &mut vertex_manager,
-                        Some((*vertex_2d_to_select, *vertex_type)),
+                        Some((vertex_2d_to_select, vertex_type)),
                     ) {
                         info!("request_entities({:?})", vertex_3d_entity_to_request);
                         let mut entity_mut = commands.entity(vertex_3d_entity_to_request);
@@ -702,14 +663,32 @@ impl ActionStack {
                     vertex_manager.deselect_vertex();
                 }
 
+                let rev_vertex_type_data = match *vertex_type.value {
+                    VertexTypeValue::Mesh => {
+                        VertexTypeData::Mesh
+                    }
+                    VertexTypeValue::Skel => {
+                        VertexTypeData::Skel(
+                            parent_vertex_2d_entity,
+                            entry_contents_opt
+                                .map(
+                                    |entries| entries
+                                    .into_iter()
+                                    .map(
+                                        |(_, entry)| entry
+                                    )
+                                    .collect()
+                                )
+                        )
+                    }
+                };
+
                 system_state.apply(world);
 
                 return Action::CreateVertex(
-                    Some(parent_vertex_2d_entity),
+                    rev_vertex_type_data,
                     vertex_3d_position,
-                    Some((*vertex_2d_entity, vertex_3d_entity)),
-                    entry_contents_opt
-                        .map(|entries| entries.into_iter().map(|(_, entry)| entry).collect()),
+                    Some((vertex_2d_entity, vertex_3d_entity)),
                 );
             }
             Action::MoveVertex(vertex_2d_entity, old_position, new_position) => {
@@ -723,19 +702,19 @@ impl ActionStack {
                     system_state.get_mut(world);
 
                 let vertex_3d_entity = *vertex_manager
-                    .vertex_entity_2d_to_3d(vertex_2d_entity)
+                    .vertex_entity_2d_to_3d(&vertex_2d_entity)
                     .unwrap();
 
                 let Ok(mut vertex_3d) = vertex_3d_q.get_mut(vertex_3d_entity) else {
                     panic!("Failed to get Vertex3d for vertex entity {:?}!", vertex_3d_entity);
                 };
-                vertex_3d.set_vec3(new_position);
+                vertex_3d.set_vec3(&new_position);
 
                 camera_manager.recalculate_3d_view();
 
                 system_state.apply(world);
 
-                return Action::MoveVertex(*vertex_2d_entity, *new_position, *old_position);
+                return Action::MoveVertex(vertex_2d_entity, new_position, old_position);
             }
         }
     }
@@ -877,10 +856,10 @@ impl ActionStack {
         commands: &mut Commands,
         client: &mut Client,
         parent: &mut FileSystemParent,
-        parent_entity_opt: &Option<Entity>,
+        parent_entity_opt: Option<Entity>,
         new_file_name: &str,
-        entry_kind: &EntryKind,
-        entry_contents_opt: &Option<Vec<FileTree>>,
+        entry_kind: EntryKind,
+        entry_contents_opt: Option<Vec<FileTree>>,
     ) -> Entity {
         info!("creating new entry: `{}`", new_file_name);
 
@@ -890,7 +869,7 @@ impl ActionStack {
             .configure_replication(ReplicationConfig::Delegated)
             .id();
 
-        let entry = FileSystemEntry::new(new_file_name, *entry_kind);
+        let entry = FileSystemEntry::new(new_file_name, entry_kind);
 
         // add FileSystemChild or FileSystemRootChild component
         if let Some(parent_entity) = parent_entity_opt {
@@ -913,10 +892,10 @@ impl ActionStack {
                         commands,
                         client,
                         &mut entry_parent_component,
-                        &Some(entity_id),
+                        Some(entity_id),
                         &sub_tree.name,
-                        &sub_tree.kind,
-                        &sub_tree.children,
+                        sub_tree.kind,
+                        sub_tree.children,
                     );
                     let old_entity = sub_tree.entity;
                     self.migrate_file_entities(old_entity, new_entity);
@@ -985,7 +964,7 @@ impl ActionStack {
                     new_vertex_3d_entity,
                     new_vertex_2d_entity,
                     parent_vertex_3d_entity,
-                    *parent_vertex_2d_entity,
+                    parent_vertex_2d_entity,
                     Some(tab_id),
                     Vertex2d::CHILD_COLOR,
                     true,
@@ -993,6 +972,10 @@ impl ActionStack {
 
                 if let Some(children) = children_opt {
                     for child in children {
+                        let child_vertex_type_data = VertexTypeData::Skel(
+                            new_vertex_2d_entity,
+                            child.children,
+                        );
                         let (new_child_vertex_2d_entity, new_child_vertex_3d_entity) = self
                             .create_vertex_entity(
                                 commands,
@@ -1001,9 +984,8 @@ impl ActionStack {
                                 vertex_manager,
                                 meshes,
                                 materials,
-                                &new_vertex_2d_entity,
+                                child_vertex_type_data,
                                 &child.position,
-                                &child.children,
                                 tab_id,
                                 new_3d_entities,
                             );
@@ -1192,11 +1174,11 @@ impl ActionStack {
         client: &Client,
         vertex_manager: &mut VertexManager,
         parent_3d_entity: &Entity,
-        vertex_3d_q: &Query<(Entity, &Vertex3d, &VertexChild)>,
+        vertex_3d_q: &Query<(Entity, &Vertex3d, &VertexChild, &VertexType)>,
     ) -> Vec<(Entity, VertexEntry)> {
         let mut output = Vec::new();
 
-        for (entity_3d, position, child) in vertex_3d_q.iter() {
+        for (entity_3d, position, child, _) in vertex_3d_q.iter() {
             if child.parent_id.get(client).unwrap() == *parent_3d_entity {
                 let entity_2d = vertex_manager.vertex_entity_3d_to_2d(&entity_3d).unwrap();
                 let child_entry = VertexEntry::new(*entity_2d, entity_3d, position.as_vec3());

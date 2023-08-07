@@ -67,7 +67,6 @@ impl CameraManager {
         if !self.camera_3d_recalc {
             return false;
         }
-        self.camera_3d_recalc = false;
 
         let Some(camera_3d) = self.camera_3d else {
             return false;
@@ -76,6 +75,8 @@ impl CameraManager {
         let Ok((_, mut camera_transform)) = camera_q.get_mut(camera_3d) else {
             return false;
         };
+
+        self.camera_3d_recalc = false;
 
         camera_transform.rotation = Quat::from_euler(
             EulerRot::YXZ,

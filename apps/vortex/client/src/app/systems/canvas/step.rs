@@ -6,7 +6,7 @@ use crate::app::resources::{
     camera_manager::CameraManager, canvas::Canvas, vertex_manager::VertexManager,
 };
 
-pub fn step(
+pub fn update_camera(
     mut canvas: ResMut<Canvas>,
     mut camera_manager: ResMut<CameraManager>,
     mut vertex_manager: ResMut<VertexManager>,

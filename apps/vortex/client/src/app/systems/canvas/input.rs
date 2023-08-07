@@ -26,14 +26,9 @@ pub fn input(
     mut input_manager: ResMut<InputManager>,
     mut input: ResMut<Input>,
     mut action_stack: ResMut<ActionStack>,
-    tab_manager: Res<TabManager>,
     mut transform_q: Query<&mut Transform>,
     mut camera_q: Query<(&mut Camera, &mut Projection)>,
-    mut visibility_q: Query<&mut Visibility>,
-    owned_by_tab_q: Query<&OwnedByTab>,
     mut vertex_3d_q: Query<&mut Vertex3d>,
-    vertex_2d_q: Query<(Entity, Option<&VertexRootChild>), (With<Vertex2d>, Without<Compass>)>,
-    edge_2d_q: Query<(Entity, &Edge2dLocal), Without<Compass>>,
 ) {
     if !canvas.is_visible() {
         return;
@@ -42,19 +37,40 @@ pub fn input(
     if !input_actions.is_empty() {
         vertex_manager.update_input(
             input_actions,
-            tab_manager.current_tab_id(),
-            input.mouse_position(),
             &mut commands,
             &mut client,
             &mut camera_manager,
             &mut action_stack,
             &mut transform_q,
             &mut camera_q,
-            &mut visibility_q,
-            &owned_by_tab_q,
             &mut vertex_3d_q,
-            &vertex_2d_q,
-            &edge_2d_q,
         );
     }
+}
+
+pub fn update_mouse_hover(
+    tab_manager: Res<TabManager>,
+    canvas: Res<Canvas>,
+    camera_manager: Res<CameraManager>,
+    input: Res<Input>,
+    mut vertex_manager: ResMut<VertexManager>,
+    mut transform_q: Query<(&mut Transform, Option<&Compass>)>,
+    vertex_2d_q: Query<(Entity, Option<&VertexRootChild>), (With<Vertex2d>, Without<Compass>)>,
+    edge_2d_q: Query<(Entity, &Edge2dLocal), Without<Compass>>,
+    owned_by_tab_q: Query<&OwnedByTab>,
+    mut visibility_q: Query<&mut Visibility>,
+) {
+    if !canvas.is_visible() {
+        return;
+    }
+    vertex_manager.update_mouse_hover(
+        &camera_manager,
+        tab_manager.current_tab_id(),
+        input.mouse_position(),
+        &mut transform_q,
+        &mut visibility_q,
+        &owned_by_tab_q,
+        &vertex_2d_q,
+        &edge_2d_q,
+    );
 }

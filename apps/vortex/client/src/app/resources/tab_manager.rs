@@ -212,13 +212,12 @@ impl TabManager {
             canvas.set_visibility(false);
         } else {
             canvas.set_visibility(true);
+            let current_tab_id = self.current_tab_id();
+            for (mut visibility, owned_by_tab) in visibility_q.iter_mut() {
+                visibility.visible = *owned_by_tab.tab_id == current_tab_id;
+            }
         }
         camera_manager.recalculate_3d_view();
-
-        let current_tab_id = self.current_tab_id();
-        for (mut visibility, owned_by_tab) in visibility_q.iter_mut() {
-            visibility.visible = *owned_by_tab.tab_id == current_tab_id;
-        }
     }
 
     // panics if no current tab!
