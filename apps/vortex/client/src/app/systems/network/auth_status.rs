@@ -13,7 +13,7 @@ pub fn auth_granted_events(
     mut event_reader: EventReader<EntityAuthGrantedEvent>,
 ) {
     for EntityAuthGrantedEvent(entity) in event_reader.iter() {
-        info!("auth granted for entity");
+        info!("auth granted for entity: {:?}", entity);
 
         action_stack.entity_update_auth_status(&mut vertex_manager, entity);
     }
@@ -25,7 +25,7 @@ pub fn auth_denied_events(
     mut event_reader: EventReader<EntityAuthDeniedEvent>,
 ) {
     for EntityAuthDeniedEvent(entity) in event_reader.iter() {
-        info!("auth denied for entity");
+        info!("auth denied for entity: {:?}", entity);
 
         action_stack.entity_update_auth_status(&mut vertex_manager, entity);
     }
@@ -37,7 +37,7 @@ pub fn auth_reset_events(
     mut event_reader: EventReader<EntityAuthResetEvent>,
 ) {
     for EntityAuthResetEvent(entity) in event_reader.iter() {
-        info!("auth reset for entity");
+        info!("auth reset for entity: {:?}", entity);
 
         action_stack.entity_update_auth_status(&mut vertex_manager, entity);
     }

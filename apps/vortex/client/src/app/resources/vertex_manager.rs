@@ -360,12 +360,12 @@ impl VertexManager {
 
     pub fn select_vertex(&mut self, entity: &Entity, shape: CanvasShape) {
         self.selected_vertex = Some((*entity, shape));
-        self.recalculate_selection();
+        self.recalculate_vertices();
     }
 
     pub fn deselect_vertex(&mut self) {
         self.selected_vertex = None;
-        self.recalculate_selection();
+        self.recalculate_vertices();
     }
 
     pub fn selected_vertex_2d(&self) -> Option<(Entity, CanvasShape)> {
@@ -870,6 +870,7 @@ impl VertexManager {
                             .unwrap();
                         if !(auth_status.is_requested() || auth_status.is_granted()) {
                             // only continue to mutate if requested or granted authority over vertex
+                            info!("No authority over vertex, skipping..");
                             return;
                         }
 

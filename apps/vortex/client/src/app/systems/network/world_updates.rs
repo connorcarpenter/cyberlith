@@ -41,14 +41,14 @@ use crate::app::{
 };
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
-    for SpawnEntityEvent(_entity) in event_reader.iter() {
-        info!("spawned entity");
+    for SpawnEntityEvent(entity) in event_reader.iter() {
+        info!("spawned entity: {:?}", entity);
     }
 }
 
 pub fn despawn_entity_events(mut event_reader: EventReader<DespawnEntityEvent>) {
-    for DespawnEntityEvent(_entity) in event_reader.iter() {
-        info!("despawned entity");
+    for DespawnEntityEvent(entity) in event_reader.iter() {
+        info!("despawned entity: {:?}", entity);
     }
 }
 

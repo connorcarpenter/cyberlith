@@ -63,7 +63,7 @@ pub enum Action {
         Vec3,
         Option<(Entity, Entity)>,
     ),
-    // Delete Vertex (2d vertex entities, optional vertex 2d entity to select after delete)
+    // Delete Vertex (2d vertex entity, optional vertex 2d entity to select after delete)
     DeleteVertex(Entity, Option<(Entity, CanvasShape)>),
     // Move Vertex (2d vertex Entity, Old Position, New Position)
     MoveVertex(Entity, Vec3, Vec3),
@@ -571,7 +571,7 @@ impl ActionStack {
 
                     // select vertex
                     vertex_manager.select_vertex(&new_vertex_2d_entity, CanvasShape::Vertex);
-                    selected_vertex = new_vertex_2d_entity;
+                    selected_vertex = new_vertex_3d_entity;
 
                     system_state.apply(world);
                 }
