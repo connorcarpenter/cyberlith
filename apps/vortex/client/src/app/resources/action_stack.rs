@@ -510,7 +510,8 @@ impl ActionStack {
             ) => {
                 let mut new_3d_vertices = Vec::new();
                 let deselected_vertex_2d_entity_store;
-                let selected_vertex;
+                let selected_vertex_3d;
+                let selected_vertex_2d;
 
                 info!("CreateVertex");
 
@@ -571,7 +572,8 @@ impl ActionStack {
 
                     // select vertex
                     vertex_manager.select_vertex(&new_vertex_2d_entity, CanvasShape::Vertex);
-                    selected_vertex = new_vertex_3d_entity;
+                    selected_vertex_3d = new_vertex_3d_entity;
+                    selected_vertex_2d = new_vertex_2d_entity;
 
                     system_state.apply(world);
                 }
@@ -582,7 +584,7 @@ impl ActionStack {
                     let (mut commands, mut client) = system_state.get_mut(world);
 
                     for vertex_to_release in new_3d_vertices {
-                        if vertex_to_release != selected_vertex {
+                        if vertex_to_release != selected_vertex_3d {
                             commands
                                 .entity(vertex_to_release)
                                 .release_authority(&mut client);
@@ -592,7 +594,7 @@ impl ActionStack {
                     system_state.apply(world);
                 }
 
-                return Action::DeleteVertex(selected_vertex, deselected_vertex_2d_entity_store);
+                return Action::DeleteVertex(selected_vertex_2d, deselected_vertex_2d_entity_store);
             }
             Action::DeleteVertex(vertex_2d_entity, vertex_2d_to_select_opt) => {
                 info!("DeleteVertex({:?})", vertex_2d_entity);
@@ -601,11 +603,12 @@ impl ActionStack {
                     Commands,
                     Client,
                     ResMut<VertexManager>,
-                    Query<(Entity, &Vertex3d, &VertexChild, &VertexType)>,
+                    Query<(Entity, &Vertex3d, &VertexType)>,
+                    Query<&VertexChild>,
                     Query<(Entity, &Edge2dLocal)>,
                     Query<(Entity, &Edge3dLocal)>,
                 )> = SystemState::new(world);
-                let (mut commands, mut client, mut vertex_manager, vertex_q, edge_2d_q, edge_3d_q) =
+                let (mut commands, mut client, mut vertex_manager, vertex_q, vertex_child_q, edge_2d_q, edge_3d_q) =
                     system_state.get_mut(world);
 
                 let vertex_3d_entity = *vertex_manager
@@ -613,83 +616,125 @@ impl ActionStack {
                     .unwrap();
 
                 // get parent entity
-                let Ok((_, vertex_3d, vertex_child, vertex_type)) = vertex_q.get(vertex_3d_entity) else {
+                let Ok((_, vertex_3d, vertex_type)) = vertex_q.get(vertex_3d_entity) else {
                     panic!("Failed to get VertexChild for vertex entity {:?}!", vertex_3d_entity);
                 };
-                let parent_vertex_3d_entity = vertex_child.parent_id.get(&client).unwrap();
-                let parent_vertex_2d_entity = *vertex_manager
-                    .vertex_entity_3d_to_2d(&parent_vertex_3d_entity)
-                    .unwrap();
-                let vertex_3d_position = vertex_3d.as_vec3();
-
-                // get entries
-                let entry_contents_opt = {
-                    let entries = Self::convert_vertices_to_tree(
-                        &client,
-                        &mut vertex_manager,
-                        &vertex_3d_entity,
-                        &vertex_q,
-                    );
-
-                    Some(entries)
-                };
-
-                // actually despawn entities
-                info!("commands.entity({:?}).despawn()", vertex_3d_entity);
-                // delete 3d vertex
-                commands.entity(vertex_3d_entity).despawn();
-
-                // cleanup mappings
-                vertex_manager.cleanup_deleted_vertex(
-                    &vertex_3d_entity,
-                    &mut commands,
-                    &edge_2d_q,
-                    &edge_3d_q,
-                );
-
-                // select entities as needed
-                if let Some((vertex_2d_to_select, vertex_type)) = vertex_2d_to_select_opt {
-                    if let Some(vertex_3d_entity_to_request) = Self::select_vertex(
-                        &mut vertex_manager,
-                        Some((vertex_2d_to_select, vertex_type)),
-                    ) {
-                        info!("request_entities({:?})", vertex_3d_entity_to_request);
-                        let mut entity_mut = commands.entity(vertex_3d_entity_to_request);
-                        if entity_mut.authority(&client).is_some() {
-                            entity_mut.request_authority(&mut client);
-                        }
-                    }
-                } else {
-                    vertex_manager.deselect_vertex();
-                }
-
-                let rev_vertex_type_data = match *vertex_type.value {
-                    VertexTypeValue::Mesh => {
-                        VertexTypeData::Mesh
-                    }
+                match *vertex_type.value {
                     VertexTypeValue::Skel => {
-                        VertexTypeData::Skel(
-                            parent_vertex_2d_entity,
-                            entry_contents_opt
-                                .map(
-                                    |entries| entries
-                                    .into_iter()
-                                    .map(
-                                        |(_, entry)| entry
-                                    )
-                                    .collect()
-                                )
-                        )
+                        let Ok(vertex_child) = vertex_child_q.get(vertex_3d_entity) else {
+                            panic!("Failed to get VertexChild for vertex entity {:?}!", vertex_3d_entity);
+                        };
+                        let parent_vertex_3d_entity = vertex_child.parent_id.get(&client).unwrap();
+                        let parent_vertex_2d_entity = *vertex_manager
+                            .vertex_entity_3d_to_2d(&parent_vertex_3d_entity)
+                            .unwrap();
+                        let vertex_3d_position = vertex_3d.as_vec3();
+
+                        // get entries
+                        let entry_contents_opt = {
+                            let entries = Self::convert_vertices_to_tree(
+                                &client,
+                                &mut vertex_manager,
+                                &vertex_3d_entity,
+                                &vertex_q,
+                                &vertex_child_q,
+                            );
+
+                            Some(entries)
+                        };
+
+                        // delete 3d vertex
+                        commands.entity(vertex_3d_entity).despawn();
+
+                        // cleanup mappings
+                        vertex_manager.cleanup_deleted_vertex(
+                            VertexTypeValue::Skel,
+                            &vertex_3d_entity,
+                            &mut commands,
+                            &edge_2d_q,
+                            &edge_3d_q,
+                        );
+
+                        // select entities as needed
+                        if let Some((vertex_2d_to_select, vertex_type)) = vertex_2d_to_select_opt {
+                            if let Some(vertex_3d_entity_to_request) = Self::select_vertex(
+                                &mut vertex_manager,
+                                Some((vertex_2d_to_select, vertex_type)),
+                            ) {
+                                info!("request_entities({:?})", vertex_3d_entity_to_request);
+                                let mut entity_mut = commands.entity(vertex_3d_entity_to_request);
+                                if entity_mut.authority(&client).is_some() {
+                                    entity_mut.request_authority(&mut client);
+                                }
+                            }
+                        } else {
+                            vertex_manager.deselect_vertex();
+                        }
+
+                        let rev_vertex_type_data = VertexTypeData::Skel(
+                                    parent_vertex_2d_entity,
+                                    entry_contents_opt
+                                        .map(
+                                            |entries| entries
+                                                .into_iter()
+                                                .map(
+                                                    |(_, entry)| entry
+                                                )
+                                                .collect()
+                                        )
+                                );
+
+                        system_state.apply(world);
+
+                        return Action::CreateVertex(
+                            rev_vertex_type_data,
+                            vertex_3d_position,
+                            Some((vertex_2d_entity, vertex_3d_entity)),
+                        );
                     }
-                };
+                    VertexTypeValue::Mesh => {
 
-                system_state.apply(world);
+                        let vertex_3d_position = vertex_3d.as_vec3();
 
-                return Action::CreateVertex(
-                    rev_vertex_type_data,
-                    vertex_3d_position,
-                    Some((vertex_2d_entity, vertex_3d_entity)),
-                );
+                        // delete 3d vertex
+                        commands.entity(vertex_3d_entity).despawn();
+
+                        // cleanup mappings
+                        vertex_manager.cleanup_deleted_vertex(
+                            VertexTypeValue::Mesh,
+                            &vertex_3d_entity,
+                            &mut commands,
+                            &edge_2d_q,
+                            &edge_3d_q,
+                        );
+
+                        // select entities as needed
+                        if let Some((vertex_2d_to_select, vertex_type)) = vertex_2d_to_select_opt {
+                            if let Some(vertex_3d_entity_to_request) = Self::select_vertex(
+                                &mut vertex_manager,
+                                Some((vertex_2d_to_select, vertex_type)),
+                            ) {
+                                info!("request_entities({:?})", vertex_3d_entity_to_request);
+                                let mut entity_mut = commands.entity(vertex_3d_entity_to_request);
+                                if entity_mut.authority(&client).is_some() {
+                                    entity_mut.request_authority(&mut client);
+                                }
+                            }
+                        } else {
+                            vertex_manager.deselect_vertex();
+                        }
+
+                        let rev_vertex_type_data = VertexTypeData::Mesh;
+
+                        system_state.apply(world);
+
+                        return Action::CreateVertex(
+                            rev_vertex_type_data,
+                            vertex_3d_position,
+                            Some((vertex_2d_entity, vertex_3d_entity)),
+                        );
+                    }
+                }
             }
             Action::MoveVertex(vertex_2d_entity, old_position, new_position) => {
                 info!("MoveVertex");
@@ -1081,7 +1126,7 @@ impl ActionStack {
         Self::enable_top_impl(world, self.undo_actions.last(), &mut self.undo_enabled);
         Self::enable_top_impl(world, self.redo_actions.last(), &mut self.redo_enabled);
 
-        info!("undo enabled: {}", self.undo_enabled);
+        //info!("undo enabled: {}", self.undo_enabled);
     }
 
     fn enable_top_impl(world: &mut World, last_action: Option<&Action>, enabled: &mut bool) {
@@ -1174,11 +1219,13 @@ impl ActionStack {
         client: &Client,
         vertex_manager: &mut VertexManager,
         parent_3d_entity: &Entity,
-        vertex_3d_q: &Query<(Entity, &Vertex3d, &VertexChild, &VertexType)>,
+        vertex_3d_q: &Query<(Entity, &Vertex3d, &VertexType)>,
+        vertex_3d_child_q: &Query<&VertexChild>,
     ) -> Vec<(Entity, VertexEntry)> {
         let mut output = Vec::new();
 
-        for (entity_3d, position, child, _) in vertex_3d_q.iter() {
+        for (entity_3d, position, _) in vertex_3d_q.iter() {
+            let child = vertex_3d_child_q.get(entity_3d).unwrap();
             if child.parent_id.get(client).unwrap() == *parent_3d_entity {
                 let entity_2d = vertex_manager.vertex_entity_3d_to_2d(&entity_3d).unwrap();
                 let child_entry = VertexEntry::new(*entity_2d, entity_3d, position.as_vec3());
@@ -1188,7 +1235,7 @@ impl ActionStack {
 
         for (entry_entity, entry) in output.iter_mut() {
             let children =
-                Self::convert_vertices_to_tree(client, vertex_manager, entry_entity, vertex_3d_q);
+                Self::convert_vertices_to_tree(client, vertex_manager, entry_entity, vertex_3d_q, vertex_3d_child_q);
             if children.len() > 0 {
                 entry.children = Some(
                     children

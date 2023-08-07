@@ -373,6 +373,7 @@ pub fn remove_component_events(
     mut fs_state_q: Query<&mut FileSystemUiState>,
     edge_2d_q: Query<(Entity, &Edge2dLocal)>,
     edge_3d_q: Query<(Entity, &Edge3dLocal)>,
+    vertex_type_q: Query<&VertexType>,
 ) {
     for events in event_reader.iter() {
         for (_entity, _component) in events.read::<FileSystemEntry>() {
@@ -417,7 +418,10 @@ pub fn remove_component_events(
                 vertex_3d_entity
             );
 
+            let vertex_type = *vertex_type_q.get(vertex_3d_entity).unwrap().value;
+
             vertex_manager.cleanup_deleted_vertex(
+                vertex_type,
                 &vertex_3d_entity,
                 &mut commands,
                 &edge_2d_q,

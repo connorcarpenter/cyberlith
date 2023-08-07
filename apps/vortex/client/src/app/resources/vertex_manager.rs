@@ -379,36 +379,53 @@ impl VertexManager {
 
     pub fn cleanup_deleted_vertex(
         &mut self,
+        vertex_type: VertexTypeValue,
         entity_3d: &Entity,
         commands: &mut Commands,
         edge_2d_q: &Query<(Entity, &Edge2dLocal)>,
         edge_3d_q: &Query<(Entity, &Edge3dLocal)>,
     ) {
-        // despawn 3d edge
-        for (edge_3d_entity, edge_3d) in edge_3d_q.iter() {
-            if edge_3d.start == *entity_3d {
-                info!("despawn 3d edge {:?}", edge_3d_entity);
-                commands.entity(edge_3d_entity).despawn();
-            }
-        }
+        match vertex_type {
+            VertexTypeValue::Skel => {
+                // despawn 3d edge
+                for (edge_3d_entity, edge_3d) in edge_3d_q.iter() {
+                    if edge_3d.start == *entity_3d {
+                        info!("despawn 3d edge {:?}", edge_3d_entity);
+                        commands.entity(edge_3d_entity).despawn();
+                    }
+                }
 
-        if let Some(vertex_2d_entity) = self.unregister_3d_vertex(entity_3d) {
-            // despawn 2d vertex
-            info!("despawn 2d vertex {:?}", vertex_2d_entity);
-            commands.entity(vertex_2d_entity).despawn();
+                if let Some(vertex_2d_entity) = self.unregister_3d_vertex(entity_3d) {
+                    // despawn 2d vertex
+                    info!("despawn 2d vertex {:?}", vertex_2d_entity);
+                    commands.entity(vertex_2d_entity).despawn();
 
-            // despawn 2d edge
-            for (edge_2d_entity, edge_2d) in edge_2d_q.iter() {
-                if edge_2d.start == vertex_2d_entity {
-                    info!("despawn 2d edge {:?}", edge_2d_entity);
-                    commands.entity(edge_2d_entity).despawn();
+                    // despawn 2d edge
+                    for (edge_2d_entity, edge_2d) in edge_2d_q.iter() {
+                        if edge_2d.start == vertex_2d_entity {
+                            info!("despawn 2d edge {:?}", edge_2d_entity);
+                            commands.entity(edge_2d_entity).despawn();
+                        }
+                    }
+                } else {
+                    panic!(
+                        "Vertex3d entity: `{:?}` has no corresponding Vertex2d entity",
+                        entity_3d
+                    );
                 }
             }
-        } else {
-            panic!(
-                "Vertex3d entity: `{:?}` has no corresponding Vertex2d entity",
-                entity_3d
-            );
+            VertexTypeValue::Mesh => {
+                if let Some(vertex_2d_entity) = self.unregister_3d_vertex(entity_3d) {
+                    // despawn 2d vertex
+                    info!("despawn 2d vertex {:?}", vertex_2d_entity);
+                    commands.entity(vertex_2d_entity).despawn();
+                } else {
+                    panic!(
+                        "Vertex3d entity: `{:?}` has no corresponding Vertex2d entity",
+                        entity_3d
+                    );
+                }
+            }
         }
 
         self.recalculate_vertices();
