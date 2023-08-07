@@ -5,11 +5,10 @@ use bevy_ecs::{entity::Entity, system::Commands};
 use math::{Vec2, Vec3};
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
-    components::RenderObjectBundle,
     Assets,
 };
 use vortex_proto::{
-    components::{OwnedByTab, VertexRootChild, VertexTypeValue},
+    components::{OwnedByTab, VertexTypeValue},
     types::TabId,
 };
 
@@ -212,12 +211,11 @@ fn vertex_process_insert_complete(
         None => Vertex2d::ROOT_COLOR,
     };
 
-    let new_vertex_2d_entity = vertex_3d_postprocess(
+    let new_vertex_2d_entity = vertex_manager.vertex_3d_postprocess(
         commands,
         meshes,
         materials,
         camera_manager,
-        vertex_manager,
         entity,
         parent_3d_entity_opt.is_none(),
         Some(tab_id),
@@ -261,64 +259,6 @@ fn vertex_process_insert_complete(
             );
         }
     }
-}
-
-pub fn vertex_3d_postprocess(
-    commands: &mut Commands,
-    meshes: &mut Assets<CpuMesh>,
-    materials: &mut Assets<CpuMaterial>,
-    camera_manager: &mut CameraManager,
-    vertex_manager: &mut VertexManager,
-    vertex_3d_entity: Entity,
-    is_root: bool,
-    tab_id_opt: Option<TabId>,
-    color: Color,
-) -> Entity {
-    commands
-        .entity(vertex_3d_entity)
-        .insert(RenderObjectBundle::sphere(
-            meshes,
-            materials,
-            Vec3::ZERO,
-            Vertex2d::RADIUS,
-            Vertex2d::SUBDIVISIONS,
-            color,
-        ))
-        .insert(camera_manager.layer_3d);
-
-    let vertex_2d_entity = commands
-        .spawn(RenderObjectBundle::circle(
-            meshes,
-            materials,
-            Vec2::ZERO,
-            Vertex2d::RADIUS,
-            Vertex2d::SUBDIVISIONS,
-            color,
-            None,
-        ))
-        .insert(camera_manager.layer_2d)
-        .insert(Vertex2d)
-        .id();
-
-    if let Some(tab_id) = tab_id_opt {
-        commands
-            .entity(vertex_2d_entity)
-            .insert(OwnedByTab::new(tab_id));
-    }
-
-    if is_root {
-        commands.entity(vertex_2d_entity).insert(VertexRootChild);
-    }
-
-    // info!(
-    //     "created Vertex3d: `{:?}`, created 2d entity: {:?}",
-    //     vertex_3d_entity, vertex_2d_entity,
-    // );
-
-    vertex_manager.register_3d_vertex(vertex_3d_entity, vertex_2d_entity);
-    camera_manager.recalculate_3d_view();
-
-    vertex_2d_entity
 }
 
 pub fn edge_3d_postprocess(

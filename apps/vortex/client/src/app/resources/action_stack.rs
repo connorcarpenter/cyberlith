@@ -13,13 +13,11 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::{
-    components::{
-        ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-        OwnedByTab, Vertex3d, VertexChild,
-    },
-    types::TabId,
-};
+use vortex_proto::{components::{
+    ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
+    OwnedByTab, Vertex3d, VertexChild,
+}, FileExtension, types::TabId};
+use vortex_proto::components::{VertexType, VertexTypeValue};
 
 use crate::app::{
     components::{
@@ -36,9 +34,10 @@ use crate::app::{
     },
     systems::{
         file_post_process,
-        network::{edge_3d_postprocess, vertex_3d_postprocess},
+        network::edge_3d_postprocess,
     },
 };
+use crate::app::components::VertexTypeData;
 
 #[derive(Clone)]
 pub enum Action {
@@ -60,7 +59,7 @@ pub enum Action {
     SelectVertex(Option<(Entity, CanvasShape)>),
     // Create Vertex (Parent 2d vertex Entity, Position, older vertex 2d entity & 3d entity it was associated with, and a list of children to create)
     CreateVertex(
-        Entity,
+        Option<Entity>,
         Vec3,
         Option<(Entity, Entity)>,
         Option<Vec<VertexEntry>>,
@@ -129,11 +128,13 @@ impl Action {
                     }
                 }
             }
-            Action::CreateVertex(entity, _, entity_opt, entity_tree_opt) => {
-                if *entity == old_2d_entity {
-                    *entity = new_2d_entity;
+            Action::CreateVertex(entity_opt_a, _, entity_opt_b, entity_tree_opt) => {
+                if let Some(entity) = entity_opt_a {
+                    if *entity == old_2d_entity {
+                        *entity = new_2d_entity;
+                    }
                 }
-                if let Some((other_2d_entity, other_3d_entity)) = entity_opt {
+                if let Some((other_2d_entity, other_3d_entity)) = entity_opt_b {
                     if *other_2d_entity == old_2d_entity {
                         *other_2d_entity = new_2d_entity;
                     }
@@ -321,6 +322,7 @@ impl ActionStack {
                     Res<Global>,
                     ResMut<Canvas>,
                     ResMut<CameraManager>,
+                    ResMut<VertexManager>,
                     ResMut<TabManager>,
                     Query<(Entity, &mut FileSystemUiState)>,
                     Query<(Entity, &ChangelistEntry, &mut ChangelistUiState)>,
@@ -333,6 +335,7 @@ impl ActionStack {
                     global,
                     mut canvas,
                     mut camera_manager,
+                    mut vertex_manager,
                     mut tab_manager,
                     mut fs_query,
                     mut cl_query,
@@ -382,8 +385,10 @@ impl ActionStack {
                     &mut client,
                     &mut canvas,
                     &mut camera_manager,
+                    &mut vertex_manager,
                     &mut visibility_q,
                     &entity_id,
+                    FileExtension::from_file_name(new_file_name),
                 );
 
                 system_state.apply(world);
@@ -536,7 +541,7 @@ impl ActionStack {
                 return Action::SelectVertex(deselected_entity);
             }
             Action::CreateVertex(
-                parent_vertex_2d_entity,
+                parent_vertex_2d_entity_opt,
                 position,
                 old_vertex_entities_opt,
                 children_opt,
@@ -584,7 +589,7 @@ impl ActionStack {
                         &mut vertex_manager,
                         &mut meshes,
                         &mut materials,
-                        &parent_vertex_2d_entity,
+                        &parent_vertex_2d_entity_opt.unwrap(),
                         &position,
                         &children_opt,
                         tab_manager.current_tab_id(),
@@ -700,7 +705,7 @@ impl ActionStack {
                 system_state.apply(world);
 
                 return Action::CreateVertex(
-                    parent_vertex_2d_entity,
+                    Some(parent_vertex_2d_entity),
                     vertex_3d_position,
                     Some((*vertex_2d_entity, vertex_3d_entity)),
                     entry_contents_opt
@@ -939,81 +944,109 @@ impl ActionStack {
         vertex_manager: &mut VertexManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
-        parent_vertex_2d_entity: &Entity,
+        vertex_type_data: VertexTypeData,
         position: &Vec3,
-        children_opt: &Option<Vec<VertexEntry>>,
         tab_id: TabId,
         new_3d_entities: &mut Vec<Entity>,
     ) -> (Entity, Entity) {
-        let parent_vertex_3d_entity = *vertex_manager
-            .vertex_entity_2d_to_3d(parent_vertex_2d_entity)
-            .unwrap();
 
-        let mut vertex_child = VertexChild::new();
-        vertex_child.parent_id.set(client, &parent_vertex_3d_entity);
-        let new_vertex_3d_entity = commands
-            .spawn_empty()
-            .enable_replication(client)
-            .configure_replication(ReplicationConfig::Delegated)
-            .insert(Vertex3d::from_vec3(*position))
-            .insert(vertex_child)
-            .id();
+        match vertex_type_data {
+            VertexTypeData::Skel(parent_vertex_2d_entity, children_opt) => {
+                let parent_vertex_3d_entity = *vertex_manager
+                    .vertex_entity_2d_to_3d(&parent_vertex_2d_entity)
+                    .unwrap();
 
-        let new_vertex_2d_entity = vertex_3d_postprocess(
-            commands,
-            meshes,
-            materials,
-            camera_manager,
-            vertex_manager,
-            new_vertex_3d_entity,
-            false,
-            Some(tab_id),
-            Vertex2d::CHILD_COLOR,
-        );
-        edge_3d_postprocess(
-            commands,
-            meshes,
-            materials,
-            camera_manager,
-            new_vertex_3d_entity,
-            new_vertex_2d_entity,
-            parent_vertex_3d_entity,
-            *parent_vertex_2d_entity,
-            Some(tab_id),
-            Vertex2d::CHILD_COLOR,
-            true,
-        );
+                let mut vertex_child = VertexChild::new();
+                vertex_child.parent_id.set(client, &parent_vertex_3d_entity);
+                let new_vertex_3d_entity = commands
+                    .spawn_empty()
+                    .enable_replication(client)
+                    .configure_replication(ReplicationConfig::Delegated)
+                    .insert(Vertex3d::from_vec3(*position))
+                    .insert(vertex_child)
+                    .insert(VertexType::new(VertexTypeValue::Skel))
+                    .id();
 
-        if let Some(children) = children_opt {
-            for child in children {
-                let (new_child_vertex_2d_entity, new_child_vertex_3d_entity) = self
-                    .create_vertex_entity(
-                        commands,
-                        client,
-                        camera_manager,
-                        vertex_manager,
-                        meshes,
-                        materials,
-                        &new_vertex_2d_entity,
-                        &child.position,
-                        &child.children,
-                        tab_id,
-                        new_3d_entities,
-                    );
-                let old_child_vertex_3d_entity = child.entity_3d;
-                let old_child_vertex_2d_entity = child.entity_2d;
-                self.migrate_vertex_entities(
-                    old_child_vertex_2d_entity,
-                    new_child_vertex_2d_entity,
-                    old_child_vertex_3d_entity,
-                    new_child_vertex_3d_entity,
+                let new_vertex_2d_entity = vertex_manager.vertex_3d_postprocess(
+                    commands,
+                    meshes,
+                    materials,
+                    camera_manager,
+                    new_vertex_3d_entity,
+                    false,
+                    Some(tab_id),
+                    Vertex2d::CHILD_COLOR,
                 );
+                edge_3d_postprocess(
+                    commands,
+                    meshes,
+                    materials,
+                    camera_manager,
+                    new_vertex_3d_entity,
+                    new_vertex_2d_entity,
+                    parent_vertex_3d_entity,
+                    *parent_vertex_2d_entity,
+                    Some(tab_id),
+                    Vertex2d::CHILD_COLOR,
+                    true,
+                );
+
+                if let Some(children) = children_opt {
+                    for child in children {
+                        let (new_child_vertex_2d_entity, new_child_vertex_3d_entity) = self
+                            .create_vertex_entity(
+                                commands,
+                                client,
+                                camera_manager,
+                                vertex_manager,
+                                meshes,
+                                materials,
+                                &new_vertex_2d_entity,
+                                &child.position,
+                                &child.children,
+                                tab_id,
+                                new_3d_entities,
+                            );
+                        let old_child_vertex_3d_entity = child.entity_3d;
+                        let old_child_vertex_2d_entity = child.entity_2d;
+                        self.migrate_vertex_entities(
+                            old_child_vertex_2d_entity,
+                            new_child_vertex_2d_entity,
+                            old_child_vertex_3d_entity,
+                            new_child_vertex_3d_entity,
+                        );
+                    }
+                }
+
+                new_3d_entities.push(new_vertex_3d_entity);
+
+                return (new_vertex_2d_entity, new_vertex_3d_entity);
+            }
+            VertexTypeData::Mesh => {
+                let new_vertex_3d_entity = commands
+                    .spawn_empty()
+                    .enable_replication(client)
+                    .configure_replication(ReplicationConfig::Delegated)
+                    .insert(Vertex3d::from_vec3(*position))
+                    .insert(VertexType::new(VertexTypeValue::Mesh))
+                    .id();
+
+                let new_vertex_2d_entity = vertex_manager.vertex_3d_postprocess(
+                    commands,
+                    meshes,
+                    materials,
+                    camera_manager,
+                    new_vertex_3d_entity,
+                    false,
+                    Some(tab_id),
+                    Vertex2d::CHILD_COLOR,
+                );
+
+                new_3d_entities.push(new_vertex_3d_entity);
+
+                return (new_vertex_2d_entity, new_vertex_3d_entity);
             }
         }
-
-        new_3d_entities.push(new_vertex_3d_entity);
-
-        return (new_vertex_2d_entity, new_vertex_3d_entity);
     }
 
     pub fn entity_update_auth_status(

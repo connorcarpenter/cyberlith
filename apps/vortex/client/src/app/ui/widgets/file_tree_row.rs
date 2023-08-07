@@ -42,6 +42,7 @@ use crate::app::{
         UiState,
     },
 };
+use crate::app::resources::vertex_manager::VertexManager;
 
 pub struct FileTreeRowUiWidget;
 
@@ -390,17 +391,20 @@ impl FileTreeRowUiWidget {
                 Client,
                 ResMut<Canvas>,
                 ResMut<CameraManager>,
+                ResMut<VertexManager>,
                 ResMut<TabManager>,
                 Query<(&mut Visibility, &OwnedByTab)>,
             )> = SystemState::new(world);
-            let (mut client, mut canvas, mut camera_manager, mut tab_manager, mut visibility_q) =
+            let (mut client, mut canvas, mut camera_manager, mut vertex_manager, mut tab_manager, mut visibility_q) =
                 system_state.get_mut(world);
             tab_manager.open_tab(
                 &mut client,
                 &mut canvas,
                 &mut camera_manager,
+                &mut vertex_manager,
                 &mut visibility_q,
                 row_entity,
+                file_ext,
             );
             system_state.apply(world);
         }

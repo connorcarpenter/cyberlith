@@ -37,3 +37,11 @@ impl VertexEntry {
 // for the editor compass
 #[derive(Component)]
 pub struct Compass;
+
+// VertexTypeData
+pub enum VertexTypeData {
+    // parent 2d vertex entity, children entries
+    Skel(Entity, Option<Vec<VertexEntry>>),
+    //
+    Mesh,
+}

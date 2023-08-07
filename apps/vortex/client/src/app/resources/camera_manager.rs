@@ -6,6 +6,7 @@ use render_api::components::{
     Camera, OrthographicProjection, Projection, RenderLayer, Transform, Viewport,
 };
 
+#[derive(Clone, Copy)]
 pub enum CameraAngle {
     Side,
     Front,

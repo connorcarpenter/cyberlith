@@ -1,3 +1,5 @@
+use crate::components::VertexTypeValue;
+
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum FileExtension {
     Unknown,
@@ -25,6 +27,14 @@ impl FileExtension {
         match self {
             FileExtension::Skel | FileExtension::Mesh => true,
             _ => false,
+        }
+    }
+
+    pub fn vertex_type(&self) -> Option<VertexTypeValue> {
+        match self {
+            FileExtension::Skel => Some(VertexTypeValue::Skel),
+            FileExtension::Mesh => Some(VertexTypeValue::Mesh),
+            _ => None,
         }
     }
 }

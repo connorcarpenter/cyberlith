@@ -17,10 +17,12 @@ use render_api::{
     shapes::{distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform},
     Assets,
 };
+use render_api::components::RenderObjectBundle;
 use vortex_proto::{
     components::{OwnedByTab, Vertex3d, VertexRootChild},
     types::TabId,
 };
+use vortex_proto::components::VertexTypeValue;
 
 use crate::app::{
     components::{Compass, Edge2dLocal, Edge3dLocal, HoverCircle, SelectCircle, Vertex2d},
@@ -30,7 +32,7 @@ use crate::app::{
         input_manager::{ClickType, InputAction},
     },
     set_3d_line_transform,
-    systems::network::{edge_3d_postprocess, vertex_3d_postprocess},
+    systems::network::edge_3d_postprocess,
 };
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
@@ -43,7 +45,7 @@ pub enum CanvasShape {
 
 #[derive(Resource)]
 pub struct VertexManager {
-    editing_skel: bool,
+    current_vertex_type: VertexTypeValue,
 
     // vertices
     vertices_3d_to_2d: HashMap<Entity, Entity>,
@@ -67,7 +69,7 @@ pub struct VertexManager {
 impl Default for VertexManager {
     fn default() -> Self {
         Self {
-            editing_skel: false,
+            current_vertex_type: VertexTypeValue::Skel,
 
             // vertices
             vertices_3d_to_2d: HashMap::new(),
@@ -147,6 +149,9 @@ impl VertexManager {
                         camera_manager.set_camera_angle_ingame(*angle_index);
                     }
                 },
+                InputAction::InsertKeyPress => {
+                    self.handle_insert_key_press(action_stack);
+                }
                 InputAction::DeleteKeyPress => {
                     self.handle_delete_key_press(commands, client, action_stack);
                 }
@@ -434,12 +439,86 @@ impl VertexManager {
         self.vertices_2d_to_3d.get(entity_2d)
     }
 
-    pub fn switch_to_skel_mode(&mut self) {
-        self.editing_skel = true;
+    pub fn set_vertex_type(&mut self, vertex_type: VertexTypeValue) {
+        self.current_vertex_type = vertex_type;
     }
 
-    pub fn switch_to_mesh_mode(&mut self) {
-        self.editing_skel = false;
+    pub fn vertex_3d_postprocess(
+        &mut self,
+        commands: &mut Commands,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+        camera_manager: &mut CameraManager,
+        vertex_3d_entity: Entity,
+        is_root: bool,
+        tab_id_opt: Option<TabId>,
+        color: Color,
+    ) -> Entity {
+        commands
+            .entity(vertex_3d_entity)
+            .insert(RenderObjectBundle::sphere(
+                meshes,
+                materials,
+                Vec3::ZERO,
+                Vertex2d::RADIUS,
+                Vertex2d::SUBDIVISIONS,
+                color,
+            ))
+            .insert(camera_manager.layer_3d);
+
+        let vertex_2d_entity = commands
+            .spawn(RenderObjectBundle::circle(
+                meshes,
+                materials,
+                Vec2::ZERO,
+                Vertex2d::RADIUS,
+                Vertex2d::SUBDIVISIONS,
+                color,
+                None,
+            ))
+            .insert(camera_manager.layer_2d)
+            .insert(Vertex2d)
+            .id();
+
+        if let Some(tab_id) = tab_id_opt {
+            commands
+                .entity(vertex_2d_entity)
+                .insert(OwnedByTab::new(tab_id));
+        }
+
+        if is_root {
+            commands.entity(vertex_2d_entity).insert(VertexRootChild);
+        }
+
+        // info!(
+        //     "created Vertex3d: `{:?}`, created 2d entity: {:?}",
+        //     vertex_3d_entity, vertex_2d_entity,
+        // );
+
+        self.register_3d_vertex(vertex_3d_entity, vertex_2d_entity);
+        camera_manager.recalculate_3d_view();
+
+        vertex_2d_entity
+    }
+
+    fn handle_insert_key_press(
+        &mut self,
+        action_stack: &mut ActionStack,
+    ) {
+        if self.selected_vertex.is_some() {
+            return;
+        }
+
+        if self.current_vertex_type == VertexTypeValue::Skel {
+            return;
+        }
+
+        action_stack.buffer_action(Action::CreateVertex(
+            None,
+            Vec3::ZERO,
+            None,
+            None,
+        ));
     }
 
     fn handle_delete_key_press(
@@ -739,7 +818,7 @@ impl VertexManager {
 
                         // spawn new vertex
                         action_stack.buffer_action(Action::CreateVertex(
-                            vertex_2d_entity,
+                            Some(vertex_2d_entity),
                             new_3d_position,
                             None,
                             None,
@@ -1113,12 +1192,11 @@ impl VertexManager {
         vertex_3d_component.set_vec3(&position);
         let new_vertex_3d_entity = commands.spawn_empty().insert(vertex_3d_component).id();
 
-        let new_vertex_2d_entity = vertex_3d_postprocess(
+        let new_vertex_2d_entity = self.vertex_3d_postprocess(
             commands,
             meshes,
             materials,
             camera_manager,
-            self,
             new_vertex_3d_entity,
             parent_vertex_3d_entity_opt.is_none(),
             None,

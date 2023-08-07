@@ -5,7 +5,7 @@ use bevy_ecs::{entity::Entity, system::Commands, world::World};
 use naia_bevy_server::{CommandsExt, RoomKey, Server};
 use vortex_proto::{components::OwnedByTab, types::TabId, FileExtension};
 
-use crate::files::{MeshWriter, SkelReader, SkelWriter};
+use crate::files::{MeshReader, MeshWriter, SkelReader, SkelWriter};
 
 pub trait FileWriter: Send + Sync {
     fn write(&self, world: &mut World, content_entities: &HashSet<Entity>) -> Box<[u8]>;
@@ -30,6 +30,7 @@ impl FileReader for FileExtension {
     ) -> FileReadOutput {
         match self {
             FileExtension::Skel => SkelReader.read(commands, server, bytes),
+            FileExtension::Mesh => MeshReader.read(commands, server, bytes),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }

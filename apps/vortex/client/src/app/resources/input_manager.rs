@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use bevy_ecs::prelude::Resource;
 
 use input::{Input, Key, MouseButton};
@@ -11,9 +12,70 @@ pub enum ClickType {
     Right,
 }
 
+#[derive(Clone, Copy)]
+pub enum InputAction {
+    MiddleMouseScroll(f32),
+    MouseMoved,
+    SwitchTo3dMode,
+    SwitchTo2dMode,
+    SetCameraAngleFixed(CameraAngle),
+    DeleteKeyPress,
+    InsertKeyPress,
+    CameraAngleYawRotate(bool),
+    MouseDragged(ClickType, Vec2, Vec2),
+    MouseClick(ClickType, Vec2),
+    MouseRelease,
+}
+
+struct KeyState {
+    pressed: bool,
+    action: InputAction,
+}
+
+impl KeyState {
+    fn new(action: InputAction) -> Self {
+        Self {
+            pressed: false,
+            action,
+        }
+    }
+}
+
+struct KeyMap {
+    map: HashMap<Key, KeyState>,
+}
+
+impl KeyMap {
+
+    fn init(keys: Vec<(Key, InputAction)>) -> Self {
+        let mut state = HashMap::new();
+
+        for (key, action) in keys {
+            state.insert(key, KeyState::new(action));
+        }
+
+        Self {
+            map: state,
+        }
+    }
+
+    fn get_actions(&mut self, input: &mut Input, output: &mut Vec<InputAction>) {
+        for (key, state) in self.map.iter_mut() {
+            if input.is_pressed(*key) {
+                if !state.pressed {
+                    output.push(state.action);
+                }
+                state.pressed = true;
+            } else {
+                state.pressed = false;
+            }
+        }
+    }
+}
+
 #[derive(Resource)]
 pub struct InputManager {
-    rotate_key_down: bool,
+    key_map: KeyMap,
     click_type: ClickType,
     click_start: Vec2,
     click_down: bool,
@@ -22,27 +84,32 @@ pub struct InputManager {
 
 impl Default for InputManager {
     fn default() -> Self {
+
+        let key_state = KeyMap::init(vec![
+            (Key::S, InputAction::SwitchTo3dMode),
+            (Key::W, InputAction::SwitchTo2dMode),
+            (Key::Num1, InputAction::SetCameraAngleFixed(CameraAngle::Ingame(1))),
+            (Key::Num2, InputAction::SetCameraAngleFixed(CameraAngle::Ingame(2))),
+            (Key::Num3, InputAction::SetCameraAngleFixed(CameraAngle::Ingame(3))),
+            (Key::Num4, InputAction::SetCameraAngleFixed(CameraAngle::Ingame(4))),
+            (Key::Num5, InputAction::SetCameraAngleFixed(CameraAngle::Ingame(5))),
+            (Key::D, InputAction::SetCameraAngleFixed(CameraAngle::Side)),
+            (Key::T, InputAction::SetCameraAngleFixed(CameraAngle::Top)),
+            (Key::F, InputAction::SetCameraAngleFixed(CameraAngle::Front)),
+            (Key::PageUp, InputAction::CameraAngleYawRotate(true)),
+            (Key::PageDown, InputAction::CameraAngleYawRotate(false)),
+            (Key::Insert, InputAction::InsertKeyPress),
+            (Key::Delete, InputAction::DeleteKeyPress),
+        ]);
+
         Self {
             click_type: ClickType::Left,
             click_start: Vec2::ZERO,
             click_down: false,
-            rotate_key_down: false,
+            key_map: key_state,
             last_mouse_position: Vec2::ZERO,
         }
     }
-}
-
-pub enum InputAction {
-    MiddleMouseScroll(f32),
-    MouseMoved,
-    SwitchTo3dMode,
-    SwitchTo2dMode,
-    SetCameraAngleFixed(CameraAngle),
-    DeleteKeyPress,
-    CameraAngleYawRotate(bool),
-    MouseDragged(ClickType, Vec2, Vec2),
-    MouseClick(ClickType, Vec2),
-    MouseRelease,
 }
 
 impl InputManager {
@@ -69,68 +136,7 @@ impl InputManager {
         }
 
         // check keyboard input
-
-        // (S)olid 3D View
-        if input.is_pressed(Key::S) {
-            output.push(InputAction::SwitchTo3dMode);
-        }
-        // (W)ireframe 2D View
-        else if input.is_pressed(Key::W) {
-            output.push(InputAction::SwitchTo2dMode);
-        }
-        // 1 Game Camera View
-        else if input.is_pressed(Key::Num1) {
-            output.push(InputAction::SetCameraAngleFixed(CameraAngle::Ingame(1)));
-        }
-        // 2 Game Camera View
-        else if input.is_pressed(Key::Num2) {
-            output.push(InputAction::SetCameraAngleFixed(CameraAngle::Ingame(2)));
-        }
-        // 3 Game Camera View
-        else if input.is_pressed(Key::Num3) {
-            output.push(InputAction::SetCameraAngleFixed(CameraAngle::Ingame(3)));
-        }
-        // 4 Game Camera View
-        else if input.is_pressed(Key::Num4) {
-            output.push(InputAction::SetCameraAngleFixed(CameraAngle::Ingame(4)));
-        }
-        // 5 Game Camera View
-        else if input.is_pressed(Key::Num5) {
-            output.push(InputAction::SetCameraAngleFixed(CameraAngle::Ingame(5)));
-        }
-        // Si(d)e Camera View
-        else if input.is_pressed(Key::D) {
-            output.push(InputAction::SetCameraAngleFixed(CameraAngle::Side));
-        }
-        // (F)ront Camera View
-        else if input.is_pressed(Key::F) {
-            output.push(InputAction::SetCameraAngleFixed(CameraAngle::Front));
-        }
-        // (T)op Camera View
-        else if input.is_pressed(Key::T) {
-            output.push(InputAction::SetCameraAngleFixed(CameraAngle::Top));
-        }
-        // Delete
-        else if input.is_pressed(Key::Delete) {
-            output.push(InputAction::DeleteKeyPress);
-        }
-
-        if !self.rotate_key_down {
-            // Rotate Yaw 45 degrees
-            if input.is_pressed(Key::PageUp) {
-                output.push(InputAction::CameraAngleYawRotate(true));
-                self.rotate_key_down = true;
-            }
-            // Rotate Yaw 45 degrees
-            else if input.is_pressed(Key::PageDown) {
-                output.push(InputAction::CameraAngleYawRotate(false));
-                self.rotate_key_down = true;
-            }
-        } else {
-            if !input.is_pressed(Key::PageUp) && !input.is_pressed(Key::PageDown) {
-                self.rotate_key_down = false;
-            }
-        }
+        self.key_map.get_actions(input, &mut output);
 
         // mouse clicks
 
