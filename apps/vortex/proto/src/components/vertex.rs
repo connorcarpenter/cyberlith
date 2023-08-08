@@ -18,8 +18,8 @@ impl ProtocolPlugin for VertexComponentsPlugin {
             .add_component::<VertexRootChild>()
             .add_component::<OwnedByTab>()
             .add_component::<VertexType>()
-            .add_component::<MeshEdge>()
-            .add_component::<MeshFace>();
+            .add_component::<Edge3d>()
+            .add_component::<Face3d>();
     }
 }
 
@@ -123,28 +123,28 @@ impl VertexType {
     }
 }
 
-// MeshEdge
+// Edge3d
 #[derive(Component, Replicate)]
-pub struct MeshEdge {
-    pub vertex_a: EntityProperty,
-    pub vertex_b: EntityProperty,
+pub struct Edge3d {
+    pub start: EntityProperty,
+    pub end: EntityProperty,
 }
 
-impl MeshEdge {
+impl Edge3d {
     pub fn new() -> Self {
         Self::new_complete()
     }
 }
 
-// MeshFace
+// Face3d
 #[derive(Component, Replicate)]
-pub struct MeshFace {
+pub struct Face3d {
     pub vertex_a: EntityProperty,
     pub vertex_b: EntityProperty,
     pub vertex_c: EntityProperty,
 }
 
-impl MeshFace {
+impl Face3d {
     pub fn new() -> Self {
         Self::new_complete()
     }

@@ -628,7 +628,6 @@ impl ActionStack {
                         let parent_vertex_2d_entity = *vertex_manager
                             .vertex_entity_3d_to_2d(&parent_vertex_3d_entity)
                             .unwrap();
-                        let vertex_3d_position = vertex_3d.as_vec3();
 
                         // get entries
                         let entry_contents_opt = {
@@ -643,33 +642,17 @@ impl ActionStack {
                             Some(entries)
                         };
 
-                        // delete 3d vertex
-                        commands.entity(vertex_3d_entity).despawn();
+                        let vertex_3d_position = vertex_3d.as_vec3();
 
-                        // cleanup mappings
-                        vertex_manager.cleanup_deleted_vertex(
-                            VertexTypeValue::Skel,
-                            &vertex_3d_entity,
+                        Self::handle_common_vertex_despawn(
                             &mut commands,
+                            &mut client,
+                            &mut vertex_manager,
                             &edge_2d_q,
                             &edge_3d_q,
+                            vertex_3d_entity,
+                            vertex_2d_to_select_opt,
                         );
-
-                        // select entities as needed
-                        if let Some((vertex_2d_to_select, vertex_type)) = vertex_2d_to_select_opt {
-                            if let Some(vertex_3d_entity_to_request) = Self::select_vertex(
-                                &mut vertex_manager,
-                                Some((vertex_2d_to_select, vertex_type)),
-                            ) {
-                                info!("request_entities({:?})", vertex_3d_entity_to_request);
-                                let mut entity_mut = commands.entity(vertex_3d_entity_to_request);
-                                if entity_mut.authority(&client).is_some() {
-                                    entity_mut.request_authority(&mut client);
-                                }
-                            }
-                        } else {
-                            vertex_manager.deselect_vertex();
-                        }
 
                         let rev_vertex_type_data = VertexTypeData::Skel(
                                     parent_vertex_2d_entity,
@@ -696,35 +679,21 @@ impl ActionStack {
 
                         let vertex_3d_position = vertex_3d.as_vec3();
 
-                        // delete 3d vertex
-                        commands.entity(vertex_3d_entity).despawn();
-
-                        // cleanup mappings
-                        vertex_manager.cleanup_deleted_vertex(
-                            VertexTypeValue::Mesh,
-                            &vertex_3d_entity,
+                        Self::handle_common_vertex_despawn(
                             &mut commands,
+                            &mut client,
+                            &mut vertex_manager,
                             &edge_2d_q,
                             &edge_3d_q,
+                            vertex_3d_entity,
+                            vertex_2d_to_select_opt,
                         );
 
-                        // select entities as needed
-                        if let Some((vertex_2d_to_select, vertex_type)) = vertex_2d_to_select_opt {
-                            if let Some(vertex_3d_entity_to_request) = Self::select_vertex(
-                                &mut vertex_manager,
-                                Some((vertex_2d_to_select, vertex_type)),
-                            ) {
-                                info!("request_entities({:?})", vertex_3d_entity_to_request);
-                                let mut entity_mut = commands.entity(vertex_3d_entity_to_request);
-                                if entity_mut.authority(&client).is_some() {
-                                    entity_mut.request_authority(&mut client);
-                                }
-                            }
-                        } else {
-                            vertex_manager.deselect_vertex();
-                        }
+                        let connected_entities = Some(Vec::new());
 
-                        let rev_vertex_type_data = VertexTypeData::Mesh;
+                        // TODO!
+
+                        let rev_vertex_type_data = VertexTypeData::Mesh(connected_entities);
 
                         system_state.apply(world);
 
@@ -761,6 +730,45 @@ impl ActionStack {
 
                 return Action::MoveVertex(vertex_2d_entity, new_position, old_position);
             }
+        }
+    }
+
+    fn handle_common_vertex_despawn(
+        commands: &mut Commands,
+        client: &mut Client,
+        vertex_manager: &mut VertexManager,
+        edge_2d_q: &Query<(Entity, &Edge2dLocal)>,
+        edge_3d_q: &Query<(Entity, &Edge3dLocal)>,
+        vertex_3d_entity: Entity,
+        vertex_2d_to_select_opt: Option<(Entity, CanvasShape)>,
+    ) {
+
+        // delete 3d vertex
+        commands.entity(vertex_3d_entity).despawn();
+
+        // cleanup mappings
+        vertex_manager.cleanup_deleted_vertex(
+            VertexTypeValue::Skel,
+            &vertex_3d_entity,
+            commands,
+            &edge_2d_q,
+            &edge_3d_q,
+        );
+
+        // select entities as needed
+        if let Some((vertex_2d_to_select, vertex_type)) = vertex_2d_to_select_opt {
+            if let Some(vertex_3d_entity_to_request) = Self::select_vertex(
+                vertex_manager,
+                Some((vertex_2d_to_select, vertex_type)),
+            ) {
+                info!("request_entities({:?})", vertex_3d_entity_to_request);
+                let mut entity_mut = commands.entity(vertex_3d_entity_to_request);
+                if entity_mut.authority(client).is_some() {
+                    entity_mut.request_authority(client);
+                }
+            }
+        } else {
+            vertex_manager.deselect_vertex();
         }
     }
 
@@ -1003,6 +1011,7 @@ impl ActionStack {
                 );
                 edge_3d_postprocess(
                     commands,
+                    client,
                     meshes,
                     materials,
                     camera_manager,
@@ -1013,6 +1022,7 @@ impl ActionStack {
                     Some(tab_id),
                     Vertex2d::CHILD_COLOR,
                     true,
+                    false,
                 );
 
                 if let Some(children) = children_opt {
@@ -1049,7 +1059,9 @@ impl ActionStack {
 
                 return (new_vertex_2d_entity, new_vertex_3d_entity);
             }
-            VertexTypeData::Mesh => {
+            VertexTypeData::Mesh(prev_vertex_2d_entities_opt) => {
+
+
                 let new_vertex_3d_entity = commands
                     .spawn_empty()
                     .enable_replication(client)
@@ -1068,6 +1080,29 @@ impl ActionStack {
                     Some(tab_id),
                     Vertex2d::CHILD_COLOR,
                 );
+
+                if let Some(prev_vertex_2d_entities) = prev_vertex_2d_entities_opt {
+                    for prev_vertex_2d_entity in prev_vertex_2d_entities {
+                        let prev_vertex_3d_entity = *vertex_manager
+                            .vertex_entity_2d_to_3d(&prev_vertex_2d_entity)
+                            .unwrap();
+                        edge_3d_postprocess(
+                            commands,
+                            client,
+                            meshes,
+                            materials,
+                            camera_manager,
+                            new_vertex_3d_entity,
+                            new_vertex_2d_entity,
+                            prev_vertex_3d_entity,
+                            prev_vertex_2d_entity,
+                            Some(tab_id),
+                            Vertex2d::CHILD_COLOR,
+                            false,
+                            true,
+                        );
+                    }
+                }
 
                 new_3d_entities.push(new_vertex_3d_entity);
 
@@ -1225,7 +1260,9 @@ impl ActionStack {
         let mut output = Vec::new();
 
         for (entity_3d, position, _) in vertex_3d_q.iter() {
-            let child = vertex_3d_child_q.get(entity_3d).unwrap();
+            let Ok(child) = vertex_3d_child_q.get(entity_3d) else {
+                continue;
+            };
             if child.parent_id.get(client).unwrap() == *parent_3d_entity {
                 let entity_2d = vertex_manager.vertex_entity_3d_to_2d(&entity_3d).unwrap();
                 let child_entry = VertexEntry::new(*entity_2d, entity_3d, position.as_vec3());

@@ -2,13 +2,15 @@ use std::collections::HashMap;
 
 use bevy_ecs::{entity::Entity, system::Commands};
 
+use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
+
 use math::{Vec2, Vec3};
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
     Assets,
 };
 use vortex_proto::{
-    components::{OwnedByTab, VertexTypeValue},
+    components::{Edge3d, OwnedByTab, VertexTypeValue},
     types::TabId,
 };
 
@@ -135,6 +137,7 @@ impl VertexWaitlist {
 
 pub fn vertex_process_insert(
     commands: &mut Commands,
+    client: &mut Client,
     meshes: &mut Assets<CpuMesh>,
     materials: &mut Assets<CpuMaterial>,
     camera_manager: &mut CameraManager,
@@ -181,6 +184,7 @@ pub fn vertex_process_insert(
         }
         vertex_process_insert_complete(
             commands,
+            client,
             meshes,
             materials,
             camera_manager,
@@ -194,6 +198,7 @@ pub fn vertex_process_insert(
 
 fn vertex_process_insert_complete(
     commands: &mut Commands,
+    client: &mut Client,
     meshes: &mut Assets<CpuMesh>,
     materials: &mut Assets<CpuMaterial>,
     camera_manager: &mut CameraManager,
@@ -223,40 +228,48 @@ fn vertex_process_insert_complete(
     );
 
     // if vertex has parent, create an edge
-    if let Some(parent_3d_entity) = parent_3d_entity_opt {
-        let Some(parent_2d_entity) = vertex_manager
-            .vertex_entity_3d_to_2d(&parent_3d_entity) else {
-            panic!("Parent 3d entity {:?} has no 2d entity", parent_3d_entity);
-        };
-        edge_3d_postprocess(
-            commands,
-            meshes,
-            materials,
-            camera_manager,
-            entity,
-            new_vertex_2d_entity,
-            parent_3d_entity,
-            *parent_2d_entity,
-            Some(tab_id),
-            Vertex2d::CHILD_COLOR,
-            type_value == VertexTypeValue::Skel,
-        );
-    }
+    match type_value {
+        VertexTypeValue::Mesh => {}
+        VertexTypeValue::Skel => {
+            if let Some(parent_3d_entity) = parent_3d_entity_opt {
+                let Some(parent_2d_entity) = vertex_manager
+                    .vertex_entity_3d_to_2d(&parent_3d_entity) else {
+                    panic!("Parent 3d entity {:?} has no 2d entity", parent_3d_entity);
+                };
+                edge_3d_postprocess(
+                    commands,
+                    client,
+                    meshes,
+                    materials,
+                    camera_manager,
+                    entity,
+                    new_vertex_2d_entity,
+                    parent_3d_entity,
+                    *parent_2d_entity,
+                    Some(tab_id),
+                    Vertex2d::CHILD_COLOR,
+                    true,
+                    false,
+                );
+            }
 
-    // if the waitlist has any children entities of this one, process them
-    if let Some(child_entries) = vertex_waitlist.on_vertex_complete(entity) {
-        for (child_entity, child_entry) in child_entries {
-            // info!("entity {:?} was waiting on parent {:?}. processing!", child_entity, entity);
-            vertex_process_insert_complete(
-                commands,
-                meshes,
-                materials,
-                camera_manager,
-                vertex_manager,
-                vertex_waitlist,
-                child_entity,
-                child_entry,
-            );
+            // if the waitlist has any children entities of this one, process them
+            if let Some(child_entries) = vertex_waitlist.on_vertex_complete(entity) {
+                for (child_entity, child_entry) in child_entries {
+                    // info!("entity {:?} was waiting on parent {:?}. processing!", child_entity, entity);
+                    vertex_process_insert_complete(
+                        commands,
+                        client,
+                        meshes,
+                        materials,
+                        camera_manager,
+                        vertex_manager,
+                        vertex_waitlist,
+                        child_entity,
+                        child_entry,
+                    );
+                }
+            }
         }
     }
 
@@ -266,6 +279,7 @@ fn vertex_process_insert_complete(
 
 pub fn edge_3d_postprocess(
     commands: &mut Commands,
+    client: &mut Client,
     meshes: &mut Assets<CpuMesh>,
     materials: &mut Assets<CpuMaterial>,
     camera_manager: &mut CameraManager,
@@ -276,6 +290,7 @@ pub fn edge_3d_postprocess(
     tab_id_opt: Option<TabId>,
     color: Color,
     arrows_not_lines: bool,
+    is_networked: bool,
 ) -> (Entity, Entity) {
     // create 2d edge entity
     let shape_components = if arrows_not_lines {
@@ -300,13 +315,32 @@ pub fn edge_3d_postprocess(
         create_3d_edge_line(meshes, materials, Vec3::ZERO, Vec3::X, color)
     };
     let new_entity = commands
-        .spawn(shape_components)
-        .insert(camera_manager.layer_3d)
-        .insert(Edge3dLocal::new(vertex_a_3d_entity, vertex_b_3d_entity))
+        .spawn_empty()
         .id();
+
+    if is_networked {
+        let mut edge_component = Edge3d::new();
+        edge_component.start.set(client, &vertex_a_3d_entity);
+        edge_component.end.set(client, &vertex_b_3d_entity);
+
+        commands
+            .entity(new_entity)
+            .enable_replication(client)
+            .configure_replication(ReplicationConfig::Delegated)
+            .insert(edge_component);
+    } else {
+        commands.entity(new_entity).insert(Edge3dLocal::new(vertex_a_3d_entity, vertex_b_3d_entity));
+    }
+
     if let Some(tab_id) = tab_id_opt {
         commands.entity(new_entity).insert(OwnedByTab::new(tab_id));
     }
+
+    commands
+        .entity(new_entity)
+        .insert(shape_components)
+        .insert(camera_manager.layer_3d);
+
     let edge_3d_entity = new_entity;
 
     camera_manager.recalculate_3d_view();

@@ -13,7 +13,7 @@ use naia_bevy_server::{
 };
 
 use vortex_proto::components::{
-    MeshEdge, MeshFace, Vertex3d, VertexSerdeInt, VertexType, VertexTypeValue,
+    Edge3d, Face3d, Vertex3d, VertexSerdeInt, VertexType, VertexTypeValue,
 };
 
 use crate::files::{FileReadOutput, FileReader, FileWriter};
@@ -49,8 +49,8 @@ impl MeshWriter {
         let mut system_state: SystemState<(
             Server,
             Query<(&Vertex3d, &VertexType)>,
-            Query<&MeshEdge>,
-            Query<&MeshFace>,
+            Query<&Edge3d>,
+            Query<&Face3d>,
         )> = SystemState::new(world);
         let (server, vertex_q, edge_q, face_q) = system_state.get_mut(world);
 
@@ -79,8 +79,8 @@ impl MeshWriter {
 
             if let Ok(edge) = edge_q.get(*entity) {
                 // entity is an edge
-                let vertex_a_entity = edge.vertex_a.get(&server).unwrap();
-                let vertex_b_entity = edge.vertex_b.get(&server).unwrap();
+                let vertex_a_entity = edge.start.get(&server).unwrap();
+                let vertex_b_entity = edge.end.get(&server).unwrap();
                 let vertex_a_id = *vertex_map.get(&vertex_a_entity).unwrap();
                 let vertex_b_id = *vertex_map.get(&vertex_b_entity).unwrap();
                 let edge_info = MeshAction::Edge(vertex_a_id as u16, vertex_b_id as u16);
@@ -225,7 +225,7 @@ impl MeshReader {
                     let vertex_a_entity = *vertices.get(vertex_a_index as usize).unwrap();
                     let vertex_b_entity = *vertices.get(vertex_b_index as usize).unwrap();
 
-                    let mut edge_component = MeshFace::new();
+                    let mut edge_component = Face3d::new();
                     edge_component.vertex_a.set(server, &vertex_a_entity);
                     edge_component.vertex_b.set(server, &vertex_b_entity);
 
@@ -242,7 +242,7 @@ impl MeshReader {
                     let vertex_b_entity = *vertices.get(vertex_b_index as usize).unwrap();
                     let vertex_c_entity = *vertices.get(vertex_c_index as usize).unwrap();
 
-                    let mut face_component = MeshFace::new();
+                    let mut face_component = Face3d::new();
                     face_component.vertex_a.set(server, &vertex_a_entity);
                     face_component.vertex_b.set(server, &vertex_b_entity);
                     face_component.vertex_c.set(server, &vertex_c_entity);

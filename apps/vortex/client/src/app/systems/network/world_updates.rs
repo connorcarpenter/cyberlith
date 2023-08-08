@@ -222,7 +222,7 @@ pub fn insert_changelist_entry_events(
 
 pub fn insert_vertex_events(
     mut commands: Commands,
-    client: Client,
+    mut client: Client,
     mut vertex_3d_events: EventReader<InsertComponentEvent<Vertex3d>>,
     mut vertex_root_events: EventReader<InsertComponentEvent<VertexRootChild>>,
     mut vertex_child_events: EventReader<InsertComponentEvent<VertexChild>>,
@@ -244,6 +244,7 @@ pub fn insert_vertex_events(
         let entity = event.entity;
         vertex_process_insert(
             &mut commands,
+            &mut client,
             &mut meshes,
             &mut materials,
             &mut camera_manager,
@@ -265,6 +266,7 @@ pub fn insert_vertex_events(
 
         vertex_process_insert(
             &mut commands,
+            &mut client,
             &mut meshes,
             &mut materials,
             &mut camera_manager,
@@ -280,6 +282,7 @@ pub fn insert_vertex_events(
         let entity = event.entity;
         vertex_process_insert(
             &mut commands,
+            &mut client,
             &mut meshes,
             &mut materials,
             &mut camera_manager,
@@ -298,6 +301,7 @@ pub fn insert_vertex_events(
 
         vertex_process_insert(
             &mut commands,
+            &mut client,
             &mut meshes,
             &mut materials,
             &mut camera_manager,
@@ -315,6 +319,7 @@ pub fn insert_vertex_events(
 
         vertex_process_insert(
             &mut commands,
+            &mut client,
             &mut meshes,
             &mut materials,
             &mut camera_manager,
@@ -373,7 +378,6 @@ pub fn remove_component_events(
     mut fs_state_q: Query<&mut FileSystemUiState>,
     edge_2d_q: Query<(Entity, &Edge2dLocal)>,
     edge_3d_q: Query<(Entity, &Edge3dLocal)>,
-    vertex_type_q: Query<&VertexType>,
 ) {
     for events in event_reader.iter() {
         for (_entity, _component) in events.read::<FileSystemEntry>() {
@@ -412,13 +416,13 @@ pub fn remove_component_events(
                 }
             }
         }
-        for (vertex_3d_entity, _) in events.read::<Vertex3d>() {
+        for (vertex_3d_entity, vertex_type) in events.read::<VertexType>() {
             info!(
-                "removed Vertex3d component from entity: {:?}",
+                "removed VertexType component from entity: {:?}",
                 vertex_3d_entity
             );
 
-            let vertex_type = *vertex_type_q.get(vertex_3d_entity).unwrap().value;
+            let vertex_type = *vertex_type.value;
 
             vertex_manager.cleanup_deleted_vertex(
                 vertex_type,

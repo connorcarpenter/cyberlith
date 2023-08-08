@@ -43,8 +43,8 @@ pub struct Compass;
 pub enum VertexTypeData {
     // parent 2d vertex entity, children entries
     Skel(Entity, Option<Vec<VertexEntry>>),
-    //
-    Mesh,
+    // connected 2d vertex entities
+    Mesh(Option<Vec<Entity>>)
 }
 
 impl VertexTypeData {
@@ -59,7 +59,15 @@ impl VertexTypeData {
                 }
                 migrate_vertex_trees(children_opt, old_2d_entity, new_2d_entity, old_3d_entity, new_3d_entity);
             }
-            VertexTypeData::Mesh => {}
+            VertexTypeData::Mesh(connected_2d_entities_opt) => {
+                if let Some(connected_2d_entities) = connected_2d_entities_opt {
+                    for connected_2d_entity in connected_2d_entities {
+                        if *connected_2d_entity == old_2d_entity {
+                            *connected_2d_entity = new_2d_entity;
+                        }
+                    }
+                }
+            }
         }
     }
 }

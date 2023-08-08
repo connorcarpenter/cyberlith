@@ -517,7 +517,7 @@ impl VertexManager {
         }
 
         action_stack.buffer_action(Action::CreateVertex(
-            VertexTypeData::Mesh,
+            VertexTypeData::Mesh(None),
             Vec3::ZERO,
             None,
         ));
@@ -817,11 +817,23 @@ impl VertexManager {
                         );
 
                         // spawn new vertex
-                        action_stack.buffer_action(Action::CreateVertex(
-                            VertexTypeData::Skel(vertex_2d_entity, None),
-                            new_3d_position,
-                            None,
-                        ));
+                        match self.current_vertex_type {
+                            VertexTypeValue::Mesh => {
+                                action_stack.buffer_action(Action::CreateVertex(
+                                    VertexTypeData::Mesh(Some(vec![vertex_2d_entity])),
+                                    new_3d_position,
+                                    None,
+                                ));
+                            }
+                            VertexTypeValue::Skel => {
+                                action_stack.buffer_action(Action::CreateVertex(
+                                    VertexTypeData::Skel(vertex_2d_entity, None),
+                                    new_3d_position,
+                                    None,
+                                ));
+                            }
+                        }
+
                     } else {
                         warn!(
                             "Selected vertex entity: {:?} has no Transform",
@@ -965,12 +977,14 @@ impl VertexManager {
     pub(crate) fn setup_compass(
         &mut self,
         commands: &mut Commands,
+        client: &mut Client,
         camera_manager: &mut CameraManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
     ) {
         let (root_vertex_2d_entity, vertex_3d_entity, _, _) = self.new_local_vertex(
             commands,
+            client,
             camera_manager,
             meshes,
             materials,
@@ -984,6 +998,7 @@ impl VertexManager {
 
         let (vertex_2d_entity, vertex_3d_entity, Some(edge_2d_entity), Some(edge_3d_entity)) = self.new_local_vertex(
             commands,
+            client,
             camera_manager,
             meshes,
             materials,
@@ -1001,6 +1016,7 @@ impl VertexManager {
 
         let (vertex_2d_entity, vertex_3d_entity, Some(edge_2d_entity), Some(edge_3d_entity)) = self.new_local_vertex(
             commands,
+            client,
             camera_manager,
             meshes,
             materials,
@@ -1018,6 +1034,7 @@ impl VertexManager {
 
         let (vertex_2d_entity, vertex_3d_entity, Some(edge_2d_entity), Some(edge_3d_entity)) = self.new_local_vertex(
             commands,
+            client,
             camera_manager,
             meshes,
             materials,
@@ -1037,12 +1054,14 @@ impl VertexManager {
     pub(crate) fn setup_grid(
         &mut self,
         commands: &mut Commands,
+        client: &mut Client,
         camera_manager: &mut CameraManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
     ) {
         self.new_grid_corner(
             commands,
+            client,
             camera_manager,
             meshes,
             materials,
@@ -1052,6 +1071,7 @@ impl VertexManager {
         );
         self.new_grid_corner(
             commands,
+            client,
             camera_manager,
             meshes,
             materials,
@@ -1062,6 +1082,7 @@ impl VertexManager {
 
         self.new_grid_corner(
             commands,
+            client,
             camera_manager,
             meshes,
             materials,
@@ -1071,6 +1092,7 @@ impl VertexManager {
         );
         self.new_grid_corner(
             commands,
+            client,
             camera_manager,
             meshes,
             materials,
@@ -1083,6 +1105,7 @@ impl VertexManager {
     fn new_grid_corner(
         &mut self,
         commands: &mut Commands,
+        client: &mut Client,
         camera_manager: &mut CameraManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
@@ -1099,6 +1122,7 @@ impl VertexManager {
 
         let (root_vertex_2d_entity, root_vertex_3d_entity, _, _) = self.new_local_vertex(
             commands,
+            client,
             camera_manager,
             meshes,
             materials,
@@ -1111,6 +1135,7 @@ impl VertexManager {
 
         self.new_grid_vertex(
             commands,
+            client,
             camera_manager,
             meshes,
             materials,
@@ -1123,6 +1148,7 @@ impl VertexManager {
         );
         self.new_grid_vertex(
             commands,
+            client,
             camera_manager,
             meshes,
             materials,
@@ -1135,6 +1161,7 @@ impl VertexManager {
         );
         self.new_grid_vertex(
             commands,
+            client,
             camera_manager,
             meshes,
             materials,
@@ -1150,6 +1177,7 @@ impl VertexManager {
     fn new_grid_vertex(
         &mut self,
         commands: &mut Commands,
+        client: &mut Client,
         camera_manager: &mut CameraManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
@@ -1158,6 +1186,7 @@ impl VertexManager {
     ) {
         let (vertex_2d_entity, vertex_3d_entity, Some(edge_2d_entity), Some(edge_3d_entity)) = self.new_local_vertex(
             commands,
+            client,
             camera_manager,
             meshes,
             materials,
@@ -1176,6 +1205,7 @@ impl VertexManager {
     fn new_local_vertex(
         &mut self,
         commands: &mut Commands,
+        client: &mut Client,
         camera_manager: &mut CameraManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
@@ -1211,6 +1241,7 @@ impl VertexManager {
             let parent_vertex_2d_entity = parent_vertex_2d_entity_opt.unwrap();
             let (edge_2d_entity, edge_3d_entity) = edge_3d_postprocess(
                 commands,
+                client,
                 meshes,
                 materials,
                 camera_manager,
@@ -1220,6 +1251,7 @@ impl VertexManager {
                 parent_vertex_2d_entity,
                 None,
                 color,
+                false,
                 false,
             );
             new_edge_2d_entity = Some(edge_2d_entity);
