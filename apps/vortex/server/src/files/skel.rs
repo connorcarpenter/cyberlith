@@ -13,7 +13,7 @@ use naia_bevy_server::{
 };
 
 use vortex_proto::components::{
-    Vertex3d, VertexChild, VertexRootChild, VertexSerdeInt, VertexType, VertexTypeValue,
+    Vertex3d, VertexChild, VertexRoot, VertexSerdeInt, VertexType, VertexTypeValue,
 };
 
 use crate::{
@@ -210,7 +210,7 @@ impl SkelReader {
                 entity_mut.insert(parent_component);
                 output.push((*entity, Some(*parent_entity)));
             } else {
-                entity_mut.insert(VertexRootChild);
+                entity_mut.insert(VertexRoot);
                 output.push((*entity, None));
             }
         }

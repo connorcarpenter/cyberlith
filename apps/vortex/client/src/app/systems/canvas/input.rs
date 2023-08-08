@@ -7,7 +7,7 @@ use bevy_ecs::{
 use input::Input;
 use naia_bevy_client::Client;
 use render_api::components::{Camera, Projection, Transform, Visibility};
-use vortex_proto::components::{OwnedByTab, Vertex3d, VertexRootChild};
+use vortex_proto::components::{OwnedByTab, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::{Compass, Edge2dLocal, Vertex2d},
@@ -55,7 +55,7 @@ pub fn update_mouse_hover(
     input: Res<Input>,
     mut vertex_manager: ResMut<VertexManager>,
     mut transform_q: Query<(&mut Transform, Option<&Compass>)>,
-    vertex_2d_q: Query<(Entity, Option<&VertexRootChild>), (With<Vertex2d>, Without<Compass>)>,
+    vertex_2d_q: Query<(Entity, Option<&VertexRoot>), (With<Vertex2d>, Without<Compass>)>,
     edge_2d_q: Query<(Entity, &Edge2dLocal), Without<Compass>>,
     owned_by_tab_q: Query<&OwnedByTab>,
     mut visibility_q: Query<&mut Visibility>,

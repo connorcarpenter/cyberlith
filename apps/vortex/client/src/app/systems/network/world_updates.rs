@@ -21,7 +21,7 @@ use render_api::{
 };
 use vortex_proto::components::{
     ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild, OwnedByTab,
-    Vertex3d, VertexChild, VertexRootChild, VertexType,
+    Vertex3d, VertexChild, VertexRoot, VertexType,
 };
 
 use crate::app::{
@@ -64,7 +64,7 @@ pub fn insert_component_events(
     // for vertices
     mut insert_vertex_3d_event_writer: EventWriter<InsertComponentEvent<Vertex3d>>,
     mut insert_vertex_child_event_writer: EventWriter<InsertComponentEvent<VertexChild>>,
-    mut insert_vertex_root_event_writer: EventWriter<InsertComponentEvent<VertexRootChild>>,
+    mut insert_vertex_root_event_writer: EventWriter<InsertComponentEvent<VertexRoot>>,
     mut insert_owned_by_event_writer: EventWriter<InsertComponentEvent<OwnedByTab>>,
     mut insert_vertex_type_event_writer: EventWriter<InsertComponentEvent<VertexType>>,
 ) {
@@ -101,9 +101,9 @@ pub fn insert_component_events(
         }
 
         // on Vertex Root Child Event
-        for entity in events.read::<VertexRootChild>() {
+        for entity in events.read::<VertexRoot>() {
             insert_vertex_root_event_writer
-                .send(InsertComponentEvent::<VertexRootChild>::new(entity));
+                .send(InsertComponentEvent::<VertexRoot>::new(entity));
         }
 
         // on OwnedByTab Insert Event
@@ -224,7 +224,7 @@ pub fn insert_vertex_events(
     mut commands: Commands,
     mut client: Client,
     mut vertex_3d_events: EventReader<InsertComponentEvent<Vertex3d>>,
-    mut vertex_root_events: EventReader<InsertComponentEvent<VertexRootChild>>,
+    mut vertex_root_events: EventReader<InsertComponentEvent<VertexRoot>>,
     mut vertex_child_events: EventReader<InsertComponentEvent<VertexChild>>,
     mut owned_by_events: EventReader<InsertComponentEvent<OwnedByTab>>,
     mut vertex_type_events: EventReader<InsertComponentEvent<VertexType>>,

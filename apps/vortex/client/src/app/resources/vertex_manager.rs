@@ -19,7 +19,7 @@ use render_api::{
 };
 use render_api::components::RenderObjectBundle;
 use vortex_proto::{
-    components::{VertexTypeValue, OwnedByTab, Vertex3d, VertexRootChild},
+    components::{VertexTypeValue, OwnedByTab, Vertex3d, VertexRoot},
     types::TabId,
 };
 
@@ -491,7 +491,7 @@ impl VertexManager {
         }
 
         if is_root {
-            commands.entity(vertex_2d_entity).insert(VertexRootChild);
+            commands.entity(vertex_2d_entity).insert(VertexRoot);
         }
 
         // info!(
@@ -579,7 +579,7 @@ impl VertexManager {
         transform_q: &mut Query<(&mut Transform, Option<&Compass>)>,
         visibility_q: &mut Query<&mut Visibility>,
         owned_by_q: &Query<&OwnedByTab>,
-        vertex_2d_q: &Query<(Entity, Option<&VertexRootChild>), (With<Vertex2d>, Without<Compass>)>,
+        vertex_2d_q: &Query<(Entity, Option<&VertexRoot>), (With<Vertex2d>, Without<Compass>)>,
         edge_2d_q: &Query<(Entity, &Edge2dLocal), Without<Compass>>,
     ) {
         if !self.hover_recalc {

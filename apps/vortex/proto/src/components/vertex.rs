@@ -15,7 +15,7 @@ impl ProtocolPlugin for VertexComponentsPlugin {
         protocol
             .add_component::<Vertex3d>()
             .add_component::<VertexChild>()
-            .add_component::<VertexRootChild>()
+            .add_component::<VertexRoot>()
             .add_component::<OwnedByTab>()
             .add_component::<VertexType>()
             .add_component::<Edge3d>()
@@ -89,9 +89,9 @@ impl VertexChild {
     }
 }
 
-// VertexRootChild
+// VertexRoot
 #[derive(Component, Replicate)]
-pub struct VertexRootChild;
+pub struct VertexRoot;
 
 // TabOwnership
 #[derive(Component, Replicate)]

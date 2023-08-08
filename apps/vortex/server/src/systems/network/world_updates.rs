@@ -17,7 +17,7 @@ use naia_bevy_server::{
 use vortex_proto::{
     components::{
         FileSystemChild, FileSystemEntry, FileSystemRootChild, Vertex3d, VertexChild,
-        VertexRootChild,
+        VertexRoot,
     },
     resources::FileEntryKey,
 };
@@ -176,9 +176,9 @@ pub fn insert_component_events(
             vertex_manager.finalize_vertex_creation();
         }
 
-        // on VertexRootChild Insert Event
-        for (_user_key, entity) in events.read::<VertexRootChild>() {
-            info!("entity: `{:?}`, inserted VertexRootChild", entity);
+        // on VertexRoot Insert Event
+        for (_user_key, entity) in events.read::<VertexRoot>() {
+            info!("entity: `{:?}`, inserted VertexRoot", entity);
             vertex_manager.on_create_vertex(&entity, None);
             vertex_manager.finalize_vertex_creation();
         }
@@ -224,9 +224,9 @@ pub fn remove_component_events(
         for (_, entity, _) in events.read::<VertexChild>() {
             info!("entity: `{:?}`, removed VertexChild", entity);
         }
-        // on VertexRootChild Remove Event
-        for (_, entity, _) in events.read::<VertexRootChild>() {
-            info!("entity: `{:?}`, removed VertexRootChild", entity);
+        // on VertexRoot Remove Event
+        for (_, entity, _) in events.read::<VertexRoot>() {
+            info!("entity: `{:?}`, removed VertexRoot", entity);
         }
     }
 }
