@@ -19,10 +19,7 @@ use render_api::{
     base::{CpuMaterial, CpuMesh},
     Assets,
 };
-use vortex_proto::components::{
-    ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild, OwnedByTab,
-    Vertex3d, VertexRoot,
-};
+use vortex_proto::components::{ChangelistEntry, Edge3d, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild, OwnedByTab, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::{
@@ -34,7 +31,7 @@ use crate::app::{
     systems::{
         file_post_process,
         network::{
-            vertex_waitlist::{vertex_process_insert, VertexWaitlistInsert},
+            vertex_waitlist::VertexWaitlistInsert,
             VertexWaitlist,
         },
     },
@@ -63,9 +60,9 @@ pub fn insert_component_events(
 
     // for vertices
     mut insert_vertex_3d_event_writer: EventWriter<InsertComponentEvent<Vertex3d>>,
-    mut insert_vertex_child_event_writer: EventWriter<InsertComponentEvent<VertexChild>>,
     mut insert_vertex_root_event_writer: EventWriter<InsertComponentEvent<VertexRoot>>,
     mut insert_owned_by_event_writer: EventWriter<InsertComponentEvent<OwnedByTab>>,
+    mut insert_edge_3d_event_writer: EventWriter<InsertComponentEvent<Edge3d>>,
 ) {
     for events in event_reader.iter() {
         // on FileSystemEntry Insert Event
@@ -89,14 +86,9 @@ pub fn insert_component_events(
             insert_cl_entry_event_writer.send(InsertComponentEvent::<ChangelistEntry>::new(entity));
         }
 
-        // on Vertex Insert Event
+        // on Vertex3d Insert Event
         for entity in events.read::<Vertex3d>() {
             insert_vertex_3d_event_writer.send(InsertComponentEvent::<Vertex3d>::new(entity));
-        }
-
-        // on Vertex Child Insert Event
-        for entity in events.read::<VertexChild>() {
-            insert_vertex_child_event_writer.send(InsertComponentEvent::<VertexChild>::new(entity));
         }
 
         // on Vertex Root Child Event
@@ -108,6 +100,11 @@ pub fn insert_component_events(
         // on OwnedByTab Insert Event
         for entity in events.read::<OwnedByTab>() {
             insert_owned_by_event_writer.send(InsertComponentEvent::<OwnedByTab>::new(entity));
+        }
+
+        // on Edge3d Insert Event
+        for entity in events.read::<Edge3d>() {
+            insert_edge_3d_event_writer.send(InsertComponentEvent::<Edge3d>::new(entity));
         }
     }
 }
@@ -219,7 +216,7 @@ pub fn insert_vertex_events(
     mut client: Client,
     mut vertex_3d_events: EventReader<InsertComponentEvent<Vertex3d>>,
     mut vertex_root_events: EventReader<InsertComponentEvent<VertexRoot>>,
-    mut vertex_child_events: EventReader<InsertComponentEvent<VertexChild>>,
+    mut edge_3d_events: EventReader<InsertComponentEvent<Edge3d>>,
     mut owned_by_events: EventReader<InsertComponentEvent<OwnedByTab>>,
 
     // for vertices
@@ -227,61 +224,62 @@ pub fn insert_vertex_events(
     mut vertex_manager: ResMut<VertexManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
-    vertex_child_q: Query<&VertexChild>,
+    edge_3d_q: Query<&Edge3d>,
     owned_by_tab_q: Query<&OwnedByTab>,
     mut waiting_vertices: Local<VertexWaitlist>,
 ) {
     // on Vertex Insert Event
     for event in vertex_3d_events.iter() {
         let entity = event.entity;
-        vertex_process_insert(
+        waiting_vertices.vertex_process_insert(
             &mut commands,
             &mut client,
             &mut meshes,
             &mut materials,
             &mut camera_manager,
             &mut vertex_manager,
-            &mut waiting_vertices,
             &entity,
             VertexWaitlistInsert::Position,
         );
     }
 
-    // on Vertex Child Insert Event
-    for event in vertex_child_events.iter() {
+    // on Vertex Root Event
+    for event in vertex_root_events.iter() {
         let entity = event.entity;
-        let vertex_child = vertex_child_q.get(entity).unwrap();
-        let Some(parent_entity) = vertex_child.parent_id.get(&client) else {
-            warn!("VertexChild component of entity: `{:?}` has no parent component", entity);
-            continue;
-        };
-
-        vertex_process_insert(
+        waiting_vertices.vertex_process_insert(
             &mut commands,
             &mut client,
             &mut meshes,
             &mut materials,
             &mut camera_manager,
             &mut vertex_manager,
-            &mut waiting_vertices,
             &entity,
-            VertexWaitlistInsert::Parent(Some(parent_entity)),
+            VertexWaitlistInsert::Parent(None),
         );
     }
 
-    // on Vertex Root Child Event
-    for event in vertex_root_events.iter() {
-        let entity = event.entity;
-        vertex_process_insert(
+    // on Edge3d Insert Event
+    for event in edge_3d_events.iter() {
+        let edge_entity = event.entity;
+        let edge_3d = edge_3d_q.get(edge_entity).unwrap();
+        let Some(parent_entity) = edge_3d.start.get(&client) else {
+            warn!("Edge3d component of entity: `{:?}` has no start entity", edge_entity);
+            continue;
+        };
+        let Some(child_entity) = edge_3d.end.get(&client) else {
+            warn!("Edge3d component of entity: `{:?}` has no start entity", edge_entity);
+            continue;
+        };
+
+        waiting_vertices.vertex_process_insert(
             &mut commands,
             &mut client,
             &mut meshes,
             &mut materials,
             &mut camera_manager,
             &mut vertex_manager,
-            &mut waiting_vertices,
-            &entity,
-            VertexWaitlistInsert::Parent(None),
+            &child_entity,
+            VertexWaitlistInsert::Parent(Some(parent_entity)),
         );
     }
 
@@ -291,14 +289,13 @@ pub fn insert_vertex_events(
         let owned_by_tab = owned_by_tab_q.get(entity).unwrap();
         let tab_id = *owned_by_tab.tab_id;
 
-        vertex_process_insert(
+        waiting_vertices.vertex_process_insert(
             &mut commands,
             &mut client,
             &mut meshes,
             &mut materials,
             &mut camera_manager,
             &mut vertex_manager,
-            &mut waiting_vertices,
             &entity,
             VertexWaitlistInsert::OwnedByTab(tab_id),
         );
@@ -350,8 +347,6 @@ pub fn remove_component_events(
     mut vertex_manager: ResMut<VertexManager>,
     mut parent_q: Query<&mut FileSystemParent>,
     mut fs_state_q: Query<&mut FileSystemUiState>,
-    edge_2d_q: Query<(Entity, &Edge2dLocal)>,
-    edge_3d_q: Query<(Entity, &Edge3dLocal)>,
 ) {
     for events in event_reader.iter() {
         for (_entity, _component) in events.read::<FileSystemEntry>() {
@@ -390,17 +385,26 @@ pub fn remove_component_events(
                 }
             }
         }
-        for (vertex_3d_entity, _) in events.read::<Vertex3d>() {
+        for (entity, _) in events.read::<Vertex3d>() {
             info!(
                 "entity: `{:?}`, removed Vertex3d",
-                vertex_3d_entity
+                entity
             );
 
             vertex_manager.cleanup_deleted_vertex(
-                &vertex_3d_entity,
+                &entity,
                 &mut commands,
-                &edge_2d_q,
-                &edge_3d_q,
+            );
+        }
+        for (entity, _) in events.read::<Edge3d>() {
+            info!(
+                "entity: `{:?}`, removed Edge3d",
+                entity
+            );
+
+            vertex_manager.cleanup_deleted_edge(
+                &entity,
+                &mut commands,
             );
         }
     }

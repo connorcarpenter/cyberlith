@@ -18,7 +18,7 @@ use render_api::{
     Assets,
 };
 use vortex_proto::{
-    components::{OwnedByTab, Vertex3d, VertexRoot},
+    components::{Edge3d, OwnedByTab, Vertex3d, VertexRoot},
     types::TabId,
 };
 
@@ -30,8 +30,9 @@ use crate::app::{
         input_manager::{ClickType, InputAction},
     },
     set_3d_line_transform,
-    systems::network::edge_3d_postprocess,
+    shapes::{create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line},
 };
+use crate::app::components::Edge3dLocal;
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub enum CanvasShape {
@@ -44,9 +45,11 @@ pub enum CanvasShape {
 #[derive(Resource)]
 pub struct VertexManager {
 
-    // vertices
     vertices_3d_to_2d: HashMap<Entity, Entity>,
     vertices_2d_to_3d: HashMap<Entity, Entity>,
+
+    edges_3d_to_2d: HashMap<Entity, Entity>,
+    edges_2d_to_3d: HashMap<Entity, Entity>,
 
     vertices_recalc: u8,
     selection_recalc: bool,
@@ -67,9 +70,11 @@ impl Default for VertexManager {
     fn default() -> Self {
         Self {
 
-            // vertices
             vertices_3d_to_2d: HashMap::new(),
             vertices_2d_to_3d: HashMap::new(),
+
+            edges_3d_to_2d: HashMap::new(),
+            edges_2d_to_3d: HashMap::new(),
 
             vertices_recalc: 0,
             selection_recalc: false,
@@ -317,9 +322,12 @@ impl VertexManager {
                 continue;
             }
 
-            if let Ok(start_transform) = transform_q.get(edge_endpoints.start) {
+            let edge_start_entity = edge_endpoints.start;
+            let edge_end_entity = edge_endpoints.end;
+
+            if let Ok(start_transform) = transform_q.get(edge_start_entity) {
                 let start_pos = start_transform.translation;
-                if let Ok(end_transform) = transform_q.get(edge_endpoints.end) {
+                if let Ok(end_transform) = transform_q.get(edge_end_entity) {
                     let end_pos = end_transform.translation;
                     let mut edge_transform = transform_q.get_mut(edge_entity).unwrap();
                     set_3d_line_transform(&mut edge_transform, start_pos, end_pos);
@@ -331,13 +339,13 @@ impl VertexManager {
                 } else {
                     warn!(
                         "3d Edge end entity {:?} has no transform",
-                        edge_endpoints.end
+                        edge_end_entity
                     );
                 }
             } else {
                 warn!(
                     "3d Edge start entity {:?} has no transform",
-                    edge_endpoints.start
+                    edge_start_entity,
                 );
             }
         }
@@ -374,36 +382,42 @@ impl VertexManager {
         self.vertices_2d_to_3d.insert(entity_2d, entity_3d);
     }
 
+    pub fn register_3d_edge(&mut self, entity_3d: Entity, entity_2d: Entity) {
+        self.edges_3d_to_2d.insert(entity_3d, entity_2d);
+        self.edges_2d_to_3d.insert(entity_2d, entity_3d);
+    }
+
     pub fn cleanup_deleted_vertex(
         &mut self,
         entity_3d: &Entity,
         commands: &mut Commands,
-        edge_2d_q: &Query<(Entity, &Edge2dLocal)>,
-        edge_3d_q: &Query<(Entity, &Edge3dLocal)>,
     ) {
-        // despawn 3d edge
-        for (edge_3d_entity, edge_3d) in edge_3d_q.iter() {
-            if edge_3d.start == *entity_3d {
-                info!("despawn 3d edge {:?}", edge_3d_entity);
-                commands.entity(edge_3d_entity).despawn();
-            }
-        }
-
         if let Some(vertex_2d_entity) = self.unregister_3d_vertex(entity_3d) {
             // despawn 2d vertex
             info!("despawn 2d vertex {:?}", vertex_2d_entity);
             commands.entity(vertex_2d_entity).despawn();
-
-            // despawn 2d edge
-            for (edge_2d_entity, edge_2d) in edge_2d_q.iter() {
-                if edge_2d.start == vertex_2d_entity {
-                    info!("despawn 2d edge {:?}", edge_2d_entity);
-                    commands.entity(edge_2d_entity).despawn();
-                }
-            }
         } else {
             panic!(
                 "Vertex3d entity: `{:?}` has no corresponding Vertex2d entity",
+                entity_3d
+            );
+        }
+
+        self.recalculate_vertices();
+    }
+
+    pub fn cleanup_deleted_edge(
+        &mut self,
+        entity_3d: &Entity,
+        commands: &mut Commands,
+    ) {
+        if let Some(edge_2d_entity) = self.unregister_3d_edge(entity_3d) {
+            // despawn 2d edge
+            info!("despawn 2d edge {:?}", edge_2d_entity);
+            commands.entity(edge_2d_entity).despawn();
+        } else {
+            panic!(
+                "Edge3d entity: `{:?}` has no corresponding Edge2d entity",
                 entity_3d
             );
         }
@@ -428,12 +442,14 @@ impl VertexManager {
         commands: &mut Commands,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
-        camera_manager: &mut CameraManager,
+        camera_manager: &CameraManager,
         vertex_3d_entity: Entity,
         is_root: bool,
         tab_id_opt: Option<TabId>,
         color: Color,
     ) -> Entity {
+
+        // vertex 3d
         commands
             .entity(vertex_3d_entity)
             .insert(RenderObjectBundle::sphere(
@@ -446,6 +462,7 @@ impl VertexManager {
             ))
             .insert(camera_manager.layer_3d);
 
+        // vertex 2d
         let vertex_2d_entity = commands
             .spawn(RenderObjectBundle::circle(
                 meshes,
@@ -475,9 +492,57 @@ impl VertexManager {
         //     vertex_3d_entity, vertex_2d_entity,
         // );
 
+        // register 3d & 2d vertices together
         self.register_3d_vertex(vertex_3d_entity, vertex_2d_entity);
 
         vertex_2d_entity
+    }
+
+    pub fn edge_3d_postprocess(
+        &mut self,
+        commands: &mut Commands,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+        camera_manager: &CameraManager,
+        edge_3d_entity: Entity,
+        vertex_a_2d_entity: Entity,
+        vertex_b_2d_entity: Entity,
+        tab_id_opt: Option<TabId>,
+        color: Color,
+        arrows_not_lines: bool,
+    ) -> Entity {
+
+        // edge 3d
+        let shape_components = if arrows_not_lines {
+            create_3d_edge_diamond(meshes, materials, Vec3::ZERO, Vec3::X, color)
+        } else {
+            create_3d_edge_line(meshes, materials, Vec3::ZERO, Vec3::X, color)
+        };
+        commands
+            .entity(edge_3d_entity)
+            .insert(shape_components)
+            .insert(camera_manager.layer_3d);
+
+        // edge 2d
+        let shape_components = if arrows_not_lines {
+            create_2d_edge_arrow(meshes, materials, Vec2::ZERO, Vec2::X, color)
+        } else {
+            create_2d_edge_line(meshes, materials, Vec2::ZERO, Vec2::X, color)
+        };
+        let edge_2d_entity = commands
+            .spawn_empty()
+            .insert(shape_components)
+            .insert(camera_manager.layer_2d)
+            .insert(Edge2dLocal::new(vertex_a_2d_entity, vertex_b_2d_entity))
+            .id();
+        if let Some(tab_id) = tab_id_opt {
+            commands.entity(edge_2d_entity).insert(OwnedByTab::new(tab_id));
+        }
+
+        // register 3d & 2d edges together
+        self.register_3d_edge(edge_3d_entity, edge_2d_entity);
+
+        edge_2d_entity
     }
 
     fn handle_insert_key_press(
@@ -939,17 +1004,23 @@ impl VertexManager {
         return None;
     }
 
+    fn unregister_3d_edge(&mut self, entity_3d: &Entity) -> Option<Entity> {
+        if let Some(entity_2d) = self.edges_3d_to_2d.remove(entity_3d) {
+            self.edges_2d_to_3d.remove(&entity_2d);
+            return Some(entity_2d);
+        }
+        return None;
+    }
+
     pub(crate) fn setup_compass(
         &mut self,
         commands: &mut Commands,
-        client: &mut Client,
         camera_manager: &mut CameraManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
     ) {
         let (root_vertex_2d_entity, vertex_3d_entity, _, _) = self.new_local_vertex(
             commands,
-            client,
             camera_manager,
             meshes,
             materials,
@@ -961,51 +1032,55 @@ impl VertexManager {
         commands.entity(root_vertex_2d_entity).insert(Compass);
         commands.entity(vertex_3d_entity).insert(Compass);
 
-        let (vertex_2d_entity, vertex_3d_entity, Some(edge_2d_entity), Some(edge_3d_entity)) = self.new_local_vertex(
+        self.new_compass_arm(
             commands,
-            client,
             camera_manager,
             meshes,
             materials,
-            Some(root_vertex_2d_entity),
+            root_vertex_2d_entity,
             Vec3::new(100.0, 0.0, 0.0),
             Color::RED,
-        ) else {
-            panic!("No edges?");
-        };
-        self.compass_vertices.push(vertex_3d_entity);
-        commands.entity(vertex_2d_entity).insert(Compass);
-        commands.entity(vertex_3d_entity).insert(Compass);
-        commands.entity(edge_2d_entity).insert(Compass);
-        commands.entity(edge_3d_entity).insert(Compass);
+        );
 
-        let (vertex_2d_entity, vertex_3d_entity, Some(edge_2d_entity), Some(edge_3d_entity)) = self.new_local_vertex(
+        self.new_compass_arm(
             commands,
-            client,
             camera_manager,
             meshes,
             materials,
-            Some(root_vertex_2d_entity),
+            root_vertex_2d_entity,
             Vec3::new(0.0, 100.0, 0.0),
             Color::GREEN,
-        ) else {
-            panic!("No edges?");
-        };
-        self.compass_vertices.push(vertex_3d_entity);
-        commands.entity(vertex_2d_entity).insert(Compass);
-        commands.entity(vertex_3d_entity).insert(Compass);
-        commands.entity(edge_2d_entity).insert(Compass);
-        commands.entity(edge_3d_entity).insert(Compass);
+        );
 
+        self.new_compass_arm(
+            commands,
+            camera_manager,
+            meshes,
+            materials,
+            root_vertex_2d_entity,
+            Vec3::new(0.0, 0.0, 100.0),
+            Color::LIGHT_BLUE,
+        );
+    }
+
+    fn new_compass_arm(
+        &mut self,
+        commands: &mut Commands,
+        camera_manager: &mut CameraManager,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+        root_vertex_2d_entity: Entity,
+        position: Vec3,
+        color: Color,
+    ) {
         let (vertex_2d_entity, vertex_3d_entity, Some(edge_2d_entity), Some(edge_3d_entity)) = self.new_local_vertex(
             commands,
-            client,
             camera_manager,
             meshes,
             materials,
             Some(root_vertex_2d_entity),
-            Vec3::new(0.0, 0.0, 100.0),
-            Color::LIGHT_BLUE,
+            position,
+            color,
         ) else {
             panic!("No edges?");
         };
@@ -1019,14 +1094,12 @@ impl VertexManager {
     pub(crate) fn setup_grid(
         &mut self,
         commands: &mut Commands,
-        client: &mut Client,
         camera_manager: &mut CameraManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
     ) {
         self.new_grid_corner(
             commands,
-            client,
             camera_manager,
             meshes,
             materials,
@@ -1036,7 +1109,6 @@ impl VertexManager {
         );
         self.new_grid_corner(
             commands,
-            client,
             camera_manager,
             meshes,
             materials,
@@ -1047,7 +1119,6 @@ impl VertexManager {
 
         self.new_grid_corner(
             commands,
-            client,
             camera_manager,
             meshes,
             materials,
@@ -1057,7 +1128,6 @@ impl VertexManager {
         );
         self.new_grid_corner(
             commands,
-            client,
             camera_manager,
             meshes,
             materials,
@@ -1070,7 +1140,6 @@ impl VertexManager {
     fn new_grid_corner(
         &mut self,
         commands: &mut Commands,
-        client: &mut Client,
         camera_manager: &mut CameraManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
@@ -1087,7 +1156,6 @@ impl VertexManager {
 
         let (root_vertex_2d_entity, root_vertex_3d_entity, _, _) = self.new_local_vertex(
             commands,
-            client,
             camera_manager,
             meshes,
             materials,
@@ -1100,7 +1168,6 @@ impl VertexManager {
 
         self.new_grid_vertex(
             commands,
-            client,
             camera_manager,
             meshes,
             materials,
@@ -1113,7 +1180,6 @@ impl VertexManager {
         );
         self.new_grid_vertex(
             commands,
-            client,
             camera_manager,
             meshes,
             materials,
@@ -1126,7 +1192,6 @@ impl VertexManager {
         );
         self.new_grid_vertex(
             commands,
-            client,
             camera_manager,
             meshes,
             materials,
@@ -1142,7 +1207,6 @@ impl VertexManager {
     fn new_grid_vertex(
         &mut self,
         commands: &mut Commands,
-        client: &mut Client,
         camera_manager: &mut CameraManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
@@ -1151,7 +1215,6 @@ impl VertexManager {
     ) {
         let (vertex_2d_entity, vertex_3d_entity, Some(edge_2d_entity), Some(edge_3d_entity)) = self.new_local_vertex(
             commands,
-            client,
             camera_manager,
             meshes,
             materials,
@@ -1170,7 +1233,6 @@ impl VertexManager {
     fn new_local_vertex(
         &mut self,
         commands: &mut Commands,
-        client: &mut Client,
         camera_manager: &mut CameraManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
@@ -1178,56 +1240,64 @@ impl VertexManager {
         position: Vec3,
         color: Color,
     ) -> (Entity, Entity, Option<Entity>, Option<Entity>) {
-        let parent_vertex_3d_entity_opt =
-            parent_vertex_2d_entity_opt.map(|parent_vertex_2d_entity| {
-                *self
-                    .vertex_entity_2d_to_3d(&parent_vertex_2d_entity)
-                    .unwrap()
-            });
 
+        // vertex 3d
         let mut vertex_3d_component = Vertex3d::new(0, 0, 0);
         vertex_3d_component.localize();
         vertex_3d_component.set_vec3(&position);
-        let new_vertex_3d_entity = commands.spawn_empty().insert(vertex_3d_component).id();
+        let new_vertex_3d_entity = commands
+            .spawn_empty()
+            .insert(vertex_3d_component)
+            .id();
 
+        // vertex 2d
         let new_vertex_2d_entity = self.vertex_3d_postprocess(
             commands,
             meshes,
             materials,
             camera_manager,
             new_vertex_3d_entity,
-            parent_vertex_3d_entity_opt.is_none(),
+            parent_vertex_2d_entity_opt.is_none(),
             None,
             color,
         );
-        let mut new_edge_2d_entity = None;
-        let mut new_edge_3d_entity = None;
-        if let Some(parent_vertex_3d_entity) = parent_vertex_3d_entity_opt {
-            let parent_vertex_2d_entity = parent_vertex_2d_entity_opt.unwrap();
-            let (edge_2d_entity, edge_3d_entity) = edge_3d_postprocess(
+
+        let mut new_edge_2d_entity_opt = None;
+        let mut new_edge_3d_entity_opt = None;
+
+        if let Some(parent_vertex_2d_entity) = parent_vertex_2d_entity_opt {
+
+            // edge 3d
+            let parent_vertex_3d_entity = *self
+                .vertex_entity_2d_to_3d(&parent_vertex_2d_entity)
+                .unwrap();
+            let new_edge_3d_entity = commands
+                .spawn_empty()
+                .insert(Edge3dLocal::new(parent_vertex_3d_entity, new_vertex_3d_entity))
+                .id();
+
+            // edge 2d
+            let new_edge_2d_entity = self.edge_3d_postprocess(
                 commands,
-                client,
                 meshes,
                 materials,
                 camera_manager,
-                new_vertex_3d_entity,
-                new_vertex_2d_entity,
-                parent_vertex_3d_entity,
+                new_edge_3d_entity,
                 parent_vertex_2d_entity,
+                new_vertex_2d_entity,
                 None,
                 color,
                 false,
-                false,
             );
-            new_edge_2d_entity = Some(edge_2d_entity);
-            new_edge_3d_entity = Some(edge_3d_entity);
+            new_edge_2d_entity_opt = Some(new_edge_2d_entity);
+            new_edge_3d_entity_opt = Some(new_edge_3d_entity);
         }
 
         return (
             new_vertex_2d_entity,
             new_vertex_3d_entity,
-            new_edge_2d_entity,
-            new_edge_3d_entity,
+            new_edge_2d_entity_opt,
+            new_edge_3d_entity_opt,
         );
     }
 

@@ -10,6 +10,7 @@ use vortex_proto::{
     },
     protocol,
 };
+use vortex_proto::components::Edge3d;
 
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
@@ -76,6 +77,7 @@ impl Plugin for VortexPlugin {
             .add_event::<InsertComponentEvent<Vertex3d>>()
             .add_event::<InsertComponentEvent<VertexRoot>>()
             .add_event::<InsertComponentEvent<OwnedByTab>>()
+            .add_event::<InsertComponentEvent<Edge3d>>()
             .add_system(network::insert_fs_component_events)
             .add_system(network::insert_changelist_entry_events)
             .add_system(network::insert_vertex_events)

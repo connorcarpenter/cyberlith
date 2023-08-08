@@ -17,10 +17,10 @@ impl Vertex2d {
 // for stored children vertexes undo/redo ...
 #[derive(Clone)]
 pub struct VertexEntry {
-    pub entity_2d: Entity,
-    pub entity_3d: Entity,
-    pub position: Vec3,
-    pub children: Option<Vec<VertexEntry>>,
+    entity_2d: Entity,
+    entity_3d: Entity,
+    position: Vec3,
+    children: Option<Vec<VertexEntry>>,
 }
 
 impl VertexEntry {
@@ -31,6 +31,26 @@ impl VertexEntry {
             position,
             children: None,
         }
+    }
+
+    pub fn set_children(&mut self, children: Vec<VertexEntry>) {
+        self.children = Some(children);
+    }
+
+    pub fn entity_2d(&self) -> Entity {
+        self.entity_2d
+    }
+
+    pub fn entity_3d(&self) -> Entity {
+        self.entity_3d
+    }
+
+    pub fn position(&self) -> Vec3 {
+        self.position
+    }
+
+    pub fn children(&self) -> Option<Vec<VertexEntry>> {
+        self.children.clone()
     }
 }
 

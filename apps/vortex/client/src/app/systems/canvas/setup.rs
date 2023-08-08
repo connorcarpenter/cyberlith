@@ -58,14 +58,12 @@ pub fn setup(
     );
     vertex_manager.setup_compass(
         &mut commands,
-        &mut client,
         &mut camera_manager,
         &mut meshes,
         &mut materials,
     );
     vertex_manager.setup_grid(
         &mut commands,
-        &mut client,
         &mut camera_manager,
         &mut meshes,
         &mut materials,
