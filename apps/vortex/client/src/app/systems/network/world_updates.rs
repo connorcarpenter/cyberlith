@@ -42,13 +42,13 @@ use crate::app::{
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
     for SpawnEntityEvent(entity) in event_reader.iter() {
-        info!("spawned entity: {:?}", entity);
+        info!("entity: `{:?}`, spawned", entity);
     }
 }
 
 pub fn despawn_entity_events(mut event_reader: EventReader<DespawnEntityEvent>) {
     for DespawnEntityEvent(entity) in event_reader.iter() {
-        info!("despawned entity: {:?}", entity);
+        info!("entity: `{:?}`, despawned", entity);
     }
 }
 
@@ -418,7 +418,7 @@ pub fn remove_component_events(
         }
         for (vertex_3d_entity, vertex_type) in events.read::<VertexType>() {
             info!(
-                "removed VertexType component from entity: {:?}",
+                "entity: `{:?}`, removed VertexType",
                 vertex_3d_entity
             );
 

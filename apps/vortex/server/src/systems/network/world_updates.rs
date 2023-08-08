@@ -32,7 +32,7 @@ use crate::{
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
     for SpawnEntityEvent(_user_key, entity) in event_reader.iter() {
-        info!("spawned entity: {:?}", entity);
+        info!("entity: `{:?}`, spawned", entity);
     }
 }
 
@@ -45,16 +45,36 @@ pub fn despawn_entity_events(
     mut event_reader: EventReader<DespawnEntityEvent>,
 ) {
     for DespawnEntityEvent(user_key, entity) in event_reader.iter() {
-        info!("despawned entity: {:?}", entity);
 
         let Some(user) = user_manager.user_info(user_key) else {
             panic!("user not found");
         };
         let workspace = git_manager.workspace_mut(user.get_username());
-        if workspace.entity_is_file(entity) {
+
+        let entity_is_file = workspace.entity_is_file(entity);
+        let entity_is_vertex = vertex_manager.entity_is_vertex(entity);
+
+        match (entity_is_file, entity_is_vertex) {
+            (true, true) => {
+                panic!("entity is both file and vertex");
+            }
+            (false, false) => {
+                panic!("entity is neither file nor vertex");
+            }
+            (true, false) => {
+                // file
+                info!("entity: `{:?}` (which is a File), despawned", entity);
+            }
+            (false, true) => {
+                // vertex
+                info!("entity: `{:?}` (which is a Vertex), despawned", entity);
+            }
+        }
+
+
+        if entity_is_file {
             workspace.on_client_delete_file(&mut commands, &mut server, entity);
-        } else if vertex_manager.entity_is_vertex(entity) {
-            info!("despawned entity is a vertex!");
+        } else if entity_is_vertex {
             vertex_manager.on_delete_vertex(&mut commands, &mut server, entity);
         }
     }
@@ -131,7 +151,7 @@ pub fn insert_component_events(
 
         // on Vertex3D Insert Event
         for (user_key, entity) in events.read::<Vertex3d>() {
-            info!("inserted Vertex3d for entity: {:?}", entity);
+            info!("entity: `{:?}`, inserted Vertex3d", entity);
             tab_manager.on_insert_vertex(&user_key, &entity);
             handle_file_modify(
                 &mut commands,
@@ -147,7 +167,7 @@ pub fn insert_component_events(
 
         // on VertexChild Insert Event
         for (_user_key, entity) in events.read::<VertexChild>() {
-            info!("inserted VertexChild");
+            info!("entity: `{:?}`, inserted VertexChild", entity);
             let child = vert_query.get(entity).unwrap();
             let Some(parent_entity) = child.parent_id.get(&server) else {
                 panic!("no parent entity!")
@@ -158,7 +178,7 @@ pub fn insert_component_events(
 
         // on VertexRootChild Insert Event
         for (_user_key, entity) in events.read::<VertexRootChild>() {
-            info!("inserted VertexRootChild");
+            info!("entity: `{:?}`, inserted VertexRootChild", entity);
             vertex_manager.on_create_vertex(&entity, None);
             vertex_manager.finalize_vertex_creation();
         }
@@ -185,7 +205,7 @@ pub fn remove_component_events(
         }
         // on Vertex3D Remove Event
         for (user_key, entity, _component) in events.read::<Vertex3d>() {
-            info!("removed Vertex3d");
+            info!("entity: `{:?}`, removed Vertex3d", entity);
 
             handle_file_modify(
                 &mut commands,
@@ -201,13 +221,12 @@ pub fn remove_component_events(
             tab_manager.on_remove_vertex(&user_key, &entity);
         }
         // on VertexChild Remove Event
-        for (_, _, _) in events.read::<VertexChild>() {
-            info!("removed VertexChild");
+        for (_, entity, _) in events.read::<VertexChild>() {
+            info!("entity: `{:?}`, removed VertexChild", entity);
         }
-
         // on VertexRootChild Remove Event
-        for (_, _, _) in events.read::<VertexRootChild>() {
-            info!("removed VertexRootChild");
+        for (_, entity, _) in events.read::<VertexRootChild>() {
+            info!("entity: `{:?}`, removed VertexRootChild", entity);
         }
     }
 }

@@ -151,7 +151,7 @@ impl TabState {
     }
 
     pub fn add_content_entity(&mut self, entity: Entity) {
-        info!("TabState adding entity: {:?}", entity);
+        //info!("TabState adding entity: {:?}", entity);
         self.content_entities.insert(entity);
     }
 

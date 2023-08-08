@@ -123,11 +123,10 @@ impl VertexManager {
         server: &mut Server,
         entity: &Entity,
     ) {
-        info!("on_delete_vertex: {:?}", entity);
         let entities_to_delete = Self::remove_entity(&mut self.vertices, entity);
         info!(
-            "on_delete_vertex: entities_to_delete: {:?}",
-            entities_to_delete
+            "on_delete_vertex: entity `{:?}`, entities_to_delete: `{:?}`",
+            entity, entities_to_delete,
         );
 
         for child_entity in entities_to_delete {
