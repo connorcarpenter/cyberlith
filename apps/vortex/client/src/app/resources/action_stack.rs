@@ -15,13 +15,14 @@ use render_api::{
 
 use vortex_proto::{components::{
     ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-    OwnedByTab, Vertex3d, VertexChild,
+    OwnedByTab, Vertex3d,
 }, FileExtension, types::TabId};
+use vortex_proto::components::Edge3d;
 
 use crate::app::{
     components::{
         file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
-        Edge2dLocal, Edge3dLocal, Vertex2d, VertexEntry,
+        Edge2dLocal, Vertex2d, VertexEntry,
     },
     resources::{
         camera_manager::CameraManager,
@@ -603,11 +604,10 @@ impl ActionStack {
                     Client,
                     ResMut<VertexManager>,
                     Query<(Entity, &Vertex3d)>,
-                    Query<&VertexChild>,
                     Query<(Entity, &Edge2dLocal)>,
-                    Query<(Entity, &Edge3dLocal)>,
+                    Query<(Entity, &Edge3d)>,
                 )> = SystemState::new(world);
-                let (mut commands, mut client, mut vertex_manager, vertex_q, vertex_child_q, edge_2d_q, edge_3d_q) =
+                let (mut commands, mut client, mut vertex_manager, vertex_q, edge_2d_q, edge_3d_q) =
                     system_state.get_mut(world);
 
                 let vertex_3d_entity = *vertex_manager

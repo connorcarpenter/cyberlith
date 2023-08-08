@@ -20,6 +20,7 @@ use crate::{
     files::{FileReadOutput, FileReader, FileWriter},
     resources::{ChangelistValue, FileEntryValue, GitManager, TabManager, VertexManager},
 };
+use crate::resources::ContentEntityData;
 
 pub struct Workspace {
     pub room_key: RoomKey,
@@ -748,11 +749,13 @@ impl Workspace {
             }
 
             // get entities from TabManager's current tab
-            let content_entities = world
+            let content_entities: HashMap<Entity, ContentEntityData> = world
                 .get_resource::<TabManager>()
                 .unwrap()
                 .user_current_tab_content_entities(user_key)
-                .clone();
+                .iter()
+                .map(|(entity, data) | (*entity, data.clone()))
+                .collect();
 
             // write
             info!("... Generating content ...");

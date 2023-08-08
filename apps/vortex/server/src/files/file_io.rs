@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{entity::Entity, system::Commands, world::World};
 
@@ -6,9 +6,10 @@ use naia_bevy_server::{CommandsExt, RoomKey, Server};
 use vortex_proto::{components::OwnedByTab, types::TabId, FileExtension};
 
 use crate::files::{MeshReader, MeshWriter, SkelReader, SkelWriter};
+use crate::resources::ContentEntityData;
 
 pub trait FileWriter: Send + Sync {
-    fn write(&self, world: &mut World, content_entities: &HashSet<Entity>) -> Box<[u8]>;
+    fn write(&self, world: &mut World, content_entities: &HashMap<Entity, ContentEntityData>) -> Box<[u8]>;
     fn write_new_default(&self) -> Box<[u8]>;
 }
 
@@ -37,7 +38,7 @@ impl FileReader for FileExtension {
 }
 
 impl FileWriter for FileExtension {
-    fn write(&self, world: &mut World, content_entities: &HashSet<Entity>) -> Box<[u8]> {
+    fn write(&self, world: &mut World, content_entities: &HashMap<Entity, ContentEntityData>) -> Box<[u8]> {
         match self {
             FileExtension::Skel => SkelWriter.write(world, content_entities),
             FileExtension::Mesh => MeshWriter.write(world, content_entities),
@@ -55,21 +56,28 @@ impl FileWriter for FileExtension {
 }
 
 pub enum FileReadOutput {
-    // Skel file, list of vertex entities and an optional parent per
-    Skel(Vec<(Entity, Option<Entity>)>),
-    // Mesh file, list of entities, list of edges, list of faces
-    Mesh(Vec<Entity>, Vec<Entity>, Vec<Entity>),
+    // Skel file, list of (vertex 3d entity, and an optional (edge 3d entity, parent vertex 3d entity))
+    Skel(Vec<(Entity, Option<(Entity, Entity)>)>),
+    // Mesh file, list of vert/edge/face entities
+    Mesh(Vec<(ShapeType, Entity)>),
+}
+
+#[derive(Copy, Clone, Hash, PartialEq, Eq)]
+pub enum ShapeType {
+    Vertex,
+    Edge,
+    Face,
 }
 
 pub fn post_process_networked_entities(
     commands: &mut Commands,
     server: &mut Server,
     room_key: &RoomKey,
-    entities: &HashSet<Entity>,
+    entities: &HashMap<Entity, ContentEntityData>,
     tab_id: TabId,
     pause_replication: bool,
 ) {
-    for entity in entities.iter() {
+    for (entity, _data) in entities.iter() {
         // associate all new Entities with the new Room
         server.room_mut(room_key).add_entity(entity);
 

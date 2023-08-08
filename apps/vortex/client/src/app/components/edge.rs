@@ -12,15 +12,3 @@ impl Edge2dLocal {
         Self { start, end }
     }
 }
-
-#[derive(Component)]
-pub struct Edge3dLocal {
-    pub start: Entity,
-    pub end: Entity,
-}
-
-impl Edge3dLocal {
-    pub fn new(start: Entity, end: Entity) -> Self {
-        Self { start, end }
-    }
-}

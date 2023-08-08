@@ -10,11 +10,9 @@ use bevy_log::{info, warn};
 use naia_bevy_server::{CommandsExt, Server, UserKey};
 
 use vortex_proto::{resources::FileEntryKey, types::TabId};
+use crate::files::ShapeType;
 
-use crate::resources::{
-    user_tab_state::TabState, workspace::Workspace, GitManager, UserManager, UserTabState,
-    VertexManager,
-};
+use crate::resources::{user_tab_state::TabState, workspace::Workspace, GitManager, UserManager, UserTabState, VertexManager, ContentEntityData};
 
 #[derive(Resource)]
 pub struct TabManager {
@@ -122,7 +120,7 @@ impl TabManager {
         info!("Select Tab!");
 
         if let Some(tab_entities) = user_state.current_tab_entities() {
-            for entity in tab_entities.iter() {
+            for (entity, _entity_data) in tab_entities.iter() {
                 // All Entities associated with previous tab must call "pause_replication"
                 if let Some(mut entity_commands) = commands.get_entity(*entity) {
                     entity_commands.pause_replication(server);
@@ -137,7 +135,7 @@ impl TabManager {
 
         // All Entities associated with new tab must call "resume_replication"
         let new_tab_entities = user_state.tab_entities(tab_id).unwrap();
-        for entity in new_tab_entities.iter() {
+        for (entity, entity_data) in new_tab_entities.iter() {
             if let Some(mut entity_commands) = commands.get_entity(*entity) {
                 entity_commands.resume_replication(server);
             } else {
@@ -276,7 +274,7 @@ impl TabManager {
             for (_user_key, closed_state) in closed_states.iter() {
                 // despawn content entities
                 let entities = closed_state.get_content_entities();
-                for entity in entities.iter() {
+                for (entity, _data) in entities.iter() {
                     world.entity_mut(*entity).despawn();
                 }
             }
@@ -303,7 +301,7 @@ impl TabManager {
 
     pub fn on_insert_vertex(&mut self, user_key: &UserKey, vertex_entity: &Entity) {
         self.user_tab_state_mut(user_key)
-            .current_tab_add_entity(vertex_entity);
+            .current_tab_add_entity(vertex_entity, ShapeType::Vertex);
     }
 
     pub fn on_remove_vertex(&mut self, user_key: &UserKey, vertex_entity: &Entity) {
@@ -313,7 +311,7 @@ impl TabManager {
 
     pub(crate) fn user_current_tab_has_entity(&self, user_key: &UserKey, entity: &Entity) -> bool {
         if let Some(entities) = self.user_tab_state(user_key).current_tab_entities() {
-            entities.contains(entity)
+            entities.contains_key(entity)
         } else {
             false
         }
@@ -333,7 +331,7 @@ impl TabManager {
             .unwrap()
     }
 
-    pub(crate) fn user_current_tab_content_entities(&self, user_key: &UserKey) -> &HashSet<Entity> {
+    pub(crate) fn user_current_tab_content_entities(&self, user_key: &UserKey) -> &HashMap<Entity, ContentEntityData> {
         self.user_tab_state(user_key)
             .current_tab_entities()
             .unwrap()

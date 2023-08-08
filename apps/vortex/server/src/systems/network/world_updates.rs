@@ -16,11 +16,12 @@ use naia_bevy_server::{
 
 use vortex_proto::{
     components::{
-        FileSystemChild, FileSystemEntry, FileSystemRootChild, Vertex3d, VertexChild,
+        FileSystemChild, FileSystemEntry, FileSystemRootChild, Vertex3d,
         VertexRoot,
     },
     resources::FileEntryKey,
 };
+use vortex_proto::components::Edge3d;
 
 use crate::{
     files::handle_file_modify,
@@ -89,16 +90,16 @@ pub fn insert_component_events(
     mut vertex_manager: ResMut<VertexManager>,
     mut fs_waiting_entities: Local<HashMap<Entity, FSWaitlist>>,
     mut event_reader: EventReader<InsertComponentEvents>,
-    fs_entry_query: Query<&FileSystemEntry>,
-    fs_child_query: Query<&FileSystemChild>,
-    entry_key_query: Query<&FileEntryKey>,
-    vert_query: Query<&VertexChild>,
+    fs_entry_q: Query<&FileSystemEntry>,
+    fs_child_q: Query<&FileSystemChild>,
+    entry_key_q: Query<&FileEntryKey>,
+    edge_3d_q: Query<&Edge3d>,
 ) {
     for events in event_reader.iter() {
         // on FileSystemEntry Insert Event
         for (user_key, entity) in events.read::<FileSystemEntry>() {
             info!("inserted FileSystemEntry");
-            let entry = fs_entry_query.get(entity).unwrap();
+            let entry = fs_entry_q.get(entity).unwrap();
             fs_process_insert(
                 &mut commands,
                 &mut server,
@@ -131,11 +132,11 @@ pub fn insert_component_events(
         // on FileSystemChild Insert Event
         for (user_key, entity) in events.read::<FileSystemChild>() {
             info!("inserted FileSystemChild");
-            let entry = fs_child_query.get(entity).unwrap();
+            let entry = fs_child_q.get(entity).unwrap();
             let Some(parent_entity) = entry.parent_id.get(&server) else {
                 panic!("no parent entity!")
             };
-            let parent_key = entry_key_query.get(parent_entity).unwrap();
+            let parent_key = entry_key_q.get(parent_entity).unwrap();
             fs_process_insert(
                 &mut commands,
                 &mut server,
@@ -161,26 +162,30 @@ pub fn insert_component_events(
                 &mut tab_manager,
                 &user_key,
                 &entity,
-                &entry_key_query,
+                &entry_key_q,
             );
         }
 
-        // on VertexChild Insert Event
-        for (_user_key, entity) in events.read::<VertexChild>() {
-            info!("entity: `{:?}`, inserted VertexChild", entity);
-            let child = vert_query.get(entity).unwrap();
-            let Some(parent_entity) = child.parent_id.get(&server) else {
+        // on Edge3d Insert Event
+        for (_user_key, edge_entity) in events.read::<Edge3d>() {
+            info!("entity: `{:?}`, inserted Edge3d", edge_entity);
+            let edge_3d = edge_3d_q.get(edge_entity).unwrap();
+            let Some(parent_entity) = edge_3d.start.get(&server) else {
                 panic!("no parent entity!")
             };
-            vertex_manager.on_create_vertex(&entity, Some(parent_entity));
+            let Some(child_entity) = edge_3d.end.get(&server) else {
+                panic!("no child entity!")
+            };
+            vertex_manager.on_create_vertex(&child_entity, Some(parent_entity));
             vertex_manager.finalize_vertex_creation();
         }
 
         // on VertexRoot Insert Event
         for (_user_key, entity) in events.read::<VertexRoot>() {
-            info!("entity: `{:?}`, inserted VertexRoot", entity);
-            vertex_manager.on_create_vertex(&entity, None);
-            vertex_manager.finalize_vertex_creation();
+            panic!("how is this possible?");
+            // info!("entity: `{:?}`, inserted VertexRoot", entity);
+            // vertex_manager.on_create_vertex(&entity, None);
+            // vertex_manager.finalize_vertex_creation();
         }
     }
 }
@@ -220,13 +225,13 @@ pub fn remove_component_events(
 
             tab_manager.on_remove_vertex(&user_key, &entity);
         }
-        // on VertexChild Remove Event
-        for (_, entity, _) in events.read::<VertexChild>() {
-            info!("entity: `{:?}`, removed VertexChild", entity);
+        // on Edge3d Remove Event
+        for (_, entity, _) in events.read::<Edge3d>() {
+            info!("entity: `{:?}`, removed Edge3d", entity);
         }
         // on VertexRoot Remove Event
         for (_, entity, _) in events.read::<VertexRoot>() {
-            info!("entity: `{:?}`, removed VertexRoot", entity);
+            panic!("entity: `{:?}`, removed VertexRoot, how is this possible?", entity);
         }
     }
 }

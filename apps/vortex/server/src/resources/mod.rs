@@ -8,10 +8,10 @@ mod user_tab_state;
 mod vertex_manager;
 mod workspace;
 
-pub use changelist_manager::{changelist_manager_process, ChangelistManager};
-pub use file_entry::{ChangelistValue, FileEntryValue};
-pub use git_manager::GitManager;
-pub use tab_manager::TabManager;
-pub use user_manager::UserManager;
-pub use user_tab_state::UserTabState;
-pub use vertex_manager::VertexManager;
+pub use changelist_manager::*;
+pub use file_entry::*;
+pub use git_manager::*;
+pub use tab_manager::*;
+pub use user_manager::*;
+pub use user_tab_state::*;
+pub use vertex_manager::*;

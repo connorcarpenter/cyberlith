@@ -5,6 +5,7 @@ use bevy_ecs::{
     prelude::{Commands, World},
     system::{Query, SystemState},
 };
+use bevy_ecs::system::Res;
 use bevy_log::info;
 
 use naia_bevy_server::{
@@ -12,14 +13,14 @@ use naia_bevy_server::{
     UnsignedVariableInteger,
 };
 
-use vortex_proto::components::{
-    Vertex3d, VertexChild, VertexRoot, VertexSerdeInt,
-};
+use vortex_proto::components::{Edge3d, Vertex3d, VertexRoot, VertexSerdeInt};
 
 use crate::{
     files::{FileReadOutput, FileReader, FileWriter},
     resources::VertexManager,
 };
+use crate::files::file_io::ShapeType;
+use crate::resources::ContentEntityData;
 
 // Actions
 #[derive(Debug)]
@@ -46,10 +47,10 @@ impl SkelWriter {
         content_entities: &Vec<Entity>,
     ) -> Vec<SkelAction> {
         let mut system_state: SystemState<(
-            Server,
-            Query<(&Vertex3d, Option<&VertexChild>)>,
+            Res<VertexManager>,
+            Query<&Vertex3d>,
         )> = SystemState::new(world);
-        let (server, vertex_query) = system_state.get_mut(world);
+        let (vertex_manager, vertex_query) = system_state.get_mut(world);
 
         let mut output = Vec::new();
 
@@ -57,17 +58,9 @@ impl SkelWriter {
         let mut map: HashMap<Entity, (usize, i16, i16, i16, Option<Entity>)> = HashMap::new();
 
         for (id, entity) in content_entities.iter().enumerate() {
-            let (vertex, has_parent_opt) = vertex_query.get(*entity).unwrap();
+            let vertex = vertex_query.get(*entity).unwrap();
 
-            let parent_id: Option<Entity> = {
-                match has_parent_opt {
-                    Some(has_parent) => match has_parent.parent_id.get(&server) {
-                        Some(parent_id) => Some(parent_id),
-                        None => None,
-                    },
-                    None => None,
-                }
-            };
+            let parent_id: Option<Entity> = vertex_manager.get_vertex_parent(entity);
 
             let vertex_info = (id, vertex.x(), vertex.y(), vertex.z(), parent_id);
             map.insert(*entity, vertex_info);
@@ -119,8 +112,8 @@ impl SkelWriter {
 }
 
 impl FileWriter for SkelWriter {
-    fn write(&self, world: &mut World, content_entities: &HashSet<Entity>) -> Box<[u8]> {
-        let content_entities_vec: Vec<Entity> = content_entities.iter().map(|e| *e).collect();
+    fn write(&self, world: &mut World, content_entities: &HashMap<Entity, ContentEntityData>) -> Box<[u8]> {
+        let content_entities_vec: Vec<Entity> = content_entities.iter().map(|(e, data)| *e).collect();
         let actions = self.world_to_actions(world, &content_entities_vec);
         self.write_from_actions(actions)
     }
@@ -180,7 +173,10 @@ impl SkelReader {
         for action in actions {
             match action {
                 SkelAction::Vertex(x, y, z, parent_id_opt) => {
-                    let entity_id = commands.spawn_empty().enable_replication(server).id();
+                    let entity_id = commands
+                        .spawn_empty()
+                        .enable_replication(server)
+                        .id();
                     info!("spawning vertex entity {:?}", entity_id);
                     if parent_id_opt.is_some() {
                         commands
@@ -201,10 +197,17 @@ impl SkelReader {
 
             if let Some(parent_id) = parent_id_opt {
                 let (parent_entity, _, _, _, _) = entities.get(*parent_id as usize).unwrap();
-                let mut parent_component = VertexChild::new();
-                parent_component.parent_id.set(server, parent_entity);
-                entity_mut.insert(parent_component);
-                output.push((*entity, Some(*parent_entity)));
+
+                let mut edge_component = Edge3d::new();
+                edge_component.start.set(server, parent_entity);
+                edge_component.end.set(server, entity);
+                let edge_entity = commands
+                    .spawn_empty()
+                    .enable_replication(server)
+                    .insert(edge_component)
+                    .id();
+
+                output.push((*entity, Some((edge_entity, *parent_entity))));
             } else {
                 entity_mut.insert(VertexRoot);
                 output.push((*entity, None));
@@ -216,13 +219,21 @@ impl SkelReader {
 
     pub fn post_process_entities(
         vertex_manager: &mut VertexManager,
-        entities: Vec<(Entity, Option<Entity>)>,
-    ) -> HashSet<Entity> {
-        let mut new_content_entities = HashSet::new();
+        entities: Vec<(Entity, Option<(Entity, Entity)>)>,
+    ) -> HashMap<Entity, ContentEntityData> {
+        let mut new_content_entities = HashMap::new();
 
-        for (entity, parent_opt) in entities {
-            new_content_entities.insert(entity);
-            vertex_manager.on_create_vertex(&entity, parent_opt);
+        for (vertex_entity, edge_opt) in entities {
+            new_content_entities.insert(vertex_entity, ContentEntityData::new(ShapeType::Vertex));
+            let parent_opt = {
+                if let Some((edge_entity, parent_entity)) = edge_opt {
+                    new_content_entities.insert(edge_entity, ContentEntityData::new(ShapeType::Edge));
+                    Some(parent_entity)
+                } else {
+                    None
+                }
+            };
+            vertex_manager.on_create_vertex(&vertex_entity, parent_opt);
         }
         vertex_manager.finalize_vertex_creation();
 

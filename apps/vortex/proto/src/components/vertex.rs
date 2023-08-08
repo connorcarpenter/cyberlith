@@ -14,7 +14,6 @@ impl ProtocolPlugin for VertexComponentsPlugin {
     fn build(&self, protocol: &mut Protocol) {
         protocol
             .add_component::<Vertex3d>()
-            .add_component::<VertexChild>()
             .add_component::<VertexRoot>()
             .add_component::<OwnedByTab>()
             .add_component::<Edge3d>()
@@ -73,18 +72,6 @@ impl Vertex3d {
 
     pub fn from_vec3(vec3: Vec3) -> Self {
         Self::new(vec3.x as i16, vec3.y as i16, vec3.z as i16)
-    }
-}
-
-// VertexChild
-#[derive(Component, Replicate)]
-pub struct VertexChild {
-    pub parent_id: EntityProperty,
-}
-
-impl VertexChild {
-    pub fn new() -> Self {
-        Self::new_complete()
     }
 }
 

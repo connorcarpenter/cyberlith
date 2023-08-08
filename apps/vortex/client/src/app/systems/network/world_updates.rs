@@ -21,13 +21,13 @@ use render_api::{
 };
 use vortex_proto::components::{
     ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild, OwnedByTab,
-    Vertex3d, VertexChild, VertexRoot,
+    Vertex3d, VertexRoot,
 };
 
 use crate::app::{
     components::{
         file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
-        Edge2dLocal, Edge3dLocal,
+        Edge2dLocal,
     },
     events::InsertComponentEvent,
     resources::{camera_manager::CameraManager, global::Global, vertex_manager::VertexManager},

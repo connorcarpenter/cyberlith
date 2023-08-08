@@ -5,12 +5,12 @@ use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, Server};
 
-struct VertexValue {
+struct VertexData {
     parent: Option<Entity>,
     children: Option<HashSet<Entity>>,
 }
 
-impl VertexValue {
+impl VertexData {
     pub fn new(parent: Option<Entity>) -> Self {
         Self {
             parent,
@@ -33,7 +33,7 @@ impl VertexValue {
 
 #[derive(Resource)]
 pub struct VertexManager {
-    vertices: HashMap<Entity, VertexValue>,
+    vertices: HashMap<Entity, VertexData>,
     waiting_for_parent: HashMap<Entity, Vec<(Entity, Option<Entity>)>>,
 }
 
@@ -47,8 +47,17 @@ impl Default for VertexManager {
 }
 
 impl VertexManager {
+
     pub fn entity_is_vertex(&self, entity: &Entity) -> bool {
         self.vertices.contains_key(entity)
+    }
+
+    pub fn get_vertex_parent(&self, entity: &Entity) -> Option<Entity> {
+        if let Some(vertex_data) = self.vertices.get(entity) {
+            vertex_data.parent
+        } else {
+            None
+        }
     }
 
     pub fn on_create_vertex(&mut self, entity: &Entity, parent_opt: Option<Entity>) {
@@ -88,28 +97,6 @@ impl VertexManager {
         }
     }
 
-    fn insert_vertex(&mut self, entity: Entity, parent_opt: Option<Entity>) {
-        info!("inserting entity: {:?}, parent is {:?}", entity, parent_opt);
-        self.vertices.insert(entity, VertexValue::new(parent_opt));
-
-        if let Some(parent_entity) = parent_opt {
-            let Some(parent_value) = self.vertices.get_mut(&parent_entity) else {
-                panic!("shouldn't be able to happen!");
-            };
-            parent_value.add_child(entity);
-        }
-
-        if let Some(list) = self.waiting_for_parent.remove(&entity) {
-            for (child_entity, child_value) in list {
-                info!(
-                    "child {:?} was waiting on parent {:?}!",
-                    child_entity, entity
-                );
-                self.insert_vertex(child_entity, child_value);
-            }
-        }
-    }
-
     pub fn finalize_vertex_creation(&self) {
         if !self.waiting_for_parent.is_empty() {
             panic!("finalize_vertex_creation: waiting_for_parent is not empty!");
@@ -136,7 +123,29 @@ impl VertexManager {
         }
     }
 
-    fn remove_entity(entities: &mut HashMap<Entity, VertexValue>, entity: &Entity) -> Vec<Entity> {
+    fn insert_vertex(&mut self, entity: Entity, parent_opt: Option<Entity>) {
+        info!("inserting entity: {:?}, parent is {:?}", entity, parent_opt);
+        self.vertices.insert(entity, VertexData::new(parent_opt));
+
+        if let Some(parent_entity) = parent_opt {
+            let Some(parent_value) = self.vertices.get_mut(&parent_entity) else {
+                panic!("shouldn't be able to happen!");
+            };
+            parent_value.add_child(entity);
+        }
+
+        if let Some(list) = self.waiting_for_parent.remove(&entity) {
+            for (child_entity, child_value) in list {
+                info!(
+                    "child {:?} was waiting on parent {:?}!",
+                    child_entity, entity
+                );
+                self.insert_vertex(child_entity, child_value);
+            }
+        }
+    }
+
+    fn remove_entity(entities: &mut HashMap<Entity, VertexData>, entity: &Entity) -> Vec<Entity> {
         let mut output = Vec::new();
 
         // remove entry
@@ -154,10 +163,10 @@ impl VertexManager {
     }
 
     fn remove_entity_and_collect_children_entities(
-        entities: &mut HashMap<Entity, VertexValue>,
+        entities: &mut HashMap<Entity, VertexData>,
         entity: &Entity,
         output: &mut Vec<Entity>,
-    ) -> VertexValue {
+    ) -> VertexData {
         let removed_entry = entities.remove(entity).unwrap();
 
         // handle children

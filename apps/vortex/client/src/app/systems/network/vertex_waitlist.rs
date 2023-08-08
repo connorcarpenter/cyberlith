@@ -15,7 +15,7 @@ use vortex_proto::{
 };
 
 use crate::app::{
-    components::{Edge2dLocal, Edge3dLocal, Vertex2d},
+    components::{Edge2dLocal, Vertex2d},
     resources::{camera_manager::CameraManager, vertex_manager::VertexManager},
     shapes::{
         create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,

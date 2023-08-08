@@ -10,6 +10,7 @@ use crate::{
     files::{post_process_networked_entities, FileReadOutput, MeshReader, SkelReader},
     resources::{workspace::Workspace, VertexManager},
 };
+use crate::files::ShapeType;
 
 pub struct UserTabState {
     current_tab: Option<TabId>,
@@ -72,7 +73,7 @@ impl UserTabState {
         }
     }
 
-    pub(crate) fn current_tab_entities(&self) -> Option<&HashSet<Entity>> {
+    pub(crate) fn current_tab_entities(&self) -> Option<&HashMap<Entity, ContentEntityData>> {
         if let Some(tab_id) = self.current_tab {
             self.tab_entities(&tab_id)
         } else {
@@ -80,7 +81,7 @@ impl UserTabState {
         }
     }
 
-    pub(crate) fn tab_entities(&self, tab_id: &TabId) -> Option<&HashSet<Entity>> {
+    pub(crate) fn tab_entities(&self, tab_id: &TabId) -> Option<&HashMap<Entity, ContentEntityData>> {
         if let Some(state) = self.tabs.get(tab_id) {
             Some(&state.content_entities)
         } else {
@@ -88,10 +89,10 @@ impl UserTabState {
         }
     }
 
-    pub(crate) fn current_tab_add_entity(&mut self, entity: &Entity) {
+    pub(crate) fn current_tab_add_entity(&mut self, entity: &Entity, shape_type: ShapeType) {
         if let Some(tab_id) = self.current_tab {
             if let Some(state) = self.tabs.get_mut(&tab_id) {
-                state.add_content_entity(*entity);
+                state.add_content_entity(*entity, shape_type);
             } else {
                 warn!("tab_id {:?} has no state", tab_id);
             }
@@ -135,14 +136,25 @@ impl UserTabState {
     }
 }
 
+#[derive(Clone)]
+pub struct ContentEntityData {
+    shape_type: ShapeType,
+}
+
+impl ContentEntityData {
+    pub fn new(shape_type: ShapeType) -> Self {
+        Self { shape_type }
+    }
+}
+
 pub struct TabState {
     room_key: RoomKey,
     file_entity: Entity,
-    content_entities: HashSet<Entity>,
+    content_entities: HashMap<Entity, ContentEntityData>,
 }
 
 impl TabState {
-    pub fn new(room_key: RoomKey, file_entity: Entity, content_entities: HashSet<Entity>) -> Self {
+    pub fn new(room_key: RoomKey, file_entity: Entity, content_entities: HashMap<Entity, ContentEntityData>) -> Self {
         Self {
             room_key,
             file_entity,
@@ -150,9 +162,9 @@ impl TabState {
         }
     }
 
-    pub fn add_content_entity(&mut self, entity: Entity) {
+    pub fn add_content_entity(&mut self, entity: Entity, shape_type: ShapeType) {
         info!("TabState adding entity: {:?}", entity);
-        self.content_entities.insert(entity);
+        self.content_entities.insert(entity, ContentEntityData::new(shape_type));
     }
 
     pub fn remove_content_entity(&mut self, entity: &Entity) {
@@ -168,7 +180,7 @@ impl TabState {
         self.file_entity
     }
 
-    pub fn get_content_entities(&self) -> &HashSet<Entity> {
+    pub fn get_content_entities(&self) -> &HashMap<Entity, ContentEntityData> {
         &self.content_entities
     }
 
@@ -187,10 +199,17 @@ impl TabState {
         }
 
         // despawn all previous entities
-        for entity in self.content_entities.iter() {
+        for (entity, entity_data) in self.content_entities.iter() {
             info!("despawning entity: {:?}", entity);
             commands.entity(*entity).take_authority(server).despawn();
-            vertex_manager.on_delete_vertex(commands, server, entity);
+
+            match entity_data.shape_type {
+                ShapeType::Vertex => {
+                    vertex_manager.on_delete_vertex(commands, server, entity);
+                }
+                ShapeType::Edge => {}
+                ShapeType::Face => {}
+            }
         }
 
         // respawn all entities
@@ -200,8 +219,8 @@ impl TabState {
             FileReadOutput::Skel(entities) => {
                 SkelReader::post_process_entities(vertex_manager, entities)
             }
-            FileReadOutput::Mesh(vertex_entities, edge_entities, face_entities) => {
-                MeshReader::post_process_entities(vertex_entities, edge_entities, face_entities)
+            FileReadOutput::Mesh(shape_entities) => {
+                MeshReader::post_process_entities(shape_entities)
             }
         };
 

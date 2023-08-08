@@ -11,12 +11,15 @@ use naia_bevy_server::{
     BitReader, BitWriter, CommandsExt, ReplicationConfig, Serde, SerdeErr, Server,
     UnsignedVariableInteger,
 };
+use serde::__private::de::Content;
 
 use vortex_proto::components::{
     Edge3d, Face3d, Vertex3d, VertexSerdeInt,
 };
 
 use crate::files::{FileReadOutput, FileReader, FileWriter};
+use crate::files::file_io::ShapeType;
+use crate::resources::ContentEntityData;
 
 // Actions
 #[derive(Debug)]
@@ -142,8 +145,8 @@ impl MeshWriter {
 }
 
 impl FileWriter for MeshWriter {
-    fn write(&self, world: &mut World, content_entities: &HashSet<Entity>) -> Box<[u8]> {
-        let content_entities_vec: Vec<Entity> = content_entities.iter().map(|e| *e).collect();
+    fn write(&self, world: &mut World, content_entities: &HashMap<Entity, ContentEntityData>) -> Box<[u8]> {
+        let content_entities_vec: Vec<Entity> = content_entities.iter().map(|(e, d)| *e).collect();
         let actions = self.world_to_actions(world, &content_entities_vec);
         self.write_from_actions(actions)
     }
@@ -203,8 +206,7 @@ impl MeshReader {
         actions: Vec<MeshAction>,
     ) -> Result<FileReadOutput, SerdeErr> {
         let mut vertices = Vec::new();
-        let mut edges = Vec::new();
-        let mut faces = Vec::new();
+        let mut output = Vec::new();
 
         for action in actions {
             match action {
@@ -217,6 +219,7 @@ impl MeshReader {
                         .id();
                     info!("spawning mesh vertex entity {:?}", entity_id);
                     vertices.push(entity_id);
+                    output.push((ShapeType::Vertex, entity_id));
                 }
                 MeshAction::Edge(vertex_a_index, vertex_b_index) => {
                     let vertex_a_entity = *vertices.get(vertex_a_index as usize).unwrap();
@@ -232,7 +235,7 @@ impl MeshReader {
                         .insert(edge_component)
                         .id();
                     info!("spawning mesh edge entity {:?}", entity_id);
-                    edges.push(entity_id);
+                    output.push((ShapeType::Edge, entity_id));
                 }
                 MeshAction::Face(vertex_a_index, vertex_b_index, vertex_c_index) => {
                     let vertex_a_entity = *vertices.get(vertex_a_index as usize).unwrap();
@@ -250,12 +253,12 @@ impl MeshReader {
                         .insert(face_component)
                         .id();
                     info!("spawning mesh face entity {:?}", entity_id);
-                    faces.push(entity_id);
+                    output.push((ShapeType::Face, entity_id));
                 }
             }
         }
 
-        Ok(FileReadOutput::Mesh(vertices, edges, faces))
+        Ok(FileReadOutput::Mesh(output))
     }
 }
 
@@ -282,20 +285,10 @@ impl FileReader for MeshReader {
 
 impl MeshReader {
     pub fn post_process_entities(
-        vertex_entities: Vec<Entity>,
-        edge_entities: Vec<Entity>,
-        face_entities: Vec<Entity>,
-    ) -> HashSet<Entity> {
-        let mut entities = HashSet::new();
-        for entity in vertex_entities {
-            entities.insert(entity);
-        }
-        for entity in edge_entities {
-            entities.insert(entity);
-        }
-        for entity in face_entities {
-            entities.insert(entity);
-        }
-        entities
+        shape_entities: Vec<(ShapeType, Entity)>,
+    ) -> HashMap<Entity, ContentEntityData> {
+        shape_entities.iter().map(|(shape_type, entity)| {
+            (*entity, ContentEntityData::new(*shape_type))
+        }).collect()
     }
 }

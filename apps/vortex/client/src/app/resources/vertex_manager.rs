@@ -23,7 +23,7 @@ use vortex_proto::{
 };
 
 use crate::app::{
-    components::{VertexTypeData, Compass, Edge2dLocal, Edge3dLocal, HoverCircle, SelectCircle, Vertex2d},
+    components::{VertexTypeData, Compass, Edge2dLocal, HoverCircle, SelectCircle, Vertex2d},
     resources::{
         action_stack::{Action, ActionStack},
         camera_manager::{CameraAngle, CameraManager},

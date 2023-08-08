@@ -8,7 +8,7 @@ use render_api::components::{Camera, Projection, Transform, Visibility};
 use vortex_proto::components::{OwnedByTab, Vertex3d};
 
 use crate::app::{
-    components::{Compass, Edge2dLocal, Edge3dLocal},
+    components::{Compass, Edge2dLocal},
     resources::{
         camera_manager::CameraManager, canvas::Canvas, tab_manager::TabManager,
         vertex_manager::VertexManager,

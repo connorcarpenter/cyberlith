@@ -29,6 +29,8 @@ use crate::{
         user_manager::UserInfo, workspace::Workspace, FileEntryValue, UserManager, VertexManager,
     },
 };
+use crate::files::ShapeType;
+use crate::resources::ContentEntityData;
 
 #[derive(Resource)]
 pub struct GitManager {
@@ -251,7 +253,7 @@ impl GitManager {
         room_key: &RoomKey,
         tab_id: TabId,
         pause_replication: bool,
-    ) -> HashSet<Entity> {
+    ) -> HashMap<Entity, ContentEntityData> {
         info!("loading content entities");
 
         let workspace = self.workspaces.get(username).unwrap();
@@ -261,8 +263,8 @@ impl GitManager {
             FileReadOutput::Skel(entities) => {
                 SkelReader::post_process_entities(vertex_manager, entities)
             }
-            FileReadOutput::Mesh(vertex_entities, edge_entities, face_entities) => {
-                MeshReader::post_process_entities(vertex_entities, edge_entities, face_entities)
+            FileReadOutput::Mesh(shape_entities) => {
+                MeshReader::post_process_entities(shape_entities)
             }
         };
 
@@ -293,7 +295,7 @@ impl GitManager {
         username: &str,
         key: &FileEntryKey,
         world: &mut World,
-        content_entities: &HashSet<Entity>,
+        content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]> {
         let ext = self.working_file_extension(username, key);
         return ext.write(world, content_entities);
