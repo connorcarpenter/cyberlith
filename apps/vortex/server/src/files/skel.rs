@@ -13,7 +13,7 @@ use naia_bevy_server::{
 };
 
 use vortex_proto::components::{
-    Vertex3d, VertexChild, VertexRoot, VertexSerdeInt, VertexType, VertexTypeValue,
+    Vertex3d, VertexChild, VertexRoot, VertexSerdeInt,
 };
 
 use crate::{
@@ -47,7 +47,7 @@ impl SkelWriter {
     ) -> Vec<SkelAction> {
         let mut system_state: SystemState<(
             Server,
-            Query<(&Vertex3d, &VertexType, Option<&VertexChild>)>,
+            Query<(&Vertex3d, Option<&VertexChild>)>,
         )> = SystemState::new(world);
         let (server, vertex_query) = system_state.get_mut(world);
 
@@ -57,10 +57,7 @@ impl SkelWriter {
         let mut map: HashMap<Entity, (usize, i16, i16, i16, Option<Entity>)> = HashMap::new();
 
         for (id, entity) in content_entities.iter().enumerate() {
-            let (vertex, vertex_type, has_parent_opt) = vertex_query.get(*entity).unwrap();
-            if *vertex_type.value != VertexTypeValue::Skel {
-                panic!("Vertex type is not Skel");
-            }
+            let (vertex, has_parent_opt) = vertex_query.get(*entity).unwrap();
 
             let parent_id: Option<Entity> = {
                 match has_parent_opt {
@@ -201,7 +198,6 @@ impl SkelReader {
         for (entity, x, y, z, parent_id_opt) in entities.iter() {
             let mut entity_mut = commands.entity(*entity);
             entity_mut.insert(Vertex3d::new(*x, *y, *z));
-            entity_mut.insert(VertexType::new(VertexTypeValue::Skel));
 
             if let Some(parent_id) = parent_id_opt {
                 let (parent_entity, _, _, _, _) = entities.get(*parent_id as usize).unwrap();

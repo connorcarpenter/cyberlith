@@ -11,7 +11,6 @@ mod vertex;
 use vertex::VertexComponentsPlugin;
 pub use vertex::{
     Edge3d, Face3d, OwnedByTab, Vertex3d, VertexChild, VertexRoot, VertexSerdeInt,
-    VertexType, VertexTypeValue,
 };
 
 // Plugin

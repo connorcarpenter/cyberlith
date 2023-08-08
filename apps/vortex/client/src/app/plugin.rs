@@ -6,7 +6,7 @@ use render_api::resources::WindowSettings;
 use vortex_proto::{
     components::{
         ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-        OwnedByTab, Vertex3d, VertexChild, VertexRoot, VertexType,
+        OwnedByTab, Vertex3d, VertexChild, VertexRoot,
     },
     protocol,
 };
@@ -77,7 +77,6 @@ impl Plugin for VortexPlugin {
             .add_event::<InsertComponentEvent<VertexChild>>()
             .add_event::<InsertComponentEvent<VertexRoot>>()
             .add_event::<InsertComponentEvent<OwnedByTab>>()
-            .add_event::<InsertComponentEvent<VertexType>>()
             .add_system(network::insert_fs_component_events)
             .add_system(network::insert_changelist_entry_events)
             .add_system(network::insert_vertex_events)

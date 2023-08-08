@@ -124,7 +124,11 @@ impl TabManager {
         if let Some(tab_entities) = user_state.current_tab_entities() {
             for entity in tab_entities.iter() {
                 // All Entities associated with previous tab must call "pause_replication"
-                commands.entity(*entity).pause_replication(server);
+                if let Some(mut entity_commands) = commands.get_entity(*entity) {
+                    entity_commands.pause_replication(server);
+                } else {
+                    warn!("select_tab(): Entity {:?} not found", entity);
+                }
             }
         }
 
@@ -134,7 +138,11 @@ impl TabManager {
         // All Entities associated with new tab must call "resume_replication"
         let new_tab_entities = user_state.tab_entities(tab_id).unwrap();
         for entity in new_tab_entities.iter() {
-            commands.entity(*entity).resume_replication(server);
+            if let Some(mut entity_commands) = commands.get_entity(*entity) {
+                entity_commands.resume_replication(server);
+            } else {
+                warn!("select_tab(): Entity {:?} not found", entity);
+            }
         }
     }
 

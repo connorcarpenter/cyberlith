@@ -10,7 +10,7 @@ use render_api::{
     Assets,
 };
 use vortex_proto::{
-    components::{Edge3d, OwnedByTab, VertexTypeValue},
+    components::{Edge3d, OwnedByTab},
     types::TabId,
 };
 
@@ -26,14 +26,12 @@ pub enum VertexWaitlistInsert {
     Position,
     Parent(Option<Entity>),
     OwnedByTab(TabId),
-    Type(VertexTypeValue),
 }
 
 pub struct VertexWaitlistEntry {
     has_pos: bool,
     parent: Option<Option<Entity>>,
     tab_id: Option<TabId>,
-    vertex_type: Option<VertexTypeValue>,
 }
 
 impl VertexWaitlistEntry {
@@ -42,12 +40,11 @@ impl VertexWaitlistEntry {
             has_pos: false,
             parent: None,
             tab_id: None,
-            vertex_type: None,
         }
     }
 
     fn is_ready(&self) -> bool {
-        self.has_pos && self.parent.is_some() && self.tab_id.is_some() && self.vertex_type.is_some()
+        self.has_pos && self.parent.is_some() && self.tab_id.is_some()
     }
 
     fn set_parent(&mut self, parent: Option<Entity>) {
@@ -73,15 +70,10 @@ impl VertexWaitlistEntry {
         self.tab_id = Some(tab_id);
     }
 
-    fn set_type(&mut self, value: VertexTypeValue) {
-        self.vertex_type = Some(value);
-    }
-
-    pub(crate) fn decompose(self) -> (Option<Entity>, TabId, VertexTypeValue) {
+    pub(crate) fn decompose(self) -> (Option<Entity>, TabId) {
         return (
             self.parent.unwrap(),
             self.tab_id.unwrap(),
-            self.vertex_type.unwrap(),
         );
     }
 }
@@ -161,9 +153,6 @@ pub fn vertex_process_insert(
         VertexWaitlistInsert::OwnedByTab(tab_id) => {
             entry.set_tab_id(tab_id);
         }
-        VertexWaitlistInsert::Type(value) => {
-            entry.set_type(value);
-        }
     }
 
     if entry.is_ready() {
@@ -209,7 +198,7 @@ fn vertex_process_insert_complete(
 ) {
     // info!("processing complete vertex {:?}", entity);
 
-    let (parent_3d_entity_opt, tab_id, type_value) = entry.decompose();
+    let (parent_3d_entity_opt, tab_id) = entry.decompose();
 
     let color = match parent_3d_entity_opt {
         Some(_) => Vertex2d::CHILD_COLOR,
@@ -228,48 +217,43 @@ fn vertex_process_insert_complete(
     );
 
     // if vertex has parent, create an edge
-    match type_value {
-        VertexTypeValue::Mesh => {}
-        VertexTypeValue::Skel => {
-            if let Some(parent_3d_entity) = parent_3d_entity_opt {
-                let Some(parent_2d_entity) = vertex_manager
-                    .vertex_entity_3d_to_2d(&parent_3d_entity) else {
-                    panic!("Parent 3d entity {:?} has no 2d entity", parent_3d_entity);
-                };
-                edge_3d_postprocess(
-                    commands,
-                    client,
-                    meshes,
-                    materials,
-                    camera_manager,
-                    entity,
-                    new_vertex_2d_entity,
-                    parent_3d_entity,
-                    *parent_2d_entity,
-                    Some(tab_id),
-                    Vertex2d::CHILD_COLOR,
-                    true,
-                    false,
-                );
-            }
+    if let Some(parent_3d_entity) = parent_3d_entity_opt {
+        let Some(parent_2d_entity) = vertex_manager
+            .vertex_entity_3d_to_2d(&parent_3d_entity) else {
+            panic!("Parent 3d entity {:?} has no 2d entity", parent_3d_entity);
+        };
+        edge_3d_postprocess(
+            commands,
+            client,
+            meshes,
+            materials,
+            camera_manager,
+            entity,
+            new_vertex_2d_entity,
+            parent_3d_entity,
+            *parent_2d_entity,
+            Some(tab_id),
+            Vertex2d::CHILD_COLOR,
+            true,
+            false,
+        );
+    }
 
-            // if the waitlist has any children entities of this one, process them
-            if let Some(child_entries) = vertex_waitlist.on_vertex_complete(entity) {
-                for (child_entity, child_entry) in child_entries {
-                    // info!("entity {:?} was waiting on parent {:?}. processing!", child_entity, entity);
-                    vertex_process_insert_complete(
-                        commands,
-                        client,
-                        meshes,
-                        materials,
-                        camera_manager,
-                        vertex_manager,
-                        vertex_waitlist,
-                        child_entity,
-                        child_entry,
-                    );
-                }
-            }
+    // if the waitlist has any children entities of this one, process them
+    if let Some(child_entries) = vertex_waitlist.on_vertex_complete(entity) {
+        for (child_entity, child_entry) in child_entries {
+            // info!("entity {:?} was waiting on parent {:?}. processing!", child_entity, entity);
+            vertex_process_insert_complete(
+                commands,
+                client,
+                meshes,
+                materials,
+                camera_manager,
+                vertex_manager,
+                vertex_waitlist,
+                child_entity,
+                child_entry,
+            );
         }
     }
 

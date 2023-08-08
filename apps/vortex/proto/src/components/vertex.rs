@@ -17,7 +17,6 @@ impl ProtocolPlugin for VertexComponentsPlugin {
             .add_component::<VertexChild>()
             .add_component::<VertexRoot>()
             .add_component::<OwnedByTab>()
-            .add_component::<VertexType>()
             .add_component::<Edge3d>()
             .add_component::<Face3d>();
     }
@@ -102,24 +101,6 @@ pub struct OwnedByTab {
 impl OwnedByTab {
     pub fn new(tab_id: TabId) -> Self {
         Self::new_complete(tab_id)
-    }
-}
-
-#[derive(Serde, PartialEq, Clone, Copy)]
-pub enum VertexTypeValue {
-    Mesh,
-    Skel,
-}
-
-// VertexType
-#[derive(Component, Replicate)]
-pub struct VertexType {
-    pub value: Property<VertexTypeValue>,
-}
-
-impl VertexType {
-    pub fn new(value: VertexTypeValue) -> Self {
-        Self::new_complete(value)
     }
 }
 

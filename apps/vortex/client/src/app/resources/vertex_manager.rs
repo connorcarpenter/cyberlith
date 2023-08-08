@@ -13,13 +13,12 @@ use naia_bevy_client::{Client, CommandsExt, Replicate};
 use math::{convert_2d_to_3d, convert_3d_to_2d, Vec2, Vec3};
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
-    components::{Camera, CameraProjection, Projection, Transform, Visibility},
+    components::{RenderObjectBundle, Camera, CameraProjection, Projection, Transform, Visibility},
     shapes::{distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform},
     Assets,
 };
-use render_api::components::RenderObjectBundle;
 use vortex_proto::{
-    components::{VertexTypeValue, OwnedByTab, Vertex3d, VertexRoot},
+    components::{OwnedByTab, Vertex3d, VertexRoot},
     types::TabId,
 };
 
@@ -44,7 +43,6 @@ pub enum CanvasShape {
 
 #[derive(Resource)]
 pub struct VertexManager {
-    current_vertex_type: VertexTypeValue,
 
     // vertices
     vertices_3d_to_2d: HashMap<Entity, Entity>,
@@ -68,7 +66,6 @@ pub struct VertexManager {
 impl Default for VertexManager {
     fn default() -> Self {
         Self {
-            current_vertex_type: VertexTypeValue::Skel,
 
             // vertices
             vertices_3d_to_2d: HashMap::new(),
@@ -379,53 +376,36 @@ impl VertexManager {
 
     pub fn cleanup_deleted_vertex(
         &mut self,
-        vertex_type: VertexTypeValue,
         entity_3d: &Entity,
         commands: &mut Commands,
         edge_2d_q: &Query<(Entity, &Edge2dLocal)>,
         edge_3d_q: &Query<(Entity, &Edge3dLocal)>,
     ) {
-        match vertex_type {
-            VertexTypeValue::Skel => {
-                // despawn 3d edge
-                for (edge_3d_entity, edge_3d) in edge_3d_q.iter() {
-                    if edge_3d.start == *entity_3d {
-                        info!("despawn 3d edge {:?}", edge_3d_entity);
-                        commands.entity(edge_3d_entity).despawn();
-                    }
-                }
+        // despawn 3d edge
+        for (edge_3d_entity, edge_3d) in edge_3d_q.iter() {
+            if edge_3d.start == *entity_3d {
+                info!("despawn 3d edge {:?}", edge_3d_entity);
+                commands.entity(edge_3d_entity).despawn();
+            }
+        }
 
-                if let Some(vertex_2d_entity) = self.unregister_3d_vertex(entity_3d) {
-                    // despawn 2d vertex
-                    info!("despawn 2d vertex {:?}", vertex_2d_entity);
-                    commands.entity(vertex_2d_entity).despawn();
+        if let Some(vertex_2d_entity) = self.unregister_3d_vertex(entity_3d) {
+            // despawn 2d vertex
+            info!("despawn 2d vertex {:?}", vertex_2d_entity);
+            commands.entity(vertex_2d_entity).despawn();
 
-                    // despawn 2d edge
-                    for (edge_2d_entity, edge_2d) in edge_2d_q.iter() {
-                        if edge_2d.start == vertex_2d_entity {
-                            info!("despawn 2d edge {:?}", edge_2d_entity);
-                            commands.entity(edge_2d_entity).despawn();
-                        }
-                    }
-                } else {
-                    panic!(
-                        "Vertex3d entity: `{:?}` has no corresponding Vertex2d entity",
-                        entity_3d
-                    );
+            // despawn 2d edge
+            for (edge_2d_entity, edge_2d) in edge_2d_q.iter() {
+                if edge_2d.start == vertex_2d_entity {
+                    info!("despawn 2d edge {:?}", edge_2d_entity);
+                    commands.entity(edge_2d_entity).despawn();
                 }
             }
-            VertexTypeValue::Mesh => {
-                if let Some(vertex_2d_entity) = self.unregister_3d_vertex(entity_3d) {
-                    // despawn 2d vertex
-                    info!("despawn 2d vertex {:?}", vertex_2d_entity);
-                    commands.entity(vertex_2d_entity).despawn();
-                } else {
-                    panic!(
-                        "Vertex3d entity: `{:?}` has no corresponding Vertex2d entity",
-                        entity_3d
-                    );
-                }
-            }
+        } else {
+            panic!(
+                "Vertex3d entity: `{:?}` has no corresponding Vertex2d entity",
+                entity_3d
+            );
         }
 
         self.recalculate_vertices();
@@ -441,10 +421,6 @@ impl VertexManager {
 
     pub(crate) fn vertex_entity_2d_to_3d(&self, entity_2d: &Entity) -> Option<&Entity> {
         self.vertices_2d_to_3d.get(entity_2d)
-    }
-
-    pub fn set_vertex_type(&mut self, vertex_type: VertexTypeValue) {
-        self.current_vertex_type = vertex_type;
     }
 
     pub fn vertex_3d_postprocess(
@@ -512,15 +488,15 @@ impl VertexManager {
             return;
         }
 
-        if self.current_vertex_type != VertexTypeValue::Mesh {
-            return;
-        }
-
-        action_stack.buffer_action(Action::CreateVertex(
-            VertexTypeData::Mesh(None),
-            Vec3::ZERO,
-            None,
-        ));
+        // if self.current_vertex_type != VertexTypeValue::Mesh {
+        //     return;
+        // }
+        //
+        // action_stack.buffer_action(Action::CreateVertex(
+        //     VertexTypeData::Mesh(None),
+        //     Vec3::ZERO,
+        //     None,
+        // ));
     }
 
     fn handle_delete_key_press(
@@ -817,22 +793,11 @@ impl VertexManager {
                         );
 
                         // spawn new vertex
-                        match self.current_vertex_type {
-                            VertexTypeValue::Mesh => {
-                                action_stack.buffer_action(Action::CreateVertex(
-                                    VertexTypeData::Mesh(Some(vec![vertex_2d_entity])),
-                                    new_3d_position,
-                                    None,
-                                ));
-                            }
-                            VertexTypeValue::Skel => {
-                                action_stack.buffer_action(Action::CreateVertex(
-                                    VertexTypeData::Skel(vertex_2d_entity, None),
-                                    new_3d_position,
-                                    None,
-                                ));
-                            }
-                        }
+                        action_stack.buffer_action(Action::CreateVertex(
+                            VertexTypeData(vertex_2d_entity, None),
+                            new_3d_position,
+                            None,
+                        ));
 
                     } else {
                         warn!(

@@ -176,7 +176,7 @@ impl TabManager {
         client: &mut Client,
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
-        vertex_manager: &mut VertexManager,
+        _vertex_manager: &mut VertexManager,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
         row_entity: &Entity,
     ) {
@@ -190,9 +190,6 @@ impl TabManager {
         self.set_current_tab(canvas, camera_manager, visibility_q, Some(*row_entity));
         let tab_state = self.tab_map.get_mut(&row_entity).unwrap();
         tab_state.selected = true;
-        if let Some(vertex_type) = tab_state.ext.vertex_type() {
-            vertex_manager.set_vertex_type(vertex_type);
-        }
 
         // send message to server
         let message = TabActionMessage::new(tab_state.tab_id, TabActionMessageType::Select);

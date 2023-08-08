@@ -21,7 +21,7 @@ use render_api::{
 };
 use vortex_proto::components::{
     ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild, OwnedByTab,
-    Vertex3d, VertexChild, VertexRoot, VertexType,
+    Vertex3d, VertexChild, VertexRoot,
 };
 
 use crate::app::{
@@ -66,7 +66,6 @@ pub fn insert_component_events(
     mut insert_vertex_child_event_writer: EventWriter<InsertComponentEvent<VertexChild>>,
     mut insert_vertex_root_event_writer: EventWriter<InsertComponentEvent<VertexRoot>>,
     mut insert_owned_by_event_writer: EventWriter<InsertComponentEvent<OwnedByTab>>,
-    mut insert_vertex_type_event_writer: EventWriter<InsertComponentEvent<VertexType>>,
 ) {
     for events in event_reader.iter() {
         // on FileSystemEntry Insert Event
@@ -109,11 +108,6 @@ pub fn insert_component_events(
         // on OwnedByTab Insert Event
         for entity in events.read::<OwnedByTab>() {
             insert_owned_by_event_writer.send(InsertComponentEvent::<OwnedByTab>::new(entity));
-        }
-
-        // on Vertex Type Insert Event
-        for entity in events.read::<VertexType>() {
-            insert_vertex_type_event_writer.send(InsertComponentEvent::<VertexType>::new(entity));
         }
     }
 }
@@ -227,7 +221,6 @@ pub fn insert_vertex_events(
     mut vertex_root_events: EventReader<InsertComponentEvent<VertexRoot>>,
     mut vertex_child_events: EventReader<InsertComponentEvent<VertexChild>>,
     mut owned_by_events: EventReader<InsertComponentEvent<OwnedByTab>>,
-    mut vertex_type_events: EventReader<InsertComponentEvent<VertexType>>,
 
     // for vertices
     mut camera_manager: ResMut<CameraManager>,
@@ -236,7 +229,6 @@ pub fn insert_vertex_events(
     mut materials: ResMut<Assets<CpuMaterial>>,
     vertex_child_q: Query<&VertexChild>,
     owned_by_tab_q: Query<&OwnedByTab>,
-    vertex_type_q: Query<&VertexType>,
     mut waiting_vertices: Local<VertexWaitlist>,
 ) {
     // on Vertex Insert Event
@@ -309,24 +301,6 @@ pub fn insert_vertex_events(
             &mut waiting_vertices,
             &entity,
             VertexWaitlistInsert::OwnedByTab(tab_id),
-        );
-    }
-
-    // on VertexType Insert Event
-    for event in vertex_type_events.iter() {
-        let entity = event.entity;
-        let vertex_type = *vertex_type_q.get(entity).unwrap().value;
-
-        vertex_process_insert(
-            &mut commands,
-            &mut client,
-            &mut meshes,
-            &mut materials,
-            &mut camera_manager,
-            &mut vertex_manager,
-            &mut waiting_vertices,
-            &entity,
-            VertexWaitlistInsert::Type(vertex_type),
         );
     }
 }
@@ -416,16 +390,13 @@ pub fn remove_component_events(
                 }
             }
         }
-        for (vertex_3d_entity, vertex_type) in events.read::<VertexType>() {
+        for (vertex_3d_entity, _) in events.read::<Vertex3d>() {
             info!(
-                "entity: `{:?}`, removed VertexType",
+                "entity: `{:?}`, removed Vertex3d",
                 vertex_3d_entity
             );
 
-            let vertex_type = *vertex_type.value;
-
             vertex_manager.cleanup_deleted_vertex(
-                vertex_type,
                 &vertex_3d_entity,
                 &mut commands,
                 &edge_2d_q,

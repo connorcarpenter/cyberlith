@@ -13,7 +13,7 @@ use naia_bevy_server::{
 };
 
 use vortex_proto::components::{
-    Edge3d, Face3d, Vertex3d, VertexSerdeInt, VertexType, VertexTypeValue,
+    Edge3d, Face3d, Vertex3d, VertexSerdeInt,
 };
 
 use crate::files::{FileReadOutput, FileReader, FileWriter};
@@ -48,7 +48,7 @@ impl MeshWriter {
     ) -> Vec<MeshAction> {
         let mut system_state: SystemState<(
             Server,
-            Query<(&Vertex3d, &VertexType)>,
+            Query<&Vertex3d>,
             Query<&Edge3d>,
             Query<&Face3d>,
         )> = SystemState::new(world);
@@ -60,10 +60,8 @@ impl MeshWriter {
         let mut vertex_map: HashMap<Entity, usize> = HashMap::new();
 
         for (id, entity) in content_entities.iter().enumerate() {
-            if let Ok((vertex, vertex_type)) = vertex_q.get(*entity) {
-                if *vertex_type.value != VertexTypeValue::Mesh {
-                    panic!("Vertex type is not Mesh");
-                }
+            if let Ok(vertex) = vertex_q.get(*entity) {
+
                 // entity is a vertex
                 vertex_map.insert(*entity, id);
                 let vertex_info = MeshAction::Vertex(vertex.x(), vertex.y(), vertex.z());
@@ -216,7 +214,6 @@ impl MeshReader {
                         .enable_replication(server)
                         .configure_replication(ReplicationConfig::Delegated)
                         .insert(Vertex3d::new(x, y, z))
-                        .insert(VertexType::new(VertexTypeValue::Mesh))
                         .id();
                     info!("spawning mesh vertex entity {:?}", entity_id);
                     vertices.push(entity_id);
