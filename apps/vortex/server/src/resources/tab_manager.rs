@@ -1,18 +1,23 @@
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, VecDeque};
 
-use bevy_ecs::system::Res;
 use bevy_ecs::{
     entity::Entity,
-    system::{Commands, Query, ResMut, Resource, SystemState},
+    system::{Commands, Query, Res, ResMut, Resource, SystemState},
     world::{Mut, World},
 };
 use bevy_log::{info, warn};
+
 use naia_bevy_server::{CommandsExt, Server, UserKey};
 
 use vortex_proto::{resources::FileEntryKey, types::TabId};
-use crate::files::ShapeType;
 
-use crate::resources::{user_tab_state::TabState, workspace::Workspace, GitManager, UserManager, UserTabState, VertexManager, ContentEntityData};
+use crate::{
+    files::ShapeType,
+    resources::{
+        user_tab_state::TabState, workspace::Workspace, ContentEntityData, GitManager, UserManager,
+        UserTabState, VertexManager,
+    },
+};
 
 #[derive(Resource)]
 pub struct TabManager {
@@ -331,7 +336,10 @@ impl TabManager {
             .unwrap()
     }
 
-    pub(crate) fn user_current_tab_content_entities(&self, user_key: &UserKey) -> &HashMap<Entity, ContentEntityData> {
+    pub(crate) fn user_current_tab_content_entities(
+        &self,
+        user_key: &UserKey,
+    ) -> &HashMap<Entity, ContentEntityData> {
         self.user_tab_state(user_key)
             .current_tab_entities()
             .unwrap()

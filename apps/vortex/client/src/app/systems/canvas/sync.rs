@@ -8,7 +8,7 @@ use render_api::components::{Camera, Projection, Transform, Visibility};
 use vortex_proto::components::{OwnedByTab, Vertex3d};
 
 use crate::app::{
-    components::{Edge3dLocal, Compass, Edge2dLocal},
+    components::{Compass, Edge2dLocal, Edge3dLocal},
     resources::{
         camera_manager::CameraManager, canvas::Canvas, tab_manager::TabManager,
         vertex_manager::VertexManager,
@@ -60,6 +60,6 @@ pub fn update_select_line(
         input.mouse_position(),
         &camera_manager,
         &mut transform_q,
-        &mut visibility_q
+        &mut visibility_q,
     );
 }

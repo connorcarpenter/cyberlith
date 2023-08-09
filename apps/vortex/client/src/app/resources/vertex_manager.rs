@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use bevy_ecs::{
     entity::Entity,
     query::{With, Without},
-    system::{Commands, Resource, Query},
+    system::{Commands, Query, Resource},
 };
 use bevy_log::{info, warn};
 
@@ -12,7 +12,7 @@ use naia_bevy_client::{Client, CommandsExt, Replicate};
 use math::{convert_2d_to_3d, convert_3d_to_2d, Vec2, Vec3};
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
-    components::{RenderObjectBundle, Camera, CameraProjection, Projection, Transform, Visibility},
+    components::{Camera, CameraProjection, Projection, RenderObjectBundle, Transform, Visibility},
     shapes::{distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform},
     Assets,
 };
@@ -22,14 +22,18 @@ use vortex_proto::{
 };
 
 use crate::app::{
-    components::{Edge3dLocal, VertexTypeData, Compass, Edge2dLocal, HoverCircle, SelectCircle, Vertex2d},
+    components::{
+        Compass, Edge2dLocal, Edge3dLocal, HoverCircle, SelectCircle, Vertex2d, VertexTypeData,
+    },
     resources::{
         action_stack::{Action, ActionStack},
         camera_manager::{CameraAngle, CameraManager},
         input_manager::{ClickType, InputAction},
     },
     set_3d_line_transform,
-    shapes::{create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line},
+    shapes::{
+        create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,
+    },
 };
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
@@ -42,7 +46,6 @@ pub enum CanvasShape {
 
 #[derive(Resource)]
 pub struct VertexManager {
-
     vertices_3d_to_2d: HashMap<Entity, Entity>,
     vertices_2d_to_3d: HashMap<Entity, Entity>,
 
@@ -67,7 +70,6 @@ pub struct VertexManager {
 impl Default for VertexManager {
     fn default() -> Self {
         Self {
-
             vertices_3d_to_2d: HashMap::new(),
             vertices_2d_to_3d: HashMap::new(),
 
@@ -278,7 +280,8 @@ impl VertexManager {
             if let Some((hover_entity, _)) = self.hovered_entity {
                 if hover_entity == *vertex_2d_entity {
                     let hover_circle_entity = self.hover_circle_entity.unwrap();
-                    let mut hover_circle_transform = transform_q.get_mut(hover_circle_entity).unwrap();
+                    let mut hover_circle_transform =
+                        transform_q.get_mut(hover_circle_entity).unwrap();
                     hover_circle_transform.translation.x = coords.x;
                     hover_circle_transform.translation.y = coords.y;
                 }
@@ -350,10 +353,7 @@ impl VertexManager {
                         edge_transform.scale.y = scale_3d;
                     }
                 } else {
-                    warn!(
-                        "3d Edge end entity {:?} has no transform",
-                        edge_end_entity
-                    );
+                    warn!("3d Edge end entity {:?} has no transform", edge_end_entity);
                 }
             } else {
                 warn!(
@@ -400,11 +400,7 @@ impl VertexManager {
         self.edges_2d_to_3d.insert(entity_2d, entity_3d);
     }
 
-    pub fn cleanup_deleted_vertex(
-        &mut self,
-        entity_3d: &Entity,
-        commands: &mut Commands,
-    ) {
+    pub fn cleanup_deleted_vertex(&mut self, entity_3d: &Entity, commands: &mut Commands) {
         if let Some(vertex_2d_entity) = self.unregister_3d_vertex(entity_3d) {
             // despawn 2d vertex
             info!("despawn 2d vertex {:?}", vertex_2d_entity);
@@ -419,11 +415,7 @@ impl VertexManager {
         self.recalculate_vertices();
     }
 
-    pub fn cleanup_deleted_edge(
-        &mut self,
-        entity_3d: &Entity,
-        commands: &mut Commands,
-    ) {
+    pub fn cleanup_deleted_edge(&mut self, entity_3d: &Entity, commands: &mut Commands) {
         if let Some(edge_2d_entity) = self.unregister_3d_edge(entity_3d) {
             // despawn 2d edge
             info!("despawn 2d edge {:?}", edge_2d_entity);
@@ -465,7 +457,6 @@ impl VertexManager {
         tab_id_opt: Option<TabId>,
         color: Color,
     ) -> Entity {
-
         // vertex 3d
         commands
             .entity(vertex_3d_entity)
@@ -528,7 +519,6 @@ impl VertexManager {
         color: Color,
         arrows_not_lines: bool,
     ) -> Entity {
-
         // edge 3d
         let shape_components = if arrows_not_lines {
             create_3d_edge_diamond(meshes, materials, Vec3::ZERO, Vec3::X, color)
@@ -553,7 +543,9 @@ impl VertexManager {
             .insert(Edge2dLocal::new(vertex_a_2d_entity, vertex_b_2d_entity))
             .id();
         if let Some(tab_id) = tab_id_opt {
-            commands.entity(edge_2d_entity).insert(OwnedByTab::new(tab_id));
+            commands
+                .entity(edge_2d_entity)
+                .insert(OwnedByTab::new(tab_id));
         }
 
         // register 3d & 2d edges together
@@ -562,10 +554,7 @@ impl VertexManager {
         edge_2d_entity
     }
 
-    fn handle_insert_key_press(
-        &mut self,
-        action_stack: &mut ActionStack,
-    ) {
+    fn handle_insert_key_press(&mut self, action_stack: &mut ActionStack) {
         if self.selected_vertex.is_some() {
             return;
         }
@@ -880,7 +869,6 @@ impl VertexManager {
                             new_3d_position,
                             None,
                         ));
-
                     } else {
                         warn!(
                             "Selected vertex entity: {:?} has no Transform",
@@ -1257,15 +1245,11 @@ impl VertexManager {
         position: Vec3,
         color: Color,
     ) -> (Entity, Entity, Option<Entity>, Option<Entity>) {
-
         // vertex 3d
         let mut vertex_3d_component = Vertex3d::new(0, 0, 0);
         vertex_3d_component.localize();
         vertex_3d_component.set_vec3(&position);
-        let new_vertex_3d_entity = commands
-            .spawn_empty()
-            .insert(vertex_3d_component)
-            .id();
+        let new_vertex_3d_entity = commands.spawn_empty().insert(vertex_3d_component).id();
 
         // vertex 2d
         let new_vertex_2d_entity = self.vertex_3d_postprocess(
@@ -1283,14 +1267,16 @@ impl VertexManager {
         let mut new_edge_3d_entity_opt = None;
 
         if let Some(parent_vertex_2d_entity) = parent_vertex_2d_entity_opt {
-
             // edge 3d
             let parent_vertex_3d_entity = *self
                 .vertex_entity_2d_to_3d(&parent_vertex_2d_entity)
                 .unwrap();
             let new_edge_3d_entity = commands
                 .spawn_empty()
-                .insert(Edge3dLocal::new(parent_vertex_3d_entity, new_vertex_3d_entity))
+                .insert(Edge3dLocal::new(
+                    parent_vertex_3d_entity,
+                    new_vertex_3d_entity,
+                ))
                 .id();
 
             // edge 2d

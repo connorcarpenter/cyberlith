@@ -6,19 +6,21 @@ use bevy_ecs::{
     system::{Commands, Local, Query, Res, ResMut},
 };
 use bevy_log::info;
-use naia_bevy_server::{CommandsExt, events::{
-    DespawnEntityEvent, InsertComponentEvents, RemoveComponentEvents, SpawnEntityEvent,
-    UpdateComponentEvents,
-}, Server};
+
+use naia_bevy_server::{
+    events::{
+        DespawnEntityEvent, InsertComponentEvents, RemoveComponentEvents, SpawnEntityEvent,
+        UpdateComponentEvents,
+    },
+    Server,
+};
 
 use vortex_proto::{
     components::{
-        FileSystemChild, FileSystemEntry, FileSystemRootChild, Vertex3d,
-        VertexRoot,
+        Edge3d, FileSystemChild, FileSystemEntry, FileSystemRootChild, Vertex3d, VertexRoot,
     },
     resources::FileEntryKey,
 };
-use vortex_proto::components::Edge3d;
 
 use crate::{
     files::handle_file_modify,
@@ -43,7 +45,6 @@ pub fn despawn_entity_events(
     mut event_reader: EventReader<DespawnEntityEvent>,
 ) {
     for DespawnEntityEvent(user_key, entity) in event_reader.iter() {
-
         let Some(user) = user_manager.user_info(user_key) else {
             panic!("user not found");
         };
@@ -68,7 +69,6 @@ pub fn despawn_entity_events(
                 info!("entity: `{:?}` (which is a Vertex), despawned", entity);
             }
         }
-
 
         if entity_is_file {
             workspace.on_client_delete_file(&mut commands, &mut server, entity);
@@ -228,7 +228,10 @@ pub fn remove_component_events(
         }
         // on VertexRoot Remove Event
         for (_, entity, _) in events.read::<VertexRoot>() {
-            panic!("entity: `{:?}`, removed VertexRoot, how is this possible?", entity);
+            panic!(
+                "entity: `{:?}`, removed VertexRoot, how is this possible?",
+                entity
+            );
         }
     }
 }

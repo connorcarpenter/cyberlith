@@ -9,6 +9,7 @@ use bevy_log::info;
 use git2::{Repository, Signature};
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
+
 use vortex_proto::{
     components::{ChangelistEntry, ChangelistStatus},
     messages::ChangelistMessage,
@@ -18,9 +19,10 @@ use vortex_proto::{
 
 use crate::{
     files::{FileReadOutput, FileReader, FileWriter},
-    resources::{ChangelistValue, FileEntryValue, GitManager, TabManager, VertexManager},
+    resources::{
+        ChangelistValue, ContentEntityData, FileEntryValue, GitManager, TabManager, VertexManager,
+    },
 };
-use crate::resources::ContentEntityData;
 
 pub struct Workspace {
     pub room_key: RoomKey,
@@ -754,7 +756,7 @@ impl Workspace {
                 .unwrap()
                 .user_current_tab_content_entities(user_key)
                 .iter()
-                .map(|(entity, data) | (*entity, data.clone()))
+                .map(|(entity, data)| (*entity, data.clone()))
                 .collect();
 
             // write

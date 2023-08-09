@@ -1,15 +1,22 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use bevy_ecs::{entity::Entity, system::Commands, world::World};
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server};
+
 use vortex_proto::{components::OwnedByTab, types::TabId, FileExtension};
 
-use crate::files::{MeshReader, MeshWriter, SkelReader, SkelWriter};
-use crate::resources::ContentEntityData;
+use crate::{
+    files::{MeshReader, MeshWriter, SkelReader, SkelWriter},
+    resources::ContentEntityData,
+};
 
 pub trait FileWriter: Send + Sync {
-    fn write(&self, world: &mut World, content_entities: &HashMap<Entity, ContentEntityData>) -> Box<[u8]>;
+    fn write(
+        &self,
+        world: &mut World,
+        content_entities: &HashMap<Entity, ContentEntityData>,
+    ) -> Box<[u8]>;
     fn write_new_default(&self) -> Box<[u8]>;
 }
 
@@ -38,7 +45,11 @@ impl FileReader for FileExtension {
 }
 
 impl FileWriter for FileExtension {
-    fn write(&self, world: &mut World, content_entities: &HashMap<Entity, ContentEntityData>) -> Box<[u8]> {
+    fn write(
+        &self,
+        world: &mut World,
+        content_entities: &HashMap<Entity, ContentEntityData>,
+    ) -> Box<[u8]> {
         match self {
             FileExtension::Skel => SkelWriter.write(world, content_entities),
             FileExtension::Mesh => MeshWriter.write(world, content_entities),

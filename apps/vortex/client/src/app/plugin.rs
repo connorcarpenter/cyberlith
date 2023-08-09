@@ -3,14 +3,14 @@ use bevy_ecs::schedule::{IntoSystemConfig, IntoSystemConfigs};
 
 use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin, ReceiveEvents};
 use render_api::resources::WindowSettings;
+
 use vortex_proto::{
     components::{
-        ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
+        ChangelistEntry, Edge3d, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
         OwnedByTab, Vertex3d, VertexRoot,
     },
     protocol,
 };
-use vortex_proto::components::Edge3d;
 
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
@@ -18,12 +18,12 @@ use crate::app::{
     events::{InsertComponentEvent, LoginEvent},
     resources::{
         action_stack::ActionStack, camera_manager::CameraManager, canvas::Canvas, global::Global,
-        input_manager::InputManager, tab_manager::TabManager, vertex_manager::VertexManager,
+        input_manager::InputManager, shape_waitlist::ShapeWaitlist, tab_manager::TabManager,
+        vertex_manager::VertexManager,
     },
     systems::{canvas, network, ui},
     ui::UiState,
 };
-use crate::app::resources::shape_waitlist::ShapeWaitlist;
 
 pub struct VortexPlugin;
 

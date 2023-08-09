@@ -19,17 +19,23 @@ use render_api::{
     base::{CpuMaterial, CpuMesh},
     Assets,
 };
-use vortex_proto::components::{ChangelistEntry, Edge3d, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild, OwnedByTab, Vertex3d, VertexRoot};
+
+use vortex_proto::components::{
+    ChangelistEntry, Edge3d, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
+    OwnedByTab, Vertex3d, VertexRoot,
+};
 
 use crate::app::{
-    components::{
-        file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
-    },
+    components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
     events::InsertComponentEvent,
-    resources::{camera_manager::CameraManager, global::Global, vertex_manager::VertexManager},
+    resources::{
+        camera_manager::CameraManager,
+        global::Global,
+        shape_waitlist::{ShapeWaitlist, ShapeWaitlistInsert},
+        vertex_manager::VertexManager,
+    },
     systems::file_post_process,
 };
-use crate::app::resources::shape_waitlist::{ShapeWaitlist, ShapeWaitlistInsert};
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
     for SpawnEntityEvent(entity) in event_reader.iter() {
@@ -87,8 +93,7 @@ pub fn insert_component_events(
 
         // on Vertex Root Child Event
         for entity in events.read::<VertexRoot>() {
-            insert_vertex_root_event_writer
-                .send(InsertComponentEvent::<VertexRoot>::new(entity));
+            insert_vertex_root_event_writer.send(InsertComponentEvent::<VertexRoot>::new(entity));
         }
 
         // on OwnedByTab Insert Event
@@ -258,7 +263,6 @@ pub fn insert_vertex_events(
 
     // on Edge3d Insert Event
     for event in edge_3d_events.iter() {
-
         // handle vertex
         let edge_entity = event.entity;
 
@@ -390,26 +394,14 @@ pub fn remove_component_events(
             }
         }
         for (entity, _) in events.read::<Vertex3d>() {
-            info!(
-                "entity: `{:?}`, removed Vertex3d",
-                entity
-            );
+            info!("entity: `{:?}`, removed Vertex3d", entity);
 
-            vertex_manager.cleanup_deleted_vertex(
-                &entity,
-                &mut commands,
-            );
+            vertex_manager.cleanup_deleted_vertex(&entity, &mut commands);
         }
         for (entity, _) in events.read::<Edge3d>() {
-            info!(
-                "entity: `{:?}`, removed Edge3d",
-                entity
-            );
+            info!("entity: `{:?}`, removed Edge3d", entity);
 
-            vertex_manager.cleanup_deleted_edge(
-                &entity,
-                &mut commands,
-            );
+            vertex_manager.cleanup_deleted_edge(&entity, &mut commands);
         }
     }
 }

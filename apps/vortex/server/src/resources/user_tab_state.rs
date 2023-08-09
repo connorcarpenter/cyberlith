@@ -1,16 +1,16 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use bevy_ecs::{entity::Entity, system::Commands};
 use bevy_log::{info, warn};
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server};
+
 use vortex_proto::{resources::FileEntryKey, types::TabId};
 
 use crate::{
-    files::{post_process_networked_entities, FileReadOutput, MeshReader, SkelReader},
+    files::{post_process_networked_entities, FileReadOutput, MeshReader, ShapeType, SkelReader},
     resources::{workspace::Workspace, VertexManager},
 };
-use crate::files::ShapeType;
 
 pub struct UserTabState {
     current_tab: Option<TabId>,
@@ -81,7 +81,10 @@ impl UserTabState {
         }
     }
 
-    pub(crate) fn tab_entities(&self, tab_id: &TabId) -> Option<&HashMap<Entity, ContentEntityData>> {
+    pub(crate) fn tab_entities(
+        &self,
+        tab_id: &TabId,
+    ) -> Option<&HashMap<Entity, ContentEntityData>> {
         if let Some(state) = self.tabs.get(tab_id) {
             Some(&state.content_entities)
         } else {
@@ -154,7 +157,11 @@ pub struct TabState {
 }
 
 impl TabState {
-    pub fn new(room_key: RoomKey, file_entity: Entity, content_entities: HashMap<Entity, ContentEntityData>) -> Self {
+    pub fn new(
+        room_key: RoomKey,
+        file_entity: Entity,
+        content_entities: HashMap<Entity, ContentEntityData>,
+    ) -> Self {
         Self {
             room_key,
             file_entity,
@@ -164,7 +171,8 @@ impl TabState {
 
     pub fn add_content_entity(&mut self, entity: Entity, shape_type: ShapeType) {
         info!("TabState adding entity: {:?}", entity);
-        self.content_entities.insert(entity, ContentEntityData::new(shape_type));
+        self.content_entities
+            .insert(entity, ContentEntityData::new(shape_type));
     }
 
     pub fn remove_content_entity(&mut self, entity: &Entity) {

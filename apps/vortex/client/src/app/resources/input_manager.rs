@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+
 use bevy_ecs::system::Resource;
 
 use input::{Input, Key, MouseButton};
@@ -46,7 +47,6 @@ struct KeyMap {
 }
 
 impl KeyMap {
-
     fn init(keys: Vec<(Key, InputAction)>) -> Self {
         let mut state = HashMap::new();
 
@@ -54,9 +54,7 @@ impl KeyMap {
             state.insert(key, KeyState::new(action));
         }
 
-        Self {
-            map: state,
-        }
+        Self { map: state }
     }
 
     fn get_actions(&mut self, input: &mut Input, output: &mut Vec<InputAction>) {
@@ -84,15 +82,29 @@ pub struct InputManager {
 
 impl Default for InputManager {
     fn default() -> Self {
-
         let key_state = KeyMap::init(vec![
             (Key::S, InputAction::SwitchTo3dMode),
             (Key::W, InputAction::SwitchTo2dMode),
-            (Key::Num1, InputAction::SetCameraAngleFixed(CameraAngle::Ingame(1))),
-            (Key::Num2, InputAction::SetCameraAngleFixed(CameraAngle::Ingame(2))),
-            (Key::Num3, InputAction::SetCameraAngleFixed(CameraAngle::Ingame(3))),
-            (Key::Num4, InputAction::SetCameraAngleFixed(CameraAngle::Ingame(4))),
-            (Key::Num5, InputAction::SetCameraAngleFixed(CameraAngle::Ingame(5))),
+            (
+                Key::Num1,
+                InputAction::SetCameraAngleFixed(CameraAngle::Ingame(1)),
+            ),
+            (
+                Key::Num2,
+                InputAction::SetCameraAngleFixed(CameraAngle::Ingame(2)),
+            ),
+            (
+                Key::Num3,
+                InputAction::SetCameraAngleFixed(CameraAngle::Ingame(3)),
+            ),
+            (
+                Key::Num4,
+                InputAction::SetCameraAngleFixed(CameraAngle::Ingame(4)),
+            ),
+            (
+                Key::Num5,
+                InputAction::SetCameraAngleFixed(CameraAngle::Ingame(5)),
+            ),
             (Key::D, InputAction::SetCameraAngleFixed(CameraAngle::Side)),
             (Key::T, InputAction::SetCameraAngleFixed(CameraAngle::Top)),
             (Key::F, InputAction::SetCameraAngleFixed(CameraAngle::Front)),

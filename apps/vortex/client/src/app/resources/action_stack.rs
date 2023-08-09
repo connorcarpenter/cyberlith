@@ -5,23 +5,29 @@ use bevy_ecs::{
     system::{Res, ResMut, SystemState},
 };
 use bevy_log::{info, warn};
-use math::Vec3;
+
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus, ReplicationConfig};
+
+use math::Vec3;
 use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::Visibility,
     Assets,
 };
 
-use vortex_proto::{components::{
-    ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-    OwnedByTab, Vertex3d, Edge3d
-}, FileExtension, types::TabId};
+use vortex_proto::{
+    components::{
+        ChangelistEntry, Edge3d, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
+        OwnedByTab, Vertex3d,
+    },
+    types::TabId,
+    FileExtension,
+};
 
 use crate::app::{
     components::{
         file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
-        Edge2dLocal, Vertex2d, VertexEntry, VertexTypeData
+        Edge2dLocal, Edge3dLocal, Vertex2d, VertexEntry, VertexTypeData,
     },
     resources::{
         camera_manager::CameraManager,
@@ -31,11 +37,8 @@ use crate::app::{
         tab_manager::TabManager,
         vertex_manager::{CanvasShape, VertexManager},
     },
-    systems::{
-        file_post_process,
-    },
+    systems::file_post_process,
 };
-use crate::app::components::Edge3dLocal;
 
 #[derive(Clone)]
 pub enum Action {
@@ -56,11 +59,7 @@ pub enum Action {
     // The 2D vertex entity to deselect (or None for deselect)
     SelectVertex(Option<(Entity, CanvasShape)>),
     // Create Vertex (Parent 2d vertex Entity, Position, older vertex 2d entity & 3d entity it was associated with)
-    CreateVertex(
-        VertexTypeData,
-        Vec3,
-        Option<(Entity, Entity)>,
-    ),
+    CreateVertex(VertexTypeData, Vec3, Option<(Entity, Entity)>),
     // Delete Vertex (2d vertex entity, optional vertex 2d entity to select after delete)
     DeleteVertex(Entity, Option<(Entity, CanvasShape)>),
     // Move Vertex (2d vertex Entity, Old Position, New Position)
@@ -126,7 +125,12 @@ impl Action {
                 }
             }
             Action::CreateVertex(vertex_type_data, _, entity_opt) => {
-                vertex_type_data.migrate_vertex_entities(old_2d_entity, new_2d_entity, old_3d_entity, new_3d_entity);
+                vertex_type_data.migrate_vertex_entities(
+                    old_2d_entity,
+                    new_2d_entity,
+                    old_3d_entity,
+                    new_3d_entity,
+                );
 
                 if let Some((other_2d_entity, other_3d_entity)) = entity_opt {
                     if *other_2d_entity == old_2d_entity {
@@ -501,11 +505,7 @@ impl ActionStack {
 
                 return Action::SelectVertex(deselected_entity);
             }
-            Action::CreateVertex(
-                vertex_type_data,
-                position,
-                old_vertex_entities_opt,
-            ) => {
+            Action::CreateVertex(vertex_type_data, position, old_vertex_entities_opt) => {
                 let mut new_3d_vertices = Vec::new();
                 let deselected_vertex_2d_entity_store;
                 let selected_vertex_3d;
@@ -628,7 +628,10 @@ impl ActionStack {
                         }
                     }
                     if parent_vertex_3d_entity.is_none() {
-                        panic!("Failed to find parent vertex for vertex entity {:?}!", vertex_3d_entity);
+                        panic!(
+                            "Failed to find parent vertex for vertex entity {:?}!",
+                            vertex_3d_entity
+                        );
                     }
                     *vertex_manager
                         .vertex_entity_3d_to_2d(&parent_vertex_3d_entity.unwrap())
@@ -651,14 +654,7 @@ impl ActionStack {
                 let rev_vertex_type_data = VertexTypeData(
                     parent_vertex_2d_entity,
                     entry_contents_opt
-                        .map(
-                            |entries| entries
-                                .into_iter()
-                                .map(
-                                    |(_, entry)| entry
-                                )
-                                .collect()
-                        )
+                        .map(|entries| entries.into_iter().map(|(_, entry)| entry).collect()),
                 );
 
                 let Ok((_, vertex_3d)) = vertex_q.get(vertex_3d_entity) else {
@@ -721,22 +717,17 @@ impl ActionStack {
         vertex_3d_entity: Entity,
         vertex_2d_to_select_opt: Option<(Entity, CanvasShape)>,
     ) {
-
         // delete 3d vertex
         commands.entity(vertex_3d_entity).despawn();
 
         // cleanup mappings
-        vertex_manager.cleanup_deleted_vertex(
-            &vertex_3d_entity,
-            commands,
-        );
+        vertex_manager.cleanup_deleted_vertex(&vertex_3d_entity, commands);
 
         // select entities as needed
         if let Some((vertex_2d_to_select, vertex_type)) = vertex_2d_to_select_opt {
-            if let Some(vertex_3d_entity_to_request) = Self::select_vertex(
-                vertex_manager,
-                Some((vertex_2d_to_select, vertex_type)),
-            ) {
+            if let Some(vertex_3d_entity_to_request) =
+                Self::select_vertex(vertex_manager, Some((vertex_2d_to_select, vertex_type)))
+            {
                 info!("request_entities({:?})", vertex_3d_entity_to_request);
                 let mut entity_mut = commands.entity(vertex_3d_entity_to_request);
                 if entity_mut.authority(client).is_some() {
@@ -957,7 +948,6 @@ impl ActionStack {
         tab_id: TabId,
         new_3d_entities: &mut Vec<Entity>,
     ) -> (Entity, Entity) {
-
         let VertexTypeData(parent_vertex_2d_entity, children_opt) = vertex_type_data;
 
         // create new 3d vertex
@@ -987,14 +977,19 @@ impl ActionStack {
             .unwrap();
 
         let mut new_edge_3d_component = Edge3d::new();
-        new_edge_3d_component.start.set(client, &parent_vertex_3d_entity);
+        new_edge_3d_component
+            .start
+            .set(client, &parent_vertex_3d_entity);
         new_edge_3d_component.end.set(client, &new_vertex_3d_entity);
         let new_edge_3d_entity = commands
             .spawn_empty()
             .enable_replication(client)
             .configure_replication(ReplicationConfig::Delegated)
             .insert(new_edge_3d_component)
-            .insert(Edge3dLocal::new(parent_vertex_3d_entity, new_vertex_3d_entity))
+            .insert(Edge3dLocal::new(
+                parent_vertex_3d_entity,
+                new_vertex_3d_entity,
+            ))
             .insert(OwnedByTab::new(tab_id))
             .id();
 
@@ -1014,10 +1009,7 @@ impl ActionStack {
 
         if let Some(children) = children_opt {
             for child in children {
-                let child_vertex_type_data = VertexTypeData(
-                    new_vertex_2d_entity,
-                    child.children(),
-                );
+                let child_vertex_type_data = VertexTypeData(new_vertex_2d_entity, child.children());
                 let (new_child_vertex_2d_entity, new_child_vertex_3d_entity) = self
                     .create_networked_tree(
                         commands,
@@ -1205,23 +1197,30 @@ impl ActionStack {
                 continue;
             };
             if parent_entity == *parent_3d_entity {
-                let child_entity_2d = *vertex_manager.vertex_entity_3d_to_2d(&child_entity_3d).unwrap();
+                let child_entity_2d = *vertex_manager
+                    .vertex_entity_3d_to_2d(&child_entity_3d)
+                    .unwrap();
 
                 // get positon
                 let Ok((_, vertex_3d)) = vertex_3d_q.get(child_entity_3d) else {
                     panic!("vertex entity not found");
                 };
 
-                let child_entry = VertexEntry::new(child_entity_2d, child_entity_3d, vertex_3d.as_vec3());
+                let child_entry =
+                    VertexEntry::new(child_entity_2d, child_entity_3d, vertex_3d.as_vec3());
                 output.push((child_entity_3d, child_entry));
             }
         }
 
         for (entry_entity, entry) in output.iter_mut() {
-
             // set children
-            let children =
-                Self::convert_vertices_to_tree(client, vertex_manager, entry_entity, vertex_3d_q, edge_3d_q);
+            let children = Self::convert_vertices_to_tree(
+                client,
+                vertex_manager,
+                entry_entity,
+                vertex_3d_q,
+                edge_3d_q,
+            );
             if children.len() > 0 {
                 entry.set_children(
                     children

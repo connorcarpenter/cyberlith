@@ -5,6 +5,7 @@ use bevy_ecs::{
     world::{Mut, World},
 };
 use bevy_log::info;
+
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
 
 use render_api::components::Visibility;
@@ -15,6 +16,7 @@ use render_egui::{
         Ui, WidgetText,
     },
 };
+
 use vortex_proto::{
     components::{
         ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
@@ -23,16 +25,17 @@ use vortex_proto::{
     FileExtension,
 };
 
-use crate::app::resources::camera_manager::CameraManager;
 use crate::app::{
     components::file_system::{
         ContextMenuAction, FileSystemParent, FileSystemUiState, ModalRequestType,
     },
     resources::{
         action_stack::{Action, ActionStack},
+        camera_manager::CameraManager,
         canvas::Canvas,
         global::Global,
         tab_manager::TabManager,
+        vertex_manager::VertexManager,
     },
     ui::{
         widgets::colors::{
@@ -42,7 +45,6 @@ use crate::app::{
         UiState,
     },
 };
-use crate::app::resources::vertex_manager::VertexManager;
 
 pub struct FileTreeRowUiWidget;
 
@@ -395,8 +397,14 @@ impl FileTreeRowUiWidget {
                 ResMut<TabManager>,
                 Query<(&mut Visibility, &OwnedByTab)>,
             )> = SystemState::new(world);
-            let (mut client, mut canvas, mut camera_manager, mut vertex_manager, mut tab_manager, mut visibility_q) =
-                system_state.get_mut(world);
+            let (
+                mut client,
+                mut canvas,
+                mut camera_manager,
+                mut vertex_manager,
+                mut tab_manager,
+                mut visibility_q,
+            ) = system_state.get_mut(world);
             tab_manager.open_tab(
                 &mut client,
                 &mut canvas,

@@ -63,15 +63,24 @@ pub struct Compass;
 pub struct VertexTypeData(pub Entity, pub Option<Vec<VertexEntry>>);
 
 impl VertexTypeData {
-    pub fn migrate_vertex_entities(&mut self, old_2d_entity: Entity,
-                                   new_2d_entity: Entity,
-                                   old_3d_entity: Entity,
-                                   new_3d_entity: Entity) {
+    pub fn migrate_vertex_entities(
+        &mut self,
+        old_2d_entity: Entity,
+        new_2d_entity: Entity,
+        old_3d_entity: Entity,
+        new_3d_entity: Entity,
+    ) {
         let VertexTypeData(parent_2d_vertex_entity, children_opt) = self;
         if *parent_2d_vertex_entity == old_2d_entity {
             *parent_2d_vertex_entity = new_2d_entity;
         }
-        migrate_vertex_trees(children_opt, old_2d_entity, new_2d_entity, old_3d_entity, new_3d_entity);
+        migrate_vertex_trees(
+            children_opt,
+            old_2d_entity,
+            new_2d_entity,
+            old_3d_entity,
+            new_3d_entity,
+        );
     }
 }
 

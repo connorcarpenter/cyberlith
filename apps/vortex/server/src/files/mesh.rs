@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use bevy_ecs::{
     entity::Entity,
@@ -11,15 +11,13 @@ use naia_bevy_server::{
     BitReader, BitWriter, CommandsExt, ReplicationConfig, Serde, SerdeErr, Server,
     UnsignedVariableInteger,
 };
-use serde::__private::de::Content;
 
-use vortex_proto::components::{
-    Edge3d, Face3d, Vertex3d, VertexSerdeInt,
+use vortex_proto::components::{Edge3d, Face3d, Vertex3d, VertexSerdeInt};
+
+use crate::{
+    files::{file_io::ShapeType, FileReadOutput, FileReader, FileWriter},
+    resources::ContentEntityData,
 };
-
-use crate::files::{FileReadOutput, FileReader, FileWriter};
-use crate::files::file_io::ShapeType;
-use crate::resources::ContentEntityData;
 
 // Actions
 #[derive(Debug)]
@@ -64,7 +62,6 @@ impl MeshWriter {
 
         for (id, entity) in content_entities.iter().enumerate() {
             if let Ok(vertex) = vertex_q.get(*entity) {
-
                 // entity is a vertex
                 vertex_map.insert(*entity, id);
                 let vertex_info = MeshAction::Vertex(vertex.x(), vertex.y(), vertex.z());
@@ -145,7 +142,11 @@ impl MeshWriter {
 }
 
 impl FileWriter for MeshWriter {
-    fn write(&self, world: &mut World, content_entities: &HashMap<Entity, ContentEntityData>) -> Box<[u8]> {
+    fn write(
+        &self,
+        world: &mut World,
+        content_entities: &HashMap<Entity, ContentEntityData>,
+    ) -> Box<[u8]> {
         let content_entities_vec: Vec<Entity> = content_entities.iter().map(|(e, d)| *e).collect();
         let actions = self.world_to_actions(world, &content_entities_vec);
         self.write_from_actions(actions)
@@ -287,8 +288,9 @@ impl MeshReader {
     pub fn post_process_entities(
         shape_entities: Vec<(ShapeType, Entity)>,
     ) -> HashMap<Entity, ContentEntityData> {
-        shape_entities.iter().map(|(shape_type, entity)| {
-            (*entity, ContentEntityData::new(*shape_type))
-        }).collect()
+        shape_entities
+            .iter()
+            .map(|(shape_type, entity)| (*entity, ContentEntityData::new(*shape_type)))
+            .collect()
     }
 }

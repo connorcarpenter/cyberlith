@@ -1,9 +1,10 @@
 use std::collections::{HashMap, HashSet};
 
-use bevy_ecs::{entity::Entity, system::{Commands, Resource}};
+use bevy_ecs::{
+    entity::Entity,
+    system::{Commands, Resource},
+};
 use bevy_log::info;
-
-use naia_bevy_client::Client;
 
 use render_api::{
     base::{CpuMaterial, CpuMesh},
@@ -13,10 +14,9 @@ use render_api::{
 use vortex_proto::types::TabId;
 
 use crate::app::{
-    components::Vertex2d,
+    components::{Edge3dLocal, Vertex2d},
     resources::{camera_manager::CameraManager, vertex_manager::VertexManager},
 };
-use crate::app::components::Edge3dLocal;
 
 pub enum ShapeWaitlistInsert {
     Vertex,
@@ -41,7 +41,7 @@ pub struct ShapeWaitlistEntry {
     shape: Option<ShapeType>,
     vertex_parent: Option<Option<Entity>>,
     tab_id: Option<TabId>,
-    edge_entities: Option<(Entity, Entity)>
+    edge_entities: Option<(Entity, Entity)>,
 }
 
 impl ShapeWaitlistEntry {
@@ -56,12 +56,8 @@ impl ShapeWaitlistEntry {
 
     fn is_ready(&self) -> bool {
         match self.shape {
-            Some(ShapeType::Vertex) => {
-                self.tab_id.is_some() && self.vertex_parent.is_some()
-            },
-            Some(ShapeType::Edge) => {
-                self.tab_id.is_some() && self.edge_entities.is_some()
-            },
+            Some(ShapeType::Vertex) => self.tab_id.is_some() && self.vertex_parent.is_some(),
+            Some(ShapeType::Edge) => self.tab_id.is_some() && self.edge_entities.is_some(),
             None => false,
         }
     }
@@ -103,10 +99,7 @@ impl ShapeWaitlistEntry {
                 ShapeData::Edge(entities.0, entities.1)
             }
         };
-        return (
-            shape_data,
-            self.tab_id.unwrap(),
-        );
+        return (shape_data, self.tab_id.unwrap());
     }
 }
 
@@ -131,7 +124,6 @@ impl Default for ShapeWaitlist {
 }
 
 impl ShapeWaitlist {
-
     pub fn process_insert(
         &mut self,
         commands: &mut Commands,
@@ -160,7 +152,10 @@ impl ShapeWaitlist {
                 info!("Setting parent of {:?} to {:?}", end_entity, start_entity);
                 vertex_entry.set_parent(Some(start_entity));
                 possibly_ready_entities.push(end_entity);
-                info!("Entities to check for readiness... `{:?}`", possibly_ready_entities);
+                info!(
+                    "Entities to check for readiness... `{:?}`",
+                    possibly_ready_entities
+                );
             }
             ShapeWaitlistInsert::VertexRoot => {
                 self.get_mut(&entity).unwrap().set_parent(None);
@@ -171,7 +166,12 @@ impl ShapeWaitlist {
         }
 
         for possibly_ready_entity in possibly_ready_entities {
-            if self.incomplete_entries.get(&possibly_ready_entity).unwrap().is_ready() {
+            if self
+                .incomplete_entries
+                .get(&possibly_ready_entity)
+                .unwrap()
+                .is_ready()
+            {
                 let entity = possibly_ready_entity;
                 info!("entity `{:?}` is ready!", entity);
                 let entry = self.remove(&entity).unwrap();
@@ -200,8 +200,7 @@ impl ShapeWaitlist {
                             // need to put in parent waitlist
                             info!(
                                 "edge entity {:?} requires parent {:?}. putting in parent waitlist",
-                                entity,
-                                entities.0
+                                entity, entities.0
                             );
                             self.insert_waiting_dependency(entities.0, entity, entry.clone());
                             has_all_entities = false;
@@ -210,8 +209,7 @@ impl ShapeWaitlist {
                             // need to put in parent waitlist
                             info!(
                                 "edge entity {:?} requires parent {:?}. putting in parent waitlist",
-                                entity,
-                                entities.1
+                                entity, entities.1
                             );
                             self.insert_waiting_dependency(entities.1, entity, entry.clone());
                             has_all_entities = false;
@@ -269,10 +267,16 @@ impl ShapeWaitlist {
                 );
 
                 // if the waitlist has any children entities of this one, process them
-                info!("processing complete shape {:?}. checking for children", entity);
+                info!(
+                    "processing complete shape {:?}. checking for children",
+                    entity
+                );
                 if let Some(child_entries) = self.on_vertex_complete(entity) {
                     for (child_entity, child_entry) in child_entries {
-                        info!("entity {:?} was waiting on parent {:?}. processing!", child_entity, entity);
+                        info!(
+                            "entity {:?} was waiting on parent {:?}. processing!",
+                            child_entity, entity
+                        );
                         self.process_complete(
                             commands,
                             meshes,
@@ -286,14 +290,13 @@ impl ShapeWaitlist {
                 }
             }
             ShapeData::Edge(start, end) => {
-
                 // TODO: these vertices may not have completed converting to the 2d version!
                 // there is a dependency here, must wait on the parent vertices ..
 
                 let start_2d = *vertex_manager.vertex_entity_3d_to_2d(&start).unwrap();
                 let end_2d = *vertex_manager.vertex_entity_3d_to_2d(&end).unwrap();
 
-                commands.entity(entity).insert(Edge3dLocal::new(start,end));
+                commands.entity(entity).insert(Edge3dLocal::new(start, end));
 
                 let _new_edge_2d_entity = vertex_manager.edge_3d_postprocess(
                     commands,
@@ -337,13 +340,15 @@ impl ShapeWaitlist {
         dependent_entry: ShapeWaitlistEntry,
     ) {
         if !self.dependency_map.contains_key(&dependency_entity) {
-            self.dependency_map.insert(dependency_entity, HashSet::new());
+            self.dependency_map
+                .insert(dependency_entity, HashSet::new());
         }
         let dependents = self.dependency_map.get_mut(&dependency_entity).unwrap();
         dependents.insert(dependent_entity);
 
         if !self.dependent_map.contains_key(&dependent_entity) {
-            self.dependent_map.insert(dependent_entity, (HashSet::new(), dependent_entry));
+            self.dependent_map
+                .insert(dependent_entity, (HashSet::new(), dependent_entry));
         }
         let (dependencies, _) = self.dependent_map.get_mut(&dependent_entity).unwrap();
         dependencies.insert(dependency_entity);

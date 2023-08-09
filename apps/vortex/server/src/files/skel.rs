@@ -1,11 +1,10 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use bevy_ecs::{
     entity::Entity,
     prelude::{Commands, World},
-    system::{Query, SystemState},
+    system::{Query, Res, SystemState},
 };
-use bevy_ecs::system::Res;
 use bevy_log::info;
 
 use naia_bevy_server::{
@@ -16,11 +15,9 @@ use naia_bevy_server::{
 use vortex_proto::components::{Edge3d, Vertex3d, VertexRoot, VertexSerdeInt};
 
 use crate::{
-    files::{FileReadOutput, FileReader, FileWriter},
-    resources::VertexManager,
+    files::{file_io::ShapeType, FileReadOutput, FileReader, FileWriter},
+    resources::{ContentEntityData, VertexManager},
 };
-use crate::files::file_io::ShapeType;
-use crate::resources::ContentEntityData;
 
 // Actions
 #[derive(Debug)]
@@ -46,10 +43,8 @@ impl SkelWriter {
         world: &mut World,
         content_entities: &Vec<Entity>,
     ) -> Vec<SkelAction> {
-        let mut system_state: SystemState<(
-            Res<VertexManager>,
-            Query<&Vertex3d>,
-        )> = SystemState::new(world);
+        let mut system_state: SystemState<(Res<VertexManager>, Query<&Vertex3d>)> =
+            SystemState::new(world);
         let (vertex_manager, vertex_query) = system_state.get_mut(world);
 
         let mut output = Vec::new();
@@ -112,8 +107,13 @@ impl SkelWriter {
 }
 
 impl FileWriter for SkelWriter {
-    fn write(&self, world: &mut World, content_entities: &HashMap<Entity, ContentEntityData>) -> Box<[u8]> {
-        let content_entities_vec: Vec<Entity> = content_entities.iter().map(|(e, data)| *e).collect();
+    fn write(
+        &self,
+        world: &mut World,
+        content_entities: &HashMap<Entity, ContentEntityData>,
+    ) -> Box<[u8]> {
+        let content_entities_vec: Vec<Entity> =
+            content_entities.iter().map(|(e, data)| *e).collect();
         let actions = self.world_to_actions(world, &content_entities_vec);
         self.write_from_actions(actions)
     }
@@ -173,10 +173,7 @@ impl SkelReader {
         for action in actions {
             match action {
                 SkelAction::Vertex(x, y, z, parent_id_opt) => {
-                    let entity_id = commands
-                        .spawn_empty()
-                        .enable_replication(server)
-                        .id();
+                    let entity_id = commands.spawn_empty().enable_replication(server).id();
                     info!("spawning vertex entity {:?}", entity_id);
                     if parent_id_opt.is_some() {
                         commands
@@ -228,7 +225,8 @@ impl SkelReader {
             new_content_entities.insert(vertex_entity, ContentEntityData::new(ShapeType::Vertex));
             let edge_and_parent_opt = {
                 if let Some((edge_entity, parent_entity)) = edge_opt {
-                    new_content_entities.insert(edge_entity, ContentEntityData::new(ShapeType::Edge));
+                    new_content_entities
+                        .insert(edge_entity, ContentEntityData::new(ShapeType::Edge));
                     Some((edge_entity, parent_entity))
                 } else {
                     None

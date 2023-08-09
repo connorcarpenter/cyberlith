@@ -1,4 +1,7 @@
-use bevy_ecs::{entity::Entity, system::{Query, Resource}};
+use bevy_ecs::{
+    entity::Entity,
+    system::{Query, Resource},
+};
 use bevy_log::{info, warn};
 
 use math::{EulerRot, Quat, Vec2, Vec3};

@@ -5,6 +5,7 @@ use bevy_ecs::{
     system::{Query, ResMut, SystemState},
     world::World,
 };
+
 use naia_bevy_client::Client;
 
 use render_api::components::Visibility;
@@ -12,17 +13,23 @@ use render_egui::{
     egui,
     egui::{vec2, Id, NumExt, Rect, Response, Rounding, Sense, Stroke, TextStyle, Ui, WidgetText},
 };
-use vortex_proto::{channels::TabActionChannel, components::{ChangelistStatus, FileSystemEntry, OwnedByTab}, FileExtension, messages::{TabActionMessage, TabActionMessageType, TabOpenMessage}, types::TabId};
+
+use vortex_proto::{
+    channels::TabActionChannel,
+    components::{ChangelistStatus, FileSystemEntry, OwnedByTab},
+    messages::{TabActionMessage, TabActionMessageType, TabOpenMessage},
+    types::TabId,
+    FileExtension,
+};
 
 use crate::app::{
     components::file_system::FileSystemUiState,
-    resources::{camera_manager::CameraManager, canvas::Canvas},
+    resources::{camera_manager::CameraManager, canvas::Canvas, vertex_manager::VertexManager},
     ui::widgets::colors::{
         FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
         TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED,
     },
 };
-use crate::app::resources::vertex_manager::VertexManager;
 
 #[derive(Clone, Copy)]
 struct TabState {
@@ -85,7 +92,14 @@ impl TabManager {
         file_ext: FileExtension,
     ) {
         if self.tab_map.contains_key(row_entity) {
-            self.select_tab(client, canvas, camera_manager, vertex_manager, visibility_q, row_entity);
+            self.select_tab(
+                client,
+                canvas,
+                camera_manager,
+                vertex_manager,
+                visibility_q,
+                row_entity,
+            );
         } else {
             // get current tab order
             let current_order = if let Some(current_entity) = self.current_tab {
@@ -97,8 +111,10 @@ impl TabManager {
 
             // insert new tab
             let new_tab_id = self.new_tab_id();
-            self.tab_map
-                .insert(*row_entity, TabState::new(new_tab_id, current_order, file_ext));
+            self.tab_map.insert(
+                *row_entity,
+                TabState::new(new_tab_id, current_order, file_ext),
+            );
             self.tab_order.insert(current_order, *row_entity);
 
             // send message to server
@@ -106,7 +122,14 @@ impl TabManager {
             client.send_message::<TabActionChannel, TabOpenMessage>(&message);
 
             // select tab
-            self.select_tab(client, canvas, camera_manager, vertex_manager, visibility_q, row_entity);
+            self.select_tab(
+                client,
+                canvas,
+                camera_manager,
+                vertex_manager,
+                visibility_q,
+                row_entity,
+            );
 
             self.update_tab_orders();
         }
@@ -251,7 +274,14 @@ impl TabManager {
                 if let Some(new_entity) = self.tab_order.get(new_tab_order) {
                     let new_entity = *new_entity;
                     self.set_current_tab(canvas, camera_manager, visibility_q, None);
-                    self.select_tab(client, canvas, camera_manager, vertex_manager, visibility_q, &new_entity);
+                    self.select_tab(
+                        client,
+                        canvas,
+                        camera_manager,
+                        vertex_manager,
+                        visibility_q,
+                        &new_entity,
+                    );
                 } else {
                     self.set_current_tab(canvas, camera_manager, visibility_q, None);
                 }
@@ -276,7 +306,14 @@ impl TabManager {
     ) {
         let all_tabs = self.tab_order.clone();
         for entity in all_tabs {
-            self.close_tab(client, canvas, camera_manager, vertex_manager, visibility_q, &entity);
+            self.close_tab(
+                client,
+                canvas,
+                camera_manager,
+                vertex_manager,
+                visibility_q,
+                &entity,
+            );
         }
     }
 
@@ -293,7 +330,14 @@ impl TabManager {
         if !self.tab_map.contains_key(row_entity) {
             panic!("row entity not in tab map!")
         }
-        self.select_tab(client, canvas, camera_manager, vertex_manager, visibility_q, row_entity);
+        self.select_tab(
+            client,
+            canvas,
+            camera_manager,
+            vertex_manager,
+            visibility_q,
+            row_entity,
+        );
     }
 
     fn close_all_tabs_left_of(
@@ -314,7 +358,14 @@ impl TabManager {
         }
 
         for entity in tabs_to_close {
-            self.close_tab(client, canvas, camera_manager, vertex_manager, visibility_q, &entity);
+            self.close_tab(
+                client,
+                canvas,
+                camera_manager,
+                vertex_manager,
+                visibility_q,
+                &entity,
+            );
         }
     }
 
@@ -336,7 +387,14 @@ impl TabManager {
         }
 
         for entity in tabs_to_close {
-            self.close_tab(client, canvas, camera_manager, vertex_manager, visibility_q, &entity);
+            self.close_tab(
+                client,
+                canvas,
+                camera_manager,
+                vertex_manager,
+                visibility_q,
+                &entity,
+            );
         }
     }
 
@@ -363,7 +421,14 @@ impl TabManager {
             Self::tab_context_menu(button_response, row_entity, &mut tab_action);
         }
 
-        self.execute_tab_action(client, canvas, camera_manager, vertex_manager, visibility_q, tab_action);
+        self.execute_tab_action(
+            client,
+            canvas,
+            camera_manager,
+            vertex_manager,
+            visibility_q,
+            tab_action,
+        );
     }
 
     fn render_tab(
@@ -526,10 +591,24 @@ impl TabManager {
         match tab_action {
             None => {}
             Some(TabAction::Select(row_entity)) => {
-                self.select_tab(client, canvas, camera_manager, vertex_manager, visibility_q, &row_entity);
+                self.select_tab(
+                    client,
+                    canvas,
+                    camera_manager,
+                    vertex_manager,
+                    visibility_q,
+                    &row_entity,
+                );
             }
             Some(TabAction::Close(row_entity)) => {
-                self.close_tab(client, canvas, camera_manager, vertex_manager, visibility_q, &row_entity);
+                self.close_tab(
+                    client,
+                    canvas,
+                    camera_manager,
+                    vertex_manager,
+                    visibility_q,
+                    &row_entity,
+                );
             }
             Some(TabAction::CloseAll) => {
                 self.close_all_tabs(client, canvas, camera_manager, vertex_manager, visibility_q);

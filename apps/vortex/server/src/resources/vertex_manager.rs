@@ -1,6 +1,9 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
-use bevy_ecs::{entity::Entity, system::{Commands, Resource}};
+use bevy_ecs::{
+    entity::Entity,
+    system::{Commands, Resource},
+};
 use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, Server};
@@ -50,7 +53,6 @@ impl Default for VertexManager {
 }
 
 impl VertexManager {
-
     pub fn entity_is_vertex(&self, entity: &Entity) -> bool {
         self.vertices.contains_key(entity)
     }
@@ -63,7 +65,11 @@ impl VertexManager {
         }
     }
 
-    pub fn on_create_vertex(&mut self, vertex_entity: Entity, edge_and_parent_opt: Option<(Entity, Entity)>) {
+    pub fn on_create_vertex(
+        &mut self,
+        vertex_entity: Entity,
+        edge_and_parent_opt: Option<(Entity, Entity)>,
+    ) {
         // info!("on_create_vertex: {:?} {:?}", entity, parent_opt);
 
         let success: bool;
@@ -126,11 +132,19 @@ impl VertexManager {
         }
     }
 
-    fn insert_vertex(&mut self, vertex_entity: Entity, edge_and_parent_opt: Option<(Entity, Entity)>) {
-        info!("inserting entity: `{:?}`, edge_and_parent is `{:?}`", vertex_entity, edge_and_parent_opt);
+    fn insert_vertex(
+        &mut self,
+        vertex_entity: Entity,
+        edge_and_parent_opt: Option<(Entity, Entity)>,
+    ) {
+        info!(
+            "inserting entity: `{:?}`, edge_and_parent is `{:?}`",
+            vertex_entity, edge_and_parent_opt
+        );
 
         if let Some((edge_entity, parent_entity)) = edge_and_parent_opt {
-            self.vertices.insert(vertex_entity, VertexData::new(Some(parent_entity)));
+            self.vertices
+                .insert(vertex_entity, VertexData::new(Some(parent_entity)));
             let Some(parent_value) = self.vertices.get_mut(&parent_entity) else {
                 panic!("shouldn't be able to happen!");
             };
@@ -154,8 +168,11 @@ impl VertexManager {
         let mut entities_to_despawn = Vec::new();
 
         // remove entry
-        let removed_entry =
-            Self::remove_entity_and_collect_children_entities(entities, entity, &mut entities_to_despawn);
+        let removed_entry = Self::remove_entity_and_collect_children_entities(
+            entities,
+            entity,
+            &mut entities_to_despawn,
+        );
 
         // remove entry from parent's children
         if let Some(parent_key) = removed_entry.parent {
@@ -179,7 +196,11 @@ impl VertexManager {
         // handle children
         if let Some(removed_entry_children) = &removed_entry.children {
             for (child_entity, edge_entity) in removed_entry_children {
-                Self::remove_entity_and_collect_children_entities(entities, &child_entity, entities_to_despawn);
+                Self::remove_entity_and_collect_children_entities(
+                    entities,
+                    &child_entity,
+                    entities_to_despawn,
+                );
                 entities_to_despawn.push(*child_entity);
                 entities_to_despawn.push(*edge_entity);
             }

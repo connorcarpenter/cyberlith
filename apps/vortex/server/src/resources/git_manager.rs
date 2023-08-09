@@ -11,6 +11,7 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 use git2::{Cred, Repository, Tree};
+
 use naia_bevy_server::{CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};
 
 use vortex_proto::{
@@ -26,11 +27,10 @@ use crate::{
     config::GitConfig,
     files::{post_process_networked_entities, FileReadOutput, FileWriter, MeshReader, SkelReader},
     resources::{
-        user_manager::UserInfo, workspace::Workspace, FileEntryValue, UserManager, VertexManager,
+        user_manager::UserInfo, workspace::Workspace, ContentEntityData, FileEntryValue,
+        UserManager, VertexManager,
     },
 };
-use crate::files::ShapeType;
-use crate::resources::ContentEntityData;
 
 #[derive(Resource)]
 pub struct GitManager {
