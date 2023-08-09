@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::default::Default;
 use std::marker::PhantomData;
 
-use bevy_ecs::prelude::Resource;
+use bevy_ecs::system::Resource;
 
 use render_api::Handle;
 

@@ -1,6 +1,6 @@
 use std::default::Default;
 
-use bevy_ecs::prelude::Resource;
+use bevy_ecs::system::Resource;
 
 use crate::components::Viewport;
 

@@ -1,4 +1,4 @@
-use bevy_ecs::prelude::Resource;
+use bevy_ecs::system::Resource;
 
 use math::Vec2;
 

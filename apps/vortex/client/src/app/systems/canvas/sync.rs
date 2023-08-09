@@ -5,16 +5,15 @@ use bevy_ecs::{
 
 use input::Input;
 use render_api::components::{Camera, Projection, Transform, Visibility};
-use vortex_proto::components::{Edge3d, OwnedByTab, Vertex3d};
+use vortex_proto::components::{OwnedByTab, Vertex3d};
 
 use crate::app::{
-    components::{Compass, Edge2dLocal},
+    components::{Edge3dLocal, Compass, Edge2dLocal},
     resources::{
         camera_manager::CameraManager, canvas::Canvas, tab_manager::TabManager,
         vertex_manager::VertexManager,
     },
 };
-use crate::app::components::Edge3dLocal;
 
 pub fn sync_vertices(
     tab_manager: Res<TabManager>,

@@ -6,13 +6,10 @@ use bevy_ecs::{
     system::{Commands, Local, Query, Res, ResMut},
 };
 use bevy_log::info;
-use naia_bevy_server::{
-    events::{
-        DespawnEntityEvent, InsertComponentEvents, RemoveComponentEvents, SpawnEntityEvent,
-        UpdateComponentEvents,
-    },
-    Server,
-};
+use naia_bevy_server::{CommandsExt, events::{
+    DespawnEntityEvent, InsertComponentEvents, RemoveComponentEvents, SpawnEntityEvent,
+    UpdateComponentEvents,
+}, Server};
 
 use vortex_proto::{
     components::{
@@ -176,7 +173,7 @@ pub fn insert_component_events(
             let Some(child_entity) = edge_3d.end.get(&server) else {
                 panic!("no child entity!")
             };
-            vertex_manager.on_create_vertex(&child_entity, Some(parent_entity));
+            vertex_manager.on_create_vertex(child_entity, Some((edge_entity, parent_entity)));
             vertex_manager.finalize_vertex_creation();
         }
 

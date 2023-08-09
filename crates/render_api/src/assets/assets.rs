@@ -5,7 +5,7 @@ use std::{
     hash::{Hash, Hasher},
 };
 
-use bevy_ecs::prelude::Resource;
+use bevy_ecs::system::Resource;
 
 use super::Handle;
 

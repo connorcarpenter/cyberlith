@@ -1,5 +1,5 @@
 use bevy_app::{App, Plugin};
-use bevy_ecs::schedule::IntoSystemConfigs;
+use bevy_ecs::schedule::{IntoSystemConfig, IntoSystemConfigs};
 
 use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin, ReceiveEvents};
 use render_api::resources::WindowSettings;
@@ -23,6 +23,7 @@ use crate::app::{
     systems::{canvas, network, ui},
     ui::UiState,
 };
+use crate::app::resources::shape_waitlist::ShapeWaitlist;
 
 pub struct VortexPlugin;
 
@@ -62,7 +63,7 @@ impl Plugin for VortexPlugin {
                     network::despawn_entity_events,
                     network::insert_component_events,
                     network::update_component_events,
-                    network::remove_component_events,
+                    network::remove_component_events.before(network::despawn_entity_events),
                     network::auth_granted_events,
                     network::auth_denied_events,
                     network::auth_reset_events,
@@ -78,6 +79,7 @@ impl Plugin for VortexPlugin {
             .add_event::<InsertComponentEvent<VertexRoot>>()
             .add_event::<InsertComponentEvent<OwnedByTab>>()
             .add_event::<InsertComponentEvent<Edge3d>>()
+            .init_resource::<ShapeWaitlist>()
             .add_system(network::insert_fs_component_events)
             .add_system(network::insert_changelist_entry_events)
             .add_system(network::insert_vertex_events)

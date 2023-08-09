@@ -33,7 +33,7 @@ impl AssetHash<CpuMesh> for Diamond3d {}
 impl From<Diamond3d> for CpuMesh {
     fn from(_: Diamond3d) -> Self {
         let girth = 4.0;
-        let waist_height = 0.8;
+        let waist_height = 0.2;
 
         let ax = f32::to_radians(0.0).cos() * girth;
         let ay = f32::to_radians(0.0).sin() * girth;

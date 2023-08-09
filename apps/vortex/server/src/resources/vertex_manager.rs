@@ -7,34 +7,37 @@ use naia_bevy_server::{CommandsExt, Server};
 
 struct VertexData {
     parent: Option<Entity>,
-    children: Option<HashSet<Entity>>,
+    // children map from vertex entity to edge entity
+    children: Option<HashMap<Entity, Entity>>,
 }
 
 impl VertexData {
-    pub fn new(parent: Option<Entity>) -> Self {
+    fn new(parent: Option<Entity>) -> Self {
         Self {
             parent,
             children: None,
         }
     }
 
-    pub fn add_child(&mut self, entity: Entity) {
+    fn add_child(&mut self, vertex_entity: Entity, edge_entity: Entity) {
         self.children
-            .get_or_insert_with(|| HashSet::new())
-            .insert(entity);
+            .get_or_insert_with(|| HashMap::new())
+            .insert(vertex_entity, edge_entity);
     }
 
-    pub fn remove_child(&mut self, entity: &Entity) {
+    fn remove_child(&mut self, entity: &Entity) -> Option<Entity> {
         if let Some(children) = self.children.as_mut() {
-            children.remove(&entity);
+            return children.remove(&entity);
         }
+        return None;
     }
 }
 
 #[derive(Resource)]
 pub struct VertexManager {
     vertices: HashMap<Entity, VertexData>,
-    waiting_for_parent: HashMap<Entity, Vec<(Entity, Option<Entity>)>>,
+    // map from parent entity -> list of (vertex entity, Option<(edge entity, parent entity)>)
+    waiting_for_parent: HashMap<Entity, Vec<(Entity, Option<(Entity, Entity)>)>>,
 }
 
 impl Default for VertexManager {
@@ -60,12 +63,12 @@ impl VertexManager {
         }
     }
 
-    pub fn on_create_vertex(&mut self, entity: &Entity, parent_opt: Option<Entity>) {
+    pub fn on_create_vertex(&mut self, vertex_entity: Entity, edge_and_parent_opt: Option<(Entity, Entity)>) {
         // info!("on_create_vertex: {:?} {:?}", entity, parent_opt);
 
         let success: bool;
 
-        if let Some(parent_entity) = parent_opt {
+        if let Some((edge_entity, parent_entity)) = edge_and_parent_opt {
             if self.vertices.contains_key(&parent_entity) {
                 // success!
                 success = true;
@@ -81,10 +84,10 @@ impl VertexManager {
                     panic!("shouldn't be able to happen!");
                 };
 
-                list.push((*entity, parent_opt));
+                list.push((vertex_entity, edge_and_parent_opt));
                 info!(
                     "waiting on parent .. entity: {:?}, parent is {:?}",
-                    entity, parent_entity
+                    vertex_entity, parent_entity
                 )
             }
         } else {
@@ -93,7 +96,7 @@ impl VertexManager {
         }
 
         if success {
-            self.insert_vertex(*entity, parent_opt);
+            self.insert_vertex(vertex_entity, edge_and_parent_opt);
         }
     }
 
@@ -123,57 +126,62 @@ impl VertexManager {
         }
     }
 
-    fn insert_vertex(&mut self, entity: Entity, parent_opt: Option<Entity>) {
-        info!("inserting entity: {:?}, parent is {:?}", entity, parent_opt);
-        self.vertices.insert(entity, VertexData::new(parent_opt));
+    fn insert_vertex(&mut self, vertex_entity: Entity, edge_and_parent_opt: Option<(Entity, Entity)>) {
+        info!("inserting entity: `{:?}`, edge_and_parent is `{:?}`", vertex_entity, edge_and_parent_opt);
 
-        if let Some(parent_entity) = parent_opt {
+        if let Some((edge_entity, parent_entity)) = edge_and_parent_opt {
+            self.vertices.insert(vertex_entity, VertexData::new(Some(parent_entity)));
             let Some(parent_value) = self.vertices.get_mut(&parent_entity) else {
                 panic!("shouldn't be able to happen!");
             };
-            parent_value.add_child(entity);
+            parent_value.add_child(vertex_entity, edge_entity);
+        } else {
+            self.vertices.insert(vertex_entity, VertexData::new(None));
         }
 
-        if let Some(list) = self.waiting_for_parent.remove(&entity) {
-            for (child_entity, child_value) in list {
+        if let Some(list) = self.waiting_for_parent.remove(&vertex_entity) {
+            for (child_entity, child_edge_and_parent_opt) in list {
                 info!(
                     "child {:?} was waiting on parent {:?}!",
-                    child_entity, entity
+                    child_entity, vertex_entity
                 );
-                self.insert_vertex(child_entity, child_value);
+                self.insert_vertex(child_entity, child_edge_and_parent_opt);
             }
         }
     }
 
     fn remove_entity(entities: &mut HashMap<Entity, VertexData>, entity: &Entity) -> Vec<Entity> {
-        let mut output = Vec::new();
+        let mut entities_to_despawn = Vec::new();
 
         // remove entry
         let removed_entry =
-            Self::remove_entity_and_collect_children_entities(entities, entity, &mut output);
+            Self::remove_entity_and_collect_children_entities(entities, entity, &mut entities_to_despawn);
 
         // remove entry from parent's children
         if let Some(parent_key) = removed_entry.parent {
             if let Some(parent) = entities.get_mut(&parent_key) {
-                parent.remove_child(entity);
+                if let Some(edge_entity) = parent.remove_child(entity) {
+                    entities_to_despawn.push(edge_entity);
+                }
             }
         }
 
-        return output;
+        return entities_to_despawn;
     }
 
     fn remove_entity_and_collect_children_entities(
         entities: &mut HashMap<Entity, VertexData>,
         entity: &Entity,
-        output: &mut Vec<Entity>,
+        entities_to_despawn: &mut Vec<Entity>,
     ) -> VertexData {
         let removed_entry = entities.remove(entity).unwrap();
 
         // handle children
         if let Some(removed_entry_children) = &removed_entry.children {
-            for child_entity in removed_entry_children {
-                Self::remove_entity_and_collect_children_entities(entities, &child_entity, output);
-                output.push(*child_entity);
+            for (child_entity, edge_entity) in removed_entry_children {
+                Self::remove_entity_and_collect_children_entities(entities, &child_entity, entities_to_despawn);
+                entities_to_despawn.push(*child_entity);
+                entities_to_despawn.push(*edge_entity);
             }
         }
 

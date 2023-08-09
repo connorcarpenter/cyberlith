@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use bevy_ecs::{
     entity::Entity,
     event::{EventReader, EventWriter},
-    system::{Commands, Local, Query, Res, ResMut},
+    system::{Commands, Query, Res, ResMut},
 };
 use bevy_log::{info, warn};
 
@@ -24,18 +24,12 @@ use vortex_proto::components::{ChangelistEntry, Edge3d, EntryKind, FileSystemChi
 use crate::app::{
     components::{
         file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
-        Edge2dLocal,
     },
     events::InsertComponentEvent,
     resources::{camera_manager::CameraManager, global::Global, vertex_manager::VertexManager},
-    systems::{
-        file_post_process,
-        network::{
-            vertex_waitlist::VertexWaitlistInsert,
-            VertexWaitlist,
-        },
-    },
+    systems::file_post_process,
 };
+use crate::app::resources::shape_waitlist::{ShapeWaitlist, ShapeWaitlistInsert};
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
     for SpawnEntityEvent(entity) in event_reader.iter() {
@@ -224,80 +218,90 @@ pub fn insert_vertex_events(
     mut vertex_manager: ResMut<VertexManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
+    mut waiting_vertices: ResMut<ShapeWaitlist>,
     edge_3d_q: Query<&Edge3d>,
     owned_by_tab_q: Query<&OwnedByTab>,
-    mut waiting_vertices: Local<VertexWaitlist>,
 ) {
     // on Vertex Insert Event
     for event in vertex_3d_events.iter() {
         let entity = event.entity;
-        waiting_vertices.vertex_process_insert(
+
+        info!("entity: {:?} - inserted Vertex3d", entity);
+
+        waiting_vertices.process_insert(
             &mut commands,
-            &mut client,
             &mut meshes,
             &mut materials,
             &mut camera_manager,
             &mut vertex_manager,
             &entity,
-            VertexWaitlistInsert::Position,
+            ShapeWaitlistInsert::Vertex,
         );
     }
 
     // on Vertex Root Event
     for event in vertex_root_events.iter() {
         let entity = event.entity;
-        waiting_vertices.vertex_process_insert(
+
+        info!("entity: {:?} - inserted VertexRoot", entity);
+
+        waiting_vertices.process_insert(
             &mut commands,
-            &mut client,
             &mut meshes,
             &mut materials,
             &mut camera_manager,
             &mut vertex_manager,
             &entity,
-            VertexWaitlistInsert::Parent(None),
+            ShapeWaitlistInsert::VertexRoot,
         );
     }
 
     // on Edge3d Insert Event
     for event in edge_3d_events.iter() {
+
+        // handle vertex
         let edge_entity = event.entity;
+
+        info!("entity: {:?} - inserted Edge3d", edge_entity);
+
         let edge_3d = edge_3d_q.get(edge_entity).unwrap();
-        let Some(parent_entity) = edge_3d.start.get(&client) else {
+        let Some(start_entity) = edge_3d.start.get(&client) else {
             warn!("Edge3d component of entity: `{:?}` has no start entity", edge_entity);
             continue;
         };
-        let Some(child_entity) = edge_3d.end.get(&client) else {
+        let Some(end_entity) = edge_3d.end.get(&client) else {
             warn!("Edge3d component of entity: `{:?}` has no start entity", edge_entity);
             continue;
         };
 
-        waiting_vertices.vertex_process_insert(
+        waiting_vertices.process_insert(
             &mut commands,
-            &mut client,
             &mut meshes,
             &mut materials,
             &mut camera_manager,
             &mut vertex_manager,
-            &child_entity,
-            VertexWaitlistInsert::Parent(Some(parent_entity)),
+            &edge_entity,
+            ShapeWaitlistInsert::Edge(start_entity, end_entity),
         );
     }
 
     // on OwnedByTab Insert Event
     for event in owned_by_events.iter() {
         let entity = event.entity;
+
+        info!("entity: {:?} - inserted OwnedByTab", entity);
+
         let owned_by_tab = owned_by_tab_q.get(entity).unwrap();
         let tab_id = *owned_by_tab.tab_id;
 
-        waiting_vertices.vertex_process_insert(
+        waiting_vertices.process_insert(
             &mut commands,
-            &mut client,
             &mut meshes,
             &mut materials,
             &mut camera_manager,
             &mut vertex_manager,
             &entity,
-            VertexWaitlistInsert::OwnedByTab(tab_id),
+            ShapeWaitlistInsert::OwnedByTab(tab_id),
         );
     }
 }

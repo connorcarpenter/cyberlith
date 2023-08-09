@@ -2,9 +2,8 @@ use std::collections::HashMap;
 
 use bevy_ecs::{
     entity::Entity,
-    prelude::Resource,
     query::{With, Without},
-    system::{Commands, Query},
+    system::{Commands, Resource, Query},
 };
 use bevy_log::{info, warn};
 
@@ -18,12 +17,12 @@ use render_api::{
     Assets,
 };
 use vortex_proto::{
-    components::{Edge3d, OwnedByTab, Vertex3d, VertexRoot},
+    components::{OwnedByTab, Vertex3d, VertexRoot},
     types::TabId,
 };
 
 use crate::app::{
-    components::{VertexTypeData, Compass, Edge2dLocal, HoverCircle, SelectCircle, Vertex2d},
+    components::{Edge3dLocal, VertexTypeData, Compass, Edge2dLocal, HoverCircle, SelectCircle, Vertex2d},
     resources::{
         action_stack::{Action, ActionStack},
         camera_manager::{CameraAngle, CameraManager},
@@ -32,7 +31,6 @@ use crate::app::{
     set_3d_line_transform,
     shapes::{create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line},
 };
-use crate::app::components::Edge3dLocal;
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub enum CanvasShape {
@@ -299,19 +297,34 @@ impl VertexManager {
                 continue;
             }
 
-            let start_transform = transform_q.get(edge_endpoints.start).unwrap();
-            let start_pos = start_transform.translation.truncate();
+            if let Ok(start_transform) = transform_q.get(edge_endpoints.start) {
+                let start_pos = start_transform.translation.truncate();
 
-            let end_transform = transform_q.get(edge_endpoints.end).unwrap();
-            let end_pos = end_transform.translation.truncate();
+                if let Ok(end_transform) = transform_q.get(edge_endpoints.end) {
+                    let end_pos = end_transform.translation.truncate();
 
-            let mut edge_transform = transform_q.get_mut(edge_entity).unwrap();
-            set_2d_line_transform(&mut edge_transform, start_pos, end_pos);
+                    if let Ok(mut edge_transform) = transform_q.get_mut(edge_entity) {
+                        set_2d_line_transform(&mut edge_transform, start_pos, end_pos);
 
-            if let Some((hover_entity, CanvasShape::Edge)) = self.hovered_entity {
-                if hover_entity == edge_entity {
-                    edge_transform.scale.y = 3.0;
+                        if let Some((hover_entity, CanvasShape::Edge)) = self.hovered_entity {
+                            if hover_entity == edge_entity {
+                                edge_transform.scale.y = 3.0;
+                            }
+                        }
+                    } else {
+                        warn!("2d Edge entity {:?} has no transform", edge_entity);
+                    }
+                } else {
+                    warn!(
+                        "2d Edge end entity {:?} has no transform",
+                        edge_endpoints.end,
+                    );
                 }
+            } else {
+                warn!(
+                    "2d Edge start entity {:?} has no transform",
+                    edge_endpoints.start,
+                );
             }
         }
 
@@ -427,6 +440,10 @@ impl VertexManager {
 
     pub(crate) fn has_vertex_entity_3d(&self, entity_3d: &Entity) -> bool {
         self.vertices_3d_to_2d.contains_key(entity_3d)
+    }
+
+    pub(crate) fn has_edge_entity_3d(&self, entity_3d: &Entity) -> bool {
+        self.edges_3d_to_2d.contains_key(entity_3d)
     }
 
     pub(crate) fn vertex_entity_3d_to_2d(&self, entity_3d: &Entity) -> Option<&Entity> {

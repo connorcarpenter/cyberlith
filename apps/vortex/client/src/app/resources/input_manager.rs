@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use bevy_ecs::prelude::Resource;
+use bevy_ecs::system::Resource;
 
 use input::{Input, Key, MouseButton};
 use math::Vec2;

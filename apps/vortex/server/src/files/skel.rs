@@ -204,6 +204,7 @@ impl SkelReader {
                 let edge_entity = commands
                     .spawn_empty()
                     .enable_replication(server)
+                    .configure_replication(ReplicationConfig::Delegated)
                     .insert(edge_component)
                     .id();
 
@@ -225,15 +226,15 @@ impl SkelReader {
 
         for (vertex_entity, edge_opt) in entities {
             new_content_entities.insert(vertex_entity, ContentEntityData::new(ShapeType::Vertex));
-            let parent_opt = {
+            let edge_and_parent_opt = {
                 if let Some((edge_entity, parent_entity)) = edge_opt {
                     new_content_entities.insert(edge_entity, ContentEntityData::new(ShapeType::Edge));
-                    Some(parent_entity)
+                    Some((edge_entity, parent_entity))
                 } else {
                     None
                 }
             };
-            vertex_manager.on_create_vertex(&vertex_entity, parent_opt);
+            vertex_manager.on_create_vertex(vertex_entity, edge_and_parent_opt);
         }
         vertex_manager.finalize_vertex_creation();
 
