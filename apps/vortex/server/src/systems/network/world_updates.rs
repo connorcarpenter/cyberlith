@@ -26,9 +26,10 @@ use crate::{
     files::handle_file_modify,
     resources::{
         fs_waitlist::{fs_process_insert, FSWaitlist, FSWaitlistInsert},
-        GitManager, TabManager, UserManager, VertexManager, VertexWaitlist, VertexWaitlistInsert,
+        GitManager, TabManager, UserManager, VertexManager, ShapeWaitlist, ShapeWaitlistInsert,
     },
 };
+use crate::files::ShapeType;
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
     for SpawnEntityEvent(_user_key, entity) in event_reader.iter() {
@@ -41,8 +42,10 @@ pub fn despawn_entity_events(
     mut server: Server,
     user_manager: Res<UserManager>,
     mut git_manager: ResMut<GitManager>,
+    mut tab_manager: ResMut<TabManager>,
     mut vertex_manager: ResMut<VertexManager>,
     mut event_reader: EventReader<DespawnEntityEvent>,
+    entry_key_query: Query<&FileEntryKey>,
 ) {
     for DespawnEntityEvent(user_key, entity) in event_reader.iter() {
         let Some(user) = user_manager.user_info(user_key) else {
@@ -55,10 +58,10 @@ pub fn despawn_entity_events(
 
         match (entity_is_file, entity_is_vertex) {
             (true, true) => {
-                panic!("entity is both file and vertex");
+                panic!("entity: `{:?}` is both file and vertex", entity);
             }
             (false, false) => {
-                panic!("entity is neither file nor vertex");
+                panic!("entity: `{:?}` is neither file nor vertex", entity);
             }
             (true, false) => {
                 // file
@@ -73,7 +76,23 @@ pub fn despawn_entity_events(
         if entity_is_file {
             workspace.on_client_delete_file(&mut commands, &mut server, entity);
         } else if entity_is_vertex {
-            vertex_manager.on_delete_vertex(&mut commands, &mut server, entity);
+            let other_entities_to_despawn = vertex_manager.on_delete_vertex(&mut commands, &mut server, entity);
+
+            handle_file_modify(
+                &mut commands,
+                &mut server,
+                &user_manager,
+                &mut git_manager,
+                &mut tab_manager,
+                &user_key,
+                &entity,
+                &entry_key_query,
+            );
+
+            tab_manager.on_remove_content_entity(&user_key, &entity);
+            for other_entity in other_entities_to_despawn {
+                tab_manager.on_remove_content_entity(&user_key, &other_entity);
+            }
         }
     }
 }
@@ -84,7 +103,7 @@ pub fn insert_component_events(
     user_manager: Res<UserManager>,
     mut git_manager: ResMut<GitManager>,
     mut tab_manager: ResMut<TabManager>,
-    mut vertex_waitlist: ResMut<VertexWaitlist>,
+    mut vertex_waitlist: ResMut<ShapeWaitlist>,
     mut vertex_manager: ResMut<VertexManager>,
     mut fs_waiting_entities: Local<HashMap<Entity, FSWaitlist>>,
     mut event_reader: EventReader<InsertComponentEvents>,
@@ -152,7 +171,8 @@ pub fn insert_component_events(
         // on Vertex3D Insert Event
         for (user_key, entity) in events.read::<Vertex3d>() {
             info!("entity: `{:?}`, inserted Vertex3d", entity);
-            tab_manager.on_insert_vertex(&user_key, &entity);
+
+            tab_manager.on_insert_content_entity(&user_key, &entity, ShapeType::Vertex);
             handle_file_modify(
                 &mut commands,
                 &mut server,
@@ -163,11 +183,28 @@ pub fn insert_component_events(
                 &entity,
                 &entry_key_q,
             );
+            vertex_waitlist.process_insert(
+                &mut vertex_manager,
+                ShapeWaitlistInsert::Vertex(entity),
+            );
         }
 
         // on Edge3d Insert Event
-        for (_user_key, edge_entity) in events.read::<Edge3d>() {
+        for (user_key, edge_entity) in events.read::<Edge3d>() {
             info!("entity: `{:?}`, inserted Edge3d", edge_entity);
+
+            tab_manager.on_insert_content_entity(&user_key, &edge_entity, ShapeType::Edge);
+            handle_file_modify(
+                &mut commands,
+                &mut server,
+                &user_manager,
+                &mut git_manager,
+                &mut tab_manager,
+                &user_key,
+                &edge_entity,
+                &entry_key_q,
+            );
+
             let edge_3d = edge_3d_q.get(edge_entity).unwrap();
             let Some(start_entity) = edge_3d.start.get(&server) else {
                 panic!("no parent entity!")
@@ -177,7 +214,7 @@ pub fn insert_component_events(
             };
             vertex_waitlist.process_insert(
                 &mut vertex_manager,
-                VertexWaitlistInsert::Edge(start_entity, edge_entity, end_entity),
+                ShapeWaitlistInsert::Edge(start_entity, edge_entity, end_entity),
             );
         }
 
@@ -188,7 +225,7 @@ pub fn insert_component_events(
 
             vertex_waitlist.process_insert(
                 &mut vertex_manager,
-                VertexWaitlistInsert::FileType(entity, file_type_value),
+                ShapeWaitlistInsert::FileType(entity, file_type_value),
             );
         }
 
@@ -204,12 +241,6 @@ pub fn insert_component_events(
 
 pub fn remove_component_events(
     mut event_reader: EventReader<RemoveComponentEvents>,
-    mut commands: Commands,
-    mut server: Server,
-    user_manager: Res<UserManager>,
-    mut git_manager: ResMut<GitManager>,
-    mut tab_manager: ResMut<TabManager>,
-    entry_key_query: Query<&FileEntryKey>,
 ) {
     for events in event_reader.iter() {
         for (_user_key, _entity, _component) in events.read::<FileSystemRootChild>() {
@@ -221,24 +252,11 @@ pub fn remove_component_events(
             // TODO!
         }
         // on Vertex3D Remove Event
-        for (user_key, entity, _component) in events.read::<Vertex3d>() {
+        for (_user_key, entity, _component) in events.read::<Vertex3d>() {
             info!("entity: `{:?}`, removed Vertex3d", entity);
-
-            handle_file_modify(
-                &mut commands,
-                &mut server,
-                &user_manager,
-                &mut git_manager,
-                &mut tab_manager,
-                &user_key,
-                &entity,
-                &entry_key_query,
-            );
-
-            tab_manager.on_remove_vertex(&user_key, &entity);
         }
         // on Edge3d Remove Event
-        for (_, entity, _) in events.read::<Edge3d>() {
+        for (_user_key, entity, _) in events.read::<Edge3d>() {
             info!("entity: `{:?}`, removed Edge3d", entity);
         }
         // on VertexRoot Remove Event

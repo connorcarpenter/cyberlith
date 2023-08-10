@@ -169,38 +169,39 @@ impl VertexManager {
         commands: &mut Commands,
         server: &mut Server,
         entity: &Entity,
-    ) {
-        match self.vertices.get(entity) {
+    ) -> Vec<Entity> {
+        let entities_to_despawn = match self.vertices.get(entity) {
             Some(VertexData::Skel(_)) => {
-                self.on_delete_skel_vertex(commands, server, entity);
+                self.on_delete_skel_vertex(entity)
             }
             Some(VertexData::Mesh(_)) => {
-                self.on_delete_mesh_vertex(commands, server, entity);
+                self.on_delete_mesh_vertex(entity)
             }
             None => {
                 panic!("on_delete_vertex: vertex entity `{:?}` not found!", entity);
             }
+        };
+
+        info!(
+            "on_delete_vertex: entity `{:?}`, entities_to_despawn: `{:?}`",
+            entity, entities_to_despawn,
+        );
+
+        for child_entity in entities_to_despawn.iter() {
+            commands
+                .entity(*child_entity)
+                .take_authority(server)
+                .despawn();
         }
+
+        entities_to_despawn
     }
 
     fn on_delete_mesh_vertex(
         &mut self,
-        commands: &mut Commands,
-        server: &mut Server,
         entity: &Entity,
-    ) {
-        let entities_to_delete = Self::remove_mesh_vertex(&mut self.vertices, entity);
-        info!(
-            "on_delete_mesh_vertex: entity `{:?}`, entities_to_delete: `{:?}`",
-            entity, entities_to_delete,
-        );
-
-        for child_entity in entities_to_delete {
-            commands
-                .entity(child_entity)
-                .take_authority(server)
-                .despawn();
-        }
+    ) -> Vec<Entity> {
+        Self::remove_mesh_vertex(&mut self.vertices, entity)
     }
 
     fn remove_mesh_vertex(entities: &mut HashMap<Entity, VertexData>, vertex_entity: &Entity) -> Vec<Entity> {
@@ -226,22 +227,9 @@ impl VertexManager {
 
     fn on_delete_skel_vertex(
         &mut self,
-        commands: &mut Commands,
-        server: &mut Server,
         entity: &Entity,
-    ) {
-        let entities_to_delete = Self::remove_skel_vertex(&mut self.vertices, entity);
-        info!(
-            "on_delete_skel_vertex: entity `{:?}`, entities_to_delete: `{:?}`",
-            entity, entities_to_delete,
-        );
-
-        for child_entity in entities_to_delete {
-            commands
-                .entity(child_entity)
-                .take_authority(server)
-                .despawn();
-        }
+    ) -> Vec<Entity> {
+        Self::remove_skel_vertex(&mut self.vertices, entity)
     }
 
     fn remove_skel_vertex(entities: &mut HashMap<Entity, VertexData>, vertex_entity: &Entity) -> Vec<Entity> {

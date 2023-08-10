@@ -9,7 +9,7 @@ use vortex_proto::{resources::FileEntryKey, types::TabId};
 
 use crate::{
     files::{post_process_networked_entities, FileReadOutput, MeshReader, ShapeType, SkelReader},
-    resources::{VertexWaitlist, workspace::Workspace, VertexManager},
+    resources::{ShapeWaitlist, workspace::Workspace, VertexManager},
 };
 
 pub struct UserTabState {
@@ -92,7 +92,7 @@ impl UserTabState {
         }
     }
 
-    pub(crate) fn current_tab_add_entity(&mut self, entity: &Entity, shape_type: ShapeType) {
+    pub(crate) fn current_tab_add_content_entity(&mut self, entity: &Entity, shape_type: ShapeType) {
         if let Some(tab_id) = self.current_tab {
             if let Some(state) = self.tabs.get_mut(&tab_id) {
                 state.add_content_entity(*entity, shape_type);
@@ -104,7 +104,7 @@ impl UserTabState {
         }
     }
 
-    pub(crate) fn current_tab_remove_entity(&mut self, entity: &Entity) {
+    pub(crate) fn current_tab_remove_content_entity(&mut self, entity: &Entity) {
         if let Some(tab_id) = self.current_tab {
             if let Some(state) = self.tabs.get_mut(&tab_id) {
                 state.remove_content_entity(entity);
@@ -117,7 +117,7 @@ impl UserTabState {
         commands: &mut Commands,
         server: &mut Server,
         workspace: &Workspace,
-        vertex_waitlist: &mut VertexWaitlist,
+        vertex_waitlist: &mut ShapeWaitlist,
         vertex_manager: &mut VertexManager,
         file_entity: &Entity,
         file_entry_key: &FileEntryKey,
@@ -199,7 +199,7 @@ impl TabState {
         commands: &mut Commands,
         server: &mut Server,
         workspace: &Workspace,
-        vertex_waitlist: &mut VertexWaitlist,
+        vertex_waitlist: &mut ShapeWaitlist,
         vertex_manager: &mut VertexManager,
         file_entry_key: &FileEntryKey,
         tab_id: TabId,

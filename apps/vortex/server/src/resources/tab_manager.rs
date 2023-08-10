@@ -15,7 +15,7 @@ use crate::{
     files::ShapeType,
     resources::{
         user_tab_state::TabState, workspace::Workspace, ContentEntityData, GitManager, UserManager,
-        UserTabState, VertexManager, VertexWaitlist
+        UserTabState, VertexManager, ShapeWaitlist
     },
 };
 
@@ -49,7 +49,7 @@ impl TabManager {
         server: &mut Server,
         user_manager: &UserManager,
         git_manager: &mut GitManager,
-        vertex_waitlist: &mut VertexWaitlist,
+        vertex_waitlist: &mut ShapeWaitlist,
         vertex_manager: &mut VertexManager,
         key_query: &Query<&FileEntryKey>,
         user_key: &UserKey,
@@ -175,7 +175,7 @@ impl TabManager {
             ResMut<TabManager>,
             Res<UserManager>,
             ResMut<GitManager>,
-            ResMut<VertexWaitlist>,
+            ResMut<ShapeWaitlist>,
             ResMut<VertexManager>,
             Query<&FileEntryKey>,
         )> = SystemState::new(world);
@@ -309,14 +309,14 @@ impl TabManager {
         std::mem::take(&mut self.queued_selects)
     }
 
-    pub fn on_insert_vertex(&mut self, user_key: &UserKey, vertex_entity: &Entity) {
+    pub fn on_insert_content_entity(&mut self, user_key: &UserKey, entity: &Entity, shape_type: ShapeType) {
         self.user_tab_state_mut(user_key)
-            .current_tab_add_entity(vertex_entity, ShapeType::Vertex);
+            .current_tab_add_content_entity(entity, shape_type);
     }
 
-    pub fn on_remove_vertex(&mut self, user_key: &UserKey, vertex_entity: &Entity) {
+    pub fn on_remove_content_entity(&mut self, user_key: &UserKey, entity: &Entity) {
         self.user_tab_state_mut(user_key)
-            .current_tab_remove_entity(vertex_entity);
+            .current_tab_remove_content_entity(entity);
     }
 
     pub(crate) fn user_current_tab_has_entity(&self, user_key: &UserKey, entity: &Entity) -> bool {
@@ -355,7 +355,7 @@ impl TabManager {
         commands: &mut Commands,
         server: &mut Server,
         workspace: &Workspace,
-        vertex_waitlist: &mut VertexWaitlist,
+        vertex_waitlist: &mut ShapeWaitlist,
         vertex_manager: &mut VertexManager,
         user_key: &UserKey,
         file_entity: &Entity,

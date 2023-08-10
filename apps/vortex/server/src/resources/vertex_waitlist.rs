@@ -10,7 +10,8 @@ use vortex_proto::components::FileTypeValue;
 
 use crate::resources::VertexManager;
 
-pub enum VertexWaitlistInsert {
+pub enum ShapeWaitlistInsert {
+    Vertex(Entity),
     ///////////Vertex
     VertexRoot(Entity),
     /////parent, edge, child
@@ -19,34 +20,52 @@ pub enum VertexWaitlistInsert {
     FileType(Entity, FileTypeValue),
 }
 
-enum VertexData {
-    Skel(Option<(Entity, Entity)>),
-    Mesh,
+#[derive(Clone, Copy)]
+enum ShapeType {
+    Vertex,
+    Edge,
+}
+
+enum ShapeData {
+    SkelVertex(Option<(Entity, Entity)>),
+    SkelEdge,
+    MeshVertex,
+    MeshEdge(Entity, Entity),
 }
 
 #[derive(Clone)]
-pub struct VertexWaitlistEntry {
+pub struct ShapeWaitlistEntry {
+    shape: Option<ShapeType>,
     edge_and_parent_opt: Option<Option<(Entity, Entity)>>,
+    edge_entities: Option<(Entity, Entity)>,
     file_type: Option<FileTypeValue>,
 }
 
-impl VertexWaitlistEntry {
+impl ShapeWaitlistEntry {
     fn new() -> Self {
         Self {
+            shape: None,
             edge_and_parent_opt: None,
+            edge_entities: None,
             file_type: None,
         }
     }
 
     fn is_ready(&self) -> bool {
-        match self.file_type {
-            Some(FileTypeValue::Skel) => {
+        match (self.file_type, self.shape) {
+            (Some(FileTypeValue::Skel), Some(ShapeType::Vertex)) => {
                 return self.edge_and_parent_opt.is_some();
             }
-            Some(FileTypeValue::Mesh) => {
+            (Some(FileTypeValue::Skel), Some(ShapeType::Edge)) => {
                 return true;
             }
-            None => {
+            (Some(FileTypeValue::Mesh), Some(ShapeType::Vertex)) => {
+                return true;
+            }
+            (Some(FileTypeValue::Mesh), Some(ShapeType::Edge)) => {
+                self.edge_entities.is_some()
+            }
+            _ => {
                 return false;
             }
         }
@@ -67,19 +86,34 @@ impl VertexWaitlistEntry {
         return false;
     }
 
+    fn set_edge_entities(&mut self, start: Entity, end: Entity) {
+        self.edge_entities = Some((start, end));
+    }
+
+    fn set_shape_type(&mut self, shape_type: ShapeType) {
+        self.shape = Some(shape_type);
+    }
+
     fn set_file_type(&mut self, file_type: FileTypeValue) {
         self.file_type = Some(file_type);
     }
 
-    fn decompose(self) -> VertexData {
-        match self.file_type {
-            Some(FileTypeValue::Skel) => {
-                return VertexData::Skel(self.edge_and_parent_opt.unwrap());
+    fn decompose(self) -> ShapeData {
+        match (self.file_type, self.shape) {
+            (Some(FileTypeValue::Skel), Some(ShapeType::Vertex)) => {
+                return ShapeData::SkelVertex(self.edge_and_parent_opt.unwrap());
             }
-            Some(FileTypeValue::Mesh) => {
-                return VertexData::Mesh;
+            (Some(FileTypeValue::Skel), Some(ShapeType::Edge)) => {
+                return ShapeData::SkelEdge;
             }
-            None => {
+            (Some(FileTypeValue::Mesh), Some(ShapeType::Vertex)) => {
+                return ShapeData::MeshVertex;
+            }
+            (Some(FileTypeValue::Mesh), Some(ShapeType::Edge)) => {
+                let (start, end) = self.edge_entities.unwrap();
+                return ShapeData::MeshEdge(start, end);
+            }
+            _ => {
                 panic!("shouldn't be able to happen!");
             }
         }
@@ -87,16 +121,16 @@ impl VertexWaitlistEntry {
 }
 
 #[derive(Resource)]
-pub struct VertexWaitlist {
+pub struct ShapeWaitlist {
     // incomplete entity -> entry
-    incomplete_entries: HashMap<Entity, VertexWaitlistEntry>,
+    incomplete_entries: HashMap<Entity, ShapeWaitlistEntry>,
     // waiting entity -> (entity dependencies, entry)
-    dependent_map: HashMap<Entity, (HashSet<Entity>, VertexWaitlistEntry)>,
+    dependent_map: HashMap<Entity, (HashSet<Entity>, ShapeWaitlistEntry)>,
     // entity dependency -> entities waiting on it
     dependency_map: HashMap<Entity, HashSet<Entity>>,
 }
 
-impl Default for VertexWaitlist {
+impl Default for ShapeWaitlist {
     fn default() -> Self {
         Self {
             incomplete_entries: HashMap::new(),
@@ -106,11 +140,11 @@ impl Default for VertexWaitlist {
     }
 }
 
-impl VertexWaitlist {
+impl ShapeWaitlist {
     pub fn process_inserts(
         &mut self,
         vertex_manager: &mut VertexManager,
-        inserts: Vec<VertexWaitlistInsert>,
+        inserts: Vec<ShapeWaitlistInsert>,
     ) {
         for insert in inserts {
             self.process_insert(vertex_manager, insert);
@@ -120,34 +154,57 @@ impl VertexWaitlist {
     pub fn process_insert(
         &mut self,
         vertex_manager: &mut VertexManager,
-        insert: VertexWaitlistInsert,
+        insert: ShapeWaitlistInsert,
     ) {
         let mut possibly_ready_entities = Vec::new();
 
         match insert {
-            VertexWaitlistInsert::Edge(parent_entity, edge_entity, vertex_entity) => {
+            ShapeWaitlistInsert::Vertex(vertex_entity) => {
                 if !self.contains_key(&vertex_entity) {
-                    self.insert_incomplete(vertex_entity, VertexWaitlistEntry::new());
+                    self.insert_incomplete(vertex_entity, ShapeWaitlistEntry::new());
                 }
-                let vertex_entry = self.get_mut(&vertex_entity).unwrap();
-                info!("Setting parent of {:?} to {:?}", vertex_entity, parent_entity);
-                vertex_entry.set_edge_and_parent(Some((edge_entity, parent_entity)));
-                possibly_ready_entities.push(vertex_entity);
+                self.get_mut(&vertex_entity).unwrap().set_shape_type(ShapeType::Vertex);
+            }
+            ShapeWaitlistInsert::Edge(parent_entity, edge_entity, vertex_entity) => {
+                {
+                    if !self.contains_key(&vertex_entity) {
+                        self.insert_incomplete(vertex_entity, ShapeWaitlistEntry::new());
+                    }
+                    let vertex_entry = self.get_mut(&vertex_entity).unwrap();
+                    info!("Setting parent of {:?} to {:?}", vertex_entity, parent_entity);
+                    vertex_entry.set_edge_and_parent(Some((edge_entity, parent_entity)));
+                    vertex_entry.set_shape_type(ShapeType::Vertex);
+                    possibly_ready_entities.push(vertex_entity);
+                }
+
+                {
+                    if !self.contains_key(&edge_entity) {
+                        self.insert_incomplete(edge_entity, ShapeWaitlistEntry::new());
+                    }
+                    let edge_entry = self.get_mut(&edge_entity).unwrap();
+                    edge_entry.set_shape_type(ShapeType::Edge);
+                    edge_entry.set_edge_entities(parent_entity, vertex_entity);
+                    possibly_ready_entities.push(edge_entity);
+
+                }
+
                 info!(
                     "Entities to check for readiness... `{:?}`",
                     possibly_ready_entities
                 );
             }
-            VertexWaitlistInsert::VertexRoot(vertex_entity) => {
+            ShapeWaitlistInsert::VertexRoot(vertex_entity) => {
                 if !self.contains_key(&vertex_entity) {
-                    self.insert_incomplete(vertex_entity, VertexWaitlistEntry::new());
+                    self.insert_incomplete(vertex_entity, ShapeWaitlistEntry::new());
                 }
-                self.get_mut(&vertex_entity).unwrap().set_edge_and_parent(None);
+                let entry = self.get_mut(&vertex_entity).unwrap();
+                entry.set_edge_and_parent(None);
+                entry.set_shape_type(ShapeType::Vertex);
                 possibly_ready_entities.push(vertex_entity);
             }
-            VertexWaitlistInsert::FileType(vertex_entity, file_type) => {
+            ShapeWaitlistInsert::FileType(vertex_entity, file_type) => {
                 if !self.contains_key(&vertex_entity) {
-                    self.insert_incomplete(vertex_entity, VertexWaitlistEntry::new());
+                    self.insert_incomplete(vertex_entity, ShapeWaitlistEntry::new());
                 }
                 self.get_mut(&vertex_entity).unwrap().set_file_type(file_type);
                 possibly_ready_entities.push(vertex_entity);
@@ -165,20 +222,57 @@ impl VertexWaitlist {
                 info!("entity `{:?}` is ready!", entity);
                 let entry = self.remove(&entity).unwrap();
 
-                if entry.has_edge_and_parent() {
-                    let (_, parent_entity) = entry.get_edge_and_parent().unwrap();
-                    if !vertex_manager.has_vertex(&parent_entity) {
-                        // need to put in parent waitlist
-                        info!(
-                            "vert entity {:?} requires parent {:?}. putting in parent waitlist",
-                            entity,
-                            parent_entity
-                        );
-                        self.insert_waiting_dependency(parent_entity, entity, entry);
-                        continue;
+                match (entry.file_type.unwrap(), entry.shape.unwrap()) {
+                    (FileTypeValue::Skel, ShapeType::Vertex) => {
+                        if entry.has_edge_and_parent() {
+                            let (_, parent_entity) = entry.get_edge_and_parent().unwrap();
+                            if !vertex_manager.has_vertex(&parent_entity) {
+                                // need to put in parent waitlist
+                                info!(
+                                    "vert entity {:?} requires parent {:?}. putting in parent waitlist",
+                                    entity,
+                                    parent_entity
+                                );
+                                self.insert_waiting_dependency(parent_entity, entity, entry);
+                                continue;
+                            }
+                        }
+                    }
+                    (FileTypeValue::Skel, ShapeType::Edge) => {
+                        info!("`{:?}` Skel Edge complete!", entity);
+                        return;
+                    }
+                    (FileTypeValue::Mesh, ShapeType::Vertex) => {
+                        info!("`{:?}` Mesh Vertex complete!", entity);
+                    }
+                    (FileTypeValue::Mesh, ShapeType::Edge) => {
+                        let entities = entry.edge_entities.unwrap();
+                        let mut has_all_entities = true;
+                        if !vertex_manager.has_vertex(&entities.0) {
+                            // need to put in parent waitlist
+                            info!(
+                                "edge entity {:?} requires parent {:?}. putting in parent waitlist",
+                                entity, entities.0
+                            );
+                            self.insert_waiting_dependency(entities.0, entity, entry.clone());
+                            has_all_entities = false;
+                        }
+                        if !vertex_manager.has_vertex(&entities.1) {
+                            // need to put in parent waitlist
+                            info!(
+                                "edge entity {:?} requires parent {:?}. putting in parent waitlist",
+                                entity, entities.1
+                            );
+                            self.insert_waiting_dependency(entities.1, entity, entry.clone());
+                            has_all_entities = false;
+                        }
+                        if !has_all_entities {
+                            continue;
+                        }
                     }
                 }
-                info!("processing vertex {:?}", entity);
+
+                info!("processing shape {:?}", entity);
                 self.process_complete(
                     vertex_manager,
                     entity,
@@ -194,37 +288,43 @@ impl VertexWaitlist {
         &mut self,
         vertex_manager: &mut VertexManager,
         entity: Entity,
-        entry: VertexWaitlistEntry,
+        entry: ShapeWaitlistEntry,
     ) {
         // info!("processing complete vertex {:?}", entity);
 
         let data = entry.decompose();
 
         match data {
-            VertexData::Skel(edge_and_parent_opt) => {
+            ShapeData::SkelVertex(edge_and_parent_opt) => {
                 vertex_manager.on_create_skel_vertex(entity, edge_and_parent_opt);
-
-                // if the waitlist has any children entities of this one, process them
-                info!(
-                    "processing complete shape {:?}. checking for children",
-                    entity
-                );
-                if let Some(child_entries) = self.on_vertex_complete(entity) {
-                    for (child_entity, child_entry) in child_entries {
-                        info!(
-                            "entity {:?} was waiting on parent {:?}. processing!",
-                            child_entity, entity
-                        );
-                        self.process_complete(
-                            vertex_manager,
-                            child_entity,
-                            child_entry,
-                        );
-                    }
-                }
             }
-            VertexData::Mesh => {
+            ShapeData::SkelEdge => {
+                //
+            }
+            ShapeData::MeshVertex => {
                 vertex_manager.on_create_mesh_vertex(entity);
+            }
+            ShapeData::MeshEdge(start, end) => {
+                vertex_manager.on_create_mesh_edge(start, entity, end);
+            }
+        }
+
+        // if the waitlist has any children entities of this one, process them
+        info!(
+            "processing complete shape {:?}. checking for children",
+            entity
+        );
+        if let Some(child_entries) = self.on_vertex_complete(entity) {
+            for (child_entity, child_entry) in child_entries {
+                info!(
+                    "entity {:?} was waiting on parent {:?}. processing!",
+                    child_entity, entity
+                );
+                self.process_complete(
+                    vertex_manager,
+                    child_entity,
+                    child_entry,
+                );
             }
         }
     }
@@ -233,15 +333,15 @@ impl VertexWaitlist {
         self.incomplete_entries.contains_key(entity)
     }
 
-    fn insert_incomplete(&mut self, entity: Entity, entry: VertexWaitlistEntry) {
+    fn insert_incomplete(&mut self, entity: Entity, entry: ShapeWaitlistEntry) {
         self.incomplete_entries.insert(entity, entry);
     }
 
-    fn get_mut(&mut self, entity: &Entity) -> Option<&mut VertexWaitlistEntry> {
+    fn get_mut(&mut self, entity: &Entity) -> Option<&mut ShapeWaitlistEntry> {
         self.incomplete_entries.get_mut(entity)
     }
 
-    fn remove(&mut self, entity: &Entity) -> Option<VertexWaitlistEntry> {
+    fn remove(&mut self, entity: &Entity) -> Option<ShapeWaitlistEntry> {
         self.incomplete_entries.remove(entity)
     }
 
@@ -249,7 +349,7 @@ impl VertexWaitlist {
         &mut self,
         dependency_entity: Entity,
         dependent_entity: Entity,
-        dependent_entry: VertexWaitlistEntry,
+        dependent_entry: ShapeWaitlistEntry,
     ) {
         if !self.dependency_map.contains_key(&dependency_entity) {
             self.dependency_map
@@ -266,7 +366,7 @@ impl VertexWaitlist {
         dependencies.insert(dependency_entity);
     }
 
-    fn on_vertex_complete(&mut self, entity: Entity) -> Option<Vec<(Entity, VertexWaitlistEntry)>> {
+    fn on_vertex_complete(&mut self, entity: Entity) -> Option<Vec<(Entity, ShapeWaitlistEntry)>> {
         if let Some(dependents) = self.dependency_map.remove(&entity) {
             let mut result = Vec::new();
             for dependent in dependents {

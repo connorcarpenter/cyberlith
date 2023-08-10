@@ -16,7 +16,7 @@ use vortex_proto::components::{Edge3d, FileType, FileTypeValue, Vertex3d, Vertex
 
 use crate::{
     files::{file_io::ShapeType, FileReadOutput, FileReader, FileWriter},
-    resources::{ContentEntityData, VertexManager, VertexWaitlist, VertexWaitlistInsert},
+    resources::{ContentEntityData, VertexManager, ShapeWaitlist, ShapeWaitlistInsert},
 };
 
 // Actions
@@ -223,7 +223,7 @@ impl SkelReader {
     }
 
     pub fn post_process_entities(
-        vertex_waitlist: &mut VertexWaitlist,
+        vertex_waitlist: &mut ShapeWaitlist,
         vertex_manager: &mut VertexManager,
         entities: Vec<(Entity, Option<(Entity, Entity)>)>,
     ) -> HashMap<Entity, ContentEntityData> {
@@ -234,15 +234,15 @@ impl SkelReader {
 
             let mut inserts = Vec::new();
 
-            inserts.push(VertexWaitlistInsert::FileType(vertex_entity, FileTypeValue::Skel));
+            inserts.push(ShapeWaitlistInsert::FileType(vertex_entity, FileTypeValue::Skel));
 
             if let Some((edge_entity, parent_entity)) = edge_opt {
                 new_content_entities
                     .insert(edge_entity, ContentEntityData::new(ShapeType::Edge));
-                inserts.push(VertexWaitlistInsert::Edge(parent_entity, edge_entity,vertex_entity));
+                inserts.push(ShapeWaitlistInsert::Edge(parent_entity, edge_entity, vertex_entity));
                 vertex_waitlist.process_inserts(vertex_manager, inserts);
             } else {
-                inserts.push(VertexWaitlistInsert::VertexRoot(vertex_entity));
+                inserts.push(ShapeWaitlistInsert::VertexRoot(vertex_entity));
                 vertex_waitlist.process_inserts(vertex_manager, inserts);
             }
 

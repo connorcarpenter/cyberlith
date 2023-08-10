@@ -15,15 +15,15 @@ pub fn handle_file_modify(
     git_manager: &mut GitManager,
     tab_manager: &mut TabManager,
     user_key: &UserKey,
-    vertex_entity: &Entity,
+    content_entity: &Entity,
     key_query: &Query<&FileEntryKey>,
 ) {
     // we must assume the modification has been done to the currently opened file
     // check this now
-    if !tab_manager.user_current_tab_has_entity(user_key, vertex_entity) {
+    if !tab_manager.user_current_tab_has_entity(user_key, content_entity) {
         // info!("vertex_entity: {:?}", vertex_entity);
         // tab_manager.user_current_tab_print_entities(user_key);
-        panic!("somehow the user is modifying a file that is not their current tab .. vertex entity: {:?}", vertex_entity);
+        panic!("somehow the user is modifying a file that is not their current tab .. vertex entity: {:?}", content_entity);
     }
 
     // get FileEntryKey associated with current tab
