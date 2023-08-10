@@ -1,19 +1,16 @@
 use bevy_ecs::{
     event::EventReader,
-    system::{Commands, ResMut},
+    system::ResMut,
 };
 use bevy_log::info;
 
 use naia_bevy_client::{
     events::{EntityAuthDeniedEvent, EntityAuthGrantedEvent, EntityAuthResetEvent},
-    Client, CommandsExt,
 };
 
 use crate::app::resources::{action_stack::ActionStack, vertex_manager::VertexManager};
 
 pub fn auth_granted_events(
-    mut commands: Commands,
-    mut client: Client,
     mut action_stack: ResMut<ActionStack>,
     mut vertex_manager: ResMut<VertexManager>,
     mut event_reader: EventReader<EntityAuthGrantedEvent>,
@@ -21,9 +18,8 @@ pub fn auth_granted_events(
     for EntityAuthGrantedEvent(entity) in event_reader.iter() {
         if vertex_manager.has_edge_entity_3d(entity) {
             // entity is edge
-            // release authority, we don't need it
-            info!("auth granted for edge entity: {:?}, releasing!", entity);
-            commands.entity(*entity).release_authority(&mut client);
+            // TODO: handle edge auth?
+            panic!("auth granted for edge entity: {:?}", entity);
         } else if vertex_manager.has_vertex_entity_3d(entity) {
             // entity is vertex
             info!("auth granted for vertex entity: {:?}", entity);

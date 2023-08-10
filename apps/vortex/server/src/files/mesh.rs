@@ -12,7 +12,7 @@ use naia_bevy_server::{
     UnsignedVariableInteger,
 };
 
-use vortex_proto::components::{Edge3d, Face3d, Vertex3d, VertexSerdeInt};
+use vortex_proto::components::{Edge3d, Face3d, FileType, FileTypeValue, Vertex3d, VertexSerdeInt};
 
 use crate::{
     files::{file_io::ShapeType, FileReadOutput, FileReader, FileWriter},
@@ -52,8 +52,9 @@ impl MeshWriter {
             Query<&Vertex3d>,
             Query<&Edge3d>,
             Query<&Face3d>,
+            Query<&FileType>,
         )> = SystemState::new(world);
-        let (server, vertex_q, edge_q, face_q) = system_state.get_mut(world);
+        let (server, vertex_q, edge_q, face_q, file_type_q) = system_state.get_mut(world);
 
         let mut output = Vec::new();
 
@@ -61,6 +62,12 @@ impl MeshWriter {
         let mut vertex_map: HashMap<Entity, usize> = HashMap::new();
 
         for (id, entity) in content_entities.iter().enumerate() {
+            let Ok(file_type) = file_type_q.get(*entity) else {
+                panic!("entity {:?} does not have a FileType component!", entity);
+            };
+            if *file_type.value != FileTypeValue::Mesh {
+                panic!("entity {:?} does not have a FileType component with value Mesh!", entity);
+            }
             if let Ok(vertex) = vertex_q.get(*entity) {
                 // entity is a vertex
                 vertex_map.insert(*entity, id);
@@ -153,7 +160,11 @@ impl FileWriter for MeshWriter {
     }
 
     fn write_new_default(&self) -> Box<[u8]> {
-        self.write_from_actions(Vec::new())
+        let mut default_actions = Vec::new();
+
+        default_actions.push(MeshAction::Vertex(0, 0, 0));
+
+        self.write_from_actions(default_actions)
     }
 }
 

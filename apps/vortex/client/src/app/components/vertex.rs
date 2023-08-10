@@ -60,7 +60,12 @@ pub struct Compass;
 
 // VertexTypeData
 #[derive(Clone)]
-pub struct VertexTypeData(pub Entity, pub Option<Vec<VertexEntry>>);
+pub enum VertexTypeData {
+    // parent_vertex_2d_entity, children_tree_opt
+    Skel(Entity, Option<Vec<VertexEntry>>),
+    // parent_vertex_2d_entity
+    Mesh(Option<Entity>),
+}
 
 impl VertexTypeData {
     pub fn migrate_vertex_entities(
@@ -70,17 +75,27 @@ impl VertexTypeData {
         old_3d_entity: Entity,
         new_3d_entity: Entity,
     ) {
-        let VertexTypeData(parent_2d_vertex_entity, children_opt) = self;
-        if *parent_2d_vertex_entity == old_2d_entity {
-            *parent_2d_vertex_entity = new_2d_entity;
+        match self {
+            VertexTypeData::Skel(parent_2d_vertex_entity, children_opt) => {
+                if *parent_2d_vertex_entity == old_2d_entity {
+                    *parent_2d_vertex_entity = new_2d_entity;
+                }
+                migrate_vertex_trees(
+                    children_opt,
+                    old_2d_entity,
+                    new_2d_entity,
+                    old_3d_entity,
+                    new_3d_entity,
+                );
+            }
+            VertexTypeData::Mesh(parent_2d_vertex_entity_opt) => {
+                if let Some(parent_2d_vertex_entity) = parent_2d_vertex_entity_opt {
+                    if *parent_2d_vertex_entity == old_2d_entity {
+                        *parent_2d_vertex_entity = new_2d_entity;
+                    }
+                }
+            }
         }
-        migrate_vertex_trees(
-            children_opt,
-            old_2d_entity,
-            new_2d_entity,
-            old_3d_entity,
-            new_3d_entity,
-        );
     }
 }
 

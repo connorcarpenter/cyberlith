@@ -17,6 +17,7 @@ use render_api::{
 
 use vortex_proto::{
     components::{
+        FileType, FileTypeValue,
         ChangelistEntry, Edge3d, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
         OwnedByTab, Vertex3d,
     },
@@ -27,7 +28,7 @@ use vortex_proto::{
 use crate::app::{
     components::{
         file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
-        Edge2dLocal, Edge3dLocal, Vertex2d, VertexEntry, VertexTypeData,
+        Edge3dLocal, Vertex2d, VertexEntry, VertexTypeData,
     },
     resources::{
         camera_manager::CameraManager,
@@ -506,7 +507,7 @@ impl ActionStack {
                 return Action::SelectVertex(deselected_entity);
             }
             Action::CreateVertex(vertex_type_data, position, old_vertex_entities_opt) => {
-                let mut new_3d_vertices = Vec::new();
+                let mut entities_to_release = Vec::new();
                 let deselected_vertex_2d_entity_store;
                 let selected_vertex_3d;
                 let selected_vertex_2d;
@@ -533,6 +534,7 @@ impl ActionStack {
                         mut materials,
                     ) = system_state.get_mut(world);
 
+                    // deselect all selected vertices
                     let (deselected_vertex_2d_entity, vertex_3d_entity_to_release) =
                         Self::deselect_all_selected_vertices(&mut vertex_manager);
                     deselected_vertex_2d_entity_store = deselected_vertex_2d_entity;
@@ -543,18 +545,52 @@ impl ActionStack {
                         }
                     }
 
-                    let (new_vertex_2d_entity, new_vertex_3d_entity) = self.create_networked_tree(
-                        &mut commands,
-                        &mut client,
-                        &mut camera_manager,
-                        &mut vertex_manager,
-                        &mut meshes,
-                        &mut materials,
-                        vertex_type_data,
-                        position,
-                        tab_manager.current_tab_id(),
-                        &mut new_3d_vertices,
-                    );
+                    // create vertices and children
+                    let (new_vertex_2d_entity, new_vertex_3d_entity) = match vertex_type_data {
+                        VertexTypeData::Skel(parent_vertex_2d_entity, children_opt) => {
+                            let (new_vertex_2d_entity, new_vertex_3d_entity) = self.create_parented_networked_vertex(
+                                &mut commands,
+                                &mut client,
+                                &mut camera_manager,
+                                &mut vertex_manager,
+                                &mut meshes,
+                                &mut materials,
+                                Some(parent_vertex_2d_entity),
+                                position,
+                                tab_manager.current_tab_id(),
+                                &mut entities_to_release,
+                            );
+                            if let Some(children) = children_opt {
+                                self.create_child_tree(
+                                    &mut commands,
+                                    &mut client,
+                                    &mut camera_manager,
+                                    &mut vertex_manager,
+                                    &mut meshes,
+                                    &mut materials,
+                                    new_vertex_2d_entity,
+                                    children,
+                                    tab_manager.current_tab_id(),
+                                );
+                            }
+                            (new_vertex_2d_entity, new_vertex_3d_entity)
+                        }
+                        VertexTypeData::Mesh(parent_vertex_2d_entity_opt) => {
+                            let (new_vertex_2d_entity, new_vertex_3d_entity) = self.create_parented_networked_vertex(
+                                &mut commands,
+                                &mut client,
+                                &mut camera_manager,
+                                &mut vertex_manager,
+                                &mut meshes,
+                                &mut materials,
+                                parent_vertex_2d_entity_opt,
+                                position,
+                                tab_manager.current_tab_id(),
+                                &mut entities_to_release,
+                            );
+                            (new_vertex_2d_entity, new_vertex_3d_entity)
+                        }
+                    };
 
                     // migrate undo entities
                     if let Some((old_vertex_2d_entity, old_vertex_3d_entity)) =
@@ -581,10 +617,10 @@ impl ActionStack {
                     let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
                     let (mut commands, mut client) = system_state.get_mut(world);
 
-                    for vertex_to_release in new_3d_vertices {
-                        if vertex_to_release != selected_vertex_3d {
+                    for entity_to_release in entities_to_release {
+                        if entity_to_release != selected_vertex_3d {
                             commands
-                                .entity(vertex_to_release)
+                                .entity(entity_to_release)
                                 .release_authority(&mut client);
                         }
                     }
@@ -602,83 +638,119 @@ impl ActionStack {
                     Client,
                     ResMut<VertexManager>,
                     Query<(Entity, &Vertex3d)>,
-                    Query<(Entity, &Edge2dLocal)>,
-                    Query<(Entity, &Edge3d)>,
+                    Query<&Edge3d>,
+                    Query<&FileType>
                 )> = SystemState::new(world);
-                let (mut commands, mut client, mut vertex_manager, vertex_q, edge_2d_q, edge_3d_q) =
+                let (mut commands, mut client, mut vertex_manager, vertex_q, edge_3d_q, file_type_q) =
                     system_state.get_mut(world);
 
                 let vertex_3d_entity = *vertex_manager
                     .vertex_entity_2d_to_3d(&vertex_2d_entity)
                     .unwrap();
 
-                // get parent entity
-                let parent_vertex_2d_entity = {
-                    let mut parent_vertex_3d_entity = None;
-                    for (edge_3d_entity, edge_3d) in edge_3d_q.iter() {
-                        let Some(child_entity) = edge_3d.end.get(&client) else {
-                            continue;
+                let Ok(file_type) = file_type_q.get(vertex_3d_entity) else {
+                    panic!("Failed to get FileType for vertex entity {:?}!", vertex_3d_entity);
+                };
+                let file_type_value = *file_type.value;
+
+                match file_type_value {
+                    FileTypeValue::Skel => {
+                        // get parent entity
+                        let parent_vertex_2d_entity = {
+                            let mut parent_vertex_3d_entity = None;
+                            for edge_3d in edge_3d_q.iter() {
+                                let Some(child_entity) = edge_3d.end.get(&client) else {
+                                    continue;
+                                };
+                                let Some(parent_entity) = edge_3d.start.get(&client) else {
+                                    continue;
+                                };
+                                if child_entity == vertex_3d_entity {
+                                    parent_vertex_3d_entity = Some(parent_entity);
+                                    break;
+                                }
+                            }
+                            if parent_vertex_3d_entity.is_none() {
+                                panic!(
+                                    "Failed to find parent vertex for vertex entity {:?}!",
+                                    vertex_3d_entity
+                                );
+                            }
+                            *vertex_manager
+                                .vertex_entity_3d_to_2d(&parent_vertex_3d_entity.unwrap())
+                                .unwrap()
                         };
-                        let Some(parent_entity) = edge_3d.start.get(&client) else {
-                            continue;
+
+                        // get entries
+                        let entry_contents_opt = {
+                            let entries = Self::convert_vertices_to_tree(
+                                &client,
+                                &mut vertex_manager,
+                                &vertex_3d_entity,
+                                &vertex_q,
+                                &edge_3d_q,
+                            );
+
+                            Some(entries)
                         };
-                        if child_entity == vertex_3d_entity {
-                            parent_vertex_3d_entity = Some(parent_entity);
-                            break;
-                        }
-                    }
-                    if parent_vertex_3d_entity.is_none() {
-                        panic!(
-                            "Failed to find parent vertex for vertex entity {:?}!",
-                            vertex_3d_entity
+
+                        let rev_vertex_type_data = VertexTypeData::Skel(
+                            parent_vertex_2d_entity,
+                            entry_contents_opt
+                                .map(|entries| entries.into_iter().map(|(_, entry)| entry).collect()),
+                        );
+
+                        let Ok((_, vertex_3d)) = vertex_q.get(vertex_3d_entity) else {
+                            panic!("Failed to get VertexChild for vertex entity {:?}!", vertex_3d_entity);
+                        };
+                        let vertex_3d_position = vertex_3d.as_vec3();
+
+                        Self::handle_common_vertex_despawn(
+                            &mut commands,
+                            &mut client,
+                            &mut vertex_manager,
+                            vertex_3d_entity,
+                            vertex_2d_to_select_opt,
+                        );
+
+                        system_state.apply(world);
+
+                        return Action::CreateVertex(
+                            rev_vertex_type_data,
+                            vertex_3d_position,
+                            Some((vertex_2d_entity, vertex_3d_entity)),
                         );
                     }
-                    *vertex_manager
-                        .vertex_entity_3d_to_2d(&parent_vertex_3d_entity.unwrap())
-                        .unwrap()
-                };
+                    FileTypeValue::Mesh => {
 
-                // get entries
-                let entry_contents_opt = {
-                    let entries = Self::convert_vertices_to_tree(
-                        &client,
-                        &mut vertex_manager,
-                        &vertex_3d_entity,
-                        &vertex_q,
-                        &edge_3d_q,
-                    );
+                        // TODO: handle vertex connections
 
-                    Some(entries)
-                };
+                        let rev_vertex_type_data = VertexTypeData::Mesh(
+                            None,
+                        );
 
-                let rev_vertex_type_data = VertexTypeData(
-                    parent_vertex_2d_entity,
-                    entry_contents_opt
-                        .map(|entries| entries.into_iter().map(|(_, entry)| entry).collect()),
-                );
+                        let Ok((_, vertex_3d)) = vertex_q.get(vertex_3d_entity) else {
+                            panic!("Failed to get VertexChild for vertex entity {:?}!", vertex_3d_entity);
+                        };
+                        let vertex_3d_position = vertex_3d.as_vec3();
 
-                let Ok((_, vertex_3d)) = vertex_q.get(vertex_3d_entity) else {
-                    panic!("Failed to get VertexChild for vertex entity {:?}!", vertex_3d_entity);
-                };
-                let vertex_3d_position = vertex_3d.as_vec3();
+                        Self::handle_common_vertex_despawn(
+                            &mut commands,
+                            &mut client,
+                            &mut vertex_manager,
+                            vertex_3d_entity,
+                            vertex_2d_to_select_opt,
+                        );
 
-                Self::handle_common_vertex_despawn(
-                    &mut commands,
-                    &mut client,
-                    &mut vertex_manager,
-                    &edge_2d_q,
-                    &edge_3d_q,
-                    vertex_3d_entity,
-                    vertex_2d_to_select_opt,
-                );
+                        system_state.apply(world);
 
-                system_state.apply(world);
-
-                return Action::CreateVertex(
-                    rev_vertex_type_data,
-                    vertex_3d_position,
-                    Some((vertex_2d_entity, vertex_3d_entity)),
-                );
+                        return Action::CreateVertex(
+                            rev_vertex_type_data,
+                            vertex_3d_position,
+                            Some((vertex_2d_entity, vertex_3d_entity)),
+                        );
+                    }
+                }
             }
             Action::MoveVertex(vertex_2d_entity, old_position, new_position) => {
                 info!("MoveVertex");
@@ -712,8 +784,6 @@ impl ActionStack {
         commands: &mut Commands,
         client: &mut Client,
         vertex_manager: &mut VertexManager,
-        edge_2d_q: &Query<(Entity, &Edge2dLocal)>,
-        edge_3d_q: &Query<(Entity, &Edge3d)>,
         vertex_3d_entity: Entity,
         vertex_2d_to_select_opt: Option<(Entity, CanvasShape)>,
     ) {
@@ -935,7 +1005,7 @@ impl ActionStack {
         entity_id
     }
 
-    fn create_networked_tree(
+    fn create_parented_networked_vertex(
         &mut self,
         commands: &mut Commands,
         client: &mut Client,
@@ -943,12 +1013,11 @@ impl ActionStack {
         vertex_manager: &mut VertexManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
-        vertex_type_data: VertexTypeData,
+        parent_vertex_2d_entity_opt: Option<Entity>,
         position: Vec3,
         tab_id: TabId,
-        new_3d_entities: &mut Vec<Entity>,
+        entities_to_release: &mut Vec<Entity>,
     ) -> (Entity, Entity) {
-        let VertexTypeData(parent_vertex_2d_entity, children_opt) = vertex_type_data;
 
         // create new 3d vertex
         let new_vertex_3d_entity = commands
@@ -958,6 +1027,8 @@ impl ActionStack {
             .insert(Vertex3d::from_vec3(position))
             .insert(OwnedByTab::new(tab_id))
             .id();
+
+        entities_to_release.push(new_vertex_3d_entity);
 
         // create new 2d vertex, add local components to 3d vertex
         let new_vertex_2d_entity = vertex_manager.vertex_3d_postprocess(
@@ -971,72 +1042,100 @@ impl ActionStack {
             Vertex2d::CHILD_COLOR,
         );
 
-        // create new 3d edge
-        let parent_vertex_3d_entity = *vertex_manager
-            .vertex_entity_2d_to_3d(&parent_vertex_2d_entity)
-            .unwrap();
+        if let Some(parent_vertex_2d_entity) = parent_vertex_2d_entity_opt {
+            // create new 3d edge
+            let parent_vertex_3d_entity = *vertex_manager
+                .vertex_entity_2d_to_3d(&parent_vertex_2d_entity)
+                .unwrap();
 
-        let mut new_edge_3d_component = Edge3d::new();
-        new_edge_3d_component
-            .start
-            .set(client, &parent_vertex_3d_entity);
-        new_edge_3d_component.end.set(client, &new_vertex_3d_entity);
-        let new_edge_3d_entity = commands
-            .spawn_empty()
-            .enable_replication(client)
-            .configure_replication(ReplicationConfig::Delegated)
-            .insert(new_edge_3d_component)
-            .insert(Edge3dLocal::new(
-                parent_vertex_3d_entity,
-                new_vertex_3d_entity,
-            ))
-            .insert(OwnedByTab::new(tab_id))
-            .id();
+            let mut new_edge_3d_component = Edge3d::new();
+            new_edge_3d_component
+                .start
+                .set(client, &parent_vertex_3d_entity);
+            new_edge_3d_component.end.set(client, &new_vertex_3d_entity);
+            let new_edge_3d_entity = commands
+                .spawn_empty()
+                .enable_replication(client)
+                .configure_replication(ReplicationConfig::Delegated)
+                .insert(new_edge_3d_component)
+                .insert(Edge3dLocal::new(
+                    parent_vertex_3d_entity,
+                    new_vertex_3d_entity,
+                ))
+                .insert(OwnedByTab::new(tab_id))
+                .id();
 
-        // create new 2d edge, add local components to 3d edge
-        let new_edge_2d_entity = vertex_manager.edge_3d_postprocess(
-            commands,
-            meshes,
-            materials,
-            camera_manager,
-            new_edge_3d_entity,
-            new_vertex_2d_entity,
-            parent_vertex_2d_entity,
-            Some(tab_id),
-            Vertex2d::CHILD_COLOR,
-            true,
-        );
+            // create new 2d edge, add local components to 3d edge
+            let _new_edge_2d_entity = vertex_manager.edge_3d_postprocess(
+                commands,
+                meshes,
+                materials,
+                camera_manager,
+                new_edge_3d_entity,
+                new_vertex_2d_entity,
+                parent_vertex_2d_entity,
+                Some(tab_id),
+                Vertex2d::CHILD_COLOR,
+                true,
+            );
 
-        if let Some(children) = children_opt {
-            for child in children {
-                let child_vertex_type_data = VertexTypeData(new_vertex_2d_entity, child.children());
-                let (new_child_vertex_2d_entity, new_child_vertex_3d_entity) = self
-                    .create_networked_tree(
-                        commands,
-                        client,
-                        camera_manager,
-                        vertex_manager,
-                        meshes,
-                        materials,
-                        child_vertex_type_data,
-                        child.position(),
-                        tab_id,
-                        new_3d_entities,
-                    );
-                let old_child_vertex_3d_entity = child.entity_3d();
-                let old_child_vertex_2d_entity = child.entity_2d();
-                self.migrate_vertex_entities(
-                    old_child_vertex_2d_entity,
-                    new_child_vertex_2d_entity,
-                    old_child_vertex_3d_entity,
-                    new_child_vertex_3d_entity,
-                );
-            }
+            entities_to_release.push(new_edge_3d_entity);
         }
 
-        new_3d_entities.push(new_vertex_3d_entity);
-
         return (new_vertex_2d_entity, new_vertex_3d_entity);
+    }
+
+    fn create_child_tree(
+        &mut self,
+        commands: &mut Commands,
+        client: &mut Client,
+        camera_manager: &mut CameraManager,
+        vertex_manager: &mut VertexManager,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+        parent_vertex_2d_entity: Entity,
+        children: Vec<VertexEntry>,
+        tab_id: TabId,
+    ) {
+        let mut output = Vec::new();
+        for child in children {
+            let grandchildren_opt = child.children();
+
+            let (new_child_vertex_2d_entity, new_child_vertex_3d_entity) = self
+                .create_parented_networked_vertex(
+                    commands,
+                    client,
+                    camera_manager,
+                    vertex_manager,
+                    meshes,
+                    materials,
+                    Some(parent_vertex_2d_entity),
+                    child.position(),
+                    tab_id,
+                    &mut output,
+                );
+            if let Some(grandchildren) = grandchildren_opt {
+                self.create_child_tree(
+                    commands,
+                    client,
+                    camera_manager,
+                    vertex_manager,
+                    meshes,
+                    materials,
+                    new_child_vertex_2d_entity,
+                    grandchildren,
+                    tab_id,
+                );
+            }
+            let old_child_vertex_3d_entity = child.entity_3d();
+            let old_child_vertex_2d_entity = child.entity_2d();
+            self.migrate_vertex_entities(
+                old_child_vertex_2d_entity,
+                new_child_vertex_2d_entity,
+                old_child_vertex_3d_entity,
+                new_child_vertex_3d_entity,
+            );
+        }
     }
 
     pub fn entity_update_auth_status(
@@ -1183,11 +1282,11 @@ impl ActionStack {
         vertex_manager: &mut VertexManager,
         parent_3d_entity: &Entity,
         vertex_3d_q: &Query<(Entity, &Vertex3d)>,
-        edge_3d_q: &Query<(Entity, &Edge3d)>,
+        edge_3d_q: &Query<&Edge3d>,
     ) -> Vec<(Entity, VertexEntry)> {
         let mut output = Vec::new();
 
-        for (edge_entity, edge_3d) in edge_3d_q.iter() {
+        for edge_3d in edge_3d_q.iter() {
             let Some(parent_entity) = edge_3d.start.get(client) else {
                 warn!("edge start not found");
                 continue;

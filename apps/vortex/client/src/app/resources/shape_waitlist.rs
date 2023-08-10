@@ -369,7 +369,7 @@ impl ShapeWaitlist {
         if let Some(dependents) = self.dependency_map.remove(&entity) {
             let mut result = Vec::new();
             for dependent in dependents {
-                let (dependencies, entry) = self.dependent_map.get_mut(&dependent).unwrap();
+                let (dependencies, _) = self.dependent_map.get_mut(&dependent).unwrap();
                 dependencies.remove(&entity);
                 if dependencies.is_empty() {
                     let (_, entry) = self.dependent_map.remove(&dependent).unwrap();

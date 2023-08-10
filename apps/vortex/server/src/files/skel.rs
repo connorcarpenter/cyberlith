@@ -12,7 +12,7 @@ use naia_bevy_server::{
     UnsignedVariableInteger,
 };
 
-use vortex_proto::components::{Edge3d, Vertex3d, VertexRoot, VertexSerdeInt};
+use vortex_proto::components::{Edge3d, FileType, FileTypeValue, Vertex3d, VertexRoot, VertexSerdeInt};
 
 use crate::{
     files::{file_io::ShapeType, FileReadOutput, FileReader, FileWriter},
@@ -43,9 +43,9 @@ impl SkelWriter {
         world: &mut World,
         content_entities: &Vec<Entity>,
     ) -> Vec<SkelAction> {
-        let mut system_state: SystemState<(Res<VertexManager>, Query<&Vertex3d>)> =
+        let mut system_state: SystemState<(Res<VertexManager>, Query<&Vertex3d>, Query<&FileType>)> =
             SystemState::new(world);
-        let (vertex_manager, vertex_query) = system_state.get_mut(world);
+        let (vertex_manager, vertex_q, file_type_q) = system_state.get_mut(world);
 
         let mut output = Vec::new();
 
@@ -53,7 +53,13 @@ impl SkelWriter {
         let mut map: HashMap<Entity, (usize, i16, i16, i16, Option<Entity>)> = HashMap::new();
 
         for (id, entity) in content_entities.iter().enumerate() {
-            let vertex = vertex_query.get(*entity).unwrap();
+            let Ok(file_type) = file_type_q.get(*entity) else {
+                panic!("entity {:?} does not have a FileType component!", entity);
+            };
+            if *file_type.value != FileTypeValue::Skel {
+                panic!("entity {:?} does not have a FileType component with value Skel!", entity);
+            }
+            let vertex = vertex_q.get(*entity).unwrap();
 
             let parent_id: Option<Entity> = vertex_manager.get_vertex_parent(entity);
 

@@ -2,6 +2,7 @@ use bevy_app::{App, Plugin};
 use bevy_ecs::schedule::{IntoSystemConfig, IntoSystemConfigs};
 
 use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin, ReceiveEvents};
+
 use render_api::resources::WindowSettings;
 
 use vortex_proto::{
@@ -11,6 +12,7 @@ use vortex_proto::{
     },
     protocol,
 };
+use vortex_proto::components::FileType;
 
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
@@ -79,6 +81,7 @@ impl Plugin for VortexPlugin {
             .add_event::<InsertComponentEvent<VertexRoot>>()
             .add_event::<InsertComponentEvent<OwnedByTab>>()
             .add_event::<InsertComponentEvent<Edge3d>>()
+            .add_event::<InsertComponentEvent<FileType>>()
             .init_resource::<ShapeWaitlist>()
             .add_system(network::insert_fs_component_events)
             .add_system(network::insert_changelist_entry_events)

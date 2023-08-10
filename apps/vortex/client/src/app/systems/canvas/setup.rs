@@ -1,8 +1,6 @@
 use bevy_ecs::system::{Commands, Res, ResMut};
 use bevy_log::info;
 
-use naia_bevy_client::Client;
-
 use math::{Vec2, Vec3};
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh, CpuTexture2D},
@@ -24,7 +22,6 @@ use crate::app::{
 pub fn setup(
     config: Res<AppConfig>,
     mut commands: Commands,
-    mut client: Client,
     mut canvas: ResMut<Canvas>,
     mut vertex_manager: ResMut<VertexManager>,
     mut camera_manager: ResMut<CameraManager>,

@@ -20,6 +20,7 @@ use vortex_proto::{
     components::{OwnedByTab, Vertex3d, VertexRoot},
     types::TabId,
 };
+use vortex_proto::components::FileTypeValue;
 
 use crate::app::{
     components::{
@@ -46,6 +47,9 @@ pub enum CanvasShape {
 
 #[derive(Resource)]
 pub struct VertexManager {
+
+    current_file_type: FileTypeValue,
+
     vertices_3d_to_2d: HashMap<Entity, Entity>,
     vertices_2d_to_3d: HashMap<Entity, Entity>,
 
@@ -70,6 +74,9 @@ pub struct VertexManager {
 impl Default for VertexManager {
     fn default() -> Self {
         Self {
+
+            current_file_type: FileTypeValue::Skel,
+
             vertices_3d_to_2d: HashMap::new(),
             vertices_2d_to_3d: HashMap::new(),
 
@@ -554,20 +561,24 @@ impl VertexManager {
         edge_2d_entity
     }
 
+    pub fn set_current_file_type(&mut self, file_type: FileTypeValue) {
+        self.current_file_type = file_type;
+    }
+
     fn handle_insert_key_press(&mut self, action_stack: &mut ActionStack) {
         if self.selected_vertex.is_some() {
             return;
         }
 
-        // if self.current_vertex_type != VertexTypeValue::Mesh {
-        //     return;
-        // }
-        //
-        // action_stack.buffer_action(Action::CreateVertex(
-        //     VertexTypeData::Mesh(None),
-        //     Vec3::ZERO,
-        //     None,
-        // ));
+        if self.current_file_type != FileTypeValue::Mesh {
+            return;
+        }
+
+        action_stack.buffer_action(Action::CreateVertex(
+            VertexTypeData::Mesh(None),
+            Vec3::ZERO,
+            None,
+        ));
     }
 
     fn handle_delete_key_press(
@@ -865,7 +876,14 @@ impl VertexManager {
 
                         // spawn new vertex
                         action_stack.buffer_action(Action::CreateVertex(
-                            VertexTypeData(vertex_2d_entity, None),
+                            match self.current_file_type {
+                                FileTypeValue::Skel => {
+                                    VertexTypeData::Skel(vertex_2d_entity, None)
+                                }
+                                FileTypeValue::Mesh => {
+                                    VertexTypeData::Mesh(Some(vertex_2d_entity))
+                                }
+                            },
                             new_3d_position,
                             None,
                         ));

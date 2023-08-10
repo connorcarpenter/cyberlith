@@ -199,7 +199,7 @@ impl TabManager {
         client: &mut Client,
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
-        _vertex_manager: &mut VertexManager,
+        vertex_manager: &mut VertexManager,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
         row_entity: &Entity,
     ) {
@@ -210,9 +210,12 @@ impl TabManager {
         }
 
         // select new tab
-        self.set_current_tab(canvas, camera_manager, visibility_q, Some(*row_entity));
+        self.set_current_tab(canvas, camera_manager, visibility_q, *row_entity);
         let tab_state = self.tab_map.get_mut(&row_entity).unwrap();
         tab_state.selected = true;
+
+        // change vertex manager's file type
+        vertex_manager.set_current_file_type(tab_state.ext.to_file_type());
 
         // send message to server
         let message = TabActionMessage::new(tab_state.tab_id, TabActionMessageType::Select);
@@ -224,19 +227,26 @@ impl TabManager {
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
-        val: Option<Entity>,
+        tab_entity: Entity,
     ) {
-        self.current_tab = val;
+        self.current_tab = Some(tab_entity);
 
-        if val.is_none() {
-            canvas.set_visibility(false);
-        } else {
-            canvas.set_visibility(true);
-            let current_tab_id = self.current_tab_id();
-            for (mut visibility, owned_by_tab) in visibility_q.iter_mut() {
-                visibility.visible = *owned_by_tab.tab_id == current_tab_id;
-            }
+        canvas.set_visibility(true);
+        let current_tab_id = self.current_tab_id();
+        for (mut visibility, owned_by_tab) in visibility_q.iter_mut() {
+            visibility.visible = *owned_by_tab.tab_id == current_tab_id;
         }
+
+        camera_manager.recalculate_3d_view();
+    }
+
+    fn clear_current_tab(
+        &mut self,
+        canvas: &mut Canvas,
+        camera_manager: &mut CameraManager,
+    ) {
+        self.current_tab = None;
+        canvas.set_visibility(false);
         camera_manager.recalculate_3d_view();
     }
 
@@ -273,7 +283,7 @@ impl TabManager {
                 }
                 if let Some(new_entity) = self.tab_order.get(new_tab_order) {
                     let new_entity = *new_entity;
-                    self.set_current_tab(canvas, camera_manager, visibility_q, None);
+                    self.clear_current_tab(canvas, camera_manager);
                     self.select_tab(
                         client,
                         canvas,
@@ -283,7 +293,7 @@ impl TabManager {
                         &new_entity,
                     );
                 } else {
-                    self.set_current_tab(canvas, camera_manager, visibility_q, None);
+                    self.clear_current_tab(canvas, camera_manager);
                 }
             }
         }

@@ -1,3 +1,5 @@
+use crate::components::FileTypeValue;
+
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum FileExtension {
     Unknown,
@@ -25,6 +27,14 @@ impl FileExtension {
         match self {
             FileExtension::Skel | FileExtension::Mesh => true,
             _ => false,
+        }
+    }
+
+    pub fn to_file_type(&self) -> FileTypeValue {
+        match self {
+            FileExtension::Skel => FileTypeValue::Skel,
+            FileExtension::Mesh => FileTypeValue::Mesh,
+            _ => panic!("FileExtension::to_file_type() called on non-io file extension!"),
         }
     }
 }

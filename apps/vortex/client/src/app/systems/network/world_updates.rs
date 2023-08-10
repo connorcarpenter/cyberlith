@@ -20,7 +20,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{ChangelistEntry, Edge3d, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, FileTypeValue, OwnedByTab, Vertex3d, VertexRoot};
+use vortex_proto::components::{ChangelistEntry, Edge3d, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, OwnedByTab, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
@@ -215,7 +215,7 @@ pub fn insert_changelist_entry_events(
 
 pub fn insert_vertex_events(
     mut commands: Commands,
-    mut client: Client,
+    client: Client,
     mut vertex_3d_events: EventReader<InsertComponentEvent<Vertex3d>>,
     mut vertex_root_events: EventReader<InsertComponentEvent<VertexRoot>>,
     mut edge_3d_events: EventReader<InsertComponentEvent<Edge3d>>,
@@ -230,6 +230,7 @@ pub fn insert_vertex_events(
     mut waiting_vertices: ResMut<ShapeWaitlist>,
     edge_3d_q: Query<&Edge3d>,
     owned_by_tab_q: Query<&OwnedByTab>,
+    file_type_q: Query<&FileType>,
 ) {
     // on Vertex Insert Event
     for event in vertex_3d_events.iter() {
@@ -329,7 +330,7 @@ pub fn insert_vertex_events(
             &mut camera_manager,
             &mut vertex_manager,
             &entity,
-            ShapeWaitlistInsert::OwnedByTab(tab_id),
+            ShapeWaitlistInsert::FileType(file_type_value),
         );
     }
 }
