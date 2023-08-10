@@ -39,21 +39,18 @@ impl VertexData {
 #[derive(Resource)]
 pub struct VertexManager {
     vertices: HashMap<Entity, VertexData>,
-    // map from parent entity -> list of (vertex entity, Option<(edge entity, parent entity)>)
-    waiting_for_parent: HashMap<Entity, Vec<(Entity, Option<(Entity, Entity)>)>>,
 }
 
 impl Default for VertexManager {
     fn default() -> Self {
         Self {
             vertices: HashMap::new(),
-            waiting_for_parent: HashMap::new(),
         }
     }
 }
 
 impl VertexManager {
-    pub fn entity_is_vertex(&self, entity: &Entity) -> bool {
+    pub fn has_vertex(&self, entity: &Entity) -> bool {
         self.vertices.contains_key(entity)
     }
 
@@ -72,44 +69,13 @@ impl VertexManager {
     ) {
         // info!("on_create_vertex: {:?} {:?}", entity, parent_opt);
 
-        let success: bool;
-
-        if let Some((edge_entity, parent_entity)) = edge_and_parent_opt {
-            if self.vertices.contains_key(&parent_entity) {
-                // success!
-                success = true;
-            } else {
-                // waiting on parent
-                success = false;
-
-                if !self.waiting_for_parent.contains_key(&parent_entity) {
-                    self.waiting_for_parent.insert(parent_entity, Vec::new());
-                }
-
-                let Some(list) = self.waiting_for_parent.get_mut(&parent_entity) else {
-                    panic!("shouldn't be able to happen!");
-                };
-
-                list.push((vertex_entity, edge_and_parent_opt));
-                info!(
-                    "waiting on parent .. entity: {:?}, parent is {:?}",
-                    vertex_entity, parent_entity
-                )
+        if let Some((_, parent_entity)) = edge_and_parent_opt {
+            if !self.vertices.contains_key(&parent_entity) {
+                panic!("on_create_vertex: parent entity `{:?}` not found! Vertex Waitlist should handle this...", parent_entity);
             }
-        } else {
-            // success!
-            success = true;
         }
 
-        if success {
-            self.insert_vertex(vertex_entity, edge_and_parent_opt);
-        }
-    }
-
-    pub fn finalize_vertex_creation(&self) {
-        if !self.waiting_for_parent.is_empty() {
-            panic!("finalize_vertex_creation: waiting_for_parent is not empty!");
-        }
+        self.insert_vertex(vertex_entity, edge_and_parent_opt);
     }
 
     pub fn on_delete_vertex(
@@ -151,16 +117,6 @@ impl VertexManager {
             parent_value.add_child(vertex_entity, edge_entity);
         } else {
             self.vertices.insert(vertex_entity, VertexData::new(None));
-        }
-
-        if let Some(list) = self.waiting_for_parent.remove(&vertex_entity) {
-            for (child_entity, child_edge_and_parent_opt) in list {
-                info!(
-                    "child {:?} was waiting on parent {:?}!",
-                    child_entity, vertex_entity
-                );
-                self.insert_vertex(child_entity, child_edge_and_parent_opt);
-            }
         }
     }
 

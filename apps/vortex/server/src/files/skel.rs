@@ -16,7 +16,7 @@ use vortex_proto::components::{Edge3d, FileType, FileTypeValue, Vertex3d, Vertex
 
 use crate::{
     files::{file_io::ShapeType, FileReadOutput, FileReader, FileWriter},
-    resources::{ContentEntityData, VertexManager},
+    resources::{ContentEntityData, VertexManager, VertexWaitlist, VertexWaitlistInsert},
 };
 
 // Actions
@@ -223,6 +223,7 @@ impl SkelReader {
     }
 
     pub fn post_process_entities(
+        vertex_waitlist: &mut VertexWaitlist,
         vertex_manager: &mut VertexManager,
         entities: Vec<(Entity, Option<(Entity, Entity)>)>,
     ) -> HashMap<Entity, ContentEntityData> {
@@ -230,18 +231,22 @@ impl SkelReader {
 
         for (vertex_entity, edge_opt) in entities {
             new_content_entities.insert(vertex_entity, ContentEntityData::new(ShapeType::Vertex));
-            let edge_and_parent_opt = {
-                if let Some((edge_entity, parent_entity)) = edge_opt {
-                    new_content_entities
-                        .insert(edge_entity, ContentEntityData::new(ShapeType::Edge));
-                    Some((edge_entity, parent_entity))
-                } else {
-                    None
-                }
-            };
-            vertex_manager.on_create_vertex(vertex_entity, edge_and_parent_opt);
+
+            let mut inserts = Vec::new();
+
+            inserts.push(VertexWaitlistInsert::FileType(vertex_entity, FileTypeValue::Skel));
+
+            if let Some((edge_entity, parent_entity)) = edge_opt {
+                new_content_entities
+                    .insert(edge_entity, ContentEntityData::new(ShapeType::Edge));
+                inserts.push(VertexWaitlistInsert::Edge(parent_entity, edge_entity,vertex_entity));
+                vertex_waitlist.process_inserts(vertex_manager, inserts);
+            } else {
+                inserts.push(VertexWaitlistInsert::VertexRoot(vertex_entity));
+                vertex_waitlist.process_inserts(vertex_manager, inserts);
+            }
+
         }
-        vertex_manager.finalize_vertex_creation();
 
         new_content_entities
     }

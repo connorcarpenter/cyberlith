@@ -545,53 +545,19 @@ impl ActionStack {
                         }
                     }
 
-                    // create vertices and children
-                    let (new_vertex_2d_entity, new_vertex_3d_entity) = match vertex_type_data {
-                        VertexTypeData::Skel(parent_vertex_2d_entity, children_opt) => {
-                            let (new_vertex_2d_entity, new_vertex_3d_entity) = self.create_parented_networked_vertex(
-                                &mut commands,
-                                &mut client,
-                                &mut camera_manager,
-                                &mut vertex_manager,
-                                &mut meshes,
-                                &mut materials,
-                                Some(parent_vertex_2d_entity),
-                                position,
-                                tab_manager.current_tab_id(),
-                                &mut entities_to_release,
-                            );
-                            if let Some(children) = children_opt {
-                                self.create_child_tree(
-                                    &mut commands,
-                                    &mut client,
-                                    &mut camera_manager,
-                                    &mut vertex_manager,
-                                    &mut meshes,
-                                    &mut materials,
-                                    new_vertex_2d_entity,
-                                    children,
-                                    tab_manager.current_tab_id(),
-                                );
-                            }
-                            (new_vertex_2d_entity, new_vertex_3d_entity)
-                        }
-                        VertexTypeData::Mesh(parent_vertex_2d_entity_opt) => {
-                            let (new_vertex_2d_entity, new_vertex_3d_entity) = self.create_parented_networked_vertex(
-                                &mut commands,
-                                &mut client,
-                                &mut camera_manager,
-                                &mut vertex_manager,
-                                &mut meshes,
-                                &mut materials,
-                                parent_vertex_2d_entity_opt,
-                                position,
-                                tab_manager.current_tab_id(),
-                                &mut entities_to_release,
-                            );
-                            (new_vertex_2d_entity, new_vertex_3d_entity)
-                        }
-                    };
-
+                    // create vertex
+                    let (new_vertex_2d_entity, new_vertex_3d_entity) = self.create_networked_vertex(
+                        &mut commands,
+                        &mut client,
+                        &mut camera_manager,
+                        &mut vertex_manager,
+                        &mut meshes,
+                        &mut materials,
+                        position,
+                        tab_manager.current_tab_id(),
+                        vertex_type_data.to_file_type_value(),
+                        &mut entities_to_release,
+                    );
                     // migrate undo entities
                     if let Some((old_vertex_2d_entity, old_vertex_3d_entity)) =
                         old_vertex_entities_opt
@@ -601,6 +567,44 @@ impl ActionStack {
                             new_vertex_2d_entity,
                             old_vertex_3d_entity,
                             new_vertex_3d_entity,
+                        );
+                    }
+
+                    if let Some(parent_vertex_2d_entity) = match vertex_type_data {
+                        VertexTypeData::Skel(parent_vertex_2d_entity, children_opt) => {
+                            if let Some(children) = children_opt {
+                                self.create_networked_children_tree(
+                                    &mut commands,
+                                    &mut client,
+                                    &mut camera_manager,
+                                    &mut vertex_manager,
+                                    &mut meshes,
+                                    &mut materials,
+                                    new_vertex_2d_entity,
+                                    children,
+                                    tab_manager.current_tab_id(),
+                                    &mut entities_to_release,
+                                );
+                            }
+                            Some(parent_vertex_2d_entity)
+                        }
+                        VertexTypeData::Mesh(parent_vertex_2d_entity_opt) => {
+                            parent_vertex_2d_entity_opt
+                        }
+                    } {
+                        self.create_networked_edge(
+                            &mut commands,
+                            &mut client,
+                            &mut camera_manager,
+                            &mut vertex_manager,
+                            &mut meshes,
+                            &mut materials,
+                            parent_vertex_2d_entity,
+                            new_vertex_2d_entity,
+                            new_vertex_3d_entity,
+                            tab_manager.current_tab_id(),
+                            FileTypeValue::Mesh,
+                            &mut entities_to_release,
                         );
                     }
 
@@ -1005,7 +1009,7 @@ impl ActionStack {
         entity_id
     }
 
-    fn create_parented_networked_vertex(
+    fn create_networked_vertex(
         &mut self,
         commands: &mut Commands,
         client: &mut Client,
@@ -1013,9 +1017,9 @@ impl ActionStack {
         vertex_manager: &mut VertexManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
-        parent_vertex_2d_entity_opt: Option<Entity>,
         position: Vec3,
         tab_id: TabId,
+        file_type: FileTypeValue,
         entities_to_release: &mut Vec<Entity>,
     ) -> (Entity, Entity) {
 
@@ -1026,6 +1030,7 @@ impl ActionStack {
             .configure_replication(ReplicationConfig::Delegated)
             .insert(Vertex3d::from_vec3(position))
             .insert(OwnedByTab::new(tab_id))
+            .insert(FileType::new(file_type))
             .id();
 
         entities_to_release.push(new_vertex_3d_entity);
@@ -1042,50 +1047,65 @@ impl ActionStack {
             Vertex2d::CHILD_COLOR,
         );
 
-        if let Some(parent_vertex_2d_entity) = parent_vertex_2d_entity_opt {
-            // create new 3d edge
-            let parent_vertex_3d_entity = *vertex_manager
-                .vertex_entity_2d_to_3d(&parent_vertex_2d_entity)
-                .unwrap();
-
-            let mut new_edge_3d_component = Edge3d::new();
-            new_edge_3d_component
-                .start
-                .set(client, &parent_vertex_3d_entity);
-            new_edge_3d_component.end.set(client, &new_vertex_3d_entity);
-            let new_edge_3d_entity = commands
-                .spawn_empty()
-                .enable_replication(client)
-                .configure_replication(ReplicationConfig::Delegated)
-                .insert(new_edge_3d_component)
-                .insert(Edge3dLocal::new(
-                    parent_vertex_3d_entity,
-                    new_vertex_3d_entity,
-                ))
-                .insert(OwnedByTab::new(tab_id))
-                .id();
-
-            // create new 2d edge, add local components to 3d edge
-            let _new_edge_2d_entity = vertex_manager.edge_3d_postprocess(
-                commands,
-                meshes,
-                materials,
-                camera_manager,
-                new_edge_3d_entity,
-                new_vertex_2d_entity,
-                parent_vertex_2d_entity,
-                Some(tab_id),
-                Vertex2d::CHILD_COLOR,
-                true,
-            );
-
-            entities_to_release.push(new_edge_3d_entity);
-        }
-
         return (new_vertex_2d_entity, new_vertex_3d_entity);
     }
 
-    fn create_child_tree(
+    fn create_networked_edge(
+        &mut self,
+        commands: &mut Commands,
+        client: &mut Client,
+        camera_manager: &mut CameraManager,
+        vertex_manager: &mut VertexManager,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+        parent_vertex_2d_entity: Entity,
+        child_vertex_2d_entity: Entity,
+        child_vertex_3d_entity: Entity,
+        tab_id: TabId,
+        file_type: FileTypeValue,
+        entities_to_release: &mut Vec<Entity>,
+    ) {
+        // create new 3d edge
+        let parent_vertex_3d_entity = *vertex_manager
+            .vertex_entity_2d_to_3d(&parent_vertex_2d_entity)
+            .unwrap();
+
+        let mut new_edge_3d_component = Edge3d::new();
+        new_edge_3d_component
+            .start
+            .set(client, &parent_vertex_3d_entity);
+        new_edge_3d_component.end.set(client, &child_vertex_3d_entity);
+        let new_edge_3d_entity = commands
+            .spawn_empty()
+            .enable_replication(client)
+            .configure_replication(ReplicationConfig::Delegated)
+            .insert(new_edge_3d_component)
+            .insert(Edge3dLocal::new(
+                parent_vertex_3d_entity,
+                child_vertex_3d_entity,
+            ))
+            .insert(OwnedByTab::new(tab_id))
+            .insert(FileType::new(file_type))
+            .id();
+
+        // create new 2d edge, add local components to 3d edge
+        let _new_edge_2d_entity = vertex_manager.edge_3d_postprocess(
+            commands,
+            meshes,
+            materials,
+            camera_manager,
+            new_edge_3d_entity,
+            child_vertex_2d_entity,
+            parent_vertex_2d_entity,
+            Some(tab_id),
+            Vertex2d::CHILD_COLOR,
+            true,
+        );
+
+        entities_to_release.push(new_edge_3d_entity);
+    }
+
+    fn create_networked_children_tree(
         &mut self,
         commands: &mut Commands,
         client: &mut Client,
@@ -1096,26 +1116,49 @@ impl ActionStack {
         parent_vertex_2d_entity: Entity,
         children: Vec<VertexEntry>,
         tab_id: TabId,
+        entities_to_release: &mut Vec<Entity>,
     ) {
-        let mut output = Vec::new();
         for child in children {
+            let position = child.position();
             let grandchildren_opt = child.children();
+            let old_child_vertex_3d_entity = child.entity_3d();
+            let old_child_vertex_2d_entity = child.entity_2d();
 
             let (new_child_vertex_2d_entity, new_child_vertex_3d_entity) = self
-                .create_parented_networked_vertex(
+                .create_networked_vertex(
                     commands,
                     client,
                     camera_manager,
                     vertex_manager,
                     meshes,
                     materials,
-                    Some(parent_vertex_2d_entity),
-                    child.position(),
+                    position,
                     tab_id,
-                    &mut output,
+                    FileTypeValue::Skel,
+                    entities_to_release,
                 );
+            self.migrate_vertex_entities(
+                old_child_vertex_2d_entity,
+                new_child_vertex_2d_entity,
+                old_child_vertex_3d_entity,
+                new_child_vertex_3d_entity,
+            );
+            self.create_networked_edge(
+                commands,
+                client,
+                camera_manager,
+                vertex_manager,
+                meshes,
+                materials,
+                parent_vertex_2d_entity,
+                new_child_vertex_2d_entity,
+                new_child_vertex_3d_entity,
+                tab_id,
+                FileTypeValue::Skel,
+                entities_to_release,
+            );
             if let Some(grandchildren) = grandchildren_opt {
-                self.create_child_tree(
+                self.create_networked_children_tree(
                     commands,
                     client,
                     camera_manager,
@@ -1125,16 +1168,9 @@ impl ActionStack {
                     new_child_vertex_2d_entity,
                     grandchildren,
                     tab_id,
+                    entities_to_release
                 );
             }
-            let old_child_vertex_3d_entity = child.entity_3d();
-            let old_child_vertex_2d_entity = child.entity_2d();
-            self.migrate_vertex_entities(
-                old_child_vertex_2d_entity,
-                new_child_vertex_2d_entity,
-                old_child_vertex_3d_entity,
-                new_child_vertex_3d_entity,
-            );
         }
     }
 

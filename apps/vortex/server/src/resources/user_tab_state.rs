@@ -9,7 +9,7 @@ use vortex_proto::{resources::FileEntryKey, types::TabId};
 
 use crate::{
     files::{post_process_networked_entities, FileReadOutput, MeshReader, ShapeType, SkelReader},
-    resources::{workspace::Workspace, VertexManager},
+    resources::{VertexWaitlist, workspace::Workspace, VertexManager},
 };
 
 pub struct UserTabState {
@@ -117,6 +117,7 @@ impl UserTabState {
         commands: &mut Commands,
         server: &mut Server,
         workspace: &Workspace,
+        vertex_waitlist: &mut VertexWaitlist,
         vertex_manager: &mut VertexManager,
         file_entity: &Entity,
         file_entry_key: &FileEntryKey,
@@ -130,6 +131,7 @@ impl UserTabState {
                 commands,
                 server,
                 workspace,
+                vertex_waitlist,
                 vertex_manager,
                 file_entry_key,
                 *tab_id,
@@ -197,6 +199,7 @@ impl TabState {
         commands: &mut Commands,
         server: &mut Server,
         workspace: &Workspace,
+        vertex_waitlist: &mut VertexWaitlist,
         vertex_manager: &mut VertexManager,
         file_entry_key: &FileEntryKey,
         tab_id: TabId,
@@ -226,7 +229,7 @@ impl TabState {
 
         let new_content_entities = match output {
             FileReadOutput::Skel(entities) => {
-                SkelReader::post_process_entities(vertex_manager, entities)
+                SkelReader::post_process_entities(vertex_waitlist, vertex_manager, entities)
             }
             FileReadOutput::Mesh(shape_entities) => {
                 MeshReader::post_process_entities(shape_entities)

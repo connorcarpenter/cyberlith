@@ -28,7 +28,7 @@ use crate::{
     files::{post_process_networked_entities, FileReadOutput, FileWriter, MeshReader, SkelReader},
     resources::{
         user_manager::UserInfo, workspace::Workspace, ContentEntityData, FileEntryValue,
-        UserManager, VertexManager,
+        UserManager, VertexManager, VertexWaitlist
     },
 };
 
@@ -247,6 +247,7 @@ impl GitManager {
         &self,
         commands: &mut Commands,
         server: &mut Server,
+        vertex_waitlist: &mut VertexWaitlist,
         vertex_manager: &mut VertexManager,
         username: &str,
         file_entry_key: &FileEntryKey,
@@ -262,7 +263,7 @@ impl GitManager {
 
         let new_entities = match output {
             FileReadOutput::Skel(entities) => {
-                SkelReader::post_process_entities(vertex_manager, entities)
+                SkelReader::post_process_entities(vertex_waitlist, vertex_manager, entities)
             }
             FileReadOutput::Mesh(shape_entities) => {
                 MeshReader::post_process_entities(shape_entities)

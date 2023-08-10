@@ -1,15 +1,15 @@
 use std::time::Duration;
 
 use bevy_app::{App, ScheduleRunnerPlugin, ScheduleRunnerSettings};
-use bevy_ecs::schedule::IntoSystemConfig;
 use bevy_ecs::{
     prelude::apply_system_buffers,
-    schedule::IntoSystemConfigs,
+    schedule::{IntoSystemConfigs, IntoSystemConfig},
     system::{Res, ResMut},
 };
 use bevy_log::{info, LogPlugin};
 
 use naia_bevy_server::{Plugin as ServerPlugin, ReceiveEvents, ServerConfig};
+
 use resources::GitManager;
 use systems::network;
 use vortex_proto::protocol;
@@ -17,7 +17,7 @@ use vortex_proto::protocol;
 use crate::{
     config::{AppConfig, ConfigPlugin},
     resources::{
-        changelist_manager_process, ChangelistManager, TabManager, UserManager, VertexManager,
+        changelist_manager_process, ChangelistManager, TabManager, UserManager, VertexManager, VertexWaitlist,
     },
     systems::world_loop,
 };
@@ -50,6 +50,7 @@ fn main() {
         .init_resource::<GitManager>()
         .init_resource::<TabManager>()
         .init_resource::<ChangelistManager>()
+        .init_resource::<VertexWaitlist>()
         .init_resource::<VertexManager>()
         // Network Systems
         .add_startup_system(network::init)

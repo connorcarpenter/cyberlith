@@ -227,7 +227,7 @@ pub fn insert_vertex_events(
     mut vertex_manager: ResMut<VertexManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
-    mut waiting_vertices: ResMut<ShapeWaitlist>,
+    mut shape_waitlist: ResMut<ShapeWaitlist>,
     edge_3d_q: Query<&Edge3d>,
     owned_by_tab_q: Query<&OwnedByTab>,
     file_type_q: Query<&FileType>,
@@ -238,7 +238,7 @@ pub fn insert_vertex_events(
 
         info!("entity: {:?} - inserted Vertex3d", entity);
 
-        waiting_vertices.process_insert(
+        shape_waitlist.process_insert(
             &mut commands,
             &mut meshes,
             &mut materials,
@@ -255,7 +255,7 @@ pub fn insert_vertex_events(
 
         info!("entity: {:?} - inserted VertexRoot", entity);
 
-        waiting_vertices.process_insert(
+        shape_waitlist.process_insert(
             &mut commands,
             &mut meshes,
             &mut materials,
@@ -283,7 +283,7 @@ pub fn insert_vertex_events(
             continue;
         };
 
-        waiting_vertices.process_insert(
+        shape_waitlist.process_insert(
             &mut commands,
             &mut meshes,
             &mut materials,
@@ -303,7 +303,7 @@ pub fn insert_vertex_events(
         let owned_by_tab = owned_by_tab_q.get(entity).unwrap();
         let tab_id = *owned_by_tab.tab_id;
 
-        waiting_vertices.process_insert(
+        shape_waitlist.process_insert(
             &mut commands,
             &mut meshes,
             &mut materials,
@@ -323,7 +323,7 @@ pub fn insert_vertex_events(
         let file_type = file_type_q.get(entity).unwrap();
         let file_type_value = *file_type.value;
 
-        waiting_vertices.process_insert(
+        shape_waitlist.process_insert(
             &mut commands,
             &mut meshes,
             &mut materials,

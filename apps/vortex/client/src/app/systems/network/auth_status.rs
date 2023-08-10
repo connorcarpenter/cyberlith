@@ -19,7 +19,7 @@ pub fn auth_granted_events(
         if vertex_manager.has_edge_entity_3d(entity) {
             // entity is edge
             // TODO: handle edge auth?
-            panic!("auth granted for edge entity: {:?}", entity);
+            info!("auth granted for edge entity: {:?}", entity);
         } else if vertex_manager.has_vertex_entity_3d(entity) {
             // entity is vertex
             info!("auth granted for vertex entity: {:?}", entity);

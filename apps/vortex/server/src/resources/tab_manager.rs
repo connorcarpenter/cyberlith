@@ -15,7 +15,7 @@ use crate::{
     files::ShapeType,
     resources::{
         user_tab_state::TabState, workspace::Workspace, ContentEntityData, GitManager, UserManager,
-        UserTabState, VertexManager,
+        UserTabState, VertexManager, VertexWaitlist
     },
 };
 
@@ -49,6 +49,7 @@ impl TabManager {
         server: &mut Server,
         user_manager: &UserManager,
         git_manager: &mut GitManager,
+        vertex_waitlist: &mut VertexWaitlist,
         vertex_manager: &mut VertexManager,
         key_query: &Query<&FileEntryKey>,
         user_key: &UserKey,
@@ -84,6 +85,7 @@ impl TabManager {
         let content_entities = git_manager.load_content_entities(
             commands,
             server,
+            vertex_waitlist,
             vertex_manager,
             username,
             &file_entry_key,
@@ -173,6 +175,7 @@ impl TabManager {
             ResMut<TabManager>,
             Res<UserManager>,
             ResMut<GitManager>,
+            ResMut<VertexWaitlist>,
             ResMut<VertexManager>,
             Query<&FileEntryKey>,
         )> = SystemState::new(world);
@@ -182,6 +185,7 @@ impl TabManager {
             mut tab_manager,
             user_manager,
             mut git_manager,
+            mut vertex_waitlist,
             mut vertex_manager,
             key_query,
         ) = system_state.get_mut(world);
@@ -194,6 +198,7 @@ impl TabManager {
                 &mut server,
                 &user_manager,
                 &mut git_manager,
+                &mut vertex_waitlist,
                 &mut vertex_manager,
                 &key_query,
                 &user_key,
@@ -350,6 +355,7 @@ impl TabManager {
         commands: &mut Commands,
         server: &mut Server,
         workspace: &Workspace,
+        vertex_waitlist: &mut VertexWaitlist,
         vertex_manager: &mut VertexManager,
         user_key: &UserKey,
         file_entity: &Entity,
@@ -360,6 +366,7 @@ impl TabManager {
                 commands,
                 server,
                 workspace,
+                vertex_waitlist,
                 vertex_manager,
                 file_entity,
                 file_entry_key,

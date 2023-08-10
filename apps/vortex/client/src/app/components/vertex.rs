@@ -3,6 +3,8 @@ use bevy_ecs::{entity::Entity, prelude::Component};
 use math::Vec3;
 use render_api::base::Color;
 
+use vortex_proto::components::FileTypeValue;
+
 // Just a marker, to distinguish from 3d version
 #[derive(Component)]
 pub struct Vertex2d;
@@ -68,6 +70,12 @@ pub enum VertexTypeData {
 }
 
 impl VertexTypeData {
+    pub fn to_file_type_value(&self) -> FileTypeValue {
+        match self {
+            VertexTypeData::Skel(_, _) => FileTypeValue::Skel,
+            VertexTypeData::Mesh(_) => FileTypeValue::Mesh,
+        }
+    }
     pub fn migrate_vertex_entities(
         &mut self,
         old_2d_entity: Entity,

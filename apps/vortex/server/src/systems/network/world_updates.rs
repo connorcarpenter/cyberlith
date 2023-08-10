@@ -17,7 +17,7 @@ use naia_bevy_server::{
 
 use vortex_proto::{
     components::{
-        Edge3d, FileSystemChild, FileSystemEntry, FileSystemRootChild, Vertex3d, VertexRoot,
+        FileType, Edge3d, FileSystemChild, FileSystemEntry, FileSystemRootChild, Vertex3d, VertexRoot,
     },
     resources::FileEntryKey,
 };
@@ -29,6 +29,7 @@ use crate::{
         GitManager, TabManager, UserManager, VertexManager,
     },
 };
+use crate::resources::{VertexWaitlist, VertexWaitlistInsert};
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
     for SpawnEntityEvent(_user_key, entity) in event_reader.iter() {
@@ -51,7 +52,7 @@ pub fn despawn_entity_events(
         let workspace = git_manager.workspace_mut(user.get_username());
 
         let entity_is_file = workspace.entity_is_file(entity);
-        let entity_is_vertex = vertex_manager.entity_is_vertex(entity);
+        let entity_is_vertex = vertex_manager.has_vertex(entity);
 
         match (entity_is_file, entity_is_vertex) {
             (true, true) => {
@@ -84,6 +85,7 @@ pub fn insert_component_events(
     user_manager: Res<UserManager>,
     mut git_manager: ResMut<GitManager>,
     mut tab_manager: ResMut<TabManager>,
+    mut vertex_waitlist: ResMut<VertexWaitlist>,
     mut vertex_manager: ResMut<VertexManager>,
     mut fs_waiting_entities: Local<HashMap<Entity, FSWaitlist>>,
     mut event_reader: EventReader<InsertComponentEvents>,
@@ -91,6 +93,7 @@ pub fn insert_component_events(
     fs_child_q: Query<&FileSystemChild>,
     entry_key_q: Query<&FileEntryKey>,
     edge_3d_q: Query<&Edge3d>,
+    vert_file_type_q: Query<&FileType>,
 ) {
     for events in event_reader.iter() {
         // on FileSystemEntry Insert Event
@@ -167,14 +170,27 @@ pub fn insert_component_events(
         for (_user_key, edge_entity) in events.read::<Edge3d>() {
             info!("entity: `{:?}`, inserted Edge3d", edge_entity);
             let edge_3d = edge_3d_q.get(edge_entity).unwrap();
-            let Some(parent_entity) = edge_3d.start.get(&server) else {
+            let Some(start_entity) = edge_3d.start.get(&server) else {
                 panic!("no parent entity!")
             };
-            let Some(child_entity) = edge_3d.end.get(&server) else {
+            let Some(end_entity) = edge_3d.end.get(&server) else {
                 panic!("no child entity!")
             };
-            vertex_manager.on_create_vertex(child_entity, Some((edge_entity, parent_entity)));
-            vertex_manager.finalize_vertex_creation();
+            vertex_waitlist.process_insert(
+                &mut vertex_manager,
+                VertexWaitlistInsert::Edge(start_entity, edge_entity, end_entity),
+            );
+        }
+
+        // on Vertex FileType Insert Event
+        for (_user_key, entity) in events.read::<FileType>() {
+            info!("vertex entity: `{:?}`, inserted FileType", entity);
+            let file_type_value = *vert_file_type_q.get(entity).unwrap().value;
+
+            vertex_waitlist.process_insert(
+                &mut vertex_manager,
+                VertexWaitlistInsert::FileType(entity, file_type_value),
+            );
         }
 
         // on VertexRoot Insert Event
