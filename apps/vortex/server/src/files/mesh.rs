@@ -226,13 +226,15 @@ impl MeshReader {
                     let vertex_a_entity = *vertices.get(vertex_a_index as usize).unwrap();
                     let vertex_b_entity = *vertices.get(vertex_b_index as usize).unwrap();
 
-                    let mut edge_component = Face3d::new();
-                    edge_component.vertex_a.set(server, &vertex_a_entity);
-                    edge_component.vertex_b.set(server, &vertex_b_entity);
+                    let mut edge_component = Edge3d::new();
+                    edge_component.start.set(server, &vertex_a_entity);
+                    edge_component.end.set(server, &vertex_b_entity);
 
                     let entity_id = commands
                         .spawn_empty()
                         .enable_replication(server)
+                        // setting to Delegated to match client-created edges
+                        .configure_replication(ReplicationConfig::Delegated)
                         .insert(edge_component)
                         .id();
                     info!("spawning mesh edge entity {:?}", entity_id);
@@ -251,6 +253,8 @@ impl MeshReader {
                     let entity_id = commands
                         .spawn_empty()
                         .enable_replication(server)
+                        // setting to Delegated to match client-created faces
+                        .configure_replication(ReplicationConfig::Delegated)
                         .insert(face_component)
                         .id();
                     info!("spawning mesh face entity {:?}", entity_id);

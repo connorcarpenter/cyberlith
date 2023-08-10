@@ -202,7 +202,8 @@ impl TabState {
         tab_id: TabId,
         tab_is_selected: bool,
     ) {
-        if !workspace.working_file_extension(file_entry_key).can_io() {
+        let working_file_extension = workspace.working_file_extension(file_entry_key);
+        if !working_file_extension.can_io() {
             panic!("can't read file: `{:?}`", file_entry_key.name());
         }
 
@@ -238,6 +239,7 @@ impl TabState {
             &self.room_key,
             &new_content_entities,
             tab_id,
+            &working_file_extension,
             !tab_is_selected,
         );
 

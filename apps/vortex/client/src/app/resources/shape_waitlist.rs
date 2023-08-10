@@ -10,6 +10,7 @@ use render_api::{
     base::{CpuMaterial, CpuMesh},
     Assets,
 };
+use vortex_proto::components::FileTypeValue;
 
 use vortex_proto::types::TabId;
 
@@ -23,6 +24,7 @@ pub enum ShapeWaitlistInsert {
     VertexRoot,
     Edge(Entity, Entity),
     OwnedByTab(TabId),
+    FileType(FileTypeValue),
 }
 
 #[derive(Clone, Copy)]
@@ -42,6 +44,7 @@ pub struct ShapeWaitlistEntry {
     vertex_parent: Option<Option<Entity>>,
     tab_id: Option<TabId>,
     edge_entities: Option<(Entity, Entity)>,
+    file_type: Option<FileTypeValue>,
 }
 
 impl ShapeWaitlistEntry {
@@ -51,13 +54,14 @@ impl ShapeWaitlistEntry {
             vertex_parent: None,
             tab_id: None,
             edge_entities: None,
+            file_type: None,
         }
     }
 
     fn is_ready(&self) -> bool {
         match self.shape {
-            Some(ShapeType::Vertex) => self.tab_id.is_some() && self.vertex_parent.is_some(),
-            Some(ShapeType::Edge) => self.tab_id.is_some() && self.edge_entities.is_some(),
+            Some(ShapeType::Vertex) => self.file_type.is_some() && self.tab_id.is_some() && self.vertex_parent.is_some(),
+            Some(ShapeType::Edge) =>   self.file_type.is_some() && self.tab_id.is_some() && self.edge_entities.is_some(),
             None => false,
         }
     }
@@ -89,6 +93,10 @@ impl ShapeWaitlistEntry {
 
     fn set_tab_id(&mut self, tab_id: TabId) {
         self.tab_id = Some(tab_id);
+    }
+
+    fn set_file_type(&mut self, file_type: FileTypeValue) {
+        self.file_type = Some(file_type);
     }
 
     fn decompose(self) -> (ShapeData, TabId) {
@@ -162,6 +170,9 @@ impl ShapeWaitlist {
             }
             ShapeWaitlistInsert::OwnedByTab(tab_id) => {
                 self.get_mut(&entity).unwrap().set_tab_id(tab_id);
+            }
+            ShapeWaitlistInsert::FileType(file_type) => {
+                self.get_mut(&entity).unwrap().set_file_type(file_type);
             }
         }
 

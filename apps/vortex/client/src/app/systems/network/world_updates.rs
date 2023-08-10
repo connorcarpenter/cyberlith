@@ -20,10 +20,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{
-    ChangelistEntry, Edge3d, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-    OwnedByTab, Vertex3d, VertexRoot,
-};
+use vortex_proto::components::{ChangelistEntry, Edge3d, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, FileTypeValue, OwnedByTab, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
@@ -62,6 +59,7 @@ pub fn insert_component_events(
     mut insert_vertex_3d_event_writer: EventWriter<InsertComponentEvent<Vertex3d>>,
     mut insert_vertex_root_event_writer: EventWriter<InsertComponentEvent<VertexRoot>>,
     mut insert_owned_by_event_writer: EventWriter<InsertComponentEvent<OwnedByTab>>,
+    mut insert_file_type_event_writer: EventWriter<InsertComponentEvent<FileType>>,
     mut insert_edge_3d_event_writer: EventWriter<InsertComponentEvent<Edge3d>>,
 ) {
     for events in event_reader.iter() {
@@ -99,6 +97,11 @@ pub fn insert_component_events(
         // on OwnedByTab Insert Event
         for entity in events.read::<OwnedByTab>() {
             insert_owned_by_event_writer.send(InsertComponentEvent::<OwnedByTab>::new(entity));
+        }
+
+        // on FileType Insert Event
+        for entity in events.read::<FileType>() {
+            insert_file_type_event_writer.send(InsertComponentEvent::<FileType>::new(entity));
         }
 
         // on Edge3d Insert Event
@@ -217,6 +220,7 @@ pub fn insert_vertex_events(
     mut vertex_root_events: EventReader<InsertComponentEvent<VertexRoot>>,
     mut edge_3d_events: EventReader<InsertComponentEvent<Edge3d>>,
     mut owned_by_events: EventReader<InsertComponentEvent<OwnedByTab>>,
+    mut file_type_events: EventReader<InsertComponentEvent<FileType>>,
 
     // for vertices
     mut camera_manager: ResMut<CameraManager>,
@@ -297,6 +301,26 @@ pub fn insert_vertex_events(
 
         let owned_by_tab = owned_by_tab_q.get(entity).unwrap();
         let tab_id = *owned_by_tab.tab_id;
+
+        waiting_vertices.process_insert(
+            &mut commands,
+            &mut meshes,
+            &mut materials,
+            &mut camera_manager,
+            &mut vertex_manager,
+            &entity,
+            ShapeWaitlistInsert::OwnedByTab(tab_id),
+        );
+    }
+
+    // on FileType Insert Event
+    for event in file_type_events.iter() {
+        let entity = event.entity;
+
+        info!("entity: {:?} - inserted FileType", entity);
+
+        let file_type = file_type_q.get(entity).unwrap();
+        let file_type_value = *file_type.value;
 
         waiting_vertices.process_insert(
             &mut commands,

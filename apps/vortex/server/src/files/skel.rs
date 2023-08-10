@@ -201,6 +201,7 @@ impl SkelReader {
                 let edge_entity = commands
                     .spawn_empty()
                     .enable_replication(server)
+                    // setting to Delegated to match client-created edges
                     .configure_replication(ReplicationConfig::Delegated)
                     .insert(edge_component)
                     .id();

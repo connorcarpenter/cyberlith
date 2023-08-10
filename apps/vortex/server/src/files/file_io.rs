@@ -4,7 +4,7 @@ use bevy_ecs::{entity::Entity, system::Commands, world::World};
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server};
 
-use vortex_proto::{components::OwnedByTab, types::TabId, FileExtension};
+use vortex_proto::{components::{OwnedByTab, FileType, FileTypeValue}, types::TabId, FileExtension};
 
 use crate::{
     files::{MeshReader, MeshWriter, SkelReader, SkelWriter},
@@ -86,6 +86,7 @@ pub fn post_process_networked_entities(
     room_key: &RoomKey,
     entities: &HashMap<Entity, ContentEntityData>,
     tab_id: TabId,
+    file_extension: &FileExtension,
     pause_replication: bool,
 ) {
     for (entity, _data) in entities.iter() {
@@ -94,6 +95,17 @@ pub fn post_process_networked_entities(
 
         // add tab ownership
         commands.entity(*entity).insert(OwnedByTab::new(tab_id));
+
+        // add FileType component
+        match file_extension {
+            FileExtension::Skel => {
+                commands.entity(*entity).insert(FileType::new(FileTypeValue::Skel));
+            }
+            FileExtension::Mesh => {
+                commands.entity(*entity).insert(FileType::new(FileTypeValue::Mesh));
+            }
+            _ => {}
+        }
 
         // pause replication if indicated
         if pause_replication {

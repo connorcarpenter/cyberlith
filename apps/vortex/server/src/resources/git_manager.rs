@@ -257,6 +257,7 @@ impl GitManager {
         info!("loading content entities");
 
         let workspace = self.workspaces.get(username).unwrap();
+        let working_file_extension = workspace.working_file_extension(file_entry_key);
         let output = workspace.load_content_entities(commands, server, file_entry_key);
 
         let new_entities = match output {
@@ -274,6 +275,7 @@ impl GitManager {
             room_key,
             &new_entities,
             tab_id,
+            &working_file_extension,
             pause_replication,
         );
 

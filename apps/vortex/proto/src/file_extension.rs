@@ -23,8 +23,7 @@ impl FileExtension {
 
     pub fn can_io(&self) -> bool {
         match self {
-            //FileExtension::Skel | FileExtension::Mesh => true,
-            FileExtension::Skel => true,
+            FileExtension::Skel | FileExtension::Mesh => true,
             _ => false,
         }
     }

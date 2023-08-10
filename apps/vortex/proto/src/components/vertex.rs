@@ -17,7 +17,8 @@ impl ProtocolPlugin for VertexComponentsPlugin {
             .add_component::<VertexRoot>()
             .add_component::<OwnedByTab>()
             .add_component::<Edge3d>()
-            .add_component::<Face3d>();
+            .add_component::<Face3d>()
+            .add_component::<FileType>();
     }
 }
 
@@ -115,5 +116,23 @@ pub struct Face3d {
 impl Face3d {
     pub fn new() -> Self {
         Self::new_complete()
+    }
+}
+
+// FileType
+#[derive(Serde, Clone, PartialEq, Debug)]
+pub enum FileTypeValue {
+    Skel,
+    Mesh,
+}
+
+#[derive(Component, Replicate)]
+pub struct FileType {
+    pub value: Property<FileTypeValue>,
+}
+
+impl FileType {
+    pub fn new(value: FileTypeValue) -> Self {
+        Self::new_complete(value)
     }
 }
