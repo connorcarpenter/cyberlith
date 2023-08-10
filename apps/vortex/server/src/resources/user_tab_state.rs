@@ -219,7 +219,9 @@ impl TabState {
                 ShapeType::Vertex => {
                     vertex_manager.on_delete_vertex(commands, server, entity);
                 }
-                ShapeType::Edge => {}
+                ShapeType::Edge => {
+                    //vertex_manager.on_delete_edge();
+                }
                 ShapeType::Face => {}
             }
         }
@@ -232,7 +234,7 @@ impl TabState {
                 SkelReader::post_process_entities(vertex_waitlist, vertex_manager, entities)
             }
             FileReadOutput::Mesh(shape_entities) => {
-                MeshReader::post_process_entities(shape_entities)
+                MeshReader::post_process_entities(vertex_manager, shape_entities)
             }
         };
 

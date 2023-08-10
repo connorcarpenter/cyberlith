@@ -99,7 +99,7 @@ impl ShapeWaitlistEntry {
         self.file_type = Some(file_type);
     }
 
-    fn decompose(self) -> (ShapeData, TabId) {
+    fn decompose(self) -> (ShapeData, TabId, FileTypeValue) {
         let shape_data = match self.shape.unwrap() {
             ShapeType::Vertex => ShapeData::Vertex(self.vertex_parent.unwrap()),
             ShapeType::Edge => {
@@ -107,7 +107,7 @@ impl ShapeWaitlistEntry {
                 ShapeData::Edge(entities.0, entities.1)
             }
         };
-        return (shape_data, self.tab_id.unwrap());
+        return (shape_data, self.tab_id.unwrap(), self.file_type.unwrap());
     }
 }
 
@@ -172,6 +172,7 @@ impl ShapeWaitlist {
                 self.get_mut(&entity).unwrap().set_tab_id(tab_id);
             }
             ShapeWaitlistInsert::FileType(file_type) => {
+                info!("entity {:?} is set as file type: {:?}", entity, file_type);
                 self.get_mut(&entity).unwrap().set_file_type(file_type);
             }
         }
@@ -257,7 +258,7 @@ impl ShapeWaitlist {
     ) {
         // info!("processing complete vertex {:?}", entity);
 
-        let (shape_data, tab_id) = entry.decompose();
+        let (shape_data, tab_id, file_type) = entry.decompose();
 
         match shape_data {
             ShapeData::Vertex(parent_3d_entity_opt) => {
@@ -301,8 +302,6 @@ impl ShapeWaitlist {
                 }
             }
             ShapeData::Edge(start, end) => {
-                // TODO: these vertices may not have completed converting to the 2d version!
-                // there is a dependency here, must wait on the parent vertices ..
 
                 let start_2d = *vertex_manager.vertex_entity_3d_to_2d(&start).unwrap();
                 let end_2d = *vertex_manager.vertex_entity_3d_to_2d(&end).unwrap();
@@ -319,7 +318,7 @@ impl ShapeWaitlist {
                     end_2d,
                     Some(tab_id),
                     Vertex2d::CHILD_COLOR,
-                    true, //todo, handle mesh edges ..
+                    file_type == FileTypeValue::Skel,
                 );
             }
         }

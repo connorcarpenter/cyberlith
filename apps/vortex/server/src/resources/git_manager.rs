@@ -266,7 +266,7 @@ impl GitManager {
                 SkelReader::post_process_entities(vertex_waitlist, vertex_manager, entities)
             }
             FileReadOutput::Mesh(shape_entities) => {
-                MeshReader::post_process_entities(shape_entities)
+                MeshReader::post_process_entities(vertex_manager, shape_entities)
             }
         };
 

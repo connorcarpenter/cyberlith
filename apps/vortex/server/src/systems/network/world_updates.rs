@@ -26,10 +26,9 @@ use crate::{
     files::handle_file_modify,
     resources::{
         fs_waitlist::{fs_process_insert, FSWaitlist, FSWaitlistInsert},
-        GitManager, TabManager, UserManager, VertexManager,
+        GitManager, TabManager, UserManager, VertexManager, VertexWaitlist, VertexWaitlistInsert,
     },
 };
-use crate::resources::{VertexWaitlist, VertexWaitlistInsert};
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
     for SpawnEntityEvent(_user_key, entity) in event_reader.iter() {

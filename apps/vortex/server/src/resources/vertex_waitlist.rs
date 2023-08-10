@@ -202,7 +202,7 @@ impl VertexWaitlist {
 
         match data {
             VertexData::Skel(edge_and_parent_opt) => {
-                vertex_manager.on_create_vertex(entity, edge_and_parent_opt);
+                vertex_manager.on_create_skel_vertex(entity, edge_and_parent_opt);
 
                 // if the waitlist has any children entities of this one, process them
                 info!(
@@ -223,7 +223,9 @@ impl VertexWaitlist {
                     }
                 }
             }
-            _ => {}
+            VertexData::Mesh => {
+                vertex_manager.on_create_mesh_vertex(entity);
+            }
         }
     }
 

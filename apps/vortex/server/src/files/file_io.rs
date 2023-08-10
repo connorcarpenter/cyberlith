@@ -70,7 +70,7 @@ pub enum FileReadOutput {
     // Skel file, list of (vertex 3d entity, and an optional (edge 3d entity, parent vertex 3d entity))
     Skel(Vec<(Entity, Option<(Entity, Entity)>)>),
     // Mesh file, list of vert/edge/face entities
-    Mesh(Vec<(ShapeType, Entity)>),
+    Mesh(Vec<(Entity, ShapeTypeData)>),
 }
 
 #[derive(Copy, Clone, Hash, PartialEq, Eq)]
@@ -78,6 +78,23 @@ pub enum ShapeType {
     Vertex,
     Edge,
     Face,
+}
+
+#[derive(Copy, Clone, Hash, PartialEq, Eq)]
+pub enum ShapeTypeData {
+    Vertex,
+    Edge(Entity, Entity),
+    Face,
+}
+
+impl From<ShapeTypeData> for ShapeType {
+    fn from(shape_type_data: ShapeTypeData) -> Self {
+        match shape_type_data {
+            ShapeTypeData::Vertex => ShapeType::Vertex,
+            ShapeTypeData::Edge(_, _) => ShapeType::Edge,
+            ShapeTypeData::Face => ShapeType::Face,
+        }
+    }
 }
 
 pub fn post_process_networked_entities(

@@ -1099,7 +1099,7 @@ impl ActionStack {
             parent_vertex_2d_entity,
             Some(tab_id),
             Vertex2d::CHILD_COLOR,
-            true,
+            file_type == FileTypeValue::Skel,
         );
 
         entities_to_release.push(new_edge_3d_entity);

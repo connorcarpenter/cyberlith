@@ -15,8 +15,8 @@ use naia_bevy_server::{
 use vortex_proto::components::{Edge3d, Face3d, FileType, FileTypeValue, Vertex3d, VertexSerdeInt};
 
 use crate::{
-    files::{file_io::ShapeType, FileReadOutput, FileReader, FileWriter},
-    resources::ContentEntityData,
+    files::{ShapeTypeData, FileReadOutput, FileReader, FileWriter},
+    resources::{ContentEntityData, VertexManager},
 };
 
 // Actions
@@ -231,7 +231,7 @@ impl MeshReader {
                         .id();
                     info!("spawning mesh vertex entity {:?}", entity_id);
                     vertices.push(entity_id);
-                    output.push((ShapeType::Vertex, entity_id));
+                    output.push((entity_id, ShapeTypeData::Vertex));
                 }
                 MeshAction::Edge(vertex_a_index, vertex_b_index) => {
                     let vertex_a_entity = *vertices.get(vertex_a_index as usize).unwrap();
@@ -249,7 +249,7 @@ impl MeshReader {
                         .insert(edge_component)
                         .id();
                     info!("spawning mesh edge entity {:?}", entity_id);
-                    output.push((ShapeType::Edge, entity_id));
+                    output.push((entity_id, ShapeTypeData::Edge(vertex_a_entity, vertex_b_entity)));
                 }
                 MeshAction::Face(vertex_a_index, vertex_b_index, vertex_c_index) => {
                     let vertex_a_entity = *vertices.get(vertex_a_index as usize).unwrap();
@@ -269,7 +269,7 @@ impl MeshReader {
                         .insert(face_component)
                         .id();
                     info!("spawning mesh face entity {:?}", entity_id);
-                    output.push((ShapeType::Face, entity_id));
+                    output.push((entity_id, ShapeTypeData::Face));
                 }
             }
         }
@@ -300,12 +300,27 @@ impl FileReader for MeshReader {
 }
 
 impl MeshReader {
+
     pub fn post_process_entities(
-        shape_entities: Vec<(ShapeType, Entity)>,
+        vertex_manager: &mut VertexManager,
+        shape_entities: Vec<(Entity, ShapeTypeData)>,
     ) -> HashMap<Entity, ContentEntityData> {
-        shape_entities
-            .iter()
-            .map(|(shape_type, entity)| (*entity, ContentEntityData::new(*shape_type)))
-            .collect()
+        let mut new_content_entities = HashMap::new();
+
+        for (entity, shape_type_data) in shape_entities {
+            new_content_entities.insert(entity, ContentEntityData::new(shape_type_data.into()));
+
+            match shape_type_data {
+                ShapeTypeData::Vertex => {
+                    vertex_manager.on_create_mesh_vertex(entity);
+                }
+                ShapeTypeData::Edge(start, end) => {
+                    vertex_manager.on_create_mesh_edge(start, entity, end);
+                }
+                ShapeTypeData::Face => {}
+            }
+        }
+
+        new_content_entities
     }
 }
