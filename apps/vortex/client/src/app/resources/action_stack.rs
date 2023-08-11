@@ -545,6 +545,8 @@ impl ActionStack {
                         }
                     }
 
+                    let file_type_value = vertex_type_data.to_file_type_value();
+
                     // create vertex
                     let (new_vertex_2d_entity, new_vertex_3d_entity) = self.create_networked_vertex(
                         &mut commands,
@@ -555,7 +557,7 @@ impl ActionStack {
                         &mut materials,
                         position,
                         tab_manager.current_tab_id(),
-                        vertex_type_data.to_file_type_value(),
+                        file_type_value,
                         &mut entities_to_release,
                     );
                     // migrate undo entities
@@ -603,7 +605,7 @@ impl ActionStack {
                             new_vertex_2d_entity,
                             new_vertex_3d_entity,
                             tab_manager.current_tab_id(),
-                            FileTypeValue::Mesh,
+                            file_type_value,
                             &mut entities_to_release,
                         );
                     }

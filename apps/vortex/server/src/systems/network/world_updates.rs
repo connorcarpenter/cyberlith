@@ -220,8 +220,10 @@ pub fn insert_component_events(
 
         // on Vertex FileType Insert Event
         for (_user_key, entity) in events.read::<FileType>() {
-            info!("vertex entity: `{:?}`, inserted FileType", entity);
+
             let file_type_value = *vert_file_type_q.get(entity).unwrap().value;
+
+            info!("entity: `{:?}`, inserted FileType: {:?}", entity, file_type_value);
 
             vertex_waitlist.process_insert(
                 &mut vertex_manager,
