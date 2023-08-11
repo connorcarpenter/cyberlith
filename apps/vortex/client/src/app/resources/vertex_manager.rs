@@ -453,6 +453,10 @@ impl VertexManager {
         self.vertices_2d_to_3d.get(entity_2d)
     }
 
+    pub(crate) fn edge_entity_2d_to_3d(&self, entity_2d: &Entity) -> Option<&Entity> {
+        self.edges_2d_to_3d.get(entity_2d)
+    }
+
     pub fn vertex_3d_postprocess(
         &mut self,
         commands: &mut Commands,
@@ -848,50 +852,72 @@ impl VertexManager {
             match click_type {
                 ClickType::Left => {
                     if cursor_is_hovering {
-                        return;
-                    }
+                        if self.current_file_type != FileTypeValue::Mesh {
+                            return;
+                        }
 
-                    // create new vertex
+                        if let (_, CanvasShape::Edge) = self.hovered_entity.unwrap() {
+                            return;
+                        }
 
-                    // get camera
-                    let camera_3d = camera_manager.camera_3d_entity().unwrap();
-                    let camera_transform: Transform = *transform_q.get(camera_3d).unwrap();
-                    let (camera, camera_projection) = camera_q.get(camera_3d).unwrap();
+                        // link vertices together
 
-                    let camera_viewport = camera.viewport.unwrap();
-                    let view_matrix = camera_transform.view_matrix();
-                    let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
+                        let (vertex_2d_entity_a, _) = self.selected_vertex.unwrap();
+                        let (vertex_2d_entity_b, _) = self.hovered_entity.unwrap();
+                        if vertex_2d_entity_a == vertex_2d_entity_b {
+                            return;
+                        }
 
-                    // get 2d vertex transform
-                    let (vertex_2d_entity, _) = self.selected_vertex.unwrap();
-                    if let Ok(vertex_2d_transform) = transform_q.get(vertex_2d_entity) {
-                        // convert 2d to 3d
-                        let new_3d_position = convert_2d_to_3d(
-                            &view_matrix,
-                            &projection_matrix,
-                            &camera_viewport.size_vec2(),
-                            &mouse_position,
-                            vertex_2d_transform.translation.z,
-                        );
-
-                        // spawn new vertex
-                        action_stack.buffer_action(Action::CreateVertex(
-                            match self.current_file_type {
-                                FileTypeValue::Skel => {
-                                    VertexTypeData::Skel(vertex_2d_entity, None)
-                                }
-                                FileTypeValue::Mesh => {
-                                    VertexTypeData::Mesh(vec![vertex_2d_entity])
-                                }
-                            },
-                            new_3d_position,
+                        action_stack.buffer_action(Action::CreateEdge(
+                            vertex_2d_entity_a,
+                            vertex_2d_entity_b,
                             None,
                         ));
+
                     } else {
-                        warn!(
-                            "Selected vertex entity: {:?} has no Transform",
-                            vertex_2d_entity
-                        );
+
+                        // create new vertex
+
+                        // get camera
+                        let camera_3d = camera_manager.camera_3d_entity().unwrap();
+                        let camera_transform: Transform = *transform_q.get(camera_3d).unwrap();
+                        let (camera, camera_projection) = camera_q.get(camera_3d).unwrap();
+
+                        let camera_viewport = camera.viewport.unwrap();
+                        let view_matrix = camera_transform.view_matrix();
+                        let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
+
+                        // get 2d vertex transform
+                        let (vertex_2d_entity, _) = self.selected_vertex.unwrap();
+                        if let Ok(vertex_2d_transform) = transform_q.get(vertex_2d_entity) {
+                            // convert 2d to 3d
+                            let new_3d_position = convert_2d_to_3d(
+                                &view_matrix,
+                                &projection_matrix,
+                                &camera_viewport.size_vec2(),
+                                &mouse_position,
+                                vertex_2d_transform.translation.z,
+                            );
+
+                            // spawn new vertex
+                            action_stack.buffer_action(Action::CreateVertex(
+                                match self.current_file_type {
+                                    FileTypeValue::Skel => {
+                                        VertexTypeData::Skel(vertex_2d_entity, None)
+                                    }
+                                    FileTypeValue::Mesh => {
+                                        VertexTypeData::Mesh(vec![vertex_2d_entity])
+                                    }
+                                },
+                                new_3d_position,
+                                None,
+                            ));
+                        } else {
+                            warn!(
+                                "Selected vertex entity: {:?} has no Transform",
+                                vertex_2d_entity
+                            );
+                        }
                     }
                 }
                 ClickType::Right => {
