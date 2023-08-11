@@ -575,7 +575,7 @@ impl VertexManager {
         }
 
         action_stack.buffer_action(Action::CreateVertex(
-            VertexTypeData::Mesh(None),
+            VertexTypeData::Mesh(Vec::new()),
             Vec3::ZERO,
             None,
         ));
@@ -881,7 +881,7 @@ impl VertexManager {
                                     VertexTypeData::Skel(vertex_2d_entity, None)
                                 }
                                 FileTypeValue::Mesh => {
-                                    VertexTypeData::Mesh(Some(vertex_2d_entity))
+                                    VertexTypeData::Mesh(vec![vertex_2d_entity])
                                 }
                             },
                             new_3d_position,

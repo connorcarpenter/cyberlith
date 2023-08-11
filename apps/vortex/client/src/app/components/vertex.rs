@@ -65,8 +65,8 @@ pub struct Compass;
 pub enum VertexTypeData {
     // parent_vertex_2d_entity, children_tree_opt
     Skel(Entity, Option<Vec<VertexEntry>>),
-    // parent_vertex_2d_entity
-    Mesh(Option<Entity>),
+    // connected 2d vertices
+    Mesh(Vec<Entity>),
 }
 
 impl VertexTypeData {
@@ -96,10 +96,10 @@ impl VertexTypeData {
                     new_3d_entity,
                 );
             }
-            VertexTypeData::Mesh(parent_2d_vertex_entity_opt) => {
-                if let Some(parent_2d_vertex_entity) = parent_2d_vertex_entity_opt {
-                    if *parent_2d_vertex_entity == old_2d_entity {
-                        *parent_2d_vertex_entity = new_2d_entity;
+            VertexTypeData::Mesh(connected_vertices) => {
+                for connected_vertex in connected_vertices {
+                    if *connected_vertex == old_2d_entity {
+                        *connected_vertex = new_2d_entity;
                     }
                 }
             }

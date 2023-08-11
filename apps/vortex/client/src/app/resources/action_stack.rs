@@ -28,7 +28,7 @@ use vortex_proto::{
 use crate::app::{
     components::{
         file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
-        Edge3dLocal, Vertex2d, VertexEntry, VertexTypeData,
+        Edge3dLocal, Vertex2d, VertexEntry, VertexTypeData, Edge2dLocal
     },
     resources::{
         camera_manager::CameraManager,
@@ -546,6 +546,7 @@ impl ActionStack {
                     }
 
                     let file_type_value = vertex_type_data.to_file_type_value();
+                    let current_tab_id = tab_manager.current_tab_id();
 
                     // create vertex
                     let (new_vertex_2d_entity, new_vertex_3d_entity) = self.create_networked_vertex(
@@ -556,7 +557,7 @@ impl ActionStack {
                         &mut meshes,
                         &mut materials,
                         position,
-                        tab_manager.current_tab_id(),
+                        current_tab_id,
                         file_type_value,
                         &mut entities_to_release,
                     );
@@ -572,7 +573,7 @@ impl ActionStack {
                         );
                     }
 
-                    if let Some(parent_vertex_2d_entity) = match vertex_type_data {
+                    match vertex_type_data {
                         VertexTypeData::Skel(parent_vertex_2d_entity, children_opt) => {
                             if let Some(children) = children_opt {
                                 self.create_networked_children_tree(
@@ -584,31 +585,44 @@ impl ActionStack {
                                     &mut materials,
                                     new_vertex_2d_entity,
                                     children,
-                                    tab_manager.current_tab_id(),
+                                    current_tab_id,
                                     &mut entities_to_release,
                                 );
                             }
-                            Some(parent_vertex_2d_entity)
+                            self.create_networked_edge(
+                                &mut commands,
+                                &mut client,
+                                &mut camera_manager,
+                                &mut vertex_manager,
+                                &mut meshes,
+                                &mut materials,
+                                parent_vertex_2d_entity,
+                                new_vertex_2d_entity,
+                                new_vertex_3d_entity,
+                                current_tab_id,
+                                FileTypeValue::Skel,
+                                &mut entities_to_release,
+                            );
                         }
-                        VertexTypeData::Mesh(parent_vertex_2d_entity_opt) => {
-                            parent_vertex_2d_entity_opt
+                        VertexTypeData::Mesh(connected_vertex_entities) => {
+                            for connected_vertex_entity in connected_vertex_entities {
+                                self.create_networked_edge(
+                                    &mut commands,
+                                    &mut client,
+                                    &mut camera_manager,
+                                    &mut vertex_manager,
+                                    &mut meshes,
+                                    &mut materials,
+                                    connected_vertex_entity,
+                                    new_vertex_2d_entity,
+                                    new_vertex_3d_entity,
+                                    current_tab_id,
+                                    FileTypeValue::Mesh,
+                                    &mut entities_to_release,
+                                );
+                            }
                         }
-                    } {
-                        self.create_networked_edge(
-                            &mut commands,
-                            &mut client,
-                            &mut camera_manager,
-                            &mut vertex_manager,
-                            &mut meshes,
-                            &mut materials,
-                            parent_vertex_2d_entity,
-                            new_vertex_2d_entity,
-                            new_vertex_3d_entity,
-                            tab_manager.current_tab_id(),
-                            file_type_value,
-                            &mut entities_to_release,
-                        );
-                    }
+                    };
 
                     // select vertex
                     vertex_manager.select_vertex(&new_vertex_2d_entity, CanvasShape::Vertex);
@@ -729,14 +743,37 @@ impl ActionStack {
                     }
                     FileTypeValue::Mesh => {
 
-                        // TODO: handle vertex connections
+                        let mut connected_vertices_2d_entities = Vec::new();
+                        for edge_3d in edge_3d_q.iter() {
+
+                            let start_entity = edge_3d.start.get(&client).unwrap();
+                            let end_entity = edge_3d.end.get(&client).unwrap();
+
+                            if start_entity == vertex_3d_entity {
+                                if let Some(end_2d_entity) = *vertex_manager.vertex_entity_3d_to_2d(&end_entity) {
+                                    connected_vertices_2d_entities.push(end_2d_entity);
+                                } else {
+                                    // this is a known bug that happens when undo/redo too fast
+                                    // it may not be worth it to fix! would require the entire hierarchy to be stored similar to the server
+                                    warn!("2d vertex still hasn't been created for {:?}, cannot add to undo/redo stack.", end_entity);
+                                }
+                            } else if end_entity == vertex_3d_entity {
+                                if let Some(start_2d_entity) = *vertex_manager.vertex_entity_3d_to_2d(&start_entity) {
+                                    connected_vertices_2d_entities.push(start_2d_entity);
+                                } else {
+                                    // this is a known bug that happens when undo/redo too fast
+                                    // it may not be worth it to fix! would require the entire hierarchy to be stored similar to the server
+                                    warn!("2d vertex still hasn't been created for {:?}, cannot add to undo/redo stack.", start_entity);
+                                }
+                            }
+                        }
 
                         let rev_vertex_type_data = VertexTypeData::Mesh(
-                            None,
+                            connected_vertices_2d_entities,
                         );
 
                         let Ok((_, vertex_3d)) = vertex_q.get(vertex_3d_entity) else {
-                            panic!("Failed to get VertexChild for vertex entity {:?}!", vertex_3d_entity);
+                            panic!("Failed to get Vertex3d for vertex entity {:?}!", vertex_3d_entity);
                         };
                         let vertex_3d_position = vertex_3d.as_vec3();
 
