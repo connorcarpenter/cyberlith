@@ -407,34 +407,40 @@ impl ShapeManager {
         self.edges_2d_to_3d.insert(entity_2d, entity_3d);
     }
 
-    pub fn cleanup_deleted_vertex(&mut self, entity_3d: &Entity, commands: &mut Commands) {
-        if let Some(vertex_2d_entity) = self.unregister_3d_vertex(entity_3d) {
-            // despawn 2d vertex
-            info!("despawn 2d vertex {:?}", vertex_2d_entity);
-            commands.entity(vertex_2d_entity).despawn();
-        } else {
+    // returns entity 2d
+    pub fn cleanup_deleted_vertex(&mut self, entity_3d: &Entity, commands: &mut Commands) -> Entity {
+        let Some(vertex_2d_entity) = self.unregister_3d_vertex(entity_3d) else {
             panic!(
                 "Vertex3d entity: `{:?}` has no corresponding Vertex2d entity",
                 entity_3d
             );
-        }
+        };
+
+        // despawn 2d vertex
+        info!("despawn 2d vertex {:?}", vertex_2d_entity);
+        commands.entity(vertex_2d_entity).despawn();
 
         self.recalculate_shapes();
+
+        vertex_2d_entity
     }
 
-    pub fn cleanup_deleted_edge(&mut self, entity_3d: &Entity, commands: &mut Commands) {
-        if let Some(edge_2d_entity) = self.unregister_3d_edge(entity_3d) {
-            // despawn 2d edge
-            info!("despawn 2d edge {:?}", edge_2d_entity);
-            commands.entity(edge_2d_entity).despawn();
-        } else {
+    // returns entity 2d
+    pub fn cleanup_deleted_edge(&mut self, entity_3d: &Entity, commands: &mut Commands) -> Entity {
+        let Some(edge_2d_entity) = self.unregister_3d_edge(entity_3d) else {
             panic!(
                 "Edge3d entity: `{:?}` has no corresponding Edge2d entity",
                 entity_3d
             );
-        }
+        };
+
+        // despawn 2d edge
+        info!("despawn 2d edge {:?}", edge_2d_entity);
+        commands.entity(edge_2d_entity).despawn();
 
         self.recalculate_shapes();
+
+        edge_2d_entity
     }
 
     pub(crate) fn has_vertex_entity_3d(&self, entity_3d: &Entity) -> bool {
@@ -591,46 +597,73 @@ impl ShapeManager {
         client: &mut Client,
         action_stack: &mut ActionStack,
     ) {
-        if self.selected_shape.is_none() {
-            return;
+        match self.selected_shape {
+            Some((vertex_2d_entity, CanvasShape::Vertex)) => {
+                // delete vertex
+                let vertex_3d_entity = self.vertex_entity_2d_to_3d(&vertex_2d_entity).unwrap();
+
+                // check whether we can delete vertex
+                let auth_status = commands
+                    .entity(*vertex_3d_entity)
+                    .authority(client)
+                    .unwrap();
+                if !auth_status.is_granted() && !auth_status.is_available() {
+                    // do nothing, vertex is not available
+                    // TODO: queue for deletion? check before this?
+                    warn!(
+                        "Vertex {:?} is not available for deletion!",
+                        vertex_3d_entity
+                    );
+                    return;
+                }
+
+                let auth_status = commands
+                    .entity(*vertex_3d_entity)
+                    .authority(client)
+                    .unwrap();
+                if !auth_status.is_granted() {
+                    // request authority if needed
+                    commands.entity(*vertex_3d_entity).request_authority(client);
+                }
+
+                action_stack.buffer_action(Action::DeleteVertex(vertex_2d_entity, None));
+
+                self.selected_shape = None;
+            }
+            Some((edge_2d_entity, CanvasShape::Edge)) => {
+                // delete edge
+                let edge_3d_entity = self.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
+
+                // check whether we can delete edge
+                let auth_status = commands
+                    .entity(*edge_3d_entity)
+                    .authority(client)
+                    .unwrap();
+                if !auth_status.is_granted() && !auth_status.is_available() {
+                    // do nothing, edge is not available
+                    // TODO: queue for deletion? check before this?
+                    warn!(
+                        "Edge {:?} is not available for deletion!",
+                        edge_3d_entity
+                    );
+                    return;
+                }
+
+                let auth_status = commands
+                    .entity(*edge_3d_entity)
+                    .authority(client)
+                    .unwrap();
+                if !auth_status.is_granted() {
+                    // request authority if needed
+                    commands.entity(*edge_3d_entity).request_authority(client);
+                }
+
+                action_stack.buffer_action(Action::DeleteEdge(edge_2d_entity, None));
+
+                self.selected_shape = None;
+            }
+            _ => {}
         }
-
-        // delete vertex
-        let (vertex_2d_entity, shape) = self.selected_shape.unwrap();
-
-        if shape == CanvasShape::RootVertex {
-            return;
-        }
-
-        let vertex_3d_entity = self.vertex_entity_2d_to_3d(&vertex_2d_entity).unwrap();
-
-        // check whether we can delete vertex
-        let auth_status = commands
-            .entity(*vertex_3d_entity)
-            .authority(client)
-            .unwrap();
-        if !auth_status.is_granted() && !auth_status.is_available() {
-            // do nothing, vertex is not available
-            // TODO: queue for deletion? check before this?
-            warn!(
-                "Vertex {:?} is not available for deletion!",
-                vertex_3d_entity
-            );
-            return;
-        }
-
-        let auth_status = commands
-            .entity(*vertex_3d_entity)
-            .authority(client)
-            .unwrap();
-        if !auth_status.is_granted() {
-            // request authority if needed
-            commands.entity(*vertex_3d_entity).request_authority(client);
-        }
-
-        action_stack.buffer_action(Action::DeleteVertex(vertex_2d_entity, None));
-
-        self.selected_shape = None;
     }
 
     pub(crate) fn update_mouse_hover(

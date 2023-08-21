@@ -9,7 +9,7 @@ use vortex_proto::{resources::FileEntryKey, types::TabId};
 
 use crate::{
     files::{post_process_networked_entities, FileReadOutput, MeshReader, ShapeType, SkelReader},
-    resources::{ShapeWaitlist, workspace::Workspace, VertexManager},
+    resources::{ShapeWaitlist, workspace::Workspace, ShapeManager},
 };
 
 pub struct UserTabState {
@@ -118,7 +118,7 @@ impl UserTabState {
         server: &mut Server,
         workspace: &Workspace,
         vertex_waitlist: &mut ShapeWaitlist,
-        vertex_manager: &mut VertexManager,
+        vertex_manager: &mut ShapeManager,
         file_entity: &Entity,
         file_entry_key: &FileEntryKey,
     ) {
@@ -200,7 +200,7 @@ impl TabState {
         server: &mut Server,
         workspace: &Workspace,
         vertex_waitlist: &mut ShapeWaitlist,
-        vertex_manager: &mut VertexManager,
+        vertex_manager: &mut ShapeManager,
         file_entry_key: &FileEntryKey,
         tab_id: TabId,
         tab_is_selected: bool,

@@ -16,7 +16,7 @@ use vortex_proto::components::{Edge3d, FileType, FileTypeValue, Vertex3d, Vertex
 
 use crate::{
     files::{file_io::ShapeType, FileReadOutput, FileReader, FileWriter},
-    resources::{ContentEntityData, VertexManager, ShapeWaitlist, ShapeWaitlistInsert},
+    resources::{ContentEntityData, ShapeManager, ShapeWaitlist, ShapeWaitlistInsert},
 };
 
 // Actions
@@ -43,7 +43,7 @@ impl SkelWriter {
         world: &mut World,
         content_entities: &Vec<Entity>,
     ) -> Vec<SkelAction> {
-        let mut system_state: SystemState<(Res<VertexManager>, Query<&Vertex3d>, Query<&FileType>)> =
+        let mut system_state: SystemState<(Res<ShapeManager>, Query<&Vertex3d>, Query<&FileType>)> =
             SystemState::new(world);
         let (vertex_manager, vertex_q, file_type_q) = system_state.get_mut(world);
 
@@ -224,7 +224,7 @@ impl SkelReader {
 
     pub fn post_process_entities(
         vertex_waitlist: &mut ShapeWaitlist,
-        vertex_manager: &mut VertexManager,
+        vertex_manager: &mut ShapeManager,
         entities: Vec<(Entity, Option<(Entity, Entity)>)>,
     ) -> HashMap<Entity, ContentEntityData> {
         let mut new_content_entities = HashMap::new();

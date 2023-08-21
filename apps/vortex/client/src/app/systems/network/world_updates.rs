@@ -33,6 +33,7 @@ use crate::app::{
     },
     systems::file_post_process,
 };
+use crate::app::resources::action_stack::ActionStack;
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
     for SpawnEntityEvent(entity) in event_reader.iter() {
@@ -376,8 +377,9 @@ pub fn remove_component_events(
     mut commands: Commands,
     client: Client,
     mut global: ResMut<Global>,
-    mut event_reader: EventReader<RemoveComponentEvents>,
+    mut action_stack: ResMut<ActionStack>,
     mut shape_manager: ResMut<ShapeManager>,
+    mut event_reader: EventReader<RemoveComponentEvents>,
     mut parent_q: Query<&mut FileSystemParent>,
     mut fs_state_q: Query<&mut FileSystemUiState>,
 ) {
@@ -418,15 +420,17 @@ pub fn remove_component_events(
                 }
             }
         }
-        for (entity, _) in events.read::<Vertex3d>() {
-            info!("entity: `{:?}`, removed Vertex3d", entity);
+        for (entity_3d, _) in events.read::<Vertex3d>() {
+            info!("entity: `{:?}`, removed Vertex3d", entity_3d);
 
-            shape_manager.cleanup_deleted_vertex(&entity, &mut commands);
+            let entity_2d = shape_manager.cleanup_deleted_vertex(&entity_3d, &mut commands);
+            action_stack.remove_vertex_entity(entity_2d, entity_3d);
         }
-        for (entity, _) in events.read::<Edge3d>() {
-            info!("entity: `{:?}`, removed Edge3d", entity);
+        for (entity_3d, _) in events.read::<Edge3d>() {
+            info!("entity: `{:?}`, removed Edge3d", entity_3d);
 
-            shape_manager.cleanup_deleted_edge(&entity, &mut commands);
+            let entity_2d = shape_manager.cleanup_deleted_edge(&entity_3d, &mut commands);
+            action_stack.remove_edge_entity(entity_2d, entity_3d);
         }
     }
 }

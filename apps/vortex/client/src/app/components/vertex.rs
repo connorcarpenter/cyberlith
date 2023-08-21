@@ -107,6 +107,29 @@ impl VertexTypeData {
             }
         }
     }
+
+    pub fn remove_vertex_entity(
+        &mut self,
+        entity_2d: Entity,
+        entity_3d: Entity,
+    ) -> bool {
+        match self {
+            VertexTypeData::Skel(parent_2d_vertex_entity, children_opt) => {
+                if *parent_2d_vertex_entity == entity_2d {
+                    return true;
+                }
+                remove_entity_from_vertex_trees(
+                    children_opt,
+                    entity_2d,
+                    entity_3d,
+                );
+            }
+            VertexTypeData::Mesh(connected_vertices) => {
+                connected_vertices.retain(|&x| x != entity_2d);
+            }
+        }
+        return false;
+    }
 }
 
 fn migrate_vertex_trees(
@@ -130,6 +153,23 @@ fn migrate_vertex_trees(
                 new_2d_entity,
                 old_3d_entity,
                 new_3d_entity,
+            );
+        }
+    }
+}
+
+fn remove_entity_from_vertex_trees(
+    vertex_trees_opt: &mut Option<Vec<VertexEntry>>,
+    entity_2d: Entity,
+    entity_3d: Entity,
+) {
+    if let Some(vertex_trees) = vertex_trees_opt {
+        vertex_trees.retain(|x| x.entity_2d != entity_2d && x.entity_3d != entity_3d);
+        for vertex_tree in vertex_trees {
+            remove_entity_from_vertex_trees(
+                &mut vertex_tree.children,
+                entity_2d,
+                entity_3d,
             );
         }
     }

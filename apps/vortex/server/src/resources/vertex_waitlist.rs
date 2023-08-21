@@ -8,7 +8,7 @@ use bevy_log::info;
 
 use vortex_proto::components::FileTypeValue;
 
-use crate::resources::VertexManager;
+use crate::resources::ShapeManager;
 
 pub enum ShapeWaitlistInsert {
     Vertex(Entity),
@@ -143,7 +143,7 @@ impl Default for ShapeWaitlist {
 impl ShapeWaitlist {
     pub fn process_inserts(
         &mut self,
-        vertex_manager: &mut VertexManager,
+        vertex_manager: &mut ShapeManager,
         inserts: Vec<ShapeWaitlistInsert>,
     ) {
         for insert in inserts {
@@ -153,7 +153,7 @@ impl ShapeWaitlist {
 
     pub fn process_insert(
         &mut self,
-        vertex_manager: &mut VertexManager,
+        vertex_manager: &mut ShapeManager,
         insert: ShapeWaitlistInsert,
     ) {
         let mut possibly_ready_entities = Vec::new();
@@ -286,7 +286,7 @@ impl ShapeWaitlist {
 
     fn process_complete(
         &mut self,
-        vertex_manager: &mut VertexManager,
+        vertex_manager: &mut ShapeManager,
         entity: Entity,
         entry: ShapeWaitlistEntry,
     ) {

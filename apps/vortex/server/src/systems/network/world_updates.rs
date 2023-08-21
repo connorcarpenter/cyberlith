@@ -26,7 +26,7 @@ use crate::{
     files::handle_file_modify,
     resources::{
         fs_waitlist::{fs_process_insert, FSWaitlist, FSWaitlistInsert},
-        GitManager, TabManager, UserManager, VertexManager, ShapeWaitlist, ShapeWaitlistInsert,
+        GitManager, TabManager, UserManager, ShapeManager, ShapeWaitlist, ShapeWaitlistInsert,
     },
 };
 use crate::files::ShapeType;
@@ -43,7 +43,7 @@ pub fn despawn_entity_events(
     user_manager: Res<UserManager>,
     mut git_manager: ResMut<GitManager>,
     mut tab_manager: ResMut<TabManager>,
-    mut vertex_manager: ResMut<VertexManager>,
+    mut vertex_manager: ResMut<ShapeManager>,
     mut event_reader: EventReader<DespawnEntityEvent>,
     entry_key_query: Query<&FileEntryKey>,
 ) {
@@ -55,43 +55,58 @@ pub fn despawn_entity_events(
 
         let entity_is_file = workspace.entity_is_file(entity);
         let entity_is_vertex = vertex_manager.has_vertex(entity);
+        let entity_is_edge = vertex_manager.has_edge(entity);
 
-        match (entity_is_file, entity_is_vertex) {
-            (true, true) => {
-                panic!("entity: `{:?}` is both file and vertex", entity);
-            }
-            (false, false) => {
-                panic!("entity: `{:?}` is neither file nor vertex", entity);
-            }
-            (true, false) => {
+        match (entity_is_file, entity_is_vertex, entity_is_edge) {
+            (true, false, false) => {
                 // file
                 info!("entity: `{:?}` (which is a File), despawned", entity);
+
+                workspace.on_client_delete_file(&mut commands, &mut server, entity);
             }
-            (false, true) => {
+            (false, true, false) => {
                 // vertex
                 info!("entity: `{:?}` (which is a Vertex), despawned", entity);
+
+                let other_entities_to_despawn = vertex_manager.on_delete_vertex(&mut commands, &mut server, entity);
+
+                handle_file_modify(
+                    &mut commands,
+                    &mut server,
+                    &user_manager,
+                    &mut git_manager,
+                    &mut tab_manager,
+                    &user_key,
+                    &entity,
+                    &entry_key_query,
+                );
+
+                tab_manager.on_remove_content_entity(&user_key, &entity);
+                for other_entity in other_entities_to_despawn {
+                    tab_manager.on_remove_content_entity(&user_key, &other_entity);
+                }
             }
-        }
+            (false, false, true) => {
+                // edge
+                info!("entity: `{:?}` (which is an Edge), despawned", entity);
 
-        if entity_is_file {
-            workspace.on_client_delete_file(&mut commands, &mut server, entity);
-        } else if entity_is_vertex {
-            let other_entities_to_despawn = vertex_manager.on_delete_vertex(&mut commands, &mut server, entity);
+                vertex_manager.on_delete_edge(entity);
 
-            handle_file_modify(
-                &mut commands,
-                &mut server,
-                &user_manager,
-                &mut git_manager,
-                &mut tab_manager,
-                &user_key,
-                &entity,
-                &entry_key_query,
-            );
+                handle_file_modify(
+                    &mut commands,
+                    &mut server,
+                    &user_manager,
+                    &mut git_manager,
+                    &mut tab_manager,
+                    &user_key,
+                    &entity,
+                    &entry_key_query,
+                );
 
-            tab_manager.on_remove_content_entity(&user_key, &entity);
-            for other_entity in other_entities_to_despawn {
-                tab_manager.on_remove_content_entity(&user_key, &other_entity);
+                tab_manager.on_remove_content_entity(&user_key, &entity);
+            }
+            _ => {
+                panic!("despawned entity: `{:?}` which is (file: {:?}, vert: {:?}, edge: {:?})", entity, entity_is_file, entity_is_vertex, entity_is_edge);
             }
         }
     }
@@ -104,7 +119,7 @@ pub fn insert_component_events(
     mut git_manager: ResMut<GitManager>,
     mut tab_manager: ResMut<TabManager>,
     mut vertex_waitlist: ResMut<ShapeWaitlist>,
-    mut vertex_manager: ResMut<VertexManager>,
+    mut vertex_manager: ResMut<ShapeManager>,
     mut fs_waiting_entities: Local<HashMap<Entity, FSWaitlist>>,
     mut event_reader: EventReader<InsertComponentEvents>,
     fs_entry_q: Query<&FileSystemEntry>,

@@ -16,7 +16,7 @@ use vortex_proto::components::{Edge3d, Face3d, FileType, FileTypeValue, Vertex3d
 
 use crate::{
     files::{ShapeTypeData, FileReadOutput, FileReader, FileWriter},
-    resources::{ContentEntityData, VertexManager},
+    resources::{ContentEntityData, ShapeManager},
 };
 
 // Actions
@@ -316,7 +316,7 @@ impl FileReader for MeshReader {
 impl MeshReader {
 
     pub fn post_process_entities(
-        vertex_manager: &mut VertexManager,
+        vertex_manager: &mut ShapeManager,
         shape_entities: Vec<(Entity, ShapeTypeData)>,
     ) -> HashMap<Entity, ContentEntityData> {
         let mut new_content_entities = HashMap::new();

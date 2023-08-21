@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{
     entity::Entity,
@@ -73,21 +73,29 @@ impl MeshVertexData {
 }
 
 #[derive(Resource)]
-pub struct VertexManager {
+pub struct ShapeManager {
+    // vertex entity -> vertex data
     vertices: HashMap<Entity, VertexData>,
+    // edge entity -> connected vertex entities
+    edges: HashMap<Entity, (Entity, Entity)>,
 }
 
-impl Default for VertexManager {
+impl Default for ShapeManager {
     fn default() -> Self {
         Self {
             vertices: HashMap::new(),
+            edges: HashMap::new(),
         }
     }
 }
 
-impl VertexManager {
+impl ShapeManager {
     pub fn has_vertex(&self, entity: &Entity) -> bool {
         self.vertices.contains_key(entity)
+    }
+
+    pub fn has_edge(&self, entity: &Entity) -> bool {
+        self.edges.contains_key(entity)
     }
 
     pub fn get_vertex_parent(&self, entity: &Entity) -> Option<Entity> {
@@ -123,6 +131,8 @@ impl VertexManager {
         edge: Entity,
         end: Entity,
     ) {
+        self.edges.insert(edge, (start, end));
+
         let Some(VertexData::Mesh(data)) = self.vertices.get_mut(&start) else {
             panic!("on_create_mesh_edge: start entity `{:?}` not found!", start);
         };
@@ -197,15 +207,41 @@ impl VertexManager {
         entities_to_despawn
     }
 
+    pub fn on_delete_edge(
+        &mut self,
+        entity: &Entity,
+    ) {
+        let (start, end) = self.edges.remove(entity).unwrap();
+
+        info!("removing mapping in vertex entity `{:?}`, edge entity: `{:?}`", start, entity);
+        let Some(VertexData::Mesh(data)) = self.vertices.get_mut(&start) else {
+            panic!("shouldn't be able to happen!");
+        };
+        data.remove_edge(&end);
+
+        info!("removing mapping in vertex entity `{:?}`, edge entity: `{:?}`", end, entity);
+        let Some(VertexData::Mesh(data)) = self.vertices.get_mut(&end) else {
+            panic!("shouldn't be able to happen!");
+        };
+        data.remove_edge(&start);
+    }
+
     fn on_delete_mesh_vertex(
         &mut self,
         entity: &Entity,
     ) -> Vec<Entity> {
-        Self::remove_mesh_vertex(&mut self.vertices, entity)
+        let edges_to_despawn = Self::remove_mesh_vertex(&mut self.vertices, entity);
+
+        for edge_entity in edges_to_despawn.iter() {
+            self.edges.remove(edge_entity);
+        }
+
+        edges_to_despawn
     }
 
+    // returns list of edges to despawn
     fn remove_mesh_vertex(entities: &mut HashMap<Entity, VertexData>, vertex_entity: &Entity) -> Vec<Entity> {
-        let mut entities_to_despawn = Vec::new();
+        let mut edges_to_despawn = Vec::new();
 
         // remove entry
         let VertexData::Mesh(removed_entry) = entities.remove(vertex_entity).unwrap() else {
@@ -214,7 +250,7 @@ impl VertexManager {
 
         if let Some(edges) = removed_entry.edges {
             for (connected_vertex_entity, edge_entity) in edges {
-                entities_to_despawn.push(edge_entity);
+                edges_to_despawn.push(edge_entity);
                 let Some(VertexData::Mesh(connected_vertex_data)) = entities.get_mut(&connected_vertex_entity) else {
                     panic!("shouldn't be able to happen!");
                 };
@@ -222,7 +258,7 @@ impl VertexManager {
             }
         }
 
-        return entities_to_despawn;
+        return edges_to_despawn;
     }
 
     fn on_delete_skel_vertex(

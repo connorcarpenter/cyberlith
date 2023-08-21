@@ -16,9 +16,8 @@ use crate::app::{
     components::{HoverCircle, SelectCircle, SelectLine, Vertex2d},
     config::AppConfig,
     resources::{camera_manager::CameraManager, canvas::Canvas, shape_manager::ShapeManager},
-    shapes::create_2d_edge_arrow,
+    shapes::create_2d_edge_line,
 };
-use crate::app::shapes::create_2d_edge_line;
 
 pub fn setup(
     config: Res<AppConfig>,

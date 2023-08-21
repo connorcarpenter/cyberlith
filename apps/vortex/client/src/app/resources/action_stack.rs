@@ -215,6 +215,119 @@ impl Action {
             _ => {}
         }
     }
+
+    // returns true if full removal is necessary
+    pub(crate) fn remove_vertex_entity(&mut self, entity_2d: Entity, entity_3d: Entity) -> bool {
+        match self {
+            Action::SelectShape(entity_opt) => {
+                match entity_opt {
+                    Some((entity, CanvasShape::Vertex)) | Some((entity, CanvasShape::RootVertex)) => {
+                        if *entity == entity_2d {
+                            return true;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            Action::CreateVertex(vertex_type_data, _, entity_opt) => {
+                if vertex_type_data.remove_vertex_entity(
+                    entity_2d,
+                    entity_3d,
+                ) {
+                    return true;
+                }
+
+                {
+                    let mut remove = false;
+                    if let Some((other_2d_entity, other_3d_entity)) = entity_opt {
+                        if *other_2d_entity == entity_2d || *other_3d_entity == entity_3d {
+                            remove = true;
+                        }
+                    }
+                    if remove {
+                        *entity_opt = None;
+                    }
+                }
+            }
+            Action::DeleteVertex(entity, entity_opt) => {
+                if *entity == entity_2d {
+                    return true;
+                }
+                let mut remove = false;
+                if let Some((other_entity, _)) = entity_opt {
+                    if *other_entity == entity_2d {
+                        remove = true;
+                    }
+                }
+                if remove {
+                    *entity_opt = None;
+                }
+            }
+            Action::MoveVertex(entity, _, _) => {
+                if *entity == entity_2d {
+                    return true;
+                }
+            }
+            Action::CreateEdge(entity_a, entity_b, _) => {
+                if *entity_a == entity_2d || *entity_b == entity_2d {
+                    return true;
+                }
+            }
+            Action::DeleteEdge(_, entity_opt) => {
+                let mut remove_option = false;
+                if let Some((entity, _)) = entity_opt {
+                    if *entity == entity_2d {
+                        remove_option = true;
+                    }
+                }
+                if remove_option {
+                    *entity_opt = None;
+                }
+            }
+            _ => {}
+        }
+
+        return false;
+    }
+
+    // returns true if should be removed from undo/redo
+    pub(crate) fn remove_edge_entity(
+        &mut self,
+        entity_2d: Entity,
+        entity_3d: Entity,
+    ) -> bool {
+        match self {
+            Action::SelectShape(entity_opt) => {
+                match entity_opt {
+                    Some((entity, CanvasShape::Edge)) => {
+                        if *entity == entity_2d {
+                            return true;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            Action::CreateEdge(_, _, entity_opt) => {
+                let mut remove = false;
+                if let Some((edge_2d_entity, edge_3d_entity)) = entity_opt {
+                    if *edge_2d_entity == entity_2d || *edge_3d_entity == entity_3d {
+                        remove = true;
+                    }
+                }
+                if remove {
+                    *entity_opt = None;
+                }
+            }
+            Action::DeleteEdge(edge_2d_entity, _) => {
+                if *edge_2d_entity == entity_2d {
+                    return true;
+                }
+            }
+            _ => {}
+        }
+
+        return false;
+    }
 }
 
 #[derive(Resource)]
@@ -985,9 +1098,10 @@ impl ActionStack {
                 let (mut commands, mut client, mut shape_manager, edge_3d_q) =
                     system_state.get_mut(world);
 
-                let edge_3d_entity = *shape_manager
-                    .edge_entity_2d_to_3d(&edge_2d_entity)
-                    .unwrap();
+                let Some(edge_3d_entity_ref) = shape_manager.edge_entity_2d_to_3d(&edge_2d_entity) else {
+                    panic!("failed to get edge 3d entity for edge 2d entity `{:?}`!", edge_2d_entity)
+                };
+                let edge_3d_entity = *edge_3d_entity_ref;
 
                 let edge_3d = edge_3d_q.get(edge_3d_entity).unwrap();
                 let vertex_start_3d = edge_3d.start.get(&client).unwrap();
@@ -1682,6 +1796,76 @@ impl ActionStack {
                 old_3d_entity,
                 new_3d_entity,
             );
+        }
+    }
+
+    pub fn remove_vertex_entity(
+        &mut self,
+        entity_2d: Entity,
+        entity_3d: Entity,
+    ) {
+        {
+            let mut removals = Vec::new();
+            for (id, action) in self.undo_actions.iter_mut().enumerate() {
+                if action.remove_vertex_entity(
+                    entity_2d,
+                    entity_3d,
+                ) {
+                    removals.push(id);
+                }
+            }
+            for removal in removals {
+                self.undo_actions.remove(removal);
+            }
+        }
+        {
+            let mut removals = Vec::new();
+            for (id, action) in self.redo_actions.iter_mut().enumerate() {
+                if action.remove_vertex_entity(
+                    entity_2d,
+                    entity_3d,
+                ) {
+                    removals.push(id);
+                }
+            }
+            for removal in removals {
+                self.redo_actions.remove(removal);
+            }
+        }
+    }
+
+    pub fn remove_edge_entity(
+        &mut self,
+        entity_2d: Entity,
+        entity_3d: Entity,
+    ) {
+        {
+            let mut removals = Vec::new();
+            for (id, action) in self.undo_actions.iter_mut().enumerate() {
+                if action.remove_edge_entity(
+                    entity_2d,
+                    entity_3d,
+                ) {
+                    removals.push(id);
+                }
+            }
+            for removal in removals {
+                self.undo_actions.remove(removal);
+            }
+        }
+        {
+            let mut removals = Vec::new();
+            for (id, action) in self.redo_actions.iter_mut().enumerate() {
+                if action.remove_edge_entity(
+                    entity_2d,
+                    entity_3d,
+                ) {
+                    removals.push(id);
+                }
+            }
+            for removal in removals {
+                self.redo_actions.remove(removal);
+            }
         }
     }
 }

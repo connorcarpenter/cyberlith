@@ -20,7 +20,7 @@ use vortex_proto::{
 use crate::{
     files::{FileReadOutput, FileReader, FileWriter},
     resources::{
-        ShapeWaitlist, ChangelistValue, ContentEntityData, FileEntryValue, GitManager, TabManager, VertexManager,
+        ShapeWaitlist, ChangelistValue, ContentEntityData, FileEntryValue, GitManager, TabManager, ShapeManager,
     },
 };
 
@@ -292,7 +292,7 @@ impl Workspace {
             Server,
             ResMut<TabManager>,
             ResMut<ShapeWaitlist>,
-            ResMut<VertexManager>,
+            ResMut<ShapeManager>,
             Query<&ChangelistEntry>,
         )> = SystemState::new(world);
         let (mut commands, mut server, mut tab_manager, mut vertex_waitlist, mut vertex_manager, cl_query) =

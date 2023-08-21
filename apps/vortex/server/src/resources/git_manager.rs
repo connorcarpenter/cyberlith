@@ -28,7 +28,7 @@ use crate::{
     files::{post_process_networked_entities, FileReadOutput, FileWriter, MeshReader, SkelReader},
     resources::{
         user_manager::UserInfo, workspace::Workspace, ContentEntityData, FileEntryValue,
-        UserManager, VertexManager, ShapeWaitlist
+        UserManager, ShapeManager, ShapeWaitlist
     },
 };
 
@@ -248,7 +248,7 @@ impl GitManager {
         commands: &mut Commands,
         server: &mut Server,
         shape_waitlist: &mut ShapeWaitlist,
-        vertex_manager: &mut VertexManager,
+        vertex_manager: &mut ShapeManager,
         username: &str,
         file_entry_key: &FileEntryKey,
         room_key: &RoomKey,

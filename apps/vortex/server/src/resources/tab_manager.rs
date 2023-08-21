@@ -15,7 +15,7 @@ use crate::{
     files::ShapeType,
     resources::{
         user_tab_state::TabState, workspace::Workspace, ContentEntityData, GitManager, UserManager,
-        UserTabState, VertexManager, ShapeWaitlist
+        UserTabState, ShapeManager, ShapeWaitlist
     },
 };
 
@@ -50,7 +50,7 @@ impl TabManager {
         user_manager: &UserManager,
         git_manager: &mut GitManager,
         vertex_waitlist: &mut ShapeWaitlist,
-        vertex_manager: &mut VertexManager,
+        vertex_manager: &mut ShapeManager,
         key_query: &Query<&FileEntryKey>,
         user_key: &UserKey,
         tab_id: &TabId,
@@ -176,7 +176,7 @@ impl TabManager {
             Res<UserManager>,
             ResMut<GitManager>,
             ResMut<ShapeWaitlist>,
-            ResMut<VertexManager>,
+            ResMut<ShapeManager>,
             Query<&FileEntryKey>,
         )> = SystemState::new(world);
         let (
@@ -356,7 +356,7 @@ impl TabManager {
         server: &mut Server,
         workspace: &Workspace,
         vertex_waitlist: &mut ShapeWaitlist,
-        vertex_manager: &mut VertexManager,
+        vertex_manager: &mut ShapeManager,
         user_key: &UserKey,
         file_entity: &Entity,
         file_entry_key: &FileEntryKey,
