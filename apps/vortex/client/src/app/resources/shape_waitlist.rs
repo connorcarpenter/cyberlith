@@ -60,7 +60,14 @@ impl ShapeWaitlistEntry {
 
     fn is_ready(&self) -> bool {
         match self.shape {
-            Some(ShapeType::Vertex) => self.file_type.is_some() && self.tab_id.is_some() && self.vertex_parent.is_some(),
+            Some(ShapeType::Vertex) => {
+                match self.file_type {
+                    None => return false,
+                    Some(FileTypeValue::Skel) => return self.tab_id.is_some() && self.vertex_parent.is_some(),
+                    Some(FileTypeValue::Mesh) => return self.tab_id.is_some(),
+                }
+
+            },
             Some(ShapeType::Edge) =>   self.file_type.is_some() && self.tab_id.is_some() && self.edge_entities.is_some(),
             None => false,
         }
@@ -100,14 +107,18 @@ impl ShapeWaitlistEntry {
     }
 
     fn decompose(self) -> (ShapeData, TabId, FileTypeValue) {
-        let shape_data = match self.shape.unwrap() {
-            ShapeType::Vertex => ShapeData::Vertex(self.vertex_parent.unwrap()),
-            ShapeType::Edge => {
+        let shape = self.shape.unwrap();
+        let file_type = self.file_type.unwrap();
+
+        let shape_data = match (shape, file_type) {
+            (ShapeType::Vertex, FileTypeValue::Skel) => ShapeData::Vertex(self.vertex_parent.unwrap()),
+            (ShapeType::Vertex, FileTypeValue::Mesh) => ShapeData::Vertex(None),
+            (ShapeType::Edge, _) => {
                 let entities = self.edge_entities.unwrap();
                 ShapeData::Edge(entities.0, entities.1)
             }
         };
-        return (shape_data, self.tab_id.unwrap(), self.file_type.unwrap());
+        return (shape_data, self.tab_id.unwrap(), file_type);
     }
 }
 
@@ -153,13 +164,21 @@ impl ShapeWaitlist {
                 self.get_mut(&entity).unwrap().set_vertex();
             }
             ShapeWaitlistInsert::Edge(start_entity, end_entity) => {
-                let edge_entry = self.get_mut(&entity).unwrap();
+                let Some(edge_entry) = self.get_mut(&entity) else {
+                    panic!("edge entity {:?} should have been inserted already!", entity);
+                };
                 edge_entry.set_edge(start_entity, end_entity);
 
-                let vertex_entry = self.get_mut(&end_entity).unwrap();
-                info!("Setting parent of {:?} to {:?}", end_entity, start_entity);
-                vertex_entry.set_parent(Some(start_entity));
-                possibly_ready_entities.push(end_entity);
+                if let Some(vertex_entry) = self.get_mut(&end_entity) {
+
+                    // skel vertices will wait around for a parent, and will be here
+                    // mesh vertices should already be gone, so will skip this block, or set the vertices parent which will be overwritten later
+
+                    info!("Setting parent of {:?} to {:?}", end_entity, start_entity);
+                    vertex_entry.set_parent(Some(start_entity));
+                    possibly_ready_entities.push(end_entity);
+                };
+
                 info!(
                     "Entities to check for readiness... `{:?}`",
                     possibly_ready_entities
@@ -178,71 +197,79 @@ impl ShapeWaitlist {
         }
 
         for possibly_ready_entity in possibly_ready_entities {
-            if self
+            let Some(incomplete_entry) = self
                 .incomplete_entries
-                .get(&possibly_ready_entity)
-                .unwrap()
-                .is_ready()
-            {
-                let entity = possibly_ready_entity;
-                info!("entity `{:?}` is ready!", entity);
-                let entry = self.remove(&entity).unwrap();
+                .get(&possibly_ready_entity) else {
+                panic!("entity {:?} should have been inserted already!", possibly_ready_entity);
+            };
+            if !incomplete_entry.is_ready() {
+                info!("entity `{:?}` is not ready yet...", possibly_ready_entity);
+                return;
+            }
 
-                match entry.shape.unwrap() {
-                    ShapeType::Vertex => {
-                        if entry.has_parent() {
-                            let parent_entity = entry.get_parent().unwrap();
-                            if !vertex_manager.has_vertex_entity_3d(&parent_entity) {
-                                // need to put in parent waitlist
-                                info!(
-                                    "vert entity {:?} requires parent {:?}. putting in parent waitlist",
-                                    entity,
-                                    parent_entity
-                                );
-                                self.insert_waiting_dependency(parent_entity, entity, entry);
-                                continue;
-                            }
-                        }
-                        info!("processing vertex {:?}", entity);
-                    }
-                    ShapeType::Edge => {
-                        let entities = entry.edge_entities.unwrap();
-                        let mut has_all_entities = true;
-                        if !vertex_manager.has_vertex_entity_3d(&entities.0) {
+            // entity is ready!
+            let entity = possibly_ready_entity;
+            info!("entity `{:?}` is ready!", entity);
+
+            let entry = self.remove(&entity).unwrap();
+            let entry_shape = entry.shape.unwrap();
+            let entry_file_type = entry.file_type.unwrap();
+
+            match (entry_shape, entry_file_type) {
+                (ShapeType::Vertex, FileTypeValue::Skel) => {
+                    if entry.has_parent() {
+                        let parent_entity = entry.get_parent().unwrap();
+                        if !vertex_manager.has_vertex_entity_3d(&parent_entity) {
                             // need to put in parent waitlist
                             info!(
-                                "edge entity {:?} requires parent {:?}. putting in parent waitlist",
-                                entity, entities.0
+                                "vert entity {:?} requires parent {:?}. putting in parent waitlist",
+                                entity,
+                                parent_entity
                             );
-                            self.insert_waiting_dependency(entities.0, entity, entry.clone());
-                            has_all_entities = false;
-                        }
-                        if !vertex_manager.has_vertex_entity_3d(&entities.1) {
-                            // need to put in parent waitlist
-                            info!(
-                                "edge entity {:?} requires parent {:?}. putting in parent waitlist",
-                                entity, entities.1
-                            );
-                            self.insert_waiting_dependency(entities.1, entity, entry.clone());
-                            has_all_entities = false;
-                        }
-                        if !has_all_entities {
+                            self.insert_waiting_dependency(parent_entity, entity, entry);
                             continue;
                         }
                     }
+                    info!("processing vertex {:?}", entity);
                 }
-                self.process_complete(
-                    commands,
-                    meshes,
-                    materials,
-                    camera_manager,
-                    vertex_manager,
-                    entity,
-                    entry,
-                );
-            } else {
-                info!("entity `{:?}` is not ready yet...", entity);
+                (ShapeType::Vertex, FileTypeValue::Mesh) => {
+                    info!("processing vertex {:?}", entity);
+                }
+                (ShapeType::Edge, _) => {
+                    let entities = entry.edge_entities.unwrap();
+                    let mut has_all_entities = true;
+                    if !vertex_manager.has_vertex_entity_3d(&entities.0) {
+                        // need to put in parent waitlist
+                        info!(
+                            "edge entity {:?} requires parent {:?}. putting in parent waitlist",
+                            entity, entities.0
+                        );
+                        self.insert_waiting_dependency(entities.0, entity, entry.clone());
+                        has_all_entities = false;
+                    }
+                    if !vertex_manager.has_vertex_entity_3d(&entities.1) {
+                        // need to put in parent waitlist
+                        info!(
+                            "edge entity {:?} requires parent {:?}. putting in parent waitlist",
+                            entity, entities.1
+                        );
+                        self.insert_waiting_dependency(entities.1, entity, entry.clone());
+                        has_all_entities = false;
+                    }
+                    if !has_all_entities {
+                        continue;
+                    }
+                }
             }
+            self.process_complete(
+                commands,
+                meshes,
+                materials,
+                camera_manager,
+                vertex_manager,
+                entity,
+                entry,
+            );
         }
     }
 
@@ -260,8 +287,8 @@ impl ShapeWaitlist {
 
         let (shape_data, tab_id, file_type) = entry.decompose();
 
-        match shape_data {
-            ShapeData::Vertex(parent_3d_entity_opt) => {
+        match (shape_data, file_type) {
+            (ShapeData::Vertex(parent_3d_entity_opt), FileTypeValue::Skel) => {
                 let color = match parent_3d_entity_opt {
                     Some(_) => Vertex2d::CHILD_COLOR,
                     None => Vertex2d::ROOT_COLOR,
@@ -301,7 +328,25 @@ impl ShapeWaitlist {
                     }
                 }
             }
-            ShapeData::Edge(start, end) => {
+            (ShapeData::Vertex(_), FileTypeValue::Mesh) => {
+                let color = Vertex2d::CHILD_COLOR;
+
+                let _new_vertex_2d_entity = vertex_manager.vertex_3d_postprocess(
+                    commands,
+                    meshes,
+                    materials,
+                    camera_manager,
+                    entity,
+                    false,
+                    Some(tab_id),
+                    color,
+                );
+
+                if self.on_vertex_complete(entity).is_some() {
+                    panic!("mesh vertex should not have children!");
+                }
+            }
+            (ShapeData::Edge(start, end), _) => {
 
                 let start_2d = *vertex_manager.vertex_entity_3d_to_2d(&start).unwrap();
                 let end_2d = *vertex_manager.vertex_entity_3d_to_2d(&end).unwrap();

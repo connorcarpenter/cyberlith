@@ -172,13 +172,13 @@ impl TabState {
     }
 
     pub fn add_content_entity(&mut self, entity: Entity, shape_type: ShapeType) {
-        info!("TabState adding entity: {:?}", entity);
+        info!("TabState adding content entity: `{:?}`", entity);
         self.content_entities
             .insert(entity, ContentEntityData::new(shape_type));
     }
 
     pub fn remove_content_entity(&mut self, entity: &Entity) {
-        info!("TabState removing entity: {:?}", entity);
+        info!("TabState removing content entity: `{:?}`", entity);
         self.content_entities.remove(entity);
     }
 

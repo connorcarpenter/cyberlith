@@ -247,7 +247,7 @@ impl GitManager {
         &self,
         commands: &mut Commands,
         server: &mut Server,
-        vertex_waitlist: &mut ShapeWaitlist,
+        shape_waitlist: &mut ShapeWaitlist,
         vertex_manager: &mut VertexManager,
         username: &str,
         file_entry_key: &FileEntryKey,
@@ -263,7 +263,7 @@ impl GitManager {
 
         let new_entities = match output {
             FileReadOutput::Skel(entities) => {
-                SkelReader::post_process_entities(vertex_waitlist, vertex_manager, entities)
+                SkelReader::post_process_entities(shape_waitlist, vertex_manager, entities)
             }
             FileReadOutput::Mesh(shape_entities) => {
                 MeshReader::post_process_entities(vertex_manager, shape_entities)

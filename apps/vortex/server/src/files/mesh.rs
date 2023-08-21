@@ -61,7 +61,10 @@ impl MeshWriter {
         /////////////////////////////////////  id /////////////////
         let mut vertex_map: HashMap<Entity, usize> = HashMap::new();
 
-        for (id, entity) in content_entities.iter().enumerate() {
+        info!("writing in world_to_actions(), content_entities: `{:?}`", content_entities);
+
+        let mut vertex_count: usize = 0;
+        for entity in content_entities.iter() {
             let Ok(file_type) = file_type_q.get(*entity) else {
                 panic!("entity {:?} does not have a FileType component!", entity);
             };
@@ -70,9 +73,10 @@ impl MeshWriter {
             }
             if let Ok(vertex) = vertex_q.get(*entity) {
                 // entity is a vertex
-                vertex_map.insert(*entity, id);
+                vertex_map.insert(*entity, vertex_count);
                 let vertex_info = MeshAction::Vertex(vertex.x(), vertex.y(), vertex.z());
                 output.push(vertex_info);
+                vertex_count += 1;
             }
         }
 
@@ -112,31 +116,37 @@ impl MeshWriter {
     fn write_from_actions(&self, actions: Vec<MeshAction>) -> Box<[u8]> {
         let mut bit_writer = BitWriter::new();
 
-        for action in actions {
+        for (action_id, action) in actions.iter().enumerate() {
             match action {
                 MeshAction::Vertex(x, y, z) => {
                     // continue bit
                     MeshActionType::Vertex.ser(&mut bit_writer);
 
                     // encode X, Y, Z
-                    VertexSerdeInt::from(x).ser(&mut bit_writer);
-                    VertexSerdeInt::from(y).ser(&mut bit_writer);
-                    VertexSerdeInt::from(z).ser(&mut bit_writer);
+                    VertexSerdeInt::from(*x).ser(&mut bit_writer);
+                    VertexSerdeInt::from(*y).ser(&mut bit_writer);
+                    VertexSerdeInt::from(*z).ser(&mut bit_writer);
+
+                    info!("writing vertex {} : ({}, {}, {})", action_id, x, y, z);
                 }
                 MeshAction::Edge(vertex_a, vertex_b) => {
                     // continue bit
                     MeshActionType::Edge.ser(&mut bit_writer);
 
-                    UnsignedVariableInteger::<6>::from(vertex_a).ser(&mut bit_writer);
-                    UnsignedVariableInteger::<6>::from(vertex_b).ser(&mut bit_writer);
+                    UnsignedVariableInteger::<6>::from(*vertex_a).ser(&mut bit_writer);
+                    UnsignedVariableInteger::<6>::from(*vertex_b).ser(&mut bit_writer);
+
+                    info!("writing edge : ({}, {})", vertex_a, vertex_b);
                 }
                 MeshAction::Face(vertex_a, vertex_b, vertex_c) => {
                     // continue bit
                     MeshActionType::Face.ser(&mut bit_writer);
 
-                    UnsignedVariableInteger::<6>::from(vertex_a).ser(&mut bit_writer);
-                    UnsignedVariableInteger::<6>::from(vertex_b).ser(&mut bit_writer);
-                    UnsignedVariableInteger::<6>::from(vertex_c).ser(&mut bit_writer);
+                    UnsignedVariableInteger::<6>::from(*vertex_a).ser(&mut bit_writer);
+                    UnsignedVariableInteger::<6>::from(*vertex_b).ser(&mut bit_writer);
+                    UnsignedVariableInteger::<6>::from(*vertex_c).ser(&mut bit_writer);
+
+                    info!("writing face : ({}, {}, {})", vertex_a, vertex_b, vertex_c);
                 }
             }
         }
@@ -234,12 +244,16 @@ impl MeshReader {
                     output.push((entity_id, ShapeTypeData::Vertex));
                 }
                 MeshAction::Edge(vertex_a_index, vertex_b_index) => {
-                    let vertex_a_entity = *vertices.get(vertex_a_index as usize).unwrap();
-                    let vertex_b_entity = *vertices.get(vertex_b_index as usize).unwrap();
+                    let Some(vertex_a_entity) = vertices.get(vertex_a_index as usize) else {
+                        panic!("edge's vertex_a_index is `{:?}` and list of vertices is `{:?}`", vertex_a_index, vertices);
+                    };
+                    let Some(vertex_b_entity) = vertices.get(vertex_b_index as usize) else {
+                        panic!("edge's vertex_b_index is `{:?}` and list of vertices is `{:?}`", vertex_b_index, vertices);
+                    };
 
                     let mut edge_component = Edge3d::new();
-                    edge_component.start.set(server, &vertex_a_entity);
-                    edge_component.end.set(server, &vertex_b_entity);
+                    edge_component.start.set(server, vertex_a_entity);
+                    edge_component.end.set(server, vertex_b_entity);
 
                     let entity_id = commands
                         .spawn_empty()
@@ -249,7 +263,7 @@ impl MeshReader {
                         .insert(edge_component)
                         .id();
                     info!("spawning mesh edge entity {:?}", entity_id);
-                    output.push((entity_id, ShapeTypeData::Edge(vertex_a_entity, vertex_b_entity)));
+                    output.push((entity_id, ShapeTypeData::Edge(*vertex_a_entity, *vertex_b_entity)));
                 }
                 MeshAction::Face(vertex_a_index, vertex_b_index, vertex_c_index) => {
                     let vertex_a_entity = *vertices.get(vertex_a_index as usize).unwrap();

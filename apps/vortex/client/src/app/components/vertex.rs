@@ -70,12 +70,14 @@ pub enum VertexTypeData {
 }
 
 impl VertexTypeData {
+
     pub fn to_file_type_value(&self) -> FileTypeValue {
         match self {
             VertexTypeData::Skel(_, _) => FileTypeValue::Skel,
             VertexTypeData::Mesh(_) => FileTypeValue::Mesh,
         }
     }
+
     pub fn migrate_vertex_entities(
         &mut self,
         old_2d_entity: Entity,
