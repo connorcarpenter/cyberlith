@@ -904,7 +904,6 @@ impl ActionStack {
                     }
 
                     // get 3d version of first vertex
-                    //let vertex_3d_entity_a = *vertex_manager.vertex_entity_2d_to_3d(&vertex_2d_entity_a).unwrap();
                     let vertex_3d_entity_b = *vertex_manager.vertex_entity_2d_to_3d(&vertex_2d_entity_b).unwrap();
 
                     // create edge
@@ -963,7 +962,7 @@ impl ActionStack {
             }
             Action::DeleteEdge(edge_2d_entity, vertex_2d_to_select_opt) => {
 
-                info!("DeleteEdge");
+                info!("DeleteEdge(edge_2d_entity: `{:?}`)", edge_2d_entity);
                 let mut system_state: SystemState<(
                     Commands,
                     Client,
@@ -978,8 +977,10 @@ impl ActionStack {
                     .unwrap();
 
                 let edge_3d = edge_3d_q.get(edge_3d_entity).unwrap();
-                let vertex_start = edge_3d.start.get(&client).unwrap();
-                let vertex_end = edge_3d.end.get(&client).unwrap();
+                let vertex_start_3d = edge_3d.start.get(&client).unwrap();
+                let vertex_end_3d = edge_3d.end.get(&client).unwrap();
+                let vertex_start_2d = *vertex_manager.vertex_entity_3d_to_2d(&vertex_start_3d).unwrap();
+                let vertex_end_2d = *vertex_manager.vertex_entity_3d_to_2d(&vertex_end_3d).unwrap();
 
                 // delete 3d edge
                 commands.entity(edge_3d_entity).despawn();
@@ -1004,7 +1005,7 @@ impl ActionStack {
 
                 system_state.apply(world);
 
-                return Action::CreateEdge(vertex_start, vertex_end, Some((edge_2d_entity, edge_3d_entity)));
+                return Action::CreateEdge(vertex_start_2d, vertex_end_2d, Some((edge_2d_entity, edge_3d_entity)));
             }
         }
     }
