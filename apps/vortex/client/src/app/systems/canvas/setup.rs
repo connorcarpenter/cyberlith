@@ -18,6 +18,7 @@ use crate::app::{
     resources::{camera_manager::CameraManager, canvas::Canvas, shape_manager::ShapeManager},
     shapes::create_2d_edge_arrow,
 };
+use crate::app::shapes::create_2d_edge_line;
 
 pub fn setup(
     config: Res<AppConfig>,
@@ -140,7 +141,7 @@ fn setup_2d_scene(
 
     // select line
     let mut select_line_components =
-        create_2d_edge_arrow(meshes, materials, Vec2::ZERO, Vec2::X, Color::WHITE);
+        create_2d_edge_line(meshes, materials, Vec2::ZERO, Vec2::X, Color::WHITE);
     select_line_components.visibility.visible = false;
     let select_line_entity = commands
         .spawn(select_line_components)

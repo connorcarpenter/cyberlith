@@ -167,6 +167,12 @@ impl Transform {
     pub fn right_direction(&self) -> Vec3 {
         self.view_direction().cross(self.up_direction())
     }
+
+    pub fn mirror(&mut self, other: &Self) {
+        self.translation = other.translation;
+        self.rotation = other.rotation;
+        self.scale = other.scale;
+    }
 }
 
 impl Default for Transform {

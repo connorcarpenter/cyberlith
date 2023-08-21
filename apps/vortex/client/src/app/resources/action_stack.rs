@@ -57,7 +57,7 @@ pub enum Action {
     DeleteEntry(Entity, Option<Vec<Entity>>),
     // The File Row entity to rename, and the new name
     RenameEntry(Entity, String),
-    // The 2D vertex entity to deselect (or None for deselect)
+    // The 2D shape entity to deselect (or None for deselect)
     SelectShape(Option<(Entity, CanvasShape)>),
     // Create Vertex (Parent 2d vertex Entity, Position, older vertex 2d entity & 3d entity it was associated with)
     CreateVertex(VertexTypeData, Vec3, Option<(Entity, Entity)>),
@@ -1112,17 +1112,24 @@ impl ActionStack {
     // returns entity to request auth for
     fn select_shape(
         shape_manager: &mut ShapeManager,
-        vertex_2d_entity_opt: Option<(Entity, CanvasShape)>,
+        shape_2d_entity_opt: Option<(Entity, CanvasShape)>,
     ) -> Option<Entity> {
-        if let Some((vertex_2d_entity, shape)) = vertex_2d_entity_opt {
-            shape_manager.select_shape(&vertex_2d_entity, shape);
-            if shape == CanvasShape::Vertex {
-                let vertex_3d_entity = shape_manager
-                    .vertex_entity_2d_to_3d(&vertex_2d_entity)
-                    .unwrap();
-                return Some(*vertex_3d_entity);
-            } else {
-                return None;
+        if let Some((shape_2d_entity, shape)) = shape_2d_entity_opt {
+            shape_manager.select_shape(&shape_2d_entity, shape);
+            match shape {
+                CanvasShape::Vertex => {
+                    let vertex_3d_entity = shape_manager
+                        .vertex_entity_2d_to_3d(&shape_2d_entity)
+                        .unwrap();
+                    return Some(*vertex_3d_entity);
+                }
+                CanvasShape::Edge => {
+                    let edge_3d_entity = shape_manager
+                        .edge_entity_2d_to_3d(&shape_2d_entity)
+                        .unwrap();
+                    return Some(*edge_3d_entity);
+                }
+                _ => return None,
             }
         }
         return None;
@@ -1133,14 +1140,23 @@ impl ActionStack {
     ) -> (Option<(Entity, CanvasShape)>, Option<Entity>) {
         let mut entity_to_deselect = None;
         let mut entity_to_release = None;
-        if let Some((vertex_2d_entity, vertex_2d_type)) = shape_manager.selected_shape_2d() {
+        if let Some((shape_2d_entity, shape_2d_type)) = shape_manager.selected_shape_2d() {
             shape_manager.deselect_shape();
-            entity_to_deselect = Some((vertex_2d_entity, vertex_2d_type));
-            if vertex_2d_type == CanvasShape::Vertex {
-                let vertex_3d_entity = shape_manager
-                    .vertex_entity_2d_to_3d(&vertex_2d_entity)
-                    .unwrap();
-                entity_to_release = Some(*vertex_3d_entity);
+            entity_to_deselect = Some((shape_2d_entity, shape_2d_type));
+            match shape_2d_type {
+                CanvasShape::Vertex => {
+                    let vertex_3d_entity = shape_manager
+                        .vertex_entity_2d_to_3d(&shape_2d_entity)
+                        .unwrap();
+                    entity_to_release = Some(*vertex_3d_entity);
+                }
+                CanvasShape::Edge => {
+                    let edge_3d_entity = shape_manager
+                        .edge_entity_2d_to_3d(&shape_2d_entity)
+                        .unwrap();
+                    entity_to_release = Some(*edge_3d_entity);
+                }
+                _ => {}
             }
         }
         (entity_to_deselect, entity_to_release)

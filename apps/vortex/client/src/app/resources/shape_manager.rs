@@ -770,69 +770,71 @@ impl ShapeManager {
             panic!("Select shape entities has no Visibility");
         };
 
-        if let Some((selected_vertex_entity, _)) = self.selected_shape {
-            let vertex_transform = {
-                let Ok(vertex_transform) = transform_q.get(selected_vertex_entity) else {
-                    return;
-                };
-                *vertex_transform
-            };
-
-            // sync select line transform
-            {
-                let Ok(mut select_line_transform) = transform_q.get_mut(select_line_entity) else {
-                    panic!("Select line entity has no Transform");
+        match self.selected_shape {
+            Some((selected_vertex_entity, CanvasShape::Vertex)) | Some((selected_vertex_entity, CanvasShape::RootVertex)) => {
+                let vertex_transform = {
+                    let Ok(vertex_transform) = transform_q.get(selected_vertex_entity) else {
+                        return;
+                    };
+                    *vertex_transform
                 };
 
-                set_2d_line_transform(
-                    &mut select_line_transform,
-                    vertex_transform.translation.truncate(),
-                    *mouse_position,
-                );
-                select_line_transform.scale.y = camera_manager.camera_3d_scale();
+                // sync select line transform
+                {
+                    let Ok(mut select_line_transform) = transform_q.get_mut(select_line_entity) else {
+                        panic!("Select line entity has no Transform");
+                    };
+
+                    set_2d_line_transform(
+                        &mut select_line_transform,
+                        vertex_transform.translation.truncate(),
+                        *mouse_position,
+                    );
+                    select_line_transform.scale.y = camera_manager.camera_3d_scale();
+                }
+
+                // sync select circle transform
+                {
+                    let Ok(mut select_circle_transform) = transform_q.get_mut(select_circle_entity) else {
+                        panic!("Select shape entities has no Transform");
+                    };
+
+                    select_circle_transform.translation = vertex_transform.translation;
+                    select_circle_transform.scale =
+                        Vec3::splat(SelectCircle::RADIUS * camera_manager.camera_3d_scale());
+                }
+
+                select_shape_visibilities[0].visible = true;
+                select_shape_visibilities[1].visible = true;
             }
-
-            // sync select circle transform
-            {
-                let Ok(mut select_circle_transform) = transform_q.get_mut(select_circle_entity) else {
-                    panic!("Select shape entities has no Transform");
+            Some((selected_edge_entity, CanvasShape::Edge)) => {
+                let selected_edge_transform = {
+                    let Ok(selected_edge_transform) = transform_q.get(selected_edge_entity) else {
+                        return;
+                    };
+                    *selected_edge_transform
                 };
 
-                select_circle_transform.translation = vertex_transform.translation;
-                select_circle_transform.scale =
-                    Vec3::splat(SelectCircle::RADIUS * camera_manager.camera_3d_scale());
+                // sync select line transform
+                {
+                    let Ok(mut select_line_transform) = transform_q.get_mut(select_line_entity) else {
+                        panic!("Select line entity has no Transform");
+                    };
+
+                    select_line_transform.mirror(&selected_edge_transform);
+
+                    select_line_transform.scale.y = 3.0 * camera_manager.camera_3d_scale();
+                    select_line_transform.translation.z += 1.0;
+                }
+
+                select_shape_visibilities[1].visible = true;
+
+                select_shape_visibilities[0].visible = false; // no select circle visible
             }
-
-            select_shape_visibilities[0].visible = true;
-            select_shape_visibilities[1].visible = true;
-        } else {
-            select_shape_visibilities[0].visible = false;
-            select_shape_visibilities[1].visible = false;
-        }
-
-        //
-
-        if let Some((selected_vertex_entity, _)) = self.selected_shape {
-            let vertex_transform = {
-                let Ok(vertex_transform) = transform_q.get(selected_vertex_entity) else {
-                    return;
-                };
-                *vertex_transform
-            };
-
-            let Ok(mut select_line_transform) = transform_q.get_mut(select_line_entity) else {
-                panic!("Select line entity has no Transform");
-            };
-
-            set_2d_line_transform(
-                &mut select_line_transform,
-                vertex_transform.translation.truncate(),
-                *mouse_position,
-            );
-            select_line_transform.scale.y = camera_manager.camera_3d_scale();
-        } else {
-            let mut select_line_visibility = visibility_q.get_mut(select_line_entity).unwrap();
-            select_line_visibility.visible = false;
+            None => {
+                select_shape_visibilities[0].visible = false;
+                select_shape_visibilities[1].visible = false;
+            }
         }
     }
 
@@ -846,11 +848,19 @@ impl ShapeManager {
         transform_q: &Query<&mut Transform>,
     ) {
         let cursor_is_hovering = self.hovered_entity.is_some();
-        let vertex_is_selected = self.selected_shape.is_some();
+        let shape_is_selected = self.selected_shape.is_some();
 
-        if vertex_is_selected {
+        if shape_is_selected {
             match click_type {
                 ClickType::Left => {
+
+                    if let (_, CanvasShape::Edge) = self.selected_shape.unwrap() {
+                        // should not ever be able to attach something to an edge?
+                        // deselect edge
+                        action_stack.buffer_action(Action::SelectShape(self.hovered_entity));
+                        return;
+                    }
+
                     if cursor_is_hovering {
                         if self.current_file_type != FileTypeValue::Mesh {
                             // skel file type does nothing when trying to connect vertices together
@@ -860,6 +870,8 @@ impl ShapeManager {
 
                         if let (_, CanvasShape::Edge) = self.hovered_entity.unwrap() {
                             // should not ever be able to attach something to an edge?
+
+                            action_stack.buffer_action(Action::SelectShape(self.hovered_entity));
                             return;
                         }
 
@@ -923,10 +935,6 @@ impl ShapeManager {
                     }
                 }
                 ClickType::Right => {
-                    if self.selected_shape.is_none() {
-                        return;
-                    }
-
                     // deselect vertex
                     action_stack.buffer_action(Action::SelectShape(None));
                 }
@@ -935,8 +943,13 @@ impl ShapeManager {
             if cursor_is_hovering {
                 match (self.hovered_entity.map(|(_, s)| s).unwrap(), click_type) {
                     (CanvasShape::Vertex, ClickType::Left)
-                    | (CanvasShape::RootVertex, ClickType::Left) | (CanvasShape::Edge, ClickType::Left) => {
+                    | (CanvasShape::RootVertex, ClickType::Left) => {
                         action_stack.buffer_action(Action::SelectShape(self.hovered_entity));
+                    }
+                    (CanvasShape::Edge, ClickType::Left) => {
+                        if self.current_file_type == FileTypeValue::Mesh {
+                            action_stack.buffer_action(Action::SelectShape(self.hovered_entity));
+                        }
                     }
                     (CanvasShape::Vertex, ClickType::Right)
                     | (CanvasShape::RootVertex, ClickType::Right) => {
@@ -963,10 +976,9 @@ impl ShapeManager {
         vertex_3d_q: &mut Query<&mut Vertex3d>,
     ) {
         let vertex_is_selected = self.selected_shape.is_some();
-        let vertex_is_root_vertex =
-            vertex_is_selected && self.selected_shape.unwrap().1 == CanvasShape::RootVertex;
+        let shape_can_drag = vertex_is_selected && self.selected_shape.unwrap().1 == CanvasShape::Vertex;
 
-        if vertex_is_selected && !vertex_is_root_vertex {
+        if vertex_is_selected && shape_can_drag {
             match click_type {
                 ClickType::Left => {
                     // move vertex
