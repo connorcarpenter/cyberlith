@@ -963,6 +963,7 @@ impl ActionStack {
             }
             Action::DeleteEdge(edge_2d_entity, vertex_2d_to_select_opt) => {
 
+                info!("DeleteEdge");
                 let mut system_state: SystemState<(
                     Commands,
                     Client,
@@ -980,8 +981,11 @@ impl ActionStack {
                 let vertex_start = edge_3d.start.get(&client).unwrap();
                 let vertex_end = edge_3d.end.get(&client).unwrap();
 
-                // delete 3d vertex
+                // delete 3d edge
                 commands.entity(edge_3d_entity).despawn();
+
+                // cleanup mappings
+                vertex_manager.cleanup_deleted_edge(&edge_3d_entity, &mut commands);
 
                 // select entities as needed
                 if let Some((vertex_2d_to_select, vertex_type)) = vertex_2d_to_select_opt {
@@ -997,6 +1001,8 @@ impl ActionStack {
                 } else {
                     vertex_manager.deselect_vertex();
                 }
+
+                system_state.apply(world);
 
                 return Action::CreateEdge(vertex_start, vertex_end, Some((edge_2d_entity, edge_3d_entity)));
             }
