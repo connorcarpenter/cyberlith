@@ -6,4 +6,4 @@ pub mod global;
 pub mod input_manager;
 pub mod shape_waitlist;
 pub mod tab_manager;
-pub mod vertex_manager;
+pub mod shape_manager;

@@ -13,7 +13,7 @@ use crate::app::{
     components::{Compass, Edge2dLocal, Vertex2d},
     resources::{
         action_stack::ActionStack, camera_manager::CameraManager, canvas::Canvas,
-        input_manager::InputManager, tab_manager::TabManager, vertex_manager::VertexManager,
+        input_manager::InputManager, tab_manager::TabManager, shape_manager::ShapeManager,
     },
 };
 
@@ -22,7 +22,7 @@ pub fn input(
     mut client: Client,
     mut camera_manager: ResMut<CameraManager>,
     canvas: Res<Canvas>,
-    mut vertex_manager: ResMut<VertexManager>,
+    mut shape_manager: ResMut<ShapeManager>,
     mut input_manager: ResMut<InputManager>,
     mut input: ResMut<Input>,
     mut action_stack: ResMut<ActionStack>,
@@ -35,7 +35,7 @@ pub fn input(
     }
     let input_actions = input_manager.update_input(&mut input);
     if !input_actions.is_empty() {
-        vertex_manager.update_input(
+        shape_manager.update_input(
             input_actions,
             &mut commands,
             &mut client,
@@ -53,7 +53,7 @@ pub fn update_mouse_hover(
     canvas: Res<Canvas>,
     camera_manager: Res<CameraManager>,
     input: Res<Input>,
-    mut vertex_manager: ResMut<VertexManager>,
+    mut shape_manager: ResMut<ShapeManager>,
     mut transform_q: Query<(&mut Transform, Option<&Compass>)>,
     vertex_2d_q: Query<(Entity, Option<&VertexRoot>), (With<Vertex2d>, Without<Compass>)>,
     edge_2d_q: Query<(Entity, &Edge2dLocal), Without<Compass>>,
@@ -63,7 +63,7 @@ pub fn update_mouse_hover(
     if !canvas.is_visible() {
         return;
     }
-    vertex_manager.update_mouse_hover(
+    shape_manager.update_mouse_hover(
         &camera_manager,
         tab_manager.current_tab_id(),
         input.mouse_position(),

@@ -24,7 +24,7 @@ use vortex_proto::{
 
 use crate::app::{
     components::file_system::FileSystemUiState,
-    resources::{camera_manager::CameraManager, canvas::Canvas, vertex_manager::VertexManager},
+    resources::{camera_manager::CameraManager, canvas::Canvas, shape_manager::ShapeManager},
     ui::widgets::colors::{
         FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
         TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED,
@@ -86,7 +86,7 @@ impl TabManager {
         client: &mut Client,
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
-        vertex_manager: &mut VertexManager,
+        shape_manager: &mut ShapeManager,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
         row_entity: &Entity,
         file_ext: FileExtension,
@@ -96,7 +96,7 @@ impl TabManager {
                 client,
                 canvas,
                 camera_manager,
-                vertex_manager,
+                shape_manager,
                 visibility_q,
                 row_entity,
             );
@@ -126,7 +126,7 @@ impl TabManager {
                 client,
                 canvas,
                 camera_manager,
-                vertex_manager,
+                shape_manager,
                 visibility_q,
                 row_entity,
             );
@@ -141,7 +141,7 @@ impl TabManager {
                 Client,
                 ResMut<Canvas>,
                 ResMut<CameraManager>,
-                ResMut<VertexManager>,
+                ResMut<ShapeManager>,
                 ResMut<TabManager>,
                 Query<(&FileSystemEntry, &FileSystemUiState)>,
                 Query<(&mut Visibility, &OwnedByTab)>,
@@ -150,7 +150,7 @@ impl TabManager {
                 mut client,
                 mut canvas,
                 mut camera_manager,
-                mut vertex_manager,
+                mut shape_manager,
                 mut tab_manager,
                 file_q,
                 mut visibility_q,
@@ -160,7 +160,7 @@ impl TabManager {
                 &mut client,
                 &mut canvas,
                 &mut camera_manager,
-                &mut vertex_manager,
+                &mut shape_manager,
                 ui,
                 &file_q,
                 &mut visibility_q,
@@ -199,7 +199,7 @@ impl TabManager {
         client: &mut Client,
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
-        vertex_manager: &mut VertexManager,
+        shape_manager: &mut ShapeManager,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
         row_entity: &Entity,
     ) {
@@ -215,7 +215,7 @@ impl TabManager {
         tab_state.selected = true;
 
         // change vertex manager's file type
-        vertex_manager.set_current_file_type(tab_state.ext.to_file_type());
+        shape_manager.set_current_file_type(tab_state.ext.to_file_type());
 
         // send message to server
         let message = TabActionMessage::new(tab_state.tab_id, TabActionMessageType::Select);
@@ -264,7 +264,7 @@ impl TabManager {
         client: &mut Client,
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
-        vertex_manager: &mut VertexManager,
+        shape_manager: &mut ShapeManager,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
         row_entity: &Entity,
     ) {
@@ -288,7 +288,7 @@ impl TabManager {
                         client,
                         canvas,
                         camera_manager,
-                        vertex_manager,
+                        shape_manager,
                         visibility_q,
                         &new_entity,
                     );
@@ -311,7 +311,7 @@ impl TabManager {
         client: &mut Client,
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
-        vertex_manager: &mut VertexManager,
+        shape_manager: &mut ShapeManager,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
     ) {
         let all_tabs = self.tab_order.clone();
@@ -320,7 +320,7 @@ impl TabManager {
                 client,
                 canvas,
                 camera_manager,
-                vertex_manager,
+                shape_manager,
                 visibility_q,
                 &entity,
             );
@@ -332,11 +332,11 @@ impl TabManager {
         client: &mut Client,
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
-        vertex_manager: &mut VertexManager,
+        shape_manager: &mut ShapeManager,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
         row_entity: &Entity,
     ) {
-        self.close_all_tabs(client, canvas, camera_manager, vertex_manager, visibility_q);
+        self.close_all_tabs(client, canvas, camera_manager, shape_manager, visibility_q);
         if !self.tab_map.contains_key(row_entity) {
             panic!("row entity not in tab map!")
         }
@@ -344,7 +344,7 @@ impl TabManager {
             client,
             canvas,
             camera_manager,
-            vertex_manager,
+            shape_manager,
             visibility_q,
             row_entity,
         );
@@ -355,7 +355,7 @@ impl TabManager {
         client: &mut Client,
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
-        vertex_manager: &mut VertexManager,
+        shape_manager: &mut ShapeManager,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
         row_entity: &Entity,
     ) {
@@ -372,7 +372,7 @@ impl TabManager {
                 client,
                 canvas,
                 camera_manager,
-                vertex_manager,
+                shape_manager,
                 visibility_q,
                 &entity,
             );
@@ -384,7 +384,7 @@ impl TabManager {
         client: &mut Client,
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
-        vertex_manager: &mut VertexManager,
+        shape_manager: &mut ShapeManager,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
         row_entity: &Entity,
     ) {
@@ -401,7 +401,7 @@ impl TabManager {
                 client,
                 canvas,
                 camera_manager,
-                vertex_manager,
+                shape_manager,
                 visibility_q,
                 &entity,
             );
@@ -413,7 +413,7 @@ impl TabManager {
         client: &mut Client,
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
-        vertex_manager: &mut VertexManager,
+        shape_manager: &mut ShapeManager,
         ui: &mut Ui,
         file_q: &Query<(&FileSystemEntry, &FileSystemUiState)>,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
@@ -435,7 +435,7 @@ impl TabManager {
             client,
             canvas,
             camera_manager,
-            vertex_manager,
+            shape_manager,
             visibility_q,
             tab_action,
         );
@@ -594,7 +594,7 @@ impl TabManager {
         client: &mut Client,
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
-        vertex_manager: &mut VertexManager,
+        shape_manager: &mut ShapeManager,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
         tab_action: Option<TabAction>,
     ) {
@@ -605,7 +605,7 @@ impl TabManager {
                     client,
                     canvas,
                     camera_manager,
-                    vertex_manager,
+                    shape_manager,
                     visibility_q,
                     &row_entity,
                 );
@@ -615,20 +615,20 @@ impl TabManager {
                     client,
                     canvas,
                     camera_manager,
-                    vertex_manager,
+                    shape_manager,
                     visibility_q,
                     &row_entity,
                 );
             }
             Some(TabAction::CloseAll) => {
-                self.close_all_tabs(client, canvas, camera_manager, vertex_manager, visibility_q);
+                self.close_all_tabs(client, canvas, camera_manager, shape_manager, visibility_q);
             }
             Some(TabAction::CloseOthers(row_entity)) => {
                 self.close_all_tabs_except(
                     client,
                     canvas,
                     camera_manager,
-                    vertex_manager,
+                    shape_manager,
                     visibility_q,
                     &row_entity,
                 );
@@ -638,7 +638,7 @@ impl TabManager {
                     client,
                     canvas,
                     camera_manager,
-                    vertex_manager,
+                    shape_manager,
                     visibility_q,
                     &row_entity,
                 );
@@ -648,7 +648,7 @@ impl TabManager {
                     client,
                     canvas,
                     camera_manager,
-                    vertex_manager,
+                    shape_manager,
                     visibility_q,
                     &row_entity,
                 );

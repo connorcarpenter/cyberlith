@@ -11,7 +11,7 @@ use crate::app::{
     components::{Compass, Edge2dLocal, Edge3dLocal},
     resources::{
         camera_manager::CameraManager, canvas::Canvas, tab_manager::TabManager,
-        vertex_manager::VertexManager,
+        shape_manager::ShapeManager,
     },
 };
 
@@ -19,7 +19,7 @@ pub fn sync_vertices(
     tab_manager: Res<TabManager>,
     canvas: Res<Canvas>,
     camera_manager: Res<CameraManager>,
-    mut vertex_manager: ResMut<VertexManager>,
+    mut shape_manager: ResMut<ShapeManager>,
     mut transform_q: Query<&mut Transform>,
     compass_q: Query<&Compass>,
     camera_q: Query<(&Camera, &Projection)>,
@@ -31,7 +31,7 @@ pub fn sync_vertices(
     if !canvas.is_visible() {
         return;
     }
-    vertex_manager.sync_vertices(
+    shape_manager.sync_vertices(
         &camera_manager,
         tab_manager.current_tab_id(),
         &compass_q,
@@ -48,7 +48,7 @@ pub fn update_select_line(
     canvas: Res<Canvas>,
     camera_manager: Res<CameraManager>,
     input: Res<Input>,
-    mut vertex_manager: ResMut<VertexManager>,
+    mut shape_manager: ResMut<ShapeManager>,
     mut transform_q: Query<&mut Transform>,
     mut visibility_q: Query<&mut Visibility>,
 ) {
@@ -56,7 +56,7 @@ pub fn update_select_line(
         return;
     }
 
-    vertex_manager.update_select_line(
+    shape_manager.update_select_line(
         input.mouse_position(),
         &camera_manager,
         &mut transform_q,

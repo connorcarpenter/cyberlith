@@ -36,7 +36,7 @@ use crate::app::{
         file_tree::FileTree,
         global::Global,
         tab_manager::TabManager,
-        vertex_manager::{CanvasShape, VertexManager},
+        shape_manager::{CanvasShape, ShapeManager},
     },
     systems::file_post_process,
 };
@@ -58,7 +58,7 @@ pub enum Action {
     // The File Row entity to rename, and the new name
     RenameEntry(Entity, String),
     // The 2D vertex entity to deselect (or None for deselect)
-    SelectVertex(Option<(Entity, CanvasShape)>),
+    SelectShape(Option<(Entity, CanvasShape)>),
     // Create Vertex (Parent 2d vertex Entity, Position, older vertex 2d entity & 3d entity it was associated with)
     CreateVertex(VertexTypeData, Vec3, Option<(Entity, Entity)>),
     // Delete Vertex (2d vertex entity, optional vertex 2d entity to select after delete)
@@ -122,11 +122,14 @@ impl Action {
         new_3d_vert_entity: Entity,
     ) {
         match self {
-            Action::SelectVertex(entity_opt) => {
-                if let Some((entity, _)) = entity_opt {
-                    if *entity == old_2d_vert_entity {
-                        *entity = new_2d_vert_entity;
+            Action::SelectShape(entity_opt) => {
+                match entity_opt {
+                    Some((entity, CanvasShape::Vertex)) | Some((entity, CanvasShape::RootVertex)) => {
+                        if *entity == old_2d_vert_entity {
+                            *entity = new_2d_vert_entity;
+                        }
                     }
+                    _ => {}
                 }
             }
             Action::CreateVertex(vertex_type_data, _, entity_opt) => {
@@ -186,6 +189,16 @@ impl Action {
         new_3d_edge_entity: Entity,
     ) {
         match self {
+            Action::SelectShape(entity_opt) => {
+                match entity_opt {
+                    Some((entity, CanvasShape::Edge)) => {
+                        if *entity == old_2d_edge_entity {
+                            *entity = new_2d_edge_entity;
+                        }
+                    }
+                    _ => {}
+                }
+            }
             Action::CreateEdge(_, _, Some((edge_2d_entity, edge_3d_entity))) => {
                 if *edge_2d_entity == old_2d_edge_entity {
                     *edge_2d_entity = new_2d_edge_entity;
@@ -330,7 +343,7 @@ impl ActionStack {
                     Res<Global>,
                     ResMut<Canvas>,
                     ResMut<CameraManager>,
-                    ResMut<VertexManager>,
+                    ResMut<ShapeManager>,
                     ResMut<TabManager>,
                     Query<(Entity, &mut FileSystemUiState)>,
                     Query<(Entity, &ChangelistEntry, &mut ChangelistUiState)>,
@@ -343,7 +356,7 @@ impl ActionStack {
                     global,
                     mut canvas,
                     mut camera_manager,
-                    mut vertex_manager,
+                    mut shape_manager,
                     mut tab_manager,
                     mut fs_query,
                     mut cl_query,
@@ -393,7 +406,7 @@ impl ActionStack {
                     &mut client,
                     &mut canvas,
                     &mut camera_manager,
-                    &mut vertex_manager,
+                    &mut shape_manager,
                     &mut visibility_q,
                     &entity_id,
                     FileExtension::from_file_name(&new_file_name),
@@ -515,18 +528,18 @@ impl ActionStack {
 
                 return Action::RenameEntry(file_entity, old_name);
             }
-            Action::SelectVertex(vertex_2d_entity_opt) => {
-                info!("SelectVertex({:?})", vertex_2d_entity_opt);
+            Action::SelectShape(shape_2d_entity_opt) => {
+                info!("SelectShape({:?})", shape_2d_entity_opt);
 
-                let mut system_state: SystemState<(Commands, Client, ResMut<VertexManager>)> =
+                let mut system_state: SystemState<(Commands, Client, ResMut<ShapeManager>)> =
                     SystemState::new(world);
-                let (mut commands, mut client, mut vertex_manager) = system_state.get_mut(world);
+                let (mut commands, mut client, mut shape_manager) = system_state.get_mut(world);
 
-                // Deselect all selected vertices, select the new selected vertices
+                // Deselect all selected shapes, select the new selected shapes
                 let (deselected_entity, entity_to_release) =
-                    Self::deselect_all_selected_vertices(&mut vertex_manager);
+                    Self::deselect_all_selected_shapes(&mut shape_manager);
                 let entity_to_request =
-                    Self::select_vertex(&mut vertex_manager, vertex_2d_entity_opt.map(|v| v));
+                    Self::select_shape(&mut shape_manager, shape_2d_entity_opt.map(|v| v));
 
                 if entity_to_request != entity_to_release {
                     if let Some(entity) = entity_to_release {
@@ -546,7 +559,7 @@ impl ActionStack {
 
                 system_state.apply(world);
 
-                return Action::SelectVertex(deselected_entity);
+                return Action::SelectShape(deselected_entity);
             }
             Action::CreateVertex(vertex_type_data, position, old_vertex_entities_opt) => {
                 let mut entities_to_release = Vec::new();
@@ -561,7 +574,7 @@ impl ActionStack {
                         Commands,
                         Client,
                         ResMut<CameraManager>,
-                        ResMut<VertexManager>,
+                        ResMut<ShapeManager>,
                         Res<TabManager>,
                         ResMut<Assets<CpuMesh>>,
                         ResMut<Assets<CpuMaterial>>,
@@ -570,7 +583,7 @@ impl ActionStack {
                         mut commands,
                         mut client,
                         mut camera_manager,
-                        mut vertex_manager,
+                        mut shape_manager,
                         tab_manager,
                         mut meshes,
                         mut materials,
@@ -578,7 +591,7 @@ impl ActionStack {
 
                     // deselect all selected vertices
                     let (deselected_vertex_2d_entity, vertex_3d_entity_to_release) =
-                        Self::deselect_all_selected_vertices(&mut vertex_manager);
+                        Self::deselect_all_selected_shapes(&mut shape_manager);
                     deselected_vertex_2d_entity_store = deselected_vertex_2d_entity;
                     if let Some(entity) = vertex_3d_entity_to_release {
                         let mut entity_mut = commands.entity(entity);
@@ -595,7 +608,7 @@ impl ActionStack {
                         &mut commands,
                         &mut client,
                         &mut camera_manager,
-                        &mut vertex_manager,
+                        &mut shape_manager,
                         &mut meshes,
                         &mut materials,
                         position,
@@ -622,7 +635,7 @@ impl ActionStack {
                                     &mut commands,
                                     &mut client,
                                     &mut camera_manager,
-                                    &mut vertex_manager,
+                                    &mut shape_manager,
                                     &mut meshes,
                                     &mut materials,
                                     new_vertex_2d_entity,
@@ -635,7 +648,7 @@ impl ActionStack {
                                 &mut commands,
                                 &mut client,
                                 &mut camera_manager,
-                                &mut vertex_manager,
+                                &mut shape_manager,
                                 &mut meshes,
                                 &mut materials,
                                 parent_vertex_2d_entity,
@@ -652,7 +665,7 @@ impl ActionStack {
                                     &mut commands,
                                     &mut client,
                                     &mut camera_manager,
-                                    &mut vertex_manager,
+                                    &mut shape_manager,
                                     &mut meshes,
                                     &mut materials,
                                     connected_vertex_entity,
@@ -667,7 +680,7 @@ impl ActionStack {
                     };
 
                     // select vertex
-                    vertex_manager.select_vertex(&new_vertex_2d_entity, CanvasShape::Vertex);
+                    shape_manager.select_shape(&new_vertex_2d_entity, CanvasShape::Vertex);
                     selected_vertex_3d = new_vertex_3d_entity;
                     selected_vertex_2d = new_vertex_2d_entity;
 
@@ -698,15 +711,15 @@ impl ActionStack {
                 let mut system_state: SystemState<(
                     Commands,
                     Client,
-                    ResMut<VertexManager>,
+                    ResMut<ShapeManager>,
                     Query<(Entity, &Vertex3d)>,
                     Query<&Edge3d>,
                     Query<&FileType>
                 )> = SystemState::new(world);
-                let (mut commands, mut client, mut vertex_manager, vertex_q, edge_3d_q, file_type_q) =
+                let (mut commands, mut client, mut shape_manager, vertex_q, edge_3d_q, file_type_q) =
                     system_state.get_mut(world);
 
-                let vertex_3d_entity = *vertex_manager
+                let vertex_3d_entity = *shape_manager
                     .vertex_entity_2d_to_3d(&vertex_2d_entity)
                     .unwrap();
 
@@ -738,7 +751,7 @@ impl ActionStack {
                                     vertex_3d_entity
                                 );
                             }
-                            *vertex_manager
+                            *shape_manager
                                 .vertex_entity_3d_to_2d(&parent_vertex_3d_entity.unwrap())
                                 .unwrap()
                         };
@@ -747,7 +760,7 @@ impl ActionStack {
                         let entry_contents_opt = {
                             let entries = Self::convert_vertices_to_tree(
                                 &client,
-                                &mut vertex_manager,
+                                &mut shape_manager,
                                 &vertex_3d_entity,
                                 &vertex_q,
                                 &edge_3d_q,
@@ -770,7 +783,7 @@ impl ActionStack {
                         Self::handle_common_vertex_despawn(
                             &mut commands,
                             &mut client,
-                            &mut vertex_manager,
+                            &mut shape_manager,
                             vertex_3d_entity,
                             vertex_2d_to_select_opt,
                         );
@@ -792,7 +805,7 @@ impl ActionStack {
                             let end_entity = edge_3d.end.get(&client).unwrap();
 
                             if start_entity == vertex_3d_entity {
-                                if let Some(end_2d_entity) = vertex_manager.vertex_entity_3d_to_2d(&end_entity) {
+                                if let Some(end_2d_entity) = shape_manager.vertex_entity_3d_to_2d(&end_entity) {
                                     connected_vertices_2d_entities.push(*end_2d_entity);
                                 } else {
                                     // this is a known bug that happens when undo/redo too fast
@@ -800,7 +813,7 @@ impl ActionStack {
                                     warn!("2d vertex still hasn't been created for {:?}, cannot add to undo/redo stack.", end_entity);
                                 }
                             } else if end_entity == vertex_3d_entity {
-                                if let Some(start_2d_entity) = vertex_manager.vertex_entity_3d_to_2d(&start_entity) {
+                                if let Some(start_2d_entity) = shape_manager.vertex_entity_3d_to_2d(&start_entity) {
                                     connected_vertices_2d_entities.push(*start_2d_entity);
                                 } else {
                                     // this is a known bug that happens when undo/redo too fast
@@ -822,7 +835,7 @@ impl ActionStack {
                         Self::handle_common_vertex_despawn(
                             &mut commands,
                             &mut client,
-                            &mut vertex_manager,
+                            &mut shape_manager,
                             vertex_3d_entity,
                             vertex_2d_to_select_opt,
                         );
@@ -840,14 +853,14 @@ impl ActionStack {
             Action::MoveVertex(vertex_2d_entity, old_position, new_position) => {
                 info!("MoveVertex");
                 let mut system_state: SystemState<(
-                    ResMut<VertexManager>,
+                    ResMut<ShapeManager>,
                     ResMut<CameraManager>,
                     Query<&mut Vertex3d>,
                 )> = SystemState::new(world);
-                let (vertex_manager, mut camera_manager, mut vertex_3d_q) =
+                let (shape_manager, mut camera_manager, mut vertex_3d_q) =
                     system_state.get_mut(world);
 
-                let vertex_3d_entity = *vertex_manager
+                let vertex_3d_entity = *shape_manager
                     .vertex_entity_2d_to_3d(&vertex_2d_entity)
                     .unwrap();
 
@@ -875,7 +888,7 @@ impl ActionStack {
                         Commands,
                         Client,
                         ResMut<CameraManager>,
-                        ResMut<VertexManager>,
+                        ResMut<ShapeManager>,
                         Res<TabManager>,
                         ResMut<Assets<CpuMesh>>,
                         ResMut<Assets<CpuMaterial>>,
@@ -885,7 +898,7 @@ impl ActionStack {
                         mut commands,
                         mut client,
                         mut camera_manager,
-                        mut vertex_manager,
+                        mut shape_manager,
                         tab_manager,
                         mut meshes,
                         mut materials,
@@ -894,7 +907,7 @@ impl ActionStack {
 
                     // deselect all selected vertices
                     let (deselected_vertex_2d_entity, vertex_3d_entity_to_release) =
-                        Self::deselect_all_selected_vertices(&mut vertex_manager);
+                        Self::deselect_all_selected_shapes(&mut shape_manager);
                     deselected_vertex_2d_entity_store = deselected_vertex_2d_entity;
                     if let Some(entity) = vertex_3d_entity_to_release {
                         let mut entity_mut = commands.entity(entity);
@@ -904,14 +917,14 @@ impl ActionStack {
                     }
 
                     // get 3d version of first vertex
-                    let vertex_3d_entity_b = *vertex_manager.vertex_entity_2d_to_3d(&vertex_2d_entity_b).unwrap();
+                    let vertex_3d_entity_b = *shape_manager.vertex_entity_2d_to_3d(&vertex_2d_entity_b).unwrap();
 
                     // create edge
                     let (new_edge_2d_entity, new_edge_3d_entity) = self.create_networked_edge(
                         &mut commands,
                         &mut client,
                         &mut camera_manager,
-                        &mut vertex_manager,
+                        &mut shape_manager,
                         &mut meshes,
                         &mut materials,
                         vertex_2d_entity_a,
@@ -936,7 +949,7 @@ impl ActionStack {
                     }
 
                     // select vertex
-                    vertex_manager.select_vertex(&vertex_2d_entity_b, CanvasShape::Vertex);
+                    shape_manager.select_shape(&vertex_2d_entity_b, CanvasShape::Vertex);
                     selected_vertex_3d = vertex_3d_entity_b;
 
                     system_state.apply(world);
@@ -966,32 +979,32 @@ impl ActionStack {
                 let mut system_state: SystemState<(
                     Commands,
                     Client,
-                    ResMut<VertexManager>,
+                    ResMut<ShapeManager>,
                     Query<&Edge3d>,
                 )> = SystemState::new(world);
-                let (mut commands, mut client, mut vertex_manager, edge_3d_q) =
+                let (mut commands, mut client, mut shape_manager, edge_3d_q) =
                     system_state.get_mut(world);
 
-                let edge_3d_entity = *vertex_manager
+                let edge_3d_entity = *shape_manager
                     .edge_entity_2d_to_3d(&edge_2d_entity)
                     .unwrap();
 
                 let edge_3d = edge_3d_q.get(edge_3d_entity).unwrap();
                 let vertex_start_3d = edge_3d.start.get(&client).unwrap();
                 let vertex_end_3d = edge_3d.end.get(&client).unwrap();
-                let vertex_start_2d = *vertex_manager.vertex_entity_3d_to_2d(&vertex_start_3d).unwrap();
-                let vertex_end_2d = *vertex_manager.vertex_entity_3d_to_2d(&vertex_end_3d).unwrap();
+                let vertex_start_2d = *shape_manager.vertex_entity_3d_to_2d(&vertex_start_3d).unwrap();
+                let vertex_end_2d = *shape_manager.vertex_entity_3d_to_2d(&vertex_end_3d).unwrap();
 
                 // delete 3d edge
                 commands.entity(edge_3d_entity).despawn();
 
                 // cleanup mappings
-                vertex_manager.cleanup_deleted_edge(&edge_3d_entity, &mut commands);
+                shape_manager.cleanup_deleted_edge(&edge_3d_entity, &mut commands);
 
                 // select entities as needed
                 if let Some((vertex_2d_to_select, vertex_type)) = vertex_2d_to_select_opt {
                     if let Some(vertex_3d_entity_to_request) =
-                        Self::select_vertex(&mut vertex_manager, Some((vertex_2d_to_select, vertex_type)))
+                        Self::select_shape(&mut shape_manager, Some((vertex_2d_to_select, vertex_type)))
                     {
                         info!("request_entities({:?})", vertex_3d_entity_to_request);
                         let mut entity_mut = commands.entity(vertex_3d_entity_to_request);
@@ -1000,7 +1013,7 @@ impl ActionStack {
                         }
                     }
                 } else {
-                    vertex_manager.deselect_vertex();
+                    shape_manager.deselect_shape();
                 }
 
                 system_state.apply(world);
@@ -1013,7 +1026,7 @@ impl ActionStack {
     fn handle_common_vertex_despawn(
         commands: &mut Commands,
         client: &mut Client,
-        vertex_manager: &mut VertexManager,
+        shape_manager: &mut ShapeManager,
         vertex_3d_entity: Entity,
         vertex_2d_to_select_opt: Option<(Entity, CanvasShape)>,
     ) {
@@ -1021,12 +1034,12 @@ impl ActionStack {
         commands.entity(vertex_3d_entity).despawn();
 
         // cleanup mappings
-        vertex_manager.cleanup_deleted_vertex(&vertex_3d_entity, commands);
+        shape_manager.cleanup_deleted_vertex(&vertex_3d_entity, commands);
 
         // select entities as needed
         if let Some((vertex_2d_to_select, vertex_type)) = vertex_2d_to_select_opt {
             if let Some(vertex_3d_entity_to_request) =
-                Self::select_vertex(vertex_manager, Some((vertex_2d_to_select, vertex_type)))
+                Self::select_shape(shape_manager, Some((vertex_2d_to_select, vertex_type)))
             {
                 info!("request_entities({:?})", vertex_3d_entity_to_request);
                 let mut entity_mut = commands.entity(vertex_3d_entity_to_request);
@@ -1035,7 +1048,7 @@ impl ActionStack {
                 }
             }
         } else {
-            vertex_manager.deselect_vertex();
+            shape_manager.deselect_shape();
         }
     }
 
@@ -1097,14 +1110,14 @@ impl ActionStack {
     }
 
     // returns entity to request auth for
-    fn select_vertex(
-        vertex_manager: &mut VertexManager,
+    fn select_shape(
+        shape_manager: &mut ShapeManager,
         vertex_2d_entity_opt: Option<(Entity, CanvasShape)>,
     ) -> Option<Entity> {
         if let Some((vertex_2d_entity, shape)) = vertex_2d_entity_opt {
-            vertex_manager.select_vertex(&vertex_2d_entity, shape);
+            shape_manager.select_shape(&vertex_2d_entity, shape);
             if shape == CanvasShape::Vertex {
-                let vertex_3d_entity = vertex_manager
+                let vertex_3d_entity = shape_manager
                     .vertex_entity_2d_to_3d(&vertex_2d_entity)
                     .unwrap();
                 return Some(*vertex_3d_entity);
@@ -1115,16 +1128,16 @@ impl ActionStack {
         return None;
     }
 
-    fn deselect_all_selected_vertices(
-        vertex_manager: &mut VertexManager,
+    fn deselect_all_selected_shapes(
+        shape_manager: &mut ShapeManager,
     ) -> (Option<(Entity, CanvasShape)>, Option<Entity>) {
         let mut entity_to_deselect = None;
         let mut entity_to_release = None;
-        if let Some((vertex_2d_entity, vertex_2d_type)) = vertex_manager.selected_vertex_2d() {
-            vertex_manager.deselect_vertex();
+        if let Some((vertex_2d_entity, vertex_2d_type)) = shape_manager.selected_shape_2d() {
+            shape_manager.deselect_shape();
             entity_to_deselect = Some((vertex_2d_entity, vertex_2d_type));
             if vertex_2d_type == CanvasShape::Vertex {
-                let vertex_3d_entity = vertex_manager
+                let vertex_3d_entity = shape_manager
                     .vertex_entity_2d_to_3d(&vertex_2d_entity)
                     .unwrap();
                 entity_to_release = Some(*vertex_3d_entity);
@@ -1240,7 +1253,7 @@ impl ActionStack {
         commands: &mut Commands,
         client: &mut Client,
         camera_manager: &mut CameraManager,
-        vertex_manager: &mut VertexManager,
+        shape_manager: &mut ShapeManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         position: Vec3,
@@ -1262,7 +1275,7 @@ impl ActionStack {
         entities_to_release.push(new_vertex_3d_entity);
 
         // create new 2d vertex, add local components to 3d vertex
-        let new_vertex_2d_entity = vertex_manager.vertex_3d_postprocess(
+        let new_vertex_2d_entity = shape_manager.vertex_3d_postprocess(
             commands,
             meshes,
             materials,
@@ -1281,7 +1294,7 @@ impl ActionStack {
         commands: &mut Commands,
         client: &mut Client,
         camera_manager: &mut CameraManager,
-        vertex_manager: &mut VertexManager,
+        shape_manager: &mut ShapeManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         parent_vertex_2d_entity: Entity,
@@ -1292,7 +1305,7 @@ impl ActionStack {
         entities_to_release: &mut Vec<Entity>,
     ) -> (Entity, Entity) {
         // create new 3d edge
-        let parent_vertex_3d_entity = *vertex_manager
+        let parent_vertex_3d_entity = *shape_manager
             .vertex_entity_2d_to_3d(&parent_vertex_2d_entity)
             .unwrap();
 
@@ -1315,7 +1328,7 @@ impl ActionStack {
             .id();
 
         // create new 2d edge, add local components to 3d edge
-        let new_edge_2d_entity = vertex_manager.edge_3d_postprocess(
+        let new_edge_2d_entity = shape_manager.edge_3d_postprocess(
             commands,
             meshes,
             materials,
@@ -1338,7 +1351,7 @@ impl ActionStack {
         commands: &mut Commands,
         client: &mut Client,
         camera_manager: &mut CameraManager,
-        vertex_manager: &mut VertexManager,
+        shape_manager: &mut ShapeManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         parent_vertex_2d_entity: Entity,
@@ -1357,7 +1370,7 @@ impl ActionStack {
                     commands,
                     client,
                     camera_manager,
-                    vertex_manager,
+                    shape_manager,
                     meshes,
                     materials,
                     position,
@@ -1375,7 +1388,7 @@ impl ActionStack {
                 commands,
                 client,
                 camera_manager,
-                vertex_manager,
+                shape_manager,
                 meshes,
                 materials,
                 parent_vertex_2d_entity,
@@ -1390,7 +1403,7 @@ impl ActionStack {
                     commands,
                     client,
                     camera_manager,
-                    vertex_manager,
+                    shape_manager,
                     meshes,
                     materials,
                     new_child_vertex_2d_entity,
@@ -1404,18 +1417,18 @@ impl ActionStack {
 
     pub fn entity_update_auth_status(
         &mut self,
-        vertex_manager: &mut VertexManager,
+        shape_manager: &mut ShapeManager,
         entity: &Entity,
     ) {
         // if either the undo or redo stack's top entity is this entity, then we need to enable/disable undo based on new auth status
         Self::entity_update_auth_status_impl(
-            vertex_manager,
+            shape_manager,
             &mut self.buffered_check,
             self.undo_actions.last(),
             entity,
         );
         Self::entity_update_auth_status_impl(
-            vertex_manager,
+            shape_manager,
             &mut self.buffered_check,
             self.redo_actions.last(),
             entity,
@@ -1423,7 +1436,7 @@ impl ActionStack {
     }
 
     fn entity_update_auth_status_impl(
-        vertex_manager: &mut VertexManager,
+        shape_manager: &mut ShapeManager,
         buffered_check: &mut bool,
         action_opt: Option<&Action>,
         entity: &Entity,
@@ -1434,9 +1447,9 @@ impl ActionStack {
                     *buffered_check = true;
                 }
             }
-            Some(Action::SelectVertex(vertex_2d_entity_opt)) => {
+            Some(Action::SelectShape(vertex_2d_entity_opt)) => {
                 if let Some((vertex_2d_entity, CanvasShape::Vertex)) = vertex_2d_entity_opt {
-                    let vertex_3d_entity = vertex_manager
+                    let vertex_3d_entity = shape_manager
                         .vertex_entity_2d_to_3d(vertex_2d_entity)
                         .unwrap();
                     if *vertex_3d_entity == *entity {
@@ -1460,12 +1473,12 @@ impl ActionStack {
             Some(Action::SelectEntries(entities)) => {
                 *enabled = Self::should_be_enabled(world, entities);
             }
-            Some(Action::SelectVertex(vertex_2d_entity_opt)) => {
+            Some(Action::SelectShape(vertex_2d_entity_opt)) => {
                 let mut entities = Vec::new();
 
                 if let Some((vertex_2d_entity, CanvasShape::Vertex)) = vertex_2d_entity_opt {
                     let vertex_3d_entity = world
-                        .get_resource::<VertexManager>()
+                        .get_resource::<ShapeManager>()
                         .unwrap()
                         .vertex_entity_2d_to_3d(vertex_2d_entity)
                         .unwrap();
@@ -1543,7 +1556,7 @@ impl ActionStack {
 
     fn convert_vertices_to_tree(
         client: &Client,
-        vertex_manager: &mut VertexManager,
+        shape_manager: &mut ShapeManager,
         parent_3d_entity: &Entity,
         vertex_3d_q: &Query<(Entity, &Vertex3d)>,
         edge_3d_q: &Query<&Edge3d>,
@@ -1560,7 +1573,7 @@ impl ActionStack {
                 continue;
             };
             if parent_entity == *parent_3d_entity {
-                let child_entity_2d = *vertex_manager
+                let child_entity_2d = *shape_manager
                     .vertex_entity_3d_to_2d(&child_entity_3d)
                     .unwrap();
 
@@ -1579,7 +1592,7 @@ impl ActionStack {
             // set children
             let children = Self::convert_vertices_to_tree(
                 client,
-                vertex_manager,
+                shape_manager,
                 entry_entity,
                 vertex_3d_q,
                 edge_3d_q,

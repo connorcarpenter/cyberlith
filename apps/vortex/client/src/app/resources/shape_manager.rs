@@ -46,7 +46,7 @@ pub enum CanvasShape {
 }
 
 #[derive(Resource)]
-pub struct VertexManager {
+pub struct ShapeManager {
 
     current_file_type: FileTypeValue,
 
@@ -56,7 +56,7 @@ pub struct VertexManager {
     edges_3d_to_2d: HashMap<Entity, Entity>,
     edges_2d_to_3d: HashMap<Entity, Entity>,
 
-    vertices_recalc: u8,
+    shapes_recalc: u8,
     selection_recalc: bool,
     hover_recalc: bool,
 
@@ -65,13 +65,13 @@ pub struct VertexManager {
 
     pub select_circle_entity: Option<Entity>,
     pub select_line_entity: Option<Entity>,
-    selected_vertex: Option<(Entity, CanvasShape)>,
+    selected_shape: Option<(Entity, CanvasShape)>,
 
     last_vertex_dragged: Option<(Entity, Vec3, Vec3)>,
     compass_vertices: Vec<Entity>,
 }
 
-impl Default for VertexManager {
+impl Default for ShapeManager {
     fn default() -> Self {
         Self {
 
@@ -83,7 +83,7 @@ impl Default for VertexManager {
             edges_3d_to_2d: HashMap::new(),
             edges_2d_to_3d: HashMap::new(),
 
-            vertices_recalc: 0,
+            shapes_recalc: 0,
             selection_recalc: false,
             hover_recalc: false,
 
@@ -92,7 +92,7 @@ impl Default for VertexManager {
 
             select_circle_entity: None,
             select_line_entity: None,
-            selected_vertex: None,
+            selected_shape: None,
 
             last_vertex_dragged: None,
             compass_vertices: Vec::new(),
@@ -100,7 +100,7 @@ impl Default for VertexManager {
     }
 }
 
-impl VertexManager {
+impl ShapeManager {
     pub fn update_input(
         &mut self,
 
@@ -130,12 +130,12 @@ impl VertexManager {
                 InputAction::SwitchTo3dMode => {
                     // disable 2d camera, enable 3d camera
                     camera_manager.set_3d_mode(camera_q);
-                    self.recalculate_vertices();
+                    self.recalculate_shapes();
                 }
                 InputAction::SwitchTo2dMode => {
                     // disable 3d camera, enable 2d camera
                     camera_manager.set_2d_mode(camera_q);
-                    self.recalculate_vertices();
+                    self.recalculate_shapes();
                 }
                 InputAction::SetCameraAngleFixed(camera_angle) => match camera_angle {
                     CameraAngle::Side => {
@@ -210,7 +210,7 @@ impl VertexManager {
         edge_3d_q: &Query<(Entity, &Edge3dLocal)>,
         owned_by_q: &Query<&OwnedByTab>,
     ) {
-        if self.vertices_recalc == 0 {
+        if self.shapes_recalc == 0 {
             return;
         }
 
@@ -226,7 +226,7 @@ impl VertexManager {
             return;
         };
 
-        self.vertices_recalc -= 1;
+        self.shapes_recalc -= 1;
         self.recalculate_hover();
         self.recalculate_selection();
         self.compass_recalc(camera_manager, vertex_3d_q, &camera_transform);
@@ -371,8 +371,8 @@ impl VertexManager {
         }
     }
 
-    pub fn recalculate_vertices(&mut self) {
-        self.vertices_recalc = 2;
+    pub fn recalculate_shapes(&mut self) {
+        self.shapes_recalc = 2;
     }
 
     pub fn recalculate_hover(&mut self) {
@@ -383,18 +383,18 @@ impl VertexManager {
         self.selection_recalc = true;
     }
 
-    pub fn select_vertex(&mut self, entity: &Entity, shape: CanvasShape) {
-        self.selected_vertex = Some((*entity, shape));
-        self.recalculate_vertices();
+    pub fn select_shape(&mut self, entity: &Entity, shape: CanvasShape) {
+        self.selected_shape = Some((*entity, shape));
+        self.recalculate_shapes();
     }
 
-    pub fn deselect_vertex(&mut self) {
-        self.selected_vertex = None;
-        self.recalculate_vertices();
+    pub fn deselect_shape(&mut self) {
+        self.selected_shape = None;
+        self.recalculate_shapes();
     }
 
-    pub fn selected_vertex_2d(&self) -> Option<(Entity, CanvasShape)> {
-        self.selected_vertex
+    pub fn selected_shape_2d(&self) -> Option<(Entity, CanvasShape)> {
+        self.selected_shape
     }
 
     pub fn register_3d_vertex(&mut self, entity_3d: Entity, entity_2d: Entity) {
@@ -419,7 +419,7 @@ impl VertexManager {
             );
         }
 
-        self.recalculate_vertices();
+        self.recalculate_shapes();
     }
 
     pub fn cleanup_deleted_edge(&mut self, entity_3d: &Entity, commands: &mut Commands) {
@@ -434,7 +434,7 @@ impl VertexManager {
             );
         }
 
-        self.recalculate_vertices();
+        self.recalculate_shapes();
     }
 
     pub(crate) fn has_vertex_entity_3d(&self, entity_3d: &Entity) -> bool {
@@ -570,7 +570,7 @@ impl VertexManager {
     }
 
     fn handle_insert_key_press(&mut self, action_stack: &mut ActionStack) {
-        if self.selected_vertex.is_some() {
+        if self.selected_shape.is_some() {
             return;
         }
 
@@ -591,12 +591,12 @@ impl VertexManager {
         client: &mut Client,
         action_stack: &mut ActionStack,
     ) {
-        if self.selected_vertex.is_none() {
+        if self.selected_shape.is_none() {
             return;
         }
 
         // delete vertex
-        let (vertex_2d_entity, shape) = self.selected_vertex.unwrap();
+        let (vertex_2d_entity, shape) = self.selected_shape.unwrap();
 
         if shape == CanvasShape::RootVertex {
             return;
@@ -630,7 +630,7 @@ impl VertexManager {
 
         action_stack.buffer_action(Action::DeleteVertex(vertex_2d_entity, None));
 
-        self.selected_vertex = None;
+        self.selected_shape = None;
     }
 
     pub(crate) fn update_mouse_hover(
@@ -770,7 +770,7 @@ impl VertexManager {
             panic!("Select shape entities has no Visibility");
         };
 
-        if let Some((selected_vertex_entity, _)) = self.selected_vertex {
+        if let Some((selected_vertex_entity, _)) = self.selected_shape {
             let vertex_transform = {
                 let Ok(vertex_transform) = transform_q.get(selected_vertex_entity) else {
                     return;
@@ -812,7 +812,7 @@ impl VertexManager {
 
         //
 
-        if let Some((selected_vertex_entity, _)) = self.selected_vertex {
+        if let Some((selected_vertex_entity, _)) = self.selected_shape {
             let vertex_transform = {
                 let Ok(vertex_transform) = transform_q.get(selected_vertex_entity) else {
                     return;
@@ -846,23 +846,25 @@ impl VertexManager {
         transform_q: &Query<&mut Transform>,
     ) {
         let cursor_is_hovering = self.hovered_entity.is_some();
-        let vertex_is_selected = self.selected_vertex.is_some();
+        let vertex_is_selected = self.selected_shape.is_some();
 
         if vertex_is_selected {
             match click_type {
                 ClickType::Left => {
                     if cursor_is_hovering {
                         if self.current_file_type != FileTypeValue::Mesh {
+                            // skel file type does nothing when trying to connect vertices together
+                            // needs to always be a new vertex
                             return;
                         }
 
                         if let (_, CanvasShape::Edge) = self.hovered_entity.unwrap() {
+                            // should not ever be able to attach something to an edge?
                             return;
                         }
 
                         // link vertices together
-
-                        let (vertex_2d_entity_a, _) = self.selected_vertex.unwrap();
+                        let (vertex_2d_entity_a, _) = self.selected_shape.unwrap();
                         let (vertex_2d_entity_b, _) = self.hovered_entity.unwrap();
                         if vertex_2d_entity_a == vertex_2d_entity_b {
                             return;
@@ -888,7 +890,7 @@ impl VertexManager {
                         let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
 
                         // get 2d vertex transform
-                        let (vertex_2d_entity, _) = self.selected_vertex.unwrap();
+                        let (vertex_2d_entity, _) = self.selected_shape.unwrap();
                         if let Ok(vertex_2d_transform) = transform_q.get(vertex_2d_entity) {
                             // convert 2d to 3d
                             let new_3d_position = convert_2d_to_3d(
@@ -921,26 +923,25 @@ impl VertexManager {
                     }
                 }
                 ClickType::Right => {
-                    if self.selected_vertex.is_none() {
+                    if self.selected_shape.is_none() {
                         return;
                     }
 
                     // deselect vertex
-                    action_stack.buffer_action(Action::SelectVertex(None));
+                    action_stack.buffer_action(Action::SelectShape(None));
                 }
             }
         } else {
             if cursor_is_hovering {
                 match (self.hovered_entity.map(|(_, s)| s).unwrap(), click_type) {
                     (CanvasShape::Vertex, ClickType::Left)
-                    | (CanvasShape::RootVertex, ClickType::Left) => {
-                        action_stack.buffer_action(Action::SelectVertex(self.hovered_entity));
+                    | (CanvasShape::RootVertex, ClickType::Left) | (CanvasShape::Edge, ClickType::Left) => {
+                        action_stack.buffer_action(Action::SelectShape(self.hovered_entity));
                     }
                     (CanvasShape::Vertex, ClickType::Right)
                     | (CanvasShape::RootVertex, ClickType::Right) => {
                         // do nothing, vertex deselection happens above
                     }
-                    (CanvasShape::Edge, ClickType::Left) => { /* ? */ }
                     (CanvasShape::Edge, ClickType::Right) => {
                         // TODO: delete edge?
                     }
@@ -961,15 +962,15 @@ impl VertexManager {
         transform_q: &Query<&mut Transform>,
         vertex_3d_q: &mut Query<&mut Vertex3d>,
     ) {
-        let vertex_is_selected = self.selected_vertex.is_some();
+        let vertex_is_selected = self.selected_shape.is_some();
         let vertex_is_root_vertex =
-            vertex_is_selected && self.selected_vertex.unwrap().1 == CanvasShape::RootVertex;
+            vertex_is_selected && self.selected_shape.unwrap().1 == CanvasShape::RootVertex;
 
         if vertex_is_selected && !vertex_is_root_vertex {
             match click_type {
                 ClickType::Left => {
                     // move vertex
-                    let (vertex_2d_entity, _) = self.selected_vertex.unwrap();
+                    let (vertex_2d_entity, _) = self.selected_shape.unwrap();
 
                     if let Some(vertex_3d_entity) = self.vertex_entity_2d_to_3d(&vertex_2d_entity) {
                         let auth_status = commands
@@ -1021,7 +1022,7 @@ impl VertexManager {
                         vertex_3d.set_z(new_3d_position.z as i16);
 
                         // redraw
-                        self.recalculate_vertices();
+                        self.recalculate_shapes();
                     } else {
                         warn!(
                             "Selected vertex entity: {:?} has no 3d counterpart",

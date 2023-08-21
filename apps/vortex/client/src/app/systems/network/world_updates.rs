@@ -29,7 +29,7 @@ use crate::app::{
         camera_manager::CameraManager,
         global::Global,
         shape_waitlist::{ShapeWaitlist, ShapeWaitlistInsert},
-        vertex_manager::VertexManager,
+        shape_manager::ShapeManager,
     },
     systems::file_post_process,
 };
@@ -224,7 +224,7 @@ pub fn insert_vertex_events(
 
     // for vertices
     mut camera_manager: ResMut<CameraManager>,
-    mut vertex_manager: ResMut<VertexManager>,
+    mut shape_manager: ResMut<ShapeManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
     mut shape_waitlist: ResMut<ShapeWaitlist>,
@@ -243,7 +243,7 @@ pub fn insert_vertex_events(
             &mut meshes,
             &mut materials,
             &mut camera_manager,
-            &mut vertex_manager,
+            &mut shape_manager,
             &entity,
             ShapeWaitlistInsert::Vertex,
         );
@@ -260,7 +260,7 @@ pub fn insert_vertex_events(
             &mut meshes,
             &mut materials,
             &mut camera_manager,
-            &mut vertex_manager,
+            &mut shape_manager,
             &entity,
             ShapeWaitlistInsert::VertexRoot,
         );
@@ -288,7 +288,7 @@ pub fn insert_vertex_events(
             &mut meshes,
             &mut materials,
             &mut camera_manager,
-            &mut vertex_manager,
+            &mut shape_manager,
             &edge_entity,
             ShapeWaitlistInsert::Edge(start_entity, end_entity),
         );
@@ -308,7 +308,7 @@ pub fn insert_vertex_events(
             &mut meshes,
             &mut materials,
             &mut camera_manager,
-            &mut vertex_manager,
+            &mut shape_manager,
             &entity,
             ShapeWaitlistInsert::OwnedByTab(tab_id),
         );
@@ -328,7 +328,7 @@ pub fn insert_vertex_events(
             &mut meshes,
             &mut materials,
             &mut camera_manager,
-            &mut vertex_manager,
+            &mut shape_manager,
             &entity,
             ShapeWaitlistInsert::FileType(file_type_value),
         );
@@ -377,7 +377,7 @@ pub fn remove_component_events(
     client: Client,
     mut global: ResMut<Global>,
     mut event_reader: EventReader<RemoveComponentEvents>,
-    mut vertex_manager: ResMut<VertexManager>,
+    mut shape_manager: ResMut<ShapeManager>,
     mut parent_q: Query<&mut FileSystemParent>,
     mut fs_state_q: Query<&mut FileSystemUiState>,
 ) {
@@ -421,12 +421,12 @@ pub fn remove_component_events(
         for (entity, _) in events.read::<Vertex3d>() {
             info!("entity: `{:?}`, removed Vertex3d", entity);
 
-            vertex_manager.cleanup_deleted_vertex(&entity, &mut commands);
+            shape_manager.cleanup_deleted_vertex(&entity, &mut commands);
         }
         for (entity, _) in events.read::<Edge3d>() {
             info!("entity: `{:?}`, removed Edge3d", entity);
 
-            vertex_manager.cleanup_deleted_edge(&entity, &mut commands);
+            shape_manager.cleanup_deleted_edge(&entity, &mut commands);
         }
     }
 }

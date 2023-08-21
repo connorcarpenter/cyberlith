@@ -16,7 +16,7 @@ use vortex_proto::types::TabId;
 
 use crate::app::{
     components::{Edge3dLocal, Vertex2d},
-    resources::{camera_manager::CameraManager, vertex_manager::VertexManager},
+    resources::{camera_manager::CameraManager, shape_manager::ShapeManager},
 };
 
 pub enum ShapeWaitlistInsert {
@@ -149,7 +149,7 @@ impl ShapeWaitlist {
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         camera_manager: &mut CameraManager,
-        vertex_manager: &mut VertexManager,
+        shape_manager: &mut ShapeManager,
         entity: &Entity,
         insert: ShapeWaitlistInsert,
     ) {
@@ -219,7 +219,7 @@ impl ShapeWaitlist {
                 (ShapeType::Vertex, FileTypeValue::Skel) => {
                     if entry.has_parent() {
                         let parent_entity = entry.get_parent().unwrap();
-                        if !vertex_manager.has_vertex_entity_3d(&parent_entity) {
+                        if !shape_manager.has_vertex_entity_3d(&parent_entity) {
                             // need to put in parent waitlist
                             info!(
                                 "vert entity {:?} requires parent {:?}. putting in parent waitlist",
@@ -238,7 +238,7 @@ impl ShapeWaitlist {
                 (ShapeType::Edge, _) => {
                     let entities = entry.edge_entities.unwrap();
                     let mut has_all_entities = true;
-                    if !vertex_manager.has_vertex_entity_3d(&entities.0) {
+                    if !shape_manager.has_vertex_entity_3d(&entities.0) {
                         // need to put in parent waitlist
                         info!(
                             "edge entity {:?} requires parent {:?}. putting in parent waitlist",
@@ -247,7 +247,7 @@ impl ShapeWaitlist {
                         self.insert_waiting_dependency(entities.0, entity, entry.clone());
                         has_all_entities = false;
                     }
-                    if !vertex_manager.has_vertex_entity_3d(&entities.1) {
+                    if !shape_manager.has_vertex_entity_3d(&entities.1) {
                         // need to put in parent waitlist
                         info!(
                             "edge entity {:?} requires parent {:?}. putting in parent waitlist",
@@ -266,7 +266,7 @@ impl ShapeWaitlist {
                 meshes,
                 materials,
                 camera_manager,
-                vertex_manager,
+                shape_manager,
                 entity,
                 entry,
             );
@@ -279,7 +279,7 @@ impl ShapeWaitlist {
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         camera_manager: &mut CameraManager,
-        vertex_manager: &mut VertexManager,
+        shape_manager: &mut ShapeManager,
         entity: Entity,
         entry: ShapeWaitlistEntry,
     ) {
@@ -294,7 +294,7 @@ impl ShapeWaitlist {
                     None => Vertex2d::ROOT_COLOR,
                 };
 
-                let _new_vertex_2d_entity = vertex_manager.vertex_3d_postprocess(
+                let _new_vertex_2d_entity = shape_manager.vertex_3d_postprocess(
                     commands,
                     meshes,
                     materials,
@@ -321,7 +321,7 @@ impl ShapeWaitlist {
                             meshes,
                             materials,
                             camera_manager,
-                            vertex_manager,
+                            shape_manager,
                             child_entity,
                             child_entry,
                         );
@@ -331,7 +331,7 @@ impl ShapeWaitlist {
             (ShapeData::Vertex(_), FileTypeValue::Mesh) => {
                 let color = Vertex2d::CHILD_COLOR;
 
-                let _new_vertex_2d_entity = vertex_manager.vertex_3d_postprocess(
+                let _new_vertex_2d_entity = shape_manager.vertex_3d_postprocess(
                     commands,
                     meshes,
                     materials,
@@ -348,12 +348,12 @@ impl ShapeWaitlist {
             }
             (ShapeData::Edge(start, end), _) => {
 
-                let start_2d = *vertex_manager.vertex_entity_3d_to_2d(&start).unwrap();
-                let end_2d = *vertex_manager.vertex_entity_3d_to_2d(&end).unwrap();
+                let start_2d = *shape_manager.vertex_entity_3d_to_2d(&start).unwrap();
+                let end_2d = *shape_manager.vertex_entity_3d_to_2d(&end).unwrap();
 
                 commands.entity(entity).insert(Edge3dLocal::new(start, end));
 
-                let _new_edge_2d_entity = vertex_manager.edge_3d_postprocess(
+                let _new_edge_2d_entity = shape_manager.edge_3d_postprocess(
                     commands,
                     meshes,
                     materials,
@@ -369,7 +369,7 @@ impl ShapeWaitlist {
         }
 
         camera_manager.recalculate_3d_view();
-        vertex_manager.recalculate_vertices();
+        shape_manager.recalculate_shapes();
     }
 
     fn contains_key(&self, entity: &Entity) -> bool {

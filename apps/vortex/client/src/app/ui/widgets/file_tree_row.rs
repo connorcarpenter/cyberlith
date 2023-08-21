@@ -35,7 +35,7 @@ use crate::app::{
         canvas::Canvas,
         global::Global,
         tab_manager::TabManager,
-        vertex_manager::VertexManager,
+        shape_manager::ShapeManager,
     },
     ui::{
         widgets::colors::{
@@ -393,7 +393,7 @@ impl FileTreeRowUiWidget {
                 Client,
                 ResMut<Canvas>,
                 ResMut<CameraManager>,
-                ResMut<VertexManager>,
+                ResMut<ShapeManager>,
                 ResMut<TabManager>,
                 Query<(&mut Visibility, &OwnedByTab)>,
             )> = SystemState::new(world);
@@ -401,7 +401,7 @@ impl FileTreeRowUiWidget {
                 mut client,
                 mut canvas,
                 mut camera_manager,
-                mut vertex_manager,
+                mut shape_manager,
                 mut tab_manager,
                 mut visibility_q,
             ) = system_state.get_mut(world);
@@ -409,7 +409,7 @@ impl FileTreeRowUiWidget {
                 &mut client,
                 &mut canvas,
                 &mut camera_manager,
-                &mut vertex_manager,
+                &mut shape_manager,
                 &mut visibility_q,
                 row_entity,
                 file_ext,

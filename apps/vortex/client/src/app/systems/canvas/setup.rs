@@ -15,7 +15,7 @@ use render_egui::EguiUserTextures;
 use crate::app::{
     components::{HoverCircle, SelectCircle, SelectLine, Vertex2d},
     config::AppConfig,
-    resources::{camera_manager::CameraManager, canvas::Canvas, vertex_manager::VertexManager},
+    resources::{camera_manager::CameraManager, canvas::Canvas, shape_manager::ShapeManager},
     shapes::create_2d_edge_arrow,
 };
 
@@ -23,7 +23,7 @@ pub fn setup(
     config: Res<AppConfig>,
     mut commands: Commands,
     mut canvas: ResMut<Canvas>,
-    mut vertex_manager: ResMut<VertexManager>,
+    mut shape_manager: ResMut<ShapeManager>,
     mut camera_manager: ResMut<CameraManager>,
     mut textures: ResMut<Assets<CpuTexture2D>>,
     mut user_textures: ResMut<EguiUserTextures>,
@@ -47,19 +47,19 @@ pub fn setup(
     setup_2d_scene(
         &mut commands,
         &mut camera_manager,
-        &mut vertex_manager,
+        &mut shape_manager,
         &mut meshes,
         &mut materials,
         &texture_size,
         canvas_texture_handle,
     );
-    vertex_manager.setup_compass(
+    shape_manager.setup_compass(
         &mut commands,
         &mut camera_manager,
         &mut meshes,
         &mut materials,
     );
-    vertex_manager.setup_grid(
+    shape_manager.setup_grid(
         &mut commands,
         &mut camera_manager,
         &mut meshes,
@@ -70,7 +70,7 @@ pub fn setup(
 fn setup_2d_scene(
     commands: &mut Commands,
     camera_manager: &mut CameraManager,
-    vertex_manager: &mut VertexManager,
+    shape_manager: &mut ShapeManager,
     meshes: &mut Assets<CpuMesh>,
     materials: &mut Assets<CpuMaterial>,
     texture_size: &Vec2,
@@ -118,7 +118,7 @@ fn setup_2d_scene(
         .insert(camera_manager.layer_2d)
         .insert(HoverCircle)
         .id();
-    vertex_manager.hover_circle_entity = Some(hover_circle_entity);
+    shape_manager.hover_circle_entity = Some(hover_circle_entity);
 
     // select circle
     let mut select_circle_components = RenderObjectBundle::circle(
@@ -136,7 +136,7 @@ fn setup_2d_scene(
         .insert(camera_manager.layer_2d)
         .insert(SelectCircle)
         .id();
-    vertex_manager.select_circle_entity = Some(select_circle_entity);
+    shape_manager.select_circle_entity = Some(select_circle_entity);
 
     // select line
     let mut select_line_components =
@@ -147,7 +147,7 @@ fn setup_2d_scene(
         .insert(camera_manager.layer_2d)
         .insert(SelectLine)
         .id();
-    vertex_manager.select_line_entity = Some(select_line_entity);
+    shape_manager.select_line_entity = Some(select_line_entity);
 }
 
 fn setup_3d_scene(
