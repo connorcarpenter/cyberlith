@@ -374,9 +374,9 @@ impl ActionStack {
             panic!("No executed actions to undo!");
         };
 
-        let reversed_action = self.execute_action(world, action);
+        let mut reversed_actions = self.execute_action(world, action);
 
-        self.redo_actions.push(reversed_action);
+        self.redo_actions.append(&mut reversed_actions);
 
         self.enable_top(world);
     }
@@ -389,9 +389,9 @@ impl ActionStack {
             panic!("No undone actions to redo!");
         };
 
-        let reversed_action = self.execute_action(world, action);
+        let mut reversed_actions = self.execute_action(world, action);
 
-        self.undo_actions.push(reversed_action);
+        self.undo_actions.append(&mut reversed_actions);
 
         self.enable_top(world);
     }
@@ -406,15 +406,15 @@ impl ActionStack {
         }
         let drained_actions: Vec<Action> = self.buffered_actions.drain(..).collect();
         for action in drained_actions {
-            let reversed_action = self.execute_action(world, action);
-            self.undo_actions.push(reversed_action);
+            let mut reversed_actions = self.execute_action(world, action);
+            self.undo_actions.append(&mut reversed_actions);
         }
         self.redo_actions.clear();
 
         self.enable_top(world);
     }
 
-    fn execute_action(&mut self, world: &mut World, action: Action) -> Action {
+    fn execute_action(&mut self, world: &mut World, action: Action) -> Vec<Action> {
         match action {
             Action::SelectEntries(file_entities) => {
                 let mut system_state: SystemState<(
@@ -441,7 +441,7 @@ impl ActionStack {
 
                 system_state.apply(world);
 
-                return Action::SelectEntries(deselected_row_entities);
+                return vec![Action::SelectEntries(deselected_row_entities)];
             }
             Action::NewEntry(
                 parent_entity_opt,
@@ -527,7 +527,7 @@ impl ActionStack {
 
                 system_state.apply(world);
 
-                return Action::DeleteEntry(entity_id, Some(deselected_row_entities));
+                return vec![Action::DeleteEntry(entity_id, Some(deselected_row_entities))];
             }
             Action::DeleteEntry(file_entity, files_to_select_opt) => {
                 let mut system_state: SystemState<(
@@ -618,14 +618,14 @@ impl ActionStack {
 
                 system_state.apply(world);
 
-                return Action::NewEntry(
+                return vec![Action::NewEntry(
                     parent_entity_opt,
                     entry_name,
                     entry_kind,
                     Some(file_entity),
                     entry_contents_opt
                         .map(|entries| entries.into_iter().map(|(_, tree)| tree).collect()),
-                );
+                )];
             }
             Action::RenameEntry(file_entity, new_name) => {
                 let mut system_state: SystemState<Query<&mut FileSystemEntry>> =
@@ -639,7 +639,7 @@ impl ActionStack {
 
                 system_state.apply(world);
 
-                return Action::RenameEntry(file_entity, old_name);
+                return vec![Action::RenameEntry(file_entity, old_name)];
             }
             Action::SelectShape(shape_2d_entity_opt) => {
                 info!("SelectShape({:?})", shape_2d_entity_opt);
@@ -672,7 +672,7 @@ impl ActionStack {
 
                 system_state.apply(world);
 
-                return Action::SelectShape(deselected_entity);
+                return vec![Action::SelectShape(deselected_entity)];
             }
             Action::CreateVertex(vertex_type_data, position, old_vertex_entities_opt) => {
                 let mut entities_to_release = Vec::new();
@@ -816,7 +816,7 @@ impl ActionStack {
                     system_state.apply(world);
                 }
 
-                return Action::DeleteVertex(selected_vertex_2d, deselected_vertex_2d_entity_store);
+                return vec![Action::DeleteVertex(selected_vertex_2d, deselected_vertex_2d_entity_store)];
             }
             Action::DeleteVertex(vertex_2d_entity, vertex_2d_to_select_opt) => {
                 info!("DeleteVertex({:?})", vertex_2d_entity);
@@ -903,11 +903,11 @@ impl ActionStack {
 
                         system_state.apply(world);
 
-                        return Action::CreateVertex(
+                        return vec![Action::CreateVertex(
                             rev_vertex_type_data,
                             vertex_3d_position,
                             Some((vertex_2d_entity, vertex_3d_entity)),
-                        );
+                        )];
                     }
                     FileTypeValue::Mesh => {
 
@@ -955,11 +955,11 @@ impl ActionStack {
 
                         system_state.apply(world);
 
-                        return Action::CreateVertex(
+                        return vec![Action::CreateVertex(
                             rev_vertex_type_data,
                             vertex_3d_position,
                             Some((vertex_2d_entity, vertex_3d_entity)),
-                        );
+                        )];
                     }
                 }
             }
@@ -986,7 +986,7 @@ impl ActionStack {
 
                 system_state.apply(world);
 
-                return Action::MoveVertex(vertex_2d_entity, new_position, old_position);
+                return vec![Action::MoveVertex(vertex_2d_entity, new_position, old_position)];
             }
             Action::CreateEdge(vertex_2d_entity_a, vertex_2d_entity_b, old_edge_entities_opt) => {
                 info!("CreateEdge");
@@ -1084,7 +1084,10 @@ impl ActionStack {
                     system_state.apply(world);
                 }
 
-                return Action::DeleteEdge(created_edge_2d_entity, deselected_vertex_2d_entity_store);
+                return vec![
+                    Action::DeleteEdge(created_edge_2d_entity, deselected_vertex_2d_entity_store),
+                    Action::SelectShape(Some((created_edge_2d_entity, CanvasShape::Edge))),
+                ];
             }
             Action::DeleteEdge(edge_2d_entity, vertex_2d_to_select_opt) => {
 
@@ -1132,7 +1135,7 @@ impl ActionStack {
 
                 system_state.apply(world);
 
-                return Action::CreateEdge(vertex_start_2d, vertex_end_2d, Some((edge_2d_entity, edge_3d_entity)));
+                return vec![Action::CreateEdge(vertex_start_2d, vertex_end_2d, Some((edge_2d_entity, edge_3d_entity)))];
             }
         }
     }
