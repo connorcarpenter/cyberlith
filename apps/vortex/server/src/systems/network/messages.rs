@@ -22,7 +22,7 @@ pub fn message_events(
     mut tab_manager: ResMut<TabManager>,
     mut cl_manager: ResMut<ChangelistManager>,
     mut vertex_waitlist: ResMut<ShapeWaitlist>,
-    mut vertex_manager: ResMut<ShapeManager>,
+    mut shape_manager: ResMut<ShapeManager>,
     key_query: Query<&FileEntryKey>,
 ) {
     for events in event_reader.iter() {
@@ -42,7 +42,7 @@ pub fn message_events(
                     &user_manager,
                     &mut git_manager,
                     &mut vertex_waitlist,
-                    &mut vertex_manager,
+                    &mut shape_manager,
                     &key_query,
                     &user_key,
                     &tab_id,

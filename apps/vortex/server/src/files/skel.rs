@@ -45,7 +45,7 @@ impl SkelWriter {
     ) -> Vec<SkelAction> {
         let mut system_state: SystemState<(Res<ShapeManager>, Query<&Vertex3d>, Query<&FileType>)> =
             SystemState::new(world);
-        let (vertex_manager, vertex_q, file_type_q) = system_state.get_mut(world);
+        let (shape_manager, vertex_q, file_type_q) = system_state.get_mut(world);
 
         let mut output = Vec::new();
 
@@ -61,7 +61,7 @@ impl SkelWriter {
             }
             let vertex = vertex_q.get(*entity).unwrap();
 
-            let parent_id: Option<Entity> = vertex_manager.get_vertex_parent(entity);
+            let parent_id: Option<Entity> = shape_manager.get_vertex_parent(entity);
 
             let vertex_info = (id, vertex.x(), vertex.y(), vertex.z(), parent_id);
             map.insert(*entity, vertex_info);
@@ -224,7 +224,7 @@ impl SkelReader {
 
     pub fn post_process_entities(
         vertex_waitlist: &mut ShapeWaitlist,
-        vertex_manager: &mut ShapeManager,
+        shape_manager: &mut ShapeManager,
         entities: Vec<(Entity, Option<(Entity, Entity)>)>,
     ) -> HashMap<Entity, ContentEntityData> {
         let mut new_content_entities = HashMap::new();
@@ -240,10 +240,10 @@ impl SkelReader {
                 new_content_entities
                     .insert(edge_entity, ContentEntityData::new(ShapeType::Edge));
                 inserts.push(ShapeWaitlistInsert::Edge(parent_entity, edge_entity, vertex_entity));
-                vertex_waitlist.process_inserts(vertex_manager, inserts);
+                vertex_waitlist.process_inserts(shape_manager, inserts);
             } else {
                 inserts.push(ShapeWaitlistInsert::VertexRoot(vertex_entity));
-                vertex_waitlist.process_inserts(vertex_manager, inserts);
+                vertex_waitlist.process_inserts(shape_manager, inserts);
             }
 
         }

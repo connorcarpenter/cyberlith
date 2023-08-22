@@ -118,7 +118,7 @@ impl UserTabState {
         server: &mut Server,
         workspace: &Workspace,
         vertex_waitlist: &mut ShapeWaitlist,
-        vertex_manager: &mut ShapeManager,
+        shape_manager: &mut ShapeManager,
         file_entity: &Entity,
         file_entry_key: &FileEntryKey,
     ) {
@@ -132,7 +132,7 @@ impl UserTabState {
                 server,
                 workspace,
                 vertex_waitlist,
-                vertex_manager,
+                shape_manager,
                 file_entry_key,
                 *tab_id,
                 tab_is_selected,
@@ -200,7 +200,7 @@ impl TabState {
         server: &mut Server,
         workspace: &Workspace,
         vertex_waitlist: &mut ShapeWaitlist,
-        vertex_manager: &mut ShapeManager,
+        shape_manager: &mut ShapeManager,
         file_entry_key: &FileEntryKey,
         tab_id: TabId,
         tab_is_selected: bool,
@@ -217,10 +217,10 @@ impl TabState {
 
             match entity_data.shape_type {
                 ShapeType::Vertex => {
-                    vertex_manager.on_delete_vertex(commands, server, entity);
+                    shape_manager.on_delete_vertex(commands, server, entity);
                 }
                 ShapeType::Edge => {
-                    //vertex_manager.on_delete_edge();
+                    //shape_manager.on_delete_edge();
                 }
                 ShapeType::Face => {}
             }
@@ -231,10 +231,10 @@ impl TabState {
 
         let new_content_entities = match output {
             FileReadOutput::Skel(entities) => {
-                SkelReader::post_process_entities(vertex_waitlist, vertex_manager, entities)
+                SkelReader::post_process_entities(vertex_waitlist, shape_manager, entities)
             }
             FileReadOutput::Mesh(shape_entities) => {
-                MeshReader::post_process_entities(vertex_manager, shape_entities)
+                MeshReader::post_process_entities(shape_manager, shape_entities)
             }
         };
 

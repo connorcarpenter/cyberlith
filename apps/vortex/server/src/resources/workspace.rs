@@ -295,7 +295,7 @@ impl Workspace {
             ResMut<ShapeManager>,
             Query<&ChangelistEntry>,
         )> = SystemState::new(world);
-        let (mut commands, mut server, mut tab_manager, mut vertex_waitlist, mut vertex_manager, cl_query) =
+        let (mut commands, mut server, mut tab_manager, mut vertex_waitlist, mut shape_manager, cl_query) =
             system_state.get_mut(world);
 
         let cl_entity: Entity = message.entity.get(&server).unwrap();
@@ -317,7 +317,7 @@ impl Workspace {
                     &mut server,
                     self,
                     &mut vertex_waitlist,
-                    &mut vertex_manager,
+                    &mut shape_manager,
                     user_key,
                     &file_entity,
                     &file_entry_key,

@@ -143,17 +143,17 @@ impl Default for ShapeWaitlist {
 impl ShapeWaitlist {
     pub fn process_inserts(
         &mut self,
-        vertex_manager: &mut ShapeManager,
+        shape_manager: &mut ShapeManager,
         inserts: Vec<ShapeWaitlistInsert>,
     ) {
         for insert in inserts {
-            self.process_insert(vertex_manager, insert);
+            self.process_insert(shape_manager, insert);
         }
     }
 
     pub fn process_insert(
         &mut self,
-        vertex_manager: &mut ShapeManager,
+        shape_manager: &mut ShapeManager,
         insert: ShapeWaitlistInsert,
     ) {
         let mut possibly_ready_entities = Vec::new();
@@ -226,7 +226,7 @@ impl ShapeWaitlist {
                     (FileTypeValue::Skel, ShapeType::Vertex) => {
                         if entry.has_edge_and_parent() {
                             let (_, parent_entity) = entry.get_edge_and_parent().unwrap();
-                            if !vertex_manager.has_vertex(&parent_entity) {
+                            if !shape_manager.has_vertex(&parent_entity) {
                                 // need to put in parent waitlist
                                 info!(
                                     "vert entity {:?} requires parent {:?}. putting in parent waitlist",
@@ -248,7 +248,7 @@ impl ShapeWaitlist {
                     (FileTypeValue::Mesh, ShapeType::Edge) => {
                         let entities = entry.edge_entities.unwrap();
                         let mut has_all_entities = true;
-                        if !vertex_manager.has_vertex(&entities.0) {
+                        if !shape_manager.has_vertex(&entities.0) {
                             // need to put in parent waitlist
                             info!(
                                 "edge entity {:?} requires parent {:?}. putting in parent waitlist",
@@ -257,7 +257,7 @@ impl ShapeWaitlist {
                             self.insert_waiting_dependency(entities.0, entity, entry.clone());
                             has_all_entities = false;
                         }
-                        if !vertex_manager.has_vertex(&entities.1) {
+                        if !shape_manager.has_vertex(&entities.1) {
                             // need to put in parent waitlist
                             info!(
                                 "edge entity {:?} requires parent {:?}. putting in parent waitlist",
@@ -274,7 +274,7 @@ impl ShapeWaitlist {
 
                 info!("processing shape {:?}", entity);
                 self.process_complete(
-                    vertex_manager,
+                    shape_manager,
                     entity,
                     entry,
                 );
@@ -286,7 +286,7 @@ impl ShapeWaitlist {
 
     fn process_complete(
         &mut self,
-        vertex_manager: &mut ShapeManager,
+        shape_manager: &mut ShapeManager,
         entity: Entity,
         entry: ShapeWaitlistEntry,
     ) {
@@ -296,16 +296,16 @@ impl ShapeWaitlist {
 
         match data {
             ShapeData::SkelVertex(edge_and_parent_opt) => {
-                vertex_manager.on_create_skel_vertex(entity, edge_and_parent_opt);
+                shape_manager.on_create_skel_vertex(entity, edge_and_parent_opt);
             }
             ShapeData::SkelEdge => {
                 //
             }
             ShapeData::MeshVertex => {
-                vertex_manager.on_create_mesh_vertex(entity);
+                shape_manager.on_create_mesh_vertex(entity);
             }
             ShapeData::MeshEdge(start, end) => {
-                vertex_manager.on_create_mesh_edge(start, entity, end);
+                shape_manager.on_create_mesh_edge(start, entity, end);
             }
         }
 
@@ -321,7 +321,7 @@ impl ShapeWaitlist {
                     child_entity, entity
                 );
                 self.process_complete(
-                    vertex_manager,
+                    shape_manager,
                     child_entity,
                     child_entry,
                 );

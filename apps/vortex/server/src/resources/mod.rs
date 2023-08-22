@@ -5,7 +5,7 @@ mod git_manager;
 mod tab_manager;
 mod user_manager;
 mod user_tab_state;
-mod vertex_manager;
+mod shape_manager;
 mod workspace;
 mod vertex_waitlist;
 
@@ -15,5 +15,5 @@ pub use git_manager::*;
 pub use tab_manager::*;
 pub use user_manager::*;
 pub use user_tab_state::*;
-pub use vertex_manager::*;
+pub use shape_manager::*;
 pub use vertex_waitlist::*;

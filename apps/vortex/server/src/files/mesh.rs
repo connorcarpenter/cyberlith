@@ -316,7 +316,7 @@ impl FileReader for MeshReader {
 impl MeshReader {
 
     pub fn post_process_entities(
-        vertex_manager: &mut ShapeManager,
+        shape_manager: &mut ShapeManager,
         shape_entities: Vec<(Entity, ShapeTypeData)>,
     ) -> HashMap<Entity, ContentEntityData> {
         let mut new_content_entities = HashMap::new();
@@ -326,10 +326,10 @@ impl MeshReader {
 
             match shape_type_data {
                 ShapeTypeData::Vertex => {
-                    vertex_manager.on_create_mesh_vertex(entity);
+                    shape_manager.on_create_mesh_vertex(entity);
                 }
                 ShapeTypeData::Edge(start, end) => {
-                    vertex_manager.on_create_mesh_edge(start, entity, end);
+                    shape_manager.on_create_mesh_edge(start, entity, end);
                 }
                 ShapeTypeData::Face => {}
             }

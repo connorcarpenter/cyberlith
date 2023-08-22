@@ -43,7 +43,7 @@ pub fn despawn_entity_events(
     user_manager: Res<UserManager>,
     mut git_manager: ResMut<GitManager>,
     mut tab_manager: ResMut<TabManager>,
-    mut vertex_manager: ResMut<ShapeManager>,
+    mut shape_manager: ResMut<ShapeManager>,
     mut event_reader: EventReader<DespawnEntityEvent>,
     entry_key_query: Query<&FileEntryKey>,
 ) {
@@ -54,8 +54,8 @@ pub fn despawn_entity_events(
         let workspace = git_manager.workspace_mut(user.get_username());
 
         let entity_is_file = workspace.entity_is_file(entity);
-        let entity_is_vertex = vertex_manager.has_vertex(entity);
-        let entity_is_edge = vertex_manager.has_edge(entity);
+        let entity_is_vertex = shape_manager.has_vertex(entity);
+        let entity_is_edge = shape_manager.has_edge(entity);
 
         match (entity_is_file, entity_is_vertex, entity_is_edge) {
             (true, false, false) => {
@@ -68,7 +68,7 @@ pub fn despawn_entity_events(
                 // vertex
                 info!("entity: `{:?}` (which is a Vertex), despawned", entity);
 
-                let other_entities_to_despawn = vertex_manager.on_delete_vertex(&mut commands, &mut server, entity);
+                let other_entities_to_despawn = shape_manager.on_delete_vertex(&mut commands, &mut server, entity);
 
                 handle_file_modify(
                     &mut commands,
@@ -90,7 +90,7 @@ pub fn despawn_entity_events(
                 // edge
                 info!("entity: `{:?}` (which is an Edge), despawned", entity);
 
-                vertex_manager.on_delete_edge(entity);
+                shape_manager.on_delete_edge(entity);
 
                 handle_file_modify(
                     &mut commands,
@@ -119,7 +119,7 @@ pub fn insert_component_events(
     mut git_manager: ResMut<GitManager>,
     mut tab_manager: ResMut<TabManager>,
     mut vertex_waitlist: ResMut<ShapeWaitlist>,
-    mut vertex_manager: ResMut<ShapeManager>,
+    mut shape_manager: ResMut<ShapeManager>,
     mut fs_waiting_entities: Local<HashMap<Entity, FSWaitlist>>,
     mut event_reader: EventReader<InsertComponentEvents>,
     fs_entry_q: Query<&FileSystemEntry>,
@@ -199,7 +199,7 @@ pub fn insert_component_events(
                 &entry_key_q,
             );
             vertex_waitlist.process_insert(
-                &mut vertex_manager,
+                &mut shape_manager,
                 ShapeWaitlistInsert::Vertex(entity),
             );
         }
@@ -228,7 +228,7 @@ pub fn insert_component_events(
                 panic!("no child entity!")
             };
             vertex_waitlist.process_insert(
-                &mut vertex_manager,
+                &mut shape_manager,
                 ShapeWaitlistInsert::Edge(start_entity, edge_entity, end_entity),
             );
         }
@@ -241,7 +241,7 @@ pub fn insert_component_events(
             info!("entity: `{:?}`, inserted FileType: {:?}", entity, file_type_value);
 
             vertex_waitlist.process_insert(
-                &mut vertex_manager,
+                &mut shape_manager,
                 ShapeWaitlistInsert::FileType(entity, file_type_value),
             );
         }
@@ -250,8 +250,8 @@ pub fn insert_component_events(
         for (_user_key, entity) in events.read::<VertexRoot>() {
             panic!("how is this possible?");
             // info!("entity: `{:?}`, inserted VertexRoot", entity);
-            // vertex_manager.on_create_vertex(&entity, None);
-            // vertex_manager.finalize_vertex_creation();
+            // shape_manager.on_create_vertex(&entity, None);
+            // shape_manager.finalize_vertex_creation();
         }
     }
 }
