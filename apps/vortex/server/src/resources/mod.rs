@@ -7,7 +7,7 @@ mod user_manager;
 mod user_tab_state;
 mod shape_manager;
 mod workspace;
-mod vertex_waitlist;
+mod shape_waitlist;
 
 pub use changelist_manager::*;
 pub use file_entry::*;
@@ -16,4 +16,4 @@ pub use tab_manager::*;
 pub use user_manager::*;
 pub use user_tab_state::*;
 pub use shape_manager::*;
-pub use vertex_waitlist::*;
+pub use shape_waitlist::*;
