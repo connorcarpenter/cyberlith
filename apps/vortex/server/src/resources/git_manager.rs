@@ -28,7 +28,7 @@ use crate::{
     files::{post_process_networked_entities, FileReadOutput, FileWriter, MeshReader, SkelReader},
     resources::{
         user_manager::UserInfo, workspace::Workspace, ContentEntityData, FileEntryValue,
-        UserManager, ShapeManager, ShapeWaitlist
+        ShapeManager, ShapeWaitlist, UserManager,
     },
 };
 

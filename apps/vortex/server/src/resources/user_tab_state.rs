@@ -9,7 +9,7 @@ use vortex_proto::{resources::FileEntryKey, types::TabId};
 
 use crate::{
     files::{post_process_networked_entities, FileReadOutput, MeshReader, ShapeType, SkelReader},
-    resources::{ShapeWaitlist, workspace::Workspace, ShapeManager},
+    resources::{workspace::Workspace, ShapeManager, ShapeWaitlist},
 };
 
 pub struct UserTabState {
@@ -92,7 +92,11 @@ impl UserTabState {
         }
     }
 
-    pub(crate) fn current_tab_add_content_entity(&mut self, entity: &Entity, shape_type: ShapeType) {
+    pub(crate) fn current_tab_add_content_entity(
+        &mut self,
+        entity: &Entity,
+        shape_type: ShapeType,
+    ) {
         if let Some(tab_id) = self.current_tab {
             if let Some(state) = self.tabs.get_mut(&tab_id) {
                 state.add_content_entity(*entity, shape_type);

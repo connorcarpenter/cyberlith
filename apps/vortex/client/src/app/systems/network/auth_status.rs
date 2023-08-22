@@ -1,11 +1,8 @@
-use bevy_ecs::{
-    event::EventReader,
-    system::ResMut,
-};
+use bevy_ecs::{event::EventReader, system::ResMut};
 use bevy_log::info;
 
-use naia_bevy_client::{
-    events::{EntityAuthDeniedEvent, EntityAuthGrantedEvent, EntityAuthResetEvent},
+use naia_bevy_client::events::{
+    EntityAuthDeniedEvent, EntityAuthGrantedEvent, EntityAuthResetEvent,
 };
 
 use crate::app::resources::{action_stack::ActionStack, shape_manager::ShapeManager};

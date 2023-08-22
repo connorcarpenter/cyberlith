@@ -17,9 +17,8 @@ use render_api::{
 
 use vortex_proto::{
     components::{
-        FileType, FileTypeValue,
         ChangelistEntry, Edge3d, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-        OwnedByTab, Vertex3d,
+        FileType, FileTypeValue, OwnedByTab, Vertex3d,
     },
     types::TabId,
     FileExtension,
@@ -28,15 +27,15 @@ use vortex_proto::{
 use crate::app::{
     components::{
         file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
-        Edge3dLocal, Vertex2d, VertexEntry, VertexTypeData
+        Edge3dLocal, Vertex2d, VertexEntry, VertexTypeData,
     },
     resources::{
         camera_manager::CameraManager,
         canvas::Canvas,
         file_tree::FileTree,
         global::Global,
-        tab_manager::TabManager,
         shape_manager::{CanvasShape, ShapeManager},
+        tab_manager::TabManager,
     },
     systems::file_post_process,
 };
@@ -68,7 +67,7 @@ pub enum Action {
     // Link 2 Vertices together (2d vertex Entity, 2d vertex Entity, older edge 2d entity & 3d entity it was associated with)
     CreateEdge(Entity, Entity, Option<(Entity, Entity)>),
     // Delete Edge (2d edge entity, optional vertex 2d entity to select after delete)
-    DeleteEdge(Entity, Option<(Entity, CanvasShape)>)
+    DeleteEdge(Entity, Option<(Entity, CanvasShape)>),
 }
 
 impl Action {
@@ -122,16 +121,14 @@ impl Action {
         new_3d_vert_entity: Entity,
     ) {
         match self {
-            Action::SelectShape(entity_opt) => {
-                match entity_opt {
-                    Some((entity, CanvasShape::Vertex)) | Some((entity, CanvasShape::RootVertex)) => {
-                        if *entity == old_2d_vert_entity {
-                            *entity = new_2d_vert_entity;
-                        }
+            Action::SelectShape(entity_opt) => match entity_opt {
+                Some((entity, CanvasShape::Vertex)) | Some((entity, CanvasShape::RootVertex)) => {
+                    if *entity == old_2d_vert_entity {
+                        *entity = new_2d_vert_entity;
                     }
-                    _ => {}
                 }
-            }
+                _ => {}
+            },
             Action::CreateVertex(vertex_type_data, _, entity_opt) => {
                 vertex_type_data.migrate_vertex_entities(
                     old_2d_vert_entity,
@@ -189,16 +186,14 @@ impl Action {
         new_3d_edge_entity: Entity,
     ) {
         match self {
-            Action::SelectShape(entity_opt) => {
-                match entity_opt {
-                    Some((entity, CanvasShape::Edge)) => {
-                        if *entity == old_2d_edge_entity {
-                            *entity = new_2d_edge_entity;
-                        }
+            Action::SelectShape(entity_opt) => match entity_opt {
+                Some((entity, CanvasShape::Edge)) => {
+                    if *entity == old_2d_edge_entity {
+                        *entity = new_2d_edge_entity;
                     }
-                    _ => {}
                 }
-            }
+                _ => {}
+            },
             Action::CreateEdge(_, _, Some((edge_2d_entity, edge_3d_entity))) => {
                 if *edge_2d_entity == old_2d_edge_entity {
                     *edge_2d_entity = new_2d_edge_entity;
@@ -219,21 +214,16 @@ impl Action {
     // returns true if full removal is necessary
     pub(crate) fn remove_vertex_entity(&mut self, entity_2d: Entity, entity_3d: Entity) -> bool {
         match self {
-            Action::SelectShape(entity_opt) => {
-                match entity_opt {
-                    Some((entity, CanvasShape::Vertex)) | Some((entity, CanvasShape::RootVertex)) => {
-                        if *entity == entity_2d {
-                            return true;
-                        }
+            Action::SelectShape(entity_opt) => match entity_opt {
+                Some((entity, CanvasShape::Vertex)) | Some((entity, CanvasShape::RootVertex)) => {
+                    if *entity == entity_2d {
+                        return true;
                     }
-                    _ => {}
                 }
-            }
+                _ => {}
+            },
             Action::CreateVertex(vertex_type_data, _, entity_opt) => {
-                if vertex_type_data.remove_vertex_entity(
-                    entity_2d,
-                    entity_3d,
-                ) {
+                if vertex_type_data.remove_vertex_entity(entity_2d, entity_3d) {
                     return true;
                 }
 
@@ -291,22 +281,16 @@ impl Action {
     }
 
     // returns true if should be removed from undo/redo
-    pub(crate) fn remove_edge_entity(
-        &mut self,
-        entity_2d: Entity,
-        entity_3d: Entity,
-    ) -> bool {
+    pub(crate) fn remove_edge_entity(&mut self, entity_2d: Entity, entity_3d: Entity) -> bool {
         match self {
-            Action::SelectShape(entity_opt) => {
-                match entity_opt {
-                    Some((entity, CanvasShape::Edge)) => {
-                        if *entity == entity_2d {
-                            return true;
-                        }
+            Action::SelectShape(entity_opt) => match entity_opt {
+                Some((entity, CanvasShape::Edge)) => {
+                    if *entity == entity_2d {
+                        return true;
                     }
-                    _ => {}
                 }
-            }
+                _ => {}
+            },
             Action::CreateEdge(_, _, entity_opt) => {
                 let mut remove = false;
                 if let Some((edge_2d_entity, edge_3d_entity)) = entity_opt {
@@ -527,7 +511,10 @@ impl ActionStack {
 
                 system_state.apply(world);
 
-                return vec![Action::DeleteEntry(entity_id, Some(deselected_row_entities))];
+                return vec![Action::DeleteEntry(
+                    entity_id,
+                    Some(deselected_row_entities),
+                )];
             }
             Action::DeleteEntry(file_entity, files_to_select_opt) => {
                 let mut system_state: SystemState<(
@@ -717,18 +704,19 @@ impl ActionStack {
                     let current_tab_id = tab_manager.current_tab_id();
 
                     // create vertex
-                    let (new_vertex_2d_entity, new_vertex_3d_entity) = self.create_networked_vertex(
-                        &mut commands,
-                        &mut client,
-                        &mut camera_manager,
-                        &mut shape_manager,
-                        &mut meshes,
-                        &mut materials,
-                        position,
-                        current_tab_id,
-                        file_type_value,
-                        &mut entities_to_release,
-                    );
+                    let (new_vertex_2d_entity, new_vertex_3d_entity) = self
+                        .create_networked_vertex(
+                            &mut commands,
+                            &mut client,
+                            &mut camera_manager,
+                            &mut shape_manager,
+                            &mut meshes,
+                            &mut materials,
+                            position,
+                            current_tab_id,
+                            file_type_value,
+                            &mut entities_to_release,
+                        );
                     // migrate undo entities
                     if let Some((old_vertex_2d_entity, old_vertex_3d_entity)) =
                         old_vertex_entities_opt
@@ -816,7 +804,10 @@ impl ActionStack {
                     system_state.apply(world);
                 }
 
-                return vec![Action::DeleteVertex(selected_vertex_2d, deselected_vertex_2d_entity_store)];
+                return vec![Action::DeleteVertex(
+                    selected_vertex_2d,
+                    deselected_vertex_2d_entity_store,
+                )];
             }
             Action::DeleteVertex(vertex_2d_entity, vertex_2d_to_select_opt) => {
                 info!("DeleteVertex({:?})", vertex_2d_entity);
@@ -827,7 +818,7 @@ impl ActionStack {
                     ResMut<ShapeManager>,
                     Query<(Entity, &Vertex3d)>,
                     Query<&Edge3d>,
-                    Query<&FileType>
+                    Query<&FileType>,
                 )> = SystemState::new(world);
                 let (mut commands, mut client, mut shape_manager, vertex_q, edge_3d_q, file_type_q) =
                     system_state.get_mut(world);
@@ -884,8 +875,9 @@ impl ActionStack {
 
                         let rev_vertex_type_data = VertexTypeData::Skel(
                             parent_vertex_2d_entity,
-                            entry_contents_opt
-                                .map(|entries| entries.into_iter().map(|(_, entry)| entry).collect()),
+                            entry_contents_opt.map(|entries| {
+                                entries.into_iter().map(|(_, entry)| entry).collect()
+                            }),
                         );
 
                         let Ok((_, vertex_3d)) = vertex_q.get(vertex_3d_entity) else {
@@ -910,15 +902,15 @@ impl ActionStack {
                         )];
                     }
                     FileTypeValue::Mesh => {
-
                         let mut connected_vertices_2d_entities = Vec::new();
                         for edge_3d in edge_3d_q.iter() {
-
                             let start_entity = edge_3d.start.get(&client).unwrap();
                             let end_entity = edge_3d.end.get(&client).unwrap();
 
                             if start_entity == vertex_3d_entity {
-                                if let Some(end_2d_entity) = shape_manager.vertex_entity_3d_to_2d(&end_entity) {
+                                if let Some(end_2d_entity) =
+                                    shape_manager.vertex_entity_3d_to_2d(&end_entity)
+                                {
                                     connected_vertices_2d_entities.push(*end_2d_entity);
                                 } else {
                                     // this is a known bug that happens when undo/redo too fast
@@ -926,7 +918,9 @@ impl ActionStack {
                                     warn!("2d vertex still hasn't been created for {:?}, cannot add to undo/redo stack.", end_entity);
                                 }
                             } else if end_entity == vertex_3d_entity {
-                                if let Some(start_2d_entity) = shape_manager.vertex_entity_3d_to_2d(&start_entity) {
+                                if let Some(start_2d_entity) =
+                                    shape_manager.vertex_entity_3d_to_2d(&start_entity)
+                                {
                                     connected_vertices_2d_entities.push(*start_2d_entity);
                                 } else {
                                     // this is a known bug that happens when undo/redo too fast
@@ -936,9 +930,8 @@ impl ActionStack {
                             }
                         }
 
-                        let rev_vertex_type_data = VertexTypeData::Mesh(
-                            connected_vertices_2d_entities,
-                        );
+                        let rev_vertex_type_data =
+                            VertexTypeData::Mesh(connected_vertices_2d_entities);
 
                         let Ok((_, vertex_3d)) = vertex_q.get(vertex_3d_entity) else {
                             panic!("Failed to get Vertex3d for vertex entity {:?}!", vertex_3d_entity);
@@ -986,7 +979,11 @@ impl ActionStack {
 
                 system_state.apply(world);
 
-                return vec![Action::MoveVertex(vertex_2d_entity, new_position, old_position)];
+                return vec![Action::MoveVertex(
+                    vertex_2d_entity,
+                    new_position,
+                    old_position,
+                )];
             }
             Action::CreateEdge(vertex_2d_entity_a, vertex_2d_entity_b, old_edge_entities_opt) => {
                 info!("CreateEdge");
@@ -1005,8 +1002,7 @@ impl ActionStack {
                         Res<TabManager>,
                         ResMut<Assets<CpuMesh>>,
                         ResMut<Assets<CpuMaterial>>,
-                    )> =
-                        SystemState::new(world);
+                    )> = SystemState::new(world);
                     let (
                         mut commands,
                         mut client,
@@ -1015,7 +1011,6 @@ impl ActionStack {
                         tab_manager,
                         mut meshes,
                         mut materials,
-
                     ) = system_state.get_mut(world);
 
                     // deselect all selected vertices
@@ -1030,7 +1025,9 @@ impl ActionStack {
                     }
 
                     // get 3d version of first vertex
-                    let vertex_3d_entity_b = *shape_manager.vertex_entity_2d_to_3d(&vertex_2d_entity_b).unwrap();
+                    let vertex_3d_entity_b = *shape_manager
+                        .vertex_entity_2d_to_3d(&vertex_2d_entity_b)
+                        .unwrap();
 
                     // create edge
                     let (new_edge_2d_entity, new_edge_3d_entity) = self.create_networked_edge(
@@ -1050,9 +1047,7 @@ impl ActionStack {
                     created_edge_2d_entity = new_edge_2d_entity;
 
                     // migrate undo entities
-                    if let Some((old_edge_2d_entity, old_edge_3d_entity)) =
-                        old_edge_entities_opt
-                    {
+                    if let Some((old_edge_2d_entity, old_edge_3d_entity)) = old_edge_entities_opt {
                         self.migrate_edge_entities(
                             old_edge_2d_entity,
                             new_edge_2d_entity,
@@ -1090,7 +1085,6 @@ impl ActionStack {
                 ];
             }
             Action::DeleteEdge(edge_2d_entity, vertex_2d_to_select_opt) => {
-
                 info!("DeleteEdge(edge_2d_entity: `{:?}`)", edge_2d_entity);
                 let mut system_state: SystemState<(
                     Commands,
@@ -1109,8 +1103,12 @@ impl ActionStack {
                 let edge_3d = edge_3d_q.get(edge_3d_entity).unwrap();
                 let vertex_start_3d = edge_3d.start.get(&client).unwrap();
                 let vertex_end_3d = edge_3d.end.get(&client).unwrap();
-                let vertex_start_2d = *shape_manager.vertex_entity_3d_to_2d(&vertex_start_3d).unwrap();
-                let vertex_end_2d = *shape_manager.vertex_entity_3d_to_2d(&vertex_end_3d).unwrap();
+                let vertex_start_2d = *shape_manager
+                    .vertex_entity_3d_to_2d(&vertex_start_3d)
+                    .unwrap();
+                let vertex_end_2d = *shape_manager
+                    .vertex_entity_3d_to_2d(&vertex_end_3d)
+                    .unwrap();
 
                 // delete 3d edge
                 commands.entity(edge_3d_entity).despawn();
@@ -1120,9 +1118,10 @@ impl ActionStack {
 
                 // select entities as needed
                 if let Some((vertex_2d_to_select, vertex_type)) = vertex_2d_to_select_opt {
-                    if let Some(vertex_3d_entity_to_request) =
-                        Self::select_shape(&mut shape_manager, Some((vertex_2d_to_select, vertex_type)))
-                    {
+                    if let Some(vertex_3d_entity_to_request) = Self::select_shape(
+                        &mut shape_manager,
+                        Some((vertex_2d_to_select, vertex_type)),
+                    ) {
                         info!("request_entities({:?})", vertex_3d_entity_to_request);
                         let mut entity_mut = commands.entity(vertex_3d_entity_to_request);
                         if entity_mut.authority(&client).is_some() {
@@ -1135,7 +1134,11 @@ impl ActionStack {
 
                 system_state.apply(world);
 
-                return vec![Action::CreateEdge(vertex_start_2d, vertex_end_2d, Some((edge_2d_entity, edge_3d_entity)))];
+                return vec![Action::CreateEdge(
+                    vertex_start_2d,
+                    vertex_end_2d,
+                    Some((edge_2d_entity, edge_3d_entity)),
+                )];
             }
         }
     }
@@ -1394,7 +1397,6 @@ impl ActionStack {
         file_type: FileTypeValue,
         entities_to_release: &mut Vec<Entity>,
     ) -> (Entity, Entity) {
-
         // create new 3d vertex
         let new_vertex_3d_entity = commands
             .spawn_empty()
@@ -1446,7 +1448,9 @@ impl ActionStack {
         new_edge_3d_component
             .start
             .set(client, &parent_vertex_3d_entity);
-        new_edge_3d_component.end.set(client, &child_vertex_3d_entity);
+        new_edge_3d_component
+            .end
+            .set(client, &child_vertex_3d_entity);
         let new_edge_3d_entity = commands
             .spawn_empty()
             .enable_replication(client)
@@ -1542,17 +1546,13 @@ impl ActionStack {
                     new_child_vertex_2d_entity,
                     grandchildren,
                     tab_id,
-                    entities_to_release
+                    entities_to_release,
                 );
             }
         }
     }
 
-    pub fn entity_update_auth_status(
-        &mut self,
-        shape_manager: &mut ShapeManager,
-        entity: &Entity,
-    ) {
+    pub fn entity_update_auth_status(&mut self, shape_manager: &mut ShapeManager, entity: &Entity) {
         // if either the undo or redo stack's top entity is this entity, then we need to enable/disable undo based on new auth status
         Self::entity_update_auth_status_impl(
             shape_manager,
@@ -1802,18 +1802,11 @@ impl ActionStack {
         }
     }
 
-    pub fn remove_vertex_entity(
-        &mut self,
-        entity_2d: Entity,
-        entity_3d: Entity,
-    ) {
+    pub fn remove_vertex_entity(&mut self, entity_2d: Entity, entity_3d: Entity) {
         {
             let mut removals = Vec::new();
             for (id, action) in self.undo_actions.iter_mut().enumerate() {
-                if action.remove_vertex_entity(
-                    entity_2d,
-                    entity_3d,
-                ) {
+                if action.remove_vertex_entity(entity_2d, entity_3d) {
                     removals.push(id);
                 }
             }
@@ -1824,10 +1817,7 @@ impl ActionStack {
         {
             let mut removals = Vec::new();
             for (id, action) in self.redo_actions.iter_mut().enumerate() {
-                if action.remove_vertex_entity(
-                    entity_2d,
-                    entity_3d,
-                ) {
+                if action.remove_vertex_entity(entity_2d, entity_3d) {
                     removals.push(id);
                 }
             }
@@ -1837,18 +1827,11 @@ impl ActionStack {
         }
     }
 
-    pub fn remove_edge_entity(
-        &mut self,
-        entity_2d: Entity,
-        entity_3d: Entity,
-    ) {
+    pub fn remove_edge_entity(&mut self, entity_2d: Entity, entity_3d: Entity) {
         {
             let mut removals = Vec::new();
             for (id, action) in self.undo_actions.iter_mut().enumerate() {
-                if action.remove_edge_entity(
-                    entity_2d,
-                    entity_3d,
-                ) {
+                if action.remove_edge_entity(entity_2d, entity_3d) {
                     removals.push(id);
                 }
             }
@@ -1859,10 +1842,7 @@ impl ActionStack {
         {
             let mut removals = Vec::new();
             for (id, action) in self.redo_actions.iter_mut().enumerate() {
-                if action.remove_edge_entity(
-                    entity_2d,
-                    entity_3d,
-                ) {
+                if action.remove_edge_entity(entity_2d, entity_3d) {
                     removals.push(id);
                 }
             }

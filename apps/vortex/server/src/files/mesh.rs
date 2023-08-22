@@ -15,7 +15,7 @@ use naia_bevy_server::{
 use vortex_proto::components::{Edge3d, Face3d, FileType, FileTypeValue, Vertex3d, VertexSerdeInt};
 
 use crate::{
-    files::{ShapeTypeData, FileReadOutput, FileReader, FileWriter},
+    files::{FileReadOutput, FileReader, FileWriter, ShapeTypeData},
     resources::{ContentEntityData, ShapeManager},
 };
 
@@ -61,7 +61,10 @@ impl MeshWriter {
         /////////////////////////////////////  id /////////////////
         let mut vertex_map: HashMap<Entity, usize> = HashMap::new();
 
-        info!("writing in world_to_actions(), content_entities: `{:?}`", content_entities);
+        info!(
+            "writing in world_to_actions(), content_entities: `{:?}`",
+            content_entities
+        );
 
         let mut vertex_count: usize = 0;
         for entity in content_entities.iter() {
@@ -69,7 +72,10 @@ impl MeshWriter {
                 panic!("entity {:?} does not have a FileType component!", entity);
             };
             if *file_type.value != FileTypeValue::Mesh {
-                panic!("entity {:?} does not have a FileType component with value Mesh!", entity);
+                panic!(
+                    "entity {:?} does not have a FileType component with value Mesh!",
+                    entity
+                );
             }
             if let Ok(vertex) = vertex_q.get(*entity) {
                 // entity is a vertex
@@ -263,7 +269,10 @@ impl MeshReader {
                         .insert(edge_component)
                         .id();
                     info!("spawning mesh edge entity {:?}", entity_id);
-                    output.push((entity_id, ShapeTypeData::Edge(*vertex_a_entity, *vertex_b_entity)));
+                    output.push((
+                        entity_id,
+                        ShapeTypeData::Edge(*vertex_a_entity, *vertex_b_entity),
+                    ));
                 }
                 MeshAction::Face(vertex_a_index, vertex_b_index, vertex_c_index) => {
                     let vertex_a_entity = *vertices.get(vertex_a_index as usize).unwrap();
@@ -314,7 +323,6 @@ impl FileReader for MeshReader {
 }
 
 impl MeshReader {
-
     pub fn post_process_entities(
         shape_manager: &mut ShapeManager,
         shape_entities: Vec<(Entity, ShapeTypeData)>,

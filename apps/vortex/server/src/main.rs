@@ -3,7 +3,7 @@ use std::time::Duration;
 use bevy_app::{App, ScheduleRunnerPlugin, ScheduleRunnerSettings};
 use bevy_ecs::{
     prelude::apply_system_buffers,
-    schedule::{IntoSystemConfigs, IntoSystemConfig},
+    schedule::{IntoSystemConfig, IntoSystemConfigs},
     system::{Res, ResMut},
 };
 use bevy_log::{info, LogPlugin};
@@ -17,7 +17,8 @@ use vortex_proto::protocol;
 use crate::{
     config::{AppConfig, ConfigPlugin},
     resources::{
-        changelist_manager_process, ChangelistManager, TabManager, UserManager, ShapeManager, ShapeWaitlist,
+        changelist_manager_process, ChangelistManager, ShapeManager, ShapeWaitlist, TabManager,
+        UserManager,
     },
     systems::world_loop,
 };

@@ -1,9 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use bevy_ecs::{
-    entity::Entity,
-    system::Resource,
-};
+use bevy_ecs::{entity::Entity, system::Resource};
 use bevy_log::info;
 
 use vortex_proto::components::FileTypeValue;
@@ -62,9 +59,7 @@ impl ShapeWaitlistEntry {
             (Some(FileTypeValue::Mesh), Some(ShapeType::Vertex)) => {
                 return true;
             }
-            (Some(FileTypeValue::Mesh), Some(ShapeType::Edge)) => {
-                self.edge_entities.is_some()
-            }
+            (Some(FileTypeValue::Mesh), Some(ShapeType::Edge)) => self.edge_entities.is_some(),
             _ => {
                 return false;
             }
@@ -163,7 +158,9 @@ impl ShapeWaitlist {
                 if !self.contains_key(&vertex_entity) {
                     self.insert_incomplete(vertex_entity, ShapeWaitlistEntry::new());
                 }
-                self.get_mut(&vertex_entity).unwrap().set_shape_type(ShapeType::Vertex);
+                self.get_mut(&vertex_entity)
+                    .unwrap()
+                    .set_shape_type(ShapeType::Vertex);
             }
             ShapeWaitlistInsert::Edge(parent_entity, edge_entity, vertex_entity) => {
                 {
@@ -171,7 +168,10 @@ impl ShapeWaitlist {
                         self.insert_incomplete(vertex_entity, ShapeWaitlistEntry::new());
                     }
                     let vertex_entry = self.get_mut(&vertex_entity).unwrap();
-                    info!("Setting parent of {:?} to {:?}", vertex_entity, parent_entity);
+                    info!(
+                        "Setting parent of {:?} to {:?}",
+                        vertex_entity, parent_entity
+                    );
                     vertex_entry.set_edge_and_parent(Some((edge_entity, parent_entity)));
                     vertex_entry.set_shape_type(ShapeType::Vertex);
                     possibly_ready_entities.push(vertex_entity);
@@ -185,7 +185,6 @@ impl ShapeWaitlist {
                     edge_entry.set_shape_type(ShapeType::Edge);
                     edge_entry.set_edge_entities(parent_entity, vertex_entity);
                     possibly_ready_entities.push(edge_entity);
-
                 }
 
                 info!(
@@ -206,7 +205,9 @@ impl ShapeWaitlist {
                 if !self.contains_key(&vertex_entity) {
                     self.insert_incomplete(vertex_entity, ShapeWaitlistEntry::new());
                 }
-                self.get_mut(&vertex_entity).unwrap().set_file_type(file_type);
+                self.get_mut(&vertex_entity)
+                    .unwrap()
+                    .set_file_type(file_type);
                 possibly_ready_entities.push(vertex_entity);
             }
         }
@@ -273,11 +274,7 @@ impl ShapeWaitlist {
                 }
 
                 info!("processing shape {:?}", entity);
-                self.process_complete(
-                    shape_manager,
-                    entity,
-                    entry,
-                );
+                self.process_complete(shape_manager, entity, entry);
             } else {
                 info!("entity `{:?}` is not ready yet...", possibly_ready_entity);
             }
@@ -320,11 +317,7 @@ impl ShapeWaitlist {
                     "entity {:?} was waiting on parent {:?}. processing!",
                     child_entity, entity
                 );
-                self.process_complete(
-                    shape_manager,
-                    child_entity,
-                    child_entry,
-                );
+                self.process_complete(shape_manager, child_entity, child_entry);
             }
         }
     }

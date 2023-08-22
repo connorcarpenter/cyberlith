@@ -48,9 +48,7 @@ struct MeshVertexData {
 
 impl MeshVertexData {
     fn new() -> Self {
-        Self {
-            edges: None
-        }
+        Self { edges: None }
     }
 
     fn add_edge(&mut self, vertex_entity: Entity, edge_entity: Entity) {
@@ -101,7 +99,7 @@ impl ShapeManager {
     pub fn get_vertex_parent(&self, entity: &Entity) -> Option<Entity> {
         if let Some(vertex_data) = self.vertices.get(entity) {
             match vertex_data {
-                VertexData::Skel(skel_data) => { skel_data.parent }
+                VertexData::Skel(skel_data) => skel_data.parent,
                 VertexData::Mesh(_) => {
                     panic!("should not call this on a mesh vertex!");
                 }
@@ -111,26 +109,16 @@ impl ShapeManager {
         }
     }
 
-    pub fn on_create_mesh_vertex(
-        &mut self,
-        vertex_entity: Entity,
-    ) {
+    pub fn on_create_mesh_vertex(&mut self, vertex_entity: Entity) {
         // info!("on_create_mesh_vertex: {:?} {:?}", entity, parent_opt);
 
-        info!(
-            "inserting mesh vert entity: `{:?}`",
-            vertex_entity,
-        );
+        info!("inserting mesh vert entity: `{:?}`", vertex_entity,);
 
-        self.vertices.insert(vertex_entity, VertexData::Mesh(MeshVertexData::new()));
+        self.vertices
+            .insert(vertex_entity, VertexData::Mesh(MeshVertexData::new()));
     }
 
-    pub fn on_create_mesh_edge(
-        &mut self,
-        start: Entity,
-        edge: Entity,
-        end: Entity,
-    ) {
+    pub fn on_create_mesh_edge(&mut self, start: Entity, edge: Entity, end: Entity) {
         self.edges.insert(edge, (start, end));
 
         let Some(VertexData::Mesh(data)) = self.vertices.get_mut(&start) else {
@@ -163,14 +151,17 @@ impl ShapeManager {
         );
 
         if let Some((edge_entity, parent_entity)) = edge_and_parent_opt {
-            self.vertices
-                .insert(vertex_entity, VertexData::Skel(SkelVertexData::new(Some(parent_entity))));
+            self.vertices.insert(
+                vertex_entity,
+                VertexData::Skel(SkelVertexData::new(Some(parent_entity))),
+            );
             let Some(VertexData::Skel(parent_value)) = self.vertices.get_mut(&parent_entity) else {
                 panic!("shouldn't be able to happen!");
             };
             parent_value.add_child(vertex_entity, edge_entity);
         } else {
-            self.vertices.insert(vertex_entity, VertexData::Skel(SkelVertexData::new(None)));
+            self.vertices
+                .insert(vertex_entity, VertexData::Skel(SkelVertexData::new(None)));
         }
     }
 
@@ -181,12 +172,8 @@ impl ShapeManager {
         entity: &Entity,
     ) -> Vec<Entity> {
         let entities_to_despawn = match self.vertices.get(entity) {
-            Some(VertexData::Skel(_)) => {
-                self.on_delete_skel_vertex(entity)
-            }
-            Some(VertexData::Mesh(_)) => {
-                self.on_delete_mesh_vertex(entity)
-            }
+            Some(VertexData::Skel(_)) => self.on_delete_skel_vertex(entity),
+            Some(VertexData::Mesh(_)) => self.on_delete_mesh_vertex(entity),
             None => {
                 panic!("on_delete_vertex: vertex entity `{:?}` not found!", entity);
             }
@@ -207,29 +194,29 @@ impl ShapeManager {
         entities_to_despawn
     }
 
-    pub fn on_delete_edge(
-        &mut self,
-        entity: &Entity,
-    ) {
+    pub fn on_delete_edge(&mut self, entity: &Entity) {
         let (start, end) = self.edges.remove(entity).unwrap();
 
-        info!("removing mapping in vertex entity `{:?}`, edge entity: `{:?}`", start, entity);
+        info!(
+            "removing mapping in vertex entity `{:?}`, edge entity: `{:?}`",
+            start, entity
+        );
         let Some(VertexData::Mesh(data)) = self.vertices.get_mut(&start) else {
             panic!("shouldn't be able to happen!");
         };
         data.remove_edge(&end);
 
-        info!("removing mapping in vertex entity `{:?}`, edge entity: `{:?}`", end, entity);
+        info!(
+            "removing mapping in vertex entity `{:?}`, edge entity: `{:?}`",
+            end, entity
+        );
         let Some(VertexData::Mesh(data)) = self.vertices.get_mut(&end) else {
             panic!("shouldn't be able to happen!");
         };
         data.remove_edge(&start);
     }
 
-    fn on_delete_mesh_vertex(
-        &mut self,
-        entity: &Entity,
-    ) -> Vec<Entity> {
+    fn on_delete_mesh_vertex(&mut self, entity: &Entity) -> Vec<Entity> {
         let edges_to_despawn = Self::remove_mesh_vertex(&mut self.vertices, entity);
 
         for edge_entity in edges_to_despawn.iter() {
@@ -240,7 +227,10 @@ impl ShapeManager {
     }
 
     // returns list of edges to despawn
-    fn remove_mesh_vertex(entities: &mut HashMap<Entity, VertexData>, vertex_entity: &Entity) -> Vec<Entity> {
+    fn remove_mesh_vertex(
+        entities: &mut HashMap<Entity, VertexData>,
+        vertex_entity: &Entity,
+    ) -> Vec<Entity> {
         let mut edges_to_despawn = Vec::new();
 
         // remove entry
@@ -261,14 +251,14 @@ impl ShapeManager {
         return edges_to_despawn;
     }
 
-    fn on_delete_skel_vertex(
-        &mut self,
-        entity: &Entity,
-    ) -> Vec<Entity> {
+    fn on_delete_skel_vertex(&mut self, entity: &Entity) -> Vec<Entity> {
         Self::remove_skel_vertex(&mut self.vertices, entity)
     }
 
-    fn remove_skel_vertex(entities: &mut HashMap<Entity, VertexData>, vertex_entity: &Entity) -> Vec<Entity> {
+    fn remove_skel_vertex(
+        entities: &mut HashMap<Entity, VertexData>,
+        vertex_entity: &Entity,
+    ) -> Vec<Entity> {
         let mut entities_to_despawn = Vec::new();
 
         // remove entry

@@ -4,7 +4,11 @@ use bevy_ecs::{entity::Entity, system::Commands, world::World};
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server};
 
-use vortex_proto::{components::{OwnedByTab, FileType, FileTypeValue}, types::TabId, FileExtension};
+use vortex_proto::{
+    components::{FileType, FileTypeValue, OwnedByTab},
+    types::TabId,
+    FileExtension,
+};
 
 use crate::{
     files::{MeshReader, MeshWriter, SkelReader, SkelWriter},
@@ -116,10 +120,14 @@ pub fn post_process_networked_entities(
         // add FileType component
         match file_extension {
             FileExtension::Skel => {
-                commands.entity(*entity).insert(FileType::new(FileTypeValue::Skel));
+                commands
+                    .entity(*entity)
+                    .insert(FileType::new(FileTypeValue::Skel));
             }
             FileExtension::Mesh => {
-                commands.entity(*entity).insert(FileType::new(FileTypeValue::Mesh));
+                commands
+                    .entity(*entity)
+                    .insert(FileType::new(FileTypeValue::Mesh));
             }
             _ => {}
         }

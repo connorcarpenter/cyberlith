@@ -17,19 +17,20 @@ use naia_bevy_server::{
 
 use vortex_proto::{
     components::{
-        FileType, Edge3d, FileSystemChild, FileSystemEntry, FileSystemRootChild, Vertex3d, VertexRoot,
+        Edge3d, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, Vertex3d,
+        VertexRoot,
     },
     resources::FileEntryKey,
 };
 
+use crate::files::ShapeType;
 use crate::{
     files::handle_file_modify,
     resources::{
         fs_waitlist::{fs_process_insert, FSWaitlist, FSWaitlistInsert},
-        GitManager, TabManager, UserManager, ShapeManager, ShapeWaitlist, ShapeWaitlistInsert,
+        GitManager, ShapeManager, ShapeWaitlist, ShapeWaitlistInsert, TabManager, UserManager,
     },
 };
-use crate::files::ShapeType;
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
     for SpawnEntityEvent(_user_key, entity) in event_reader.iter() {
@@ -68,7 +69,8 @@ pub fn despawn_entity_events(
                 // vertex
                 info!("entity: `{:?}` (which is a Vertex), despawned", entity);
 
-                let other_entities_to_despawn = shape_manager.on_delete_vertex(&mut commands, &mut server, entity);
+                let other_entities_to_despawn =
+                    shape_manager.on_delete_vertex(&mut commands, &mut server, entity);
 
                 handle_file_modify(
                     &mut commands,
@@ -106,7 +108,10 @@ pub fn despawn_entity_events(
                 tab_manager.on_remove_content_entity(&user_key, &entity);
             }
             _ => {
-                panic!("despawned entity: `{:?}` which is (file: {:?}, vert: {:?}, edge: {:?})", entity, entity_is_file, entity_is_vertex, entity_is_edge);
+                panic!(
+                    "despawned entity: `{:?}` which is (file: {:?}, vert: {:?}, edge: {:?})",
+                    entity, entity_is_file, entity_is_vertex, entity_is_edge
+                );
             }
         }
     }
@@ -198,10 +203,7 @@ pub fn insert_component_events(
                 &entity,
                 &entry_key_q,
             );
-            vertex_waitlist.process_insert(
-                &mut shape_manager,
-                ShapeWaitlistInsert::Vertex(entity),
-            );
+            vertex_waitlist.process_insert(&mut shape_manager, ShapeWaitlistInsert::Vertex(entity));
         }
 
         // on Edge3d Insert Event
@@ -235,10 +237,12 @@ pub fn insert_component_events(
 
         // on Vertex FileType Insert Event
         for (_user_key, entity) in events.read::<FileType>() {
-
             let file_type_value = *vert_file_type_q.get(entity).unwrap().value;
 
-            info!("entity: `{:?}`, inserted FileType: {:?}", entity, file_type_value);
+            info!(
+                "entity: `{:?}`, inserted FileType: {:?}",
+                entity, file_type_value
+            );
 
             vertex_waitlist.process_insert(
                 &mut shape_manager,
@@ -256,9 +260,7 @@ pub fn insert_component_events(
     }
 }
 
-pub fn remove_component_events(
-    mut event_reader: EventReader<RemoveComponentEvents>,
-) {
+pub fn remove_component_events(mut event_reader: EventReader<RemoveComponentEvents>) {
     for events in event_reader.iter() {
         for (_user_key, _entity, _component) in events.read::<FileSystemRootChild>() {
             info!("removed FileSystemRootChild component from entity");

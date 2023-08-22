@@ -60,15 +60,16 @@ impl ShapeWaitlistEntry {
 
     fn is_ready(&self) -> bool {
         match self.shape {
-            Some(ShapeType::Vertex) => {
-                match self.file_type {
-                    None => return false,
-                    Some(FileTypeValue::Skel) => return self.tab_id.is_some() && self.vertex_parent.is_some(),
-                    Some(FileTypeValue::Mesh) => return self.tab_id.is_some(),
+            Some(ShapeType::Vertex) => match self.file_type {
+                None => return false,
+                Some(FileTypeValue::Skel) => {
+                    return self.tab_id.is_some() && self.vertex_parent.is_some()
                 }
-
+                Some(FileTypeValue::Mesh) => return self.tab_id.is_some(),
             },
-            Some(ShapeType::Edge) =>   self.file_type.is_some() && self.tab_id.is_some() && self.edge_entities.is_some(),
+            Some(ShapeType::Edge) => {
+                self.file_type.is_some() && self.tab_id.is_some() && self.edge_entities.is_some()
+            }
             None => false,
         }
     }
@@ -111,7 +112,9 @@ impl ShapeWaitlistEntry {
         let file_type = self.file_type.unwrap();
 
         let shape_data = match (shape, file_type) {
-            (ShapeType::Vertex, FileTypeValue::Skel) => ShapeData::Vertex(self.vertex_parent.unwrap()),
+            (ShapeType::Vertex, FileTypeValue::Skel) => {
+                ShapeData::Vertex(self.vertex_parent.unwrap())
+            }
             (ShapeType::Vertex, FileTypeValue::Mesh) => ShapeData::Vertex(None),
             (ShapeType::Edge, _) => {
                 let entities = self.edge_entities.unwrap();
@@ -170,7 +173,6 @@ impl ShapeWaitlist {
                 edge_entry.set_edge(start_entity, end_entity);
 
                 if let Some(vertex_entry) = self.get_mut(&end_entity) {
-
                     // skel vertices will wait around for a parent, and will be here
                     // mesh vertices should already be gone, so will skip this block, or set the vertices parent which will be overwritten later
 
@@ -223,8 +225,7 @@ impl ShapeWaitlist {
                             // need to put in parent waitlist
                             info!(
                                 "vert entity {:?} requires parent {:?}. putting in parent waitlist",
-                                entity,
-                                parent_entity
+                                entity, parent_entity
                             );
                             self.insert_waiting_dependency(parent_entity, entity, entry);
                             continue;
@@ -347,7 +348,6 @@ impl ShapeWaitlist {
                 }
             }
             (ShapeData::Edge(start, end), _) => {
-
                 let start_2d = *shape_manager.vertex_entity_3d_to_2d(&start).unwrap();
                 let end_2d = *shape_manager.vertex_entity_3d_to_2d(&end).unwrap();
 

@@ -16,11 +16,11 @@ use render_api::{
     shapes::{distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform},
     Assets,
 };
+use vortex_proto::components::FileTypeValue;
 use vortex_proto::{
     components::{OwnedByTab, Vertex3d, VertexRoot},
     types::TabId,
 };
-use vortex_proto::components::FileTypeValue;
 
 use crate::app::{
     components::{
@@ -47,7 +47,6 @@ pub enum CanvasShape {
 
 #[derive(Resource)]
 pub struct ShapeManager {
-
     current_file_type: FileTypeValue,
 
     vertices_3d_to_2d: HashMap<Entity, Entity>,
@@ -74,7 +73,6 @@ pub struct ShapeManager {
 impl Default for ShapeManager {
     fn default() -> Self {
         Self {
-
             current_file_type: FileTypeValue::Skel,
 
             vertices_3d_to_2d: HashMap::new(),
@@ -408,7 +406,11 @@ impl ShapeManager {
     }
 
     // returns entity 2d
-    pub fn cleanup_deleted_vertex(&mut self, entity_3d: &Entity, commands: &mut Commands) -> Entity {
+    pub fn cleanup_deleted_vertex(
+        &mut self,
+        entity_3d: &Entity,
+        commands: &mut Commands,
+    ) -> Entity {
         let Some(vertex_2d_entity) = self.unregister_3d_vertex(entity_3d) else {
             panic!(
                 "Vertex3d entity: `{:?}` has no corresponding Vertex2d entity",
@@ -635,24 +637,15 @@ impl ShapeManager {
                 let edge_3d_entity = self.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
 
                 // check whether we can delete edge
-                let auth_status = commands
-                    .entity(*edge_3d_entity)
-                    .authority(client)
-                    .unwrap();
+                let auth_status = commands.entity(*edge_3d_entity).authority(client).unwrap();
                 if !auth_status.is_granted() && !auth_status.is_available() {
                     // do nothing, edge is not available
                     // TODO: queue for deletion? check before this?
-                    warn!(
-                        "Edge {:?} is not available for deletion!",
-                        edge_3d_entity
-                    );
+                    warn!("Edge {:?} is not available for deletion!", edge_3d_entity);
                     return;
                 }
 
-                let auth_status = commands
-                    .entity(*edge_3d_entity)
-                    .authority(client)
-                    .unwrap();
+                let auth_status = commands.entity(*edge_3d_entity).authority(client).unwrap();
                 if !auth_status.is_granted() {
                     // request authority if needed
                     commands.entity(*edge_3d_entity).request_authority(client);
@@ -804,7 +797,8 @@ impl ShapeManager {
         };
 
         match self.selected_shape {
-            Some((selected_vertex_entity, CanvasShape::Vertex)) | Some((selected_vertex_entity, CanvasShape::RootVertex)) => {
+            Some((selected_vertex_entity, CanvasShape::Vertex))
+            | Some((selected_vertex_entity, CanvasShape::RootVertex)) => {
                 let vertex_transform = {
                     let Ok(vertex_transform) = transform_q.get(selected_vertex_entity) else {
                         return;
@@ -886,7 +880,6 @@ impl ShapeManager {
         if shape_is_selected {
             match click_type {
                 ClickType::Left => {
-
                     if let (_, CanvasShape::Edge) = self.selected_shape.unwrap() {
                         // should not ever be able to attach something to an edge?
                         // deselect edge
@@ -920,9 +913,7 @@ impl ShapeManager {
                             vertex_2d_entity_b,
                             None,
                         ));
-
                     } else {
-
                         // create new vertex
 
                         // get camera
@@ -932,7 +923,8 @@ impl ShapeManager {
 
                         let camera_viewport = camera.viewport.unwrap();
                         let view_matrix = camera_transform.view_matrix();
-                        let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
+                        let projection_matrix =
+                            camera_projection.projection_matrix(&camera_viewport);
 
                         // get 2d vertex transform
                         let (vertex_2d_entity, _) = self.selected_shape.unwrap();
@@ -1009,7 +1001,8 @@ impl ShapeManager {
         vertex_3d_q: &mut Query<&mut Vertex3d>,
     ) {
         let vertex_is_selected = self.selected_shape.is_some();
-        let shape_can_drag = vertex_is_selected && self.selected_shape.unwrap().1 == CanvasShape::Vertex;
+        let shape_can_drag =
+            vertex_is_selected && self.selected_shape.unwrap().1 == CanvasShape::Vertex;
 
         if vertex_is_selected && shape_can_drag {
             match click_type {

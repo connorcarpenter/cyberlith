@@ -20,20 +20,23 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{ChangelistEntry, Edge3d, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, OwnedByTab, Vertex3d, VertexRoot};
+use vortex_proto::components::{
+    ChangelistEntry, Edge3d, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
+    FileType, OwnedByTab, Vertex3d, VertexRoot,
+};
 
+use crate::app::resources::action_stack::ActionStack;
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
     events::InsertComponentEvent,
     resources::{
         camera_manager::CameraManager,
         global::Global,
-        shape_waitlist::{ShapeWaitlist, ShapeWaitlistInsert},
         shape_manager::ShapeManager,
+        shape_waitlist::{ShapeWaitlist, ShapeWaitlistInsert},
     },
     systems::file_post_process,
 };
-use crate::app::resources::action_stack::ActionStack;
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
     for SpawnEntityEvent(entity) in event_reader.iter() {

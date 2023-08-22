@@ -9,7 +9,9 @@ pub use file_system::{
 
 mod vertex;
 use vertex::VertexComponentsPlugin;
-pub use vertex::{Edge3d, Face3d, OwnedByTab, Vertex3d, VertexRoot, VertexSerdeInt, FileType, FileTypeValue};
+pub use vertex::{
+    Edge3d, Face3d, FileType, FileTypeValue, OwnedByTab, Vertex3d, VertexRoot, VertexSerdeInt,
+};
 
 // Plugin
 pub struct ComponentsPlugin;

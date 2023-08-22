@@ -13,7 +13,7 @@ use crate::app::{
     components::{Compass, Edge2dLocal, Vertex2d},
     resources::{
         action_stack::ActionStack, camera_manager::CameraManager, canvas::Canvas,
-        input_manager::InputManager, tab_manager::TabManager, shape_manager::ShapeManager,
+        input_manager::InputManager, shape_manager::ShapeManager, tab_manager::TabManager,
     },
 };
 

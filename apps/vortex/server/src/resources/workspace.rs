@@ -20,7 +20,8 @@ use vortex_proto::{
 use crate::{
     files::{FileReadOutput, FileReader, FileWriter},
     resources::{
-        ShapeWaitlist, ChangelistValue, ContentEntityData, FileEntryValue, GitManager, TabManager, ShapeManager,
+        ChangelistValue, ContentEntityData, FileEntryValue, GitManager, ShapeManager,
+        ShapeWaitlist, TabManager,
     },
 };
 
@@ -295,8 +296,14 @@ impl Workspace {
             ResMut<ShapeManager>,
             Query<&ChangelistEntry>,
         )> = SystemState::new(world);
-        let (mut commands, mut server, mut tab_manager, mut vertex_waitlist, mut shape_manager, cl_query) =
-            system_state.get_mut(world);
+        let (
+            mut commands,
+            mut server,
+            mut tab_manager,
+            mut vertex_waitlist,
+            mut shape_manager,
+            cl_query,
+        ) = system_state.get_mut(world);
 
         let cl_entity: Entity = message.entity.get(&server).unwrap();
         let changelist_entry = cl_query.get(cl_entity).unwrap();

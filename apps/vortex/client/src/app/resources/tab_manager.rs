@@ -240,11 +240,7 @@ impl TabManager {
         camera_manager.recalculate_3d_view();
     }
 
-    fn clear_current_tab(
-        &mut self,
-        canvas: &mut Canvas,
-        camera_manager: &mut CameraManager,
-    ) {
+    fn clear_current_tab(&mut self, canvas: &mut Canvas, camera_manager: &mut CameraManager) {
         self.current_tab = None;
         canvas.set_visibility(false);
         camera_manager.recalculate_3d_view();

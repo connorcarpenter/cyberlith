@@ -14,8 +14,8 @@ use vortex_proto::{resources::FileEntryKey, types::TabId};
 use crate::{
     files::ShapeType,
     resources::{
-        user_tab_state::TabState, workspace::Workspace, ContentEntityData, GitManager, UserManager,
-        UserTabState, ShapeManager, ShapeWaitlist
+        user_tab_state::TabState, workspace::Workspace, ContentEntityData, GitManager,
+        ShapeManager, ShapeWaitlist, UserManager, UserTabState,
     },
 };
 
@@ -309,7 +309,12 @@ impl TabManager {
         std::mem::take(&mut self.queued_selects)
     }
 
-    pub fn on_insert_content_entity(&mut self, user_key: &UserKey, entity: &Entity, shape_type: ShapeType) {
+    pub fn on_insert_content_entity(
+        &mut self,
+        user_key: &UserKey,
+        entity: &Entity,
+        shape_type: ShapeType,
+    ) {
         self.user_tab_state_mut(user_key)
             .current_tab_add_content_entity(entity, shape_type);
     }

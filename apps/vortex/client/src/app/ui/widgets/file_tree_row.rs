@@ -34,8 +34,8 @@ use crate::app::{
         camera_manager::CameraManager,
         canvas::Canvas,
         global::Global,
-        tab_manager::TabManager,
         shape_manager::ShapeManager,
+        tab_manager::TabManager,
     },
     ui::{
         widgets::colors::{

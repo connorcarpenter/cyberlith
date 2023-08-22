@@ -102,9 +102,14 @@ fn fs_process_insert_complete(
     let (name, kind, parent) = entry.decompose();
 
     let key = FileEntryKey::new_with_parent(parent.clone(), &name, kind);
-    git_manager
-        .workspace_mut(username)
-        .on_client_create_file(commands, server, &name, *file_entity, parent, &key);
+    git_manager.workspace_mut(username).on_client_create_file(
+        commands,
+        server,
+        &name,
+        *file_entity,
+        parent,
+        &key,
+    );
 
     // info!("inserting FileEntryKey for entity: {:?}", file_entity);
     commands.entity(*file_entity).insert(key);

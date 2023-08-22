@@ -5,6 +5,7 @@ use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin, ReceiveEvents};
 
 use render_api::resources::WindowSettings;
 
+use vortex_proto::components::FileType;
 use vortex_proto::{
     components::{
         ChangelistEntry, Edge3d, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
@@ -12,7 +13,6 @@ use vortex_proto::{
     },
     protocol,
 };
-use vortex_proto::components::FileType;
 
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
@@ -20,8 +20,8 @@ use crate::app::{
     events::{InsertComponentEvent, LoginEvent},
     resources::{
         action_stack::ActionStack, camera_manager::CameraManager, canvas::Canvas, global::Global,
-        input_manager::InputManager, shape_waitlist::ShapeWaitlist, tab_manager::TabManager,
-        shape_manager::ShapeManager,
+        input_manager::InputManager, shape_manager::ShapeManager, shape_waitlist::ShapeWaitlist,
+        tab_manager::TabManager,
     },
     systems::{canvas, network, ui},
     ui::UiState,

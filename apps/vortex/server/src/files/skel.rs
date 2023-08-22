@@ -12,7 +12,9 @@ use naia_bevy_server::{
     UnsignedVariableInteger,
 };
 
-use vortex_proto::components::{Edge3d, FileType, FileTypeValue, Vertex3d, VertexRoot, VertexSerdeInt};
+use vortex_proto::components::{
+    Edge3d, FileType, FileTypeValue, Vertex3d, VertexRoot, VertexSerdeInt,
+};
 
 use crate::{
     files::{file_io::ShapeType, FileReadOutput, FileReader, FileWriter},
@@ -57,7 +59,10 @@ impl SkelWriter {
                 panic!("entity {:?} does not have a FileType component!", entity);
             };
             if *file_type.value != FileTypeValue::Skel {
-                panic!("entity {:?} does not have a FileType component with value Skel!", entity);
+                panic!(
+                    "entity {:?} does not have a FileType component with value Skel!",
+                    entity
+                );
             }
             let vertex = vertex_q.get(*entity).unwrap();
 
@@ -234,18 +239,23 @@ impl SkelReader {
 
             let mut inserts = Vec::new();
 
-            inserts.push(ShapeWaitlistInsert::FileType(vertex_entity, FileTypeValue::Skel));
+            inserts.push(ShapeWaitlistInsert::FileType(
+                vertex_entity,
+                FileTypeValue::Skel,
+            ));
 
             if let Some((edge_entity, parent_entity)) = edge_opt {
-                new_content_entities
-                    .insert(edge_entity, ContentEntityData::new(ShapeType::Edge));
-                inserts.push(ShapeWaitlistInsert::Edge(parent_entity, edge_entity, vertex_entity));
+                new_content_entities.insert(edge_entity, ContentEntityData::new(ShapeType::Edge));
+                inserts.push(ShapeWaitlistInsert::Edge(
+                    parent_entity,
+                    edge_entity,
+                    vertex_entity,
+                ));
                 vertex_waitlist.process_inserts(shape_manager, inserts);
             } else {
                 inserts.push(ShapeWaitlistInsert::VertexRoot(vertex_entity));
                 vertex_waitlist.process_inserts(shape_manager, inserts);
             }
-
         }
 
         new_content_entities
