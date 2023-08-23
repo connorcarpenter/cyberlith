@@ -36,6 +36,7 @@ use crate::app::{
         create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,
     },
 };
+use crate::app::components::FaceIcon2d;
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub enum CanvasShape {
@@ -589,23 +590,37 @@ impl ShapeManager {
         set
     }
 
-    pub fn process_new_faces(&mut self, commands: &mut Commands) {
+    pub fn process_new_faces(&mut self, commands: &mut Commands, camera_manager: &CameraManager, meshes: &mut Assets<CpuMesh>, materials: &mut Assets<CpuMaterial>) {
         if self.new_face_keys.is_empty() {
             return;
         }
 
         let keys = std::mem::take(&mut self.new_face_keys);
         for key in keys {
-            let entity_3d = commands.spawn_empty().id();
-            let entity_2d = commands.spawn_empty().id();
+
+            // 3d face needs it's own mesh set up to match it's vertices
+            let entity_3d = commands
+                .spawn_empty()
+                .id();
+
+            // 2d face needs to have it's own button mesh, matching the 2d vertices
+            let entity_2d = commands
+                .spawn_empty()
+                .insert(FaceIcon2d::new(key.vertex_a, key.vertex_b, key.vertex_c))
+                .insert(RenderObjectBundle::equilateral_triangle(
+                    meshes,
+                    materials,
+                    Vec2::ZERO,
+                    FaceIcon2d::SIZE,
+                    FaceIcon2d::COLOR,
+                    Some(1),
+                ))
+                .insert(camera_manager.layer_2d)
+                .id();
+
             self.face_keys.insert(key, entity_3d);
             self.faces_3d.insert(entity_3d, Face3dData::new(key, entity_2d));
             self.faces_2d.insert(entity_2d, entity_3d);
-
-            // gotta create the actual entity button entity components, ect
-            // 3d face needs it's own mesh set up to match it's vertices
-            // 2d face needs to have it's own button mesh, matching the 2d vertices
-            todo!()
         }
     }
 

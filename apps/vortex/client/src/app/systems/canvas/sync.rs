@@ -4,7 +4,9 @@ use bevy_ecs::{
 };
 
 use input::Input;
-use render_api::components::{Camera, Projection, Transform, Visibility};
+
+use render_api::{Assets, base::{CpuMaterial, CpuMesh}, components::{Camera, Projection, Transform, Visibility}};
+
 use vortex_proto::components::{OwnedByTab, Vertex3d};
 
 use crate::app::{
@@ -46,9 +48,12 @@ pub fn sync_vertices(
 
 pub fn process_faces(
     mut commands: Commands,
+    camera_manager: Res<CameraManager>,
     mut shape_manager: ResMut<ShapeManager>,
+    mut meshes: ResMut<Assets<CpuMesh>>,
+    mut materials: ResMut<Assets<CpuMaterial>>,
 ) {
-    shape_manager.process_new_faces(&mut commands);
+    shape_manager.process_new_faces(&mut commands, &camera_manager, &mut meshes, &mut materials);
 }
 
 pub fn update_select_line(

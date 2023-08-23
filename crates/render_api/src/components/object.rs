@@ -147,4 +147,28 @@ impl RenderObjectBundle {
             ..Default::default()
         }
     }
+
+    pub fn equilateral_triangle(
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+        position: Vec2,
+        size: f32,
+        color: Color,
+        outline: Option<u8>,
+    ) -> Self {
+        let mesh = if let Some(_thickness) = outline {
+            let mesh = meshes.add(shapes::HollowTriangle::new_2d_equilateral());
+            mesh
+        } else {
+            let mesh = meshes.add(shapes::Triangle::new_2d_equilateral());
+            mesh
+        };
+
+        Self {
+            mesh,
+            material: materials.add(color),
+            transform: Transform::from_translation_2d(position).with_scale(Vec3::splat(size)),
+            ..Default::default()
+        }
+    }
 }

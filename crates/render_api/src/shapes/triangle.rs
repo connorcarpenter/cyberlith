@@ -28,13 +28,13 @@ impl Triangle {
         Self::new_3d(a.extend(0.0), b.extend(0.0), c.extend(0.0))
     }
 
-    pub fn new_2d_equilateral(size: u16) -> Self {
-        let a_x = f32::to_radians(90.0).cos() * (size as f32);
-        let a_y = f32::to_radians(90.0).sin() * (size as f32);
-        let b_x = f32::to_radians(210.0).cos() * (size as f32);
-        let b_y = f32::to_radians(210.0).sin() * (size as f32);
-        let c_x = f32::to_radians(330.0).cos() * (size as f32);
-        let c_y = f32::to_radians(330.0).sin() * (size as f32);
+    pub fn new_2d_equilateral() -> Self {
+        let a_x = f32::to_radians(90.0).cos();
+        let a_y = f32::to_radians(90.0).sin();
+        let b_x = f32::to_radians(210.0).cos();
+        let b_y = f32::to_radians(210.0).sin();
+        let c_x = f32::to_radians(330.0).cos();
+        let c_y = f32::to_radians(330.0).sin();
 
         Self::new_2d(
             Vec2::new(a_x, a_y),
@@ -86,13 +86,13 @@ impl HollowTriangle {
         }
     }
 
-    pub fn new_2d_equilateral(size: u16) -> Self {
-        let a_x = f32::to_radians(90.0).cos() * (size as f32);
-        let a_y = f32::to_radians(90.0).sin() * (size as f32);
-        let b_x = f32::to_radians(210.0).cos() * (size as f32);
-        let b_y = f32::to_radians(210.0).sin() * (size as f32);
-        let c_x = f32::to_radians(330.0).cos() * (size as f32);
-        let c_y = f32::to_radians(330.0).sin() * (size as f32);
+    pub fn new_2d_equilateral() -> Self {
+        let a_x = f32::to_radians(90.0).cos();
+        let a_y = f32::to_radians(90.0).sin();
+        let b_x = f32::to_radians(210.0).cos();
+        let b_y = f32::to_radians(210.0).sin();
+        let c_x = f32::to_radians(330.0).cos();
+        let c_y = f32::to_radians(330.0).sin();
 
         Self::new_2d(
             Vec2::new(a_x, a_y),
