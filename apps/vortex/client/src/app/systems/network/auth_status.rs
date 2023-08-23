@@ -16,14 +16,14 @@ pub fn auth_granted_events(
         if shape_manager.has_edge_entity_3d(entity) {
             // entity is edge
             // TODO: handle edge auth?
-            info!("auth granted for edge entity: {:?}", entity);
+            //info!("auth granted for edge entity: {:?}", entity);
         } else if shape_manager.has_vertex_entity_3d(entity) {
             // entity is vertex
-            info!("auth granted for vertex entity: {:?}", entity);
+            //info!("auth granted for vertex entity: {:?}", entity);
             action_stack.entity_update_auth_status(&mut shape_manager, entity);
         } else {
             // entity is .. file?
-            info!("auth granted for file? entity: {:?}", entity);
+            //info!("auth granted for file? entity: {:?}", entity);
             action_stack.entity_update_auth_status(&mut shape_manager, entity);
         }
     }
@@ -35,7 +35,7 @@ pub fn auth_denied_events(
     mut event_reader: EventReader<EntityAuthDeniedEvent>,
 ) {
     for EntityAuthDeniedEvent(entity) in event_reader.iter() {
-        info!("auth denied for entity: {:?}", entity);
+        // info!("auth denied for entity: {:?}", entity);
 
         action_stack.entity_update_auth_status(&mut shape_manager, entity);
     }
@@ -47,7 +47,7 @@ pub fn auth_reset_events(
     mut event_reader: EventReader<EntityAuthResetEvent>,
 ) {
     for EntityAuthResetEvent(entity) in event_reader.iter() {
-        info!("auth reset for entity: {:?}", entity);
+        // info!("auth reset for entity: {:?}", entity);
 
         action_stack.entity_update_auth_status(&mut shape_manager, entity);
     }

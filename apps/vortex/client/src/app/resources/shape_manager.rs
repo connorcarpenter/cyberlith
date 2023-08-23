@@ -43,7 +43,7 @@ pub enum CanvasShape {
     RootVertex,
     Vertex,
     Edge,
-    // Face,
+    Face,
 }
 
 struct Edge3dData {
@@ -86,9 +86,9 @@ impl Vertex3dData {
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash, Debug)]
 struct Face3dKey {
-    vertex_a: Entity,
-    vertex_b: Entity,
-    vertex_c: Entity,
+    vertex_3d_a: Entity,
+    vertex_3d_b: Entity,
+    vertex_3d_c: Entity,
 }
 
 impl Face3dKey {
@@ -99,9 +99,9 @@ impl Face3dKey {
         vertices.sort();
 
         Self {
-            vertex_a: vertices[0],
-            vertex_b: vertices[1],
-            vertex_c: vertices[2],
+            vertex_3d_a: vertices[0],
+            vertex_3d_b: vertices[1],
+            vertex_3d_c: vertices[2],
         }
     }
 }
@@ -143,7 +143,7 @@ pub struct ShapeManager {
     // 2d face entity -> 3d face entity
     faces_2d: HashMap<Entity, Entity>,
     // queue of new faces to process
-    new_face_keys: Vec<Face3dKey>,
+    new_face_keys: Vec<(Face3dKey, Option<TabId>)>,
 
     shapes_recalc: u8,
     selection_recalc: bool,
@@ -301,6 +301,7 @@ impl ShapeManager {
         vertex_3d_q: &mut Query<(Entity, &mut Vertex3d)>,
         edge_2d_q: &Query<(Entity, &Edge2dLocal)>,
         edge_3d_q: &Query<(Entity, &Edge3dLocal)>,
+        face_2d_q: &Query<(Entity, &FaceIcon2d)>,
         owned_by_q: &Query<&OwnedByTab>,
     ) {
         if self.shapes_recalc == 0 {
@@ -328,6 +329,15 @@ impl ShapeManager {
         let view_matrix = camera_transform.view_matrix();
         let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
 
+        let camera_3d_scale = camera_manager.camera_3d_scale();
+
+        let vertex_3d_scale = Vertex2d::RADIUS / camera_3d_scale;
+        let vertex_2d_scale = Vertex2d::RADIUS * camera_3d_scale;
+
+        let edge_3d_scale = 1.0 / camera_3d_scale;
+
+        let face_2d_scale =   FaceIcon2d::SIZE * camera_3d_scale;
+
         // update vertices
         for (vertex_3d_entity, vertex_3d) in vertex_3d_q.iter() {
             // check if vertex is owned by the current tab
@@ -347,8 +357,7 @@ impl ShapeManager {
             vertex_3d_transform.translation.z = vertex_3d.z().into();
 
             if compass_q.get(vertex_3d_entity).is_ok() {
-                let scale_3d = Vertex2d::RADIUS / camera_manager.camera_3d_scale();
-                vertex_3d_transform.scale = Vec3::splat(scale_3d);
+                vertex_3d_transform.scale = Vec3::splat(vertex_3d_scale);
             }
 
             let (coords, depth) = convert_3d_to_2d(
@@ -372,8 +381,7 @@ impl ShapeManager {
 
             // update 2d compass
             if compass_q.get(vertex_2d_entity).is_err() {
-                let scale_2d = camera_manager.camera_3d_scale() * Vertex2d::RADIUS;
-                vertex_2d_transform.scale = Vec3::splat(scale_2d);
+                vertex_2d_transform.scale = Vec3::splat(vertex_2d_scale);
             }
 
             // update hover circle
@@ -448,9 +456,8 @@ impl ShapeManager {
                     let mut edge_transform = transform_q.get_mut(edge_entity).unwrap();
                     set_3d_line_transform(&mut edge_transform, start_pos, end_pos);
                     if compass_q.get(edge_entity).is_ok() {
-                        let scale_3d = 1.0 / camera_manager.camera_3d_scale();
-                        edge_transform.scale.x = scale_3d;
-                        edge_transform.scale.y = scale_3d;
+                        edge_transform.scale.x = edge_3d_scale;
+                        edge_transform.scale.y = edge_3d_scale;
                     }
                 } else {
                     warn!("3d Edge end entity {:?} has no transform", edge_end_entity);
@@ -460,6 +467,42 @@ impl ShapeManager {
                     "3d Edge start entity {:?} has no transform",
                     edge_start_entity,
                 );
+            }
+        }
+
+        // update 2d faces
+        for (face_2d_entity, face_icon) in face_2d_q.iter() {
+
+            // check if face is owned by the current tab
+            if !Self::is_owned_by_tab_or_unowned(current_tab_id, owned_by_q, face_2d_entity) {
+                continue;
+            }
+
+            // find center of all of face_icon's vertices
+            let Ok(vertex_a_transform) = transform_q.get(face_icon.vertex_2d_a()) else {
+                warn!("Face entity {:?}'s vertex_a has no transform", face_2d_entity);
+                continue;
+            };
+            let Ok(vertex_b_transform) = transform_q.get(face_icon.vertex_2d_b()) else {
+                warn!("Face entity {:?}'s vertex_b has no transform", face_2d_entity);
+                continue;
+            };
+            let Ok(vertex_c_transform) = transform_q.get(face_icon.vertex_2d_c()) else {
+                warn!("Face entity {:?}'s vertex_c has no transform", face_2d_entity);
+                continue;
+            };
+
+            let center_translation = Vec3::new(
+                (vertex_a_transform.translation.x + vertex_b_transform.translation.x + vertex_c_transform.translation.x) / 3.0,
+                (vertex_a_transform.translation.y + vertex_b_transform.translation.y + vertex_c_transform.translation.y) / 3.0,
+                (vertex_a_transform.translation.z + vertex_b_transform.translation.z + vertex_c_transform.translation.z) / 3.0,
+            );
+
+            if let Ok(mut face_transform) = transform_q.get_mut(face_2d_entity) {
+                face_transform.translation = center_translation;
+                face_transform.scale = Vec3::splat(face_2d_scale);
+            } else {
+                warn!("Face entity {:?} has no transform", face_2d_entity);
             }
         }
     }
@@ -495,7 +538,7 @@ impl ShapeManager {
         self.vertices_2d.insert(entity_2d, entity_3d);
     }
 
-    pub fn register_3d_edge(&mut self, edge_3d_entity: Entity, edge_2d_entity: Entity, vertex_a_3d_entity: Entity, vertex_b_3d_entity: Entity) {
+    pub fn register_3d_edge(&mut self, edge_3d_entity: Entity, edge_2d_entity: Entity, vertex_a_3d_entity: Entity, vertex_b_3d_entity: Entity, tab_id_opt: Option<TabId>) {
         {
             let Some(vertex_a_3d_data) = self.vertices_3d.get_mut(&vertex_a_3d_entity) else {
                 panic!("Vertex3d entity: `{:?}` has not been registered", vertex_a_3d_entity);
@@ -512,7 +555,7 @@ impl ShapeManager {
         self.edges_3d.insert(edge_3d_entity, Edge3dData::new(edge_2d_entity, vertex_a_3d_entity, vertex_b_3d_entity));
         self.edges_2d.insert(edge_2d_entity, edge_3d_entity);
 
-        self.check_for_new_faces(vertex_a_3d_entity, vertex_b_3d_entity);
+        self.check_for_new_faces(vertex_a_3d_entity, vertex_b_3d_entity, tab_id_opt);
     }
 
     fn unregister_3d_vertex(&mut self, entity_3d: &Entity) -> Option<Entity> {
@@ -553,7 +596,7 @@ impl ShapeManager {
         return None;
     }
 
-    fn check_for_new_faces(&mut self, vertex_a_3d_entity: Entity, vertex_b_3d_entity: Entity) {
+    fn check_for_new_faces(&mut self, vertex_a_3d_entity: Entity, vertex_b_3d_entity: Entity, tab_id_opt: Option<TabId>) {
 
         let vertex_a_connected_vertices = self.get_connected_vertices(vertex_a_3d_entity);
         let vertex_b_connected_vertices = self.get_connected_vertices(vertex_b_3d_entity);
@@ -563,7 +606,7 @@ impl ShapeManager {
             let face_key = Face3dKey::new(vertex_a_3d_entity, vertex_b_3d_entity, *common_vertex);
             if !self.face_keys.contains_key(&face_key) {
                 self.face_keys.insert(face_key, Entity::PLACEHOLDER);
-                self.new_face_keys.push(face_key);
+                self.new_face_keys.push((face_key, tab_id_opt));
             }
         }
     }
@@ -590,13 +633,20 @@ impl ShapeManager {
         set
     }
 
-    pub fn process_new_faces(&mut self, commands: &mut Commands, camera_manager: &CameraManager, meshes: &mut Assets<CpuMesh>, materials: &mut Assets<CpuMaterial>) {
+    pub fn process_new_faces(
+        &mut self,
+        commands: &mut Commands,
+        camera_manager: &CameraManager,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+    ) {
         if self.new_face_keys.is_empty() {
             return;
         }
 
         let keys = std::mem::take(&mut self.new_face_keys);
-        for key in keys {
+        for (key, tab_id_opt) in keys {
+            info!("processing new face: `{:?}`", key);
 
             // 3d face needs it's own mesh set up to match it's vertices
             let entity_3d = commands
@@ -604,9 +654,13 @@ impl ShapeManager {
                 .id();
 
             // 2d face needs to have it's own button mesh, matching the 2d vertices
+            let vertex_2d_a = self.vertex_entity_3d_to_2d(&key.vertex_3d_a).unwrap();
+            let vertex_2d_b = self.vertex_entity_3d_to_2d(&key.vertex_3d_b).unwrap();
+            let vertex_2d_c = self.vertex_entity_3d_to_2d(&key.vertex_3d_c).unwrap();
+
             let entity_2d = commands
                 .spawn_empty()
-                .insert(FaceIcon2d::new(key.vertex_a, key.vertex_b, key.vertex_c))
+                .insert(FaceIcon2d::new(vertex_2d_a, vertex_2d_b, vertex_2d_c))
                 .insert(RenderObjectBundle::equilateral_triangle(
                     meshes,
                     materials,
@@ -617,6 +671,17 @@ impl ShapeManager {
                 ))
                 .insert(camera_manager.layer_2d)
                 .id();
+
+            info!("spawned 2d face entity: {:?}", entity_2d);
+
+            if let Some(tab_id) = tab_id_opt {
+                commands
+                    .entity(entity_2d)
+                    .insert(OwnedByTab::new(tab_id));
+                info!("adding OwnedByTab({:?}) to entity {:?}", tab_id, entity_2d);
+            } else {
+                panic!("no tab id :(")
+            }
 
             self.face_keys.insert(key, entity_3d);
             self.faces_3d.insert(entity_3d, Face3dData::new(key, entity_2d));
@@ -724,6 +789,7 @@ impl ShapeManager {
             .id();
 
         if let Some(tab_id) = tab_id_opt {
+            info!("adding OwnedByTab({:?}) to entity {:?}", tab_id, vertex_2d_entity);
             commands
                 .entity(vertex_2d_entity)
                 .insert(OwnedByTab::new(tab_id));
@@ -789,7 +855,7 @@ impl ShapeManager {
         }
 
         // register 3d & 2d edges together
-        self.register_3d_edge(edge_3d_entity, edge_2d_entity, vertex_a_3d_entity, vertex_b_3d_entity);
+        self.register_3d_edge(edge_3d_entity, edge_2d_entity, vertex_a_3d_entity, vertex_b_3d_entity, tab_id_opt);
 
         edge_2d_entity
     }
@@ -984,8 +1050,11 @@ impl ShapeManager {
 
                     hover_circle_visibility.visible = false;
                 }
-                None => {
+                Some((entity, CanvasShape::Face)) => {
                     todo!();
+                }
+                None => {
+                    panic!("impossible?");
                 }
             }
         } else {
@@ -1078,6 +1147,9 @@ impl ShapeManager {
                 select_shape_visibilities[1].visible = true;
 
                 select_shape_visibilities[0].visible = false; // no select circle visible
+            }
+            Some((selected_face_entity, CanvasShape::Face)) => {
+                todo!();
             }
             None => {
                 select_shape_visibilities[0].visible = false;
@@ -1197,12 +1269,18 @@ impl ShapeManager {
                             action_stack.buffer_action(Action::SelectShape(self.hovered_entity));
                         }
                     }
+                    (CanvasShape::Face, ClickType::Left) => {
+                        todo!();
+                    }
                     (CanvasShape::Vertex, ClickType::Right)
                     | (CanvasShape::RootVertex, ClickType::Right) => {
                         // do nothing, vertex deselection happens above
                     }
                     (CanvasShape::Edge, ClickType::Right) => {
                         // TODO: delete edge?
+                    }
+                    (CanvasShape::Face, ClickType::Right) => {
+                        // TODO: delete face?
                     }
                 }
             }

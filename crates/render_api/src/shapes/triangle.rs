@@ -1,3 +1,4 @@
+use bevy_log::info;
 use math::{Vec2, Vec3};
 
 use crate::{
@@ -29,17 +30,10 @@ impl Triangle {
     }
 
     pub fn new_2d_equilateral() -> Self {
-        let a_x = f32::to_radians(90.0).cos();
-        let a_y = f32::to_radians(90.0).sin();
-        let b_x = f32::to_radians(210.0).cos();
-        let b_y = f32::to_radians(210.0).sin();
-        let c_x = f32::to_radians(330.0).cos();
-        let c_y = f32::to_radians(330.0).sin();
-
         Self::new_2d(
-            Vec2::new(a_x, a_y),
-            Vec2::new(b_x, b_y),
-            Vec2::new(c_x, c_y),
+            Vec2::new(0.0, -1.0),
+            Vec2::new(-1.0, 1.0),
+            Vec2::new(1.0, 1.0),
         )
     }
 }
@@ -53,6 +47,9 @@ impl From<Triangle> for CpuMesh {
             Vec3::new(tri.c.0 as f32, tri.c.1 as f32, tri.c.2 as f32),
         ];
         let normals = vec![Vec3::Z, Vec3::Z, Vec3::Z];
+
+        info!("Triangle Positions: {:?}", positions);
+
         CpuMesh {
             indices,
             positions: Positions(positions),
@@ -87,17 +84,10 @@ impl HollowTriangle {
     }
 
     pub fn new_2d_equilateral() -> Self {
-        let a_x = f32::to_radians(90.0).cos();
-        let a_y = f32::to_radians(90.0).sin();
-        let b_x = f32::to_radians(210.0).cos();
-        let b_y = f32::to_radians(210.0).sin();
-        let c_x = f32::to_radians(330.0).cos();
-        let c_y = f32::to_radians(330.0).sin();
-
         Self::new_2d(
-            Vec2::new(a_x, a_y),
-            Vec2::new(b_x, b_y),
-            Vec2::new(c_x, c_y),
+            Vec2::new(0.0, -1.0),
+            Vec2::new(-1.0, 1.0),
+            Vec2::new(1.0, 1.0),
         )
     }
 }
@@ -115,7 +105,7 @@ impl From<HollowTriangle> for CpuMesh {
             (outer_a.z + outer_b.z + outer_c.z) / 3.0,
         );
 
-        let thickness = 0.9;
+        let thickness = 0.5;
         let thickness_inv = 1.0 - thickness;
 
         let inner_a = Vec3::new(

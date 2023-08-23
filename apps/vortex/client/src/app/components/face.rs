@@ -21,4 +21,16 @@ impl FaceIcon2d {
             vertex_2d_c,
         }
     }
+
+    pub fn vertex_2d_a(&self) -> Entity {
+        self.vertex_2d_a
+    }
+
+    pub fn vertex_2d_b(&self) -> Entity {
+        self.vertex_2d_b
+    }
+
+    pub fn vertex_2d_c(&self) -> Entity {
+        self.vertex_2d_c
+    }
 }

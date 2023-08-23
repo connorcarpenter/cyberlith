@@ -649,7 +649,6 @@ impl ActionStack {
                         }
                     }
                     if let Some(entity) = entity_to_request {
-                        info!("request_entity({:?})", entity);
                         let mut entity_mut = commands.entity(entity);
                         if entity_mut.authority(&client).is_some() {
                             entity_mut.request_authority(&mut client);
@@ -667,7 +666,14 @@ impl ActionStack {
                 let selected_vertex_3d;
                 let selected_vertex_2d;
 
-                info!("CreateVertex");
+                match &vertex_type_data {
+                    VertexTypeData::Skel(parent_entity, _) => {
+                        info!("CreateVertexSkel(parent: {:?}, position: {:?})", parent_entity, position);
+                    }
+                    VertexTypeData::Mesh(_) => {
+                        info!("CreateVertexMesh(position: {:?})", position);
+                    }
+                }
 
                 {
                     let mut system_state: SystemState<(
@@ -986,7 +992,7 @@ impl ActionStack {
                 )];
             }
             Action::CreateEdge(vertex_2d_entity_a, vertex_2d_entity_b, old_edge_entities_opt) => {
-                info!("CreateEdge");
+                info!("CreateEdge(vertex_a: {:?}, vertex_b: {:?})", vertex_2d_entity_a, vertex_2d_entity_b);
 
                 let mut entities_to_release = Vec::new();
                 let deselected_vertex_2d_entity_store;

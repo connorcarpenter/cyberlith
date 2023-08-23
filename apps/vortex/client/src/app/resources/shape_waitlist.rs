@@ -193,7 +193,6 @@ impl ShapeWaitlist {
                 self.get_mut(&entity).unwrap().set_tab_id(tab_id);
             }
             ShapeWaitlistInsert::FileType(file_type) => {
-                info!("entity {:?} is set as file type: {:?}", entity, file_type);
                 self.get_mut(&entity).unwrap().set_file_type(file_type);
             }
         }
@@ -231,11 +230,8 @@ impl ShapeWaitlist {
                             continue;
                         }
                     }
-                    info!("processing vertex {:?}", entity);
                 }
-                (ShapeType::Vertex, FileTypeValue::Mesh) => {
-                    info!("processing vertex {:?}", entity);
-                }
+                (ShapeType::Vertex, FileTypeValue::Mesh) => {}
                 (ShapeType::Edge, _) => {
                     let entities = entry.edge_entities.unwrap();
                     let mut has_all_entities = true;
