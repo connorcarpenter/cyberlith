@@ -823,7 +823,7 @@ impl ActionStack {
                 let (mut commands, mut client, mut shape_manager, vertex_q, edge_3d_q, file_type_q) =
                     system_state.get_mut(world);
 
-                let vertex_3d_entity = *shape_manager
+                let vertex_3d_entity = shape_manager
                     .vertex_entity_2d_to_3d(&vertex_2d_entity)
                     .unwrap();
 
@@ -855,7 +855,7 @@ impl ActionStack {
                                     vertex_3d_entity
                                 );
                             }
-                            *shape_manager
+                            shape_manager
                                 .vertex_entity_3d_to_2d(&parent_vertex_3d_entity.unwrap())
                                 .unwrap()
                         };
@@ -911,7 +911,7 @@ impl ActionStack {
                                 if let Some(end_2d_entity) =
                                     shape_manager.vertex_entity_3d_to_2d(&end_entity)
                                 {
-                                    connected_vertices_2d_entities.push(*end_2d_entity);
+                                    connected_vertices_2d_entities.push(end_2d_entity);
                                 } else {
                                     // this is a known bug that happens when undo/redo too fast
                                     // it may not be worth it to fix! would require the entire hierarchy to be stored similar to the server
@@ -921,7 +921,7 @@ impl ActionStack {
                                 if let Some(start_2d_entity) =
                                     shape_manager.vertex_entity_3d_to_2d(&start_entity)
                                 {
-                                    connected_vertices_2d_entities.push(*start_2d_entity);
+                                    connected_vertices_2d_entities.push(start_2d_entity);
                                 } else {
                                     // this is a known bug that happens when undo/redo too fast
                                     // it may not be worth it to fix! would require the entire hierarchy to be stored similar to the server
@@ -966,7 +966,7 @@ impl ActionStack {
                 let (shape_manager, mut camera_manager, mut vertex_3d_q) =
                     system_state.get_mut(world);
 
-                let vertex_3d_entity = *shape_manager
+                let vertex_3d_entity = shape_manager
                     .vertex_entity_2d_to_3d(&vertex_2d_entity)
                     .unwrap();
 
@@ -1025,7 +1025,7 @@ impl ActionStack {
                     }
 
                     // get 3d version of first vertex
-                    let vertex_3d_entity_b = *shape_manager
+                    let vertex_3d_entity_b = shape_manager
                         .vertex_entity_2d_to_3d(&vertex_2d_entity_b)
                         .unwrap();
 
@@ -1098,15 +1098,15 @@ impl ActionStack {
                 let Some(edge_3d_entity_ref) = shape_manager.edge_entity_2d_to_3d(&edge_2d_entity) else {
                     panic!("failed to get edge 3d entity for edge 2d entity `{:?}`!", edge_2d_entity)
                 };
-                let edge_3d_entity = *edge_3d_entity_ref;
+                let edge_3d_entity = edge_3d_entity_ref;
 
                 let edge_3d = edge_3d_q.get(edge_3d_entity).unwrap();
                 let vertex_start_3d = edge_3d.start.get(&client).unwrap();
                 let vertex_end_3d = edge_3d.end.get(&client).unwrap();
-                let vertex_start_2d = *shape_manager
+                let vertex_start_2d = shape_manager
                     .vertex_entity_3d_to_2d(&vertex_start_3d)
                     .unwrap();
-                let vertex_end_2d = *shape_manager
+                let vertex_end_2d = shape_manager
                     .vertex_entity_3d_to_2d(&vertex_end_3d)
                     .unwrap();
 
@@ -1241,13 +1241,13 @@ impl ActionStack {
                     let vertex_3d_entity = shape_manager
                         .vertex_entity_2d_to_3d(&shape_2d_entity)
                         .unwrap();
-                    return Some(*vertex_3d_entity);
+                    return Some(vertex_3d_entity);
                 }
                 CanvasShape::Edge => {
                     let edge_3d_entity = shape_manager
                         .edge_entity_2d_to_3d(&shape_2d_entity)
                         .unwrap();
-                    return Some(*edge_3d_entity);
+                    return Some(edge_3d_entity);
                 }
                 _ => return None,
             }
@@ -1268,13 +1268,13 @@ impl ActionStack {
                     let vertex_3d_entity = shape_manager
                         .vertex_entity_2d_to_3d(&shape_2d_entity)
                         .unwrap();
-                    entity_to_release = Some(*vertex_3d_entity);
+                    entity_to_release = Some(vertex_3d_entity);
                 }
                 CanvasShape::Edge => {
                     let edge_3d_entity = shape_manager
                         .edge_entity_2d_to_3d(&shape_2d_entity)
                         .unwrap();
-                    entity_to_release = Some(*edge_3d_entity);
+                    entity_to_release = Some(edge_3d_entity);
                 }
                 _ => {}
             }
@@ -1440,7 +1440,7 @@ impl ActionStack {
         entities_to_release: &mut Vec<Entity>,
     ) -> (Entity, Entity) {
         // create new 3d edge
-        let parent_vertex_3d_entity = *shape_manager
+        let parent_vertex_3d_entity = shape_manager
             .vertex_entity_2d_to_3d(&parent_vertex_2d_entity)
             .unwrap();
 
@@ -1472,7 +1472,9 @@ impl ActionStack {
             camera_manager,
             new_edge_3d_entity,
             child_vertex_2d_entity,
+            child_vertex_3d_entity,
             parent_vertex_2d_entity,
+            parent_vertex_3d_entity,
             Some(tab_id),
             Vertex2d::CHILD_COLOR,
             file_type == FileTypeValue::Skel,
@@ -1585,7 +1587,7 @@ impl ActionStack {
                     let vertex_3d_entity = shape_manager
                         .vertex_entity_2d_to_3d(vertex_2d_entity)
                         .unwrap();
-                    if *vertex_3d_entity == *entity {
+                    if vertex_3d_entity == *entity {
                         *buffered_check = true;
                     }
                 }
@@ -1615,7 +1617,7 @@ impl ActionStack {
                         .unwrap()
                         .vertex_entity_2d_to_3d(vertex_2d_entity)
                         .unwrap();
-                    entities.push(*vertex_3d_entity);
+                    entities.push(vertex_3d_entity);
                 }
 
                 *enabled = Self::should_be_enabled(world, &entities);
@@ -1706,7 +1708,7 @@ impl ActionStack {
                 continue;
             };
             if parent_entity == *parent_3d_entity {
-                let child_entity_2d = *shape_manager
+                let child_entity_2d = shape_manager
                     .vertex_entity_3d_to_2d(&child_entity_3d)
                     .unwrap();
 

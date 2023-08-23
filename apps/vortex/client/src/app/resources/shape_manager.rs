@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{
     entity::Entity,
@@ -16,9 +16,9 @@ use render_api::{
     shapes::{distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform},
     Assets,
 };
-use vortex_proto::components::FileTypeValue;
+
 use vortex_proto::{
-    components::{OwnedByTab, Vertex3d, VertexRoot},
+    components::{FileTypeValue, OwnedByTab, Vertex3d, VertexRoot},
     types::TabId,
 };
 
@@ -45,15 +45,104 @@ pub enum CanvasShape {
     // Face,
 }
 
+struct Edge3dData {
+    entity_2d: Entity,
+    vertex_a_3d_entity: Entity,
+    vertex_b_3d_entity: Entity,
+}
+
+impl Edge3dData {
+    fn new(entity_2d: Entity, vertex_a_3d_entity: Entity, vertex_b_3d_entity: Entity) -> Self {
+        Self {
+            entity_2d,
+            vertex_a_3d_entity,
+            vertex_b_3d_entity,
+        }
+    }
+}
+
+struct Vertex3dData {
+    entity_2d: Entity,
+    edges_3d: HashSet<Entity>,
+}
+
+impl Vertex3dData {
+    fn new(entity_2d: Entity) -> Self {
+        Self {
+            entity_2d,
+            edges_3d: HashSet::new(),
+        }
+    }
+
+    fn add_edge(&mut self, edge_3d_entity: Entity) {
+        self.edges_3d.insert(edge_3d_entity);
+    }
+
+    fn remove_edge(&mut self, edge_3d_entity: &Entity) {
+        self.edges_3d.remove(edge_3d_entity);
+    }
+}
+
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Debug)]
+struct Face3dKey {
+    vertex_a: Entity,
+    vertex_b: Entity,
+    vertex_c: Entity,
+}
+
+impl Face3dKey {
+    fn new(vertex_a: Entity, vertex_b: Entity, vertex_c: Entity) -> Self {
+
+        let mut vertices = vec![vertex_a, vertex_b, vertex_c];
+
+        vertices.sort();
+
+        Self {
+            vertex_a: vertices[0],
+            vertex_b: vertices[1],
+            vertex_c: vertices[2],
+        }
+    }
+}
+
+struct Face3dData {
+    entity_2d: Entity,
+    key: Face3dKey,
+    active: bool,
+}
+
+impl Face3dData {
+    fn new(key: Face3dKey, entity_2d: Entity) -> Self {
+        Self {
+            key,
+            entity_2d,
+            active: false,
+        }
+    }
+}
+
 #[derive(Resource)]
 pub struct ShapeManager {
     current_file_type: FileTypeValue,
 
-    vertices_3d_to_2d: HashMap<Entity, Entity>,
-    vertices_2d_to_3d: HashMap<Entity, Entity>,
+    // 3d vertex entity -> 3d vertex data
+    vertices_3d: HashMap<Entity, Vertex3dData>,
+    // 2d vertex entity -> 3d vertex entity
+    vertices_2d: HashMap<Entity, Entity>,
 
-    edges_3d_to_2d: HashMap<Entity, Entity>,
-    edges_2d_to_3d: HashMap<Entity, Entity>,
+    // 3d edge entity -> 3d edge data
+    edges_3d: HashMap<Entity, Edge3dData>,
+    // 2d edge entity -> 3d edge entity
+    edges_2d: HashMap<Entity, Entity>,
+
+    // 3d face key -> 3d face entity
+    face_keys: HashMap<Face3dKey, Entity>,
+    // 3d face entity -> 3d face data
+    faces_3d: HashMap<Entity, Face3dData>,
+    // 2d face entity -> 3d face entity
+    faces_2d: HashMap<Entity, Entity>,
+    // queue of new faces to process
+    new_face_keys: Vec<Face3dKey>,
 
     shapes_recalc: u8,
     selection_recalc: bool,
@@ -75,11 +164,16 @@ impl Default for ShapeManager {
         Self {
             current_file_type: FileTypeValue::Skel,
 
-            vertices_3d_to_2d: HashMap::new(),
-            vertices_2d_to_3d: HashMap::new(),
+            vertices_3d: HashMap::new(),
+            vertices_2d: HashMap::new(),
 
-            edges_3d_to_2d: HashMap::new(),
-            edges_2d_to_3d: HashMap::new(),
+            edges_3d: HashMap::new(),
+            edges_2d: HashMap::new(),
+
+            new_face_keys: Vec::new(),
+            face_keys: HashMap::new(),
+            faces_2d: HashMap::new(),
+            faces_3d: HashMap::new(),
 
             shapes_recalc: 0,
             selection_recalc: false,
@@ -266,7 +360,7 @@ impl ShapeManager {
             let Some(vertex_2d_entity) = self.vertex_entity_3d_to_2d(&vertex_3d_entity) else {
                 panic!("Vertex3d entity {:?} has no corresponding Vertex2d entity", vertex_3d_entity);
             };
-            let Ok(mut vertex_2d_transform) = transform_q.get_mut(*vertex_2d_entity) else {
+            let Ok(mut vertex_2d_transform) = transform_q.get_mut(vertex_2d_entity) else {
                 panic!("Vertex2d entity {:?} has no Transform", vertex_2d_entity);
             };
 
@@ -276,14 +370,14 @@ impl ShapeManager {
             vertex_2d_transform.translation.z = depth;
 
             // update 2d compass
-            if compass_q.get(*vertex_2d_entity).is_err() {
+            if compass_q.get(vertex_2d_entity).is_err() {
                 let scale_2d = camera_manager.camera_3d_scale() * Vertex2d::RADIUS;
                 vertex_2d_transform.scale = Vec3::splat(scale_2d);
             }
 
             // update hover circle
             if let Some((hover_entity, _)) = self.hovered_entity {
-                if hover_entity == *vertex_2d_entity {
+                if hover_entity == vertex_2d_entity {
                     let hover_circle_entity = self.hover_circle_entity.unwrap();
                     let mut hover_circle_transform =
                         transform_q.get_mut(hover_circle_entity).unwrap();
@@ -301,7 +395,7 @@ impl ShapeManager {
             };
 
             // check if vertex is owned by the current tab
-            if !Self::is_owned_by_tab_or_unowned(current_tab_id, owned_by_q, *end_3d_entity) {
+            if !Self::is_owned_by_tab_or_unowned(current_tab_id, owned_by_q, end_3d_entity) {
                 continue;
             }
 
@@ -396,13 +490,103 @@ impl ShapeManager {
     }
 
     pub fn register_3d_vertex(&mut self, entity_3d: Entity, entity_2d: Entity) {
-        self.vertices_3d_to_2d.insert(entity_3d, entity_2d);
-        self.vertices_2d_to_3d.insert(entity_2d, entity_3d);
+        self.vertices_3d.insert(entity_3d, Vertex3dData::new(entity_2d));
+        self.vertices_2d.insert(entity_2d, entity_3d);
     }
 
-    pub fn register_3d_edge(&mut self, entity_3d: Entity, entity_2d: Entity) {
-        self.edges_3d_to_2d.insert(entity_3d, entity_2d);
-        self.edges_2d_to_3d.insert(entity_2d, entity_3d);
+    pub fn register_3d_edge(&mut self, edge_3d_entity: Entity, edge_2d_entity: Entity, vertex_a_3d_entity: Entity, vertex_b_3d_entity: Entity) {
+        {
+            let Some(vertex_a_3d_data) = self.vertices_3d.get_mut(&vertex_a_3d_entity) else {
+                panic!("Vertex3d entity: `{:?}` has not been registered", vertex_a_3d_entity);
+            };
+            vertex_a_3d_data.add_edge(edge_3d_entity);
+        }
+        {
+            let Some(vertex_b_3d_data) = self.vertices_3d.get_mut(&vertex_b_3d_entity) else {
+                panic!("Vertex3d entity: `{:?}` has not been registered", vertex_b_3d_entity);
+            };
+            vertex_b_3d_data.add_edge(edge_3d_entity);
+        }
+
+        self.edges_3d.insert(edge_3d_entity, Edge3dData::new(edge_2d_entity, vertex_a_3d_entity, vertex_b_3d_entity));
+        self.edges_2d.insert(edge_2d_entity, edge_3d_entity);
+
+        self.check_for_new_faces(vertex_a_3d_entity, vertex_b_3d_entity);
+    }
+
+    fn unregister_3d_vertex(&mut self, entity_3d: &Entity) -> Option<Entity> {
+        if let Some(data) = self.vertices_3d.remove(entity_3d) {
+            let entity_2d = data.entity_2d;
+            self.vertices_2d.remove(&entity_2d);
+            return Some(entity_2d);
+        }
+        return None;
+    }
+
+    fn unregister_3d_edge(&mut self, entity_3d: &Entity) -> Option<Entity> {
+        if let Some(entity_3d_data) = self.edges_3d.remove(entity_3d) {
+            let entity_2d = entity_3d_data.entity_2d;
+            self.edges_2d.remove(&entity_2d);
+
+            // remove edge from vertices
+            {
+                let vertex_a_3d_entity = entity_3d_data.vertex_a_3d_entity;
+                let vertex_b_3d_entity = entity_3d_data.vertex_b_3d_entity;
+
+                {
+                    let Some(vertex_a_3d_data) = self.vertices_3d.get_mut(&vertex_a_3d_entity) else {
+                        panic!("Vertex3d entity: `{:?}` has not been registered", vertex_a_3d_entity);
+                    };
+                    vertex_a_3d_data.remove_edge(entity_3d);
+                }
+                {
+                    let Some(vertex_b_3d_data) = self.vertices_3d.get_mut(&vertex_b_3d_entity) else {
+                        panic!("Vertex3d entity: `{:?}` has not been registered", vertex_b_3d_entity);
+                    };
+                    vertex_b_3d_data.remove_edge(entity_3d);
+                }
+            }
+
+            return Some(entity_2d);
+        }
+        return None;
+    }
+
+    fn check_for_new_faces(&mut self, vertex_a_3d_entity: Entity, vertex_b_3d_entity: Entity) {
+
+        let vertex_a_connected_vertices = self.get_connected_vertices(vertex_a_3d_entity);
+        let vertex_b_connected_vertices = self.get_connected_vertices(vertex_b_3d_entity);
+
+        let common_vertices = vertex_a_connected_vertices.intersection(&vertex_b_connected_vertices);
+        for common_vertex in common_vertices {
+            let face_key = Face3dKey::new(vertex_a_3d_entity, vertex_b_3d_entity, *common_vertex);
+            if !self.face_keys.contains_key(&face_key) {
+                self.face_keys.insert(face_key, Entity::PLACEHOLDER);
+                self.new_face_keys.push(face_key);
+            }
+        }
+    }
+
+    fn get_connected_vertices(&self, vertex_3d_entity: Entity) -> HashSet<Entity> {
+        let mut set = HashSet::new();
+
+        let Some(vertex_data) = self.vertices_3d.get(&vertex_3d_entity) else {
+            panic!("Vertex3d entity: `{:?}` has not been registered", vertex_3d_entity);
+        };
+        let edges = &vertex_data.edges_3d;
+        for edge_entity in edges {
+            let edge_data = self.edges_3d.get(edge_entity).unwrap();
+            let vertex_a_3d_entity = edge_data.vertex_a_3d_entity;
+            let vertex_b_3d_entity = edge_data.vertex_b_3d_entity;
+
+            if vertex_a_3d_entity != vertex_3d_entity {
+                set.insert(vertex_a_3d_entity);
+            } else if vertex_b_3d_entity != vertex_3d_entity {
+                set.insert(vertex_b_3d_entity);
+            }
+        }
+
+        set
     }
 
     // returns entity 2d
@@ -446,23 +630,23 @@ impl ShapeManager {
     }
 
     pub(crate) fn has_vertex_entity_3d(&self, entity_3d: &Entity) -> bool {
-        self.vertices_3d_to_2d.contains_key(entity_3d)
+        self.vertices_3d.contains_key(entity_3d)
     }
 
     pub(crate) fn has_edge_entity_3d(&self, entity_3d: &Entity) -> bool {
-        self.edges_3d_to_2d.contains_key(entity_3d)
+        self.edges_3d.contains_key(entity_3d)
     }
 
-    pub(crate) fn vertex_entity_3d_to_2d(&self, entity_3d: &Entity) -> Option<&Entity> {
-        self.vertices_3d_to_2d.get(entity_3d)
+    pub(crate) fn vertex_entity_3d_to_2d(&self, entity_3d: &Entity) -> Option<Entity> {
+        self.vertices_3d.get(entity_3d).map(|data| data.entity_2d)
     }
 
-    pub(crate) fn vertex_entity_2d_to_3d(&self, entity_2d: &Entity) -> Option<&Entity> {
-        self.vertices_2d_to_3d.get(entity_2d)
+    pub(crate) fn vertex_entity_2d_to_3d(&self, entity_2d: &Entity) -> Option<Entity> {
+        self.vertices_2d.get(entity_2d).copied()
     }
 
-    pub(crate) fn edge_entity_2d_to_3d(&self, entity_2d: &Entity) -> Option<&Entity> {
-        self.edges_2d_to_3d.get(entity_2d)
+    pub(crate) fn edge_entity_2d_to_3d(&self, entity_2d: &Entity) -> Option<Entity> {
+        self.edges_2d.get(entity_2d).copied()
     }
 
     pub fn vertex_3d_postprocess(
@@ -533,7 +717,9 @@ impl ShapeManager {
         camera_manager: &CameraManager,
         edge_3d_entity: Entity,
         vertex_a_2d_entity: Entity,
+        vertex_a_3d_entity: Entity,
         vertex_b_2d_entity: Entity,
+        vertex_b_3d_entity: Entity,
         tab_id_opt: Option<TabId>,
         color: Color,
         arrows_not_lines: bool,
@@ -568,7 +754,7 @@ impl ShapeManager {
         }
 
         // register 3d & 2d edges together
-        self.register_3d_edge(edge_3d_entity, edge_2d_entity);
+        self.register_3d_edge(edge_3d_entity, edge_2d_entity, vertex_a_3d_entity, vertex_b_3d_entity);
 
         edge_2d_entity
     }
@@ -606,7 +792,7 @@ impl ShapeManager {
 
                 // check whether we can delete vertex
                 let auth_status = commands
-                    .entity(*vertex_3d_entity)
+                    .entity(vertex_3d_entity)
                     .authority(client)
                     .unwrap();
                 if !auth_status.is_granted() && !auth_status.is_available() {
@@ -620,12 +806,12 @@ impl ShapeManager {
                 }
 
                 let auth_status = commands
-                    .entity(*vertex_3d_entity)
+                    .entity(vertex_3d_entity)
                     .authority(client)
                     .unwrap();
                 if !auth_status.is_granted() {
                     // request authority if needed
-                    commands.entity(*vertex_3d_entity).request_authority(client);
+                    commands.entity(vertex_3d_entity).request_authority(client);
                 }
 
                 action_stack.buffer_action(Action::DeleteVertex(vertex_2d_entity, None));
@@ -637,7 +823,7 @@ impl ShapeManager {
                 let edge_3d_entity = self.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
 
                 // check whether we can delete edge
-                let auth_status = commands.entity(*edge_3d_entity).authority(client).unwrap();
+                let auth_status = commands.entity(edge_3d_entity).authority(client).unwrap();
                 if !auth_status.is_granted() && !auth_status.is_available() {
                     // do nothing, edge is not available
                     // TODO: queue for deletion? check before this?
@@ -645,10 +831,10 @@ impl ShapeManager {
                     return;
                 }
 
-                let auth_status = commands.entity(*edge_3d_entity).authority(client).unwrap();
+                let auth_status = commands.entity(edge_3d_entity).authority(client).unwrap();
                 if !auth_status.is_granted() {
                     // request authority if needed
-                    commands.entity(*edge_3d_entity).request_authority(client);
+                    commands.entity(edge_3d_entity).request_authority(client);
                 }
 
                 action_stack.buffer_action(Action::DeleteEdge(edge_2d_entity, None));
@@ -1012,7 +1198,7 @@ impl ShapeManager {
 
                     if let Some(vertex_3d_entity) = self.vertex_entity_2d_to_3d(&vertex_2d_entity) {
                         let auth_status = commands
-                            .entity(*vertex_3d_entity)
+                            .entity(vertex_3d_entity)
                             .authority(client)
                             .unwrap();
                         if !(auth_status.is_requested() || auth_status.is_granted()) {
@@ -1044,7 +1230,7 @@ impl ShapeManager {
                         );
 
                         // set networked 3d vertex position
-                        let mut vertex_3d = vertex_3d_q.get_mut(*vertex_3d_entity).unwrap();
+                        let mut vertex_3d = vertex_3d_q.get_mut(vertex_3d_entity).unwrap();
 
                         if let Some((_, old_3d_position, _)) = self.last_vertex_dragged {
                             self.last_vertex_dragged =
@@ -1082,22 +1268,6 @@ impl ShapeManager {
                 }
             }
         }
-    }
-
-    fn unregister_3d_vertex(&mut self, entity_3d: &Entity) -> Option<Entity> {
-        if let Some(entity_2d) = self.vertices_3d_to_2d.remove(entity_3d) {
-            self.vertices_2d_to_3d.remove(&entity_2d);
-            return Some(entity_2d);
-        }
-        return None;
-    }
-
-    fn unregister_3d_edge(&mut self, entity_3d: &Entity) -> Option<Entity> {
-        if let Some(entity_2d) = self.edges_3d_to_2d.remove(entity_3d) {
-            self.edges_2d_to_3d.remove(&entity_2d);
-            return Some(entity_2d);
-        }
-        return None;
     }
 
     pub(crate) fn setup_compass(
@@ -1351,7 +1521,7 @@ impl ShapeManager {
 
         if let Some(parent_vertex_2d_entity) = parent_vertex_2d_entity_opt {
             // edge 3d
-            let parent_vertex_3d_entity = *self
+            let parent_vertex_3d_entity = self
                 .vertex_entity_2d_to_3d(&parent_vertex_2d_entity)
                 .unwrap();
             let new_edge_3d_entity = commands
@@ -1370,7 +1540,9 @@ impl ShapeManager {
                 camera_manager,
                 new_edge_3d_entity,
                 parent_vertex_2d_entity,
+                parent_vertex_3d_entity,
                 new_vertex_2d_entity,
+                new_vertex_3d_entity,
                 None,
                 color,
                 false,

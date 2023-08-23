@@ -347,11 +347,11 @@ impl ShapeWaitlist {
                     panic!("mesh vertex should not have children!");
                 }
             }
-            (ShapeData::Edge(start, end), _) => {
-                let start_2d = *shape_manager.vertex_entity_3d_to_2d(&start).unwrap();
-                let end_2d = *shape_manager.vertex_entity_3d_to_2d(&end).unwrap();
+            (ShapeData::Edge(start_3d, end_3d), _) => {
+                let start_2d = shape_manager.vertex_entity_3d_to_2d(&start_3d).unwrap();
+                let end_2d = shape_manager.vertex_entity_3d_to_2d(&end_3d).unwrap();
 
-                commands.entity(entity).insert(Edge3dLocal::new(start, end));
+                commands.entity(entity).insert(Edge3dLocal::new(start_3d, end_3d));
 
                 let _new_edge_2d_entity = shape_manager.edge_3d_postprocess(
                     commands,
@@ -360,7 +360,9 @@ impl ShapeWaitlist {
                     camera_manager,
                     entity,
                     start_2d,
+                    start_3d,
                     end_2d,
+                    end_3d,
                     Some(tab_id),
                     Vertex2d::CHILD_COLOR,
                     file_type == FileTypeValue::Skel,
