@@ -5,6 +5,7 @@ use crate::{
     base::{CpuMesh, Indices, Positions},
 };
 
+// Circle
 #[derive(Hash)]
 pub struct Circle {
     pub angle_subdivisions: u16,
