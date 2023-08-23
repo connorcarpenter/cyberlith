@@ -589,6 +589,26 @@ impl ShapeManager {
         set
     }
 
+    pub fn process_new_faces(&mut self, commands: &mut Commands) {
+        if self.new_face_keys.is_empty() {
+            return;
+        }
+
+        let keys = std::mem::take(&mut self.new_face_keys);
+        for key in keys {
+            let entity_3d = commands.spawn_empty().id();
+            let entity_2d = commands.spawn_empty().id();
+            self.face_keys.insert(key, entity_3d);
+            self.faces_3d.insert(entity_3d, Face3dData::new(key, entity_2d));
+            self.faces_2d.insert(entity_2d, entity_3d);
+
+            // gotta create the actual entity button entity components, ect
+            // 3d face needs it's own mesh set up to match it's vertices
+            // 2d face needs to have it's own button mesh, matching the 2d vertices
+            todo!()
+        }
+    }
+
     // returns entity 2d
     pub fn cleanup_deleted_vertex(
         &mut self,

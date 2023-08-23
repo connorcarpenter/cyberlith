@@ -1,6 +1,6 @@
 use bevy_ecs::{
     entity::Entity,
-    system::{Query, Res, ResMut},
+    system::{Commands, Query, Res, ResMut},
 };
 
 use input::Input;
@@ -42,6 +42,13 @@ pub fn sync_vertices(
         &edge_3d_q,
         &owned_by_tab_q,
     );
+}
+
+pub fn process_faces(
+    mut commands: Commands,
+    mut shape_manager: ResMut<ShapeManager>,
+) {
+    shape_manager.process_new_faces(&mut commands);
 }
 
 pub fn update_select_line(
