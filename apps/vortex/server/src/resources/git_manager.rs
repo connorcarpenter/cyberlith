@@ -12,7 +12,7 @@ use bevy_ecs::{
 use bevy_log::info;
 use git2::{Cred, Repository, Tree};
 
-use naia_bevy_server::{CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};
+use naia_bevy_server::{BigMap, CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};
 
 use vortex_proto::{
     components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild},
@@ -23,26 +23,29 @@ use vortex_proto::{
 };
 
 use crate::{
-    components::FileSystemOwner,
     config::GitConfig,
     files::{post_process_networked_entities, FileReadOutput, FileWriter, MeshReader, SkelReader},
     resources::{
-        user_manager::UserInfo, workspace::Workspace, ContentEntityData, FileEntryValue,
-        ShapeManager, ShapeWaitlist, UserManager,
+        user_manager::UserSessionData, project::Project, ContentEntityData, FileEntryValue,
+        ShapeManager, ShapeWaitlist, UserManager, project::ProjectKey,
     },
 };
+use crate::resources::FileSpace;
 
 #[derive(Resource)]
 pub struct GitManager {
     config: Option<GitConfig>,
-    workspaces: HashMap<String, Workspace>,
+    projects: BigMap<ProjectKey, Project>,
+    // get project key from username, should only be used on initialization
+    project_keys: HashMap<String, ProjectKey>,
 }
 
 impl Default for GitManager {
     fn default() -> Self {
         Self {
             config: None,
-            workspaces: HashMap::new(),
+            projects: BigMap::new(),
+            project_keys: HashMap::new(),
         }
     }
 }
@@ -52,43 +55,57 @@ impl GitManager {
         self.config = Some(config.clone());
     }
 
-    pub fn has_workspace(&mut self, user_info: &UserInfo) -> bool {
-        self.workspaces.contains_key(user_info.get_username())
+    pub fn has_project_key(&mut self, project_owner_name: &str) -> bool {
+        self.project_keys.contains_key(project_owner_name)
     }
 
-    pub fn get_workspace_room_key(&self, user_info: &UserInfo) -> Option<RoomKey> {
-        if let Some(workspace) = self.workspaces.get(user_info.get_username()) {
-            Some(workspace.room_key.clone())
-        } else {
-            None
-        }
+    pub fn project_key(&self, project_owner_name: &str) -> Option<ProjectKey> {
+        self.project_keys.get(project_owner_name).cloned()
     }
 
-    pub fn workspace_mut(&mut self, username: &str) -> &mut Workspace {
-        self.workspaces.get_mut(username).unwrap()
+    pub fn project(&self, project_key: &ProjectKey) -> Option<&Project> {
+        self.projects.get(project_key)
     }
 
-    pub fn get_remote_callbacks(access_token: &str) -> git2::RemoteCallbacks {
-        let mut remote_callbacks = git2::RemoteCallbacks::new();
-        remote_callbacks.credentials(move |_url, _username_from_url, _allowed_types| {
-            Cred::userpass_plaintext("token", access_token)
-        });
-
-        remote_callbacks
+    pub fn project_mut(&mut self, project_key: &ProjectKey) -> Option<&mut Project> {
+        self.projects.get_mut(project_key)
     }
 
-    pub fn add_workspace(
+    pub(crate) fn user_join_filespace(
         &mut self,
         commands: &mut Commands,
         server: &mut Server,
+        shape_waitlist: &mut ShapeWaitlist,
+        shape_manager: &mut ShapeManager,
         user_key: &UserKey,
-        user_info: &UserInfo,
+        project_key: &ProjectKey,
+        file_key: &FileEntryKey,
+        tab_id: TabId,
     ) {
-        // Create User's Working directory if it doesn't already exist
-        let username = user_info.get_username();
+        let Some(project) = self.projects.get_mut(project_key) else {
+            panic!("Could not find project for user");
+        };
+        project.user_join_filespace(
+            commands,
+            server,
+            shape_waitlist,
+            shape_manager,
+            user_key,
+            file_key,
+            tab_id,
+        );
+    }
 
+    pub fn create_project(
+        &mut self,
+        commands: &mut Commands,
+        server: &mut Server,
+        owner_user_key: &UserKey,
+        owner_name: &str,
+    ) -> ProjectKey {
+        // Create User's Working directory if it doesn't already exist
         let root_dir = "target/users";
-        let full_path_str = format!("{}/{}", root_dir, username);
+        let full_path_str = format!("{}/{}", root_dir, owner_name);
         let path = Path::new(&full_path_str);
         let repo_url = self.config.as_ref().unwrap().repo_url.as_str();
         let access_token = self.config.as_ref().unwrap().access_token.as_str();
@@ -152,23 +169,37 @@ impl GitManager {
             fill_file_entries_from_git(&mut file_entries, commands, server, &repo, &tree, "", None);
         }
 
-        let new_workspace = Workspace::new(
-            user_info.get_room_key().unwrap(),
+        // Create new room for user and all their owned entities
+        let project_room_key = server.make_room().key();
+
+        let new_project = Project::new(
+            project_room_key,
             file_entries,
             repo,
             access_token,
             &full_path_str,
         );
 
-        insert_networked_components(
+        let project_key = self.projects.insert(new_project);
+        self.project_keys.insert(owner_name.to_string(), project_key);
+
+        insert_entry_components_from_list(
             commands,
             server,
-            &new_workspace.master_file_entries,
-            user_key,
-            &new_workspace.room_key,
+            &new_project.master_file_entries,
+            &new_project.room_key(),
         );
 
-        self.workspaces.insert(username.to_string(), new_workspace);
+        project_key
+    }
+
+    pub fn get_remote_callbacks(access_token: &str) -> git2::RemoteCallbacks {
+        let mut remote_callbacks = git2::RemoteCallbacks::new();
+        remote_callbacks.credentials(move |_url, _username_from_url, _allowed_types| {
+            Cred::userpass_plaintext("token", access_token)
+        });
+
+        remote_callbacks
     }
 
     pub fn commit_changelist_entry(
@@ -178,15 +209,18 @@ impl GitManager {
         message: ChangelistMessage,
     ) {
         let user_manager = world.get_resource::<UserManager>().unwrap();
-        let user_info = user_manager.user_info(&user_key).unwrap();
-        let username = user_info.get_username().to_string();
-        let email = user_info.get_email().to_string();
+        let user_perm_data = user_manager.user_perm_data(&user_key).unwrap();
+        let username = user_perm_data.username().to_string();
+        let email = user_perm_data.email().to_string();
 
-        let Some(workspace) = self.workspaces.get_mut(&username) else {
-            panic!("Could not find workspace for user: `{}`", username);
+        let user_session_data = user_manager.user_session_data(&user_key).unwrap();
+        let project_key = user_session_data.project_key().unwrap();
+
+        let Some(project) = self.projects.get_mut(&project_key) else {
+            panic!("Could not find project for user: `{}`", username);
         };
 
-        workspace.commit_changelist_entry(world, &user_key, &username, &email, message);
+        project.commit_changelist_entry(world, &user_key, &username, &email, message);
     }
 
     pub fn rollback_changelist_entry(
@@ -196,20 +230,23 @@ impl GitManager {
         message: ChangelistMessage,
     ) {
         let user_manager = world.get_resource::<UserManager>().unwrap();
-        let user_info = user_manager.user_info(&user_key).unwrap();
-        let user_name = user_info.get_username().to_string();
-        let user_room_key = user_info.get_room_key().unwrap();
 
-        let Some(workspace) = self.workspaces.get_mut(&user_name) else {
-            panic!("Could not find workspace for user: `{}`", user_name);
+        let user_name = user_manager.user_perm_data(&user_key).username().to_string();
+
+        let user_session_data = user_manager.user_session_data(&user_key).unwrap();
+        let Some(user_project_key) = user_session_data.project_key() else {
+            panic!("Could not find project key for user: `{}`", user_name);
         };
+        let Some(project) = self.projects.get_mut(&user_project_key) else {
+            panic!("Could not find project for user: `{}`", user_name);
+        };
+        let project_room_key = project.room_key();
 
-        if let Some((key, value)) = workspace.rollback_changelist_entry(&user_key, world, message) {
+        if let Some((key, value)) = project.rollback_changelist_entry(&user_key, world, message) {
             self.spawn_networked_entry_into_world(
                 world,
-                &user_key,
-                &user_name,
-                &user_room_key,
+                &user_project_key,
+                &project_room_key,
                 &key,
                 &value,
             )
@@ -219,23 +256,21 @@ impl GitManager {
     fn spawn_networked_entry_into_world(
         &mut self,
         world: &mut World,
-        user_key: &UserKey,
-        user_name: &str,
-        user_room_key: &RoomKey,
+        project_key: &ProjectKey,
+        project_room_key: &RoomKey,
         entry_key: &FileEntryKey,
         entry_val: &FileEntryValue,
     ) {
-        let workspace = self.workspaces.get(user_name).unwrap();
+        let project = self.projects.get(project_key).unwrap();
 
         let mut system_state: SystemState<(Commands, Server)> = SystemState::new(world);
         let (mut commands, mut server) = system_state.get_mut(world);
 
-        insert_networked_components_entry(
+        insert_entry_components(
             &mut commands,
             &mut server,
-            user_key,
-            user_room_key,
-            &workspace.working_file_entries,
+            project_room_key,
+            &project.working_file_entries,
             entry_key,
             entry_val,
         );
@@ -243,70 +278,30 @@ impl GitManager {
         system_state.apply(world);
     }
 
-    pub(crate) fn load_content_entities(
-        &self,
-        commands: &mut Commands,
-        server: &mut Server,
-        shape_waitlist: &mut ShapeWaitlist,
-        shape_manager: &mut ShapeManager,
-        username: &str,
-        file_entry_key: &FileEntryKey,
-        room_key: &RoomKey,
-        tab_id: TabId,
-        pause_replication: bool,
-    ) -> HashMap<Entity, ContentEntityData> {
-        info!("loading content entities");
-
-        let workspace = self.workspaces.get(username).unwrap();
-        let working_file_extension = workspace.working_file_extension(file_entry_key);
-        let output = workspace.load_content_entities(commands, server, file_entry_key);
-
-        let new_entities = match output {
-            FileReadOutput::Skel(entities) => {
-                SkelReader::post_process_entities(shape_waitlist, shape_manager, entities)
-            }
-            FileReadOutput::Mesh(shape_entities) => {
-                MeshReader::post_process_entities(shape_manager, shape_entities)
-            }
-        };
-
-        post_process_networked_entities(
-            commands,
-            server,
-            room_key,
-            &new_entities,
-            tab_id,
-            &working_file_extension,
-            pause_replication,
-        );
-
-        new_entities
-    }
-
-    pub(crate) fn can_read(&self, username: &str, key: &FileEntryKey) -> bool {
-        let ext = self.working_file_extension(username, key);
+    pub(crate) fn can_read(&self, project_key: &ProjectKey, key: &FileEntryKey) -> bool {
+        let ext = self.working_file_extension(project_key, key);
         return ext.can_io();
     }
 
-    pub(crate) fn can_write(&self, username: &str, key: &FileEntryKey) -> bool {
-        let ext = self.working_file_extension(username, key);
+    pub(crate) fn can_write(&self, project_key: &ProjectKey, key: &FileEntryKey) -> bool {
+        let ext = self.working_file_extension(project_key, key);
         return ext.can_io();
     }
 
     pub(crate) fn write(
         &self,
-        username: &str,
+        project_key: &ProjectKey,
         key: &FileEntryKey,
         world: &mut World,
         content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]> {
-        let ext = self.working_file_extension(username, key);
+        let ext = self.working_file_extension(project_key, key);
         return ext.write(world, content_entities);
     }
 
-    pub fn working_file_extension(&self, username: &str, key: &FileEntryKey) -> FileExtension {
-        self.workspaces
-            .get(username)
+    pub fn working_file_extension(&self, project_key: &ProjectKey, key: &FileEntryKey) -> FileExtension {
+        self.projects
+            .get(project_key)
             .unwrap()
             .working_file_extension(key)
     }
@@ -315,13 +310,13 @@ impl GitManager {
         &mut self,
         commands: &mut Commands,
         server: &mut Server,
-        username: &str,
+        user_key: &UserKey,
         key: &FileEntryKey,
         bytes: Box<[u8]>,
     ) {
-        let workspace = self.workspaces.get_mut(username).unwrap();
+        let project = self.projects.get_mut(user_key).unwrap();
 
-        workspace.set_changelist_entry_content(commands, server, key, bytes);
+        project.set_changelist_entry_content(commands, server, key, bytes);
     }
 
     pub fn spawn_file_tree_entity(commands: &mut Commands, server: &mut Server) -> Entity {
@@ -397,12 +392,11 @@ fn fill_file_entries_from_git(
     output
 }
 
-fn insert_networked_components(
+fn insert_entry_components_from_list(
     commands: &mut Commands,
     server: &mut Server,
     file_entries: &HashMap<FileEntryKey, FileEntryValue>,
-    user_key: &UserKey,
-    room_key: &RoomKey,
+    project_room_key: &RoomKey,
 ) {
     for (file_entry_key, file_entry_value) in file_entries.iter() {
         info!(
@@ -410,11 +404,10 @@ fn insert_networked_components(
             file_entry_key.name()
         );
 
-        insert_networked_components_entry(
+        insert_entry_components(
             commands,
             server,
-            user_key,
-            room_key,
+            project_room_key,
             file_entries,
             file_entry_key,
             file_entry_value,
@@ -422,11 +415,10 @@ fn insert_networked_components(
     }
 }
 
-fn insert_networked_components_entry(
+fn insert_entry_components(
     commands: &mut Commands,
     server: &mut Server,
-    user_key: &UserKey,
-    room_key: &RoomKey,
+    project_room_key: &RoomKey,
     file_entries: &HashMap<FileEntryKey, FileEntryValue>,
     entry_key: &FileEntryKey,
     entry_val: &FileEntryValue,
@@ -437,11 +429,10 @@ fn insert_networked_components_entry(
     commands
         .entity(entry_entity)
         .insert(FileSystemEntry::new(&entry_key.name(), entry_key.kind()))
-        .insert(FileSystemOwner(*user_key))
         .insert(entry_key.clone());
 
     // Add entity to room
-    server.room_mut(room_key).add_entity(&entry_entity);
+    server.room_mut(project_room_key).add_entity(&entry_entity);
 
     // Add parent entity to component
     if let Some(parent_key) = entry_val.parent() {

@@ -20,23 +20,25 @@ pub fn connect_events(
 
         info!("Server connected to: {}", address);
 
-        // Get user's username from UserManager
-        let user_info = user_manager.user_info_mut(user_key).unwrap();
+        // Get user info
+        let Some(user_info) = user_manager.user_session_data(user_key) else {
+            panic!("user not found");
+        };
+        let project_owner_name = user_info.project_owner_name();
 
-        if git_manager.has_workspace(user_info) {
-            // not the first Client logged in as this user
-            // enter the first Client's user's workspace room
-            let user_room_key = git_manager.get_workspace_room_key(user_info).unwrap();
-            user_info.set_room_key(user_room_key);
-            server.user_mut(user_key).enter_room(&user_room_key);
-        } else {
-            // Create new room for user and all their owned entities
-            let user_room_key = server.make_room().key();
-            user_info.set_room_key(user_room_key);
-            server.user_mut(user_key).enter_room(&user_room_key);
-
+        let project_key = if !git_manager.has_project_key(project_owner_name) {
             // GitManager initializes new user's working directory
-            git_manager.add_workspace(&mut commands, &mut server, user_key, user_info);
-        }
+            git_manager.create_project(&mut commands, &mut server, user_key, project_owner_name)
+        } else {
+            // not the first Client logged in as this user
+            git_manager.project_key(project_owner_name).unwrap()
+        };
+
+        // add project key to session data
+        user_manager.user_session_data_mut(user_key).unwrap().set_project_key(project_key);
+
+        // current user enters project room
+        let project_room_key = git_manager.project(&project_key).unwrap().room_key();
+        server.user_mut(user_key).enter_room(&project_room_key);
     }
 }

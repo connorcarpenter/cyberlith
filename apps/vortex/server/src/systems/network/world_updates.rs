@@ -27,7 +27,7 @@ use crate::files::ShapeType;
 use crate::{
     files::handle_file_modify,
     resources::{
-        fs_waitlist::{fs_process_insert, FSWaitlist, FSWaitlistInsert},
+        file_waitlist::{fs_process_insert, FSWaitlist, FSWaitlistInsert},
         GitManager, ShapeManager, ShapeWaitlist, ShapeWaitlistInsert, TabManager, UserManager,
     },
 };
@@ -49,12 +49,12 @@ pub fn despawn_entity_events(
     entry_key_query: Query<&FileEntryKey>,
 ) {
     for DespawnEntityEvent(user_key, entity) in event_reader.iter() {
-        let Some(user) = user_manager.user_info(user_key) else {
+        let Some(user) = user_manager.user_session_data(user_key) else {
             panic!("user not found");
         };
-        let workspace = git_manager.workspace_mut(user.get_username());
+        let project = git_manager.project_mut(user.get_username());
 
-        let entity_is_file = workspace.entity_is_file(entity);
+        let entity_is_file = project.entity_is_file(entity);
         let entity_is_vertex = shape_manager.has_vertex(entity);
         let entity_is_edge = shape_manager.has_edge(entity);
 
@@ -63,7 +63,7 @@ pub fn despawn_entity_events(
                 // file
                 info!("entity: `{:?}` (which is a File), despawned", entity);
 
-                workspace.on_client_delete_file(&mut commands, &mut server, entity);
+                project.on_client_delete_file(&mut commands, &mut server, entity);
             }
             (false, true, false) => {
                 // vertex

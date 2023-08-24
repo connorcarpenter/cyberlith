@@ -108,7 +108,6 @@ pub fn post_process_networked_entities(
     entities: &HashMap<Entity, ContentEntityData>,
     tab_id: TabId,
     file_extension: &FileExtension,
-    pause_replication: bool,
 ) {
     for (entity, _data) in entities.iter() {
         // associate all new Entities with the new Room
@@ -130,14 +129,6 @@ pub fn post_process_networked_entities(
                     .insert(FileType::new(FileTypeValue::Mesh));
             }
             _ => {}
-        }
-
-        // pause replication if indicated
-        if pause_replication {
-            commands
-                .entity(*entity)
-                // call "pause_replication" on all Entities (they will be resumed when tab is selected)
-                .pause_replication(server);
         }
     }
 }

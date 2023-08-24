@@ -14,14 +14,13 @@ use vortex_proto::{resources::FileEntryKey, types::TabId};
 use crate::{
     files::ShapeType,
     resources::{
-        user_tab_state::TabState, workspace::Workspace, ContentEntityData, GitManager,
+        project::Project, ContentEntityData, GitManager,
         ShapeManager, ShapeWaitlist, UserManager, UserTabState,
     },
 };
 
 #[derive(Resource)]
 pub struct TabManager {
-    users: HashMap<UserKey, UserTabState>,
     queued_closes: VecDeque<(UserKey, TabId)>,
     queued_opens: VecDeque<(UserKey, TabId, Entity)>,
     queued_selects: VecDeque<(UserKey, TabId)>,
@@ -32,7 +31,6 @@ pub struct TabManager {
 impl Default for TabManager {
     fn default() -> Self {
         Self {
-            users: HashMap::new(),
             queued_closes: VecDeque::new(),
             queued_opens: VecDeque::new(),
             queued_selects: VecDeque::new(),
@@ -47,108 +45,65 @@ impl TabManager {
         &mut self,
         commands: &mut Commands,
         server: &mut Server,
-        user_manager: &UserManager,
+        user_manager: &mut UserManager,
         git_manager: &mut GitManager,
-        vertex_waitlist: &mut ShapeWaitlist,
+        shape_waitlist: &mut ShapeWaitlist,
         shape_manager: &mut ShapeManager,
-        key_query: &Query<&FileEntryKey>,
+        key_q: &Query<&FileEntryKey>,
         user_key: &UserKey,
         tab_id: &TabId,
         file_entity: &Entity,
     ) {
         info!("open tab");
 
-        let Ok(file_entry_key) = key_query.get(*file_entity) else {
+        let Ok(file_entry_key) = key_q.get(*file_entity) else {
             self.waiting_opens.insert((*user_key, *file_entity), *tab_id);
             info!("no FileEntryKey for entity: {:?}, queuing open tab", file_entity);
             return;
         };
 
         // load from file all Entities in the file of the current tab
-        let username = user_manager.user_name(user_key).unwrap();
+        let user_session_data = user_manager.user_session_data(user_key).unwrap();
+        let project_key = user_session_data.project_key().unwrap();
 
-        if !git_manager.can_read(username, &file_entry_key) {
+        if !git_manager.can_read(&project_key, &file_entry_key) {
             warn!("can't read file: `{:?}`", file_entry_key.name());
             return;
         }
 
-        // initialize user tab state if necessary
-        if !self.users.contains_key(user_key) {
-            self.users.insert(user_key.clone(), UserTabState::default());
-        }
+        // insert tab into collection
+        user_manager.open_tab(user_key, tab_id.clone(), file_entry_key.clone());
 
-        let user_state = self.users.get_mut(user_key).unwrap();
-
-        // create new Room for entities which are in the new tab
-        let new_room_key = server.make_room().key();
-
-        let content_entities = git_manager.load_content_entities(
+        git_manager.user_join_filespace(
             commands,
             server,
-            vertex_waitlist,
+            shape_waitlist,
             shape_manager,
-            username,
+            user_key,
+            &project_key,
             &file_entry_key,
-            &new_room_key,
             *tab_id,
-            true,
         );
-
-        // insert TabState into collection
-        let tab_state = TabState::new(new_room_key, file_entity.clone(), content_entities);
-        user_state.insert_tab_state(tab_id.clone(), tab_state);
-
-        // put user in new room
-        server.room_mut(&new_room_key).add_user(user_key);
-
-        // if there is a selection waiting, queue it
-        if let Some(tab_id) = self.waiting_selects.remove(user_key) {
-            self.queued_selects.push_back((*user_key, tab_id));
-        }
     }
 
     pub fn select_tab(
         &mut self,
-        commands: &mut Commands,
-        server: &mut Server,
+        user_manager: &mut UserManager,
         user_key: &UserKey,
         tab_id: &TabId,
     ) {
-        let Some(user_state) = self.users.get_mut(user_key) else {
-            info!("select_tab(): user_tab_state has not been initialized, queuing for later.");
-            self.waiting_selects.insert(*user_key, *tab_id);
-            return;
+        let Some(user_tab_state) = user_manager.user_tab_state_mut(user_key) else {
+            panic!("user does not exist")
         };
-        if !user_state.has_tab_id(tab_id) {
+        if !user_tab_state.has_tab_id(tab_id) {
             warn!("User does not have tab {}", tab_id);
             return;
         }
 
         info!("Select Tab!");
 
-        if let Some(tab_entities) = user_state.current_tab_entities() {
-            for (entity, _entity_data) in tab_entities.iter() {
-                // All Entities associated with previous tab must call "pause_replication"
-                if let Some(mut entity_commands) = commands.get_entity(*entity) {
-                    entity_commands.pause_replication(server);
-                } else {
-                    warn!("select_tab(): Entity {:?} not found", entity);
-                }
-            }
-        }
-
         // Switch current Tab
-        user_state.set_current_tab(Some(tab_id.clone()));
-
-        // All Entities associated with new tab must call "resume_replication"
-        let new_tab_entities = user_state.tab_entities(tab_id).unwrap();
-        for (entity, entity_data) in new_tab_entities.iter() {
-            if let Some(mut entity_commands) = commands.get_entity(*entity) {
-                entity_commands.resume_replication(server);
-            } else {
-                warn!("select_tab(): Entity {:?} not found", entity);
-            }
-        }
+        user_tab_state.set_current_tab(Some(tab_id.clone()));
     }
 
     pub fn complete_waiting_open(&mut self, user_key: &UserKey, file_entity: &Entity) {
@@ -173,7 +128,7 @@ impl TabManager {
             Commands,
             Server,
             ResMut<TabManager>,
-            Res<UserManager>,
+            ResMut<UserManager>,
             ResMut<GitManager>,
             ResMut<ShapeWaitlist>,
             ResMut<ShapeManager>,
@@ -183,7 +138,7 @@ impl TabManager {
             mut commands,
             mut server,
             mut tab_manager,
-            user_manager,
+            mut user_manager,
             mut git_manager,
             mut vertex_waitlist,
             mut shape_manager,
@@ -196,7 +151,7 @@ impl TabManager {
             tab_manager.open_tab(
                 &mut commands,
                 &mut server,
-                &user_manager,
+                &mut user_manager,
                 &mut git_manager,
                 &mut vertex_waitlist,
                 &mut shape_manager,
@@ -250,26 +205,26 @@ impl TabManager {
                         .get::<FileEntryKey>()
                         .unwrap()
                         .clone();
-                    if !git_manager.can_write(&username, &file_entry_key) {
+                    if !git_manager.can_write(user_key, &file_entry_key) {
                         panic!("can't write file: `{:?}`", file_entry_key.name());
                     }
                     let bytes = git_manager.write(
-                        &username,
+                        user_key,
                         &file_entry_key,
                         world,
                         closed_state.get_content_entities(),
                     );
-                    output.push((username, file_entry_key, bytes));
+                    output.push((user_key, file_entry_key, bytes));
                 }
 
                 let mut system_state: SystemState<(Commands, Server)> = SystemState::new(world);
                 let (mut commands, mut server) = system_state.get_mut(world);
 
-                for (username, key, bytes) in output {
+                for (user_key, key, bytes) in output {
                     git_manager.set_changelist_entry_content(
                         &mut commands,
                         &mut server,
-                        &username,
+                        user_key,
                         &key,
                         bytes,
                     );
@@ -292,14 +247,14 @@ impl TabManager {
     }
 
     fn process_queued_selects(world: &mut World) {
-        let mut system_state: SystemState<(Commands, Server, ResMut<TabManager>)> =
+        let mut system_state: SystemState<(ResMut<TabManager>, ResMut<UserManager>)> =
             SystemState::new(world);
-        let (mut commands, mut server, mut tab_manager) = system_state.get_mut(world);
+        let (mut tab_manager, mut user_manager) = system_state.get_mut(world);
 
         let selects = tab_manager.take_queued_selects();
 
         for (user_key, tab_id) in selects {
-            tab_manager.select_tab(&mut commands, &mut server, &user_key, &tab_id);
+            tab_manager.select_tab(&mut user_manager, &user_key, &tab_id);
         }
 
         system_state.apply(world);
@@ -355,78 +310,12 @@ impl TabManager {
             .unwrap()
     }
 
-    pub(crate) fn respawn_tab_content_entities(
-        &mut self,
-        commands: &mut Commands,
-        server: &mut Server,
-        workspace: &Workspace,
-        vertex_waitlist: &mut ShapeWaitlist,
-        shape_manager: &mut ShapeManager,
-        user_key: &UserKey,
-        file_entity: &Entity,
-        file_entry_key: &FileEntryKey,
-    ) {
-        if let Some(user_tab_state) = self.users.get_mut(user_key) {
-            user_tab_state.respawn_tab_content_entities(
-                commands,
-                server,
-                workspace,
-                vertex_waitlist,
-                shape_manager,
-                file_entity,
-                file_entry_key,
-            );
-        }
-    }
-
-    fn user_tab_state(&self, user_key: &UserKey) -> &UserTabState {
-        let Some(user_state) = self.users.get(user_key) else {
-            panic!("user_tab_state has not been initialized!");
-        };
-
-        user_state
-    }
-
-    fn user_tab_state_mut(&mut self, user_key: &UserKey) -> &mut UserTabState {
-        let Some(user_state) = self.users.get_mut(user_key) else {
-            panic!("user_tab_state has not been initialized!");
-        };
-
-        user_state
-    }
-
-    fn process_queued_closes_inner(&mut self, server: &mut Server) -> Vec<(UserKey, TabState)> {
+    fn process_queued_closes_inner(&mut self, server: &mut Server, user_manager: &mut UserManager) -> Vec<(UserKey, FileSpace)> {
         let mut output = Vec::new();
         while let Some((user_key, tab_id)) = self.queued_closes.pop_front() {
-            let closed_state = self.close_tab(server, &user_key, &tab_id);
+            let closed_state = user_manager.close_tab(server, &user_key, &tab_id);
             output.push((user_key, closed_state));
         }
         output
-    }
-
-    fn close_tab(&mut self, server: &mut Server, user_key: &UserKey, tab_id: &TabId) -> TabState {
-        let mut remove = false;
-        let Some(user_state) = self.users.get_mut(user_key) else {
-            panic!("User does not exist!");
-        };
-        if user_state.get_current_tab() == Some(tab_id.clone()) {
-            user_state.set_current_tab(None);
-        }
-
-        let Some(tab_state) = user_state.remove_tab_state(tab_id) else {
-            panic!("User does not have tab {}", tab_id);
-        };
-
-        if !user_state.has_tabs() {
-            remove = true;
-        }
-        if remove {
-            self.users.remove(user_key);
-        }
-
-        // remove the Room
-        server.room_mut(&tab_state.get_room_key()).destroy();
-
-        tab_state
     }
 }

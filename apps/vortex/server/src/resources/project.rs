@@ -8,7 +8,7 @@ use bevy_ecs::{
 use bevy_log::info;
 use git2::{Repository, Signature};
 
-use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
+use naia_bevy_server::{BigMapKey, CommandsExt, RoomKey, Server, UserKey};
 
 use vortex_proto::{
     components::{ChangelistEntry, ChangelistStatus},
@@ -16,27 +16,43 @@ use vortex_proto::{
     resources::FileEntryKey,
     FileExtension,
 };
+use vortex_proto::types::TabId;
 
 use crate::{
     files::{FileReadOutput, FileReader, FileWriter},
     resources::{
         ChangelistValue, ContentEntityData, FileEntryValue, GitManager, ShapeManager,
-        ShapeWaitlist, TabManager,
+        ShapeWaitlist, TabManager, FileSpace
     },
 };
+use crate::files::{MeshReader, post_process_networked_entities, SkelReader};
 
-pub struct Workspace {
-    pub room_key: RoomKey,
+#[derive(Clone, Copy, Eq, PartialEq, Hash)]
+pub struct ProjectKey(u64);
+
+impl BigMapKey for ProjectKey {
+    fn to_u64(&self) -> u64 {
+        self.0
+    }
+
+    fn from_u64(value: u64) -> Self {
+        Self(value)
+    }
+}
+
+pub struct Project {
+    room_key: RoomKey,
     pub master_file_entries: HashMap<FileEntryKey, FileEntryValue>,
     pub working_file_entries: HashMap<FileEntryKey, FileEntryValue>,
     pub changelist_entries: HashMap<FileEntryKey, ChangelistValue>,
+    filespaces: HashMap<FileEntryKey, FileSpace>,
     repo: Mutex<Repository>,
     access_token: String,
     branch: String,
     internal_path: String,
 }
 
-impl Workspace {
+impl Project {
     pub fn new(
         room_key: RoomKey,
         file_entries: HashMap<FileEntryKey, FileEntryValue>,
@@ -47,6 +63,7 @@ impl Workspace {
         let working_file_tree = file_entries.clone();
         Self {
             room_key,
+            filespaces: HashMap::new(),
             master_file_entries: file_entries,
             working_file_entries: working_file_tree,
             changelist_entries: HashMap::new(),
@@ -55,6 +72,35 @@ impl Workspace {
             branch: "main".to_string(),
             internal_path: internal_path.to_string(),
         }
+    }
+
+    pub fn room_key(&self) -> RoomKey {
+        self.room_key
+    }
+
+    pub(crate) fn user_join_filespace(
+        &mut self,
+        commands: &mut Commands,
+        server: &mut Server,
+        shape_waitlist: &mut ShapeWaitlist,
+        shape_manager: &mut ShapeManager,
+        user_key: &UserKey,
+        file_key: &FileEntryKey,
+        tab_id: TabId,
+    ) {
+        if !self.filespaces.contains_key(file_key) {
+            let filespace = self.create_filespace(
+                commands,
+                server,
+                shape_waitlist,
+                shape_manager,
+                file_key,
+                tab_id,
+            );
+            self.filespaces.insert(file_key.clone(), filespace);
+        }
+        let filespace = self.filespaces.get_mut(file_key).unwrap();
+        filespace.user_join(server, user_key);
     }
 
     pub fn entity_is_file(&self, entity: &Entity) -> bool {
@@ -561,34 +607,44 @@ impl Workspace {
             .insert(file_entry_key.clone(), changelist_value);
     }
 
-    pub(crate) fn load_content_entities(
+    fn create_filespace(
         &self,
         commands: &mut Commands,
         server: &mut Server,
-        key: &FileEntryKey,
-    ) -> FileReadOutput {
-        // get file extension of file
-        let file_extension = self.working_file_extension(key);
+        shape_waitlist: &mut ShapeWaitlist,
+        shape_manager: &mut ShapeManager,
+        file_key: &FileEntryKey,
+        tab_id: TabId,
+    ) -> FileSpace {
+        let file_extension = self.working_file_extension(file_key);
+
+        let file_room_key = server.create_room().key();
 
         // get file contents from either the changelist or the file system
         let bytes = {
-            if self.changelist_entries.contains_key(key) {
+            if self.changelist_entries.contains_key(file_key) {
                 // get contents of file from changelist
-                if let Some(content) = self.changelist_entries.get(key).unwrap().get_content() {
+                if let Some(content) = self.changelist_entries.get(file_key).unwrap().get_content() {
                     Box::from(content)
                 } else {
-                    self.get_file_contents(key)
+                    self.get_file_contents(file_key)
                 }
             } else {
                 // get contents of file from file system
-                self.get_file_contents(key)
+                self.get_file_contents(file_key)
             }
         };
 
-        // FileReader reads File's contents and spawns all Entities + Components
-        let read_output = file_extension.read(commands, server, &bytes);
-
-        read_output
+        FileSpace::new(
+            commands,
+            server,
+            shape_waitlist,
+            shape_manager,
+            &file_extension,
+            file_room_key,
+            tab_id,
+            bytes,
+        )
     }
 
     fn get_file_contents(&self, key: &FileEntryKey) -> Box<[u8]> {

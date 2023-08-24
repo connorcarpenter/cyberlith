@@ -32,11 +32,11 @@ pub fn handle_file_modify(
         panic!("somehow the current tab is not a file entity ..");
     };
 
-    // on users current workspace, trigger modify event
-    let Some(user) = user_manager.user_info(user_key) else {
+    // on users current project, trigger modify event
+    let Some(user) = user_manager.user_session_data(user_key) else {
         panic!("user not found");
     };
     git_manager
-        .workspace_mut(user.get_username())
+        .project_mut(user_key)
         .on_client_modify_file(commands, server, file_key, &file_entity);
 }
