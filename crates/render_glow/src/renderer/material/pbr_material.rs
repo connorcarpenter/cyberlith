@@ -1,3 +1,4 @@
+
 use render_api::base::{Color, CpuMaterial, LightingModel};
 
 use crate::{core::*, renderer::*};
@@ -104,7 +105,10 @@ impl PbrMaterial {
                     ..Default::default()
                 }
             } else {
-                RenderStates::default()
+                RenderStates {
+                    cull: Cull::Back,
+                    ..Default::default()
+                }
             },
             emissive: cpu_material.emissive,
             emissive_texture,

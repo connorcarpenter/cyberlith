@@ -116,14 +116,17 @@ impl Context {
                 }
                 Cull::Back => {
                     self.enable(glow::CULL_FACE);
+                    self.front_face(glow::CCW);
                     self.cull_face(glow::BACK);
                 }
                 Cull::Front => {
                     self.enable(glow::CULL_FACE);
+                    self.front_face(glow::CCW);
                     self.cull_face(glow::FRONT);
                 }
                 Cull::FrontAndBack => {
                     self.enable(glow::CULL_FACE);
+                    self.front_face(glow::CCW);
                     self.cull_face(glow::FRONT_AND_BACK);
                 }
             }

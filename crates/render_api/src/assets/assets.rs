@@ -28,8 +28,8 @@ pub trait AssetHash<T>: Any + Hash + Into<T> {
 }
 
 impl<T> Assets<T> {
-    pub fn add<L: AssetHash<T>>(&mut self, l: L) -> Handle<T> {
-        let key = l.get_key();
+    pub fn add<L: AssetHash<T>>(&mut self, asset: L) -> Handle<T> {
+        let key = asset.get_key();
 
         if let Some(old_handle) = self.keys.get(&key) {
             //info!("getting old handle");
@@ -37,14 +37,14 @@ impl<T> Assets<T> {
         }
 
         //info!("making new handle");
-        let new_handle = self.add_inner(l.into());
+        let new_handle = self.add_inner(asset.into());
         self.keys.insert(key, new_handle.clone());
         new_handle
     }
 
-    fn add_inner(&mut self, t: T) -> Handle<T> {
+    fn add_inner(&mut self, asset: T) -> Handle<T> {
         let handle = Handle::new(self.last_id);
-        self.assets.insert(self.last_id, t);
+        self.assets.insert(self.last_id, asset);
         self.added_ids.insert(self.last_id);
         self.last_id += 1;
         handle

@@ -224,7 +224,7 @@ impl TabState {
                     shape_manager.on_delete_vertex(commands, server, entity);
                 }
                 ShapeType::Edge => {
-                    //shape_manager.on_delete_edge();
+                    shape_manager.on_delete_edge(entity);
                 }
                 ShapeType::Face => {}
             }
