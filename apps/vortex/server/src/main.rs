@@ -1,9 +1,8 @@
 use std::time::Duration;
 
-use bevy_app::{App, ScheduleRunnerPlugin, ScheduleRunnerSettings};
+use bevy_app::{App, ScheduleRunnerPlugin, Startup, Update};
 use bevy_ecs::{
-    prelude::apply_system_buffers,
-    schedule::{IntoSystemConfig, IntoSystemConfigs},
+    schedule::{apply_deferred, IntoSystemConfigs},
     system::{Res, ResMut},
 };
 use bevy_log::{info, LogPlugin};
@@ -38,14 +37,10 @@ fn main() {
     // Build App
     App::default()
         // Plugins
-        .add_plugin(ConfigPlugin)
-        .insert_resource(
-            // this is needed to avoid running the server at uncapped FPS
-            ScheduleRunnerSettings::run_loop(Duration::from_millis(5)),
-        )
-        .add_plugin(ScheduleRunnerPlugin::default())
-        .add_plugin(LogPlugin::default())
-        .add_plugin(ServerPlugin::new(server_config, protocol()))
+        .add_plugins(ConfigPlugin)
+        .add_plugins(ScheduleRunnerPlugin::run_loop(Duration::from_millis(5)))
+        .add_plugins(LogPlugin::default())
+        .add_plugins(ServerPlugin::new(server_config, protocol()))
         // Resources
         .init_resource::<UserManager>()
         .init_resource::<GitManager>()
@@ -54,8 +49,9 @@ fn main() {
         .init_resource::<ShapeWaitlist>()
         .init_resource::<ShapeManager>()
         // Network Systems
-        .add_startup_system(network::init)
+        .add_systems(Startup, network::init)
         .add_systems(
+            Update,
             (
                 network::auth_events,
                 network::connect_events,
@@ -72,18 +68,19 @@ fn main() {
                 .in_set(ReceiveEvents),
         )
         .add_systems(
+            Update,
             (
                 network::insert_component_events,
-                apply_system_buffers,
+                apply_deferred,
                 network::message_events,
             )
                 .chain()
                 .in_set(ReceiveEvents),
         )
         // Other Systems
-        .add_startup_system(setup)
-        .add_system(world_loop.after(ReceiveEvents))
-        .add_system(changelist_manager_process)
+        .add_systems(Startup, setup)
+        .add_systems(Update, world_loop.after(ReceiveEvents))
+        .add_systems(Update, changelist_manager_process)
         // Run App
         .run();
 }

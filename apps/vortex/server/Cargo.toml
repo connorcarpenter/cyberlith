@@ -13,9 +13,9 @@ vortex_proto = { path = "../proto" }
 naia-bevy-server = { path = "../../../../naia/adapters/bevy/server", features = [ "transport_webrtc" ] }
 
 # These are the official Bevy crates, going forward, we can use them because the Server isn't built for Wasm
-bevy_app = { version = "0.10", default-features=false }
-bevy_ecs = { version = "0.10", default-features=false }
-bevy_log = { version = "0.10", default-features=false }
+bevy_app = { version = "0.11", default-features=false }
+bevy_ecs = { version = "0.11", default-features=false }
+bevy_log = { version = "0.11", default-features=false }
 
 # External crates
 git2 = { version = "0.17" }

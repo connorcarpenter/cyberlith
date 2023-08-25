@@ -1,7 +1,9 @@
 use bevy_ecs::entity::Entity;
+use bevy_ecs::event::Event;
 
 use naia_bevy_client::Replicate;
 
+#[derive(Event)]
 pub struct InsertComponentEvent<T: Replicate> {
     pub entity: Entity,
     phantom_t: std::marker::PhantomData<T>,

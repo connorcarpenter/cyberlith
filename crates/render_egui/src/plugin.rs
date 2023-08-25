@@ -1,9 +1,9 @@
-use bevy_app::{App, CoreSet, Plugin};
-use bevy_ecs::schedule::{IntoSystemConfig, IntoSystemSetConfig};
+use bevy_app::{App, First, MainScheduleOrder, Plugin, PostUpdate, Startup};
+use bevy_ecs::schedule::{IntoSystemSetConfig};
 
-use render_api::RenderSet;
+use render_api::{RenderDraw, RenderSync};
 
-use crate::{systems, EguiContext, EguiSet, EguiUserTextures};
+use crate::{systems, EguiContext, EguiPreUpdate, EguiPostUpdate, EguiDraw, EguiSync, EguiUserTextures};
 
 // Plugin
 pub struct EguiPlugin;
@@ -14,28 +14,17 @@ impl Plugin for EguiPlugin {
             // EGUI Specific
             .insert_resource(EguiContext::default())
             .insert_resource(EguiUserTextures::default())
-            // System Sets
-            .configure_set(
-                EguiSet::PreUpdate
-                    .after(CoreSet::First)
-                    .before(CoreSet::FirstFlush),
-            )
-            .configure_set(
-                EguiSet::PostUpdate
-                    .after(CoreSet::PostUpdate)
-                    .before(CoreSet::PostUpdateFlush),
-            )
-            .configure_set(
-                EguiSet::Sync
-                    .after(RenderSet::Sync)
-                    .before(RenderSet::SyncFlush),
-            )
-            .configure_set(EguiSet::Draw.after(RenderSet::Draw))
             // Systems
-            .add_startup_system(systems::startup)
-            .add_system(systems::pre_update.in_base_set(EguiSet::PreUpdate))
-            .add_system(systems::post_update.in_base_set(EguiSet::PostUpdate))
-            .add_system(systems::sync.in_base_set(EguiSet::Sync))
-            .add_system(systems::draw.in_base_set(EguiSet::Draw));
+            .add_systems(Startup, systems::startup)
+            .add_systems(EguiPreUpdate, systems::pre_update)
+            .add_systems(EguiPostUpdate, systems::post_update)
+            .add_systems(EguiSync, systems::sync)
+            .add_systems(EguiDraw, systems::draw);
+
+        let mut order = app.world.resource_mut::<MainScheduleOrder>();
+        order.insert_after(First, EguiPreUpdate);
+        order.insert_after(PostUpdate, EguiPostUpdate);
+        order.insert_after(RenderSync, EguiSync);
+        order.insert_after(RenderDraw, EguiDraw);
     }
 }

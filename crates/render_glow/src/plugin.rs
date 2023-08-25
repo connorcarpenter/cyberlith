@@ -1,9 +1,9 @@
-use bevy_app::{App, CoreSchedule, CoreSet, Plugin};
-use bevy_ecs::schedule::{ExecutorKind, IntoSystemConfig, IntoSystemSetConfig, Schedule};
+use bevy_app::{App, First, Last, Main, MainScheduleOrder, Plugin, PostUpdate, PreUpdate, RunFixedUpdateLoop, StateTransition, Update};
+use bevy_ecs::schedule::{ExecutorKind, Schedule};
 
-use render_api::RenderSet;
+use render_api::RenderDraw;
 
-use crate::{base_set::GlowSet, draw::draw, input, runner::runner_func, sync::SyncPlugin};
+use crate::{base_set::GlowInput, draw::draw, input, runner::runner_func, sync::SyncPlugin};
 
 pub struct RenderGlowPlugin;
 
@@ -11,20 +11,21 @@ impl Plugin for RenderGlowPlugin {
     fn build(&self, app: &mut App) {
         app
             // Plugins
-            .add_plugin(SyncPlugin)
-            .add_plugin(SingleThreadedPlugin)
+            .add_plugins(SyncPlugin)
+            .add_plugins(SingleThreadedPlugin)
             // Runner
             .set_runner(runner_func)
-            // Sets
-            // System Sets
-            .configure_set(
-                GlowSet::Input
-                    .after(CoreSet::PreUpdate)
-                    .before(CoreSet::PreUpdateFlush),
-            )
             // Systems
-            .add_system(input::run.in_base_set(GlowSet::Input))
-            .add_system(draw.in_base_set(RenderSet::Draw));
+            .add_systems(GlowInput, input::run)
+            .add_systems(RenderDraw, draw);
+
+        let mut order = app.world.resource_mut::<MainScheduleOrder>();
+        order.insert_after(PreUpdate, GlowInput);
+
+        let make_single_threaded_fn = |schedule: &mut Schedule| {
+            schedule.set_executor_kind(ExecutorKind::SingleThreaded);
+        };
+        app.edit_schedule(GlowInput, make_single_threaded_fn.clone());
     }
 }
 
@@ -35,9 +36,13 @@ impl Plugin for SingleThreadedPlugin {
         let make_single_threaded_fn = |schedule: &mut Schedule| {
             schedule.set_executor_kind(ExecutorKind::SingleThreaded);
         };
-        app.edit_schedule(CoreSchedule::Outer, make_single_threaded_fn.clone());
-        app.edit_schedule(CoreSchedule::Startup, make_single_threaded_fn.clone());
-        app.edit_schedule(CoreSchedule::Main, make_single_threaded_fn.clone());
-        app.edit_schedule(CoreSchedule::FixedUpdate, make_single_threaded_fn);
+        app.edit_schedule(Main, make_single_threaded_fn.clone());
+        app.edit_schedule(First, make_single_threaded_fn.clone());
+        app.edit_schedule(PreUpdate, make_single_threaded_fn.clone());
+        app.edit_schedule(StateTransition, make_single_threaded_fn.clone());
+        app.edit_schedule(RunFixedUpdateLoop, make_single_threaded_fn.clone());
+        app.edit_schedule(Update, make_single_threaded_fn.clone());
+        app.edit_schedule(PostUpdate, make_single_threaded_fn.clone());
+        app.edit_schedule(Last, make_single_threaded_fn);
     }
 }

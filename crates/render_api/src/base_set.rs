@@ -1,9 +1,8 @@
-use bevy_ecs::prelude::SystemSet;
 
-#[derive(Debug, Hash, PartialEq, Eq, Clone, SystemSet)]
-#[system_set(base)]
-pub enum RenderSet {
-    Sync,
-    SyncFlush,
-    Draw,
-}
+use bevy_ecs::schedule::ScheduleLabel;
+
+#[derive(Debug, Hash, PartialEq, Eq, Clone, ScheduleLabel)]
+pub struct RenderSync;
+
+#[derive(Debug, Hash, PartialEq, Eq, Clone, ScheduleLabel)]
+pub struct RenderDraw;

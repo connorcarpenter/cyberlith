@@ -29,9 +29,9 @@ render_glow = { path = "../../../crates/render_glow", optional = true }
 
 # External Crates
 naia-bevy-client = { path = "../../../../naia/adapters/bevy/client", features = ["transport_webrtc"] }
-bevy_app = { version = "0.10", default-features=false }
-bevy_ecs = { version = "0.10", default-features=false }
-bevy_log = { version = "0.10", default-features=false }
+bevy_app = { version = "0.11", default-features=false }
+bevy_ecs = { version = "0.11", default-features=false }
+bevy_log = { version = "0.11", default-features=false }
 cfg-if = { version = "1.0" }
 
 # Wasm Only

@@ -26,9 +26,9 @@ input = { path = "../../../crates/input" }
 
 # External Crates
 naia-bevy-client = { path = "../../../../naia/adapters/bevy/client", features = ["transport_webrtc"] }
-bevy_app = { version = "0.10", default-features=false }
-bevy_ecs = { version = "0.10", default-features=false }
-bevy_log = { version = "0.10", default-features=false }
+bevy_app = { version = "0.11", default-features=false }
+bevy_ecs = { version = "0.11", default-features=false }
+bevy_log = { version = "0.11", default-features=false }
 cfg-if = { version = "1.0" }
 egui-modal = { version = "0.2.2" }
 config_rs = { version ="0.13", package = "config", default-features = false, features = ["yaml"] }

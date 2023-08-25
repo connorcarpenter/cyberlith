@@ -3,14 +3,13 @@ use bevy_ecs::{
     change_detection::DetectChanges,
     entity::Entity,
     query::{Added, Changed},
-    schedule::IntoSystemConfig,
     system::{Commands, Query, ResMut},
 };
 
 use render_api::{
     base::{CpuMaterial, CpuMesh, CpuTexture2D},
     components::{AmbientLight, DirectionalLight},
-    Assets, RenderSet,
+    Assets, RenderSync,
 };
 
 use crate::{
@@ -30,13 +29,13 @@ impl Plugin for SyncPlugin {
             .insert_resource(AssetMapping::<CpuTexture2D, GpuTexture2D>::default())
             .insert_resource(AssetMapping::<CpuTexture2D, GpuDepthTexture2D>::default())
             // Systems
-            .add_system(sync_mesh_assets.in_base_set(RenderSet::Sync))
-            .add_system(sync_material_assets.in_base_set(RenderSet::Sync))
-            .add_system(sync_texture_2d_assets.in_base_set(RenderSet::Sync))
-            .add_system(sync_ambient_light_added.in_base_set(RenderSet::Sync))
-            .add_system(sync_ambient_light_changed.in_base_set(RenderSet::Sync))
-            .add_system(sync_directional_light_added.in_base_set(RenderSet::Sync))
-            .add_system(sync_directional_light_changed.in_base_set(RenderSet::Sync));
+            .add_systems(RenderSync, sync_mesh_assets)
+            .add_systems(RenderSync, sync_material_assets)
+            .add_systems(RenderSync, sync_texture_2d_assets)
+            .add_systems(RenderSync, sync_ambient_light_added)
+            .add_systems(RenderSync, sync_ambient_light_changed)
+            .add_systems(RenderSync, sync_directional_light_added)
+            .add_systems(RenderSync, sync_directional_light_changed);
     }
 }
 

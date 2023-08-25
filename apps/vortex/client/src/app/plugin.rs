@@ -1,5 +1,5 @@
-use bevy_app::{App, Plugin};
-use bevy_ecs::schedule::{IntoSystemConfig, IntoSystemConfigs};
+use bevy_app::{App, Plugin, Startup, Update};
+use bevy_ecs::schedule::{IntoSystemConfigs};
 
 use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin, ReceiveEvents};
 
@@ -42,7 +42,7 @@ impl Plugin for VortexPlugin {
 
         app
             // Add Config
-            .add_plugin(ConfigPlugin)
+            .add_plugins(ConfigPlugin)
             // Add Window Settings Plugin
             .insert_resource(WindowSettings {
                 title: "Vortex".to_string(),
@@ -50,11 +50,12 @@ impl Plugin for VortexPlugin {
                 ..Default::default()
             })
             // Networking Plugin
-            .add_plugin(ClientPlugin::new(ClientConfig::default(), protocol()))
+            .add_plugins(ClientPlugin::new(ClientConfig::default(), protocol()))
             .add_event::<LoginEvent>()
             // Networking Systems
-            .add_system(network::login)
+            .add_systems(Update,network::login)
             .add_systems(
+                Update,
                 (
                     network::connect_events,
                     network::disconnect_events,
@@ -82,26 +83,26 @@ impl Plugin for VortexPlugin {
             .add_event::<InsertComponentEvent<Edge3d>>()
             .add_event::<InsertComponentEvent<FileType>>()
             .init_resource::<ShapeWaitlist>()
-            .add_system(network::insert_fs_component_events)
-            .add_system(network::insert_changelist_entry_events)
-            .add_system(network::insert_vertex_events)
+            .add_systems(Update, network::insert_fs_component_events)
+            .add_systems(Update, network::insert_changelist_entry_events)
+            .add_systems(Update, network::insert_vertex_events)
             // UI Configuration
             .init_resource::<UiState>()
             .insert_resource(global_resource)
             .init_resource::<TabManager>()
             .init_resource::<ActionStack>()
-            .add_system(ui::update)
+            .add_systems(Update,ui::update)
             // Canvas Config
             .init_resource::<ShapeManager>()
             .init_resource::<Canvas>()
             .init_resource::<CameraManager>()
             .init_resource::<InputManager>()
-            .add_startup_system(canvas::setup)
-            .add_system(canvas::update_camera)
-            .add_system(canvas::sync_vertices)
-            .add_system(canvas::process_faces)
-            .add_system(canvas::update_select_line)
-            .add_system(canvas::input)
-            .add_system(canvas::update_mouse_hover);
+            .add_systems(Startup,canvas::setup)
+            .add_systems(Update,canvas::update_camera)
+            .add_systems(Update,canvas::sync_vertices)
+            .add_systems(Update,canvas::process_faces)
+            .add_systems(Update,canvas::update_select_line)
+            .add_systems(Update,canvas::input)
+            .add_systems(Update,canvas::update_mouse_hover);
     }
 }
