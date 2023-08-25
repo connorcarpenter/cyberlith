@@ -12,15 +12,15 @@ pub fn build() -> App {
     let mut app = App::default();
     app
         // Bevy Plugins
-        .add_plugin(LogPlugin::default())
+        .add_plugins(LogPlugin::default())
         // Add Render Plugins
-        .add_plugin(RenderApiPlugin)
-        .add_plugin(RenderGlowPlugin)
+        .add_plugins(RenderApiPlugin)
+        .add_plugins(RenderGlowPlugin)
         // Add Egui Plugin
-        .add_plugin(EguiPlugin)
+        .add_plugins(EguiPlugin)
         // Add Input Plugin
-        .add_plugin(InputPlugin)
+        .add_plugins(InputPlugin)
         // Add Vortex Plugin
-        .add_plugin(VortexPlugin);
+        .add_plugins(VortexPlugin);
     app
 }

@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use bevy_app::{App, ScheduleRunnerPlugin, ScheduleRunnerSettings};
+use bevy_app::{App, ScheduleRunnerPlugin, Startup, Update};
 use bevy_ecs::schedule::IntoSystemConfigs;
 use bevy_log::{info, LogPlugin};
 use naia_bevy_server::{Plugin as ServerPlugin, ReceiveEvents, ServerConfig};
@@ -18,17 +18,14 @@ fn main() {
     // Build App
     App::default()
         // Plugins
-        .insert_resource(
-            // this is needed to avoid running the server at uncapped FPS
-            ScheduleRunnerSettings::run_loop(Duration::from_millis(5)),
-        )
-        .add_plugin(ScheduleRunnerPlugin::default())
-        .add_plugin(LogPlugin::default())
-        .add_plugin(ServerPlugin::new(ServerConfig::default(), protocol()))
+        .add_plugins(ScheduleRunnerPlugin::run_loop(Duration::from_millis(5)))
+        .add_plugins(LogPlugin::default())
+        .add_plugins(ServerPlugin::new(ServerConfig::default(), protocol()))
         // Startup System
-        .add_startup_system(network::init)
+        .add_systems(Startup, network::init)
         // Receive Server Events
         .add_systems(
+            Update,
             (
                 network::auth_events,
                 network::connect_events,

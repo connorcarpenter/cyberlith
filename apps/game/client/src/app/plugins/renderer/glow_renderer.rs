@@ -6,6 +6,6 @@ pub struct RendererPlugin;
 
 impl Plugin for RendererPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(RenderGlowPlugin);
+        app.add_plugins(RenderGlowPlugin);
     }
 }

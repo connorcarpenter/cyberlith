@@ -24,6 +24,7 @@ crate-type = ["cdylib", "rlib"]
 game_proto = { path = "../proto" }
 math = { path = "../../../crates/math" }
 render_api = { path = "../../../crates/render_api" }
+input = { path = "../../../crates/input" }
 # `render_glow` and `render_wgpu` SHOULD *ALWAYS* be optional
 render_glow = { path = "../../../crates/render_glow", optional = true }
 
