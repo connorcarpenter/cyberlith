@@ -342,6 +342,7 @@ pub fn insert_vertex_events(
 pub fn update_component_events(
     mut event_reader: EventReader<UpdateComponentEvents>,
     entry_query: Query<&FileSystemEntry>,
+    mut shape_manager: ResMut<ShapeManager>,
 ) {
     for events in event_reader.iter() {
         // on FileSystemEntry Update Event
@@ -372,6 +373,15 @@ pub fn update_component_events(
                 child_entity, entry_name
             );
             todo!();
+        }
+        // on Vertex3d Update Event
+        let mut updated_vertices = false;
+        for (_, entity) in events.read::<Vertex3d>() {
+            updated_vertices = true;
+            break;
+        }
+        if updated_vertices {
+            shape_manager.recalculate_shapes();
         }
     }
 }
