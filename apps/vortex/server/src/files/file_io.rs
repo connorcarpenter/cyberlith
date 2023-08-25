@@ -5,7 +5,7 @@ use bevy_ecs::{entity::Entity, system::Commands, world::World};
 use naia_bevy_server::{CommandsExt, RoomKey, Server};
 
 use vortex_proto::{
-    components::{FileType, FileTypeValue, OwnedByTab},
+    components::{FileType, FileTypeValue, OwnedByFile},
     types::TabId,
     FileExtension,
 };
@@ -106,15 +106,18 @@ pub fn post_process_networked_entities(
     server: &mut Server,
     room_key: &RoomKey,
     entities: &HashMap<Entity, ContentEntityData>,
-    tab_id: TabId,
+    file_entity: &Entity,
     file_extension: &FileExtension,
 ) {
     for (entity, _data) in entities.iter() {
+
         // associate all new Entities with the new Room
         server.room_mut(room_key).add_entity(entity);
 
-        // add tab ownership
-        commands.entity(*entity).insert(OwnedByTab::new(tab_id));
+        // add file ownership
+        let mut file_ownership_component = OwnedByFile::new();
+        file_ownership_component.file_entity.set(server, file_entity);
+        commands.entity(*entity).insert(file_ownership_component);
 
         // add FileType component
         match file_extension {

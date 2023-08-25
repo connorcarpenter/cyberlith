@@ -8,22 +8,10 @@ use naia_bevy_server::{
 };
 
 pub fn publish_entity_events(
-    mut server: Server,
-    user_manager: ResMut<UserManager>,
     mut event_reader: EventReader<PublishEntityEvent>,
 ) {
-    for PublishEntityEvent(user_key, client_entity) in event_reader.iter() {
+    for PublishEntityEvent(_user_key, client_entity) in event_reader.iter() {
         info!("client entity has been made public: {:?}", client_entity);
-
-        let room_key = user_manager
-            .user_session_data(user_key)
-            .unwrap()
-            .get_room_key()
-            .unwrap();
-
-        todo!("should only put file entries into the user's project room");
-        // Add newly public entity to the main Room
-        server.room_mut(&room_key).add_entity(client_entity);
     }
 }
 

@@ -1,12 +1,14 @@
 use std::collections::HashMap;
+use bevy_ecs::entity::Entity;
 
 use bevy_ecs::system::Resource;
+use bevy_log::{info, warn};
 use naia_bevy_server::{RoomKey, Server, UserKey};
 use vortex_proto::resources::FileEntryKey;
 use vortex_proto::types::TabId;
 
 use crate::resources::project::ProjectKey;
-use crate::resources::{FileSpace, UserTabState};
+use crate::resources::{ContentEntityData, FileSpace, GitManager, UserTabState};
 
 pub struct UserSessionData {
     // used to index into permanent data
@@ -52,8 +54,27 @@ impl UserSessionData {
         &mut self.tab_state
     }
 
+    pub(crate) fn current_tab(&self) -> Option<TabId> {
+        self.tab_state.current_tab()
+    }
+
+    pub(crate) fn current_tab_file_key(&self) -> Option<FileEntryKey> {
+        if let Some(current_tab) = self.tab_state.current_tab() {
+            self.tab_state.tab_file_key(&current_tab)
+        } else {
+            None
+        }
+    }
+
     pub(crate) fn open_tab(&mut self, tab_id: TabId, file_key: FileEntryKey) {
         self.tab_state.insert_tab(tab_id, file_key);
+    }
+
+    pub(crate) fn close_tab(&mut self, tab_id: &TabId) -> Option<FileEntryKey> {
+        if self.tab_state.current_tab() == Some(tab_id.clone()) {
+            self.tab_state.set_current_tab(None);
+        }
+        self.tab_state.remove_tab(tab_id)
     }
 }
 
@@ -172,23 +193,40 @@ impl UserManager {
         user_session.open_tab(tab_id, file_key);
     }
 
-    pub(crate) fn close_tab(&mut self, server: &mut Server, user_key: &UserKey, tab_id: &TabId) -> TabData {
+    pub(crate) fn close_tab(&mut self, server: &mut Server, git_manager: &mut GitManager, user_key: &UserKey, tab_id: &TabId) -> (ProjectKey, FileEntryKey, HashMap<Entity, ContentEntityData>) {
 
         let Some(user_session) = self.user_sessions.get_mut(user_key) else {
             panic!("User does not exist!");
         };
-        let user_tab_state = user_session.tab_state_mut();
-        if user_tab_state.get_current_tab() == Some(tab_id.clone()) {
-            user_tab_state.set_current_tab(None);
-        }
-
-        let Some(tab_state) = user_tab_state.remove_tab(tab_id) else {
-            panic!("User does not have tab {}", tab_id);
+        let Some(file_key) = user_session.close_tab(tab_id) else {
+            panic!("User tab does not exist");
         };
 
-        // remove the Room
-        server.room_mut(&tab_state.get_room_key()).destroy();
+        let Some(project_key) = user_session.project_key() else {
+            panic!("User does not have project key");
+        };
+        let project = git_manager.project_mut(&project_key).unwrap();
+        let content_entities = project.user_leave_filespace(server, &file_key);
 
-        tab_state
+        (project_key, file_key, content_entities)
+    }
+
+    pub fn select_tab(
+        &mut self,
+        user_key: &UserKey,
+        tab_id: &TabId,
+    ) {
+        let Some(user_tab_state) = self.user_tab_state_mut(user_key) else {
+            panic!("user does not exist")
+        };
+        if !user_tab_state.has_tab_id(tab_id) {
+            warn!("User does not have tab {}", tab_id);
+            return;
+        }
+
+        info!("Select Tab!");
+
+        // Switch current Tab
+        user_tab_state.set_current_tab(Some(tab_id.clone()));
     }
 }

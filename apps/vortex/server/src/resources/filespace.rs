@@ -26,7 +26,6 @@ impl ContentEntityData {
 
 pub struct FileSpace {
     room_key: RoomKey,
-    file_entity: Entity,
     content_entities: HashMap<Entity, ContentEntityData>,
     user_count: usize,
 }
@@ -39,7 +38,7 @@ impl FileSpace {
         shape_manager: &mut ShapeManager,
         file_extension: &FileExtension,
         file_room_key: &RoomKey,
-        tab_id: TabId,
+        file_entity: &Entity,
         bytes: Box<[u8]>,
     ) -> Self {
 
@@ -50,13 +49,12 @@ impl FileSpace {
             shape_manager,
             file_extension,
             file_room_key,
-            tab_id,
+            file_entity,
             bytes,
         );
 
         Self {
-            room_key,
-            file_entity,
+            room_key: *file_room_key,
             content_entities,
             user_count: 0,
         }
@@ -66,12 +64,12 @@ impl FileSpace {
         self.room_key
     }
 
-    pub fn file_entity(&self) -> Entity {
-        self.file_entity
-    }
-
     pub fn content_entities(&self) -> &HashMap<Entity, ContentEntityData> {
         &self.content_entities
+    }
+
+    pub(crate) fn has_entity(&self, entity: &Entity) -> bool {
+        self.content_entities.contains_key(entity)
     }
 
     fn load_content_entities(
@@ -81,7 +79,7 @@ impl FileSpace {
         shape_manager: &mut ShapeManager,
         file_extension: &FileExtension,
         file_room_key: &RoomKey,
-        tab_id: TabId,
+        file_entity: &Entity,
         bytes: Box<[u8]>,
     ) -> HashMap<Entity, ContentEntityData> {
 
@@ -102,11 +100,19 @@ impl FileSpace {
             server,
             file_room_key,
             &new_entities,
-            tab_id,
+            file_entity,
             &file_extension,
         );
 
         new_entities
+    }
+
+    pub(crate) fn user_leave(&mut self) {
+        self.user_count -= 1;
+    }
+
+    pub(crate) fn has_no_users(&self) -> bool {
+        self.user_count == 0
     }
 
     pub(crate) fn user_join(&mut self, server: &mut Server, user_key: &UserKey) {
@@ -135,7 +141,7 @@ impl FileSpace {
         shape_manager: &mut ShapeManager,
         file_extension: &FileExtension,
         file_key: &FileEntryKey,
-        tab_id: TabId,
+        file_entity: &Entity,
         bytes: Box<[u8]>,
     ) {
         if !file_extension.can_io() {
@@ -166,7 +172,7 @@ impl FileSpace {
             shape_manager,
             file_extension,
             &self.room_key,
-            tab_id,
+            file_entity,
             bytes
         );
     }

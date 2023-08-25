@@ -30,6 +30,7 @@ use crate::{
         ShapeManager, ShapeWaitlist, UserManager, project::ProjectKey,
     },
 };
+use crate::files::ShapeType;
 use crate::resources::FileSpace;
 
 #[derive(Resource)]
@@ -71,6 +72,52 @@ impl GitManager {
         self.projects.get_mut(project_key)
     }
 
+    pub(crate) fn file_entity(&self, project_key: &ProjectKey, file_key: &FileEntryKey) -> Option<Entity> {
+        let project = self.projects.get(project_key).unwrap();
+        project.file_entity(file_key)
+    }
+
+    pub(crate) fn on_client_create_file(
+        &mut self,
+        commands: &mut Commands,
+        server: &mut Server,
+        project_key: &ProjectKey,
+        file_name: &str,
+        file_entity: Entity,
+        parent_file_key: Option<FileEntryKey>,
+        file_key: &FileEntryKey
+    ) {
+        let project = self.projects.get_mut(project_key).unwrap();
+        project.on_client_create_file(commands, server, file_name, file_entity, parent_file_key, file_key);
+    }
+
+    pub(crate) fn on_client_modify_file(&mut self, commands: &mut Commands, server: &mut Server, project_key: &ProjectKey, file_key: &FileEntryKey) {
+        let file_entity = self.file_entity(&project_key, &file_key).unwrap();
+        let project = self.projects.get_mut(project_key).unwrap();
+        project.on_client_modify_file(commands, server, file_key, &file_entity);
+    }
+
+    pub(crate) fn on_insert_content_entity(&mut self, user_manager: &UserManager, user_key: &UserKey, entity: &Entity, shape_type: ShapeType) {
+        let user_session_data = user_manager.user_session_data(user_key).unwrap();
+        let project_key = user_session_data.project_key().unwrap();
+        let file_key = user_session_data.current_tab_file_key().unwrap();
+        let project = self.projects.get_mut(&project_key).unwrap();
+        project.on_insert_content_entity(&file_key, entity, shape_type);
+    }
+
+    pub(crate) fn on_remove_content_entity(&mut self, user_manager: &UserManager, user_key: &UserKey, entity: &Entity) {
+        let user_session_data = user_manager.user_session_data(user_key).unwrap();
+        let project_key = user_session_data.project_key().unwrap();
+        let file_key = user_session_data.current_tab_file_key().unwrap();
+        let project = self.projects.get_mut(&project_key).unwrap();
+        project.on_remove_content_entity(&file_key, entity);
+    }
+
+    pub(crate) fn filespace_has_entity(&self, project_key: &ProjectKey, file_key: &FileEntryKey, entity: &Entity) -> bool {
+        let project = self.projects.get(project_key).unwrap();
+        project.filespace_has_entity(file_key, entity)
+    }
+
     pub(crate) fn user_join_filespace(
         &mut self,
         commands: &mut Commands,
@@ -80,7 +127,6 @@ impl GitManager {
         user_key: &UserKey,
         project_key: &ProjectKey,
         file_key: &FileEntryKey,
-        tab_id: TabId,
     ) {
         let Some(project) = self.projects.get_mut(project_key) else {
             panic!("Could not find project for user");
@@ -92,7 +138,6 @@ impl GitManager {
             shape_manager,
             user_key,
             file_key,
-            tab_id,
         );
     }
 
@@ -180,15 +225,15 @@ impl GitManager {
             &full_path_str,
         );
 
-        let project_key = self.projects.insert(new_project);
-        self.project_keys.insert(owner_name.to_string(), project_key);
-
         insert_entry_components_from_list(
             commands,
             server,
             &new_project.master_file_entries,
             &new_project.room_key(),
         );
+
+        let project_key = self.projects.insert(new_project);
+        self.project_keys.insert(owner_name.to_string(), project_key);
 
         project_key
     }
@@ -231,7 +276,7 @@ impl GitManager {
     ) {
         let user_manager = world.get_resource::<UserManager>().unwrap();
 
-        let user_name = user_manager.user_perm_data(&user_key).username().to_string();
+        let user_name = user_manager.user_perm_data(&user_key).unwrap().username().to_string();
 
         let user_session_data = user_manager.user_session_data(&user_key).unwrap();
         let Some(user_project_key) = user_session_data.project_key() else {
@@ -310,12 +355,11 @@ impl GitManager {
         &mut self,
         commands: &mut Commands,
         server: &mut Server,
-        user_key: &UserKey,
+        project_key: &ProjectKey,
         key: &FileEntryKey,
         bytes: Box<[u8]>,
     ) {
-        let project = self.projects.get_mut(user_key).unwrap();
-
+        let project = self.projects.get_mut(project_key).unwrap();
         project.set_changelist_entry_content(commands, server, key, bytes);
     }
 

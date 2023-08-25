@@ -22,7 +22,7 @@ use render_api::{
 
 use vortex_proto::components::{
     ChangelistEntry, Edge3d, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-    FileType, OwnedByTab, Vertex3d, VertexRoot,
+    FileType, OwnedByFile, Vertex3d, VertexRoot,
 };
 
 use crate::app::resources::action_stack::ActionStack;
@@ -62,7 +62,7 @@ pub fn insert_component_events(
     // for vertices
     mut insert_vertex_3d_event_writer: EventWriter<InsertComponentEvent<Vertex3d>>,
     mut insert_vertex_root_event_writer: EventWriter<InsertComponentEvent<VertexRoot>>,
-    mut insert_owned_by_event_writer: EventWriter<InsertComponentEvent<OwnedByTab>>,
+    mut insert_owned_by_event_writer: EventWriter<InsertComponentEvent<OwnedByFile>>,
     mut insert_file_type_event_writer: EventWriter<InsertComponentEvent<FileType>>,
     mut insert_edge_3d_event_writer: EventWriter<InsertComponentEvent<Edge3d>>,
 ) {
@@ -99,8 +99,8 @@ pub fn insert_component_events(
         }
 
         // on OwnedByTab Insert Event
-        for entity in events.read::<OwnedByTab>() {
-            insert_owned_by_event_writer.send(InsertComponentEvent::<OwnedByTab>::new(entity));
+        for entity in events.read::<OwnedByFile>() {
+            insert_owned_by_event_writer.send(InsertComponentEvent::<OwnedByFile>::new(entity));
         }
 
         // on FileType Insert Event
@@ -223,7 +223,7 @@ pub fn insert_vertex_events(
     mut vertex_3d_events: EventReader<InsertComponentEvent<Vertex3d>>,
     mut vertex_root_events: EventReader<InsertComponentEvent<VertexRoot>>,
     mut edge_3d_events: EventReader<InsertComponentEvent<Edge3d>>,
-    mut owned_by_events: EventReader<InsertComponentEvent<OwnedByTab>>,
+    mut owned_by_events: EventReader<InsertComponentEvent<OwnedByFile>>,
     mut file_type_events: EventReader<InsertComponentEvent<FileType>>,
 
     // for vertices
@@ -233,7 +233,7 @@ pub fn insert_vertex_events(
     mut materials: ResMut<Assets<CpuMaterial>>,
     mut shape_waitlist: ResMut<ShapeWaitlist>,
     edge_3d_q: Query<&Edge3d>,
-    owned_by_tab_q: Query<&OwnedByTab>,
+    owned_by_tab_q: Query<&OwnedByFile>,
     file_type_q: Query<&FileType>,
 ) {
     // on Vertex Insert Event
@@ -298,14 +298,14 @@ pub fn insert_vertex_events(
         );
     }
 
-    // on OwnedByTab Insert Event
+    // on OwnedByFile Insert Event
     for event in owned_by_events.iter() {
         let entity = event.entity;
 
         info!("entity: {:?} - inserted OwnedByTab", entity);
 
-        let owned_by_tab = owned_by_tab_q.get(entity).unwrap();
-        let tab_id = *owned_by_tab.tab_id;
+        let owned_by_file = owned_by_tab_q.get(entity).unwrap();
+        let file_entity = owned_by_file.file_entity.get(&client).unwrap();
 
         shape_waitlist.process_insert(
             &mut commands,
@@ -314,7 +314,7 @@ pub fn insert_vertex_events(
             &mut camera_manager,
             &mut shape_manager,
             &entity,
-            ShapeWaitlistInsert::OwnedByTab(tab_id),
+            ShapeWaitlistInsert::OwnedByFile(file_entity),
         );
     }
 

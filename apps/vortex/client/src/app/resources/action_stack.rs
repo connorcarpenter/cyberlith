@@ -18,7 +18,7 @@ use render_api::{
 use vortex_proto::{
     components::{
         ChangelistEntry, Edge3d, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-        FileType, FileTypeValue, OwnedByTab, Vertex3d,
+        FileType, FileTypeValue, OwnedByFile, Vertex3d,
     },
     types::TabId,
     FileExtension,
@@ -39,6 +39,7 @@ use crate::app::{
     },
     systems::file_post_process,
 };
+use crate::app::components::OwnedByFileLocal;
 
 #[derive(Clone)]
 pub enum Action {
@@ -445,7 +446,7 @@ impl ActionStack {
                     Query<(Entity, &mut FileSystemUiState)>,
                     Query<(Entity, &ChangelistEntry, &mut ChangelistUiState)>,
                     Query<&mut FileSystemParent>,
-                    Query<(&mut Visibility, &OwnedByTab)>,
+                    Query<(&mut Visibility, &OwnedByFileLocal)>,
                 )> = SystemState::new(world);
                 let (
                     mut commands,
@@ -707,7 +708,7 @@ impl ActionStack {
                     }
 
                     let file_type_value = vertex_type_data.to_file_type_value();
-                    let current_tab_id = tab_manager.current_tab_id();
+                    let current_tab_entity = tab_manager.current_tab_entity();
 
                     // create vertex
                     let (new_vertex_2d_entity, new_vertex_3d_entity) = self
@@ -719,7 +720,7 @@ impl ActionStack {
                             &mut meshes,
                             &mut materials,
                             position,
-                            current_tab_id,
+                            current_tab_entity,
                             file_type_value,
                             &mut entities_to_release,
                         );
@@ -747,7 +748,7 @@ impl ActionStack {
                                     &mut materials,
                                     new_vertex_2d_entity,
                                     children,
-                                    current_tab_id,
+                                    current_tab_entity,
                                     &mut entities_to_release,
                                 );
                             }
@@ -761,7 +762,7 @@ impl ActionStack {
                                 parent_vertex_2d_entity,
                                 new_vertex_2d_entity,
                                 new_vertex_3d_entity,
-                                current_tab_id,
+                                current_tab_entity,
                                 FileTypeValue::Skel,
                                 &mut entities_to_release,
                             );
@@ -778,7 +779,7 @@ impl ActionStack {
                                     connected_vertex_entity,
                                     new_vertex_2d_entity,
                                     new_vertex_3d_entity,
-                                    current_tab_id,
+                                    current_tab_entity,
                                     FileTypeValue::Mesh,
                                     &mut entities_to_release,
                                 );
@@ -1046,7 +1047,7 @@ impl ActionStack {
                         vertex_2d_entity_a,
                         vertex_2d_entity_b,
                         vertex_3d_entity_b,
-                        tab_manager.current_tab_id(),
+                        tab_manager.current_tab_entity(),
                         FileTypeValue::Mesh,
                         &mut entities_to_release,
                     );
@@ -1399,17 +1400,19 @@ impl ActionStack {
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         position: Vec3,
-        tab_id: TabId,
+        file_entity: Entity,
         file_type: FileTypeValue,
         entities_to_release: &mut Vec<Entity>,
     ) -> (Entity, Entity) {
         // create new 3d vertex
+        let mut owned_by_file_component = OwnedByFile::new();
+        owned_by_file_component.file_entity.set(client, &file_entity);
         let new_vertex_3d_entity = commands
             .spawn_empty()
             .enable_replication(client)
             .configure_replication(ReplicationConfig::Delegated)
             .insert(Vertex3d::from_vec3(position))
-            .insert(OwnedByTab::new(tab_id))
+            .insert(owned_by_file_component)
             .insert(FileType::new(file_type))
             .id();
 
@@ -1423,7 +1426,7 @@ impl ActionStack {
             camera_manager,
             new_vertex_3d_entity,
             false,
-            Some(tab_id),
+            Some(file_entity),
             Vertex2d::CHILD_COLOR,
         );
 
@@ -1441,7 +1444,7 @@ impl ActionStack {
         parent_vertex_2d_entity: Entity,
         child_vertex_2d_entity: Entity,
         child_vertex_3d_entity: Entity,
-        tab_id: TabId,
+        file_entity: Entity,
         file_type: FileTypeValue,
         entities_to_release: &mut Vec<Entity>,
     ) -> (Entity, Entity) {
@@ -1457,6 +1460,8 @@ impl ActionStack {
         new_edge_3d_component
             .end
             .set(client, &child_vertex_3d_entity);
+        let mut owned_by_file_component = OwnedByFile::new();
+        owned_by_file_component.file_entity.set(client, &file_entity);
         let new_edge_3d_entity = commands
             .spawn_empty()
             .enable_replication(client)
@@ -1466,7 +1471,7 @@ impl ActionStack {
                 parent_vertex_3d_entity,
                 child_vertex_3d_entity,
             ))
-            .insert(OwnedByTab::new(tab_id))
+            .insert(owned_by_file_component)
             .insert(FileType::new(file_type))
             .id();
 
@@ -1481,7 +1486,7 @@ impl ActionStack {
             child_vertex_3d_entity,
             parent_vertex_2d_entity,
             parent_vertex_3d_entity,
-            Some(tab_id),
+            Some(file_entity),
             Vertex2d::CHILD_COLOR,
             file_type == FileTypeValue::Skel,
         );
@@ -1501,7 +1506,7 @@ impl ActionStack {
         materials: &mut Assets<CpuMaterial>,
         parent_vertex_2d_entity: Entity,
         children: Vec<VertexEntry>,
-        tab_id: TabId,
+        file_entity: Entity,
         entities_to_release: &mut Vec<Entity>,
     ) {
         for child in children {
@@ -1519,7 +1524,7 @@ impl ActionStack {
                     meshes,
                     materials,
                     position,
-                    tab_id,
+                    file_entity,
                     FileTypeValue::Skel,
                     entities_to_release,
                 );
@@ -1539,7 +1544,7 @@ impl ActionStack {
                 parent_vertex_2d_entity,
                 new_child_vertex_2d_entity,
                 new_child_vertex_3d_entity,
-                tab_id,
+                file_entity,
                 FileTypeValue::Skel,
                 entities_to_release,
             );
@@ -1553,7 +1558,7 @@ impl ActionStack {
                     materials,
                     new_child_vertex_2d_entity,
                     grandchildren,
-                    tab_id,
+                    file_entity,
                     entities_to_release,
                 );
             }

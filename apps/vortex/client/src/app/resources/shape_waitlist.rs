@@ -18,12 +18,13 @@ use crate::app::{
     components::{Edge3dLocal, Vertex2d},
     resources::{camera_manager::CameraManager, shape_manager::ShapeManager},
 };
+use crate::app::components::OwnedByFileLocal;
 
 pub enum ShapeWaitlistInsert {
     Vertex,
     VertexRoot,
     Edge(Entity, Entity),
-    OwnedByTab(TabId),
+    OwnedByFile(Entity),
     FileType(FileTypeValue),
 }
 
@@ -42,7 +43,7 @@ enum ShapeData {
 pub struct ShapeWaitlistEntry {
     shape: Option<ShapeType>,
     vertex_parent: Option<Option<Entity>>,
-    tab_id: Option<TabId>,
+    file_entity: Option<Entity>,
     edge_entities: Option<(Entity, Entity)>,
     file_type: Option<FileTypeValue>,
 }
@@ -52,7 +53,7 @@ impl ShapeWaitlistEntry {
         Self {
             shape: None,
             vertex_parent: None,
-            tab_id: None,
+            file_entity: None,
             edge_entities: None,
             file_type: None,
         }
@@ -63,12 +64,12 @@ impl ShapeWaitlistEntry {
             Some(ShapeType::Vertex) => match self.file_type {
                 None => return false,
                 Some(FileTypeValue::Skel) => {
-                    return self.tab_id.is_some() && self.vertex_parent.is_some()
+                    return self.file_entity.is_some() && self.vertex_parent.is_some()
                 }
-                Some(FileTypeValue::Mesh) => return self.tab_id.is_some(),
+                Some(FileTypeValue::Mesh) => return self.file_entity.is_some(),
             },
             Some(ShapeType::Edge) => {
-                self.file_type.is_some() && self.tab_id.is_some() && self.edge_entities.is_some()
+                self.file_type.is_some() && self.file_entity.is_some() && self.edge_entities.is_some()
             }
             None => false,
         }
@@ -99,15 +100,15 @@ impl ShapeWaitlistEntry {
         self.edge_entities = Some((start, end));
     }
 
-    fn set_tab_id(&mut self, tab_id: TabId) {
-        self.tab_id = Some(tab_id);
+    fn set_file_entity(&mut self, file_entity: Entity) {
+        self.file_entity = Some(file_entity);
     }
 
     fn set_file_type(&mut self, file_type: FileTypeValue) {
         self.file_type = Some(file_type);
     }
 
-    fn decompose(self) -> (ShapeData, TabId, FileTypeValue) {
+    fn decompose(self) -> (ShapeData, Entity, FileTypeValue) {
         let shape = self.shape.unwrap();
         let file_type = self.file_type.unwrap();
 
@@ -121,7 +122,7 @@ impl ShapeWaitlistEntry {
                 ShapeData::Edge(entities.0, entities.1)
             }
         };
-        return (shape_data, self.tab_id.unwrap(), file_type);
+        return (shape_data, self.file_entity.unwrap(), file_type);
     }
 }
 
@@ -189,8 +190,11 @@ impl ShapeWaitlist {
             ShapeWaitlistInsert::VertexRoot => {
                 self.get_mut(&entity).unwrap().set_parent(None);
             }
-            ShapeWaitlistInsert::OwnedByTab(tab_id) => {
-                self.get_mut(&entity).unwrap().set_tab_id(tab_id);
+            ShapeWaitlistInsert::OwnedByFile(file_entity) => {
+                self.get_mut(&entity).unwrap().set_file_entity(file_entity);
+
+                // insert local version of OwnedByFile
+                commands.entity(*entity).insert(OwnedByFileLocal::new(file_entity));
             }
             ShapeWaitlistInsert::FileType(file_type) => {
                 self.get_mut(&entity).unwrap().set_file_type(file_type);
@@ -282,7 +286,7 @@ impl ShapeWaitlist {
     ) {
         // info!("processing complete vertex {:?}", entity);
 
-        let (shape_data, tab_id, file_type) = entry.decompose();
+        let (shape_data, file_entity, file_type) = entry.decompose();
 
         match (shape_data, file_type) {
             (ShapeData::Vertex(parent_3d_entity_opt), FileTypeValue::Skel) => {
@@ -298,7 +302,7 @@ impl ShapeWaitlist {
                     camera_manager,
                     entity,
                     parent_3d_entity_opt.is_none(),
-                    Some(tab_id),
+                    Some(file_entity),
                     color,
                 );
 
@@ -335,7 +339,7 @@ impl ShapeWaitlist {
                     camera_manager,
                     entity,
                     false,
-                    Some(tab_id),
+                    Some(file_entity),
                     color,
                 );
 
@@ -359,7 +363,7 @@ impl ShapeWaitlist {
                     start_3d,
                     end_2d,
                     end_3d,
-                    Some(tab_id),
+                    Some(file_entity),
                     Vertex2d::CHILD_COLOR,
                     file_type == FileTypeValue::Skel,
                 );

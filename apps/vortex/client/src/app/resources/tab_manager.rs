@@ -16,7 +16,7 @@ use render_egui::{
 
 use vortex_proto::{
     channels::TabActionChannel,
-    components::{ChangelistStatus, FileSystemEntry, OwnedByTab},
+    components::{ChangelistStatus, FileSystemEntry, OwnedByFile},
     messages::{TabActionMessage, TabActionMessageType, TabOpenMessage},
     types::TabId,
     FileExtension,
@@ -30,6 +30,7 @@ use crate::app::{
         TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED,
     },
 };
+use crate::app::components::OwnedByFileLocal;
 
 #[derive(Clone, Copy)]
 struct TabState {
@@ -87,7 +88,7 @@ impl TabManager {
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         shape_manager: &mut ShapeManager,
-        visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
+        visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         row_entity: &Entity,
         file_ext: FileExtension,
     ) {
@@ -144,7 +145,7 @@ impl TabManager {
                 ResMut<ShapeManager>,
                 ResMut<TabManager>,
                 Query<(&FileSystemEntry, &FileSystemUiState)>,
-                Query<(&mut Visibility, &OwnedByTab)>,
+                Query<(&mut Visibility, &OwnedByFileLocal)>,
             )> = SystemState::new(world);
             let (
                 mut client,
@@ -200,7 +201,7 @@ impl TabManager {
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         shape_manager: &mut ShapeManager,
-        visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
+        visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         row_entity: &Entity,
     ) {
         // deselect current tab
@@ -226,15 +227,15 @@ impl TabManager {
         &mut self,
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
-        visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
+        visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         tab_entity: Entity,
     ) {
         self.current_tab = Some(tab_entity);
 
         canvas.set_visibility(true);
-        let current_tab_id = self.current_tab_id();
+        let current_tab_file_entity = self.current_tab_entity();
         for (mut visibility, owned_by_tab) in visibility_q.iter_mut() {
-            visibility.visible = *owned_by_tab.tab_id == current_tab_id;
+            visibility.visible = owned_by_tab.file_entity == current_tab_file_entity;
         }
 
         camera_manager.recalculate_3d_view();
@@ -244,6 +245,14 @@ impl TabManager {
         self.current_tab = None;
         canvas.set_visibility(false);
         camera_manager.recalculate_3d_view();
+    }
+
+    // panics if no current tab!
+    pub fn current_tab_entity(&self) -> Entity {
+        let Some(current_entity) = self.current_tab else {
+            panic!("no current tab! don't use this method unless you know there is a current tab!");
+        };
+        current_entity
     }
 
     // panics if no current tab!
@@ -261,7 +270,7 @@ impl TabManager {
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         shape_manager: &mut ShapeManager,
-        visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
+        visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         row_entity: &Entity,
     ) {
         // remove tab
@@ -308,7 +317,7 @@ impl TabManager {
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         shape_manager: &mut ShapeManager,
-        visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
+        visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
     ) {
         let all_tabs = self.tab_order.clone();
         for entity in all_tabs {
@@ -329,7 +338,7 @@ impl TabManager {
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         shape_manager: &mut ShapeManager,
-        visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
+        visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         row_entity: &Entity,
     ) {
         self.close_all_tabs(client, canvas, camera_manager, shape_manager, visibility_q);
@@ -352,7 +361,7 @@ impl TabManager {
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         shape_manager: &mut ShapeManager,
-        visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
+        visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         row_entity: &Entity,
     ) {
         let tab_state = self.tab_map.get(row_entity).unwrap();
@@ -381,7 +390,7 @@ impl TabManager {
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         shape_manager: &mut ShapeManager,
-        visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
+        visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         row_entity: &Entity,
     ) {
         let tab_state = self.tab_map.get(row_entity).unwrap();
@@ -412,7 +421,7 @@ impl TabManager {
         shape_manager: &mut ShapeManager,
         ui: &mut Ui,
         file_q: &Query<(&FileSystemEntry, &FileSystemUiState)>,
-        visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
+        visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
     ) {
         let mut tab_action = None;
 
@@ -591,7 +600,7 @@ impl TabManager {
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         shape_manager: &mut ShapeManager,
-        visibility_q: &mut Query<(&mut Visibility, &OwnedByTab)>,
+        visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         tab_action: Option<TabAction>,
     ) {
         match tab_action {

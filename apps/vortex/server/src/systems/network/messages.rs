@@ -19,7 +19,7 @@ pub fn message_events(
     mut commands: Commands,
     mut server: Server,
     mut event_reader: EventReader<MessageEvents>,
-    user_manager: Res<UserManager>,
+    mut user_manager: ResMut<UserManager>,
     mut git_manager: ResMut<GitManager>,
     mut tab_manager: ResMut<TabManager>,
     mut cl_manager: ResMut<ChangelistManager>,
@@ -41,7 +41,7 @@ pub fn message_events(
                 tab_manager.open_tab(
                     &mut commands,
                     &mut server,
-                    &user_manager,
+                    &mut user_manager,
                     &mut git_manager,
                     &mut vertex_waitlist,
                     &mut shape_manager,
@@ -58,7 +58,7 @@ pub fn message_events(
             let tab_id = message.tab_id;
             match message.action {
                 TabActionMessageType::Select => {
-                    tab_manager.select_tab(&mut commands, &mut server, &user_key, &tab_id);
+                    user_manager.select_tab(&user_key, &tab_id);
                 }
                 TabActionMessageType::Close => {
                     tab_manager.queue_close_tab(user_key, tab_id);

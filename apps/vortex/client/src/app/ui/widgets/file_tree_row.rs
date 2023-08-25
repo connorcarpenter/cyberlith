@@ -20,7 +20,7 @@ use render_egui::{
 use vortex_proto::{
     components::{
         ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-        OwnedByTab,
+        OwnedByFile,
     },
     FileExtension,
 };
@@ -45,6 +45,7 @@ use crate::app::{
         UiState,
     },
 };
+use crate::app::components::OwnedByFileLocal;
 
 pub struct FileTreeRowUiWidget;
 
@@ -395,7 +396,7 @@ impl FileTreeRowUiWidget {
                 ResMut<CameraManager>,
                 ResMut<ShapeManager>,
                 ResMut<TabManager>,
-                Query<(&mut Visibility, &OwnedByTab)>,
+                Query<(&mut Visibility, &OwnedByFileLocal)>,
             )> = SystemState::new(world);
             let (
                 mut client,

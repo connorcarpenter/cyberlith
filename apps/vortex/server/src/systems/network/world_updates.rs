@@ -43,16 +43,14 @@ pub fn despawn_entity_events(
     mut server: Server,
     user_manager: Res<UserManager>,
     mut git_manager: ResMut<GitManager>,
-    mut tab_manager: ResMut<TabManager>,
     mut shape_manager: ResMut<ShapeManager>,
     mut event_reader: EventReader<DespawnEntityEvent>,
-    entry_key_query: Query<&FileEntryKey>,
 ) {
     for DespawnEntityEvent(user_key, entity) in event_reader.iter() {
-        let Some(user) = user_manager.user_session_data(user_key) else {
+        let Some(user_session_data) = user_manager.user_session_data(user_key) else {
             panic!("user not found");
         };
-        let project = git_manager.project_mut(user.get_username());
+        let project = git_manager.project_mut(&user_session_data.project_key().unwrap()).unwrap();
 
         let entity_is_file = project.entity_is_file(entity);
         let entity_is_vertex = shape_manager.has_vertex(entity);
@@ -77,15 +75,13 @@ pub fn despawn_entity_events(
                     &mut server,
                     &user_manager,
                     &mut git_manager,
-                    &mut tab_manager,
                     &user_key,
                     &entity,
-                    &entry_key_query,
                 );
 
-                tab_manager.on_remove_content_entity(&user_key, &entity);
+                git_manager.on_remove_content_entity(&user_manager, &user_key, &entity);
                 for other_entity in other_entities_to_despawn {
-                    tab_manager.on_remove_content_entity(&user_key, &other_entity);
+                    git_manager.on_remove_content_entity(&user_manager, &user_key, &other_entity);
                 }
             }
             (false, false, true) => {
@@ -99,13 +95,11 @@ pub fn despawn_entity_events(
                     &mut server,
                     &user_manager,
                     &mut git_manager,
-                    &mut tab_manager,
                     &user_key,
                     &entity,
-                    &entry_key_query,
                 );
 
-                tab_manager.on_remove_content_entity(&user_key, &entity);
+                git_manager.on_remove_content_entity(&user_manager, &user_key, &entity);
             }
             _ => {
                 panic!(
@@ -192,16 +186,14 @@ pub fn insert_component_events(
         for (user_key, entity) in events.read::<Vertex3d>() {
             info!("entity: `{:?}`, inserted Vertex3d", entity);
 
-            tab_manager.on_insert_content_entity(&user_key, &entity, ShapeType::Vertex);
+            git_manager.on_insert_content_entity(&user_manager, &user_key, &entity, ShapeType::Vertex);
             handle_file_modify(
                 &mut commands,
                 &mut server,
                 &user_manager,
                 &mut git_manager,
-                &mut tab_manager,
                 &user_key,
                 &entity,
-                &entry_key_q,
             );
             vertex_waitlist.process_insert(&mut shape_manager, ShapeWaitlistInsert::Vertex(entity));
         }
@@ -210,16 +202,14 @@ pub fn insert_component_events(
         for (user_key, edge_entity) in events.read::<Edge3d>() {
             info!("entity: `{:?}`, inserted Edge3d", edge_entity);
 
-            tab_manager.on_insert_content_entity(&user_key, &edge_entity, ShapeType::Edge);
+            git_manager.on_insert_content_entity(&user_manager, &user_key, &edge_entity, ShapeType::Edge);
             handle_file_modify(
                 &mut commands,
                 &mut server,
                 &user_manager,
                 &mut git_manager,
-                &mut tab_manager,
                 &user_key,
                 &edge_entity,
-                &entry_key_q,
             );
 
             let edge_3d = edge_3d_q.get(edge_entity).unwrap();
@@ -294,8 +284,6 @@ pub fn update_component_events(
     mut server: Server,
     user_manager: Res<UserManager>,
     mut git_manager: ResMut<GitManager>,
-    mut tab_manager: ResMut<TabManager>,
-    entry_key_query: Query<&FileEntryKey>,
 ) {
     for events in event_reader.iter() {
         // on FileSystemEntry Update Event
@@ -313,10 +301,8 @@ pub fn update_component_events(
                 &mut server,
                 &user_manager,
                 &mut git_manager,
-                &mut tab_manager,
                 &user_key,
                 &entity,
-                &entry_key_query,
             );
         }
     }

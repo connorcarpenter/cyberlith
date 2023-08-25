@@ -7,7 +7,7 @@ use bevy_ecs::{
 use input::Input;
 use naia_bevy_client::Client;
 use render_api::components::{Camera, Projection, Transform, Visibility};
-use vortex_proto::components::{OwnedByTab, Vertex3d, VertexRoot};
+use vortex_proto::components::{OwnedByFile, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::{Compass, Edge2dLocal, Vertex2d},
@@ -16,6 +16,7 @@ use crate::app::{
         input_manager::InputManager, shape_manager::ShapeManager, tab_manager::TabManager,
     },
 };
+use crate::app::components::OwnedByFileLocal;
 
 pub fn input(
     mut commands: Commands,
@@ -57,7 +58,7 @@ pub fn update_mouse_hover(
     mut transform_q: Query<(&mut Transform, Option<&Compass>)>,
     vertex_2d_q: Query<(Entity, Option<&VertexRoot>), (With<Vertex2d>, Without<Compass>)>,
     edge_2d_q: Query<(Entity, &Edge2dLocal), Without<Compass>>,
-    owned_by_tab_q: Query<&OwnedByTab>,
+    owned_by_tab_q: Query<&OwnedByFileLocal>,
     mut visibility_q: Query<&mut Visibility>,
 ) {
     if !canvas.is_visible() {
@@ -65,7 +66,7 @@ pub fn update_mouse_hover(
     }
     shape_manager.update_mouse_hover(
         &camera_manager,
-        tab_manager.current_tab_id(),
+        tab_manager.current_tab_entity(),
         input.mouse_position(),
         &mut transform_q,
         &mut visibility_q,

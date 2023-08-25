@@ -41,7 +41,15 @@ impl UserTabState {
         self.current_tab = tab_id_opt;
     }
 
-    pub fn get_current_tab(&self) -> Option<TabId> {
+    pub fn current_tab(&self) -> Option<TabId> {
         self.current_tab
+    }
+
+    pub fn tab_file_key(&self, tab_id: &TabId) -> Option<FileEntryKey> {
+        if let Some(file_key) = self.tabs.get(tab_id) {
+            Some(file_key.clone())
+        } else {
+            None
+        }
     }
 }

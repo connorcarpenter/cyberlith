@@ -7,7 +7,7 @@ use input::Input;
 
 use render_api::{Assets, base::{CpuMaterial, CpuMesh}, components::{Camera, Projection, Transform, Visibility}};
 
-use vortex_proto::components::{OwnedByTab, Vertex3d};
+use vortex_proto::components::{OwnedByFile, Vertex3d};
 
 use crate::app::{
     components::{FaceIcon2d, Compass, Edge2dLocal, Edge3dLocal},
@@ -16,6 +16,7 @@ use crate::app::{
         tab_manager::TabManager,
     },
 };
+use crate::app::components::OwnedByFileLocal;
 
 pub fn sync_vertices(
     tab_manager: Res<TabManager>,
@@ -29,14 +30,14 @@ pub fn sync_vertices(
     edge_2d_q: Query<(Entity, &Edge2dLocal)>,
     edge_3d_q: Query<(Entity, &Edge3dLocal)>,
     face_2d_q: Query<(Entity, &FaceIcon2d)>,
-    owned_by_tab_q: Query<&OwnedByTab>,
+    owned_by_tab_q: Query<&OwnedByFileLocal>,
 ) {
     if !canvas.is_visible() {
         return;
     }
     shape_manager.sync_vertices(
         &camera_manager,
-        tab_manager.current_tab_id(),
+        tab_manager.current_tab_entity(),
         &compass_q,
         &mut transform_q,
         &camera_q,

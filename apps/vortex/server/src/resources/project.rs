@@ -5,6 +5,7 @@ use bevy_ecs::{
     system::{Commands, Query, ResMut, SystemState},
     world::World,
 };
+use bevy_ecs::system::Res;
 use bevy_log::info;
 use git2::{Repository, Signature};
 
@@ -25,7 +26,8 @@ use crate::{
         ShapeWaitlist, TabManager, FileSpace
     },
 };
-use crate::files::{MeshReader, post_process_networked_entities, SkelReader};
+use crate::files::{MeshReader, post_process_networked_entities, ShapeType, SkelReader};
+use crate::resources::UserManager;
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
 pub struct ProjectKey(u64);
@@ -78,6 +80,28 @@ impl Project {
         self.room_key
     }
 
+    pub(crate) fn file_entity(&self, file_key: &FileEntryKey) -> Option<Entity> {
+        let file_entry_val = self.working_file_entries.get(file_key)?;
+        Some(file_entry_val.entity())
+    }
+
+    pub fn file_room_key(&self, file_key: &FileEntryKey) -> Option<RoomKey> {
+        self.filespaces.get(file_key).map(|fs| fs.room_key())
+    }
+
+    pub(crate) fn filespace_has_entity(&self, file_key: &FileEntryKey, entity: &Entity) -> bool {
+        let filespace = self.filespaces.get(file_key).unwrap();
+        filespace.has_entity(entity)
+    }
+
+    pub(crate) fn on_insert_content_entity(&mut self, file_key: &FileEntryKey, entity: &Entity, shape_type: ShapeType) {
+        self.filespaces.get_mut(file_key).unwrap().add_content_entity(*entity, shape_type);
+    }
+
+    pub(crate) fn on_remove_content_entity(&mut self, file_key: &FileEntryKey, entity: &Entity) {
+        self.filespaces.get_mut(file_key).unwrap().remove_content_entity(entity);
+    }
+
     pub(crate) fn user_join_filespace(
         &mut self,
         commands: &mut Commands,
@@ -86,8 +110,8 @@ impl Project {
         shape_manager: &mut ShapeManager,
         user_key: &UserKey,
         file_key: &FileEntryKey,
-        tab_id: TabId,
     ) {
+        let file_entity = self.file_entity(file_key).unwrap();
         if !self.filespaces.contains_key(file_key) {
             let filespace = self.create_filespace(
                 commands,
@@ -95,12 +119,28 @@ impl Project {
                 shape_waitlist,
                 shape_manager,
                 file_key,
-                tab_id,
+                &file_entity,
             );
             self.filespaces.insert(file_key.clone(), filespace);
         }
         let filespace = self.filespaces.get_mut(file_key).unwrap();
         filespace.user_join(server, user_key);
+    }
+
+    pub(crate) fn user_leave_filespace(&mut self, server: &mut Server, file_key: &FileEntryKey) -> HashMap<Entity, ContentEntityData> {
+        let Some(filespace) = self.filespaces.get_mut(file_key) else {
+            panic!("Filespace not found");
+        };
+        let content_entities = filespace.content_entities().clone();
+        filespace.user_leave();
+        if filespace.has_no_users() {
+            self.delete_filespace(
+                server,
+                file_key,
+            );
+        }
+
+        content_entities
     }
 
     pub fn entity_is_file(&self, entity: &Entity) -> bool {
@@ -127,6 +167,12 @@ impl Project {
             file_entry_key.clone(),
             file_entry_val,
         );
+
+        // Insert FileEntryKey component to new File Entity
+        commands.entity(entity).insert(file_entry_key.clone());
+
+        // New File Entity enters the current project's room
+        server.room_mut(&self.room_key()).add_entity(&entity);
 
         // Update changelist
 
@@ -337,7 +383,8 @@ impl Project {
         let mut system_state: SystemState<(
             Commands,
             Server,
-            ResMut<TabManager>,
+            Res<UserManager>,
+            ResMut<GitManager>,
             ResMut<ShapeWaitlist>,
             ResMut<ShapeManager>,
             Query<&ChangelistEntry>,
@@ -345,7 +392,8 @@ impl Project {
         let (
             mut commands,
             mut server,
-            mut tab_manager,
+            user_manager,
+            mut git_manager,
             mut vertex_waitlist,
             mut shape_manager,
             cl_query,
@@ -364,14 +412,12 @@ impl Project {
                 // cleanup changelist entry
                 self.cleanup_changelist_entry(&mut commands, &file_entry_key);
 
-                // if tab is open, respawn content entities within to previous state
-                tab_manager.respawn_tab_content_entities(
+                // respawn content entities within to previous state
+                self.respawn_tab_content_entities(
                     &mut commands,
                     &mut server,
-                    self,
                     &mut vertex_waitlist,
                     &mut shape_manager,
-                    user_key,
                     &file_entity,
                     &file_entry_key,
                 );
@@ -429,6 +475,32 @@ impl Project {
         system_state.apply(world);
 
         output
+    }
+
+    fn respawn_tab_content_entities(
+        &mut self,
+        commands: &mut Commands,
+        server: &mut Server,
+        shape_waitlist: &mut ShapeWaitlist,
+        shape_manager: &mut ShapeManager,
+        file_entity: &Entity,
+        file_key: &FileEntryKey
+    ) {
+        let file_extension = self.working_file_extension(file_key);
+        let bytes = self.get_bytes_from_cl_or_fs(file_key);
+        let Some(filespace) = self.filespaces.get_mut(file_key) else {
+            panic!("Filespace not found");
+        };
+        filespace.respawn_content_entities(
+            commands,
+            server,
+            shape_waitlist,
+            shape_manager,
+            &file_extension,
+            file_key,
+            file_entity,
+            bytes,
+        );
     }
 
     fn fs_update_index(&mut self, path: &str) {
@@ -614,26 +686,14 @@ impl Project {
         shape_waitlist: &mut ShapeWaitlist,
         shape_manager: &mut ShapeManager,
         file_key: &FileEntryKey,
-        tab_id: TabId,
+        file_entity: &Entity,
     ) -> FileSpace {
         let file_extension = self.working_file_extension(file_key);
 
-        let file_room_key = server.create_room().key();
+        let file_room_key = server.make_room().key();
 
         // get file contents from either the changelist or the file system
-        let bytes = {
-            if self.changelist_entries.contains_key(file_key) {
-                // get contents of file from changelist
-                if let Some(content) = self.changelist_entries.get(file_key).unwrap().get_content() {
-                    Box::from(content)
-                } else {
-                    self.get_file_contents(file_key)
-                }
-            } else {
-                // get contents of file from file system
-                self.get_file_contents(file_key)
-            }
-        };
+        let bytes = self.get_bytes_from_cl_or_fs(file_key);
 
         FileSpace::new(
             commands,
@@ -641,10 +701,32 @@ impl Project {
             shape_waitlist,
             shape_manager,
             &file_extension,
-            file_room_key,
-            tab_id,
+            &file_room_key,
+            file_entity,
             bytes,
         )
+    }
+
+    fn get_bytes_from_cl_or_fs(&self, file_key: &FileEntryKey) -> Box<[u8]> {
+        if self.changelist_entries.contains_key(file_key) {
+            // get contents of file from changelist
+            if let Some(content) = self.changelist_entries.get(file_key).unwrap().get_content() {
+                Box::from(content)
+            } else {
+                self.get_file_contents(file_key)
+            }
+        } else {
+            // get contents of file from file system
+            self.get_file_contents(file_key)
+        }
+    }
+
+    fn delete_filespace(&mut self, server: &mut Server, file_key: &FileEntryKey) {
+        let filespace = self.filespaces.remove(file_key).unwrap();
+        let file_room_key = filespace.room_key();
+
+        // delete file room
+        server.room_mut(&file_room_key).destroy();
     }
 
     fn get_file_contents(&self, key: &FileEntryKey) -> Box<[u8]> {
@@ -815,14 +897,7 @@ impl Project {
                 panic!("can't write file: `{:?}`", file_entry_key.name());
             }
 
-            // get entities from TabManager's current tab
-            let content_entities: HashMap<Entity, ContentEntityData> = world
-                .get_resource::<TabManager>()
-                .unwrap()
-                .user_current_tab_content_entities(user_key)
-                .iter()
-                .map(|(entity, data)| (*entity, data.clone()))
-                .collect();
+            let content_entities: HashMap<Entity, ContentEntityData> = self.filespaces.get(file_entry_key).unwrap().content_entities().clone();
 
             // write
             info!("... Generating content ...");

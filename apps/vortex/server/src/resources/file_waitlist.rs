@@ -95,22 +95,22 @@ fn fs_process_insert_complete(
     file_entity: &Entity,
     entry: FSWaitlist,
 ) {
-    let Some(user) = user_manager.user_session_data(user_key) else {
+    let Some(user_session_data) = user_manager.user_session_data(user_key) else {
         panic!("user not found!");
     };
-    let username = user.get_username();
+
+    let project_key = user_session_data.project_key().unwrap();
+
     let (name, kind, parent) = entry.decompose();
 
     let key = FileEntryKey::new_with_parent(parent.clone(), &name, kind);
-    git_manager.project_mut(user_key).on_client_create_file(
+    git_manager.on_client_create_file(
         commands,
         server,
+        &project_key,
         &name,
         *file_entity,
         parent,
         &key,
     );
-
-    // info!("inserting FileEntryKey for entity: {:?}", file_entity);
-    commands.entity(*file_entity).insert(key);
 }

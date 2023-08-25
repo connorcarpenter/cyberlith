@@ -18,7 +18,7 @@ use render_api::{
 };
 
 use vortex_proto::{
-    components::{FileTypeValue, OwnedByTab, Vertex3d, VertexRoot},
+    components::{FileTypeValue, OwnedByFile, Vertex3d, VertexRoot},
     types::TabId,
 };
 
@@ -36,7 +36,7 @@ use crate::app::{
         create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,
     },
 };
-use crate::app::components::FaceIcon2d;
+use crate::app::components::{FaceIcon2d, OwnedByFileLocal};
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub enum CanvasShape {
@@ -143,7 +143,7 @@ pub struct ShapeManager {
     // 2d face entity -> 3d face entity
     faces_2d: HashMap<Entity, Entity>,
     // queue of new faces to process
-    new_face_keys: Vec<(Face3dKey, Option<TabId>)>,
+    new_face_keys: Vec<(Face3dKey, Option<Entity>)>,
 
     shapes_recalc: u8,
     selection_recalc: bool,
@@ -294,7 +294,7 @@ impl ShapeManager {
     pub fn sync_vertices(
         &mut self,
         camera_manager: &CameraManager,
-        current_tab_id: TabId,
+        current_tab_file_entity: Entity,
         compass_q: &Query<&Compass>,
         transform_q: &mut Query<&mut Transform>,
         camera_q: &Query<(&Camera, &Projection)>,
@@ -302,7 +302,7 @@ impl ShapeManager {
         edge_2d_q: &Query<(Entity, &Edge2dLocal)>,
         edge_3d_q: &Query<(Entity, &Edge3dLocal)>,
         face_2d_q: &Query<(Entity, &FaceIcon2d)>,
-        owned_by_q: &Query<&OwnedByTab>,
+        owned_by_q: &Query<&OwnedByFileLocal>,
     ) {
         if self.shapes_recalc == 0 {
             return;
@@ -341,7 +341,7 @@ impl ShapeManager {
         // update vertices
         for (vertex_3d_entity, vertex_3d) in vertex_3d_q.iter() {
             // check if vertex is owned by the current tab
-            if !Self::is_owned_by_tab_or_unowned(current_tab_id, owned_by_q, vertex_3d_entity) {
+            if !Self::is_owned_by_tab_or_unowned(current_tab_file_entity, owned_by_q, vertex_3d_entity) {
                 continue;
             }
 
@@ -404,7 +404,7 @@ impl ShapeManager {
             };
 
             // check if vertex is owned by the current tab
-            if !Self::is_owned_by_tab_or_unowned(current_tab_id, owned_by_q, end_3d_entity) {
+            if !Self::is_owned_by_tab_or_unowned(current_tab_file_entity, owned_by_q, end_3d_entity) {
                 continue;
             }
 
@@ -442,7 +442,7 @@ impl ShapeManager {
         // update 3d edges
         for (edge_entity, edge_endpoints) in edge_3d_q.iter() {
             // check if vertex is owned by the current tab
-            if !Self::is_owned_by_tab_or_unowned(current_tab_id, owned_by_q, edge_entity) {
+            if !Self::is_owned_by_tab_or_unowned(current_tab_file_entity, owned_by_q, edge_entity) {
                 continue;
             }
 
@@ -474,7 +474,7 @@ impl ShapeManager {
         for (face_2d_entity, face_icon) in face_2d_q.iter() {
 
             // check if face is owned by the current tab
-            if !Self::is_owned_by_tab_or_unowned(current_tab_id, owned_by_q, face_2d_entity) {
+            if !Self::is_owned_by_tab_or_unowned(current_tab_file_entity, owned_by_q, face_2d_entity) {
                 continue;
             }
 
@@ -538,7 +538,7 @@ impl ShapeManager {
         self.vertices_2d.insert(entity_2d, entity_3d);
     }
 
-    pub fn register_3d_edge(&mut self, edge_3d_entity: Entity, edge_2d_entity: Entity, vertex_a_3d_entity: Entity, vertex_b_3d_entity: Entity, tab_id_opt: Option<TabId>) {
+    pub fn register_3d_edge(&mut self, edge_3d_entity: Entity, edge_2d_entity: Entity, vertex_a_3d_entity: Entity, vertex_b_3d_entity: Entity, ownership_opt: Option<Entity>) {
         {
             let Some(vertex_a_3d_data) = self.vertices_3d.get_mut(&vertex_a_3d_entity) else {
                 panic!("Vertex3d entity: `{:?}` has not been registered", vertex_a_3d_entity);
@@ -555,7 +555,7 @@ impl ShapeManager {
         self.edges_3d.insert(edge_3d_entity, Edge3dData::new(edge_2d_entity, vertex_a_3d_entity, vertex_b_3d_entity));
         self.edges_2d.insert(edge_2d_entity, edge_3d_entity);
 
-        self.check_for_new_faces(vertex_a_3d_entity, vertex_b_3d_entity, tab_id_opt);
+        self.check_for_new_faces(vertex_a_3d_entity, vertex_b_3d_entity, ownership_opt);
     }
 
     fn unregister_3d_vertex(&mut self, entity_3d: &Entity) -> Option<Entity> {
@@ -596,7 +596,7 @@ impl ShapeManager {
         return None;
     }
 
-    fn check_for_new_faces(&mut self, vertex_a_3d_entity: Entity, vertex_b_3d_entity: Entity, tab_id_opt: Option<TabId>) {
+    fn check_for_new_faces(&mut self, vertex_a_3d_entity: Entity, vertex_b_3d_entity: Entity, ownership_opt: Option<Entity>) {
 
         let vertex_a_connected_vertices = self.get_connected_vertices(vertex_a_3d_entity);
         let vertex_b_connected_vertices = self.get_connected_vertices(vertex_b_3d_entity);
@@ -606,7 +606,7 @@ impl ShapeManager {
             let face_key = Face3dKey::new(vertex_a_3d_entity, vertex_b_3d_entity, *common_vertex);
             if !self.face_keys.contains_key(&face_key) {
                 self.face_keys.insert(face_key, Entity::PLACEHOLDER);
-                self.new_face_keys.push((face_key, tab_id_opt));
+                self.new_face_keys.push((face_key, ownership_opt));
             }
         }
     }
@@ -645,7 +645,7 @@ impl ShapeManager {
         }
 
         let keys = std::mem::take(&mut self.new_face_keys);
-        for (key, tab_id_opt) in keys {
+        for (key, file_entity_opt) in keys {
             info!("processing new face: `{:?}`", key);
 
             // 3d face needs it's own mesh set up to match it's vertices
@@ -674,11 +674,11 @@ impl ShapeManager {
 
             info!("spawned 2d face entity: {:?}", entity_2d);
 
-            if let Some(tab_id) = tab_id_opt {
+            if let Some(file_entity) = file_entity_opt {
+                info!("adding OwnedByFile({:?}) to entity {:?}", file_entity, entity_2d);
                 commands
                     .entity(entity_2d)
-                    .insert(OwnedByTab::new(tab_id));
-                info!("adding OwnedByTab({:?}) to entity {:?}", tab_id, entity_2d);
+                    .insert(OwnedByFileLocal::new(file_entity));
             } else {
                 panic!("no tab id :(")
             }
@@ -757,7 +757,7 @@ impl ShapeManager {
         camera_manager: &CameraManager,
         vertex_3d_entity: Entity,
         is_root: bool,
-        tab_id_opt: Option<TabId>,
+        ownership_opt: Option<Entity>,
         color: Color,
     ) -> Entity {
         // vertex 3d
@@ -788,11 +788,11 @@ impl ShapeManager {
             .insert(Vertex2d)
             .id();
 
-        if let Some(tab_id) = tab_id_opt {
-            info!("adding OwnedByTab({:?}) to entity {:?}", tab_id, vertex_2d_entity);
+        if let Some(file_entity) = ownership_opt {
+            info!("adding OwnedByFileLocal({:?}) to entity {:?}", file_entity, vertex_2d_entity);
             commands
                 .entity(vertex_2d_entity)
-                .insert(OwnedByTab::new(tab_id));
+                .insert(OwnedByFileLocal::new(file_entity));
         }
 
         if is_root {
@@ -821,7 +821,7 @@ impl ShapeManager {
         vertex_a_3d_entity: Entity,
         vertex_b_2d_entity: Entity,
         vertex_b_3d_entity: Entity,
-        tab_id_opt: Option<TabId>,
+        ownership_opt: Option<Entity>,
         color: Color,
         arrows_not_lines: bool,
     ) -> Entity {
@@ -848,14 +848,14 @@ impl ShapeManager {
             .insert(camera_manager.layer_2d)
             .insert(Edge2dLocal::new(vertex_a_2d_entity, vertex_b_2d_entity))
             .id();
-        if let Some(tab_id) = tab_id_opt {
+        if let Some(file_entity) = ownership_opt {
             commands
                 .entity(edge_2d_entity)
-                .insert(OwnedByTab::new(tab_id));
+                .insert(OwnedByFileLocal::new(file_entity));
         }
 
         // register 3d & 2d edges together
-        self.register_3d_edge(edge_3d_entity, edge_2d_entity, vertex_a_3d_entity, vertex_b_3d_entity, tab_id_opt);
+        self.register_3d_edge(edge_3d_entity, edge_2d_entity, vertex_a_3d_entity, vertex_b_3d_entity, ownership_opt);
 
         edge_2d_entity
     }
@@ -949,11 +949,11 @@ impl ShapeManager {
     pub(crate) fn update_mouse_hover(
         &mut self,
         camera_manager: &CameraManager,
-        current_tab_id: TabId,
+        current_tab_file_entity: Entity,
         mouse_position: &Vec2,
         transform_q: &mut Query<(&mut Transform, Option<&Compass>)>,
         visibility_q: &mut Query<&mut Visibility>,
-        owned_by_q: &Query<&OwnedByTab>,
+        owned_by_q: &Query<&OwnedByFileLocal>,
         vertex_2d_q: &Query<(Entity, Option<&VertexRoot>), (With<Vertex2d>, Without<Compass>)>,
         edge_2d_q: &Query<(Entity, &Edge2dLocal), Without<Compass>>,
     ) {
@@ -968,7 +968,7 @@ impl ShapeManager {
 
         for (vertex_entity, root_opt) in vertex_2d_q.iter() {
             // check tab ownership, skip vertices from other tabs
-            if !Self::is_owned_by_tab(current_tab_id, owned_by_q, vertex_entity) {
+            if !Self::is_owned_by_tab(current_tab_file_entity, owned_by_q, vertex_entity) {
                 continue;
             }
 
@@ -1000,7 +1000,7 @@ impl ShapeManager {
         if !is_hovering {
             for (edge_entity, _) in edge_2d_q.iter() {
                 // check tab ownership, skip edges from other tabs
-                if !Self::is_owned_by_tab(current_tab_id, owned_by_q, edge_entity) {
+                if !Self::is_owned_by_tab(current_tab_file_entity, owned_by_q, edge_entity) {
                     continue;
                 }
 
@@ -1711,12 +1711,12 @@ impl ShapeManager {
 
     // returns true if vertex is owned by tab or unowned
     fn is_owned_by_tab_or_unowned(
-        current_tab_id: TabId,
-        owned_by_tab_q: &Query<&OwnedByTab>,
+        current_tab_file_entity: Entity,
+        owned_by_tab_q: &Query<&OwnedByFileLocal>,
         entity: Entity,
     ) -> bool {
         if let Ok(owned_by_tab) = owned_by_tab_q.get(entity) {
-            if *owned_by_tab.tab_id == current_tab_id {
+            if owned_by_tab.file_entity == current_tab_file_entity {
                 return true;
             }
         } else {
@@ -1727,12 +1727,12 @@ impl ShapeManager {
 
     // returns true if vertex is owned by tab
     fn is_owned_by_tab(
-        current_tab_id: TabId,
-        owned_by_tab_q: &Query<&OwnedByTab>,
+        current_tab_file_entity: Entity,
+        owned_by_tab_q: &Query<&OwnedByFileLocal>,
         entity: Entity,
     ) -> bool {
         if let Ok(owned_by_tab) = owned_by_tab_q.get(entity) {
-            if *owned_by_tab.tab_id == current_tab_id {
+            if owned_by_tab.file_entity == current_tab_file_entity {
                 return true;
             }
         }

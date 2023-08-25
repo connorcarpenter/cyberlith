@@ -6,8 +6,6 @@ use naia_bevy_shared::{
 
 use math::Vec3;
 
-use crate::types::TabId;
-
 pub struct VertexComponentsPlugin;
 
 impl ProtocolPlugin for VertexComponentsPlugin {
@@ -15,7 +13,7 @@ impl ProtocolPlugin for VertexComponentsPlugin {
         protocol
             .add_component::<Vertex3d>()
             .add_component::<VertexRoot>()
-            .add_component::<OwnedByTab>()
+            .add_component::<OwnedByFile>()
             .add_component::<Edge3d>()
             .add_component::<Face3d>()
             .add_component::<FileType>();
@@ -80,15 +78,15 @@ impl Vertex3d {
 #[derive(Component, Replicate)]
 pub struct VertexRoot;
 
-// TabOwnership
+// FileOwnership
 #[derive(Component, Replicate)]
-pub struct OwnedByTab {
-    pub tab_id: Property<TabId>,
+pub struct OwnedByFile {
+    pub file_entity: EntityProperty,
 }
 
-impl OwnedByTab {
-    pub fn new(tab_id: TabId) -> Self {
-        Self::new_complete(tab_id)
+impl OwnedByFile {
+    pub fn new() -> Self {
+        Self::new_complete()
     }
 }
 

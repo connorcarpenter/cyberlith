@@ -5,11 +5,10 @@ use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin, ReceiveEvents};
 
 use render_api::resources::WindowSettings;
 
-use vortex_proto::components::FileType;
 use vortex_proto::{
     components::{
         ChangelistEntry, Edge3d, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-        OwnedByTab, Vertex3d, VertexRoot,
+        OwnedByFile, Vertex3d, VertexRoot, FileType
     },
     protocol,
 };
@@ -79,7 +78,7 @@ impl Plugin for VortexPlugin {
             .add_event::<InsertComponentEvent<ChangelistEntry>>()
             .add_event::<InsertComponentEvent<Vertex3d>>()
             .add_event::<InsertComponentEvent<VertexRoot>>()
-            .add_event::<InsertComponentEvent<OwnedByTab>>()
+            .add_event::<InsertComponentEvent<OwnedByFile>>()
             .add_event::<InsertComponentEvent<Edge3d>>()
             .add_event::<InsertComponentEvent<FileType>>()
             .init_resource::<ShapeWaitlist>()

@@ -18,6 +18,7 @@ use crate::{
         ShapeManager, ShapeWaitlist, UserManager, UserTabState,
     },
 };
+use crate::resources::project::ProjectKey;
 
 #[derive(Resource)]
 pub struct TabManager {
@@ -82,28 +83,7 @@ impl TabManager {
             user_key,
             &project_key,
             &file_entry_key,
-            *tab_id,
         );
-    }
-
-    pub fn select_tab(
-        &mut self,
-        user_manager: &mut UserManager,
-        user_key: &UserKey,
-        tab_id: &TabId,
-    ) {
-        let Some(user_tab_state) = user_manager.user_tab_state_mut(user_key) else {
-            panic!("user does not exist")
-        };
-        if !user_tab_state.has_tab_id(tab_id) {
-            warn!("User does not have tab {}", tab_id);
-            return;
-        }
-
-        info!("Select Tab!");
-
-        // Switch current Tab
-        user_tab_state.set_current_tab(Some(tab_id.clone()));
     }
 
     pub fn complete_waiting_open(&mut self, user_key: &UserKey, file_entity: &Entity) {
@@ -172,11 +152,11 @@ impl TabManager {
     fn process_queued_closes(world: &mut World) {
         // closed tabs
         let closed_states = {
-            let mut system_state: SystemState<(Server, ResMut<TabManager>)> =
+            let mut system_state: SystemState<(Server, ResMut<TabManager>, ResMut<UserManager>, ResMut<GitManager>)> =
                 SystemState::new(world);
-            let (mut server, mut tab_manager) = system_state.get_mut(world);
+            let (mut server, mut tab_manager, mut user_manager, mut git_manager) = system_state.get_mut(world);
 
-            let output = Self::process_queued_closes_inner(&mut tab_manager, &mut server);
+            let output = Self::process_queued_closes_inner(&mut tab_manager, &mut server, &mut user_manager, &mut git_manager);
 
             system_state.apply(world);
 
@@ -193,38 +173,27 @@ impl TabManager {
             world.resource_scope(|world, mut git_manager: Mut<GitManager>| {
                 let mut output = Vec::new();
 
-                for (user_key, closed_state) in closed_states.iter() {
-                    let username = world
-                        .get_resource::<UserManager>()
-                        .unwrap()
-                        .user_name(&user_key)
-                        .unwrap()
-                        .to_string();
-                    let file_entry_key = world
-                        .entity(closed_state.get_file_entity())
-                        .get::<FileEntryKey>()
-                        .unwrap()
-                        .clone();
-                    if !git_manager.can_write(user_key, &file_entry_key) {
-                        panic!("can't write file: `{:?}`", file_entry_key.name());
+                for (project_key, file_key, content_entities) in closed_states.iter() {
+                    if !git_manager.can_write(project_key, file_key) {
+                        panic!("can't write file: `{:?}`", file_key.name());
                     }
                     let bytes = git_manager.write(
-                        user_key,
-                        &file_entry_key,
+                        project_key,
+                        file_key,
                         world,
-                        closed_state.get_content_entities(),
+                        content_entities,
                     );
-                    output.push((user_key, file_entry_key, bytes));
+                    output.push((project_key, file_key, bytes));
                 }
 
                 let mut system_state: SystemState<(Commands, Server)> = SystemState::new(world);
                 let (mut commands, mut server) = system_state.get_mut(world);
 
-                for (user_key, key, bytes) in output {
+                for (project_key, key, bytes) in output {
                     git_manager.set_changelist_entry_content(
                         &mut commands,
                         &mut server,
-                        user_key,
+                        project_key,
                         &key,
                         bytes,
                     );
@@ -236,10 +205,9 @@ impl TabManager {
 
         // actually despawn entities associated with tab
         {
-            for (_user_key, closed_state) in closed_states.iter() {
+            for (_, _, content_entities) in closed_states.iter() {
                 // despawn content entities
-                let entities = closed_state.get_content_entities();
-                for (entity, _data) in entities.iter() {
+                for (entity, _data) in content_entities.iter() {
                     world.entity_mut(*entity).despawn();
                 }
             }
@@ -254,7 +222,7 @@ impl TabManager {
         let selects = tab_manager.take_queued_selects();
 
         for (user_key, tab_id) in selects {
-            tab_manager.select_tab(&mut user_manager, &user_key, &tab_id);
+            user_manager.select_tab(&user_key, &tab_id);
         }
 
         system_state.apply(world);
@@ -264,57 +232,22 @@ impl TabManager {
         std::mem::take(&mut self.queued_selects)
     }
 
-    pub fn on_insert_content_entity(
+    fn process_queued_closes_inner(
         &mut self,
-        user_key: &UserKey,
-        entity: &Entity,
-        shape_type: ShapeType,
-    ) {
-        self.user_tab_state_mut(user_key)
-            .current_tab_add_content_entity(entity, shape_type);
-    }
-
-    pub fn on_remove_content_entity(&mut self, user_key: &UserKey, entity: &Entity) {
-        self.user_tab_state_mut(user_key)
-            .current_tab_remove_content_entity(entity);
-    }
-
-    pub(crate) fn user_current_tab_has_entity(&self, user_key: &UserKey, entity: &Entity) -> bool {
-        if let Some(entities) = self.user_tab_state(user_key).current_tab_entities() {
-            entities.contains_key(entity)
-        } else {
-            false
-        }
-    }
-
-    // pub(crate) fn user_current_tab_print_entities(&self, user_key: &UserKey) {
-    //     if let Some(entities) = self.user_tab_state(user_key).current_tab_entities() {
-    //         info!("user_current_tab_print_entities: {:?}", entities);
-    //     } else {
-    //         info!("user_current_tab_print_entities: None");
-    //     }
-    // }
-
-    pub(crate) fn user_current_tab_file_entity(&self, user_key: &UserKey) -> Entity {
-        self.user_tab_state(user_key)
-            .current_tab_file_entity()
-            .unwrap()
-    }
-
-    pub(crate) fn user_current_tab_content_entities(
-        &self,
-        user_key: &UserKey,
-    ) -> &HashMap<Entity, ContentEntityData> {
-        self.user_tab_state(user_key)
-            .current_tab_entities()
-            .unwrap()
-    }
-
-    fn process_queued_closes_inner(&mut self, server: &mut Server, user_manager: &mut UserManager) -> Vec<(UserKey, FileSpace)> {
+        server: &mut Server,
+        user_manager: &mut UserManager,
+        git_manager: &mut GitManager
+    ) -> Vec<(ProjectKey, FileEntryKey, HashMap<Entity, ContentEntityData>)> {
         let mut output = Vec::new();
         while let Some((user_key, tab_id)) = self.queued_closes.pop_front() {
-            let closed_state = user_manager.close_tab(server, &user_key, &tab_id);
-            output.push((user_key, closed_state));
+
+            let (project_key, file_key, content_entities) = user_manager.close_tab(
+                server,
+                git_manager,
+                &user_key,
+                &tab_id
+            );
+            output.push((project_key, file_key, content_entities));
         }
         output
     }
