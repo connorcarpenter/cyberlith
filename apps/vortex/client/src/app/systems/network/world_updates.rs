@@ -211,8 +211,8 @@ pub fn insert_changelist_entry_events(
         global.changelist.insert(entry.file_entry_key(), entity);
 
         info!(
-            "Received ChangelistEntry insert event. path: `{:?}`, name: `{:?}`",
-            *entry.path, *entry.name
+            "Received ChangelistEntry insert event. entity: `{:?}`, path: `{:?}`, name: `{:?}`",
+            entity, *entry.path, *entry.name
         );
     }
 }

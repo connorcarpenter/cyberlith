@@ -281,7 +281,10 @@ pub fn update_component_events(
         }
         // on Vertex3D Update Event
         for (_, entity) in events.read::<Vertex3d>() {
-            git_manager.on_client_modify_file(&mut commands, &mut server, &entity);
+            let Some((project_key, file_key)) = git_manager.content_entity_keys(&entity) else {
+                panic!("no content entity keys!");
+            };
+            git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
         }
     }
 }

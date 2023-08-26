@@ -41,7 +41,7 @@ pub struct GitManager {
     // get project key from username, should only be used on initialization
     project_keys: HashMap<String, ProjectKey>,
     content_entity_keys: HashMap<Entity, (ProjectKey, FileEntryKey)>,
-    queued_client_modify_files: Vec<Entity>,
+    queued_client_modify_files: Vec<(ProjectKey, FileEntryKey)>,
 }
 
 impl Default for GitManager {
@@ -96,17 +96,21 @@ impl GitManager {
         project.on_client_create_file(commands, server, file_name, file_entity, parent_file_key, file_key);
     }
 
-    pub(crate) fn on_client_modify_file(&mut self, commands: &mut Commands, server: &mut Server, content_entity: &Entity) {
+    pub(crate) fn content_entity_keys(&self, content_entity: &Entity) -> Option<(ProjectKey, FileEntryKey)> {
+        self.content_entity_keys.get(content_entity).cloned()
+    }
 
-        let (project_key, file_key) = self.content_entity_keys.get(content_entity).unwrap();
-
+    pub(crate) fn on_client_modify_file(&mut self, commands: &mut Commands, server: &mut Server, project_key: &ProjectKey, file_key: &FileEntryKey) {
         let file_entity = self.file_entity(&project_key, &file_key).unwrap();
         let project = self.projects.get_mut(project_key).unwrap();
         project.on_client_modify_file(commands, server, file_key, &file_entity);
     }
 
     pub(crate) fn queue_client_modify_file(&mut self, content_entity: &Entity) {
-        self.queued_client_modify_files.push(*content_entity);
+        let Some((project_key, file_key)) = self.content_entity_keys(content_entity) else {
+            panic!("Could not find content entity key for entity: {:?}", content_entity);
+        };
+        self.queued_client_modify_files.push((project_key, file_key));
     }
 
     pub(crate) fn process_queued_actions(world: &mut World) {
@@ -121,8 +125,8 @@ impl GitManager {
             mut git_manager,
         ) = system_state.get_mut(world);
 
-        for entity in std::mem::take(&mut git_manager.queued_client_modify_files) {
-            git_manager.on_client_modify_file(&mut commands, &mut server, &entity);
+        for (project_key, file_key) in std::mem::take(&mut git_manager.queued_client_modify_files) {
+            git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
         }
 
         system_state.apply(world);
@@ -130,9 +134,9 @@ impl GitManager {
 
     pub(crate) fn on_client_insert_content_entity(&mut self, server: &mut Server, project_key: &ProjectKey, file_key: &FileEntryKey, entity: &Entity, shape_type: ShapeType) {
 
-        self.queue_client_modify_file(entity);
-
         self.content_entity_keys.insert(*entity, (*project_key, file_key.clone()));
+
+        self.queue_client_modify_file(entity);
 
         let project = self.projects.get_mut(&project_key).unwrap();
         project.on_insert_content_entity(file_key, entity, shape_type);
