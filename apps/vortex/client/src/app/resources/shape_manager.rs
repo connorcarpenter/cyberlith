@@ -50,6 +50,7 @@ struct Edge3dData {
     entity_2d: Entity,
     vertex_a_3d_entity: Entity,
     vertex_b_3d_entity: Entity,
+    faces_3d: HashSet<Entity>,
 }
 
 impl Edge3dData {
@@ -58,7 +59,16 @@ impl Edge3dData {
             entity_2d,
             vertex_a_3d_entity,
             vertex_b_3d_entity,
+            faces_3d: HashSet::new(),
         }
+    }
+
+    fn add_face(&mut self, face_3d_entity: Entity) {
+        self.faces_3d.insert(face_3d_entity);
+    }
+
+    fn remove_face(&mut self, face_3d_entity: &Entity) {
+        self.faces_3d.remove(face_3d_entity);
     }
 }
 
@@ -110,14 +120,20 @@ struct Face3dData {
     entity_2d: Entity,
     key: Face3dKey,
     active: bool,
+    edge_3d_a: Entity,
+    edge_3d_b: Entity,
+    edge_3d_c: Entity,
 }
 
 impl Face3dData {
-    fn new(key: Face3dKey, entity_2d: Entity) -> Self {
+    fn new(key: Face3dKey, entity_2d: Entity, edge_3d_a: Entity, edge_3d_b: Entity, edge_3d_c: Entity) -> Self {
         Self {
             key,
             entity_2d,
             active: false,
+            edge_3d_a,
+            edge_3d_b,
+            edge_3d_c,
         }
     }
 }
@@ -688,8 +704,33 @@ impl ShapeManager {
             }
 
             self.face_keys.insert(key, entity_3d);
-            self.faces_3d.insert(entity_3d, Face3dData::new(key, entity_2d));
+
             self.faces_2d.insert(entity_2d, entity_3d);
+
+            let mut edge_entities = Vec::new();
+            // add face to edge data
+            for (vert_a, vert_b) in [(&key.vertex_3d_a, &key.vertex_3d_b), (&key.vertex_3d_b, &key.vertex_3d_c), (&key.vertex_3d_c, &key.vertex_3d_a)] {
+                // find edge in common
+                let vertex_a_edges = &self.vertices_3d.get(vert_a).unwrap().edges_3d;
+                let vertex_b_edges = &self.vertices_3d.get(vert_b).unwrap().edges_3d;
+                let intersection = vertex_a_edges.intersection(vertex_b_edges);
+                let mut found_edge = false;
+                for edge_entity in intersection {
+                    if found_edge {
+                        panic!("should only be one edge between any two vertices!");
+                    }
+                    found_edge = true;
+
+                    let Some(edge_3d_data) = self.edges_3d.get_mut(edge_entity) else {
+                        panic!("Edge3d entity: `{:?}` has not been registered", edge_entity);
+                    };
+                    edge_3d_data.add_face(entity_3d);
+
+                    edge_entities.push(*edge_entity);
+                }
+            }
+
+            self.faces_3d.insert(entity_3d, Face3dData::new(key, entity_2d, edge_entities[0], edge_entities[1], edge_entities[2]));
         }
     }
 
@@ -699,6 +740,8 @@ impl ShapeManager {
         entity_3d: &Entity,
         commands: &mut Commands,
     ) -> Entity {
+
+        // unregister vertex
         let Some(vertex_2d_entity) = self.unregister_3d_vertex(entity_3d) else {
             panic!(
                 "Vertex3d entity: `{:?}` has no corresponding Vertex2d entity",
@@ -717,6 +760,16 @@ impl ShapeManager {
 
     // returns entity 2d
     pub fn cleanup_deleted_edge(&mut self, entity_3d: &Entity, commands: &mut Commands) -> Entity {
+
+        // cleanup faces
+        {
+            let edge_3d_data = self.edges_3d.get(entity_3d).unwrap();
+            let faces_3d: Vec<Entity> = edge_3d_data.faces_3d.iter().copied().collect();
+            for face_3d_entity in faces_3d {
+                self.delete_and_cleanup_face(&face_3d_entity, commands);
+            }
+        }
+
         let Some(edge_2d_entity) = self.unregister_3d_edge(entity_3d) else {
             panic!(
                 "Edge3d entity: `{:?}` has no corresponding Edge2d entity",
@@ -731,6 +784,25 @@ impl ShapeManager {
         self.recalculate_shapes();
 
         edge_2d_entity
+    }
+
+    pub fn delete_and_cleanup_face(&mut self, face_3d_entity: &Entity, commands: &mut Commands) {
+        let face_3d_data = self.faces_3d.remove(face_3d_entity).unwrap();
+        let face_2d_entity = face_3d_data.entity_2d;
+        self.faces_2d.remove(&face_2d_entity);
+
+        // remove face from edges
+        for edge_entity in [face_3d_data.edge_3d_a, face_3d_data.edge_3d_b, face_3d_data.edge_3d_c] {
+            let edge_3d_data = self.edges_3d.get_mut(&edge_entity).unwrap();
+            edge_3d_data.remove_face(face_3d_entity);
+        }
+
+        // remove from keys list
+        self.face_keys.remove(&face_3d_data.key);
+
+        // despawn entities
+        commands.entity(face_2d_entity).despawn();
+        commands.entity(*face_3d_entity).despawn();
     }
 
     pub(crate) fn has_vertex_entity_3d(&self, entity_3d: &Entity) -> bool {
