@@ -31,7 +31,7 @@ pub fn connect_events(
             git_manager.create_project(&mut commands, &mut server, user_key, project_owner_name)
         } else {
             // not the first Client logged in as this user
-            git_manager.project_key(project_owner_name).unwrap()
+            git_manager.project_key_from_name(project_owner_name).unwrap()
         };
 
         // add project key to session data

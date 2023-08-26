@@ -578,16 +578,20 @@ impl ShapeManager {
                 let vertex_b_3d_entity = entity_3d_data.vertex_b_3d_entity;
 
                 {
-                    let Some(vertex_a_3d_data) = self.vertices_3d.get_mut(&vertex_a_3d_entity) else {
-                        panic!("Vertex3d entity: `{:?}` has not been registered", vertex_a_3d_entity);
+                    if let Some(vertex_a_3d_data) = self.vertices_3d.get_mut(&vertex_a_3d_entity) {
+                        vertex_a_3d_data.remove_edge(entity_3d);
+                    } else {
+                        warn!("Vertex3d entity: `{:?}` has not been registered", vertex_a_3d_entity);
+                        // don't panic here because it's possible that the vertex has already been deleted
                     };
-                    vertex_a_3d_data.remove_edge(entity_3d);
                 }
                 {
-                    let Some(vertex_b_3d_data) = self.vertices_3d.get_mut(&vertex_b_3d_entity) else {
-                        panic!("Vertex3d entity: `{:?}` has not been registered", vertex_b_3d_entity);
+                    if let Some(vertex_b_3d_data) = self.vertices_3d.get_mut(&vertex_b_3d_entity) {
+                        vertex_b_3d_data.remove_edge(entity_3d);
+                    } else {
+                        warn!("Vertex3d entity: `{:?}` has not been registered", vertex_b_3d_entity);
+                        // don't panic here because it's possible that the vertex has already been deleted
                     };
-                    vertex_b_3d_data.remove_edge(entity_3d);
                 }
             }
 

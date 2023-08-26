@@ -11,13 +11,13 @@ pub fn publish_entity_events(
     mut event_reader: EventReader<PublishEntityEvent>,
 ) {
     for PublishEntityEvent(_user_key, client_entity) in event_reader.iter() {
-        info!("client entity has been made public: {:?}", client_entity);
+        //info!("client entity has been made public: {:?}", client_entity);
     }
 }
 
 pub fn unpublish_entity_events(mut event_reader: EventReader<UnpublishEntityEvent>) {
     for UnpublishEntityEvent(_user_key, client_entity) in event_reader.iter() {
-        info!("client entity has been unpublished: {:?}", client_entity);
+        //info!("client entity has been unpublished: {:?}", client_entity);
 
         // TODO: remove entity from main Room
     }

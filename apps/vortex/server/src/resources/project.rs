@@ -26,7 +26,7 @@ use crate::{
         ShapeWaitlist, TabManager, FileSpace
     },
 };
-use crate::files::{MeshReader, post_process_networked_entities, ShapeType, SkelReader};
+use crate::files::{load_content_entities, MeshReader, ShapeType, SkelReader};
 use crate::resources::UserManager;
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
@@ -106,25 +106,24 @@ impl Project {
         &mut self,
         commands: &mut Commands,
         server: &mut Server,
-        shape_waitlist: &mut ShapeWaitlist,
         shape_manager: &mut ShapeManager,
         user_key: &UserKey,
         file_key: &FileEntryKey,
-    ) {
-        let file_entity = self.file_entity(file_key).unwrap();
+    ) -> Option<Vec<Entity>> {
         if !self.filespaces.contains_key(file_key) {
-            let filespace = self.create_filespace(
+            let new_entities = self.create_filespace(
                 commands,
                 server,
-                shape_waitlist,
                 shape_manager,
+                user_key,
                 file_key,
-                &file_entity,
             );
-            self.filespaces.insert(file_key.clone(), filespace);
+            return Some(new_entities);
+        } else {
+            let filespace = self.filespaces.get_mut(file_key).unwrap();
+            filespace.user_join(server, user_key);
+            return None;
         }
-        let filespace = self.filespaces.get_mut(file_key).unwrap();
-        filespace.user_join(server, user_key);
     }
 
     pub(crate) fn user_leave_filespace(&mut self, server: &mut Server, file_key: &FileEntryKey) -> HashMap<Entity, ContentEntityData> {
@@ -376,25 +375,18 @@ impl Project {
     // returns an entity to spawn if delete was rolled back
     pub fn rollback_changelist_entry(
         &mut self,
-        user_key: &UserKey,
         world: &mut World,
         message: ChangelistMessage,
     ) -> Option<(FileEntryKey, FileEntryValue)> {
         let mut system_state: SystemState<(
             Commands,
             Server,
-            Res<UserManager>,
-            ResMut<GitManager>,
-            ResMut<ShapeWaitlist>,
             ResMut<ShapeManager>,
             Query<&ChangelistEntry>,
         )> = SystemState::new(world);
         let (
             mut commands,
             mut server,
-            user_manager,
-            mut git_manager,
-            mut vertex_waitlist,
             mut shape_manager,
             cl_query,
         ) = system_state.get_mut(world);
@@ -413,10 +405,9 @@ impl Project {
                 self.cleanup_changelist_entry(&mut commands, &file_entry_key);
 
                 // respawn content entities within to previous state
-                self.respawn_tab_content_entities(
+                self.respawn_file_content_entities(
                     &mut commands,
                     &mut server,
-                    &mut vertex_waitlist,
                     &mut shape_manager,
                     &file_entity,
                     &file_entry_key,
@@ -477,11 +468,10 @@ impl Project {
         output
     }
 
-    fn respawn_tab_content_entities(
+    fn respawn_file_content_entities(
         &mut self,
         commands: &mut Commands,
         server: &mut Server,
-        shape_waitlist: &mut ShapeWaitlist,
         shape_manager: &mut ShapeManager,
         file_entity: &Entity,
         file_key: &FileEntryKey
@@ -494,7 +484,6 @@ impl Project {
         filespace.respawn_content_entities(
             commands,
             server,
-            shape_waitlist,
             shape_manager,
             &file_extension,
             file_key,
@@ -680,31 +669,44 @@ impl Project {
     }
 
     fn create_filespace(
-        &self,
+        &mut self,
         commands: &mut Commands,
         server: &mut Server,
-        shape_waitlist: &mut ShapeWaitlist,
         shape_manager: &mut ShapeManager,
+        user_key: &UserKey,
         file_key: &FileEntryKey,
-        file_entity: &Entity,
-    ) -> FileSpace {
-        let file_extension = self.working_file_extension(file_key);
+    ) -> Vec<Entity> {
 
         let file_room_key = server.make_room().key();
 
         // get file contents from either the changelist or the file system
         let bytes = self.get_bytes_from_cl_or_fs(file_key);
 
-        FileSpace::new(
+        let file_entity = self.file_entity(file_key).unwrap();
+        let file_extension = self.working_file_extension(file_key);
+
+        let content_entities_with_data = load_content_entities(
             commands,
             server,
-            shape_waitlist,
             shape_manager,
             &file_extension,
             &file_room_key,
-            file_entity,
+            &file_entity,
             bytes,
-        )
+        );
+
+        let new_entities: Vec<Entity> = content_entities_with_data.keys().map(|e| *e).collect();
+
+        let mut filespace = FileSpace::new(
+            &file_room_key,
+            content_entities_with_data,
+        );
+
+        filespace.user_join(server, user_key);
+
+        self.filespaces.insert(file_key.clone(), filespace);
+
+        new_entities
     }
 
     fn get_bytes_from_cl_or_fs(&self, file_key: &FileEntryKey) -> Box<[u8]> {

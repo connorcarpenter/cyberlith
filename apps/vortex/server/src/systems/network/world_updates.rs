@@ -22,10 +22,9 @@ use vortex_proto::{
     },
     resources::FileEntryKey,
 };
+use vortex_proto::components::OwnedByFile;
 
-use crate::files::ShapeType;
 use crate::{
-    files::handle_file_modify,
     resources::{
         file_waitlist::{fs_process_insert, FSWaitlist, FSWaitlistInsert},
         GitManager, ShapeManager, ShapeWaitlist, ShapeWaitlistInsert, TabManager, UserManager,
@@ -70,18 +69,9 @@ pub fn despawn_entity_events(
                 let other_entities_to_despawn =
                     shape_manager.on_delete_vertex(&mut commands, &mut server, entity);
 
-                handle_file_modify(
-                    &mut commands,
-                    &mut server,
-                    &user_manager,
-                    &mut git_manager,
-                    &user_key,
-                    &entity,
-                );
-
-                git_manager.on_remove_content_entity(&user_manager, &user_key, &entity);
+                git_manager.on_client_remove_content_entity(&user_manager, &user_key, &entity);
                 for other_entity in other_entities_to_despawn {
-                    git_manager.on_remove_content_entity(&user_manager, &user_key, &other_entity);
+                    git_manager.on_client_remove_content_entity(&user_manager, &user_key, &other_entity);
                 }
             }
             (false, false, true) => {
@@ -90,16 +80,7 @@ pub fn despawn_entity_events(
 
                 shape_manager.on_delete_edge(entity);
 
-                handle_file_modify(
-                    &mut commands,
-                    &mut server,
-                    &user_manager,
-                    &mut git_manager,
-                    &user_key,
-                    &entity,
-                );
-
-                git_manager.on_remove_content_entity(&user_manager, &user_key, &entity);
+                git_manager.on_client_remove_content_entity(&user_manager, &user_key, &entity);
             }
             _ => {
                 panic!(
@@ -117,7 +98,7 @@ pub fn insert_component_events(
     user_manager: Res<UserManager>,
     mut git_manager: ResMut<GitManager>,
     mut tab_manager: ResMut<TabManager>,
-    mut vertex_waitlist: ResMut<ShapeWaitlist>,
+    mut shape_waitlist: ResMut<ShapeWaitlist>,
     mut shape_manager: ResMut<ShapeManager>,
     mut fs_waiting_entities: Local<HashMap<Entity, FSWaitlist>>,
     mut event_reader: EventReader<InsertComponentEvents>,
@@ -126,6 +107,7 @@ pub fn insert_component_events(
     entry_key_q: Query<&FileEntryKey>,
     edge_3d_q: Query<&Edge3d>,
     vert_file_type_q: Query<&FileType>,
+    owned_by_file_q: Query<&OwnedByFile>,
 ) {
     for events in event_reader.iter() {
         // on FileSystemEntry Insert Event
@@ -183,34 +165,15 @@ pub fn insert_component_events(
         }
 
         // on Vertex3D Insert Event
-        for (user_key, entity) in events.read::<Vertex3d>() {
+        for (_, entity) in events.read::<Vertex3d>() {
             info!("entity: `{:?}`, inserted Vertex3d", entity);
 
-            git_manager.on_insert_content_entity(&user_manager, &user_key, &entity, ShapeType::Vertex);
-            handle_file_modify(
-                &mut commands,
-                &mut server,
-                &user_manager,
-                &mut git_manager,
-                &user_key,
-                &entity,
-            );
-            vertex_waitlist.process_insert(&mut shape_manager, ShapeWaitlistInsert::Vertex(entity));
+            shape_waitlist.process_insert(&mut server, &mut git_manager, &mut shape_manager, ShapeWaitlistInsert::Vertex(entity));
         }
 
         // on Edge3d Insert Event
-        for (user_key, edge_entity) in events.read::<Edge3d>() {
+        for (_, edge_entity) in events.read::<Edge3d>() {
             info!("entity: `{:?}`, inserted Edge3d", edge_entity);
-
-            git_manager.on_insert_content_entity(&user_manager, &user_key, &edge_entity, ShapeType::Edge);
-            handle_file_modify(
-                &mut commands,
-                &mut server,
-                &user_manager,
-                &mut git_manager,
-                &user_key,
-                &edge_entity,
-            );
 
             let edge_3d = edge_3d_q.get(edge_entity).unwrap();
             let Some(start_entity) = edge_3d.start.get(&server) else {
@@ -219,7 +182,9 @@ pub fn insert_component_events(
             let Some(end_entity) = edge_3d.end.get(&server) else {
                 panic!("no child entity!")
             };
-            vertex_waitlist.process_insert(
+            shape_waitlist.process_insert(
+                &mut server,
+                &mut git_manager,
                 &mut shape_manager,
                 ShapeWaitlistInsert::Edge(start_entity, edge_entity, end_entity),
             );
@@ -234,9 +199,30 @@ pub fn insert_component_events(
                 entity, file_type_value
             );
 
-            vertex_waitlist.process_insert(
+            shape_waitlist.process_insert(
+                &mut server,
+                &mut git_manager,
                 &mut shape_manager,
                 ShapeWaitlistInsert::FileType(entity, file_type_value),
+            );
+        }
+
+        // on OwnedByFile Insert Event
+        for (user_key, entity) in events.read::<OwnedByFile>() {
+            let file_entity = owned_by_file_q.get(entity).unwrap().file_entity.get(&server).unwrap();
+            let file_key = entry_key_q.get(file_entity).unwrap();
+            let project_key = user_manager.user_session_data(&user_key).unwrap().project_key().unwrap();
+
+            info!(
+                "entity: `{:?}`, inserted OwnedByFile({:?})",
+                entity, file_entity
+            );
+
+            shape_waitlist.process_insert(
+                &mut server,
+                &mut git_manager,
+                &mut shape_manager,
+                ShapeWaitlistInsert::OwnedByFile(entity, project_key, file_key.clone()),
             );
         }
 
@@ -282,7 +268,6 @@ pub fn update_component_events(
     mut event_reader: EventReader<UpdateComponentEvents>,
     mut commands: Commands,
     mut server: Server,
-    user_manager: Res<UserManager>,
     mut git_manager: ResMut<GitManager>,
 ) {
     for events in event_reader.iter() {
@@ -295,15 +280,8 @@ pub fn update_component_events(
             // TODO!
         }
         // on Vertex3D Update Event
-        for (user_key, entity) in events.read::<Vertex3d>() {
-            handle_file_modify(
-                &mut commands,
-                &mut server,
-                &user_manager,
-                &mut git_manager,
-                &user_key,
-                &entity,
-            );
+        for (_, entity) in events.read::<Vertex3d>() {
+            git_manager.on_client_modify_file(&mut commands, &mut server, &entity);
         }
     }
 }

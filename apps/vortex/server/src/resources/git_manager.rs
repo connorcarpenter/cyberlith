@@ -9,6 +9,7 @@ use bevy_ecs::{
     system::{Commands, Resource, SystemState},
     world::World,
 };
+use bevy_ecs::system::ResMut;
 use bevy_log::info;
 use git2::{Cred, Repository, Tree};
 
@@ -24,13 +25,13 @@ use vortex_proto::{
 
 use crate::{
     config::GitConfig,
-    files::{post_process_networked_entities, FileReadOutput, FileWriter, MeshReader, SkelReader},
+    files::{ FileReadOutput, FileWriter, MeshReader, SkelReader},
     resources::{
         user_manager::UserSessionData, project::Project, ContentEntityData, FileEntryValue,
         ShapeManager, ShapeWaitlist, UserManager, project::ProjectKey,
     },
 };
-use crate::files::ShapeType;
+use crate::files::{load_content_entities, ShapeType};
 use crate::resources::FileSpace;
 
 #[derive(Resource)]
@@ -39,6 +40,8 @@ pub struct GitManager {
     projects: BigMap<ProjectKey, Project>,
     // get project key from username, should only be used on initialization
     project_keys: HashMap<String, ProjectKey>,
+    content_entity_keys: HashMap<Entity, (ProjectKey, FileEntryKey)>,
+    queued_client_modify_files: Vec<Entity>,
 }
 
 impl Default for GitManager {
@@ -47,6 +50,8 @@ impl Default for GitManager {
             config: None,
             projects: BigMap::new(),
             project_keys: HashMap::new(),
+            content_entity_keys: HashMap::new(),
+            queued_client_modify_files: Vec::new(),
         }
     }
 }
@@ -60,7 +65,7 @@ impl GitManager {
         self.project_keys.contains_key(project_owner_name)
     }
 
-    pub fn project_key(&self, project_owner_name: &str) -> Option<ProjectKey> {
+    pub fn project_key_from_name(&self, project_owner_name: &str) -> Option<ProjectKey> {
         self.project_keys.get(project_owner_name).cloned()
     }
 
@@ -91,21 +96,57 @@ impl GitManager {
         project.on_client_create_file(commands, server, file_name, file_entity, parent_file_key, file_key);
     }
 
-    pub(crate) fn on_client_modify_file(&mut self, commands: &mut Commands, server: &mut Server, project_key: &ProjectKey, file_key: &FileEntryKey) {
+    pub(crate) fn on_client_modify_file(&mut self, commands: &mut Commands, server: &mut Server, content_entity: &Entity) {
+
+        let (project_key, file_key) = self.content_entity_keys.get(content_entity).unwrap();
+
         let file_entity = self.file_entity(&project_key, &file_key).unwrap();
         let project = self.projects.get_mut(project_key).unwrap();
         project.on_client_modify_file(commands, server, file_key, &file_entity);
     }
 
-    pub(crate) fn on_insert_content_entity(&mut self, user_manager: &UserManager, user_key: &UserKey, entity: &Entity, shape_type: ShapeType) {
-        let user_session_data = user_manager.user_session_data(user_key).unwrap();
-        let project_key = user_session_data.project_key().unwrap();
-        let file_key = user_session_data.current_tab_file_key().unwrap();
-        let project = self.projects.get_mut(&project_key).unwrap();
-        project.on_insert_content_entity(&file_key, entity, shape_type);
+    pub(crate) fn queue_client_modify_file(&mut self, content_entity: &Entity) {
+        self.queued_client_modify_files.push(*content_entity);
     }
 
-    pub(crate) fn on_remove_content_entity(&mut self, user_manager: &UserManager, user_key: &UserKey, entity: &Entity) {
+    pub(crate) fn process_queued_actions(world: &mut World) {
+        let mut system_state: SystemState<(
+            Commands,
+            Server,
+            ResMut<GitManager>,
+        )> = SystemState::new(world);
+        let (
+            mut commands,
+            mut server,
+            mut git_manager,
+        ) = system_state.get_mut(world);
+
+        for entity in std::mem::take(&mut git_manager.queued_client_modify_files) {
+            git_manager.on_client_modify_file(&mut commands, &mut server, &entity);
+        }
+
+        system_state.apply(world);
+    }
+
+    pub(crate) fn on_client_insert_content_entity(&mut self, server: &mut Server, project_key: &ProjectKey, file_key: &FileEntryKey, entity: &Entity, shape_type: ShapeType) {
+
+        self.queue_client_modify_file(entity);
+
+        self.content_entity_keys.insert(*entity, (*project_key, file_key.clone()));
+
+        let project = self.projects.get_mut(&project_key).unwrap();
+        project.on_insert_content_entity(file_key, entity, shape_type);
+
+        let file_room_key = project.file_room_key(file_key).unwrap();
+        server.room_mut(&file_room_key).add_entity(entity);
+    }
+
+    pub(crate) fn on_client_remove_content_entity(&mut self, user_manager: &UserManager, user_key: &UserKey, entity: &Entity) {
+
+        self.queue_client_modify_file(entity);
+
+        self.content_entity_keys.remove(entity);
+
         let user_session_data = user_manager.user_session_data(user_key).unwrap();
         let project_key = user_session_data.project_key().unwrap();
         let file_key = user_session_data.current_tab_file_key().unwrap();
@@ -122,7 +163,6 @@ impl GitManager {
         &mut self,
         commands: &mut Commands,
         server: &mut Server,
-        shape_waitlist: &mut ShapeWaitlist,
         shape_manager: &mut ShapeManager,
         user_key: &UserKey,
         project_key: &ProjectKey,
@@ -131,14 +171,17 @@ impl GitManager {
         let Some(project) = self.projects.get_mut(project_key) else {
             panic!("Could not find project for user");
         };
-        project.user_join_filespace(
+        if let Some(new_content_entities) = project.user_join_filespace(
             commands,
             server,
-            shape_waitlist,
             shape_manager,
             user_key,
             file_key,
-        );
+        ) {
+            for entity in new_content_entities {
+                self.content_entity_keys.insert(entity, (*project_key, file_key.clone()));
+            }
+        }
     }
 
     pub fn create_project(
@@ -287,7 +330,7 @@ impl GitManager {
         };
         let project_room_key = project.room_key();
 
-        if let Some((key, value)) = project.rollback_changelist_entry(&user_key, world, message) {
+        if let Some((key, value)) = project.rollback_changelist_entry(world, message) {
             self.spawn_networked_entry_into_world(
                 world,
                 &user_project_key,

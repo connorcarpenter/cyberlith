@@ -8,10 +8,11 @@ use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 use vortex_proto::{FileExtension, resources::FileEntryKey, types::TabId};
 
 use crate::{
-    files::{post_process_networked_entities, FileReadOutput, MeshReader, ShapeType, SkelReader},
+    files::{ FileReadOutput, MeshReader, ShapeType, SkelReader},
     resources::{project::Project, ShapeManager, ShapeWaitlist},
 };
-use crate::files::FileReader;
+use crate::files::{FileReader, load_content_entities};
+use crate::resources::GitManager;
 
 #[derive(Clone)]
 pub struct ContentEntityData {
@@ -32,26 +33,9 @@ pub struct FileSpace {
 
 impl FileSpace {
     pub fn new(
-        commands: &mut Commands,
-        server: &mut Server,
-        shape_waitlist: &mut ShapeWaitlist,
-        shape_manager: &mut ShapeManager,
-        file_extension: &FileExtension,
         file_room_key: &RoomKey,
-        file_entity: &Entity,
-        bytes: Box<[u8]>,
+        content_entities: HashMap<Entity, ContentEntityData>,
     ) -> Self {
-
-        let content_entities = Self::load_content_entities(
-            commands,
-            server,
-            shape_waitlist,
-            shape_manager,
-            file_extension,
-            file_room_key,
-            file_entity,
-            bytes,
-        );
 
         Self {
             room_key: *file_room_key,
@@ -70,41 +54,6 @@ impl FileSpace {
 
     pub(crate) fn has_entity(&self, entity: &Entity) -> bool {
         self.content_entities.contains_key(entity)
-    }
-
-    fn load_content_entities(
-        commands: &mut Commands,
-        server: &mut Server,
-        shape_waitlist: &mut ShapeWaitlist,
-        shape_manager: &mut ShapeManager,
-        file_extension: &FileExtension,
-        file_room_key: &RoomKey,
-        file_entity: &Entity,
-        bytes: Box<[u8]>,
-    ) -> HashMap<Entity, ContentEntityData> {
-
-        // FileReader reads File's contents and spawns all Entities + Components
-        let read_output = file_extension.read(commands, server, &bytes);
-
-        let new_entities = match read_output {
-            FileReadOutput::Skel(entities) => {
-                SkelReader::post_process_entities(shape_waitlist, shape_manager, entities)
-            }
-            FileReadOutput::Mesh(shape_entities) => {
-                MeshReader::post_process_entities(shape_manager, shape_entities)
-            }
-        };
-
-        post_process_networked_entities(
-            commands,
-            server,
-            file_room_key,
-            &new_entities,
-            file_entity,
-            &file_extension,
-        );
-
-        new_entities
     }
 
     pub(crate) fn user_leave(&mut self) {
@@ -137,7 +86,6 @@ impl FileSpace {
         &mut self,
         commands: &mut Commands,
         server: &mut Server,
-        shape_waitlist: &mut ShapeWaitlist,
         shape_manager: &mut ShapeManager,
         file_extension: &FileExtension,
         file_key: &FileEntryKey,
@@ -165,10 +113,9 @@ impl FileSpace {
         }
 
         // respawn all entities
-        self.content_entities = Self::load_content_entities(
+        self.content_entities = load_content_entities(
             commands,
             server,
-            shape_waitlist,
             shape_manager,
             file_extension,
             &self.room_key,

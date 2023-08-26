@@ -2,32 +2,37 @@ use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{entity::Entity, system::Resource};
 use bevy_log::info;
+use naia_bevy_server::Server;
 
 use vortex_proto::components::FileTypeValue;
+use vortex_proto::resources::FileEntryKey;
+use crate::files::ShapeType;
+use crate::resources::project::ProjectKey;
 
-use crate::resources::ShapeManager;
+use crate::resources::{GitManager, ShapeManager, UserManager};
 
 pub enum ShapeWaitlistInsert {
+    //// shape
     Vertex(Entity),
-    ///////////Vertex
+    //// shape
     VertexRoot(Entity),
-    /////parent, edge, child
+    //// parent, edge, child
     Edge(Entity, Entity, Entity),
-    /////////Vertex
+    //// shape, filetype
     FileType(Entity, FileTypeValue),
-}
-
-#[derive(Clone, Copy)]
-enum ShapeType {
-    Vertex,
-    Edge,
+    //// shape, project key, file key
+    OwnedByFile(Entity, ProjectKey, FileEntryKey),
 }
 
 enum ShapeData {
-    SkelVertex(Option<(Entity, Entity)>),
-    SkelEdge,
-    MeshVertex,
-    MeshEdge(Entity, Entity),
+    // (ProjectKey, FileKey, Option<Edge, Parent>)
+    SkelVertex(ProjectKey, FileEntryKey, Option<(Entity, Entity)>),
+    // ProjectKey, FileKey
+    SkelEdge(ProjectKey, FileEntryKey),
+    // ProjectKey, FileKey
+    MeshVertex(ProjectKey, FileEntryKey),
+    // (ProjectKey, FileKey, Start, End)
+    MeshEdge(ProjectKey, FileEntryKey, Entity, Entity),
 }
 
 #[derive(Clone)]
@@ -36,6 +41,7 @@ pub struct ShapeWaitlistEntry {
     edge_and_parent_opt: Option<Option<(Entity, Entity)>>,
     edge_entities: Option<(Entity, Entity)>,
     file_type: Option<FileTypeValue>,
+    owned_by_file: Option<(ProjectKey, FileEntryKey)>,
 }
 
 impl ShapeWaitlistEntry {
@@ -45,21 +51,24 @@ impl ShapeWaitlistEntry {
             edge_and_parent_opt: None,
             edge_entities: None,
             file_type: None,
+            owned_by_file: None,
         }
     }
 
     fn is_ready(&self) -> bool {
         match (self.file_type, self.shape) {
             (Some(FileTypeValue::Skel), Some(ShapeType::Vertex)) => {
-                return self.edge_and_parent_opt.is_some();
+                return self.owned_by_file.is_some() && self.edge_and_parent_opt.is_some();
             }
             (Some(FileTypeValue::Skel), Some(ShapeType::Edge)) => {
-                return true;
+                return self.owned_by_file.is_some();
             }
             (Some(FileTypeValue::Mesh), Some(ShapeType::Vertex)) => {
-                return true;
+                return self.owned_by_file.is_some();
             }
-            (Some(FileTypeValue::Mesh), Some(ShapeType::Edge)) => self.edge_entities.is_some(),
+            (Some(FileTypeValue::Mesh), Some(ShapeType::Edge)) => {
+                self.owned_by_file.is_some() && self.edge_entities.is_some()
+            },
             _ => {
                 return false;
             }
@@ -93,20 +102,26 @@ impl ShapeWaitlistEntry {
         self.file_type = Some(file_type);
     }
 
+    fn set_owned_by_file(&mut self, project_key: ProjectKey, file_key: FileEntryKey) {
+        self.owned_by_file = Some((project_key, file_key));
+    }
+
     fn decompose(self) -> ShapeData {
+        let (project_key, file_key) = self.owned_by_file.unwrap();
+
         match (self.file_type, self.shape) {
             (Some(FileTypeValue::Skel), Some(ShapeType::Vertex)) => {
-                return ShapeData::SkelVertex(self.edge_and_parent_opt.unwrap());
+                return ShapeData::SkelVertex(project_key, file_key, self.edge_and_parent_opt.unwrap());
             }
             (Some(FileTypeValue::Skel), Some(ShapeType::Edge)) => {
-                return ShapeData::SkelEdge;
+                return ShapeData::SkelEdge(project_key, file_key);
             }
             (Some(FileTypeValue::Mesh), Some(ShapeType::Vertex)) => {
-                return ShapeData::MeshVertex;
+                return ShapeData::MeshVertex(project_key, file_key);
             }
             (Some(FileTypeValue::Mesh), Some(ShapeType::Edge)) => {
                 let (start, end) = self.edge_entities.unwrap();
-                return ShapeData::MeshEdge(start, end);
+                return ShapeData::MeshEdge(project_key, file_key, start, end);
             }
             _ => {
                 panic!("shouldn't be able to happen!");
@@ -136,18 +151,11 @@ impl Default for ShapeWaitlist {
 }
 
 impl ShapeWaitlist {
-    pub fn process_inserts(
-        &mut self,
-        shape_manager: &mut ShapeManager,
-        inserts: Vec<ShapeWaitlistInsert>,
-    ) {
-        for insert in inserts {
-            self.process_insert(shape_manager, insert);
-        }
-    }
 
     pub fn process_insert(
         &mut self,
+        server: &mut Server,
+        git_manager: &mut GitManager,
         shape_manager: &mut ShapeManager,
         insert: ShapeWaitlistInsert,
     ) {
@@ -201,14 +209,23 @@ impl ShapeWaitlist {
                 entry.set_shape_type(ShapeType::Vertex);
                 possibly_ready_entities.push(vertex_entity);
             }
-            ShapeWaitlistInsert::FileType(vertex_entity, file_type) => {
-                if !self.contains_key(&vertex_entity) {
-                    self.insert_incomplete(vertex_entity, ShapeWaitlistEntry::new());
+            ShapeWaitlistInsert::FileType(shape_entity, file_type) => {
+                if !self.contains_key(&shape_entity) {
+                    self.insert_incomplete(shape_entity, ShapeWaitlistEntry::new());
                 }
-                self.get_mut(&vertex_entity)
+                self.get_mut(&shape_entity)
                     .unwrap()
                     .set_file_type(file_type);
-                possibly_ready_entities.push(vertex_entity);
+                possibly_ready_entities.push(shape_entity);
+            }
+            ShapeWaitlistInsert::OwnedByFile(shape_entity, project_key, file_key) => {
+                if !self.contains_key(&shape_entity) {
+                    self.insert_incomplete(shape_entity, ShapeWaitlistEntry::new());
+                }
+                self.get_mut(&shape_entity)
+                    .unwrap()
+                    .set_owned_by_file(project_key, file_key);
+                possibly_ready_entities.push(shape_entity);
             }
         }
 
@@ -271,10 +288,16 @@ impl ShapeWaitlist {
                             continue;
                         }
                     }
+                    (FileTypeValue::Skel, ShapeType::Face) => {
+                        todo!();
+                    }
+                    (FileTypeValue::Mesh, ShapeType::Face) => {
+                        todo!();
+                    }
                 }
 
                 info!("processing shape {:?}", entity);
-                self.process_complete(shape_manager, entity, entry);
+                self.process_complete(server, git_manager, shape_manager, entity, entry);
             } else {
                 info!("entity `{:?}` is not ready yet...", possibly_ready_entity);
             }
@@ -283,6 +306,8 @@ impl ShapeWaitlist {
 
     fn process_complete(
         &mut self,
+        server: &mut Server,
+        git_manager: &mut GitManager,
         shape_manager: &mut ShapeManager,
         entity: Entity,
         entry: ShapeWaitlistEntry,
@@ -292,16 +317,19 @@ impl ShapeWaitlist {
         let data = entry.decompose();
 
         match data {
-            ShapeData::SkelVertex(edge_and_parent_opt) => {
+            ShapeData::SkelVertex(project_key, file_key, edge_and_parent_opt) => {
+                git_manager.on_client_insert_content_entity(server, &project_key, &file_key, &entity, ShapeType::Vertex);
                 shape_manager.on_create_skel_vertex(entity, edge_and_parent_opt);
             }
-            ShapeData::SkelEdge => {
-                //
+            ShapeData::SkelEdge(project_key, file_key) => {
+                git_manager.on_client_insert_content_entity(server, &project_key, &file_key, &entity, ShapeType::Edge);
             }
-            ShapeData::MeshVertex => {
+            ShapeData::MeshVertex(project_key, file_key) => {
+                git_manager.on_client_insert_content_entity(server, &project_key, &file_key, &entity, ShapeType::Vertex);
                 shape_manager.on_create_mesh_vertex(entity);
             }
-            ShapeData::MeshEdge(start, end) => {
+            ShapeData::MeshEdge(project_key, file_key, start, end) => {
+                git_manager.on_client_insert_content_entity(server, &project_key, &file_key, &entity, ShapeType::Edge);
                 shape_manager.on_create_mesh_edge(start, entity, end);
             }
         }
@@ -317,7 +345,7 @@ impl ShapeWaitlist {
                     "entity {:?} was waiting on parent {:?}. processing!",
                     child_entity, entity
                 );
-                self.process_complete(shape_manager, child_entity, child_entry);
+                self.process_complete(server, git_manager, shape_manager, child_entity, child_entry);
             }
         }
     }

@@ -43,7 +43,6 @@ pub fn message_events(
                     &mut server,
                     &mut user_manager,
                     &mut git_manager,
-                    &mut vertex_waitlist,
                     &mut shape_manager,
                     &key_query,
                     &user_key,

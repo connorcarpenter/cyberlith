@@ -14,6 +14,7 @@ use crate::{
     files::{MeshReader, MeshWriter, SkelReader, SkelWriter},
     resources::ContentEntityData,
 };
+use crate::resources::{GitManager, ShapeManager};
 
 pub trait FileWriter: Send + Sync {
     fn write(
@@ -101,7 +102,41 @@ impl From<ShapeTypeData> for ShapeType {
     }
 }
 
-pub fn post_process_networked_entities(
+pub fn load_content_entities(
+    commands: &mut Commands,
+    server: &mut Server,
+    shape_manager: &mut ShapeManager,
+    file_extension: &FileExtension,
+    file_room_key: &RoomKey,
+    file_entity: &Entity,
+    bytes: Box<[u8]>,
+) -> HashMap<Entity, ContentEntityData> {
+
+    // FileReader reads File's contents and spawns all Entities + Components
+    let read_output = file_extension.read(commands, server, &bytes);
+
+    let new_entities = match read_output {
+        FileReadOutput::Skel(entities) => {
+            SkelReader::post_process_entities(shape_manager, entities)
+        }
+        FileReadOutput::Mesh(shape_entities) => {
+            MeshReader::post_process_entities(shape_manager, shape_entities)
+        }
+    };
+
+    post_process_loaded_networked_entities(
+        commands,
+        server,
+        file_room_key,
+        &new_entities,
+        file_entity,
+        &file_extension,
+    );
+
+    new_entities
+}
+
+fn post_process_loaded_networked_entities(
     commands: &mut Commands,
     server: &mut Server,
     room_key: &RoomKey,
@@ -109,7 +144,7 @@ pub fn post_process_networked_entities(
     file_entity: &Entity,
     file_extension: &FileExtension,
 ) {
-    for (entity, _data) in entities.iter() {
+    for (entity, data) in entities.iter() {
 
         // associate all new Entities with the new Room
         server.room_mut(room_key).add_entity(entity);

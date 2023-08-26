@@ -98,7 +98,7 @@ pub fn insert_component_events(
             insert_vertex_root_event_writer.send(InsertComponentEvent::<VertexRoot>::new(entity));
         }
 
-        // on OwnedByTab Insert Event
+        // on OwnedByFile Insert Event
         for entity in events.read::<OwnedByFile>() {
             insert_owned_by_event_writer.send(InsertComponentEvent::<OwnedByFile>::new(entity));
         }
@@ -302,7 +302,7 @@ pub fn insert_vertex_events(
     for event in owned_by_events.iter() {
         let entity = event.entity;
 
-        info!("entity: {:?} - inserted OwnedByTab", entity);
+        info!("entity: {:?} - inserted OwnedByFile", entity);
 
         let owned_by_file = owned_by_tab_q.get(entity).unwrap();
         let file_entity = owned_by_file.file_entity.get(&client).unwrap();

@@ -48,7 +48,6 @@ impl TabManager {
         server: &mut Server,
         user_manager: &mut UserManager,
         git_manager: &mut GitManager,
-        shape_waitlist: &mut ShapeWaitlist,
         shape_manager: &mut ShapeManager,
         key_q: &Query<&FileEntryKey>,
         user_key: &UserKey,
@@ -78,7 +77,6 @@ impl TabManager {
         git_manager.user_join_filespace(
             commands,
             server,
-            shape_waitlist,
             shape_manager,
             user_key,
             &project_key,
@@ -110,7 +108,6 @@ impl TabManager {
             ResMut<TabManager>,
             ResMut<UserManager>,
             ResMut<GitManager>,
-            ResMut<ShapeWaitlist>,
             ResMut<ShapeManager>,
             Query<&FileEntryKey>,
         )> = SystemState::new(world);
@@ -120,7 +117,6 @@ impl TabManager {
             mut tab_manager,
             mut user_manager,
             mut git_manager,
-            mut vertex_waitlist,
             mut shape_manager,
             key_query,
         ) = system_state.get_mut(world);
@@ -133,7 +129,6 @@ impl TabManager {
                 &mut server,
                 &mut user_manager,
                 &mut git_manager,
-                &mut vertex_waitlist,
                 &mut shape_manager,
                 &key_query,
                 &user_key,
