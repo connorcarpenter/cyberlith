@@ -141,15 +141,14 @@ impl GitManager {
         server.room_mut(&file_room_key).add_entity(entity);
     }
 
-    pub(crate) fn on_client_remove_content_entity(&mut self, user_manager: &UserManager, user_key: &UserKey, entity: &Entity) {
+    pub(crate) fn on_client_remove_content_entity(&mut self, entity: &Entity) {
 
         self.queue_client_modify_file(entity);
 
-        self.content_entity_keys.remove(entity);
+        let Some((project_key, file_key)) = self.content_entity_keys.remove(entity) else {
+            panic!("Could not find content entity key for entity: {:?}", entity);
+        };
 
-        let user_session_data = user_manager.user_session_data(user_key).unwrap();
-        let project_key = user_session_data.project_key().unwrap();
-        let file_key = user_session_data.current_tab_file_key().unwrap();
         let project = self.projects.get_mut(&project_key).unwrap();
         project.on_remove_content_entity(&file_key, entity);
     }

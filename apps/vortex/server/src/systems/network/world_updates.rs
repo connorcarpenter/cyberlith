@@ -69,9 +69,9 @@ pub fn despawn_entity_events(
                 let other_entities_to_despawn =
                     shape_manager.on_delete_vertex(&mut commands, &mut server, entity);
 
-                git_manager.on_client_remove_content_entity(&user_manager, &user_key, &entity);
+                git_manager.on_client_remove_content_entity(&entity);
                 for other_entity in other_entities_to_despawn {
-                    git_manager.on_client_remove_content_entity(&user_manager, &user_key, &other_entity);
+                    git_manager.on_client_remove_content_entity(&other_entity);
                 }
             }
             (false, false, true) => {
@@ -80,7 +80,7 @@ pub fn despawn_entity_events(
 
                 shape_manager.on_delete_edge(entity);
 
-                git_manager.on_client_remove_content_entity(&user_manager, &user_key, &entity);
+                git_manager.on_client_remove_content_entity(&entity);
             }
             _ => {
                 panic!(
