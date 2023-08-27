@@ -376,7 +376,7 @@ pub fn update_component_events(
         }
         // on Vertex3d Update Event
         let mut updated_vertices = false;
-        for (_, entity) in events.read::<Vertex3d>() {
+        for (_, _) in events.read::<Vertex3d>() {
             updated_vertices = true;
             break;
         }

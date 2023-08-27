@@ -12,9 +12,11 @@ pub fn create_2d_edge_line(
     start: Vec2,
     end: Vec2,
     color: Color,
+    thickness: f32,
 ) -> RenderObjectBundle {
     let mesh = meshes.add(Line2d);
     let mut transform = Transform::default();
+    transform.scale.y = thickness;
     set_2d_line_transform(&mut transform, start, end);
     RenderObjectBundle {
         mesh,

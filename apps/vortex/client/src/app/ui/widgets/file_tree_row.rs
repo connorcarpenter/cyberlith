@@ -20,15 +20,14 @@ use render_egui::{
 use vortex_proto::{
     components::{
         ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-        OwnedByFile,
     },
     FileExtension,
 };
 
 use crate::app::{
-    components::file_system::{
+    components::{file_system::{
         ContextMenuAction, FileSystemParent, FileSystemUiState, ModalRequestType,
-    },
+    }, OwnedByFileLocal},
     resources::{
         action_stack::{Action, ActionStack},
         camera_manager::CameraManager,
@@ -45,7 +44,6 @@ use crate::app::{
         UiState,
     },
 };
-use crate::app::components::OwnedByFileLocal;
 
 pub struct FileTreeRowUiWidget;
 

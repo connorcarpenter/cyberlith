@@ -12,13 +12,10 @@ use render_api::{
 };
 use vortex_proto::components::FileTypeValue;
 
-use vortex_proto::types::TabId;
-
 use crate::app::{
-    components::{Edge3dLocal, Vertex2d},
+    components::{OwnedByFileLocal, Edge3dLocal, Vertex2d},
     resources::{camera_manager::CameraManager, shape_manager::ShapeManager},
 };
-use crate::app::components::OwnedByFileLocal;
 
 pub enum ShapeWaitlistInsert {
     Vertex,

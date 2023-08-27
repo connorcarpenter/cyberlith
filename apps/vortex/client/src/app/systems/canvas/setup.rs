@@ -13,12 +13,11 @@ use render_api::{
 use render_egui::EguiUserTextures;
 
 use crate::app::{
-    components::{HoverCircle, SelectCircle, SelectLine, Vertex2d},
+    components::{SelectTriangle, SelectCircle, SelectLine, Vertex2d},
     config::AppConfig,
     resources::{camera_manager::CameraManager, canvas::Canvas, shape_manager::ShapeManager},
     shapes::create_2d_edge_line,
 };
-use crate::app::components::{HoverTriangle, SelectTriangle};
 
 pub fn setup(
     config: Res<AppConfig>,
@@ -107,45 +106,6 @@ fn setup_2d_scene(
         camera_manager.camera_2d = Some(camera_entity);
     }
 
-    // hover circle
-    {
-        let mut hover_circle_components = RenderObjectBundle::circle(
-            meshes,
-            materials,
-            Vec2::ZERO,
-            HoverCircle::DISPLAY_RADIUS,
-            Vertex2d::SUBDIVISIONS,
-            Color::GREEN,
-            Some(1),
-        );
-        hover_circle_components.visibility.visible = false;
-        let hover_circle_entity = commands
-            .spawn(hover_circle_components)
-            .insert(camera_manager.layer_2d)
-            .insert(HoverCircle)
-            .id();
-        shape_manager.hover_circle_entity = Some(hover_circle_entity);
-    }
-
-    // hover triangle
-    {
-        let mut hover_triangle_components = RenderObjectBundle::equilateral_triangle(
-            meshes,
-            materials,
-            Vec2::ZERO,
-            HoverTriangle::DISPLAY_SIZE,
-            Color::GREEN,
-            Some(1),
-        );
-        hover_triangle_components.visibility.visible = false;
-        let hover_triangle_entity = commands
-            .spawn(hover_triangle_components)
-            .insert(camera_manager.layer_2d)
-            .insert(HoverTriangle)
-            .id();
-        shape_manager.hover_triangle_entity = Some(hover_triangle_entity);
-    }
-
     // select circle
     {
         let mut select_circle_components = RenderObjectBundle::circle(
@@ -188,7 +148,7 @@ fn setup_2d_scene(
     // select line
     {
         let mut select_line_components =
-            create_2d_edge_line(meshes, materials, Vec2::ZERO, Vec2::X, Color::WHITE);
+            create_2d_edge_line(meshes, materials, Vec2::ZERO, Vec2::X, Color::WHITE, SelectLine::THICKNESS);
         select_line_components.visibility.visible = false;
         let select_line_entity = commands
             .spawn(select_line_components)

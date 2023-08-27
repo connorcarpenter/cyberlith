@@ -1,5 +1,4 @@
 use bevy_ecs::{event::EventReader, system::ResMut};
-use bevy_log::info;
 
 use naia_bevy_client::events::{
     EntityAuthDeniedEvent, EntityAuthGrantedEvent, EntityAuthResetEvent,

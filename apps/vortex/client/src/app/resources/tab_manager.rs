@@ -16,21 +16,20 @@ use render_egui::{
 
 use vortex_proto::{
     channels::TabActionChannel,
-    components::{ChangelistStatus, FileSystemEntry, OwnedByFile},
+    components::{ChangelistStatus, FileSystemEntry},
     messages::{TabActionMessage, TabActionMessageType, TabOpenMessage},
     types::TabId,
     FileExtension,
 };
 
 use crate::app::{
-    components::file_system::FileSystemUiState,
+    components::{file_system::FileSystemUiState, OwnedByFileLocal},
     resources::{camera_manager::CameraManager, canvas::Canvas, shape_manager::ShapeManager},
     ui::widgets::colors::{
         FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
         TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED,
     },
 };
-use crate::app::components::OwnedByFileLocal;
 
 #[derive(Clone, Copy)]
 struct TabState {
@@ -253,15 +252,6 @@ impl TabManager {
             panic!("no current tab! don't use this method unless you know there is a current tab!");
         };
         current_entity
-    }
-
-    // panics if no current tab!
-    pub fn current_tab_id(&self) -> TabId {
-        let Some(current_entity) = self.current_tab else {
-            panic!("no current tab! don't use this method unless you know there is a current tab!");
-        };
-        let tab_state = self.tab_map.get(&current_entity).unwrap();
-        tab_state.tab_id
     }
 
     fn close_tab(

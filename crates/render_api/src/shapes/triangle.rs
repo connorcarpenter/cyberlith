@@ -40,12 +40,25 @@ impl Triangle {
 
 impl From<Triangle> for CpuMesh {
     fn from(tri: Triangle) -> Self {
-        let indices: Indices = Indices(Some(vec![0u16, 1, 2]));
+
+        let mut outer_a = Vec3::new(tri.a.0 as f32, tri.a.1 as f32, tri.a.2 as f32);
+        let mut outer_b = Vec3::new(tri.b.0 as f32, tri.b.1 as f32, tri.b.2 as f32);
+        let mut outer_c = Vec3::new(tri.c.0 as f32, tri.c.1 as f32, tri.c.2 as f32);
+
+        let center = Vec3::new(
+            (outer_a.x + outer_b.x + outer_c.x) / 3.0,
+            (outer_a.y + outer_b.y + outer_c.y) / 3.0,
+            (outer_a.z + outer_b.z + outer_c.z) / 3.0,
+        );
+
+        outer_a -= center;
+        outer_b -= center;
+        outer_c -= center;
+
         let positions = vec![
-            Vec3::new(tri.a.0 as f32, tri.a.1 as f32, tri.a.2 as f32),
-            Vec3::new(tri.b.0 as f32, tri.b.1 as f32, tri.b.2 as f32),
-            Vec3::new(tri.c.0 as f32, tri.c.1 as f32, tri.c.2 as f32),
+            outer_a, outer_b, outer_c
         ];
+        let indices: Indices = Indices(Some(vec![0u16, 1, 2]));
         let normals = vec![Vec3::Z, Vec3::Z, Vec3::Z];
 
         info!("Triangle Positions: {:?}", positions);
@@ -95,33 +108,35 @@ impl HollowTriangle {
 impl From<HollowTriangle> for CpuMesh {
     fn from(tri: HollowTriangle) -> Self {
 
-        let outer_a = Vec3::new(tri.a.0 as f32, tri.a.1 as f32, tri.a.2 as f32);
-        let outer_b = Vec3::new(tri.b.0 as f32, tri.b.1 as f32, tri.b.2 as f32);
-        let outer_c = Vec3::new(tri.c.0 as f32, tri.c.1 as f32, tri.c.2 as f32);
+        let mut outer_a = Vec3::new(tri.a.0 as f32, tri.a.1 as f32, tri.a.2 as f32);
+        let mut outer_b = Vec3::new(tri.b.0 as f32, tri.b.1 as f32, tri.b.2 as f32);
+        let mut outer_c = Vec3::new(tri.c.0 as f32, tri.c.1 as f32, tri.c.2 as f32);
 
         let center = Vec3::new(
             (outer_a.x + outer_b.x + outer_c.x) / 3.0,
             (outer_a.y + outer_b.y + outer_c.y) / 3.0,
             (outer_a.z + outer_b.z + outer_c.z) / 3.0,
         );
+        outer_a -= center;
+        outer_b -= center;
+        outer_c -= center;
 
         let thickness = 0.5;
-        let thickness_inv = 1.0 - thickness;
 
         let inner_a = Vec3::new(
-            (outer_a.x * thickness) + (center.x * thickness_inv),
-            (outer_a.y * thickness) + (center.y * thickness_inv),
-            (outer_a.z * thickness) + (center.z * thickness_inv),
+            outer_a.x * thickness,
+            outer_a.y * thickness,
+            outer_a.z * thickness,
         );
         let inner_b = Vec3::new(
-            (outer_b.x * thickness) + (center.x * thickness_inv),
-            (outer_b.y * thickness) + (center.y * thickness_inv),
-            (outer_b.z * thickness) + (center.z * thickness_inv),
+            outer_b.x * thickness,
+            outer_b.y * thickness,
+            outer_b.z * thickness,
         );
         let inner_c = Vec3::new(
-            (outer_c.x * thickness) + (center.x * thickness_inv),
-            (outer_c.y * thickness) + (center.y * thickness_inv),
-            (outer_c.z * thickness) + (center.z * thickness_inv),
+            outer_c.x * thickness,
+            outer_c.y * thickness,
+            outer_c.z * thickness,
         );
 
         let positions = vec![

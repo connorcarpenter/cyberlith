@@ -20,12 +20,11 @@ use vortex_proto::{
         ChangelistEntry, Edge3d, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
         FileType, FileTypeValue, OwnedByFile, Vertex3d,
     },
-    types::TabId,
     FileExtension,
 };
 
 use crate::app::{
-    components::{
+    components::{OwnedByFileLocal,
         file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
         Edge3dLocal, Vertex2d, VertexEntry, VertexTypeData,
     },
@@ -39,7 +38,6 @@ use crate::app::{
     },
     systems::file_post_process,
 };
-use crate::app::components::OwnedByFileLocal;
 
 #[derive(Clone)]
 pub enum Action {

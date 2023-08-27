@@ -18,13 +18,12 @@ use render_api::{
 };
 
 use vortex_proto::{
-    components::{FileTypeValue, OwnedByFile, Vertex3d, VertexRoot},
-    types::TabId,
+    components::{FileTypeValue, Vertex3d, VertexRoot},
 };
 
 use crate::app::{
     components::{
-        Compass, Edge2dLocal, Edge3dLocal, HoverCircle, SelectCircle, Vertex2d, VertexTypeData,
+        Compass, Edge2dLocal, Edge3dLocal, SelectCircle, Vertex2d, VertexTypeData, FaceIcon2d, OwnedByFileLocal, SelectTriangle
     },
     resources::{
         action_stack::{Action, ActionStack},
@@ -36,7 +35,6 @@ use crate::app::{
         create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,
     },
 };
-use crate::app::components::{FaceIcon2d, OwnedByFileLocal};
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub enum CanvasShape {
@@ -165,8 +163,6 @@ pub struct ShapeManager {
     selection_recalc: bool,
     hover_recalc: bool,
 
-    pub hover_circle_entity: Option<Entity>,
-    pub hover_triangle_entity: Option<Entity>,
     hovered_entity: Option<(Entity, CanvasShape)>,
 
     pub select_circle_entity: Option<Entity>,
@@ -198,8 +194,6 @@ impl Default for ShapeManager {
             selection_recalc: false,
             hover_recalc: false,
 
-            hover_circle_entity: None,
-            hover_triangle_entity: None,
             hovered_entity: None,
 
             select_circle_entity: None,
@@ -311,18 +305,21 @@ impl ShapeManager {
         }
     }
 
-    pub fn sync_vertices(
+    pub fn sync_shapes(
         &mut self,
         camera_manager: &CameraManager,
         current_tab_file_entity: Entity,
-        compass_q: &Query<&Compass>,
-        transform_q: &mut Query<&mut Transform>,
+
         camera_q: &Query<(&Camera, &Projection)>,
+        compass_q: &Query<&Compass>,
+
+        transform_q: &mut Query<&mut Transform>,
+        owned_by_q: &Query<&OwnedByFileLocal>,
+
         vertex_3d_q: &mut Query<(Entity, &mut Vertex3d)>,
         edge_2d_q: &Query<(Entity, &Edge2dLocal)>,
         edge_3d_q: &Query<(Entity, &Edge3dLocal)>,
         face_2d_q: &Query<(Entity, &FaceIcon2d)>,
-        owned_by_q: &Query<&OwnedByFileLocal>,
     ) {
         if self.shapes_recalc == 0 {
             return;
@@ -351,12 +348,18 @@ impl ShapeManager {
 
         let camera_3d_scale = camera_manager.camera_3d_scale();
 
-        let vertex_3d_scale = Vertex2d::RADIUS / camera_3d_scale;
         let vertex_2d_scale = Vertex2d::RADIUS * camera_3d_scale;
+        let hover_vertex_2d_scale = Vertex2d::HOVER_RADIUS * camera_3d_scale;
+        let compass_vertex_3d_scale = Compass::VERTEX_RADIUS / camera_3d_scale;
+        let compass_vertex_2d_scale = Vertex2d::RADIUS;
 
-        let edge_3d_scale = 1.0 / camera_3d_scale;
+        let edge_2d_scale = Edge2dLocal::NORMAL_THICKNESS * camera_3d_scale;
+        let hover_edge_2d_scale = Edge2dLocal::HOVER_THICKNESS * camera_3d_scale;
+        let compass_edge_3d_scale = Compass::EDGE_THICKNESS / camera_3d_scale;
+        let compass_edge_2d_scale = Edge2dLocal::NORMAL_THICKNESS;
 
-        let face_2d_scale =   FaceIcon2d::SIZE * camera_3d_scale;
+        let face_2d_scale = FaceIcon2d::SIZE * camera_3d_scale;
+        let hover_face_2d_scale = FaceIcon2d::HOVER_SIZE * camera_3d_scale;
 
         // update vertices
         for (vertex_3d_entity, vertex_3d) in vertex_3d_q.iter() {
@@ -377,9 +380,12 @@ impl ShapeManager {
             vertex_3d_transform.translation.z = vertex_3d.z().into();
 
             if compass_q.get(vertex_3d_entity).is_ok() {
-                vertex_3d_transform.scale = Vec3::splat(vertex_3d_scale);
+                vertex_3d_transform.scale = Vec3::splat(compass_vertex_3d_scale);
+            } else {
+                // vertex_3d_transform.scale = should put 3d vertex scale here?
             }
 
+            // update 2d vertices
             let (coords, depth) = convert_3d_to_2d(
                 &view_matrix,
                 &projection_matrix,
@@ -394,32 +400,22 @@ impl ShapeManager {
                 panic!("Vertex2d entity {:?} has no Transform", vertex_2d_entity);
             };
 
-            // update 2d vertices
             vertex_2d_transform.translation.x = coords.x;
             vertex_2d_transform.translation.y = coords.y;
             vertex_2d_transform.translation.z = depth;
 
             // update 2d compass
-            if compass_q.get(vertex_2d_entity).is_err() {
+            if compass_q.get(vertex_2d_entity).is_ok() {
+                vertex_2d_transform.scale = Vec3::splat(compass_vertex_2d_scale);
+            } else {
                 vertex_2d_transform.scale = Vec3::splat(vertex_2d_scale);
-            }
-
-            // update hover circle
-            if let Some((hover_entity, _)) = self.hovered_entity {
-                if hover_entity == vertex_2d_entity {
-                    let hover_circle_entity = self.hover_circle_entity.unwrap();
-                    let mut hover_circle_transform =
-                        transform_q.get_mut(hover_circle_entity).unwrap();
-                    hover_circle_transform.translation.x = coords.x;
-                    hover_circle_transform.translation.y = coords.y;
-                }
             }
         }
 
         // update 2d edges
-        for (edge_entity, edge_endpoints) in edge_2d_q.iter() {
+        for (edge_2d_entity, edge_endpoints) in edge_2d_q.iter() {
             let Some(end_3d_entity) = self.vertex_entity_2d_to_3d(&edge_endpoints.end) else {
-                warn!("Edge entity {:?} has no 3d endpoint entity", edge_entity);
+                warn!("Edge entity {:?} has no 3d endpoint entity", edge_2d_entity);
                 continue;
             };
 
@@ -428,34 +424,37 @@ impl ShapeManager {
                 continue;
             }
 
-            if let Ok(start_transform) = transform_q.get(edge_endpoints.start) {
-                let start_pos = start_transform.translation.truncate();
-
-                if let Ok(end_transform) = transform_q.get(edge_endpoints.end) {
-                    let end_pos = end_transform.translation.truncate();
-
-                    if let Ok(mut edge_transform) = transform_q.get_mut(edge_entity) {
-                        set_2d_line_transform(&mut edge_transform, start_pos, end_pos);
-
-                        if let Some((hover_entity, CanvasShape::Edge)) = self.hovered_entity {
-                            if hover_entity == edge_entity {
-                                edge_transform.scale.y = 3.0;
-                            }
-                        }
-                    } else {
-                        warn!("2d Edge entity {:?} has no transform", edge_entity);
-                    }
-                } else {
-                    warn!(
-                        "2d Edge end entity {:?} has no transform",
-                        edge_endpoints.end,
-                    );
-                }
-            } else {
+            let Ok(start_transform) = transform_q.get(edge_endpoints.start) else {
                 warn!(
                     "2d Edge start entity {:?} has no transform",
                     edge_endpoints.start,
                 );
+                continue;
+            };
+
+            let start_pos = start_transform.translation.truncate();
+
+            let Ok(end_transform) = transform_q.get(edge_endpoints.end) else {
+                warn!(
+                    "2d Edge end entity {:?} has no transform",
+                    edge_endpoints.end,
+                );
+                continue;
+            };
+
+            let end_pos = end_transform.translation.truncate();
+
+            let Ok(mut edge_2d_transform) = transform_q.get_mut(edge_2d_entity) else {
+                warn!("2d Edge entity {:?} has no transform", edge_2d_entity);
+                continue;
+            };
+
+            set_2d_line_transform(&mut edge_2d_transform, start_pos, end_pos);
+
+            if compass_q.get(edge_2d_entity).is_ok() {
+                edge_2d_transform.scale.y = compass_edge_2d_scale;
+            } else {
+                edge_2d_transform.scale.y = edge_2d_scale;
             }
         }
 
@@ -469,24 +468,24 @@ impl ShapeManager {
             let edge_start_entity = edge_endpoints.start;
             let edge_end_entity = edge_endpoints.end;
 
-            if let Ok(start_transform) = transform_q.get(edge_start_entity) {
-                let start_pos = start_transform.translation;
-                if let Ok(end_transform) = transform_q.get(edge_end_entity) {
-                    let end_pos = end_transform.translation;
-                    let mut edge_transform = transform_q.get_mut(edge_entity).unwrap();
-                    set_3d_line_transform(&mut edge_transform, start_pos, end_pos);
-                    if compass_q.get(edge_entity).is_ok() {
-                        edge_transform.scale.x = edge_3d_scale;
-                        edge_transform.scale.y = edge_3d_scale;
-                    }
-                } else {
-                    warn!("3d Edge end entity {:?} has no transform", edge_end_entity);
-                }
-            } else {
+            let Ok(start_transform) = transform_q.get(edge_start_entity) else {
                 warn!(
                     "3d Edge start entity {:?} has no transform",
                     edge_start_entity,
                 );
+                continue;
+            };
+            let start_pos = start_transform.translation;
+            let Ok(end_transform) = transform_q.get(edge_end_entity) else {
+                warn!("3d Edge end entity {:?} has no transform", edge_end_entity);
+                continue;
+            };
+            let end_pos = end_transform.translation;
+            let mut edge_transform = transform_q.get_mut(edge_entity).unwrap();
+            set_3d_line_transform(&mut edge_transform, start_pos, end_pos);
+            if compass_q.get(edge_entity).is_ok() {
+                edge_transform.scale.x = compass_edge_3d_scale;
+                edge_transform.scale.y = compass_edge_3d_scale;
             }
         }
 
@@ -523,6 +522,28 @@ impl ShapeManager {
                 face_transform.scale = Vec3::splat(face_2d_scale);
             } else {
                 warn!("Face entity {:?} has no transform", face_2d_entity);
+            }
+        }
+
+        // update hover circle / triangle
+        if let Some((hover_entity, shape)) = self.hovered_entity {
+            if self.hovered_entity != self.selected_shape {
+                match shape {
+                    CanvasShape::RootVertex | CanvasShape::Vertex => {
+                        let mut hover_vert_transform = transform_q.get_mut(hover_entity).unwrap();
+                        hover_vert_transform.scale.x = hover_vertex_2d_scale;
+                        hover_vert_transform.scale.y = hover_vertex_2d_scale;
+                    }
+                    CanvasShape::Edge => {
+                        let mut hover_edge_transform = transform_q.get_mut(hover_entity).unwrap();
+                        hover_edge_transform.scale.y = hover_edge_2d_scale;
+                    }
+                    CanvasShape::Face => {
+                        let mut hover_face_transform = transform_q.get_mut(hover_entity).unwrap();
+                        hover_face_transform.scale.x = hover_face_2d_scale;
+                        hover_face_transform.scale.y = hover_face_2d_scale;
+                    }
+                }
             }
         }
     }
@@ -918,9 +939,9 @@ impl ShapeManager {
 
         // edge 2d
         let shape_components = if arrows_not_lines {
-            create_2d_edge_arrow(meshes, materials, Vec2::ZERO, Vec2::X, color)
+            create_2d_edge_arrow(meshes, materials, Vec2::ZERO, Vec2::X, color, Edge2dLocal::NORMAL_THICKNESS)
         } else {
-            create_2d_edge_line(meshes, materials, Vec2::ZERO, Vec2::X, color)
+            create_2d_edge_line(meshes, materials, Vec2::ZERO, Vec2::X, color, Edge2dLocal::NORMAL_THICKNESS)
         };
         let edge_2d_entity = commands
             .spawn_empty()
@@ -1028,14 +1049,16 @@ impl ShapeManager {
 
     pub(crate) fn update_mouse_hover(
         &mut self,
-        camera_manager: &CameraManager,
         current_tab_file_entity: Entity,
         mouse_position: &Vec2,
+        camera_manager: &CameraManager,
+
         transform_q: &mut Query<(&mut Transform, Option<&Compass>)>,
-        visibility_q: &mut Query<&mut Visibility>,
         owned_by_q: &Query<&OwnedByFileLocal>,
+
         vertex_2d_q: &Query<(Entity, Option<&VertexRoot>), (With<Vertex2d>, Without<Compass>)>,
         edge_2d_q: &Query<(Entity, &Edge2dLocal), Without<Compass>>,
+        face_2d_q: &Query<(Entity, &FaceIcon2d)>,
     ) {
         if !self.hover_recalc {
             return;
@@ -1043,7 +1066,6 @@ impl ShapeManager {
         self.hover_recalc = false;
 
         let mut least_distance = f32::MAX;
-        let mut least_coords = Vec2::ZERO;
         let mut least_entity = None;
 
         // check for vertices
@@ -1058,7 +1080,6 @@ impl ShapeManager {
             let distance = vertex_position.distance(*mouse_position);
             if distance < least_distance {
                 least_distance = distance;
-                least_coords = vertex_position;
 
                 let shape = match root_opt {
                     Some(_) => CanvasShape::RootVertex,
@@ -1069,8 +1090,7 @@ impl ShapeManager {
             }
         }
 
-        let mut is_hovering =
-            least_distance <= (HoverCircle::DETECT_RADIUS * camera_manager.camera_3d_scale());
+        let mut is_hovering = least_distance <= (Vertex2d::DETECT_RADIUS * camera_manager.camera_3d_scale());
 
         // check for edges
         if !is_hovering {
@@ -1091,44 +1111,29 @@ impl ShapeManager {
                 }
             }
 
-            is_hovering =
-                least_distance <= (Edge2dLocal::HOVER_THICKNESS * camera_manager.camera_3d_scale());
+            is_hovering = least_distance <= (Edge2dLocal::DETECT_THICKNESS * camera_manager.camera_3d_scale());
         }
 
-        // check for edges
+        // check for faces
         if !is_hovering {
-            for (edge_entity, _) in edge_2d_q.iter() {
-                // check tab ownership, skip edges from other tabs
-                if !Self::is_owned_by_tab(current_tab_file_entity, owned_by_q, edge_entity) {
+            for (face_entity, _) in face_2d_q.iter() {
+                // check tab ownership, skip faces from other tabs
+                if !Self::is_owned_by_tab(current_tab_file_entity, owned_by_q, face_entity) {
                     continue;
                 }
 
-                let (edge_transform, _) = transform_q.get(edge_entity).unwrap();
-                let edge_start = edge_transform.translation.truncate();
-                let edge_end = get_2d_line_transform_endpoint(&edge_transform);
-
-                let distance = distance_to_2d_line(*mouse_position, edge_start, edge_end);
+                let (face_transform, _) = transform_q.get(face_entity).unwrap();
+                let face_position = face_transform.translation.truncate();
+                let distance = face_position.distance(*mouse_position);
                 if distance < least_distance {
                     least_distance = distance;
-                    least_entity = Some((edge_entity, CanvasShape::Edge));
+
+                    least_entity = Some((face_entity, CanvasShape::Face));
                 }
             }
 
-            is_hovering =
-                least_distance <= (Edge2dLocal::HOVER_THICKNESS * camera_manager.camera_3d_scale());
+            is_hovering = least_distance <= (FaceIcon2d::DETECT_RADIUS * camera_manager.camera_3d_scale());
         }
-
-        // just setting edge thickness back to normal ... is there a better way to do this?
-        for (edge_entity, _) in edge_2d_q.iter() {
-            let (mut edge_transform, _) = transform_q.get_mut(edge_entity).unwrap();
-            edge_transform.scale.y = camera_manager.camera_3d_scale();
-        }
-
-        // get hover circle
-        let hover_circle_entity = self.hover_circle_entity.unwrap();
-        let Ok(mut hover_circle_visibility) = visibility_q.get_mut(hover_circle_entity) else {
-            panic!("HoverCircle entity has no Transform or Visibility");
-        };
 
         // define old and new hovered states
         let old_hovered_entity = self.hovered_entity;
@@ -1139,56 +1144,9 @@ impl ShapeManager {
             return;
         }
 
-        // reset old hovered entity
-        match old_hovered_entity {
-            Some((_, CanvasShape::Vertex)) | Some((_, CanvasShape::RootVertex)) => {
-
-            }
-            Some((entity, CanvasShape::Edge)) => {
-
-            }
-            Some((entity, CanvasShape::Face)) => {
-
-            }
-            None => {
-
-            }
-        }
-
-        // handle new hovered entity
-        match next_hovered_entity {
-            Some((_, CanvasShape::Vertex)) | Some((_, CanvasShape::RootVertex)) => {
-                // hovering over vertex
-                let Ok((mut hover_circle_transform, _)) = transform_q.get_mut(hover_circle_entity) else {
-                    panic!("HoverCircle entity has no Transform");
-                };
-                hover_circle_transform.translation.x = least_coords.x;
-                hover_circle_transform.translation.y = least_coords.y;
-                hover_circle_transform.scale =
-                    Vec3::splat(HoverCircle::DISPLAY_RADIUS * camera_manager.camera_3d_scale());
-
-                hover_circle_visibility.visible = true;
-            }
-            Some((entity, CanvasShape::Edge)) => {
-                // hovering over edge
-                let Ok((mut edge_transform, _)) = transform_q.get_mut(entity) else {
-                    panic!("Edge entity has no Transform");
-                };
-                edge_transform.scale.y =
-                    Edge2dLocal::HOVER_THICKNESS * camera_manager.camera_3d_scale();
-
-                hover_circle_visibility.visible = false;
-            }
-            Some((entity, CanvasShape::Face)) => {
-                todo!();
-            }
-            None => {
-                hover_circle_visibility.visible = false;
-            }
-        }
-
         // apply
         self.hovered_entity = next_hovered_entity;
+        self.shapes_recalc = 1;
     }
 
     pub(crate) fn update_select_line(
@@ -1206,11 +1164,12 @@ impl ShapeManager {
         // update selected vertex line
         let select_line_entity = self.select_line_entity.unwrap();
         let select_circle_entity = self.select_circle_entity.unwrap();
+        let select_triangle_entity = self.select_triangle_entity.unwrap();
 
         //
 
         // update selected vertex circle & line
-        let Ok(mut select_shape_visibilities) = visibility_q.get_many_mut([select_circle_entity, select_line_entity]) else {
+        let Ok(mut select_shape_visibilities) = visibility_q.get_many_mut([select_circle_entity, select_triangle_entity, select_line_entity]) else {
             panic!("Select shape entities has no Visibility");
         };
 
@@ -1249,8 +1208,9 @@ impl ShapeManager {
                         Vec3::splat(SelectCircle::RADIUS * camera_manager.camera_3d_scale());
                 }
 
-                select_shape_visibilities[0].visible = true;
-                select_shape_visibilities[1].visible = true;
+                select_shape_visibilities[0].visible = true; // select circle is visible
+                select_shape_visibilities[1].visible = false; // no select triangle visible
+                select_shape_visibilities[2].visible = true; // select line is visible
             }
             Some((selected_edge_entity, CanvasShape::Edge)) => {
                 let selected_edge_transform = {
@@ -1272,16 +1232,37 @@ impl ShapeManager {
                     select_line_transform.translation.z += 1.0;
                 }
 
-                select_shape_visibilities[1].visible = true;
-
                 select_shape_visibilities[0].visible = false; // no select circle visible
+                select_shape_visibilities[1].visible = false; // no select triangle visible
+                select_shape_visibilities[2].visible = true; // select line is visible
             }
             Some((selected_face_entity, CanvasShape::Face)) => {
-                todo!();
+                let face_icon_transform = {
+                    let Ok(face_icon_transform) = transform_q.get(selected_face_entity) else {
+                        return;
+                    };
+                    *face_icon_transform
+                };
+
+                // sync select triangle transform
+                {
+                    let Ok(mut select_triangle_transform) = transform_q.get_mut(select_triangle_entity) else {
+                        panic!("Select shape entities has no Transform");
+                    };
+
+                    select_triangle_transform.translation = face_icon_transform.translation;
+                    select_triangle_transform.scale =
+                        Vec3::splat(SelectTriangle::SIZE * camera_manager.camera_3d_scale());
+                }
+
+                select_shape_visibilities[0].visible = false; // select circle is not visible
+                select_shape_visibilities[1].visible = true; // select triangle is visible
+                select_shape_visibilities[2].visible = false; // select line is not visible
             }
             None => {
-                select_shape_visibilities[0].visible = false;
-                select_shape_visibilities[1].visible = false;
+                select_shape_visibilities[0].visible = false; // no select circle visible
+                select_shape_visibilities[1].visible = false; // no select triangle visible
+                select_shape_visibilities[2].visible = false; // no select line visible
             }
         }
     }
@@ -1301,11 +1282,14 @@ impl ShapeManager {
         if shape_is_selected {
             match click_type {
                 ClickType::Left => {
-                    if let (_, CanvasShape::Edge) = self.selected_shape.unwrap() {
-                        // should not ever be able to attach something to an edge?
-                        // deselect edge
-                        action_stack.buffer_action(Action::SelectShape(self.hovered_entity));
-                        return;
+                    match self.selected_shape.unwrap() {
+                        (_, CanvasShape::Edge) | (_, CanvasShape::Face) => {
+                            // should not ever be able to attach something to an edge or face?
+                            // select hovered entity
+                            action_stack.buffer_action(Action::SelectShape(self.hovered_entity));
+                            return;
+                        }
+                        _ => {}
                     }
 
                     if cursor_is_hovering {
@@ -1315,11 +1299,14 @@ impl ShapeManager {
                             return;
                         }
 
-                        if let (_, CanvasShape::Edge) = self.hovered_entity.unwrap() {
-                            // should not ever be able to attach something to an edge?
-
-                            action_stack.buffer_action(Action::SelectShape(self.hovered_entity));
-                            return;
+                        match self.hovered_entity.unwrap() {
+                            (_, CanvasShape::Edge) | (_, CanvasShape::Face) => {
+                                // should not ever be able to attach something to an edge or face?
+                                // select hovered entity
+                                action_stack.buffer_action(Action::SelectShape(self.hovered_entity));
+                                return;
+                            }
+                            _ => {}
                         }
 
                         // link vertices together
@@ -1398,7 +1385,11 @@ impl ShapeManager {
                         }
                     }
                     (CanvasShape::Face, ClickType::Left) => {
-                        todo!();
+                        if self.current_file_type == FileTypeValue::Mesh {
+                            action_stack.buffer_action(Action::SelectShape(self.hovered_entity));
+                        } else {
+                            panic!("shouldn't be possible");
+                        }
                     }
                     (CanvasShape::Vertex, ClickType::Right)
                     | (CanvasShape::RootVertex, ClickType::Right) => {

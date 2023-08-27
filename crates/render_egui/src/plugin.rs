@@ -1,5 +1,4 @@
 use bevy_app::{App, First, MainScheduleOrder, Plugin, PostUpdate, Startup};
-use bevy_ecs::schedule::{IntoSystemSetConfig};
 
 use render_api::{RenderDraw, RenderSync};
 

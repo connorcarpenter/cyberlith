@@ -7,7 +7,10 @@ pub struct Edge2dLocal {
 }
 
 impl Edge2dLocal {
-    pub const HOVER_THICKNESS: f32 = 2.0;
+    pub const NORMAL_THICKNESS: f32 = 1.0;
+    pub const DETECT_THICKNESS: f32 = Edge2dLocal::NORMAL_THICKNESS + 1.0;
+    pub const HOVER_THICKNESS: f32 = Edge2dLocal::NORMAL_THICKNESS + 1.0;
+
     pub fn new(start: Entity, end: Entity) -> Self {
         Self { start, end }
     }
@@ -20,6 +23,8 @@ pub struct Edge3dLocal {
 }
 
 impl Edge3dLocal {
+    pub const NORMAL_THICKNESS: f32 = 1.0;
+
     pub fn new(start: Entity, end: Entity) -> Self {
         Self { start, end }
     }

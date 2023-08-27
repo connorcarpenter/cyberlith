@@ -12,6 +12,8 @@ pub struct FaceIcon2d {
 
 impl FaceIcon2d {
     pub const SIZE: f32 = 3.0;
+    pub const HOVER_SIZE: f32 = FaceIcon2d::SIZE + 1.0;
+    pub const DETECT_RADIUS: f32 = FaceIcon2d::SIZE + 1.0;
     pub const COLOR: Color = Color::GREEN;
 
     pub fn new(vertex_2d_a: Entity, vertex_2d_b: Entity, vertex_2d_c: Entity) -> Self {

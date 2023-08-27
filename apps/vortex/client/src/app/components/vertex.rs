@@ -11,6 +11,9 @@ pub struct Vertex2d;
 
 impl Vertex2d {
     pub const RADIUS: f32 = 3.0;
+    pub const DETECT_RADIUS: f32 = Vertex2d::RADIUS + 1.0;
+    pub const HOVER_RADIUS: f32 = Vertex2d::RADIUS + 1.0;
+
     pub const SUBDIVISIONS: u16 = 12;
     pub const CHILD_COLOR: Color = Color::GREEN;
     pub const ROOT_COLOR: Color = Color::LIGHT_GREEN;
@@ -59,6 +62,11 @@ impl VertexEntry {
 // for the editor compass
 #[derive(Component)]
 pub struct Compass;
+
+impl Compass {
+    pub const VERTEX_RADIUS: f32 = 3.0;
+    pub const EDGE_THICKNESS: f32 = 1.0;
+}
 
 // VertexTypeData
 #[derive(Clone)]
