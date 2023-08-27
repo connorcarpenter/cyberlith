@@ -166,9 +166,11 @@ pub struct ShapeManager {
     hover_recalc: bool,
 
     pub hover_circle_entity: Option<Entity>,
+    pub hover_triangle_entity: Option<Entity>,
     hovered_entity: Option<(Entity, CanvasShape)>,
 
     pub select_circle_entity: Option<Entity>,
+    pub select_triangle_entity: Option<Entity>,
     pub select_line_entity: Option<Entity>,
     selected_shape: Option<(Entity, CanvasShape)>,
 
@@ -197,9 +199,11 @@ impl Default for ShapeManager {
             hover_recalc: false,
 
             hover_circle_entity: None,
+            hover_triangle_entity: None,
             hovered_entity: None,
 
             select_circle_entity: None,
+            select_triangle_entity: None,
             select_line_entity: None,
             selected_shape: None,
 
@@ -1042,6 +1046,7 @@ impl ShapeManager {
         let mut least_coords = Vec2::ZERO;
         let mut least_entity = None;
 
+        // check for vertices
         for (vertex_entity, root_opt) in vertex_2d_q.iter() {
             // check tab ownership, skip vertices from other tabs
             if !Self::is_owned_by_tab(current_tab_file_entity, owned_by_q, vertex_entity) {
@@ -1067,12 +1072,7 @@ impl ShapeManager {
         let mut is_hovering =
             least_distance <= (HoverCircle::DETECT_RADIUS * camera_manager.camera_3d_scale());
 
-        // just setting edge thickness back to normal ... is there a better way to do this?
-        for (edge_entity, _) in edge_2d_q.iter() {
-            let (mut edge_transform, _) = transform_q.get_mut(edge_entity).unwrap();
-            edge_transform.scale.y = camera_manager.camera_3d_scale();
-        }
-
+        // check for edges
         if !is_hovering {
             for (edge_entity, _) in edge_2d_q.iter() {
                 // check tab ownership, skip edges from other tabs
@@ -1095,48 +1095,100 @@ impl ShapeManager {
                 least_distance <= (Edge2dLocal::HOVER_THICKNESS * camera_manager.camera_3d_scale());
         }
 
+        // check for edges
+        if !is_hovering {
+            for (edge_entity, _) in edge_2d_q.iter() {
+                // check tab ownership, skip edges from other tabs
+                if !Self::is_owned_by_tab(current_tab_file_entity, owned_by_q, edge_entity) {
+                    continue;
+                }
+
+                let (edge_transform, _) = transform_q.get(edge_entity).unwrap();
+                let edge_start = edge_transform.translation.truncate();
+                let edge_end = get_2d_line_transform_endpoint(&edge_transform);
+
+                let distance = distance_to_2d_line(*mouse_position, edge_start, edge_end);
+                if distance < least_distance {
+                    least_distance = distance;
+                    least_entity = Some((edge_entity, CanvasShape::Edge));
+                }
+            }
+
+            is_hovering =
+                least_distance <= (Edge2dLocal::HOVER_THICKNESS * camera_manager.camera_3d_scale());
+        }
+
+        // just setting edge thickness back to normal ... is there a better way to do this?
+        for (edge_entity, _) in edge_2d_q.iter() {
+            let (mut edge_transform, _) = transform_q.get_mut(edge_entity).unwrap();
+            edge_transform.scale.y = camera_manager.camera_3d_scale();
+        }
+
+        // get hover circle
         let hover_circle_entity = self.hover_circle_entity.unwrap();
         let Ok(mut hover_circle_visibility) = visibility_q.get_mut(hover_circle_entity) else {
             panic!("HoverCircle entity has no Transform or Visibility");
         };
 
-        if is_hovering {
-            self.hovered_entity = least_entity;
+        // define old and new hovered states
+        let old_hovered_entity = self.hovered_entity;
+        let next_hovered_entity = if is_hovering { least_entity } else { None };
 
-            match self.hovered_entity {
-                Some((_, CanvasShape::Vertex)) | Some((_, CanvasShape::RootVertex)) => {
-                    // hovering over vertex
-                    let Ok((mut hover_circle_transform, _)) = transform_q.get_mut(hover_circle_entity) else {
-                        panic!("HoverCircle entity has no Transform");
-                    };
-                    hover_circle_transform.translation.x = least_coords.x;
-                    hover_circle_transform.translation.y = least_coords.y;
-                    hover_circle_transform.scale =
-                        Vec3::splat(HoverCircle::DISPLAY_RADIUS * camera_manager.camera_3d_scale());
-
-                    hover_circle_visibility.visible = true;
-                }
-                Some((entity, CanvasShape::Edge)) => {
-                    // hovering over edge
-                    let Ok((mut edge_transform, _)) = transform_q.get_mut(entity) else {
-                        panic!("Edge entity has no Transform");
-                    };
-                    edge_transform.scale.y =
-                        Edge2dLocal::HOVER_THICKNESS * camera_manager.camera_3d_scale();
-
-                    hover_circle_visibility.visible = false;
-                }
-                Some((entity, CanvasShape::Face)) => {
-                    todo!();
-                }
-                None => {
-                    panic!("impossible?");
-                }
-            }
-        } else {
-            self.hovered_entity = None;
-            hover_circle_visibility.visible = false;
+        // hover state did not change
+        if old_hovered_entity == next_hovered_entity {
+            return;
         }
+
+        // reset old hovered entity
+        match old_hovered_entity {
+            Some((_, CanvasShape::Vertex)) | Some((_, CanvasShape::RootVertex)) => {
+
+            }
+            Some((entity, CanvasShape::Edge)) => {
+
+            }
+            Some((entity, CanvasShape::Face)) => {
+
+            }
+            None => {
+
+            }
+        }
+
+        // handle new hovered entity
+        match next_hovered_entity {
+            Some((_, CanvasShape::Vertex)) | Some((_, CanvasShape::RootVertex)) => {
+                // hovering over vertex
+                let Ok((mut hover_circle_transform, _)) = transform_q.get_mut(hover_circle_entity) else {
+                    panic!("HoverCircle entity has no Transform");
+                };
+                hover_circle_transform.translation.x = least_coords.x;
+                hover_circle_transform.translation.y = least_coords.y;
+                hover_circle_transform.scale =
+                    Vec3::splat(HoverCircle::DISPLAY_RADIUS * camera_manager.camera_3d_scale());
+
+                hover_circle_visibility.visible = true;
+            }
+            Some((entity, CanvasShape::Edge)) => {
+                // hovering over edge
+                let Ok((mut edge_transform, _)) = transform_q.get_mut(entity) else {
+                    panic!("Edge entity has no Transform");
+                };
+                edge_transform.scale.y =
+                    Edge2dLocal::HOVER_THICKNESS * camera_manager.camera_3d_scale();
+
+                hover_circle_visibility.visible = false;
+            }
+            Some((entity, CanvasShape::Face)) => {
+                todo!();
+            }
+            None => {
+                hover_circle_visibility.visible = false;
+            }
+        }
+
+        // apply
+        self.hovered_entity = next_hovered_entity;
     }
 
     pub(crate) fn update_select_line(

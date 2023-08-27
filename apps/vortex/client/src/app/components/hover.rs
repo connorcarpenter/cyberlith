@@ -11,3 +11,13 @@ impl HoverCircle {
     pub const DISPLAY_RADIUS: f32 = 8.0;
     pub const DETECT_RADIUS: f32 = Vertex2d::RADIUS + 1.0;
 }
+
+// Just a marker for the hover triangle
+
+#[derive(Component)]
+pub struct HoverTriangle;
+
+impl HoverTriangle {
+    pub const DISPLAY_SIZE: f32 = 8.0;
+    pub const DETECT_RADIUS: f32 = Vertex2d::RADIUS + 1.0;
+}

@@ -18,6 +18,7 @@ use crate::app::{
     resources::{camera_manager::CameraManager, canvas::Canvas, shape_manager::ShapeManager},
     shapes::create_2d_edge_line,
 };
+use crate::app::components::{HoverTriangle, SelectTriangle};
 
 pub fn setup(
     config: Res<AppConfig>,
@@ -79,75 +80,123 @@ fn setup_2d_scene(
     camera_manager.layer_2d = RenderLayers::layer(2);
 
     // light
-    commands
-        .spawn(AmbientLight {
-            intensity: 1.0,
-            color: Color::WHITE,
-            ..Default::default()
-        })
-        .insert(camera_manager.layer_2d);
+    {
+        commands
+            .spawn(AmbientLight {
+                intensity: 1.0,
+                color: Color::WHITE,
+                ..Default::default()
+            })
+            .insert(camera_manager.layer_2d);
+    }
 
     // camera
-    let mut camera_bundle = CameraBundle::new_2d(&Viewport::new_at_origin(
-        texture_size.x as u32,
-        texture_size.y as u32,
-    ));
-    camera_bundle.camera.target = RenderTarget::Image(canvas_texture_handle);
-    camera_bundle.camera.is_active = false;
-    camera_bundle.camera.order = 1;
-    let camera_entity = commands
-        .spawn(camera_bundle)
-        .insert(camera_manager.layer_2d)
-        .id();
+    {
+        let mut camera_bundle = CameraBundle::new_2d(&Viewport::new_at_origin(
+            texture_size.x as u32,
+            texture_size.y as u32,
+        ));
+        camera_bundle.camera.target = RenderTarget::Image(canvas_texture_handle);
+        camera_bundle.camera.is_active = false;
+        camera_bundle.camera.order = 1;
+        let camera_entity = commands
+            .spawn(camera_bundle)
+            .insert(camera_manager.layer_2d)
+            .id();
 
-    camera_manager.camera_2d = Some(camera_entity);
+        camera_manager.camera_2d = Some(camera_entity);
+    }
 
     // hover circle
-    let mut hover_circle_components = RenderObjectBundle::circle(
-        meshes,
-        materials,
-        Vec2::ZERO,
-        HoverCircle::DISPLAY_RADIUS,
-        Vertex2d::SUBDIVISIONS,
-        Color::GREEN,
-        Some(1),
-    );
-    hover_circle_components.visibility.visible = false;
-    let hover_circle_entity = commands
-        .spawn(hover_circle_components)
-        .insert(camera_manager.layer_2d)
-        .insert(HoverCircle)
-        .id();
-    shape_manager.hover_circle_entity = Some(hover_circle_entity);
+    {
+        let mut hover_circle_components = RenderObjectBundle::circle(
+            meshes,
+            materials,
+            Vec2::ZERO,
+            HoverCircle::DISPLAY_RADIUS,
+            Vertex2d::SUBDIVISIONS,
+            Color::GREEN,
+            Some(1),
+        );
+        hover_circle_components.visibility.visible = false;
+        let hover_circle_entity = commands
+            .spawn(hover_circle_components)
+            .insert(camera_manager.layer_2d)
+            .insert(HoverCircle)
+            .id();
+        shape_manager.hover_circle_entity = Some(hover_circle_entity);
+    }
+
+    // hover triangle
+    {
+        let mut hover_triangle_components = RenderObjectBundle::equilateral_triangle(
+            meshes,
+            materials,
+            Vec2::ZERO,
+            HoverTriangle::DISPLAY_SIZE,
+            Color::GREEN,
+            Some(1),
+        );
+        hover_triangle_components.visibility.visible = false;
+        let hover_triangle_entity = commands
+            .spawn(hover_triangle_components)
+            .insert(camera_manager.layer_2d)
+            .insert(HoverTriangle)
+            .id();
+        shape_manager.hover_triangle_entity = Some(hover_triangle_entity);
+    }
 
     // select circle
-    let mut select_circle_components = RenderObjectBundle::circle(
-        meshes,
-        materials,
-        Vec2::ZERO,
-        SelectCircle::RADIUS,
-        Vertex2d::SUBDIVISIONS,
-        Color::WHITE,
-        Some(1),
-    );
-    select_circle_components.visibility.visible = false;
-    let select_circle_entity = commands
-        .spawn(select_circle_components)
-        .insert(camera_manager.layer_2d)
-        .insert(SelectCircle)
-        .id();
-    shape_manager.select_circle_entity = Some(select_circle_entity);
+    {
+        let mut select_circle_components = RenderObjectBundle::circle(
+            meshes,
+            materials,
+            Vec2::ZERO,
+            SelectCircle::RADIUS,
+            Vertex2d::SUBDIVISIONS,
+            Color::WHITE,
+            Some(1),
+        );
+        select_circle_components.visibility.visible = false;
+        let select_circle_entity = commands
+            .spawn(select_circle_components)
+            .insert(camera_manager.layer_2d)
+            .insert(SelectCircle)
+            .id();
+        shape_manager.select_circle_entity = Some(select_circle_entity);
+    }
+
+    // select triangle
+    {
+        let mut select_triangle_components = RenderObjectBundle::equilateral_triangle(
+            meshes,
+            materials,
+            Vec2::ZERO,
+            SelectTriangle::SIZE,
+            Color::WHITE,
+            Some(1),
+        );
+        select_triangle_components.visibility.visible = false;
+        let select_triangle_entity = commands
+            .spawn(select_triangle_components)
+            .insert(camera_manager.layer_2d)
+            .insert(SelectTriangle)
+            .id();
+        shape_manager.select_triangle_entity = Some(select_triangle_entity);
+    }
 
     // select line
-    let mut select_line_components =
-        create_2d_edge_line(meshes, materials, Vec2::ZERO, Vec2::X, Color::WHITE);
-    select_line_components.visibility.visible = false;
-    let select_line_entity = commands
-        .spawn(select_line_components)
-        .insert(camera_manager.layer_2d)
-        .insert(SelectLine)
-        .id();
-    shape_manager.select_line_entity = Some(select_line_entity);
+    {
+        let mut select_line_components =
+            create_2d_edge_line(meshes, materials, Vec2::ZERO, Vec2::X, Color::WHITE);
+        select_line_components.visibility.visible = false;
+        let select_line_entity = commands
+            .spawn(select_line_components)
+            .insert(camera_manager.layer_2d)
+            .insert(SelectLine)
+            .id();
+        shape_manager.select_line_entity = Some(select_line_entity);
+    }
 }
 
 fn setup_3d_scene(
