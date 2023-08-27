@@ -24,9 +24,9 @@ use vortex_proto::{
 };
 
 use crate::app::{
-    components::{OwnedByFileLocal,
+    components::{
         file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
-        Edge3dLocal, Vertex2d, VertexEntry, VertexTypeData,
+        Edge3dLocal, OwnedByFileLocal, Vertex2d, VertexEntry, VertexTypeData,
     },
     resources::{
         camera_manager::CameraManager,
@@ -667,7 +667,10 @@ impl ActionStack {
 
                 match &vertex_type_data {
                     VertexTypeData::Skel(parent_entity, _) => {
-                        info!("CreateVertexSkel(parent: {:?}, position: {:?})", parent_entity, position);
+                        info!(
+                            "CreateVertexSkel(parent: {:?}, position: {:?})",
+                            parent_entity, position
+                        );
                     }
                     VertexTypeData::Mesh(_) => {
                         info!("CreateVertexMesh(position: {:?})", position);
@@ -991,7 +994,10 @@ impl ActionStack {
                 )];
             }
             Action::CreateEdge(vertex_2d_entity_a, vertex_2d_entity_b, old_edge_entities_opt) => {
-                info!("CreateEdge(vertex_a: {:?}, vertex_b: {:?})", vertex_2d_entity_a, vertex_2d_entity_b);
+                info!(
+                    "CreateEdge(vertex_a: {:?}, vertex_b: {:?})",
+                    vertex_2d_entity_a, vertex_2d_entity_b
+                );
 
                 let mut entities_to_release = Vec::new();
                 let deselected_vertex_2d_entity_store;
@@ -1404,7 +1410,9 @@ impl ActionStack {
     ) -> (Entity, Entity) {
         // create new 3d vertex
         let mut owned_by_file_component = OwnedByFile::new();
-        owned_by_file_component.file_entity.set(client, &file_entity);
+        owned_by_file_component
+            .file_entity
+            .set(client, &file_entity);
         let new_vertex_3d_entity = commands
             .spawn_empty()
             .enable_replication(client)
@@ -1459,7 +1467,9 @@ impl ActionStack {
             .end
             .set(client, &child_vertex_3d_entity);
         let mut owned_by_file_component = OwnedByFile::new();
-        owned_by_file_component.file_entity.set(client, &file_entity);
+        owned_by_file_component
+            .file_entity
+            .set(client, &file_entity);
         let new_edge_3d_entity = commands
             .spawn_empty()
             .enable_replication(client)

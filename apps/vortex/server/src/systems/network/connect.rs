@@ -31,11 +31,16 @@ pub fn connect_events(
             git_manager.create_project(&mut commands, &mut server, user_key, project_owner_name)
         } else {
             // not the first Client logged in as this user
-            git_manager.project_key_from_name(project_owner_name).unwrap()
+            git_manager
+                .project_key_from_name(project_owner_name)
+                .unwrap()
         };
 
         // add project key to session data
-        user_manager.user_session_data_mut(user_key).unwrap().set_project_key(project_key);
+        user_manager
+            .user_session_data_mut(user_key)
+            .unwrap()
+            .set_project_key(project_key);
 
         // current user enters project room
         let project_room_key = git_manager.project(&project_key).unwrap().room_key();

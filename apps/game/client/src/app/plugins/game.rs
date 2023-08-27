@@ -6,16 +6,17 @@ use bevy_ecs::{
 };
 
 use math::Vec3;
+
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
     components::{
-        AmbientLight, Camera, CameraBundle, DirectionalLight, PerspectiveProjection, Projection,
-        RenderObjectBundle, Transform,
+        AmbientLight, Camera, CameraBundle, ClearOperation, DirectionalLight,
+        OrthographicProjection, Projection, RenderLayers, RenderObjectBundle, RenderTarget,
+        Transform, Viewport,
     },
     resources::WindowSettings,
     shapes, Assets, Window,
 };
-use render_api::components::{ClearOperation, OrthographicProjection, PointLight, RenderLayers, RenderTarget, Viewport};
 
 #[derive(Component)]
 pub struct CubeMarker;
@@ -80,52 +81,52 @@ fn setup(
         .insert(CubeMarker)
         .insert(layer);
     // light
-    commands.spawn(AmbientLight {
-        intensity: 0.1,
-        color: Color::WHITE,
-        ..Default::default()
-    })
-        .insert(layer);;
+    commands
+        .spawn(AmbientLight {
+            intensity: 0.1,
+            color: Color::WHITE,
+            ..Default::default()
+        })
+        .insert(layer);
     // commands.spawn(PointLight {
     //     position: Vec3::new(50.0, 50.0, 50.0),
     //     intensity: 5.0,
     //     color: Color::RED,
     //     ..Default::default()
     // }).insert(layer);
-    commands.spawn(DirectionalLight {
-        direction: Vec3::new(12.0, 45.0, 91.0),
-        intensity: 2.0,
-        color: Color::WHITE,
-    })
-        .insert(layer);;
+    commands
+        .spawn(DirectionalLight {
+            direction: Vec3::new(12.0, 45.0, 91.0),
+            intensity: 2.0,
+            color: Color::WHITE,
+        })
+        .insert(layer);
     // camera
-    commands.spawn(CameraBundle {
-        camera: Camera {
-            viewport: Some(Viewport::new_at_origin(
-                1280, 720,
-            )),
-            order: 0,
-            clear_operation: ClearOperation::from_rgba(0.0, 0.0, 0.0, 1.0),
-            target: RenderTarget::Screen,
-            ..Default::default()
-        },
-        transform: Transform::from_xyz(100.0, 100.0, 0.0).looking_at(Vec3::ZERO, Vec3::Y),
-        projection: Projection::Orthographic(OrthographicProjection {
-            height: 720.0,
-            near: -1000.0,
-            far: 1000.0,
-            ..Default::default()
-        }
-        //  projection: Projection::Perspective(PerspectiveProjection {
-        //              fov: 45.0,
-        //              near: 0.0,
-        //              far: 500.0,
-        //              ..Default::default()
-        //          }
-        ),
-
-    })
-        .insert(layer);;
+    commands
+        .spawn(CameraBundle {
+            camera: Camera {
+                viewport: Some(Viewport::new_at_origin(1280, 720)),
+                order: 0,
+                clear_operation: ClearOperation::from_rgba(0.0, 0.0, 0.0, 1.0),
+                target: RenderTarget::Screen,
+                ..Default::default()
+            },
+            transform: Transform::from_xyz(100.0, 100.0, 0.0).looking_at(Vec3::ZERO, Vec3::Y),
+            projection: Projection::Orthographic(
+                OrthographicProjection {
+                    height: 720.0,
+                    near: -1000.0,
+                    far: 1000.0,
+                    ..Default::default()
+                }, //  projection: Projection::Perspective(PerspectiveProjection {
+                   //              fov: 45.0,
+                   //              near: 0.0,
+                   //              far: 500.0,
+                   //              ..Default::default()
+                   //          }
+            ),
+        })
+        .insert(layer);
 }
 
 fn step(mut cube_q: Query<&mut Transform, With<CubeMarker>>, mut rotation: Local<f32>) {

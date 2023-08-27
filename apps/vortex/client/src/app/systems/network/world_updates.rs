@@ -325,7 +325,10 @@ pub fn insert_vertex_events(
         let file_type = file_type_q.get(entity).unwrap();
         let file_type_value = *file_type.value;
 
-        info!("entity: {:?} - inserted FileType::{:?}", entity, file_type_value);
+        info!(
+            "entity: {:?} - inserted FileType::{:?}",
+            entity, file_type_value
+        );
 
         shape_waitlist.process_insert(
             &mut commands,

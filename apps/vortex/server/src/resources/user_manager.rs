@@ -1,14 +1,12 @@
 use std::collections::HashMap;
-use bevy_ecs::entity::Entity;
 
-use bevy_ecs::system::Resource;
+use bevy_ecs::{entity::Entity, system::Resource};
 use bevy_log::{info, warn};
-use naia_bevy_server::{RoomKey, Server, UserKey};
-use vortex_proto::resources::FileEntryKey;
-use vortex_proto::types::TabId;
 
-use crate::resources::project::ProjectKey;
-use crate::resources::{ContentEntityData, FileSpace, GitManager, UserTabState};
+use naia_bevy_server::{Server, UserKey};
+use vortex_proto::{resources::FileEntryKey, types::TabId};
+
+use crate::resources::{project::ProjectKey, ContentEntityData, GitManager, UserTabState};
 
 pub struct UserSessionData {
     // used to index into permanent data
@@ -87,7 +85,12 @@ pub struct UserPermanentData {
 }
 
 impl UserPermanentData {
-    pub fn new(username: &str, email: &str, password: &str, starting_project_owner_name: &str) -> Self {
+    pub fn new(
+        username: &str,
+        email: &str,
+        password: &str,
+        starting_project_owner_name: &str,
+    ) -> Self {
         Self {
             username: username.to_string(),
             email: email.to_string(),
@@ -119,13 +122,23 @@ impl Default for UserManager {
         // Connor
         credentials.insert(
             "connorcarpenter".to_string(),
-            UserPermanentData::new("connorcarpenter", "connorcarpenter@gmail.com", "greattobealive!", "connorcarpenter"),
+            UserPermanentData::new(
+                "connorcarpenter",
+                "connorcarpenter@gmail.com",
+                "greattobealive!",
+                "connorcarpenter",
+            ),
         );
 
         // Brendon?
         credentials.insert(
             "brendoncarpenter".to_string(),
-            UserPermanentData::new("brendoncarpenter", "brendon.e.carpenter@gmail.com", "greattobealive!", "connorcarpenter"),
+            UserPermanentData::new(
+                "brendoncarpenter",
+                "brendon.e.carpenter@gmail.com",
+                "greattobealive!",
+                "connorcarpenter",
+            ),
         );
 
         // TODO: add more users here? get from database?
@@ -179,7 +192,10 @@ impl UserManager {
             panic!("user not found");
         };
         let project_owner_name = user_data.starting_project_owner_name.clone();
-        self.user_sessions.insert(*user_key, UserSessionData::new(user_name, &project_owner_name));
+        self.user_sessions.insert(
+            *user_key,
+            UserSessionData::new(user_name, &project_owner_name),
+        );
     }
 
     pub fn logout_user(&mut self, user_key: &UserKey) {
@@ -193,8 +209,13 @@ impl UserManager {
         user_session.open_tab(tab_id, file_key);
     }
 
-    pub(crate) fn close_tab(&mut self, server: &mut Server, git_manager: &mut GitManager, user_key: &UserKey, tab_id: &TabId) -> (ProjectKey, FileEntryKey, HashMap<Entity, ContentEntityData>) {
-
+    pub(crate) fn close_tab(
+        &mut self,
+        server: &mut Server,
+        git_manager: &mut GitManager,
+        user_key: &UserKey,
+        tab_id: &TabId,
+    ) -> (ProjectKey, FileEntryKey, HashMap<Entity, ContentEntityData>) {
         let Some(user_session) = self.user_sessions.get_mut(user_key) else {
             panic!("User does not exist!");
         };
@@ -211,11 +232,7 @@ impl UserManager {
         (project_key, file_key, content_entities)
     }
 
-    pub fn select_tab(
-        &mut self,
-        user_key: &UserKey,
-        tab_id: &TabId,
-    ) {
+    pub fn select_tab(&mut self, user_key: &UserKey, tab_id: &TabId) {
         let Some(user_tab_state) = self.user_tab_state_mut(user_key) else {
             panic!("user does not exist")
         };

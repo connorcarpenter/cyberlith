@@ -2,19 +2,17 @@ use std::collections::HashMap;
 
 use bevy_ecs::{entity::Entity, system::Commands, world::World};
 
-use naia_bevy_server::{CommandsExt, RoomKey, Server};
+use naia_bevy_server::{RoomKey, Server};
 
 use vortex_proto::{
     components::{FileType, FileTypeValue, OwnedByFile},
-    types::TabId,
     FileExtension,
 };
 
 use crate::{
     files::{MeshReader, MeshWriter, SkelReader, SkelWriter},
-    resources::ContentEntityData,
+    resources::{ContentEntityData, ShapeManager},
 };
-use crate::resources::{GitManager, ShapeManager};
 
 pub trait FileWriter: Send + Sync {
     fn write(
@@ -111,7 +109,6 @@ pub fn load_content_entities(
     file_entity: &Entity,
     bytes: Box<[u8]>,
 ) -> HashMap<Entity, ContentEntityData> {
-
     // FileReader reads File's contents and spawns all Entities + Components
     let read_output = file_extension.read(commands, server, &bytes);
 
@@ -145,13 +142,14 @@ fn post_process_loaded_networked_entities(
     file_extension: &FileExtension,
 ) {
     for (entity, data) in entities.iter() {
-
         // associate all new Entities with the new Room
         server.room_mut(room_key).add_entity(entity);
 
         // add file ownership
         let mut file_ownership_component = OwnedByFile::new();
-        file_ownership_component.file_entity.set(server, file_entity);
+        file_ownership_component
+            .file_entity
+            .set(server, file_entity);
         commands.entity(*entity).insert(file_ownership_component);
 
         // add FileType component

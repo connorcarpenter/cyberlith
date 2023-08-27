@@ -5,12 +5,16 @@ use bevy_ecs::{
 
 use input::Input;
 
-use render_api::{Assets, base::{CpuMaterial, CpuMesh}, components::{Camera, Projection, Transform, Visibility}};
+use render_api::{
+    base::{CpuMaterial, CpuMesh},
+    components::{Camera, Projection, Transform, Visibility},
+    Assets,
+};
 
 use vortex_proto::components::Vertex3d;
 
 use crate::app::{
-    components::{FaceIcon2d, Compass, Edge2dLocal, Edge3dLocal, OwnedByFileLocal},
+    components::{Compass, Edge2dLocal, Edge3dLocal, FaceIcon2d, OwnedByFileLocal},
     resources::{
         camera_manager::CameraManager, canvas::Canvas, shape_manager::ShapeManager,
         tab_manager::TabManager,
@@ -40,13 +44,10 @@ pub fn sync_vertices(
     shape_manager.sync_shapes(
         &camera_manager,
         tab_manager.current_tab_entity(),
-
         &camera_q,
         &compass_q,
-
         &mut transform_q,
         &owned_by_tab_q,
-
         &mut vertex_3d_q,
         &edge_2d_q,
         &edge_3d_q,

@@ -10,7 +10,7 @@ use render_api::components::{Camera, Projection, Transform};
 use vortex_proto::components::{Vertex3d, VertexRoot};
 
 use crate::app::{
-    components::{Compass, Edge2dLocal, Vertex2d, FaceIcon2d, OwnedByFileLocal},
+    components::{Compass, Edge2dLocal, FaceIcon2d, OwnedByFileLocal, Vertex2d},
     resources::{
         action_stack::ActionStack, camera_manager::CameraManager, canvas::Canvas,
         input_manager::InputManager, shape_manager::ShapeManager, tab_manager::TabManager,
@@ -68,12 +68,9 @@ pub fn update_mouse_hover(
     shape_manager.update_mouse_hover(
         tab_manager.current_tab_entity(),
         input.mouse_position(),
-
         &camera_manager,
-
         &mut transform_q,
         &owned_by_tab_q,
-
         &vertex_2d_q,
         &edge_2d_q,
         &face_2d_q,

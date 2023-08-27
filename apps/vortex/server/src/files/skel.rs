@@ -18,9 +18,8 @@ use vortex_proto::components::{
 
 use crate::{
     files::{file_io::ShapeType, FileReadOutput, FileReader, FileWriter},
-    resources::{ContentEntityData, ShapeManager, ShapeWaitlist, ShapeWaitlistInsert},
+    resources::{ContentEntityData, ShapeManager},
 };
-use crate::resources::GitManager;
 
 // Actions
 #[derive(Debug)]
@@ -232,11 +231,9 @@ impl SkelReader {
         shape_manager: &mut ShapeManager,
         shape_entities: Vec<(Entity, Option<(Entity, Entity)>)>,
     ) -> HashMap<Entity, ContentEntityData> {
-
         let mut new_content_entities = HashMap::new();
 
         for (vertex_entity, edge_opt) in shape_entities {
-
             shape_manager.on_create_skel_vertex(vertex_entity, edge_opt);
 
             new_content_entities.insert(vertex_entity, ContentEntityData::new(ShapeType::Vertex));

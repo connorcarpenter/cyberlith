@@ -17,13 +17,12 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::{
-    components::{FileTypeValue, Vertex3d, VertexRoot},
-};
+use vortex_proto::components::{FileTypeValue, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::{
-        Compass, Edge2dLocal, Edge3dLocal, SelectCircle, Vertex2d, VertexTypeData, FaceIcon2d, OwnedByFileLocal, SelectTriangle
+        Compass, Edge2dLocal, Edge3dLocal, FaceIcon2d, OwnedByFileLocal, SelectCircle,
+        SelectTriangle, Vertex2d, VertexTypeData,
     },
     resources::{
         action_stack::{Action, ActionStack},
@@ -101,7 +100,6 @@ struct Face3dKey {
 
 impl Face3dKey {
     fn new(vertex_a: Entity, vertex_b: Entity, vertex_c: Entity) -> Self {
-
         let mut vertices = vec![vertex_a, vertex_b, vertex_c];
 
         vertices.sort();
@@ -124,7 +122,13 @@ struct Face3dData {
 }
 
 impl Face3dData {
-    fn new(key: Face3dKey, entity_2d: Entity, edge_3d_a: Entity, edge_3d_b: Entity, edge_3d_c: Entity) -> Self {
+    fn new(
+        key: Face3dKey,
+        entity_2d: Entity,
+        edge_3d_a: Entity,
+        edge_3d_b: Entity,
+        edge_3d_c: Entity,
+    ) -> Self {
         Self {
             key,
             entity_2d,
@@ -364,7 +368,11 @@ impl ShapeManager {
         // update vertices
         for (vertex_3d_entity, vertex_3d) in vertex_3d_q.iter() {
             // check if vertex is owned by the current tab
-            if !Self::is_owned_by_tab_or_unowned(current_tab_file_entity, owned_by_q, vertex_3d_entity) {
+            if !Self::is_owned_by_tab_or_unowned(
+                current_tab_file_entity,
+                owned_by_q,
+                vertex_3d_entity,
+            ) {
                 continue;
             }
 
@@ -420,7 +428,8 @@ impl ShapeManager {
             };
 
             // check if vertex is owned by the current tab
-            if !Self::is_owned_by_tab_or_unowned(current_tab_file_entity, owned_by_q, end_3d_entity) {
+            if !Self::is_owned_by_tab_or_unowned(current_tab_file_entity, owned_by_q, end_3d_entity)
+            {
                 continue;
             }
 
@@ -491,9 +500,12 @@ impl ShapeManager {
 
         // update 2d faces
         for (face_2d_entity, face_icon) in face_2d_q.iter() {
-
             // check if face is owned by the current tab
-            if !Self::is_owned_by_tab_or_unowned(current_tab_file_entity, owned_by_q, face_2d_entity) {
+            if !Self::is_owned_by_tab_or_unowned(
+                current_tab_file_entity,
+                owned_by_q,
+                face_2d_entity,
+            ) {
                 continue;
             }
 
@@ -512,9 +524,18 @@ impl ShapeManager {
             };
 
             let center_translation = Vec3::new(
-                (vertex_a_transform.translation.x + vertex_b_transform.translation.x + vertex_c_transform.translation.x) / 3.0,
-                (vertex_a_transform.translation.y + vertex_b_transform.translation.y + vertex_c_transform.translation.y) / 3.0,
-                (vertex_a_transform.translation.z + vertex_b_transform.translation.z + vertex_c_transform.translation.z) / 3.0,
+                (vertex_a_transform.translation.x
+                    + vertex_b_transform.translation.x
+                    + vertex_c_transform.translation.x)
+                    / 3.0,
+                (vertex_a_transform.translation.y
+                    + vertex_b_transform.translation.y
+                    + vertex_c_transform.translation.y)
+                    / 3.0,
+                (vertex_a_transform.translation.z
+                    + vertex_b_transform.translation.z
+                    + vertex_c_transform.translation.z)
+                    / 3.0,
             );
 
             if let Ok(mut face_transform) = transform_q.get_mut(face_2d_entity) {
@@ -575,11 +596,19 @@ impl ShapeManager {
     }
 
     pub fn register_3d_vertex(&mut self, entity_3d: Entity, entity_2d: Entity) {
-        self.vertices_3d.insert(entity_3d, Vertex3dData::new(entity_2d));
+        self.vertices_3d
+            .insert(entity_3d, Vertex3dData::new(entity_2d));
         self.vertices_2d.insert(entity_2d, entity_3d);
     }
 
-    pub fn register_3d_edge(&mut self, edge_3d_entity: Entity, edge_2d_entity: Entity, vertex_a_3d_entity: Entity, vertex_b_3d_entity: Entity, ownership_opt: Option<Entity>) {
+    pub fn register_3d_edge(
+        &mut self,
+        edge_3d_entity: Entity,
+        edge_2d_entity: Entity,
+        vertex_a_3d_entity: Entity,
+        vertex_b_3d_entity: Entity,
+        ownership_opt: Option<Entity>,
+    ) {
         {
             let Some(vertex_a_3d_data) = self.vertices_3d.get_mut(&vertex_a_3d_entity) else {
                 panic!("Vertex3d entity: `{:?}` has not been registered", vertex_a_3d_entity);
@@ -593,7 +622,10 @@ impl ShapeManager {
             vertex_b_3d_data.add_edge(edge_3d_entity);
         }
 
-        self.edges_3d.insert(edge_3d_entity, Edge3dData::new(edge_2d_entity, vertex_a_3d_entity, vertex_b_3d_entity));
+        self.edges_3d.insert(
+            edge_3d_entity,
+            Edge3dData::new(edge_2d_entity, vertex_a_3d_entity, vertex_b_3d_entity),
+        );
         self.edges_2d.insert(edge_2d_entity, edge_3d_entity);
 
         self.check_for_new_faces(vertex_a_3d_entity, vertex_b_3d_entity, ownership_opt);
@@ -622,7 +654,10 @@ impl ShapeManager {
                     if let Some(vertex_a_3d_data) = self.vertices_3d.get_mut(&vertex_a_3d_entity) {
                         vertex_a_3d_data.remove_edge(entity_3d);
                     } else {
-                        warn!("Vertex3d entity: `{:?}` has not been registered", vertex_a_3d_entity);
+                        warn!(
+                            "Vertex3d entity: `{:?}` has not been registered",
+                            vertex_a_3d_entity
+                        );
                         // don't panic here because it's possible that the vertex has already been deleted
                     };
                 }
@@ -630,7 +665,10 @@ impl ShapeManager {
                     if let Some(vertex_b_3d_data) = self.vertices_3d.get_mut(&vertex_b_3d_entity) {
                         vertex_b_3d_data.remove_edge(entity_3d);
                     } else {
-                        warn!("Vertex3d entity: `{:?}` has not been registered", vertex_b_3d_entity);
+                        warn!(
+                            "Vertex3d entity: `{:?}` has not been registered",
+                            vertex_b_3d_entity
+                        );
                         // don't panic here because it's possible that the vertex has already been deleted
                     };
                 }
@@ -641,12 +679,17 @@ impl ShapeManager {
         return None;
     }
 
-    fn check_for_new_faces(&mut self, vertex_a_3d_entity: Entity, vertex_b_3d_entity: Entity, ownership_opt: Option<Entity>) {
-
+    fn check_for_new_faces(
+        &mut self,
+        vertex_a_3d_entity: Entity,
+        vertex_b_3d_entity: Entity,
+        ownership_opt: Option<Entity>,
+    ) {
         let vertex_a_connected_vertices = self.get_connected_vertices(vertex_a_3d_entity);
         let vertex_b_connected_vertices = self.get_connected_vertices(vertex_b_3d_entity);
 
-        let common_vertices = vertex_a_connected_vertices.intersection(&vertex_b_connected_vertices);
+        let common_vertices =
+            vertex_a_connected_vertices.intersection(&vertex_b_connected_vertices);
         for common_vertex in common_vertices {
             let face_key = Face3dKey::new(vertex_a_3d_entity, vertex_b_3d_entity, *common_vertex);
             if !self.face_keys.contains_key(&face_key) {
@@ -694,9 +737,7 @@ impl ShapeManager {
             info!("processing new face: `{:?}`", key);
 
             // 3d face needs it's own mesh set up to match it's vertices
-            let entity_3d = commands
-                .spawn_empty()
-                .id();
+            let entity_3d = commands.spawn_empty().id();
 
             // 2d face needs to have it's own button mesh, matching the 2d vertices
             let vertex_2d_a = self.vertex_entity_3d_to_2d(&key.vertex_3d_a).unwrap();
@@ -720,7 +761,10 @@ impl ShapeManager {
             info!("spawned 2d face entity: {:?}", entity_2d);
 
             if let Some(file_entity) = file_entity_opt {
-                info!("adding OwnedByFile({:?}) to entity {:?}", file_entity, entity_2d);
+                info!(
+                    "adding OwnedByFile({:?}) to entity {:?}",
+                    file_entity, entity_2d
+                );
                 commands
                     .entity(entity_2d)
                     .insert(OwnedByFileLocal::new(file_entity));
@@ -734,7 +778,11 @@ impl ShapeManager {
 
             let mut edge_entities = Vec::new();
             // add face to edge data
-            for (vert_a, vert_b) in [(&key.vertex_3d_a, &key.vertex_3d_b), (&key.vertex_3d_b, &key.vertex_3d_c), (&key.vertex_3d_c, &key.vertex_3d_a)] {
+            for (vert_a, vert_b) in [
+                (&key.vertex_3d_a, &key.vertex_3d_b),
+                (&key.vertex_3d_b, &key.vertex_3d_c),
+                (&key.vertex_3d_c, &key.vertex_3d_a),
+            ] {
                 // find edge in common
                 let vertex_a_edges = &self.vertices_3d.get(vert_a).unwrap().edges_3d;
                 let vertex_b_edges = &self.vertices_3d.get(vert_b).unwrap().edges_3d;
@@ -755,7 +803,16 @@ impl ShapeManager {
                 }
             }
 
-            self.faces_3d.insert(entity_3d, Face3dData::new(key, entity_2d, edge_entities[0], edge_entities[1], edge_entities[2]));
+            self.faces_3d.insert(
+                entity_3d,
+                Face3dData::new(
+                    key,
+                    entity_2d,
+                    edge_entities[0],
+                    edge_entities[1],
+                    edge_entities[2],
+                ),
+            );
         }
     }
 
@@ -765,7 +822,6 @@ impl ShapeManager {
         entity_3d: &Entity,
         commands: &mut Commands,
     ) -> Entity {
-
         // unregister vertex
         let Some(vertex_2d_entity) = self.unregister_3d_vertex(entity_3d) else {
             panic!(
@@ -785,7 +841,6 @@ impl ShapeManager {
 
     // returns entity 2d
     pub fn cleanup_deleted_edge(&mut self, entity_3d: &Entity, commands: &mut Commands) -> Entity {
-
         // cleanup faces
         {
             let edge_3d_data = self.edges_3d.get(entity_3d).unwrap();
@@ -817,7 +872,11 @@ impl ShapeManager {
         self.faces_2d.remove(&face_2d_entity);
 
         // remove face from edges
-        for edge_entity in [face_3d_data.edge_3d_a, face_3d_data.edge_3d_b, face_3d_data.edge_3d_c] {
+        for edge_entity in [
+            face_3d_data.edge_3d_a,
+            face_3d_data.edge_3d_b,
+            face_3d_data.edge_3d_c,
+        ] {
             let edge_3d_data = self.edges_3d.get_mut(&edge_entity).unwrap();
             edge_3d_data.remove_face(face_3d_entity);
         }
@@ -890,7 +949,10 @@ impl ShapeManager {
             .id();
 
         if let Some(file_entity) = ownership_opt {
-            info!("adding OwnedByFileLocal({:?}) to entity {:?}", file_entity, vertex_2d_entity);
+            info!(
+                "adding OwnedByFileLocal({:?}) to entity {:?}",
+                file_entity, vertex_2d_entity
+            );
             commands
                 .entity(vertex_2d_entity)
                 .insert(OwnedByFileLocal::new(file_entity));
@@ -939,9 +1001,23 @@ impl ShapeManager {
 
         // edge 2d
         let shape_components = if arrows_not_lines {
-            create_2d_edge_arrow(meshes, materials, Vec2::ZERO, Vec2::X, color, Edge2dLocal::NORMAL_THICKNESS)
+            create_2d_edge_arrow(
+                meshes,
+                materials,
+                Vec2::ZERO,
+                Vec2::X,
+                color,
+                Edge2dLocal::NORMAL_THICKNESS,
+            )
         } else {
-            create_2d_edge_line(meshes, materials, Vec2::ZERO, Vec2::X, color, Edge2dLocal::NORMAL_THICKNESS)
+            create_2d_edge_line(
+                meshes,
+                materials,
+                Vec2::ZERO,
+                Vec2::X,
+                color,
+                Edge2dLocal::NORMAL_THICKNESS,
+            )
         };
         let edge_2d_entity = commands
             .spawn_empty()
@@ -956,7 +1032,13 @@ impl ShapeManager {
         }
 
         // register 3d & 2d edges together
-        self.register_3d_edge(edge_3d_entity, edge_2d_entity, vertex_a_3d_entity, vertex_b_3d_entity, ownership_opt);
+        self.register_3d_edge(
+            edge_3d_entity,
+            edge_2d_entity,
+            vertex_a_3d_entity,
+            vertex_b_3d_entity,
+            ownership_opt,
+        );
 
         edge_2d_entity
     }
@@ -993,10 +1075,7 @@ impl ShapeManager {
                 let vertex_3d_entity = self.vertex_entity_2d_to_3d(&vertex_2d_entity).unwrap();
 
                 // check whether we can delete vertex
-                let auth_status = commands
-                    .entity(vertex_3d_entity)
-                    .authority(client)
-                    .unwrap();
+                let auth_status = commands.entity(vertex_3d_entity).authority(client).unwrap();
                 if !auth_status.is_granted() && !auth_status.is_available() {
                     // do nothing, vertex is not available
                     // TODO: queue for deletion? check before this?
@@ -1007,10 +1086,7 @@ impl ShapeManager {
                     return;
                 }
 
-                let auth_status = commands
-                    .entity(vertex_3d_entity)
-                    .authority(client)
-                    .unwrap();
+                let auth_status = commands.entity(vertex_3d_entity).authority(client).unwrap();
                 if !auth_status.is_granted() {
                     // request authority if needed
                     commands.entity(vertex_3d_entity).request_authority(client);
@@ -1090,7 +1166,8 @@ impl ShapeManager {
             }
         }
 
-        let mut is_hovering = least_distance <= (Vertex2d::DETECT_RADIUS * camera_manager.camera_3d_scale());
+        let mut is_hovering =
+            least_distance <= (Vertex2d::DETECT_RADIUS * camera_manager.camera_3d_scale());
 
         // check for edges
         if !is_hovering {
@@ -1111,7 +1188,8 @@ impl ShapeManager {
                 }
             }
 
-            is_hovering = least_distance <= (Edge2dLocal::DETECT_THICKNESS * camera_manager.camera_3d_scale());
+            is_hovering = least_distance
+                <= (Edge2dLocal::DETECT_THICKNESS * camera_manager.camera_3d_scale());
         }
 
         // check for faces
@@ -1132,7 +1210,8 @@ impl ShapeManager {
                 }
             }
 
-            is_hovering = least_distance <= (FaceIcon2d::DETECT_RADIUS * camera_manager.camera_3d_scale());
+            is_hovering =
+                least_distance <= (FaceIcon2d::DETECT_RADIUS * camera_manager.camera_3d_scale());
         }
 
         // define old and new hovered states
@@ -1303,7 +1382,8 @@ impl ShapeManager {
                             (_, CanvasShape::Edge) | (_, CanvasShape::Face) => {
                                 // should not ever be able to attach something to an edge or face?
                                 // select hovered entity
-                                action_stack.buffer_action(Action::SelectShape(self.hovered_entity));
+                                action_stack
+                                    .buffer_action(Action::SelectShape(self.hovered_entity));
                                 return;
                             }
                             _ => {}
@@ -1429,10 +1509,8 @@ impl ShapeManager {
                     let (vertex_2d_entity, _) = self.selected_shape.unwrap();
 
                     if let Some(vertex_3d_entity) = self.vertex_entity_2d_to_3d(&vertex_2d_entity) {
-                        let auth_status = commands
-                            .entity(vertex_3d_entity)
-                            .authority(client)
-                            .unwrap();
+                        let auth_status =
+                            commands.entity(vertex_3d_entity).authority(client).unwrap();
                         if !(auth_status.is_requested() || auth_status.is_granted()) {
                             // only continue to mutate if requested or granted authority over vertex
                             info!("No authority over vertex, skipping..");

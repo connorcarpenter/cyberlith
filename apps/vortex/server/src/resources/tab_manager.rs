@@ -2,23 +2,18 @@ use std::collections::{HashMap, VecDeque};
 
 use bevy_ecs::{
     entity::Entity,
-    system::{Commands, Query, Res, ResMut, Resource, SystemState},
+    system::{Commands, Query, ResMut, Resource, SystemState},
     world::{Mut, World},
 };
 use bevy_log::{info, warn};
 
-use naia_bevy_server::{CommandsExt, Server, UserKey};
+use naia_bevy_server::{Server, UserKey};
 
 use vortex_proto::{resources::FileEntryKey, types::TabId};
 
-use crate::{
-    files::ShapeType,
-    resources::{
-        project::Project, ContentEntityData, GitManager,
-        ShapeManager, ShapeWaitlist, UserManager, UserTabState,
-    },
+use crate::resources::{
+    project::ProjectKey, ContentEntityData, GitManager, ShapeManager, UserManager,
 };
-use crate::resources::project::ProjectKey;
 
 #[derive(Resource)]
 pub struct TabManager {
@@ -147,11 +142,21 @@ impl TabManager {
     fn process_queued_closes(world: &mut World) {
         // closed tabs
         let closed_states = {
-            let mut system_state: SystemState<(Server, ResMut<TabManager>, ResMut<UserManager>, ResMut<GitManager>)> =
-                SystemState::new(world);
-            let (mut server, mut tab_manager, mut user_manager, mut git_manager) = system_state.get_mut(world);
+            let mut system_state: SystemState<(
+                Server,
+                ResMut<TabManager>,
+                ResMut<UserManager>,
+                ResMut<GitManager>,
+            )> = SystemState::new(world);
+            let (mut server, mut tab_manager, mut user_manager, mut git_manager) =
+                system_state.get_mut(world);
 
-            let output = Self::process_queued_closes_inner(&mut tab_manager, &mut server, &mut user_manager, &mut git_manager);
+            let output = Self::process_queued_closes_inner(
+                &mut tab_manager,
+                &mut server,
+                &mut user_manager,
+                &mut git_manager,
+            );
 
             system_state.apply(world);
 
@@ -172,12 +177,7 @@ impl TabManager {
                     if !git_manager.can_write(project_key, file_key) {
                         panic!("can't write file: `{:?}`", file_key.name());
                     }
-                    let bytes = git_manager.write(
-                        project_key,
-                        file_key,
-                        world,
-                        content_entities,
-                    );
+                    let bytes = git_manager.write(project_key, file_key, world, content_entities);
                     output.push((project_key, file_key, bytes));
                 }
 
@@ -231,17 +231,12 @@ impl TabManager {
         &mut self,
         server: &mut Server,
         user_manager: &mut UserManager,
-        git_manager: &mut GitManager
+        git_manager: &mut GitManager,
     ) -> Vec<(ProjectKey, FileEntryKey, HashMap<Entity, ContentEntityData>)> {
         let mut output = Vec::new();
         while let Some((user_key, tab_id)) = self.queued_closes.pop_front() {
-
-            let (project_key, file_key, content_entities) = user_manager.close_tab(
-                server,
-                git_manager,
-                &user_key,
-                &tab_id
-            );
+            let (project_key, file_key, content_entities) =
+                user_manager.close_tab(server, git_manager, &user_key, &tab_id);
             output.push((project_key, file_key, content_entities));
         }
         output

@@ -6,10 +6,9 @@ use std::{
 
 use bevy_ecs::{
     entity::Entity,
-    system::{Commands, Resource, SystemState},
+    system::{Commands, ResMut, Resource, SystemState},
     world::World,
 };
-use bevy_ecs::system::ResMut;
 use bevy_log::info;
 use git2::{Cred, Repository, Tree};
 
@@ -19,20 +18,17 @@ use vortex_proto::{
     components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild},
     messages::ChangelistMessage,
     resources::FileEntryKey,
-    types::TabId,
     FileExtension,
 };
 
 use crate::{
     config::GitConfig,
-    files::{ FileReadOutput, FileWriter, MeshReader, SkelReader},
+    files::{FileWriter, ShapeType},
     resources::{
-        user_manager::UserSessionData, project::Project, ContentEntityData, FileEntryValue,
-        ShapeManager, ShapeWaitlist, UserManager, project::ProjectKey,
+        project::Project, project::ProjectKey, ContentEntityData, FileEntryValue, ShapeManager,
+        UserManager,
     },
 };
-use crate::files::{load_content_entities, ShapeType};
-use crate::resources::FileSpace;
 
 #[derive(Resource)]
 pub struct GitManager {
@@ -77,7 +73,11 @@ impl GitManager {
         self.projects.get_mut(project_key)
     }
 
-    pub(crate) fn file_entity(&self, project_key: &ProjectKey, file_key: &FileEntryKey) -> Option<Entity> {
+    pub(crate) fn file_entity(
+        &self,
+        project_key: &ProjectKey,
+        file_key: &FileEntryKey,
+    ) -> Option<Entity> {
         let project = self.projects.get(project_key).unwrap();
         project.file_entity(file_key)
     }
@@ -90,17 +90,33 @@ impl GitManager {
         file_name: &str,
         file_entity: Entity,
         parent_file_key: Option<FileEntryKey>,
-        file_key: &FileEntryKey
+        file_key: &FileEntryKey,
     ) {
         let project = self.projects.get_mut(project_key).unwrap();
-        project.on_client_create_file(commands, server, file_name, file_entity, parent_file_key, file_key);
+        project.on_client_create_file(
+            commands,
+            server,
+            file_name,
+            file_entity,
+            parent_file_key,
+            file_key,
+        );
     }
 
-    pub(crate) fn content_entity_keys(&self, content_entity: &Entity) -> Option<(ProjectKey, FileEntryKey)> {
+    pub(crate) fn content_entity_keys(
+        &self,
+        content_entity: &Entity,
+    ) -> Option<(ProjectKey, FileEntryKey)> {
         self.content_entity_keys.get(content_entity).cloned()
     }
 
-    pub(crate) fn on_client_modify_file(&mut self, commands: &mut Commands, server: &mut Server, project_key: &ProjectKey, file_key: &FileEntryKey) {
+    pub(crate) fn on_client_modify_file(
+        &mut self,
+        commands: &mut Commands,
+        server: &mut Server,
+        project_key: &ProjectKey,
+        file_key: &FileEntryKey,
+    ) {
         let file_entity = self.file_entity(&project_key, &file_key).unwrap();
         let project = self.projects.get_mut(project_key).unwrap();
         project.on_client_modify_file(commands, server, file_key, &file_entity);
@@ -110,20 +126,14 @@ impl GitManager {
         let Some((project_key, file_key)) = self.content_entity_keys(content_entity) else {
             panic!("Could not find content entity key for entity: {:?}", content_entity);
         };
-        self.queued_client_modify_files.push((project_key, file_key));
+        self.queued_client_modify_files
+            .push((project_key, file_key));
     }
 
     pub(crate) fn process_queued_actions(world: &mut World) {
-        let mut system_state: SystemState<(
-            Commands,
-            Server,
-            ResMut<GitManager>,
-        )> = SystemState::new(world);
-        let (
-            mut commands,
-            mut server,
-            mut git_manager,
-        ) = system_state.get_mut(world);
+        let mut system_state: SystemState<(Commands, Server, ResMut<GitManager>)> =
+            SystemState::new(world);
+        let (mut commands, mut server, mut git_manager) = system_state.get_mut(world);
 
         for (project_key, file_key) in std::mem::take(&mut git_manager.queued_client_modify_files) {
             git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
@@ -132,9 +142,16 @@ impl GitManager {
         system_state.apply(world);
     }
 
-    pub(crate) fn on_client_insert_content_entity(&mut self, server: &mut Server, project_key: &ProjectKey, file_key: &FileEntryKey, entity: &Entity, shape_type: ShapeType) {
-
-        self.content_entity_keys.insert(*entity, (*project_key, file_key.clone()));
+    pub(crate) fn on_client_insert_content_entity(
+        &mut self,
+        server: &mut Server,
+        project_key: &ProjectKey,
+        file_key: &FileEntryKey,
+        entity: &Entity,
+        shape_type: ShapeType,
+    ) {
+        self.content_entity_keys
+            .insert(*entity, (*project_key, file_key.clone()));
 
         self.queue_client_modify_file(entity);
 
@@ -146,7 +163,6 @@ impl GitManager {
     }
 
     pub(crate) fn on_client_remove_content_entity(&mut self, entity: &Entity) {
-
         self.queue_client_modify_file(entity);
 
         let Some((project_key, file_key)) = self.content_entity_keys.remove(entity) else {
@@ -157,7 +173,12 @@ impl GitManager {
         project.on_remove_content_entity(&file_key, entity);
     }
 
-    pub(crate) fn filespace_has_entity(&self, project_key: &ProjectKey, file_key: &FileEntryKey, entity: &Entity) -> bool {
+    pub(crate) fn filespace_has_entity(
+        &self,
+        project_key: &ProjectKey,
+        file_key: &FileEntryKey,
+        entity: &Entity,
+    ) -> bool {
         let project = self.projects.get(project_key).unwrap();
         project.filespace_has_entity(file_key, entity)
     }
@@ -174,15 +195,12 @@ impl GitManager {
         let Some(project) = self.projects.get_mut(project_key) else {
             panic!("Could not find project for user");
         };
-        if let Some(new_content_entities) = project.user_join_filespace(
-            commands,
-            server,
-            shape_manager,
-            user_key,
-            file_key,
-        ) {
+        if let Some(new_content_entities) =
+            project.user_join_filespace(commands, server, shape_manager, user_key, file_key)
+        {
             for entity in new_content_entities {
-                self.content_entity_keys.insert(entity, (*project_key, file_key.clone()));
+                self.content_entity_keys
+                    .insert(entity, (*project_key, file_key.clone()));
             }
         }
     }
@@ -279,7 +297,8 @@ impl GitManager {
         );
 
         let project_key = self.projects.insert(new_project);
-        self.project_keys.insert(owner_name.to_string(), project_key);
+        self.project_keys
+            .insert(owner_name.to_string(), project_key);
 
         project_key
     }
@@ -322,7 +341,11 @@ impl GitManager {
     ) {
         let user_manager = world.get_resource::<UserManager>().unwrap();
 
-        let user_name = user_manager.user_perm_data(&user_key).unwrap().username().to_string();
+        let user_name = user_manager
+            .user_perm_data(&user_key)
+            .unwrap()
+            .username()
+            .to_string();
 
         let user_session_data = user_manager.user_session_data(&user_key).unwrap();
         let Some(user_project_key) = user_session_data.project_key() else {
@@ -390,7 +413,11 @@ impl GitManager {
         return ext.write(world, content_entities);
     }
 
-    pub fn working_file_extension(&self, project_key: &ProjectKey, key: &FileEntryKey) -> FileExtension {
+    pub fn working_file_extension(
+        &self,
+        project_key: &ProjectKey,
+        key: &FileEntryKey,
+    ) -> FileExtension {
         self.projects
             .get(project_key)
             .unwrap()

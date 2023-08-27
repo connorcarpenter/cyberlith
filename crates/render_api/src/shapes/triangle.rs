@@ -40,7 +40,6 @@ impl Triangle {
 
 impl From<Triangle> for CpuMesh {
     fn from(tri: Triangle) -> Self {
-
         let mut outer_a = Vec3::new(tri.a.0 as f32, tri.a.1 as f32, tri.a.2 as f32);
         let mut outer_b = Vec3::new(tri.b.0 as f32, tri.b.1 as f32, tri.b.2 as f32);
         let mut outer_c = Vec3::new(tri.c.0 as f32, tri.c.1 as f32, tri.c.2 as f32);
@@ -55,9 +54,7 @@ impl From<Triangle> for CpuMesh {
         outer_b -= center;
         outer_c -= center;
 
-        let positions = vec![
-            outer_a, outer_b, outer_c
-        ];
+        let positions = vec![outer_a, outer_b, outer_c];
         let indices: Indices = Indices(Some(vec![0u16, 1, 2]));
         let normals = vec![Vec3::Z, Vec3::Z, Vec3::Z];
 
@@ -83,7 +80,6 @@ pub struct HollowTriangle {
 impl AssetHash<CpuMesh> for HollowTriangle {}
 
 impl HollowTriangle {
-
     pub fn new_2d(a: Vec2, b: Vec2, c: Vec2) -> Self {
         let a = a.extend(0.0);
         let b = b.extend(0.0);
@@ -107,7 +103,6 @@ impl HollowTriangle {
 
 impl From<HollowTriangle> for CpuMesh {
     fn from(tri: HollowTriangle) -> Self {
-
         let mut outer_a = Vec3::new(tri.a.0 as f32, tri.a.1 as f32, tri.a.2 as f32);
         let mut outer_b = Vec3::new(tri.b.0 as f32, tri.b.1 as f32, tri.b.2 as f32);
         let mut outer_c = Vec3::new(tri.c.0 as f32, tri.c.1 as f32, tri.c.2 as f32);
@@ -139,26 +134,13 @@ impl From<HollowTriangle> for CpuMesh {
             outer_c.z * thickness,
         );
 
-        let positions = vec![
-            outer_a,
-            outer_b,
-            outer_c,
-            inner_a,
-            inner_b,
-            inner_c,
-        ];
+        let positions = vec![outer_a, outer_b, outer_c, inner_a, inner_b, inner_c];
 
         let normals = vec![Vec3::Z, Vec3::Z, Vec3::Z, Vec3::Z, Vec3::Z, Vec3::Z];
 
         let indices: Indices = Indices(Some(vec![
-            0u16, 1, 4,
-            0, 4, 3,
-            1, 2, 5,
-            1, 5, 4,
-            2, 0, 3,
-            2, 3, 5,
+            0u16, 1, 4, 0, 4, 3, 1, 2, 5, 1, 5, 4, 2, 0, 3, 2, 3, 5,
         ]));
-
 
         CpuMesh {
             indices,

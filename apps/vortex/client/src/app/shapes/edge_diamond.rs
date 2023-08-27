@@ -53,12 +53,7 @@ impl From<Diamond3d> for CpuMesh {
         ];
 
         let indices: Indices = Indices(Some(vec![
-            0u16, 2, 1,
-            0, 1, 3,
-            0, 3, 2,
-            4, 1, 2,
-            4, 3, 1,
-            4, 2, 3,
+            0u16, 2, 1, 0, 1, 3, 0, 3, 2, 4, 1, 2, 4, 3, 1, 4, 2, 3,
         ]));
 
         let mut mesh = CpuMesh {

@@ -25,9 +25,10 @@ use vortex_proto::{
 };
 
 use crate::app::{
-    components::{file_system::{
-        ContextMenuAction, FileSystemParent, FileSystemUiState, ModalRequestType,
-    }, OwnedByFileLocal},
+    components::{
+        file_system::{ContextMenuAction, FileSystemParent, FileSystemUiState, ModalRequestType},
+        OwnedByFileLocal,
+    },
     resources::{
         action_stack::{Action, ActionStack},
         camera_manager::CameraManager,

@@ -1,21 +1,21 @@
 mod changelist_manager;
 mod file_entry;
 pub mod file_waitlist;
+mod filespace;
 mod git_manager;
+mod project;
 mod shape_manager;
 mod shape_waitlist;
 mod tab_manager;
 mod user_manager;
 mod user_tab_state;
-mod project;
-mod filespace;
 
 pub use changelist_manager::*;
 pub use file_entry::*;
+pub use filespace::*;
 pub use git_manager::*;
 pub use shape_manager::*;
 pub use shape_waitlist::*;
 pub use tab_manager::*;
 pub use user_manager::*;
 pub use user_tab_state::*;
-pub use filespace::*;

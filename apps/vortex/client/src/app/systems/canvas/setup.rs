@@ -13,7 +13,7 @@ use render_api::{
 use render_egui::EguiUserTextures;
 
 use crate::app::{
-    components::{SelectTriangle, SelectCircle, SelectLine, Vertex2d},
+    components::{SelectCircle, SelectLine, SelectTriangle, Vertex2d},
     config::AppConfig,
     resources::{camera_manager::CameraManager, canvas::Canvas, shape_manager::ShapeManager},
     shapes::create_2d_edge_line,
@@ -147,8 +147,14 @@ fn setup_2d_scene(
 
     // select line
     {
-        let mut select_line_components =
-            create_2d_edge_line(meshes, materials, Vec2::ZERO, Vec2::X, Color::WHITE, SelectLine::THICKNESS);
+        let mut select_line_components = create_2d_edge_line(
+            meshes,
+            materials,
+            Vec2::ZERO,
+            Vec2::X,
+            Color::WHITE,
+            SelectLine::THICKNESS,
+        );
         select_line_components.visibility.visible = false;
         let select_line_entity = commands
             .spawn(select_line_components)

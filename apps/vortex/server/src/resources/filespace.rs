@@ -1,18 +1,16 @@
 use std::collections::HashMap;
 
 use bevy_ecs::{entity::Entity, system::Commands};
-use bevy_log::{info, warn};
+use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 
-use vortex_proto::{FileExtension, resources::FileEntryKey, types::TabId};
+use vortex_proto::{resources::FileEntryKey, FileExtension};
 
 use crate::{
-    files::{ FileReadOutput, MeshReader, ShapeType, SkelReader},
-    resources::{project::Project, ShapeManager, ShapeWaitlist},
+    files::{load_content_entities, ShapeType},
+    resources::ShapeManager,
 };
-use crate::files::{FileReader, load_content_entities};
-use crate::resources::GitManager;
 
 #[derive(Clone)]
 pub struct ContentEntityData {
@@ -36,7 +34,6 @@ impl FileSpace {
         file_room_key: &RoomKey,
         content_entities: HashMap<Entity, ContentEntityData>,
     ) -> Self {
-
         Self {
             room_key: *file_room_key,
             content_entities,
@@ -65,7 +62,6 @@ impl FileSpace {
     }
 
     pub(crate) fn user_join(&mut self, server: &mut Server, user_key: &UserKey) {
-
         self.user_count += 1;
 
         // put user in new room
@@ -74,7 +70,8 @@ impl FileSpace {
 
     pub fn add_content_entity(&mut self, entity: Entity, shape_type: ShapeType) {
         info!("FileSpace adding content entity: `{:?}`", entity);
-        self.content_entities.insert(entity, ContentEntityData::new(shape_type));
+        self.content_entities
+            .insert(entity, ContentEntityData::new(shape_type));
     }
 
     pub fn remove_content_entity(&mut self, entity: &Entity) {
@@ -120,7 +117,7 @@ impl FileSpace {
             file_extension,
             &self.room_key,
             file_entity,
-            bytes
+            bytes,
         );
     }
 }

@@ -13,7 +13,7 @@ use render_api::{
 use vortex_proto::components::FileTypeValue;
 
 use crate::app::{
-    components::{OwnedByFileLocal, Edge3dLocal, Vertex2d},
+    components::{Edge3dLocal, OwnedByFileLocal, Vertex2d},
     resources::{camera_manager::CameraManager, shape_manager::ShapeManager},
 };
 
@@ -66,7 +66,9 @@ impl ShapeWaitlistEntry {
                 Some(FileTypeValue::Mesh) => return self.file_entity.is_some(),
             },
             Some(ShapeType::Edge) => {
-                self.file_type.is_some() && self.file_entity.is_some() && self.edge_entities.is_some()
+                self.file_type.is_some()
+                    && self.file_entity.is_some()
+                    && self.edge_entities.is_some()
             }
             None => false,
         }
@@ -191,7 +193,9 @@ impl ShapeWaitlist {
                 self.get_mut(&entity).unwrap().set_file_entity(file_entity);
 
                 // insert local version of OwnedByFile
-                commands.entity(*entity).insert(OwnedByFileLocal::new(file_entity));
+                commands
+                    .entity(*entity)
+                    .insert(OwnedByFileLocal::new(file_entity));
             }
             ShapeWaitlistInsert::FileType(file_type) => {
                 self.get_mut(&entity).unwrap().set_file_type(file_type);
@@ -348,7 +352,9 @@ impl ShapeWaitlist {
                 let start_2d = shape_manager.vertex_entity_3d_to_2d(&start_3d).unwrap();
                 let end_2d = shape_manager.vertex_entity_3d_to_2d(&end_3d).unwrap();
 
-                commands.entity(entity).insert(Edge3dLocal::new(start_3d, end_3d));
+                commands
+                    .entity(entity)
+                    .insert(Edge3dLocal::new(start_3d, end_3d));
 
                 let _new_edge_2d_entity = shape_manager.edge_3d_postprocess(
                     commands,

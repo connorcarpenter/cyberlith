@@ -1,4 +1,7 @@
-use bevy_app::{App, First, Last, Main, MainScheduleOrder, Plugin, PostUpdate, PreUpdate, RunFixedUpdateLoop, StateTransition, Update};
+use bevy_app::{
+    App, First, Last, Main, MainScheduleOrder, Plugin, PostUpdate, PreUpdate, RunFixedUpdateLoop,
+    StateTransition, Update,
+};
 use bevy_ecs::schedule::{ExecutorKind, Schedule};
 
 use render_api::RenderDraw;

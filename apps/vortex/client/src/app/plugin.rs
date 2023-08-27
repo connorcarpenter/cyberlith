@@ -1,5 +1,5 @@
 use bevy_app::{App, Plugin, Startup, Update};
-use bevy_ecs::schedule::{IntoSystemConfigs};
+use bevy_ecs::schedule::IntoSystemConfigs;
 
 use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin, ReceiveEvents};
 
@@ -8,7 +8,7 @@ use render_api::resources::WindowSettings;
 use vortex_proto::{
     components::{
         ChangelistEntry, Edge3d, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-        OwnedByFile, Vertex3d, VertexRoot, FileType
+        FileType, OwnedByFile, Vertex3d, VertexRoot,
     },
     protocol,
 };
@@ -53,7 +53,7 @@ impl Plugin for VortexPlugin {
             .add_plugins(ClientPlugin::new(ClientConfig::default(), protocol()))
             .add_event::<LoginEvent>()
             // Networking Systems
-            .add_systems(Update,network::login)
+            .add_systems(Update, network::login)
             .add_systems(
                 Update,
                 (
@@ -91,18 +91,18 @@ impl Plugin for VortexPlugin {
             .insert_resource(global_resource)
             .init_resource::<TabManager>()
             .init_resource::<ActionStack>()
-            .add_systems(Update,ui::update)
+            .add_systems(Update, ui::update)
             // Canvas Config
             .init_resource::<ShapeManager>()
             .init_resource::<Canvas>()
             .init_resource::<CameraManager>()
             .init_resource::<InputManager>()
-            .add_systems(Startup,canvas::setup)
-            .add_systems(Update,canvas::update_camera)
-            .add_systems(Update,canvas::sync_vertices)
-            .add_systems(Update,canvas::process_faces)
-            .add_systems(Update,canvas::update_select_line)
-            .add_systems(Update,canvas::input)
-            .add_systems(Update,canvas::update_mouse_hover);
+            .add_systems(Startup, canvas::setup)
+            .add_systems(Update, canvas::update_camera)
+            .add_systems(Update, canvas::sync_vertices)
+            .add_systems(Update, canvas::process_faces)
+            .add_systems(Update, canvas::update_select_line)
+            .add_systems(Update, canvas::input)
+            .add_systems(Update, canvas::update_mouse_hover);
     }
 }

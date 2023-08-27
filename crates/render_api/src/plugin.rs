@@ -30,7 +30,6 @@ impl Plugin for RenderApiPlugin {
         app.edit_schedule(RenderSync, make_single_threaded_fn.clone());
         app.edit_schedule(RenderDraw, make_single_threaded_fn.clone());
 
-
         let mut order = app.world.resource_mut::<MainScheduleOrder>();
         order.insert_after(Last, RenderSync);
         order.insert_after(RenderSync, RenderDraw);

@@ -7,9 +7,7 @@ use naia_bevy_server::{
     Server,
 };
 
-pub fn publish_entity_events(
-    mut event_reader: EventReader<PublishEntityEvent>,
-) {
+pub fn publish_entity_events(mut event_reader: EventReader<PublishEntityEvent>) {
     for PublishEntityEvent(_user_key, client_entity) in event_reader.iter() {
         //info!("client entity has been made public: {:?}", client_entity);
     }

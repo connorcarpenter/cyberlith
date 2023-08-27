@@ -2,7 +2,9 @@ use bevy_app::{App, First, MainScheduleOrder, Plugin, PostUpdate, Startup};
 
 use render_api::{RenderDraw, RenderSync};
 
-use crate::{systems, EguiContext, EguiPreUpdate, EguiPostUpdate, EguiDraw, EguiSync, EguiUserTextures};
+use crate::{
+    systems, EguiContext, EguiDraw, EguiPostUpdate, EguiPreUpdate, EguiSync, EguiUserTextures,
+};
 
 // Plugin
 pub struct EguiPlugin;

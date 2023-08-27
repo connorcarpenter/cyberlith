@@ -17,18 +17,15 @@ use naia_bevy_server::{
 
 use vortex_proto::{
     components::{
-        Edge3d, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, Vertex3d,
-        VertexRoot,
+        Edge3d, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile,
+        Vertex3d, VertexRoot,
     },
     resources::FileEntryKey,
 };
-use vortex_proto::components::OwnedByFile;
 
-use crate::{
-    resources::{
-        file_waitlist::{fs_process_insert, FSWaitlist, FSWaitlistInsert},
-        GitManager, ShapeManager, ShapeWaitlist, ShapeWaitlistInsert, TabManager, UserManager,
-    },
+use crate::resources::{
+    file_waitlist::{fs_process_insert, FSWaitlist, FSWaitlistInsert},
+    GitManager, ShapeManager, ShapeWaitlist, ShapeWaitlistInsert, TabManager, UserManager,
 };
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
@@ -49,7 +46,9 @@ pub fn despawn_entity_events(
         let Some(user_session_data) = user_manager.user_session_data(user_key) else {
             panic!("user not found");
         };
-        let project = git_manager.project_mut(&user_session_data.project_key().unwrap()).unwrap();
+        let project = git_manager
+            .project_mut(&user_session_data.project_key().unwrap())
+            .unwrap();
 
         let entity_is_file = project.entity_is_file(entity);
         let entity_is_vertex = shape_manager.has_vertex(entity);
@@ -168,7 +167,12 @@ pub fn insert_component_events(
         for (_, entity) in events.read::<Vertex3d>() {
             info!("entity: `{:?}`, inserted Vertex3d", entity);
 
-            shape_waitlist.process_insert(&mut server, &mut git_manager, &mut shape_manager, ShapeWaitlistInsert::Vertex(entity));
+            shape_waitlist.process_insert(
+                &mut server,
+                &mut git_manager,
+                &mut shape_manager,
+                ShapeWaitlistInsert::Vertex(entity),
+            );
         }
 
         // on Edge3d Insert Event
@@ -209,9 +213,18 @@ pub fn insert_component_events(
 
         // on OwnedByFile Insert Event
         for (user_key, entity) in events.read::<OwnedByFile>() {
-            let file_entity = owned_by_file_q.get(entity).unwrap().file_entity.get(&server).unwrap();
+            let file_entity = owned_by_file_q
+                .get(entity)
+                .unwrap()
+                .file_entity
+                .get(&server)
+                .unwrap();
             let file_key = entry_key_q.get(file_entity).unwrap();
-            let project_key = user_manager.user_session_data(&user_key).unwrap().project_key().unwrap();
+            let project_key = user_manager
+                .user_session_data(&user_key)
+                .unwrap()
+                .project_key()
+                .unwrap();
 
             info!(
                 "entity: `{:?}`, inserted OwnedByFile({:?})",

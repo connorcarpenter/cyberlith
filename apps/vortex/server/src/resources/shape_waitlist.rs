@@ -2,14 +2,15 @@ use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{entity::Entity, system::Resource};
 use bevy_log::info;
+
 use naia_bevy_server::Server;
 
-use vortex_proto::components::FileTypeValue;
-use vortex_proto::resources::FileEntryKey;
-use crate::files::ShapeType;
-use crate::resources::project::ProjectKey;
+use vortex_proto::{components::FileTypeValue, resources::FileEntryKey};
 
-use crate::resources::{GitManager, ShapeManager, UserManager};
+use crate::{
+    files::ShapeType,
+    resources::{project::ProjectKey, GitManager, ShapeManager},
+};
 
 pub enum ShapeWaitlistInsert {
     //// shape
@@ -68,7 +69,7 @@ impl ShapeWaitlistEntry {
             }
             (Some(FileTypeValue::Mesh), Some(ShapeType::Edge)) => {
                 self.owned_by_file.is_some() && self.edge_entities.is_some()
-            },
+            }
             _ => {
                 return false;
             }
@@ -111,7 +112,11 @@ impl ShapeWaitlistEntry {
 
         match (self.file_type, self.shape) {
             (Some(FileTypeValue::Skel), Some(ShapeType::Vertex)) => {
-                return ShapeData::SkelVertex(project_key, file_key, self.edge_and_parent_opt.unwrap());
+                return ShapeData::SkelVertex(
+                    project_key,
+                    file_key,
+                    self.edge_and_parent_opt.unwrap(),
+                );
             }
             (Some(FileTypeValue::Skel), Some(ShapeType::Edge)) => {
                 return ShapeData::SkelEdge(project_key, file_key);
@@ -151,7 +156,6 @@ impl Default for ShapeWaitlist {
 }
 
 impl ShapeWaitlist {
-
     pub fn process_insert(
         &mut self,
         server: &mut Server,
@@ -318,18 +322,42 @@ impl ShapeWaitlist {
 
         match data {
             ShapeData::SkelVertex(project_key, file_key, edge_and_parent_opt) => {
-                git_manager.on_client_insert_content_entity(server, &project_key, &file_key, &entity, ShapeType::Vertex);
+                git_manager.on_client_insert_content_entity(
+                    server,
+                    &project_key,
+                    &file_key,
+                    &entity,
+                    ShapeType::Vertex,
+                );
                 shape_manager.on_create_skel_vertex(entity, edge_and_parent_opt);
             }
             ShapeData::SkelEdge(project_key, file_key) => {
-                git_manager.on_client_insert_content_entity(server, &project_key, &file_key, &entity, ShapeType::Edge);
+                git_manager.on_client_insert_content_entity(
+                    server,
+                    &project_key,
+                    &file_key,
+                    &entity,
+                    ShapeType::Edge,
+                );
             }
             ShapeData::MeshVertex(project_key, file_key) => {
-                git_manager.on_client_insert_content_entity(server, &project_key, &file_key, &entity, ShapeType::Vertex);
+                git_manager.on_client_insert_content_entity(
+                    server,
+                    &project_key,
+                    &file_key,
+                    &entity,
+                    ShapeType::Vertex,
+                );
                 shape_manager.on_create_mesh_vertex(entity);
             }
             ShapeData::MeshEdge(project_key, file_key, start, end) => {
-                git_manager.on_client_insert_content_entity(server, &project_key, &file_key, &entity, ShapeType::Edge);
+                git_manager.on_client_insert_content_entity(
+                    server,
+                    &project_key,
+                    &file_key,
+                    &entity,
+                    ShapeType::Edge,
+                );
                 shape_manager.on_create_mesh_edge(start, entity, end);
             }
         }
@@ -345,7 +373,13 @@ impl ShapeWaitlist {
                     "entity {:?} was waiting on parent {:?}. processing!",
                     child_entity, entity
                 );
-                self.process_complete(server, git_manager, shape_manager, child_entity, child_entry);
+                self.process_complete(
+                    server,
+                    git_manager,
+                    shape_manager,
+                    child_entity,
+                    child_entry,
+                );
             }
         }
     }
