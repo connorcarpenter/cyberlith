@@ -42,7 +42,7 @@ pub enum CanvasShape {
 struct Vertex3dData {
     entity_2d: Entity,
     edges_3d: HashSet<Entity>,
-    faces_3d: HashSet<Entity>,
+    faces_3d: HashSet<Face3dKey>,
 }
 
 impl Vertex3dData {
@@ -62,12 +62,12 @@ impl Vertex3dData {
         self.edges_3d.remove(edge_3d_entity);
     }
 
-    fn add_face(&mut self, face_3d_entity: Entity) {
-        self.faces_3d.insert(face_3d_entity);
+    fn add_face(&mut self, face_key: Face3dKey) {
+        self.faces_3d.insert(face_key);
     }
 
-    fn remove_face(&mut self, face_3d_entity: &Entity) {
-        self.faces_3d.remove(face_3d_entity);
+    fn remove_face(&mut self, face_key: &Face3dKey) {
+        self.faces_3d.remove(face_key);
     }
 }
 
@@ -75,7 +75,7 @@ struct Edge3dData {
     entity_2d: Entity,
     vertex_a_3d_entity: Entity,
     vertex_b_3d_entity: Entity,
-    faces_3d: HashSet<Entity>,
+    faces_3d: HashSet<Face3dKey>,
 }
 
 impl Edge3dData {
@@ -88,12 +88,12 @@ impl Edge3dData {
         }
     }
 
-    fn add_face(&mut self, face_3d_entity: Entity) {
-        self.faces_3d.insert(face_3d_entity);
+    fn add_face(&mut self, face_key: Face3dKey) {
+        self.faces_3d.insert(face_key);
     }
 
-    fn remove_face(&mut self, face_3d_entity: &Entity) {
-        self.faces_3d.remove(face_3d_entity);
+    fn remove_face(&mut self, face_key: &Face3dKey) {
+        self.faces_3d.remove(face_key);
     }
 }
 
@@ -119,20 +119,17 @@ impl Face3dKey {
 }
 
 struct Face3dData {
-    key: Face3dKey,
+    entity_3d: Option<Entity>,
     entity_2d: Entity,
     file_entity: Entity,
 
     edge_3d_a: Entity,
     edge_3d_b: Entity,
     edge_3d_c: Entity,
-
-    active: bool,
 }
 
 impl Face3dData {
     fn new(
-        key: Face3dKey,
         entity_2d: Entity,
         file_entity: Entity,
         edge_3d_a: Entity,
@@ -140,13 +137,12 @@ impl Face3dData {
         edge_3d_c: Entity,
     ) -> Self {
         Self {
-            key,
             entity_2d,
+            entity_3d: None,
             file_entity,
             edge_3d_a,
             edge_3d_b,
             edge_3d_c,
-            active: false,
         }
     }
 }
@@ -166,11 +162,11 @@ pub struct ShapeManager {
     edges_2d: HashMap<Entity, Entity>,
 
     // 3d face key -> 3d face entity
-    face_keys: HashMap<Face3dKey, Entity>,
+    face_keys: HashMap<Face3dKey, Option<Face3dData>>,
     // 3d face entity -> 3d face data
-    faces_3d: HashMap<Entity, Face3dData>,
+    faces_3d: HashMap<Entity, Face3dKey>,
     // 2d face entity -> 3d face entity
-    faces_2d: HashMap<Entity, Entity>,
+    faces_2d: HashMap<Entity, Face3dKey>,
     // queue of new faces to process
     new_face_keys: Vec<(Face3dKey, Entity)>,
 
@@ -706,7 +702,7 @@ impl ShapeManager {
         for common_vertex in common_vertices {
             let face_key = Face3dKey::new(vertex_a_3d_entity, vertex_b_3d_entity, *common_vertex);
             if !self.face_keys.contains_key(&face_key) {
-                self.face_keys.insert(face_key, Entity::PLACEHOLDER);
+                self.face_keys.insert(face_key, None);
                 self.new_face_keys.push((face_key, file_entity));
             }
         }
@@ -746,18 +742,16 @@ impl ShapeManager {
         }
 
         let keys = std::mem::take(&mut self.new_face_keys);
-        for (key, file_entity) in keys {
-            info!("processing new face: `{:?}`", key);
-
-            // 3d face remains empty until it's networked
-            let entity_3d = commands
-                .spawn_empty()
-                .id();
+        for (face_key, file_entity) in keys {
+            info!("processing new face: `{:?}`", face_key);
+            let vertex_3d_a = face_key.vertex_3d_a;
+            let vertex_3d_b = face_key.vertex_3d_b;
+            let vertex_3d_c = face_key.vertex_3d_c;
 
             // 2d face needs to have it's own button mesh, matching the 2d vertices
-            let vertex_2d_a = self.vertex_entity_3d_to_2d(&key.vertex_3d_a).unwrap();
-            let vertex_2d_b = self.vertex_entity_3d_to_2d(&key.vertex_3d_b).unwrap();
-            let vertex_2d_c = self.vertex_entity_3d_to_2d(&key.vertex_3d_c).unwrap();
+            let vertex_2d_a = self.vertex_entity_3d_to_2d(&vertex_3d_a).unwrap();
+            let vertex_2d_b = self.vertex_entity_3d_to_2d(&vertex_3d_b).unwrap();
+            let vertex_2d_c = self.vertex_entity_3d_to_2d(&vertex_3d_c).unwrap();
 
             let entity_2d = commands
                 .spawn_empty()
@@ -783,26 +777,22 @@ impl ShapeManager {
                 .entity(entity_2d)
                 .insert(OwnedByFileLocal::new(file_entity));
 
-            self.face_keys.insert(key, entity_3d);
-
-            self.faces_2d.insert(entity_2d, entity_3d);
-
             // add face to vertex data
             {
-                let vertex_a_3d_data = self.vertices_3d.get_mut(&key.vertex_3d_a).unwrap();
-                vertex_a_3d_data.add_face(entity_3d);
-                let vertex_b_3d_data = self.vertices_3d.get_mut(&key.vertex_3d_b).unwrap();
-                vertex_b_3d_data.add_face(entity_3d);
-                let vertex_c_3d_data = self.vertices_3d.get_mut(&key.vertex_3d_c).unwrap();
-                vertex_c_3d_data.add_face(entity_3d);
+                let vertex_a_3d_data = self.vertices_3d.get_mut(&vertex_3d_a).unwrap();
+                vertex_a_3d_data.add_face(face_key);
+                let vertex_b_3d_data = self.vertices_3d.get_mut(&vertex_3d_b).unwrap();
+                vertex_b_3d_data.add_face(face_key);
+                let vertex_c_3d_data = self.vertices_3d.get_mut(&vertex_3d_c).unwrap();
+                vertex_c_3d_data.add_face(face_key);
             }
 
             // add face to edge data
             let mut edge_entities = Vec::new();
             for (vert_a, vert_b) in [
-                (&key.vertex_3d_a, &key.vertex_3d_b),
-                (&key.vertex_3d_b, &key.vertex_3d_c),
-                (&key.vertex_3d_c, &key.vertex_3d_a),
+                (&vertex_3d_a, &vertex_3d_b),
+                (&vertex_3d_b, &vertex_3d_c),
+                (&vertex_3d_c, &vertex_3d_a),
             ] {
                 // find edge in common
                 let vertex_a_edges = &self.vertices_3d.get(vert_a).unwrap().edges_3d;
@@ -818,24 +808,21 @@ impl ShapeManager {
                     let Some(edge_3d_data) = self.edges_3d.get_mut(edge_entity) else {
                         panic!("Edge3d entity: `{:?}` has not been registered", edge_entity);
                     };
-                    edge_3d_data.add_face(entity_3d);
+                    edge_3d_data.add_face(face_key);
 
                     edge_entities.push(*edge_entity);
                 }
             }
 
             // register face data
-            self.faces_3d.insert(
-                entity_3d,
-                Face3dData::new(
-                    key,
-                    entity_2d,
-                    file_entity,
-                    edge_entities[0],
-                    edge_entities[1],
-                    edge_entities[2],
-                ),
-            );
+            self.face_keys.insert(face_key, Some(Face3dData::new(
+                entity_2d,
+                file_entity,
+                edge_entities[0],
+                edge_entities[1],
+                edge_entities[2],
+            )));
+            self.faces_2d.insert(entity_2d, face_key);
         }
     }
 
@@ -844,22 +831,21 @@ impl ShapeManager {
         world: &mut World,
         face_2d_entity: Entity,
     ) {
-        let Some(face_3d_entity) = self.face_entity_2d_to_3d(&face_2d_entity) else {
+        let Some(face_3d_key) = self.face_key_from_2d_entity(&face_2d_entity) else {
             panic!(
                 "Face2d entity: `{:?}` has no corresponding Face3d entity",
                 face_2d_entity
             );
         };
-        let Some(face_3d_data) = self.faces_3d.get_mut(&face_3d_entity) else {
+        let Some(Some(face_3d_data)) = self.face_keys.get_mut(&face_3d_key) else {
             panic!(
                 "Face3d entity: `{:?}` has not been registered",
-                face_3d_entity
+                face_3d_key
             );
         };
-        if face_3d_data.active {
-            panic!("already activated face 3d! cannot do this twice!");
+        if face_3d_data.entity_3d.is_some() {
+            panic!("already create face 3d entity! cannot do this twice!");
         }
-        face_3d_data.active = true;
 
         let mut system_state: SystemState<(
             Commands,
@@ -881,7 +867,7 @@ impl ShapeManager {
         // get 3d vertex entities & positions
         let mut positions = [Vec3::ZERO, Vec3::ZERO, Vec3::ZERO];
         let mut vertex_3d_entities = [Entity::PLACEHOLDER, Entity::PLACEHOLDER, Entity::PLACEHOLDER];
-        let face_3d_key = face_3d_data.key;
+
         for (index, vertex_3d_entity) in [face_3d_key.vertex_3d_a, face_3d_key.vertex_3d_b, face_3d_key.vertex_3d_c].iter().enumerate() {
             let vertex_transform = transform_q.get(*vertex_3d_entity).unwrap();
             positions[index] = vertex_transform.translation;
@@ -912,8 +898,8 @@ impl ShapeManager {
             .set(&mut client, &face_3d_data.file_entity);
 
         // set up 3d entity
-        commands
-            .entity(face_3d_entity)
+        let face_3d_entity = commands
+            .spawn_empty()
             .enable_replication(&mut client)
             .configure_replication(ReplicationConfig::Delegated)
             .insert(owned_by_file_component)
@@ -925,7 +911,9 @@ impl ShapeManager {
             ))
             .insert(camera_manager.layer_3d)
             .insert(Face3dLocal)
-            .insert(face_3d_component);
+            .insert(face_3d_component)
+            .id();
+        face_3d_data.entity_3d = Some(face_3d_entity);
 
         // change 2d icon to use non-hollow triangle
         commands
@@ -994,15 +982,21 @@ impl ShapeManager {
             panic!("Vertex3d entity: `{:?}` has not been registered", vertex_3d_entity);
         };
 
-        for face_3d_entity in &vertex_3d_data.faces_3d {
-            let Ok(face_3d) = face_3d_q.get(*face_3d_entity) else {
-                panic!("Face3d entity: `{:?}` has not been registered", face_3d_entity);
+        for face_3d_key in &vertex_3d_data.faces_3d {
+            let Some(Some(face_3d_data)) = self.face_keys.get(face_3d_key) else {
+                panic!("Face3d key: `{:?}` has not been registered", face_3d_key);
             };
+            if face_3d_data.entity_3d.is_none() {
+                continue;
+            }
+            let face_3d_entity = face_3d_data.entity_3d.unwrap();
+            let vertex_3d_a = face_3d_key.vertex_3d_a;
+            let vertex_3d_b = face_3d_key.vertex_3d_b;
+            let vertex_3d_c = face_3d_key.vertex_3d_c;
+
             let mut positions = [Vec3::ZERO, Vec3::ZERO, Vec3::ZERO];
             for (index, vertex) in [
-                face_3d.vertex_a.get(client).unwrap(),
-                face_3d.vertex_b.get(client).unwrap(),
-                face_3d.vertex_c.get(client).unwrap(),
+                vertex_3d_a, vertex_3d_b, vertex_3d_c,
             ].iter().enumerate() {
                 positions[index] = transform_q.get(*vertex).unwrap().translation;
             }
@@ -1010,11 +1004,11 @@ impl ShapeManager {
             let (new_mesh, new_center) = RenderObjectBundle::world_triangle_mesh(positions);
 
             // update mesh
-            let mesh_handle = mesh_handle_q.get(*face_3d_entity).unwrap();
+            let mesh_handle = mesh_handle_q.get(face_3d_entity).unwrap();
             meshes.set(mesh_handle, new_mesh);
 
             // update transform
-            let mut transform = transform_q.get_mut(*face_3d_entity).unwrap();
+            let mut transform = transform_q.get_mut(face_3d_entity).unwrap();
             transform.translation = new_center;
         }
     }
@@ -1046,10 +1040,9 @@ impl ShapeManager {
     pub fn cleanup_deleted_edge(&mut self, entity_3d: &Entity, commands: &mut Commands) -> Entity {
         // cleanup faces
         {
-            let edge_3d_data = self.edges_3d.get(entity_3d).unwrap();
-            let faces_3d: Vec<Entity> = edge_3d_data.faces_3d.iter().copied().collect();
-            for face_3d_entity in faces_3d {
-                self.delete_and_cleanup_face(&face_3d_entity, commands);
+            let face_3d_keys: Vec<Face3dKey> = self.edges_3d.get(entity_3d).unwrap().faces_3d.iter().copied().collect();
+            for face_3d_key in face_3d_keys {
+                self.delete_and_cleanup_face(commands, &face_3d_key);
             }
         }
 
@@ -1069,19 +1062,19 @@ impl ShapeManager {
         edge_2d_entity
     }
 
-    pub fn delete_and_cleanup_face(&mut self, face_3d_entity: &Entity, commands: &mut Commands) {
-        let face_3d_data = self.faces_3d.remove(face_3d_entity).unwrap();
+    fn delete_and_cleanup_face(&mut self, commands: &mut Commands, face_3d_key: &Face3dKey) {
+        let face_3d_data = self.face_keys.remove(face_3d_key).unwrap().unwrap();
         let face_2d_entity = face_3d_data.entity_2d;
         self.faces_2d.remove(&face_2d_entity);
 
         // remove face from vertices
         for vertex_entity in [
-            face_3d_data.key.vertex_3d_a,
-            face_3d_data.key.vertex_3d_b,
-            face_3d_data.key.vertex_3d_c,
+            face_3d_key.vertex_3d_a,
+            face_3d_key.vertex_3d_b,
+            face_3d_key.vertex_3d_c,
         ] {
             let vertex_3d_data = self.vertices_3d.get_mut(&vertex_entity).unwrap();
-            vertex_3d_data.remove_face(face_3d_entity);
+            vertex_3d_data.remove_face(face_3d_key);
         }
 
         // remove face from edges
@@ -1091,15 +1084,17 @@ impl ShapeManager {
             face_3d_data.edge_3d_c,
         ] {
             let edge_3d_data = self.edges_3d.get_mut(&edge_entity).unwrap();
-            edge_3d_data.remove_face(face_3d_entity);
+            edge_3d_data.remove_face(face_3d_key);
         }
 
         // remove from keys list
-        self.face_keys.remove(&face_3d_data.key);
+        self.face_keys.remove(face_3d_key);
 
         // despawn entities
         commands.entity(face_2d_entity).despawn();
-        commands.entity(*face_3d_entity).despawn();
+        if let Some(face_3d_entity) = face_3d_data.entity_3d {
+            commands.entity(face_3d_entity).despawn();
+        }
     }
 
     pub(crate) fn has_vertex_entity_3d(&self, entity_3d: &Entity) -> bool {
@@ -1122,15 +1117,18 @@ impl ShapeManager {
         self.edges_2d.get(entity_2d).copied()
     }
 
-    pub(crate) fn face_entity_2d_to_3d(&self, entity_2d: &Entity) -> Option<Entity> {
+    fn face_key_from_2d_entity(&self, entity_2d: &Entity) -> Option<Face3dKey> {
         self.faces_2d.get(entity_2d).copied()
     }
 
-    pub(crate) fn face_3d_is_replicating(&self, entity_3d: &Entity) -> bool {
-        let Some(face_3d_data) = self.faces_3d.get(entity_3d) else {
-            panic!("Face3d entity: `{:?}` has not been registered", entity_3d);
+    pub(crate) fn face_3d_entity_from_2d_entity(&self, entity_2d: &Entity) -> Option<Entity> {
+        let Some(face_key) = self.faces_2d.get(entity_2d) else {
+            return None;
         };
-        face_3d_data.active
+        let Some(Some(face_3d_data)) = self.face_keys.get(face_key) else {
+            return None;
+        };
+        face_3d_data.entity_3d
     }
 
     pub fn vertex_3d_postprocess(

@@ -1290,13 +1290,7 @@ impl ActionStack {
                     return Some(edge_3d_entity);
                 }
                 CanvasShape::Face => {
-                    let face_3d_entity = shape_manager
-                        .face_entity_2d_to_3d(&shape_2d_entity)
-                        .unwrap();
-                    if shape_manager.face_3d_is_replicating(&face_3d_entity) {
-                        return Some(face_3d_entity);
-                    }
-                    return None;
+                    return shape_manager.face_3d_entity_from_2d_entity(&shape_2d_entity);
                 }
                 _ => return None,
             }
