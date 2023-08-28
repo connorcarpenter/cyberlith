@@ -1,6 +1,7 @@
 use std::default::Default;
 
 use bevy_ecs::bundle::Bundle;
+use bevy_log::info;
 
 use math::{Vec2, Vec3};
 

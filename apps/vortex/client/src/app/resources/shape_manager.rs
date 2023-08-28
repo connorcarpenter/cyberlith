@@ -860,14 +860,23 @@ impl ShapeManager {
         // get 3d vertex entities & positions
         let mut positions = [Vec3::ZERO, Vec3::ZERO, Vec3::ZERO];
         let mut vertex_3d_entities = [Entity::PLACEHOLDER, Entity::PLACEHOLDER, Entity::PLACEHOLDER];
-        for (index, edge_entity) in [face_3d_data.edge_3d_a, face_3d_data.edge_3d_b, face_3d_data.edge_3d_c].iter().enumerate() {
-            let edge_3d_data = self.edges_3d.get(&edge_entity).unwrap();
-            let vertex_3d_entity = edge_3d_data.vertex_a_3d_entity;
-            let vertex_transform = transform_q.get(vertex_3d_entity).unwrap();
+        let face_3d_key = face_3d_data.key;
+        for (index, vertex_3d_entity) in [face_3d_key.vertex_3d_a, face_3d_key.vertex_3d_b, face_3d_key.vertex_3d_c].iter().enumerate() {
+            let vertex_transform = transform_q.get(*vertex_3d_entity).unwrap();
             positions[index] = vertex_transform.translation;
-            vertex_3d_entities[index] = vertex_3d_entity;
+            vertex_3d_entities[index] = *vertex_3d_entity;
         }
 
+        // possibly reorder vertices to be counter-clockwise with respect to camera
+        let camera_3d_entity = camera_manager.camera_3d_entity().unwrap();
+        let camera_transform = transform_q.get(camera_3d_entity).unwrap();
+        math::reorder_triangle_winding(
+            &mut positions,
+            camera_transform.translation,
+            true,
+        );
+
+        // set up networked face component
         let mut face_3d_component = Face3d::new();
         face_3d_component.vertex_a.set(&mut client, &vertex_3d_entities[0]);
         face_3d_component.vertex_b.set(&mut client, &vertex_3d_entities[1]);
