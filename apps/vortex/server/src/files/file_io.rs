@@ -76,7 +76,7 @@ pub enum FileReadOutput {
     Mesh(Vec<(Entity, ShapeTypeData)>),
 }
 
-#[derive(Copy, Clone, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Hash, PartialEq, Eq, Debug)]
 pub enum ShapeType {
     Vertex,
     Edge,

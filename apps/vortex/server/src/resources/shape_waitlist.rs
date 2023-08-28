@@ -281,7 +281,6 @@ impl ShapeWaitlist {
                     }
                     (FileTypeValue::Skel, ShapeType::Edge) => {
                         info!("`{:?}` Skel Edge complete!", entity);
-                        return;
                     }
                     (FileTypeValue::Mesh, ShapeType::Vertex) => {
                         info!("`{:?}` Mesh Vertex complete!", entity);
@@ -305,14 +304,14 @@ impl ShapeWaitlist {
                         }
                     }
                     (FileTypeValue::Mesh, ShapeType::Face) => {
-                        todo!();
+                        info!("`{:?}` Mesh Face complete!", entity);
                     }
                     (FileTypeValue::Skel, ShapeType::Face) => {
                         panic!("not possible");
                     }
                 }
 
-                info!("processing shape {:?}", entity);
+                info!("processing shape type: `{:?}`, entity: `{:?}`", entry.shape.unwrap(), entity);
                 self.process_complete(server, git_manager, shape_manager, entity, entry);
             } else {
                 info!("entity `{:?}` is not ready yet...", possibly_ready_entity);
@@ -332,50 +331,34 @@ impl ShapeWaitlist {
 
         let data = entry.decompose();
 
-        match data {
+        let (project_key, file_key, shape_type) = match data {
             ShapeData::SkelVertex(project_key, file_key, edge_and_parent_opt) => {
-                git_manager.on_client_insert_content_entity(
-                    server,
-                    &project_key,
-                    &file_key,
-                    &entity,
-                    ShapeType::Vertex,
-                );
                 shape_manager.on_create_skel_vertex(entity, edge_and_parent_opt);
+                (project_key, file_key, ShapeType::Vertex)
             }
             ShapeData::SkelEdge(project_key, file_key) => {
-                git_manager.on_client_insert_content_entity(
-                    server,
-                    &project_key,
-                    &file_key,
-                    &entity,
-                    ShapeType::Edge,
-                );
+                (project_key, file_key, ShapeType::Edge)
             }
             ShapeData::MeshVertex(project_key, file_key) => {
-                git_manager.on_client_insert_content_entity(
-                    server,
-                    &project_key,
-                    &file_key,
-                    &entity,
-                    ShapeType::Vertex,
-                );
                 shape_manager.on_create_mesh_vertex(entity);
+                (project_key, file_key, ShapeType::Vertex)
             }
             ShapeData::MeshEdge(project_key, file_key, start, end) => {
-                git_manager.on_client_insert_content_entity(
-                    server,
-                    &project_key,
-                    &file_key,
-                    &entity,
-                    ShapeType::Edge,
-                );
                 shape_manager.on_create_mesh_edge(start, entity, end);
+                (project_key, file_key, ShapeType::Vertex)
             }
             ShapeData::MeshFace(project_key, file_key) => {
-                todo!()
+                (project_key, file_key, ShapeType::Face)
             }
-        }
+        };
+
+        git_manager.on_client_insert_content_entity(
+            server,
+            &project_key,
+            &file_key,
+            &entity,
+            shape_type,
+        );
 
         // if the waitlist has any children entities of this one, process them
         info!(

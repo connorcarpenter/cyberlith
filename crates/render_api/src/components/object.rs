@@ -172,11 +172,13 @@ impl RenderObjectBundle {
         let positions = vec![outer_a, outer_b, outer_c];
         let indices: Indices = Indices(Some(vec![0u16, 1, 2]));
 
-        let mesh = CpuMesh {
+        let mut mesh = CpuMesh {
             indices,
             positions: Positions(positions),
             ..Default::default()
         };
+
+        mesh.compute_normals();
 
         Self {
             mesh: meshes.add_unique(mesh),

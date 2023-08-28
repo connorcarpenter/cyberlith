@@ -11,12 +11,7 @@ use bevy_log::{info, warn};
 use naia_bevy_client::{Client, CommandsExt, Replicate, ReplicationConfig};
 
 use math::{convert_2d_to_3d, convert_3d_to_2d, Vec2, Vec3};
-use render_api::{
-    base::{Color, CpuMaterial, CpuMesh},
-    components::{Camera, CameraProjection, Projection, RenderObjectBundle, Transform, Visibility},
-    shapes::{distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform},
-    Assets,
-};
+use render_api::{base::{Color, CpuMaterial, CpuMesh}, components::{Camera, CameraProjection, Projection, RenderObjectBundle, Transform, Visibility}, shapes::{Triangle, distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform}, Assets};
 
 use vortex_proto::components::{Face3d, FileTypeValue, OwnedByFile, Vertex3d, VertexRoot};
 
@@ -853,7 +848,14 @@ impl ShapeManager {
             ResMut<Assets<CpuMaterial>>,
             Query<&Transform>,
         )> = SystemState::new(world);
-        let (mut commands, mut client, camera_manager, mut meshes, mut materials, transform_q) = system_state.get_mut(world);
+        let (
+            mut commands,
+            mut client,
+            camera_manager,
+            mut meshes,
+            mut materials,
+            transform_q
+        ) = system_state.get_mut(world);
 
         // get 3d vertex entities & positions
         let mut positions = [Vec3::ZERO, Vec3::ZERO, Vec3::ZERO];
@@ -894,73 +896,12 @@ impl ShapeManager {
             .insert(face_3d_component);
 
         // change 2d icon to use non-hollow triangle
+        commands
+            .entity(face_2d_entity)
+            .insert(meshes.add(Triangle::new_2d_equilateral()));
 
         system_state.apply(world);
     }
-
-    //pub fn vertex_3d_postprocess(
-    //         &mut self,
-    //         commands: &mut Commands,
-    //         meshes: &mut Assets<CpuMesh>,
-    //         materials: &mut Assets<CpuMaterial>,
-    //         camera_manager: &CameraManager,
-    //         vertex_3d_entity: Entity,
-    //         is_root: bool,
-    //         ownership_opt: Option<Entity>,
-    //         color: Color,
-    //     ) -> Entity {
-    //         // vertex 3d
-    //         commands
-    //             .entity(vertex_3d_entity)
-    //             .insert(RenderObjectBundle::sphere(
-    //                 meshes,
-    //                 materials,
-    //                 Vec3::ZERO,
-    //                 Vertex2d::RADIUS,
-    //                 Vertex2d::SUBDIVISIONS,
-    //                 color,
-    //             ))
-    //             .insert(camera_manager.layer_3d);
-    //
-    //         // vertex 2d
-    //         let vertex_2d_entity = commands
-    //             .spawn(RenderObjectBundle::circle(
-    //                 meshes,
-    //                 materials,
-    //                 Vec2::ZERO,
-    //                 Vertex2d::RADIUS,
-    //                 Vertex2d::SUBDIVISIONS,
-    //                 color,
-    //                 None,
-    //             ))
-    //             .insert(camera_manager.layer_2d)
-    //             .insert(Vertex2d)
-    //             .id();
-    //
-    //         if let Some(file_entity) = ownership_opt {
-    //             info!(
-    //                 "adding OwnedByFileLocal({:?}) to entity {:?}",
-    //                 file_entity, vertex_2d_entity
-    //             );
-    //             commands
-    //                 .entity(vertex_2d_entity)
-    //                 .insert(OwnedByFileLocal::new(file_entity));
-    //         }
-    //
-    //         if is_root {
-    //             commands.entity(vertex_2d_entity).insert(VertexRoot);
-    //         }
-    //
-    //         // info!(
-    //         //     "created Vertex3d: `{:?}`, created 2d entity: {:?}",
-    //         //     vertex_3d_entity, vertex_2d_entity,
-    //         // );
-    //
-    //         // register 3d & 2d vertices together
-    //         self.register_3d_vertex(vertex_3d_entity, vertex_2d_entity);
-    //
-    //         vertex_2d_entity
-    //     }
 
     // returns entity 2d
     pub fn cleanup_deleted_vertex(

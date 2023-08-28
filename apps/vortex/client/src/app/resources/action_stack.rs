@@ -1167,6 +1167,9 @@ impl ActionStack {
                     Some((edge_2d_entity, edge_3d_entity)),
                 )];
             }
+            Action::DeleteFace(face_2d_entity) => {
+                return vec![Action::SelectShape(Some((face_2d_entity, CanvasShape::Face)))];
+            }
         }
     }
 
