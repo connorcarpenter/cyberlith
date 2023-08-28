@@ -1,6 +1,7 @@
 use glam::Vec3;
 
-pub fn reorder_triangle_winding(vertices: &mut [Vec3; 3], external_point: Vec3, set_to_clockwise: bool) {
+// returns whether last two vertices were swapped
+pub fn reorder_triangle_winding(vertices: &mut [Vec3; 3], external_point: Vec3, set_to_clockwise: bool) -> bool {
     let a= vertices[0];
     let b = vertices[1];
     let c = vertices[2];
@@ -21,13 +22,14 @@ pub fn reorder_triangle_winding(vertices: &mut [Vec3; 3], external_point: Vec3, 
         true
     } else {
         // is coplanar
-        return;
+        return false;
     };
 
     if currently_clockwise == set_to_clockwise {
-        return;
+        return false;
     }
 
     // swap vertices
     vertices.swap(1, 2);
+    return true;
 }

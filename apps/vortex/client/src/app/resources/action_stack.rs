@@ -10,16 +10,12 @@ use bevy_log::{info, warn};
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus, ReplicationConfig};
 
 use math::Vec3;
-use render_api::{
-    base::{CpuMaterial, CpuMesh},
-    components::Visibility,
-    Assets,
-};
+use render_api::{base::{CpuMaterial, CpuMesh}, components::{Visibility, Transform}, Assets, Handle};
 
 use vortex_proto::{
     components::{
         ChangelistEntry, Edge3d, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-        FileType, FileTypeValue, OwnedByFile, Vertex3d,
+        FileType, FileTypeValue, OwnedByFile, Vertex3d, Face3d,
     },
     FileExtension,
 };
@@ -983,12 +979,24 @@ impl ActionStack {
             Action::MoveVertex(vertex_2d_entity, old_position, new_position) => {
                 info!("MoveVertex");
                 let mut system_state: SystemState<(
+                    Client,
+                    ResMut<Assets<CpuMesh>>,
                     ResMut<ShapeManager>,
                     ResMut<CameraManager>,
                     Query<&mut Vertex3d>,
+                    Query<&Handle<CpuMesh>>,
+                    Query<&Face3d>,
+                    Query<&mut Transform>,
                 )> = SystemState::new(world);
-                let (shape_manager, mut camera_manager, mut vertex_3d_q) =
-                    system_state.get_mut(world);
+                let (client,
+                    mut meshes,
+                    shape_manager,
+                    mut camera_manager,
+                    mut vertex_3d_q,
+                    mesh_handle_q,
+                    face_3d_q,
+                    mut transform_q,
+                ) = system_state.get_mut(world);
 
                 let vertex_3d_entity = shape_manager
                     .vertex_entity_2d_to_3d(&vertex_2d_entity)
@@ -998,6 +1006,8 @@ impl ActionStack {
                     panic!("Failed to get Vertex3d for vertex entity {:?}!", vertex_3d_entity);
                 };
                 vertex_3d.set_vec3(&new_position);
+
+                shape_manager.on_vertex_3d_moved(&client, &mut meshes, &mesh_handle_q, &face_3d_q, &mut transform_q, &vertex_3d_entity);
 
                 camera_manager.recalculate_3d_view();
 

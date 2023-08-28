@@ -156,6 +156,17 @@ impl RenderObjectBundle {
         color: Color,
     ) -> Self {
 
+        let (mesh, center) = Self::world_triangle_mesh(positions);
+
+        Self {
+            mesh: meshes.add_unique(mesh),
+            material: materials.add(color),
+            transform: Transform::from_translation(center),
+            ..Default::default()
+        }
+    }
+
+    pub fn world_triangle_mesh(positions: [Vec3; 3]) -> (CpuMesh, Vec3) {
         let mut outer_a = positions[0];
         let mut outer_b = positions[1];
         let mut outer_c = positions[2];
@@ -181,12 +192,7 @@ impl RenderObjectBundle {
 
         mesh.compute_normals();
 
-        Self {
-            mesh: meshes.add_unique(mesh),
-            material: materials.add(color),
-            transform: Transform::from_translation(center),
-            ..Default::default()
-        }
+        (mesh, center)
     }
 
     pub fn equilateral_triangle(

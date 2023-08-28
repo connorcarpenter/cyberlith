@@ -11,7 +11,7 @@ use bevy_log::{info, warn};
 use naia_bevy_client::{Client, CommandsExt, Replicate, ReplicationConfig};
 
 use math::{convert_2d_to_3d, convert_3d_to_2d, Vec2, Vec3};
-use render_api::{base::{Color, CpuMaterial, CpuMesh}, components::{Camera, CameraProjection, Projection, RenderObjectBundle, Transform, Visibility}, shapes::{Triangle, distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform}, Assets};
+use render_api::{base::{Color, CpuMaterial, CpuMesh}, components::{Camera, CameraProjection, Projection, RenderObjectBundle, Transform, Visibility}, shapes::{Triangle, distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform}, Assets, Handle};
 
 use vortex_proto::components::{Face3d, FileTypeValue, OwnedByFile, Vertex3d, VertexRoot};
 
@@ -39,6 +39,38 @@ pub enum CanvasShape {
     Face,
 }
 
+struct Vertex3dData {
+    entity_2d: Entity,
+    edges_3d: HashSet<Entity>,
+    faces_3d: HashSet<Entity>,
+}
+
+impl Vertex3dData {
+    fn new(entity_2d: Entity) -> Self {
+        Self {
+            entity_2d,
+            edges_3d: HashSet::new(),
+            faces_3d: HashSet::new(),
+        }
+    }
+
+    fn add_edge(&mut self, edge_3d_entity: Entity) {
+        self.edges_3d.insert(edge_3d_entity);
+    }
+
+    fn remove_edge(&mut self, edge_3d_entity: &Entity) {
+        self.edges_3d.remove(edge_3d_entity);
+    }
+
+    fn add_face(&mut self, face_3d_entity: Entity) {
+        self.faces_3d.insert(face_3d_entity);
+    }
+
+    fn remove_face(&mut self, face_3d_entity: &Entity) {
+        self.faces_3d.remove(face_3d_entity);
+    }
+}
+
 struct Edge3dData {
     entity_2d: Entity,
     vertex_a_3d_entity: Entity,
@@ -62,28 +94,6 @@ impl Edge3dData {
 
     fn remove_face(&mut self, face_3d_entity: &Entity) {
         self.faces_3d.remove(face_3d_entity);
-    }
-}
-
-struct Vertex3dData {
-    entity_2d: Entity,
-    edges_3d: HashSet<Entity>,
-}
-
-impl Vertex3dData {
-    fn new(entity_2d: Entity) -> Self {
-        Self {
-            entity_2d,
-            edges_3d: HashSet::new(),
-        }
-    }
-
-    fn add_edge(&mut self, edge_3d_entity: Entity) {
-        self.edges_3d.insert(edge_3d_entity);
-    }
-
-    fn remove_edge(&mut self, edge_3d_entity: &Entity) {
-        self.edges_3d.remove(edge_3d_entity);
     }
 }
 
@@ -777,8 +787,18 @@ impl ShapeManager {
 
             self.faces_2d.insert(entity_2d, entity_3d);
 
-            let mut edge_entities = Vec::new();
+            // add face to vertex data
+            {
+                let vertex_a_3d_data = self.vertices_3d.get_mut(&key.vertex_3d_a).unwrap();
+                vertex_a_3d_data.add_face(entity_3d);
+                let vertex_b_3d_data = self.vertices_3d.get_mut(&key.vertex_3d_b).unwrap();
+                vertex_b_3d_data.add_face(entity_3d);
+                let vertex_c_3d_data = self.vertices_3d.get_mut(&key.vertex_3d_c).unwrap();
+                vertex_c_3d_data.add_face(entity_3d);
+            }
+
             // add face to edge data
+            let mut edge_entities = Vec::new();
             for (vert_a, vert_b) in [
                 (&key.vertex_3d_a, &key.vertex_3d_b),
                 (&key.vertex_3d_b, &key.vertex_3d_c),
@@ -804,6 +824,7 @@ impl ShapeManager {
                 }
             }
 
+            // register face data
             self.faces_3d.insert(
                 entity_3d,
                 Face3dData::new(
@@ -870,11 +891,13 @@ impl ShapeManager {
         // possibly reorder vertices to be counter-clockwise with respect to camera
         let camera_3d_entity = camera_manager.camera_3d_entity().unwrap();
         let camera_transform = transform_q.get(camera_3d_entity).unwrap();
-        math::reorder_triangle_winding(
+        if math::reorder_triangle_winding(
             &mut positions,
             camera_transform.translation,
             true,
-        );
+        ) {
+            vertex_3d_entities.swap(1,2);
+        }
 
         // set up networked face component
         let mut face_3d_component = Face3d::new();
@@ -910,6 +933,44 @@ impl ShapeManager {
             .insert(meshes.add(Triangle::new_2d_equilateral()));
 
         system_state.apply(world);
+    }
+
+    pub fn on_vertex_3d_moved(
+        &self,
+        client: &Client,
+        meshes: &mut Assets<CpuMesh>,
+        mesh_handle_q: &Query<&Handle<CpuMesh>>,
+        face_3d_q: &Query<&Face3d>,
+        transform_q: &mut Query<&mut Transform>,
+        vertex_3d_entity: &Entity,
+    ) {
+        let Some(vertex_3d_data) = self.vertices_3d.get(vertex_3d_entity) else {
+            panic!("Vertex3d entity: `{:?}` has not been registered", vertex_3d_entity);
+        };
+
+        for face_3d_entity in &vertex_3d_data.faces_3d {
+            let Ok(face_3d) = face_3d_q.get(*face_3d_entity) else {
+                panic!("Face3d entity: `{:?}` has not been registered", face_3d_entity);
+            };
+            let mut positions = [Vec3::ZERO, Vec3::ZERO, Vec3::ZERO];
+            for (index, vertex) in [
+                face_3d.vertex_a.get(client).unwrap(),
+                face_3d.vertex_b.get(client).unwrap(),
+                face_3d.vertex_c.get(client).unwrap(),
+            ].iter().enumerate() {
+                positions[index] = transform_q.get(*vertex).unwrap().translation;
+            }
+
+            let (new_mesh, new_center) = RenderObjectBundle::world_triangle_mesh(positions);
+
+            // update mesh
+            let mesh_handle = mesh_handle_q.get(*face_3d_entity).unwrap();
+            meshes.set(mesh_handle, new_mesh);
+
+            // update transform
+            let mut transform = transform_q.get_mut(*face_3d_entity).unwrap();
+            transform.translation = new_center;
+        }
     }
 
     // returns entity 2d
@@ -966,6 +1027,16 @@ impl ShapeManager {
         let face_3d_data = self.faces_3d.remove(face_3d_entity).unwrap();
         let face_2d_entity = face_3d_data.entity_2d;
         self.faces_2d.remove(&face_2d_entity);
+
+        // remove face from vertices
+        for vertex_entity in [
+            face_3d_data.key.vertex_3d_a,
+            face_3d_data.key.vertex_3d_b,
+            face_3d_data.key.vertex_3d_c,
+        ] {
+            let vertex_3d_data = self.vertices_3d.get_mut(&vertex_entity).unwrap();
+            vertex_3d_data.remove_face(face_3d_entity);
+        }
 
         // remove face from edges
         for edge_entity in [
