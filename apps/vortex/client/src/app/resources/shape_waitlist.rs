@@ -21,6 +21,7 @@ pub enum ShapeWaitlistInsert {
     Vertex,
     VertexRoot,
     Edge(Entity, Entity),
+    Face(Entity, Entity, Entity),
     OwnedByFile(Entity),
     FileType(FileTypeValue),
 }
@@ -29,11 +30,13 @@ pub enum ShapeWaitlistInsert {
 enum ShapeType {
     Vertex,
     Edge,
+    Face,
 }
 
 enum ShapeData {
     Vertex(Option<Entity>),
     Edge(Entity, Entity),
+    Face(Entity, Entity, Entity),
 }
 
 #[derive(Clone)]
@@ -42,6 +45,7 @@ pub struct ShapeWaitlistEntry {
     vertex_parent: Option<Option<Entity>>,
     file_entity: Option<Entity>,
     edge_entities: Option<(Entity, Entity)>,
+    face_entities: Option<(Entity, Entity, Entity)>,
     file_type: Option<FileTypeValue>,
 }
 
@@ -52,6 +56,7 @@ impl ShapeWaitlistEntry {
             vertex_parent: None,
             file_entity: None,
             edge_entities: None,
+            face_entities: None,
             file_type: None,
         }
     }
@@ -69,6 +74,11 @@ impl ShapeWaitlistEntry {
                 self.file_type.is_some()
                     && self.file_entity.is_some()
                     && self.edge_entities.is_some()
+            }
+            Some(ShapeType::Face) => {
+                self.file_type.is_some()
+                    && self.file_entity.is_some()
+                    && self.face_entities.is_some()
             }
             None => false,
         }
@@ -99,6 +109,12 @@ impl ShapeWaitlistEntry {
         self.edge_entities = Some((start, end));
     }
 
+    fn set_face(&mut self, vertex_a: Entity, vertex_b: Entity, vertex_c: Entity) {
+        self.shape = Some(ShapeType::Face);
+        self.face_entities = Some((vertex_a, vertex_b, vertex_c));
+        self.file_type = Some(FileTypeValue::Mesh);
+    }
+
     fn set_file_entity(&mut self, file_entity: Entity) {
         self.file_entity = Some(file_entity);
     }
@@ -119,6 +135,10 @@ impl ShapeWaitlistEntry {
             (ShapeType::Edge, _) => {
                 let entities = self.edge_entities.unwrap();
                 ShapeData::Edge(entities.0, entities.1)
+            }
+            (ShapeType::Face, _) => {
+                let (vertex_a, vertex_b, vertex_c) = self.face_entities.unwrap();
+                ShapeData::Face(vertex_a, vertex_b, vertex_c)
             }
         };
         return (shape_data, self.file_entity.unwrap(), file_type);
@@ -166,6 +186,9 @@ impl ShapeWaitlist {
             ShapeWaitlistInsert::Vertex => {
                 self.get_mut(&entity).unwrap().set_vertex();
             }
+            ShapeWaitlistInsert::VertexRoot => {
+                self.get_mut(&entity).unwrap().set_parent(None);
+            }
             ShapeWaitlistInsert::Edge(start_entity, end_entity) => {
                 let Some(edge_entry) = self.get_mut(&entity) else {
                     panic!("edge entity {:?} should have been inserted already!", entity);
@@ -186,8 +209,8 @@ impl ShapeWaitlist {
                     possibly_ready_entities
                 );
             }
-            ShapeWaitlistInsert::VertexRoot => {
-                self.get_mut(&entity).unwrap().set_parent(None);
+            ShapeWaitlistInsert::Face(vertex_a, vertex_b, vertex_c) => {
+                self.get_mut(&entity).unwrap().set_face(vertex_a, vertex_b, vertex_c);
             }
             ShapeWaitlistInsert::OwnedByFile(file_entity) => {
                 self.get_mut(&entity).unwrap().set_file_entity(file_entity);
@@ -236,7 +259,6 @@ impl ShapeWaitlist {
                         }
                     }
                 }
-                (ShapeType::Vertex, FileTypeValue::Mesh) => {}
                 (ShapeType::Edge, _) => {
                     let entities = entry.edge_entities.unwrap();
                     let mut has_all_entities = true;
@@ -262,6 +284,8 @@ impl ShapeWaitlist {
                         continue;
                     }
                 }
+                (ShapeType::Vertex, FileTypeValue::Mesh) => {}
+                (ShapeType::Face, _) => {}
             }
             self.process_complete(
                 commands,
@@ -370,6 +394,9 @@ impl ShapeWaitlist {
                     Vertex2d::CHILD_COLOR,
                     file_type == FileTypeValue::Skel,
                 );
+            }
+            (ShapeData::Face(vertex_a, vertex_b, vertex_c), _) => {
+                shape_manager.face_3d_postprocess(entity, vertex_a, vertex_b, vertex_c);
             }
         }
 

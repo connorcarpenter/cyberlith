@@ -935,6 +935,52 @@ impl ShapeManager {
         system_state.apply(world);
     }
 
+    pub fn face_3d_postprocess(
+        &mut self,
+        face_3d_entity: Entity,
+        vertex_3d_a: Entity,
+        vertex_3d_b: Entity,
+        vertex_3d_c: Entity,
+    ) {
+        todo!();
+        // let Some(face_3d_data) = self.faces_3d.get_mut(&face_3d_entity) else {
+        //     panic!(
+        //         "Face3d entity: `{:?}` has not been registered",
+        //         face_3d_entity
+        //     );
+        // };
+        // if face_3d_data.active {
+        //     panic!("already activated face 3d! cannot do this twice!");
+        // }
+        // face_3d_data.active = true;
+        //
+        // // get 3d vertex entities & positions
+        // let mut positions = [Vec3::ZERO, Vec3::ZERO, Vec3::ZERO];
+        // let face_3d_key = face_3d_data.key;
+        // let mut vertex_3d_entities = [face_3d_key.vertex_3d_a, face_3d_key.vertex_3d_b, face_3d_key.vertex_3d_c];
+        // for (index, vertex_3d_entity) in vertex_3d_entities.iter().enumerate() {
+        //     let vertex_transform = transform_q.get(*vertex_3d_entity).unwrap();
+        //     positions[index] = vertex_transform.translation;
+        // }
+        //
+        // // set up 3d entity
+        // commands
+        //     .entity(face_3d_entity)
+        //     .insert(RenderObjectBundle::world_triangle(
+        //         meshes,
+        //         materials,
+        //         positions,
+        //         Face3dLocal::COLOR,
+        //     ))
+        //     .insert(camera_manager.layer_3d)
+        //     .insert(Face3dLocal);
+        //
+        // // change 2d icon to use non-hollow triangle
+        // commands
+        //     .entity(face_2d_entity)
+        //     .insert(meshes.add(Triangle::new_2d_equilateral()));
+    }
+
     pub fn on_vertex_3d_moved(
         &self,
         client: &Client,

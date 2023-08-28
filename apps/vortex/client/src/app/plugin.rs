@@ -7,7 +7,7 @@ use render_api::resources::WindowSettings;
 
 use vortex_proto::{
     components::{
-        ChangelistEntry, Edge3d, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
+        ChangelistEntry, Edge3d, Face3d, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
         FileType, OwnedByFile, Vertex3d, VertexRoot,
     },
     protocol,
@@ -81,11 +81,15 @@ impl Plugin for VortexPlugin {
             .add_event::<InsertComponentEvent<VertexRoot>>()
             .add_event::<InsertComponentEvent<OwnedByFile>>()
             .add_event::<InsertComponentEvent<Edge3d>>()
+            .add_event::<InsertComponentEvent<Face3d>>()
             .add_event::<InsertComponentEvent<FileType>>()
             .init_resource::<ShapeWaitlist>()
             .add_systems(Update, network::insert_fs_component_events)
             .add_systems(Update, network::insert_changelist_entry_events)
             .add_systems(Update, network::insert_vertex_events)
+            .add_systems(Update, network::insert_edge_events)
+            .add_systems(Update, network::insert_face_events)
+            .add_systems(Update, network::insert_shape_events)
             // UI Configuration
             .init_resource::<UiState>()
             .insert_resource(global_resource)

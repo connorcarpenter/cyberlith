@@ -20,10 +20,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{
-    ChangelistEntry, Edge3d, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-    FileType, OwnedByFile, Vertex3d, VertexRoot,
-};
+use vortex_proto::components::{ChangelistEntry, Edge3d, EntryKind, Face3d, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, Vertex3d, VertexRoot};
 
 use crate::app::resources::action_stack::ActionStack;
 use crate::app::{
@@ -65,6 +62,7 @@ pub fn insert_component_events(
     mut insert_owned_by_event_writer: EventWriter<InsertComponentEvent<OwnedByFile>>,
     mut insert_file_type_event_writer: EventWriter<InsertComponentEvent<FileType>>,
     mut insert_edge_3d_event_writer: EventWriter<InsertComponentEvent<Edge3d>>,
+    mut insert_face_3d_event_writer: EventWriter<InsertComponentEvent<Face3d>>,
 ) {
     for events in event_reader.iter() {
         // on FileSystemEntry Insert Event
@@ -111,6 +109,11 @@ pub fn insert_component_events(
         // on Edge3d Insert Event
         for entity in events.read::<Edge3d>() {
             insert_edge_3d_event_writer.send(InsertComponentEvent::<Edge3d>::new(entity));
+        }
+
+        // on Face3d Insert Event
+        for entity in events.read::<Face3d>() {
+            insert_face_3d_event_writer.send(InsertComponentEvent::<Face3d>::new(entity));
         }
     }
 }
@@ -219,12 +222,8 @@ pub fn insert_changelist_entry_events(
 
 pub fn insert_vertex_events(
     mut commands: Commands,
-    client: Client,
     mut vertex_3d_events: EventReader<InsertComponentEvent<Vertex3d>>,
     mut vertex_root_events: EventReader<InsertComponentEvent<VertexRoot>>,
-    mut edge_3d_events: EventReader<InsertComponentEvent<Edge3d>>,
-    mut owned_by_events: EventReader<InsertComponentEvent<OwnedByFile>>,
-    mut file_type_events: EventReader<InsertComponentEvent<FileType>>,
 
     // for vertices
     mut camera_manager: ResMut<CameraManager>,
@@ -232,9 +231,6 @@ pub fn insert_vertex_events(
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
     mut shape_waitlist: ResMut<ShapeWaitlist>,
-    edge_3d_q: Query<&Edge3d>,
-    owned_by_tab_q: Query<&OwnedByFile>,
-    file_type_q: Query<&FileType>,
 ) {
     // on Vertex Insert Event
     for event in vertex_3d_events.iter() {
@@ -269,7 +265,21 @@ pub fn insert_vertex_events(
             ShapeWaitlistInsert::VertexRoot,
         );
     }
+}
 
+pub fn insert_edge_events(
+    mut commands: Commands,
+    client: Client,
+    mut edge_3d_events: EventReader<InsertComponentEvent<Edge3d>>,
+
+    // for vertices
+    mut camera_manager: ResMut<CameraManager>,
+    mut shape_manager: ResMut<ShapeManager>,
+    mut meshes: ResMut<Assets<CpuMesh>>,
+    mut materials: ResMut<Assets<CpuMaterial>>,
+    mut shape_waitlist: ResMut<ShapeWaitlist>,
+    edge_3d_q: Query<&Edge3d>,
+) {
     // on Edge3d Insert Event
     for event in edge_3d_events.iter() {
         // handle vertex
@@ -297,7 +307,67 @@ pub fn insert_vertex_events(
             ShapeWaitlistInsert::Edge(start_entity, end_entity),
         );
     }
+}
 
+pub fn insert_face_events(
+    mut commands: Commands,
+    client: Client,
+    mut face_3d_events: EventReader<InsertComponentEvent<Face3d>>,
+    mut camera_manager: ResMut<CameraManager>,
+    mut shape_manager: ResMut<ShapeManager>,
+    mut meshes: ResMut<Assets<CpuMesh>>,
+    mut materials: ResMut<Assets<CpuMaterial>>,
+    mut shape_waitlist: ResMut<ShapeWaitlist>,
+    face_3d_q: Query<&Face3d>,
+) {
+    // on Face3d Insert Event
+    for event in face_3d_events.iter() {
+        // handle face
+        let face_entity = event.entity;
+
+        info!("entity: {:?} - inserted Face3d", face_entity);
+
+        let face_3d = face_3d_q.get(face_entity).unwrap();
+        let Some(vertex_a_entity) = face_3d.vertex_a.get(&client) else {
+            warn!("Face3d component of entity: `{:?}` has no start entity", face_entity);
+            continue;
+        };
+        let Some(vertex_b_entity) = face_3d.vertex_b.get(&client) else {
+            warn!("Face3d component of entity: `{:?}` has no start entity", face_entity);
+            continue;
+        };
+        let Some(vertex_c_entity) = face_3d.vertex_c.get(&client) else {
+            warn!("Face3d component of entity: `{:?}` has no start entity", face_entity);
+            continue;
+        };
+
+        shape_waitlist.process_insert(
+            &mut commands,
+            &mut meshes,
+            &mut materials,
+            &mut camera_manager,
+            &mut shape_manager,
+            &face_entity,
+            ShapeWaitlistInsert::Face(vertex_a_entity, vertex_b_entity, vertex_c_entity),
+        );
+    }
+}
+
+pub fn insert_shape_events(
+    mut commands: Commands,
+    client: Client,
+    mut owned_by_events: EventReader<InsertComponentEvent<OwnedByFile>>,
+    mut file_type_events: EventReader<InsertComponentEvent<FileType>>,
+
+    // for vertices
+    mut camera_manager: ResMut<CameraManager>,
+    mut shape_manager: ResMut<ShapeManager>,
+    mut meshes: ResMut<Assets<CpuMesh>>,
+    mut materials: ResMut<Assets<CpuMaterial>>,
+    mut shape_waitlist: ResMut<ShapeWaitlist>,
+    owned_by_tab_q: Query<&OwnedByFile>,
+    file_type_q: Query<&FileType>,
+) {
     // on OwnedByFile Insert Event
     for event in owned_by_events.iter() {
         let entity = event.entity;
