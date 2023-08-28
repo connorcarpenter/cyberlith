@@ -36,3 +36,12 @@ impl FaceIcon2d {
         self.vertex_2d_c
     }
 }
+
+
+// Just a marker, to distinguish from 2d version
+#[derive(Component)]
+pub struct Face3dLocal;
+
+impl Face3dLocal {
+    pub const COLOR: Color = Color::GREEN;
+}

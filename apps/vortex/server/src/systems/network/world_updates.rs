@@ -16,7 +16,7 @@ use naia_bevy_server::{
 };
 
 use vortex_proto::{
-    components::{
+    components::{Face3d,
         Edge3d, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile,
         Vertex3d, VertexRoot,
     },
@@ -191,6 +191,18 @@ pub fn insert_component_events(
                 &mut git_manager,
                 &mut shape_manager,
                 ShapeWaitlistInsert::Edge(start_entity, edge_entity, end_entity),
+            );
+        }
+
+        // on Face3d Insert Event
+        for (_, face_entity) in events.read::<Face3d>() {
+            info!("entity: `{:?}`, inserted Face3d", face_entity);
+
+            shape_waitlist.process_insert(
+                &mut server,
+                &mut git_manager,
+                &mut shape_manager,
+                ShapeWaitlistInsert::Face(face_entity),
             );
         }
 

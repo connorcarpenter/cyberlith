@@ -3,11 +3,12 @@ use std::collections::{HashMap, HashSet};
 use bevy_ecs::{
     entity::Entity,
     query::{With, Without},
-    system::{Commands, Query, Resource},
+    system::{Commands, Query, Resource, Res, ResMut, SystemState},
+    world::World,
 };
 use bevy_log::{info, warn};
 
-use naia_bevy_client::{Client, CommandsExt, Replicate};
+use naia_bevy_client::{Client, CommandsExt, Replicate, ReplicationConfig};
 
 use math::{convert_2d_to_3d, convert_3d_to_2d, Vec2, Vec3};
 use render_api::{
@@ -17,12 +18,12 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{FileTypeValue, Vertex3d, VertexRoot};
+use vortex_proto::components::{Face3d, FileTypeValue, OwnedByFile, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::{
         Compass, Edge2dLocal, Edge3dLocal, FaceIcon2d, OwnedByFileLocal, SelectCircle,
-        SelectTriangle, Vertex2d, VertexTypeData,
+        SelectTriangle, Vertex2d, VertexTypeData, Face3dLocal
     },
     resources::{
         action_stack::{Action, ActionStack},
@@ -113,18 +114,22 @@ impl Face3dKey {
 }
 
 struct Face3dData {
-    entity_2d: Entity,
     key: Face3dKey,
-    active: bool,
+    entity_2d: Entity,
+    file_entity: Entity,
+
     edge_3d_a: Entity,
     edge_3d_b: Entity,
     edge_3d_c: Entity,
+
+    active: bool,
 }
 
 impl Face3dData {
     fn new(
         key: Face3dKey,
         entity_2d: Entity,
+        file_entity: Entity,
         edge_3d_a: Entity,
         edge_3d_b: Entity,
         edge_3d_c: Entity,
@@ -132,10 +137,11 @@ impl Face3dData {
         Self {
             key,
             entity_2d,
-            active: false,
+            file_entity,
             edge_3d_a,
             edge_3d_b,
             edge_3d_c,
+            active: false,
         }
     }
 }
@@ -161,7 +167,7 @@ pub struct ShapeManager {
     // 2d face entity -> 3d face entity
     faces_2d: HashMap<Entity, Entity>,
     // queue of new faces to process
-    new_face_keys: Vec<(Face3dKey, Option<Entity>)>,
+    new_face_keys: Vec<(Face3dKey, Entity)>,
 
     shapes_recalc: u8,
     selection_recalc: bool,
@@ -628,7 +634,9 @@ impl ShapeManager {
         );
         self.edges_2d.insert(edge_2d_entity, edge_3d_entity);
 
-        self.check_for_new_faces(vertex_a_3d_entity, vertex_b_3d_entity, ownership_opt);
+        if let Some(file_entity) = ownership_opt {
+            self.check_for_new_faces(vertex_a_3d_entity, vertex_b_3d_entity, file_entity);
+        }
     }
 
     fn unregister_3d_vertex(&mut self, entity_3d: &Entity) -> Option<Entity> {
@@ -683,7 +691,7 @@ impl ShapeManager {
         &mut self,
         vertex_a_3d_entity: Entity,
         vertex_b_3d_entity: Entity,
-        ownership_opt: Option<Entity>,
+        file_entity: Entity,
     ) {
         let vertex_a_connected_vertices = self.get_connected_vertices(vertex_a_3d_entity);
         let vertex_b_connected_vertices = self.get_connected_vertices(vertex_b_3d_entity);
@@ -694,7 +702,7 @@ impl ShapeManager {
             let face_key = Face3dKey::new(vertex_a_3d_entity, vertex_b_3d_entity, *common_vertex);
             if !self.face_keys.contains_key(&face_key) {
                 self.face_keys.insert(face_key, Entity::PLACEHOLDER);
-                self.new_face_keys.push((face_key, ownership_opt));
+                self.new_face_keys.push((face_key, file_entity));
             }
         }
     }
@@ -733,11 +741,13 @@ impl ShapeManager {
         }
 
         let keys = std::mem::take(&mut self.new_face_keys);
-        for (key, file_entity_opt) in keys {
+        for (key, file_entity) in keys {
             info!("processing new face: `{:?}`", key);
 
-            // 3d face needs it's own mesh set up to match it's vertices
-            let entity_3d = commands.spawn_empty().id();
+            // 3d face remains empty until it's networked
+            let entity_3d = commands
+                .spawn_empty()
+                .id();
 
             // 2d face needs to have it's own button mesh, matching the 2d vertices
             let vertex_2d_a = self.vertex_entity_3d_to_2d(&key.vertex_3d_a).unwrap();
@@ -760,17 +770,13 @@ impl ShapeManager {
 
             info!("spawned 2d face entity: {:?}", entity_2d);
 
-            if let Some(file_entity) = file_entity_opt {
-                info!(
-                    "adding OwnedByFile({:?}) to entity {:?}",
-                    file_entity, entity_2d
-                );
-                commands
-                    .entity(entity_2d)
-                    .insert(OwnedByFileLocal::new(file_entity));
-            } else {
-                panic!("no tab id :(")
-            }
+            info!(
+                "adding OwnedByFile({:?}) to entity {:?}",
+                file_entity, entity_2d
+            );
+            commands
+                .entity(entity_2d)
+                .insert(OwnedByFileLocal::new(file_entity));
 
             self.face_keys.insert(key, entity_3d);
 
@@ -808,6 +814,7 @@ impl ShapeManager {
                 Face3dData::new(
                     key,
                     entity_2d,
+                    file_entity,
                     edge_entities[0],
                     edge_entities[1],
                     edge_entities[2],
@@ -815,6 +822,145 @@ impl ShapeManager {
             );
         }
     }
+
+    pub fn create_networked_face(
+        &mut self,
+        world: &mut World,
+        face_2d_entity: Entity,
+    ) {
+        let Some(face_3d_entity) = self.face_entity_2d_to_3d(&face_2d_entity) else {
+            panic!(
+                "Face2d entity: `{:?}` has no corresponding Face3d entity",
+                face_2d_entity
+            );
+        };
+        let Some(face_3d_data) = self.faces_3d.get_mut(&face_3d_entity) else {
+            panic!(
+                "Face3d entity: `{:?}` has not been registered",
+                face_3d_entity
+            );
+        };
+        if face_3d_data.active {
+            panic!("already activated face 3d! cannot do this twice!");
+        }
+        face_3d_data.active = true;
+
+        let mut system_state: SystemState<(
+            Commands,
+            Client,
+            Res<CameraManager>,
+            ResMut<Assets<CpuMesh>>,
+            ResMut<Assets<CpuMaterial>>,
+            Query<&Transform>,
+        )> = SystemState::new(world);
+        let (mut commands, mut client, camera_manager, mut meshes, mut materials, transform_q) = system_state.get_mut(world);
+
+        // get 3d vertex entities & positions
+        let mut positions = [Vec3::ZERO, Vec3::ZERO, Vec3::ZERO];
+        let mut vertex_3d_entities = [Entity::PLACEHOLDER, Entity::PLACEHOLDER, Entity::PLACEHOLDER];
+        for (index, edge_entity) in [face_3d_data.edge_3d_a, face_3d_data.edge_3d_b, face_3d_data.edge_3d_c].iter().enumerate() {
+            let edge_3d_data = self.edges_3d.get(&edge_entity).unwrap();
+            let vertex_3d_entity = edge_3d_data.vertex_a_3d_entity;
+            let vertex_transform = transform_q.get(vertex_3d_entity).unwrap();
+            positions[index] = vertex_transform.translation;
+            vertex_3d_entities[index] = vertex_3d_entity;
+        }
+
+        let mut face_3d_component = Face3d::new();
+        face_3d_component.vertex_a.set(&mut client, &vertex_3d_entities[0]);
+        face_3d_component.vertex_b.set(&mut client, &vertex_3d_entities[1]);
+        face_3d_component.vertex_c.set(&mut client, &vertex_3d_entities[2]);
+
+        // get owned_by_file component
+        let mut owned_by_file_component = OwnedByFile::new();
+        owned_by_file_component
+            .file_entity
+            .set(&mut client, &face_3d_data.file_entity);
+
+        // set up 3d entity
+        commands
+            .entity(face_3d_entity)
+            .enable_replication(&mut client)
+            .configure_replication(ReplicationConfig::Delegated)
+            .insert(owned_by_file_component)
+            .insert(RenderObjectBundle::world_triangle(
+                &mut meshes,
+                &mut materials,
+                positions,
+                Face3dLocal::COLOR,
+            ))
+            .insert(camera_manager.layer_3d)
+            .insert(Face3dLocal)
+            .insert(face_3d_component);
+
+        // change 2d icon to use non-hollow triangle
+
+        system_state.apply(world);
+    }
+
+    //pub fn vertex_3d_postprocess(
+    //         &mut self,
+    //         commands: &mut Commands,
+    //         meshes: &mut Assets<CpuMesh>,
+    //         materials: &mut Assets<CpuMaterial>,
+    //         camera_manager: &CameraManager,
+    //         vertex_3d_entity: Entity,
+    //         is_root: bool,
+    //         ownership_opt: Option<Entity>,
+    //         color: Color,
+    //     ) -> Entity {
+    //         // vertex 3d
+    //         commands
+    //             .entity(vertex_3d_entity)
+    //             .insert(RenderObjectBundle::sphere(
+    //                 meshes,
+    //                 materials,
+    //                 Vec3::ZERO,
+    //                 Vertex2d::RADIUS,
+    //                 Vertex2d::SUBDIVISIONS,
+    //                 color,
+    //             ))
+    //             .insert(camera_manager.layer_3d);
+    //
+    //         // vertex 2d
+    //         let vertex_2d_entity = commands
+    //             .spawn(RenderObjectBundle::circle(
+    //                 meshes,
+    //                 materials,
+    //                 Vec2::ZERO,
+    //                 Vertex2d::RADIUS,
+    //                 Vertex2d::SUBDIVISIONS,
+    //                 color,
+    //                 None,
+    //             ))
+    //             .insert(camera_manager.layer_2d)
+    //             .insert(Vertex2d)
+    //             .id();
+    //
+    //         if let Some(file_entity) = ownership_opt {
+    //             info!(
+    //                 "adding OwnedByFileLocal({:?}) to entity {:?}",
+    //                 file_entity, vertex_2d_entity
+    //             );
+    //             commands
+    //                 .entity(vertex_2d_entity)
+    //                 .insert(OwnedByFileLocal::new(file_entity));
+    //         }
+    //
+    //         if is_root {
+    //             commands.entity(vertex_2d_entity).insert(VertexRoot);
+    //         }
+    //
+    //         // info!(
+    //         //     "created Vertex3d: `{:?}`, created 2d entity: {:?}",
+    //         //     vertex_3d_entity, vertex_2d_entity,
+    //         // );
+    //
+    //         // register 3d & 2d vertices together
+    //         self.register_3d_vertex(vertex_3d_entity, vertex_2d_entity);
+    //
+    //         vertex_2d_entity
+    //     }
 
     // returns entity 2d
     pub fn cleanup_deleted_vertex(
@@ -907,6 +1053,17 @@ impl ShapeManager {
 
     pub(crate) fn edge_entity_2d_to_3d(&self, entity_2d: &Entity) -> Option<Entity> {
         self.edges_2d.get(entity_2d).copied()
+    }
+
+    pub(crate) fn face_entity_2d_to_3d(&self, entity_2d: &Entity) -> Option<Entity> {
+        self.faces_2d.get(entity_2d).copied()
+    }
+
+    pub(crate) fn face_3d_is_replicating(&self, entity_3d: &Entity) -> bool {
+        let Some(face_3d_data) = self.faces_3d.get(entity_3d) else {
+            panic!("Face3d entity: `{:?}` has not been registered", entity_3d);
+        };
+        face_3d_data.active
     }
 
     pub fn vertex_3d_postprocess(

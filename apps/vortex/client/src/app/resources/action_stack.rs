@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use bevy_ecs::{
     prelude::{Commands, Entity, Query, Resource, World},
     system::{Res, ResMut, SystemState},
+    world::Mut
 };
 use bevy_log::{info, warn};
 
@@ -67,6 +68,8 @@ pub enum Action {
     CreateEdge(Entity, Entity, Option<(Entity, Entity)>),
     // Delete Edge (2d edge entity, optional vertex 2d entity to select after delete)
     DeleteEdge(Entity, Option<(Entity, CanvasShape)>),
+    // Delete Face (2d face entity)
+    DeleteFace(Entity),
 }
 
 impl Action {
@@ -638,7 +641,7 @@ impl ActionStack {
                 let (deselected_entity, entity_to_release) =
                     Self::deselect_all_selected_shapes(&mut shape_manager);
                 let entity_to_request =
-                    Self::select_shape(&mut shape_manager, shape_2d_entity_opt.map(|v| v));
+                    Self::select_shape(&mut shape_manager, shape_2d_entity_opt);
 
                 if entity_to_request != entity_to_release {
                     if let Some(entity) = entity_to_release {
@@ -656,6 +659,19 @@ impl ActionStack {
                 }
 
                 system_state.apply(world);
+
+                // create networked 3d face if necessary
+                if let Some((face_2d_entity, CanvasShape::Face)) = shape_2d_entity_opt {
+                    if entity_to_request.is_none() {
+                        world.resource_scope(|world, mut shape_manager: Mut<ShapeManager>| {
+                            shape_manager.create_networked_face(world, face_2d_entity);
+                        });
+                        return vec![
+                            Action::DeleteFace(face_2d_entity),
+                            Action::SelectShape(deselected_entity),
+                        ];
+                    }
+                }
 
                 return vec![Action::SelectShape(deselected_entity)];
             }
@@ -1259,6 +1275,15 @@ impl ActionStack {
                         .edge_entity_2d_to_3d(&shape_2d_entity)
                         .unwrap();
                     return Some(edge_3d_entity);
+                }
+                CanvasShape::Face => {
+                    let face_3d_entity = shape_manager
+                        .face_entity_2d_to_3d(&shape_2d_entity)
+                        .unwrap();
+                    if shape_manager.face_3d_is_replicating(&face_3d_entity) {
+                        return Some(face_3d_entity);
+                    }
+                    return None;
                 }
                 _ => return None,
             }

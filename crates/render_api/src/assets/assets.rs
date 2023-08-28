@@ -42,6 +42,10 @@ impl<T> Assets<T> {
         new_handle
     }
 
+    pub fn add_unique(&mut self, asset: T) -> Handle<T> {
+        self.add_inner(asset)
+    }
+
     fn add_inner(&mut self, asset: T) -> Handle<T> {
         let handle = Handle::new(self.last_id);
         self.assets.insert(self.last_id, asset);

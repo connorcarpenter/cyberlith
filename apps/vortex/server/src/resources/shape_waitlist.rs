@@ -19,6 +19,8 @@ pub enum ShapeWaitlistInsert {
     VertexRoot(Entity),
     //// parent, edge, child
     Edge(Entity, Entity, Entity),
+    //// face
+    Face(Entity),
     //// shape, filetype
     FileType(Entity, FileTypeValue),
     //// shape, project key, file key
@@ -34,6 +36,8 @@ enum ShapeData {
     MeshVertex(ProjectKey, FileEntryKey),
     // (ProjectKey, FileKey, Start, End)
     MeshEdge(ProjectKey, FileEntryKey, Entity, Entity),
+    //
+    MeshFace(ProjectKey, FileEntryKey),
 }
 
 #[derive(Clone)]
@@ -69,6 +73,9 @@ impl ShapeWaitlistEntry {
             }
             (Some(FileTypeValue::Mesh), Some(ShapeType::Edge)) => {
                 self.owned_by_file.is_some() && self.edge_entities.is_some()
+            }
+            (Some(FileTypeValue::Mesh), Some(ShapeType::Face)) => {
+                return self.owned_by_file.is_some();
             }
             _ => {
                 return false;
@@ -127,6 +134,9 @@ impl ShapeWaitlistEntry {
             (Some(FileTypeValue::Mesh), Some(ShapeType::Edge)) => {
                 let (start, end) = self.edge_entities.unwrap();
                 return ShapeData::MeshEdge(project_key, file_key, start, end);
+            }
+            (Some(FileTypeValue::Mesh), Some(ShapeType::Face)) => {
+                return ShapeData::MeshFace(project_key, file_key);
             }
             _ => {
                 panic!("shouldn't be able to happen!");
@@ -231,6 +241,15 @@ impl ShapeWaitlist {
                     .set_owned_by_file(project_key, file_key);
                 possibly_ready_entities.push(shape_entity);
             }
+            ShapeWaitlistInsert::Face(face_entity) => {
+                if !self.contains_key(&face_entity) {
+                    self.insert_incomplete(face_entity, ShapeWaitlistEntry::new());
+                }
+                let mut entry = self.get_mut(&face_entity).unwrap();
+                entry.set_shape_type(ShapeType::Face);
+                entry.set_file_type(FileTypeValue::Mesh);
+                possibly_ready_entities.push(face_entity);
+            }
         }
 
         for possibly_ready_entity in possibly_ready_entities {
@@ -270,33 +289,26 @@ impl ShapeWaitlist {
                     (FileTypeValue::Mesh, ShapeType::Edge) => {
                         let entities = entry.edge_entities.unwrap();
                         let mut has_all_entities = true;
-                        if !shape_manager.has_vertex(&entities.0) {
-                            // need to put in parent waitlist
-                            info!(
-                                "edge entity {:?} requires parent {:?}. putting in parent waitlist",
-                                entity, entities.0
-                            );
-                            self.insert_waiting_dependency(entities.0, entity, entry.clone());
-                            has_all_entities = false;
-                        }
-                        if !shape_manager.has_vertex(&entities.1) {
-                            // need to put in parent waitlist
-                            info!(
-                                "edge entity {:?} requires parent {:?}. putting in parent waitlist",
-                                entity, entities.1
-                            );
-                            self.insert_waiting_dependency(entities.1, entity, entry.clone());
-                            has_all_entities = false;
+                        for vertex_entity in [&entities.0, &entities.1] {
+                            if !shape_manager.has_vertex(vertex_entity) {
+                                // need to put in parent waitlist
+                                info!(
+                                    "edge entity {:?} requires parent {:?}. putting in parent waitlist",
+                                    entity, vertex_entity
+                                );
+                                self.insert_waiting_dependency(*vertex_entity, entity, entry.clone());
+                                has_all_entities = false;
+                            }
                         }
                         if !has_all_entities {
                             continue;
                         }
                     }
-                    (FileTypeValue::Skel, ShapeType::Face) => {
-                        todo!();
-                    }
                     (FileTypeValue::Mesh, ShapeType::Face) => {
                         todo!();
+                    }
+                    (FileTypeValue::Skel, ShapeType::Face) => {
+                        panic!("not possible");
                     }
                 }
 
@@ -359,6 +371,9 @@ impl ShapeWaitlist {
                     ShapeType::Edge,
                 );
                 shape_manager.on_create_mesh_edge(start, entity, end);
+            }
+            ShapeData::MeshFace(project_key, file_key) => {
+                todo!()
             }
         }
 

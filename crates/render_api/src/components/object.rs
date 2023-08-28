@@ -6,7 +6,7 @@ use math::{Vec2, Vec3};
 
 use crate::{
     assets::Handle,
-    base::{Color, CpuMaterial, CpuMesh},
+    base::{Indices, Positions, Color, CpuMaterial, CpuMesh},
     components::Visibility,
     shapes,
     shapes::set_2d_line_transform,
@@ -144,6 +144,44 @@ impl RenderObjectBundle {
             mesh,
             material: materials.add(color),
             transform: Transform::from_translation(position).with_scale(Vec3::splat(size)),
+            ..Default::default()
+        }
+    }
+
+    pub fn world_triangle(
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+        positions: [Vec3; 3],
+        color: Color,
+    ) -> Self {
+
+        let mut outer_a = positions[0];
+        let mut outer_b = positions[1];
+        let mut outer_c = positions[2];
+
+        let center = Vec3::new(
+            (outer_a.x + outer_b.x + outer_c.x) / 3.0,
+            (outer_a.y + outer_b.y + outer_c.y) / 3.0,
+            (outer_a.z + outer_b.z + outer_c.z) / 3.0,
+        );
+
+        outer_a -= center;
+        outer_b -= center;
+        outer_c -= center;
+
+        let positions = vec![outer_a, outer_b, outer_c];
+        let indices: Indices = Indices(Some(vec![0u16, 1, 2]));
+
+        let mesh = CpuMesh {
+            indices,
+            positions: Positions(positions),
+            ..Default::default()
+        };
+
+        Self {
+            mesh: meshes.add_unique(mesh),
+            material: materials.add(color),
+            transform: Transform::from_translation(center),
             ..Default::default()
         }
     }
