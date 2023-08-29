@@ -310,6 +310,28 @@ impl Action {
 
         return false;
     }
+
+    // returns true if should be removed from undo/redo
+    pub(crate) fn remove_face_entity(&mut self, entity_2d: Entity, entity_3d: Entity) -> bool {
+        match self {
+            Action::SelectShape(entity_opt) => match entity_opt {
+                Some((entity, CanvasShape::Face)) => {
+                    if *entity == entity_2d {
+                        return true;
+                    }
+                }
+                _ => {}
+            },
+            Action::DeleteFace(face_2d_entity) => {
+                if *face_2d_entity == entity_2d {
+                    return true;
+                }
+            }
+            _ => {}
+        }
+
+        return false;
+    }
 }
 
 #[derive(Resource)]
@@ -1290,7 +1312,7 @@ impl ActionStack {
                     return Some(edge_3d_entity);
                 }
                 CanvasShape::Face => {
-                    return shape_manager.face_3d_entity_from_2d_entity(&shape_2d_entity);
+                    return shape_manager.face_entity_2d_to_3d(&shape_2d_entity);
                 }
                 _ => return None,
             }
@@ -1318,6 +1340,12 @@ impl ActionStack {
                         .edge_entity_2d_to_3d(&shape_2d_entity)
                         .unwrap();
                     entity_to_release = Some(edge_3d_entity);
+                }
+                CanvasShape::Face => {
+                    let face_3d_entity = shape_manager
+                        .face_entity_2d_to_3d(&shape_2d_entity)
+                        .unwrap();
+                    entity_to_release = Some(face_3d_entity);
                 }
                 _ => {}
             }
@@ -1507,10 +1535,6 @@ impl ActionStack {
             .enable_replication(client)
             .configure_replication(ReplicationConfig::Delegated)
             .insert(new_edge_3d_component)
-            .insert(Edge3dLocal::new(
-                parent_vertex_3d_entity,
-                child_vertex_3d_entity,
-            ))
             .insert(owned_by_file_component)
             .insert(FileType::new(file_type))
             .id();
@@ -1522,10 +1546,10 @@ impl ActionStack {
             materials,
             camera_manager,
             new_edge_3d_entity,
-            child_vertex_2d_entity,
-            child_vertex_3d_entity,
             parent_vertex_2d_entity,
             parent_vertex_3d_entity,
+            child_vertex_2d_entity,
+            child_vertex_3d_entity,
             Some(file_entity),
             Vertex2d::CHILD_COLOR,
             file_type == FileTypeValue::Skel,
@@ -1896,6 +1920,31 @@ impl ActionStack {
             let mut removals = Vec::new();
             for (id, action) in self.redo_actions.iter_mut().enumerate() {
                 if action.remove_edge_entity(entity_2d, entity_3d) {
+                    removals.push(id);
+                }
+            }
+            for removal in removals {
+                self.redo_actions.remove(removal);
+            }
+        }
+    }
+
+    pub fn remove_face_entity(&mut self, entity_2d: Entity, entity_3d: Entity) {
+        {
+            let mut removals = Vec::new();
+            for (id, action) in self.undo_actions.iter_mut().enumerate() {
+                if action.remove_face_entity(entity_2d, entity_3d) {
+                    removals.push(id);
+                }
+            }
+            for removal in removals {
+                self.undo_actions.remove(removal);
+            }
+        }
+        {
+            let mut removals = Vec::new();
+            for (id, action) in self.redo_actions.iter_mut().enumerate() {
+                if action.remove_face_entity(entity_2d, entity_3d) {
                     removals.push(id);
                 }
             }

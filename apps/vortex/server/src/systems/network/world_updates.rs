@@ -121,6 +121,7 @@ pub fn insert_component_events(
     fs_child_q: Query<&FileSystemChild>,
     entry_key_q: Query<&FileEntryKey>,
     edge_3d_q: Query<&Edge3d>,
+    face_3d_q: Query<&Face3d>,
     vert_file_type_q: Query<&FileType>,
     owned_by_file_q: Query<&OwnedByFile>,
 ) {
@@ -212,13 +213,19 @@ pub fn insert_component_events(
 
         // on Face3d Insert Event
         for (_, face_entity) in events.read::<Face3d>() {
-            info!("entity: `{:?}`, inserted Face3d", face_entity);
+            let face_3d = face_3d_q.get(face_entity).unwrap();;
+
+            let vertex_a = face_3d.vertex_a.get(&server).unwrap();
+            let vertex_b = face_3d.vertex_b.get(&server).unwrap();
+            let vertex_c = face_3d.vertex_c.get(&server).unwrap();
+
+            info!("entity: `{:?}`, inserted Face3d({:?}, {:?}, {:?})", face_entity, vertex_a, vertex_b, vertex_c);
 
             shape_waitlist.process_insert(
                 &mut server,
                 &mut git_manager,
                 &mut shape_manager,
-                ShapeWaitlistInsert::Face(face_entity),
+                ShapeWaitlistInsert::Face(face_entity, vertex_a, vertex_b, vertex_c),
             );
         }
 

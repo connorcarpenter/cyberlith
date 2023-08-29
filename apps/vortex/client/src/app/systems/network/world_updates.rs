@@ -16,17 +16,18 @@ use naia_bevy_client::{
 };
 
 use render_api::{
+    components::Transform,
     base::{CpuMaterial, CpuMesh},
     Assets,
 };
 
 use vortex_proto::components::{ChangelistEntry, Edge3d, EntryKind, Face3d, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, Vertex3d, VertexRoot};
 
-use crate::app::resources::action_stack::ActionStack;
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
     events::InsertComponentEvent,
     resources::{
+        action_stack::ActionStack,
         camera_manager::CameraManager,
         global::Global,
         shape_manager::ShapeManager,
@@ -225,12 +226,12 @@ pub fn insert_vertex_events(
     mut vertex_3d_events: EventReader<InsertComponentEvent<Vertex3d>>,
     mut vertex_root_events: EventReader<InsertComponentEvent<VertexRoot>>,
 
-    // for vertices
     mut camera_manager: ResMut<CameraManager>,
     mut shape_manager: ResMut<ShapeManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
     mut shape_waitlist: ResMut<ShapeWaitlist>,
+    transform_q: Query<&Transform>,
 ) {
     // on Vertex Insert Event
     for event in vertex_3d_events.iter() {
@@ -244,6 +245,7 @@ pub fn insert_vertex_events(
             &mut materials,
             &mut camera_manager,
             &mut shape_manager,
+            &transform_q,
             &entity,
             ShapeWaitlistInsert::Vertex,
         );
@@ -261,6 +263,7 @@ pub fn insert_vertex_events(
             &mut materials,
             &mut camera_manager,
             &mut shape_manager,
+            &transform_q,
             &entity,
             ShapeWaitlistInsert::VertexRoot,
         );
@@ -278,7 +281,9 @@ pub fn insert_edge_events(
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
     mut shape_waitlist: ResMut<ShapeWaitlist>,
+
     edge_3d_q: Query<&Edge3d>,
+    transform_q: Query<&Transform>,
 ) {
     // on Edge3d Insert Event
     for event in edge_3d_events.iter() {
@@ -303,6 +308,7 @@ pub fn insert_edge_events(
             &mut materials,
             &mut camera_manager,
             &mut shape_manager,
+            &transform_q,
             &edge_entity,
             ShapeWaitlistInsert::Edge(start_entity, end_entity),
         );
@@ -318,7 +324,9 @@ pub fn insert_face_events(
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
     mut shape_waitlist: ResMut<ShapeWaitlist>,
+
     face_3d_q: Query<&Face3d>,
+    transform_q: Query<&Transform>,
 ) {
     // on Face3d Insert Event
     for event in face_3d_events.iter() {
@@ -347,6 +355,7 @@ pub fn insert_face_events(
             &mut materials,
             &mut camera_manager,
             &mut shape_manager,
+            &transform_q,
             &face_entity,
             ShapeWaitlistInsert::Face(vertex_a_entity, vertex_b_entity, vertex_c_entity),
         );
@@ -365,8 +374,10 @@ pub fn insert_shape_events(
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
     mut shape_waitlist: ResMut<ShapeWaitlist>,
+
     owned_by_tab_q: Query<&OwnedByFile>,
     file_type_q: Query<&FileType>,
+    transform_q: Query<&Transform>,
 ) {
     // on OwnedByFile Insert Event
     for event in owned_by_events.iter() {
@@ -383,6 +394,7 @@ pub fn insert_shape_events(
             &mut materials,
             &mut camera_manager,
             &mut shape_manager,
+            &transform_q,
             &entity,
             ShapeWaitlistInsert::OwnedByFile(file_entity),
         );
@@ -406,6 +418,7 @@ pub fn insert_shape_events(
             &mut materials,
             &mut camera_manager,
             &mut shape_manager,
+            &transform_q,
             &entity,
             ShapeWaitlistInsert::FileType(file_type_value),
         );
@@ -517,6 +530,11 @@ pub fn remove_component_events(
 
             let entity_2d = shape_manager.cleanup_deleted_edge(&mut commands, &entity_3d);
             action_stack.remove_edge_entity(entity_2d, entity_3d);
+        }
+        for (entity_3d, _) in events.read::<Face3d>() {
+            info!("entity: `{:?}`, removed Face3d", entity_3d);
+
+            shape_manager.cleanup_deleted_face_3d(&entity_3d);
         }
     }
 }

@@ -4,18 +4,22 @@ use bevy_ecs::{
     entity::Entity,
     system::{Commands, Resource},
 };
+use bevy_ecs::system::Query;
 use bevy_log::info;
+use math::Vec3;
 
 use render_api::{
     base::{CpuMaterial, CpuMesh},
     Assets,
 };
+use render_api::components::Transform;
 use vortex_proto::components::FileTypeValue;
 
 use crate::app::{
     components::{Edge3dLocal, OwnedByFileLocal, Vertex2d},
     resources::{camera_manager::CameraManager, shape_manager::ShapeManager},
 };
+use crate::app::resources::shape_manager::FaceKey;
 
 pub enum ShapeWaitlistInsert {
     Vertex,
@@ -173,6 +177,7 @@ impl ShapeWaitlist {
         materials: &mut Assets<CpuMaterial>,
         camera_manager: &mut CameraManager,
         shape_manager: &mut ShapeManager,
+        transform_q: &Query<&Transform>,
         entity: &Entity,
         insert: ShapeWaitlistInsert,
     ) {
@@ -293,6 +298,7 @@ impl ShapeWaitlist {
                 materials,
                 camera_manager,
                 shape_manager,
+                transform_q,
                 entity,
                 entry,
             );
@@ -306,6 +312,7 @@ impl ShapeWaitlist {
         materials: &mut Assets<CpuMaterial>,
         camera_manager: &mut CameraManager,
         shape_manager: &mut ShapeManager,
+        transform_q: &Query<&Transform>,
         entity: Entity,
         entry: ShapeWaitlistEntry,
     ) {
@@ -348,6 +355,7 @@ impl ShapeWaitlist {
                             materials,
                             camera_manager,
                             shape_manager,
+                            transform_q,
                             child_entity,
                             child_entry,
                         );
@@ -376,10 +384,6 @@ impl ShapeWaitlist {
                 let start_2d = shape_manager.vertex_entity_3d_to_2d(&start_3d).unwrap();
                 let end_2d = shape_manager.vertex_entity_3d_to_2d(&end_3d).unwrap();
 
-                commands
-                    .entity(entity)
-                    .insert(Edge3dLocal::new(start_3d, end_3d));
-
                 let _new_edge_2d_entity = shape_manager.edge_3d_postprocess(
                     commands,
                     meshes,
@@ -396,7 +400,22 @@ impl ShapeWaitlist {
                 );
             }
             (ShapeData::Face(vertex_a, vertex_b, vertex_c), _) => {
-                shape_manager.face_3d_postprocess(entity, vertex_a, vertex_b, vertex_c);
+                let face_key = FaceKey::new(vertex_a, vertex_b, vertex_c);
+                let mut positions = [Vec3::ZERO, Vec3::ZERO, Vec3::ZERO];
+                for (index, vertex_3d_entity) in [vertex_a, vertex_b, vertex_c].iter().enumerate() {
+                    let transform = transform_q.get(*vertex_3d_entity).unwrap();
+                    positions[index] = transform.translation;
+                }
+
+                shape_manager.face_3d_postprocess(
+                    commands,
+                    meshes,
+                    materials,
+                    camera_manager,
+                    face_key,
+                    entity,
+                    positions
+                );
             }
         }
 
