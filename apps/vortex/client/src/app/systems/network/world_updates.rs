@@ -478,6 +478,7 @@ pub fn remove_component_events(
     mut global: ResMut<Global>,
     mut action_stack: ResMut<ActionStack>,
     mut shape_manager: ResMut<ShapeManager>,
+    mut meshes: ResMut<Assets<CpuMesh>>,
     mut event_reader: EventReader<RemoveComponentEvents>,
     mut parent_q: Query<&mut FileSystemParent>,
     mut fs_state_q: Query<&mut FileSystemUiState>,
@@ -522,7 +523,7 @@ pub fn remove_component_events(
         for (entity_3d, _) in events.read::<Vertex3d>() {
             info!("entity: `{:?}`, removed Vertex3d", entity_3d);
 
-            let entity_2d = shape_manager.cleanup_deleted_vertex(&entity_3d, &mut commands);
+            let entity_2d = shape_manager.cleanup_deleted_vertex(&mut commands, &entity_3d);
             action_stack.remove_vertex_entity(entity_2d, entity_3d);
         }
         for (entity_3d, _) in events.read::<Edge3d>() {
@@ -534,7 +535,7 @@ pub fn remove_component_events(
         for (entity_3d, _) in events.read::<Face3d>() {
             info!("entity: `{:?}`, removed Face3d", entity_3d);
 
-            shape_manager.cleanup_deleted_face_3d(&entity_3d);
+            shape_manager.cleanup_deleted_face_3d(&mut commands, &mut meshes,&entity_3d);
         }
     }
 }

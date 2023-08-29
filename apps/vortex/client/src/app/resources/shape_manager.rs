@@ -12,6 +12,7 @@ use naia_bevy_client::{Client, CommandsExt, Replicate, ReplicationConfig};
 
 use math::{convert_2d_to_3d, convert_3d_to_2d, Vec2, Vec3};
 use render_api::{base::{Color, CpuMaterial, CpuMesh}, components::{Camera, CameraProjection, Projection, RenderObjectBundle, Transform, Visibility}, shapes::{Triangle, distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform}, Assets, Handle};
+use render_api::shapes::HollowTriangle;
 
 use vortex_proto::components::{Face3d, FileTypeValue, OwnedByFile, Vertex3d, VertexRoot};
 
@@ -704,7 +705,8 @@ impl ShapeManager {
         }
     }
 
-    fn unregister_3d_face(&mut self, entity_3d: &Entity) {
+    // returns 2d face entity
+    fn unregister_3d_face(&mut self, entity_3d: &Entity) -> Option<Entity> {
         info!("unregistering 3d face entity: `{:?}`", entity_3d);
         let Some(face_3d_key) = self.faces_3d.remove(entity_3d) else {
             panic!("no face 3d found for entity {:?}", entity_3d);
@@ -713,7 +715,12 @@ impl ShapeManager {
         if let Some(Some(face_3d_data)) = self.face_keys.get_mut(&face_3d_key) {
             face_3d_data.entity_3d = None;
             info!("remove entity 3d: `{:?}` from face 3d data", entity_3d);
+
+            let face_2d_entity = face_3d_data.entity_2d;
+            return Some(face_2d_entity);
         }
+
+        return None;
     }
 
     fn check_for_new_faces(
@@ -1029,8 +1036,8 @@ impl ShapeManager {
     // returns entity 2d
     pub fn cleanup_deleted_vertex(
         &mut self,
-        entity_3d: &Entity,
         commands: &mut Commands,
+        entity_3d: &Entity,
     ) -> Entity {
         // unregister vertex
         let Some(vertex_2d_entity) = self.unregister_3d_vertex(entity_3d) else {
@@ -1105,9 +1112,13 @@ impl ShapeManager {
     }
 
     // returns 2d face entity
-    pub(crate) fn cleanup_deleted_face_3d(&mut self, face_3d_entity: &Entity) {
+    pub(crate) fn cleanup_deleted_face_3d(&mut self, commands: &mut Commands, meshes: &mut Assets<CpuMesh>, face_3d_entity: &Entity) {
         // unregister face
-        self.unregister_3d_face(face_3d_entity);
+        if let Some(face_2d_entity) = self.unregister_3d_face(face_3d_entity) {
+            commands
+                .entity(face_2d_entity)
+                .insert(meshes.add(HollowTriangle::new_2d_equilateral()));
+        }
     }
 
     pub(crate) fn has_vertex_entity_3d(&self, entity_3d: &Entity) -> bool {
@@ -1139,6 +1150,13 @@ impl ShapeManager {
             return None;
         };
         Some(face_3d_data.entity_2d)
+    }
+
+    fn face_3d_entity_from_face_key(&self, face_key: &FaceKey) -> Option<Entity> {
+        let Some(Some(face_3d_data)) = self.face_keys.get(face_key) else {
+            return None;
+        };
+        face_3d_data.entity_3d
     }
 
     pub(crate) fn face_entity_2d_to_3d(&self, entity_2d: &Entity) -> Option<Entity> {
@@ -1359,6 +1377,30 @@ impl ShapeManager {
                 }
 
                 action_stack.buffer_action(Action::DeleteEdge(edge_2d_entity, None));
+
+                self.selected_shape = None;
+            }
+            Some((face_2d_entity, CanvasShape::Face)) => {
+
+                let face_key = self.face_key_from_2d_entity(&face_2d_entity).unwrap();
+                let face_3d_entity = self.face_3d_entity_from_face_key(&face_key).unwrap();
+
+                // check whether we can delete edge
+                let auth_status = commands.entity(face_3d_entity).authority(client).unwrap();
+                if !auth_status.is_granted() && !auth_status.is_available() {
+                    // do nothing, face is not available
+                    // TODO: queue for deletion? check before this?
+                    warn!("Face {:?} is not available for deletion!", face_key);
+                    return;
+                }
+
+                let auth_status = commands.entity(face_3d_entity).authority(client).unwrap();
+                if !auth_status.is_granted() {
+                    // request authority if needed
+                    commands.entity(face_3d_entity).request_authority(client);
+                }
+
+                action_stack.buffer_action(Action::DeleteFace(face_2d_entity));
 
                 self.selected_shape = None;
             }
