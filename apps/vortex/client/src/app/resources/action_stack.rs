@@ -1151,7 +1151,7 @@ impl ActionStack {
                 commands.entity(edge_3d_entity).despawn();
 
                 // cleanup mappings
-                shape_manager.cleanup_deleted_edge(&edge_3d_entity, &mut commands);
+                shape_manager.cleanup_deleted_edge(&mut commands, &edge_3d_entity);
 
                 // select entities as needed
                 if let Some((vertex_2d_to_select, vertex_type)) = vertex_2d_to_select_opt {

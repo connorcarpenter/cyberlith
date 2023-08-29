@@ -515,7 +515,7 @@ pub fn remove_component_events(
         for (entity_3d, _) in events.read::<Edge3d>() {
             info!("entity: `{:?}`, removed Edge3d", entity_3d);
 
-            let entity_2d = shape_manager.cleanup_deleted_edge(&entity_3d, &mut commands);
+            let entity_2d = shape_manager.cleanup_deleted_edge(&mut commands, &entity_3d);
             action_stack.remove_edge_entity(entity_2d, entity_3d);
         }
     }

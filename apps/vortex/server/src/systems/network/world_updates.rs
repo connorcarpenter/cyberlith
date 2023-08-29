@@ -22,6 +22,7 @@ use vortex_proto::{
     },
     resources::FileEntryKey,
 };
+use crate::files::ShapeType;
 
 use crate::resources::{
     file_waitlist::{fs_process_insert, FSWaitlist, FSWaitlistInsert},
@@ -50,18 +51,25 @@ pub fn despawn_entity_events(
             .project_mut(&user_session_data.project_key().unwrap())
             .unwrap();
 
-        let entity_is_file = project.entity_is_file(entity);
-        let entity_is_vertex = shape_manager.has_vertex(entity);
-        let entity_is_edge = shape_manager.has_edge(entity);
+        let mut shape_type = None;
+        if project.entity_is_file(entity) {
+            shape_type = Some((true, None));
+        } else if shape_manager.has_vertex(entity) {
+            shape_type = Some((false, Some(ShapeType::Vertex)));
+        } else if shape_manager.has_edge(entity) {
+            shape_type = Some((false, Some(ShapeType::Edge)));
+        } else if shape_manager.has_face(entity) {
+            shape_type = Some((false, Some(ShapeType::Face)));
+        }
 
-        match (entity_is_file, entity_is_vertex, entity_is_edge) {
-            (true, false, false) => {
+        match shape_type {
+            Some((true, None)) => {
                 // file
                 info!("entity: `{:?}` (which is a File), despawned", entity);
 
                 project.on_client_delete_file(&mut commands, &mut server, entity);
             }
-            (false, true, false) => {
+            Some((false, Some(ShapeType::Vertex))) => {
                 // vertex
                 info!("entity: `{:?}` (which is a Vertex), despawned", entity);
 
@@ -73,7 +81,7 @@ pub fn despawn_entity_events(
                     git_manager.on_client_remove_content_entity(&other_entity);
                 }
             }
-            (false, false, true) => {
+            Some((false, Some(ShapeType::Edge))) => {
                 // edge
                 info!("entity: `{:?}` (which is an Edge), despawned", entity);
 
@@ -81,10 +89,18 @@ pub fn despawn_entity_events(
 
                 git_manager.on_client_remove_content_entity(&entity);
             }
+            Some((false, Some(ShapeType::Face))) => {
+                // edge
+                info!("entity: `{:?}` (which is an Face), despawned", entity);
+
+                shape_manager.on_delete_face(entity);
+
+                git_manager.on_client_remove_content_entity(&entity);
+            }
             _ => {
                 panic!(
-                    "despawned entity: `{:?}` which is (file: {:?}, vert: {:?}, edge: {:?})",
-                    entity, entity_is_file, entity_is_vertex, entity_is_edge
+                    "despawned entity: `{:?}` which is ({:?})",
+                    entity, shape_type
                 );
             }
         }
@@ -206,7 +222,7 @@ pub fn insert_component_events(
             );
         }
 
-        // on Vertex FileType Insert Event
+        // on Shape FileType Insert Event
         for (_user_key, entity) in events.read::<FileType>() {
             let file_type_value = *vert_file_type_q.get(entity).unwrap().value;
 
@@ -252,7 +268,7 @@ pub fn insert_component_events(
         }
 
         // on VertexRoot Insert Event
-        for (_user_key, entity) in events.read::<VertexRoot>() {
+        for (_user_key, _entity) in events.read::<VertexRoot>() {
             panic!("how is this possible?");
             // info!("entity: `{:?}`, inserted VertexRoot", entity);
             // shape_manager.on_create_vertex(&entity, None);

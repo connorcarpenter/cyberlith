@@ -37,7 +37,7 @@ enum ShapeData {
     // (ProjectKey, FileKey, Start, End)
     MeshEdge(ProjectKey, FileEntryKey, Entity, Entity),
     //
-    MeshFace(ProjectKey, FileEntryKey),
+    MeshFace(ProjectKey, FileEntryKey, Entity, Entity, Entity),
 }
 
 #[derive(Clone)]
@@ -45,6 +45,7 @@ pub struct ShapeWaitlistEntry {
     shape: Option<ShapeType>,
     edge_and_parent_opt: Option<Option<(Entity, Entity)>>,
     edge_entities: Option<(Entity, Entity)>,
+    face_entities: Option<(Entity, Entity, Entity)>,
     file_type: Option<FileTypeValue>,
     owned_by_file: Option<(ProjectKey, FileEntryKey)>,
 }
@@ -55,6 +56,7 @@ impl ShapeWaitlistEntry {
             shape: None,
             edge_and_parent_opt: None,
             edge_entities: None,
+            face_entities: None,
             file_type: None,
             owned_by_file: None,
         }
@@ -72,10 +74,10 @@ impl ShapeWaitlistEntry {
                 return self.owned_by_file.is_some();
             }
             (Some(FileTypeValue::Mesh), Some(ShapeType::Edge)) => {
-                self.owned_by_file.is_some() && self.edge_entities.is_some()
+                return self.owned_by_file.is_some() && self.edge_entities.is_some();
             }
             (Some(FileTypeValue::Mesh), Some(ShapeType::Face)) => {
-                return self.owned_by_file.is_some();
+                return self.owned_by_file.is_some() && self.face_entities.is_some();
             }
             _ => {
                 return false;
@@ -136,6 +138,7 @@ impl ShapeWaitlistEntry {
                 return ShapeData::MeshEdge(project_key, file_key, start, end);
             }
             (Some(FileTypeValue::Mesh), Some(ShapeType::Face)) => {
+                let (a, b, c) = self.face_entities.unwrap();
                 return ShapeData::MeshFace(project_key, file_key);
             }
             _ => {
@@ -347,7 +350,8 @@ impl ShapeWaitlist {
                 shape_manager.on_create_mesh_edge(start, entity, end);
                 (project_key, file_key, ShapeType::Vertex)
             }
-            ShapeData::MeshFace(project_key, file_key) => {
+            ShapeData::MeshFace(project_key, file_key, a, b, c) => {
+                shape_manager.on_create_face(entity, a, b, c);
                 (project_key, file_key, ShapeType::Face)
             }
         };

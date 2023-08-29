@@ -990,9 +990,14 @@ impl ShapeManager {
                 continue;
             }
             let face_3d_entity = face_3d_data.entity_3d.unwrap();
-            let vertex_3d_a = face_3d_key.vertex_3d_a;
-            let vertex_3d_b = face_3d_key.vertex_3d_b;
-            let vertex_3d_c = face_3d_key.vertex_3d_c;
+
+            // need to get vertices from Face3d component because they are in the correct order
+            let Ok(face_3d) = face_3d_q.get(face_3d_entity) else {
+                panic!("Face3d entity: `{:?}` has not been registered", face_3d_entity);
+            };
+            let vertex_3d_a = face_3d.vertex_a.get(client).unwrap();
+            let vertex_3d_b = face_3d.vertex_b.get(client).unwrap();
+            let vertex_3d_c = face_3d.vertex_c.get(client).unwrap();
 
             let mut positions = [Vec3::ZERO, Vec3::ZERO, Vec3::ZERO];
             for (index, vertex) in [
@@ -1031,13 +1036,17 @@ impl ShapeManager {
         info!("despawn 2d vertex {:?}", vertex_2d_entity);
         commands.entity(vertex_2d_entity).despawn();
 
+        if self.hovered_entity == Some((vertex_2d_entity, CanvasShape::Vertex)) {
+            self.hovered_entity = None;
+        }
+
         self.recalculate_shapes();
 
         vertex_2d_entity
     }
 
     // returns entity 2d
-    pub fn cleanup_deleted_edge(&mut self, entity_3d: &Entity, commands: &mut Commands) -> Entity {
+    pub fn cleanup_deleted_edge(&mut self, commands: &mut Commands, entity_3d: &Entity) -> Entity {
         // cleanup faces
         {
             let face_3d_keys: Vec<Face3dKey> = self.edges_3d.get(entity_3d).unwrap().faces_3d.iter().copied().collect();
@@ -1056,6 +1065,10 @@ impl ShapeManager {
         // despawn 2d edge
         info!("despawn 2d edge {:?}", edge_2d_entity);
         commands.entity(edge_2d_entity).despawn();
+
+        if self.hovered_entity == Some((edge_2d_entity, CanvasShape::Edge)) {
+            self.hovered_entity = None;
+        }
 
         self.recalculate_shapes();
 
@@ -1094,6 +1107,10 @@ impl ShapeManager {
         commands.entity(face_2d_entity).despawn();
         if let Some(face_3d_entity) = face_3d_data.entity_3d {
             commands.entity(face_3d_entity).despawn();
+        }
+
+        if self.hovered_entity == Some((face_2d_entity, CanvasShape::Face)) {
+            self.hovered_entity = None;
         }
     }
 

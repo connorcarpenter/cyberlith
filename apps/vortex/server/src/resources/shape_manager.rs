@@ -42,31 +42,61 @@ impl SkelVertexData {
 }
 
 struct MeshVertexData {
-    // edge map from vertex entity to edge entity
-    edges: Option<HashMap<Entity, Entity>>,
+    edges: HashSet<Entity>,
+    // faces
+    faces: HashSet<Entity>,
 }
 
 impl MeshVertexData {
     fn new() -> Self {
-        Self { edges: None }
+        Self {
+            edges: HashSet::new(),
+            faces: HashSet::new(),
+        }
     }
 
-    fn add_edge(&mut self, vertex_entity: Entity, edge_entity: Entity) {
-        self.edges
-            .get_or_insert_with(|| HashMap::new())
-            .insert(vertex_entity, edge_entity);
+    fn add_edge(&mut self, edge_entity: Entity) {
+        self.edges.insert(edge_entity);
     }
 
     // returns edge entity
-    fn remove_edge(&mut self, vertex_entity: &Entity) -> Option<Entity> {
-        if let Some(edge_map) = self.edges.as_mut() {
-            let result = edge_map.remove(&vertex_entity);
-            if edge_map.is_empty() {
-                self.edges = None;
-            }
-            return result;
+    fn remove_edge(&mut self, edge_entity: &Entity) {
+        self.edges.remove(edge_entity);
+    }
+
+    fn add_face(&mut self, face_entity: Entity) {
+        self.faces.insert(face_entity);
+    }
+
+    fn remove_face(&mut self, face_entity: &Entity) {
+        self.faces.remove(&face_entity);
+    }
+}
+
+struct EdgeData {
+    vertex_a: Entity,
+    vertex_b: Entity,
+}
+
+impl EdgeData {
+    pub fn new(start: Entity, end: Entity) -> Self {
+        Self { vertex_a: start, vertex_b: end }
+    }
+}
+
+struct FaceData {
+    vertex_a: Entity,
+    vertex_b: Entity,
+    vertex_c: Entity,
+}
+
+impl FaceData {
+    pub fn new(vertex_a: Entity, vertex_b: Entity, vertex_c: Entity) -> Self {
+        Self {
+            vertex_a,
+            vertex_b,
+            vertex_c,
         }
-        return None;
     }
 }
 
@@ -75,7 +105,9 @@ pub struct ShapeManager {
     // vertex entity -> vertex data
     vertices: HashMap<Entity, VertexData>,
     // edge entity -> connected vertex entities
-    edges: HashMap<Entity, (Entity, Entity)>,
+    edges: HashMap<Entity, EdgeData>,
+    // face entity -> connected vertices
+    faces: HashMap<Entity, FaceData>,
 }
 
 impl Default for ShapeManager {
@@ -83,6 +115,7 @@ impl Default for ShapeManager {
         Self {
             vertices: HashMap::new(),
             edges: HashMap::new(),
+            faces: HashMap::new(),
         }
     }
 }
@@ -94,6 +127,10 @@ impl ShapeManager {
 
     pub fn has_edge(&self, entity: &Entity) -> bool {
         self.edges.contains_key(entity)
+    }
+
+    pub fn has_face(&self, entity: &Entity) -> bool {
+        self.faces.contains_key(entity)
     }
 
     pub fn get_vertex_parent(&self, entity: &Entity) -> Option<Entity> {
@@ -116,20 +153,6 @@ impl ShapeManager {
 
         self.vertices
             .insert(vertex_entity, VertexData::Mesh(MeshVertexData::new()));
-    }
-
-    pub fn on_create_mesh_edge(&mut self, start: Entity, edge: Entity, end: Entity) {
-        self.edges.insert(edge, (start, end));
-
-        let Some(VertexData::Mesh(data)) = self.vertices.get_mut(&start) else {
-            panic!("on_create_mesh_edge: start entity `{:?}` not found!", start);
-        };
-        data.add_edge(end, edge);
-
-        let Some(VertexData::Mesh(data)) = self.vertices.get_mut(&end) else {
-            panic!("on_create_mesh_edge: end entity `{:?}` not found!", end);
-        };
-        data.add_edge(start, edge);
     }
 
     pub fn on_create_skel_vertex(
@@ -165,6 +188,29 @@ impl ShapeManager {
         }
     }
 
+    pub fn on_create_mesh_edge(&mut self, start_vertex_entity: Entity, edge_entity: Entity, end_vertex_entity: Entity) {
+        self.edges.insert(edge_entity, EdgeData::new(start_vertex_entity, end_vertex_entity));
+
+        for vertex_entity in [start_vertex_entity, end_vertex_entity] {
+            let Some(VertexData::Mesh(vertex_data)) = self.vertices.get_mut(&vertex_entity) else {
+                panic!("on_create_mesh_edge: vertex entity `{:?}` not found!", vertex_entity);
+            };
+            vertex_data.add_edge(edge_entity);
+        }
+    }
+
+    pub fn on_create_face(&mut self, face_entity: Entity, vertex_a: Entity, vertex_b: Entity, vertex_c: Entity) {
+        self.faces.insert(face_entity, FaceData::new(vertex_a, vertex_b, vertex_c));
+
+        // add faces to vertices
+        for vertex_entity in [vertex_a, vertex_b, vertex_c] {
+            let Some(VertexData::Mesh(data)) = self.vertices.get_mut(&vertex_entity) else {
+                panic!("on_create_face: vertex entity `{:?}` not found!", vertex_entity);
+            };
+            data.add_face(face_entity);
+        }
+    }
+
     pub fn on_delete_vertex(
         &mut self,
         commands: &mut Commands,
@@ -194,65 +240,62 @@ impl ShapeManager {
         entities_to_despawn
     }
 
-    pub fn on_delete_edge(&mut self, entity: &Entity) {
-        let (start, end) = self.edges.remove(entity).unwrap();
-
-        info!(
-            "removing mapping in vertex entity `{:?}`, edge entity: `{:?}`",
-            start, entity
-        );
-        let Some(VertexData::Mesh(data)) = self.vertices.get_mut(&start) else {
-            panic!("shouldn't be able to happen!");
-        };
-        data.remove_edge(&end);
-
-        info!(
-            "removing mapping in vertex entity `{:?}`, edge entity: `{:?}`",
-            end, entity
-        );
-        let Some(VertexData::Mesh(data)) = self.vertices.get_mut(&end) else {
-            panic!("shouldn't be able to happen!");
-        };
-        data.remove_edge(&start);
-    }
-
-    fn on_delete_mesh_vertex(&mut self, entity: &Entity) -> Vec<Entity> {
-        let edges_to_despawn = Self::remove_mesh_vertex(&mut self.vertices, entity);
-
-        for edge_entity in edges_to_despawn.iter() {
-            self.edges.remove(edge_entity);
-        }
-
-        edges_to_despawn
-    }
-
-    // returns list of edges to despawn
-    fn remove_mesh_vertex(
-        entities: &mut HashMap<Entity, VertexData>,
-        vertex_entity: &Entity,
-    ) -> Vec<Entity> {
-        let mut edges_to_despawn = Vec::new();
-
-        // remove entry
-        let VertexData::Mesh(removed_entry) = entities.remove(vertex_entity).unwrap() else {
-            panic!("shouldn't be able to happen!");
-        };
-
-        if let Some(edges) = removed_entry.edges {
-            for (connected_vertex_entity, edge_entity) in edges {
-                edges_to_despawn.push(edge_entity);
-                let Some(VertexData::Mesh(connected_vertex_data)) = entities.get_mut(&connected_vertex_entity) else {
-                    panic!("shouldn't be able to happen!");
-                };
-                connected_vertex_data.remove_edge(vertex_entity);
-            }
-        }
-
-        return edges_to_despawn;
-    }
 
     fn on_delete_skel_vertex(&mut self, entity: &Entity) -> Vec<Entity> {
         Self::remove_skel_vertex(&mut self.vertices, entity)
+    }
+
+    fn on_delete_mesh_vertex(&mut self, vertex_entity: &Entity) -> Vec<Entity> {
+
+        let mut entities_to_despawn = Vec::new();
+
+        let VertexData::Mesh(vertex_data) = self.vertices.remove(vertex_entity).unwrap() else {
+            panic!("shouldn't be able to happen!");
+        };
+
+        for edge_entity in vertex_data.edges.iter() {
+
+            entities_to_despawn.push(*edge_entity);
+
+            self.on_delete_edge(edge_entity);
+        }
+
+        for face_entity in vertex_data.faces.iter() {
+
+            entities_to_despawn.push(*face_entity);
+
+            self.on_delete_face(face_entity);
+        }
+
+        entities_to_despawn
+    }
+
+    pub fn on_delete_edge(&mut self, edge_entity: &Entity) {
+        let edge_data = self.edges.remove(edge_entity).unwrap();
+
+        for vertex_entity in [edge_data.vertex_a, edge_data.vertex_b] {
+            if let Some(VertexData::Mesh(data)) = self.vertices.get_mut(&vertex_entity) {
+                info!(
+                    "removing mapping in vertex entity `{:?}`, edge entity: `{:?}`",
+                    vertex_entity, edge_entity
+                );
+                data.remove_edge(edge_entity);
+            }
+        }
+    }
+
+    fn on_delete_face(&mut self, face_entity: &Entity) {
+        let face_data = self.faces.remove(face_entity).unwrap();
+
+        for vertex_entity in [face_data.vertex_a, face_data.vertex_b, face_data.vertex_c] {
+            if let Some(VertexData::Mesh(data)) = self.vertices.get_mut(&vertex_entity) {
+                info!(
+                    "removing mapping in vertex entity `{:?}`, edge entity: `{:?}`",
+                    vertex_entity, face_entity
+                );
+                data.remove_face(face_entity);
+            }
+        }
     }
 
     fn remove_skel_vertex(
