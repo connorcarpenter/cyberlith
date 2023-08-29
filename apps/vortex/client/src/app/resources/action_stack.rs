@@ -1880,77 +1880,44 @@ impl ActionStack {
     }
 
     pub fn remove_vertex_entity(&mut self, entity_2d: Entity, entity_3d: Entity) {
-        {
-            let mut removals = Vec::new();
-            for (id, action) in self.undo_actions.iter_mut().enumerate() {
+        for list in [&mut self.undo_actions, &mut self.redo_actions] {
+            let mut new_actions = Vec::new();
+            for mut action in std::mem::take(list) {
                 if action.remove_vertex_entity(entity_2d, entity_3d) {
-                    removals.push(id);
+                    // don't add to new list
+                } else {
+                    new_actions.push(action);
                 }
             }
-            for removal in removals {
-                self.undo_actions.remove(removal);
-            }
-        }
-        {
-            let mut removals = Vec::new();
-            for (id, action) in self.redo_actions.iter_mut().enumerate() {
-                if action.remove_vertex_entity(entity_2d, entity_3d) {
-                    removals.push(id);
-                }
-            }
-            for removal in removals {
-                self.redo_actions.remove(removal);
-            }
+            *list = new_actions;
         }
     }
 
     pub fn remove_edge_entity(&mut self, entity_2d: Entity, entity_3d: Entity) {
-        {
-            let mut removals = Vec::new();
-            for (id, action) in self.undo_actions.iter_mut().enumerate() {
+        for list in [&mut self.undo_actions, &mut self.redo_actions] {
+            let mut new_actions = Vec::new();
+            for mut action in std::mem::take(list) {
                 if action.remove_edge_entity(entity_2d, entity_3d) {
-                    removals.push(id);
+                    // don't add to new list
+                } else {
+                    new_actions.push(action);
                 }
             }
-            for removal in removals {
-                self.undo_actions.remove(removal);
-            }
-        }
-        {
-            let mut removals = Vec::new();
-            for (id, action) in self.redo_actions.iter_mut().enumerate() {
-                if action.remove_edge_entity(entity_2d, entity_3d) {
-                    removals.push(id);
-                }
-            }
-            for removal in removals {
-                self.redo_actions.remove(removal);
-            }
+            *list = new_actions;
         }
     }
 
     pub fn remove_face_entity(&mut self, entity_2d: Entity, entity_3d: Entity) {
-        {
-            let mut removals = Vec::new();
-            for (id, action) in self.undo_actions.iter_mut().enumerate() {
+        for list in [&mut self.undo_actions, &mut self.redo_actions] {
+            let mut new_actions = Vec::new();
+            for mut action in std::mem::take(list) {
                 if action.remove_face_entity(entity_2d, entity_3d) {
-                    removals.push(id);
+                    // don't add to new list
+                } else {
+                    new_actions.push(action);
                 }
             }
-            for removal in removals {
-                self.undo_actions.remove(removal);
-            }
-        }
-        {
-            let mut removals = Vec::new();
-            for (id, action) in self.redo_actions.iter_mut().enumerate() {
-                if action.remove_face_entity(entity_2d, entity_3d) {
-                    removals.push(id);
-                }
-            }
-            for removal in removals {
-                self.redo_actions.remove(removal);
-            }
+            *list = new_actions;
         }
     }
 }
