@@ -11,8 +11,7 @@ use bevy_log::{info, warn};
 use naia_bevy_client::{Client, CommandsExt, Replicate, ReplicationConfig};
 
 use math::{convert_2d_to_3d, convert_3d_to_2d, Vec2, Vec3};
-use render_api::{base::{Color, CpuMaterial, CpuMesh}, components::{Camera, CameraProjection, Projection, RenderObjectBundle, Transform, Visibility}, shapes::{Triangle, distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform}, Assets, Handle};
-use render_api::shapes::HollowTriangle;
+use render_api::{base::{Color, CpuMaterial, CpuMesh}, components::{Camera, CameraProjection, Projection, RenderObjectBundle, Transform, Visibility}, shapes::{Triangle, HollowTriangle, distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform}, Assets, Handle};
 
 use vortex_proto::components::{Face3d, FileTypeValue, OwnedByFile, Vertex3d, VertexRoot};
 
@@ -100,9 +99,9 @@ impl Edge3dData {
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash, Debug)]
 pub struct FaceKey {
-    vertex_3d_a: Entity,
-    vertex_3d_b: Entity,
-    vertex_3d_c: Entity,
+    pub vertex_3d_a: Entity,
+    pub vertex_3d_b: Entity,
+    pub vertex_3d_c: Entity,
 }
 
 impl FaceKey {
@@ -640,10 +639,10 @@ impl ShapeManager {
         }
     }
 
-    pub fn register_3d_face(&mut self, entity_3d: Entity, face_key: FaceKey) {
-        self.faces_3d.insert(entity_3d, face_key);
+    pub fn register_3d_face(&mut self, entity_3d: Entity, face_key: &FaceKey) {
+        self.faces_3d.insert(entity_3d, *face_key);
 
-        let Some(Some(face_3d_data)) = self.face_keys.get_mut(&face_key) else {
+        let Some(Some(face_3d_data)) = self.face_keys.get_mut(face_key) else {
             panic!("Face3d key: `{:?}` has not been registered", face_key);
         };
         face_3d_data.entity_3d = Some(entity_3d);
@@ -710,11 +709,11 @@ impl ShapeManager {
     // returns 2d face entity
     fn unregister_3d_face(&mut self, entity_3d: &Entity) -> Option<Entity> {
         info!("unregistering 3d face entity: `{:?}`", entity_3d);
-        let Some(face_3d_key) = self.faces_3d.remove(entity_3d) else {
+        let Some(face_key) = self.faces_3d.remove(entity_3d) else {
             panic!("no face 3d found for entity {:?}", entity_3d);
         };
 
-        if let Some(Some(face_3d_data)) = self.face_keys.get_mut(&face_3d_key) {
+        if let Some(Some(face_3d_data)) = self.face_keys.get_mut(&face_key) {
             face_3d_data.entity_3d = None;
             info!("remove entity 3d: `{:?}` from face 3d data", entity_3d);
 
@@ -861,9 +860,11 @@ impl ShapeManager {
             )));
             self.faces_2d.insert(entity_2d, face_key);
         }
+
+        self.recalculate_shapes();
     }
 
-    pub fn create_networked_face(
+    pub fn create_networked_face_outer(
         &mut self,
         world: &mut World,
         face_2d_entity: Entity,
@@ -874,7 +875,7 @@ impl ShapeManager {
                 face_2d_entity
             );
         };
-        let Some(Some(face_3d_data)) = self.face_keys.get_mut(&face_3d_key) else {
+        let Some(Some(face_3d_data)) = self.face_keys.get(&face_3d_key) else {
             panic!(
                 "Face3d entity: `{:?}` has not been registered",
                 face_3d_key
@@ -901,11 +902,36 @@ impl ShapeManager {
             transform_q
         ) = system_state.get_mut(world);
 
+        self.create_networked_face_inner(
+            &mut commands,
+            &mut client,
+            &mut meshes,
+            &mut materials,
+            &camera_manager,
+            &transform_q,
+            &face_3d_key,
+            face_3d_data.file_entity,
+        );
+
+        system_state.apply(world);
+    }
+
+    pub fn create_networked_face_inner(
+        &mut self,
+        commands: &mut Commands,
+        client: &mut Client,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+        camera_manager: &CameraManager,
+        transform_q: &Query<&Transform>,
+        face_key: &FaceKey,
+        file_entity: Entity,
+    ) {
         // get 3d vertex entities & positions
         let mut positions = [Vec3::ZERO, Vec3::ZERO, Vec3::ZERO];
         let mut vertex_3d_entities = [Entity::PLACEHOLDER, Entity::PLACEHOLDER, Entity::PLACEHOLDER];
 
-        for (index, vertex_3d_entity) in [face_3d_key.vertex_3d_a, face_3d_key.vertex_3d_b, face_3d_key.vertex_3d_c].iter().enumerate() {
+        for (index, vertex_3d_entity) in [face_key.vertex_3d_a, face_key.vertex_3d_b, face_key.vertex_3d_c].iter().enumerate() {
             let vertex_transform = transform_q.get(*vertex_3d_entity).unwrap();
             positions[index] = vertex_transform.translation;
             vertex_3d_entities[index] = *vertex_3d_entity;
@@ -924,36 +950,34 @@ impl ShapeManager {
 
         // set up networked face component
         let mut face_3d_component = Face3d::new();
-        face_3d_component.vertex_a.set(&mut client, &vertex_3d_entities[0]);
-        face_3d_component.vertex_b.set(&mut client, &vertex_3d_entities[1]);
-        face_3d_component.vertex_c.set(&mut client, &vertex_3d_entities[2]);
+        face_3d_component.vertex_a.set(client, &vertex_3d_entities[0]);
+        face_3d_component.vertex_b.set(client, &vertex_3d_entities[1]);
+        face_3d_component.vertex_c.set(client, &vertex_3d_entities[2]);
 
         // get owned_by_file component
         let mut owned_by_file_component = OwnedByFile::new();
         owned_by_file_component
             .file_entity
-            .set(&mut client, &face_3d_data.file_entity);
+            .set(client, &file_entity);
 
         // set up 3d entity
         let face_3d_entity = commands
             .spawn_empty()
-            .enable_replication(&mut client)
+            .enable_replication(client)
             .configure_replication(ReplicationConfig::Delegated)
             .insert(owned_by_file_component)
             .insert(face_3d_component)
             .id();
 
         self.face_3d_postprocess(
-            &mut commands,
-            &mut meshes,
-            &mut materials,
+            commands,
+            meshes,
+            materials,
             &camera_manager,
-            face_3d_key,
+            face_key,
             face_3d_entity,
             positions,
         );
-
-        system_state.apply(world);
     }
 
     pub fn face_3d_postprocess(
@@ -962,7 +986,7 @@ impl ShapeManager {
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         camera_manager: &CameraManager,
-        face_key: FaceKey,
+        face_key: &FaceKey,
         face_3d_entity: Entity,
         positions: [Vec3; 3],
     ) {
@@ -1062,13 +1086,16 @@ impl ShapeManager {
         vertex_2d_entity
     }
 
-    // returns entity 2d
-    pub fn cleanup_deleted_edge(&mut self, commands: &mut Commands, entity_3d: &Entity) -> Entity {
+    // returns (edge entity 2d, Vec<(face entity 2d, face entity 3d)>
+    pub fn cleanup_deleted_edge(&mut self, commands: &mut Commands, entity_3d: &Entity) -> (Entity, Vec<Entity>) {
+
+        let mut deleted_face_2d_entities = Vec::new();
         // cleanup faces
         {
             let face_3d_keys: Vec<FaceKey> = self.edges_3d.get(entity_3d).unwrap().faces_3d.iter().copied().collect();
             for face_3d_key in face_3d_keys {
-                self.cleanup_deleted_face_key(commands, &face_3d_key);
+                let face_2d_entity= self.cleanup_deleted_face_key(commands, &face_3d_key);
+                deleted_face_2d_entities.push(face_2d_entity);
             }
         }
 
@@ -1090,10 +1117,11 @@ impl ShapeManager {
 
         self.recalculate_shapes();
 
-        edge_2d_entity
+        (edge_2d_entity, deleted_face_2d_entities)
     }
 
-    pub(crate) fn cleanup_deleted_face_key(&mut self, commands: &mut Commands, face_key: &FaceKey) {
+    // returns face 2d entity
+    pub(crate) fn cleanup_deleted_face_key(&mut self, commands: &mut Commands, face_key: &FaceKey) -> Entity {
         // unregister face
         let Some(face_2d_entity) = self.unregister_face_key(face_key) else {
             panic!(
@@ -1111,6 +1139,8 @@ impl ShapeManager {
         }
 
         self.recalculate_shapes();
+
+        face_2d_entity
     }
 
     // returns 2d face entity
@@ -1157,6 +1187,14 @@ impl ShapeManager {
 
     pub(crate) fn edge_entity_2d_to_3d(&self, entity_2d: &Entity) -> Option<Entity> {
         self.edges_2d.get(entity_2d).copied()
+    }
+
+    pub(crate) fn vertex_connected_edges(&self, vertex_3d_entity: &Entity) -> Option<Vec<Entity>> {
+        self.vertices_3d.get(vertex_3d_entity).map(|data| data.edges_3d.iter().map(|e| *e).collect())
+    }
+
+    pub(crate) fn vertex_connected_faces(&self, vertex_3d_entity: &Entity) -> Option<Vec<FaceKey>> {
+        self.vertices_3d.get(vertex_3d_entity).map(|data| data.faces_3d.iter().copied().collect())
     }
 
     fn face_key_from_2d_entity(&self, entity_2d: &Entity) -> Option<FaceKey> {
@@ -1336,7 +1374,7 @@ impl ShapeManager {
         }
 
         action_stack.buffer_action(Action::CreateVertex(
-            VertexTypeData::Mesh(Vec::new()),
+            VertexTypeData::Mesh(Vec::new(), Vec::new()),
             Vec3::ZERO,
             None,
         ));
@@ -1737,7 +1775,7 @@ impl ShapeManager {
                                         VertexTypeData::Skel(vertex_2d_entity, None)
                                     }
                                     FileTypeValue::Mesh => {
-                                        VertexTypeData::Mesh(vec![vertex_2d_entity])
+                                        VertexTypeData::Mesh(vec![vertex_2d_entity], Vec::new())
                                     }
                                 },
                                 new_3d_position,

@@ -23,9 +23,10 @@ use vortex_proto::{
 use crate::app::{
     components::{
         file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
-        Edge3dLocal, OwnedByFileLocal, Vertex2d, VertexEntry, VertexTypeData,
+        OwnedByFileLocal, Vertex2d, VertexEntry, VertexTypeData,
     },
     resources::{
+        shape_manager::FaceKey,
         camera_manager::CameraManager,
         canvas::Canvas,
         file_tree::FileTree,
@@ -54,7 +55,7 @@ pub enum Action {
     RenameEntry(Entity, String),
     // The 2D shape entity to deselect (or None for deselect)
     SelectShape(Option<(Entity, CanvasShape)>),
-    // Create Vertex (Parent 2d vertex Entity, Position, older vertex 2d entity & 3d entity it was associated with)
+    // Create Vertex (Vertex-specific data, Position, older vertex 2d entity & 3d entity it was associated with)
     CreateVertex(VertexTypeData, Vec3, Option<(Entity, Entity)>),
     // Delete Vertex (2d vertex entity, optional vertex 2d entity to select after delete)
     DeleteVertex(Entity, Option<(Entity, CanvasShape)>),
@@ -332,7 +333,7 @@ impl Action {
     }
 
     // returns true if should be removed from undo/redo
-    pub(crate) fn remove_face_entity(&mut self, entity_2d: Entity, entity_3d: Entity) -> bool {
+    pub(crate) fn remove_face_entity(&mut self, entity_2d: Entity) -> bool {
         match self {
             Action::SelectShape(entity_opt) => match entity_opt {
                 Some((entity, CanvasShape::Face)) => {
@@ -702,7 +703,7 @@ impl ActionStack {
                 if let Some((face_2d_entity, CanvasShape::Face)) = shape_2d_entity_opt {
                     if entity_to_request.is_none() {
                         world.resource_scope(|world, mut shape_manager: Mut<ShapeManager>| {
-                            shape_manager.create_networked_face(world, face_2d_entity);
+                            shape_manager.create_networked_face_outer(world, face_2d_entity);
                         });
                         return vec![
                             Action::SelectShape(deselected_entity),
@@ -719,94 +720,115 @@ impl ActionStack {
                 let selected_vertex_3d;
                 let selected_vertex_2d;
 
-                match &vertex_type_data {
-                    VertexTypeData::Skel(parent_entity, _) => {
-                        info!(
+                {
+                    match &vertex_type_data {
+                        VertexTypeData::Skel(parent_entity, _) => {
+                            info!(
                             "CreateVertexSkel(parent: {:?}, position: {:?})",
                             parent_entity, position
                         );
-                    }
-                    VertexTypeData::Mesh(_) => {
-                        info!("CreateVertexMesh(position: {:?})", position);
+                        }
+                        VertexTypeData::Mesh(_, _) => {
+                            info!("CreateVertexMesh(position: {:?})", position);
+                        }
                     }
                 }
 
-                {
-                    let mut system_state: SystemState<(
-                        Commands,
-                        Client,
-                        ResMut<CameraManager>,
-                        ResMut<ShapeManager>,
-                        Res<TabManager>,
-                        ResMut<Assets<CpuMesh>>,
-                        ResMut<Assets<CpuMaterial>>,
-                    )> = SystemState::new(world);
-                    let (
-                        mut commands,
-                        mut client,
-                        mut camera_manager,
-                        mut shape_manager,
-                        tab_manager,
-                        mut meshes,
-                        mut materials,
-                    ) = system_state.get_mut(world);
 
-                    // deselect all selected vertices
-                    let (deselected_vertex_2d_entity, vertex_3d_entity_to_release) =
-                        Self::deselect_all_selected_shapes(&mut shape_manager);
-                    deselected_vertex_2d_entity_store = deselected_vertex_2d_entity;
-                    if let Some(entity) = vertex_3d_entity_to_release {
-                        let mut entity_mut = commands.entity(entity);
-                        if entity_mut.authority(&client).is_some() {
-                            entity_mut.release_authority(&mut client);
-                        }
+                let mut system_state: SystemState<(
+                    Commands,
+                    Client,
+                    ResMut<CameraManager>,
+                    ResMut<ShapeManager>,
+                    Res<TabManager>,
+                    ResMut<Assets<CpuMesh>>,
+                    ResMut<Assets<CpuMaterial>>,
+                    Query<&Transform>,
+                )> = SystemState::new(world);
+                let (
+                    mut commands,
+                    mut client,
+                    mut camera_manager,
+                    mut shape_manager,
+                    tab_manager,
+                    mut meshes,
+                    mut materials,
+                    transform_q,
+                ) = system_state.get_mut(world);
+
+                // deselect all selected vertices
+                let (deselected_vertex_2d_entity, vertex_3d_entity_to_release) =
+                    Self::deselect_all_selected_shapes(&mut shape_manager);
+                deselected_vertex_2d_entity_store = deselected_vertex_2d_entity;
+                if let Some(entity) = vertex_3d_entity_to_release {
+                    let mut entity_mut = commands.entity(entity);
+                    if entity_mut.authority(&client).is_some() {
+                        entity_mut.release_authority(&mut client);
                     }
+                }
 
-                    let file_type_value = vertex_type_data.to_file_type_value();
-                    let current_tab_entity = tab_manager.current_tab_entity();
+                let file_type_value = vertex_type_data.to_file_type_value();
+                let current_tab_entity = tab_manager.current_tab_entity();
 
-                    // create vertex
-                    let (new_vertex_2d_entity, new_vertex_3d_entity) = self
-                        .create_networked_vertex(
+                // create vertex
+                let (new_vertex_2d_entity, new_vertex_3d_entity) = self
+                    .create_networked_vertex(
+                        &mut commands,
+                        &mut client,
+                        &mut camera_manager,
+                        &mut shape_manager,
+                        &mut meshes,
+                        &mut materials,
+                        position,
+                        current_tab_entity,
+                        file_type_value,
+                        &mut entities_to_release,
+                    );
+                // migrate undo entities
+                if let Some((old_vertex_2d_entity, old_vertex_3d_entity)) =
+                    old_vertex_entities_opt
+                {
+                    self.migrate_vertex_entities(
+                        old_vertex_2d_entity,
+                        new_vertex_2d_entity,
+                        old_vertex_3d_entity,
+                        new_vertex_3d_entity,
+                    );
+                }
+
+                match vertex_type_data {
+                    VertexTypeData::Skel(parent_vertex_2d_entity, children_opt) => {
+                        if let Some(children) = children_opt {
+                            self.create_networked_children_tree(
+                                &mut commands,
+                                &mut client,
+                                &mut camera_manager,
+                                &mut shape_manager,
+                                &mut meshes,
+                                &mut materials,
+                                new_vertex_2d_entity,
+                                children,
+                                current_tab_entity,
+                                &mut entities_to_release,
+                            );
+                        }
+                        self.create_networked_edge(
                             &mut commands,
                             &mut client,
                             &mut camera_manager,
                             &mut shape_manager,
                             &mut meshes,
                             &mut materials,
-                            position,
+                            parent_vertex_2d_entity,
+                            new_vertex_2d_entity,
+                            new_vertex_3d_entity,
                             current_tab_entity,
-                            file_type_value,
+                            FileTypeValue::Skel,
                             &mut entities_to_release,
                         );
-                    // migrate undo entities
-                    if let Some((old_vertex_2d_entity, old_vertex_3d_entity)) =
-                        old_vertex_entities_opt
-                    {
-                        self.migrate_vertex_entities(
-                            old_vertex_2d_entity,
-                            new_vertex_2d_entity,
-                            old_vertex_3d_entity,
-                            new_vertex_3d_entity,
-                        );
                     }
-
-                    match vertex_type_data {
-                        VertexTypeData::Skel(parent_vertex_2d_entity, children_opt) => {
-                            if let Some(children) = children_opt {
-                                self.create_networked_children_tree(
-                                    &mut commands,
-                                    &mut client,
-                                    &mut camera_manager,
-                                    &mut shape_manager,
-                                    &mut meshes,
-                                    &mut materials,
-                                    new_vertex_2d_entity,
-                                    children,
-                                    current_tab_entity,
-                                    &mut entities_to_release,
-                                );
-                            }
+                    VertexTypeData::Mesh(connected_vertex_entities, connected_face_vertex_pairs) => {
+                        for connected_vertex_entity in connected_vertex_entities {
                             self.create_networked_edge(
                                 &mut commands,
                                 &mut client,
@@ -814,41 +836,40 @@ impl ActionStack {
                                 &mut shape_manager,
                                 &mut meshes,
                                 &mut materials,
-                                parent_vertex_2d_entity,
+                                connected_vertex_entity,
                                 new_vertex_2d_entity,
                                 new_vertex_3d_entity,
                                 current_tab_entity,
-                                FileTypeValue::Skel,
+                                FileTypeValue::Mesh,
                                 &mut entities_to_release,
                             );
                         }
-                        VertexTypeData::Mesh(connected_vertex_entities) => {
-                            for connected_vertex_entity in connected_vertex_entities {
-                                self.create_networked_edge(
-                                    &mut commands,
-                                    &mut client,
-                                    &mut camera_manager,
-                                    &mut shape_manager,
-                                    &mut meshes,
-                                    &mut materials,
-                                    connected_vertex_entity,
-                                    new_vertex_2d_entity,
-                                    new_vertex_3d_entity,
-                                    current_tab_entity,
-                                    FileTypeValue::Mesh,
-                                    &mut entities_to_release,
-                                );
-                            }
+                        for (connected_face_vertex_a_2d, connected_face_vertex_b_2d) in connected_face_vertex_pairs {
+
+                            let connected_face_vertex_a_3d = shape_manager.vertex_entity_2d_to_3d(&connected_face_vertex_a_2d).unwrap();
+                            let connected_face_vertex_b_3d = shape_manager.vertex_entity_2d_to_3d(&connected_face_vertex_b_2d).unwrap();
+                            let face_key = FaceKey::new(new_vertex_3d_entity, connected_face_vertex_a_3d, connected_face_vertex_b_3d);
+
+                            shape_manager.create_networked_face_inner(
+                                &mut commands,
+                                &mut client,
+                                &mut meshes,
+                                &mut materials,
+                                &mut camera_manager,
+                                &transform_q,
+                                &face_key,
+                                current_tab_entity,
+                            );
                         }
-                    };
+                    }
+                };
 
-                    // select vertex
-                    shape_manager.select_shape(&new_vertex_2d_entity, CanvasShape::Vertex);
-                    selected_vertex_3d = new_vertex_3d_entity;
-                    selected_vertex_2d = new_vertex_2d_entity;
+                // select vertex
+                shape_manager.select_shape(&new_vertex_2d_entity, CanvasShape::Vertex);
+                selected_vertex_3d = new_vertex_3d_entity;
+                selected_vertex_2d = new_vertex_2d_entity;
 
-                    system_state.apply(world);
-                }
+                system_state.apply(world);
 
                 // release all non-selected vertices
                 {
@@ -965,35 +986,40 @@ impl ActionStack {
                     }
                     FileTypeValue::Mesh => {
                         let mut connected_vertices_2d_entities = Vec::new();
-                        for edge_3d in edge_3d_q.iter() {
-                            let start_entity = edge_3d.start.get(&client).unwrap();
-                            let end_entity = edge_3d.end.get(&client).unwrap();
+                        let mut connected_face_vertex_2d_entities = Vec::new();
 
-                            if start_entity == vertex_3d_entity {
-                                if let Some(end_2d_entity) =
-                                    shape_manager.vertex_entity_3d_to_2d(&end_entity)
-                                {
-                                    connected_vertices_2d_entities.push(end_2d_entity);
-                                } else {
-                                    // this is a known bug that happens when undo/redo too fast
-                                    // it may not be worth it to fix! would require the entire hierarchy to be stored similar to the server
-                                    warn!("2d vertex still hasn't been created for {:?}, cannot add to undo/redo stack.", end_entity);
-                                }
-                            } else if end_entity == vertex_3d_entity {
-                                if let Some(start_2d_entity) =
-                                    shape_manager.vertex_entity_3d_to_2d(&start_entity)
-                                {
-                                    connected_vertices_2d_entities.push(start_2d_entity);
-                                } else {
-                                    // this is a known bug that happens when undo/redo too fast
-                                    // it may not be worth it to fix! would require the entire hierarchy to be stored similar to the server
-                                    warn!("2d vertex still hasn't been created for {:?}, cannot add to undo/redo stack.", start_entity);
-                                }
-                            }
+                        let Some(connected_edges) = shape_manager.vertex_connected_edges(&vertex_3d_entity) else {
+                            panic!("Failed to get connected edges for vertex entity {:?}!", vertex_3d_entity);
+                        };
+                        for edge_3d_entity in connected_edges {
+                            let edge_3d = edge_3d_q.get(edge_3d_entity).unwrap();
+                            let start_vertex_3d_entity = edge_3d.start.get(&client).unwrap();
+                            let end_vertex_3d_entity = edge_3d.end.get(&client).unwrap();
+
+                            let connected_vertex_3d_entity = if start_vertex_3d_entity == vertex_3d_entity {
+                                end_vertex_3d_entity
+                            } else {
+                                start_vertex_3d_entity
+                            };
+
+                            let Some(connected_vertex_2d_entity) = shape_manager.vertex_entity_3d_to_2d(&connected_vertex_3d_entity) else {
+                                panic!("Failed to get connected vertex 2d entity for vertex entity {:?}!", connected_vertex_3d_entity);
+                            };
+
+                            connected_vertices_2d_entities.push(connected_vertex_2d_entity);
+                        }
+                        let Some(connected_faces) = shape_manager.vertex_connected_faces(&vertex_3d_entity) else {
+                            panic!("Failed to get connected faces for vertex entity {:?}!", vertex_3d_entity);
+                        };
+                        for face_key in connected_faces {
+                            let mut vertices_3d = vec![face_key.vertex_3d_a, face_key.vertex_3d_b, face_key.vertex_3d_c];
+                            vertices_3d.retain(|vertex| *vertex != vertex_3d_entity);
+                            let vertices_2d: Vec<Entity> = vertices_3d.iter().map(|vertex| shape_manager.vertex_entity_3d_to_2d(&vertex).unwrap()).collect();
+                            connected_face_vertex_2d_entities.push((vertices_2d[0], vertices_2d[1]));
                         }
 
                         let rev_vertex_type_data =
-                            VertexTypeData::Mesh(connected_vertices_2d_entities);
+                            VertexTypeData::Mesh(connected_vertices_2d_entities, connected_face_vertex_2d_entities);
 
                         let Ok((_, vertex_3d)) = vertex_q.get(vertex_3d_entity) else {
                             panic!("Failed to get Vertex3d for vertex entity {:?}!", vertex_3d_entity);
@@ -1236,9 +1262,8 @@ impl ActionStack {
                     Commands,
                     ResMut<ShapeManager>,
                     ResMut<Assets<CpuMesh>>,
-                    Query<&Edge3d>,
                 )> = SystemState::new(world);
-                let (mut commands, mut shape_manager, mut meshes, edge_3d_q) =
+                let (mut commands, mut shape_manager, mut meshes) =
                     system_state.get_mut(world);
 
                 let Some(face_3d_entity) = shape_manager.face_entity_2d_to_3d(&face_2d_entity) else {
@@ -1962,11 +1987,11 @@ impl ActionStack {
         }
     }
 
-    pub fn remove_face_entity(&mut self, entity_2d: Entity, entity_3d: Entity) {
+    pub fn remove_face_entity(&mut self, entity_2d: Entity) {
         for list in [&mut self.undo_actions, &mut self.redo_actions] {
             let mut new_actions = Vec::new();
             for mut action in std::mem::take(list) {
-                if action.remove_face_entity(entity_2d, entity_3d) {
+                if action.remove_face_entity(entity_2d) {
                     // don't add to new list
                 } else {
                     new_actions.push(action);

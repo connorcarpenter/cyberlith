@@ -73,15 +73,15 @@ impl Compass {
 pub enum VertexTypeData {
     // parent_vertex_2d_entity, children_tree_opt
     Skel(Entity, Option<Vec<VertexEntry>>),
-    // connected 2d vertices
-    Mesh(Vec<Entity>),
+    // connected 2d vertices, 2d vertex pairs with which formed a face
+    Mesh(Vec<Entity>, Vec<(Entity, Entity)>),
 }
 
 impl VertexTypeData {
     pub fn to_file_type_value(&self) -> FileTypeValue {
         match self {
             VertexTypeData::Skel(_, _) => FileTypeValue::Skel,
-            VertexTypeData::Mesh(_) => FileTypeValue::Mesh,
+            VertexTypeData::Mesh(_, _) => FileTypeValue::Mesh,
         }
     }
 
@@ -105,10 +105,18 @@ impl VertexTypeData {
                     new_3d_entity,
                 );
             }
-            VertexTypeData::Mesh(connected_vertices) => {
+            VertexTypeData::Mesh(connected_vertices, connected_face_vertices) => {
                 for connected_vertex in connected_vertices {
                     if *connected_vertex == old_2d_entity {
                         *connected_vertex = new_2d_entity;
+                    }
+                }
+                for (connected_vertex_a, connected_vertex_b) in connected_face_vertices {
+                    if *connected_vertex_a == old_2d_entity {
+                        *connected_vertex_a = new_2d_entity;
+                    }
+                    if *connected_vertex_b == old_2d_entity {
+                        *connected_vertex_b = new_2d_entity;
                     }
                 }
             }
@@ -123,8 +131,9 @@ impl VertexTypeData {
                 }
                 remove_entity_from_vertex_trees(children_opt, entity_2d, entity_3d);
             }
-            VertexTypeData::Mesh(connected_vertices) => {
+            VertexTypeData::Mesh(connected_vertices, connected_face_vertices) => {
                 connected_vertices.retain(|&x| x != entity_2d);
+                connected_face_vertices.retain(|(a, b)| *a != entity_2d && *b != entity_2d);
             }
         }
         return false;

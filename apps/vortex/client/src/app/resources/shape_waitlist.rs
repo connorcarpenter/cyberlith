@@ -10,16 +10,14 @@ use math::Vec3;
 
 use render_api::{
     base::{CpuMaterial, CpuMesh},
-    Assets,
+    Assets,components::Transform
 };
-use render_api::components::Transform;
 use vortex_proto::components::FileTypeValue;
 
 use crate::app::{
-    components::{Edge3dLocal, OwnedByFileLocal, Vertex2d},
-    resources::{camera_manager::CameraManager, shape_manager::ShapeManager},
+    components::{OwnedByFileLocal, Vertex2d},
+    resources::{shape_manager::FaceKey, camera_manager::CameraManager, shape_manager::ShapeManager},
 };
-use crate::app::resources::shape_manager::FaceKey;
 
 pub enum ShapeWaitlistInsert {
     Vertex,
@@ -412,7 +410,7 @@ impl ShapeWaitlist {
                     meshes,
                     materials,
                     camera_manager,
-                    face_key,
+                    &face_key,
                     entity,
                     positions
                 );
