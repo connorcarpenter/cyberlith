@@ -60,8 +60,8 @@ pub enum Action {
     DeleteVertex(Entity, Option<(Entity, CanvasShape)>),
     // Move Vertex (2d vertex Entity, Old Position, New Position)
     MoveVertex(Entity, Vec3, Vec3),
-    // Link 2 Vertices together (2d vertex Entity, 2d vertex Entity, older edge 2d entity & 3d entity it was associated with)
-    CreateEdge(Entity, Entity, Option<(Entity, Entity)>),
+    // Link 2 Vertices together (2d vertex start Entity, 2d vertex end Entity, 2d shape to select, older edge 2d entity & 3d entity it was associated with)
+    CreateEdge(Entity, Entity, (Entity, CanvasShape), Option<(Entity, Entity)>),
     // Delete Edge (2d edge entity, optional vertex 2d entity to select after delete)
     DeleteEdge(Entity, Option<(Entity, CanvasShape)>),
     // Delete Face (2d face entity)
@@ -159,12 +159,17 @@ impl Action {
                     *entity = new_2d_vert_entity;
                 }
             }
-            Action::CreateEdge(entity_a, entity_b, _) => {
+            Action::CreateEdge(entity_a, entity_b, shape_to_select, _) => {
                 if *entity_a == old_2d_vert_entity {
                     *entity_a = new_2d_vert_entity;
                 }
                 if *entity_b == old_2d_vert_entity {
                     *entity_b = new_2d_vert_entity;
+                }
+                if let (entity, CanvasShape::Vertex) = shape_to_select {
+                    if *entity == old_2d_vert_entity {
+                        *entity = new_2d_vert_entity;
+                    }
                 }
             }
             Action::DeleteEdge(_, Some((entity, _))) => {
@@ -192,12 +197,17 @@ impl Action {
                 }
                 _ => {}
             },
-            Action::CreateEdge(_, _, Some((edge_2d_entity, edge_3d_entity))) => {
+            Action::CreateEdge(_, _, shape_to_select, Some((edge_2d_entity, edge_3d_entity))) => {
                 if *edge_2d_entity == old_2d_edge_entity {
                     *edge_2d_entity = new_2d_edge_entity;
                 }
                 if *edge_3d_entity == old_3d_edge_entity {
                     *edge_3d_entity = new_3d_edge_entity;
+                }
+                if let (entity, CanvasShape::Edge) = shape_to_select {
+                    if *entity == old_2d_edge_entity {
+                        *entity = new_2d_edge_entity;
+                    }
                 }
             }
             Action::DeleteEdge(edge_2d_entity, _) => {
@@ -256,9 +266,14 @@ impl Action {
                     return true;
                 }
             }
-            Action::CreateEdge(entity_a, entity_b, _) => {
+            Action::CreateEdge(entity_a, entity_b, shape_to_select, _) => {
                 if *entity_a == entity_2d || *entity_b == entity_2d {
                     return true;
+                }
+                if let (entity, CanvasShape::Vertex) = shape_to_select {
+                    if *entity == entity_2d {
+                        return true;
+                    }
                 }
             }
             Action::DeleteEdge(_, entity_opt) => {
@@ -289,7 +304,7 @@ impl Action {
                 }
                 _ => {}
             },
-            Action::CreateEdge(_, _, entity_opt) => {
+            Action::CreateEdge(_, _, shape_to_select, entity_opt) => {
                 let mut remove = false;
                 if let Some((edge_2d_entity, edge_3d_entity)) = entity_opt {
                     if *edge_2d_entity == entity_2d || *edge_3d_entity == entity_3d {
@@ -298,6 +313,11 @@ impl Action {
                 }
                 if remove {
                     *entity_opt = None;
+                }
+                if let (entity, CanvasShape::Edge) = shape_to_select {
+                    if *entity == entity_2d {
+                        return true;
+                    }
                 }
             }
             Action::DeleteEdge(edge_2d_entity, _) => {
@@ -685,8 +705,8 @@ impl ActionStack {
                             shape_manager.create_networked_face(world, face_2d_entity);
                         });
                         return vec![
-                            Action::DeleteFace(face_2d_entity),
                             Action::SelectShape(deselected_entity),
+                            Action::DeleteFace(face_2d_entity),
                         ];
                     }
                 }
@@ -1041,15 +1061,20 @@ impl ActionStack {
                     old_position,
                 )];
             }
-            Action::CreateEdge(vertex_2d_entity_a, vertex_2d_entity_b, old_edge_entities_opt) => {
+            Action::CreateEdge(
+                vertex_2d_entity_a,
+                vertex_2d_entity_b,
+                (mut shape_2d_entity_to_select, shape_2d_type_to_select),
+                old_edge_entities_opt
+            ) => {
                 info!(
-                    "CreateEdge(vertex_a: {:?}, vertex_b: {:?})",
-                    vertex_2d_entity_a, vertex_2d_entity_b
+                    "CreateEdge(vertex_a: {:?}, vertex_b: {:?}, (shape_2d_entity_to_select: {:?}, {:?}))",
+                    vertex_2d_entity_a, vertex_2d_entity_b, shape_2d_entity_to_select, shape_2d_type_to_select,
                 );
 
                 let mut entities_to_release = Vec::new();
-                let deselected_vertex_2d_entity_store;
-                let selected_vertex_3d;
+                let selected_shape_3d;
+                let deselected_shape_2d_entity_store;
                 let created_edge_2d_entity;
 
                 {
@@ -1073,10 +1098,10 @@ impl ActionStack {
                     ) = system_state.get_mut(world);
 
                     // deselect all selected vertices
-                    let (deselected_vertex_2d_entity, vertex_3d_entity_to_release) =
+                    let (deselected_shape_2d_entity, shape_3d_entity_to_release) =
                         Self::deselect_all_selected_shapes(&mut shape_manager);
-                    deselected_vertex_2d_entity_store = deselected_vertex_2d_entity;
-                    if let Some(entity) = vertex_3d_entity_to_release {
+                    deselected_shape_2d_entity_store = deselected_shape_2d_entity;
+                    if let Some(entity) = shape_3d_entity_to_release {
                         let mut entity_mut = commands.entity(entity);
                         if entity_mut.authority(&client).is_some() {
                             entity_mut.release_authority(&mut client);
@@ -1113,22 +1138,27 @@ impl ActionStack {
                             old_edge_3d_entity,
                             new_edge_3d_entity,
                         );
+                        if shape_2d_type_to_select == CanvasShape::Edge {
+                            if shape_2d_entity_to_select == old_edge_2d_entity {
+                                shape_2d_entity_to_select = new_edge_2d_entity;
+                            }
+                        }
                     }
 
                     // select vertex
-                    shape_manager.select_shape(&vertex_2d_entity_b, CanvasShape::Vertex);
-                    selected_vertex_3d = vertex_3d_entity_b;
+                    shape_manager.select_shape(&shape_2d_entity_to_select, shape_2d_type_to_select);
+                    selected_shape_3d = shape_manager.shape_entity_2d_to_3d(&shape_2d_entity_to_select, shape_2d_type_to_select).unwrap();
 
                     system_state.apply(world);
                 }
 
-                // release all non-selected vertices
+                // release all non-selected shapes
                 {
                     let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
                     let (mut commands, mut client) = system_state.get_mut(world);
 
                     for entity_to_release in entities_to_release {
-                        if entity_to_release != selected_vertex_3d {
+                        if entity_to_release != selected_shape_3d {
                             commands
                                 .entity(entity_to_release)
                                 .release_authority(&mut client);
@@ -1139,11 +1169,11 @@ impl ActionStack {
                 }
 
                 return vec![
-                    Action::DeleteEdge(created_edge_2d_entity, deselected_vertex_2d_entity_store),
+                    Action::DeleteEdge(created_edge_2d_entity, deselected_shape_2d_entity_store),
                     Action::SelectShape(Some((created_edge_2d_entity, CanvasShape::Edge))),
                 ];
             }
-            Action::DeleteEdge(edge_2d_entity, vertex_2d_to_select_opt) => {
+            Action::DeleteEdge(edge_2d_entity, shape_2d_to_select_opt) => {
                 info!("DeleteEdge(edge_2d_entity: `{:?}`)", edge_2d_entity);
                 let mut system_state: SystemState<(
                     Commands,
@@ -1176,13 +1206,13 @@ impl ActionStack {
                 shape_manager.cleanup_deleted_edge(&mut commands, &edge_3d_entity);
 
                 // select entities as needed
-                if let Some((vertex_2d_to_select, vertex_type)) = vertex_2d_to_select_opt {
-                    if let Some(vertex_3d_entity_to_request) = Self::select_shape(
+                if let Some((shape_2d_to_select, shape_type)) = shape_2d_to_select_opt {
+                    if let Some(shape_3d_entity_to_request) = Self::select_shape(
                         &mut shape_manager,
-                        Some((vertex_2d_to_select, vertex_type)),
+                        Some((shape_2d_to_select, shape_type)),
                     ) {
-                        info!("request_entities({:?})", vertex_3d_entity_to_request);
-                        let mut entity_mut = commands.entity(vertex_3d_entity_to_request);
+                        info!("request_entities({:?})", shape_3d_entity_to_request);
+                        let mut entity_mut = commands.entity(shape_3d_entity_to_request);
                         if entity_mut.authority(&client).is_some() {
                             entity_mut.request_authority(&mut client);
                         }
@@ -1196,6 +1226,7 @@ impl ActionStack {
                 return vec![Action::CreateEdge(
                     vertex_start_2d,
                     vertex_end_2d,
+                    (edge_2d_entity, CanvasShape::Edge),
                     Some((edge_2d_entity, edge_3d_entity)),
                 )];
             }
@@ -1366,10 +1397,10 @@ impl ActionStack {
                     entity_to_release = Some(edge_3d_entity);
                 }
                 CanvasShape::Face => {
-                    let face_3d_entity = shape_manager
-                        .face_entity_2d_to_3d(&shape_2d_entity)
-                        .unwrap();
-                    entity_to_release = Some(face_3d_entity);
+                    if let Some(face_3d_entity) = shape_manager
+                        .face_entity_2d_to_3d(&shape_2d_entity) {
+                        entity_to_release = Some(face_3d_entity);
+                    }
                 }
                 _ => {}
             }

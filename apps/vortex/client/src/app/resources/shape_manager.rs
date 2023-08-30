@@ -175,11 +175,14 @@ pub struct ShapeManager {
     selection_recalc: bool,
     hover_recalc: bool,
 
+    // Option<(2d shape entity, shape type)>
     hovered_entity: Option<(Entity, CanvasShape)>,
 
     pub select_circle_entity: Option<Entity>,
     pub select_triangle_entity: Option<Entity>,
     pub select_line_entity: Option<Entity>,
+
+    // Option<(2d shape entity, shape type)>
     selected_shape: Option<(Entity, CanvasShape)>,
 
     last_vertex_dragged: Option<(Entity, Vec3, Vec3)>,
@@ -617,18 +620,14 @@ impl ShapeManager {
         vertex_b_3d_entity: Entity,
         ownership_opt: Option<Entity>,
     ) {
-        {
-            let Some(vertex_a_3d_data) = self.vertices_3d.get_mut(&vertex_a_3d_entity) else {
-                panic!("Vertex3d entity: `{:?}` has not been registered", vertex_a_3d_entity);
+        for vertex_3d_entity in [vertex_a_3d_entity, vertex_b_3d_entity] {
+            let Some(vertex_3d_data) = self.vertices_3d.get_mut(&vertex_3d_entity) else {
+                panic!("Vertex3d entity: `{:?}` has not been registered", vertex_3d_entity);
             };
-            vertex_a_3d_data.add_edge(edge_3d_entity);
+            vertex_3d_data.add_edge(edge_3d_entity);
         }
-        {
-            let Some(vertex_b_3d_data) = self.vertices_3d.get_mut(&vertex_b_3d_entity) else {
-                panic!("Vertex3d entity: `{:?}` has not been registered", vertex_b_3d_entity);
-            };
-            vertex_b_3d_data.add_edge(edge_3d_entity);
-        }
+
+        info!("register_3d_edge(3d: `{:?}`, 2d: `{:?}`)", edge_3d_entity, edge_2d_entity);
 
         self.edges_3d.insert(
             edge_3d_entity,
@@ -661,19 +660,22 @@ impl ShapeManager {
     }
 
     // returns 2d edge entity
-    fn unregister_3d_edge(&mut self, entity_3d: &Entity) -> Option<Entity> {
-        if let Some(entity_3d_data) = self.edges_3d.remove(entity_3d) {
-            let entity_2d = entity_3d_data.entity_2d;
-            self.edges_2d.remove(&entity_2d);
+    fn unregister_3d_edge(&mut self, edge_3d_entity: &Entity) -> Option<Entity> {
+        if let Some(entity_3d_data) = self.edges_3d.remove(edge_3d_entity) {
+            let edge_2d_entity = entity_3d_data.entity_2d;
+
+            info!("deregister_3d_edge(3d: `{:?}`, 2d: `{:?}`)", edge_3d_entity, edge_2d_entity);
+
+            self.edges_2d.remove(&edge_2d_entity);
 
             // remove edge from vertices
             for vertex_3d_entity in [entity_3d_data.vertex_a_3d_entity, entity_3d_data.vertex_b_3d_entity] {
                 if let Some(vertex_3d_data) = self.vertices_3d.get_mut(&vertex_3d_entity) {
-                    vertex_3d_data.remove_edge(entity_3d);
+                    vertex_3d_data.remove_edge(edge_3d_entity);
                 }
             }
 
-            return Some(entity_2d);
+            return Some(edge_2d_entity);
         }
         return None;
     }
@@ -1127,6 +1129,22 @@ impl ShapeManager {
 
     pub(crate) fn has_edge_entity_3d(&self, entity_3d: &Entity) -> bool {
         self.edges_3d.contains_key(entity_3d)
+    }
+
+    pub(crate) fn shape_entity_2d_to_3d(&self, entity_2d: &Entity, shape_type: CanvasShape) -> Option<Entity> {
+        match shape_type {
+            CanvasShape::RootVertex | CanvasShape::Vertex => {
+                self.vertex_entity_2d_to_3d(entity_2d)
+            }
+            CanvasShape::Edge => {
+                let output = self.edge_entity_2d_to_3d(entity_2d);
+                info!("edge entity 2d `{:?}` to 3d: `{:?}`", entity_2d, output);
+                output
+            }
+            CanvasShape::Face => {
+                self.face_entity_2d_to_3d(entity_2d)
+            }
+        }
     }
 
     pub(crate) fn vertex_entity_3d_to_2d(&self, entity_3d: &Entity) -> Option<Entity> {
@@ -1684,6 +1702,7 @@ impl ShapeManager {
                         action_stack.buffer_action(Action::CreateEdge(
                             vertex_2d_entity_a,
                             vertex_2d_entity_b,
+                            (vertex_2d_entity_b, CanvasShape::Vertex),
                             None,
                         ));
                     } else {
