@@ -779,89 +779,108 @@ impl ShapeManager {
 
         let keys = std::mem::take(&mut self.new_face_keys);
         for (face_key, file_entity) in keys {
-            info!("processing new face: `{:?}`", face_key);
-            let vertex_3d_a = face_key.vertex_3d_a;
-            let vertex_3d_b = face_key.vertex_3d_b;
-            let vertex_3d_c = face_key.vertex_3d_c;
-
-            // 2d face needs to have it's own button mesh, matching the 2d vertices
-            let vertex_2d_a = self.vertex_entity_3d_to_2d(&vertex_3d_a).unwrap();
-            let vertex_2d_b = self.vertex_entity_3d_to_2d(&vertex_3d_b).unwrap();
-            let vertex_2d_c = self.vertex_entity_3d_to_2d(&vertex_3d_c).unwrap();
-
-            let entity_2d = commands
-                .spawn_empty()
-                .insert(FaceIcon2d::new(vertex_2d_a, vertex_2d_b, vertex_2d_c))
-                .insert(RenderObjectBundle::equilateral_triangle(
-                    meshes,
-                    materials,
-                    Vec2::ZERO,
-                    FaceIcon2d::SIZE,
-                    FaceIcon2d::COLOR,
-                    Some(1),
-                ))
-                .insert(camera_manager.layer_2d)
-                .id();
-
-            info!("spawned 2d face entity: {:?}", entity_2d);
-
-            info!(
-                "adding OwnedByFile({:?}) to entity {:?}",
-                file_entity, entity_2d
-            );
-            commands
-                .entity(entity_2d)
-                .insert(OwnedByFileLocal::new(file_entity));
-
-            // add face to vertex data
-            {
-                let vertex_a_3d_data = self.vertices_3d.get_mut(&vertex_3d_a).unwrap();
-                vertex_a_3d_data.add_face(face_key);
-                let vertex_b_3d_data = self.vertices_3d.get_mut(&vertex_3d_b).unwrap();
-                vertex_b_3d_data.add_face(face_key);
-                let vertex_c_3d_data = self.vertices_3d.get_mut(&vertex_3d_c).unwrap();
-                vertex_c_3d_data.add_face(face_key);
-            }
-
-            // add face to edge data
-            let mut edge_entities = Vec::new();
-            for (vert_a, vert_b) in [
-                (&vertex_3d_a, &vertex_3d_b),
-                (&vertex_3d_b, &vertex_3d_c),
-                (&vertex_3d_c, &vertex_3d_a),
-            ] {
-                // find edge in common
-                let vertex_a_edges = &self.vertices_3d.get(vert_a).unwrap().edges_3d;
-                let vertex_b_edges = &self.vertices_3d.get(vert_b).unwrap().edges_3d;
-                let intersection = vertex_a_edges.intersection(vertex_b_edges);
-                let mut found_edge = false;
-                for edge_entity in intersection {
-                    if found_edge {
-                        panic!("should only be one edge between any two vertices!");
-                    }
-                    found_edge = true;
-
-                    let Some(edge_3d_data) = self.edges_3d.get_mut(edge_entity) else {
-                        panic!("Edge3d entity: `{:?}` has not been registered", edge_entity);
-                    };
-                    edge_3d_data.add_face(face_key);
-
-                    edge_entities.push(*edge_entity);
-                }
-            }
-
-            // register face data
-            self.face_keys.insert(face_key, Some(Face3dData::new(
-                entity_2d,
+            self.process_new_face(
+                commands,
+                camera_manager,
+                meshes,
+                materials,
                 file_entity,
-                edge_entities[0],
-                edge_entities[1],
-                edge_entities[2],
-            )));
-            self.faces_2d.insert(entity_2d, face_key);
+                face_key,
+            );
         }
 
         self.recalculate_shapes();
+    }
+
+    pub fn process_new_face(
+        &mut self,
+        commands: &mut Commands,
+        camera_manager: &CameraManager,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+        file_entity: Entity,
+        face_key: FaceKey
+    ) {
+        info!("processing new face: `{:?}`", face_key);
+        let vertex_3d_a = face_key.vertex_3d_a;
+        let vertex_3d_b = face_key.vertex_3d_b;
+        let vertex_3d_c = face_key.vertex_3d_c;
+
+        // 2d face needs to have it's own button mesh, matching the 2d vertices
+        let vertex_2d_a = self.vertex_entity_3d_to_2d(&vertex_3d_a).unwrap();
+        let vertex_2d_b = self.vertex_entity_3d_to_2d(&vertex_3d_b).unwrap();
+        let vertex_2d_c = self.vertex_entity_3d_to_2d(&vertex_3d_c).unwrap();
+
+        let entity_2d = commands
+            .spawn_empty()
+            .insert(FaceIcon2d::new(vertex_2d_a, vertex_2d_b, vertex_2d_c))
+            .insert(RenderObjectBundle::equilateral_triangle(
+                meshes,
+                materials,
+                Vec2::ZERO,
+                FaceIcon2d::SIZE,
+                FaceIcon2d::COLOR,
+                Some(1),
+            ))
+            .insert(camera_manager.layer_2d)
+            .id();
+
+        info!("spawned 2d face entity: {:?}", entity_2d);
+
+        info!(
+            "adding OwnedByFile({:?}) to entity {:?}",
+            file_entity, entity_2d
+        );
+        commands
+            .entity(entity_2d)
+            .insert(OwnedByFileLocal::new(file_entity));
+
+        // add face to vertex data
+        {
+            let vertex_a_3d_data = self.vertices_3d.get_mut(&vertex_3d_a).unwrap();
+            vertex_a_3d_data.add_face(face_key);
+            let vertex_b_3d_data = self.vertices_3d.get_mut(&vertex_3d_b).unwrap();
+            vertex_b_3d_data.add_face(face_key);
+            let vertex_c_3d_data = self.vertices_3d.get_mut(&vertex_3d_c).unwrap();
+            vertex_c_3d_data.add_face(face_key);
+        }
+
+        // add face to edge data
+        let mut edge_entities = Vec::new();
+        for (vert_a, vert_b) in [
+            (&vertex_3d_a, &vertex_3d_b),
+            (&vertex_3d_b, &vertex_3d_c),
+            (&vertex_3d_c, &vertex_3d_a),
+        ] {
+            // find edge in common
+            let vertex_a_edges = &self.vertices_3d.get(vert_a).unwrap().edges_3d;
+            let vertex_b_edges = &self.vertices_3d.get(vert_b).unwrap().edges_3d;
+            let intersection = vertex_a_edges.intersection(vertex_b_edges);
+            let mut found_edge = false;
+            for edge_entity in intersection {
+                if found_edge {
+                    panic!("should only be one edge between any two vertices!");
+                }
+                found_edge = true;
+
+                let Some(edge_3d_data) = self.edges_3d.get_mut(edge_entity) else {
+                    panic!("Edge3d entity: `{:?}` has not been registered", edge_entity);
+                };
+                edge_3d_data.add_face(face_key);
+
+                edge_entities.push(*edge_entity);
+            }
+        }
+
+        // register face data
+        self.face_keys.insert(face_key, Some(Face3dData::new(
+            entity_2d,
+            file_entity,
+            edge_entities[0],
+            edge_entities[1],
+            edge_entities[2],
+        )));
+        self.faces_2d.insert(entity_2d, face_key);
     }
 
     pub fn create_networked_face_outer(

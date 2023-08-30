@@ -734,7 +734,6 @@ impl ActionStack {
                     }
                 }
 
-
                 let mut system_state: SystemState<(
                     Commands,
                     Client,
@@ -743,7 +742,6 @@ impl ActionStack {
                     Res<TabManager>,
                     ResMut<Assets<CpuMesh>>,
                     ResMut<Assets<CpuMaterial>>,
-                    Query<&Transform>,
                 )> = SystemState::new(world);
                 let (
                     mut commands,
@@ -753,7 +751,6 @@ impl ActionStack {
                     tab_manager,
                     mut meshes,
                     mut materials,
-                    transform_q,
                 ) = system_state.get_mut(world);
 
                 // deselect all selected vertices
@@ -768,7 +765,7 @@ impl ActionStack {
                 }
 
                 let file_type_value = vertex_type_data.to_file_type_value();
-                let current_tab_entity = tab_manager.current_tab_entity();
+                let current_file_entity = tab_manager.current_tab_entity();
 
                 // create vertex
                 let (new_vertex_2d_entity, new_vertex_3d_entity) = self
@@ -780,10 +777,11 @@ impl ActionStack {
                         &mut meshes,
                         &mut materials,
                         position,
-                        current_tab_entity,
+                        current_file_entity,
                         file_type_value,
                         &mut entities_to_release,
                     );
+
                 // migrate undo entities
                 if let Some((old_vertex_2d_entity, old_vertex_3d_entity)) =
                     old_vertex_entities_opt
@@ -795,6 +793,27 @@ impl ActionStack {
                         new_vertex_3d_entity,
                     );
                 }
+
+                system_state.apply(world);
+
+                let mut system_state: SystemState<(
+                    Commands,
+                    Client,
+                    ResMut<CameraManager>,
+                    ResMut<ShapeManager>,
+                    ResMut<Assets<CpuMesh>>,
+                    ResMut<Assets<CpuMaterial>>,
+                    Query<&Transform>,
+                )> = SystemState::new(world);
+                let (
+                    mut commands,
+                    mut client,
+                    mut camera_manager,
+                    mut shape_manager,
+                    mut meshes,
+                    mut materials,
+                    transform_q,
+                ) = system_state.get_mut(world);
 
                 match vertex_type_data {
                     VertexTypeData::Skel(parent_vertex_2d_entity, children_opt) => {
@@ -808,7 +827,7 @@ impl ActionStack {
                                 &mut materials,
                                 new_vertex_2d_entity,
                                 children,
-                                current_tab_entity,
+                                current_file_entity,
                                 &mut entities_to_release,
                             );
                         }
@@ -822,7 +841,7 @@ impl ActionStack {
                             parent_vertex_2d_entity,
                             new_vertex_2d_entity,
                             new_vertex_3d_entity,
-                            current_tab_entity,
+                            current_file_entity,
                             FileTypeValue::Skel,
                             &mut entities_to_release,
                         );
@@ -839,7 +858,7 @@ impl ActionStack {
                                 connected_vertex_entity,
                                 new_vertex_2d_entity,
                                 new_vertex_3d_entity,
-                                current_tab_entity,
+                                current_file_entity,
                                 FileTypeValue::Mesh,
                                 &mut entities_to_release,
                             );
@@ -850,6 +869,15 @@ impl ActionStack {
                             let connected_face_vertex_b_3d = shape_manager.vertex_entity_2d_to_3d(&connected_face_vertex_b_2d).unwrap();
                             let face_key = FaceKey::new(new_vertex_3d_entity, connected_face_vertex_a_3d, connected_face_vertex_b_3d);
 
+                            shape_manager.process_new_face(
+                                &mut commands,
+                                &mut camera_manager,
+                                &mut meshes,
+                                &mut materials,
+                                current_file_entity,
+                                face_key,
+                            );
+
                             shape_manager.create_networked_face_inner(
                                 &mut commands,
                                 &mut client,
@@ -858,7 +886,7 @@ impl ActionStack {
                                 &mut camera_manager,
                                 &transform_q,
                                 &face_key,
-                                current_tab_entity,
+                                current_file_entity,
                             );
                         }
                     }
