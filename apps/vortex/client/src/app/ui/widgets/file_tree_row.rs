@@ -30,12 +30,13 @@ use crate::app::{
         OwnedByFileLocal,
     },
     resources::{
-        action_stack::{Action, ActionStack},
+        action_stack::ActionStack,
         camera_manager::CameraManager,
         canvas::Canvas,
         global::Global,
         shape_manager::ShapeManager,
         tab_manager::TabManager,
+        action::Action,
     },
     ui::{
         widgets::colors::{

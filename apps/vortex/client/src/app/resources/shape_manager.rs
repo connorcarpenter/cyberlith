@@ -21,7 +21,8 @@ use crate::app::{
         SelectTriangle, Vertex2d, VertexTypeData, Face3dLocal
     },
     resources::{
-        action_stack::{Action, ActionStack},
+        action::Action,
+        action_stack::ActionStack,
         camera_manager::{CameraAngle, CameraManager},
         input_manager::{ClickType, InputAction},
     },

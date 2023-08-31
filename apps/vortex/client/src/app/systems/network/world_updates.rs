@@ -27,7 +27,6 @@ use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
     events::InsertComponentEvent,
     resources::{
-        action_stack::ActionStack,
         camera_manager::CameraManager,
         global::Global,
         shape_manager::ShapeManager,
@@ -476,7 +475,6 @@ pub fn remove_component_events(
     mut commands: Commands,
     client: Client,
     mut global: ResMut<Global>,
-    mut action_stack: ResMut<ActionStack>,
     mut shape_manager: ResMut<ShapeManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut event_reader: EventReader<RemoveComponentEvents>,
