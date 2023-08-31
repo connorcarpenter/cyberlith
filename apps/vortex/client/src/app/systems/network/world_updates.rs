@@ -520,25 +520,20 @@ pub fn remove_component_events(
                 }
             }
         }
-        for (entity_3d, _) in events.read::<Vertex3d>() {
-            info!("entity: `{:?}`, removed Vertex3d", entity_3d);
+        for (vertex_entity_3d, _) in events.read::<Vertex3d>() {
+            info!("entity: `{:?}`, removed Vertex3d", vertex_entity_3d);
 
-            let entity_2d = shape_manager.cleanup_deleted_vertex(&mut commands, &entity_3d);
-            action_stack.remove_vertex_entity(entity_2d, entity_3d);
+            shape_manager.cleanup_deleted_vertex(&mut commands, &vertex_entity_3d);
         }
         for (edge_3d_entity, _) in events.read::<Edge3d>() {
             info!("entity: `{:?}`, removed Edge3d", edge_3d_entity);
 
-            let (edge_2d_entity, face_2d_entities) = shape_manager.cleanup_deleted_edge(&mut commands, &edge_3d_entity);
-            action_stack.remove_edge_entity(edge_2d_entity, edge_3d_entity);
-            for face_2d_entity in face_2d_entities {
-                action_stack.remove_face_entity(face_2d_entity);
-            }
+            shape_manager.cleanup_deleted_edge(&mut commands, &edge_3d_entity);
         }
-        for (entity_3d, _) in events.read::<Face3d>() {
-            info!("entity: `{:?}`, removed Face3d", entity_3d);
+        for (face_entity_3d, _) in events.read::<Face3d>() {
+            info!("entity: `{:?}`, removed Face3d", face_entity_3d);
 
-            shape_manager.cleanup_deleted_face_3d(&mut commands, &mut meshes,&entity_3d);
+            shape_manager.cleanup_deleted_face_3d(&mut commands, &mut meshes,&face_entity_3d);
         }
     }
 }

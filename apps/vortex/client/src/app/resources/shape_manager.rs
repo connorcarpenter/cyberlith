@@ -792,6 +792,11 @@ impl ShapeManager {
         self.recalculate_shapes();
     }
 
+    pub fn remove_new_face_key(&mut self, face_key: &FaceKey) {
+        self.new_face_keys.retain(|(key, _)| key != face_key);
+    }
+
+    // return face 2d entity
     pub fn process_new_face(
         &mut self,
         commands: &mut Commands,
@@ -800,7 +805,7 @@ impl ShapeManager {
         materials: &mut Assets<CpuMaterial>,
         file_entity: Entity,
         face_key: FaceKey
-    ) {
+    ) -> Entity {
         info!("processing new face: `{:?}`", face_key);
         let vertex_3d_a = face_key.vertex_3d_a;
         let vertex_3d_b = face_key.vertex_3d_b;
@@ -881,6 +886,8 @@ impl ShapeManager {
             edge_entities[2],
         )));
         self.faces_2d.insert(entity_2d, face_key);
+
+        entity_2d
     }
 
     pub fn create_networked_face_outer(
@@ -890,7 +897,7 @@ impl ShapeManager {
     ) {
         let Some(face_3d_key) = self.face_key_from_2d_entity(&face_2d_entity) else {
             panic!(
-                "Face2d entity: `{:?}` has no corresponding Face3d entity",
+                "Face2d entity: `{:?}` has no corresponding FaceKey",
                 face_2d_entity
             );
         };
@@ -1105,7 +1112,7 @@ impl ShapeManager {
         vertex_2d_entity
     }
 
-    // returns (edge entity 2d, Vec<(face entity 2d, face entity 3d)>
+    // returns (deleted edge entity 2d, Vec<(deleted face entity 2d, deleted face entity 3d)>
     pub fn cleanup_deleted_edge(&mut self, commands: &mut Commands, entity_3d: &Entity) -> (Entity, Vec<Entity>) {
 
         let mut deleted_face_2d_entities = Vec::new();
@@ -1208,6 +1215,10 @@ impl ShapeManager {
         self.edges_2d.get(entity_2d).copied()
     }
 
+    pub(crate) fn edge_entity_3d_to_2d(&self, entity_2d: &Entity) -> Option<Entity> {
+        self.edges_3d.get(entity_2d).map(|data| data.entity_2d)
+    }
+
     pub(crate) fn vertex_connected_edges(&self, vertex_3d_entity: &Entity) -> Option<Vec<Entity>> {
         self.vertices_3d.get(vertex_3d_entity).map(|data| data.edges_3d.iter().map(|e| *e).collect())
     }
@@ -1216,18 +1227,22 @@ impl ShapeManager {
         self.vertices_3d.get(vertex_3d_entity).map(|data| data.faces_3d.iter().copied().collect())
     }
 
+    pub(crate) fn edge_connected_faces(&self, edge_3d_entity: &Entity) -> Option<Vec<FaceKey>> {
+        self.edges_3d.get(edge_3d_entity).map(|data| data.faces_3d.iter().copied().collect())
+    }
+
     fn face_key_from_2d_entity(&self, entity_2d: &Entity) -> Option<FaceKey> {
         self.faces_2d.get(entity_2d).copied()
     }
 
-    fn face_2d_entity_from_face_key(&self, face_key: &FaceKey) -> Option<Entity> {
+    pub(crate) fn face_2d_entity_from_face_key(&self, face_key: &FaceKey) -> Option<Entity> {
         let Some(Some(face_3d_data)) = self.face_keys.get(face_key) else {
             return None;
         };
         Some(face_3d_data.entity_2d)
     }
 
-    fn face_3d_entity_from_face_key(&self, face_key: &FaceKey) -> Option<Entity> {
+    pub(crate) fn face_3d_entity_from_face_key(&self, face_key: &FaceKey) -> Option<Entity> {
         let Some(Some(face_3d_data)) = self.face_keys.get(face_key) else {
             return None;
         };
@@ -1761,6 +1776,7 @@ impl ShapeManager {
                             vertex_2d_entity_b,
                             (vertex_2d_entity_b, CanvasShape::Vertex),
                             None,
+                            None,
                         ));
                     } else {
                         // create new vertex
@@ -1794,7 +1810,7 @@ impl ShapeManager {
                                         VertexTypeData::Skel(vertex_2d_entity, None)
                                     }
                                     FileTypeValue::Mesh => {
-                                        VertexTypeData::Mesh(vec![vertex_2d_entity], Vec::new())
+                                        VertexTypeData::Mesh(vec![(vertex_2d_entity, None)], Vec::new())
                                     }
                                 },
                                 new_3d_position,

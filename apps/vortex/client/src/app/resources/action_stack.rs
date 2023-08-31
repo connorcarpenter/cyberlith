@@ -61,8 +61,8 @@ pub enum Action {
     DeleteVertex(Entity, Option<(Entity, CanvasShape)>),
     // Move Vertex (2d vertex Entity, Old Position, New Position)
     MoveVertex(Entity, Vec3, Vec3),
-    // Link 2 Vertices together (2d vertex start Entity, 2d vertex end Entity, 2d shape to select, older edge 2d entity & 3d entity it was associated with)
-    CreateEdge(Entity, Entity, (Entity, CanvasShape), Option<(Entity, Entity)>),
+    // Create Edge (2d vertex start entity, 2d vertex end entity, 2d shape to select, Option<Vec<(other 2d vertex entity to make a face with, old 2d face entity it was associated with)>>, Option<(older edge 2d entity)>)
+    CreateEdge(Entity, Entity, (Entity, CanvasShape), Option<Vec<(Entity, Entity, bool)>>, Option<Entity>),
     // Delete Edge (2d edge entity, optional vertex 2d entity to select after delete)
     DeleteEdge(Entity, Option<(Entity, CanvasShape)>),
     // Delete Face (2d face entity)
@@ -160,7 +160,7 @@ impl Action {
                     *entity = new_2d_vert_entity;
                 }
             }
-            Action::CreateEdge(entity_a, entity_b, shape_to_select, _) => {
+            Action::CreateEdge(entity_a, entity_b, shape_to_select, face_to_create_opt, _) => {
                 if *entity_a == old_2d_vert_entity {
                     *entity_a = new_2d_vert_entity;
                 }
@@ -170,6 +170,13 @@ impl Action {
                 if let (entity, CanvasShape::Vertex) = shape_to_select {
                     if *entity == old_2d_vert_entity {
                         *entity = new_2d_vert_entity;
+                    }
+                }
+                if let Some(entities) = face_to_create_opt {
+                    for (entity, _, _) in entities {
+                        if *entity == old_2d_vert_entity {
+                            *entity = new_2d_vert_entity;
+                        }
                     }
                 }
             }
@@ -186,8 +193,6 @@ impl Action {
         &mut self,
         old_2d_edge_entity: Entity,
         new_2d_edge_entity: Entity,
-        old_3d_edge_entity: Entity,
-        new_3d_edge_entity: Entity,
     ) {
         match self {
             Action::SelectShape(entity_opt) => match entity_opt {
@@ -198,12 +203,15 @@ impl Action {
                 }
                 _ => {}
             },
-            Action::CreateEdge(_, _, shape_to_select, Some((edge_2d_entity, edge_3d_entity))) => {
+            Action::CreateVertex(vertex_type_data, _, _) => {
+                vertex_type_data.migrate_edge_entities(
+                    old_2d_edge_entity,
+                    new_2d_edge_entity,
+                );
+            }
+            Action::CreateEdge(_, _, shape_to_select, _, Some(edge_2d_entity)) => {
                 if *edge_2d_entity == old_2d_edge_entity {
                     *edge_2d_entity = new_2d_edge_entity;
-                }
-                if *edge_3d_entity == old_3d_edge_entity {
-                    *edge_3d_entity = new_3d_edge_entity;
                 }
                 if let (entity, CanvasShape::Edge) = shape_to_select {
                     if *entity == old_2d_edge_entity {
@@ -220,139 +228,180 @@ impl Action {
         }
     }
 
-    // returns true if full removal is necessary
-    pub(crate) fn remove_vertex_entity(&mut self, entity_2d: Entity, entity_3d: Entity) -> bool {
+    pub(crate) fn migrate_face_entities(
+        &mut self,
+        old_2d_face_entity: Entity,
+        new_2d_face_entity: Entity,
+    ) {
         match self {
             Action::SelectShape(entity_opt) => match entity_opt {
-                Some((entity, CanvasShape::Vertex)) | Some((entity, CanvasShape::RootVertex)) => {
-                    if *entity == entity_2d {
-                        return true;
+                Some((face_2d_entity, CanvasShape::Face)) => {
+                    if *face_2d_entity == old_2d_face_entity {
+                        *face_2d_entity = new_2d_face_entity;
                     }
                 }
                 _ => {}
             },
-            Action::CreateVertex(vertex_type_data, _, entity_opt) => {
-                if vertex_type_data.remove_vertex_entity(entity_2d, entity_3d) {
-                    return true;
-                }
-
-                {
-                    let mut remove = false;
-                    if let Some((other_2d_entity, other_3d_entity)) = entity_opt {
-                        if *other_2d_entity == entity_2d || *other_3d_entity == entity_3d {
-                            remove = true;
+            Action::CreateVertex(vertex_type_data, _, _) => {
+                vertex_type_data.migrate_face_entities(
+                    old_2d_face_entity,
+                    new_2d_face_entity,
+                );
+            }
+            Action::CreateEdge(_, _, _, faces_to_create_opt, _) => {
+                if let Some(entities) = faces_to_create_opt {
+                    for (_, face_2d_entity, _) in entities {
+                        if *face_2d_entity == old_2d_face_entity {
+                            *face_2d_entity = new_2d_face_entity;
                         }
                     }
-                    if remove {
-                        *entity_opt = None;
-                    }
                 }
             }
-            Action::DeleteVertex(entity, entity_opt) => {
-                if *entity == entity_2d {
-                    return true;
-                }
-                let mut remove = false;
-                if let Some((other_entity, _)) = entity_opt {
-                    if *other_entity == entity_2d {
-                        remove = true;
-                    }
-                }
-                if remove {
-                    *entity_opt = None;
-                }
-            }
-            Action::MoveVertex(entity, _, _) => {
-                if *entity == entity_2d {
-                    return true;
-                }
-            }
-            Action::CreateEdge(entity_a, entity_b, shape_to_select, _) => {
-                if *entity_a == entity_2d || *entity_b == entity_2d {
-                    return true;
-                }
-                if let (entity, CanvasShape::Vertex) = shape_to_select {
-                    if *entity == entity_2d {
-                        return true;
-                    }
-                }
-            }
-            Action::DeleteEdge(_, entity_opt) => {
-                let mut remove_option = false;
-                if let Some((entity, _)) = entity_opt {
-                    if *entity == entity_2d {
-                        remove_option = true;
-                    }
-                }
-                if remove_option {
-                    *entity_opt = None;
-                }
-            }
-            _ => {}
-        }
-
-        return false;
-    }
-
-    // returns true if should be removed from undo/redo
-    pub(crate) fn remove_edge_entity(&mut self, entity_2d: Entity, entity_3d: Entity) -> bool {
-        match self {
-            Action::SelectShape(entity_opt) => match entity_opt {
-                Some((entity, CanvasShape::Edge)) => {
-                    if *entity == entity_2d {
-                        return true;
-                    }
-                }
-                _ => {}
-            },
-            Action::CreateEdge(_, _, shape_to_select, entity_opt) => {
-                let mut remove = false;
-                if let Some((edge_2d_entity, edge_3d_entity)) = entity_opt {
-                    if *edge_2d_entity == entity_2d || *edge_3d_entity == entity_3d {
-                        remove = true;
-                    }
-                }
-                if remove {
-                    *entity_opt = None;
-                }
-                if let (entity, CanvasShape::Edge) = shape_to_select {
-                    if *entity == entity_2d {
-                        return true;
-                    }
-                }
-            }
-            Action::DeleteEdge(edge_2d_entity, _) => {
-                if *edge_2d_entity == entity_2d {
-                    return true;
-                }
-            }
-            _ => {}
-        }
-
-        return false;
-    }
-
-    // returns true if should be removed from undo/redo
-    pub(crate) fn remove_face_entity(&mut self, entity_2d: Entity) -> bool {
-        match self {
-            Action::SelectShape(entity_opt) => match entity_opt {
-                Some((entity, CanvasShape::Face)) => {
-                    if *entity == entity_2d {
-                        return true;
-                    }
-                }
-                _ => {}
-            },
             Action::DeleteFace(face_2d_entity) => {
-                if *face_2d_entity == entity_2d {
-                    return true;
+                if *face_2d_entity == old_2d_face_entity {
+                    *face_2d_entity = new_2d_face_entity;
                 }
             }
             _ => {}
         }
-
-        return false;
     }
+
+    // returns true if full removal is necessary
+    // pub(crate) fn remove_vertex_entity(&mut self, entity_2d: Entity, entity_3d: Entity) -> bool {
+    //     match self {
+    //         Action::SelectShape(entity_opt) => match entity_opt {
+    //             Some((entity, CanvasShape::Vertex)) | Some((entity, CanvasShape::RootVertex)) => {
+    //                 if *entity == entity_2d {
+    //                     return true;
+    //                 }
+    //             }
+    //             _ => {}
+    //         },
+    //         Action::CreateVertex(vertex_type_data, _, entity_opt) => {
+    //             if vertex_type_data.remove_vertex_entity(entity_2d, entity_3d) {
+    //                 return true;
+    //             }
+    //
+    //             {
+    //                 let mut remove = false;
+    //                 if let Some((other_2d_entity, other_3d_entity)) = entity_opt {
+    //                     if *other_2d_entity == entity_2d || *other_3d_entity == entity_3d {
+    //                         remove = true;
+    //                     }
+    //                 }
+    //                 if remove {
+    //                     *entity_opt = None;
+    //                 }
+    //             }
+    //         }
+    //         Action::DeleteVertex(entity, entity_opt) => {
+    //             if *entity == entity_2d {
+    //                 return true;
+    //             }
+    //             let mut remove = false;
+    //             if let Some((other_entity, _)) = entity_opt {
+    //                 if *other_entity == entity_2d {
+    //                     remove = true;
+    //                 }
+    //             }
+    //             if remove {
+    //                 *entity_opt = None;
+    //             }
+    //         }
+    //         Action::MoveVertex(entity, _, _) => {
+    //             if *entity == entity_2d {
+    //                 return true;
+    //             }
+    //         }
+    //         Action::CreateEdge(entity_a, entity_b, shape_to_select, face_to_create_opt, _) => {
+    //             if *entity_a == entity_2d || *entity_b == entity_2d {
+    //                 return true;
+    //             }
+    //             if let (entity, CanvasShape::Vertex) = shape_to_select {
+    //                 if *entity == entity_2d {
+    //                     return true;
+    //                 }
+    //             }
+    //             if let Some(entities) = face_to_create_opt {
+    //                 entities.retain(|(entity, _)| *entity != entity_2d);
+    //             }
+    //         }
+    //         Action::DeleteEdge(_, entity_opt) => {
+    //             let mut remove_option = false;
+    //             if let Some((entity, _)) = entity_opt {
+    //                 if *entity == entity_2d {
+    //                     remove_option = true;
+    //                 }
+    //             }
+    //             if remove_option {
+    //                 *entity_opt = None;
+    //             }
+    //         }
+    //         _ => {}
+    //     }
+    //
+    //     return false;
+    // }
+
+    // returns true if should be removed from undo/redo
+    // pub(crate) fn remove_edge_entity(&mut self, entity_2d: Entity, entity_3d: Entity) -> bool {
+    //     match self {
+    //         Action::SelectShape(entity_opt) => match entity_opt {
+    //             Some((entity, CanvasShape::Edge)) => {
+    //                 if *entity == entity_2d {
+    //                     return true;
+    //                 }
+    //             }
+    //             _ => {}
+    //         },
+    //         Action::CreateEdge(_, _, shape_to_select, _, entity_opt) => {
+    //             let mut remove = false;
+    //             if let Some((edge_2d_entity, edge_3d_entity)) = entity_opt {
+    //                 if *edge_2d_entity == entity_2d || *edge_3d_entity == entity_3d {
+    //                     remove = true;
+    //                 }
+    //             }
+    //             if remove {
+    //                 *entity_opt = None;
+    //             }
+    //             if let (entity, CanvasShape::Edge) = shape_to_select {
+    //                 if *entity == entity_2d {
+    //                     return true;
+    //                 }
+    //             }
+    //         }
+    //         Action::DeleteEdge(edge_2d_entity, _) => {
+    //             if *edge_2d_entity == entity_2d {
+    //                 return true;
+    //             }
+    //         }
+    //         _ => {}
+    //     }
+    //
+    //     return false;
+    // }
+
+    // returns true if should be removed from undo/redo
+    // pub(crate) fn remove_face_entity(&mut self, entity_2d: Entity) -> bool {
+    //     match self {
+    //         Action::SelectShape(entity_opt) => match entity_opt {
+    //             Some((entity, CanvasShape::Face)) => {
+    //                 if *entity == entity_2d {
+    //                     return true;
+    //                 }
+    //             }
+    //             _ => {}
+    //         },
+    //         Action::DeleteFace(face_2d_entity) => {
+    //             if *face_2d_entity == entity_2d {
+    //                 return true;
+    //             }
+    //         }
+    //         _ => {}
+    //     }
+    //
+    //     return false;
+    // }
 }
 
 #[derive(Resource)]
@@ -847,8 +896,8 @@ impl ActionStack {
                         );
                     }
                     VertexTypeData::Mesh(connected_vertex_entities, connected_face_vertex_pairs) => {
-                        for connected_vertex_entity in connected_vertex_entities {
-                            self.create_networked_edge(
+                        for (connected_vertex_entity, old_edge_opt) in connected_vertex_entities {
+                            let new_edge_2d_entity = self.create_networked_edge(
                                 &mut commands,
                                 &mut client,
                                 &mut camera_manager,
@@ -862,14 +911,21 @@ impl ActionStack {
                                 FileTypeValue::Mesh,
                                 &mut entities_to_release,
                             );
+                            if let Some(old_edge_2d_entity) = old_edge_opt {
+                                self.migrate_edge_entities(
+                                    old_edge_2d_entity,
+                                    new_edge_2d_entity,
+                                );
+                            }
                         }
-                        for (connected_face_vertex_a_2d, connected_face_vertex_b_2d) in connected_face_vertex_pairs {
+                        for (connected_face_vertex_a_2d, connected_face_vertex_b_2d, old_face_2d_entity, create_face_3d) in connected_face_vertex_pairs {
 
                             let connected_face_vertex_a_3d = shape_manager.vertex_entity_2d_to_3d(&connected_face_vertex_a_2d).unwrap();
                             let connected_face_vertex_b_3d = shape_manager.vertex_entity_2d_to_3d(&connected_face_vertex_b_2d).unwrap();
                             let face_key = FaceKey::new(new_vertex_3d_entity, connected_face_vertex_a_3d, connected_face_vertex_b_3d);
 
-                            shape_manager.process_new_face(
+                            shape_manager.remove_new_face_key(&face_key);
+                            let new_face_2d_entity = shape_manager.process_new_face(
                                 &mut commands,
                                 &mut camera_manager,
                                 &mut meshes,
@@ -877,17 +933,22 @@ impl ActionStack {
                                 current_file_entity,
                                 face_key,
                             );
-
-                            shape_manager.create_networked_face_inner(
-                                &mut commands,
-                                &mut client,
-                                &mut meshes,
-                                &mut materials,
-                                &mut camera_manager,
-                                &transform_q,
-                                &face_key,
-                                current_file_entity,
+                            self.migrate_face_entities(
+                                old_face_2d_entity,
+                                new_face_2d_entity,
                             );
+                            if create_face_3d {
+                                shape_manager.create_networked_face_inner(
+                                    &mut commands,
+                                    &mut client,
+                                    &mut meshes,
+                                    &mut materials,
+                                    &mut camera_manager,
+                                    &transform_q,
+                                    &face_key,
+                                    current_file_entity,
+                                );
+                            }
                         }
                     }
                 };
@@ -1034,16 +1095,24 @@ impl ActionStack {
                                 panic!("Failed to get connected vertex 2d entity for vertex entity {:?}!", connected_vertex_3d_entity);
                             };
 
-                            connected_vertices_2d_entities.push(connected_vertex_2d_entity);
+                            let edge_2d_entity = shape_manager.edge_entity_3d_to_2d(&edge_3d_entity).unwrap();
+
+                            connected_vertices_2d_entities.push((connected_vertex_2d_entity, Some(edge_2d_entity)));
                         }
                         let Some(connected_faces) = shape_manager.vertex_connected_faces(&vertex_3d_entity) else {
                             panic!("Failed to get connected faces for vertex entity {:?}!", vertex_3d_entity);
                         };
                         for face_key in connected_faces {
+
+                            let face_3d_entity_exists = shape_manager.face_3d_entity_from_face_key(&face_key).is_some();
+
                             let mut vertices_3d = vec![face_key.vertex_3d_a, face_key.vertex_3d_b, face_key.vertex_3d_c];
                             vertices_3d.retain(|vertex| *vertex != vertex_3d_entity);
                             let vertices_2d: Vec<Entity> = vertices_3d.iter().map(|vertex| shape_manager.vertex_entity_3d_to_2d(&vertex).unwrap()).collect();
-                            connected_face_vertex_2d_entities.push((vertices_2d[0], vertices_2d[1]));
+
+                            let face_2d_entity = shape_manager.face_2d_entity_from_face_key(&face_key).unwrap();
+
+                            connected_face_vertex_2d_entities.push((vertices_2d[0], vertices_2d[1], face_2d_entity, face_3d_entity_exists));
                         }
 
                         let rev_vertex_type_data =
@@ -1119,11 +1188,12 @@ impl ActionStack {
                 vertex_2d_entity_a,
                 vertex_2d_entity_b,
                 (mut shape_2d_entity_to_select, shape_2d_type_to_select),
+                face_to_create_opt,
                 old_edge_entities_opt
             ) => {
                 info!(
-                    "CreateEdge(vertex_a: {:?}, vertex_b: {:?}, (shape_2d_entity_to_select: {:?}, {:?}))",
-                    vertex_2d_entity_a, vertex_2d_entity_b, shape_2d_entity_to_select, shape_2d_type_to_select,
+                    "CreateEdge(vertex_a: {:?}, vertex_b: {:?}, (shape_2d_entity_to_select: {:?}, {:?}), face_to_create_opt: {:?})",
+                    vertex_2d_entity_a, vertex_2d_entity_b, shape_2d_entity_to_select, shape_2d_type_to_select, face_to_create_opt
                 );
 
                 let mut entities_to_release = Vec::new();
@@ -1168,7 +1238,7 @@ impl ActionStack {
                         .unwrap();
 
                     // create edge
-                    let (new_edge_2d_entity, new_edge_3d_entity) = self.create_networked_edge(
+                    let new_edge_2d_entity = self.create_networked_edge(
                         &mut commands,
                         &mut client,
                         &mut camera_manager,
@@ -1185,12 +1255,10 @@ impl ActionStack {
                     created_edge_2d_entity = new_edge_2d_entity;
 
                     // migrate undo entities
-                    if let Some((old_edge_2d_entity, old_edge_3d_entity)) = old_edge_entities_opt {
+                    if let Some(old_edge_2d_entity) = old_edge_entities_opt {
                         self.migrate_edge_entities(
                             old_edge_2d_entity,
                             new_edge_2d_entity,
-                            old_edge_3d_entity,
-                            new_edge_3d_entity,
                         );
                         if shape_2d_type_to_select == CanvasShape::Edge {
                             if shape_2d_entity_to_select == old_edge_2d_entity {
@@ -1220,6 +1288,66 @@ impl ActionStack {
                     }
 
                     system_state.apply(world);
+                }
+
+                // create face if necessary
+                {
+                    if let Some(vertex_2d_entities) = face_to_create_opt {
+
+                        let mut system_state: SystemState<(
+                            Commands,
+                            Client,
+                            ResMut<CameraManager>,
+                            ResMut<ShapeManager>,
+                            Res<TabManager>,
+                            ResMut<Assets<CpuMesh>>,
+                            ResMut<Assets<CpuMaterial>>,
+                            Query<&Transform>,
+                        )> = SystemState::new(world);
+                        let (
+                            mut commands,
+                            mut client,
+                            mut camera_manager,
+                            mut shape_manager,
+                            tab_manager,
+                            mut meshes,
+                            mut materials,
+                            transform_q,
+                        ) = system_state.get_mut(world);
+
+                        for (vertex_2d_of_face_to_create, old_face_2d_entity, create_face_3d) in vertex_2d_entities {
+                            let vertex_3d_a = shape_manager.vertex_entity_2d_to_3d(&vertex_2d_entity_a).unwrap();
+                            let vertex_3d_b = shape_manager.vertex_entity_2d_to_3d(&vertex_2d_entity_b).unwrap();
+                            let vertex_3d_c = shape_manager.vertex_entity_2d_to_3d(&vertex_2d_of_face_to_create).unwrap();
+                            let face_key = FaceKey::new(vertex_3d_a, vertex_3d_b, vertex_3d_c);
+                            let current_file_entity = tab_manager.current_tab_entity();
+
+                            shape_manager.remove_new_face_key(&face_key);
+                            let new_face_2d_entity = shape_manager.process_new_face(
+                                &mut commands,
+                                &mut camera_manager,
+                                &mut meshes,
+                                &mut materials,
+                                current_file_entity,
+                                face_key,
+                            );
+                            self.migrate_face_entities(old_face_2d_entity, new_face_2d_entity);
+                            if create_face_3d {
+                                shape_manager.create_networked_face_inner(
+                                    &mut commands,
+                                    &mut client,
+                                    &mut meshes,
+                                    &mut materials,
+                                    &mut camera_manager,
+                                    &transform_q,
+                                    &face_key,
+                                    current_file_entity,
+                                );
+                            }
+                        }
+
+                        system_state.apply(world);
+                    }
                 }
 
                 return vec![
@@ -1256,6 +1384,32 @@ impl ActionStack {
                 // delete 3d edge
                 commands.entity(edge_3d_entity).despawn();
 
+                // store vertices that will make a new face
+                let mut deleted_face_vertex_2d_entities = Vec::new();
+                if let Some(connected_face_keys) = shape_manager.edge_connected_faces(&edge_3d_entity) {
+                    for face_key in connected_face_keys {
+
+                        let face_2d_entity = shape_manager.face_2d_entity_from_face_key(&face_key).unwrap();
+
+                        let face_has_3d_entity = shape_manager.face_3d_entity_from_face_key(&face_key).is_some();
+
+                        let mut vertices_3d = vec![face_key.vertex_3d_a, face_key.vertex_3d_b, face_key.vertex_3d_c];
+                        vertices_3d.retain(|vertex| *vertex != vertex_start_3d && *vertex != vertex_end_3d);
+                        if vertices_3d.len() != 1 {
+                            panic!("expected 1 vertices, got {}!", vertices_3d.len());
+                        }
+                        let face_vertex_3d = vertices_3d[0];
+                        let face_vertex_2d_entity = shape_manager.vertex_entity_3d_to_2d(&face_vertex_3d).unwrap();
+
+                        deleted_face_vertex_2d_entities.push((face_vertex_2d_entity, face_2d_entity, face_has_3d_entity));
+                    }
+                }
+                let deleted_face_vertex_2d_entities_opt = if deleted_face_vertex_2d_entities.len() > 0 {
+                    Some(deleted_face_vertex_2d_entities)
+                } else {
+                    None
+                };
+
                 // cleanup mappings
                 shape_manager.cleanup_deleted_edge(&mut commands, &edge_3d_entity);
 
@@ -1265,7 +1419,7 @@ impl ActionStack {
                         &mut shape_manager,
                         Some((shape_2d_to_select, shape_type)),
                     ) {
-                        info!("request_entities({:?})", shape_3d_entity_to_request);
+                        //info!("request_entities({:?})", shape_3d_entity_to_request);
                         let mut entity_mut = commands.entity(shape_3d_entity_to_request);
                         if entity_mut.authority(&client).is_some() {
                             entity_mut.request_authority(&mut client);
@@ -1281,7 +1435,8 @@ impl ActionStack {
                     vertex_start_2d,
                     vertex_end_2d,
                     (edge_2d_entity, CanvasShape::Edge),
-                    Some((edge_2d_entity, edge_3d_entity)),
+                    deleted_face_vertex_2d_entities_opt,
+                    Some(edge_2d_entity),
                 )];
             }
             Action::DeleteFace(face_2d_entity) => {
@@ -1331,7 +1486,7 @@ impl ActionStack {
             if let Some(vertex_3d_entity_to_request) =
                 Self::select_shape(shape_manager, Some((vertex_2d_to_select, vertex_type)))
             {
-                info!("request_entities({:?})", vertex_3d_entity_to_request);
+                //info!("request_entities({:?})", vertex_3d_entity_to_request);
                 let mut entity_mut = commands.entity(vertex_3d_entity_to_request);
                 if entity_mut.authority(client).is_some() {
                     entity_mut.request_authority(client);
@@ -1467,7 +1622,7 @@ impl ActionStack {
         entities_to_request: HashSet<Entity>,
     ) {
         for file_entity in entities_to_request {
-            info!("request_entities({:?})", file_entity);
+            //info!("request_entities({:?})", file_entity);
             let mut entity_mut = commands.entity(file_entity);
             if entity_mut.authority(client).is_some() {
                 entity_mut.request_authority(client);
@@ -1607,6 +1762,7 @@ impl ActionStack {
         return (new_vertex_2d_entity, new_vertex_3d_entity);
     }
 
+    // return new edge 2d entity
     fn create_networked_edge(
         &mut self,
         commands: &mut Commands,
@@ -1621,7 +1777,7 @@ impl ActionStack {
         file_entity: Entity,
         file_type: FileTypeValue,
         entities_to_release: &mut Vec<Entity>,
-    ) -> (Entity, Entity) {
+    ) -> Entity {
         // create new 3d edge
         let parent_vertex_3d_entity = shape_manager
             .vertex_entity_2d_to_3d(&parent_vertex_2d_entity)
@@ -1665,7 +1821,7 @@ impl ActionStack {
 
         entities_to_release.push(new_edge_3d_entity);
 
-        (new_edge_2d_entity, new_edge_3d_entity)
+        new_edge_2d_entity
     }
 
     fn create_networked_children_tree(
@@ -1929,11 +2085,10 @@ impl ActionStack {
     }
 
     fn migrate_file_entities(&mut self, old_entity: Entity, new_entity: Entity) {
-        for action in self.undo_actions.iter_mut() {
-            action.migrate_file_entities(old_entity, new_entity);
-        }
-        for action in self.redo_actions.iter_mut() {
-            action.migrate_file_entities(old_entity, new_entity);
+        for action_list in [&mut self.undo_actions, &mut self.redo_actions] {
+            for action in action_list.iter_mut() {
+                action.migrate_file_entities(old_entity, new_entity);
+            }
         }
     }
 
@@ -1944,21 +2099,15 @@ impl ActionStack {
         old_3d_entity: Entity,
         new_3d_entity: Entity,
     ) {
-        for action in self.undo_actions.iter_mut() {
-            action.migrate_vertex_entities(
-                old_2d_entity,
-                new_2d_entity,
-                old_3d_entity,
-                new_3d_entity,
-            );
-        }
-        for action in self.redo_actions.iter_mut() {
-            action.migrate_vertex_entities(
-                old_2d_entity,
-                new_2d_entity,
-                old_3d_entity,
-                new_3d_entity,
-            );
+        for action_list in [&mut self.undo_actions, &mut self.redo_actions] {
+            for action in action_list.iter_mut() {
+                action.migrate_vertex_entities(
+                    old_2d_entity,
+                    new_2d_entity,
+                    old_3d_entity,
+                    new_3d_entity,
+                );
+            }
         }
     }
 
@@ -1966,66 +2115,72 @@ impl ActionStack {
         &mut self,
         old_2d_entity: Entity,
         new_2d_entity: Entity,
-        old_3d_entity: Entity,
-        new_3d_entity: Entity,
     ) {
-        for action in self.undo_actions.iter_mut() {
-            action.migrate_edge_entities(
-                old_2d_entity,
-                new_2d_entity,
-                old_3d_entity,
-                new_3d_entity,
-            );
-        }
-        for action in self.redo_actions.iter_mut() {
-            action.migrate_edge_entities(
-                old_2d_entity,
-                new_2d_entity,
-                old_3d_entity,
-                new_3d_entity,
-            );
+        for action_list in [&mut self.undo_actions, &mut self.redo_actions] {
+            for action in action_list.iter_mut() {
+                action.migrate_edge_entities(
+                    old_2d_entity,
+                    new_2d_entity,
+                );
+            }
         }
     }
 
-    pub fn remove_vertex_entity(&mut self, entity_2d: Entity, entity_3d: Entity) {
-        for list in [&mut self.undo_actions, &mut self.redo_actions] {
-            let mut new_actions = Vec::new();
-            for mut action in std::mem::take(list) {
-                if action.remove_vertex_entity(entity_2d, entity_3d) {
-                    // don't add to new list
-                } else {
-                    new_actions.push(action);
-                }
+    fn migrate_face_entities(
+        &mut self,
+        old_2d_entity: Entity,
+        new_2d_entity: Entity,
+    ) {
+        info!("migrate_face_entities({:?}, {:?})", old_2d_entity, new_2d_entity);
+        for action_list in [&mut self.undo_actions, &mut self.redo_actions] {
+            for action in action_list.iter_mut() {
+                action.migrate_face_entities(
+                    old_2d_entity,
+                    new_2d_entity,
+                );
             }
-            *list = new_actions;
         }
     }
 
-    pub fn remove_edge_entity(&mut self, entity_2d: Entity, entity_3d: Entity) {
-        for list in [&mut self.undo_actions, &mut self.redo_actions] {
-            let mut new_actions = Vec::new();
-            for mut action in std::mem::take(list) {
-                if action.remove_edge_entity(entity_2d, entity_3d) {
-                    // don't add to new list
-                } else {
-                    new_actions.push(action);
-                }
-            }
-            *list = new_actions;
-        }
-    }
-
-    pub fn remove_face_entity(&mut self, entity_2d: Entity) {
-        for list in [&mut self.undo_actions, &mut self.redo_actions] {
-            let mut new_actions = Vec::new();
-            for mut action in std::mem::take(list) {
-                if action.remove_face_entity(entity_2d) {
-                    // don't add to new list
-                } else {
-                    new_actions.push(action);
-                }
-            }
-            *list = new_actions;
-        }
-    }
+    // pub fn remove_vertex_entity(&mut self, entity_2d: Entity, entity_3d: Entity) {
+    //     for list in [&mut self.undo_actions, &mut self.redo_actions] {
+    //         let mut new_actions = Vec::new();
+    //         for mut action in std::mem::take(list) {
+    //             if action.remove_vertex_entity(entity_2d, entity_3d) {
+    //                 // don't add to new list
+    //             } else {
+    //                 new_actions.push(action);
+    //             }
+    //         }
+    //         *list = new_actions;
+    //     }
+    // }
+    //
+    // pub fn remove_edge_entity(&mut self, entity_2d: Entity, entity_3d: Entity) {
+    //     for list in [&mut self.undo_actions, &mut self.redo_actions] {
+    //         let mut new_actions = Vec::new();
+    //         for mut action in std::mem::take(list) {
+    //             if action.remove_edge_entity(entity_2d, entity_3d) {
+    //                 // don't add to new list
+    //             } else {
+    //                 new_actions.push(action);
+    //             }
+    //         }
+    //         *list = new_actions;
+    //     }
+    // }
+    //
+    // pub fn remove_face_entity(&mut self, entity_2d: Entity) {
+    //     for list in [&mut self.undo_actions, &mut self.redo_actions] {
+    //         let mut new_actions = Vec::new();
+    //         for mut action in std::mem::take(list) {
+    //             if action.remove_face_entity(entity_2d) {
+    //                 // don't add to new list
+    //             } else {
+    //                 new_actions.push(action);
+    //             }
+    //         }
+    //         *list = new_actions;
+    //     }
+    // }
 }
