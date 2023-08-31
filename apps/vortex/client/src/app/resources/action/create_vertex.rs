@@ -156,8 +156,9 @@ pub(crate) fn execute(world: &mut World, action_stack: &mut ActionStack, vertex_
             );
         }
         VertexTypeData::Mesh(connected_vertex_entities, connected_face_vertex_pairs) => {
+            let mut edge_3d_entities = Vec::new();
             for (connected_vertex_entity, old_edge_opt) in connected_vertex_entities {
-                let new_edge_2d_entity = action_stack.create_networked_edge(
+                let (new_edge_2d_entity, new_edge_3d_entity) = action_stack.create_networked_edge(
                     &mut commands,
                     &mut client,
                     &mut camera_manager,
@@ -171,6 +172,7 @@ pub(crate) fn execute(world: &mut World, action_stack: &mut ActionStack, vertex_
                     FileTypeValue::Mesh,
                     &mut entities_to_release,
                 );
+                edge_3d_entities.push(new_edge_3d_entity);
                 if let Some(old_edge_2d_entity) = old_edge_opt {
                     action_stack.migrate_edge_entities(
                         old_edge_2d_entity,
@@ -191,7 +193,7 @@ pub(crate) fn execute(world: &mut World, action_stack: &mut ActionStack, vertex_
                     &mut meshes,
                     &mut materials,
                     current_file_entity,
-                    face_key,
+                    &face_key,
                 );
                 action_stack.migrate_face_entities(
                     old_face_2d_entity,
@@ -206,6 +208,7 @@ pub(crate) fn execute(world: &mut World, action_stack: &mut ActionStack, vertex_
                         &mut camera_manager,
                         &transform_q,
                         &face_key,
+                        [edge_3d_entities[0], edge_3d_entities[1], edge_3d_entities[2]],
                         current_file_entity,
                     );
                 }

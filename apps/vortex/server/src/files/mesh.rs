@@ -26,8 +26,8 @@ enum MeshAction {
     Vertex(i16, i16, i16),
     //// id1, id2 // (vertex ids)
     Edge(u16, u16),
-    //// id1, id2, id3 // (vertex ids)
-    Face(u16, u16, u16),
+    //// id1, id2, id3 // (vertex ids) // id4, id5, id6 (edge ids)
+    Face(u16, u16, u16, u16, u16, u16),
 }
 
 #[derive(Serde, Clone, PartialEq)]
@@ -60,6 +60,7 @@ impl MeshWriter {
 
         /////////////////////////////////////  id /////////////////
         let mut vertex_map: HashMap<Entity, usize> = HashMap::new();
+        let mut edge_map: HashMap<Entity, usize> = HashMap::new();
 
         info!(
             "writing in world_to_actions(), content_entities: `{:?}`",
@@ -68,17 +69,10 @@ impl MeshWriter {
 
         let mut vertex_count: usize = 0;
         for entity in content_entities.iter() {
-            let Ok(file_type) = file_type_q.get(*entity) else {
-                panic!("entity {:?} does not have a FileType component!", entity);
-            };
-            if *file_type.value != FileTypeValue::Mesh {
-                panic!(
-                    "entity {:?} does not have a FileType component with value Mesh!",
-                    entity
-                );
-            }
+
             if let Ok(vertex) = vertex_q.get(*entity) {
                 // entity is a vertex
+                check_for_mesh_file_type(&file_type_q, entity);
                 vertex_map.insert(*entity, vertex_count);
                 let vertex_info = MeshAction::Vertex(vertex.x(), vertex.y(), vertex.z());
                 output.push(vertex_info);
@@ -86,6 +80,7 @@ impl MeshWriter {
             }
         }
 
+        let mut edge_count: usize = 0;
         for entity in content_entities.iter() {
             if vertex_map.contains_key(entity) {
                 // entity is a vertex
@@ -94,13 +89,29 @@ impl MeshWriter {
 
             if let Ok(edge) = edge_q.get(*entity) {
                 // entity is an edge
+                check_for_mesh_file_type(&file_type_q, entity);
+                edge_map.insert(*entity, edge_count);
                 let vertex_a_entity = edge.start.get(&server).unwrap();
                 let vertex_b_entity = edge.end.get(&server).unwrap();
                 let vertex_a_id = *vertex_map.get(&vertex_a_entity).unwrap();
                 let vertex_b_id = *vertex_map.get(&vertex_b_entity).unwrap();
                 let edge_info = MeshAction::Edge(vertex_a_id as u16, vertex_b_id as u16);
                 output.push(edge_info);
-            } else if let Ok(face) = face_q.get(*entity) {
+                edge_count += 1;
+            }
+        }
+
+        for entity in content_entities.iter() {
+            if vertex_map.contains_key(entity) {
+                // entity is a vertex
+                continue;
+            }
+            if edge_map.contains_key(entity) {
+                // entity is an edge
+                continue;
+            }
+
+            if let Ok(face) = face_q.get(*entity) {
                 // entity is a face
                 let vertex_a_entity = face.vertex_a.get(&server).unwrap();
                 let vertex_b_entity = face.vertex_b.get(&server).unwrap();
@@ -108,8 +119,16 @@ impl MeshWriter {
                 let vertex_a_id = *vertex_map.get(&vertex_a_entity).unwrap();
                 let vertex_b_id = *vertex_map.get(&vertex_b_entity).unwrap();
                 let vertex_c_id = *vertex_map.get(&vertex_c_entity).unwrap();
+
+                let edge_a_entity = face.edge_a.get(&server).unwrap();
+                let edge_b_entity = face.edge_b.get(&server).unwrap();
+                let edge_c_entity = face.edge_c.get(&server).unwrap();
+                let edge_a_id = *edge_map.get(&edge_a_entity).unwrap();
+                let edge_b_id = *edge_map.get(&edge_b_entity).unwrap();
+                let edge_c_id = *edge_map.get(&edge_c_entity).unwrap();
+
                 let face_info =
-                    MeshAction::Face(vertex_a_id as u16, vertex_b_id as u16, vertex_c_id as u16);
+                    MeshAction::Face(vertex_a_id as u16, vertex_b_id as u16, vertex_c_id as u16, edge_a_id as u16, edge_b_id as u16, edge_c_id as u16);
                 output.push(face_info);
             } else {
                 panic!("entity is not a vertex, edge, or face");
@@ -144,7 +163,7 @@ impl MeshWriter {
 
                     info!("writing edge : ({}, {})", vertex_a, vertex_b);
                 }
-                MeshAction::Face(vertex_a, vertex_b, vertex_c) => {
+                MeshAction::Face(vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c) => {
                     // continue bit
                     MeshActionType::Face.ser(&mut bit_writer);
 
@@ -152,7 +171,11 @@ impl MeshWriter {
                     UnsignedVariableInteger::<6>::from(*vertex_b).ser(&mut bit_writer);
                     UnsignedVariableInteger::<6>::from(*vertex_c).ser(&mut bit_writer);
 
-                    info!("writing face : ({}, {}, {})", vertex_a, vertex_b, vertex_c);
+                    UnsignedVariableInteger::<6>::from(*edge_a).ser(&mut bit_writer);
+                    UnsignedVariableInteger::<6>::from(*edge_b).ser(&mut bit_writer);
+                    UnsignedVariableInteger::<6>::from(*edge_c).ser(&mut bit_writer);
+
+                    info!("writing face : ({}, {}, {}, {}, {}, {})", vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c);
                 }
             }
         }
@@ -161,6 +184,18 @@ impl MeshWriter {
         MeshActionType::None.ser(&mut bit_writer);
 
         bit_writer.to_bytes()
+    }
+}
+
+fn check_for_mesh_file_type(file_type_q: &Query<&FileType>, entity: &Entity) {
+    let Ok(file_type) = file_type_q.get(*entity) else {
+        panic!("entity {:?} does not have a FileType component!", entity);
+    };
+    if *file_type.value != FileTypeValue::Mesh {
+        panic!(
+            "entity {:?} does not have a FileType component with value Mesh!",
+            entity
+        );
     }
 }
 
@@ -221,7 +256,11 @@ impl MeshReader {
                     let vertex_b: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
                     let vertex_c: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
 
-                    output.push(MeshAction::Face(vertex_a, vertex_b, vertex_c));
+                    let edge_a: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
+                    let edge_b: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
+                    let edge_c: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
+
+                    output.push(MeshAction::Face(vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c));
                 }
             }
         }
@@ -234,6 +273,7 @@ impl MeshReader {
         actions: Vec<MeshAction>,
     ) -> Result<FileReadOutput, SerdeErr> {
         let mut vertices = Vec::new();
+        let mut edges = Vec::new();
         let mut output = Vec::new();
 
         for action in actions {
@@ -269,20 +309,28 @@ impl MeshReader {
                         .insert(edge_component)
                         .id();
                     info!("spawning mesh edge entity {:?}", entity_id);
+                    edges.push(entity_id);
                     output.push((
                         entity_id,
                         ShapeTypeData::Edge(*vertex_a_entity, *vertex_b_entity),
                     ));
                 }
-                MeshAction::Face(vertex_a_index, vertex_b_index, vertex_c_index) => {
+                MeshAction::Face(vertex_a_index, vertex_b_index, vertex_c_index, edge_a_index, edge_b_index, edge_c_index) => {
                     let vertex_a_entity = *vertices.get(vertex_a_index as usize).unwrap();
                     let vertex_b_entity = *vertices.get(vertex_b_index as usize).unwrap();
                     let vertex_c_entity = *vertices.get(vertex_c_index as usize).unwrap();
+
+                    let edge_a_entity = *edges.get(edge_a_index as usize).unwrap();
+                    let edge_b_entity = *edges.get(edge_b_index as usize).unwrap();
+                    let edge_c_entity = *edges.get(edge_c_index as usize).unwrap();
 
                     let mut face_component = Face3d::new();
                     face_component.vertex_a.set(server, &vertex_a_entity);
                     face_component.vertex_b.set(server, &vertex_b_entity);
                     face_component.vertex_c.set(server, &vertex_c_entity);
+                    face_component.edge_a.set(server, &edge_a_entity);
+                    face_component.edge_b.set(server, &edge_b_entity);
+                    face_component.edge_c.set(server, &edge_c_entity);
 
                     let entity_id = commands
                         .spawn_empty()

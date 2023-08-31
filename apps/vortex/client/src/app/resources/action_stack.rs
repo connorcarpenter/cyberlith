@@ -414,7 +414,7 @@ impl ActionStack {
         return (new_vertex_2d_entity, new_vertex_3d_entity);
     }
 
-    // return new edge 2d entity
+    // return (new edge 2d entity, new edge 3d entity)
     pub(crate) fn create_networked_edge(
         &mut self,
         commands: &mut Commands,
@@ -429,7 +429,7 @@ impl ActionStack {
         file_entity: Entity,
         file_type: FileTypeValue,
         entities_to_release: &mut Vec<Entity>,
-    ) -> Entity {
+    ) -> (Entity, Entity) {
         // create new 3d edge
         let parent_vertex_3d_entity = shape_manager
             .vertex_entity_2d_to_3d(&parent_vertex_2d_entity)
@@ -473,7 +473,7 @@ impl ActionStack {
 
         entities_to_release.push(new_edge_3d_entity);
 
-        new_edge_2d_entity
+        (new_edge_2d_entity, new_edge_3d_entity)
     }
 
     pub(crate) fn create_networked_children_tree(

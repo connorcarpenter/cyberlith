@@ -33,6 +33,7 @@ pub(crate) fn execute(world: &mut World, action_stack: &mut ActionStack, vertex_
     let selected_shape_3d;
     let deselected_shape_2d_entity_store;
     let created_edge_2d_entity;
+    let mut edge_3d_entities = Vec::new();
 
     {
         let mut system_state: SystemState<(
@@ -71,7 +72,7 @@ pub(crate) fn execute(world: &mut World, action_stack: &mut ActionStack, vertex_
             .unwrap();
 
         // create edge
-        let new_edge_2d_entity = action_stack.create_networked_edge(
+        let (new_edge_2d_entity, new_edge_3d_entity) = action_stack.create_networked_edge(
             &mut commands,
             &mut client,
             &mut camera_manager,
@@ -86,6 +87,7 @@ pub(crate) fn execute(world: &mut World, action_stack: &mut ActionStack, vertex_
             &mut entities_to_release,
         );
         created_edge_2d_entity = new_edge_2d_entity;
+        edge_3d_entities.push(new_edge_3d_entity);
 
         // migrate undo entities
         if let Some(old_edge_2d_entity) = old_edge_entities_opt {
@@ -162,7 +164,7 @@ pub(crate) fn execute(world: &mut World, action_stack: &mut ActionStack, vertex_
                     &mut meshes,
                     &mut materials,
                     current_file_entity,
-                    face_key,
+                    &face_key,
                 );
                 action_stack.migrate_face_entities(old_face_2d_entity, new_face_2d_entity);
                 if create_face_3d {
@@ -174,6 +176,7 @@ pub(crate) fn execute(world: &mut World, action_stack: &mut ActionStack, vertex_
                         &mut camera_manager,
                         &transform_q,
                         &face_key,
+                        [edge_3d_entities[0], edge_3d_entities[1], edge_3d_entities[2]],
                         current_file_entity,
                     );
                 }

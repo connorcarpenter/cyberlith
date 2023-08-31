@@ -88,14 +88,20 @@ struct FaceData {
     vertex_a: Entity,
     vertex_b: Entity,
     vertex_c: Entity,
+    edge_a: Entity,
+    edge_b: Entity,
+    edge_c: Entity,
 }
 
 impl FaceData {
-    pub fn new(vertex_a: Entity, vertex_b: Entity, vertex_c: Entity) -> Self {
+    pub fn new(vertex_a: Entity, vertex_b: Entity, vertex_c: Entity, edge_a: Entity, edge_b: Entity, edge_c: Entity) -> Self {
         Self {
             vertex_a,
             vertex_b,
             vertex_c,
+            edge_a,
+            edge_b,
+            edge_c,
         }
     }
 }
@@ -199,8 +205,8 @@ impl ShapeManager {
         }
     }
 
-    pub fn on_create_face(&mut self, face_entity: Entity, vertex_a: Entity, vertex_b: Entity, vertex_c: Entity) {
-        self.faces.insert(face_entity, FaceData::new(vertex_a, vertex_b, vertex_c));
+    pub fn on_create_face(&mut self, face_entity: Entity, vertex_a: Entity, vertex_b: Entity, vertex_c: Entity, edge_a: Entity, edge_b: Entity, edge_c: Entity) {
+        self.faces.insert(face_entity, FaceData::new(vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c));
 
         // add faces to vertices
         for vertex_entity in [vertex_a, vertex_b, vertex_c] {
@@ -209,6 +215,8 @@ impl ShapeManager {
             };
             data.add_face(face_entity);
         }
+
+        // TODO: add face to edges
     }
 
     pub fn on_delete_vertex(

@@ -19,8 +19,8 @@ pub enum ShapeWaitlistInsert {
     VertexRoot(Entity),
     //// parent, edge, child
     Edge(Entity, Entity, Entity),
-    //// face
-    Face(Entity, Entity, Entity, Entity),
+    //// (face_entity, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c)
+    Face(Entity, Entity, Entity, Entity, Entity, Entity, Entity),
     //// shape, filetype
     FileType(Entity, FileTypeValue),
     //// shape, project key, file key
@@ -36,8 +36,8 @@ enum ShapeData {
     MeshVertex(ProjectKey, FileEntryKey),
     // (ProjectKey, FileKey, Start, End)
     MeshEdge(ProjectKey, FileEntryKey, Entity, Entity),
-    //
-    MeshFace(ProjectKey, FileEntryKey, Entity, Entity, Entity),
+    // (ProjectKey, FileKey, VertexA, VertexB, VertexC, EdgeA, EdgeB, EdgeC)
+    MeshFace(ProjectKey, FileEntryKey, Entity, Entity, Entity, Entity, Entity, Entity),
 }
 
 #[derive(Clone)]
@@ -45,7 +45,7 @@ pub struct ShapeWaitlistEntry {
     shape: Option<ShapeType>,
     edge_and_parent_opt: Option<Option<(Entity, Entity)>>,
     edge_entities: Option<(Entity, Entity)>,
-    face_entities: Option<(Entity, Entity, Entity)>,
+    face_entities: Option<(Entity, Entity, Entity, Entity, Entity, Entity)>,
     file_type: Option<FileTypeValue>,
     owned_by_file: Option<(ProjectKey, FileEntryKey)>,
 }
@@ -104,8 +104,8 @@ impl ShapeWaitlistEntry {
         self.edge_entities = Some((start, end));
     }
 
-    fn set_face_entities(&mut self, vertex_a: Entity, vertex_b: Entity, vertex_c: Entity) {
-        self.face_entities = Some((vertex_a, vertex_b, vertex_c));
+    fn set_face_entities(&mut self, vertex_a: Entity, vertex_b: Entity, vertex_c: Entity, edge_a: Entity, edge_b: Entity, edge_c: Entity) {
+        self.face_entities = Some((vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c));
     }
 
     fn set_shape_type(&mut self, shape_type: ShapeType) {
@@ -142,8 +142,8 @@ impl ShapeWaitlistEntry {
                 return ShapeData::MeshEdge(project_key, file_key, start, end);
             }
             (Some(FileTypeValue::Mesh), Some(ShapeType::Face)) => {
-                let (a, b, c) = self.face_entities.unwrap();
-                return ShapeData::MeshFace(project_key, file_key, a, b, c);
+                let (vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c) = self.face_entities.unwrap();
+                return ShapeData::MeshFace(project_key, file_key, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c);
             }
             _ => {
                 panic!("shouldn't be able to happen!");
@@ -230,14 +230,14 @@ impl ShapeWaitlist {
                     possibly_ready_entities
                 );
             }
-            ShapeWaitlistInsert::Face(face_entity, vertex_a, vertex_b, vertex_c) => {
+            ShapeWaitlistInsert::Face(face_entity, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c) => {
                 if !self.contains_key(&face_entity) {
                     self.insert_incomplete(face_entity, ShapeWaitlistEntry::new());
                 }
                 let entry = self.get_mut(&face_entity).unwrap();
                 entry.set_shape_type(ShapeType::Face);
                 entry.set_file_type(FileTypeValue::Mesh);
-                entry.set_face_entities(vertex_a, vertex_b, vertex_c);
+                entry.set_face_entities(vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c);
                 possibly_ready_entities.push(face_entity);
             }
             ShapeWaitlistInsert::FileType(shape_entity, file_type) => {
@@ -355,8 +355,8 @@ impl ShapeWaitlist {
                 shape_manager.on_create_mesh_edge(start, entity, end);
                 (project_key, file_key, ShapeType::Vertex)
             }
-            ShapeData::MeshFace(project_key, file_key, a, b, c) => {
-                shape_manager.on_create_face(entity, a, b, c);
+            ShapeData::MeshFace(project_key, file_key, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c) => {
+                shape_manager.on_create_face(entity, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c);
                 (project_key, file_key, ShapeType::Face)
             }
         };

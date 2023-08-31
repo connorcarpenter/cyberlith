@@ -230,14 +230,22 @@ pub fn insert_component_events(
             let vertex_a = face_3d.vertex_a.get(&server).unwrap();
             let vertex_b = face_3d.vertex_b.get(&server).unwrap();
             let vertex_c = face_3d.vertex_c.get(&server).unwrap();
+            let edge_a = face_3d.edge_a.get(&server).unwrap();
+            let edge_b = face_3d.edge_b.get(&server).unwrap();
+            let edge_c = face_3d.edge_c.get(&server).unwrap();
 
-            info!("entity: `{:?}`, inserted Face3d({:?}, {:?}, {:?})", face_entity, vertex_a, vertex_b, vertex_c);
+            info!(
+                "entity: `{:?}`, inserted Face3d(vertices({:?}, {:?}, {:?}), edges({:?}, {:?}, {:?}))",
+                face_entity,
+                vertex_a, vertex_b, vertex_c,
+                edge_a, edge_b, edge_c
+            );
 
             shape_waitlist.process_insert(
                 &mut server,
                 &mut git_manager,
                 &mut shape_manager,
-                ShapeWaitlistInsert::Face(face_entity, vertex_a, vertex_b, vertex_c),
+                ShapeWaitlistInsert::Face(face_entity, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c),
             );
         }
 

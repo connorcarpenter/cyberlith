@@ -786,7 +786,7 @@ impl ShapeManager {
                 meshes,
                 materials,
                 file_entity,
-                face_key,
+                &face_key,
             );
         }
 
@@ -805,7 +805,7 @@ impl ShapeManager {
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         file_entity: Entity,
-        face_key: FaceKey
+        face_key: &FaceKey
     ) -> Entity {
         info!("processing new face: `{:?}`", face_key);
         let vertex_3d_a = face_key.vertex_3d_a;
@@ -842,13 +842,9 @@ impl ShapeManager {
             .insert(OwnedByFileLocal::new(file_entity));
 
         // add face to vertex data
-        {
-            let vertex_a_3d_data = self.vertices_3d.get_mut(&vertex_3d_a).unwrap();
-            vertex_a_3d_data.add_face(face_key);
-            let vertex_b_3d_data = self.vertices_3d.get_mut(&vertex_3d_b).unwrap();
-            vertex_b_3d_data.add_face(face_key);
-            let vertex_c_3d_data = self.vertices_3d.get_mut(&vertex_3d_c).unwrap();
-            vertex_c_3d_data.add_face(face_key);
+        for vertex_3d_entity in [&vertex_3d_a, &vertex_3d_b, &vertex_3d_c] {
+            let vertex_3d_data = self.vertices_3d.get_mut(vertex_3d_entity).unwrap();
+            vertex_3d_data.add_face(*face_key);
         }
 
         // add face to edge data
@@ -872,21 +868,21 @@ impl ShapeManager {
                 let Some(edge_3d_data) = self.edges_3d.get_mut(edge_entity) else {
                     panic!("Edge3d entity: `{:?}` has not been registered", edge_entity);
                 };
-                edge_3d_data.add_face(face_key);
+                edge_3d_data.add_face(*face_key);
 
                 edge_entities.push(*edge_entity);
             }
         }
 
         // register face data
-        self.face_keys.insert(face_key, Some(Face3dData::new(
+        self.face_keys.insert(*face_key, Some(Face3dData::new(
             entity_2d,
             file_entity,
             edge_entities[0],
             edge_entities[1],
             edge_entities[2],
         )));
-        self.faces_2d.insert(entity_2d, face_key);
+        self.faces_2d.insert(entity_2d, *face_key);
 
         entity_2d
     }
@@ -937,6 +933,7 @@ impl ShapeManager {
             &camera_manager,
             &transform_q,
             &face_3d_key,
+            [face_3d_data.edge_3d_a, face_3d_data.edge_3d_b, face_3d_data.edge_3d_c],
             face_3d_data.file_entity,
         );
 
@@ -952,6 +949,7 @@ impl ShapeManager {
         camera_manager: &CameraManager,
         transform_q: &Query<&Transform>,
         face_key: &FaceKey,
+        edge_3d_entities: [Entity; 3],
         file_entity: Entity,
     ) {
         // get 3d vertex entities & positions
@@ -980,6 +978,9 @@ impl ShapeManager {
         face_3d_component.vertex_a.set(client, &vertex_3d_entities[0]);
         face_3d_component.vertex_b.set(client, &vertex_3d_entities[1]);
         face_3d_component.vertex_c.set(client, &vertex_3d_entities[2]);
+        face_3d_component.edge_a.set(client, &edge_3d_entities[0]);
+        face_3d_component.edge_b.set(client, &edge_3d_entities[1]);
+        face_3d_component.edge_c.set(client, &edge_3d_entities[2]);
 
         // get owned_by_file component
         let mut owned_by_file_component = OwnedByFile::new();

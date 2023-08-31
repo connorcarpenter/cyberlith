@@ -336,15 +336,27 @@ pub fn insert_face_events(
 
         let face_3d = face_3d_q.get(face_entity).unwrap();
         let Some(vertex_a_entity) = face_3d.vertex_a.get(&client) else {
-            warn!("Face3d component of entity: `{:?}` has no start entity", face_entity);
+            warn!("Face3d component of entity: `{:?}` has no entity", face_entity);
             continue;
         };
         let Some(vertex_b_entity) = face_3d.vertex_b.get(&client) else {
-            warn!("Face3d component of entity: `{:?}` has no start entity", face_entity);
+            warn!("Face3d component of entity: `{:?}` has no entity", face_entity);
             continue;
         };
         let Some(vertex_c_entity) = face_3d.vertex_c.get(&client) else {
-            warn!("Face3d component of entity: `{:?}` has no start entity", face_entity);
+            warn!("Face3d component of entity: `{:?}` has no entity", face_entity);
+            continue;
+        };
+        let Some(edge_a_entity) = face_3d.edge_a.get(&client) else {
+            warn!("Face3d component of entity: `{:?}` has no entity", face_entity);
+            continue;
+        };
+        let Some(edge_b_entity) = face_3d.edge_b.get(&client) else {
+            warn!("Face3d component of entity: `{:?}` has no entity", face_entity);
+            continue;
+        };
+        let Some(edge_c_entity) = face_3d.edge_c.get(&client) else {
+            warn!("Face3d component of entity: `{:?}` has no entity", face_entity);
             continue;
         };
 
@@ -356,7 +368,7 @@ pub fn insert_face_events(
             &mut shape_manager,
             &transform_q,
             &face_entity,
-            ShapeWaitlistInsert::Face(vertex_a_entity, vertex_b_entity, vertex_c_entity),
+            ShapeWaitlistInsert::Face(vertex_a_entity, vertex_b_entity, vertex_c_entity, edge_a_entity, edge_b_entity, edge_c_entity),
         );
     }
 }
