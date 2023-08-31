@@ -9,6 +9,7 @@ mod shape_waitlist;
 mod tab_manager;
 mod user_manager;
 mod user_tab_state;
+mod dependency_map;
 
 pub use changelist_manager::*;
 pub use file_entry::*;
@@ -19,3 +20,4 @@ pub use shape_waitlist::*;
 pub use tab_manager::*;
 pub use user_manager::*;
 pub use user_tab_state::*;
+pub use dependency_map::*;

@@ -20,6 +20,7 @@ use crate::{
     files::{file_io::ShapeType, FileReadOutput, FileReader, FileWriter},
     resources::{ContentEntityData, ShapeManager},
 };
+use crate::files::{SkelFileWaitlist, SkelWaitlistInsert};
 
 // Actions
 #[derive(Debug)]
@@ -229,17 +230,22 @@ impl SkelReader {
 
     pub fn post_process_entities(
         shape_manager: &mut ShapeManager,
-        shape_entities: Vec<(Entity, Option<(Entity, Entity)>)>,
+        vertex_and_edge_entities: Vec<(Entity, Option<(Entity, Entity)>)>,
     ) -> HashMap<Entity, ContentEntityData> {
         let mut new_content_entities = HashMap::new();
 
-        for (vertex_entity, edge_opt) in shape_entities {
-            shape_manager.on_create_skel_vertex(vertex_entity, edge_opt);
+        let mut skel_file_waitlist = SkelFileWaitlist::default();
+
+        for (vertex_entity, edge_opt) in vertex_and_edge_entities {
 
             new_content_entities.insert(vertex_entity, ContentEntityData::new(ShapeType::Vertex));
 
-            if let Some((edge_entity, _parent_entity)) = edge_opt {
+            if let Some((edge_entity, parent_entity)) = edge_opt {
+                skel_file_waitlist.process_insert(shape_manager, SkelWaitlistInsert::Vertex(vertex_entity));
+                skel_file_waitlist.process_insert(shape_manager, SkelWaitlistInsert::Edge(parent_entity, edge_entity, vertex_entity));
                 new_content_entities.insert(edge_entity, ContentEntityData::new(ShapeType::Edge));
+            } else {
+                skel_file_waitlist.process_insert(shape_manager, SkelWaitlistInsert::VertexRoot(vertex_entity));
             }
         }
 

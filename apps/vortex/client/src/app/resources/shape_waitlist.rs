@@ -412,7 +412,7 @@ impl ShapeWaitlist {
                     file_type == FileTypeValue::Skel,
                 );
             }
-            (ShapeData::Face(vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c), _) => {
+            (ShapeData::Face(vertex_a, vertex_b, vertex_c, _edge_a, _edge_b, _edge_c), _) => {
                 let face_key = FaceKey::new(vertex_a, vertex_b, vertex_c);
                 let mut positions = [Vec3::ZERO, Vec3::ZERO, Vec3::ZERO];
                 for (index, vertex_3d_entity) in [vertex_a, vertex_b, vertex_c].iter().enumerate() {
