@@ -17,7 +17,6 @@ impl Default for UserTabState {
 }
 
 impl UserTabState {
-
     pub fn remove_tab(&mut self, tab_id: &TabId) -> Option<FileEntryKey> {
         if let Some(file_key) = self.tabs.remove(tab_id) {
             Some(file_key)

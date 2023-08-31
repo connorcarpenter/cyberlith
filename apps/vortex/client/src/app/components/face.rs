@@ -37,7 +37,6 @@ impl FaceIcon2d {
     }
 }
 
-
 // Just a marker, to distinguish from 2d version
 #[derive(Component)]
 pub struct Face3dLocal;

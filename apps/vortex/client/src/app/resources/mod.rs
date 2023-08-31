@@ -1,3 +1,4 @@
+pub mod action;
 pub mod action_stack;
 pub mod camera_manager;
 pub mod canvas;
@@ -7,4 +8,3 @@ pub mod input_manager;
 pub mod shape_manager;
 pub mod shape_waitlist;
 pub mod tab_manager;
-pub mod action;

@@ -6,12 +6,7 @@ use bevy_log::info;
 
 use naia_bevy_client::Client;
 
-use vortex_proto::{
-    components::{
-        Edge3d,
-        FileType, FileTypeValue, Vertex3d,
-    },
-};
+use vortex_proto::components::{Edge3d, FileType, FileTypeValue, Vertex3d};
 
 use crate::app::{
     components::VertexTypeData,
@@ -22,7 +17,11 @@ use crate::app::{
     },
 };
 
-pub(crate) fn execute(world: &mut World, vertex_2d_entity: Entity, vertex_2d_to_select_opt: Option<(Entity, CanvasShape)>) -> Vec<Action> {
+pub(crate) fn execute(
+    world: &mut World,
+    vertex_2d_entity: Entity,
+    vertex_2d_to_select_opt: Option<(Entity, CanvasShape)>,
+) -> Vec<Action> {
     info!("DeleteVertex({:?})", vertex_2d_entity);
 
     let mut system_state: SystemState<(
@@ -88,9 +87,8 @@ pub(crate) fn execute(world: &mut World, vertex_2d_entity: Entity, vertex_2d_to_
 
             let rev_vertex_type_data = VertexTypeData::Skel(
                 parent_vertex_2d_entity,
-                entry_contents_opt.map(|entries| {
-                    entries.into_iter().map(|(_, entry)| entry).collect()
-                }),
+                entry_contents_opt
+                    .map(|entries| entries.into_iter().map(|(_, entry)| entry).collect()),
             );
 
             let Ok((_, vertex_3d)) = vertex_q.get(vertex_3d_entity) else {
@@ -138,26 +136,44 @@ pub(crate) fn execute(world: &mut World, vertex_2d_entity: Entity, vertex_2d_to_
 
                 let edge_2d_entity = shape_manager.edge_entity_3d_to_2d(&edge_3d_entity).unwrap();
 
-                connected_vertices_2d_entities.push((connected_vertex_2d_entity, Some(edge_2d_entity)));
+                connected_vertices_2d_entities
+                    .push((connected_vertex_2d_entity, Some(edge_2d_entity)));
             }
             let Some(connected_faces) = shape_manager.vertex_connected_faces(&vertex_3d_entity) else {
                 panic!("Failed to get connected faces for vertex entity {:?}!", vertex_3d_entity);
             };
             for face_key in connected_faces {
+                let face_3d_entity_exists = shape_manager
+                    .face_3d_entity_from_face_key(&face_key)
+                    .is_some();
 
-                let face_3d_entity_exists = shape_manager.face_3d_entity_from_face_key(&face_key).is_some();
-
-                let mut vertices_3d = vec![face_key.vertex_3d_a, face_key.vertex_3d_b, face_key.vertex_3d_c];
+                let mut vertices_3d = vec![
+                    face_key.vertex_3d_a,
+                    face_key.vertex_3d_b,
+                    face_key.vertex_3d_c,
+                ];
                 vertices_3d.retain(|vertex| *vertex != vertex_3d_entity);
-                let vertices_2d: Vec<Entity> = vertices_3d.iter().map(|vertex| shape_manager.vertex_entity_3d_to_2d(&vertex).unwrap()).collect();
+                let vertices_2d: Vec<Entity> = vertices_3d
+                    .iter()
+                    .map(|vertex| shape_manager.vertex_entity_3d_to_2d(&vertex).unwrap())
+                    .collect();
 
-                let face_2d_entity = shape_manager.face_2d_entity_from_face_key(&face_key).unwrap();
+                let face_2d_entity = shape_manager
+                    .face_2d_entity_from_face_key(&face_key)
+                    .unwrap();
 
-                connected_face_vertex_2d_entities.push((vertices_2d[0], vertices_2d[1], face_2d_entity, face_3d_entity_exists));
+                connected_face_vertex_2d_entities.push((
+                    vertices_2d[0],
+                    vertices_2d[1],
+                    face_2d_entity,
+                    face_3d_entity_exists,
+                ));
             }
 
-            let rev_vertex_type_data =
-                VertexTypeData::Mesh(connected_vertices_2d_entities, connected_face_vertex_2d_entities);
+            let rev_vertex_type_data = VertexTypeData::Mesh(
+                connected_vertices_2d_entities,
+                connected_face_vertex_2d_entities,
+            );
 
             let Ok((_, vertex_3d)) = vertex_q.get(vertex_3d_entity) else {
                 panic!("Failed to get Vertex3d for vertex entity {:?}!", vertex_3d_entity);

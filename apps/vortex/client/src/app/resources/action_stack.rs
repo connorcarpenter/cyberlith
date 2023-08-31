@@ -9,13 +9,14 @@ use bevy_log::{info, warn};
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus, ReplicationConfig};
 
 use math::Vec3;
-use render_api::{base::{CpuMaterial, CpuMesh}, Assets};
+use render_api::{
+    base::{CpuMaterial, CpuMesh},
+    Assets,
+};
 
-use vortex_proto::{
-    components::{
-        ChangelistEntry, Edge3d, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-        FileType, FileTypeValue, OwnedByFile, Vertex3d,
-    },
+use vortex_proto::components::{
+    ChangelistEntry, Edge3d, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
+    FileType, FileTypeValue, OwnedByFile, Vertex3d,
 };
 
 use crate::app::{
@@ -24,10 +25,10 @@ use crate::app::{
         Vertex2d, VertexEntry,
     },
     resources::{
+        action::Action,
         camera_manager::CameraManager,
         file_tree::FileTree,
         shape_manager::{CanvasShape, ShapeManager},
-        action::Action,
     },
     systems::file_post_process,
 };
@@ -257,8 +258,9 @@ impl ActionStack {
                     entity_to_release = Some(edge_3d_entity);
                 }
                 CanvasShape::Face => {
-                    if let Some(face_3d_entity) = shape_manager
-                        .face_entity_2d_to_3d(&shape_2d_entity) {
+                    if let Some(face_3d_entity) =
+                        shape_manager.face_entity_2d_to_3d(&shape_2d_entity)
+                    {
                         entity_to_release = Some(face_3d_entity);
                     }
                 }
@@ -763,33 +765,22 @@ impl ActionStack {
         }
     }
 
-    pub(crate) fn migrate_edge_entities(
-        &mut self,
-        old_2d_entity: Entity,
-        new_2d_entity: Entity,
-    ) {
+    pub(crate) fn migrate_edge_entities(&mut self, old_2d_entity: Entity, new_2d_entity: Entity) {
         for action_list in [&mut self.undo_actions, &mut self.redo_actions] {
             for action in action_list.iter_mut() {
-                action.migrate_edge_entities(
-                    old_2d_entity,
-                    new_2d_entity,
-                );
+                action.migrate_edge_entities(old_2d_entity, new_2d_entity);
             }
         }
     }
 
-    pub(crate) fn migrate_face_entities(
-        &mut self,
-        old_2d_entity: Entity,
-        new_2d_entity: Entity,
-    ) {
-        info!("migrate_face_entities({:?}, {:?})", old_2d_entity, new_2d_entity);
+    pub(crate) fn migrate_face_entities(&mut self, old_2d_entity: Entity, new_2d_entity: Entity) {
+        info!(
+            "migrate_face_entities({:?}, {:?})",
+            old_2d_entity, new_2d_entity
+        );
         for action_list in [&mut self.undo_actions, &mut self.redo_actions] {
             for action in action_list.iter_mut() {
-                action.migrate_face_entities(
-                    old_2d_entity,
-                    new_2d_entity,
-                );
+                action.migrate_face_entities(old_2d_entity, new_2d_entity);
             }
         }
     }

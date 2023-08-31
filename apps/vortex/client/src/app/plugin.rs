@@ -7,8 +7,8 @@ use render_api::resources::WindowSettings;
 
 use vortex_proto::{
     components::{
-        ChangelistEntry, Edge3d, Face3d, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-        FileType, OwnedByFile, Vertex3d, VertexRoot,
+        ChangelistEntry, Edge3d, EntryKind, Face3d, FileSystemChild, FileSystemEntry,
+        FileSystemRootChild, FileType, OwnedByFile, Vertex3d, VertexRoot,
     },
     protocol,
 };

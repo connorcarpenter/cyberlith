@@ -1,8 +1,12 @@
 use glam::Vec3;
 
 // returns whether last two vertices were swapped
-pub fn reorder_triangle_winding(vertices: &mut [Vec3; 3], external_point: Vec3, set_to_clockwise: bool) -> bool {
-    let a= vertices[0];
+pub fn reorder_triangle_winding(
+    vertices: &mut [Vec3; 3],
+    external_point: Vec3,
+    set_to_clockwise: bool,
+) -> bool {
+    let a = vertices[0];
     let b = vertices[1];
     let c = vertices[2];
 

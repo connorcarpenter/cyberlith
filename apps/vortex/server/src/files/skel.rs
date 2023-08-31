@@ -17,10 +17,9 @@ use vortex_proto::components::{
 };
 
 use crate::{
-    files::{file_io::ShapeType, FileReadOutput, FileReader, FileWriter},
+    files::{SkelFileWaitlist, SkelWaitlistInsert, file_io::ShapeType, FileReadOutput, FileReader, FileWriter},
     resources::{ContentEntityData, ShapeManager},
 };
-use crate::files::{SkelFileWaitlist, SkelWaitlistInsert};
 
 // Actions
 #[derive(Debug)]
@@ -124,8 +123,10 @@ impl FileWriter for SkelWriter {
         world: &mut World,
         content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]> {
-        let content_entities_vec: Vec<Entity> =
-            content_entities.iter().map(|(entity, _data)| *entity).collect();
+        let content_entities_vec: Vec<Entity> = content_entities
+            .iter()
+            .map(|(entity, _data)| *entity)
+            .collect();
         let actions = self.world_to_actions(world, &content_entities_vec);
         self.write_from_actions(actions)
     }
@@ -237,15 +238,19 @@ impl SkelReader {
         let mut skel_file_waitlist = SkelFileWaitlist::default();
 
         for (vertex_entity, edge_opt) in vertex_and_edge_entities {
-
             new_content_entities.insert(vertex_entity, ContentEntityData::new(ShapeType::Vertex));
 
             if let Some((edge_entity, parent_entity)) = edge_opt {
-                skel_file_waitlist.process_insert(shape_manager, SkelWaitlistInsert::Vertex(vertex_entity));
-                skel_file_waitlist.process_insert(shape_manager, SkelWaitlistInsert::Edge(parent_entity, edge_entity, vertex_entity));
+                skel_file_waitlist
+                    .process_insert(shape_manager, SkelWaitlistInsert::Vertex(vertex_entity));
+                skel_file_waitlist.process_insert(
+                    shape_manager,
+                    SkelWaitlistInsert::Edge(parent_entity, edge_entity, vertex_entity),
+                );
                 new_content_entities.insert(edge_entity, ContentEntityData::new(ShapeType::Edge));
             } else {
-                skel_file_waitlist.process_insert(shape_manager, SkelWaitlistInsert::VertexRoot(vertex_entity));
+                skel_file_waitlist
+                    .process_insert(shape_manager, SkelWaitlistInsert::VertexRoot(vertex_entity));
             }
         }
 

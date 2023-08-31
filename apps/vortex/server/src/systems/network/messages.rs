@@ -12,9 +12,7 @@ use vortex_proto::{
     resources::FileEntryKey,
 };
 
-use crate::resources::{
-    ChangelistManager, GitManager, ShapeManager, TabManager, UserManager,
-};
+use crate::resources::{ChangelistManager, GitManager, ShapeManager, TabManager, UserManager};
 
 pub fn message_events(
     mut commands: Commands,

@@ -2,22 +2,23 @@ use std::collections::HashMap;
 
 use bevy_ecs::{
     entity::Entity,
-    system::{Commands, Resource},
+    system::{Commands, Query, Resource},
 };
-use bevy_ecs::system::Query;
 use bevy_log::info;
 use math::Vec3;
 
 use render_api::{
     base::{CpuMaterial, CpuMesh},
-    Assets,components::Transform
+    components::Transform,
+    Assets,
 };
-use vortex_proto::components::FileTypeValue;
-use vortex_proto::resources::DependencyMap;
+use vortex_proto::{components::FileTypeValue, resources::DependencyMap};
 
 use crate::app::{
     components::{OwnedByFileLocal, Vertex2d},
-    resources::{shape_manager::FaceKey, camera_manager::CameraManager, shape_manager::ShapeManager},
+    resources::{
+        camera_manager::CameraManager, shape_manager::FaceKey, shape_manager::ShapeManager,
+    },
 };
 
 pub enum ShapeWaitlistInsert {
@@ -113,7 +114,15 @@ impl ShapeWaitlistEntry {
         self.edge_entities = Some((start, end));
     }
 
-    fn set_face(&mut self, vertex_a: Entity, vertex_b: Entity, vertex_c: Entity, edge_a: Entity, edge_b: Entity, edge_c: Entity) {
+    fn set_face(
+        &mut self,
+        vertex_a: Entity,
+        vertex_b: Entity,
+        vertex_c: Entity,
+        edge_a: Entity,
+        edge_b: Entity,
+        edge_c: Entity,
+    ) {
         self.shape = Some(ShapeType::Face);
         self.face_entities = Some((vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c));
         self.file_type = Some(FileTypeValue::Mesh);
@@ -141,7 +150,8 @@ impl ShapeWaitlistEntry {
                 ShapeData::Edge(entities.0, entities.1)
             }
             (ShapeType::Face, _) => {
-                let (vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c) = self.face_entities.unwrap();
+                let (vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c) =
+                    self.face_entities.unwrap();
                 ShapeData::Face(vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c)
             }
         };
@@ -211,7 +221,9 @@ impl ShapeWaitlist {
                 );
             }
             ShapeWaitlistInsert::Face(vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c) => {
-                self.get_mut(&entity).unwrap().set_face(vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c);
+                self.get_mut(&entity)
+                    .unwrap()
+                    .set_face(vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c);
             }
             ShapeWaitlistInsert::OwnedByFile(file_entity) => {
                 self.get_mut(&entity).unwrap().set_file_entity(file_entity);
@@ -255,7 +267,11 @@ impl ShapeWaitlist {
                                 "vert entity {:?} requires parent {:?}. putting in parent waitlist",
                                 entity, parent_entity
                             );
-                            self.dependency_map.insert_waiting_dependencies(vec![parent_entity], entity, entry);
+                            self.dependency_map.insert_waiting_dependencies(
+                                vec![parent_entity],
+                                entity,
+                                entry,
+                            );
                             continue;
                         }
                     }
@@ -276,7 +292,11 @@ impl ShapeWaitlist {
                     }
 
                     if !dependencies.is_empty() {
-                        self.dependency_map.insert_waiting_dependencies(dependencies, entity, entry);
+                        self.dependency_map.insert_waiting_dependencies(
+                            dependencies,
+                            entity,
+                            entry,
+                        );
 
                         continue;
                     }
@@ -310,7 +330,11 @@ impl ShapeWaitlist {
                     }
 
                     if !dependencies.is_empty() {
-                        self.dependency_map.insert_waiting_dependencies(dependencies, entity, entry);
+                        self.dependency_map.insert_waiting_dependencies(
+                            dependencies,
+                            entity,
+                            entry,
+                        );
                         continue;
                     }
                 }
@@ -407,7 +431,8 @@ impl ShapeWaitlist {
                     meshes,
                     materials,
                     file_entity,
-                    &face_key);
+                    &face_key,
+                );
                 shape_manager.face_3d_postprocess(
                     commands,
                     meshes,
@@ -415,7 +440,7 @@ impl ShapeWaitlist {
                     camera_manager,
                     &face_key,
                     entity,
-                    positions
+                    positions,
                 );
             }
         }

@@ -1,10 +1,16 @@
-
-use bevy_ecs::{entity::Entity, system::{Commands, Query, SystemState}, world::World};
+use bevy_ecs::{
+    entity::Entity,
+    system::{Commands, Query, SystemState},
+    world::World,
+};
 
 use naia_bevy_client::Client;
 use vortex_proto::components::ChangelistEntry;
 
-use crate::app::{resources::{action::Action, action_stack::ActionStack}, components::file_system::{ChangelistUiState, FileSystemUiState}};
+use crate::app::{
+    components::file_system::{ChangelistUiState, FileSystemUiState},
+    resources::{action::Action, action_stack::ActionStack},
+};
 
 pub(crate) fn execute(world: &mut World, file_entities: Vec<Entity>) -> Vec<Action> {
     let mut system_state: SystemState<(
@@ -13,8 +19,7 @@ pub(crate) fn execute(world: &mut World, file_entities: Vec<Entity>) -> Vec<Acti
         Query<(Entity, &mut FileSystemUiState)>,
         Query<(Entity, &ChangelistEntry, &mut ChangelistUiState)>,
     )> = SystemState::new(world);
-    let (mut commands, mut client, mut fs_query, mut cl_query) =
-        system_state.get_mut(world);
+    let (mut commands, mut client, mut fs_query, mut cl_query) = system_state.get_mut(world);
 
     // TODO: when shift/control is pressed, select multiple items
 

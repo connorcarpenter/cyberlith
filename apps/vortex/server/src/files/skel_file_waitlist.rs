@@ -2,12 +2,10 @@ use std::collections::HashMap;
 
 use bevy_ecs::{entity::Entity, system::Resource};
 use bevy_log::info;
+
 use vortex_proto::resources::DependencyMap;
 
-use crate::{
-    files::ShapeType,
-    resources::ShapeManager,
-};
+use crate::{files::ShapeType, resources::ShapeManager};
 
 pub enum SkelWaitlistInsert {
     //// shape
@@ -72,12 +70,9 @@ impl SkelWaitlistEntry {
     }
 
     fn decompose(self) -> ShapeData {
-
         match self.shape {
             Some(ShapeType::Vertex) => {
-                return ShapeData::Vertex(
-                    self.edge_and_parent_opt.unwrap(),
-                );
+                return ShapeData::Vertex(self.edge_and_parent_opt.unwrap());
             }
             Some(ShapeType::Edge) => {
                 return ShapeData::Edge;
@@ -106,11 +101,7 @@ impl Default for SkelFileWaitlist {
 }
 
 impl SkelFileWaitlist {
-    pub fn process_insert(
-        &mut self,
-        shape_manager: &mut ShapeManager,
-        insert: SkelWaitlistInsert,
-    ) {
+    pub fn process_insert(&mut self, shape_manager: &mut ShapeManager, insert: SkelWaitlistInsert) {
         let mut possibly_ready_entities = Vec::new();
 
         match insert {
@@ -201,7 +192,11 @@ impl SkelFileWaitlist {
                     }
                 }
 
-                info!("processing shape type: `{:?}`, entity: `{:?}`", entry.shape.unwrap(), entity);
+                info!(
+                    "processing shape type: `{:?}`, entity: `{:?}`",
+                    entry.shape.unwrap(),
+                    entity
+                );
                 self.process_complete(shape_manager, entity, entry);
             } else {
                 info!("entity `{:?}` is not ready yet...", possibly_ready_entity);
@@ -237,11 +232,7 @@ impl SkelFileWaitlist {
                     "entity {:?} was waiting on parent {:?}. processing!",
                     child_entity, entity
                 );
-                self.process_complete(
-                    shape_manager,
-                    child_entity,
-                    child_entry,
-                );
+                self.process_complete(shape_manager, child_entity, child_entry);
             }
         }
     }

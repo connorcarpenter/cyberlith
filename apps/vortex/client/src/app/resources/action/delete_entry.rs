@@ -6,19 +6,19 @@ use bevy_ecs::{
 use naia_bevy_client::Client;
 
 use vortex_proto::components::{
-        ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-    };
+    ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
+};
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
-    resources::{
-        global::Global,
-        action::Action,
-        action_stack::ActionStack,
-    },
+    resources::{action::Action, action_stack::ActionStack, global::Global},
 };
 
-pub(crate) fn execute(world: &mut World, file_entity: Entity, files_to_select_opt: Option<Vec<Entity>>) -> Vec<Action> {
+pub(crate) fn execute(
+    world: &mut World,
+    file_entity: Entity,
+    files_to_select_opt: Option<Vec<Entity>>,
+) -> Vec<Action> {
     let mut system_state: SystemState<(
         Commands,
         Client,
@@ -32,15 +32,8 @@ pub(crate) fn execute(world: &mut World, file_entity: Entity, files_to_select_op
         )>,
         Query<&mut FileSystemParent>,
     )> = SystemState::new(world);
-    let (
-        mut commands,
-        mut client,
-        global,
-        mut ui_query,
-        mut cl_query,
-        fs_query,
-        mut parent_query,
-    ) = system_state.get_mut(world);
+    let (mut commands, mut client, global, mut ui_query, mut cl_query, fs_query, mut parent_query) =
+        system_state.get_mut(world);
     let (entry, fs_child_opt, fs_root_child_opt) = fs_query.get(file_entity).unwrap();
 
     // get name of file
@@ -96,12 +89,8 @@ pub(crate) fn execute(world: &mut World, file_entity: Entity, files_to_select_op
 
     // select files as needed
     if let Some(files_to_select) = files_to_select_opt {
-        let file_entries_to_request = ActionStack::select_files(
-            &mut client,
-            &mut ui_query,
-            &mut cl_query,
-            &files_to_select,
-        );
+        let file_entries_to_request =
+            ActionStack::select_files(&mut client, &mut ui_query, &mut cl_query, &files_to_select);
         ActionStack::request_entities(&mut commands, &mut client, file_entries_to_request);
     }
 
@@ -112,7 +101,6 @@ pub(crate) fn execute(world: &mut World, file_entity: Entity, files_to_select_op
         entry_name,
         entry_kind,
         Some(file_entity),
-        entry_contents_opt
-            .map(|entries| entries.into_iter().map(|(_, tree)| tree).collect()),
+        entry_contents_opt.map(|entries| entries.into_iter().map(|(_, tree)| tree).collect()),
     )];
 }

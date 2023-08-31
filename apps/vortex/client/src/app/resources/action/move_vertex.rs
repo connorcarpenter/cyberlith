@@ -2,24 +2,25 @@ use bevy_ecs::{
     prelude::{Entity, Query, World},
     system::{ResMut, SystemState},
 };
-use bevy_log::{info};
+use bevy_log::info;
 
 use naia_bevy_client::Client;
 
 use math::Vec3;
 use render_api::{base::CpuMesh, components::Transform, Assets, Handle};
 
-use vortex_proto::components::{Vertex3d, Face3d};
+use vortex_proto::components::{Face3d, Vertex3d};
 
-use crate::app::{
-    resources::{
-        action::Action,
-        camera_manager::CameraManager,
-        shape_manager::ShapeManager,
-    },
+use crate::app::resources::{
+    action::Action, camera_manager::CameraManager, shape_manager::ShapeManager,
 };
 
-pub(crate) fn execute(world: &mut World, vertex_2d_entity: Entity, old_position: Vec3, new_position: Vec3) -> Vec<Action> {
+pub(crate) fn execute(
+    world: &mut World,
+    vertex_2d_entity: Entity,
+    old_position: Vec3,
+    new_position: Vec3,
+) -> Vec<Action> {
     info!("MoveVertex");
     let mut system_state: SystemState<(
         Client,
@@ -31,7 +32,8 @@ pub(crate) fn execute(world: &mut World, vertex_2d_entity: Entity, old_position:
         Query<&Face3d>,
         Query<&mut Transform>,
     )> = SystemState::new(world);
-    let (client,
+    let (
+        client,
         mut meshes,
         shape_manager,
         mut camera_manager,
@@ -50,7 +52,14 @@ pub(crate) fn execute(world: &mut World, vertex_2d_entity: Entity, old_position:
     };
     vertex_3d.set_vec3(&new_position);
 
-    shape_manager.on_vertex_3d_moved(&client, &mut meshes, &mesh_handle_q, &face_3d_q, &mut transform_q, &vertex_3d_entity);
+    shape_manager.on_vertex_3d_moved(
+        &client,
+        &mut meshes,
+        &mesh_handle_q,
+        &face_3d_q,
+        &mut transform_q,
+        &vertex_3d_entity,
+    );
 
     camera_manager.recalculate_3d_view();
 

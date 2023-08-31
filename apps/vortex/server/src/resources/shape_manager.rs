@@ -80,7 +80,10 @@ struct EdgeData {
 
 impl EdgeData {
     pub fn new(start: Entity, end: Entity) -> Self {
-        Self { vertex_a: start, vertex_b: end }
+        Self {
+            vertex_a: start,
+            vertex_b: end,
+        }
     }
 }
 
@@ -94,7 +97,14 @@ struct FaceData {
 }
 
 impl FaceData {
-    pub fn new(vertex_a: Entity, vertex_b: Entity, vertex_c: Entity, edge_a: Entity, edge_b: Entity, edge_c: Entity) -> Self {
+    pub fn new(
+        vertex_a: Entity,
+        vertex_b: Entity,
+        vertex_c: Entity,
+        edge_a: Entity,
+        edge_b: Entity,
+        edge_c: Entity,
+    ) -> Self {
         Self {
             vertex_a,
             vertex_b,
@@ -194,8 +204,16 @@ impl ShapeManager {
         }
     }
 
-    pub fn on_create_mesh_edge(&mut self, start_vertex_entity: Entity, edge_entity: Entity, end_vertex_entity: Entity) {
-        self.edges.insert(edge_entity, EdgeData::new(start_vertex_entity, end_vertex_entity));
+    pub fn on_create_mesh_edge(
+        &mut self,
+        start_vertex_entity: Entity,
+        edge_entity: Entity,
+        end_vertex_entity: Entity,
+    ) {
+        self.edges.insert(
+            edge_entity,
+            EdgeData::new(start_vertex_entity, end_vertex_entity),
+        );
 
         for vertex_entity in [start_vertex_entity, end_vertex_entity] {
             let Some(VertexData::Mesh(vertex_data)) = self.vertices.get_mut(&vertex_entity) else {
@@ -205,8 +223,20 @@ impl ShapeManager {
         }
     }
 
-    pub fn on_create_face(&mut self, face_entity: Entity, vertex_a: Entity, vertex_b: Entity, vertex_c: Entity, edge_a: Entity, edge_b: Entity, edge_c: Entity) {
-        self.faces.insert(face_entity, FaceData::new(vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c));
+    pub fn on_create_face(
+        &mut self,
+        face_entity: Entity,
+        vertex_a: Entity,
+        vertex_b: Entity,
+        vertex_c: Entity,
+        edge_a: Entity,
+        edge_b: Entity,
+        edge_c: Entity,
+    ) {
+        self.faces.insert(
+            face_entity,
+            FaceData::new(vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c),
+        );
 
         // add faces to vertices
         for vertex_entity in [vertex_a, vertex_b, vertex_c] {
@@ -248,13 +278,11 @@ impl ShapeManager {
         entities_to_despawn
     }
 
-
     fn on_delete_skel_vertex(&mut self, entity: &Entity) -> Vec<Entity> {
         Self::remove_skel_vertex(&mut self.vertices, entity)
     }
 
     fn on_delete_mesh_vertex(&mut self, vertex_entity: &Entity) -> Vec<Entity> {
-
         let mut entities_to_despawn = Vec::new();
 
         let VertexData::Mesh(vertex_data) = self.vertices.remove(vertex_entity).unwrap() else {
@@ -262,14 +290,12 @@ impl ShapeManager {
         };
 
         for edge_entity in vertex_data.edges.iter() {
-
             entities_to_despawn.push(*edge_entity);
 
             self.on_delete_edge(edge_entity);
         }
 
         for face_entity in vertex_data.faces.iter() {
-
             entities_to_despawn.push(*face_entity);
 
             self.on_delete_face(face_entity);

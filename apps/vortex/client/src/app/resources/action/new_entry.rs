@@ -8,9 +8,7 @@ use naia_bevy_client::Client;
 use render_api::components::Visibility;
 
 use vortex_proto::{
-    components::{
-        ChangelistEntry, EntryKind,
-    },
+    components::{ChangelistEntry, EntryKind},
     FileExtension,
 };
 
@@ -20,18 +18,20 @@ use crate::app::{
         OwnedByFileLocal,
     },
     resources::{
-        action::Action,
-        camera_manager::CameraManager,
-        canvas::Canvas,
-        file_tree::FileTree,
-        global::Global,
-        shape_manager::ShapeManager,
-        tab_manager::TabManager,
-        action_stack::ActionStack,
+        action::Action, action_stack::ActionStack, camera_manager::CameraManager, canvas::Canvas,
+        file_tree::FileTree, global::Global, shape_manager::ShapeManager, tab_manager::TabManager,
     },
 };
 
-pub(crate) fn execute(world: &mut World, action_stack: &mut ActionStack, parent_entity_opt: Option<Entity>, new_file_name: String, entry_kind: EntryKind, old_entity_opt: Option<Entity>, entry_contents_opt: Option<Vec<FileTree>>) -> Vec<Action> {
+pub(crate) fn execute(
+    world: &mut World,
+    action_stack: &mut ActionStack,
+    parent_entity_opt: Option<Entity>,
+    new_file_name: String,
+    entry_kind: EntryKind,
+    old_entity_opt: Option<Entity>,
+    entry_contents_opt: Option<Vec<FileTree>>,
+) -> Vec<Action> {
     let mut system_state: SystemState<(
         Commands,
         Client,

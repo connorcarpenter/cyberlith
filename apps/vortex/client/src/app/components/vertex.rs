@@ -74,7 +74,10 @@ pub enum VertexTypeData {
     // parent_vertex_2d_entity, children_tree_opt
     Skel(Entity, Option<Vec<VertexEntry>>),
     // Vec<connected 2d vertex, optional old edge 2d entity>, Vec<2d vertex pair with which to form a face, old face 2d entity>
-    Mesh(Vec<(Entity, Option<Entity>)>, Vec<(Entity, Entity, Entity, bool)>),
+    Mesh(
+        Vec<(Entity, Option<Entity>)>,
+        Vec<(Entity, Entity, Entity, bool)>,
+    ),
 }
 
 impl VertexTypeData {
@@ -123,11 +126,7 @@ impl VertexTypeData {
         }
     }
 
-    pub fn migrate_edge_entities(
-        &mut self,
-        old_2d_entity: Entity,
-        new_2d_entity: Entity,
-    ) {
+    pub fn migrate_edge_entities(&mut self, old_2d_entity: Entity, new_2d_entity: Entity) {
         match self {
             VertexTypeData::Skel(_, _) => {}
             VertexTypeData::Mesh(connected_vertices, _) => {
@@ -142,11 +141,7 @@ impl VertexTypeData {
         }
     }
 
-    pub fn migrate_face_entities(
-        &mut self,
-        old_2d_entity: Entity,
-        new_2d_entity: Entity,
-    ) {
+    pub fn migrate_face_entities(&mut self, old_2d_entity: Entity, new_2d_entity: Entity) {
         match self {
             VertexTypeData::Skel(_, _) => {}
             VertexTypeData::Mesh(_, connected_faces) => {

@@ -16,15 +16,15 @@ use naia_bevy_server::{
 };
 
 use vortex_proto::{
-    components::{Face3d,
-        Edge3d, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile,
-        Vertex3d, VertexRoot,
+    components::{
+        Edge3d, Face3d, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType,
+        OwnedByFile, Vertex3d, VertexRoot,
     },
     resources::FileEntryKey,
 };
-use crate::files::ShapeType;
 
 use crate::resources::{
+    files::ShapeType,
     file_waitlist::{fs_process_insert, FSWaitlist, FSWaitlistInsert},
     GitManager, ShapeManager, ShapeWaitlist, ShapeWaitlistInsert, TabManager, UserManager,
 };
@@ -245,7 +245,15 @@ pub fn insert_component_events(
                 &mut server,
                 &mut git_manager,
                 &mut shape_manager,
-                ShapeWaitlistInsert::Face(face_entity, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c),
+                ShapeWaitlistInsert::Face(
+                    face_entity,
+                    vertex_a,
+                    vertex_b,
+                    vertex_c,
+                    edge_a,
+                    edge_b,
+                    edge_c,
+                ),
             );
         }
 

@@ -5,8 +5,8 @@ use bevy_log::info;
 
 use naia_bevy_server::Server;
 
-use vortex_proto::{components::FileTypeValue, resources::FileEntryKey};
-use vortex_proto::resources::DependencyMap;
+
+use vortex_proto::{components::FileTypeValue, resources::{FileEntryKey, DependencyMap}};
 
 use crate::{
     files::ShapeType,
@@ -38,7 +38,16 @@ enum ShapeData {
     // (ProjectKey, FileKey, Start, End)
     MeshEdge(ProjectKey, FileEntryKey, Entity, Entity),
     // (ProjectKey, FileKey, VertexA, VertexB, VertexC, EdgeA, EdgeB, EdgeC)
-    MeshFace(ProjectKey, FileEntryKey, Entity, Entity, Entity, Entity, Entity, Entity),
+    MeshFace(
+        ProjectKey,
+        FileEntryKey,
+        Entity,
+        Entity,
+        Entity,
+        Entity,
+        Entity,
+        Entity,
+    ),
 }
 
 #[derive(Clone)]
@@ -105,7 +114,15 @@ impl ShapeWaitlistEntry {
         self.edge_entities = Some((start, end));
     }
 
-    fn set_face_entities(&mut self, vertex_a: Entity, vertex_b: Entity, vertex_c: Entity, edge_a: Entity, edge_b: Entity, edge_c: Entity) {
+    fn set_face_entities(
+        &mut self,
+        vertex_a: Entity,
+        vertex_b: Entity,
+        vertex_c: Entity,
+        edge_a: Entity,
+        edge_b: Entity,
+        edge_c: Entity,
+    ) {
         self.face_entities = Some((vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c));
     }
 
@@ -143,8 +160,18 @@ impl ShapeWaitlistEntry {
                 return ShapeData::MeshEdge(project_key, file_key, start, end);
             }
             (Some(FileTypeValue::Mesh), Some(ShapeType::Face)) => {
-                let (vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c) = self.face_entities.unwrap();
-                return ShapeData::MeshFace(project_key, file_key, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c);
+                let (vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c) =
+                    self.face_entities.unwrap();
+                return ShapeData::MeshFace(
+                    project_key,
+                    file_key,
+                    vertex_a,
+                    vertex_b,
+                    vertex_c,
+                    edge_a,
+                    edge_b,
+                    edge_c,
+                );
             }
             _ => {
                 panic!("shouldn't be able to happen!");
@@ -227,7 +254,15 @@ impl ShapeWaitlist {
                     possibly_ready_entities
                 );
             }
-            ShapeWaitlistInsert::Face(face_entity, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c) => {
+            ShapeWaitlistInsert::Face(
+                face_entity,
+                vertex_a,
+                vertex_b,
+                vertex_c,
+                edge_a,
+                edge_b,
+                edge_c,
+            ) => {
                 if !self.contains_key(&face_entity) {
                     self.insert_incomplete(face_entity, ShapeWaitlistEntry::new());
                 }
@@ -279,7 +314,11 @@ impl ShapeWaitlist {
                                     entity,
                                     parent_entity
                                 );
-                                self.dependency_map.insert_waiting_dependencies(vec![parent_entity], entity, entry);
+                                self.dependency_map.insert_waiting_dependencies(
+                                    vec![parent_entity],
+                                    entity,
+                                    entry,
+                                );
                                 continue;
                             }
                         }
@@ -306,7 +345,11 @@ impl ShapeWaitlist {
                         }
 
                         if !dependencies.is_empty() {
-                            self.dependency_map.insert_waiting_dependencies(dependencies, entity, entry);
+                            self.dependency_map.insert_waiting_dependencies(
+                                dependencies,
+                                entity,
+                                entry,
+                            );
                             continue;
                         }
                     }
@@ -318,7 +361,11 @@ impl ShapeWaitlist {
                     }
                 }
 
-                info!("processing shape type: `{:?}`, entity: `{:?}`", entry.shape.unwrap(), entity);
+                info!(
+                    "processing shape type: `{:?}`, entity: `{:?}`",
+                    entry.shape.unwrap(),
+                    entity
+                );
                 self.process_complete(server, git_manager, shape_manager, entity, entry);
             } else {
                 info!("entity `{:?}` is not ready yet...", possibly_ready_entity);
@@ -343,9 +390,7 @@ impl ShapeWaitlist {
                 shape_manager.on_create_skel_vertex(entity, edge_and_parent_opt);
                 (project_key, file_key, ShapeType::Vertex)
             }
-            ShapeData::SkelEdge(project_key, file_key) => {
-                (project_key, file_key, ShapeType::Edge)
-            }
+            ShapeData::SkelEdge(project_key, file_key) => (project_key, file_key, ShapeType::Edge),
             ShapeData::MeshVertex(project_key, file_key) => {
                 shape_manager.on_create_mesh_vertex(entity);
                 (project_key, file_key, ShapeType::Vertex)
@@ -354,8 +399,18 @@ impl ShapeWaitlist {
                 shape_manager.on_create_mesh_edge(start, entity, end);
                 (project_key, file_key, ShapeType::Vertex)
             }
-            ShapeData::MeshFace(project_key, file_key, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c) => {
-                shape_manager.on_create_face(entity, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c);
+            ShapeData::MeshFace(
+                project_key,
+                file_key,
+                vertex_a,
+                vertex_b,
+                vertex_c,
+                edge_a,
+                edge_b,
+                edge_c,
+            ) => {
+                shape_manager
+                    .on_create_face(entity, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c);
                 (project_key, file_key, ShapeType::Face)
             }
         };

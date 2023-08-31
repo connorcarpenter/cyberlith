@@ -16,12 +16,15 @@ use naia_bevy_client::{
 };
 
 use render_api::{
-    components::Transform,
     base::{CpuMaterial, CpuMesh},
+    components::Transform,
     Assets,
 };
 
-use vortex_proto::components::{ChangelistEntry, Edge3d, EntryKind, Face3d, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, Vertex3d, VertexRoot};
+use vortex_proto::components::{
+    ChangelistEntry, Edge3d, EntryKind, Face3d, FileSystemChild, FileSystemEntry,
+    FileSystemRootChild, FileType, OwnedByFile, Vertex3d, VertexRoot,
+};
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
@@ -368,7 +371,14 @@ pub fn insert_face_events(
             &mut shape_manager,
             &transform_q,
             &face_entity,
-            ShapeWaitlistInsert::Face(vertex_a_entity, vertex_b_entity, vertex_c_entity, edge_a_entity, edge_b_entity, edge_c_entity),
+            ShapeWaitlistInsert::Face(
+                vertex_a_entity,
+                vertex_b_entity,
+                vertex_c_entity,
+                edge_a_entity,
+                edge_b_entity,
+                edge_c_entity,
+            ),
         );
     }
 }
@@ -543,7 +553,7 @@ pub fn remove_component_events(
         for (face_entity_3d, _) in events.read::<Face3d>() {
             info!("entity: `{:?}`, removed Face3d", face_entity_3d);
 
-            shape_manager.cleanup_deleted_face_3d(&mut commands, &mut meshes,&face_entity_3d);
+            shape_manager.cleanup_deleted_face_3d(&mut commands, &mut meshes, &face_entity_3d);
         }
     }
 }

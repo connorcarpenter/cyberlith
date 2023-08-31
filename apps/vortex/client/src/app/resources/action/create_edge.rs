@@ -2,26 +2,36 @@ use bevy_ecs::{
     prelude::{Commands, Entity, Query, World},
     system::{Res, ResMut, SystemState},
 };
-use bevy_log::{info};
+use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt};
 
-use render_api::{base::{CpuMaterial, CpuMesh}, components::Transform, Assets};
+use render_api::{
+    base::{CpuMaterial, CpuMesh},
+    components::Transform,
+    Assets,
+};
 
 use vortex_proto::components::FileTypeValue;
 
-use crate::app::{
-    resources::{
-        action_stack::ActionStack,
-        action::Action,
-        shape_manager::FaceKey,
-        camera_manager::CameraManager,
-        shape_manager::{CanvasShape, ShapeManager},
-        tab_manager::TabManager,
-    },
+use crate::app::resources::{
+    action::Action,
+    action_stack::ActionStack,
+    camera_manager::CameraManager,
+    shape_manager::FaceKey,
+    shape_manager::{CanvasShape, ShapeManager},
+    tab_manager::TabManager,
 };
 
-pub(crate) fn execute(world: &mut World, action_stack: &mut ActionStack, vertex_2d_entity_a: Entity, vertex_2d_entity_b: Entity, shape_to_select: (Entity, CanvasShape), face_to_create_opt: Option<Vec<(Entity, Entity, bool)>>, old_edge_entities_opt: Option<Entity>) -> Vec<Action> {
+pub(crate) fn execute(
+    world: &mut World,
+    action_stack: &mut ActionStack,
+    vertex_2d_entity_a: Entity,
+    vertex_2d_entity_b: Entity,
+    shape_to_select: (Entity, CanvasShape),
+    face_to_create_opt: Option<Vec<(Entity, Entity, bool)>>,
+    old_edge_entities_opt: Option<Entity>,
+) -> Vec<Action> {
     let (mut shape_2d_entity_to_select, shape_2d_type_to_select) = shape_to_select;
 
     info!(
@@ -91,10 +101,7 @@ pub(crate) fn execute(world: &mut World, action_stack: &mut ActionStack, vertex_
 
         // migrate undo entities
         if let Some(old_edge_2d_entity) = old_edge_entities_opt {
-            action_stack.migrate_edge_entities(
-                old_edge_2d_entity,
-                new_edge_2d_entity,
-            );
+            action_stack.migrate_edge_entities(old_edge_2d_entity, new_edge_2d_entity);
             if shape_2d_type_to_select == CanvasShape::Edge {
                 if shape_2d_entity_to_select == old_edge_2d_entity {
                     shape_2d_entity_to_select = new_edge_2d_entity;
@@ -104,7 +111,9 @@ pub(crate) fn execute(world: &mut World, action_stack: &mut ActionStack, vertex_
 
         // select vertex
         shape_manager.select_shape(&shape_2d_entity_to_select, shape_2d_type_to_select);
-        selected_shape_3d = shape_manager.shape_entity_2d_to_3d(&shape_2d_entity_to_select, shape_2d_type_to_select).unwrap();
+        selected_shape_3d = shape_manager
+            .shape_entity_2d_to_3d(&shape_2d_entity_to_select, shape_2d_type_to_select)
+            .unwrap();
 
         system_state.apply(world);
     }
@@ -128,7 +137,6 @@ pub(crate) fn execute(world: &mut World, action_stack: &mut ActionStack, vertex_
     // create face if necessary
     {
         if let Some(vertex_2d_entities) = face_to_create_opt {
-
             let mut system_state: SystemState<(
                 Commands,
                 Client,
@@ -150,10 +158,18 @@ pub(crate) fn execute(world: &mut World, action_stack: &mut ActionStack, vertex_
                 transform_q,
             ) = system_state.get_mut(world);
 
-            for (vertex_2d_of_face_to_create, old_face_2d_entity, create_face_3d) in vertex_2d_entities {
-                let vertex_3d_a = shape_manager.vertex_entity_2d_to_3d(&vertex_2d_entity_a).unwrap();
-                let vertex_3d_b = shape_manager.vertex_entity_2d_to_3d(&vertex_2d_entity_b).unwrap();
-                let vertex_3d_c = shape_manager.vertex_entity_2d_to_3d(&vertex_2d_of_face_to_create).unwrap();
+            for (vertex_2d_of_face_to_create, old_face_2d_entity, create_face_3d) in
+                vertex_2d_entities
+            {
+                let vertex_3d_a = shape_manager
+                    .vertex_entity_2d_to_3d(&vertex_2d_entity_a)
+                    .unwrap();
+                let vertex_3d_b = shape_manager
+                    .vertex_entity_2d_to_3d(&vertex_2d_entity_b)
+                    .unwrap();
+                let vertex_3d_c = shape_manager
+                    .vertex_entity_2d_to_3d(&vertex_2d_of_face_to_create)
+                    .unwrap();
                 let face_key = FaceKey::new(vertex_3d_a, vertex_3d_b, vertex_3d_c);
                 let current_file_entity = tab_manager.current_tab_entity();
 
@@ -176,7 +192,11 @@ pub(crate) fn execute(world: &mut World, action_stack: &mut ActionStack, vertex_
                         &mut camera_manager,
                         &transform_q,
                         &face_key,
-                        [edge_3d_entities[0], edge_3d_entities[1], edge_3d_entities[2]],
+                        [
+                            edge_3d_entities[0],
+                            edge_3d_entities[1],
+                            edge_3d_entities[2],
+                        ],
                         current_file_entity,
                     );
                 }

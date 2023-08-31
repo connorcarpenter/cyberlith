@@ -280,11 +280,7 @@ impl Project {
 
             match action_status {
                 ChangelistStatus::Modified | ChangelistStatus::Created => {
-                    self.changelist_entry_finalize_content(
-                        world,
-                        &action_status,
-                        &file_entry_key,
-                    );
+                    self.changelist_entry_finalize_content(world, &action_status, &file_entry_key);
                 }
                 ChangelistStatus::Deleted => {}
             }

@@ -1,15 +1,22 @@
 use bevy_ecs::{
     prelude::{Commands, Entity, World},
     system::{ResMut, SystemState},
-    world::Mut
+    world::Mut,
 };
-use bevy_log::{info};
+use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt};
 
-use crate::app::resources::{shape_manager::{CanvasShape, ShapeManager}, action::Action, action_stack::ActionStack};
+use crate::app::resources::{
+    action::Action,
+    action_stack::ActionStack,
+    shape_manager::{CanvasShape, ShapeManager},
+};
 
-pub(crate) fn execute(world: &mut World, shape_2d_entity_opt: Option<(Entity, CanvasShape)>) -> Vec<Action> {
+pub(crate) fn execute(
+    world: &mut World,
+    shape_2d_entity_opt: Option<(Entity, CanvasShape)>,
+) -> Vec<Action> {
     info!("SelectShape({:?})", shape_2d_entity_opt);
 
     let mut system_state: SystemState<(Commands, Client, ResMut<ShapeManager>)> =
@@ -19,8 +26,7 @@ pub(crate) fn execute(world: &mut World, shape_2d_entity_opt: Option<(Entity, Ca
     // Deselect all selected shapes, select the new selected shapes
     let (deselected_entity, entity_to_release) =
         ActionStack::deselect_all_selected_shapes(&mut shape_manager);
-    let entity_to_request =
-        ActionStack::select_shape(&mut shape_manager, shape_2d_entity_opt);
+    let entity_to_request = ActionStack::select_shape(&mut shape_manager, shape_2d_entity_opt);
 
     if entity_to_request != entity_to_release {
         if let Some(entity) = entity_to_release {

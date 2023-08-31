@@ -6,7 +6,7 @@ use math::{Vec2, Vec3};
 
 use crate::{
     assets::Handle,
-    base::{Indices, Positions, Color, CpuMaterial, CpuMesh},
+    base::{Color, CpuMaterial, CpuMesh, Indices, Positions},
     components::Visibility,
     shapes,
     shapes::set_2d_line_transform,
@@ -154,7 +154,6 @@ impl RenderObjectBundle {
         positions: [Vec3; 3],
         color: Color,
     ) -> Self {
-
         let (mesh, center) = Self::world_triangle_mesh(positions);
 
         Self {

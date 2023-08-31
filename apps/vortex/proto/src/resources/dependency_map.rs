@@ -29,8 +29,7 @@ impl<K: Hash + Copy + Eq + PartialEq, V> DependencyMap<K, V> {
 
         for dependency_key in dependency_keys {
             if !self.dependency_map.contains_key(&dependency_key) {
-                self.dependency_map
-                    .insert(dependency_key, HashSet::new());
+                self.dependency_map.insert(dependency_key, HashSet::new());
             }
             let dependents = self.dependency_map.get_mut(&dependency_key).unwrap();
             dependents.insert(dependent_key);

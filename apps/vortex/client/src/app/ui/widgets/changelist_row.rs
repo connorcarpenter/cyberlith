@@ -19,7 +19,7 @@ use vortex_proto::{
 
 use crate::app::{
     components::file_system::ChangelistUiState,
-    resources::{action_stack::ActionStack, action::Action},
+    resources::{action::Action, action_stack::ActionStack},
     ui::widgets::colors::{
         FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
         TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED,
