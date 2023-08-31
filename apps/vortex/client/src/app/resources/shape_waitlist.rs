@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use bevy_ecs::{
     entity::Entity,
@@ -13,6 +13,7 @@ use render_api::{
     Assets,components::Transform
 };
 use vortex_proto::components::FileTypeValue;
+use vortex_proto::resources::DependencyMap;
 
 use crate::app::{
     components::{OwnedByFileLocal, Vertex2d},
@@ -152,18 +153,14 @@ impl ShapeWaitlistEntry {
 pub struct ShapeWaitlist {
     // incomplete entity -> entry
     incomplete_entries: HashMap<Entity, ShapeWaitlistEntry>,
-    // waiting entity -> (entity dependencies, entry)
-    dependent_map: HashMap<Entity, (HashSet<Entity>, ShapeWaitlistEntry)>,
-    // entity dependency -> entities waiting on it
-    dependency_map: HashMap<Entity, HashSet<Entity>>,
+    dependency_map: DependencyMap<Entity, ShapeWaitlistEntry>,
 }
 
 impl Default for ShapeWaitlist {
     fn default() -> Self {
         Self {
             incomplete_entries: HashMap::new(),
-            dependent_map: HashMap::new(),
-            dependency_map: HashMap::new(),
+            dependency_map: DependencyMap::new(),
         }
     }
 }
@@ -258,15 +255,15 @@ impl ShapeWaitlist {
                                 "vert entity {:?} requires parent {:?}. putting in parent waitlist",
                                 entity, parent_entity
                             );
-                            self.insert_waiting_dependency(parent_entity, entity, entry);
+                            self.dependency_map.insert_waiting_dependencies(vec![parent_entity], entity, entry);
                             continue;
                         }
                     }
                 }
                 (ShapeType::Edge, _) => {
                     let entities = entry.edge_entities.unwrap();
-                    let mut has_all_entities = true;
 
+                    let mut dependencies = Vec::new();
                     for vertex_3d_entity in [&entities.0, &entities.1] {
                         if !shape_manager.has_vertex_entity_3d(vertex_3d_entity) {
                             // need to put in parent waitlist
@@ -274,33 +271,46 @@ impl ShapeWaitlist {
                                 "edge entity {:?} requires parent {:?}. putting in parent waitlist",
                                 entity, vertex_3d_entity
                             );
-                            self.insert_waiting_dependency(*vertex_3d_entity, entity, entry.clone());
-                            has_all_entities = false;
+                            dependencies.push(*vertex_3d_entity);
                         }
                     }
 
-                    if !has_all_entities {
+                    if !dependencies.is_empty() {
+                        self.dependency_map.insert_waiting_dependencies(dependencies, entity, entry);
+
                         continue;
                     }
                 }
                 (ShapeType::Vertex, FileTypeValue::Mesh) => {}
                 (ShapeType::Face, _) => {
                     let entities = entry.face_entities.unwrap();
-                    let mut has_all_entities = true;
+
+                    let mut dependencies = Vec::new();
 
                     for vertex_3d_entity in [&entities.0, &entities.1, &entities.2] {
                         if !shape_manager.has_vertex_entity_3d(vertex_3d_entity) {
                             // need to put in parent waitlist
                             info!(
-                                "face entity {:?} requires parent {:?}. putting in parent waitlist",
+                                "face entity {:?} requires parent vertex {:?}. putting in parent waitlist",
                                 entity, vertex_3d_entity
                             );
-                            self.insert_waiting_dependency(*vertex_3d_entity, entity, entry.clone());
-                            has_all_entities = false;
+                            dependencies.push(*vertex_3d_entity);
                         }
                     }
 
-                    if !has_all_entities {
+                    for edge_3d_entity in [&entities.3, &entities.4, &entities.5] {
+                        if !shape_manager.has_edge_entity_3d(edge_3d_entity) {
+                            // need to put in parent waitlist
+                            info!(
+                                "face entity {:?} requires parent edge {:?}. putting in parent waitlist",
+                                entity, edge_3d_entity
+                            );
+                            dependencies.push(*edge_3d_entity);
+                        }
+                    }
+
+                    if !dependencies.is_empty() {
+                        self.dependency_map.insert_waiting_dependencies(dependencies, entity, entry);
                         continue;
                     }
                 }
@@ -329,8 +339,6 @@ impl ShapeWaitlist {
         entity: Entity,
         entry: ShapeWaitlistEntry,
     ) {
-        // info!("processing complete vertex {:?}", entity);
-
         let (shape_data, file_entity, file_type) = entry.decompose();
 
         match (shape_data, file_type) {
@@ -340,7 +348,7 @@ impl ShapeWaitlist {
                     None => Vertex2d::ROOT_COLOR,
                 };
 
-                let _new_vertex_2d_entity = shape_manager.vertex_3d_postprocess(
+                shape_manager.vertex_3d_postprocess(
                     commands,
                     meshes,
                     materials,
@@ -350,35 +358,11 @@ impl ShapeWaitlist {
                     Some(file_entity),
                     color,
                 );
-
-                // if the waitlist has any children entities of this one, process them
-                info!(
-                    "processing complete shape {:?}. checking for children",
-                    entity
-                );
-                if let Some(child_entries) = self.on_vertex_complete(entity) {
-                    for (child_entity, child_entry) in child_entries {
-                        info!(
-                            "entity {:?} was waiting on parent {:?}. processing!",
-                            child_entity, entity
-                        );
-                        self.process_complete(
-                            commands,
-                            meshes,
-                            materials,
-                            camera_manager,
-                            shape_manager,
-                            transform_q,
-                            child_entity,
-                            child_entry,
-                        );
-                    }
-                }
             }
             (ShapeData::Vertex(_), FileTypeValue::Mesh) => {
                 let color = Vertex2d::CHILD_COLOR;
 
-                let _new_vertex_2d_entity = shape_manager.vertex_3d_postprocess(
+                shape_manager.vertex_3d_postprocess(
                     commands,
                     meshes,
                     materials,
@@ -388,16 +372,12 @@ impl ShapeWaitlist {
                     Some(file_entity),
                     color,
                 );
-
-                if self.on_vertex_complete(entity).is_some() {
-                    panic!("mesh vertex should not have children!");
-                }
             }
             (ShapeData::Edge(start_3d, end_3d), _) => {
                 let start_2d = shape_manager.vertex_entity_3d_to_2d(&start_3d).unwrap();
                 let end_2d = shape_manager.vertex_entity_3d_to_2d(&end_3d).unwrap();
 
-                let _new_edge_2d_entity = shape_manager.edge_3d_postprocess(
+                shape_manager.edge_3d_postprocess(
                     commands,
                     meshes,
                     materials,
@@ -440,6 +420,30 @@ impl ShapeWaitlist {
             }
         }
 
+        // if the waitlist has any children entities of this one, process them
+        info!(
+            "processing complete shape {:?}. checking for children",
+            entity
+        );
+        if let Some(child_entries) = self.dependency_map.on_dependency_complete(entity) {
+            for (child_entity, child_entry) in child_entries {
+                info!(
+                    "entity {:?} was waiting on parent {:?}. processing!",
+                    child_entity, entity
+                );
+                self.process_complete(
+                    commands,
+                    meshes,
+                    materials,
+                    camera_manager,
+                    shape_manager,
+                    transform_q,
+                    child_entity,
+                    child_entry,
+                );
+            }
+        }
+
         camera_manager.recalculate_3d_view();
         shape_manager.recalculate_shapes();
     }
@@ -458,43 +462,5 @@ impl ShapeWaitlist {
 
     fn remove(&mut self, entity: &Entity) -> Option<ShapeWaitlistEntry> {
         self.incomplete_entries.remove(entity)
-    }
-
-    fn insert_waiting_dependency(
-        &mut self,
-        dependency_entity: Entity,
-        dependent_entity: Entity,
-        dependent_entry: ShapeWaitlistEntry,
-    ) {
-        if !self.dependency_map.contains_key(&dependency_entity) {
-            self.dependency_map
-                .insert(dependency_entity, HashSet::new());
-        }
-        let dependents = self.dependency_map.get_mut(&dependency_entity).unwrap();
-        dependents.insert(dependent_entity);
-
-        if !self.dependent_map.contains_key(&dependent_entity) {
-            self.dependent_map
-                .insert(dependent_entity, (HashSet::new(), dependent_entry));
-        }
-        let (dependencies, _) = self.dependent_map.get_mut(&dependent_entity).unwrap();
-        dependencies.insert(dependency_entity);
-    }
-
-    fn on_vertex_complete(&mut self, entity: Entity) -> Option<Vec<(Entity, ShapeWaitlistEntry)>> {
-        if let Some(dependents) = self.dependency_map.remove(&entity) {
-            let mut result = Vec::new();
-            for dependent in dependents {
-                let (dependencies, _) = self.dependent_map.get_mut(&dependent).unwrap();
-                dependencies.remove(&entity);
-                if dependencies.is_empty() {
-                    let (_, entry) = self.dependent_map.remove(&dependent).unwrap();
-                    result.push((dependent, entry));
-                }
-            }
-            Some(result)
-        } else {
-            None
-        }
     }
 }
