@@ -44,24 +44,8 @@ impl UserSessionData {
         self.project_key = Some(project_key);
     }
 
-    pub(crate) fn tab_state(&self) -> &UserTabState {
-        &self.tab_state
-    }
-
     pub(crate) fn tab_state_mut(&mut self) -> &mut UserTabState {
         &mut self.tab_state
-    }
-
-    pub(crate) fn current_tab(&self) -> Option<TabId> {
-        self.tab_state.current_tab()
-    }
-
-    pub(crate) fn current_tab_file_key(&self) -> Option<FileEntryKey> {
-        if let Some(current_tab) = self.tab_state.current_tab() {
-            self.tab_state.tab_file_key(&current_tab)
-        } else {
-            None
-        }
     }
 
     pub(crate) fn open_tab(&mut self, tab_id: TabId, file_key: FileEntryKey) {

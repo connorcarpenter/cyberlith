@@ -84,11 +84,6 @@ impl Project {
         self.filespaces.get(file_key).map(|fs| fs.room_key())
     }
 
-    pub(crate) fn filespace_has_entity(&self, file_key: &FileEntryKey, entity: &Entity) -> bool {
-        let filespace = self.filespaces.get(file_key).unwrap();
-        filespace.has_entity(entity)
-    }
-
     pub(crate) fn on_insert_content_entity(
         &mut self,
         file_key: &FileEntryKey,
@@ -266,7 +261,6 @@ impl Project {
     pub fn commit_changelist_entry(
         &mut self,
         world: &mut World,
-        user_key: &UserKey,
         username: &str,
         email: &str,
         message: ChangelistMessage,
@@ -288,7 +282,6 @@ impl Project {
                 ChangelistStatus::Modified | ChangelistStatus::Created => {
                     self.changelist_entry_finalize_content(
                         world,
-                        user_key,
                         &action_status,
                         &file_entry_key,
                     );
@@ -867,7 +860,6 @@ impl Project {
     fn changelist_entry_finalize_content(
         &mut self,
         world: &mut World,
-        user_key: &UserKey,
         status: &ChangelistStatus,
         file_entry_key: &FileEntryKey,
     ) {

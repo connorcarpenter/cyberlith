@@ -21,7 +21,6 @@ pub struct TabManager {
     queued_opens: VecDeque<(UserKey, TabId, Entity)>,
     queued_selects: VecDeque<(UserKey, TabId)>,
     waiting_opens: HashMap<(UserKey, Entity), TabId>,
-    waiting_selects: HashMap<UserKey, TabId>,
 }
 
 impl Default for TabManager {
@@ -31,7 +30,6 @@ impl Default for TabManager {
             queued_opens: VecDeque::new(),
             queued_selects: VecDeque::new(),
             waiting_opens: HashMap::new(),
-            waiting_selects: HashMap::new(),
         }
     }
 }

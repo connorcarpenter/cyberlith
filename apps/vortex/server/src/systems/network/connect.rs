@@ -28,7 +28,7 @@ pub fn connect_events(
 
         let project_key = if !git_manager.has_project_key(project_owner_name) {
             // GitManager initializes new user's working directory
-            git_manager.create_project(&mut commands, &mut server, user_key, project_owner_name)
+            git_manager.create_project(&mut commands, &mut server, project_owner_name)
         } else {
             // not the first Client logged in as this user
             git_manager

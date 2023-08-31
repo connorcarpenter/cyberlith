@@ -49,10 +49,6 @@ impl FileSpace {
         &self.content_entities
     }
 
-    pub(crate) fn has_entity(&self, entity: &Entity) -> bool {
-        self.content_entities.contains_key(entity)
-    }
-
     pub(crate) fn user_leave(&mut self) {
         self.user_count -= 1;
     }

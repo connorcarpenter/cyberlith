@@ -141,7 +141,7 @@ fn post_process_loaded_networked_entities(
     file_entity: &Entity,
     file_extension: &FileExtension,
 ) {
-    for (entity, data) in entities.iter() {
+    for (entity, _data) in entities.iter() {
         // associate all new Entities with the new Room
         server.room_mut(room_key).add_entity(entity);
 

@@ -124,7 +124,7 @@ impl FileWriter for SkelWriter {
         content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]> {
         let content_entities_vec: Vec<Entity> =
-            content_entities.iter().map(|(e, data)| *e).collect();
+            content_entities.iter().map(|(entity, _data)| *entity).collect();
         let actions = self.world_to_actions(world, &content_entities_vec);
         self.write_from_actions(actions)
     }
@@ -238,7 +238,7 @@ impl SkelReader {
 
             new_content_entities.insert(vertex_entity, ContentEntityData::new(ShapeType::Vertex));
 
-            if let Some((edge_entity, parent_entity)) = edge_opt {
+            if let Some((edge_entity, _parent_entity)) = edge_opt {
                 new_content_entities.insert(edge_entity, ContentEntityData::new(ShapeType::Edge));
             }
         }

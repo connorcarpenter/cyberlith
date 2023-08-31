@@ -1,8 +1,9 @@
 use bevy_ecs::{
     event::EventReader,
-    system::{Commands, Query, Res, ResMut},
+    system::{Commands, Query, ResMut},
 };
 use bevy_log::info;
+
 use naia_bevy_server::{events::MessageEvents, Server};
 
 use vortex_proto::{
@@ -12,7 +13,7 @@ use vortex_proto::{
 };
 
 use crate::resources::{
-    ChangelistManager, GitManager, ShapeManager, ShapeWaitlist, TabManager, UserManager,
+    ChangelistManager, GitManager, ShapeManager, TabManager, UserManager,
 };
 
 pub fn message_events(
@@ -23,7 +24,6 @@ pub fn message_events(
     mut git_manager: ResMut<GitManager>,
     mut tab_manager: ResMut<TabManager>,
     mut cl_manager: ResMut<ChangelistManager>,
-    mut vertex_waitlist: ResMut<ShapeWaitlist>,
     mut shape_manager: ResMut<ShapeManager>,
     key_query: Query<&FileEntryKey>,
 ) {

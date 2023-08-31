@@ -234,7 +234,7 @@ impl ShapeWaitlist {
                 if !self.contains_key(&face_entity) {
                     self.insert_incomplete(face_entity, ShapeWaitlistEntry::new());
                 }
-                let mut entry = self.get_mut(&face_entity).unwrap();
+                let entry = self.get_mut(&face_entity).unwrap();
                 entry.set_shape_type(ShapeType::Face);
                 entry.set_file_type(FileTypeValue::Mesh);
                 entry.set_face_entities(vertex_a, vertex_b, vertex_c);

@@ -173,16 +173,6 @@ impl GitManager {
         project.on_remove_content_entity(&file_key, entity);
     }
 
-    pub(crate) fn filespace_has_entity(
-        &self,
-        project_key: &ProjectKey,
-        file_key: &FileEntryKey,
-        entity: &Entity,
-    ) -> bool {
-        let project = self.projects.get(project_key).unwrap();
-        project.filespace_has_entity(file_key, entity)
-    }
-
     pub(crate) fn user_join_filespace(
         &mut self,
         commands: &mut Commands,
@@ -209,7 +199,6 @@ impl GitManager {
         &mut self,
         commands: &mut Commands,
         server: &mut Server,
-        owner_user_key: &UserKey,
         owner_name: &str,
     ) -> ProjectKey {
         // Create User's Working directory if it doesn't already exist
@@ -330,7 +319,7 @@ impl GitManager {
             panic!("Could not find project for user: `{}`", username);
         };
 
-        project.commit_changelist_entry(world, &user_key, &username, &email, message);
+        project.commit_changelist_entry(world, &username, &email, message);
     }
 
     pub fn rollback_changelist_entry(

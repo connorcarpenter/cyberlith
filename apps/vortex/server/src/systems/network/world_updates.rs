@@ -192,6 +192,18 @@ pub fn insert_component_events(
             );
         }
 
+        // on VertexRoot Insert Event
+        for (_, entity) in events.read::<VertexRoot>() {
+            info!("entity: `{:?}`, inserted VertexRoot", entity);
+
+            shape_waitlist.process_insert(
+                &mut server,
+                &mut git_manager,
+                &mut shape_manager,
+                ShapeWaitlistInsert::VertexRoot(entity),
+            );
+        }
+
         // on Edge3d Insert Event
         for (_, edge_entity) in events.read::<Edge3d>() {
             info!("entity: `{:?}`, inserted Edge3d", edge_entity);
@@ -213,7 +225,7 @@ pub fn insert_component_events(
 
         // on Face3d Insert Event
         for (_, face_entity) in events.read::<Face3d>() {
-            let face_3d = face_3d_q.get(face_entity).unwrap();;
+            let face_3d = face_3d_q.get(face_entity).unwrap();
 
             let vertex_a = face_3d.vertex_a.get(&server).unwrap();
             let vertex_b = face_3d.vertex_b.get(&server).unwrap();

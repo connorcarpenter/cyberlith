@@ -17,9 +17,6 @@ impl Default for UserTabState {
 }
 
 impl UserTabState {
-    pub fn has_tabs(&self) -> bool {
-        !self.tabs.is_empty()
-    }
 
     pub fn remove_tab(&mut self, tab_id: &TabId) -> Option<FileEntryKey> {
         if let Some(file_key) = self.tabs.remove(tab_id) {
@@ -43,13 +40,5 @@ impl UserTabState {
 
     pub fn current_tab(&self) -> Option<TabId> {
         self.current_tab
-    }
-
-    pub fn tab_file_key(&self, tab_id: &TabId) -> Option<FileEntryKey> {
-        if let Some(file_key) = self.tabs.get(tab_id) {
-            Some(file_key.clone())
-        } else {
-            None
-        }
     }
 }

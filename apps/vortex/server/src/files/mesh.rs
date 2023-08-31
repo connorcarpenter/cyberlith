@@ -170,7 +170,7 @@ impl FileWriter for MeshWriter {
         world: &mut World,
         content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]> {
-        let content_entities_vec: Vec<Entity> = content_entities.iter().map(|(e, d)| *e).collect();
+        let content_entities_vec: Vec<Entity> = content_entities.iter().map(|(entity, _data)| *entity).collect();
         let actions = self.world_to_actions(world, &content_entities_vec);
         self.write_from_actions(actions)
     }
