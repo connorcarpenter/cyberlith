@@ -261,12 +261,14 @@ impl ShapeManager {
                 }
                 InputAction::SwitchTo3dMode => {
                     // disable 2d camera, enable 3d camera
-                    camera_manager.set_3d_mode(camera_state, camera_q);
+                    camera_state.set_3d_mode();
+                    camera_manager.recalculate_3d_view();
                     self.recalculate_shapes();
                 }
                 InputAction::SwitchTo2dMode => {
                     // disable 3d camera, enable 2d camera
-                    camera_manager.set_2d_mode(camera_state, camera_q);
+                    camera_state.set_2d_mode();
+                    camera_manager.recalculate_3d_view();
                     self.recalculate_shapes();
                 }
                 InputAction::SetCameraAngleFixed(camera_angle) => match camera_angle {

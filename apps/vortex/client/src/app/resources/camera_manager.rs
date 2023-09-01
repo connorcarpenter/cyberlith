@@ -52,7 +52,7 @@ impl CameraManager {
     pub fn update_3d_camera(
         &mut self,
         camera_state: &CameraState,
-        camera_q: &mut Query<(&mut Camera, &mut Transform)>,
+        camera_q: &mut Query<(&mut Camera, &mut Projection, &mut Transform)>,
     ) -> bool {
         if !self.camera_3d_recalc {
             return false;
@@ -66,7 +66,9 @@ impl CameraManager {
         let camera_3d_scale = camera_state.camera_3d_scale();
         let camera_3d_offset = camera_state.camera_3d_offset();
 
-        let Ok((_, mut camera_transform)) = camera_q.get_mut(camera_3d) else {
+        self.enable_cameras(camera_q, camera_state.is_2d());
+
+        let Ok((_, _, mut camera_transform)) = camera_q.get_mut(camera_3d) else {
             return false;
         };
 
@@ -89,32 +91,6 @@ impl CameraManager {
         camera_transform.translation += up * rounded_offset.y;
 
         return true;
-    }
-
-    pub fn set_2d_mode(
-        &mut self,
-        camera_state: &mut CameraState,
-        camera_query: &mut Query<(&mut Camera, &mut Projection)>,
-    ) {
-        if camera_state.is_2d() {
-            return;
-        }
-        info!("Switched to Wireframe mode");
-        camera_state.set_is_2d(true);
-        self.enable_cameras(camera_query, true);
-    }
-
-    pub fn set_3d_mode(
-        &mut self,
-        camera_state: &mut CameraState,
-        camera_query: &mut Query<(&mut Camera, &mut Projection)>,
-    ) {
-        if !camera_state.is_2d() {
-            return;
-        }
-        info!("Switched to Solid mode");
-        camera_state.set_is_2d(false);
-        self.enable_cameras(camera_query, false);
     }
 
     pub fn set_camera_angle_ingame(&mut self, camera_state: &mut CameraState, game_index: u8) {
@@ -227,18 +203,18 @@ impl CameraManager {
 
     fn enable_cameras(
         &self,
-        camera_query: &mut Query<(&mut Camera, &mut Projection)>,
+        camera_q: &mut Query<(&mut Camera, &mut Projection, &mut Transform)>,
         enable_2d: bool,
     ) {
         let enable_3d = !enable_2d;
 
         if let Some(camera_2d) = self.camera_2d {
-            if let Ok((mut camera, _)) = camera_query.get_mut(camera_2d) {
+            if let Ok((mut camera, _, _)) = camera_q.get_mut(camera_2d) {
                 camera.is_active = enable_2d;
             };
         }
         if let Some(camera_3d) = self.camera_3d {
-            if let Ok((mut camera, _)) = camera_query.get_mut(camera_3d) {
+            if let Ok((mut camera, _, _)) = camera_q.get_mut(camera_3d) {
                 camera.is_active = enable_3d;
             };
         }
@@ -298,7 +274,7 @@ impl CameraManager {
             Projection::Orthographic(OrthographicProjection::new(texture_size.y, 0.0, 1000.0));
     }
 
-    pub fn update_visibility(visible: bool, camera_q: &mut Query<(&mut Camera, &mut Transform)>) {
+    pub fn update_visibility(visible: bool, camera_q: &mut Query<(&mut Camera, &mut Projection, &mut Transform)>,) {
         let cameras_enabled = visible;
 
         if cameras_enabled {
@@ -307,7 +283,7 @@ impl CameraManager {
             info!("Camera are DISABLED");
         }
 
-        for (mut camera, _) in camera_q.iter_mut() {
+        for (mut camera, _, _) in camera_q.iter_mut() {
             camera.is_active = cameras_enabled;
         }
     }

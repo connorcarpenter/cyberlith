@@ -1,3 +1,4 @@
+use bevy_log::info;
 use math::Vec2;
 
 #[derive(Clone, Copy)]
@@ -24,7 +25,7 @@ impl CameraState {
         self.is_2d
     }
 
-    pub fn set_is_2d(&mut self, is_2d: bool) {
+    fn set_is_2d(&mut self, is_2d: bool) {
         self.is_2d = is_2d;
     }
 
@@ -50,5 +51,25 @@ impl CameraState {
 
     pub fn set_camera_3d_scale(&mut self, scale: f32) {
         self.camera_3d_scale = scale;
+    }
+
+    pub fn set_2d_mode(
+        &mut self,
+    ) {
+        if self.is_2d() {
+            return;
+        }
+        info!("Switched to Wireframe mode");
+        self.set_is_2d(true);
+    }
+
+    pub fn set_3d_mode(
+        &mut self,
+    ) {
+        if !self.is_2d() {
+            return;
+        }
+        info!("Switched to Solid mode");
+        self.set_is_2d(false);
     }
 }
