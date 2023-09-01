@@ -23,10 +23,12 @@ use vortex_proto::{
     resources::FileEntryKey,
 };
 
-use crate::resources::{
+use crate::{
     files::ShapeType,
-    file_waitlist::{fs_process_insert, FSWaitlist, FSWaitlistInsert},
-    GitManager, ShapeManager, ShapeWaitlist, ShapeWaitlistInsert, TabManager, UserManager,
+    resources::{
+        file_waitlist::{fs_process_insert, FSWaitlist, FSWaitlistInsert},
+        GitManager, ShapeManager, ShapeWaitlist, ShapeWaitlistInsert, TabManager, UserManager,
+    },
 };
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {

@@ -5,8 +5,10 @@ use bevy_log::info;
 
 use naia_bevy_server::Server;
 
-
-use vortex_proto::{components::FileTypeValue, resources::{FileEntryKey, DependencyMap}};
+use vortex_proto::{
+    components::FileTypeValue,
+    resources::{DependencyMap, FileEntryKey},
+};
 
 use crate::{
     files::ShapeType,

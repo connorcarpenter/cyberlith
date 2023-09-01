@@ -17,7 +17,10 @@ use vortex_proto::components::{
 };
 
 use crate::{
-    files::{SkelFileWaitlist, SkelWaitlistInsert, file_io::ShapeType, FileReadOutput, FileReader, FileWriter},
+    files::{
+        file_io::ShapeType, FileReadOutput, FileReader, FileWriter, SkelFileWaitlist,
+        SkelWaitlistInsert,
+    },
     resources::{ContentEntityData, ShapeManager},
 };
 
