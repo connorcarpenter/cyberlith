@@ -1830,13 +1830,22 @@ impl ShapeManager {
                             return;
                         }
 
-                        action_stack.buffer_action(Action::CreateEdge(
-                            vertex_2d_entity_a,
-                            vertex_2d_entity_b,
-                            (vertex_2d_entity_b, CanvasShape::Vertex),
-                            None,
-                            None,
-                        ));
+                        // check if edge already exists
+                        if self.edge_2d_entity_from_vertices(vertex_2d_entity_a, vertex_2d_entity_b).is_some() {
+                            // select edge
+                            action_stack.buffer_action(Action::SelectShape(Some((vertex_2d_entity_b, CanvasShape::Vertex))));
+                            return;
+                        } else {
+                            // create edge
+                            action_stack.buffer_action(Action::CreateEdge(
+                                vertex_2d_entity_a,
+                                vertex_2d_entity_b,
+                                (vertex_2d_entity_b, CanvasShape::Vertex),
+                                None,
+                                None,
+                            ));
+                            return;
+                        }
                     } else {
                         // create new vertex
 
@@ -2371,5 +2380,18 @@ impl ShapeManager {
             }
         }
         return false;
+    }
+    fn edge_2d_entity_from_vertices(&self, vertex_2d_a: Entity, vertex_2d_b: Entity) -> Option<Entity> {
+        let vertex_3d_a = self.vertex_entity_2d_to_3d(&vertex_2d_a)?;
+        let vertex_3d_b = self.vertex_entity_2d_to_3d(&vertex_2d_b)?;
+        let vertex_a_data = self.vertices_3d.get(&vertex_3d_a)?;
+        let vertex_b_data = self.vertices_3d.get(&vertex_3d_b)?;
+        let intersecting_edge_3d_entity = vertex_a_data
+            .edges_3d
+            .intersection(&vertex_b_data.edges_3d)
+            .next()?;
+        let edge_2d_entity = self.edge_entity_3d_to_2d(&intersecting_edge_3d_entity)?;
+        Some(edge_2d_entity)
+
     }
 }
