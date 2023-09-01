@@ -22,7 +22,7 @@ use crate::app::{
 };
 
 pub fn sync_vertices(
-    tab_manager: Res<TabManager>,
+    tab_manager: ResMut<TabManager>,
     canvas: Res<Canvas>,
     camera_manager: Res<CameraManager>,
     mut shape_manager: ResMut<ShapeManager>,
@@ -41,9 +41,16 @@ pub fn sync_vertices(
     if !canvas.is_visible() {
         return;
     }
+    let Some(current_tab_camera_state) = tab_manager.current_tab_camera_state() else {
+        return;
+    };
+
+    let current_tab_entity = tab_manager.current_tab_entity();
+
     shape_manager.sync_shapes(
         &camera_manager,
-        tab_manager.current_tab_entity(),
+        current_tab_camera_state,
+        current_tab_entity,
         &camera_q,
         &compass_q,
         &mut transform_q,
@@ -67,7 +74,7 @@ pub fn process_faces(
 
 pub fn update_select_line(
     canvas: Res<Canvas>,
-    camera_manager: Res<CameraManager>,
+    tab_manager: ResMut<TabManager>,
     input: Res<Input>,
     mut shape_manager: ResMut<ShapeManager>,
     mut transform_q: Query<&mut Transform>,
@@ -76,10 +83,13 @@ pub fn update_select_line(
     if !canvas.is_visible() {
         return;
     }
+    let Some(current_tab_camera_state) = tab_manager.current_tab_camera_state() else {
+        return;
+    };
 
     shape_manager.update_select_line(
         input.mouse_position(),
-        &camera_manager,
+        current_tab_camera_state,
         &mut transform_q,
         &mut visibility_q,
     );

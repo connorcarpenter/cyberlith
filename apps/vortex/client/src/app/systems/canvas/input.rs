@@ -23,6 +23,7 @@ pub fn input(
     mut camera_manager: ResMut<CameraManager>,
     canvas: Res<Canvas>,
     mut shape_manager: ResMut<ShapeManager>,
+    mut tab_manager: ResMut<TabManager>,
     mut input_manager: ResMut<InputManager>,
     mut input: ResMut<Input>,
     mut action_stack: ResMut<ActionStack>,
@@ -33,6 +34,9 @@ pub fn input(
     if !canvas.is_visible() {
         return;
     }
+    let Some(current_tab_camera_state) = tab_manager.current_tab_camera_state_mut() else {
+        return;
+    };
     let input_actions = input_manager.update_input(&mut input);
     if !input_actions.is_empty() {
         shape_manager.update_input(
@@ -40,6 +44,7 @@ pub fn input(
             &mut commands,
             &mut client,
             &mut camera_manager,
+            current_tab_camera_state,
             &mut action_stack,
             &mut transform_q,
             &mut camera_q,
@@ -51,13 +56,10 @@ pub fn input(
 pub fn update_mouse_hover(
     canvas: Res<Canvas>,
     input: Res<Input>,
-    tab_manager: Res<TabManager>,
-    camera_manager: Res<CameraManager>,
+    tab_manager: ResMut<TabManager>,
     mut shape_manager: ResMut<ShapeManager>,
-
     mut transform_q: Query<(&mut Transform, Option<&Compass>)>,
     owned_by_tab_q: Query<&OwnedByFileLocal>,
-
     vertex_2d_q: Query<(Entity, Option<&VertexRoot>), (With<Vertex2d>, Without<Compass>)>,
     edge_2d_q: Query<(Entity, &Edge2dLocal), Without<Compass>>,
     face_2d_q: Query<(Entity, &FaceIcon2d)>,
@@ -65,10 +67,17 @@ pub fn update_mouse_hover(
     if !canvas.is_visible() {
         return;
     }
+
+    let Some(current_tab_camera_state) = tab_manager.current_tab_camera_state() else {
+        return;
+    };
+
+    let current_tab_entity = tab_manager.current_tab_entity();
+
     shape_manager.update_mouse_hover(
-        tab_manager.current_tab_entity(),
+        current_tab_entity,
         input.mouse_position(),
-        &camera_manager,
+        current_tab_camera_state,
         &mut transform_q,
         &owned_by_tab_q,
         &vertex_2d_q,

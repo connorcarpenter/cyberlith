@@ -9,6 +9,8 @@ use render_api::components::{
     Camera, OrthographicProjection, Projection, RenderLayer, Transform, Viewport,
 };
 
+use crate::app::resources::camera_state::CameraState;
+
 #[derive(Clone, Copy)]
 pub enum CameraAngle {
     Side,
@@ -19,29 +21,21 @@ pub enum CameraAngle {
 
 #[derive(Resource)]
 pub struct CameraManager {
-    is_2d: bool,
     pub camera_2d: Option<Entity>,
     pub layer_2d: RenderLayer,
     pub camera_3d: Option<Entity>,
     pub layer_3d: RenderLayer,
     camera_3d_recalc: bool,
-    camera_3d_offset: Vec2,
-    camera_3d_rotation: Vec2,
-    camera_3d_scale: f32,
 }
 
 impl Default for CameraManager {
     fn default() -> Self {
         Self {
-            is_2d: true,
             camera_2d: None,
             layer_2d: RenderLayer::default(),
             camera_3d: None,
             layer_3d: RenderLayer::default(),
             camera_3d_recalc: false,
-            camera_3d_rotation: Vec2::ZERO,
-            camera_3d_scale: 2.5,
-            camera_3d_offset: Vec2::new(0.0, 100.0),
         }
     }
 }
@@ -51,20 +45,13 @@ impl CameraManager {
         self.camera_3d
     }
 
-    pub fn camera_3d_scale(&self) -> f32 {
-        self.camera_3d_scale
-    }
-
-    pub fn camera_3d_offset(&self) -> Vec2 {
-        self.camera_3d_offset
-    }
-
     pub fn recalculate_3d_view(&mut self) {
         self.camera_3d_recalc = true;
     }
 
     pub fn update_3d_camera(
         &mut self,
+        camera_state: &CameraState,
         camera_q: &mut Query<(&mut Camera, &mut Transform)>,
     ) -> bool {
         if !self.camera_3d_recalc {
@@ -75,6 +62,10 @@ impl CameraManager {
             return false;
         };
 
+        let camera_3d_rotation = camera_state.camera_3d_rotation();
+        let camera_3d_scale = camera_state.camera_3d_scale();
+        let camera_3d_offset = camera_state.camera_3d_offset();
+
         let Ok((_, mut camera_transform)) = camera_q.get_mut(camera_3d) else {
             return false;
         };
@@ -83,42 +74,50 @@ impl CameraManager {
 
         camera_transform.rotation = Quat::from_euler(
             EulerRot::YXZ,
-            f32::to_radians(self.camera_3d_rotation.x),
-            f32::to_radians(self.camera_3d_rotation.y),
+            f32::to_radians(camera_3d_rotation.x),
+            f32::to_radians(camera_3d_rotation.y),
             0.0,
         );
-        camera_transform.scale = Vec3::splat(1.0 / self.camera_3d_scale);
+        camera_transform.scale = Vec3::splat(1.0 / camera_3d_scale);
 
         let right = camera_transform.right_direction();
         let up = right.cross(camera_transform.view_direction());
 
         camera_transform.translation = camera_transform.view_direction() * -100.0; // 100 units away from where looking
-        let rounded_offset = self.camera_3d_offset.round();
+        let rounded_offset = camera_3d_offset.round();
         camera_transform.translation += right * rounded_offset.x;
         camera_transform.translation += up * rounded_offset.y;
 
         return true;
     }
 
-    pub fn set_2d_mode(&mut self, camera_query: &mut Query<(&mut Camera, &mut Projection)>) {
-        if self.is_2d {
+    pub fn set_2d_mode(
+        &mut self,
+        camera_state: &mut CameraState,
+        camera_query: &mut Query<(&mut Camera, &mut Projection)>,
+    ) {
+        if camera_state.is_2d() {
             return;
         }
         info!("Switched to Wireframe mode");
-        self.is_2d = true;
+        camera_state.set_is_2d(true);
         self.enable_cameras(camera_query, true);
     }
 
-    pub fn set_3d_mode(&mut self, camera_query: &mut Query<(&mut Camera, &mut Projection)>) {
-        if !self.is_2d {
+    pub fn set_3d_mode(
+        &mut self,
+        camera_state: &mut CameraState,
+        camera_query: &mut Query<(&mut Camera, &mut Projection)>,
+    ) {
+        if !camera_state.is_2d() {
             return;
         }
         info!("Switched to Solid mode");
-        self.is_2d = false;
+        camera_state.set_is_2d(false);
         self.enable_cameras(camera_query, false);
     }
 
-    pub fn set_camera_angle_ingame(&mut self, game_index: u8) {
+    pub fn set_camera_angle_ingame(&mut self, camera_state: &mut CameraState, game_index: u8) {
         let angle = match game_index {
             1 => 30.0,  // seems to be 2:1 diablo isometric angle ?
             2 => 63.43, // 90 - arctan(1/2)
@@ -131,13 +130,14 @@ impl CameraManager {
             }
         };
 
-        let mut rotation = self.camera_3d_rotation;
+        let mut rotation = camera_state.camera_3d_rotation();
         rotation.y = angle * -1.0;
-        self.set_camera_angle(rotation);
+        self.set_camera_angle(camera_state, rotation);
     }
 
-    pub fn set_camera_angle_yaw_rotate(&mut self, counter: bool) {
-        let mut rotation = (self.camera_3d_rotation.x / 45.0).round() * 45.0;
+    pub fn set_camera_angle_yaw_rotate(&mut self, camera_state: &mut CameraState, counter: bool) {
+        let camera_3d_rotation = camera_state.camera_3d_rotation();
+        let mut rotation = (camera_3d_rotation.x / 45.0).round() * 45.0;
         match counter {
             true => {
                 rotation += 45.0;
@@ -153,65 +153,74 @@ impl CameraManager {
             }
         }
 
-        self.set_camera_angle(Vec2::new(rotation, self.camera_3d_rotation.y));
+        self.set_camera_angle(camera_state, Vec2::new(rotation, camera_3d_rotation.y));
     }
 
-    pub fn set_camera_angle_side(&mut self) {
-        self.set_camera_angle(Vec2::new(-90.0, 0.0));
+    pub fn set_camera_angle_side(&mut self, camera_state: &mut CameraState) {
+        self.set_camera_angle(camera_state, Vec2::new(-90.0, 0.0));
     }
 
-    pub fn set_camera_angle_front(&mut self) {
-        self.set_camera_angle(Vec2::new(0.0, 0.0));
+    pub fn set_camera_angle_front(&mut self, camera_state: &mut CameraState) {
+        self.set_camera_angle(camera_state, Vec2::new(0.0, 0.0));
     }
 
-    pub fn set_camera_angle_top(&mut self) {
-        self.set_camera_angle(Vec2::new(0.0, -90.0));
+    pub fn set_camera_angle_top(&mut self, camera_state: &mut CameraState) {
+        self.set_camera_angle(camera_state, Vec2::new(0.0, -90.0));
     }
 
-    pub fn camera_pan(&mut self, delta: Vec2) {
-        self.camera_3d_offset += delta / self.camera_3d_scale;
+    pub fn camera_pan(&mut self, camera_state: &mut CameraState, delta: Vec2) {
+        let mut camera_3d_offset = camera_state.camera_3d_offset();
+        camera_3d_offset += delta / camera_state.camera_3d_scale();
+        camera_state.set_camera_3d_offset(camera_3d_offset);
 
         self.recalculate_3d_view();
     }
 
-    pub fn camera_orbit(&mut self, delta: Vec2) {
-        self.camera_3d_rotation.x += delta.x * -0.5;
-        if self.camera_3d_rotation.x > 360.0 {
-            self.camera_3d_rotation.x -= 360.0;
-        } else if self.camera_3d_rotation.x < 0.0 {
-            self.camera_3d_rotation.x += 360.0;
+    pub fn camera_orbit(&mut self, camera_state: &mut CameraState, delta: Vec2) {
+        let mut camera_3d_rotation = camera_state.camera_3d_rotation();
+
+        camera_3d_rotation.x += delta.x * -0.5;
+        if camera_3d_rotation.x > 360.0 {
+            camera_3d_rotation.x -= 360.0;
+        } else if camera_3d_rotation.x < 0.0 {
+            camera_3d_rotation.x += 360.0;
         }
 
-        self.camera_3d_rotation.y += delta.y * -0.5;
-        if self.camera_3d_rotation.y > 0.0 {
-            self.camera_3d_rotation.y = 0.0;
-        } else if self.camera_3d_rotation.y < -90.0 {
-            self.camera_3d_rotation.y = -90.0;
+        camera_3d_rotation.y += delta.y * -0.5;
+        if camera_3d_rotation.y > 0.0 {
+            camera_3d_rotation.y = 0.0;
+        } else if camera_3d_rotation.y < -90.0 {
+            camera_3d_rotation.y = -90.0;
         }
+
+        camera_state.set_camera_3d_rotation(camera_3d_rotation);
 
         self.recalculate_3d_view();
     }
 
-    pub fn camera_zoom(&mut self, zoom_delta: f32) {
-        let old_scale = self.camera_3d_scale;
+    pub fn camera_zoom(&mut self, camera_state: &mut CameraState, zoom_delta: f32) {
+        let old_scale = camera_state.camera_3d_scale();
         let new_scale = (old_scale + (zoom_delta * 0.01)).min(8.0).max(1.0);
         let scale_diff = new_scale - old_scale;
-        self.camera_3d_scale = new_scale;
+        camera_state.set_camera_3d_scale(new_scale);
+
+        let mut camera_3d_offset = camera_state.camera_3d_offset();
 
         if scale_diff.abs() > 0.0 {
-            let old_screen_offset = self.camera_3d_offset * old_scale;
-            let new_screen_offset = self.camera_3d_offset * new_scale;
+            let old_screen_offset = camera_3d_offset * old_scale;
+            let new_screen_offset = camera_3d_offset * new_scale;
 
             let offset_diff = new_screen_offset - old_screen_offset;
 
-            self.camera_3d_offset -= offset_diff / new_scale;
+            camera_3d_offset -= offset_diff / new_scale;
+            camera_state.set_camera_3d_offset(camera_3d_offset);
         }
 
         self.recalculate_3d_view();
     }
 
-    fn set_camera_angle(&mut self, angle: Vec2) {
-        self.camera_3d_rotation = angle;
+    fn set_camera_angle(&mut self, camera_state: &mut CameraState, angle: Vec2) {
+        camera_state.set_camera_3d_rotation(angle);
 
         self.recalculate_3d_view();
     }

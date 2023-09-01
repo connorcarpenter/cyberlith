@@ -24,7 +24,10 @@ use vortex_proto::{
 
 use crate::app::{
     components::{file_system::FileSystemUiState, OwnedByFileLocal},
-    resources::{camera_manager::CameraManager, canvas::Canvas, shape_manager::ShapeManager},
+    resources::{
+        camera_manager::CameraManager, camera_state::CameraState, canvas::Canvas,
+        shape_manager::ShapeManager,
+    },
     ui::widgets::colors::{
         FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
         TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED,
@@ -37,6 +40,7 @@ struct TabState {
     pub order: usize,
     pub tab_id: TabId,
     pub ext: FileExtension,
+    pub camera_state: CameraState,
 }
 
 impl TabState {
@@ -46,6 +50,7 @@ impl TabState {
             order,
             tab_id: id,
             ext,
+            camera_state: CameraState::default(),
         }
     }
 }
@@ -62,6 +67,7 @@ enum TabAction {
 #[derive(Resource)]
 pub struct TabManager {
     current_tab: Option<Entity>,
+    // entity is file entity here
     tab_map: HashMap<Entity, TabState>,
     tab_order: Vec<Entity>,
     new_tab_id: TabId,
@@ -81,6 +87,41 @@ impl Default for TabManager {
 }
 
 impl TabManager {
+    pub fn render_root(ui: &mut Ui, world: &mut World) {
+        egui::menu::bar(ui, |ui| {
+            let mut system_state: SystemState<(
+                Client,
+                ResMut<Canvas>,
+                ResMut<CameraManager>,
+                ResMut<ShapeManager>,
+                ResMut<TabManager>,
+                Query<(&FileSystemEntry, &FileSystemUiState)>,
+                Query<(&mut Visibility, &OwnedByFileLocal)>,
+            )> = SystemState::new(world);
+            let (
+                mut client,
+                mut canvas,
+                mut camera_manager,
+                mut shape_manager,
+                mut tab_manager,
+                file_q,
+                mut visibility_q,
+            ) = system_state.get_mut(world);
+
+            tab_manager.render_tabs(
+                &mut client,
+                &mut canvas,
+                &mut camera_manager,
+                &mut shape_manager,
+                ui,
+                &file_q,
+                &mut visibility_q,
+            );
+
+            system_state.apply(world);
+        });
+    }
+
     pub fn open_tab(
         &mut self,
         client: &mut Client,
@@ -135,39 +176,24 @@ impl TabManager {
         }
     }
 
-    pub fn render_root(ui: &mut Ui, world: &mut World) {
-        egui::menu::bar(ui, |ui| {
-            let mut system_state: SystemState<(
-                Client,
-                ResMut<Canvas>,
-                ResMut<CameraManager>,
-                ResMut<ShapeManager>,
-                ResMut<TabManager>,
-                Query<(&FileSystemEntry, &FileSystemUiState)>,
-                Query<(&mut Visibility, &OwnedByFileLocal)>,
-            )> = SystemState::new(world);
-            let (
-                mut client,
-                mut canvas,
-                mut camera_manager,
-                mut shape_manager,
-                mut tab_manager,
-                file_q,
-                mut visibility_q,
-            ) = system_state.get_mut(world);
+    // panics if no current tab!
+    pub fn current_tab_entity(&self) -> Entity {
+        let Some(current_entity) = self.current_tab else {
+            panic!("no current tab! don't use this method unless you know there is a current tab!");
+        };
+        current_entity
+    }
 
-            tab_manager.render_tabs(
-                &mut client,
-                &mut canvas,
-                &mut camera_manager,
-                &mut shape_manager,
-                ui,
-                &file_q,
-                &mut visibility_q,
-            );
+    pub fn current_tab_camera_state(&self) -> Option<&CameraState> {
+        let current_entity = self.current_tab?;
+        let tab_state = self.tab_map.get(&current_entity)?;
+        Some(&tab_state.camera_state)
+    }
 
-            system_state.apply(world);
-        });
+    pub fn current_tab_camera_state_mut(&mut self) -> Option<&mut CameraState> {
+        let current_entity = self.current_tab?;
+        let tab_state = self.tab_map.get_mut(&current_entity)?;
+        Some(&mut tab_state.camera_state)
     }
 
     fn new_tab_id(&mut self) -> TabId {
@@ -244,14 +270,6 @@ impl TabManager {
         self.current_tab = None;
         canvas.set_visibility(false);
         camera_manager.recalculate_3d_view();
-    }
-
-    // panics if no current tab!
-    pub fn current_tab_entity(&self) -> Entity {
-        let Some(current_entity) = self.current_tab else {
-            panic!("no current tab! don't use this method unless you know there is a current tab!");
-        };
-        current_entity
     }
 
     fn close_tab(

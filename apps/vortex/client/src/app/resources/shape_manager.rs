@@ -32,6 +32,7 @@ use crate::app::{
         action::Action,
         action_stack::ActionStack,
         camera_manager::{CameraAngle, CameraManager},
+        camera_state::CameraState,
         input_manager::{ClickType, InputAction},
     },
     set_3d_line_transform,
@@ -241,6 +242,7 @@ impl ShapeManager {
         commands: &mut Commands,
         client: &mut Client,
         camera_manager: &mut CameraManager,
+        camera_state: &mut CameraState,
         action_stack: &mut ActionStack,
 
         // queries
@@ -251,7 +253,7 @@ impl ShapeManager {
         for input_action in &input_actions {
             match input_action {
                 InputAction::MiddleMouseScroll(scroll_y) => {
-                    camera_manager.camera_zoom(*scroll_y);
+                    camera_manager.camera_zoom(camera_state, *scroll_y);
                 }
                 InputAction::MouseMoved => {
                     self.recalculate_hover();
@@ -259,26 +261,26 @@ impl ShapeManager {
                 }
                 InputAction::SwitchTo3dMode => {
                     // disable 2d camera, enable 3d camera
-                    camera_manager.set_3d_mode(camera_q);
+                    camera_manager.set_3d_mode(camera_state, camera_q);
                     self.recalculate_shapes();
                 }
                 InputAction::SwitchTo2dMode => {
                     // disable 3d camera, enable 2d camera
-                    camera_manager.set_2d_mode(camera_q);
+                    camera_manager.set_2d_mode(camera_state, camera_q);
                     self.recalculate_shapes();
                 }
                 InputAction::SetCameraAngleFixed(camera_angle) => match camera_angle {
                     CameraAngle::Side => {
-                        camera_manager.set_camera_angle_side();
+                        camera_manager.set_camera_angle_side(camera_state);
                     }
                     CameraAngle::Front => {
-                        camera_manager.set_camera_angle_front();
+                        camera_manager.set_camera_angle_front(camera_state);
                     }
                     CameraAngle::Top => {
-                        camera_manager.set_camera_angle_top();
+                        camera_manager.set_camera_angle_top(camera_state);
                     }
                     CameraAngle::Ingame(angle_index) => {
-                        camera_manager.set_camera_angle_ingame(*angle_index);
+                        camera_manager.set_camera_angle_ingame(camera_state, *angle_index);
                     }
                 },
                 InputAction::InsertKeyPress => {
@@ -288,13 +290,14 @@ impl ShapeManager {
                     self.handle_delete_key_press(commands, client, action_stack);
                 }
                 InputAction::CameraAngleYawRotate(clockwise) => {
-                    camera_manager.set_camera_angle_yaw_rotate(*clockwise);
+                    camera_manager.set_camera_angle_yaw_rotate(camera_state, *clockwise);
                 }
                 InputAction::MouseDragged(click_type, mouse_position, delta) => {
                     self.handle_mouse_drag(
                         commands,
                         client,
                         camera_manager,
+                        camera_state,
                         *click_type,
                         *mouse_position,
                         *delta,
@@ -331,6 +334,7 @@ impl ShapeManager {
     pub fn sync_shapes(
         &mut self,
         camera_manager: &CameraManager,
+        camera_state: &CameraState,
         current_tab_file_entity: Entity,
 
         camera_q: &Query<(&Camera, &Projection)>,
@@ -361,15 +365,17 @@ impl ShapeManager {
         };
 
         self.shapes_recalc -= 1;
+
+        self.compass_recalc(camera_state, vertex_3d_q, &camera_transform);
+
         self.recalculate_hover();
         self.recalculate_selection();
-        self.compass_recalc(camera_manager, vertex_3d_q, &camera_transform);
 
         let camera_viewport = camera.viewport.unwrap();
         let view_matrix = camera_transform.view_matrix();
         let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
 
-        let camera_3d_scale = camera_manager.camera_3d_scale();
+        let camera_3d_scale = camera_state.camera_3d_scale();
 
         let vertex_2d_scale = Vertex2d::RADIUS * camera_3d_scale;
         let hover_vertex_2d_scale = Vertex2d::HOVER_RADIUS * camera_3d_scale;
@@ -1561,11 +1567,9 @@ impl ShapeManager {
         &mut self,
         current_tab_file_entity: Entity,
         mouse_position: &Vec2,
-        camera_manager: &CameraManager,
-
+        camera_state: &CameraState,
         transform_q: &mut Query<(&mut Transform, Option<&Compass>)>,
         owned_by_q: &Query<&OwnedByFileLocal>,
-
         vertex_2d_q: &Query<(Entity, Option<&VertexRoot>), (With<Vertex2d>, Without<Compass>)>,
         edge_2d_q: &Query<(Entity, &Edge2dLocal), Without<Compass>>,
         face_2d_q: &Query<(Entity, &FaceIcon2d)>,
@@ -1574,6 +1578,8 @@ impl ShapeManager {
             return;
         }
         self.hover_recalc = false;
+
+        let camera_3d_scale = camera_state.camera_3d_scale();
 
         let mut least_distance = f32::MAX;
         let mut least_entity = None;
@@ -1600,8 +1606,7 @@ impl ShapeManager {
             }
         }
 
-        let mut is_hovering =
-            least_distance <= (Vertex2d::DETECT_RADIUS * camera_manager.camera_3d_scale());
+        let mut is_hovering = least_distance <= (Vertex2d::DETECT_RADIUS * camera_3d_scale);
 
         // check for edges
         if !is_hovering {
@@ -1622,8 +1627,7 @@ impl ShapeManager {
                 }
             }
 
-            is_hovering = least_distance
-                <= (Edge2dLocal::DETECT_THICKNESS * camera_manager.camera_3d_scale());
+            is_hovering = least_distance <= (Edge2dLocal::DETECT_THICKNESS * camera_3d_scale);
         }
 
         // check for faces
@@ -1644,8 +1648,7 @@ impl ShapeManager {
                 }
             }
 
-            is_hovering =
-                least_distance <= (FaceIcon2d::DETECT_RADIUS * camera_manager.camera_3d_scale());
+            is_hovering = least_distance <= (FaceIcon2d::DETECT_RADIUS * camera_3d_scale);
         }
 
         // define old and new hovered states
@@ -1665,7 +1668,7 @@ impl ShapeManager {
     pub(crate) fn update_select_line(
         &mut self,
         mouse_position: &Vec2,
-        camera_manager: &CameraManager,
+        camera_state: &CameraState,
         transform_q: &mut Query<&mut Transform>,
         visibility_q: &mut Query<&mut Visibility>,
     ) {
@@ -1673,6 +1676,8 @@ impl ShapeManager {
             return;
         }
         self.selection_recalc = false;
+
+        let camera_3d_scale = camera_state.camera_3d_scale();
 
         // update selected vertex line
         let select_line_entity = self.select_line_entity.unwrap();
@@ -1707,7 +1712,7 @@ impl ShapeManager {
                         vertex_transform.translation.truncate(),
                         *mouse_position,
                     );
-                    select_line_transform.scale.y = camera_manager.camera_3d_scale();
+                    select_line_transform.scale.y = camera_3d_scale;
                 }
 
                 // sync select circle transform
@@ -1718,7 +1723,7 @@ impl ShapeManager {
 
                     select_circle_transform.translation = vertex_transform.translation;
                     select_circle_transform.scale =
-                        Vec3::splat(SelectCircle::RADIUS * camera_manager.camera_3d_scale());
+                        Vec3::splat(SelectCircle::RADIUS * camera_3d_scale);
                 }
 
                 select_shape_visibilities[0].visible = true; // select circle is visible
@@ -1741,7 +1746,7 @@ impl ShapeManager {
 
                     select_line_transform.mirror(&selected_edge_transform);
 
-                    select_line_transform.scale.y = 3.0 * camera_manager.camera_3d_scale();
+                    select_line_transform.scale.y = 3.0 * camera_3d_scale;
                     select_line_transform.translation.z += 1.0;
                 }
 
@@ -1765,7 +1770,7 @@ impl ShapeManager {
 
                     select_triangle_transform.translation = face_icon_transform.translation;
                     select_triangle_transform.scale =
-                        Vec3::splat(SelectTriangle::SIZE * camera_manager.camera_3d_scale());
+                        Vec3::splat(SelectTriangle::SIZE * camera_3d_scale);
                 }
 
                 select_shape_visibilities[0].visible = false; // select circle is not visible
@@ -1831,9 +1836,15 @@ impl ShapeManager {
                         }
 
                         // check if edge already exists
-                        if self.edge_2d_entity_from_vertices(vertex_2d_entity_a, vertex_2d_entity_b).is_some() {
+                        if self
+                            .edge_2d_entity_from_vertices(vertex_2d_entity_a, vertex_2d_entity_b)
+                            .is_some()
+                        {
                             // select edge
-                            action_stack.buffer_action(Action::SelectShape(Some((vertex_2d_entity_b, CanvasShape::Vertex))));
+                            action_stack.buffer_action(Action::SelectShape(Some((
+                                vertex_2d_entity_b,
+                                CanvasShape::Vertex,
+                            ))));
                             return;
                         } else {
                             // create edge
@@ -1937,6 +1948,7 @@ impl ShapeManager {
         commands: &mut Commands,
         client: &Client,
         camera_manager: &mut CameraManager,
+        camera_state: &mut CameraState,
         click_type: ClickType,
         mouse_position: Vec2,
         delta: Vec2,
@@ -2017,10 +2029,10 @@ impl ShapeManager {
         } else {
             match click_type {
                 ClickType::Left => {
-                    camera_manager.camera_pan(delta);
+                    camera_manager.camera_pan(camera_state, delta);
                 }
                 ClickType::Right => {
-                    camera_manager.camera_orbit(delta);
+                    camera_manager.camera_orbit(camera_state, delta);
                 }
             }
         }
@@ -2316,40 +2328,42 @@ impl ShapeManager {
     }
 
     fn compass_recalc(
-        &mut self,
-        camera_manager: &CameraManager,
+        &self,
+        camera_state: &CameraState,
         vertex_3d_q: &mut Query<(Entity, &mut Vertex3d)>,
         camera_transform: &Transform,
     ) {
-        if let Ok((_, mut vertex_3d)) = vertex_3d_q.get_mut(self.compass_vertices[0]) {
-            let right = camera_transform.right_direction();
-            let up = right.cross(camera_transform.view_direction());
+        let Ok((_, mut vertex_3d)) = vertex_3d_q.get_mut(self.compass_vertices[0]) else {
+            return;
+        };
 
-            let unit_length = 1.0 / camera_manager.camera_3d_scale();
-            const COMPASS_POS: Vec2 = Vec2::new(530.0, 300.0);
-            let offset_2d = camera_manager.camera_3d_offset().round()
-                + Vec2::new(
-                    unit_length * -1.0 * COMPASS_POS.x,
-                    unit_length * COMPASS_POS.y,
-                );
-            let offset_3d = (right * offset_2d.x) + (up * offset_2d.y);
+        let right = camera_transform.right_direction();
+        let up = right.cross(camera_transform.view_direction());
 
-            let vert_offset_3d = Vec3::ZERO + offset_3d;
-            vertex_3d.set_vec3(&vert_offset_3d);
+        let unit_length = 1.0 / camera_state.camera_3d_scale();
+        const COMPASS_POS: Vec2 = Vec2::new(530.0, 300.0);
+        let offset_2d = camera_state.camera_3d_offset().round()
+            + Vec2::new(
+                unit_length * -1.0 * COMPASS_POS.x,
+                unit_length * COMPASS_POS.y,
+            );
+        let offset_3d = (right * offset_2d.x) + (up * offset_2d.y);
 
-            let compass_length = unit_length * 25.0;
-            let vert_offset_3d = Vec3::new(compass_length, 0.0, 0.0) + offset_3d;
-            let (_, mut vertex_3d) = vertex_3d_q.get_mut(self.compass_vertices[1]).unwrap();
-            vertex_3d.set_vec3(&vert_offset_3d);
+        let vert_offset_3d = Vec3::ZERO + offset_3d;
+        vertex_3d.set_vec3(&vert_offset_3d);
 
-            let vert_offset_3d = Vec3::new(0.0, compass_length, 0.0) + offset_3d;
-            let (_, mut vertex_3d) = vertex_3d_q.get_mut(self.compass_vertices[2]).unwrap();
-            vertex_3d.set_vec3(&vert_offset_3d);
+        let compass_length = unit_length * 25.0;
+        let vert_offset_3d = Vec3::new(compass_length, 0.0, 0.0) + offset_3d;
+        let (_, mut vertex_3d) = vertex_3d_q.get_mut(self.compass_vertices[1]).unwrap();
+        vertex_3d.set_vec3(&vert_offset_3d);
 
-            let vert_offset_3d = Vec3::new(0.0, 0.0, compass_length) + offset_3d;
-            let (_, mut vertex_3d) = vertex_3d_q.get_mut(self.compass_vertices[3]).unwrap();
-            vertex_3d.set_vec3(&vert_offset_3d);
-        }
+        let vert_offset_3d = Vec3::new(0.0, compass_length, 0.0) + offset_3d;
+        let (_, mut vertex_3d) = vertex_3d_q.get_mut(self.compass_vertices[2]).unwrap();
+        vertex_3d.set_vec3(&vert_offset_3d);
+
+        let vert_offset_3d = Vec3::new(0.0, 0.0, compass_length) + offset_3d;
+        let (_, mut vertex_3d) = vertex_3d_q.get_mut(self.compass_vertices[3]).unwrap();
+        vertex_3d.set_vec3(&vert_offset_3d);
     }
 
     // returns true if vertex is owned by tab or unowned
@@ -2381,7 +2395,11 @@ impl ShapeManager {
         }
         return false;
     }
-    fn edge_2d_entity_from_vertices(&self, vertex_2d_a: Entity, vertex_2d_b: Entity) -> Option<Entity> {
+    fn edge_2d_entity_from_vertices(
+        &self,
+        vertex_2d_a: Entity,
+        vertex_2d_b: Entity,
+    ) -> Option<Entity> {
         let vertex_3d_a = self.vertex_entity_2d_to_3d(&vertex_2d_a)?;
         let vertex_3d_b = self.vertex_entity_2d_to_3d(&vertex_2d_b)?;
         let vertex_a_data = self.vertices_3d.get(&vertex_3d_a)?;
@@ -2392,6 +2410,5 @@ impl ShapeManager {
             .next()?;
         let edge_2d_entity = self.edge_entity_3d_to_2d(&intersecting_edge_3d_entity)?;
         Some(edge_2d_entity)
-
     }
 }
