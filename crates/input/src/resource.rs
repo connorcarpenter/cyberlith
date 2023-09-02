@@ -10,7 +10,7 @@ use crate::{is_button::IsButton, IncomingEvent, Key, MouseButton, InputAction};
 pub struct Input {
     mouse_offset: Vec2,
     mouse_coords: Vec2,
-    mouse_buttons: HashMap<MouseButton, Vec2>,
+    mouse_buttons: HashSet<MouseButton>,
     mouse_scroll_y: f32,
     last_mouse_position: Vec2,
     keys: HashSet<Key>,
@@ -21,7 +21,7 @@ impl Input {
     pub fn new() -> Self {
         Self {
             mouse_coords: Vec2::ZERO,
-            mouse_buttons: HashMap::new(),
+            mouse_buttons: HashSet::new(),
             mouse_offset: Vec2::ZERO,
             mouse_scroll_y: 0.0,
             last_mouse_position: Vec2::ZERO,
@@ -58,12 +58,12 @@ impl Input {
                     if *handled {
                         continue;
                     }
-                    if !self.mouse_buttons.contains_key(button) {
+                    if !self.mouse_buttons.contains(button) {
                         let mouse_coords_x = (position.0 as f32) - self.mouse_offset.x;
                         let mouse_coords_y = (position.1 as f32) - self.mouse_offset.y;
                         let mouse_coords = Vec2::new(mouse_coords_x, mouse_coords_y);
                         self.outgoing_actions.push(InputAction::MouseClick(*button, mouse_coords));
-                        self.mouse_buttons.insert(*button, mouse_coords);
+                        self.mouse_buttons.insert(*button);
                     }
                 }
                 IncomingEvent::MouseRelease {
@@ -72,7 +72,7 @@ impl Input {
                     if *handled {
                         continue;
                     }
-                    if self.mouse_buttons.contains_key(button) {
+                    if self.mouse_buttons.contains(button) {
                         self.outgoing_actions.push(InputAction::MouseRelease(*button));
                         self.mouse_buttons.remove(button);
                     }
@@ -90,10 +90,10 @@ impl Input {
                         || self.mouse_coords.y as i16 != self.last_mouse_position.y as i16
                     {
                         // mouse moved!
+                        let delta = self.mouse_coords - self.last_mouse_position;
                         self.last_mouse_position = self.mouse_coords;
 
-                        for (mouse_button, click_start) in self.mouse_buttons.iter() {
-                            let delta = self.mouse_coords - *click_start;
+                        for mouse_button in self.mouse_buttons.iter() {
                             self.outgoing_actions.push(InputAction::MouseDragged(*mouse_button, self.mouse_coords, delta));
                         }
 
