@@ -9,6 +9,7 @@ use bevy_ecs::{
 use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt, Replicate, ReplicationConfig};
+use input::MouseButton;
 
 use math::{convert_2d_to_3d, convert_3d_to_2d, Vec2, Vec3};
 use render_api::{
@@ -33,7 +34,7 @@ use crate::app::{
         action_stack::ActionStack,
         camera_manager::{CameraAngle, CameraManager},
         camera_state::CameraState,
-        input_manager::{ClickType, InputAction},
+        input_manager::AppInputAction,
     },
     set_3d_line_transform,
     shapes::{
@@ -236,7 +237,7 @@ impl ShapeManager {
         &mut self,
 
         // input
-        input_actions: Vec<InputAction>,
+        input_actions: Vec<AppInputAction>,
 
         // resources
         commands: &mut Commands,
@@ -252,26 +253,26 @@ impl ShapeManager {
     ) {
         for input_action in &input_actions {
             match input_action {
-                InputAction::MiddleMouseScroll(scroll_y) => {
+                AppInputAction::MiddleMouseScroll(scroll_y) => {
                     camera_manager.camera_zoom(camera_state, *scroll_y);
                 }
-                InputAction::MouseMoved => {
+                AppInputAction::MouseMoved => {
                     self.recalculate_hover();
                     self.recalculate_selection();
                 }
-                InputAction::SwitchTo3dMode => {
+                AppInputAction::SwitchTo3dMode => {
                     // disable 2d camera, enable 3d camera
                     camera_state.set_3d_mode();
                     camera_manager.recalculate_3d_view();
                     self.recalculate_shapes();
                 }
-                InputAction::SwitchTo2dMode => {
+                AppInputAction::SwitchTo2dMode => {
                     // disable 3d camera, enable 2d camera
                     camera_state.set_2d_mode();
                     camera_manager.recalculate_3d_view();
                     self.recalculate_shapes();
                 }
-                InputAction::SetCameraAngleFixed(camera_angle) => match camera_angle {
+                AppInputAction::SetCameraAngleFixed(camera_angle) => match camera_angle {
                     CameraAngle::Side => {
                         camera_manager.set_camera_angle_side(camera_state);
                     }
@@ -285,16 +286,16 @@ impl ShapeManager {
                         camera_manager.set_camera_angle_ingame(camera_state, *angle_index);
                     }
                 },
-                InputAction::InsertKeyPress => {
+                AppInputAction::InsertKeyPress => {
                     self.handle_insert_key_press(action_stack);
                 }
-                InputAction::DeleteKeyPress => {
+                AppInputAction::DeleteKeyPress => {
                     self.handle_delete_key_press(commands, client, action_stack);
                 }
-                InputAction::CameraAngleYawRotate(clockwise) => {
+                AppInputAction::CameraAngleYawRotate(clockwise) => {
                     camera_manager.set_camera_angle_yaw_rotate(camera_state, *clockwise);
                 }
-                InputAction::MouseDragged(click_type, mouse_position, delta) => {
+                AppInputAction::MouseDragged(click_type, mouse_position, delta) => {
                     self.handle_mouse_drag(
                         commands,
                         client,
@@ -308,7 +309,7 @@ impl ShapeManager {
                         vertex_3d_q,
                     );
                 }
-                InputAction::MouseClick(click_type, mouse_position) => {
+                AppInputAction::MouseClick(click_type, mouse_position) => {
                     self.handle_mouse_click(
                         camera_manager,
                         action_stack,
@@ -318,7 +319,7 @@ impl ShapeManager {
                         transform_q,
                     );
                 }
-                InputAction::MouseRelease => {
+                AppInputAction::MouseRelease(MouseButton::Left) => {
                     if let Some((vertex_2d_entity, old_pos, new_pos)) =
                         self.last_vertex_dragged.take()
                     {
@@ -329,6 +330,7 @@ impl ShapeManager {
                         ));
                     }
                 }
+                _ => {}
             }
         }
     }
@@ -1791,7 +1793,7 @@ impl ShapeManager {
         &mut self,
         camera_manager: &CameraManager,
         action_stack: &mut ActionStack,
-        click_type: ClickType,
+        click_type: MouseButton,
         mouse_position: &Vec2,
         camera_q: &Query<(&mut Camera, &mut Projection)>,
         transform_q: &Query<&mut Transform>,
@@ -1801,7 +1803,7 @@ impl ShapeManager {
 
         if shape_is_selected {
             match click_type {
-                ClickType::Left => {
+                MouseButton::Left => {
                     match self.selected_shape.unwrap() {
                         (_, CanvasShape::Edge) | (_, CanvasShape::Face) => {
                             // should not ever be able to attach something to an edge or face?
@@ -1906,40 +1908,42 @@ impl ShapeManager {
                         }
                     }
                 }
-                ClickType::Right => {
+                MouseButton::Right => {
                     // deselect vertex
                     action_stack.buffer_action(Action::SelectShape(None));
                 }
+                _ => {}
             }
         } else {
             if cursor_is_hovering {
                 match (self.hovered_entity.map(|(_, s)| s).unwrap(), click_type) {
-                    (CanvasShape::Vertex, ClickType::Left)
-                    | (CanvasShape::RootVertex, ClickType::Left) => {
+                    (CanvasShape::Vertex, MouseButton::Left)
+                    | (CanvasShape::RootVertex, MouseButton::Left) => {
                         action_stack.buffer_action(Action::SelectShape(self.hovered_entity));
                     }
-                    (CanvasShape::Edge, ClickType::Left) => {
+                    (CanvasShape::Edge, MouseButton::Left) => {
                         if self.current_file_type == FileTypeValue::Mesh {
                             action_stack.buffer_action(Action::SelectShape(self.hovered_entity));
                         }
                     }
-                    (CanvasShape::Face, ClickType::Left) => {
+                    (CanvasShape::Face, MouseButton::Left) => {
                         if self.current_file_type == FileTypeValue::Mesh {
                             action_stack.buffer_action(Action::SelectShape(self.hovered_entity));
                         } else {
                             panic!("shouldn't be possible");
                         }
                     }
-                    (CanvasShape::Vertex, ClickType::Right)
-                    | (CanvasShape::RootVertex, ClickType::Right) => {
+                    (CanvasShape::Vertex, MouseButton::Right)
+                    | (CanvasShape::RootVertex, MouseButton::Right) => {
                         // do nothing, vertex deselection happens above
                     }
-                    (CanvasShape::Edge, ClickType::Right) => {
+                    (CanvasShape::Edge, MouseButton::Right) => {
                         // TODO: delete edge?
                     }
-                    (CanvasShape::Face, ClickType::Right) => {
+                    (CanvasShape::Face, MouseButton::Right) => {
                         // TODO: delete face?
                     }
+                    _ => {}
                 }
             }
         }
@@ -1951,7 +1955,7 @@ impl ShapeManager {
         client: &Client,
         camera_manager: &mut CameraManager,
         camera_state: &mut CameraState,
-        click_type: ClickType,
+        click_type: MouseButton,
         mouse_position: Vec2,
         delta: Vec2,
         camera_q: &Query<(&mut Camera, &mut Projection)>,
@@ -1964,7 +1968,7 @@ impl ShapeManager {
 
         if vertex_is_selected && shape_can_drag {
             match click_type {
-                ClickType::Left => {
+                MouseButton::Left => {
                     // move vertex
                     let (vertex_2d_entity, _) = self.selected_shape.unwrap();
 
@@ -2024,18 +2028,20 @@ impl ShapeManager {
                         );
                     }
                 }
-                ClickType::Right => {
+                MouseButton::Right => {
                     // TODO: dunno if this is possible? shouldn't the vertex be deselected?
                 }
+                _ => {}
             }
         } else {
             match click_type {
-                ClickType::Left => {
+                MouseButton::Left => {
                     camera_manager.camera_pan(camera_state, delta);
                 }
-                ClickType::Right => {
+                MouseButton::Right => {
                     camera_manager.camera_orbit(camera_state, delta);
                 }
+                _ => {}
             }
         }
     }

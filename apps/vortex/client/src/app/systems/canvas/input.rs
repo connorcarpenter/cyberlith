@@ -37,10 +37,11 @@ pub fn input(
     let Some(current_tab_camera_state) = tab_manager.current_tab_camera_state_mut() else {
         return;
     };
-    let input_actions = input_manager.update_input(&mut input);
-    if !input_actions.is_empty() {
+    let input_actions = input.take_actions();
+    let app_actions = input_manager.input_to_app_actions(input_actions);
+    if !app_actions.is_empty() {
         shape_manager.update_input(
-            input_actions,
+            app_actions,
             &mut commands,
             &mut client,
             &mut camera_manager,
