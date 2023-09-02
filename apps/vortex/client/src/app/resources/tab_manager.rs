@@ -258,6 +258,7 @@ impl TabManager {
         self.current_tab = Some(tab_entity);
 
         canvas.set_visibility(true);
+        canvas.set_focused_timed();
         let current_tab_file_entity = self.current_tab_entity();
         for (mut visibility, owned_by_tab) in visibility_q.iter_mut() {
             visibility.visible = owned_by_tab.file_entity == current_tab_file_entity;

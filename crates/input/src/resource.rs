@@ -15,6 +15,7 @@ pub struct Input {
     last_mouse_position: Vec2,
     keys: HashSet<Key>,
     outgoing_actions: Vec<InputAction>,
+    enabled: bool,
 }
 
 impl Input {
@@ -27,6 +28,7 @@ impl Input {
             last_mouse_position: Vec2::ZERO,
             keys: HashSet::new(),
             outgoing_actions: Vec::new(),
+            enabled: false,
         }
     }
 
@@ -49,7 +51,14 @@ impl Input {
         button.is_pressed(&self.mouse_buttons, &self.keys)
     }
 
+    pub fn set_enabled(&mut self, enabled: bool) {
+        self.enabled = enabled;
+    }
+
     pub fn recv_events(&mut self, events: &Vec<IncomingEvent<()>>) {
+        if !self.enabled {
+            return;
+        }
         for event in events {
             match event {
                 IncomingEvent::MousePress {

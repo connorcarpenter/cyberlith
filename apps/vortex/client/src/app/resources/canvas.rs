@@ -10,6 +10,8 @@ pub struct Canvas {
     canvas_texture_size: Vec2,
     is_visible: bool,
     next_visible: bool,
+    has_focus: bool,
+    focus_timer: u8,
 }
 
 impl Default for Canvas {
@@ -19,6 +21,8 @@ impl Default for Canvas {
             is_visible: false,
             canvas_texture: None,
             canvas_texture_size: Vec2::new(1280.0, 720.0),
+            has_focus: false,
+            focus_timer: 0,
         }
     }
 }
@@ -52,5 +56,22 @@ impl Canvas {
 
     pub fn set_visibility(&mut self, visible: bool) {
         self.next_visible = visible;
+    }
+
+    pub fn has_focus(&self) -> bool {
+        self.has_focus
+    }
+
+    pub fn set_focus(&mut self, focus: bool) {
+        if !focus && self.has_focus && self.focus_timer > 0 {
+            self.focus_timer -= 1;
+            return;
+        }
+        self.has_focus = focus;
+    }
+
+    pub fn set_focused_timed(&mut self) {
+        self.has_focus = true;
+        self.focus_timer = 1;
     }
 }

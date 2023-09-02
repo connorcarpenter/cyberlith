@@ -94,7 +94,7 @@ impl GUI {
                         modifiers,
                         handled,
                     } => {
-                        if !handled {
+                        if !*handled {
                             Some(egui::Event::Key {
                                 key: glow_to_egui_key(kind),
                                 pressed: true,
@@ -110,7 +110,7 @@ impl GUI {
                         modifiers,
                         handled,
                     } => {
-                        if !handled {
+                        if !*handled {
                             Some(egui::Event::Key {
                                 key: glow_to_egui_key(kind),
                                 pressed: false,
@@ -127,7 +127,7 @@ impl GUI {
                         modifiers,
                         handled,
                     } => {
-                        if !handled {
+                        if !*handled {
                             Some(egui::Event::PointerButton {
                                 pos: egui::Pos2 {
                                     x: position.0 as f32,
@@ -147,7 +147,7 @@ impl GUI {
                         modifiers,
                         handled,
                     } => {
-                        if !handled {
+                        if !*handled {
                             Some(egui::Event::PointerButton {
                                 pos: egui::Pos2 {
                                     x: position.0 as f32,
@@ -164,7 +164,7 @@ impl GUI {
                     IncomingEvent::MouseMotion {
                         position, handled, ..
                     } => {
-                        if !handled {
+                        if !*handled {
                             Some(egui::Event::PointerMoved(egui::Pos2 {
                                 x: position.0 as f32,
                                 y: position.1 as f32,
@@ -176,7 +176,7 @@ impl GUI {
                     IncomingEvent::Text(text) => Some(egui::Event::Text(text.clone())),
                     IncomingEvent::MouseLeave => Some(egui::Event::PointerGone),
                     IncomingEvent::MouseWheel { delta, handled, .. } => {
-                        if !handled {
+                        if !*handled {
                             Some(egui::Event::Scroll(egui::Vec2::new(
                                 delta.0 as f32,
                                 delta.1 as f32,
@@ -203,7 +203,7 @@ impl GUI {
         &mut self,
         egui_context: &egui::Context,
         frame_input: &mut FrameInput<T>,
-    ) -> bool {
+    ) {
         let mut end_frame = egui_context.end_frame();
 
         // Output Events
@@ -213,64 +213,8 @@ impl GUI {
         );
 
         *self.output.borrow_mut() = Some(end_frame);
-
-        // Input Events
-        let ctx_wants_ptr_input = egui_context.wants_pointer_input();
-        let ctx_wants_kb_input = egui_context.wants_keyboard_input();
-
-        for event in frame_input.incoming_events.iter_mut() {
-            if let IncomingEvent::ModifiersChange { modifiers } = event {
-                self.modifiers = *modifiers;
-            }
-            if ctx_wants_ptr_input {
-                match event {
-                    IncomingEvent::MousePress {
-                        ref mut handled, ..
-                    } => {
-                        *handled = true;
-                    }
-                    IncomingEvent::MouseRelease {
-                        ref mut handled, ..
-                    } => {
-                        *handled = true;
-                    }
-                    IncomingEvent::MouseWheel {
-                        ref mut handled, ..
-                    } => {
-                        *handled = true;
-                    }
-                    IncomingEvent::MouseMotion {
-                        ref mut handled, ..
-                    } => {
-                        *handled = true;
-                    }
-                    _ => {}
-                }
-            }
-
-            if ctx_wants_kb_input {
-                match event {
-                    IncomingEvent::KeyRelease {
-                        ref mut handled, ..
-                    } => {
-                        *handled = true;
-                    }
-                    IncomingEvent::KeyPress {
-                        ref mut handled, ..
-                    } => {
-                        *handled = true;
-                    }
-                    _ => {}
-                }
-            }
-        }
-        ctx_wants_ptr_input || ctx_wants_kb_input
     }
 
-    ///
-    /// Render the GUI defined in the [update](Self::update) function.
-    /// Must be called in the callback given as input to a [RenderTarget], [ColorTarget] or [DepthTarget] write method.
-    ///
     pub fn render(&self, egui_context: &egui::Context) {
         let Some(output) = self
             .output

@@ -14,6 +14,13 @@ pub struct EguiUserTextures {
 }
 
 impl EguiUserTextures {
+
+    pub fn must_process(&self) -> bool {
+        !self.added_textures.is_empty()
+            || !self.removed_textures.is_empty()
+            || !self.changed_textures.is_empty()
+    }
+
     pub fn add_texture(&mut self, texture_handle: &Handle<CpuTexture2D>) {
         self.added_textures.insert(texture_handle.clone());
     }
@@ -26,16 +33,28 @@ impl EguiUserTextures {
         self.changed_textures.insert(texture_handle.clone());
     }
 
-    pub fn flush_added_textures(&mut self) -> Vec<Handle<CpuTexture2D>> {
-        self.added_textures.drain().collect()
+    pub fn added_textures(&self) -> Vec<Handle<CpuTexture2D>> {
+        self.added_textures.iter().copied().collect()
     }
 
-    pub fn flush_removed_textures(&mut self) -> Vec<Handle<CpuTexture2D>> {
-        self.removed_textures.drain().collect()
+    pub fn removed_textures(&self) -> Vec<Handle<CpuTexture2D>> {
+        self.removed_textures.iter().copied().collect()
     }
 
-    pub fn flush_changed_textures(&mut self) -> Vec<Handle<CpuTexture2D>> {
-        self.changed_textures.drain().collect()
+    pub fn changed_textures(&self) -> Vec<Handle<CpuTexture2D>> {
+        self.changed_textures.iter().copied().collect()
+    }
+
+    pub fn flush_added_texture(&mut self, handle: &Handle<CpuTexture2D>) {
+        self.added_textures.remove(handle);
+    }
+
+    pub fn flush_removed_texture(&mut self, handle: &Handle<CpuTexture2D>) {
+        self.removed_textures.remove(handle);
+    }
+
+    pub fn flush_changed_texture(&mut self, handle: &Handle<CpuTexture2D>) {
+        self.changed_textures.remove(handle);
     }
 
     pub fn register_texture(&mut self, handle: Handle<CpuTexture2D>, id: egui::TextureId) {

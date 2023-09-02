@@ -12,7 +12,7 @@ use render_api::{
 };
 use render_egui::{
     egui,
-    egui::{pos2, Frame, Id, Image, Rect, Ui},
+    egui::{Color32, pos2, Frame, Id, Image, Rect, Ui},
     EguiUserTextures,
 };
 
@@ -22,14 +22,6 @@ use crate::app::{
 };
 
 pub fn show_canvas(ui: &mut Ui, world: &mut World) {
-    egui::CentralPanel::default()
-        .frame(Frame::central_panel(ui.style()).inner_margin(0.0))
-        .show_inside(ui, |ui| {
-            work_panel(ui, world);
-        });
-}
-
-fn work_panel(ui: &mut Ui, world: &mut World) {
     let did_resize = resize_finished(ui, world, "left_panel");
 
     let mut system_state: SystemState<(
@@ -51,42 +43,70 @@ fn work_panel(ui: &mut Ui, world: &mut World) {
         mut camera_query,
     ) = system_state.get_mut(world);
 
-    // change textures
-    let texture_handle = canvas.canvas_texture();
-    let Some(texture_id) = user_textures.texture_id(&texture_handle) else {
-        // The user texture may not be synced yet, return early.
-        return;
-    };
-    let top_left = ui.min_rect().min;
-    if ui_state.canvas_coords.is_none() {
-        ui_state.canvas_coords = Some(top_left);
-        input.set_mouse_offset(top_left.x, top_left.y);
-    }
-    let texture_size = ui.available_size();
-
-    if did_resize {
-        ui_state.canvas_coords = Some(top_left);
-        input.set_mouse_offset(top_left.x + 1.0, top_left.y + 1.0);
-
-        // This is the texture that will be rendered to.
-        let texture_width = texture_size.x as u32;
-        let texture_height = texture_size.y as u32;
-        let new_texture = CpuTexture2D::from_size(texture_width, texture_height);
-
-        textures.set(&texture_handle, new_texture);
-        user_textures.mark_texture_changed(&texture_handle);
-
-        // Update the camera to match the new texture size.
-        let native_texture_size = Vec2::new(texture_size.x, texture_size.y);
-        canvas.update_canvas_size(native_texture_size);
-        camera_manager.update_camera_viewports(native_texture_size, &mut camera_query);
-    }
-
+    let mut frame = Frame::central_panel(ui.style()).inner_margin(1.0);
     if canvas.is_visible() {
-        let image = Image::new(texture_id, texture_size)
-            .uv(Rect::from_min_max(pos2(0.0, 1.0), pos2(1.0, 0.0)));
-        ui.add_enabled(false, image);
+        if canvas.has_focus() {
+            frame = frame.fill(Color32::GRAY);
+        } else {
+            frame = frame.fill(Color32::BLACK);
+        }
     }
+
+    egui::CentralPanel::default()
+        .frame(frame)
+        .show_inside(ui, |ui| {
+            // change textures
+            let texture_handle = canvas.canvas_texture();
+            let Some(texture_id) = user_textures.texture_id(&texture_handle) else {
+                // The user texture may not be synced yet, return early.
+                return;
+            };
+            let top_left = ui.min_rect().min;
+            if ui_state.canvas_coords.is_none() {
+                ui_state.canvas_coords = Some(top_left);
+                input.set_mouse_offset(top_left.x, top_left.y);
+            }
+            let texture_size = ui.available_size();
+
+            if did_resize {
+                ui_state.canvas_coords = Some(top_left);
+                input.set_mouse_offset(top_left.x + 1.0, top_left.y + 1.0);
+
+                // This is the texture that will be rendered to.
+                let texture_width = texture_size.x as u32;
+                let texture_height = texture_size.y as u32;
+                let new_texture = CpuTexture2D::from_size(texture_width, texture_height);
+
+                textures.set(&texture_handle, new_texture);
+                user_textures.mark_texture_changed(&texture_handle);
+
+                // Update the camera to match the new texture size.
+                let native_texture_size = Vec2::new(texture_size.x, texture_size.y);
+                canvas.update_canvas_size(native_texture_size);
+                camera_manager.update_camera_viewports(native_texture_size, &mut camera_query);
+            }
+
+            if canvas.is_visible() {
+                let image = Image::new(texture_id, texture_size)
+                    .uv(Rect::from_min_max(pos2(0.0, 1.0), pos2(1.0, 0.0)))
+                    .sense(egui::Sense::click_and_drag());
+                let canvas_response = ui.add_enabled(true, image);
+
+                if canvas_response.clicked() || canvas_response.dragged() {
+                    canvas_response.request_focus();
+                    canvas.set_focus(true);
+                } else if canvas_response.clicked_elsewhere() {
+                    canvas_response.surrender_focus();
+                    canvas.set_focus(false);
+                }
+
+                let has_focus = canvas.has_focus();
+                input.set_enabled(has_focus);
+
+            } else {
+                input.set_enabled(false);
+            }
+        });
 
     system_state.apply(world);
 }
