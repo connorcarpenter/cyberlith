@@ -10,3 +10,4 @@ pub mod shape_manager;
 pub mod shape_waitlist;
 pub mod tab_manager;
 pub mod key_action_map;
+pub mod toolbar;

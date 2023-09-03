@@ -18,6 +18,7 @@ use crate::app::{
     config::ConfigPlugin,
     events::{InsertComponentEvent, LoginEvent},
     resources::{
+        toolbar::Toolbar,
         action_stack::ActionStack, camera_manager::CameraManager, canvas::Canvas, global::Global,
         input_manager::InputManager, shape_manager::ShapeManager, shape_waitlist::ShapeWaitlist,
         tab_manager::TabManager,
@@ -94,6 +95,7 @@ impl Plugin for VortexPlugin {
             .init_resource::<UiState>()
             .insert_resource(global_resource)
             .init_resource::<TabManager>()
+            .init_resource::<Toolbar>()
             .init_resource::<ActionStack>()
             .add_systems(Update, ui::update)
             // Canvas Config

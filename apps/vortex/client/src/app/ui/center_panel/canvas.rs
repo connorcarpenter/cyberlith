@@ -46,7 +46,7 @@ pub fn show_canvas(ui: &mut Ui, world: &mut World) {
     let mut frame = Frame::central_panel(ui.style()).inner_margin(1.0);
     if canvas.is_visible() {
         if canvas.has_focus() {
-            frame = frame.fill(Color32::GRAY);
+            frame = frame.fill(Color32::DARK_GRAY);
         } else {
             frame = frame.fill(Color32::BLACK);
         }
