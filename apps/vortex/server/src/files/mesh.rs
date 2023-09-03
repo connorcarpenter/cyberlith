@@ -360,7 +360,17 @@ impl MeshReader {
                         .insert(face_component)
                         .id();
                     info!("spawning mesh face entity {:?}", entity_id);
-                    output.push((entity_id, ShapeTypeData::Face));
+                    output.push((
+                        entity_id,
+                        ShapeTypeData::Face(
+                            vertex_a_entity,
+                            vertex_b_entity,
+                            vertex_c_entity,
+                            edge_a_entity,
+                            edge_b_entity,
+                            edge_c_entity
+                        )
+                    ));
                 }
             }
         }
@@ -407,7 +417,9 @@ impl MeshReader {
                 ShapeTypeData::Edge(start, end) => {
                     shape_manager.on_create_mesh_edge(start, entity, end);
                 }
-                ShapeTypeData::Face => {}
+                ShapeTypeData::Face(vert_a, vert_b, vert_c, edge_a, edge_b, edge_c) => {
+                    shape_manager.on_create_face(entity, vert_a, vert_b, vert_c, edge_a, edge_b, edge_c);
+                }
             }
         }
 
