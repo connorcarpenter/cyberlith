@@ -10,4 +10,4 @@ mod plugin;
 pub use assets::{AssetHash, Assets, Handle};
 pub use base_set::*;
 pub use plugin::RenderApiPlugin;
-pub use resources::Window;
+pub use resources::{Window, WindowResolution};

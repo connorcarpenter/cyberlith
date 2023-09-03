@@ -1,7 +1,7 @@
 use winit::window::CursorIcon;
 
 use input::IncomingEvent;
-use render_api::components::Viewport;
+use render_api::{components::Viewport, WindowResolution};
 
 use crate::core::*;
 
@@ -27,14 +27,11 @@ pub struct FrameInput<T: 'static + Clone> {
     /// Milliseconds accumulated time since start.
     pub accumulated_time: f64,
 
-    /// Viewport of the window in physical pixels (the size of the screen [RenderTarget] which is returned from [FrameInput::screen]).
-    pub viewport: Viewport,
+    /// Viewport of the window in physical pixels (not counting pixel ratio)
+    pub physical_size: Viewport,
 
-    /// Width of the window in logical pixels.
-    pub window_width: u32,
-
-    /// Height of the window in logical pixels.
-    pub window_height: u32,
+    /// Viewport of the window in logical pixels = size / pixel ratio
+    pub logical_size: Viewport,
 
     /// Number of physical pixels for each logical pixel.
     pub device_pixel_ratio: f64,
@@ -44,16 +41,17 @@ pub struct FrameInput<T: 'static + Clone> {
 }
 
 impl<T: 'static + Clone> FrameInput<T> {
-    ///
-    /// Returns the screen render target, which is used for drawing to the screen, for this window.
-    /// Same as
-    ///
-    /// ```notrust
-    /// RenderTarget::screen(&frame_input.context, frame_input.viewport.width, frame_input.viewport.height)
-    /// ```
-    ///
+
     pub fn screen(&self) -> RenderTarget {
-        RenderTarget::screen(self.viewport.width, self.viewport.height)
+        RenderTarget::screen(self.logical_size.width, self.logical_size.height)
+    }
+
+    pub fn window_resolution(&self) -> WindowResolution {
+        WindowResolution {
+            physical_size: self.physical_size,
+            logical_size: self.logical_size,
+            device_pixel_ratio: self.device_pixel_ratio,
+        }
     }
 }
 

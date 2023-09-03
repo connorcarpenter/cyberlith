@@ -1,5 +1,7 @@
 use bevy_ecs::{prelude::Mut, world::World};
 
+use render_api::Window;
+
 use render_egui::EguiContext;
 
 use crate::app::{
@@ -11,6 +13,17 @@ use crate::app::{
 
 pub fn update(world: &mut World) {
     let context = world.get_resource::<EguiContext>().unwrap().inner().clone();
+
+    {
+        let window = world.get_resource::<Window>().unwrap();
+        if window.did_change() {
+            let mut ui_state = world.get_resource_mut::<UiState>().unwrap();
+            ui_state.resized_window = true;
+            let mut window = world.get_resource_mut::<Window>().unwrap();
+            window.clear_change();
+        }
+    }
+
     let ui_state = world.get_resource::<UiState>().unwrap();
 
     if ui_state.logged_in {

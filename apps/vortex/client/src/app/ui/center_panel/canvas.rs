@@ -22,7 +22,7 @@ use crate::app::{
 };
 
 pub fn show_canvas(ui: &mut Ui, world: &mut World) {
-    let did_resize = resize_finished(ui, world, "left_panel");
+    let mut did_resize = resize_finished(ui, world, "left_panel");
 
     let mut system_state: SystemState<(
         ResMut<Canvas>,
@@ -43,6 +43,14 @@ pub fn show_canvas(ui: &mut Ui, world: &mut World) {
         mut camera_query,
     ) = system_state.get_mut(world);
 
+    if ui_state.canvas_coords.is_none() {
+        did_resize = true;
+    }
+    if ui_state.resized_window {
+        did_resize = true;
+        ui_state.resized_window = false;
+    }
+
     let mut frame = Frame::central_panel(ui.style()).inner_margin(1.0);
     if canvas.is_visible() {
         if canvas.has_focus() {
@@ -62,11 +70,8 @@ pub fn show_canvas(ui: &mut Ui, world: &mut World) {
                 return;
             };
             let top_left = ui.min_rect().min;
-            if ui_state.canvas_coords.is_none() {
-                ui_state.canvas_coords = Some(top_left);
-                input.set_mouse_offset(top_left.x, top_left.y);
-            }
-            let texture_size = ui.available_size();
+            let mut texture_size = ui.available_size();
+            texture_size.y -= 3.0;
 
             if did_resize {
                 ui_state.canvas_coords = Some(top_left);
@@ -126,6 +131,12 @@ fn resize_finished(ui: &Ui, world: &mut World, id_impl: impl Into<Id>) -> bool {
     }
     if !ui_state.dragging_side_panel && is_resizing {
         ui_state.dragging_side_panel = true;
+        return false;
+    }
+
+    if ui_state.resized_window {
+        ui_state.resized_window = false;
+        return true;
     }
 
     return false;

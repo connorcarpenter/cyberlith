@@ -250,7 +250,7 @@ impl<T: 'static + Clone> Window<T> {
                     let (physical_width, physical_height): (u32, u32) =
                         self.window.inner_size().into();
                     let device_pixel_ratio = self.window.scale_factor();
-                    let (width, height): (u32, u32) = self
+                    let (logical_width, logical_height): (u32, u32) = self
                         .window
                         .inner_size()
                         .to_logical::<f64>(device_pixel_ratio)
@@ -260,9 +260,8 @@ impl<T: 'static + Clone> Window<T> {
                         outgoing_events: Vec::new(),
                         elapsed_time,
                         accumulated_time,
-                        viewport: Viewport::new_at_origin(physical_width, physical_height),
-                        window_width: width,
-                        window_height: height,
+                        logical_size: Viewport::new_at_origin(logical_width, logical_height),
+                        physical_size: Viewport::new_at_origin(physical_width, physical_height),
                         device_pixel_ratio,
                         first_frame,
                     };

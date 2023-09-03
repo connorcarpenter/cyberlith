@@ -5,7 +5,6 @@ use crate::{
     assets::Assets,
     base::{CpuMaterial, CpuMesh, CpuTexture2D},
     base_set::{RenderDraw, RenderSync},
-    Window,
 };
 
 pub struct RenderApiPlugin;
@@ -16,9 +15,7 @@ impl Plugin for RenderApiPlugin {
             // Resources
             .insert_resource(Assets::<CpuMesh>::default())
             .insert_resource(Assets::<CpuMaterial>::default())
-            .insert_resource(Assets::<CpuTexture2D>::default())
-            // TODO: figure out how to set the correct window here ...
-            .insert_resource(Window::default());
+            .insert_resource(Assets::<CpuTexture2D>::default());
 
         // Schedules
         app.init_schedule(RenderSync);

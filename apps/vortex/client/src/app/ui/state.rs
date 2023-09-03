@@ -20,6 +20,7 @@ pub struct UiState {
     pub text_input_modal: TextInputModal,
     pub dragging_side_panel: bool,
     pub canvas_coords: Option<Pos2>,
+    pub resized_window: bool,
 }
 
 impl Default for UiState {
@@ -32,6 +33,7 @@ impl Default for UiState {
             text_input_modal: TextInputModal::new(),
             dragging_side_panel: false,
             canvas_coords: None,
+            resized_window: false,
         }
     }
 }

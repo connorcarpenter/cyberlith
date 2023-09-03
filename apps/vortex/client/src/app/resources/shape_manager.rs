@@ -1691,102 +1691,112 @@ impl ShapeManager {
         //
 
         // update selected vertex circle & line
-        let Ok(mut select_shape_visibilities) = visibility_q.get_many_mut([select_circle_entity, select_triangle_entity, select_line_entity]) else {
+        let Ok(mut select_circle_visibility) = visibility_q.get_mut(select_circle_entity) else {
             panic!("Select shape entities has no Visibility");
         };
 
-        match self.selected_shape {
-            Some((selected_vertex_entity, CanvasShape::Vertex))
-            | Some((selected_vertex_entity, CanvasShape::RootVertex)) => {
-                let vertex_transform = {
-                    let Ok(vertex_transform) = transform_q.get(selected_vertex_entity) else {
-                        return;
-                    };
-                    *vertex_transform
-                };
+        let Ok(mut select_circle_transform) = transform_q.get_mut(select_circle_entity) else {
+            panic!("Select line entity has no Transform");
+        };
 
-                // sync select line transform
-                {
-                    let Ok(mut select_line_transform) = transform_q.get_mut(select_line_entity) else {
-                        panic!("Select line entity has no Transform");
-                    };
+        select_circle_visibility.visible = true;
+        select_circle_transform.translation.x = mouse_position.x;
+        select_circle_transform.translation.y = mouse_position.y;
 
-                    set_2d_line_transform(
-                        &mut select_line_transform,
-                        vertex_transform.translation.truncate(),
-                        *mouse_position,
-                    );
-                    select_line_transform.scale.y = camera_3d_scale;
-                }
+        return;
 
-                // sync select circle transform
-                {
-                    let Ok(mut select_circle_transform) = transform_q.get_mut(select_circle_entity) else {
-                        panic!("Select shape entities has no Transform");
-                    };
-
-                    select_circle_transform.translation = vertex_transform.translation;
-                    select_circle_transform.scale =
-                        Vec3::splat(SelectCircle::RADIUS * camera_3d_scale);
-                }
-
-                select_shape_visibilities[0].visible = true; // select circle is visible
-                select_shape_visibilities[1].visible = false; // no select triangle visible
-                select_shape_visibilities[2].visible = true; // select line is visible
-            }
-            Some((selected_edge_entity, CanvasShape::Edge)) => {
-                let selected_edge_transform = {
-                    let Ok(selected_edge_transform) = transform_q.get(selected_edge_entity) else {
-                        return;
-                    };
-                    *selected_edge_transform
-                };
-
-                // sync select line transform
-                {
-                    let Ok(mut select_line_transform) = transform_q.get_mut(select_line_entity) else {
-                        panic!("Select line entity has no Transform");
-                    };
-
-                    select_line_transform.mirror(&selected_edge_transform);
-
-                    select_line_transform.scale.y = 3.0 * camera_3d_scale;
-                    select_line_transform.translation.z += 1.0;
-                }
-
-                select_shape_visibilities[0].visible = false; // no select circle visible
-                select_shape_visibilities[1].visible = false; // no select triangle visible
-                select_shape_visibilities[2].visible = true; // select line is visible
-            }
-            Some((selected_face_entity, CanvasShape::Face)) => {
-                let face_icon_transform = {
-                    let Ok(face_icon_transform) = transform_q.get(selected_face_entity) else {
-                        return;
-                    };
-                    *face_icon_transform
-                };
-
-                // sync select triangle transform
-                {
-                    let Ok(mut select_triangle_transform) = transform_q.get_mut(select_triangle_entity) else {
-                        panic!("Select shape entities has no Transform");
-                    };
-
-                    select_triangle_transform.translation = face_icon_transform.translation;
-                    select_triangle_transform.scale =
-                        Vec3::splat(SelectTriangle::SIZE * camera_3d_scale);
-                }
-
-                select_shape_visibilities[0].visible = false; // select circle is not visible
-                select_shape_visibilities[1].visible = true; // select triangle is visible
-                select_shape_visibilities[2].visible = false; // select line is not visible
-            }
-            None => {
-                select_shape_visibilities[0].visible = false; // no select circle visible
-                select_shape_visibilities[1].visible = false; // no select triangle visible
-                select_shape_visibilities[2].visible = false; // no select line visible
-            }
-        }
+        // match self.selected_shape {
+        //     Some((selected_vertex_entity, CanvasShape::Vertex))
+        //     | Some((selected_vertex_entity, CanvasShape::RootVertex)) => {
+        //         let vertex_transform = {
+        //             let Ok(vertex_transform) = transform_q.get(selected_vertex_entity) else {
+        //                 return;
+        //             };
+        //             *vertex_transform
+        //         };
+        //
+        //         // sync select line transform
+        //         {
+        //             let Ok(mut select_line_transform) = transform_q.get_mut(select_line_entity) else {
+        //                 panic!("Select line entity has no Transform");
+        //             };
+        //
+        //             set_2d_line_transform(
+        //                 &mut select_line_transform,
+        //                 vertex_transform.translation.truncate(),
+        //                 *mouse_position,
+        //             );
+        //             select_line_transform.scale.y = camera_3d_scale;
+        //         }
+        //
+        //         // sync select circle transform
+        //         {
+        //             let Ok(mut select_circle_transform) = transform_q.get_mut(select_circle_entity) else {
+        //                 panic!("Select shape entities has no Transform");
+        //             };
+        //
+        //             select_circle_transform.translation = vertex_transform.translation;
+        //             select_circle_transform.scale =
+        //                 Vec3::splat(SelectCircle::RADIUS * camera_3d_scale);
+        //         }
+        //
+        //         select_shape_visibilities[0].visible = true; // select circle is visible
+        //         select_shape_visibilities[1].visible = false; // no select triangle visible
+        //         select_shape_visibilities[2].visible = true; // select line is visible
+        //     }
+        //     Some((selected_edge_entity, CanvasShape::Edge)) => {
+        //         let selected_edge_transform = {
+        //             let Ok(selected_edge_transform) = transform_q.get(selected_edge_entity) else {
+        //                 return;
+        //             };
+        //             *selected_edge_transform
+        //         };
+        //
+        //         // sync select line transform
+        //         {
+        //             let Ok(mut select_line_transform) = transform_q.get_mut(select_line_entity) else {
+        //                 panic!("Select line entity has no Transform");
+        //             };
+        //
+        //             select_line_transform.mirror(&selected_edge_transform);
+        //
+        //             select_line_transform.scale.y = 3.0 * camera_3d_scale;
+        //             select_line_transform.translation.z += 1.0;
+        //         }
+        //
+        //         select_shape_visibilities[0].visible = false; // no select circle visible
+        //         select_shape_visibilities[1].visible = false; // no select triangle visible
+        //         select_shape_visibilities[2].visible = true; // select line is visible
+        //     }
+        //     Some((selected_face_entity, CanvasShape::Face)) => {
+        //         let face_icon_transform = {
+        //             let Ok(face_icon_transform) = transform_q.get(selected_face_entity) else {
+        //                 return;
+        //             };
+        //             *face_icon_transform
+        //         };
+        //
+        //         // sync select triangle transform
+        //         {
+        //             let Ok(mut select_triangle_transform) = transform_q.get_mut(select_triangle_entity) else {
+        //                 panic!("Select shape entities has no Transform");
+        //             };
+        //
+        //             select_triangle_transform.translation = face_icon_transform.translation;
+        //             select_triangle_transform.scale =
+        //                 Vec3::splat(SelectTriangle::SIZE * camera_3d_scale);
+        //         }
+        //
+        //         select_shape_visibilities[0].visible = false; // select circle is not visible
+        //         select_shape_visibilities[1].visible = true; // select triangle is visible
+        //         select_shape_visibilities[2].visible = false; // select line is not visible
+        //     }
+        //     None => {
+        //         select_shape_visibilities[0].visible = false; // no select circle visible
+        //         select_shape_visibilities[1].visible = false; // no select triangle visible
+        //         select_shape_visibilities[2].visible = false; // no select line visible
+        //     }
+        // }
     }
 
     fn handle_mouse_click(

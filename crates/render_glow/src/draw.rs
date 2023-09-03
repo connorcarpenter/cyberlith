@@ -147,7 +147,7 @@ pub fn draw(
         let render_target = {
             match &render_pass.camera.camera.target {
                 CameraRenderTarget::Screen => {
-                    RenderTarget::screen(frame_input.viewport.width, frame_input.viewport.height)
+                    frame_input.screen()
                 }
                 CameraRenderTarget::Image(texture_handle) => {
                     // Render to Image

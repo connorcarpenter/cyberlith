@@ -1,5 +1,5 @@
 mod window;
 mod window_settings;
 
-pub use window::Window;
-pub use window_settings::{HardwareAcceleration, SurfaceSettings, WindowSettings};
+pub use window::*;
+pub use window_settings::*;
