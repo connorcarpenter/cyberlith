@@ -1,4 +1,3 @@
-
 use bevy_ecs::system::Resource;
 
 use input::{InputAction, Key, MouseButton};
@@ -52,9 +51,18 @@ impl Default for InputManager {
                 Key::Num5,
                 AppInputAction::SetCameraAngleFixed(CameraAngle::Ingame(5)),
             ),
-            (Key::D, AppInputAction::SetCameraAngleFixed(CameraAngle::Side)),
-            (Key::T, AppInputAction::SetCameraAngleFixed(CameraAngle::Top)),
-            (Key::F, AppInputAction::SetCameraAngleFixed(CameraAngle::Front)),
+            (
+                Key::D,
+                AppInputAction::SetCameraAngleFixed(CameraAngle::Side),
+            ),
+            (
+                Key::T,
+                AppInputAction::SetCameraAngleFixed(CameraAngle::Top),
+            ),
+            (
+                Key::F,
+                AppInputAction::SetCameraAngleFixed(CameraAngle::Front),
+            ),
             (Key::PageUp, AppInputAction::CameraAngleYawRotate(true)),
             (Key::PageDown, AppInputAction::CameraAngleYawRotate(false)),
             (Key::Insert, AppInputAction::InsertKeyPress),
@@ -73,16 +81,24 @@ impl InputManager {
 
         for action in input_actions {
             match action {
-                InputAction::MiddleMouseScroll(scroll_amount) => output.push(AppInputAction::MiddleMouseScroll(scroll_amount)),
+                InputAction::MiddleMouseScroll(scroll_amount) => {
+                    output.push(AppInputAction::MiddleMouseScroll(scroll_amount))
+                }
                 InputAction::MouseMoved => output.push(AppInputAction::MouseMoved),
-                InputAction::MouseDragged(click_type, mouse_position, delta) => output.push(AppInputAction::MouseDragged(click_type, mouse_position, delta)),
-                InputAction::MouseClick(click_type, mouse_position) => output.push(AppInputAction::MouseClick(click_type, mouse_position)),
-                InputAction::MouseRelease(click_type) => output.push(AppInputAction::MouseRelease(click_type)),
+                InputAction::MouseDragged(click_type, mouse_position, delta) => output.push(
+                    AppInputAction::MouseDragged(click_type, mouse_position, delta),
+                ),
+                InputAction::MouseClick(click_type, mouse_position) => {
+                    output.push(AppInputAction::MouseClick(click_type, mouse_position))
+                }
+                InputAction::MouseRelease(click_type) => {
+                    output.push(AppInputAction::MouseRelease(click_type))
+                }
                 InputAction::KeyPress(key) => {
                     if let Some(action) = self.key_action_map.key_to_action(key) {
                         output.push(action);
                     }
-                },
+                }
                 _ => {}
             }
         }

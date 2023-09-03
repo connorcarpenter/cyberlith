@@ -41,7 +41,6 @@ pub struct FrameInput<T: 'static + Clone> {
 }
 
 impl<T: 'static + Clone> FrameInput<T> {
-
     pub fn screen(&self) -> RenderTarget {
         RenderTarget::screen(self.logical_size.width, self.logical_size.height)
     }

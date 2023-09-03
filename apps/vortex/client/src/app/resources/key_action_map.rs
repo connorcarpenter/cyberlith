@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use input::Key;
+use std::collections::HashMap;
 
 pub struct KeyActionMap<A: Clone + Copy> {
     map: HashMap<Key, A>,

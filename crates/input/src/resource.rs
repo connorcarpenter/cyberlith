@@ -4,7 +4,7 @@ use bevy_ecs::system::Resource;
 
 use math::Vec2;
 
-use crate::{is_button::IsButton, IncomingEvent, Key, MouseButton, InputAction};
+use crate::{is_button::IsButton, IncomingEvent, InputAction, Key, MouseButton};
 
 #[derive(Resource)]
 pub struct Input {
@@ -62,7 +62,10 @@ impl Input {
         for event in events {
             match event {
                 IncomingEvent::MousePress {
-                    button, handled, position, ..
+                    button,
+                    handled,
+                    position,
+                    ..
                 } => {
                     if *handled {
                         continue;
@@ -71,7 +74,8 @@ impl Input {
                         let mouse_coords_x = (position.0 as f32) - self.mouse_offset.x;
                         let mouse_coords_y = (position.1 as f32) - self.mouse_offset.y;
                         let mouse_coords = Vec2::new(mouse_coords_x, mouse_coords_y);
-                        self.outgoing_actions.push(InputAction::MouseClick(*button, mouse_coords));
+                        self.outgoing_actions
+                            .push(InputAction::MouseClick(*button, mouse_coords));
                         self.mouse_buttons.insert(*button);
                     }
                 }
@@ -82,7 +86,8 @@ impl Input {
                         continue;
                     }
                     if self.mouse_buttons.contains(button) {
-                        self.outgoing_actions.push(InputAction::MouseRelease(*button));
+                        self.outgoing_actions
+                            .push(InputAction::MouseRelease(*button));
                         self.mouse_buttons.remove(button);
                     }
                 }
@@ -103,7 +108,11 @@ impl Input {
                         self.last_mouse_position = self.mouse_coords;
 
                         for mouse_button in self.mouse_buttons.iter() {
-                            self.outgoing_actions.push(InputAction::MouseDragged(*mouse_button, self.mouse_coords, delta));
+                            self.outgoing_actions.push(InputAction::MouseDragged(
+                                *mouse_button,
+                                self.mouse_coords,
+                                delta,
+                            ));
                         }
 
                         self.outgoing_actions.push(InputAction::MouseMoved);
@@ -116,7 +125,8 @@ impl Input {
                     // mouse wheel zoom..
                     if self.mouse_scroll_y > 0.1 || self.mouse_scroll_y < -0.1 {
                         self.mouse_scroll_y = 0.0;
-                        self.outgoing_actions.push(InputAction::MiddleMouseScroll(self.mouse_scroll_y));
+                        self.outgoing_actions
+                            .push(InputAction::MiddleMouseScroll(self.mouse_scroll_y));
                     }
                 }
                 IncomingEvent::KeyPress { kind, handled, .. } => {

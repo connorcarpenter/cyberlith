@@ -18,10 +18,9 @@ use crate::app::{
     config::ConfigPlugin,
     events::{InsertComponentEvent, LoginEvent},
     resources::{
-        toolbar::Toolbar,
         action_stack::ActionStack, camera_manager::CameraManager, canvas::Canvas, global::Global,
         input_manager::InputManager, shape_manager::ShapeManager, shape_waitlist::ShapeWaitlist,
-        tab_manager::TabManager,
+        tab_manager::TabManager, toolbar::Toolbar,
     },
     systems::{canvas, network, ui},
     ui::UiState,

@@ -25,9 +25,8 @@ use vortex_proto::{
 use crate::app::{
     components::{file_system::FileSystemUiState, OwnedByFileLocal},
     resources::{
-        toolbar::Toolbar,
         camera_manager::CameraManager, camera_state::CameraState, canvas::Canvas,
-        shape_manager::ShapeManager,
+        shape_manager::ShapeManager, toolbar::Toolbar,
     },
     ui::widgets::colors::{
         FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
@@ -371,7 +370,14 @@ impl TabManager {
         visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         row_entity: &Entity,
     ) {
-        self.close_all_tabs(client, canvas, camera_manager, shape_manager, toolbar, visibility_q);
+        self.close_all_tabs(
+            client,
+            canvas,
+            camera_manager,
+            shape_manager,
+            toolbar,
+            visibility_q,
+        );
         if !self.tab_map.contains_key(row_entity) {
             panic!("row entity not in tab map!")
         }
@@ -666,7 +672,14 @@ impl TabManager {
                 );
             }
             Some(TabAction::CloseAll) => {
-                self.close_all_tabs(client, canvas, camera_manager, shape_manager, toolbar, visibility_q);
+                self.close_all_tabs(
+                    client,
+                    canvas,
+                    camera_manager,
+                    shape_manager,
+                    toolbar,
+                    visibility_q,
+                );
             }
             Some(TabAction::CloseOthers(row_entity)) => {
                 self.close_all_tabs_except(

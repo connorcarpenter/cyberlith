@@ -18,9 +18,9 @@ use crate::app::{
         OwnedByFileLocal,
     },
     resources::{
-        toolbar::Toolbar,
         action::Action, action_stack::ActionStack, camera_manager::CameraManager, canvas::Canvas,
         file_tree::FileTree, global::Global, shape_manager::ShapeManager, tab_manager::TabManager,
+        toolbar::Toolbar,
     },
 };
 

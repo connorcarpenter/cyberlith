@@ -8,8 +8,8 @@ use bevy_ecs::{
 };
 use bevy_log::{info, warn};
 
-use naia_bevy_client::{Client, CommandsExt, Replicate, ReplicationConfig};
 use input::MouseButton;
+use naia_bevy_client::{Client, CommandsExt, Replicate, ReplicationConfig};
 
 use math::{convert_2d_to_3d, convert_3d_to_2d, Vec2, Vec3};
 use render_api::{
@@ -997,8 +997,8 @@ impl ShapeManager {
             face_key.vertex_3d_b,
             face_key.vertex_3d_c,
         ]
-            .iter()
-            .enumerate()
+        .iter()
+        .enumerate()
         {
             let vertex_transform = transform_q.get(*vertex_3d_entity).unwrap();
             positions[index] = vertex_transform.translation;
@@ -2355,9 +2355,9 @@ impl ShapeManager {
         const COMPASS_POS: Vec2 = Vec2::new(530.0, 300.0);
         let offset_2d = camera_state.camera_3d_offset().round()
             + Vec2::new(
-            unit_length * -1.0 * COMPASS_POS.x,
-            unit_length * COMPASS_POS.y,
-        );
+                unit_length * -1.0 * COMPASS_POS.x,
+                unit_length * COMPASS_POS.y,
+            );
         let offset_3d = (right * offset_2d.x) + (up * offset_2d.y);
 
         let vert_offset_3d = Vec3::ZERO + offset_3d;

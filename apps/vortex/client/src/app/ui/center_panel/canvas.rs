@@ -12,7 +12,7 @@ use render_api::{
 };
 use render_egui::{
     egui,
-    egui::{Color32, pos2, Frame, Id, Image, Rect, Ui},
+    egui::{pos2, Color32, Frame, Id, Image, Rect, Ui},
     EguiUserTextures,
 };
 
@@ -107,7 +107,6 @@ pub fn show_canvas(ui: &mut Ui, world: &mut World) {
 
                 let has_focus = canvas.has_focus();
                 input.set_enabled(has_focus);
-
             } else {
                 input.set_enabled(false);
             }

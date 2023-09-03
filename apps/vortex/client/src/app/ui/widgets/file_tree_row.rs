@@ -30,9 +30,8 @@ use crate::app::{
         OwnedByFileLocal,
     },
     resources::{
-        toolbar::Toolbar,
         action::Action, action_stack::ActionStack, camera_manager::CameraManager, canvas::Canvas,
-        global::Global, shape_manager::ShapeManager, tab_manager::TabManager,
+        global::Global, shape_manager::ShapeManager, tab_manager::TabManager, toolbar::Toolbar,
     },
     ui::{
         widgets::colors::{

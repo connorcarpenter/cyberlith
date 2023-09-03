@@ -14,7 +14,6 @@ pub struct EguiUserTextures {
 }
 
 impl EguiUserTextures {
-
     pub fn must_process(&self) -> bool {
         !self.added_textures.is_empty()
             || !self.removed_textures.is_empty()

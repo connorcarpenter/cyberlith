@@ -1,9 +1,14 @@
-use bevy_app::{App, First, Last, Main, MainScheduleOrder, Plugin, PostUpdate, PreStartup, PreUpdate, RunFixedUpdateLoop, StateTransition, Update};
+use bevy_app::{
+    App, First, Last, Main, MainScheduleOrder, Plugin, PostUpdate, PreStartup, PreUpdate,
+    RunFixedUpdateLoop, StateTransition, Update,
+};
 use bevy_ecs::schedule::{ExecutorKind, Schedule};
 
 use render_api::{RenderDraw, Window};
 
-use crate::{base_set::GlowInput, draw::draw, input, window, runner::runner_func, sync::SyncPlugin};
+use crate::{
+    base_set::GlowInput, draw::draw, input, runner::runner_func, sync::SyncPlugin, window,
+};
 
 pub struct RenderGlowPlugin;
 

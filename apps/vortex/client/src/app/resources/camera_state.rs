@@ -53,9 +53,7 @@ impl CameraState {
         self.camera_3d_scale = scale;
     }
 
-    pub fn set_2d_mode(
-        &mut self,
-    ) {
+    pub fn set_2d_mode(&mut self) {
         if self.is_2d() {
             return;
         }
@@ -63,9 +61,7 @@ impl CameraState {
         self.set_is_2d(true);
     }
 
-    pub fn set_3d_mode(
-        &mut self,
-    ) {
+    pub fn set_3d_mode(&mut self) {
         if !self.is_2d() {
             return;
         }

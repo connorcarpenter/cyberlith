@@ -1,4 +1,3 @@
-
 mod anim;
 mod mesh;
 mod skel;
@@ -6,10 +5,15 @@ mod skel;
 use bevy_ecs::{system::Resource, world::World};
 use bevy_log::info;
 
-use render_egui::{egui::{Button, Response, Ui, Widget}, egui};
+use render_egui::{
+    egui,
+    egui::{Button, Response, Ui, Widget},
+};
 use vortex_proto::components::FileTypeValue;
 
-use crate::app::resources::toolbar::{anim::AnimationToolbar, mesh::MeshToolbar, skel::SkeletonToolbar};
+use crate::app::resources::toolbar::{
+    anim::AnimationToolbar, mesh::MeshToolbar, skel::SkeletonToolbar,
+};
 
 pub enum ToolbarKind {
     None,
@@ -32,7 +36,6 @@ impl Default for Toolbar {
 }
 
 impl Toolbar {
-
     pub(crate) fn button(ui: &mut Ui, button_text: &str, tooltip: &str) -> Response {
         let button = Button::new(button_text).min_size(egui::Vec2::splat(26.0));
         button.ui(ui).on_hover_text(tooltip)
@@ -60,16 +63,16 @@ impl Toolbar {
 
     pub fn render(&mut self, ui: &mut Ui, world: &mut World) {
         match self.kind {
-            ToolbarKind::None => {},
+            ToolbarKind::None => {}
             ToolbarKind::Skeleton(ref mut toolbar) => {
                 toolbar.render(ui, world);
-            },
+            }
             ToolbarKind::Mesh(ref mut toolbar) => {
                 toolbar.render(ui, world);
-            },
+            }
             ToolbarKind::Animation(ref mut toolbar) => {
                 toolbar.render(ui, world);
-            },
+            }
         }
     }
 }

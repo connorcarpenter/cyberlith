@@ -274,7 +274,10 @@ impl CameraManager {
             Projection::Orthographic(OrthographicProjection::new(texture_size.y, 0.0, 1000.0));
     }
 
-    pub fn update_visibility(visible: bool, camera_q: &mut Query<(&mut Camera, &mut Projection, &mut Transform)>,) {
+    pub fn update_visibility(
+        visible: bool,
+        camera_q: &mut Query<(&mut Camera, &mut Projection, &mut Transform)>,
+    ) {
         let cameras_enabled = visible;
 
         if cameras_enabled {
