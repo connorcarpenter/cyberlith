@@ -125,6 +125,7 @@ impl Face3d {
 pub enum FileTypeValue {
     Skel,
     Mesh,
+    Anim,
 }
 
 #[derive(Component, Replicate)]

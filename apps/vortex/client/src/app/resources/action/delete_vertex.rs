@@ -196,5 +196,8 @@ pub(crate) fn execute(
                 Some((vertex_2d_entity, vertex_3d_entity)),
             )];
         }
+        FileTypeValue::Anim => {
+            panic!("");
+        }
     }
 }

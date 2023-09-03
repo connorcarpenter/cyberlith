@@ -30,6 +30,7 @@ use crate::app::{
         OwnedByFileLocal,
     },
     resources::{
+        toolbar::Toolbar,
         action::Action, action_stack::ActionStack, camera_manager::CameraManager, canvas::Canvas,
         global::Global, shape_manager::ShapeManager, tab_manager::TabManager,
     },
@@ -391,6 +392,7 @@ impl FileTreeRowUiWidget {
                 ResMut<CameraManager>,
                 ResMut<ShapeManager>,
                 ResMut<TabManager>,
+                ResMut<Toolbar>,
                 Query<(&mut Visibility, &OwnedByFileLocal)>,
             )> = SystemState::new(world);
             let (
@@ -399,6 +401,7 @@ impl FileTreeRowUiWidget {
                 mut camera_manager,
                 mut shape_manager,
                 mut tab_manager,
+                mut toolbar,
                 mut visibility_q,
             ) = system_state.get_mut(world);
             tab_manager.open_tab(
@@ -406,6 +409,7 @@ impl FileTreeRowUiWidget {
                 &mut canvas,
                 &mut camera_manager,
                 &mut shape_manager,
+                &mut toolbar,
                 &mut visibility_q,
                 row_entity,
                 file_ext,

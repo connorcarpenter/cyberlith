@@ -1896,6 +1896,9 @@ impl ShapeManager {
                                         vec![(vertex_2d_entity, None)],
                                         Vec::new(),
                                     ),
+                                    FileTypeValue::Anim => {
+                                        panic!("");
+                                    }
                                 },
                                 new_3d_position,
                                 None,

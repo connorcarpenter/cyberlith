@@ -74,6 +74,9 @@ impl ShapeWaitlistEntry {
                     return self.file_entity.is_some() && self.vertex_parent.is_some()
                 }
                 Some(FileTypeValue::Mesh) => return self.file_entity.is_some(),
+                Some(FileTypeValue::Anim) => {
+                    panic!("");
+                }
             },
             Some(ShapeType::Edge) => {
                 self.file_type.is_some()
@@ -153,6 +156,9 @@ impl ShapeWaitlistEntry {
                 let (vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c) =
                     self.face_entities.unwrap();
                 ShapeData::Face(vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c)
+            }
+            (_, FileTypeValue::Anim) => {
+                panic!("");
             }
         };
         return (shape_data, self.file_entity.unwrap(), file_type);
@@ -338,6 +344,9 @@ impl ShapeWaitlist {
                         continue;
                     }
                 }
+                (_, FileTypeValue::Anim) => {
+                    panic!("");
+                }
             }
             self.process_complete(
                 commands,
@@ -442,6 +451,9 @@ impl ShapeWaitlist {
                     entity,
                     positions,
                 );
+            }
+            (_, FileTypeValue::Anim) => {
+                panic!("");
             }
         }
 

@@ -25,6 +25,7 @@ use vortex_proto::{
 use crate::app::{
     components::{file_system::FileSystemUiState, OwnedByFileLocal},
     resources::{
+        toolbar::Toolbar,
         camera_manager::CameraManager, camera_state::CameraState, canvas::Canvas,
         shape_manager::ShapeManager,
     },
@@ -95,6 +96,7 @@ impl TabManager {
                 ResMut<CameraManager>,
                 ResMut<ShapeManager>,
                 ResMut<TabManager>,
+                ResMut<Toolbar>,
                 Query<(&FileSystemEntry, &FileSystemUiState)>,
                 Query<(&mut Visibility, &OwnedByFileLocal)>,
             )> = SystemState::new(world);
@@ -104,6 +106,7 @@ impl TabManager {
                 mut camera_manager,
                 mut shape_manager,
                 mut tab_manager,
+                mut toolbar,
                 file_q,
                 mut visibility_q,
             ) = system_state.get_mut(world);
@@ -113,6 +116,7 @@ impl TabManager {
                 &mut canvas,
                 &mut camera_manager,
                 &mut shape_manager,
+                &mut toolbar,
                 ui,
                 &file_q,
                 &mut visibility_q,
@@ -128,6 +132,7 @@ impl TabManager {
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         shape_manager: &mut ShapeManager,
+        toolbar: &mut Toolbar,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         row_entity: &Entity,
         file_ext: FileExtension,
@@ -138,6 +143,7 @@ impl TabManager {
                 canvas,
                 camera_manager,
                 shape_manager,
+                toolbar,
                 visibility_q,
                 row_entity,
             );
@@ -168,6 +174,7 @@ impl TabManager {
                 canvas,
                 camera_manager,
                 shape_manager,
+                toolbar,
                 visibility_q,
                 row_entity,
             );
@@ -226,6 +233,7 @@ impl TabManager {
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         shape_manager: &mut ShapeManager,
+        toolbar: &mut Toolbar,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         row_entity: &Entity,
     ) {
@@ -240,8 +248,13 @@ impl TabManager {
         let tab_state = self.tab_map.get_mut(&row_entity).unwrap();
         tab_state.selected = true;
 
+        let file_type = tab_state.ext.to_file_type();
+
         // change vertex manager's file type
-        shape_manager.set_current_file_type(tab_state.ext.to_file_type());
+        shape_manager.set_current_file_type(file_type);
+
+        // change toolbar's type
+        toolbar.set_file_type(file_type);
 
         // send message to server
         let message = TabActionMessage::new(tab_state.tab_id, TabActionMessageType::Select);
@@ -279,6 +292,7 @@ impl TabManager {
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         shape_manager: &mut ShapeManager,
+        toolbar: &mut Toolbar,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         row_entity: &Entity,
     ) {
@@ -303,11 +317,15 @@ impl TabManager {
                         canvas,
                         camera_manager,
                         shape_manager,
+                        toolbar,
                         visibility_q,
                         &new_entity,
                     );
                 } else {
                     self.clear_current_tab(canvas, camera_manager);
+
+                    // no tabs!
+                    toolbar.clear();
                 }
             }
         }
@@ -326,6 +344,7 @@ impl TabManager {
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         shape_manager: &mut ShapeManager,
+        toolbar: &mut Toolbar,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
     ) {
         let all_tabs = self.tab_order.clone();
@@ -335,6 +354,7 @@ impl TabManager {
                 canvas,
                 camera_manager,
                 shape_manager,
+                toolbar,
                 visibility_q,
                 &entity,
             );
@@ -347,10 +367,11 @@ impl TabManager {
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         shape_manager: &mut ShapeManager,
+        toolbar: &mut Toolbar,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         row_entity: &Entity,
     ) {
-        self.close_all_tabs(client, canvas, camera_manager, shape_manager, visibility_q);
+        self.close_all_tabs(client, canvas, camera_manager, shape_manager, toolbar, visibility_q);
         if !self.tab_map.contains_key(row_entity) {
             panic!("row entity not in tab map!")
         }
@@ -359,6 +380,7 @@ impl TabManager {
             canvas,
             camera_manager,
             shape_manager,
+            toolbar,
             visibility_q,
             row_entity,
         );
@@ -370,6 +392,7 @@ impl TabManager {
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         shape_manager: &mut ShapeManager,
+        toolbar: &mut Toolbar,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         row_entity: &Entity,
     ) {
@@ -387,6 +410,7 @@ impl TabManager {
                 canvas,
                 camera_manager,
                 shape_manager,
+                toolbar,
                 visibility_q,
                 &entity,
             );
@@ -399,6 +423,7 @@ impl TabManager {
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         shape_manager: &mut ShapeManager,
+        toolbar: &mut Toolbar,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         row_entity: &Entity,
     ) {
@@ -416,6 +441,7 @@ impl TabManager {
                 canvas,
                 camera_manager,
                 shape_manager,
+                toolbar,
                 visibility_q,
                 &entity,
             );
@@ -428,6 +454,7 @@ impl TabManager {
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         shape_manager: &mut ShapeManager,
+        toolbar: &mut Toolbar,
         ui: &mut Ui,
         file_q: &Query<(&FileSystemEntry, &FileSystemUiState)>,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
@@ -450,6 +477,7 @@ impl TabManager {
             canvas,
             camera_manager,
             shape_manager,
+            toolbar,
             visibility_q,
             tab_action,
         );
@@ -609,6 +637,7 @@ impl TabManager {
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         shape_manager: &mut ShapeManager,
+        toolbar: &mut Toolbar,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         tab_action: Option<TabAction>,
     ) {
@@ -620,6 +649,7 @@ impl TabManager {
                     canvas,
                     camera_manager,
                     shape_manager,
+                    toolbar,
                     visibility_q,
                     &row_entity,
                 );
@@ -630,12 +660,13 @@ impl TabManager {
                     canvas,
                     camera_manager,
                     shape_manager,
+                    toolbar,
                     visibility_q,
                     &row_entity,
                 );
             }
             Some(TabAction::CloseAll) => {
-                self.close_all_tabs(client, canvas, camera_manager, shape_manager, visibility_q);
+                self.close_all_tabs(client, canvas, camera_manager, shape_manager, toolbar, visibility_q);
             }
             Some(TabAction::CloseOthers(row_entity)) => {
                 self.close_all_tabs_except(
@@ -643,6 +674,7 @@ impl TabManager {
                     canvas,
                     camera_manager,
                     shape_manager,
+                    toolbar,
                     visibility_q,
                     &row_entity,
                 );
@@ -653,6 +685,7 @@ impl TabManager {
                     canvas,
                     camera_manager,
                     shape_manager,
+                    toolbar,
                     visibility_q,
                     &row_entity,
                 );
@@ -663,6 +696,7 @@ impl TabManager {
                     canvas,
                     camera_manager,
                     shape_manager,
+                    toolbar,
                     visibility_q,
                     &row_entity,
                 );

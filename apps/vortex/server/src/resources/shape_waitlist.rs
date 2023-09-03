@@ -361,6 +361,9 @@ impl ShapeWaitlist {
                     (FileTypeValue::Skel, ShapeType::Face) => {
                         panic!("not possible");
                     }
+                    (FileTypeValue::Anim, _) => {
+                        panic!("not possible");
+                    }
                 }
 
                 info!(
