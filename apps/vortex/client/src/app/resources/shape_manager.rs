@@ -1041,6 +1041,7 @@ impl ShapeManager {
             .enable_replication(client)
             .configure_replication(ReplicationConfig::Delegated)
             .insert(owned_by_file_component)
+            .insert(OwnedByFileLocal::new(file_entity))
             .insert(face_3d_component)
             .id();
 
@@ -1409,11 +1410,14 @@ impl ShapeManager {
 
         if let Some(file_entity) = ownership_opt {
             info!(
-                "adding OwnedByFileLocal({:?}) to entity {:?}",
-                file_entity, vertex_2d_entity
+                "adding OwnedByFileLocal({:?}) to entity 2d: `{:?}` & 3d: `{:?}`",
+                file_entity, vertex_2d_entity, vertex_3d_entity,
             );
             commands
                 .entity(vertex_2d_entity)
+                .insert(OwnedByFileLocal::new(file_entity));
+            commands
+                .entity(vertex_3d_entity)
                 .insert(OwnedByFileLocal::new(file_entity));
         }
 
@@ -1488,6 +1492,9 @@ impl ShapeManager {
         if let Some(file_entity) = ownership_opt {
             commands
                 .entity(edge_2d_entity)
+                .insert(OwnedByFileLocal::new(file_entity));
+            commands
+                .entity(edge_3d_entity)
                 .insert(OwnedByFileLocal::new(file_entity));
         }
 

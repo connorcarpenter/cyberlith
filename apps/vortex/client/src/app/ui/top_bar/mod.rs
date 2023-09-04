@@ -1,4 +1,4 @@
-use bevy_ecs::{prelude::Mut, world::World};
+use bevy_ecs::{world::World};
 
 use render_egui::{
     egui,
@@ -6,10 +6,9 @@ use render_egui::{
 };
 
 use crate::app::{
-    resources::global::Global,
+    resources::{global::Global, action_stack::{action_stack_redo, action_stack_undo}},
     ui::shortcuts::{SHORTCUT_REDO, SHORTCUT_UNDO},
 };
-use crate::app::resources::action_stack::{action_stack_redo, action_stack_undo};
 
 pub fn top_bar(context: &egui::Context, world: &mut World) {
     egui::TopBottomPanel::top("top_bar").show(context, |ui| {
@@ -73,35 +72,34 @@ fn edit_menu_button(ui: &mut Ui, world: &mut World) {
         let mut should_undo = false;
         let mut should_redo = false;
 
-        world.resource_scope(|world, mut global: Mut<Global>| {
-            let action_stack = &mut global.action_stack;
-            ui.set_min_width(220.0);
-            ui.style_mut().wrap = Some(false);
+        let mut global = world.get_resource_mut::<Global>().unwrap();
+        let action_stack = &mut global.action_stack;
+        ui.set_min_width(220.0);
+        ui.style_mut().wrap = Some(false);
 
-            if ui
-                .add_enabled(
-                    action_stack.has_undo(),
-                    egui::Button::new("⟲ Undo")
-                        .shortcut_text(ui.ctx().format_shortcut(&SHORTCUT_UNDO)),
-                )
-                .clicked()
-            {
-                should_undo = true;
-                ui.close_menu();
-            }
+        if ui
+            .add_enabled(
+                action_stack.has_undo(),
+                egui::Button::new("⟲ Undo")
+                    .shortcut_text(ui.ctx().format_shortcut(&SHORTCUT_UNDO)),
+            )
+            .clicked()
+        {
+            should_undo = true;
+            ui.close_menu();
+        }
 
-            if ui
-                .add_enabled(
-                    action_stack.has_redo(),
-                    egui::Button::new("⟳ Redo")
-                        .shortcut_text(ui.ctx().format_shortcut(&SHORTCUT_REDO)),
-                )
-                .clicked()
-            {
-                should_redo = true;
-                ui.close_menu();
-            }
-        });
+        if ui
+            .add_enabled(
+                action_stack.has_redo(),
+                egui::Button::new("⟳ Redo")
+                    .shortcut_text(ui.ctx().format_shortcut(&SHORTCUT_REDO)),
+            )
+            .clicked()
+        {
+            should_redo = true;
+            ui.close_menu();
+        }
 
         if should_undo {
             action_stack_undo(world);

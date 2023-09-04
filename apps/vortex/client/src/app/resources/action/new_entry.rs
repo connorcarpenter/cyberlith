@@ -1,6 +1,6 @@
 use bevy_ecs::{
     prelude::{Commands, Entity, Query, World},
-    system::{Res, ResMut, SystemState},
+    system::{ResMut, SystemState},
 };
 use bevy_log::info;
 
@@ -20,7 +20,7 @@ use crate::app::{
     },
     resources::{
         action::{FileAction, select_entries::{deselect_all_selected_files, release_entities}}, action_stack::ActionStack, camera_manager::CameraManager, canvas::Canvas,
-        file_tree::FileTree, global::Global, shape_manager::ShapeManager, tab_manager::TabManager,
+        file_tree::FileTree, shape_manager::ShapeManager, tab_manager::TabManager,
         toolbar::Toolbar,
     },
     systems::file_post_process,
@@ -29,6 +29,7 @@ use crate::app::{
 pub(crate) fn execute(
     world: &mut World,
     action_stack: &mut ActionStack<FileAction>,
+    project_root_entity: Entity,
     parent_entity_opt: Option<Entity>,
     new_file_name: String,
     entry_kind: EntryKind,
@@ -38,7 +39,6 @@ pub(crate) fn execute(
     let mut system_state: SystemState<(
         Commands,
         Client,
-        Res<Global>,
         ResMut<Canvas>,
         ResMut<CameraManager>,
         ResMut<ShapeManager>,
@@ -52,7 +52,6 @@ pub(crate) fn execute(
     let (
         mut commands,
         mut client,
-        global,
         mut canvas,
         mut camera_manager,
         mut shape_manager,
@@ -72,7 +71,7 @@ pub(crate) fn execute(
         if let Some(parent_entity) = parent_entity_opt {
             parent_entity
         } else {
-            global.project_root_entity
+            project_root_entity
         }
     };
 

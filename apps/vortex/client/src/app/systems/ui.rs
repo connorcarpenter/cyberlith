@@ -35,8 +35,9 @@ pub fn update(world: &mut World) {
         consume_shortcuts(&context, world);
 
         world.resource_scope(|world, mut global: Mut<Global>| {
+            let project_root_entity = global.project_root_entity;
             let action_stack = &mut global.action_stack;
-            action_stack.execute_actions(world, None);
+            action_stack.execute_actions(world, Some(&project_root_entity));
         });
         world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
             if let Some(tab_file_entity) = tab_manager.current_tab_entity() {

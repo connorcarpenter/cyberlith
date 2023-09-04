@@ -1,6 +1,6 @@
 use bevy_ecs::{
     prelude::{Commands, Entity, Query, World},
-    system::{Res, ResMut, SystemState},
+    system::{ResMut, SystemState},
 };
 use bevy_log::info;
 
@@ -20,7 +20,6 @@ use crate::app::{resources::{
     camera_manager::CameraManager,
     shape_manager::FaceKey,
     shape_manager::{CanvasShape, ShapeManager},
-    tab_manager::TabManager,
 }, components::Vertex2d};
 
 pub(crate) fn execute(

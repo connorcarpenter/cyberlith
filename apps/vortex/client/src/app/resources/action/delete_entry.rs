@@ -16,13 +16,13 @@ use crate::app::{
 
 pub(crate) fn execute(
     world: &mut World,
+    project_root_entity: Entity,
     file_entity: Entity,
     files_to_select_opt: Option<Vec<Entity>>,
 ) -> Vec<FileAction> {
     let mut system_state: SystemState<(
         Commands,
         Client,
-        Res<Global>,
         Query<(Entity, &mut FileSystemUiState)>,
         Query<(Entity, &ChangelistEntry, &mut ChangelistUiState)>,
         Query<(
@@ -32,7 +32,7 @@ pub(crate) fn execute(
         )>,
         Query<&mut FileSystemParent>,
     )> = SystemState::new(world);
-    let (mut commands, mut client, global, mut ui_query, mut cl_query, fs_query, mut parent_query) =
+    let (mut commands, mut client, mut ui_query, mut cl_query, fs_query, mut parent_query) =
         system_state.get_mut(world);
     let (entry, fs_child_opt, fs_root_child_opt) = fs_query.get(file_entity).unwrap();
 
@@ -56,7 +56,7 @@ pub(crate) fn execute(
     } else if let Some(_) = fs_root_child_opt {
         // remove entity from root
         parent_query
-            .get_mut(global.project_root_entity)
+            .get_mut(project_root_entity)
             .unwrap()
             .remove_child(&file_entity);
 

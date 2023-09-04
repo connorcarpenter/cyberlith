@@ -1,5 +1,6 @@
 
 use bevy_ecs::{entity::Entity, event::EventReader, system::{Query, ResMut}};
+use bevy_log::{info, warn};
 
 use naia_bevy_client::events::{
     EntityAuthDeniedEvent, EntityAuthGrantedEvent, EntityAuthResetEvent,
@@ -51,16 +52,20 @@ fn process_entity_auth_status(
     entity: &Entity
 ) {
     if shape_manager.has_shape_entity_3d(entity) {
-        //info!("auth granted for entity: {:?}", entity);
+        info!("auth processing for shape entity: {:?}", entity);
         if let Ok(owning_file_entity) = owned_by_q.get(*entity) {
             if let Some(tab_state) = tab_manager.tab_state_mut(&owning_file_entity.file_entity) {
                 let shape_3d_entity = shape_manager.shape_entity_3d_to_2d(entity).unwrap();
                 tab_state.action_stack.entity_update_auth_status(&shape_3d_entity);
+            } else {
+                warn!("no tab state found for file entity: {:?}", owning_file_entity.file_entity);
             }
+        } else {
+            warn!("no owning file entity found for entity: {:?}", entity);
         }
     } else {
         // entity is .. file?
-        //info!("auth granted for file? entity: {:?}", entity);
+        info!("auth processing for file? entity: {:?}", entity);
         global.action_stack.entity_update_auth_status(entity);
     }
 }

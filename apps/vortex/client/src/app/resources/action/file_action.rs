@@ -67,7 +67,7 @@ impl FileAction {
 }
 
 impl Action for FileAction {
-    fn execute(self, world: &mut World, tab_file_entity_opt: Option<&Entity>, action_stack: &mut ActionStack<Self>) -> Vec<Self> {
+    fn execute(self, world: &mut World, entity_opt: Option<&Entity>, action_stack: &mut ActionStack<Self>) -> Vec<Self> {
         match self {
             Self::SelectEntries(file_entities) => select_entries::execute(world, file_entities),
             Self::NewEntry(
@@ -76,17 +76,22 @@ impl Action for FileAction {
                 entry_kind,
                 old_entity_opt,
                 entry_contents_opt,
-            ) => new_entry::execute(
-                world,
-                action_stack,
-                parent_entity_opt,
-                new_file_name,
-                entry_kind,
-                old_entity_opt,
-                entry_contents_opt,
-            ),
+            ) => {
+                let project_root_entity = *(entity_opt.unwrap());
+                new_entry::execute(
+                    world,
+                    action_stack,
+                    project_root_entity,
+                    parent_entity_opt,
+                    new_file_name,
+                    entry_kind,
+                    old_entity_opt,
+                    entry_contents_opt,
+                )
+            },
             Self::DeleteEntry(file_entity, files_to_select_opt) => {
-                delete_entry::execute(world, file_entity, files_to_select_opt)
+                let project_root_entity = *(entity_opt.unwrap());
+                delete_entry::execute(world, project_root_entity, file_entity, files_to_select_opt)
             }
             Self::RenameEntry(file_entity, new_name) => {
                 rename_entry::execute(world, file_entity, new_name)
