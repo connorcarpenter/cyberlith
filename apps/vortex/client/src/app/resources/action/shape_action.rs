@@ -5,7 +5,7 @@ use math::Vec3;
 
 use crate::app::{
     components::VertexTypeData,
-    resources::{action_stack::{ActionStack, Action}, shape_manager::{CanvasShape, ShapeManager}, action::{create_edge, create_vertex, delete_edge, delete_face, delete_vertex, move_vertex, select_shape}},
+    resources::{shape_manager::{CanvasShape, ShapeManager}, action::{Action, ActionStack, create_edge, create_vertex, delete_edge, delete_face, delete_vertex, move_vertex, select_shape}},
 };
 
 #[derive(Clone)]

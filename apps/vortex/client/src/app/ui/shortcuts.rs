@@ -5,7 +5,7 @@ use render_egui::{
     egui::{KeyboardShortcut, Modifiers},
 };
 
-use crate::app::resources::{action_stack::{action_stack_redo, action_stack_undo}};
+use crate::app::resources::action::{action_stack_redo, action_stack_undo};
 
 pub const SHORTCUT_UNDO: KeyboardShortcut = KeyboardShortcut::new(Modifiers::CTRL, egui::Key::Z);
 pub const SHORTCUT_REDO: KeyboardShortcut = KeyboardShortcut::new(

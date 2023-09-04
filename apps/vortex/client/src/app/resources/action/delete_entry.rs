@@ -1,6 +1,6 @@
 use bevy_ecs::{
     prelude::{Commands, Entity, Query, World},
-    system::{Res, SystemState},
+    system::SystemState,
 };
 
 use naia_bevy_client::Client;
@@ -11,7 +11,7 @@ use vortex_proto::components::{
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
-    resources::{file_tree::FileTree, action::select_entries::{request_entities, select_files}, action::FileAction, file_manager::FileManager},
+    resources::{file_tree::FileTree, action::select_entries::{request_entities, select_files}, action::FileAction},
 };
 
 pub(crate) fn execute(

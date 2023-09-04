@@ -30,9 +30,8 @@ use crate::app::{
         SelectTriangle, Vertex2d, VertexTypeData,
     },
     resources::{
-        action::ShapeAction,
+        action::{ShapeAction, ActionStack},
         tab_manager::TabState,
-        action_stack::ActionStack,
         camera_manager::{CameraAngle, CameraManager},
         camera_state::CameraState,
         input_manager::AppInputAction,

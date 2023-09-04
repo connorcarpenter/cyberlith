@@ -18,8 +18,7 @@ use vortex_proto::components::{FileType, FileTypeValue, OwnedByFile, Vertex3d};
 use crate::app::{
     components::{VertexTypeData, Vertex2d, VertexEntry},
     resources::{
-        action::{create_edge::create_networked_edge, select_shape::deselect_all_selected_shapes, ShapeAction},
-        action_stack::ActionStack,
+        action::{ActionStack, create_edge::create_networked_edge, select_shape::deselect_all_selected_shapes, ShapeAction},
         camera_manager::CameraManager,
         shape_manager::FaceKey,
         shape_manager::{CanvasShape, ShapeManager},

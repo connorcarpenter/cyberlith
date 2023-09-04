@@ -6,7 +6,7 @@ use render_egui::{
 };
 
 use crate::app::{
-    resources::{file_manager::FileManager, action_stack::{action_stack_redo, action_stack_undo}},
+    resources::{file_manager::FileManager, action::{action_stack_redo, action_stack_undo}},
     ui::shortcuts::{SHORTCUT_REDO, SHORTCUT_UNDO},
 };
 

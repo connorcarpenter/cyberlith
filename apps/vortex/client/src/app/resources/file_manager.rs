@@ -4,7 +4,7 @@ use bevy_ecs::prelude::{Entity, Resource};
 
 use vortex_proto::resources::FileEntryKey;
 
-use crate::app::resources::{action::FileAction, action_stack::ActionStack};
+use crate::app::resources::action::{ActionStack, FileAction};
 
 #[derive(Resource)]
 pub struct FileManager {

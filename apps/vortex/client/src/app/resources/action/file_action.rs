@@ -3,7 +3,7 @@ use bevy_ecs::prelude::{Entity, World};
 
 use vortex_proto::components::EntryKind;
 
-use crate::app::resources::{action_stack::{ActionStack, Action}, file_tree::FileTree, action::{delete_entry, new_entry, rename_entry, select_entries}};
+use crate::app::resources::{file_tree::FileTree, action::{Action, ActionStack, delete_entry, new_entry, rename_entry, select_entries}};
 
 #[derive(Clone)]
 pub enum FileAction {

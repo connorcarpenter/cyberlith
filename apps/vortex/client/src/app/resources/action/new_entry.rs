@@ -19,7 +19,7 @@ use crate::app::{
         OwnedByFileLocal,
     },
     resources::{
-        action::{FileAction, select_entries::{deselect_all_selected_files, release_entities}}, action_stack::ActionStack, camera_manager::CameraManager, canvas::Canvas,
+        action::{ActionStack, FileAction, select_entries::{deselect_all_selected_files, release_entities}}, camera_manager::CameraManager, canvas::Canvas,
         file_tree::FileTree, shape_manager::ShapeManager, tab_manager::TabManager,
         toolbar::Toolbar,
     },
