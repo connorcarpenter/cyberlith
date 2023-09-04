@@ -2,17 +2,16 @@ use bevy_ecs::{
     prelude::{Commands, Entity, Query, World},
     system::{ResMut, SystemState},
 };
-use bevy_log::info;
+use bevy_log::{info, warn};
 
-use naia_bevy_client::Client;
+use naia_bevy_client::{Client, CommandsExt};
 
 use vortex_proto::components::{Edge3d, FileType, FileTypeValue, Vertex3d};
 
 use crate::app::{
-    components::VertexTypeData,
+    components::{VertexTypeData, VertexEntry},
     resources::{
-        action::Action,
-        action_stack::ActionStack,
+        action::{Action, select_shape::select_shape},
         shape_manager::{CanvasShape, ShapeManager},
     },
 };
@@ -74,7 +73,7 @@ pub(crate) fn execute(
 
             // get entries
             let entry_contents_opt = {
-                let entries = ActionStack::convert_vertices_to_tree(
+                let entries = convert_vertices_to_tree(
                     &client,
                     &mut shape_manager,
                     &vertex_3d_entity,
@@ -96,7 +95,7 @@ pub(crate) fn execute(
             };
             let vertex_3d_position = vertex_3d.as_vec3();
 
-            ActionStack::handle_common_vertex_despawn(
+            handle_common_vertex_despawn(
                 &mut commands,
                 &mut client,
                 &mut shape_manager,
@@ -180,7 +179,7 @@ pub(crate) fn execute(
             };
             let vertex_3d_position = vertex_3d.as_vec3();
 
-            ActionStack::handle_common_vertex_despawn(
+            handle_common_vertex_despawn(
                 &mut commands,
                 &mut client,
                 &mut shape_manager,
@@ -200,4 +199,89 @@ pub(crate) fn execute(
             panic!("");
         }
     }
+}
+
+fn handle_common_vertex_despawn(
+    commands: &mut Commands,
+    client: &mut Client,
+    shape_manager: &mut ShapeManager,
+    vertex_3d_entity: Entity,
+    vertex_2d_to_select_opt: Option<(Entity, CanvasShape)>,
+) {
+    // delete 3d vertex
+    commands.entity(vertex_3d_entity).despawn();
+
+    // cleanup mappings
+    shape_manager.cleanup_deleted_vertex(commands, &vertex_3d_entity);
+
+    // select entities as needed
+    if let Some((vertex_2d_to_select, vertex_type)) = vertex_2d_to_select_opt {
+        if let Some(vertex_3d_entity_to_request) =
+            select_shape(shape_manager, Some((vertex_2d_to_select, vertex_type)))
+        {
+            //info!("request_entities({:?})", vertex_3d_entity_to_request);
+            let mut entity_mut = commands.entity(vertex_3d_entity_to_request);
+            if entity_mut.authority(client).is_some() {
+                entity_mut.request_authority(client);
+            }
+        }
+    } else {
+        shape_manager.deselect_shape();
+    }
+}
+
+fn convert_vertices_to_tree(
+    client: &Client,
+    shape_manager: &mut ShapeManager,
+    parent_3d_entity: &Entity,
+    vertex_3d_q: &Query<(Entity, &Vertex3d)>,
+    edge_3d_q: &Query<&Edge3d>,
+) -> Vec<(Entity, VertexEntry)> {
+    let mut output = Vec::new();
+
+    for edge_3d in edge_3d_q.iter() {
+        let Some(parent_entity) = edge_3d.start.get(client) else {
+            warn!("edge start not found");
+            continue;
+        };
+        let Some(child_entity_3d) = edge_3d.end.get(client) else {
+            warn!("edge end not found");
+            continue;
+        };
+        if parent_entity == *parent_3d_entity {
+            let child_entity_2d = shape_manager
+                .vertex_entity_3d_to_2d(&child_entity_3d)
+                .unwrap();
+
+            // get positon
+            let Ok((_, vertex_3d)) = vertex_3d_q.get(child_entity_3d) else {
+                panic!("vertex entity not found");
+            };
+
+            let child_entry =
+                VertexEntry::new(child_entity_2d, child_entity_3d, vertex_3d.as_vec3());
+            output.push((child_entity_3d, child_entry));
+        }
+    }
+
+    for (entry_entity, entry) in output.iter_mut() {
+        // set children
+        let children = convert_vertices_to_tree(
+            client,
+            shape_manager,
+            entry_entity,
+            vertex_3d_q,
+            edge_3d_q,
+        );
+        if children.len() > 0 {
+            entry.set_children(
+                children
+                    .into_iter()
+                    .map(|(_, child_tree)| child_tree)
+                    .collect(),
+            );
+        }
+    }
+
+    output
 }

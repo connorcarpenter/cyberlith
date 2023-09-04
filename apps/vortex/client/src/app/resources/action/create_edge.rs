@@ -4,7 +4,7 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use naia_bevy_client::{Client, CommandsExt};
+use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
 use render_api::{
     base::{CpuMaterial, CpuMesh},
@@ -12,7 +12,8 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::FileTypeValue;
+use vortex_proto::components::{Edge3d, FileType, FileTypeValue, OwnedByFile};
+use crate::app::components::Vertex2d;
 
 use crate::app::resources::{
     action::Action,
@@ -22,6 +23,7 @@ use crate::app::resources::{
     shape_manager::{CanvasShape, ShapeManager},
     tab_manager::TabManager,
 };
+use crate::app::resources::action::select_shape::deselect_all_selected_shapes;
 
 pub(crate) fn execute(
     world: &mut World,
@@ -67,7 +69,7 @@ pub(crate) fn execute(
 
         // deselect all selected vertices
         let (deselected_shape_2d_entity, shape_3d_entity_to_release) =
-            ActionStack::deselect_all_selected_shapes(&mut shape_manager);
+            deselect_all_selected_shapes(&mut shape_manager);
         deselected_shape_2d_entity_store = deselected_shape_2d_entity;
         if let Some(entity) = shape_3d_entity_to_release {
             let mut entity_mut = commands.entity(entity);
@@ -82,7 +84,7 @@ pub(crate) fn execute(
             .unwrap();
 
         // create edge
-        let (new_edge_2d_entity, new_edge_3d_entity) = action_stack.create_networked_edge(
+        let (new_edge_2d_entity, new_edge_3d_entity) = create_networked_edge(
             &mut commands,
             &mut client,
             &mut camera_manager,
@@ -210,4 +212,65 @@ pub(crate) fn execute(
         Action::DeleteEdge(created_edge_2d_entity, deselected_shape_2d_entity_store),
         Action::SelectShape(Some((created_edge_2d_entity, CanvasShape::Edge))),
     ];
+}
+
+// return (new edge 2d entity, new edge 3d entity)
+pub fn create_networked_edge(
+    commands: &mut Commands,
+    client: &mut Client,
+    camera_manager: &mut CameraManager,
+    shape_manager: &mut ShapeManager,
+    meshes: &mut Assets<CpuMesh>,
+    materials: &mut Assets<CpuMaterial>,
+    parent_vertex_2d_entity: Entity,
+    child_vertex_2d_entity: Entity,
+    child_vertex_3d_entity: Entity,
+    file_entity: Entity,
+    file_type: FileTypeValue,
+    entities_to_release: &mut Vec<Entity>,
+) -> (Entity, Entity) {
+    // create new 3d edge
+    let parent_vertex_3d_entity = shape_manager
+        .vertex_entity_2d_to_3d(&parent_vertex_2d_entity)
+        .unwrap();
+
+    let mut new_edge_3d_component = Edge3d::new();
+    new_edge_3d_component
+        .start
+        .set(client, &parent_vertex_3d_entity);
+    new_edge_3d_component
+        .end
+        .set(client, &child_vertex_3d_entity);
+    let mut owned_by_file_component = OwnedByFile::new();
+    owned_by_file_component
+        .file_entity
+        .set(client, &file_entity);
+    let new_edge_3d_entity = commands
+        .spawn_empty()
+        .enable_replication(client)
+        .configure_replication(ReplicationConfig::Delegated)
+        .insert(new_edge_3d_component)
+        .insert(owned_by_file_component)
+        .insert(FileType::new(file_type))
+        .id();
+
+    // create new 2d edge, add local components to 3d edge
+    let new_edge_2d_entity = shape_manager.edge_3d_postprocess(
+        commands,
+        meshes,
+        materials,
+        camera_manager,
+        new_edge_3d_entity,
+        parent_vertex_2d_entity,
+        parent_vertex_3d_entity,
+        child_vertex_2d_entity,
+        child_vertex_3d_entity,
+        Some(file_entity),
+        Vertex2d::CHILD_COLOR,
+        file_type == FileTypeValue::Skel,
+    );
+
+    entities_to_release.push(new_edge_3d_entity);
+
+    (new_edge_2d_entity, new_edge_3d_entity)
 }

@@ -11,7 +11,7 @@ use vortex_proto::components::{
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
-    resources::{action::Action, action_stack::ActionStack, global::Global},
+    resources::{file_tree::FileTree, action::select_entries::{request_entities, select_files}, action::Action, global::Global},
 };
 
 pub(crate) fn execute(
@@ -72,7 +72,7 @@ pub(crate) fn execute(
         match entry_kind {
             EntryKind::File => None,
             EntryKind::Directory => {
-                let entries = ActionStack::convert_contents_to_slim_tree(
+                let entries = convert_contents_to_slim_tree(
                     &client,
                     &file_entity,
                     &fs_query,
@@ -90,8 +90,8 @@ pub(crate) fn execute(
     // select files as needed
     if let Some(files_to_select) = files_to_select_opt {
         let file_entries_to_request =
-            ActionStack::select_files(&mut client, &mut ui_query, &mut cl_query, &files_to_select);
-        ActionStack::request_entities(&mut commands, &mut client, file_entries_to_request);
+            select_files(&mut client, &mut ui_query, &mut cl_query, &files_to_select);
+        request_entities(&mut commands, &mut client, file_entries_to_request);
     }
 
     system_state.apply(world);
@@ -103,4 +103,49 @@ pub(crate) fn execute(
         Some(file_entity),
         entry_contents_opt.map(|entries| entries.into_iter().map(|(_, tree)| tree).collect()),
     )];
+}
+
+pub(crate) fn convert_contents_to_slim_tree(
+    client: &Client,
+    parent_entity: &Entity,
+    fs_query: &Query<(
+        &FileSystemEntry,
+        Option<&FileSystemChild>,
+        Option<&FileSystemRootChild>,
+    )>,
+    parent_query: &mut Query<&mut FileSystemParent>,
+) -> Vec<(Entity, FileTree)> {
+    let mut trees = Vec::new();
+
+    if let Ok(parent) = parent_query.get(*parent_entity) {
+        let children_entities = parent.get_children();
+        for child_entity in children_entities {
+            let (child_entry, _, _) = fs_query.get(child_entity).unwrap();
+            let slim_tree = FileTree::new(
+                child_entity,
+                child_entry.name.to_string(),
+                *child_entry.kind,
+            );
+            trees.push((child_entity, slim_tree));
+        }
+
+        for (entry_entity, tree) in trees.iter_mut() {
+            let subtree = convert_contents_to_slim_tree(
+                client,
+                entry_entity,
+                fs_query,
+                parent_query,
+            );
+            if subtree.len() > 0 {
+                tree.children = Some(
+                    subtree
+                        .into_iter()
+                        .map(|(_, child_tree)| child_tree)
+                        .collect(),
+                );
+            }
+        }
+    }
+
+    trees
 }

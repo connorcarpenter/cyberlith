@@ -9,8 +9,7 @@ use naia_bevy_client::{Client, CommandsExt};
 use vortex_proto::components::Edge3d;
 
 use crate::app::resources::{
-    action::Action,
-    action_stack::ActionStack,
+    action::{Action, select_shape::select_shape},
     shape_manager::{CanvasShape, ShapeManager},
 };
 
@@ -87,7 +86,7 @@ pub(crate) fn execute(
     // select entities as needed
     if let Some((shape_2d_to_select, shape_type)) = shape_2d_to_select_opt {
         if let Some(shape_3d_entity_to_request) =
-            ActionStack::select_shape(&mut shape_manager, Some((shape_2d_to_select, shape_type)))
+            select_shape(&mut shape_manager, Some((shape_2d_to_select, shape_type)))
         {
             //info!("request_entities({:?})", shape_3d_entity_to_request);
             let mut entity_mut = commands.entity(shape_3d_entity_to_request);

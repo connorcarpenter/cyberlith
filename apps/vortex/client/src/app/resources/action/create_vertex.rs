@@ -4,7 +4,7 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use naia_bevy_client::{Client, CommandsExt};
+use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
 use math::Vec3;
 use render_api::{
@@ -13,7 +13,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::FileTypeValue;
+use vortex_proto::components::{FileType, FileTypeValue, OwnedByFile, Vertex3d};
 
 use crate::app::{
     components::VertexTypeData,
@@ -26,6 +26,9 @@ use crate::app::{
         tab_manager::TabManager,
     },
 };
+use crate::app::components::{Vertex2d, VertexEntry};
+use crate::app::resources::action::create_edge::create_networked_edge;
+use crate::app::resources::action::select_shape::deselect_all_selected_shapes;
 
 pub(crate) fn execute(
     world: &mut World,
@@ -73,8 +76,7 @@ pub(crate) fn execute(
     ) = system_state.get_mut(world);
 
     // deselect all selected vertices
-    let (deselected_vertex_2d_entity, vertex_3d_entity_to_release) =
-        ActionStack::deselect_all_selected_shapes(&mut shape_manager);
+    let (deselected_vertex_2d_entity, vertex_3d_entity_to_release) = deselect_all_selected_shapes(&mut shape_manager);
     deselected_vertex_2d_entity_store = deselected_vertex_2d_entity;
     if let Some(entity) = vertex_3d_entity_to_release {
         let mut entity_mut = commands.entity(entity);
@@ -87,7 +89,7 @@ pub(crate) fn execute(
     let current_file_entity = tab_manager.current_tab_entity();
 
     // create vertex
-    let (new_vertex_2d_entity, new_vertex_3d_entity) = action_stack.create_networked_vertex(
+    let (new_vertex_2d_entity, new_vertex_3d_entity) = create_networked_vertex(
         &mut commands,
         &mut client,
         &mut camera_manager,
@@ -134,7 +136,8 @@ pub(crate) fn execute(
     match vertex_type_data {
         VertexTypeData::Skel(parent_vertex_2d_entity, children_opt) => {
             if let Some(children) = children_opt {
-                action_stack.create_networked_children_tree(
+                create_networked_children_tree(
+                    action_stack,
                     &mut commands,
                     &mut client,
                     &mut camera_manager,
@@ -147,7 +150,7 @@ pub(crate) fn execute(
                     &mut entities_to_release,
                 );
             }
-            action_stack.create_networked_edge(
+            create_networked_edge(
                 &mut commands,
                 &mut client,
                 &mut camera_manager,
@@ -165,7 +168,7 @@ pub(crate) fn execute(
         VertexTypeData::Mesh(connected_vertex_entities, connected_face_vertex_pairs) => {
             let mut edge_3d_entities = Vec::new();
             for (connected_vertex_entity, old_edge_opt) in connected_vertex_entities {
-                let (new_edge_2d_entity, new_edge_3d_entity) = action_stack.create_networked_edge(
+                let (new_edge_2d_entity, new_edge_3d_entity) = create_networked_edge(
                     &mut commands,
                     &mut client,
                     &mut camera_manager,
@@ -261,4 +264,116 @@ pub(crate) fn execute(
         selected_vertex_2d,
         deselected_vertex_2d_entity_store,
     )];
+}
+
+pub fn create_networked_vertex(
+    commands: &mut Commands,
+    client: &mut Client,
+    camera_manager: &mut CameraManager,
+    shape_manager: &mut ShapeManager,
+    meshes: &mut Assets<CpuMesh>,
+    materials: &mut Assets<CpuMaterial>,
+    position: Vec3,
+    file_entity: Entity,
+    file_type: FileTypeValue,
+    entities_to_release: &mut Vec<Entity>,
+) -> (Entity, Entity) {
+    // create new 3d vertex
+    let mut owned_by_file_component = OwnedByFile::new();
+    owned_by_file_component
+        .file_entity
+        .set(client, &file_entity);
+    let new_vertex_3d_entity = commands
+        .spawn_empty()
+        .enable_replication(client)
+        .configure_replication(ReplicationConfig::Delegated)
+        .insert(Vertex3d::from_vec3(position))
+        .insert(owned_by_file_component)
+        .insert(FileType::new(file_type))
+        .id();
+
+    entities_to_release.push(new_vertex_3d_entity);
+
+    // create new 2d vertex, add local components to 3d vertex
+    let new_vertex_2d_entity = shape_manager.vertex_3d_postprocess(
+        commands,
+        meshes,
+        materials,
+        camera_manager,
+        new_vertex_3d_entity,
+        false,
+        Some(file_entity),
+        Vertex2d::CHILD_COLOR,
+    );
+
+    return (new_vertex_2d_entity, new_vertex_3d_entity);
+}
+
+pub(crate) fn create_networked_children_tree(
+    action_stack: &mut ActionStack,
+    commands: &mut Commands,
+    client: &mut Client,
+    camera_manager: &mut CameraManager,
+    shape_manager: &mut ShapeManager,
+    meshes: &mut Assets<CpuMesh>,
+    materials: &mut Assets<CpuMaterial>,
+    parent_vertex_2d_entity: Entity,
+    children: Vec<VertexEntry>,
+    file_entity: Entity,
+    entities_to_release: &mut Vec<Entity>,
+) {
+    for child in children {
+        let position = child.position();
+        let grandchildren_opt = child.children();
+        let old_child_vertex_3d_entity = child.entity_3d();
+        let old_child_vertex_2d_entity = child.entity_2d();
+
+        let (new_child_vertex_2d_entity, new_child_vertex_3d_entity) = create_networked_vertex(
+                commands,
+                client,
+                camera_manager,
+                shape_manager,
+                meshes,
+                materials,
+                position,
+                file_entity,
+                FileTypeValue::Skel,
+                entities_to_release,
+            );
+        action_stack.migrate_vertex_entities(
+            old_child_vertex_2d_entity,
+            new_child_vertex_2d_entity,
+            old_child_vertex_3d_entity,
+            new_child_vertex_3d_entity,
+        );
+        create_networked_edge(
+            commands,
+            client,
+            camera_manager,
+            shape_manager,
+            meshes,
+            materials,
+            parent_vertex_2d_entity,
+            new_child_vertex_2d_entity,
+            new_child_vertex_3d_entity,
+            file_entity,
+            FileTypeValue::Skel,
+            entities_to_release,
+        );
+        if let Some(grandchildren) = grandchildren_opt {
+            create_networked_children_tree(
+                action_stack,
+                commands,
+                client,
+                camera_manager,
+                shape_manager,
+                meshes,
+                materials,
+                new_child_vertex_2d_entity,
+                grandchildren,
+                file_entity,
+                entities_to_release,
+            );
+        }
+    }
 }
