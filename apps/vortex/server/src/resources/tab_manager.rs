@@ -149,8 +149,7 @@ impl TabManager {
             let (mut server, mut tab_manager, mut user_manager, mut git_manager) =
                 system_state.get_mut(world);
 
-            let output = Self::process_queued_closes_inner(
-                &mut tab_manager,
+            let output = tab_manager.process_queued_closes_inner(
                 &mut server,
                 &mut user_manager,
                 &mut git_manager,
@@ -172,6 +171,10 @@ impl TabManager {
                 let mut output = Vec::new();
 
                 for (project_key, file_key, content_entities) in closed_states.iter() {
+                    if git_manager.file_entity(project_key, file_key).is_none() {
+                        // file was deleted, continue
+                        continue;
+                    }
                     if !git_manager.can_write(project_key, file_key) {
                         panic!("can't write file: `{:?}`", file_key.name());
                     }

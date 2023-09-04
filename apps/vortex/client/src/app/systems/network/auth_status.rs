@@ -6,46 +6,46 @@ use naia_bevy_client::events::{
     EntityAuthDeniedEvent, EntityAuthGrantedEvent, EntityAuthResetEvent,
 };
 
-use crate::app::{components::OwnedByFileLocal, resources::{tab_manager::TabManager, file_manager::FileManager, shape_manager::ShapeManager}};
+use crate::app::{components::OwnedByFileLocal, resources::{tab_manager::TabManager, action::FileActions, shape_manager::ShapeManager}};
 
 pub fn auth_granted_events(
-    mut file_manager: ResMut<FileManager>,
+    mut file_actions: ResMut<FileActions>,
     mut shape_manager: ResMut<ShapeManager>,
     mut tab_manager: ResMut<TabManager>,
     mut event_reader: EventReader<EntityAuthGrantedEvent>,
     owned_by_q: Query<&OwnedByFileLocal>,
 ) {
     for EntityAuthGrantedEvent(entity) in event_reader.iter() {
-        process_entity_auth_status(&mut file_manager, &mut shape_manager, &mut tab_manager, &owned_by_q, entity, "granted");
+        process_entity_auth_status(&mut file_actions, &mut shape_manager, &mut tab_manager, &owned_by_q, entity, "granted");
     }
 }
 
 pub fn auth_denied_events(
-    mut file_manager: ResMut<FileManager>,
+    mut file_actions: ResMut<FileActions>,
     mut shape_manager: ResMut<ShapeManager>,
     mut tab_manager: ResMut<TabManager>,
     mut event_reader: EventReader<EntityAuthDeniedEvent>,
     owned_by_q: Query<&OwnedByFileLocal>,
 ) {
     for EntityAuthDeniedEvent(entity) in event_reader.iter() {
-        process_entity_auth_status(&mut file_manager, &mut shape_manager, &mut tab_manager, &owned_by_q, entity, "denied");
+        process_entity_auth_status(&mut file_actions, &mut shape_manager, &mut tab_manager, &owned_by_q, entity, "denied");
     }
 }
 
 pub fn auth_reset_events(
-    mut file_manager: ResMut<FileManager>,
+    mut file_actions: ResMut<FileActions>,
     mut shape_manager: ResMut<ShapeManager>,
     mut tab_manager: ResMut<TabManager>,
     mut event_reader: EventReader<EntityAuthResetEvent>,
     owned_by_q: Query<&OwnedByFileLocal>,
 ) {
     for EntityAuthResetEvent(entity) in event_reader.iter() {
-        process_entity_auth_status(&mut file_manager, &mut shape_manager, &mut tab_manager, &owned_by_q, entity, "reset");
+        process_entity_auth_status(&mut file_actions, &mut shape_manager, &mut tab_manager, &owned_by_q, entity, "reset");
     }
 }
 
 fn process_entity_auth_status(
-    file_manager: &mut FileManager,
+    file_actions: &mut FileActions,
     shape_manager: &mut ShapeManager,
     tab_manager: &mut TabManager,
     owned_by_q: &Query<&OwnedByFileLocal>,
@@ -67,6 +67,6 @@ fn process_entity_auth_status(
     } else {
         // entity is .. file?
         info!("auth processing for file? entity `{:?}`: `{:?}`", entity, status);
-        file_manager.action_stack.entity_update_auth_status(entity);
+        file_actions.entity_update_auth_status(entity);
     }
 }

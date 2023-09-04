@@ -5,6 +5,7 @@ use bevy_ecs::{
     world::World,
 };
 use bevy_log::info;
+
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
 
 use render_egui::{
@@ -19,7 +20,7 @@ use vortex_proto::{
 
 use crate::app::{
     components::file_system::ChangelistUiState,
-    resources::{action::FileAction, file_manager::FileManager},
+    resources::action::{FileAction, FileActions},
     ui::widgets::colors::{
         FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
         TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED,
@@ -214,12 +215,10 @@ impl ChangelistRowUiWidget {
         let mut system_state: SystemState<(
             Commands,
             Client,
-            ResMut<FileManager>,
+            ResMut<FileActions>,
             Query<&ChangelistEntry>,
         )> = SystemState::new(world);
-        let (mut commands, client, mut file_manager, query) = system_state.get_mut(world);
-
-        let action_stack = &mut file_manager.action_stack;
+        let (mut commands, client, mut file_actions, query) = system_state.get_mut(world);
 
         let has_auth: bool = {
             if let Ok(entry) = query.get(*row_entity) {
@@ -240,7 +239,7 @@ impl ChangelistRowUiWidget {
         if has_auth {
             let mut entities = Vec::new();
             entities.push(*row_entity);
-            action_stack.buffer_action(FileAction::SelectEntries(entities));
+            file_actions.buffer_action(FileAction::SelectEntries(entities));
         }
     }
 
@@ -269,7 +268,7 @@ impl ChangelistRowUiWidget {
         let mut message = ChangelistMessage::new(action, opt_str);
         message.entity.set(&client, row_entity);
 
-        info!("sent ChangelistMessage");
+        info!("sent ChangelistMessage for entity: `{:?}`, action: {:?}", row_entity, action);
         client.send_message::<ChangelistActionChannel, ChangelistMessage>(&message);
     }
 }

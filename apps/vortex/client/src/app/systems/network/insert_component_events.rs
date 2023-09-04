@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use bevy_ecs::{
     entity::Entity,
     event::{EventReader, EventWriter},
-    system::{Commands, Query, Res, ResMut},
+    system::{Commands, Query, ResMut},
 };
 use bevy_log::{info, warn};
 
@@ -108,7 +108,7 @@ pub fn insert_component_events(
 
 pub fn insert_fs_component_events(
     mut commands: Commands,
-    file_manager: Res<FileManager>,
+    mut file_manager: ResMut<FileManager>,
     client: Client,
     mut entry_events: EventReader<InsertComponentEvent<FileSystemEntry>>,
     mut root_events: EventReader<InsertComponentEvent<FileSystemRootChild>>,
@@ -133,6 +133,7 @@ pub fn insert_fs_component_events(
                 .unwrap()
                 .insert(entity, FileSystemParent::new());
         }
+        file_manager.on_file_create(&entity);
     }
 
     for event in root_events.iter() {

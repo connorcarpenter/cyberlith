@@ -20,7 +20,7 @@ use crate::app::{
     resources::{
         camera_manager::CameraManager, canvas::Canvas, file_manager::FileManager,
         input_manager::InputManager, shape_manager::ShapeManager, shape_waitlist::ShapeWaitlist,
-        tab_manager::TabManager, toolbar::Toolbar,
+        tab_manager::TabManager, toolbar::Toolbar, action::FileActions
     },
     systems::{canvas, network, ui},
     ui::UiState,
@@ -93,6 +93,7 @@ impl Plugin for VortexPlugin {
             // UI Configuration
             .init_resource::<UiState>()
             .insert_resource(file_manager)
+            .init_resource::<FileActions>()
             .init_resource::<TabManager>()
             .init_resource::<Toolbar>()
             .add_systems(Update, ui::update)

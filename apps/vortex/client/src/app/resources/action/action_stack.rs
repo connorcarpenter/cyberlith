@@ -7,7 +7,7 @@ use bevy_ecs::world::Mut;
 
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
 
-use crate::app::resources::{action::{FileAction, ShapeAction}, canvas::Canvas, file_manager::FileManager, tab_manager::TabManager};
+use crate::app::resources::{action::{FileActions, FileAction, ShapeAction}, canvas::Canvas, file_manager::FileManager, tab_manager::TabManager};
 
 pub trait Action: Clone {
     fn execute(self, world: &mut World, entity_opt: Option<&Entity>, action_stack: &mut ActionStack<Self>) -> Vec<Self>;
@@ -49,11 +49,13 @@ pub(crate) fn action_stack_undo(world: &mut World) {
             }
         });
     } else {
-        world.resource_scope(|world, mut file_manager: Mut<FileManager>| {
+        world.resource_scope(|world, mut file_actions: Mut<FileActions>| {
+            let file_manager = world.get_resource::<FileManager>().unwrap();
+
             let project_root_entity = file_manager.project_root_entity;
-            let action_stack = &mut file_manager.action_stack;
-            if action_stack.has_undo() {
-                action_stack.undo_action(world, Some(&project_root_entity));
+
+            if file_actions.has_undo() {
+                file_actions.undo_action(world, Some(&project_root_entity));
             }
         });
     }
@@ -79,11 +81,12 @@ pub(crate) fn action_stack_redo(world: &mut World) {
             }
         });
     } else {
-        world.resource_scope(|world, mut file_manager: Mut<FileManager>| {
+        world.resource_scope(|world, mut file_actions: Mut<FileActions>| {
+            let file_manager = world.get_resource::<FileManager>().unwrap();
             let project_root_entity = file_manager.project_root_entity;
-            let action_stack = &mut file_manager.action_stack;
-            if action_stack.has_redo() {
-                action_stack.redo_action(world, Some(&project_root_entity));
+
+            if file_actions.has_redo() {
+                file_actions.redo_action(world, Some(&project_root_entity));
             }
         });
     }

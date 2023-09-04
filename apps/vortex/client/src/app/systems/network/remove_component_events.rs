@@ -11,40 +11,51 @@ use naia_bevy_client::{
 };
 
 use render_api::{
+    components::Visibility,
     base::CpuMesh,
     Assets,
 };
-
 use vortex_proto::components::{
     ChangelistEntry, Edge3d, Face3d, FileSystemChild, FileSystemEntry,
     FileSystemRootChild, Vertex3d,
 };
 
 use crate::app::{
-    components::file_system::{FileSystemParent, FileSystemUiState},
+    components::{file_system::{FileSystemParent, FileSystemUiState}, OwnedByFileLocal},
     resources::{
+        canvas::Canvas,
         file_manager::FileManager,
         shape_manager::ShapeManager,
+        tab_manager::TabManager,
+        camera_manager::CameraManager,
+        toolbar::Toolbar,
     },
 };
 
 pub fn remove_component_events(
     mut commands: Commands,
-    client: Client,
+    mut client: Client,
+    mut canvas: ResMut<Canvas>,
+    mut camera_manager: ResMut<CameraManager>,
     mut file_manager: ResMut<FileManager>,
     mut shape_manager: ResMut<ShapeManager>,
+    mut tab_manager: ResMut<TabManager>,
+    mut toolbar: ResMut<Toolbar>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut event_reader: EventReader<RemoveComponentEvents>,
     mut parent_q: Query<&mut FileSystemParent>,
     mut fs_state_q: Query<&mut FileSystemUiState>,
+    mut visibility_q: Query<(&mut Visibility, &OwnedByFileLocal)>,
 ) {
     for events in event_reader.iter() {
-        for (_entity, _component) in events.read::<FileSystemEntry>() {
-            info!("removed FileSystemEntry component from entity");
+        for (entity, _component) in events.read::<FileSystemEntry>() {
+            info!("entity: `{:?}`, removed FileSystemEntry", entity);
+
+            file_manager.on_file_delete(&mut client, &mut canvas, &mut camera_manager, &mut shape_manager, &mut tab_manager, &mut toolbar, &mut visibility_q, &entity);
         }
 
         for (entity, _component) in events.read::<FileSystemRootChild>() {
-            info!("removed FileSystemRootChild component from entity");
+            info!("entity: `{:?}`, removed FileSystemRootChild", entity);
 
             let Ok(mut parent) = parent_q.get_mut(file_manager.project_root_entity) else {
                 continue;
@@ -53,7 +64,7 @@ pub fn remove_component_events(
         }
 
         for (entity, component) in events.read::<FileSystemChild>() {
-            info!("removed FileSystemChild component from entity");
+            info!("entity: `{:?}`, removed FileSystemChild", entity);
 
             let Some(parent_entity) = component.parent_id.get(&client) else {
                 continue;
@@ -63,8 +74,8 @@ pub fn remove_component_events(
             };
             parent.remove_child(&entity);
         }
-        for (_entity, component) in events.read::<ChangelistEntry>() {
-            info!("removed ChangelistEntry component from entity");
+        for (entity, component) in events.read::<ChangelistEntry>() {
+            info!("entity: `{:?}`, removed ChangelistEntry", entity);
 
             let entry = component.file_entry_key();
             file_manager.changelist.remove(&entry);

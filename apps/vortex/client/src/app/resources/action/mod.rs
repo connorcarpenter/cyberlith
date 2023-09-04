@@ -12,7 +12,9 @@ mod select_shape;
 mod file_action;
 mod shape_action;
 mod action_stack;
+mod file_actions;
 
 pub use file_action::*;
 pub use shape_action::*;
 pub use action_stack::*;
+pub use file_actions::*;

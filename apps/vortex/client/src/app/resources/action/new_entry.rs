@@ -36,6 +36,8 @@ pub(crate) fn execute(
     old_entity_opt: Option<Entity>,
     entry_contents_opt: Option<Vec<FileTree>>,
 ) -> Vec<FileAction> {
+    info!("CreateEntry({:?})", new_file_name);
+
     let mut system_state: SystemState<(
         Commands,
         Client,

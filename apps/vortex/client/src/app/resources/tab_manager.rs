@@ -184,6 +184,62 @@ impl TabManager {
         }
     }
 
+    pub fn close_tab(
+        &mut self,
+        client: &mut Client,
+        canvas: &mut Canvas,
+        camera_manager: &mut CameraManager,
+        shape_manager: &mut ShapeManager,
+        toolbar: &mut Toolbar,
+        visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
+        row_entity: &Entity,
+    ) {
+        // remove tab
+        let tab_state = self.tab_map.remove(row_entity).unwrap();
+        self.tab_order.remove(tab_state.order);
+
+        self.update_tab_orders();
+
+        // select new tab
+        if let Some(current_entity) = self.current_tab {
+            if current_entity == *row_entity {
+                let mut new_tab_order = tab_state.order;
+                if new_tab_order > 0 {
+                    new_tab_order -= 1;
+                }
+                if let Some(new_entity) = self.tab_order.get(new_tab_order) {
+                    let new_entity = *new_entity;
+                    self.clear_current_tab(canvas, camera_manager);
+                    self.select_tab(
+                        client,
+                        canvas,
+                        camera_manager,
+                        shape_manager,
+                        toolbar,
+                        visibility_q,
+                        &new_entity,
+                    );
+                } else {
+                    self.clear_current_tab(canvas, camera_manager);
+
+                    // no tabs!
+                    toolbar.clear();
+                }
+            }
+        }
+
+        // send message to server
+        let message = TabActionMessage::new(tab_state.tab_id, TabActionMessageType::Close);
+        client.send_message::<TabActionChannel, TabActionMessage>(&message);
+
+        // recycle tab id
+        self.recycle_tab_id(tab_state.tab_id);
+    }
+
+    pub fn file_has_tab(&self, file_entity: &Entity) -> bool {
+        self.tab_map.contains_key(file_entity)
+    }
+
     pub fn tab_state(&self, file_entity: &Entity) -> Option<&TabState> {
         self.tab_map.get(file_entity)
     }
@@ -291,58 +347,6 @@ impl TabManager {
         self.current_tab = None;
         canvas.set_visibility(false);
         camera_manager.recalculate_3d_view();
-    }
-
-    fn close_tab(
-        &mut self,
-        client: &mut Client,
-        canvas: &mut Canvas,
-        camera_manager: &mut CameraManager,
-        shape_manager: &mut ShapeManager,
-        toolbar: &mut Toolbar,
-        visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
-        row_entity: &Entity,
-    ) {
-        // remove tab
-        let tab_state = self.tab_map.remove(row_entity).unwrap();
-        self.tab_order.remove(tab_state.order);
-
-        self.update_tab_orders();
-
-        // select new tab
-        if let Some(current_entity) = self.current_tab {
-            if current_entity == *row_entity {
-                let mut new_tab_order = tab_state.order;
-                if new_tab_order > 0 {
-                    new_tab_order -= 1;
-                }
-                if let Some(new_entity) = self.tab_order.get(new_tab_order) {
-                    let new_entity = *new_entity;
-                    self.clear_current_tab(canvas, camera_manager);
-                    self.select_tab(
-                        client,
-                        canvas,
-                        camera_manager,
-                        shape_manager,
-                        toolbar,
-                        visibility_q,
-                        &new_entity,
-                    );
-                } else {
-                    self.clear_current_tab(canvas, camera_manager);
-
-                    // no tabs!
-                    toolbar.clear();
-                }
-            }
-        }
-
-        // send message to server
-        let message = TabActionMessage::new(tab_state.tab_id, TabActionMessageType::Close);
-        client.send_message::<TabActionChannel, TabActionMessage>(&message);
-
-        // recycle tab id
-        self.recycle_tab_id(tab_state.tab_id);
     }
 
     fn close_all_tabs(
@@ -478,9 +482,7 @@ impl TabManager {
         for row_entity in &self.tab_order {
             let tab_state = self.tab_map.get(row_entity).unwrap();
 
-            let Ok((entry, ui_state)) = file_q.get(*row_entity) else {
-                continue;
-            };
+            let (entry, ui_state) = file_q.get(*row_entity).unwrap();
 
             let button_response =
                 Self::render_tab(ui, row_entity, entry, ui_state, tab_state, &mut tab_action);

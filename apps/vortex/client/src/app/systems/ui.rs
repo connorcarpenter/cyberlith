@@ -4,12 +4,11 @@ use render_api::Window;
 use render_egui::EguiContext;
 
 use crate::app::{
-    resources::file_manager::FileManager,
+    resources::{file_manager::FileManager, action::FileActions, tab_manager::TabManager},
     ui::{
         center_panel, consume_shortcuts, left_panel, login_modal, top_bar, TextInputModal, UiState,
     },
 };
-use crate::app::resources::tab_manager::TabManager;
 
 pub fn update(world: &mut World) {
     let context = world.get_resource::<EguiContext>().unwrap().inner().clone();
@@ -34,10 +33,11 @@ pub fn update(world: &mut World) {
 
         consume_shortcuts(&context, world);
 
-        world.resource_scope(|world, mut file_manager: Mut<FileManager>| {
+        world.resource_scope(|world, mut file_actions: Mut<FileActions>| {
+            let file_manager = world.get_resource::<FileManager>().unwrap();
             let project_root_entity = file_manager.project_root_entity;
-            let action_stack = &mut file_manager.action_stack;
-            action_stack.execute_actions(world, Some(&project_root_entity));
+
+            file_actions.execute_actions(world, Some(&project_root_entity));
         });
         world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
             if let Some(tab_file_entity) = tab_manager.current_tab_entity() {

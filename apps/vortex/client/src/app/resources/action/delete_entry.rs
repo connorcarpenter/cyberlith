@@ -1,17 +1,19 @@
 use bevy_ecs::{
     prelude::{Commands, Entity, Query, World},
-    system::SystemState,
+    system::{SystemState, ResMut},
 };
+use bevy_log::info;
 
 use naia_bevy_client::Client;
 
+use render_api::components::Visibility;
 use vortex_proto::components::{
     ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
 };
 
 use crate::app::{
-    components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
-    resources::{file_tree::FileTree, action::select_entries::{request_entities, select_files}, action::FileAction},
+    components::{file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState}, OwnedByFileLocal},
+    resources::{camera_manager::CameraManager, canvas::Canvas, shape_manager::ShapeManager, tab_manager::TabManager, toolbar::Toolbar, file_manager::FileManager, file_tree::FileTree, action::select_entries::{request_entities, select_files}, action::FileAction},
 };
 
 pub(crate) fn execute(
@@ -20,9 +22,17 @@ pub(crate) fn execute(
     file_entity: Entity,
     files_to_select_opt: Option<Vec<Entity>>,
 ) -> Vec<FileAction> {
+    info!("DeleteEntry({:?})", file_entity);
     let mut system_state: SystemState<(
         Commands,
         Client,
+        ResMut<FileManager>,
+        ResMut<Canvas>,
+        ResMut<CameraManager>,
+        ResMut<ShapeManager>,
+        ResMut<TabManager>,
+        ResMut<Toolbar>,
+        Query<(&mut Visibility, &OwnedByFileLocal)>,
         Query<(Entity, &mut FileSystemUiState)>,
         Query<(Entity, &ChangelistEntry, &mut ChangelistUiState)>,
         Query<(
@@ -32,8 +42,21 @@ pub(crate) fn execute(
         )>,
         Query<&mut FileSystemParent>,
     )> = SystemState::new(world);
-    let (mut commands, mut client, mut ui_query, mut cl_query, fs_query, mut parent_query) =
-        system_state.get_mut(world);
+    let (
+        mut commands,
+        mut client,
+        mut file_manager,
+        mut canvas,
+        mut camera_manager,
+        mut shape_manager,
+        mut tab_manager,
+        mut toolbar,
+        mut visibility_q,
+        mut ui_q,
+        mut cl_q,
+        fs_query,
+        mut parent_q
+    ) = system_state.get_mut(world);
     let (entry, fs_child_opt, fs_root_child_opt) = fs_query.get(file_entity).unwrap();
 
     // get name of file
@@ -47,7 +70,7 @@ pub(crate) fn execute(
             panic!("FileSystemChild {:?} has no parent!", file_entity);
         };
         // remove entity from parent
-        parent_query
+        parent_q
             .get_mut(parent_entity)
             .unwrap()
             .remove_child(&file_entity);
@@ -55,7 +78,7 @@ pub(crate) fn execute(
         Some(parent_entity)
     } else if let Some(_) = fs_root_child_opt {
         // remove entity from root
-        parent_query
+        parent_q
             .get_mut(project_root_entity)
             .unwrap()
             .remove_child(&file_entity);
@@ -76,7 +99,7 @@ pub(crate) fn execute(
                     &client,
                     &file_entity,
                     &fs_query,
-                    &mut parent_query,
+                    &mut parent_q,
                 );
 
                 Some(entries)
@@ -90,9 +113,12 @@ pub(crate) fn execute(
     // select files as needed
     if let Some(files_to_select) = files_to_select_opt {
         let file_entries_to_request =
-            select_files(&mut client, &mut ui_query, &mut cl_query, &files_to_select);
+            select_files(&mut client, &mut ui_q, &mut cl_q, &files_to_select);
         request_entities(&mut commands, &mut client, file_entries_to_request);
     }
+
+    // file manager track deleted file
+    file_manager.on_file_delete(&mut client, &mut canvas, &mut camera_manager, &mut shape_manager, &mut tab_manager, &mut toolbar, &mut visibility_q, &file_entity);
 
     system_state.apply(world);
 
