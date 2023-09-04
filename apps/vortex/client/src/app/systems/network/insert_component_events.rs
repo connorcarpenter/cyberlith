@@ -8,10 +8,7 @@ use bevy_ecs::{
 use bevy_log::{info, warn};
 
 use naia_bevy_client::{
-    events::{
-        DespawnEntityEvent, InsertComponentEvents, RemoveComponentEvents, SpawnEntityEvent,
-        UpdateComponentEvents,
-    },
+    events::InsertComponentEvents,
     Client,
 };
 
@@ -37,18 +34,6 @@ use crate::app::{
     },
     systems::file_post_process,
 };
-
-pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
-    for SpawnEntityEvent(entity) in event_reader.iter() {
-        info!("entity: `{:?}`, spawned", entity);
-    }
-}
-
-pub fn despawn_entity_events(mut event_reader: EventReader<DespawnEntityEvent>) {
-    for DespawnEntityEvent(entity) in event_reader.iter() {
-        info!("entity: `{:?}`, despawned", entity);
-    }
-}
 
 pub fn insert_component_events(
     mut event_reader: EventReader<InsertComponentEvents>,
@@ -443,117 +428,5 @@ pub fn insert_shape_events(
             &entity,
             ShapeWaitlistInsert::FileType(file_type_value),
         );
-    }
-}
-
-pub fn update_component_events(
-    mut event_reader: EventReader<UpdateComponentEvents>,
-    entry_query: Query<&FileSystemEntry>,
-    mut shape_manager: ResMut<ShapeManager>,
-) {
-    for events in event_reader.iter() {
-        // on FileSystemEntry Update Event
-        for (_, entry_entity) in events.read::<FileSystemEntry>() {
-            let entry = entry_query.get(entry_entity).unwrap();
-            let entry_name = (*(entry.name)).clone();
-            info!(
-                "received updated FileSystemEntry: `{:?}` ({:?})",
-                entry_entity, entry_name
-            );
-        }
-        // on FileSystemRootChild Update Event
-        for (_, child_entity) in events.read::<FileSystemRootChild>() {
-            let entry = entry_query.get(child_entity).unwrap();
-            let entry_name = (*(entry.name)).clone();
-            info!(
-                "received updated FileSystemRootChild: `{:?}` ({:?})",
-                child_entity, entry_name
-            );
-            todo!();
-        }
-        // on FileSystemChild Update Event
-        for (_, child_entity) in events.read::<FileSystemChild>() {
-            let entry = entry_query.get(child_entity).unwrap();
-            let entry_name = (*(entry.name)).clone();
-            info!(
-                "received updated FileSystemChild: `{:?}` ({:?})",
-                child_entity, entry_name
-            );
-            todo!();
-        }
-        // on Vertex3d Update Event
-        let mut updated_vertices = false;
-        for (_, _) in events.read::<Vertex3d>() {
-            updated_vertices = true;
-            break;
-        }
-        if updated_vertices {
-            shape_manager.recalculate_shapes();
-        }
-    }
-}
-
-pub fn remove_component_events(
-    mut commands: Commands,
-    client: Client,
-    mut file_manager: ResMut<FileManager>,
-    mut shape_manager: ResMut<ShapeManager>,
-    mut meshes: ResMut<Assets<CpuMesh>>,
-    mut event_reader: EventReader<RemoveComponentEvents>,
-    mut parent_q: Query<&mut FileSystemParent>,
-    mut fs_state_q: Query<&mut FileSystemUiState>,
-) {
-    for events in event_reader.iter() {
-        for (_entity, _component) in events.read::<FileSystemEntry>() {
-            info!("removed FileSystemEntry component from entity");
-        }
-
-        for (entity, _component) in events.read::<FileSystemRootChild>() {
-            info!("removed FileSystemRootChild component from entity");
-
-            let Ok(mut parent) = parent_q.get_mut(file_manager.project_root_entity) else {
-                continue;
-            };
-            parent.remove_child(&entity);
-        }
-
-        for (entity, component) in events.read::<FileSystemChild>() {
-            info!("removed FileSystemChild component from entity");
-
-            let Some(parent_entity) = component.parent_id.get(&client) else {
-                continue;
-            };
-            let Ok(mut parent) = parent_q.get_mut(parent_entity) else {
-                continue;
-            };
-            parent.remove_child(&entity);
-        }
-        for (_entity, component) in events.read::<ChangelistEntry>() {
-            info!("removed ChangelistEntry component from entity");
-
-            let entry = component.file_entry_key();
-            file_manager.changelist.remove(&entry);
-
-            if let Some(file_entity) = component.file_entity.get(&client) {
-                if let Ok(mut fs_state) = fs_state_q.get_mut(file_entity) {
-                    fs_state.change_status = None;
-                }
-            }
-        }
-        for (vertex_entity_3d, _) in events.read::<Vertex3d>() {
-            info!("entity: `{:?}`, removed Vertex3d", vertex_entity_3d);
-
-            shape_manager.cleanup_deleted_vertex(&mut commands, &vertex_entity_3d);
-        }
-        for (edge_3d_entity, _) in events.read::<Edge3d>() {
-            info!("entity: `{:?}`, removed Edge3d", edge_3d_entity);
-
-            shape_manager.cleanup_deleted_edge(&mut commands, &edge_3d_entity);
-        }
-        for (face_entity_3d, _) in events.read::<Face3d>() {
-            info!("entity: `{:?}`, removed Face3d", face_entity_3d);
-
-            shape_manager.cleanup_deleted_face_3d(&mut commands, &mut meshes, &face_entity_3d);
-        }
     }
 }
