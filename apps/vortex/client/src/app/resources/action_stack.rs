@@ -7,7 +7,7 @@ use bevy_ecs::world::Mut;
 
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
 
-use crate::app::resources::{action::{FileAction, ShapeAction}, canvas::Canvas, global::Global, tab_manager::TabManager};
+use crate::app::resources::{action::{FileAction, ShapeAction}, canvas::Canvas, file_manager::FileManager, tab_manager::TabManager};
 
 pub trait Action: Clone {
     fn execute(self, world: &mut World, entity_opt: Option<&Entity>, action_stack: &mut ActionStack<Self>) -> Vec<Self>;
@@ -49,10 +49,11 @@ pub(crate) fn action_stack_undo(world: &mut World) {
             }
         });
     } else {
-        world.resource_scope(|world, mut global: Mut<Global>| {
-            let action_stack = &mut global.action_stack;
+        world.resource_scope(|world, mut file_manager: Mut<FileManager>| {
+            let project_root_entity = file_manager.project_root_entity;
+            let action_stack = &mut file_manager.action_stack;
             if action_stack.has_undo() {
-                action_stack.undo_action(world, None);
+                action_stack.undo_action(world, Some(&project_root_entity));
             }
         });
     }
@@ -78,10 +79,11 @@ pub(crate) fn action_stack_redo(world: &mut World) {
             }
         });
     } else {
-        world.resource_scope(|world, mut global: Mut<Global>| {
-            let action_stack = &mut global.action_stack;
+        world.resource_scope(|world, mut file_manager: Mut<FileManager>| {
+            let project_root_entity = file_manager.project_root_entity;
+            let action_stack = &mut file_manager.action_stack;
             if action_stack.has_redo() {
-                action_stack.redo_action(world, None);
+                action_stack.redo_action(world, Some(&project_root_entity));
             }
         });
     }
@@ -113,7 +115,7 @@ impl<A: Action> ActionStack<A> {
         !self.redo_actions.is_empty() && self.redo_enabled
     }
 
-    pub fn undo_action(&mut self, world: &mut World, tab_file_entity_opt: Option<&Entity>) {
+    pub fn undo_action(&mut self, world: &mut World, entity_opt: Option<&Entity>) {
         if !self.undo_enabled {
             panic!("Undo is disabled!");
         }
@@ -121,14 +123,14 @@ impl<A: Action> ActionStack<A> {
             panic!("No executed actions to undo!");
         };
 
-        let mut reversed_actions = self.execute_action(world, tab_file_entity_opt, action);
+        let mut reversed_actions = self.execute_action(world, entity_opt, action);
 
         self.redo_actions.append(&mut reversed_actions);
 
         self.enable_top(world);
     }
 
-    pub fn redo_action(&mut self, world: &mut World, tab_file_entity_opt: Option<&Entity>) {
+    pub fn redo_action(&mut self, world: &mut World, entity_opt: Option<&Entity>) {
         if !self.redo_enabled {
             panic!("Redo is disabled!");
         }
@@ -136,7 +138,7 @@ impl<A: Action> ActionStack<A> {
             panic!("No undone actions to redo!");
         };
 
-        let mut reversed_actions = self.execute_action(world, tab_file_entity_opt, action);
+        let mut reversed_actions = self.execute_action(world, entity_opt, action);
 
         self.undo_actions.append(&mut reversed_actions);
 

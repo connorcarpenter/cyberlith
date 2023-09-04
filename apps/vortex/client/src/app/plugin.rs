@@ -18,7 +18,7 @@ use crate::app::{
     config::ConfigPlugin,
     events::{InsertComponentEvent, LoginEvent},
     resources::{
-        camera_manager::CameraManager, canvas::Canvas, global::Global,
+        camera_manager::CameraManager, canvas::Canvas, file_manager::FileManager,
         input_manager::InputManager, shape_manager::ShapeManager, shape_waitlist::ShapeWaitlist,
         tab_manager::TabManager, toolbar::Toolbar,
     },
@@ -30,7 +30,7 @@ pub struct VortexPlugin;
 
 impl Plugin for VortexPlugin {
     fn build(&self, app: &mut App) {
-        // setup Global
+        // setup FileManager
         let project_root_entity = app
             .world
             .spawn_empty()
@@ -38,7 +38,7 @@ impl Plugin for VortexPlugin {
             .insert(FileSystemUiState::new_root())
             .insert(FileSystemEntry::new("Project", EntryKind::Directory))
             .id();
-        let global_resource = Global::new(project_root_entity);
+        let file_manager = FileManager::new(project_root_entity);
 
         app
             // Add Config
@@ -92,7 +92,7 @@ impl Plugin for VortexPlugin {
             .add_systems(Update, network::insert_shape_events)
             // UI Configuration
             .init_resource::<UiState>()
-            .insert_resource(global_resource)
+            .insert_resource(file_manager)
             .init_resource::<TabManager>()
             .init_resource::<Toolbar>()
             .add_systems(Update, ui::update)

@@ -7,13 +7,13 @@ use vortex_proto::resources::FileEntryKey;
 use crate::app::resources::{action::FileAction, action_stack::ActionStack};
 
 #[derive(Resource)]
-pub struct Global {
+pub struct FileManager {
     pub project_root_entity: Entity,
     pub changelist: BTreeMap<FileEntryKey, Entity>,
     pub action_stack: ActionStack<FileAction>,
 }
 
-impl Global {
+impl FileManager {
     pub fn new(project_root_entity: Entity) -> Self {
         Self {
             project_root_entity,

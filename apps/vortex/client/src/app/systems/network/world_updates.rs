@@ -31,7 +31,7 @@ use crate::app::{
     events::InsertComponentEvent,
     resources::{
         camera_manager::CameraManager,
-        global::Global,
+        file_manager::FileManager,
         shape_manager::ShapeManager,
         shape_waitlist::{ShapeWaitlist, ShapeWaitlistInsert},
     },
@@ -123,7 +123,7 @@ pub fn insert_component_events(
 
 pub fn insert_fs_component_events(
     mut commands: Commands,
-    global: Res<Global>,
+    file_manager: Res<FileManager>,
     client: Client,
     mut entry_events: EventReader<InsertComponentEvent<FileSystemEntry>>,
     mut root_events: EventReader<InsertComponentEvent<FileSystemRootChild>>,
@@ -132,7 +132,7 @@ pub fn insert_fs_component_events(
     mut parent_q: Query<&mut FileSystemParent>,
     child_q: Query<&FileSystemChild>,
 ) {
-    let project_root_entity = global.project_root_entity;
+    let project_root_entity = file_manager.project_root_entity;
     let mut recent_parents: Option<HashMap<Entity, FileSystemParent>> = None;
 
     for event in entry_events.iter() {
@@ -194,7 +194,7 @@ pub fn insert_fs_component_events(
 
 pub fn insert_changelist_entry_events(
     mut commands: Commands,
-    mut global: ResMut<Global>,
+    mut file_manager: ResMut<FileManager>,
     client: Client,
     mut events: EventReader<InsertComponentEvent<ChangelistEntry>>,
     changelist_q: Query<&ChangelistEntry>,
@@ -214,7 +214,7 @@ pub fn insert_changelist_entry_events(
         }
 
         // insert into changelist resource
-        global.changelist.insert(entry.file_entry_key(), entity);
+        file_manager.changelist.insert(entry.file_entry_key(), entity);
 
         info!(
             "Received ChangelistEntry insert event. entity: `{:?}`, path: `{:?}`, name: `{:?}`",
@@ -496,7 +496,7 @@ pub fn update_component_events(
 pub fn remove_component_events(
     mut commands: Commands,
     client: Client,
-    mut global: ResMut<Global>,
+    mut file_manager: ResMut<FileManager>,
     mut shape_manager: ResMut<ShapeManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut event_reader: EventReader<RemoveComponentEvents>,
@@ -511,7 +511,7 @@ pub fn remove_component_events(
         for (entity, _component) in events.read::<FileSystemRootChild>() {
             info!("removed FileSystemRootChild component from entity");
 
-            let Ok(mut parent) = parent_q.get_mut(global.project_root_entity) else {
+            let Ok(mut parent) = parent_q.get_mut(file_manager.project_root_entity) else {
                 continue;
             };
             parent.remove_child(&entity);
@@ -532,7 +532,7 @@ pub fn remove_component_events(
             info!("removed ChangelistEntry component from entity");
 
             let entry = component.file_entry_key();
-            global.changelist.remove(&entry);
+            file_manager.changelist.remove(&entry);
 
             if let Some(file_entity) = component.file_entity.get(&client) {
                 if let Ok(mut fs_state) = fs_state_q.get_mut(file_entity) {

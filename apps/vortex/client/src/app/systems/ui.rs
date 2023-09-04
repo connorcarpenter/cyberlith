@@ -4,7 +4,7 @@ use render_api::Window;
 use render_egui::EguiContext;
 
 use crate::app::{
-    resources::global::Global,
+    resources::file_manager::FileManager,
     ui::{
         center_panel, consume_shortcuts, left_panel, login_modal, top_bar, TextInputModal, UiState,
     },
@@ -34,9 +34,9 @@ pub fn update(world: &mut World) {
 
         consume_shortcuts(&context, world);
 
-        world.resource_scope(|world, mut global: Mut<Global>| {
-            let project_root_entity = global.project_root_entity;
-            let action_stack = &mut global.action_stack;
+        world.resource_scope(|world, mut file_manager: Mut<FileManager>| {
+            let project_root_entity = file_manager.project_root_entity;
+            let action_stack = &mut file_manager.action_stack;
             action_stack.execute_actions(world, Some(&project_root_entity));
         });
         world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {

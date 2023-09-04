@@ -5,7 +5,7 @@ use vortex_proto::components::{EntryKind, FileSystemEntry};
 
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
-    resources::global::Global,
+    resources::file_manager::FileManager,
     ui::widgets::FileTreeRowUiWidget,
 };
 
@@ -13,7 +13,7 @@ pub struct FileTreeUiWidget;
 
 impl FileTreeUiWidget {
     pub fn render_root(ui: &mut Ui, world: &mut World) {
-        let root_entity = world.get_resource::<Global>().unwrap().project_root_entity;
+        let root_entity = world.get_resource::<FileManager>().unwrap().project_root_entity;
         let entry = world.entity(root_entity).get::<FileSystemEntry>().unwrap();
         let name = (*entry.name).clone();
 

@@ -31,7 +31,7 @@ use crate::app::{
     },
     resources::{
         action::FileAction, camera_manager::CameraManager, canvas::Canvas,
-        global::Global, shape_manager::ShapeManager, tab_manager::TabManager, toolbar::Toolbar,
+        file_manager::FileManager, shape_manager::ShapeManager, tab_manager::TabManager, toolbar::Toolbar,
     },
     ui::{
         widgets::colors::{
@@ -363,10 +363,10 @@ impl FileTreeRowUiWidget {
     }
 
     pub fn on_row_click(world: &mut World, row_entity: &Entity) {
-        let mut system_state: SystemState<(Commands, Client, ResMut<Global>)> =
+        let mut system_state: SystemState<(Commands, Client, ResMut<FileManager>)> =
             SystemState::new(world);
-        let (mut commands, client, mut global) = system_state.get_mut(world);
-        let action_stack = &mut global.action_stack;
+        let (mut commands, client, mut file_manager) = system_state.get_mut(world);
+        let action_stack = &mut file_manager.action_stack;
         let mut is_denied = false;
         if let Some(authority) = commands.entity(*row_entity).authority(&client) {
             if authority.is_denied() {
@@ -637,12 +637,12 @@ impl FileTreeRowUiWidget {
         entry_name: &str,
     ) {
         let mut system_state: SystemState<(
-            ResMut<Global>,
+            ResMut<FileManager>,
             Query<&FileSystemParent>,
         )> = SystemState::new(world);
-        let (mut global, parent_query) = system_state.get_mut(world);
+        let (mut file_manager, parent_query) = system_state.get_mut(world);
 
-        let parent_entity = directory_entity.unwrap_or(global.project_root_entity);
+        let parent_entity = directory_entity.unwrap_or(file_manager.project_root_entity);
 
         if Self::check_for_duplicate_children(
             ui_state,
@@ -654,7 +654,7 @@ impl FileTreeRowUiWidget {
             return;
         }
 
-        global.action_stack.buffer_action(FileAction::NewEntry(
+        file_manager.action_stack.buffer_action(FileAction::NewEntry(
             directory_entity,
             entry_name.to_string(),
             entry_kind,
@@ -671,12 +671,12 @@ impl FileTreeRowUiWidget {
     ) {
         let mut system_state: SystemState<(
             Client,
-            ResMut<Global>,
+            ResMut<FileManager>,
             Query<&FileSystemParent>,
             Query<&FileSystemEntry>,
             Query<&FileSystemChild>,
         )> = SystemState::new(world);
-        let (client, mut global, parent_query, entry_query, child_query) =
+        let (client, mut file_manager, parent_query, entry_query, child_query) =
             system_state.get_mut(world);
 
         let entry_kind = *(entry_query.get(*entry_entity).unwrap().kind);
@@ -688,7 +688,7 @@ impl FileTreeRowUiWidget {
                 };
                 child_entity
             } else {
-                global.project_root_entity
+                file_manager.project_root_entity
             }
         };
 
@@ -702,13 +702,13 @@ impl FileTreeRowUiWidget {
             return;
         }
 
-        global.action_stack.buffer_action(FileAction::RenameEntry(*entry_entity, entry_name.to_string()));
+        file_manager.action_stack.buffer_action(FileAction::RenameEntry(*entry_entity, entry_name.to_string()));
     }
 
     pub fn on_modal_response_delete(world: &mut World, row_entity: &Entity) {
-        let mut system_state: SystemState<ResMut<Global>> = SystemState::new(world);
-        let mut global = system_state.get_mut(world);
-        let action_stack = &mut global.action_stack;
+        let mut system_state: SystemState<ResMut<FileManager>> = SystemState::new(world);
+        let mut file_manager = system_state.get_mut(world);
+        let action_stack = &mut file_manager.action_stack;
         action_stack.buffer_action(FileAction::DeleteEntry(*row_entity, None));
     }
 }

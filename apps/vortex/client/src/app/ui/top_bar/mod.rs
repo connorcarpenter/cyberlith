@@ -6,7 +6,7 @@ use render_egui::{
 };
 
 use crate::app::{
-    resources::{global::Global, action_stack::{action_stack_redo, action_stack_undo}},
+    resources::{file_manager::FileManager, action_stack::{action_stack_redo, action_stack_undo}},
     ui::shortcuts::{SHORTCUT_REDO, SHORTCUT_UNDO},
 };
 
@@ -72,8 +72,8 @@ fn edit_menu_button(ui: &mut Ui, world: &mut World) {
         let mut should_undo = false;
         let mut should_redo = false;
 
-        let mut global = world.get_resource_mut::<Global>().unwrap();
-        let action_stack = &mut global.action_stack;
+        let mut file_manager = world.get_resource_mut::<FileManager>().unwrap();
+        let action_stack = &mut file_manager.action_stack;
         ui.set_min_width(220.0);
         ui.style_mut().wrap = Some(false);
 

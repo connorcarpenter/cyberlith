@@ -11,7 +11,7 @@ use vortex_proto::components::{
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
-    resources::{file_tree::FileTree, action::select_entries::{request_entities, select_files}, action::FileAction, global::Global},
+    resources::{file_tree::FileTree, action::select_entries::{request_entities, select_files}, action::FileAction, file_manager::FileManager},
 };
 
 pub(crate) fn execute(

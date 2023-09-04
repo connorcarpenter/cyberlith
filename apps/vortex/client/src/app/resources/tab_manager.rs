@@ -478,7 +478,9 @@ impl TabManager {
         for row_entity in &self.tab_order {
             let tab_state = self.tab_map.get(row_entity).unwrap();
 
-            let (entry, ui_state) = file_q.get(*row_entity).unwrap();
+            let Ok((entry, ui_state)) = file_q.get(*row_entity) else {
+                continue;
+            };
 
             let button_response =
                 Self::render_tab(ui, row_entity, entry, ui_state, tab_state, &mut tab_action);

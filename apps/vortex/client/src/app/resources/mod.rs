@@ -4,7 +4,7 @@ pub mod camera_manager;
 pub mod camera_state;
 pub mod canvas;
 pub mod file_tree;
-pub mod global;
+pub mod file_manager;
 pub mod input_manager;
 pub mod key_action_map;
 pub mod shape_manager;

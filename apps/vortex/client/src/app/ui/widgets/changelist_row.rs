@@ -19,7 +19,7 @@ use vortex_proto::{
 
 use crate::app::{
     components::file_system::ChangelistUiState,
-    resources::{action::FileAction, global::Global},
+    resources::{action::FileAction, file_manager::FileManager},
     ui::widgets::colors::{
         FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
         TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED,
@@ -41,7 +41,11 @@ impl ChangelistRowUiWidget {
         let auth_status: Option<EntityAuthStatus> = {
             if let Ok((entry, _)) = query.get(row_entity) {
                 if let Some(file_entity) = entry.file_entity.get(&client) {
-                    commands.entity(file_entity).authority(&client)
+                    if let Some(entity_command) = commands.get_entity(file_entity) {
+                        entity_command.authority(&client)
+                    } else {
+                        None
+                    }
                 } else {
                     None
                 }
@@ -210,12 +214,12 @@ impl ChangelistRowUiWidget {
         let mut system_state: SystemState<(
             Commands,
             Client,
-            ResMut<Global>,
+            ResMut<FileManager>,
             Query<&ChangelistEntry>,
         )> = SystemState::new(world);
-        let (mut commands, client, mut global, query) = system_state.get_mut(world);
+        let (mut commands, client, mut file_manager, query) = system_state.get_mut(world);
 
-        let action_stack = &mut global.action_stack;
+        let action_stack = &mut file_manager.action_stack;
 
         let has_auth: bool = {
             if let Ok(entry) = query.get(*row_entity) {
