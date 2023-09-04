@@ -16,9 +16,9 @@ use render_api::{
 use vortex_proto::components::{FileType, FileTypeValue, OwnedByFile, Vertex3d};
 
 use crate::app::{
-    components::VertexTypeData,
+    components::{VertexTypeData, Vertex2d, VertexEntry},
     resources::{
-        action::Action,
+        action::{create_edge::create_networked_edge, select_shape::deselect_all_selected_shapes, ShapeAction},
         action_stack::ActionStack,
         camera_manager::CameraManager,
         shape_manager::FaceKey,
@@ -26,17 +26,15 @@ use crate::app::{
         tab_manager::TabManager,
     },
 };
-use crate::app::components::{Vertex2d, VertexEntry};
-use crate::app::resources::action::create_edge::create_networked_edge;
-use crate::app::resources::action::select_shape::deselect_all_selected_shapes;
 
 pub(crate) fn execute(
     world: &mut World,
-    action_stack: &mut ActionStack,
+    action_stack: &mut ActionStack<ShapeAction>,
+    tab_file_entity: &Entity,
     vertex_type_data: VertexTypeData,
     position: Vec3,
     old_vertex_entities_opt: Option<(Entity, Entity)>,
-) -> Vec<Action> {
+) -> Vec<ShapeAction> {
     let mut entities_to_release = Vec::new();
     let deselected_vertex_2d_entity_store;
     let selected_vertex_3d;
@@ -61,7 +59,6 @@ pub(crate) fn execute(
         Client,
         ResMut<CameraManager>,
         ResMut<ShapeManager>,
-        Res<TabManager>,
         ResMut<Assets<CpuMesh>>,
         ResMut<Assets<CpuMaterial>>,
     )> = SystemState::new(world);
@@ -70,7 +67,6 @@ pub(crate) fn execute(
         mut client,
         mut camera_manager,
         mut shape_manager,
-        tab_manager,
         mut meshes,
         mut materials,
     ) = system_state.get_mut(world);
@@ -86,7 +82,6 @@ pub(crate) fn execute(
     }
 
     let file_type_value = vertex_type_data.to_file_type_value();
-    let current_file_entity = tab_manager.current_tab_entity();
 
     // create vertex
     let (new_vertex_2d_entity, new_vertex_3d_entity) = create_networked_vertex(
@@ -97,7 +92,7 @@ pub(crate) fn execute(
         &mut meshes,
         &mut materials,
         position,
-        current_file_entity,
+        *tab_file_entity,
         file_type_value,
         &mut entities_to_release,
     );
@@ -146,7 +141,7 @@ pub(crate) fn execute(
                     &mut materials,
                     new_vertex_2d_entity,
                     children,
-                    current_file_entity,
+                    *tab_file_entity,
                     &mut entities_to_release,
                 );
             }
@@ -160,7 +155,7 @@ pub(crate) fn execute(
                 parent_vertex_2d_entity,
                 new_vertex_2d_entity,
                 new_vertex_3d_entity,
-                current_file_entity,
+                *tab_file_entity,
                 FileTypeValue::Skel,
                 &mut entities_to_release,
             );
@@ -178,7 +173,7 @@ pub(crate) fn execute(
                     connected_vertex_entity,
                     new_vertex_2d_entity,
                     new_vertex_3d_entity,
-                    current_file_entity,
+                    *tab_file_entity,
                     FileTypeValue::Mesh,
                     &mut entities_to_release,
                 );
@@ -212,7 +207,7 @@ pub(crate) fn execute(
                     &mut camera_manager,
                     &mut meshes,
                     &mut materials,
-                    current_file_entity,
+                    *tab_file_entity,
                     &face_key,
                 );
                 action_stack.migrate_face_entities(old_face_2d_entity, new_face_2d_entity);
@@ -230,7 +225,7 @@ pub(crate) fn execute(
                             edge_3d_entities[1],
                             edge_3d_entities[2],
                         ],
-                        current_file_entity,
+                        *tab_file_entity,
                     );
                 }
             }
@@ -260,7 +255,7 @@ pub(crate) fn execute(
         system_state.apply(world);
     }
 
-    return vec![Action::DeleteVertex(
+    return vec![ShapeAction::DeleteVertex(
         selected_vertex_2d,
         deselected_vertex_2d_entity_store,
     )];
@@ -310,7 +305,7 @@ pub fn create_networked_vertex(
 }
 
 pub(crate) fn create_networked_children_tree(
-    action_stack: &mut ActionStack,
+    action_stack: &mut ActionStack<ShapeAction>,
     commands: &mut Commands,
     client: &mut Client,
     camera_manager: &mut CameraManager,

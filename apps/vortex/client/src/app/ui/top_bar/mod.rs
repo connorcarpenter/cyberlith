@@ -6,9 +6,10 @@ use render_egui::{
 };
 
 use crate::app::{
-    resources::action_stack::ActionStack,
+    resources::global::Global,
     ui::shortcuts::{SHORTCUT_REDO, SHORTCUT_UNDO},
 };
+use crate::app::resources::action_stack::{action_stack_redo, action_stack_undo};
 
 pub fn top_bar(context: &egui::Context, world: &mut World) {
     egui::TopBottomPanel::top("top_bar").show(context, |ui| {
@@ -69,7 +70,11 @@ fn file_menu_button(ui: &mut Ui) {
 
 fn edit_menu_button(ui: &mut Ui, world: &mut World) {
     ui.menu_button("Edit", |ui| {
-        world.resource_scope(|world, mut action_stack: Mut<ActionStack>| {
+        let mut should_undo = false;
+        let mut should_redo = false;
+
+        world.resource_scope(|world, mut global: Mut<Global>| {
+            let action_stack = &mut global.action_stack;
             ui.set_min_width(220.0);
             ui.style_mut().wrap = Some(false);
 
@@ -81,7 +86,7 @@ fn edit_menu_button(ui: &mut Ui, world: &mut World) {
                 )
                 .clicked()
             {
-                action_stack.undo_action(world);
+                should_undo = true;
                 ui.close_menu();
             }
 
@@ -93,10 +98,17 @@ fn edit_menu_button(ui: &mut Ui, world: &mut World) {
                 )
                 .clicked()
             {
-                action_stack.redo_action(world);
+                should_redo = true;
                 ui.close_menu();
             }
         });
+
+        if should_undo {
+            action_stack_undo(world);
+        }
+        if should_redo {
+            action_stack_redo(world);
+        }
     });
 }
 

@@ -11,10 +11,10 @@ use vortex_proto::components::ChangelistEntry;
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemUiState},
-    resources::action::Action,
+    resources::action::FileAction,
 };
 
-pub fn execute(world: &mut World, file_entities: Vec<Entity>) -> Vec<Action> {
+pub fn execute(world: &mut World, file_entities: Vec<Entity>) -> Vec<FileAction> {
     let mut system_state: SystemState<(
         Commands,
         Client,
@@ -36,7 +36,7 @@ pub fn execute(world: &mut World, file_entities: Vec<Entity>) -> Vec<Action> {
 
     system_state.apply(world);
 
-    return vec![Action::SelectEntries(deselected_row_entities)];
+    return vec![FileAction::SelectEntries(deselected_row_entities)];
 }
 
 pub fn select_files(

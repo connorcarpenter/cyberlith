@@ -11,14 +11,14 @@ use vortex_proto::components::{
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
-    resources::{file_tree::FileTree, action::select_entries::{request_entities, select_files}, action::Action, global::Global},
+    resources::{file_tree::FileTree, action::select_entries::{request_entities, select_files}, action::FileAction, global::Global},
 };
 
 pub(crate) fn execute(
     world: &mut World,
     file_entity: Entity,
     files_to_select_opt: Option<Vec<Entity>>,
-) -> Vec<Action> {
+) -> Vec<FileAction> {
     let mut system_state: SystemState<(
         Commands,
         Client,
@@ -96,7 +96,7 @@ pub(crate) fn execute(
 
     system_state.apply(world);
 
-    return vec![Action::NewEntry(
+    return vec![FileAction::NewEntry(
         parent_entity_opt,
         entry_name,
         entry_kind,

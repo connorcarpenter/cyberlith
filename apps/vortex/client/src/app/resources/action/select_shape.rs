@@ -8,14 +8,14 @@ use bevy_log::info;
 use naia_bevy_client::{Client, CommandsExt};
 
 use crate::app::resources::{
-    action::Action,
+    action::ShapeAction,
     shape_manager::{CanvasShape, ShapeManager},
 };
 
 pub(crate) fn execute(
     world: &mut World,
     shape_2d_entity_opt: Option<(Entity, CanvasShape)>,
-) -> Vec<Action> {
+) -> Vec<ShapeAction> {
     info!("SelectShape({:?})", shape_2d_entity_opt);
 
     let mut system_state: SystemState<(Commands, Client, ResMut<ShapeManager>)> =
@@ -50,13 +50,13 @@ pub(crate) fn execute(
                 shape_manager.create_networked_face_outer(world, face_2d_entity);
             });
             return vec![
-                Action::SelectShape(deselected_entity),
-                Action::DeleteFace(face_2d_entity),
+                ShapeAction::SelectShape(deselected_entity),
+                ShapeAction::DeleteFace(face_2d_entity),
             ];
         }
     }
 
-    return vec![Action::SelectShape(deselected_entity)];
+    return vec![ShapeAction::SelectShape(deselected_entity)];
 }
 
 // returns entity to request auth for

@@ -17,9 +17,10 @@ pub fn update_camera(
     if canvas.update_visibility() {
         CameraManager::update_visibility(canvas.is_visible(), &mut camera_q);
     }
-    let Some(current_tab_camera_state) = tab_manager.current_tab_camera_state() else {
+    let Some(current_tab_state) = tab_manager.current_tab_state() else {
         return;
     };
+    let current_tab_camera_state = &current_tab_state.camera_state;
     if camera_manager.update_3d_camera(current_tab_camera_state, &mut camera_q) {
         shape_manager.recalculate_shapes();
     }

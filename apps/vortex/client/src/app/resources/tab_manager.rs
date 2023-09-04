@@ -25,8 +25,9 @@ use vortex_proto::{
 use crate::app::{
     components::{file_system::FileSystemUiState, OwnedByFileLocal},
     resources::{
+        action::ShapeAction,
         camera_manager::CameraManager, camera_state::CameraState, canvas::Canvas,
-        shape_manager::ShapeManager, toolbar::Toolbar,
+        shape_manager::ShapeManager, toolbar::Toolbar, action_stack::ActionStack,
     },
     ui::widgets::colors::{
         FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
@@ -34,13 +35,13 @@ use crate::app::{
     },
 };
 
-#[derive(Clone, Copy)]
-struct TabState {
+pub struct TabState {
     pub selected: bool,
     pub order: usize,
     pub tab_id: TabId,
     pub ext: FileExtension,
     pub camera_state: CameraState,
+    pub action_stack: ActionStack<ShapeAction>,
 }
 
 impl TabState {
@@ -51,6 +52,7 @@ impl TabState {
             tab_id: id,
             ext,
             camera_state: CameraState::default(),
+            action_stack: ActionStack::default(),
         }
     }
 }
@@ -182,24 +184,28 @@ impl TabManager {
         }
     }
 
-    // panics if no current tab!
-    pub fn current_tab_entity(&self) -> Entity {
-        let Some(current_entity) = self.current_tab else {
-            panic!("no current tab! don't use this method unless you know there is a current tab!");
-        };
-        current_entity
+    pub fn tab_state(&self, file_entity: &Entity) -> Option<&TabState> {
+        self.tab_map.get(file_entity)
     }
 
-    pub fn current_tab_camera_state(&self) -> Option<&CameraState> {
+    pub fn tab_state_mut(&mut self, file_entity: &Entity) -> Option<&mut TabState> {
+        self.tab_map.get_mut(file_entity)
+    }
+
+    pub fn current_tab_entity(&self) -> Option<&Entity> {
+        self.current_tab.as_ref()
+    }
+
+    pub fn current_tab_state(&self) -> Option<&TabState> {
         let current_entity = self.current_tab?;
         let tab_state = self.tab_map.get(&current_entity)?;
-        Some(&tab_state.camera_state)
+        Some(tab_state)
     }
 
-    pub fn current_tab_camera_state_mut(&mut self) -> Option<&mut CameraState> {
+    pub fn current_tab_state_mut(&mut self) -> Option<&mut TabState> {
         let current_entity = self.current_tab?;
         let tab_state = self.tab_map.get_mut(&current_entity)?;
-        Some(&mut tab_state.camera_state)
+        Some(tab_state)
     }
 
     fn new_tab_id(&mut self) -> TabId {
@@ -271,9 +277,11 @@ impl TabManager {
 
         canvas.set_visibility(true);
         canvas.set_focused_timed();
-        let current_tab_file_entity = self.current_tab_entity();
-        for (mut visibility, owned_by_tab) in visibility_q.iter_mut() {
-            visibility.visible = owned_by_tab.file_entity == current_tab_file_entity;
+
+        if let Some(current_tab_file_entity) = self.current_tab_entity() {
+            for (mut visibility, owned_by_tab) in visibility_q.iter_mut() {
+                visibility.visible = owned_by_tab.file_entity == *current_tab_file_entity;
+            }
         }
 
         camera_manager.recalculate_3d_view();

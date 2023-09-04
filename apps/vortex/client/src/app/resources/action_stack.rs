@@ -1,27 +1,92 @@
 
 use bevy_ecs::{
-    prelude::{Commands, Entity, Resource, World},
+    prelude::{Commands, Entity, World},
     system::SystemState,
 };
+use bevy_ecs::world::Mut;
 
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
 
-use crate::app::resources::{
-    action::Action,
-    shape_manager::{CanvasShape, ShapeManager},
-};
+use crate::app::resources::action::{FileAction, ShapeAction};
+use crate::app::resources::canvas::Canvas;
+use crate::app::resources::global::Global;
+use crate::app::resources::tab_manager::TabManager;
 
-#[derive(Resource)]
-pub struct ActionStack {
-    buffered_actions: Vec<Action>,
-    undo_actions: Vec<Action>,
-    redo_actions: Vec<Action>,
+pub trait Action: Clone {
+    fn execute(self, world: &mut World, tab_file_entity_opt: Option<&Entity>, action_stack: &mut ActionStack<Self>) -> Vec<Self>;
+    fn entity_update_auth_status_impl(
+        buffered_check: &mut bool,
+        action_opt: Option<&Self>,
+        entity: &Entity,
+    );
+    fn enable_top_impl(world: &mut World, last_action: Option<&Self>, enabled: &mut bool);
+}
+
+pub struct ActionStack<A: Action> {
+    buffered_actions: Vec<A>,
+    undo_actions: Vec<A>,
+    redo_actions: Vec<A>,
     undo_enabled: bool,
     redo_enabled: bool,
     buffered_check: bool,
 }
 
-impl Default for ActionStack {
+pub(crate) fn action_stack_undo(world: &mut World) {
+
+    let Some(canvas) = world.get_resource::<Canvas>() else {
+        return;
+    };
+
+    let canvas_has_focus = canvas.has_focus();
+
+    if canvas_has_focus {
+        world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+            let Some(tab_file_entity) = tab_manager.current_tab_entity() else {
+                return;
+            };
+            let tab_file_entity = *tab_file_entity;
+            if let Some(tab_state) = tab_manager.current_tab_state_mut() {
+                tab_state.action_stack.undo_action(world, Some(&tab_file_entity));
+            }
+        });
+    } else {
+        world.resource_scope(|world, mut global: Mut<Global>| {
+            let action_stack = &mut global.action_stack;
+            if action_stack.has_undo() {
+                action_stack.undo_action(world, None);
+            }
+        });
+    }
+}
+
+pub(crate) fn action_stack_redo(world: &mut World) {
+    let Some(canvas) = world.get_resource::<Canvas>() else {
+        return;
+    };
+
+    let canvas_has_focus = canvas.has_focus();
+
+    if canvas_has_focus {
+        world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+            let Some(tab_file_entity) = tab_manager.current_tab_entity() else {
+                return;
+            };
+            let tab_file_entity = *tab_file_entity;
+            if let Some(tab_state) = tab_manager.current_tab_state_mut() {
+                tab_state.action_stack.redo_action(world, Some(&tab_file_entity));
+            }
+        });
+    } else {
+        world.resource_scope(|world, mut global: Mut<Global>| {
+            let action_stack = &mut global.action_stack;
+            if action_stack.has_redo() {
+                action_stack.redo_action(world, None);
+            }
+        });
+    }
+}
+
+impl<A: Action> Default for ActionStack<A> {
     fn default() -> Self {
         Self {
             buffered_actions: Vec::new(),
@@ -34,8 +99,8 @@ impl Default for ActionStack {
     }
 }
 
-impl ActionStack {
-    pub fn buffer_action(&mut self, action: Action) {
+impl<A: Action> ActionStack<A> {
+    pub fn buffer_action(&mut self, action: A) {
         self.buffered_actions.push(action);
     }
 
@@ -47,7 +112,7 @@ impl ActionStack {
         !self.redo_actions.is_empty() && self.redo_enabled
     }
 
-    pub fn undo_action(&mut self, world: &mut World) {
+    pub fn undo_action(&mut self, world: &mut World, tab_file_entity_opt: Option<&Entity>) {
         if !self.undo_enabled {
             panic!("Undo is disabled!");
         }
@@ -55,14 +120,14 @@ impl ActionStack {
             panic!("No executed actions to undo!");
         };
 
-        let mut reversed_actions = self.execute_action(world, action);
+        let mut reversed_actions = self.execute_action(world, tab_file_entity_opt, action);
 
         self.redo_actions.append(&mut reversed_actions);
 
         self.enable_top(world);
     }
 
-    pub fn redo_action(&mut self, world: &mut World) {
+    pub fn redo_action(&mut self, world: &mut World, tab_file_entity_opt: Option<&Entity>) {
         if !self.redo_enabled {
             panic!("Redo is disabled!");
         }
@@ -70,14 +135,14 @@ impl ActionStack {
             panic!("No undone actions to redo!");
         };
 
-        let mut reversed_actions = self.execute_action(world, action);
+        let mut reversed_actions = self.execute_action(world, tab_file_entity_opt, action);
 
         self.undo_actions.append(&mut reversed_actions);
 
         self.enable_top(world);
     }
 
-    pub fn execute_actions(&mut self, world: &mut World) {
+    pub fn execute_actions(&mut self, world: &mut World, tab_file_entity_opt: Option<&Entity>) {
         if self.buffered_check {
             self.enable_top(world);
             self.buffered_check = false;
@@ -85,9 +150,9 @@ impl ActionStack {
         if self.buffered_actions.is_empty() {
             return;
         }
-        let drained_actions: Vec<Action> = self.buffered_actions.drain(..).collect();
+        let drained_actions: Vec<A> = self.buffered_actions.drain(..).collect();
         for action in drained_actions {
-            let mut reversed_actions = self.execute_action(world, action);
+            let mut reversed_actions = self.execute_action(world, tab_file_entity_opt, action);
             self.undo_actions.append(&mut reversed_actions);
         }
         self.redo_actions.clear();
@@ -95,89 +160,36 @@ impl ActionStack {
         self.enable_top(world);
     }
 
-    fn execute_action(&mut self, world: &mut World, action: Action) -> Vec<Action> {
-        action.execute(world, self)
+    fn execute_action(&mut self, world: &mut World, tab_file_entity_opt: Option<&Entity>, action: A) -> Vec<A> {
+        action.execute(world, tab_file_entity_opt, self)
     }
 
-    pub fn entity_update_auth_status(&mut self, shape_manager: &mut ShapeManager, entity: &Entity) {
+    pub fn entity_update_auth_status(&mut self, entity: &Entity) {
         // if either the undo or redo stack's top entity is this entity, then we need to enable/disable undo based on new auth status
-        Self::entity_update_auth_status_impl(
-            shape_manager,
+        A::entity_update_auth_status_impl(
             &mut self.buffered_check,
             self.undo_actions.last(),
             entity,
         );
-        Self::entity_update_auth_status_impl(
-            shape_manager,
+        A::entity_update_auth_status_impl(
             &mut self.buffered_check,
             self.redo_actions.last(),
             entity,
         );
     }
 
-    fn entity_update_auth_status_impl(
-        shape_manager: &mut ShapeManager,
-        buffered_check: &mut bool,
-        action_opt: Option<&Action>,
-        entity: &Entity,
-    ) {
-        match action_opt {
-            Some(Action::SelectEntries(file_entities)) => {
-                if file_entities.contains(entity) {
-                    *buffered_check = true;
-                }
-            }
-            Some(Action::SelectShape(vertex_2d_entity_opt)) => {
-                if let Some((vertex_2d_entity, CanvasShape::Vertex)) = vertex_2d_entity_opt {
-                    let vertex_3d_entity = shape_manager
-                        .vertex_entity_2d_to_3d(vertex_2d_entity)
-                        .unwrap();
-                    if vertex_3d_entity == *entity {
-                        *buffered_check = true;
-                    }
-                }
-            }
-            _ => {}
-        }
-    }
-
     fn enable_top(&mut self, world: &mut World) {
-        Self::enable_top_impl(world, self.undo_actions.last(), &mut self.undo_enabled);
-        Self::enable_top_impl(world, self.redo_actions.last(), &mut self.redo_enabled);
+        A::enable_top_impl(world, self.undo_actions.last(), &mut self.undo_enabled);
+        A::enable_top_impl(world, self.redo_actions.last(), &mut self.redo_enabled);
     }
 
-    fn enable_top_impl(world: &mut World, last_action: Option<&Action>, enabled: &mut bool) {
-        match last_action {
-            Some(Action::SelectEntries(entities)) => {
-                *enabled = Self::should_be_enabled(world, entities);
-            }
-            Some(Action::SelectShape(vertex_2d_entity_opt)) => {
-                let mut entities = Vec::new();
-
-                if let Some((vertex_2d_entity, CanvasShape::Vertex)) = vertex_2d_entity_opt {
-                    let vertex_3d_entity = world
-                        .get_resource::<ShapeManager>()
-                        .unwrap()
-                        .vertex_entity_2d_to_3d(vertex_2d_entity)
-                        .unwrap();
-                    entities.push(vertex_3d_entity);
-                }
-
-                *enabled = Self::should_be_enabled(world, &entities);
-            }
-            _ => {
-                *enabled = true;
-            }
-        }
-    }
-
-    fn should_be_enabled(world: &mut World, entities: &Vec<Entity>) -> bool {
+    pub fn should_be_enabled(world: &mut World, entities: &Vec<Entity>) -> bool {
         let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
         let (mut commands, client) = system_state.get_mut(world);
 
-        for file_entity in entities {
+        for entity in entities {
             if let Some(EntityAuthStatus::Available) =
-                commands.entity(*file_entity).authority(&client)
+                commands.entity(*entity).authority(&client)
             {
                 // enabled should continue being true
             } else {
@@ -186,7 +198,9 @@ impl ActionStack {
         }
         return true;
     }
+}
 
+impl ActionStack<FileAction> {
     pub(crate) fn migrate_file_entities(&mut self, old_entity: Entity, new_entity: Entity) {
         for action_list in [&mut self.undo_actions, &mut self.redo_actions] {
             for action in action_list.iter_mut() {
@@ -194,7 +208,9 @@ impl ActionStack {
             }
         }
     }
+}
 
+impl ActionStack<ShapeAction> {
     pub(crate) fn migrate_vertex_entities(
         &mut self,
         old_2d_entity: Entity,

@@ -41,25 +41,27 @@ pub fn sync_vertices(
     if !canvas.is_visible() {
         return;
     }
-    let Some(current_tab_camera_state) = tab_manager.current_tab_camera_state() else {
+    let Some(current_tab_state) = tab_manager.current_tab_state() else {
         return;
     };
 
-    let current_tab_entity = tab_manager.current_tab_entity();
+    if let Some(current_tab_entity) = tab_manager.current_tab_entity() {
+        let current_tab_camera_state = &current_tab_state.camera_state;
 
-    shape_manager.sync_shapes(
-        &camera_manager,
-        current_tab_camera_state,
-        current_tab_entity,
-        &camera_q,
-        &compass_q,
-        &mut transform_q,
-        &owned_by_tab_q,
-        &mut vertex_3d_q,
-        &edge_2d_q,
-        &edge_3d_q,
-        &face_2d_q,
-    );
+        shape_manager.sync_shapes(
+            &camera_manager,
+            current_tab_camera_state,
+            *current_tab_entity,
+            &camera_q,
+            &compass_q,
+            &mut transform_q,
+            &owned_by_tab_q,
+            &mut vertex_3d_q,
+            &edge_2d_q,
+            &edge_3d_q,
+            &face_2d_q,
+        );
+    }
 }
 
 pub fn process_faces(
@@ -83,9 +85,11 @@ pub fn update_select_line(
     if !canvas.is_visible() {
         return;
     }
-    let Some(current_tab_camera_state) = tab_manager.current_tab_camera_state() else {
+    let Some(current_tab_state) = tab_manager.current_tab_state() else {
         return;
     };
+
+    let current_tab_camera_state = &current_tab_state.camera_state;
 
     shape_manager.update_select_line(
         input.mouse_position(),

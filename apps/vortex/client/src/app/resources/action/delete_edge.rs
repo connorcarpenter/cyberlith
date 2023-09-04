@@ -9,7 +9,7 @@ use naia_bevy_client::{Client, CommandsExt};
 use vortex_proto::components::Edge3d;
 
 use crate::app::resources::{
-    action::{Action, select_shape::select_shape},
+    action::{ShapeAction, select_shape::select_shape},
     shape_manager::{CanvasShape, ShapeManager},
 };
 
@@ -17,7 +17,7 @@ pub(crate) fn execute(
     world: &mut World,
     edge_2d_entity: Entity,
     shape_2d_to_select_opt: Option<(Entity, CanvasShape)>,
-) -> Vec<Action> {
+) -> Vec<ShapeAction> {
     info!("DeleteEdge(edge_2d_entity: `{:?}`)", edge_2d_entity);
     let mut system_state: SystemState<(Commands, Client, ResMut<ShapeManager>, Query<&Edge3d>)> =
         SystemState::new(world);
@@ -100,7 +100,7 @@ pub(crate) fn execute(
 
     system_state.apply(world);
 
-    return vec![Action::CreateEdge(
+    return vec![ShapeAction::CreateEdge(
         vertex_start_2d,
         vertex_end_2d,
         (edge_2d_entity, CanvasShape::Edge),

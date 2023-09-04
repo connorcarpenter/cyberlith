@@ -1,53 +1,66 @@
-use bevy_ecs::{event::EventReader, system::ResMut};
+
+use bevy_ecs::{entity::Entity, event::EventReader, system::{Query, ResMut}};
 
 use naia_bevy_client::events::{
     EntityAuthDeniedEvent, EntityAuthGrantedEvent, EntityAuthResetEvent,
 };
 
-use crate::app::resources::{action_stack::ActionStack, shape_manager::ShapeManager};
+use crate::app::{components::OwnedByFileLocal, resources::{tab_manager::TabManager, global::Global, shape_manager::ShapeManager}};
 
 pub fn auth_granted_events(
-    mut action_stack: ResMut<ActionStack>,
+    mut global: ResMut<Global>,
     mut shape_manager: ResMut<ShapeManager>,
+    mut tab_manager: ResMut<TabManager>,
     mut event_reader: EventReader<EntityAuthGrantedEvent>,
+    owned_by_q: Query<&OwnedByFileLocal>,
 ) {
     for EntityAuthGrantedEvent(entity) in event_reader.iter() {
-        if shape_manager.has_edge_entity_3d(entity) {
-            // entity is edge
-            // TODO: handle edge auth?
-            //info!("auth granted for edge entity: {:?}", entity);
-        } else if shape_manager.has_vertex_entity_3d(entity) {
-            // entity is vertex
-            //info!("auth granted for vertex entity: {:?}", entity);
-            action_stack.entity_update_auth_status(&mut shape_manager, entity);
-        } else {
-            // entity is .. file?
-            //info!("auth granted for file? entity: {:?}", entity);
-            action_stack.entity_update_auth_status(&mut shape_manager, entity);
-        }
+        process_entity_auth_status(&mut global, &mut shape_manager, &mut tab_manager, &owned_by_q, entity);
     }
 }
 
 pub fn auth_denied_events(
-    mut action_stack: ResMut<ActionStack>,
+    mut global: ResMut<Global>,
     mut shape_manager: ResMut<ShapeManager>,
+    mut tab_manager: ResMut<TabManager>,
     mut event_reader: EventReader<EntityAuthDeniedEvent>,
+    owned_by_q: Query<&OwnedByFileLocal>,
 ) {
     for EntityAuthDeniedEvent(entity) in event_reader.iter() {
-        // info!("auth denied for entity: {:?}", entity);
-
-        action_stack.entity_update_auth_status(&mut shape_manager, entity);
+        process_entity_auth_status(&mut global, &mut shape_manager, &mut tab_manager, &owned_by_q, entity);
     }
 }
 
 pub fn auth_reset_events(
-    mut action_stack: ResMut<ActionStack>,
+    mut global: ResMut<Global>,
     mut shape_manager: ResMut<ShapeManager>,
+    mut tab_manager: ResMut<TabManager>,
     mut event_reader: EventReader<EntityAuthResetEvent>,
+    owned_by_q: Query<&OwnedByFileLocal>,
 ) {
     for EntityAuthResetEvent(entity) in event_reader.iter() {
-        // info!("auth reset for entity: {:?}", entity);
+        process_entity_auth_status(&mut global, &mut shape_manager, &mut tab_manager, &owned_by_q, entity);
+    }
+}
 
-        action_stack.entity_update_auth_status(&mut shape_manager, entity);
+fn process_entity_auth_status(
+    global: &mut Global,
+    shape_manager: &mut ShapeManager,
+    tab_manager: &mut TabManager,
+    owned_by_q: &Query<&OwnedByFileLocal>,
+    entity: &Entity
+) {
+    if shape_manager.has_shape_entity_3d(entity) {
+        //info!("auth granted for entity: {:?}", entity);
+        if let Ok(owning_file_entity) = owned_by_q.get(*entity) {
+            if let Some(tab_state) = tab_manager.tab_state_mut(&owning_file_entity.file_entity) {
+                let shape_3d_entity = shape_manager.shape_entity_3d_to_2d(entity).unwrap();
+                tab_state.action_stack.entity_update_auth_status(&shape_3d_entity);
+            }
+        }
+    } else {
+        // entity is .. file?
+        //info!("auth granted for file? entity: {:?}", entity);
+        global.action_stack.entity_update_auth_status(entity);
     }
 }

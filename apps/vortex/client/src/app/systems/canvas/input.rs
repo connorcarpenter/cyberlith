@@ -12,7 +12,7 @@ use vortex_proto::components::{Vertex3d, VertexRoot};
 use crate::app::{
     components::{Compass, Edge2dLocal, FaceIcon2d, OwnedByFileLocal, Vertex2d},
     resources::{
-        action_stack::ActionStack, camera_manager::CameraManager, canvas::Canvas,
+        camera_manager::CameraManager, canvas::Canvas,
         input_manager::InputManager, shape_manager::ShapeManager, tab_manager::TabManager,
     },
 };
@@ -26,7 +26,6 @@ pub fn input(
     mut tab_manager: ResMut<TabManager>,
     mut input_manager: ResMut<InputManager>,
     mut input: ResMut<Input>,
-    mut action_stack: ResMut<ActionStack>,
     mut transform_q: Query<&mut Transform>,
     mut camera_q: Query<(&mut Camera, &mut Projection)>,
     mut vertex_3d_q: Query<&mut Vertex3d>,
@@ -34,7 +33,7 @@ pub fn input(
     if !canvas.is_visible() {
         return;
     }
-    let Some(current_tab_camera_state) = tab_manager.current_tab_camera_state_mut() else {
+    let Some(current_tab_state) = tab_manager.current_tab_state_mut() else {
         return;
     };
     let input_actions = input.take_actions();
@@ -45,8 +44,7 @@ pub fn input(
             &mut commands,
             &mut client,
             &mut camera_manager,
-            current_tab_camera_state,
-            &mut action_stack,
+            current_tab_state,
             &mut transform_q,
             &mut camera_q,
             &mut vertex_3d_q,
@@ -69,20 +67,22 @@ pub fn update_mouse_hover(
         return;
     }
 
-    let Some(current_tab_camera_state) = tab_manager.current_tab_camera_state() else {
+    let Some(current_tab_state) = tab_manager.current_tab_state() else {
         return;
     };
 
-    let current_tab_entity = tab_manager.current_tab_entity();
+    if let Some(current_tab_entity) = tab_manager.current_tab_entity() {
+        let current_tab_camera_state = &current_tab_state.camera_state;
 
-    shape_manager.update_mouse_hover(
-        current_tab_entity,
-        input.mouse_position(),
-        current_tab_camera_state,
-        &mut transform_q,
-        &owned_by_tab_q,
-        &vertex_2d_q,
-        &edge_2d_q,
-        &face_2d_q,
-    );
+        shape_manager.update_mouse_hover(
+            *current_tab_entity,
+            input.mouse_position(),
+            current_tab_camera_state,
+            &mut transform_q,
+            &owned_by_tab_q,
+            &vertex_2d_q,
+            &edge_2d_q,
+            &face_2d_q,
+        );
+    }
 }

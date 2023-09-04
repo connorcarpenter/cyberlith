@@ -11,7 +11,7 @@ use vortex_proto::components::{Edge3d, FileType, FileTypeValue, Vertex3d};
 use crate::app::{
     components::{VertexTypeData, VertexEntry},
     resources::{
-        action::{Action, select_shape::select_shape},
+        action::{ShapeAction, select_shape::select_shape},
         shape_manager::{CanvasShape, ShapeManager},
     },
 };
@@ -20,7 +20,7 @@ pub(crate) fn execute(
     world: &mut World,
     vertex_2d_entity: Entity,
     vertex_2d_to_select_opt: Option<(Entity, CanvasShape)>,
-) -> Vec<Action> {
+) -> Vec<ShapeAction> {
     info!("DeleteVertex({:?})", vertex_2d_entity);
 
     let mut system_state: SystemState<(
@@ -105,7 +105,7 @@ pub(crate) fn execute(
 
             system_state.apply(world);
 
-            return vec![Action::CreateVertex(
+            return vec![ShapeAction::CreateVertex(
                 rev_vertex_type_data,
                 vertex_3d_position,
                 Some((vertex_2d_entity, vertex_3d_entity)),
@@ -189,7 +189,7 @@ pub(crate) fn execute(
 
             system_state.apply(world);
 
-            return vec![Action::CreateVertex(
+            return vec![ShapeAction::CreateVertex(
                 rev_vertex_type_data,
                 vertex_3d_position,
                 Some((vertex_2d_entity, vertex_3d_entity)),

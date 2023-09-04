@@ -9,10 +9,9 @@ use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 use render_api::components::Visibility;
 
 use vortex_proto::{
-    components::{ChangelistEntry, EntryKind},
+    components::{ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild},
     FileExtension,
 };
-use vortex_proto::components::{FileSystemChild, FileSystemEntry, FileSystemRootChild};
 
 use crate::app::{
     components::{
@@ -20,22 +19,22 @@ use crate::app::{
         OwnedByFileLocal,
     },
     resources::{
-        action::{Action, select_entries::{deselect_all_selected_files, release_entities}}, action_stack::ActionStack, camera_manager::CameraManager, canvas::Canvas,
+        action::{FileAction, select_entries::{deselect_all_selected_files, release_entities}}, action_stack::ActionStack, camera_manager::CameraManager, canvas::Canvas,
         file_tree::FileTree, global::Global, shape_manager::ShapeManager, tab_manager::TabManager,
         toolbar::Toolbar,
     },
+    systems::file_post_process,
 };
-use crate::app::systems::file_post_process;
 
 pub(crate) fn execute(
     world: &mut World,
-    action_stack: &mut ActionStack,
+    action_stack: &mut ActionStack<FileAction>,
     parent_entity_opt: Option<Entity>,
     new_file_name: String,
     entry_kind: EntryKind,
     old_entity_opt: Option<Entity>,
     entry_contents_opt: Option<Vec<FileTree>>,
-) -> Vec<Action> {
+) -> Vec<FileAction> {
     let mut system_state: SystemState<(
         Commands,
         Client,
@@ -117,14 +116,14 @@ pub(crate) fn execute(
 
     system_state.apply(world);
 
-    return vec![Action::DeleteEntry(
+    return vec![FileAction::DeleteEntry(
         entity_id,
         Some(deselected_row_entities),
     )];
 }
 
 fn create_fs_entry(
-    action_stack: &mut ActionStack,
+    action_stack: &mut ActionStack<FileAction>,
     commands: &mut Commands,
     client: &mut Client,
     parent: &mut FileSystemParent,

@@ -1,15 +1,15 @@
 use bevy_ecs::{prelude::Mut, world::World};
 
 use render_api::Window;
-
 use render_egui::EguiContext;
 
 use crate::app::{
-    resources::action_stack::ActionStack,
+    resources::global::Global,
     ui::{
         center_panel, consume_shortcuts, left_panel, login_modal, top_bar, TextInputModal, UiState,
     },
 };
+use crate::app::resources::tab_manager::TabManager;
 
 pub fn update(world: &mut World) {
     let context = world.get_resource::<EguiContext>().unwrap().inner().clone();
@@ -34,8 +34,18 @@ pub fn update(world: &mut World) {
 
         consume_shortcuts(&context, world);
 
-        world.resource_scope(|world, mut action_stack: Mut<ActionStack>| {
-            action_stack.execute_actions(world);
+        world.resource_scope(|world, mut global: Mut<Global>| {
+            let action_stack = &mut global.action_stack;
+            action_stack.execute_actions(world, None);
+        });
+        world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+            if let Some(tab_file_entity) = tab_manager.current_tab_entity() {
+                let tab_file_entity = *tab_file_entity;
+                let Some(tab_state) = tab_manager.current_tab_state_mut() else {
+                    return;
+                };
+                tab_state.action_stack.execute_actions(world, Some(&tab_file_entity));
+            }
         });
     } else {
         login_modal(&context, world);

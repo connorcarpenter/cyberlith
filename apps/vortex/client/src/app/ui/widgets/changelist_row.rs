@@ -19,7 +19,7 @@ use vortex_proto::{
 
 use crate::app::{
     components::file_system::ChangelistUiState,
-    resources::{action::Action, action_stack::ActionStack},
+    resources::{action::FileAction, global::Global},
     ui::widgets::colors::{
         FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
         TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED,
@@ -210,10 +210,12 @@ impl ChangelistRowUiWidget {
         let mut system_state: SystemState<(
             Commands,
             Client,
-            ResMut<ActionStack>,
+            ResMut<Global>,
             Query<&ChangelistEntry>,
         )> = SystemState::new(world);
-        let (mut commands, client, mut action_stack, query) = system_state.get_mut(world);
+        let (mut commands, client, mut global, query) = system_state.get_mut(world);
+
+        let action_stack = &mut global.action_stack;
 
         let has_auth: bool = {
             if let Ok(entry) = query.get(*row_entity) {
@@ -234,7 +236,7 @@ impl ChangelistRowUiWidget {
         if has_auth {
             let mut entities = Vec::new();
             entities.push(*row_entity);
-            action_stack.buffer_action(Action::SelectEntries(entities));
+            action_stack.buffer_action(FileAction::SelectEntries(entities));
         }
     }
 

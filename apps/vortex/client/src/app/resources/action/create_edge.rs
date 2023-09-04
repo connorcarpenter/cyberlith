@@ -13,27 +13,26 @@ use render_api::{
 };
 
 use vortex_proto::components::{Edge3d, FileType, FileTypeValue, OwnedByFile};
-use crate::app::components::Vertex2d;
 
-use crate::app::resources::{
-    action::Action,
+use crate::app::{resources::{
+    action::{select_shape::deselect_all_selected_shapes, ShapeAction},
     action_stack::ActionStack,
     camera_manager::CameraManager,
     shape_manager::FaceKey,
     shape_manager::{CanvasShape, ShapeManager},
     tab_manager::TabManager,
-};
-use crate::app::resources::action::select_shape::deselect_all_selected_shapes;
+}, components::Vertex2d};
 
 pub(crate) fn execute(
     world: &mut World,
-    action_stack: &mut ActionStack,
+    action_stack: &mut ActionStack<ShapeAction>,
+    tab_file_entity: &Entity,
     vertex_2d_entity_a: Entity,
     vertex_2d_entity_b: Entity,
     shape_to_select: (Entity, CanvasShape),
     face_to_create_opt: Option<Vec<(Entity, Entity, bool)>>,
     old_edge_entities_opt: Option<Entity>,
-) -> Vec<Action> {
+) -> Vec<ShapeAction> {
     let (mut shape_2d_entity_to_select, shape_2d_type_to_select) = shape_to_select;
 
     info!(
@@ -53,7 +52,6 @@ pub(crate) fn execute(
             Client,
             ResMut<CameraManager>,
             ResMut<ShapeManager>,
-            Res<TabManager>,
             ResMut<Assets<CpuMesh>>,
             ResMut<Assets<CpuMaterial>>,
         )> = SystemState::new(world);
@@ -62,7 +60,6 @@ pub(crate) fn execute(
             mut client,
             mut camera_manager,
             mut shape_manager,
-            tab_manager,
             mut meshes,
             mut materials,
         ) = system_state.get_mut(world);
@@ -94,7 +91,7 @@ pub(crate) fn execute(
             vertex_2d_entity_a,
             vertex_2d_entity_b,
             vertex_3d_entity_b,
-            tab_manager.current_tab_entity(),
+            *tab_file_entity,
             FileTypeValue::Mesh,
             &mut entities_to_release,
         );
@@ -144,7 +141,6 @@ pub(crate) fn execute(
                 Client,
                 ResMut<CameraManager>,
                 ResMut<ShapeManager>,
-                Res<TabManager>,
                 ResMut<Assets<CpuMesh>>,
                 ResMut<Assets<CpuMaterial>>,
                 Query<&Transform>,
@@ -154,7 +150,6 @@ pub(crate) fn execute(
                 mut client,
                 mut camera_manager,
                 mut shape_manager,
-                tab_manager,
                 mut meshes,
                 mut materials,
                 transform_q,
@@ -173,7 +168,6 @@ pub(crate) fn execute(
                     .vertex_entity_2d_to_3d(&vertex_2d_of_face_to_create)
                     .unwrap();
                 let face_key = FaceKey::new(vertex_3d_a, vertex_3d_b, vertex_3d_c);
-                let current_file_entity = tab_manager.current_tab_entity();
 
                 shape_manager.remove_new_face_key(&face_key);
                 let new_face_2d_entity = shape_manager.process_new_face(
@@ -181,7 +175,7 @@ pub(crate) fn execute(
                     &mut camera_manager,
                     &mut meshes,
                     &mut materials,
-                    current_file_entity,
+                    *tab_file_entity,
                     &face_key,
                 );
                 action_stack.migrate_face_entities(old_face_2d_entity, new_face_2d_entity);
@@ -199,7 +193,7 @@ pub(crate) fn execute(
                             edge_3d_entities[1],
                             edge_3d_entities[2],
                         ],
-                        current_file_entity,
+                        *tab_file_entity,
                     );
                 }
             }
@@ -209,8 +203,8 @@ pub(crate) fn execute(
     }
 
     return vec![
-        Action::DeleteEdge(created_edge_2d_entity, deselected_shape_2d_entity_store),
-        Action::SelectShape(Some((created_edge_2d_entity, CanvasShape::Edge))),
+        ShapeAction::DeleteEdge(created_edge_2d_entity, deselected_shape_2d_entity_store),
+        ShapeAction::SelectShape(Some((created_edge_2d_entity, CanvasShape::Edge))),
     ];
 }
 

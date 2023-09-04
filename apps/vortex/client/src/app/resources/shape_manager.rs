@@ -30,7 +30,8 @@ use crate::app::{
         SelectTriangle, Vertex2d, VertexTypeData,
     },
     resources::{
-        action::Action,
+        action::ShapeAction,
+        tab_manager::TabState,
         action_stack::ActionStack,
         camera_manager::{CameraAngle, CameraManager},
         camera_state::CameraState,
@@ -243,14 +244,15 @@ impl ShapeManager {
         commands: &mut Commands,
         client: &mut Client,
         camera_manager: &mut CameraManager,
-        camera_state: &mut CameraState,
-        action_stack: &mut ActionStack,
+        tab_state: &mut TabState,
 
         // queries
         transform_q: &mut Query<&mut Transform>,
         camera_q: &mut Query<(&mut Camera, &mut Projection)>,
         vertex_3d_q: &mut Query<&mut Vertex3d>,
     ) {
+        let camera_state = &mut tab_state.camera_state;
+
         for input_action in &input_actions {
             match input_action {
                 AppInputAction::MiddleMouseScroll(scroll_y) => {
@@ -287,10 +289,10 @@ impl ShapeManager {
                     }
                 },
                 AppInputAction::InsertKeyPress => {
-                    self.handle_insert_key_press(action_stack);
+                    self.handle_insert_key_press(&mut tab_state.action_stack);
                 }
                 AppInputAction::DeleteKeyPress => {
-                    self.handle_delete_key_press(commands, client, action_stack);
+                    self.handle_delete_key_press(commands, client, &mut tab_state.action_stack);
                 }
                 AppInputAction::CameraAngleYawRotate(clockwise) => {
                     camera_manager.set_camera_angle_yaw_rotate(camera_state, *clockwise);
@@ -312,7 +314,7 @@ impl ShapeManager {
                 AppInputAction::MouseClick(click_type, mouse_position) => {
                     self.handle_mouse_click(
                         camera_manager,
-                        action_stack,
+                        &mut tab_state.action_stack,
                         *click_type,
                         mouse_position,
                         camera_q,
@@ -323,7 +325,7 @@ impl ShapeManager {
                     if let Some((vertex_2d_entity, old_pos, new_pos)) =
                         self.last_vertex_dragged.take()
                     {
-                        action_stack.buffer_action(Action::MoveVertex(
+                        tab_state.action_stack.buffer_action(ShapeAction::MoveVertex(
                             vertex_2d_entity,
                             old_pos,
                             new_pos,
@@ -1251,6 +1253,10 @@ impl ShapeManager {
         self.edges_3d.contains_key(entity_3d)
     }
 
+    pub(crate) fn has_shape_entity_3d(&self, entity_3d: &Entity) -> bool {
+        self.faces_3d.contains_key(entity_3d) || self.edges_3d.contains_key(entity_3d) || self.vertices_3d.contains_key(entity_3d)
+    }
+
     pub(crate) fn shape_entity_2d_to_3d(
         &self,
         entity_2d: &Entity,
@@ -1264,6 +1270,32 @@ impl ShapeManager {
                 output
             }
             CanvasShape::Face => self.face_entity_2d_to_3d(entity_2d),
+        }
+    }
+
+    fn shape_type_from_3d_entity(&self, entity_3d: &Entity) -> Option<CanvasShape> {
+        if self.vertices_3d.contains_key(entity_3d) {
+            Some(CanvasShape::Vertex)
+        } else if self.edges_3d.contains_key(entity_3d) {
+            Some(CanvasShape::Edge)
+        } else if self.faces_3d.contains_key(entity_3d) {
+            Some(CanvasShape::Face)
+        } else {
+            None
+        }
+    }
+
+    pub(crate) fn shape_entity_3d_to_2d(
+        &self,
+        entity_3d: &Entity,
+    ) -> Option<Entity> {
+
+        let shape_type = self.shape_type_from_3d_entity(entity_3d).unwrap();
+
+        match shape_type {
+            CanvasShape::RootVertex | CanvasShape::Vertex => self.vertex_entity_3d_to_2d(entity_3d),
+            CanvasShape::Edge => self.edge_entity_3d_to_2d(entity_3d),
+            CanvasShape::Face => self.face_entity_3d_to_2d(entity_3d),
         }
     }
 
@@ -1281,6 +1313,23 @@ impl ShapeManager {
 
     pub(crate) fn edge_entity_3d_to_2d(&self, entity_2d: &Entity) -> Option<Entity> {
         self.edges_3d.get(entity_2d).map(|data| data.entity_2d)
+    }
+
+    pub(crate) fn face_entity_2d_to_3d(&self, entity_2d: &Entity) -> Option<Entity> {
+        let Some(face_key) = self.faces_2d.get(entity_2d) else {
+            return None;
+        };
+        let Some(Some(face_3d_data)) = self.face_keys.get(face_key) else {
+            return None;
+        };
+        face_3d_data.entity_3d
+    }
+
+    pub(crate) fn face_entity_3d_to_2d(&self, entity_3d: &Entity) -> Option<Entity> {
+        let Some(face_key) = self.faces_3d.get(entity_3d) else {
+            return None;
+        };
+        self.face_2d_entity_from_face_key(face_key)
     }
 
     pub(crate) fn vertex_connected_edges(&self, vertex_3d_entity: &Entity) -> Option<Vec<Entity>> {
@@ -1313,16 +1362,6 @@ impl ShapeManager {
     }
 
     pub(crate) fn face_3d_entity_from_face_key(&self, face_key: &FaceKey) -> Option<Entity> {
-        let Some(Some(face_3d_data)) = self.face_keys.get(face_key) else {
-            return None;
-        };
-        face_3d_data.entity_3d
-    }
-
-    pub(crate) fn face_entity_2d_to_3d(&self, entity_2d: &Entity) -> Option<Entity> {
-        let Some(face_key) = self.faces_2d.get(entity_2d) else {
-            return None;
-        };
         let Some(Some(face_3d_data)) = self.face_keys.get(face_key) else {
             return None;
         };
@@ -1468,7 +1507,7 @@ impl ShapeManager {
         self.current_file_type = file_type;
     }
 
-    fn handle_insert_key_press(&mut self, action_stack: &mut ActionStack) {
+    fn handle_insert_key_press(&mut self, action_stack: &mut ActionStack<ShapeAction>) {
         if self.selected_shape.is_some() {
             return;
         }
@@ -1477,7 +1516,7 @@ impl ShapeManager {
             return;
         }
 
-        action_stack.buffer_action(Action::CreateVertex(
+        action_stack.buffer_action(ShapeAction::CreateVertex(
             VertexTypeData::Mesh(Vec::new(), Vec::new()),
             Vec3::ZERO,
             None,
@@ -1488,7 +1527,7 @@ impl ShapeManager {
         &mut self,
         commands: &mut Commands,
         client: &mut Client,
-        action_stack: &mut ActionStack,
+        action_stack: &mut ActionStack<ShapeAction>,
     ) {
         match self.selected_shape {
             Some((vertex_2d_entity, CanvasShape::Vertex)) => {
@@ -1513,7 +1552,7 @@ impl ShapeManager {
                     commands.entity(vertex_3d_entity).request_authority(client);
                 }
 
-                action_stack.buffer_action(Action::DeleteVertex(vertex_2d_entity, None));
+                action_stack.buffer_action(ShapeAction::DeleteVertex(vertex_2d_entity, None));
 
                 self.selected_shape = None;
             }
@@ -1536,7 +1575,7 @@ impl ShapeManager {
                     commands.entity(edge_3d_entity).request_authority(client);
                 }
 
-                action_stack.buffer_action(Action::DeleteEdge(edge_2d_entity, None));
+                action_stack.buffer_action(ShapeAction::DeleteEdge(edge_2d_entity, None));
 
                 self.selected_shape = None;
             }
@@ -1559,7 +1598,7 @@ impl ShapeManager {
                     commands.entity(face_3d_entity).request_authority(client);
                 }
 
-                action_stack.buffer_action(Action::DeleteFace(face_2d_entity));
+                action_stack.buffer_action(ShapeAction::DeleteFace(face_2d_entity));
 
                 self.selected_shape = None;
             }
@@ -1792,7 +1831,7 @@ impl ShapeManager {
     fn handle_mouse_click(
         &mut self,
         camera_manager: &CameraManager,
-        action_stack: &mut ActionStack,
+        action_stack: &mut ActionStack<ShapeAction>,
         click_type: MouseButton,
         mouse_position: &Vec2,
         camera_q: &Query<(&mut Camera, &mut Projection)>,
@@ -1808,7 +1847,7 @@ impl ShapeManager {
                         (_, CanvasShape::Edge) | (_, CanvasShape::Face) => {
                             // should not ever be able to attach something to an edge or face?
                             // select hovered entity
-                            action_stack.buffer_action(Action::SelectShape(self.hovered_entity));
+                            action_stack.buffer_action(ShapeAction::SelectShape(self.hovered_entity));
                             return;
                         }
                         _ => {}
@@ -1826,7 +1865,7 @@ impl ShapeManager {
                                 // should not ever be able to attach something to an edge or face?
                                 // select hovered entity
                                 action_stack
-                                    .buffer_action(Action::SelectShape(self.hovered_entity));
+                                    .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
                                 return;
                             }
                             _ => {}
@@ -1845,14 +1884,14 @@ impl ShapeManager {
                             .is_some()
                         {
                             // select edge
-                            action_stack.buffer_action(Action::SelectShape(Some((
+                            action_stack.buffer_action(ShapeAction::SelectShape(Some((
                                 vertex_2d_entity_b,
                                 CanvasShape::Vertex,
                             ))));
                             return;
                         } else {
                             // create edge
-                            action_stack.buffer_action(Action::CreateEdge(
+                            action_stack.buffer_action(ShapeAction::CreateEdge(
                                 vertex_2d_entity_a,
                                 vertex_2d_entity_b,
                                 (vertex_2d_entity_b, CanvasShape::Vertex),
@@ -1887,7 +1926,7 @@ impl ShapeManager {
                             );
 
                             // spawn new vertex
-                            action_stack.buffer_action(Action::CreateVertex(
+                            action_stack.buffer_action(ShapeAction::CreateVertex(
                                 match self.current_file_type {
                                     FileTypeValue::Skel => {
                                         VertexTypeData::Skel(vertex_2d_entity, None)
@@ -1913,7 +1952,7 @@ impl ShapeManager {
                 }
                 MouseButton::Right => {
                     // deselect vertex
-                    action_stack.buffer_action(Action::SelectShape(None));
+                    action_stack.buffer_action(ShapeAction::SelectShape(None));
                 }
                 _ => {}
             }
@@ -1922,16 +1961,16 @@ impl ShapeManager {
                 match (self.hovered_entity.map(|(_, s)| s).unwrap(), click_type) {
                     (CanvasShape::Vertex, MouseButton::Left)
                     | (CanvasShape::RootVertex, MouseButton::Left) => {
-                        action_stack.buffer_action(Action::SelectShape(self.hovered_entity));
+                        action_stack.buffer_action(ShapeAction::SelectShape(self.hovered_entity));
                     }
                     (CanvasShape::Edge, MouseButton::Left) => {
                         if self.current_file_type == FileTypeValue::Mesh {
-                            action_stack.buffer_action(Action::SelectShape(self.hovered_entity));
+                            action_stack.buffer_action(ShapeAction::SelectShape(self.hovered_entity));
                         }
                     }
                     (CanvasShape::Face, MouseButton::Left) => {
                         if self.current_file_type == FileTypeValue::Mesh {
-                            action_stack.buffer_action(Action::SelectShape(self.hovered_entity));
+                            action_stack.buffer_action(ShapeAction::SelectShape(self.hovered_entity));
                         } else {
                             panic!("shouldn't be possible");
                         }

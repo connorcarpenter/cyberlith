@@ -1,10 +1,11 @@
-use bevy_ecs::prelude::{Mut, World};
+use bevy_ecs::prelude::World;
+
 use render_egui::{
     egui,
     egui::{KeyboardShortcut, Modifiers},
 };
 
-use crate::app::resources::action_stack::ActionStack;
+use crate::app::resources::{action_stack::{action_stack_redo, action_stack_undo}};
 
 pub const SHORTCUT_UNDO: KeyboardShortcut = KeyboardShortcut::new(Modifiers::CTRL, egui::Key::Z);
 pub const SHORTCUT_REDO: KeyboardShortcut = KeyboardShortcut::new(
@@ -17,16 +18,12 @@ pub const SHORTCUT_REDO: KeyboardShortcut = KeyboardShortcut::new(
 );
 
 pub fn consume_shortcuts(context: &egui::Context, world: &mut World) {
-    world.resource_scope(|world, mut action_stack: Mut<ActionStack>| {
-        if action_stack.has_undo() {
-            if context.input_mut(|i| i.consume_shortcut(&SHORTCUT_UNDO)) {
-                action_stack.undo_action(world);
-            }
-        }
-        if action_stack.has_redo() {
-            if context.input_mut(|i| i.consume_shortcut(&SHORTCUT_REDO)) {
-                action_stack.redo_action(world);
-            }
-        }
-    });
+
+    if context.input_mut(|i| i.consume_shortcut(&SHORTCUT_UNDO)) {
+        action_stack_undo(world);
+    }
+
+    if context.input_mut(|i| i.consume_shortcut(&SHORTCUT_REDO)) {
+        action_stack_redo(world);
+    }
 }

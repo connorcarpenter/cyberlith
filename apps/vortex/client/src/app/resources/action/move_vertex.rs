@@ -12,7 +12,7 @@ use render_api::{base::CpuMesh, components::Transform, Assets, Handle};
 use vortex_proto::components::{Face3d, Vertex3d};
 
 use crate::app::resources::{
-    action::Action, camera_manager::CameraManager, shape_manager::ShapeManager,
+    action::ShapeAction, camera_manager::CameraManager, shape_manager::ShapeManager,
 };
 
 pub(crate) fn execute(
@@ -20,7 +20,7 @@ pub(crate) fn execute(
     vertex_2d_entity: Entity,
     old_position: Vec3,
     new_position: Vec3,
-) -> Vec<Action> {
+) -> Vec<ShapeAction> {
     info!("MoveVertex");
     let mut system_state: SystemState<(
         Client,
@@ -65,7 +65,7 @@ pub(crate) fn execute(
 
     system_state.apply(world);
 
-    return vec![Action::MoveVertex(
+    return vec![ShapeAction::MoveVertex(
         vertex_2d_entity,
         new_position,
         old_position,

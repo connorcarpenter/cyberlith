@@ -5,9 +5,9 @@ use bevy_ecs::{
 
 use vortex_proto::components::FileSystemEntry;
 
-use crate::app::resources::action::Action;
+use crate::app::resources::action::FileAction;
 
-pub(crate) fn execute(world: &mut World, file_entity: Entity, new_name: String) -> Vec<Action> {
+pub(crate) fn execute(world: &mut World, file_entity: Entity, new_name: String) -> Vec<FileAction> {
     let mut system_state: SystemState<Query<&mut FileSystemEntry>> = SystemState::new(world);
     let mut entry_query = system_state.get_mut(world);
     let Ok(mut file_entry) = entry_query.get_mut(file_entity) else {
@@ -18,5 +18,5 @@ pub(crate) fn execute(world: &mut World, file_entity: Entity, new_name: String) 
 
     system_state.apply(world);
 
-    return vec![Action::RenameEntry(file_entity, old_name)];
+    return vec![FileAction::RenameEntry(file_entity, old_name)];
 }
