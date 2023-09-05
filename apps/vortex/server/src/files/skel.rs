@@ -8,7 +8,7 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_server::{
-    BitReader, BitWriter, CommandsExt, ReplicationConfig, Serde, SerdeErr, Server,
+    BitReader, FileBitWriter, CommandsExt, ReplicationConfig, Serde, SerdeErr, Server,
     UnsignedVariableInteger,
 };
 
@@ -89,7 +89,7 @@ impl SkelWriter {
     }
 
     fn write_from_actions(&self, actions: Vec<SkelAction>) -> Box<[u8]> {
-        let mut bit_writer = BitWriter::new();
+        let mut bit_writer = FileBitWriter::new();
 
         for action in actions {
             match action {

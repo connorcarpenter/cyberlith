@@ -8,7 +8,7 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_server::{
-    BitReader, BitWriter, CommandsExt, ReplicationConfig, Serde, SerdeErr, Server,
+    BitReader, FileBitWriter, CommandsExt, ReplicationConfig, Serde, SerdeErr, Server,
     UnsignedVariableInteger,
 };
 
@@ -144,7 +144,7 @@ impl MeshWriter {
     }
 
     fn write_from_actions(&self, actions: Vec<MeshAction>) -> Box<[u8]> {
-        let mut bit_writer = BitWriter::new();
+        let mut bit_writer = FileBitWriter::new();
 
         for (action_id, action) in actions.iter().enumerate() {
             match action {
