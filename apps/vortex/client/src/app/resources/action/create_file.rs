@@ -19,7 +19,7 @@ use crate::app::{
         OwnedByFileLocal,
     },
     resources::{
-        action::{ActionStack, FileAction, select_entries::{deselect_all_selected_files, release_entities}}, camera_manager::CameraManager, canvas::Canvas,
+        action::{ActionStack, FileAction, select_file::{deselect_all_selected_files, release_entities}}, camera_manager::CameraManager, canvas::Canvas,
         file_tree::FileTree, shape_manager::ShapeManager, tab_manager::TabManager,
         toolbar::Toolbar,
     },
@@ -36,7 +36,7 @@ pub(crate) fn execute(
     old_entity_opt: Option<Entity>,
     entry_contents_opt: Option<Vec<FileTree>>,
 ) -> Vec<FileAction> {
-    info!("CreateEntry({:?})", new_file_name);
+    info!("CreateFile({:?})", new_file_name);
 
     let mut system_state: SystemState<(
         Commands,
@@ -119,7 +119,7 @@ pub(crate) fn execute(
 
     system_state.apply(world);
 
-    return vec![FileAction::DeleteEntry(
+    return vec![FileAction::DeleteFile(
         entity_id,
         Some(deselected_row_entities),
     )];

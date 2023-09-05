@@ -13,7 +13,7 @@ use vortex_proto::components::{
 
 use crate::app::{
     components::{file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState}, OwnedByFileLocal},
-    resources::{camera_manager::CameraManager, canvas::Canvas, shape_manager::ShapeManager, tab_manager::TabManager, toolbar::Toolbar, file_manager::FileManager, file_tree::FileTree, action::select_entries::{request_entities, select_files}, action::FileAction},
+    resources::{camera_manager::CameraManager, canvas::Canvas, shape_manager::ShapeManager, tab_manager::TabManager, toolbar::Toolbar, file_manager::FileManager, file_tree::FileTree, action::select_file::{request_entities, select_files}, action::FileAction},
 };
 
 pub(crate) fn execute(
@@ -22,7 +22,7 @@ pub(crate) fn execute(
     file_entity: Entity,
     files_to_select_opt: Option<Vec<Entity>>,
 ) -> Vec<FileAction> {
-    info!("DeleteEntry({:?})", file_entity);
+    info!("DeleteFile({:?})", file_entity);
     let mut system_state: SystemState<(
         Commands,
         Client,
@@ -122,7 +122,7 @@ pub(crate) fn execute(
 
     system_state.apply(world);
 
-    return vec![FileAction::NewEntry(
+    return vec![FileAction::CreateFile(
         parent_entity_opt,
         entry_name,
         entry_kind,

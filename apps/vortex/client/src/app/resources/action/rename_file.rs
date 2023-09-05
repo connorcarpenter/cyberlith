@@ -18,5 +18,5 @@ pub(crate) fn execute(world: &mut World, file_entity: Entity, new_name: String) 
 
     system_state.apply(world);
 
-    return vec![FileAction::RenameEntry(file_entity, old_name)];
+    return vec![FileAction::RenameFile(file_entity, old_name)];
 }

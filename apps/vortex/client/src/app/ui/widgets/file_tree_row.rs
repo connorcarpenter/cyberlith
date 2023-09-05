@@ -376,7 +376,7 @@ impl FileTreeRowUiWidget {
         if !is_denied {
             let mut entities = Vec::new();
             entities.push(*row_entity);
-            file_actions.buffer_action(FileAction::SelectEntries(entities));
+            file_actions.buffer_action(FileAction::SelectFile(entities));
         }
     }
 
@@ -655,7 +655,7 @@ impl FileTreeRowUiWidget {
             return;
         }
 
-        file_actions.buffer_action(FileAction::NewEntry(
+        file_actions.buffer_action(FileAction::CreateFile(
             directory_entity,
             entry_name.to_string(),
             entry_kind,
@@ -704,13 +704,13 @@ impl FileTreeRowUiWidget {
             return;
         }
 
-        file_actions.buffer_action(FileAction::RenameEntry(*entry_entity, entry_name.to_string()));
+        file_actions.buffer_action(FileAction::RenameFile(*entry_entity, entry_name.to_string()));
     }
 
     pub fn on_modal_response_delete(world: &mut World, row_entity: &Entity) {
 
         let mut file_actions = world.get_resource_mut::<FileActions>().unwrap();
 
-        file_actions.buffer_action(FileAction::DeleteEntry(*row_entity, None));
+        file_actions.buffer_action(FileAction::DeleteFile(*row_entity, None));
     }
 }

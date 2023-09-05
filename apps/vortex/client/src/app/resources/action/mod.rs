@@ -1,13 +1,13 @@
 mod create_edge;
 mod create_vertex;
 mod delete_edge;
-mod delete_entry;
+mod delete_file;
 mod delete_face;
 mod delete_vertex;
 mod move_vertex;
-mod new_entry;
-mod rename_entry;
-mod select_entries;
+mod create_file;
+mod rename_file;
+mod select_file;
 mod select_shape;
 mod file_action;
 mod shape_action;

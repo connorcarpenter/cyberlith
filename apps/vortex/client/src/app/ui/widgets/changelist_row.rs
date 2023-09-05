@@ -243,7 +243,7 @@ impl ChangelistRowUiWidget {
         if has_auth {
             let mut entities = Vec::new();
             entities.push(*row_entity);
-            file_actions.buffer_action(FileAction::SelectEntries(entities));
+            file_actions.buffer_action(FileAction::SelectFile(entities));
         }
     }
 

@@ -36,7 +36,7 @@ pub fn execute(world: &mut World, file_entities: Vec<Entity>) -> Vec<FileAction>
 
     system_state.apply(world);
 
-    return vec![FileAction::SelectEntries(deselected_row_entities)];
+    return vec![FileAction::SelectFile(deselected_row_entities)];
 }
 
 pub fn select_files(

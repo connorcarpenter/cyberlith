@@ -9,7 +9,7 @@ use naia_bevy_client::Client;
 use math::Vec3;
 use render_api::{base::CpuMesh, components::Transform, Assets, Handle};
 
-use vortex_proto::components::{Face3d, Vertex3d};
+use vortex_proto::components::Face3d;
 
 use crate::app::resources::{
     action::ShapeAction, camera_manager::CameraManager, shape_manager::ShapeManager,
