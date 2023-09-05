@@ -129,7 +129,7 @@ impl FaceKey {
     }
 }
 
-struct Face3dData {
+struct FaceData {
     entity_3d: Option<Entity>,
     entity_2d: Entity,
     file_entity: Entity,
@@ -139,7 +139,7 @@ struct Face3dData {
     edge_3d_c: Entity,
 }
 
-impl Face3dData {
+impl FaceData {
     fn new(
         entity_2d: Entity,
         file_entity: Entity,
@@ -173,7 +173,7 @@ pub struct ShapeManager {
     edges_2d: HashMap<Entity, Entity>,
 
     // 3d face key -> 3d face entity
-    face_keys: HashMap<FaceKey, Option<Face3dData>>,
+    face_keys: HashMap<FaceKey, Option<FaceData>>,
     // 3d face entity -> 3d face data
     faces_3d: HashMap<Entity, FaceKey>,
     // 2d face entity -> 3d face entity
@@ -843,6 +843,9 @@ impl ShapeManager {
         file_entity: Entity,
         face_key: &FaceKey,
     ) -> Entity {
+        if self.has_2d_face(face_key) {
+            panic!("face key already registered! `{:?}`", face_key);
+        }
         info!("processing new face: `{:?}`", face_key);
         let vertex_3d_a = face_key.vertex_3d_a;
         let vertex_3d_b = face_key.vertex_3d_b;
@@ -913,7 +916,7 @@ impl ShapeManager {
         // register face data
         self.face_keys.insert(
             *face_key,
-            Some(Face3dData::new(
+            Some(FaceData::new(
                 entity_2d,
                 file_entity,
                 edge_entities[0],
@@ -1251,6 +1254,13 @@ impl ShapeManager {
 
     pub(crate) fn has_edge_entity_3d(&self, entity_3d: &Entity) -> bool {
         self.edges_3d.contains_key(entity_3d)
+    }
+
+    pub(crate) fn has_2d_face(&self, face_key: &FaceKey) -> bool {
+        if let Some(Some(_)) = self.face_keys.get(face_key) {
+            return true;
+        }
+        return false;
     }
 
     pub(crate) fn has_shape_entity_3d(&self, entity_3d: &Entity) -> bool {

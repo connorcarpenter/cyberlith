@@ -434,14 +434,16 @@ impl ShapeWaitlist {
                 }
 
                 shape_manager.remove_new_face_key(&face_key);
-                shape_manager.process_new_face(
-                    commands,
-                    camera_manager,
-                    meshes,
-                    materials,
-                    file_entity,
-                    &face_key,
-                );
+                if !shape_manager.has_2d_face(&face_key) {
+                    shape_manager.process_new_face(
+                        commands,
+                        camera_manager,
+                        meshes,
+                        materials,
+                        file_entity,
+                        &face_key,
+                    );
+                }
                 shape_manager.face_3d_postprocess(
                     commands,
                     meshes,
