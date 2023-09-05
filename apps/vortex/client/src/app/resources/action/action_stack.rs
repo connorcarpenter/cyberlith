@@ -194,10 +194,13 @@ impl<A: Action> ActionStack<A> {
         let (mut commands, client) = system_state.get_mut(world);
 
         for entity in entities {
-            if let Some(EntityAuthStatus::Available) =
-                commands.entity(*entity).authority(&client)
-            {
-                // enabled should continue being true
+            if let Some(entity_commands) = commands.get_entity(*entity) {
+                if let Some(EntityAuthStatus::Available) = entity_commands.authority(&client)
+                {
+                    // enabled should continue being true
+                } else {
+                    return false;
+                }
             } else {
                 return false;
             }
