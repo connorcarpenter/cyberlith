@@ -27,7 +27,7 @@ pub(crate) fn execute(
         ResMut<Assets<CpuMesh>>,
         ResMut<ShapeManager>,
         ResMut<CameraManager>,
-        Query<&mut Vertex3d>,
+        //Query<&mut Vertex3d>,
         Query<&Handle<CpuMesh>>,
         Query<&Face3d>,
         Query<&mut Transform>,
@@ -37,7 +37,7 @@ pub(crate) fn execute(
         mut meshes,
         shape_manager,
         mut camera_manager,
-        mut vertex_3d_q,
+        //mut vertex_3d_q,
         mesh_handle_q,
         face_3d_q,
         mut transform_q,
@@ -47,10 +47,12 @@ pub(crate) fn execute(
         .vertex_entity_2d_to_3d(&vertex_2d_entity)
         .unwrap();
 
-    let Ok(mut vertex_3d) = vertex_3d_q.get_mut(vertex_3d_entity) else {
-        panic!("Failed to get Vertex3d for vertex entity {:?}!", vertex_3d_entity);
-    };
-    vertex_3d.set_vec3(&new_position);
+    // MoveVertex action happens after the vertex has already been moved, so we don't need to do anything here, I think
+
+    // let Ok(mut vertex_3d) = vertex_3d_q.get_mut(vertex_3d_entity) else {
+    //     panic!("Failed to get Vertex3d for vertex entity {:?}!", vertex_3d_entity);
+    // };
+    // vertex_3d.set_vec3(&new_position);
 
     shape_manager.on_vertex_3d_moved(
         &client,
