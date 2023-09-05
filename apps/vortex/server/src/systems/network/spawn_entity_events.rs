@@ -1,4 +1,3 @@
-
 use bevy_ecs::{
     event::EventReader,
     system::{Commands, Res, ResMut},
@@ -6,17 +5,13 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_server::{
-    events::{
-        DespawnEntityEvent, SpawnEntityEvent,
-    },
+    events::{DespawnEntityEvent, SpawnEntityEvent},
     Server,
 };
 
 use crate::{
     files::ShapeType,
-    resources::{
-        GitManager, ShapeManager, UserManager,
-    },
+    resources::{GitManager, ShapeManager, UserManager},
 };
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {

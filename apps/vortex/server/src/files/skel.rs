@@ -8,7 +8,7 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_server::{
-    BitReader, FileBitWriter, CommandsExt, ReplicationConfig, Serde, SerdeErr, Server,
+    BitReader, CommandsExt, FileBitWriter, ReplicationConfig, Serde, SerdeErr, Server,
     UnsignedVariableInteger,
 };
 

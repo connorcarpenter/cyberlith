@@ -4,7 +4,7 @@ use render_api::Window;
 use render_egui::EguiContext;
 
 use crate::app::{
-    resources::{file_manager::FileManager, action::FileActions, tab_manager::TabManager},
+    resources::{action::FileActions, file_manager::FileManager, tab_manager::TabManager},
     ui::{
         center_panel, consume_shortcuts, left_panel, login_modal, top_bar, TextInputModal, UiState,
     },
@@ -45,7 +45,9 @@ pub fn update(world: &mut World) {
                 let Some(tab_state) = tab_manager.current_tab_state_mut() else {
                     return;
                 };
-                tab_state.action_stack.execute_actions(world, Some(&tab_file_entity));
+                tab_state
+                    .action_stack
+                    .execute_actions(world, Some(&tab_file_entity));
             }
         });
     } else {

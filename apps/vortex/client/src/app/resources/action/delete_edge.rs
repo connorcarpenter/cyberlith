@@ -9,7 +9,7 @@ use naia_bevy_client::{Client, CommandsExt};
 use vortex_proto::components::Edge3d;
 
 use crate::app::resources::{
-    action::{ShapeAction, select_shape::select_shape},
+    action::{select_shape::select_shape, ShapeAction},
     shape_manager::{CanvasShape, ShapeManager},
 };
 

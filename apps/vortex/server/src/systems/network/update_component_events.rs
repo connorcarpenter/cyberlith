@@ -1,18 +1,11 @@
-
 use bevy_ecs::{
     event::EventReader,
     system::{Commands, ResMut},
 };
 
-use naia_bevy_server::{
-    events::UpdateComponentEvents,
-    Server,
-};
+use naia_bevy_server::{events::UpdateComponentEvents, Server};
 
-use vortex_proto::components::{
-        FileSystemChild, FileSystemEntry,
-        Vertex3d,
-    };
+use vortex_proto::components::{FileSystemChild, FileSystemEntry, Vertex3d};
 
 use crate::resources::GitManager;
 

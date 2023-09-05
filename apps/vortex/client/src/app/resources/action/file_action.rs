@@ -1,9 +1,11 @@
-
 use bevy_ecs::prelude::{Entity, World};
 
 use vortex_proto::components::EntryKind;
 
-use crate::app::resources::{file_tree::FileTree, action::{Action, ActionStack, delete_file, create_file, rename_file, select_file}};
+use crate::app::resources::{
+    action::{create_file, delete_file, rename_file, select_file, Action, ActionStack},
+    file_tree::FileTree,
+};
 
 #[derive(Clone)]
 pub enum FileAction {
@@ -67,7 +69,12 @@ impl FileAction {
 }
 
 impl Action for FileAction {
-    fn execute(self, world: &mut World, entity_opt: Option<&Entity>, action_stack: &mut ActionStack<Self>) -> Vec<Self> {
+    fn execute(
+        self,
+        world: &mut World,
+        entity_opt: Option<&Entity>,
+        action_stack: &mut ActionStack<Self>,
+    ) -> Vec<Self> {
         match self {
             Self::SelectFile(file_entities) => select_file::execute(world, file_entities),
             Self::CreateFile(
@@ -88,7 +95,7 @@ impl Action for FileAction {
                     old_entity_opt,
                     entry_contents_opt,
                 )
-            },
+            }
             Self::DeleteFile(file_entity, files_to_select_opt) => {
                 let project_root_entity = *(entity_opt.unwrap());
                 delete_file::execute(world, project_root_entity, file_entity, files_to_select_opt)

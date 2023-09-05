@@ -14,12 +14,15 @@ use render_api::{
 
 use vortex_proto::components::{Edge3d, FileType, FileTypeValue, OwnedByFile};
 
-use crate::app::{resources::{
-    action::{ActionStack, select_shape::deselect_all_selected_shapes, ShapeAction},
-    camera_manager::CameraManager,
-    shape_manager::FaceKey,
-    shape_manager::{CanvasShape, ShapeManager},
-}, components::Vertex2d};
+use crate::app::{
+    components::Vertex2d,
+    resources::{
+        action::{select_shape::deselect_all_selected_shapes, ActionStack, ShapeAction},
+        camera_manager::CameraManager,
+        shape_manager::FaceKey,
+        shape_manager::{CanvasShape, ShapeManager},
+    },
+};
 
 pub(crate) fn execute(
     world: &mut World,

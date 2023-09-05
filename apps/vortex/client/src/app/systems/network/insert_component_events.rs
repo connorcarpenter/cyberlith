@@ -7,10 +7,7 @@ use bevy_ecs::{
 };
 use bevy_log::{info, warn};
 
-use naia_bevy_client::{
-    events::InsertComponentEvents,
-    Client,
-};
+use naia_bevy_client::{events::InsertComponentEvents, Client};
 
 use render_api::{
     base::{CpuMaterial, CpuMesh},
@@ -18,7 +15,10 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{ChangelistEntry, ChangelistStatus, Edge3d, EntryKind, Face3d, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, Vertex3d, VertexRoot};
+use vortex_proto::components::{
+    ChangelistEntry, ChangelistStatus, Edge3d, EntryKind, Face3d, FileSystemChild, FileSystemEntry,
+    FileSystemRootChild, FileType, OwnedByFile, Vertex3d, VertexRoot,
+};
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
@@ -199,7 +199,9 @@ pub fn insert_changelist_entry_events(
         }
 
         // insert into changelist resource
-        file_manager.changelist.insert(entry.file_entry_key(), entity);
+        file_manager
+            .changelist
+            .insert(entry.file_entry_key(), entity);
 
         info!(
             "Received ChangelistEntry insert event. entity: `{:?}`, path: `{:?}`, name: `{:?}`",

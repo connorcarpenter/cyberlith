@@ -1,7 +1,7 @@
 use bevy_ecs::{
     entity::Entity,
     prelude::ResMut,
-    system::{Res, Commands, Query, SystemState},
+    system::{Commands, Query, Res, SystemState},
     world::{Mut, World},
 };
 use bevy_log::info;
@@ -30,8 +30,13 @@ use crate::app::{
         OwnedByFileLocal,
     },
     resources::{
-        action::{FileAction, FileActions}, camera_manager::CameraManager, canvas::Canvas,
-        file_manager::FileManager, shape_manager::ShapeManager, tab_manager::TabManager, toolbar::Toolbar,
+        action::{FileAction, FileActions},
+        camera_manager::CameraManager,
+        canvas::Canvas,
+        file_manager::FileManager,
+        shape_manager::ShapeManager,
+        tab_manager::TabManager,
+        toolbar::Toolbar,
     },
     ui::{
         widgets::colors::{
@@ -704,11 +709,13 @@ impl FileTreeRowUiWidget {
             return;
         }
 
-        file_actions.buffer_action(FileAction::RenameFile(*entry_entity, entry_name.to_string()));
+        file_actions.buffer_action(FileAction::RenameFile(
+            *entry_entity,
+            entry_name.to_string(),
+        ));
     }
 
     pub fn on_modal_response_delete(world: &mut World, row_entity: &Entity) {
-
         let mut file_actions = world.get_resource_mut::<FileActions>().unwrap();
 
         file_actions.buffer_action(FileAction::DeleteFile(*row_entity, None));

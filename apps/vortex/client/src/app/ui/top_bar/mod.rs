@@ -1,4 +1,4 @@
-use bevy_ecs::{world::World};
+use bevy_ecs::world::World;
 
 use render_egui::{
     egui,
@@ -6,7 +6,7 @@ use render_egui::{
 };
 
 use crate::app::{
-    resources::action::{FileActions, action_stack_redo, action_stack_undo},
+    resources::action::{action_stack_redo, action_stack_undo, FileActions},
     ui::shortcuts::{SHORTCUT_REDO, SHORTCUT_UNDO},
 };
 
@@ -80,8 +80,7 @@ fn edit_menu_button(ui: &mut Ui, world: &mut World) {
         if ui
             .add_enabled(
                 file_actions.has_undo(),
-                egui::Button::new("⟲ Undo")
-                    .shortcut_text(ui.ctx().format_shortcut(&SHORTCUT_UNDO)),
+                egui::Button::new("⟲ Undo").shortcut_text(ui.ctx().format_shortcut(&SHORTCUT_UNDO)),
             )
             .clicked()
         {
@@ -92,8 +91,7 @@ fn edit_menu_button(ui: &mut Ui, world: &mut World) {
         if ui
             .add_enabled(
                 file_actions.has_redo(),
-                egui::Button::new("⟳ Redo")
-                    .shortcut_text(ui.ctx().format_shortcut(&SHORTCUT_REDO)),
+                egui::Button::new("⟳ Redo").shortcut_text(ui.ctx().format_shortcut(&SHORTCUT_REDO)),
             )
             .clicked()
         {

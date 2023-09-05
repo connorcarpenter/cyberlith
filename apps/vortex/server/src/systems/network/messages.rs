@@ -27,7 +27,10 @@ pub fn message_events(
 ) {
     for events in event_reader.iter() {
         for (user_key, message) in events.read::<ChangelistActionChannel, ChangelistMessage>() {
-            info!("received ChangelistMessage with action: {:?}", message.action);
+            info!(
+                "received ChangelistMessage with action: {:?}",
+                message.action
+            );
 
             cl_manager.queue_changelist_message(user_key, message);
         }

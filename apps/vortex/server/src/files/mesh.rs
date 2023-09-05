@@ -8,7 +8,7 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_server::{
-    BitReader, FileBitWriter, CommandsExt, ReplicationConfig, Serde, SerdeErr, Server,
+    BitReader, CommandsExt, FileBitWriter, ReplicationConfig, Serde, SerdeErr, Server,
     UnsignedVariableInteger,
 };
 
@@ -368,8 +368,8 @@ impl MeshReader {
                             vertex_c_entity,
                             edge_a_entity,
                             edge_b_entity,
-                            edge_c_entity
-                        )
+                            edge_c_entity,
+                        ),
                     ));
                 }
             }
@@ -418,7 +418,8 @@ impl MeshReader {
                     shape_manager.on_create_mesh_edge(start, entity, end);
                 }
                 ShapeTypeData::Face(vert_a, vert_b, vert_c, edge_a, edge_b, edge_c) => {
-                    shape_manager.on_create_face(entity, vert_a, vert_b, vert_c, edge_a, edge_b, edge_c);
+                    shape_manager
+                        .on_create_face(entity, vert_a, vert_b, vert_c, edge_a, edge_b, edge_c);
                 }
             }
         }

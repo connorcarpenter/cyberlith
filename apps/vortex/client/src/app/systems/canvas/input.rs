@@ -12,8 +12,8 @@ use vortex_proto::components::{Vertex3d, VertexRoot};
 use crate::app::{
     components::{Compass, Edge2dLocal, FaceIcon2d, OwnedByFileLocal, Vertex2d},
     resources::{
-        camera_manager::CameraManager, canvas::Canvas,
-        input_manager::InputManager, shape_manager::ShapeManager, tab_manager::TabManager,
+        camera_manager::CameraManager, canvas::Canvas, input_manager::InputManager,
+        shape_manager::ShapeManager, tab_manager::TabManager,
     },
 };
 

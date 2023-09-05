@@ -25,9 +25,12 @@ use vortex_proto::{
 use crate::app::{
     components::{file_system::FileSystemUiState, OwnedByFileLocal},
     resources::{
-        action::{ShapeAction, ActionStack},
-        camera_manager::CameraManager, camera_state::CameraState, canvas::Canvas,
-        shape_manager::ShapeManager, toolbar::Toolbar,
+        action::{ActionStack, ShapeAction},
+        camera_manager::CameraManager,
+        camera_state::CameraState,
+        canvas::Canvas,
+        shape_manager::ShapeManager,
+        toolbar::Toolbar,
     },
     ui::widgets::colors::{
         FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,

@@ -1,14 +1,10 @@
-
 use bevy_ecs::event::EventReader;
 use bevy_log::info;
 
 use naia_bevy_server::events::RemoveComponentEvents;
 
-use vortex_proto::{
-    components::{
-        Edge3d, FileSystemChild, FileSystemRootChild,
-        Vertex3d, VertexRoot,
-    },
+use vortex_proto::components::{
+    Edge3d, FileSystemChild, FileSystemRootChild, Vertex3d, VertexRoot,
 };
 
 pub fn remove_component_events(mut event_reader: EventReader<RemoveComponentEvents>) {

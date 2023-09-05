@@ -272,7 +272,10 @@ impl ChangelistRowUiWidget {
         let mut message = ChangelistMessage::new(action, opt_str);
         message.entity.set(&client, row_entity);
 
-        info!("sent ChangelistMessage for entity: `{:?}`, action: {:?}", row_entity, action);
+        info!(
+            "sent ChangelistMessage for entity: `{:?}`, action: {:?}",
+            row_entity, action
+        );
         client.send_message::<ChangelistActionChannel, ChangelistMessage>(&message);
     }
 }

@@ -1,18 +1,12 @@
-
 use bevy_ecs::{
     event::EventReader,
     system::{Query, ResMut},
 };
 use bevy_log::info;
 
-use naia_bevy_client::{
-    events::UpdateComponentEvents,
-};
+use naia_bevy_client::events::UpdateComponentEvents;
 
-use vortex_proto::components::{
-    FileSystemChild, FileSystemEntry,
-    FileSystemRootChild, Vertex3d,
-};
+use vortex_proto::components::{FileSystemChild, FileSystemEntry, FileSystemRootChild, Vertex3d};
 
 use crate::app::resources::shape_manager::ShapeManager;
 

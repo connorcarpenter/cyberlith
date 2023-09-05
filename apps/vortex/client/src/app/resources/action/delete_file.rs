@@ -1,6 +1,6 @@
 use bevy_ecs::{
     prelude::{Commands, Entity, Query, World},
-    system::{SystemState, ResMut},
+    system::{ResMut, SystemState},
 };
 use bevy_log::info;
 
@@ -12,8 +12,21 @@ use vortex_proto::components::{
 };
 
 use crate::app::{
-    components::{file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState}, OwnedByFileLocal},
-    resources::{camera_manager::CameraManager, canvas::Canvas, shape_manager::ShapeManager, tab_manager::TabManager, toolbar::Toolbar, file_manager::FileManager, file_tree::FileTree, action::select_file::{request_entities, select_files}, action::FileAction},
+    components::{
+        file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
+        OwnedByFileLocal,
+    },
+    resources::{
+        action::select_file::{request_entities, select_files},
+        action::FileAction,
+        camera_manager::CameraManager,
+        canvas::Canvas,
+        file_manager::FileManager,
+        file_tree::FileTree,
+        shape_manager::ShapeManager,
+        tab_manager::TabManager,
+        toolbar::Toolbar,
+    },
 };
 
 pub(crate) fn execute(
@@ -55,7 +68,7 @@ pub(crate) fn execute(
         mut ui_q,
         mut cl_q,
         fs_query,
-        mut parent_q
+        mut parent_q,
     ) = system_state.get_mut(world);
     let (entry, fs_child_opt, fs_root_child_opt) = fs_query.get(file_entity).unwrap();
 
@@ -95,12 +108,8 @@ pub(crate) fn execute(
         match entry_kind {
             EntryKind::File => None,
             EntryKind::Directory => {
-                let entries = convert_contents_to_slim_tree(
-                    &client,
-                    &file_entity,
-                    &fs_query,
-                    &mut parent_q,
-                );
+                let entries =
+                    convert_contents_to_slim_tree(&client, &file_entity, &fs_query, &mut parent_q);
 
                 Some(entries)
             }
@@ -118,7 +127,16 @@ pub(crate) fn execute(
     }
 
     // file manager track deleted file
-    file_manager.on_file_delete(&mut client, &mut canvas, &mut camera_manager, &mut shape_manager, &mut tab_manager, &mut toolbar, &mut visibility_q, &file_entity);
+    file_manager.on_file_delete(
+        &mut client,
+        &mut canvas,
+        &mut camera_manager,
+        &mut shape_manager,
+        &mut tab_manager,
+        &mut toolbar,
+        &mut visibility_q,
+        &file_entity,
+    );
 
     system_state.apply(world);
 
@@ -156,12 +174,8 @@ pub(crate) fn convert_contents_to_slim_tree(
         }
 
         for (entry_entity, tree) in trees.iter_mut() {
-            let subtree = convert_contents_to_slim_tree(
-                client,
-                entry_entity,
-                fs_query,
-                parent_query,
-            );
+            let subtree =
+                convert_contents_to_slim_tree(client, entry_entity, fs_query, parent_query);
             if subtree.len() > 0 {
                 tree.children = Some(
                     subtree

@@ -11,12 +11,11 @@ use git2::{Repository, Signature};
 use naia_bevy_server::{BigMapKey, CommandsExt, RoomKey, Server, UserKey};
 
 use vortex_proto::{
-    components::{ChangelistEntry, ChangelistStatus},
+    components::{ChangelistEntry, ChangelistStatus, EntryKind},
     messages::ChangelistMessage,
     resources::FileEntryKey,
     FileExtension,
 };
-use vortex_proto::components::EntryKind;
 
 use crate::{
     files::{load_content_entities, FileWriter, ShapeType},
@@ -781,10 +780,7 @@ impl Project {
         }
     }
 
-    fn add_parents_to_master_file_tree(
-        &mut self,
-        parent_key: &FileEntryKey,
-    ) {
+    fn add_parents_to_master_file_tree(&mut self, parent_key: &FileEntryKey) {
         if self.master_file_entries.contains_key(&parent_key) {
             // no need to add parents
             return;
@@ -793,7 +789,8 @@ impl Project {
             panic!("parent does not exist in Working Tree!");
         }
         // parent exists in working tree, so add it to master tree
-        if let Some(grandparent_key) = self.working_file_entries.get(&parent_key).unwrap().parent() {
+        if let Some(grandparent_key) = self.working_file_entries.get(&parent_key).unwrap().parent()
+        {
             let grandparent_key = grandparent_key.clone();
             self.add_parents_to_master_file_tree(&grandparent_key);
         }

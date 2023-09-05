@@ -26,8 +26,10 @@ pub fn execute(world: &mut World, file_entities: Vec<Entity>) -> Vec<FileAction>
     // TODO: when shift/control is pressed, select multiple items
 
     // Deselect all selected files, select the new selected files
-    let (deselected_row_entities, mut file_entries_to_release) = deselect_all_selected_files(&mut client, &mut fs_query, &mut cl_query);
-    let mut file_entries_to_request = select_files(&mut client, &mut fs_query, &mut cl_query, &file_entities);
+    let (deselected_row_entities, mut file_entries_to_release) =
+        deselect_all_selected_files(&mut client, &mut fs_query, &mut cl_query);
+    let mut file_entries_to_request =
+        select_files(&mut client, &mut fs_query, &mut cl_query, &file_entities);
 
     remove_duplicates(&mut file_entries_to_release, &mut file_entries_to_request);
 

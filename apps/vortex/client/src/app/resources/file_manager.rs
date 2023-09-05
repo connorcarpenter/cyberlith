@@ -1,13 +1,22 @@
 use std::collections::{BTreeMap, HashSet};
 
-use bevy_ecs::{prelude::{Entity, Resource}, system::Query};
+use bevy_ecs::{
+    prelude::{Entity, Resource},
+    system::Query,
+};
 
 use naia_bevy_client::Client;
 
 use render_api::components::Visibility;
 use vortex_proto::resources::FileEntryKey;
 
-use crate::app::{components::OwnedByFileLocal, resources::{toolbar::Toolbar, tab_manager::TabManager, shape_manager::ShapeManager, canvas::Canvas, camera_manager::CameraManager}};
+use crate::app::{
+    components::OwnedByFileLocal,
+    resources::{
+        camera_manager::CameraManager, canvas::Canvas, shape_manager::ShapeManager,
+        tab_manager::TabManager, toolbar::Toolbar,
+    },
+};
 
 #[derive(Resource)]
 pub struct FileManager {
@@ -38,12 +47,20 @@ impl FileManager {
         tab_manager: &mut TabManager,
         toolbar: &mut Toolbar,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
-        file_entity: &Entity
+        file_entity: &Entity,
     ) {
         self.file_entities.remove(file_entity);
 
         if tab_manager.file_has_tab(file_entity) {
-            tab_manager.close_tab(client, canvas, camera_manager, shape_manager, toolbar, visibility_q, file_entity);
+            tab_manager.close_tab(
+                client,
+                canvas,
+                camera_manager,
+                shape_manager,
+                toolbar,
+                visibility_q,
+                file_entity,
+            );
         }
     }
 }

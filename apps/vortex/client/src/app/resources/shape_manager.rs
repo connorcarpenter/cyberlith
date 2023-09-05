@@ -30,11 +30,11 @@ use crate::app::{
         SelectTriangle, Vertex2d, VertexTypeData,
     },
     resources::{
-        action::{ShapeAction, ActionStack},
-        tab_manager::TabState,
+        action::{ActionStack, ShapeAction},
         camera_manager::{CameraAngle, CameraManager},
         camera_state::CameraState,
         input_manager::AppInputAction,
+        tab_manager::TabState,
     },
     set_3d_line_transform,
     shapes::{
@@ -324,11 +324,13 @@ impl ShapeManager {
                     if let Some((vertex_2d_entity, old_pos, new_pos)) =
                         self.last_vertex_dragged.take()
                     {
-                        tab_state.action_stack.buffer_action(ShapeAction::MoveVertex(
-                            vertex_2d_entity,
-                            old_pos,
-                            new_pos,
-                        ));
+                        tab_state
+                            .action_stack
+                            .buffer_action(ShapeAction::MoveVertex(
+                                vertex_2d_entity,
+                                old_pos,
+                                new_pos,
+                            ));
                     }
                 }
                 _ => {}
@@ -1264,7 +1266,9 @@ impl ShapeManager {
     }
 
     pub(crate) fn has_shape_entity_3d(&self, entity_3d: &Entity) -> bool {
-        self.faces_3d.contains_key(entity_3d) || self.edges_3d.contains_key(entity_3d) || self.vertices_3d.contains_key(entity_3d)
+        self.faces_3d.contains_key(entity_3d)
+            || self.edges_3d.contains_key(entity_3d)
+            || self.vertices_3d.contains_key(entity_3d)
     }
 
     pub(crate) fn shape_entity_2d_to_3d(
@@ -1295,11 +1299,7 @@ impl ShapeManager {
         }
     }
 
-    pub(crate) fn shape_entity_3d_to_2d(
-        &self,
-        entity_3d: &Entity,
-    ) -> Option<Entity> {
-
+    pub(crate) fn shape_entity_3d_to_2d(&self, entity_3d: &Entity) -> Option<Entity> {
         let shape_type = self.shape_type_from_3d_entity(entity_3d).unwrap();
 
         match shape_type {
@@ -1863,7 +1863,8 @@ impl ShapeManager {
                         (_, CanvasShape::Edge) | (_, CanvasShape::Face) => {
                             // should not ever be able to attach something to an edge or face?
                             // select hovered entity
-                            action_stack.buffer_action(ShapeAction::SelectShape(self.hovered_entity));
+                            action_stack
+                                .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
                             return;
                         }
                         _ => {}
@@ -1981,12 +1982,14 @@ impl ShapeManager {
                     }
                     (CanvasShape::Edge, MouseButton::Left) => {
                         if self.current_file_type == FileTypeValue::Mesh {
-                            action_stack.buffer_action(ShapeAction::SelectShape(self.hovered_entity));
+                            action_stack
+                                .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
                         }
                     }
                     (CanvasShape::Face, MouseButton::Left) => {
                         if self.current_file_type == FileTypeValue::Mesh {
-                            action_stack.buffer_action(ShapeAction::SelectShape(self.hovered_entity));
+                            action_stack
+                                .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
                         } else {
                             panic!("shouldn't be possible");
                         }

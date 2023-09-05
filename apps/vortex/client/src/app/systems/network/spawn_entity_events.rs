@@ -1,7 +1,4 @@
-
-use bevy_ecs::{
-    event::EventReader,
-};
+use bevy_ecs::event::EventReader;
 use bevy_log::info;
 
 use naia_bevy_client::events::{DespawnEntityEvent, SpawnEntityEvent};

@@ -7,10 +7,7 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use naia_bevy_server::{
-    events::InsertComponentEvents,
-    Server,
-};
+use naia_bevy_server::{events::InsertComponentEvents, Server};
 
 use vortex_proto::{
     components::{

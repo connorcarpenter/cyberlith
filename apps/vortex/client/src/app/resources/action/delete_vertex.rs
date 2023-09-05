@@ -9,9 +9,9 @@ use naia_bevy_client::{Client, CommandsExt};
 use vortex_proto::components::{Edge3d, FileType, FileTypeValue, Vertex3d};
 
 use crate::app::{
-    components::{VertexTypeData, VertexEntry},
+    components::{VertexEntry, VertexTypeData},
     resources::{
-        action::{ShapeAction, select_shape::select_shape},
+        action::{select_shape::select_shape, ShapeAction},
         shape_manager::{CanvasShape, ShapeManager},
     },
 };
@@ -266,13 +266,8 @@ fn convert_vertices_to_tree(
 
     for (entry_entity, entry) in output.iter_mut() {
         // set children
-        let children = convert_vertices_to_tree(
-            client,
-            shape_manager,
-            entry_entity,
-            vertex_3d_q,
-            edge_3d_q,
-        );
+        let children =
+            convert_vertices_to_tree(client, shape_manager, entry_entity, vertex_3d_q, edge_3d_q);
         if children.len() > 0 {
             entry.set_children(
                 children

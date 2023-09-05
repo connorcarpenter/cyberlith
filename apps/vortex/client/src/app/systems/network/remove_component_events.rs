@@ -1,31 +1,25 @@
-
 use bevy_ecs::{
     event::EventReader,
     system::{Commands, Query, ResMut},
 };
 use bevy_log::info;
 
-use naia_bevy_client::{
-    events::RemoveComponentEvents,
-    Client,
-};
+use naia_bevy_client::{events::RemoveComponentEvents, Client};
 
-use render_api::{
-    components::Visibility,
-    base::CpuMesh,
-    Assets,
+use render_api::{base::CpuMesh, components::Visibility, Assets};
+use vortex_proto::components::{
+    ChangelistEntry, ChangelistStatus, Edge3d, Face3d, FileSystemChild, FileSystemEntry,
+    FileSystemRootChild, Vertex3d,
 };
-use vortex_proto::components::{ChangelistEntry, ChangelistStatus, Edge3d, Face3d, FileSystemChild, FileSystemEntry, FileSystemRootChild, Vertex3d};
 
 use crate::app::{
-    components::{file_system::{FileSystemParent, FileSystemUiState}, OwnedByFileLocal},
+    components::{
+        file_system::{FileSystemParent, FileSystemUiState},
+        OwnedByFileLocal,
+    },
     resources::{
-        canvas::Canvas,
-        file_manager::FileManager,
-        shape_manager::ShapeManager,
-        tab_manager::TabManager,
-        camera_manager::CameraManager,
-        toolbar::Toolbar,
+        camera_manager::CameraManager, canvas::Canvas, file_manager::FileManager,
+        shape_manager::ShapeManager, tab_manager::TabManager, toolbar::Toolbar,
     },
 };
 
@@ -48,7 +42,16 @@ pub fn remove_component_events(
         for (entity, _component) in events.read::<FileSystemEntry>() {
             info!("entity: `{:?}`, removed FileSystemEntry", entity);
 
-            file_manager.on_file_delete(&mut client, &mut canvas, &mut camera_manager, &mut shape_manager, &mut tab_manager, &mut toolbar, &mut visibility_q, &entity);
+            file_manager.on_file_delete(
+                &mut client,
+                &mut canvas,
+                &mut camera_manager,
+                &mut shape_manager,
+                &mut tab_manager,
+                &mut toolbar,
+                &mut visibility_q,
+                &entity,
+            );
         }
 
         for (entity, _component) in events.read::<FileSystemRootChild>() {

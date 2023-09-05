@@ -1,11 +1,16 @@
-
 use bevy_ecs::prelude::{Entity, World};
 
 use math::Vec3;
 
 use crate::app::{
     components::VertexTypeData,
-    resources::{shape_manager::{CanvasShape, ShapeManager}, action::{Action, ActionStack, create_edge, create_vertex, delete_edge, delete_face, delete_vertex, move_vertex, select_shape}},
+    resources::{
+        action::{
+            create_edge, create_vertex, delete_edge, delete_face, delete_vertex, move_vertex,
+            select_shape, Action, ActionStack,
+        },
+        shape_manager::{CanvasShape, ShapeManager},
+    },
 };
 
 #[derive(Clone)]
@@ -33,7 +38,6 @@ pub enum ShapeAction {
 }
 
 impl ShapeAction {
-
     pub(crate) fn migrate_vertex_entities(
         &mut self,
         old_2d_vert_entity: Entity,
@@ -184,7 +188,12 @@ impl ShapeAction {
 }
 
 impl Action for ShapeAction {
-    fn execute(self, world: &mut World, tab_file_entity_opt: Option<&Entity>, action_stack: &mut ActionStack<Self>) -> Vec<Self> {
+    fn execute(
+        self,
+        world: &mut World,
+        tab_file_entity_opt: Option<&Entity>,
+        action_stack: &mut ActionStack<Self>,
+    ) -> Vec<Self> {
         let Some(tab_file_entity) = tab_file_entity_opt else {
             panic!("should be a tab file entity");
         };

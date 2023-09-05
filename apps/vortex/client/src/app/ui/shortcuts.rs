@@ -18,7 +18,6 @@ pub const SHORTCUT_REDO: KeyboardShortcut = KeyboardShortcut::new(
 );
 
 pub fn consume_shortcuts(context: &egui::Context, world: &mut World) {
-
     if context.input_mut(|i| i.consume_shortcut(&SHORTCUT_UNDO)) {
         action_stack_undo(world);
     }

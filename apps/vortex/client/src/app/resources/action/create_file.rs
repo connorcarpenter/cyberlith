@@ -9,7 +9,9 @@ use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 use render_api::components::Visibility;
 
 use vortex_proto::{
-    components::{ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild},
+    components::{
+        ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
+    },
     FileExtension,
 };
 
@@ -19,8 +21,15 @@ use crate::app::{
         OwnedByFileLocal,
     },
     resources::{
-        action::{ActionStack, FileAction, select_file::{deselect_all_selected_files, release_entities}}, camera_manager::CameraManager, canvas::Canvas,
-        file_tree::FileTree, shape_manager::ShapeManager, tab_manager::TabManager,
+        action::{
+            select_file::{deselect_all_selected_files, release_entities},
+            ActionStack, FileAction,
+        },
+        camera_manager::CameraManager,
+        canvas::Canvas,
+        file_tree::FileTree,
+        shape_manager::ShapeManager,
+        tab_manager::TabManager,
         toolbar::Toolbar,
     },
     systems::file_post_process,

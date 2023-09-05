@@ -16,9 +16,12 @@ use render_api::{
 use vortex_proto::components::{FileType, FileTypeValue, OwnedByFile, Vertex3d};
 
 use crate::app::{
-    components::{VertexTypeData, Vertex2d, VertexEntry},
+    components::{Vertex2d, VertexEntry, VertexTypeData},
     resources::{
-        action::{ActionStack, create_edge::create_networked_edge, select_shape::deselect_all_selected_shapes, ShapeAction},
+        action::{
+            create_edge::create_networked_edge, select_shape::deselect_all_selected_shapes,
+            ActionStack, ShapeAction,
+        },
         camera_manager::CameraManager,
         shape_manager::FaceKey,
         shape_manager::{CanvasShape, ShapeManager},
@@ -70,7 +73,8 @@ pub(crate) fn execute(
     ) = system_state.get_mut(world);
 
     // deselect all selected vertices
-    let (deselected_vertex_2d_entity, vertex_3d_entity_to_release) = deselect_all_selected_shapes(&mut shape_manager);
+    let (deselected_vertex_2d_entity, vertex_3d_entity_to_release) =
+        deselect_all_selected_shapes(&mut shape_manager);
     deselected_vertex_2d_entity_store = deselected_vertex_2d_entity;
     if let Some(entity) = vertex_3d_entity_to_release {
         let mut entity_mut = commands.entity(entity);
@@ -322,17 +326,17 @@ pub(crate) fn create_networked_children_tree(
         let old_child_vertex_2d_entity = child.entity_2d();
 
         let (new_child_vertex_2d_entity, new_child_vertex_3d_entity) = create_networked_vertex(
-                commands,
-                client,
-                camera_manager,
-                shape_manager,
-                meshes,
-                materials,
-                position,
-                file_entity,
-                FileTypeValue::Skel,
-                entities_to_release,
-            );
+            commands,
+            client,
+            camera_manager,
+            shape_manager,
+            meshes,
+            materials,
+            position,
+            file_entity,
+            FileTypeValue::Skel,
+            entities_to_release,
+        );
         action_stack.migrate_vertex_entities(
             old_child_vertex_2d_entity,
             new_child_vertex_2d_entity,

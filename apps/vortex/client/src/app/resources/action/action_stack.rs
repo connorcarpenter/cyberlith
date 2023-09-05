@@ -1,16 +1,25 @@
-
 use bevy_ecs::{
     prelude::{Commands, Entity, World},
     system::SystemState,
+    world::Mut,
 };
-use bevy_ecs::world::Mut;
 
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
 
-use crate::app::resources::{action::{FileActions, FileAction, ShapeAction}, canvas::Canvas, file_manager::FileManager, tab_manager::TabManager};
+use crate::app::resources::{
+    action::{FileAction, FileActions, ShapeAction},
+    canvas::Canvas,
+    file_manager::FileManager,
+    tab_manager::TabManager,
+};
 
 pub trait Action: Clone {
-    fn execute(self, world: &mut World, entity_opt: Option<&Entity>, action_stack: &mut ActionStack<Self>) -> Vec<Self>;
+    fn execute(
+        self,
+        world: &mut World,
+        entity_opt: Option<&Entity>,
+        action_stack: &mut ActionStack<Self>,
+    ) -> Vec<Self>;
     fn entity_update_auth_status_impl(
         buffered_check: &mut bool,
         action_opt: Option<&Self>,
@@ -29,7 +38,6 @@ pub struct ActionStack<A: Action> {
 }
 
 pub(crate) fn action_stack_undo(world: &mut World) {
-
     let Some(canvas) = world.get_resource::<Canvas>() else {
         return;
     };
@@ -44,7 +52,9 @@ pub(crate) fn action_stack_undo(world: &mut World) {
             let tab_file_entity = *tab_file_entity;
             if let Some(tab_state) = tab_manager.current_tab_state_mut() {
                 if tab_state.action_stack.has_undo() {
-                    tab_state.action_stack.undo_action(world, Some(&tab_file_entity));
+                    tab_state
+                        .action_stack
+                        .undo_action(world, Some(&tab_file_entity));
                 }
             }
         });
@@ -76,7 +86,9 @@ pub(crate) fn action_stack_redo(world: &mut World) {
             let tab_file_entity = *tab_file_entity;
             if let Some(tab_state) = tab_manager.current_tab_state_mut() {
                 if tab_state.action_stack.has_redo() {
-                    tab_state.action_stack.redo_action(world, Some(&tab_file_entity));
+                    tab_state
+                        .action_stack
+                        .redo_action(world, Some(&tab_file_entity));
                 }
             }
         });
@@ -166,7 +178,12 @@ impl<A: Action> ActionStack<A> {
         self.enable_top(world);
     }
 
-    fn execute_action(&mut self, world: &mut World, entity_opt: Option<&Entity>, action: A) -> Vec<A> {
+    fn execute_action(
+        &mut self,
+        world: &mut World,
+        entity_opt: Option<&Entity>,
+        action: A,
+    ) -> Vec<A> {
         action.execute(world, entity_opt, self)
     }
 
@@ -195,8 +212,7 @@ impl<A: Action> ActionStack<A> {
 
         for entity in entities {
             if let Some(entity_commands) = commands.get_entity(*entity) {
-                if let Some(EntityAuthStatus::Available) = entity_commands.authority(&client)
-                {
+                if let Some(EntityAuthStatus::Available) = entity_commands.authority(&client) {
                     // enabled should continue being true
                 } else {
                     return false;

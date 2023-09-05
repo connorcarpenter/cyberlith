@@ -110,9 +110,7 @@ pub fn deselect_all_selected_shapes(
                 entity_to_release = Some(edge_3d_entity);
             }
             CanvasShape::Face => {
-                if let Some(face_3d_entity) =
-                    shape_manager.face_entity_2d_to_3d(&shape_2d_entity)
-                {
+                if let Some(face_3d_entity) = shape_manager.face_entity_2d_to_3d(&shape_2d_entity) {
                     entity_to_release = Some(face_3d_entity);
                 }
             }
