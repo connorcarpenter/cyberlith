@@ -8,10 +8,7 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_server::{
-    events::{
-        DespawnEntityEvent, InsertComponentEvents, RemoveComponentEvents, SpawnEntityEvent,
-        UpdateComponentEvents,
-    },
+    events::InsertComponentEvents,
     Server,
 };
 
@@ -23,91 +20,10 @@ use vortex_proto::{
     resources::FileEntryKey,
 };
 
-use crate::{
-    files::ShapeType,
-    resources::{
-        file_waitlist::{fs_process_insert, FSWaitlist, FSWaitlistInsert},
-        GitManager, ShapeManager, ShapeWaitlist, ShapeWaitlistInsert, TabManager, UserManager,
-    },
+use crate::resources::{
+    file_waitlist::{fs_process_insert, FSWaitlist, FSWaitlistInsert},
+    GitManager, ShapeManager, ShapeWaitlist, ShapeWaitlistInsert, TabManager, UserManager,
 };
-
-pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
-    for SpawnEntityEvent(_user_key, entity) in event_reader.iter() {
-        info!("entity: `{:?}`, spawned", entity);
-    }
-}
-
-pub fn despawn_entity_events(
-    mut commands: Commands,
-    mut server: Server,
-    user_manager: Res<UserManager>,
-    mut git_manager: ResMut<GitManager>,
-    mut shape_manager: ResMut<ShapeManager>,
-    mut event_reader: EventReader<DespawnEntityEvent>,
-) {
-    for DespawnEntityEvent(user_key, entity) in event_reader.iter() {
-        let Some(user_session_data) = user_manager.user_session_data(user_key) else {
-            panic!("user not found");
-        };
-        let project = git_manager
-            .project_mut(&user_session_data.project_key().unwrap())
-            .unwrap();
-
-        let mut shape_type = None;
-        if project.entity_is_file(entity) {
-            shape_type = Some((true, None));
-        } else if shape_manager.has_vertex(entity) {
-            shape_type = Some((false, Some(ShapeType::Vertex)));
-        } else if shape_manager.has_edge(entity) {
-            shape_type = Some((false, Some(ShapeType::Edge)));
-        } else if shape_manager.has_face(entity) {
-            shape_type = Some((false, Some(ShapeType::Face)));
-        }
-
-        match shape_type {
-            Some((true, None)) => {
-                // file
-                info!("entity: `{:?}` (which is a File), despawned", entity);
-
-                project.on_client_delete_file(&mut commands, &mut server, entity);
-            }
-            Some((false, Some(ShapeType::Vertex))) => {
-                // vertex
-                info!("entity: `{:?}` (which is a Vertex), despawned", entity);
-
-                let other_entities_to_despawn =
-                    shape_manager.on_delete_vertex(&mut commands, &mut server, entity);
-
-                git_manager.on_client_remove_content_entity(&entity);
-                for other_entity in other_entities_to_despawn {
-                    git_manager.on_client_remove_content_entity(&other_entity);
-                }
-            }
-            Some((false, Some(ShapeType::Edge))) => {
-                // edge
-                info!("entity: `{:?}` (which is an Edge), despawned", entity);
-
-                shape_manager.on_delete_edge(entity);
-
-                git_manager.on_client_remove_content_entity(&entity);
-            }
-            Some((false, Some(ShapeType::Face))) => {
-                // edge
-                info!("entity: `{:?}` (which is an Face), despawned", entity);
-
-                shape_manager.on_delete_face(entity);
-
-                git_manager.on_client_remove_content_entity(&entity);
-            }
-            _ => {
-                panic!(
-                    "despawned entity: `{:?}` which is ({:?})",
-                    entity, shape_type
-                );
-            }
-        }
-    }
-}
 
 pub fn insert_component_events(
     mut commands: Commands,
@@ -310,59 +226,6 @@ pub fn insert_component_events(
             // info!("entity: `{:?}`, inserted VertexRoot", entity);
             // shape_manager.on_create_vertex(&entity, None);
             // shape_manager.finalize_vertex_creation();
-        }
-    }
-}
-
-pub fn remove_component_events(mut event_reader: EventReader<RemoveComponentEvents>) {
-    for events in event_reader.iter() {
-        for (_user_key, _entity, _component) in events.read::<FileSystemRootChild>() {
-            info!("removed FileSystemRootChild component from entity");
-            // TODO!
-        }
-        for (_user_key, _entity, _component) in events.read::<FileSystemChild>() {
-            info!("removed FileSystemChild component from entity");
-            // TODO!
-        }
-        // on Vertex3D Remove Event
-        for (_user_key, entity, _component) in events.read::<Vertex3d>() {
-            info!("entity: `{:?}`, removed Vertex3d", entity);
-        }
-        // on Edge3d Remove Event
-        for (_user_key, entity, _) in events.read::<Edge3d>() {
-            info!("entity: `{:?}`, removed Edge3d", entity);
-        }
-        // on VertexRoot Remove Event
-        for (_, entity, _) in events.read::<VertexRoot>() {
-            panic!(
-                "entity: `{:?}`, removed VertexRoot, how is this possible?",
-                entity
-            );
-        }
-    }
-}
-
-pub fn update_component_events(
-    mut event_reader: EventReader<UpdateComponentEvents>,
-    mut commands: Commands,
-    mut server: Server,
-    mut git_manager: ResMut<GitManager>,
-) {
-    for events in event_reader.iter() {
-        // on FileSystemEntry Update Event
-        for (_user_key, _entity) in events.read::<FileSystemEntry>() {
-            // TODO!
-        }
-        // on FileSystemChild Update Event
-        for (_user_key, _entity) in events.read::<FileSystemChild>() {
-            // TODO!
-        }
-        // on Vertex3D Update Event
-        for (_, entity) in events.read::<Vertex3d>() {
-            let Some((project_key, file_key)) = git_manager.content_entity_keys(&entity) else {
-                panic!("no content entity keys!");
-            };
-            git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
         }
     }
 }
