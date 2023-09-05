@@ -103,17 +103,19 @@ pub(crate) fn execute(
         action_stack.migrate_file_entities(old_entity, entity_id);
     }
 
-    // open tab for new entry
-    tab_manager.open_tab(
-        &mut client,
-        &mut canvas,
-        &mut camera_manager,
-        &mut shape_manager,
-        &mut toolbar,
-        &mut visibility_q,
-        &entity_id,
-        FileExtension::from_file_name(&new_file_name),
-    );
+    if entry_kind == EntryKind::File {
+        // open tab for new entry
+        tab_manager.open_tab(
+            &mut client,
+            &mut canvas,
+            &mut camera_manager,
+            &mut shape_manager,
+            &mut toolbar,
+            &mut visibility_q,
+            &entity_id,
+            FileExtension::from_file_name(&new_file_name),
+        );
+    }
 
     system_state.apply(world);
 

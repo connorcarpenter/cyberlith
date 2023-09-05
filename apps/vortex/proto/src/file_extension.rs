@@ -34,7 +34,7 @@ impl FileExtension {
         match self {
             FileExtension::Skel => FileTypeValue::Skel,
             FileExtension::Mesh => FileTypeValue::Mesh,
-            _ => panic!("FileExtension::to_file_type() called on non-io file extension!"),
+            _ => panic!("FileExtension::to_file_type() called on non-io file extension!: {:?}", self),
         }
     }
 }

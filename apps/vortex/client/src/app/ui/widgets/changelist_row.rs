@@ -41,7 +41,9 @@ impl ChangelistRowUiWidget {
         // get auth status
         let auth_status: Option<EntityAuthStatus> = {
             if let Ok((entry, _)) = query.get(row_entity) {
-                if let Some(file_entity) = entry.file_entity.get(&client) {
+                if *entry.status == ChangelistStatus::Deleted {
+                    None
+                } else if let Some(file_entity) = entry.file_entity.get(&client) {
                     if let Some(entity_command) = commands.get_entity(file_entity) {
                         entity_command.authority(&client)
                     } else {
@@ -222,7 +224,9 @@ impl ChangelistRowUiWidget {
 
         let has_auth: bool = {
             if let Ok(entry) = query.get(*row_entity) {
-                if let Some(file_entity) = entry.file_entity.get(&client) {
+                if *entry.status == ChangelistStatus::Deleted {
+                    true
+                } else if let Some(file_entity) = entry.file_entity.get(&client) {
                     if let Some(authority) = commands.entity(file_entity).authority(&client) {
                         !authority.is_denied()
                     } else {

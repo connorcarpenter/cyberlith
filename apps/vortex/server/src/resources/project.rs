@@ -16,6 +16,7 @@ use vortex_proto::{
     resources::FileEntryKey,
     FileExtension,
 };
+use vortex_proto::components::EntryKind;
 
 use crate::{
     files::{load_content_entities, FileWriter, ShapeType},
@@ -152,7 +153,11 @@ impl Project {
         parent: Option<FileEntryKey>,
         file_entry_key: &FileEntryKey,
     ) {
-        info!("creating file: {}", name);
+        if file_entry_key.kind() == EntryKind::Directory {
+            info!("creating directory: {}", name);
+        } else {
+            info!("creating file: {}", name);
+        }
 
         let file_extension = FileExtension::from_file_name(name);
         let file_entry_val = FileEntryValue::new(entity, parent, None, Some(file_extension));
@@ -172,29 +177,35 @@ impl Project {
 
         // Update changelist
 
-        // check whether newly added file already exists in master tree
-        let file_exists_in_master = self.master_file_entries.contains_key(&file_entry_key);
+        if file_entry_key.kind() == EntryKind::File {
+            // check whether newly added file already exists in master tree
+            let file_exists_in_master = self.master_file_entries.contains_key(&file_entry_key);
 
-        // check whether a changelist entry already exists for this file
-        let file_exists_in_changelist = self.changelist_entries.contains_key(&file_entry_key);
+            // check whether a changelist entry already exists for this file
+            let file_exists_in_changelist = self.changelist_entries.contains_key(&file_entry_key);
 
-        // if file doesn't exist in master tree and no changelist entry exists, then create a changelist entry
-        if !file_exists_in_master && !file_exists_in_changelist {
-            let default_file_contents = file_extension.write_new_default();
-            self.new_changelist_entry(
-                commands,
-                server,
-                &file_entry_key,
-                ChangelistStatus::Created,
-                Some(&entity),
-                Some(default_file_contents),
-            );
-        }
+            // if file doesn't exist in master tree and no changelist entry exists, then create a changelist entry
+            if !file_exists_in_master && !file_exists_in_changelist {
+                let default_file_contents_opt = if file_entry_key.kind() == EntryKind::File {
+                    Some(file_extension.write_new_default())
+                } else {
+                    None
+                };
+                self.new_changelist_entry(
+                    commands,
+                    server,
+                    &file_entry_key,
+                    ChangelistStatus::Created,
+                    Some(&entity),
+                    default_file_contents_opt,
+                );
+            }
 
-        // if file exists in master tree and a changelist entry exists, then delete the changelist entry
-        if file_exists_in_master && file_exists_in_changelist {
-            let changelist_entry = self.changelist_entries.remove(&file_entry_key).unwrap();
-            commands.entity(changelist_entry.entity()).despawn();
+            // if file exists in master tree and a changelist entry exists, then delete the changelist entry
+            if file_exists_in_master && file_exists_in_changelist {
+                let changelist_entry = self.changelist_entries.remove(&file_entry_key).unwrap();
+                commands.entity(changelist_entry.entity()).despawn();
+            }
         }
     }
 
@@ -278,6 +289,10 @@ impl Project {
             action_status = *changelist_entry.status;
             file_entry_key = changelist_entry.file_entry_key();
 
+            if file_entry_key.kind() == EntryKind::Directory {
+                panic!("should not be able to commit a directory");
+            }
+
             match action_status {
                 ChangelistStatus::Modified | ChangelistStatus::Created => {
                     self.changelist_entry_finalize_content(world, &action_status, &file_entry_key);
@@ -321,7 +336,10 @@ impl Project {
                     .clone();
                 let file_entity = file_entry_val.entity();
 
-                // update master tree with new file entry
+                // update master tree with new file entry & parents
+                if let Some(parent_key) = file_entry_val.parent() {
+                    self.add_parents_to_master_file_tree(parent_key);
+                }
                 Self::add_to_file_tree(
                     &mut self.master_file_entries,
                     file_entry_key.clone(),
@@ -589,6 +607,11 @@ impl Project {
         server: &mut Server,
         file_entry_key: &FileEntryKey,
     ) {
+        if file_entry_key.kind() == EntryKind::Directory {
+            // deleted directories don't go into changelist
+            return;
+        }
+
         // Update changelist
 
         // check whether newly added file already exists in master tree
@@ -756,6 +779,29 @@ impl Project {
                 Some(bytes),
             );
         }
+    }
+
+    fn add_parents_to_master_file_tree(
+        &mut self,
+        parent_key: &FileEntryKey,
+    ) {
+        if self.master_file_entries.contains_key(&parent_key) {
+            // no need to add parents
+            return;
+        };
+        if !self.working_file_entries.contains_key(&parent_key) {
+            panic!("parent does not exist in Working Tree!");
+        }
+        // parent exists in working tree, so add it to master tree
+        if let Some(grandparent_key) = self.working_file_entries.get(&parent_key).unwrap().parent() {
+            let grandparent_key = grandparent_key.clone();
+            self.add_parents_to_master_file_tree(&grandparent_key);
+        }
+        Self::add_to_file_tree(
+            &mut self.master_file_entries,
+            parent_key.clone(),
+            self.working_file_entries.get(&parent_key).unwrap().clone(),
+        );
     }
 
     fn add_to_file_tree(

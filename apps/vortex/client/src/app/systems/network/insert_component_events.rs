@@ -18,10 +18,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{
-    ChangelistEntry, Edge3d, EntryKind, Face3d, FileSystemChild, FileSystemEntry,
-    FileSystemRootChild, FileType, OwnedByFile, Vertex3d, VertexRoot,
-};
+use vortex_proto::components::{ChangelistEntry, ChangelistStatus, Edge3d, EntryKind, Face3d, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
@@ -194,9 +191,11 @@ pub fn insert_changelist_entry_events(
         let entry = changelist_q.get(entity).unwrap();
 
         // associate status with file entry
-        if let Some(file_entity) = entry.file_entity.get(&client) {
-            let mut fs_state = fs_state_q.get_mut(file_entity).unwrap();
-            fs_state.change_status = Some(*entry.status);
+        if *entry.status != ChangelistStatus::Deleted {
+            if let Some(file_entity) = entry.file_entity.get(&client) {
+                let mut fs_state = fs_state_q.get_mut(file_entity).unwrap();
+                fs_state.change_status = Some(*entry.status);
+            }
         }
 
         // insert into changelist resource

@@ -7,7 +7,7 @@ use bevy_ecs::{
 };
 
 use naia_bevy_client::{Client, CommandsExt};
-use vortex_proto::components::ChangelistEntry;
+use vortex_proto::components::{ChangelistEntry, ChangelistStatus};
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemUiState},
@@ -57,8 +57,10 @@ pub fn select_files(
             // Changelist
             ui_state.selected = true;
 
-            if let Some(file_entity) = cl_entry.file_entity.get(client) {
-                file_entries_to_request.insert(file_entity);
+            if *cl_entry.status != ChangelistStatus::Deleted {
+                if let Some(file_entity) = cl_entry.file_entity.get(client) {
+                    file_entries_to_request.insert(file_entity);
+                }
             }
         }
     }
@@ -88,8 +90,10 @@ pub fn deselect_all_selected_files(
 
             deselected_row_entities.push(item_entity);
 
-            if let Some(file_entity) = cl_entry.file_entity.get(client) {
-                file_entries_to_release.insert(file_entity);
+            if *cl_entry.status != ChangelistStatus::Deleted {
+                if let Some(file_entity) = cl_entry.file_entity.get(client) {
+                    file_entries_to_release.insert(file_entity);
+                }
             }
         }
     }

@@ -15,10 +15,7 @@ use render_api::{
     base::CpuMesh,
     Assets,
 };
-use vortex_proto::components::{
-    ChangelistEntry, Edge3d, Face3d, FileSystemChild, FileSystemEntry,
-    FileSystemRootChild, Vertex3d,
-};
+use vortex_proto::components::{ChangelistEntry, ChangelistStatus, Edge3d, Face3d, FileSystemChild, FileSystemEntry, FileSystemRootChild, Vertex3d};
 
 use crate::app::{
     components::{file_system::{FileSystemParent, FileSystemUiState}, OwnedByFileLocal},
@@ -80,9 +77,11 @@ pub fn remove_component_events(
             let entry = component.file_entry_key();
             file_manager.changelist.remove(&entry);
 
-            if let Some(file_entity) = component.file_entity.get(&client) {
-                if let Ok(mut fs_state) = fs_state_q.get_mut(file_entity) {
-                    fs_state.change_status = None;
+            if *component.status != ChangelistStatus::Deleted {
+                if let Some(file_entity) = component.file_entity.get(&client) {
+                    if let Ok(mut fs_state) = fs_state_q.get_mut(file_entity) {
+                        fs_state.change_status = None;
+                    }
                 }
             }
         }
