@@ -117,12 +117,12 @@ impl GitManager {
         project_key: &ProjectKey,
         file_key: &FileEntryKey,
     ) {
-        if file_key.kind() == EntryKind::Directory {
-            return;
-        }
-        let file_entity = self.file_entity(&project_key, &file_key).unwrap();
         let project = self.projects.get_mut(project_key).unwrap();
-        project.on_client_modify_file(commands, server, file_key, &file_entity);
+        if file_key.kind() == EntryKind::Directory {
+            project.on_client_modify_dir(commands, server, file_key);
+        } else {
+            project.on_client_modify_file(commands, server, file_key);
+        }
     }
 
     pub(crate) fn queue_client_modify_file(&mut self, content_entity: &Entity) {

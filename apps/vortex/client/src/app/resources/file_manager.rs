@@ -9,7 +9,7 @@ use naia_bevy_client::Client;
 
 use render_api::components::Visibility;
 use render_egui::egui::epaint::ahash::HashSet;
-use vortex_proto::resources::FileEntryKey;
+use vortex_proto::{components::{FileSystemChild, FileSystemEntry}, resources::FileEntryKey};
 
 use crate::app::{
     components::OwnedByFileLocal,
@@ -131,4 +131,31 @@ impl FileManager {
         let file_data = self.file_entities.get(file_entity)?;
         Some(&file_data.changelist_children)
     }
+}
+
+pub fn get_full_path(
+    client: &Client,
+    fs_q: &Query<(&FileSystemEntry, Option<&FileSystemChild>)>,
+    file_entity: Entity
+) -> String {
+    let mut path = String::new();
+
+    let (_, parent) = fs_q.get(file_entity).unwrap();
+    if let Some(parent_entity) = parent {
+        let mut current_entity = parent_entity.parent_id.get(client).unwrap();
+
+        loop {
+            let (entry, parent) = fs_q.get(current_entity).unwrap();
+            let entry_name = (*(entry.name)).clone();
+            path.insert_str(0, &entry_name);
+            if let Some(parent_entity) = parent {
+                current_entity = parent_entity.parent_id.get(client).unwrap();
+                path.insert_str(0, "/");
+            } else {
+                break;
+            }
+        }
+    }
+
+    path
 }

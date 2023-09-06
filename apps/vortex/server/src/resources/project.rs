@@ -236,13 +236,30 @@ impl Project {
         }
     }
 
+    pub fn on_client_modify_dir(
+        &mut self,
+        commands: &mut Commands,
+        server: &mut Server,
+        dir_key: &FileEntryKey,
+    ) {
+        // get children and create changelist entries if needed
+        let file_entry_val = self.working_file_entries.get(dir_key).unwrap();
+        if let Some(children) = file_entry_val.children() {
+            let children: Vec<FileEntryKey> = children.iter().cloned().collect();
+            for child_key in children {
+                self.on_client_modify_file(commands, server, &child_key);
+            }
+        }
+    }
+
     pub fn on_client_modify_file(
         &mut self,
         commands: &mut Commands,
         server: &mut Server,
         file_entry_key: &FileEntryKey,
-        file_entity: &Entity,
     ) {
+        let file_entity = self.file_entity(file_entry_key).unwrap();
+
         // check whether a changelist entry already exists for this file
         let file_exists_in_changelist = self.changelist_entries.contains_key(&file_entry_key);
 
@@ -257,7 +274,7 @@ impl Project {
                 server,
                 file_entry_key,
                 ChangelistStatus::Modified,
-                Some(file_entity),
+                Some(&file_entity),
                 None,
             );
         }
