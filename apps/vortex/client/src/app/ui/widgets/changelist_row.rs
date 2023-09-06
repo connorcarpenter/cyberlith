@@ -143,7 +143,9 @@ impl ChangelistRowUiWidget {
                     path_widget_text.into_galley(ui, None, path_wrap_width, TextStyle::Button);
                 let path_text_size = path_text.size();
 
-                path_text.paint_with_color_override(ui.painter(), inner_pos, text_colors.disabled);
+                let mut path_text_pos = inner_pos;
+                path_text_pos.y += 2.0;
+                path_text.paint_with_color_override(ui.painter(), path_text_pos, text_colors.disabled);
                 inner_pos.x += path_text_size.x + item_spacing;
             }
         }
