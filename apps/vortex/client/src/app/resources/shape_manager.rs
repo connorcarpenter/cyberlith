@@ -1462,9 +1462,9 @@ impl ShapeManager {
     ) -> Entity {
         // edge 3d
         let shape_components = if arrows_not_lines {
-            create_3d_edge_diamond(meshes, materials, Vec3::ZERO, Vec3::X, color)
+            create_3d_edge_diamond(meshes, materials, Vec3::ZERO, Vec3::X, color, Edge3dLocal::NORMAL_THICKNESS)
         } else {
-            create_3d_edge_line(meshes, materials, Vec3::ZERO, Vec3::X, color)
+            create_3d_edge_line(meshes, materials, Vec3::ZERO, Vec3::X, color, Edge3dLocal::NORMAL_THICKNESS)
         };
         commands
             .entity(edge_3d_entity)

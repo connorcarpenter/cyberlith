@@ -243,10 +243,6 @@ impl TabManager {
         self.tab_map.contains_key(file_entity)
     }
 
-    pub fn tab_state(&self, file_entity: &Entity) -> Option<&TabState> {
-        self.tab_map.get(file_entity)
-    }
-
     pub fn tab_state_mut(&mut self, file_entity: &Entity) -> Option<&mut TabState> {
         self.tab_map.get_mut(file_entity)
     }

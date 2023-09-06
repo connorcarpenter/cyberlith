@@ -263,15 +263,6 @@ impl Project {
         }
     }
 
-    pub fn commit_entire_changelist(
-        &mut self,
-        _commands: &mut Commands,
-        _server: &Server,
-        _query: &Query<&ChangelistEntry>,
-    ) {
-        todo!();
-    }
-
     fn get_full_file_path(
         fs_map: &HashMap<FileEntryKey, FileEntryValue>,
         fs_q: &Query<&FileSystemEntry>,

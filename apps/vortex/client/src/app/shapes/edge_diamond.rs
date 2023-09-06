@@ -11,12 +11,13 @@ pub fn create_3d_edge_diamond(
     start: Vec3,
     end: Vec3,
     color: Color,
+    thickness: f32,
 ) -> RenderObjectBundle {
     let mesh = meshes.add(Diamond3d);
     let distance = start.distance(end);
     let transform = Transform::from_translation(start)
         .looking_at(end, Vec3::Y)
-        .with_scale(Vec3::new(distance, 1.0, 1.0));
+        .with_scale(Vec3::new(distance, thickness, thickness));
     RenderObjectBundle {
         mesh,
         material: materials.add(color),

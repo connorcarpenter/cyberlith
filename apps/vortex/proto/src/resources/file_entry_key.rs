@@ -40,6 +40,6 @@ impl FileEntryKey {
     }
 
     pub fn path_for_children(&self) -> String {
-        format!("{}{}/", self.path, self.name)
+        format!("{}{}", self.path, self.name)
     }
 }

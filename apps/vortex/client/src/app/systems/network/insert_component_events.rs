@@ -103,7 +103,7 @@ pub fn insert_component_events(
     }
 }
 
-pub fn insert_fs_component_events(
+pub fn insert_file_component_events(
     mut commands: Commands,
     mut file_manager: ResMut<FileManager>,
     client: Client,
