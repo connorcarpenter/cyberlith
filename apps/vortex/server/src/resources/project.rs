@@ -247,7 +247,11 @@ impl Project {
         if let Some(children) = file_entry_val.children() {
             let children: Vec<FileEntryKey> = children.iter().cloned().collect();
             for child_key in children {
-                self.on_client_modify_file(commands, server, &child_key);
+                if child_key.kind() == EntryKind::Directory {
+                    self.on_client_modify_dir(commands, server, &child_key);
+                } else {
+                    self.on_client_modify_file(commands, server, &child_key);
+                }
             }
         }
     }
