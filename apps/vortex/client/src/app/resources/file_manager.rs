@@ -8,6 +8,7 @@ use bevy_ecs::{
 use naia_bevy_client::Client;
 
 use render_api::components::Visibility;
+use render_egui::egui::epaint::ahash::HashSet;
 use vortex_proto::resources::FileEntryKey;
 
 use crate::app::{
@@ -32,12 +33,14 @@ impl ChangelistData {
 
 struct FileData {
     changelist_entity: Option<Entity>,
+    changelist_children: HashSet<Entity>,
 }
 
 impl FileData {
     fn new() -> Self {
         Self {
             changelist_entity: None,
+            changelist_children: HashSet::default(),
         }
     }
 }
@@ -88,7 +91,7 @@ impl FileManager {
         }
     }
 
-    pub fn insert_changelist_entry(&mut self, file_entry_key: FileEntryKey, file_entity_opt: Option<Entity>, cl_entity: Entity) {
+    pub fn insert_changelist_entry(&mut self, file_entry_key: FileEntryKey, file_entity_opt: Option<Entity>, parent_entity_opt: Option<Entity>, cl_entity: Entity) {
         self.changelist.insert(file_entry_key, ChangelistData::new(cl_entity));
 
         if let Some(file_entity) = file_entity_opt {
@@ -96,6 +99,13 @@ impl FileManager {
                 panic!("file_entity {:?} not found in file_entities", file_entity);
             };
             file_data.changelist_entity = Some(cl_entity);
+        }
+
+        if let Some(parent_entity) = parent_entity_opt {
+            let Some(parent_data) = self.file_entities.get_mut(&parent_entity) else {
+                panic!("parent_entity {:?} not found in file_entities", parent_entity);
+            };
+            parent_data.changelist_children.insert(cl_entity);
         }
     }
 
@@ -115,5 +125,10 @@ impl FileManager {
         let file_data = self.file_entities.get(file_entity)?;
         let changelist_entity = file_data.changelist_entity?;
         Some(changelist_entity)
+    }
+
+    pub fn get_file_changelist_children(&self, file_entity: &Entity) -> Option<&HashSet<Entity>> {
+        let file_data = self.file_entities.get(file_entity)?;
+        Some(&file_data.changelist_children)
     }
 }

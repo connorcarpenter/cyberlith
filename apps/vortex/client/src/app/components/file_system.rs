@@ -48,6 +48,20 @@ impl FileSystemParent {
     }
 }
 
+// FileSystemEntryLocal
+#[derive(Component)]
+pub struct FileSystemEntryLocal {
+    pub name: String,
+}
+
+impl FileSystemEntryLocal {
+    pub fn new(name: &str) -> Self {
+        Self {
+            name: name.to_string(),
+        }
+    }
+}
+
 // FileSystemUiState
 #[derive(Component)]
 pub struct FileSystemUiState {
@@ -85,14 +99,16 @@ pub struct ChangelistUiState {
     pub context_menu_response: Option<Option<ChangelistAction>>,
     // this name includes renames, shouldn't be used for a key!
     pub display_name: String,
+    pub display_path: String,
 }
 
 impl ChangelistUiState {
-    pub fn new(display_name: &str) -> Self {
+    pub fn new(display_name: &str, display_path: &str) -> Self {
         Self {
             selected: false,
             context_menu_response: None,
             display_name: display_name.to_string(),
+            display_path: display_path.to_string(),
         }
     }
 }

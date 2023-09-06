@@ -8,19 +8,19 @@ use naia_bevy_client::events::UpdateComponentEvents;
 
 use vortex_proto::components::{FileSystemChild, FileSystemEntry, FileSystemRootChild, Vertex3d};
 
-use crate::app::{components::file_system::ChangelistUiState, resources::{file_manager::FileManager, shape_manager::ShapeManager}};
+use crate::app::{components::file_system::{ChangelistUiState, FileSystemEntryLocal}, resources::{file_manager::FileManager, shape_manager::ShapeManager}};
 
 pub fn update_component_events(
     mut event_reader: EventReader<UpdateComponentEvents>,
     file_manager: ResMut<FileManager>,
     mut shape_manager: ResMut<ShapeManager>,
-    entry_q: Query<&FileSystemEntry>,
+    mut entry_q: Query<(&FileSystemEntry, &mut FileSystemEntryLocal)>,
     mut cl_q: Query<&mut ChangelistUiState>,
 ) {
     for events in event_reader.iter() {
         // on FileSystemEntry Update Event
         for (_, entry_entity) in events.read::<FileSystemEntry>() {
-            let entry = entry_q.get(entry_entity).unwrap();
+            let (entry, mut entry_local) = entry_q.get_mut(entry_entity).unwrap();
             let entry_name = (*(entry.name)).clone();
             info!(
                 "received updated FileSystemEntry: `{:?}` ({:?})",
@@ -28,12 +28,20 @@ pub fn update_component_events(
             );
             if let Some(cl_entity) = file_manager.get_file_changelist_entity(&entry_entity) {
                 let mut cl_state = cl_q.get_mut(cl_entity).unwrap();
-                cl_state.display_name = entry_name;
+                cl_state.display_name = entry_name.clone();
             }
+            if let Some(cl_children) = file_manager.get_file_changelist_children(&entry_entity) {
+                for cl_child_entity in cl_children.iter() {
+                    let mut cl_child_state = cl_q.get_mut(*cl_child_entity).unwrap();
+                    let new_path = cl_child_state.display_path.replace(entry_local.name.as_str(), entry_name.as_str());
+                    cl_child_state.display_path = new_path;
+                }
+            }
+            entry_local.name = entry_name;
         }
         // on FileSystemRootChild Update Event
         for (_, child_entity) in events.read::<FileSystemRootChild>() {
-            let entry = entry_q.get(child_entity).unwrap();
+            let (entry, _) = entry_q.get(child_entity).unwrap();
             let entry_name = (*(entry.name)).clone();
             info!(
                 "received updated FileSystemRootChild: `{:?}` ({:?})",
@@ -43,7 +51,7 @@ pub fn update_component_events(
         }
         // on FileSystemChild Update Event
         for (_, child_entity) in events.read::<FileSystemChild>() {
-            let entry = entry_q.get(child_entity).unwrap();
+            let (entry, _) = entry_q.get(child_entity).unwrap();
             let entry_name = (*(entry.name)).clone();
             info!(
                 "received updated FileSystemChild: `{:?}` ({:?})",

@@ -21,7 +21,7 @@ use vortex_proto::components::{
 };
 
 use crate::app::{
-    components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
+    components::file_system::{FileSystemEntryLocal, ChangelistUiState, FileSystemParent, FileSystemUiState},
     events::InsertComponentEvent,
     resources::{
         camera_manager::CameraManager,
@@ -134,6 +134,7 @@ pub fn insert_fs_component_events(
                 .insert(entity, FileSystemParent::new());
         }
         file_manager.on_file_create(&entity);
+        commands.entity(entity).insert(FileSystemEntryLocal::new(&*entry.name));
     }
 
     for event in root_events.iter() {
@@ -184,7 +185,7 @@ pub fn insert_changelist_entry_events(
     client: Client,
     mut events: EventReader<InsertComponentEvent<ChangelistEntry>>,
     changelist_q: Query<&ChangelistEntry>,
-    mut fs_state_q: Query<(&FileSystemEntry, &mut FileSystemUiState)>,
+    mut fs_state_q: Query<(&FileSystemEntry, &mut FileSystemUiState, Option<&FileSystemChild>)>,
 ) {
     // on ChangelistEntry Insert Event
     for event in events.iter() {
@@ -198,23 +199,31 @@ pub fn insert_changelist_entry_events(
         );
 
         let mut cl_ui_state_name: String = (*entry.name).clone();
+        let cl_ui_state_path: String = (*entry.path).clone();
         let mut file_entity_opt: Option<Entity> = None;
+        let mut parent_entity_opt: Option<Entity> = None;
 
         // associate status with file entry
         if *entry.status != ChangelistStatus::Deleted {
             if let Some(file_entity) = entry.file_entity.get(&client) {
-                file_entity_opt = Some(file_entity);
-                let (fs_entry, mut fs_state) = fs_state_q.get_mut(file_entity).unwrap();
+                let (fs_entry, mut fs_state, fs_child_opt) = fs_state_q.get_mut(file_entity).unwrap();
+
                 fs_state.change_status = Some(*entry.status);
+
                 cl_ui_state_name = (*fs_entry.name).clone();
+                file_entity_opt = Some(file_entity);
+
+                if let Some(fs_child) = fs_child_opt {
+                    parent_entity_opt = fs_child.parent_id.get(&client);
+                }
             }
         }
 
         // insert ui state component
-        commands.entity(cl_entity).insert(ChangelistUiState::new(&cl_ui_state_name));
+        commands.entity(cl_entity).insert(ChangelistUiState::new(&cl_ui_state_name, &cl_ui_state_path));
 
         // insert into changelist resource
-        file_manager.insert_changelist_entry(entry.file_entry_key(), file_entity_opt, cl_entity);
+        file_manager.insert_changelist_entry(entry.file_entry_key(), file_entity_opt, parent_entity_opt, cl_entity);
     }
 }
 

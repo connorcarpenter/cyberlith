@@ -17,7 +17,7 @@ use vortex_proto::{
 
 use crate::app::{
     components::{
-        file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
+        file_system::{FileSystemEntryLocal, ChangelistUiState, FileSystemParent, FileSystemUiState},
         OwnedByFileLocal,
     },
     resources::{
@@ -199,8 +199,11 @@ fn create_fs_entry(
     // add child to parent
     file_post_process::parent_add_child_entry(parent, &entry, entity_id);
 
-    // add FileSystemEntry component
-    commands.entity(entity_id).insert(entry);
+    commands.entity(entity_id)
+        // add FileSystemEntry component
+        .insert(entry)
+        // add FileSystemEntryLocal component
+        .insert(FileSystemEntryLocal::new(new_file_name));
 
     // register with file manager
     file_manager.on_file_create(&entity_id);

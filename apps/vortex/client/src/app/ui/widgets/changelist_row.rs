@@ -61,6 +61,7 @@ impl ChangelistRowUiWidget {
         };
 
         let name = ui_state.display_name.to_string();
+        let dir_text = ui_state.display_path.to_string();
         let is_dir = *entry.kind == EntryKind::Directory;
         let unicode_icon = if is_dir { "📁" } else { "📃" };
         let text_str = format!("{} {}", unicode_icon, name);
@@ -135,7 +136,8 @@ impl ChangelistRowUiWidget {
 
             // Draw Path Text
             {
-                let path_widget_text: WidgetText = (&*entry.path).into();
+                let path_widget_text: WidgetText = dir_text.into();
+
                 let path_wrap_width = ui.available_width();
                 let path_text =
                     path_widget_text.into_galley(ui, None, path_wrap_width, TextStyle::Button);

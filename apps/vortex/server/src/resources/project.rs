@@ -11,7 +11,7 @@ use git2::{Repository, Signature};
 use naia_bevy_server::{BigMapKey, CommandsExt, RoomKey, Server, UserKey};
 
 use vortex_proto::{
-    components::{ChangelistEntry, ChangelistStatus, EntryKind},
+    components::{FileSystemEntry, ChangelistEntry, ChangelistStatus, EntryKind},
     messages::ChangelistMessage,
     resources::FileEntryKey,
     FileExtension,
@@ -272,6 +272,25 @@ impl Project {
         todo!();
     }
 
+    fn get_full_file_path(
+        fs_map: &HashMap<FileEntryKey, FileEntryValue>,
+        fs_q: &Query<&FileSystemEntry>,
+        file_key: &FileEntryKey,
+        file_entity: Entity
+    ) -> String {
+
+        let fs_entry = fs_q.get(file_entity).unwrap();
+        let file_name = fs_entry.name.as_str();
+        let fs_value = fs_map.get(file_key).unwrap();
+        if let Some(parent_file_key) = fs_value.parent() {
+            let parent_entity = fs_map.get(parent_file_key).unwrap().entity();
+            let parent_path = Self::get_full_file_path(fs_map, fs_q, parent_file_key, parent_entity);
+            format!("{}/{}", parent_path, file_name)
+        } else {
+            format!("{}", file_name)
+        }
+    }
+
     pub fn commit_changelist_entry(
         &mut self,
         world: &mut World,
@@ -306,8 +325,8 @@ impl Project {
 
         let commit_message = message.commit_message.unwrap();
 
-        let mut system_state: SystemState<(Commands, Server)> = SystemState::new(world);
-        let (mut commands, mut server) = system_state.get_mut(world);
+        let mut system_state: SystemState<(Commands, Server, Query<&FileSystemEntry>)> = SystemState::new(world);
+        let (mut commands, mut server, fs_entry_q) = system_state.get_mut(world);
 
         match action_status {
             ChangelistStatus::Modified => {
@@ -319,7 +338,13 @@ impl Project {
                 let file_entity = file_entry_val.entity();
 
                 info!("git modify file");
-                self.fs_create_or_update_file(&file_entry_key);
+                let path = Self::get_full_file_path(
+                    &self.working_file_entries,
+                    &fs_entry_q,
+                    &file_entry_key,
+                    file_entity
+                );
+                self.fs_create_or_update_file(&file_entry_key, &path);
 
                 // despawn changelist entity
                 self.cleanup_changelist_entry(&mut commands, &file_entry_key);
@@ -350,7 +375,13 @@ impl Project {
                 );
 
                 info!("git create file");
-                self.fs_create_or_update_file(&file_entry_key);
+                let path = Self::get_full_file_path(
+                    &self.working_file_entries,
+                    &fs_entry_q,
+                    &file_entry_key,
+                    file_entity
+                );
+                self.fs_create_or_update_file(&file_entry_key, &path);
 
                 // despawn changelist entity
                 self.cleanup_changelist_entry(&mut commands, &file_entry_key);
@@ -373,7 +404,9 @@ impl Project {
                 }
 
                 // delete file
-                self.fs_delete_file(file_entry_key);
+                info!("git delete file");
+                let full_file_path = format!("{}{}", file_entry_key.path(), file_entry_key.name());
+                self.fs_delete_file(&full_file_path);
 
                 // sync to git repo
                 self.git_commit(username, email, &commit_message);
@@ -510,15 +543,14 @@ impl Project {
         index.write().expect("Failed to write index");
     }
 
-    fn fs_create_or_update_file(&mut self, key: &FileEntryKey) {
-        let file_path = self.fs_write_file(key);
-        self.fs_update_index(&file_path);
+    fn fs_create_or_update_file(&mut self, key: &FileEntryKey, path: &str) {
+        self.fs_write_file(key, path);
+        self.fs_update_index(path);
     }
 
-    fn fs_delete_file(&mut self, key: FileEntryKey) {
+    fn fs_delete_file(&mut self, file_path: &str) {
         let repo = self.repo.lock().unwrap();
 
-        let file_path = format!("{}{}", key.path(), key.name());
         let full_path = format!("{}/{}", self.internal_path, file_path);
         info!("git deleting file at: `{}`", full_path);
 
@@ -533,10 +565,7 @@ impl Project {
         index.write().expect("Failed to write index");
     }
 
-    fn fs_write_file(&mut self, key: &FileEntryKey) -> String {
-        let file_path = format!("{}{}", key.path(), key.name());
-        let full_path = format!("{}/{}", self.internal_path, file_path);
-        info!("git writing file at: `{}`", full_path);
+    fn fs_write_file(&mut self, key: &FileEntryKey, path: &str) {
 
         let file_content = self
             .changelist_entries
@@ -545,10 +574,17 @@ impl Project {
             .get_content()
             .unwrap();
 
-        // Write the file with the desired content
-        fs::write(&full_path, file_content).expect("Failed to write file");
+        let full_file_path = format!("{}/{}", self.internal_path, path);
 
-        file_path
+        // Create the directory if it doesn't exist
+        if let Some(parent) = Path::new(&full_file_path).parent() {
+            info!("git creating directories: `{}`", parent.to_str().unwrap());
+            fs::create_dir_all(parent).expect("failed to create directories");
+        }
+
+        // Write the file with the desired content
+        info!("git writing file at: `{}`", full_file_path);
+        fs::write(full_file_path, file_content).expect("Failed to write file");
     }
 
     fn git_commit(&mut self, username: &str, email: &str, commit_message: &str) {
