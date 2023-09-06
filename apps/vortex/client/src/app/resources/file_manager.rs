@@ -93,7 +93,7 @@ impl FileManager {
 
         if let Some(file_entity) = file_entity_opt {
             let Some(file_data) = self.file_entities.get_mut(&file_entity) else {
-                panic!("file_entity not found in file_entities");
+                panic!("file_entity {:?} not found in file_entities", file_entity);
             };
             file_data.changelist_entity = Some(cl_entity);
         }

@@ -31,6 +31,7 @@ use crate::app::{
         shape_manager::ShapeManager,
         tab_manager::TabManager,
         toolbar::Toolbar,
+        file_manager::FileManager,
     },
     systems::file_post_process,
 };
@@ -52,6 +53,7 @@ pub(crate) fn execute(
         Client,
         ResMut<Canvas>,
         ResMut<CameraManager>,
+        ResMut<FileManager>,
         ResMut<ShapeManager>,
         ResMut<TabManager>,
         ResMut<Toolbar>,
@@ -65,6 +67,7 @@ pub(crate) fn execute(
         mut client,
         mut canvas,
         mut camera_manager,
+        mut file_manager,
         mut shape_manager,
         mut tab_manager,
         mut toolbar,
@@ -100,6 +103,7 @@ pub(crate) fn execute(
         action_stack,
         &mut commands,
         &mut client,
+        &mut file_manager,
         &mut parent,
         parent_entity_opt,
         &new_file_name,
@@ -138,13 +142,14 @@ fn create_fs_entry(
     action_stack: &mut ActionStack<FileAction>,
     commands: &mut Commands,
     client: &mut Client,
+    file_manager: &mut FileManager,
     parent: &mut FileSystemParent,
     parent_entity_opt: Option<Entity>,
     new_file_name: &str,
     entry_kind: EntryKind,
     entry_contents_opt: Option<Vec<FileTree>>,
 ) -> Entity {
-    info!("creating new entry: `{}`", new_file_name);
+    info!("creating new fs entry: `{}`", new_file_name);
 
     let entity_id = commands
         .spawn_empty()
@@ -175,6 +180,7 @@ fn create_fs_entry(
                     action_stack,
                     commands,
                     client,
+                    file_manager,
                     &mut entry_parent_component,
                     Some(entity_id),
                     &sub_tree.name,
@@ -195,6 +201,9 @@ fn create_fs_entry(
 
     // add FileSystemEntry component
     commands.entity(entity_id).insert(entry);
+
+    // register with file manager
+    file_manager.on_file_create(&entity_id);
 
     entity_id
 }

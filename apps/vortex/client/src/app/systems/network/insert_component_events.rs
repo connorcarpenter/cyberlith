@@ -120,6 +120,9 @@ pub fn insert_fs_component_events(
     for event in entry_events.iter() {
         let entity = event.entity;
         let entry = entry_q.get(entity).unwrap();
+
+        info!("entity: `{:?}` - inserted FileSystemEntry. kind: `{:?}`, name: `{:?}`", entity, *entry.kind, *entry.name);
+
         file_post_process::insert_ui_state_component(&mut commands, entity, false);
         if *entry.kind == EntryKind::Directory {
             if recent_parents.is_none() {
@@ -189,6 +192,11 @@ pub fn insert_changelist_entry_events(
 
         let entry = changelist_q.get(cl_entity).unwrap();
 
+        info!(
+            "entity: `{:?}` - inserted ChangelistEntry. path: `{:?}`, name: `{:?}`",
+            cl_entity, *entry.path, *entry.name
+        );
+
         let mut cl_ui_state_name: String = (*entry.name).clone();
         let mut file_entity_opt: Option<Entity> = None;
 
@@ -207,11 +215,6 @@ pub fn insert_changelist_entry_events(
 
         // insert into changelist resource
         file_manager.insert_changelist_entry(entry.file_entry_key(), file_entity_opt, cl_entity);
-
-        info!(
-            "Received ChangelistEntry insert event. entity: `{:?}`, path: `{:?}`, name: `{:?}`",
-            cl_entity, *entry.path, *entry.name
-        );
     }
 }
 
