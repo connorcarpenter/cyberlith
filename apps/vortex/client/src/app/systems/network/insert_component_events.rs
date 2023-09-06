@@ -181,31 +181,36 @@ pub fn insert_changelist_entry_events(
     client: Client,
     mut events: EventReader<InsertComponentEvent<ChangelistEntry>>,
     changelist_q: Query<&ChangelistEntry>,
-    mut fs_state_q: Query<&mut FileSystemUiState>,
+    mut fs_state_q: Query<(&FileSystemEntry, &mut FileSystemUiState)>,
 ) {
     // on ChangelistEntry Insert Event
     for event in events.iter() {
-        let entity = event.entity;
-        commands.entity(entity).insert(ChangelistUiState::new());
+        let cl_entity = event.entity;
 
-        let entry = changelist_q.get(entity).unwrap();
+        let entry = changelist_q.get(cl_entity).unwrap();
+
+        let mut cl_ui_state_name: String = (*entry.name).clone();
+        let mut file_entity_opt: Option<Entity> = None;
 
         // associate status with file entry
         if *entry.status != ChangelistStatus::Deleted {
             if let Some(file_entity) = entry.file_entity.get(&client) {
-                let mut fs_state = fs_state_q.get_mut(file_entity).unwrap();
+                file_entity_opt = Some(file_entity);
+                let (fs_entry, mut fs_state) = fs_state_q.get_mut(file_entity).unwrap();
                 fs_state.change_status = Some(*entry.status);
+                cl_ui_state_name = (*fs_entry.name).clone();
             }
         }
 
+        // insert ui state component
+        commands.entity(cl_entity).insert(ChangelistUiState::new(&cl_ui_state_name));
+
         // insert into changelist resource
-        file_manager
-            .changelist
-            .insert(entry.file_entry_key(), entity);
+        file_manager.insert_changelist_entry(entry.file_entry_key(), file_entity_opt, cl_entity);
 
         info!(
             "Received ChangelistEntry insert event. entity: `{:?}`, path: `{:?}`, name: `{:?}`",
-            entity, *entry.path, *entry.name
+            cl_entity, *entry.path, *entry.name
         );
     }
 }

@@ -143,6 +143,10 @@ impl Project {
         Self::find_file_entry_by_entity(&self.working_file_entries, entity).is_some()
     }
 
+    pub fn get_file_key_from_entity(&self, entity: &Entity) -> Option<FileEntryKey> {
+        Self::find_file_entry_by_entity(&self.working_file_entries, entity)
+    }
+
     pub fn on_client_create_file(
         &mut self,
         commands: &mut Commands,

@@ -78,7 +78,7 @@ pub fn remove_component_events(
             info!("entity: `{:?}`, removed ChangelistEntry", entity);
 
             let entry = component.file_entry_key();
-            file_manager.changelist.remove(&entry);
+            file_manager.remove_changelist_entry(&entry);
 
             if *component.status != ChangelistStatus::Deleted {
                 if let Some(file_entity) = component.file_entity.get(&client) {

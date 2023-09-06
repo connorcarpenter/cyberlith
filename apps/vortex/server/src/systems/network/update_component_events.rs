@@ -1,24 +1,29 @@
 use bevy_ecs::{
     event::EventReader,
-    system::{Commands, ResMut},
+    system::{Res, Commands, ResMut},
 };
 
 use naia_bevy_server::{events::UpdateComponentEvents, Server};
 
 use vortex_proto::components::{FileSystemChild, FileSystemEntry, Vertex3d};
 
-use crate::resources::GitManager;
+use crate::resources::{GitManager, UserManager};
 
 pub fn update_component_events(
-    mut event_reader: EventReader<UpdateComponentEvents>,
     mut commands: Commands,
     mut server: Server,
     mut git_manager: ResMut<GitManager>,
+    user_manager: Res<UserManager>,
+    mut event_reader: EventReader<UpdateComponentEvents>,
 ) {
     for events in event_reader.iter() {
         // on FileSystemEntry Update Event
-        for (_user_key, _entity) in events.read::<FileSystemEntry>() {
-            // TODO!
+        for (user_key, entity) in events.read::<FileSystemEntry>() {
+            let username = user_manager.user_session_data(&user_key).unwrap().username();
+            let project_key = git_manager.project_key_from_name(username).unwrap();
+            let project = git_manager.project(&project_key).unwrap();
+            let file_key = project.get_file_key_from_entity(&entity).unwrap();
+            git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
         }
         // on FileSystemChild Update Event
         for (_user_key, _entity) in events.read::<FileSystemChild>() {

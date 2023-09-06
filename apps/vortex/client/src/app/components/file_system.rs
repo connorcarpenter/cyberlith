@@ -83,13 +83,16 @@ pub struct ChangelistUiState {
     // the first Option is for whether there is a response
     // the second Option is whether there is an Action or a No-Op
     pub context_menu_response: Option<Option<ChangelistAction>>,
+    // this name includes renames, shouldn't be used for a key!
+    pub display_name: String,
 }
 
 impl ChangelistUiState {
-    pub fn new() -> Self {
+    pub fn new(display_name: &str) -> Self {
         Self {
             selected: false,
             context_menu_response: None,
+            display_name: display_name.to_string(),
         }
     }
 }

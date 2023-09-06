@@ -60,7 +60,7 @@ impl ChangelistRowUiWidget {
             return;
         };
 
-        let name = &*entry.name;
+        let name = ui_state.display_name.to_string();
         let is_dir = *entry.kind == EntryKind::Directory;
         let unicode_icon = if is_dir { "📁" } else { "📃" };
         let text_str = format!("{} {}", unicode_icon, name);

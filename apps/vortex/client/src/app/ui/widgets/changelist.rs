@@ -15,10 +15,7 @@ impl ChangelistUiWidget {
             let mut system_state: SystemState<Res<FileManager>> = SystemState::new(world);
             let file_manager = system_state.get(world);
 
-            let mut entities = Vec::new();
-            for (_, entity) in file_manager.changelist.iter() {
-                entities.push(*entity);
-            }
+            let entities = file_manager.changelist_entities();
             for entity in entities {
                 ChangelistRowUiWidget::render_row(ui, world, entity);
             }
