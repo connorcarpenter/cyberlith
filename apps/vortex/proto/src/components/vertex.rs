@@ -16,7 +16,8 @@ impl ProtocolPlugin for VertexComponentsPlugin {
             .add_component::<OwnedByFile>()
             .add_component::<Edge3d>()
             .add_component::<Face3d>()
-            .add_component::<FileType>();
+            .add_component::<FileType>()
+            .add_component::<ShapeName>();
     }
 }
 
@@ -135,6 +136,18 @@ pub struct FileType {
 
 impl FileType {
     pub fn new(value: FileTypeValue) -> Self {
+        Self::new_complete(value)
+    }
+}
+
+// ShapeName
+#[derive(Component, Replicate)]
+pub struct ShapeName {
+    pub value: Property<String>,
+}
+
+impl ShapeName {
+    pub fn new(value: String) -> Self {
         Self::new_complete(value)
     }
 }

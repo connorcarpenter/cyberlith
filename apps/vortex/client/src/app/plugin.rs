@@ -8,7 +8,7 @@ use render_api::resources::WindowSettings;
 use vortex_proto::{
     components::{
         ChangelistEntry, Edge3d, EntryKind, Face3d, FileSystemChild, FileSystemEntry,
-        FileSystemRootChild, FileType, OwnedByFile, Vertex3d, VertexRoot,
+        FileSystemRootChild, FileType, OwnedByFile, Vertex3d, VertexRoot, ShapeName
     },
     protocol,
 };
@@ -16,7 +16,7 @@ use vortex_proto::{
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
     config::ConfigPlugin,
-    events::{InsertComponentEvent, LoginEvent},
+    events::{LoginEvent, InsertComponentEvent},
     resources::{
         action::FileActions, camera_manager::CameraManager, canvas::Canvas,
         file_manager::FileManager, input_manager::InputManager, shape_manager::ShapeManager,
@@ -79,11 +79,14 @@ impl Plugin for VortexPlugin {
             .add_event::<InsertComponentEvent<ChangelistEntry>>()
             .add_event::<InsertComponentEvent<Vertex3d>>()
             .add_event::<InsertComponentEvent<VertexRoot>>()
-            .add_event::<InsertComponentEvent<OwnedByFile>>()
             .add_event::<InsertComponentEvent<Edge3d>>()
             .add_event::<InsertComponentEvent<Face3d>>()
             .add_event::<InsertComponentEvent<FileType>>()
+            .add_event::<InsertComponentEvent<OwnedByFile>>()
+            .add_event::<InsertComponentEvent<ShapeName>>()
+            // shape waitlist
             .init_resource::<ShapeWaitlist>()
+            // Insert Component Systems
             .add_systems(Update, network::insert_file_component_events)
             .add_systems(Update, network::insert_changelist_entry_events)
             .add_systems(Update, network::insert_vertex_events)

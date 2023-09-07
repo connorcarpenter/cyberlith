@@ -14,15 +14,16 @@ enum VertexData {
 }
 
 struct SkelVertexData {
-    parent: Option<Entity>,
+    // parent entity, edge entity
+    parent_and_edge_opt: Option<(Entity, Entity)>,
     // children map from vertex entity to edge entity
     children: Option<HashMap<Entity, Entity>>,
 }
 
 impl SkelVertexData {
-    fn new(parent: Option<Entity>) -> Self {
+    fn new(parent_and_edge_opt: Option<(Entity, Entity)>) -> Self {
         Self {
-            parent,
+            parent_and_edge_opt,
             children: None,
         }
     }
@@ -149,10 +150,10 @@ impl ShapeManager {
         self.faces.contains_key(entity)
     }
 
-    pub fn get_vertex_parent(&self, entity: &Entity) -> Option<Entity> {
+    pub fn get_vertex_parent(&self, entity: &Entity) -> Option<(Entity, Entity)> {
         if let Some(vertex_data) = self.vertices.get(entity) {
             match vertex_data {
-                VertexData::Skel(skel_data) => skel_data.parent,
+                VertexData::Skel(skel_data) => skel_data.parent_and_edge_opt,
                 VertexData::Mesh(_) => {
                     panic!("should not call this on a mesh vertex!");
                 }
@@ -192,7 +193,7 @@ impl ShapeManager {
         if let Some((edge_entity, parent_entity)) = edge_and_parent_opt {
             self.vertices.insert(
                 vertex_entity,
-                VertexData::Skel(SkelVertexData::new(Some(parent_entity))),
+                VertexData::Skel(SkelVertexData::new(Some((parent_entity, edge_entity)))),
             );
             let Some(VertexData::Skel(parent_value)) = self.vertices.get_mut(&parent_entity) else {
                 panic!("shouldn't be able to happen!");
@@ -346,8 +347,8 @@ impl ShapeManager {
         );
 
         // remove entry from parent's children
-        if let Some(parent_key) = removed_entry.parent {
-            if let Some(VertexData::Skel(parent)) = entities.get_mut(&parent_key) {
+        if let Some((parent_entity, _)) = removed_entry.parent_and_edge_opt {
+            if let Some(VertexData::Skel(parent)) = entities.get_mut(&parent_entity) {
                 if let Some(edge_entity) = parent.remove_child(vertex_entity) {
                     entities_to_despawn.push(edge_entity);
                 }

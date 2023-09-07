@@ -1,11 +1,12 @@
 use bevy_ecs::{
     event::EventReader,
-    system::{Res, Commands, ResMut},
+    system::{Query, Res, Commands, ResMut},
 };
+use bevy_log::info;
 
 use naia_bevy_server::{events::UpdateComponentEvents, Server};
 
-use vortex_proto::components::{FileSystemChild, FileSystemEntry, Vertex3d};
+use vortex_proto::components::{FileSystemChild, FileSystemEntry, ShapeName, Vertex3d};
 
 use crate::resources::{GitManager, UserManager};
 
@@ -15,6 +16,7 @@ pub fn update_component_events(
     mut git_manager: ResMut<GitManager>,
     user_manager: Res<UserManager>,
     mut event_reader: EventReader<UpdateComponentEvents>,
+    shape_name_q: Query<&ShapeName>,
 ) {
     for events in event_reader.iter() {
         // on FileSystemEntry Update Event
@@ -35,6 +37,13 @@ pub fn update_component_events(
                 panic!("no content entity keys!");
             };
             git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
+        }
+        // on ShapeName Update Event
+        for (_, entity) in events.read::<ShapeName>() {
+            let Ok(shape_name) = shape_name_q.get(entity) else {
+                continue;
+            };
+            info!("entity: {:?} updated ShapeName to: {:?}", entity, *shape_name.value);
         }
     }
 }

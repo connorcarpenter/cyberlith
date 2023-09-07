@@ -45,7 +45,7 @@ impl FSWaitlist {
     }
 }
 
-pub fn fs_process_insert(
+pub fn file_process_insert(
     commands: &mut Commands,
     server: &mut Server,
     insert: FSWaitlistInsert,

@@ -13,7 +13,7 @@ use naia_bevy_server::{
 };
 
 use vortex_proto::components::{
-    Edge3d, FileType, FileTypeValue, Vertex3d, VertexRoot, VertexSerdeInt,
+    Edge3d, FileType, FileTypeValue, Vertex3d, VertexRoot, VertexSerdeInt, ShapeName,
 };
 
 use crate::{
@@ -27,8 +27,8 @@ use crate::{
 // Actions
 #[derive(Debug)]
 enum SkelAction {
-    //////// x,   y,   z, parent_id (0 for none)
-    Vertex(i16, i16, i16, Option<u16>),
+    //////// x,   y,   z, parent_id (0 for none), vertex_name, edge_name //
+    Vertex(i16, i16, i16, Option<u16>, Option<String>, Option<String>),
 }
 
 // Writer
@@ -38,7 +38,7 @@ impl SkelWriter {
     fn new_default_actions(&self) -> Vec<SkelAction> {
         let mut output = Vec::new();
 
-        output.push(SkelAction::Vertex(0, 0, 0, None));
+        output.push(SkelAction::Vertex(0, 0, 0, None, None, None));
 
         output
     }
@@ -48,14 +48,14 @@ impl SkelWriter {
         world: &mut World,
         content_entities: &Vec<Entity>,
     ) -> Vec<SkelAction> {
-        let mut system_state: SystemState<(Res<ShapeManager>, Query<&Vertex3d>, Query<&FileType>)> =
+        let mut system_state: SystemState<(Res<ShapeManager>, Query<&Vertex3d>, Query<&FileType>, Query<&ShapeName>)> =
             SystemState::new(world);
-        let (shape_manager, vertex_q, file_type_q) = system_state.get_mut(world);
+        let (shape_manager, vertex_q, file_type_q, shape_name_q) = system_state.get_mut(world);
 
         let mut output = Vec::new();
 
-        /////////////////////////////  id,   x,   y,   z, parent_entity   /////////////////
-        let mut map: HashMap<Entity, (usize, i16, i16, i16, Option<Entity>)> = HashMap::new();
+        ///////////////////////////////  id,   x,   y,   z,  parent_entity,    vertex_name,      edge_name ///////////////////
+        let mut map: HashMap<Entity, (usize, i16, i16, i16, Option<Entity>, Option<String>, Option<String>)> = HashMap::new();
 
         for (id, entity) in content_entities.iter().enumerate() {
             let Ok(file_type) = file_type_q.get(*entity) else {
@@ -69,19 +69,43 @@ impl SkelWriter {
             }
             let vertex = vertex_q.get(*entity).unwrap();
 
-            let parent_id: Option<Entity> = shape_manager.get_vertex_parent(entity);
+            let parent_and_edge_entity_opt: Option<(Entity, Entity)> = shape_manager.get_vertex_parent(entity);
 
-            let vertex_info = (id, vertex.x(), vertex.y(), vertex.z(), parent_id);
-            map.insert(*entity, vertex_info);
+            let vertex_name_opt: Option<String> = {
+                if let Ok(shape_name) = shape_name_q.get(*entity) {
+                    Some((*shape_name.value).clone())
+                } else {
+                    None
+                }
+            };
+
+            let edge_name_opt: Option<String> = {
+                if let Some((edge_entity, _)) = parent_and_edge_entity_opt {
+                    if let Ok(shape_name) = shape_name_q.get(edge_entity) {
+                        Some((*shape_name.value).clone())
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            };
+
+            let parent_entity_opt = parent_and_edge_entity_opt.map(|(parent_entity, _)| parent_entity);
+
+            map.insert(
+                *entity,
+                (id, vertex.x(), vertex.y(), vertex.z(), parent_entity_opt, vertex_name_opt, edge_name_opt)
+            );
         }
 
         for entity in content_entities.iter() {
-            let (_, x, y, z, parent_entity_opt) = map.get(entity).unwrap();
+            let (_, x, y, z, parent_entity_opt, vertex_name_opt, edge_name_opt) = map.get(entity).unwrap();
             let parent_id = parent_entity_opt.map(|parent_entity| {
-                let (parent_id, _, _, _, _) = map.get(&parent_entity).unwrap();
+                let (parent_id, _, _, _, _, _, _) = map.get(&parent_entity).unwrap();
                 *parent_id as u16
             });
-            let vertex_info = SkelAction::Vertex(*x, *y, *z, parent_id);
+            let vertex_info = SkelAction::Vertex(*x, *y, *z, parent_id, vertex_name_opt.clone(), edge_name_opt.clone());
             output.push(vertex_info);
         }
 
@@ -93,7 +117,7 @@ impl SkelWriter {
 
         for action in actions {
             match action {
-                SkelAction::Vertex(x, y, z, parent_id_opt) => {
+                SkelAction::Vertex(x, y, z, parent_id_opt, vertex_name_opt, edge_name_opt) => {
                     // continue bit
                     true.ser(&mut bit_writer);
 
@@ -109,6 +133,8 @@ impl SkelWriter {
                         }
                     };
                     UnsignedVariableInteger::<6>::from(parent_id).ser(&mut bit_writer);
+                    vertex_name_opt.ser(&mut bit_writer);
+                    edge_name_opt.ser(&mut bit_writer);
                 }
             }
         }
@@ -171,8 +197,10 @@ impl SkelReader {
                     Some(parent_id - 1)
                 }
             };
+            let vertex_name_opt = Option::<String>::de(bit_reader)?;
+            let edge_name_opt = Option::<String>::de(bit_reader)?;
 
-            output.push(SkelAction::Vertex(x, y, z, parent_id_opt));
+            output.push(SkelAction::Vertex(x, y, z, parent_id_opt, vertex_name_opt, edge_name_opt));
         }
         Ok(output)
     }
@@ -184,32 +212,39 @@ impl SkelReader {
     ) -> Result<FileReadOutput, SerdeErr> {
         let mut output = Vec::new();
 
-        let mut entities: Vec<(Entity, i16, i16, i16, Option<u16>)> = Vec::new();
+        let mut entities: Vec<(Entity, i16, i16, i16, Option<u16>, Option<String>, Option<String>)> = Vec::new();
 
         for action in actions {
             match action {
-                SkelAction::Vertex(x, y, z, parent_id_opt) => {
+                SkelAction::Vertex(x, y, z, parent_id_opt, vertex_name_opt, edge_name_opt) => {
                     let entity_id = commands.spawn_empty().enable_replication(server).id();
                     info!("spawning vertex entity {:?}", entity_id);
                     if parent_id_opt.is_some() {
                         commands
                             .entity(entity_id)
                             .configure_replication(ReplicationConfig::Delegated);
-                        entities.push((entity_id, x, y, z, parent_id_opt));
+                        entities.push((entity_id, x, y, z, parent_id_opt, vertex_name_opt, edge_name_opt));
                     } else {
                         // root node should always be at 0,0,0 ... you can refactor these files later
-                        entities.push((entity_id, 0, 0, 0, parent_id_opt));
+                        entities.push((entity_id, 0, 0, 0, parent_id_opt, vertex_name_opt, edge_name_opt));
                     }
                 }
             }
         }
 
-        for (entity, x, y, z, parent_id_opt) in entities.iter() {
-            let mut entity_mut = commands.entity(*entity);
-            entity_mut.insert(Vertex3d::new(*x, *y, *z));
+        for (entity, x, y, z, parent_id_opt, vertex_name_opt, edge_name_opt) in entities.iter() {
+            commands
+                .entity(*entity)
+                .insert(Vertex3d::new(*x, *y, *z));
+
+            if let Some(vertex_name) = vertex_name_opt {
+                commands
+                    .entity(*entity)
+                    .insert(ShapeName::new(vertex_name.clone()));
+            }
 
             if let Some(parent_id) = parent_id_opt {
-                let (parent_entity, _, _, _, _) = entities.get(*parent_id as usize).unwrap();
+                let (parent_entity, _, _, _, _, _, _) = entities.get(*parent_id as usize).unwrap();
 
                 let mut edge_component = Edge3d::new();
                 edge_component.start.set(server, parent_entity);
@@ -222,9 +257,17 @@ impl SkelReader {
                     .insert(edge_component)
                     .id();
 
+                if let Some(edge_name) = edge_name_opt {
+                    commands
+                        .entity(edge_entity)
+                        .insert(ShapeName::new(edge_name.clone()));
+                }
+
                 output.push((*entity, Some((edge_entity, *parent_entity))));
             } else {
-                entity_mut.insert(VertexRoot);
+                commands
+                    .entity(*entity)
+                    .insert(VertexRoot);
                 output.push((*entity, None));
             }
         }

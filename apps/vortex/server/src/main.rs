@@ -11,7 +11,7 @@ use naia_bevy_server::{Plugin as ServerPlugin, ReceiveEvents, ServerConfig};
 
 use resources::GitManager;
 use systems::network;
-use vortex_proto::protocol;
+use vortex_proto::{components::{Edge3d, Face3d, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, ShapeName, Vertex3d, VertexRoot}, protocol};
 
 use crate::{
     config::{AppConfig, ConfigPlugin},
@@ -20,6 +20,7 @@ use crate::{
         UserManager,
     },
     systems::world_loop,
+    events::InsertComponentEvent,
 };
 
 mod components;
@@ -27,6 +28,7 @@ mod config;
 mod files;
 mod resources;
 mod systems;
+mod events;
 
 fn main() {
     info!("Vortex Server starting up");
@@ -71,12 +73,28 @@ fn main() {
             Update,
             (
                 network::insert_component_events,
+                network::insert_file_component_events,
+                network::insert_vertex_component_events,
+                network::insert_edge_component_events,
+                network::insert_face_component_events,
+                network::insert_shape_component_events,
                 apply_deferred,
                 network::message_events,
             )
                 .chain()
                 .in_set(ReceiveEvents),
         )
+        // Insert Component Events
+            .add_event::<InsertComponentEvent<FileSystemEntry>>()
+            .add_event::<InsertComponentEvent<FileSystemRootChild>>()
+            .add_event::<InsertComponentEvent<FileSystemChild>>()
+            .add_event::<InsertComponentEvent<Vertex3d>>()
+            .add_event::<InsertComponentEvent<VertexRoot>>()
+            .add_event::<InsertComponentEvent<Edge3d>>()
+            .add_event::<InsertComponentEvent<Face3d>>()
+            .add_event::<InsertComponentEvent<FileType>>()
+            .add_event::<InsertComponentEvent<OwnedByFile>>()
+            .add_event::<InsertComponentEvent<ShapeName>>()
         // Other Systems
         .add_systems(Startup, setup)
         .add_systems(Update, world_loop.after(ReceiveEvents))

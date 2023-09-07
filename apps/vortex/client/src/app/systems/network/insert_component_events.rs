@@ -15,14 +15,15 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{
-    ChangelistEntry, ChangelistStatus, Edge3d, EntryKind, Face3d, FileSystemChild, FileSystemEntry,
-    FileSystemRootChild, FileType, OwnedByFile, Vertex3d, VertexRoot,
+use vortex_proto::{
+    components::{
+        ChangelistEntry, ChangelistStatus, Edge3d, EntryKind, Face3d, FileSystemChild, FileSystemEntry,
+        FileSystemRootChild, FileType, OwnedByFile, Vertex3d, VertexRoot,
+    },
 };
 
 use crate::app::{
     components::file_system::{FileSystemEntryLocal, ChangelistUiState, FileSystemParent, FileSystemUiState},
-    events::InsertComponentEvent,
     resources::{
         camera_manager::CameraManager,
         file_manager::{FileManager, get_full_path},
@@ -30,6 +31,7 @@ use crate::app::{
         shape_waitlist::{ShapeWaitlist, ShapeWaitlistInsert},
     },
     systems::file_post_process,
+    events::InsertComponentEvent,
 };
 
 pub fn insert_component_events(
