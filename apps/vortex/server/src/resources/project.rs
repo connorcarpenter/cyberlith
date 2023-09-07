@@ -284,8 +284,8 @@ impl Project {
         }
     }
 
-    fn get_full_file_path(
-        fs_map: &HashMap<FileEntryKey, FileEntryValue>,
+    fn get_full_file_path_working(
+        &self,
         fs_q: &Query<&FileSystemEntry>,
         file_key: &FileEntryKey,
         file_entity: Entity
@@ -293,10 +293,24 @@ impl Project {
 
         let fs_entry = fs_q.get(file_entity).unwrap();
         let file_name = fs_entry.name.as_str();
-        let fs_value = fs_map.get(file_key).unwrap();
+        let fs_value = self.working_file_entries.get(file_key).unwrap();
         if let Some(parent_file_key) = fs_value.parent() {
-            let parent_entity = fs_map.get(parent_file_key).unwrap().entity();
-            let parent_path = Self::get_full_file_path(fs_map, fs_q, parent_file_key, parent_entity);
+            let parent_entity = self.working_file_entries.get(parent_file_key).unwrap().entity();
+            let parent_path = self.get_full_file_path_working(fs_q, parent_file_key, parent_entity);
+            format!("{}/{}", parent_path, file_name)
+        } else {
+            format!("{}", file_name)
+        }
+    }
+
+    fn get_full_file_path_master(
+        &self,
+        file_key: &FileEntryKey,
+    ) -> String {
+        let file_name = file_key.name();
+        let fs_value = self.master_file_entries.get(file_key).unwrap();
+        if let Some(parent_file_key) = fs_value.parent() {
+            let parent_path = self.get_full_file_path_master(parent_file_key);
             format!("{}/{}", parent_path, file_name)
         } else {
             format!("{}", file_name)
@@ -350,8 +364,7 @@ impl Project {
                 let file_entity = file_entry_val.entity();
 
                 info!("git modify file");
-                let path = Self::get_full_file_path(
-                    &self.working_file_entries,
+                let path = self.get_full_file_path_working(
                     &fs_entry_q,
                     &file_entry_key,
                     file_entity
@@ -387,8 +400,7 @@ impl Project {
                 );
 
                 info!("git create file");
-                let path = Self::get_full_file_path(
-                    &self.working_file_entries,
+                let path = self.get_full_file_path_working(
                     &fs_entry_q,
                     &file_entry_key,
                     file_entity
@@ -406,6 +418,10 @@ impl Project {
                 self.git_push();
             }
             ChangelistStatus::Deleted => {
+                let path = self.get_full_file_path_master(
+                    &file_entry_key,
+                );
+
                 // Remove Entity from Master Tree, returning a list of child entities that should be despawned
                 let (_entry_value, entities_to_delete) =
                     Self::remove_file_entry(&mut self.master_file_entries, &file_entry_key);
@@ -417,8 +433,7 @@ impl Project {
 
                 // delete file
                 info!("git delete file");
-                let full_file_path = format!("{}{}", file_entry_key.path(), file_entry_key.name());
-                self.fs_delete_file(&full_file_path);
+                self.fs_delete_file(&path);
 
                 // sync to git repo
                 self.git_commit(username, email, &commit_message);
