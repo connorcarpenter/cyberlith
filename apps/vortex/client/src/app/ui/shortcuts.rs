@@ -5,7 +5,7 @@ use render_egui::{
     egui::{KeyboardShortcut, Modifiers},
 };
 
-use crate::app::{resources::action::{action_stack_redo, action_stack_undo}, ui::widgets::naming_bar_visibility_toggle};
+use crate::app::{resources::{action::{action_stack_redo, action_stack_undo}, canvas::Canvas}, ui::widgets::naming_bar_visibility_toggle};
 
 pub const SHORTCUT_UNDO: KeyboardShortcut = KeyboardShortcut::new(Modifiers::CTRL, egui::Key::Z);
 pub const SHORTCUT_REDO: KeyboardShortcut = KeyboardShortcut::new(
@@ -26,7 +26,10 @@ pub fn consume_shortcuts(context: &egui::Context, world: &mut World) {
         action_stack_redo(world);
     }
 
-    if context.input_mut(|i| i.consume_key(Modifiers::NONE, egui::Key::N)) {
-        naming_bar_visibility_toggle(world);
+    let canvas = world.get_resource::<Canvas>().unwrap();
+    if canvas.is_visible() && canvas.has_focus() {
+        if context.input_mut(|i| i.consume_key(Modifiers::NONE, egui::Key::N)) {
+            naming_bar_visibility_toggle(world);
+        }
     }
 }

@@ -23,7 +23,7 @@ use crate::app::{
         shape_waitlist::ShapeWaitlist, tab_manager::TabManager, toolbar::Toolbar,
     },
     systems::{canvas, network, ui},
-    ui::UiState,
+    ui::{UiState, widgets::NamingBarState},
 };
 
 pub struct VortexPlugin;
@@ -95,6 +95,7 @@ impl Plugin for VortexPlugin {
             .add_systems(Update, network::insert_shape_events)
             // UI Configuration
             .init_resource::<UiState>()
+            .init_resource::<NamingBarState>()
             .insert_resource(file_manager)
             .init_resource::<FileActions>()
             .init_resource::<TabManager>()

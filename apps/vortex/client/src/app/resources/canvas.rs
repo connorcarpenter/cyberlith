@@ -81,10 +81,10 @@ impl Canvas {
 
     pub(crate) fn is_position_inside(&self, pos: Vec2) -> bool {
         // check if position is inside self.canvas_texture_size
-        if pos.x < 0.0 || pos.y < 0.0 {
+        if pos.x < 2.0 || pos.y < 2.0 {
             return false;
         }
-        if pos.x > self.canvas_texture_size.x || pos.y > self.canvas_texture_size.y {
+        if pos.x > self.canvas_texture_size.x - 2.0 || pos.y > self.canvas_texture_size.y - 2.0 {
             return false;
         }
         return true;
