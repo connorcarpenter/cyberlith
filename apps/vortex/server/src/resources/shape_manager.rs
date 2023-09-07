@@ -150,7 +150,7 @@ impl ShapeManager {
         self.faces.contains_key(entity)
     }
 
-    pub fn get_vertex_parent(&self, entity: &Entity) -> Option<(Entity, Entity)> {
+    pub fn get_vertex_parent_and_edge(&self, entity: &Entity) -> Option<(Entity, Entity)> {
         if let Some(vertex_data) = self.vertices.get(entity) {
             match vertex_data {
                 VertexData::Skel(skel_data) => skel_data.parent_and_edge_opt,

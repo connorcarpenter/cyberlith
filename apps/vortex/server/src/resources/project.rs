@@ -836,12 +836,14 @@ impl Project {
             changelist_entry.set_content(bytes);
         } else {
             // no changelist entry exists, so create a new one with Modified status
+            let file_entity = self.file_entity(key).unwrap();
+
             self.new_changelist_entry(
                 commands,
                 server,
                 key,
                 ChangelistStatus::Modified,
-                None,
+                Some(&file_entity),
                 Some(bytes),
             );
         }

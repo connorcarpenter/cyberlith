@@ -208,24 +208,23 @@ pub fn insert_changelist_entry_events(
 
         // associate status with file entry
         if *entry.status != ChangelistStatus::Deleted {
-            if let Some(file_entity) = entry.file_entity.get(&client) {
+            let file_entity = entry.file_entity.get(&client).unwrap();
 
-                let mut fs_state = fs_state_q.get_mut(file_entity).unwrap();
-                fs_state.change_status = Some(*entry.status);
+            let mut fs_state = fs_state_q.get_mut(file_entity).unwrap();
+            fs_state.change_status = Some(*entry.status);
 
-                let (fs_entry, fs_child_opt) = fs_q.get(file_entity).unwrap();
-                display_name = (*fs_entry.name).clone();
-                file_entity_opt = Some(file_entity);
+            let (fs_entry, fs_child_opt) = fs_q.get(file_entity).unwrap();
+            display_name = (*fs_entry.name).clone();
+            file_entity_opt = Some(file_entity);
 
-                if let Some(fs_child) = fs_child_opt {
-                    parent_entity_opt = fs_child.parent_id.get(&client);
-                }
+            if let Some(fs_child) = fs_child_opt {
+                parent_entity_opt = fs_child.parent_id.get(&client);
+            }
 
-                if parent_entity_opt.is_some() {
-                    let new_display_path = get_full_path(&client, &fs_q, file_entity);
-                    info!("change path for entity: `{:?}`. path was: `{:?}`, now is `{:?}`", file_entity, display_path, new_display_path);
-                    display_path = new_display_path;
-                }
+            if parent_entity_opt.is_some() {
+                let new_display_path = get_full_path(&client, &fs_q, file_entity);
+                info!("change path for entity: `{:?}`. path was: `{:?}`, now is `{:?}`", file_entity, display_path, new_display_path);
+                display_path = new_display_path;
             }
         }
 

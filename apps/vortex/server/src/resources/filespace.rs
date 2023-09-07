@@ -65,9 +65,8 @@ impl FileSpace {
     }
 
     pub fn add_content_entity(&mut self, entity: Entity, shape_type: ShapeType) {
-        info!("FileSpace adding content entity: `{:?}`", entity);
-        self.content_entities
-            .insert(entity, ContentEntityData::new(shape_type));
+        info!("FileSpace adding content entity: `{:?}`, `{:?}`", entity, shape_type);
+        self.content_entities.insert(entity, ContentEntityData::new(shape_type));
     }
 
     pub fn remove_content_entity(&mut self, entity: &Entity) {

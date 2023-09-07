@@ -56,8 +56,9 @@ impl SkelWriter {
 
         ///////////////////////////////  id,   x,   y,   z,  parent_entity,    vertex_name,      edge_name ///////////////////
         let mut map: HashMap<Entity, (usize, i16, i16, i16, Option<Entity>, Option<String>, Option<String>)> = HashMap::new();
+        let mut vertices: Vec<Entity> = Vec::new();
 
-        for (id, entity) in content_entities.iter().enumerate() {
+        for entity in content_entities.iter() {
             let Ok(file_type) = file_type_q.get(*entity) else {
                 panic!("entity {:?} does not have a FileType component!", entity);
             };
@@ -67,9 +68,11 @@ impl SkelWriter {
                     entity
                 );
             }
-            let vertex = vertex_q.get(*entity).unwrap();
+            let Ok(vertex) = vertex_q.get(*entity) else {
+                    continue;
+            };
 
-            let parent_and_edge_entity_opt: Option<(Entity, Entity)> = shape_manager.get_vertex_parent(entity);
+            let parent_and_edge_entity_opt: Option<(Entity, Entity)> = shape_manager.get_vertex_parent_and_edge(entity);
 
             let vertex_name_opt: Option<String> = {
                 if let Ok(shape_name) = shape_name_q.get(*entity) {
@@ -93,13 +96,15 @@ impl SkelWriter {
 
             let parent_entity_opt = parent_and_edge_entity_opt.map(|(parent_entity, _)| parent_entity);
 
+            let id = vertices.len();
             map.insert(
                 *entity,
                 (id, vertex.x(), vertex.y(), vertex.z(), parent_entity_opt, vertex_name_opt, edge_name_opt)
             );
+            vertices.push(*entity);
         }
 
-        for entity in content_entities.iter() {
+        for entity in vertices.iter() {
             let (_, x, y, z, parent_entity_opt, vertex_name_opt, edge_name_opt) = map.get(entity).unwrap();
             let parent_id = parent_entity_opt.map(|parent_entity| {
                 let (parent_id, _, _, _, _, _, _) = map.get(&parent_entity).unwrap();
@@ -125,6 +130,8 @@ impl SkelWriter {
                     VertexSerdeInt::from(x).ser(&mut bit_writer);
                     VertexSerdeInt::from(y).ser(&mut bit_writer);
                     VertexSerdeInt::from(z).ser(&mut bit_writer);
+
+                    // Parent Id
                     let parent_id = {
                         if let Some(parent_id) = parent_id_opt {
                             parent_id + 1
@@ -133,6 +140,8 @@ impl SkelWriter {
                         }
                     };
                     UnsignedVariableInteger::<6>::from(parent_id).ser(&mut bit_writer);
+
+                    // Names
                     vertex_name_opt.ser(&mut bit_writer);
                     edge_name_opt.ser(&mut bit_writer);
                 }
@@ -218,7 +227,7 @@ impl SkelReader {
             match action {
                 SkelAction::Vertex(x, y, z, parent_id_opt, vertex_name_opt, edge_name_opt) => {
                     let entity_id = commands.spawn_empty().enable_replication(server).id();
-                    info!("spawning vertex entity {:?}", entity_id);
+                    info!("spawning vertex (id {:?}, entity: {:?}, parent_id_opt: {:?})", entities.len(), entity_id, parent_id_opt);
                     if parent_id_opt.is_some() {
                         commands
                             .entity(entity_id)
@@ -244,7 +253,9 @@ impl SkelReader {
             }
 
             if let Some(parent_id) = parent_id_opt {
-                let (parent_entity, _, _, _, _, _, _) = entities.get(*parent_id as usize).unwrap();
+                let Some((parent_entity, _, _, _, _, _, _)) = entities.get(*parent_id as usize) else {
+                    panic!("parent_id {:?} not found", parent_id);
+                };
 
                 let mut edge_component = Edge3d::new();
                 edge_component.start.set(server, parent_entity);
