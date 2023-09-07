@@ -15,15 +15,15 @@ impl Default for MeshToolbar {
 impl MeshToolbar {
     pub(crate) fn render(&mut self, ui: &mut Ui, _world: &mut World) {
         // insert vertex
-        let _response = Toolbar::button(ui, "🔼", "Insert vertex");
+        let _response = Toolbar::button(ui, "🔼", "Insert vertex", true);
 
         // delete selected
-        let _response = Toolbar::button(ui, "🗑", "Delete selected shape");
+        let _response = Toolbar::button(ui, "🗑", "Delete selected shape", true);
 
         // toggle normals visibility
-        let _response = Toolbar::button(ui, "🔍", "Show/hide normals");
+        let _response = Toolbar::button(ui, "🔍", "Show/hide normals", true);
 
         // swap normals
-        let _response = Toolbar::button(ui, "🔄", "Swap face normals");
+        let _response = Toolbar::button(ui, "🔄", "Swap face normals", true);
     }
 }

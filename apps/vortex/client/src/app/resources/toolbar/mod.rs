@@ -36,9 +36,9 @@ impl Default for Toolbar {
 }
 
 impl Toolbar {
-    pub(crate) fn button(ui: &mut Ui, button_text: &str, tooltip: &str) -> Response {
+    pub(crate) fn button(ui: &mut Ui, button_text: &str, tooltip: &str, enabled: bool) -> Response {
         let button = Button::new(button_text).min_size(egui::Vec2::splat(26.0));
-        button.ui(ui).on_hover_text(tooltip)
+        ui.add_enabled(enabled, button).on_hover_text(tooltip)
     }
 
     pub fn clear(&mut self) {
