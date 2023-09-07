@@ -2,7 +2,7 @@ use bevy_ecs::world::World;
 
 use render_egui::{egui, egui::Ui};
 
-use crate::app::{resources::{shape_manager::ShapeManager, toolbar::{Toolbar, ToolbarKind}}, ui::UiState};
+use crate::app::{resources::{canvas::Canvas, shape_manager::ShapeManager, toolbar::{Toolbar, ToolbarKind}}, ui::UiState};
 
 pub struct NamingBarWidget {
 
@@ -35,4 +35,8 @@ pub fn naming_bar_visibility_toggle(world: &mut World) {
     let old_visible = ui_state.naming_bar_visible;
     ui_state.naming_bar_visible = !old_visible;
     ui_state.resized_window = true;
+
+    // set focus to canvas
+    let mut canvas = world.get_resource_mut::<Canvas>().unwrap();
+    canvas.set_focused_timed();
 }
