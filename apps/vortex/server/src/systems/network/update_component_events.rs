@@ -40,10 +40,14 @@ pub fn update_component_events(
         }
         // on ShapeName Update Event
         for (_, entity) in events.read::<ShapeName>() {
-            let Ok(shape_name) = shape_name_q.get(entity) else {
-                continue;
-            };
+
+            let shape_name = shape_name_q.get(entity).unwrap();
             info!("entity: {:?} updated ShapeName to: {:?}", entity, *shape_name.value);
+
+            let Some((project_key, file_key)) = git_manager.content_entity_keys(&entity) else {
+                panic!("no content entity keys!");
+            };
+            git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
         }
     }
 }

@@ -1,14 +1,16 @@
-use bevy_ecs::{system::Resource, world::World};
+use bevy_ecs::{system::{Resource, Commands, Query, ResMut, SystemState}, world::World, entity::Entity};
 
 use render_egui::{egui, egui::{Align, Ui, Button, Frame, Layout}};
+use vortex_proto::components::ShapeName;
 
-use crate::app::{resources::{canvas::Canvas, shape_manager::ShapeManager, toolbar::{Toolbar, ToolbarKind}}, ui::UiState};
+use crate::app::{resources::{canvas::Canvas, shape_manager::{ShapeManager, CanvasShape}, toolbar::{Toolbar, ToolbarKind}}, ui::UiState};
 
 #[derive(Resource)]
 pub struct NamingBarState {
     pub(crate) visible: bool,
     prev_text: String,
     text: String,
+    pub(crate) selected_shape_opt: Option<(Entity, CanvasShape)>,
 }
 
 impl Default for NamingBarState {
@@ -17,6 +19,7 @@ impl Default for NamingBarState {
             visible: false,
             prev_text: "".to_string(),
             text: "".to_string(),
+            selected_shape_opt: None,
         }
     }
 }
@@ -27,16 +30,85 @@ pub fn render_naming_bar(ui: &mut Ui, world: &mut World) {
         .show_inside(ui, |ui| {
         ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
 
-            let mut state = world.get_resource_mut::<NamingBarState>().unwrap();
+            let shape_manager = world.get_resource::<ShapeManager>().unwrap();
+            let selected_shape_2d = shape_manager.selected_shape_2d();
+            if selected_shape_2d.is_none() {
+                let mut state = world.get_resource_mut::<NamingBarState>().unwrap();
+                state.visible = false;
+                state.selected_shape_opt = None;
+                return;
+            } else {
+                let state = world.get_resource::<NamingBarState>().unwrap();
+                if state.selected_shape_opt != selected_shape_2d {
+
+                    let (shape_2d_entity, shape) = selected_shape_2d.unwrap();
+                    let shape_manager = world.get_resource::<ShapeManager>().unwrap();
+                    let shape_3d_entity = shape_manager.shape_entity_2d_to_3d(&shape_2d_entity, shape).unwrap();
+
+                    let mut system_state: SystemState<(ResMut<NamingBarState>, Query<&ShapeName>)> =
+                        SystemState::new(world);
+                    let (mut state, shape_name_q) = system_state.get_mut(world);
+
+
+                    let official_name = if let Ok(shape_name) = shape_name_q.get(shape_3d_entity) {
+                        (*shape_name.value).clone()
+                    } else {
+                        "".to_string()
+                    };
+
+                    state.prev_text = official_name.clone();
+                    state.text = official_name;
+                    state.selected_shape_opt = selected_shape_2d;
+
+                    system_state.apply(world);
+                }
+            }
+
+            let state = world.get_resource::<NamingBarState>().unwrap();
             let has_changed = state.prev_text != state.text;
 
-            let button = Button::new("✖").min_size(egui::Vec2::splat(18.0));
-            ui.add_enabled(has_changed, button).on_hover_text("Cancel");
+            // cancel button
+            if ui
+                .add_enabled(
+                    has_changed,
+                    Button::new("✖").min_size(egui::Vec2::splat(18.0))
+                )
+                .on_hover_text("Cancel")
+                .clicked()
+            {
+                let mut state = world.get_resource_mut::<NamingBarState>().unwrap();
+                state.text = state.prev_text.clone();
+            }
 
-            let button = Button::new("✔").min_size(egui::Vec2::splat(18.0));
-            ui.add_enabled(has_changed, button).on_hover_text("Accept");
+            // accept button
+            if ui
+                .add_enabled(
+                    has_changed,
+                    Button::new("✔").min_size(egui::Vec2::splat(18.0))
+                )
+                .on_hover_text("Accept")
+                .clicked()
+            {
+                let (shape_2d_entity, shape) = selected_shape_2d.unwrap();
+                let shape_manager = world.get_resource::<ShapeManager>().unwrap();
+                let shape_3d_entity = shape_manager.shape_entity_2d_to_3d(&shape_2d_entity, shape).unwrap();
 
-            let text_edit_response = ui.text_edit_singleline(&mut state.text);
+                let mut system_state: SystemState<(Commands, ResMut<NamingBarState>, Query<&mut ShapeName>)> =
+                    SystemState::new(world);
+                let (mut commands, mut state, mut shape_name_q) = system_state.get_mut(world);
+
+                state.prev_text = state.text.clone();
+                if let Ok(mut shape_name) = shape_name_q.get_mut(shape_3d_entity) {
+                    *shape_name.value = state.text.clone();
+                } else {
+                    commands.entity(shape_3d_entity).insert(ShapeName::new(state.text.clone()));
+                }
+
+                system_state.apply(world);
+            }
+
+            let mut state = world.get_resource_mut::<NamingBarState>().unwrap();
+            ui.text_edit_singleline(&mut state.text);
 
             ui.label("name: ");
         });

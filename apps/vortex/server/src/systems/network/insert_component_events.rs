@@ -278,6 +278,7 @@ pub fn insert_face_component_events(
 }
 
 pub fn insert_shape_component_events(
+    mut commands: Commands,
     mut server: Server,
     user_manager: Res<UserManager>,
     mut git_manager: ResMut<GitManager>,
@@ -349,5 +350,10 @@ pub fn insert_shape_component_events(
             "entity: `{:?}`, inserted ShapeName: {:?}",
             entity, shape_name
         );
+
+        let Some((project_key, file_key)) = git_manager.content_entity_keys(&entity) else {
+            panic!("no content entity keys!");
+        };
+        git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
     }
 }
