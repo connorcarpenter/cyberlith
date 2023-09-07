@@ -6,14 +6,8 @@ use crate::app::resources::toolbar::Toolbar;
 
 pub struct MeshToolbar;
 
-impl Default for MeshToolbar {
-    fn default() -> Self {
-        Self
-    }
-}
-
 impl MeshToolbar {
-    pub(crate) fn render(&mut self, ui: &mut Ui, _world: &mut World) {
+    pub(crate) fn render(ui: &mut Ui, _world: &mut World) {
         // insert vertex
         let _response = Toolbar::button(ui, "🔼", "Insert vertex", true);
 

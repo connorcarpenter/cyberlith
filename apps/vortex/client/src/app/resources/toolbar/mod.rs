@@ -7,7 +7,7 @@ use bevy_log::info;
 
 use render_egui::{
     egui,
-    egui::{Button, Response, Ui, Widget},
+    egui::{Button, Response, Ui},
 };
 use vortex_proto::components::FileTypeValue;
 
@@ -15,22 +15,38 @@ use crate::app::resources::toolbar::{
     anim::AnimationToolbar, mesh::MeshToolbar, skel::SkeletonToolbar,
 };
 
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub enum ToolbarKind {
-    None,
-    Skeleton(SkeletonToolbar),
-    Mesh(MeshToolbar),
-    Animation(AnimationToolbar),
+    Skeleton,
+    Mesh,
+    Animation,
+}
+
+impl ToolbarKind {
+    pub fn render(&self, ui: &mut Ui, world: &mut World) {
+        match self {
+            ToolbarKind::Skeleton => {
+                SkeletonToolbar::render(ui, world);
+            }
+            ToolbarKind::Mesh => {
+                MeshToolbar::render(ui, world);
+            }
+            ToolbarKind::Animation => {
+                AnimationToolbar::render(ui, world);
+            }
+        }
+    }
 }
 
 #[derive(Resource)]
 pub struct Toolbar {
-    kind: ToolbarKind,
+    i12n: Option<ToolbarKind>,
 }
 
 impl Default for Toolbar {
     fn default() -> Self {
         Self {
-            kind: ToolbarKind::None,
+            i12n: None,
         }
     }
 }
@@ -43,35 +59,24 @@ impl Toolbar {
 
     pub fn clear(&mut self) {
         info!("Toolbar::clear()");
-        self.kind = ToolbarKind::None;
+        self.i12n = None;
+    }
+    
+    pub fn kind(&self) -> Option<ToolbarKind> {
+        self.i12n
     }
 
     pub(crate) fn set_file_type(&mut self, file_type_value: FileTypeValue) {
         info!("Toolbar::set_file_type({:?})", file_type_value);
         match file_type_value {
             FileTypeValue::Skel => {
-                self.kind = ToolbarKind::Skeleton(SkeletonToolbar::default());
+                self.i12n = Some(ToolbarKind::Skeleton);
             }
             FileTypeValue::Mesh => {
-                self.kind = ToolbarKind::Mesh(MeshToolbar::default());
+                self.i12n = Some(ToolbarKind::Mesh);
             }
             FileTypeValue::Anim => {
-                self.kind = ToolbarKind::Animation(AnimationToolbar::default());
-            }
-        }
-    }
-
-    pub fn render(&mut self, ui: &mut Ui, world: &mut World) {
-        match self.kind {
-            ToolbarKind::None => {}
-            ToolbarKind::Skeleton(ref mut toolbar) => {
-                toolbar.render(ui, world);
-            }
-            ToolbarKind::Mesh(ref mut toolbar) => {
-                toolbar.render(ui, world);
-            }
-            ToolbarKind::Animation(ref mut toolbar) => {
-                toolbar.render(ui, world);
+                self.i12n = Some(ToolbarKind::Animation);
             }
         }
     }

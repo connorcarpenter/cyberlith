@@ -124,9 +124,9 @@ impl Input {
 
                     // mouse wheel zoom..
                     if self.mouse_scroll_y > 0.1 || self.mouse_scroll_y < -0.1 {
-                        self.mouse_scroll_y = 0.0;
                         self.outgoing_actions
                             .push(InputAction::MiddleMouseScroll(self.mouse_scroll_y));
+                        self.mouse_scroll_y = 0.0;
                     }
                 }
                 IncomingEvent::KeyPress { kind, handled, .. } => {

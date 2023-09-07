@@ -92,43 +92,6 @@ impl Default for TabManager {
 }
 
 impl TabManager {
-    pub fn render_root(ui: &mut Ui, world: &mut World) {
-        egui::menu::bar(ui, |ui| {
-            let mut system_state: SystemState<(
-                Client,
-                ResMut<Canvas>,
-                ResMut<CameraManager>,
-                ResMut<ShapeManager>,
-                ResMut<TabManager>,
-                ResMut<Toolbar>,
-                Query<(&FileSystemEntry, &FileSystemUiState)>,
-                Query<(&mut Visibility, &OwnedByFileLocal)>,
-            )> = SystemState::new(world);
-            let (
-                mut client,
-                mut canvas,
-                mut camera_manager,
-                mut shape_manager,
-                mut tab_manager,
-                mut toolbar,
-                file_q,
-                mut visibility_q,
-            ) = system_state.get_mut(world);
-
-            tab_manager.render_tabs(
-                &mut client,
-                &mut canvas,
-                &mut camera_manager,
-                &mut shape_manager,
-                &mut toolbar,
-                ui,
-                &file_q,
-                &mut visibility_q,
-            );
-
-            system_state.apply(world);
-        });
-    }
 
     pub fn open_tab(
         &mut self,
@@ -729,12 +692,42 @@ impl TabManager {
     }
 }
 
-// if ui.add(egui::Button::new("Tab 1")).clicked() {
-//     let mut cameras_visible = world.get_resource_mut::<AxesCamerasVisible>().unwrap();
-//     (*cameras_visible).0 = true;
-//
-// } else if ui.add(egui::Button::new("Tab 2")).clicked() {
-//     let mut cameras_visible = world.get_resource_mut::<AxesCamerasVisible>().unwrap();
-//     (*cameras_visible).0 = false;
-//
-// }
+pub fn render_tab_bar(ui: &mut Ui, world: &mut World) {
+    egui::TopBottomPanel::top("tab_bar").show_inside(ui, |ui| {
+        egui::menu::bar(ui, |ui| {
+            let mut system_state: SystemState<(
+                Client,
+                ResMut<Canvas>,
+                ResMut<CameraManager>,
+                ResMut<ShapeManager>,
+                ResMut<TabManager>,
+                ResMut<Toolbar>,
+                Query<(&FileSystemEntry, &FileSystemUiState)>,
+                Query<(&mut Visibility, &OwnedByFileLocal)>,
+            )> = SystemState::new(world);
+            let (
+                mut client,
+                mut canvas,
+                mut camera_manager,
+                mut shape_manager,
+                mut tab_manager,
+                mut toolbar,
+                file_q,
+                mut visibility_q,
+            ) = system_state.get_mut(world);
+
+            tab_manager.render_tabs(
+                &mut client,
+                &mut canvas,
+                &mut camera_manager,
+                &mut shape_manager,
+                &mut toolbar,
+                ui,
+                &file_q,
+                &mut visibility_q,
+            );
+
+            system_state.apply(world);
+        });
+    });
+}

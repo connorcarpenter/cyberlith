@@ -74,4 +74,19 @@ impl Canvas {
         self.has_focus = true;
         self.focus_timer = 1;
     }
+
+    pub fn canvas_size(&self) -> Vec2 {
+        self.canvas_texture_size
+    }
+
+    pub(crate) fn is_position_inside(&self, pos: Vec2) -> bool {
+        // check if position is inside self.canvas_texture_size
+        if pos.x < 0.0 || pos.y < 0.0 {
+            return false;
+        }
+        if pos.x > self.canvas_texture_size.x || pos.y > self.canvas_texture_size.y {
+            return false;
+        }
+        return true;
+    }
 }

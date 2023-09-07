@@ -37,7 +37,7 @@ pub fn input(
         return;
     };
     let input_actions = input.take_actions();
-    let app_actions = input_manager.input_to_app_actions(input_actions);
+    let app_actions = input_manager.input_to_app_actions(&canvas, input_actions);
     if !app_actions.is_empty() {
         shape_manager.update_input(
             app_actions,

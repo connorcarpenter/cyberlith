@@ -21,6 +21,7 @@ pub struct UiState {
     pub dragging_side_panel: bool,
     pub canvas_coords: Option<Pos2>,
     pub resized_window: bool,
+    pub naming_bar_visible: bool,
 }
 
 impl Default for UiState {
@@ -34,6 +35,7 @@ impl Default for UiState {
             dragging_side_panel: false,
             canvas_coords: None,
             resized_window: false,
+            naming_bar_visible: false,
         }
     }
 }
