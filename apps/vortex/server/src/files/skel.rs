@@ -76,7 +76,11 @@ impl SkelWriter {
 
             let vertex_name_opt: Option<String> = {
                 if let Ok(shape_name) = shape_name_q.get(*entity) {
-                    Some((*shape_name.value).clone())
+                    if shape_name.value.len() > 0 {
+                        Some((*shape_name.value).clone())
+                    } else {
+                        None
+                    }
                 } else {
                     None
                 }
@@ -85,7 +89,11 @@ impl SkelWriter {
             let edge_name_opt: Option<String> = {
                 if let Some((edge_entity, _)) = parent_and_edge_entity_opt {
                     if let Ok(shape_name) = shape_name_q.get(edge_entity) {
-                        Some((*shape_name.value).clone())
+                        if shape_name.value.len() > 0 {
+                            Some((*shape_name.value).clone())
+                        } else {
+                            None
+                        }
                     } else {
                         None
                     }
