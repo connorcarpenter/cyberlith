@@ -30,6 +30,7 @@ use crate::app::{
         SelectTriangle, Vertex2d, VertexTypeData,
     },
     resources::{
+        canvas::Canvas,
         action::{ActionStack, ShapeAction},
         camera_manager::{CameraAngle, CameraManager},
         camera_state::CameraState,
@@ -197,6 +198,16 @@ pub struct ShapeManager {
 
     last_vertex_dragged: Option<(Entity, Vec3, Vec3)>,
     compass_vertices: Vec<Entity>,
+}
+
+impl ShapeManager {
+    pub(crate) fn on_canvas_focus_changed(&mut self, new_focus: bool) {
+        self.recalculate_selection();
+        if !new_focus {
+            self.last_vertex_dragged = None;
+            self.hovered_entity = None;
+        }
+    }
 }
 
 impl Default for ShapeManager {
@@ -1573,6 +1584,9 @@ impl ShapeManager {
                 self.selected_shape = None;
             }
             Some((edge_2d_entity, CanvasShape::Edge)) => {
+                if self.current_file_type == FileTypeValue::Skel {
+                    return;
+                }
                 // delete edge
                 let edge_3d_entity = self.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
 
@@ -1727,6 +1741,7 @@ impl ShapeManager {
     pub(crate) fn update_select_line(
         &mut self,
         mouse_position: &Vec2,
+        canvas: &Canvas,
         camera_state: &CameraState,
         transform_q: &mut Query<&mut Transform>,
         visibility_q: &mut Query<&mut Visibility>,
@@ -1787,7 +1802,7 @@ impl ShapeManager {
 
                 select_shape_visibilities[0].visible = true; // select circle is visible
                 select_shape_visibilities[1].visible = false; // no select triangle visible
-                select_shape_visibilities[2].visible = true; // select line is visible
+                select_shape_visibilities[2].visible = canvas.has_focus(); // select line is visible
             }
             Some((selected_edge_entity, CanvasShape::Edge)) => {
                 let selected_edge_transform = {
@@ -1871,22 +1886,27 @@ impl ShapeManager {
                     }
 
                     if cursor_is_hovering {
-                        if self.current_file_type != FileTypeValue::Mesh {
+                        if self.current_file_type == FileTypeValue::Skel {
                             // skel file type does nothing when trying to connect vertices together
                             // needs to always be a new vertex
+                            // select hovered entity
+                            action_stack
+                                .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
                             return;
+                        } else {
+                            match self.hovered_entity.unwrap() {
+                                (_, CanvasShape::Edge) | (_, CanvasShape::Face) => {
+                                    // should not ever be able to attach something to an edge or face?
+                                    // select hovered entity
+                                    action_stack
+                                        .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
+                                    return;
+                                }
+                                _ => {}
+                            }
                         }
 
-                        match self.hovered_entity.unwrap() {
-                            (_, CanvasShape::Edge) | (_, CanvasShape::Face) => {
-                                // should not ever be able to attach something to an edge or face?
-                                // select hovered entity
-                                action_stack
-                                    .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
-                                return;
-                            }
-                            _ => {}
-                        }
+                        // at this point, filetype is Mesh, and we are trying to connect vertices together
 
                         // link vertices together
                         let (vertex_2d_entity_a, _) = self.selected_shape.unwrap();
@@ -1981,10 +2001,8 @@ impl ShapeManager {
                         action_stack.buffer_action(ShapeAction::SelectShape(self.hovered_entity));
                     }
                     (CanvasShape::Edge, MouseButton::Left) => {
-                        if self.current_file_type == FileTypeValue::Mesh {
-                            action_stack
-                                .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
-                        }
+                        action_stack
+                            .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
                     }
                     (CanvasShape::Face, MouseButton::Left) => {
                         if self.current_file_type == FileTypeValue::Mesh {

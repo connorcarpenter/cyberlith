@@ -85,9 +85,11 @@ impl InputManager {
                     output.push(AppInputAction::MiddleMouseScroll(scroll_amount))
                 }
                 InputAction::MouseMoved => output.push(AppInputAction::MouseMoved),
-                InputAction::MouseDragged(click_type, mouse_position, delta) => output.push(
-                    AppInputAction::MouseDragged(click_type, mouse_position, delta),
-                ),
+                InputAction::MouseDragged(click_type, mouse_position, delta) => {
+                    if canvas.has_focus() {
+                        output.push(AppInputAction::MouseDragged(click_type, mouse_position, delta));
+                    }
+                },
                 InputAction::MouseClick(click_type, mouse_position) => {
                     // check if mouse position is outside of canvas
                     if !canvas.is_position_inside(mouse_position) {

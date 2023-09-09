@@ -4,6 +4,8 @@ use math::Vec2;
 
 use render_api::{base::CpuTexture2D, Handle};
 
+use crate::app::resources::shape_manager::ShapeManager;
+
 #[derive(Resource)]
 pub struct Canvas {
     canvas_texture: Option<Handle<CpuTexture2D>>,
@@ -62,17 +64,21 @@ impl Canvas {
         self.has_focus
     }
 
-    pub fn set_focus(&mut self, focus: bool) {
+    pub fn set_focus(&mut self, shape_manager: &mut ShapeManager, focus: bool) {
         if !focus && self.has_focus && self.focus_timer > 0 {
             self.focus_timer -= 1;
             return;
         }
         self.has_focus = focus;
+
+        shape_manager.on_canvas_focus_changed(focus);
     }
 
-    pub fn set_focused_timed(&mut self) {
+    pub fn set_focused_timed(&mut self, shape_manager: &mut ShapeManager) {
         self.has_focus = true;
         self.focus_timer = 1;
+
+        shape_manager.on_canvas_focus_changed(true);
     }
 
     pub(crate) fn is_position_inside(&self, pos: Vec2) -> bool {

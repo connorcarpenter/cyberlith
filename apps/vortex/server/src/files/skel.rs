@@ -87,7 +87,7 @@ impl SkelWriter {
             };
 
             let edge_name_opt: Option<String> = {
-                if let Some((edge_entity, _)) = parent_and_edge_entity_opt {
+                if let Some((_, edge_entity)) = parent_and_edge_entity_opt {
                     if let Ok(shape_name) = shape_name_q.get(edge_entity) {
                         if shape_name.value.len() > 0 {
                             Some((*shape_name.value).clone())
@@ -131,6 +131,9 @@ impl SkelWriter {
         for action in actions {
             match action {
                 SkelAction::Vertex(x, y, z, parent_id_opt, vertex_name_opt, edge_name_opt) => {
+
+                    info!("writing vertex (x: {:?}, y: {:?}, z: {:?}, parent_id_opt: {:?}, vertex_name_opt: {:?}, edge_name_opt: {:?})", x, y, z, parent_id_opt, vertex_name_opt, edge_name_opt);
+
                     // continue bit
                     true.ser(&mut bit_writer);
 

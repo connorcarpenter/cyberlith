@@ -93,6 +93,7 @@ pub fn update_select_line(
 
     shape_manager.update_select_line(
         input.mouse_position(),
+        &canvas,
         current_tab_camera_state,
         &mut transform_q,
         &mut visibility_q,

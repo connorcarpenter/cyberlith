@@ -1,6 +1,6 @@
-use bevy_ecs::{system::{Resource, Commands, Query, ResMut, SystemState}, world::World, entity::Entity};
+use bevy_ecs::{system::{Res, Resource, Commands, Query, ResMut, SystemState}, world::{World, Mut}, entity::Entity};
 
-use render_egui::{egui, egui::{Align, Ui, Button, Frame, Layout}};
+use render_egui::{egui, egui::{TextEdit, Align, Ui, Button, Frame, Layout}};
 use vortex_proto::components::ShapeName;
 
 use crate::app::{resources::{canvas::Canvas, shape_manager::{ShapeManager, CanvasShape}, toolbar::{Toolbar, ToolbarKind}}, ui::UiState};
@@ -32,36 +32,30 @@ pub fn render_naming_bar(ui: &mut Ui, world: &mut World) {
 
             let shape_manager = world.get_resource::<ShapeManager>().unwrap();
             let selected_shape_2d = shape_manager.selected_shape_2d();
-            if selected_shape_2d.is_none() {
-                let mut state = world.get_resource_mut::<NamingBarState>().unwrap();
-                state.visible = false;
-                state.selected_shape_opt = None;
-                return;
-            } else {
-                let state = world.get_resource::<NamingBarState>().unwrap();
-                if state.selected_shape_opt != selected_shape_2d {
 
-                    let (shape_2d_entity, shape) = selected_shape_2d.unwrap();
-                    let shape_manager = world.get_resource::<ShapeManager>().unwrap();
+            let state = world.get_resource::<NamingBarState>().unwrap();
+            if state.selected_shape_opt != selected_shape_2d {
+
+                let mut system_state: SystemState<(ResMut<NamingBarState>, Res<ShapeManager>, Query<&ShapeName>)> =
+                    SystemState::new(world);
+                let (mut state, shape_manager, shape_name_q) = system_state.get_mut(world);
+
+                let official_name = if let Some((shape_2d_entity, shape)) = selected_shape_2d {
                     let shape_3d_entity = shape_manager.shape_entity_2d_to_3d(&shape_2d_entity, shape).unwrap();
 
-                    let mut system_state: SystemState<(ResMut<NamingBarState>, Query<&ShapeName>)> =
-                        SystemState::new(world);
-                    let (mut state, shape_name_q) = system_state.get_mut(world);
-
-
-                    let official_name = if let Ok(shape_name) = shape_name_q.get(shape_3d_entity) {
+                    if let Ok(shape_name) = shape_name_q.get(shape_3d_entity) {
                         (*shape_name.value).clone()
                     } else {
                         "".to_string()
-                    };
+                    }
+                } else {
+                    "".to_string()
+                };
+                state.prev_text = official_name.clone();
+                state.text = official_name;
+                state.selected_shape_opt = selected_shape_2d;
 
-                    state.prev_text = official_name.clone();
-                    state.text = official_name;
-                    state.selected_shape_opt = selected_shape_2d;
-
-                    system_state.apply(world);
-                }
+                system_state.apply(world);
             }
 
             let state = world.get_resource::<NamingBarState>().unwrap();
@@ -108,7 +102,13 @@ pub fn render_naming_bar(ui: &mut Ui, world: &mut World) {
             }
 
             let mut state = world.get_resource_mut::<NamingBarState>().unwrap();
-            ui.text_edit_singleline(&mut state.text);
+            let text_edit = TextEdit::singleline(&mut state.text);
+            let response = ui.add_enabled(selected_shape_2d.is_some(), text_edit);
+            if response.has_focus() {
+                world.resource_scope(|world, mut canvas: Mut<Canvas>| {
+                    canvas.set_focus(&mut world.get_resource_mut::<ShapeManager>().unwrap(), false);
+                });
+            }
 
             ui.label("name: ");
         });
@@ -140,6 +140,7 @@ pub fn naming_bar_visibility_toggle(world: &mut World) {
     ui_state.resized_window = true;
 
     // set focus to canvas
-    let mut canvas = world.get_resource_mut::<Canvas>().unwrap();
-    canvas.set_focused_timed();
+    world.resource_scope(|world, mut canvas: Mut<Canvas>| {
+        canvas.set_focused_timed(&mut world.get_resource_mut::<ShapeManager>().unwrap());
+    });
 }

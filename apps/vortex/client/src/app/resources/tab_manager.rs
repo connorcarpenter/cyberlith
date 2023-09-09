@@ -267,7 +267,7 @@ impl TabManager {
         }
 
         // select new tab
-        self.set_current_tab(canvas, camera_manager, visibility_q, *row_entity);
+        self.set_current_tab(canvas, camera_manager, shape_manager, visibility_q, *row_entity);
         let tab_state = self.tab_map.get_mut(&row_entity).unwrap();
         tab_state.selected = true;
 
@@ -288,13 +288,14 @@ impl TabManager {
         &mut self,
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
+        shape_manager: &mut ShapeManager,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         tab_entity: Entity,
     ) {
         self.current_tab = Some(tab_entity);
 
         canvas.set_visibility(true);
-        canvas.set_focused_timed();
+        canvas.set_focused_timed(shape_manager);
 
         if let Some(current_tab_file_entity) = self.current_tab_entity() {
             for (mut visibility, owned_by_tab) in visibility_q.iter_mut() {
