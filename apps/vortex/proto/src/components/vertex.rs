@@ -15,6 +15,7 @@ impl ProtocolPlugin for VertexComponentsPlugin {
             .add_component::<VertexRoot>()
             .add_component::<OwnedByFile>()
             .add_component::<Edge3d>()
+            .add_component::<EdgeAngle>()
             .add_component::<Face3d>()
             .add_component::<FileType>()
             .add_component::<ShapeName>();
@@ -149,5 +150,31 @@ pub struct ShapeName {
 impl ShapeName {
     pub fn new(value: String) -> Self {
         Self::new_complete(value)
+    }
+}
+
+// EdgeAngle
+#[derive(Component, Replicate)]
+pub struct EdgeAngle {
+    pub value: Property<u8>,
+}
+
+impl EdgeAngle {
+    pub fn new(value_f32: f32) -> Self {
+        let value_u8 = (value_f32 * 255.0 / 360.0) as u8;
+        Self::new_complete(value_u8)
+    }
+
+    // angle in degrees
+    pub fn get(&self) -> f32 {
+        let value: u8 = *self.value;
+        let value_f32 = value as f32;
+        value_f32 * 360.0 / 255.0
+    }
+
+    // angle in degrees
+    pub fn set(&mut self, value: f32) {
+        let value_u8 = (value * 255.0 / 360.0) as u8;
+        *self.value = value_u8.into();
     }
 }

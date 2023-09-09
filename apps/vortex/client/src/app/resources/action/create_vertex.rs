@@ -43,10 +43,10 @@ pub(crate) fn execute(
 
     {
         match &vertex_type_data {
-            VertexTypeData::Skel(parent_entity, _) => {
+            VertexTypeData::Skel(parent_entity, edge_angle, _) => {
                 info!(
-                    "CreateVertexSkel(parent: {:?}, position: {:?})",
-                    parent_entity, position
+                    "CreateVertexSkel(parent: {:?}, edge_angle: {:?}, position: {:?})",
+                    parent_entity, edge_angle, position
                 );
             }
             VertexTypeData::Mesh(_, _) => {
@@ -131,7 +131,7 @@ pub(crate) fn execute(
     ) = system_state.get_mut(world);
 
     match vertex_type_data {
-        VertexTypeData::Skel(parent_vertex_2d_entity, children_opt) => {
+        VertexTypeData::Skel(parent_vertex_2d_entity, edge_angle, children_opt) => {
             if let Some(children) = children_opt {
                 create_networked_children_tree(
                     action_stack,
@@ -159,6 +159,7 @@ pub(crate) fn execute(
                 new_vertex_3d_entity,
                 *tab_file_entity,
                 FileTypeValue::Skel,
+                edge_angle,
                 &mut entities_to_release,
             );
         }
@@ -177,6 +178,7 @@ pub(crate) fn execute(
                     new_vertex_3d_entity,
                     *tab_file_entity,
                     FileTypeValue::Mesh,
+                    0.0,
                     &mut entities_to_release,
                 );
                 edge_3d_entities.push(new_edge_3d_entity);
@@ -324,6 +326,7 @@ pub(crate) fn create_networked_children_tree(
         let grandchildren_opt = child.children();
         let old_child_vertex_3d_entity = child.entity_3d();
         let old_child_vertex_2d_entity = child.entity_2d();
+        let edge_angle = child.edge_angle();
 
         let (new_child_vertex_2d_entity, new_child_vertex_3d_entity) = create_networked_vertex(
             commands,
@@ -355,6 +358,7 @@ pub(crate) fn create_networked_children_tree(
             new_child_vertex_3d_entity,
             file_entity,
             FileTypeValue::Skel,
+            edge_angle,
             entities_to_release,
         );
         if let Some(grandchildren) = grandchildren_opt {

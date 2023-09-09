@@ -1966,7 +1966,7 @@ impl ShapeManager {
                             action_stack.buffer_action(ShapeAction::CreateVertex(
                                 match self.current_file_type {
                                     FileTypeValue::Skel => {
-                                        VertexTypeData::Skel(vertex_2d_entity, None)
+                                        VertexTypeData::Skel(vertex_2d_entity, 0.0,None)
                                     }
                                     FileTypeValue::Mesh => VertexTypeData::Mesh(
                                         vec![(vertex_2d_entity, None)],

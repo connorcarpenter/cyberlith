@@ -12,7 +12,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{Edge3d, FileType, FileTypeValue, OwnedByFile};
+use vortex_proto::components::{Edge3d, EdgeAngle, FileType, FileTypeValue, OwnedByFile};
 
 use crate::app::{
     components::Vertex2d,
@@ -94,6 +94,7 @@ pub(crate) fn execute(
             vertex_3d_entity_b,
             *tab_file_entity,
             FileTypeValue::Mesh,
+            0.0,
             &mut entities_to_release,
         );
         created_edge_2d_entity = new_edge_2d_entity;
@@ -222,6 +223,7 @@ pub fn create_networked_edge(
     child_vertex_3d_entity: Entity,
     file_entity: Entity,
     file_type: FileTypeValue,
+    edge_angle: f32,
     entities_to_release: &mut Vec<Entity>,
 ) -> (Entity, Entity) {
     // create new 3d edge
@@ -248,6 +250,10 @@ pub fn create_networked_edge(
         .insert(owned_by_file_component)
         .insert(FileType::new(file_type))
         .id();
+
+    if file_type == FileTypeValue::Skel {
+        commands.entity(new_edge_3d_entity).insert(EdgeAngle::new(edge_angle));
+    }
 
     // create new 2d edge, add local components to 3d edge
     let new_edge_2d_entity = shape_manager.edge_3d_postprocess(

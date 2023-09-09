@@ -6,7 +6,7 @@ use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt};
 
-use vortex_proto::components::{Edge3d, FileType, FileTypeValue, Vertex3d};
+use vortex_proto::components::{Edge3d, EdgeAngle, FileType, FileTypeValue, Vertex3d};
 
 use crate::app::{
     components::{VertexEntry, VertexTypeData},
@@ -28,7 +28,7 @@ pub(crate) fn execute(
         Client,
         ResMut<ShapeManager>,
         Query<(Entity, &Vertex3d)>,
-        Query<&Edge3d>,
+        Query<(&Edge3d, &EdgeAngle)>,
         Query<&FileType>,
     )> = SystemState::new(world);
     let (mut commands, mut client, mut shape_manager, vertex_q, edge_3d_q, file_type_q) =
@@ -46,9 +46,10 @@ pub(crate) fn execute(
     match file_type_value {
         FileTypeValue::Skel => {
             // get parent entity
-            let parent_vertex_2d_entity = {
+            let (parent_vertex_2d_entity, edge_angle) = {
                 let mut parent_vertex_3d_entity = None;
-                for edge_3d in edge_3d_q.iter() {
+                let mut edge_angle = None;
+                for (edge_3d, item_edge_angle) in edge_3d_q.iter() {
                     let Some(child_entity) = edge_3d.end.get(&client) else {
                         continue;
                     };
@@ -57,6 +58,7 @@ pub(crate) fn execute(
                     };
                     if child_entity == vertex_3d_entity {
                         parent_vertex_3d_entity = Some(parent_entity);
+                        edge_angle = Some(item_edge_angle.get());
                         break;
                     }
                 }
@@ -66,9 +68,9 @@ pub(crate) fn execute(
                         vertex_3d_entity
                     );
                 }
-                shape_manager
+                (shape_manager
                     .vertex_entity_3d_to_2d(&parent_vertex_3d_entity.unwrap())
-                    .unwrap()
+                    .unwrap(), edge_angle.unwrap())
             };
 
             // get entries
@@ -86,6 +88,7 @@ pub(crate) fn execute(
 
             let rev_vertex_type_data = VertexTypeData::Skel(
                 parent_vertex_2d_entity,
+                edge_angle,
                 entry_contents_opt
                     .map(|entries| entries.into_iter().map(|(_, entry)| entry).collect()),
             );
@@ -119,7 +122,7 @@ pub(crate) fn execute(
                 panic!("Failed to get connected edges for vertex entity {:?}!", vertex_3d_entity);
             };
             for edge_3d_entity in connected_edges {
-                let edge_3d = edge_3d_q.get(edge_3d_entity).unwrap();
+                let (edge_3d, _) = edge_3d_q.get(edge_3d_entity).unwrap();
                 let start_vertex_3d_entity = edge_3d.start.get(&client).unwrap();
                 let end_vertex_3d_entity = edge_3d.end.get(&client).unwrap();
 
@@ -235,11 +238,11 @@ fn convert_vertices_to_tree(
     shape_manager: &mut ShapeManager,
     parent_3d_entity: &Entity,
     vertex_3d_q: &Query<(Entity, &Vertex3d)>,
-    edge_3d_q: &Query<&Edge3d>,
+    edge_3d_q: &Query<(&Edge3d, &EdgeAngle)>,
 ) -> Vec<(Entity, VertexEntry)> {
     let mut output = Vec::new();
 
-    for edge_3d in edge_3d_q.iter() {
+    for (edge_3d, edge_angle) in edge_3d_q.iter() {
         let Some(parent_entity) = edge_3d.start.get(client) else {
             warn!("edge start not found");
             continue;
@@ -259,7 +262,7 @@ fn convert_vertices_to_tree(
             };
 
             let child_entry =
-                VertexEntry::new(child_entity_2d, child_entity_3d, vertex_3d.as_vec3());
+                VertexEntry::new(child_entity_2d, child_entity_3d, vertex_3d.as_vec3(), edge_angle.get());
             output.push((child_entity_3d, child_entry));
         }
     }

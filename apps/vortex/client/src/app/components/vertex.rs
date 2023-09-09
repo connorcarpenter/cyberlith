@@ -25,15 +25,17 @@ pub struct VertexEntry {
     entity_2d: Entity,
     entity_3d: Entity,
     position: Vec3,
+    edge_angle: f32,
     children: Option<Vec<VertexEntry>>,
 }
 
 impl VertexEntry {
-    pub fn new(entity_2d: Entity, entity_3d: Entity, position: Vec3) -> Self {
+    pub fn new(entity_2d: Entity, entity_3d: Entity, position: Vec3, edge_angle: f32) -> Self {
         Self {
             entity_2d,
             entity_3d,
             position,
+            edge_angle,
             children: None,
         }
     }
@@ -54,6 +56,8 @@ impl VertexEntry {
         self.position
     }
 
+    pub fn edge_angle(&self) -> f32 { self.edge_angle }
+
     pub fn children(&self) -> Option<Vec<VertexEntry>> {
         self.children.clone()
     }
@@ -72,7 +76,7 @@ impl Compass {
 #[derive(Clone)]
 pub enum VertexTypeData {
     // parent_vertex_2d_entity, children_tree_opt
-    Skel(Entity, Option<Vec<VertexEntry>>),
+    Skel(Entity, f32, Option<Vec<VertexEntry>>),
     // Vec<connected 2d vertex, optional old edge 2d entity>, Vec<2d vertex pair with which to form a face, old face 2d entity>
     Mesh(
         Vec<(Entity, Option<Entity>)>,
@@ -83,7 +87,7 @@ pub enum VertexTypeData {
 impl VertexTypeData {
     pub fn to_file_type_value(&self) -> FileTypeValue {
         match self {
-            VertexTypeData::Skel(_, _) => FileTypeValue::Skel,
+            VertexTypeData::Skel(_, _, _) => FileTypeValue::Skel,
             VertexTypeData::Mesh(_, _) => FileTypeValue::Mesh,
         }
     }
@@ -96,7 +100,7 @@ impl VertexTypeData {
         new_3d_entity: Entity,
     ) {
         match self {
-            VertexTypeData::Skel(parent_2d_vertex_entity, children_opt) => {
+            VertexTypeData::Skel(parent_2d_vertex_entity, _, children_opt) => {
                 if *parent_2d_vertex_entity == old_2d_entity {
                     *parent_2d_vertex_entity = new_2d_entity;
                 }
@@ -128,7 +132,7 @@ impl VertexTypeData {
 
     pub fn migrate_edge_entities(&mut self, old_2d_entity: Entity, new_2d_entity: Entity) {
         match self {
-            VertexTypeData::Skel(_, _) => {}
+            VertexTypeData::Skel(_, _, _) => {}
             VertexTypeData::Mesh(connected_vertices, _) => {
                 for (_, connected_edge_opt) in connected_vertices {
                     if let Some(connected_edge) = connected_edge_opt {
@@ -143,7 +147,7 @@ impl VertexTypeData {
 
     pub fn migrate_face_entities(&mut self, old_2d_entity: Entity, new_2d_entity: Entity) {
         match self {
-            VertexTypeData::Skel(_, _) => {}
+            VertexTypeData::Skel(_, _, _) => {}
             VertexTypeData::Mesh(_, connected_faces) => {
                 for (_, _, face_2d_entity, _) in connected_faces {
                     if *face_2d_entity == old_2d_entity {

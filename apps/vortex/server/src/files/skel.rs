@@ -12,9 +12,7 @@ use naia_bevy_server::{
     UnsignedVariableInteger,
 };
 
-use vortex_proto::components::{
-    Edge3d, FileType, FileTypeValue, Vertex3d, VertexRoot, VertexSerdeInt, ShapeName,
-};
+use vortex_proto::components::{Edge3d, FileType, FileTypeValue, Vertex3d, VertexRoot, VertexSerdeInt, ShapeName, EdgeAngle};
 
 use crate::{
     files::{
@@ -27,8 +25,8 @@ use crate::{
 // Actions
 #[derive(Debug)]
 enum SkelAction {
-    //////// x,   y,   z, parent_id (0 for none), vertex_name, edge_name //
-    Vertex(i16, i16, i16, Option<u16>, Option<String>, Option<String>),
+    //////// x,   y,   z, Option<parent_id, angle>, vertex_name, edge_name //
+    Vertex(i16, i16, i16, Option<(u16, u8)>, Option<String>, Option<String>),
 }
 
 // Writer
@@ -48,14 +46,14 @@ impl SkelWriter {
         world: &mut World,
         content_entities: &Vec<Entity>,
     ) -> Vec<SkelAction> {
-        let mut system_state: SystemState<(Res<ShapeManager>, Query<&Vertex3d>, Query<&FileType>, Query<&ShapeName>)> =
+        let mut system_state: SystemState<(Res<ShapeManager>, Query<&Vertex3d>, Query<&FileType>, Query<&ShapeName>, Query<&EdgeAngle>)> =
             SystemState::new(world);
-        let (shape_manager, vertex_q, file_type_q, shape_name_q) = system_state.get_mut(world);
+        let (shape_manager, vertex_q, file_type_q, shape_name_q, edge_angle_q) = system_state.get_mut(world);
 
         let mut output = Vec::new();
 
-        ///////////////////////////////  id,   x,   y,   z,  parent_entity,    vertex_name,      edge_name ///////////////////
-        let mut map: HashMap<Entity, (usize, i16, i16, i16, Option<Entity>, Option<String>, Option<String>)> = HashMap::new();
+        ///////////////////////////////  id,   x,   y,   z, Option<parent_entity, angle>, vertex_name, edge_name ///////////////////
+        let mut map: HashMap<Entity, (usize, i16, i16, i16, Option<(Entity, u8)>, Option<String>, Option<String>)> = HashMap::new();
         let mut vertices: Vec<Entity> = Vec::new();
 
         for entity in content_entities.iter() {
@@ -102,7 +100,13 @@ impl SkelWriter {
                 }
             };
 
-            let parent_entity_opt = parent_and_edge_entity_opt.map(|(parent_entity, _)| parent_entity);
+            let parent_entity_opt = parent_and_edge_entity_opt.map(|(parent_entity, edge_entity)| {
+                let Ok(edge_angle) = edge_angle_q.get(edge_entity) else {
+                    panic!("edge_entity {:?} does not have an EdgeAngle component!", edge_entity);
+                };
+                let edge_angle_val: u8 = *edge_angle.value;
+                (parent_entity, edge_angle_val)
+            });
 
             let id = vertices.len();
             map.insert(
@@ -114,9 +118,9 @@ impl SkelWriter {
 
         for entity in vertices.iter() {
             let (_, x, y, z, parent_entity_opt, vertex_name_opt, edge_name_opt) = map.get(entity).unwrap();
-            let parent_id = parent_entity_opt.map(|parent_entity| {
+            let parent_id = parent_entity_opt.map(|(parent_entity, angle)| {
                 let (parent_id, _, _, _, _, _, _) = map.get(&parent_entity).unwrap();
-                *parent_id as u16
+                (*parent_id as u16, angle)
             });
             let vertex_info = SkelAction::Vertex(*x, *y, *z, parent_id, vertex_name_opt.clone(), edge_name_opt.clone());
             output.push(vertex_info);
@@ -144,13 +148,18 @@ impl SkelWriter {
 
                     // Parent Id
                     let parent_id = {
-                        if let Some(parent_id) = parent_id_opt {
+                        if let Some((parent_id, _)) = parent_id_opt {
                             parent_id + 1
                         } else {
                             0
                         }
                     };
                     UnsignedVariableInteger::<6>::from(parent_id).ser(&mut bit_writer);
+
+                    // Angle
+                    if let Some((_, angle)) = parent_id_opt {
+                        angle.ser(&mut bit_writer);
+                    }
 
                     // Names
                     vertex_name_opt.ser(&mut bit_writer);
@@ -217,10 +226,16 @@ impl SkelReader {
                     Some(parent_id - 1)
                 }
             };
+            let parent_and_angle_opt = if let Some(parent_id) = parent_id_opt {
+                let angle = u8::de(bit_reader)?;
+                Some((parent_id, angle))
+            } else {
+                None
+            };
             let vertex_name_opt = Option::<String>::de(bit_reader)?;
             let edge_name_opt = Option::<String>::de(bit_reader)?;
 
-            output.push(SkelAction::Vertex(x, y, z, parent_id_opt, vertex_name_opt, edge_name_opt));
+            output.push(SkelAction::Vertex(x, y, z, parent_and_angle_opt, vertex_name_opt, edge_name_opt));
         }
         Ok(output)
     }
@@ -232,7 +247,7 @@ impl SkelReader {
     ) -> Result<FileReadOutput, SerdeErr> {
         let mut output = Vec::new();
 
-        let mut entities: Vec<(Entity, i16, i16, i16, Option<u16>, Option<String>, Option<String>)> = Vec::new();
+        let mut entities: Vec<(Entity, i16, i16, i16, Option<(u16, u8)>, Option<String>, Option<String>)> = Vec::new();
 
         for action in actions {
             match action {
@@ -263,7 +278,7 @@ impl SkelReader {
                     .insert(ShapeName::new(vertex_name.clone()));
             }
 
-            if let Some(parent_id) = parent_id_opt {
+            if let Some((parent_id, edge_angle)) = parent_id_opt {
                 let Some((parent_entity, _, _, _, _, _, _)) = entities.get(*parent_id as usize) else {
                     panic!("parent_id {:?} not found", parent_id);
                 };
@@ -277,6 +292,7 @@ impl SkelReader {
                     // setting to Delegated to match client-created edges
                     .configure_replication(ReplicationConfig::Delegated)
                     .insert(edge_component)
+                    .insert(EdgeAngle::new_complete(*edge_angle))
                     .id();
 
                 if let Some(edge_name) = edge_name_opt {
