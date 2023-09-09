@@ -22,7 +22,7 @@ use render_api::{
     Assets, Handle,
 };
 
-use vortex_proto::components::{Face3d, FileTypeValue, OwnedByFile, Vertex3d, VertexRoot};
+use vortex_proto::components::{EdgeAngle, Face3d, FileTypeValue, OwnedByFile, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::{
@@ -363,7 +363,7 @@ impl ShapeManager {
 
         vertex_3d_q: &mut Query<(Entity, &mut Vertex3d)>,
         edge_2d_q: &Query<(Entity, &Edge2dLocal)>,
-        edge_3d_q: &Query<(Entity, &Edge3dLocal)>,
+        edge_3d_q: &Query<(Entity, &Edge3dLocal, Option<&EdgeAngle>)>,
         face_2d_q: &Query<(Entity, &FaceIcon2d)>,
     ) {
         if self.shapes_recalc == 0 {
@@ -511,11 +511,13 @@ impl ShapeManager {
         }
 
         // update 3d edges
-        for (edge_entity, edge_endpoints) in edge_3d_q.iter() {
+        for (edge_entity, edge_endpoints, edge_angle_opt) in edge_3d_q.iter() {
             // check if vertex is owned by the current tab
             if !Self::is_owned_by_tab_or_unowned(current_tab_file_entity, owned_by_q, edge_entity) {
                 continue;
             }
+
+            let edge_angle_opt = edge_angle_opt.map(|angle| angle.get());
 
             let edge_start_entity = edge_endpoints.start;
             let edge_end_entity = edge_endpoints.end;
@@ -534,7 +536,7 @@ impl ShapeManager {
             };
             let end_pos = end_transform.translation;
             let mut edge_transform = transform_q.get_mut(edge_entity).unwrap();
-            set_3d_line_transform(&mut edge_transform, start_pos, end_pos);
+            set_3d_line_transform(&mut edge_transform, start_pos, end_pos, edge_angle_opt);
             if compass_q.get(edge_entity).is_ok() {
                 edge_transform.scale.x = compass_edge_3d_scale;
                 edge_transform.scale.y = compass_edge_3d_scale;

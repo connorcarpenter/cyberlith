@@ -11,7 +11,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::Vertex3d;
+use vortex_proto::components::{EdgeAngle, Vertex3d};
 
 use crate::app::{
     components::{Compass, Edge2dLocal, Edge3dLocal, FaceIcon2d, OwnedByFileLocal},
@@ -35,7 +35,7 @@ pub fn sync_vertices(
 
     mut vertex_3d_q: Query<(Entity, &mut Vertex3d)>,
     edge_2d_q: Query<(Entity, &Edge2dLocal)>,
-    edge_3d_q: Query<(Entity, &Edge3dLocal)>,
+    edge_3d_q: Query<(Entity, &Edge3dLocal, Option<&EdgeAngle>)>,
     face_2d_q: Query<(Entity, &FaceIcon2d)>,
 ) {
     if !canvas.is_visible() {
