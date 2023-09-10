@@ -21,6 +21,7 @@ use vortex_proto::{
         FileSystemRootChild, FileType, OwnedByFile, Vertex3d, VertexRoot,
     },
 };
+use vortex_proto::components::EdgeAngle;
 
 use crate::app::{
     components::file_system::{FileSystemEntryLocal, ChangelistUiState, FileSystemParent, FileSystemUiState},
@@ -49,6 +50,7 @@ pub fn insert_component_events(
     mut insert_owned_by_event_writer: EventWriter<InsertComponentEvent<OwnedByFile>>,
     mut insert_file_type_event_writer: EventWriter<InsertComponentEvent<FileType>>,
     mut insert_edge_3d_event_writer: EventWriter<InsertComponentEvent<Edge3d>>,
+    mut insert_edge_angle_event_writer: EventWriter<InsertComponentEvent<EdgeAngle>>,
     mut insert_face_3d_event_writer: EventWriter<InsertComponentEvent<Face3d>>,
 ) {
     for events in event_reader.iter() {
@@ -96,6 +98,11 @@ pub fn insert_component_events(
         // on Edge3d Insert Event
         for entity in events.read::<Edge3d>() {
             insert_edge_3d_event_writer.send(InsertComponentEvent::<Edge3d>::new(entity));
+        }
+
+        // on EdgeAngle Insert Event
+        for entity in events.read::<EdgeAngle>() {
+            insert_edge_angle_event_writer.send(InsertComponentEvent::<EdgeAngle>::new(entity));
         }
 
         // on Face3d Insert Event
@@ -289,6 +296,7 @@ pub fn insert_edge_events(
     mut commands: Commands,
     client: Client,
     mut edge_3d_events: EventReader<InsertComponentEvent<Edge3d>>,
+    mut edge_angle_events: EventReader<InsertComponentEvent<EdgeAngle>>,
 
     // for vertices
     mut camera_manager: ResMut<CameraManager>,
@@ -298,6 +306,7 @@ pub fn insert_edge_events(
     mut shape_waitlist: ResMut<ShapeWaitlist>,
 
     edge_3d_q: Query<&Edge3d>,
+    edge_angle_q: Query<&EdgeAngle>,
     transform_q: Query<&Transform>,
 ) {
     // on Edge3d Insert Event
@@ -326,6 +335,27 @@ pub fn insert_edge_events(
             &transform_q,
             &edge_entity,
             ShapeWaitlistInsert::Edge(start_entity, end_entity),
+        );
+    }
+
+    // on EdgeAngle Insert Event
+    for event in edge_angle_events.iter() {
+        // handle vertex
+        let edge_entity = event.entity;
+
+        info!("entity: {:?} - inserted EdgeAngle", edge_entity);
+
+        let edge_3d = edge_angle_q.get(edge_entity).unwrap();
+
+        shape_waitlist.process_insert(
+            &mut commands,
+            &mut meshes,
+            &mut materials,
+            &mut camera_manager,
+            &mut shape_manager,
+            &transform_q,
+            &edge_entity,
+            ShapeWaitlistInsert::EdgeAngle(edge_3d.get()),
         );
     }
 }

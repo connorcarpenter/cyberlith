@@ -42,6 +42,7 @@ use crate::app::{
         create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,
     },
 };
+use crate::app::components::EdgeAngleLocal;
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub enum CanvasShape {
@@ -88,15 +89,17 @@ struct Edge3dData {
     vertex_a_3d_entity: Entity,
     vertex_b_3d_entity: Entity,
     faces_3d: HashSet<FaceKey>,
+    angle_entity_opt: Option<Entity>,
 }
 
 impl Edge3dData {
-    fn new(entity_2d: Entity, vertex_a_3d_entity: Entity, vertex_b_3d_entity: Entity) -> Self {
+    fn new(entity_2d: Entity, vertex_a_3d_entity: Entity, vertex_b_3d_entity: Entity, angle_entity_opt: Option<Entity>) -> Self {
         Self {
             entity_2d,
             vertex_a_3d_entity,
             vertex_b_3d_entity,
             faces_3d: HashSet::new(),
+            angle_entity_opt,
         }
     }
 
@@ -653,6 +656,7 @@ impl ShapeManager {
         vertex_a_3d_entity: Entity,
         vertex_b_3d_entity: Entity,
         ownership_opt: Option<Entity>,
+        angle_entity_opt: Option<Entity>,
     ) {
         for vertex_3d_entity in [vertex_a_3d_entity, vertex_b_3d_entity] {
             let Some(vertex_3d_data) = self.vertices_3d.get_mut(&vertex_3d_entity) else {
@@ -668,7 +672,7 @@ impl ShapeManager {
 
         self.edges_3d.insert(
             edge_3d_entity,
-            Edge3dData::new(edge_2d_entity, vertex_a_3d_entity, vertex_b_3d_entity),
+            Edge3dData::new(edge_2d_entity, vertex_a_3d_entity, vertex_b_3d_entity, angle_entity_opt),
         );
         self.edges_2d.insert(edge_2d_entity, edge_3d_entity);
 
@@ -1472,6 +1476,7 @@ impl ShapeManager {
         ownership_opt: Option<Entity>,
         color: Color,
         arrows_not_lines: bool,
+        edge_angle_opt: Option<f32>,
     ) -> Entity {
         // edge 3d
         let shape_components = if arrows_not_lines {
@@ -1486,39 +1491,67 @@ impl ShapeManager {
             .insert(Edge3dLocal::new(vertex_a_3d_entity, vertex_b_3d_entity));
 
         // edge 2d
-        let shape_components = if arrows_not_lines {
-            create_2d_edge_arrow(
-                meshes,
-                materials,
-                Vec2::ZERO,
-                Vec2::X,
-                color,
-                Edge2dLocal::NORMAL_THICKNESS,
-            )
-        } else {
-            create_2d_edge_line(
-                meshes,
-                materials,
-                Vec2::ZERO,
-                Vec2::X,
-                color,
-                Edge2dLocal::NORMAL_THICKNESS,
-            )
+        let edge_2d_entity = {
+            let shape_components = if arrows_not_lines {
+                create_2d_edge_arrow(
+                    meshes,
+                    materials,
+                    Vec2::ZERO,
+                    Vec2::X,
+                    color,
+                    Edge2dLocal::NORMAL_THICKNESS,
+                )
+            } else {
+                create_2d_edge_line(
+                    meshes,
+                    materials,
+                    Vec2::ZERO,
+                    Vec2::X,
+                    color,
+                    Edge2dLocal::NORMAL_THICKNESS,
+                )
+            };
+            let edge_2d_entity = commands
+                .spawn_empty()
+                .insert(shape_components)
+                .insert(camera_manager.layer_2d)
+                .insert(Edge2dLocal::new(vertex_a_2d_entity, vertex_b_2d_entity))
+                .id();
+            if let Some(file_entity) = ownership_opt {
+                commands
+                    .entity(edge_2d_entity)
+                    .insert(OwnedByFileLocal::new(file_entity));
+                commands
+                    .entity(edge_3d_entity)
+                    .insert(OwnedByFileLocal::new(file_entity));
+            }
+            edge_2d_entity
         };
-        let edge_2d_entity = commands
-            .spawn_empty()
-            .insert(shape_components)
-            .insert(camera_manager.layer_2d)
-            .insert(Edge2dLocal::new(vertex_a_2d_entity, vertex_b_2d_entity))
-            .id();
-        if let Some(file_entity) = ownership_opt {
-            commands
-                .entity(edge_2d_entity)
-                .insert(OwnedByFileLocal::new(file_entity));
-            commands
-                .entity(edge_3d_entity)
-                .insert(OwnedByFileLocal::new(file_entity));
-        }
+
+        // Edge Angle
+        let edge_angle_entity_opt = if let Some(edge_angle) = edge_angle_opt {
+            let shape_components = create_2d_edge_arrow(
+                meshes,
+                materials,
+                Vec2::ZERO,
+                Vec2::X,
+                color,
+                Edge2dLocal::NORMAL_THICKNESS,
+            );
+            let edge_angle_entity = commands.spawn_empty()
+                .insert(shape_components)
+                .insert(camera_manager.layer_2d)
+                .insert(EdgeAngleLocal::new(edge_angle))
+                .id();
+            if let Some(file_entity) = ownership_opt {
+                commands
+                    .entity(edge_angle_entity)
+                    .insert(OwnedByFileLocal::new(file_entity));
+            }
+            Some(edge_angle_entity)
+        } else {
+            None
+        };
 
         // register 3d & 2d edges together
         self.register_3d_edge(
@@ -1527,6 +1560,7 @@ impl ShapeManager {
             vertex_a_3d_entity,
             vertex_b_3d_entity,
             ownership_opt,
+            edge_angle_entity_opt,
         );
 
         edge_2d_entity
@@ -2403,6 +2437,7 @@ impl ShapeManager {
                 None,
                 color,
                 false,
+                None,
             );
             new_edge_2d_entity_opt = Some(new_edge_2d_entity);
             new_edge_3d_entity_opt = Some(new_edge_3d_entity);

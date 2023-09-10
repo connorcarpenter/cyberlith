@@ -94,7 +94,7 @@ pub(crate) fn execute(
             vertex_3d_entity_b,
             *tab_file_entity,
             FileTypeValue::Mesh,
-            0.0,
+            None,
             &mut entities_to_release,
         );
         created_edge_2d_entity = new_edge_2d_entity;
@@ -223,7 +223,7 @@ pub fn create_networked_edge(
     child_vertex_3d_entity: Entity,
     file_entity: Entity,
     file_type: FileTypeValue,
-    edge_angle: f32,
+    edge_angle: Option<f32>,
     entities_to_release: &mut Vec<Entity>,
 ) -> (Entity, Entity) {
     // create new 3d edge
@@ -252,7 +252,8 @@ pub fn create_networked_edge(
         .id();
 
     if file_type == FileTypeValue::Skel {
-        commands.entity(new_edge_3d_entity).insert(EdgeAngle::new(edge_angle));
+        let edge_angle_f32 = edge_angle.unwrap();
+        commands.entity(new_edge_3d_entity).insert(EdgeAngle::new(edge_angle_f32));
     }
 
     // create new 2d edge, add local components to 3d edge
@@ -269,6 +270,7 @@ pub fn create_networked_edge(
         Some(file_entity),
         Vertex2d::CHILD_COLOR,
         file_type == FileTypeValue::Skel,
+        edge_angle,
     );
 
     entities_to_release.push(new_edge_3d_entity);

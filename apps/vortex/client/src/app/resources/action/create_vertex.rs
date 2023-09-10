@@ -159,7 +159,7 @@ pub(crate) fn execute(
                 new_vertex_3d_entity,
                 *tab_file_entity,
                 FileTypeValue::Skel,
-                edge_angle,
+                Some(edge_angle),
                 &mut entities_to_release,
             );
         }
@@ -178,7 +178,7 @@ pub(crate) fn execute(
                     new_vertex_3d_entity,
                     *tab_file_entity,
                     FileTypeValue::Mesh,
-                    0.0,
+                    None,
                     &mut entities_to_release,
                 );
                 edge_3d_entities.push(new_edge_3d_entity);
@@ -358,7 +358,7 @@ pub(crate) fn create_networked_children_tree(
             new_child_vertex_3d_entity,
             file_entity,
             FileTypeValue::Skel,
-            edge_angle,
+            Some(edge_angle),
             entities_to_release,
         );
         if let Some(grandchildren) = grandchildren_opt {

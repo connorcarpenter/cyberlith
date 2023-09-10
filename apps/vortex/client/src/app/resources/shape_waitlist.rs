@@ -26,6 +26,7 @@ pub enum ShapeWaitlistInsert {
     VertexRoot,
     Edge(Entity, Entity),
     Face(Entity, Entity, Entity, Entity, Entity, Entity),
+    EdgeAngle(f32),
     OwnedByFile(Entity),
     FileType(FileTypeValue),
 }
@@ -39,7 +40,7 @@ enum ShapeType {
 
 enum ShapeData {
     Vertex(Option<Entity>),
-    Edge(Entity, Entity),
+    Edge(Entity, Entity, Option<f32>),
     Face(Entity, Entity, Entity, Entity, Entity, Entity),
 }
 
@@ -49,6 +50,7 @@ pub struct ShapeWaitlistEntry {
     vertex_parent: Option<Option<Entity>>,
     file_entity: Option<Entity>,
     edge_entities: Option<(Entity, Entity)>,
+    edge_angle: Option<f32>,
     // Option<vertex a, vertex b, vertex c, edge a, edge b, edge c>
     face_entities: Option<(Entity, Entity, Entity, Entity, Entity, Entity)>,
     file_type: Option<FileTypeValue>,
@@ -63,6 +65,7 @@ impl ShapeWaitlistEntry {
             edge_entities: None,
             face_entities: None,
             file_type: None,
+            edge_angle: None,
         }
     }
 
@@ -79,9 +82,20 @@ impl ShapeWaitlistEntry {
                 }
             },
             Some(ShapeType::Edge) => {
-                self.file_type.is_some()
-                    && self.file_entity.is_some()
-                    && self.edge_entities.is_some()
+                match self.file_type {
+                    None => return false,
+                    Some(FileTypeValue::Skel) => {
+                        return self.file_entity.is_some()
+                            && self.edge_entities.is_some()
+                            && self.edge_angle.is_some()
+                    }
+                    Some(FileTypeValue::Mesh) => {
+                        return self.file_entity.is_some() && self.edge_entities.is_some()
+                    }
+                    Some(FileTypeValue::Anim) => {
+                        panic!("");
+                    }
+                }
             }
             Some(ShapeType::Face) => {
                 self.file_type.is_some()
@@ -117,6 +131,10 @@ impl ShapeWaitlistEntry {
         self.edge_entities = Some((start, end));
     }
 
+    fn set_edge_angle(&mut self, angle: f32) {
+        self.edge_angle = Some(angle);
+    }
+
     fn set_face(
         &mut self,
         vertex_a: Entity,
@@ -148,9 +166,14 @@ impl ShapeWaitlistEntry {
                 ShapeData::Vertex(self.vertex_parent.unwrap())
             }
             (ShapeType::Vertex, FileTypeValue::Mesh) => ShapeData::Vertex(None),
-            (ShapeType::Edge, _) => {
+            (ShapeType::Edge, FileTypeValue::Mesh) => {
                 let entities = self.edge_entities.unwrap();
-                ShapeData::Edge(entities.0, entities.1)
+                ShapeData::Edge(entities.0, entities.1, None)
+            }
+            (ShapeType::Edge, FileTypeValue::Skel) => {
+                let entities = self.edge_entities.unwrap();
+                let edge_angle = self.edge_angle.unwrap();
+                ShapeData::Edge(entities.0, entities.1, Some(edge_angle))
             }
             (ShapeType::Face, _) => {
                 let (vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c) =
@@ -225,6 +248,9 @@ impl ShapeWaitlist {
                     "Entities to check for readiness... `{:?}`",
                     possibly_ready_entities
                 );
+            }
+            ShapeWaitlistInsert::EdgeAngle(angle) => {
+                self.get_mut(&entity).unwrap().set_edge_angle(angle);
             }
             ShapeWaitlistInsert::Face(vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c) => {
                 self.get_mut(&entity)
@@ -406,7 +432,7 @@ impl ShapeWaitlist {
                     color,
                 );
             }
-            (ShapeData::Edge(start_3d, end_3d), _) => {
+            (ShapeData::Edge(start_3d, end_3d, edge_angle_opt), _) => {
                 let start_2d = shape_manager.vertex_entity_3d_to_2d(&start_3d).unwrap();
                 let end_2d = shape_manager.vertex_entity_3d_to_2d(&end_3d).unwrap();
 
@@ -423,6 +449,7 @@ impl ShapeWaitlist {
                     Some(file_entity),
                     Vertex2d::CHILD_COLOR,
                     file_type == FileTypeValue::Skel,
+                    edge_angle_opt
                 );
             }
             (ShapeData::Face(vertex_a, vertex_b, vertex_c, _edge_a, _edge_b, _edge_c), _) => {
