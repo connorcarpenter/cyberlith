@@ -30,6 +30,7 @@ pub fn sync_vertices(
     compass_q: Query<&Compass>,
     camera_q: Query<(&Camera, &Projection)>,
 
+    mut visibility_q: Query<&mut Visibility>,
     mut transform_q: Query<&mut Transform>,
     owned_by_tab_q: Query<&OwnedByFileLocal>,
 
@@ -54,6 +55,7 @@ pub fn sync_vertices(
             *current_tab_entity,
             &camera_q,
             &compass_q,
+            &mut visibility_q,
             &mut transform_q,
             &owned_by_tab_q,
             &mut vertex_3d_q,

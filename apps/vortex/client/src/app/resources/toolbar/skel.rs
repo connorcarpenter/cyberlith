@@ -23,10 +23,17 @@ impl SkeletonToolbar {
         {
             // delete selected vertex
             let button_enabled = if let Some((_, shape)) = selected_shape_2d {
-                // I guess in skeleton mode these are the only selectable shapes, but anyway..
                 shape == CanvasShape::Vertex || shape == CanvasShape::RootVertex
             } else { false };
             let _response = Toolbar::button(ui, "🗑", "Delete vertex", button_enabled);
+        }
+
+        {
+            // toggle edge angle visibility
+            let response = Toolbar::button(ui, "📐", "Toggle edge angle visibility", true);
+            if response.clicked() {
+                world.get_resource_mut::<ShapeManager>().unwrap().edge_angle_visibility_toggle();
+            }
         }
     }
 }
