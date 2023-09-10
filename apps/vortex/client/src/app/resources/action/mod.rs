@@ -13,6 +13,7 @@ mod rename_file;
 mod select_file;
 mod select_shape;
 mod shape_action;
+mod rotate_edge;
 
 pub use action_stack::*;
 pub use file_action::*;

@@ -355,7 +355,7 @@ pub fn insert_edge_events(
             &mut shape_manager,
             &transform_q,
             &edge_entity,
-            ShapeWaitlistInsert::EdgeAngle(edge_3d.get()),
+            ShapeWaitlistInsert::EdgeAngle(edge_3d.get_radians()),
         );
     }
 }

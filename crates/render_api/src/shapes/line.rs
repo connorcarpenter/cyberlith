@@ -17,7 +17,7 @@ pub fn set_2d_line_transform_from_angle(transform: &mut Transform, start: Vec2, 
     transform.translation.x = start.x;
     transform.translation.y = start.y;
     transform.translation.z = depth;
-    transform.rotation = Quat::from_rotation_z(angle);
+    transform.rotation = Quat::from_rotation_z(normalize_angle(angle));
     transform.scale.x = length;
 }
 
@@ -53,6 +53,17 @@ pub fn angle_between(a: &Vec2, b: &Vec2) -> f32 {
     let c = Vec2::new(b.x - a.x, b.y - a.y);
     let angle = c.y.atan2(c.x);
     angle + if angle < 0.0 { 2.0 * PI } else { 0.0 }
+}
+
+pub fn normalize_angle(angle: f32) -> f32 {
+    let mut angle = angle;
+    while angle < 0.0 {
+        angle += 2.0 * PI;
+    }
+    while angle > 2.0 * PI {
+        angle -= 2.0 * PI;
+    }
+    angle
 }
 
 #[derive(Hash)]

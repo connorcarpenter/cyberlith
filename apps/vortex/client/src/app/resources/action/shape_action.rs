@@ -7,7 +7,7 @@ use crate::app::{
     resources::{
         action::{
             create_edge, create_vertex, delete_edge, delete_face, delete_vertex, move_vertex,
-            select_shape, Action, ActionStack,
+            select_shape, Action, ActionStack, rotate_edge,
         },
         shape_manager::{CanvasShape, ShapeManager},
     },
@@ -33,6 +33,8 @@ pub enum ShapeAction {
     ),
     // Delete Edge (2d edge entity, optional vertex 2d entity to select after delete)
     DeleteEdge(Entity, Option<(Entity, CanvasShape)>),
+    // Rotate Edge (2d edge entity, old angle, new angle)
+    RotateEdge(Entity, f32, f32),
     // Delete Face (2d face entity)
     DeleteFace(Entity),
 }
@@ -142,6 +144,11 @@ impl ShapeAction {
                     }
                 }
             }
+            ShapeAction::RotateEdge(edge_2d_entity, _, _) => {
+                if *edge_2d_entity == old_2d_edge_entity {
+                    *edge_2d_entity = new_2d_edge_entity;
+                }
+            }
             ShapeAction::DeleteEdge(edge_2d_entity, _) => {
                 if *edge_2d_entity == old_2d_edge_entity {
                     *edge_2d_entity = new_2d_edge_entity;
@@ -235,6 +242,9 @@ impl Action for ShapeAction {
             ),
             ShapeAction::DeleteEdge(edge_2d_entity, shape_2d_to_select_opt) => {
                 delete_edge::execute(world, edge_2d_entity, shape_2d_to_select_opt)
+            }
+            ShapeAction::RotateEdge(edge_2d_entity, old_angle, new_angle) => {
+                rotate_edge::execute(world, edge_2d_entity, old_angle, new_angle)
             }
             ShapeAction::DeleteFace(face_2d_entity) => delete_face::execute(world, face_2d_entity),
         }

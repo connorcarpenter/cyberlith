@@ -1,4 +1,5 @@
 use bevy_ecs::component::Component;
+use log::info;
 
 use naia_bevy_shared::{
     EntityProperty, Property, Protocol, ProtocolPlugin, Replicate, Serde, SignedVariableInteger,
@@ -166,15 +167,28 @@ impl EdgeAngle {
     }
 
     // angle in degrees
-    pub fn get(&self) -> f32 {
+    pub fn get_radians(&self) -> f32 {
+        let degrees = self.get_degrees();
+        f32::to_radians(degrees)
+    }
+
+    // angle in degrees
+    pub fn set_radians(&mut self, value: f32) {
+        let degrees = f32::to_degrees(value);
+        self.set_degrees(degrees);
+    }
+
+    // angle in degrees
+    pub fn get_degrees(&self) -> f32 {
         let value: u8 = *self.value;
         let value_f32 = value as f32;
         value_f32 * 360.0 / 255.0
     }
 
     // angle in degrees
-    pub fn set(&mut self, value: f32) {
+    pub fn set_degrees(&mut self, value: f32) {
         let value_u8 = (value * 255.0 / 360.0) as u8;
-        *self.value = value_u8.into();
+        info!("set_degrees: value: {}, value_u8: {}", value, value_u8);
+        *self.value = value_u8;
     }
 }

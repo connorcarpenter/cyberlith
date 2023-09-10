@@ -58,7 +58,7 @@ pub(crate) fn execute(
                     };
                     if child_entity == vertex_3d_entity {
                         parent_vertex_3d_entity = Some(parent_entity);
-                        edge_angle = Some(item_edge_angle.get());
+                        edge_angle = Some(item_edge_angle.get_radians());
                         break;
                     }
                 }
@@ -262,7 +262,7 @@ fn convert_vertices_to_tree(
             };
 
             let child_entry =
-                VertexEntry::new(child_entity_2d, child_entity_3d, vertex_3d.as_vec3(), edge_angle.get());
+                VertexEntry::new(child_entity_2d, child_entity_3d, vertex_3d.as_vec3(), edge_angle.get_radians());
             output.push((child_entity_3d, child_entry));
         }
     }

@@ -7,7 +7,7 @@ use bevy_ecs::{
 use input::Input;
 use naia_bevy_client::Client;
 use render_api::components::{Camera, Projection, Transform};
-use vortex_proto::components::{Vertex3d, VertexRoot};
+use vortex_proto::components::{EdgeAngle, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::{Compass, Edge2dLocal, FaceIcon2d, OwnedByFileLocal, Vertex2d},
@@ -29,6 +29,7 @@ pub fn input(
     mut transform_q: Query<&mut Transform>,
     mut camera_q: Query<(&mut Camera, &mut Projection)>,
     mut vertex_3d_q: Query<&mut Vertex3d>,
+    mut edge_angle_q: Query<&mut EdgeAngle>,
 ) {
     if !canvas.is_visible() {
         return;
@@ -48,6 +49,7 @@ pub fn input(
             &mut transform_q,
             &mut camera_q,
             &mut vertex_3d_q,
+            &mut edge_angle_q,
         );
     }
 }

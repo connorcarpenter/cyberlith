@@ -6,7 +6,7 @@ use bevy_log::info;
 
 use naia_bevy_client::{events::UpdateComponentEvents, Client};
 
-use vortex_proto::components::{ChangelistEntry, FileSystemChild, FileSystemEntry, FileSystemRootChild, Vertex3d};
+use vortex_proto::components::{ChangelistEntry, FileSystemChild, FileSystemEntry, FileSystemRootChild, Vertex3d, EdgeAngle};
 
 use crate::app::{components::file_system::{ChangelistUiState, FileSystemEntryLocal}, resources::{file_manager::{FileManager, get_full_path}, shape_manager::ShapeManager}};
 
@@ -68,13 +68,17 @@ pub fn update_component_events(
             );
             todo!();
         }
-        // on Vertex3d Update Event
-        let mut updated_vertices = false;
+        // on Shape Update Event
+        let mut updated_shapes = false;
         for (_, _) in events.read::<Vertex3d>() {
-            updated_vertices = true;
+            updated_shapes = true;
             break;
         }
-        if updated_vertices {
+        for (_, _) in events.read::<EdgeAngle>() {
+            updated_shapes = true;
+            break;
+        }
+        if updated_shapes {
             shape_manager.recalculate_shapes();
         }
     }
