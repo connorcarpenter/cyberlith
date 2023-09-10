@@ -12,7 +12,7 @@ pub fn set_3d_line_transform(transform: &mut Transform, start: Vec3, end: Vec3, 
     }
 
     if let Some(angle) = angle_opt {
-        transform.rotate_axis(translation_diff, angle);
+        transform.rotate_axis(translation_diff.normalize(), angle);
     }
 
     transform.scale.z = start.distance(end);
