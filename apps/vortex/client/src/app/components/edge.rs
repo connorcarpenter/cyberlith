@@ -29,14 +29,3 @@ impl Edge3dLocal {
         Self { start, end }
     }
 }
-
-#[derive(Component)]
-pub struct EdgeAngleLocal {
-    pub angle: f32,
-}
-
-impl EdgeAngleLocal {
-    pub fn new(angle: f32) -> Self {
-        Self { angle }
-    }
-}

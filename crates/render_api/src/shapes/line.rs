@@ -8,12 +8,17 @@ use crate::{
     components::Transform,
 };
 
-pub fn set_2d_line_transform(transform: &mut Transform, start: Vec2, end: Vec2) {
+pub fn set_2d_line_transform(transform: &mut Transform, start: Vec2, end: Vec2, depth: f32) {
     let angle = angle_between(&start, &end);
+    set_2d_line_transform_from_angle(transform, start, angle, start.distance(end), depth);
+}
+
+pub fn set_2d_line_transform_from_angle(transform: &mut Transform, start: Vec2, angle: f32, length: f32, depth: f32) {
     transform.translation.x = start.x;
     transform.translation.y = start.y;
+    transform.translation.z = depth;
     transform.rotation = Quat::from_rotation_z(angle);
-    transform.scale.x = start.distance(end);
+    transform.scale.x = length;
 }
 
 pub fn get_2d_line_transform_endpoint(transform: &Transform) -> Vec2 {
@@ -44,7 +49,7 @@ pub fn distance_to_2d_line(point: Vec2, line_start: Vec2, line_end: Vec2) -> f32
     return point.distance(pb);
 }
 
-fn angle_between(a: &Vec2, b: &Vec2) -> f32 {
+pub fn angle_between(a: &Vec2, b: &Vec2) -> f32 {
     let c = Vec2::new(b.x - a.x, b.y - a.y);
     let angle = c.y.atan2(c.x);
     angle + if angle < 0.0 { 2.0 * PI } else { 0.0 }

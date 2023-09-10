@@ -102,11 +102,12 @@ impl RenderObjectBundle {
         materials: &mut Assets<CpuMaterial>,
         start: Vec2,
         end: Vec2,
+        depth: f32,
         color: Color,
     ) -> Self {
         let mesh = meshes.add(shapes::Line);
         let mut transform = Transform::default();
-        set_2d_line_transform(&mut transform, start, end);
+        set_2d_line_transform(&mut transform, start, end, depth);
         Self {
             mesh,
             material: materials.add(color),

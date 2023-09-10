@@ -8,7 +8,7 @@ use render_api::resources::WindowSettings;
 use vortex_proto::{
     components::{
         ChangelistEntry, Edge3d, EntryKind, Face3d, FileSystemChild, FileSystemEntry,
-        FileSystemRootChild, FileType, OwnedByFile, Vertex3d, VertexRoot, ShapeName
+        FileSystemRootChild, FileType, OwnedByFile, Vertex3d, VertexRoot, ShapeName, EdgeAngle
     },
     protocol,
 };
@@ -80,6 +80,7 @@ impl Plugin for VortexPlugin {
             .add_event::<InsertComponentEvent<Vertex3d>>()
             .add_event::<InsertComponentEvent<VertexRoot>>()
             .add_event::<InsertComponentEvent<Edge3d>>()
+            .add_event::<InsertComponentEvent<EdgeAngle>>()
             .add_event::<InsertComponentEvent<Face3d>>()
             .add_event::<InsertComponentEvent<FileType>>()
             .add_event::<InsertComponentEvent<OwnedByFile>>()

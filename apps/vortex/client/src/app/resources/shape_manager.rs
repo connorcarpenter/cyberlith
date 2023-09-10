@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::f32::consts::FRAC_PI_2;
 
 use bevy_ecs::{
     entity::Entity,
@@ -21,6 +22,7 @@ use render_api::{
     },
     Assets, Handle,
 };
+use render_api::shapes::{angle_between, set_2d_line_transform_from_angle};
 
 use vortex_proto::components::{EdgeAngle, Face3d, FileTypeValue, OwnedByFile, Vertex3d, VertexRoot};
 
@@ -42,7 +44,6 @@ use crate::app::{
         create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,
     },
 };
-use crate::app::components::EdgeAngleLocal;
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub enum CanvasShape {
@@ -89,17 +90,18 @@ struct Edge3dData {
     vertex_a_3d_entity: Entity,
     vertex_b_3d_entity: Entity,
     faces_3d: HashSet<FaceKey>,
-    angle_entity_opt: Option<Entity>,
+    // base circle, line, end circle
+    angle_entities_opt: Option<(Entity, Entity, Entity)>,
 }
 
 impl Edge3dData {
-    fn new(entity_2d: Entity, vertex_a_3d_entity: Entity, vertex_b_3d_entity: Entity, angle_entity_opt: Option<Entity>) -> Self {
+    fn new(entity_2d: Entity, vertex_a_3d_entity: Entity, vertex_b_3d_entity: Entity, angle_entities_opt: Option<(Entity, Entity, Entity)>) -> Self {
         Self {
             entity_2d,
             vertex_a_3d_entity,
             vertex_b_3d_entity,
             faces_3d: HashSet::new(),
-            angle_entity_opt,
+            angle_entities_opt,
         }
     }
 
@@ -405,6 +407,8 @@ impl ShapeManager {
 
         let edge_2d_scale = Edge2dLocal::NORMAL_THICKNESS * camera_3d_scale;
         let hover_edge_2d_scale = Edge2dLocal::HOVER_THICKNESS * camera_3d_scale;
+        let edge_angle_scale = ((Edge2dLocal::HOVER_THICKNESS + 1.0)/2.0) * camera_3d_scale;
+        let edge_angle_length = edge_2d_scale * 4.0;
         let compass_edge_3d_scale = Compass::EDGE_THICKNESS / camera_3d_scale;
         let compass_edge_2d_scale = Edge2dLocal::NORMAL_THICKNESS;
 
@@ -498,13 +502,14 @@ impl ShapeManager {
             };
 
             let end_pos = end_transform.translation.truncate();
+            let depth = (start_transform.translation.z + end_transform.translation.z) / 2.0;
 
             let Ok(mut edge_2d_transform) = transform_q.get_mut(edge_2d_entity) else {
                 warn!("2d Edge entity {:?} has no transform", edge_2d_entity);
                 continue;
             };
 
-            set_2d_line_transform(&mut edge_2d_transform, start_pos, end_pos);
+            set_2d_line_transform(&mut edge_2d_transform, start_pos, end_pos, depth);
 
             if compass_q.get(edge_2d_entity).is_ok() {
                 edge_2d_transform.scale.y = compass_edge_2d_scale;
@@ -543,6 +548,49 @@ impl ShapeManager {
             if compass_q.get(edge_entity).is_ok() {
                 edge_transform.scale.x = compass_edge_3d_scale;
                 edge_transform.scale.y = compass_edge_3d_scale;
+            }
+
+            // update 2d edge angle
+            if let Some(edge_angle) = edge_angle_opt {
+
+                let edge_3d_data = self.edges_3d.get(&edge_entity).unwrap();
+                let edge_2d_entity = edge_3d_data.entity_2d;
+
+                let edge_2d_transform = transform_q.get(edge_2d_entity).unwrap();
+                let start_pos = edge_2d_transform.translation.truncate();
+                let end_pos = get_2d_line_transform_endpoint(&edge_2d_transform);
+                let base_angle = angle_between(&start_pos, &end_pos);
+                let middle_pos = (start_pos + end_pos) / 2.0;
+                let edge_depth = edge_2d_transform.translation.z;
+
+                let (base_circle_entity, angle_edge_entity, end_circle_entity) = edge_3d_data.angle_entities_opt.unwrap();
+
+                let Ok(mut angle_transform) = transform_q.get_mut(angle_edge_entity) else {
+                    warn!("Edge angle entity {:?} has no transform", angle_edge_entity);
+                    continue;
+                };
+
+                set_2d_line_transform_from_angle(&mut angle_transform, middle_pos, base_angle + edge_angle + FRAC_PI_2, edge_angle_length, edge_depth + 1.0);
+                angle_transform.scale.y = edge_2d_scale;
+                let edge_angle_endpoint = get_2d_line_transform_endpoint(&angle_transform);
+
+                let Ok(mut base_circle_transform) = transform_q.get_mut(base_circle_entity) else {
+                    warn!("Edge angle base circle entity {:?} has no transform", base_circle_entity);
+                    continue;
+                };
+                base_circle_transform.translation.x = middle_pos.x;
+                base_circle_transform.translation.y = middle_pos.y;
+                base_circle_transform.translation.z = edge_depth + 1.0;
+                base_circle_transform.scale = Vec3::splat(edge_angle_scale);
+
+                let Ok(mut end_circle_transform) = transform_q.get_mut(end_circle_entity) else {
+                    warn!("Edge angle end circle entity {:?} has no transform", end_circle_entity);
+                    continue;
+                };
+                end_circle_transform.translation.x = edge_angle_endpoint.x;
+                end_circle_transform.translation.y = edge_angle_endpoint.y;
+                end_circle_transform.translation.z = edge_depth + 1.0;
+                end_circle_transform.scale = Vec3::splat(edge_angle_scale);
             }
         }
 
@@ -656,7 +704,8 @@ impl ShapeManager {
         vertex_a_3d_entity: Entity,
         vertex_b_3d_entity: Entity,
         ownership_opt: Option<Entity>,
-        angle_entity_opt: Option<Entity>,
+        // (base circle, line, end circle)
+        angle_entities_opt: Option<(Entity, Entity, Entity)>,
     ) {
         for vertex_3d_entity in [vertex_a_3d_entity, vertex_b_3d_entity] {
             let Some(vertex_3d_data) = self.vertices_3d.get_mut(&vertex_3d_entity) else {
@@ -672,7 +721,7 @@ impl ShapeManager {
 
         self.edges_3d.insert(
             edge_3d_entity,
-            Edge3dData::new(edge_2d_entity, vertex_a_3d_entity, vertex_b_3d_entity, angle_entity_opt),
+            Edge3dData::new(edge_2d_entity, vertex_a_3d_entity, vertex_b_3d_entity, angle_entities_opt),
         );
         self.edges_2d.insert(edge_2d_entity, edge_3d_entity);
 
@@ -1498,8 +1547,10 @@ impl ShapeManager {
                     materials,
                     Vec2::ZERO,
                     Vec2::X,
+                    0.0,
                     color,
                     Edge2dLocal::NORMAL_THICKNESS,
+                    2.0,
                 )
             } else {
                 create_2d_edge_line(
@@ -1507,6 +1558,7 @@ impl ShapeManager {
                     materials,
                     Vec2::ZERO,
                     Vec2::X,
+                    0.0,
                     color,
                     Edge2dLocal::NORMAL_THICKNESS,
                 )
@@ -1529,26 +1581,51 @@ impl ShapeManager {
         };
 
         // Edge Angle
-        let edge_angle_entity_opt = if let Some(edge_angle) = edge_angle_opt {
-            let shape_components = create_2d_edge_arrow(
+        let edge_angle_entities_opt = if let Some(_edge_angle) = edge_angle_opt {
+
+            let shape_components = create_2d_edge_line(
                 meshes,
                 materials,
                 Vec2::ZERO,
                 Vec2::X,
-                color,
+                0.0,
+                Color::DARK_BLUE,
                 Edge2dLocal::NORMAL_THICKNESS,
             );
-            let edge_angle_entity = commands.spawn_empty()
+            let edge_angle_line_entity = commands.spawn_empty()
                 .insert(shape_components)
                 .insert(camera_manager.layer_2d)
-                .insert(EdgeAngleLocal::new(edge_angle))
                 .id();
+            let edge_angle_circle_entities = {
+                let mut circle_entities = Vec::new();
+                for _ in 0..2 {
+                    let id = commands.spawn_empty()
+                        .insert(RenderObjectBundle::circle(
+                            meshes,
+                            materials,
+                            Vec2::ZERO,
+                            1.0,
+                            Vertex2d::SUBDIVISIONS,
+                            Color::DARK_BLUE,
+                            None,
+                        ))
+                        .insert(camera_manager.layer_2d)
+                        .id();
+                    circle_entities.push(id);
+                }
+                circle_entities
+            };
             if let Some(file_entity) = ownership_opt {
                 commands
-                    .entity(edge_angle_entity)
+                    .entity(edge_angle_line_entity)
                     .insert(OwnedByFileLocal::new(file_entity));
+                for circle_entity in edge_angle_circle_entities.iter() {
+                    commands
+                        .entity(*circle_entity)
+                        .insert(OwnedByFileLocal::new(file_entity));
+                }
             }
-            Some(edge_angle_entity)
+            Some((edge_angle_circle_entities[0], edge_angle_line_entity, edge_angle_circle_entities[1]))
         } else {
             None
         };
@@ -1560,7 +1637,7 @@ impl ShapeManager {
             vertex_a_3d_entity,
             vertex_b_3d_entity,
             ownership_opt,
-            edge_angle_entity_opt,
+            edge_angle_entities_opt,
         );
 
         edge_2d_entity
@@ -1821,6 +1898,7 @@ impl ShapeManager {
                         &mut select_line_transform,
                         vertex_transform.translation.truncate(),
                         *mouse_position,
+                        0.0,
                     );
                     select_line_transform.scale.y = camera_3d_scale;
                 }

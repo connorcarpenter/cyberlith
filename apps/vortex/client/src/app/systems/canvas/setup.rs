@@ -152,6 +152,7 @@ fn setup_2d_scene(
             materials,
             Vec2::ZERO,
             Vec2::X,
+            0.0,
             Color::WHITE,
             SelectLine::THICKNESS,
         );
