@@ -188,7 +188,6 @@ impl EdgeAngle {
     // angle in degrees
     pub fn set_degrees(&mut self, value: f32) {
         let value_u8 = (value * 255.0 / 360.0) as u8;
-        info!("set_degrees: value: {}, value_u8: {}", value, value_u8);
         *self.value = value_u8;
     }
 }

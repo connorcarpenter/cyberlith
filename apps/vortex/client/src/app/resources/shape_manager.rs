@@ -2255,11 +2255,16 @@ impl ShapeManager {
                                 return;
                             }
 
+                            let edge_2d_transform = transform_q.get(edge_2d_entity).unwrap();
+                            let start_pos = edge_2d_transform.translation.truncate();
+                            let end_pos = get_2d_line_transform_endpoint(&edge_2d_transform);
+                            let base_angle = angle_between(&start_pos, &end_pos);
+
                             let edge_angle_entity = self.edges_3d.get(&edge_3d_entity).unwrap().angle_entities_opt.unwrap().0;
                             let edge_angle_pos = transform_q.get(edge_angle_entity).unwrap().translation.truncate();
 
                             let mut edge_angle = edge_angle_q.get_mut(edge_3d_entity).unwrap();
-                            let new_angle = normalize_angle(angle_between(&edge_angle_pos, &mouse_position) - FRAC_PI_2);
+                            let new_angle = normalize_angle(angle_between(&edge_angle_pos, &mouse_position) - FRAC_PI_2 - base_angle);
                             if let Some((_, prev_angle, _)) = self.last_edge_dragged {
                                 self.last_edge_dragged = Some((edge_2d_entity, prev_angle, new_angle));
                             } else {
