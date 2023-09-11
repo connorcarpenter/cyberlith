@@ -37,7 +37,10 @@ impl Plugin for RenderApiPlugin {
 
         let mut order = app.world.resource_mut::<MainScheduleOrder>();
         order.insert_after(Last, RenderSync);
-        order.insert_after(RenderSync, Draw);
-        order.insert_after(Draw, Render);
+
+        // this doesn't make sense to me .. seems like it should be reversed!
+        // but the reverse order here creates rendering artifacts??
+        order.insert_after(RenderSync, Render);
+        order.insert_after(Render, Draw);
     }
 }
