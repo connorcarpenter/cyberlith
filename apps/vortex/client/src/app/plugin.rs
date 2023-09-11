@@ -8,25 +8,25 @@ use render_api::resources::WindowSettings;
 
 use vortex_proto::{
     components::{
-        ChangelistEntry, Edge3d, EntryKind, Face3d, FileSystemChild, FileSystemEntry,
-        FileSystemRootChild, FileType, OwnedByFile, Vertex3d, VertexRoot, ShapeName, EdgeAngle
+        ChangelistEntry, Edge3d, EdgeAngle, EntryKind, Face3d, FileSystemChild, FileSystemEntry,
+        FileSystemRootChild, FileType, OwnedByFile, ShapeName, Vertex3d, VertexRoot,
     },
     protocol,
 };
 
+use crate::app::systems::draw;
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
     config::ConfigPlugin,
-    events::{LoginEvent, InsertComponentEvent},
+    events::{InsertComponentEvent, LoginEvent},
     resources::{
         action::FileActions, camera_manager::CameraManager, canvas::Canvas,
         file_manager::FileManager, input_manager::InputManager, shape_manager::ShapeManager,
         shape_waitlist::ShapeWaitlist, tab_manager::TabManager, toolbar::Toolbar,
     },
     systems::{canvas, network, ui},
-    ui::{UiState, widgets::NamingBarState},
+    ui::{widgets::NamingBarState, UiState},
 };
-use crate::app::systems::draw;
 
 pub struct VortexPlugin;
 

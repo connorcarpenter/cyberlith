@@ -253,7 +253,9 @@ pub fn create_networked_edge(
 
     if file_type == FileTypeValue::Skel {
         let edge_angle_f32 = edge_angle.unwrap();
-        commands.entity(new_edge_3d_entity).insert(EdgeAngle::new(edge_angle_f32));
+        commands
+            .entity(new_edge_3d_entity)
+            .insert(EdgeAngle::new(edge_angle_f32));
     }
 
     // create new 2d edge, add local components to 3d edge

@@ -5,7 +5,13 @@ use bevy_ecs::world::World;
 use canvas::render_canvas;
 use render_egui::{egui, egui::Frame};
 
-use crate::app::{ui::{render_tool_bar, widgets::{render_naming_bar, NamingBarState}}, resources::tab_manager::render_tab_bar};
+use crate::app::{
+    resources::tab_manager::render_tab_bar,
+    ui::{
+        render_tool_bar,
+        widgets::{render_naming_bar, NamingBarState},
+    },
+};
 
 pub fn center_panel(context: &egui::Context, world: &mut World) {
     egui::CentralPanel::default()

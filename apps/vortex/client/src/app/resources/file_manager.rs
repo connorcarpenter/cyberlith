@@ -9,7 +9,10 @@ use naia_bevy_client::Client;
 
 use render_api::components::Visibility;
 use render_egui::egui::epaint::ahash::HashSet;
-use vortex_proto::{components::{FileSystemChild, FileSystemEntry}, resources::FileEntryKey};
+use vortex_proto::{
+    components::{FileSystemChild, FileSystemEntry},
+    resources::FileEntryKey,
+};
 
 use crate::app::{
     components::OwnedByFileLocal,
@@ -25,9 +28,7 @@ struct ChangelistData {
 
 impl ChangelistData {
     fn new(changelist_entity: Entity) -> Self {
-        Self {
-            changelist_entity,
-        }
+        Self { changelist_entity }
     }
 }
 
@@ -91,8 +92,15 @@ impl FileManager {
         }
     }
 
-    pub fn insert_changelist_entry(&mut self, file_entry_key: FileEntryKey, file_entity_opt: Option<Entity>, parent_entity_opt: Option<Entity>, cl_entity: Entity) {
-        self.changelist.insert(file_entry_key, ChangelistData::new(cl_entity));
+    pub fn insert_changelist_entry(
+        &mut self,
+        file_entry_key: FileEntryKey,
+        file_entity_opt: Option<Entity>,
+        parent_entity_opt: Option<Entity>,
+        cl_entity: Entity,
+    ) {
+        self.changelist
+            .insert(file_entry_key, ChangelistData::new(cl_entity));
 
         if let Some(file_entity) = file_entity_opt {
             let Some(file_data) = self.file_entities.get_mut(&file_entity) else {
@@ -136,7 +144,7 @@ impl FileManager {
 pub fn get_full_path(
     client: &Client,
     fs_q: &Query<(&FileSystemEntry, Option<&FileSystemChild>)>,
-    file_entity: Entity
+    file_entity: Entity,
 ) -> String {
     let mut path = String::new();
 

@@ -3,9 +3,9 @@ pub use plugin::RenderGlowPlugin;
 
 mod asset_mapping;
 mod base_set;
-mod draw_flush;
 mod input;
 mod plugin;
+mod render;
 mod runner;
 mod sync;
 

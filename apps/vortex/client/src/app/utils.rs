@@ -1,7 +1,12 @@
 use math::Vec3;
 use render_api::components::Transform;
 
-pub fn set_3d_line_transform(transform: &mut Transform, start: Vec3, end: Vec3, angle_opt: Option<f32>) {
+pub fn set_3d_line_transform(
+    transform: &mut Transform,
+    start: Vec3,
+    end: Vec3,
+    angle_opt: Option<f32>,
+) {
     transform.translation = start;
     let translation_diff = end - start;
 

@@ -35,13 +35,17 @@ pub struct Arrow2d {
 
 impl Default for Arrow2d {
     fn default() -> Self {
-        Self { head_width_tenths: 20 }
+        Self {
+            head_width_tenths: 20,
+        }
     }
 }
 
 impl Arrow2d {
     pub fn new(head_width: f32) -> Self {
-        Self { head_width_tenths: ((head_width * 10.0) as u8) }
+        Self {
+            head_width_tenths: ((head_width * 10.0) as u8),
+        }
     }
 }
 

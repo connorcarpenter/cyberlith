@@ -7,7 +7,7 @@ use bevy_ecs::schedule::{ExecutorKind, Schedule};
 use render_api::{Render, Window};
 
 use crate::{
-    base_set::GlowInput, draw_flush::render, input, runner::runner_func, sync::SyncPlugin, window,
+    base_set::GlowInput, input, render::render, runner::runner_func, sync::SyncPlugin, window,
 };
 
 pub struct RenderGlowPlugin;

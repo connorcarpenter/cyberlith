@@ -3,8 +3,8 @@ use bevy_ecs::system::{Query, ResMut};
 use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::{
-        DirectionalLight, AmbientLight, Camera, PointLight, Projection, RenderLayer,
-        Transform, Visibility,
+        AmbientLight, Camera, DirectionalLight, PointLight, Projection, RenderLayer, Transform,
+        Visibility,
     },
     resources::RenderFrame,
     Handle,
@@ -32,12 +32,7 @@ pub fn draw(
         if !camera.is_active {
             continue;
         }
-        render_frame.draw_camera(
-            render_layer_opt,
-            camera,
-            transform,
-            projection,
-        );
+        render_frame.draw_camera(render_layer_opt, camera, transform, projection);
     }
 
     // Aggregate Point Lights
@@ -47,19 +42,12 @@ pub fn draw(
 
     // Aggregate Directional Lights
     for (handle, render_layer_opt) in directional_lights_q.iter() {
-        render_frame.draw_directional_light(
-            render_layer_opt,
-            handle,
-        );
+        render_frame.draw_directional_light(render_layer_opt, handle);
     }
 
     // Aggregate Ambient Lights
     for (handle, ambient_light, render_layer_opt) in ambient_lights_q.iter() {
-        render_frame.draw_ambient_light(
-            render_layer_opt,
-            handle,
-            &ambient_light.color,
-        );
+        render_frame.draw_ambient_light(render_layer_opt, handle, &ambient_light.color);
     }
 
     // Aggregate RenderObjects
@@ -67,11 +55,6 @@ pub fn draw(
         if !visibility.visible {
             continue;
         }
-        render_frame.draw_object(
-            render_layer_opt,
-            mesh_handle,
-            mat_handle,
-            transform,
-        );
+        render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
     }
 }

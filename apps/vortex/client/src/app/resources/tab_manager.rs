@@ -92,7 +92,6 @@ impl Default for TabManager {
 }
 
 impl TabManager {
-
     pub fn open_tab(
         &mut self,
         client: &mut Client,
@@ -267,7 +266,13 @@ impl TabManager {
         }
 
         // select new tab
-        self.set_current_tab(canvas, camera_manager, shape_manager, visibility_q, *row_entity);
+        self.set_current_tab(
+            canvas,
+            camera_manager,
+            shape_manager,
+            visibility_q,
+            *row_entity,
+        );
         let tab_state = self.tab_map.get_mut(&row_entity).unwrap();
         tab_state.selected = true;
 

@@ -45,9 +45,7 @@ pub struct Toolbar {
 
 impl Default for Toolbar {
     fn default() -> Self {
-        Self {
-            i12n: None,
-        }
+        Self { i12n: None }
     }
 }
 
@@ -61,7 +59,7 @@ impl Toolbar {
         info!("Toolbar::clear()");
         self.i12n = None;
     }
-    
+
     pub fn kind(&self) -> Option<ToolbarKind> {
         self.i12n
     }

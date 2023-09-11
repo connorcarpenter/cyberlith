@@ -7,7 +7,7 @@ use crate::app::{
     resources::{
         action::{
             create_edge, create_vertex, delete_edge, delete_face, delete_vertex, move_vertex,
-            select_shape, Action, ActionStack, rotate_edge,
+            rotate_edge, select_shape, Action, ActionStack,
         },
         shape_manager::{CanvasShape, ShapeManager},
     },

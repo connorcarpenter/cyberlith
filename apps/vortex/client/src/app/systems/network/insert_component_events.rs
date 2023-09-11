@@ -15,24 +15,24 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::{
-    components::{
-        ChangelistEntry, ChangelistStatus, Edge3d, EntryKind, Face3d, FileSystemChild, FileSystemEntry,
-        FileSystemRootChild, FileType, OwnedByFile, Vertex3d, VertexRoot,
-    },
-};
 use vortex_proto::components::EdgeAngle;
+use vortex_proto::components::{
+    ChangelistEntry, ChangelistStatus, Edge3d, EntryKind, Face3d, FileSystemChild, FileSystemEntry,
+    FileSystemRootChild, FileType, OwnedByFile, Vertex3d, VertexRoot,
+};
 
 use crate::app::{
-    components::file_system::{FileSystemEntryLocal, ChangelistUiState, FileSystemParent, FileSystemUiState},
+    components::file_system::{
+        ChangelistUiState, FileSystemEntryLocal, FileSystemParent, FileSystemUiState,
+    },
+    events::InsertComponentEvent,
     resources::{
         camera_manager::CameraManager,
-        file_manager::{FileManager, get_full_path},
+        file_manager::{get_full_path, FileManager},
         shape_manager::ShapeManager,
         shape_waitlist::{ShapeWaitlist, ShapeWaitlistInsert},
     },
     systems::file_post_process,
-    events::InsertComponentEvent,
 };
 
 pub fn insert_component_events(
@@ -130,7 +130,10 @@ pub fn insert_file_component_events(
         let entity = event.entity;
         let entry = entry_q.get(entity).unwrap();
 
-        info!("entity: `{:?}` - inserted FileSystemEntry. kind: `{:?}`, name: `{:?}`", entity, *entry.kind, *entry.name);
+        info!(
+            "entity: `{:?}` - inserted FileSystemEntry. kind: `{:?}`, name: `{:?}`",
+            entity, *entry.kind, *entry.name
+        );
 
         file_post_process::insert_ui_state_component(&mut commands, entity, false);
         if *entry.kind == EntryKind::Directory {
@@ -143,7 +146,9 @@ pub fn insert_file_component_events(
                 .insert(entity, FileSystemParent::new());
         }
         file_manager.on_file_create(&entity);
-        commands.entity(entity).insert(FileSystemEntryLocal::new(&*entry.name));
+        commands
+            .entity(entity)
+            .insert(FileSystemEntryLocal::new(&*entry.name));
     }
 
     for event in root_events.iter() {
@@ -230,16 +235,26 @@ pub fn insert_changelist_entry_events(
 
             if parent_entity_opt.is_some() {
                 let new_display_path = get_full_path(&client, &fs_q, file_entity);
-                info!("change path for entity: `{:?}`. path was: `{:?}`, now is `{:?}`", file_entity, display_path, new_display_path);
+                info!(
+                    "change path for entity: `{:?}`. path was: `{:?}`, now is `{:?}`",
+                    file_entity, display_path, new_display_path
+                );
                 display_path = new_display_path;
             }
         }
 
         // insert ui state component
-        commands.entity(cl_entity).insert(ChangelistUiState::new(&display_name, &display_path));
+        commands
+            .entity(cl_entity)
+            .insert(ChangelistUiState::new(&display_name, &display_path));
 
         // insert into changelist resource
-        file_manager.insert_changelist_entry(entry.file_entry_key(), file_entity_opt, parent_entity_opt, cl_entity);
+        file_manager.insert_changelist_entry(
+            entry.file_entry_key(),
+            file_entity_opt,
+            parent_entity_opt,
+            cl_entity,
+        );
     }
 }
 

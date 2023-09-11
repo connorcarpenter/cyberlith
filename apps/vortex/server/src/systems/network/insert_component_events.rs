@@ -12,15 +12,18 @@ use naia_bevy_server::{events::InsertComponentEvents, Server};
 use vortex_proto::{
     components::{
         Edge3d, Face3d, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType,
-        OwnedByFile, Vertex3d, VertexRoot, ShapeName,
+        OwnedByFile, ShapeName, Vertex3d, VertexRoot,
     },
     resources::FileEntryKey,
 };
 
-use crate::{resources::{
-    file_waitlist::{file_process_insert, FSWaitlist, FSWaitlistInsert},
-    GitManager, ShapeManager, ShapeWaitlist, ShapeWaitlistInsert, TabManager, UserManager,
-}, events::InsertComponentEvent};
+use crate::{
+    events::InsertComponentEvent,
+    resources::{
+        file_waitlist::{file_process_insert, FSWaitlist, FSWaitlistInsert},
+        GitManager, ShapeManager, ShapeWaitlist, ShapeWaitlistInsert, TabManager, UserManager,
+    },
+};
 
 pub fn insert_component_events(
     mut event_reader: EventReader<InsertComponentEvents>,
@@ -43,38 +46,47 @@ pub fn insert_component_events(
     for events in event_reader.iter() {
         // on FileSystemEntry Insert Event
         for (user_key, entity) in events.read::<FileSystemEntry>() {
-            insert_fs_entry_event_writer.send(InsertComponentEvent::<FileSystemEntry>::new(user_key, entity));
+            insert_fs_entry_event_writer.send(InsertComponentEvent::<FileSystemEntry>::new(
+                user_key, entity,
+            ));
         }
 
         // on FileSystemRootChild Insert Event
         for (user_key, entity) in events.read::<FileSystemRootChild>() {
-            insert_fs_root_event_writer
-                .send(InsertComponentEvent::<FileSystemRootChild>::new(user_key, entity));
+            insert_fs_root_event_writer.send(InsertComponentEvent::<FileSystemRootChild>::new(
+                user_key, entity,
+            ));
         }
 
         // on FileSystemChild Insert Event
         for (user_key, entity) in events.read::<FileSystemChild>() {
-            insert_fs_child_event_writer.send(InsertComponentEvent::<FileSystemChild>::new(user_key, entity));
+            insert_fs_child_event_writer.send(InsertComponentEvent::<FileSystemChild>::new(
+                user_key, entity,
+            ));
         }
 
         // on Vertex3d Insert Event
         for (user_key, entity) in events.read::<Vertex3d>() {
-            insert_vertex_3d_event_writer.send(InsertComponentEvent::<Vertex3d>::new(user_key, entity));
+            insert_vertex_3d_event_writer
+                .send(InsertComponentEvent::<Vertex3d>::new(user_key, entity));
         }
 
         // on Vertex Root Child Event
         for (user_key, entity) in events.read::<VertexRoot>() {
-            insert_vertex_root_event_writer.send(InsertComponentEvent::<VertexRoot>::new(user_key, entity));
+            insert_vertex_root_event_writer
+                .send(InsertComponentEvent::<VertexRoot>::new(user_key, entity));
         }
 
         // on OwnedByFile Insert Event
         for (user_key, entity) in events.read::<OwnedByFile>() {
-            insert_owned_by_event_writer.send(InsertComponentEvent::<OwnedByFile>::new(user_key, entity));
+            insert_owned_by_event_writer
+                .send(InsertComponentEvent::<OwnedByFile>::new(user_key, entity));
         }
 
         // on FileType Insert Event
         for (user_key, entity) in events.read::<FileType>() {
-            insert_file_type_event_writer.send(InsertComponentEvent::<FileType>::new(user_key, entity));
+            insert_file_type_event_writer
+                .send(InsertComponentEvent::<FileType>::new(user_key, entity));
         }
 
         // on Edge3d Insert Event
@@ -89,7 +101,8 @@ pub fn insert_component_events(
 
         // on ShapeName Insert Event
         for (user_key, entity) in events.read::<ShapeName>() {
-            insert_shape_name_event_writer.send(InsertComponentEvent::<ShapeName>::new(user_key, entity));
+            insert_shape_name_event_writer
+                .send(InsertComponentEvent::<ShapeName>::new(user_key, entity));
         }
     }
 }
@@ -255,9 +268,7 @@ pub fn insert_face_component_events(
 
         info!(
             "entity: `{:?}`, inserted Face3d(vertices({:?}, {:?}, {:?}), edges({:?}, {:?}, {:?}))",
-            face_entity,
-            vertex_a, vertex_b, vertex_c,
-            edge_a, edge_b, edge_c
+            face_entity, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c
         );
 
         shape_waitlist.process_insert(

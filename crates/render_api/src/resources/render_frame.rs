@@ -1,9 +1,12 @@
 use std::default::Default;
 
-use bevy_ecs::system::Resource;
 use crate::base::{CpuMaterial, CpuMesh};
+use bevy_ecs::system::Resource;
 
-use crate::components::{AmbientLight, AmbientLightColor, Camera, DirectionalLight, PointLight, Projection, RenderLayer, RenderLayers, Transform};
+use crate::components::{
+    AmbientLight, AmbientLightColor, Camera, DirectionalLight, PointLight, Projection, RenderLayer,
+    RenderLayers, Transform,
+};
 use crate::Handle;
 
 #[derive(Resource)]
@@ -24,9 +27,17 @@ impl RenderFrame {
         std::mem::take(&mut self.contents)
     }
 
-    pub fn draw_camera(&mut self, render_layer_opt: Option<&RenderLayer>, camera: &Camera, transform: &Transform, projection: &Projection) {
+    pub fn draw_camera(
+        &mut self,
+        render_layer_opt: Option<&RenderLayer>,
+        camera: &Camera,
+        transform: &Transform,
+        projection: &Projection,
+    ) {
         let id = convert_wrapper(render_layer_opt.copied());
-        self.contents.cameras.push((id, *camera, *transform, *projection));
+        self.contents
+            .cameras
+            .push((id, *camera, *transform, *projection));
     }
 
     pub fn draw_point_light(&mut self, render_layer_opt: Option<&RenderLayer>, light: &PointLight) {
@@ -34,19 +45,38 @@ impl RenderFrame {
         self.contents.point_lights.push((id, *light));
     }
 
-    pub fn draw_directional_light(&mut self, render_layer_opt: Option<&RenderLayer>, handle: &Handle<DirectionalLight>) {
+    pub fn draw_directional_light(
+        &mut self,
+        render_layer_opt: Option<&RenderLayer>,
+        handle: &Handle<DirectionalLight>,
+    ) {
         let id = convert_wrapper(render_layer_opt.copied());
         self.contents.directional_lights.push((id, handle.clone()));
     }
 
-    pub fn draw_ambient_light(&mut self, render_layer_opt: Option<&RenderLayer>, handle: &Handle<AmbientLight>, light_color: &AmbientLightColor) {
+    pub fn draw_ambient_light(
+        &mut self,
+        render_layer_opt: Option<&RenderLayer>,
+        handle: &Handle<AmbientLight>,
+        light_color: &AmbientLightColor,
+    ) {
         let id = convert_wrapper(render_layer_opt.copied());
-        self.contents.ambient_lights.push((id, handle.clone(), *light_color));
+        self.contents
+            .ambient_lights
+            .push((id, handle.clone(), *light_color));
     }
 
-    pub fn draw_object(&mut self, render_layer_opt: Option<&RenderLayer>, mesh_handle: &Handle<CpuMesh>, mat_handle: &Handle<CpuMaterial>, transform: &Transform) {
+    pub fn draw_object(
+        &mut self,
+        render_layer_opt: Option<&RenderLayer>,
+        mesh_handle: &Handle<CpuMesh>,
+        mat_handle: &Handle<CpuMaterial>,
+        transform: &Transform,
+    ) {
         let id = convert_wrapper(render_layer_opt.copied());
-        self.contents.objects.push((id, mesh_handle.clone(), mat_handle.clone(), *transform));
+        self.contents
+            .objects
+            .push((id, mesh_handle.clone(), mat_handle.clone(), *transform));
     }
 }
 

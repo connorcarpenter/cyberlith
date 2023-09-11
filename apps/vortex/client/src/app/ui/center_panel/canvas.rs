@@ -16,11 +16,11 @@ use render_egui::{
     EguiUserTextures,
 };
 
+use crate::app::resources::shape_manager::ShapeManager;
 use crate::app::{
     resources::{camera_manager::CameraManager, canvas::Canvas},
     ui::UiState,
 };
-use crate::app::resources::shape_manager::ShapeManager;
 
 pub fn render_canvas(ui: &mut Ui, world: &mut World) {
     egui::CentralPanel::default() // canvas area
@@ -94,7 +94,8 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
                         // Update the camera to match the new texture size.
                         let native_texture_size = Vec2::new(texture_size.x, texture_size.y);
                         canvas.update_canvas_size(native_texture_size);
-                        camera_manager.update_camera_viewports(native_texture_size, &mut camera_query);
+                        camera_manager
+                            .update_camera_viewports(native_texture_size, &mut camera_query);
                     }
 
                     if canvas.is_visible() {

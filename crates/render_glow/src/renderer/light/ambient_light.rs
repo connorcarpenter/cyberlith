@@ -40,7 +40,10 @@ pub struct RenderAmbientLight<'a> {
 }
 
 impl<'a> RenderAmbientLight<'a> {
-    pub fn new(ambient_light: &'a AmbientLightColor, ambient_light_impl: &'a AmbientLightImpl) -> Self {
+    pub fn new(
+        ambient_light: &'a AmbientLightColor,
+        ambient_light_impl: &'a AmbientLightImpl,
+    ) -> Self {
         Self {
             ambient_light,
             ambient_light_impl,

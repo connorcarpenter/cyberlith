@@ -81,22 +81,20 @@ impl ShapeWaitlistEntry {
                     panic!("");
                 }
             },
-            Some(ShapeType::Edge) => {
-                match self.file_type {
-                    None => return false,
-                    Some(FileTypeValue::Skel) => {
-                        return self.file_entity.is_some()
-                            && self.edge_entities.is_some()
-                            && self.edge_angle.is_some()
-                    }
-                    Some(FileTypeValue::Mesh) => {
-                        return self.file_entity.is_some() && self.edge_entities.is_some()
-                    }
-                    Some(FileTypeValue::Anim) => {
-                        panic!("");
-                    }
+            Some(ShapeType::Edge) => match self.file_type {
+                None => return false,
+                Some(FileTypeValue::Skel) => {
+                    return self.file_entity.is_some()
+                        && self.edge_entities.is_some()
+                        && self.edge_angle.is_some()
                 }
-            }
+                Some(FileTypeValue::Mesh) => {
+                    return self.file_entity.is_some() && self.edge_entities.is_some()
+                }
+                Some(FileTypeValue::Anim) => {
+                    panic!("");
+                }
+            },
             Some(ShapeType::Face) => {
                 self.file_type.is_some()
                     && self.file_entity.is_some()
@@ -449,7 +447,7 @@ impl ShapeWaitlist {
                     Some(file_entity),
                     Vertex2d::CHILD_COLOR,
                     file_type == FileTypeValue::Skel,
-                    edge_angle_opt
+                    edge_angle_opt,
                 );
             }
             (ShapeData::Face(vertex_a, vertex_b, vertex_c, _edge_a, _edge_b, _edge_c), _) => {

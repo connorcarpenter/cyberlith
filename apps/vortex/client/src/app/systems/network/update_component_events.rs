@@ -6,9 +6,17 @@ use bevy_log::info;
 
 use naia_bevy_client::{events::UpdateComponentEvents, Client};
 
-use vortex_proto::components::{ChangelistEntry, FileSystemChild, FileSystemEntry, FileSystemRootChild, Vertex3d, EdgeAngle};
+use vortex_proto::components::{
+    ChangelistEntry, EdgeAngle, FileSystemChild, FileSystemEntry, FileSystemRootChild, Vertex3d,
+};
 
-use crate::app::{components::file_system::{ChangelistUiState, FileSystemEntryLocal}, resources::{file_manager::{FileManager, get_full_path}, shape_manager::ShapeManager}};
+use crate::app::{
+    components::file_system::{ChangelistUiState, FileSystemEntryLocal},
+    resources::{
+        file_manager::{get_full_path, FileManager},
+        shape_manager::ShapeManager,
+    },
+};
 
 pub fn update_component_events(
     client: Client,
@@ -39,7 +47,10 @@ pub fn update_component_events(
 
                     let old_path = old_child_state.display_path.clone();
                     let new_path = get_full_path(&client, &entry_q, child_file_entity);
-                    info!("change path for child entity: `{:?}`. path was: `{:?}`, now is `{:?}`", cl_child_entity, old_path, new_path);
+                    info!(
+                        "change path for child entity: `{:?}`. path was: `{:?}`, now is `{:?}`",
+                        cl_child_entity, old_path, new_path
+                    );
 
                     let (_, mut cl_child_state) = cl_q.get_mut(*cl_child_entity).unwrap();
                     cl_child_state.display_path = new_path;

@@ -3,7 +3,9 @@ use bevy_log::info;
 
 use naia_bevy_server::events::RemoveComponentEvents;
 
-use vortex_proto::components::{Edge3d, Face3d, FileSystemChild, FileSystemRootChild, ShapeName, Vertex3d, VertexRoot};
+use vortex_proto::components::{
+    Edge3d, Face3d, FileSystemChild, FileSystemRootChild, ShapeName, Vertex3d, VertexRoot,
+};
 
 pub fn remove_component_events(mut event_reader: EventReader<RemoveComponentEvents>) {
     for events in event_reader.iter() {

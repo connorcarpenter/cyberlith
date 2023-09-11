@@ -1,13 +1,11 @@
 use bevy_ecs::system::{NonSendMut, Res, ResMut};
 
 use render_api::{
-    resources::RenderFrame,
     base::{CpuMaterial, CpuMesh, CpuTexture2D},
     components::{
-        DirectionalLight,
-        AmbientLight, Camera, RenderLayers,
-        RenderTarget as CameraRenderTarget,
+        AmbientLight, Camera, DirectionalLight, RenderLayers, RenderTarget as CameraRenderTarget,
     },
+    resources::RenderFrame,
 };
 
 use crate::{
@@ -29,7 +27,7 @@ pub fn render(
     textures: ResMut<AssetMapping<CpuTexture2D, GpuTexture2D>>,
     depth_textures: ResMut<AssetMapping<CpuTexture2D, GpuDepthTexture2D>>,
     directional_lights: ResMut<AssetMapping<DirectionalLight, DirectionalLightImpl>>,
-    ambient_lights: ResMut<AssetMapping<AmbientLight, AmbientLightImpl>>
+    ambient_lights: ResMut<AssetMapping<AmbientLight, AmbientLightImpl>>,
 ) {
     let mut layer_to_order: Vec<Vec<usize>> = Vec::with_capacity(RenderLayers::TOTAL_LAYERS);
     layer_to_order.resize(RenderLayers::TOTAL_LAYERS, Vec::new());
@@ -53,7 +51,6 @@ pub fn render(
 
     // Aggregate Point Lights
     for (render_layer, point_light) in frame_contents.point_lights.iter() {
-
         for camera_index in layer_to_order[*render_layer].iter().map(|x| *x) {
             if camera_work[camera_index].is_none() {
                 panic!("Found PointLight with RenderLayer not associated with any Camera!");
@@ -69,7 +66,6 @@ pub fn render(
 
     // Aggregate Directional Lights
     for (render_layer, light_handle) in frame_contents.directional_lights.iter() {
-
         for camera_index in layer_to_order[*render_layer].iter().map(|x| *x) {
             if camera_work[camera_index].is_none() {
                 panic!("Found DirectionalLight with RenderLayer not associated with any Camera!");
@@ -87,7 +83,6 @@ pub fn render(
 
     // Aggregate Ambient Lights
     for (render_layer, light_handle, light_color) in frame_contents.ambient_lights.iter() {
-
         for camera_index in layer_to_order[*render_layer].iter().map(|x| *x) {
             if camera_work[camera_index].is_none() {
                 panic!("Found DirectionalLight with RenderLayer not associated with any Camera!");
@@ -105,7 +100,6 @@ pub fn render(
 
     // Aggregate RenderObjects
     for (render_layer, mesh_handle, mat_handle, transform) in frame_contents.objects.iter() {
-
         for camera_index in layer_to_order[*render_layer].iter().map(|x| *x) {
             if camera_work[camera_index].is_none() {
                 panic!("Found render object with RenderLayer not associated with any Camera!");

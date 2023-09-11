@@ -1,7 +1,13 @@
 use bevy_app::{App, Last, MainScheduleOrder, Plugin};
 use bevy_ecs::schedule::{ExecutorKind, Schedule};
 
-use crate::{assets::Assets, base::{CpuMaterial, CpuMesh, CpuTexture2D}, base_set::{Draw, RenderSync}, Render, resources::RenderFrame};
+use crate::{
+    assets::Assets,
+    base::{CpuMaterial, CpuMesh, CpuTexture2D},
+    base_set::{Draw, RenderSync},
+    resources::RenderFrame,
+    Render,
+};
 
 pub struct RenderApiPlugin;
 
@@ -9,9 +15,9 @@ impl Plugin for RenderApiPlugin {
     fn build(&self, app: &mut App) {
         app
             // Resources
-            .init_resource::<Assets::<CpuMesh>>()
-            .init_resource::<Assets::<CpuMaterial>>()
-            .init_resource::<Assets::<CpuTexture2D>>()
+            .init_resource::<Assets<CpuMesh>>()
+            .init_resource::<Assets<CpuMaterial>>()
+            .init_resource::<Assets<CpuTexture2D>>()
             .init_resource::<RenderFrame>();
 
         // Schedules

@@ -145,7 +145,11 @@ impl ChangelistRowUiWidget {
 
                 let mut path_text_pos = inner_pos;
                 path_text_pos.y += 2.0;
-                path_text.paint_with_color_override(ui.painter(), path_text_pos, text_colors.disabled);
+                path_text.paint_with_color_override(
+                    ui.painter(),
+                    path_text_pos,
+                    text_colors.disabled,
+                );
                 inner_pos.x += path_text_size.x + item_spacing;
             }
         }

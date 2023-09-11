@@ -3,7 +3,9 @@ use bevy_ecs::system::Resource;
 use input::{InputAction, Key, MouseButton};
 use math::Vec2;
 
-use crate::app::resources::{canvas::Canvas, camera_manager::CameraAngle, key_action_map::KeyActionMap};
+use crate::app::resources::{
+    camera_manager::CameraAngle, canvas::Canvas, key_action_map::KeyActionMap,
+};
 
 #[derive(Clone, Copy)]
 pub enum AppInputAction {
@@ -76,7 +78,11 @@ impl Default for InputManager {
 }
 
 impl InputManager {
-    pub fn input_to_app_actions(&mut self, canvas: &Canvas, input_actions: Vec<InputAction>) -> Vec<AppInputAction> {
+    pub fn input_to_app_actions(
+        &mut self,
+        canvas: &Canvas,
+        input_actions: Vec<InputAction>,
+    ) -> Vec<AppInputAction> {
         let mut output = Vec::new();
 
         for action in input_actions {
@@ -87,9 +93,13 @@ impl InputManager {
                 InputAction::MouseMoved => output.push(AppInputAction::MouseMoved),
                 InputAction::MouseDragged(click_type, mouse_position, delta) => {
                     if canvas.has_focus() {
-                        output.push(AppInputAction::MouseDragged(click_type, mouse_position, delta));
+                        output.push(AppInputAction::MouseDragged(
+                            click_type,
+                            mouse_position,
+                            delta,
+                        ));
                     }
-                },
+                }
                 InputAction::MouseClick(click_type, mouse_position) => {
                     // check if mouse position is outside of canvas
                     if !canvas.is_position_inside(mouse_position) {

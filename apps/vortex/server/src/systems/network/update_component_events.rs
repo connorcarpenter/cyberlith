@@ -1,6 +1,6 @@
 use bevy_ecs::{
     event::EventReader,
-    system::{Query, Res, Commands, ResMut},
+    system::{Commands, Query, Res, ResMut},
 };
 use bevy_log::info;
 
@@ -21,7 +21,10 @@ pub fn update_component_events(
     for events in event_reader.iter() {
         // on FileSystemEntry Update Event
         for (user_key, entity) in events.read::<FileSystemEntry>() {
-            let username = user_manager.user_session_data(&user_key).unwrap().username();
+            let username = user_manager
+                .user_session_data(&user_key)
+                .unwrap()
+                .username();
             let project_key = git_manager.project_key_from_name(username).unwrap();
             let project = git_manager.project(&project_key).unwrap();
             let file_key = project.get_file_key_from_entity(&entity).unwrap();
@@ -40,9 +43,11 @@ pub fn update_component_events(
         }
         // on ShapeName Update Event
         for (_, entity) in events.read::<ShapeName>() {
-
             let shape_name = shape_name_q.get(entity).unwrap();
-            info!("entity: {:?} updated ShapeName to: {:?}", entity, *shape_name.value);
+            info!(
+                "entity: {:?} updated ShapeName to: {:?}",
+                entity, *shape_name.value
+            );
 
             let Some((project_key, file_key)) = git_manager.content_entity_keys(&entity) else {
                 panic!("no content entity keys!");

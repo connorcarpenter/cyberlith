@@ -68,9 +68,12 @@ pub(crate) fn execute(
                         vertex_3d_entity
                     );
                 }
-                (shape_manager
-                    .vertex_entity_3d_to_2d(&parent_vertex_3d_entity.unwrap())
-                    .unwrap(), edge_angle.unwrap())
+                (
+                    shape_manager
+                        .vertex_entity_3d_to_2d(&parent_vertex_3d_entity.unwrap())
+                        .unwrap(),
+                    edge_angle.unwrap(),
+                )
             };
 
             // get entries
@@ -261,8 +264,12 @@ fn convert_vertices_to_tree(
                 panic!("vertex entity not found");
             };
 
-            let child_entry =
-                VertexEntry::new(child_entity_2d, child_entity_3d, vertex_3d.as_vec3(), edge_angle.get_radians());
+            let child_entry = VertexEntry::new(
+                child_entity_2d,
+                child_entity_3d,
+                vertex_3d.as_vec3(),
+                edge_angle.get_radians(),
+            );
             output.push((child_entity_3d, child_entry));
         }
     }

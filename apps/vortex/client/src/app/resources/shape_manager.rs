@@ -13,6 +13,7 @@ use input::MouseButton;
 use naia_bevy_client::{Client, CommandsExt, Replicate, ReplicationConfig};
 
 use math::{convert_2d_to_3d, convert_3d_to_2d, Vec2, Vec3};
+use render_api::shapes::{angle_between, normalize_angle, set_2d_line_transform_from_angle};
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
     components::{Camera, CameraProjection, Projection, RenderObjectBundle, Transform, Visibility},
@@ -22,9 +23,10 @@ use render_api::{
     },
     Assets, Handle,
 };
-use render_api::shapes::{angle_between, normalize_angle, set_2d_line_transform_from_angle};
 
-use vortex_proto::components::{EdgeAngle, Face3d, FileTypeValue, OwnedByFile, Vertex3d, VertexRoot};
+use vortex_proto::components::{
+    EdgeAngle, Face3d, FileTypeValue, OwnedByFile, Vertex3d, VertexRoot,
+};
 
 use crate::app::{
     components::{
@@ -32,10 +34,10 @@ use crate::app::{
         SelectTriangle, Vertex2d, VertexTypeData,
     },
     resources::{
-        canvas::Canvas,
         action::{ActionStack, ShapeAction},
         camera_manager::{CameraAngle, CameraManager},
         camera_state::CameraState,
+        canvas::Canvas,
         input_manager::AppInputAction,
         tab_manager::TabState,
     },
@@ -95,7 +97,12 @@ struct Edge3dData {
 }
 
 impl Edge3dData {
-    fn new(entity_2d: Entity, vertex_a_3d_entity: Entity, vertex_b_3d_entity: Entity, angle_entities_opt: Option<(Entity, Entity, Entity)>) -> Self {
+    fn new(
+        entity_2d: Entity,
+        vertex_a_3d_entity: Entity,
+        vertex_b_3d_entity: Entity,
+        angle_entities_opt: Option<(Entity, Entity, Entity)>,
+    ) -> Self {
         Self {
             entity_2d,
             vertex_a_3d_entity,
@@ -245,7 +252,6 @@ impl Default for ShapeManager {
 }
 
 impl ShapeManager {
-
     pub(crate) fn on_canvas_focus_changed(&mut self, new_focus: bool) {
         self.recalculate_selection();
         if !new_focus {
@@ -356,7 +362,9 @@ impl ShapeManager {
                                 new_pos,
                             ));
                     }
-                    if let Some((edge_2d_entity, old_angle, new_angle)) = self.last_edge_dragged.take() {
+                    if let Some((edge_2d_entity, old_angle, new_angle)) =
+                        self.last_edge_dragged.take()
+                    {
                         tab_state
                             .action_stack
                             .buffer_action(ShapeAction::RotateEdge(
@@ -425,7 +433,7 @@ impl ShapeManager {
 
         let edge_2d_scale = Edge2dLocal::NORMAL_THICKNESS * camera_3d_scale;
         let hover_edge_2d_scale = Edge2dLocal::HOVER_THICKNESS * camera_3d_scale;
-        let edge_angle_scale = ((Edge2dLocal::HOVER_THICKNESS + 1.0)/2.0) * camera_3d_scale;
+        let edge_angle_scale = ((Edge2dLocal::HOVER_THICKNESS + 1.0) / 2.0) * camera_3d_scale;
         let edge_angle_length = edge_2d_scale * 4.0;
         let compass_edge_3d_scale = Compass::EDGE_THICKNESS / camera_3d_scale;
         let compass_edge_2d_scale = Edge2dLocal::NORMAL_THICKNESS;
@@ -570,9 +578,9 @@ impl ShapeManager {
 
             // update 2d edge angle
             if let Some(edge_angle) = edge_angle_opt {
-
                 let edge_3d_data = self.edges_3d.get(&edge_entity).unwrap();
-                let (base_circle_entity, angle_edge_entity, end_circle_entity) = edge_3d_data.angle_entities_opt.unwrap();
+                let (base_circle_entity, angle_edge_entity, end_circle_entity) =
+                    edge_3d_data.angle_entities_opt.unwrap();
                 for entity in [base_circle_entity, angle_edge_entity, end_circle_entity] {
                     let Ok(mut visibility) = visibility_q.get_mut(entity) else {
                         warn!("Edge angle entity {:?} has no transform", entity);
@@ -598,7 +606,13 @@ impl ShapeManager {
 
                     let edge_angle_drawn = base_angle + edge_angle + FRAC_PI_2;
                     let edge_depth_drawn = edge_depth - 1.0;
-                    set_2d_line_transform_from_angle(&mut angle_transform, middle_pos, edge_angle_drawn, edge_angle_length, edge_depth_drawn);
+                    set_2d_line_transform_from_angle(
+                        &mut angle_transform,
+                        middle_pos,
+                        edge_angle_drawn,
+                        edge_angle_length,
+                        edge_depth_drawn,
+                    );
                     angle_transform.scale.y = edge_2d_scale;
                     let edge_angle_endpoint = get_2d_line_transform_endpoint(&angle_transform);
 
@@ -750,7 +764,12 @@ impl ShapeManager {
 
         self.edges_3d.insert(
             edge_3d_entity,
-            Edge3dData::new(edge_2d_entity, vertex_a_3d_entity, vertex_b_3d_entity, angle_entities_opt),
+            Edge3dData::new(
+                edge_2d_entity,
+                vertex_a_3d_entity,
+                vertex_b_3d_entity,
+                angle_entities_opt,
+            ),
         );
         self.edges_2d.insert(edge_2d_entity, edge_3d_entity);
 
@@ -1558,9 +1577,23 @@ impl ShapeManager {
     ) -> Entity {
         // edge 3d
         let shape_components = if arrows_not_lines {
-            create_3d_edge_diamond(meshes, materials, Vec3::ZERO, Vec3::X, color, Edge3dLocal::NORMAL_THICKNESS)
+            create_3d_edge_diamond(
+                meshes,
+                materials,
+                Vec3::ZERO,
+                Vec3::X,
+                color,
+                Edge3dLocal::NORMAL_THICKNESS,
+            )
         } else {
-            create_3d_edge_line(meshes, materials, Vec3::ZERO, Vec3::X, color, Edge3dLocal::NORMAL_THICKNESS)
+            create_3d_edge_line(
+                meshes,
+                materials,
+                Vec3::ZERO,
+                Vec3::X,
+                color,
+                Edge3dLocal::NORMAL_THICKNESS,
+            )
         };
         commands
             .entity(edge_3d_entity)
@@ -1611,7 +1644,6 @@ impl ShapeManager {
 
         // Edge Angle
         let edge_angle_entities_opt = if let Some(_edge_angle) = edge_angle_opt {
-
             let shape_components = create_2d_edge_line(
                 meshes,
                 materials,
@@ -1621,14 +1653,16 @@ impl ShapeManager {
                 Color::DARK_BLUE,
                 Edge2dLocal::NORMAL_THICKNESS,
             );
-            let edge_angle_line_entity = commands.spawn_empty()
+            let edge_angle_line_entity = commands
+                .spawn_empty()
                 .insert(shape_components)
                 .insert(camera_manager.layer_2d)
                 .id();
             let edge_angle_circle_entities = {
                 let mut circle_entities = Vec::new();
                 for _ in 0..2 {
-                    let id = commands.spawn_empty()
+                    let id = commands
+                        .spawn_empty()
                         .insert(RenderObjectBundle::circle(
                             meshes,
                             materials,
@@ -1654,7 +1688,11 @@ impl ShapeManager {
                         .insert(OwnedByFileLocal::new(file_entity));
                 }
             }
-            Some((edge_angle_circle_entities[0], edge_angle_line_entity, edge_angle_circle_entities[1]))
+            Some((
+                edge_angle_circle_entities[0],
+                edge_angle_line_entity,
+                edge_angle_circle_entities[1],
+            ))
         } else {
             None
         };
@@ -2041,8 +2079,9 @@ impl ShapeManager {
                                 (_, CanvasShape::Edge) | (_, CanvasShape::Face) => {
                                     // should not ever be able to attach something to an edge or face?
                                     // select hovered entity
-                                    action_stack
-                                        .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
+                                    action_stack.buffer_action(ShapeAction::SelectShape(
+                                        self.hovered_entity,
+                                    ));
                                     return;
                                 }
                                 _ => {}
@@ -2109,7 +2148,7 @@ impl ShapeManager {
                             action_stack.buffer_action(ShapeAction::CreateVertex(
                                 match self.current_file_type {
                                     FileTypeValue::Skel => {
-                                        VertexTypeData::Skel(vertex_2d_entity, 0.0,None)
+                                        VertexTypeData::Skel(vertex_2d_entity, 0.0, None)
                                     }
                                     FileTypeValue::Mesh => VertexTypeData::Mesh(
                                         vec![(vertex_2d_entity, None)],
@@ -2144,8 +2183,7 @@ impl ShapeManager {
                         action_stack.buffer_action(ShapeAction::SelectShape(self.hovered_entity));
                     }
                     (CanvasShape::Edge, MouseButton::Left) => {
-                        action_stack
-                            .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
+                        action_stack.buffer_action(ShapeAction::SelectShape(self.hovered_entity));
                     }
                     (CanvasShape::Face, MouseButton::Left) => {
                         if self.current_file_type == FileTypeValue::Mesh {
@@ -2186,19 +2224,19 @@ impl ShapeManager {
         edge_angle_q: &mut Query<&mut EdgeAngle>,
     ) {
         let vertex_is_selected = self.selected_shape.is_some();
-        let shape_can_drag = vertex_is_selected && match self.selected_shape.unwrap().1 {
-            CanvasShape::RootVertex | CanvasShape::Vertex => true,
-            CanvasShape::Edge => {
-                self.current_file_type == FileTypeValue::Skel
-            }
-            _ => false,
-        };
+        let shape_can_drag = vertex_is_selected
+            && match self.selected_shape.unwrap().1 {
+                CanvasShape::RootVertex | CanvasShape::Vertex => true,
+                CanvasShape::Edge => self.current_file_type == FileTypeValue::Skel,
+                _ => false,
+            };
 
         if vertex_is_selected && shape_can_drag {
             match click_type {
                 MouseButton::Left => {
                     match self.selected_shape.unwrap() {
-                        (vertex_2d_entity, CanvasShape::Vertex) | (vertex_2d_entity, CanvasShape::RootVertex) => {
+                        (vertex_2d_entity, CanvasShape::Vertex)
+                        | (vertex_2d_entity, CanvasShape::RootVertex) => {
                             // move vertex
                             let Some(vertex_3d_entity) = self.vertex_entity_2d_to_3d(&vertex_2d_entity) else {
                                 warn!(
@@ -2259,7 +2297,8 @@ impl ShapeManager {
                         }
                         (edge_2d_entity, CanvasShape::Edge) => {
                             // rotate edge angle
-                            let edge_3d_entity = self.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
+                            let edge_3d_entity =
+                                self.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
 
                             let auth_status =
                                 commands.entity(edge_3d_entity).authority(client).unwrap();
@@ -2274,16 +2313,32 @@ impl ShapeManager {
                             let end_pos = get_2d_line_transform_endpoint(&edge_2d_transform);
                             let base_angle = angle_between(&start_pos, &end_pos);
 
-                            let edge_angle_entity = self.edges_3d.get(&edge_3d_entity).unwrap().angle_entities_opt.unwrap().0;
-                            let edge_angle_pos = transform_q.get(edge_angle_entity).unwrap().translation.truncate();
+                            let edge_angle_entity = self
+                                .edges_3d
+                                .get(&edge_3d_entity)
+                                .unwrap()
+                                .angle_entities_opt
+                                .unwrap()
+                                .0;
+                            let edge_angle_pos = transform_q
+                                .get(edge_angle_entity)
+                                .unwrap()
+                                .translation
+                                .truncate();
 
                             let mut edge_angle = edge_angle_q.get_mut(edge_3d_entity).unwrap();
-                            let new_angle = normalize_angle(angle_between(&edge_angle_pos, &mouse_position) - FRAC_PI_2 - base_angle);
+                            let new_angle = normalize_angle(
+                                angle_between(&edge_angle_pos, &mouse_position)
+                                    - FRAC_PI_2
+                                    - base_angle,
+                            );
                             if let Some((_, prev_angle, _)) = self.last_edge_dragged {
-                                self.last_edge_dragged = Some((edge_2d_entity, prev_angle, new_angle));
+                                self.last_edge_dragged =
+                                    Some((edge_2d_entity, prev_angle, new_angle));
                             } else {
                                 let old_angle = edge_angle.get_radians();
-                                self.last_edge_dragged = Some((edge_2d_entity, old_angle, new_angle));
+                                self.last_edge_dragged =
+                                    Some((edge_2d_entity, old_angle, new_angle));
                             }
                             edge_angle.set_radians(new_angle);
 

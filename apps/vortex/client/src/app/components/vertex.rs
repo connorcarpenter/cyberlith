@@ -56,7 +56,9 @@ impl VertexEntry {
         self.position
     }
 
-    pub fn edge_angle(&self) -> f32 { self.edge_angle }
+    pub fn edge_angle(&self) -> f32 {
+        self.edge_angle
+    }
 
     pub fn children(&self) -> Option<Vec<VertexEntry>> {
         self.children.clone()

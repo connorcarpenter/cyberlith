@@ -13,7 +13,13 @@ pub fn set_2d_line_transform(transform: &mut Transform, start: Vec2, end: Vec2, 
     set_2d_line_transform_from_angle(transform, start, angle, start.distance(end), depth);
 }
 
-pub fn set_2d_line_transform_from_angle(transform: &mut Transform, start: Vec2, angle: f32, length: f32, depth: f32) {
+pub fn set_2d_line_transform_from_angle(
+    transform: &mut Transform,
+    start: Vec2,
+    angle: f32,
+    length: f32,
+    depth: f32,
+) {
     transform.translation.x = start.x;
     transform.translation.y = start.y;
     transform.translation.z = depth;

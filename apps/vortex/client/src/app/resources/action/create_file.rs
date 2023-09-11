@@ -17,7 +17,9 @@ use vortex_proto::{
 
 use crate::app::{
     components::{
-        file_system::{FileSystemEntryLocal, ChangelistUiState, FileSystemParent, FileSystemUiState},
+        file_system::{
+            ChangelistUiState, FileSystemEntryLocal, FileSystemParent, FileSystemUiState,
+        },
         OwnedByFileLocal,
     },
     resources::{
@@ -27,11 +29,11 @@ use crate::app::{
         },
         camera_manager::CameraManager,
         canvas::Canvas,
+        file_manager::FileManager,
         file_tree::FileTree,
         shape_manager::ShapeManager,
         tab_manager::TabManager,
         toolbar::Toolbar,
-        file_manager::FileManager,
     },
     systems::file_post_process,
 };
@@ -199,7 +201,8 @@ fn create_fs_entry(
     // add child to parent
     file_post_process::parent_add_child_entry(parent, &entry, entity_id);
 
-    commands.entity(entity_id)
+    commands
+        .entity(entity_id)
         // add FileSystemEntry component
         .insert(entry)
         // add FileSystemEntryLocal component

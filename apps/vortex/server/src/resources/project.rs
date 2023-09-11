@@ -11,7 +11,7 @@ use git2::{Repository, Signature};
 use naia_bevy_server::{BigMapKey, CommandsExt, RoomKey, Server, UserKey};
 
 use vortex_proto::{
-    components::{FileSystemEntry, ChangelistEntry, ChangelistStatus, EntryKind},
+    components::{ChangelistEntry, ChangelistStatus, EntryKind, FileSystemEntry},
     messages::ChangelistMessage,
     resources::FileEntryKey,
     FileExtension,
@@ -288,14 +288,17 @@ impl Project {
         &self,
         fs_q: &Query<&FileSystemEntry>,
         file_key: &FileEntryKey,
-        file_entity: Entity
+        file_entity: Entity,
     ) -> String {
-
         let fs_entry = fs_q.get(file_entity).unwrap();
         let file_name = fs_entry.name.as_str();
         let fs_value = self.working_file_entries.get(file_key).unwrap();
         if let Some(parent_file_key) = fs_value.parent() {
-            let parent_entity = self.working_file_entries.get(parent_file_key).unwrap().entity();
+            let parent_entity = self
+                .working_file_entries
+                .get(parent_file_key)
+                .unwrap()
+                .entity();
             let parent_path = self.get_full_file_path_working(fs_q, parent_file_key, parent_entity);
             format!("{}/{}", parent_path, file_name)
         } else {
@@ -303,10 +306,7 @@ impl Project {
         }
     }
 
-    fn get_full_file_path_master(
-        &self,
-        file_key: &FileEntryKey,
-    ) -> String {
+    fn get_full_file_path_master(&self, file_key: &FileEntryKey) -> String {
         let file_name = file_key.name();
         let fs_value = self.master_file_entries.get(file_key).unwrap();
         if let Some(parent_file_key) = fs_value.parent() {
@@ -351,7 +351,8 @@ impl Project {
 
         let commit_message = message.commit_message.unwrap();
 
-        let mut system_state: SystemState<(Commands, Server, Query<&FileSystemEntry>)> = SystemState::new(world);
+        let mut system_state: SystemState<(Commands, Server, Query<&FileSystemEntry>)> =
+            SystemState::new(world);
         let (mut commands, mut server, fs_entry_q) = system_state.get_mut(world);
 
         match action_status {
@@ -364,11 +365,8 @@ impl Project {
                 let file_entity = file_entry_val.entity();
 
                 info!("git modify file");
-                let path = self.get_full_file_path_working(
-                    &fs_entry_q,
-                    &file_entry_key,
-                    file_entity
-                );
+                let path =
+                    self.get_full_file_path_working(&fs_entry_q, &file_entry_key, file_entity);
                 self.fs_create_or_update_file(&file_entry_key, &path);
 
                 // despawn changelist entity
@@ -400,11 +398,8 @@ impl Project {
                 );
 
                 info!("git create file");
-                let path = self.get_full_file_path_working(
-                    &fs_entry_q,
-                    &file_entry_key,
-                    file_entity
-                );
+                let path =
+                    self.get_full_file_path_working(&fs_entry_q, &file_entry_key, file_entity);
                 self.fs_create_or_update_file(&file_entry_key, &path);
 
                 // despawn changelist entity
@@ -418,9 +413,7 @@ impl Project {
                 self.git_push();
             }
             ChangelistStatus::Deleted => {
-                let path = self.get_full_file_path_master(
-                    &file_entry_key,
-                );
+                let path = self.get_full_file_path_master(&file_entry_key);
 
                 // Remove Entity from Master Tree, returning a list of child entities that should be despawned
                 let (_entry_value, entities_to_delete) =
@@ -593,7 +586,6 @@ impl Project {
     }
 
     fn fs_write_file(&mut self, key: &FileEntryKey, path: &str) {
-
         let file_content = self
             .changelist_entries
             .get(&key)

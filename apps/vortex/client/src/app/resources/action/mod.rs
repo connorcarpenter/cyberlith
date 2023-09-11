@@ -10,10 +10,10 @@ mod file_action;
 mod file_actions;
 mod move_vertex;
 mod rename_file;
+mod rotate_edge;
 mod select_file;
 mod select_shape;
 mod shape_action;
-mod rotate_edge;
 
 pub use action_stack::*;
 pub use file_action::*;
