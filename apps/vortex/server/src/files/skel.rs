@@ -7,10 +7,7 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use naia_bevy_server::{
-    BitReader, CommandsExt, FileBitWriter, ReplicationConfig, Serde, SerdeErr, Server,
-    UnsignedVariableInteger,
-};
+use naia_bevy_server::{BitReader, CommandsExt, FileBitWriter, ReplicationConfig, Serde, SerdeErr, Server, UnsignedInteger, UnsignedVariableInteger};
 
 use vortex_proto::components::{
     Edge3d, EdgeAngle, FileType, FileTypeValue, ShapeName, Vertex3d, VertexRoot, VertexSerdeInt,
@@ -32,7 +29,7 @@ enum SkelAction {
         i16,
         i16,
         i16,
-        Option<(u16, u8)>,
+        Option<(u16, UnsignedInteger<6>)>,
         Option<String>,
         Option<String>,
     ),
@@ -75,7 +72,7 @@ impl SkelWriter {
                 i16,
                 i16,
                 i16,
-                Option<(Entity, u8)>,
+                Option<(Entity, UnsignedInteger<6>)>,
                 Option<String>,
                 Option<String>,
             ),
@@ -130,10 +127,9 @@ impl SkelWriter {
             let parent_entity_opt =
                 parent_and_edge_entity_opt.map(|(parent_entity, edge_entity)| {
                     let Ok(edge_angle) = edge_angle_q.get(edge_entity) else {
-                    panic!("edge_entity {:?} does not have an EdgeAngle component!", edge_entity);
-                };
-                    let edge_angle_val: u8 = *edge_angle.value;
-                    (parent_entity, edge_angle_val)
+                        panic!("edge_entity {:?} does not have an EdgeAngle component!", edge_entity);
+                    };
+                    (parent_entity, *edge_angle.value)
                 });
 
             let id = vertices.len();
@@ -270,7 +266,7 @@ impl SkelReader {
                 }
             };
             let parent_and_angle_opt = if let Some(parent_id) = parent_id_opt {
-                let angle = u8::de(bit_reader)?;
+                let angle = UnsignedInteger::<6>::de(bit_reader)?;
                 Some((parent_id, angle))
             } else {
                 None
@@ -302,7 +298,7 @@ impl SkelReader {
             i16,
             i16,
             i16,
-            Option<(u16, u8)>,
+            Option<(u16, UnsignedInteger<6>)>,
             Option<String>,
             Option<String>,
         )> = Vec::new();

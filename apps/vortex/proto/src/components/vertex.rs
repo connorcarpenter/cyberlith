@@ -1,8 +1,6 @@
 use bevy_ecs::component::Component;
 
-use naia_bevy_shared::{
-    EntityProperty, Property, Protocol, ProtocolPlugin, Replicate, Serde, SignedVariableInteger,
-};
+use naia_bevy_shared::{EntityProperty, Property, Protocol, ProtocolPlugin, Replicate, Serde, SignedVariableInteger, UnsignedInteger};
 
 use math::Vec3;
 
@@ -156,13 +154,19 @@ impl ShapeName {
 // EdgeAngle
 #[derive(Component, Replicate)]
 pub struct EdgeAngle {
-    pub value: Property<u8>,
+    pub value: Property<UnsignedInteger<6>>,
 }
 
 impl EdgeAngle {
+    const MAX_ANGLES: f32 = 64.0;
+    const MAX_DEGREES: f32 = 360.0;
+
     pub fn new(value_f32: f32) -> Self {
-        let value_u8 = (value_f32 * 255.0 / 360.0) as u8;
-        Self::new_complete(value_u8)
+
+        let value_u8 = (value_f32 * Self::MAX_ANGLES / Self::MAX_DEGREES) as u8;
+        let integer = UnsignedInteger::<6>::new(value_u8);
+
+        Self::new_complete(integer)
     }
 
     // angle in degrees
@@ -179,14 +183,15 @@ impl EdgeAngle {
 
     // angle in degrees
     pub fn get_degrees(&self) -> f32 {
-        let value: u8 = *self.value;
-        let value_f32 = value as f32;
-        value_f32 * 360.0 / 255.0
+        let value_u8: u8 = self.value.to();
+        let value_f32 = value_u8 as f32;
+        value_f32 * Self::MAX_DEGREES / Self::MAX_ANGLES
     }
 
     // angle in degrees
-    pub fn set_degrees(&mut self, value: f32) {
-        let value_u8 = (value * 255.0 / 360.0) as u8;
-        *self.value = value_u8;
+    pub fn set_degrees(&mut self, value_f32: f32) {
+        let value_u8 = (value_f32 * Self::MAX_ANGLES / Self::MAX_DEGREES) as u8;
+        let integer = UnsignedInteger::<6>::new(value_u8);
+        *self.value = integer;
     }
 }
