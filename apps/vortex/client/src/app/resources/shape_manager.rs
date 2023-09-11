@@ -433,8 +433,9 @@ impl ShapeManager {
 
         let edge_2d_scale = Edge2dLocal::NORMAL_THICKNESS * camera_3d_scale;
         let hover_edge_2d_scale = Edge2dLocal::HOVER_THICKNESS * camera_3d_scale;
-        let edge_angle_scale = ((Edge2dLocal::HOVER_THICKNESS + 1.0) / 2.0) * camera_3d_scale;
-        let edge_angle_length = edge_2d_scale * 4.0;
+        let edge_angle_base_circle_scale = ((Edge2dLocal::HOVER_THICKNESS + 1.0) / 2.0) * camera_3d_scale * 1.2;
+        let edge_angle_end_circle_scale = edge_angle_base_circle_scale * 0.6;
+        let edge_angle_length = edge_2d_scale * 5.0;
         let compass_edge_3d_scale = Compass::EDGE_THICKNESS / camera_3d_scale;
         let compass_edge_2d_scale = Edge2dLocal::NORMAL_THICKNESS;
 
@@ -623,7 +624,7 @@ impl ShapeManager {
                     base_circle_transform.translation.x = middle_pos.x;
                     base_circle_transform.translation.y = middle_pos.y;
                     base_circle_transform.translation.z = edge_depth_drawn;
-                    base_circle_transform.scale = Vec3::splat(edge_angle_scale);
+                    base_circle_transform.scale = Vec3::splat(edge_angle_base_circle_scale);
 
                     let Ok(mut end_circle_transform) = transform_q.get_mut(end_circle_entity) else {
                         warn!("Edge angle end circle entity {:?} has no transform", end_circle_entity);
@@ -632,7 +633,7 @@ impl ShapeManager {
                     end_circle_transform.translation.x = edge_angle_endpoint.x;
                     end_circle_transform.translation.y = edge_angle_endpoint.y;
                     end_circle_transform.translation.z = edge_depth_drawn;
-                    end_circle_transform.scale = Vec3::splat(edge_angle_scale);
+                    end_circle_transform.scale = Vec3::splat(edge_angle_end_circle_scale);
                 }
             }
         }
