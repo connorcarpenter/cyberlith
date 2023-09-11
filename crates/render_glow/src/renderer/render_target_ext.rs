@@ -7,11 +7,6 @@ pub trait RenderTargetExt {
     fn height(&self) -> u32;
     fn write(&self, render: impl FnOnce()) -> &Self;
 
-    ///
-    /// Render the objects using the given camera and lights into this render target.
-    /// Use an empty array for the `lights` argument, if the objects does not require lights to be rendered.
-    /// Also, objects outside the camera frustum are not rendered and the objects are rendered in the order given by [cmp_render_order].
-    ///
     fn render(&self, render_pass: RenderPass) -> &Self {
         let (camera, lights_holder, mut objects) = render_pass.take();
         let lights = &RenderPass::process_lights(&lights_holder);

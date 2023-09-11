@@ -48,7 +48,7 @@ impl CameraBundle {
 ///
 /// Represents a camera used for viewing 3D assets.
 ///
-#[derive(Component)]
+#[derive(Component, Clone, Copy)]
 pub struct Camera {
     pub viewport: Option<Viewport>,
     pub order: usize,

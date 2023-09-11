@@ -9,7 +9,7 @@ use crate::base::{Attenuation, Color};
 ///
 /// A light which shines from the given position in all directions.
 ///
-#[derive(Component)]
+#[derive(Component, Copy, Clone)]
 pub struct PointLight {
     pub position: Vec3,
     /// The intensity of the light. This allows for higher intensity than 1 which can be used to simulate high intensity light sources like the sun.

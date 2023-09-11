@@ -3,7 +3,7 @@ pub use plugin::RenderGlowPlugin;
 
 mod asset_mapping;
 mod base_set;
-mod draw;
+mod draw_flush;
 mod input;
 mod plugin;
 mod runner;

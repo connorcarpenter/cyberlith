@@ -1,6 +1,6 @@
 use bevy_ecs::component::Component;
 
-use render_api::components::AmbientLight;
+use render_api::components::{AmbientLight, AmbientLightColor};
 
 use crate::{core::*, renderer::*};
 
@@ -35,12 +35,12 @@ impl From<&AmbientLight> for AmbientLightImpl {
 }
 
 pub struct RenderAmbientLight<'a> {
-    pub ambient_light: &'a AmbientLight,
+    pub ambient_light: &'a AmbientLightColor,
     pub ambient_light_impl: &'a AmbientLightImpl,
 }
 
 impl<'a> RenderAmbientLight<'a> {
-    pub fn new(ambient_light: &'a AmbientLight, ambient_light_impl: &'a AmbientLightImpl) -> Self {
+    pub fn new(ambient_light: &'a AmbientLightColor, ambient_light_impl: &'a AmbientLightImpl) -> Self {
         Self {
             ambient_light,
             ambient_light_impl,

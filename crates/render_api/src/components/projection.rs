@@ -10,7 +10,7 @@ pub trait CameraProjection {
     fn far(&self) -> f32;
 }
 
-#[derive(Component, Clone)]
+#[derive(Component, Clone, Copy)]
 pub enum Projection {
     Perspective(PerspectiveProjection),
     Orthographic(OrthographicProjection),
@@ -58,7 +58,7 @@ impl Default for Projection {
 }
 
 /// A 3D camera projection in which distant objects appear smaller than close objects.
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct PerspectiveProjection {
     /// The vertical field of view (FOV) in radians.
     ///
@@ -104,7 +104,7 @@ impl Default for PerspectiveProjection {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct OrthographicProjection {
     pub height: f32,
     /// The distance of the near clipping plane in world units.

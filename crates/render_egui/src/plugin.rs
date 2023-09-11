@@ -1,6 +1,6 @@
 use bevy_app::{App, First, MainScheduleOrder, Plugin, PostUpdate, Startup};
 
-use render_api::{RenderDraw, RenderSync};
+use render_api::{Draw, RenderSync};
 
 use crate::{
     systems, EguiContext, EguiDraw, EguiPostUpdate, EguiPreUpdate, EguiSync, EguiUserTextures,
@@ -26,6 +26,6 @@ impl Plugin for EguiPlugin {
         order.insert_after(First, EguiPreUpdate);
         order.insert_after(PostUpdate, EguiPostUpdate);
         order.insert_after(RenderSync, EguiSync);
-        order.insert_after(RenderDraw, EguiDraw);
+        order.insert_after(Draw, EguiDraw);
     }
 }

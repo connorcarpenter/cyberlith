@@ -81,11 +81,7 @@ fn setup_2d_scene(
     // light
     {
         commands
-            .spawn(AmbientLight {
-                intensity: 1.0,
-                color: Color::WHITE,
-                ..Default::default()
-            })
+            .spawn(AmbientLight::new(1.0, Color::WHITE))
             .insert(camera_manager.layer_2d);
     }
 

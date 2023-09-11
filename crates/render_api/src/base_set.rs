@@ -4,4 +4,7 @@ use bevy_ecs::schedule::ScheduleLabel;
 pub struct RenderSync;
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, ScheduleLabel)]
-pub struct RenderDraw;
+pub struct Draw;
+
+#[derive(Debug, Hash, PartialEq, Eq, Clone, ScheduleLabel)]
+pub struct Render;

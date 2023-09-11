@@ -8,10 +8,7 @@ use crate::base::{Color, CpuTextureCube};
 ///
 #[derive(Component)]
 pub struct AmbientLight {
-    /// The intensity of the light. This allows for higher intensity than 1 which can be used to simulate high intensity light sources like the sun.
-    pub intensity: f32,
-    /// The base color of the light.
-    pub color: Color,
+    pub color: AmbientLightColor,
     /// The light shining from the environment. This is calculated based on an environment map.
     pub environment: Option<CpuTextureCube>,
 }
@@ -19,8 +16,7 @@ pub struct AmbientLight {
 impl AmbientLight {
     pub fn none() -> Self {
         Self {
-            intensity: 0.0,
-            color: Color::WHITE,
+            color: AmbientLightColor::new(0.0, Color::WHITE),
             environment: None,
         }
     }
@@ -28,8 +24,7 @@ impl AmbientLight {
     /// Constructs an ambient light that shines equally on all surfaces.
     pub fn new(intensity: f32, color: Color) -> Self {
         Self {
-            intensity,
-            color,
+            color: AmbientLightColor::new(intensity, color),
             environment: None,
         }
     }
@@ -41,8 +36,7 @@ impl AmbientLight {
         environment_map: CpuTextureCube,
     ) -> Self {
         Self {
-            intensity,
-            color,
+            color: AmbientLightColor::new(intensity, color),
             environment: Some(environment_map),
         }
     }
@@ -51,9 +45,31 @@ impl AmbientLight {
 impl Default for AmbientLight {
     fn default() -> Self {
         Self {
-            color: Color::WHITE,
-            intensity: 1.0,
+            color: AmbientLightColor::default(),
             environment: None,
         }
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct AmbientLightColor {
+    /// The intensity of the light. This allows for higher intensity than 1 which can be used to simulate high intensity light sources like the sun.
+    pub intensity: f32,
+    /// The base color of the light.
+    pub color: Color,
+}
+
+impl Default for AmbientLightColor {
+    fn default() -> Self {
+        Self {
+            color: Color::WHITE,
+            intensity: 1.0,
+        }
+    }
+}
+
+impl AmbientLightColor {
+    pub fn new(intensity: f32, color: Color) -> Self {
+        Self { intensity, color }
     }
 }

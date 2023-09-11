@@ -1,5 +1,5 @@
 // Clear Operation
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct ClearOperation {
     pub red: Option<f32>,
     pub green: Option<f32>,

@@ -1,4 +1,4 @@
-use render_api::components::AmbientLight;
+use render_api::components::AmbientLightColor;
 
 use crate::{
     core::Program,
@@ -9,7 +9,7 @@ use crate::{
 #[derive(Clone, Copy)]
 pub enum RenderLight<'a> {
     Wrapped(&'a dyn Light),
-    Ambient(&'a AmbientLight, &'a AmbientLightImpl),
+    Ambient(&'a AmbientLightColor, &'a AmbientLightImpl),
 }
 
 impl<'a> RenderLight<'a> {
@@ -17,7 +17,7 @@ impl<'a> RenderLight<'a> {
         Self::Wrapped(light)
     }
 
-    pub fn ambient(light: &'a AmbientLight, light_impl: &'a AmbientLightImpl) -> Self {
+    pub fn ambient(light: &'a AmbientLightColor, light_impl: &'a AmbientLightImpl) -> Self {
         Self::Ambient(light, light_impl)
     }
 }

@@ -4,10 +4,10 @@ use bevy_app::{
 };
 use bevy_ecs::schedule::{ExecutorKind, Schedule};
 
-use render_api::{RenderDraw, Window};
+use render_api::{Render, Window};
 
 use crate::{
-    base_set::GlowInput, draw::draw, input, runner::runner_func, sync::SyncPlugin, window,
+    base_set::GlowInput, draw_flush::render, input, runner::runner_func, sync::SyncPlugin, window,
 };
 
 pub struct RenderGlowPlugin;
@@ -26,7 +26,7 @@ impl Plugin for RenderGlowPlugin {
             .add_systems(PreStartup, window::sync)
             .add_systems(First, window::sync)
             .add_systems(GlowInput, input::run)
-            .add_systems(RenderDraw, draw);
+            .add_systems(Render, render);
 
         let mut order = app.world.resource_mut::<MainScheduleOrder>();
         order.insert_after(PreUpdate, GlowInput);

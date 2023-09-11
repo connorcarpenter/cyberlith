@@ -2,6 +2,7 @@ use bevy_app::{App, Plugin, Startup, Update};
 use bevy_ecs::schedule::IntoSystemConfigs;
 
 use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin, ReceiveEvents};
+use render_api::Draw;
 
 use render_api::resources::WindowSettings;
 
@@ -25,6 +26,7 @@ use crate::app::{
     systems::{canvas, network, ui},
     ui::{UiState, widgets::NamingBarState},
 };
+use crate::app::systems::draw;
 
 pub struct VortexPlugin;
 
@@ -113,6 +115,8 @@ impl Plugin for VortexPlugin {
             .add_systems(Update, canvas::process_faces)
             .add_systems(Update, canvas::update_select_line)
             .add_systems(Update, canvas::input)
-            .add_systems(Update, canvas::update_mouse_hover);
+            .add_systems(Update, canvas::update_mouse_hover)
+            // Draw
+            .add_systems(Draw, draw);
     }
 }

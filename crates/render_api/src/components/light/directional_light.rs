@@ -10,7 +10,7 @@ use crate::base::Color;
 /// A light which shines in the given direction.
 /// The light will cast shadows if you [generate a shadow map](DirectionalLight::generate_shadow_map).
 ///
-#[derive(Component, Clone)]
+#[derive(Component, Clone, Copy)]
 pub struct DirectionalLight {
     /// The intensity of the light. This allows for higher intensity than 1 which can be used to simulate high intensity light sources like the sun.
     pub intensity: f32,
