@@ -16,6 +16,12 @@ pub struct DirectionalLightImpl {
     shadow_matrix: Mat4,
 }
 
+impl From<&DirectionalLight> for DirectionalLightImpl {
+    fn from(light: &DirectionalLight) -> Self {
+        Self::new(light)
+    }
+}
+
 impl DirectionalLightImpl {
     pub fn new(light: &DirectionalLight) -> Self {
         Self {

@@ -29,6 +29,7 @@ pub fn setup(
     mut user_textures: ResMut<EguiUserTextures>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
+    mut ambient_lights: ResMut<Assets<AmbientLight>>,
 ) {
     info!("Environment: {}", config.general.env_name);
 
@@ -41,6 +42,7 @@ pub fn setup(
     setup_3d_scene(
         &mut commands,
         &mut camera_manager,
+        &mut ambient_lights,
         &texture_size,
         canvas_texture_handle,
     );
@@ -50,6 +52,7 @@ pub fn setup(
         &mut shape_manager,
         &mut meshes,
         &mut materials,
+        &mut ambient_lights,
         &texture_size,
         canvas_texture_handle,
     );
@@ -73,6 +76,7 @@ fn setup_2d_scene(
     shape_manager: &mut ShapeManager,
     meshes: &mut Assets<CpuMesh>,
     materials: &mut Assets<CpuMaterial>,
+    ambient_lights: &mut Assets<AmbientLight>,
     texture_size: &Vec2,
     canvas_texture_handle: Handle<CpuTexture2D>,
 ) {
@@ -81,7 +85,7 @@ fn setup_2d_scene(
     // light
     {
         commands
-            .spawn(AmbientLight::new(1.0, Color::WHITE))
+            .spawn(ambient_lights.add(AmbientLight::new(1.0, Color::WHITE)))
             .insert(camera_manager.layer_2d);
     }
 
@@ -165,6 +169,7 @@ fn setup_2d_scene(
 fn setup_3d_scene(
     commands: &mut Commands,
     camera_manager: &mut CameraManager,
+    ambient_lights: &mut Assets<AmbientLight>,
     texture_size: &Vec2,
     canvas_texture_handle: Handle<CpuTexture2D>,
 ) {
@@ -172,7 +177,7 @@ fn setup_3d_scene(
 
     // Ambient Light
     commands
-        .spawn(AmbientLight::new(0.01, Color::WHITE))
+        .spawn(ambient_lights.add(AmbientLight::new(0.01, Color::WHITE)))
         .insert(camera_manager.layer_3d);
     commands
         .spawn(PointLight {

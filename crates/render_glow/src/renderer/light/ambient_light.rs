@@ -10,22 +10,15 @@ use crate::{core::*, renderer::*};
 ///
 #[derive(Component)]
 pub struct AmbientLightImpl {
+    pub color: AmbientLightColor,
     /// The light shining from the environment. This is calculated based on an environment map.
     pub environment: Option<Environment>,
-}
-
-impl AmbientLightImpl {
-    pub fn use_light(&mut self, light: &AmbientLight) {
-        self.environment = light
-            .environment
-            .as_ref()
-            .map(|environment_map| Environment::new(&environment_map.into()));
-    }
 }
 
 impl From<&AmbientLight> for AmbientLightImpl {
     fn from(ambient_light: &AmbientLight) -> Self {
         Self {
+            color: ambient_light.color,
             environment: ambient_light
                 .environment
                 .as_ref()
@@ -34,26 +27,9 @@ impl From<&AmbientLight> for AmbientLightImpl {
     }
 }
 
-pub struct RenderAmbientLight<'a> {
-    pub ambient_light: &'a AmbientLightColor,
-    pub ambient_light_impl: &'a AmbientLightImpl,
-}
-
-impl<'a> RenderAmbientLight<'a> {
-    pub fn new(
-        ambient_light: &'a AmbientLightColor,
-        ambient_light_impl: &'a AmbientLightImpl,
-    ) -> Self {
-        Self {
-            ambient_light,
-            ambient_light_impl,
-        }
-    }
-}
-
-impl<'a> Light for RenderAmbientLight<'a> {
+impl<'a> Light for AmbientLightImpl {
     fn shader_source(&self, i: u32) -> String {
-        if self.ambient_light_impl.environment.is_some() {
+        if self.environment.is_some() {
             format!(
             "
                 uniform samplerCube irradianceMap;
@@ -101,20 +77,20 @@ impl<'a> Light for RenderAmbientLight<'a> {
         }
     }
     fn use_uniforms(&self, program: &Program, _i: u32) {
-        if let Some(ref environment) = self.ambient_light_impl.environment {
+        if let Some(ref environment) = self.environment {
             program.use_texture_cube("irradianceMap", &environment.irradiance_map);
             program.use_texture_cube("prefilterMap", &environment.prefilter_map);
             program.use_texture("brdfLUT", &environment.brdf_map);
         }
         program.use_uniform(
             "ambientColor",
-            self.ambient_light.color.to_vec3() * self.ambient_light.intensity,
+            self.color.color.to_vec3() * self.color.intensity,
         );
     }
 }
 
 impl Default for AmbientLightImpl {
     fn default() -> Self {
-        Self { environment: None }
+        Self { color: AmbientLightColor::default(), environment: None }
     }
 }

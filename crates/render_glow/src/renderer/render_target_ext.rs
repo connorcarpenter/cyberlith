@@ -8,8 +8,7 @@ pub trait RenderTargetExt {
     fn write(&self, render: impl FnOnce()) -> &Self;
 
     fn render(&self, render_pass: RenderPass) -> &Self {
-        let (camera, lights_holder, mut objects) = render_pass.take();
-        let lights = &RenderPass::process_lights(&lights_holder);
+        let (camera, lights, mut objects) = render_pass.take();
 
         // Forward
         for object in objects.iter_mut() {
@@ -21,7 +20,7 @@ pub trait RenderTargetExt {
 
         self.write(|| {
             for object in objects {
-                object.render(&camera, lights);
+                object.render(&camera, &lights);
             }
         });
         self

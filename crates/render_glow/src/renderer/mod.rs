@@ -1,14 +1,3 @@
-pub use effect::*;
-pub use error::*;
-pub use geometry::*;
-pub use light::*;
-pub use material::*;
-pub use render_camera::*;
-pub use render_light::*;
-pub use render_object::*;
-pub use render_pass::*;
-pub use render_target_ext::*;
-pub use utils::*;
 
 mod effect;
 mod error;
@@ -16,8 +5,18 @@ mod geometry;
 mod light;
 mod material;
 mod render_camera;
-mod render_light;
 mod render_object;
 mod render_pass;
 mod render_target_ext;
 mod utils;
+
+pub use effect::*;
+pub use error::*;
+pub use geometry::*;
+pub use light::*;
+pub use material::*;
+pub use render_camera::*;
+pub use render_object::*;
+pub use render_pass::*;
+pub use render_target_ext::*;
+pub use utils::*;

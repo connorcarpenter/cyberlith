@@ -2,6 +2,7 @@ use bevy_app::{App, Last, MainScheduleOrder, Plugin};
 use bevy_ecs::schedule::{ExecutorKind, Schedule};
 
 use crate::{
+    components::{AmbientLight, DirectionalLight},
     assets::Assets,
     base::{CpuMaterial, CpuMesh, CpuTexture2D},
     base_set::{Draw, RenderSync},
@@ -18,6 +19,8 @@ impl Plugin for RenderApiPlugin {
             .init_resource::<Assets<CpuMesh>>()
             .init_resource::<Assets<CpuMaterial>>()
             .init_resource::<Assets<CpuTexture2D>>()
+            .init_resource::<Assets<AmbientLight>>()
+            .init_resource::<Assets<DirectionalLight>>()
             .init_resource::<RenderFrame>();
 
         // Schedules

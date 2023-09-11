@@ -23,7 +23,7 @@ pub fn draw(
         Option<&RenderLayer>,
     )>,
     // Lights
-    ambient_lights_q: Query<(&Handle<AmbientLight>, &AmbientLight, Option<&RenderLayer>)>,
+    ambient_lights_q: Query<(&Handle<AmbientLight>, Option<&RenderLayer>)>,
     point_lights_q: Query<(&PointLight, Option<&RenderLayer>)>,
     directional_lights_q: Query<(&Handle<DirectionalLight>, Option<&RenderLayer>)>,
 ) {
@@ -46,8 +46,8 @@ pub fn draw(
     }
 
     // Aggregate Ambient Lights
-    for (handle, ambient_light, render_layer_opt) in ambient_lights_q.iter() {
-        render_frame.draw_ambient_light(render_layer_opt, handle, &ambient_light.color);
+    for (handle, render_layer_opt) in ambient_lights_q.iter() {
+        render_frame.draw_ambient_light(render_layer_opt, handle);
     }
 
     // Aggregate RenderObjects

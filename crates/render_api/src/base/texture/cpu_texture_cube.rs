@@ -92,6 +92,7 @@ impl CubeSide {
     }
 }
 
+#[derive(Clone, Debug, Hash)]
 pub struct CpuTextureCube {
     pub right: CpuTexture2D,
     pub left: CpuTexture2D,

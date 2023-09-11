@@ -1,10 +1,10 @@
 use std::default::Default;
 
-use crate::base::{CpuMaterial, CpuMesh};
 use bevy_ecs::system::Resource;
 
+use crate::base::{CpuMaterial, CpuMesh};
 use crate::components::{
-    AmbientLight, AmbientLightColor, Camera, DirectionalLight, PointLight, Projection, RenderLayer,
+    AmbientLight, Camera, DirectionalLight, PointLight, Projection, RenderLayer,
     RenderLayers, Transform,
 };
 use crate::Handle;
@@ -58,12 +58,11 @@ impl RenderFrame {
         &mut self,
         render_layer_opt: Option<&RenderLayer>,
         handle: &Handle<AmbientLight>,
-        light_color: &AmbientLightColor,
     ) {
         let id = convert_wrapper(render_layer_opt.copied());
         self.contents
             .ambient_lights
-            .push((id, handle.clone(), *light_color));
+            .push((id, handle.clone()));
     }
 
     pub fn draw_object(
@@ -84,7 +83,7 @@ pub struct RenderFrameContents {
     pub cameras: Vec<(usize, Camera, Transform, Projection)>,
     pub point_lights: Vec<(usize, PointLight)>,
     pub directional_lights: Vec<(usize, Handle<DirectionalLight>)>,
-    pub ambient_lights: Vec<(usize, Handle<AmbientLight>, AmbientLightColor)>,
+    pub ambient_lights: Vec<(usize, Handle<AmbientLight>)>,
     pub objects: Vec<(usize, Handle<CpuMesh>, Handle<CpuMaterial>, Transform)>,
 }
 

@@ -6,12 +6,12 @@ use render_api::{
     Handle,
 };
 
-use crate::renderer::{GpuMesh, Light, Material, RenderCamera, RenderLight, RenderObject};
+use crate::renderer::{GpuMesh, Light, Material, RenderCamera, RenderObject};
 
 // Render Pass
 pub struct RenderPass<'a> {
     pub camera: RenderCamera<'a>,
-    pub lights: Vec<RenderLight<'a>>,
+    pub lights: Vec<&'a dyn Light>,
     objects: HashMap<(Handle<CpuMesh>, Handle<CpuMaterial>), RenderObject<'a>>,
 }
 
@@ -52,7 +52,7 @@ impl<'a> RenderPass<'a> {
         self,
     ) -> (
         RenderCamera<'a>,
-        Vec<RenderLight<'a>>,
+        Vec<&'a dyn Light>,
         Vec<RenderObject<'a>>,
     ) {
         let objects: Vec<RenderObject<'a>> =
@@ -62,9 +62,5 @@ impl<'a> RenderPass<'a> {
 
     pub fn process_camera(render: &RenderCamera<'a>) -> &'a Camera {
         &render.camera
-    }
-
-    pub fn process_lights(render: &'a Vec<RenderLight<'a>>) -> Vec<&dyn Light> {
-        render.iter().map(|light| light as &dyn Light).collect()
     }
 }

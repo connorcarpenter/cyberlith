@@ -12,7 +12,7 @@ use crate::{
     asset_mapping::AssetMapping,
     core::{GpuDepthTexture2D, GpuTexture2D, RenderTarget},
     renderer::{
-        AmbientLightImpl, DirectionalLightImpl, GpuMesh, Material, RenderLight, RenderPass,
+        AmbientLightImpl, DirectionalLightImpl, GpuMesh, Material, RenderPass,
         RenderTargetExt,
     },
     window::FrameInput,
@@ -60,7 +60,7 @@ pub fn render(
                 .as_mut()
                 .unwrap()
                 .lights
-                .push(RenderLight::wrapped(point_light));
+                .push(point_light);
         }
     }
 
@@ -77,12 +77,12 @@ pub fn render(
                 .as_mut()
                 .unwrap()
                 .lights
-                .push(RenderLight::wrapped(directional_light_impl));
+                .push(directional_light_impl);
         }
     }
 
     // Aggregate Ambient Lights
-    for (render_layer, light_handle, light_color) in frame_contents.ambient_lights.iter() {
+    for (render_layer, light_handle) in frame_contents.ambient_lights.iter() {
         for camera_index in layer_to_order[*render_layer].iter().map(|x| *x) {
             if camera_work[camera_index].is_none() {
                 panic!("Found DirectionalLight with RenderLayer not associated with any Camera!");
@@ -94,7 +94,7 @@ pub fn render(
                 .as_mut()
                 .unwrap()
                 .lights
-                .push(RenderLight::ambient(light_color, ambient_light_impl));
+                .push(ambient_light_impl);
         }
     }
 
