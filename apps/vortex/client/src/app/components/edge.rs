@@ -8,8 +8,12 @@ pub struct Edge2dLocal {
 
 impl Edge2dLocal {
     pub const NORMAL_THICKNESS: f32 = 1.0;
-    pub const DETECT_THICKNESS: f32 = Edge2dLocal::NORMAL_THICKNESS + 1.0;
-    pub const HOVER_THICKNESS: f32 = Edge2dLocal::NORMAL_THICKNESS + 1.0;
+    pub const DETECT_THICKNESS: f32 = Self::NORMAL_THICKNESS + 1.0;
+    pub const HOVER_THICKNESS: f32 = Self::NORMAL_THICKNESS + 1.0;
+    pub const EDGE_ANGLE_LENGTH: f32 = 5.0;
+    pub const EDGE_ANGLE_THICKNESS: f32 = 1.0;
+    pub const EDGE_ANGLE_BASE_CIRCLE_RADIUS: f32 = ((Self::HOVER_THICKNESS + 1.0) / 2.0) * 1.2;
+    pub const EDGE_ANGLE_END_CIRCLE_RADIUS: f32 = Self::EDGE_ANGLE_BASE_CIRCLE_RADIUS * 0.6;
 
     pub fn new(start: Entity, end: Entity) -> Self {
         Self { start, end }

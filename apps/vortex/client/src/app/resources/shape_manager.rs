@@ -406,45 +406,85 @@ impl ShapeManager {
             return;
         };
 
-        let Ok(camera_transform) = transform_q.get(camera_3d) else {
-            return;
-        };
-
-        let Ok((camera, camera_projection)) = camera_q.get(camera_3d) else {
-            return;
-        };
-
         self.shapes_recalc -= 1;
-
-        self.compass_recalc(camera_state, vertex_3d_q, &camera_transform);
 
         self.recalculate_hover();
         self.recalculate_selection();
 
+        let camera_3d_scale = camera_state.camera_3d_scale();
+
+        self.sync_compass(
+            &camera_3d,
+            camera_state,
+            vertex_3d_q,
+            &transform_q
+        );
+        self.sync_vertices(
+            &camera_3d,
+            camera_3d_scale,
+            camera_q,
+            vertex_3d_q,
+            transform_q,
+            owned_by_q,
+            compass_q,
+            current_tab_file_entity,
+        );
+        self.sync_2d_edges(
+            edge_2d_q,
+            transform_q,
+            owned_by_q,
+            compass_q,
+            current_tab_file_entity,
+            camera_3d_scale,
+        );
+        self.sync_3d_edges(
+            edge_3d_q,
+            transform_q,
+            owned_by_q,
+            visibility_q,
+            compass_q,
+            current_tab_file_entity,
+            camera_3d_scale,
+        );
+        Self::sync_2d_faces(
+            face_2d_q,
+            transform_q,
+            owned_by_q,
+            current_tab_file_entity,
+            camera_3d_scale,
+        );
+        self.sync_hover_shape_scale(
+            transform_q,
+            camera_3d_scale,
+        );
+    }
+
+    fn sync_vertices(
+        &self,
+        camera_3d_entity: &Entity,
+        camera_3d_scale: f32,
+        camera_q: &Query<(&Camera, &Projection)>,
+        vertex_3d_q: &mut Query<(Entity, &mut Vertex3d)>,
+        transform_q: &mut Query<&mut Transform>,
+        owned_by_q: &Query<&OwnedByFileLocal>,
+        compass_q: &Query<&Compass>,
+        current_tab_file_entity: Entity,
+    ) {
+        let Ok((camera, camera_projection)) = camera_q.get(*camera_3d_entity) else {
+            return;
+        };
+
+        let Ok(camera_transform) = transform_q.get(*camera_3d_entity) else {
+            return;
+        };
+
         let camera_viewport = camera.viewport.unwrap();
         let view_matrix = camera_transform.view_matrix();
         let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
-
-        let camera_3d_scale = camera_state.camera_3d_scale();
-
         let vertex_2d_scale = Vertex2d::RADIUS * camera_3d_scale;
-        let hover_vertex_2d_scale = Vertex2d::HOVER_RADIUS * camera_3d_scale;
         let compass_vertex_3d_scale = Compass::VERTEX_RADIUS / camera_3d_scale;
         let compass_vertex_2d_scale = Vertex2d::RADIUS;
 
-        let edge_2d_scale = Edge2dLocal::NORMAL_THICKNESS * camera_3d_scale;
-        let hover_edge_2d_scale = Edge2dLocal::HOVER_THICKNESS * camera_3d_scale;
-        let edge_angle_base_circle_scale =
-            ((Edge2dLocal::HOVER_THICKNESS + 1.0) / 2.0) * camera_3d_scale * 1.2;
-        let edge_angle_end_circle_scale = edge_angle_base_circle_scale * 0.6;
-        let edge_angle_length = edge_2d_scale * 5.0;
-        let compass_edge_3d_scale = Compass::EDGE_THICKNESS / camera_3d_scale;
-        let compass_edge_2d_scale = Edge2dLocal::NORMAL_THICKNESS;
-
-        let face_2d_scale = FaceIcon2d::SIZE * camera_3d_scale;
-        let hover_face_2d_scale = FaceIcon2d::HOVER_SIZE * camera_3d_scale;
-
-        // update vertices
         for (vertex_3d_entity, vertex_3d) in vertex_3d_q.iter() {
             // check if vertex is owned by the current tab
             if !Self::is_owned_by_tab_or_unowned(
@@ -498,8 +538,19 @@ impl ShapeManager {
                 vertex_2d_transform.scale = Vec3::splat(vertex_2d_scale);
             }
         }
+    }
 
-        // update 2d edges
+    fn sync_2d_edges(
+        &mut self,
+        edge_2d_q: &Query<(Entity, &Edge2dLocal)>,
+        transform_q: &mut Query<&mut Transform>,
+        owned_by_q: &Query<&OwnedByFileLocal>,
+        compass_q: &Query<&Compass>,
+        current_tab_file_entity: Entity,
+        camera_3d_scale: f32,
+    ) {
+        let edge_2d_scale = Edge2dLocal::NORMAL_THICKNESS * camera_3d_scale;
+
         for (edge_2d_entity, edge_endpoints) in edge_2d_q.iter() {
             let Some(end_3d_entity) = self.vertex_entity_2d_to_3d(&edge_endpoints.end) else {
                 warn!("Edge entity {:?} has no 3d endpoint entity", edge_2d_entity);
@@ -541,13 +592,29 @@ impl ShapeManager {
             set_2d_line_transform(&mut edge_2d_transform, start_pos, end_pos, depth);
 
             if compass_q.get(edge_2d_entity).is_ok() {
-                edge_2d_transform.scale.y = compass_edge_2d_scale;
+                edge_2d_transform.scale.y = Edge2dLocal::NORMAL_THICKNESS;
             } else {
                 edge_2d_transform.scale.y = edge_2d_scale;
             }
         }
+    }
 
-        // update 3d edges
+    fn sync_3d_edges(
+        &mut self,
+        edge_3d_q: &Query<(Entity, &Edge3dLocal, Option<&EdgeAngle>)>,
+        transform_q: &mut Query<&mut Transform>,
+        owned_by_q: &Query<&OwnedByFileLocal>,
+        visibility_q: &mut Query<&mut Visibility>,
+        compass_q: &Query<&Compass>,
+        current_tab_file_entity: Entity,
+        camera_3d_scale: f32,
+    ) {
+        let edge_angle_base_circle_scale = Edge2dLocal::EDGE_ANGLE_BASE_CIRCLE_RADIUS * camera_3d_scale;
+        let edge_angle_end_circle_scale = Edge2dLocal::EDGE_ANGLE_END_CIRCLE_RADIUS * camera_3d_scale;
+        let edge_angle_length = Edge2dLocal::EDGE_ANGLE_LENGTH * camera_3d_scale;
+        let edge_angle_thickness = Edge2dLocal::EDGE_ANGLE_THICKNESS * camera_3d_scale;
+        let compass_edge_3d_scale = Compass::EDGE_THICKNESS / camera_3d_scale;
+
         for (edge_entity, edge_endpoints, edge_angle_opt) in edge_3d_q.iter() {
             // check if vertex is owned by the current tab
             if !Self::is_owned_by_tab_or_unowned(current_tab_file_entity, owned_by_q, edge_entity) {
@@ -616,7 +683,7 @@ impl ShapeManager {
                         edge_angle_length,
                         edge_depth_drawn,
                     );
-                    angle_transform.scale.y = edge_2d_scale;
+                    angle_transform.scale.y = edge_angle_thickness;
                     let edge_angle_endpoint = get_2d_line_transform_endpoint(&angle_transform);
 
                     let Ok(mut base_circle_transform) = transform_q.get_mut(base_circle_entity) else {
@@ -639,8 +706,17 @@ impl ShapeManager {
                 }
             }
         }
+    }
 
-        // update 2d faces
+    fn sync_2d_faces(
+        face_2d_q: &Query<(Entity, &FaceIcon2d)>,
+        transform_q: &mut Query<&mut Transform>,
+        owned_by_q: &Query<&OwnedByFileLocal>,
+        current_tab_file_entity: Entity,
+        camera_3d_scale: f32
+    ) {
+        let face_2d_scale = FaceIcon2d::SIZE * camera_3d_scale;
+
         for (face_2d_entity, face_icon) in face_2d_q.iter() {
             // check if face is owned by the current tab
             if !Self::is_owned_by_tab_or_unowned(
@@ -687,8 +763,17 @@ impl ShapeManager {
                 warn!("Face entity {:?} has no transform", face_2d_entity);
             }
         }
+    }
 
-        // update hover circle / triangle
+    fn sync_hover_shape_scale(
+        &mut self,
+        transform_q: &mut Query<&mut Transform>,
+        camera_3d_scale: f32,
+    ) {
+        let hover_vertex_2d_scale = Vertex2d::HOVER_RADIUS * camera_3d_scale;
+        let hover_edge_2d_scale = Edge2dLocal::HOVER_THICKNESS * camera_3d_scale;
+        let hover_face_2d_scale = FaceIcon2d::HOVER_SIZE * camera_3d_scale;
+
         if let Some((hover_entity, shape)) = self.hovered_entity {
             if self.hovered_entity != self.selected_shape {
                 match shape {
@@ -2691,12 +2776,17 @@ impl ShapeManager {
         );
     }
 
-    fn compass_recalc(
+    fn sync_compass(
         &self,
+        camera_3d_entity: &Entity,
         camera_state: &CameraState,
         vertex_3d_q: &mut Query<(Entity, &mut Vertex3d)>,
-        camera_transform: &Transform,
+        transform_q: &Query<&mut Transform>,
     ) {
+        let Ok(camera_transform) = transform_q.get(*camera_3d_entity) else {
+            return;
+        };
+
         let Ok((_, mut vertex_3d)) = vertex_3d_q.get_mut(self.compass_vertices[0]) else {
             return;
         };
