@@ -91,6 +91,9 @@ impl<'a> Light for AmbientLightImpl {
 
 impl Default for AmbientLightImpl {
     fn default() -> Self {
-        Self { color: AmbientLightColor::default(), environment: None }
+        Self {
+            color: AmbientLightColor::default(),
+            environment: None,
+        }
     }
 }

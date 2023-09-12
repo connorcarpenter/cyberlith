@@ -1,8 +1,5 @@
 use bevy_app::{App, Plugin};
-use bevy_ecs::{
-    change_detection::DetectChanges,
-    system::ResMut,
-};
+use bevy_ecs::{change_detection::DetectChanges, system::ResMut};
 
 use render_api::{
     base::{CpuMaterial, CpuMesh, CpuTexture2D},
@@ -22,12 +19,12 @@ impl Plugin for SyncPlugin {
     fn build(&self, app: &mut App) {
         app
             // Resources
-            .init_resource::<AssetMapping::<CpuMesh, GpuMesh>>()
-            .init_resource::<AssetMapping::<CpuMaterial, Box<dyn Material>>>()
-            .init_resource::<AssetMapping::<CpuTexture2D, GpuTexture2D>>()
-            .init_resource::<AssetMapping::<CpuTexture2D, GpuDepthTexture2D>>()
-            .init_resource::<AssetMapping::<AmbientLight, AmbientLightImpl>>()
-            .init_resource::<AssetMapping::<DirectionalLight, DirectionalLightImpl>>()
+            .init_resource::<AssetMapping<CpuMesh, GpuMesh>>()
+            .init_resource::<AssetMapping<CpuMaterial, Box<dyn Material>>>()
+            .init_resource::<AssetMapping<CpuTexture2D, GpuTexture2D>>()
+            .init_resource::<AssetMapping<CpuTexture2D, GpuDepthTexture2D>>()
+            .init_resource::<AssetMapping<AmbientLight, AmbientLightImpl>>()
+            .init_resource::<AssetMapping<DirectionalLight, DirectionalLightImpl>>()
             // Systems
             .add_systems(RenderSync, sync_mesh_assets)
             .add_systems(RenderSync, sync_material_assets)

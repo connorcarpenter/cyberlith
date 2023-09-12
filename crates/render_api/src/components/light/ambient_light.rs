@@ -1,7 +1,9 @@
 use std::hash::{Hash, Hasher};
 
-use crate::AssetHash;
-use crate::base::{Color, CpuTextureCube};
+use crate::{
+    base::{Color, CpuTextureCube},
+    AssetHash,
+};
 
 ///
 /// A light which shines on all surfaces.

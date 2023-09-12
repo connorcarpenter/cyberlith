@@ -1,6 +1,8 @@
 use glam::Quat;
 
-use naia_serde::{BitReader, BitWrite, ConstBitLength, SerdeErr, SerdeInternal as Serde, SignedInteger};
+use naia_serde::{
+    BitReader, BitWrite, ConstBitLength, SerdeErr, SerdeInternal as Serde, SignedInteger,
+};
 
 // SerdeQuat
 #[derive(Clone, Copy, PartialEq)]
@@ -38,7 +40,6 @@ impl ConstBitLength for SkipComponent {
 }
 
 impl Serde for SerdeQuat {
-
     fn ser(&self, writer: &mut dyn BitWrite) {
         let mut quat = self.0.normalize();
 
@@ -98,7 +99,8 @@ impl Serde for SerdeQuat {
         });
 
         // get skipped value. noting that skipped value = sqrt(1 - a^2 + b^2 + c^2)
-        let mut skipped_value = (1.0 - components[0].powi(2) - components[1].powi(2) - components[2].powi(2)).sqrt();
+        let mut skipped_value =
+            (1.0 - components[0].powi(2) - components[1].powi(2) - components[2].powi(2)).sqrt();
 
         // make negative if needed
         if skipped_is_negative {
@@ -106,10 +108,18 @@ impl Serde for SerdeQuat {
         }
 
         let quat = match skip_component {
-            SkipComponent::X => Quat::from_xyzw(skipped_value, components[0], components[1], components[2]),
-            SkipComponent::Y => Quat::from_xyzw(components[0], skipped_value, components[1], components[2]),
-            SkipComponent::Z => Quat::from_xyzw(components[0], components[1], skipped_value, components[2]),
-            SkipComponent::W => Quat::from_xyzw(components[0], components[1], components[2], skipped_value),
+            SkipComponent::X => {
+                Quat::from_xyzw(skipped_value, components[0], components[1], components[2])
+            }
+            SkipComponent::Y => {
+                Quat::from_xyzw(components[0], skipped_value, components[1], components[2])
+            }
+            SkipComponent::Z => {
+                Quat::from_xyzw(components[0], components[1], skipped_value, components[2])
+            }
+            SkipComponent::W => {
+                Quat::from_xyzw(components[0], components[1], components[2], skipped_value)
+            }
         };
 
         Ok(Self(quat))
@@ -122,7 +132,9 @@ impl Serde for SerdeQuat {
 
 impl ConstBitLength for SerdeQuat {
     fn const_bit_length() -> u32 {
-        SkipComponent::const_bit_length() + bool::const_bit_length() + <[SignedInteger<{ Self::BITS }>; 3]>::const_bit_length()
+        SkipComponent::const_bit_length()
+            + bool::const_bit_length()
+            + <[SignedInteger<{ Self::BITS }>; 3]>::const_bit_length()
     }
 }
 
@@ -154,7 +166,6 @@ mod tests {
 
     #[test]
     fn serde() {
-
         let mut count = 0;
         let mut rng = rand::thread_rng();
 
@@ -167,10 +178,14 @@ mod tests {
                 glam::EulerRot::XYZ,
                 f32::to_radians(x_rot),
                 f32::to_radians(y_rot),
-                f32::to_radians(z_rot));
+                f32::to_radians(z_rot),
+            );
 
             // println!("Euler In: [{}, {}, {}]", x_rot, y_rot, z_rot);
-            println!("Quat In: [{}, {}, {}, {}]", quat_in.x, quat_in.y, quat_in.z, quat_in.w);
+            println!(
+                "Quat In: [{}, {}, {}, {}]",
+                quat_in.x, quat_in.y, quat_in.z, quat_in.w
+            );
 
             let mut writer = naia_serde::BitWriter::new();
             SerdeQuat::from(quat_in).ser(&mut writer);
@@ -186,7 +201,10 @@ mod tests {
             //          f32::to_degrees(euler_out.1),
             //          f32::to_degrees(euler_out.2));
 
-            println!("Quat Out: [{}, {}, {}, {}]", quat_out.x, quat_out.y, quat_out.z, quat_out.w);
+            println!(
+                "Quat Out: [{}, {}, {}, {}]",
+                quat_out.x, quat_out.y, quat_out.z, quat_out.w
+            );
 
             let angle_between = quat_in.angle_between(quat_out);
             println!("Diff: {}", angle_between);

@@ -1,6 +1,9 @@
 use bevy_ecs::component::Component;
 
-use naia_bevy_shared::{EntityProperty, Property, Protocol, ProtocolPlugin, Replicate, Serde, SignedVariableInteger, UnsignedInteger};
+use naia_bevy_shared::{
+    EntityProperty, Property, Protocol, ProtocolPlugin, Replicate, Serde, SignedVariableInteger,
+    UnsignedInteger,
+};
 
 use math::Vec3;
 
@@ -162,7 +165,6 @@ impl EdgeAngle {
     const MAX_DEGREES: f32 = 360.0;
 
     pub fn new(value_f32: f32) -> Self {
-
         let value_u8 = (value_f32 * Self::MAX_ANGLES / Self::MAX_DEGREES) as u8;
         let integer = UnsignedInteger::<6>::new(value_u8);
 

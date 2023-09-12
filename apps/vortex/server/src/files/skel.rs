@@ -7,7 +7,10 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use naia_bevy_server::{BitReader, CommandsExt, FileBitWriter, ReplicationConfig, Serde, SerdeErr, Server, UnsignedInteger, UnsignedVariableInteger};
+use naia_bevy_server::{
+    BitReader, CommandsExt, FileBitWriter, ReplicationConfig, Serde, SerdeErr, Server,
+    UnsignedInteger, UnsignedVariableInteger,
+};
 
 use vortex_proto::components::{
     Edge3d, EdgeAngle, FileType, FileTypeValue, ShapeName, Vertex3d, VertexRoot, VertexSerdeInt,

@@ -2,12 +2,14 @@ use std::default::Default;
 
 use bevy_ecs::system::Resource;
 
-use crate::base::{CpuMaterial, CpuMesh};
-use crate::components::{
-    AmbientLight, Camera, DirectionalLight, PointLight, Projection, RenderLayer,
-    RenderLayers, Transform,
+use crate::{
+    base::{CpuMaterial, CpuMesh},
+    components::{
+        AmbientLight, Camera, DirectionalLight, PointLight, Projection, RenderLayer, RenderLayers,
+        Transform,
+    },
+    Handle,
 };
-use crate::Handle;
 
 #[derive(Resource)]
 pub struct RenderFrame {
@@ -60,9 +62,7 @@ impl RenderFrame {
         handle: &Handle<AmbientLight>,
     ) {
         let id = convert_wrapper(render_layer_opt.copied());
-        self.contents
-            .ambient_lights
-            .push((id, handle.clone()));
+        self.contents.ambient_lights.push((id, handle.clone()));
     }
 
     pub fn draw_object(

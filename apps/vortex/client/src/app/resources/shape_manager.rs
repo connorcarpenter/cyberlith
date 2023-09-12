@@ -433,7 +433,8 @@ impl ShapeManager {
 
         let edge_2d_scale = Edge2dLocal::NORMAL_THICKNESS * camera_3d_scale;
         let hover_edge_2d_scale = Edge2dLocal::HOVER_THICKNESS * camera_3d_scale;
-        let edge_angle_base_circle_scale = ((Edge2dLocal::HOVER_THICKNESS + 1.0) / 2.0) * camera_3d_scale * 1.2;
+        let edge_angle_base_circle_scale =
+            ((Edge2dLocal::HOVER_THICKNESS + 1.0) / 2.0) * camera_3d_scale * 1.2;
         let edge_angle_end_circle_scale = edge_angle_base_circle_scale * 0.6;
         let edge_angle_length = edge_2d_scale * 5.0;
         let compass_edge_3d_scale = Compass::EDGE_THICKNESS / camera_3d_scale;

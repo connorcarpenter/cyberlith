@@ -48,13 +48,7 @@ impl<'a> RenderPass<'a> {
         }
     }
 
-    pub fn take(
-        self,
-    ) -> (
-        RenderCamera<'a>,
-        Vec<&'a dyn Light>,
-        Vec<RenderObject<'a>>,
-    ) {
+    pub fn take(self) -> (RenderCamera<'a>, Vec<&'a dyn Light>, Vec<RenderObject<'a>>) {
         let objects: Vec<RenderObject<'a>> =
             self.objects.into_iter().map(|(_, object)| object).collect();
         (self.camera, self.lights, objects)
