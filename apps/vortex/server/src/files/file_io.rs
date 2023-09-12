@@ -10,7 +10,7 @@ use vortex_proto::{
 };
 
 use crate::{
-    files::{MeshReader, MeshWriter, SkelReader, SkelWriter},
+    files::{AnimWriter, AnimReader, MeshReader, MeshWriter, SkelReader, SkelWriter},
     resources::{ContentEntityData, ShapeManager},
 };
 
@@ -42,6 +42,7 @@ impl FileReader for FileExtension {
         match self {
             FileExtension::Skel => SkelReader.read(commands, server, bytes),
             FileExtension::Mesh => MeshReader.read(commands, server, bytes),
+            FileExtension::Anim => AnimReader.read(commands, server, bytes),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }
@@ -56,6 +57,7 @@ impl FileWriter for FileExtension {
         match self {
             FileExtension::Skel => SkelWriter.write(world, content_entities),
             FileExtension::Mesh => MeshWriter.write(world, content_entities),
+            FileExtension::Anim => AnimWriter.write(world, content_entities),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }
@@ -64,6 +66,7 @@ impl FileWriter for FileExtension {
         match self {
             FileExtension::Skel => SkelWriter.write_new_default(),
             FileExtension::Mesh => MeshWriter.write_new_default(),
+            FileExtension::Anim => AnimWriter.write_new_default(),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }
@@ -74,6 +77,8 @@ pub enum FileReadOutput {
     Skel(Vec<(Entity, Option<(Entity, Entity)>)>),
     // Mesh file, list of vert/edge/face entities
     Mesh(Vec<(Entity, ShapeTypeData)>),
+    //
+    Anim,
 }
 
 #[derive(Copy, Clone, Hash, PartialEq, Eq, Debug)]

@@ -138,6 +138,7 @@ impl ConstBitLength for SerdeQuat {
     }
 }
 
+#[cfg(test)]
 mod tests {
     use glam::Quat;
     use naia_serde::{ConstBitLength, Serde};
