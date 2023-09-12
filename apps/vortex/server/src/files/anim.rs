@@ -100,10 +100,7 @@ impl FileReader for AnimReader {
 }
 
 impl AnimReader {
-    pub fn post_process_entities(
-        shape_manager: &mut ShapeManager,
-        shape_entities: Vec<(Entity, ShapeTypeData)>,
-    ) -> HashMap<Entity, ContentEntityData> {
+    pub fn post_process_entities() -> HashMap<Entity, ContentEntityData> {
         todo!()
     }
 }

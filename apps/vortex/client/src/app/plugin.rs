@@ -2,9 +2,8 @@ use bevy_app::{App, Plugin, Startup, Update};
 use bevy_ecs::schedule::IntoSystemConfigs;
 
 use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin, ReceiveEvents};
-use render_api::Draw;
 
-use render_api::resources::WindowSettings;
+use render_api::{resources::WindowSettings, Draw};
 
 use vortex_proto::{
     components::{
@@ -14,17 +13,17 @@ use vortex_proto::{
     protocol,
 };
 
-use crate::app::systems::draw;
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
     config::ConfigPlugin,
     events::{InsertComponentEvent, LoginEvent},
     resources::{
+        animation_manager::AnimationManager,
         action::FileActions, camera_manager::CameraManager, canvas::Canvas,
         file_manager::FileManager, input_manager::InputManager, shape_manager::ShapeManager,
         shape_waitlist::ShapeWaitlist, tab_manager::TabManager, toolbar::Toolbar,
     },
-    systems::{canvas, network, ui},
+    systems::{draw, canvas, network, ui},
     ui::{widgets::NamingBarState, UiState},
 };
 
@@ -106,6 +105,7 @@ impl Plugin for VortexPlugin {
             .add_systems(Update, ui::update)
             // Canvas Config
             .init_resource::<ShapeManager>()
+            .init_resource::<AnimationManager>()
             .init_resource::<Canvas>()
             .init_resource::<CameraManager>()
             .init_resource::<InputManager>()

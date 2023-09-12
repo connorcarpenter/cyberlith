@@ -35,6 +35,8 @@ impl ChangelistData {
 struct FileData {
     changelist_entity: Option<Entity>,
     changelist_children: HashSet<Entity>,
+    // use for, e.g. skel file associated with anim file
+    file_dependencies: HashSet<Entity>,
 }
 
 impl FileData {
@@ -42,6 +44,7 @@ impl FileData {
         Self {
             changelist_entity: None,
             changelist_children: HashSet::default(),
+            file_dependencies: HashSet::default(),
         }
     }
 }

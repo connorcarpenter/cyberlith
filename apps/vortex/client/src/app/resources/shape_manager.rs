@@ -1,5 +1,4 @@
-use std::collections::{HashMap, HashSet};
-use std::f32::consts::FRAC_PI_2;
+use std::{collections::{HashMap, HashSet}, f32::consts::FRAC_PI_2};
 
 use bevy_ecs::{
     entity::Entity,
@@ -9,16 +8,15 @@ use bevy_ecs::{
 };
 use bevy_log::{info, warn};
 
-use input::MouseButton;
 use naia_bevy_client::{Client, CommandsExt, Replicate, ReplicationConfig};
 
+use input::MouseButton;
 use math::{convert_2d_to_3d, convert_3d_to_2d, Vec2, Vec3};
-use render_api::shapes::{angle_between, normalize_angle, set_2d_line_transform_from_angle};
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
     components::{Camera, CameraProjection, Projection, RenderObjectBundle, Transform, Visibility},
     shapes::{
-        distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform, HollowTriangle,
+        angle_between, normalize_angle, set_2d_line_transform_from_angle, distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform, HollowTriangle,
         Triangle,
     },
     Assets, Handle,
@@ -34,6 +32,7 @@ use crate::app::{
         SelectTriangle, Vertex2d, VertexTypeData,
     },
     resources::{
+        animation_manager::AnimationManager,
         action::{ActionStack, ShapeAction},
         camera_manager::{CameraAngle, CameraManager},
         camera_state::CameraState,
@@ -271,6 +270,7 @@ impl ShapeManager {
         commands: &mut Commands,
         client: &mut Client,
         camera_manager: &mut CameraManager,
+        animation_manager: &mut AnimationManager,
         tab_state: &mut TabState,
 
         // queries
@@ -331,6 +331,7 @@ impl ShapeManager {
                         client,
                         camera_manager,
                         camera_state,
+                        animation_manager,
                         *click_type,
                         *mouse_position,
                         *delta,
@@ -1717,6 +1718,10 @@ impl ShapeManager {
     }
 
     fn handle_insert_key_press(&mut self, action_stack: &mut ActionStack<ShapeAction>) {
+        if self.current_file_type == FileTypeValue::Anim {
+            return;
+        }
+
         if self.selected_shape.is_some() {
             return;
         }
@@ -1738,6 +1743,10 @@ impl ShapeManager {
         client: &mut Client,
         action_stack: &mut ActionStack<ShapeAction>,
     ) {
+        if self.current_file_type == FileTypeValue::Anim {
+            return;
+        }
+
         match self.selected_shape {
             Some((vertex_2d_entity, CanvasShape::Vertex)) => {
                 // delete vertex
@@ -1985,7 +1994,7 @@ impl ShapeManager {
 
                 select_shape_visibilities[0].visible = true; // select circle is visible
                 select_shape_visibilities[1].visible = false; // no select triangle visible
-                select_shape_visibilities[2].visible = canvas.has_focus(); // select line is visible
+                select_shape_visibilities[2].visible = self.current_file_type != FileTypeValue::Anim && canvas.has_focus(); // select line is visible
             }
             Some((selected_edge_entity, CanvasShape::Edge)) => {
                 let selected_edge_transform = {
@@ -2217,6 +2226,7 @@ impl ShapeManager {
         client: &Client,
         camera_manager: &mut CameraManager,
         camera_state: &mut CameraState,
+        animation_manager: &mut AnimationManager,
         click_type: MouseButton,
         mouse_position: Vec2,
         delta: Vec2,
@@ -2229,7 +2239,7 @@ impl ShapeManager {
         let shape_can_drag = vertex_is_selected
             && match self.selected_shape.unwrap().1 {
                 CanvasShape::RootVertex | CanvasShape::Vertex => true,
-                CanvasShape::Edge => self.current_file_type == FileTypeValue::Skel,
+                CanvasShape::Edge => self.current_file_type != FileTypeValue::Mesh,
                 _ => false,
             };
 
@@ -2237,8 +2247,7 @@ impl ShapeManager {
             match click_type {
                 MouseButton::Left => {
                     match self.selected_shape.unwrap() {
-                        (vertex_2d_entity, CanvasShape::Vertex)
-                        | (vertex_2d_entity, CanvasShape::RootVertex) => {
+                        (vertex_2d_entity, CanvasShape::Vertex) => {
                             // move vertex
                             let Some(vertex_3d_entity) = self.vertex_entity_2d_to_3d(&vertex_2d_entity) else {
                                 warn!(
@@ -2247,6 +2256,17 @@ impl ShapeManager {
                                 );
                                 return;
                             };
+
+                            if self.current_file_type == FileTypeValue::Anim {
+                                animation_manager.drag_vertex(
+                                    commands,
+                                    client,
+                                    vertex_3d_entity,
+                                    mouse_position,
+                                    delta,
+                                );
+                                return;
+                            }
 
                             let auth_status =
                                 commands.entity(vertex_3d_entity).authority(client).unwrap();
@@ -2301,6 +2321,17 @@ impl ShapeManager {
                             // rotate edge angle
                             let edge_3d_entity =
                                 self.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
+
+                            if self.current_file_type == FileTypeValue::Anim {
+                                animation_manager.drag_edge(
+                                    commands,
+                                    client,
+                                    edge_3d_entity,
+                                    mouse_position,
+                                    delta,
+                                );
+                                return;
+                            }
 
                             let auth_status =
                                 commands.entity(edge_3d_entity).authority(client).unwrap();

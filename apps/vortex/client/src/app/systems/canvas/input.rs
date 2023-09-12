@@ -4,14 +4,16 @@ use bevy_ecs::{
     system::{Commands, Query, Res, ResMut},
 };
 
-use input::Input;
 use naia_bevy_client::Client;
+
+use input::Input;
 use render_api::components::{Camera, Projection, Transform};
 use vortex_proto::components::{EdgeAngle, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::{Compass, Edge2dLocal, FaceIcon2d, OwnedByFileLocal, Vertex2d},
     resources::{
+        animation_manager::AnimationManager,
         camera_manager::CameraManager, canvas::Canvas, input_manager::InputManager,
         shape_manager::ShapeManager, tab_manager::TabManager,
     },
@@ -23,6 +25,7 @@ pub fn input(
     mut camera_manager: ResMut<CameraManager>,
     canvas: Res<Canvas>,
     mut shape_manager: ResMut<ShapeManager>,
+    mut animation_manager: ResMut<AnimationManager>,
     mut tab_manager: ResMut<TabManager>,
     mut input_manager: ResMut<InputManager>,
     mut input: ResMut<Input>,
@@ -45,6 +48,7 @@ pub fn input(
             &mut commands,
             &mut client,
             &mut camera_manager,
+            &mut animation_manager,
             current_tab_state,
             &mut transform_q,
             &mut camera_q,
