@@ -14,7 +14,7 @@ use crate::app::{
     components::LocalShape,
     resources::{
         camera_manager::CameraManager,
-        shape_manager::ShapeManager
+        vertex_manager::VertexManager,
     },
 };
 
@@ -24,14 +24,14 @@ impl Grid {
     pub(crate) fn setup_grid(
         commands: &mut Commands,
         camera_manager: &mut CameraManager,
-        shape_manager: &mut ShapeManager,
+        vertex_manager: &mut VertexManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
     ) {
         Self::new_grid_corner(
             commands,
             camera_manager,
-            shape_manager,
+            vertex_manager,
             meshes,
             materials,
             true,
@@ -41,7 +41,7 @@ impl Grid {
         Self::new_grid_corner(
             commands,
             camera_manager,
-            shape_manager,
+            vertex_manager,
             meshes,
             materials,
             true,
@@ -51,7 +51,7 @@ impl Grid {
         Self::new_grid_corner(
             commands,
             camera_manager,
-            shape_manager,
+            vertex_manager,
             meshes,
             materials,
             false,
@@ -61,7 +61,7 @@ impl Grid {
         Self::new_grid_corner(
             commands,
             camera_manager,
-            shape_manager,
+            vertex_manager,
             meshes,
             materials,
             false,
@@ -73,7 +73,7 @@ impl Grid {
     fn new_grid_corner(
         commands: &mut Commands,
         camera_manager: &mut CameraManager,
-        shape_manager: &mut ShapeManager,
+        vertex_manager: &mut VertexManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         x: bool,
@@ -102,7 +102,7 @@ impl Grid {
         Self::new_grid_vertex(
             commands,
             camera_manager,
-            shape_manager,
+            vertex_manager,
             meshes,
             materials,
             root_vertex_2d_entity,
@@ -115,7 +115,7 @@ impl Grid {
         Self::new_grid_vertex(
             commands,
             camera_manager,
-            shape_manager,
+            vertex_manager,
             meshes,
             materials,
             root_vertex_2d_entity,
@@ -128,7 +128,7 @@ impl Grid {
         Self::new_grid_vertex(
             commands,
             camera_manager,
-            shape_manager,
+            vertex_manager,
             meshes,
             materials,
             root_vertex_2d_entity,
@@ -143,7 +143,7 @@ impl Grid {
     fn new_grid_vertex(
         commands: &mut Commands,
         camera_manager: &mut CameraManager,
-        shape_manager: &mut ShapeManager,
+        vertex_manager: &mut VertexManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         parent_vertex_2d_entity: Entity,

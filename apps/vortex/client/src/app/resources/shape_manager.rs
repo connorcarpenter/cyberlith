@@ -53,14 +53,14 @@ use crate::app::resources::vertex_manager::VertexManager;
 
 #[derive(Resource)]
 pub struct ShapeManager {
-    current_file_type: FileTypeValue,
+    pub(crate) current_file_type: FileTypeValue,
 
     resync_shapes: u8,
     resync_selection: bool,
     resync_hover: bool,
 
     // Option<(2d shape entity, shape type)>
-    hovered_entity: Option<(Entity, CanvasShape)>,
+    pub(crate) hovered_entity: Option<(Entity, CanvasShape)>,
 
     pub select_circle_entity: Option<Entity>,
     pub select_triangle_entity: Option<Entity>,
@@ -103,6 +103,8 @@ impl ShapeManager {
         camera_manager: &mut CameraManager,
         animation_manager: &mut AnimationManager,
         tab_state: &mut TabState,
+        vertex_manager: &mut VertexManager,
+        edge_manager: &mut EdgeManager,
 
         // queries
         transform_q: &mut Query<&mut Transform>,
@@ -269,7 +271,7 @@ impl ShapeManager {
             local_shape_q,
             current_tab_file_entity,
         );
-        edge_manager.sync_2d_edges(
+        EdgeManager::sync_2d_edges(
             edge_2d_q,
             transform_q,
             owned_by_q,
@@ -548,14 +550,16 @@ impl ShapeManager {
     }
 
     // SHAPES
-    pub(crate) fn has_shape_entity_3d(entity_3d: &Entity) -> bool {
-        face_manager.faces_3d.contains_key(entity_3d)
-            || edge_manager.edges_3d.contains_key(entity_3d)
-            || vertex_manager.vertices_3d.contains_key(entity_3d)
+    pub(crate) fn has_shape_entity_3d(vertex_manager: &VertexManager, edge_manager: &EdgeManager, face_manager: &FaceManager, entity_3d: &Entity) -> bool {
+        face_manager.has_face_entity_3d(entity_3d)
+            || edge_manager.has_edge_entity_3d(entity_3d)
+            || vertex_manager.has_vertex_entity_3d(entity_3d)
     }
 
     pub(crate) fn shape_entity_2d_to_3d(
-        &self,
+        vertex_manager: &VertexManager,
+        edge_manager: &EdgeManager,
+        face_manager: &FaceManager,
         entity_2d: &Entity,
         shape_type: CanvasShape,
     ) -> Option<Entity> {
@@ -570,8 +574,8 @@ impl ShapeManager {
         }
     }
 
-    pub(crate) fn shape_entity_3d_to_2d(&self, entity_3d: &Entity) -> Option<Entity> {
-        let shape_type = self.shape_type_from_3d_entity(entity_3d).unwrap();
+    pub(crate) fn shape_entity_3d_to_2d(vertex_manager: &VertexManager, edge_manager: &EdgeManager, face_manager: &FaceManager, entity_3d: &Entity) -> Option<Entity> {
+        let shape_type = Self::shape_type_from_3d_entity(vertex_manager, edge_manager, face_manager, entity_3d).unwrap();
 
         match shape_type {
             CanvasShape::RootVertex | CanvasShape::Vertex => vertex_manager.vertex_entity_3d_to_2d(entity_3d),
@@ -580,12 +584,12 @@ impl ShapeManager {
         }
     }
 
-    fn shape_type_from_3d_entity(&self, entity_3d: &Entity) -> Option<CanvasShape> {
-        if vertex_manager.vertices_3d.contains_key(entity_3d) {
+    fn shape_type_from_3d_entity(vertex_manager: &VertexManager, edge_manager: &EdgeManager, face_manager: &FaceManager, entity_3d: &Entity) -> Option<CanvasShape> {
+        if vertex_manager.has_vertex_entity_3d(entity_3d) {
             Some(CanvasShape::Vertex)
-        } else if edge_manager.edges_3d.contains_key(entity_3d) {
+        } else if edge_manager.has_edge_entity_3d(entity_3d) {
             Some(CanvasShape::Edge)
-        } else if face_manager.faces_3d.contains_key(entity_3d) {
+        } else if face_manager.has_face_entity_3d(entity_3d) {
             Some(CanvasShape::Face)
         } else {
             None
@@ -597,7 +601,7 @@ impl ShapeManager {
         self.current_file_type = file_type;
     }
 
-    pub(crate) fn on_canvas_focus_changed(&mut self, new_focus: bool) {
+    pub(crate) fn on_canvas_focus_changed(&mut self, vertex_manager: &mut VertexManager, edge_manager: &mut EdgeManager, new_focus: bool) {
         self.queue_resync_selection_ui();
         if !new_focus {
             vertex_manager.last_vertex_dragged = None;
@@ -634,6 +638,9 @@ impl ShapeManager {
         commands: &mut Commands,
         client: &mut Client,
         action_stack: &mut ActionStack<ShapeAction>,
+        vertex_manager: &VertexManager,
+        edge_manager: &EdgeManager,
+        face_manager: &FaceManager,
     ) {
         if self.current_file_type == FileTypeValue::Anim {
             return;
@@ -693,15 +700,14 @@ impl ShapeManager {
                 self.selected_shape = None;
             }
             Some((face_2d_entity, CanvasShape::Face)) => {
-                let face_key = face_manager.face_key_from_2d_entity(&face_2d_entity).unwrap();
-                let face_3d_entity = face_manager.face_3d_entity_from_face_key(&face_key).unwrap();
+                let face_3d_entity = face_manager.face_entity_2d_to_3d(&face_2d_entity).unwrap();
 
                 // check whether we can delete edge
                 let auth_status = commands.entity(face_3d_entity).authority(client).unwrap();
                 if !auth_status.is_granted() && !auth_status.is_available() {
                     // do nothing, face is not available
                     // TODO: queue for deletion? check before this?
-                    warn!("Face {:?} is not available for deletion!", face_key);
+                    warn!("Face `{:?}` is not available for deletion!", face_3d_entity);
                     return;
                 }
 
@@ -722,6 +728,7 @@ impl ShapeManager {
     fn handle_mouse_click(
         &mut self,
         camera_manager: &CameraManager,
+        edge_manager: &EdgeManager,
         action_stack: &mut ActionStack<ShapeAction>,
         click_type: MouseButton,
         mouse_position: &Vec2,
@@ -894,6 +901,8 @@ impl ShapeManager {
         client: &Client,
         camera_manager: &mut CameraManager,
         camera_state: &mut CameraState,
+        vertex_manager: &mut VertexManager,
+        edge_manager: &mut EdgeManager,
         animation_manager: &mut AnimationManager,
         click_type: MouseButton,
         mouse_position: Vec2,

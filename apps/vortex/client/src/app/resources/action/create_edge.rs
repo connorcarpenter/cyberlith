@@ -57,6 +57,8 @@ pub(crate) fn execute(
             ResMut<CameraManager>,
             ResMut<ShapeManager>,
             ResMut<VertexManager>,
+            ResMut<EdgeManager>,
+            ResMut<FaceManager>,
             ResMut<Assets<CpuMesh>>,
             ResMut<Assets<CpuMaterial>>,
         )> = SystemState::new(world);
@@ -66,13 +68,15 @@ pub(crate) fn execute(
             mut camera_manager,
             mut shape_manager,
             mut vertex_manager,
+            mut edge_manager,
+            mut face_manager,
             mut meshes,
             mut materials,
         ) = system_state.get_mut(world);
 
         // deselect all selected vertices
         let (deselected_shape_2d_entity, shape_3d_entity_to_release) =
-            deselect_all_selected_shapes(&mut shape_manager);
+            deselect_all_selected_shapes(&mut shape_manager, &vertex_manager, &edge_manager, &face_manager);
         deselected_shape_2d_entity_store = deselected_shape_2d_entity;
         if let Some(entity) = shape_3d_entity_to_release {
             let mut entity_mut = commands.entity(entity);
@@ -87,11 +91,11 @@ pub(crate) fn execute(
             .unwrap();
 
         // create edge
-        let (new_edge_2d_entity, new_edge_3d_entity) = EdgeManager::create_networked_edge(
+        let (new_edge_2d_entity, new_edge_3d_entity) = edge_manager.create_networked_edge(
             &mut commands,
             &mut client,
             &mut camera_manager,
-            &mut shape_manager,
+            &mut vertex_manager,
             &mut meshes,
             &mut materials,
             vertex_2d_entity_a,
@@ -117,8 +121,7 @@ pub(crate) fn execute(
 
         // select vertex
         shape_manager.select_shape(&shape_2d_entity_to_select, shape_2d_type_to_select);
-        selected_shape_3d = shape_manager
-            .shape_entity_2d_to_3d(&shape_2d_entity_to_select, shape_2d_type_to_select)
+        selected_shape_3d = ShapeManager::shape_entity_2d_to_3d(&vertex_manager, &edge_manager, &face_manager, &shape_2d_entity_to_select, shape_2d_type_to_select)
             .unwrap();
 
         system_state.apply(world);
@@ -147,8 +150,8 @@ pub(crate) fn execute(
                 Commands,
                 Client,
                 ResMut<CameraManager>,
-                ResMut<ShapeManager>,
                 ResMut<VertexManager>,
+                ResMut<EdgeManager>,
                 ResMut<FaceManager>,
                 ResMut<Assets<CpuMesh>>,
                 ResMut<Assets<CpuMaterial>>,
@@ -158,8 +161,8 @@ pub(crate) fn execute(
                 mut commands,
                 mut client,
                 mut camera_manager,
-                mut shape_manager,
                 mut vertex_manager,
+                mut edge_manager,
                 mut face_manager,
                 mut meshes,
                 mut materials,
@@ -184,6 +187,8 @@ pub(crate) fn execute(
                 let new_face_2d_entity = face_manager.process_new_face(
                     &mut commands,
                     &mut camera_manager,
+                    &mut vertex_manager,
+                    &mut edge_manager,
                     &mut meshes,
                     &mut materials,
                     *tab_file_entity,

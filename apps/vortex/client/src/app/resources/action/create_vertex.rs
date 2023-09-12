@@ -63,6 +63,8 @@ pub(crate) fn execute(
         ResMut<CameraManager>,
         ResMut<ShapeManager>,
         ResMut<VertexManager>,
+        ResMut<EdgeManager>,
+        ResMut<FaceManager>,
         ResMut<Assets<CpuMesh>>,
         ResMut<Assets<CpuMaterial>>,
     )> = SystemState::new(world);
@@ -72,13 +74,15 @@ pub(crate) fn execute(
         mut camera_manager,
         mut shape_manager,
         mut vertex_manager,
+        edge_manager,
+        face_manager,
         mut meshes,
         mut materials,
     ) = system_state.get_mut(world);
 
     // deselect all selected vertices
     let (deselected_vertex_2d_entity, vertex_3d_entity_to_release) =
-        deselect_all_selected_shapes(&mut shape_manager);
+        deselect_all_selected_shapes(&mut shape_manager, &vertex_manager, &edge_manager, &face_manager);
     deselected_vertex_2d_entity_store = deselected_vertex_2d_entity;
     if let Some(entity) = vertex_3d_entity_to_release {
         let mut entity_mut = commands.entity(entity);
@@ -120,6 +124,7 @@ pub(crate) fn execute(
         ResMut<CameraManager>,
         ResMut<ShapeManager>,
         ResMut<VertexManager>,
+        ResMut<EdgeManager>,
         ResMut<FaceManager>,
         ResMut<Assets<CpuMesh>>,
         ResMut<Assets<CpuMaterial>>,
@@ -131,6 +136,7 @@ pub(crate) fn execute(
         mut camera_manager,
         mut shape_manager,
         mut vertex_manager,
+        mut edge_manager,
         mut face_manager,
         mut meshes,
         mut materials,
@@ -154,11 +160,11 @@ pub(crate) fn execute(
                     &mut entities_to_release,
                 );
             }
-            EdgeManager::create_networked_edge(
+            edge_manager.create_networked_edge(
                 &mut commands,
                 &mut client,
                 &mut camera_manager,
-                &mut shape_manager,
+                &mut vertex_manager,
                 &mut meshes,
                 &mut materials,
                 parent_vertex_2d_entity,
@@ -173,11 +179,11 @@ pub(crate) fn execute(
         VertexTypeData::Mesh(connected_vertex_entities, connected_face_vertex_pairs) => {
             let mut edge_3d_entities = Vec::new();
             for (connected_vertex_entity, old_edge_opt) in connected_vertex_entities {
-                let (new_edge_2d_entity, new_edge_3d_entity) = EdgeManager::create_networked_edge(
+                let (new_edge_2d_entity, new_edge_3d_entity) = edge_manager.create_networked_edge(
                     &mut commands,
                     &mut client,
                     &mut camera_manager,
-                    &mut shape_manager,
+                    &mut vertex_manager,
                     &mut meshes,
                     &mut materials,
                     connected_vertex_entity,
@@ -216,6 +222,8 @@ pub(crate) fn execute(
                 let new_face_2d_entity = face_manager.process_new_face(
                     &mut commands,
                     &mut camera_manager,
+                    &mut vertex_manager,
+                    &mut edge_manager,
                     &mut meshes,
                     &mut materials,
                     *tab_file_entity,

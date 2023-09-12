@@ -46,16 +46,18 @@ use crate::app::{
         create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,
     },
 };
+use crate::app::resources::face_manager::FaceManager;
+use crate::app::resources::vertex_manager::VertexManager;
 
 #[derive(Resource)]
 pub struct EdgeManager {
 
     // 3d edge entity -> 3d edge data
-    edges_3d: HashMap<Entity, Edge3dData>,
+    pub(crate) edges_3d: HashMap<Entity, Edge3dData>,
     // 2d edge entity -> 3d edge entity
     edges_2d: HashMap<Entity, Entity>,
 
-    last_edge_dragged: Option<(Entity, f32, f32)>,
+    pub(crate) last_edge_dragged: Option<(Entity, f32, f32)>,
 
     edge_angle_visibility: bool,
 }
@@ -74,7 +76,7 @@ impl Default for EdgeManager {
 impl EdgeManager {
 
     pub fn sync_2d_edges(
-        &self,
+        vertex_manager: &VertexManager,
         edge_2d_q: &Query<(Entity, &Edge2dLocal)>,
         transform_q: &mut Query<&mut Transform>,
         owned_by_q: &Query<&OwnedByFileLocal>,
@@ -243,10 +245,11 @@ impl EdgeManager {
 
     // return (new edge 2d entity, new edge 3d entity)
     pub fn create_networked_edge(
+        &mut self,
         commands: &mut Commands,
         client: &mut Client,
         camera_manager: &mut CameraManager,
-        shape_manager: &mut ShapeManager,
+        vertex_manager: &VertexManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         parent_vertex_2d_entity: Entity,
@@ -290,7 +293,7 @@ impl EdgeManager {
         }
 
         // create new 2d edge, add local components to 3d edge
-        let new_edge_2d_entity = edge_manager.edge_3d_postprocess(
+        let new_edge_2d_entity = self.edge_3d_postprocess(
             commands,
             meshes,
             materials,
@@ -464,6 +467,8 @@ impl EdgeManager {
 
     pub fn register_3d_edge(
         &mut self,
+        vertex_manager: &mut VertexManager,
+        face_manager: &mut FaceManager,
         edge_3d_entity: Entity,
         edge_2d_entity: Entity,
         vertex_a_3d_entity: Entity,
@@ -504,6 +509,8 @@ impl EdgeManager {
     pub fn cleanup_deleted_edge(
         &mut self,
         commands: &mut Commands,
+        shape_manager: &mut ShapeManager,
+        face_manager: &mut FaceManager,
         entity_3d: &Entity,
     ) -> (Entity, Vec<Entity>) {
         let mut deleted_face_2d_entities = Vec::new();
@@ -562,7 +569,7 @@ impl EdgeManager {
             .map(|data| data.faces_3d.iter().copied().collect())
     }
 
-    pub fn edge_angle_visibility_toggle(&mut self) {
+    pub fn edge_angle_visibility_toggle(&mut self, shape_manager: &mut ShapeManager) {
         if shape_manager.current_file_type != FileTypeValue::Skel {
             return;
         }
@@ -573,7 +580,7 @@ impl EdgeManager {
     }
 
     // returns 2d edge entity
-    fn unregister_3d_edge(&mut self, edge_3d_entity: &Entity) -> Option<Entity> {
+    fn unregister_3d_edge(&mut self, vertex_manager: &mut VertexManager, edge_3d_entity: &Entity) -> Option<Entity> {
         if let Some(entity_3d_data) = self.edges_3d.remove(edge_3d_entity) {
             let edge_2d_entity = entity_3d_data.entity_2d;
 
@@ -599,8 +606,9 @@ impl EdgeManager {
         return None;
     }
 
-    fn edge_2d_entity_from_vertices(
+    pub(crate) fn edge_2d_entity_from_vertices(
         &self,
+        vertex_manager: &VertexManager,
         vertex_2d_a: Entity,
         vertex_2d_b: Entity,
     ) -> Option<Entity> {

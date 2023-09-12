@@ -20,6 +20,9 @@ use crate::app::{
         camera_manager::CameraManager, shape_manager::ShapeManager, shape_data::FaceKey
     },
 };
+use crate::app::resources::edge_manager::EdgeManager;
+use crate::app::resources::face_manager::FaceManager;
+use crate::app::resources::vertex_manager::VertexManager;
 
 pub enum ShapeWaitlistInsert {
     Vertex,
@@ -210,6 +213,9 @@ impl ShapeWaitlist {
         materials: &mut Assets<CpuMaterial>,
         camera_manager: &mut CameraManager,
         shape_manager: &mut ShapeManager,
+        vertex_manager: &mut VertexManager,
+        edge_manager: &mut EdgeManager,
+        face_manager: &mut FaceManager,
         transform_q: &Query<&Transform>,
         entity: &Entity,
         insert: ShapeWaitlistInsert,
@@ -378,6 +384,9 @@ impl ShapeWaitlist {
                 materials,
                 camera_manager,
                 shape_manager,
+                vertex_manager,
+                edge_manager,
+                face_manager,
                 transform_q,
                 entity,
                 entry,
@@ -392,6 +401,9 @@ impl ShapeWaitlist {
         materials: &mut Assets<CpuMaterial>,
         camera_manager: &mut CameraManager,
         shape_manager: &mut ShapeManager,
+        vertex_manager: &mut VertexManager,
+        edge_manager: &mut EdgeManager,
+        face_manager: &mut FaceManager,
         transform_q: &Query<&Transform>,
         entity: Entity,
         entry: ShapeWaitlistEntry,

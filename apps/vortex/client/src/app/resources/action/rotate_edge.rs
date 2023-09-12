@@ -1,13 +1,13 @@
 use bevy_ecs::{
     prelude::{Entity, World},
-    system::{Query, ResMut, SystemState},
+    system::{Query, Res, ResMut, SystemState},
 };
 use bevy_log::info;
 
 use vortex_proto::components::EdgeAngle;
 
 use crate::app::resources::{
-    action::ShapeAction, camera_manager::CameraManager, shape_manager::ShapeManager,
+    action::ShapeAction, camera_manager::CameraManager, edge_manager::EdgeManager
 };
 
 pub(crate) fn execute(
@@ -21,11 +21,11 @@ pub(crate) fn execute(
         edge_2d_entity, old_angle, new_angle
     );
     let mut system_state: SystemState<(
-        ResMut<ShapeManager>,
+        Res<EdgeManager>,
         ResMut<CameraManager>,
         Query<&mut EdgeAngle>,
     )> = SystemState::new(world);
-    let (shape_manager, mut camera_manager, mut edge_angle_q) = system_state.get_mut(world);
+    let (edge_manager, mut camera_manager, mut edge_angle_q) = system_state.get_mut(world);
 
     let edge_3d_entity = edge_manager.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
 

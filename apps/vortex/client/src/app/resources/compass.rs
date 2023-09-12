@@ -20,6 +20,7 @@ use crate::app::{
         shape_manager::ShapeManager
     },
 };
+use crate::app::resources::vertex_manager::VertexManager;
 
 #[derive(Resource)]
 pub struct Compass {
@@ -40,6 +41,7 @@ impl Compass {
         commands: &mut Commands,
         camera_manager: &mut CameraManager,
         shape_manager: &mut ShapeManager,
+        vertex_manager: &mut VertexManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
     ) {
@@ -138,7 +140,7 @@ impl Compass {
         &mut self,
         commands: &mut Commands,
         camera_manager: &mut CameraManager,
-        shape_manager: &mut ShapeManager,
+        vertex_manager: &mut ShapeManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         root_vertex_2d_entity: Entity,

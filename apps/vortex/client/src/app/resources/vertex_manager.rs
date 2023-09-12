@@ -47,15 +47,16 @@ use crate::app::{
         create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,
     },
 };
+use crate::app::resources::face_manager::FaceManager;
 
 #[derive(Resource)]
 pub struct VertexManager {
     // 3d vertex entity -> 3d vertex data
-    vertices_3d: HashMap<Entity, Vertex3dData>,
+    pub(crate) vertices_3d: HashMap<Entity, Vertex3dData>,
     // 2d vertex entity -> 3d vertex entity
     vertices_2d: HashMap<Entity, Entity>,
 
-    last_vertex_dragged: Option<(Entity, Vec3, Vec3)>,
+    pub(crate) last_vertex_dragged: Option<(Entity, Vec3, Vec3)>,
 }
 
 impl Default for VertexManager {
@@ -131,7 +132,7 @@ impl VertexManager {
                 &vertex_3d_transform.translation,
             );
 
-            let Some(vertex_2d_entity) = vertex_manager.vertex_entity_3d_to_2d(&vertex_3d_entity) else {
+            let Some(vertex_2d_entity) = self.vertex_entity_3d_to_2d(&vertex_3d_entity) else {
                 panic!("Vertex3d entity {:?} has no corresponding Vertex2d entity", vertex_3d_entity);
             };
             let Ok(mut vertex_2d_transform) = transform_q.get_mut(vertex_2d_entity) else {
@@ -342,6 +343,7 @@ impl VertexManager {
         &mut self,
         commands: &mut Commands,
         camera_manager: &mut CameraManager,
+        edge_manager: &mut EdgeManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         parent_vertex_2d_entity_opt: Option<Entity>,
@@ -413,6 +415,7 @@ impl VertexManager {
     pub fn on_vertex_3d_moved(
         &self,
         client: &Client,
+        face_manager: &FaceManager,
         meshes: &mut Assets<CpuMesh>,
         mesh_handle_q: &Query<&Handle<CpuMesh>>,
         face_3d_q: &Query<&Face3d>,
@@ -461,6 +464,7 @@ impl VertexManager {
     pub fn cleanup_deleted_vertex(
         &mut self,
         commands: &mut Commands,
+        shape_manager: &mut ShapeManager,
         entity_3d: &Entity,
     ) -> Entity {
         // unregister vertex
@@ -518,7 +522,7 @@ impl VertexManager {
         return None;
     }
 
-    fn get_connected_vertices(&self, vertex_3d_entity: Entity) -> HashSet<Entity> {
+    pub(crate) fn get_connected_vertices(&self, edge_manager: &EdgeManager, vertex_3d_entity: Entity) -> HashSet<Entity> {
         let mut set = HashSet::new();
 
         let Some(vertex_data) = self.vertices_3d.get(&vertex_3d_entity) else {

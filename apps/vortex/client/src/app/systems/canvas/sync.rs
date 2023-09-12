@@ -21,6 +21,7 @@ use crate::app::{
     },
 };
 use crate::app::resources::compass::Compass;
+use crate::app::resources::face_manager::FaceManager;
 
 pub fn sync_vertices(
     tab_manager: ResMut<TabManager>,
@@ -73,10 +74,11 @@ pub fn process_faces(
     mut commands: Commands,
     camera_manager: Res<CameraManager>,
     mut shape_manager: ResMut<ShapeManager>,
+    mut face_manager: ResMut<FaceManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
 ) {
-    face_manager.process_new_faces(&mut commands, &camera_manager, &mut meshes, &mut materials);
+    face_manager.process_new_faces(&mut commands, &camera_manager, &mut shape_manager, &mut meshes, &mut materials);
 }
 
 pub fn update_select_line(

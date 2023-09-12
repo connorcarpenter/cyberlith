@@ -19,6 +19,9 @@ use crate::app::{
     },
     ui::UiState,
 };
+use crate::app::resources::edge_manager::EdgeManager;
+use crate::app::resources::face_manager::FaceManager;
+use crate::app::resources::vertex_manager::VertexManager;
 
 #[derive(Resource)]
 pub struct NamingBarState {
@@ -51,14 +54,15 @@ pub fn render_naming_bar(ui: &mut Ui, world: &mut World) {
                 if state.selected_shape_opt != selected_shape_2d {
                     let mut system_state: SystemState<(
                         ResMut<NamingBarState>,
-                        Res<ShapeManager>,
+                        Res<VertexManager>,
+                        Res<EdgeManager>,
+                        Res<FaceManager>,
                         Query<&ShapeName>,
                     )> = SystemState::new(world);
-                    let (mut state, shape_manager, shape_name_q) = system_state.get_mut(world);
+                    let (mut state, vertex_manager, edge_manager, face_manager, shape_name_q) = system_state.get_mut(world);
 
                     let official_name = if let Some((shape_2d_entity, shape)) = selected_shape_2d {
-                        let shape_3d_entity = shape_manager
-                            .shape_entity_2d_to_3d(&shape_2d_entity, shape)
+                        let shape_3d_entity = ShapeManager::shape_entity_2d_to_3d(&vertex_manager, &edge_manager, &face_manager,&shape_2d_entity, shape)
                             .unwrap();
 
                         if let Ok(shape_name) = shape_name_q.get(shape_3d_entity) {
@@ -102,10 +106,14 @@ pub fn render_naming_bar(ui: &mut Ui, world: &mut World) {
                     .clicked()
                 {
                     let (shape_2d_entity, shape) = selected_shape_2d.unwrap();
-                    let shape_manager = world.get_resource::<ShapeManager>().unwrap();
-                    let shape_3d_entity = shape_manager
-                        .shape_entity_2d_to_3d(&shape_2d_entity, shape)
-                        .unwrap();
+
+                    let shape_3d_entity = ShapeManager::shape_entity_2d_to_3d(
+                        world.get_resource::<VertexManager>().unwrap(),
+                        world.get_resource::<EdgeManager>().unwrap(),
+                        world.get_resource::<FaceManager>().unwrap(),
+                        &shape_2d_entity,
+                        shape
+                    ).unwrap();
 
                     let mut system_state: SystemState<(
                         Commands,

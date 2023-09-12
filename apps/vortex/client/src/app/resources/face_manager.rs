@@ -47,11 +47,14 @@ use crate::app::{
         create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,
     },
 };
+use crate::app::resources::edge_manager::EdgeManager;
+use crate::app::resources::shape_manager::ShapeManager;
+use crate::app::resources::vertex_manager::VertexManager;
 
 #[derive(Resource)]
 pub struct FaceManager {
     // 3d face key -> 3d face entity
-    face_keys: HashMap<FaceKey, Option<FaceData>>,
+    pub(crate) face_keys: HashMap<FaceKey, Option<FaceData>>,
     // 3d face entity -> 3d face data
     faces_3d: HashMap<Entity, FaceKey>,
     // 2d face entity -> 3d face entity
@@ -134,6 +137,7 @@ impl FaceManager {
         &mut self,
         commands: &mut Commands,
         camera_manager: &CameraManager,
+        shape_manager: &mut ShapeManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
     ) {
@@ -161,6 +165,8 @@ impl FaceManager {
         &mut self,
         commands: &mut Commands,
         camera_manager: &CameraManager,
+        vertex_manager: &mut VertexManager,
+        edge_manager: &mut EdgeManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         file_entity: Entity,
@@ -443,6 +449,7 @@ impl FaceManager {
     pub(crate) fn cleanup_deleted_face_key(
         &mut self,
         commands: &mut Commands,
+        shape_manager: &mut ShapeManager,
         face_key: &FaceKey,
     ) -> Entity {
         // unregister face
@@ -471,6 +478,10 @@ impl FaceManager {
             return true;
         }
         return false;
+    }
+
+    pub(crate) fn has_face_entity_3d(&self, entity_3d: &Entity) -> bool {
+        self.faces_3d.contains_key(entity_3d)
     }
 
     pub(crate) fn face_entity_2d_to_3d(&self, entity_2d: &Entity) -> Option<Entity> {
@@ -509,7 +520,7 @@ impl FaceManager {
     }
 
     // returns 2d face entity
-    fn unregister_face_key(&mut self, face_key: &FaceKey) -> Option<Entity> {
+    fn unregister_face_key(&mut self, vertex_manager: &mut VertexManager, edge_manager: &mut EdgeManager, face_key: &FaceKey) -> Option<Entity> {
         info!("unregistering face key: `{:?}`", face_key);
         if let Some(Some(face_3d_data)) = self.face_keys.remove(&face_key) {
             let entity_2d = face_3d_data.entity_2d;
@@ -561,14 +572,16 @@ impl FaceManager {
         return None;
     }
 
-    fn check_for_new_faces(
+    pub(crate) fn check_for_new_faces(
         &mut self,
+        vertex_manager: &VertexManager,
+        edge_manager: &EdgeManager,
         vertex_a_3d_entity: Entity,
         vertex_b_3d_entity: Entity,
         file_entity: Entity,
     ) {
-        let vertex_a_connected_vertices = vertex_manager.get_connected_vertices(vertex_a_3d_entity);
-        let vertex_b_connected_vertices = vertex_manager.get_connected_vertices(vertex_b_3d_entity);
+        let vertex_a_connected_vertices = vertex_manager.get_connected_vertices(edge_manager, vertex_a_3d_entity);
+        let vertex_b_connected_vertices = vertex_manager.get_connected_vertices(edge_manager, vertex_b_3d_entity);
 
         let common_vertices =
             vertex_a_connected_vertices.intersection(&vertex_b_connected_vertices);

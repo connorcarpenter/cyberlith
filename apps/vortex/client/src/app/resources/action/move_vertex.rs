@@ -12,7 +12,7 @@ use render_api::{base::CpuMesh, components::Transform, Assets, Handle};
 use vortex_proto::components::{Face3d, Vertex3d};
 
 use crate::app::resources::{
-    action::ShapeAction, camera_manager::CameraManager, shape_manager::ShapeManager,
+    action::ShapeAction, camera_manager::CameraManager, vertex_manager::VertexManager,
 };
 
 pub(crate) fn execute(
@@ -25,7 +25,7 @@ pub(crate) fn execute(
     let mut system_state: SystemState<(
         Client,
         ResMut<Assets<CpuMesh>>,
-        ResMut<ShapeManager>,
+        ResMut<VertexManager>,
         ResMut<CameraManager>,
         //Query<&mut Vertex3d>,
         Query<&Handle<CpuMesh>>,
@@ -36,7 +36,7 @@ pub(crate) fn execute(
     let (
         client,
         mut meshes,
-        shape_manager,
+        vertex_manager,
         mut camera_manager,
         //mut vertex_3d_q,
         mesh_handle_q,

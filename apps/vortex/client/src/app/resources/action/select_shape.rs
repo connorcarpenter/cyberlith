@@ -66,9 +66,9 @@ pub(crate) fn execute(
 // returns entity to request auth for
 pub fn select_shape(
     shape_manager: &mut ShapeManager,
-    vertex_manager: &mut VertexManager,
-    edge_manager: &mut EdgeManager,
-    face_manager: &mut FaceManager,
+    vertex_manager: &VertexManager,
+    edge_manager: &EdgeManager,
+    face_manager: &FaceManager,
     shape_2d_entity_opt: Option<(Entity, CanvasShape)>,
 ) -> Option<Entity> {
     if let Some((shape_2d_entity, shape)) = shape_2d_entity_opt {
@@ -97,32 +97,16 @@ pub fn select_shape(
 
 pub fn deselect_all_selected_shapes(
     shape_manager: &mut ShapeManager,
+    vertex_manager: &VertexManager,
+    edge_manager: &EdgeManager,
+    face_manager: &FaceManager,
 ) -> (Option<(Entity, CanvasShape)>, Option<Entity>) {
     let mut entity_to_deselect = None;
     let mut entity_to_release = None;
     if let Some((shape_2d_entity, shape_2d_type)) = shape_manager.selected_shape_2d() {
         shape_manager.deselect_shape();
         entity_to_deselect = Some((shape_2d_entity, shape_2d_type));
-        match shape_2d_type {
-            CanvasShape::Vertex => {
-                let vertex_3d_entity = vertex_manager
-                    .vertex_entity_2d_to_3d(&shape_2d_entity)
-                    .unwrap();
-                entity_to_release = Some(vertex_3d_entity);
-            }
-            CanvasShape::Edge => {
-                let edge_3d_entity = edge_manager
-                    .edge_entity_2d_to_3d(&shape_2d_entity)
-                    .unwrap();
-                entity_to_release = Some(edge_3d_entity);
-            }
-            CanvasShape::Face => {
-                if let Some(face_3d_entity) = face_manager.face_entity_2d_to_3d(&shape_2d_entity) {
-                    entity_to_release = Some(face_3d_entity);
-                }
-            }
-            _ => {}
-        }
+        entity_to_release = Some(ShapeManager::shape_entity_2d_to_3d(vertex_manager, edge_manager, face_manager, shape_2d_entity).unwrap())
     }
     (entity_to_deselect, entity_to_release)
 }
