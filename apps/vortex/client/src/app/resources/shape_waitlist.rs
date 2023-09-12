@@ -291,7 +291,7 @@ impl ShapeWaitlist {
                 (ShapeType::Vertex, FileTypeValue::Skel) => {
                     if entry.has_parent() {
                         let parent_entity = entry.get_parent().unwrap();
-                        if !shape_manager.has_vertex_entity_3d(&parent_entity) {
+                        if !vertex_manager.has_vertex_entity_3d(&parent_entity) {
                             // need to put in parent waitlist
                             info!(
                                 "vert entity {:?} requires parent {:?}. putting in parent waitlist",
@@ -311,7 +311,7 @@ impl ShapeWaitlist {
 
                     let mut dependencies = Vec::new();
                     for vertex_3d_entity in [&entities.0, &entities.1] {
-                        if !shape_manager.has_vertex_entity_3d(vertex_3d_entity) {
+                        if !vertex_manager.has_vertex_entity_3d(vertex_3d_entity) {
                             // need to put in parent waitlist
                             info!(
                                 "edge entity {:?} requires parent {:?}. putting in parent waitlist",
@@ -338,7 +338,7 @@ impl ShapeWaitlist {
                     let mut dependencies = Vec::new();
 
                     for vertex_3d_entity in [&entities.0, &entities.1, &entities.2] {
-                        if !shape_manager.has_vertex_entity_3d(vertex_3d_entity) {
+                        if !vertex_manager.has_vertex_entity_3d(vertex_3d_entity) {
                             // need to put in parent waitlist
                             info!(
                                 "face entity {:?} requires parent vertex {:?}. putting in parent waitlist",
@@ -349,7 +349,7 @@ impl ShapeWaitlist {
                     }
 
                     for edge_3d_entity in [&entities.3, &entities.4, &entities.5] {
-                        if !shape_manager.has_edge_entity_3d(edge_3d_entity) {
+                        if !edge_manager.has_edge_entity_3d(edge_3d_entity) {
                             // need to put in parent waitlist
                             info!(
                                 "face entity {:?} requires parent edge {:?}. putting in parent waitlist",
@@ -405,7 +405,7 @@ impl ShapeWaitlist {
                     None => Vertex2d::ROOT_COLOR,
                 };
 
-                shape_manager.vertex_3d_postprocess(
+                vertex_manager.vertex_3d_postprocess(
                     commands,
                     meshes,
                     materials,
@@ -419,7 +419,7 @@ impl ShapeWaitlist {
             (ShapeData::Vertex(_), FileTypeValue::Mesh) => {
                 let color = Vertex2d::CHILD_COLOR;
 
-                shape_manager.vertex_3d_postprocess(
+                vertex_manager.vertex_3d_postprocess(
                     commands,
                     meshes,
                     materials,
@@ -431,10 +431,10 @@ impl ShapeWaitlist {
                 );
             }
             (ShapeData::Edge(start_3d, end_3d, edge_angle_opt), _) => {
-                let start_2d = shape_manager.vertex_entity_3d_to_2d(&start_3d).unwrap();
-                let end_2d = shape_manager.vertex_entity_3d_to_2d(&end_3d).unwrap();
+                let start_2d = vertex_manager.vertex_entity_3d_to_2d(&start_3d).unwrap();
+                let end_2d = vertex_manager.vertex_entity_3d_to_2d(&end_3d).unwrap();
 
-                shape_manager.edge_3d_postprocess(
+                edge_manager.edge_3d_postprocess(
                     commands,
                     meshes,
                     materials,
@@ -458,9 +458,9 @@ impl ShapeWaitlist {
                     positions[index] = transform.translation;
                 }
 
-                shape_manager.remove_new_face_key(&face_key);
-                if !shape_manager.has_2d_face(&face_key) {
-                    shape_manager.process_new_face(
+                face_manager.remove_new_face_key(&face_key);
+                if !face_manager.has_2d_face(&face_key) {
+                    face_manager.process_new_face(
                         commands,
                         camera_manager,
                         meshes,
@@ -469,7 +469,7 @@ impl ShapeWaitlist {
                         &face_key,
                     );
                 }
-                shape_manager.face_3d_postprocess(
+                face_manager.face_3d_postprocess(
                     commands,
                     meshes,
                     materials,

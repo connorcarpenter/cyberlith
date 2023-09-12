@@ -45,7 +45,7 @@ pub(crate) fn execute(
         mut vertex_3d_q,
     ) = system_state.get_mut(world);
 
-    let vertex_3d_entity = shape_manager
+    let vertex_3d_entity = vertex_manager
         .vertex_entity_2d_to_3d(&vertex_2d_entity)
         .unwrap();
 
@@ -56,7 +56,7 @@ pub(crate) fn execute(
     };
     vertex_3d.set_vec3(&new_position);
 
-    shape_manager.on_vertex_3d_moved(
+    vertex_manager.on_vertex_3d_moved(
         &client,
         &mut meshes,
         &mesh_handle_q,

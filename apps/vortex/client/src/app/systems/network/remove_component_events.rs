@@ -91,17 +91,17 @@ pub fn remove_component_events(
         for (vertex_entity_3d, _) in events.read::<Vertex3d>() {
             info!("entity: `{:?}`, removed Vertex3d", vertex_entity_3d);
 
-            shape_manager.cleanup_deleted_vertex(&mut commands, &vertex_entity_3d);
+            vertex_manager.cleanup_deleted_vertex(&mut commands, &vertex_entity_3d);
         }
         for (edge_3d_entity, _) in events.read::<Edge3d>() {
             info!("entity: `{:?}`, removed Edge3d", edge_3d_entity);
 
-            shape_manager.cleanup_deleted_edge(&mut commands, &edge_3d_entity);
+            edge_manager.cleanup_deleted_edge(&mut commands, &edge_3d_entity);
         }
         for (face_entity_3d, _) in events.read::<Face3d>() {
             info!("entity: `{:?}`, removed Face3d", face_entity_3d);
 
-            shape_manager.cleanup_deleted_face_3d(&mut commands, &mut meshes, &face_entity_3d);
+            face_manager.cleanup_deleted_face_3d(&mut commands, &mut meshes, &face_entity_3d);
         }
     }
 }

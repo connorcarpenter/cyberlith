@@ -13,6 +13,9 @@ use crate::app::{
     resources::{
         action::{select_shape::select_shape, ShapeAction},
         shape_manager::ShapeManager,
+        edge_manager::EdgeManager,
+        face_manager::FaceManager,
+        vertex_manager::VertexManager,
         shape_data::CanvasShape,
     },
 };
@@ -28,14 +31,26 @@ pub(crate) fn execute(
         Commands,
         Client,
         ResMut<ShapeManager>,
+        ResMut<VertexManager>,
+        ResMut<EdgeManager>,
+        ResMut<FaceManager>,
         Query<(Entity, &Vertex3d)>,
         Query<(&Edge3d, &EdgeAngle)>,
         Query<&FileType>,
     )> = SystemState::new(world);
-    let (mut commands, mut client, mut shape_manager, vertex_q, edge_3d_q, file_type_q) =
-        system_state.get_mut(world);
+    let (
+        mut commands,
+        mut client,
+        mut shape_manager,
+        mut vertex_manager,
+        mut edge_manager,
+        mut face_manager,
+        vertex_q,
+        edge_3d_q,
+        file_type_q
+    ) = system_state.get_mut(world);
 
-    let vertex_3d_entity = shape_manager
+    let vertex_3d_entity = vertex_manager
         .vertex_entity_2d_to_3d(&vertex_2d_entity)
         .unwrap();
 
@@ -70,7 +85,7 @@ pub(crate) fn execute(
                     );
                 }
                 (
-                    shape_manager
+                    vertex_manager
                         .vertex_entity_3d_to_2d(&parent_vertex_3d_entity.unwrap())
                         .unwrap(),
                     edge_angle.unwrap(),
@@ -81,7 +96,7 @@ pub(crate) fn execute(
             let entry_contents_opt = {
                 let entries = convert_vertices_to_tree(
                     &client,
-                    &mut shape_manager,
+                    &mut vertex_manager,
                     &vertex_3d_entity,
                     &vertex_q,
                     &edge_3d_q,
@@ -106,6 +121,7 @@ pub(crate) fn execute(
                 &mut commands,
                 &mut client,
                 &mut shape_manager,
+                &mut vertex_manager,
                 vertex_3d_entity,
                 vertex_2d_to_select_opt,
             );
@@ -122,7 +138,7 @@ pub(crate) fn execute(
             let mut connected_vertices_2d_entities = Vec::new();
             let mut connected_face_vertex_2d_entities = Vec::new();
 
-            let Some(connected_edges) = shape_manager.vertex_connected_edges(&vertex_3d_entity) else {
+            let Some(connected_edges) = vertex_manager.vertex_connected_edges(&vertex_3d_entity) else {
                 panic!("Failed to get connected edges for vertex entity {:?}!", vertex_3d_entity);
             };
             for edge_3d_entity in connected_edges {
@@ -136,20 +152,20 @@ pub(crate) fn execute(
                     start_vertex_3d_entity
                 };
 
-                let Some(connected_vertex_2d_entity) = shape_manager.vertex_entity_3d_to_2d(&connected_vertex_3d_entity) else {
+                let Some(connected_vertex_2d_entity) = vertex_manager.vertex_entity_3d_to_2d(&connected_vertex_3d_entity) else {
                     panic!("Failed to get connected vertex 2d entity for vertex entity {:?}!", connected_vertex_3d_entity);
                 };
 
-                let edge_2d_entity = shape_manager.edge_entity_3d_to_2d(&edge_3d_entity).unwrap();
+                let edge_2d_entity = edge_manager.edge_entity_3d_to_2d(&edge_3d_entity).unwrap();
 
                 connected_vertices_2d_entities
                     .push((connected_vertex_2d_entity, Some(edge_2d_entity)));
             }
-            let Some(connected_faces) = shape_manager.vertex_connected_faces(&vertex_3d_entity) else {
+            let Some(connected_faces) = vertex_manager.vertex_connected_faces(&vertex_3d_entity) else {
                 panic!("Failed to get connected faces for vertex entity {:?}!", vertex_3d_entity);
             };
             for face_key in connected_faces {
-                let face_3d_entity_exists = shape_manager
+                let face_3d_entity_exists = face_manager
                     .face_3d_entity_from_face_key(&face_key)
                     .is_some();
 
@@ -161,10 +177,10 @@ pub(crate) fn execute(
                 vertices_3d.retain(|vertex| *vertex != vertex_3d_entity);
                 let vertices_2d: Vec<Entity> = vertices_3d
                     .iter()
-                    .map(|vertex| shape_manager.vertex_entity_3d_to_2d(&vertex).unwrap())
+                    .map(|vertex| vertex_manager.vertex_entity_3d_to_2d(&vertex).unwrap())
                     .collect();
 
-                let face_2d_entity = shape_manager
+                let face_2d_entity = face_manager
                     .face_2d_entity_from_face_key(&face_key)
                     .unwrap();
 
@@ -190,6 +206,7 @@ pub(crate) fn execute(
                 &mut commands,
                 &mut client,
                 &mut shape_manager,
+                &mut vertex_manager,
                 vertex_3d_entity,
                 vertex_2d_to_select_opt,
             );
@@ -212,6 +229,7 @@ fn handle_common_vertex_despawn(
     commands: &mut Commands,
     client: &mut Client,
     shape_manager: &mut ShapeManager,
+    vertex_manager: &mut VertexManager,
     vertex_3d_entity: Entity,
     vertex_2d_to_select_opt: Option<(Entity, CanvasShape)>,
 ) {
@@ -219,7 +237,7 @@ fn handle_common_vertex_despawn(
     commands.entity(vertex_3d_entity).despawn();
 
     // cleanup mappings
-    shape_manager.cleanup_deleted_vertex(commands, &vertex_3d_entity);
+    vertex_manager.cleanup_deleted_vertex(commands, &vertex_3d_entity);
 
     // select entities as needed
     if let Some((vertex_2d_to_select, vertex_type)) = vertex_2d_to_select_opt {
@@ -239,7 +257,7 @@ fn handle_common_vertex_despawn(
 
 fn convert_vertices_to_tree(
     client: &Client,
-    shape_manager: &mut ShapeManager,
+    vertex_manager: &VertexManager,
     parent_3d_entity: &Entity,
     vertex_3d_q: &Query<(Entity, &Vertex3d)>,
     edge_3d_q: &Query<(&Edge3d, &EdgeAngle)>,
@@ -256,7 +274,7 @@ fn convert_vertices_to_tree(
             continue;
         };
         if parent_entity == *parent_3d_entity {
-            let child_entity_2d = shape_manager
+            let child_entity_2d = vertex_manager
                 .vertex_entity_3d_to_2d(&child_entity_3d)
                 .unwrap();
 
@@ -278,7 +296,7 @@ fn convert_vertices_to_tree(
     for (entry_entity, entry) in output.iter_mut() {
         // set children
         let children =
-            convert_vertices_to_tree(client, shape_manager, entry_entity, vertex_3d_q, edge_3d_q);
+            convert_vertices_to_tree(client, vertex_manager, entry_entity, vertex_3d_q, edge_3d_q);
         if children.len() > 0 {
             entry.set_children(
                 children

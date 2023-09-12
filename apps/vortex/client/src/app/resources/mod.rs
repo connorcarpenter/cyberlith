@@ -14,3 +14,6 @@ pub mod animation_manager;
 pub mod shape_data;
 pub mod compass;
 pub mod grid;
+pub mod edge_manager;
+pub mod vertex_manager;
+pub mod face_manager;

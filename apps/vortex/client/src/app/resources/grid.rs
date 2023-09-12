@@ -87,7 +87,7 @@ impl Grid {
         let grid_size: f32 = 100.0;
         let neg_grid_size: f32 = -grid_size;
 
-        let (root_vertex_2d_entity, root_vertex_3d_entity, _, _) = shape_manager.new_local_vertex(
+        let (root_vertex_2d_entity, root_vertex_3d_entity, _, _) = vertex_manager.new_local_vertex(
             commands,
             camera_manager,
             meshes,
@@ -149,7 +149,7 @@ impl Grid {
         parent_vertex_2d_entity: Entity,
         position: Vec3,
     ) {
-        let (vertex_2d_entity, vertex_3d_entity, Some(edge_2d_entity), Some(edge_3d_entity)) = shape_manager.new_local_vertex(
+        let (vertex_2d_entity, vertex_3d_entity, Some(edge_2d_entity), Some(edge_3d_entity)) = vertex_manager.new_local_vertex(
             commands,
             camera_manager,
             meshes,

@@ -27,7 +27,7 @@ pub(crate) fn execute(
     )> = SystemState::new(world);
     let (shape_manager, mut camera_manager, mut edge_angle_q) = system_state.get_mut(world);
 
-    let edge_3d_entity = shape_manager.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
+    let edge_3d_entity = edge_manager.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
 
     let Ok(mut edge_angle) = edge_angle_q.get_mut(edge_3d_entity) else {
         panic!("Failed to get EdgeAngle for edge entity {:?}!", edge_3d_entity);

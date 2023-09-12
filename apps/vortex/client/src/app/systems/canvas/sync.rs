@@ -76,7 +76,7 @@ pub fn process_faces(
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
 ) {
-    shape_manager.process_new_faces(&mut commands, &camera_manager, &mut meshes, &mut materials);
+    face_manager.process_new_faces(&mut commands, &camera_manager, &mut meshes, &mut materials);
 }
 
 pub fn update_select_line(

@@ -17,12 +17,15 @@ use vortex_proto::components::{Edge3d, EdgeAngle, FileType, FileTypeValue, Owned
 use crate::app::{
     components::Vertex2d,
     resources::{
+        face_manager::FaceManager,
+        vertex_manager::VertexManager,
         action::{select_shape::deselect_all_selected_shapes, ActionStack, ShapeAction},
         camera_manager::CameraManager,
         shape_manager::ShapeManager,
         shape_data::{CanvasShape, FaceKey},
     },
 };
+use crate::app::resources::edge_manager::EdgeManager;
 
 pub(crate) fn execute(
     world: &mut World,
@@ -53,6 +56,7 @@ pub(crate) fn execute(
             Client,
             ResMut<CameraManager>,
             ResMut<ShapeManager>,
+            ResMut<VertexManager>,
             ResMut<Assets<CpuMesh>>,
             ResMut<Assets<CpuMaterial>>,
         )> = SystemState::new(world);
@@ -61,6 +65,7 @@ pub(crate) fn execute(
             mut client,
             mut camera_manager,
             mut shape_manager,
+            mut vertex_manager,
             mut meshes,
             mut materials,
         ) = system_state.get_mut(world);
@@ -77,12 +82,12 @@ pub(crate) fn execute(
         }
 
         // get 3d version of first vertex
-        let vertex_3d_entity_b = shape_manager
+        let vertex_3d_entity_b = vertex_manager
             .vertex_entity_2d_to_3d(&vertex_2d_entity_b)
             .unwrap();
 
         // create edge
-        let (new_edge_2d_entity, new_edge_3d_entity) = create_networked_edge(
+        let (new_edge_2d_entity, new_edge_3d_entity) = EdgeManager::create_networked_edge(
             &mut commands,
             &mut client,
             &mut camera_manager,
@@ -143,6 +148,8 @@ pub(crate) fn execute(
                 Client,
                 ResMut<CameraManager>,
                 ResMut<ShapeManager>,
+                ResMut<VertexManager>,
+                ResMut<FaceManager>,
                 ResMut<Assets<CpuMesh>>,
                 ResMut<Assets<CpuMaterial>>,
                 Query<&Transform>,
@@ -152,6 +159,8 @@ pub(crate) fn execute(
                 mut client,
                 mut camera_manager,
                 mut shape_manager,
+                mut vertex_manager,
+                mut face_manager,
                 mut meshes,
                 mut materials,
                 transform_q,
@@ -160,19 +169,19 @@ pub(crate) fn execute(
             for (vertex_2d_of_face_to_create, old_face_2d_entity, create_face_3d) in
                 vertex_2d_entities
             {
-                let vertex_3d_a = shape_manager
+                let vertex_3d_a = vertex_manager
                     .vertex_entity_2d_to_3d(&vertex_2d_entity_a)
                     .unwrap();
-                let vertex_3d_b = shape_manager
+                let vertex_3d_b = vertex_manager
                     .vertex_entity_2d_to_3d(&vertex_2d_entity_b)
                     .unwrap();
-                let vertex_3d_c = shape_manager
+                let vertex_3d_c = vertex_manager
                     .vertex_entity_2d_to_3d(&vertex_2d_of_face_to_create)
                     .unwrap();
                 let face_key = FaceKey::new(vertex_3d_a, vertex_3d_b, vertex_3d_c);
 
-                shape_manager.remove_new_face_key(&face_key);
-                let new_face_2d_entity = shape_manager.process_new_face(
+                face_manager.remove_new_face_key(&face_key);
+                let new_face_2d_entity = face_manager.process_new_face(
                     &mut commands,
                     &mut camera_manager,
                     &mut meshes,
@@ -182,7 +191,7 @@ pub(crate) fn execute(
                 );
                 action_stack.migrate_face_entities(old_face_2d_entity, new_face_2d_entity);
                 if create_face_3d {
-                    shape_manager.create_networked_face(
+                    face_manager.create_networked_face(
                         &mut commands,
                         &mut client,
                         &mut meshes,
@@ -208,74 +217,4 @@ pub(crate) fn execute(
         ShapeAction::DeleteEdge(created_edge_2d_entity, deselected_shape_2d_entity_store),
         ShapeAction::SelectShape(Some((created_edge_2d_entity, CanvasShape::Edge))),
     ];
-}
-
-// return (new edge 2d entity, new edge 3d entity)
-pub fn create_networked_edge(
-    commands: &mut Commands,
-    client: &mut Client,
-    camera_manager: &mut CameraManager,
-    shape_manager: &mut ShapeManager,
-    meshes: &mut Assets<CpuMesh>,
-    materials: &mut Assets<CpuMaterial>,
-    parent_vertex_2d_entity: Entity,
-    child_vertex_2d_entity: Entity,
-    child_vertex_3d_entity: Entity,
-    file_entity: Entity,
-    file_type: FileTypeValue,
-    edge_angle: Option<f32>,
-    entities_to_release: &mut Vec<Entity>,
-) -> (Entity, Entity) {
-    // create new 3d edge
-    let parent_vertex_3d_entity = shape_manager
-        .vertex_entity_2d_to_3d(&parent_vertex_2d_entity)
-        .unwrap();
-
-    let mut new_edge_3d_component = Edge3d::new();
-    new_edge_3d_component
-        .start
-        .set(client, &parent_vertex_3d_entity);
-    new_edge_3d_component
-        .end
-        .set(client, &child_vertex_3d_entity);
-    let mut owned_by_file_component = OwnedByFile::new();
-    owned_by_file_component
-        .file_entity
-        .set(client, &file_entity);
-    let new_edge_3d_entity = commands
-        .spawn_empty()
-        .enable_replication(client)
-        .configure_replication(ReplicationConfig::Delegated)
-        .insert(new_edge_3d_component)
-        .insert(owned_by_file_component)
-        .insert(FileType::new(file_type))
-        .id();
-
-    if file_type == FileTypeValue::Skel {
-        let edge_angle_f32 = edge_angle.unwrap();
-        commands
-            .entity(new_edge_3d_entity)
-            .insert(EdgeAngle::new(edge_angle_f32));
-    }
-
-    // create new 2d edge, add local components to 3d edge
-    let new_edge_2d_entity = shape_manager.edge_3d_postprocess(
-        commands,
-        meshes,
-        materials,
-        camera_manager,
-        new_edge_3d_entity,
-        parent_vertex_2d_entity,
-        parent_vertex_3d_entity,
-        child_vertex_2d_entity,
-        child_vertex_3d_entity,
-        Some(file_entity),
-        Vertex2d::CHILD_COLOR,
-        file_type == FileTypeValue::Skel,
-        edge_angle,
-    );
-
-    entities_to_release.push(new_edge_3d_entity);
-
-    (new_edge_2d_entity, new_edge_3d_entity)
 }

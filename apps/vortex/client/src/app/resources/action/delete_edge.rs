@@ -12,6 +12,9 @@ use crate::app::resources::{
     action::{select_shape::select_shape, ShapeAction},
     shape_manager::ShapeManager,
     shape_data::CanvasShape,
+    edge_manager::EdgeManager,
+    face_manager::FaceManager,
+    vertex_manager::VertexManager,
 };
 
 pub(crate) fn execute(
@@ -20,11 +23,26 @@ pub(crate) fn execute(
     shape_2d_to_select_opt: Option<(Entity, CanvasShape)>,
 ) -> Vec<ShapeAction> {
     info!("DeleteEdge(edge_2d_entity: `{:?}`)", edge_2d_entity);
-    let mut system_state: SystemState<(Commands, Client, ResMut<ShapeManager>, Query<&Edge3d>)> =
-        SystemState::new(world);
-    let (mut commands, mut client, mut shape_manager, edge_3d_q) = system_state.get_mut(world);
+    let mut system_state: SystemState<(
+        Commands,
+        Client,
+        ResMut<ShapeManager>,
+        ResMut<VertexManager>,
+        ResMut<EdgeManager>,
+        ResMut<FaceManager>,
+        Query<&Edge3d>
+    )> = SystemState::new(world);
+    let (
+        mut commands,
+        mut client,
+        mut shape_manager,
+        mut vertex_manager,
+        mut edge_manager,
+        mut face_manager,
+        edge_3d_q
+    ) = system_state.get_mut(world);
 
-    let Some(edge_3d_entity_ref) = shape_manager.edge_entity_2d_to_3d(&edge_2d_entity) else {
+    let Some(edge_3d_entity_ref) = edge_manager.edge_entity_2d_to_3d(&edge_2d_entity) else {
         panic!("failed to get edge 3d entity for edge 2d entity `{:?}`!", edge_2d_entity)
     };
     let edge_3d_entity = edge_3d_entity_ref;
@@ -32,10 +50,10 @@ pub(crate) fn execute(
     let edge_3d = edge_3d_q.get(edge_3d_entity).unwrap();
     let vertex_start_3d = edge_3d.start.get(&client).unwrap();
     let vertex_end_3d = edge_3d.end.get(&client).unwrap();
-    let vertex_start_2d = shape_manager
+    let vertex_start_2d = vertex_manager
         .vertex_entity_3d_to_2d(&vertex_start_3d)
         .unwrap();
-    let vertex_end_2d = shape_manager
+    let vertex_end_2d = vertex_manager
         .vertex_entity_3d_to_2d(&vertex_end_3d)
         .unwrap();
 
@@ -44,13 +62,13 @@ pub(crate) fn execute(
 
     // store vertices that will make a new face
     let mut deleted_face_vertex_2d_entities = Vec::new();
-    if let Some(connected_face_keys) = shape_manager.edge_connected_faces(&edge_3d_entity) {
+    if let Some(connected_face_keys) = edge_manager.edge_connected_faces(&edge_3d_entity) {
         for face_key in connected_face_keys {
-            let face_2d_entity = shape_manager
+            let face_2d_entity = face_manager
                 .face_2d_entity_from_face_key(&face_key)
                 .unwrap();
 
-            let face_has_3d_entity = shape_manager
+            let face_has_3d_entity = face_manager
                 .face_3d_entity_from_face_key(&face_key)
                 .is_some();
 
@@ -64,7 +82,7 @@ pub(crate) fn execute(
                 panic!("expected 1 vertices, got {}!", vertices_3d.len());
             }
             let face_vertex_3d = vertices_3d[0];
-            let face_vertex_2d_entity = shape_manager
+            let face_vertex_2d_entity = vertex_manager
                 .vertex_entity_3d_to_2d(&face_vertex_3d)
                 .unwrap();
 
@@ -82,7 +100,7 @@ pub(crate) fn execute(
     };
 
     // cleanup mappings
-    shape_manager.cleanup_deleted_edge(&mut commands, &edge_3d_entity);
+    edge_manager.cleanup_deleted_edge(&mut commands, &edge_3d_entity);
 
     // select entities as needed
     if let Some((shape_2d_to_select, shape_type)) = shape_2d_to_select_opt {

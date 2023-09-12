@@ -12,6 +12,9 @@ use crate::app::resources::{
     action::ShapeAction,
     shape_manager::ShapeManager,
 };
+use crate::app::resources::edge_manager::EdgeManager;
+use crate::app::resources::face_manager::FaceManager;
+use crate::app::resources::vertex_manager::VertexManager;
 
 pub(crate) fn execute(
     world: &mut World,
@@ -47,8 +50,8 @@ pub(crate) fn execute(
     // create networked 3d face if necessary
     if let Some((face_2d_entity, CanvasShape::Face)) = shape_2d_entity_opt {
         if entity_to_request.is_none() {
-            world.resource_scope(|world, mut shape_manager: Mut<ShapeManager>| {
-                shape_manager.create_networked_face_from_world(world, face_2d_entity);
+            world.resource_scope(|world, mut face_manager: Mut<FaceManager>| {
+                face_manager.create_networked_face_from_world(world, face_2d_entity);
             });
             return vec![
                 ShapeAction::SelectShape(deselected_entity),
@@ -63,25 +66,28 @@ pub(crate) fn execute(
 // returns entity to request auth for
 pub fn select_shape(
     shape_manager: &mut ShapeManager,
+    vertex_manager: &mut VertexManager,
+    edge_manager: &mut EdgeManager,
+    face_manager: &mut FaceManager,
     shape_2d_entity_opt: Option<(Entity, CanvasShape)>,
 ) -> Option<Entity> {
     if let Some((shape_2d_entity, shape)) = shape_2d_entity_opt {
         shape_manager.select_shape(&shape_2d_entity, shape);
         match shape {
             CanvasShape::Vertex => {
-                let vertex_3d_entity = shape_manager
+                let vertex_3d_entity = vertex_manager
                     .vertex_entity_2d_to_3d(&shape_2d_entity)
                     .unwrap();
                 return Some(vertex_3d_entity);
             }
             CanvasShape::Edge => {
-                let edge_3d_entity = shape_manager
+                let edge_3d_entity = edge_manager
                     .edge_entity_2d_to_3d(&shape_2d_entity)
                     .unwrap();
                 return Some(edge_3d_entity);
             }
             CanvasShape::Face => {
-                return shape_manager.face_entity_2d_to_3d(&shape_2d_entity);
+                return face_manager.face_entity_2d_to_3d(&shape_2d_entity);
             }
             _ => return None,
         }
@@ -99,19 +105,19 @@ pub fn deselect_all_selected_shapes(
         entity_to_deselect = Some((shape_2d_entity, shape_2d_type));
         match shape_2d_type {
             CanvasShape::Vertex => {
-                let vertex_3d_entity = shape_manager
+                let vertex_3d_entity = vertex_manager
                     .vertex_entity_2d_to_3d(&shape_2d_entity)
                     .unwrap();
                 entity_to_release = Some(vertex_3d_entity);
             }
             CanvasShape::Edge => {
-                let edge_3d_entity = shape_manager
+                let edge_3d_entity = edge_manager
                     .edge_entity_2d_to_3d(&shape_2d_entity)
                     .unwrap();
                 entity_to_release = Some(edge_3d_entity);
             }
             CanvasShape::Face => {
-                if let Some(face_3d_entity) = shape_manager.face_entity_2d_to_3d(&shape_2d_entity) {
+                if let Some(face_3d_entity) = face_manager.face_entity_2d_to_3d(&shape_2d_entity) {
                     entity_to_release = Some(face_3d_entity);
                 }
             }

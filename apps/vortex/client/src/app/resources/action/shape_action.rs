@@ -13,6 +13,7 @@ use crate::app::{
         shape_data::CanvasShape,
     },
 };
+use crate::app::resources::vertex_manager::VertexManager;
 
 #[derive(Clone)]
 pub enum ShapeAction {
@@ -275,7 +276,7 @@ impl Action for ShapeAction {
 
                 if let Some((vertex_2d_entity, CanvasShape::Vertex)) = vertex_2d_entity_opt {
                     let vertex_3d_entity = world
-                        .get_resource::<ShapeManager>()
+                        .get_resource::<VertexManager>()
                         .unwrap()
                         .vertex_entity_2d_to_3d(vertex_2d_entity)
                         .unwrap();

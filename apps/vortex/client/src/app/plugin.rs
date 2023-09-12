@@ -18,6 +18,9 @@ use crate::app::{
     config::ConfigPlugin,
     events::{InsertComponentEvent, LoginEvent},
     resources::{
+        edge_manager::EdgeManager,
+        face_manager::FaceManager,
+        vertex_manager::VertexManager,
         compass::Compass,
         animation_manager::AnimationManager,
         action::FileActions, camera_manager::CameraManager, canvas::Canvas,
@@ -106,11 +109,14 @@ impl Plugin for VortexPlugin {
             .add_systems(Update, ui::update)
             // Canvas Config
             .init_resource::<ShapeManager>()
+            .init_resource::<VertexManager>()
+            .init_resource::<EdgeManager>()
+            .init_resource::<FaceManager>()
             .init_resource::<AnimationManager>()
-            .init_resource::<Compass>()
-            .init_resource::<Canvas>()
             .init_resource::<CameraManager>()
             .init_resource::<InputManager>()
+            .init_resource::<Compass>()
+            .init_resource::<Canvas>()
             .add_systems(Startup, canvas::setup)
             .add_systems(Update, canvas::update_camera)
             .add_systems(Update, canvas::sync_vertices)

@@ -7,6 +7,7 @@ use crate::app::{
         shape_manager::ShapeManager,
         toolbar::Toolbar,
         shape_data::CanvasShape,
+        edge_manager::EdgeManager,
     },
     ui::widgets::naming_bar_visibility_toggle,
 };
@@ -41,7 +42,7 @@ impl SkeletonToolbar {
             let response = Toolbar::button(ui, "📐", "Toggle edge angle visibility", true);
             if response.clicked() {
                 world
-                    .get_resource_mut::<ShapeManager>()
+                    .get_resource_mut::<EdgeManager>()
                     .unwrap()
                     .edge_angle_visibility_toggle();
             }

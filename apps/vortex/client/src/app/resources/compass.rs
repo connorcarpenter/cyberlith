@@ -43,7 +43,7 @@ impl Compass {
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
     ) {
-        let (root_vertex_2d_entity, vertex_3d_entity, _, _) = shape_manager.new_local_vertex(
+        let (root_vertex_2d_entity, vertex_3d_entity, _, _) = vertex_manager.new_local_vertex(
             commands,
             camera_manager,
             meshes,
@@ -145,7 +145,7 @@ impl Compass {
         position: Vec3,
         color: Color,
     ) {
-        let (vertex_2d_entity, vertex_3d_entity, Some(edge_2d_entity), Some(edge_3d_entity)) = shape_manager.new_local_vertex(
+        let (vertex_2d_entity, vertex_3d_entity, Some(edge_2d_entity), Some(edge_3d_entity)) = vertex_manager.new_local_vertex(
             commands,
             camera_manager,
             meshes,
