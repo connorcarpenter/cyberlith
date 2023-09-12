@@ -11,7 +11,7 @@ use render_api::components::{Camera, Projection, Transform};
 use vortex_proto::components::{EdgeAngle, Vertex3d, VertexRoot};
 
 use crate::app::{
-    components::{Compass, Edge2dLocal, FaceIcon2d, OwnedByFileLocal, Vertex2d},
+    components::{LocalShape, Edge2dLocal, FaceIcon2d, OwnedByFileLocal, Vertex2d},
     resources::{
         animation_manager::AnimationManager,
         camera_manager::CameraManager, canvas::Canvas, input_manager::InputManager,
@@ -63,10 +63,10 @@ pub fn update_mouse_hover(
     input: Res<Input>,
     tab_manager: ResMut<TabManager>,
     mut shape_manager: ResMut<ShapeManager>,
-    mut transform_q: Query<(&mut Transform, Option<&Compass>)>,
+    mut transform_q: Query<(&mut Transform, Option<&LocalShape>)>,
     owned_by_tab_q: Query<&OwnedByFileLocal>,
-    vertex_2d_q: Query<(Entity, Option<&VertexRoot>), (With<Vertex2d>, Without<Compass>)>,
-    edge_2d_q: Query<(Entity, &Edge2dLocal), Without<Compass>>,
+    vertex_2d_q: Query<(Entity, Option<&VertexRoot>), (With<Vertex2d>, Without<LocalShape>)>,
+    edge_2d_q: Query<(Entity, &Edge2dLocal), Without<LocalShape>>,
     face_2d_q: Query<(Entity, &FaceIcon2d)>,
 ) {
     if !canvas.is_visible() {

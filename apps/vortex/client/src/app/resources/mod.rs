@@ -12,3 +12,5 @@ pub mod tab_manager;
 pub mod toolbar;
 pub mod animation_manager;
 pub mod shape_data;
+pub mod compass;
+pub mod grid;

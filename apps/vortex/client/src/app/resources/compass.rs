@@ -1,0 +1,165 @@
+
+use bevy_ecs::{
+    entity::Entity,
+    system::{Query, Commands, Resource},
+};
+
+use math::{Vec2, Vec3};
+use render_api::{
+    components::Transform,
+    base::{Color, CpuMaterial, CpuMesh},
+    Assets,
+};
+use vortex_proto::components::Vertex3d;
+
+use crate::app::{
+    components::LocalShape,
+    resources::{
+        camera_state::CameraState,
+        camera_manager::CameraManager,
+        shape_manager::ShapeManager
+    },
+};
+
+#[derive(Resource)]
+pub struct Compass {
+    compass_vertices: Vec<Entity>,
+}
+
+impl Default for Compass {
+    fn default() -> Self {
+        Self {
+            compass_vertices: Vec::new(),
+        }
+    }
+}
+
+impl Compass {
+    pub(crate) fn setup_compass(
+        &mut self,
+        commands: &mut Commands,
+        camera_manager: &mut CameraManager,
+        shape_manager: &mut ShapeManager,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+    ) {
+        let (root_vertex_2d_entity, vertex_3d_entity, _, _) = shape_manager.new_local_vertex(
+            commands,
+            camera_manager,
+            meshes,
+            materials,
+            None,
+            Vec3::ZERO,
+            Color::WHITE,
+        );
+        self.compass_vertices.push(vertex_3d_entity);
+        commands.entity(root_vertex_2d_entity).insert(LocalShape);
+        commands.entity(vertex_3d_entity).insert(LocalShape);
+
+        self.new_compass_arm(
+            commands,
+            camera_manager,
+            shape_manager,
+            meshes,
+            materials,
+            root_vertex_2d_entity,
+            Vec3::new(100.0, 0.0, 0.0),
+            Color::RED,
+        );
+
+        self.new_compass_arm(
+            commands,
+            camera_manager,
+            shape_manager,
+            meshes,
+            materials,
+            root_vertex_2d_entity,
+            Vec3::new(0.0, 100.0, 0.0),
+            Color::GREEN,
+        );
+
+        self.new_compass_arm(
+            commands,
+            camera_manager,
+            shape_manager,
+            meshes,
+            materials,
+            root_vertex_2d_entity,
+            Vec3::new(0.0, 0.0, 100.0),
+            Color::LIGHT_BLUE,
+        );
+    }
+
+    pub fn sync_compass(
+        &self,
+        camera_3d_entity: &Entity,
+        camera_state: &CameraState,
+        vertex_3d_q: &mut Query<(Entity, &mut Vertex3d)>,
+        transform_q: &Query<&mut Transform>,
+    ) {
+        let Ok(camera_transform) = transform_q.get(*camera_3d_entity) else {
+            return;
+        };
+
+        let Ok((_, mut vertex_3d)) = vertex_3d_q.get_mut(self.compass_vertices[0]) else {
+            return;
+        };
+
+        let right = camera_transform.right_direction();
+        let up = right.cross(camera_transform.view_direction());
+
+        let unit_length = 1.0 / camera_state.camera_3d_scale();
+        const COMPASS_POS: Vec2 = Vec2::new(530.0, 300.0);
+        let offset_2d = camera_state.camera_3d_offset().round()
+            + Vec2::new(
+            unit_length * -1.0 * COMPASS_POS.x,
+            unit_length * COMPASS_POS.y,
+        );
+        let offset_3d = (right * offset_2d.x) + (up * offset_2d.y);
+
+        let vert_offset_3d = Vec3::ZERO + offset_3d;
+        vertex_3d.set_vec3(&vert_offset_3d);
+
+        let compass_length = unit_length * 25.0;
+        let vert_offset_3d = Vec3::new(compass_length, 0.0, 0.0) + offset_3d;
+        let (_, mut vertex_3d) = vertex_3d_q.get_mut(self.compass_vertices[1]).unwrap();
+        vertex_3d.set_vec3(&vert_offset_3d);
+
+        let vert_offset_3d = Vec3::new(0.0, compass_length, 0.0) + offset_3d;
+        let (_, mut vertex_3d) = vertex_3d_q.get_mut(self.compass_vertices[2]).unwrap();
+        vertex_3d.set_vec3(&vert_offset_3d);
+
+        let vert_offset_3d = Vec3::new(0.0, 0.0, compass_length) + offset_3d;
+        let (_, mut vertex_3d) = vertex_3d_q.get_mut(self.compass_vertices[3]).unwrap();
+        vertex_3d.set_vec3(&vert_offset_3d);
+    }
+
+    fn new_compass_arm(
+        &mut self,
+        commands: &mut Commands,
+        camera_manager: &mut CameraManager,
+        shape_manager: &mut ShapeManager,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+        root_vertex_2d_entity: Entity,
+        position: Vec3,
+        color: Color,
+    ) {
+        let (vertex_2d_entity, vertex_3d_entity, Some(edge_2d_entity), Some(edge_3d_entity)) = shape_manager.new_local_vertex(
+            commands,
+            camera_manager,
+            meshes,
+            materials,
+            Some(root_vertex_2d_entity),
+            position,
+            color,
+        ) else {
+            panic!("No edges?");
+        };
+        self.compass_vertices.push(vertex_3d_entity);
+        commands.entity(vertex_2d_entity).insert(LocalShape);
+        commands.entity(vertex_3d_entity).insert(LocalShape);
+        commands.entity(edge_2d_entity).insert(LocalShape);
+        commands.entity(edge_3d_entity).insert(LocalShape);
+    }
+}

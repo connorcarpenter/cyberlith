@@ -14,20 +14,22 @@ use render_api::{
 use vortex_proto::components::{EdgeAngle, Vertex3d};
 
 use crate::app::{
-    components::{Compass, Edge2dLocal, Edge3dLocal, FaceIcon2d, OwnedByFileLocal},
+    components::{LocalShape, Edge2dLocal, Edge3dLocal, FaceIcon2d, OwnedByFileLocal},
     resources::{
         camera_manager::CameraManager, canvas::Canvas, shape_manager::ShapeManager,
         tab_manager::TabManager,
     },
 };
+use crate::app::resources::compass::Compass;
 
 pub fn sync_vertices(
     tab_manager: ResMut<TabManager>,
     canvas: Res<Canvas>,
     camera_manager: Res<CameraManager>,
+    compass: Res<Compass>,
     mut shape_manager: ResMut<ShapeManager>,
 
-    compass_q: Query<&Compass>,
+    compass_q: Query<&LocalShape>,
     camera_q: Query<(&Camera, &Projection)>,
 
     mut visibility_q: Query<&mut Visibility>,
@@ -52,6 +54,7 @@ pub fn sync_vertices(
         shape_manager.sync_shapes(
             &camera_manager,
             current_tab_camera_state,
+            &compass,
             *current_tab_entity,
             &camera_q,
             &compass_q,

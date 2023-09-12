@@ -48,7 +48,7 @@ pub(crate) fn execute(
     if let Some((face_2d_entity, CanvasShape::Face)) = shape_2d_entity_opt {
         if entity_to_request.is_none() {
             world.resource_scope(|world, mut shape_manager: Mut<ShapeManager>| {
-                shape_manager.create_networked_face_outer(world, face_2d_entity);
+                shape_manager.create_networked_face_from_world(world, face_2d_entity);
             });
             return vec![
                 ShapeAction::SelectShape(deselected_entity),

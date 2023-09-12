@@ -67,9 +67,9 @@ impl VertexEntry {
 
 // for the editor compass
 #[derive(Component)]
-pub struct Compass;
+pub struct LocalShape;
 
-impl Compass {
+impl LocalShape {
     pub const VERTEX_RADIUS: f32 = 3.0;
     pub const EDGE_THICKNESS: f32 = 1.0;
 }

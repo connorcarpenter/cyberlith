@@ -18,6 +18,7 @@ use crate::app::{
     config::ConfigPlugin,
     events::{InsertComponentEvent, LoginEvent},
     resources::{
+        compass::Compass,
         animation_manager::AnimationManager,
         action::FileActions, camera_manager::CameraManager, canvas::Canvas,
         file_manager::FileManager, input_manager::InputManager, shape_manager::ShapeManager,
@@ -106,6 +107,7 @@ impl Plugin for VortexPlugin {
             // Canvas Config
             .init_resource::<ShapeManager>()
             .init_resource::<AnimationManager>()
+            .init_resource::<Compass>()
             .init_resource::<Canvas>()
             .init_resource::<CameraManager>()
             .init_resource::<InputManager>()

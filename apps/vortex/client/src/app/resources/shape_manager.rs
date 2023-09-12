@@ -28,7 +28,7 @@ use vortex_proto::components::{
 
 use crate::app::{
     components::{
-        Compass, Edge2dLocal, Edge3dLocal, Face3dLocal, FaceIcon2d, OwnedByFileLocal, SelectCircle,
+        LocalShape, Edge2dLocal, Edge3dLocal, Face3dLocal, FaceIcon2d, OwnedByFileLocal, SelectCircle,
         SelectTriangle, Vertex2d, VertexTypeData,
     },
     resources::{
@@ -37,6 +37,7 @@ use crate::app::{
         camera_manager::{CameraAngle, CameraManager},
         camera_state::CameraState,
         canvas::Canvas,
+        compass::Compass,
         input_manager::AppInputAction,
         tab_manager::TabState,
         shape_data::{Vertex3dData, CanvasShape, Edge3dData, FaceData, FaceKey},
@@ -86,7 +87,6 @@ pub struct ShapeManager {
 
     last_vertex_dragged: Option<(Entity, Vec3, Vec3)>,
     last_edge_dragged: Option<(Entity, f32, f32)>,
-    compass_vertices: Vec<Entity>,
 
     edge_angle_visibility: bool,
 }
@@ -120,7 +120,6 @@ impl Default for ShapeManager {
 
             last_vertex_dragged: None,
             last_edge_dragged: None,
-            compass_vertices: Vec::new(),
 
             edge_angle_visibility: true,
         }
@@ -128,14 +127,6 @@ impl Default for ShapeManager {
 }
 
 impl ShapeManager {
-    pub(crate) fn on_canvas_focus_changed(&mut self, new_focus: bool) {
-        self.recalculate_selection();
-        if !new_focus {
-            self.last_vertex_dragged = None;
-            self.last_edge_dragged = None;
-            self.hovered_entity = None;
-        }
-    }
 
     pub fn update_input(
         &mut self,
@@ -261,10 +252,11 @@ impl ShapeManager {
         &mut self,
         camera_manager: &CameraManager,
         camera_state: &CameraState,
+        compass: &Compass,
         current_tab_file_entity: Entity,
 
         camera_q: &Query<(&Camera, &Projection)>,
-        compass_q: &Query<&Compass>,
+        local_shape_q: &Query<&LocalShape>,
 
         visibility_q: &mut Query<&mut Visibility>,
         transform_q: &mut Query<&mut Transform>,
@@ -290,7 +282,7 @@ impl ShapeManager {
 
         let camera_3d_scale = camera_state.camera_3d_scale();
 
-        self.sync_compass(
+        compass.sync_compass(
             &camera_3d,
             camera_state,
             vertex_3d_q,
@@ -303,14 +295,14 @@ impl ShapeManager {
             vertex_3d_q,
             transform_q,
             owned_by_q,
-            compass_q,
+            local_shape_q,
             current_tab_file_entity,
         );
         self.sync_2d_edges(
             edge_2d_q,
             transform_q,
             owned_by_q,
-            compass_q,
+            local_shape_q,
             current_tab_file_entity,
             camera_3d_scale,
         );
@@ -319,7 +311,7 @@ impl ShapeManager {
             transform_q,
             owned_by_q,
             visibility_q,
-            compass_q,
+            local_shape_q,
             current_tab_file_entity,
             camera_3d_scale,
         );
@@ -336,343 +328,7 @@ impl ShapeManager {
         );
     }
 
-    fn sync_vertices(
-        &self,
-        camera_3d_entity: &Entity,
-        camera_3d_scale: f32,
-        camera_q: &Query<(&Camera, &Projection)>,
-        vertex_3d_q: &mut Query<(Entity, &mut Vertex3d)>,
-        transform_q: &mut Query<&mut Transform>,
-        owned_by_q: &Query<&OwnedByFileLocal>,
-        compass_q: &Query<&Compass>,
-        current_tab_file_entity: Entity,
-    ) {
-        let Ok((camera, camera_projection)) = camera_q.get(*camera_3d_entity) else {
-            return;
-        };
-
-        let Ok(camera_transform) = transform_q.get(*camera_3d_entity) else {
-            return;
-        };
-
-        let camera_viewport = camera.viewport.unwrap();
-        let view_matrix = camera_transform.view_matrix();
-        let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
-        let vertex_2d_scale = Vertex2d::RADIUS * camera_3d_scale;
-        let compass_vertex_3d_scale = Compass::VERTEX_RADIUS / camera_3d_scale;
-        let compass_vertex_2d_scale = Vertex2d::RADIUS;
-
-        for (vertex_3d_entity, vertex_3d) in vertex_3d_q.iter() {
-            // check if vertex is owned by the current tab
-            if !Self::is_owned_by_tab_or_unowned(
-                current_tab_file_entity,
-                owned_by_q,
-                vertex_3d_entity,
-            ) {
-                continue;
-            }
-
-            // get transform
-            let Ok(mut vertex_3d_transform) = transform_q.get_mut(vertex_3d_entity) else {
-                warn!("Vertex3d entity {:?} has no Transform", vertex_3d_entity);
-                continue;
-            };
-
-            // update 3d vertices
-            vertex_3d_transform.translation.x = vertex_3d.x().into();
-            vertex_3d_transform.translation.y = vertex_3d.y().into();
-            vertex_3d_transform.translation.z = vertex_3d.z().into();
-
-            if compass_q.get(vertex_3d_entity).is_ok() {
-                vertex_3d_transform.scale = Vec3::splat(compass_vertex_3d_scale);
-            } else {
-                // vertex_3d_transform.scale = should put 3d vertex scale here?
-            }
-
-            // update 2d vertices
-            let (coords, depth) = convert_3d_to_2d(
-                &view_matrix,
-                &projection_matrix,
-                &camera_viewport.size_vec2(),
-                &vertex_3d_transform.translation,
-            );
-
-            let Some(vertex_2d_entity) = self.vertex_entity_3d_to_2d(&vertex_3d_entity) else {
-                panic!("Vertex3d entity {:?} has no corresponding Vertex2d entity", vertex_3d_entity);
-            };
-            let Ok(mut vertex_2d_transform) = transform_q.get_mut(vertex_2d_entity) else {
-                panic!("Vertex2d entity {:?} has no Transform", vertex_2d_entity);
-            };
-
-            vertex_2d_transform.translation.x = coords.x;
-            vertex_2d_transform.translation.y = coords.y;
-            vertex_2d_transform.translation.z = depth;
-
-            // update 2d compass
-            if compass_q.get(vertex_2d_entity).is_ok() {
-                vertex_2d_transform.scale = Vec3::splat(compass_vertex_2d_scale);
-            } else {
-                vertex_2d_transform.scale = Vec3::splat(vertex_2d_scale);
-            }
-        }
-    }
-
-    fn sync_2d_edges(
-        &mut self,
-        edge_2d_q: &Query<(Entity, &Edge2dLocal)>,
-        transform_q: &mut Query<&mut Transform>,
-        owned_by_q: &Query<&OwnedByFileLocal>,
-        compass_q: &Query<&Compass>,
-        current_tab_file_entity: Entity,
-        camera_3d_scale: f32,
-    ) {
-        let edge_2d_scale = Edge2dLocal::NORMAL_THICKNESS * camera_3d_scale;
-
-        for (edge_2d_entity, edge_endpoints) in edge_2d_q.iter() {
-            let Some(end_3d_entity) = self.vertex_entity_2d_to_3d(&edge_endpoints.end) else {
-                warn!("Edge entity {:?} has no 3d endpoint entity", edge_2d_entity);
-                continue;
-            };
-
-            // check if vertex is owned by the current tab
-            if !Self::is_owned_by_tab_or_unowned(current_tab_file_entity, owned_by_q, end_3d_entity)
-            {
-                continue;
-            }
-
-            let Ok(start_transform) = transform_q.get(edge_endpoints.start) else {
-                warn!(
-                    "2d Edge start entity {:?} has no transform",
-                    edge_endpoints.start,
-                );
-                continue;
-            };
-
-            let start_pos = start_transform.translation.truncate();
-
-            let Ok(end_transform) = transform_q.get(edge_endpoints.end) else {
-                warn!(
-                    "2d Edge end entity {:?} has no transform",
-                    edge_endpoints.end,
-                );
-                continue;
-            };
-
-            let end_pos = end_transform.translation.truncate();
-            let depth = (start_transform.translation.z + end_transform.translation.z) / 2.0;
-
-            let Ok(mut edge_2d_transform) = transform_q.get_mut(edge_2d_entity) else {
-                warn!("2d Edge entity {:?} has no transform", edge_2d_entity);
-                continue;
-            };
-
-            set_2d_line_transform(&mut edge_2d_transform, start_pos, end_pos, depth);
-
-            if compass_q.get(edge_2d_entity).is_ok() {
-                edge_2d_transform.scale.y = Edge2dLocal::NORMAL_THICKNESS;
-            } else {
-                edge_2d_transform.scale.y = edge_2d_scale;
-            }
-        }
-    }
-
-    fn sync_3d_edges(
-        &mut self,
-        edge_3d_q: &Query<(Entity, &Edge3dLocal, Option<&EdgeAngle>)>,
-        transform_q: &mut Query<&mut Transform>,
-        owned_by_q: &Query<&OwnedByFileLocal>,
-        visibility_q: &mut Query<&mut Visibility>,
-        compass_q: &Query<&Compass>,
-        current_tab_file_entity: Entity,
-        camera_3d_scale: f32,
-    ) {
-        let edge_angle_base_circle_scale = Edge2dLocal::EDGE_ANGLE_BASE_CIRCLE_RADIUS * camera_3d_scale;
-        let edge_angle_end_circle_scale = Edge2dLocal::EDGE_ANGLE_END_CIRCLE_RADIUS * camera_3d_scale;
-        let edge_angle_length = Edge2dLocal::EDGE_ANGLE_LENGTH * camera_3d_scale;
-        let edge_angle_thickness = Edge2dLocal::EDGE_ANGLE_THICKNESS * camera_3d_scale;
-        let compass_edge_3d_scale = Compass::EDGE_THICKNESS / camera_3d_scale;
-
-        for (edge_entity, edge_endpoints, edge_angle_opt) in edge_3d_q.iter() {
-            // check if vertex is owned by the current tab
-            if !Self::is_owned_by_tab_or_unowned(current_tab_file_entity, owned_by_q, edge_entity) {
-                continue;
-            }
-
-            let edge_angle_opt = edge_angle_opt.map(|angle| angle.get_radians());
-
-            let edge_start_entity = edge_endpoints.start;
-            let edge_end_entity = edge_endpoints.end;
-
-            let Ok(start_transform) = transform_q.get(edge_start_entity) else {
-                warn!(
-                    "3d Edge start entity {:?} has no transform",
-                    edge_start_entity,
-                );
-                continue;
-            };
-            let start_pos = start_transform.translation;
-            let Ok(end_transform) = transform_q.get(edge_end_entity) else {
-                warn!("3d Edge end entity {:?} has no transform", edge_end_entity);
-                continue;
-            };
-            let end_pos = end_transform.translation;
-            let mut edge_transform = transform_q.get_mut(edge_entity).unwrap();
-            set_3d_line_transform(&mut edge_transform, start_pos, end_pos, edge_angle_opt);
-            if compass_q.get(edge_entity).is_ok() {
-                edge_transform.scale.x = compass_edge_3d_scale;
-                edge_transform.scale.y = compass_edge_3d_scale;
-            }
-
-            // update 2d edge angle
-            if let Some(edge_angle) = edge_angle_opt {
-                let edge_3d_data = self.edges_3d.get(&edge_entity).unwrap();
-                let (base_circle_entity, angle_edge_entity, end_circle_entity) =
-                    edge_3d_data.angle_entities_opt.unwrap();
-                for entity in [base_circle_entity, angle_edge_entity, end_circle_entity] {
-                    let Ok(mut visibility) = visibility_q.get_mut(entity) else {
-                        warn!("Edge angle entity {:?} has no transform", entity);
-                        continue;
-                    };
-                    visibility.visible = self.edge_angle_visibility;
-                }
-
-                if self.edge_angle_visibility {
-                    let edge_2d_entity = edge_3d_data.entity_2d;
-
-                    let edge_2d_transform = transform_q.get(edge_2d_entity).unwrap();
-                    let start_pos = edge_2d_transform.translation.truncate();
-                    let end_pos = get_2d_line_transform_endpoint(&edge_2d_transform);
-                    let base_angle = angle_between(&start_pos, &end_pos);
-                    let middle_pos = (start_pos + end_pos) / 2.0;
-                    let edge_depth = edge_2d_transform.translation.z;
-
-                    let Ok(mut angle_transform) = transform_q.get_mut(angle_edge_entity) else {
-                        warn!("Edge angle entity {:?} has no transform", angle_edge_entity);
-                        continue;
-                    };
-
-                    let edge_angle_drawn = base_angle + edge_angle + FRAC_PI_2;
-                    let edge_depth_drawn = edge_depth - 1.0;
-                    set_2d_line_transform_from_angle(
-                        &mut angle_transform,
-                        middle_pos,
-                        edge_angle_drawn,
-                        edge_angle_length,
-                        edge_depth_drawn,
-                    );
-                    angle_transform.scale.y = edge_angle_thickness;
-                    let edge_angle_endpoint = get_2d_line_transform_endpoint(&angle_transform);
-
-                    let Ok(mut base_circle_transform) = transform_q.get_mut(base_circle_entity) else {
-                        warn!("Edge angle base circle entity {:?} has no transform", base_circle_entity);
-                        continue;
-                    };
-                    base_circle_transform.translation.x = middle_pos.x;
-                    base_circle_transform.translation.y = middle_pos.y;
-                    base_circle_transform.translation.z = edge_depth_drawn;
-                    base_circle_transform.scale = Vec3::splat(edge_angle_base_circle_scale);
-
-                    let Ok(mut end_circle_transform) = transform_q.get_mut(end_circle_entity) else {
-                        warn!("Edge angle end circle entity {:?} has no transform", end_circle_entity);
-                        continue;
-                    };
-                    end_circle_transform.translation.x = edge_angle_endpoint.x;
-                    end_circle_transform.translation.y = edge_angle_endpoint.y;
-                    end_circle_transform.translation.z = edge_depth_drawn;
-                    end_circle_transform.scale = Vec3::splat(edge_angle_end_circle_scale);
-                }
-            }
-        }
-    }
-
-    fn sync_2d_faces(
-        face_2d_q: &Query<(Entity, &FaceIcon2d)>,
-        transform_q: &mut Query<&mut Transform>,
-        owned_by_q: &Query<&OwnedByFileLocal>,
-        current_tab_file_entity: Entity,
-        camera_3d_scale: f32
-    ) {
-        let face_2d_scale = FaceIcon2d::SIZE * camera_3d_scale;
-
-        for (face_2d_entity, face_icon) in face_2d_q.iter() {
-            // check if face is owned by the current tab
-            if !Self::is_owned_by_tab_or_unowned(
-                current_tab_file_entity,
-                owned_by_q,
-                face_2d_entity,
-            ) {
-                continue;
-            }
-
-            // find center of all of face_icon's vertices
-            let Ok(vertex_a_transform) = transform_q.get(face_icon.vertex_2d_a()) else {
-                warn!("Face entity {:?}'s vertex_a has no transform", face_2d_entity);
-                continue;
-            };
-            let Ok(vertex_b_transform) = transform_q.get(face_icon.vertex_2d_b()) else {
-                warn!("Face entity {:?}'s vertex_b has no transform", face_2d_entity);
-                continue;
-            };
-            let Ok(vertex_c_transform) = transform_q.get(face_icon.vertex_2d_c()) else {
-                warn!("Face entity {:?}'s vertex_c has no transform", face_2d_entity);
-                continue;
-            };
-
-            let center_translation = Vec3::new(
-                (vertex_a_transform.translation.x
-                    + vertex_b_transform.translation.x
-                    + vertex_c_transform.translation.x)
-                    / 3.0,
-                (vertex_a_transform.translation.y
-                    + vertex_b_transform.translation.y
-                    + vertex_c_transform.translation.y)
-                    / 3.0,
-                (vertex_a_transform.translation.z
-                    + vertex_b_transform.translation.z
-                    + vertex_c_transform.translation.z)
-                    / 3.0,
-            );
-
-            if let Ok(mut face_transform) = transform_q.get_mut(face_2d_entity) {
-                face_transform.translation = center_translation;
-                face_transform.scale = Vec3::splat(face_2d_scale);
-            } else {
-                warn!("Face entity {:?} has no transform", face_2d_entity);
-            }
-        }
-    }
-
-    fn sync_hover_shape_scale(
-        &mut self,
-        transform_q: &mut Query<&mut Transform>,
-        camera_3d_scale: f32,
-    ) {
-        let hover_vertex_2d_scale = Vertex2d::HOVER_RADIUS * camera_3d_scale;
-        let hover_edge_2d_scale = Edge2dLocal::HOVER_THICKNESS * camera_3d_scale;
-        let hover_face_2d_scale = FaceIcon2d::HOVER_SIZE * camera_3d_scale;
-
-        if let Some((hover_entity, shape)) = self.hovered_entity {
-            if self.hovered_entity != self.selected_shape {
-                match shape {
-                    CanvasShape::RootVertex | CanvasShape::Vertex => {
-                        let mut hover_vert_transform = transform_q.get_mut(hover_entity).unwrap();
-                        hover_vert_transform.scale.x = hover_vertex_2d_scale;
-                        hover_vert_transform.scale.y = hover_vertex_2d_scale;
-                    }
-                    CanvasShape::Edge => {
-                        let mut hover_edge_transform = transform_q.get_mut(hover_entity).unwrap();
-                        hover_edge_transform.scale.y = hover_edge_2d_scale;
-                    }
-                    CanvasShape::Face => {
-                        let mut hover_face_transform = transform_q.get_mut(hover_entity).unwrap();
-                        hover_face_transform.scale.x = hover_face_2d_scale;
-                        hover_face_transform.scale.y = hover_face_2d_scale;
-                    }
-                }
-            }
-        }
-    }
-
+    // RECALC
     pub fn recalculate_shapes(&mut self) {
         self.shapes_recalc = 2;
     }
@@ -685,6 +341,7 @@ impl ShapeManager {
         self.selection_recalc = true;
     }
 
+    // SELECTION
     pub fn select_shape(&mut self, entity: &Entity, shape: CanvasShape) {
         self.selected_shape = Some((*entity, shape));
         self.recalculate_shapes();
@@ -699,474 +356,111 @@ impl ShapeManager {
         self.selected_shape
     }
 
+    // SHAPES
+    pub(crate) fn has_shape_entity_3d(&self, entity_3d: &Entity) -> bool {
+        self.faces_3d.contains_key(entity_3d)
+            || self.edges_3d.contains_key(entity_3d)
+            || self.vertices_3d.contains_key(entity_3d)
+    }
+
+    pub(crate) fn shape_entity_2d_to_3d(
+        &self,
+        entity_2d: &Entity,
+        shape_type: CanvasShape,
+    ) -> Option<Entity> {
+        match shape_type {
+            CanvasShape::RootVertex | CanvasShape::Vertex => self.vertex_entity_2d_to_3d(entity_2d),
+            CanvasShape::Edge => {
+                let output = self.edge_entity_2d_to_3d(entity_2d);
+                info!("edge entity 2d `{:?}` to 3d: `{:?}`", entity_2d, output);
+                output
+            }
+            CanvasShape::Face => self.face_entity_2d_to_3d(entity_2d),
+        }
+    }
+
+    pub(crate) fn shape_entity_3d_to_2d(&self, entity_3d: &Entity) -> Option<Entity> {
+        let shape_type = self.shape_type_from_3d_entity(entity_3d).unwrap();
+
+        match shape_type {
+            CanvasShape::RootVertex | CanvasShape::Vertex => self.vertex_entity_3d_to_2d(entity_3d),
+            CanvasShape::Edge => self.edge_entity_3d_to_2d(entity_3d),
+            CanvasShape::Face => self.face_entity_3d_to_2d(entity_3d),
+        }
+    }
+
+    // VERTICES
+    pub fn vertex_3d_postprocess(
+        &mut self,
+        commands: &mut Commands,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+        camera_manager: &CameraManager,
+        vertex_3d_entity: Entity,
+        is_root: bool,
+        ownership_opt: Option<Entity>,
+        color: Color,
+    ) -> Entity {
+        // vertex 3d
+        commands
+            .entity(vertex_3d_entity)
+            .insert(RenderObjectBundle::sphere(
+                meshes,
+                materials,
+                Vec3::ZERO,
+                Vertex2d::RADIUS,
+                Vertex2d::SUBDIVISIONS,
+                color,
+            ))
+            .insert(camera_manager.layer_3d);
+
+        // vertex 2d
+        let vertex_2d_entity = commands
+            .spawn(RenderObjectBundle::circle(
+                meshes,
+                materials,
+                Vec2::ZERO,
+                Vertex2d::RADIUS,
+                Vertex2d::SUBDIVISIONS,
+                color,
+                None,
+            ))
+            .insert(camera_manager.layer_2d)
+            .insert(Vertex2d)
+            .id();
+
+        if let Some(file_entity) = ownership_opt {
+            info!(
+                "adding OwnedByFileLocal({:?}) to entity 2d: `{:?}` & 3d: `{:?}`",
+                file_entity, vertex_2d_entity, vertex_3d_entity,
+            );
+            commands
+                .entity(vertex_2d_entity)
+                .insert(OwnedByFileLocal::new(file_entity));
+            commands
+                .entity(vertex_3d_entity)
+                .insert(OwnedByFileLocal::new(file_entity));
+        }
+
+        if is_root {
+            commands.entity(vertex_2d_entity).insert(VertexRoot);
+        }
+
+        // info!(
+        //     "created Vertex3d: `{:?}`, created 2d entity: {:?}",
+        //     vertex_3d_entity, vertex_2d_entity,
+        // );
+
+        // register 3d & 2d vertices together
+        self.register_3d_vertex(vertex_3d_entity, vertex_2d_entity);
+
+        vertex_2d_entity
+    }
+
     pub fn register_3d_vertex(&mut self, entity_3d: Entity, entity_2d: Entity) {
         self.vertices_3d
             .insert(entity_3d, Vertex3dData::new(entity_2d));
         self.vertices_2d.insert(entity_2d, entity_3d);
-    }
-
-    pub fn register_3d_edge(
-        &mut self,
-        edge_3d_entity: Entity,
-        edge_2d_entity: Entity,
-        vertex_a_3d_entity: Entity,
-        vertex_b_3d_entity: Entity,
-        ownership_opt: Option<Entity>,
-        // (base circle, line, end circle)
-        angle_entities_opt: Option<(Entity, Entity, Entity)>,
-    ) {
-        for vertex_3d_entity in [vertex_a_3d_entity, vertex_b_3d_entity] {
-            let Some(vertex_3d_data) = self.vertices_3d.get_mut(&vertex_3d_entity) else {
-                panic!("Vertex3d entity: `{:?}` has not been registered", vertex_3d_entity);
-            };
-            vertex_3d_data.add_edge(edge_3d_entity);
-        }
-
-        info!(
-            "register_3d_edge(3d: `{:?}`, 2d: `{:?}`)",
-            edge_3d_entity, edge_2d_entity
-        );
-
-        self.edges_3d.insert(
-            edge_3d_entity,
-            Edge3dData::new(
-                edge_2d_entity,
-                vertex_a_3d_entity,
-                vertex_b_3d_entity,
-                angle_entities_opt,
-            ),
-        );
-        self.edges_2d.insert(edge_2d_entity, edge_3d_entity);
-
-        if let Some(file_entity) = ownership_opt {
-            self.check_for_new_faces(vertex_a_3d_entity, vertex_b_3d_entity, file_entity);
-        }
-    }
-
-    pub fn register_3d_face(&mut self, entity_3d: Entity, face_key: &FaceKey) {
-        self.faces_3d.insert(entity_3d, *face_key);
-
-        let Some(Some(face_3d_data)) = self.face_keys.get_mut(face_key) else {
-            panic!("Face3d key: `{:?}` has not been registered", face_key);
-        };
-        face_3d_data.entity_3d = Some(entity_3d);
-    }
-
-    // returns 2d vertex entity
-    fn unregister_3d_vertex(&mut self, entity_3d: &Entity) -> Option<Entity> {
-        if let Some(data) = self.vertices_3d.remove(entity_3d) {
-            let entity_2d = data.entity_2d;
-            self.vertices_2d.remove(&entity_2d);
-            return Some(entity_2d);
-        }
-        return None;
-    }
-
-    // returns 2d edge entity
-    fn unregister_3d_edge(&mut self, edge_3d_entity: &Entity) -> Option<Entity> {
-        if let Some(entity_3d_data) = self.edges_3d.remove(edge_3d_entity) {
-            let edge_2d_entity = entity_3d_data.entity_2d;
-
-            info!(
-                "deregister_3d_edge(3d: `{:?}`, 2d: `{:?}`)",
-                edge_3d_entity, edge_2d_entity
-            );
-
-            self.edges_2d.remove(&edge_2d_entity);
-
-            // remove edge from vertices
-            for vertex_3d_entity in [
-                entity_3d_data.vertex_a_3d_entity,
-                entity_3d_data.vertex_b_3d_entity,
-            ] {
-                if let Some(vertex_3d_data) = self.vertices_3d.get_mut(&vertex_3d_entity) {
-                    vertex_3d_data.remove_edge(edge_3d_entity);
-                }
-            }
-
-            return Some(edge_2d_entity);
-        }
-        return None;
-    }
-
-    // returns 2d face entity
-    fn unregister_face_key(&mut self, face_key: &FaceKey) -> Option<Entity> {
-        info!("unregistering face key: `{:?}`", face_key);
-        if let Some(Some(face_3d_data)) = self.face_keys.remove(&face_key) {
-            let entity_2d = face_3d_data.entity_2d;
-            self.faces_2d.remove(&entity_2d);
-
-            // remove face from vertices
-            for vertex_3d_entity in [
-                face_key.vertex_3d_a,
-                face_key.vertex_3d_b,
-                face_key.vertex_3d_c,
-            ] {
-                if let Some(vertex_3d_data) = self.vertices_3d.get_mut(&vertex_3d_entity) {
-                    vertex_3d_data.remove_face(face_key);
-                }
-            }
-
-            // remove face from edges
-            for edge_3d_entity in [
-                face_3d_data.edge_3d_a,
-                face_3d_data.edge_3d_b,
-                face_3d_data.edge_3d_c,
-            ] {
-                if let Some(edge_3d_data) = self.edges_3d.get_mut(&edge_3d_entity) {
-                    edge_3d_data.remove_face(face_key);
-                }
-            }
-
-            return Some(entity_2d);
-        } else {
-            return None;
-        }
-    }
-
-    // returns 2d face entity
-    fn unregister_3d_face(&mut self, entity_3d: &Entity) -> Option<Entity> {
-        info!("unregistering 3d face entity: `{:?}`", entity_3d);
-        let Some(face_key) = self.faces_3d.remove(entity_3d) else {
-            panic!("no face 3d found for entity {:?}", entity_3d);
-        };
-
-        if let Some(Some(face_3d_data)) = self.face_keys.get_mut(&face_key) {
-            face_3d_data.entity_3d = None;
-            info!("remove entity 3d: `{:?}` from face 3d data", entity_3d);
-
-            let face_2d_entity = face_3d_data.entity_2d;
-            return Some(face_2d_entity);
-        }
-
-        return None;
-    }
-
-    fn check_for_new_faces(
-        &mut self,
-        vertex_a_3d_entity: Entity,
-        vertex_b_3d_entity: Entity,
-        file_entity: Entity,
-    ) {
-        let vertex_a_connected_vertices = self.get_connected_vertices(vertex_a_3d_entity);
-        let vertex_b_connected_vertices = self.get_connected_vertices(vertex_b_3d_entity);
-
-        let common_vertices =
-            vertex_a_connected_vertices.intersection(&vertex_b_connected_vertices);
-        for common_vertex in common_vertices {
-            let face_key = FaceKey::new(vertex_a_3d_entity, vertex_b_3d_entity, *common_vertex);
-            if !self.face_keys.contains_key(&face_key) {
-                self.face_keys.insert(face_key, None);
-                self.new_face_keys.push((face_key, file_entity));
-            }
-        }
-    }
-
-    fn get_connected_vertices(&self, vertex_3d_entity: Entity) -> HashSet<Entity> {
-        let mut set = HashSet::new();
-
-        let Some(vertex_data) = self.vertices_3d.get(&vertex_3d_entity) else {
-            panic!("Vertex3d entity: `{:?}` has not been registered", vertex_3d_entity);
-        };
-        let edges = &vertex_data.edges_3d;
-        for edge_entity in edges {
-            let edge_data = self.edges_3d.get(edge_entity).unwrap();
-            let vertex_a_3d_entity = edge_data.vertex_a_3d_entity;
-            let vertex_b_3d_entity = edge_data.vertex_b_3d_entity;
-
-            if vertex_a_3d_entity != vertex_3d_entity {
-                set.insert(vertex_a_3d_entity);
-            } else if vertex_b_3d_entity != vertex_3d_entity {
-                set.insert(vertex_b_3d_entity);
-            }
-        }
-
-        set
-    }
-
-    pub fn process_new_faces(
-        &mut self,
-        commands: &mut Commands,
-        camera_manager: &CameraManager,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
-    ) {
-        if self.new_face_keys.is_empty() {
-            return;
-        }
-
-        let keys = std::mem::take(&mut self.new_face_keys);
-        for (face_key, file_entity) in keys {
-            self.process_new_face(
-                commands,
-                camera_manager,
-                meshes,
-                materials,
-                file_entity,
-                &face_key,
-            );
-        }
-
-        self.recalculate_shapes();
-    }
-
-    pub fn remove_new_face_key(&mut self, face_key: &FaceKey) {
-        self.new_face_keys.retain(|(key, _)| key != face_key);
-    }
-
-    // return face 2d entity
-    pub fn process_new_face(
-        &mut self,
-        commands: &mut Commands,
-        camera_manager: &CameraManager,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
-        file_entity: Entity,
-        face_key: &FaceKey,
-    ) -> Entity {
-        if self.has_2d_face(face_key) {
-            panic!("face key already registered! `{:?}`", face_key);
-        }
-        info!("processing new face: `{:?}`", face_key);
-        let vertex_3d_a = face_key.vertex_3d_a;
-        let vertex_3d_b = face_key.vertex_3d_b;
-        let vertex_3d_c = face_key.vertex_3d_c;
-
-        // 2d face needs to have it's own button mesh, matching the 2d vertices
-        let vertex_2d_a = self.vertex_entity_3d_to_2d(&vertex_3d_a).unwrap();
-        let vertex_2d_b = self.vertex_entity_3d_to_2d(&vertex_3d_b).unwrap();
-        let vertex_2d_c = self.vertex_entity_3d_to_2d(&vertex_3d_c).unwrap();
-
-        let entity_2d = commands
-            .spawn_empty()
-            .insert(FaceIcon2d::new(vertex_2d_a, vertex_2d_b, vertex_2d_c))
-            .insert(RenderObjectBundle::equilateral_triangle(
-                meshes,
-                materials,
-                Vec2::ZERO,
-                FaceIcon2d::SIZE,
-                FaceIcon2d::COLOR,
-                Some(1),
-            ))
-            .insert(camera_manager.layer_2d)
-            .id();
-
-        info!("spawned 2d face entity: {:?}", entity_2d);
-
-        info!(
-            "adding OwnedByFile({:?}) to entity {:?}",
-            file_entity, entity_2d
-        );
-        commands
-            .entity(entity_2d)
-            .insert(OwnedByFileLocal::new(file_entity));
-
-        // add face to vertex data
-        for vertex_3d_entity in [&vertex_3d_a, &vertex_3d_b, &vertex_3d_c] {
-            let vertex_3d_data = self.vertices_3d.get_mut(vertex_3d_entity).unwrap();
-            vertex_3d_data.add_face(*face_key);
-        }
-
-        // add face to edge data
-        let mut edge_entities = Vec::new();
-        for (vert_a, vert_b) in [
-            (&vertex_3d_a, &vertex_3d_b),
-            (&vertex_3d_b, &vertex_3d_c),
-            (&vertex_3d_c, &vertex_3d_a),
-        ] {
-            // find edge in common
-            let vertex_a_edges = &self.vertices_3d.get(vert_a).unwrap().edges_3d;
-            let vertex_b_edges = &self.vertices_3d.get(vert_b).unwrap().edges_3d;
-            let intersection = vertex_a_edges.intersection(vertex_b_edges);
-            let mut found_edge = false;
-            for edge_entity in intersection {
-                if found_edge {
-                    panic!("should only be one edge between any two vertices!");
-                }
-                found_edge = true;
-
-                let Some(edge_3d_data) = self.edges_3d.get_mut(edge_entity) else {
-                    panic!("Edge3d entity: `{:?}` has not been registered", edge_entity);
-                };
-                edge_3d_data.add_face(*face_key);
-
-                edge_entities.push(*edge_entity);
-            }
-        }
-
-        // register face data
-        self.face_keys.insert(
-            *face_key,
-            Some(FaceData::new(
-                entity_2d,
-                file_entity,
-                edge_entities[0],
-                edge_entities[1],
-                edge_entities[2],
-            )),
-        );
-        self.faces_2d.insert(entity_2d, *face_key);
-
-        entity_2d
-    }
-
-    pub fn create_networked_face_outer(&mut self, world: &mut World, face_2d_entity: Entity) {
-        let Some(face_3d_key) = self.face_key_from_2d_entity(&face_2d_entity) else {
-            panic!(
-                "Face2d entity: `{:?}` has no corresponding FaceKey",
-                face_2d_entity
-            );
-        };
-        let Some(Some(face_3d_data)) = self.face_keys.get(&face_3d_key) else {
-            panic!(
-                "Face3d entity: `{:?}` has not been registered",
-                face_3d_key
-            );
-        };
-        if face_3d_data.entity_3d.is_some() {
-            panic!("already create face 3d entity! cannot do this twice!");
-        }
-
-        let mut system_state: SystemState<(
-            Commands,
-            Client,
-            Res<CameraManager>,
-            ResMut<Assets<CpuMesh>>,
-            ResMut<Assets<CpuMaterial>>,
-            Query<&Transform>,
-        )> = SystemState::new(world);
-        let (mut commands, mut client, camera_manager, mut meshes, mut materials, transform_q) =
-            system_state.get_mut(world);
-
-        self.create_networked_face_inner(
-            &mut commands,
-            &mut client,
-            &mut meshes,
-            &mut materials,
-            &camera_manager,
-            &transform_q,
-            &face_3d_key,
-            [
-                face_3d_data.edge_3d_a,
-                face_3d_data.edge_3d_b,
-                face_3d_data.edge_3d_c,
-            ],
-            face_3d_data.file_entity,
-        );
-
-        system_state.apply(world);
-    }
-
-    pub fn create_networked_face_inner(
-        &mut self,
-        commands: &mut Commands,
-        client: &mut Client,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
-        camera_manager: &CameraManager,
-        transform_q: &Query<&Transform>,
-        face_key: &FaceKey,
-        edge_3d_entities: [Entity; 3],
-        file_entity: Entity,
-    ) {
-        // get 3d vertex entities & positions
-        let mut positions = [Vec3::ZERO, Vec3::ZERO, Vec3::ZERO];
-        let mut vertex_3d_entities = [
-            Entity::PLACEHOLDER,
-            Entity::PLACEHOLDER,
-            Entity::PLACEHOLDER,
-        ];
-
-        for (index, vertex_3d_entity) in [
-            face_key.vertex_3d_a,
-            face_key.vertex_3d_b,
-            face_key.vertex_3d_c,
-        ]
-        .iter()
-        .enumerate()
-        {
-            let vertex_transform = transform_q.get(*vertex_3d_entity).unwrap();
-            positions[index] = vertex_transform.translation;
-            vertex_3d_entities[index] = *vertex_3d_entity;
-        }
-
-        // possibly reorder vertices to be counter-clockwise with respect to camera
-        let camera_3d_entity = camera_manager.camera_3d_entity().unwrap();
-        let camera_transform = transform_q.get(camera_3d_entity).unwrap();
-        if math::reorder_triangle_winding(&mut positions, camera_transform.translation, true) {
-            vertex_3d_entities.swap(1, 2);
-        }
-
-        // set up networked face component
-        let mut face_3d_component = Face3d::new();
-        face_3d_component
-            .vertex_a
-            .set(client, &vertex_3d_entities[0]);
-        face_3d_component
-            .vertex_b
-            .set(client, &vertex_3d_entities[1]);
-        face_3d_component
-            .vertex_c
-            .set(client, &vertex_3d_entities[2]);
-        face_3d_component.edge_a.set(client, &edge_3d_entities[0]);
-        face_3d_component.edge_b.set(client, &edge_3d_entities[1]);
-        face_3d_component.edge_c.set(client, &edge_3d_entities[2]);
-
-        // get owned_by_file component
-        let mut owned_by_file_component = OwnedByFile::new();
-        owned_by_file_component
-            .file_entity
-            .set(client, &file_entity);
-
-        // set up 3d entity
-        let face_3d_entity = commands
-            .spawn_empty()
-            .enable_replication(client)
-            .configure_replication(ReplicationConfig::Delegated)
-            .insert(owned_by_file_component)
-            .insert(OwnedByFileLocal::new(file_entity))
-            .insert(face_3d_component)
-            .id();
-
-        self.face_3d_postprocess(
-            commands,
-            meshes,
-            materials,
-            &camera_manager,
-            face_key,
-            face_3d_entity,
-            positions,
-        );
-    }
-
-    pub fn face_3d_postprocess(
-        &mut self,
-        commands: &mut Commands,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
-        camera_manager: &CameraManager,
-        face_key: &FaceKey,
-        face_3d_entity: Entity,
-        positions: [Vec3; 3],
-    ) {
-        commands
-            .entity(face_3d_entity)
-            .insert(RenderObjectBundle::world_triangle(
-                meshes,
-                materials,
-                positions,
-                Face3dLocal::COLOR,
-            ))
-            .insert(camera_manager.layer_3d)
-            .insert(Face3dLocal);
-
-        self.register_3d_face(face_3d_entity, face_key);
-
-        // change 2d icon to use non-hollow triangle
-        let face_2d_entity = self.face_2d_entity_from_face_key(&face_key).unwrap();
-        commands
-            .entity(face_2d_entity)
-            .insert(meshes.add(Triangle::new_2d_equilateral()));
     }
 
     pub fn on_vertex_3d_moved(
@@ -1243,149 +537,8 @@ impl ShapeManager {
         vertex_2d_entity
     }
 
-    // returns (deleted edge entity 2d, Vec<(deleted face entity 2d, deleted face entity 3d)>
-    pub fn cleanup_deleted_edge(
-        &mut self,
-        commands: &mut Commands,
-        entity_3d: &Entity,
-    ) -> (Entity, Vec<Entity>) {
-        let mut deleted_face_2d_entities = Vec::new();
-        // cleanup faces
-        {
-            let face_3d_keys: Vec<FaceKey> = self
-                .edges_3d
-                .get(entity_3d)
-                .unwrap()
-                .faces_3d
-                .iter()
-                .copied()
-                .collect();
-            for face_3d_key in face_3d_keys {
-                let face_2d_entity = self.cleanup_deleted_face_key(commands, &face_3d_key);
-                deleted_face_2d_entities.push(face_2d_entity);
-            }
-        }
-
-        // unregister edge
-        let Some(edge_2d_entity) = self.unregister_3d_edge(entity_3d) else {
-            panic!(
-                "Edge3d entity: `{:?}` has no corresponding Edge2d entity",
-                entity_3d
-            );
-        };
-
-        // despawn 2d edge
-        info!("despawn 2d edge {:?}", edge_2d_entity);
-        commands.entity(edge_2d_entity).despawn();
-
-        if self.hovered_entity == Some((edge_2d_entity, CanvasShape::Edge)) {
-            self.hovered_entity = None;
-        }
-
-        self.recalculate_shapes();
-
-        (edge_2d_entity, deleted_face_2d_entities)
-    }
-
-    // returns face 2d entity
-    pub(crate) fn cleanup_deleted_face_key(
-        &mut self,
-        commands: &mut Commands,
-        face_key: &FaceKey,
-    ) -> Entity {
-        // unregister face
-        let Some(face_2d_entity) = self.unregister_face_key(face_key) else {
-            panic!(
-                "FaceKey: `{:?}` has no corresponding Face2d entity",
-                face_key
-            );
-        };
-
-        // despawn 2d face
-        info!("despawn 2d face {:?}", face_2d_entity);
-        commands.entity(face_2d_entity).despawn();
-
-        if self.hovered_entity == Some((face_2d_entity, CanvasShape::Face)) {
-            self.hovered_entity = None;
-        }
-
-        self.recalculate_shapes();
-
-        face_2d_entity
-    }
-
-    // returns 2d face entity
-    pub(crate) fn cleanup_deleted_face_3d(
-        &mut self,
-        commands: &mut Commands,
-        meshes: &mut Assets<CpuMesh>,
-        face_3d_entity: &Entity,
-    ) {
-        // unregister face
-        if let Some(face_2d_entity) = self.unregister_3d_face(face_3d_entity) {
-            commands
-                .entity(face_2d_entity)
-                .insert(meshes.add(HollowTriangle::new_2d_equilateral()));
-        }
-    }
-
     pub(crate) fn has_vertex_entity_3d(&self, entity_3d: &Entity) -> bool {
         self.vertices_3d.contains_key(entity_3d)
-    }
-
-    pub(crate) fn has_edge_entity_3d(&self, entity_3d: &Entity) -> bool {
-        self.edges_3d.contains_key(entity_3d)
-    }
-
-    pub(crate) fn has_2d_face(&self, face_key: &FaceKey) -> bool {
-        if let Some(Some(_)) = self.face_keys.get(face_key) {
-            return true;
-        }
-        return false;
-    }
-
-    pub(crate) fn has_shape_entity_3d(&self, entity_3d: &Entity) -> bool {
-        self.faces_3d.contains_key(entity_3d)
-            || self.edges_3d.contains_key(entity_3d)
-            || self.vertices_3d.contains_key(entity_3d)
-    }
-
-    pub(crate) fn shape_entity_2d_to_3d(
-        &self,
-        entity_2d: &Entity,
-        shape_type: CanvasShape,
-    ) -> Option<Entity> {
-        match shape_type {
-            CanvasShape::RootVertex | CanvasShape::Vertex => self.vertex_entity_2d_to_3d(entity_2d),
-            CanvasShape::Edge => {
-                let output = self.edge_entity_2d_to_3d(entity_2d);
-                info!("edge entity 2d `{:?}` to 3d: `{:?}`", entity_2d, output);
-                output
-            }
-            CanvasShape::Face => self.face_entity_2d_to_3d(entity_2d),
-        }
-    }
-
-    fn shape_type_from_3d_entity(&self, entity_3d: &Entity) -> Option<CanvasShape> {
-        if self.vertices_3d.contains_key(entity_3d) {
-            Some(CanvasShape::Vertex)
-        } else if self.edges_3d.contains_key(entity_3d) {
-            Some(CanvasShape::Edge)
-        } else if self.faces_3d.contains_key(entity_3d) {
-            Some(CanvasShape::Face)
-        } else {
-            None
-        }
-    }
-
-    pub(crate) fn shape_entity_3d_to_2d(&self, entity_3d: &Entity) -> Option<Entity> {
-        let shape_type = self.shape_type_from_3d_entity(entity_3d).unwrap();
-
-        match shape_type {
-            CanvasShape::RootVertex | CanvasShape::Vertex => self.vertex_entity_3d_to_2d(entity_3d),
-            CanvasShape::Edge => self.edge_entity_3d_to_2d(entity_3d),
-            CanvasShape::Face => self.face_entity_3d_to_2d(entity_3d),
-        }
     }
 
     pub(crate) fn vertex_entity_3d_to_2d(&self, entity_3d: &Entity) -> Option<Entity> {
@@ -1394,31 +547,6 @@ impl ShapeManager {
 
     pub(crate) fn vertex_entity_2d_to_3d(&self, entity_2d: &Entity) -> Option<Entity> {
         self.vertices_2d.get(entity_2d).copied()
-    }
-
-    pub(crate) fn edge_entity_2d_to_3d(&self, entity_2d: &Entity) -> Option<Entity> {
-        self.edges_2d.get(entity_2d).copied()
-    }
-
-    pub(crate) fn edge_entity_3d_to_2d(&self, entity_2d: &Entity) -> Option<Entity> {
-        self.edges_3d.get(entity_2d).map(|data| data.entity_2d)
-    }
-
-    pub(crate) fn face_entity_2d_to_3d(&self, entity_2d: &Entity) -> Option<Entity> {
-        let Some(face_key) = self.faces_2d.get(entity_2d) else {
-            return None;
-        };
-        let Some(Some(face_3d_data)) = self.face_keys.get(face_key) else {
-            return None;
-        };
-        face_3d_data.entity_3d
-    }
-
-    pub(crate) fn face_entity_3d_to_2d(&self, entity_3d: &Entity) -> Option<Entity> {
-        let Some(face_key) = self.faces_3d.get(entity_3d) else {
-            return None;
-        };
-        self.face_2d_entity_from_face_key(face_key)
     }
 
     pub(crate) fn vertex_connected_edges(&self, vertex_3d_entity: &Entity) -> Option<Vec<Entity>> {
@@ -1433,97 +561,7 @@ impl ShapeManager {
             .map(|data| data.faces_3d.iter().copied().collect())
     }
 
-    pub(crate) fn edge_connected_faces(&self, edge_3d_entity: &Entity) -> Option<Vec<FaceKey>> {
-        self.edges_3d
-            .get(edge_3d_entity)
-            .map(|data| data.faces_3d.iter().copied().collect())
-    }
-
-    fn face_key_from_2d_entity(&self, entity_2d: &Entity) -> Option<FaceKey> {
-        self.faces_2d.get(entity_2d).copied()
-    }
-
-    pub(crate) fn face_2d_entity_from_face_key(&self, face_key: &FaceKey) -> Option<Entity> {
-        let Some(Some(face_3d_data)) = self.face_keys.get(face_key) else {
-            return None;
-        };
-        Some(face_3d_data.entity_2d)
-    }
-
-    pub(crate) fn face_3d_entity_from_face_key(&self, face_key: &FaceKey) -> Option<Entity> {
-        let Some(Some(face_3d_data)) = self.face_keys.get(face_key) else {
-            return None;
-        };
-        face_3d_data.entity_3d
-    }
-
-    pub fn vertex_3d_postprocess(
-        &mut self,
-        commands: &mut Commands,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
-        camera_manager: &CameraManager,
-        vertex_3d_entity: Entity,
-        is_root: bool,
-        ownership_opt: Option<Entity>,
-        color: Color,
-    ) -> Entity {
-        // vertex 3d
-        commands
-            .entity(vertex_3d_entity)
-            .insert(RenderObjectBundle::sphere(
-                meshes,
-                materials,
-                Vec3::ZERO,
-                Vertex2d::RADIUS,
-                Vertex2d::SUBDIVISIONS,
-                color,
-            ))
-            .insert(camera_manager.layer_3d);
-
-        // vertex 2d
-        let vertex_2d_entity = commands
-            .spawn(RenderObjectBundle::circle(
-                meshes,
-                materials,
-                Vec2::ZERO,
-                Vertex2d::RADIUS,
-                Vertex2d::SUBDIVISIONS,
-                color,
-                None,
-            ))
-            .insert(camera_manager.layer_2d)
-            .insert(Vertex2d)
-            .id();
-
-        if let Some(file_entity) = ownership_opt {
-            info!(
-                "adding OwnedByFileLocal({:?}) to entity 2d: `{:?}` & 3d: `{:?}`",
-                file_entity, vertex_2d_entity, vertex_3d_entity,
-            );
-            commands
-                .entity(vertex_2d_entity)
-                .insert(OwnedByFileLocal::new(file_entity));
-            commands
-                .entity(vertex_3d_entity)
-                .insert(OwnedByFileLocal::new(file_entity));
-        }
-
-        if is_root {
-            commands.entity(vertex_2d_entity).insert(VertexRoot);
-        }
-
-        // info!(
-        //     "created Vertex3d: `{:?}`, created 2d entity: {:?}",
-        //     vertex_3d_entity, vertex_2d_entity,
-        // );
-
-        // register 3d & 2d vertices together
-        self.register_3d_vertex(vertex_3d_entity, vertex_2d_entity);
-
-        vertex_2d_entity
-    }
-
+    // EDGES
     pub fn edge_3d_postprocess(
         &mut self,
         commands: &mut Commands,
@@ -1675,10 +713,506 @@ impl ShapeManager {
         edge_2d_entity
     }
 
+    pub fn register_3d_edge(
+        &mut self,
+        edge_3d_entity: Entity,
+        edge_2d_entity: Entity,
+        vertex_a_3d_entity: Entity,
+        vertex_b_3d_entity: Entity,
+        ownership_opt: Option<Entity>,
+        // (base circle, line, end circle)
+        angle_entities_opt: Option<(Entity, Entity, Entity)>,
+    ) {
+        for vertex_3d_entity in [vertex_a_3d_entity, vertex_b_3d_entity] {
+            let Some(vertex_3d_data) = self.vertices_3d.get_mut(&vertex_3d_entity) else {
+                panic!("Vertex3d entity: `{:?}` has not been registered", vertex_3d_entity);
+            };
+            vertex_3d_data.add_edge(edge_3d_entity);
+        }
+
+        info!(
+            "register_3d_edge(3d: `{:?}`, 2d: `{:?}`)",
+            edge_3d_entity, edge_2d_entity
+        );
+
+        self.edges_3d.insert(
+            edge_3d_entity,
+            Edge3dData::new(
+                edge_2d_entity,
+                vertex_a_3d_entity,
+                vertex_b_3d_entity,
+                angle_entities_opt,
+            ),
+        );
+        self.edges_2d.insert(edge_2d_entity, edge_3d_entity);
+
+        if let Some(file_entity) = ownership_opt {
+            self.check_for_new_faces(vertex_a_3d_entity, vertex_b_3d_entity, file_entity);
+        }
+    }
+
+    // returns (deleted edge entity 2d, Vec<(deleted face entity 2d, deleted face entity 3d)>
+    pub fn cleanup_deleted_edge(
+        &mut self,
+        commands: &mut Commands,
+        entity_3d: &Entity,
+    ) -> (Entity, Vec<Entity>) {
+        let mut deleted_face_2d_entities = Vec::new();
+        // cleanup faces
+        {
+            let face_3d_keys: Vec<FaceKey> = self
+                .edges_3d
+                .get(entity_3d)
+                .unwrap()
+                .faces_3d
+                .iter()
+                .copied()
+                .collect();
+            for face_3d_key in face_3d_keys {
+                let face_2d_entity = self.cleanup_deleted_face_key(commands, &face_3d_key);
+                deleted_face_2d_entities.push(face_2d_entity);
+            }
+        }
+
+        // unregister edge
+        let Some(edge_2d_entity) = self.unregister_3d_edge(entity_3d) else {
+            panic!(
+                "Edge3d entity: `{:?}` has no corresponding Edge2d entity",
+                entity_3d
+            );
+        };
+
+        // despawn 2d edge
+        info!("despawn 2d edge {:?}", edge_2d_entity);
+        commands.entity(edge_2d_entity).despawn();
+
+        if self.hovered_entity == Some((edge_2d_entity, CanvasShape::Edge)) {
+            self.hovered_entity = None;
+        }
+
+        self.recalculate_shapes();
+
+        (edge_2d_entity, deleted_face_2d_entities)
+    }
+
+    pub(crate) fn has_edge_entity_3d(&self, entity_3d: &Entity) -> bool {
+        self.edges_3d.contains_key(entity_3d)
+    }
+
+    pub(crate) fn edge_entity_2d_to_3d(&self, entity_2d: &Entity) -> Option<Entity> {
+        self.edges_2d.get(entity_2d).copied()
+    }
+
+    pub(crate) fn edge_entity_3d_to_2d(&self, entity_2d: &Entity) -> Option<Entity> {
+        self.edges_3d.get(entity_2d).map(|data| data.entity_2d)
+    }
+
+    pub(crate) fn edge_connected_faces(&self, edge_3d_entity: &Entity) -> Option<Vec<FaceKey>> {
+        self.edges_3d
+            .get(edge_3d_entity)
+            .map(|data| data.faces_3d.iter().copied().collect())
+    }
+
+    // FACES
+    pub fn process_new_faces(
+        &mut self,
+        commands: &mut Commands,
+        camera_manager: &CameraManager,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+    ) {
+        if self.new_face_keys.is_empty() {
+            return;
+        }
+
+        let keys = std::mem::take(&mut self.new_face_keys);
+        for (face_key, file_entity) in keys {
+            self.process_new_face(
+                commands,
+                camera_manager,
+                meshes,
+                materials,
+                file_entity,
+                &face_key,
+            );
+        }
+
+        self.recalculate_shapes();
+    }
+
+    // return face 2d entity
+    pub fn process_new_face(
+        &mut self,
+        commands: &mut Commands,
+        camera_manager: &CameraManager,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+        file_entity: Entity,
+        face_key: &FaceKey,
+    ) -> Entity {
+        if self.has_2d_face(face_key) {
+            panic!("face key already registered! `{:?}`", face_key);
+        }
+        info!("processing new face: `{:?}`", face_key);
+        let vertex_3d_a = face_key.vertex_3d_a;
+        let vertex_3d_b = face_key.vertex_3d_b;
+        let vertex_3d_c = face_key.vertex_3d_c;
+
+        // 2d face needs to have it's own button mesh, matching the 2d vertices
+        let vertex_2d_a = self.vertex_entity_3d_to_2d(&vertex_3d_a).unwrap();
+        let vertex_2d_b = self.vertex_entity_3d_to_2d(&vertex_3d_b).unwrap();
+        let vertex_2d_c = self.vertex_entity_3d_to_2d(&vertex_3d_c).unwrap();
+
+        let entity_2d = commands
+            .spawn_empty()
+            .insert(FaceIcon2d::new(vertex_2d_a, vertex_2d_b, vertex_2d_c))
+            .insert(RenderObjectBundle::equilateral_triangle(
+                meshes,
+                materials,
+                Vec2::ZERO,
+                FaceIcon2d::SIZE,
+                FaceIcon2d::COLOR,
+                Some(1),
+            ))
+            .insert(camera_manager.layer_2d)
+            .id();
+
+        info!("spawned 2d face entity: {:?}", entity_2d);
+
+        info!(
+            "adding OwnedByFile({:?}) to entity {:?}",
+            file_entity, entity_2d
+        );
+        commands
+            .entity(entity_2d)
+            .insert(OwnedByFileLocal::new(file_entity));
+
+        // add face to vertex data
+        for vertex_3d_entity in [&vertex_3d_a, &vertex_3d_b, &vertex_3d_c] {
+            let vertex_3d_data = self.vertices_3d.get_mut(vertex_3d_entity).unwrap();
+            vertex_3d_data.add_face(*face_key);
+        }
+
+        // add face to edge data
+        let mut edge_entities = Vec::new();
+        for (vert_a, vert_b) in [
+            (&vertex_3d_a, &vertex_3d_b),
+            (&vertex_3d_b, &vertex_3d_c),
+            (&vertex_3d_c, &vertex_3d_a),
+        ] {
+            // find edge in common
+            let vertex_a_edges = &self.vertices_3d.get(vert_a).unwrap().edges_3d;
+            let vertex_b_edges = &self.vertices_3d.get(vert_b).unwrap().edges_3d;
+            let intersection = vertex_a_edges.intersection(vertex_b_edges);
+            let mut found_edge = false;
+            for edge_entity in intersection {
+                if found_edge {
+                    panic!("should only be one edge between any two vertices!");
+                }
+                found_edge = true;
+
+                let Some(edge_3d_data) = self.edges_3d.get_mut(edge_entity) else {
+                    panic!("Edge3d entity: `{:?}` has not been registered", edge_entity);
+                };
+                edge_3d_data.add_face(*face_key);
+
+                edge_entities.push(*edge_entity);
+            }
+        }
+
+        // register face data
+        self.face_keys.insert(
+            *face_key,
+            Some(FaceData::new(
+                entity_2d,
+                file_entity,
+                edge_entities[0],
+                edge_entities[1],
+                edge_entities[2],
+            )),
+        );
+        self.faces_2d.insert(entity_2d, *face_key);
+
+        entity_2d
+    }
+
+    pub fn create_networked_face_from_world(&mut self, world: &mut World, face_2d_entity: Entity) {
+        let Some(face_3d_key) = self.face_key_from_2d_entity(&face_2d_entity) else {
+            panic!(
+                "Face2d entity: `{:?}` has no corresponding FaceKey",
+                face_2d_entity
+            );
+        };
+        let Some(Some(face_3d_data)) = self.face_keys.get(&face_3d_key) else {
+            panic!(
+                "Face3d entity: `{:?}` has not been registered",
+                face_3d_key
+            );
+        };
+        if face_3d_data.entity_3d.is_some() {
+            panic!("already create face 3d entity! cannot do this twice!");
+        }
+
+        let mut system_state: SystemState<(
+            Commands,
+            Client,
+            Res<CameraManager>,
+            ResMut<Assets<CpuMesh>>,
+            ResMut<Assets<CpuMaterial>>,
+            Query<&Transform>,
+        )> = SystemState::new(world);
+        let (mut commands, mut client, camera_manager, mut meshes, mut materials, transform_q) =
+            system_state.get_mut(world);
+
+        self.create_networked_face(
+            &mut commands,
+            &mut client,
+            &mut meshes,
+            &mut materials,
+            &camera_manager,
+            &transform_q,
+            &face_3d_key,
+            [
+                face_3d_data.edge_3d_a,
+                face_3d_data.edge_3d_b,
+                face_3d_data.edge_3d_c,
+            ],
+            face_3d_data.file_entity,
+        );
+
+        system_state.apply(world);
+    }
+
+    pub fn create_networked_face(
+        &mut self,
+        commands: &mut Commands,
+        client: &mut Client,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+        camera_manager: &CameraManager,
+        transform_q: &Query<&Transform>,
+        face_key: &FaceKey,
+        edge_3d_entities: [Entity; 3],
+        file_entity: Entity,
+    ) {
+        // get 3d vertex entities & positions
+        let mut positions = [Vec3::ZERO, Vec3::ZERO, Vec3::ZERO];
+        let mut vertex_3d_entities = [
+            Entity::PLACEHOLDER,
+            Entity::PLACEHOLDER,
+            Entity::PLACEHOLDER,
+        ];
+
+        for (index, vertex_3d_entity) in [
+            face_key.vertex_3d_a,
+            face_key.vertex_3d_b,
+            face_key.vertex_3d_c,
+        ]
+            .iter()
+            .enumerate()
+        {
+            let vertex_transform = transform_q.get(*vertex_3d_entity).unwrap();
+            positions[index] = vertex_transform.translation;
+            vertex_3d_entities[index] = *vertex_3d_entity;
+        }
+
+        // possibly reorder vertices to be counter-clockwise with respect to camera
+        let camera_3d_entity = camera_manager.camera_3d_entity().unwrap();
+        let camera_transform = transform_q.get(camera_3d_entity).unwrap();
+        if math::reorder_triangle_winding(&mut positions, camera_transform.translation, true) {
+            vertex_3d_entities.swap(1, 2);
+        }
+
+        // set up networked face component
+        let mut face_3d_component = Face3d::new();
+        face_3d_component
+            .vertex_a
+            .set(client, &vertex_3d_entities[0]);
+        face_3d_component
+            .vertex_b
+            .set(client, &vertex_3d_entities[1]);
+        face_3d_component
+            .vertex_c
+            .set(client, &vertex_3d_entities[2]);
+        face_3d_component.edge_a.set(client, &edge_3d_entities[0]);
+        face_3d_component.edge_b.set(client, &edge_3d_entities[1]);
+        face_3d_component.edge_c.set(client, &edge_3d_entities[2]);
+
+        // get owned_by_file component
+        let mut owned_by_file_component = OwnedByFile::new();
+        owned_by_file_component
+            .file_entity
+            .set(client, &file_entity);
+
+        // set up 3d entity
+        let face_3d_entity = commands
+            .spawn_empty()
+            .enable_replication(client)
+            .configure_replication(ReplicationConfig::Delegated)
+            .insert(owned_by_file_component)
+            .insert(OwnedByFileLocal::new(file_entity))
+            .insert(face_3d_component)
+            .id();
+
+        self.face_3d_postprocess(
+            commands,
+            meshes,
+            materials,
+            &camera_manager,
+            face_key,
+            face_3d_entity,
+            positions,
+        );
+    }
+
+    pub fn face_3d_postprocess(
+        &mut self,
+        commands: &mut Commands,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+        camera_manager: &CameraManager,
+        face_key: &FaceKey,
+        face_3d_entity: Entity,
+        positions: [Vec3; 3],
+    ) {
+        commands
+            .entity(face_3d_entity)
+            .insert(RenderObjectBundle::world_triangle(
+                meshes,
+                materials,
+                positions,
+                Face3dLocal::COLOR,
+            ))
+            .insert(camera_manager.layer_3d)
+            .insert(Face3dLocal);
+
+        self.register_3d_face(face_3d_entity, face_key);
+
+        // change 2d icon to use non-hollow triangle
+        let face_2d_entity = self.face_2d_entity_from_face_key(&face_key).unwrap();
+        commands
+            .entity(face_2d_entity)
+            .insert(meshes.add(Triangle::new_2d_equilateral()));
+    }
+
+    // returns 2d face entity
+    pub fn register_3d_face(&mut self, entity_3d: Entity, face_key: &FaceKey) {
+        self.faces_3d.insert(entity_3d, *face_key);
+
+        let Some(Some(face_3d_data)) = self.face_keys.get_mut(face_key) else {
+            panic!("Face3d key: `{:?}` has not been registered", face_key);
+        };
+        face_3d_data.entity_3d = Some(entity_3d);
+    }
+
+    pub fn remove_new_face_key(&mut self, face_key: &FaceKey) {
+        self.new_face_keys.retain(|(key, _)| key != face_key);
+    }
+
+    pub(crate) fn cleanup_deleted_face_3d(
+        &mut self,
+        commands: &mut Commands,
+        meshes: &mut Assets<CpuMesh>,
+        face_3d_entity: &Entity,
+    ) {
+        // unregister face
+        if let Some(face_2d_entity) = self.unregister_3d_face(face_3d_entity) {
+            commands
+                .entity(face_2d_entity)
+                .insert(meshes.add(HollowTriangle::new_2d_equilateral()));
+        }
+    }
+
+    // returns face 2d entity
+    pub(crate) fn cleanup_deleted_face_key(
+        &mut self,
+        commands: &mut Commands,
+        face_key: &FaceKey,
+    ) -> Entity {
+        // unregister face
+        let Some(face_2d_entity) = self.unregister_face_key(face_key) else {
+            panic!(
+                "FaceKey: `{:?}` has no corresponding Face2d entity",
+                face_key
+            );
+        };
+
+        // despawn 2d face
+        info!("despawn 2d face {:?}", face_2d_entity);
+        commands.entity(face_2d_entity).despawn();
+
+        if self.hovered_entity == Some((face_2d_entity, CanvasShape::Face)) {
+            self.hovered_entity = None;
+        }
+
+        self.recalculate_shapes();
+
+        face_2d_entity
+    }
+
+    pub(crate) fn has_2d_face(&self, face_key: &FaceKey) -> bool {
+        if let Some(Some(_)) = self.face_keys.get(face_key) {
+            return true;
+        }
+        return false;
+    }
+
+    pub(crate) fn face_entity_2d_to_3d(&self, entity_2d: &Entity) -> Option<Entity> {
+        let Some(face_key) = self.faces_2d.get(entity_2d) else {
+            return None;
+        };
+        let Some(Some(face_3d_data)) = self.face_keys.get(face_key) else {
+            return None;
+        };
+        face_3d_data.entity_3d
+    }
+
+    pub(crate) fn face_entity_3d_to_2d(&self, entity_3d: &Entity) -> Option<Entity> {
+        let Some(face_key) = self.faces_3d.get(entity_3d) else {
+            return None;
+        };
+        self.face_2d_entity_from_face_key(face_key)
+    }
+
+    pub(crate) fn face_2d_entity_from_face_key(&self, face_key: &FaceKey) -> Option<Entity> {
+        let Some(Some(face_3d_data)) = self.face_keys.get(face_key) else {
+            return None;
+        };
+        Some(face_3d_data.entity_2d)
+    }
+
+    pub(crate) fn face_3d_entity_from_face_key(&self, face_key: &FaceKey) -> Option<Entity> {
+        let Some(Some(face_3d_data)) = self.face_keys.get(face_key) else {
+            return None;
+        };
+        face_3d_data.entity_3d
+    }
+
+    // MISC
     pub fn set_current_file_type(&mut self, file_type: FileTypeValue) {
         self.current_file_type = file_type;
     }
 
+    pub fn edge_angle_visibility_toggle(&mut self) {
+        if self.current_file_type != FileTypeValue::Skel {
+            return;
+        }
+
+        self.edge_angle_visibility = !self.edge_angle_visibility;
+
+        self.recalculate_shapes();
+    }
+
+    pub(crate) fn on_canvas_focus_changed(&mut self, new_focus: bool) {
+        self.recalculate_selection();
+        if !new_focus {
+            self.last_vertex_dragged = None;
+            self.last_edge_dragged = None;
+            self.hovered_entity = None;
+        }
+    }
+
+    // Private methods
     fn handle_insert_key_press(&mut self, action_stack: &mut ActionStack<ShapeAction>) {
         if self.current_file_type == FileTypeValue::Anim {
             return;
@@ -1794,10 +1328,10 @@ impl ShapeManager {
         current_tab_file_entity: Entity,
         mouse_position: &Vec2,
         camera_state: &CameraState,
-        transform_q: &mut Query<(&mut Transform, Option<&Compass>)>,
+        transform_q: &mut Query<(&mut Transform, Option<&LocalShape>)>,
         owned_by_q: &Query<&OwnedByFileLocal>,
-        vertex_2d_q: &Query<(Entity, Option<&VertexRoot>), (With<Vertex2d>, Without<Compass>)>,
-        edge_2d_q: &Query<(Entity, &Edge2dLocal), Without<Compass>>,
+        vertex_2d_q: &Query<(Entity, Option<&VertexRoot>), (With<Vertex2d>, Without<LocalShape>)>,
+        edge_2d_q: &Query<(Entity, &Edge2dLocal), Without<LocalShape>>,
         face_2d_q: &Query<(Entity, &FaceIcon2d)>,
     ) {
         if !self.hover_recalc {
@@ -2363,225 +1897,7 @@ impl ShapeManager {
         }
     }
 
-    pub(crate) fn setup_compass(
-        &mut self,
-        commands: &mut Commands,
-        camera_manager: &mut CameraManager,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
-    ) {
-        let (root_vertex_2d_entity, vertex_3d_entity, _, _) = self.new_local_vertex(
-            commands,
-            camera_manager,
-            meshes,
-            materials,
-            None,
-            Vec3::ZERO,
-            Color::WHITE,
-        );
-        self.compass_vertices.push(vertex_3d_entity);
-        commands.entity(root_vertex_2d_entity).insert(Compass);
-        commands.entity(vertex_3d_entity).insert(Compass);
-
-        self.new_compass_arm(
-            commands,
-            camera_manager,
-            meshes,
-            materials,
-            root_vertex_2d_entity,
-            Vec3::new(100.0, 0.0, 0.0),
-            Color::RED,
-        );
-
-        self.new_compass_arm(
-            commands,
-            camera_manager,
-            meshes,
-            materials,
-            root_vertex_2d_entity,
-            Vec3::new(0.0, 100.0, 0.0),
-            Color::GREEN,
-        );
-
-        self.new_compass_arm(
-            commands,
-            camera_manager,
-            meshes,
-            materials,
-            root_vertex_2d_entity,
-            Vec3::new(0.0, 0.0, 100.0),
-            Color::LIGHT_BLUE,
-        );
-    }
-
-    fn new_compass_arm(
-        &mut self,
-        commands: &mut Commands,
-        camera_manager: &mut CameraManager,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
-        root_vertex_2d_entity: Entity,
-        position: Vec3,
-        color: Color,
-    ) {
-        let (vertex_2d_entity, vertex_3d_entity, Some(edge_2d_entity), Some(edge_3d_entity)) = self.new_local_vertex(
-            commands,
-            camera_manager,
-            meshes,
-            materials,
-            Some(root_vertex_2d_entity),
-            position,
-            color,
-        ) else {
-            panic!("No edges?");
-        };
-        self.compass_vertices.push(vertex_3d_entity);
-        commands.entity(vertex_2d_entity).insert(Compass);
-        commands.entity(vertex_3d_entity).insert(Compass);
-        commands.entity(edge_2d_entity).insert(Compass);
-        commands.entity(edge_3d_entity).insert(Compass);
-    }
-
-    pub(crate) fn setup_grid(
-        &mut self,
-        commands: &mut Commands,
-        camera_manager: &mut CameraManager,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
-    ) {
-        self.new_grid_corner(
-            commands,
-            camera_manager,
-            meshes,
-            materials,
-            true,
-            true,
-            true,
-        );
-        self.new_grid_corner(
-            commands,
-            camera_manager,
-            meshes,
-            materials,
-            true,
-            false,
-            false,
-        );
-
-        self.new_grid_corner(
-            commands,
-            camera_manager,
-            meshes,
-            materials,
-            false,
-            true,
-            false,
-        );
-        self.new_grid_corner(
-            commands,
-            camera_manager,
-            meshes,
-            materials,
-            false,
-            false,
-            true,
-        );
-    }
-
-    fn new_grid_corner(
-        &mut self,
-        commands: &mut Commands,
-        camera_manager: &mut CameraManager,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
-        x: bool,
-        y: bool,
-        z: bool,
-    ) {
-        let xf = if x { 1.0 } else { -1.0 };
-        let yf = if y { 1.0 } else { -1.0 };
-        let zf = if z { 1.0 } else { -1.0 };
-
-        let grid_size: f32 = 100.0;
-        let neg_grid_size: f32 = -grid_size;
-
-        let (root_vertex_2d_entity, root_vertex_3d_entity, _, _) = self.new_local_vertex(
-            commands,
-            camera_manager,
-            meshes,
-            materials,
-            None,
-            Vec3::new(grid_size * xf, (grid_size * yf) + grid_size, grid_size * zf),
-            Color::DARK_GRAY,
-        );
-        commands.entity(root_vertex_2d_entity).insert(Compass);
-        commands.entity(root_vertex_3d_entity).insert(Compass);
-
-        self.new_grid_vertex(
-            commands,
-            camera_manager,
-            meshes,
-            materials,
-            root_vertex_2d_entity,
-            Vec3::new(
-                neg_grid_size * xf,
-                (grid_size * yf) + grid_size,
-                grid_size * zf,
-            ),
-        );
-        self.new_grid_vertex(
-            commands,
-            camera_manager,
-            meshes,
-            materials,
-            root_vertex_2d_entity,
-            Vec3::new(
-                grid_size * xf,
-                (neg_grid_size * yf) + grid_size,
-                grid_size * zf,
-            ),
-        );
-        self.new_grid_vertex(
-            commands,
-            camera_manager,
-            meshes,
-            materials,
-            root_vertex_2d_entity,
-            Vec3::new(
-                grid_size * xf,
-                (grid_size * yf) + grid_size,
-                neg_grid_size * zf,
-            ),
-        );
-    }
-
-    fn new_grid_vertex(
-        &mut self,
-        commands: &mut Commands,
-        camera_manager: &mut CameraManager,
-        meshes: &mut Assets<CpuMesh>,
-        materials: &mut Assets<CpuMaterial>,
-        parent_vertex_2d_entity: Entity,
-        position: Vec3,
-    ) {
-        let (vertex_2d_entity, vertex_3d_entity, Some(edge_2d_entity), Some(edge_3d_entity)) = self.new_local_vertex(
-            commands,
-            camera_manager,
-            meshes,
-            materials,
-            Some(parent_vertex_2d_entity),
-            position,
-            Color::DARK_GRAY,
-        ) else {
-            panic!("No edges?");
-        };
-        commands.entity(vertex_2d_entity).insert(Compass);
-        commands.entity(edge_2d_entity).insert(Compass);
-        commands.entity(vertex_3d_entity).insert(Compass);
-        commands.entity(edge_3d_entity).insert(Compass);
-    }
-
-    fn new_local_vertex(
+    pub fn new_local_vertex(
         &mut self,
         commands: &mut Commands,
         camera_manager: &mut CameraManager,
@@ -2653,48 +1969,341 @@ impl ShapeManager {
         );
     }
 
-    fn sync_compass(
+    fn sync_vertices(
         &self,
         camera_3d_entity: &Entity,
-        camera_state: &CameraState,
+        camera_3d_scale: f32,
+        camera_q: &Query<(&Camera, &Projection)>,
         vertex_3d_q: &mut Query<(Entity, &mut Vertex3d)>,
-        transform_q: &Query<&mut Transform>,
+        transform_q: &mut Query<&mut Transform>,
+        owned_by_q: &Query<&OwnedByFileLocal>,
+        compass_q: &Query<&LocalShape>,
+        current_tab_file_entity: Entity,
     ) {
+        let Ok((camera, camera_projection)) = camera_q.get(*camera_3d_entity) else {
+            return;
+        };
+
         let Ok(camera_transform) = transform_q.get(*camera_3d_entity) else {
             return;
         };
 
-        let Ok((_, mut vertex_3d)) = vertex_3d_q.get_mut(self.compass_vertices[0]) else {
-            return;
-        };
+        let camera_viewport = camera.viewport.unwrap();
+        let view_matrix = camera_transform.view_matrix();
+        let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
+        let vertex_2d_scale = Vertex2d::RADIUS * camera_3d_scale;
+        let compass_vertex_3d_scale = LocalShape::VERTEX_RADIUS / camera_3d_scale;
+        let compass_vertex_2d_scale = Vertex2d::RADIUS;
 
-        let right = camera_transform.right_direction();
-        let up = right.cross(camera_transform.view_direction());
+        for (vertex_3d_entity, vertex_3d) in vertex_3d_q.iter() {
+            // check if vertex is owned by the current tab
+            if !Self::is_owned_by_tab_or_unowned(
+                current_tab_file_entity,
+                owned_by_q,
+                vertex_3d_entity,
+            ) {
+                continue;
+            }
 
-        let unit_length = 1.0 / camera_state.camera_3d_scale();
-        const COMPASS_POS: Vec2 = Vec2::new(530.0, 300.0);
-        let offset_2d = camera_state.camera_3d_offset().round()
-            + Vec2::new(
-                unit_length * -1.0 * COMPASS_POS.x,
-                unit_length * COMPASS_POS.y,
+            // get transform
+            let Ok(mut vertex_3d_transform) = transform_q.get_mut(vertex_3d_entity) else {
+                warn!("Vertex3d entity {:?} has no Transform", vertex_3d_entity);
+                continue;
+            };
+
+            // update 3d vertices
+            vertex_3d_transform.translation.x = vertex_3d.x().into();
+            vertex_3d_transform.translation.y = vertex_3d.y().into();
+            vertex_3d_transform.translation.z = vertex_3d.z().into();
+
+            if compass_q.get(vertex_3d_entity).is_ok() {
+                vertex_3d_transform.scale = Vec3::splat(compass_vertex_3d_scale);
+            } else {
+                // vertex_3d_transform.scale = should put 3d vertex scale here?
+            }
+
+            // update 2d vertices
+            let (coords, depth) = convert_3d_to_2d(
+                &view_matrix,
+                &projection_matrix,
+                &camera_viewport.size_vec2(),
+                &vertex_3d_transform.translation,
             );
-        let offset_3d = (right * offset_2d.x) + (up * offset_2d.y);
 
-        let vert_offset_3d = Vec3::ZERO + offset_3d;
-        vertex_3d.set_vec3(&vert_offset_3d);
+            let Some(vertex_2d_entity) = self.vertex_entity_3d_to_2d(&vertex_3d_entity) else {
+                panic!("Vertex3d entity {:?} has no corresponding Vertex2d entity", vertex_3d_entity);
+            };
+            let Ok(mut vertex_2d_transform) = transform_q.get_mut(vertex_2d_entity) else {
+                panic!("Vertex2d entity {:?} has no Transform", vertex_2d_entity);
+            };
 
-        let compass_length = unit_length * 25.0;
-        let vert_offset_3d = Vec3::new(compass_length, 0.0, 0.0) + offset_3d;
-        let (_, mut vertex_3d) = vertex_3d_q.get_mut(self.compass_vertices[1]).unwrap();
-        vertex_3d.set_vec3(&vert_offset_3d);
+            vertex_2d_transform.translation.x = coords.x;
+            vertex_2d_transform.translation.y = coords.y;
+            vertex_2d_transform.translation.z = depth;
 
-        let vert_offset_3d = Vec3::new(0.0, compass_length, 0.0) + offset_3d;
-        let (_, mut vertex_3d) = vertex_3d_q.get_mut(self.compass_vertices[2]).unwrap();
-        vertex_3d.set_vec3(&vert_offset_3d);
+            // update 2d compass
+            if compass_q.get(vertex_2d_entity).is_ok() {
+                vertex_2d_transform.scale = Vec3::splat(compass_vertex_2d_scale);
+            } else {
+                vertex_2d_transform.scale = Vec3::splat(vertex_2d_scale);
+            }
+        }
+    }
 
-        let vert_offset_3d = Vec3::new(0.0, 0.0, compass_length) + offset_3d;
-        let (_, mut vertex_3d) = vertex_3d_q.get_mut(self.compass_vertices[3]).unwrap();
-        vertex_3d.set_vec3(&vert_offset_3d);
+    fn sync_2d_edges(
+        &mut self,
+        edge_2d_q: &Query<(Entity, &Edge2dLocal)>,
+        transform_q: &mut Query<&mut Transform>,
+        owned_by_q: &Query<&OwnedByFileLocal>,
+        compass_q: &Query<&LocalShape>,
+        current_tab_file_entity: Entity,
+        camera_3d_scale: f32,
+    ) {
+        let edge_2d_scale = Edge2dLocal::NORMAL_THICKNESS * camera_3d_scale;
+
+        for (edge_2d_entity, edge_endpoints) in edge_2d_q.iter() {
+            let Some(end_3d_entity) = self.vertex_entity_2d_to_3d(&edge_endpoints.end) else {
+                warn!("Edge entity {:?} has no 3d endpoint entity", edge_2d_entity);
+                continue;
+            };
+
+            // check if vertex is owned by the current tab
+            if !Self::is_owned_by_tab_or_unowned(current_tab_file_entity, owned_by_q, end_3d_entity)
+            {
+                continue;
+            }
+
+            let Ok(start_transform) = transform_q.get(edge_endpoints.start) else {
+                warn!(
+                    "2d Edge start entity {:?} has no transform",
+                    edge_endpoints.start,
+                );
+                continue;
+            };
+
+            let start_pos = start_transform.translation.truncate();
+
+            let Ok(end_transform) = transform_q.get(edge_endpoints.end) else {
+                warn!(
+                    "2d Edge end entity {:?} has no transform",
+                    edge_endpoints.end,
+                );
+                continue;
+            };
+
+            let end_pos = end_transform.translation.truncate();
+            let depth = (start_transform.translation.z + end_transform.translation.z) / 2.0;
+
+            let Ok(mut edge_2d_transform) = transform_q.get_mut(edge_2d_entity) else {
+                warn!("2d Edge entity {:?} has no transform", edge_2d_entity);
+                continue;
+            };
+
+            set_2d_line_transform(&mut edge_2d_transform, start_pos, end_pos, depth);
+
+            if compass_q.get(edge_2d_entity).is_ok() {
+                edge_2d_transform.scale.y = Edge2dLocal::NORMAL_THICKNESS;
+            } else {
+                edge_2d_transform.scale.y = edge_2d_scale;
+            }
+        }
+    }
+
+    fn sync_3d_edges(
+        &mut self,
+        edge_3d_q: &Query<(Entity, &Edge3dLocal, Option<&EdgeAngle>)>,
+        transform_q: &mut Query<&mut Transform>,
+        owned_by_q: &Query<&OwnedByFileLocal>,
+        visibility_q: &mut Query<&mut Visibility>,
+        compass_q: &Query<&LocalShape>,
+        current_tab_file_entity: Entity,
+        camera_3d_scale: f32,
+    ) {
+        let edge_angle_base_circle_scale = Edge2dLocal::EDGE_ANGLE_BASE_CIRCLE_RADIUS * camera_3d_scale;
+        let edge_angle_end_circle_scale = Edge2dLocal::EDGE_ANGLE_END_CIRCLE_RADIUS * camera_3d_scale;
+        let edge_angle_length = Edge2dLocal::EDGE_ANGLE_LENGTH * camera_3d_scale;
+        let edge_angle_thickness = Edge2dLocal::EDGE_ANGLE_THICKNESS * camera_3d_scale;
+        let compass_edge_3d_scale = LocalShape::EDGE_THICKNESS / camera_3d_scale;
+
+        for (edge_entity, edge_endpoints, edge_angle_opt) in edge_3d_q.iter() {
+            // check if vertex is owned by the current tab
+            if !Self::is_owned_by_tab_or_unowned(current_tab_file_entity, owned_by_q, edge_entity) {
+                continue;
+            }
+
+            let edge_angle_opt = edge_angle_opt.map(|angle| angle.get_radians());
+
+            let edge_start_entity = edge_endpoints.start;
+            let edge_end_entity = edge_endpoints.end;
+
+            let Ok(start_transform) = transform_q.get(edge_start_entity) else {
+                warn!(
+                    "3d Edge start entity {:?} has no transform",
+                    edge_start_entity,
+                );
+                continue;
+            };
+            let start_pos = start_transform.translation;
+            let Ok(end_transform) = transform_q.get(edge_end_entity) else {
+                warn!("3d Edge end entity {:?} has no transform", edge_end_entity);
+                continue;
+            };
+            let end_pos = end_transform.translation;
+            let mut edge_transform = transform_q.get_mut(edge_entity).unwrap();
+            set_3d_line_transform(&mut edge_transform, start_pos, end_pos, edge_angle_opt);
+            if compass_q.get(edge_entity).is_ok() {
+                edge_transform.scale.x = compass_edge_3d_scale;
+                edge_transform.scale.y = compass_edge_3d_scale;
+            }
+
+            // update 2d edge angle
+            if let Some(edge_angle) = edge_angle_opt {
+                let edge_3d_data = self.edges_3d.get(&edge_entity).unwrap();
+                let (base_circle_entity, angle_edge_entity, end_circle_entity) =
+                    edge_3d_data.angle_entities_opt.unwrap();
+                for entity in [base_circle_entity, angle_edge_entity, end_circle_entity] {
+                    let Ok(mut visibility) = visibility_q.get_mut(entity) else {
+                        warn!("Edge angle entity {:?} has no transform", entity);
+                        continue;
+                    };
+                    visibility.visible = self.edge_angle_visibility;
+                }
+
+                if self.edge_angle_visibility {
+                    let edge_2d_entity = edge_3d_data.entity_2d;
+
+                    let edge_2d_transform = transform_q.get(edge_2d_entity).unwrap();
+                    let start_pos = edge_2d_transform.translation.truncate();
+                    let end_pos = get_2d_line_transform_endpoint(&edge_2d_transform);
+                    let base_angle = angle_between(&start_pos, &end_pos);
+                    let middle_pos = (start_pos + end_pos) / 2.0;
+                    let edge_depth = edge_2d_transform.translation.z;
+
+                    let Ok(mut angle_transform) = transform_q.get_mut(angle_edge_entity) else {
+                        warn!("Edge angle entity {:?} has no transform", angle_edge_entity);
+                        continue;
+                    };
+
+                    let edge_angle_drawn = base_angle + edge_angle + FRAC_PI_2;
+                    let edge_depth_drawn = edge_depth - 1.0;
+                    set_2d_line_transform_from_angle(
+                        &mut angle_transform,
+                        middle_pos,
+                        edge_angle_drawn,
+                        edge_angle_length,
+                        edge_depth_drawn,
+                    );
+                    angle_transform.scale.y = edge_angle_thickness;
+                    let edge_angle_endpoint = get_2d_line_transform_endpoint(&angle_transform);
+
+                    let Ok(mut base_circle_transform) = transform_q.get_mut(base_circle_entity) else {
+                        warn!("Edge angle base circle entity {:?} has no transform", base_circle_entity);
+                        continue;
+                    };
+                    base_circle_transform.translation.x = middle_pos.x;
+                    base_circle_transform.translation.y = middle_pos.y;
+                    base_circle_transform.translation.z = edge_depth_drawn;
+                    base_circle_transform.scale = Vec3::splat(edge_angle_base_circle_scale);
+
+                    let Ok(mut end_circle_transform) = transform_q.get_mut(end_circle_entity) else {
+                        warn!("Edge angle end circle entity {:?} has no transform", end_circle_entity);
+                        continue;
+                    };
+                    end_circle_transform.translation.x = edge_angle_endpoint.x;
+                    end_circle_transform.translation.y = edge_angle_endpoint.y;
+                    end_circle_transform.translation.z = edge_depth_drawn;
+                    end_circle_transform.scale = Vec3::splat(edge_angle_end_circle_scale);
+                }
+            }
+        }
+    }
+
+    fn sync_2d_faces(
+        face_2d_q: &Query<(Entity, &FaceIcon2d)>,
+        transform_q: &mut Query<&mut Transform>,
+        owned_by_q: &Query<&OwnedByFileLocal>,
+        current_tab_file_entity: Entity,
+        camera_3d_scale: f32
+    ) {
+        let face_2d_scale = FaceIcon2d::SIZE * camera_3d_scale;
+
+        for (face_2d_entity, face_icon) in face_2d_q.iter() {
+            // check if face is owned by the current tab
+            if !Self::is_owned_by_tab_or_unowned(
+                current_tab_file_entity,
+                owned_by_q,
+                face_2d_entity,
+            ) {
+                continue;
+            }
+
+            // find center of all of face_icon's vertices
+            let Ok(vertex_a_transform) = transform_q.get(face_icon.vertex_2d_a()) else {
+                warn!("Face entity {:?}'s vertex_a has no transform", face_2d_entity);
+                continue;
+            };
+            let Ok(vertex_b_transform) = transform_q.get(face_icon.vertex_2d_b()) else {
+                warn!("Face entity {:?}'s vertex_b has no transform", face_2d_entity);
+                continue;
+            };
+            let Ok(vertex_c_transform) = transform_q.get(face_icon.vertex_2d_c()) else {
+                warn!("Face entity {:?}'s vertex_c has no transform", face_2d_entity);
+                continue;
+            };
+
+            let center_translation = Vec3::new(
+                (vertex_a_transform.translation.x
+                    + vertex_b_transform.translation.x
+                    + vertex_c_transform.translation.x)
+                    / 3.0,
+                (vertex_a_transform.translation.y
+                    + vertex_b_transform.translation.y
+                    + vertex_c_transform.translation.y)
+                    / 3.0,
+                (vertex_a_transform.translation.z
+                    + vertex_b_transform.translation.z
+                    + vertex_c_transform.translation.z)
+                    / 3.0,
+            );
+
+            if let Ok(mut face_transform) = transform_q.get_mut(face_2d_entity) {
+                face_transform.translation = center_translation;
+                face_transform.scale = Vec3::splat(face_2d_scale);
+            } else {
+                warn!("Face entity {:?} has no transform", face_2d_entity);
+            }
+        }
+    }
+
+    fn sync_hover_shape_scale(
+        &mut self,
+        transform_q: &mut Query<&mut Transform>,
+        camera_3d_scale: f32,
+    ) {
+        let hover_vertex_2d_scale = Vertex2d::HOVER_RADIUS * camera_3d_scale;
+        let hover_edge_2d_scale = Edge2dLocal::HOVER_THICKNESS * camera_3d_scale;
+        let hover_face_2d_scale = FaceIcon2d::HOVER_SIZE * camera_3d_scale;
+
+        if let Some((hover_entity, shape)) = self.hovered_entity {
+            if self.hovered_entity != self.selected_shape {
+                match shape {
+                    CanvasShape::RootVertex | CanvasShape::Vertex => {
+                        let mut hover_vert_transform = transform_q.get_mut(hover_entity).unwrap();
+                        hover_vert_transform.scale.x = hover_vertex_2d_scale;
+                        hover_vert_transform.scale.y = hover_vertex_2d_scale;
+                    }
+                    CanvasShape::Edge => {
+                        let mut hover_edge_transform = transform_q.get_mut(hover_entity).unwrap();
+                        hover_edge_transform.scale.y = hover_edge_2d_scale;
+                    }
+                    CanvasShape::Face => {
+                        let mut hover_face_transform = transform_q.get_mut(hover_entity).unwrap();
+                        hover_face_transform.scale.x = hover_face_2d_scale;
+                        hover_face_transform.scale.y = hover_face_2d_scale;
+                    }
+                }
+            }
+        }
     }
 
     // returns true if vertex is owned by tab or unowned
@@ -2726,6 +2335,155 @@ impl ShapeManager {
         }
         return false;
     }
+
+    fn shape_type_from_3d_entity(&self, entity_3d: &Entity) -> Option<CanvasShape> {
+        if self.vertices_3d.contains_key(entity_3d) {
+            Some(CanvasShape::Vertex)
+        } else if self.edges_3d.contains_key(entity_3d) {
+            Some(CanvasShape::Edge)
+        } else if self.faces_3d.contains_key(entity_3d) {
+            Some(CanvasShape::Face)
+        } else {
+            None
+        }
+    }
+
+    // returns 2d vertex entity
+    fn unregister_3d_vertex(&mut self, entity_3d: &Entity) -> Option<Entity> {
+        if let Some(data) = self.vertices_3d.remove(entity_3d) {
+            let entity_2d = data.entity_2d;
+            self.vertices_2d.remove(&entity_2d);
+            return Some(entity_2d);
+        }
+        return None;
+    }
+
+    // returns 2d edge entity
+    fn unregister_3d_edge(&mut self, edge_3d_entity: &Entity) -> Option<Entity> {
+        if let Some(entity_3d_data) = self.edges_3d.remove(edge_3d_entity) {
+            let edge_2d_entity = entity_3d_data.entity_2d;
+
+            info!(
+                "deregister_3d_edge(3d: `{:?}`, 2d: `{:?}`)",
+                edge_3d_entity, edge_2d_entity
+            );
+
+            self.edges_2d.remove(&edge_2d_entity);
+
+            // remove edge from vertices
+            for vertex_3d_entity in [
+                entity_3d_data.vertex_a_3d_entity,
+                entity_3d_data.vertex_b_3d_entity,
+            ] {
+                if let Some(vertex_3d_data) = self.vertices_3d.get_mut(&vertex_3d_entity) {
+                    vertex_3d_data.remove_edge(edge_3d_entity);
+                }
+            }
+
+            return Some(edge_2d_entity);
+        }
+        return None;
+    }
+
+    // returns 2d face entity
+    fn unregister_face_key(&mut self, face_key: &FaceKey) -> Option<Entity> {
+        info!("unregistering face key: `{:?}`", face_key);
+        if let Some(Some(face_3d_data)) = self.face_keys.remove(&face_key) {
+            let entity_2d = face_3d_data.entity_2d;
+            self.faces_2d.remove(&entity_2d);
+
+            // remove face from vertices
+            for vertex_3d_entity in [
+                face_key.vertex_3d_a,
+                face_key.vertex_3d_b,
+                face_key.vertex_3d_c,
+            ] {
+                if let Some(vertex_3d_data) = self.vertices_3d.get_mut(&vertex_3d_entity) {
+                    vertex_3d_data.remove_face(face_key);
+                }
+            }
+
+            // remove face from edges
+            for edge_3d_entity in [
+                face_3d_data.edge_3d_a,
+                face_3d_data.edge_3d_b,
+                face_3d_data.edge_3d_c,
+            ] {
+                if let Some(edge_3d_data) = self.edges_3d.get_mut(&edge_3d_entity) {
+                    edge_3d_data.remove_face(face_key);
+                }
+            }
+
+            return Some(entity_2d);
+        } else {
+            return None;
+        }
+    }
+
+    // returns 2d face entity
+    fn unregister_3d_face(&mut self, entity_3d: &Entity) -> Option<Entity> {
+        info!("unregistering 3d face entity: `{:?}`", entity_3d);
+        let Some(face_key) = self.faces_3d.remove(entity_3d) else {
+            panic!("no face 3d found for entity {:?}", entity_3d);
+        };
+
+        if let Some(Some(face_3d_data)) = self.face_keys.get_mut(&face_key) {
+            face_3d_data.entity_3d = None;
+            info!("remove entity 3d: `{:?}` from face 3d data", entity_3d);
+
+            let face_2d_entity = face_3d_data.entity_2d;
+            return Some(face_2d_entity);
+        }
+
+        return None;
+    }
+
+    fn face_key_from_2d_entity(&self, entity_2d: &Entity) -> Option<FaceKey> {
+        self.faces_2d.get(entity_2d).copied()
+    }
+
+    fn check_for_new_faces(
+        &mut self,
+        vertex_a_3d_entity: Entity,
+        vertex_b_3d_entity: Entity,
+        file_entity: Entity,
+    ) {
+        let vertex_a_connected_vertices = self.get_connected_vertices(vertex_a_3d_entity);
+        let vertex_b_connected_vertices = self.get_connected_vertices(vertex_b_3d_entity);
+
+        let common_vertices =
+            vertex_a_connected_vertices.intersection(&vertex_b_connected_vertices);
+        for common_vertex in common_vertices {
+            let face_key = FaceKey::new(vertex_a_3d_entity, vertex_b_3d_entity, *common_vertex);
+            if !self.face_keys.contains_key(&face_key) {
+                self.face_keys.insert(face_key, None);
+                self.new_face_keys.push((face_key, file_entity));
+            }
+        }
+    }
+
+    fn get_connected_vertices(&self, vertex_3d_entity: Entity) -> HashSet<Entity> {
+        let mut set = HashSet::new();
+
+        let Some(vertex_data) = self.vertices_3d.get(&vertex_3d_entity) else {
+            panic!("Vertex3d entity: `{:?}` has not been registered", vertex_3d_entity);
+        };
+        let edges = &vertex_data.edges_3d;
+        for edge_entity in edges {
+            let edge_data = self.edges_3d.get(edge_entity).unwrap();
+            let vertex_a_3d_entity = edge_data.vertex_a_3d_entity;
+            let vertex_b_3d_entity = edge_data.vertex_b_3d_entity;
+
+            if vertex_a_3d_entity != vertex_3d_entity {
+                set.insert(vertex_a_3d_entity);
+            } else if vertex_b_3d_entity != vertex_3d_entity {
+                set.insert(vertex_b_3d_entity);
+            }
+        }
+
+        set
+    }
+
     fn edge_2d_entity_from_vertices(
         &self,
         vertex_2d_a: Entity,
@@ -2741,15 +2499,5 @@ impl ShapeManager {
             .next()?;
         let edge_2d_entity = self.edge_entity_3d_to_2d(&intersecting_edge_3d_entity)?;
         Some(edge_2d_entity)
-    }
-
-    pub fn edge_angle_visibility_toggle(&mut self) {
-        if self.current_file_type != FileTypeValue::Skel {
-            return;
-        }
-
-        self.edge_angle_visibility = !self.edge_angle_visibility;
-
-        self.recalculate_shapes();
     }
 }
