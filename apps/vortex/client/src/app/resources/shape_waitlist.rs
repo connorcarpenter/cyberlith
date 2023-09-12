@@ -17,7 +17,7 @@ use vortex_proto::{components::FileTypeValue, resources::DependencyMap};
 use crate::app::{
     components::{OwnedByFileLocal, Vertex2d},
     resources::{
-        camera_manager::CameraManager, shape_manager::FaceKey, shape_manager::ShapeManager,
+        camera_manager::CameraManager, shape_manager::ShapeManager, shape_data::FaceKey
     },
 };
 

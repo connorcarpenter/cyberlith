@@ -4,8 +4,9 @@ use render_egui::egui::Ui;
 
 use crate::app::{
     resources::{
-        shape_manager::{CanvasShape, ShapeManager},
+        shape_manager::ShapeManager,
         toolbar::Toolbar,
+        shape_data::CanvasShape,
     },
     ui::widgets::naming_bar_visibility_toggle,
 };

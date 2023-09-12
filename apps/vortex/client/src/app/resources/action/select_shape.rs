@@ -8,8 +8,9 @@ use bevy_log::info;
 use naia_bevy_client::{Client, CommandsExt};
 
 use crate::app::resources::{
+    shape_data::CanvasShape,
     action::ShapeAction,
-    shape_manager::{CanvasShape, ShapeManager},
+    shape_manager::ShapeManager,
 };
 
 pub(crate) fn execute(

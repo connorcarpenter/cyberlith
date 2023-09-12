@@ -12,19 +12,18 @@ use render_api::{
     components::Transform,
     Assets,
 };
-
 use vortex_proto::components::{FileType, FileTypeValue, OwnedByFile, Vertex3d};
 
 use crate::app::{
     components::{Vertex2d, VertexEntry, VertexTypeData},
     resources::{
+        shape_data::{CanvasShape, FaceKey},
         action::{
             create_edge::create_networked_edge, select_shape::deselect_all_selected_shapes,
             ActionStack, ShapeAction,
         },
         camera_manager::CameraManager,
-        shape_manager::FaceKey,
-        shape_manager::{CanvasShape, ShapeManager},
+        shape_manager::ShapeManager,
     },
 };
 

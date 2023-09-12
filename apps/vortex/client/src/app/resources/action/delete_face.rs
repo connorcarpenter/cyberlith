@@ -8,7 +8,8 @@ use render_api::{base::CpuMesh, Assets};
 
 use crate::app::resources::{
     action::ShapeAction,
-    shape_manager::{CanvasShape, ShapeManager},
+    shape_manager::ShapeManager,
+    shape_data::CanvasShape,
 };
 
 pub(crate) fn execute(world: &mut World, face_2d_entity: Entity) -> Vec<ShapeAction> {

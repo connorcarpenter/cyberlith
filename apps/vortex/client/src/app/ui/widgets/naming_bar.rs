@@ -12,8 +12,9 @@ use vortex_proto::components::ShapeName;
 
 use crate::app::{
     resources::{
+        shape_data::CanvasShape,
         canvas::Canvas,
-        shape_manager::{CanvasShape, ShapeManager},
+        shape_manager::ShapeManager,
         toolbar::{Toolbar, ToolbarKind},
     },
     ui::UiState,

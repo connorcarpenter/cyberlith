@@ -19,8 +19,8 @@ use crate::app::{
     resources::{
         action::{select_shape::deselect_all_selected_shapes, ActionStack, ShapeAction},
         camera_manager::CameraManager,
-        shape_manager::FaceKey,
-        shape_manager::{CanvasShape, ShapeManager},
+        shape_manager::ShapeManager,
+        shape_data::{CanvasShape, FaceKey},
     },
 };
 
