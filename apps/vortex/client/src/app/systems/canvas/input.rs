@@ -80,7 +80,7 @@ pub fn update_mouse_hover(
     if let Some(current_tab_entity) = tab_manager.current_tab_entity() {
         let current_tab_camera_state = &current_tab_state.camera_state;
 
-        shape_manager.update_mouse_hover(
+        shape_manager.sync_mouse_hover_ui(
             *current_tab_entity,
             input.mouse_position(),
             current_tab_camera_state,

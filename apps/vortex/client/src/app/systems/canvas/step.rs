@@ -22,6 +22,6 @@ pub fn update_camera(
     };
     let current_tab_camera_state = &current_tab_state.camera_state;
     if camera_manager.update_3d_camera(current_tab_camera_state, &mut camera_q) {
-        shape_manager.recalculate_shapes();
+        shape_manager.queue_resync_shapes();
     }
 }

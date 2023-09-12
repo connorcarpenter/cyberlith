@@ -96,7 +96,7 @@ pub fn update_select_line(
 
     let current_tab_camera_state = &current_tab_state.camera_state;
 
-    shape_manager.update_select_line(
+    shape_manager.sync_selection_ui(
         input.mouse_position(),
         &canvas,
         current_tab_camera_state,

@@ -182,7 +182,7 @@ pub(crate) fn execute(
                 );
                 action_stack.migrate_face_entities(old_face_2d_entity, new_face_2d_entity);
                 if create_face_3d {
-                    shape_manager.create_networked_face_inner(
+                    shape_manager.create_networked_face(
                         &mut commands,
                         &mut client,
                         &mut meshes,

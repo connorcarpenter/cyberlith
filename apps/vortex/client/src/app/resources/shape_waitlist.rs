@@ -509,7 +509,7 @@ impl ShapeWaitlist {
         }
 
         camera_manager.recalculate_3d_view();
-        shape_manager.recalculate_shapes();
+        shape_manager.queue_resync_shapes();
     }
 
     fn contains_key(&self, entity: &Entity) -> bool {

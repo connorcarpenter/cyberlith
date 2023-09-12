@@ -90,7 +90,7 @@ pub fn update_component_events(
             break;
         }
         if updated_shapes {
-            shape_manager.recalculate_shapes();
+            shape_manager.queue_resync_shapes();
         }
     }
 }
