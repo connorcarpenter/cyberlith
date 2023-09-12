@@ -41,7 +41,7 @@ impl ConstBitLength for SkipComponent {
 
 impl Serde for SerdeQuat {
     fn ser(&self, writer: &mut dyn BitWrite) {
-        let mut quat = self.0.normalize();
+        let quat = self.0.normalize();
 
         let components = [quat.x, quat.y, quat.z, quat.w];
         let mut biggest_value = f32::MIN;
@@ -93,7 +93,7 @@ impl Serde for SerdeQuat {
         let components = <[SignedInteger<{ Self::BITS }>; 3]>::de(reader)?;
 
         // turn components back into f32s
-        let mut components = components.map(|component| {
+        let components = components.map(|component| {
             let value: i128 = component.to();
             value as f32 / Self::MAX_SIZE
         });

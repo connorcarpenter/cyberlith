@@ -1,5 +1,3 @@
-pub use file_extension::*;
-pub use protocol::protocol;
 
 pub mod channels;
 pub mod components;
@@ -9,3 +7,8 @@ pub mod types;
 
 mod file_extension;
 mod protocol;
+
+pub use file_extension::*;
+pub use protocol::protocol;
+
+pub use math::SerdeQuat;
