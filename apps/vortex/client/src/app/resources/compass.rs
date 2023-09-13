@@ -1,28 +1,24 @@
-
 use bevy_ecs::{
     entity::Entity,
-    system::{Query, Commands, Resource},
+    system::{Commands, Query, Resource},
 };
 
 use math::{Vec2, Vec3};
 use render_api::{
-    components::Transform,
     base::{Color, CpuMaterial, CpuMesh},
+    components::Transform,
     Assets,
 };
+
 use vortex_proto::components::Vertex3d;
 
 use crate::app::{
     components::LocalShape,
     resources::{
-        camera_state::CameraState,
-        camera_manager::CameraManager,
-        shape_manager::ShapeManager
+        camera_manager::CameraManager, camera_state::CameraState, edge_manager::EdgeManager,
+        face_manager::FaceManager, vertex_manager::VertexManager,
     },
 };
-use crate::app::resources::edge_manager::EdgeManager;
-use crate::app::resources::face_manager::FaceManager;
-use crate::app::resources::vertex_manager::VertexManager;
 
 #[derive(Resource)]
 pub struct Compass {
@@ -125,9 +121,9 @@ impl Compass {
         const COMPASS_POS: Vec2 = Vec2::new(530.0, 300.0);
         let offset_2d = camera_state.camera_3d_offset().round()
             + Vec2::new(
-            unit_length * -1.0 * COMPASS_POS.x,
-            unit_length * COMPASS_POS.y,
-        );
+                unit_length * -1.0 * COMPASS_POS.x,
+                unit_length * COMPASS_POS.y,
+            );
         let offset_3d = (right * offset_2d.x) + (up * offset_2d.y);
 
         let vert_offset_3d = Vec3::ZERO + offset_3d;

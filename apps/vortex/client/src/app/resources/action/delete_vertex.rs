@@ -12,11 +12,11 @@ use crate::app::{
     components::{VertexEntry, VertexTypeData},
     resources::{
         action::{select_shape::select_shape, ShapeAction},
-        shape_manager::ShapeManager,
         edge_manager::EdgeManager,
         face_manager::FaceManager,
-        vertex_manager::VertexManager,
         shape_data::CanvasShape,
+        shape_manager::ShapeManager,
+        vertex_manager::VertexManager,
     },
 };
 
@@ -43,11 +43,11 @@ pub(crate) fn execute(
         mut client,
         mut shape_manager,
         mut vertex_manager,
-        mut edge_manager,
-        mut face_manager,
+        edge_manager,
+        face_manager,
         vertex_q,
         edge_3d_q,
-        file_type_q
+        file_type_q,
     ) = system_state.get_mut(world);
 
     let vertex_3d_entity = vertex_manager
@@ -243,13 +243,17 @@ fn handle_common_vertex_despawn(
     commands.entity(vertex_3d_entity).despawn();
 
     // cleanup mappings
-    vertex_manager.cleanup_deleted_vertex(commands, shape_manager,&vertex_3d_entity);
+    vertex_manager.cleanup_deleted_vertex(commands, shape_manager, &vertex_3d_entity);
 
     // select entities as needed
     if let Some((vertex_2d_to_select, vertex_type)) = vertex_2d_to_select_opt {
-        if let Some(vertex_3d_entity_to_request) =
-            select_shape(shape_manager, vertex_manager, edge_manager, face_manager,Some((vertex_2d_to_select, vertex_type)))
-        {
+        if let Some(vertex_3d_entity_to_request) = select_shape(
+            shape_manager,
+            vertex_manager,
+            edge_manager,
+            face_manager,
+            Some((vertex_2d_to_select, vertex_type)),
+        ) {
             //info!("request_entities({:?})", vertex_3d_entity_to_request);
             let mut entity_mut = commands.entity(vertex_3d_entity_to_request);
             if entity_mut.authority(client).is_some() {

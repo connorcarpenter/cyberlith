@@ -14,12 +14,10 @@ use render_api::{
 use vortex_proto::components::{EdgeAngle, Vertex3d};
 
 use crate::app::{
-    components::{LocalShape, Edge2dLocal, Edge3dLocal, FaceIcon2d, OwnedByFileLocal},
+    components::{Edge2dLocal, Edge3dLocal, FaceIcon2d, LocalShape, OwnedByFileLocal},
     resources::{
-        camera_manager::CameraManager, canvas::Canvas, shape_manager::ShapeManager,
-        tab_manager::TabManager, compass::Compass,
-        edge_manager::EdgeManager,
-        face_manager::FaceManager,
+        camera_manager::CameraManager, canvas::Canvas, compass::Compass, edge_manager::EdgeManager,
+        face_manager::FaceManager, shape_manager::ShapeManager, tab_manager::TabManager,
         vertex_manager::VertexManager,
     },
 };
@@ -85,7 +83,15 @@ pub fn process_faces(
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
 ) {
-    face_manager.process_new_faces(&mut commands, &camera_manager, &mut shape_manager, &mut vertex_manager, &mut edge_manager, &mut meshes, &mut materials);
+    face_manager.process_new_faces(
+        &mut commands,
+        &camera_manager,
+        &mut shape_manager,
+        &mut vertex_manager,
+        &mut edge_manager,
+        &mut meshes,
+        &mut materials,
+    );
 }
 
 pub fn update_select_line(

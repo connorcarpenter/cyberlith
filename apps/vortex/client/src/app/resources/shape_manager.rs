@@ -1,55 +1,46 @@
-use std::{collections::{HashMap, HashSet}, f32::consts::FRAC_PI_2};
+use std::f32::consts::FRAC_PI_2;
 
 use bevy_ecs::{
     entity::Entity,
     query::{With, Without},
-    system::{Commands, Query, Res, ResMut, Resource, SystemState},
-    world::World,
+    system::{Commands, Query, Resource},
 };
 use bevy_log::{info, warn};
 
-use naia_bevy_client::{Client, CommandsExt, Replicate, ReplicationConfig};
+use naia_bevy_client::{Client, CommandsExt};
 
 use input::MouseButton;
-use math::{convert_2d_to_3d, convert_3d_to_2d, Vec2, Vec3};
+use math::{convert_2d_to_3d, Vec2, Vec3};
 use render_api::{
-    base::{Color, CpuMaterial, CpuMesh},
-    components::{Camera, CameraProjection, Projection, RenderObjectBundle, Transform, Visibility},
+    components::{Camera, CameraProjection, Projection, Transform, Visibility},
     shapes::{
-        angle_between, normalize_angle, set_2d_line_transform_from_angle, distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform, HollowTriangle,
-        Triangle,
+        angle_between, distance_to_2d_line, get_2d_line_transform_endpoint, normalize_angle,
+        set_2d_line_transform,
     },
-    Assets, Handle,
 };
 
-use vortex_proto::components::{
-    EdgeAngle, Face3d, FileTypeValue, OwnedByFile, Vertex3d, VertexRoot,
-};
+use vortex_proto::components::{EdgeAngle, FileTypeValue, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::{
-        LocalShape, Edge2dLocal, Edge3dLocal, Face3dLocal, FaceIcon2d, OwnedByFileLocal, SelectCircle,
+        Edge2dLocal, Edge3dLocal, FaceIcon2d, LocalShape, OwnedByFileLocal, SelectCircle,
         SelectTriangle, Vertex2d, VertexTypeData,
     },
     resources::{
-        animation_manager::AnimationManager,
         action::{ActionStack, ShapeAction},
+        animation_manager::AnimationManager,
         camera_manager::{CameraAngle, CameraManager},
         camera_state::CameraState,
         canvas::Canvas,
         compass::Compass,
+        edge_manager::EdgeManager,
+        face_manager::FaceManager,
         input_manager::AppInputAction,
+        shape_data::CanvasShape,
         tab_manager::TabState,
-        shape_data::{Vertex3dData, CanvasShape, Edge3dData, FaceData, FaceKey},
-    },
-    set_3d_line_transform,
-    shapes::{
-        create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,
+        vertex_manager::VertexManager,
     },
 };
-use crate::app::resources::edge_manager::EdgeManager;
-use crate::app::resources::face_manager::FaceManager;
-use crate::app::resources::vertex_manager::VertexManager;
 
 #[derive(Resource)]
 pub struct ShapeManager {
@@ -90,7 +81,6 @@ impl Default for ShapeManager {
 }
 
 impl ShapeManager {
-
     pub fn update_input(
         &mut self,
 
@@ -154,7 +144,14 @@ impl ShapeManager {
                     self.handle_insert_key_press(&mut tab_state.action_stack);
                 }
                 AppInputAction::DeleteKeyPress => {
-                    self.handle_delete_key_press(commands, client, &mut tab_state.action_stack, &vertex_manager, &edge_manager, &face_manager);
+                    self.handle_delete_key_press(
+                        commands,
+                        client,
+                        &mut tab_state.action_stack,
+                        &vertex_manager,
+                        &edge_manager,
+                        &face_manager,
+                    );
                 }
                 AppInputAction::CameraAngleYawRotate(clockwise) => {
                     camera_manager.set_camera_angle_yaw_rotate(camera_state, *clockwise);
@@ -222,7 +219,7 @@ impl ShapeManager {
     pub fn queue_resync_shapes(&mut self) {
         self.resync_shapes = 2;
     }
-    
+
     pub fn sync_shapes(
         &mut self,
         camera_manager: &CameraManager,
@@ -260,12 +257,7 @@ impl ShapeManager {
 
         let camera_3d_scale = camera_state.camera_3d_scale();
 
-        compass.sync_compass(
-            &camera_3d,
-            camera_state,
-            vertex_3d_q,
-            &transform_q
-        );
+        compass.sync_compass(&camera_3d, camera_state, vertex_3d_q, &transform_q);
         vertex_manager.sync_vertices(
             &camera_3d,
             camera_3d_scale,
@@ -301,17 +293,14 @@ impl ShapeManager {
             current_tab_file_entity,
             camera_3d_scale,
         );
-        self.sync_hover_shape_scale(
-            transform_q,
-            camera_3d_scale,
-        );
+        self.sync_hover_shape_scale(transform_q, camera_3d_scale);
     }
 
     // HOVER
     pub fn queue_resync_hover_ui(&mut self) {
         self.resync_hover = true;
     }
-    
+
     pub(crate) fn sync_mouse_hover_ui(
         &mut self,
         current_tab_file_entity: Entity,
@@ -428,11 +417,11 @@ impl ShapeManager {
     pub fn selected_shape_2d(&self) -> Option<(Entity, CanvasShape)> {
         self.selected_shape
     }
-    
+
     pub fn queue_resync_selection_ui(&mut self) {
         self.resync_selection = true;
     }
-    
+
     pub(crate) fn sync_selection_ui(
         &mut self,
         mouse_position: &Vec2,
@@ -498,7 +487,9 @@ impl ShapeManager {
 
                 select_shape_visibilities[0].visible = true; // select circle is visible
                 select_shape_visibilities[1].visible = false; // no select triangle visible
-                select_shape_visibilities[2].visible = self.current_file_type != FileTypeValue::Anim && canvas.has_focus(); // select line is visible
+                select_shape_visibilities[2].visible =
+                    self.current_file_type != FileTypeValue::Anim && canvas.has_focus();
+                // select line is visible
             }
             Some((selected_edge_entity, CanvasShape::Edge)) => {
                 let selected_edge_transform = {
@@ -556,7 +547,12 @@ impl ShapeManager {
     }
 
     // SHAPES
-    pub(crate) fn has_shape_entity_3d(vertex_manager: &VertexManager, edge_manager: &EdgeManager, face_manager: &FaceManager, entity_3d: &Entity) -> bool {
+    pub(crate) fn has_shape_entity_3d(
+        vertex_manager: &VertexManager,
+        edge_manager: &EdgeManager,
+        face_manager: &FaceManager,
+        entity_3d: &Entity,
+    ) -> bool {
         face_manager.has_face_entity_3d(entity_3d)
             || edge_manager.has_edge_entity_3d(entity_3d)
             || vertex_manager.has_vertex_entity_3d(entity_3d)
@@ -570,7 +566,9 @@ impl ShapeManager {
         shape_type: CanvasShape,
     ) -> Option<Entity> {
         match shape_type {
-            CanvasShape::RootVertex | CanvasShape::Vertex => vertex_manager.vertex_entity_2d_to_3d(entity_2d),
+            CanvasShape::RootVertex | CanvasShape::Vertex => {
+                vertex_manager.vertex_entity_2d_to_3d(entity_2d)
+            }
             CanvasShape::Edge => {
                 let output = edge_manager.edge_entity_2d_to_3d(entity_2d);
                 info!("edge entity 2d `{:?}` to 3d: `{:?}`", entity_2d, output);
@@ -580,17 +578,31 @@ impl ShapeManager {
         }
     }
 
-    pub(crate) fn shape_entity_3d_to_2d(vertex_manager: &VertexManager, edge_manager: &EdgeManager, face_manager: &FaceManager, entity_3d: &Entity) -> Option<Entity> {
-        let shape_type = Self::shape_type_from_3d_entity(vertex_manager, edge_manager, face_manager, entity_3d).unwrap();
+    pub(crate) fn shape_entity_3d_to_2d(
+        vertex_manager: &VertexManager,
+        edge_manager: &EdgeManager,
+        face_manager: &FaceManager,
+        entity_3d: &Entity,
+    ) -> Option<Entity> {
+        let shape_type =
+            Self::shape_type_from_3d_entity(vertex_manager, edge_manager, face_manager, entity_3d)
+                .unwrap();
 
         match shape_type {
-            CanvasShape::RootVertex | CanvasShape::Vertex => vertex_manager.vertex_entity_3d_to_2d(entity_3d),
+            CanvasShape::RootVertex | CanvasShape::Vertex => {
+                vertex_manager.vertex_entity_3d_to_2d(entity_3d)
+            }
             CanvasShape::Edge => edge_manager.edge_entity_3d_to_2d(entity_3d),
             CanvasShape::Face => face_manager.face_entity_3d_to_2d(entity_3d),
         }
     }
 
-    fn shape_type_from_3d_entity(vertex_manager: &VertexManager, edge_manager: &EdgeManager, face_manager: &FaceManager, entity_3d: &Entity) -> Option<CanvasShape> {
+    fn shape_type_from_3d_entity(
+        vertex_manager: &VertexManager,
+        edge_manager: &EdgeManager,
+        face_manager: &FaceManager,
+        entity_3d: &Entity,
+    ) -> Option<CanvasShape> {
         if vertex_manager.has_vertex_entity_3d(entity_3d) {
             Some(CanvasShape::Vertex)
         } else if edge_manager.has_edge_entity_3d(entity_3d) {
@@ -607,7 +619,12 @@ impl ShapeManager {
         self.current_file_type = file_type;
     }
 
-    pub(crate) fn on_canvas_focus_changed(&mut self, vertex_manager: &mut VertexManager, edge_manager: &mut EdgeManager, new_focus: bool) {
+    pub(crate) fn on_canvas_focus_changed(
+        &mut self,
+        vertex_manager: &mut VertexManager,
+        edge_manager: &mut EdgeManager,
+        new_focus: bool,
+    ) {
         self.queue_resync_selection_ui();
         if !new_focus {
             vertex_manager.last_vertex_dragged = None;
@@ -655,7 +672,9 @@ impl ShapeManager {
         match self.selected_shape {
             Some((vertex_2d_entity, CanvasShape::Vertex)) => {
                 // delete vertex
-                let vertex_3d_entity = vertex_manager.vertex_entity_2d_to_3d(&vertex_2d_entity).unwrap();
+                let vertex_3d_entity = vertex_manager
+                    .vertex_entity_2d_to_3d(&vertex_2d_entity)
+                    .unwrap();
 
                 // check whether we can delete vertex
                 let auth_status = commands.entity(vertex_3d_entity).authority(client).unwrap();
@@ -792,7 +811,11 @@ impl ShapeManager {
 
                         // check if edge already exists
                         if edge_manager
-                            .edge_2d_entity_from_vertices(vertex_manager, vertex_2d_entity_a, vertex_2d_entity_b)
+                            .edge_2d_entity_from_vertices(
+                                vertex_manager,
+                                vertex_2d_entity_a,
+                                vertex_2d_entity_b,
+                            )
                             .is_some()
                         {
                             // select edge
@@ -985,7 +1008,9 @@ impl ShapeManager {
                             // set networked 3d vertex position
                             let mut vertex_3d = vertex_3d_q.get_mut(vertex_3d_entity).unwrap();
 
-                            if let Some((_, old_3d_position, _)) = vertex_manager.last_vertex_dragged {
+                            if let Some((_, old_3d_position, _)) =
+                                vertex_manager.last_vertex_dragged
+                            {
                                 vertex_manager.last_vertex_dragged =
                                     Some((vertex_2d_entity, old_3d_position, new_3d_position));
                             } else {

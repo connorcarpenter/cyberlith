@@ -7,7 +7,7 @@ use bevy_log::info;
 use vortex_proto::components::EdgeAngle;
 
 use crate::app::resources::{
-    action::ShapeAction, camera_manager::CameraManager, edge_manager::EdgeManager
+    action::ShapeAction, camera_manager::CameraManager, edge_manager::EdgeManager,
 };
 
 pub(crate) fn execute(

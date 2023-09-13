@@ -7,6 +7,7 @@ use bevy_log::info;
 use naia_bevy_client::Client;
 
 use render_api::components::Visibility;
+
 use vortex_proto::components::{
     ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
 };
@@ -21,15 +22,15 @@ use crate::app::{
         action::FileAction,
         camera_manager::CameraManager,
         canvas::Canvas,
+        edge_manager::EdgeManager,
         file_manager::FileManager,
         file_tree::FileTree,
         shape_manager::ShapeManager,
         tab_manager::TabManager,
         toolbar::Toolbar,
+        vertex_manager::VertexManager,
     },
 };
-use crate::app::resources::edge_manager::EdgeManager;
-use crate::app::resources::vertex_manager::VertexManager;
 
 pub(crate) fn execute(
     world: &mut World,

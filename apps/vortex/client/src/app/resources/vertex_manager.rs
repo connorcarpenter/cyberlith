@@ -1,53 +1,35 @@
-use std::{collections::{HashMap, HashSet}, f32::consts::FRAC_PI_2};
+use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{
     entity::Entity,
-    query::{With, Without},
-    system::{Commands, Query, Res, ResMut, Resource, SystemState},
-    world::World,
+    system::{Commands, Query, Resource},
 };
 use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt, Replicate, ReplicationConfig};
 
-use input::MouseButton;
-use math::{convert_2d_to_3d, convert_3d_to_2d, Vec2, Vec3};
+use math::{convert_3d_to_2d, Vec2, Vec3};
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
-    components::{Camera, CameraProjection, Projection, RenderObjectBundle, Transform, Visibility},
-    shapes::{
-        angle_between, normalize_angle, set_2d_line_transform_from_angle, distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform, HollowTriangle,
-        Triangle,
-    },
+    components::{Camera, CameraProjection, Projection, RenderObjectBundle, Transform},
     Assets, Handle,
 };
 
-use vortex_proto::components::{EdgeAngle, Face3d, FileType, FileTypeValue, OwnedByFile, Vertex3d, VertexRoot};
+use vortex_proto::components::{
+    Face3d, FileType, FileTypeValue, OwnedByFile, Vertex3d, VertexRoot,
+};
 
 use crate::app::{
-    components::{
-        LocalShape, Edge2dLocal, Edge3dLocal, Face3dLocal, FaceIcon2d, OwnedByFileLocal, SelectCircle,
-        SelectTriangle, Vertex2d, VertexTypeData, VertexEntry
-    },
+    components::{Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d, VertexEntry},
     resources::{
-        edge_manager::EdgeManager,
-        shape_manager::ShapeManager,
-        animation_manager::AnimationManager,
         action::{ActionStack, ShapeAction},
-        camera_manager::{CameraAngle, CameraManager},
-        camera_state::CameraState,
-        canvas::Canvas,
-        compass::Compass,
-        input_manager::AppInputAction,
-        tab_manager::TabState,
-        shape_data::{Vertex3dData, CanvasShape, Edge3dData, FaceData, FaceKey},
-    },
-    set_3d_line_transform,
-    shapes::{
-        create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,
+        camera_manager::CameraManager,
+        edge_manager::EdgeManager,
+        face_manager::FaceManager,
+        shape_data::{CanvasShape, FaceKey, Vertex3dData},
+        shape_manager::ShapeManager,
     },
 };
-use crate::app::resources::face_manager::FaceManager;
 
 #[derive(Resource)]
 pub struct VertexManager {
@@ -70,7 +52,6 @@ impl Default for VertexManager {
 }
 
 impl VertexManager {
-
     pub fn sync_vertices(
         &self,
         camera_3d_entity: &Entity,
@@ -217,17 +198,18 @@ impl VertexManager {
             let old_child_vertex_2d_entity = child.entity_2d();
             let edge_angle = child.edge_angle();
 
-            let (new_child_vertex_2d_entity, new_child_vertex_3d_entity) = self.create_networked_vertex(
-                commands,
-                client,
-                camera_manager,
-                meshes,
-                materials,
-                position,
-                file_entity,
-                FileTypeValue::Skel,
-                entities_to_release,
-            );
+            let (new_child_vertex_2d_entity, new_child_vertex_3d_entity) = self
+                .create_networked_vertex(
+                    commands,
+                    client,
+                    camera_manager,
+                    meshes,
+                    materials,
+                    position,
+                    file_entity,
+                    FileTypeValue::Skel,
+                    entities_to_release,
+                );
             action_stack.migrate_vertex_entities(
                 old_child_vertex_2d_entity,
                 new_child_vertex_2d_entity,
@@ -528,7 +510,11 @@ impl VertexManager {
         return None;
     }
 
-    pub(crate) fn get_connected_vertices(&self, edge_manager: &EdgeManager, vertex_3d_entity: Entity) -> HashSet<Entity> {
+    pub(crate) fn get_connected_vertices(
+        &self,
+        edge_manager: &EdgeManager,
+        vertex_3d_entity: Entity,
+    ) -> HashSet<Entity> {
         let mut set = HashSet::new();
 
         let Some(vertex_data) = self.vertices_3d.get(&vertex_3d_entity) else {

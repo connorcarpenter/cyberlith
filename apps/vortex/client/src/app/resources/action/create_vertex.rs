@@ -4,7 +4,7 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
+use naia_bevy_client::{Client, CommandsExt};
 
 use math::Vec3;
 use render_api::{
@@ -12,20 +12,17 @@ use render_api::{
     components::Transform,
     Assets,
 };
-use vortex_proto::components::{FileType, FileTypeValue, OwnedByFile, Vertex3d};
+use vortex_proto::components::FileTypeValue;
 
 use crate::app::{
-    components::{Vertex2d, VertexEntry, VertexTypeData},
+    components::VertexTypeData,
     resources::{
-        shape_data::{CanvasShape, FaceKey},
-        action::{
-            select_shape::deselect_all_selected_shapes,
-            ActionStack, ShapeAction,
-        },
+        action::{select_shape::deselect_all_selected_shapes, ActionStack, ShapeAction},
         camera_manager::CameraManager,
-        shape_manager::ShapeManager,
         edge_manager::EdgeManager,
         face_manager::FaceManager,
+        shape_data::{CanvasShape, FaceKey},
+        shape_manager::ShapeManager,
         vertex_manager::VertexManager,
     },
 };
@@ -81,8 +78,12 @@ pub(crate) fn execute(
     ) = system_state.get_mut(world);
 
     // deselect all selected vertices
-    let (deselected_vertex_2d_entity, vertex_3d_entity_to_release) =
-        deselect_all_selected_shapes(&mut shape_manager, &vertex_manager, &edge_manager, &face_manager);
+    let (deselected_vertex_2d_entity, vertex_3d_entity_to_release) = deselect_all_selected_shapes(
+        &mut shape_manager,
+        &vertex_manager,
+        &edge_manager,
+        &face_manager,
+    );
     deselected_vertex_2d_entity_store = deselected_vertex_2d_entity;
     if let Some(entity) = vertex_3d_entity_to_release {
         let mut entity_mut = commands.entity(entity);

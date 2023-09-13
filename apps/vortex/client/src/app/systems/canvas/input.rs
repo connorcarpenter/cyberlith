@@ -8,17 +8,15 @@ use naia_bevy_client::Client;
 
 use input::Input;
 use render_api::components::{Camera, Projection, Transform};
+
 use vortex_proto::components::{EdgeAngle, Vertex3d, VertexRoot};
 
 use crate::app::{
-    components::{LocalShape, Edge2dLocal, FaceIcon2d, OwnedByFileLocal, Vertex2d},
+    components::{Edge2dLocal, FaceIcon2d, LocalShape, OwnedByFileLocal, Vertex2d},
     resources::{
-        animation_manager::AnimationManager,
-        camera_manager::CameraManager, canvas::Canvas, input_manager::InputManager,
-        shape_manager::ShapeManager, tab_manager::TabManager,
-        vertex_manager::VertexManager,
-        edge_manager::EdgeManager,
-        face_manager::FaceManager,
+        animation_manager::AnimationManager, camera_manager::CameraManager, canvas::Canvas,
+        edge_manager::EdgeManager, face_manager::FaceManager, input_manager::InputManager,
+        shape_manager::ShapeManager, tab_manager::TabManager, vertex_manager::VertexManager,
     },
 };
 

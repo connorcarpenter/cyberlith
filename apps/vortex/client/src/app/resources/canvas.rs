@@ -3,10 +3,10 @@ use bevy_ecs::system::Resource;
 use math::Vec2;
 
 use render_api::{base::CpuTexture2D, Handle};
-use crate::app::resources::edge_manager::EdgeManager;
 
-use crate::app::resources::shape_manager::ShapeManager;
-use crate::app::resources::vertex_manager::VertexManager;
+use crate::app::resources::{
+    edge_manager::EdgeManager, shape_manager::ShapeManager, vertex_manager::VertexManager,
+};
 
 #[derive(Resource)]
 pub struct Canvas {
@@ -66,7 +66,13 @@ impl Canvas {
         self.has_focus
     }
 
-    pub fn set_focus(&mut self, shape_manager: &mut ShapeManager, vertex_manager: &mut VertexManager, edge_manager: &mut EdgeManager, focus: bool) {
+    pub fn set_focus(
+        &mut self,
+        shape_manager: &mut ShapeManager,
+        vertex_manager: &mut VertexManager,
+        edge_manager: &mut EdgeManager,
+        focus: bool,
+    ) {
         if !focus && self.has_focus && self.focus_timer > 0 {
             self.focus_timer -= 1;
             return;
@@ -76,7 +82,12 @@ impl Canvas {
         shape_manager.on_canvas_focus_changed(vertex_manager, edge_manager, focus);
     }
 
-    pub fn set_focused_timed(&mut self, shape_manager: &mut ShapeManager, vertex_manager: &mut VertexManager, edge_manager: &mut EdgeManager) {
+    pub fn set_focused_timed(
+        &mut self,
+        shape_manager: &mut ShapeManager,
+        vertex_manager: &mut VertexManager,
+        edge_manager: &mut EdgeManager,
+    ) {
         self.has_focus = true;
         self.focus_timer = 1;
 

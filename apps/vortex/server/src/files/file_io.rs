@@ -10,7 +10,7 @@ use vortex_proto::{
 };
 
 use crate::{
-    files::{AnimWriter, AnimReader, MeshReader, MeshWriter, SkelReader, SkelWriter},
+    files::{AnimReader, AnimWriter, MeshReader, MeshWriter, SkelReader, SkelWriter},
     resources::{ContentEntityData, ShapeManager},
 };
 
@@ -124,9 +124,7 @@ pub fn load_content_entities(
         FileReadOutput::Mesh(shape_entities) => {
             MeshReader::post_process_entities(shape_manager, shape_entities)
         }
-        FileReadOutput::Anim => {
-            AnimReader::post_process_entities()
-        }
+        FileReadOutput::Anim => AnimReader::post_process_entities(),
     };
 
     post_process_loaded_networked_entities(

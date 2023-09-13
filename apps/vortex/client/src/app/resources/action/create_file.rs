@@ -29,16 +29,16 @@ use crate::app::{
         },
         camera_manager::CameraManager,
         canvas::Canvas,
+        edge_manager::EdgeManager,
         file_manager::FileManager,
         file_tree::FileTree,
         shape_manager::ShapeManager,
         tab_manager::TabManager,
         toolbar::Toolbar,
+        vertex_manager::VertexManager,
     },
     systems::file_post_process,
 };
-use crate::app::resources::edge_manager::EdgeManager;
-use crate::app::resources::vertex_manager::VertexManager;
 
 pub(crate) fn execute(
     world: &mut World,

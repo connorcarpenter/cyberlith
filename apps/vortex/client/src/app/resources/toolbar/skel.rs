@@ -5,10 +5,8 @@ use render_egui::egui::Ui;
 
 use crate::app::{
     resources::{
-        shape_manager::ShapeManager,
+        edge_manager::EdgeManager, shape_data::CanvasShape, shape_manager::ShapeManager,
         toolbar::Toolbar,
-        shape_data::CanvasShape,
-        edge_manager::EdgeManager,
     },
     ui::widgets::naming_bar_visibility_toggle,
 };
@@ -42,7 +40,8 @@ impl SkeletonToolbar {
             // toggle edge angle visibility
             let response = Toolbar::button(ui, "📐", "Toggle edge angle visibility", true);
             if response.clicked() {
-                let mut system_state: SystemState<(ResMut<ShapeManager>, ResMut<EdgeManager>)> = SystemState::new(world);
+                let mut system_state: SystemState<(ResMut<ShapeManager>, ResMut<EdgeManager>)> =
+                    SystemState::new(world);
                 let (mut shape_manager, mut edge_manager) = system_state.get_mut(world);
 
                 edge_manager.edge_angle_visibility_toggle(&mut shape_manager);

@@ -5,9 +5,7 @@ use bevy_ecs::{
     prelude::{Commands, World},
 };
 
-use naia_bevy_server::{
-    BitReader, Serde, SerdeErr, Server,
-};
+use naia_bevy_server::{BitReader, Serde, SerdeErr, Server};
 use vortex_proto::SerdeQuat;
 
 use crate::{
@@ -21,7 +19,7 @@ enum AnimAction {
     // shape name -> shape_index
     ShapeIndex(String, u32),
     // shape_index -> rotation
-    Frame(HashMap<u32, SerdeQuat>, Transition)
+    Frame(HashMap<u32, SerdeQuat>, Transition),
 }
 
 #[derive(Serde, Clone, PartialEq)]

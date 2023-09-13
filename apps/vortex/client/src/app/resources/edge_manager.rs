@@ -1,57 +1,43 @@
-use std::{collections::{HashMap, HashSet}, f32::consts::FRAC_PI_2};
+use std::{collections::HashMap, f32::consts::FRAC_PI_2};
 
 use bevy_ecs::{
     entity::Entity,
-    query::{With, Without},
-    system::{Commands, Query, Res, ResMut, Resource, SystemState},
-    world::World,
+    system::{Commands, Query, Resource},
 };
 use bevy_log::{info, warn};
 
-use naia_bevy_client::{Client, CommandsExt, Replicate, ReplicationConfig};
+use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
-use input::MouseButton;
-use math::{convert_2d_to_3d, convert_3d_to_2d, Vec2, Vec3};
+use math::{Vec2, Vec3};
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
-    components::{Camera, CameraProjection, Projection, RenderObjectBundle, Transform, Visibility},
+    components::{RenderObjectBundle, Transform, Visibility},
     shapes::{
-        angle_between, normalize_angle, set_2d_line_transform_from_angle, distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform, HollowTriangle,
-        Triangle,
+        angle_between, get_2d_line_transform_endpoint, set_2d_line_transform,
+        set_2d_line_transform_from_angle,
     },
-    Assets, Handle,
+    Assets,
 };
 
-use vortex_proto::components::{Edge3d, EdgeAngle, Face3d, FileType, FileTypeValue, OwnedByFile, Vertex3d, VertexRoot};
+use vortex_proto::components::{Edge3d, EdgeAngle, FileType, FileTypeValue, OwnedByFile};
 
 use crate::app::{
-    components::{
-        LocalShape, Edge2dLocal, Edge3dLocal, Face3dLocal, FaceIcon2d, OwnedByFileLocal, SelectCircle,
-        SelectTriangle, Vertex2d, VertexTypeData,
-    },
+    components::{Edge2dLocal, Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d},
     resources::{
+        camera_manager::CameraManager,
+        face_manager::FaceManager,
+        shape_data::{CanvasShape, Edge3dData, FaceKey},
         shape_manager::ShapeManager,
-        animation_manager::AnimationManager,
-        action::{ActionStack, ShapeAction},
-        camera_manager::{CameraAngle, CameraManager},
-        camera_state::CameraState,
-        canvas::Canvas,
-        compass::Compass,
-        input_manager::AppInputAction,
-        tab_manager::TabState,
-        shape_data::{Vertex3dData, CanvasShape, Edge3dData, FaceData, FaceKey},
+        vertex_manager::VertexManager,
     },
     set_3d_line_transform,
     shapes::{
         create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,
     },
 };
-use crate::app::resources::face_manager::FaceManager;
-use crate::app::resources::vertex_manager::VertexManager;
 
 #[derive(Resource)]
 pub struct EdgeManager {
-
     // 3d edge entity -> 3d edge data
     pub(crate) edges_3d: HashMap<Entity, Edge3dData>,
     // 2d edge entity -> 3d edge entity
@@ -74,7 +60,6 @@ impl Default for EdgeManager {
 }
 
 impl EdgeManager {
-
     pub fn sync_2d_edges(
         vertex_manager: &VertexManager,
         edge_2d_q: &Query<(Entity, &Edge2dLocal)>,
@@ -93,8 +78,11 @@ impl EdgeManager {
             };
 
             // check if vertex is owned by the current tab
-            if !ShapeManager::is_owned_by_tab_or_unowned(current_tab_file_entity, owned_by_q, end_3d_entity)
-            {
+            if !ShapeManager::is_owned_by_tab_or_unowned(
+                current_tab_file_entity,
+                owned_by_q,
+                end_3d_entity,
+            ) {
                 continue;
             }
 
@@ -144,15 +132,21 @@ impl EdgeManager {
         current_tab_file_entity: Entity,
         camera_3d_scale: f32,
     ) {
-        let edge_angle_base_circle_scale = Edge2dLocal::EDGE_ANGLE_BASE_CIRCLE_RADIUS * camera_3d_scale;
-        let edge_angle_end_circle_scale = Edge2dLocal::EDGE_ANGLE_END_CIRCLE_RADIUS * camera_3d_scale;
+        let edge_angle_base_circle_scale =
+            Edge2dLocal::EDGE_ANGLE_BASE_CIRCLE_RADIUS * camera_3d_scale;
+        let edge_angle_end_circle_scale =
+            Edge2dLocal::EDGE_ANGLE_END_CIRCLE_RADIUS * camera_3d_scale;
         let edge_angle_length = Edge2dLocal::EDGE_ANGLE_LENGTH * camera_3d_scale;
         let edge_angle_thickness = Edge2dLocal::EDGE_ANGLE_THICKNESS * camera_3d_scale;
         let compass_edge_3d_scale = LocalShape::EDGE_THICKNESS / camera_3d_scale;
 
         for (edge_entity, edge_endpoints, edge_angle_opt) in edge_3d_q.iter() {
             // check if vertex is owned by the current tab
-            if !ShapeManager::is_owned_by_tab_or_unowned(current_tab_file_entity, owned_by_q, edge_entity) {
+            if !ShapeManager::is_owned_by_tab_or_unowned(
+                current_tab_file_entity,
+                owned_by_q,
+                edge_entity,
+            ) {
                 continue;
             }
 
@@ -508,7 +502,13 @@ impl EdgeManager {
         self.edges_2d.insert(edge_2d_entity, edge_3d_entity);
 
         if let Some(file_entity) = ownership_opt {
-            face_manager.check_for_new_faces(vertex_manager, &self, vertex_a_3d_entity, vertex_b_3d_entity, file_entity);
+            face_manager.check_for_new_faces(
+                vertex_manager,
+                &self,
+                vertex_a_3d_entity,
+                vertex_b_3d_entity,
+                file_entity,
+            );
         }
     }
 
@@ -533,7 +533,13 @@ impl EdgeManager {
                 .copied()
                 .collect();
             for face_3d_key in face_3d_keys {
-                let face_2d_entity = face_manager.cleanup_deleted_face_key(commands, shape_manager, vertex_manager, self, &face_3d_key);
+                let face_2d_entity = face_manager.cleanup_deleted_face_key(
+                    commands,
+                    shape_manager,
+                    vertex_manager,
+                    self,
+                    &face_3d_key,
+                );
                 deleted_face_2d_entities.push(face_2d_entity);
             }
         }
@@ -588,7 +594,11 @@ impl EdgeManager {
     }
 
     // returns 2d edge entity
-    fn unregister_3d_edge(&mut self, vertex_manager: &mut VertexManager, edge_3d_entity: &Entity) -> Option<Entity> {
+    fn unregister_3d_edge(
+        &mut self,
+        vertex_manager: &mut VertexManager,
+        edge_3d_entity: &Entity,
+    ) -> Option<Entity> {
         if let Some(entity_3d_data) = self.edges_3d.remove(edge_3d_entity) {
             let edge_2d_entity = entity_3d_data.entity_2d;
 
@@ -604,7 +614,8 @@ impl EdgeManager {
                 entity_3d_data.vertex_a_3d_entity,
                 entity_3d_data.vertex_b_3d_entity,
             ] {
-                if let Some(vertex_3d_data) = vertex_manager.vertices_3d.get_mut(&vertex_3d_entity) {
+                if let Some(vertex_3d_data) = vertex_manager.vertices_3d.get_mut(&vertex_3d_entity)
+                {
                     vertex_3d_data.remove_edge(edge_3d_entity);
                 }
             }

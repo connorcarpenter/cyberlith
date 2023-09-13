@@ -15,10 +15,9 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::EdgeAngle;
 use vortex_proto::components::{
-    ChangelistEntry, ChangelistStatus, Edge3d, EntryKind, Face3d, FileSystemChild, FileSystemEntry,
-    FileSystemRootChild, FileType, OwnedByFile, Vertex3d, VertexRoot,
+    ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind, Face3d, FileSystemChild,
+    FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, Vertex3d, VertexRoot,
 };
 
 use crate::app::{
@@ -28,15 +27,15 @@ use crate::app::{
     events::InsertComponentEvent,
     resources::{
         camera_manager::CameraManager,
+        edge_manager::EdgeManager,
+        face_manager::FaceManager,
         file_manager::{get_full_path, FileManager},
         shape_manager::ShapeManager,
         shape_waitlist::{ShapeWaitlist, ShapeWaitlistInsert},
+        vertex_manager::VertexManager,
     },
     systems::file_post_process,
 };
-use crate::app::resources::edge_manager::EdgeManager;
-use crate::app::resources::face_manager::FaceManager;
-use crate::app::resources::vertex_manager::VertexManager;
 
 pub fn insert_component_events(
     mut event_reader: EventReader<InsertComponentEvents>,

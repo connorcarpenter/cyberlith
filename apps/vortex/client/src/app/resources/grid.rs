@@ -1,8 +1,4 @@
-
-use bevy_ecs::{
-    entity::Entity,
-    system::Commands,
-};
+use bevy_ecs::{entity::Entity, system::Commands};
 
 use math::Vec3;
 use render_api::{
@@ -13,12 +9,10 @@ use render_api::{
 use crate::app::{
     components::LocalShape,
     resources::{
-        camera_manager::CameraManager,
+        camera_manager::CameraManager, edge_manager::EdgeManager, face_manager::FaceManager,
         vertex_manager::VertexManager,
     },
 };
-use crate::app::resources::edge_manager::EdgeManager;
-use crate::app::resources::face_manager::FaceManager;
 
 pub struct Grid;
 

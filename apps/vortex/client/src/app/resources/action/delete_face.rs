@@ -7,9 +7,7 @@ use bevy_log::info;
 use render_api::{base::CpuMesh, Assets};
 
 use crate::app::resources::{
-    action::ShapeAction,
-    shape_data::CanvasShape,
-    face_manager::FaceManager,
+    action::ShapeAction, face_manager::FaceManager, shape_data::CanvasShape,
 };
 
 pub(crate) fn execute(world: &mut World, face_2d_entity: Entity) -> Vec<ShapeAction> {

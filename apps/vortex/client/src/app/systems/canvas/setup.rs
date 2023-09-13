@@ -15,9 +15,11 @@ use render_egui::EguiUserTextures;
 use crate::app::{
     components::{SelectCircle, SelectLine, SelectTriangle, Vertex2d},
     config::AppConfig,
-    resources::{grid::Grid, camera_manager::CameraManager, canvas::Canvas, shape_manager::ShapeManager, compass::Compass, edge_manager::EdgeManager,
-                face_manager::FaceManager,
-                vertex_manager::VertexManager},
+    resources::{
+        camera_manager::CameraManager, canvas::Canvas, compass::Compass, edge_manager::EdgeManager,
+        face_manager::FaceManager, grid::Grid, shape_manager::ShapeManager,
+        vertex_manager::VertexManager,
+    },
     shapes::create_2d_edge_line,
 };
 

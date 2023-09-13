@@ -14,15 +14,13 @@ use render_api::{
 };
 use vortex_proto::{components::FileTypeValue, resources::DependencyMap};
 
-use crate::app::{
-    components::{OwnedByFileLocal, Vertex2d},
-    resources::{
-        camera_manager::CameraManager, shape_manager::ShapeManager, shape_data::FaceKey
-    },
-};
 use crate::app::resources::edge_manager::EdgeManager;
 use crate::app::resources::face_manager::FaceManager;
 use crate::app::resources::vertex_manager::VertexManager;
+use crate::app::{
+    components::{OwnedByFileLocal, Vertex2d},
+    resources::{camera_manager::CameraManager, shape_data::FaceKey, shape_manager::ShapeManager},
+};
 
 pub enum ShapeWaitlistInsert {
     Vertex,

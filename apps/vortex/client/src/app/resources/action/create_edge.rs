@@ -4,7 +4,7 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
+use naia_bevy_client::{Client, CommandsExt};
 
 use render_api::{
     base::{CpuMaterial, CpuMesh},
@@ -12,20 +12,17 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{Edge3d, EdgeAngle, FileType, FileTypeValue, OwnedByFile};
+use vortex_proto::components::FileTypeValue;
 
-use crate::app::{
-    components::Vertex2d,
-    resources::{
-        face_manager::FaceManager,
-        vertex_manager::VertexManager,
-        action::{select_shape::deselect_all_selected_shapes, ActionStack, ShapeAction},
-        camera_manager::CameraManager,
-        shape_manager::ShapeManager,
-        shape_data::{CanvasShape, FaceKey},
-    },
+use crate::app::resources::{
+    action::{select_shape::deselect_all_selected_shapes, ActionStack, ShapeAction},
+    camera_manager::CameraManager,
+    edge_manager::EdgeManager,
+    face_manager::FaceManager,
+    shape_data::{CanvasShape, FaceKey},
+    shape_manager::ShapeManager,
+    vertex_manager::VertexManager,
 };
-use crate::app::resources::edge_manager::EdgeManager;
 
 pub(crate) fn execute(
     world: &mut World,
@@ -75,8 +72,12 @@ pub(crate) fn execute(
         ) = system_state.get_mut(world);
 
         // deselect all selected vertices
-        let (deselected_shape_2d_entity, shape_3d_entity_to_release) =
-            deselect_all_selected_shapes(&mut shape_manager, &vertex_manager, &edge_manager, &face_manager);
+        let (deselected_shape_2d_entity, shape_3d_entity_to_release) = deselect_all_selected_shapes(
+            &mut shape_manager,
+            &vertex_manager,
+            &edge_manager,
+            &face_manager,
+        );
         deselected_shape_2d_entity_store = deselected_shape_2d_entity;
         if let Some(entity) = shape_3d_entity_to_release {
             let mut entity_mut = commands.entity(entity);
@@ -122,8 +123,14 @@ pub(crate) fn execute(
 
         // select vertex
         shape_manager.select_shape(&shape_2d_entity_to_select, shape_2d_type_to_select);
-        selected_shape_3d = ShapeManager::shape_entity_2d_to_3d(&vertex_manager, &edge_manager, &face_manager, &shape_2d_entity_to_select, shape_2d_type_to_select)
-            .unwrap();
+        selected_shape_3d = ShapeManager::shape_entity_2d_to_3d(
+            &vertex_manager,
+            &edge_manager,
+            &face_manager,
+            &shape_2d_entity_to_select,
+            shape_2d_type_to_select,
+        )
+        .unwrap();
 
         system_state.apply(world);
     }

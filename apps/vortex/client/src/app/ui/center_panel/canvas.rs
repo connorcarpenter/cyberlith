@@ -16,13 +16,13 @@ use render_egui::{
     EguiUserTextures,
 };
 
-use crate::app::resources::shape_manager::ShapeManager;
 use crate::app::{
-    resources::{camera_manager::CameraManager, canvas::Canvas},
+    resources::{
+        camera_manager::CameraManager, canvas::Canvas, edge_manager::EdgeManager,
+        shape_manager::ShapeManager, vertex_manager::VertexManager,
+    },
     ui::UiState,
 };
-use crate::app::resources::edge_manager::EdgeManager;
-use crate::app::resources::vertex_manager::VertexManager;
 
 pub fn render_canvas(ui: &mut Ui, world: &mut World) {
     egui::CentralPanel::default() // canvas area
@@ -112,10 +112,20 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
 
                         if canvas_response.clicked() || canvas_response.dragged() {
                             canvas_response.request_focus();
-                            canvas.set_focus(&mut shape_manager, &mut vertex_manager, &mut edge_manager,true);
+                            canvas.set_focus(
+                                &mut shape_manager,
+                                &mut vertex_manager,
+                                &mut edge_manager,
+                                true,
+                            );
                         } else if canvas_response.clicked_elsewhere() {
                             canvas_response.surrender_focus();
-                            canvas.set_focus(&mut shape_manager, &mut vertex_manager, &mut edge_manager,false);
+                            canvas.set_focus(
+                                &mut shape_manager,
+                                &mut vertex_manager,
+                                &mut edge_manager,
+                                false,
+                            );
                         }
 
                         let has_focus = canvas.has_focus();

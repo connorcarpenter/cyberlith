@@ -9,11 +9,10 @@ use crate::app::{
             create_edge, create_vertex, delete_edge, delete_face, delete_vertex, move_vertex,
             rotate_edge, select_shape, Action, ActionStack,
         },
-        shape_manager::ShapeManager,
         shape_data::CanvasShape,
+        vertex_manager::VertexManager,
     },
 };
-use crate::app::resources::vertex_manager::VertexManager;
 
 #[derive(Clone)]
 pub enum ShapeAction {

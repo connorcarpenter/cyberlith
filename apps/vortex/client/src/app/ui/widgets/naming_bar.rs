@@ -1,7 +1,7 @@
 use bevy_ecs::{
     entity::Entity,
     system::{Commands, Query, Res, ResMut, Resource, SystemState},
-    world::{Mut, World},
+    world::World,
 };
 
 use render_egui::{
@@ -12,16 +12,16 @@ use vortex_proto::components::ShapeName;
 
 use crate::app::{
     resources::{
-        shape_data::CanvasShape,
         canvas::Canvas,
+        edge_manager::EdgeManager,
+        face_manager::FaceManager,
+        shape_data::CanvasShape,
         shape_manager::ShapeManager,
         toolbar::{Toolbar, ToolbarKind},
+        vertex_manager::VertexManager,
     },
     ui::UiState,
 };
-use crate::app::resources::edge_manager::EdgeManager;
-use crate::app::resources::face_manager::FaceManager;
-use crate::app::resources::vertex_manager::VertexManager;
 
 #[derive(Resource)]
 pub struct NamingBarState {
@@ -59,11 +59,18 @@ pub fn render_naming_bar(ui: &mut Ui, world: &mut World) {
                         Res<FaceManager>,
                         Query<&ShapeName>,
                     )> = SystemState::new(world);
-                    let (mut state, vertex_manager, edge_manager, face_manager, shape_name_q) = system_state.get_mut(world);
+                    let (mut state, vertex_manager, edge_manager, face_manager, shape_name_q) =
+                        system_state.get_mut(world);
 
                     let official_name = if let Some((shape_2d_entity, shape)) = selected_shape_2d {
-                        let shape_3d_entity = ShapeManager::shape_entity_2d_to_3d(&vertex_manager, &edge_manager, &face_manager,&shape_2d_entity, shape)
-                            .unwrap();
+                        let shape_3d_entity = ShapeManager::shape_entity_2d_to_3d(
+                            &vertex_manager,
+                            &edge_manager,
+                            &face_manager,
+                            &shape_2d_entity,
+                            shape,
+                        )
+                        .unwrap();
 
                         if let Ok(shape_name) = shape_name_q.get(shape_3d_entity) {
                             (*shape_name.value).clone()
@@ -112,8 +119,9 @@ pub fn render_naming_bar(ui: &mut Ui, world: &mut World) {
                         world.get_resource::<EdgeManager>().unwrap(),
                         world.get_resource::<FaceManager>().unwrap(),
                         &shape_2d_entity,
-                        shape
-                    ).unwrap();
+                        shape,
+                    )
+                    .unwrap();
 
                     let mut system_state: SystemState<(
                         Commands,
@@ -144,7 +152,8 @@ pub fn render_naming_bar(ui: &mut Ui, world: &mut World) {
                         ResMut<VertexManager>,
                         ResMut<EdgeManager>,
                     )> = SystemState::new(world);
-                    let (mut canvas, mut shape_manager, mut vertex_manager, mut edge_manager) = system_state.get_mut(world);
+                    let (mut canvas, mut shape_manager, mut vertex_manager, mut edge_manager) =
+                        system_state.get_mut(world);
 
                     canvas.set_focus(
                         &mut shape_manager,
@@ -191,12 +200,8 @@ pub fn naming_bar_visibility_toggle(world: &mut World) {
         ResMut<VertexManager>,
         ResMut<EdgeManager>,
     )> = SystemState::new(world);
-    let (
-        mut canvas,
-        mut shape_manager,
-        mut vertex_manager,
-        mut edge_manager,
-    ) = system_state.get_mut(world);
+    let (mut canvas, mut shape_manager, mut vertex_manager, mut edge_manager) =
+        system_state.get_mut(world);
 
     canvas.set_focused_timed(&mut shape_manager, &mut vertex_manager, &mut edge_manager);
 

@@ -12,7 +12,8 @@ use render_api::{base::CpuMesh, components::Transform, Assets, Handle};
 use vortex_proto::components::{Face3d, Vertex3d};
 
 use crate::app::resources::{
-    action::ShapeAction, camera_manager::CameraManager, vertex_manager::VertexManager, face_manager::FaceManager
+    action::ShapeAction, camera_manager::CameraManager, face_manager::FaceManager,
+    vertex_manager::VertexManager,
 };
 
 pub(crate) fn execute(

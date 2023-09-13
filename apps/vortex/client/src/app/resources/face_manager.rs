@@ -1,55 +1,34 @@
-use std::{collections::{HashMap, HashSet}, f32::consts::FRAC_PI_2};
+use std::collections::HashMap;
 
 use bevy_ecs::{
     entity::Entity,
-    query::{With, Without},
     system::{Commands, Query, Res, ResMut, Resource, SystemState},
     world::World,
 };
 use bevy_log::{info, warn};
 
-use naia_bevy_client::{Client, CommandsExt, Replicate, ReplicationConfig};
+use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
-use input::MouseButton;
-use math::{convert_2d_to_3d, convert_3d_to_2d, Vec2, Vec3};
+use math::{Vec2, Vec3};
 use render_api::{
-    base::{Color, CpuMaterial, CpuMesh},
-    components::{Camera, CameraProjection, Projection, RenderObjectBundle, Transform, Visibility},
-    shapes::{
-        angle_between, normalize_angle, set_2d_line_transform_from_angle, distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform, HollowTriangle,
-        Triangle,
-    },
-    Assets, Handle,
+    base::{CpuMaterial, CpuMesh},
+    components::{RenderObjectBundle, Transform},
+    shapes::{HollowTriangle, Triangle},
+    Assets,
 };
 
-use vortex_proto::components::{
-    EdgeAngle, Face3d, FileTypeValue, OwnedByFile, Vertex3d, VertexRoot,
-};
+use vortex_proto::components::{Face3d, OwnedByFile};
 
 use crate::app::{
-    components::{
-        LocalShape, Edge2dLocal, Edge3dLocal, Face3dLocal, FaceIcon2d, OwnedByFileLocal, SelectCircle,
-        SelectTriangle, Vertex2d, VertexTypeData,
-    },
+    components::{Face3dLocal, FaceIcon2d, OwnedByFileLocal},
     resources::{
-        animation_manager::AnimationManager,
-        action::{ActionStack, ShapeAction},
-        camera_manager::{CameraAngle, CameraManager},
-        camera_state::CameraState,
-        canvas::Canvas,
-        compass::Compass,
-        input_manager::AppInputAction,
-        tab_manager::TabState,
-        shape_data::{Vertex3dData, CanvasShape, Edge3dData, FaceData, FaceKey},
-    },
-    set_3d_line_transform,
-    shapes::{
-        create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,
+        camera_manager::CameraManager,
+        edge_manager::EdgeManager,
+        shape_data::{CanvasShape, FaceData, FaceKey},
+        shape_manager::ShapeManager,
+        vertex_manager::VertexManager,
     },
 };
-use crate::app::resources::edge_manager::EdgeManager;
-use crate::app::resources::shape_manager::ShapeManager;
-use crate::app::resources::vertex_manager::VertexManager;
 
 #[derive(Resource)]
 pub struct FaceManager {
@@ -75,13 +54,12 @@ impl Default for FaceManager {
 }
 
 impl FaceManager {
-
     pub fn sync_2d_faces(
         face_2d_q: &Query<(Entity, &FaceIcon2d)>,
         transform_q: &mut Query<&mut Transform>,
         owned_by_q: &Query<&OwnedByFileLocal>,
         current_tab_file_entity: Entity,
-        camera_3d_scale: f32
+        camera_3d_scale: f32,
     ) {
         let face_2d_scale = FaceIcon2d::SIZE * camera_3d_scale;
 
@@ -215,7 +193,10 @@ impl FaceManager {
 
         // add face to vertex data
         for vertex_3d_entity in [&vertex_3d_a, &vertex_3d_b, &vertex_3d_c] {
-            let vertex_3d_data = vertex_manager.vertices_3d.get_mut(vertex_3d_entity).unwrap();
+            let vertex_3d_data = vertex_manager
+                .vertices_3d
+                .get_mut(vertex_3d_entity)
+                .unwrap();
             vertex_3d_data.add_face(*face_key);
         }
 
@@ -334,8 +315,8 @@ impl FaceManager {
             face_key.vertex_3d_b,
             face_key.vertex_3d_c,
         ]
-            .iter()
-            .enumerate()
+        .iter()
+        .enumerate()
         {
             let vertex_transform = transform_q.get(*vertex_3d_entity).unwrap();
             positions[index] = vertex_transform.translation;
@@ -526,7 +507,12 @@ impl FaceManager {
     }
 
     // returns 2d face entity
-    fn unregister_face_key(&mut self, vertex_manager: &mut VertexManager, edge_manager: &mut EdgeManager, face_key: &FaceKey) -> Option<Entity> {
+    fn unregister_face_key(
+        &mut self,
+        vertex_manager: &mut VertexManager,
+        edge_manager: &mut EdgeManager,
+        face_key: &FaceKey,
+    ) -> Option<Entity> {
         info!("unregistering face key: `{:?}`", face_key);
         if let Some(Some(face_3d_data)) = self.face_keys.remove(&face_key) {
             let entity_2d = face_3d_data.entity_2d;
@@ -538,7 +524,8 @@ impl FaceManager {
                 face_key.vertex_3d_b,
                 face_key.vertex_3d_c,
             ] {
-                if let Some(vertex_3d_data) = vertex_manager.vertices_3d.get_mut(&vertex_3d_entity) {
+                if let Some(vertex_3d_data) = vertex_manager.vertices_3d.get_mut(&vertex_3d_entity)
+                {
                     vertex_3d_data.remove_face(face_key);
                 }
             }
@@ -586,8 +573,10 @@ impl FaceManager {
         vertex_b_3d_entity: Entity,
         file_entity: Entity,
     ) {
-        let vertex_a_connected_vertices = vertex_manager.get_connected_vertices(edge_manager, vertex_a_3d_entity);
-        let vertex_b_connected_vertices = vertex_manager.get_connected_vertices(edge_manager, vertex_b_3d_entity);
+        let vertex_a_connected_vertices =
+            vertex_manager.get_connected_vertices(edge_manager, vertex_a_3d_entity);
+        let vertex_b_connected_vertices =
+            vertex_manager.get_connected_vertices(edge_manager, vertex_b_3d_entity);
 
         let common_vertices =
             vertex_a_connected_vertices.intersection(&vertex_b_connected_vertices);

@@ -33,10 +33,12 @@ use crate::app::{
         action::{FileAction, FileActions},
         camera_manager::CameraManager,
         canvas::Canvas,
+        edge_manager::EdgeManager,
         file_manager::FileManager,
         shape_manager::ShapeManager,
         tab_manager::TabManager,
         toolbar::Toolbar,
+        vertex_manager::VertexManager,
     },
     ui::{
         widgets::colors::{
@@ -46,8 +48,6 @@ use crate::app::{
         UiState,
     },
 };
-use crate::app::resources::edge_manager::EdgeManager;
-use crate::app::resources::vertex_manager::VertexManager;
 
 pub struct FileTreeRowUiWidget;
 

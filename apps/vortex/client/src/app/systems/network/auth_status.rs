@@ -1,9 +1,8 @@
 use bevy_ecs::{
     entity::Entity,
     event::EventReader,
-    system::{Query, ResMut},
+    system::{Query, Res, ResMut},
 };
-use bevy_ecs::system::Res;
 use bevy_log::{info, warn};
 
 use naia_bevy_client::events::{
@@ -12,9 +11,10 @@ use naia_bevy_client::events::{
 
 use crate::app::{
     components::OwnedByFileLocal,
-    resources::{action::FileActions, shape_manager::ShapeManager, tab_manager::TabManager, edge_manager::EdgeManager,
-                face_manager::FaceManager,
-                vertex_manager::VertexManager,},
+    resources::{
+        action::FileActions, edge_manager::EdgeManager, face_manager::FaceManager,
+        shape_manager::ShapeManager, tab_manager::TabManager, vertex_manager::VertexManager,
+    },
 };
 
 pub fn auth_granted_events(
@@ -103,7 +103,13 @@ fn process_entity_auth_status(
         );
         if let Ok(owning_file_entity) = owned_by_q.get(*entity) {
             if let Some(tab_state) = tab_manager.tab_state_mut(&owning_file_entity.file_entity) {
-                let shape_3d_entity = ShapeManager::shape_entity_3d_to_2d(vertex_manager, edge_manager, face_manager,entity).unwrap();
+                let shape_3d_entity = ShapeManager::shape_entity_3d_to_2d(
+                    vertex_manager,
+                    edge_manager,
+                    face_manager,
+                    entity,
+                )
+                .unwrap();
                 tab_state
                     .action_stack
                     .entity_update_auth_status(&shape_3d_entity);

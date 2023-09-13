@@ -18,11 +18,9 @@ use crate::app::{
         OwnedByFileLocal,
     },
     resources::{
-        camera_manager::CameraManager, canvas::Canvas, file_manager::FileManager,
-        shape_manager::ShapeManager, tab_manager::TabManager, toolbar::Toolbar,
-        edge_manager::EdgeManager,
-        face_manager::FaceManager,
-        vertex_manager::VertexManager,
+        camera_manager::CameraManager, canvas::Canvas, edge_manager::EdgeManager,
+        face_manager::FaceManager, file_manager::FileManager, shape_manager::ShapeManager,
+        tab_manager::TabManager, toolbar::Toolbar, vertex_manager::VertexManager,
     },
 };
 
@@ -99,12 +97,22 @@ pub fn remove_component_events(
         for (vertex_entity_3d, _) in events.read::<Vertex3d>() {
             info!("entity: `{:?}`, removed Vertex3d", vertex_entity_3d);
 
-            vertex_manager.cleanup_deleted_vertex(&mut commands, &mut shape_manager, &vertex_entity_3d);
+            vertex_manager.cleanup_deleted_vertex(
+                &mut commands,
+                &mut shape_manager,
+                &vertex_entity_3d,
+            );
         }
         for (edge_3d_entity, _) in events.read::<Edge3d>() {
             info!("entity: `{:?}`, removed Edge3d", edge_3d_entity);
 
-            edge_manager.cleanup_deleted_edge(&mut commands, &mut shape_manager, &mut vertex_manager, &mut face_manager, &edge_3d_entity);
+            edge_manager.cleanup_deleted_edge(
+                &mut commands,
+                &mut shape_manager,
+                &mut vertex_manager,
+                &mut face_manager,
+                &edge_3d_entity,
+            );
         }
         for (face_entity_3d, _) in events.read::<Face3d>() {
             info!("entity: `{:?}`, removed Face3d", face_entity_3d);

@@ -9,6 +9,7 @@ use naia_bevy_client::Client;
 
 use render_api::components::Visibility;
 use render_egui::egui::epaint::ahash::HashSet;
+
 use vortex_proto::{
     components::{FileSystemChild, FileSystemEntry},
     resources::FileEntryKey,
@@ -17,12 +18,11 @@ use vortex_proto::{
 use crate::app::{
     components::OwnedByFileLocal,
     resources::{
-        camera_manager::CameraManager, canvas::Canvas, shape_manager::ShapeManager,
-        tab_manager::TabManager, toolbar::Toolbar,
+        camera_manager::CameraManager, canvas::Canvas, edge_manager::EdgeManager,
+        shape_manager::ShapeManager, tab_manager::TabManager, toolbar::Toolbar,
+        vertex_manager::VertexManager,
     },
 };
-use crate::app::resources::edge_manager::EdgeManager;
-use crate::app::resources::vertex_manager::VertexManager;
 
 struct ChangelistData {
     changelist_entity: Entity,

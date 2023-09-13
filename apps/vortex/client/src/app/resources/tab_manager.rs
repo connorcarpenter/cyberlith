@@ -22,6 +22,8 @@ use vortex_proto::{
     FileExtension,
 };
 
+use crate::app::resources::edge_manager::EdgeManager;
+use crate::app::resources::vertex_manager::VertexManager;
 use crate::app::{
     components::{file_system::FileSystemUiState, OwnedByFileLocal},
     resources::{
@@ -37,8 +39,6 @@ use crate::app::{
         TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED,
     },
 };
-use crate::app::resources::edge_manager::EdgeManager;
-use crate::app::resources::vertex_manager::VertexManager;
 
 pub struct TabState {
     pub selected: bool,

@@ -18,16 +18,13 @@ use crate::app::{
     config::ConfigPlugin,
     events::{InsertComponentEvent, LoginEvent},
     resources::{
-        edge_manager::EdgeManager,
-        face_manager::FaceManager,
-        vertex_manager::VertexManager,
-        compass::Compass,
-        animation_manager::AnimationManager,
-        action::FileActions, camera_manager::CameraManager, canvas::Canvas,
+        action::FileActions, animation_manager::AnimationManager, camera_manager::CameraManager,
+        canvas::Canvas, compass::Compass, edge_manager::EdgeManager, face_manager::FaceManager,
         file_manager::FileManager, input_manager::InputManager, shape_manager::ShapeManager,
         shape_waitlist::ShapeWaitlist, tab_manager::TabManager, toolbar::Toolbar,
+        vertex_manager::VertexManager,
     },
-    systems::{draw, canvas, network, ui},
+    systems::{canvas, draw, network, ui},
     ui::{widgets::NamingBarState, UiState},
 };
 
