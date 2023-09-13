@@ -21,6 +21,8 @@ use crate::app::{
         tab_manager::TabManager, toolbar::Toolbar,
     },
 };
+use crate::app::resources::edge_manager::EdgeManager;
+use crate::app::resources::vertex_manager::VertexManager;
 
 struct ChangelistData {
     changelist_entity: Entity,
@@ -75,6 +77,8 @@ impl FileManager {
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         shape_manager: &mut ShapeManager,
+        vertex_manager: &mut VertexManager,
+        edge_manager: &mut EdgeManager,
         tab_manager: &mut TabManager,
         toolbar: &mut Toolbar,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
@@ -88,6 +92,8 @@ impl FileManager {
                 canvas,
                 camera_manager,
                 shape_manager,
+                vertex_manager,
+                edge_manager,
                 toolbar,
                 visibility_q,
                 file_entity,

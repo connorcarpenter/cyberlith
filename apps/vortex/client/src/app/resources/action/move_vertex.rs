@@ -1,6 +1,6 @@
 use bevy_ecs::{
     prelude::{Entity, Query, World},
-    system::{ResMut, SystemState},
+    system::{Res, ResMut, SystemState},
 };
 use bevy_log::info;
 
@@ -12,7 +12,7 @@ use render_api::{base::CpuMesh, components::Transform, Assets, Handle};
 use vortex_proto::components::{Face3d, Vertex3d};
 
 use crate::app::resources::{
-    action::ShapeAction, camera_manager::CameraManager, vertex_manager::VertexManager,
+    action::ShapeAction, camera_manager::CameraManager, vertex_manager::VertexManager, face_manager::FaceManager
 };
 
 pub(crate) fn execute(
@@ -26,6 +26,7 @@ pub(crate) fn execute(
         Client,
         ResMut<Assets<CpuMesh>>,
         ResMut<VertexManager>,
+        Res<FaceManager>,
         ResMut<CameraManager>,
         //Query<&mut Vertex3d>,
         Query<&Handle<CpuMesh>>,
@@ -37,6 +38,7 @@ pub(crate) fn execute(
         client,
         mut meshes,
         vertex_manager,
+        face_manager,
         mut camera_manager,
         //mut vertex_3d_q,
         mesh_handle_q,
@@ -58,6 +60,7 @@ pub(crate) fn execute(
 
     vertex_manager.on_vertex_3d_moved(
         &client,
+        &face_manager,
         &mut meshes,
         &mesh_handle_q,
         &face_3d_q,

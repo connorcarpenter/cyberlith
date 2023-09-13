@@ -37,6 +37,8 @@ use crate::app::{
     },
     systems::file_post_process,
 };
+use crate::app::resources::edge_manager::EdgeManager;
+use crate::app::resources::vertex_manager::VertexManager;
 
 pub(crate) fn execute(
     world: &mut World,
@@ -57,6 +59,8 @@ pub(crate) fn execute(
         ResMut<CameraManager>,
         ResMut<FileManager>,
         ResMut<ShapeManager>,
+        ResMut<VertexManager>,
+        ResMut<EdgeManager>,
         ResMut<TabManager>,
         ResMut<Toolbar>,
         Query<(Entity, &mut FileSystemUiState)>,
@@ -71,6 +75,8 @@ pub(crate) fn execute(
         mut camera_manager,
         mut file_manager,
         mut shape_manager,
+        mut vertex_manager,
+        mut edge_manager,
         mut tab_manager,
         mut toolbar,
         mut fs_query,
@@ -125,6 +131,8 @@ pub(crate) fn execute(
             &mut canvas,
             &mut camera_manager,
             &mut shape_manager,
+            &mut vertex_manager,
+            &mut edge_manager,
             &mut toolbar,
             &mut visibility_q,
             &entity_id,

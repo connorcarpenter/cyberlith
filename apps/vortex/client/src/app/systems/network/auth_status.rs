@@ -3,6 +3,7 @@ use bevy_ecs::{
     event::EventReader,
     system::{Query, ResMut},
 };
+use bevy_ecs::system::Res;
 use bevy_log::{info, warn};
 
 use naia_bevy_client::events::{
@@ -11,12 +12,16 @@ use naia_bevy_client::events::{
 
 use crate::app::{
     components::OwnedByFileLocal,
-    resources::{action::FileActions, shape_manager::ShapeManager, tab_manager::TabManager},
+    resources::{action::FileActions, shape_manager::ShapeManager, tab_manager::TabManager, edge_manager::EdgeManager,
+                face_manager::FaceManager,
+                vertex_manager::VertexManager,},
 };
 
 pub fn auth_granted_events(
     mut file_actions: ResMut<FileActions>,
-    mut shape_manager: ResMut<ShapeManager>,
+    vertex_manager: Res<VertexManager>,
+    edge_manager: Res<EdgeManager>,
+    face_manager: Res<FaceManager>,
     mut tab_manager: ResMut<TabManager>,
     mut event_reader: EventReader<EntityAuthGrantedEvent>,
     owned_by_q: Query<&OwnedByFileLocal>,
@@ -24,7 +29,9 @@ pub fn auth_granted_events(
     for EntityAuthGrantedEvent(entity) in event_reader.iter() {
         process_entity_auth_status(
             &mut file_actions,
-            &mut shape_manager,
+            &vertex_manager,
+            &edge_manager,
+            &face_manager,
             &mut tab_manager,
             &owned_by_q,
             entity,
@@ -35,7 +42,9 @@ pub fn auth_granted_events(
 
 pub fn auth_denied_events(
     mut file_actions: ResMut<FileActions>,
-    mut shape_manager: ResMut<ShapeManager>,
+    vertex_manager: Res<VertexManager>,
+    edge_manager: Res<EdgeManager>,
+    face_manager: Res<FaceManager>,
     mut tab_manager: ResMut<TabManager>,
     mut event_reader: EventReader<EntityAuthDeniedEvent>,
     owned_by_q: Query<&OwnedByFileLocal>,
@@ -43,7 +52,9 @@ pub fn auth_denied_events(
     for EntityAuthDeniedEvent(entity) in event_reader.iter() {
         process_entity_auth_status(
             &mut file_actions,
-            &mut shape_manager,
+            &vertex_manager,
+            &edge_manager,
+            &face_manager,
             &mut tab_manager,
             &owned_by_q,
             entity,
@@ -54,7 +65,9 @@ pub fn auth_denied_events(
 
 pub fn auth_reset_events(
     mut file_actions: ResMut<FileActions>,
-    mut shape_manager: ResMut<ShapeManager>,
+    vertex_manager: Res<VertexManager>,
+    edge_manager: Res<EdgeManager>,
+    face_manager: Res<FaceManager>,
     mut tab_manager: ResMut<TabManager>,
     mut event_reader: EventReader<EntityAuthResetEvent>,
     owned_by_q: Query<&OwnedByFileLocal>,
@@ -62,7 +75,9 @@ pub fn auth_reset_events(
     for EntityAuthResetEvent(entity) in event_reader.iter() {
         process_entity_auth_status(
             &mut file_actions,
-            &mut shape_manager,
+            &vertex_manager,
+            &edge_manager,
+            &face_manager,
             &mut tab_manager,
             &owned_by_q,
             entity,
@@ -73,20 +88,22 @@ pub fn auth_reset_events(
 
 fn process_entity_auth_status(
     file_actions: &mut FileActions,
-    shape_manager: &mut ShapeManager,
+    vertex_manager: &VertexManager,
+    edge_manager: &EdgeManager,
+    face_manager: &FaceManager,
     tab_manager: &mut TabManager,
     owned_by_q: &Query<&OwnedByFileLocal>,
     entity: &Entity,
     status: &str,
 ) {
-    if shape_manager.has_shape_entity_3d(entity) {
+    if ShapeManager::has_shape_entity_3d(vertex_manager, edge_manager, face_manager, entity) {
         info!(
             "auth processing for shape entity `{:?}`: `{:?}`",
             entity, status
         );
         if let Ok(owning_file_entity) = owned_by_q.get(*entity) {
             if let Some(tab_state) = tab_manager.tab_state_mut(&owning_file_entity.file_entity) {
-                let shape_3d_entity = shape_manager.shape_entity_3d_to_2d(entity).unwrap();
+                let shape_3d_entity = ShapeManager::shape_entity_3d_to_2d(vertex_manager, edge_manager, face_manager,entity).unwrap();
                 tab_state
                     .action_stack
                     .entity_update_auth_status(&shape_3d_entity);

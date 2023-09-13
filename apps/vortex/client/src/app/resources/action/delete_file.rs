@@ -28,6 +28,8 @@ use crate::app::{
         toolbar::Toolbar,
     },
 };
+use crate::app::resources::edge_manager::EdgeManager;
+use crate::app::resources::vertex_manager::VertexManager;
 
 pub(crate) fn execute(
     world: &mut World,
@@ -43,6 +45,8 @@ pub(crate) fn execute(
         ResMut<Canvas>,
         ResMut<CameraManager>,
         ResMut<ShapeManager>,
+        ResMut<VertexManager>,
+        ResMut<EdgeManager>,
         ResMut<TabManager>,
         ResMut<Toolbar>,
         Query<(&mut Visibility, &OwnedByFileLocal)>,
@@ -62,6 +66,8 @@ pub(crate) fn execute(
         mut canvas,
         mut camera_manager,
         mut shape_manager,
+        mut vertex_manager,
+        mut edge_manager,
         mut tab_manager,
         mut toolbar,
         mut visibility_q,
@@ -132,6 +138,8 @@ pub(crate) fn execute(
         &mut canvas,
         &mut camera_manager,
         &mut shape_manager,
+        &mut vertex_manager,
+        &mut edge_manager,
         &mut tab_manager,
         &mut toolbar,
         &mut visibility_q,

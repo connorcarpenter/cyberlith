@@ -46,6 +46,8 @@ use crate::app::{
         UiState,
     },
 };
+use crate::app::resources::edge_manager::EdgeManager;
+use crate::app::resources::vertex_manager::VertexManager;
 
 pub struct FileTreeRowUiWidget;
 
@@ -396,6 +398,8 @@ impl FileTreeRowUiWidget {
                 ResMut<Canvas>,
                 ResMut<CameraManager>,
                 ResMut<ShapeManager>,
+                ResMut<VertexManager>,
+                ResMut<EdgeManager>,
                 ResMut<TabManager>,
                 ResMut<Toolbar>,
                 Query<(&mut Visibility, &OwnedByFileLocal)>,
@@ -405,20 +409,26 @@ impl FileTreeRowUiWidget {
                 mut canvas,
                 mut camera_manager,
                 mut shape_manager,
+                mut vertex_manager,
+                mut edge_manager,
                 mut tab_manager,
                 mut toolbar,
                 mut visibility_q,
             ) = system_state.get_mut(world);
+
             tab_manager.open_tab(
                 &mut client,
                 &mut canvas,
                 &mut camera_manager,
                 &mut shape_manager,
+                &mut vertex_manager,
+                &mut edge_manager,
                 &mut toolbar,
                 &mut visibility_q,
                 row_entity,
                 file_ext,
             );
+
             system_state.apply(world);
         }
     }

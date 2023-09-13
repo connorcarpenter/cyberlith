@@ -17,11 +17,12 @@ use crate::app::{
     components::{LocalShape, Edge2dLocal, Edge3dLocal, FaceIcon2d, OwnedByFileLocal},
     resources::{
         camera_manager::CameraManager, canvas::Canvas, shape_manager::ShapeManager,
-        tab_manager::TabManager,
+        tab_manager::TabManager, compass::Compass,
+        edge_manager::EdgeManager,
+        face_manager::FaceManager,
+        vertex_manager::VertexManager,
     },
 };
-use crate::app::resources::compass::Compass;
-use crate::app::resources::face_manager::FaceManager;
 
 pub fn sync_vertices(
     tab_manager: ResMut<TabManager>,
@@ -29,6 +30,8 @@ pub fn sync_vertices(
     camera_manager: Res<CameraManager>,
     compass: Res<Compass>,
     mut shape_manager: ResMut<ShapeManager>,
+    vertex_manager: Res<VertexManager>,
+    edge_manager: Res<EdgeManager>,
 
     compass_q: Query<&LocalShape>,
     camera_q: Query<(&Camera, &Projection)>,
@@ -57,6 +60,8 @@ pub fn sync_vertices(
             current_tab_camera_state,
             &compass,
             *current_tab_entity,
+            &vertex_manager,
+            &edge_manager,
             &camera_q,
             &compass_q,
             &mut visibility_q,
@@ -74,11 +79,13 @@ pub fn process_faces(
     mut commands: Commands,
     camera_manager: Res<CameraManager>,
     mut shape_manager: ResMut<ShapeManager>,
+    mut vertex_manager: ResMut<VertexManager>,
+    mut edge_manager: ResMut<EdgeManager>,
     mut face_manager: ResMut<FaceManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
 ) {
-    face_manager.process_new_faces(&mut commands, &camera_manager, &mut shape_manager, &mut meshes, &mut materials);
+    face_manager.process_new_faces(&mut commands, &camera_manager, &mut shape_manager, &mut vertex_manager, &mut edge_manager, &mut meshes, &mut materials);
 }
 
 pub fn update_select_line(

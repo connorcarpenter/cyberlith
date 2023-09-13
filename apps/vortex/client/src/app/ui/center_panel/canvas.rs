@@ -21,6 +21,8 @@ use crate::app::{
     resources::{camera_manager::CameraManager, canvas::Canvas},
     ui::UiState,
 };
+use crate::app::resources::edge_manager::EdgeManager;
+use crate::app::resources::vertex_manager::VertexManager;
 
 pub fn render_canvas(ui: &mut Ui, world: &mut World) {
     egui::CentralPanel::default() // canvas area
@@ -32,6 +34,8 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
                 ResMut<Canvas>,
                 ResMut<CameraManager>,
                 ResMut<ShapeManager>,
+                ResMut<VertexManager>,
+                ResMut<EdgeManager>,
                 ResMut<Assets<CpuTexture2D>>,
                 ResMut<EguiUserTextures>,
                 ResMut<UiState>,
@@ -42,6 +46,8 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
                 mut canvas,
                 mut camera_manager,
                 mut shape_manager,
+                mut vertex_manager,
+                mut edge_manager,
                 mut textures,
                 mut user_textures,
                 mut ui_state,
@@ -106,10 +112,10 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
 
                         if canvas_response.clicked() || canvas_response.dragged() {
                             canvas_response.request_focus();
-                            canvas.set_focus(&mut shape_manager, true);
+                            canvas.set_focus(&mut shape_manager, &mut vertex_manager, &mut edge_manager,true);
                         } else if canvas_response.clicked_elsewhere() {
                             canvas_response.surrender_focus();
-                            canvas.set_focus(&mut shape_manager, false);
+                            canvas.set_focus(&mut shape_manager, &mut vertex_manager, &mut edge_manager,false);
                         }
 
                         let has_focus = canvas.has_focus();

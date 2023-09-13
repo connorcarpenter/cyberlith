@@ -138,12 +138,22 @@ pub fn render_naming_bar(ui: &mut Ui, world: &mut World) {
                 let text_edit = TextEdit::singleline(&mut state.text);
                 let response = ui.add_enabled(selected_shape_2d.is_some(), text_edit);
                 if response.has_focus() {
-                    world.resource_scope(|world, mut canvas: Mut<Canvas>| {
-                        canvas.set_focus(
-                            &mut world.get_resource_mut::<ShapeManager>().unwrap(),
-                            false,
-                        );
-                    });
+                    let mut system_state: SystemState<(
+                        ResMut<Canvas>,
+                        ResMut<ShapeManager>,
+                        ResMut<VertexManager>,
+                        ResMut<EdgeManager>,
+                    )> = SystemState::new(world);
+                    let (mut canvas, mut shape_manager, mut vertex_manager, mut edge_manager) = system_state.get_mut(world);
+
+                    canvas.set_focus(
+                        &mut shape_manager,
+                        &mut vertex_manager,
+                        &mut edge_manager,
+                        false,
+                    );
+
+                    system_state.apply(world);
                 }
 
                 ui.label("name: ");
@@ -175,7 +185,20 @@ pub fn naming_bar_visibility_toggle(world: &mut World) {
     ui_state.resized_window = true;
 
     // set focus to canvas
-    world.resource_scope(|world, mut canvas: Mut<Canvas>| {
-        canvas.set_focused_timed(&mut world.get_resource_mut::<ShapeManager>().unwrap());
-    });
+    let mut system_state: SystemState<(
+        ResMut<Canvas>,
+        ResMut<ShapeManager>,
+        ResMut<VertexManager>,
+        ResMut<EdgeManager>,
+    )> = SystemState::new(world);
+    let (
+        mut canvas,
+        mut shape_manager,
+        mut vertex_manager,
+        mut edge_manager,
+    ) = system_state.get_mut(world);
+
+    canvas.set_focused_timed(&mut shape_manager, &mut vertex_manager, &mut edge_manager);
+
+    system_state.apply(world);
 }

@@ -1,4 +1,5 @@
 use bevy_ecs::prelude::World;
+use bevy_ecs::system::{ResMut, SystemState};
 
 use render_egui::egui::Ui;
 
@@ -41,10 +42,12 @@ impl SkeletonToolbar {
             // toggle edge angle visibility
             let response = Toolbar::button(ui, "📐", "Toggle edge angle visibility", true);
             if response.clicked() {
-                world
-                    .get_resource_mut::<EdgeManager>()
-                    .unwrap()
-                    .edge_angle_visibility_toggle();
+                let mut system_state: SystemState<(ResMut<ShapeManager>, ResMut<EdgeManager>)> = SystemState::new(world);
+                let (mut shape_manager, mut edge_manager) = system_state.get_mut(world);
+
+                edge_manager.edge_angle_visibility_toggle(&mut shape_manager);
+
+                system_state.apply(world);
             }
         }
     }

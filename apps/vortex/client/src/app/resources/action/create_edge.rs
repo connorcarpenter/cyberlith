@@ -96,6 +96,7 @@ pub(crate) fn execute(
             &mut client,
             &mut camera_manager,
             &mut vertex_manager,
+            &mut face_manager,
             &mut meshes,
             &mut materials,
             vertex_2d_entity_a,

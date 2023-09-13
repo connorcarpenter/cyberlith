@@ -3,6 +3,7 @@ use bevy_ecs::{
     system::{ResMut, SystemState},
     world::Mut,
 };
+use bevy_ecs::system::Res;
 use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt};
@@ -22,13 +23,13 @@ pub(crate) fn execute(
 ) -> Vec<ShapeAction> {
     info!("SelectShape({:?})", shape_2d_entity_opt);
 
-    let mut system_state: SystemState<(Commands, Client, ResMut<ShapeManager>)> =
+    let mut system_state: SystemState<(Commands, Client, ResMut<ShapeManager>, Res<VertexManager>, Res<EdgeManager>, Res<FaceManager>)> =
         SystemState::new(world);
-    let (mut commands, mut client, mut shape_manager) = system_state.get_mut(world);
+    let (mut commands, mut client, mut shape_manager, vertex_manager, edge_manager, face_manager) = system_state.get_mut(world);
 
     // Deselect all selected shapes, select the new selected shapes
-    let (deselected_entity, entity_to_release) = deselect_all_selected_shapes(&mut shape_manager);
-    let entity_to_request = select_shape(&mut shape_manager, shape_2d_entity_opt);
+    let (deselected_entity, entity_to_release) = deselect_all_selected_shapes(&mut shape_manager, &vertex_manager, &edge_manager, &face_manager);
+    let entity_to_request = select_shape(&mut shape_manager, &vertex_manager, &edge_manager, &face_manager, shape_2d_entity_opt);
 
     if entity_to_request != entity_to_release {
         if let Some(entity) = entity_to_release {
@@ -106,7 +107,7 @@ pub fn deselect_all_selected_shapes(
     if let Some((shape_2d_entity, shape_2d_type)) = shape_manager.selected_shape_2d() {
         shape_manager.deselect_shape();
         entity_to_deselect = Some((shape_2d_entity, shape_2d_type));
-        entity_to_release = Some(ShapeManager::shape_entity_2d_to_3d(vertex_manager, edge_manager, face_manager, shape_2d_entity).unwrap())
+        entity_to_release = Some(ShapeManager::shape_entity_2d_to_3d(vertex_manager, edge_manager, face_manager, &shape_2d_entity, shape_2d_type).unwrap())
     }
     (entity_to_deselect, entity_to_release)
 }

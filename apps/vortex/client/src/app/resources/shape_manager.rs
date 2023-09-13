@@ -105,6 +105,7 @@ impl ShapeManager {
         tab_state: &mut TabState,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
+        face_manager: &FaceManager,
 
         // queries
         transform_q: &mut Query<&mut Transform>,
@@ -153,7 +154,7 @@ impl ShapeManager {
                     self.handle_insert_key_press(&mut tab_state.action_stack);
                 }
                 AppInputAction::DeleteKeyPress => {
-                    self.handle_delete_key_press(commands, client, &mut tab_state.action_stack);
+                    self.handle_delete_key_press(commands, client, &mut tab_state.action_stack, &vertex_manager, &edge_manager, &face_manager);
                 }
                 AppInputAction::CameraAngleYawRotate(clockwise) => {
                     camera_manager.set_camera_angle_yaw_rotate(camera_state, *clockwise);
@@ -164,6 +165,8 @@ impl ShapeManager {
                         client,
                         camera_manager,
                         camera_state,
+                        vertex_manager,
+                        edge_manager,
                         animation_manager,
                         *click_type,
                         *mouse_position,
@@ -177,6 +180,8 @@ impl ShapeManager {
                 AppInputAction::MouseClick(click_type, mouse_position) => {
                     self.handle_mouse_click(
                         camera_manager,
+                        vertex_manager,
+                        edge_manager,
                         &mut tab_state.action_stack,
                         *click_type,
                         mouse_position,
@@ -272,6 +277,7 @@ impl ShapeManager {
             current_tab_file_entity,
         );
         EdgeManager::sync_2d_edges(
+            vertex_manager,
             edge_2d_q,
             transform_q,
             owned_by_q,
@@ -728,6 +734,7 @@ impl ShapeManager {
     fn handle_mouse_click(
         &mut self,
         camera_manager: &CameraManager,
+        vertex_manager: &VertexManager,
         edge_manager: &EdgeManager,
         action_stack: &mut ActionStack<ShapeAction>,
         click_type: MouseButton,
@@ -785,7 +792,7 @@ impl ShapeManager {
 
                         // check if edge already exists
                         if edge_manager
-                            .edge_2d_entity_from_vertices(vertex_2d_entity_a, vertex_2d_entity_b)
+                            .edge_2d_entity_from_vertices(vertex_manager, vertex_2d_entity_a, vertex_2d_entity_b)
                             .is_some()
                         {
                             // select edge

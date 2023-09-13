@@ -122,6 +122,8 @@ pub(crate) fn execute(
                 &mut client,
                 &mut shape_manager,
                 &mut vertex_manager,
+                &edge_manager,
+                &face_manager,
                 vertex_3d_entity,
                 vertex_2d_to_select_opt,
             );
@@ -207,6 +209,8 @@ pub(crate) fn execute(
                 &mut client,
                 &mut shape_manager,
                 &mut vertex_manager,
+                &edge_manager,
+                &face_manager,
                 vertex_3d_entity,
                 vertex_2d_to_select_opt,
             );
@@ -230,6 +234,8 @@ fn handle_common_vertex_despawn(
     client: &mut Client,
     shape_manager: &mut ShapeManager,
     vertex_manager: &mut VertexManager,
+    edge_manager: &EdgeManager,
+    face_manager: &FaceManager,
     vertex_3d_entity: Entity,
     vertex_2d_to_select_opt: Option<(Entity, CanvasShape)>,
 ) {
@@ -237,12 +243,12 @@ fn handle_common_vertex_despawn(
     commands.entity(vertex_3d_entity).despawn();
 
     // cleanup mappings
-    vertex_manager.cleanup_deleted_vertex(commands, &vertex_3d_entity);
+    vertex_manager.cleanup_deleted_vertex(commands, shape_manager,&vertex_3d_entity);
 
     // select entities as needed
     if let Some((vertex_2d_to_select, vertex_type)) = vertex_2d_to_select_opt {
         if let Some(vertex_3d_entity_to_request) =
-            select_shape(shape_manager, Some((vertex_2d_to_select, vertex_type)))
+            select_shape(shape_manager, vertex_manager, edge_manager, face_manager,Some((vertex_2d_to_select, vertex_type)))
         {
             //info!("request_entities({:?})", vertex_3d_entity_to_request);
             let mut entity_mut = commands.entity(vertex_3d_entity_to_request);

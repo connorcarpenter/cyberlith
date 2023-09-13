@@ -100,12 +100,12 @@ pub(crate) fn execute(
     };
 
     // cleanup mappings
-    edge_manager.cleanup_deleted_edge(&mut commands, &edge_3d_entity);
+    edge_manager.cleanup_deleted_edge(&mut commands, &mut shape_manager, &mut vertex_manager, &mut face_manager,&edge_3d_entity);
 
     // select entities as needed
     if let Some((shape_2d_to_select, shape_type)) = shape_2d_to_select_opt {
         if let Some(shape_3d_entity_to_request) =
-            select_shape(&mut shape_manager, Some((shape_2d_to_select, shape_type)))
+            select_shape(&mut shape_manager, &vertex_manager, &edge_manager, &face_manager, Some((shape_2d_to_select, shape_type)))
         {
             //info!("request_entities({:?})", shape_3d_entity_to_request);
             let mut entity_mut = commands.entity(shape_3d_entity_to_request);

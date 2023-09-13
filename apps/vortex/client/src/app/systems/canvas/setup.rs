@@ -15,7 +15,9 @@ use render_egui::EguiUserTextures;
 use crate::app::{
     components::{SelectCircle, SelectLine, SelectTriangle, Vertex2d},
     config::AppConfig,
-    resources::{grid::Grid, camera_manager::CameraManager, canvas::Canvas, shape_manager::ShapeManager, compass::Compass},
+    resources::{grid::Grid, camera_manager::CameraManager, canvas::Canvas, shape_manager::ShapeManager, compass::Compass, edge_manager::EdgeManager,
+                face_manager::FaceManager,
+                vertex_manager::VertexManager},
     shapes::create_2d_edge_line,
 };
 
@@ -24,6 +26,9 @@ pub fn setup(
     mut commands: Commands,
     mut canvas: ResMut<Canvas>,
     mut shape_manager: ResMut<ShapeManager>,
+    mut vertex_manager: ResMut<VertexManager>,
+    mut edge_manager: ResMut<EdgeManager>,
+    mut face_manager: ResMut<FaceManager>,
     mut camera_manager: ResMut<CameraManager>,
     mut compass: ResMut<Compass>,
     mut textures: ResMut<Assets<CpuTexture2D>>,
@@ -60,14 +65,18 @@ pub fn setup(
     compass.setup_compass(
         &mut commands,
         &mut camera_manager,
-        &mut shape_manager,
+        &mut vertex_manager,
+        &mut edge_manager,
+        &mut face_manager,
         &mut meshes,
         &mut materials,
     );
     Grid::setup_grid(
         &mut commands,
         &mut camera_manager,
-        &mut shape_manager,
+        &mut vertex_manager,
+        &mut edge_manager,
+        &mut face_manager,
         &mut meshes,
         &mut materials,
     );

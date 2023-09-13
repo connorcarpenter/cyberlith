@@ -20,6 +20,8 @@ use crate::app::{
         shape_manager::ShapeManager
     },
 };
+use crate::app::resources::edge_manager::EdgeManager;
+use crate::app::resources::face_manager::FaceManager;
 use crate::app::resources::vertex_manager::VertexManager;
 
 #[derive(Resource)]
@@ -40,14 +42,17 @@ impl Compass {
         &mut self,
         commands: &mut Commands,
         camera_manager: &mut CameraManager,
-        shape_manager: &mut ShapeManager,
         vertex_manager: &mut VertexManager,
+        edge_manager: &mut EdgeManager,
+        face_manager: &mut FaceManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
     ) {
         let (root_vertex_2d_entity, vertex_3d_entity, _, _) = vertex_manager.new_local_vertex(
             commands,
             camera_manager,
+            edge_manager,
+            face_manager,
             meshes,
             materials,
             None,
@@ -61,7 +66,9 @@ impl Compass {
         self.new_compass_arm(
             commands,
             camera_manager,
-            shape_manager,
+            vertex_manager,
+            edge_manager,
+            face_manager,
             meshes,
             materials,
             root_vertex_2d_entity,
@@ -72,7 +79,9 @@ impl Compass {
         self.new_compass_arm(
             commands,
             camera_manager,
-            shape_manager,
+            vertex_manager,
+            edge_manager,
+            face_manager,
             meshes,
             materials,
             root_vertex_2d_entity,
@@ -83,7 +92,9 @@ impl Compass {
         self.new_compass_arm(
             commands,
             camera_manager,
-            shape_manager,
+            vertex_manager,
+            edge_manager,
+            face_manager,
             meshes,
             materials,
             root_vertex_2d_entity,
@@ -140,7 +151,9 @@ impl Compass {
         &mut self,
         commands: &mut Commands,
         camera_manager: &mut CameraManager,
-        vertex_manager: &mut ShapeManager,
+        vertex_manager: &mut VertexManager,
+        edge_manager: &mut EdgeManager,
+        face_manager: &mut FaceManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         root_vertex_2d_entity: Entity,
@@ -150,6 +163,8 @@ impl Compass {
         let (vertex_2d_entity, vertex_3d_entity, Some(edge_2d_entity), Some(edge_3d_entity)) = vertex_manager.new_local_vertex(
             commands,
             camera_manager,
+            edge_manager,
+            face_manager,
             meshes,
             materials,
             Some(root_vertex_2d_entity),

@@ -249,7 +249,8 @@ impl EdgeManager {
         commands: &mut Commands,
         client: &mut Client,
         camera_manager: &mut CameraManager,
-        vertex_manager: &VertexManager,
+        vertex_manager: &mut VertexManager,
+        face_manager: &mut FaceManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         parent_vertex_2d_entity: Entity,
@@ -298,6 +299,8 @@ impl EdgeManager {
             meshes,
             materials,
             camera_manager,
+            vertex_manager,
+            face_manager,
             new_edge_3d_entity,
             parent_vertex_2d_entity,
             parent_vertex_3d_entity,
@@ -320,6 +323,8 @@ impl EdgeManager {
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         camera_manager: &CameraManager,
+        vertex_manager: &mut VertexManager,
+        face_manager: &mut FaceManager,
         edge_3d_entity: Entity,
         vertex_a_2d_entity: Entity,
         vertex_a_3d_entity: Entity,
@@ -454,6 +459,8 @@ impl EdgeManager {
 
         // register 3d & 2d edges together
         self.register_3d_edge(
+            vertex_manager,
+            face_manager,
             edge_3d_entity,
             edge_2d_entity,
             vertex_a_3d_entity,
@@ -501,7 +508,7 @@ impl EdgeManager {
         self.edges_2d.insert(edge_2d_entity, edge_3d_entity);
 
         if let Some(file_entity) = ownership_opt {
-            face_manager.check_for_new_faces(vertex_a_3d_entity, vertex_b_3d_entity, file_entity);
+            face_manager.check_for_new_faces(vertex_manager, &self, vertex_a_3d_entity, vertex_b_3d_entity, file_entity);
         }
     }
 
@@ -510,6 +517,7 @@ impl EdgeManager {
         &mut self,
         commands: &mut Commands,
         shape_manager: &mut ShapeManager,
+        vertex_manager: &mut VertexManager,
         face_manager: &mut FaceManager,
         entity_3d: &Entity,
     ) -> (Entity, Vec<Entity>) {
@@ -525,13 +533,13 @@ impl EdgeManager {
                 .copied()
                 .collect();
             for face_3d_key in face_3d_keys {
-                let face_2d_entity = face_manager.cleanup_deleted_face_key(commands, &face_3d_key);
+                let face_2d_entity = face_manager.cleanup_deleted_face_key(commands, shape_manager, vertex_manager, self, &face_3d_key);
                 deleted_face_2d_entities.push(face_2d_entity);
             }
         }
 
         // unregister edge
-        let Some(edge_2d_entity) = self.unregister_3d_edge(entity_3d) else {
+        let Some(edge_2d_entity) = self.unregister_3d_edge(vertex_manager,entity_3d) else {
             panic!(
                 "Edge3d entity: `{:?}` has no corresponding Edge2d entity",
                 entity_3d

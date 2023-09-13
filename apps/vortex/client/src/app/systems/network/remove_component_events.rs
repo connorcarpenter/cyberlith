@@ -53,6 +53,8 @@ pub fn remove_component_events(
                 &mut canvas,
                 &mut camera_manager,
                 &mut shape_manager,
+                &mut vertex_manager,
+                &mut edge_manager,
                 &mut tab_manager,
                 &mut toolbar,
                 &mut visibility_q,
@@ -102,7 +104,7 @@ pub fn remove_component_events(
         for (edge_3d_entity, _) in events.read::<Edge3d>() {
             info!("entity: `{:?}`, removed Edge3d", edge_3d_entity);
 
-            edge_manager.cleanup_deleted_edge(&mut commands, &mut shape_manager, &mut face_manager, &edge_3d_entity);
+            edge_manager.cleanup_deleted_edge(&mut commands, &mut shape_manager, &mut vertex_manager, &mut face_manager, &edge_3d_entity);
         }
         for (face_entity_3d, _) in events.read::<Face3d>() {
             info!("entity: `{:?}`, removed Face3d", face_entity_3d);

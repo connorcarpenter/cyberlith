@@ -138,6 +138,8 @@ impl FaceManager {
         commands: &mut Commands,
         camera_manager: &CameraManager,
         shape_manager: &mut ShapeManager,
+        vertex_manager: &mut VertexManager,
+        edge_manager: &mut EdgeManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
     ) {
@@ -150,6 +152,8 @@ impl FaceManager {
             self.process_new_face(
                 commands,
                 camera_manager,
+                vertex_manager,
+                edge_manager,
                 meshes,
                 materials,
                 file_entity,
@@ -450,10 +454,12 @@ impl FaceManager {
         &mut self,
         commands: &mut Commands,
         shape_manager: &mut ShapeManager,
+        vertex_manager: &mut VertexManager,
+        edge_manager: &mut EdgeManager,
         face_key: &FaceKey,
     ) -> Entity {
         // unregister face
-        let Some(face_2d_entity) = self.unregister_face_key(face_key) else {
+        let Some(face_2d_entity) = self.unregister_face_key(vertex_manager, edge_manager, face_key) else {
             panic!(
                 "FaceKey: `{:?}` has no corresponding Face2d entity",
                 face_key
