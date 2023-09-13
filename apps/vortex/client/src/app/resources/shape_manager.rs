@@ -29,44 +29,48 @@ use crate::app::{
     resources::{
         action::{ActionStack, ShapeAction},
         animation_manager::AnimationManager,
-        camera_manager::{CameraAngle, CameraManager},
+        camera_manager::CameraManager,
         camera_state::CameraState,
         canvas::Canvas,
         compass::Compass,
         edge_manager::EdgeManager,
         face_manager::FaceManager,
-        input_manager::AppInputAction,
         shape_data::CanvasShape,
-        tab_manager::TabState,
         vertex_manager::VertexManager,
     },
 };
 
 #[derive(Resource)]
 pub struct ShapeManager {
+
+    ///// go to canvas
     pub(crate) current_file_type: FileTypeValue,
-
     resync_shapes: u8,
-    resync_selection: bool,
-    resync_hover: bool,
 
+    ///// go to input manager
+
+    //// hover
+    resync_hover: bool,
     // Option<(2d shape entity, shape type)>
     pub(crate) hovered_entity: Option<(Entity, CanvasShape)>,
 
+    //// selection
+    resync_selection: bool,
+    // Option<(2d shape entity, shape type)>
+    selected_shape: Option<(Entity, CanvasShape)>,
     pub select_circle_entity: Option<Entity>,
     pub select_triangle_entity: Option<Entity>,
     pub select_line_entity: Option<Entity>,
-
-    // Option<(2d shape entity, shape type)>
-    selected_shape: Option<(Entity, CanvasShape)>,
 }
 
 impl Default for ShapeManager {
     fn default() -> Self {
         Self {
+            // canvas
             current_file_type: FileTypeValue::Skel,
-
             resync_shapes: 0,
+
+            // input manager
             resync_selection: false,
             resync_hover: false,
 
@@ -81,141 +85,7 @@ impl Default for ShapeManager {
 }
 
 impl ShapeManager {
-    pub fn update_input(
-        &mut self,
 
-        // input
-        input_actions: Vec<AppInputAction>,
-
-        // resources
-        commands: &mut Commands,
-        client: &mut Client,
-        camera_manager: &mut CameraManager,
-        animation_manager: &mut AnimationManager,
-        tab_state: &mut TabState,
-        vertex_manager: &mut VertexManager,
-        edge_manager: &mut EdgeManager,
-        face_manager: &FaceManager,
-
-        // queries
-        transform_q: &mut Query<&mut Transform>,
-        camera_q: &mut Query<(&mut Camera, &mut Projection)>,
-        vertex_3d_q: &mut Query<&mut Vertex3d>,
-        edge_angle_q: &mut Query<&mut EdgeAngle>,
-    ) {
-        let camera_state = &mut tab_state.camera_state;
-
-        for input_action in &input_actions {
-            match input_action {
-                AppInputAction::MiddleMouseScroll(scroll_y) => {
-                    camera_manager.camera_zoom(camera_state, *scroll_y);
-                }
-                AppInputAction::MouseMoved => {
-                    self.queue_resync_hover_ui();
-                    self.queue_resync_selection_ui();
-                }
-                AppInputAction::SwitchTo3dMode => {
-                    // disable 2d camera, enable 3d camera
-                    camera_state.set_3d_mode();
-                    camera_manager.recalculate_3d_view();
-                    self.queue_resync_shapes();
-                }
-                AppInputAction::SwitchTo2dMode => {
-                    // disable 3d camera, enable 2d camera
-                    camera_state.set_2d_mode();
-                    camera_manager.recalculate_3d_view();
-                    self.queue_resync_shapes();
-                }
-                AppInputAction::SetCameraAngleFixed(camera_angle) => match camera_angle {
-                    CameraAngle::Side => {
-                        camera_manager.set_camera_angle_side(camera_state);
-                    }
-                    CameraAngle::Front => {
-                        camera_manager.set_camera_angle_front(camera_state);
-                    }
-                    CameraAngle::Top => {
-                        camera_manager.set_camera_angle_top(camera_state);
-                    }
-                    CameraAngle::Ingame(angle_index) => {
-                        camera_manager.set_camera_angle_ingame(camera_state, *angle_index);
-                    }
-                },
-                AppInputAction::InsertKeyPress => {
-                    self.handle_insert_key_press(&mut tab_state.action_stack);
-                }
-                AppInputAction::DeleteKeyPress => {
-                    self.handle_delete_key_press(
-                        commands,
-                        client,
-                        &mut tab_state.action_stack,
-                        &vertex_manager,
-                        &edge_manager,
-                        &face_manager,
-                    );
-                }
-                AppInputAction::CameraAngleYawRotate(clockwise) => {
-                    camera_manager.set_camera_angle_yaw_rotate(camera_state, *clockwise);
-                }
-                AppInputAction::MouseDragged(click_type, mouse_position, delta) => {
-                    self.handle_mouse_drag(
-                        commands,
-                        client,
-                        camera_manager,
-                        camera_state,
-                        vertex_manager,
-                        edge_manager,
-                        animation_manager,
-                        *click_type,
-                        *mouse_position,
-                        *delta,
-                        camera_q,
-                        transform_q,
-                        vertex_3d_q,
-                        edge_angle_q,
-                    );
-                }
-                AppInputAction::MouseClick(click_type, mouse_position) => {
-                    self.handle_mouse_click(
-                        camera_manager,
-                        vertex_manager,
-                        edge_manager,
-                        &mut tab_state.action_stack,
-                        *click_type,
-                        mouse_position,
-                        camera_q,
-                        transform_q,
-                    );
-                }
-                AppInputAction::MouseRelease(MouseButton::Left) => {
-                    if let Some((vertex_2d_entity, old_pos, new_pos)) =
-                        vertex_manager.last_vertex_dragged.take()
-                    {
-                        tab_state
-                            .action_stack
-                            .buffer_action(ShapeAction::MoveVertex(
-                                vertex_2d_entity,
-                                old_pos,
-                                new_pos,
-                            ));
-                    }
-                    if let Some((edge_2d_entity, old_angle, new_angle)) =
-                        edge_manager.last_edge_dragged.take()
-                    {
-                        tab_state
-                            .action_stack
-                            .buffer_action(ShapeAction::RotateEdge(
-                                edge_2d_entity,
-                                old_angle,
-                                new_angle,
-                            ));
-                    }
-                }
-                _ => {}
-            }
-        }
-    }
-
-    // SHAPE SYNC
     pub fn queue_resync_shapes(&mut self) {
         self.resync_shapes = 2;
     }
@@ -636,7 +506,7 @@ impl ShapeManager {
     // private methods
 
     // INPUT
-    fn handle_insert_key_press(&mut self, action_stack: &mut ActionStack<ShapeAction>) {
+    pub(crate) fn handle_insert_key_press(&mut self, action_stack: &mut ActionStack<ShapeAction>) {
         if self.current_file_type == FileTypeValue::Anim {
             return;
         }
@@ -656,7 +526,7 @@ impl ShapeManager {
         ));
     }
 
-    fn handle_delete_key_press(
+    pub(crate) fn handle_delete_key_press(
         &mut self,
         commands: &mut Commands,
         client: &mut Client,
@@ -750,7 +620,7 @@ impl ShapeManager {
         }
     }
 
-    fn handle_mouse_click(
+    pub(crate) fn handle_mouse_click(
         &mut self,
         camera_manager: &CameraManager,
         vertex_manager: &VertexManager,
@@ -925,7 +795,7 @@ impl ShapeManager {
         }
     }
 
-    fn handle_mouse_drag(
+    pub(crate) fn handle_mouse_drag(
         &mut self,
         commands: &mut Commands,
         client: &Client,

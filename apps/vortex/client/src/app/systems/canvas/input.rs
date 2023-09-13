@@ -31,7 +31,7 @@ pub fn input(
     face_manager: Res<FaceManager>,
     mut animation_manager: ResMut<AnimationManager>,
     mut tab_manager: ResMut<TabManager>,
-    mut input_manager: ResMut<InputManager>,
+    input_manager: Res<InputManager>,
     mut input: ResMut<Input>,
     mut transform_q: Query<&mut Transform>,
     mut camera_q: Query<(&mut Camera, &mut Projection)>,
@@ -45,24 +45,23 @@ pub fn input(
         return;
     };
     let input_actions = input.take_actions();
-    let app_actions = input_manager.input_to_app_actions(&canvas, input_actions);
-    if !app_actions.is_empty() {
-        shape_manager.update_input(
-            app_actions,
-            &mut commands,
-            &mut client,
-            &mut camera_manager,
-            &mut animation_manager,
-            current_tab_state,
-            &mut vertex_manager,
-            &mut edge_manager,
-            &face_manager,
-            &mut transform_q,
-            &mut camera_q,
-            &mut vertex_3d_q,
-            &mut edge_angle_q,
-        );
-    }
+    input_manager.update_input(
+        input_actions,
+        &mut commands,
+        &mut client,
+        &canvas,
+        &mut camera_manager,
+        &mut shape_manager,
+        &mut animation_manager,
+        current_tab_state,
+        &mut vertex_manager,
+        &mut edge_manager,
+        &face_manager,
+        &mut transform_q,
+        &mut camera_q,
+        &mut vertex_3d_q,
+        &mut edge_angle_q,
+    );
 }
 
 pub fn update_mouse_hover(
