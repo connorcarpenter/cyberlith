@@ -17,12 +17,11 @@ use crate::app::{
     config::AppConfig,
     resources::{
         camera_manager::CameraManager, canvas::Canvas, compass::Compass, edge_manager::EdgeManager,
-        face_manager::FaceManager, grid::Grid, shape_manager::ShapeManager,
+        face_manager::FaceManager, grid::Grid, input_manager::InputManager,
         vertex_manager::VertexManager,
     },
     shapes::create_2d_edge_line,
 };
-use crate::app::resources::input_manager::InputManager;
 
 pub fn setup(
     config: Res<AppConfig>,

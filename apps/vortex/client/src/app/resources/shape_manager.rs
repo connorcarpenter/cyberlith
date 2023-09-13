@@ -1,16 +1,10 @@
-
-use bevy_ecs::{
-    entity::Entity,
-    system::Query,
-};
+use bevy_ecs::{entity::Entity, system::Query};
 use bevy_log::info;
 
 use crate::app::{
     components::OwnedByFileLocal,
     resources::{
-        edge_manager::EdgeManager,
-        face_manager::FaceManager,
-        shape_data::CanvasShape,
+        edge_manager::EdgeManager, face_manager::FaceManager, shape_data::CanvasShape,
         vertex_manager::VertexManager,
     },
 };
@@ -18,7 +12,6 @@ use crate::app::{
 pub struct ShapeManager;
 
 impl ShapeManager {
-
     // SHAPES
     pub(crate) fn has_shape_entity_3d(
         vertex_manager: &VertexManager,

@@ -1,33 +1,39 @@
 use std::f32::consts::FRAC_PI_2;
-use bevy_ecs::entity::Entity;
-use bevy_ecs::query::{With, Without};
-use bevy_ecs::system::{Commands, Query, Resource};
+
+use bevy_ecs::{
+    entity::Entity,
+    query::{With, Without},
+    system::{Commands, Query, Resource},
+};
 use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt};
 
 use input::{InputAction, Key, MouseButton};
 use math::{convert_2d_to_3d, Vec2, Vec3};
-use render_api::components::{Camera, CameraProjection, Projection, Transform, Visibility};
-use render_api::shapes::{angle_between, distance_to_2d_line, get_2d_line_transform_endpoint, normalize_angle, set_2d_line_transform};
+use render_api::{
+    components::{Camera, CameraProjection, Projection, Transform, Visibility},
+    shapes::{
+        angle_between, distance_to_2d_line, get_2d_line_transform_endpoint, normalize_angle,
+        set_2d_line_transform,
+    },
+};
 
 use vortex_proto::components::{EdgeAngle, FileTypeValue, Vertex3d, VertexRoot};
-use crate::app::components::{Edge2dLocal, FaceIcon2d, LocalShape, OwnedByFileLocal, SelectCircle, SelectTriangle, Vertex2d, VertexTypeData};
 
-use crate::app::resources::{
-    camera_manager::CameraAngle, canvas::Canvas, key_action_map::KeyActionMap,
-    action::ShapeAction,
-    animation_manager::AnimationManager,
-    camera_manager::CameraManager,
-    edge_manager::EdgeManager,
-    face_manager::FaceManager,
-    shape_manager::ShapeManager,
-    tab_manager::TabState,
-    vertex_manager::VertexManager,
+use crate::app::{
+    components::{
+        Edge2dLocal, FaceIcon2d, LocalShape, OwnedByFileLocal, SelectCircle, SelectTriangle,
+        Vertex2d, VertexTypeData,
+    },
+    resources::{
+        action::ActionStack, action::ShapeAction, animation_manager::AnimationManager,
+        camera_manager::CameraAngle, camera_manager::CameraManager, camera_state::CameraState,
+        canvas::Canvas, edge_manager::EdgeManager, face_manager::FaceManager,
+        key_action_map::KeyActionMap, shape_data::CanvasShape, shape_manager::ShapeManager,
+        tab_manager::TabState, vertex_manager::VertexManager,
+    },
 };
-use crate::app::resources::action::ActionStack;
-use crate::app::resources::camera_state::CameraState;
-use crate::app::resources::shape_data::CanvasShape;
 
 #[derive(Clone, Copy)]
 pub enum AppInputAction {
@@ -122,7 +128,6 @@ impl Default for InputManager {
 }
 
 impl InputManager {
-
     pub fn update_input(
         &mut self,
 
@@ -355,7 +360,8 @@ impl InputManager {
         if !is_hovering {
             for (edge_entity, _) in edge_2d_q.iter() {
                 // check tab ownership, skip edges from other tabs
-                if !ShapeManager::is_owned_by_tab(current_tab_file_entity, owned_by_q, edge_entity) {
+                if !ShapeManager::is_owned_by_tab(current_tab_file_entity, owned_by_q, edge_entity)
+                {
                     continue;
                 }
 
@@ -377,7 +383,8 @@ impl InputManager {
         if !is_hovering {
             for (face_entity, _) in face_2d_q.iter() {
                 // check tab ownership, skip faces from other tabs
-                if !ShapeManager::is_owned_by_tab(current_tab_file_entity, owned_by_q, face_entity) {
+                if !ShapeManager::is_owned_by_tab(current_tab_file_entity, owned_by_q, face_entity)
+                {
                     continue;
                 }
 
@@ -551,8 +558,11 @@ impl InputManager {
         }
     }
 
-    pub(crate) fn handle_insert_key_press(&mut self, canvas: &Canvas, action_stack: &mut ActionStack<ShapeAction>) {
-
+    pub(crate) fn handle_insert_key_press(
+        &mut self,
+        canvas: &Canvas,
+        action_stack: &mut ActionStack<ShapeAction>,
+    ) {
         if canvas.current_file_type != FileTypeValue::Mesh {
             return;
         }
@@ -860,10 +870,10 @@ impl InputManager {
         let vertex_is_selected = self.selected_shape.is_some();
         let shape_can_drag = vertex_is_selected
             && match self.selected_shape.unwrap().1 {
-            CanvasShape::RootVertex | CanvasShape::Vertex => true,
-            CanvasShape::Edge => canvas.current_file_type != FileTypeValue::Mesh,
-            _ => false,
-        };
+                CanvasShape::RootVertex | CanvasShape::Vertex => true,
+                CanvasShape::Edge => canvas.current_file_type != FileTypeValue::Mesh,
+                _ => false,
+            };
 
         if vertex_is_selected && shape_can_drag {
             match click_type {

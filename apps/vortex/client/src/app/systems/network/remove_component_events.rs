@@ -7,6 +7,7 @@ use bevy_log::info;
 use naia_bevy_client::{events::RemoveComponentEvents, Client};
 
 use render_api::{base::CpuMesh, components::Visibility, Assets};
+
 use vortex_proto::components::{
     ChangelistEntry, ChangelistStatus, Edge3d, Face3d, FileSystemChild, FileSystemEntry,
     FileSystemRootChild, Vertex3d,
@@ -19,8 +20,8 @@ use crate::app::{
     },
     resources::{
         camera_manager::CameraManager, canvas::Canvas, edge_manager::EdgeManager,
-        face_manager::FaceManager, file_manager::FileManager, shape_manager::ShapeManager,
-        tab_manager::TabManager, toolbar::Toolbar, vertex_manager::VertexManager, input_manager::InputManager,
+        face_manager::FaceManager, file_manager::FileManager, input_manager::InputManager,
+        tab_manager::TabManager, toolbar::Toolbar, vertex_manager::VertexManager,
     },
 };
 

@@ -7,12 +7,12 @@ use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt};
 
+use crate::app::resources::canvas::Canvas;
+use crate::app::resources::input_manager::InputManager;
 use crate::app::resources::{
     action::ShapeAction, edge_manager::EdgeManager, face_manager::FaceManager,
     shape_data::CanvasShape, shape_manager::ShapeManager, vertex_manager::VertexManager,
 };
-use crate::app::resources::canvas::Canvas;
-use crate::app::resources::input_manager::InputManager;
 
 pub(crate) fn execute(
     world: &mut World,
@@ -36,7 +36,7 @@ pub(crate) fn execute(
         mut input_manager,
         vertex_manager,
         edge_manager,
-        face_manager
+        face_manager,
     ) = system_state.get_mut(world);
 
     // Deselect all selected shapes, select the new selected shapes

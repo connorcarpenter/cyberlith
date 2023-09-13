@@ -12,6 +12,7 @@ use render_api::{
     components::Transform,
     Assets,
 };
+
 use vortex_proto::components::FileTypeValue;
 
 use crate::app::{
@@ -19,15 +20,14 @@ use crate::app::{
     resources::{
         action::{select_shape::deselect_all_selected_shapes, ActionStack, ShapeAction},
         camera_manager::CameraManager,
+        canvas::Canvas,
         edge_manager::EdgeManager,
         face_manager::FaceManager,
+        input_manager::InputManager,
         shape_data::{CanvasShape, FaceKey},
-        shape_manager::ShapeManager,
         vertex_manager::VertexManager,
     },
 };
-use crate::app::resources::canvas::Canvas;
-use crate::app::resources::input_manager::InputManager;
 
 pub(crate) fn execute(
     world: &mut World,

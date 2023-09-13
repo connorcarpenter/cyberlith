@@ -22,8 +22,6 @@ use vortex_proto::{
     FileExtension,
 };
 
-use crate::app::resources::edge_manager::EdgeManager;
-use crate::app::resources::vertex_manager::VertexManager;
 use crate::app::{
     components::{file_system::FileSystemUiState, OwnedByFileLocal},
     resources::{
@@ -31,15 +29,16 @@ use crate::app::{
         camera_manager::CameraManager,
         camera_state::CameraState,
         canvas::Canvas,
-        shape_manager::ShapeManager,
+        edge_manager::EdgeManager,
+        input_manager::InputManager,
         toolbar::Toolbar,
+        vertex_manager::VertexManager,
     },
     ui::widgets::colors::{
         FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
         TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED,
     },
 };
-use crate::app::resources::input_manager::InputManager;
 
 pub struct TabState {
     pub selected: bool,

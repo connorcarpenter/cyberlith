@@ -13,8 +13,8 @@ use vortex_proto::components::{
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemEntryLocal},
     resources::{
+        canvas::Canvas,
         file_manager::{get_full_path, FileManager},
-        canvas::Canvas
     },
 };
 

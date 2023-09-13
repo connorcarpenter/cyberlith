@@ -10,11 +10,11 @@ use vortex_proto::components::Edge3d;
 
 use crate::app::resources::{
     action::{select_shape::select_shape, ShapeAction},
+    canvas::Canvas,
     edge_manager::EdgeManager,
     face_manager::FaceManager,
-    shape_data::CanvasShape,
-    canvas::Canvas,
     input_manager::InputManager,
+    shape_data::CanvasShape,
     vertex_manager::VertexManager,
 };
 

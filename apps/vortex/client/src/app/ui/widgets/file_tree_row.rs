@@ -35,7 +35,7 @@ use crate::app::{
         canvas::Canvas,
         edge_manager::EdgeManager,
         file_manager::FileManager,
-        shape_manager::ShapeManager,
+        input_manager::InputManager,
         tab_manager::TabManager,
         toolbar::Toolbar,
         vertex_manager::VertexManager,
@@ -48,7 +48,6 @@ use crate::app::{
         UiState,
     },
 };
-use crate::app::resources::input_manager::InputManager;
 
 pub struct FileTreeRowUiWidget;
 

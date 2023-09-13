@@ -3,8 +3,7 @@ use bevy_ecs::system::{Query, ResMut};
 use render_api::components::{Camera, Projection, Transform};
 
 use crate::app::resources::{
-    camera_manager::CameraManager, canvas::Canvas, shape_manager::ShapeManager,
-    tab_manager::TabManager,
+    camera_manager::CameraManager, canvas::Canvas, tab_manager::TabManager,
 };
 
 pub fn update_camera(

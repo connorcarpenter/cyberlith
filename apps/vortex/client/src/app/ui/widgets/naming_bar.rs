@@ -8,6 +8,7 @@ use render_egui::{
     egui,
     egui::{Align, Button, Frame, Layout, TextEdit, Ui},
 };
+
 use vortex_proto::components::ShapeName;
 
 use crate::app::{
@@ -15,6 +16,7 @@ use crate::app::{
         canvas::Canvas,
         edge_manager::EdgeManager,
         face_manager::FaceManager,
+        input_manager::InputManager,
         shape_data::CanvasShape,
         shape_manager::ShapeManager,
         toolbar::{Toolbar, ToolbarKind},
@@ -22,7 +24,6 @@ use crate::app::{
     },
     ui::UiState,
 };
-use crate::app::resources::input_manager::InputManager;
 
 #[derive(Resource)]
 pub struct NamingBarState {

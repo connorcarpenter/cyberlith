@@ -23,14 +23,14 @@ use crate::app::{
     components::{Face3dLocal, FaceIcon2d, OwnedByFileLocal},
     resources::{
         camera_manager::CameraManager,
+        canvas::Canvas,
         edge_manager::EdgeManager,
+        input_manager::InputManager,
         shape_data::{CanvasShape, FaceData, FaceKey},
         shape_manager::ShapeManager,
         vertex_manager::VertexManager,
     },
 };
-use crate::app::resources::canvas::Canvas;
-use crate::app::resources::input_manager::InputManager;
 
 #[derive(Resource)]
 pub struct FaceManager {

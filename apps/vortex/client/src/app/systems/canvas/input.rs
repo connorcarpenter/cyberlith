@@ -16,7 +16,7 @@ use crate::app::{
     resources::{
         animation_manager::AnimationManager, camera_manager::CameraManager, canvas::Canvas,
         edge_manager::EdgeManager, face_manager::FaceManager, input_manager::InputManager,
-        shape_manager::ShapeManager, tab_manager::TabManager, vertex_manager::VertexManager,
+        tab_manager::TabManager, vertex_manager::VertexManager,
     },
 };
 

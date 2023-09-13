@@ -5,13 +5,11 @@ use render_egui::egui::Ui;
 
 use crate::app::{
     resources::{
-        edge_manager::EdgeManager, shape_data::CanvasShape, shape_manager::ShapeManager,
-        toolbar::Toolbar,
+        canvas::Canvas, edge_manager::EdgeManager, input_manager::InputManager,
+        shape_data::CanvasShape, toolbar::Toolbar,
     },
     ui::widgets::naming_bar_visibility_toggle,
 };
-use crate::app::resources::canvas::Canvas;
-use crate::app::resources::input_manager::InputManager;
 
 pub struct SkeletonToolbar;
 

@@ -17,14 +17,14 @@ use vortex_proto::components::FileTypeValue;
 use crate::app::resources::{
     action::{select_shape::deselect_all_selected_shapes, ActionStack, ShapeAction},
     camera_manager::CameraManager,
+    canvas::Canvas,
     edge_manager::EdgeManager,
     face_manager::FaceManager,
+    input_manager::InputManager,
     shape_data::{CanvasShape, FaceKey},
     shape_manager::ShapeManager,
     vertex_manager::VertexManager,
 };
-use crate::app::resources::canvas::Canvas;
-use crate::app::resources::input_manager::InputManager;
 
 pub(crate) fn execute(
     world: &mut World,
@@ -127,7 +127,11 @@ pub(crate) fn execute(
         }
 
         // select vertex
-        input_manager.select_shape(&mut canvas, &shape_2d_entity_to_select, shape_2d_type_to_select);
+        input_manager.select_shape(
+            &mut canvas,
+            &shape_2d_entity_to_select,
+            shape_2d_type_to_select,
+        );
         selected_shape_3d = ShapeManager::shape_entity_2d_to_3d(
             &vertex_manager,
             &edge_manager,

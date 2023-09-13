@@ -25,7 +25,9 @@ use crate::app::{
     components::{Edge2dLocal, Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d},
     resources::{
         camera_manager::CameraManager,
+        canvas::Canvas,
         face_manager::FaceManager,
+        input_manager::InputManager,
         shape_data::{CanvasShape, Edge3dData, FaceKey},
         shape_manager::ShapeManager,
         vertex_manager::VertexManager,
@@ -35,8 +37,6 @@ use crate::app::{
         create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,
     },
 };
-use crate::app::resources::canvas::Canvas;
-use crate::app::resources::input_manager::InputManager;
 
 #[derive(Resource)]
 pub struct EdgeManager {

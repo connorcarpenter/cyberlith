@@ -19,11 +19,10 @@ use crate::app::{
     components::OwnedByFileLocal,
     resources::{
         camera_manager::CameraManager, canvas::Canvas, edge_manager::EdgeManager,
-        shape_manager::ShapeManager, tab_manager::TabManager, toolbar::Toolbar,
+        input_manager::InputManager, tab_manager::TabManager, toolbar::Toolbar,
         vertex_manager::VertexManager,
     },
 };
-use crate::app::resources::input_manager::InputManager;
 
 struct ChangelistData {
     changelist_entity: Entity,

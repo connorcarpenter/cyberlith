@@ -27,16 +27,15 @@ use crate::app::{
     events::InsertComponentEvent,
     resources::{
         camera_manager::CameraManager,
+        canvas::Canvas,
         edge_manager::EdgeManager,
         face_manager::FaceManager,
         file_manager::{get_full_path, FileManager},
-        shape_manager::ShapeManager,
         shape_waitlist::{ShapeWaitlist, ShapeWaitlistInsert},
         vertex_manager::VertexManager,
     },
     systems::file_post_process,
 };
-use crate::app::resources::canvas::Canvas;
 
 pub fn insert_component_events(
     mut event_reader: EventReader<InsertComponentEvents>,

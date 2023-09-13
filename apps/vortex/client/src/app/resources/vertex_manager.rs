@@ -9,6 +9,7 @@ use bevy_log::{info, warn};
 use naia_bevy_client::{Client, CommandsExt, Replicate, ReplicationConfig};
 
 use math::{convert_3d_to_2d, Vec2, Vec3};
+
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
     components::{Camera, CameraProjection, Projection, RenderObjectBundle, Transform},
@@ -24,14 +25,14 @@ use crate::app::{
     resources::{
         action::{ActionStack, ShapeAction},
         camera_manager::CameraManager,
+        canvas::Canvas,
         edge_manager::EdgeManager,
         face_manager::FaceManager,
+        input_manager::InputManager,
         shape_data::{CanvasShape, FaceKey, Vertex3dData},
         shape_manager::ShapeManager,
     },
 };
-use crate::app::resources::canvas::Canvas;
-use crate::app::resources::input_manager::InputManager;
 
 #[derive(Resource)]
 pub struct VertexManager {

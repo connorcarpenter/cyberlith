@@ -12,15 +12,14 @@ use crate::app::{
     components::{VertexEntry, VertexTypeData},
     resources::{
         action::{select_shape::select_shape, ShapeAction},
+        canvas::Canvas,
         edge_manager::EdgeManager,
         face_manager::FaceManager,
+        input_manager::InputManager,
         shape_data::CanvasShape,
-        shape_manager::ShapeManager,
         vertex_manager::VertexManager,
     },
 };
-use crate::app::resources::canvas::Canvas;
-use crate::app::resources::input_manager::InputManager;
 
 pub(crate) fn execute(
     world: &mut World,
