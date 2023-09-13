@@ -24,14 +24,13 @@ pub fn input(
     mut commands: Commands,
     mut client: Client,
     mut camera_manager: ResMut<CameraManager>,
-    canvas: Res<Canvas>,
-    mut shape_manager: ResMut<ShapeManager>,
+    mut canvas: ResMut<Canvas>,
     mut vertex_manager: ResMut<VertexManager>,
     mut edge_manager: ResMut<EdgeManager>,
     face_manager: Res<FaceManager>,
     mut animation_manager: ResMut<AnimationManager>,
     mut tab_manager: ResMut<TabManager>,
-    input_manager: Res<InputManager>,
+    mut input_manager: ResMut<InputManager>,
     mut input: ResMut<Input>,
     mut transform_q: Query<&mut Transform>,
     mut camera_q: Query<(&mut Camera, &mut Projection)>,
@@ -49,9 +48,8 @@ pub fn input(
         input_actions,
         &mut commands,
         &mut client,
-        &canvas,
+        &mut canvas,
         &mut camera_manager,
-        &mut shape_manager,
         &mut animation_manager,
         current_tab_state,
         &mut vertex_manager,
@@ -65,10 +63,10 @@ pub fn input(
 }
 
 pub fn update_mouse_hover(
-    canvas: Res<Canvas>,
+    mut canvas: ResMut<Canvas>,
     input: Res<Input>,
     tab_manager: ResMut<TabManager>,
-    mut shape_manager: ResMut<ShapeManager>,
+    mut input_manager: ResMut<InputManager>,
     mut transform_q: Query<(&mut Transform, Option<&LocalShape>)>,
     owned_by_tab_q: Query<&OwnedByFileLocal>,
     vertex_2d_q: Query<(Entity, Option<&VertexRoot>), (With<Vertex2d>, Without<LocalShape>)>,
@@ -86,7 +84,8 @@ pub fn update_mouse_hover(
     if let Some(current_tab_entity) = tab_manager.current_tab_entity() {
         let current_tab_camera_state = &current_tab_state.camera_state;
 
-        shape_manager.sync_mouse_hover_ui(
+        input_manager.sync_mouse_hover_ui(
+            &mut canvas,
             *current_tab_entity,
             input.mouse_position(),
             current_tab_camera_state,

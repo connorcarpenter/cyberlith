@@ -21,6 +21,7 @@ use crate::app::{
     components::{OwnedByFileLocal, Vertex2d},
     resources::{camera_manager::CameraManager, shape_data::FaceKey, shape_manager::ShapeManager},
 };
+use crate::app::resources::canvas::Canvas;
 
 pub enum ShapeWaitlistInsert {
     Vertex,
@@ -210,7 +211,7 @@ impl ShapeWaitlist {
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         camera_manager: &mut CameraManager,
-        shape_manager: &mut ShapeManager,
+        canvas: &mut Canvas,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
         face_manager: &mut FaceManager,
@@ -381,7 +382,7 @@ impl ShapeWaitlist {
                 meshes,
                 materials,
                 camera_manager,
-                shape_manager,
+                canvas,
                 vertex_manager,
                 edge_manager,
                 face_manager,
@@ -398,7 +399,7 @@ impl ShapeWaitlist {
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         camera_manager: &mut CameraManager,
-        shape_manager: &mut ShapeManager,
+        canvas: &mut Canvas,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
         face_manager: &mut FaceManager,
@@ -514,7 +515,7 @@ impl ShapeWaitlist {
                     meshes,
                     materials,
                     camera_manager,
-                    shape_manager,
+                    canvas,
                     vertex_manager,
                     edge_manager,
                     face_manager,
@@ -526,7 +527,7 @@ impl ShapeWaitlist {
         }
 
         camera_manager.recalculate_3d_view();
-        shape_manager.queue_resync_shapes();
+        canvas.queue_resync_shapes();
     }
 
     fn contains_key(&self, entity: &Entity) -> bool {

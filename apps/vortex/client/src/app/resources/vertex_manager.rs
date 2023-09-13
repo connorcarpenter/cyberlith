@@ -30,6 +30,8 @@ use crate::app::{
         shape_manager::ShapeManager,
     },
 };
+use crate::app::resources::canvas::Canvas;
+use crate::app::resources::input_manager::InputManager;
 
 #[derive(Resource)]
 pub struct VertexManager {
@@ -452,7 +454,8 @@ impl VertexManager {
     pub fn cleanup_deleted_vertex(
         &mut self,
         commands: &mut Commands,
-        shape_manager: &mut ShapeManager,
+        canvas: &mut Canvas,
+        input_manager: &mut InputManager,
         entity_3d: &Entity,
     ) -> Entity {
         // unregister vertex
@@ -467,11 +470,11 @@ impl VertexManager {
         info!("despawn 2d vertex {:?}", vertex_2d_entity);
         commands.entity(vertex_2d_entity).despawn();
 
-        if shape_manager.hovered_entity == Some((vertex_2d_entity, CanvasShape::Vertex)) {
-            shape_manager.hovered_entity = None;
+        if input_manager.hovered_entity == Some((vertex_2d_entity, CanvasShape::Vertex)) {
+            input_manager.hovered_entity = None;
         }
 
-        shape_manager.queue_resync_shapes();
+        canvas.queue_resync_shapes();
 
         vertex_2d_entity
     }

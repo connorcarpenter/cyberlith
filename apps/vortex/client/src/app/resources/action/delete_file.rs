@@ -31,6 +31,8 @@ use crate::app::{
         vertex_manager::VertexManager,
     },
 };
+use crate::app::resources::input_manager::InputManager;
+use crate::app::systems::canvas::input;
 
 pub(crate) fn execute(
     world: &mut World,
@@ -45,7 +47,7 @@ pub(crate) fn execute(
         ResMut<FileManager>,
         ResMut<Canvas>,
         ResMut<CameraManager>,
-        ResMut<ShapeManager>,
+        ResMut<InputManager>,
         ResMut<VertexManager>,
         ResMut<EdgeManager>,
         ResMut<TabManager>,
@@ -66,7 +68,7 @@ pub(crate) fn execute(
         mut file_manager,
         mut canvas,
         mut camera_manager,
-        mut shape_manager,
+        mut input_manager,
         mut vertex_manager,
         mut edge_manager,
         mut tab_manager,
@@ -138,7 +140,7 @@ pub(crate) fn execute(
         &mut client,
         &mut canvas,
         &mut camera_manager,
-        &mut shape_manager,
+        &mut input_manager,
         &mut vertex_manager,
         &mut edge_manager,
         &mut tab_manager,

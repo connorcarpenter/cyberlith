@@ -11,6 +11,8 @@ use crate::app::resources::{
     action::ShapeAction, edge_manager::EdgeManager, face_manager::FaceManager,
     shape_data::CanvasShape, shape_manager::ShapeManager, vertex_manager::VertexManager,
 };
+use crate::app::resources::canvas::Canvas;
+use crate::app::resources::input_manager::InputManager;
 
 pub(crate) fn execute(
     world: &mut World,
@@ -21,23 +23,33 @@ pub(crate) fn execute(
     let mut system_state: SystemState<(
         Commands,
         Client,
-        ResMut<ShapeManager>,
+        ResMut<Canvas>,
+        ResMut<InputManager>,
         Res<VertexManager>,
         Res<EdgeManager>,
         Res<FaceManager>,
     )> = SystemState::new(world);
-    let (mut commands, mut client, mut shape_manager, vertex_manager, edge_manager, face_manager) =
-        system_state.get_mut(world);
+    let (
+        mut commands,
+        mut client,
+        mut canvas,
+        mut input_manager,
+        vertex_manager,
+        edge_manager,
+        face_manager
+    ) = system_state.get_mut(world);
 
     // Deselect all selected shapes, select the new selected shapes
     let (deselected_entity, entity_to_release) = deselect_all_selected_shapes(
-        &mut shape_manager,
+        &mut canvas,
+        &mut input_manager,
         &vertex_manager,
         &edge_manager,
         &face_manager,
     );
     let entity_to_request = select_shape(
-        &mut shape_manager,
+        &mut canvas,
+        &mut input_manager,
         &vertex_manager,
         &edge_manager,
         &face_manager,
@@ -79,14 +91,15 @@ pub(crate) fn execute(
 
 // returns entity to request auth for
 pub fn select_shape(
-    shape_manager: &mut ShapeManager,
+    canvas: &mut Canvas,
+    input_manager: &mut InputManager,
     vertex_manager: &VertexManager,
     edge_manager: &EdgeManager,
     face_manager: &FaceManager,
     shape_2d_entity_opt: Option<(Entity, CanvasShape)>,
 ) -> Option<Entity> {
     if let Some((shape_2d_entity, shape)) = shape_2d_entity_opt {
-        shape_manager.select_shape(&shape_2d_entity, shape);
+        input_manager.select_shape(canvas, &shape_2d_entity, shape);
         match shape {
             CanvasShape::Vertex => {
                 let vertex_3d_entity = vertex_manager
@@ -108,15 +121,16 @@ pub fn select_shape(
 }
 
 pub fn deselect_all_selected_shapes(
-    shape_manager: &mut ShapeManager,
+    canvas: &mut Canvas,
+    input_manager: &mut InputManager,
     vertex_manager: &VertexManager,
     edge_manager: &EdgeManager,
     face_manager: &FaceManager,
 ) -> (Option<(Entity, CanvasShape)>, Option<Entity>) {
     let mut entity_to_deselect = None;
     let mut entity_to_release = None;
-    if let Some((shape_2d_entity, shape_2d_type)) = shape_manager.selected_shape_2d() {
-        shape_manager.deselect_shape();
+    if let Some((shape_2d_entity, shape_2d_type)) = input_manager.selected_shape_2d() {
+        input_manager.deselect_shape(canvas);
         entity_to_deselect = Some((shape_2d_entity, shape_2d_type));
         entity_to_release = Some(
             ShapeManager::shape_entity_2d_to_3d(

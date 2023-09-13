@@ -29,6 +29,8 @@ use crate::app::{
         vertex_manager::VertexManager,
     },
 };
+use crate::app::resources::canvas::Canvas;
+use crate::app::resources::input_manager::InputManager;
 
 #[derive(Resource)]
 pub struct FaceManager {
@@ -114,8 +116,8 @@ impl FaceManager {
     pub fn process_new_faces(
         &mut self,
         commands: &mut Commands,
+        canvas: &mut Canvas,
         camera_manager: &CameraManager,
-        shape_manager: &mut ShapeManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
         meshes: &mut Assets<CpuMesh>,
@@ -139,7 +141,7 @@ impl FaceManager {
             );
         }
 
-        shape_manager.queue_resync_shapes();
+        canvas.queue_resync_shapes();
     }
 
     // return face 2d entity
@@ -434,7 +436,8 @@ impl FaceManager {
     pub(crate) fn cleanup_deleted_face_key(
         &mut self,
         commands: &mut Commands,
-        shape_manager: &mut ShapeManager,
+        canvas: &mut Canvas,
+        input_manager: &mut InputManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
         face_key: &FaceKey,
@@ -451,11 +454,11 @@ impl FaceManager {
         info!("despawn 2d face {:?}", face_2d_entity);
         commands.entity(face_2d_entity).despawn();
 
-        if shape_manager.hovered_entity == Some((face_2d_entity, CanvasShape::Face)) {
-            shape_manager.hovered_entity = None;
+        if input_manager.hovered_entity == Some((face_2d_entity, CanvasShape::Face)) {
+            input_manager.hovered_entity = None;
         }
 
-        shape_manager.queue_resync_shapes();
+        canvas.queue_resync_shapes();
 
         face_2d_entity
     }

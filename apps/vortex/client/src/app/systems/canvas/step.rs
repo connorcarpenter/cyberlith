@@ -11,7 +11,6 @@ pub fn update_camera(
     mut canvas: ResMut<Canvas>,
     mut camera_manager: ResMut<CameraManager>,
     tab_manager: ResMut<TabManager>,
-    mut shape_manager: ResMut<ShapeManager>,
     mut camera_q: Query<(&mut Camera, &mut Projection, &mut Transform)>,
 ) {
     if canvas.update_visibility() {
@@ -22,6 +21,6 @@ pub fn update_camera(
     };
     let current_tab_camera_state = &current_tab_state.camera_state;
     if camera_manager.update_3d_camera(current_tab_camera_state, &mut camera_q) {
-        shape_manager.queue_resync_shapes();
+        canvas.queue_resync_shapes();
     }
 }

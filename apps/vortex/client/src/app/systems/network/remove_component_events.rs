@@ -20,7 +20,7 @@ use crate::app::{
     resources::{
         camera_manager::CameraManager, canvas::Canvas, edge_manager::EdgeManager,
         face_manager::FaceManager, file_manager::FileManager, shape_manager::ShapeManager,
-        tab_manager::TabManager, toolbar::Toolbar, vertex_manager::VertexManager,
+        tab_manager::TabManager, toolbar::Toolbar, vertex_manager::VertexManager, input_manager::InputManager,
     },
 };
 
@@ -30,7 +30,7 @@ pub fn remove_component_events(
     mut canvas: ResMut<Canvas>,
     mut camera_manager: ResMut<CameraManager>,
     mut file_manager: ResMut<FileManager>,
-    mut shape_manager: ResMut<ShapeManager>,
+    mut input_manager: ResMut<InputManager>,
     mut vertex_manager: ResMut<VertexManager>,
     mut edge_manager: ResMut<EdgeManager>,
     mut face_manager: ResMut<FaceManager>,
@@ -50,7 +50,7 @@ pub fn remove_component_events(
                 &mut client,
                 &mut canvas,
                 &mut camera_manager,
-                &mut shape_manager,
+                &mut input_manager,
                 &mut vertex_manager,
                 &mut edge_manager,
                 &mut tab_manager,
@@ -99,7 +99,8 @@ pub fn remove_component_events(
 
             vertex_manager.cleanup_deleted_vertex(
                 &mut commands,
-                &mut shape_manager,
+                &mut canvas,
+                &mut input_manager,
                 &vertex_entity_3d,
             );
         }
@@ -108,7 +109,8 @@ pub fn remove_component_events(
 
             edge_manager.cleanup_deleted_edge(
                 &mut commands,
-                &mut shape_manager,
+                &mut canvas,
+                &mut input_manager,
                 &mut vertex_manager,
                 &mut face_manager,
                 &edge_3d_entity,

@@ -10,13 +10,15 @@ use crate::app::{
     },
     ui::widgets::naming_bar_visibility_toggle,
 };
+use crate::app::resources::canvas::Canvas;
+use crate::app::resources::input_manager::InputManager;
 
 pub struct SkeletonToolbar;
 
 impl SkeletonToolbar {
     pub(crate) fn render(ui: &mut Ui, world: &mut World) {
-        let shape_manager = world.get_resource::<ShapeManager>().unwrap();
-        let selected_shape_2d = shape_manager.selected_shape_2d();
+        let input_manager = world.get_resource::<InputManager>().unwrap();
+        let selected_shape_2d = input_manager.selected_shape_2d();
 
         {
             // name selected shape
@@ -40,11 +42,11 @@ impl SkeletonToolbar {
             // toggle edge angle visibility
             let response = Toolbar::button(ui, "📐", "Toggle edge angle visibility", true);
             if response.clicked() {
-                let mut system_state: SystemState<(ResMut<ShapeManager>, ResMut<EdgeManager>)> =
+                let mut system_state: SystemState<(ResMut<Canvas>, ResMut<EdgeManager>)> =
                     SystemState::new(world);
-                let (mut shape_manager, mut edge_manager) = system_state.get_mut(world);
+                let (mut canvas, mut edge_manager) = system_state.get_mut(world);
 
-                edge_manager.edge_angle_visibility_toggle(&mut shape_manager);
+                edge_manager.edge_angle_visibility_toggle(&mut canvas);
 
                 system_state.apply(world);
             }

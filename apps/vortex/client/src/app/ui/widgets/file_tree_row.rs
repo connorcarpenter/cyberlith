@@ -48,6 +48,7 @@ use crate::app::{
         UiState,
     },
 };
+use crate::app::resources::input_manager::InputManager;
 
 pub struct FileTreeRowUiWidget;
 
@@ -397,7 +398,7 @@ impl FileTreeRowUiWidget {
                 Client,
                 ResMut<Canvas>,
                 ResMut<CameraManager>,
-                ResMut<ShapeManager>,
+                ResMut<InputManager>,
                 ResMut<VertexManager>,
                 ResMut<EdgeManager>,
                 ResMut<TabManager>,
@@ -408,7 +409,7 @@ impl FileTreeRowUiWidget {
                 mut client,
                 mut canvas,
                 mut camera_manager,
-                mut shape_manager,
+                mut input_manager,
                 mut vertex_manager,
                 mut edge_manager,
                 mut tab_manager,
@@ -420,7 +421,7 @@ impl FileTreeRowUiWidget {
                 &mut client,
                 &mut canvas,
                 &mut camera_manager,
-                &mut shape_manager,
+                &mut input_manager,
                 &mut vertex_manager,
                 &mut edge_manager,
                 &mut toolbar,

@@ -23,6 +23,7 @@ use crate::app::{
         vertex_manager::VertexManager,
     },
 };
+use crate::app::resources::input_manager::InputManager;
 
 struct ChangelistData {
     changelist_entity: Entity,
@@ -76,7 +77,7 @@ impl FileManager {
         client: &mut Client,
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
-        shape_manager: &mut ShapeManager,
+        input_manager: &mut InputManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
         tab_manager: &mut TabManager,
@@ -91,7 +92,7 @@ impl FileManager {
                 client,
                 canvas,
                 camera_manager,
-                shape_manager,
+                input_manager,
                 vertex_manager,
                 edge_manager,
                 toolbar,

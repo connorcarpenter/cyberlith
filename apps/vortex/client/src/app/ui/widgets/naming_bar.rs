@@ -22,6 +22,7 @@ use crate::app::{
     },
     ui::UiState,
 };
+use crate::app::resources::input_manager::InputManager;
 
 #[derive(Resource)]
 pub struct NamingBarState {
@@ -47,8 +48,8 @@ pub fn render_naming_bar(ui: &mut Ui, world: &mut World) {
         .frame(Frame::central_panel(ui.style()).inner_margin(2.0))
         .show_inside(ui, |ui| {
             ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                let shape_manager = world.get_resource::<ShapeManager>().unwrap();
-                let selected_shape_2d = shape_manager.selected_shape_2d();
+                let input_manager = world.get_resource::<InputManager>().unwrap();
+                let selected_shape_2d = input_manager.selected_shape_2d();
 
                 let state = world.get_resource::<NamingBarState>().unwrap();
                 if state.selected_shape_opt != selected_shape_2d {
@@ -148,15 +149,15 @@ pub fn render_naming_bar(ui: &mut Ui, world: &mut World) {
                 if response.has_focus() {
                     let mut system_state: SystemState<(
                         ResMut<Canvas>,
-                        ResMut<ShapeManager>,
+                        ResMut<InputManager>,
                         ResMut<VertexManager>,
                         ResMut<EdgeManager>,
                     )> = SystemState::new(world);
-                    let (mut canvas, mut shape_manager, mut vertex_manager, mut edge_manager) =
+                    let (mut canvas, mut input_manager, mut vertex_manager, mut edge_manager) =
                         system_state.get_mut(world);
 
                     canvas.set_focus(
-                        &mut shape_manager,
+                        &mut input_manager,
                         &mut vertex_manager,
                         &mut edge_manager,
                         false,
@@ -179,8 +180,8 @@ pub fn naming_bar_visibility_toggle(world: &mut World) {
     }
 
     // is vertex/edge selected?
-    let shape_manager = world.get_resource::<ShapeManager>().unwrap();
-    let selected_shape_2d = shape_manager.selected_shape_2d();
+    let input_manager = world.get_resource::<InputManager>().unwrap();
+    let selected_shape_2d = input_manager.selected_shape_2d();
     if selected_shape_2d.is_none() {
         return;
     }
@@ -196,14 +197,14 @@ pub fn naming_bar_visibility_toggle(world: &mut World) {
     // set focus to canvas
     let mut system_state: SystemState<(
         ResMut<Canvas>,
-        ResMut<ShapeManager>,
+        ResMut<InputManager>,
         ResMut<VertexManager>,
         ResMut<EdgeManager>,
     )> = SystemState::new(world);
-    let (mut canvas, mut shape_manager, mut vertex_manager, mut edge_manager) =
+    let (mut canvas, mut input_manager, mut vertex_manager, mut edge_manager) =
         system_state.get_mut(world);
 
-    canvas.set_focused_timed(&mut shape_manager, &mut vertex_manager, &mut edge_manager);
+    canvas.set_focused_timed(&mut input_manager, &mut vertex_manager, &mut edge_manager);
 
     system_state.apply(world);
 }

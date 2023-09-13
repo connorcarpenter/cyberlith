@@ -19,6 +19,8 @@ use crate::app::{
         vertex_manager::VertexManager,
     },
 };
+use crate::app::resources::canvas::Canvas;
+use crate::app::resources::input_manager::InputManager;
 
 pub(crate) fn execute(
     world: &mut World,
@@ -30,7 +32,8 @@ pub(crate) fn execute(
     let mut system_state: SystemState<(
         Commands,
         Client,
-        ResMut<ShapeManager>,
+        ResMut<Canvas>,
+        ResMut<InputManager>,
         ResMut<VertexManager>,
         ResMut<EdgeManager>,
         ResMut<FaceManager>,
@@ -41,7 +44,8 @@ pub(crate) fn execute(
     let (
         mut commands,
         mut client,
-        mut shape_manager,
+        mut canvas,
+        mut input_manager,
         mut vertex_manager,
         edge_manager,
         face_manager,
@@ -120,7 +124,8 @@ pub(crate) fn execute(
             handle_common_vertex_despawn(
                 &mut commands,
                 &mut client,
-                &mut shape_manager,
+                &mut canvas,
+                &mut input_manager,
                 &mut vertex_manager,
                 &edge_manager,
                 &face_manager,
@@ -207,7 +212,8 @@ pub(crate) fn execute(
             handle_common_vertex_despawn(
                 &mut commands,
                 &mut client,
-                &mut shape_manager,
+                &mut canvas,
+                &mut input_manager,
                 &mut vertex_manager,
                 &edge_manager,
                 &face_manager,
@@ -232,7 +238,8 @@ pub(crate) fn execute(
 fn handle_common_vertex_despawn(
     commands: &mut Commands,
     client: &mut Client,
-    shape_manager: &mut ShapeManager,
+    canvas: &mut Canvas,
+    input_manager: &mut InputManager,
     vertex_manager: &mut VertexManager,
     edge_manager: &EdgeManager,
     face_manager: &FaceManager,
@@ -243,12 +250,13 @@ fn handle_common_vertex_despawn(
     commands.entity(vertex_3d_entity).despawn();
 
     // cleanup mappings
-    vertex_manager.cleanup_deleted_vertex(commands, shape_manager, &vertex_3d_entity);
+    vertex_manager.cleanup_deleted_vertex(commands, canvas, input_manager, &vertex_3d_entity);
 
     // select entities as needed
     if let Some((vertex_2d_to_select, vertex_type)) = vertex_2d_to_select_opt {
         if let Some(vertex_3d_entity_to_request) = select_shape(
-            shape_manager,
+            canvas,
+            input_manager,
             vertex_manager,
             edge_manager,
             face_manager,
@@ -261,7 +269,7 @@ fn handle_common_vertex_despawn(
             }
         }
     } else {
-        shape_manager.deselect_shape();
+        input_manager.deselect_shape(canvas);
     }
 }
 

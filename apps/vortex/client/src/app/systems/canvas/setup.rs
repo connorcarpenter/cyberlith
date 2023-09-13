@@ -22,16 +22,17 @@ use crate::app::{
     },
     shapes::create_2d_edge_line,
 };
+use crate::app::resources::input_manager::InputManager;
 
 pub fn setup(
     config: Res<AppConfig>,
     mut commands: Commands,
     mut canvas: ResMut<Canvas>,
-    mut shape_manager: ResMut<ShapeManager>,
     mut vertex_manager: ResMut<VertexManager>,
     mut edge_manager: ResMut<EdgeManager>,
     mut face_manager: ResMut<FaceManager>,
     mut camera_manager: ResMut<CameraManager>,
+    mut input_manager: ResMut<InputManager>,
     mut compass: ResMut<Compass>,
     mut textures: ResMut<Assets<CpuTexture2D>>,
     mut user_textures: ResMut<EguiUserTextures>,
@@ -57,7 +58,7 @@ pub fn setup(
     setup_2d_scene(
         &mut commands,
         &mut camera_manager,
-        &mut shape_manager,
+        &mut input_manager,
         &mut meshes,
         &mut materials,
         &mut ambient_lights,
@@ -87,7 +88,7 @@ pub fn setup(
 fn setup_2d_scene(
     commands: &mut Commands,
     camera_manager: &mut CameraManager,
-    shape_manager: &mut ShapeManager,
+    input_manager: &mut InputManager,
     meshes: &mut Assets<CpuMesh>,
     materials: &mut Assets<CpuMaterial>,
     ambient_lights: &mut Assets<AmbientLight>,
@@ -137,7 +138,7 @@ fn setup_2d_scene(
             .insert(camera_manager.layer_2d)
             .insert(SelectCircle)
             .id();
-        shape_manager.select_circle_entity = Some(select_circle_entity);
+        input_manager.select_circle_entity = Some(select_circle_entity);
     }
 
     // select triangle
@@ -156,7 +157,7 @@ fn setup_2d_scene(
             .insert(camera_manager.layer_2d)
             .insert(SelectTriangle)
             .id();
-        shape_manager.select_triangle_entity = Some(select_triangle_entity);
+        input_manager.select_triangle_entity = Some(select_triangle_entity);
     }
 
     // select line
@@ -176,7 +177,7 @@ fn setup_2d_scene(
             .insert(camera_manager.layer_2d)
             .insert(SelectLine)
             .id();
-        shape_manager.select_line_entity = Some(select_line_entity);
+        input_manager.select_line_entity = Some(select_line_entity);
     }
 }
 

@@ -13,7 +13,8 @@ use crate::app::resources::{
     edge_manager::EdgeManager,
     face_manager::FaceManager,
     shape_data::CanvasShape,
-    shape_manager::ShapeManager,
+    canvas::Canvas,
+    input_manager::InputManager,
     vertex_manager::VertexManager,
 };
 
@@ -26,7 +27,8 @@ pub(crate) fn execute(
     let mut system_state: SystemState<(
         Commands,
         Client,
-        ResMut<ShapeManager>,
+        ResMut<Canvas>,
+        ResMut<InputManager>,
         ResMut<VertexManager>,
         ResMut<EdgeManager>,
         ResMut<FaceManager>,
@@ -35,7 +37,8 @@ pub(crate) fn execute(
     let (
         mut commands,
         mut client,
-        mut shape_manager,
+        mut canvas,
+        mut input_manager,
         mut vertex_manager,
         mut edge_manager,
         mut face_manager,
@@ -102,7 +105,8 @@ pub(crate) fn execute(
     // cleanup mappings
     edge_manager.cleanup_deleted_edge(
         &mut commands,
-        &mut shape_manager,
+        &mut canvas,
+        &mut input_manager,
         &mut vertex_manager,
         &mut face_manager,
         &edge_3d_entity,
@@ -111,7 +115,8 @@ pub(crate) fn execute(
     // select entities as needed
     if let Some((shape_2d_to_select, shape_type)) = shape_2d_to_select_opt {
         if let Some(shape_3d_entity_to_request) = select_shape(
-            &mut shape_manager,
+            &mut canvas,
+            &mut input_manager,
             &vertex_manager,
             &edge_manager,
             &face_manager,
@@ -124,7 +129,7 @@ pub(crate) fn execute(
             }
         }
     } else {
-        shape_manager.deselect_shape();
+        input_manager.deselect_shape(&mut canvas);
     }
 
     system_state.apply(world);

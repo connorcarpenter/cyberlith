@@ -14,7 +14,7 @@ use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemEntryLocal},
     resources::{
         file_manager::{get_full_path, FileManager},
-        shape_manager::ShapeManager,
+        canvas::Canvas
     },
 };
 
@@ -22,7 +22,7 @@ pub fn update_component_events(
     client: Client,
     mut event_reader: EventReader<UpdateComponentEvents>,
     file_manager: ResMut<FileManager>,
-    mut shape_manager: ResMut<ShapeManager>,
+    mut canvas: ResMut<Canvas>,
     entry_q: Query<(&FileSystemEntry, Option<&FileSystemChild>)>,
     mut entry_local_q: Query<&mut FileSystemEntryLocal>,
     mut cl_q: Query<(&ChangelistEntry, &mut ChangelistUiState)>,
@@ -90,7 +90,7 @@ pub fn update_component_events(
             break;
         }
         if updated_shapes {
-            shape_manager.queue_resync_shapes();
+            canvas.queue_resync_shapes();
         }
     }
 }

@@ -36,6 +36,7 @@ use crate::app::{
     },
     systems::file_post_process,
 };
+use crate::app::resources::canvas::Canvas;
 
 pub fn insert_component_events(
     mut event_reader: EventReader<InsertComponentEvents>,
@@ -266,7 +267,7 @@ pub fn insert_vertex_events(
     mut vertex_root_events: EventReader<InsertComponentEvent<VertexRoot>>,
 
     mut camera_manager: ResMut<CameraManager>,
-    mut shape_manager: ResMut<ShapeManager>,
+    mut canvas: ResMut<Canvas>,
     mut vertex_manager: ResMut<VertexManager>,
     mut edge_manager: ResMut<EdgeManager>,
     mut face_manager: ResMut<FaceManager>,
@@ -286,7 +287,7 @@ pub fn insert_vertex_events(
             &mut meshes,
             &mut materials,
             &mut camera_manager,
-            &mut shape_manager,
+            &mut canvas,
             &mut vertex_manager,
             &mut edge_manager,
             &mut face_manager,
@@ -307,7 +308,7 @@ pub fn insert_vertex_events(
             &mut meshes,
             &mut materials,
             &mut camera_manager,
-            &mut shape_manager,
+            &mut canvas,
             &mut vertex_manager,
             &mut edge_manager,
             &mut face_manager,
@@ -326,7 +327,7 @@ pub fn insert_edge_events(
 
     // for vertices
     mut camera_manager: ResMut<CameraManager>,
-    mut shape_manager: ResMut<ShapeManager>,
+    mut canvas: ResMut<Canvas>,
     mut vertex_manager: ResMut<VertexManager>,
     mut edge_manager: ResMut<EdgeManager>,
     mut face_manager: ResMut<FaceManager>,
@@ -360,7 +361,7 @@ pub fn insert_edge_events(
             &mut meshes,
             &mut materials,
             &mut camera_manager,
-            &mut shape_manager,
+            &mut canvas,
             &mut vertex_manager,
             &mut edge_manager,
             &mut face_manager,
@@ -384,7 +385,7 @@ pub fn insert_edge_events(
             &mut meshes,
             &mut materials,
             &mut camera_manager,
-            &mut shape_manager,
+            &mut canvas,
             &mut vertex_manager,
             &mut edge_manager,
             &mut face_manager,
@@ -400,7 +401,7 @@ pub fn insert_face_events(
     client: Client,
     mut face_3d_events: EventReader<InsertComponentEvent<Face3d>>,
     mut camera_manager: ResMut<CameraManager>,
-    mut shape_manager: ResMut<ShapeManager>,
+    mut canvas: ResMut<Canvas>,
     mut vertex_manager: ResMut<VertexManager>,
     mut edge_manager: ResMut<EdgeManager>,
     mut face_manager: ResMut<FaceManager>,
@@ -449,7 +450,7 @@ pub fn insert_face_events(
             &mut meshes,
             &mut materials,
             &mut camera_manager,
-            &mut shape_manager,
+            &mut canvas,
             &mut vertex_manager,
             &mut edge_manager,
             &mut face_manager,
@@ -475,7 +476,7 @@ pub fn insert_shape_events(
 
     // for vertices
     mut camera_manager: ResMut<CameraManager>,
-    mut shape_manager: ResMut<ShapeManager>,
+    mut canvas: ResMut<Canvas>,
     mut vertex_manager: ResMut<VertexManager>,
     mut edge_manager: ResMut<EdgeManager>,
     mut face_manager: ResMut<FaceManager>,
@@ -501,7 +502,7 @@ pub fn insert_shape_events(
             &mut meshes,
             &mut materials,
             &mut camera_manager,
-            &mut shape_manager,
+            &mut canvas,
             &mut vertex_manager,
             &mut edge_manager,
             &mut face_manager,
@@ -528,7 +529,7 @@ pub fn insert_shape_events(
             &mut meshes,
             &mut materials,
             &mut camera_manager,
-            &mut shape_manager,
+            &mut canvas,
             &mut vertex_manager,
             &mut edge_manager,
             &mut face_manager,

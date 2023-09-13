@@ -105,7 +105,6 @@ impl Plugin for VortexPlugin {
             .init_resource::<Toolbar>()
             .add_systems(Update, ui::update)
             // Canvas Config
-            .init_resource::<ShapeManager>()
             .init_resource::<VertexManager>()
             .init_resource::<EdgeManager>()
             .init_resource::<FaceManager>()

@@ -35,6 +35,8 @@ use crate::app::{
         create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,
     },
 };
+use crate::app::resources::canvas::Canvas;
+use crate::app::resources::input_manager::InputManager;
 
 #[derive(Resource)]
 pub struct EdgeManager {
@@ -516,7 +518,8 @@ impl EdgeManager {
     pub fn cleanup_deleted_edge(
         &mut self,
         commands: &mut Commands,
-        shape_manager: &mut ShapeManager,
+        canvas: &mut Canvas,
+        input_manager: &mut InputManager,
         vertex_manager: &mut VertexManager,
         face_manager: &mut FaceManager,
         entity_3d: &Entity,
@@ -535,7 +538,8 @@ impl EdgeManager {
             for face_3d_key in face_3d_keys {
                 let face_2d_entity = face_manager.cleanup_deleted_face_key(
                     commands,
-                    shape_manager,
+                    canvas,
+                    input_manager,
                     vertex_manager,
                     self,
                     &face_3d_key,
@@ -556,11 +560,11 @@ impl EdgeManager {
         info!("despawn 2d edge {:?}", edge_2d_entity);
         commands.entity(edge_2d_entity).despawn();
 
-        if shape_manager.hovered_entity == Some((edge_2d_entity, CanvasShape::Edge)) {
-            shape_manager.hovered_entity = None;
+        if input_manager.hovered_entity == Some((edge_2d_entity, CanvasShape::Edge)) {
+            input_manager.hovered_entity = None;
         }
 
-        shape_manager.queue_resync_shapes();
+        canvas.queue_resync_shapes();
 
         (edge_2d_entity, deleted_face_2d_entities)
     }
@@ -583,14 +587,14 @@ impl EdgeManager {
             .map(|data| data.faces_3d.iter().copied().collect())
     }
 
-    pub fn edge_angle_visibility_toggle(&mut self, shape_manager: &mut ShapeManager) {
-        if shape_manager.current_file_type != FileTypeValue::Skel {
+    pub fn edge_angle_visibility_toggle(&mut self, canvas: &mut Canvas) {
+        if canvas.current_file_type != FileTypeValue::Skel {
             return;
         }
 
         self.edge_angle_visibility = !self.edge_angle_visibility;
 
-        shape_manager.queue_resync_shapes();
+        canvas.queue_resync_shapes();
     }
 
     // returns 2d edge entity

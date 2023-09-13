@@ -19,7 +19,7 @@ use render_egui::{
 use crate::app::{
     resources::{
         camera_manager::CameraManager, canvas::Canvas, edge_manager::EdgeManager,
-        shape_manager::ShapeManager, vertex_manager::VertexManager,
+        input_manager::InputManager, vertex_manager::VertexManager,
     },
     ui::UiState,
 };
@@ -33,7 +33,7 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
             let mut system_state: SystemState<(
                 ResMut<Canvas>,
                 ResMut<CameraManager>,
-                ResMut<ShapeManager>,
+                ResMut<InputManager>,
                 ResMut<VertexManager>,
                 ResMut<EdgeManager>,
                 ResMut<Assets<CpuTexture2D>>,
@@ -45,7 +45,7 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
             let (
                 mut canvas,
                 mut camera_manager,
-                mut shape_manager,
+                mut input_manager,
                 mut vertex_manager,
                 mut edge_manager,
                 mut textures,
@@ -113,7 +113,7 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
                         if canvas_response.clicked() || canvas_response.dragged() {
                             canvas_response.request_focus();
                             canvas.set_focus(
-                                &mut shape_manager,
+                                &mut input_manager,
                                 &mut vertex_manager,
                                 &mut edge_manager,
                                 true,
@@ -121,7 +121,7 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
                         } else if canvas_response.clicked_elsewhere() {
                             canvas_response.surrender_focus();
                             canvas.set_focus(
-                                &mut shape_manager,
+                                &mut input_manager,
                                 &mut vertex_manager,
                                 &mut edge_manager,
                                 false,

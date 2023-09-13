@@ -23,6 +23,8 @@ use crate::app::resources::{
     shape_manager::ShapeManager,
     vertex_manager::VertexManager,
 };
+use crate::app::resources::canvas::Canvas;
+use crate::app::resources::input_manager::InputManager;
 
 pub(crate) fn execute(
     world: &mut World,
@@ -52,7 +54,8 @@ pub(crate) fn execute(
             Commands,
             Client,
             ResMut<CameraManager>,
-            ResMut<ShapeManager>,
+            ResMut<Canvas>,
+            ResMut<InputManager>,
             ResMut<VertexManager>,
             ResMut<EdgeManager>,
             ResMut<FaceManager>,
@@ -63,7 +66,8 @@ pub(crate) fn execute(
             mut commands,
             mut client,
             mut camera_manager,
-            mut shape_manager,
+            mut canvas,
+            mut input_manager,
             mut vertex_manager,
             mut edge_manager,
             mut face_manager,
@@ -73,7 +77,8 @@ pub(crate) fn execute(
 
         // deselect all selected vertices
         let (deselected_shape_2d_entity, shape_3d_entity_to_release) = deselect_all_selected_shapes(
-            &mut shape_manager,
+            &mut canvas,
+            &mut input_manager,
             &vertex_manager,
             &edge_manager,
             &face_manager,
@@ -122,7 +127,7 @@ pub(crate) fn execute(
         }
 
         // select vertex
-        shape_manager.select_shape(&shape_2d_entity_to_select, shape_2d_type_to_select);
+        input_manager.select_shape(&mut canvas, &shape_2d_entity_to_select, shape_2d_type_to_select);
         selected_shape_3d = ShapeManager::shape_entity_2d_to_3d(
             &vertex_manager,
             &edge_manager,

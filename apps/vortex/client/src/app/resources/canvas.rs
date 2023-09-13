@@ -1,12 +1,19 @@
-use bevy_ecs::system::Resource;
+
+use bevy_ecs::{system::{Query, Resource}, entity::Entity};
 
 use math::Vec2;
 
-use render_api::{base::CpuTexture2D, Handle};
+use render_api::{base::CpuTexture2D, Handle, components::{Camera, Projection, Transform, Visibility}};
 
-use crate::app::resources::{
-    edge_manager::EdgeManager, shape_manager::ShapeManager, vertex_manager::VertexManager,
-};
+use vortex_proto::components::{EdgeAngle, FileTypeValue, Vertex3d};
+
+use crate::app::{components::{Edge2dLocal, Edge3dLocal, FaceIcon2d, LocalShape, OwnedByFileLocal}, resources::{
+    edge_manager::EdgeManager, shape_manager::ShapeManager, vertex_manager::VertexManager, camera_manager::CameraManager,
+    camera_state::CameraState,
+    compass::Compass,
+    face_manager::FaceManager,
+}};
+use crate::app::resources::input_manager::InputManager;
 
 #[derive(Resource)]
 pub struct Canvas {
@@ -16,6 +23,9 @@ pub struct Canvas {
     next_visible: bool,
     has_focus: bool,
     focus_timer: u8,
+
+    pub(crate) current_file_type: FileTypeValue,
+    resync_shapes: u8,
 }
 
 impl Default for Canvas {
@@ -27,6 +37,9 @@ impl Default for Canvas {
             canvas_texture_size: Vec2::new(1280.0, 720.0),
             has_focus: false,
             focus_timer: 0,
+
+            current_file_type: FileTypeValue::Skel,
+            resync_shapes: 0,
         }
     }
 }
@@ -68,7 +81,7 @@ impl Canvas {
 
     pub fn set_focus(
         &mut self,
-        shape_manager: &mut ShapeManager,
+        input_manager: &mut InputManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
         focus: bool,
@@ -79,19 +92,19 @@ impl Canvas {
         }
         self.has_focus = focus;
 
-        shape_manager.on_canvas_focus_changed(vertex_manager, edge_manager, focus);
+        Canvas::on_canvas_focus_changed(input_manager, vertex_manager, edge_manager, focus);
     }
 
     pub fn set_focused_timed(
         &mut self,
-        shape_manager: &mut ShapeManager,
+        input_manager: &mut InputManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
     ) {
         self.has_focus = true;
         self.focus_timer = 1;
 
-        shape_manager.on_canvas_focus_changed(vertex_manager, edge_manager, true);
+        Canvas::on_canvas_focus_changed(input_manager, vertex_manager, edge_manager, true);
     }
 
     pub(crate) fn is_position_inside(&self, pos: Vec2) -> bool {
@@ -103,5 +116,108 @@ impl Canvas {
             return false;
         }
         return true;
+    }
+
+    pub fn queue_resync_shapes(&mut self) {
+        self.resync_shapes = 2;
+    }
+
+    pub fn queue_resync_shapes_light(&mut self) {
+        self.resync_shapes = 1;
+    }
+
+    pub fn sync_shapes(
+        &mut self,
+        camera_manager: &CameraManager,
+        camera_state: &CameraState,
+        compass: &Compass,
+        current_tab_file_entity: Entity,
+
+        vertex_manager: &VertexManager,
+        edge_manager: &EdgeManager,
+        input_manager: &mut InputManager,
+
+        camera_q: &Query<(&Camera, &Projection)>,
+        local_shape_q: &Query<&LocalShape>,
+
+        visibility_q: &mut Query<&mut Visibility>,
+        transform_q: &mut Query<&mut Transform>,
+        owned_by_q: &Query<&OwnedByFileLocal>,
+
+        vertex_3d_q: &mut Query<(Entity, &mut Vertex3d)>,
+        edge_2d_q: &Query<(Entity, &Edge2dLocal)>,
+        edge_3d_q: &Query<(Entity, &Edge3dLocal, Option<&EdgeAngle>)>,
+        face_2d_q: &Query<(Entity, &FaceIcon2d)>,
+    ) {
+        if self.resync_shapes == 0 {
+            return;
+        }
+
+        let Some(camera_3d) = camera_manager.camera_3d_entity() else {
+            return;
+        };
+
+        self.resync_shapes -= 1;
+
+        input_manager.queue_resync_hover_ui();
+        input_manager.queue_resync_selection_ui();
+
+        let camera_3d_scale = camera_state.camera_3d_scale();
+
+        compass.sync_compass(&camera_3d, camera_state, vertex_3d_q, &transform_q);
+        vertex_manager.sync_vertices(
+            &camera_3d,
+            camera_3d_scale,
+            camera_q,
+            vertex_3d_q,
+            transform_q,
+            owned_by_q,
+            local_shape_q,
+            current_tab_file_entity,
+        );
+        EdgeManager::sync_2d_edges(
+            vertex_manager,
+            edge_2d_q,
+            transform_q,
+            owned_by_q,
+            local_shape_q,
+            current_tab_file_entity,
+            camera_3d_scale,
+        );
+        edge_manager.sync_3d_edges(
+            edge_3d_q,
+            transform_q,
+            owned_by_q,
+            visibility_q,
+            local_shape_q,
+            current_tab_file_entity,
+            camera_3d_scale,
+        );
+        FaceManager::sync_2d_faces(
+            face_2d_q,
+            transform_q,
+            owned_by_q,
+            current_tab_file_entity,
+            camera_3d_scale,
+        );
+        input_manager.sync_hover_shape_scale(transform_q, camera_3d_scale);
+    }
+
+    pub fn set_current_file_type(&mut self, file_type: FileTypeValue) {
+        self.current_file_type = file_type;
+    }
+
+    pub(crate) fn on_canvas_focus_changed(
+        input_manager: &mut InputManager,
+        vertex_manager: &mut VertexManager,
+        edge_manager: &mut EdgeManager,
+        new_focus: bool,
+    ) {
+        input_manager.queue_resync_selection_ui();
+        if !new_focus {
+            vertex_manager.last_vertex_dragged = None;
+            edge_manager.last_edge_dragged = None;
+            input_manager.hovered_entity = None;
+        }
     }
 }
