@@ -231,6 +231,9 @@ pub(crate) fn execute(
         FileTypeValue::Anim => {
             panic!("");
         }
+        FileTypeValue::Unknown => {
+            panic!("");
+        }
     }
 }
 

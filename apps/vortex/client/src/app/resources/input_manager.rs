@@ -500,7 +500,7 @@ impl InputManager {
                 select_shape_visibilities[0].visible = true; // select circle is visible
                 select_shape_visibilities[1].visible = false; // no select triangle visible
                 select_shape_visibilities[2].visible =
-                    canvas.current_file_type != FileTypeValue::Anim && canvas.has_focus();
+                    !canvas.current_file_type_equals(FileTypeValue::Anim) && canvas.has_focus();
                 // select line is visible
             }
             Some((selected_edge_entity, CanvasShape::Edge)) => {
@@ -563,7 +563,7 @@ impl InputManager {
         canvas: &Canvas,
         action_stack: &mut ActionStack<ShapeAction>,
     ) {
-        if canvas.current_file_type != FileTypeValue::Mesh {
+        if !canvas.current_file_type_equals(FileTypeValue::Mesh) {
             return;
         }
 
@@ -588,7 +588,7 @@ impl InputManager {
         edge_manager: &EdgeManager,
         face_manager: &FaceManager,
     ) {
-        if canvas.current_file_type == FileTypeValue::Anim {
+        if canvas.current_file_type_equals(FileTypeValue::Anim)  {
             return;
         }
 
@@ -622,7 +622,7 @@ impl InputManager {
                 self.selected_shape = None;
             }
             Some((edge_2d_entity, CanvasShape::Edge)) => {
-                if canvas.current_file_type == FileTypeValue::Skel {
+                if canvas.current_file_type_equals(FileTypeValue::Skel) {
                     return;
                 }
                 // delete edge
@@ -703,7 +703,7 @@ impl InputManager {
                     }
 
                     if cursor_is_hovering {
-                        if canvas.current_file_type == FileTypeValue::Skel {
+                        if canvas.current_file_type_equals(FileTypeValue::Skel) {
                             // skel file type does nothing when trying to connect vertices together
                             // needs to always be a new vertex
                             // select hovered entity
@@ -786,7 +786,7 @@ impl InputManager {
 
                             // spawn new vertex
                             action_stack.buffer_action(ShapeAction::CreateVertex(
-                                match canvas.current_file_type {
+                                match canvas.get_current_file_type() {
                                     FileTypeValue::Skel => {
                                         VertexTypeData::Skel(vertex_2d_entity, 0.0, None)
                                     }
@@ -794,7 +794,7 @@ impl InputManager {
                                         vec![(vertex_2d_entity, None)],
                                         Vec::new(),
                                     ),
-                                    FileTypeValue::Anim => {
+                                    FileTypeValue::Anim | FileTypeValue::Unknown => {
                                         panic!("");
                                     }
                                 },
@@ -826,7 +826,7 @@ impl InputManager {
                         action_stack.buffer_action(ShapeAction::SelectShape(self.hovered_entity));
                     }
                     (CanvasShape::Face, MouseButton::Left) => {
-                        if canvas.current_file_type == FileTypeValue::Mesh {
+                        if canvas.current_file_type_equals(FileTypeValue::Mesh) {
                             action_stack
                                 .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
                         } else {
@@ -871,7 +871,7 @@ impl InputManager {
         let shape_can_drag = vertex_is_selected
             && match self.selected_shape.unwrap().1 {
                 CanvasShape::RootVertex | CanvasShape::Vertex => true,
-                CanvasShape::Edge => canvas.current_file_type != FileTypeValue::Mesh,
+                CanvasShape::Edge => !canvas.current_file_type_equals(FileTypeValue::Mesh),
                 _ => false,
             };
 
@@ -889,7 +889,7 @@ impl InputManager {
                                 return;
                             };
 
-                            if canvas.current_file_type == FileTypeValue::Anim {
+                            if canvas.current_file_type_equals(FileTypeValue::Anim) {
                                 animation_manager.drag_vertex(
                                     commands,
                                     client,
@@ -956,7 +956,7 @@ impl InputManager {
                             let edge_3d_entity =
                                 edge_manager.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
 
-                            if canvas.current_file_type == FileTypeValue::Anim {
+                            if canvas.current_file_type_equals(FileTypeValue::Anim) {
                                 animation_manager.drag_edge(
                                     commands,
                                     client,

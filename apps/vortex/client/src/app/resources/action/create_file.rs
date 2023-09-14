@@ -14,6 +14,7 @@ use vortex_proto::{
     },
     FileExtension,
 };
+use vortex_proto::components::FileTypeValue;
 
 use crate::app::{
     components::{
@@ -217,7 +218,7 @@ fn create_fs_entry(
         .insert(FileSystemEntryLocal::new(new_file_name));
 
     // register with file manager
-    file_manager.on_file_create(&entity_id);
+    file_manager.on_file_create(&entity_id, FileTypeValue::from(new_file_name));
 
     entity_id
 }

@@ -76,6 +76,9 @@ impl Toolbar {
             FileTypeValue::Anim => {
                 self.i12n = Some(ToolbarKind::Animation);
             }
+            FileTypeValue::Unknown => {
+                self.i12n = None;
+            }
         }
     }
 }

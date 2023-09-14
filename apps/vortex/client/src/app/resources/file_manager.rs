@@ -4,6 +4,7 @@ use bevy_ecs::{
     prelude::{Entity, Resource},
     system::Query,
 };
+use bevy_log::info;
 
 use naia_bevy_client::Client;
 
@@ -14,6 +15,7 @@ use vortex_proto::{
     components::{FileSystemChild, FileSystemEntry},
     resources::FileEntryKey,
 };
+use vortex_proto::components::FileTypeValue;
 
 use crate::app::{
     components::OwnedByFileLocal,
@@ -35,17 +37,22 @@ impl ChangelistData {
 }
 
 struct FileData {
+    file_type: FileTypeValue,
     changelist_entity: Option<Entity>,
     changelist_children: HashSet<Entity>,
-    // use for, e.g. skel file associated with anim file
+    // use for, e.g. a skel file required by anim file. anim is the dependent here.
+    file_dependents: HashSet<Entity>,
+    // use for, e.g. a skel file required by anim file. skel is the dependency here.
     file_dependencies: HashSet<Entity>,
 }
 
 impl FileData {
-    fn new() -> Self {
+    fn new(file_type: FileTypeValue) -> Self {
         Self {
+            file_type,
             changelist_entity: None,
             changelist_children: HashSet::default(),
+            file_dependents: HashSet::default(),
             file_dependencies: HashSet::default(),
         }
     }
@@ -67,8 +74,8 @@ impl FileManager {
         }
     }
 
-    pub fn on_file_create(&mut self, file_entity: &Entity) {
-        self.file_entities.insert(*file_entity, FileData::new());
+    pub fn on_file_create(&mut self, file_entity: &Entity, file_type: FileTypeValue) {
+        self.file_entities.insert(*file_entity, FileData::new(file_type));
     }
 
     pub fn on_file_delete(
@@ -147,6 +154,77 @@ impl FileManager {
     pub fn get_file_changelist_children(&self, file_entity: &Entity) -> Option<&HashSet<Entity>> {
         let file_data = self.file_entities.get(file_entity)?;
         Some(&file_data.changelist_children)
+    }
+
+    pub(crate) fn file_has_dependency(&self, file_entity: &Entity, file_type: FileTypeValue) -> bool {
+        let file_data = self.file_entities.get(file_entity).unwrap();
+        for dependency_file_entity in file_data.file_dependencies.iter() {
+            let dependency_file_data = self.file_entities.get(dependency_file_entity).unwrap();
+            if dependency_file_data.file_type == file_type {
+                return true;
+            }
+        }
+        false
+    }
+
+    pub(crate) fn file_get_dependency(&self, file_entity: Entity, file_ext: FileTypeValue) -> Option<Entity> {
+        let file_data = self.file_entities.get(&file_entity).unwrap();
+        for dependency_file_entity in file_data.file_dependencies.iter() {
+            let dependency_file_data = self.file_entities.get(dependency_file_entity).unwrap();
+            if dependency_file_data.file_type == file_ext {
+                return Some(*dependency_file_entity);
+            }
+        }
+        None
+    }
+
+    pub fn file_add_dependency(&mut self, file_entity: &Entity, dependency_file_entity: &Entity) {
+        info!("file_add_dependency({:?}, {:?})", file_entity, dependency_file_entity);
+
+        // add dependency to dependent
+        {
+            let dependent_file_data = self.file_entities.get_mut(file_entity).unwrap();
+
+            if dependent_file_data.file_dependencies.contains(dependency_file_entity) {
+                panic!("file {:?} already has dependency {:?}", file_entity, dependency_file_entity);
+            }
+
+            dependent_file_data.file_dependencies.insert(*dependency_file_entity);
+        }
+
+        // add dependent to dependency
+        {
+            let dependency_file_data = self.file_entities.get_mut(dependency_file_entity).unwrap();
+
+            if dependency_file_data.file_dependents.contains(file_entity) {
+                panic!("file {:?} already has dependent {:?}", dependency_file_entity, file_entity);
+            }
+
+            dependency_file_data.file_dependents.insert(*file_entity);
+        }
+    }
+
+    pub fn file_remove_dependency(&mut self, file_entity: &Entity, dependency_file_entity: &Entity) {
+        // remove dependency from dependent
+        {
+            let dependent_file_data = self.file_entities.get_mut(file_entity).unwrap();
+
+            if !dependent_file_data.file_dependencies.contains(dependency_file_entity) {
+                panic!("file {:?} does not have dependency {:?}", file_entity, dependency_file_entity);
+            }
+
+            dependent_file_data.file_dependencies.remove(dependency_file_entity);
+        }
+        // remove dependent from dependency
+        {
+            let dependency_file_data = self.file_entities.get_mut(dependency_file_entity).unwrap();
+
+            if !dependency_file_data.file_dependents.contains(file_entity) {
+                panic!("file {:?} does not have dependent {:?}", dependency_file_entity, file_entity);
+            }
+
+            dependency_file_data.file_dependents.remove(file_entity);
+        }
     }
 }
 

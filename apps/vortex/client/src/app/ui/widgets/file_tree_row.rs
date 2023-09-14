@@ -48,6 +48,7 @@ use crate::app::{
         UiState,
     },
 };
+use crate::app::ui::BindingState;
 
 pub struct FileTreeRowUiWidget;
 
@@ -370,6 +371,15 @@ impl FileTreeRowUiWidget {
     }
 
     pub fn on_row_click(world: &mut World, row_entity: &Entity) {
+
+        // check to see if we are binding first
+        let mut ui_state = world.get_resource_mut::<UiState>().unwrap();
+        if ui_state.binding_file == BindingState::Binding {
+            ui_state.binding_file = BindingState::BindResult(*row_entity);
+            return;
+        }
+
+        // continue
         let mut system_state: SystemState<(Commands, Client, ResMut<FileActions>)> =
             SystemState::new(world);
         let (mut commands, client, mut file_actions) = system_state.get_mut(world);

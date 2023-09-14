@@ -6,6 +6,7 @@ use naia_bevy_shared::{
 };
 
 use math::Vec3;
+use crate::FileExtension;
 
 pub struct VertexComponentsPlugin;
 
@@ -129,6 +130,14 @@ pub enum FileTypeValue {
     Skel,
     Mesh,
     Anim,
+    Unknown,
+}
+
+impl From<&str> for FileTypeValue {
+    fn from(s: &str) -> Self {
+        let file_ext = FileExtension::from_file_name(s);
+        file_ext.to_file_type()
+    }
 }
 
 #[derive(Component, Replicate)]

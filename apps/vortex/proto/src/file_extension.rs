@@ -1,3 +1,4 @@
+use log::info;
 use crate::components::FileTypeValue;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
@@ -14,6 +15,8 @@ impl FileExtension {
         // split file name by '.'
         let split: Vec<_> = file_name.split('.').collect();
         let ext: &str = split.last().unwrap();
+
+        //info!("file_name: {}, ext: {}", file_name, ext);
 
         // match file extension to enum
         match ext {
@@ -37,6 +40,7 @@ impl FileExtension {
             FileExtension::Skel => FileTypeValue::Skel,
             FileExtension::Mesh => FileTypeValue::Mesh,
             FileExtension::Anim => FileTypeValue::Anim,
+            FileExtension::Unknown => FileTypeValue::Unknown,
             _ => panic!(
                 "FileExtension::to_file_type() called on non-io file extension!: {:?}",
                 self

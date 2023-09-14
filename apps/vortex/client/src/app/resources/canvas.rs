@@ -31,7 +31,7 @@ pub struct Canvas {
     has_focus: bool,
     focus_timer: u8,
 
-    pub(crate) current_file_type: FileTypeValue,
+    current_file_type: FileTypeValue,
     resync_shapes: u8,
 }
 
@@ -208,6 +208,14 @@ impl Canvas {
             camera_3d_scale,
         );
         input_manager.sync_hover_shape_scale(transform_q, camera_3d_scale);
+    }
+
+    pub(crate) fn current_file_type_equals(&self, file_type: FileTypeValue) -> bool {
+        self.current_file_type == file_type
+    }
+
+    pub fn get_current_file_type(&self) -> FileTypeValue {
+        self.current_file_type
     }
 
     pub fn set_current_file_type(&mut self, file_type: FileTypeValue) {

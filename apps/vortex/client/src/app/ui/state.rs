@@ -1,4 +1,5 @@
-use bevy_ecs::system::Resource;
+
+use bevy_ecs::{system::Resource, entity::Entity};
 
 use render_egui::egui::Pos2;
 
@@ -11,6 +12,14 @@ pub enum LoggingInState {
     LoginFailed,
 }
 
+#[derive(Clone, Copy, PartialEq)]
+pub enum BindingState {
+    NotBinding,
+    Binding,
+    // file entity
+    BindResult(Entity),
+}
+
 #[derive(Resource)]
 pub struct UiState {
     pub logged_in: bool,
@@ -21,6 +30,7 @@ pub struct UiState {
     pub dragging_side_panel: bool,
     pub canvas_coords: Option<Pos2>,
     pub resized_window: bool,
+    pub binding_file: BindingState,
 }
 
 impl Default for UiState {
@@ -34,6 +44,7 @@ impl Default for UiState {
             dragging_side_panel: false,
             canvas_coords: None,
             resized_window: false,
+            binding_file: BindingState::NotBinding,
         }
     }
 }

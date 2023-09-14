@@ -588,7 +588,7 @@ impl EdgeManager {
     }
 
     pub fn edge_angle_visibility_toggle(&mut self, canvas: &mut Canvas) {
-        if canvas.current_file_type != FileTypeValue::Skel {
+        if !canvas.current_file_type_equals(FileTypeValue::Skel) {
             return;
         }
 
