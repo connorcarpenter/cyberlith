@@ -14,7 +14,7 @@ use crate::{
 
 #[derive(Clone)]
 pub struct ContentEntityData {
-    shape_type: ShapeType,
+    pub(crate) shape_type: ShapeType,
 }
 
 impl ContentEntityData {
@@ -78,46 +78,11 @@ impl FileSpace {
         self.content_entities.remove(entity);
     }
 
-    pub fn respawn_content_entities(
+    pub fn set_content_entities(
         &mut self,
-        commands: &mut Commands,
-        server: &mut Server,
-        shape_manager: &mut ShapeManager,
-        file_extension: &FileExtension,
-        file_key: &FileEntryKey,
-        file_entity: &Entity,
-        bytes: Box<[u8]>,
+        content_entities: HashMap<Entity, ContentEntityData>
     ) {
-        if !file_extension.can_io() {
-            panic!("can't read file: `{:?}`", file_key.name());
-        }
-
-        // despawn all previous entities
-        for (entity, entity_data) in self.content_entities.iter() {
-            info!("despawning entity: {:?}", entity);
-            commands.entity(*entity).take_authority(server).despawn();
-
-            match entity_data.shape_type {
-                ShapeType::Vertex => {
-                    shape_manager.on_delete_vertex(commands, server, entity);
-                }
-                ShapeType::Edge => {
-                    shape_manager.on_delete_edge(entity);
-                }
-                ShapeType::Face => {}
-            }
-        }
-
-        // respawn all entities
-        self.content_entities = load_content_entities(
-            commands,
-            server,
-            shape_manager,
-            file_extension,
-            &self.room_key,
-            file_entity,
-            bytes,
-        );
+        self.content_entities = content_entities;
     }
 }
 

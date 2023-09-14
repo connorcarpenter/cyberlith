@@ -560,15 +560,42 @@ impl Project {
         let Some(filespace) = self.filespaces.get_mut(file_key) else {
             panic!("Filespace not found");
         };
-        filespace.respawn_content_entities(
+        if !file_extension.can_io() {
+            panic!("can't read file: `{:?}`", file_key.name());
+        }
+
+        // despawn all previous entities
+        for (entity, entity_data) in filespace.content_entities().iter() {
+            info!("despawning entity: {:?}", entity);
+            commands.entity(*entity).take_authority(server).despawn();
+
+            match entity_data.shape_type {
+                ShapeType::Vertex => {
+                    shape_manager.on_delete_vertex(commands, server, entity);
+                }
+                ShapeType::Edge => {
+                    shape_manager.on_delete_edge(entity);
+                }
+                ShapeType::Face => {}
+            }
+        }
+
+        // respawn all entities
+        let filespace_room_key = filespace.room_key();
+        let content_entities = load_content_entities(
             commands,
             server,
+            self,
             shape_manager,
             &file_extension,
+            &filespace_room_key,
             file_key,
             file_entity,
             bytes,
         );
+
+        let filespace = self.filespaces.get_mut(file_key).unwrap();
+        filespace.set_content_entities(content_entities);
     }
 
     fn fs_update_index(&mut self, path: &str) {
@@ -773,9 +800,11 @@ impl Project {
         let content_entities_with_data = load_content_entities(
             commands,
             server,
+            self,
             shape_manager,
             &file_extension,
             &file_room_key,
+            file_key,
             &file_entity,
             bytes,
         );

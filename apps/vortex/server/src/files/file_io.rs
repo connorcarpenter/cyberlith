@@ -82,8 +82,8 @@ pub enum FileReadOutput {
     Skel(Vec<(Entity, Option<(Entity, Entity)>)>),
     // Mesh file, list of vert/edge/face entities
     Mesh(Vec<(Entity, ShapeTypeData)>),
-    //
-    Anim,
+    // Option<(SkelPath, SkelFile)>
+    Anim(Option<(String, String)>),
 }
 
 #[derive(Copy, Clone, Hash, PartialEq, Eq, Debug)]
@@ -113,9 +113,11 @@ impl From<ShapeTypeData> for ShapeType {
 pub fn load_content_entities(
     commands: &mut Commands,
     server: &mut Server,
+    project: &mut Project,
     shape_manager: &mut ShapeManager,
     file_extension: &FileExtension,
     file_room_key: &RoomKey,
+    file_key: &FileEntryKey,
     file_entity: &Entity,
     bytes: Box<[u8]>,
 ) -> HashMap<Entity, ContentEntityData> {
@@ -129,7 +131,9 @@ pub fn load_content_entities(
         FileReadOutput::Mesh(shape_entities) => {
             MeshReader::post_process_entities(shape_manager, shape_entities)
         }
-        FileReadOutput::Anim => AnimReader::post_process_entities(),
+        FileReadOutput::Anim(skel_path_opt) => {
+            AnimReader::post_process(commands, server, project, shape_manager, file_key, file_entity, skel_path_opt)
+        },
     };
 
     post_process_loaded_networked_entities(
@@ -175,7 +179,10 @@ fn post_process_loaded_networked_entities(
                     .entity(*entity)
                     .insert(FileType::new(FileTypeValue::Mesh));
             }
-            _ => {}
+            FileExtension::Anim => {
+                panic!("todo / shouldn't have content entities yet");
+            }
+            _ => panic!("File extension {:?} not implemented", file_extension),
         }
     }
 }

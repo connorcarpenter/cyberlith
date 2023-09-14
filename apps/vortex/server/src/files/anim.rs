@@ -14,11 +14,12 @@ use crate::{
     files::{FileReadOutput, FileReader, FileWriter},
     resources::{ContentEntityData, Project},
 };
+use crate::resources::ShapeManager;
 
 // Actions
 enum AnimAction {
-    // fule file path
-    SkelFile(String),
+    // path, file_name
+    SkelFile(String, String),
     // shape name -> shape_index
     ShapeIndex(String),
     // shape_index -> rotation
@@ -91,7 +92,7 @@ impl AnimWriter {
 
         let full_skel_path = dependency_key.full_path();
         info!("{} writing dependency: {}", file_key.name(), full_skel_path);
-        actions.push(AnimAction::SkelFile(full_skel_path));
+        actions.push(AnimAction::SkelFile(dependency_key.path().to_string(), dependency_key.name().to_string()));
 
         // TODO: poses and such
 
@@ -103,9 +104,10 @@ impl AnimWriter {
 
         for action in actions {
             match action {
-                AnimAction::SkelFile(path) => {
+                AnimAction::SkelFile(path, file_name) => {
                     AnimActionType::SkelFile.ser(&mut bit_writer);
                     path.ser(&mut bit_writer);
+                    file_name.ser(&mut bit_writer);
                 }
                 AnimAction::ShapeIndex(name) => {
                     AnimActionType::ShapeIndex.ser(&mut bit_writer);
@@ -167,7 +169,8 @@ impl AnimReader {
             match action_type {
                 AnimActionType::SkelFile => {
                     let path = String::de(bit_reader)?;
-                    actions.push(AnimAction::SkelFile(path));
+                    let file_name = String::de(bit_reader)?;
+                    actions.push(AnimAction::SkelFile(path, file_name));
                 }
                 AnimActionType::ShapeIndex => {
                     let name = String::de(bit_reader)?;
@@ -202,7 +205,34 @@ impl AnimReader {
         server: &mut Server,
         actions: Vec<AnimAction>,
     ) -> Result<FileReadOutput, SerdeErr> {
-        Ok(FileReadOutput::Anim)
+
+        let mut skel_path = None;
+
+        for action in actions {
+            match action {
+                AnimAction::SkelFile(path, file_name) => {
+                    skel_path = Some((path, file_name));
+                }
+                AnimAction::ShapeIndex(_) => {}
+                AnimAction::Frame(_, _) => {}
+            }
+        }
+
+        Ok(FileReadOutput::Anim(skel_path))
+    }
+
+    pub fn post_process(
+        commands: &mut Commands,
+        server: &mut Server,
+        project: &mut Project,
+        shape_manager: &mut ShapeManager,
+        file_key: &FileEntryKey,
+        file_entity: &Entity,
+        skel_path_opt: Option<(String, String)>
+    ) -> HashMap<Entity, ContentEntityData> {
+
+
+        HashMap::new()
     }
 }
 
@@ -224,13 +254,5 @@ impl FileReader for AnimReader {
         };
 
         result
-    }
-}
-
-impl AnimReader {
-    pub fn post_process_entities() -> HashMap<Entity, ContentEntityData> {
-        let mut new_content_entities = HashMap::new();
-
-        new_content_entities
     }
 }
