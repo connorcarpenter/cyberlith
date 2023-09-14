@@ -13,7 +13,7 @@ use render_egui::{
     egui::{NumExt, Response, Rounding, Sense, Stroke, TextStyle, Ui, WidgetText},
 };
 use vortex_proto::{
-    channels::ChangelistActionChannel,
+    channels::FileActionChannel,
     components::{ChangelistEntry, ChangelistStatus, EntryKind},
     messages::{ChangelistAction, ChangelistMessage},
 };
@@ -284,6 +284,6 @@ impl ChangelistRowUiWidget {
             "sent ChangelistMessage for entity: `{:?}`, action: {:?}",
             row_entity, action
         );
-        client.send_message::<ChangelistActionChannel, ChangelistMessage>(&message);
+        client.send_message::<FileActionChannel, ChangelistMessage>(&message);
     }
 }

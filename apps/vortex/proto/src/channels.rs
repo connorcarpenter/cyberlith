@@ -8,20 +8,20 @@ pub struct ChannelsPlugin;
 impl ProtocolPlugin for ChannelsPlugin {
     fn build(&self, protocol: &mut Protocol) {
         protocol
-            .add_channel::<ChangelistActionChannel>(
+            .add_channel::<TabActionChannel>(
                 ChannelDirection::ClientToServer,
                 ChannelMode::OrderedReliable(ReliableSettings::default()),
             )
-            .add_channel::<TabActionChannel>(
-                ChannelDirection::ClientToServer,
+            .add_channel::<FileActionChannel>(
+                ChannelDirection::Bidirectional,
                 ChannelMode::OrderedReliable(ReliableSettings::default()),
             );
     }
 }
 
-// ChangelistActionChannel
+// FileActionChannel
 #[derive(Channel)]
-pub struct ChangelistActionChannel;
+pub struct FileActionChannel;
 
 // TabActionChannel
 #[derive(Channel)]

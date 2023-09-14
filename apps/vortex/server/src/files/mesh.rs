@@ -13,11 +13,13 @@ use naia_bevy_server::{
 };
 
 use vortex_proto::components::{Edge3d, Face3d, FileType, FileTypeValue, Vertex3d, VertexSerdeInt};
+use vortex_proto::resources::FileEntryKey;
 
 use crate::{
     files::{FileReadOutput, FileReader, FileWriter, ShapeTypeData},
     resources::{ContentEntityData, ShapeManager},
 };
+use crate::resources::{FileEntryValue, Project};
 
 // Actions
 #[derive(Debug)]
@@ -211,6 +213,8 @@ impl FileWriter for MeshWriter {
     fn write(
         &self,
         world: &mut World,
+        _project: &Project,
+        _file_key: &FileEntryKey,
         content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]> {
         let content_entities_vec: Vec<Entity> = content_entities

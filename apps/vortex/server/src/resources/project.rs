@@ -39,13 +39,14 @@ impl BigMapKey for ProjectKey {
 
 pub struct Project {
     room_key: RoomKey,
-    pub master_file_entries: HashMap<FileEntryKey, FileEntryValue>,
-    pub working_file_entries: HashMap<FileEntryKey, FileEntryValue>,
+    master_file_entries: HashMap<FileEntryKey, FileEntryValue>,
+    working_file_entries: HashMap<FileEntryKey, FileEntryValue>,
     pub changelist_entries: HashMap<FileEntryKey, ChangelistValue>,
     filespaces: HashMap<FileEntryKey, FileSpace>,
+
     repo: Mutex<Repository>,
-    access_token: String,
     branch: String,
+    access_token: String,
     internal_path: String,
 }
 
@@ -69,6 +70,11 @@ impl Project {
             branch: "main".to_string(),
             internal_path: internal_path.to_string(),
         }
+    }
+
+    pub fn write(&self, world: &mut World, file_key: &FileEntryKey, content_entities: &HashMap<Entity, ContentEntityData>) -> Box<[u8]> {
+        let ext = self.working_file_extension(file_key);
+        return ext.write(world, self, file_key, content_entities);
     }
 
     pub fn room_key(&self) -> RoomKey {
@@ -163,7 +169,7 @@ impl Project {
         }
 
         let file_extension = FileExtension::from_file_name(name);
-        let file_entry_val = FileEntryValue::new(entity, parent, None, Some(file_extension));
+        let file_entry_val = FileEntryValue::new(entity, Some(file_extension), parent, None);
 
         // Add new Entity into Working Tree
         Self::add_to_file_tree(
@@ -282,6 +288,19 @@ impl Project {
                 None,
             );
         }
+    }
+
+    pub fn master_file_entries(&self) -> &HashMap<FileEntryKey, FileEntryValue> {
+        &self.master_file_entries
+    }
+
+    pub fn working_file_entries(&self) -> &HashMap<FileEntryKey, FileEntryValue> {
+        &self.working_file_entries
+    }
+
+    pub fn file_add_dependency(&mut self, file_key: &FileEntryKey, dependency_key: &FileEntryKey) {
+        let file_entry_val = self.working_file_entries.get_mut(file_key).unwrap();
+        file_entry_val.add_dependency(dependency_key);
     }
 
     fn get_full_file_path_working(
@@ -961,15 +980,15 @@ impl Project {
         &mut self,
         world: &mut World,
         status: &ChangelistStatus,
-        file_entry_key: &FileEntryKey,
+        file_key: &FileEntryKey,
     ) {
         info!(
             "Finalizing content for changelist file `{}` of status: {:?}",
-            file_entry_key.name(),
+            file_key.name(),
             status
         );
-        let extension = self.working_file_extension(file_entry_key);
-        let changelist_value = self.changelist_entries.get_mut(&file_entry_key).unwrap();
+        let extension = self.working_file_extension(file_key);
+        let changelist_value = self.changelist_entries.get_mut(&file_key).unwrap();
         if changelist_value.has_content() {
             // changelist entry already has content, backed up last time tab closed
             // nothing left to do here
@@ -981,19 +1000,20 @@ impl Project {
             // get extension and check we can write
 
             if !extension.can_io() {
-                panic!("can't write file: `{:?}`", file_entry_key.name());
+                panic!("can't write file: `{:?}`", file_key.name());
             }
 
             let content_entities: HashMap<Entity, ContentEntityData> = self
                 .filespaces
-                .get(file_entry_key)
+                .get(file_key)
                 .unwrap()
                 .content_entities()
                 .clone();
 
             // write
             info!("... Generating content ...");
-            let bytes = extension.write(world, &content_entities);
+            let bytes = extension.write(world, self, file_key, &content_entities);
+            let changelist_value = self.changelist_entries.get_mut(&file_key).unwrap();
             changelist_value.set_content(bytes);
         }
     }

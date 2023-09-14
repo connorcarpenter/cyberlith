@@ -15,6 +15,7 @@ use naia_bevy_server::{
 use vortex_proto::components::{
     Edge3d, EdgeAngle, FileType, FileTypeValue, ShapeName, Vertex3d, VertexRoot, VertexSerdeInt,
 };
+use vortex_proto::resources::FileEntryKey;
 
 use crate::{
     files::{
@@ -23,6 +24,7 @@ use crate::{
     },
     resources::{ContentEntityData, ShapeManager},
 };
+use crate::resources::{FileEntryValue, Project};
 
 // Actions
 #[derive(Debug)]
@@ -221,6 +223,8 @@ impl FileWriter for SkelWriter {
     fn write(
         &self,
         world: &mut World,
+        _project: &Project,
+        _file_key: &FileEntryKey,
         content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]> {
         let content_entities_vec: Vec<Entity> = content_entities

@@ -19,3 +19,4 @@ pub use shape_waitlist::*;
 pub use tab_manager::*;
 pub use user_manager::*;
 pub use user_tab_state::*;
+pub use project::*;

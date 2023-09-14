@@ -6,18 +6,21 @@ use naia_bevy_server::{RoomKey, Server};
 
 use vortex_proto::{
     components::{FileType, FileTypeValue, OwnedByFile},
+    resources::FileEntryKey,
     FileExtension,
 };
 
 use crate::{
     files::{AnimReader, AnimWriter, MeshReader, MeshWriter, SkelReader, SkelWriter},
-    resources::{ContentEntityData, ShapeManager},
+    resources::{Project, ContentEntityData, ShapeManager},
 };
 
 pub trait FileWriter: Send + Sync {
     fn write(
         &self,
         world: &mut World,
+        project: &Project,
+        file_key: &FileEntryKey,
         content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]>;
     fn write_new_default(&self) -> Box<[u8]>;
@@ -52,12 +55,14 @@ impl FileWriter for FileExtension {
     fn write(
         &self,
         world: &mut World,
+        project: &Project,
+        file_key: &FileEntryKey,
         content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]> {
         match self {
-            FileExtension::Skel => SkelWriter.write(world, content_entities),
-            FileExtension::Mesh => MeshWriter.write(world, content_entities),
-            FileExtension::Anim => AnimWriter.write(world, content_entities),
+            FileExtension::Skel => SkelWriter.write(world, project, file_key, content_entities),
+            FileExtension::Mesh => MeshWriter.write(world, project, file_key, content_entities),
+            FileExtension::Anim => AnimWriter.write(world, project, file_key, content_entities),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }

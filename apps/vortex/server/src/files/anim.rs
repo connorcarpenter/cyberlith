@@ -4,18 +4,20 @@ use bevy_ecs::{
     entity::Entity,
     prelude::{Commands, World},
 };
+use bevy_log::info;
 
 use naia_bevy_server::{BitReader, BitWrite, FileBitWriter, Serde, SerdeErr, Server, UnsignedVariableInteger};
-use vortex_proto::SerdeQuat;
+
+use vortex_proto::{FileExtension, resources::FileEntryKey, SerdeQuat};
 
 use crate::{
-    files::{FileReadOutput, FileReader, FileWriter, ShapeTypeData},
-    resources::{ContentEntityData, ShapeManager},
+    files::{FileReadOutput, FileReader, FileWriter},
+    resources::{ContentEntityData, Project},
 };
 
 // Actions
 enum AnimAction {
-    // file path
+    // fule file path
     SkelFile(String),
     // shape name -> shape_index
     ShapeIndex(String),
@@ -64,9 +66,34 @@ impl AnimWriter {
     fn world_to_actions(
         &self,
         world: &mut World,
+        project: &Project,
+        file_key: &FileEntryKey,
         content_entities: &Vec<Entity>,
     ) -> Vec<AnimAction> {
         let mut actions = Vec::new();
+
+        // get skel file
+        let working_file_entries = project.working_file_entries();
+        let file_value = working_file_entries.get(file_key).unwrap();
+        let Some(dependencies) = file_value.dependencies() else {
+            return actions;
+        };
+
+        if dependencies.len() != 1 {
+            panic!("anim file should have exactly one dependency");
+        }
+
+        let dependency_key = dependencies.iter().next().unwrap();
+        let dependency_value = working_file_entries.get(dependency_key).unwrap();
+        if dependency_value.extension().unwrap() != FileExtension::Skel {
+            panic!("anim file should depend on a single .skel file");
+        }
+
+        let full_skel_path = dependency_key.full_path();
+        info!("{} writing dependency: {}", file_key.name(), full_skel_path);
+        actions.push(AnimAction::SkelFile(full_skel_path));
+
+        // TODO: poses and such
 
         actions
     }
@@ -111,13 +138,15 @@ impl FileWriter for AnimWriter {
     fn write(
         &self,
         world: &mut World,
+        project: &Project,
+        file_key: &FileEntryKey,
         content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]> {
         let content_entities_vec: Vec<Entity> = content_entities
             .iter()
             .map(|(entity, _data)| *entity)
             .collect();
-        let actions = self.world_to_actions(world, &content_entities_vec);
+        let actions = self.world_to_actions(world, project, file_key, &content_entities_vec);
         self.write_from_actions(actions)
     }
 

@@ -20,7 +20,7 @@ impl FileEntryKey {
 
     pub fn new_with_parent(parent: Option<FileEntryKey>, name: &str, kind: EntryKind) -> Self {
         let path = match &parent {
-            Some(parent_key) => parent_key.path_for_children(),
+            Some(parent_key) => parent_key.full_path(),
             None => "".to_string(),
         };
 
@@ -39,7 +39,7 @@ impl FileEntryKey {
         self.kind
     }
 
-    pub fn path_for_children(&self) -> String {
+    pub fn full_path(&self) -> String {
         format!("{}{}", self.path, self.name)
     }
 }

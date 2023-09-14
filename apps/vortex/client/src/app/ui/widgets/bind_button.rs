@@ -1,8 +1,12 @@
 use bevy_ecs::entity::Entity;
+use bevy_ecs::system::{ResMut, SystemState};
 use bevy_ecs::world::World;
+use naia_bevy_client::Client;
 
 use render_egui::{egui, egui::{Button, Direction, Frame, Layout, Ui}};
+use vortex_proto::channels::FileActionChannel;
 use vortex_proto::components::{FileSystemEntry, FileTypeValue};
+use vortex_proto::messages::FileBindMessage;
 
 use crate::app::{resources::{file_manager::FileManager}, ui::{BindingState, UiState}};
 
@@ -23,13 +27,19 @@ pub fn render_bind_button(ui: &mut Ui, world: &mut World, current_file_entity: E
                             BindingState::Binding => {
                                 ui.add_enabled(false, Button::new("Click on .skel file in sidebar to bind."));
                             }
-                            BindingState::BindResult(file_entity) => {
+                            BindingState::BindResult(dependency_file_entity) => {
 
                                 let mut file_manager = world.get_resource_mut::<FileManager>().unwrap();
-                                file_manager.file_add_dependency(&current_file_entity, &file_entity);
+                                file_manager.file_add_dependency(&current_file_entity, &dependency_file_entity);
 
                                 let mut ui_state = world.get_resource_mut::<UiState>().unwrap();
                                 ui_state.binding_file = BindingState::NotBinding;
+
+                                // send message to server
+                                let mut system_state: SystemState<Client> = SystemState::new(world);
+                                let mut client = system_state.get_mut(world);
+                                let message = FileBindMessage::new(&client, &current_file_entity, &dependency_file_entity);
+                                client.send_message::<FileActionChannel, FileBindMessage>(&message);
                             }
                         }
                     });

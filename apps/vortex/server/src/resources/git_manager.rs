@@ -284,7 +284,7 @@ impl GitManager {
         insert_entry_components_from_list(
             commands,
             server,
-            &new_project.master_file_entries,
+            &new_project.master_file_entries(),
             &new_project.room_key(),
         );
 
@@ -376,7 +376,7 @@ impl GitManager {
             &mut commands,
             &mut server,
             project_room_key,
-            &project.working_file_entries,
+            &project.working_file_entries(),
             entry_key,
             entry_val,
         );
@@ -397,12 +397,12 @@ impl GitManager {
     pub(crate) fn write(
         &self,
         project_key: &ProjectKey,
-        key: &FileEntryKey,
+        file_key: &FileEntryKey,
         world: &mut World,
         content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]> {
-        let ext = self.working_file_extension(project_key, key);
-        return ext.write(world, content_entities);
+        let project = self.projects.get(project_key).unwrap();
+        project.write(world, file_key, content_entities)
     }
 
     pub fn working_file_extension(
@@ -463,7 +463,7 @@ fn fill_file_entries_from_git(
                 let file_entry_key = FileEntryKey::new(path, &name, entry_kind);
 
                 let git_children = git_entry.to_object(repo).unwrap().peel_to_tree().unwrap();
-                let new_path = file_entry_key.path_for_children();
+                let new_path = file_entry_key.full_path();
                 let children = fill_file_entries_from_git(
                     file_entries,
                     commands,
@@ -475,7 +475,7 @@ fn fill_file_entries_from_git(
                 );
 
                 let file_entry_value =
-                    FileEntryValue::new(id, parent.clone(), Some(children), None);
+                    FileEntryValue::new(id, None, parent.clone(), Some(children));
                 file_entries.insert(file_entry_key.clone(), file_entry_value);
 
                 output.insert(file_entry_key.clone());
@@ -487,7 +487,7 @@ fn fill_file_entries_from_git(
                 let file_entry_key = FileEntryKey::new(path, &name, entry_kind);
                 let file_extension = FileExtension::from_file_name(&name);
                 let file_entry_value =
-                    FileEntryValue::new(id, parent.clone(), None, Some(file_extension));
+                    FileEntryValue::new(id, Some(file_extension), parent.clone(), None);
                 file_entries.insert(file_entry_key.clone(), file_entry_value);
 
                 output.insert(file_entry_key.clone());

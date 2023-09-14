@@ -7,23 +7,25 @@ use vortex_proto::{resources::FileEntryKey, FileExtension};
 #[derive(Clone)]
 pub struct FileEntryValue {
     entity: Entity,
+    extension: Option<FileExtension>,
     parent: Option<FileEntryKey>,
     children: Option<HashSet<FileEntryKey>>,
-    extension: Option<FileExtension>,
+    dependencies: Option<HashSet<FileEntryKey>>,
 }
 
 impl FileEntryValue {
     pub fn new(
         entity: Entity,
+        extension: Option<FileExtension>,
         parent: Option<FileEntryKey>,
         children: Option<HashSet<FileEntryKey>>,
-        extension: Option<FileExtension>,
     ) -> Self {
         Self {
             entity,
             parent,
             children,
             extension,
+            dependencies: None,
         }
     }
 
@@ -33,6 +35,10 @@ impl FileEntryValue {
 
     pub fn set_entity(&mut self, entity: Entity) {
         self.entity = entity;
+    }
+
+    pub fn extension(&self) -> Option<FileExtension> {
+        self.extension
     }
 
     pub fn parent(&self) -> Option<&FileEntryKey> {
@@ -55,8 +61,21 @@ impl FileEntryValue {
         }
     }
 
-    pub fn extension(&self) -> Option<FileExtension> {
-        self.extension
+    pub fn dependencies(&self) -> Option<&HashSet<FileEntryKey>> {
+        self.dependencies.as_ref()
+    }
+
+    pub fn add_dependency(&mut self, key: &FileEntryKey) {
+        self.dependencies
+            .get_or_insert_with(|| HashSet::new())
+            .insert(key.clone());
+    }
+
+    pub fn remove_dependency(&mut self, key: &FileEntryKey) {
+        let dependencies = self.dependencies.as_mut().unwrap();
+        if !dependencies.remove(&key) {
+            panic!("dependency not found");
+        }
     }
 }
 
