@@ -5,11 +5,15 @@ use naia_bevy_client::Client;
 use math::Vec2;
 
 #[derive(Resource)]
-pub struct AnimationManager {}
+pub struct AnimationManager {
+    pub current_skel_file: Option<Entity>,
+}
 
 impl Default for AnimationManager {
     fn default() -> Self {
-        Self {}
+        Self {
+            current_skel_file: None,
+        }
     }
 }
 
