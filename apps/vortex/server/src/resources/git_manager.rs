@@ -15,7 +15,7 @@ use git2::{Cred, Repository, Tree};
 use naia_bevy_server::{BigMap, CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};
 
 use vortex_proto::{
-    components::{FileExtension, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild},
+    components::{EntryKind, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild},
     messages::ChangelistMessage,
     resources::FileEntryKey,
 };

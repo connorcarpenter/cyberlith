@@ -17,10 +17,9 @@ use render_egui::{
     },
 };
 
-use vortex_proto::{
-    components::{
-        FileExtension, ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-    },
+use vortex_proto::components::{
+    ChangelistStatus, EntryKind, FileExtension, FileSystemChild, FileSystemEntry,
+    FileSystemRootChild,
 };
 
 use crate::app::{
@@ -39,12 +38,11 @@ use crate::app::{
         vertex_manager::VertexManager,
     },
     ui::{
-        BindingState,
         widgets::colors::{
             FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
             TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED,
         },
-        UiState,
+        BindingState, UiState,
     },
 };
 
@@ -369,7 +367,6 @@ impl FileTreeRowUiWidget {
     }
 
     pub fn on_row_click(world: &mut World, row_entity: &Entity) {
-
         // check to see if we are binding first
         let mut ui_state = world.get_resource_mut::<UiState>().unwrap();
         if ui_state.binding_file == BindingState::Binding {

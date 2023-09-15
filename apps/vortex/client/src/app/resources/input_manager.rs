@@ -27,12 +27,11 @@ use crate::app::{
         Vertex2d, VertexTypeData,
     },
     resources::{
-        action::ShapeAction, animation_manager::AnimationManager,
-        camera_manager::CameraAngle, camera_manager::CameraManager, camera_state::CameraState,
-        canvas::Canvas, edge_manager::EdgeManager, face_manager::FaceManager,
+        action::ShapeAction, animation_manager::AnimationManager, camera_manager::CameraAngle,
+        camera_manager::CameraManager, camera_state::CameraState, canvas::Canvas,
+        edge_manager::EdgeManager, face_manager::FaceManager, file_manager::FileManager,
         key_action_map::KeyActionMap, shape_data::CanvasShape, shape_manager::ShapeManager,
-        vertex_manager::VertexManager, file_manager::FileManager,
-        tab_manager::TabManager,
+        tab_manager::TabManager, vertex_manager::VertexManager,
     },
 };
 
@@ -195,7 +194,10 @@ impl InputManager {
         for input_action in app_actions {
             match input_action {
                 AppInputAction::MiddleMouseScroll(scroll_y) => {
-                    camera_manager.camera_zoom(tab_manager.current_tab_camera_state_mut().unwrap(), scroll_y);
+                    camera_manager.camera_zoom(
+                        tab_manager.current_tab_camera_state_mut().unwrap(),
+                        scroll_y,
+                    );
                 }
                 AppInputAction::MouseMoved => {
                     self.queue_resync_hover_ui();
@@ -203,28 +205,43 @@ impl InputManager {
                 }
                 AppInputAction::SwitchTo3dMode => {
                     // disable 2d camera, enable 3d camera
-                    tab_manager.current_tab_camera_state_mut().unwrap().set_3d_mode();
+                    tab_manager
+                        .current_tab_camera_state_mut()
+                        .unwrap()
+                        .set_3d_mode();
                     camera_manager.recalculate_3d_view();
                     canvas.queue_resync_shapes();
                 }
                 AppInputAction::SwitchTo2dMode => {
                     // disable 3d camera, enable 2d camera
-                    tab_manager.current_tab_camera_state_mut().unwrap().set_2d_mode();
+                    tab_manager
+                        .current_tab_camera_state_mut()
+                        .unwrap()
+                        .set_2d_mode();
                     camera_manager.recalculate_3d_view();
                     canvas.queue_resync_shapes();
                 }
                 AppInputAction::SetCameraAngleFixed(camera_angle) => match camera_angle {
                     CameraAngle::Side => {
-                        camera_manager.set_camera_angle_side(tab_manager.current_tab_camera_state_mut().unwrap());
+                        camera_manager.set_camera_angle_side(
+                            tab_manager.current_tab_camera_state_mut().unwrap(),
+                        );
                     }
                     CameraAngle::Front => {
-                        camera_manager.set_camera_angle_front(tab_manager.current_tab_camera_state_mut().unwrap());
+                        camera_manager.set_camera_angle_front(
+                            tab_manager.current_tab_camera_state_mut().unwrap(),
+                        );
                     }
                     CameraAngle::Top => {
-                        camera_manager.set_camera_angle_top(tab_manager.current_tab_camera_state_mut().unwrap());
+                        camera_manager.set_camera_angle_top(
+                            tab_manager.current_tab_camera_state_mut().unwrap(),
+                        );
                     }
                     CameraAngle::Ingame(angle_index) => {
-                        camera_manager.set_camera_angle_ingame(tab_manager.current_tab_camera_state_mut().unwrap(), angle_index);
+                        camera_manager.set_camera_angle_ingame(
+                            tab_manager.current_tab_camera_state_mut().unwrap(),
+                            angle_index,
+                        );
                     }
                 },
                 AppInputAction::InsertKeyPress => {
@@ -242,7 +259,10 @@ impl InputManager {
                     );
                 }
                 AppInputAction::CameraAngleYawRotate(clockwise) => {
-                    camera_manager.set_camera_angle_yaw_rotate(tab_manager.current_tab_camera_state_mut().unwrap(), clockwise);
+                    camera_manager.set_camera_angle_yaw_rotate(
+                        tab_manager.current_tab_camera_state_mut().unwrap(),
+                        clockwise,
+                    );
                 }
                 AppInputAction::MouseDragged(click_type, mouse_position, delta) => {
                     self.handle_mouse_drag(
@@ -281,7 +301,9 @@ impl InputManager {
                     if let Some((vertex_2d_entity, old_pos, new_pos)) =
                         vertex_manager.last_vertex_dragged.take()
                     {
-                        tab_manager.current_tab_action_stack_mut().unwrap()
+                        tab_manager
+                            .current_tab_action_stack_mut()
+                            .unwrap()
                             .buffer_action(ShapeAction::MoveVertex(
                                 vertex_2d_entity,
                                 old_pos,
@@ -291,7 +313,9 @@ impl InputManager {
                     if let Some((edge_2d_entity, old_angle, new_angle)) =
                         edge_manager.last_edge_dragged.take()
                     {
-                        tab_manager.current_tab_action_stack_mut().unwrap()
+                        tab_manager
+                            .current_tab_action_stack_mut()
+                            .unwrap()
                             .buffer_action(ShapeAction::RotateEdge(
                                 edge_2d_entity,
                                 old_angle,
@@ -508,7 +532,8 @@ impl InputManager {
 
                 select_shape_visibilities[0].visible = true; // select circle is visible
                 select_shape_visibilities[1].visible = false; // no select triangle visible
-                select_shape_visibilities[2].visible = current_file_type != FileExtension::Anim && canvas.has_focus();
+                select_shape_visibilities[2].visible =
+                    current_file_type != FileExtension::Anim && canvas.has_focus();
                 // select line is visible
             }
             Some((selected_edge_entity, CanvasShape::Edge)) => {
@@ -582,11 +607,14 @@ impl InputManager {
             return;
         }
 
-        tab_manager.current_tab_action_stack_mut().unwrap().buffer_action(ShapeAction::CreateVertex(
-            VertexTypeData::Mesh(Vec::new(), Vec::new()),
-            Vec3::ZERO,
-            None,
-        ));
+        tab_manager
+            .current_tab_action_stack_mut()
+            .unwrap()
+            .buffer_action(ShapeAction::CreateVertex(
+                VertexTypeData::Mesh(Vec::new(), Vec::new()),
+                Vec3::ZERO,
+                None,
+            ));
     }
 
     pub(crate) fn handle_delete_key_press(
@@ -630,7 +658,11 @@ impl InputManager {
                     commands.entity(vertex_3d_entity).request_authority(client);
                 }
 
-                tab_manager.current_tab_state_mut().unwrap().action_stack.buffer_action(ShapeAction::DeleteVertex(vertex_2d_entity, None));
+                tab_manager
+                    .current_tab_state_mut()
+                    .unwrap()
+                    .action_stack
+                    .buffer_action(ShapeAction::DeleteVertex(vertex_2d_entity, None));
 
                 self.selected_shape = None;
             }
@@ -656,7 +688,11 @@ impl InputManager {
                     commands.entity(edge_3d_entity).request_authority(client);
                 }
 
-                tab_manager.current_tab_state_mut().unwrap().action_stack.buffer_action(ShapeAction::DeleteEdge(edge_2d_entity, None));
+                tab_manager
+                    .current_tab_state_mut()
+                    .unwrap()
+                    .action_stack
+                    .buffer_action(ShapeAction::DeleteEdge(edge_2d_entity, None));
 
                 self.selected_shape = None;
             }
@@ -678,7 +714,11 @@ impl InputManager {
                     commands.entity(face_3d_entity).request_authority(client);
                 }
 
-                tab_manager.current_tab_state_mut().unwrap().action_stack.buffer_action(ShapeAction::DeleteFace(face_2d_entity));
+                tab_manager
+                    .current_tab_state_mut()
+                    .unwrap()
+                    .action_stack
+                    .buffer_action(ShapeAction::DeleteFace(face_2d_entity));
 
                 self.selected_shape = None;
             }
@@ -711,7 +751,10 @@ impl InputManager {
                         (_, CanvasShape::Edge) | (_, CanvasShape::Face) => {
                             // should not ever be able to attach something to an edge or face?
                             // select hovered entity
-                            tab_manager.current_tab_state_mut().unwrap().action_stack
+                            tab_manager
+                                .current_tab_state_mut()
+                                .unwrap()
+                                .action_stack
                                 .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
                             return;
                         }
@@ -723,7 +766,10 @@ impl InputManager {
                             // skel file type does nothing when trying to connect vertices together
                             // needs to always be a new vertex
                             // select hovered entity
-                            tab_manager.current_tab_state_mut().unwrap().action_stack
+                            tab_manager
+                                .current_tab_state_mut()
+                                .unwrap()
+                                .action_stack
                                 .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
                             return;
                         } else {
@@ -731,9 +777,13 @@ impl InputManager {
                                 (_, CanvasShape::Edge) | (_, CanvasShape::Face) => {
                                     // should not ever be able to attach something to an edge or face?
                                     // select hovered entity
-                                    tab_manager.current_tab_state_mut().unwrap().action_stack.buffer_action(ShapeAction::SelectShape(
-                                        self.hovered_entity,
-                                    ));
+                                    tab_manager
+                                        .current_tab_state_mut()
+                                        .unwrap()
+                                        .action_stack
+                                        .buffer_action(ShapeAction::SelectShape(
+                                            self.hovered_entity,
+                                        ));
                                     return;
                                 }
                                 _ => {}
@@ -759,20 +809,28 @@ impl InputManager {
                             .is_some()
                         {
                             // select edge
-                            tab_manager.current_tab_state_mut().unwrap().action_stack.buffer_action(ShapeAction::SelectShape(Some((
-                                vertex_2d_entity_b,
-                                CanvasShape::Vertex,
-                            ))));
+                            tab_manager
+                                .current_tab_state_mut()
+                                .unwrap()
+                                .action_stack
+                                .buffer_action(ShapeAction::SelectShape(Some((
+                                    vertex_2d_entity_b,
+                                    CanvasShape::Vertex,
+                                ))));
                             return;
                         } else {
                             // create edge
-                            tab_manager.current_tab_state_mut().unwrap().action_stack.buffer_action(ShapeAction::CreateEdge(
-                                vertex_2d_entity_a,
-                                vertex_2d_entity_b,
-                                (vertex_2d_entity_b, CanvasShape::Vertex),
-                                None,
-                                None,
-                            ));
+                            tab_manager
+                                .current_tab_state_mut()
+                                .unwrap()
+                                .action_stack
+                                .buffer_action(ShapeAction::CreateEdge(
+                                    vertex_2d_entity_a,
+                                    vertex_2d_entity_b,
+                                    (vertex_2d_entity_b, CanvasShape::Vertex),
+                                    None,
+                                    None,
+                                ));
                             return;
                         }
                     } else {
@@ -801,22 +859,26 @@ impl InputManager {
                             );
 
                             // spawn new vertex
-                            tab_manager.current_tab_state_mut().unwrap().action_stack.buffer_action(ShapeAction::CreateVertex(
-                                match current_file_type {
-                                    FileExtension::Skel => {
-                                        VertexTypeData::Skel(vertex_2d_entity, 0.0, None)
-                                    }
-                                    FileExtension::Mesh => VertexTypeData::Mesh(
-                                        vec![(vertex_2d_entity, None)],
-                                        Vec::new(),
-                                    ),
-                                    FileExtension::Anim | FileExtension::Unknown => {
-                                        panic!("");
-                                    }
-                                },
-                                new_3d_position,
-                                None,
-                            ));
+                            tab_manager
+                                .current_tab_state_mut()
+                                .unwrap()
+                                .action_stack
+                                .buffer_action(ShapeAction::CreateVertex(
+                                    match current_file_type {
+                                        FileExtension::Skel => {
+                                            VertexTypeData::Skel(vertex_2d_entity, 0.0, None)
+                                        }
+                                        FileExtension::Mesh => VertexTypeData::Mesh(
+                                            vec![(vertex_2d_entity, None)],
+                                            Vec::new(),
+                                        ),
+                                        FileExtension::Anim | FileExtension::Unknown => {
+                                            panic!("");
+                                        }
+                                    },
+                                    new_3d_position,
+                                    None,
+                                ));
                         } else {
                             warn!(
                                 "Selected vertex entity: {:?} has no Transform",
@@ -827,7 +889,11 @@ impl InputManager {
                 }
                 MouseButton::Right => {
                     // deselect vertex
-                    tab_manager.current_tab_state_mut().unwrap().action_stack.buffer_action(ShapeAction::SelectShape(None));
+                    tab_manager
+                        .current_tab_state_mut()
+                        .unwrap()
+                        .action_stack
+                        .buffer_action(ShapeAction::SelectShape(None));
                 }
                 _ => {}
             }
@@ -836,14 +902,25 @@ impl InputManager {
                 match (self.hovered_entity.map(|(_, s)| s).unwrap(), click_type) {
                     (CanvasShape::Vertex, MouseButton::Left)
                     | (CanvasShape::RootVertex, MouseButton::Left) => {
-                        tab_manager.current_tab_state_mut().unwrap().action_stack.buffer_action(ShapeAction::SelectShape(self.hovered_entity));
+                        tab_manager
+                            .current_tab_state_mut()
+                            .unwrap()
+                            .action_stack
+                            .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
                     }
                     (CanvasShape::Edge, MouseButton::Left) => {
-                        tab_manager.current_tab_state_mut().unwrap().action_stack.buffer_action(ShapeAction::SelectShape(self.hovered_entity));
+                        tab_manager
+                            .current_tab_state_mut()
+                            .unwrap()
+                            .action_stack
+                            .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
                     }
                     (CanvasShape::Face, MouseButton::Left) => {
                         if current_file_type == FileExtension::Mesh {
-                            tab_manager.current_tab_state_mut().unwrap().action_stack
+                            tab_manager
+                                .current_tab_state_mut()
+                                .unwrap()
+                                .action_stack
                                 .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
                         } else {
                             panic!("shouldn't be possible");

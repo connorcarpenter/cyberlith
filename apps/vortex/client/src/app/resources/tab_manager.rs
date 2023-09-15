@@ -123,10 +123,8 @@ impl TabManager {
 
             // insert new tab
             let new_tab_id = self.new_tab_id();
-            self.tab_map.insert(
-                *row_entity,
-                TabState::new(new_tab_id, current_order),
-            );
+            self.tab_map
+                .insert(*row_entity, TabState::new(new_tab_id, current_order));
             self.tab_order.insert(current_order, *row_entity);
 
             // send message to server
@@ -191,7 +189,6 @@ impl TabManager {
                 }
             }
         }
-
 
         // send message to server
         let message = TabActionMessage::new(tab_state.tab_id, TabActionMessageType::Close);

@@ -3,14 +3,14 @@ use naia_bevy_shared::{Protocol, ProtocolPlugin};
 mod file_system;
 use file_system::FileSystemComponentsPlugin;
 pub use file_system::{
-    ChangelistEntry, ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry,
-    FileSystemRootChild, FileDependency,
+    ChangelistEntry, ChangelistStatus, EntryKind, FileDependency, FileSystemChild, FileSystemEntry,
+    FileSystemRootChild,
 };
 
 mod vertex;
 use vertex::VertexComponentsPlugin;
 pub use vertex::{
-    Edge3d, EdgeAngle, Face3d, FileType, FileExtension, OwnedByFile, ShapeName, Vertex3d,
+    Edge3d, EdgeAngle, Face3d, FileExtension, FileType, OwnedByFile, ShapeName, Vertex3d,
     VertexRoot, VertexSerdeInt,
 };
 

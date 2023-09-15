@@ -6,9 +6,16 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use naia_bevy_server::{BitReader, BitWrite, CommandsExt, FileBitWriter, ReplicationConfig, Serde, SerdeErr, Server, UnsignedVariableInteger};
+use naia_bevy_server::{
+    BitReader, BitWrite, CommandsExt, FileBitWriter, ReplicationConfig, Serde, SerdeErr, Server,
+    UnsignedVariableInteger,
+};
 
-use vortex_proto::{components::{FileExtension, EntryKind, FileDependency}, resources::FileEntryKey, SerdeQuat};
+use vortex_proto::{
+    components::{EntryKind, FileDependency, FileExtension},
+    resources::FileEntryKey,
+    SerdeQuat,
+};
 
 use crate::{
     files::{FileReadOutput, FileReader, FileWriter},
@@ -48,9 +55,7 @@ impl Serde for Transition {
     fn de(reader: &mut BitReader) -> Result<Self, SerdeErr> {
         let duration_5ms: u32 = UnsignedVariableInteger::<7>::de(reader)?.to();
         let duration_ms = (duration_5ms as f32) * 5.0;
-        Ok(Self {
-            duration_ms,
-        })
+        Ok(Self { duration_ms })
     }
 
     fn bit_length(&self) -> u32 {
@@ -91,7 +96,10 @@ impl AnimWriter {
 
         let full_skel_path = dependency_key.full_path();
         info!("{} writing dependency: {}", file_key.name(), full_skel_path);
-        actions.push(AnimAction::SkelFile(dependency_key.path().to_string(), dependency_key.name().to_string()));
+        actions.push(AnimAction::SkelFile(
+            dependency_key.path().to_string(),
+            dependency_key.name().to_string(),
+        ));
 
         // TODO: poses and such
 
@@ -204,7 +212,6 @@ impl AnimReader {
         server: &mut Server,
         actions: Vec<AnimAction>,
     ) -> Result<FileReadOutput, SerdeErr> {
-
         let mut skel_path = None;
 
         for action in actions {
@@ -228,9 +235,8 @@ impl AnimReader {
         project: &mut Project,
         file_key: &FileEntryKey,
         file_entity: &Entity,
-        skel_path_opt: Option<(String, String)>
+        skel_path_opt: Option<(String, String)>,
     ) -> HashMap<Entity, ContentEntityData> {
-
         let mut content_entities = HashMap::new();
 
         info!("skel_path: {:?}", skel_path_opt);

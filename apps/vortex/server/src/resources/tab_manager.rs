@@ -10,10 +10,10 @@ use bevy_log::{info, warn};
 use naia_bevy_server::{Server, UserKey};
 
 use vortex_proto::{resources::FileEntryKey, types::TabId};
-use crate::files::on_despawn_file_content_entities;
 
-use crate::resources::{
-    project::ProjectKey, ContentEntityData, GitManager, ShapeManager, UserManager,
+use crate::{
+    files::on_despawn_file_content_entities,
+    resources::{project::ProjectKey, ContentEntityData, GitManager, ShapeManager, UserManager},
 };
 
 #[derive(Resource)]

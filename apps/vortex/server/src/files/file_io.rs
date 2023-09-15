@@ -6,13 +6,13 @@ use bevy_log::info;
 use naia_bevy_server::{CommandsExt, RoomKey, Server};
 
 use vortex_proto::{
-    components::{FileType, FileExtension, OwnedByFile},
+    components::{FileExtension, FileType, OwnedByFile},
     resources::FileEntryKey,
 };
 
 use crate::{
     files::{AnimReader, AnimWriter, MeshReader, MeshWriter, SkelReader, SkelWriter},
-    resources::{Project, ContentEntityData, ShapeManager},
+    resources::{ContentEntityData, Project, ShapeManager},
 };
 
 pub trait FileWriter: Send + Sync {
@@ -131,9 +131,14 @@ pub fn load_content_entities(
         FileReadOutput::Mesh(shape_entities) => {
             MeshReader::post_process_entities(shape_manager, shape_entities)
         }
-        FileReadOutput::Anim(skel_path_opt) => {
-            AnimReader::post_process(commands, server, project, file_key, file_entity, skel_path_opt)
-        },
+        FileReadOutput::Anim(skel_path_opt) => AnimReader::post_process(
+            commands,
+            server,
+            project,
+            file_key,
+            file_entity,
+            skel_path_opt,
+        ),
     };
 
     post_process_loaded_networked_entities(

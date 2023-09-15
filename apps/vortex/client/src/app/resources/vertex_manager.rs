@@ -17,7 +17,7 @@ use render_api::{
 };
 
 use vortex_proto::components::{
-    Face3d, FileType, FileExtension, OwnedByFile, Vertex3d, VertexRoot,
+    Face3d, FileExtension, FileType, OwnedByFile, Vertex3d, VertexRoot,
 };
 
 use crate::app::{

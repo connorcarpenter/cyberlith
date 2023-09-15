@@ -89,7 +89,7 @@ impl ChangelistEntry {
 #[derive(Component, Replicate)]
 pub struct FileDependency {
     pub file_entity: EntityProperty,
-    pub dependency_entity: EntityProperty
+    pub dependency_entity: EntityProperty,
 }
 
 impl FileDependency {

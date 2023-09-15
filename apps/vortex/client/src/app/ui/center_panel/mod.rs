@@ -4,13 +4,14 @@ use canvas::render_canvas;
 use bevy_ecs::world::World;
 
 use render_egui::{egui, egui::Frame};
+
 use vortex_proto::components::FileExtension;
 
 use crate::app::{
-    resources::{tab_manager::render_tab_bar, file_manager::FileManager, tab_manager::TabManager},
+    resources::{file_manager::FileManager, tab_manager::render_tab_bar, tab_manager::TabManager},
     ui::{
         render_tool_bar,
-        widgets::{render_bound, render_bind_button, render_naming_bar, NamingBarState},
+        widgets::{render_bind_button, render_bound, render_naming_bar, NamingBarState},
     },
 };
 
@@ -27,7 +28,8 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                 let file_manager = world.get_resource::<FileManager>().unwrap();
                 let current_file_type = file_manager.get_file_type(&current_file_entity);
                 if current_file_type == FileExtension::Anim {
-                    if !file_manager.file_has_dependency(&current_file_entity, FileExtension::Skel) {
+                    if !file_manager.file_has_dependency(&current_file_entity, FileExtension::Skel)
+                    {
                         render_bind_button(ui, world, &current_file_entity);
                         return;
                     } else {

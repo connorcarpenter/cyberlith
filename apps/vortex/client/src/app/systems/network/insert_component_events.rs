@@ -15,7 +15,11 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind, Face3d, FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, FileExtension, OwnedByFile, Vertex3d, VertexRoot};
+use vortex_proto::components::{
+    ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind, Face3d, FileDependency,
+    FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile,
+    Vertex3d, VertexRoot,
+};
 
 use crate::app::{
     components::file_system::{
@@ -72,7 +76,8 @@ pub fn insert_component_events(
 
         // on FileDependency Insert Event
         for entity in events.read::<FileDependency>() {
-            insert_fs_dependency_event_writer.send(InsertComponentEvent::<FileDependency>::new(entity));
+            insert_fs_dependency_event_writer
+                .send(InsertComponentEvent::<FileDependency>::new(entity));
         }
 
         // on ChangelistEntry Insert Event
@@ -207,7 +212,10 @@ pub fn insert_file_component_events(
 
         file_manager.file_add_dependency(&file_entity, &dependency_entity);
 
-        info!("received FileDependency(file: `{:?}`, dependency: `{:?}`)", file_entity, dependency_entity);
+        info!(
+            "received FileDependency(file: `{:?}`, dependency: `{:?}`)",
+            file_entity, dependency_entity
+        );
     }
 }
 

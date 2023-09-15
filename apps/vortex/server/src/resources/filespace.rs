@@ -79,10 +79,7 @@ impl FileSpace {
         self.content_entities.remove(entity);
     }
 
-    pub fn set_content_entities(
-        &mut self,
-        content_entities: HashMap<Entity, ContentEntityData>
-    ) {
+    pub fn set_content_entities(&mut self, content_entities: HashMap<Entity, ContentEntityData>) {
         self.content_entities = content_entities;
     }
 }

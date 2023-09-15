@@ -12,11 +12,14 @@ use naia_bevy_server::{
     UnsignedVariableInteger,
 };
 
-use vortex_proto::{components::{Edge3d, Face3d, FileType, FileExtension, Vertex3d, VertexSerdeInt}, resources::FileEntryKey};
+use vortex_proto::{
+    components::{Edge3d, Face3d, FileExtension, FileType, Vertex3d, VertexSerdeInt},
+    resources::FileEntryKey,
+};
 
 use crate::{
     files::{FileReadOutput, FileReader, FileWriter, ShapeTypeData},
-    resources::{Project, ContentEntityData, ShapeManager},
+    resources::{ContentEntityData, Project, ShapeManager},
 };
 
 // Actions
@@ -410,7 +413,8 @@ impl MeshReader {
         let mut new_content_entities = HashMap::new();
 
         for (entity, shape_type_data) in shape_entities {
-            new_content_entities.insert(entity, ContentEntityData::new_shape(shape_type_data.into()));
+            new_content_entities
+                .insert(entity, ContentEntityData::new_shape(shape_type_data.into()));
 
             match shape_type_data {
                 ShapeTypeData::Vertex => {

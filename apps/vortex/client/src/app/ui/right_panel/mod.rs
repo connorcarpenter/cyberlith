@@ -20,7 +20,6 @@ pub fn render_tool_bar(ui: &mut Ui, world: &mut World) {
         .show_inside(ui, |ui| {
             ui.style_mut().override_text_style = Some(egui::TextStyle::Heading);
             ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
-
                 Toolbar::render(ui, world);
 
                 ui.allocate_space(ui.available_size());

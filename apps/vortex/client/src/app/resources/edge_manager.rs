@@ -19,7 +19,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{Edge3d, EdgeAngle, FileType, FileExtension, OwnedByFile};
+use vortex_proto::components::{Edge3d, EdgeAngle, FileExtension, FileType, OwnedByFile};
 
 use crate::app::{
     components::{Edge2dLocal, Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d},
@@ -27,9 +27,11 @@ use crate::app::{
         camera_manager::CameraManager,
         canvas::Canvas,
         face_manager::FaceManager,
+        file_manager::FileManager,
         input_manager::InputManager,
         shape_data::{CanvasShape, Edge3dData, FaceKey},
         shape_manager::ShapeManager,
+        tab_manager::TabManager,
         vertex_manager::VertexManager,
     },
     set_3d_line_transform,
@@ -37,8 +39,6 @@ use crate::app::{
         create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,
     },
 };
-use crate::app::resources::file_manager::FileManager;
-use crate::app::resources::tab_manager::TabManager;
 
 #[derive(Resource)]
 pub struct EdgeManager {
@@ -589,7 +589,12 @@ impl EdgeManager {
             .map(|data| data.faces_3d.iter().copied().collect())
     }
 
-    pub fn edge_angle_visibility_toggle(&mut self, file_manager: &FileManager, tab_manager: &TabManager, canvas: &mut Canvas) {
+    pub fn edge_angle_visibility_toggle(
+        &mut self,
+        file_manager: &FileManager,
+        tab_manager: &TabManager,
+        canvas: &mut Canvas,
+    ) {
         let current_file_entity = tab_manager.current_tab_entity().unwrap();
         let current_file_type = file_manager.get_file_type(current_file_entity);
         if current_file_type != FileExtension::Skel {

@@ -15,8 +15,8 @@ use crate::app::{
     components::{Edge2dLocal, FaceIcon2d, LocalShape, OwnedByFileLocal, Vertex2d},
     resources::{
         animation_manager::AnimationManager, camera_manager::CameraManager, canvas::Canvas,
-        edge_manager::EdgeManager, face_manager::FaceManager, input_manager::InputManager,
-        tab_manager::TabManager, vertex_manager::VertexManager, file_manager::FileManager
+        edge_manager::EdgeManager, face_manager::FaceManager, file_manager::FileManager,
+        input_manager::InputManager, tab_manager::TabManager, vertex_manager::VertexManager,
     },
 };
 

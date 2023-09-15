@@ -8,10 +8,9 @@ use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
 use render_api::components::Visibility;
 
-use vortex_proto::{
-    components::{
-        FileExtension, ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-    },
+use vortex_proto::components::{
+    ChangelistEntry, EntryKind, FileExtension, FileSystemChild, FileSystemEntry,
+    FileSystemRootChild,
 };
 
 use crate::app::{

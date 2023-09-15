@@ -26,7 +26,6 @@ pub fn message_events(
     key_q: Query<&FileEntryKey>,
 ) {
     for events in event_reader.iter() {
-
         // Changelist Message
         for (user_key, message) in events.read::<FileActionChannel, ChangelistMessage>() {
             info!(

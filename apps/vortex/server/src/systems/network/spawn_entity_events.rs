@@ -1,14 +1,14 @@
 use bevy_ecs::{
     event::EventReader,
-    system::{Commands, Res, ResMut},
+    system::{Commands, Query, Res, ResMut},
 };
-use bevy_ecs::system::Query;
 use bevy_log::info;
 
 use naia_bevy_server::{
     events::{DespawnEntityEvent, SpawnEntityEvent},
     Server,
 };
+
 use vortex_proto::components::ChangelistEntry;
 
 use crate::{
@@ -55,7 +55,12 @@ pub fn despawn_entity_events(
                 // file
                 info!("entity: `{:?}` (which is a File), despawned", entity);
 
-                project.on_client_delete_file(&mut commands, &mut server, &mut changelist_q, entity);
+                project.on_client_delete_file(
+                    &mut commands,
+                    &mut server,
+                    &mut changelist_q,
+                    entity,
+                );
             }
             Some((false, Some(ShapeType::Vertex))) => {
                 // vertex

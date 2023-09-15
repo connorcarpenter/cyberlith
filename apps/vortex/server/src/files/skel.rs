@@ -12,16 +12,19 @@ use naia_bevy_server::{
     UnsignedInteger, UnsignedVariableInteger,
 };
 
-use vortex_proto::{components::{
-    Edge3d, EdgeAngle, FileType, FileExtension, ShapeName, Vertex3d, VertexRoot, VertexSerdeInt,
-}, resources::FileEntryKey};
+use vortex_proto::{
+    components::{
+        Edge3d, EdgeAngle, FileExtension, FileType, ShapeName, Vertex3d, VertexRoot, VertexSerdeInt,
+    },
+    resources::FileEntryKey,
+};
 
 use crate::{
     files::{
         file_io::ShapeType, FileReadOutput, FileReader, FileWriter, SkelFileWaitlist,
         SkelWaitlistInsert,
     },
-    resources::{Project, ContentEntityData, ShapeManager},
+    resources::{ContentEntityData, Project, ShapeManager},
 };
 
 // Actions
@@ -398,7 +401,10 @@ impl SkelReader {
         let mut skel_file_waitlist = SkelFileWaitlist::default();
 
         for (vertex_entity, edge_opt) in vertex_and_edge_entities {
-            new_content_entities.insert(vertex_entity, ContentEntityData::new_shape(ShapeType::Vertex));
+            new_content_entities.insert(
+                vertex_entity,
+                ContentEntityData::new_shape(ShapeType::Vertex),
+            );
 
             if let Some((edge_entity, parent_entity)) = edge_opt {
                 skel_file_waitlist
@@ -407,7 +413,8 @@ impl SkelReader {
                     shape_manager,
                     SkelWaitlistInsert::Edge(parent_entity, edge_entity, vertex_entity),
                 );
-                new_content_entities.insert(edge_entity, ContentEntityData::new_shape(ShapeType::Edge));
+                new_content_entities
+                    .insert(edge_entity, ContentEntityData::new_shape(ShapeType::Edge));
             } else {
                 skel_file_waitlist
                     .process_insert(shape_manager, SkelWaitlistInsert::VertexRoot(vertex_entity));

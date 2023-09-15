@@ -17,11 +17,10 @@ use crate::app::{
     components::{Edge2dLocal, Edge3dLocal, FaceIcon2d, LocalShape, OwnedByFileLocal},
     resources::{
         camera_manager::CameraManager, canvas::Canvas, compass::Compass, edge_manager::EdgeManager,
-        face_manager::FaceManager, input_manager::InputManager, tab_manager::TabManager,
-        vertex_manager::VertexManager,
+        face_manager::FaceManager, file_manager::FileManager, input_manager::InputManager,
+        tab_manager::TabManager, vertex_manager::VertexManager,
     },
 };
-use crate::app::resources::file_manager::FileManager;
 
 pub fn sync_vertices(
     tab_manager: ResMut<TabManager>,

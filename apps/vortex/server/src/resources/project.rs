@@ -11,18 +11,17 @@ use git2::{Repository, Signature};
 use naia_bevy_server::{BigMapKey, CommandsExt, RoomKey, Server, UserKey};
 
 use vortex_proto::{
-    components::{FileExtension, ChangelistEntry, ChangelistStatus, EntryKind, FileSystemEntry},
+    components::{ChangelistEntry, ChangelistStatus, EntryKind, FileExtension, FileSystemEntry},
     messages::ChangelistMessage,
     resources::FileEntryKey,
 };
 
 use crate::{
-    files::{load_content_entities, FileWriter, ShapeType},
+    files::{load_content_entities, on_despawn_file_content_entities, FileWriter, ShapeType},
     resources::{
         ChangelistValue, ContentEntityData, FileEntryValue, FileSpace, GitManager, ShapeManager,
     },
 };
-use crate::files::on_despawn_file_content_entities;
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
 pub struct ProjectKey(u64);
@@ -72,7 +71,12 @@ impl Project {
         }
     }
 
-    pub fn write(&self, world: &mut World, file_key: &FileEntryKey, content_entities: &HashMap<Entity, ContentEntityData>) -> Box<[u8]> {
+    pub fn write(
+        &self,
+        world: &mut World,
+        file_key: &FileEntryKey,
+        content_entities: &HashMap<Entity, ContentEntityData>,
+    ) -> Box<[u8]> {
         let ext = self.working_file_extension(file_key);
         return ext.write(world, self, file_key, content_entities);
     }
@@ -90,8 +94,13 @@ impl Project {
         self.filespaces.get(file_key).map(|fs| fs.room_key())
     }
 
-    pub(crate) fn file_content_entities(&self, file_key: &FileEntryKey) -> Option<&HashMap<Entity, ContentEntityData>> {
-        self.filespaces.get(file_key).map(|fs| fs.content_entities())
+    pub(crate) fn file_content_entities(
+        &self,
+        file_key: &FileEntryKey,
+    ) -> Option<&HashMap<Entity, ContentEntityData>> {
+        self.filespaces
+            .get(file_key)
+            .map(|fs| fs.content_entities())
     }
 
     pub(crate) fn on_insert_content_entity(
@@ -304,13 +313,23 @@ impl Project {
     }
 
     pub fn file_add_dependency(&mut self, file_key: &FileEntryKey, dependency_key: &FileEntryKey) {
-        info!("file_add_dependency: {:?} -> {:?}", file_key, dependency_key);
+        info!(
+            "file_add_dependency: {:?} -> {:?}",
+            file_key, dependency_key
+        );
         let file_entry_val = self.working_file_entries.get_mut(file_key).unwrap();
         file_entry_val.add_dependency(dependency_key);
     }
 
-    pub fn file_remove_dependency(&mut self, file_key: &FileEntryKey, dependency_key: &FileEntryKey) {
-        info!("file_remove_dependency: {:?} -> {:?}", file_key, dependency_key);
+    pub fn file_remove_dependency(
+        &mut self,
+        file_key: &FileEntryKey,
+        dependency_key: &FileEntryKey,
+    ) {
+        info!(
+            "file_remove_dependency: {:?} -> {:?}",
+            file_key, dependency_key
+        );
         let Some(file_entry_val) = self.working_file_entries.get_mut(file_key) else {
             warn!("file_remove_dependency: file_key not found: {:?}", file_key);
             return;
@@ -577,11 +596,15 @@ impl Project {
         }
 
         // despawn all previous entities
-        let content_entities = self
-            .file_content_entities(file_key)
-            .unwrap()
-            .clone();
-        on_despawn_file_content_entities(commands, server, shape_manager, self, file_key, &content_entities);
+        let content_entities = self.file_content_entities(file_key).unwrap().clone();
+        on_despawn_file_content_entities(
+            commands,
+            server,
+            shape_manager,
+            self,
+            file_key,
+            &content_entities,
+        );
 
         // respawn all entities
         let filespace_room_key = self.file_room_key(file_key).unwrap();
@@ -747,7 +770,11 @@ impl Project {
         }
 
         if file_exists_in_master && file_exists_in_changelist {
-            let changelist_entity = self.changelist_entries.get_mut(&file_entry_key).unwrap().entity();
+            let changelist_entity = self
+                .changelist_entries
+                .get_mut(&file_entry_key)
+                .unwrap()
+                .entity();
             let mut changelist_entry = changelist_q.get_mut(changelist_entity).unwrap();
             if *changelist_entry.status != ChangelistStatus::Deleted {
                 *changelist_entry.status = ChangelistStatus::Deleted;
@@ -846,11 +873,7 @@ impl Project {
         }
     }
 
-    fn delete_filespace(
-        &mut self,
-        server: &mut Server,
-        file_key: &FileEntryKey
-    ) {
+    fn delete_filespace(&mut self, server: &mut Server, file_key: &FileEntryKey) {
         let filespace = self.filespaces.remove(file_key).unwrap();
 
         let file_room_key = filespace.room_key();

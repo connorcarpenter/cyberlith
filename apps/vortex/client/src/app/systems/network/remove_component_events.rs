@@ -8,7 +8,10 @@ use naia_bevy_client::{events::RemoveComponentEvents, Client};
 
 use render_api::{base::CpuMesh, components::Visibility, Assets};
 
-use vortex_proto::components::{ChangelistEntry, ChangelistStatus, Edge3d, Face3d, FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild, Vertex3d};
+use vortex_proto::components::{
+    ChangelistEntry, ChangelistStatus, Edge3d, Face3d, FileDependency, FileSystemChild,
+    FileSystemEntry, FileSystemRootChild, Vertex3d,
+};
 
 use crate::app::{
     components::{

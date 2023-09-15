@@ -6,7 +6,7 @@ use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt};
 
-use vortex_proto::components::{Edge3d, EdgeAngle, FileType, FileExtension, Vertex3d};
+use vortex_proto::components::{Edge3d, EdgeAngle, FileExtension, FileType, Vertex3d};
 
 use crate::app::{
     components::{VertexEntry, VertexTypeData},

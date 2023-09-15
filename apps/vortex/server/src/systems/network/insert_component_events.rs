@@ -11,12 +11,11 @@ use naia_bevy_server::{events::InsertComponentEvents, Server};
 
 use vortex_proto::{
     components::{
-        Edge3d, Face3d, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType,
-        OwnedByFile, ShapeName, Vertex3d, VertexRoot,
+        Edge3d, Face3d, FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild,
+        FileType, OwnedByFile, ShapeName, Vertex3d, VertexRoot,
     },
     resources::FileEntryKey,
 };
-use vortex_proto::components::FileDependency;
 
 use crate::{
     events::InsertComponentEvent,
@@ -202,7 +201,11 @@ pub fn insert_file_component_events(
         let file_entity = component.file_entity.get(&server).unwrap();
         let dependency_entity = component.dependency_entity.get(&server).unwrap();
 
-        let project_key = user_manager.user_session_data(&user_key).unwrap().project_key().unwrap();
+        let project_key = user_manager
+            .user_session_data(&user_key)
+            .unwrap()
+            .project_key()
+            .unwrap();
         let file_key = key_q.get(file_entity).unwrap().clone();
         let dependency_key = key_q.get(dependency_entity).unwrap().clone();
 
@@ -211,7 +214,11 @@ pub fn insert_file_component_events(
 
         git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
 
-        info!("inserted FileDependency(file: `{:?}`, dependency: `{:?}`)", file_key.name(), dependency_key.name());
+        info!(
+            "inserted FileDependency(file: `{:?}`, dependency: `{:?}`)",
+            file_key.name(),
+            dependency_key.name()
+        );
     }
 }
 

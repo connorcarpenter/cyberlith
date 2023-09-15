@@ -13,15 +13,9 @@ use vortex_proto::components::{FileExtension, ShapeName};
 
 use crate::app::{
     resources::{
-        canvas::Canvas,
-        edge_manager::EdgeManager,
-        face_manager::FaceManager,
-        input_manager::InputManager,
-        shape_data::CanvasShape,
-        shape_manager::ShapeManager,
-        vertex_manager::VertexManager,
-        file_manager::FileManager,
-        tab_manager::TabManager,
+        canvas::Canvas, edge_manager::EdgeManager, face_manager::FaceManager,
+        file_manager::FileManager, input_manager::InputManager, shape_data::CanvasShape,
+        shape_manager::ShapeManager, tab_manager::TabManager, vertex_manager::VertexManager,
     },
     ui::UiState,
 };
@@ -180,7 +174,10 @@ pub fn naming_bar_visibility_toggle(world: &mut World) {
     let Some(current_file_entity) = world.get_resource::<TabManager>().unwrap().current_tab_entity() else {
         return;
     };
-    let current_file_type = world.get_resource::<FileManager>().unwrap().get_file_type(&current_file_entity);
+    let current_file_type = world
+        .get_resource::<FileManager>()
+        .unwrap()
+        .get_file_type(&current_file_entity);
     if current_file_type != FileExtension::Skel {
         return;
     }
