@@ -20,10 +20,9 @@ pub fn render_tool_bar(ui: &mut Ui, world: &mut World) {
         .show_inside(ui, |ui| {
             ui.style_mut().override_text_style = Some(egui::TextStyle::Heading);
             ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
-                let toolbar = world.get_resource::<Toolbar>().unwrap();
-                if let Some(toolbar_kind) = toolbar.kind() {
-                    toolbar_kind.render(ui, world);
-                }
+
+                Toolbar::render(ui, world);
+
                 ui.allocate_space(ui.available_size());
             });
             ui.allocate_space(ui.available_size());

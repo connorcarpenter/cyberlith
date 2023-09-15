@@ -24,17 +24,14 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
             let tab_manager = world.get_resource::<TabManager>().unwrap();
             if let Some(current_file_entity) = tab_manager.current_tab_entity() {
                 let current_file_entity = *current_file_entity;
-                // let mut entities = world.query::<(Entity, &Order, &Label)>()
-                //     .iter(&world)
-                //     .collect::<Vec<_>>();
-                let canvas = world.get_resource::<Canvas>().unwrap();
-                if canvas.current_file_type_equals(FileExtension::Anim) {
-                    let file_manager = world.get_resource::<FileManager>().unwrap();
+                let file_manager = world.get_resource::<FileManager>().unwrap();
+                let current_file_type = file_manager.get_file_type(&current_file_entity);
+                if current_file_type == FileExtension::Anim {
                     if !file_manager.file_has_dependency(&current_file_entity, FileExtension::Skel) {
-                        render_bind_button(ui, world, current_file_entity);
+                        render_bind_button(ui, world, &current_file_entity);
                         return;
                     } else {
-                        render_bound(ui, world, current_file_entity);
+                        render_bound(ui, world, &current_file_entity);
                         return;
                     }
                 }

@@ -9,7 +9,7 @@ use render_egui::{
     egui::{Align, Button, Frame, Layout, TextEdit, Ui},
 };
 
-use vortex_proto::components::ShapeName;
+use vortex_proto::components::{FileExtension, ShapeName};
 
 use crate::app::{
     resources::{
@@ -19,11 +19,13 @@ use crate::app::{
         input_manager::InputManager,
         shape_data::CanvasShape,
         shape_manager::ShapeManager,
-        toolbar::{Toolbar, ToolbarKind},
+        toolbar::Toolbar,
         vertex_manager::VertexManager,
     },
     ui::UiState,
 };
+use crate::app::resources::file_manager::FileManager;
+use crate::app::resources::tab_manager::TabManager;
 
 #[derive(Resource)]
 pub struct NamingBarState {
@@ -174,11 +176,12 @@ pub fn render_naming_bar(ui: &mut Ui, world: &mut World) {
 
 pub fn naming_bar_visibility_toggle(world: &mut World) {
     // is skeleton toolbar open?
-    let toolbar = world.get_resource::<Toolbar>().unwrap();
-    let toolbar_kind = toolbar.kind();
-    if toolbar_kind != Some(ToolbarKind::Skeleton) {
+
+    // get current file extension
+    let Some(current_file_entity) = world.get_resource::<TabManager>().unwrap().current_tab_entity() else {
         return;
-    }
+    };
+    let current_file_type = world.get_resource::<FileManager>().unwrap().get_file_type(&current_file_entity);
 
     // is vertex/edge selected?
     let input_manager = world.get_resource::<InputManager>().unwrap();

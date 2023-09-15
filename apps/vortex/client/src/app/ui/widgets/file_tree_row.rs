@@ -410,7 +410,6 @@ impl FileTreeRowUiWidget {
                 ResMut<VertexManager>,
                 ResMut<EdgeManager>,
                 ResMut<TabManager>,
-                ResMut<Toolbar>,
                 Query<(&mut Visibility, &OwnedByFileLocal)>,
             )> = SystemState::new(world);
             let (
@@ -421,7 +420,6 @@ impl FileTreeRowUiWidget {
                 mut vertex_manager,
                 mut edge_manager,
                 mut tab_manager,
-                mut toolbar,
                 mut visibility_q,
             ) = system_state.get_mut(world);
 
@@ -432,7 +430,6 @@ impl FileTreeRowUiWidget {
                 &mut input_manager,
                 &mut vertex_manager,
                 &mut edge_manager,
-                &mut toolbar,
                 &mut visibility_q,
                 row_entity,
                 file_ext,

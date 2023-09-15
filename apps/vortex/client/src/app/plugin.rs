@@ -103,7 +103,6 @@ impl Plugin for VortexPlugin {
             .insert_resource(file_manager)
             .init_resource::<FileActions>()
             .init_resource::<TabManager>()
-            .init_resource::<Toolbar>()
             .add_systems(Update, ui::update)
             // Canvas Config
             .init_resource::<VertexManager>()

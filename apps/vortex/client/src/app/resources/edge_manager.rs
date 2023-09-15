@@ -37,6 +37,8 @@ use crate::app::{
         create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,
     },
 };
+use crate::app::resources::file_manager::FileManager;
+use crate::app::resources::tab_manager::TabManager;
 
 #[derive(Resource)]
 pub struct EdgeManager {
@@ -587,8 +589,10 @@ impl EdgeManager {
             .map(|data| data.faces_3d.iter().copied().collect())
     }
 
-    pub fn edge_angle_visibility_toggle(&mut self, canvas: &mut Canvas) {
-        if !canvas.current_file_type_equals(FileExtension::Skel) {
+    pub fn edge_angle_visibility_toggle(&mut self, file_manager: &FileManager, tab_manager: &TabManager, canvas: &mut Canvas) {
+        let current_file_entity = tab_manager.current_tab_entity().unwrap();
+        let current_file_type = file_manager.get_file_type(current_file_entity);
+        if current_file_type != FileExtension::Skel {
             return;
         }
 

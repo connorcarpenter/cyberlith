@@ -33,7 +33,6 @@ pub fn remove_component_events(
     mut edge_manager: ResMut<EdgeManager>,
     mut face_manager: ResMut<FaceManager>,
     mut tab_manager: ResMut<TabManager>,
-    mut toolbar: ResMut<Toolbar>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut event_reader: EventReader<RemoveComponentEvents>,
     mut parent_q: Query<&mut FileSystemParent>,
@@ -52,7 +51,6 @@ pub fn remove_component_events(
                 &mut vertex_manager,
                 &mut edge_manager,
                 &mut tab_manager,
-                &mut toolbar,
                 &mut visibility_q,
                 &entity,
             );

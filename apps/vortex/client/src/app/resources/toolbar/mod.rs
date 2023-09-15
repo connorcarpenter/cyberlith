@@ -10,44 +10,18 @@ use render_egui::{
     egui::{Button, Response, Ui},
 };
 use vortex_proto::components::FileExtension;
+use crate::app::resources::file_manager::FileManager;
+use crate::app::resources::tab_manager::TabManager;
 
 use crate::app::resources::toolbar::{
     anim::AnimationToolbar, mesh::MeshToolbar, skel::SkeletonToolbar,
 };
 
-#[derive(PartialEq, Eq, Clone, Copy)]
-pub enum ToolbarKind {
-    Skeleton,
-    Mesh,
-    Animation,
+impl Toolbar {
+
 }
 
-impl ToolbarKind {
-    pub fn render(&self, ui: &mut Ui, world: &mut World) {
-        match self {
-            ToolbarKind::Skeleton => {
-                SkeletonToolbar::render(ui, world);
-            }
-            ToolbarKind::Mesh => {
-                MeshToolbar::render(ui, world);
-            }
-            ToolbarKind::Animation => {
-                AnimationToolbar::render(ui, world);
-            }
-        }
-    }
-}
-
-#[derive(Resource)]
-pub struct Toolbar {
-    i12n: Option<ToolbarKind>,
-}
-
-impl Default for Toolbar {
-    fn default() -> Self {
-        Self { i12n: None }
-    }
-}
+pub struct Toolbar;
 
 impl Toolbar {
     pub(crate) fn button(ui: &mut Ui, button_text: &str, tooltip: &str, enabled: bool) -> Response {
@@ -55,30 +29,25 @@ impl Toolbar {
         ui.add_enabled(enabled, button).on_hover_text(tooltip)
     }
 
-    pub fn clear(&mut self) {
-        info!("Toolbar::clear()");
-        self.i12n = None;
-    }
+    pub fn render(ui: &mut Ui, world: &mut World) {
 
-    pub fn kind(&self) -> Option<ToolbarKind> {
-        self.i12n
-    }
+        // get current file extension
+        let Some(current_file_entity) = world.get_resource::<TabManager>().unwrap().current_tab_entity() else {
+            return;
+        };
+        let current_file_type = world.get_resource::<FileManager>().unwrap().get_file_type(&current_file_entity);
 
-    pub(crate) fn set_file_type(&mut self, file_type_value: FileExtension) {
-        info!("Toolbar::set_file_type({:?})", file_type_value);
-        match file_type_value {
+        match current_file_type {
             FileExtension::Skel => {
-                self.i12n = Some(ToolbarKind::Skeleton);
+                SkeletonToolbar::render(ui, world);
             }
             FileExtension::Mesh => {
-                self.i12n = Some(ToolbarKind::Mesh);
+                MeshToolbar::render(ui, world);
             }
             FileExtension::Anim => {
-                self.i12n = Some(ToolbarKind::Animation);
+                AnimationToolbar::render(ui, world);
             }
-            FileExtension::Unknown => {
-                self.i12n = None;
-            }
+            _ => {}
         }
     }
 }

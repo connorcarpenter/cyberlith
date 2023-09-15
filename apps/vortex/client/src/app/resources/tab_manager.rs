@@ -43,18 +43,16 @@ pub struct TabState {
     pub selected: bool,
     pub order: usize,
     pub tab_id: TabId,
-    pub ext: FileExtension,
     pub camera_state: CameraState,
     pub action_stack: ActionStack<ShapeAction>,
 }
 
 impl TabState {
-    pub fn new(id: TabId, order: usize, ext: FileExtension) -> Self {
+    pub fn new(id: TabId, order: usize) -> Self {
         Self {
             selected: false,
             order,
             tab_id: id,
-            ext,
             camera_state: CameraState::default(),
             action_stack: ActionStack::default(),
         }
@@ -101,7 +99,6 @@ impl TabManager {
         input_manager: &mut InputManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
-        toolbar: &mut Toolbar,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         row_entity: &Entity,
         file_ext: FileExtension,
@@ -114,7 +111,6 @@ impl TabManager {
                 input_manager,
                 vertex_manager,
                 edge_manager,
-                toolbar,
                 visibility_q,
                 row_entity,
             );
@@ -131,7 +127,7 @@ impl TabManager {
             let new_tab_id = self.new_tab_id();
             self.tab_map.insert(
                 *row_entity,
-                TabState::new(new_tab_id, current_order, file_ext),
+                TabState::new(new_tab_id, current_order),
             );
             self.tab_order.insert(current_order, *row_entity);
 
@@ -147,7 +143,6 @@ impl TabManager {
                 input_manager,
                 vertex_manager,
                 edge_manager,
-                toolbar,
                 visibility_q,
                 row_entity,
             );
@@ -164,7 +159,6 @@ impl TabManager {
         input_manager: &mut InputManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
-        toolbar: &mut Toolbar,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         row_entity: &Entity,
     ) {
@@ -191,15 +185,11 @@ impl TabManager {
                         input_manager,
                         vertex_manager,
                         edge_manager,
-                        toolbar,
                         visibility_q,
                         &new_entity,
                     );
                 } else {
                     self.clear_current_tab(canvas, camera_manager);
-
-                    // no tabs!
-                    toolbar.clear();
                 }
             }
         }
@@ -237,6 +227,18 @@ impl TabManager {
         Some(tab_state)
     }
 
+    pub fn current_tab_camera_state_mut(&mut self) -> Option<&mut CameraState> {
+        let current_entity = self.current_tab?;
+        let tab_state = self.tab_map.get_mut(&current_entity)?;
+        Some(&mut tab_state.camera_state)
+    }
+
+    pub fn current_tab_action_stack_mut(&mut self) -> Option<&mut ActionStack<ShapeAction>> {
+        let current_entity = self.current_tab?;
+        let tab_state = self.tab_map.get_mut(&current_entity)?;
+        Some(&mut tab_state.action_stack)
+    }
+
     fn new_tab_id(&mut self) -> TabId {
         if self.recycled_tab_ids.is_empty() {
             let id = self.new_tab_id;
@@ -269,7 +271,6 @@ impl TabManager {
         input_manager: &mut InputManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
-        toolbar: &mut Toolbar,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         row_entity: &Entity,
     ) {
@@ -291,14 +292,6 @@ impl TabManager {
         );
         let tab_state = self.tab_map.get_mut(&row_entity).unwrap();
         tab_state.selected = true;
-
-        let file_type = tab_state.ext;
-
-        // change canvas's file type
-        canvas.set_current_file_type(file_type);
-
-        // change toolbar's type
-        toolbar.set_file_type(file_type);
 
         // send message to server
         let message = TabActionMessage::new(tab_state.tab_id, TabActionMessageType::Select);
@@ -343,7 +336,6 @@ impl TabManager {
         input_manager: &mut InputManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
-        toolbar: &mut Toolbar,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
     ) {
         let all_tabs = self.tab_order.clone();
@@ -355,7 +347,6 @@ impl TabManager {
                 input_manager,
                 vertex_manager,
                 edge_manager,
-                toolbar,
                 visibility_q,
                 &entity,
             );
@@ -370,7 +361,6 @@ impl TabManager {
         input_manager: &mut InputManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
-        toolbar: &mut Toolbar,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         row_entity: &Entity,
     ) {
@@ -381,7 +371,6 @@ impl TabManager {
             input_manager,
             vertex_manager,
             edge_manager,
-            toolbar,
             visibility_q,
         );
         if !self.tab_map.contains_key(row_entity) {
@@ -394,7 +383,6 @@ impl TabManager {
             input_manager,
             vertex_manager,
             edge_manager,
-            toolbar,
             visibility_q,
             row_entity,
         );
@@ -408,7 +396,6 @@ impl TabManager {
         input_manager: &mut InputManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
-        toolbar: &mut Toolbar,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         row_entity: &Entity,
     ) {
@@ -428,7 +415,6 @@ impl TabManager {
                 input_manager,
                 vertex_manager,
                 edge_manager,
-                toolbar,
                 visibility_q,
                 &entity,
             );
@@ -443,7 +429,6 @@ impl TabManager {
         input_manager: &mut InputManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
-        toolbar: &mut Toolbar,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         row_entity: &Entity,
     ) {
@@ -463,7 +448,6 @@ impl TabManager {
                 input_manager,
                 vertex_manager,
                 edge_manager,
-                toolbar,
                 visibility_q,
                 &entity,
             );
@@ -478,7 +462,6 @@ impl TabManager {
         input_manager: &mut InputManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
-        toolbar: &mut Toolbar,
         ui: &mut Ui,
         file_q: &Query<(&FileSystemEntry, &FileSystemUiState)>,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
@@ -503,7 +486,6 @@ impl TabManager {
             input_manager,
             vertex_manager,
             edge_manager,
-            toolbar,
             visibility_q,
             tab_action,
         );
@@ -665,7 +647,6 @@ impl TabManager {
         input_manager: &mut InputManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
-        toolbar: &mut Toolbar,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         tab_action: Option<TabAction>,
     ) {
@@ -679,7 +660,6 @@ impl TabManager {
                     input_manager,
                     vertex_manager,
                     edge_manager,
-                    toolbar,
                     visibility_q,
                     &row_entity,
                 );
@@ -692,7 +672,6 @@ impl TabManager {
                     input_manager,
                     vertex_manager,
                     edge_manager,
-                    toolbar,
                     visibility_q,
                     &row_entity,
                 );
@@ -705,7 +684,6 @@ impl TabManager {
                     input_manager,
                     vertex_manager,
                     edge_manager,
-                    toolbar,
                     visibility_q,
                 );
             }
@@ -717,7 +695,6 @@ impl TabManager {
                     input_manager,
                     vertex_manager,
                     edge_manager,
-                    toolbar,
                     visibility_q,
                     &row_entity,
                 );
@@ -730,7 +707,6 @@ impl TabManager {
                     input_manager,
                     vertex_manager,
                     edge_manager,
-                    toolbar,
                     visibility_q,
                     &row_entity,
                 );
@@ -743,7 +719,6 @@ impl TabManager {
                     input_manager,
                     vertex_manager,
                     edge_manager,
-                    toolbar,
                     visibility_q,
                     &row_entity,
                 );
@@ -763,7 +738,6 @@ pub fn render_tab_bar(ui: &mut Ui, world: &mut World) {
                 ResMut<VertexManager>,
                 ResMut<EdgeManager>,
                 ResMut<TabManager>,
-                ResMut<Toolbar>,
                 Query<(&FileSystemEntry, &FileSystemUiState)>,
                 Query<(&mut Visibility, &OwnedByFileLocal)>,
             )> = SystemState::new(world);
@@ -775,7 +749,6 @@ pub fn render_tab_bar(ui: &mut Ui, world: &mut World) {
                 mut vertex_manager,
                 mut edge_manager,
                 mut tab_manager,
-                mut toolbar,
                 file_q,
                 mut visibility_q,
             ) = system_state.get_mut(world);
@@ -787,7 +760,6 @@ pub fn render_tab_bar(ui: &mut Ui, world: &mut World) {
                 &mut input_manager,
                 &mut vertex_manager,
                 &mut edge_manager,
-                &mut toolbar,
                 ui,
                 &file_q,
                 &mut visibility_q,

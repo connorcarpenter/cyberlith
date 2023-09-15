@@ -8,7 +8,7 @@ use vortex_proto::{components::{FileDependency, FileSystemEntry, FileExtension}}
 
 use crate::app::{resources::{file_manager::FileManager}, ui::{BindingState, UiState}};
 
-pub fn render_bind_button(ui: &mut Ui, world: &mut World, current_file_entity: Entity) {
+pub fn render_bind_button(ui: &mut Ui, world: &mut World, current_file_entity: &Entity) {
     egui::CentralPanel::default()
         .show_inside(ui, |ui| {
             ui.with_layout(Layout::centered_and_justified(Direction::TopDown), |ui| {
@@ -53,7 +53,7 @@ pub fn render_bind_button(ui: &mut Ui, world: &mut World, current_file_entity: E
         });
 }
 
-pub fn render_bound(ui: &mut Ui, world: &mut World, current_file_entity: Entity) {
+pub fn render_bound(ui: &mut Ui, world: &mut World, current_file_entity: &Entity) {
     egui::CentralPanel::default()
         .show_inside(ui, |ui| {
             ui.with_layout(Layout::centered_and_justified(Direction::TopDown), |ui| {

@@ -16,22 +16,23 @@ use crate::app::{
     resources::{
         animation_manager::AnimationManager, camera_manager::CameraManager, canvas::Canvas,
         edge_manager::EdgeManager, face_manager::FaceManager, input_manager::InputManager,
-        tab_manager::TabManager, vertex_manager::VertexManager,
+        tab_manager::TabManager, vertex_manager::VertexManager, file_manager::FileManager
     },
 };
 
 pub fn input(
     mut commands: Commands,
     mut client: Client,
-    mut camera_manager: ResMut<CameraManager>,
+    file_manager: Res<FileManager>,
+    mut tab_manager: ResMut<TabManager>,
     mut canvas: ResMut<Canvas>,
+    mut camera_manager: ResMut<CameraManager>,
+    mut input: ResMut<Input>,
+    mut input_manager: ResMut<InputManager>,
     mut vertex_manager: ResMut<VertexManager>,
     mut edge_manager: ResMut<EdgeManager>,
     face_manager: Res<FaceManager>,
     mut animation_manager: ResMut<AnimationManager>,
-    mut tab_manager: ResMut<TabManager>,
-    mut input_manager: ResMut<InputManager>,
-    mut input: ResMut<Input>,
     mut transform_q: Query<&mut Transform>,
     mut camera_q: Query<(&mut Camera, &mut Projection)>,
     mut vertex_3d_q: Query<&mut Vertex3d>,
@@ -40,9 +41,7 @@ pub fn input(
     if !canvas.is_visible() {
         return;
     }
-    let Some(current_tab_state) = tab_manager.current_tab_state_mut() else {
-        return;
-    };
+
     let input_actions = input.take_actions();
     input_manager.update_input(
         input_actions,
@@ -51,7 +50,8 @@ pub fn input(
         &mut canvas,
         &mut camera_manager,
         &mut animation_manager,
-        current_tab_state,
+        &file_manager,
+        &mut tab_manager,
         &mut vertex_manager,
         &mut edge_manager,
         &face_manager,

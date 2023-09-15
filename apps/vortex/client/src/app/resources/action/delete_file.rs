@@ -49,7 +49,6 @@ pub(crate) fn execute(
         ResMut<VertexManager>,
         ResMut<EdgeManager>,
         ResMut<TabManager>,
-        ResMut<Toolbar>,
         Query<(&mut Visibility, &OwnedByFileLocal)>,
         Query<(Entity, &mut FileSystemUiState)>,
         Query<(Entity, &ChangelistEntry, &mut ChangelistUiState)>,
@@ -70,7 +69,6 @@ pub(crate) fn execute(
         mut vertex_manager,
         mut edge_manager,
         mut tab_manager,
-        mut toolbar,
         mut visibility_q,
         mut ui_q,
         mut cl_q,
@@ -142,7 +140,6 @@ pub(crate) fn execute(
         &mut vertex_manager,
         &mut edge_manager,
         &mut tab_manager,
-        &mut toolbar,
         &mut visibility_q,
         &file_entity,
     );

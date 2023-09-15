@@ -30,8 +30,6 @@ pub struct Canvas {
     next_visible: bool,
     has_focus: bool,
     focus_timer: u8,
-
-    current_file_type: FileExtension,
     resync_shapes: u8,
 }
 
@@ -44,8 +42,6 @@ impl Default for Canvas {
             canvas_texture_size: Vec2::new(1280.0, 720.0),
             has_focus: false,
             focus_timer: 0,
-
-            current_file_type: FileExtension::Skel,
             resync_shapes: 0,
         }
     }
@@ -208,18 +204,6 @@ impl Canvas {
             camera_3d_scale,
         );
         input_manager.sync_hover_shape_scale(transform_q, camera_3d_scale);
-    }
-
-    pub(crate) fn current_file_type_equals(&self, file_type: FileExtension) -> bool {
-        self.current_file_type == file_type
-    }
-
-    pub fn get_current_file_type(&self) -> FileExtension {
-        self.current_file_type
-    }
-
-    pub fn set_current_file_type(&mut self, file_type: FileExtension) {
-        self.current_file_type = file_type;
     }
 
     pub(crate) fn on_canvas_focus_changed(

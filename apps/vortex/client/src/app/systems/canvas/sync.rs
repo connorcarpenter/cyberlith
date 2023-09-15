@@ -21,6 +21,7 @@ use crate::app::{
         vertex_manager::VertexManager,
     },
 };
+use crate::app::resources::file_manager::FileManager;
 
 pub fn sync_vertices(
     tab_manager: ResMut<TabManager>,
@@ -97,7 +98,8 @@ pub fn process_faces(
 
 pub fn update_select_line(
     canvas: Res<Canvas>,
-    tab_manager: ResMut<TabManager>,
+    file_manager: Res<FileManager>,
+    tab_manager: Res<TabManager>,
     input: Res<Input>,
     mut input_manager: ResMut<InputManager>,
     mut transform_q: Query<&mut Transform>,
@@ -106,17 +108,13 @@ pub fn update_select_line(
     if !canvas.is_visible() {
         return;
     }
-    let Some(current_tab_state) = tab_manager.current_tab_state() else {
-        return;
-    };
-
-    let current_tab_camera_state = &current_tab_state.camera_state;
 
     input_manager.sync_selection_ui(
-        input.mouse_position(),
         &canvas,
-        current_tab_camera_state,
+        &file_manager,
+        &tab_manager,
         &mut transform_q,
         &mut visibility_q,
+        input.mouse_position(),
     );
 }

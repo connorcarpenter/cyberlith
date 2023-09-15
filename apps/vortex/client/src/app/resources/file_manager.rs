@@ -87,7 +87,6 @@ impl FileManager {
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
         tab_manager: &mut TabManager,
-        toolbar: &mut Toolbar,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         file_entity: &Entity,
     ) {
@@ -101,11 +100,15 @@ impl FileManager {
                 input_manager,
                 vertex_manager,
                 edge_manager,
-                toolbar,
                 visibility_q,
                 file_entity,
             );
         }
+    }
+
+    pub fn get_file_type(&self, file_entity: &Entity) -> FileExtension {
+        let file_data = self.file_entities.get(file_entity).unwrap();
+        file_data.file_type
     }
 
     pub fn insert_changelist_entry(
@@ -167,7 +170,7 @@ impl FileManager {
         false
     }
 
-    pub(crate) fn file_get_dependency(&self, file_entity: Entity, file_ext: FileExtension) -> Option<Entity> {
+    pub(crate) fn file_get_dependency(&self, file_entity: &Entity, file_ext: FileExtension) -> Option<Entity> {
         let file_data = self.file_entities.get(&file_entity).unwrap();
         for dependency_file_entity in file_data.file_dependencies.iter() {
             let dependency_file_data = self.file_entities.get(dependency_file_entity).unwrap();

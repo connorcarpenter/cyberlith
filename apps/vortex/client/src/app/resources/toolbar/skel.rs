@@ -1,5 +1,5 @@
 use bevy_ecs::prelude::World;
-use bevy_ecs::system::{ResMut, SystemState};
+use bevy_ecs::system::{Res, ResMut, SystemState};
 
 use render_egui::egui::Ui;
 
@@ -10,6 +10,8 @@ use crate::app::{
     },
     ui::widgets::naming_bar_visibility_toggle,
 };
+use crate::app::resources::file_manager::FileManager;
+use crate::app::resources::tab_manager::TabManager;
 
 pub struct SkeletonToolbar;
 
@@ -40,11 +42,11 @@ impl SkeletonToolbar {
             // toggle edge angle visibility
             let response = Toolbar::button(ui, "📐", "Toggle edge angle visibility", true);
             if response.clicked() {
-                let mut system_state: SystemState<(ResMut<Canvas>, ResMut<EdgeManager>)> =
+                let mut system_state: SystemState<(ResMut<Canvas>, ResMut<EdgeManager>, Res<FileManager>, Res<TabManager>)> =
                     SystemState::new(world);
-                let (mut canvas, mut edge_manager) = system_state.get_mut(world);
+                let (mut canvas, mut edge_manager, file_manager, tab_manager) = system_state.get_mut(world);
 
-                edge_manager.edge_angle_visibility_toggle(&mut canvas);
+                edge_manager.edge_angle_visibility_toggle(&file_manager, &tab_manager, &mut canvas);
 
                 system_state.apply(world);
             }
