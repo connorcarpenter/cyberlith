@@ -80,7 +80,7 @@ impl ChangelistEntry {
         Self::new_complete(kind, name.to_string(), path.to_string(), status)
     }
 
-    pub fn file_entry_key(&self) -> FileKey {
+    pub fn file_key(&self) -> FileKey {
         FileKey::new(&self.path, &self.name, *self.kind)
     }
 }

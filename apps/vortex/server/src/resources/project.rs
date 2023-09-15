@@ -173,9 +173,9 @@ impl Project {
         name: &str,
         entity: Entity,
         parent: Option<FileKey>,
-        file_entry_key: &FileKey,
+        file_key: &FileKey,
     ) {
-        if file_entry_key.kind() == EntryKind::Directory {
+        if file_key.kind() == EntryKind::Directory {
             info!("creating directory: {}", name);
         } else {
             info!("creating file: {}", name);
@@ -187,28 +187,28 @@ impl Project {
         // Add new Entity into Working Tree
         Self::add_to_file_tree(
             &mut self.working_file_entries,
-            file_entry_key.clone(),
+            file_key.clone(),
             file_entry_val,
         );
 
         // Insert FileEntryKey component to new File Entity
-        commands.entity(entity).insert(file_entry_key.clone());
+        commands.entity(entity).insert(file_key.clone());
 
         // New File Entity enters the current project's room
         server.room_mut(&self.room_key()).add_entity(&entity);
 
         // Update changelist
 
-        if file_entry_key.kind() == EntryKind::File {
+        if file_key.kind() == EntryKind::File {
             // check whether newly added file already exists in master tree
-            let file_exists_in_master = self.master_file_entries.contains_key(&file_entry_key);
+            let file_exists_in_master = self.master_file_entries.contains_key(&file_key);
 
             // check whether a changelist entry already exists for this file
-            let file_exists_in_changelist = self.changelist_entries.contains_key(&file_entry_key);
+            let file_exists_in_changelist = self.changelist_entries.contains_key(&file_key);
 
             // if file doesn't exist in master tree and no changelist entry exists, then create a changelist entry
             if !file_exists_in_master && !file_exists_in_changelist {
-                let default_file_contents_opt = if file_entry_key.kind() == EntryKind::File {
+                let default_file_contents_opt = if file_key.kind() == EntryKind::File {
                     Some(file_extension.write_new_default())
                 } else {
                     None
@@ -216,7 +216,7 @@ impl Project {
                 self.new_changelist_entry(
                     commands,
                     server,
-                    &file_entry_key,
+                    &file_key,
                     ChangelistStatus::Created,
                     Some(&entity),
                     default_file_contents_opt,
@@ -225,7 +225,7 @@ impl Project {
 
             // if file exists in master tree and a changelist entry exists, then delete the changelist entry
             if file_exists_in_master && file_exists_in_changelist {
-                let changelist_entry = self.changelist_entries.remove(&file_entry_key).unwrap();
+                let changelist_entry = self.changelist_entries.remove(&file_key).unwrap();
                 commands.entity(changelist_entry.entity()).despawn();
             }
         }
@@ -239,12 +239,12 @@ impl Project {
         entity: &Entity,
     ) {
         // Remove Entity from Working Tree, returning a list of child entities that should be despawned
-        let file_entry_key =
+        let file_key =
             Self::find_file_entry_by_entity(&self.working_file_entries, entity).unwrap();
         let (_entry_value, entities_to_delete) =
-            Self::remove_file_entry(&mut self.working_file_entries, &file_entry_key);
+            Self::remove_file_entry(&mut self.working_file_entries, &file_key);
 
-        self.update_changelist_after_despawn(commands, server, changelist_q, &file_entry_key);
+        self.update_changelist_after_despawn(commands, server, changelist_q, &file_key);
 
         for (child_entity, child_key) in entities_to_delete {
             commands
@@ -280,23 +280,23 @@ impl Project {
         &mut self,
         commands: &mut Commands,
         server: &mut Server,
-        file_entry_key: &FileKey,
+        file_key: &FileKey,
     ) {
-        let file_entity = self.file_entity(file_entry_key).unwrap();
+        let file_entity = self.file_entity(file_key).unwrap();
 
         // check whether a changelist entry already exists for this file
-        let file_exists_in_changelist = self.changelist_entries.contains_key(&file_entry_key);
+        let file_exists_in_changelist = self.changelist_entries.contains_key(&file_key);
 
         if file_exists_in_changelist {
             // For Modified Changelist entries, if there is no content, then it will be written on Commit
-            let entry = self.changelist_entries.get_mut(&file_entry_key).unwrap();
+            let entry = self.changelist_entries.get_mut(&file_key).unwrap();
             entry.delete_content();
         } else {
             // create a changelist entry
             self.new_changelist_entry(
                 commands,
                 server,
-                file_entry_key,
+                file_key,
                 ChangelistStatus::Modified,
                 Some(&file_entity),
                 None,
@@ -378,7 +378,7 @@ impl Project {
         message: ChangelistMessage,
     ) {
         let action_status: ChangelistStatus;
-        let file_entry_key: FileKey;
+        let file_key: FileKey;
         {
             let mut system_state: SystemState<(Server, Query<&ChangelistEntry>)> =
                 SystemState::new(world);
@@ -388,15 +388,15 @@ impl Project {
 
             let changelist_entry = cl_query.get(cl_entity).unwrap();
             action_status = *changelist_entry.status;
-            file_entry_key = changelist_entry.file_entry_key();
+            file_key = changelist_entry.file_key();
 
-            if file_entry_key.kind() == EntryKind::Directory {
+            if file_key.kind() == EntryKind::Directory {
                 panic!("should not be able to commit a directory");
             }
 
             match action_status {
                 ChangelistStatus::Modified | ChangelistStatus::Created => {
-                    self.changelist_entry_finalize_content(world, &action_status, &file_entry_key);
+                    self.changelist_entry_finalize_content(world, &action_status, &file_key);
                 }
                 ChangelistStatus::Deleted => {}
             }
@@ -412,18 +412,18 @@ impl Project {
             ChangelistStatus::Modified => {
                 let file_entry_val = self
                     .working_file_entries
-                    .get(&file_entry_key)
+                    .get(&file_key)
                     .unwrap()
                     .clone();
                 let file_entity = file_entry_val.entity();
 
                 info!("git modify file");
                 let path =
-                    self.get_full_file_path_working(&fs_entry_q, &file_entry_key, file_entity);
-                self.fs_create_or_update_file(&file_entry_key, &path);
+                    self.get_full_file_path_working(&fs_entry_q, &file_key, file_entity);
+                self.fs_create_or_update_file(&file_key, &path);
 
                 // despawn changelist entity
-                self.cleanup_changelist_entry(&mut commands, &file_entry_key);
+                self.cleanup_changelist_entry(&mut commands, &file_key);
 
                 // remove auth from file entity
                 commands.entity(file_entity).take_authority(&mut server);
@@ -435,7 +435,7 @@ impl Project {
             ChangelistStatus::Created => {
                 let file_entry_val = self
                     .working_file_entries
-                    .get(&file_entry_key)
+                    .get(&file_key)
                     .unwrap()
                     .clone();
                 let file_entity = file_entry_val.entity();
@@ -446,17 +446,17 @@ impl Project {
                 }
                 Self::add_to_file_tree(
                     &mut self.master_file_entries,
-                    file_entry_key.clone(),
+                    file_key.clone(),
                     file_entry_val.clone(),
                 );
 
                 info!("git create file");
                 let path =
-                    self.get_full_file_path_working(&fs_entry_q, &file_entry_key, file_entity);
-                self.fs_create_or_update_file(&file_entry_key, &path);
+                    self.get_full_file_path_working(&fs_entry_q, &file_key, file_entity);
+                self.fs_create_or_update_file(&file_key, &path);
 
                 // despawn changelist entity
-                self.cleanup_changelist_entry(&mut commands, &file_entry_key);
+                self.cleanup_changelist_entry(&mut commands, &file_key);
 
                 // remove auth from file entity
                 commands.entity(file_entity).take_authority(&mut server);
@@ -466,12 +466,12 @@ impl Project {
                 self.git_push();
             }
             ChangelistStatus::Deleted => {
-                let path = self.get_full_file_path_master(&file_entry_key);
+                let path = self.get_full_file_path_master(&file_key);
 
                 // Remove Entity from Master Tree, returning a list of child entities that should be despawned
                 let (_entry_value, entities_to_delete) =
-                    Self::remove_file_entry(&mut self.master_file_entries, &file_entry_key);
-                self.cleanup_changelist_entry(&mut commands, &file_entry_key);
+                    Self::remove_file_entry(&mut self.master_file_entries, &file_key);
+                self.cleanup_changelist_entry(&mut commands, &file_key);
 
                 for (_, child_key) in entities_to_delete {
                     self.cleanup_changelist_entry(&mut commands, &child_key);
@@ -508,14 +508,14 @@ impl Project {
         let changelist_entry = cl_query.get(cl_entity).unwrap();
 
         let status = *changelist_entry.status;
-        let file_entry_key = changelist_entry.file_entry_key();
+        let file_key = changelist_entry.file_key();
 
         let output = match status {
             ChangelistStatus::Modified => {
                 let file_entity = changelist_entry.file_entity.get(&server).unwrap();
 
                 // cleanup changelist entry
-                self.cleanup_changelist_entry(&mut commands, &file_entry_key);
+                self.cleanup_changelist_entry(&mut commands, &file_key);
 
                 // respawn content entities within to previous state
                 self.respawn_file_content_entities(
@@ -523,7 +523,7 @@ impl Project {
                     &mut server,
                     &mut shape_manager,
                     &file_entity,
-                    &file_entry_key,
+                    &file_key,
                 );
 
                 None
@@ -531,7 +531,7 @@ impl Project {
             ChangelistStatus::Created => {
                 // Remove Entity from Working Tree, returning a list of child entities that should be despawned
                 let (entry_value, entities_to_delete) =
-                    Self::remove_file_entry(&mut self.working_file_entries, &file_entry_key);
+                    Self::remove_file_entry(&mut self.working_file_entries, &file_key);
 
                 // despawn row entity
                 let row_entity = entry_value.entity();
@@ -541,7 +541,7 @@ impl Project {
                     .despawn();
 
                 // cleanup changelist entry
-                self.cleanup_changelist_entry(&mut commands, &file_entry_key);
+                self.cleanup_changelist_entry(&mut commands, &file_key);
 
                 // cleanup children
                 for (child_row_entity, child_key) in entities_to_delete {
@@ -558,21 +558,21 @@ impl Project {
             ChangelistStatus::Deleted => {
                 let new_entity = GitManager::spawn_file_tree_entity(&mut commands, &mut server);
 
-                let file_entry_value = self.master_file_entries.get_mut(&file_entry_key).unwrap();
+                let file_entry_value = self.master_file_entries.get_mut(&file_key).unwrap();
                 file_entry_value.set_entity(new_entity);
                 let file_entry_value = file_entry_value.clone();
 
                 // update working tree with old file entry
                 Self::add_to_file_tree(
                     &mut self.working_file_entries,
-                    file_entry_key.clone(),
+                    file_key.clone(),
                     file_entry_value.clone(),
                 );
 
                 // despawn changelist entity
-                self.cleanup_changelist_entry(&mut commands, &file_entry_key);
+                self.cleanup_changelist_entry(&mut commands, &file_key);
 
-                Some((file_entry_key.clone(), file_entry_value))
+                Some((file_key.clone(), file_entry_value))
             }
         };
 
@@ -724,8 +724,8 @@ impl Project {
             .expect("Failed to push commit");
     }
 
-    fn cleanup_changelist_entry(&mut self, commands: &mut Commands, file_entry_key: &FileKey) {
-        let Some(changelist_value) = self.changelist_entries.remove(file_entry_key) else {
+    fn cleanup_changelist_entry(&mut self, commands: &mut Commands, file_key: &FileKey) {
+        let Some(changelist_value) = self.changelist_entries.remove(file_key) else {
             panic!("Changelist entry not found for file entry key");
         };
         commands.entity(changelist_value.entity()).despawn();
@@ -736,9 +736,9 @@ impl Project {
         commands: &mut Commands,
         server: &mut Server,
         changelist_q: &mut Query<&mut ChangelistEntry>,
-        file_entry_key: &FileKey,
+        file_key: &FileKey,
     ) {
-        if file_entry_key.kind() == EntryKind::Directory {
+        if file_key.kind() == EntryKind::Directory {
             // deleted directories don't go into changelist
             return;
         }
@@ -746,14 +746,14 @@ impl Project {
         // Update changelist
 
         // check whether newly added file already exists in master tree
-        let file_exists_in_master = self.master_file_entries.contains_key(&file_entry_key);
+        let file_exists_in_master = self.master_file_entries.contains_key(&file_key);
 
         // check whether a changelist entry already exists for this file
-        let file_exists_in_changelist = self.changelist_entries.contains_key(&file_entry_key);
+        let file_exists_in_changelist = self.changelist_entries.contains_key(&file_key);
 
         // if file doesn't exist in master tree and a changelist entry exists, then delete the changelist entry
         if !file_exists_in_master && file_exists_in_changelist {
-            let changelist_entry = self.changelist_entries.remove(&file_entry_key).unwrap();
+            let changelist_entry = self.changelist_entries.remove(&file_key).unwrap();
             commands.entity(changelist_entry.entity()).despawn();
         }
 
@@ -762,7 +762,7 @@ impl Project {
             self.new_changelist_entry(
                 commands,
                 server,
-                file_entry_key,
+                file_key,
                 ChangelistStatus::Deleted,
                 None,
                 None,
@@ -772,7 +772,7 @@ impl Project {
         if file_exists_in_master && file_exists_in_changelist {
             let changelist_entity = self
                 .changelist_entries
-                .get_mut(&file_entry_key)
+                .get_mut(&file_key)
                 .unwrap()
                 .entity();
             let mut changelist_entry = changelist_q.get_mut(changelist_entity).unwrap();
@@ -786,15 +786,15 @@ impl Project {
         &mut self,
         commands: &mut Commands,
         server: &mut Server,
-        file_entry_key: &FileKey,
+        file_key: &FileKey,
         changelist_status: ChangelistStatus,
         entity_opt: Option<&Entity>,
         content_opt: Option<Box<[u8]>>,
     ) {
         let mut changelist_entry = ChangelistEntry::new(
-            file_entry_key.kind(),
-            file_entry_key.name(),
-            file_entry_key.path(),
+            file_key.kind(),
+            file_key.name(),
+            file_key.path(),
             changelist_status,
         );
         if let Some(entity) = entity_opt {
@@ -817,7 +817,7 @@ impl Project {
             changelist_value.set_content(content);
         }
         self.changelist_entries
-            .insert(file_entry_key.clone(), changelist_value);
+            .insert(file_key.clone(), changelist_value);
     }
 
     fn create_filespace(
@@ -952,10 +952,10 @@ impl Project {
 
     fn add_to_file_tree(
         file_entries: &mut HashMap<FileKey, FileEntryValue>,
-        file_entry_key: FileKey,
+        file_key: FileKey,
         file_entry_value: FileEntryValue,
     ) {
-        file_entries.insert(file_entry_key.clone(), file_entry_value.clone());
+        file_entries.insert(file_key.clone(), file_entry_value.clone());
 
         let Some(parent_key) = file_entry_value.parent() else {
             return;
@@ -963,7 +963,7 @@ impl Project {
         let Some(parent_file_tree) = file_entries.get_mut(&parent_key) else {
             panic!("parent does not exist in FileTree!");
         };
-        parent_file_tree.add_child(file_entry_key.clone());
+        parent_file_tree.add_child(file_key.clone());
         info!("Added child to parent entry");
     }
 

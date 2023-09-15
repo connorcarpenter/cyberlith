@@ -443,10 +443,10 @@ fn fill_file_entries_from_git(
                 let entry_kind = EntryKind::Directory;
                 let id = GitManager::spawn_file_tree_entity(commands, server);
 
-                let file_entry_key = FileKey::new(path, &name, entry_kind);
+                let file_key = FileKey::new(path, &name, entry_kind);
 
                 let git_children = git_entry.to_object(repo).unwrap().peel_to_tree().unwrap();
-                let new_path = file_entry_key.full_path();
+                let new_path = file_key.full_path();
                 let children = fill_file_entries_from_git(
                     file_entries,
                     commands,
@@ -454,26 +454,26 @@ fn fill_file_entries_from_git(
                     repo,
                     &git_children,
                     &new_path,
-                    Some(file_entry_key.clone()),
+                    Some(file_key.clone()),
                 );
 
                 let file_entry_value =
                     FileEntryValue::new(id, None, parent.clone(), Some(children));
-                file_entries.insert(file_entry_key.clone(), file_entry_value);
+                file_entries.insert(file_key.clone(), file_entry_value);
 
-                output.insert(file_entry_key.clone());
+                output.insert(file_key.clone());
             }
             Some(git2::ObjectType::Blob) => {
                 let entry_kind = EntryKind::File;
                 let id = GitManager::spawn_file_tree_entity(commands, server);
 
-                let file_entry_key = FileKey::new(path, &name, entry_kind);
+                let file_key = FileKey::new(path, &name, entry_kind);
                 let file_extension = FileExtension::from(name.as_str());
                 let file_entry_value =
                     FileEntryValue::new(id, Some(file_extension), parent.clone(), None);
-                file_entries.insert(file_entry_key.clone(), file_entry_value);
+                file_entries.insert(file_key.clone(), file_entry_value);
 
-                output.insert(file_entry_key.clone());
+                output.insert(file_key.clone());
             }
             _ => {
                 info!("Unknown file type: {:?}", git_entry.kind());
@@ -490,10 +490,10 @@ fn insert_entry_components_from_list(
     file_entries: &HashMap<FileKey, FileEntryValue>,
     project_room_key: &RoomKey,
 ) {
-    for (file_entry_key, file_entry_value) in file_entries.iter() {
+    for (file_key, file_entry_value) in file_entries.iter() {
         info!(
             "Networking: walking tree for Entry `{:?}`",
-            file_entry_key.name()
+            file_key.name()
         );
 
         insert_entry_components(
@@ -501,7 +501,7 @@ fn insert_entry_components_from_list(
             server,
             project_room_key,
             file_entries,
-            file_entry_key,
+            file_key,
             file_entry_value,
         );
     }

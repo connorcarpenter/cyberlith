@@ -276,7 +276,7 @@ pub fn insert_changelist_entry_events(
 
         // insert into changelist resource
         file_manager.insert_changelist_entry(
-            entry.file_entry_key(),
+            entry.file_key(),
             file_entity_opt,
             parent_entity_opt,
             cl_entity,

@@ -48,7 +48,7 @@ impl TabManager {
     ) {
         info!("open tab");
 
-        let Ok(file_entry_key) = key_q.get(*file_entity) else {
+        let Ok(file_key) = key_q.get(*file_entity) else {
             self.waiting_opens.insert((*user_key, *file_entity), *tab_id);
             info!("no FileEntryKey for entity: {:?}, queuing open tab", file_entity);
             return;
@@ -58,8 +58,8 @@ impl TabManager {
         let user_session_data = user_manager.user_session_data(user_key).unwrap();
         let project_key = user_session_data.project_key().unwrap();
 
-        if !git_manager.can_read(&project_key, &file_entry_key) {
-            warn!("can't read file: `{:?}`", file_entry_key.name());
+        if !git_manager.can_read(&project_key, &file_key) {
+            warn!("can't read file: `{:?}`", file_key.name());
             return;
         }
 
@@ -72,7 +72,7 @@ impl TabManager {
             user_key,
             tab_id.clone(),
             &project_key,
-            file_entry_key,
+            file_key,
         );
     }
 

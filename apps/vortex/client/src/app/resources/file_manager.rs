@@ -112,13 +112,13 @@ impl FileManager {
 
     pub fn insert_changelist_entry(
         &mut self,
-        file_entry_key: FileKey,
+        file_key: FileKey,
         file_entity_opt: Option<Entity>,
         parent_entity_opt: Option<Entity>,
         cl_entity: Entity,
     ) {
         self.changelist
-            .insert(file_entry_key, ChangelistData::new(cl_entity));
+            .insert(file_key, ChangelistData::new(cl_entity));
 
         if let Some(file_entity) = file_entity_opt {
             let Some(file_data) = self.file_entities.get_mut(&file_entity) else {
@@ -135,8 +135,8 @@ impl FileManager {
         }
     }
 
-    pub fn remove_changelist_entry(&mut self, file_entry_key: &FileKey) {
-        self.changelist.remove(file_entry_key);
+    pub fn remove_changelist_entry(&mut self, file_key: &FileKey) {
+        self.changelist.remove(file_key);
     }
 
     pub fn changelist_entities(&self) -> Vec<Entity> {
