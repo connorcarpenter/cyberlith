@@ -18,6 +18,7 @@ use vortex_proto::{
     },
     protocol,
 };
+use vortex_proto::components::FileDependency;
 
 use crate::{
     config::{AppConfig, ConfigPlugin},
@@ -101,6 +102,7 @@ fn main() {
         .add_event::<InsertComponentEvent<FileType>>()
         .add_event::<InsertComponentEvent<OwnedByFile>>()
         .add_event::<InsertComponentEvent<ShapeName>>()
+        .add_event::<InsertComponentEvent<FileDependency>>()
         // Other Systems
         .add_systems(Startup, setup)
         .add_systems(Update, world_loop.after(ReceiveEvents))

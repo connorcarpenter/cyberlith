@@ -4,7 +4,7 @@ use bevy_ecs::{
     entity::Entity,
     system::{Commands, Resource},
 };
-use bevy_log::info;
+use bevy_log::{info, warn};
 
 use naia_bevy_server::{CommandsExt, Server};
 
@@ -306,7 +306,10 @@ impl ShapeManager {
     }
 
     pub fn on_delete_edge(&mut self, edge_entity: &Entity) {
-        let edge_data = self.edges.remove(edge_entity).unwrap();
+        let Some(edge_data) = self.edges.remove(edge_entity) else {
+            warn!("edge entity `{:?}` not found, perhaps was already despawned?", edge_entity);
+            return;
+        };
 
         for vertex_entity in [edge_data.vertex_a, edge_data.vertex_b] {
             if let Some(VertexData::Mesh(data)) = self.vertices.get_mut(&vertex_entity) {

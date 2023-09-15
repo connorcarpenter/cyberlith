@@ -398,7 +398,7 @@ impl SkelReader {
         let mut skel_file_waitlist = SkelFileWaitlist::default();
 
         for (vertex_entity, edge_opt) in vertex_and_edge_entities {
-            new_content_entities.insert(vertex_entity, ContentEntityData::new(ShapeType::Vertex));
+            new_content_entities.insert(vertex_entity, ContentEntityData::new_shape(ShapeType::Vertex));
 
             if let Some((edge_entity, parent_entity)) = edge_opt {
                 skel_file_waitlist
@@ -407,7 +407,7 @@ impl SkelReader {
                     shape_manager,
                     SkelWaitlistInsert::Edge(parent_entity, edge_entity, vertex_entity),
                 );
-                new_content_entities.insert(edge_entity, ContentEntityData::new(ShapeType::Edge));
+                new_content_entities.insert(edge_entity, ContentEntityData::new_shape(ShapeType::Edge));
             } else {
                 skel_file_waitlist
                     .process_insert(shape_manager, SkelWaitlistInsert::VertexRoot(vertex_entity));

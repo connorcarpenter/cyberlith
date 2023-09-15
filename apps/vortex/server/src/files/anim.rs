@@ -6,14 +6,16 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use naia_bevy_server::{BitReader, BitWrite, FileBitWriter, RoomKey, Serde, SerdeErr, Server, UnsignedVariableInteger};
+use naia_bevy_server::{BitReader, BitWrite, CommandsExt, FileBitWriter, ReplicationConfig, RoomKey, Serde, SerdeErr, Server, UnsignedVariableInteger};
 
-use vortex_proto::{messages::FileBindMessage, components::EntryKind, channels::FileActionChannel, FileExtension, resources::FileEntryKey, SerdeQuat};
+use vortex_proto::{components::EntryKind, channels::FileActionChannel, FileExtension, resources::FileEntryKey, SerdeQuat};
+use vortex_proto::components::FileDependency;
 
 use crate::{
     files::{FileReadOutput, FileReader, FileWriter},
     resources::{ContentEntityData, Project},
 };
+use crate::resources::GitManager;
 
 // Actions
 enum AnimAction {
@@ -223,12 +225,15 @@ impl AnimReader {
     }
 
     pub fn post_process(
+        commands: &mut Commands,
         server: &mut Server,
         project: &mut Project,
         file_key: &FileEntryKey,
         file_entity: &Entity,
         skel_path_opt: Option<(String, String)>
     ) -> HashMap<Entity, ContentEntityData> {
+
+        let mut content_entities = HashMap::new();
 
         info!("skel_path: {:?}", skel_path_opt);
         if let Some((skel_path, skel_file_name)) = skel_path_opt {
@@ -238,18 +243,19 @@ impl AnimReader {
             let skel_file_entity = project.file_entity(&skel_file_key).unwrap();
 
             // get all users in room with file entity
-            let project_room_key = project.room_key();
-            let user_keys = server.room(&project_room_key).user_keys().cloned().collect::<Vec<_>>();
-
-            // send message
-            let message = FileBindMessage::new(server, &file_entity, &skel_file_entity);
-            for user_key in user_keys {
-                info!("sending bind message to user: {:?}", user_key);
-                server.send_message::<FileActionChannel, FileBindMessage>(&user_key, &message);
-            }
+            let mut component = FileDependency::new();
+            component.file_entity.set(server, file_entity);
+            component.dependency_entity.set(server, &skel_file_entity);
+            let entity = commands
+                .spawn_empty()
+                .enable_replication(server)
+                .configure_replication(ReplicationConfig::Delegated)
+                .insert(component)
+                .id();
+            content_entities.insert(entity, ContentEntityData::new_dependency(skel_file_key));
         }
 
-        HashMap::new()
+        content_entities
     }
 }
 

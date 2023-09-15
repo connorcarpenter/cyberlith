@@ -410,7 +410,7 @@ impl MeshReader {
         let mut new_content_entities = HashMap::new();
 
         for (entity, shape_type_data) in shape_entities {
-            new_content_entities.insert(entity, ContentEntityData::new(shape_type_data.into()));
+            new_content_entities.insert(entity, ContentEntityData::new_shape(shape_type_data.into()));
 
             match shape_type_data {
                 ShapeTypeData::Vertex => {

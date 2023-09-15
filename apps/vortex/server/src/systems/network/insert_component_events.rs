@@ -16,6 +16,7 @@ use vortex_proto::{
     },
     resources::FileEntryKey,
 };
+use vortex_proto::components::FileDependency;
 
 use crate::{
     events::InsertComponentEvent,
@@ -32,6 +33,7 @@ pub fn insert_component_events(
     mut insert_fs_entry_event_writer: EventWriter<InsertComponentEvent<FileSystemEntry>>,
     mut insert_fs_root_event_writer: EventWriter<InsertComponentEvent<FileSystemRootChild>>,
     mut insert_fs_child_event_writer: EventWriter<InsertComponentEvent<FileSystemChild>>,
+    mut insert_fs_dependency_event_writer: EventWriter<InsertComponentEvent<FileDependency>>,
 
     // for vertices
     mut insert_vertex_3d_event_writer: EventWriter<InsertComponentEvent<Vertex3d>>,
@@ -61,6 +63,13 @@ pub fn insert_component_events(
         // on FileSystemChild Insert Event
         for (user_key, entity) in events.read::<FileSystemChild>() {
             insert_fs_child_event_writer.send(InsertComponentEvent::<FileSystemChild>::new(
+                user_key, entity,
+            ));
+        }
+
+        // on FileDependency Insert Event
+        for (user_key, entity) in events.read::<FileDependency>() {
+            insert_fs_dependency_event_writer.send(InsertComponentEvent::<FileDependency>::new(
                 user_key, entity,
             ));
         }
@@ -117,9 +126,11 @@ pub fn insert_file_component_events(
     mut fs_entry_events: EventReader<InsertComponentEvent<FileSystemEntry>>,
     mut fs_child_events: EventReader<InsertComponentEvent<FileSystemChild>>,
     mut fs_root_child_events: EventReader<InsertComponentEvent<FileSystemRootChild>>,
+    mut fs_dependency_events: EventReader<InsertComponentEvent<FileDependency>>,
     fs_entry_q: Query<&FileSystemEntry>,
     fs_child_q: Query<&FileSystemChild>,
-    entry_key_q: Query<&FileEntryKey>,
+    key_q: Query<&FileEntryKey>,
+    fs_dependency_q: Query<&FileDependency>,
 ) {
     // on FileSystemEntry Insert Event
     for event in fs_entry_events.iter() {
@@ -162,12 +173,12 @@ pub fn insert_file_component_events(
     for event in fs_child_events.iter() {
         let user_key = event.user_key;
         let entity = event.entity;
-        info!("inserted FileSystemChild");
+        info!("entity `{:?}` inserted FileSystemChild", entity);
         let entry = fs_child_q.get(entity).unwrap();
         let Some(parent_entity) = entry.parent_id.get(&server) else {
             panic!("no parent entity!")
         };
-        let parent_key = entry_key_q.get(parent_entity).unwrap();
+        let parent_key = key_q.get(parent_entity).unwrap();
         file_process_insert(
             &mut commands,
             &mut server,
@@ -179,6 +190,28 @@ pub fn insert_file_component_events(
             &user_key,
             &entity,
         );
+    }
+
+    // on FileDependency Insert Event
+    for event in fs_dependency_events.iter() {
+        let user_key = event.user_key;
+        let entity = event.entity;
+
+        let component = fs_dependency_q.get(entity).unwrap();
+
+        let file_entity = component.file_entity.get(&server).unwrap();
+        let dependency_entity = component.dependency_entity.get(&server).unwrap();
+
+        let project_key = user_manager.user_session_data(&user_key).unwrap().project_key().unwrap();
+        let file_key = key_q.get(file_entity).unwrap().clone();
+        let dependency_key = key_q.get(dependency_entity).unwrap().clone();
+
+        let project = git_manager.project_mut(&project_key).unwrap();
+        project.file_add_dependency(&file_key, &dependency_key);
+
+        git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
+
+        info!("inserted FileDependency(file: `{:?}`, dependency: `{:?}`)", file_key.name(), dependency_key.name());
     }
 }
 

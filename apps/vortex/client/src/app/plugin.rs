@@ -12,6 +12,7 @@ use vortex_proto::{
     },
     protocol,
 };
+use vortex_proto::components::FileDependency;
 
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
@@ -86,6 +87,7 @@ impl Plugin for VortexPlugin {
             .add_event::<InsertComponentEvent<FileType>>()
             .add_event::<InsertComponentEvent<OwnedByFile>>()
             .add_event::<InsertComponentEvent<ShapeName>>()
+            .add_event::<InsertComponentEvent<FileDependency>>()
             // shape waitlist
             .init_resource::<ShapeWaitlist>()
             // Insert Component Systems

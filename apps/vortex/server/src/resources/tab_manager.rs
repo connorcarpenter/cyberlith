@@ -10,6 +10,7 @@ use bevy_log::{info, warn};
 use naia_bevy_server::{Server, UserKey};
 
 use vortex_proto::{resources::FileEntryKey, types::TabId};
+use crate::files::on_despawn_file_content_entities;
 
 use crate::resources::{
     project::ProjectKey, ContentEntityData, GitManager, ShapeManager, UserManager,
@@ -201,12 +202,34 @@ impl TabManager {
 
         // actually despawn entities associated with tab
         {
-            for (_, _, content_entities) in closed_states.iter() {
+            let mut system_state: SystemState<(
+                Commands,
+                Server,
+                ResMut<ShapeManager>,
+                ResMut<GitManager>,
+            )> = SystemState::new(world);
+            let (mut commands, mut server, mut shape_manager, mut git_manager) =
+                system_state.get_mut(world);
+
+            for (project_key, file_key, content_entities) in closed_states.iter() {
                 // despawn content entities
                 for (entity, _data) in content_entities.iter() {
-                    world.entity_mut(*entity).despawn();
+                    commands.entity(*entity).despawn();
                 }
+
+                let project = git_manager.project_mut(project_key).unwrap();
+                // handle despawns
+                on_despawn_file_content_entities(
+                    &mut commands,
+                    &mut server,
+                    &mut shape_manager,
+                    project,
+                    file_key,
+                    content_entities,
+                );
             }
+
+            system_state.apply(world);
         }
     }
 

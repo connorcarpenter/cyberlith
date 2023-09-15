@@ -66,9 +66,14 @@ impl FileEntryValue {
     }
 
     pub fn add_dependency(&mut self, key: &FileEntryKey) {
-        self.dependencies
-            .get_or_insert_with(|| HashSet::new())
-            .insert(key.clone());
+        if self.dependencies.is_none() {
+            self.dependencies = Some(HashSet::new());
+        }
+        let dependencies = self.dependencies.as_mut().unwrap();
+        if dependencies.contains(key) {
+            panic!("dependency already exists");
+        }
+        dependencies.insert(key.clone());
     }
 
     pub fn remove_dependency(&mut self, key: &FileEntryKey) {

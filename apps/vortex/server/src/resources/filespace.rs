@@ -4,17 +4,23 @@ use bevy_ecs::entity::Entity;
 use bevy_log::info;
 
 use naia_bevy_server::{RoomKey, Server, UserKey};
+use vortex_proto::resources::FileEntryKey;
 
 use crate::files::ShapeType;
 
 #[derive(Clone)]
-pub struct ContentEntityData {
-    pub(crate) shape_type: ShapeType,
+pub enum ContentEntityData {
+    Shape(ShapeType),
+    Dependency(FileEntryKey),
 }
 
 impl ContentEntityData {
-    pub fn new(shape_type: ShapeType) -> Self {
-        Self { shape_type }
+    pub fn new_shape(shape_type: ShapeType) -> Self {
+        Self::Shape(shape_type)
+    }
+
+    pub fn new_dependency(dependency_key: FileEntryKey) -> Self {
+        Self::Dependency(dependency_key)
     }
 }
 
@@ -65,7 +71,7 @@ impl FileSpace {
             entity, shape_type
         );
         self.content_entities
-            .insert(entity, ContentEntityData::new(shape_type));
+            .insert(entity, ContentEntityData::new_shape(shape_type));
     }
 
     pub fn remove_content_entity(&mut self, entity: &Entity) {

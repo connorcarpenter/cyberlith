@@ -1,11 +1,12 @@
 use std::{collections::HashMap, fs, fs::File, io::Read, path::Path, sync::Mutex};
+use std::ptr::addr_of_mut;
 
 use bevy_ecs::{
     entity::Entity,
     system::{Commands, Query, ResMut, SystemState},
     world::World,
 };
-use bevy_log::info;
+use bevy_log::{info, warn};
 use git2::{Repository, Signature};
 
 use naia_bevy_server::{BigMapKey, CommandsExt, RoomKey, Server, UserKey};
@@ -23,6 +24,7 @@ use crate::{
         ChangelistValue, ContentEntityData, FileEntryValue, FileSpace, GitManager, ShapeManager,
     },
 };
+use crate::files::on_despawn_file_content_entities;
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
 pub struct ProjectKey(u64);
@@ -88,6 +90,10 @@ impl Project {
 
     pub fn file_room_key(&self, file_key: &FileEntryKey) -> Option<RoomKey> {
         self.filespaces.get(file_key).map(|fs| fs.room_key())
+    }
+
+    pub(crate) fn file_content_entities(&self, file_key: &FileEntryKey) -> Option<&HashMap<Entity, ContentEntityData>> {
+        self.filespaces.get(file_key).map(|fs| fs.content_entities())
     }
 
     pub(crate) fn on_insert_content_entity(
@@ -222,6 +228,7 @@ impl Project {
         &mut self,
         commands: &mut Commands,
         server: &mut Server,
+        changelist_q: &mut Query<&mut ChangelistEntry>,
         entity: &Entity,
     ) {
         // Remove Entity from Working Tree, returning a list of child entities that should be despawned
@@ -230,7 +237,7 @@ impl Project {
         let (_entry_value, entities_to_delete) =
             Self::remove_file_entry(&mut self.working_file_entries, &file_entry_key);
 
-        self.update_changelist_after_despawn(commands, server, &file_entry_key);
+        self.update_changelist_after_despawn(commands, server, changelist_q, &file_entry_key);
 
         for (child_entity, child_key) in entities_to_delete {
             commands
@@ -238,7 +245,7 @@ impl Project {
                 .take_authority(server)
                 .despawn();
 
-            self.update_changelist_after_despawn(commands, server, &child_key);
+            self.update_changelist_after_despawn(commands, server, changelist_q, &child_key);
         }
     }
 
@@ -299,8 +306,18 @@ impl Project {
     }
 
     pub fn file_add_dependency(&mut self, file_key: &FileEntryKey, dependency_key: &FileEntryKey) {
+        info!("file_add_dependency: {:?} -> {:?}", file_key, dependency_key);
         let file_entry_val = self.working_file_entries.get_mut(file_key).unwrap();
         file_entry_val.add_dependency(dependency_key);
+    }
+
+    pub fn file_remove_dependency(&mut self, file_key: &FileEntryKey, dependency_key: &FileEntryKey) {
+        info!("file_remove_dependency: {:?} -> {:?}", file_key, dependency_key);
+        let Some(file_entry_val) = self.working_file_entries.get_mut(file_key) else {
+            warn!("file_remove_dependency: file_key not found: {:?}", file_key);
+            return;
+        };
+        file_entry_val.remove_dependency(dependency_key);
     }
 
     fn get_full_file_path_working(
@@ -557,31 +574,19 @@ impl Project {
     ) {
         let file_extension = self.working_file_extension(file_key);
         let bytes = self.get_bytes_from_cl_or_fs(file_key);
-        let Some(filespace) = self.filespaces.get_mut(file_key) else {
-            panic!("Filespace not found");
-        };
         if !file_extension.can_io() {
             panic!("can't read file: `{:?}`", file_key.name());
         }
 
         // despawn all previous entities
-        for (entity, entity_data) in filespace.content_entities().iter() {
-            info!("despawning entity: {:?}", entity);
-            commands.entity(*entity).take_authority(server).despawn();
-
-            match entity_data.shape_type {
-                ShapeType::Vertex => {
-                    shape_manager.on_delete_vertex(commands, server, entity);
-                }
-                ShapeType::Edge => {
-                    shape_manager.on_delete_edge(entity);
-                }
-                ShapeType::Face => {}
-            }
-        }
+        let content_entities = self
+            .file_content_entities(file_key)
+            .unwrap()
+            .clone();
+        on_despawn_file_content_entities(commands, server, shape_manager, self, file_key, &content_entities);
 
         // respawn all entities
-        let filespace_room_key = filespace.room_key();
+        let filespace_room_key = self.file_room_key(file_key).unwrap();
         let content_entities = load_content_entities(
             commands,
             server,
@@ -709,6 +714,7 @@ impl Project {
         &mut self,
         commands: &mut Commands,
         server: &mut Server,
+        changelist_q: &mut Query<&mut ChangelistEntry>,
         file_entry_key: &FileEntryKey,
     ) {
         if file_entry_key.kind() == EntryKind::Directory {
@@ -740,6 +746,14 @@ impl Project {
                 None,
                 None,
             );
+        }
+
+        if file_exists_in_master && file_exists_in_changelist {
+            let changelist_entity = self.changelist_entries.get_mut(&file_entry_key).unwrap().entity();
+            let mut changelist_entry = changelist_q.get_mut(changelist_entity).unwrap();
+            if *changelist_entry.status != ChangelistStatus::Deleted {
+                *changelist_entry.status = ChangelistStatus::Deleted;
+            }
         }
     }
 
@@ -834,8 +848,13 @@ impl Project {
         }
     }
 
-    fn delete_filespace(&mut self, server: &mut Server, file_key: &FileEntryKey) {
-        let filespace = self.filespaces.remove(file_key).unwrap();
+    fn delete_filespace(
+        &mut self,
+        server: &mut Server,
+        file_key: &FileEntryKey
+    ) {
+        let mut filespace = self.filespaces.remove(file_key).unwrap();
+
         let file_room_key = filespace.room_key();
 
         // delete file room

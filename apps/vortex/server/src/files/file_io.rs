@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 
 use bevy_ecs::{entity::Entity, system::Commands, world::World};
+use bevy_log::info;
 
-use naia_bevy_server::{RoomKey, Server};
+use naia_bevy_server::{CommandsExt, RoomKey, Server};
 
 use vortex_proto::{
     components::{FileType, FileTypeValue, OwnedByFile},
@@ -132,7 +133,7 @@ pub fn load_content_entities(
             MeshReader::post_process_entities(shape_manager, shape_entities)
         }
         FileReadOutput::Anim(skel_path_opt) => {
-            AnimReader::post_process(server, project, file_key, file_entity, skel_path_opt)
+            AnimReader::post_process(commands, server, project, file_key, file_entity, skel_path_opt)
         },
     };
 
@@ -180,9 +181,38 @@ fn post_process_loaded_networked_entities(
                     .insert(FileType::new(FileTypeValue::Mesh));
             }
             FileExtension::Anim => {
-                panic!("todo / shouldn't have content entities yet");
+                commands
+                    .entity(*entity)
+                    .insert(FileType::new(FileTypeValue::Anim));
             }
             _ => panic!("File extension {:?} not implemented", file_extension),
+        }
+    }
+}
+
+pub fn on_despawn_file_content_entities(
+    commands: &mut Commands,
+    server: &mut Server,
+    shape_manager: &mut ShapeManager,
+    project: &mut Project,
+    file_key: &FileEntryKey,
+    content_entities: &HashMap<Entity, ContentEntityData>,
+) {
+    for (entity, entity_data) in content_entities.iter() {
+        info!("despawning entity: {:?}", entity);
+        commands.entity(*entity).take_authority(server).despawn();
+
+        match entity_data {
+            ContentEntityData::Shape(ShapeType::Vertex) => {
+                shape_manager.on_delete_vertex(commands, server, entity);
+            }
+            ContentEntityData::Shape(ShapeType::Edge) => {
+                shape_manager.on_delete_edge(entity);
+            }
+            ContentEntityData::Shape(ShapeType::Face) => {}
+            ContentEntityData::Dependency(dependency_key) => {
+                project.file_remove_dependency(&file_key, &dependency_key);
+            }
         }
     }
 }
