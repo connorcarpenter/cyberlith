@@ -17,7 +17,7 @@ use vortex_proto::{
 };
 
 use crate::{
-    files::{load_content_entities, on_despawn_file_content_entities, FileWriter, ShapeType},
+    files::{load_content_entities, despawn_file_content_entities, FileWriter, ShapeType},
     resources::{
         ChangelistValue, ContentEntityData, FileEntryValue, FileSpace, GitManager, ShapeManager,
     },
@@ -34,6 +34,12 @@ impl BigMapKey for ProjectKey {
     fn from_u64(value: u64) -> Self {
         Self(value)
     }
+}
+
+pub enum RollbackResult {
+    Created,
+    Modified(FileKey, HashMap<Entity, ContentEntityData>, HashMap<Entity, ContentEntityData>),
+    Deleted(FileKey, FileEntryValue)
 }
 
 pub struct Project {
@@ -75,7 +81,7 @@ impl Project {
         &self,
         world: &mut World,
         file_key: &FileKey,
-        content_entities: &HashMap<Entity, ContentEntityData>,
+        content_entities: &Option<HashMap<Entity, ContentEntityData>>,
     ) -> Box<[u8]> {
         let ext = self.working_file_extension(file_key);
         return ext.write(world, self, file_key, content_entities);
@@ -129,7 +135,7 @@ impl Project {
         shape_manager: &mut ShapeManager,
         user_key: &UserKey,
         file_key: &FileKey,
-    ) -> Option<Vec<Entity>> {
+    ) -> Option<HashMap<Entity, ContentEntityData>> {
         if !self.filespaces.contains_key(file_key) {
             let new_entities =
                 self.create_filespace(commands, server, shape_manager, user_key, file_key);
@@ -145,17 +151,18 @@ impl Project {
         &mut self,
         server: &mut Server,
         file_key: &FileKey,
-    ) -> HashMap<Entity, ContentEntityData> {
+    ) -> Option<HashMap<Entity, ContentEntityData>> {
         let Some(filespace) = self.filespaces.get_mut(file_key) else {
             panic!("Filespace not found");
         };
-        let content_entities = filespace.content_entities().clone();
+
         filespace.user_leave();
         if filespace.has_no_users() {
-            self.delete_filespace(server, file_key);
+            let content_entities = self.delete_filespace(server, file_key);
+            return Some(content_entities);
         }
 
-        content_entities
+        return None;
     }
 
     pub fn entity_is_file(&self, entity: &Entity) -> bool {
@@ -480,7 +487,7 @@ impl Project {
         &mut self,
         world: &mut World,
         message: ChangelistMessage,
-    ) -> Option<(FileKey, FileEntryValue)> {
+    ) -> RollbackResult {
         let mut system_state: SystemState<(
             Commands,
             Server,
@@ -496,23 +503,6 @@ impl Project {
         let file_key = changelist_entry.file_key();
 
         let output = match status {
-            ChangelistStatus::Modified => {
-                let file_entity = changelist_entry.file_entity.get(&server).unwrap();
-
-                // cleanup changelist entry
-                self.cleanup_changelist_entry(&mut commands, &file_key);
-
-                // respawn content entities within to previous state
-                self.respawn_file_content_entities(
-                    &mut commands,
-                    &mut server,
-                    &mut shape_manager,
-                    &file_entity,
-                    &file_key,
-                );
-
-                None
-            }
             ChangelistStatus::Created => {
                 // Remove Entity from Working Tree, returning a list of child entities that should be despawned
                 let (entry_value, entities_to_delete) =
@@ -538,7 +528,24 @@ impl Project {
                     self.cleanup_changelist_entry(&mut commands, &child_key);
                 }
 
-                None
+                RollbackResult::Created
+            }
+            ChangelistStatus::Modified => {
+                let file_entity = changelist_entry.file_entity.get(&server).unwrap();
+
+                // cleanup changelist entry
+                self.cleanup_changelist_entry(&mut commands, &file_key);
+
+                // respawn content entities within to previous state
+                let (old_entities, new_entities) = self.respawn_file_content_entities(
+                    &mut commands,
+                    &mut server,
+                    &mut shape_manager,
+                    &file_entity,
+                    &file_key,
+                );
+
+                RollbackResult::Modified(file_key,old_entities, new_entities)
             }
             ChangelistStatus::Deleted => {
                 let new_entity = GitManager::spawn_file_tree_entity(&mut commands, &mut server);
@@ -557,7 +564,7 @@ impl Project {
                 // despawn changelist entity
                 self.cleanup_changelist_entry(&mut commands, &file_key);
 
-                Some((file_key.clone(), file_entry_value))
+                RollbackResult::Deleted(file_key.clone(), file_entry_value)
             }
         };
 
@@ -573,7 +580,7 @@ impl Project {
         shape_manager: &mut ShapeManager,
         file_entity: &Entity,
         file_key: &FileKey,
-    ) {
+    ) -> (HashMap<Entity, ContentEntityData>, HashMap<Entity, ContentEntityData>) {
         let file_extension = self.working_file_extension(file_key);
         let bytes = self.get_bytes_from_cl_or_fs(file_key);
         if !file_extension.can_io() {
@@ -581,19 +588,19 @@ impl Project {
         }
 
         // despawn all previous entities
-        let content_entities = self.file_content_entities(file_key).unwrap().clone();
-        on_despawn_file_content_entities(
+        let old_content_entities = self.file_content_entities(file_key).unwrap().clone();
+        despawn_file_content_entities(
             commands,
             server,
             shape_manager,
             self,
             file_key,
-            &content_entities,
+            &old_content_entities,
         );
 
         // respawn all entities
         let filespace_room_key = self.file_room_key(file_key).unwrap();
-        let content_entities = load_content_entities(
+        let new_content_entities = load_content_entities(
             commands,
             server,
             self,
@@ -606,7 +613,9 @@ impl Project {
         );
 
         let filespace = self.filespaces.get_mut(file_key).unwrap();
-        filespace.set_content_entities(content_entities);
+        filespace.set_content_entities(new_content_entities.clone());
+
+        (old_content_entities, new_content_entities)
     }
 
     fn fs_update_index(&mut self, path: &str) {
@@ -808,7 +817,7 @@ impl Project {
         shape_manager: &mut ShapeManager,
         user_key: &UserKey,
         file_key: &FileKey,
-    ) -> Vec<Entity> {
+    ) -> HashMap<Entity, ContentEntityData> {
         let file_room_key = server.make_room().key();
 
         // get file contents from either the changelist or the file system
@@ -829,15 +838,13 @@ impl Project {
             bytes,
         );
 
-        let new_entities: Vec<Entity> = content_entities_with_data.keys().map(|e| *e).collect();
-
-        let mut filespace = FileSpace::new(&file_room_key, content_entities_with_data);
+        let mut filespace = FileSpace::new(&file_room_key, content_entities_with_data.clone());
 
         filespace.user_join(server, user_key);
 
         self.filespaces.insert(file_key.clone(), filespace);
 
-        new_entities
+        content_entities_with_data
     }
 
     fn get_bytes_from_cl_or_fs(&self, file_key: &FileKey) -> Box<[u8]> {
@@ -854,13 +861,16 @@ impl Project {
         }
     }
 
-    fn delete_filespace(&mut self, server: &mut Server, file_key: &FileKey) {
+    fn delete_filespace(&mut self, server: &mut Server, file_key: &FileKey) -> HashMap<Entity, ContentEntityData> {
         let filespace = self.filespaces.remove(file_key).unwrap();
 
         let file_room_key = filespace.room_key();
 
         // delete file room
         server.room_mut(&file_room_key).destroy();
+
+        // return content entities
+        filespace.content_entities().clone()
     }
 
     fn get_file_contents(&self, key: &FileKey) -> Box<[u8]> {
@@ -1059,10 +1069,11 @@ impl Project {
                 .unwrap()
                 .content_entities()
                 .clone();
+            let content_entities_opt = Some(content_entities);
 
             // write
             info!("... Generating content ...");
-            let bytes = extension.write(world, self, file_key, &content_entities);
+            let bytes = extension.write(world, self, file_key, &content_entities_opt);
             let changelist_value = self.changelist_entries.get_mut(&file_key).unwrap();
             changelist_value.set_content(bytes);
         }

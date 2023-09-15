@@ -197,7 +197,7 @@ impl UserManager {
         if let Some(new_content_entities) =
             project.user_join_filespace(commands, server, shape_manager, user_key, file_key)
         {
-            git_manager.register_content_entities(project_key, file_key, new_content_entities);
+            git_manager.register_content_entities(project_key, file_key, &new_content_entities);
         }
     }
 
@@ -207,7 +207,7 @@ impl UserManager {
         git_manager: &mut GitManager,
         user_key: &UserKey,
         tab_id: &TabId,
-    ) -> (ProjectKey, FileKey, HashMap<Entity, ContentEntityData>) {
+    ) -> (ProjectKey, FileKey, Option<HashMap<Entity, ContentEntityData>>) {
         let Some(user_session) = self.user_sessions.get_mut(user_key) else {
             panic!("User does not exist!");
         };
@@ -219,8 +219,8 @@ impl UserManager {
             panic!("User does not have project key");
         };
         let project = git_manager.project_mut(&project_key).unwrap();
-        let content_entities = project.user_leave_filespace(server, &file_key);
+        let content_entities_opt = project.user_leave_filespace(server, &file_key);
 
-        (project_key, file_key, content_entities)
+        (project_key, file_key, content_entities_opt)
     }
 }

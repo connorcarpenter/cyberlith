@@ -48,8 +48,15 @@ impl MeshWriter {
     fn world_to_actions(
         &self,
         world: &mut World,
-        content_entities: &Vec<Entity>,
+        content_entities_opt: &Option<HashMap<Entity, ContentEntityData>>,
     ) -> Vec<MeshAction> {
+        let content_entities = content_entities_opt
+            .as_ref()
+            .unwrap()
+            .keys()
+            .cloned()
+            .collect::<Vec<Entity>>();
+
         let mut system_state: SystemState<(
             Server,
             Query<&Vertex3d>,
@@ -216,13 +223,9 @@ impl FileWriter for MeshWriter {
         world: &mut World,
         _project: &Project,
         _file_key: &FileKey,
-        content_entities: &HashMap<Entity, ContentEntityData>,
+        content_entities_opt: &Option<HashMap<Entity, ContentEntityData>>,
     ) -> Box<[u8]> {
-        let content_entities_vec: Vec<Entity> = content_entities
-            .iter()
-            .map(|(entity, _data)| *entity)
-            .collect();
-        let actions = self.world_to_actions(world, &content_entities_vec);
+        let actions = self.world_to_actions(world, content_entities_opt);
         self.write_from_actions(actions)
     }
 

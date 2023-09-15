@@ -70,10 +70,10 @@ pub struct AnimWriter;
 impl AnimWriter {
     fn world_to_actions(
         &self,
-        world: &mut World,
+        _world: &mut World,
         project: &Project,
         file_key: &FileKey,
-        content_entities: &Vec<Entity>,
+        _content_entities_opt: &Option<HashMap<Entity, ContentEntityData>>,
     ) -> Vec<AnimAction> {
         let mut actions = Vec::new();
 
@@ -149,13 +149,9 @@ impl FileWriter for AnimWriter {
         world: &mut World,
         project: &Project,
         file_key: &FileKey,
-        content_entities: &HashMap<Entity, ContentEntityData>,
+        content_entities_opt: &Option<HashMap<Entity, ContentEntityData>>,
     ) -> Box<[u8]> {
-        let content_entities_vec: Vec<Entity> = content_entities
-            .iter()
-            .map(|(entity, _data)| *entity)
-            .collect();
-        let actions = self.world_to_actions(world, project, file_key, &content_entities_vec);
+        let actions = self.world_to_actions(world, project, file_key, content_entities_opt);
         self.write_from_actions(actions)
     }
 
@@ -208,8 +204,8 @@ impl AnimReader {
     }
 
     fn actions_to_world(
-        commands: &mut Commands,
-        server: &mut Server,
+        _commands: &mut Commands,
+        _server: &mut Server,
         actions: Vec<AnimAction>,
     ) -> Result<FileReadOutput, SerdeErr> {
         let mut skel_path = None;

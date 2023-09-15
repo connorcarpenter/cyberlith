@@ -24,7 +24,7 @@ use crate::{
     config::GitConfig,
     files::ShapeType,
     resources::{
-        project::Project, project::ProjectKey, ContentEntityData, FileEntryValue, UserManager,
+        RollbackResult, project::Project, project::ProjectKey, ContentEntityData, FileEntryValue, UserManager,
     },
 };
 
@@ -105,12 +105,33 @@ impl GitManager {
         &mut self,
         project_key: &ProjectKey,
         file_key: &FileKey,
-        content_entities: Vec<Entity>,
+        content_entities: &HashMap<Entity, ContentEntityData>,
     ) {
-        for entity in content_entities {
-            self.content_entity_keys
-                .insert(entity, (*project_key, file_key.clone()));
+        for (entity, _) in content_entities {
+            self.register_content_entity(project_key, file_key, entity);
         }
+    }
+
+    fn register_content_entity(
+        &mut self,
+        project_key: &ProjectKey,
+        file_key: &FileKey,
+        content_entity: &Entity,
+    ) {
+        self.content_entity_keys.insert(*content_entity, (*project_key, file_key.clone()));
+    }
+
+    pub(crate) fn deregister_content_entities(&mut self, content_entities: &HashMap<Entity, ContentEntityData>) {
+        for (entity, _) in content_entities.iter() {
+            self.deregister_content_entity(entity);
+        }
+    }
+
+    fn deregister_content_entity(
+        &mut self,
+        content_entity: &Entity,
+    ) -> Option<(ProjectKey, FileKey)> {
+        self.content_entity_keys.remove(content_entity)
     }
 
     pub(crate) fn content_entity_keys(
@@ -163,8 +184,7 @@ impl GitManager {
         entity: &Entity,
         shape_type: ShapeType,
     ) {
-        self.content_entity_keys
-            .insert(*entity, (*project_key, file_key.clone()));
+        self.register_content_entity(project_key, file_key, entity);
 
         self.queue_client_modify_file(entity);
 
@@ -178,7 +198,7 @@ impl GitManager {
     pub(crate) fn on_client_remove_content_entity(&mut self, entity: &Entity) {
         self.queue_client_modify_file(entity);
 
-        let Some((project_key, file_key)) = self.content_entity_keys.remove(entity) else {
+        let Some((project_key, file_key)) = self.deregister_content_entity(entity) else {
             panic!("Could not find content entity key for entity: {:?}", entity);
         };
 
@@ -336,14 +356,24 @@ impl GitManager {
         };
         let project_room_key = project.room_key();
 
-        if let Some((key, value)) = project.rollback_changelist_entry(world, message) {
-            self.spawn_networked_entry_into_world(
-                world,
-                &user_project_key,
-                &project_room_key,
-                &key,
-                &value,
-            )
+        match project.rollback_changelist_entry(world, message) {
+            RollbackResult::Created => {
+
+            }
+            RollbackResult::Modified(file_key, old_content_entities, new_content_entities) => {
+                let mut git_manager = world.get_resource_mut::<GitManager>().unwrap();
+                git_manager.deregister_content_entities(&old_content_entities);
+                git_manager.register_content_entities(&user_project_key, &file_key, &new_content_entities);
+            }
+            RollbackResult::Deleted(key, value) => {
+                self.spawn_networked_entry_into_world(
+                    world,
+                    &user_project_key,
+                    &project_room_key,
+                    &key,
+                    &value,
+                )
+            }
         }
     }
 
@@ -387,7 +417,7 @@ impl GitManager {
         project_key: &ProjectKey,
         file_key: &FileKey,
         world: &mut World,
-        content_entities: &HashMap<Entity, ContentEntityData>,
+        content_entities: &Option<HashMap<Entity, ContentEntityData>>,
     ) -> Box<[u8]> {
         let project = self.projects.get(project_key).unwrap();
         project.write(world, file_key, content_entities)

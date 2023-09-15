@@ -12,7 +12,7 @@ use naia_bevy_server::{Server, UserKey};
 use vortex_proto::{resources::FileKey, types::TabId};
 
 use crate::{
-    files::on_despawn_file_content_entities,
+    files::despawn_file_content_entities,
     resources::{project::ProjectKey, ContentEntityData, GitManager, ShapeManager, UserManager},
 };
 
@@ -168,7 +168,7 @@ impl TabManager {
             world.resource_scope(|world, mut git_manager: Mut<GitManager>| {
                 let mut output = Vec::new();
 
-                for (project_key, file_key, content_entities) in closed_states.iter() {
+                for (project_key, file_key, content_entities_opt) in closed_states.iter() {
                     if git_manager.file_entity(project_key, file_key).is_none() {
                         // file was deleted, continue
                         continue;
@@ -176,7 +176,7 @@ impl TabManager {
                     if !git_manager.can_write(project_key, file_key) {
                         panic!("can't write file: `{:?}`", file_key.name());
                     }
-                    let bytes = git_manager.write(project_key, file_key, world, content_entities);
+                    let bytes = git_manager.write(project_key, file_key, world, content_entities_opt);
                     output.push((project_key, file_key, bytes));
                 }
 
@@ -208,22 +208,24 @@ impl TabManager {
             let (mut commands, mut server, mut shape_manager, mut git_manager) =
                 system_state.get_mut(world);
 
-            for (project_key, file_key, content_entities) in closed_states.iter() {
-                // despawn content entities
-                for (entity, _data) in content_entities.iter() {
-                    commands.entity(*entity).despawn();
-                }
+            for (project_key, file_key, content_entities_opt) in closed_states.iter() {
+                if let Some(content_entities) = content_entities_opt {
 
-                let project = git_manager.project_mut(project_key).unwrap();
-                // handle despawns
-                on_despawn_file_content_entities(
-                    &mut commands,
-                    &mut server,
-                    &mut shape_manager,
-                    project,
-                    file_key,
-                    content_entities,
-                );
+                    let project = git_manager.project_mut(project_key).unwrap();
+
+                    // handle despawns
+                    despawn_file_content_entities(
+                        &mut commands,
+                        &mut server,
+                        &mut shape_manager,
+                        project,
+                        file_key,
+                        content_entities,
+                    );
+
+                    // deregister
+                    git_manager.deregister_content_entities(content_entities);
+                }
             }
 
             system_state.apply(world);
@@ -235,7 +237,7 @@ impl TabManager {
         server: &mut Server,
         user_manager: &mut UserManager,
         git_manager: &mut GitManager,
-    ) -> Vec<(ProjectKey, FileKey, HashMap<Entity, ContentEntityData>)> {
+    ) -> Vec<(ProjectKey, FileKey, Option<HashMap<Entity, ContentEntityData>>)> {
         let mut output = Vec::new();
         while let Some((user_key, tab_id)) = self.queued_closes.pop_front() {
             let (project_key, file_key, content_entities) =

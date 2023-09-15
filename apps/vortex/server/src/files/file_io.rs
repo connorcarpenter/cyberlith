@@ -21,7 +21,7 @@ pub trait FileWriter: Send + Sync {
         world: &mut World,
         project: &Project,
         file_key: &FileKey,
-        content_entities: &HashMap<Entity, ContentEntityData>,
+        content_entities_opt: &Option<HashMap<Entity, ContentEntityData>>,
     ) -> Box<[u8]>;
     fn write_new_default(&self) -> Box<[u8]>;
 }
@@ -57,12 +57,12 @@ impl FileWriter for FileExtension {
         world: &mut World,
         project: &Project,
         file_key: &FileKey,
-        content_entities: &HashMap<Entity, ContentEntityData>,
+        content_entities_opt: &Option<HashMap<Entity, ContentEntityData>>,
     ) -> Box<[u8]> {
         match self {
-            FileExtension::Skel => SkelWriter.write(world, project, file_key, content_entities),
-            FileExtension::Mesh => MeshWriter.write(world, project, file_key, content_entities),
-            FileExtension::Anim => AnimWriter.write(world, project, file_key, content_entities),
+            FileExtension::Skel => SkelWriter.write(world, project, file_key, content_entities_opt),
+            FileExtension::Mesh => MeshWriter.write(world, project, file_key, content_entities_opt),
+            FileExtension::Anim => AnimWriter.write(world, project, file_key, content_entities_opt),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }
@@ -194,7 +194,7 @@ fn post_process_loaded_networked_entities(
     }
 }
 
-pub fn on_despawn_file_content_entities(
+pub fn despawn_file_content_entities(
     commands: &mut Commands,
     server: &mut Server,
     shape_manager: &mut ShapeManager,

@@ -20,22 +20,22 @@ impl Default for AnimationManager {
 impl AnimationManager {
     pub(crate) fn drag_edge(
         &mut self,
-        commands: &mut Commands,
-        client: &Client,
-        edge_3d_entity: Entity,
-        mouse_position: Vec2,
-        delta: Vec2,
+        _commands: &mut Commands,
+        _client: &Client,
+        _edge_3d_entity: Entity,
+        _mouse_position: Vec2,
+        _delta: Vec2,
     ) {
         todo!()
     }
 
     pub(crate) fn drag_vertex(
         &mut self,
-        commands: &mut Commands,
-        client: &Client,
-        vert_3d_entity: Entity,
-        mouse_position: Vec2,
-        delta: Vec2,
+        _commands: &mut Commands,
+        _client: &Client,
+        _vert_3d_entity: Entity,
+        _mouse_position: Vec2,
+        _delta: Vec2,
     ) {
         todo!()
     }
