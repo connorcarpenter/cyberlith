@@ -17,7 +17,7 @@ use render_egui::{
 use vortex_proto::{
     channels::TabActionChannel,
     components::{ChangelistStatus, FileSystemEntry},
-    messages::{TabCloseMessage, TabActionMessageType, TabOpenMessage},
+    messages::{TabCloseMessage, TabOpenMessage},
     types::TabId,
 };
 
@@ -103,7 +103,6 @@ impl TabManager {
     ) {
         if self.tab_map.contains_key(row_entity) {
             self.select_tab(
-                client,
                 canvas,
                 camera_manager,
                 input_manager,
@@ -133,7 +132,6 @@ impl TabManager {
 
             // select tab
             self.select_tab(
-                client,
                 canvas,
                 camera_manager,
                 input_manager,
@@ -175,7 +173,6 @@ impl TabManager {
                     let new_entity = *new_entity;
                     self.clear_current_tab(canvas, camera_manager);
                     self.select_tab(
-                        client,
                         canvas,
                         camera_manager,
                         input_manager,
@@ -191,7 +188,7 @@ impl TabManager {
         }
 
         // send message to server
-        let message = TabCloseMessage::new(tab_state.tab_id, TabActionMessageType::Close);
+        let message = TabCloseMessage::new(tab_state.tab_id);
         client.send_message::<TabActionChannel, TabCloseMessage>(&message);
 
         // recycle tab id
@@ -260,7 +257,6 @@ impl TabManager {
 
     fn select_tab(
         &mut self,
-        client: &mut Client,
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         input_manager: &mut InputManager,
@@ -287,10 +283,6 @@ impl TabManager {
         );
         let tab_state = self.tab_map.get_mut(&row_entity).unwrap();
         tab_state.selected = true;
-
-        // send message to server
-        let message = TabCloseMessage::new(tab_state.tab_id, TabActionMessageType::Select);
-        client.send_message::<TabActionChannel, TabCloseMessage>(&message);
     }
 
     fn set_current_tab(
@@ -372,7 +364,6 @@ impl TabManager {
             panic!("row entity not in tab map!")
         }
         self.select_tab(
-            client,
             canvas,
             camera_manager,
             input_manager,
@@ -649,7 +640,6 @@ impl TabManager {
             None => {}
             Some(TabAction::Select(row_entity)) => {
                 self.select_tab(
-                    client,
                     canvas,
                     camera_manager,
                     input_manager,
