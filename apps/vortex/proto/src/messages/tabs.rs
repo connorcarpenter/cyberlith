@@ -1,5 +1,6 @@
 use bevy_ecs::entity::Entity;
-use naia_bevy_shared::{EntityAndGlobalEntityConverter, EntityProperty, Message, Serde};
+
+use naia_bevy_shared::{EntityAndGlobalEntityConverter, EntityProperty, Message};
 
 use crate::types::TabId;
 
@@ -24,20 +25,13 @@ impl TabOpenMessage {
     }
 }
 
-#[derive(Serde, PartialEq, Clone)]
-pub enum TabActionMessageType {
-    Select,
-    Close,
-}
-
 #[derive(Message)]
-pub struct TabActionMessage {
+pub struct TabCloseMessage {
     pub tab_id: TabId,
-    pub action: TabActionMessageType,
 }
 
-impl TabActionMessage {
-    pub fn new(tab_id: TabId, action: TabActionMessageType) -> Self {
-        Self { tab_id, action }
+impl TabCloseMessage {
+    pub fn new(tab_id: TabId) -> Self {
+        Self { tab_id }
     }
 }

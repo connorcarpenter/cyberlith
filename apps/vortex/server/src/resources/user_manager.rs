@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
 use bevy_ecs::{entity::Entity, system::Resource};
-use bevy_log::{info, warn};
 
 use naia_bevy_server::{Server, UserKey};
+
 use vortex_proto::{resources::FileEntryKey, types::TabId};
 
 use crate::resources::{project::ProjectKey, ContentEntityData, GitManager, UserTabState};
@@ -44,18 +44,11 @@ impl UserSessionData {
         self.project_key = Some(project_key);
     }
 
-    pub(crate) fn tab_state_mut(&mut self) -> &mut UserTabState {
-        &mut self.tab_state
-    }
-
     pub(crate) fn open_tab(&mut self, tab_id: TabId, file_key: FileEntryKey) {
         self.tab_state.insert_tab(tab_id, file_key);
     }
 
     pub(crate) fn close_tab(&mut self, tab_id: &TabId) -> Option<FileEntryKey> {
-        if self.tab_state.current_tab() == Some(tab_id.clone()) {
-            self.tab_state.set_current_tab(None);
-        }
         self.tab_state.remove_tab(tab_id)
     }
 }
@@ -164,13 +157,6 @@ impl UserManager {
         self.user_sessions.get_mut(user_key)
     }
 
-    pub(crate) fn user_tab_state_mut(&mut self, user_key: &UserKey) -> Option<&mut UserTabState> {
-        let Some(user_session) = self.user_sessions.get_mut(user_key) else {
-            panic!("user not found");
-        };
-        Some(user_session.tab_state_mut())
-    }
-
     pub fn login_user(&mut self, user_key: &UserKey, user_name: &str) {
         let Some(user_data) = self.user_permanent_data.get(user_name) else {
             panic!("user not found");
@@ -214,20 +200,5 @@ impl UserManager {
         let content_entities = project.user_leave_filespace(server, &file_key);
 
         (project_key, file_key, content_entities)
-    }
-
-    pub fn select_tab(&mut self, user_key: &UserKey, tab_id: &TabId) {
-        let Some(user_tab_state) = self.user_tab_state_mut(user_key) else {
-            panic!("user does not exist")
-        };
-        if !user_tab_state.has_tab_id(tab_id) {
-            warn!("User does not have tab {}", tab_id);
-            return;
-        }
-
-        info!("Select Tab!");
-
-        // Switch current Tab
-        user_tab_state.set_current_tab(Some(tab_id.clone()));
     }
 }

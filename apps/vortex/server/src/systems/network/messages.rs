@@ -8,7 +8,7 @@ use naia_bevy_server::{events::MessageEvents, Server};
 
 use vortex_proto::{
     channels::{FileActionChannel, TabActionChannel},
-    messages::{ChangelistMessage, TabActionMessage, TabActionMessageType, TabOpenMessage},
+    messages::{ChangelistMessage, TabCloseMessage, TabOpenMessage},
     resources::FileEntryKey,
 };
 
@@ -55,16 +55,9 @@ pub fn message_events(
         }
 
         // Tab Select & Close Message
-        for (user_key, message) in events.read::<TabActionChannel, TabActionMessage>() {
+        for (user_key, message) in events.read::<TabActionChannel, TabCloseMessage>() {
             let tab_id = message.tab_id;
-            match message.action {
-                TabActionMessageType::Select => {
-                    user_manager.select_tab(&user_key, &tab_id);
-                }
-                TabActionMessageType::Close => {
-                    tab_manager.queue_close_tab(user_key, tab_id);
-                }
-            }
+            tab_manager.queue_close_tab(user_key, tab_id);
         }
     }
 }

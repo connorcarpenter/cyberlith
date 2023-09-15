@@ -17,7 +17,7 @@ use render_egui::{
 use vortex_proto::{
     channels::TabActionChannel,
     components::{ChangelistStatus, FileSystemEntry},
-    messages::{TabActionMessage, TabActionMessageType, TabOpenMessage},
+    messages::{TabCloseMessage, TabActionMessageType, TabOpenMessage},
     types::TabId,
 };
 
@@ -191,8 +191,8 @@ impl TabManager {
         }
 
         // send message to server
-        let message = TabActionMessage::new(tab_state.tab_id, TabActionMessageType::Close);
-        client.send_message::<TabActionChannel, TabActionMessage>(&message);
+        let message = TabCloseMessage::new(tab_state.tab_id, TabActionMessageType::Close);
+        client.send_message::<TabActionChannel, TabCloseMessage>(&message);
 
         // recycle tab id
         self.recycle_tab_id(tab_state.tab_id);
@@ -289,8 +289,8 @@ impl TabManager {
         tab_state.selected = true;
 
         // send message to server
-        let message = TabActionMessage::new(tab_state.tab_id, TabActionMessageType::Select);
-        client.send_message::<TabActionChannel, TabActionMessage>(&message);
+        let message = TabCloseMessage::new(tab_state.tab_id, TabActionMessageType::Select);
+        client.send_message::<TabActionChannel, TabCloseMessage>(&message);
     }
 
     fn set_current_tab(

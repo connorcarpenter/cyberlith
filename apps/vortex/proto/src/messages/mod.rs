@@ -16,7 +16,7 @@ impl ProtocolPlugin for MessagesPlugin {
         protocol
             .add_message::<Auth>()
             .add_message::<ChangelistMessage>()
-            .add_message::<TabActionMessage>()
+            .add_message::<TabCloseMessage>()
             .add_message::<TabOpenMessage>();
     }
 }

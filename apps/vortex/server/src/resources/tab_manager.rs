@@ -20,7 +20,6 @@ use crate::{
 pub struct TabManager {
     queued_closes: VecDeque<(UserKey, TabId)>,
     queued_opens: VecDeque<(UserKey, TabId, Entity)>,
-    queued_selects: VecDeque<(UserKey, TabId)>,
     waiting_opens: HashMap<(UserKey, Entity), TabId>,
 }
 
@@ -29,7 +28,6 @@ impl Default for TabManager {
         Self {
             queued_closes: VecDeque::new(),
             queued_opens: VecDeque::new(),
-            queued_selects: VecDeque::new(),
             waiting_opens: HashMap::new(),
         }
     }
@@ -92,7 +90,6 @@ impl TabManager {
     pub fn process_queued_actions(world: &mut World) {
         Self::process_queued_opens(world);
         Self::process_queued_closes(world);
-        Self::process_queued_selects(world);
     }
 
     fn process_queued_opens(world: &mut World) {
@@ -231,24 +228,6 @@ impl TabManager {
 
             system_state.apply(world);
         }
-    }
-
-    fn process_queued_selects(world: &mut World) {
-        let mut system_state: SystemState<(ResMut<TabManager>, ResMut<UserManager>)> =
-            SystemState::new(world);
-        let (mut tab_manager, mut user_manager) = system_state.get_mut(world);
-
-        let selects = tab_manager.take_queued_selects();
-
-        for (user_key, tab_id) in selects {
-            user_manager.select_tab(&user_key, &tab_id);
-        }
-
-        system_state.apply(world);
-    }
-
-    fn take_queued_selects(&mut self) -> VecDeque<(UserKey, TabId)> {
-        std::mem::take(&mut self.queued_selects)
     }
 
     fn process_queued_closes_inner(
