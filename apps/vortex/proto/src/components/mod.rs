@@ -10,7 +10,7 @@ pub use file_system::{
 mod vertex;
 use vertex::VertexComponentsPlugin;
 pub use vertex::{
-    Edge3d, EdgeAngle, Face3d, FileType, FileTypeValue, OwnedByFile, ShapeName, Vertex3d,
+    Edge3d, EdgeAngle, Face3d, FileType, FileExtension, OwnedByFile, ShapeName, Vertex3d,
     VertexRoot, VertexSerdeInt,
 };
 

@@ -17,7 +17,7 @@ use render_api::{
 };
 
 use vortex_proto::components::{
-    Face3d, FileType, FileTypeValue, OwnedByFile, Vertex3d, VertexRoot,
+    Face3d, FileType, FileExtension, OwnedByFile, Vertex3d, VertexRoot,
 };
 
 use crate::app::{
@@ -145,7 +145,7 @@ impl VertexManager {
         materials: &mut Assets<CpuMaterial>,
         position: Vec3,
         file_entity: Entity,
-        file_type: FileTypeValue,
+        file_type: FileExtension,
         entities_to_release: &mut Vec<Entity>,
     ) -> (Entity, Entity) {
         // create new 3d vertex
@@ -210,7 +210,7 @@ impl VertexManager {
                     materials,
                     position,
                     file_entity,
-                    FileTypeValue::Skel,
+                    FileExtension::Skel,
                     entities_to_release,
                 );
             action_stack.migrate_vertex_entities(
@@ -231,7 +231,7 @@ impl VertexManager {
                 new_child_vertex_2d_entity,
                 new_child_vertex_3d_entity,
                 file_entity,
-                FileTypeValue::Skel,
+                FileExtension::Skel,
                 Some(edge_angle),
                 entities_to_release,
             );

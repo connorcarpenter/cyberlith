@@ -10,7 +10,7 @@ use render_api::components::Visibility;
 
 use vortex_proto::{
     components::{
-        FileTypeValue, ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
+        FileExtension, ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
     },
 };
 
@@ -135,7 +135,7 @@ pub(crate) fn execute(
             &mut toolbar,
             &mut visibility_q,
             &entity_id,
-            FileTypeValue::from(new_file_name.as_str()),
+            FileExtension::from(new_file_name.as_str()),
         );
     }
 
@@ -216,7 +216,7 @@ fn create_fs_entry(
         .insert(FileSystemEntryLocal::new(new_file_name));
 
     // register with file manager
-    file_manager.on_file_create(&entity_id, FileTypeValue::from(new_file_name));
+    file_manager.on_file_create(&entity_id, FileExtension::from(new_file_name));
 
     entity_id
 }

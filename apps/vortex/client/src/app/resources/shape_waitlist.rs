@@ -12,7 +12,7 @@ use render_api::{
     components::Transform,
     Assets,
 };
-use vortex_proto::{components::FileTypeValue, resources::DependencyMap};
+use vortex_proto::{components::FileExtension, resources::DependencyMap};
 
 use crate::app::{
     components::{OwnedByFileLocal, Vertex2d},
@@ -29,7 +29,7 @@ pub enum ShapeWaitlistInsert {
     Face(Entity, Entity, Entity, Entity, Entity, Entity),
     EdgeAngle(f32),
     OwnedByFile(Entity),
-    FileType(FileTypeValue),
+    FileType(FileExtension),
 }
 
 #[derive(Clone, Copy)]
@@ -54,7 +54,7 @@ pub struct ShapeWaitlistEntry {
     edge_angle: Option<f32>,
     // Option<vertex a, vertex b, vertex c, edge a, edge b, edge c>
     face_entities: Option<(Entity, Entity, Entity, Entity, Entity, Entity)>,
-    file_type: Option<FileTypeValue>,
+    file_type: Option<FileExtension>,
 }
 
 impl ShapeWaitlistEntry {
@@ -74,25 +74,25 @@ impl ShapeWaitlistEntry {
         match self.shape {
             Some(ShapeType::Vertex) => match self.file_type {
                 None => return false,
-                Some(FileTypeValue::Skel) => {
+                Some(FileExtension::Skel) => {
                     return self.file_entity.is_some() && self.vertex_parent.is_some()
                 }
-                Some(FileTypeValue::Mesh) => return self.file_entity.is_some(),
-                Some(FileTypeValue::Anim) | Some(FileTypeValue::Unknown) => {
+                Some(FileExtension::Mesh) => return self.file_entity.is_some(),
+                Some(FileExtension::Anim) | Some(FileExtension::Unknown) => {
                     panic!("");
                 }
             },
             Some(ShapeType::Edge) => match self.file_type {
                 None => return false,
-                Some(FileTypeValue::Skel) => {
+                Some(FileExtension::Skel) => {
                     return self.file_entity.is_some()
                         && self.edge_entities.is_some()
                         && self.edge_angle.is_some()
                 }
-                Some(FileTypeValue::Mesh) => {
+                Some(FileExtension::Mesh) => {
                     return self.file_entity.is_some() && self.edge_entities.is_some()
                 }
-                Some(FileTypeValue::Anim) | Some(FileTypeValue::Unknown) => {
+                Some(FileExtension::Anim) | Some(FileExtension::Unknown) => {
                     panic!("");
                 }
             },
@@ -145,31 +145,31 @@ impl ShapeWaitlistEntry {
     ) {
         self.shape = Some(ShapeType::Face);
         self.face_entities = Some((vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c));
-        self.file_type = Some(FileTypeValue::Mesh);
+        self.file_type = Some(FileExtension::Mesh);
     }
 
     fn set_file_entity(&mut self, file_entity: Entity) {
         self.file_entity = Some(file_entity);
     }
 
-    fn set_file_type(&mut self, file_type: FileTypeValue) {
+    fn set_file_type(&mut self, file_type: FileExtension) {
         self.file_type = Some(file_type);
     }
 
-    fn decompose(self) -> (ShapeData, Entity, FileTypeValue) {
+    fn decompose(self) -> (ShapeData, Entity, FileExtension) {
         let shape = self.shape.unwrap();
         let file_type = self.file_type.unwrap();
 
         let shape_data = match (shape, file_type) {
-            (ShapeType::Vertex, FileTypeValue::Skel) => {
+            (ShapeType::Vertex, FileExtension::Skel) => {
                 ShapeData::Vertex(self.vertex_parent.unwrap())
             }
-            (ShapeType::Vertex, FileTypeValue::Mesh) => ShapeData::Vertex(None),
-            (ShapeType::Edge, FileTypeValue::Mesh) => {
+            (ShapeType::Vertex, FileExtension::Mesh) => ShapeData::Vertex(None),
+            (ShapeType::Edge, FileExtension::Mesh) => {
                 let entities = self.edge_entities.unwrap();
                 ShapeData::Edge(entities.0, entities.1, None)
             }
-            (ShapeType::Edge, FileTypeValue::Skel) => {
+            (ShapeType::Edge, FileExtension::Skel) => {
                 let entities = self.edge_entities.unwrap();
                 let edge_angle = self.edge_angle.unwrap();
                 ShapeData::Edge(entities.0, entities.1, Some(edge_angle))
@@ -179,7 +179,7 @@ impl ShapeWaitlistEntry {
                     self.face_entities.unwrap();
                 ShapeData::Face(vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c)
             }
-            (_, FileTypeValue::Anim) | (_, FileTypeValue::Unknown) => {
+            (_, FileExtension::Anim) | (_, FileExtension::Unknown) => {
                 panic!("");
             }
         };
@@ -292,7 +292,7 @@ impl ShapeWaitlist {
             let entry_file_type = entry.file_type.unwrap();
 
             match (entry_shape, entry_file_type) {
-                (ShapeType::Vertex, FileTypeValue::Skel) => {
+                (ShapeType::Vertex, FileExtension::Skel) => {
                     if entry.has_parent() {
                         let parent_entity = entry.get_parent().unwrap();
                         if !vertex_manager.has_vertex_entity_3d(&parent_entity) {
@@ -335,7 +335,7 @@ impl ShapeWaitlist {
                         continue;
                     }
                 }
-                (ShapeType::Vertex, FileTypeValue::Mesh) => {}
+                (ShapeType::Vertex, FileExtension::Mesh) => {}
                 (ShapeType::Face, _) => {
                     let entities = entry.face_entities.unwrap();
 
@@ -372,7 +372,7 @@ impl ShapeWaitlist {
                         continue;
                     }
                 }
-                (_, FileTypeValue::Anim) | (_, FileTypeValue::Unknown) => {
+                (_, FileExtension::Anim) | (_, FileExtension::Unknown) => {
                     panic!("");
                 }
             }
@@ -409,7 +409,7 @@ impl ShapeWaitlist {
         let (shape_data, file_entity, file_type) = entry.decompose();
 
         match (shape_data, file_type) {
-            (ShapeData::Vertex(parent_3d_entity_opt), FileTypeValue::Skel) => {
+            (ShapeData::Vertex(parent_3d_entity_opt), FileExtension::Skel) => {
                 let color = match parent_3d_entity_opt {
                     Some(_) => Vertex2d::CHILD_COLOR,
                     None => Vertex2d::ROOT_COLOR,
@@ -426,7 +426,7 @@ impl ShapeWaitlist {
                     color,
                 );
             }
-            (ShapeData::Vertex(_), FileTypeValue::Mesh) => {
+            (ShapeData::Vertex(_), FileExtension::Mesh) => {
                 let color = Vertex2d::CHILD_COLOR;
 
                 vertex_manager.vertex_3d_postprocess(
@@ -458,7 +458,7 @@ impl ShapeWaitlist {
                     end_3d,
                     Some(file_entity),
                     Vertex2d::CHILD_COLOR,
-                    file_type == FileTypeValue::Skel,
+                    file_type == FileExtension::Skel,
                     edge_angle_opt,
                 );
             }
@@ -493,7 +493,7 @@ impl ShapeWaitlist {
                     positions,
                 );
             }
-            (_, FileTypeValue::Anim) | (_, FileTypeValue::Unknown) => {
+            (_, FileExtension::Anim) | (_, FileExtension::Unknown) => {
                 panic!("");
             }
         }

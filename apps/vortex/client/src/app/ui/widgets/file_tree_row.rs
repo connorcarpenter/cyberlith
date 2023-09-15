@@ -19,7 +19,7 @@ use render_egui::{
 
 use vortex_proto::{
     components::{
-        FileTypeValue, ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
+        FileExtension, ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
     },
 };
 
@@ -66,7 +66,7 @@ impl FileTreeRowUiWidget {
         } else {
             Self::paint_no_icon
         };
-        let file_extension = FileTypeValue::from(name);
+        let file_extension = FileExtension::from(name);
         let separator = if path.len() > 0 { ":" } else { "" };
         let full_path = format!("{}{}{}", path, separator, name);
         let unicode_icon = if is_dir { "📁" } else { "📃" };
@@ -217,7 +217,7 @@ impl FileTreeRowUiWidget {
 
     pub fn handle_interactions(
         is_dir: bool,
-        file_extension: FileTypeValue,
+        file_extension: FileExtension,
         depth: usize,
         world: &mut World,
         row_entity: &Entity,
@@ -396,7 +396,7 @@ impl FileTreeRowUiWidget {
         }
     }
 
-    pub fn on_row_double_click(world: &mut World, file_ext: FileTypeValue, row_entity: &Entity) {
+    pub fn on_row_double_click(world: &mut World, file_ext: FileExtension, row_entity: &Entity) {
         // select the row
         Self::on_row_click(world, row_entity);
 

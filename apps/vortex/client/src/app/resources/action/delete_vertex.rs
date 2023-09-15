@@ -6,7 +6,7 @@ use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt};
 
-use vortex_proto::components::{Edge3d, EdgeAngle, FileType, FileTypeValue, Vertex3d};
+use vortex_proto::components::{Edge3d, EdgeAngle, FileType, FileExtension, Vertex3d};
 
 use crate::app::{
     components::{VertexEntry, VertexTypeData},
@@ -63,7 +63,7 @@ pub(crate) fn execute(
     let file_type_value = *file_type.value;
 
     match file_type_value {
-        FileTypeValue::Skel => {
+        FileExtension::Skel => {
             // get parent entity
             let (parent_vertex_2d_entity, edge_angle) = {
                 let mut parent_vertex_3d_entity = None;
@@ -140,7 +140,7 @@ pub(crate) fn execute(
                 Some((vertex_2d_entity, vertex_3d_entity)),
             )];
         }
-        FileTypeValue::Mesh => {
+        FileExtension::Mesh => {
             let mut connected_vertices_2d_entities = Vec::new();
             let mut connected_face_vertex_2d_entities = Vec::new();
 
@@ -228,10 +228,10 @@ pub(crate) fn execute(
                 Some((vertex_2d_entity, vertex_3d_entity)),
             )];
         }
-        FileTypeValue::Anim => {
+        FileExtension::Anim => {
             panic!("");
         }
-        FileTypeValue::Unknown => {
+        FileExtension::Unknown => {
             panic!("");
         }
     }

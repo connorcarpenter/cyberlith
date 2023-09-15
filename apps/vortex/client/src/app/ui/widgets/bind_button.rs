@@ -4,7 +4,7 @@ use naia_bevy_client::{Client, CommandsExt};
 
 use render_egui::{egui, egui::{Button, Direction, Frame, Layout, Ui}};
 
-use vortex_proto::{components::{FileDependency, FileSystemEntry, FileTypeValue}};
+use vortex_proto::{components::{FileDependency, FileSystemEntry, FileExtension}};
 
 use crate::app::{resources::{file_manager::FileManager}, ui::{BindingState, UiState}};
 
@@ -61,7 +61,7 @@ pub fn render_bound(ui: &mut Ui, world: &mut World, current_file_entity: Entity)
                     .inner_margin(300.0)
                     .show(ui, |ui| {
                         let file_manager = world.get_resource::<FileManager>().unwrap();
-                        let dependency_entity = file_manager.file_get_dependency(current_file_entity, FileTypeValue::Skel).unwrap();
+                        let dependency_entity = file_manager.file_get_dependency(current_file_entity, FileExtension::Skel).unwrap();
                         let dependency_name = world.query::<&FileSystemEntry>().get(world, dependency_entity).unwrap().name.as_str();
                         ui.add_enabled(false, Button::new(dependency_name));
                     });

@@ -9,7 +9,7 @@ use render_egui::{
     egui,
     egui::{Button, Response, Ui},
 };
-use vortex_proto::components::FileTypeValue;
+use vortex_proto::components::FileExtension;
 
 use crate::app::resources::toolbar::{
     anim::AnimationToolbar, mesh::MeshToolbar, skel::SkeletonToolbar,
@@ -64,19 +64,19 @@ impl Toolbar {
         self.i12n
     }
 
-    pub(crate) fn set_file_type(&mut self, file_type_value: FileTypeValue) {
+    pub(crate) fn set_file_type(&mut self, file_type_value: FileExtension) {
         info!("Toolbar::set_file_type({:?})", file_type_value);
         match file_type_value {
-            FileTypeValue::Skel => {
+            FileExtension::Skel => {
                 self.i12n = Some(ToolbarKind::Skeleton);
             }
-            FileTypeValue::Mesh => {
+            FileExtension::Mesh => {
                 self.i12n = Some(ToolbarKind::Mesh);
             }
-            FileTypeValue::Anim => {
+            FileExtension::Anim => {
                 self.i12n = Some(ToolbarKind::Animation);
             }
-            FileTypeValue::Unknown => {
+            FileExtension::Unknown => {
                 self.i12n = None;
             }
         }

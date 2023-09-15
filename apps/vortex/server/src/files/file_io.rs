@@ -6,7 +6,7 @@ use bevy_log::info;
 use naia_bevy_server::{CommandsExt, RoomKey, Server};
 
 use vortex_proto::{
-    components::{FileType, FileTypeValue, OwnedByFile},
+    components::{FileType, FileExtension, OwnedByFile},
     resources::FileEntryKey,
 };
 
@@ -35,7 +35,7 @@ pub trait FileReader: Send + Sync {
     ) -> FileReadOutput;
 }
 
-impl FileReader for FileTypeValue {
+impl FileReader for FileExtension {
     fn read(
         &self,
         commands: &mut Commands,
@@ -43,15 +43,15 @@ impl FileReader for FileTypeValue {
         bytes: &Box<[u8]>,
     ) -> FileReadOutput {
         match self {
-            FileTypeValue::Skel => SkelReader.read(commands, server, bytes),
-            FileTypeValue::Mesh => MeshReader.read(commands, server, bytes),
-            FileTypeValue::Anim => AnimReader.read(commands, server, bytes),
+            FileExtension::Skel => SkelReader.read(commands, server, bytes),
+            FileExtension::Mesh => MeshReader.read(commands, server, bytes),
+            FileExtension::Anim => AnimReader.read(commands, server, bytes),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }
 }
 
-impl FileWriter for FileTypeValue {
+impl FileWriter for FileExtension {
     fn write(
         &self,
         world: &mut World,
@@ -60,18 +60,18 @@ impl FileWriter for FileTypeValue {
         content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]> {
         match self {
-            FileTypeValue::Skel => SkelWriter.write(world, project, file_key, content_entities),
-            FileTypeValue::Mesh => MeshWriter.write(world, project, file_key, content_entities),
-            FileTypeValue::Anim => AnimWriter.write(world, project, file_key, content_entities),
+            FileExtension::Skel => SkelWriter.write(world, project, file_key, content_entities),
+            FileExtension::Mesh => MeshWriter.write(world, project, file_key, content_entities),
+            FileExtension::Anim => AnimWriter.write(world, project, file_key, content_entities),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }
 
     fn write_new_default(&self) -> Box<[u8]> {
         match self {
-            FileTypeValue::Skel => SkelWriter.write_new_default(),
-            FileTypeValue::Mesh => MeshWriter.write_new_default(),
-            FileTypeValue::Anim => AnimWriter.write_new_default(),
+            FileExtension::Skel => SkelWriter.write_new_default(),
+            FileExtension::Mesh => MeshWriter.write_new_default(),
+            FileExtension::Anim => AnimWriter.write_new_default(),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }
@@ -115,7 +115,7 @@ pub fn load_content_entities(
     server: &mut Server,
     project: &mut Project,
     shape_manager: &mut ShapeManager,
-    file_extension: &FileTypeValue,
+    file_extension: &FileExtension,
     file_room_key: &RoomKey,
     file_key: &FileEntryKey,
     file_entity: &Entity,
@@ -154,7 +154,7 @@ fn post_process_loaded_networked_entities(
     room_key: &RoomKey,
     entities: &HashMap<Entity, ContentEntityData>,
     file_entity: &Entity,
-    file_extension: &FileTypeValue,
+    file_extension: &FileExtension,
 ) {
     for (entity, _data) in entities.iter() {
         // associate all new Entities with the new Room
@@ -169,20 +169,20 @@ fn post_process_loaded_networked_entities(
 
         // add FileType component
         match file_extension {
-            FileTypeValue::Skel => {
+            FileExtension::Skel => {
                 commands
                     .entity(*entity)
-                    .insert(FileType::new(FileTypeValue::Skel));
+                    .insert(FileType::new(FileExtension::Skel));
             }
-            FileTypeValue::Mesh => {
+            FileExtension::Mesh => {
                 commands
                     .entity(*entity)
-                    .insert(FileType::new(FileTypeValue::Mesh));
+                    .insert(FileType::new(FileExtension::Mesh));
             }
-            FileTypeValue::Anim => {
+            FileExtension::Anim => {
                 commands
                     .entity(*entity)
-                    .insert(FileType::new(FileTypeValue::Anim));
+                    .insert(FileType::new(FileExtension::Anim));
             }
             _ => panic!("File extension {:?} not implemented", file_extension),
         }

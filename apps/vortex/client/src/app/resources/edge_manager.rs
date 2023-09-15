@@ -19,7 +19,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{Edge3d, EdgeAngle, FileType, FileTypeValue, OwnedByFile};
+use vortex_proto::components::{Edge3d, EdgeAngle, FileType, FileExtension, OwnedByFile};
 
 use crate::app::{
     components::{Edge2dLocal, Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d},
@@ -253,7 +253,7 @@ impl EdgeManager {
         child_vertex_2d_entity: Entity,
         child_vertex_3d_entity: Entity,
         file_entity: Entity,
-        file_type: FileTypeValue,
+        file_type: FileExtension,
         edge_angle: Option<f32>,
         entities_to_release: &mut Vec<Entity>,
     ) -> (Entity, Entity) {
@@ -282,7 +282,7 @@ impl EdgeManager {
             .insert(FileType::new(file_type))
             .id();
 
-        if file_type == FileTypeValue::Skel {
+        if file_type == FileExtension::Skel {
             let edge_angle_f32 = edge_angle.unwrap();
             commands
                 .entity(new_edge_3d_entity)
@@ -304,7 +304,7 @@ impl EdgeManager {
             child_vertex_3d_entity,
             Some(file_entity),
             Vertex2d::CHILD_COLOR,
-            file_type == FileTypeValue::Skel,
+            file_type == FileExtension::Skel,
             edge_angle,
         );
 
@@ -588,7 +588,7 @@ impl EdgeManager {
     }
 
     pub fn edge_angle_visibility_toggle(&mut self, canvas: &mut Canvas) {
-        if !canvas.current_file_type_equals(FileTypeValue::Skel) {
+        if !canvas.current_file_type_equals(FileExtension::Skel) {
             return;
         }
 

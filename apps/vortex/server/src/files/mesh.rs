@@ -12,7 +12,7 @@ use naia_bevy_server::{
     UnsignedVariableInteger,
 };
 
-use vortex_proto::{components::{Edge3d, Face3d, FileType, FileTypeValue, Vertex3d, VertexSerdeInt}, resources::FileEntryKey};
+use vortex_proto::{components::{Edge3d, Face3d, FileType, FileExtension, Vertex3d, VertexSerdeInt}, resources::FileEntryKey};
 
 use crate::{
     files::{FileReadOutput, FileReader, FileWriter, ShapeTypeData},
@@ -199,7 +199,7 @@ fn check_for_mesh_file_type(file_type_q: &Query<&FileType>, entity: &Entity) {
     let Ok(file_type) = file_type_q.get(*entity) else {
         panic!("entity {:?} does not have a FileType component!", entity);
     };
-    if *file_type.value != FileTypeValue::Mesh {
+    if *file_type.value != FileExtension::Mesh {
         panic!(
             "entity {:?} does not have a FileType component with value Mesh!",
             entity

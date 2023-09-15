@@ -13,7 +13,7 @@ use naia_bevy_server::{
 };
 
 use vortex_proto::{components::{
-    Edge3d, EdgeAngle, FileType, FileTypeValue, ShapeName, Vertex3d, VertexRoot, VertexSerdeInt,
+    Edge3d, EdgeAngle, FileType, FileExtension, ShapeName, Vertex3d, VertexRoot, VertexSerdeInt,
 }, resources::FileEntryKey};
 
 use crate::{
@@ -86,7 +86,7 @@ impl SkelWriter {
             let Ok(file_type) = file_type_q.get(*entity) else {
                 panic!("entity {:?} does not have a FileType component!", entity);
             };
-            if *file_type.value != FileTypeValue::Skel {
+            if *file_type.value != FileExtension::Skel {
                 panic!(
                     "entity {:?} does not have a FileType component with value Skel!",
                     entity

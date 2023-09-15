@@ -125,14 +125,14 @@ impl Face3d {
 
 // FileType
 #[derive(Serde, Copy, Clone, PartialEq, Debug)]
-pub enum FileTypeValue {
+pub enum FileExtension {
     Skel,
     Mesh,
     Anim,
     Unknown,
 }
 
-impl From<&str> for FileTypeValue {
+impl From<&str> for FileExtension {
     fn from(file_name: &str) -> Self {
         // split file name by '.'
         let split: Vec<_> = file_name.split('.').collect();
@@ -142,18 +142,18 @@ impl From<&str> for FileTypeValue {
 
         // match file extension to enum
         match ext {
-            "skel" => FileTypeValue::Skel,
-            "mesh" => FileTypeValue::Mesh,
-            "anim" => FileTypeValue::Anim,
-            _ => FileTypeValue::Unknown,
+            "skel" => FileExtension::Skel,
+            "mesh" => FileExtension::Mesh,
+            "anim" => FileExtension::Anim,
+            _ => FileExtension::Unknown,
         }
     }
 }
 
-impl FileTypeValue {
+impl FileExtension {
     pub fn can_io(&self) -> bool {
         match self {
-            FileTypeValue::Skel | FileTypeValue::Mesh | FileTypeValue::Anim => true,
+            FileExtension::Skel | FileExtension::Mesh | FileExtension::Anim => true,
             _ => false,
         }
     }
@@ -161,11 +161,11 @@ impl FileTypeValue {
 
 #[derive(Component, Replicate)]
 pub struct FileType {
-    pub value: Property<FileTypeValue>,
+    pub value: Property<FileExtension>,
 }
 
 impl FileType {
-    pub fn new(value: FileTypeValue) -> Self {
+    pub fn new(value: FileExtension) -> Self {
         Self::new_complete(value)
     }
 }

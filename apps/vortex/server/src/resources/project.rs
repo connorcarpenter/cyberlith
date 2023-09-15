@@ -11,7 +11,7 @@ use git2::{Repository, Signature};
 use naia_bevy_server::{BigMapKey, CommandsExt, RoomKey, Server, UserKey};
 
 use vortex_proto::{
-    components::{FileTypeValue, ChangelistEntry, ChangelistStatus, EntryKind, FileSystemEntry},
+    components::{FileExtension, ChangelistEntry, ChangelistStatus, EntryKind, FileSystemEntry},
     messages::ChangelistMessage,
     resources::FileEntryKey,
 };
@@ -172,7 +172,7 @@ impl Project {
             info!("creating file: {}", name);
         }
 
-        let file_extension = FileTypeValue::from(name);
+        let file_extension = FileExtension::from(name);
         let file_entry_val = FileEntryValue::new(entity, Some(file_extension), parent, None);
 
         // Add new Entity into Working Tree
@@ -876,7 +876,7 @@ impl Project {
         }
     }
 
-    pub(crate) fn working_file_extension(&self, key: &FileEntryKey) -> FileTypeValue {
+    pub(crate) fn working_file_extension(&self, key: &FileEntryKey) -> FileExtension {
         let value = self.working_file_entries.get(key).unwrap();
         value.extension().unwrap()
     }

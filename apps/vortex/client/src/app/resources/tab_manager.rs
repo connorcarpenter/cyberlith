@@ -16,7 +16,7 @@ use render_egui::{
 
 use vortex_proto::{
     channels::TabActionChannel,
-    components::{FileTypeValue, ChangelistStatus, FileSystemEntry},
+    components::{FileExtension, ChangelistStatus, FileSystemEntry},
     messages::{TabActionMessage, TabActionMessageType, TabOpenMessage},
     types::TabId,
 };
@@ -43,13 +43,13 @@ pub struct TabState {
     pub selected: bool,
     pub order: usize,
     pub tab_id: TabId,
-    pub ext: FileTypeValue,
+    pub ext: FileExtension,
     pub camera_state: CameraState,
     pub action_stack: ActionStack<ShapeAction>,
 }
 
 impl TabState {
-    pub fn new(id: TabId, order: usize, ext: FileTypeValue) -> Self {
+    pub fn new(id: TabId, order: usize, ext: FileExtension) -> Self {
         Self {
             selected: false,
             order,
@@ -104,7 +104,7 @@ impl TabManager {
         toolbar: &mut Toolbar,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         row_entity: &Entity,
-        file_ext: FileTypeValue,
+        file_ext: FileExtension,
     ) {
         if self.tab_map.contains_key(row_entity) {
             self.select_tab(

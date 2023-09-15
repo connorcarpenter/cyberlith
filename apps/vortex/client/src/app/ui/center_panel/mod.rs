@@ -4,7 +4,7 @@ use bevy_ecs::world::World;
 
 use canvas::render_canvas;
 use render_egui::{egui, egui::Frame};
-use vortex_proto::components::FileTypeValue;
+use vortex_proto::components::FileExtension;
 
 use crate::app::{
     resources::{tab_manager::render_tab_bar, canvas::Canvas, file_manager::FileManager, tab_manager::TabManager},
@@ -28,9 +28,9 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                 //     .iter(&world)
                 //     .collect::<Vec<_>>();
                 let canvas = world.get_resource::<Canvas>().unwrap();
-                if canvas.current_file_type_equals(FileTypeValue::Anim) {
+                if canvas.current_file_type_equals(FileExtension::Anim) {
                     let file_manager = world.get_resource::<FileManager>().unwrap();
-                    if !file_manager.file_has_dependency(&current_file_entity, FileTypeValue::Skel) {
+                    if !file_manager.file_has_dependency(&current_file_entity, FileExtension::Skel) {
                         render_bind_button(ui, world, current_file_entity);
                         return;
                     } else {

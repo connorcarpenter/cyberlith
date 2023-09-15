@@ -8,7 +8,7 @@ use bevy_log::info;
 
 use naia_bevy_server::{BitReader, BitWrite, CommandsExt, FileBitWriter, ReplicationConfig, Serde, SerdeErr, Server, UnsignedVariableInteger};
 
-use vortex_proto::{components::{FileTypeValue, EntryKind, FileDependency}, resources::FileEntryKey, SerdeQuat};
+use vortex_proto::{components::{FileExtension, EntryKind, FileDependency}, resources::FileEntryKey, SerdeQuat};
 
 use crate::{
     files::{FileReadOutput, FileReader, FileWriter},
@@ -85,7 +85,7 @@ impl AnimWriter {
 
         let dependency_key = dependencies.iter().next().unwrap();
         let dependency_value = working_file_entries.get(dependency_key).unwrap();
-        if dependency_value.extension().unwrap() != FileTypeValue::Skel {
+        if dependency_value.extension().unwrap() != FileExtension::Skel {
             panic!("anim file should depend on a single .skel file");
         }
 

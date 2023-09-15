@@ -12,7 +12,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::FileTypeValue;
+use vortex_proto::components::FileExtension;
 
 use crate::app::resources::{
     action::{select_shape::deselect_all_selected_shapes, ActionStack, ShapeAction},
@@ -109,7 +109,7 @@ pub(crate) fn execute(
             vertex_2d_entity_b,
             vertex_3d_entity_b,
             *tab_file_entity,
-            FileTypeValue::Mesh,
+            FileExtension::Mesh,
             None,
             &mut entities_to_release,
         );

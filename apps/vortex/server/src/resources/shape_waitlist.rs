@@ -6,7 +6,7 @@ use bevy_log::info;
 use naia_bevy_server::Server;
 
 use vortex_proto::{
-    components::FileTypeValue,
+    components::FileExtension,
     resources::{DependencyMap, FileEntryKey},
 };
 
@@ -25,7 +25,7 @@ pub enum ShapeWaitlistInsert {
     //// (face_entity, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c)
     Face(Entity, Entity, Entity, Entity, Entity, Entity, Entity),
     //// shape, filetype
-    FileType(Entity, FileTypeValue),
+    FileType(Entity, FileExtension),
     //// shape, project key, file key
     OwnedByFile(Entity, ProjectKey, FileEntryKey),
 }
@@ -58,7 +58,7 @@ pub struct ShapeWaitlistEntry {
     edge_and_parent_opt: Option<Option<(Entity, Entity)>>,
     edge_entities: Option<(Entity, Entity)>,
     face_entities: Option<(Entity, Entity, Entity, Entity, Entity, Entity)>,
-    file_type: Option<FileTypeValue>,
+    file_type: Option<FileExtension>,
     owned_by_file: Option<(ProjectKey, FileEntryKey)>,
 }
 
@@ -76,19 +76,19 @@ impl ShapeWaitlistEntry {
 
     fn is_ready(&self) -> bool {
         match (self.file_type, self.shape) {
-            (Some(FileTypeValue::Skel), Some(ShapeType::Vertex)) => {
+            (Some(FileExtension::Skel), Some(ShapeType::Vertex)) => {
                 return self.owned_by_file.is_some() && self.edge_and_parent_opt.is_some();
             }
-            (Some(FileTypeValue::Skel), Some(ShapeType::Edge)) => {
+            (Some(FileExtension::Skel), Some(ShapeType::Edge)) => {
                 return self.owned_by_file.is_some();
             }
-            (Some(FileTypeValue::Mesh), Some(ShapeType::Vertex)) => {
+            (Some(FileExtension::Mesh), Some(ShapeType::Vertex)) => {
                 return self.owned_by_file.is_some();
             }
-            (Some(FileTypeValue::Mesh), Some(ShapeType::Edge)) => {
+            (Some(FileExtension::Mesh), Some(ShapeType::Edge)) => {
                 return self.owned_by_file.is_some() && self.edge_entities.is_some();
             }
-            (Some(FileTypeValue::Mesh), Some(ShapeType::Face)) => {
+            (Some(FileExtension::Mesh), Some(ShapeType::Face)) => {
                 return self.owned_by_file.is_some() && self.face_entities.is_some();
             }
             _ => {
@@ -132,7 +132,7 @@ impl ShapeWaitlistEntry {
         self.shape = Some(shape_type);
     }
 
-    fn set_file_type(&mut self, file_type: FileTypeValue) {
+    fn set_file_type(&mut self, file_type: FileExtension) {
         self.file_type = Some(file_type);
     }
 
@@ -144,24 +144,24 @@ impl ShapeWaitlistEntry {
         let (project_key, file_key) = self.owned_by_file.unwrap();
 
         match (self.file_type, self.shape) {
-            (Some(FileTypeValue::Skel), Some(ShapeType::Vertex)) => {
+            (Some(FileExtension::Skel), Some(ShapeType::Vertex)) => {
                 return ShapeData::SkelVertex(
                     project_key,
                     file_key,
                     self.edge_and_parent_opt.unwrap(),
                 );
             }
-            (Some(FileTypeValue::Skel), Some(ShapeType::Edge)) => {
+            (Some(FileExtension::Skel), Some(ShapeType::Edge)) => {
                 return ShapeData::SkelEdge(project_key, file_key);
             }
-            (Some(FileTypeValue::Mesh), Some(ShapeType::Vertex)) => {
+            (Some(FileExtension::Mesh), Some(ShapeType::Vertex)) => {
                 return ShapeData::MeshVertex(project_key, file_key);
             }
-            (Some(FileTypeValue::Mesh), Some(ShapeType::Edge)) => {
+            (Some(FileExtension::Mesh), Some(ShapeType::Edge)) => {
                 let (start, end) = self.edge_entities.unwrap();
                 return ShapeData::MeshEdge(project_key, file_key, start, end);
             }
-            (Some(FileTypeValue::Mesh), Some(ShapeType::Face)) => {
+            (Some(FileExtension::Mesh), Some(ShapeType::Face)) => {
                 let (vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c) =
                     self.face_entities.unwrap();
                 return ShapeData::MeshFace(
@@ -270,7 +270,7 @@ impl ShapeWaitlist {
                 }
                 let entry = self.get_mut(&face_entity).unwrap();
                 entry.set_shape_type(ShapeType::Face);
-                entry.set_file_type(FileTypeValue::Mesh);
+                entry.set_file_type(FileExtension::Mesh);
                 entry.set_face_entities(vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c);
                 possibly_ready_entities.push(face_entity);
             }
@@ -306,7 +306,7 @@ impl ShapeWaitlist {
                 let entry = self.remove(&entity).unwrap();
 
                 match (entry.file_type.unwrap(), entry.shape.unwrap()) {
-                    (FileTypeValue::Skel, ShapeType::Vertex) => {
+                    (FileExtension::Skel, ShapeType::Vertex) => {
                         if entry.has_edge_and_parent() {
                             let (_, parent_entity) = entry.get_edge_and_parent().unwrap();
                             if !shape_manager.has_vertex(&parent_entity) {
@@ -325,13 +325,13 @@ impl ShapeWaitlist {
                             }
                         }
                     }
-                    (FileTypeValue::Skel, ShapeType::Edge) => {
+                    (FileExtension::Skel, ShapeType::Edge) => {
                         info!("`{:?}` Skel Edge complete!", entity);
                     }
-                    (FileTypeValue::Mesh, ShapeType::Vertex) => {
+                    (FileExtension::Mesh, ShapeType::Vertex) => {
                         info!("`{:?}` Mesh Vertex complete!", entity);
                     }
-                    (FileTypeValue::Mesh, ShapeType::Edge) => {
+                    (FileExtension::Mesh, ShapeType::Edge) => {
                         let edge_entities = entry.edge_entities.unwrap();
                         let mut dependencies = Vec::new();
 
@@ -355,13 +355,13 @@ impl ShapeWaitlist {
                             continue;
                         }
                     }
-                    (FileTypeValue::Mesh, ShapeType::Face) => {
+                    (FileExtension::Mesh, ShapeType::Face) => {
                         info!("`{:?}` Mesh Face complete!", entity);
                     }
-                    (FileTypeValue::Skel, ShapeType::Face) => {
+                    (FileExtension::Skel, ShapeType::Face) => {
                         panic!("not possible");
                     }
-                    (FileTypeValue::Anim, _) | (FileTypeValue::Unknown, _) => {
+                    (FileExtension::Anim, _) | (FileExtension::Unknown, _) => {
                         panic!("not possible");
                     }
                 }

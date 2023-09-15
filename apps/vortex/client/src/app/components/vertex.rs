@@ -3,7 +3,7 @@ use bevy_ecs::{entity::Entity, prelude::Component};
 use math::Vec3;
 use render_api::base::Color;
 
-use vortex_proto::components::FileTypeValue;
+use vortex_proto::components::FileExtension;
 
 // Just a marker, to distinguish from 3d version
 #[derive(Component)]
@@ -87,10 +87,10 @@ pub enum VertexTypeData {
 }
 
 impl VertexTypeData {
-    pub fn to_file_type_value(&self) -> FileTypeValue {
+    pub fn to_file_type_value(&self) -> FileExtension {
         match self {
-            VertexTypeData::Skel(_, _, _) => FileTypeValue::Skel,
-            VertexTypeData::Mesh(_, _) => FileTypeValue::Mesh,
+            VertexTypeData::Skel(_, _, _) => FileExtension::Skel,
+            VertexTypeData::Mesh(_, _) => FileExtension::Mesh,
         }
     }
 

@@ -15,7 +15,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind, Face3d, FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, FileTypeValue, OwnedByFile, Vertex3d, VertexRoot};
+use vortex_proto::components::{ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind, Face3d, FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, FileExtension, OwnedByFile, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::file_system::{
@@ -152,7 +152,7 @@ pub fn insert_file_component_events(
                 .unwrap()
                 .insert(entity, FileSystemParent::new());
         }
-        file_manager.on_file_create(&entity, FileTypeValue::from(entry.name.as_str()));
+        file_manager.on_file_create(&entity, FileExtension::from(entry.name.as_str()));
         commands
             .entity(entity)
             .insert(FileSystemEntryLocal::new(entry.name.as_str()));

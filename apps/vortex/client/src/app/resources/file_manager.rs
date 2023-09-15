@@ -15,7 +15,7 @@ use vortex_proto::{
     components::{FileSystemChild, FileSystemEntry},
     resources::FileEntryKey,
 };
-use vortex_proto::components::FileTypeValue;
+use vortex_proto::components::FileExtension;
 
 use crate::app::{
     components::OwnedByFileLocal,
@@ -37,7 +37,7 @@ impl ChangelistData {
 }
 
 struct FileData {
-    file_type: FileTypeValue,
+    file_type: FileExtension,
     changelist_entity: Option<Entity>,
     changelist_children: HashSet<Entity>,
     // use for, e.g. a skel file required by anim file. anim is the dependent here.
@@ -47,7 +47,7 @@ struct FileData {
 }
 
 impl FileData {
-    fn new(file_type: FileTypeValue) -> Self {
+    fn new(file_type: FileExtension) -> Self {
         Self {
             file_type,
             changelist_entity: None,
@@ -74,7 +74,7 @@ impl FileManager {
         }
     }
 
-    pub fn on_file_create(&mut self, file_entity: &Entity, file_type: FileTypeValue) {
+    pub fn on_file_create(&mut self, file_entity: &Entity, file_type: FileExtension) {
         self.file_entities.insert(*file_entity, FileData::new(file_type));
     }
 
@@ -156,7 +156,7 @@ impl FileManager {
         Some(&file_data.changelist_children)
     }
 
-    pub(crate) fn file_has_dependency(&self, file_entity: &Entity, file_type: FileTypeValue) -> bool {
+    pub(crate) fn file_has_dependency(&self, file_entity: &Entity, file_type: FileExtension) -> bool {
         let file_data = self.file_entities.get(file_entity).unwrap();
         for dependency_file_entity in file_data.file_dependencies.iter() {
             let dependency_file_data = self.file_entities.get(dependency_file_entity).unwrap();
@@ -167,7 +167,7 @@ impl FileManager {
         false
     }
 
-    pub(crate) fn file_get_dependency(&self, file_entity: Entity, file_ext: FileTypeValue) -> Option<Entity> {
+    pub(crate) fn file_get_dependency(&self, file_entity: Entity, file_ext: FileExtension) -> Option<Entity> {
         let file_data = self.file_entities.get(&file_entity).unwrap();
         for dependency_file_entity in file_data.file_dependencies.iter() {
             let dependency_file_data = self.file_entities.get(dependency_file_entity).unwrap();

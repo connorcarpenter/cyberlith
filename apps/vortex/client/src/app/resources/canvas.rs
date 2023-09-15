@@ -11,7 +11,7 @@ use render_api::{
     Handle,
 };
 
-use vortex_proto::components::{EdgeAngle, FileTypeValue, Vertex3d};
+use vortex_proto::components::{EdgeAngle, FileExtension, Vertex3d};
 
 use crate::app::{
     components::{Edge2dLocal, Edge3dLocal, FaceIcon2d, LocalShape, OwnedByFileLocal},
@@ -31,7 +31,7 @@ pub struct Canvas {
     has_focus: bool,
     focus_timer: u8,
 
-    current_file_type: FileTypeValue,
+    current_file_type: FileExtension,
     resync_shapes: u8,
 }
 
@@ -45,7 +45,7 @@ impl Default for Canvas {
             has_focus: false,
             focus_timer: 0,
 
-            current_file_type: FileTypeValue::Skel,
+            current_file_type: FileExtension::Skel,
             resync_shapes: 0,
         }
     }
@@ -210,15 +210,15 @@ impl Canvas {
         input_manager.sync_hover_shape_scale(transform_q, camera_3d_scale);
     }
 
-    pub(crate) fn current_file_type_equals(&self, file_type: FileTypeValue) -> bool {
+    pub(crate) fn current_file_type_equals(&self, file_type: FileExtension) -> bool {
         self.current_file_type == file_type
     }
 
-    pub fn get_current_file_type(&self) -> FileTypeValue {
+    pub fn get_current_file_type(&self) -> FileExtension {
         self.current_file_type
     }
 
-    pub fn set_current_file_type(&mut self, file_type: FileTypeValue) {
+    pub fn set_current_file_type(&mut self, file_type: FileExtension) {
         self.current_file_type = file_type;
     }
 

@@ -13,7 +13,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::FileTypeValue;
+use vortex_proto::components::FileExtension;
 
 use crate::app::{
     components::VertexTypeData,
@@ -181,7 +181,7 @@ pub(crate) fn execute(
                 new_vertex_2d_entity,
                 new_vertex_3d_entity,
                 *tab_file_entity,
-                FileTypeValue::Skel,
+                FileExtension::Skel,
                 Some(edge_angle),
                 &mut entities_to_release,
             );
@@ -201,7 +201,7 @@ pub(crate) fn execute(
                     new_vertex_2d_entity,
                     new_vertex_3d_entity,
                     *tab_file_entity,
-                    FileTypeValue::Mesh,
+                    FileExtension::Mesh,
                     None,
                     &mut entities_to_release,
                 );
