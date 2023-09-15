@@ -1,12 +1,10 @@
-use bevy_ecs::entity::Entity;
-use bevy_ecs::system::{ResMut, SystemState};
-use bevy_ecs::world::World;
+use bevy_ecs::{entity::Entity, system::SystemState, world::World};
+
 use naia_bevy_client::Client;
 
 use render_egui::{egui, egui::{Button, Direction, Frame, Layout, Ui}};
-use vortex_proto::channels::FileActionChannel;
-use vortex_proto::components::{FileSystemEntry, FileTypeValue};
-use vortex_proto::messages::FileBindMessage;
+
+use vortex_proto::{channels::FileActionChannel, components::{FileSystemEntry, FileTypeValue}, messages::FileBindMessage};
 
 use crate::app::{resources::{file_manager::FileManager}, ui::{BindingState, UiState}};
 

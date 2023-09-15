@@ -1,6 +1,6 @@
 use bevy_ecs::entity::Entity;
 
-use naia_bevy_shared::{EntityAndGlobalEntityConverter, EntityProperty, Message, Serde};
+use naia_bevy_shared::{EntityAndGlobalEntityConverter, EntityProperty, Message};
 
 #[derive(Message)]
 pub struct FileBindMessage {

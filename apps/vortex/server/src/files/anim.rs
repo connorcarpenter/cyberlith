@@ -6,15 +6,14 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use naia_bevy_server::{BitReader, BitWrite, FileBitWriter, Serde, SerdeErr, Server, UnsignedVariableInteger};
+use naia_bevy_server::{BitReader, BitWrite, FileBitWriter, RoomKey, Serde, SerdeErr, Server, UnsignedVariableInteger};
 
-use vortex_proto::{FileExtension, resources::FileEntryKey, SerdeQuat};
+use vortex_proto::{messages::FileBindMessage, components::EntryKind, channels::FileActionChannel, FileExtension, resources::FileEntryKey, SerdeQuat};
 
 use crate::{
     files::{FileReadOutput, FileReader, FileWriter},
     resources::{ContentEntityData, Project},
 };
-use crate::resources::ShapeManager;
 
 // Actions
 enum AnimAction {
@@ -218,19 +217,37 @@ impl AnimReader {
             }
         }
 
+        info!("skel_path: {:?}", skel_path);
+
         Ok(FileReadOutput::Anim(skel_path))
     }
 
     pub fn post_process(
-        commands: &mut Commands,
         server: &mut Server,
         project: &mut Project,
-        shape_manager: &mut ShapeManager,
         file_key: &FileEntryKey,
         file_entity: &Entity,
         skel_path_opt: Option<(String, String)>
     ) -> HashMap<Entity, ContentEntityData> {
 
+        info!("skel_path: {:?}", skel_path_opt);
+        if let Some((skel_path, skel_file_name)) = skel_path_opt {
+            let skel_file_key = FileEntryKey::new(&skel_path, &skel_file_name, EntryKind::File);
+            project.file_add_dependency(file_key, &skel_file_key);
+
+            let skel_file_entity = project.file_entity(&skel_file_key).unwrap();
+
+            // get all users in room with file entity
+            let project_room_key = project.room_key();
+            let user_keys = server.room(&project_room_key).user_keys().cloned().collect::<Vec<_>>();
+
+            // send message
+            let message = FileBindMessage::new(server, &file_entity, &skel_file_entity);
+            for user_key in user_keys {
+                info!("sending bind message to user: {:?}", user_key);
+                server.send_message::<FileActionChannel, FileBindMessage>(&user_key, &message);
+            }
+        }
 
         HashMap::new()
     }

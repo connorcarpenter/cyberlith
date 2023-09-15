@@ -12,14 +12,12 @@ use naia_bevy_server::{
     UnsignedVariableInteger,
 };
 
-use vortex_proto::components::{Edge3d, Face3d, FileType, FileTypeValue, Vertex3d, VertexSerdeInt};
-use vortex_proto::resources::FileEntryKey;
+use vortex_proto::{components::{Edge3d, Face3d, FileType, FileTypeValue, Vertex3d, VertexSerdeInt}, resources::FileEntryKey};
 
 use crate::{
     files::{FileReadOutput, FileReader, FileWriter, ShapeTypeData},
-    resources::{ContentEntityData, ShapeManager},
+    resources::{Project, ContentEntityData, ShapeManager},
 };
-use crate::resources::{FileEntryValue, Project};
 
 // Actions
 #[derive(Debug)]

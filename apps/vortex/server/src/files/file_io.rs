@@ -132,7 +132,7 @@ pub fn load_content_entities(
             MeshReader::post_process_entities(shape_manager, shape_entities)
         }
         FileReadOutput::Anim(skel_path_opt) => {
-            AnimReader::post_process(commands, server, project, shape_manager, file_key, file_entity, skel_path_opt)
+            AnimReader::post_process(server, project, file_key, file_entity, skel_path_opt)
         },
     };
 

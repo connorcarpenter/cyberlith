@@ -12,8 +12,7 @@ impl ProtocolPlugin for FileSystemComponentsPlugin {
             .add_component::<FileSystemEntry>()
             .add_component::<FileSystemChild>()
             .add_component::<FileSystemRootChild>()
-            .add_component::<ChangelistEntry>()
-            .add_component::<FileDependency>();
+            .add_component::<ChangelistEntry>();
     }
 }
 
@@ -82,17 +81,5 @@ impl ChangelistEntry {
 
     pub fn file_entry_key(&self) -> FileEntryKey {
         FileEntryKey::new(&self.path, &self.name, *self.kind)
-    }
-}
-
-// FileDependency
-#[derive(Component, Replicate)]
-pub struct FileDependency {
-    pub file_entity: EntityProperty,
-}
-
-impl FileDependency {
-    pub fn new() -> Self {
-        Self::new_complete()
     }
 }

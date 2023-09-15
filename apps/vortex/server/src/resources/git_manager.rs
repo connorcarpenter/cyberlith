@@ -23,7 +23,7 @@ use vortex_proto::{
 
 use crate::{
     config::GitConfig,
-    files::{FileWriter, ShapeType},
+    files::ShapeType,
     resources::{
         project::Project, project::ProjectKey, ContentEntityData, FileEntryValue, ShapeManager,
         UserManager,

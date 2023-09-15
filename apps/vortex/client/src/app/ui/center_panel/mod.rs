@@ -7,15 +7,12 @@ use render_egui::{egui, egui::Frame};
 use vortex_proto::components::FileTypeValue;
 
 use crate::app::{
-    resources::{tab_manager::render_tab_bar, canvas::Canvas, animation_manager::AnimationManager},
+    resources::{tab_manager::render_tab_bar, canvas::Canvas, file_manager::FileManager, tab_manager::TabManager},
     ui::{
         render_tool_bar,
-        widgets::{render_bind_button, render_naming_bar, NamingBarState},
+        widgets::{render_bound, render_bind_button, render_naming_bar, NamingBarState},
     },
 };
-use crate::app::resources::file_manager::FileManager;
-use crate::app::resources::tab_manager::TabManager;
-use crate::app::ui::widgets::render_bound;
 
 pub fn center_panel(context: &egui::Context, world: &mut World) {
     egui::CentralPanel::default()

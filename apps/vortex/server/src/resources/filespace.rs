@@ -1,16 +1,11 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{entity::Entity, system::Commands};
+use bevy_ecs::entity::Entity;
 use bevy_log::info;
 
-use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
+use naia_bevy_server::{RoomKey, Server, UserKey};
 
-use vortex_proto::{resources::FileEntryKey, FileExtension};
-
-use crate::{
-    files::{load_content_entities, ShapeType},
-    resources::ShapeManager,
-};
+use crate::files::ShapeType;
 
 #[derive(Clone)]
 pub struct ContentEntityData {

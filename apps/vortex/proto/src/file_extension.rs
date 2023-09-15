@@ -1,4 +1,4 @@
-use log::info;
+
 use crate::components::FileTypeValue;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]

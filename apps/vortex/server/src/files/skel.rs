@@ -12,19 +12,17 @@ use naia_bevy_server::{
     UnsignedInteger, UnsignedVariableInteger,
 };
 
-use vortex_proto::components::{
+use vortex_proto::{components::{
     Edge3d, EdgeAngle, FileType, FileTypeValue, ShapeName, Vertex3d, VertexRoot, VertexSerdeInt,
-};
-use vortex_proto::resources::FileEntryKey;
+}, resources::FileEntryKey};
 
 use crate::{
     files::{
         file_io::ShapeType, FileReadOutput, FileReader, FileWriter, SkelFileWaitlist,
         SkelWaitlistInsert,
     },
-    resources::{ContentEntityData, ShapeManager},
+    resources::{Project, ContentEntityData, ShapeManager},
 };
-use crate::resources::{FileEntryValue, Project};
 
 // Actions
 #[derive(Debug)]
