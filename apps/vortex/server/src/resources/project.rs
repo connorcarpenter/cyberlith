@@ -239,8 +239,7 @@ impl Project {
         entity: &Entity,
     ) {
         // Remove Entity from Working Tree, returning a list of child entities that should be despawned
-        let file_key =
-            Self::find_file_entry_by_entity(&self.working_file_entries, entity).unwrap();
+        let file_key = Self::find_file_entry_by_entity(&self.working_file_entries, entity).unwrap();
         let (_entry_value, entities_to_delete) =
             Self::remove_file_entry(&mut self.working_file_entries, &file_key);
 
@@ -321,11 +320,7 @@ impl Project {
         file_entry_val.add_dependency(dependency_key);
     }
 
-    pub fn file_remove_dependency(
-        &mut self,
-        file_key: &FileKey,
-        dependency_key: &FileKey,
-    ) {
+    pub fn file_remove_dependency(&mut self, file_key: &FileKey, dependency_key: &FileKey) {
         info!(
             "file_remove_dependency: {:?} -> {:?}",
             file_key, dependency_key
@@ -410,16 +405,11 @@ impl Project {
 
         match action_status {
             ChangelistStatus::Modified => {
-                let file_entry_val = self
-                    .working_file_entries
-                    .get(&file_key)
-                    .unwrap()
-                    .clone();
+                let file_entry_val = self.working_file_entries.get(&file_key).unwrap().clone();
                 let file_entity = file_entry_val.entity();
 
                 info!("git modify file");
-                let path =
-                    self.get_full_file_path_working(&fs_entry_q, &file_key, file_entity);
+                let path = self.get_full_file_path_working(&fs_entry_q, &file_key, file_entity);
                 self.fs_create_or_update_file(&file_key, &path);
 
                 // despawn changelist entity
@@ -433,11 +423,7 @@ impl Project {
                 self.git_push();
             }
             ChangelistStatus::Created => {
-                let file_entry_val = self
-                    .working_file_entries
-                    .get(&file_key)
-                    .unwrap()
-                    .clone();
+                let file_entry_val = self.working_file_entries.get(&file_key).unwrap().clone();
                 let file_entity = file_entry_val.entity();
 
                 // update master tree with new file entry & parents
@@ -451,8 +437,7 @@ impl Project {
                 );
 
                 info!("git create file");
-                let path =
-                    self.get_full_file_path_working(&fs_entry_q, &file_key, file_entity);
+                let path = self.get_full_file_path_working(&fs_entry_q, &file_key, file_entity);
                 self.fs_create_or_update_file(&file_key, &path);
 
                 // despawn changelist entity
@@ -770,11 +755,7 @@ impl Project {
         }
 
         if file_exists_in_master && file_exists_in_changelist {
-            let changelist_entity = self
-                .changelist_entries
-                .get_mut(&file_key)
-                .unwrap()
-                .entity();
+            let changelist_entity = self.changelist_entries.get_mut(&file_key).unwrap().entity();
             let mut changelist_entry = changelist_q.get_mut(changelist_entity).unwrap();
             if *changelist_entry.status != ChangelistStatus::Deleted {
                 *changelist_entry.status = ChangelistStatus::Deleted;

@@ -15,7 +15,6 @@ impl Default for UserTabState {
 }
 
 impl UserTabState {
-
     pub fn insert_tab(&mut self, tab_id: TabId, file_key: FileKey) {
         self.tabs.insert(tab_id, file_key);
     }

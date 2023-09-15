@@ -1,12 +1,17 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{entity::Entity, system::{Resource, Commands}};
+use bevy_ecs::{
+    entity::Entity,
+    system::{Commands, Resource},
+};
 
 use naia_bevy_server::{Server, UserKey};
 
 use vortex_proto::{resources::FileKey, types::TabId};
 
-use crate::resources::{project::ProjectKey, ContentEntityData, GitManager, UserTabState, ShapeManager};
+use crate::resources::{
+    project::ProjectKey, ContentEntityData, GitManager, ShapeManager, UserTabState,
+};
 
 pub struct UserSessionData {
     // used to index into permanent data
@@ -181,7 +186,7 @@ impl UserManager {
         user_key: &UserKey,
         tab_id: TabId,
         project_key: &ProjectKey,
-        file_key: &FileKey
+        file_key: &FileKey,
     ) {
         let Some(user_session) = self.user_sessions.get_mut(user_key) else {
             panic!("user not found");
@@ -189,13 +194,9 @@ impl UserManager {
         user_session.open_tab(tab_id, file_key);
 
         let project = git_manager.project_mut(project_key).unwrap();
-        if let Some(new_content_entities) = project.user_join_filespace(
-            commands,
-            server,
-            shape_manager,
-            user_key,
-            file_key,
-        ) {
+        if let Some(new_content_entities) =
+            project.user_join_filespace(commands, server, shape_manager, user_key, file_key)
+        {
             git_manager.register_content_entities(project_key, file_key, new_content_entities);
         }
     }

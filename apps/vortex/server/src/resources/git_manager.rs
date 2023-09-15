@@ -24,8 +24,7 @@ use crate::{
     config::GitConfig,
     files::ShapeType,
     resources::{
-        project::Project, project::ProjectKey, ContentEntityData, FileEntryValue,
-        UserManager,
+        project::Project, project::ProjectKey, ContentEntityData, FileEntryValue, UserManager,
     },
 };
 
@@ -102,9 +101,15 @@ impl GitManager {
         );
     }
 
-    pub(crate) fn register_content_entities(&mut self, project_key: &ProjectKey, file_key: &FileKey, content_entities: Vec<Entity>) {
+    pub(crate) fn register_content_entities(
+        &mut self,
+        project_key: &ProjectKey,
+        file_key: &FileKey,
+        content_entities: Vec<Entity>,
+    ) {
         for entity in content_entities {
-            self.content_entity_keys.insert(entity, (*project_key, file_key.clone()));
+            self.content_entity_keys
+                .insert(entity, (*project_key, file_key.clone()));
         }
     }
 
@@ -388,11 +393,7 @@ impl GitManager {
         project.write(world, file_key, content_entities)
     }
 
-    pub fn working_file_extension(
-        &self,
-        project_key: &ProjectKey,
-        key: &FileKey,
-    ) -> FileExtension {
+    pub fn working_file_extension(&self, project_key: &ProjectKey, key: &FileKey) -> FileExtension {
         self.projects
             .get(project_key)
             .unwrap()
@@ -491,10 +492,7 @@ fn insert_entry_components_from_list(
     project_room_key: &RoomKey,
 ) {
     for (file_key, file_entry_value) in file_entries.iter() {
-        info!(
-            "Networking: walking tree for Entry `{:?}`",
-            file_key.name()
-        );
+        info!("Networking: walking tree for Entry `{:?}`", file_key.name());
 
         insert_entry_components(
             commands,
