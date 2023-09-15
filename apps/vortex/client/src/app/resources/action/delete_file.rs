@@ -27,7 +27,6 @@ use crate::app::{
         file_tree::FileTree,
         input_manager::InputManager,
         tab_manager::TabManager,
-        toolbar::Toolbar,
         vertex_manager::VertexManager,
     },
 };

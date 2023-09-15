@@ -2,24 +2,17 @@ mod anim;
 mod mesh;
 mod skel;
 
-use bevy_ecs::{system::Resource, world::World};
-use bevy_log::info;
+use bevy_ecs::world::World;
 
 use render_egui::{
     egui,
     egui::{Button, Response, Ui},
 };
 use vortex_proto::components::FileExtension;
-use crate::app::resources::file_manager::FileManager;
-use crate::app::resources::tab_manager::TabManager;
 
-use crate::app::resources::toolbar::{
+use crate::app::resources::{file_manager::FileManager, tab_manager::TabManager, toolbar::{
     anim::AnimationToolbar, mesh::MeshToolbar, skel::SkeletonToolbar,
-};
-
-impl Toolbar {
-
-}
+}};
 
 pub struct Toolbar;
 

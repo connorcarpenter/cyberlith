@@ -36,7 +36,6 @@ use crate::app::{
         file_manager::FileManager,
         input_manager::InputManager,
         tab_manager::TabManager,
-        toolbar::Toolbar,
         vertex_manager::VertexManager,
     },
     ui::{
@@ -432,7 +431,6 @@ impl FileTreeRowUiWidget {
                 &mut edge_manager,
                 &mut visibility_q,
                 row_entity,
-                file_ext,
             );
 
             system_state.apply(world);

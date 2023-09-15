@@ -16,7 +16,7 @@ use render_egui::{
 
 use vortex_proto::{
     channels::TabActionChannel,
-    components::{FileExtension, ChangelistStatus, FileSystemEntry},
+    components::{ChangelistStatus, FileSystemEntry},
     messages::{TabActionMessage, TabActionMessageType, TabOpenMessage},
     types::TabId,
 };
@@ -30,7 +30,6 @@ use crate::app::{
         canvas::Canvas,
         edge_manager::EdgeManager,
         input_manager::InputManager,
-        toolbar::Toolbar,
         vertex_manager::VertexManager,
     },
     ui::widgets::colors::{
@@ -101,7 +100,6 @@ impl TabManager {
         edge_manager: &mut EdgeManager,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         row_entity: &Entity,
-        file_ext: FileExtension,
     ) {
         if self.tab_map.contains_key(row_entity) {
             self.select_tab(

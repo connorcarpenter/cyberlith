@@ -12,16 +12,15 @@ use render_api::components::Visibility;
 use render_egui::egui::epaint::ahash::HashSet;
 
 use vortex_proto::{
-    components::{FileSystemChild, FileSystemEntry},
+    components::{FileExtension, FileSystemChild, FileSystemEntry},
     resources::FileEntryKey,
 };
-use vortex_proto::components::FileExtension;
 
 use crate::app::{
     components::OwnedByFileLocal,
     resources::{
         camera_manager::CameraManager, canvas::Canvas, edge_manager::EdgeManager,
-        input_manager::InputManager, tab_manager::TabManager, toolbar::Toolbar,
+        input_manager::InputManager, tab_manager::TabManager,
         vertex_manager::VertexManager,
     },
 };

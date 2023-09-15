@@ -7,12 +7,11 @@ use render_api::{resources::WindowSettings, Draw};
 
 use vortex_proto::{
     components::{
-        ChangelistEntry, Edge3d, EdgeAngle, EntryKind, Face3d, FileSystemChild, FileSystemEntry,
+        FileDependency, ChangelistEntry, Edge3d, EdgeAngle, EntryKind, Face3d, FileSystemChild, FileSystemEntry,
         FileSystemRootChild, FileType, OwnedByFile, ShapeName, Vertex3d, VertexRoot,
     },
     protocol,
 };
-use vortex_proto::components::FileDependency;
 
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
@@ -22,7 +21,7 @@ use crate::app::{
         action::FileActions, animation_manager::AnimationManager, camera_manager::CameraManager,
         canvas::Canvas, compass::Compass, edge_manager::EdgeManager, face_manager::FaceManager,
         file_manager::FileManager, input_manager::InputManager, shape_waitlist::ShapeWaitlist,
-        tab_manager::TabManager, toolbar::Toolbar, vertex_manager::VertexManager,
+        tab_manager::TabManager, vertex_manager::VertexManager,
     },
     systems::{canvas, draw, network, ui},
     ui::{widgets::NamingBarState, UiState},

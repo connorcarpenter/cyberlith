@@ -27,15 +27,14 @@ use crate::app::{
         Vertex2d, VertexTypeData,
     },
     resources::{
-        action::ActionStack, action::ShapeAction, animation_manager::AnimationManager,
+        action::ShapeAction, animation_manager::AnimationManager,
         camera_manager::CameraAngle, camera_manager::CameraManager, camera_state::CameraState,
         canvas::Canvas, edge_manager::EdgeManager, face_manager::FaceManager,
         key_action_map::KeyActionMap, shape_data::CanvasShape, shape_manager::ShapeManager,
-        tab_manager::TabState, vertex_manager::VertexManager,
+        vertex_manager::VertexManager, file_manager::FileManager,
+        tab_manager::TabManager,
     },
 };
-use crate::app::resources::file_manager::FileManager;
-use crate::app::resources::tab_manager::TabManager;
 
 #[derive(Clone, Copy)]
 pub enum AppInputAction {

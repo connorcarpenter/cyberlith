@@ -11,7 +11,7 @@ use render_api::{
     Handle,
 };
 
-use vortex_proto::components::{EdgeAngle, FileExtension, Vertex3d};
+use vortex_proto::components::{EdgeAngle, Vertex3d};
 
 use crate::app::{
     components::{Edge2dLocal, Edge3dLocal, FaceIcon2d, LocalShape, OwnedByFileLocal},

@@ -33,7 +33,6 @@ use crate::app::{
         file_tree::FileTree,
         input_manager::InputManager,
         tab_manager::TabManager,
-        toolbar::Toolbar,
         vertex_manager::VertexManager,
     },
     systems::file_post_process,
@@ -132,7 +131,6 @@ pub(crate) fn execute(
             &mut edge_manager,
             &mut visibility_q,
             &entity_id,
-            FileExtension::from(new_file_name.as_str()),
         );
     }
 

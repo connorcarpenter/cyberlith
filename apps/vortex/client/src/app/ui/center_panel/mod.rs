@@ -1,13 +1,13 @@
 mod canvas;
+use canvas::render_canvas;
 
 use bevy_ecs::world::World;
 
-use canvas::render_canvas;
 use render_egui::{egui, egui::Frame};
 use vortex_proto::components::FileExtension;
 
 use crate::app::{
-    resources::{tab_manager::render_tab_bar, canvas::Canvas, file_manager::FileManager, tab_manager::TabManager},
+    resources::{tab_manager::render_tab_bar, file_manager::FileManager, tab_manager::TabManager},
     ui::{
         render_tool_bar,
         widgets::{render_bound, render_bind_button, render_naming_bar, NamingBarState},

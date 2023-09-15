@@ -19,13 +19,12 @@ use crate::app::{
         input_manager::InputManager,
         shape_data::CanvasShape,
         shape_manager::ShapeManager,
-        toolbar::Toolbar,
         vertex_manager::VertexManager,
+        file_manager::FileManager,
+        tab_manager::TabManager,
     },
     ui::UiState,
 };
-use crate::app::resources::file_manager::FileManager;
-use crate::app::resources::tab_manager::TabManager;
 
 #[derive(Resource)]
 pub struct NamingBarState {
@@ -182,6 +181,9 @@ pub fn naming_bar_visibility_toggle(world: &mut World) {
         return;
     };
     let current_file_type = world.get_resource::<FileManager>().unwrap().get_file_type(&current_file_entity);
+    if current_file_type != FileExtension::Skel {
+        return;
+    }
 
     // is vertex/edge selected?
     let input_manager = world.get_resource::<InputManager>().unwrap();
