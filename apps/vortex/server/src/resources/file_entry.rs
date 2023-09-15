@@ -2,23 +2,23 @@ use std::collections::HashSet;
 
 use bevy_ecs::entity::Entity;
 
-use vortex_proto::{components::FileExtension, resources::FileEntryKey};
+use vortex_proto::{components::FileExtension, resources::FileKey};
 
 #[derive(Clone)]
 pub struct FileEntryValue {
     entity: Entity,
     extension: Option<FileExtension>,
-    parent: Option<FileEntryKey>,
-    children: Option<HashSet<FileEntryKey>>,
-    dependencies: Option<HashSet<FileEntryKey>>,
+    parent: Option<FileKey>,
+    children: Option<HashSet<FileKey>>,
+    dependencies: Option<HashSet<FileKey>>,
 }
 
 impl FileEntryValue {
     pub fn new(
         entity: Entity,
         extension: Option<FileExtension>,
-        parent: Option<FileEntryKey>,
-        children: Option<HashSet<FileEntryKey>>,
+        parent: Option<FileKey>,
+        children: Option<HashSet<FileKey>>,
     ) -> Self {
         Self {
             entity,
@@ -41,31 +41,31 @@ impl FileEntryValue {
         self.extension
     }
 
-    pub fn parent(&self) -> Option<&FileEntryKey> {
+    pub fn parent(&self) -> Option<&FileKey> {
         self.parent.as_ref()
     }
 
-    pub fn children(&self) -> Option<&HashSet<FileEntryKey>> {
+    pub fn children(&self) -> Option<&HashSet<FileKey>> {
         self.children.as_ref()
     }
 
-    pub fn add_child(&mut self, key: FileEntryKey) {
+    pub fn add_child(&mut self, key: FileKey) {
         self.children
             .get_or_insert_with(|| HashSet::new())
             .insert(key);
     }
 
-    pub fn remove_child(&mut self, key: &FileEntryKey) {
+    pub fn remove_child(&mut self, key: &FileKey) {
         if let Some(children) = self.children.as_mut() {
             children.remove(&key);
         }
     }
 
-    pub fn dependencies(&self) -> Option<&HashSet<FileEntryKey>> {
+    pub fn dependencies(&self) -> Option<&HashSet<FileKey>> {
         self.dependencies.as_ref()
     }
 
-    pub fn add_dependency(&mut self, key: &FileEntryKey) {
+    pub fn add_dependency(&mut self, key: &FileKey) {
         if self.dependencies.is_none() {
             self.dependencies = Some(HashSet::new());
         }
@@ -76,7 +76,7 @@ impl FileEntryValue {
         dependencies.insert(key.clone());
     }
 
-    pub fn remove_dependency(&mut self, key: &FileEntryKey) {
+    pub fn remove_dependency(&mut self, key: &FileKey) {
         let dependencies = self.dependencies.as_mut().unwrap();
         if !dependencies.remove(&key) {
             panic!("dependency not found");

@@ -9,7 +9,7 @@ use bevy_log::{info, warn};
 
 use naia_bevy_server::{Server, UserKey};
 
-use vortex_proto::{resources::FileEntryKey, types::TabId};
+use vortex_proto::{resources::FileKey, types::TabId};
 
 use crate::{
     files::on_despawn_file_content_entities,
@@ -41,7 +41,7 @@ impl TabManager {
         user_manager: &mut UserManager,
         git_manager: &mut GitManager,
         shape_manager: &mut ShapeManager,
-        key_q: &Query<&FileEntryKey>,
+        key_q: &Query<&FileKey>,
         user_key: &UserKey,
         tab_id: &TabId,
         file_entity: &Entity,
@@ -100,7 +100,7 @@ impl TabManager {
             ResMut<UserManager>,
             ResMut<GitManager>,
             ResMut<ShapeManager>,
-            Query<&FileEntryKey>,
+            Query<&FileKey>,
         )> = SystemState::new(world);
         let (
             mut commands,
@@ -235,7 +235,7 @@ impl TabManager {
         server: &mut Server,
         user_manager: &mut UserManager,
         git_manager: &mut GitManager,
-    ) -> Vec<(ProjectKey, FileEntryKey, HashMap<Entity, ContentEntityData>)> {
+    ) -> Vec<(ProjectKey, FileKey, HashMap<Entity, ContentEntityData>)> {
         let mut output = Vec::new();
         while let Some((user_key, tab_id)) = self.queued_closes.pop_front() {
             let (project_key, file_key, content_entities) =

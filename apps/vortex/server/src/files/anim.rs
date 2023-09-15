@@ -13,7 +13,7 @@ use naia_bevy_server::{
 
 use vortex_proto::{
     components::{EntryKind, FileDependency, FileExtension},
-    resources::FileEntryKey,
+    resources::FileKey,
     SerdeQuat,
 };
 
@@ -72,7 +72,7 @@ impl AnimWriter {
         &self,
         world: &mut World,
         project: &Project,
-        file_key: &FileEntryKey,
+        file_key: &FileKey,
         content_entities: &Vec<Entity>,
     ) -> Vec<AnimAction> {
         let mut actions = Vec::new();
@@ -148,7 +148,7 @@ impl FileWriter for AnimWriter {
         &self,
         world: &mut World,
         project: &Project,
-        file_key: &FileEntryKey,
+        file_key: &FileKey,
         content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]> {
         let content_entities_vec: Vec<Entity> = content_entities
@@ -233,7 +233,7 @@ impl AnimReader {
         commands: &mut Commands,
         server: &mut Server,
         project: &mut Project,
-        file_key: &FileEntryKey,
+        file_key: &FileKey,
         file_entity: &Entity,
         skel_path_opt: Option<(String, String)>,
     ) -> HashMap<Entity, ContentEntityData> {
@@ -241,7 +241,7 @@ impl AnimReader {
 
         info!("skel_path: {:?}", skel_path_opt);
         if let Some((skel_path, skel_file_name)) = skel_path_opt {
-            let skel_file_key = FileEntryKey::new(&skel_path, &skel_file_name, EntryKind::File);
+            let skel_file_key = FileKey::new(&skel_path, &skel_file_name, EntryKind::File);
             project.file_add_dependency(file_key, &skel_file_key);
 
             let skel_file_entity = project.file_entity(&skel_file_key).unwrap();

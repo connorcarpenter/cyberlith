@@ -3,13 +3,13 @@ use bevy_ecs::component::Component;
 use crate::components::EntryKind;
 
 #[derive(Clone, Eq, Hash, PartialEq, Component, Ord, PartialOrd, Debug)]
-pub struct FileEntryKey {
+pub struct FileKey {
     kind: EntryKind,
     name: String,
     path: String,
 }
 
-impl FileEntryKey {
+impl FileKey {
     pub fn new(path: &str, name: &str, kind: EntryKind) -> Self {
         Self {
             name: name.to_string(),
@@ -18,7 +18,7 @@ impl FileEntryKey {
         }
     }
 
-    pub fn new_with_parent(parent: Option<FileEntryKey>, name: &str, kind: EntryKind) -> Self {
+    pub fn new_with_parent(parent: Option<FileKey>, name: &str, kind: EntryKind) -> Self {
         let path = match &parent {
             Some(parent_key) => parent_key.full_path(),
             None => "".to_string(),

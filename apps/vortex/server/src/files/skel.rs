@@ -16,7 +16,7 @@ use vortex_proto::{
     components::{
         Edge3d, EdgeAngle, FileExtension, FileType, ShapeName, Vertex3d, VertexRoot, VertexSerdeInt,
     },
-    resources::FileEntryKey,
+    resources::FileKey,
 };
 
 use crate::{
@@ -225,7 +225,7 @@ impl FileWriter for SkelWriter {
         &self,
         world: &mut World,
         _project: &Project,
-        _file_key: &FileEntryKey,
+        _file_key: &FileKey,
         content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]> {
         let content_entities_vec: Vec<Entity> = content_entities

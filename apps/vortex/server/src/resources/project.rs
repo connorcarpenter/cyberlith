@@ -13,7 +13,7 @@ use naia_bevy_server::{BigMapKey, CommandsExt, RoomKey, Server, UserKey};
 use vortex_proto::{
     components::{ChangelistEntry, ChangelistStatus, EntryKind, FileExtension, FileSystemEntry},
     messages::ChangelistMessage,
-    resources::FileEntryKey,
+    resources::FileKey,
 };
 
 use crate::{
@@ -38,10 +38,10 @@ impl BigMapKey for ProjectKey {
 
 pub struct Project {
     room_key: RoomKey,
-    master_file_entries: HashMap<FileEntryKey, FileEntryValue>,
-    working_file_entries: HashMap<FileEntryKey, FileEntryValue>,
-    pub changelist_entries: HashMap<FileEntryKey, ChangelistValue>,
-    filespaces: HashMap<FileEntryKey, FileSpace>,
+    master_file_entries: HashMap<FileKey, FileEntryValue>,
+    working_file_entries: HashMap<FileKey, FileEntryValue>,
+    pub changelist_entries: HashMap<FileKey, ChangelistValue>,
+    filespaces: HashMap<FileKey, FileSpace>,
 
     repo: Mutex<Repository>,
     branch: String,
@@ -52,7 +52,7 @@ pub struct Project {
 impl Project {
     pub fn new(
         room_key: RoomKey,
-        file_entries: HashMap<FileEntryKey, FileEntryValue>,
+        file_entries: HashMap<FileKey, FileEntryValue>,
         repo: Repository,
         access_token: &str,
         internal_path: &str,
@@ -74,7 +74,7 @@ impl Project {
     pub fn write(
         &self,
         world: &mut World,
-        file_key: &FileEntryKey,
+        file_key: &FileKey,
         content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]> {
         let ext = self.working_file_extension(file_key);
@@ -85,18 +85,18 @@ impl Project {
         self.room_key
     }
 
-    pub(crate) fn file_entity(&self, file_key: &FileEntryKey) -> Option<Entity> {
+    pub(crate) fn file_entity(&self, file_key: &FileKey) -> Option<Entity> {
         let file_entry_val = self.working_file_entries.get(file_key)?;
         Some(file_entry_val.entity())
     }
 
-    pub fn file_room_key(&self, file_key: &FileEntryKey) -> Option<RoomKey> {
+    pub fn file_room_key(&self, file_key: &FileKey) -> Option<RoomKey> {
         self.filespaces.get(file_key).map(|fs| fs.room_key())
     }
 
     pub(crate) fn file_content_entities(
         &self,
-        file_key: &FileEntryKey,
+        file_key: &FileKey,
     ) -> Option<&HashMap<Entity, ContentEntityData>> {
         self.filespaces
             .get(file_key)
@@ -105,7 +105,7 @@ impl Project {
 
     pub(crate) fn on_insert_content_entity(
         &mut self,
-        file_key: &FileEntryKey,
+        file_key: &FileKey,
         entity: &Entity,
         shape_type: ShapeType,
     ) {
@@ -115,7 +115,7 @@ impl Project {
             .add_content_entity(*entity, shape_type);
     }
 
-    pub(crate) fn on_remove_content_entity(&mut self, file_key: &FileEntryKey, entity: &Entity) {
+    pub(crate) fn on_remove_content_entity(&mut self, file_key: &FileKey, entity: &Entity) {
         self.filespaces
             .get_mut(file_key)
             .unwrap()
@@ -128,7 +128,7 @@ impl Project {
         server: &mut Server,
         shape_manager: &mut ShapeManager,
         user_key: &UserKey,
-        file_key: &FileEntryKey,
+        file_key: &FileKey,
     ) -> Option<Vec<Entity>> {
         if !self.filespaces.contains_key(file_key) {
             let new_entities =
@@ -144,7 +144,7 @@ impl Project {
     pub(crate) fn user_leave_filespace(
         &mut self,
         server: &mut Server,
-        file_key: &FileEntryKey,
+        file_key: &FileKey,
     ) -> HashMap<Entity, ContentEntityData> {
         let Some(filespace) = self.filespaces.get_mut(file_key) else {
             panic!("Filespace not found");
@@ -162,7 +162,7 @@ impl Project {
         Self::find_file_entry_by_entity(&self.working_file_entries, entity).is_some()
     }
 
-    pub fn get_file_key_from_entity(&self, entity: &Entity) -> Option<FileEntryKey> {
+    pub fn get_file_key_from_entity(&self, entity: &Entity) -> Option<FileKey> {
         Self::find_file_entry_by_entity(&self.working_file_entries, entity)
     }
 
@@ -172,8 +172,8 @@ impl Project {
         server: &mut Server,
         name: &str,
         entity: Entity,
-        parent: Option<FileEntryKey>,
-        file_entry_key: &FileEntryKey,
+        parent: Option<FileKey>,
+        file_entry_key: &FileKey,
     ) {
         if file_entry_key.kind() == EntryKind::Directory {
             info!("creating directory: {}", name);
@@ -260,12 +260,12 @@ impl Project {
         &mut self,
         commands: &mut Commands,
         server: &mut Server,
-        dir_key: &FileEntryKey,
+        dir_key: &FileKey,
     ) {
         // get children and create changelist entries if needed
         let file_entry_val = self.working_file_entries.get(dir_key).unwrap();
         if let Some(children) = file_entry_val.children() {
-            let children: Vec<FileEntryKey> = children.iter().cloned().collect();
+            let children: Vec<FileKey> = children.iter().cloned().collect();
             for child_key in children {
                 if child_key.kind() == EntryKind::Directory {
                     self.on_client_modify_dir(commands, server, &child_key);
@@ -280,7 +280,7 @@ impl Project {
         &mut self,
         commands: &mut Commands,
         server: &mut Server,
-        file_entry_key: &FileEntryKey,
+        file_entry_key: &FileKey,
     ) {
         let file_entity = self.file_entity(file_entry_key).unwrap();
 
@@ -304,15 +304,15 @@ impl Project {
         }
     }
 
-    pub fn master_file_entries(&self) -> &HashMap<FileEntryKey, FileEntryValue> {
+    pub fn master_file_entries(&self) -> &HashMap<FileKey, FileEntryValue> {
         &self.master_file_entries
     }
 
-    pub fn working_file_entries(&self) -> &HashMap<FileEntryKey, FileEntryValue> {
+    pub fn working_file_entries(&self) -> &HashMap<FileKey, FileEntryValue> {
         &self.working_file_entries
     }
 
-    pub fn file_add_dependency(&mut self, file_key: &FileEntryKey, dependency_key: &FileEntryKey) {
+    pub fn file_add_dependency(&mut self, file_key: &FileKey, dependency_key: &FileKey) {
         info!(
             "file_add_dependency: {:?} -> {:?}",
             file_key, dependency_key
@@ -323,8 +323,8 @@ impl Project {
 
     pub fn file_remove_dependency(
         &mut self,
-        file_key: &FileEntryKey,
-        dependency_key: &FileEntryKey,
+        file_key: &FileKey,
+        dependency_key: &FileKey,
     ) {
         info!(
             "file_remove_dependency: {:?} -> {:?}",
@@ -340,7 +340,7 @@ impl Project {
     fn get_full_file_path_working(
         &self,
         fs_q: &Query<&FileSystemEntry>,
-        file_key: &FileEntryKey,
+        file_key: &FileKey,
         file_entity: Entity,
     ) -> String {
         let fs_entry = fs_q.get(file_entity).unwrap();
@@ -359,7 +359,7 @@ impl Project {
         }
     }
 
-    fn get_full_file_path_master(&self, file_key: &FileEntryKey) -> String {
+    fn get_full_file_path_master(&self, file_key: &FileKey) -> String {
         let file_name = file_key.name();
         let fs_value = self.master_file_entries.get(file_key).unwrap();
         if let Some(parent_file_key) = fs_value.parent() {
@@ -378,7 +378,7 @@ impl Project {
         message: ChangelistMessage,
     ) {
         let action_status: ChangelistStatus;
-        let file_entry_key: FileEntryKey;
+        let file_entry_key: FileKey;
         {
             let mut system_state: SystemState<(Server, Query<&ChangelistEntry>)> =
                 SystemState::new(world);
@@ -495,7 +495,7 @@ impl Project {
         &mut self,
         world: &mut World,
         message: ChangelistMessage,
-    ) -> Option<(FileEntryKey, FileEntryValue)> {
+    ) -> Option<(FileKey, FileEntryValue)> {
         let mut system_state: SystemState<(
             Commands,
             Server,
@@ -587,7 +587,7 @@ impl Project {
         server: &mut Server,
         shape_manager: &mut ShapeManager,
         file_entity: &Entity,
-        file_key: &FileEntryKey,
+        file_key: &FileKey,
     ) {
         let file_extension = self.working_file_extension(file_key);
         let bytes = self.get_bytes_from_cl_or_fs(file_key);
@@ -635,7 +635,7 @@ impl Project {
         index.write().expect("Failed to write index");
     }
 
-    fn fs_create_or_update_file(&mut self, key: &FileEntryKey, path: &str) {
+    fn fs_create_or_update_file(&mut self, key: &FileKey, path: &str) {
         self.fs_write_file(key, path);
         self.fs_update_index(path);
     }
@@ -657,7 +657,7 @@ impl Project {
         index.write().expect("Failed to write index");
     }
 
-    fn fs_write_file(&mut self, key: &FileEntryKey, path: &str) {
+    fn fs_write_file(&mut self, key: &FileKey, path: &str) {
         let file_content = self
             .changelist_entries
             .get(&key)
@@ -724,7 +724,7 @@ impl Project {
             .expect("Failed to push commit");
     }
 
-    fn cleanup_changelist_entry(&mut self, commands: &mut Commands, file_entry_key: &FileEntryKey) {
+    fn cleanup_changelist_entry(&mut self, commands: &mut Commands, file_entry_key: &FileKey) {
         let Some(changelist_value) = self.changelist_entries.remove(file_entry_key) else {
             panic!("Changelist entry not found for file entry key");
         };
@@ -736,7 +736,7 @@ impl Project {
         commands: &mut Commands,
         server: &mut Server,
         changelist_q: &mut Query<&mut ChangelistEntry>,
-        file_entry_key: &FileEntryKey,
+        file_entry_key: &FileKey,
     ) {
         if file_entry_key.kind() == EntryKind::Directory {
             // deleted directories don't go into changelist
@@ -786,7 +786,7 @@ impl Project {
         &mut self,
         commands: &mut Commands,
         server: &mut Server,
-        file_entry_key: &FileEntryKey,
+        file_entry_key: &FileKey,
         changelist_status: ChangelistStatus,
         entity_opt: Option<&Entity>,
         content_opt: Option<Box<[u8]>>,
@@ -826,7 +826,7 @@ impl Project {
         server: &mut Server,
         shape_manager: &mut ShapeManager,
         user_key: &UserKey,
-        file_key: &FileEntryKey,
+        file_key: &FileKey,
     ) -> Vec<Entity> {
         let file_room_key = server.make_room().key();
 
@@ -859,7 +859,7 @@ impl Project {
         new_entities
     }
 
-    fn get_bytes_from_cl_or_fs(&self, file_key: &FileEntryKey) -> Box<[u8]> {
+    fn get_bytes_from_cl_or_fs(&self, file_key: &FileKey) -> Box<[u8]> {
         if self.changelist_entries.contains_key(file_key) {
             // get contents of file from changelist
             if let Some(content) = self.changelist_entries.get(file_key).unwrap().get_content() {
@@ -873,7 +873,7 @@ impl Project {
         }
     }
 
-    fn delete_filespace(&mut self, server: &mut Server, file_key: &FileEntryKey) {
+    fn delete_filespace(&mut self, server: &mut Server, file_key: &FileKey) {
         let filespace = self.filespaces.remove(file_key).unwrap();
 
         let file_room_key = filespace.room_key();
@@ -882,7 +882,7 @@ impl Project {
         server.room_mut(&file_room_key).destroy();
     }
 
-    fn get_file_contents(&self, key: &FileEntryKey) -> Box<[u8]> {
+    fn get_file_contents(&self, key: &FileKey) -> Box<[u8]> {
         let file_path = format!("{}{}", key.path(), key.name());
         let full_path = format!("{}/{}", self.internal_path, file_path);
         info!("Getting blob for file: {}", full_path);
@@ -899,7 +899,7 @@ impl Project {
         }
     }
 
-    pub(crate) fn working_file_extension(&self, key: &FileEntryKey) -> FileExtension {
+    pub(crate) fn working_file_extension(&self, key: &FileKey) -> FileExtension {
         let value = self.working_file_entries.get(key).unwrap();
         value.extension().unwrap()
     }
@@ -908,7 +908,7 @@ impl Project {
         &mut self,
         commands: &mut Commands,
         server: &mut Server,
-        key: &FileEntryKey,
+        key: &FileKey,
         bytes: Box<[u8]>,
     ) {
         // update Changelist entry with new bytes
@@ -929,7 +929,7 @@ impl Project {
         }
     }
 
-    fn add_parents_to_master_file_tree(&mut self, parent_key: &FileEntryKey) {
+    fn add_parents_to_master_file_tree(&mut self, parent_key: &FileKey) {
         if self.master_file_entries.contains_key(&parent_key) {
             // no need to add parents
             return;
@@ -951,8 +951,8 @@ impl Project {
     }
 
     fn add_to_file_tree(
-        file_entries: &mut HashMap<FileEntryKey, FileEntryValue>,
-        file_entry_key: FileEntryKey,
+        file_entries: &mut HashMap<FileKey, FileEntryValue>,
+        file_entry_key: FileKey,
         file_entry_value: FileEntryValue,
     ) {
         file_entries.insert(file_entry_key.clone(), file_entry_value.clone());
@@ -984,9 +984,9 @@ impl Project {
     //
 
     fn find_file_entry_by_entity(
-        file_entries: &HashMap<FileEntryKey, FileEntryValue>,
+        file_entries: &HashMap<FileKey, FileEntryValue>,
         entity: &Entity,
-    ) -> Option<FileEntryKey> {
+    ) -> Option<FileKey> {
         let mut key_opt = None;
         for (entry_key, entry_val) in file_entries.iter() {
             if entry_val.entity() == *entity {
@@ -1003,9 +1003,9 @@ impl Project {
     }
 
     fn remove_file_entry(
-        file_entries: &mut HashMap<FileEntryKey, FileEntryValue>,
-        key: &FileEntryKey,
-    ) -> (FileEntryValue, Vec<(Entity, FileEntryKey)>) {
+        file_entries: &mut HashMap<FileKey, FileEntryValue>,
+        key: &FileKey,
+    ) -> (FileEntryValue, Vec<(Entity, FileKey)>) {
         let mut entities = Vec::new();
 
         // remove entry
@@ -1023,9 +1023,9 @@ impl Project {
     }
 
     fn remove_entry_and_collect_children_entities(
-        file_entries: &mut HashMap<FileEntryKey, FileEntryValue>,
-        key: &FileEntryKey,
-        entities: &mut Vec<(Entity, FileEntryKey)>,
+        file_entries: &mut HashMap<FileKey, FileEntryValue>,
+        key: &FileKey,
+        entities: &mut Vec<(Entity, FileKey)>,
     ) -> FileEntryValue {
         // remove entry
         let removed_entry = file_entries.remove(key).unwrap();
@@ -1049,7 +1049,7 @@ impl Project {
         &mut self,
         world: &mut World,
         status: &ChangelistStatus,
-        file_key: &FileEntryKey,
+        file_key: &FileKey,
     ) {
         info!(
             "Finalizing content for changelist file `{}` of status: {:?}",

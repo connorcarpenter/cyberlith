@@ -4,18 +4,18 @@ use bevy_ecs::{entity::Entity, system::Commands};
 
 use naia_bevy_server::{Server, UserKey};
 
-use vortex_proto::{components::EntryKind, resources::FileEntryKey};
+use vortex_proto::{components::EntryKind, resources::FileKey};
 
 use crate::resources::{GitManager, TabManager, UserManager};
 
 pub enum FSWaitlistInsert {
     Entry(EntryKind, String),
-    Parent(Option<FileEntryKey>),
+    Parent(Option<FileKey>),
 }
 
 pub struct FSWaitlist {
     entry: Option<(EntryKind, String)>,
-    parent: Option<Option<FileEntryKey>>,
+    parent: Option<Option<FileKey>>,
 }
 
 impl FSWaitlist {
@@ -30,7 +30,7 @@ impl FSWaitlist {
         self.entry.is_some() && self.parent.is_some()
     }
 
-    fn set_parent(&mut self, key: Option<FileEntryKey>) {
+    fn set_parent(&mut self, key: Option<FileKey>) {
         self.parent = Some(key);
     }
 
@@ -38,7 +38,7 @@ impl FSWaitlist {
         self.entry = Some((kind, name));
     }
 
-    pub(crate) fn decompose(self) -> (String, EntryKind, Option<FileEntryKey>) {
+    pub(crate) fn decompose(self) -> (String, EntryKind, Option<FileKey>) {
         let (kind, name) = self.entry.unwrap();
         let parent = self.parent.unwrap();
         (name, kind, parent)
@@ -103,7 +103,7 @@ fn fs_process_insert_complete(
 
     let (name, kind, parent) = entry.decompose();
 
-    let key = FileEntryKey::new_with_parent(parent.clone(), &name, kind);
+    let key = FileKey::new_with_parent(parent.clone(), &name, kind);
     git_manager.on_client_create_file(
         commands,
         server,

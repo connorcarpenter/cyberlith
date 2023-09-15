@@ -14,7 +14,7 @@ use vortex_proto::{
         Edge3d, Face3d, FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild,
         FileType, OwnedByFile, ShapeName, Vertex3d, VertexRoot,
     },
-    resources::FileEntryKey,
+    resources::FileKey,
 };
 
 use crate::{
@@ -128,7 +128,7 @@ pub fn insert_file_component_events(
     mut fs_dependency_events: EventReader<InsertComponentEvent<FileDependency>>,
     fs_entry_q: Query<&FileSystemEntry>,
     fs_child_q: Query<&FileSystemChild>,
-    key_q: Query<&FileEntryKey>,
+    key_q: Query<&FileKey>,
     fs_dependency_q: Query<&FileDependency>,
 ) {
     // on FileSystemEntry Insert Event
@@ -338,7 +338,7 @@ pub fn insert_shape_component_events(
     mut file_type_events: EventReader<InsertComponentEvent<FileType>>,
     mut owned_by_file_events: EventReader<InsertComponentEvent<OwnedByFile>>,
     mut shape_name_events: EventReader<InsertComponentEvent<ShapeName>>,
-    entry_key_q: Query<&FileEntryKey>,
+    entry_key_q: Query<&FileKey>,
     file_type_q: Query<&FileType>,
     owned_by_file_q: Query<&OwnedByFile>,
     shape_name_q: Query<&ShapeName>,

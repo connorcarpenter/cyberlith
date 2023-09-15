@@ -7,7 +7,7 @@ use naia_bevy_server::Server;
 
 use vortex_proto::{
     components::FileExtension,
-    resources::{DependencyMap, FileEntryKey},
+    resources::{DependencyMap, FileKey},
 };
 
 use crate::{
@@ -27,22 +27,22 @@ pub enum ShapeWaitlistInsert {
     //// shape, filetype
     FileType(Entity, FileExtension),
     //// shape, project key, file key
-    OwnedByFile(Entity, ProjectKey, FileEntryKey),
+    OwnedByFile(Entity, ProjectKey, FileKey),
 }
 
 enum ShapeData {
     // (ProjectKey, FileKey, Option<Edge, Parent>)
-    SkelVertex(ProjectKey, FileEntryKey, Option<(Entity, Entity)>),
+    SkelVertex(ProjectKey, FileKey, Option<(Entity, Entity)>),
     // ProjectKey, FileKey
-    SkelEdge(ProjectKey, FileEntryKey),
+    SkelEdge(ProjectKey, FileKey),
     // ProjectKey, FileKey
-    MeshVertex(ProjectKey, FileEntryKey),
+    MeshVertex(ProjectKey, FileKey),
     // (ProjectKey, FileKey, Start, End)
-    MeshEdge(ProjectKey, FileEntryKey, Entity, Entity),
+    MeshEdge(ProjectKey, FileKey, Entity, Entity),
     // (ProjectKey, FileKey, VertexA, VertexB, VertexC, EdgeA, EdgeB, EdgeC)
     MeshFace(
         ProjectKey,
-        FileEntryKey,
+        FileKey,
         Entity,
         Entity,
         Entity,
@@ -59,7 +59,7 @@ pub struct ShapeWaitlistEntry {
     edge_entities: Option<(Entity, Entity)>,
     face_entities: Option<(Entity, Entity, Entity, Entity, Entity, Entity)>,
     file_type: Option<FileExtension>,
-    owned_by_file: Option<(ProjectKey, FileEntryKey)>,
+    owned_by_file: Option<(ProjectKey, FileKey)>,
 }
 
 impl ShapeWaitlistEntry {
@@ -136,7 +136,7 @@ impl ShapeWaitlistEntry {
         self.file_type = Some(file_type);
     }
 
-    fn set_owned_by_file(&mut self, project_key: ProjectKey, file_key: FileEntryKey) {
+    fn set_owned_by_file(&mut self, project_key: ProjectKey, file_key: FileKey) {
         self.owned_by_file = Some((project_key, file_key));
     }
 

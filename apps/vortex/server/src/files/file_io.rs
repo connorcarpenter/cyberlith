@@ -7,7 +7,7 @@ use naia_bevy_server::{CommandsExt, RoomKey, Server};
 
 use vortex_proto::{
     components::{FileExtension, FileType, OwnedByFile},
-    resources::FileEntryKey,
+    resources::FileKey,
 };
 
 use crate::{
@@ -20,7 +20,7 @@ pub trait FileWriter: Send + Sync {
         &self,
         world: &mut World,
         project: &Project,
-        file_key: &FileEntryKey,
+        file_key: &FileKey,
         content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]>;
     fn write_new_default(&self) -> Box<[u8]>;
@@ -56,7 +56,7 @@ impl FileWriter for FileExtension {
         &self,
         world: &mut World,
         project: &Project,
-        file_key: &FileEntryKey,
+        file_key: &FileKey,
         content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]> {
         match self {
@@ -117,7 +117,7 @@ pub fn load_content_entities(
     shape_manager: &mut ShapeManager,
     file_extension: &FileExtension,
     file_room_key: &RoomKey,
-    file_key: &FileEntryKey,
+    file_key: &FileKey,
     file_entity: &Entity,
     bytes: Box<[u8]>,
 ) -> HashMap<Entity, ContentEntityData> {
@@ -199,7 +199,7 @@ pub fn on_despawn_file_content_entities(
     server: &mut Server,
     shape_manager: &mut ShapeManager,
     project: &mut Project,
-    file_key: &FileEntryKey,
+    file_key: &FileKey,
     content_entities: &HashMap<Entity, ContentEntityData>,
 ) {
     for (entity, entity_data) in content_entities.iter() {

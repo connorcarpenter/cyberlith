@@ -17,7 +17,7 @@ use naia_bevy_server::{BigMap, CommandsExt, ReplicationConfig, RoomKey, Server, 
 use vortex_proto::{
     components::{EntryKind, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild},
     messages::ChangelistMessage,
-    resources::FileEntryKey,
+    resources::FileKey,
 };
 
 use crate::{
@@ -35,8 +35,8 @@ pub struct GitManager {
     projects: BigMap<ProjectKey, Project>,
     // get project key from username, should only be used on initialization
     project_keys: HashMap<String, ProjectKey>,
-    content_entity_keys: HashMap<Entity, (ProjectKey, FileEntryKey)>,
-    queued_client_modify_files: Vec<(ProjectKey, FileEntryKey)>,
+    content_entity_keys: HashMap<Entity, (ProjectKey, FileKey)>,
+    queued_client_modify_files: Vec<(ProjectKey, FileKey)>,
 }
 
 impl Default for GitManager {
@@ -75,7 +75,7 @@ impl GitManager {
     pub(crate) fn file_entity(
         &self,
         project_key: &ProjectKey,
-        file_key: &FileEntryKey,
+        file_key: &FileKey,
     ) -> Option<Entity> {
         let project = self.projects.get(project_key).unwrap();
         project.file_entity(file_key)
@@ -88,8 +88,8 @@ impl GitManager {
         project_key: &ProjectKey,
         file_name: &str,
         file_entity: Entity,
-        parent_file_key: Option<FileEntryKey>,
-        file_key: &FileEntryKey,
+        parent_file_key: Option<FileKey>,
+        file_key: &FileKey,
     ) {
         let project = self.projects.get_mut(project_key).unwrap();
         project.on_client_create_file(
@@ -102,7 +102,7 @@ impl GitManager {
         );
     }
 
-    pub(crate) fn register_content_entities(&mut self, project_key: &ProjectKey, file_key: &FileEntryKey, content_entities: Vec<Entity>) {
+    pub(crate) fn register_content_entities(&mut self, project_key: &ProjectKey, file_key: &FileKey, content_entities: Vec<Entity>) {
         for entity in content_entities {
             self.content_entity_keys.insert(entity, (*project_key, file_key.clone()));
         }
@@ -111,7 +111,7 @@ impl GitManager {
     pub(crate) fn content_entity_keys(
         &self,
         content_entity: &Entity,
-    ) -> Option<(ProjectKey, FileEntryKey)> {
+    ) -> Option<(ProjectKey, FileKey)> {
         self.content_entity_keys.get(content_entity).cloned()
     }
 
@@ -120,7 +120,7 @@ impl GitManager {
         commands: &mut Commands,
         server: &mut Server,
         project_key: &ProjectKey,
-        file_key: &FileEntryKey,
+        file_key: &FileKey,
     ) {
         let project = self.projects.get_mut(project_key).unwrap();
         if file_key.kind() == EntryKind::Directory {
@@ -154,7 +154,7 @@ impl GitManager {
         &mut self,
         server: &mut Server,
         project_key: &ProjectKey,
-        file_key: &FileEntryKey,
+        file_key: &FileKey,
         entity: &Entity,
         shape_type: ShapeType,
     ) {
@@ -347,7 +347,7 @@ impl GitManager {
         world: &mut World,
         project_key: &ProjectKey,
         project_room_key: &RoomKey,
-        entry_key: &FileEntryKey,
+        entry_key: &FileKey,
         entry_val: &FileEntryValue,
     ) {
         let project = self.projects.get(project_key).unwrap();
@@ -367,12 +367,12 @@ impl GitManager {
         system_state.apply(world);
     }
 
-    pub(crate) fn can_read(&self, project_key: &ProjectKey, key: &FileEntryKey) -> bool {
+    pub(crate) fn can_read(&self, project_key: &ProjectKey, key: &FileKey) -> bool {
         let ext = self.working_file_extension(project_key, key);
         return ext.can_io();
     }
 
-    pub(crate) fn can_write(&self, project_key: &ProjectKey, key: &FileEntryKey) -> bool {
+    pub(crate) fn can_write(&self, project_key: &ProjectKey, key: &FileKey) -> bool {
         let ext = self.working_file_extension(project_key, key);
         return ext.can_io();
     }
@@ -380,7 +380,7 @@ impl GitManager {
     pub(crate) fn write(
         &self,
         project_key: &ProjectKey,
-        file_key: &FileEntryKey,
+        file_key: &FileKey,
         world: &mut World,
         content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]> {
@@ -391,7 +391,7 @@ impl GitManager {
     pub fn working_file_extension(
         &self,
         project_key: &ProjectKey,
-        key: &FileEntryKey,
+        key: &FileKey,
     ) -> FileExtension {
         self.projects
             .get(project_key)
@@ -404,7 +404,7 @@ impl GitManager {
         commands: &mut Commands,
         server: &mut Server,
         project_key: &ProjectKey,
-        key: &FileEntryKey,
+        key: &FileKey,
         bytes: Box<[u8]>,
     ) {
         let project = self.projects.get_mut(project_key).unwrap();
@@ -423,14 +423,14 @@ impl GitManager {
 }
 
 fn fill_file_entries_from_git(
-    file_entries: &mut HashMap<FileEntryKey, FileEntryValue>,
+    file_entries: &mut HashMap<FileKey, FileEntryValue>,
     commands: &mut Commands,
     server: &mut Server,
     repo: &Repository,
     git_tree: &Tree,
     path: &str,
-    parent: Option<FileEntryKey>,
-) -> HashSet<FileEntryKey> {
+    parent: Option<FileKey>,
+) -> HashSet<FileKey> {
     let mut output = HashSet::new();
 
     for git_entry in git_tree.iter() {
@@ -443,7 +443,7 @@ fn fill_file_entries_from_git(
                 let entry_kind = EntryKind::Directory;
                 let id = GitManager::spawn_file_tree_entity(commands, server);
 
-                let file_entry_key = FileEntryKey::new(path, &name, entry_kind);
+                let file_entry_key = FileKey::new(path, &name, entry_kind);
 
                 let git_children = git_entry.to_object(repo).unwrap().peel_to_tree().unwrap();
                 let new_path = file_entry_key.full_path();
@@ -467,7 +467,7 @@ fn fill_file_entries_from_git(
                 let entry_kind = EntryKind::File;
                 let id = GitManager::spawn_file_tree_entity(commands, server);
 
-                let file_entry_key = FileEntryKey::new(path, &name, entry_kind);
+                let file_entry_key = FileKey::new(path, &name, entry_kind);
                 let file_extension = FileExtension::from(name.as_str());
                 let file_entry_value =
                     FileEntryValue::new(id, Some(file_extension), parent.clone(), None);
@@ -487,7 +487,7 @@ fn fill_file_entries_from_git(
 fn insert_entry_components_from_list(
     commands: &mut Commands,
     server: &mut Server,
-    file_entries: &HashMap<FileEntryKey, FileEntryValue>,
+    file_entries: &HashMap<FileKey, FileEntryValue>,
     project_room_key: &RoomKey,
 ) {
     for (file_entry_key, file_entry_value) in file_entries.iter() {
@@ -511,8 +511,8 @@ fn insert_entry_components(
     commands: &mut Commands,
     server: &mut Server,
     project_room_key: &RoomKey,
-    file_entries: &HashMap<FileEntryKey, FileEntryValue>,
-    entry_key: &FileEntryKey,
+    file_entries: &HashMap<FileKey, FileEntryValue>,
+    entry_key: &FileKey,
     entry_val: &FileEntryValue,
 ) {
     let entry_entity = entry_val.entity();

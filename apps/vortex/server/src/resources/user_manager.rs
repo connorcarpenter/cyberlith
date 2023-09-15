@@ -4,7 +4,7 @@ use bevy_ecs::{entity::Entity, system::{Resource, Commands}};
 
 use naia_bevy_server::{Server, UserKey};
 
-use vortex_proto::{resources::FileEntryKey, types::TabId};
+use vortex_proto::{resources::FileKey, types::TabId};
 
 use crate::resources::{project::ProjectKey, ContentEntityData, GitManager, UserTabState, ShapeManager};
 
@@ -44,11 +44,11 @@ impl UserSessionData {
         self.project_key = Some(project_key);
     }
 
-    pub(crate) fn open_tab(&mut self, tab_id: TabId, file_key: &FileEntryKey) {
+    pub(crate) fn open_tab(&mut self, tab_id: TabId, file_key: &FileKey) {
         self.tab_state.insert_tab(tab_id, file_key.clone());
     }
 
-    pub(crate) fn close_tab(&mut self, tab_id: &TabId) -> Option<FileEntryKey> {
+    pub(crate) fn close_tab(&mut self, tab_id: &TabId) -> Option<FileKey> {
         self.tab_state.remove_tab(tab_id)
     }
 }
@@ -181,7 +181,7 @@ impl UserManager {
         user_key: &UserKey,
         tab_id: TabId,
         project_key: &ProjectKey,
-        file_key: &FileEntryKey
+        file_key: &FileKey
     ) {
         let Some(user_session) = self.user_sessions.get_mut(user_key) else {
             panic!("user not found");
@@ -206,7 +206,7 @@ impl UserManager {
         git_manager: &mut GitManager,
         user_key: &UserKey,
         tab_id: &TabId,
-    ) -> (ProjectKey, FileEntryKey, HashMap<Entity, ContentEntityData>) {
+    ) -> (ProjectKey, FileKey, HashMap<Entity, ContentEntityData>) {
         let Some(user_session) = self.user_sessions.get_mut(user_key) else {
             panic!("User does not exist!");
         };

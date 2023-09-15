@@ -9,7 +9,7 @@ use naia_bevy_server::{events::MessageEvents, Server};
 use vortex_proto::{
     channels::{FileActionChannel, TabActionChannel},
     messages::{ChangelistMessage, TabCloseMessage, TabOpenMessage},
-    resources::FileEntryKey,
+    resources::FileKey,
 };
 
 use crate::resources::{ChangelistManager, GitManager, ShapeManager, TabManager, UserManager};
@@ -23,7 +23,7 @@ pub fn message_events(
     mut tab_manager: ResMut<TabManager>,
     mut cl_manager: ResMut<ChangelistManager>,
     mut shape_manager: ResMut<ShapeManager>,
-    key_q: Query<&FileEntryKey>,
+    key_q: Query<&FileKey>,
 ) {
     for events in event_reader.iter() {
         // Changelist Message

@@ -13,7 +13,7 @@ use render_egui::egui::epaint::ahash::HashSet;
 
 use vortex_proto::{
     components::{FileExtension, FileSystemChild, FileSystemEntry},
-    resources::FileEntryKey,
+    resources::FileKey,
 };
 
 use crate::app::{
@@ -59,7 +59,7 @@ impl FileData {
 #[derive(Resource)]
 pub struct FileManager {
     pub project_root_entity: Entity,
-    changelist: BTreeMap<FileEntryKey, ChangelistData>,
+    changelist: BTreeMap<FileKey, ChangelistData>,
     file_entities: HashMap<Entity, FileData>,
 }
 
@@ -112,7 +112,7 @@ impl FileManager {
 
     pub fn insert_changelist_entry(
         &mut self,
-        file_entry_key: FileEntryKey,
+        file_entry_key: FileKey,
         file_entity_opt: Option<Entity>,
         parent_entity_opt: Option<Entity>,
         cl_entity: Entity,
@@ -135,7 +135,7 @@ impl FileManager {
         }
     }
 
-    pub fn remove_changelist_entry(&mut self, file_entry_key: &FileEntryKey) {
+    pub fn remove_changelist_entry(&mut self, file_entry_key: &FileKey) {
         self.changelist.remove(file_entry_key);
     }
 
