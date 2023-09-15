@@ -64,15 +64,15 @@ impl TabManager {
         }
 
         // insert tab into collection
-        user_manager.open_tab(user_key, tab_id.clone(), file_entry_key.clone());
-
-        git_manager.user_join_filespace(
+        user_manager.open_tab(
             commands,
             server,
+            git_manager,
             shape_manager,
             user_key,
+            tab_id.clone(),
             &project_key,
-            &file_entry_key,
+            file_entry_key,
         );
     }
 

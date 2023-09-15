@@ -24,7 +24,7 @@ use crate::{
     config::GitConfig,
     files::ShapeType,
     resources::{
-        project::Project, project::ProjectKey, ContentEntityData, FileEntryValue, ShapeManager,
+        project::Project, project::ProjectKey, ContentEntityData, FileEntryValue,
         UserManager,
     },
 };
@@ -102,6 +102,12 @@ impl GitManager {
         );
     }
 
+    pub(crate) fn register_content_entities(&mut self, project_key: &ProjectKey, file_key: &FileEntryKey, content_entities: Vec<Entity>) {
+        for entity in content_entities {
+            self.content_entity_keys.insert(entity, (*project_key, file_key.clone()));
+        }
+    }
+
     pub(crate) fn content_entity_keys(
         &self,
         content_entity: &Entity,
@@ -173,28 +179,6 @@ impl GitManager {
 
         let project = self.projects.get_mut(&project_key).unwrap();
         project.on_remove_content_entity(&file_key, entity);
-    }
-
-    pub(crate) fn user_join_filespace(
-        &mut self,
-        commands: &mut Commands,
-        server: &mut Server,
-        shape_manager: &mut ShapeManager,
-        user_key: &UserKey,
-        project_key: &ProjectKey,
-        file_key: &FileEntryKey,
-    ) {
-        let Some(project) = self.projects.get_mut(project_key) else {
-            panic!("Could not find project for user");
-        };
-        if let Some(new_content_entities) =
-            project.user_join_filespace(commands, server, shape_manager, user_key, file_key)
-        {
-            for entity in new_content_entities {
-                self.content_entity_keys
-                    .insert(entity, (*project_key, file_key.clone()));
-            }
-        }
     }
 
     pub fn create_project(

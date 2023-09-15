@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{entity::Entity, system::Resource};
+use bevy_ecs::{entity::Entity, system::{Resource, Commands}};
 
 use naia_bevy_server::{Server, UserKey};
 
 use vortex_proto::{resources::FileEntryKey, types::TabId};
 
-use crate::resources::{project::ProjectKey, ContentEntityData, GitManager, UserTabState};
+use crate::resources::{project::ProjectKey, ContentEntityData, GitManager, UserTabState, ShapeManager};
 
 pub struct UserSessionData {
     // used to index into permanent data
@@ -44,8 +44,8 @@ impl UserSessionData {
         self.project_key = Some(project_key);
     }
 
-    pub(crate) fn open_tab(&mut self, tab_id: TabId, file_key: FileEntryKey) {
-        self.tab_state.insert_tab(tab_id, file_key);
+    pub(crate) fn open_tab(&mut self, tab_id: TabId, file_key: &FileEntryKey) {
+        self.tab_state.insert_tab(tab_id, file_key.clone());
     }
 
     pub(crate) fn close_tab(&mut self, tab_id: &TabId) -> Option<FileEntryKey> {
@@ -172,11 +172,32 @@ impl UserManager {
         self.user_sessions.remove(user_key);
     }
 
-    pub(crate) fn open_tab(&mut self, user_key: &UserKey, tab_id: TabId, file_key: FileEntryKey) {
+    pub(crate) fn open_tab(
+        &mut self,
+        commands: &mut Commands,
+        server: &mut Server,
+        git_manager: &mut GitManager,
+        shape_manager: &mut ShapeManager,
+        user_key: &UserKey,
+        tab_id: TabId,
+        project_key: &ProjectKey,
+        file_key: &FileEntryKey
+    ) {
         let Some(user_session) = self.user_sessions.get_mut(user_key) else {
             panic!("user not found");
         };
         user_session.open_tab(tab_id, file_key);
+
+        let project = git_manager.project_mut(project_key).unwrap();
+        if let Some(new_content_entities) = project.user_join_filespace(
+            commands,
+            server,
+            shape_manager,
+            user_key,
+            file_key,
+        ) {
+            git_manager.register_content_entities(project_key, file_key, new_content_entities);
+        }
     }
 
     pub(crate) fn close_tab(
