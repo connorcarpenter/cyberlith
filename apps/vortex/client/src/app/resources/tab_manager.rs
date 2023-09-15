@@ -205,6 +205,7 @@ impl TabManager {
             }
         }
 
+
         // send message to server
         let message = TabActionMessage::new(tab_state.tab_id, TabActionMessageType::Close);
         client.send_message::<TabActionChannel, TabActionMessage>(&message);

@@ -15,7 +15,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind, Face3d, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, FileTypeValue, OwnedByFile, Vertex3d, VertexRoot};
+use vortex_proto::components::{ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind, Face3d, FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, FileTypeValue, OwnedByFile, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::file_system::{
@@ -41,6 +41,7 @@ pub fn insert_component_events(
     mut insert_fs_entry_event_writer: EventWriter<InsertComponentEvent<FileSystemEntry>>,
     mut insert_fs_root_event_writer: EventWriter<InsertComponentEvent<FileSystemRootChild>>,
     mut insert_fs_child_event_writer: EventWriter<InsertComponentEvent<FileSystemChild>>,
+    mut insert_fs_dependency_event_writer: EventWriter<InsertComponentEvent<FileDependency>>,
     mut insert_cl_entry_event_writer: EventWriter<InsertComponentEvent<ChangelistEntry>>,
 
     // for vertices
@@ -67,6 +68,11 @@ pub fn insert_component_events(
         // on FileSystemChild Insert Event
         for entity in events.read::<FileSystemChild>() {
             insert_fs_child_event_writer.send(InsertComponentEvent::<FileSystemChild>::new(entity));
+        }
+
+        // on FileDependency Insert Event
+        for entity in events.read::<FileDependency>() {
+            insert_fs_dependency_event_writer.send(InsertComponentEvent::<FileDependency>::new(entity));
         }
 
         // on ChangelistEntry Insert Event
@@ -118,9 +124,11 @@ pub fn insert_file_component_events(
     mut entry_events: EventReader<InsertComponentEvent<FileSystemEntry>>,
     mut root_events: EventReader<InsertComponentEvent<FileSystemRootChild>>,
     mut child_events: EventReader<InsertComponentEvent<FileSystemChild>>,
+    mut dependency_events: EventReader<InsertComponentEvent<FileDependency>>,
     entry_q: Query<&FileSystemEntry>,
     mut parent_q: Query<&mut FileSystemParent>,
     child_q: Query<&FileSystemChild>,
+    dependency_q: Query<&FileDependency>,
 ) {
     let project_root_entity = file_manager.project_root_entity;
     let mut recent_parents: Option<HashMap<Entity, FileSystemParent>> = None;
@@ -189,6 +197,17 @@ pub fn insert_file_component_events(
         for (entity, parent) in parent_map.drain() {
             commands.entity(entity).insert(parent);
         }
+    }
+
+    for event in dependency_events.iter() {
+        let entity = event.entity;
+        let component = dependency_q.get(entity).unwrap();
+        let file_entity = component.file_entity.get(&client).unwrap();
+        let dependency_entity = component.dependency_entity.get(&client).unwrap();
+
+        file_manager.file_add_dependency(&file_entity, &dependency_entity);
+
+        info!("received FileDependency(file: `{:?}`, dependency: `{:?}`)", file_entity, dependency_entity);
     }
 }
 

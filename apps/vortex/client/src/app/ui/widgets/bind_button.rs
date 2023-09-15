@@ -1,10 +1,10 @@
-use bevy_ecs::{entity::Entity, system::SystemState, world::World};
+use bevy_ecs::{entity::Entity, system::{SystemState, Commands}, world::World};
 
-use naia_bevy_client::Client;
+use naia_bevy_client::{Client, CommandsExt};
 
 use render_egui::{egui, egui::{Button, Direction, Frame, Layout, Ui}};
 
-use vortex_proto::{channels::FileActionChannel, components::{FileSystemEntry, FileTypeValue}, messages::FileBindMessage};
+use vortex_proto::{components::{FileDependency, FileSystemEntry, FileTypeValue}};
 
 use crate::app::{resources::{file_manager::FileManager}, ui::{BindingState, UiState}};
 
@@ -34,10 +34,18 @@ pub fn render_bind_button(ui: &mut Ui, world: &mut World, current_file_entity: E
                                 ui_state.binding_file = BindingState::NotBinding;
 
                                 // send message to server
-                                let mut system_state: SystemState<Client> = SystemState::new(world);
-                                let mut client = system_state.get_mut(world);
-                                let message = FileBindMessage::new(&client, &current_file_entity, &dependency_file_entity);
-                                client.send_message::<FileActionChannel, FileBindMessage>(&message);
+                                let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+                                let (mut commands, mut client) = system_state.get_mut(world);
+
+                                let mut component = FileDependency::new();
+                                component.file_entity.set(&client, &current_file_entity);
+                                component.dependency_entity.set(&client, &dependency_file_entity);
+                                commands
+                                    .spawn_empty()
+                                    .enable_replication(&mut client)
+                                    .insert(component);
+
+                                system_state.apply(world);
                             }
                         }
                     });

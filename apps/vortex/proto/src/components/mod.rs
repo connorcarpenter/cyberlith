@@ -4,7 +4,7 @@ mod file_system;
 use file_system::FileSystemComponentsPlugin;
 pub use file_system::{
     ChangelistEntry, ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry,
-    FileSystemRootChild,
+    FileSystemRootChild, FileDependency,
 };
 
 mod vertex;

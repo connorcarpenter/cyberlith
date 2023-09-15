@@ -8,7 +8,6 @@ mod reject;
 mod remove_component_events;
 mod spawn_entity_events;
 mod update_component_events;
-mod messages;
 
 pub use auth_status::*;
 pub use connect::*;
@@ -20,4 +19,3 @@ pub use reject::*;
 pub use remove_component_events::*;
 pub use spawn_entity_events::*;
 pub use update_component_events::*;
-pub use messages::*;

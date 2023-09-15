@@ -70,7 +70,6 @@ impl Plugin for VortexPlugin {
                     network::auth_granted_events,
                     network::auth_denied_events,
                     network::auth_reset_events,
-                    network::message_events,
                 )
                     .in_set(ReceiveEvents),
             )

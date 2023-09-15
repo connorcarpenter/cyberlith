@@ -8,10 +8,7 @@ use naia_bevy_client::{events::RemoveComponentEvents, Client};
 
 use render_api::{base::CpuMesh, components::Visibility, Assets};
 
-use vortex_proto::components::{
-    ChangelistEntry, ChangelistStatus, Edge3d, Face3d, FileSystemChild, FileSystemEntry,
-    FileSystemRootChild, Vertex3d,
-};
+use vortex_proto::components::{ChangelistEntry, ChangelistStatus, Edge3d, Face3d, FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild, Vertex3d};
 
 use crate::app::{
     components::{
@@ -94,6 +91,14 @@ pub fn remove_component_events(
                     }
                 }
             }
+        }
+        for (entity, component) in events.read::<FileDependency>() {
+            info!("entity: `{:?}`, removed FileDependency", entity);
+
+            let file_entity = component.file_entity.get(&client).unwrap();
+            let dependency_entity = component.dependency_entity.get(&client).unwrap();
+
+            file_manager.file_remove_dependency(&file_entity, &dependency_entity);
         }
         for (vertex_entity_3d, _) in events.read::<Vertex3d>() {
             info!("entity: `{:?}`, removed Vertex3d", vertex_entity_3d);
