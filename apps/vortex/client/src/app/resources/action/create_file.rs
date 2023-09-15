@@ -10,11 +10,9 @@ use render_api::components::Visibility;
 
 use vortex_proto::{
     components::{
-        ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
+        FileTypeValue, ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
     },
-    FileExtension,
 };
-use vortex_proto::components::FileTypeValue;
 
 use crate::app::{
     components::{
@@ -137,7 +135,7 @@ pub(crate) fn execute(
             &mut toolbar,
             &mut visibility_q,
             &entity_id,
-            FileExtension::from_file_name(&new_file_name),
+            FileTypeValue::from(new_file_name.as_str()),
         );
     }
 

@@ -16,10 +16,9 @@ use render_egui::{
 
 use vortex_proto::{
     channels::TabActionChannel,
-    components::{ChangelistStatus, FileSystemEntry},
+    components::{FileTypeValue, ChangelistStatus, FileSystemEntry},
     messages::{TabActionMessage, TabActionMessageType, TabOpenMessage},
     types::TabId,
-    FileExtension,
 };
 
 use crate::app::{
@@ -44,13 +43,13 @@ pub struct TabState {
     pub selected: bool,
     pub order: usize,
     pub tab_id: TabId,
-    pub ext: FileExtension,
+    pub ext: FileTypeValue,
     pub camera_state: CameraState,
     pub action_stack: ActionStack<ShapeAction>,
 }
 
 impl TabState {
-    pub fn new(id: TabId, order: usize, ext: FileExtension) -> Self {
+    pub fn new(id: TabId, order: usize, ext: FileTypeValue) -> Self {
         Self {
             selected: false,
             order,
@@ -105,7 +104,7 @@ impl TabManager {
         toolbar: &mut Toolbar,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         row_entity: &Entity,
-        file_ext: FileExtension,
+        file_ext: FileTypeValue,
     ) {
         if self.tab_map.contains_key(row_entity) {
             self.select_tab(
@@ -293,7 +292,7 @@ impl TabManager {
         let tab_state = self.tab_map.get_mut(&row_entity).unwrap();
         tab_state.selected = true;
 
-        let file_type = tab_state.ext.to_file_type();
+        let file_type = tab_state.ext;
 
         // change canvas's file type
         canvas.set_current_file_type(file_type);

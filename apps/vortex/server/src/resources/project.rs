@@ -1,5 +1,4 @@
 use std::{collections::HashMap, fs, fs::File, io::Read, path::Path, sync::Mutex};
-use std::ptr::addr_of_mut;
 
 use bevy_ecs::{
     entity::Entity,
@@ -12,10 +11,9 @@ use git2::{Repository, Signature};
 use naia_bevy_server::{BigMapKey, CommandsExt, RoomKey, Server, UserKey};
 
 use vortex_proto::{
-    components::{ChangelistEntry, ChangelistStatus, EntryKind, FileSystemEntry},
+    components::{FileTypeValue, ChangelistEntry, ChangelistStatus, EntryKind, FileSystemEntry},
     messages::ChangelistMessage,
     resources::FileEntryKey,
-    FileExtension,
 };
 
 use crate::{
@@ -174,7 +172,7 @@ impl Project {
             info!("creating file: {}", name);
         }
 
-        let file_extension = FileExtension::from_file_name(name);
+        let file_extension = FileTypeValue::from(name);
         let file_entry_val = FileEntryValue::new(entity, Some(file_extension), parent, None);
 
         // Add new Entity into Working Tree
@@ -853,7 +851,7 @@ impl Project {
         server: &mut Server,
         file_key: &FileEntryKey
     ) {
-        let mut filespace = self.filespaces.remove(file_key).unwrap();
+        let filespace = self.filespaces.remove(file_key).unwrap();
 
         let file_room_key = filespace.room_key();
 
@@ -878,7 +876,7 @@ impl Project {
         }
     }
 
-    pub(crate) fn working_file_extension(&self, key: &FileEntryKey) -> FileExtension {
+    pub(crate) fn working_file_extension(&self, key: &FileEntryKey) -> FileTypeValue {
         let value = self.working_file_entries.get(key).unwrap();
         value.extension().unwrap()
     }

@@ -19,9 +19,8 @@ use render_egui::{
 
 use vortex_proto::{
     components::{
-        ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
+        FileTypeValue, ChangelistStatus, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
     },
-    FileExtension,
 };
 
 use crate::app::{
@@ -41,6 +40,7 @@ use crate::app::{
         vertex_manager::VertexManager,
     },
     ui::{
+        BindingState,
         widgets::colors::{
             FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
             TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED,
@@ -48,7 +48,6 @@ use crate::app::{
         UiState,
     },
 };
-use crate::app::ui::BindingState;
 
 pub struct FileTreeRowUiWidget;
 
@@ -67,7 +66,7 @@ impl FileTreeRowUiWidget {
         } else {
             Self::paint_no_icon
         };
-        let file_extension = FileExtension::from_file_name(name);
+        let file_extension = FileTypeValue::from(name);
         let separator = if path.len() > 0 { ":" } else { "" };
         let full_path = format!("{}{}{}", path, separator, name);
         let unicode_icon = if is_dir { "📁" } else { "📃" };
@@ -218,7 +217,7 @@ impl FileTreeRowUiWidget {
 
     pub fn handle_interactions(
         is_dir: bool,
-        file_extension: FileExtension,
+        file_extension: FileTypeValue,
         depth: usize,
         world: &mut World,
         row_entity: &Entity,
@@ -397,7 +396,7 @@ impl FileTreeRowUiWidget {
         }
     }
 
-    pub fn on_row_double_click(world: &mut World, file_ext: FileExtension, row_entity: &Entity) {
+    pub fn on_row_double_click(world: &mut World, file_ext: FileTypeValue, row_entity: &Entity) {
         // select the row
         Self::on_row_click(world, row_entity);
 

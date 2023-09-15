@@ -6,7 +6,6 @@ use naia_bevy_shared::{
 };
 
 use math::Vec3;
-use crate::FileExtension;
 
 pub struct VertexComponentsPlugin;
 
@@ -134,9 +133,29 @@ pub enum FileTypeValue {
 }
 
 impl From<&str> for FileTypeValue {
-    fn from(s: &str) -> Self {
-        let file_ext = FileExtension::from_file_name(s);
-        file_ext.to_file_type()
+    fn from(file_name: &str) -> Self {
+        // split file name by '.'
+        let split: Vec<_> = file_name.split('.').collect();
+        let ext: &str = split.last().unwrap();
+
+        //info!("file_name: {}, ext: {}", file_name, ext);
+
+        // match file extension to enum
+        match ext {
+            "skel" => FileTypeValue::Skel,
+            "mesh" => FileTypeValue::Mesh,
+            "anim" => FileTypeValue::Anim,
+            _ => FileTypeValue::Unknown,
+        }
+    }
+}
+
+impl FileTypeValue {
+    pub fn can_io(&self) -> bool {
+        match self {
+            FileTypeValue::Skel | FileTypeValue::Mesh | FileTypeValue::Anim => true,
+            _ => false,
+        }
     }
 }
 

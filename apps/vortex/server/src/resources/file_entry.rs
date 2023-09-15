@@ -2,12 +2,12 @@ use std::collections::HashSet;
 
 use bevy_ecs::entity::Entity;
 
-use vortex_proto::{resources::FileEntryKey, FileExtension};
+use vortex_proto::{components::FileTypeValue, resources::FileEntryKey};
 
 #[derive(Clone)]
 pub struct FileEntryValue {
     entity: Entity,
-    extension: Option<FileExtension>,
+    extension: Option<FileTypeValue>,
     parent: Option<FileEntryKey>,
     children: Option<HashSet<FileEntryKey>>,
     dependencies: Option<HashSet<FileEntryKey>>,
@@ -16,7 +16,7 @@ pub struct FileEntryValue {
 impl FileEntryValue {
     pub fn new(
         entity: Entity,
-        extension: Option<FileExtension>,
+        extension: Option<FileTypeValue>,
         parent: Option<FileEntryKey>,
         children: Option<HashSet<FileEntryKey>>,
     ) -> Self {
@@ -37,7 +37,7 @@ impl FileEntryValue {
         self.entity = entity;
     }
 
-    pub fn extension(&self) -> Option<FileExtension> {
+    pub fn extension(&self) -> Option<FileTypeValue> {
         self.extension
     }
 

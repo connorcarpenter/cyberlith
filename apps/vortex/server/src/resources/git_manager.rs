@@ -15,10 +15,9 @@ use git2::{Cred, Repository, Tree};
 use naia_bevy_server::{BigMap, CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};
 
 use vortex_proto::{
-    components::{EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild},
+    components::{FileTypeValue, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild},
     messages::ChangelistMessage,
     resources::FileEntryKey,
-    FileExtension,
 };
 
 use crate::{
@@ -409,7 +408,7 @@ impl GitManager {
         &self,
         project_key: &ProjectKey,
         key: &FileEntryKey,
-    ) -> FileExtension {
+    ) -> FileTypeValue {
         self.projects
             .get(project_key)
             .unwrap()
@@ -485,7 +484,7 @@ fn fill_file_entries_from_git(
                 let id = GitManager::spawn_file_tree_entity(commands, server);
 
                 let file_entry_key = FileEntryKey::new(path, &name, entry_kind);
-                let file_extension = FileExtension::from_file_name(&name);
+                let file_extension = FileTypeValue::from(name.as_str());
                 let file_entry_value =
                     FileEntryValue::new(id, Some(file_extension), parent.clone(), None);
                 file_entries.insert(file_entry_key.clone(), file_entry_value);
