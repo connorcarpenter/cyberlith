@@ -93,6 +93,7 @@ impl ShapeManager {
             ContentOwnership::OwnedByTab => true,
             ContentOwnership::UnownedByTab => false,
             ContentOwnership::Unowned => true,
+            ContentOwnership::DependencyOwnedByTab => true
         }
     }
 
@@ -107,6 +108,7 @@ impl ShapeManager {
             ContentOwnership::OwnedByTab => true,
             ContentOwnership::UnownedByTab => false,
             ContentOwnership::Unowned => false,
+            ContentOwnership::DependencyOwnedByTab => true
         }
     }
 
@@ -122,6 +124,10 @@ impl ShapeManager {
                 return ContentOwnership::OwnedByTab;
             } else {
                 // check if file is a dependency of owning file
+                return match file_manager.file_has_dependency(&file_entity, &owned_by_tab.file_entity) {
+                    true => ContentOwnership::DependencyOwnedByTab,
+                    false => ContentOwnership::UnownedByTab,
+                }
             }
         }
         return ContentOwnership::Unowned;
@@ -129,6 +135,7 @@ impl ShapeManager {
 }
 
 enum ContentOwnership {
+    DependencyOwnedByTab,
     OwnedByTab,
     UnownedByTab,
     Unowned,

@@ -158,7 +158,7 @@ impl FileManager {
         Some(&file_data.changelist_children)
     }
 
-    pub(crate) fn file_has_dependency(
+    pub(crate) fn file_has_dependency_with_extension(
         &self,
         file_entity: &Entity,
         file_type: FileExtension,
@@ -186,6 +186,11 @@ impl FileManager {
             }
         }
         None
+    }
+
+    pub(crate) fn file_has_dependency(&self, file_entity: &Entity, dependency_file_entity: &Entity) -> bool {
+        let file_data = self.file_entities.get(file_entity).unwrap();
+        file_data.file_dependencies.contains(dependency_file_entity)
     }
 
     pub fn file_add_dependency(&mut self, file_entity: &Entity, dependency_file_entity: &Entity) {
