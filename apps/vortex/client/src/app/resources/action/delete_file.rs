@@ -6,28 +6,18 @@ use bevy_log::info;
 
 use naia_bevy_client::Client;
 
-use render_api::components::Visibility;
-
 use vortex_proto::components::{
     ChangelistEntry, EntryKind, FileSystemChild, FileSystemEntry, FileSystemRootChild,
 };
 
 use crate::app::{
-    components::{
-        file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
-        OwnedByFileLocal,
-    },
+    components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
     resources::{
         action::select_file::{request_entities, select_files},
         action::FileAction,
-        camera_manager::CameraManager,
-        canvas::Canvas,
-        edge_manager::EdgeManager,
         file_manager::FileManager,
         file_tree::FileTree,
-        input_manager::InputManager,
         tab_manager::TabManager,
-        vertex_manager::VertexManager,
     },
 };
 
@@ -42,13 +32,7 @@ pub(crate) fn execute(
         Commands,
         Client,
         ResMut<FileManager>,
-        ResMut<Canvas>,
-        ResMut<CameraManager>,
-        ResMut<InputManager>,
-        ResMut<VertexManager>,
-        ResMut<EdgeManager>,
         ResMut<TabManager>,
-        Query<(&mut Visibility, &OwnedByFileLocal)>,
         Query<(Entity, &mut FileSystemUiState)>,
         Query<(Entity, &ChangelistEntry, &mut ChangelistUiState)>,
         Query<(
@@ -62,13 +46,7 @@ pub(crate) fn execute(
         mut commands,
         mut client,
         mut file_manager,
-        mut canvas,
-        mut camera_manager,
-        mut input_manager,
-        mut vertex_manager,
-        mut edge_manager,
         mut tab_manager,
-        mut visibility_q,
         mut ui_q,
         mut cl_q,
         fs_query,
@@ -133,13 +111,7 @@ pub(crate) fn execute(
     // file manager track deleted file
     file_manager.on_file_delete(
         &mut client,
-        &mut canvas,
-        &mut camera_manager,
-        &mut input_manager,
-        &mut vertex_manager,
-        &mut edge_manager,
         &mut tab_manager,
-        &mut visibility_q,
         &file_entity,
     );
 

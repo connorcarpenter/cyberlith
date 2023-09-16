@@ -8,7 +8,6 @@ use bevy_log::info;
 
 use naia_bevy_client::Client;
 
-use render_api::components::Visibility;
 use render_egui::egui::epaint::ahash::HashSet;
 
 use vortex_proto::{
@@ -16,13 +15,7 @@ use vortex_proto::{
     resources::FileKey,
 };
 
-use crate::app::{
-    components::OwnedByFileLocal,
-    resources::{
-        camera_manager::CameraManager, canvas::Canvas, edge_manager::EdgeManager,
-        input_manager::InputManager, tab_manager::TabManager, vertex_manager::VertexManager,
-    },
-};
+use crate::app::resources::tab_manager::TabManager;
 
 struct ChangelistData {
     changelist_entity: Entity,
@@ -80,13 +73,7 @@ impl FileManager {
     pub fn on_file_delete(
         &mut self,
         client: &mut Client,
-        canvas: &mut Canvas,
-        camera_manager: &mut CameraManager,
-        input_manager: &mut InputManager,
-        vertex_manager: &mut VertexManager,
-        edge_manager: &mut EdgeManager,
         tab_manager: &mut TabManager,
-        visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         file_entity: &Entity,
     ) {
         self.file_entities.remove(file_entity);
@@ -94,13 +81,6 @@ impl FileManager {
         if tab_manager.file_has_tab(file_entity) {
             tab_manager.close_tab(
                 client,
-                self,
-                canvas,
-                camera_manager,
-                input_manager,
-                vertex_manager,
-                edge_manager,
-                visibility_q,
                 file_entity,
             );
         }

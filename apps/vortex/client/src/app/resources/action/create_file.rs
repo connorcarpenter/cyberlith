@@ -6,33 +6,23 @@ use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
-use render_api::components::Visibility;
-
 use vortex_proto::components::{
     ChangelistEntry, EntryKind, FileExtension, FileSystemChild, FileSystemEntry,
     FileSystemRootChild,
 };
 
 use crate::app::{
-    components::{
-        file_system::{
+    components::file_system::{
             ChangelistUiState, FileSystemEntryLocal, FileSystemParent, FileSystemUiState,
         },
-        OwnedByFileLocal,
-    },
     resources::{
         action::{
             select_file::{deselect_all_selected_files, release_entities},
             ActionStack, FileAction,
         },
-        camera_manager::CameraManager,
-        canvas::Canvas,
-        edge_manager::EdgeManager,
         file_manager::FileManager,
         file_tree::FileTree,
-        input_manager::InputManager,
         tab_manager::TabManager,
-        vertex_manager::VertexManager,
     },
     systems::file_post_process,
 };
@@ -52,32 +42,20 @@ pub(crate) fn execute(
     let mut system_state: SystemState<(
         Commands,
         Client,
-        ResMut<Canvas>,
-        ResMut<CameraManager>,
         ResMut<FileManager>,
-        ResMut<InputManager>,
-        ResMut<VertexManager>,
-        ResMut<EdgeManager>,
         ResMut<TabManager>,
         Query<(Entity, &mut FileSystemUiState)>,
         Query<(Entity, &ChangelistEntry, &mut ChangelistUiState)>,
         Query<&mut FileSystemParent>,
-        Query<(&mut Visibility, &OwnedByFileLocal)>,
     )> = SystemState::new(world);
     let (
         mut commands,
         mut client,
-        mut canvas,
-        mut camera_manager,
         mut file_manager,
-        mut input_manager,
-        mut vertex_manager,
-        mut edge_manager,
         mut tab_manager,
         mut fs_query,
         mut cl_query,
         mut parent_query,
-        mut visibility_q,
     ) = system_state.get_mut(world);
 
     let (deselected_row_entities, file_entries_to_release) =
@@ -121,17 +99,7 @@ pub(crate) fn execute(
 
     if entry_kind == EntryKind::File {
         // open tab for new entry
-        tab_manager.open_tab(
-            &mut client,
-            &file_manager,
-            &mut canvas,
-            &mut camera_manager,
-            &mut input_manager,
-            &mut vertex_manager,
-            &mut edge_manager,
-            &mut visibility_q,
-            &entity_id,
-        );
+        tab_manager.open_tab(&mut client, &entity_id);
     }
 
     system_state.apply(world);

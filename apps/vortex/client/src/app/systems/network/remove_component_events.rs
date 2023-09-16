@@ -6,7 +6,7 @@ use bevy_log::info;
 
 use naia_bevy_client::{events::RemoveComponentEvents, Client};
 
-use render_api::{base::CpuMesh, components::Visibility, Assets};
+use render_api::{base::CpuMesh, Assets};
 
 use vortex_proto::components::{
     ChangelistEntry, ChangelistStatus, Edge3d, Face3d, FileDependency, FileSystemChild,
@@ -14,12 +14,9 @@ use vortex_proto::components::{
 };
 
 use crate::app::{
-    components::{
-        file_system::{FileSystemParent, FileSystemUiState},
-        OwnedByFileLocal,
-    },
+    components::file_system::{FileSystemParent, FileSystemUiState},
     resources::{
-        camera_manager::CameraManager, canvas::Canvas, edge_manager::EdgeManager,
+        canvas::Canvas, edge_manager::EdgeManager,
         face_manager::FaceManager, file_manager::FileManager, input_manager::InputManager,
         tab_manager::TabManager, vertex_manager::VertexManager,
     },
@@ -29,7 +26,6 @@ pub fn remove_component_events(
     mut commands: Commands,
     mut client: Client,
     mut canvas: ResMut<Canvas>,
-    mut camera_manager: ResMut<CameraManager>,
     mut file_manager: ResMut<FileManager>,
     mut input_manager: ResMut<InputManager>,
     mut vertex_manager: ResMut<VertexManager>,
@@ -40,7 +36,6 @@ pub fn remove_component_events(
     mut event_reader: EventReader<RemoveComponentEvents>,
     mut parent_q: Query<&mut FileSystemParent>,
     mut fs_state_q: Query<&mut FileSystemUiState>,
-    mut visibility_q: Query<(&mut Visibility, &OwnedByFileLocal)>,
 ) {
     for events in event_reader.iter() {
         for (entity, _component) in events.read::<FileSystemEntry>() {
@@ -48,13 +43,7 @@ pub fn remove_component_events(
 
             file_manager.on_file_delete(
                 &mut client,
-                &mut canvas,
-                &mut camera_manager,
-                &mut input_manager,
-                &mut vertex_manager,
-                &mut edge_manager,
                 &mut tab_manager,
-                &mut visibility_q,
                 &entity,
             );
         }

@@ -8,7 +8,6 @@ use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
 
-use render_api::components::Visibility;
 use render_egui::{
     egui,
     egui::{
@@ -25,17 +24,11 @@ use vortex_proto::components::{
 use crate::app::{
     components::{
         file_system::{ContextMenuAction, FileSystemParent, FileSystemUiState, ModalRequestType},
-        OwnedByFileLocal,
     },
     resources::{
         action::{FileAction, FileActions},
-        camera_manager::CameraManager,
-        canvas::Canvas,
-        edge_manager::EdgeManager,
         file_manager::FileManager,
-        input_manager::InputManager,
         tab_manager::TabManager,
-        vertex_manager::VertexManager,
     },
     ui::{
         widgets::colors::{
@@ -398,40 +391,10 @@ impl FileTreeRowUiWidget {
 
         // add to tabs
         if file_ext.can_io() {
-            let mut system_state: SystemState<(
-                Client,
-                Res<FileManager>,
-                ResMut<Canvas>,
-                ResMut<CameraManager>,
-                ResMut<InputManager>,
-                ResMut<VertexManager>,
-                ResMut<EdgeManager>,
-                ResMut<TabManager>,
-                Query<(&mut Visibility, &OwnedByFileLocal)>,
-            )> = SystemState::new(world);
-            let (
-                mut client,
-                file_manager,
-                mut canvas,
-                mut camera_manager,
-                mut input_manager,
-                mut vertex_manager,
-                mut edge_manager,
-                mut tab_manager,
-                mut visibility_q,
-            ) = system_state.get_mut(world);
+            let mut system_state: SystemState<(Client, ResMut<TabManager>)> = SystemState::new(world);
+            let (mut client, mut tab_manager) = system_state.get_mut(world);
 
-            tab_manager.open_tab(
-                &mut client,
-                &file_manager,
-                &mut canvas,
-                &mut camera_manager,
-                &mut input_manager,
-                &mut vertex_manager,
-                &mut edge_manager,
-                &mut visibility_q,
-                row_entity,
-            );
+            tab_manager.open_tab(&mut client, row_entity);
 
             system_state.apply(world);
         }

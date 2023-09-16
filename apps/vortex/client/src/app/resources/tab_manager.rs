@@ -22,11 +22,11 @@ use vortex_proto::{
     types::TabId,
 };
 
-use crate::app::resources::file_manager::FileManager;
-use crate::app::resources::shape_manager::ShapeManager;
 use crate::app::{
     components::{file_system::FileSystemUiState, OwnedByFileLocal},
     resources::{
+        file_manager::FileManager,
+        shape_manager::ShapeManager,
         action::{ActionStack, ShapeAction},
         camera_manager::CameraManager,
         camera_state::CameraState,
@@ -73,6 +73,7 @@ enum TabAction {
 #[derive(Resource)]
 pub struct TabManager {
     current_tab: Option<Entity>,
+    last_tab: Option<Entity>,
     // entity is file entity here
     tab_map: HashMap<Entity, TabState>,
     tab_order: Vec<Entity>,
@@ -84,6 +85,7 @@ impl Default for TabManager {
     fn default() -> Self {
         Self {
             current_tab: None,
+            last_tab: None,
             tab_map: HashMap::new(),
             tab_order: Vec::new(),
             new_tab_id: 0,
@@ -93,29 +95,68 @@ impl Default for TabManager {
 }
 
 impl TabManager {
-    pub fn open_tab(
+
+    pub fn sync_tabs(
+        mut tab_manager: ResMut<TabManager>,
+        file_manager: Res<FileManager>,
+        mut canvas: ResMut<Canvas>,
+        mut camera_manager: ResMut<CameraManager>,
+        mut input_manager: ResMut<InputManager>,
+        mut vertex_manager: ResMut<VertexManager>,
+        mut edge_manager: ResMut<EdgeManager>,
+        mut visibility_q: Query<(&mut Visibility, &OwnedByFileLocal)>
+    ) {
+        tab_manager.on_sync_tabs(
+            &file_manager,
+            &mut canvas,
+            &mut camera_manager,
+            &mut input_manager,
+            &mut vertex_manager,
+            &mut edge_manager,
+            &mut visibility_q
+        );
+    }
+
+    pub fn on_sync_tabs(
         &mut self,
-        client: &mut Client,
         file_manager: &FileManager,
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         input_manager: &mut InputManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
-        visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
+        visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>
+    ) {
+        if self.current_tab == self.last_tab {
+            return;
+        }
+
+        self.last_tab = self.current_tab;
+
+
+        canvas.set_visibility(true);
+        canvas.set_focused_timed(input_manager, vertex_manager, edge_manager);
+
+        if let Some(current_tab_file_entity) = self.current_tab_entity() {
+            for (mut visibility, owned_by_tab) in visibility_q.iter_mut() {
+                visibility.visible = ShapeManager::is_owned_by_file(
+                    file_manager,
+                    current_tab_file_entity,
+                    Some(&owned_by_tab.file_entity),
+                );
+            }
+        }
+
+        camera_manager.recalculate_3d_view();
+    }
+
+    pub fn open_tab(
+        &mut self,
+        client: &mut Client,
         row_entity: &Entity,
     ) {
         if self.tab_map.contains_key(row_entity) {
-            self.select_tab(
-                file_manager,
-                canvas,
-                camera_manager,
-                input_manager,
-                vertex_manager,
-                edge_manager,
-                visibility_q,
-                row_entity,
-            );
+            self.select_tab(row_entity);
         } else {
             // get current tab order
             let current_order = if let Some(current_entity) = self.current_tab {
@@ -136,16 +177,7 @@ impl TabManager {
             client.send_message::<TabActionChannel, TabOpenMessage>(&message);
 
             // select tab
-            self.select_tab(
-                file_manager,
-                canvas,
-                camera_manager,
-                input_manager,
-                vertex_manager,
-                edge_manager,
-                visibility_q,
-                row_entity,
-            );
+            self.select_tab(row_entity);
 
             self.update_tab_orders();
         }
@@ -154,13 +186,6 @@ impl TabManager {
     pub fn close_tab(
         &mut self,
         client: &mut Client,
-        file_manager: &FileManager,
-        canvas: &mut Canvas,
-        camera_manager: &mut CameraManager,
-        input_manager: &mut InputManager,
-        vertex_manager: &mut VertexManager,
-        edge_manager: &mut EdgeManager,
-        visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         row_entity: &Entity,
     ) {
         // remove tab
@@ -178,19 +203,10 @@ impl TabManager {
                 }
                 if let Some(new_entity) = self.tab_order.get(new_tab_order) {
                     let new_entity = *new_entity;
-                    self.clear_current_tab(canvas, camera_manager);
-                    self.select_tab(
-                        file_manager,
-                        canvas,
-                        camera_manager,
-                        input_manager,
-                        vertex_manager,
-                        edge_manager,
-                        visibility_q,
-                        &new_entity,
-                    );
+                    self.clear_current_tab();
+                    self.select_tab(&new_entity);
                 } else {
-                    self.clear_current_tab(canvas, camera_manager);
+                    self.clear_current_tab();
                 }
             }
         }
@@ -265,13 +281,6 @@ impl TabManager {
 
     fn select_tab(
         &mut self,
-        file_manager: &FileManager,
-        canvas: &mut Canvas,
-        camera_manager: &mut CameraManager,
-        input_manager: &mut InputManager,
-        vertex_manager: &mut VertexManager,
-        edge_manager: &mut EdgeManager,
-        visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         row_entity: &Entity,
     ) {
         // deselect current tab
@@ -281,77 +290,27 @@ impl TabManager {
         }
 
         // select new tab
-        self.set_current_tab(
-            file_manager,
-            canvas,
-            camera_manager,
-            input_manager,
-            vertex_manager,
-            edge_manager,
-            visibility_q,
-            *row_entity,
-        );
+        self.set_current_tab(*row_entity);
         let tab_state = self.tab_map.get_mut(&row_entity).unwrap();
         tab_state.selected = true;
     }
 
-    fn set_current_tab(
-        &mut self,
-        file_manager: &FileManager,
-        canvas: &mut Canvas,
-        camera_manager: &mut CameraManager,
-        input_manager: &mut InputManager,
-        vertex_manager: &mut VertexManager,
-        edge_manager: &mut EdgeManager,
-        visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
-        tab_entity: Entity,
-    ) {
+    fn set_current_tab(&mut self, tab_entity: Entity) {
         self.current_tab = Some(tab_entity);
-
-        canvas.set_visibility(true);
-        canvas.set_focused_timed(input_manager, vertex_manager, edge_manager);
-
-        if let Some(current_tab_file_entity) = self.current_tab_entity() {
-            for (mut visibility, owned_by_tab) in visibility_q.iter_mut() {
-                visibility.visible = ShapeManager::is_owned_by_file(
-                    file_manager,
-                    current_tab_file_entity,
-                    Some(&owned_by_tab.file_entity),
-                );
-            }
-        }
-
-        camera_manager.recalculate_3d_view();
     }
 
-    fn clear_current_tab(&mut self, canvas: &mut Canvas, camera_manager: &mut CameraManager) {
+    fn clear_current_tab(&mut self) {
         self.current_tab = None;
-        canvas.set_visibility(false);
-        camera_manager.recalculate_3d_view();
     }
 
     fn close_all_tabs(
         &mut self,
         client: &mut Client,
-        file_manager: &FileManager,
-        canvas: &mut Canvas,
-        camera_manager: &mut CameraManager,
-        input_manager: &mut InputManager,
-        vertex_manager: &mut VertexManager,
-        edge_manager: &mut EdgeManager,
-        visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
     ) {
         let all_tabs = self.tab_order.clone();
         for entity in all_tabs {
             self.close_tab(
                 client,
-                file_manager,
-                canvas,
-                camera_manager,
-                input_manager,
-                vertex_manager,
-                edge_manager,
-                visibility_q,
                 &entity,
             );
         }
@@ -360,50 +319,18 @@ impl TabManager {
     fn close_all_tabs_except(
         &mut self,
         client: &mut Client,
-        file_manager: &FileManager,
-        canvas: &mut Canvas,
-        camera_manager: &mut CameraManager,
-        input_manager: &mut InputManager,
-        vertex_manager: &mut VertexManager,
-        edge_manager: &mut EdgeManager,
-        visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         row_entity: &Entity,
     ) {
-        self.close_all_tabs(
-            client,
-            file_manager,
-            canvas,
-            camera_manager,
-            input_manager,
-            vertex_manager,
-            edge_manager,
-            visibility_q,
-        );
+        self.close_all_tabs(client);
         if !self.tab_map.contains_key(row_entity) {
             panic!("row entity not in tab map!")
         }
-        self.select_tab(
-            file_manager,
-            canvas,
-            camera_manager,
-            input_manager,
-            vertex_manager,
-            edge_manager,
-            visibility_q,
-            row_entity,
-        );
+        self.select_tab(row_entity);
     }
 
     fn close_all_tabs_left_of(
         &mut self,
         client: &mut Client,
-        file_manager: &FileManager,
-        canvas: &mut Canvas,
-        camera_manager: &mut CameraManager,
-        input_manager: &mut InputManager,
-        vertex_manager: &mut VertexManager,
-        edge_manager: &mut EdgeManager,
-        visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         row_entity: &Entity,
     ) {
         let tab_state = self.tab_map.get(row_entity).unwrap();
@@ -417,13 +344,6 @@ impl TabManager {
         for entity in tabs_to_close {
             self.close_tab(
                 client,
-                file_manager,
-                canvas,
-                camera_manager,
-                input_manager,
-                vertex_manager,
-                edge_manager,
-                visibility_q,
                 &entity,
             );
         }
@@ -432,13 +352,6 @@ impl TabManager {
     fn close_all_tabs_right_of(
         &mut self,
         client: &mut Client,
-        file_manager: &FileManager,
-        canvas: &mut Canvas,
-        camera_manager: &mut CameraManager,
-        input_manager: &mut InputManager,
-        vertex_manager: &mut VertexManager,
-        edge_manager: &mut EdgeManager,
-        visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         row_entity: &Entity,
     ) {
         let tab_state = self.tab_map.get(row_entity).unwrap();
@@ -452,13 +365,6 @@ impl TabManager {
         for entity in tabs_to_close {
             self.close_tab(
                 client,
-                file_manager,
-                canvas,
-                camera_manager,
-                input_manager,
-                vertex_manager,
-                edge_manager,
-                visibility_q,
                 &entity,
             );
         }
@@ -467,15 +373,8 @@ impl TabManager {
     fn render_tabs(
         &mut self,
         client: &mut Client,
-        file_manager: &FileManager,
-        canvas: &mut Canvas,
-        camera_manager: &mut CameraManager,
-        input_manager: &mut InputManager,
-        vertex_manager: &mut VertexManager,
-        edge_manager: &mut EdgeManager,
         ui: &mut Ui,
         file_q: &Query<(&FileSystemEntry, &FileSystemUiState)>,
-        visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
     ) {
         let mut tab_action = None;
 
@@ -492,13 +391,6 @@ impl TabManager {
 
         self.execute_tab_action(
             client,
-            file_manager,
-            canvas,
-            camera_manager,
-            input_manager,
-            vertex_manager,
-            edge_manager,
-            visibility_q,
             tab_action,
         );
     }
@@ -654,90 +546,37 @@ impl TabManager {
     fn execute_tab_action(
         &mut self,
         client: &mut Client,
-        file_manager: &FileManager,
-        canvas: &mut Canvas,
-        camera_manager: &mut CameraManager,
-        input_manager: &mut InputManager,
-        vertex_manager: &mut VertexManager,
-        edge_manager: &mut EdgeManager,
-        visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
         tab_action: Option<TabAction>,
     ) {
         match tab_action {
             None => {}
             Some(TabAction::Select(row_entity)) => {
-                self.select_tab(
-                    file_manager,
-                    canvas,
-                    camera_manager,
-                    input_manager,
-                    vertex_manager,
-                    edge_manager,
-                    visibility_q,
-                    &row_entity,
-                );
+                self.select_tab(&row_entity);
             }
             Some(TabAction::Close(row_entity)) => {
                 self.close_tab(
                     client,
-                    file_manager,
-                    canvas,
-                    camera_manager,
-                    input_manager,
-                    vertex_manager,
-                    edge_manager,
-                    visibility_q,
                     &row_entity,
                 );
             }
             Some(TabAction::CloseAll) => {
-                self.close_all_tabs(
-                    client,
-                    file_manager,
-                    canvas,
-                    camera_manager,
-                    input_manager,
-                    vertex_manager,
-                    edge_manager,
-                    visibility_q,
-                );
+                self.close_all_tabs(client);
             }
             Some(TabAction::CloseOthers(row_entity)) => {
                 self.close_all_tabs_except(
                     client,
-                    file_manager,
-                    canvas,
-                    camera_manager,
-                    input_manager,
-                    vertex_manager,
-                    edge_manager,
-                    visibility_q,
                     &row_entity,
                 );
             }
             Some(TabAction::CloseLeft(row_entity)) => {
                 self.close_all_tabs_left_of(
                     client,
-                    file_manager,
-                    canvas,
-                    camera_manager,
-                    input_manager,
-                    vertex_manager,
-                    edge_manager,
-                    visibility_q,
                     &row_entity,
                 );
             }
             Some(TabAction::CloseRight(row_entity)) => {
                 self.close_all_tabs_right_of(
                     client,
-                    file_manager,
-                    canvas,
-                    camera_manager,
-                    input_manager,
-                    vertex_manager,
-                    edge_manager,
-                    visibility_q,
                     &row_entity,
                 );
             }
@@ -750,41 +589,12 @@ pub fn render_tab_bar(ui: &mut Ui, world: &mut World) {
         egui::menu::bar(ui, |ui| {
             let mut system_state: SystemState<(
                 Client,
-                Res<FileManager>,
-                ResMut<Canvas>,
-                ResMut<CameraManager>,
-                ResMut<InputManager>,
-                ResMut<VertexManager>,
-                ResMut<EdgeManager>,
                 ResMut<TabManager>,
                 Query<(&FileSystemEntry, &FileSystemUiState)>,
-                Query<(&mut Visibility, &OwnedByFileLocal)>,
             )> = SystemState::new(world);
-            let (
-                mut client,
-                file_manager,
-                mut canvas,
-                mut camera_manager,
-                mut input_manager,
-                mut vertex_manager,
-                mut edge_manager,
-                mut tab_manager,
-                file_q,
-                mut visibility_q,
-            ) = system_state.get_mut(world);
+            let (mut client, mut tab_manager, file_q) = system_state.get_mut(world);
 
-            tab_manager.render_tabs(
-                &mut client,
-                &file_manager,
-                &mut canvas,
-                &mut camera_manager,
-                &mut input_manager,
-                &mut vertex_manager,
-                &mut edge_manager,
-                ui,
-                &file_q,
-                &mut visibility_q,
-            );
+            tab_manager.render_tabs(&mut client, ui, &file_q);
 
             system_state.apply(world);
         });
