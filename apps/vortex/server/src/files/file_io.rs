@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use bevy_ecs::{entity::Entity, system::Commands, world::World};
 use bevy_log::info;
 
-use naia_bevy_server::{CommandsExt, RoomKey, Server};
+use naia_bevy_server::{CommandsExt, Server};
 
 use vortex_proto::{
     components::{FileExtension, FileType, OwnedByFile},
@@ -116,7 +116,6 @@ pub fn load_content_entities(
     project: &mut Project,
     shape_manager: &mut ShapeManager,
     file_extension: &FileExtension,
-    file_room_key: &RoomKey,
     file_key: &FileKey,
     file_entity: &Entity,
     bytes: Box<[u8]>,

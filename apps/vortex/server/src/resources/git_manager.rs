@@ -200,10 +200,7 @@ impl GitManager {
         };
 
         let project = self.projects.get_mut(&project_key).unwrap();
-        project.on_remove_content_entity(&file_key, entity);
-
-        let file_room_key = project.file_room_key(&file_key).unwrap();
-        server.room_mut(&file_room_key).remove_entity(entity);
+        project.on_remove_content_entity(server, &file_key, entity);
     }
 
     pub fn create_project(

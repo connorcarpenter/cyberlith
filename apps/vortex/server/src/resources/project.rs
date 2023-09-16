@@ -121,11 +121,12 @@ impl Project {
             .add_content_entity(*entity, content_data.clone());
     }
 
-    pub(crate) fn on_remove_content_entity(&mut self, file_key: &FileKey, entity: &Entity) {
-        self.filespaces
-            .get_mut(file_key)
-            .unwrap()
-            .remove_content_entity(entity);
+    pub(crate) fn on_remove_content_entity(&mut self, server: &mut Server, file_key: &FileKey, entity: &Entity) {
+        // it's possible the the filespace has already be despawned
+        if let Some(filespace) = self.filespaces.get_mut(file_key) {
+            filespace.remove_content_entity(entity);
+            server.room_mut(&filespace.room_key()).remove_entity(entity);
+        }
     }
 
     pub(crate) fn user_join_filespace(
@@ -599,14 +600,12 @@ impl Project {
         );
 
         // respawn all entities
-        let filespace_room_key = self.file_room_key(file_key).unwrap();
         let new_content_entities = load_content_entities(
             commands,
             server,
             self,
             shape_manager,
             &file_extension,
-            &filespace_room_key,
             file_key,
             file_entity,
             bytes,
@@ -832,7 +831,6 @@ impl Project {
             self,
             shape_manager,
             &file_extension,
-            &file_room_key,
             file_key,
             &file_entity,
             bytes,
