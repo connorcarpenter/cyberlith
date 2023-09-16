@@ -67,7 +67,7 @@ pub fn despawn_entity_events(
                 info!("entity: `{:?}` (which is a Vertex), despawned", entity);
 
                 let other_entities_to_despawn =
-                    shape_manager.on_delete_vertex(&mut commands, &mut server, entity);
+                    shape_manager.on_client_despawn_vertex(&mut commands, &mut server, entity);
 
                 git_manager.on_client_remove_content_entity(&entity);
                 for other_entity in other_entities_to_despawn {
@@ -78,7 +78,7 @@ pub fn despawn_entity_events(
                 // edge
                 info!("entity: `{:?}` (which is an Edge), despawned", entity);
 
-                shape_manager.on_delete_edge(entity);
+                shape_manager.on_client_despawn_edge(entity);
 
                 git_manager.on_client_remove_content_entity(&entity);
             }

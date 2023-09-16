@@ -208,10 +208,10 @@ pub fn despawn_file_content_entities(
 
         match entity_data {
             ContentEntityData::Shape(ShapeType::Vertex) => {
-                shape_manager.on_delete_vertex(commands, server, entity);
+                shape_manager.deregister_vertex(entity);
             }
             ContentEntityData::Shape(ShapeType::Edge) => {
-                shape_manager.on_delete_edge(entity);
+                shape_manager.deregister_edge(entity);
             }
             ContentEntityData::Shape(ShapeType::Face) => {}
             ContentEntityData::Dependency(dependency_key) => {

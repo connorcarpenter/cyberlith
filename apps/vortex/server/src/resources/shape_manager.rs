@@ -8,12 +8,12 @@ use bevy_log::{info, warn};
 
 use naia_bevy_server::{CommandsExt, Server};
 
-enum VertexData {
+pub enum VertexData {
     Skel(SkelVertexData),
     Mesh(MeshVertexData),
 }
 
-struct SkelVertexData {
+pub struct SkelVertexData {
     // parent entity, edge entity
     parent_and_edge_opt: Option<(Entity, Entity)>,
     // children map from vertex entity to edge entity
@@ -42,7 +42,7 @@ impl SkelVertexData {
     }
 }
 
-struct MeshVertexData {
+pub struct MeshVertexData {
     edges: HashSet<Entity>,
     // faces
     faces: HashSet<Entity>,
@@ -74,7 +74,7 @@ impl MeshVertexData {
     }
 }
 
-struct EdgeData {
+pub struct EdgeData {
     vertex_a: Entity,
     vertex_b: Entity,
 }
@@ -168,8 +168,7 @@ impl ShapeManager {
 
         info!("inserting mesh vert entity: `{:?}`", vertex_entity,);
 
-        self.vertices
-            .insert(vertex_entity, VertexData::Mesh(MeshVertexData::new()));
+        self.vertices.insert(vertex_entity, VertexData::Mesh(MeshVertexData::new()));
     }
 
     pub fn on_create_skel_vertex(
@@ -250,22 +249,30 @@ impl ShapeManager {
         // TODO: add face to edges
     }
 
-    pub fn on_delete_vertex(
+    pub fn deregister_vertex(&mut self, vertex_entity: &Entity) -> Option<VertexData> {
+        self.vertices.remove(vertex_entity)
+    }
+
+    pub fn deregister_edge(&mut self, edge_entity: &Entity) -> Option<EdgeData> {
+        self.edges.remove(edge_entity)
+    }
+
+    pub fn on_client_despawn_vertex(
         &mut self,
         commands: &mut Commands,
         server: &mut Server,
         entity: &Entity,
     ) -> Vec<Entity> {
         let entities_to_despawn = match self.vertices.get(entity) {
-            Some(VertexData::Skel(_)) => self.on_delete_skel_vertex(entity),
-            Some(VertexData::Mesh(_)) => self.on_delete_mesh_vertex(entity),
+            Some(VertexData::Skel(_)) => self.on_client_despawn_skel_vertex(entity),
+            Some(VertexData::Mesh(_)) => self.on_client_despawn_mesh_vertex(entity),
             None => {
-                panic!("on_delete_vertex: vertex entity `{:?}` not found!", entity);
+                panic!("on_client_despawn_vertex: vertex entity `{:?}` not found!", entity);
             }
         };
 
         info!(
-            "on_delete_vertex: entity `{:?}`, entities_to_despawn: `{:?}`",
+            "on_client_despawn_vertex: entity `{:?}`, entities_to_despawn: `{:?}`",
             entity, entities_to_despawn,
         );
 
@@ -279,11 +286,28 @@ impl ShapeManager {
         entities_to_despawn
     }
 
-    fn on_delete_skel_vertex(&mut self, entity: &Entity) -> Vec<Entity> {
-        Self::remove_skel_vertex(&mut self.vertices, entity)
+    fn on_client_despawn_skel_vertex(&mut self, vertex_entity: &Entity) -> Vec<Entity> {
+        let mut entities_to_despawn = Vec::new();
+
+        // remove entry
+        let removed_entry = self.remove_skel_vertex_and_collect_children(
+            vertex_entity,
+            &mut entities_to_despawn,
+        );
+
+        // remove entry from parent's children
+        if let Some((parent_entity, _)) = removed_entry.parent_and_edge_opt {
+            if let Some(VertexData::Skel(parent)) = self.vertices.get_mut(&parent_entity) {
+                if let Some(edge_entity) = parent.remove_child(vertex_entity) {
+                    entities_to_despawn.push(edge_entity);
+                }
+            }
+        }
+
+        return entities_to_despawn;
     }
 
-    fn on_delete_mesh_vertex(&mut self, vertex_entity: &Entity) -> Vec<Entity> {
+    fn on_client_despawn_mesh_vertex(&mut self, vertex_entity: &Entity) -> Vec<Entity> {
         let mut entities_to_despawn = Vec::new();
 
         let VertexData::Mesh(vertex_data) = self.vertices.remove(vertex_entity).unwrap() else {
@@ -293,7 +317,7 @@ impl ShapeManager {
         for edge_entity in vertex_data.edges.iter() {
             entities_to_despawn.push(*edge_entity);
 
-            self.on_delete_edge(edge_entity);
+            self.on_client_despawn_edge(edge_entity);
         }
 
         for face_entity in vertex_data.faces.iter() {
@@ -305,8 +329,8 @@ impl ShapeManager {
         entities_to_despawn
     }
 
-    pub fn on_delete_edge(&mut self, edge_entity: &Entity) {
-        let Some(edge_data) = self.edges.remove(edge_entity) else {
+    pub fn on_client_despawn_edge(&mut self, edge_entity: &Entity) {
+        let Some(edge_data) = self.deregister_edge(edge_entity) else {
             warn!("edge entity `{:?}` not found, perhaps was already despawned?", edge_entity);
             return;
         };
@@ -336,45 +360,19 @@ impl ShapeManager {
         }
     }
 
-    fn remove_skel_vertex(
-        entities: &mut HashMap<Entity, VertexData>,
-        vertex_entity: &Entity,
-    ) -> Vec<Entity> {
-        let mut entities_to_despawn = Vec::new();
-
-        // remove entry
-        let removed_entry = Self::remove_skel_vertex_and_collect_children(
-            entities,
-            vertex_entity,
-            &mut entities_to_despawn,
-        );
-
-        // remove entry from parent's children
-        if let Some((parent_entity, _)) = removed_entry.parent_and_edge_opt {
-            if let Some(VertexData::Skel(parent)) = entities.get_mut(&parent_entity) {
-                if let Some(edge_entity) = parent.remove_child(vertex_entity) {
-                    entities_to_despawn.push(edge_entity);
-                }
-            }
-        }
-
-        return entities_to_despawn;
-    }
-
     fn remove_skel_vertex_and_collect_children(
-        entities: &mut HashMap<Entity, VertexData>,
+        &mut self,
         entity: &Entity,
         entities_to_despawn: &mut Vec<Entity>,
     ) -> SkelVertexData {
-        let VertexData::Skel(removed_entry) = entities.remove(entity).unwrap() else {
+        let VertexData::Skel(removed_entry) = self.deregister_vertex(entity).unwrap() else {
             panic!("shouldn't be able to happen!");
         };
 
         // handle children
         if let Some(removed_entry_children) = &removed_entry.children {
             for (child_entity, edge_entity) in removed_entry_children {
-                Self::remove_skel_vertex_and_collect_children(
-                    entities,
+                self.remove_skel_vertex_and_collect_children(
                     &child_entity,
                     entities_to_despawn,
                 );

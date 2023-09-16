@@ -324,10 +324,10 @@ impl SkelReader {
                         entity_id,
                         parent_id_opt
                     );
+                    commands
+                        .entity(entity_id)
+                        .configure_replication(ReplicationConfig::Delegated);
                     if parent_id_opt.is_some() {
-                        commands
-                            .entity(entity_id)
-                            .configure_replication(ReplicationConfig::Delegated);
                         entities.push((
                             entity_id,
                             x,

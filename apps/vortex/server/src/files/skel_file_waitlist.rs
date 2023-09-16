@@ -112,6 +112,7 @@ impl SkelFileWaitlist {
                 self.get_mut(&vertex_entity)
                     .unwrap()
                     .set_shape_type(ShapeType::Vertex);
+                possibly_ready_entities.push(vertex_entity);
             }
             SkelWaitlistInsert::VertexRoot(vertex_entity) => {
                 if !self.contains_key(&vertex_entity) {
