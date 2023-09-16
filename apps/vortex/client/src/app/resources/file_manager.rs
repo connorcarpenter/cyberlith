@@ -79,10 +79,7 @@ impl FileManager {
         self.file_entities.remove(file_entity);
 
         if tab_manager.file_has_tab(file_entity) {
-            tab_manager.close_tab(
-                client,
-                file_entity,
-            );
+            tab_manager.close_tab(client, file_entity);
         }
     }
 

@@ -22,8 +22,8 @@ use vortex_proto::components::{
 };
 
 use crate::app::{
-    components::{
-        file_system::{ContextMenuAction, FileSystemParent, FileSystemUiState, ModalRequestType},
+    components::file_system::{
+        ContextMenuAction, FileSystemParent, FileSystemUiState, ModalRequestType,
     },
     resources::{
         action::{FileAction, FileActions},
@@ -391,7 +391,8 @@ impl FileTreeRowUiWidget {
 
         // add to tabs
         if file_ext.can_io() {
-            let mut system_state: SystemState<(Client, ResMut<TabManager>)> = SystemState::new(world);
+            let mut system_state: SystemState<(Client, ResMut<TabManager>)> =
+                SystemState::new(world);
             let (mut client, mut tab_manager) = system_state.get_mut(world);
 
             tab_manager.open_tab(&mut client, row_entity);

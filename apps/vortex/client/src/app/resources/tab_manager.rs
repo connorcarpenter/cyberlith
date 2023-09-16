@@ -25,14 +25,14 @@ use vortex_proto::{
 use crate::app::{
     components::{file_system::FileSystemUiState, OwnedByFileLocal},
     resources::{
-        file_manager::FileManager,
-        shape_manager::ShapeManager,
         action::{ActionStack, ShapeAction},
         camera_manager::CameraManager,
         camera_state::CameraState,
         canvas::Canvas,
         edge_manager::EdgeManager,
+        file_manager::FileManager,
         input_manager::InputManager,
+        shape_manager::ShapeManager,
         vertex_manager::VertexManager,
     },
     ui::widgets::colors::{
@@ -97,7 +97,6 @@ impl Default for TabManager {
 }
 
 impl TabManager {
-
     pub fn sync_tabs(
         mut tab_manager: ResMut<TabManager>,
         file_manager: Res<FileManager>,
@@ -106,7 +105,7 @@ impl TabManager {
         mut input_manager: ResMut<InputManager>,
         mut vertex_manager: ResMut<VertexManager>,
         mut edge_manager: ResMut<EdgeManager>,
-        mut visibility_q: Query<(&mut Visibility, &OwnedByFileLocal)>
+        mut visibility_q: Query<(&mut Visibility, &OwnedByFileLocal)>,
     ) {
         tab_manager.on_sync_tabs(
             &mut canvas,
@@ -114,11 +113,7 @@ impl TabManager {
             &mut vertex_manager,
             &mut edge_manager,
         );
-        tab_manager.on_sync_tab_ownership(
-            &file_manager,
-            &mut camera_manager,
-            &mut visibility_q,
-        );
+        tab_manager.on_sync_tab_ownership(&file_manager, &mut camera_manager, &mut visibility_q);
     }
 
     pub fn on_sync_tabs(
@@ -148,7 +143,7 @@ impl TabManager {
         &mut self,
         file_manager: &FileManager,
         camera_manager: &mut CameraManager,
-        visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>
+        visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
     ) {
         if !self.resync_tab_ownership {
             return;
@@ -169,11 +164,7 @@ impl TabManager {
         camera_manager.recalculate_3d_view();
     }
 
-    pub fn open_tab(
-        &mut self,
-        client: &mut Client,
-        row_entity: &Entity,
-    ) {
+    pub fn open_tab(&mut self, client: &mut Client, row_entity: &Entity) {
         if self.tab_map.contains_key(row_entity) {
             self.select_tab(row_entity);
         } else {
@@ -202,11 +193,7 @@ impl TabManager {
         }
     }
 
-    pub fn close_tab(
-        &mut self,
-        client: &mut Client,
-        row_entity: &Entity,
-    ) {
+    pub fn close_tab(&mut self, client: &mut Client, row_entity: &Entity) {
         // remove tab
         let tab_state = self.tab_map.remove(row_entity).unwrap();
         self.tab_order.remove(tab_state.order);
@@ -298,10 +285,7 @@ impl TabManager {
         }
     }
 
-    fn select_tab(
-        &mut self,
-        row_entity: &Entity,
-    ) {
+    fn select_tab(&mut self, row_entity: &Entity) {
         // deselect current tab
         if let Some(current_entity) = self.current_tab {
             let tab_state = self.tab_map.get_mut(&current_entity).unwrap();
@@ -322,24 +306,14 @@ impl TabManager {
         self.current_tab = None;
     }
 
-    fn close_all_tabs(
-        &mut self,
-        client: &mut Client,
-    ) {
+    fn close_all_tabs(&mut self, client: &mut Client) {
         let all_tabs = self.tab_order.clone();
         for entity in all_tabs {
-            self.close_tab(
-                client,
-                &entity,
-            );
+            self.close_tab(client, &entity);
         }
     }
 
-    fn close_all_tabs_except(
-        &mut self,
-        client: &mut Client,
-        row_entity: &Entity,
-    ) {
+    fn close_all_tabs_except(&mut self, client: &mut Client, row_entity: &Entity) {
         self.close_all_tabs(client);
         if !self.tab_map.contains_key(row_entity) {
             panic!("row entity not in tab map!")
@@ -347,11 +321,7 @@ impl TabManager {
         self.select_tab(row_entity);
     }
 
-    fn close_all_tabs_left_of(
-        &mut self,
-        client: &mut Client,
-        row_entity: &Entity,
-    ) {
+    fn close_all_tabs_left_of(&mut self, client: &mut Client, row_entity: &Entity) {
         let tab_state = self.tab_map.get(row_entity).unwrap();
         let order = tab_state.order;
         let mut tabs_to_close: Vec<Entity> = Vec::new();
@@ -361,18 +331,11 @@ impl TabManager {
         }
 
         for entity in tabs_to_close {
-            self.close_tab(
-                client,
-                &entity,
-            );
+            self.close_tab(client, &entity);
         }
     }
 
-    fn close_all_tabs_right_of(
-        &mut self,
-        client: &mut Client,
-        row_entity: &Entity,
-    ) {
+    fn close_all_tabs_right_of(&mut self, client: &mut Client, row_entity: &Entity) {
         let tab_state = self.tab_map.get(row_entity).unwrap();
         let order = tab_state.order;
         let mut tabs_to_close: Vec<Entity> = Vec::new();
@@ -382,10 +345,7 @@ impl TabManager {
         }
 
         for entity in tabs_to_close {
-            self.close_tab(
-                client,
-                &entity,
-            );
+            self.close_tab(client, &entity);
         }
     }
 
@@ -408,10 +368,7 @@ impl TabManager {
             Self::tab_context_menu(button_response, row_entity, &mut tab_action);
         }
 
-        self.execute_tab_action(
-            client,
-            tab_action,
-        );
+        self.execute_tab_action(client, tab_action);
     }
 
     fn render_tab(
@@ -562,42 +519,26 @@ impl TabManager {
         });
     }
 
-    fn execute_tab_action(
-        &mut self,
-        client: &mut Client,
-        tab_action: Option<TabAction>,
-    ) {
+    fn execute_tab_action(&mut self, client: &mut Client, tab_action: Option<TabAction>) {
         match tab_action {
             None => {}
             Some(TabAction::Select(row_entity)) => {
                 self.select_tab(&row_entity);
             }
             Some(TabAction::Close(row_entity)) => {
-                self.close_tab(
-                    client,
-                    &row_entity,
-                );
+                self.close_tab(client, &row_entity);
             }
             Some(TabAction::CloseAll) => {
                 self.close_all_tabs(client);
             }
             Some(TabAction::CloseOthers(row_entity)) => {
-                self.close_all_tabs_except(
-                    client,
-                    &row_entity,
-                );
+                self.close_all_tabs_except(client, &row_entity);
             }
             Some(TabAction::CloseLeft(row_entity)) => {
-                self.close_all_tabs_left_of(
-                    client,
-                    &row_entity,
-                );
+                self.close_all_tabs_left_of(client, &row_entity);
             }
             Some(TabAction::CloseRight(row_entity)) => {
-                self.close_all_tabs_right_of(
-                    client,
-                    &row_entity,
-                );
+                self.close_all_tabs_right_of(client, &row_entity);
             }
         }
     }

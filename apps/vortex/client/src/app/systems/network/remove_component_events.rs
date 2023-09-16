@@ -16,9 +16,9 @@ use vortex_proto::components::{
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
     resources::{
-        canvas::Canvas, edge_manager::EdgeManager,
-        face_manager::FaceManager, file_manager::FileManager, input_manager::InputManager,
-        tab_manager::TabManager, vertex_manager::VertexManager,
+        canvas::Canvas, edge_manager::EdgeManager, face_manager::FaceManager,
+        file_manager::FileManager, input_manager::InputManager, tab_manager::TabManager,
+        vertex_manager::VertexManager,
     },
 };
 
@@ -41,11 +41,7 @@ pub fn remove_component_events(
         for (entity, _component) in events.read::<FileSystemEntry>() {
             info!("entity: `{:?}`, removed FileSystemEntry", entity);
 
-            file_manager.on_file_delete(
-                &mut client,
-                &mut tab_manager,
-                &entity,
-            );
+            file_manager.on_file_delete(&mut client, &mut tab_manager, &entity);
         }
 
         for (entity, _component) in events.read::<FileSystemRootChild>() {

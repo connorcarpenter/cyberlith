@@ -13,8 +13,8 @@ use vortex_proto::components::{
 
 use crate::app::{
     components::file_system::{
-            ChangelistUiState, FileSystemEntryLocal, FileSystemParent, FileSystemUiState,
-        },
+        ChangelistUiState, FileSystemEntryLocal, FileSystemParent, FileSystemUiState,
+    },
     resources::{
         action::{
             select_file::{deselect_all_selected_files, release_entities},

@@ -33,8 +33,8 @@ use crate::app::{
         face_manager::FaceManager,
         file_manager::{get_full_path, FileManager},
         shape_waitlist::{ShapeWaitlist, ShapeWaitlistInsert},
-        vertex_manager::VertexManager,
         tab_manager::TabManager,
+        vertex_manager::VertexManager,
     },
     systems::file_post_process,
 };

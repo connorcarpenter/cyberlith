@@ -109,11 +109,7 @@ pub(crate) fn execute(
     }
 
     // file manager track deleted file
-    file_manager.on_file_delete(
-        &mut client,
-        &mut tab_manager,
-        &file_entity,
-    );
+    file_manager.on_file_delete(&mut client, &mut tab_manager, &file_entity);
 
     system_state.apply(world);
 
