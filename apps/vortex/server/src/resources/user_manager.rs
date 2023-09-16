@@ -193,7 +193,14 @@ impl UserManager {
         };
         user_session.open_tab(tab_id, file_key);
 
-        git_manager.on_client_open_tab(commands, server, shape_manager, project_key, file_key, user_key);
+        git_manager.on_client_open_tab(
+            commands,
+            server,
+            shape_manager,
+            project_key,
+            file_key,
+            user_key,
+        );
     }
 
     pub(crate) fn close_tab(
@@ -202,7 +209,11 @@ impl UserManager {
         git_manager: &mut GitManager,
         user_key: &UserKey,
         tab_id: &TabId,
-    ) -> Vec<(ProjectKey, FileKey, Option<HashMap<Entity, ContentEntityData>>)> {
+    ) -> Vec<(
+        ProjectKey,
+        FileKey,
+        Option<HashMap<Entity, ContentEntityData>>,
+    )> {
         let Some(user_session) = self.user_sessions.get_mut(user_key) else {
             panic!("User does not exist!");
         };

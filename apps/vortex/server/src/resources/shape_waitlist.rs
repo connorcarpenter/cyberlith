@@ -12,7 +12,7 @@ use vortex_proto::{
 
 use crate::{
     files::ShapeType,
-    resources::{ContentEntityData, project::ProjectKey, GitManager, ShapeManager},
+    resources::{project::ProjectKey, ContentEntityData, GitManager, ShapeManager},
 };
 
 pub enum ShapeWaitlistInsert {

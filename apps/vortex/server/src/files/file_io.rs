@@ -159,7 +159,6 @@ fn post_process_loaded_networked_entities(
     file_extension: &FileExtension,
 ) {
     for (entity, _data) in entities.iter() {
-
         // add file ownership
         let mut file_ownership_component = OwnedByFile::new();
         file_ownership_component

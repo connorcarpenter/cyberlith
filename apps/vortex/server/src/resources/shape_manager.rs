@@ -168,7 +168,8 @@ impl ShapeManager {
 
         info!("inserting mesh vert entity: `{:?}`", vertex_entity,);
 
-        self.vertices.insert(vertex_entity, VertexData::Mesh(MeshVertexData::new()));
+        self.vertices
+            .insert(vertex_entity, VertexData::Mesh(MeshVertexData::new()));
     }
 
     pub fn on_create_skel_vertex(
@@ -267,7 +268,10 @@ impl ShapeManager {
             Some(VertexData::Skel(_)) => self.on_client_despawn_skel_vertex(entity),
             Some(VertexData::Mesh(_)) => self.on_client_despawn_mesh_vertex(entity),
             None => {
-                panic!("on_client_despawn_vertex: vertex entity `{:?}` not found!", entity);
+                panic!(
+                    "on_client_despawn_vertex: vertex entity `{:?}` not found!",
+                    entity
+                );
             }
         };
 
@@ -290,10 +294,8 @@ impl ShapeManager {
         let mut entities_to_despawn = Vec::new();
 
         // remove entry
-        let removed_entry = self.remove_skel_vertex_and_collect_children(
-            vertex_entity,
-            &mut entities_to_despawn,
-        );
+        let removed_entry =
+            self.remove_skel_vertex_and_collect_children(vertex_entity, &mut entities_to_despawn);
 
         // remove entry from parent's children
         if let Some((parent_entity, _)) = removed_entry.parent_and_edge_opt {
@@ -372,10 +374,7 @@ impl ShapeManager {
         // handle children
         if let Some(removed_entry_children) = &removed_entry.children {
             for (child_entity, edge_entity) in removed_entry_children {
-                self.remove_skel_vertex_and_collect_children(
-                    &child_entity,
-                    entities_to_despawn,
-                );
+                self.remove_skel_vertex_and_collect_children(&child_entity, entities_to_despawn);
                 entities_to_despawn.push(*child_entity);
                 entities_to_despawn.push(*edge_entity);
             }

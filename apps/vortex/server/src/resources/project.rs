@@ -17,7 +17,7 @@ use vortex_proto::{
 };
 
 use crate::{
-    files::{load_content_entities, despawn_file_content_entities, FileWriter},
+    files::{despawn_file_content_entities, load_content_entities, FileWriter},
     resources::{
         ChangelistValue, ContentEntityData, FileEntryValue, FileSpace, GitManager, ShapeManager,
     },
@@ -38,8 +38,12 @@ impl BigMapKey for ProjectKey {
 
 pub enum RollbackResult {
     Created,
-    Modified(FileKey, HashMap<Entity, ContentEntityData>, HashMap<Entity, ContentEntityData>),
-    Deleted(FileKey, FileEntryValue)
+    Modified(
+        FileKey,
+        HashMap<Entity, ContentEntityData>,
+        HashMap<Entity, ContentEntityData>,
+    ),
+    Deleted(FileKey, FileEntryValue),
 }
 
 pub struct Project {
@@ -121,7 +125,12 @@ impl Project {
             .add_content_entity(*entity, content_data.clone());
     }
 
-    pub(crate) fn on_remove_content_entity(&mut self, server: &mut Server, file_key: &FileKey, entity: &Entity) {
+    pub(crate) fn on_remove_content_entity(
+        &mut self,
+        server: &mut Server,
+        file_key: &FileKey,
+        entity: &Entity,
+    ) {
         // it's possible the the filespace has already be despawned
         if let Some(filespace) = self.filespaces.get_mut(file_key) {
             filespace.remove_content_entity(entity);
@@ -561,7 +570,7 @@ impl Project {
                     &file_key,
                 );
 
-                RollbackResult::Modified(file_key,old_entities, new_entities)
+                RollbackResult::Modified(file_key, old_entities, new_entities)
             }
             ChangelistStatus::Deleted => {
                 let new_entity = GitManager::spawn_file_tree_entity(&mut commands, &mut server);
@@ -596,7 +605,10 @@ impl Project {
         shape_manager: &mut ShapeManager,
         file_entity: &Entity,
         file_key: &FileKey,
-    ) -> (HashMap<Entity, ContentEntityData>, HashMap<Entity, ContentEntityData>) {
+    ) -> (
+        HashMap<Entity, ContentEntityData>,
+        HashMap<Entity, ContentEntityData>,
+    ) {
         let file_extension = self.working_file_extension(file_key);
         let bytes = self.get_bytes_from_cl_or_fs(file_key);
         if !file_extension.can_io() {
@@ -870,7 +882,11 @@ impl Project {
         }
     }
 
-    fn delete_filespace(&mut self, server: &mut Server, file_key: &FileKey) -> HashMap<Entity, ContentEntityData> {
+    fn delete_filespace(
+        &mut self,
+        server: &mut Server,
+        file_key: &FileKey,
+    ) -> HashMap<Entity, ContentEntityData> {
         let filespace = self.filespaces.remove(file_key).unwrap();
 
         let file_room_key = filespace.room_key();

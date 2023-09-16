@@ -23,10 +23,11 @@ use vortex_proto::{
 use crate::{
     config::GitConfig,
     resources::{
-        RollbackResult, project::Project, project::ProjectKey, ContentEntityData, FileEntryValue, UserManager,
+        ShapeManager,
+        project::Project, project::ProjectKey, ContentEntityData, FileEntryValue, RollbackResult,
+        UserManager,
     },
 };
-use crate::resources::ShapeManager;
 
 #[derive(Resource)]
 pub struct GitManager {
@@ -87,13 +88,20 @@ impl GitManager {
         shape_manager: &mut ShapeManager,
         project_key: &ProjectKey,
         file_key: &FileKey,
-        user_key: &UserKey
+        user_key: &UserKey,
     ) {
         {
             // user join filespace
             let project = self.projects.get_mut(project_key).unwrap();
-            if let Some(new_content_entities) = project.user_join_filespace(commands, server, shape_manager, user_key, file_key) {
-                self.register_content_entities(server, project_key, file_key, &new_content_entities);
+            if let Some(new_content_entities) =
+                project.user_join_filespace(commands, server, shape_manager, user_key, file_key)
+            {
+                self.register_content_entities(
+                    server,
+                    project_key,
+                    file_key,
+                    &new_content_entities,
+                );
             }
         }
 
@@ -103,8 +111,19 @@ impl GitManager {
             let dependency_file_keys = project.dependency_file_keys(file_key);
             for dependency_key in dependency_file_keys {
                 let project = self.projects.get_mut(project_key).unwrap();
-                if let Some(new_content_entities) = project.user_join_filespace(commands, server, shape_manager, user_key, &dependency_key) {
-                    self.register_content_entities(server, project_key, &dependency_key, &new_content_entities);
+                if let Some(new_content_entities) = project.user_join_filespace(
+                    commands,
+                    server,
+                    shape_manager,
+                    user_key,
+                    &dependency_key,
+                ) {
+                    self.register_content_entities(
+                        server,
+                        project_key,
+                        &dependency_key,
+                        &new_content_entities,
+                    );
                 }
             }
         }
@@ -115,9 +134,17 @@ impl GitManager {
         server: &mut Server,
         project_key: &ProjectKey,
         file_key: &FileKey,
-        user_key: &UserKey
-    ) -> Vec<(ProjectKey, FileKey, Option<HashMap<Entity, ContentEntityData>>)> {
-        let mut output: Vec<(ProjectKey, FileKey, Option<HashMap<Entity, ContentEntityData>>)> = Vec::new();
+        user_key: &UserKey,
+    ) -> Vec<(
+        ProjectKey,
+        FileKey,
+        Option<HashMap<Entity, ContentEntityData>>,
+    )> {
+        let mut output: Vec<(
+            ProjectKey,
+            FileKey,
+            Option<HashMap<Entity, ContentEntityData>>,
+        )> = Vec::new();
 
         {
             // user leave filespace
@@ -132,7 +159,8 @@ impl GitManager {
             let dependency_file_keys = project.dependency_file_keys(&file_key);
             for dependency_key in dependency_file_keys {
                 let project = self.projects.get_mut(project_key).unwrap();
-                let content_entities_opt = project.user_leave_filespace(server, user_key, &dependency_key);
+                let content_entities_opt =
+                    project.user_leave_filespace(server, user_key, &dependency_key);
                 output.push((*project_key, dependency_key, content_entities_opt));
             }
         }
@@ -169,7 +197,13 @@ impl GitManager {
         content_entities: &HashMap<Entity, ContentEntityData>,
     ) {
         for (entity, content_entity_data) in content_entities {
-            self.on_insert_content_entity(server, project_key, file_key, entity, content_entity_data);
+            self.on_insert_content_entity(
+                server,
+                project_key,
+                file_key,
+                entity,
+                content_entity_data,
+            );
         }
     }
 
@@ -179,10 +213,15 @@ impl GitManager {
         file_key: &FileKey,
         content_entity: &Entity,
     ) {
-        self.content_entity_keys.insert(*content_entity, (*project_key, file_key.clone()));
+        self.content_entity_keys
+            .insert(*content_entity, (*project_key, file_key.clone()));
     }
 
-    pub(crate) fn deregister_content_entities(&mut self, server: &mut Server, content_entities: &HashMap<Entity, ContentEntityData>) {
+    pub(crate) fn deregister_content_entities(
+        &mut self,
+        server: &mut Server,
+        content_entities: &HashMap<Entity, ContentEntityData>,
+    ) {
         for (entity, _) in content_entities.iter() {
             self.on_remove_content_entity(server, entity);
         }
@@ -255,7 +294,6 @@ impl GitManager {
     }
 
     pub(crate) fn on_remove_content_entity(&mut self, server: &mut Server, entity: &Entity) {
-
         let Some((project_key, file_key)) = self.deregister_content_entity(entity) else {
             panic!("Could not find content entity key for entity: {:?}", entity);
         };
@@ -415,27 +453,29 @@ impl GitManager {
         let project_room_key = project.room_key();
 
         match project.rollback_changelist_entry(world, message) {
-            RollbackResult::Created => {
-
-            }
+            RollbackResult::Created => {}
             RollbackResult::Modified(file_key, old_content_entities, new_content_entities) => {
-                let mut system_state: SystemState<(Server, ResMut<GitManager>)> = SystemState::new(world);
+                let mut system_state: SystemState<(Server, ResMut<GitManager>)> =
+                    SystemState::new(world);
                 let (mut server, mut git_manager) = system_state.get_mut(world);
 
                 git_manager.deregister_content_entities(&mut server, &old_content_entities);
-                git_manager.register_content_entities(&mut server, &user_project_key, &file_key, &new_content_entities);
+                git_manager.register_content_entities(
+                    &mut server,
+                    &user_project_key,
+                    &file_key,
+                    &new_content_entities,
+                );
 
                 system_state.apply(world);
             }
-            RollbackResult::Deleted(key, value) => {
-                self.spawn_networked_entry_into_world(
-                    world,
-                    &user_project_key,
-                    &project_room_key,
-                    &key,
-                    &value,
-                )
-            }
+            RollbackResult::Deleted(key, value) => self.spawn_networked_entry_into_world(
+                world,
+                &user_project_key,
+                &project_room_key,
+                &key,
+                &value,
+            ),
         }
     }
 

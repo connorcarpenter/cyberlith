@@ -176,7 +176,8 @@ impl TabManager {
                     if !git_manager.can_write(project_key, file_key) {
                         panic!("can't write file: `{:?}`", file_key.name());
                     }
-                    let bytes = git_manager.write(project_key, file_key, world, content_entities_opt);
+                    let bytes =
+                        git_manager.write(project_key, file_key, world, content_entities_opt);
                     output.push((project_key, file_key, bytes));
                 }
 
@@ -210,7 +211,6 @@ impl TabManager {
 
             for (project_key, file_key, content_entities_opt) in closed_states.iter() {
                 if let Some(content_entities) = content_entities_opt {
-
                     let project = git_manager.project_mut(project_key).unwrap();
 
                     // handle despawns
@@ -237,7 +237,11 @@ impl TabManager {
         server: &mut Server,
         user_manager: &mut UserManager,
         git_manager: &mut GitManager,
-    ) -> Vec<(ProjectKey, FileKey, Option<HashMap<Entity, ContentEntityData>>)> {
+    ) -> Vec<(
+        ProjectKey,
+        FileKey,
+        Option<HashMap<Entity, ContentEntityData>>,
+    )> {
         let mut output = Vec::new();
         while let Some((user_key, tab_id)) = self.queued_closes.pop_front() {
             let mut tab_output = user_manager.close_tab(server, git_manager, &user_key, &tab_id);
