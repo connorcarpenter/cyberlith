@@ -65,6 +65,7 @@ impl Default for EdgeManager {
 
 impl EdgeManager {
     pub fn sync_2d_edges(
+        file_manager: &FileManager,
         vertex_manager: &VertexManager,
         edge_2d_q: &Query<(Entity, &Edge2dLocal)>,
         transform_q: &mut Query<&mut Transform>,
@@ -82,7 +83,8 @@ impl EdgeManager {
             };
 
             // check if vertex is owned by the current tab
-            if !ShapeManager::is_owned_by_tab_or_unowned(
+            if !ShapeManager::is_owned_by_file_or_unowned(
+                file_manager,
                 current_tab_file_entity,
                 owned_by_q,
                 end_3d_entity,
@@ -128,6 +130,7 @@ impl EdgeManager {
 
     pub fn sync_3d_edges(
         &self,
+        file_manager: &FileManager,
         edge_3d_q: &Query<(Entity, &Edge3dLocal, Option<&EdgeAngle>)>,
         transform_q: &mut Query<&mut Transform>,
         owned_by_q: &Query<&OwnedByFileLocal>,
@@ -146,7 +149,8 @@ impl EdgeManager {
 
         for (edge_entity, edge_endpoints, edge_angle_opt) in edge_3d_q.iter() {
             // check if vertex is owned by the current tab
-            if !ShapeManager::is_owned_by_tab_or_unowned(
+            if !ShapeManager::is_owned_by_file_or_unowned(
+                file_manager,
                 current_tab_file_entity,
                 owned_by_q,
                 edge_entity,

@@ -31,6 +31,7 @@ use crate::app::{
         vertex_manager::VertexManager,
     },
 };
+use crate::app::resources::file_manager::FileManager;
 
 #[derive(Resource)]
 pub struct FaceManager {
@@ -57,6 +58,7 @@ impl Default for FaceManager {
 
 impl FaceManager {
     pub fn sync_2d_faces(
+        file_manager: &FileManager,
         face_2d_q: &Query<(Entity, &FaceIcon2d)>,
         transform_q: &mut Query<&mut Transform>,
         owned_by_q: &Query<&OwnedByFileLocal>,
@@ -67,7 +69,8 @@ impl FaceManager {
 
         for (face_2d_entity, face_icon) in face_2d_q.iter() {
             // check if face is owned by the current tab
-            if !ShapeManager::is_owned_by_tab_or_unowned(
+            if !ShapeManager::is_owned_by_file_or_unowned(
+                file_manager,
                 current_tab_file_entity,
                 owned_by_q,
                 face_2d_entity,

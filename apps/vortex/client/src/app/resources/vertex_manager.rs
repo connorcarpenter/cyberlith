@@ -33,6 +33,7 @@ use crate::app::{
         shape_manager::ShapeManager,
     },
 };
+use crate::app::resources::file_manager::FileManager;
 
 #[derive(Resource)]
 pub struct VertexManager {
@@ -57,10 +58,11 @@ impl Default for VertexManager {
 impl VertexManager {
     pub fn sync_vertices(
         &self,
+        file_manager: &FileManager,
         camera_3d_entity: &Entity,
         camera_3d_scale: f32,
         camera_q: &Query<(&Camera, &Projection)>,
-        vertex_3d_q: &mut Query<(Entity, &mut Vertex3d)>,
+        vertex_3d_q: &Query<(Entity, &mut Vertex3d)>,
         transform_q: &mut Query<&mut Transform>,
         owned_by_q: &Query<&OwnedByFileLocal>,
         compass_q: &Query<&LocalShape>,
@@ -83,7 +85,8 @@ impl VertexManager {
 
         for (vertex_3d_entity, vertex_3d) in vertex_3d_q.iter() {
             // check if vertex is owned by the current tab
-            if !ShapeManager::is_owned_by_tab_or_unowned(
+            if !ShapeManager::is_owned_by_file_or_unowned(
+                file_manager,
                 current_tab_file_entity,
                 owned_by_q,
                 vertex_3d_entity,

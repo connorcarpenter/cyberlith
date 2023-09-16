@@ -8,6 +8,7 @@ use crate::app::{
         vertex_manager::VertexManager,
     },
 };
+use crate::app::resources::file_manager::FileManager;
 
 pub struct ShapeManager;
 
@@ -81,32 +82,54 @@ impl ShapeManager {
     }
 
     // returns true if vertex is owned by tab or unowned
-    pub(crate) fn is_owned_by_tab_or_unowned(
-        current_tab_file_entity: Entity,
-        owned_by_tab_q: &Query<&OwnedByFileLocal>,
-        entity: Entity,
+    // used by grid & compass so it renders too
+    pub(crate) fn is_owned_by_file_or_unowned(
+        file_manager: &FileManager,
+        file_entity: Entity,
+        owned_by_file_q: &Query<&OwnedByFileLocal>,
+        content_entity: Entity,
     ) -> bool {
-        if let Ok(owned_by_tab) = owned_by_tab_q.get(entity) {
-            if owned_by_tab.file_entity == current_tab_file_entity {
-                return true;
-            }
-        } else {
-            return true;
+        match Self::is_owned_by_file_internal(file_manager, owned_by_file_q, file_entity, content_entity) {
+            ContentOwnership::OwnedByTab => true,
+            ContentOwnership::UnownedByTab => false,
+            ContentOwnership::Unowned => true,
         }
-        return false;
     }
 
     // returns true if vertex is owned by tab
-    pub(crate) fn is_owned_by_tab(
-        current_tab_file_entity: Entity,
-        owned_by_tab_q: &Query<&OwnedByFileLocal>,
-        entity: Entity,
+    pub(crate) fn is_owned_by_file(
+        file_manager: &FileManager,
+        file_entity: Entity,
+        owned_by_file_q: &Query<&OwnedByFileLocal>,
+        content_entity: Entity,
     ) -> bool {
-        if let Ok(owned_by_tab) = owned_by_tab_q.get(entity) {
-            if owned_by_tab.file_entity == current_tab_file_entity {
-                return true;
+        match Self::is_owned_by_file_internal(file_manager, owned_by_file_q, file_entity, content_entity) {
+            ContentOwnership::OwnedByTab => true,
+            ContentOwnership::UnownedByTab => false,
+            ContentOwnership::Unowned => false,
+        }
+    }
+
+    // returns true if vertex is owned by tab
+    fn is_owned_by_file_internal(
+        file_manager: &FileManager,
+        owned_by_file_q: &Query<&OwnedByFileLocal>,
+        file_entity: Entity,
+        content_entity: Entity,
+    ) -> ContentOwnership {
+        if let Ok(owned_by_tab) = owned_by_file_q.get(content_entity) {
+            if owned_by_tab.file_entity == file_entity {
+                return ContentOwnership::OwnedByTab;
+            } else {
+                // check if file is a dependency of owning file
             }
         }
-        return false;
+        return ContentOwnership::Unowned;
     }
+}
+
+enum ContentOwnership {
+    OwnedByTab,
+    UnownedByTab,
+    Unowned,
 }

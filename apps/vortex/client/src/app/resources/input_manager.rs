@@ -335,6 +335,7 @@ impl InputManager {
 
     pub(crate) fn sync_mouse_hover_ui(
         &mut self,
+        file_manager: &FileManager,
         canvas: &mut Canvas,
         current_tab_file_entity: Entity,
         mouse_position: &Vec2,
@@ -358,7 +359,7 @@ impl InputManager {
         // check for vertices
         for (vertex_entity, root_opt) in vertex_2d_q.iter() {
             // check tab ownership, skip vertices from other tabs
-            if !ShapeManager::is_owned_by_tab(current_tab_file_entity, owned_by_q, vertex_entity) {
+            if !ShapeManager::is_owned_by_file(file_manager, current_tab_file_entity, owned_by_q, vertex_entity) {
                 continue;
             }
 
@@ -383,7 +384,7 @@ impl InputManager {
         if !is_hovering {
             for (edge_entity, _) in edge_2d_q.iter() {
                 // check tab ownership, skip edges from other tabs
-                if !ShapeManager::is_owned_by_tab(current_tab_file_entity, owned_by_q, edge_entity)
+                if !ShapeManager::is_owned_by_file(file_manager, current_tab_file_entity, owned_by_q, edge_entity)
                 {
                     continue;
                 }
@@ -406,7 +407,7 @@ impl InputManager {
         if !is_hovering {
             for (face_entity, _) in face_2d_q.iter() {
                 // check tab ownership, skip faces from other tabs
-                if !ShapeManager::is_owned_by_tab(current_tab_file_entity, owned_by_q, face_entity)
+                if !ShapeManager::is_owned_by_file(file_manager, current_tab_file_entity, owned_by_q, face_entity)
                 {
                     continue;
                 }

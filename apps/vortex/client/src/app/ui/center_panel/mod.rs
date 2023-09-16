@@ -11,7 +11,7 @@ use crate::app::{
     resources::{file_manager::FileManager, tab_manager::render_tab_bar, tab_manager::TabManager},
     ui::{
         render_tool_bar,
-        widgets::{render_bind_button, render_bound, render_naming_bar, NamingBarState},
+        widgets::{render_bind_button, render_naming_bar, NamingBarState},
     },
 };
 
@@ -31,9 +31,6 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                     if !file_manager.file_has_dependency(&current_file_entity, FileExtension::Skel)
                     {
                         render_bind_button(ui, world, &current_file_entity);
-                        return;
-                    } else {
-                        render_bound(ui, world, &current_file_entity);
                         return;
                     }
                 }

@@ -23,6 +23,7 @@ use crate::app::{
 };
 
 pub fn sync_vertices(
+    file_manager: Res<FileManager>,
     tab_manager: ResMut<TabManager>,
     mut canvas: ResMut<Canvas>,
     camera_manager: Res<CameraManager>,
@@ -31,12 +32,12 @@ pub fn sync_vertices(
     edge_manager: Res<EdgeManager>,
     mut input_manager: ResMut<InputManager>,
 
-    compass_q: Query<&LocalShape>,
+    local_shape_q: Query<&LocalShape>,
     camera_q: Query<(&Camera, &Projection)>,
 
     mut visibility_q: Query<&mut Visibility>,
     mut transform_q: Query<&mut Transform>,
-    owned_by_tab_q: Query<&OwnedByFileLocal>,
+    owned_by_q: Query<&OwnedByFileLocal>,
 
     mut vertex_3d_q: Query<(Entity, &mut Vertex3d)>,
     edge_2d_q: Query<(Entity, &Edge2dLocal)>,
@@ -50,27 +51,58 @@ pub fn sync_vertices(
         return;
     };
 
-    if let Some(current_tab_entity) = tab_manager.current_tab_entity() {
-        let current_tab_camera_state = &current_tab_state.camera_state;
+    if let Some(current_tab_file_entity) = tab_manager.current_tab_entity() {
+        let camera_state = &current_tab_state.camera_state;
 
-        canvas.sync_shapes(
-            &camera_manager,
-            current_tab_camera_state,
-            &compass,
-            *current_tab_entity,
-            &vertex_manager,
-            &edge_manager,
-            &mut input_manager,
-            &camera_q,
-            &compass_q,
-            &mut visibility_q,
-            &mut transform_q,
-            &owned_by_tab_q,
-            &mut vertex_3d_q,
-            &edge_2d_q,
-            &edge_3d_q,
-            &face_2d_q,
-        );
+        let should_sync_shapes = canvas.should_sync_shapes(&camera_manager);
+        if should_sync_shapes {
+            input_manager.queue_resync_hover_ui();
+            input_manager.queue_resync_selection_ui();
+            let camera_3d = camera_manager.camera_3d_entity().unwrap();
+            let camera_3d_scale = camera_state.camera_3d_scale();
+
+            compass.sync_compass(&camera_3d, camera_state, &mut vertex_3d_q, &transform_q);
+            vertex_manager.sync_vertices(
+                &file_manager,
+                &camera_3d,
+                camera_3d_scale,
+                &camera_q,
+                &vertex_3d_q,
+                &mut transform_q,
+                &owned_by_q,
+                &local_shape_q,
+                *current_tab_file_entity,
+            );
+            EdgeManager::sync_2d_edges(
+                &file_manager,
+                &vertex_manager,
+                &edge_2d_q,
+                &mut transform_q,
+                &owned_by_q,
+                &local_shape_q,
+                *current_tab_file_entity,
+                camera_3d_scale,
+            );
+            edge_manager.sync_3d_edges(
+                &file_manager,
+                &edge_3d_q,
+                &mut transform_q,
+                &owned_by_q,
+                &mut visibility_q,
+                &local_shape_q,
+                *current_tab_file_entity,
+                camera_3d_scale,
+            );
+            FaceManager::sync_2d_faces(
+                &file_manager,
+                &face_2d_q,
+                &mut transform_q,
+                &owned_by_q,
+                *current_tab_file_entity,
+                camera_3d_scale,
+            );
+            input_manager.sync_hover_shape_scale(&mut transform_q, camera_3d_scale);
+        }
     }
 }
 

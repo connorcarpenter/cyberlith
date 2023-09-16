@@ -11,7 +11,7 @@ use render_egui::{
     egui::{Button, Direction, Frame, Layout, Ui},
 };
 
-use vortex_proto::components::{FileDependency, FileExtension, FileSystemEntry};
+use vortex_proto::components::FileDependency;
 
 use crate::app::{
     resources::file_manager::FileManager,
@@ -61,26 +61,6 @@ pub fn render_bind_button(ui: &mut Ui, world: &mut World, current_file_entity: &
                         system_state.apply(world);
                     }
                 }
-            });
-        });
-    });
-}
-
-pub fn render_bound(ui: &mut Ui, world: &mut World, current_file_entity: &Entity) {
-    egui::CentralPanel::default().show_inside(ui, |ui| {
-        ui.with_layout(Layout::centered_and_justified(Direction::TopDown), |ui| {
-            Frame::none().inner_margin(300.0).show(ui, |ui| {
-                let file_manager = world.get_resource::<FileManager>().unwrap();
-                let dependency_entity = file_manager
-                    .file_get_dependency(current_file_entity, FileExtension::Skel)
-                    .unwrap();
-                let dependency_name = world
-                    .query::<&FileSystemEntry>()
-                    .get(world, dependency_entity)
-                    .unwrap()
-                    .name
-                    .as_str();
-                ui.add_enabled(false, Button::new(dependency_name));
             });
         });
     });

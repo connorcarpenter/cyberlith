@@ -21,6 +21,7 @@ use crate::app::{
         vertex_manager::VertexManager,
     },
 };
+use crate::app::resources::file_manager::FileManager;
 
 #[derive(Resource)]
 pub struct Canvas {
@@ -129,81 +130,18 @@ impl Canvas {
         self.resync_shapes = 1;
     }
 
-    pub fn sync_shapes(
-        &mut self,
-        camera_manager: &CameraManager,
-        camera_state: &CameraState,
-        compass: &Compass,
-        current_tab_file_entity: Entity,
-
-        vertex_manager: &VertexManager,
-        edge_manager: &EdgeManager,
-        input_manager: &mut InputManager,
-
-        camera_q: &Query<(&Camera, &Projection)>,
-        local_shape_q: &Query<&LocalShape>,
-
-        visibility_q: &mut Query<&mut Visibility>,
-        transform_q: &mut Query<&mut Transform>,
-        owned_by_q: &Query<&OwnedByFileLocal>,
-
-        vertex_3d_q: &mut Query<(Entity, &mut Vertex3d)>,
-        edge_2d_q: &Query<(Entity, &Edge2dLocal)>,
-        edge_3d_q: &Query<(Entity, &Edge3dLocal, Option<&EdgeAngle>)>,
-        face_2d_q: &Query<(Entity, &FaceIcon2d)>,
-    ) {
+    pub fn should_sync_shapes(&mut self, camera_manager: &CameraManager) -> bool {
         if self.resync_shapes == 0 {
-            return;
+            return false;
         }
 
-        let Some(camera_3d) = camera_manager.camera_3d_entity() else {
-            return;
-        };
+        if camera_manager.camera_3d_entity().is_none() {
+            return false;
+        }
 
         self.resync_shapes -= 1;
 
-        input_manager.queue_resync_hover_ui();
-        input_manager.queue_resync_selection_ui();
-
-        let camera_3d_scale = camera_state.camera_3d_scale();
-
-        compass.sync_compass(&camera_3d, camera_state, vertex_3d_q, &transform_q);
-        vertex_manager.sync_vertices(
-            &camera_3d,
-            camera_3d_scale,
-            camera_q,
-            vertex_3d_q,
-            transform_q,
-            owned_by_q,
-            local_shape_q,
-            current_tab_file_entity,
-        );
-        EdgeManager::sync_2d_edges(
-            vertex_manager,
-            edge_2d_q,
-            transform_q,
-            owned_by_q,
-            local_shape_q,
-            current_tab_file_entity,
-            camera_3d_scale,
-        );
-        edge_manager.sync_3d_edges(
-            edge_3d_q,
-            transform_q,
-            owned_by_q,
-            visibility_q,
-            local_shape_q,
-            current_tab_file_entity,
-            camera_3d_scale,
-        );
-        FaceManager::sync_2d_faces(
-            face_2d_q,
-            transform_q,
-            owned_by_q,
-            current_tab_file_entity,
-            camera_3d_scale,
-        );
-        input_manager.sync_hover_shape_scale(transform_q, camera_3d_scale);
+        return true;
     }
 
     pub(crate) fn on_canvas_focus_changed(
