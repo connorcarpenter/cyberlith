@@ -432,6 +432,8 @@ impl InputManager {
         let old_hovered_entity = self.hovered_entity;
         let next_hovered_entity = if is_hovering { least_entity } else { None };
 
+        self.sync_hover_shape_scale(transform_q, camera_3d_scale);
+
         // hover state did not change
         if old_hovered_entity == next_hovered_entity {
             return;
@@ -1139,31 +1141,34 @@ impl InputManager {
 
     pub(crate) fn sync_hover_shape_scale(
         &mut self,
-        transform_q: &mut Query<&mut Transform>,
+        transform_q: &mut Query<(&mut Transform, Option<&LocalShape>)>,
         camera_3d_scale: f32,
     ) {
+        let Some((hover_entity, shape)) = self.hovered_entity else {
+            return;
+        };
+        if self.hovered_entity == self.selected_shape {
+            return;
+        }
+
         let hover_vertex_2d_scale = Vertex2d::HOVER_RADIUS * camera_3d_scale;
         let hover_edge_2d_scale = Edge2dLocal::HOVER_THICKNESS * camera_3d_scale;
         let hover_face_2d_scale = FaceIcon2d::HOVER_SIZE * camera_3d_scale;
 
-        if let Some((hover_entity, shape)) = self.hovered_entity {
-            if self.hovered_entity != self.selected_shape {
-                match shape {
-                    CanvasShape::RootVertex | CanvasShape::Vertex => {
-                        let mut hover_vert_transform = transform_q.get_mut(hover_entity).unwrap();
-                        hover_vert_transform.scale.x = hover_vertex_2d_scale;
-                        hover_vert_transform.scale.y = hover_vertex_2d_scale;
-                    }
-                    CanvasShape::Edge => {
-                        let mut hover_edge_transform = transform_q.get_mut(hover_entity).unwrap();
-                        hover_edge_transform.scale.y = hover_edge_2d_scale;
-                    }
-                    CanvasShape::Face => {
-                        let mut hover_face_transform = transform_q.get_mut(hover_entity).unwrap();
-                        hover_face_transform.scale.x = hover_face_2d_scale;
-                        hover_face_transform.scale.y = hover_face_2d_scale;
-                    }
-                }
+        match shape {
+            CanvasShape::RootVertex | CanvasShape::Vertex => {
+                let (mut hover_vert_transform, _) = transform_q.get_mut(hover_entity).unwrap();
+                hover_vert_transform.scale.x = hover_vertex_2d_scale;
+                hover_vert_transform.scale.y = hover_vertex_2d_scale;
+            }
+            CanvasShape::Edge => {
+                let (mut hover_edge_transform, _) = transform_q.get_mut(hover_entity).unwrap();
+                hover_edge_transform.scale.y = hover_edge_2d_scale;
+            }
+            CanvasShape::Face => {
+                let (mut hover_face_transform, _) = transform_q.get_mut(hover_entity).unwrap();
+                hover_face_transform.scale.x = hover_face_2d_scale;
+                hover_face_transform.scale.y = hover_face_2d_scale;
             }
         }
     }

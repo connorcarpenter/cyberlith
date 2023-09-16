@@ -26,7 +26,7 @@ impl AnimationManager {
         _mouse_position: Vec2,
         _delta: Vec2,
     ) {
-        todo!()
+
     }
 
     pub(crate) fn drag_vertex(
@@ -37,6 +37,6 @@ impl AnimationManager {
         _mouse_position: Vec2,
         _delta: Vec2,
     ) {
-        todo!()
+
     }
 }
