@@ -240,9 +240,8 @@ impl TabManager {
     ) -> Vec<(ProjectKey, FileKey, Option<HashMap<Entity, ContentEntityData>>)> {
         let mut output = Vec::new();
         while let Some((user_key, tab_id)) = self.queued_closes.pop_front() {
-            let (project_key, file_key, content_entities) =
-                user_manager.close_tab(server, git_manager, &user_key, &tab_id);
-            output.push((project_key, file_key, content_entities));
+            let mut tab_output = user_manager.close_tab(server, git_manager, &user_key, &tab_id);
+            output.append(&mut tab_output);
         }
         output
     }

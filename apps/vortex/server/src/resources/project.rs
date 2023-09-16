@@ -129,6 +129,20 @@ impl Project {
         }
     }
 
+    pub(crate) fn dependency_file_keys(&self, file_key: &FileKey) -> Vec<FileKey> {
+        let mut output = Vec::new();
+        let file_entry_val = self.working_file_entries.get(file_key).unwrap();
+        if let Some(dependencies) = file_entry_val.dependencies() {
+            for dependency_key in dependencies {
+                output.push(dependency_key.clone());
+
+                // perhaps we will need to recurse one day ..
+                // output.append(&mut self.dependency_file_keys(dependency_key));
+            }
+        }
+        output
+    }
+
     pub(crate) fn user_join_filespace(
         &mut self,
         commands: &mut Commands,
@@ -137,27 +151,28 @@ impl Project {
         user_key: &UserKey,
         file_key: &FileKey,
     ) -> Option<HashMap<Entity, ContentEntityData>> {
-        if !self.filespaces.contains_key(file_key) {
-            let new_entities =
-                self.create_filespace(commands, server, shape_manager, user_key, file_key);
-            return Some(new_entities);
+        let new_content_entities_opt = if !self.filespaces.contains_key(file_key) {
+            let new_entities = self.create_filespace(commands, server, shape_manager, file_key);
+            Some(new_entities)
         } else {
-            let filespace = self.filespaces.get_mut(file_key).unwrap();
-            filespace.user_join(server, user_key);
-            return None;
-        }
+            None
+        };
+        let filespace = self.filespaces.get_mut(file_key).unwrap();
+        filespace.user_join(server, user_key);
+        new_content_entities_opt
     }
 
     pub(crate) fn user_leave_filespace(
         &mut self,
         server: &mut Server,
+        user_key: &UserKey,
         file_key: &FileKey,
     ) -> Option<HashMap<Entity, ContentEntityData>> {
         let Some(filespace) = self.filespaces.get_mut(file_key) else {
             panic!("Filespace not found");
         };
 
-        filespace.user_leave();
+        filespace.user_leave(server, user_key);
         if filespace.has_no_users() {
             let content_entities = self.delete_filespace(server, file_key);
             return Some(content_entities);
@@ -814,7 +829,6 @@ impl Project {
         commands: &mut Commands,
         server: &mut Server,
         shape_manager: &mut ShapeManager,
-        user_key: &UserKey,
         file_key: &FileKey,
     ) -> HashMap<Entity, ContentEntityData> {
         let file_room_key = server.make_room().key();
@@ -836,10 +850,7 @@ impl Project {
             bytes,
         );
 
-        let mut filespace = FileSpace::new(&file_room_key, content_entities_with_data.clone());
-
-        filespace.user_join(server, user_key);
-
+        let filespace = FileSpace::new(&file_room_key, content_entities_with_data.clone());
         self.filespaces.insert(file_key.clone(), filespace);
 
         content_entities_with_data

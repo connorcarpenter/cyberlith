@@ -26,6 +26,7 @@ use crate::{
         RollbackResult, project::Project, project::ProjectKey, ContentEntityData, FileEntryValue, UserManager,
     },
 };
+use crate::resources::ShapeManager;
 
 #[derive(Resource)]
 pub struct GitManager {
@@ -77,6 +78,66 @@ impl GitManager {
     ) -> Option<Entity> {
         let project = self.projects.get(project_key).unwrap();
         project.file_entity(file_key)
+    }
+
+    pub(crate) fn on_client_open_tab(
+        &mut self,
+        commands: &mut Commands,
+        server: &mut Server,
+        shape_manager: &mut ShapeManager,
+        project_key: &ProjectKey,
+        file_key: &FileKey,
+        user_key: &UserKey
+    ) {
+        {
+            // user join filespace
+            let project = self.projects.get_mut(project_key).unwrap();
+            if let Some(new_content_entities) = project.user_join_filespace(commands, server, shape_manager, user_key, file_key) {
+                self.register_content_entities(server, project_key, file_key, &new_content_entities);
+            }
+        }
+
+        {
+            // user join dependency filespaces
+            let project = self.projects.get_mut(project_key).unwrap();
+            let dependency_file_keys = project.dependency_file_keys(file_key);
+            for dependency_key in dependency_file_keys {
+                let project = self.projects.get_mut(project_key).unwrap();
+                if let Some(new_content_entities) = project.user_join_filespace(commands, server, shape_manager, user_key, &dependency_key) {
+                    self.register_content_entities(server, project_key, &dependency_key, &new_content_entities);
+                }
+            }
+        }
+    }
+
+    pub(crate) fn on_client_close_tab(
+        &mut self,
+        server: &mut Server,
+        project_key: &ProjectKey,
+        file_key: &FileKey,
+        user_key: &UserKey
+    ) -> Vec<(ProjectKey, FileKey, Option<HashMap<Entity, ContentEntityData>>)> {
+        let mut output: Vec<(ProjectKey, FileKey, Option<HashMap<Entity, ContentEntityData>>)> = Vec::new();
+
+        {
+            // user leave filespace
+            let project = self.projects.get_mut(project_key).unwrap();
+            let content_entities_opt = project.user_leave_filespace(server, user_key, file_key);
+            output.push((*project_key, file_key.clone(), content_entities_opt));
+        }
+
+        {
+            // user leave dependency filespaces
+            let project = self.projects.get_mut(project_key).unwrap();
+            let dependency_file_keys = project.dependency_file_keys(&file_key);
+            for dependency_key in dependency_file_keys {
+                let project = self.projects.get_mut(project_key).unwrap();
+                let content_entities_opt = project.user_leave_filespace(server, user_key, &dependency_key);
+                output.push((*project_key, dependency_key, content_entities_opt));
+            }
+        }
+
+        output
     }
 
     pub(crate) fn on_client_create_file(

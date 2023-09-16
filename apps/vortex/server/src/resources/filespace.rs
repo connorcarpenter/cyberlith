@@ -53,12 +53,19 @@ impl FileSpace {
     pub(crate) fn user_join(&mut self, server: &mut Server, user_key: &UserKey) {
         self.user_count += 1;
 
-        // put user in new room
-        server.room_mut(&self.room_key).add_user(user_key);
+        // put user in room
+        if !server.room(&self.room_key).has_user(user_key) {
+            server.room_mut(&self.room_key).add_user(user_key);
+        }
     }
 
-    pub(crate) fn user_leave(&mut self) {
+    pub(crate) fn user_leave(&mut self, server: &mut Server, user_key: &UserKey) {
         self.user_count -= 1;
+
+        // user leave room
+        if server.room(&self.room_key).has_user(user_key) {
+            server.room_mut(&self.room_key).remove_user(user_key);
+        }
     }
 
     pub(crate) fn has_no_users(&self) -> bool {
