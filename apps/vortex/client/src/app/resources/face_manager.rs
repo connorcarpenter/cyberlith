@@ -10,6 +10,7 @@ use bevy_log::{info, warn};
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
 use math::{Vec2, Vec3};
+use render_api::components::Visibility;
 use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::{RenderObjectBundle, Transform},
@@ -27,9 +28,7 @@ use crate::app::{
         edge_manager::EdgeManager,
         input_manager::InputManager,
         shape_data::{CanvasShape, FaceData, FaceKey},
-        shape_manager::ShapeManager,
         vertex_manager::VertexManager,
-        file_manager::FileManager,
     },
 };
 
@@ -59,18 +58,15 @@ impl Default for FaceManager {
 }
 
 impl FaceManager {
-
     pub fn queue_resync(&mut self) {
         self.resync = true;
     }
 
     pub fn sync_2d_faces(
         &mut self,
-        file_manager: &FileManager,
         face_2d_q: &Query<(Entity, &FaceIcon2d)>,
         transform_q: &mut Query<&mut Transform>,
-        owned_by_q: &Query<&OwnedByFileLocal>,
-        current_tab_file_entity: Entity,
+        visibility_q: &Query<&Visibility>,
         camera_3d_scale: f32,
     ) {
         if !self.resync {
@@ -82,13 +78,11 @@ impl FaceManager {
         let face_2d_scale = FaceIcon2d::SIZE * camera_3d_scale;
 
         for (face_2d_entity, face_icon) in face_2d_q.iter() {
-            // check if face is owned by the current tab
-            if !ShapeManager::is_owned_by_file_or_unowned(
-                file_manager,
-                current_tab_file_entity,
-                owned_by_q,
-                face_2d_entity,
-            ) {
+            // check visibility
+            let Ok(visibility) = visibility_q.get(face_2d_entity) else {
+                panic!("entity has no Visibility");
+            };
+            if !visibility.visible {
                 continue;
             }
 

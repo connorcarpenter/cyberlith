@@ -36,7 +36,6 @@ impl Default for Compass {
 }
 
 impl Compass {
-
     pub fn queue_resync(&mut self) {
         self.resync = true;
     }

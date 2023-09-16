@@ -123,6 +123,7 @@ pub(crate) fn execute(
         // open tab for new entry
         tab_manager.open_tab(
             &mut client,
+            &file_manager,
             &mut canvas,
             &mut camera_manager,
             &mut input_manager,

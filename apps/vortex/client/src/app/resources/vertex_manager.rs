@@ -11,7 +11,7 @@ use naia_bevy_client::{Client, CommandsExt, Replicate, ReplicationConfig};
 use math::{convert_3d_to_2d, Vec2, Vec3};
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
-    components::{Camera, CameraProjection, Projection, RenderObjectBundle, Transform},
+    components::{Camera, CameraProjection, Projection, RenderObjectBundle, Transform, Visibility},
     Assets, Handle,
 };
 
@@ -29,8 +29,6 @@ use crate::app::{
         face_manager::FaceManager,
         input_manager::InputManager,
         shape_data::{CanvasShape, FaceKey, Vertex3dData},
-        shape_manager::ShapeManager,
-        file_manager::FileManager,
     },
 };
 
@@ -58,22 +56,19 @@ impl Default for VertexManager {
 }
 
 impl VertexManager {
-
     pub fn queue_resync(&mut self) {
         self.resync = true;
     }
 
     pub fn sync_vertices(
         &mut self,
-        file_manager: &FileManager,
         camera_3d_entity: &Entity,
         camera_3d_scale: f32,
         camera_q: &Query<(&Camera, &Projection)>,
         vertex_3d_q: &Query<(Entity, &Vertex3d)>,
         transform_q: &mut Query<&mut Transform>,
-        owned_by_q: &Query<&OwnedByFileLocal>,
-        compass_q: &Query<&LocalShape>,
-        current_tab_file_entity: Entity,
+        visibility_q: &Query<&Visibility>,
+        local_shape_q: &Query<&LocalShape>,
     ) {
         if !self.resync {
             return;
@@ -97,15 +92,12 @@ impl VertexManager {
         let compass_vertex_2d_scale = Vertex2d::RADIUS;
 
         for (vertex_3d_entity, vertex_3d) in vertex_3d_q.iter() {
-            // check if vertex is owned by the current tab
-            if !ShapeManager::is_owned_by_file_or_unowned(
-                file_manager,
-                current_tab_file_entity,
-                owned_by_q,
-                vertex_3d_entity,
-            ) {
-                continue;
-            }
+            // check visibility
+            if let Ok(visibility) = visibility_q.get(vertex_3d_entity) {
+                if !visibility.visible {
+                    continue;
+                }
+            };
 
             // get transform
             let Ok(mut vertex_3d_transform) = transform_q.get_mut(vertex_3d_entity) else {
@@ -118,7 +110,7 @@ impl VertexManager {
             vertex_3d_transform.translation.y = vertex_3d.y().into();
             vertex_3d_transform.translation.z = vertex_3d.z().into();
 
-            if compass_q.get(vertex_3d_entity).is_ok() {
+            if local_shape_q.get(vertex_3d_entity).is_ok() {
                 vertex_3d_transform.scale = Vec3::splat(compass_vertex_3d_scale);
             } else {
                 // vertex_3d_transform.scale = should put 3d vertex scale here?
@@ -144,7 +136,7 @@ impl VertexManager {
             vertex_2d_transform.translation.z = depth;
 
             // update 2d compass
-            if compass_q.get(vertex_2d_entity).is_ok() {
+            if local_shape_q.get(vertex_2d_entity).is_ok() {
                 vertex_2d_transform.scale = Vec3::splat(compass_vertex_2d_scale);
             } else {
                 vertex_2d_transform.scale = Vec3::splat(vertex_2d_scale);

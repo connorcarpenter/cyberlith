@@ -1,5 +1,6 @@
 use std::collections::{HashMap, VecDeque};
 
+use bevy_ecs::system::Res;
 use bevy_ecs::{
     prelude::{Entity, Resource},
     system::{Query, ResMut, SystemState},
@@ -21,6 +22,8 @@ use vortex_proto::{
     types::TabId,
 };
 
+use crate::app::resources::file_manager::FileManager;
+use crate::app::resources::shape_manager::ShapeManager;
 use crate::app::{
     components::{file_system::FileSystemUiState, OwnedByFileLocal},
     resources::{
@@ -93,6 +96,7 @@ impl TabManager {
     pub fn open_tab(
         &mut self,
         client: &mut Client,
+        file_manager: &FileManager,
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         input_manager: &mut InputManager,
@@ -103,6 +107,7 @@ impl TabManager {
     ) {
         if self.tab_map.contains_key(row_entity) {
             self.select_tab(
+                file_manager,
                 canvas,
                 camera_manager,
                 input_manager,
@@ -132,6 +137,7 @@ impl TabManager {
 
             // select tab
             self.select_tab(
+                file_manager,
                 canvas,
                 camera_manager,
                 input_manager,
@@ -148,6 +154,7 @@ impl TabManager {
     pub fn close_tab(
         &mut self,
         client: &mut Client,
+        file_manager: &FileManager,
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         input_manager: &mut InputManager,
@@ -173,6 +180,7 @@ impl TabManager {
                     let new_entity = *new_entity;
                     self.clear_current_tab(canvas, camera_manager);
                     self.select_tab(
+                        file_manager,
                         canvas,
                         camera_manager,
                         input_manager,
@@ -257,6 +265,7 @@ impl TabManager {
 
     fn select_tab(
         &mut self,
+        file_manager: &FileManager,
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         input_manager: &mut InputManager,
@@ -273,6 +282,7 @@ impl TabManager {
 
         // select new tab
         self.set_current_tab(
+            file_manager,
             canvas,
             camera_manager,
             input_manager,
@@ -287,6 +297,7 @@ impl TabManager {
 
     fn set_current_tab(
         &mut self,
+        file_manager: &FileManager,
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         input_manager: &mut InputManager,
@@ -302,7 +313,11 @@ impl TabManager {
 
         if let Some(current_tab_file_entity) = self.current_tab_entity() {
             for (mut visibility, owned_by_tab) in visibility_q.iter_mut() {
-                visibility.visible = owned_by_tab.file_entity == *current_tab_file_entity;
+                visibility.visible = ShapeManager::is_owned_by_file(
+                    file_manager,
+                    current_tab_file_entity,
+                    Some(&owned_by_tab.file_entity),
+                );
             }
         }
 
@@ -318,6 +333,7 @@ impl TabManager {
     fn close_all_tabs(
         &mut self,
         client: &mut Client,
+        file_manager: &FileManager,
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         input_manager: &mut InputManager,
@@ -329,6 +345,7 @@ impl TabManager {
         for entity in all_tabs {
             self.close_tab(
                 client,
+                file_manager,
                 canvas,
                 camera_manager,
                 input_manager,
@@ -343,6 +360,7 @@ impl TabManager {
     fn close_all_tabs_except(
         &mut self,
         client: &mut Client,
+        file_manager: &FileManager,
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         input_manager: &mut InputManager,
@@ -353,6 +371,7 @@ impl TabManager {
     ) {
         self.close_all_tabs(
             client,
+            file_manager,
             canvas,
             camera_manager,
             input_manager,
@@ -364,6 +383,7 @@ impl TabManager {
             panic!("row entity not in tab map!")
         }
         self.select_tab(
+            file_manager,
             canvas,
             camera_manager,
             input_manager,
@@ -377,6 +397,7 @@ impl TabManager {
     fn close_all_tabs_left_of(
         &mut self,
         client: &mut Client,
+        file_manager: &FileManager,
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         input_manager: &mut InputManager,
@@ -396,6 +417,7 @@ impl TabManager {
         for entity in tabs_to_close {
             self.close_tab(
                 client,
+                file_manager,
                 canvas,
                 camera_manager,
                 input_manager,
@@ -410,6 +432,7 @@ impl TabManager {
     fn close_all_tabs_right_of(
         &mut self,
         client: &mut Client,
+        file_manager: &FileManager,
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         input_manager: &mut InputManager,
@@ -429,6 +452,7 @@ impl TabManager {
         for entity in tabs_to_close {
             self.close_tab(
                 client,
+                file_manager,
                 canvas,
                 camera_manager,
                 input_manager,
@@ -443,6 +467,7 @@ impl TabManager {
     fn render_tabs(
         &mut self,
         client: &mut Client,
+        file_manager: &FileManager,
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         input_manager: &mut InputManager,
@@ -467,6 +492,7 @@ impl TabManager {
 
         self.execute_tab_action(
             client,
+            file_manager,
             canvas,
             camera_manager,
             input_manager,
@@ -628,6 +654,7 @@ impl TabManager {
     fn execute_tab_action(
         &mut self,
         client: &mut Client,
+        file_manager: &FileManager,
         canvas: &mut Canvas,
         camera_manager: &mut CameraManager,
         input_manager: &mut InputManager,
@@ -640,6 +667,7 @@ impl TabManager {
             None => {}
             Some(TabAction::Select(row_entity)) => {
                 self.select_tab(
+                    file_manager,
                     canvas,
                     camera_manager,
                     input_manager,
@@ -652,6 +680,7 @@ impl TabManager {
             Some(TabAction::Close(row_entity)) => {
                 self.close_tab(
                     client,
+                    file_manager,
                     canvas,
                     camera_manager,
                     input_manager,
@@ -664,6 +693,7 @@ impl TabManager {
             Some(TabAction::CloseAll) => {
                 self.close_all_tabs(
                     client,
+                    file_manager,
                     canvas,
                     camera_manager,
                     input_manager,
@@ -675,6 +705,7 @@ impl TabManager {
             Some(TabAction::CloseOthers(row_entity)) => {
                 self.close_all_tabs_except(
                     client,
+                    file_manager,
                     canvas,
                     camera_manager,
                     input_manager,
@@ -687,6 +718,7 @@ impl TabManager {
             Some(TabAction::CloseLeft(row_entity)) => {
                 self.close_all_tabs_left_of(
                     client,
+                    file_manager,
                     canvas,
                     camera_manager,
                     input_manager,
@@ -699,6 +731,7 @@ impl TabManager {
             Some(TabAction::CloseRight(row_entity)) => {
                 self.close_all_tabs_right_of(
                     client,
+                    file_manager,
                     canvas,
                     camera_manager,
                     input_manager,
@@ -717,6 +750,7 @@ pub fn render_tab_bar(ui: &mut Ui, world: &mut World) {
         egui::menu::bar(ui, |ui| {
             let mut system_state: SystemState<(
                 Client,
+                Res<FileManager>,
                 ResMut<Canvas>,
                 ResMut<CameraManager>,
                 ResMut<InputManager>,
@@ -728,6 +762,7 @@ pub fn render_tab_bar(ui: &mut Ui, world: &mut World) {
             )> = SystemState::new(world);
             let (
                 mut client,
+                file_manager,
                 mut canvas,
                 mut camera_manager,
                 mut input_manager,
@@ -740,6 +775,7 @@ pub fn render_tab_bar(ui: &mut Ui, world: &mut World) {
 
             tab_manager.render_tabs(
                 &mut client,
+                &file_manager,
                 &mut canvas,
                 &mut camera_manager,
                 &mut input_manager,

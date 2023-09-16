@@ -28,8 +28,10 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                 let file_manager = world.get_resource::<FileManager>().unwrap();
                 let current_file_type = file_manager.get_file_type(&current_file_entity);
                 if current_file_type == FileExtension::Anim {
-                    if !file_manager.file_has_dependency_with_extension(&current_file_entity, FileExtension::Skel)
-                    {
+                    if !file_manager.file_has_dependency_with_extension(
+                        &current_file_entity,
+                        FileExtension::Skel,
+                    ) {
                         render_bind_button(ui, world, &current_file_entity);
                         return;
                     }

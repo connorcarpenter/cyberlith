@@ -400,6 +400,7 @@ impl FileTreeRowUiWidget {
         if file_ext.can_io() {
             let mut system_state: SystemState<(
                 Client,
+                Res<FileManager>,
                 ResMut<Canvas>,
                 ResMut<CameraManager>,
                 ResMut<InputManager>,
@@ -410,6 +411,7 @@ impl FileTreeRowUiWidget {
             )> = SystemState::new(world);
             let (
                 mut client,
+                file_manager,
                 mut canvas,
                 mut camera_manager,
                 mut input_manager,
@@ -421,6 +423,7 @@ impl FileTreeRowUiWidget {
 
             tab_manager.open_tab(
                 &mut client,
+                &file_manager,
                 &mut canvas,
                 &mut camera_manager,
                 &mut input_manager,

@@ -7,12 +7,12 @@ use bevy_ecs::{
 use naia_bevy_client::Client;
 
 use input::Input;
-use render_api::components::{Camera, Projection, Transform};
+use render_api::components::{Camera, Projection, Transform, Visibility};
 
 use vortex_proto::components::{EdgeAngle, Vertex3d, VertexRoot};
 
 use crate::app::{
-    components::{Edge2dLocal, FaceIcon2d, LocalShape, OwnedByFileLocal, Vertex2d},
+    components::{Edge2dLocal, FaceIcon2d, LocalShape, Vertex2d},
     resources::{
         animation_manager::AnimationManager, camera_manager::CameraManager, canvas::Canvas,
         edge_manager::EdgeManager, face_manager::FaceManager, file_manager::FileManager,
@@ -65,11 +65,10 @@ pub fn input(
 pub fn update_mouse_hover(
     mut canvas: ResMut<Canvas>,
     input: Res<Input>,
-    file_manager: Res<FileManager>,
     tab_manager: Res<TabManager>,
     mut input_manager: ResMut<InputManager>,
     mut transform_q: Query<(&mut Transform, Option<&LocalShape>)>,
-    owned_by_tab_q: Query<&OwnedByFileLocal>,
+    visibility_q: Query<&Visibility>,
     vertex_2d_q: Query<(Entity, Option<&VertexRoot>), (With<Vertex2d>, Without<LocalShape>)>,
     edge_2d_q: Query<(Entity, &Edge2dLocal), Without<LocalShape>>,
     face_2d_q: Query<(Entity, &FaceIcon2d)>,
@@ -80,19 +79,14 @@ pub fn update_mouse_hover(
     let Some(current_tab_state) = tab_manager.current_tab_state() else {
         return;
     };
-    let Some(current_tab_entity) = tab_manager.current_tab_entity() else {
-        return;
-    };
     let current_tab_camera_state = &current_tab_state.camera_state;
 
     input_manager.sync_mouse_hover_ui(
-        &file_manager,
         &mut canvas,
-        *current_tab_entity,
         input.mouse_position(),
         current_tab_camera_state,
         &mut transform_q,
-        &owned_by_tab_q,
+        &visibility_q,
         &vertex_2d_q,
         &edge_2d_q,
         &face_2d_q,

@@ -94,6 +94,7 @@ impl FileManager {
         if tab_manager.file_has_tab(file_entity) {
             tab_manager.close_tab(
                 client,
+                self,
                 canvas,
                 camera_manager,
                 input_manager,
@@ -188,7 +189,11 @@ impl FileManager {
         None
     }
 
-    pub(crate) fn file_has_dependency(&self, file_entity: &Entity, dependency_file_entity: &Entity) -> bool {
+    pub(crate) fn file_has_dependency(
+        &self,
+        file_entity: &Entity,
+        dependency_file_entity: &Entity,
+    ) -> bool {
         let file_data = self.file_entities.get(file_entity).unwrap();
         file_data.file_dependencies.contains(dependency_file_entity)
     }

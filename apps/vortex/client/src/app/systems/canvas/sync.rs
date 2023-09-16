@@ -14,7 +14,7 @@ use render_api::{
 use vortex_proto::components::{EdgeAngle, Vertex3d};
 
 use crate::app::{
-    components::{Edge2dLocal, Edge3dLocal, FaceIcon2d, LocalShape, OwnedByFileLocal},
+    components::{Edge2dLocal, Edge3dLocal, FaceIcon2d, LocalShape},
     resources::{
         camera_manager::CameraManager, canvas::Canvas, compass::Compass, edge_manager::EdgeManager,
         face_manager::FaceManager, file_manager::FileManager, input_manager::InputManager,
@@ -73,15 +73,14 @@ pub fn sync_compass(
 }
 
 pub fn sync_vertices(
-    file_manager: Res<FileManager>,
     tab_manager: Res<TabManager>,
-    mut canvas: ResMut<Canvas>,
+    canvas: Res<Canvas>,
     camera_manager: Res<CameraManager>,
     mut vertex_manager: ResMut<VertexManager>,
     local_shape_q: Query<&LocalShape>,
     camera_q: Query<(&Camera, &Projection)>,
     mut transform_q: Query<&mut Transform>,
-    owned_by_q: Query<&OwnedByFileLocal>,
+    visibility_q: Query<&Visibility>,
     vertex_3d_q: Query<(Entity, &Vertex3d)>,
 ) {
     if !canvas.is_visible() {
@@ -90,37 +89,28 @@ pub fn sync_vertices(
     let Some(current_tab_state) = tab_manager.current_tab_state() else {
         return;
     };
-    let Some(current_tab_file_entity) = tab_manager.current_tab_entity() else {
-        return;
-    };
     let camera_3d = camera_manager.camera_3d_entity().unwrap();
     let camera_state = &current_tab_state.camera_state;
     let camera_3d_scale = camera_state.camera_3d_scale();
 
     vertex_manager.sync_vertices(
-        &file_manager,
         &camera_3d,
         camera_3d_scale,
         &camera_q,
         &vertex_3d_q,
         &mut transform_q,
-        &owned_by_q,
+        &visibility_q,
         &local_shape_q,
-        *current_tab_file_entity,
     );
 }
 
-
 pub fn sync_edges(
-    file_manager: Res<FileManager>,
     tab_manager: Res<TabManager>,
-    mut canvas: ResMut<Canvas>,
-    vertex_manager: Res<VertexManager>,
+    canvas: Res<Canvas>,
     mut edge_manager: ResMut<EdgeManager>,
     local_shape_q: Query<&LocalShape>,
     mut visibility_q: Query<&mut Visibility>,
     mut transform_q: Query<&mut Transform>,
-    owned_by_q: Query<&OwnedByFileLocal>,
     edge_2d_q: Query<(Entity, &Edge2dLocal)>,
     edge_3d_q: Query<(Entity, &Edge3dLocal, Option<&EdgeAngle>)>,
 ) {
@@ -130,33 +120,25 @@ pub fn sync_edges(
     let Some(current_tab_state) = tab_manager.current_tab_state() else {
         return;
     };
-    let Some(current_tab_file_entity) = tab_manager.current_tab_entity() else {
-        return;
-    };
     let camera_state = &current_tab_state.camera_state;
     let camera_3d_scale = camera_state.camera_3d_scale();
 
     edge_manager.sync_edges(
-        &file_manager,
-        &vertex_manager,
         &edge_2d_q,
         &edge_3d_q,
         &mut transform_q,
         &mut visibility_q,
-        &owned_by_q,
         &local_shape_q,
-        *current_tab_file_entity,
         camera_3d_scale,
     );
 }
 
 pub fn sync_faces(
-    file_manager: Res<FileManager>,
     tab_manager: Res<TabManager>,
-    mut canvas: ResMut<Canvas>,
+    canvas: Res<Canvas>,
     mut face_manager: ResMut<FaceManager>,
     mut transform_q: Query<&mut Transform>,
-    owned_by_q: Query<&OwnedByFileLocal>,
+    visibility_q: Query<&Visibility>,
     face_2d_q: Query<(Entity, &FaceIcon2d)>,
 ) {
     if !canvas.is_visible() {
@@ -165,20 +147,10 @@ pub fn sync_faces(
     let Some(current_tab_state) = tab_manager.current_tab_state() else {
         return;
     };
-    let Some(current_tab_file_entity) = tab_manager.current_tab_entity() else {
-        return;
-    };
     let camera_state = &current_tab_state.camera_state;
     let camera_3d_scale = camera_state.camera_3d_scale();
 
-    face_manager.sync_2d_faces(
-        &file_manager,
-        &face_2d_q,
-        &mut transform_q,
-        &owned_by_q,
-        *current_tab_file_entity,
-        camera_3d_scale,
-    );
+    face_manager.sync_2d_faces(&face_2d_q, &mut transform_q, &visibility_q, camera_3d_scale);
 }
 
 pub fn process_faces(

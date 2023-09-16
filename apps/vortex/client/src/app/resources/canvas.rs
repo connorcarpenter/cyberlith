@@ -1,27 +1,12 @@
-use bevy_ecs::{
-    entity::Entity,
-    system::{Query, Resource},
-};
+use bevy_ecs::system::Resource;
 
 use math::Vec2;
 
-use render_api::{
-    base::CpuTexture2D,
-    components::{Camera, Projection, Transform, Visibility},
-    Handle,
-};
+use render_api::{base::CpuTexture2D, Handle};
 
-use vortex_proto::components::{EdgeAngle, Vertex3d};
-
-use crate::app::{
-    components::{Edge2dLocal, Edge3dLocal, FaceIcon2d, LocalShape, OwnedByFileLocal},
-    resources::{
-        camera_manager::CameraManager, camera_state::CameraState, compass::Compass,
-        edge_manager::EdgeManager, face_manager::FaceManager, input_manager::InputManager,
-        vertex_manager::VertexManager,
-    },
+use crate::app::resources::{
+    edge_manager::EdgeManager, input_manager::InputManager, vertex_manager::VertexManager,
 };
-use crate::app::resources::file_manager::FileManager;
 
 #[derive(Resource)]
 pub struct Canvas {

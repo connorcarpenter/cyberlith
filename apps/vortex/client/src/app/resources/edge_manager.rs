@@ -30,7 +30,6 @@ use crate::app::{
         file_manager::FileManager,
         input_manager::InputManager,
         shape_data::{CanvasShape, Edge3dData, FaceKey},
-        shape_manager::ShapeManager,
         tab_manager::TabManager,
         vertex_manager::VertexManager,
     },
@@ -66,22 +65,17 @@ impl Default for EdgeManager {
 }
 
 impl EdgeManager {
-
     pub fn queue_resync(&mut self) {
         self.resync = true;
     }
 
     pub fn sync_edges(
         &mut self,
-        file_manager: &FileManager,
-        vertex_manager: &VertexManager,
         edge_2d_q: &Query<(Entity, &Edge2dLocal)>,
         edge_3d_q: &Query<(Entity, &Edge3dLocal, Option<&EdgeAngle>)>,
         transform_q: &mut Query<&mut Transform>,
         visibility_q: &mut Query<&mut Visibility>,
-        owned_by_q: &Query<&OwnedByFileLocal>,
         local_shape_q: &Query<&LocalShape>,
-        current_tab_file_entity: Entity,
         camera_3d_scale: f32,
     ) {
         if !self.resync {
@@ -90,35 +84,37 @@ impl EdgeManager {
 
         self.resync = false;
 
-        Self::sync_2d_edges(file_manager, vertex_manager, edge_2d_q, transform_q, owned_by_q, local_shape_q, current_tab_file_entity, camera_3d_scale);
-        self.sync_3d_edges(file_manager, edge_3d_q, transform_q, owned_by_q, visibility_q, local_shape_q, current_tab_file_entity, camera_3d_scale);
+        Self::sync_2d_edges(
+            edge_2d_q,
+            transform_q,
+            visibility_q,
+            local_shape_q,
+            camera_3d_scale,
+        );
+        self.sync_3d_edges(
+            edge_3d_q,
+            transform_q,
+            visibility_q,
+            local_shape_q,
+            camera_3d_scale,
+        );
     }
 
     fn sync_2d_edges(
-        file_manager: &FileManager,
-        vertex_manager: &VertexManager,
         edge_2d_q: &Query<(Entity, &Edge2dLocal)>,
         transform_q: &mut Query<&mut Transform>,
-        owned_by_q: &Query<&OwnedByFileLocal>,
+        visibility_q: &Query<&mut Visibility>,
         local_shape_q: &Query<&LocalShape>,
-        current_tab_file_entity: Entity,
         camera_3d_scale: f32,
     ) {
         let edge_2d_scale = Edge2dLocal::NORMAL_THICKNESS * camera_3d_scale;
 
         for (edge_2d_entity, edge_endpoints) in edge_2d_q.iter() {
-            let Some(end_3d_entity) = vertex_manager.vertex_entity_2d_to_3d(&edge_endpoints.end) else {
-                warn!("Edge entity {:?} has no 3d endpoint entity", edge_2d_entity);
-                continue;
+            // visibility
+            let Ok(visibility) = visibility_q.get(edge_2d_entity) else {
+                panic!("entity has no Visibility");
             };
-
-            // check if vertex is owned by the current tab
-            if !ShapeManager::is_owned_by_file_or_unowned(
-                file_manager,
-                current_tab_file_entity,
-                owned_by_q,
-                end_3d_entity,
-            ) {
+            if !visibility.visible {
                 continue;
             }
 
@@ -160,13 +156,10 @@ impl EdgeManager {
 
     pub fn sync_3d_edges(
         &self,
-        file_manager: &FileManager,
         edge_3d_q: &Query<(Entity, &Edge3dLocal, Option<&EdgeAngle>)>,
         transform_q: &mut Query<&mut Transform>,
-        owned_by_q: &Query<&OwnedByFileLocal>,
         visibility_q: &mut Query<&mut Visibility>,
         local_shape_q: &Query<&LocalShape>,
-        current_tab_file_entity: Entity,
         camera_3d_scale: f32,
     ) {
         let edge_angle_base_circle_scale =
@@ -178,13 +171,11 @@ impl EdgeManager {
         let local_shape_edge_3d_scale = LocalShape::EDGE_THICKNESS / camera_3d_scale;
 
         for (edge_entity, edge_endpoints, edge_angle_opt) in edge_3d_q.iter() {
-            // check if vertex is owned by the current tab
-            if !ShapeManager::is_owned_by_file_or_unowned(
-                file_manager,
-                current_tab_file_entity,
-                owned_by_q,
-                edge_entity,
-            ) {
+            // check visibility
+            let Ok(visibility) = visibility_q.get(edge_entity) else {
+                panic!("entity has no Visibility");
+            };
+            if !visibility.visible {
                 continue;
             }
 
