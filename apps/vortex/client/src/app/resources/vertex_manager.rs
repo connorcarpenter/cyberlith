@@ -9,7 +9,6 @@ use bevy_log::{info, warn};
 use naia_bevy_client::{Client, CommandsExt, Replicate, ReplicationConfig};
 
 use math::{convert_3d_to_2d, Vec2, Vec3};
-
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
     components::{Camera, CameraProjection, Projection, RenderObjectBundle, Transform},
@@ -31,12 +30,14 @@ use crate::app::{
         input_manager::InputManager,
         shape_data::{CanvasShape, FaceKey, Vertex3dData},
         shape_manager::ShapeManager,
+        file_manager::FileManager,
     },
 };
-use crate::app::resources::file_manager::FileManager;
 
 #[derive(Resource)]
 pub struct VertexManager {
+    resync: bool,
+
     // 3d vertex entity -> 3d vertex data
     pub(crate) vertices_3d: HashMap<Entity, Vertex3dData>,
     // 2d vertex entity -> 3d vertex entity
@@ -48,6 +49,7 @@ pub struct VertexManager {
 impl Default for VertexManager {
     fn default() -> Self {
         Self {
+            resync: false,
             vertices_3d: HashMap::new(),
             vertices_2d: HashMap::new(),
             last_vertex_dragged: None,
@@ -56,18 +58,29 @@ impl Default for VertexManager {
 }
 
 impl VertexManager {
+
+    pub fn queue_resync(&mut self) {
+        self.resync = true;
+    }
+
     pub fn sync_vertices(
-        &self,
+        &mut self,
         file_manager: &FileManager,
         camera_3d_entity: &Entity,
         camera_3d_scale: f32,
         camera_q: &Query<(&Camera, &Projection)>,
-        vertex_3d_q: &Query<(Entity, &mut Vertex3d)>,
+        vertex_3d_q: &Query<(Entity, &Vertex3d)>,
         transform_q: &mut Query<&mut Transform>,
         owned_by_q: &Query<&OwnedByFileLocal>,
         compass_q: &Query<&LocalShape>,
         current_tab_file_entity: Entity,
     ) {
+        if !self.resync {
+            return;
+        }
+
+        self.resync = false;
+
         let Ok((camera, camera_projection)) = camera_q.get(*camera_3d_entity) else {
             return;
         };

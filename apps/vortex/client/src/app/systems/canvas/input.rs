@@ -65,7 +65,8 @@ pub fn input(
 pub fn update_mouse_hover(
     mut canvas: ResMut<Canvas>,
     input: Res<Input>,
-    tab_manager: ResMut<TabManager>,
+    file_manager: Res<FileManager>,
+    tab_manager: Res<TabManager>,
     mut input_manager: ResMut<InputManager>,
     mut transform_q: Query<(&mut Transform, Option<&LocalShape>)>,
     owned_by_tab_q: Query<&OwnedByFileLocal>,
@@ -76,24 +77,24 @@ pub fn update_mouse_hover(
     if !canvas.is_visible() {
         return;
     }
-
     let Some(current_tab_state) = tab_manager.current_tab_state() else {
         return;
     };
+    let Some(current_tab_entity) = tab_manager.current_tab_entity() else {
+        return;
+    };
+    let current_tab_camera_state = &current_tab_state.camera_state;
 
-    if let Some(current_tab_entity) = tab_manager.current_tab_entity() {
-        let current_tab_camera_state = &current_tab_state.camera_state;
-
-        input_manager.sync_mouse_hover_ui(
-            &mut canvas,
-            *current_tab_entity,
-            input.mouse_position(),
-            current_tab_camera_state,
-            &mut transform_q,
-            &owned_by_tab_q,
-            &vertex_2d_q,
-            &edge_2d_q,
-            &face_2d_q,
-        );
-    }
+    input_manager.sync_mouse_hover_ui(
+        &file_manager,
+        &mut canvas,
+        *current_tab_entity,
+        input.mouse_position(),
+        current_tab_camera_state,
+        &mut transform_q,
+        &owned_by_tab_q,
+        &vertex_2d_q,
+        &edge_2d_q,
+        &face_2d_q,
+    );
 }

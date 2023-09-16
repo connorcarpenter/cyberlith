@@ -29,12 +29,13 @@ use crate::app::{
         shape_data::{CanvasShape, FaceData, FaceKey},
         shape_manager::ShapeManager,
         vertex_manager::VertexManager,
+        file_manager::FileManager,
     },
 };
-use crate::app::resources::file_manager::FileManager;
 
 #[derive(Resource)]
 pub struct FaceManager {
+    resync: bool,
     // 3d face key -> 3d face entity
     pub(crate) face_keys: HashMap<FaceKey, Option<FaceData>>,
     // 3d face entity -> 3d face data
@@ -48,6 +49,7 @@ pub struct FaceManager {
 impl Default for FaceManager {
     fn default() -> Self {
         Self {
+            resync: false,
             new_face_keys: Vec::new(),
             face_keys: HashMap::new(),
             faces_2d: HashMap::new(),
@@ -57,7 +59,13 @@ impl Default for FaceManager {
 }
 
 impl FaceManager {
+
+    pub fn queue_resync(&mut self) {
+        self.resync = true;
+    }
+
     pub fn sync_2d_faces(
+        &mut self,
         file_manager: &FileManager,
         face_2d_q: &Query<(Entity, &FaceIcon2d)>,
         transform_q: &mut Query<&mut Transform>,
@@ -65,6 +73,12 @@ impl FaceManager {
         current_tab_file_entity: Entity,
         camera_3d_scale: f32,
     ) {
+        if !self.resync {
+            return;
+        }
+
+        self.resync = false;
+
         let face_2d_scale = FaceIcon2d::SIZE * camera_3d_scale;
 
         for (face_2d_entity, face_icon) in face_2d_q.iter() {

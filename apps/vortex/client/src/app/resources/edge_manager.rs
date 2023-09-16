@@ -42,6 +42,7 @@ use crate::app::{
 
 #[derive(Resource)]
 pub struct EdgeManager {
+    resync: bool,
     // 3d edge entity -> 3d edge data
     pub(crate) edges_3d: HashMap<Entity, Edge3dData>,
     // 2d edge entity -> 3d edge entity
@@ -55,6 +56,7 @@ pub struct EdgeManager {
 impl Default for EdgeManager {
     fn default() -> Self {
         Self {
+            resync: false,
             edges_3d: HashMap::new(),
             edges_2d: HashMap::new(),
             last_edge_dragged: None,
@@ -64,13 +66,41 @@ impl Default for EdgeManager {
 }
 
 impl EdgeManager {
-    pub fn sync_2d_edges(
+
+    pub fn queue_resync(&mut self) {
+        self.resync = true;
+    }
+
+    pub fn sync_edges(
+        &mut self,
+        file_manager: &FileManager,
+        vertex_manager: &VertexManager,
+        edge_2d_q: &Query<(Entity, &Edge2dLocal)>,
+        edge_3d_q: &Query<(Entity, &Edge3dLocal, Option<&EdgeAngle>)>,
+        transform_q: &mut Query<&mut Transform>,
+        visibility_q: &mut Query<&mut Visibility>,
+        owned_by_q: &Query<&OwnedByFileLocal>,
+        local_shape_q: &Query<&LocalShape>,
+        current_tab_file_entity: Entity,
+        camera_3d_scale: f32,
+    ) {
+        if !self.resync {
+            return;
+        }
+
+        self.resync = false;
+
+        Self::sync_2d_edges(file_manager, vertex_manager, edge_2d_q, transform_q, owned_by_q, local_shape_q, current_tab_file_entity, camera_3d_scale);
+        self.sync_3d_edges(file_manager, edge_3d_q, transform_q, owned_by_q, visibility_q, local_shape_q, current_tab_file_entity, camera_3d_scale);
+    }
+
+    fn sync_2d_edges(
         file_manager: &FileManager,
         vertex_manager: &VertexManager,
         edge_2d_q: &Query<(Entity, &Edge2dLocal)>,
         transform_q: &mut Query<&mut Transform>,
         owned_by_q: &Query<&OwnedByFileLocal>,
-        compass_q: &Query<&LocalShape>,
+        local_shape_q: &Query<&LocalShape>,
         current_tab_file_entity: Entity,
         camera_3d_scale: f32,
     ) {
@@ -120,7 +150,7 @@ impl EdgeManager {
 
             set_2d_line_transform(&mut edge_2d_transform, start_pos, end_pos, depth);
 
-            if compass_q.get(edge_2d_entity).is_ok() {
+            if local_shape_q.get(edge_2d_entity).is_ok() {
                 edge_2d_transform.scale.y = Edge2dLocal::NORMAL_THICKNESS;
             } else {
                 edge_2d_transform.scale.y = edge_2d_scale;
@@ -135,7 +165,7 @@ impl EdgeManager {
         transform_q: &mut Query<&mut Transform>,
         owned_by_q: &Query<&OwnedByFileLocal>,
         visibility_q: &mut Query<&mut Visibility>,
-        compass_q: &Query<&LocalShape>,
+        local_shape_q: &Query<&LocalShape>,
         current_tab_file_entity: Entity,
         camera_3d_scale: f32,
     ) {
@@ -145,7 +175,7 @@ impl EdgeManager {
             Edge2dLocal::EDGE_ANGLE_END_CIRCLE_RADIUS * camera_3d_scale;
         let edge_angle_length = Edge2dLocal::EDGE_ANGLE_LENGTH * camera_3d_scale;
         let edge_angle_thickness = Edge2dLocal::EDGE_ANGLE_THICKNESS * camera_3d_scale;
-        let compass_edge_3d_scale = LocalShape::EDGE_THICKNESS / camera_3d_scale;
+        let local_shape_edge_3d_scale = LocalShape::EDGE_THICKNESS / camera_3d_scale;
 
         for (edge_entity, edge_endpoints, edge_angle_opt) in edge_3d_q.iter() {
             // check if vertex is owned by the current tab
@@ -178,9 +208,9 @@ impl EdgeManager {
             let end_pos = end_transform.translation;
             let mut edge_transform = transform_q.get_mut(edge_entity).unwrap();
             set_3d_line_transform(&mut edge_transform, start_pos, end_pos, edge_angle_opt);
-            if compass_q.get(edge_entity).is_ok() {
-                edge_transform.scale.x = compass_edge_3d_scale;
-                edge_transform.scale.y = compass_edge_3d_scale;
+            if local_shape_q.get(edge_entity).is_ok() {
+                edge_transform.scale.x = local_shape_edge_3d_scale;
+                edge_transform.scale.y = local_shape_edge_3d_scale;
             }
 
             // update 2d edge angle

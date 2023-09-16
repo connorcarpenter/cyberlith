@@ -130,12 +130,8 @@ impl Canvas {
         self.resync_shapes = 1;
     }
 
-    pub fn should_sync_shapes(&mut self, camera_manager: &CameraManager) -> bool {
+    pub fn should_sync_shapes(&mut self) -> bool {
         if self.resync_shapes == 0 {
-            return false;
-        }
-
-        if camera_manager.camera_3d_entity().is_none() {
             return false;
         }
 

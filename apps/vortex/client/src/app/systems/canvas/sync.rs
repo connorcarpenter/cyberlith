@@ -22,26 +22,141 @@ use crate::app::{
     },
 };
 
+pub fn queue_resyncs(
+    mut canvas: ResMut<Canvas>,
+    tab_manager: Res<TabManager>,
+    camera_manager: Res<CameraManager>,
+    mut compass: ResMut<Compass>,
+    mut vertex_manager: ResMut<VertexManager>,
+    mut edge_manager: ResMut<EdgeManager>,
+    mut input_manager: ResMut<InputManager>,
+    mut face_manager: ResMut<FaceManager>,
+) {
+    if !canvas.is_visible() {
+        return;
+    }
+    if tab_manager.current_tab_entity().is_none() {
+        return;
+    }
+    if tab_manager.current_tab_state().is_none() {
+        return;
+    };
+    if camera_manager.camera_3d_entity().is_none() {
+        return;
+    }
+
+    let should_sync_shapes = canvas.should_sync_shapes();
+    if should_sync_shapes {
+        input_manager.queue_resync_hover_ui();
+        input_manager.queue_resync_selection_ui();
+        compass.queue_resync();
+        vertex_manager.queue_resync();
+        edge_manager.queue_resync();
+        face_manager.queue_resync();
+    }
+}
+
+pub fn sync_compass(
+    tab_manager: Res<TabManager>,
+    camera_manager: Res<CameraManager>,
+    mut compass: ResMut<Compass>,
+    transform_q: Query<&Transform>,
+    mut vertex_3d_q: Query<(Entity, &mut Vertex3d)>,
+) {
+    let Some(current_tab_state) = tab_manager.current_tab_state() else {
+        return;
+    };
+    let camera_state = &current_tab_state.camera_state;
+    let camera_3d = camera_manager.camera_3d_entity().unwrap();
+
+    compass.sync_compass(&camera_3d, camera_state, &mut vertex_3d_q, &transform_q);
+}
+
 pub fn sync_vertices(
     file_manager: Res<FileManager>,
-    tab_manager: ResMut<TabManager>,
+    tab_manager: Res<TabManager>,
     mut canvas: ResMut<Canvas>,
     camera_manager: Res<CameraManager>,
-    compass: Res<Compass>,
-    vertex_manager: Res<VertexManager>,
-    edge_manager: Res<EdgeManager>,
-    mut input_manager: ResMut<InputManager>,
-
+    mut vertex_manager: ResMut<VertexManager>,
     local_shape_q: Query<&LocalShape>,
     camera_q: Query<(&Camera, &Projection)>,
+    mut transform_q: Query<&mut Transform>,
+    owned_by_q: Query<&OwnedByFileLocal>,
+    vertex_3d_q: Query<(Entity, &Vertex3d)>,
+) {
+    if !canvas.is_visible() {
+        return;
+    }
+    let Some(current_tab_state) = tab_manager.current_tab_state() else {
+        return;
+    };
+    let Some(current_tab_file_entity) = tab_manager.current_tab_entity() else {
+        return;
+    };
+    let camera_3d = camera_manager.camera_3d_entity().unwrap();
+    let camera_state = &current_tab_state.camera_state;
+    let camera_3d_scale = camera_state.camera_3d_scale();
 
+    vertex_manager.sync_vertices(
+        &file_manager,
+        &camera_3d,
+        camera_3d_scale,
+        &camera_q,
+        &vertex_3d_q,
+        &mut transform_q,
+        &owned_by_q,
+        &local_shape_q,
+        *current_tab_file_entity,
+    );
+}
+
+
+pub fn sync_edges(
+    file_manager: Res<FileManager>,
+    tab_manager: Res<TabManager>,
+    mut canvas: ResMut<Canvas>,
+    vertex_manager: Res<VertexManager>,
+    mut edge_manager: ResMut<EdgeManager>,
+    local_shape_q: Query<&LocalShape>,
     mut visibility_q: Query<&mut Visibility>,
     mut transform_q: Query<&mut Transform>,
     owned_by_q: Query<&OwnedByFileLocal>,
-
-    mut vertex_3d_q: Query<(Entity, &mut Vertex3d)>,
     edge_2d_q: Query<(Entity, &Edge2dLocal)>,
     edge_3d_q: Query<(Entity, &Edge3dLocal, Option<&EdgeAngle>)>,
+) {
+    if !canvas.is_visible() {
+        return;
+    }
+    let Some(current_tab_state) = tab_manager.current_tab_state() else {
+        return;
+    };
+    let Some(current_tab_file_entity) = tab_manager.current_tab_entity() else {
+        return;
+    };
+    let camera_state = &current_tab_state.camera_state;
+    let camera_3d_scale = camera_state.camera_3d_scale();
+
+    edge_manager.sync_edges(
+        &file_manager,
+        &vertex_manager,
+        &edge_2d_q,
+        &edge_3d_q,
+        &mut transform_q,
+        &mut visibility_q,
+        &owned_by_q,
+        &local_shape_q,
+        *current_tab_file_entity,
+        camera_3d_scale,
+    );
+}
+
+pub fn sync_faces(
+    file_manager: Res<FileManager>,
+    tab_manager: Res<TabManager>,
+    mut canvas: ResMut<Canvas>,
+    mut face_manager: ResMut<FaceManager>,
+    mut transform_q: Query<&mut Transform>,
+    owned_by_q: Query<&OwnedByFileLocal>,
     face_2d_q: Query<(Entity, &FaceIcon2d)>,
 ) {
     if !canvas.is_visible() {
@@ -50,60 +165,20 @@ pub fn sync_vertices(
     let Some(current_tab_state) = tab_manager.current_tab_state() else {
         return;
     };
+    let Some(current_tab_file_entity) = tab_manager.current_tab_entity() else {
+        return;
+    };
+    let camera_state = &current_tab_state.camera_state;
+    let camera_3d_scale = camera_state.camera_3d_scale();
 
-    if let Some(current_tab_file_entity) = tab_manager.current_tab_entity() {
-        let camera_state = &current_tab_state.camera_state;
-
-        let should_sync_shapes = canvas.should_sync_shapes(&camera_manager);
-        if should_sync_shapes {
-            input_manager.queue_resync_hover_ui();
-            input_manager.queue_resync_selection_ui();
-            let camera_3d = camera_manager.camera_3d_entity().unwrap();
-            let camera_3d_scale = camera_state.camera_3d_scale();
-
-            compass.sync_compass(&camera_3d, camera_state, &mut vertex_3d_q, &transform_q);
-            vertex_manager.sync_vertices(
-                &file_manager,
-                &camera_3d,
-                camera_3d_scale,
-                &camera_q,
-                &vertex_3d_q,
-                &mut transform_q,
-                &owned_by_q,
-                &local_shape_q,
-                *current_tab_file_entity,
-            );
-            EdgeManager::sync_2d_edges(
-                &file_manager,
-                &vertex_manager,
-                &edge_2d_q,
-                &mut transform_q,
-                &owned_by_q,
-                &local_shape_q,
-                *current_tab_file_entity,
-                camera_3d_scale,
-            );
-            edge_manager.sync_3d_edges(
-                &file_manager,
-                &edge_3d_q,
-                &mut transform_q,
-                &owned_by_q,
-                &mut visibility_q,
-                &local_shape_q,
-                *current_tab_file_entity,
-                camera_3d_scale,
-            );
-            FaceManager::sync_2d_faces(
-                &file_manager,
-                &face_2d_q,
-                &mut transform_q,
-                &owned_by_q,
-                *current_tab_file_entity,
-                camera_3d_scale,
-            );
-            input_manager.sync_hover_shape_scale(&mut transform_q, camera_3d_scale);
-        }
-    }
+    face_manager.sync_2d_faces(
+        &file_manager,
+        &face_2d_q,
+        &mut transform_q,
+        &owned_by_q,
+        *current_tab_file_entity,
+        camera_3d_scale,
+    );
 }
 
 pub fn process_faces(

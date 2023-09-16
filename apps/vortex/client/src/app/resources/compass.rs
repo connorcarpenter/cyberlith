@@ -22,18 +22,25 @@ use crate::app::{
 
 #[derive(Resource)]
 pub struct Compass {
+    resync: bool,
     compass_vertices: Vec<Entity>,
 }
 
 impl Default for Compass {
     fn default() -> Self {
         Self {
+            resync: false,
             compass_vertices: Vec::new(),
         }
     }
 }
 
 impl Compass {
+
+    pub fn queue_resync(&mut self) {
+        self.resync = true;
+    }
+
     pub(crate) fn setup_compass(
         &mut self,
         commands: &mut Commands,
@@ -100,12 +107,18 @@ impl Compass {
     }
 
     pub fn sync_compass(
-        &self,
+        &mut self,
         camera_3d_entity: &Entity,
         camera_state: &CameraState,
         vertex_3d_q: &mut Query<(Entity, &mut Vertex3d)>,
-        transform_q: &Query<&mut Transform>,
+        transform_q: &Query<&Transform>,
     ) {
+        if !self.resync {
+            return;
+        }
+
+        self.resync = false;
+
         let Ok(camera_transform) = transform_q.get(*camera_3d_entity) else {
             return;
         };
