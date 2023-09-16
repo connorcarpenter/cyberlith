@@ -74,6 +74,7 @@ enum TabAction {
 pub struct TabManager {
     current_tab: Option<Entity>,
     last_tab: Option<Entity>,
+    resync_tab_ownership: bool,
     // entity is file entity here
     tab_map: HashMap<Entity, TabState>,
     tab_order: Vec<Entity>,
@@ -86,6 +87,7 @@ impl Default for TabManager {
         Self {
             current_tab: None,
             last_tab: None,
+            resync_tab_ownership: false,
             tab_map: HashMap::new(),
             tab_order: Vec::new(),
             new_tab_id: 0,
@@ -107,25 +109,24 @@ impl TabManager {
         mut visibility_q: Query<(&mut Visibility, &OwnedByFileLocal)>
     ) {
         tab_manager.on_sync_tabs(
-            &file_manager,
             &mut canvas,
-            &mut camera_manager,
             &mut input_manager,
             &mut vertex_manager,
             &mut edge_manager,
-            &mut visibility_q
+        );
+        tab_manager.on_sync_tab_ownership(
+            &file_manager,
+            &mut camera_manager,
+            &mut visibility_q,
         );
     }
 
     pub fn on_sync_tabs(
         &mut self,
-        file_manager: &FileManager,
         canvas: &mut Canvas,
-        camera_manager: &mut CameraManager,
         input_manager: &mut InputManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
-        visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>
     ) {
         if self.current_tab == self.last_tab {
             return;
@@ -133,9 +134,27 @@ impl TabManager {
 
         self.last_tab = self.current_tab;
 
-
         canvas.set_visibility(true);
         canvas.set_focused_timed(input_manager, vertex_manager, edge_manager);
+
+        self.resync_tab_ownership();
+    }
+
+    pub fn resync_tab_ownership(&mut self) {
+        self.resync_tab_ownership = true;
+    }
+
+    pub fn on_sync_tab_ownership(
+        &mut self,
+        file_manager: &FileManager,
+        camera_manager: &mut CameraManager,
+        visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>
+    ) {
+        if !self.resync_tab_ownership {
+            return;
+        }
+
+        self.resync_tab_ownership = false;
 
         if let Some(current_tab_file_entity) = self.current_tab_entity() {
             for (mut visibility, owned_by_tab) in visibility_q.iter_mut() {

@@ -34,6 +34,7 @@ use crate::app::{
         file_manager::{get_full_path, FileManager},
         shape_waitlist::{ShapeWaitlist, ShapeWaitlistInsert},
         vertex_manager::VertexManager,
+        tab_manager::TabManager,
     },
     systems::file_post_process,
 };
@@ -124,8 +125,9 @@ pub fn insert_component_events(
 
 pub fn insert_file_component_events(
     mut commands: Commands,
-    mut file_manager: ResMut<FileManager>,
     client: Client,
+    mut file_manager: ResMut<FileManager>,
+    mut tab_manager: ResMut<TabManager>,
     mut entry_events: EventReader<InsertComponentEvent<FileSystemEntry>>,
     mut root_events: EventReader<InsertComponentEvent<FileSystemRootChild>>,
     mut child_events: EventReader<InsertComponentEvent<FileSystemChild>>,
@@ -216,6 +218,8 @@ pub fn insert_file_component_events(
             "received FileDependency(file: `{:?}`, dependency: `{:?}`)",
             file_entity, dependency_entity
         );
+
+        tab_manager.resync_tab_ownership();
     }
 }
 
