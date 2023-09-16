@@ -224,7 +224,7 @@ impl TabManager {
                     );
 
                     // deregister
-                    git_manager.deregister_content_entities(content_entities);
+                    git_manager.deregister_content_entities(&mut server, content_entities);
                 }
             }
 

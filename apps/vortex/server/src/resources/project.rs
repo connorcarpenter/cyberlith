@@ -17,7 +17,7 @@ use vortex_proto::{
 };
 
 use crate::{
-    files::{load_content_entities, despawn_file_content_entities, FileWriter, ShapeType},
+    files::{load_content_entities, despawn_file_content_entities, FileWriter},
     resources::{
         ChangelistValue, ContentEntityData, FileEntryValue, FileSpace, GitManager, ShapeManager,
     },
@@ -113,12 +113,12 @@ impl Project {
         &mut self,
         file_key: &FileKey,
         entity: &Entity,
-        shape_type: ShapeType,
+        content_data: &ContentEntityData,
     ) {
         self.filespaces
             .get_mut(file_key)
             .unwrap()
-            .add_content_entity(*entity, shape_type);
+            .add_content_entity(*entity, content_data.clone());
     }
 
     pub(crate) fn on_remove_content_entity(&mut self, file_key: &FileKey, entity: &Entity) {

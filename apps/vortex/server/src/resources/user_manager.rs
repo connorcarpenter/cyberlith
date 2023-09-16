@@ -197,7 +197,7 @@ impl UserManager {
         if let Some(new_content_entities) =
             project.user_join_filespace(commands, server, shape_manager, user_key, file_key)
         {
-            git_manager.register_content_entities(project_key, file_key, &new_content_entities);
+            git_manager.register_content_entities(server, project_key, file_key, &new_content_entities);
         }
     }
 

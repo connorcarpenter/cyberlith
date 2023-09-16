@@ -8,7 +8,7 @@ use vortex_proto::resources::FileKey;
 
 use crate::files::ShapeType;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum ContentEntityData {
     Shape(ShapeType),
     Dependency(FileKey),
@@ -50,6 +50,13 @@ impl FileSpace {
         &self.content_entities
     }
 
+    pub(crate) fn user_join(&mut self, server: &mut Server, user_key: &UserKey) {
+        self.user_count += 1;
+
+        // put user in new room
+        server.room_mut(&self.room_key).add_user(user_key);
+    }
+
     pub(crate) fn user_leave(&mut self) {
         self.user_count -= 1;
     }
@@ -58,20 +65,12 @@ impl FileSpace {
         self.user_count == 0
     }
 
-    pub(crate) fn user_join(&mut self, server: &mut Server, user_key: &UserKey) {
-        self.user_count += 1;
-
-        // put user in new room
-        server.room_mut(&self.room_key).add_user(user_key);
-    }
-
-    pub fn add_content_entity(&mut self, entity: Entity, shape_type: ShapeType) {
+    pub fn add_content_entity(&mut self, entity: Entity, content_data: ContentEntityData) {
         info!(
             "FileSpace adding content entity: `{:?}`, `{:?}`",
-            entity, shape_type
+            entity, content_data
         );
-        self.content_entities
-            .insert(entity, ContentEntityData::new_shape(shape_type));
+        self.content_entities.insert(entity, content_data);
     }
 
     pub fn remove_content_entity(&mut self, entity: &Entity) {

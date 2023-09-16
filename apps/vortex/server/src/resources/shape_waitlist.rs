@@ -12,7 +12,7 @@ use vortex_proto::{
 
 use crate::{
     files::ShapeType,
-    resources::{project::ProjectKey, GitManager, ShapeManager},
+    resources::{ContentEntityData, project::ProjectKey, GitManager, ShapeManager},
 };
 
 pub enum ShapeWaitlistInsert {
@@ -420,12 +420,14 @@ impl ShapeWaitlist {
             }
         };
 
-        git_manager.on_client_insert_content_entity(
+        git_manager.queue_client_modify_file(&entity);
+        let content_entity_data = ContentEntityData::new_shape(shape_type);
+        git_manager.on_insert_content_entity(
             server,
             &project_key,
             &file_key,
             &entity,
-            shape_type,
+            &content_entity_data,
         );
 
         // if the waitlist has any children entities of this one, process them

@@ -66,29 +66,35 @@ pub fn despawn_entity_events(
                 // vertex
                 info!("entity: `{:?}` (which is a Vertex), despawned", entity);
 
+                git_manager.queue_client_modify_file(entity);
+
                 let other_entities_to_despawn =
                     shape_manager.on_client_despawn_vertex(&mut commands, &mut server, entity);
 
-                git_manager.on_client_remove_content_entity(&entity);
+                git_manager.on_remove_content_entity(&mut server, &entity);
                 for other_entity in other_entities_to_despawn {
-                    git_manager.on_client_remove_content_entity(&other_entity);
+                    git_manager.on_remove_content_entity(&mut server, &other_entity);
                 }
             }
             Some((false, Some(ShapeType::Edge))) => {
                 // edge
                 info!("entity: `{:?}` (which is an Edge), despawned", entity);
 
+                git_manager.queue_client_modify_file(entity);
+
                 shape_manager.on_client_despawn_edge(entity);
 
-                git_manager.on_client_remove_content_entity(&entity);
+                git_manager.on_remove_content_entity(&mut server, &entity);
             }
             Some((false, Some(ShapeType::Face))) => {
                 // edge
                 info!("entity: `{:?}` (which is an Face), despawned", entity);
 
-                shape_manager.on_delete_face(entity);
+                git_manager.queue_client_modify_file(entity);
 
-                git_manager.on_client_remove_content_entity(&entity);
+                shape_manager.on_client_despawn_face(entity);
+
+                git_manager.on_remove_content_entity(&mut server, &entity);
             }
             _ => {
                 panic!(

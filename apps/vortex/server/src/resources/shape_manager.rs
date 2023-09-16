@@ -323,7 +323,7 @@ impl ShapeManager {
         for face_entity in vertex_data.faces.iter() {
             entities_to_despawn.push(*face_entity);
 
-            self.on_delete_face(face_entity);
+            self.on_client_despawn_face(face_entity);
         }
 
         entities_to_despawn
@@ -346,7 +346,7 @@ impl ShapeManager {
         }
     }
 
-    pub(crate) fn on_delete_face(&mut self, face_entity: &Entity) {
+    pub(crate) fn on_client_despawn_face(&mut self, face_entity: &Entity) {
         let face_data = self.faces.remove(face_entity).unwrap();
 
         for vertex_entity in [face_data.vertex_a, face_data.vertex_b, face_data.vertex_c] {

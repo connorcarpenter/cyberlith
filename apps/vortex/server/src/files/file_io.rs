@@ -144,7 +144,6 @@ pub fn load_content_entities(
     post_process_loaded_networked_entities(
         commands,
         server,
-        file_room_key,
         &new_entities,
         file_entity,
         &file_extension,
@@ -156,14 +155,11 @@ pub fn load_content_entities(
 fn post_process_loaded_networked_entities(
     commands: &mut Commands,
     server: &mut Server,
-    room_key: &RoomKey,
     entities: &HashMap<Entity, ContentEntityData>,
     file_entity: &Entity,
     file_extension: &FileExtension,
 ) {
     for (entity, _data) in entities.iter() {
-        // associate all new Entities with the new Room
-        server.room_mut(room_key).add_entity(entity);
 
         // add file ownership
         let mut file_ownership_component = OwnedByFile::new();
