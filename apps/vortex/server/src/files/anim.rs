@@ -271,10 +271,12 @@ impl AnimReader {
     }
 
     fn actions_to_world(
-        _commands: &mut Commands,
-        _server: &mut Server,
+        world: &mut World,
         actions: Vec<AnimAction>,
     ) -> Result<FileReadOutput, SerdeErr> {
+        // let mut system_state: SystemState<Query<&AnimFrame>> = SystemState::new(world);
+        // let frame_q = system_state.get_mut(world);
+
         let mut skel_path = None;
 
         for action in actions {
@@ -286,6 +288,8 @@ impl AnimReader {
                 AnimAction::Frame(_, _) => {}
             }
         }
+
+        // system_state.apply(world);
 
         info!("skel_path: {:?}", skel_path);
 
@@ -334,8 +338,7 @@ impl AnimReader {
 impl FileReader for AnimReader {
     fn read(
         &self,
-        commands: &mut Commands,
-        server: &mut Server,
+        world: &mut World,
         bytes: &Box<[u8]>,
     ) -> FileReadOutput {
         let mut bit_reader = BitReader::new(bytes);
@@ -344,7 +347,7 @@ impl FileReader for AnimReader {
             panic!("Error reading .anim file");
         };
 
-        let Ok(result) = Self::actions_to_world(commands, server, actions) else {
+        let Ok(result) = Self::actions_to_world(world, actions) else {
             panic!("Error reading .anim file");
         };
 
