@@ -70,23 +70,40 @@ impl AnimWriter {
         _world: &mut World,
         project: &Project,
         file_key: &FileKey,
-        _content_entities_opt: &Option<HashMap<Entity, ContentEntityData>>,
+        content_entities_opt: &Option<HashMap<Entity, ContentEntityData>>,
     ) -> Vec<AnimAction> {
-        let mut actions = Vec::new();
 
-        // get skel file
         let working_file_entries = project.working_file_entries();
-        let file_value = working_file_entries.get(file_key).unwrap();
-        let Some(dependencies) = file_value.dependencies() else {
-            return actions;
-        };
 
-        if dependencies.len() != 1 {
-            panic!("anim file should have exactly one dependency");
+        let mut skel_dependency_key_opt = None;
+
+        let content_entities = content_entities_opt.as_ref().unwrap();
+        for (content_entity, content_data) in content_entities {
+            match content_data {
+                ContentEntityData::Shape(_) => {
+                    panic!("animation should not have any shape entity in it");
+                }
+                ContentEntityData::Dependency(dependency_ext, dependency_key) => {
+                    if *dependency_ext != FileExtension::Skel {
+                        panic!("anim file should depend on a single .skel file");
+                    }
+                    skel_dependency_key_opt = Some(dependency_key);
+                }
+                ContentEntityData::Frame => {
+                    todo!();
+                }
+                ContentEntityData::Rotation => {
+                    todo!();
+                }
+            }
         }
 
-        let dependency_key = dependencies.iter().next().unwrap();
-        let dependency_value = working_file_entries.get(dependency_key).unwrap();
+        let mut actions = Vec::new();
+
+        let Some(dependency_key) = skel_dependency_key_opt else {
+            panic!("anim file should depend on a single .skel file");
+        };
+        let dependency_value = working_file_entries.get(&dependency_key).unwrap();
         if dependency_value.extension().unwrap() != FileExtension::Skel {
             panic!("anim file should depend on a single .skel file");
         }
@@ -235,6 +252,11 @@ impl AnimReader {
         info!("skel_path: {:?}", skel_path_opt);
         if let Some((skel_path, skel_file_name)) = skel_path_opt {
             let skel_file_key = FileKey::new(&skel_path, &skel_file_name, EntryKind::File);
+            let file_extension = project.file_extension(&skel_file_key).unwrap();
+            if file_extension != FileExtension::Skel {
+                panic!("anim file should depend on a single .skel file");
+            }
+
             project.file_add_dependency(file_key, &skel_file_key);
 
             let skel_file_entity = project.file_entity(&skel_file_key).unwrap();
@@ -249,7 +271,7 @@ impl AnimReader {
                 .configure_replication(ReplicationConfig::Delegated)
                 .insert(component)
                 .id();
-            content_entities.insert(entity, ContentEntityData::new_dependency(skel_file_key));
+            content_entities.insert(entity, ContentEntityData::new_dependency(file_extension, skel_file_key));
         }
 
         content_entities

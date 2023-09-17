@@ -100,6 +100,11 @@ impl Project {
         Some(file_entry_val.entity())
     }
 
+    pub(crate) fn file_extension(&self, file_key: &FileKey) -> Option<FileExtension> {
+        let file_entry_val = self.working_file_entries.get(file_key)?;
+        file_entry_val.extension()
+    }
+
     pub fn file_room_key(&self, file_key: &FileKey) -> Option<RoomKey> {
         self.filespaces.get(file_key).map(|fs| fs.room_key())
     }

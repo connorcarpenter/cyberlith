@@ -208,8 +208,14 @@ pub fn despawn_file_content_entities(
                 shape_manager.deregister_edge(entity);
             }
             ContentEntityData::Shape(ShapeType::Face) => {}
-            ContentEntityData::Dependency(dependency_key) => {
+            ContentEntityData::Dependency(_, dependency_key) => {
                 project.file_remove_dependency(&file_key, &dependency_key);
+            }
+            ContentEntityData::Frame => {
+                todo!();
+            }
+            ContentEntityData::Rotation => {
+                todo!();
             }
         }
     }
