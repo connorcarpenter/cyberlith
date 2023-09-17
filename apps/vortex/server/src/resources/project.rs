@@ -40,8 +40,7 @@ pub enum RollbackResult {
     Created,
     Modified(
         FileKey,
-        HashMap<Entity, ContentEntityData>,
-        HashMap<Entity, ContentEntityData>,
+        Option<(HashMap<Entity, ContentEntityData>, HashMap<Entity, ContentEntityData>)>,
     ),
     Deleted(FileKey, FileEntryValue),
 }
@@ -116,6 +115,10 @@ impl Project {
         self.filespaces
             .get(file_key)
             .map(|fs| fs.content_entities())
+    }
+
+    pub(crate) fn has_filespace(&self, file_key: &FileKey) -> bool {
+        self.filespaces.contains_key(file_key)
     }
 
     pub(crate) fn on_insert_content_entity(
@@ -587,13 +590,18 @@ impl Project {
         system_state.apply(world);
 
         // respawn content entities within to previous state
-        let (old_entities, new_entities) = self.respawn_file_content_entities(
-            world,
-            &file_entity,
-            &file_key,
-        );
+        let result = if self.has_filespace(file_key) {
+            let (old_entities, new_entities) = self.respawn_file_content_entities(
+                world,
+                &file_entity,
+                &file_key,
+            );
+            Some((old_entities, new_entities))
+        } else {
+            None
+        };
 
-        RollbackResult::Modified(file_key.clone(), old_entities, new_entities)
+        RollbackResult::Modified(file_key.clone(), result)
     }
 
     fn rollback_deleted_file(&mut self, world: &mut World, file_key: &FileKey) -> RollbackResult {

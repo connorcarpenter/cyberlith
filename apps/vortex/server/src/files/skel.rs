@@ -5,6 +5,7 @@ use bevy_ecs::{
     prelude::{Commands, World},
     system::{Query, Res, SystemState},
 };
+use bevy_ecs::system::ResMut;
 use bevy_log::info;
 
 use naia_bevy_server::{
@@ -20,7 +21,7 @@ use vortex_proto::{
 
 use crate::{
     files::{
-        file_io::ShapeType, FileReadOutput, FileReader, FileWriter, SkelFileWaitlist,
+        file_io::ShapeType, FileWriter, SkelFileWaitlist,
         SkelWaitlistInsert,
     },
     resources::{ContentEntityData, Project, ShapeManager},
@@ -305,9 +306,9 @@ impl SkelReader {
     fn actions_to_world(
         world: &mut World,
         actions: Vec<SkelAction>,
-    ) -> Result<FileReadOutput, SerdeErr> {
-        let mut system_state: SystemState<(Commands, Server)> = SystemState::new(world);
-        let (mut commands, mut server) = system_state.get_mut(world);
+    ) -> HashMap<Entity, ContentEntityData> {
+        let mut system_state: SystemState<(Commands, Server, ResMut<ShapeManager>)> = SystemState::new(world);
+        let (mut commands, mut server, mut shape_manager) = system_state.get_mut(world);
 
         let mut output = Vec::new();
 
@@ -399,9 +400,11 @@ impl SkelReader {
             }
         }
 
+        let output = SkelReader::post_process_entities(&mut shape_manager, output);
+
         system_state.apply(world);
 
-        Ok(FileReadOutput::Skel(output))
+        output
     }
 
     pub fn post_process_entities(
@@ -437,21 +440,19 @@ impl SkelReader {
     }
 }
 
-impl FileReader for SkelReader {
-    fn read(
+impl SkelReader {
+    pub fn read(
         &self,
         world: &mut World,
         bytes: &Box<[u8]>,
-    ) -> FileReadOutput {
+    ) -> HashMap<Entity, ContentEntityData> {
         let mut bit_reader = BitReader::new(bytes);
 
         let Ok(actions) = Self::read_to_actions(&mut bit_reader) else {
             panic!("Error reading .skel file");
         };
 
-        let Ok(result) = Self::actions_to_world(world, actions) else {
-            panic!("Error reading .skel file");
-        };
+        let result = Self::actions_to_world(world, actions);
 
         result
     }

@@ -30,20 +30,26 @@ pub trait FileReader: Send + Sync {
     fn read(
         &self,
         world: &mut World,
+        project: &mut Project,
+        file_key: &FileKey,
+        file_entity: &Entity,
         bytes: &Box<[u8]>,
-    ) -> FileReadOutput;
+    ) -> HashMap<Entity, ContentEntityData>;
 }
 
 impl FileReader for FileExtension {
     fn read(
         &self,
         world: &mut World,
+        project: &mut Project,
+        file_key: &FileKey,
+        file_entity: &Entity,
         bytes: &Box<[u8]>,
-    ) -> FileReadOutput {
+    ) -> HashMap<Entity, ContentEntityData> {
         match self {
             FileExtension::Skel => SkelReader.read(world, bytes),
             FileExtension::Mesh => MeshReader.read(world, bytes),
-            FileExtension::Anim => AnimReader.read(world, bytes),
+            FileExtension::Anim => AnimReader.read(world, project, file_key, file_entity, bytes),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }
@@ -72,15 +78,6 @@ impl FileWriter for FileExtension {
             _ => panic!("File extension {:?} not implemented", self),
         }
     }
-}
-
-pub enum FileReadOutput {
-    // Skel file, list of (vertex 3d entity, and an optional (edge 3d entity, parent vertex 3d entity))
-    Skel(Vec<(Entity, Option<(Entity, Entity)>)>),
-    // Mesh file, list of vert/edge/face entities
-    Mesh(Vec<(Entity, ShapeTypeData)>),
-    // Option<(SkelPath, SkelFile)>
-    Anim(Option<(String, String)>),
 }
 
 #[derive(Copy, Clone, Hash, PartialEq, Eq, Debug)]
@@ -116,27 +113,10 @@ pub fn load_content_entities(
     bytes: Box<[u8]>,
 ) -> HashMap<Entity, ContentEntityData> {
     // FileReader reads File's contents and spawns all Entities + Components
-    let read_output = file_extension.read(world, &bytes);
+    let new_entities = file_extension.read(world, project, file_key, file_entity, &bytes);
 
-    let mut system_state: SystemState<(Commands, Server, ResMut<ShapeManager>)> = SystemState::new(world);
-    let (mut commands, mut server, mut shape_manager) = system_state.get_mut(world);
-
-    let new_entities = match read_output {
-        FileReadOutput::Skel(entities) => {
-            SkelReader::post_process_entities(&mut shape_manager, entities)
-        }
-        FileReadOutput::Mesh(shape_entities) => {
-            MeshReader::post_process_entities(&mut shape_manager, shape_entities)
-        }
-        FileReadOutput::Anim(skel_path_opt) => AnimReader::post_process(
-            &mut commands,
-            &mut server,
-            project,
-            file_key,
-            file_entity,
-            skel_path_opt,
-        ),
-    };
+    let mut system_state: SystemState<(Commands, Server)> = SystemState::new(world);
+    let (mut commands, mut server) = system_state.get_mut(world);
 
     post_process_loaded_networked_entities(
         &mut commands,

@@ -19,7 +19,7 @@ use vortex_proto::{
 };
 
 use crate::{
-    files::{FileReadOutput, FileReader, FileWriter},
+    files::FileWriter,
     resources::{ContentEntityData, Project},
 };
 
@@ -154,17 +154,17 @@ impl AnimWriter {
         }
 
         // Write Frames
-        let biggest_order = biggest_order_opt.unwrap();
-        for order in 0..=biggest_order {
-
-            let Some((frame_entity, transition)) = frame_map.remove(&order) else {
-                panic!("anim file should not have any gaps in frame orders");
-            };
-            let Some(poses) = frame_poses_map.remove(&frame_entity) else {
-                panic!("anim file should not have any gaps in frame orders");
-            };
-            info!("writing frame: {}", order);
-            actions.push(AnimAction::Frame(poses, transition));
+        if let Some(biggest_order) = biggest_order_opt {
+            for order in 0..=biggest_order {
+                let Some((frame_entity, transition)) = frame_map.remove(&order) else {
+                    panic!("anim file should not have any gaps in frame orders");
+                };
+                let Some(poses) = frame_poses_map.remove(&frame_entity) else {
+                    panic!("anim file should not have any gaps in frame orders");
+                };
+                info!("writing frame: {}", order);
+                actions.push(AnimAction::Frame(poses, transition));
+            }
         }
 
         actions
@@ -272,8 +272,11 @@ impl AnimReader {
 
     fn actions_to_world(
         world: &mut World,
+        project: &mut Project,
+        file_key: &FileKey,
+        file_entity: &Entity,
         actions: Vec<AnimAction>,
-    ) -> Result<FileReadOutput, SerdeErr> {
+    ) -> HashMap<Entity, ContentEntityData> {
         // let mut system_state: SystemState<Query<&AnimFrame>> = SystemState::new(world);
         // let frame_q = system_state.get_mut(world);
 
@@ -293,18 +296,26 @@ impl AnimReader {
 
         info!("skel_path: {:?}", skel_path);
 
-        Ok(FileReadOutput::Anim(skel_path))
+        AnimReader::post_process(
+            world,
+            project,
+            file_key,
+            file_entity,
+            skel_path,
+        )
     }
 
     pub fn post_process(
-        commands: &mut Commands,
-        server: &mut Server,
+        world: &mut World,
         project: &mut Project,
         file_key: &FileKey,
         file_entity: &Entity,
         skel_path_opt: Option<(String, String)>,
     ) -> HashMap<Entity, ContentEntityData> {
         let mut content_entities = HashMap::new();
+
+        let mut system_state: SystemState<(Commands, Server)> = SystemState::new(world);
+        let (mut commands, mut server) = system_state.get_mut(world);
 
         info!("skel_path: {:?}", skel_path_opt);
         if let Some((skel_path, skel_file_name)) = skel_path_opt {
@@ -320,36 +331,39 @@ impl AnimReader {
 
             // get all users in room with file entity
             let mut component = FileDependency::new();
-            component.file_entity.set(server, file_entity);
-            component.dependency_entity.set(server, &skel_file_entity);
+            component.file_entity.set(&server, file_entity);
+            component.dependency_entity.set(&server, &skel_file_entity);
             let entity = commands
                 .spawn_empty()
-                .enable_replication(server)
+                .enable_replication(&mut server)
                 .configure_replication(ReplicationConfig::Delegated)
                 .insert(component)
                 .id();
             content_entities.insert(entity, ContentEntityData::new_dependency(skel_file_key));
         }
 
+        system_state.apply(world);
+
         content_entities
     }
 }
 
-impl FileReader for AnimReader {
-    fn read(
+impl AnimReader {
+    pub fn read(
         &self,
         world: &mut World,
+        project: &mut Project,
+        file_key: &FileKey,
+        file_entity: &Entity,
         bytes: &Box<[u8]>,
-    ) -> FileReadOutput {
+    ) -> HashMap<Entity, ContentEntityData> {
         let mut bit_reader = BitReader::new(bytes);
 
         let Ok(actions) = Self::read_to_actions(&mut bit_reader) else {
             panic!("Error reading .anim file");
         };
 
-        let Ok(result) = Self::actions_to_world(world, actions) else {
-            panic!("Error reading .anim file");
-        };
+        let result = Self::actions_to_world(world, project, file_key, file_entity, actions);
 
         result
     }

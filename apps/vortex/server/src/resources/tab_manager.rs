@@ -42,11 +42,11 @@ impl TabManager {
         tab_id: &TabId,
         file_entity: &Entity,
     ) {
-        let Ok(file_key) = key_q.get(*file_entity) else {
+        if key_q.get(*file_entity).is_err() {
             self.waiting_opens.insert((*user_key, *file_entity), *tab_id);
             info!("no FileEntryKey for entity: {:?}, queuing open tab", file_entity);
             return;
-        };
+        }
 
         self.queued_opens.push_back((*user_key, *tab_id, *file_entity));
         info!("entity: {:?}, queuing open tab", file_entity);

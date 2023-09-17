@@ -5,6 +5,7 @@ use bevy_ecs::{
     prelude::{Commands, World},
     system::{Query, SystemState},
 };
+use bevy_ecs::system::ResMut;
 use bevy_log::info;
 
 use naia_bevy_server::{
@@ -17,7 +18,7 @@ use vortex_proto::{
 };
 
 use crate::{
-    files::{FileReadOutput, FileReader, FileWriter, ShapeTypeData},
+    files::{FileWriter, ShapeTypeData},
     resources::{ContentEntityData, Project, ShapeManager},
 };
 
@@ -289,9 +290,9 @@ impl MeshReader {
     fn actions_to_world(
         world: &mut World,
         actions: Vec<MeshAction>,
-    ) -> Result<FileReadOutput, SerdeErr> {
-        let mut system_state: SystemState<(Commands, Server)> = SystemState::new(world);
-        let (mut commands, mut server) = system_state.get_mut(world);
+    ) -> HashMap<Entity, ContentEntityData> {
+        let mut system_state: SystemState<(Commands, Server, ResMut<ShapeManager>)> = SystemState::new(world);
+        let (mut commands, mut server, mut shape_manager) = system_state.get_mut(world);
 
         let mut vertices = Vec::new();
         let mut edges = Vec::new();
@@ -383,27 +384,27 @@ impl MeshReader {
             }
         }
 
+        let output = MeshReader::post_process_entities(&mut shape_manager, output);
+
         system_state.apply(world);
 
-        Ok(FileReadOutput::Mesh(output))
+        output
     }
 }
 
-impl FileReader for MeshReader {
-    fn read(
+impl MeshReader {
+    pub fn read(
         &self,
         world: &mut World,
         bytes: &Box<[u8]>,
-    ) -> FileReadOutput {
+    ) -> HashMap<Entity, ContentEntityData> {
         let mut bit_reader = BitReader::new(bytes);
 
         let Ok(actions) = Self::read_to_actions(&mut bit_reader) else {
             panic!("Error reading .mesh file");
         };
 
-        let Ok(result) = Self::actions_to_world(world, actions) else {
-            panic!("Error reading .mesh file");
-        };
+        let result = Self::actions_to_world(world, actions);
 
         result
     }

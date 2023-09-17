@@ -129,8 +129,12 @@ impl TabManager {
 
         self.last_tab = self.current_tab;
 
-        canvas.set_visibility(true);
-        canvas.set_focused_timed(input_manager, vertex_manager, edge_manager);
+        if self.current_tab.is_some() {
+            canvas.set_visibility(true);
+            canvas.set_focused_timed(input_manager, vertex_manager, edge_manager);
+        } else {
+            canvas.set_visibility(false);
+        }
 
         self.resync_tab_ownership();
     }

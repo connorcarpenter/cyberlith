@@ -455,17 +455,18 @@ impl GitManager {
 
         match project.rollback_changelist_entry(world, message) {
             RollbackResult::Created => {}
-            RollbackResult::Modified(file_key, old_content_entities, new_content_entities) => {
-
-                world.resource_scope(|world, mut git_manager: Mut<GitManager>| {
-                    git_manager.deregister_content_entities(world, &old_content_entities);
-                    git_manager.register_content_entities(
-                        world,
-                        &user_project_key,
-                        &file_key,
-                        &new_content_entities,
-                    );
-                });
+            RollbackResult::Modified(file_key, content_entities_opt) => {
+                if let Some((old_content_entities, new_content_entities)) = content_entities_opt {
+                    world.resource_scope(|world, mut git_manager: Mut<GitManager>| {
+                        git_manager.deregister_content_entities(world, &old_content_entities);
+                        git_manager.register_content_entities(
+                            world,
+                            &user_project_key,
+                            &file_key,
+                            &new_content_entities,
+                        );
+                    });
+                }
             }
             RollbackResult::Deleted(key, value) => self.spawn_networked_entry_into_world(
                 world,
