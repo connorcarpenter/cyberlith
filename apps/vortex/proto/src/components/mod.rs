@@ -7,12 +7,16 @@ pub use file_system::{
     FileSystemRootChild,
 };
 
-mod vertex;
-use vertex::VertexComponentsPlugin;
-pub use vertex::{
+mod shape;
+use shape::VertexComponentsPlugin;
+pub use shape::{
     Edge3d, EdgeAngle, Face3d, FileExtension, FileType, OwnedByFile, ShapeName, Vertex3d,
     VertexRoot, VertexSerdeInt,
 };
+
+mod animation;
+use animation::AnimationComponentsPlugin;
+pub use animation::{AnimFrame, AnimRotation};
 
 // Plugin
 pub struct ComponentsPlugin;
@@ -21,6 +25,7 @@ impl ProtocolPlugin for ComponentsPlugin {
     fn build(&self, protocol: &mut Protocol) {
         protocol
             .add_plugin(FileSystemComponentsPlugin)
-            .add_plugin(VertexComponentsPlugin);
+            .add_plugin(VertexComponentsPlugin)
+            .add_plugin(AnimationComponentsPlugin);
     }
 }

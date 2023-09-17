@@ -14,10 +14,10 @@ impl ProtocolPlugin for VertexComponentsPlugin {
         protocol
             .add_component::<Vertex3d>()
             .add_component::<VertexRoot>()
-            .add_component::<OwnedByFile>()
             .add_component::<Edge3d>()
             .add_component::<EdgeAngle>()
             .add_component::<Face3d>()
+            .add_component::<OwnedByFile>()
             .add_component::<FileType>()
             .add_component::<ShapeName>();
     }

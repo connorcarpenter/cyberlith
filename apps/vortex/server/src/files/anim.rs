@@ -42,25 +42,22 @@ enum AnimActionType {
 
 #[derive(Clone, PartialEq)]
 pub struct Transition {
-    pub duration_ms: f32,
+    pub duration_5ms: u16,
     //pub easing: Easing,
 }
 
 impl Serde for Transition {
     fn ser(&self, writer: &mut dyn BitWrite) {
-        let duration_5ms = (self.duration_ms / 5.0).round() as u32;
-        UnsignedVariableInteger::<7>::from(duration_5ms).ser(writer);
+        UnsignedVariableInteger::<7>::from(self.duration_5ms).ser(writer);
     }
 
     fn de(reader: &mut BitReader) -> Result<Self, SerdeErr> {
-        let duration_5ms: u32 = UnsignedVariableInteger::<7>::de(reader)?.to();
-        let duration_ms = (duration_5ms as f32) * 5.0;
-        Ok(Self { duration_ms })
+        let duration_5ms: u16 = UnsignedVariableInteger::<7>::de(reader)?.to();
+        Ok(Self { duration_5ms })
     }
 
     fn bit_length(&self) -> u32 {
-        let duration_5ms = (self.duration_ms / 5.0).round() as u32;
-        UnsignedVariableInteger::<7>::from(duration_5ms).bit_length()
+        UnsignedVariableInteger::<7>::from(self.duration_5ms).bit_length()
     }
 }
 
