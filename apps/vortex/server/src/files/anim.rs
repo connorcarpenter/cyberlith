@@ -219,7 +219,11 @@ impl FileWriter for AnimWriter {
     }
 
     fn write_new_default(&self) -> Box<[u8]> {
-        self.write_from_actions(Vec::new())
+        let mut actions = Vec::new();
+
+        actions.push(AnimAction::Frame(HashMap::new(), Transition::new(100)));
+
+        self.write_from_actions(actions)
     }
 }
 
