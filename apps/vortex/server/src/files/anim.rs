@@ -3,16 +3,17 @@ use std::collections::HashMap;
 use bevy_ecs::{
     entity::Entity,
     prelude::{Commands, World},
+    system::{Query, SystemState},
 };
 use bevy_log::info;
 
 use naia_bevy_server::{
-    BitReader, BitWrite, CommandsExt, FileBitWriter, ReplicationConfig, Serde, SerdeErr, Server,
+    BitReader, CommandsExt, FileBitWriter, ReplicationConfig, Serde, SerdeErr, Server,
     UnsignedVariableInteger,
 };
 
 use vortex_proto::{
-    components::{EntryKind, FileDependency, FileExtension},
+    components::{EntryKind, FileDependency, FileExtension, AnimFrame, AnimRotation, ShapeName, Transition},
     resources::FileKey,
     SerdeQuat,
 };
@@ -29,7 +30,7 @@ enum AnimAction {
     // shape name -> shape_index
     ShapeIndex(String),
     // shape_index -> rotation
-    Frame(HashMap<u32, SerdeQuat>, Transition),
+    Frame(HashMap<u16, SerdeQuat>, Transition),
 }
 
 #[derive(Serde, Clone, PartialEq)]
@@ -40,34 +41,13 @@ enum AnimActionType {
     None,
 }
 
-#[derive(Clone, PartialEq)]
-pub struct Transition {
-    pub duration_5ms: u16,
-    //pub easing: Easing,
-}
-
-impl Serde for Transition {
-    fn ser(&self, writer: &mut dyn BitWrite) {
-        UnsignedVariableInteger::<7>::from(self.duration_5ms).ser(writer);
-    }
-
-    fn de(reader: &mut BitReader) -> Result<Self, SerdeErr> {
-        let duration_5ms: u16 = UnsignedVariableInteger::<7>::de(reader)?.to();
-        Ok(Self { duration_5ms })
-    }
-
-    fn bit_length(&self) -> u32 {
-        UnsignedVariableInteger::<7>::from(self.duration_5ms).bit_length()
-    }
-}
-
 // Writer
 pub struct AnimWriter;
 
 impl AnimWriter {
     fn world_to_actions(
         &self,
-        _world: &mut World,
+        world: &mut World,
         project: &Project,
         content_entities_opt: &Option<HashMap<Entity, ContentEntityData>>,
     ) -> Vec<AnimAction> {
@@ -76,6 +56,12 @@ impl AnimWriter {
 
         let mut skel_dependency_key_opt = None;
         let mut shape_names: Vec<String> = Vec::new();
+        let mut shape_map: HashMap<String, u16> = HashMap::new();
+
+        let mut biggest_order_opt: Option<u8> = None;
+        //////////////////// order, frame_entity, duration_5ms
+        let mut frame_map: HashMap<u8, (Entity, Transition)> = HashMap::new();
+        let mut frame_poses_map: HashMap<Entity, HashMap<u16, SerdeQuat>> = HashMap::new();
 
         let content_entities = content_entities_opt.as_ref().unwrap();
         for (content_entity, content_data) in content_entities {
@@ -91,16 +77,66 @@ impl AnimWriter {
                     skel_dependency_key_opt = Some(dependency_key);
                 }
                 ContentEntityData::Frame => {
-                    todo!();
+                    let mut system_state: SystemState<Query<&AnimFrame>> = SystemState::new(world);
+                    let frame_q = system_state.get_mut(world);
+
+                    let Ok(frame) = frame_q.get(*content_entity) else {
+                        panic!("Error getting frame component");
+                    };
+
+                    let frame_order = frame.get_order();
+
+                    // update biggest order
+                    if let Some(biggest_order) = biggest_order_opt {
+                        if frame_order > biggest_order {
+                            biggest_order_opt = Some(frame_order);
+                        }
+                    } else {
+                        biggest_order_opt = Some(frame_order);
+                    }
+
+                    if frame_map.contains_key(&frame_order) {
+                        panic!("anim file should not have duplicate frame orders");
+                    }
+                    frame_map.insert(frame_order, (*content_entity, (*frame.transition).clone()));
                 }
                 ContentEntityData::Rotation => {
-                    todo!();
+                    let mut system_state: SystemState<(Server, Query<&AnimRotation>, Query<&ShapeName>)> = SystemState::new(world);
+                    let (server, rot_q, name_q) = system_state.get_mut(world);
+
+                    let Ok(rotation) = rot_q.get(*content_entity) else {
+                        panic!("Error getting rotation component");
+                    };
+
+                    // get shape name
+                    let vertex_3d_entity: Entity = rotation.vertex_3d_entity.get(&server).unwrap();
+                    let Ok(name) = name_q.get(vertex_3d_entity) else {
+                        panic!("Error getting shape name component");
+                    };
+                    let name = (*name.value).clone();
+                    let shape_index: u16 = if !shape_map.contains_key(&name) {
+                        let shape_index = shape_names.len() as u16;
+                        shape_map.insert(name.clone(), shape_index);
+                        shape_names.push(name);
+                        shape_index
+                    } else {
+                        *shape_map.get(&name).unwrap()
+                    };
+
+                    // get & add to frame
+                    let frame_entity: Entity = rotation.frame_entity.get(&server).unwrap();
+                    if !frame_poses_map.contains_key(&frame_entity) {
+                        frame_poses_map.insert(frame_entity, HashMap::new());
+                    }
+                    let poses_map = frame_poses_map.get_mut(&frame_entity).unwrap();
+                    poses_map.insert(shape_index, rotation.get_rotation_serde());
                 }
             }
         }
 
         let mut actions = Vec::new();
 
+        // Write Skel Dependency
         let Some(dependency_key) = skel_dependency_key_opt else {
             panic!("anim file should depend on a single .skel file");
         };
@@ -111,7 +147,25 @@ impl AnimWriter {
             dependency_key.name().to_string(),
         ));
 
-        // TODO: poses and such
+        // Write Shape Names
+        for shape_name in shape_names {
+            info!("writing shape name: {}", shape_name);
+            actions.push(AnimAction::ShapeIndex(shape_name));
+        }
+
+        // Write Frames
+        let biggest_order = biggest_order_opt.unwrap();
+        for order in 0..=biggest_order {
+
+            let Some((frame_entity, transition)) = frame_map.remove(&order) else {
+                panic!("anim file should not have any gaps in frame orders");
+            };
+            let Some(poses) = frame_poses_map.remove(&frame_entity) else {
+                panic!("anim file should not have any gaps in frame orders");
+            };
+            info!("writing frame: {}", order);
+            actions.push(AnimAction::Frame(poses, transition));
+        }
 
         actions
     }
@@ -197,7 +251,7 @@ impl AnimReader {
                             break;
                         }
 
-                        let shape_index: u32 = UnsignedVariableInteger::<5>::de(bit_reader)?.to();
+                        let shape_index: u16 = UnsignedVariableInteger::<5>::de(bit_reader)?.to();
                         let pose = SerdeQuat::de(bit_reader)?;
                         poses.insert(shape_index, pose);
                     }

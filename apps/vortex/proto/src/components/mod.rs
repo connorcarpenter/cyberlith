@@ -16,7 +16,7 @@ pub use shape::{
 
 mod animation;
 use animation::AnimationComponentsPlugin;
-pub use animation::{AnimFrame, AnimRotation};
+pub use animation::{AnimFrame, AnimRotation, Transition};
 
 // Plugin
 pub struct ComponentsPlugin;

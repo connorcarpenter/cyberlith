@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{
     entity::Entity,
@@ -90,6 +90,7 @@ impl SkelWriter {
             ),
         > = HashMap::new();
         let mut vertices: Vec<Entity> = Vec::new();
+        let mut vertex_names: HashSet<String> = HashSet::new();
 
         for entity in content_entities.iter() {
             let Ok(file_type) = file_type_q.get(*entity) else {
@@ -111,7 +112,13 @@ impl SkelWriter {
             let vertex_name_opt: Option<String> = {
                 if let Ok(shape_name) = shape_name_q.get(*entity) {
                     if shape_name.value.len() > 0 {
-                        Some((*shape_name.value).clone())
+                        let value = (*shape_name.value).clone();
+                        if vertex_names.contains(&value) {
+                            panic!("vertex name {:?} already exists in file!", value);
+                        } else {
+                            vertex_names.insert(value.clone());
+                        }
+                        Some(value)
                     } else {
                         None
                     }
