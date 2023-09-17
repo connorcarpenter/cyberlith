@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use bevy_ecs::{entity::Entity, system::Commands, world::World};
+use bevy_ecs::system::{ResMut, SystemState};
 use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, Server};
@@ -28,8 +29,7 @@ pub trait FileWriter: Send + Sync {
 pub trait FileReader: Send + Sync {
     fn read(
         &self,
-        commands: &mut Commands,
-        server: &mut Server,
+        world: &mut World,
         bytes: &Box<[u8]>,
     ) -> FileReadOutput;
 }
@@ -37,14 +37,13 @@ pub trait FileReader: Send + Sync {
 impl FileReader for FileExtension {
     fn read(
         &self,
-        commands: &mut Commands,
-        server: &mut Server,
+        world: &mut World,
         bytes: &Box<[u8]>,
     ) -> FileReadOutput {
         match self {
-            FileExtension::Skel => SkelReader.read(commands, server, bytes),
-            FileExtension::Mesh => MeshReader.read(commands, server, bytes),
-            FileExtension::Anim => AnimReader.read(commands, server, bytes),
+            FileExtension::Skel => SkelReader.read(world, bytes),
+            FileExtension::Mesh => MeshReader.read(world, bytes),
+            FileExtension::Anim => AnimReader.read(world, bytes),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }
@@ -109,28 +108,29 @@ impl From<ShapeTypeData> for ShapeType {
 }
 
 pub fn load_content_entities(
-    commands: &mut Commands,
-    server: &mut Server,
+    world: &mut World,
     project: &mut Project,
-    shape_manager: &mut ShapeManager,
     file_extension: &FileExtension,
     file_key: &FileKey,
     file_entity: &Entity,
     bytes: Box<[u8]>,
 ) -> HashMap<Entity, ContentEntityData> {
     // FileReader reads File's contents and spawns all Entities + Components
-    let read_output = file_extension.read(commands, server, &bytes);
+    let read_output = file_extension.read(world, &bytes);
+
+    let mut system_state: SystemState<(Commands, Server, ResMut<ShapeManager>)> = SystemState::new(world);
+    let (mut commands, mut server, mut shape_manager) = system_state.get_mut(world);
 
     let new_entities = match read_output {
         FileReadOutput::Skel(entities) => {
-            SkelReader::post_process_entities(shape_manager, entities)
+            SkelReader::post_process_entities(&mut shape_manager, entities)
         }
         FileReadOutput::Mesh(shape_entities) => {
-            MeshReader::post_process_entities(shape_manager, shape_entities)
+            MeshReader::post_process_entities(&mut shape_manager, shape_entities)
         }
         FileReadOutput::Anim(skel_path_opt) => AnimReader::post_process(
-            commands,
-            server,
+            &mut commands,
+            &mut server,
             project,
             file_key,
             file_entity,
@@ -139,12 +139,14 @@ pub fn load_content_entities(
     };
 
     post_process_loaded_networked_entities(
-        commands,
-        server,
+        &mut commands,
+        &mut server,
         &new_entities,
         file_entity,
         &file_extension,
     );
+
+    system_state.apply(world);
 
     new_entities
 }
@@ -187,16 +189,17 @@ fn post_process_loaded_networked_entities(
 }
 
 pub fn despawn_file_content_entities(
-    commands: &mut Commands,
-    server: &mut Server,
-    shape_manager: &mut ShapeManager,
+    world: &mut World,
     project: &mut Project,
     file_key: &FileKey,
     content_entities: &HashMap<Entity, ContentEntityData>,
 ) {
+    let mut system_state: SystemState<(Commands, Server, ResMut<ShapeManager>)> = SystemState::new(world);
+    let (mut commands, mut server, mut shape_manager) = system_state.get_mut(world);
+
     for (entity, entity_data) in content_entities.iter() {
         info!("despawning entity: {:?}", entity);
-        commands.entity(*entity).take_authority(server).despawn();
+        commands.entity(*entity).take_authority(&mut server).despawn();
 
         match entity_data {
             ContentEntityData::Shape(ShapeType::Vertex) => {
@@ -217,4 +220,6 @@ pub fn despawn_file_content_entities(
             }
         }
     }
+
+    system_state.apply(world);
 }

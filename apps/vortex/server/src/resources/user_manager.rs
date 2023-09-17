@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use bevy_ecs::{
     entity::Entity,
-    system::{Commands, Resource},
+    system::Resource,
 };
 
 use naia_bevy_server::{Server, UserKey};
@@ -10,7 +10,7 @@ use naia_bevy_server::{Server, UserKey};
 use vortex_proto::{resources::FileKey, types::TabId};
 
 use crate::resources::{
-    project::ProjectKey, ContentEntityData, GitManager, ShapeManager, UserTabState,
+    project::ProjectKey, ContentEntityData, GitManager, UserTabState,
 };
 
 pub struct UserSessionData {
@@ -179,28 +179,14 @@ impl UserManager {
 
     pub(crate) fn open_tab(
         &mut self,
-        commands: &mut Commands,
-        server: &mut Server,
-        git_manager: &mut GitManager,
-        shape_manager: &mut ShapeManager,
         user_key: &UserKey,
         tab_id: TabId,
-        project_key: &ProjectKey,
         file_key: &FileKey,
     ) {
         let Some(user_session) = self.user_sessions.get_mut(user_key) else {
             panic!("user not found");
         };
         user_session.open_tab(tab_id, file_key);
-
-        git_manager.on_client_open_tab(
-            commands,
-            server,
-            shape_manager,
-            project_key,
-            file_key,
-            user_key,
-        );
     }
 
     pub(crate) fn close_tab(

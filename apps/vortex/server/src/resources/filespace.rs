@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
 use bevy_ecs::entity::Entity;
+use bevy_ecs::system::SystemState;
+use bevy_ecs::world::World;
 use bevy_log::info;
 
 use naia_bevy_server::{RoomKey, Server, UserKey};
@@ -61,10 +63,13 @@ impl FileSpace {
         &self.content_entities
     }
 
-    pub(crate) fn user_join(&mut self, server: &mut Server, user_key: &UserKey) {
+    pub(crate) fn user_join(&mut self, world: &mut World, user_key: &UserKey) {
         self.user_count += 1;
 
         // put user in room
+        let mut system_state: SystemState<Server> = SystemState::new(world);
+        let mut server = system_state.get_mut(world);
+
         if !server.room(&self.room_key).has_user(user_key) {
             server.room_mut(&self.room_key).add_user(user_key);
         }

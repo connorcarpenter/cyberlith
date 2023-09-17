@@ -2,7 +2,7 @@ use std::{collections::HashMap, fs, fs::File, io::Read, path::Path, sync::Mutex}
 
 use bevy_ecs::{
     entity::Entity,
-    system::{Commands, Query, ResMut, SystemState},
+    system::{Commands, Query, SystemState},
     world::World,
 };
 use bevy_log::{info, warn};
@@ -19,7 +19,7 @@ use vortex_proto::{
 use crate::{
     files::{despawn_file_content_entities, load_content_entities, FileWriter},
     resources::{
-        ChangelistValue, ContentEntityData, FileEntryValue, FileSpace, GitManager, ShapeManager,
+        ChangelistValue, ContentEntityData, FileEntryValue, FileSpace, GitManager,
     },
 };
 
@@ -159,20 +159,18 @@ impl Project {
 
     pub(crate) fn user_join_filespace(
         &mut self,
-        commands: &mut Commands,
-        server: &mut Server,
-        shape_manager: &mut ShapeManager,
+        world: &mut World,
         user_key: &UserKey,
         file_key: &FileKey,
     ) -> Option<HashMap<Entity, ContentEntityData>> {
         let new_content_entities_opt = if !self.filespaces.contains_key(file_key) {
-            let new_entities = self.create_filespace(commands, server, shape_manager, file_key);
+            let new_entities = self.create_filespace(world, file_key);
             Some(new_entities)
         } else {
             None
         };
         let filespace = self.filespaces.get_mut(file_key).unwrap();
-        filespace.user_join(server, user_key);
+        filespace.user_join(world, user_key);
         new_content_entities_opt
     }
 
@@ -518,96 +516,117 @@ impl Project {
         world: &mut World,
         message: ChangelistMessage,
     ) -> RollbackResult {
-        let mut system_state: SystemState<(
-            Commands,
-            Server,
-            ResMut<ShapeManager>,
-            Query<&ChangelistEntry>,
-        )> = SystemState::new(world);
-        let (mut commands, mut server, mut shape_manager, cl_query) = system_state.get_mut(world);
+        let mut system_state: SystemState<(Server, Query<&ChangelistEntry>)> = SystemState::new(world);
+        let (server, cl_query) = system_state.get_mut(world);
 
         let cl_entity: Entity = message.entity.get(&server).unwrap();
         let changelist_entry = cl_query.get(cl_entity).unwrap();
 
         let status = *changelist_entry.status;
         let file_key = changelist_entry.file_key();
-
-        let output = match status {
-            ChangelistStatus::Created => {
-                // Remove Entity from Working Tree, returning a list of child entities that should be despawned
-                let (entry_value, entities_to_delete) =
-                    Self::remove_file_entry(&mut self.working_file_entries, &file_key);
-
-                // despawn row entity
-                let row_entity = entry_value.entity();
-                commands
-                    .entity(row_entity)
-                    .take_authority(&mut server)
-                    .despawn();
-
-                // cleanup changelist entry
-                self.cleanup_changelist_entry(&mut commands, &file_key);
-
-                // cleanup children
-                for (child_row_entity, child_key) in entities_to_delete {
-                    commands
-                        .entity(child_row_entity)
-                        .take_authority(&mut server)
-                        .despawn();
-
-                    self.cleanup_changelist_entry(&mut commands, &child_key);
-                }
-
-                RollbackResult::Created
-            }
-            ChangelistStatus::Modified => {
-                let file_entity = changelist_entry.file_entity.get(&server).unwrap();
-
-                // cleanup changelist entry
-                self.cleanup_changelist_entry(&mut commands, &file_key);
-
-                // respawn content entities within to previous state
-                let (old_entities, new_entities) = self.respawn_file_content_entities(
-                    &mut commands,
-                    &mut server,
-                    &mut shape_manager,
-                    &file_entity,
-                    &file_key,
-                );
-
-                RollbackResult::Modified(file_key, old_entities, new_entities)
-            }
-            ChangelistStatus::Deleted => {
-                let new_entity = GitManager::spawn_file_tree_entity(&mut commands, &mut server);
-
-                let file_entry_value = self.master_file_entries.get_mut(&file_key).unwrap();
-                file_entry_value.set_entity(new_entity);
-                let file_entry_value = file_entry_value.clone();
-
-                // update working tree with old file entry
-                Self::add_to_file_tree(
-                    &mut self.working_file_entries,
-                    file_key.clone(),
-                    file_entry_value.clone(),
-                );
-
-                // despawn changelist entity
-                self.cleanup_changelist_entry(&mut commands, &file_key);
-
-                RollbackResult::Deleted(file_key.clone(), file_entry_value)
-            }
-        };
+        let file_entity = changelist_entry.file_entity.get(&server).unwrap();
 
         system_state.apply(world);
 
-        output
+        match status {
+            ChangelistStatus::Created => {
+                self.rollback_created_file(world, &file_key)
+            }
+            ChangelistStatus::Modified => {
+                self.rollback_modified_file(world, &file_key, &file_entity)
+            }
+            ChangelistStatus::Deleted => {
+                self.rollback_deleted_file(world, &file_key)
+            }
+        }
+    }
+
+    fn rollback_created_file(&mut self, world: &mut World, file_key: &FileKey) -> RollbackResult {
+        let mut system_state: SystemState<(
+            Commands,
+            Server,
+        )> = SystemState::new(world);
+        let (mut commands, mut server) = system_state.get_mut(world);
+
+        // Remove Entity from Working Tree, returning a list of child entities that should be despawned
+        let (entry_value, entities_to_delete) =
+            Self::remove_file_entry(&mut self.working_file_entries, file_key);
+
+        // despawn row entity
+        let row_entity = entry_value.entity();
+        commands
+            .entity(row_entity)
+            .take_authority(&mut server)
+            .despawn();
+
+        // cleanup changelist entry
+        self.cleanup_changelist_entry(&mut commands, file_key);
+
+        // cleanup children
+        for (child_row_entity, child_key) in entities_to_delete {
+            commands
+                .entity(child_row_entity)
+                .take_authority(&mut server)
+                .despawn();
+
+            self.cleanup_changelist_entry(&mut commands, &child_key);
+        }
+
+        system_state.apply(world);
+
+        RollbackResult::Created
+    }
+
+    fn rollback_modified_file(&mut self, world: &mut World, file_key: &FileKey, file_entity: &Entity) -> RollbackResult {
+        let mut system_state: SystemState<Commands> = SystemState::new(world);
+        let mut commands = system_state.get_mut(world);
+
+        // cleanup changelist entry
+        self.cleanup_changelist_entry(&mut commands, &file_key);
+
+        system_state.apply(world);
+
+        // respawn content entities within to previous state
+        let (old_entities, new_entities) = self.respawn_file_content_entities(
+            world,
+            &file_entity,
+            &file_key,
+        );
+
+        RollbackResult::Modified(file_key.clone(), old_entities, new_entities)
+    }
+
+    fn rollback_deleted_file(&mut self, world: &mut World, file_key: &FileKey) -> RollbackResult {
+        let mut system_state: SystemState<(
+            Commands,
+            Server,
+        )> = SystemState::new(world);
+        let (mut commands, mut server) = system_state.get_mut(world);
+
+        let new_entity = GitManager::spawn_file_tree_entity(&mut commands, &mut server);
+
+        let file_entry_value = self.master_file_entries.get_mut(&file_key).unwrap();
+        file_entry_value.set_entity(new_entity);
+        let file_entry_value = file_entry_value.clone();
+
+        // update working tree with old file entry
+        Self::add_to_file_tree(
+            &mut self.working_file_entries,
+            file_key.clone(),
+            file_entry_value.clone(),
+        );
+
+        // despawn changelist entity
+        self.cleanup_changelist_entry(&mut commands, &file_key);
+
+        system_state.apply(world);
+
+        RollbackResult::Deleted(file_key.clone(), file_entry_value)
     }
 
     fn respawn_file_content_entities(
         &mut self,
-        commands: &mut Commands,
-        server: &mut Server,
-        shape_manager: &mut ShapeManager,
+        world: &mut World,
         file_entity: &Entity,
         file_key: &FileKey,
     ) -> (
@@ -623,9 +642,7 @@ impl Project {
         // despawn all previous entities
         let old_content_entities = self.file_content_entities(file_key).unwrap().clone();
         despawn_file_content_entities(
-            commands,
-            server,
-            shape_manager,
+            world,
             self,
             file_key,
             &old_content_entities,
@@ -633,10 +650,8 @@ impl Project {
 
         // respawn all entities
         let new_content_entities = load_content_entities(
-            commands,
-            server,
+            world,
             self,
-            shape_manager,
             &file_extension,
             file_key,
             file_entity,
@@ -843,12 +858,9 @@ impl Project {
 
     fn create_filespace(
         &mut self,
-        commands: &mut Commands,
-        server: &mut Server,
-        shape_manager: &mut ShapeManager,
+        world: &mut World,
         file_key: &FileKey,
     ) -> HashMap<Entity, ContentEntityData> {
-        let file_room_key = server.make_room().key();
 
         // get file contents from either the changelist or the file system
         let bytes = self.get_bytes_from_cl_or_fs(file_key);
@@ -857,16 +869,17 @@ impl Project {
         let file_extension = self.working_file_extension(file_key);
 
         let content_entities_with_data = load_content_entities(
-            commands,
-            server,
+            world,
             self,
-            shape_manager,
             &file_extension,
             file_key,
             &file_entity,
             bytes,
         );
 
+        let mut system_state: SystemState<Server> = SystemState::new(world);
+        let mut server = system_state.get_mut(world);
+        let file_room_key = server.make_room().key();
         let filespace = FileSpace::new(&file_room_key, content_entities_with_data.clone());
         self.filespaces.insert(file_key.clone(), filespace);
 

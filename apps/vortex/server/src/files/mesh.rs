@@ -287,10 +287,12 @@ impl MeshReader {
     }
 
     fn actions_to_world(
-        commands: &mut Commands,
-        server: &mut Server,
+        world: &mut World,
         actions: Vec<MeshAction>,
     ) -> Result<FileReadOutput, SerdeErr> {
+        let mut system_state: SystemState<(Commands, Server)> = SystemState::new(world);
+        let (mut commands, mut server) = system_state.get_mut(world);
+
         let mut vertices = Vec::new();
         let mut edges = Vec::new();
         let mut output = Vec::new();
@@ -300,7 +302,7 @@ impl MeshReader {
                 MeshAction::Vertex(x, y, z) => {
                     let entity_id = commands
                         .spawn_empty()
-                        .enable_replication(server)
+                        .enable_replication(&mut server)
                         .configure_replication(ReplicationConfig::Delegated)
                         .insert(Vertex3d::new(x, y, z))
                         .id();
@@ -317,12 +319,12 @@ impl MeshReader {
                     };
 
                     let mut edge_component = Edge3d::new();
-                    edge_component.start.set(server, vertex_a_entity);
-                    edge_component.end.set(server, vertex_b_entity);
+                    edge_component.start.set(&server, vertex_a_entity);
+                    edge_component.end.set(&server, vertex_b_entity);
 
                     let entity_id = commands
                         .spawn_empty()
-                        .enable_replication(server)
+                        .enable_replication(&mut server)
                         // setting to Delegated to match client-created edges
                         .configure_replication(ReplicationConfig::Delegated)
                         .insert(edge_component)
@@ -351,16 +353,16 @@ impl MeshReader {
                     let edge_c_entity = *edges.get(edge_c_index as usize).unwrap();
 
                     let mut face_component = Face3d::new();
-                    face_component.vertex_a.set(server, &vertex_a_entity);
-                    face_component.vertex_b.set(server, &vertex_b_entity);
-                    face_component.vertex_c.set(server, &vertex_c_entity);
-                    face_component.edge_a.set(server, &edge_a_entity);
-                    face_component.edge_b.set(server, &edge_b_entity);
-                    face_component.edge_c.set(server, &edge_c_entity);
+                    face_component.vertex_a.set(&server, &vertex_a_entity);
+                    face_component.vertex_b.set(&server, &vertex_b_entity);
+                    face_component.vertex_c.set(&server, &vertex_c_entity);
+                    face_component.edge_a.set(&server, &edge_a_entity);
+                    face_component.edge_b.set(&server, &edge_b_entity);
+                    face_component.edge_c.set(&server, &edge_c_entity);
 
                     let entity_id = commands
                         .spawn_empty()
-                        .enable_replication(server)
+                        .enable_replication(&mut server)
                         // setting to Delegated to match client-created faces
                         .configure_replication(ReplicationConfig::Delegated)
                         .insert(face_component)
@@ -381,6 +383,8 @@ impl MeshReader {
             }
         }
 
+        system_state.apply(world);
+
         Ok(FileReadOutput::Mesh(output))
     }
 }
@@ -388,8 +392,7 @@ impl MeshReader {
 impl FileReader for MeshReader {
     fn read(
         &self,
-        commands: &mut Commands,
-        server: &mut Server,
+        world: &mut World,
         bytes: &Box<[u8]>,
     ) -> FileReadOutput {
         let mut bit_reader = BitReader::new(bytes);
@@ -398,7 +401,7 @@ impl FileReader for MeshReader {
             panic!("Error reading .mesh file");
         };
 
-        let Ok(result) = Self::actions_to_world(commands, server, actions) else {
+        let Ok(result) = Self::actions_to_world(world, actions) else {
             panic!("Error reading .mesh file");
         };
 

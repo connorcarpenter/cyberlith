@@ -1,6 +1,6 @@
 use bevy_ecs::{
     event::EventReader,
-    system::{Commands, Query, ResMut},
+    system::{ResMut, Query},
 };
 use bevy_log::info;
 
@@ -12,18 +12,14 @@ use vortex_proto::{
     resources::FileKey,
 };
 
-use crate::resources::{ChangelistManager, GitManager, ShapeManager, TabManager, UserManager};
+use crate::resources::{ChangelistManager, TabManager};
 
 pub fn message_events(
-    mut commands: Commands,
-    mut server: Server,
+    server: Server,
     mut event_reader: EventReader<MessageEvents>,
-    mut user_manager: ResMut<UserManager>,
-    mut git_manager: ResMut<GitManager>,
     mut tab_manager: ResMut<TabManager>,
     mut cl_manager: ResMut<ChangelistManager>,
-    mut shape_manager: ResMut<ShapeManager>,
-    key_q: Query<&FileKey>,
+    file_key_q: Query<&FileKey>,
 ) {
     for events in event_reader.iter() {
         // Changelist Message
@@ -40,13 +36,8 @@ pub fn message_events(
         for (user_key, message) in events.read::<TabActionChannel, TabOpenMessage>() {
             let tab_id = message.tab_id;
             if let Some(file_entity) = message.file_entity.get(&server) {
-                tab_manager.open_tab(
-                    &mut commands,
-                    &mut server,
-                    &mut user_manager,
-                    &mut git_manager,
-                    &mut shape_manager,
-                    &key_q,
+                tab_manager.queue_open_tab(
+                    &file_key_q,
                     &user_key,
                     &tab_id,
                     &file_entity,

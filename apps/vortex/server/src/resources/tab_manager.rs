@@ -5,7 +5,7 @@ use bevy_ecs::{
     system::{Commands, Query, ResMut, Resource, SystemState},
     world::{Mut, World},
 };
-use bevy_log::{info, warn};
+use bevy_log::info;
 
 use naia_bevy_server::{Server, UserKey};
 
@@ -13,7 +13,7 @@ use vortex_proto::{resources::FileKey, types::TabId};
 
 use crate::{
     files::despawn_file_content_entities,
-    resources::{project::ProjectKey, ContentEntityData, GitManager, ShapeManager, UserManager},
+    resources::{project::ProjectKey, ContentEntityData, GitManager, UserManager},
 };
 
 #[derive(Resource)]
@@ -34,53 +34,59 @@ impl Default for TabManager {
 }
 
 impl TabManager {
-    pub fn open_tab(
+
+    pub fn queue_open_tab(
         &mut self,
-        commands: &mut Commands,
-        server: &mut Server,
-        user_manager: &mut UserManager,
-        git_manager: &mut GitManager,
-        shape_manager: &mut ShapeManager,
         key_q: &Query<&FileKey>,
         user_key: &UserKey,
         tab_id: &TabId,
         file_entity: &Entity,
     ) {
-        info!("open tab");
-
         let Ok(file_key) = key_q.get(*file_entity) else {
             self.waiting_opens.insert((*user_key, *file_entity), *tab_id);
             info!("no FileEntryKey for entity: {:?}, queuing open tab", file_entity);
             return;
         };
 
+        self.queued_opens.push_back((*user_key, *tab_id, *file_entity));
+        info!("entity: {:?}, queuing open tab", file_entity);
+    }
+
+    pub fn complete_waiting_open(&mut self, user_key: &UserKey, file_entity: &Entity) {
+        if let Some(tab_id) = self.waiting_opens.remove(&(*user_key, *file_entity)) {
+            self.queued_opens.push_back((*user_key, tab_id, *file_entity));
+        }
+    }
+
+    pub fn open_tab(
+        &mut self,
+        user_manager: &mut UserManager,
+        git_manager: &mut GitManager,
+        key_q: &Query<&FileKey>,
+        user_key: &UserKey,
+        tab_id: &TabId,
+        file_entity: &Entity,
+    ) -> (ProjectKey, FileKey) {
+        info!("open tab");
+
+        let file_key = key_q.get(*file_entity).unwrap();
+
         // load from file all Entities in the file of the current tab
         let user_session_data = user_manager.user_session_data(user_key).unwrap();
         let project_key = user_session_data.project_key().unwrap();
 
         if !git_manager.can_read(&project_key, &file_key) {
-            warn!("can't read file: `{:?}`", file_key.name());
-            return;
+            panic!("can't read file: `{:?}`", file_key.name());
         }
 
         // insert tab into collection
         user_manager.open_tab(
-            commands,
-            server,
-            git_manager,
-            shape_manager,
             user_key,
             tab_id.clone(),
-            &project_key,
             file_key,
         );
-    }
 
-    pub fn complete_waiting_open(&mut self, user_key: &UserKey, file_entity: &Entity) {
-        if let Some(tab_id) = self.waiting_opens.remove(&(*user_key, *file_entity)) {
-            self.queued_opens
-                .push_back((*user_key, tab_id, *file_entity));
-        }
+        (project_key, file_key.clone())
     }
 
     pub fn queue_close_tab(&mut self, user_key: UserKey, tab_id: TabId) {
@@ -93,42 +99,50 @@ impl TabManager {
     }
 
     fn process_queued_opens(world: &mut World) {
-        let mut system_state: SystemState<(
-            Commands,
-            Server,
-            ResMut<TabManager>,
-            ResMut<UserManager>,
-            ResMut<GitManager>,
-            ResMut<ShapeManager>,
-            Query<&FileKey>,
-        )> = SystemState::new(world);
-        let (
-            mut commands,
-            mut server,
-            mut tab_manager,
-            mut user_manager,
-            mut git_manager,
-            mut shape_manager,
-            key_query,
-        ) = system_state.get_mut(world);
+        let mut git_opens = Vec::new();
 
-        let opens = tab_manager.take_queued_opens();
+        world.resource_scope(|world, mut git_manager: Mut<GitManager>| {
+            {
+                let mut system_state: SystemState<(
+                    ResMut<TabManager>,
+                    ResMut<UserManager>,
+                    Query<&FileKey>,
+                )> = SystemState::new(world);
+                let (
+                    mut tab_manager,
+                    mut user_manager,
+                    key_query,
+                ) = system_state.get_mut(world);
 
-        for (user_key, tab_id, file_entity) in opens {
-            tab_manager.open_tab(
-                &mut commands,
-                &mut server,
-                &mut user_manager,
-                &mut git_manager,
-                &mut shape_manager,
-                &key_query,
-                &user_key,
-                &tab_id,
-                &file_entity,
-            );
-        }
 
-        system_state.apply(world);
+                let tab_opens = tab_manager.take_queued_opens();
+
+                for (user_key, tab_id, file_entity) in tab_opens {
+                    let (project_key, file_key) = tab_manager.open_tab(
+                        &mut user_manager,
+                        &mut git_manager,
+                        &key_query,
+                        &user_key,
+                        &tab_id,
+                        &file_entity,
+                    );
+                    git_opens.push((user_key, project_key, file_key));
+                }
+
+                system_state.apply(world);
+            }
+
+            {
+                for (user_key, project_key, file_key) in git_opens {
+                    git_manager.on_client_open_tab(
+                        world,
+                        &user_key,
+                        &project_key,
+                        &file_key,
+                    );
+                }
+            }
+        });
     }
 
     fn take_queued_opens(&mut self) -> VecDeque<(UserKey, TabId, Entity)> {
@@ -200,35 +214,24 @@ impl TabManager {
 
         // actually despawn entities associated with tab
         {
-            let mut system_state: SystemState<(
-                Commands,
-                Server,
-                ResMut<ShapeManager>,
-                ResMut<GitManager>,
-            )> = SystemState::new(world);
-            let (mut commands, mut server, mut shape_manager, mut git_manager) =
-                system_state.get_mut(world);
+            world.resource_scope(|world, mut git_manager: Mut<GitManager>| {
+                for (project_key, file_key, content_entities_opt) in closed_states.iter() {
+                    if let Some(content_entities) = content_entities_opt {
+                        let project = git_manager.project_mut(project_key).unwrap();
 
-            for (project_key, file_key, content_entities_opt) in closed_states.iter() {
-                if let Some(content_entities) = content_entities_opt {
-                    let project = git_manager.project_mut(project_key).unwrap();
+                        // handle despawns
+                        despawn_file_content_entities(
+                            world,
+                            project,
+                            file_key,
+                            content_entities,
+                        );
 
-                    // handle despawns
-                    despawn_file_content_entities(
-                        &mut commands,
-                        &mut server,
-                        &mut shape_manager,
-                        project,
-                        file_key,
-                        content_entities,
-                    );
-
-                    // deregister
-                    git_manager.deregister_content_entities(&mut server, content_entities);
+                        // deregister
+                        git_manager.deregister_content_entities(world, content_entities);
+                    }
                 }
-            }
-
-            system_state.apply(world);
+            });
         }
     }
 

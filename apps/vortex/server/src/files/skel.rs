@@ -303,10 +303,12 @@ impl SkelReader {
     }
 
     fn actions_to_world(
-        commands: &mut Commands,
-        server: &mut Server,
+        world: &mut World,
         actions: Vec<SkelAction>,
     ) -> Result<FileReadOutput, SerdeErr> {
+        let mut system_state: SystemState<(Commands, Server)> = SystemState::new(world);
+        let (mut commands, mut server) = system_state.get_mut(world);
+
         let mut output = Vec::new();
 
         let mut entities: Vec<(
@@ -322,7 +324,7 @@ impl SkelReader {
         for action in actions {
             match action {
                 SkelAction::Vertex(x, y, z, parent_id_opt, vertex_name_opt, edge_name_opt) => {
-                    let entity_id = commands.spawn_empty().enable_replication(server).id();
+                    let entity_id = commands.spawn_empty().enable_replication(&mut server).id();
                     info!(
                         "spawning vertex (id {:?}, entity: {:?}, parent_id_opt: {:?})",
                         entities.len(),
@@ -373,11 +375,11 @@ impl SkelReader {
                 };
 
                 let mut edge_component = Edge3d::new();
-                edge_component.start.set(server, parent_entity);
-                edge_component.end.set(server, entity);
+                edge_component.start.set(&server, parent_entity);
+                edge_component.end.set(&server, entity);
                 let edge_entity = commands
                     .spawn_empty()
-                    .enable_replication(server)
+                    .enable_replication(&mut server)
                     // setting to Delegated to match client-created edges
                     .configure_replication(ReplicationConfig::Delegated)
                     .insert(edge_component)
@@ -396,6 +398,8 @@ impl SkelReader {
                 output.push((*entity, None));
             }
         }
+
+        system_state.apply(world);
 
         Ok(FileReadOutput::Skel(output))
     }
@@ -436,8 +440,7 @@ impl SkelReader {
 impl FileReader for SkelReader {
     fn read(
         &self,
-        commands: &mut Commands,
-        server: &mut Server,
+        world: &mut World,
         bytes: &Box<[u8]>,
     ) -> FileReadOutput {
         let mut bit_reader = BitReader::new(bytes);
@@ -446,7 +449,7 @@ impl FileReader for SkelReader {
             panic!("Error reading .skel file");
         };
 
-        let Ok(result) = Self::actions_to_world(commands, server, actions) else {
+        let Ok(result) = Self::actions_to_world(world, actions) else {
             panic!("Error reading .skel file");
         };
 
