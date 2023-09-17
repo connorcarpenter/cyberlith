@@ -44,8 +44,7 @@ pub struct AnimFrame {
 }
 
 impl AnimFrame {
-    pub fn new(order: u8, duration_ms: u16) -> Self {
-        let transition = Transition::new(duration_ms);
+    pub fn new(order: u8, transition: Transition) -> Self {
         Self::new_complete(order.into(), transition)
     }
 
@@ -67,9 +66,8 @@ pub struct AnimRotation {
 }
 
 impl AnimRotation {
-    pub fn new(rotation: Quat) -> Self {
-        let serde_quat = SerdeQuat::from(rotation);
-        Self::new_complete(serde_quat)
+    pub fn new(rotation: SerdeQuat) -> Self {
+        Self::new_complete(rotation)
     }
 
     pub fn get_rotation(&self) -> Quat {

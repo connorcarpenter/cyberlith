@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use bevy_ecs::{
     entity::Entity,
     prelude::{Commands, World},
-    system::{Query, SystemState},
+    system::{Res, Query, SystemState},
 };
 use bevy_log::info;
 
@@ -20,7 +20,7 @@ use vortex_proto::{
 
 use crate::{
     files::FileWriter,
-    resources::{ContentEntityData, Project},
+    resources::{ContentEntityData, Project, ShapeManager},
 };
 
 // Actions
@@ -277,69 +277,76 @@ impl AnimReader {
         file_entity: &Entity,
         actions: Vec<AnimAction>,
     ) -> HashMap<Entity, ContentEntityData> {
-        // let mut system_state: SystemState<Query<&AnimFrame>> = SystemState::new(world);
-        // let frame_q = system_state.get_mut(world);
 
-        let mut skel_path = None;
+        let mut content_entities = HashMap::new();
+        let mut shape_name_index = 0;
+        let mut shape_name_map = HashMap::new();
+        let mut frame_index = 0;
+
+        let mut system_state: SystemState<(Commands, Server, Res<ShapeManager>)> = SystemState::new(world);
+        let (mut commands, mut server, shape_manager) = system_state.get_mut(world);
 
         for action in actions {
             match action {
-                AnimAction::SkelFile(path, file_name) => {
-                    skel_path = Some((path, file_name));
+                AnimAction::SkelFile(skel_path, skel_file_name) => {
+                    let skel_file_key = FileKey::new(&skel_path, &skel_file_name, EntryKind::File);
+                    let file_extension = project.file_extension(&skel_file_key).unwrap();
+                    if file_extension != FileExtension::Skel {
+                        panic!("anim file should depend on a single .skel file");
+                    }
+
+                    project.file_add_dependency(file_key, &skel_file_key);
+
+                    let skel_file_entity = project.file_entity(&skel_file_key).unwrap();
+
+                    // get all users in room with file entity
+                    let mut component = FileDependency::new();
+                    component.file_entity.set(&server, file_entity);
+                    component.dependency_entity.set(&server, &skel_file_entity);
+                    let entity = commands
+                        .spawn_empty()
+                        .enable_replication(&mut server)
+                        .configure_replication(ReplicationConfig::Delegated)
+                        .insert(component)
+                        .id();
+                    content_entities.insert(entity, ContentEntityData::new_dependency(skel_file_key));
                 }
-                AnimAction::ShapeIndex(_) => {}
-                AnimAction::Frame(_, _) => {}
+                AnimAction::ShapeIndex(shape_name) => {
+                    shape_name_map.insert(shape_name_index, shape_name);
+                    shape_name_index += 1;
+                }
+                AnimAction::Frame(poses, transition) => {
+
+                    let frame_entity = commands
+                        .spawn_empty()
+                        .enable_replication(&mut server)
+                        .configure_replication(ReplicationConfig::Delegated)
+                        .insert(AnimFrame::new(frame_index, transition))
+                        .id();
+
+                    content_entities.insert(frame_entity, ContentEntityData::new_frame());
+
+                    for (shape_index, rotation) in poses {
+                        let shape_name = shape_name_map.get(&shape_index).unwrap();
+                        let vertex_3d_entity = shape_manager.get_vertex_from_shape_name(shape_name).unwrap();
+
+                        let mut component = AnimRotation::new(rotation);
+                        component.frame_entity.set(&server, &frame_entity);
+                        component.vertex_3d_entity.set(&server, &vertex_3d_entity);
+
+                        let rotation_entity = commands
+                            .spawn_empty()
+                            .enable_replication(&mut server)
+                            .configure_replication(ReplicationConfig::Delegated)
+                            .insert(component)
+                            .id();
+
+                        content_entities.insert(rotation_entity, ContentEntityData::new_rotation());
+                    }
+
+                    frame_index += 1;
+                }
             }
-        }
-
-        // system_state.apply(world);
-
-        info!("skel_path: {:?}", skel_path);
-
-        AnimReader::post_process(
-            world,
-            project,
-            file_key,
-            file_entity,
-            skel_path,
-        )
-    }
-
-    pub fn post_process(
-        world: &mut World,
-        project: &mut Project,
-        file_key: &FileKey,
-        file_entity: &Entity,
-        skel_path_opt: Option<(String, String)>,
-    ) -> HashMap<Entity, ContentEntityData> {
-        let mut content_entities = HashMap::new();
-
-        let mut system_state: SystemState<(Commands, Server)> = SystemState::new(world);
-        let (mut commands, mut server) = system_state.get_mut(world);
-
-        info!("skel_path: {:?}", skel_path_opt);
-        if let Some((skel_path, skel_file_name)) = skel_path_opt {
-            let skel_file_key = FileKey::new(&skel_path, &skel_file_name, EntryKind::File);
-            let file_extension = project.file_extension(&skel_file_key).unwrap();
-            if file_extension != FileExtension::Skel {
-                panic!("anim file should depend on a single .skel file");
-            }
-
-            project.file_add_dependency(file_key, &skel_file_key);
-
-            let skel_file_entity = project.file_entity(&skel_file_key).unwrap();
-
-            // get all users in room with file entity
-            let mut component = FileDependency::new();
-            component.file_entity.set(&server, file_entity);
-            component.dependency_entity.set(&server, &skel_file_entity);
-            let entity = commands
-                .spawn_empty()
-                .enable_replication(&mut server)
-                .configure_replication(ReplicationConfig::Delegated)
-                .insert(component)
-                .id();
-            content_entities.insert(entity, ContentEntityData::new_dependency(skel_file_key));
         }
 
         system_state.apply(world);

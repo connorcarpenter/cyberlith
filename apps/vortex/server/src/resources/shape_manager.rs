@@ -18,6 +18,8 @@ pub struct SkelVertexData {
     parent_and_edge_opt: Option<(Entity, Entity)>,
     // children map from vertex entity to edge entity
     children: Option<HashMap<Entity, Entity>>,
+    // name
+    name_opt: Option<String>,
 }
 
 impl SkelVertexData {
@@ -25,6 +27,7 @@ impl SkelVertexData {
         Self {
             parent_and_edge_opt,
             children: None,
+            name_opt: None,
         }
     }
 
@@ -39,6 +42,14 @@ impl SkelVertexData {
             return children.remove(&entity);
         }
         return None;
+    }
+
+    fn set_name(&mut self, name: String) {
+        self.name_opt = Some(name);
+    }
+
+    fn remove_name(&mut self) {
+        self.name_opt = None;
     }
 }
 
@@ -121,6 +132,7 @@ impl FaceData {
 pub struct ShapeManager {
     // vertex entity -> vertex data
     vertices: HashMap<Entity, VertexData>,
+    name_to_vertex_map: HashMap<String, Entity>,
     // edge entity -> connected vertex entities
     edges: HashMap<Entity, EdgeData>,
     // face entity -> connected vertices
@@ -131,6 +143,7 @@ impl Default for ShapeManager {
     fn default() -> Self {
         Self {
             vertices: HashMap::new(),
+            name_to_vertex_map: HashMap::new(),
             edges: HashMap::new(),
             faces: HashMap::new(),
         }
@@ -161,6 +174,26 @@ impl ShapeManager {
         } else {
             None
         }
+    }
+
+    pub fn register_shape_name(&mut self, vertex_3d_entity: Entity, shape_name: String) {
+        self.name_to_vertex_map.insert(shape_name.clone(), vertex_3d_entity);
+        let Some(VertexData::Skel(vertex_data)) = self.vertices.get_mut(&vertex_3d_entity) else {
+            panic!("shouldn't be able to happen!");
+        };
+        vertex_data.set_name(shape_name);
+    }
+
+    pub fn deregister_shape_name(&mut self, shape_name: &str) {
+        let vertex_3d_entity = self.name_to_vertex_map.remove(shape_name).unwrap();
+        let Some(VertexData::Skel(vertex_data)) = self.vertices.get_mut(&vertex_3d_entity) else {
+            panic!("shouldn't be able to happen!");
+        };
+        vertex_data.remove_name();
+    }
+
+    pub fn get_vertex_from_shape_name(&self, shape_name: &str) -> Option<Entity> {
+        self.name_to_vertex_map.get(shape_name).copied()
     }
 
     pub fn on_create_mesh_vertex(&mut self, vertex_entity: Entity) {

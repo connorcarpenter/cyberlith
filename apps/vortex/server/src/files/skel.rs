@@ -368,6 +368,7 @@ impl SkelReader {
                 commands
                     .entity(*entity)
                     .insert(ShapeName::new(vertex_name.clone()));
+                shape_manager.register_shape_name(*entity, vertex_name.clone());
             }
 
             if let Some((parent_id, edge_angle)) = parent_id_opt {
