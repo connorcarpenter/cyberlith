@@ -406,7 +406,5 @@ pub fn insert_shape_component_events(
             panic!("no content entity keys!");
         };
         git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
-
-        shape_manager.register_shape_name(entity, shape_name);
     }
 }

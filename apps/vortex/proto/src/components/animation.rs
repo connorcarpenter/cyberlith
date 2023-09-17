@@ -61,13 +61,13 @@ impl AnimFrame {
 #[derive(Component, Replicate)]
 pub struct AnimRotation {
     pub frame_entity: EntityProperty,
-    pub vertex_3d_entity: EntityProperty,
+    pub vertex_name: Property<String>,
     rotation: Property<SerdeQuat>,
 }
 
 impl AnimRotation {
-    pub fn new(rotation: SerdeQuat) -> Self {
-        Self::new_complete(rotation)
+    pub fn new(vertex_name: String, rotation: SerdeQuat) -> Self {
+        Self::new_complete(vertex_name, rotation)
     }
 
     pub fn get_rotation(&self) -> Quat {

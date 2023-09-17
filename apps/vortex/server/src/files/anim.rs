@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use bevy_ecs::{
     entity::Entity,
     prelude::{Commands, World},
-    system::{Res, Query, SystemState},
+    system::{Query, SystemState},
 };
 use bevy_log::info;
 
@@ -13,14 +13,14 @@ use naia_bevy_server::{
 };
 
 use vortex_proto::{
-    components::{EntryKind, FileDependency, FileExtension, AnimFrame, AnimRotation, ShapeName, Transition},
+    components::{EntryKind, FileDependency, FileExtension, AnimFrame, AnimRotation, Transition},
     resources::FileKey,
     SerdeQuat,
 };
 
 use crate::{
     files::FileWriter,
-    resources::{ContentEntityData, Project, ShapeManager},
+    resources::{ContentEntityData, Project},
 };
 
 // Actions
@@ -101,19 +101,15 @@ impl AnimWriter {
                     frame_map.insert(frame_order, (*content_entity, (*frame.transition).clone()));
                 }
                 ContentEntityData::Rotation => {
-                    let mut system_state: SystemState<(Server, Query<&AnimRotation>, Query<&ShapeName>)> = SystemState::new(world);
-                    let (server, rot_q, name_q) = system_state.get_mut(world);
+                    let mut system_state: SystemState<(Server, Query<&AnimRotation>)> = SystemState::new(world);
+                    let (server, rot_q) = system_state.get_mut(world);
 
                     let Ok(rotation) = rot_q.get(*content_entity) else {
                         panic!("Error getting rotation component");
                     };
 
                     // get shape name
-                    let vertex_3d_entity: Entity = rotation.vertex_3d_entity.get(&server).unwrap();
-                    let Ok(name) = name_q.get(vertex_3d_entity) else {
-                        panic!("Error getting shape name component");
-                    };
-                    let name = (*name.value).clone();
+                    let name = (*rotation.vertex_name).clone();
                     let shape_index: u16 = if !shape_map.contains_key(&name) {
                         let shape_index = shape_names.len() as u16;
                         shape_map.insert(name.clone(), shape_index);
@@ -283,8 +279,8 @@ impl AnimReader {
         let mut shape_name_map = HashMap::new();
         let mut frame_index = 0;
 
-        let mut system_state: SystemState<(Commands, Server, Res<ShapeManager>)> = SystemState::new(world);
-        let (mut commands, mut server, shape_manager) = system_state.get_mut(world);
+        let mut system_state: SystemState<(Commands, Server)> = SystemState::new(world);
+        let (mut commands, mut server) = system_state.get_mut(world);
 
         for action in actions {
             match action {
@@ -328,11 +324,10 @@ impl AnimReader {
 
                     for (shape_index, rotation) in poses {
                         let shape_name = shape_name_map.get(&shape_index).unwrap();
-                        let vertex_3d_entity = shape_manager.get_vertex_from_shape_name(shape_name).unwrap();
 
-                        let mut component = AnimRotation::new(rotation);
+
+                        let mut component = AnimRotation::new(shape_name.clone(), rotation);
                         component.frame_entity.set(&server, &frame_entity);
-                        component.vertex_3d_entity.set(&server, &vertex_3d_entity);
 
                         let rotation_entity = commands
                             .spawn_empty()

@@ -870,6 +870,8 @@ impl Project {
         file_key: &FileKey,
     ) -> HashMap<Entity, ContentEntityData> {
 
+        info!("Creating filespace for file: {:?}", file_key.name());
+
         // get file contents from either the changelist or the file system
         let bytes = self.get_bytes_from_cl_or_fs(file_key);
 
@@ -890,6 +892,8 @@ impl Project {
         let file_room_key = server.make_room().key();
         let filespace = FileSpace::new(&file_room_key, content_entities_with_data.clone());
         self.filespaces.insert(file_key.clone(), filespace);
+
+        info!("content entities: {:?}", content_entities_with_data);
 
         content_entities_with_data
     }
