@@ -14,7 +14,6 @@ use naia_bevy_server::{
 
 use vortex_proto::{
     components::{Edge3d, Face3d, FileExtension, FileType, Vertex3d, VertexSerdeInt},
-    resources::FileKey,
 };
 
 use crate::{
@@ -222,7 +221,6 @@ impl FileWriter for MeshWriter {
         &self,
         world: &mut World,
         _project: &Project,
-        _file_key: &FileKey,
         content_entities_opt: &Option<HashMap<Entity, ContentEntityData>>,
     ) -> Box<[u8]> {
         let actions = self.world_to_actions(world, content_entities_opt);

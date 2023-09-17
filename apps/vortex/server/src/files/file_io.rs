@@ -20,7 +20,6 @@ pub trait FileWriter: Send + Sync {
         &self,
         world: &mut World,
         project: &Project,
-        file_key: &FileKey,
         content_entities_opt: &Option<HashMap<Entity, ContentEntityData>>,
     ) -> Box<[u8]>;
     fn write_new_default(&self) -> Box<[u8]>;
@@ -56,13 +55,12 @@ impl FileWriter for FileExtension {
         &self,
         world: &mut World,
         project: &Project,
-        file_key: &FileKey,
         content_entities_opt: &Option<HashMap<Entity, ContentEntityData>>,
     ) -> Box<[u8]> {
         match self {
-            FileExtension::Skel => SkelWriter.write(world, project, file_key, content_entities_opt),
-            FileExtension::Mesh => MeshWriter.write(world, project, file_key, content_entities_opt),
-            FileExtension::Anim => AnimWriter.write(world, project, file_key, content_entities_opt),
+            FileExtension::Skel => SkelWriter.write(world, project, content_entities_opt),
+            FileExtension::Mesh => MeshWriter.write(world, project, content_entities_opt),
+            FileExtension::Anim => AnimWriter.write(world, project, content_entities_opt),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }
@@ -208,7 +206,7 @@ pub fn despawn_file_content_entities(
                 shape_manager.deregister_edge(entity);
             }
             ContentEntityData::Shape(ShapeType::Face) => {}
-            ContentEntityData::Dependency(_, dependency_key) => {
+            ContentEntityData::Dependency(dependency_key) => {
                 project.file_remove_dependency(&file_key, &dependency_key);
             }
             ContentEntityData::Frame => {

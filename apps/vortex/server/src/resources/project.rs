@@ -88,7 +88,7 @@ impl Project {
         content_entities: &Option<HashMap<Entity, ContentEntityData>>,
     ) -> Box<[u8]> {
         let ext = self.working_file_extension(file_key);
-        return ext.write(world, self, file_key, content_entities);
+        return ext.write(world, self, content_entities);
     }
 
     pub fn room_key(&self) -> RoomKey {
@@ -1103,7 +1103,7 @@ impl Project {
 
             // write
             info!("... Generating content ...");
-            let bytes = extension.write(world, self, file_key, &content_entities_opt);
+            let bytes = extension.write(world, self, &content_entities_opt);
             let changelist_value = self.changelist_entries.get_mut(&file_key).unwrap();
             changelist_value.set_content(bytes);
         }

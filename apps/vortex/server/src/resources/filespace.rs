@@ -5,14 +5,14 @@ use bevy_log::info;
 
 use naia_bevy_server::{RoomKey, Server, UserKey};
 
-use vortex_proto::{components::FileExtension, resources::FileKey};
+use vortex_proto::resources::FileKey;
 
 use crate::files::ShapeType;
 
 #[derive(Clone, Debug)]
 pub enum ContentEntityData {
     Shape(ShapeType),
-    Dependency(FileExtension, FileKey),
+    Dependency(FileKey),
     Frame,
     Rotation
 }
@@ -22,8 +22,8 @@ impl ContentEntityData {
         Self::Shape(shape_type)
     }
 
-    pub fn new_dependency(file_type: FileExtension, dependency_key: FileKey) -> Self {
-        Self::Dependency(file_type, dependency_key)
+    pub fn new_dependency(dependency_key: FileKey) -> Self {
+        Self::Dependency(dependency_key)
     }
 
     pub fn new_frame() -> Self {

@@ -16,7 +16,6 @@ use vortex_proto::{
     components::{
         Edge3d, EdgeAngle, FileExtension, FileType, ShapeName, Vertex3d, VertexRoot, VertexSerdeInt,
     },
-    resources::FileKey,
 };
 
 use crate::{
@@ -232,7 +231,6 @@ impl FileWriter for SkelWriter {
         &self,
         world: &mut World,
         _project: &Project,
-        _file_key: &FileKey,
         content_entities_opt: &Option<HashMap<Entity, ContentEntityData>>,
     ) -> Box<[u8]> {
         let actions = self.world_to_actions(world, content_entities_opt);

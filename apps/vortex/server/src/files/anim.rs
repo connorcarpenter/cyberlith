@@ -69,13 +69,13 @@ impl AnimWriter {
         &self,
         _world: &mut World,
         project: &Project,
-        file_key: &FileKey,
         content_entities_opt: &Option<HashMap<Entity, ContentEntityData>>,
     ) -> Vec<AnimAction> {
 
         let working_file_entries = project.working_file_entries();
 
         let mut skel_dependency_key_opt = None;
+        let mut shape_names: Vec<String> = Vec::new();
 
         let content_entities = content_entities_opt.as_ref().unwrap();
         for (content_entity, content_data) in content_entities {
@@ -83,8 +83,9 @@ impl AnimWriter {
                 ContentEntityData::Shape(_) => {
                     panic!("animation should not have any shape entity in it");
                 }
-                ContentEntityData::Dependency(dependency_ext, dependency_key) => {
-                    if *dependency_ext != FileExtension::Skel {
+                ContentEntityData::Dependency(dependency_key) => {
+                    let dependency_value = working_file_entries.get(dependency_key).unwrap();
+                    if dependency_value.extension().unwrap() != FileExtension::Skel {
                         panic!("anim file should depend on a single .skel file");
                     }
                     skel_dependency_key_opt = Some(dependency_key);
@@ -103,13 +104,8 @@ impl AnimWriter {
         let Some(dependency_key) = skel_dependency_key_opt else {
             panic!("anim file should depend on a single .skel file");
         };
-        let dependency_value = working_file_entries.get(&dependency_key).unwrap();
-        if dependency_value.extension().unwrap() != FileExtension::Skel {
-            panic!("anim file should depend on a single .skel file");
-        }
 
-        let full_skel_path = dependency_key.full_path();
-        info!("{} writing dependency: {}", file_key.name(), full_skel_path);
+        info!("writing dependency: {}", dependency_key.full_path());
         actions.push(AnimAction::SkelFile(
             dependency_key.path().to_string(),
             dependency_key.name().to_string(),
@@ -162,10 +158,9 @@ impl FileWriter for AnimWriter {
         &self,
         world: &mut World,
         project: &Project,
-        file_key: &FileKey,
         content_entities_opt: &Option<HashMap<Entity, ContentEntityData>>,
     ) -> Box<[u8]> {
-        let actions = self.world_to_actions(world, project, file_key, content_entities_opt);
+        let actions = self.world_to_actions(world, project, content_entities_opt);
         self.write_from_actions(actions)
     }
 
@@ -271,7 +266,7 @@ impl AnimReader {
                 .configure_replication(ReplicationConfig::Delegated)
                 .insert(component)
                 .id();
-            content_entities.insert(entity, ContentEntityData::new_dependency(file_extension, skel_file_key));
+            content_entities.insert(entity, ContentEntityData::new_dependency(skel_file_key));
         }
 
         content_entities
