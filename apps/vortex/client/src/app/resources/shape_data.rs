@@ -14,14 +14,16 @@ pub struct Vertex3dData {
     pub(crate) entity_2d: Entity,
     pub(crate) edges_3d: HashSet<Entity>,
     pub(crate) faces_3d: HashSet<FaceKey>,
+    pub(crate) owner_opt: Option<Entity>,
 }
 
 impl Vertex3dData {
-    pub fn new(entity_2d: Entity) -> Self {
+    pub fn new(entity_2d: Entity, owner_opt: Option<Entity>) -> Self {
         Self {
             entity_2d,
             edges_3d: HashSet::new(),
             faces_3d: HashSet::new(),
+            owner_opt,
         }
     }
 

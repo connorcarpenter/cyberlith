@@ -15,16 +15,12 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{
-    ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind, Face3d, FileDependency,
-    FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile,
-    Vertex3d, VertexRoot,
-};
+use vortex_proto::components::{ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind, Face3d, FileDependency, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, ShapeName, Vertex3d, VertexRoot};
 
 use crate::app::{
-    components::file_system::{
+    components::{file_system::{
         ChangelistUiState, FileSystemEntryLocal, FileSystemParent, FileSystemUiState,
-    },
+    }, OwnedByFileLocal},
     events::InsertComponentEvent,
     resources::{
         camera_manager::CameraManager,
@@ -52,6 +48,7 @@ pub fn insert_component_events(
     // for vertices
     mut insert_vertex_3d_event_writer: EventWriter<InsertComponentEvent<Vertex3d>>,
     mut insert_vertex_root_event_writer: EventWriter<InsertComponentEvent<VertexRoot>>,
+    mut insert_shape_name_event_writer: EventWriter<InsertComponentEvent<ShapeName>>,
     mut insert_owned_by_event_writer: EventWriter<InsertComponentEvent<OwnedByFile>>,
     mut insert_file_type_event_writer: EventWriter<InsertComponentEvent<FileType>>,
     mut insert_edge_3d_event_writer: EventWriter<InsertComponentEvent<Edge3d>>,
@@ -94,6 +91,11 @@ pub fn insert_component_events(
         // on Vertex Root Child Event
         for entity in events.read::<VertexRoot>() {
             insert_vertex_root_event_writer.send(InsertComponentEvent::<VertexRoot>::new(entity));
+        }
+
+        // on Shape Name Event
+        for entity in events.read::<ShapeName>() {
+            insert_shape_name_event_writer.send(InsertComponentEvent::<ShapeName>::new(entity));
         }
 
         // on OwnedByFile Insert Event
@@ -292,6 +294,7 @@ pub fn insert_vertex_events(
     mut commands: Commands,
     mut vertex_3d_events: EventReader<InsertComponentEvent<Vertex3d>>,
     mut vertex_root_events: EventReader<InsertComponentEvent<VertexRoot>>,
+    mut shape_name_events: EventReader<InsertComponentEvent<ShapeName>>,
 
     mut camera_manager: ResMut<CameraManager>,
     mut canvas: ResMut<Canvas>,
@@ -302,6 +305,7 @@ pub fn insert_vertex_events(
     mut materials: ResMut<Assets<CpuMaterial>>,
     mut shape_waitlist: ResMut<ShapeWaitlist>,
     transform_q: Query<&Transform>,
+    shape_name_q: Query<(&OwnedByFileLocal, &ShapeName)>,
 ) {
     // on Vertex Insert Event
     for event in vertex_3d_events.iter() {
@@ -343,6 +347,19 @@ pub fn insert_vertex_events(
             &entity,
             ShapeWaitlistInsert::VertexRoot,
         );
+    }
+
+    // on Vertex Name Event
+    for event in shape_name_events.iter() {
+        let entity = event.entity;
+
+        let (owned_by_file, shape_name) = shape_name_q.get(entity).unwrap();
+        let shape_name = (*shape_name.value).clone();
+        let file_entity = owned_by_file.file_entity;
+
+        info!("entity: {:?} - inserted ShapeName(file: {:?}, name: {:?})", entity, file_entity, shape_name);
+
+        vertex_manager.register_vertex_name(file_entity, shape_name, entity);
     }
 }
 

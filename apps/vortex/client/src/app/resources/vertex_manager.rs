@@ -15,9 +15,7 @@ use render_api::{
     Assets, Handle,
 };
 
-use vortex_proto::components::{
-    Face3d, FileExtension, FileType, OwnedByFile, Vertex3d, VertexRoot,
-};
+use vortex_proto::components::{Face3d, FileExtension, FileType, OwnedByFile, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::{Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d, VertexEntry},
@@ -40,6 +38,8 @@ pub struct VertexManager {
     pub(crate) vertices_3d: HashMap<Entity, Vertex3dData>,
     // 2d vertex entity -> 3d vertex entity
     vertices_2d: HashMap<Entity, Entity>,
+    // (file entity, vertex name) -> 3d vertex entity
+    vertex_names: HashMap<(Entity, String), Entity>,
 
     pub(crate) last_vertex_dragged: Option<(Entity, Vec3, Vec3)>,
 }
@@ -50,12 +50,34 @@ impl Default for VertexManager {
             resync: false,
             vertices_3d: HashMap::new(),
             vertices_2d: HashMap::new(),
+            vertex_names: HashMap::new(),
             last_vertex_dragged: None,
         }
     }
 }
 
 impl VertexManager {
+
+    pub fn vertex_name_changed(&mut self, file_entity: Entity, old_name: String, new_name: String, vertex_3d_entity: Entity) {
+        self.deregister_vertex_name(&file_entity, &old_name);
+        self.register_vertex_name(file_entity, new_name, vertex_3d_entity);
+    }
+
+    pub fn register_vertex_name(&mut self, file_entity: Entity, name: String, vertex_3d_entity: Entity) {
+        let key = (file_entity, name);
+        if self.vertex_names.contains_key(&key) {
+            panic!("Vertex name {:?} already exists", key)
+        }
+        self.vertex_names.insert(key, vertex_3d_entity);
+    }
+
+    pub fn deregister_vertex_name(&mut self, file_entity: &Entity, name: &String) {
+        let key = (*file_entity, name.clone());
+        if self.vertex_names.remove(&key).is_none() {
+            panic!("Vertex name {:?} does not exist", key)
+        }
+    }
+
     pub fn queue_resync(&mut self) {
         self.resync = true;
     }
@@ -324,14 +346,14 @@ impl VertexManager {
         // );
 
         // register 3d & 2d vertices together
-        self.register_3d_vertex(vertex_3d_entity, vertex_2d_entity);
+        self.register_3d_vertex(vertex_3d_entity, vertex_2d_entity, ownership_opt);
 
         vertex_2d_entity
     }
 
-    pub fn register_3d_vertex(&mut self, entity_3d: Entity, entity_2d: Entity) {
+    pub fn register_3d_vertex(&mut self, entity_3d: Entity, entity_2d: Entity, ownership_opt: Option<Entity>) {
         self.vertices_3d
-            .insert(entity_3d, Vertex3dData::new(entity_2d));
+            .insert(entity_3d, Vertex3dData::new(entity_2d, ownership_opt));
         self.vertices_2d.insert(entity_2d, entity_3d);
     }
 

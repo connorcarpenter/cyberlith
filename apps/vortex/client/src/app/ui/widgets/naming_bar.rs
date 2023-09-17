@@ -12,6 +12,7 @@ use render_egui::{
 use vortex_proto::components::{FileExtension, ShapeName};
 
 use crate::app::{
+    components::OwnedByFileLocal,
     resources::{
         canvas::Canvas, edge_manager::EdgeManager, face_manager::FaceManager,
         file_manager::FileManager, input_manager::InputManager, shape_data::CanvasShape,
@@ -123,17 +124,22 @@ pub fn render_naming_bar(ui: &mut Ui, world: &mut World) {
                     let mut system_state: SystemState<(
                         Commands,
                         ResMut<NamingBarState>,
-                        Query<&mut ShapeName>,
+                        ResMut<VertexManager>,
+                        Query<(&OwnedByFileLocal, Option<&mut ShapeName>)>,
                     )> = SystemState::new(world);
-                    let (mut commands, mut state, mut shape_name_q) = system_state.get_mut(world);
+                    let (mut commands, mut state, mut vertex_manager, mut shape_q) = system_state.get_mut(world);
 
                     state.prev_text = state.text.clone();
-                    if let Ok(mut shape_name) = shape_name_q.get_mut(shape_3d_entity) {
+                    let (owned_by_file_local, mut shape_name_opt) = shape_q.get_mut(shape_3d_entity).unwrap();
+                    if let Some(shape_name) = shape_name_opt.as_mut() {
+                        let old_name = (*shape_name.value).clone();
                         *shape_name.value = state.text.clone();
+                        vertex_manager.vertex_name_changed(owned_by_file_local.file_entity, old_name, (*shape_name.value).clone(), shape_3d_entity);
                     } else {
                         commands
                             .entity(shape_3d_entity)
                             .insert(ShapeName::new(state.text.clone()));
+                        vertex_manager.register_vertex_name(owned_by_file_local.file_entity, state.text.clone(), shape_3d_entity);
                     }
 
                     system_state.apply(world);
