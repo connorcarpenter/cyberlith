@@ -3,13 +3,15 @@ use bevy_ecs::{
     query::{With, Without},
     system::{Commands, Query, Res, ResMut},
 };
+use bevy_ecs::system::SystemState;
+use bevy_ecs::world::{Mut, World};
 
 use naia_bevy_client::Client;
 
 use input::Input;
 use render_api::components::{Camera, Projection, Transform, Visibility};
 
-use vortex_proto::components::{EdgeAngle, Vertex3d, VertexRoot};
+use vortex_proto::components::{EdgeAngle, ShapeName, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::{Edge2dLocal, FaceIcon2d, LocalShape, Vertex2d},
@@ -20,46 +22,25 @@ use crate::app::{
     },
 };
 
-pub fn input(
-    mut commands: Commands,
-    mut client: Client,
-    file_manager: Res<FileManager>,
-    mut tab_manager: ResMut<TabManager>,
-    mut canvas: ResMut<Canvas>,
-    mut camera_manager: ResMut<CameraManager>,
-    mut input: ResMut<Input>,
-    mut input_manager: ResMut<InputManager>,
-    mut vertex_manager: ResMut<VertexManager>,
-    mut edge_manager: ResMut<EdgeManager>,
-    face_manager: Res<FaceManager>,
-    mut animation_manager: ResMut<AnimationManager>,
-    mut transform_q: Query<&mut Transform>,
-    mut camera_q: Query<(&mut Camera, &mut Projection)>,
-    mut vertex_3d_q: Query<&mut Vertex3d>,
-    mut edge_angle_q: Query<&mut EdgeAngle>,
-) {
+pub fn input(world: &mut World) {
+    let mut system_state: SystemState<(
+        Res<Canvas>,
+        ResMut<Input>,
+    )> = SystemState::new(world);
+    let (canvas, mut input) = system_state.get_mut(world);
+
     if !canvas.is_visible() {
         return;
     }
 
     let input_actions = input.take_actions();
-    input_manager.update_input(
-        input_actions,
-        &mut commands,
-        &mut client,
-        &mut canvas,
-        &mut camera_manager,
-        &mut animation_manager,
-        &file_manager,
-        &mut tab_manager,
-        &mut vertex_manager,
-        &mut edge_manager,
-        &face_manager,
-        &mut transform_q,
-        &mut camera_q,
-        &mut vertex_3d_q,
-        &mut edge_angle_q,
-    );
+
+    world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
+        input_manager.update_input(
+            input_actions,
+            world,
+        );
+    });
 }
 
 pub fn update_mouse_hover(

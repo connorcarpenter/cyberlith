@@ -1,16 +1,21 @@
 use std::collections::HashMap;
 
 use bevy_ecs::{entity::Entity, prelude::{Commands, Query}, system::Resource};
+use bevy_ecs::system::{Res, ResMut, SystemState};
+use bevy_ecs::world::World;
 use bevy_log::warn;
 
 use naia_bevy_client::Client;
 
-use math::Vec2;
-use render_api::components::{Transform, Visibility};
+use math::{convert_2d_to_3d, Vec2};
+use render_api::components::{Camera, CameraProjection, Projection, Transform, Visibility};
 
 use vortex_proto::components::{AnimFrame, AnimRotation, ShapeName, Vertex3d};
 
 use crate::app::components::LocalVertex3dChild;
+use crate::app::resources::camera_manager::CameraManager;
+use crate::app::resources::canvas::Canvas;
+use crate::app::resources::vertex_manager::VertexManager;
 
 #[derive(Resource)]
 pub struct AnimationManager {
@@ -57,25 +62,20 @@ impl AnimationManager {
         self.vertex_names.remove(&(*frame_entity, vertex_name.to_string()));
     }
 
-    pub(crate) fn drag_edge(
-        &mut self,
-        _commands: &mut Commands,
-        _client: &Client,
-        _edge_3d_entity: Entity,
-        _mouse_position: Vec2,
-        _delta: Vec2,
-    ) {
-        // unused for now
+    fn get_current_rotation(&self, vertex_name: &str) -> Option<&Entity> {
+        let current_frame = self.current_frame?;
+        self.vertex_names.get(&(current_frame, vertex_name.to_string()))
     }
 
     pub(crate) fn drag_vertex(
         &mut self,
-        commands: &mut Commands,
-        client: &Client,
-        vert_3d_entity: Entity,
+        world: &mut World,
+        vertex_3d_entity: Entity,
+        vertex_2d_entity: Entity,
         mouse_position: Vec2,
         delta: Vec2,
     ) {
+        // check auth status of rotation
         // let auth_status =
         //     commands.entity(vertex_3d_entity).authority(client).unwrap();
         // if !(auth_status.is_requested() || auth_status.is_granted()) {
@@ -83,28 +83,43 @@ impl AnimationManager {
         //     info!("No authority over vertex, skipping..");
         //     return;
         // }
-        //
-        // // get camera
-        // let camera_3d = camera_manager.camera_3d_entity().unwrap();
-        // let camera_transform: Transform = *transform_q.get(camera_3d).unwrap();
-        // let (camera, camera_projection) = camera_q.get(camera_3d).unwrap();
-        //
-        // let camera_viewport = camera.viewport.unwrap();
-        // let view_matrix = camera_transform.view_matrix();
-        // let projection_matrix =
-        //     camera_projection.projection_matrix(&camera_viewport);
-        //
-        // // get 2d vertex transform
-        // let vertex_2d_transform = transform_q.get(vertex_2d_entity).unwrap();
-        //
-        // // convert 2d to 3d
-        // let new_3d_position = convert_2d_to_3d(
-        //     &view_matrix,
-        //     &projection_matrix,
-        //     &camera_viewport.size_vec2(),
-        //     &mouse_position,
-        //     vertex_2d_transform.translation.z,
-        // );
+
+        // get rotation
+        let Some(frame_entity) = self.current_frame else {
+            return;
+        };
+
+        let mut system_state: SystemState<(
+            Res<CameraManager>,
+            Query<(&Camera, &Projection)>,
+            Query<&Transform>,
+        )> = SystemState::new(world);
+        let (
+            camera_manager,
+            camera_q,
+            transform_q,
+        ) = system_state.get_mut(world);
+
+        // get camera
+        let camera_3d = camera_manager.camera_3d_entity().unwrap();
+        let camera_transform: Transform = *transform_q.get(camera_3d).unwrap();
+        let (camera, camera_projection) = camera_q.get(camera_3d).unwrap();
+
+        let camera_viewport = camera.viewport.unwrap();
+        let view_matrix = camera_transform.view_matrix();
+        let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
+
+        // get 2d vertex transform
+        let vertex_2d_transform = transform_q.get(vertex_2d_entity).unwrap();
+
+        // convert 2d to 3d
+        let new_3d_position = convert_2d_to_3d(
+            &view_matrix,
+            &projection_matrix,
+            &camera_viewport.size_vec2(),
+            &mouse_position,
+            vertex_2d_transform.translation.z,
+        );
         //
         // // set networked 3d vertex position
         // let mut vertex_3d = vertex_3d_q.get_mut(vertex_3d_entity).unwrap();
@@ -123,6 +138,17 @@ impl AnimationManager {
         // vertex_3d.set_x(new_3d_position.x as i16);
         // vertex_3d.set_y(new_3d_position.y as i16);
         // vertex_3d.set_z(new_3d_position.z as i16);
+    }
+
+    pub(crate) fn drag_edge(
+        &mut self,
+        _commands: &mut Commands,
+        _client: &Client,
+        _edge_3d_entity: Entity,
+        _mouse_position: Vec2,
+        _delta: Vec2,
+    ) {
+        // unused for now
     }
 
     pub(crate) fn sync_vertices_3d(
