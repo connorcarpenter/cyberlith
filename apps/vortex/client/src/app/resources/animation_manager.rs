@@ -8,7 +8,9 @@ use naia_bevy_client::Client;
 use math::Vec2;
 use render_api::components::{Transform, Visibility};
 
-use vortex_proto::components::{AnimFrame, Vertex3d};
+use vortex_proto::components::{AnimFrame, AnimRotation, ShapeName, Vertex3d};
+
+use crate::app::components::LocalVertex3dChild;
 
 #[derive(Resource)]
 pub struct AnimationManager {
@@ -32,6 +34,10 @@ impl Default for AnimationManager {
 }
 
 impl AnimationManager {
+
+    pub(crate) fn current_frame(&self) -> Option<Entity> {
+        self.current_frame
+    }
 
     pub(crate) fn register_frame(&mut self, file_entity: Entity, frame_entity: Entity, frame: &AnimFrame) {
         let order = frame.get_order();
@@ -123,8 +129,13 @@ impl AnimationManager {
         &self,
         vertex_3d_q: &Query<(Entity, &Vertex3d)>,
         transform_q: &mut Query<&mut Transform>,
-        visibility_q: &Query<&Visibility>
+        visibility_q: &Query<&Visibility>,
+        name_q: &Query<&ShapeName>,
+        child_q: &Query<&LocalVertex3dChild>,
+        rotation_q: &Query<&AnimRotation>,
     ) {
+        let current_frame = self.current_frame.unwrap();
+
         for (vertex_3d_entity, vertex_3d) in vertex_3d_q.iter() {
             // check visibility
             if let Ok(visibility) = visibility_q.get(vertex_3d_entity) {
@@ -133,16 +144,43 @@ impl AnimationManager {
                 }
             };
 
-            // get transform
-            let Ok(mut vertex_3d_transform) = transform_q.get_mut(vertex_3d_entity) else {
-                warn!("Vertex3d entity {:?} has no Transform", vertex_3d_entity);
-                continue;
-            };
+            let mut rotation_opt = None;
+            if let Ok(name_component) = name_q.get(vertex_3d_entity) {
+                let name = (*name_component.value).clone();
+                if let Some(rotation_entity) = self.vertex_names.get(&(current_frame, name)) {
+                    rotation_opt = Some(rotation_entity);
+                }
+            }
 
-            // update 3d vertices
-            vertex_3d_transform.translation.x = vertex_3d.x().into();
-            vertex_3d_transform.translation.y = vertex_3d.y().into();
-            vertex_3d_transform.translation.z = vertex_3d.z().into();
+            if let Some(rotation_entity) = rotation_opt {
+                let rotation = rotation_q.get(*rotation_entity).unwrap();
+                let rotation = rotation.get_rotation();
+
+                let parent_vertex_3d_entity = child_q.get(vertex_3d_entity).unwrap().parent_entity;
+                let (_, parent_vertex_3d) = vertex_3d_q.get(parent_vertex_3d_entity).unwrap();
+                let parent_pos = parent_vertex_3d.as_vec3();
+                let displacement = vertex_3d.as_vec3() - parent_pos;
+                let rotated_displacement = rotation * displacement;
+                let new_position = parent_pos + rotated_displacement;
+
+                // update transform
+                let Ok(mut vertex_3d_transform) = transform_q.get_mut(vertex_3d_entity) else {
+                    warn!("Vertex3d entity {:?} has no Transform", vertex_3d_entity);
+                    continue;
+                };
+                vertex_3d_transform.translation = new_position;
+
+            } else {
+                // get transform
+                let Ok(mut vertex_3d_transform) = transform_q.get_mut(vertex_3d_entity) else {
+                    warn!("Vertex3d entity {:?} has no Transform", vertex_3d_entity);
+                    continue;
+                };
+                // update 3d vertices
+                vertex_3d_transform.translation.x = vertex_3d.x().into();
+                vertex_3d_transform.translation.y = vertex_3d.y().into();
+                vertex_3d_transform.translation.z = vertex_3d.z().into();
+            }
         }
     }
 }

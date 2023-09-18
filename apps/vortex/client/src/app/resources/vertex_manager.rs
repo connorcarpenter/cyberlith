@@ -15,7 +15,7 @@ use render_api::{
     Assets, Handle,
 };
 
-use vortex_proto::components::{Face3d, FileExtension, FileType, OwnedByFile, Vertex3d, VertexRoot};
+use vortex_proto::components::{AnimRotation, Face3d, FileExtension, FileType, OwnedByFile, ShapeName, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::{LocalVertex3dChild, Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d, VertexEntry},
@@ -101,14 +101,21 @@ impl VertexManager {
         vertex_3d_q: &Query<(Entity, &Vertex3d)>,
         transform_q: &mut Query<&mut Transform>,
         visibility_q: &Query<&Visibility>,
+        name_q: &Query<&ShapeName>,
+        child_q: &Query<&LocalVertex3dChild>,
+        rotation_q: &Query<&AnimRotation>,
     ) -> bool {
         if !self.resync {
             return false;
         }
 
+        if animation_manager.current_frame().is_none() {
+            return self.sync_vertices_3d(vertex_3d_q, transform_q, visibility_q);
+        }
+
         self.resync = false;
 
-        animation_manager.sync_vertices_3d(vertex_3d_q, transform_q, visibility_q);
+        animation_manager.sync_vertices_3d(vertex_3d_q, transform_q, visibility_q, name_q, child_q, rotation_q);
 
         return true;
     }

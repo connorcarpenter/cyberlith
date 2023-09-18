@@ -11,7 +11,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{EdgeAngle, FileExtension, Vertex3d};
+use vortex_proto::components::{AnimRotation, EdgeAngle, FileExtension, ShapeName, Vertex3d};
 
 use crate::app::{
     components::{Edge2dLocal, Edge3dLocal, FaceIcon2d, LocalShape},
@@ -21,6 +21,7 @@ use crate::app::{
         tab_manager::TabManager, vertex_manager::VertexManager, animation_manager::AnimationManager
     },
 };
+use crate::app::components::LocalVertex3dChild;
 
 pub fn queue_resyncs(
     mut canvas: ResMut<Canvas>,
@@ -84,6 +85,9 @@ pub fn sync_vertices(
     mut transform_q: Query<&mut Transform>,
     visibility_q: Query<&Visibility>,
     vertex_3d_q: Query<(Entity, &Vertex3d)>,
+    name_q: Query<&ShapeName>,
+    child_q: Query<&LocalVertex3dChild>,
+    rotation_q: Query<&AnimRotation>,
 ) {
     if !canvas.is_visible() {
         return;
@@ -112,6 +116,9 @@ pub fn sync_vertices(
                 &vertex_3d_q,
                 &mut transform_q,
                 &visibility_q,
+                &name_q,
+                &child_q,
+                &rotation_q,
             )
         }
         _ => { false }

@@ -2,7 +2,7 @@ use std::{default::Default, ops::Mul};
 
 use bevy_ecs::component::Component;
 
-use math::{Mat3, Mat4, Quat, Vec2, Vec3};
+use math::{Mat4, Quat, Vec2, Vec3};
 
 #[derive(Clone, Component, Copy)]
 pub struct Transform {
@@ -128,10 +128,7 @@ impl Transform {
     }
 
     pub fn look_to(&mut self, direction: Vec3, up: Vec3) {
-        let forward = direction.normalize();
-        let right = up.cross(forward).normalize();
-        let up = forward.cross(right);
-        self.rotation = Quat::from_mat3(&Mat3::from_cols(right, up, forward));
+        self.rotation = math::quat_look_to(direction, up);
     }
 
     pub fn view_matrix(&self) -> Mat4 {
