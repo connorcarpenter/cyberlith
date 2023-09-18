@@ -42,20 +42,6 @@ pub(crate) fn execute(
     let selected_vertex_3d;
     let selected_vertex_2d;
 
-    {
-        match &vertex_type_data {
-            VertexTypeData::Skel(parent_entity, edge_angle, _) => {
-                info!(
-                    "CreateVertexSkel(parent: {:?}, edge_angle: {:?}, position: {:?})",
-                    parent_entity, edge_angle, position
-                );
-            }
-            VertexTypeData::Mesh(_, _) => {
-                info!("CreateVertexMesh(position: {:?})", position);
-            }
-        }
-    }
-
     let mut system_state: SystemState<(
         Commands,
         Client,
@@ -100,15 +86,32 @@ pub(crate) fn execute(
     let file_type_value = vertex_type_data.to_file_type_value();
 
     // create vertex
+    let parent_vertex_3d_entity_opt = match &vertex_type_data {
+        VertexTypeData::Skel(parent_vertex_2d_entity, edge_angle, _) => {
+            info!(
+                "CreateVertexSkel(parent: {:?}, edge_angle: {:?}, position: {:?})",
+                parent_vertex_2d_entity, edge_angle, position
+            );
+            let parent_vertex_3d_entity = vertex_manager
+                .vertex_entity_2d_to_3d(parent_vertex_2d_entity)
+                .unwrap();
+            Some(parent_vertex_3d_entity)
+        }
+        VertexTypeData::Mesh(_, _) => {
+            info!("CreateVertexMesh(position: {:?})", position);
+            None
+        }
+    };
     let (new_vertex_2d_entity, new_vertex_3d_entity) = vertex_manager.create_networked_vertex(
         &mut commands,
         &mut client,
         &mut camera_manager,
         &mut meshes,
         &mut materials,
-        position,
-        *tab_file_entity,
         file_type_value,
+        *tab_file_entity,
+        parent_vertex_3d_entity_opt,
+        position,
         &mut entities_to_release,
     );
 
@@ -164,11 +167,15 @@ pub(crate) fn execute(
                     &mut meshes,
                     &mut materials,
                     new_vertex_2d_entity,
+                    new_vertex_3d_entity,
                     children,
                     *tab_file_entity,
                     &mut entities_to_release,
                 );
             }
+            let parent_vertex_3d_entity = vertex_manager
+                .vertex_entity_2d_to_3d(&parent_vertex_2d_entity)
+                .unwrap();
             edge_manager.create_networked_edge(
                 &mut commands,
                 &mut client,
@@ -178,6 +185,7 @@ pub(crate) fn execute(
                 &mut meshes,
                 &mut materials,
                 parent_vertex_2d_entity,
+                parent_vertex_3d_entity,
                 new_vertex_2d_entity,
                 new_vertex_3d_entity,
                 *tab_file_entity,
@@ -188,7 +196,10 @@ pub(crate) fn execute(
         }
         VertexTypeData::Mesh(connected_vertex_entities, connected_face_vertex_pairs) => {
             let mut edge_3d_entities = Vec::new();
-            for (connected_vertex_entity, old_edge_opt) in connected_vertex_entities {
+            for (connected_vertex_2d_entity, old_edge_opt) in connected_vertex_entities {
+                let connected_vertex_3d_entity = vertex_manager
+                    .vertex_entity_2d_to_3d(&connected_vertex_2d_entity)
+                    .unwrap();
                 let (new_edge_2d_entity, new_edge_3d_entity) = edge_manager.create_networked_edge(
                     &mut commands,
                     &mut client,
@@ -197,7 +208,8 @@ pub(crate) fn execute(
                     &mut face_manager,
                     &mut meshes,
                     &mut materials,
-                    connected_vertex_entity,
+                    connected_vertex_2d_entity,
+                    connected_vertex_3d_entity,
                     new_vertex_2d_entity,
                     new_vertex_3d_entity,
                     *tab_file_entity,

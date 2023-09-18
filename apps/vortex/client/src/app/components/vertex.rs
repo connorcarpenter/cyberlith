@@ -19,6 +19,17 @@ impl Vertex2d {
     pub const ROOT_COLOR: Color = Color::LIGHT_GREEN;
 }
 
+#[derive(Component)]
+pub struct LocalVertex3dChild {
+    pub parent_entity: Entity,
+}
+
+impl LocalVertex3dChild {
+    pub fn new(parent_entity: Entity) -> Self {
+        Self { parent_entity }
+    }
+}
+
 // for stored children vertexes undo/redo ...
 #[derive(Clone)]
 pub struct VertexEntry {

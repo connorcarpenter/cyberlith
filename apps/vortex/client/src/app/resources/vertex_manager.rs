@@ -18,7 +18,7 @@ use render_api::{
 use vortex_proto::components::{Face3d, FileExtension, FileType, OwnedByFile, Vertex3d, VertexRoot};
 
 use crate::app::{
-    components::{Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d, VertexEntry},
+    components::{LocalVertex3dChild, Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d, VertexEntry},
     resources::{
         action::{ActionStack, ShapeAction},
         camera_manager::CameraManager,
@@ -27,6 +27,7 @@ use crate::app::{
         face_manager::FaceManager,
         input_manager::InputManager,
         shape_data::{CanvasShape, FaceKey, Vertex3dData},
+        animation_manager::AnimationManager,
     },
 };
 
@@ -90,6 +91,24 @@ impl VertexManager {
             vertex_3d_transform.translation.y = vertex_3d.y().into();
             vertex_3d_transform.translation.z = vertex_3d.z().into();
         }
+
+        return true;
+    }
+
+    pub fn sync_vertices_3d_anim(
+        &mut self,
+        animation_manager: &AnimationManager,
+        vertex_3d_q: &Query<(Entity, &Vertex3d)>,
+        transform_q: &mut Query<&mut Transform>,
+        visibility_q: &Query<&Visibility>,
+    ) -> bool {
+        if !self.resync {
+            return false;
+        }
+
+        self.resync = false;
+
+        animation_manager.sync_vertices_3d(vertex_3d_q, transform_q, visibility_q);
 
         return true;
     }
@@ -174,9 +193,10 @@ impl VertexManager {
         camera_manager: &mut CameraManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
-        position: Vec3,
-        file_entity: Entity,
         file_type: FileExtension,
+        file_entity: Entity,
+        parent_vertex_3d_entity_opt: Option<Entity>,
+        position: Vec3,
         entities_to_release: &mut Vec<Entity>,
     ) -> (Entity, Entity) {
         // create new 3d vertex
@@ -202,6 +222,7 @@ impl VertexManager {
             materials,
             camera_manager,
             new_vertex_3d_entity,
+            parent_vertex_3d_entity_opt,
             false,
             Some(file_entity),
             Vertex2d::CHILD_COLOR,
@@ -221,6 +242,7 @@ impl VertexManager {
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         parent_vertex_2d_entity: Entity,
+        parent_vertex_3d_entity: Entity,
         children: Vec<VertexEntry>,
         file_entity: Entity,
         entities_to_release: &mut Vec<Entity>,
@@ -239,9 +261,10 @@ impl VertexManager {
                     camera_manager,
                     meshes,
                     materials,
-                    position,
-                    file_entity,
                     FileExtension::Skel,
+                    file_entity,
+                    Some(parent_vertex_3d_entity),
+                    position,
                     entities_to_release,
                 );
             action_stack.migrate_vertex_entities(
@@ -259,6 +282,7 @@ impl VertexManager {
                 meshes,
                 materials,
                 parent_vertex_2d_entity,
+                parent_vertex_3d_entity,
                 new_child_vertex_2d_entity,
                 new_child_vertex_3d_entity,
                 file_entity,
@@ -277,6 +301,7 @@ impl VertexManager {
                     meshes,
                     materials,
                     new_child_vertex_2d_entity,
+                    new_child_vertex_3d_entity,
                     grandchildren,
                     file_entity,
                     entities_to_release,
@@ -292,6 +317,7 @@ impl VertexManager {
         materials: &mut Assets<CpuMaterial>,
         camera_manager: &CameraManager,
         vertex_3d_entity: Entity,
+        parent_vertex_3d_entity_opt: Option<Entity>,
         is_root: bool,
         ownership_opt: Option<Entity>,
         color: Color,
@@ -308,6 +334,12 @@ impl VertexManager {
                 color,
             ))
             .insert(camera_manager.layer_3d);
+
+        if let Some(parent_vertex_3d_entity) = parent_vertex_3d_entity_opt {
+            commands
+                .entity(vertex_3d_entity)
+                .insert(LocalVertex3dChild::new(parent_vertex_3d_entity));
+        }
 
         // vertex 2d
         let vertex_2d_entity = commands
@@ -377,13 +409,16 @@ impl VertexManager {
         let new_vertex_3d_entity = commands.spawn_empty().insert(vertex_3d_component).id();
 
         // vertex 2d
+        let parent_vertex_3d_entity_opt = parent_vertex_2d_entity_opt
+            .map(|parent_vertex_2d_entity| self.vertex_entity_2d_to_3d(&parent_vertex_2d_entity).unwrap());
         let new_vertex_2d_entity = self.vertex_3d_postprocess(
             commands,
             meshes,
             materials,
             camera_manager,
             new_vertex_3d_entity,
-            parent_vertex_2d_entity_opt.is_none(),
+            parent_vertex_3d_entity_opt,
+            false,
             None,
             color,
         );

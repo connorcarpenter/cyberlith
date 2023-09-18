@@ -40,6 +40,7 @@ enum ShapeType {
 }
 
 enum ShapeData {
+    //parent_3d_entity_opt
     Vertex(Option<Entity>),
     Edge(Entity, Entity, Option<f32>),
     Face(Entity, Entity, Entity, Entity, Entity, Entity),
@@ -421,6 +422,7 @@ impl ShapeWaitlist {
                     materials,
                     camera_manager,
                     entity,
+                    parent_3d_entity_opt,
                     parent_3d_entity_opt.is_none(),
                     Some(file_entity),
                     color,
@@ -435,6 +437,7 @@ impl ShapeWaitlist {
                     materials,
                     camera_manager,
                     entity,
+                    None,
                     false,
                     Some(file_entity),
                     color,

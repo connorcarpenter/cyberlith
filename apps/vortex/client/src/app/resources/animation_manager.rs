@@ -1,12 +1,14 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{entity::Entity, prelude::Commands, system::Resource};
+use bevy_ecs::{entity::Entity, prelude::{Commands, Query}, system::Resource};
+use bevy_log::warn;
 
 use naia_bevy_client::Client;
 
 use math::Vec2;
+use render_api::components::{Transform, Visibility};
 
-use vortex_proto::components::AnimFrame;
+use vortex_proto::components::{AnimFrame, Vertex3d};
 
 #[derive(Resource)]
 pub struct AnimationManager {
@@ -115,5 +117,32 @@ impl AnimationManager {
         // vertex_3d.set_x(new_3d_position.x as i16);
         // vertex_3d.set_y(new_3d_position.y as i16);
         // vertex_3d.set_z(new_3d_position.z as i16);
+    }
+
+    pub(crate) fn sync_vertices_3d(
+        &self,
+        vertex_3d_q: &Query<(Entity, &Vertex3d)>,
+        transform_q: &mut Query<&mut Transform>,
+        visibility_q: &Query<&Visibility>
+    ) {
+        for (vertex_3d_entity, vertex_3d) in vertex_3d_q.iter() {
+            // check visibility
+            if let Ok(visibility) = visibility_q.get(vertex_3d_entity) {
+                if !visibility.visible {
+                    continue;
+                }
+            };
+
+            // get transform
+            let Ok(mut vertex_3d_transform) = transform_q.get_mut(vertex_3d_entity) else {
+                warn!("Vertex3d entity {:?} has no Transform", vertex_3d_entity);
+                continue;
+            };
+
+            // update 3d vertices
+            vertex_3d_transform.translation.x = vertex_3d.x().into();
+            vertex_3d_transform.translation.y = vertex_3d.y().into();
+            vertex_3d_transform.translation.z = vertex_3d.z().into();
+        }
     }
 }

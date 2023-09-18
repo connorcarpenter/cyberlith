@@ -420,7 +420,6 @@ impl ShapeWaitlist {
             }
         };
 
-        git_manager.queue_client_modify_file(&entity);
         let content_entity_data = ContentEntityData::new_shape(shape_type);
         git_manager.on_insert_content_entity(
             server,
@@ -429,6 +428,7 @@ impl ShapeWaitlist {
             &entity,
             &content_entity_data,
         );
+        git_manager.queue_client_modify_file(&entity);
 
         // if the waitlist has any children entities of this one, process them
         info!(

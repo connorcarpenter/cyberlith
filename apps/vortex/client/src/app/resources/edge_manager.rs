@@ -277,6 +277,7 @@ impl EdgeManager {
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         parent_vertex_2d_entity: Entity,
+        parent_vertex_3d_entity: Entity,
         child_vertex_2d_entity: Entity,
         child_vertex_3d_entity: Entity,
         file_entity: Entity,
@@ -285,10 +286,6 @@ impl EdgeManager {
         entities_to_release: &mut Vec<Entity>,
     ) -> (Entity, Entity) {
         // create new 3d edge
-        let parent_vertex_3d_entity = vertex_manager
-            .vertex_entity_2d_to_3d(&parent_vertex_2d_entity)
-            .unwrap();
-
         let mut new_edge_3d_component = Edge3d::new();
         new_edge_3d_component
             .start

@@ -11,14 +11,14 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{EdgeAngle, Vertex3d};
+use vortex_proto::components::{EdgeAngle, FileExtension, Vertex3d};
 
 use crate::app::{
     components::{Edge2dLocal, Edge3dLocal, FaceIcon2d, LocalShape},
     resources::{
         camera_manager::CameraManager, canvas::Canvas, compass::Compass, edge_manager::EdgeManager,
         face_manager::FaceManager, file_manager::FileManager, input_manager::InputManager,
-        tab_manager::TabManager, vertex_manager::VertexManager,
+        tab_manager::TabManager, vertex_manager::VertexManager, animation_manager::AnimationManager
     },
 };
 
@@ -73,10 +73,12 @@ pub fn sync_compass(
 }
 
 pub fn sync_vertices(
+    file_manager: Res<FileManager>,
     tab_manager: Res<TabManager>,
     canvas: Res<Canvas>,
     camera_manager: Res<CameraManager>,
     mut vertex_manager: ResMut<VertexManager>,
+    animation_manager: Res<AnimationManager>,
     local_shape_q: Query<&LocalShape>,
     camera_q: Query<(&Camera, &Projection)>,
     mut transform_q: Query<&mut Transform>,
@@ -89,15 +91,31 @@ pub fn sync_vertices(
     let Some(current_tab_state) = tab_manager.current_tab_state() else {
         return;
     };
+    let current_file_entity = tab_manager.current_tab_entity().unwrap();
+    let file_extension = file_manager.get_file_type(current_file_entity);
+
     let camera_3d = camera_manager.camera_3d_entity().unwrap();
     let camera_state = &current_tab_state.camera_state;
     let camera_3d_scale = camera_state.camera_3d_scale();
 
-    let did_sync = vertex_manager.sync_vertices_3d(
-        &vertex_3d_q,
-        &mut transform_q,
-        &visibility_q,
-    );
+    let did_sync = match file_extension {
+        FileExtension::Skel | FileExtension::Mesh => {
+            vertex_manager.sync_vertices_3d(
+                &vertex_3d_q,
+                &mut transform_q,
+                &visibility_q,
+            )
+        }
+        FileExtension::Anim => {
+            vertex_manager.sync_vertices_3d_anim(
+                &animation_manager,
+                &vertex_3d_q,
+                &mut transform_q,
+                &visibility_q,
+            )
+        }
+        _ => { false }
+    };
     if did_sync {
         vertex_manager.sync_vertices_2d(
             &camera_3d,

@@ -92,6 +92,10 @@ pub(crate) fn execute(
         }
 
         // get 3d version of first vertex
+        let vertex_3d_entity_a = vertex_manager
+            .vertex_entity_2d_to_3d(&vertex_2d_entity_a)
+            .unwrap();
+        // get 3d version of second vertex
         let vertex_3d_entity_b = vertex_manager
             .vertex_entity_2d_to_3d(&vertex_2d_entity_b)
             .unwrap();
@@ -106,6 +110,7 @@ pub(crate) fn execute(
             &mut meshes,
             &mut materials,
             vertex_2d_entity_a,
+            vertex_3d_entity_a,
             vertex_2d_entity_b,
             vertex_3d_entity_b,
             *tab_file_entity,
