@@ -6,7 +6,7 @@ use bevy_log::info;
 
 use naia_bevy_client::{events::UpdateComponentEvents, Client};
 
-use vortex_proto::components::{ChangelistEntry, EdgeAngle, FileSystemChild, FileSystemEntry, FileSystemRootChild, ShapeName, Vertex3d};
+use vortex_proto::components::{AnimFrame, ChangelistEntry, EdgeAngle, FileSystemChild, FileSystemEntry, FileSystemRootChild, ShapeName, Vertex3d};
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemEntryLocal},
@@ -91,6 +91,9 @@ pub fn update_component_events(
             canvas.queue_resync_shapes();
         }
         for (_tick, _entity) in events.read::<ShapeName>() {
+            todo!();
+        }
+        for (_tick, _entity) in events.read::<AnimFrame>() {
             todo!();
         }
     }
