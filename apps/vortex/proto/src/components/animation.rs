@@ -39,6 +39,7 @@ impl Transition {
 // Frame
 #[derive(Component, Replicate)]
 pub struct AnimFrame {
+    pub file_entity: EntityProperty,
     order: Property<UnsignedVariableInteger<4>>,
     pub transition: Property<Transition>,
 }

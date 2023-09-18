@@ -15,14 +15,15 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind, Face3d, FileDependency, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, ShapeName, Vertex3d, VertexRoot};
+use vortex_proto::components::{AnimFrame, AnimRotation, ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind, Face3d, FileDependency, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, ShapeName, Vertex3d, VertexRoot};
 
 use crate::app::{
-    components::{file_system::{
+    components::{LocalAnimRotation, file_system::{
         ChangelistUiState, FileSystemEntryLocal, FileSystemParent, FileSystemUiState,
     }, OwnedByFileLocal},
     events::InsertComponentEvent,
     resources::{
+        animation_manager::AnimationManager,
         camera_manager::CameraManager,
         canvas::Canvas,
         edge_manager::EdgeManager,
@@ -54,6 +55,8 @@ pub fn insert_component_events(
     mut insert_edge_3d_event_writer: EventWriter<InsertComponentEvent<Edge3d>>,
     mut insert_edge_angle_event_writer: EventWriter<InsertComponentEvent<EdgeAngle>>,
     mut insert_face_3d_event_writer: EventWriter<InsertComponentEvent<Face3d>>,
+    mut insert_anim_frame_event_writer: EventWriter<InsertComponentEvent<AnimFrame>>,
+    mut insert_anim_rotation_event_writer: EventWriter<InsertComponentEvent<AnimRotation>>,
 ) {
     for events in event_reader.iter() {
         // on FileSystemEntry Insert Event
@@ -121,6 +124,16 @@ pub fn insert_component_events(
         // on Face3d Insert Event
         for entity in events.read::<Face3d>() {
             insert_face_3d_event_writer.send(InsertComponentEvent::<Face3d>::new(entity));
+        }
+
+        // on Animation Frame Event
+        for entity in events.read::<AnimFrame>() {
+            insert_anim_frame_event_writer.send(InsertComponentEvent::<AnimFrame>::new(entity));
+        }
+
+        // on Animation Rotation Event
+        for entity in events.read::<AnimFrame>() {
+            insert_anim_rotation_event_writer.send(InsertComponentEvent::<AnimRotation>::new(entity));
         }
     }
 }
@@ -358,8 +371,6 @@ pub fn insert_vertex_events(
         let file_entity = owned_by_file.file_entity;
 
         info!("entity: {:?} - inserted ShapeName(file: {:?}, name: {:?})", entity, file_entity, shape_name);
-
-        vertex_manager.register_vertex_name(file_entity, shape_name, entity);
     }
 }
 
@@ -512,11 +523,10 @@ pub fn insert_face_events(
     }
 }
 
-pub fn insert_shape_events(
+pub fn insert_owned_by_file_events(
     mut commands: Commands,
     client: Client,
     mut owned_by_events: EventReader<InsertComponentEvent<OwnedByFile>>,
-    mut file_type_events: EventReader<InsertComponentEvent<FileType>>,
 
     // for vertices
     mut camera_manager: ResMut<CameraManager>,
@@ -529,7 +539,6 @@ pub fn insert_shape_events(
     mut shape_waitlist: ResMut<ShapeWaitlist>,
 
     owned_by_tab_q: Query<&OwnedByFile>,
-    file_type_q: Query<&FileType>,
     transform_q: Query<&Transform>,
 ) {
     // on OwnedByFile Insert Event
@@ -541,6 +550,7 @@ pub fn insert_shape_events(
         let owned_by_file = owned_by_tab_q.get(entity).unwrap();
         let file_entity = owned_by_file.file_entity.get(&client).unwrap();
 
+        // this leaks memory!!! some OwnedByFile components are never removed
         shape_waitlist.process_insert(
             &mut commands,
             &mut meshes,
@@ -555,7 +565,25 @@ pub fn insert_shape_events(
             ShapeWaitlistInsert::OwnedByFile(file_entity),
         );
     }
+}
 
+pub fn insert_file_type_events(
+    mut commands: Commands,
+    mut file_type_events: EventReader<InsertComponentEvent<FileType>>,
+
+    // for vertices
+    mut camera_manager: ResMut<CameraManager>,
+    mut canvas: ResMut<Canvas>,
+    mut vertex_manager: ResMut<VertexManager>,
+    mut edge_manager: ResMut<EdgeManager>,
+    mut face_manager: ResMut<FaceManager>,
+    mut meshes: ResMut<Assets<CpuMesh>>,
+    mut materials: ResMut<Assets<CpuMaterial>>,
+    mut shape_waitlist: ResMut<ShapeWaitlist>,
+
+    file_type_q: Query<&FileType>,
+    transform_q: Query<&Transform>,
+) {
     // on FileType Insert Event
     for event in file_type_events.iter() {
         let entity = event.entity;
@@ -581,5 +609,43 @@ pub fn insert_shape_events(
             &entity,
             ShapeWaitlistInsert::FileType(file_type_value),
         );
+    }
+}
+
+pub fn insert_animation_events(
+    mut commands: Commands,
+    client: Client,
+    mut animation_manager: ResMut<AnimationManager>,
+    mut frame_events: EventReader<InsertComponentEvent<AnimFrame>>,
+    mut rotation_events: EventReader<InsertComponentEvent<AnimRotation>>,
+    frame_q: Query<&AnimFrame>,
+    rotation_q: Query<&AnimRotation>,
+) {
+    // on AnimFrame Insert Event
+    for event in frame_events.iter() {
+        let entity = event.entity;
+
+        info!("entity: {:?} - inserted AnimFrame", entity);
+
+        let frame = frame_q.get(entity).unwrap();
+        let file_entity = frame.file_entity.get(&client).unwrap();
+
+        animation_manager.register_frame(file_entity, entity, frame);
+    }
+
+    // on AnimRotation Insert Event
+    for event in rotation_events.iter() {
+        let rotation_entity = event.entity;
+
+        info!("entity: {:?} - inserted AnimRotation", rotation_entity);
+
+        let rotation = rotation_q.get(rotation_entity).unwrap();
+
+        let frame_entity = rotation.frame_entity.get(&client).unwrap();
+        commands.entity(rotation_entity).insert(LocalAnimRotation::new(frame_entity));
+
+        let vertex_name = (*rotation.vertex_name).clone();
+
+        animation_manager.register_rotation(frame_entity, rotation_entity, vertex_name);
     }
 }

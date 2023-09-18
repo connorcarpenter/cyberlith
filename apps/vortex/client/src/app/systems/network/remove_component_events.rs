@@ -8,14 +8,14 @@ use naia_bevy_client::{events::RemoveComponentEvents, Client};
 
 use render_api::{base::CpuMesh, Assets};
 
-use vortex_proto::components::{ChangelistEntry, ChangelistStatus, Edge3d, Face3d, FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild, ShapeName, Vertex3d};
+use vortex_proto::components::{AnimFrame, AnimRotation, ChangelistEntry, ChangelistStatus, Edge3d, Face3d, FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild, ShapeName, Vertex3d};
 
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
     resources::{
         canvas::Canvas, edge_manager::EdgeManager, face_manager::FaceManager,
         file_manager::FileManager, input_manager::InputManager, tab_manager::TabManager,
-        vertex_manager::VertexManager,
+        vertex_manager::VertexManager, animation_manager::AnimationManager
     },
 };
 
@@ -29,6 +29,7 @@ pub fn remove_component_events(
     mut edge_manager: ResMut<EdgeManager>,
     mut face_manager: ResMut<FaceManager>,
     mut tab_manager: ResMut<TabManager>,
+    mut animation_manager: ResMut<AnimationManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut event_reader: EventReader<RemoveComponentEvents>,
     mut parent_q: Query<&mut FileSystemParent>,
@@ -84,12 +85,11 @@ pub fn remove_component_events(
             file_manager.file_remove_dependency(&file_entity, &dependency_entity);
         }
         for (vertex_entity_3d, shape_name) in events.read::<ShapeName>() {
-            info!("entity: `{:?}`, removed ShapeName", vertex_entity_3d);
 
             let owner_entity = vertex_manager.vertices_3d.get(&vertex_entity_3d).unwrap().owner_opt.unwrap();
             let name = (*shape_name.value).clone();
 
-            vertex_manager.deregister_vertex_name(&owner_entity, &name);
+            info!("entity: `{:?}`, removed ShapeName(owner: {:?}, name: {:?})", vertex_entity_3d, owner_entity, name);
         }
         for (vertex_entity_3d, _) in events.read::<Vertex3d>() {
             info!("entity: `{:?}`, removed Vertex3d", vertex_entity_3d);
@@ -117,6 +117,20 @@ pub fn remove_component_events(
             info!("entity: `{:?}`, removed Face3d", face_entity_3d);
 
             face_manager.cleanup_deleted_face_3d(&mut commands, &mut meshes, &face_entity_3d);
+        }
+        for (frame_entity, frame) in events.read::<AnimFrame>() {
+            info!("entity: `{:?}`, removed AnimFrame", frame_entity);
+
+            let file_entity = frame.file_entity.get(&client).unwrap();
+
+            animation_manager.deregister_frame(&file_entity, &frame);
+        }
+        for (rot_entity, rot) in events.read::<AnimRotation>() {
+            info!("entity: `{:?}`, removed AnimRotation", rot_entity);
+
+            let frame_entity = rot.frame_entity.get(&client).unwrap();
+
+            animation_manager.deregister_rotation(&frame_entity, &*rot.vertex_name);
         }
     }
 }

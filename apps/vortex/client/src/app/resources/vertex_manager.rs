@@ -38,8 +38,6 @@ pub struct VertexManager {
     pub(crate) vertices_3d: HashMap<Entity, Vertex3dData>,
     // 2d vertex entity -> 3d vertex entity
     vertices_2d: HashMap<Entity, Entity>,
-    // (file entity, vertex name) -> 3d vertex entity
-    vertex_names: HashMap<(Entity, String), Entity>,
 
     pub(crate) last_vertex_dragged: Option<(Entity, Vec3, Vec3)>,
 }
@@ -50,33 +48,12 @@ impl Default for VertexManager {
             resync: false,
             vertices_3d: HashMap::new(),
             vertices_2d: HashMap::new(),
-            vertex_names: HashMap::new(),
             last_vertex_dragged: None,
         }
     }
 }
 
 impl VertexManager {
-
-    pub fn vertex_name_changed(&mut self, file_entity: Entity, old_name: String, new_name: String, vertex_3d_entity: Entity) {
-        self.deregister_vertex_name(&file_entity, &old_name);
-        self.register_vertex_name(file_entity, new_name, vertex_3d_entity);
-    }
-
-    pub fn register_vertex_name(&mut self, file_entity: Entity, name: String, vertex_3d_entity: Entity) {
-        let key = (file_entity, name);
-        if self.vertex_names.contains_key(&key) {
-            panic!("Vertex name {:?} already exists", key)
-        }
-        self.vertex_names.insert(key, vertex_3d_entity);
-    }
-
-    pub fn deregister_vertex_name(&mut self, file_entity: &Entity, name: &String) {
-        let key = (*file_entity, name.clone());
-        if self.vertex_names.remove(&key).is_none() {
-            panic!("Vertex name {:?} does not exist", key)
-        }
-    }
 
     pub fn queue_resync(&mut self) {
         self.resync = true;

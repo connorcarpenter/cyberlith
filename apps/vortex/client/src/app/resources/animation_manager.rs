@@ -1,23 +1,54 @@
+use std::collections::HashMap;
+
 use bevy_ecs::{entity::Entity, prelude::Commands, system::Resource};
 
 use naia_bevy_client::Client;
 
 use math::Vec2;
 
+use vortex_proto::components::AnimFrame;
+
 #[derive(Resource)]
 pub struct AnimationManager {
     pub current_skel_file: Option<Entity>,
+    current_frame: Option<Entity>,
+    // (file_entity, order) -> frame_entity
+    frames: HashMap<(Entity, u8), Entity>,
+    // (frame_entity, vertex_name) -> rotation_entity
+    vertex_names: HashMap<(Entity, String), Entity>
 }
 
 impl Default for AnimationManager {
     fn default() -> Self {
         Self {
             current_skel_file: None,
+            current_frame: None,
+            frames: HashMap::new(),
+            vertex_names: HashMap::new(),
         }
     }
 }
 
 impl AnimationManager {
+
+    pub(crate) fn register_frame(&mut self, file_entity: Entity, frame_entity: Entity, frame: &AnimFrame) {
+        let order = frame.get_order();
+        self.frames.insert((file_entity, order), frame_entity);
+    }
+
+    pub(crate) fn deregister_frame(&mut self, file_entity: &Entity, frame: &AnimFrame) {
+        let order = frame.get_order();
+        self.frames.remove(&(*file_entity, order));
+    }
+
+    pub(crate) fn register_rotation(&mut self, frame_entity: Entity, rotation_entity: Entity, vertex_name: String) {
+        self.vertex_names.insert((frame_entity, vertex_name), rotation_entity);
+    }
+
+    pub(crate) fn deregister_rotation(&mut self, frame_entity: &Entity, vertex_name: &str) {
+        self.vertex_names.remove(&(*frame_entity, vertex_name.to_string()));
+    }
+
     pub(crate) fn drag_edge(
         &mut self,
         _commands: &mut Commands,

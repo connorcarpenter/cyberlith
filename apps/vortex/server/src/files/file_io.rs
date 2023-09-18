@@ -138,32 +138,37 @@ fn post_process_loaded_networked_entities(
     file_entity: &Entity,
     file_extension: &FileExtension,
 ) {
-    for (entity, _data) in entities.iter() {
-        // add file ownership
-        let mut file_ownership_component = OwnedByFile::new();
-        file_ownership_component
-            .file_entity
-            .set(server, file_entity);
-        commands.entity(*entity).insert(file_ownership_component);
+    for (entity, data) in entities.iter() {
+        match data {
+            ContentEntityData::Shape(_) => {
+                // add file ownership
+                let mut file_ownership_component = OwnedByFile::new();
+                file_ownership_component
+                    .file_entity
+                    .set(server, file_entity);
+                commands.entity(*entity).insert(file_ownership_component);
 
-        // add FileType component
-        match file_extension {
-            FileExtension::Skel => {
-                commands
-                    .entity(*entity)
-                    .insert(FileType::new(FileExtension::Skel));
+                // add FileType component
+                match file_extension {
+                    FileExtension::Skel => {
+                        commands
+                            .entity(*entity)
+                            .insert(FileType::new(FileExtension::Skel));
+                    }
+                    FileExtension::Mesh => {
+                        commands
+                            .entity(*entity)
+                            .insert(FileType::new(FileExtension::Mesh));
+                    }
+                    FileExtension::Anim => {
+                        commands
+                            .entity(*entity)
+                            .insert(FileType::new(FileExtension::Anim));
+                    }
+                    _ => panic!("File extension {:?} not implemented", file_extension),
+                }
             }
-            FileExtension::Mesh => {
-                commands
-                    .entity(*entity)
-                    .insert(FileType::new(FileExtension::Mesh));
-            }
-            FileExtension::Anim => {
-                commands
-                    .entity(*entity)
-                    .insert(FileType::new(FileExtension::Anim));
-            }
-            _ => panic!("File extension {:?} not implemented", file_extension),
+            _ => {}
         }
     }
 }

@@ -313,11 +313,13 @@ impl AnimReader {
                 }
                 AnimAction::Frame(poses, transition) => {
 
+                    let mut component = AnimFrame::new(frame_index, transition);
+                    component.file_entity.set(&server, file_entity);
                     let frame_entity = commands
                         .spawn_empty()
                         .enable_replication(&mut server)
                         .configure_replication(ReplicationConfig::Delegated)
-                        .insert(AnimFrame::new(frame_index, transition))
+                        .insert(component)
                         .id();
 
                     content_entities.insert(frame_entity, ContentEntityData::new_frame());

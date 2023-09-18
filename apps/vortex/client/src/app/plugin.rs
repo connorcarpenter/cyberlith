@@ -7,7 +7,7 @@ use render_api::{resources::WindowSettings, Draw};
 
 use vortex_proto::{
     components::{
-        ChangelistEntry, Edge3d, EdgeAngle, EntryKind, Face3d, FileDependency, FileSystemChild,
+        AnimFrame, AnimRotation, ChangelistEntry, Edge3d, EdgeAngle, EntryKind, Face3d, FileDependency, FileSystemChild,
         FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, ShapeName, Vertex3d,
         VertexRoot,
     },
@@ -88,6 +88,8 @@ impl Plugin for VortexPlugin {
             .add_event::<InsertComponentEvent<OwnedByFile>>()
             .add_event::<InsertComponentEvent<ShapeName>>()
             .add_event::<InsertComponentEvent<FileDependency>>()
+            .add_event::<InsertComponentEvent<AnimFrame>>()
+            .add_event::<InsertComponentEvent<AnimRotation>>()
             // shape waitlist
             .init_resource::<ShapeWaitlist>()
             // Insert Component Systems
@@ -96,7 +98,9 @@ impl Plugin for VortexPlugin {
             .add_systems(Update, network::insert_vertex_events)
             .add_systems(Update, network::insert_edge_events)
             .add_systems(Update, network::insert_face_events)
-            .add_systems(Update, network::insert_shape_events)
+            .add_systems(Update, network::insert_owned_by_file_events)
+            .add_systems(Update, network::insert_file_type_events)
+            .add_systems(Update, network::insert_animation_events)
             // UI Configuration
             .init_resource::<UiState>()
             .init_resource::<NamingBarState>()
