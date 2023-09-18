@@ -59,36 +59,17 @@ impl VertexManager {
         self.resync = true;
     }
 
-    pub fn sync_vertices(
+    pub fn sync_vertices_3d(
         &mut self,
-        camera_3d_entity: &Entity,
-        camera_3d_scale: f32,
-        camera_q: &Query<(&Camera, &Projection)>,
         vertex_3d_q: &Query<(Entity, &Vertex3d)>,
         transform_q: &mut Query<&mut Transform>,
         visibility_q: &Query<&Visibility>,
-        local_shape_q: &Query<&LocalShape>,
-    ) {
+    ) -> bool {
         if !self.resync {
-            return;
+            return false;
         }
 
         self.resync = false;
-
-        let Ok((camera, camera_projection)) = camera_q.get(*camera_3d_entity) else {
-            return;
-        };
-
-        let Ok(camera_transform) = transform_q.get(*camera_3d_entity) else {
-            return;
-        };
-
-        let camera_viewport = camera.viewport.unwrap();
-        let view_matrix = camera_transform.view_matrix();
-        let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
-        let vertex_2d_scale = Vertex2d::RADIUS * camera_3d_scale;
-        let compass_vertex_3d_scale = LocalShape::VERTEX_RADIUS / camera_3d_scale;
-        let compass_vertex_2d_scale = Vertex2d::RADIUS;
 
         for (vertex_3d_entity, vertex_3d) in vertex_3d_q.iter() {
             // check visibility
@@ -108,6 +89,49 @@ impl VertexManager {
             vertex_3d_transform.translation.x = vertex_3d.x().into();
             vertex_3d_transform.translation.y = vertex_3d.y().into();
             vertex_3d_transform.translation.z = vertex_3d.z().into();
+        }
+
+        return true;
+    }
+
+    pub fn sync_vertices_2d(
+        &mut self,
+        camera_3d_entity: &Entity,
+        camera_3d_scale: f32,
+        camera_q: &Query<(&Camera, &Projection)>,
+        vertex_3d_q: &Query<(Entity, &Vertex3d)>,
+        transform_q: &mut Query<&mut Transform>,
+        visibility_q: &Query<&Visibility>,
+        local_shape_q: &Query<&LocalShape>,
+    ) {
+        let Ok((camera, camera_projection)) = camera_q.get(*camera_3d_entity) else {
+            return;
+        };
+
+        let Ok(camera_transform) = transform_q.get(*camera_3d_entity) else {
+            return;
+        };
+
+        let camera_viewport = camera.viewport.unwrap();
+        let view_matrix = camera_transform.view_matrix();
+        let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
+        let vertex_2d_scale = Vertex2d::RADIUS * camera_3d_scale;
+        let compass_vertex_3d_scale = LocalShape::VERTEX_RADIUS / camera_3d_scale;
+        let compass_vertex_2d_scale = Vertex2d::RADIUS;
+
+        for (vertex_3d_entity, _) in vertex_3d_q.iter() {
+            // check visibility
+            if let Ok(visibility) = visibility_q.get(vertex_3d_entity) {
+                if !visibility.visible {
+                    continue;
+                }
+            };
+
+            // get 3d transform
+            let Ok(mut vertex_3d_transform) = transform_q.get_mut(vertex_3d_entity) else {
+                warn!("Vertex3d entity {:?} has no Transform", vertex_3d_entity);
+                continue;
+            };
 
             if local_shape_q.get(vertex_3d_entity).is_ok() {
                 vertex_3d_transform.scale = Vec3::splat(compass_vertex_3d_scale);

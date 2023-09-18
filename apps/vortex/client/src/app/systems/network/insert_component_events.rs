@@ -20,7 +20,7 @@ use vortex_proto::components::{AnimFrame, AnimRotation, ChangelistEntry, Changel
 use crate::app::{
     components::{LocalAnimRotation, file_system::{
         ChangelistUiState, FileSystemEntryLocal, FileSystemParent, FileSystemUiState,
-    }, OwnedByFileLocal},
+    }},
     events::InsertComponentEvent,
     resources::{
         animation_manager::AnimationManager,
@@ -318,7 +318,7 @@ pub fn insert_vertex_events(
     mut materials: ResMut<Assets<CpuMaterial>>,
     mut shape_waitlist: ResMut<ShapeWaitlist>,
     transform_q: Query<&Transform>,
-    shape_name_q: Query<(&OwnedByFileLocal, &ShapeName)>,
+    shape_name_q: Query<&ShapeName>,
 ) {
     // on Vertex Insert Event
     for event in vertex_3d_events.iter() {
@@ -366,11 +366,10 @@ pub fn insert_vertex_events(
     for event in shape_name_events.iter() {
         let entity = event.entity;
 
-        let (owned_by_file, shape_name) = shape_name_q.get(entity).unwrap();
+        let shape_name = shape_name_q.get(entity).unwrap();
         let shape_name = (*shape_name.value).clone();
-        let file_entity = owned_by_file.file_entity;
 
-        info!("entity: {:?} - inserted ShapeName(file: {:?}, name: {:?})", entity, file_entity, shape_name);
+        info!("entity: {:?} - inserted ShapeName(name: {:?})", entity, shape_name);
     }
 }
 

@@ -93,15 +93,22 @@ pub fn sync_vertices(
     let camera_state = &current_tab_state.camera_state;
     let camera_3d_scale = camera_state.camera_3d_scale();
 
-    vertex_manager.sync_vertices(
-        &camera_3d,
-        camera_3d_scale,
-        &camera_q,
+    let did_sync = vertex_manager.sync_vertices_3d(
         &vertex_3d_q,
         &mut transform_q,
         &visibility_q,
-        &local_shape_q,
     );
+    if did_sync {
+        vertex_manager.sync_vertices_2d(
+            &camera_3d,
+            camera_3d_scale,
+            &camera_q,
+            &vertex_3d_q,
+            &mut transform_q,
+            &visibility_q,
+            &local_shape_q,
+        );
+    }
 }
 
 pub fn sync_edges(
