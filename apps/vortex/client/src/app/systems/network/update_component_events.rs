@@ -6,7 +6,7 @@ use bevy_log::info;
 
 use naia_bevy_client::{events::UpdateComponentEvents, Client};
 
-use vortex_proto::components::{AnimFrame, ChangelistEntry, EdgeAngle, FileSystemChild, FileSystemEntry, FileSystemRootChild, ShapeName, Vertex3d};
+use vortex_proto::components::{AnimFrame, AnimRotation, ChangelistEntry, EdgeAngle, FileSystemChild, FileSystemEntry, FileSystemRootChild, ShapeName, Vertex3d};
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemEntryLocal},
@@ -84,6 +84,10 @@ pub fn update_component_events(
             break;
         }
         for (_, _) in events.read::<EdgeAngle>() {
+            updated_shapes = true;
+            break;
+        }
+        for (_, _) in events.read::<AnimRotation>() {
             updated_shapes = true;
             break;
         }

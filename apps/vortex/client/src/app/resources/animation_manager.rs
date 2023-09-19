@@ -93,6 +93,7 @@ impl AnimationManager {
         let mut system_state: SystemState<(
             Commands,
             Client,
+            ResMut<Canvas>,
             Res<CameraManager>,
             Query<(&Camera, &Projection)>,
             Query<&Transform>,
@@ -103,6 +104,7 @@ impl AnimationManager {
         let (
             mut commands,
             mut client,
+            mut canvas,
             camera_manager,
             camera_q,
             transform_q,
@@ -175,16 +177,18 @@ impl AnimationManager {
             );
         };
 
-        system_state.apply(world);
-
-        let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
-        let (mut commands, mut client) = system_state.get_mut(world);
-
-        for entity in entities_to_release {
-            commands.entity(entity).release_authority(&mut client);
-        }
+        canvas.queue_resync_shapes();
 
         system_state.apply(world);
+
+        // let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+        // let (mut commands, mut client) = system_state.get_mut(world);
+        //
+        // for entity in entities_to_release {
+        //     commands.entity(entity).release_authority(&mut client);
+        // }
+        //
+        // system_state.apply(world);
     }
 
     fn create_networked_rotation(
