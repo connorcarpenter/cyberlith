@@ -6,11 +6,12 @@ use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
-use math::{convert_2d_to_3d, Quat, quat_look_to, Vec2, Vec3};
+use math::{convert_2d_to_3d, Mat3, Quat, quat_look_to, Vec2, Vec3};
 use render_api::components::{Camera, CameraProjection, Projection, Transform, Visibility};
 
 use vortex_proto::components::{AnimFrame, AnimRotation, ShapeName, Vertex3d, VertexRoot};
 
+use crate::app::components::LocalAnimRotation;
 use crate::app::resources::{camera_manager::CameraManager, canvas::Canvas, vertex_manager::VertexManager};
 
 #[derive(Resource)]
@@ -95,7 +96,8 @@ impl AnimationManager {
             Query<(&Camera, &Projection)>,
             Query<&Transform>,
             Query<&Vertex3d>,
-            Query<&mut AnimRotation>,
+            Query<(&mut AnimRotation, &LocalAnimRotation)>,
+            Query<&ShapeName>,
         )> = SystemState::new(world);
         let (
             mut commands,
@@ -107,6 +109,7 @@ impl AnimationManager {
             transform_q,
             vertex_3d_q,
             mut rotation_q,
+            name_q,
         ) = system_state.get_mut(world);
 
         //
@@ -124,13 +127,14 @@ impl AnimationManager {
 
         // get parent 3d position
         let parent_vertex_3d_entity = vertex_manager.vertex_parent_3d_entity(&vertex_3d_entity).unwrap();
-        let parent_3d_position = vertex_3d_q.get(parent_vertex_3d_entity).unwrap().as_vec3();
+        let parent_original_3d_position = vertex_3d_q.get(parent_vertex_3d_entity).unwrap().as_vec3();
+        let parent_rotated_3d_position = transform_q.get(parent_vertex_3d_entity).unwrap().translation;
 
         // get old 3d position
-        let old_3d_position = vertex_3d_q.get(vertex_3d_entity).unwrap().as_vec3();
+        let original_3d_position = vertex_3d_q.get(vertex_3d_entity).unwrap().as_vec3();
 
         // get base angle
-        let base_angle = quat_look_to(old_3d_position - parent_3d_position, Vec3::Y);
+        let base_angle = quat_look_to(original_3d_position - parent_original_3d_position, Vec3::Y);
 
         // get camera
         let camera_3d = camera_manager.camera_3d_entity().unwrap();
@@ -145,7 +149,7 @@ impl AnimationManager {
         let vertex_2d_transform = transform_q.get(vertex_2d_entity).unwrap();
 
         // convert 2d to 3d
-        let new_3d_position = convert_2d_to_3d(
+        let mut new_3d_position = convert_2d_to_3d(
             &view_matrix,
             &projection_matrix,
             &camera_viewport.size_vec2(),
@@ -153,13 +157,15 @@ impl AnimationManager {
             vertex_2d_transform.translation.z,
         );
 
-        let target_angle = quat_look_to(new_3d_position - parent_3d_position, Vec3::Y);
-        let rotation_angle = target_angle * base_angle.inverse();
+        let target_angle = quat_look_to(new_3d_position - parent_rotated_3d_position, Vec3::Y);
+        let mut rotation_angle = (target_angle * base_angle.inverse()).normalize();
+
+        get_inversed_final_rotation(&vertex_manager, self, frame_entity, parent_vertex_3d_entity, &name_q, &rotation_q, &mut rotation_angle);
 
         let mut entities_to_release = Vec::new();
 
         if let Some(rotation_entity) = rotation_entity_opt {
-            let mut anim_rotation = rotation_q.get_mut(rotation_entity).unwrap();
+            let (mut anim_rotation, _) = rotation_q.get_mut(rotation_entity).unwrap();
             anim_rotation.set_rotation(rotation_angle);
         } else {
             // create new rotation entity
@@ -208,13 +214,15 @@ impl AnimationManager {
 
         entities_to_release.push(new_rotation_entity);
 
-        self.rotation_postprocess(frame_entity, new_rotation_entity, name);
+        self.rotation_postprocess(commands, frame_entity, new_rotation_entity, name);
 
         return new_rotation_entity;
     }
 
-    pub fn rotation_postprocess(&mut self, frame_entity: Entity, rotation_entity: Entity, vertex_name: String) {
+    pub fn rotation_postprocess(&mut self, commands: &mut Commands, frame_entity: Entity, rotation_entity: Entity, vertex_name: String) {
         self.register_rotation(frame_entity, rotation_entity, vertex_name);
+
+        commands.entity(rotation_entity).insert(LocalAnimRotation::new());
     }
 
     pub(crate) fn drag_edge(
@@ -235,7 +243,7 @@ impl AnimationManager {
         transform_q: &mut Query<&mut Transform>,
         visibility_q: &Query<&Visibility>,
         name_q: &Query<&ShapeName>,
-        rotation_q: &Query<&AnimRotation>,
+        rotation_q: &mut Query<(&AnimRotation, &mut LocalAnimRotation)>,
         root_q: &Query<Entity, With<VertexRoot>>,
     ) {
         let current_frame = self.current_frame.unwrap();
@@ -285,7 +293,7 @@ impl AnimationManager {
         vertex_3d_q: &Query<(Entity, &Vertex3d)>,
         transform_q: &mut Query<&mut Transform>,
         name_q: &Query<&ShapeName>,
-        rot_q: &Query<&AnimRotation>,
+        rotation_q: &mut Query<(&AnimRotation, &mut LocalAnimRotation)>,
         frame_entity: Entity,
         parent_vertex_3d_entity: Entity,
         original_parent_pos: Vec3,
@@ -305,8 +313,9 @@ impl AnimationManager {
             if let Ok(name_component) = name_q.get(*child_vertex_3d_entity) {
                 let name = (*name_component.value).clone();
                 if let Some(rotation_entity) = self.vertex_names.get(&(frame_entity, name)) {
-                    let anim_rotation = rot_q.get(*rotation_entity).unwrap();
+                    let (anim_rotation, mut local_anim_rotation) = rotation_q.get_mut(*rotation_entity).unwrap();
                     rotation = anim_rotation.get_rotation();
+                    local_anim_rotation.last_synced_quat = rotation;
                 }
             }
 
@@ -328,7 +337,7 @@ impl AnimationManager {
                 vertex_3d_q,
                 transform_q,
                 name_q,
-                rot_q,
+                rotation_q,
                 frame_entity,
                 *child_vertex_3d_entity,
                 original_child_pos,
@@ -337,4 +346,87 @@ impl AnimationManager {
             );
         }
     }
+}
+
+fn get_final_rotation(
+    vertex_manager: &VertexManager,
+    anim_manager: &AnimationManager,
+    frame_entity: Entity,
+    vertex_entity: Entity,
+    name_q: &Query<&ShapeName>,
+    rotation_q: &Query<(&mut AnimRotation, &LocalAnimRotation)>,
+) -> (Quat, Quat) {
+    let mut rotation = Quat::IDENTITY;
+    if let Ok(name_component) = name_q.get(vertex_entity) {
+        let name = (*name_component.value).clone();
+        if let Some(rotation_entity) = anim_manager.vertex_names.get(&(frame_entity, name)) {
+            let (_, anim_rotation) = rotation_q.get(*rotation_entity).unwrap();
+            rotation = anim_rotation.last_synced_quat.normalize();
+        }
+    }
+
+    if let Some(parent_entity) = vertex_manager.vertex_parent_3d_entity(&vertex_entity) {
+        let (grandparent_rotation, parent_rotation) = get_final_rotation(vertex_manager, anim_manager, frame_entity, parent_entity, name_q, rotation_q);
+        let parent_rotation = (grandparent_rotation * parent_rotation).normalize();
+        return (parent_rotation, rotation);
+    } else {
+        return (Quat::IDENTITY, rotation)
+    }
+}
+
+fn get_inversed_final_rotation(
+    vertex_manager: &VertexManager,
+    anim_manager: &AnimationManager,
+    frame_entity: Entity,
+    vertex_entity: Entity,
+    name_q: &Query<&ShapeName>,
+    rotation_q: &Query<(&mut AnimRotation, &LocalAnimRotation)>,
+    target_rotation: &mut Quat,
+) {
+    if let Ok(name_component) = name_q.get(vertex_entity) {
+        let name = (*name_component.value).clone();
+        if let Some(rotation_entity) = anim_manager.vertex_names.get(&(frame_entity, name)) {
+            let (_, anim_rotation) = rotation_q.get(*rotation_entity).unwrap();
+            *target_rotation = (anim_rotation.last_synced_quat.inverse() * *target_rotation).normalize();
+        }
+    }
+
+    if let Some(parent_entity) = vertex_manager.vertex_parent_3d_entity(&vertex_entity) {
+        get_inversed_final_rotation(vertex_manager, anim_manager, frame_entity, parent_entity, name_q, rotation_q, target_rotation);
+    }
+}
+
+fn get_inversed_final_point(
+    vertex_manager: &VertexManager,
+    anim_manager: &AnimationManager,
+    frame_entity: Entity,
+    vertex_entity: Entity,
+    transform_q: &Query<&Transform>,
+    name_q: &Query<&ShapeName>,
+    rotation_q: &Query<(&mut AnimRotation, &LocalAnimRotation)>,
+    target_point: &mut Vec3,
+) {
+    let mut rotation = Quat::IDENTITY;
+    if let Ok(name_component) = name_q.get(vertex_entity) {
+        let name = (*name_component.value).clone();
+        if let Some(rotation_entity) = anim_manager.vertex_names.get(&(frame_entity, name)) {
+            let (_, anim_rotation) = rotation_q.get(*rotation_entity).unwrap();
+            //*target_rotation = (*target_rotation * anim_rotation.last_synced_quat.inverse()).normalize();
+            rotation = anim_rotation.last_synced_quat;
+        }
+    }
+
+    if let Some(parent_entity) = vertex_manager.vertex_parent_3d_entity(&vertex_entity) {
+
+        let rotated_parent_pos = transform_q.get(parent_entity).unwrap().translation;
+        *target_point -= rotated_parent_pos;
+
+        get_inversed_final_point(vertex_manager, anim_manager, frame_entity, parent_entity, transform_q, name_q, rotation_q, target_point);
+    }
+
+
+    //let rotation = (parent_rotation * rotation).normalize();
+    //let displacement = original_child_pos - original_parent_pos;
+    //let rotated_displacement = rotation * displacement;
+    //let rotated_child_pos = rotated_parent_pos + rotated_displacement;
 }

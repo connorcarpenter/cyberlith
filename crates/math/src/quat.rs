@@ -148,7 +148,8 @@ impl ConstBitLength for SerdeQuat {
 
 #[cfg(test)]
 mod tests {
-    use glam::Quat;
+    use glam::{Quat, Vec3};
+    use log::info;
     use naia_serde::{ConstBitLength, Serde};
     use rand::Rng;
 
@@ -228,5 +229,55 @@ mod tests {
                 break;
             }
         }
+    }
+
+    #[test]
+    fn quat_ops() {
+        let mut rng = rand::thread_rng();
+
+        let x_rot = rng.gen_range(0.0..360.0);
+        let y_rot = rng.gen_range(0.0..360.0);
+        let z_rot = rng.gen_range(0.0..360.0);
+
+        let quat_a = Quat::from_euler(
+            glam::EulerRot::XYZ,
+            f32::to_radians(x_rot),
+            f32::to_radians(y_rot),
+            f32::to_radians(z_rot),
+        ).normalize();
+
+        println!("quat_a: {:?}", quat_a);
+
+        let quat_b = Quat::from_euler(
+            glam::EulerRot::XYZ,
+            f32::to_radians(x_rot),
+            f32::to_radians(y_rot),
+            f32::to_radians(z_rot),
+        ).normalize();
+
+        //println!("quat_b: {:?}", quat_b);
+
+        let quat_a_and_b = (quat_a * quat_b).normalize();
+        println!("quat_a * quat_b: {:?}", quat_a_and_b);
+
+        let quat_c = Quat::from_euler(
+            glam::EulerRot::XYZ,
+            f32::to_radians(x_rot),
+            f32::to_radians(y_rot),
+            f32::to_radians(z_rot),
+        ).normalize();
+
+        //println!("quat_c: {:?}", quat_c);
+
+        let quat_a_and_b_and_c = (quat_a_and_b * quat_c).normalize();
+        println!("quat_a * quat_b * quat_c: {:?}", quat_a_and_b_and_c);
+
+        let quat_a_and_b = (quat_a_and_b_and_c * quat_c.inverse()).normalize();
+        println!("quat_a * quat_b: {:?}", quat_a_and_b);
+
+        let quat_a = (quat_a_and_b * quat_b.inverse()).normalize();
+        println!("quat_a: {:?}", quat_a);
+
+        assert!(false);
     }
 }

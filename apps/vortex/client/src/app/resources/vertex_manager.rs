@@ -31,6 +31,7 @@ use crate::app::{
         animation_manager::AnimationManager,
     },
 };
+use crate::app::components::LocalAnimRotation;
 
 #[derive(Resource)]
 pub struct VertexManager {
@@ -103,7 +104,7 @@ impl VertexManager {
         transform_q: &mut Query<&mut Transform>,
         visibility_q: &Query<&Visibility>,
         name_q: &Query<&ShapeName>,
-        rotation_q: &Query<&AnimRotation>,
+        rotation_q: &mut Query<(&AnimRotation, &mut LocalAnimRotation)>,
         root_q: &Query<Entity, With<VertexRoot>>,
     ) -> bool {
         if !self.resync {

@@ -22,6 +22,7 @@ use crate::app::{
         tab_manager::TabManager, vertex_manager::VertexManager, animation_manager::AnimationManager
     },
 };
+use crate::app::components::LocalAnimRotation;
 
 pub fn queue_resyncs(
     mut canvas: ResMut<Canvas>,
@@ -86,7 +87,7 @@ pub fn sync_vertices(
     visibility_q: Query<&Visibility>,
     vertex_3d_q: Query<(Entity, &Vertex3d)>,
     name_q: Query<&ShapeName>,
-    rotation_q: Query<&AnimRotation>,
+    mut rotation_q: Query<(&AnimRotation, &mut LocalAnimRotation)>,
     root_q: Query<Entity, With<VertexRoot>>,
 ) {
     if !canvas.is_visible() {
@@ -117,7 +118,7 @@ pub fn sync_vertices(
                 &mut transform_q,
                 &visibility_q,
                 &name_q,
-                &rotation_q,
+                &mut rotation_q,
                 &root_q,
             )
         }

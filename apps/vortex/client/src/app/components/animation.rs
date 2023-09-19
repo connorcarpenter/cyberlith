@@ -1,15 +1,16 @@
 use bevy_ecs::{entity::Entity, prelude::Component};
+use math::Quat;
 
 // LocalAnimRotation
 #[derive(Component)]
 pub struct LocalAnimRotation {
-    pub frame_entity: Entity,
+    pub last_synced_quat: Quat,
 }
 
 impl LocalAnimRotation {
-    pub fn new(frame_entity: Entity) -> Self {
+    pub fn new() -> Self {
         Self {
-            frame_entity,
+            last_synced_quat: Quat::IDENTITY
         }
     }
 }

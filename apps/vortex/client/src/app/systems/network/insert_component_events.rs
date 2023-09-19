@@ -18,7 +18,7 @@ use render_api::{
 use vortex_proto::components::{AnimFrame, AnimRotation, ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind, Face3d, FileDependency, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, ShapeName, Vertex3d, VertexRoot};
 
 use crate::app::{
-    components::{LocalAnimRotation, file_system::{
+    components::{file_system::{
         ChangelistUiState, FileSystemEntryLocal, FileSystemParent, FileSystemUiState,
     }},
     events::InsertComponentEvent,
@@ -642,10 +642,9 @@ pub fn insert_animation_events(
         let rotation = rotation_q.get(rotation_entity).unwrap();
 
         let frame_entity = rotation.frame_entity.get(&client).unwrap();
-        commands.entity(rotation_entity).insert(LocalAnimRotation::new(frame_entity));
 
         let vertex_name = (*rotation.vertex_name).clone();
 
-        animation_manager.rotation_postprocess(frame_entity, rotation_entity, vertex_name);
+        animation_manager.rotation_postprocess(&mut commands, frame_entity, rotation_entity, vertex_name);
     }
 }
