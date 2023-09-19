@@ -86,10 +86,9 @@ pub fn remove_component_events(
         }
         for (vertex_entity_3d, shape_name) in events.read::<ShapeName>() {
 
-            let owner_entity = vertex_manager.vertices_3d.get(&vertex_entity_3d).unwrap().owner_opt.unwrap();
             let name = (*shape_name.value).clone();
 
-            info!("entity: `{:?}`, removed ShapeName(owner: {:?}, name: {:?})", vertex_entity_3d, owner_entity, name);
+            info!("entity: `{:?}`, removed ShapeName(name: {:?})", vertex_entity_3d, name);
         }
         for (vertex_entity_3d, _) in events.read::<Vertex3d>() {
             info!("entity: `{:?}`, removed Vertex3d", vertex_entity_3d);

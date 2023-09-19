@@ -24,6 +24,7 @@ use crate::{
         GitManager, ShapeManager, ShapeWaitlist, ShapeWaitlistInsert, TabManager, UserManager,
     },
 };
+use crate::resources::ContentEntityData;
 
 pub fn insert_component_events(
     mut event_reader: EventReader<InsertComponentEvents>,
@@ -212,6 +213,14 @@ pub fn insert_file_component_events(
         let project = git_manager.project_mut(&project_key).unwrap();
         project.file_add_dependency(&file_key, &dependency_key);
 
+        let content_entity_data = ContentEntityData::new_dependency(dependency_key.clone());
+        git_manager.on_insert_content_entity(
+            &mut server,
+            &project_key,
+            &file_key,
+            &entity,
+            &content_entity_data,
+        );
         git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
 
         info!(

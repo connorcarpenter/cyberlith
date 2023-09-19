@@ -3,11 +3,11 @@ use std::collections::HashMap;
 use bevy_ecs::{entity::Entity, prelude::{Commands, Query}, system::Resource};
 use bevy_ecs::system::{Res, ResMut, SystemState};
 use bevy_ecs::world::World;
-use bevy_log::warn;
+use bevy_log::{info, warn};
 
-use naia_bevy_client::Client;
+use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
-use math::{convert_2d_to_3d, Vec2};
+use math::{convert_2d_to_3d, Quat, quat_look_to, Vec2, Vec3};
 use render_api::components::{Camera, CameraProjection, Projection, Transform, Visibility};
 
 use vortex_proto::components::{AnimFrame, AnimRotation, ShapeName, Vertex3d};
@@ -47,6 +47,9 @@ impl AnimationManager {
     pub(crate) fn register_frame(&mut self, file_entity: Entity, frame_entity: Entity, frame: &AnimFrame) {
         let order = frame.get_order();
         self.frames.insert((file_entity, order), frame_entity);
+        if self.current_frame.is_none() {
+            self.current_frame = Some(frame_entity);
+        }
     }
 
     pub(crate) fn deregister_frame(&mut self, file_entity: &Entity, frame: &AnimFrame) {
@@ -75,30 +78,61 @@ impl AnimationManager {
         mouse_position: Vec2,
         delta: Vec2,
     ) {
-        // check auth status of rotation
-        // let auth_status =
-        //     commands.entity(vertex_3d_entity).authority(client).unwrap();
-        // if !(auth_status.is_requested() || auth_status.is_granted()) {
-        //     // only continue to mutate if requested or granted authority over vertex
-        //     info!("No authority over vertex, skipping..");
-        //     return;
-        // }
-
         // get rotation
         let Some(frame_entity) = self.current_frame else {
+            info!("no frame");
             return;
         };
 
+        let Ok(shape_name) = world.query::<(&ShapeName)>().get(world, vertex_3d_entity) else {
+            return;
+        };
+
+        let shape_name: String = (*shape_name.value).clone();
+
         let mut system_state: SystemState<(
+            Commands,
+            Client,
             Res<CameraManager>,
             Query<(&Camera, &Projection)>,
             Query<&Transform>,
+            Query<&Vertex3d>,
+            Query<&LocalVertex3dChild>,
+            Query<&mut AnimRotation>,
         )> = SystemState::new(world);
         let (
+            mut commands,
+            mut client,
             camera_manager,
             camera_q,
             transform_q,
+            vertex_3d_q,
+            vertex_3d_child_q,
+            mut rotation_q,
         ) = system_state.get_mut(world);
+
+        //
+        let rotation_entity_opt = self.get_current_rotation(&shape_name).copied();
+        if let Some(rotation_entity) = rotation_entity_opt {
+            let auth_status = commands.entity(rotation_entity).authority(&client).unwrap();
+            if !(auth_status.is_requested() || auth_status.is_granted()) {
+                // only continue to mutate if requested or granted authority over vertex
+                info!("No authority over vertex rotation, skipping..");
+                return;
+            }
+        }
+
+        //
+
+        // get parent 3d position
+        let parent_vertex_3d_entity = vertex_3d_child_q.get(vertex_3d_entity).unwrap().parent_entity;
+        let parent_3d_position = vertex_3d_q.get(parent_vertex_3d_entity).unwrap().as_vec3();
+
+        // get old 3d position
+        let old_3d_position = vertex_3d_q.get(vertex_3d_entity).unwrap().as_vec3();
+
+        // get base angle
+        let base_angle = quat_look_to(old_3d_position - parent_3d_position, Vec3::Y);
 
         // get camera
         let camera_3d = camera_manager.camera_3d_entity().unwrap();
@@ -120,24 +154,67 @@ impl AnimationManager {
             &mouse_position,
             vertex_2d_transform.translation.z,
         );
-        //
-        // // set networked 3d vertex position
-        // let mut vertex_3d = vertex_3d_q.get_mut(vertex_3d_entity).unwrap();
-        //
-        // if let Some((_, old_3d_position, _)) =
-        //     vertex_manager.last_vertex_dragged
-        // {
-        //     vertex_manager.last_vertex_dragged =
-        //         Some((vertex_2d_entity, old_3d_position, new_3d_position));
-        // } else {
-        //     let old_3d_position = vertex_3d.as_vec3();
-        //     vertex_manager.last_vertex_dragged =
-        //         Some((vertex_2d_entity, old_3d_position, new_3d_position));
-        // }
-        //
-        // vertex_3d.set_x(new_3d_position.x as i16);
-        // vertex_3d.set_y(new_3d_position.y as i16);
-        // vertex_3d.set_z(new_3d_position.z as i16);
+
+        let target_angle = quat_look_to(new_3d_position - parent_3d_position, Vec3::Y);
+        let rotation_angle = target_angle * base_angle.inverse();
+
+        let mut entities_to_release = Vec::new();
+
+        if let Some(rotation_entity) = rotation_entity_opt {
+            let mut anim_rotation = rotation_q.get_mut(rotation_entity).unwrap();
+            anim_rotation.set_rotation(rotation_angle);
+        } else {
+            // create new rotation entity
+            self.create_networked_rotation(
+                &mut commands,
+                &mut client,
+                frame_entity,
+                shape_name.to_string(),
+                rotation_angle,
+                &mut entities_to_release
+            );
+        };
+
+        system_state.apply(world);
+
+        let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+        let (mut commands, mut client) = system_state.get_mut(world);
+
+        for entity in entities_to_release {
+            commands.entity(entity).release_authority(&mut client);
+        }
+
+        system_state.apply(world);
+    }
+
+    fn create_networked_rotation(
+        &mut self,
+        commands: &mut Commands,
+        client: &mut Client,
+        frame_entity: Entity,
+        name: String,
+        rotation: Quat,
+        entities_to_release: &mut Vec<Entity>,
+    ) -> Entity {
+
+        let mut component = AnimRotation::new(name.clone(), rotation.into());
+        component.frame_entity.set(client, &frame_entity);
+        let new_rotation_entity = commands
+            .spawn_empty()
+            .enable_replication(client)
+            .configure_replication(ReplicationConfig::Delegated)
+            .insert(component)
+            .id();
+
+        entities_to_release.push(new_rotation_entity);
+
+        self.rotation_postprocess(frame_entity, new_rotation_entity, name);
+
+        return new_rotation_entity;
+    }
+
+    pub fn rotation_postprocess(&mut self, frame_entity: Entity, rotation_entity: Entity, vertex_name: String) {
+        self.register_rotation(frame_entity, rotation_entity, vertex_name);
     }
 
     pub(crate) fn drag_edge(

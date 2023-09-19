@@ -8,7 +8,7 @@ pub struct AnimationComponentsPlugin;
 
 impl ProtocolPlugin for AnimationComponentsPlugin {
     fn build(&self, protocol: &mut Protocol) {
-        protocol.add_component::<AnimRotation>();
+        protocol.add_component::<AnimRotation>().add_component::<AnimFrame>();
     }
 }
 

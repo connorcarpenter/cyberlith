@@ -762,202 +762,204 @@ impl InputManager {
 
         let current_file_entity = tab_manager.current_tab_entity().unwrap();
         let current_file_type = file_manager.get_file_type(&current_file_entity);
+        let selected_shape = self.selected_shape.map(|(entity, shape)| shape);
+        let hovered_shape = self.hovered_entity.map(|(entity, shape)| shape);
 
-        if shape_is_selected {
-            match click_type {
-                MouseButton::Left => {
-                    match self.selected_shape.unwrap() {
-                        (_, CanvasShape::Edge) | (_, CanvasShape::Face) => {
-                            // should not ever be able to attach something to an edge or face?
-                            // select hovered entity
-                            tab_manager
-                                .current_tab_state_mut()
-                                .unwrap()
-                                .action_stack
-                                .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
-                            return;
-                        }
-                        _ => {}
+        // click_type, selected_shape, hovered_shape, current_file_type
+        match (click_type, selected_shape, hovered_shape, current_file_type) {
+            (MouseButton::Left, Some(CanvasShape::Edge | CanvasShape::Face), _, _) => {
+                // should not ever be able to attach something to an edge or face?
+                // select hovered entity
+                tab_manager
+                    .current_tab_state_mut()
+                    .unwrap()
+                    .action_stack
+                    .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
+                return;
+            }
+            (MouseButton::Left, Some(_), Some(_), FileExtension::Skel) => {
+                // skel file type does nothing when trying to connect vertices together
+                // needs to always be a new vertex
+                // select hovered entity
+                tab_manager
+                    .current_tab_state_mut()
+                    .unwrap()
+                    .action_stack
+                    .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
+                return;
+            }
+            (MouseButton::Left, Some(_), Some(shape), FileExtension::Anim) => {
+                match shape {
+                    CanvasShape::RootVertex | CanvasShape::Vertex => {
+                        // select hovered entity
+                        tab_manager
+                            .current_tab_state_mut()
+                            .unwrap()
+                            .action_stack
+                            .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
+                        return;
                     }
-
-                    if cursor_is_hovering {
-                        if current_file_type == FileExtension::Skel {
-                            // skel file type does nothing when trying to connect vertices together
-                            // needs to always be a new vertex
-                            // select hovered entity
-                            tab_manager
-                                .current_tab_state_mut()
-                                .unwrap()
-                                .action_stack
-                                .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
-                            return;
-                        } else {
-                            match self.hovered_entity.unwrap() {
-                                (_, CanvasShape::Edge) | (_, CanvasShape::Face) => {
-                                    // should not ever be able to attach something to an edge or face?
-                                    // select hovered entity
-                                    tab_manager
-                                        .current_tab_state_mut()
-                                        .unwrap()
-                                        .action_stack
-                                        .buffer_action(ShapeAction::SelectShape(
-                                            self.hovered_entity,
-                                        ));
-                                    return;
-                                }
-                                _ => {}
-                            }
-                        }
-
-                        // at this point, filetype is Mesh, and we are trying to connect vertices together
-
-                        // link vertices together
-                        let (vertex_2d_entity_a, _) = self.selected_shape.unwrap();
-                        let (vertex_2d_entity_b, _) = self.hovered_entity.unwrap();
-                        if vertex_2d_entity_a == vertex_2d_entity_b {
-                            return;
-                        }
-
-                        // check if edge already exists
-                        if edge_manager
-                            .edge_2d_entity_from_vertices(
-                                &vertex_manager,
-                                vertex_2d_entity_a,
-                                vertex_2d_entity_b,
-                            )
-                            .is_some()
-                        {
-                            // select edge
-                            tab_manager
-                                .current_tab_state_mut()
-                                .unwrap()
-                                .action_stack
-                                .buffer_action(ShapeAction::SelectShape(Some((
-                                    vertex_2d_entity_b,
-                                    CanvasShape::Vertex,
-                                ))));
-                            return;
-                        } else {
-                            // create edge
-                            tab_manager
-                                .current_tab_state_mut()
-                                .unwrap()
-                                .action_stack
-                                .buffer_action(ShapeAction::CreateEdge(
-                                    vertex_2d_entity_a,
-                                    vertex_2d_entity_b,
-                                    (vertex_2d_entity_b, CanvasShape::Vertex),
-                                    None,
-                                    None,
-                                ));
-                            return;
-                        }
-                    } else {
-                        // create new vertex
-
-                        // get camera
-                        let camera_3d = camera_manager.camera_3d_entity().unwrap();
-                        let camera_transform: Transform = *transform_q.get(camera_3d).unwrap();
-                        let (camera, camera_projection) = camera_q.get(camera_3d).unwrap();
-
-                        let camera_viewport = camera.viewport.unwrap();
-                        let view_matrix = camera_transform.view_matrix();
-                        let projection_matrix =
-                            camera_projection.projection_matrix(&camera_viewport);
-
-                        // get 2d vertex transform
-                        let (vertex_2d_entity, _) = self.selected_shape.unwrap();
-                        if let Ok(vertex_2d_transform) = transform_q.get(vertex_2d_entity) {
-                            // convert 2d to 3d
-                            let new_3d_position = convert_2d_to_3d(
-                                &view_matrix,
-                                &projection_matrix,
-                                &camera_viewport.size_vec2(),
-                                &mouse_position,
-                                vertex_2d_transform.translation.z,
-                            );
-
-                            // spawn new vertex
-                            tab_manager
-                                .current_tab_state_mut()
-                                .unwrap()
-                                .action_stack
-                                .buffer_action(ShapeAction::CreateVertex(
-                                    match current_file_type {
-                                        FileExtension::Skel => {
-                                            VertexTypeData::Skel(vertex_2d_entity, 0.0, None)
-                                        }
-                                        FileExtension::Mesh => VertexTypeData::Mesh(
-                                            vec![(vertex_2d_entity, None)],
-                                            Vec::new(),
-                                        ),
-                                        FileExtension::Anim | FileExtension::Unknown => {
-                                            panic!("");
-                                        }
-                                    },
-                                    new_3d_position,
-                                    None,
-                                ));
-                        } else {
-                            warn!(
-                                "Selected vertex entity: {:?} has no Transform",
-                                vertex_2d_entity
-                            );
-                        }
+                    _ => {
+                        // deselect vertex
+                        tab_manager
+                            .current_tab_state_mut()
+                            .unwrap()
+                            .action_stack
+                            .buffer_action(ShapeAction::SelectShape(None));
+                        return;
                     }
                 }
-                MouseButton::Right => {
-                    // deselect vertex
+            }
+            (MouseButton::Left, Some(_), Some(CanvasShape::Edge | CanvasShape::Face), FileExtension::Mesh) => {
+                // should not ever be able to attach something to an edge or face?
+                // select hovered entity
+                tab_manager
+                    .current_tab_state_mut()
+                    .unwrap()
+                    .action_stack
+                    .buffer_action(ShapeAction::SelectShape(
+                        self.hovered_entity,
+                    ));
+                return;
+            }
+            (MouseButton::Left, Some(_), Some(CanvasShape::Vertex | CanvasShape::RootVertex), FileExtension::Mesh) => {
+                // link vertices together
+                let (vertex_2d_entity_a, _) = self.selected_shape.unwrap();
+                let (vertex_2d_entity_b, _) = self.hovered_entity.unwrap();
+                if vertex_2d_entity_a == vertex_2d_entity_b {
+                    return;
+                }
+
+                // check if edge already exists
+                if edge_manager
+                    .edge_2d_entity_from_vertices(
+                        &vertex_manager,
+                        vertex_2d_entity_a,
+                        vertex_2d_entity_b,
+                    )
+                    .is_some()
+                {
+                    // select edge
                     tab_manager
                         .current_tab_state_mut()
                         .unwrap()
                         .action_stack
-                        .buffer_action(ShapeAction::SelectShape(None));
-                }
-                _ => {}
-            }
-        } else {
-            if cursor_is_hovering {
-                match (self.hovered_entity.map(|(_, s)| s).unwrap(), click_type) {
-                    (CanvasShape::Vertex, MouseButton::Left)
-                    | (CanvasShape::RootVertex, MouseButton::Left) => {
-                        tab_manager
-                            .current_tab_state_mut()
-                            .unwrap()
-                            .action_stack
-                            .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
-                    }
-                    (CanvasShape::Edge, MouseButton::Left) => {
-                        tab_manager
-                            .current_tab_state_mut()
-                            .unwrap()
-                            .action_stack
-                            .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
-                    }
-                    (CanvasShape::Face, MouseButton::Left) => {
-                        if current_file_type == FileExtension::Mesh {
-                            tab_manager
-                                .current_tab_state_mut()
-                                .unwrap()
-                                .action_stack
-                                .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
-                        } else {
-                            panic!("shouldn't be possible");
-                        }
-                    }
-                    (CanvasShape::Vertex, MouseButton::Right)
-                    | (CanvasShape::RootVertex, MouseButton::Right) => {
-                        // do nothing, vertex deselection happens above
-                    }
-                    (CanvasShape::Edge, MouseButton::Right) => {
-                        // TODO: delete edge?
-                    }
-                    (CanvasShape::Face, MouseButton::Right) => {
-                        // TODO: delete face?
-                    }
-                    _ => {}
+                        .buffer_action(ShapeAction::SelectShape(Some((
+                            vertex_2d_entity_b,
+                            CanvasShape::Vertex,
+                        ))));
+                    return;
+                } else {
+                    // create edge
+                    tab_manager
+                        .current_tab_state_mut()
+                        .unwrap()
+                        .action_stack
+                        .buffer_action(ShapeAction::CreateEdge(
+                            vertex_2d_entity_a,
+                            vertex_2d_entity_b,
+                            (vertex_2d_entity_b, CanvasShape::Vertex),
+                            None,
+                            None,
+                        ));
+                    return;
                 }
             }
+            (MouseButton::Left, Some(_), None, FileExtension::Anim) => {
+                // deselect vertex
+                tab_manager
+                    .current_tab_state_mut()
+                    .unwrap()
+                    .action_stack
+                    .buffer_action(ShapeAction::SelectShape(None));
+                return;
+            }
+            (MouseButton::Left, Some(_), None, FileExtension::Skel | FileExtension::Mesh) => {
+                // create new vertex
+
+                // get camera
+                let camera_3d = camera_manager.camera_3d_entity().unwrap();
+                let camera_transform: Transform = *transform_q.get(camera_3d).unwrap();
+                let (camera, camera_projection) = camera_q.get(camera_3d).unwrap();
+
+                let camera_viewport = camera.viewport.unwrap();
+                let view_matrix = camera_transform.view_matrix();
+                let projection_matrix =
+                    camera_projection.projection_matrix(&camera_viewport);
+
+                // get 2d vertex transform
+                let (vertex_2d_entity, _) = self.selected_shape.unwrap();
+                let Ok(vertex_2d_transform) = transform_q.get(vertex_2d_entity) else {
+                    warn!(
+                        "Selected vertex entity: {:?} has no Transform",
+                        vertex_2d_entity
+                    );
+                    return;
+                };
+                // convert 2d to 3d
+                let new_3d_position = convert_2d_to_3d(
+                    &view_matrix,
+                    &projection_matrix,
+                    &camera_viewport.size_vec2(),
+                    &mouse_position,
+                    vertex_2d_transform.translation.z,
+                );
+
+                // spawn new vertex
+                tab_manager
+                    .current_tab_state_mut()
+                    .unwrap()
+                    .action_stack
+                    .buffer_action(ShapeAction::CreateVertex(
+                        match current_file_type {
+                            FileExtension::Skel => {
+                                VertexTypeData::Skel(vertex_2d_entity, 0.0, None)
+                            }
+                            FileExtension::Mesh => VertexTypeData::Mesh(
+                                vec![(vertex_2d_entity, None)],
+                                Vec::new(),
+                            ),
+                            _ => {
+                                panic!("");
+                            }
+                        },
+                        new_3d_position,
+                        None,
+                    ));
+            }
+            (MouseButton::Left, None, Some(CanvasShape::Vertex | CanvasShape::RootVertex), _) => {
+                tab_manager
+                    .current_tab_state_mut()
+                    .unwrap()
+                    .action_stack
+                    .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
+            }
+            (MouseButton::Left, None, Some(CanvasShape::Edge), FileExtension::Anim) => {
+                return;
+            }
+            (MouseButton::Left, None, Some(CanvasShape::Edge), FileExtension::Skel | FileExtension::Mesh) => {
+                tab_manager
+                    .current_tab_state_mut()
+                    .unwrap()
+                    .action_stack
+                    .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
+            }
+            (MouseButton::Left, None, Some(CanvasShape::Face), FileExtension::Mesh) => {
+                tab_manager
+                    .current_tab_state_mut()
+                    .unwrap()
+                    .action_stack
+                    .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
+            }
+            (MouseButton::Right, _, _, _) => {
+                // deselect vertex
+                tab_manager
+                    .current_tab_state_mut()
+                    .unwrap()
+                    .action_stack
+                    .buffer_action(ShapeAction::SelectShape(None));
+            }
+            _ => {}
         }
     }
 

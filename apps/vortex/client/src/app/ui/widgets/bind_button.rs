@@ -4,7 +4,7 @@ use bevy_ecs::{
     world::World,
 };
 
-use naia_bevy_client::{Client, CommandsExt};
+use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
 use render_egui::{
     egui,
@@ -53,10 +53,20 @@ pub fn render_bind_button(ui: &mut Ui, world: &mut World, current_file_entity: &
                         component
                             .dependency_entity
                             .set(&client, &dependency_file_entity);
-                        commands
+                        let dependency_entity = commands
                             .spawn_empty()
                             .enable_replication(&mut client)
-                            .insert(component);
+                            .configure_replication(ReplicationConfig::Delegated)
+                            .insert(component)
+                            .id();
+
+                        system_state.apply(world);
+
+                        let mut system_state: SystemState<(Commands, Client)> =
+                            SystemState::new(world);
+                        let (mut commands, mut client) = system_state.get_mut(world);
+
+                        commands.entity(dependency_entity).release_authority(&mut client);
 
                         system_state.apply(world);
                     }

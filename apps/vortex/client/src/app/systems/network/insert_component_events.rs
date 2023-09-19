@@ -128,11 +128,12 @@ pub fn insert_component_events(
 
         // on Animation Frame Event
         for entity in events.read::<AnimFrame>() {
+            info!("received AnimFrame!");
             insert_anim_frame_event_writer.send(InsertComponentEvent::<AnimFrame>::new(entity));
         }
 
         // on Animation Rotation Event
-        for entity in events.read::<AnimFrame>() {
+        for entity in events.read::<AnimRotation>() {
             insert_anim_rotation_event_writer.send(InsertComponentEvent::<AnimRotation>::new(entity));
         }
     }
@@ -645,6 +646,6 @@ pub fn insert_animation_events(
 
         let vertex_name = (*rotation.vertex_name).clone();
 
-        animation_manager.register_rotation(frame_entity, rotation_entity, vertex_name);
+        animation_manager.rotation_postprocess(frame_entity, rotation_entity, vertex_name);
     }
 }

@@ -148,7 +148,10 @@ impl Project {
 
     pub(crate) fn dependency_file_keys(&self, file_key: &FileKey) -> Vec<FileKey> {
         let mut output = Vec::new();
-        let file_entry_val = self.working_file_entries.get(file_key).unwrap();
+
+        // unwrap here doesn't work when file has been closed after being deleted...
+        let file_entry_val = self.working_file_entries.get(file_key).unwrap(); // here
+
         if let Some(dependencies) = file_entry_val.dependencies() {
             for dependency_key in dependencies {
                 output.push(dependency_key.clone());
@@ -899,14 +902,19 @@ impl Project {
     }
 
     fn get_bytes_from_cl_or_fs(&self, file_key: &FileKey) -> Box<[u8]> {
+
         if self.changelist_entries.contains_key(file_key) {
+
             // get contents of file from changelist
             if let Some(content) = self.changelist_entries.get(file_key).unwrap().get_content() {
+                info!("getting bytes from changelist");
                 Box::from(content)
             } else {
+                info!("getting bytes from file 1");
                 self.get_file_contents(file_key)
             }
         } else {
+            info!("getting bytes from file 2");
             // get contents of file from file system
             self.get_file_contents(file_key)
         }

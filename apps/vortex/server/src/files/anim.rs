@@ -86,6 +86,8 @@ impl AnimWriter {
 
                     let frame_order = frame.get_order();
 
+                    info!("processing frame: {}", frame_order);
+
                     // update biggest order
                     if let Some(biggest_order) = biggest_order_opt {
                         if frame_order > biggest_order {
@@ -133,15 +135,13 @@ impl AnimWriter {
         let mut actions = Vec::new();
 
         // Write Skel Dependency
-        let Some(dependency_key) = skel_dependency_key_opt else {
-            panic!("anim file should depend on a single .skel file");
-        };
-
-        info!("writing dependency: {}", dependency_key.full_path());
-        actions.push(AnimAction::SkelFile(
-            dependency_key.path().to_string(),
-            dependency_key.name().to_string(),
-        ));
+        if let Some(dependency_key) = skel_dependency_key_opt {
+            info!("writing dependency: {}", dependency_key.full_path());
+            actions.push(AnimAction::SkelFile(
+                dependency_key.path().to_string(),
+                dependency_key.name().to_string(),
+            ));
+        }
 
         // Write Shape Names
         for shape_name in shape_names {
@@ -156,9 +156,10 @@ impl AnimWriter {
                     panic!("anim file should not have any gaps in frame orders");
                 };
                 let Some(poses) = frame_poses_map.remove(&frame_entity) else {
-                    panic!("anim file should not have any gaps in frame orders");
+                    // no rotations in frame currently
+                    continue;
                 };
-                info!("writing frame: {}", order);
+                info!("push frame action: {}", order);
                 actions.push(AnimAction::Frame(poses, transition));
             }
         }
@@ -181,6 +182,7 @@ impl AnimWriter {
                     name.ser(&mut bit_writer);
                 }
                 AnimAction::Frame(poses, transition) => {
+                    info!("write AnimActionType::Frame");
                     AnimActionType::Frame.ser(&mut bit_writer);
                     transition.ser(&mut bit_writer);
                     for (shape_index, pose) in poses {
@@ -215,6 +217,7 @@ impl FileWriter for AnimWriter {
     }
 
     fn write_new_default(&self) -> Box<[u8]> {
+        info!("anim write new default");
         let mut actions = Vec::new();
 
         actions.push(AnimAction::Frame(HashMap::new(), Transition::new(100)));
@@ -232,22 +235,27 @@ impl AnimReader {
 
         loop {
             let action_type = AnimActionType::de(bit_reader)?;
+            info!("reading action");
             match action_type {
                 AnimActionType::SkelFile => {
+                    info!("read dep");
                     let path = String::de(bit_reader)?;
                     let file_name = String::de(bit_reader)?;
                     actions.push(AnimAction::SkelFile(path, file_name));
                 }
                 AnimActionType::ShapeIndex => {
+                    info!("read shape");
                     let name = String::de(bit_reader)?;
                     actions.push(AnimAction::ShapeIndex(name));
                 }
                 AnimActionType::Frame => {
+                    info!("read frame");
                     let transition = Transition::de(bit_reader)?;
                     let mut poses = HashMap::new();
                     loop {
                         let continue_bit = bool::de(bit_reader)?;
                         if !continue_bit {
+                            info!("hit false continue bit");
                             break;
                         }
 
@@ -255,12 +263,16 @@ impl AnimReader {
                         let pose = SerdeQuat::de(bit_reader)?;
                         poses.insert(shape_index, pose);
                     }
+                    info!("action push frame");
                     actions.push(AnimAction::Frame(poses, transition));
                 }
                 AnimActionType::None => {
+                    info!("read none");
                     break;
                 }
             }
+            info!("done reading action");
+            info!("...")
         }
 
         Ok(actions)
@@ -312,6 +324,8 @@ impl AnimReader {
                     shape_name_index += 1;
                 }
                 AnimAction::Frame(poses, transition) => {
+
+                    info!("read frame action!");
 
                     let mut component = AnimFrame::new(frame_index, transition);
                     component.file_entity.set(&server, file_entity);
