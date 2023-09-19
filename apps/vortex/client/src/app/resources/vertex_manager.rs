@@ -4,6 +4,7 @@ use bevy_ecs::{
     entity::Entity,
     system::{Commands, Query, Resource},
 };
+use bevy_ecs::query::With;
 use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt, Replicate, ReplicationConfig};
@@ -18,7 +19,7 @@ use render_api::{
 use vortex_proto::components::{AnimRotation, Face3d, FileExtension, FileType, OwnedByFile, ShapeName, Vertex3d, VertexRoot};
 
 use crate::app::{
-    components::{LocalVertex3dChild, Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d, VertexEntry},
+    components::{Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d, VertexEntry},
     resources::{
         action::{ActionStack, ShapeAction},
         camera_manager::CameraManager,
@@ -102,8 +103,8 @@ impl VertexManager {
         transform_q: &mut Query<&mut Transform>,
         visibility_q: &Query<&Visibility>,
         name_q: &Query<&ShapeName>,
-        child_q: &Query<&LocalVertex3dChild>,
         rotation_q: &Query<&AnimRotation>,
+        root_q: &Query<Entity, With<VertexRoot>>,
     ) -> bool {
         if !self.resync {
             return false;
@@ -115,7 +116,7 @@ impl VertexManager {
 
         self.resync = false;
 
-        animation_manager.sync_vertices_3d(vertex_3d_q, transform_q, visibility_q, name_q, child_q, rotation_q);
+        animation_manager.sync_vertices_3d(self, vertex_3d_q, transform_q, visibility_q, name_q, rotation_q, root_q);
 
         return true;
     }
@@ -342,12 +343,6 @@ impl VertexManager {
             ))
             .insert(camera_manager.layer_3d);
 
-        if let Some(parent_vertex_3d_entity) = parent_vertex_3d_entity_opt {
-            commands
-                .entity(vertex_3d_entity)
-                .insert(LocalVertex3dChild::new(parent_vertex_3d_entity));
-        }
-
         // vertex 2d
         let vertex_2d_entity = commands
             .spawn(RenderObjectBundle::circle(
@@ -386,15 +381,32 @@ impl VertexManager {
         // );
 
         // register 3d & 2d vertices together
-        self.register_3d_vertex(vertex_3d_entity, vertex_2d_entity, ownership_opt);
+        self.register_3d_vertex(parent_vertex_3d_entity_opt, vertex_3d_entity, vertex_2d_entity, ownership_opt);
 
         vertex_2d_entity
     }
 
-    pub fn register_3d_vertex(&mut self, entity_3d: Entity, entity_2d: Entity, ownership_opt: Option<Entity>) {
+    pub fn register_3d_vertex(&mut self, parent_vertex_3d_entity_opt: Option<Entity>, entity_3d: Entity, entity_2d: Entity, ownership_opt: Option<Entity>) {
         self.vertices_3d
-            .insert(entity_3d, Vertex3dData::new(entity_2d, ownership_opt));
+            .insert(entity_3d, Vertex3dData::new(parent_vertex_3d_entity_opt, entity_2d, ownership_opt));
         self.vertices_2d.insert(entity_2d, entity_3d);
+
+        if let Some(parent_vertex_3d_entity) = parent_vertex_3d_entity_opt {
+            let Some(parent_vertex_3d_data) = self.vertices_3d.get_mut(&parent_vertex_3d_entity) else {
+                panic!("Vertex3d entity: `{:?}` has not been registered", parent_vertex_3d_entity);
+            };
+            parent_vertex_3d_data.add_child(entity_3d);
+        }
+    }
+
+    pub fn vertex_parent_3d_entity(&self, vertex_3d_entity: &Entity) -> Option<Entity> {
+        let vertex_3d_data = self.vertices_3d.get(vertex_3d_entity)?;
+        vertex_3d_data.parent_3d_entity_opt
+    }
+
+    pub fn vertex_children_3d_entities(&self, vertex_3d_entity: &Entity) -> Option<&HashSet<Entity>> {
+        let vertex_3d_data = self.vertices_3d.get(vertex_3d_entity)?;
+        vertex_3d_data.children_3d_entities_opt.as_ref()
     }
 
     pub fn new_local_vertex(
@@ -582,6 +594,14 @@ impl VertexManager {
         if let Some(data) = self.vertices_3d.remove(entity_3d) {
             let entity_2d = data.entity_2d;
             self.vertices_2d.remove(&entity_2d);
+
+            if let Some(parent_3d_entity) = data.parent_3d_entity_opt {
+                let Some(parent_3d_data) = self.vertices_3d.get_mut(&parent_3d_entity) else {
+                    panic!("Vertex3d entity: `{:?}` has not been registered", parent_3d_entity);
+                };
+                parent_3d_data.remove_child(entity_3d);
+            }
+
             return Some(entity_2d);
         }
         return None;

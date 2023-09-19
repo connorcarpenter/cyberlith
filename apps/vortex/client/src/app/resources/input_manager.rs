@@ -969,22 +969,6 @@ impl InputManager {
         click_type: MouseButton,
         mouse_position: Vec2,
         delta: Vec2,
-
-        // commands: &mut Commands,
-        // client: &Client,
-        // file_manager: &FileManager,
-        // tab_manager: &mut TabManager,
-        // canvas: &mut Canvas,
-        // camera_manager: &mut CameraManager,
-        // vertex_manager: &mut VertexManager,
-        // edge_manager: &mut EdgeManager,
-        // animation_manager: &mut AnimationManager,
-
-        // camera_q: &Query<(&mut Camera, &mut Projection)>,
-        // shape_name_q: &Query<&ShapeName>,
-        // transform_q: &Query<&mut Transform>,
-        // vertex_3d_q: &mut Query<&mut Vertex3d>,
-        // edge_angle_q: &mut Query<&mut EdgeAngle>,
     ) {
         let current_file_entity = world.get_resource::<TabManager>().unwrap().current_tab_entity().unwrap();
         let current_file_type = world.get_resource::<FileManager>().unwrap().get_file_type(&current_file_entity);

@@ -1,8 +1,7 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{entity::Entity, prelude::{Commands, Query}, system::Resource};
-use bevy_ecs::system::{Res, ResMut, SystemState};
-use bevy_ecs::world::World;
+use bevy_ecs::{world::World, entity::Entity, prelude::{Commands, Query}, system::{Res, Resource, ResMut, SystemState}};
+use bevy_ecs::query::With;
 use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
@@ -10,12 +9,9 @@ use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 use math::{convert_2d_to_3d, Quat, quat_look_to, Vec2, Vec3};
 use render_api::components::{Camera, CameraProjection, Projection, Transform, Visibility};
 
-use vortex_proto::components::{AnimFrame, AnimRotation, ShapeName, Vertex3d};
+use vortex_proto::components::{AnimFrame, AnimRotation, ShapeName, Vertex3d, VertexRoot};
 
-use crate::app::components::LocalVertex3dChild;
-use crate::app::resources::camera_manager::CameraManager;
-use crate::app::resources::canvas::Canvas;
-use crate::app::resources::vertex_manager::VertexManager;
+use crate::app::resources::{camera_manager::CameraManager, canvas::Canvas, vertex_manager::VertexManager};
 
 #[derive(Resource)]
 pub struct AnimationManager {
@@ -95,10 +91,10 @@ impl AnimationManager {
             Client,
             ResMut<Canvas>,
             Res<CameraManager>,
+            Res<VertexManager>,
             Query<(&Camera, &Projection)>,
             Query<&Transform>,
             Query<&Vertex3d>,
-            Query<&LocalVertex3dChild>,
             Query<&mut AnimRotation>,
         )> = SystemState::new(world);
         let (
@@ -106,10 +102,10 @@ impl AnimationManager {
             mut client,
             mut canvas,
             camera_manager,
+            vertex_manager,
             camera_q,
             transform_q,
             vertex_3d_q,
-            vertex_3d_child_q,
             mut rotation_q,
         ) = system_state.get_mut(world);
 
@@ -127,7 +123,7 @@ impl AnimationManager {
         //
 
         // get parent 3d position
-        let parent_vertex_3d_entity = vertex_3d_child_q.get(vertex_3d_entity).unwrap().parent_entity;
+        let parent_vertex_3d_entity = vertex_manager.vertex_parent_3d_entity(&vertex_3d_entity).unwrap();
         let parent_3d_position = vertex_3d_q.get(parent_vertex_3d_entity).unwrap().as_vec3();
 
         // get old 3d position
@@ -234,53 +230,98 @@ impl AnimationManager {
 
     pub(crate) fn sync_vertices_3d(
         &self,
+        vertex_manager: &VertexManager,
         vertex_3d_q: &Query<(Entity, &Vertex3d)>,
         transform_q: &mut Query<&mut Transform>,
         visibility_q: &Query<&Visibility>,
         name_q: &Query<&ShapeName>,
-        child_q: &Query<&LocalVertex3dChild>,
         rotation_q: &Query<&AnimRotation>,
+        root_q: &Query<Entity, With<VertexRoot>>,
     ) {
         let current_frame = self.current_frame.unwrap();
 
-        for (vertex_3d_entity, vertex_3d) in vertex_3d_q.iter() {
-            // check visibility
+        // find root 3d vertex
+        let mut root_3d_vertex = None;
+        for vertex_3d_entity in root_q.iter() {
             if let Ok(visibility) = visibility_q.get(vertex_3d_entity) {
                 if !visibility.visible {
                     continue;
                 }
             };
+            if vertex_3d_q.get(vertex_3d_entity).is_err() {
+                continue;
+            }
+            if root_3d_vertex.is_some() {
+                panic!("Multiple root 3d vertices found!");
+            }
+            root_3d_vertex = Some(vertex_3d_entity);
+        }
+
+        let Some(root_3d_vertex) = root_3d_vertex else {
+            info!("skipping");
+            return;
+        };
+
+        self.sync_vertices_3d_children(
+            vertex_manager,
+            vertex_3d_q,
+            transform_q,
+            name_q,
+            rotation_q,
+            current_frame,
+            root_3d_vertex,
+        );
+
+
+    }
+
+    fn sync_vertices_3d_children(
+        &self,
+        vertex_manager: &VertexManager,
+        vertex_3d_q: &Query<(Entity, &Vertex3d)>,
+        transform_q: &mut Query<&mut Transform>,
+        name_q: &Query<&ShapeName>,
+        rot_q: &Query<&AnimRotation>,
+        frame_entity: Entity,
+        parent_vertex_3d_entity: Entity
+    ) {
+        let Some(children) = vertex_manager.vertex_children_3d_entities(&parent_vertex_3d_entity) else {
+            return;
+        };
+        let (_, parent_vertex_3d) = vertex_3d_q.get(parent_vertex_3d_entity).unwrap();
+        let parent_pos = parent_vertex_3d.as_vec3();
+
+        for child_vertex_3d_entity in children.iter() {
+
+            let (_, vertex_3d) = vertex_3d_q.get(*child_vertex_3d_entity).unwrap();
 
             let mut rotation_opt = None;
-            if let Ok(name_component) = name_q.get(vertex_3d_entity) {
+            if let Ok(name_component) = name_q.get(*child_vertex_3d_entity) {
                 let name = (*name_component.value).clone();
-                if let Some(rotation_entity) = self.vertex_names.get(&(current_frame, name)) {
+                if let Some(rotation_entity) = self.vertex_names.get(&(frame_entity, name)) {
                     rotation_opt = Some(rotation_entity);
                 }
             }
 
             if let Some(rotation_entity) = rotation_opt {
-                let rotation = rotation_q.get(*rotation_entity).unwrap();
+                let rotation = rot_q.get(*rotation_entity).unwrap();
                 let rotation = rotation.get_rotation();
 
-                let parent_vertex_3d_entity = child_q.get(vertex_3d_entity).unwrap().parent_entity;
-                let (_, parent_vertex_3d) = vertex_3d_q.get(parent_vertex_3d_entity).unwrap();
-                let parent_pos = parent_vertex_3d.as_vec3();
                 let displacement = vertex_3d.as_vec3() - parent_pos;
                 let rotated_displacement = rotation * displacement;
                 let new_position = parent_pos + rotated_displacement;
 
                 // update transform
-                let Ok(mut vertex_3d_transform) = transform_q.get_mut(vertex_3d_entity) else {
-                    warn!("Vertex3d entity {:?} has no Transform", vertex_3d_entity);
+                let Ok(mut vertex_3d_transform) = transform_q.get_mut(*child_vertex_3d_entity) else {
+                    warn!("Vertex3d entity {:?} has no Transform", child_vertex_3d_entity);
                     continue;
                 };
                 vertex_3d_transform.translation = new_position;
 
             } else {
                 // get transform
-                let Ok(mut vertex_3d_transform) = transform_q.get_mut(vertex_3d_entity) else {
-                    warn!("Vertex3d entity {:?} has no Transform", vertex_3d_entity);
+                let Ok(mut vertex_3d_transform) = transform_q.get_mut(*child_vertex_3d_entity) else {
+                    warn!("Vertex3d entity {:?} has no Transform", child_vertex_3d_entity);
                     continue;
                 };
                 // update 3d vertices
@@ -288,6 +329,17 @@ impl AnimationManager {
                 vertex_3d_transform.translation.y = vertex_3d.y().into();
                 vertex_3d_transform.translation.z = vertex_3d.z().into();
             }
+
+            // recurse
+            self.sync_vertices_3d_children(
+                vertex_manager,
+                vertex_3d_q,
+                transform_q,
+                name_q,
+                rot_q,
+                frame_entity,
+                *child_vertex_3d_entity
+            );
         }
     }
 }
