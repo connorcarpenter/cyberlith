@@ -8,14 +8,17 @@ use naia_bevy_client::{events::RemoveComponentEvents, Client};
 
 use render_api::{base::CpuMesh, Assets};
 
-use vortex_proto::components::{AnimFrame, AnimRotation, ChangelistEntry, ChangelistStatus, Edge3d, Face3d, FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild, ShapeName, Vertex3d};
+use vortex_proto::components::{
+    AnimFrame, AnimRotation, ChangelistEntry, ChangelistStatus, Edge3d, Face3d, FileDependency,
+    FileSystemChild, FileSystemEntry, FileSystemRootChild, ShapeName, Vertex3d,
+};
 
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
     resources::{
-        canvas::Canvas, edge_manager::EdgeManager, face_manager::FaceManager,
-        file_manager::FileManager, input_manager::InputManager, tab_manager::TabManager,
-        vertex_manager::VertexManager, animation_manager::AnimationManager
+        animation_manager::AnimationManager, canvas::Canvas, edge_manager::EdgeManager,
+        face_manager::FaceManager, file_manager::FileManager, input_manager::InputManager,
+        tab_manager::TabManager, vertex_manager::VertexManager,
     },
 };
 
@@ -85,10 +88,12 @@ pub fn remove_component_events(
             file_manager.file_remove_dependency(&file_entity, &dependency_entity);
         }
         for (vertex_entity_3d, shape_name) in events.read::<ShapeName>() {
-
             let name = (*shape_name.value).clone();
 
-            info!("entity: `{:?}`, removed ShapeName(name: {:?})", vertex_entity_3d, name);
+            info!(
+                "entity: `{:?}`, removed ShapeName(name: {:?})",
+                vertex_entity_3d, name
+            );
         }
         for (vertex_entity_3d, _) in events.read::<Vertex3d>() {
             info!("entity: `{:?}`, removed Vertex3d", vertex_entity_3d);

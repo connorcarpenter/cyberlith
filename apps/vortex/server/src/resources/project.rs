@@ -18,9 +18,7 @@ use vortex_proto::{
 
 use crate::{
     files::{despawn_file_content_entities, load_content_entities, FileWriter},
-    resources::{
-        ChangelistValue, ContentEntityData, FileEntryValue, FileSpace, GitManager,
-    },
+    resources::{ChangelistValue, ContentEntityData, FileEntryValue, FileSpace, GitManager},
 };
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
@@ -40,7 +38,10 @@ pub enum RollbackResult {
     Created,
     Modified(
         FileKey,
-        Option<(HashMap<Entity, ContentEntityData>, HashMap<Entity, ContentEntityData>)>,
+        Option<(
+            HashMap<Entity, ContentEntityData>,
+            HashMap<Entity, ContentEntityData>,
+        )>,
     ),
     Deleted(FileKey, FileEntryValue),
 }
@@ -522,7 +523,8 @@ impl Project {
         world: &mut World,
         message: ChangelistMessage,
     ) -> RollbackResult {
-        let mut system_state: SystemState<(Server, Query<&ChangelistEntry>)> = SystemState::new(world);
+        let mut system_state: SystemState<(Server, Query<&ChangelistEntry>)> =
+            SystemState::new(world);
         let (server, cl_query) = system_state.get_mut(world);
 
         let cl_entity: Entity = message.entity.get(&server).unwrap();
@@ -535,23 +537,16 @@ impl Project {
         system_state.apply(world);
 
         match status {
-            ChangelistStatus::Created => {
-                self.rollback_created_file(world, &file_key)
-            }
+            ChangelistStatus::Created => self.rollback_created_file(world, &file_key),
             ChangelistStatus::Modified => {
                 self.rollback_modified_file(world, &file_key, &file_entity)
             }
-            ChangelistStatus::Deleted => {
-                self.rollback_deleted_file(world, &file_key)
-            }
+            ChangelistStatus::Deleted => self.rollback_deleted_file(world, &file_key),
         }
     }
 
     fn rollback_created_file(&mut self, world: &mut World, file_key: &FileKey) -> RollbackResult {
-        let mut system_state: SystemState<(
-            Commands,
-            Server,
-        )> = SystemState::new(world);
+        let mut system_state: SystemState<(Commands, Server)> = SystemState::new(world);
         let (mut commands, mut server) = system_state.get_mut(world);
 
         // Remove Entity from Working Tree, returning a list of child entities that should be despawned
@@ -583,7 +578,12 @@ impl Project {
         RollbackResult::Created
     }
 
-    fn rollback_modified_file(&mut self, world: &mut World, file_key: &FileKey, file_entity: &Entity) -> RollbackResult {
+    fn rollback_modified_file(
+        &mut self,
+        world: &mut World,
+        file_key: &FileKey,
+        file_entity: &Entity,
+    ) -> RollbackResult {
         let mut system_state: SystemState<Commands> = SystemState::new(world);
         let mut commands = system_state.get_mut(world);
 
@@ -594,11 +594,8 @@ impl Project {
 
         // respawn content entities within to previous state
         let result = if self.has_filespace(file_key) {
-            let (old_entities, new_entities) = self.respawn_file_content_entities(
-                world,
-                &file_entity,
-                &file_key,
-            );
+            let (old_entities, new_entities) =
+                self.respawn_file_content_entities(world, &file_entity, &file_key);
             Some((old_entities, new_entities))
         } else {
             None
@@ -608,10 +605,7 @@ impl Project {
     }
 
     fn rollback_deleted_file(&mut self, world: &mut World, file_key: &FileKey) -> RollbackResult {
-        let mut system_state: SystemState<(
-            Commands,
-            Server,
-        )> = SystemState::new(world);
+        let mut system_state: SystemState<(Commands, Server)> = SystemState::new(world);
         let (mut commands, mut server) = system_state.get_mut(world);
 
         let new_entity = GitManager::spawn_file_tree_entity(&mut commands, &mut server);
@@ -652,22 +646,11 @@ impl Project {
 
         // despawn all previous entities
         let old_content_entities = self.file_content_entities(file_key).unwrap().clone();
-        despawn_file_content_entities(
-            world,
-            self,
-            file_key,
-            &old_content_entities,
-        );
+        despawn_file_content_entities(world, self, file_key, &old_content_entities);
 
         // respawn all entities
-        let new_content_entities = load_content_entities(
-            world,
-            self,
-            &file_extension,
-            file_key,
-            file_entity,
-            bytes,
-        );
+        let new_content_entities =
+            load_content_entities(world, self, &file_extension, file_key, file_entity, bytes);
 
         let filespace = self.filespaces.get_mut(file_key).unwrap();
         filespace.set_content_entities(new_content_entities.clone());
@@ -872,7 +855,6 @@ impl Project {
         world: &mut World,
         file_key: &FileKey,
     ) -> HashMap<Entity, ContentEntityData> {
-
         info!("Creating filespace for file: {:?}", file_key.name());
 
         // get file contents from either the changelist or the file system
@@ -881,14 +863,8 @@ impl Project {
         let file_entity = self.file_entity(file_key).unwrap();
         let file_extension = self.working_file_extension(file_key);
 
-        let content_entities_with_data = load_content_entities(
-            world,
-            self,
-            &file_extension,
-            file_key,
-            &file_entity,
-            bytes,
-        );
+        let content_entities_with_data =
+            load_content_entities(world, self, &file_extension, file_key, &file_entity, bytes);
 
         let mut system_state: SystemState<Server> = SystemState::new(world);
         let mut server = system_state.get_mut(world);
@@ -902,9 +878,7 @@ impl Project {
     }
 
     fn get_bytes_from_cl_or_fs(&self, file_key: &FileKey) -> Box<[u8]> {
-
         if self.changelist_entries.contains_key(file_key) {
-
             // get contents of file from changelist
             if let Some(content) = self.changelist_entries.get(file_key).unwrap().get_content() {
                 info!("getting bytes from changelist");

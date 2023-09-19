@@ -13,7 +13,7 @@ use naia_bevy_server::{
 };
 
 use vortex_proto::{
-    components::{EntryKind, FileDependency, FileExtension, AnimFrame, AnimRotation, Transition},
+    components::{AnimFrame, AnimRotation, EntryKind, FileDependency, FileExtension, Transition},
     resources::FileKey,
     SerdeQuat,
 };
@@ -51,7 +51,6 @@ impl AnimWriter {
         project: &Project,
         content_entities_opt: &Option<HashMap<Entity, ContentEntityData>>,
     ) -> Vec<AnimAction> {
-
         let working_file_entries = project.working_file_entries();
 
         let mut skel_dependency_key_opt = None;
@@ -103,7 +102,8 @@ impl AnimWriter {
                     frame_map.insert(frame_order, (*content_entity, (*frame.transition).clone()));
                 }
                 ContentEntityData::Rotation => {
-                    let mut system_state: SystemState<(Server, Query<&AnimRotation>)> = SystemState::new(world);
+                    let mut system_state: SystemState<(Server, Query<&AnimRotation>)> =
+                        SystemState::new(world);
                     let (server, rot_q) = system_state.get_mut(world);
 
                     let Ok(rotation) = rot_q.get(*content_entity) else {
@@ -285,7 +285,6 @@ impl AnimReader {
         file_entity: &Entity,
         actions: Vec<AnimAction>,
     ) -> HashMap<Entity, ContentEntityData> {
-
         let mut content_entities = HashMap::new();
         let mut shape_name_index = 0;
         let mut shape_name_map = HashMap::new();
@@ -317,14 +316,14 @@ impl AnimReader {
                         .configure_replication(ReplicationConfig::Delegated)
                         .insert(component)
                         .id();
-                    content_entities.insert(entity, ContentEntityData::new_dependency(skel_file_key));
+                    content_entities
+                        .insert(entity, ContentEntityData::new_dependency(skel_file_key));
                 }
                 AnimAction::ShapeIndex(shape_name) => {
                     shape_name_map.insert(shape_name_index, shape_name);
                     shape_name_index += 1;
                 }
                 AnimAction::Frame(poses, transition) => {
-
                     info!("read frame action!");
 
                     let mut component = AnimFrame::new(frame_index, transition);
@@ -340,7 +339,6 @@ impl AnimReader {
 
                     for (shape_index, rotation) in poses {
                         let shape_name = shape_name_map.get(&shape_index).unwrap();
-
 
                         let mut component = AnimRotation::new(shape_name.clone(), rotation);
                         component.frame_entity.set(&server, &frame_entity);

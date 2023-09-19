@@ -15,12 +15,16 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{AnimFrame, AnimRotation, ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind, Face3d, FileDependency, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, ShapeName, Vertex3d, VertexRoot};
+use vortex_proto::components::{
+    AnimFrame, AnimRotation, ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind,
+    Face3d, FileDependency, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild,
+    FileType, OwnedByFile, ShapeName, Vertex3d, VertexRoot,
+};
 
 use crate::app::{
-    components::{file_system::{
+    components::file_system::{
         ChangelistUiState, FileSystemEntryLocal, FileSystemParent, FileSystemUiState,
-    }},
+    },
     events::InsertComponentEvent,
     resources::{
         animation_manager::AnimationManager,
@@ -134,7 +138,8 @@ pub fn insert_component_events(
 
         // on Animation Rotation Event
         for entity in events.read::<AnimRotation>() {
-            insert_anim_rotation_event_writer.send(InsertComponentEvent::<AnimRotation>::new(entity));
+            insert_anim_rotation_event_writer
+                .send(InsertComponentEvent::<AnimRotation>::new(entity));
         }
     }
 }
@@ -370,7 +375,10 @@ pub fn insert_vertex_events(
         let shape_name = shape_name_q.get(entity).unwrap();
         let shape_name = (*shape_name.value).clone();
 
-        info!("entity: {:?} - inserted ShapeName(name: {:?})", entity, shape_name);
+        info!(
+            "entity: {:?} - inserted ShapeName(name: {:?})",
+            entity, shape_name
+        );
     }
 }
 
@@ -645,6 +653,11 @@ pub fn insert_animation_events(
 
         let vertex_name = (*rotation.vertex_name).clone();
 
-        animation_manager.rotation_postprocess(&mut commands, frame_entity, rotation_entity, vertex_name);
+        animation_manager.rotation_postprocess(
+            &mut commands,
+            frame_entity,
+            rotation_entity,
+            vertex_name,
+        );
     }
 }

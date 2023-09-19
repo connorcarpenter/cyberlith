@@ -16,7 +16,7 @@ pub enum ContentEntityData {
     Shape(ShapeType),
     Dependency(FileKey),
     Frame,
-    Rotation
+    Rotation,
 }
 
 impl ContentEntityData {

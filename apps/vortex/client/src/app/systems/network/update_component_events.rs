@@ -6,7 +6,10 @@ use bevy_log::info;
 
 use naia_bevy_client::{events::UpdateComponentEvents, Client};
 
-use vortex_proto::components::{AnimFrame, AnimRotation, ChangelistEntry, EdgeAngle, FileSystemChild, FileSystemEntry, FileSystemRootChild, ShapeName, Vertex3d};
+use vortex_proto::components::{
+    AnimFrame, AnimRotation, ChangelistEntry, EdgeAngle, FileSystemChild, FileSystemEntry,
+    FileSystemRootChild, ShapeName, Vertex3d,
+};
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemEntryLocal},

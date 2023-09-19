@@ -1,4 +1,4 @@
-use bevy_ecs::{entity::Entity, prelude::Component};
+use bevy_ecs::prelude::Component;
 use math::Quat;
 
 // LocalAnimRotation
@@ -10,7 +10,7 @@ pub struct LocalAnimRotation {
 impl LocalAnimRotation {
     pub fn new() -> Self {
         Self {
-            last_synced_quat: Quat::IDENTITY
+            last_synced_quat: Quat::IDENTITY,
         }
     }
 }

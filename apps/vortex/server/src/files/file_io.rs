@@ -1,7 +1,10 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{entity::Entity, system::Commands, world::World};
-use bevy_ecs::system::{ResMut, SystemState};
+use bevy_ecs::{
+    entity::Entity,
+    system::{Commands, ResMut, SystemState},
+    world::World,
+};
 use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, Server};
@@ -179,12 +182,16 @@ pub fn despawn_file_content_entities(
     file_key: &FileKey,
     content_entities: &HashMap<Entity, ContentEntityData>,
 ) {
-    let mut system_state: SystemState<(Commands, Server, ResMut<ShapeManager>)> = SystemState::new(world);
+    let mut system_state: SystemState<(Commands, Server, ResMut<ShapeManager>)> =
+        SystemState::new(world);
     let (mut commands, mut server, mut shape_manager) = system_state.get_mut(world);
 
     for (entity, entity_data) in content_entities.iter() {
         info!("despawning entity: {:?}", entity);
-        commands.entity(*entity).take_authority(&mut server).despawn();
+        commands
+            .entity(*entity)
+            .take_authority(&mut server)
+            .despawn();
 
         match entity_data {
             ContentEntityData::Shape(ShapeType::Vertex) => {

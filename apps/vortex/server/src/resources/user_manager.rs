@@ -1,17 +1,12 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{
-    entity::Entity,
-    system::Resource,
-};
+use bevy_ecs::{entity::Entity, system::Resource};
 
 use naia_bevy_server::{Server, UserKey};
 
 use vortex_proto::{resources::FileKey, types::TabId};
 
-use crate::resources::{
-    project::ProjectKey, ContentEntityData, GitManager, UserTabState,
-};
+use crate::resources::{project::ProjectKey, ContentEntityData, GitManager, UserTabState};
 
 pub struct UserSessionData {
     // used to index into permanent data
@@ -177,12 +172,7 @@ impl UserManager {
         self.user_sessions.remove(user_key);
     }
 
-    pub(crate) fn open_tab(
-        &mut self,
-        user_key: &UserKey,
-        tab_id: TabId,
-        file_key: &FileKey,
-    ) {
+    pub(crate) fn open_tab(&mut self, user_key: &UserKey, tab_id: TabId, file_key: &FileKey) {
         let Some(user_session) = self.user_sessions.get_mut(user_key) else {
             panic!("user not found");
         };

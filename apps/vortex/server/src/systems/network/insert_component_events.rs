@@ -21,10 +21,10 @@ use crate::{
     events::InsertComponentEvent,
     resources::{
         file_waitlist::{file_process_insert, FSWaitlist, FSWaitlistInsert},
-        GitManager, ShapeManager, ShapeWaitlist, ShapeWaitlistInsert, TabManager, UserManager,
+        ContentEntityData, GitManager, ShapeManager, ShapeWaitlist, ShapeWaitlistInsert,
+        TabManager, UserManager,
     },
 };
-use crate::resources::ContentEntityData;
 
 pub fn insert_component_events(
     mut event_reader: EventReader<InsertComponentEvents>,

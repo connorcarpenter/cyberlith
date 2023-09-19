@@ -1,8 +1,8 @@
 use bevy_ecs::{
     entity::Entity,
+    query::With,
     system::{Commands, Query, Res, ResMut},
 };
-use bevy_ecs::query::With;
 
 use input::Input;
 
@@ -12,17 +12,19 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{AnimRotation, EdgeAngle, FileExtension, ShapeName, Vertex3d, VertexRoot};
+use vortex_proto::components::{
+    AnimRotation, EdgeAngle, FileExtension, ShapeName, Vertex3d, VertexRoot,
+};
 
 use crate::app::{
-    components::{Edge2dLocal, Edge3dLocal, FaceIcon2d, LocalShape},
+    components::{Edge2dLocal, Edge3dLocal, FaceIcon2d, LocalAnimRotation, LocalShape},
     resources::{
-        camera_manager::CameraManager, canvas::Canvas, compass::Compass, edge_manager::EdgeManager,
-        face_manager::FaceManager, file_manager::FileManager, input_manager::InputManager,
-        tab_manager::TabManager, vertex_manager::VertexManager, animation_manager::AnimationManager
+        animation_manager::AnimationManager, camera_manager::CameraManager, canvas::Canvas,
+        compass::Compass, edge_manager::EdgeManager, face_manager::FaceManager,
+        file_manager::FileManager, input_manager::InputManager, tab_manager::TabManager,
+        vertex_manager::VertexManager,
     },
 };
-use crate::app::components::LocalAnimRotation;
 
 pub fn queue_resyncs(
     mut canvas: ResMut<Canvas>,
@@ -105,24 +107,18 @@ pub fn sync_vertices(
 
     let did_sync = match file_extension {
         FileExtension::Skel | FileExtension::Mesh => {
-            vertex_manager.sync_vertices_3d(
-                &vertex_3d_q,
-                &mut transform_q,
-                &visibility_q,
-            )
+            vertex_manager.sync_vertices_3d(&vertex_3d_q, &mut transform_q, &visibility_q)
         }
-        FileExtension::Anim => {
-            vertex_manager.sync_vertices_3d_anim(
-                &animation_manager,
-                &vertex_3d_q,
-                &mut transform_q,
-                &visibility_q,
-                &name_q,
-                &mut rotation_q,
-                &root_q,
-            )
-        }
-        _ => { false }
+        FileExtension::Anim => vertex_manager.sync_vertices_3d_anim(
+            &animation_manager,
+            &vertex_3d_q,
+            &mut transform_q,
+            &visibility_q,
+            &name_q,
+            &mut rotation_q,
+            &root_q,
+        ),
+        _ => false,
     };
     if did_sync {
         vertex_manager.sync_vertices_2d(

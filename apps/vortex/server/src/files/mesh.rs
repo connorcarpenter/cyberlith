@@ -3,9 +3,8 @@ use std::collections::HashMap;
 use bevy_ecs::{
     entity::Entity,
     prelude::{Commands, World},
-    system::{Query, SystemState},
+    system::{Query, ResMut, SystemState},
 };
-use bevy_ecs::system::ResMut;
 use bevy_log::info;
 
 use naia_bevy_server::{
@@ -13,9 +12,7 @@ use naia_bevy_server::{
     UnsignedVariableInteger,
 };
 
-use vortex_proto::{
-    components::{Edge3d, Face3d, FileExtension, FileType, Vertex3d, VertexSerdeInt},
-};
+use vortex_proto::components::{Edge3d, Face3d, FileExtension, FileType, Vertex3d, VertexSerdeInt};
 
 use crate::{
     files::{FileWriter, ShapeTypeData},
@@ -291,7 +288,8 @@ impl MeshReader {
         world: &mut World,
         actions: Vec<MeshAction>,
     ) -> HashMap<Entity, ContentEntityData> {
-        let mut system_state: SystemState<(Commands, Server, ResMut<ShapeManager>)> = SystemState::new(world);
+        let mut system_state: SystemState<(Commands, Server, ResMut<ShapeManager>)> =
+            SystemState::new(world);
         let (mut commands, mut server, mut shape_manager) = system_state.get_mut(world);
 
         let mut vertices = Vec::new();
@@ -393,11 +391,7 @@ impl MeshReader {
 }
 
 impl MeshReader {
-    pub fn read(
-        &self,
-        world: &mut World,
-        bytes: &Box<[u8]>,
-    ) -> HashMap<Entity, ContentEntityData> {
+    pub fn read(&self, world: &mut World, bytes: &Box<[u8]>) -> HashMap<Entity, ContentEntityData> {
         let mut bit_reader = BitReader::new(bytes);
 
         let Ok(actions) = Self::read_to_actions(&mut bit_reader) else {

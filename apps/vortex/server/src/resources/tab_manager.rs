@@ -34,7 +34,6 @@ impl Default for TabManager {
 }
 
 impl TabManager {
-
     pub fn queue_open_tab(
         &mut self,
         key_q: &Query<&FileKey>,
@@ -43,18 +42,24 @@ impl TabManager {
         file_entity: &Entity,
     ) {
         if key_q.get(*file_entity).is_err() {
-            self.waiting_opens.insert((*user_key, *file_entity), *tab_id);
-            info!("no FileEntryKey for entity: {:?}, queuing open tab", file_entity);
+            self.waiting_opens
+                .insert((*user_key, *file_entity), *tab_id);
+            info!(
+                "no FileEntryKey for entity: {:?}, queuing open tab",
+                file_entity
+            );
             return;
         }
 
-        self.queued_opens.push_back((*user_key, *tab_id, *file_entity));
+        self.queued_opens
+            .push_back((*user_key, *tab_id, *file_entity));
         info!("entity: {:?}, queuing open tab", file_entity);
     }
 
     pub fn complete_waiting_open(&mut self, user_key: &UserKey, file_entity: &Entity) {
         if let Some(tab_id) = self.waiting_opens.remove(&(*user_key, *file_entity)) {
-            self.queued_opens.push_back((*user_key, tab_id, *file_entity));
+            self.queued_opens
+                .push_back((*user_key, tab_id, *file_entity));
         }
     }
 
@@ -80,11 +85,7 @@ impl TabManager {
         }
 
         // insert tab into collection
-        user_manager.open_tab(
-            user_key,
-            tab_id.clone(),
-            file_key,
-        );
+        user_manager.open_tab(user_key, tab_id.clone(), file_key);
 
         (project_key, file_key.clone())
     }
@@ -108,12 +109,7 @@ impl TabManager {
                     ResMut<UserManager>,
                     Query<&FileKey>,
                 )> = SystemState::new(world);
-                let (
-                    mut tab_manager,
-                    mut user_manager,
-                    key_query,
-                ) = system_state.get_mut(world);
-
+                let (mut tab_manager, mut user_manager, key_query) = system_state.get_mut(world);
 
                 let tab_opens = tab_manager.take_queued_opens();
 
@@ -134,12 +130,7 @@ impl TabManager {
 
             {
                 for (user_key, project_key, file_key) in git_opens {
-                    git_manager.on_client_open_tab(
-                        world,
-                        &user_key,
-                        &project_key,
-                        &file_key,
-                    );
+                    git_manager.on_client_open_tab(world, &user_key, &project_key, &file_key);
                 }
             }
         });
@@ -220,12 +211,7 @@ impl TabManager {
                         let project = git_manager.project_mut(project_key).unwrap();
 
                         // handle despawns
-                        despawn_file_content_entities(
-                            world,
-                            project,
-                            file_key,
-                            content_entities,
-                        );
+                        despawn_file_content_entities(world, project, file_key, content_entities);
 
                         // deregister
                         git_manager.deregister_content_entities(world, content_entities);

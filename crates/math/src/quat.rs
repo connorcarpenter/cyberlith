@@ -244,7 +244,8 @@ mod tests {
             f32::to_radians(x_rot),
             f32::to_radians(y_rot),
             f32::to_radians(z_rot),
-        ).normalize();
+        )
+        .normalize();
 
         println!("quat_a: {:?}", quat_a);
 
@@ -253,7 +254,8 @@ mod tests {
             f32::to_radians(x_rot),
             f32::to_radians(y_rot),
             f32::to_radians(z_rot),
-        ).normalize();
+        )
+        .normalize();
 
         //println!("quat_b: {:?}", quat_b);
 
@@ -265,7 +267,8 @@ mod tests {
             f32::to_radians(x_rot),
             f32::to_radians(y_rot),
             f32::to_radians(z_rot),
-        ).normalize();
+        )
+        .normalize();
 
         //println!("quat_c: {:?}", quat_c);
 

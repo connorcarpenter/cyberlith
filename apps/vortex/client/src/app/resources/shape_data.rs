@@ -20,7 +20,11 @@ pub struct Vertex3dData {
 }
 
 impl Vertex3dData {
-    pub fn new(parent_3d_entity_opt: Option<Entity>, entity_2d: Entity, owner_opt: Option<Entity>) -> Self {
+    pub fn new(
+        parent_3d_entity_opt: Option<Entity>,
+        entity_2d: Entity,
+        owner_opt: Option<Entity>,
+    ) -> Self {
         Self {
             parent_3d_entity_opt,
             entity_2d,

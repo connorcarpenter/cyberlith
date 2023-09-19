@@ -2,9 +2,9 @@ use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{
     entity::Entity,
+    query::With,
     system::{Commands, Query, Resource},
 };
-use bevy_ecs::query::With;
 use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt, Replicate, ReplicationConfig};
@@ -16,22 +16,25 @@ use render_api::{
     Assets, Handle,
 };
 
-use vortex_proto::components::{AnimRotation, Face3d, FileExtension, FileType, OwnedByFile, ShapeName, Vertex3d, VertexRoot};
+use vortex_proto::components::{
+    AnimRotation, Face3d, FileExtension, FileType, OwnedByFile, ShapeName, Vertex3d, VertexRoot,
+};
 
 use crate::app::{
-    components::{Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d, VertexEntry},
+    components::{
+        Edge3dLocal, LocalAnimRotation, LocalShape, OwnedByFileLocal, Vertex2d, VertexEntry,
+    },
     resources::{
         action::{ActionStack, ShapeAction},
+        animation_manager::AnimationManager,
         camera_manager::CameraManager,
         canvas::Canvas,
         edge_manager::EdgeManager,
         face_manager::FaceManager,
         input_manager::InputManager,
         shape_data::{CanvasShape, FaceKey, Vertex3dData},
-        animation_manager::AnimationManager,
     },
 };
-use crate::app::components::LocalAnimRotation;
 
 #[derive(Resource)]
 pub struct VertexManager {
@@ -57,7 +60,6 @@ impl Default for VertexManager {
 }
 
 impl VertexManager {
-
     pub fn queue_resync(&mut self) {
         self.resync = true;
     }
@@ -117,7 +119,15 @@ impl VertexManager {
 
         self.resync = false;
 
-        animation_manager.sync_vertices_3d(self, vertex_3d_q, transform_q, visibility_q, name_q, rotation_q, root_q);
+        animation_manager.sync_vertices_3d(
+            self,
+            vertex_3d_q,
+            transform_q,
+            visibility_q,
+            name_q,
+            rotation_q,
+            root_q,
+        );
 
         return true;
     }
@@ -382,14 +392,27 @@ impl VertexManager {
         // );
 
         // register 3d & 2d vertices together
-        self.register_3d_vertex(parent_vertex_3d_entity_opt, vertex_3d_entity, vertex_2d_entity, ownership_opt);
+        self.register_3d_vertex(
+            parent_vertex_3d_entity_opt,
+            vertex_3d_entity,
+            vertex_2d_entity,
+            ownership_opt,
+        );
 
         vertex_2d_entity
     }
 
-    pub fn register_3d_vertex(&mut self, parent_vertex_3d_entity_opt: Option<Entity>, entity_3d: Entity, entity_2d: Entity, ownership_opt: Option<Entity>) {
-        self.vertices_3d
-            .insert(entity_3d, Vertex3dData::new(parent_vertex_3d_entity_opt, entity_2d, ownership_opt));
+    pub fn register_3d_vertex(
+        &mut self,
+        parent_vertex_3d_entity_opt: Option<Entity>,
+        entity_3d: Entity,
+        entity_2d: Entity,
+        ownership_opt: Option<Entity>,
+    ) {
+        self.vertices_3d.insert(
+            entity_3d,
+            Vertex3dData::new(parent_vertex_3d_entity_opt, entity_2d, ownership_opt),
+        );
         self.vertices_2d.insert(entity_2d, entity_3d);
 
         if let Some(parent_vertex_3d_entity) = parent_vertex_3d_entity_opt {
@@ -405,7 +428,10 @@ impl VertexManager {
         vertex_3d_data.parent_3d_entity_opt
     }
 
-    pub fn vertex_children_3d_entities(&self, vertex_3d_entity: &Entity) -> Option<&HashSet<Entity>> {
+    pub fn vertex_children_3d_entities(
+        &self,
+        vertex_3d_entity: &Entity,
+    ) -> Option<&HashSet<Entity>> {
         let vertex_3d_data = self.vertices_3d.get(vertex_3d_entity)?;
         vertex_3d_data.children_3d_entities_opt.as_ref()
     }
@@ -429,8 +455,11 @@ impl VertexManager {
         let new_vertex_3d_entity = commands.spawn_empty().insert(vertex_3d_component).id();
 
         // vertex 2d
-        let parent_vertex_3d_entity_opt = parent_vertex_2d_entity_opt
-            .map(|parent_vertex_2d_entity| self.vertex_entity_2d_to_3d(&parent_vertex_2d_entity).unwrap());
+        let parent_vertex_3d_entity_opt =
+            parent_vertex_2d_entity_opt.map(|parent_vertex_2d_entity| {
+                self.vertex_entity_2d_to_3d(&parent_vertex_2d_entity)
+                    .unwrap()
+            });
         let new_vertex_2d_entity = self.vertex_3d_postprocess(
             commands,
             meshes,

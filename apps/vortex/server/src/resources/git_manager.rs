@@ -7,7 +7,7 @@ use std::{
 use bevy_ecs::{
     entity::Entity,
     system::{Commands, ResMut, Resource, SystemState},
-    world::{World, Mut},
+    world::{Mut, World},
 };
 use bevy_log::info;
 use git2::{Cred, Repository, Tree};
@@ -93,12 +93,7 @@ impl GitManager {
             if let Some(new_content_entities) =
                 project.user_join_filespace(world, user_key, file_key)
             {
-                self.register_content_entities(
-                    world,
-                    project_key,
-                    file_key,
-                    &new_content_entities,
-                );
+                self.register_content_entities(world, project_key, file_key, &new_content_entities);
             }
         }
 
@@ -108,11 +103,9 @@ impl GitManager {
             let dependency_file_keys = project.dependency_file_keys(file_key);
             for dependency_key in dependency_file_keys {
                 let project = self.projects.get_mut(project_key).unwrap();
-                if let Some(new_content_entities) = project.user_join_filespace(
-                    world,
-                    user_key,
-                    &dependency_key,
-                ) {
+                if let Some(new_content_entities) =
+                    project.user_join_filespace(world, user_key, &dependency_key)
+                {
                     self.register_content_entities(
                         world,
                         project_key,

@@ -1,32 +1,22 @@
 use bevy_ecs::{
     entity::Entity,
     query::{With, Without},
-    system::{Commands, Query, Res, ResMut},
+    system::{Query, Res, ResMut, SystemState},
+    world::{Mut, World},
 };
-use bevy_ecs::system::SystemState;
-use bevy_ecs::world::{Mut, World};
-
-use naia_bevy_client::Client;
 
 use input::Input;
-use render_api::components::{Camera, Projection, Transform, Visibility};
+use render_api::components::{Transform, Visibility};
 
-use vortex_proto::components::{EdgeAngle, ShapeName, Vertex3d, VertexRoot};
+use vortex_proto::components::VertexRoot;
 
 use crate::app::{
     components::{Edge2dLocal, FaceIcon2d, LocalShape, Vertex2d},
-    resources::{
-        animation_manager::AnimationManager, camera_manager::CameraManager, canvas::Canvas,
-        edge_manager::EdgeManager, face_manager::FaceManager, file_manager::FileManager,
-        input_manager::InputManager, tab_manager::TabManager, vertex_manager::VertexManager,
-    },
+    resources::{canvas::Canvas, input_manager::InputManager, tab_manager::TabManager},
 };
 
 pub fn input(world: &mut World) {
-    let mut system_state: SystemState<(
-        Res<Canvas>,
-        ResMut<Input>,
-    )> = SystemState::new(world);
+    let mut system_state: SystemState<(Res<Canvas>, ResMut<Input>)> = SystemState::new(world);
     let (canvas, mut input) = system_state.get_mut(world);
 
     if !canvas.is_visible() {
@@ -36,10 +26,7 @@ pub fn input(world: &mut World) {
     let input_actions = input.take_actions();
 
     world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
-        input_manager.update_input(
-            input_actions,
-            world,
-        );
+        input_manager.update_input(input_actions, world);
     });
 }
 

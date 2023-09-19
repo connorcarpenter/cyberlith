@@ -7,9 +7,7 @@ use vortex_proto::components::{
     Edge3d, Face3d, FileSystemChild, FileSystemRootChild, ShapeName, Vertex3d, VertexRoot,
 };
 
-pub fn remove_component_events(
-    mut event_reader: EventReader<RemoveComponentEvents>
-) {
+pub fn remove_component_events(mut event_reader: EventReader<RemoveComponentEvents>) {
     for events in event_reader.iter() {
         for (_user_key, _entity, _component) in events.read::<FileSystemRootChild>() {
             info!("removed FileSystemRootChild component from entity");

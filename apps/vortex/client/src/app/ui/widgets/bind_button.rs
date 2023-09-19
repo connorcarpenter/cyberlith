@@ -66,7 +66,9 @@ pub fn render_bind_button(ui: &mut Ui, world: &mut World, current_file_entity: &
                             SystemState::new(world);
                         let (mut commands, mut client) = system_state.get_mut(world);
 
-                        commands.entity(dependency_entity).release_authority(&mut client);
+                        commands
+                            .entity(dependency_entity)
+                            .release_authority(&mut client);
 
                         system_state.apply(world);
                     }

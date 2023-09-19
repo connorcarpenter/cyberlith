@@ -1,6 +1,6 @@
 use bevy_ecs::{
     event::EventReader,
-    system::{ResMut, Query},
+    system::{Query, ResMut},
 };
 use bevy_log::info;
 
@@ -36,12 +36,7 @@ pub fn message_events(
         for (user_key, message) in events.read::<TabActionChannel, TabOpenMessage>() {
             let tab_id = message.tab_id;
             if let Some(file_entity) = message.file_entity.get(&server) {
-                tab_manager.queue_open_tab(
-                    &file_key_q,
-                    &user_key,
-                    &tab_id,
-                    &file_entity,
-                );
+                tab_manager.queue_open_tab(&file_key_q, &user_key, &tab_id, &file_entity);
             }
         }
 
