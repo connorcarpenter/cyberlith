@@ -262,6 +262,9 @@ impl AnimationManager {
             return;
         };
 
+        let (_, vertex_3d) = vertex_3d_q.get(root_3d_vertex).unwrap();
+        let vertex_pos = vertex_3d.as_vec3();
+
         self.sync_vertices_3d_children(
             vertex_manager,
             vertex_3d_q,
@@ -270,9 +273,10 @@ impl AnimationManager {
             rotation_q,
             current_frame,
             root_3d_vertex,
+            vertex_pos,
+            vertex_pos,
+            Quat::IDENTITY,
         );
-
-
     }
 
     fn sync_vertices_3d_children(
@@ -283,52 +287,40 @@ impl AnimationManager {
         name_q: &Query<&ShapeName>,
         rot_q: &Query<&AnimRotation>,
         frame_entity: Entity,
-        parent_vertex_3d_entity: Entity
+        parent_vertex_3d_entity: Entity,
+        original_parent_pos: Vec3,
+        rotated_parent_pos: Vec3,
+        parent_rotation: Quat,
     ) {
         let Some(children) = vertex_manager.vertex_children_3d_entities(&parent_vertex_3d_entity) else {
             return;
         };
-        let (_, parent_vertex_3d) = vertex_3d_q.get(parent_vertex_3d_entity).unwrap();
-        let parent_pos = parent_vertex_3d.as_vec3();
 
         for child_vertex_3d_entity in children.iter() {
 
             let (_, vertex_3d) = vertex_3d_q.get(*child_vertex_3d_entity).unwrap();
+            let original_child_pos = vertex_3d.as_vec3();
 
-            let mut rotation_opt = None;
+            let mut rotation = Quat::IDENTITY;
             if let Ok(name_component) = name_q.get(*child_vertex_3d_entity) {
                 let name = (*name_component.value).clone();
                 if let Some(rotation_entity) = self.vertex_names.get(&(frame_entity, name)) {
-                    rotation_opt = Some(rotation_entity);
+                    let anim_rotation = rot_q.get(*rotation_entity).unwrap();
+                    rotation = anim_rotation.get_rotation();
                 }
             }
 
-            if let Some(rotation_entity) = rotation_opt {
-                let rotation = rot_q.get(*rotation_entity).unwrap();
-                let rotation = rotation.get_rotation();
+            let rotation = (parent_rotation * rotation).normalize();
+            let displacement = original_child_pos - original_parent_pos;
+            let rotated_displacement = rotation * displacement;
+            let rotated_child_pos = rotated_parent_pos + rotated_displacement;
 
-                let displacement = vertex_3d.as_vec3() - parent_pos;
-                let rotated_displacement = rotation * displacement;
-                let new_position = parent_pos + rotated_displacement;
-
-                // update transform
-                let Ok(mut vertex_3d_transform) = transform_q.get_mut(*child_vertex_3d_entity) else {
-                    warn!("Vertex3d entity {:?} has no Transform", child_vertex_3d_entity);
-                    continue;
-                };
-                vertex_3d_transform.translation = new_position;
-
-            } else {
-                // get transform
-                let Ok(mut vertex_3d_transform) = transform_q.get_mut(*child_vertex_3d_entity) else {
-                    warn!("Vertex3d entity {:?} has no Transform", child_vertex_3d_entity);
-                    continue;
-                };
-                // update 3d vertices
-                vertex_3d_transform.translation.x = vertex_3d.x().into();
-                vertex_3d_transform.translation.y = vertex_3d.y().into();
-                vertex_3d_transform.translation.z = vertex_3d.z().into();
-            }
+            // update transform
+            let Ok(mut vertex_3d_transform) = transform_q.get_mut(*child_vertex_3d_entity) else {
+                warn!("Vertex3d entity {:?} has no Transform", child_vertex_3d_entity);
+                continue;
+            };
+            vertex_3d_transform.translation = rotated_child_pos;
 
             // recurse
             self.sync_vertices_3d_children(
@@ -338,7 +330,10 @@ impl AnimationManager {
                 name_q,
                 rot_q,
                 frame_entity,
-                *child_vertex_3d_entity
+                *child_vertex_3d_entity,
+                original_child_pos,
+                rotated_child_pos,
+                rotation,
             );
         }
     }
