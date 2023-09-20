@@ -11,6 +11,8 @@ use crate::app::{
         },
         shape_data::CanvasShape,
         vertex_manager::VertexManager,
+        edge_manager::EdgeManager,
+        face_manager::FaceManager,
     },
 };
 
@@ -49,15 +51,15 @@ impl ShapeAction {
         new_3d_vert_entity: Entity,
     ) {
         match self {
-            ShapeAction::SelectShape(entity_opt) => match entity_opt {
-                Some((entity, CanvasShape::Vertex)) | Some((entity, CanvasShape::RootVertex)) => {
+            Self::SelectShape(entity_opt) => match entity_opt {
+                Some((entity, CanvasShape::Vertex | CanvasShape::RootVertex)) => {
                     if *entity == old_2d_vert_entity {
                         *entity = new_2d_vert_entity;
                     }
                 }
                 _ => {}
             },
-            ShapeAction::CreateVertex(vertex_type_data, _, entity_opt) => {
+            Self::CreateVertex(vertex_type_data, _, entity_opt) => {
                 vertex_type_data.migrate_vertex_entities(
                     old_2d_vert_entity,
                     new_2d_vert_entity,
@@ -74,7 +76,7 @@ impl ShapeAction {
                     }
                 }
             }
-            ShapeAction::DeleteVertex(entity, entity_opt) => {
+            Self::DeleteVertex(entity, entity_opt) => {
                 if *entity == old_2d_vert_entity {
                     *entity = new_2d_vert_entity;
                 }
@@ -84,12 +86,12 @@ impl ShapeAction {
                     }
                 }
             }
-            ShapeAction::MoveVertex(entity, _, _) => {
+            Self::MoveVertex(entity, _, _) => {
                 if *entity == old_2d_vert_entity {
                     *entity = new_2d_vert_entity;
                 }
             }
-            ShapeAction::CreateEdge(entity_a, entity_b, shape_to_select, face_to_create_opt, _) => {
+            Self::CreateEdge(entity_a, entity_b, shape_to_select, face_to_create_opt, _) => {
                 if *entity_a == old_2d_vert_entity {
                     *entity_a = new_2d_vert_entity;
                 }
@@ -109,7 +111,7 @@ impl ShapeAction {
                     }
                 }
             }
-            ShapeAction::DeleteEdge(_, Some((entity, _))) => {
+            Self::DeleteEdge(_, Some((entity, _))) => {
                 if *entity == old_2d_vert_entity {
                     *entity = new_2d_vert_entity;
                 }
@@ -124,7 +126,7 @@ impl ShapeAction {
         new_2d_edge_entity: Entity,
     ) {
         match self {
-            ShapeAction::SelectShape(entity_opt) => match entity_opt {
+            Self::SelectShape(entity_opt) => match entity_opt {
                 Some((entity, CanvasShape::Edge)) => {
                     if *entity == old_2d_edge_entity {
                         *entity = new_2d_edge_entity;
@@ -132,10 +134,10 @@ impl ShapeAction {
                 }
                 _ => {}
             },
-            ShapeAction::CreateVertex(vertex_type_data, _, _) => {
+            Self::CreateVertex(vertex_type_data, _, _) => {
                 vertex_type_data.migrate_edge_entities(old_2d_edge_entity, new_2d_edge_entity);
             }
-            ShapeAction::CreateEdge(_, _, shape_to_select, _, Some(edge_2d_entity)) => {
+            Self::CreateEdge(_, _, shape_to_select, _, Some(edge_2d_entity)) => {
                 if *edge_2d_entity == old_2d_edge_entity {
                     *edge_2d_entity = new_2d_edge_entity;
                 }
@@ -145,12 +147,12 @@ impl ShapeAction {
                     }
                 }
             }
-            ShapeAction::RotateEdge(edge_2d_entity, _, _) => {
+            Self::RotateEdge(edge_2d_entity, _, _) => {
                 if *edge_2d_entity == old_2d_edge_entity {
                     *edge_2d_entity = new_2d_edge_entity;
                 }
             }
-            ShapeAction::DeleteEdge(edge_2d_entity, _) => {
+            Self::DeleteEdge(edge_2d_entity, _) => {
                 if *edge_2d_entity == old_2d_edge_entity {
                     *edge_2d_entity = new_2d_edge_entity;
                 }
@@ -165,7 +167,7 @@ impl ShapeAction {
         new_2d_face_entity: Entity,
     ) {
         match self {
-            ShapeAction::SelectShape(entity_opt) => match entity_opt {
+            Self::SelectShape(entity_opt) => match entity_opt {
                 Some((face_2d_entity, CanvasShape::Face)) => {
                     if *face_2d_entity == old_2d_face_entity {
                         *face_2d_entity = new_2d_face_entity;
@@ -173,10 +175,10 @@ impl ShapeAction {
                 }
                 _ => {}
             },
-            ShapeAction::CreateVertex(vertex_type_data, _, _) => {
+            Self::CreateVertex(vertex_type_data, _, _) => {
                 vertex_type_data.migrate_face_entities(old_2d_face_entity, new_2d_face_entity);
             }
-            ShapeAction::CreateEdge(_, _, _, faces_to_create_opt, _) => {
+            Self::CreateEdge(_, _, _, faces_to_create_opt, _) => {
                 if let Some(entities) = faces_to_create_opt {
                     for (_, face_2d_entity, _) in entities {
                         if *face_2d_entity == old_2d_face_entity {
@@ -185,7 +187,7 @@ impl ShapeAction {
                     }
                 }
             }
-            ShapeAction::DeleteFace(face_2d_entity) => {
+            Self::DeleteFace(face_2d_entity) => {
                 if *face_2d_entity == old_2d_face_entity {
                     *face_2d_entity = new_2d_face_entity;
                 }
@@ -206,10 +208,10 @@ impl Action for ShapeAction {
             panic!("should be a tab file entity");
         };
         match self {
-            ShapeAction::SelectShape(shape_2d_entity_opt) => {
+            Self::SelectShape(shape_2d_entity_opt) => {
                 select_shape::execute(world, shape_2d_entity_opt)
             }
-            ShapeAction::CreateVertex(vertex_type_data, position, old_vertex_entities_opt) => {
+            Self::CreateVertex(vertex_type_data, position, old_vertex_entities_opt) => {
                 create_vertex::execute(
                     world,
                     action_stack,
@@ -219,13 +221,13 @@ impl Action for ShapeAction {
                     old_vertex_entities_opt,
                 )
             }
-            ShapeAction::DeleteVertex(vertex_2d_entity, vertex_2d_to_select_opt) => {
+            Self::DeleteVertex(vertex_2d_entity, vertex_2d_to_select_opt) => {
                 delete_vertex::execute(world, vertex_2d_entity, vertex_2d_to_select_opt)
             }
-            ShapeAction::MoveVertex(vertex_2d_entity, old_position, new_position) => {
+            Self::MoveVertex(vertex_2d_entity, old_position, new_position) => {
                 move_vertex::execute(world, vertex_2d_entity, old_position, new_position)
             }
-            ShapeAction::CreateEdge(
+            Self::CreateEdge(
                 vertex_2d_entity_a,
                 vertex_2d_entity_b,
                 (shape_2d_entity_to_select, shape_2d_type_to_select),
@@ -241,13 +243,13 @@ impl Action for ShapeAction {
                 face_to_create_opt,
                 old_edge_entities_opt,
             ),
-            ShapeAction::DeleteEdge(edge_2d_entity, shape_2d_to_select_opt) => {
+            Self::DeleteEdge(edge_2d_entity, shape_2d_to_select_opt) => {
                 delete_edge::execute(world, edge_2d_entity, shape_2d_to_select_opt)
             }
-            ShapeAction::RotateEdge(edge_2d_entity, old_angle, new_angle) => {
+            Self::RotateEdge(edge_2d_entity, old_angle, new_angle) => {
                 rotate_edge::execute(world, edge_2d_entity, old_angle, new_angle)
             }
-            ShapeAction::DeleteFace(face_2d_entity) => delete_face::execute(world, face_2d_entity),
+            Self::DeleteFace(face_2d_entity) => delete_face::execute(world, face_2d_entity),
         }
     }
 
@@ -273,16 +275,36 @@ impl Action for ShapeAction {
             Some(Self::SelectShape(vertex_2d_entity_opt)) => {
                 let mut entities = Vec::new();
 
-                if let Some((vertex_2d_entity, CanvasShape::Vertex)) = vertex_2d_entity_opt {
-                    let vertex_3d_entity = world
-                        .get_resource::<VertexManager>()
-                        .unwrap()
-                        .vertex_entity_2d_to_3d(vertex_2d_entity)
-                        .unwrap();
-                    entities.push(vertex_3d_entity);
+                if let Some((shape_2d_entity, shape_type)) = vertex_2d_entity_opt {
+                    match shape_type {
+                        CanvasShape::RootVertex | CanvasShape::Vertex => {
+                            let vertex_3d_entity = world
+                                .get_resource::<VertexManager>()
+                                .unwrap()
+                                .vertex_entity_2d_to_3d(shape_2d_entity)
+                                .unwrap();
+                            entities.push(vertex_3d_entity);
+                        }
+                        CanvasShape::Edge => {
+                            let edge_3d_entity = world
+                                .get_resource::<EdgeManager>()
+                                .unwrap()
+                                .edge_entity_2d_to_3d(shape_2d_entity)
+                                .unwrap();
+                            entities.push(edge_3d_entity);
+                        }
+                        CanvasShape::Face => {
+                            let face_3d_entity = world
+                                .get_resource::<FaceManager>()
+                                .unwrap()
+                                .face_entity_2d_to_3d(shape_2d_entity)
+                                .unwrap();
+                            entities.push(face_3d_entity);
+                        }
+                    }
                 }
 
-                *enabled = ActionStack::<ShapeAction>::should_be_enabled(world, &entities);
+                *enabled = ActionStack::<Self>::should_be_enabled(world, &entities);
             }
             _ => {
                 *enabled = true;

@@ -395,7 +395,7 @@ impl FileTreeRowUiWidget {
                 SystemState::new(world);
             let (mut client, mut tab_manager) = system_state.get_mut(world);
 
-            tab_manager.open_tab(&mut client, row_entity);
+            tab_manager.open_tab(&mut client, row_entity, file_ext);
 
             system_state.apply(world);
         }

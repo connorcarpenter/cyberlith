@@ -14,8 +14,12 @@ mod rotate_edge;
 mod select_file;
 mod select_shape;
 mod shape_action;
+mod anim_action;
+mod select_vertex_anim;
 
 pub use action_stack::*;
 pub use file_action::*;
 pub use file_actions::*;
 pub use shape_action::*;
+pub use anim_action::*;
+pub use select_vertex_anim::*;

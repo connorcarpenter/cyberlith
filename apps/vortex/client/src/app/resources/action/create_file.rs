@@ -80,7 +80,7 @@ pub(crate) fn execute(
     // actually create new entry
     let mut parent = parent_query.get_mut(parent_entity).unwrap();
 
-    let entity_id = create_fs_entry(
+    let (file_ext, entity_id) = create_fs_entry(
         action_stack,
         &mut commands,
         &mut client,
@@ -99,7 +99,7 @@ pub(crate) fn execute(
 
     if entry_kind == EntryKind::File {
         // open tab for new entry
-        tab_manager.open_tab(&mut client, &entity_id);
+        tab_manager.open_tab(&mut client, &entity_id, file_ext);
     }
 
     system_state.apply(world);
@@ -120,7 +120,7 @@ fn create_fs_entry(
     new_file_name: &str,
     entry_kind: EntryKind,
     entry_contents_opt: Option<Vec<FileTree>>,
-) -> Entity {
+) -> (FileExtension, Entity) {
     info!("creating new fs entry: `{}`", new_file_name);
 
     let entity_id = commands
@@ -148,7 +148,7 @@ fn create_fs_entry(
 
         if let Some(entry_contents) = entry_contents_opt {
             for sub_tree in entry_contents {
-                let new_entity = create_fs_entry(
+                let (_, new_entity) = create_fs_entry(
                     action_stack,
                     commands,
                     client,
@@ -179,7 +179,8 @@ fn create_fs_entry(
         .insert(FileSystemEntryLocal::new(new_file_name));
 
     // register with file manager
-    file_manager.on_file_create(&entity_id, FileExtension::from(new_file_name));
+    let file_ext = FileExtension::from(new_file_name);
+    file_manager.on_file_create(&entity_id, file_ext);
 
-    entity_id
+    (file_ext, entity_id)
 }

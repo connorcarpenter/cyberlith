@@ -1,9 +1,8 @@
 use std::collections::{HashMap, VecDeque};
 
-use bevy_ecs::system::Res;
 use bevy_ecs::{
     prelude::{Entity, Resource},
-    system::{Query, ResMut, SystemState},
+    system::{Res, Query, ResMut, SystemState},
     world::World,
 };
 
@@ -17,7 +16,7 @@ use render_egui::{
 
 use vortex_proto::{
     channels::TabActionChannel,
-    components::{ChangelistStatus, FileSystemEntry},
+    components::{ChangelistStatus, FileSystemEntry, FileExtension},
     messages::{TabCloseMessage, TabOpenMessage},
     types::TabId,
 };
@@ -25,7 +24,7 @@ use vortex_proto::{
 use crate::app::{
     components::{file_system::FileSystemUiState, OwnedByFileLocal},
     resources::{
-        action::{ActionStack, ShapeAction},
+        action::{TabActionStack, ShapeAction},
         camera_manager::CameraManager,
         camera_state::CameraState,
         canvas::Canvas,
@@ -46,17 +45,17 @@ pub struct TabState {
     pub order: usize,
     pub tab_id: TabId,
     pub camera_state: CameraState,
-    pub action_stack: ActionStack<ShapeAction>,
+    pub action_stack: TabActionStack,
 }
 
 impl TabState {
-    pub fn new(id: TabId, order: usize) -> Self {
+    pub fn new(id: TabId, order: usize, file_ext: FileExtension) -> Self {
         Self {
             selected: false,
             order,
             tab_id: id,
             camera_state: CameraState::default(),
-            action_stack: ActionStack::default(),
+            action_stack: TabActionStack::new(file_ext),
         }
     }
 }
@@ -168,7 +167,7 @@ impl TabManager {
         camera_manager.recalculate_3d_view();
     }
 
-    pub fn open_tab(&mut self, client: &mut Client, row_entity: &Entity) {
+    pub fn open_tab(&mut self, client: &mut Client, row_entity: &Entity, file_ext: FileExtension) {
         if self.tab_map.contains_key(row_entity) {
             self.select_tab(row_entity);
         } else {
@@ -183,7 +182,7 @@ impl TabManager {
             // insert new tab
             let new_tab_id = self.new_tab_id();
             self.tab_map
-                .insert(*row_entity, TabState::new(new_tab_id, current_order));
+                .insert(*row_entity, TabState::new(new_tab_id, current_order, file_ext));
             self.tab_order.insert(current_order, *row_entity);
 
             // send message to server
@@ -259,10 +258,12 @@ impl TabManager {
         Some(&mut tab_state.camera_state)
     }
 
-    pub fn current_tab_action_stack_mut(&mut self) -> Option<&mut ActionStack<ShapeAction>> {
-        let current_entity = self.current_tab?;
-        let tab_state = self.tab_map.get_mut(&current_entity)?;
-        Some(&mut tab_state.action_stack)
+    pub fn buffer_shape_action(&mut self, action: ShapeAction) {
+        if let Some(current_entity) = self.current_tab {
+            if let Some(tab_state) = self.tab_map.get_mut(&current_entity) {
+                tab_state.action_stack.buffer_shape_action(action);
+            }
+        }
     }
 
     fn new_tab_id(&mut self) -> TabId {

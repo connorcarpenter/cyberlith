@@ -31,7 +31,7 @@ use crate::app::{
         camera_manager::CameraManager, camera_state::CameraState, canvas::Canvas,
         edge_manager::EdgeManager, face_manager::FaceManager, file_manager::FileManager,
         key_action_map::KeyActionMap, shape_data::CanvasShape, tab_manager::TabManager,
-        vertex_manager::VertexManager,
+        vertex_manager::VertexManager, action::AnimAction,
     },
 };
 
@@ -201,9 +201,7 @@ impl InputManager {
                         vertex_manager.last_vertex_dragged.take()
                     {
                         tab_manager
-                            .current_tab_action_stack_mut()
-                            .unwrap()
-                            .buffer_action(ShapeAction::MoveVertex(
+                            .buffer_shape_action(ShapeAction::MoveVertex(
                                 vertex_2d_entity,
                                 old_pos,
                                 new_pos,
@@ -213,9 +211,7 @@ impl InputManager {
                         edge_manager.last_edge_dragged.take()
                     {
                         tab_manager
-                            .current_tab_action_stack_mut()
-                            .unwrap()
-                            .buffer_action(ShapeAction::RotateEdge(
+                            .buffer_shape_action(ShapeAction::RotateEdge(
                                 edge_2d_entity,
                                 old_angle,
                                 new_angle,
@@ -608,10 +604,7 @@ impl InputManager {
             return;
         }
 
-        tab_manager
-            .current_tab_action_stack_mut()
-            .unwrap()
-            .buffer_action(ShapeAction::CreateVertex(
+        tab_manager.buffer_shape_action(ShapeAction::CreateVertex(
                 VertexTypeData::Mesh(Vec::new(), Vec::new()),
                 Vec3::ZERO,
                 None,
@@ -680,7 +673,7 @@ impl InputManager {
                     .current_tab_state_mut()
                     .unwrap()
                     .action_stack
-                    .buffer_action(ShapeAction::DeleteVertex(vertex_2d_entity, None));
+                    .buffer_shape_action(ShapeAction::DeleteVertex(vertex_2d_entity, None));
 
                 self.selected_shape = None;
             }
@@ -712,7 +705,7 @@ impl InputManager {
                     .current_tab_state_mut()
                     .unwrap()
                     .action_stack
-                    .buffer_action(ShapeAction::DeleteEdge(edge_2d_entity, None));
+                    .buffer_shape_action(ShapeAction::DeleteEdge(edge_2d_entity, None));
 
                 self.selected_shape = None;
             }
@@ -740,7 +733,7 @@ impl InputManager {
                     .current_tab_state_mut()
                     .unwrap()
                     .action_stack
-                    .buffer_action(ShapeAction::DeleteFace(face_2d_entity));
+                    .buffer_shape_action(ShapeAction::DeleteFace(face_2d_entity));
 
                 self.selected_shape = None;
             }
@@ -782,25 +775,24 @@ impl InputManager {
 
         // click_type, selected_shape, hovered_shape, current_file_type
         match (click_type, selected_shape, hovered_shape, current_file_type) {
-            (MouseButton::Left, Some(CanvasShape::Edge | CanvasShape::Face), _, _) => {
+            (MouseButton::Left, Some(CanvasShape::Edge | CanvasShape::Face), _, FileExtension::Skel | FileExtension::Mesh) => {
                 // should not ever be able to attach something to an edge or face?
                 // select hovered entity
                 tab_manager
                     .current_tab_state_mut()
                     .unwrap()
                     .action_stack
-                    .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
+                    .buffer_shape_action(ShapeAction::SelectShape(self.hovered_entity));
                 return;
             }
-            (MouseButton::Left, Some(_), Some(_), FileExtension::Skel) => {
+            (MouseButton::Left, Some(CanvasShape::Vertex | CanvasShape::RootVertex), Some(_), FileExtension::Skel) => {
                 // skel file type does nothing when trying to connect vertices together
-                // needs to always be a new vertex
                 // select hovered entity
                 tab_manager
                     .current_tab_state_mut()
                     .unwrap()
                     .action_stack
-                    .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
+                    .buffer_shape_action(ShapeAction::SelectShape(self.hovered_entity));
                 return;
             }
             (MouseButton::Left, Some(_), Some(shape), FileExtension::Anim) => {
@@ -811,7 +803,7 @@ impl InputManager {
                             .current_tab_state_mut()
                             .unwrap()
                             .action_stack
-                            .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
+                            .buffer_anim_action(AnimAction::SelectVertex(self.hovered_entity.map(|(e, _)| e)));
                         return;
                     }
                     _ => {
@@ -820,7 +812,7 @@ impl InputManager {
                             .current_tab_state_mut()
                             .unwrap()
                             .action_stack
-                            .buffer_action(ShapeAction::SelectShape(None));
+                            .buffer_anim_action(AnimAction::SelectVertex(None));
                         return;
                     }
                 }
@@ -837,12 +829,12 @@ impl InputManager {
                     .current_tab_state_mut()
                     .unwrap()
                     .action_stack
-                    .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
+                    .buffer_shape_action(ShapeAction::SelectShape(self.hovered_entity));
                 return;
             }
             (
                 MouseButton::Left,
-                Some(_),
+                Some(CanvasShape::Vertex | CanvasShape::RootVertex),
                 Some(CanvasShape::Vertex | CanvasShape::RootVertex),
                 FileExtension::Mesh,
             ) => {
@@ -862,12 +854,12 @@ impl InputManager {
                     )
                     .is_some()
                 {
-                    // select edge
+                    // select vertex
                     tab_manager
                         .current_tab_state_mut()
                         .unwrap()
                         .action_stack
-                        .buffer_action(ShapeAction::SelectShape(Some((
+                        .buffer_shape_action(ShapeAction::SelectShape(Some((
                             vertex_2d_entity_b,
                             CanvasShape::Vertex,
                         ))));
@@ -878,7 +870,7 @@ impl InputManager {
                         .current_tab_state_mut()
                         .unwrap()
                         .action_stack
-                        .buffer_action(ShapeAction::CreateEdge(
+                        .buffer_shape_action(ShapeAction::CreateEdge(
                             vertex_2d_entity_a,
                             vertex_2d_entity_b,
                             (vertex_2d_entity_b, CanvasShape::Vertex),
@@ -888,16 +880,16 @@ impl InputManager {
                     return;
                 }
             }
-            (MouseButton::Left, Some(_), None, FileExtension::Anim) => {
+            (MouseButton::Left, Some(CanvasShape::Vertex), None, FileExtension::Anim) => {
                 // deselect vertex
                 tab_manager
                     .current_tab_state_mut()
                     .unwrap()
                     .action_stack
-                    .buffer_action(ShapeAction::SelectShape(None));
+                    .buffer_anim_action(AnimAction::SelectVertex(None));
                 return;
             }
-            (MouseButton::Left, Some(_), None, FileExtension::Skel | FileExtension::Mesh) => {
+            (MouseButton::Left, Some(CanvasShape::Vertex | CanvasShape::RootVertex), None, FileExtension::Skel | FileExtension::Mesh) => {
                 // create new vertex
 
                 // get camera
@@ -932,7 +924,7 @@ impl InputManager {
                     .current_tab_state_mut()
                     .unwrap()
                     .action_stack
-                    .buffer_action(ShapeAction::CreateVertex(
+                    .buffer_shape_action(ShapeAction::CreateVertex(
                         match current_file_type {
                             FileExtension::Skel => {
                                 VertexTypeData::Skel(vertex_2d_entity, 0.0, None)
@@ -948,42 +940,45 @@ impl InputManager {
                         None,
                     ));
             }
-            (MouseButton::Left, None, Some(CanvasShape::Vertex | CanvasShape::RootVertex), _) => {
+            (MouseButton::Left, None, Some(CanvasShape::RootVertex | CanvasShape::Vertex | CanvasShape::Edge), FileExtension::Skel | FileExtension::Mesh) => {
                 tab_manager
                     .current_tab_state_mut()
                     .unwrap()
                     .action_stack
-                    .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
+                    .buffer_shape_action(ShapeAction::SelectShape(self.hovered_entity));
+            }
+            (MouseButton::Left, None, Some(CanvasShape::Vertex), FileExtension::Anim) => {
+                tab_manager
+                    .current_tab_state_mut()
+                    .unwrap()
+                    .action_stack
+                    .buffer_anim_action(AnimAction::SelectVertex(self.hovered_entity.map(|(e, _)| e)));
             }
             (MouseButton::Left, None, Some(CanvasShape::Edge), FileExtension::Anim) => {
                 return;
-            }
-            (
-                MouseButton::Left,
-                None,
-                Some(CanvasShape::Edge),
-                FileExtension::Skel | FileExtension::Mesh,
-            ) => {
-                tab_manager
-                    .current_tab_state_mut()
-                    .unwrap()
-                    .action_stack
-                    .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
             }
             (MouseButton::Left, None, Some(CanvasShape::Face), FileExtension::Mesh) => {
                 tab_manager
                     .current_tab_state_mut()
                     .unwrap()
                     .action_stack
-                    .buffer_action(ShapeAction::SelectShape(self.hovered_entity));
+                    .buffer_shape_action(ShapeAction::SelectShape(self.hovered_entity));
             }
-            (MouseButton::Right, _, _, _) => {
+            (MouseButton::Right, _, _, FileExtension::Skel | FileExtension::Mesh) => {
                 // deselect vertex
                 tab_manager
                     .current_tab_state_mut()
                     .unwrap()
                     .action_stack
-                    .buffer_action(ShapeAction::SelectShape(None));
+                    .buffer_shape_action(ShapeAction::SelectShape(None));
+            }
+            (MouseButton::Right, _, _, FileExtension::Anim) => {
+                // deselect vertex
+                tab_manager
+                    .current_tab_state_mut()
+                    .unwrap()
+                    .action_stack
+                    .buffer_anim_action(AnimAction::SelectVertex(None));
             }
             _ => {}
         }

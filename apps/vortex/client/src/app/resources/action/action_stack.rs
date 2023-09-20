@@ -6,8 +6,10 @@ use bevy_ecs::{
 
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
 
+use vortex_proto::components::FileExtension;
+
 use crate::app::resources::{
-    action::{FileAction, FileActions, ShapeAction},
+    action::{AnimAction, FileAction, FileActions, ShapeAction},
     canvas::Canvas,
     file_manager::FileManager,
     tab_manager::TabManager,
@@ -28,6 +30,111 @@ pub trait Action: Clone {
     fn enable_top_impl(world: &mut World, last_action: Option<&Self>, enabled: &mut bool);
 }
 
+pub enum TabActionStack {
+    Shape(ActionStack<ShapeAction>),
+    Animation(ActionStack<AnimAction>),
+}
+
+impl TabActionStack {
+    pub fn new(file_ext: FileExtension) -> Self {
+        match file_ext {
+            FileExtension::Skel | FileExtension::Mesh => Self::Shape(ActionStack::default()),
+            FileExtension::Anim => Self::Animation(ActionStack::default()),
+            _ => {
+                panic!("TabActionStack::new() called with unsupported file extension: {:?}", file_ext);
+            }
+        }
+    }
+
+    pub fn buffer_shape_action(&mut self, action: ShapeAction) {
+        match self {
+            Self::Shape(action_stack) => {
+                action_stack.buffer_action(action);
+            }
+            _ => {
+                panic!("buffer_shape_action() called on TabActionStack::Animation");
+            }
+        }
+    }
+
+    pub fn buffer_anim_action(&mut self, action: AnimAction) {
+        match self {
+            Self::Animation(action_stack) => {
+                action_stack.buffer_action(action);
+            }
+            _ => {
+                panic!("buffer_anim_action() called on TabActionStack::Shape");
+            }
+        }
+    }
+
+    pub fn has_undo(&self) -> bool {
+        match self {
+            Self::Shape(action_stack) => {
+                action_stack.has_undo()
+            }
+            Self::Animation(action_stack) => {
+                action_stack.has_undo()
+            }
+        }
+    }
+
+    pub fn has_redo(&self) -> bool {
+        match self {
+            Self::Shape(action_stack) => {
+                action_stack.has_redo()
+            }
+            Self::Animation(action_stack) => {
+                action_stack.has_redo()
+            }
+        }
+    }
+
+    pub fn undo_action(&mut self, world: &mut World, entity_opt: Option<&Entity>) {
+        match self {
+            Self::Shape(action_stack) => {
+                action_stack.undo_action(world, entity_opt);
+            }
+            Self::Animation(action_stack) => {
+                action_stack.undo_action(world, entity_opt);
+            }
+        }
+    }
+
+    pub fn redo_action(&mut self, world: &mut World, entity_opt: Option<&Entity>) {
+        match self {
+            Self::Shape(action_stack) => {
+                action_stack.redo_action(world, entity_opt);
+            }
+            Self::Animation(action_stack) => {
+                action_stack.redo_action(world, entity_opt);
+            }
+        }
+    }
+
+    pub fn execute_actions(&mut self, world: &mut World, entity_opt: Option<&Entity>) {
+        match self {
+            Self::Shape(action_stack) => {
+                action_stack.execute_actions(world, entity_opt);
+            }
+            Self::Animation(action_stack) => {
+                action_stack.execute_actions(world, entity_opt);
+            }
+        }
+    }
+
+    pub fn entity_update_auth_status(&mut self, entity: &Entity) {
+        match self {
+            Self::Shape(action_stack) => {
+                action_stack.entity_update_auth_status(entity);
+            }
+            Self::Animation(action_stack) => {
+                action_stack.entity_update_auth_status(entity);
+            }
+        }
+    }
+}
+
 pub struct ActionStack<A: Action> {
     buffered_actions: Vec<A>,
     undo_actions: Vec<A>,
@@ -35,6 +142,19 @@ pub struct ActionStack<A: Action> {
     undo_enabled: bool,
     redo_enabled: bool,
     buffered_check: bool,
+}
+
+impl<A: Action> Default for ActionStack<A> {
+    fn default() -> Self {
+        Self {
+            buffered_actions: Vec::new(),
+            undo_actions: Vec::new(),
+            redo_actions: Vec::new(),
+            undo_enabled: true,
+            redo_enabled: true,
+            buffered_check: false,
+        }
+    }
 }
 
 pub(crate) fn action_stack_undo(world: &mut World) {
@@ -101,19 +221,6 @@ pub(crate) fn action_stack_redo(world: &mut World) {
                 file_actions.redo_action(world, Some(&project_root_entity));
             }
         });
-    }
-}
-
-impl<A: Action> Default for ActionStack<A> {
-    fn default() -> Self {
-        Self {
-            buffered_actions: Vec::new(),
-            undo_actions: Vec::new(),
-            redo_actions: Vec::new(),
-            undo_enabled: true,
-            redo_enabled: true,
-            buffered_check: false,
-        }
     }
 }
 
