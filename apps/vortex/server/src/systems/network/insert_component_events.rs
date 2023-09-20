@@ -12,7 +12,7 @@ use naia_bevy_server::{events::InsertComponentEvents, Server};
 use vortex_proto::{
     components::{
         Edge3d, Face3d, FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-        FileType, OwnedByFile, ShapeName, Vertex3d, VertexRoot,
+        FileType, OwnedByFile, ShapeName, Vertex3d, VertexRoot, AnimFrame, AnimRotation
     },
     resources::FileKey,
 };
@@ -22,7 +22,7 @@ use crate::{
     resources::{
         file_waitlist::{file_process_insert, FSWaitlist, FSWaitlistInsert},
         ContentEntityData, GitManager, ShapeManager, ShapeWaitlist, ShapeWaitlistInsert,
-        TabManager, UserManager,
+        TabManager, UserManager, AnimationManager
     },
 };
 
@@ -44,6 +44,10 @@ pub fn insert_component_events(
     mut insert_file_type_event_writer: EventWriter<InsertComponentEvent<FileType>>,
     mut insert_owned_by_event_writer: EventWriter<InsertComponentEvent<OwnedByFile>>,
     mut insert_shape_name_event_writer: EventWriter<InsertComponentEvent<ShapeName>>,
+
+    // for animations
+    mut insert_rotation_event_writer: EventWriter<InsertComponentEvent<AnimRotation>>,
+    mut insert_frame_event_writer: EventWriter<InsertComponentEvent<AnimFrame>>,
 ) {
     for events in event_reader.iter() {
         // on FileSystemEntry Insert Event
@@ -112,6 +116,16 @@ pub fn insert_component_events(
         for (user_key, entity) in events.read::<ShapeName>() {
             insert_shape_name_event_writer
                 .send(InsertComponentEvent::<ShapeName>::new(user_key, entity));
+        }
+
+        // on AnimRotation Insert Event
+        for (user_key, entity) in events.read::<AnimRotation>() {
+            insert_rotation_event_writer.send(InsertComponentEvent::<AnimRotation>::new(user_key, entity));
+        }
+
+        // on AnimFrame Insert Event
+        for (user_key, entity) in events.read::<AnimFrame>() {
+            insert_frame_event_writer.send(InsertComponentEvent::<AnimFrame>::new(user_key, entity));
         }
     }
 }
@@ -414,6 +428,82 @@ pub fn insert_shape_component_events(
         let Some((project_key, file_key)) = git_manager.content_entity_keys(&entity) else {
             panic!("no content entity keys!");
         };
+        git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
+    }
+}
+
+pub fn insert_animation_component_events(
+    mut commands: Commands,
+    mut server: Server,
+    user_manager: ResMut<UserManager>,
+    mut git_manager: ResMut<GitManager>,
+    mut animation_manager: ResMut<AnimationManager>,
+    mut frame_events: EventReader<InsertComponentEvent<AnimFrame>>,
+    mut rotation_events: EventReader<InsertComponentEvent<AnimRotation>>,
+    key_q: Query<&FileKey>,
+    frame_q: Query<&AnimFrame>,
+    rot_q: Query<&AnimRotation>,
+) {
+    // on AnimFrame Insert Event
+    for event in frame_events.iter() {
+        let user_key = event.user_key;
+        let frame_entity = event.entity;
+        info!("entity: `{:?}`, inserted AnimFrame", frame_entity);
+
+        let frame = frame_q.get(frame_entity).unwrap();
+        let file_entity: Entity = frame.file_entity.get(&server).unwrap();
+
+        let project_key = user_manager
+            .user_session_data(&user_key)
+            .unwrap()
+            .project_key()
+            .unwrap();
+        let file_key = key_q.get(file_entity).unwrap().clone();
+
+        animation_manager.on_create_frame(frame_entity);
+
+        let content_entity_data = ContentEntityData::new_frame();
+        git_manager.on_insert_content_entity(
+            &mut server,
+            &project_key,
+            &file_key,
+            &frame_entity,
+            &content_entity_data,
+        );
+
+        git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
+    }
+
+    // on AnimRotation Insert Event
+    for event in rotation_events.iter() {
+        let user_key = event.user_key;
+        let rot_entity = event.entity;
+
+        info!("entity: `{:?}`, inserted AnimRotation", rot_entity);
+
+        let rotation = rot_q.get(rot_entity).unwrap();
+        let frame_entity: Entity = rotation.frame_entity.get(&server).unwrap();
+        let frame = frame_q.get(frame_entity).unwrap();
+        let file_entity: Entity = frame.file_entity.get(&server).unwrap();
+
+        let project_key = user_manager
+            .user_session_data(&user_key)
+            .unwrap()
+            .project_key()
+            .unwrap();
+        let file_key = key_q.get(file_entity).unwrap().clone();
+
+        animation_manager.on_create_rotation(frame_entity, rot_entity);
+
+        let content_entity_data = ContentEntityData::new_rotation();
+        git_manager.on_insert_content_entity(
+            &mut server,
+            &project_key,
+            &file_key,
+            &rot_entity,
+            &content_entity_data,
+        );
+
         git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
     }
 }

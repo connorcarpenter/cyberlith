@@ -136,14 +136,12 @@ impl Project {
 
     pub(crate) fn on_remove_content_entity(
         &mut self,
-        server: &mut Server,
         file_key: &FileKey,
         entity: &Entity,
     ) {
         // it's possible the the filespace has already be despawned
         if let Some(filespace) = self.filespaces.get_mut(file_key) {
             filespace.remove_content_entity(entity);
-            server.room_mut(&filespace.room_key()).remove_entity(entity);
         }
     }
 

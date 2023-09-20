@@ -15,7 +15,7 @@ use crate::app::{
     resources::{
         canvas::Canvas, edge_manager::EdgeManager, face_manager::FaceManager,
         file_manager::FileManager, input_manager::InputManager, shape_data::CanvasShape,
-        shape_manager::ShapeManager, tab_manager::TabManager, vertex_manager::VertexManager,
+        shape_manager::ShapeManager, tab_manager::TabManager, vertex_manager::VertexManager, animation_manager::AnimationManager
     },
     ui::UiState,
 };
@@ -149,14 +149,16 @@ pub fn render_naming_bar(ui: &mut Ui, world: &mut World) {
                         ResMut<InputManager>,
                         ResMut<VertexManager>,
                         ResMut<EdgeManager>,
+                        ResMut<AnimationManager>,
                     )> = SystemState::new(world);
-                    let (mut canvas, mut input_manager, mut vertex_manager, mut edge_manager) =
+                    let (mut canvas, mut input_manager, mut vertex_manager, mut edge_manager, mut animation_manager) =
                         system_state.get_mut(world);
 
                     canvas.set_focus(
                         &mut input_manager,
                         &mut vertex_manager,
                         &mut edge_manager,
+                        &mut animation_manager,
                         false,
                     );
 
@@ -204,11 +206,12 @@ pub fn naming_bar_visibility_toggle(world: &mut World) {
         ResMut<InputManager>,
         ResMut<VertexManager>,
         ResMut<EdgeManager>,
+        ResMut<AnimationManager>,
     )> = SystemState::new(world);
-    let (mut canvas, mut input_manager, mut vertex_manager, mut edge_manager) =
+    let (mut canvas, mut input_manager, mut vertex_manager, mut edge_manager, mut animation_manager) =
         system_state.get_mut(world);
 
-    canvas.set_focused_timed(&mut input_manager, &mut vertex_manager, &mut edge_manager);
+    canvas.set_focused_timed(&mut input_manager, &mut vertex_manager, &mut edge_manager, &mut animation_manager);
 
     system_state.apply(world);
 }

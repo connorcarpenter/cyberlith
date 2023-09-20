@@ -5,7 +5,7 @@ use math::Vec2;
 use render_api::{base::CpuTexture2D, Handle};
 
 use crate::app::resources::{
-    edge_manager::EdgeManager, input_manager::InputManager, vertex_manager::VertexManager,
+    edge_manager::EdgeManager, input_manager::InputManager, vertex_manager::VertexManager, animation_manager::AnimationManager
 };
 
 #[derive(Resource)]
@@ -73,6 +73,7 @@ impl Canvas {
         input_manager: &mut InputManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
+        animation_manager: &mut AnimationManager,
         focus: bool,
     ) {
         if !focus && self.has_focus && self.focus_timer > 0 {
@@ -81,7 +82,7 @@ impl Canvas {
         }
         self.has_focus = focus;
 
-        Canvas::on_canvas_focus_changed(input_manager, vertex_manager, edge_manager, focus);
+        Canvas::on_canvas_focus_changed(input_manager, vertex_manager, edge_manager, animation_manager, focus);
     }
 
     pub fn set_focused_timed(
@@ -89,11 +90,12 @@ impl Canvas {
         input_manager: &mut InputManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
+        animation_manager: &mut AnimationManager,
     ) {
         self.has_focus = true;
         self.focus_timer = 1;
 
-        Canvas::on_canvas_focus_changed(input_manager, vertex_manager, edge_manager, true);
+        Canvas::on_canvas_focus_changed(input_manager, vertex_manager, edge_manager, animation_manager, true);
     }
 
     pub(crate) fn is_position_inside(&self, pos: Vec2) -> bool {
@@ -129,12 +131,14 @@ impl Canvas {
         input_manager: &mut InputManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
+        animation_manager: &mut AnimationManager,
         new_focus: bool,
     ) {
         input_manager.queue_resync_selection_ui();
         if !new_focus {
             vertex_manager.reset_last_vertex_dragged();
             edge_manager.reset_last_edge_dragged();
+            animation_manager.reset_last_rotation_dragged();
             input_manager.hovered_entity = None;
         }
     }

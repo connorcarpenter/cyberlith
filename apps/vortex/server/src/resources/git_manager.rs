@@ -12,7 +12,7 @@ use bevy_ecs::{
 use bevy_log::info;
 use git2::{Cred, Repository, Tree};
 
-use naia_bevy_server::{BigMap, CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};
+use naia_bevy_server::{BigMap, CommandsExt, ReplicationConfig, RoomKey, Server, UserKey, BigMapKey};
 
 use vortex_proto::{
     components::{EntryKind, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild},
@@ -293,7 +293,13 @@ impl GitManager {
         };
 
         let project = self.projects.get_mut(&project_key).unwrap();
-        project.on_remove_content_entity(server, &file_key, entity);
+        project.on_remove_content_entity(&file_key, entity);
+
+        let file_room_key = project.file_room_key(&file_key).unwrap();
+        let mut room_mut = server.room_mut(&file_room_key);
+        if room_mut.has_entity(entity) {
+            room_mut.remove_entity(entity);
+        }
     }
 
     pub fn create_project(

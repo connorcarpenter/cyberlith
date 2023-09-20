@@ -11,15 +11,22 @@ use naia_bevy_server::{
 
 use vortex_proto::components::ChangelistEntry;
 
-use crate::{
-    files::ShapeType,
-    resources::{GitManager, ShapeManager, UserManager},
-};
+use crate::resources::{AnimationManager, GitManager, ShapeManager, UserManager};
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
     for SpawnEntityEvent(_user_key, entity) in event_reader.iter() {
         info!("entity: `{:?}`, spawned", entity);
     }
+}
+
+#[derive(Debug)]
+enum DespawnType {
+    File,
+    Vertex,
+    Edge,
+    Face,
+    Rotation,
+    Frame,
 }
 
 pub fn despawn_entity_events(
@@ -28,6 +35,7 @@ pub fn despawn_entity_events(
     user_manager: Res<UserManager>,
     mut git_manager: ResMut<GitManager>,
     mut shape_manager: ResMut<ShapeManager>,
+    mut animation_manager: ResMut<AnimationManager>,
     mut event_reader: EventReader<DespawnEntityEvent>,
     mut changelist_q: Query<&mut ChangelistEntry>,
 ) {
@@ -39,19 +47,23 @@ pub fn despawn_entity_events(
             .project_mut(&user_session_data.project_key().unwrap())
             .unwrap();
 
-        let mut shape_type = None;
+        let mut despawn_type = None;
         if project.entity_is_file(entity) {
-            shape_type = Some((true, None));
+            despawn_type = Some(DespawnType::File);
         } else if shape_manager.has_vertex(entity) {
-            shape_type = Some((false, Some(ShapeType::Vertex)));
+            despawn_type = Some(DespawnType::Vertex);
         } else if shape_manager.has_edge(entity) {
-            shape_type = Some((false, Some(ShapeType::Edge)));
+            despawn_type = Some(DespawnType::Edge);
         } else if shape_manager.has_face(entity) {
-            shape_type = Some((false, Some(ShapeType::Face)));
+            despawn_type = Some(DespawnType::Face);
+        } else if animation_manager.has_rotation(entity) {
+            despawn_type = Some(DespawnType::Rotation);
+        } else if animation_manager.has_frame(entity) {
+            despawn_type = Some(DespawnType::Frame);
         }
 
-        match shape_type {
-            Some((true, None)) => {
+        match despawn_type {
+            Some(DespawnType::File) => {
                 // file
                 info!("entity: `{:?}` (which is a File), despawned", entity);
 
@@ -62,7 +74,7 @@ pub fn despawn_entity_events(
                     entity,
                 );
             }
-            Some((false, Some(ShapeType::Vertex))) => {
+            Some(DespawnType::Vertex) => {
                 // vertex
                 info!("entity: `{:?}` (which is a Vertex), despawned", entity);
 
@@ -76,7 +88,7 @@ pub fn despawn_entity_events(
                     git_manager.on_remove_content_entity(&mut server, &other_entity);
                 }
             }
-            Some((false, Some(ShapeType::Edge))) => {
+            Some(DespawnType::Edge) => {
                 // edge
                 info!("entity: `{:?}` (which is an Edge), despawned", entity);
 
@@ -86,7 +98,7 @@ pub fn despawn_entity_events(
 
                 git_manager.on_remove_content_entity(&mut server, &entity);
             }
-            Some((false, Some(ShapeType::Face))) => {
+            Some(DespawnType::Face) => {
                 // edge
                 info!("entity: `{:?}` (which is an Face), despawned", entity);
 
@@ -96,10 +108,30 @@ pub fn despawn_entity_events(
 
                 git_manager.on_remove_content_entity(&mut server, &entity);
             }
+            Some(DespawnType::Rotation) => {
+                // edge
+                info!("entity: `{:?}` (which is an Rotation), despawned", entity);
+
+                git_manager.queue_client_modify_file(entity);
+
+                animation_manager.on_client_despawn_rotation(entity);
+
+                git_manager.on_remove_content_entity(&mut server, &entity);
+            }
+            Some(DespawnType::Frame) => {
+                // edge
+                info!("entity: `{:?}` (which is an Frame), despawned", entity);
+
+                git_manager.queue_client_modify_file(entity);
+
+                animation_manager.on_client_despawn_frame(entity);
+
+                git_manager.on_remove_content_entity(&mut server, &entity);
+            }
             _ => {
                 panic!(
                     "despawned entity: `{:?}` which is ({:?})",
-                    entity, shape_type
+                    entity, despawn_type
                 );
             }
         }

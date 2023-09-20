@@ -29,6 +29,8 @@ pub struct AnimationManager {
     frames: HashMap<(Entity, u8), Entity>,
     // (frame_entity, vertex_name) -> rotation_entity
     vertex_names: HashMap<(Entity, String), Entity>,
+
+    last_rotation_dragged: Option<(Entity, Option<Quat>, Quat)>,
 }
 
 impl Default for AnimationManager {
@@ -38,6 +40,7 @@ impl Default for AnimationManager {
             current_frame: None,
             frames: HashMap::new(),
             vertex_names: HashMap::new(),
+            last_rotation_dragged: None,
         }
     }
 }
@@ -194,12 +197,16 @@ impl AnimationManager {
             &mut rotation_angle,
         );
 
-        let mut entities_to_release = Vec::new();
-
         if let Some(rotation_entity) = rotation_entity_opt {
             let (mut anim_rotation, _) = rotation_q.get_mut(rotation_entity).unwrap();
+
+            self.update_last_rotation_dragged(vertex_2d_entity, Some(anim_rotation.get_rotation()), rotation_angle);
+
             anim_rotation.set_rotation(rotation_angle);
         } else {
+
+            self.update_last_rotation_dragged(vertex_2d_entity, None, rotation_angle);
+
             // create new rotation entity
             self.create_networked_rotation(
                 &mut commands,
@@ -207,32 +214,37 @@ impl AnimationManager {
                 frame_entity,
                 shape_name.to_string(),
                 rotation_angle,
-                &mut entities_to_release,
             );
         };
 
         canvas.queue_resync_shapes();
 
         system_state.apply(world);
-
-        // let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
-        // let (mut commands, mut client) = system_state.get_mut(world);
-        //
-        // for entity in entities_to_release {
-        //     commands.entity(entity).release_authority(&mut client);
-        // }
-        //
-        // system_state.apply(world);
     }
 
-    fn create_networked_rotation(
+    pub fn reset_last_rotation_dragged(&mut self) {
+        self.last_rotation_dragged = None;
+    }
+
+    fn update_last_rotation_dragged(&mut self, vertex_2d_entity: Entity, old_rotation: Option<Quat>, new_rotation: Quat) {
+        if let Some((_, old_rotation, _)) = self.last_rotation_dragged {
+            self.last_rotation_dragged = Some((vertex_2d_entity, old_rotation, new_rotation));
+        } else {
+            self.last_rotation_dragged = Some((vertex_2d_entity, old_rotation, new_rotation));
+        }
+    }
+
+    pub fn take_last_rotation_dragged(&mut self) -> Option<(Entity, Option<Quat>, Quat)> {
+        self.last_rotation_dragged.take()
+    }
+
+    pub fn create_networked_rotation(
         &mut self,
         commands: &mut Commands,
         client: &mut Client,
         frame_entity: Entity,
         name: String,
         rotation: Quat,
-        entities_to_release: &mut Vec<Entity>,
     ) -> Entity {
         let mut component = AnimRotation::new(name.clone(), rotation.into());
         component.frame_entity.set(client, &frame_entity);
@@ -242,8 +254,6 @@ impl AnimationManager {
             .configure_replication(ReplicationConfig::Delegated)
             .insert(component)
             .id();
-
-        entities_to_release.push(new_rotation_entity);
 
         self.rotation_postprocess(commands, frame_entity, new_rotation_entity, name);
 

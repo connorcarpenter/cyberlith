@@ -3,9 +3,7 @@ use bevy_log::info;
 
 use naia_bevy_server::events::RemoveComponentEvents;
 
-use vortex_proto::components::{
-    Edge3d, Face3d, FileSystemChild, FileSystemRootChild, ShapeName, Vertex3d, VertexRoot,
-};
+use vortex_proto::components::{AnimFrame, AnimRotation, Edge3d, Face3d, FileSystemChild, FileSystemRootChild, ShapeName, Vertex3d, VertexRoot};
 
 pub fn remove_component_events(mut event_reader: EventReader<RemoveComponentEvents>) {
     for events in event_reader.iter() {
@@ -39,6 +37,14 @@ pub fn remove_component_events(mut event_reader: EventReader<RemoveComponentEven
         // on ShapeName Remove Event
         for (_, entity, _) in events.read::<ShapeName>() {
             info!("entity: `{:?}`, removed ShapeName", entity);
+        }
+        // on AnimFrame Remove Event
+        for (_, entity, _) in events.read::<AnimFrame>() {
+            info!("entity: `{:?}`, removed AnimFrame", entity);
+        }
+        // on AnimRotation Remove Event
+        for (_, entity, _) in events.read::<AnimRotation>() {
+            info!("entity: `{:?}`, removed AnimRotation", entity);
         }
     }
 }

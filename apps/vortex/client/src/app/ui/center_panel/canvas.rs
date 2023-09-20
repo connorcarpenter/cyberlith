@@ -19,7 +19,7 @@ use render_egui::{
 use crate::app::{
     resources::{
         camera_manager::CameraManager, canvas::Canvas, edge_manager::EdgeManager,
-        input_manager::InputManager, vertex_manager::VertexManager,
+        input_manager::InputManager, vertex_manager::VertexManager, animation_manager::AnimationManager
     },
     ui::UiState,
 };
@@ -36,6 +36,7 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
                 ResMut<InputManager>,
                 ResMut<VertexManager>,
                 ResMut<EdgeManager>,
+                ResMut<AnimationManager>,
                 ResMut<Assets<CpuTexture2D>>,
                 ResMut<EguiUserTextures>,
                 ResMut<UiState>,
@@ -48,6 +49,7 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
                 mut input_manager,
                 mut vertex_manager,
                 mut edge_manager,
+                mut animation_manager,
                 mut textures,
                 mut user_textures,
                 mut ui_state,
@@ -116,6 +118,7 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
                                 &mut input_manager,
                                 &mut vertex_manager,
                                 &mut edge_manager,
+                                &mut animation_manager,
                                 true,
                             );
                         } else if canvas_response.clicked_elsewhere() {
@@ -124,6 +127,7 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
                                 &mut input_manager,
                                 &mut vertex_manager,
                                 &mut edge_manager,
+                                &mut animation_manager,
                                 false,
                             );
                         }

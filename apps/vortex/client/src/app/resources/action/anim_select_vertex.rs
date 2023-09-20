@@ -13,12 +13,11 @@ use crate::app::resources::{canvas::Canvas, input_manager::InputManager,
                             animation_manager::AnimationManager,
 };
 
-
 pub fn execute(
     world: &mut World,
     vertex_2d_entity_opt: Option<Entity>,
 ) -> Vec<AnimAction> {
-    info!("SelectVertexAnim({:?})", vertex_2d_entity_opt);
+    info!("AnimSelectVertex({:?})", vertex_2d_entity_opt);
 
     let mut system_state: SystemState<(
         Commands,

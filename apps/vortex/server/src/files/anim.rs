@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use bevy_ecs::{
     entity::Entity,
     prelude::{Commands, World},
-    system::{Query, SystemState},
+    system::{ResMut, Query, SystemState},
 };
 use bevy_log::info;
 
@@ -22,6 +22,7 @@ use crate::{
     files::FileWriter,
     resources::{ContentEntityData, Project},
 };
+use crate::resources::AnimationManager;
 
 // Actions
 enum AnimAction {
@@ -285,13 +286,13 @@ impl AnimReader {
         file_entity: &Entity,
         actions: Vec<AnimAction>,
     ) -> HashMap<Entity, ContentEntityData> {
-        let mut content_entities = HashMap::new();
+        let mut output = HashMap::new();
         let mut shape_name_index = 0;
         let mut shape_name_map = HashMap::new();
         let mut frame_index = 0;
 
-        let mut system_state: SystemState<(Commands, Server)> = SystemState::new(world);
-        let (mut commands, mut server) = system_state.get_mut(world);
+        let mut system_state: SystemState<(Commands, Server, ResMut<AnimationManager>)> = SystemState::new(world);
+        let (mut commands, mut server, mut animation_manager) = system_state.get_mut(world);
 
         for action in actions {
             match action {
@@ -316,7 +317,7 @@ impl AnimReader {
                         .configure_replication(ReplicationConfig::Delegated)
                         .insert(component)
                         .id();
-                    content_entities
+                    output
                         .insert(entity, ContentEntityData::new_dependency(skel_file_key));
                 }
                 AnimAction::ShapeIndex(shape_name) => {
@@ -335,7 +336,9 @@ impl AnimReader {
                         .insert(component)
                         .id();
 
-                    content_entities.insert(frame_entity, ContentEntityData::new_frame());
+                    output.insert(frame_entity, ContentEntityData::new_frame());
+
+                    animation_manager.on_create_frame(frame_entity);
 
                     for (shape_index, rotation) in poses {
                         let shape_name = shape_name_map.get(&shape_index).unwrap();
@@ -350,7 +353,9 @@ impl AnimReader {
                             .insert(component)
                             .id();
 
-                        content_entities.insert(rotation_entity, ContentEntityData::new_rotation());
+                        output.insert(rotation_entity, ContentEntityData::new_rotation());
+
+                        animation_manager.on_create_rotation(frame_entity, rotation_entity);
                     }
 
                     frame_index += 1;
@@ -360,11 +365,9 @@ impl AnimReader {
 
         system_state.apply(world);
 
-        content_entities
+        output
     }
-}
 
-impl AnimReader {
     pub fn read(
         &self,
         world: &mut World,

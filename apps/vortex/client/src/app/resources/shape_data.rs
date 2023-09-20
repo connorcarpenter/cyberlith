@@ -99,14 +99,6 @@ impl Edge3dData {
             angle_entities_opt,
         }
     }
-
-    pub fn add_face(&mut self, face_key: FaceKey) {
-        self.faces_3d.insert(face_key);
-    }
-
-    pub fn remove_face(&mut self, face_key: &FaceKey) {
-        self.faces_3d.remove(face_key);
-    }
 }
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash, Debug)]

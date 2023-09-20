@@ -1,3 +1,11 @@
+
+mod components;
+mod config;
+mod events;
+mod files;
+mod resources;
+mod systems;
+
 use std::time::Duration;
 
 use bevy_app::{App, ScheduleRunnerPlugin, Startup, Update};
@@ -12,7 +20,7 @@ use naia_bevy_server::{Plugin as ServerPlugin, ReceiveEvents, ServerConfig};
 use vortex_proto::{
     components::{
         Edge3d, Face3d, FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-        FileType, OwnedByFile, ShapeName, Vertex3d, VertexRoot,
+        FileType, OwnedByFile, ShapeName, Vertex3d, VertexRoot, AnimRotation, AnimFrame,
     },
     protocol,
 };
@@ -22,20 +30,10 @@ use crate::{
     events::InsertComponentEvent,
     resources::{
         changelist_manager_process, ChangelistManager, ShapeManager, ShapeWaitlist, TabManager,
-        UserManager,
+        UserManager, AnimationManager, GitManager
     },
-    systems::world_loop,
+    systems::{world_loop, network},
 };
-
-mod components;
-mod config;
-mod events;
-mod files;
-mod resources;
-mod systems;
-
-use resources::GitManager;
-use systems::network;
 
 fn main() {
     info!("Vortex Server starting up");
@@ -57,6 +55,7 @@ fn main() {
         .init_resource::<ChangelistManager>()
         .init_resource::<ShapeWaitlist>()
         .init_resource::<ShapeManager>()
+        .init_resource::<AnimationManager>()
         // Network Systems
         .add_systems(Startup, network::init)
         .add_systems(
@@ -85,6 +84,7 @@ fn main() {
                 network::insert_edge_component_events,
                 network::insert_face_component_events,
                 network::insert_shape_component_events,
+                network::insert_animation_component_events,
                 apply_deferred,
                 network::message_events,
             )
@@ -103,6 +103,8 @@ fn main() {
         .add_event::<InsertComponentEvent<OwnedByFile>>()
         .add_event::<InsertComponentEvent<ShapeName>>()
         .add_event::<InsertComponentEvent<FileDependency>>()
+        .add_event::<InsertComponentEvent<AnimRotation>>()
+        .add_event::<InsertComponentEvent<AnimFrame>>()
         // Other Systems
         .add_systems(Startup, setup)
         .add_systems(Update, world_loop.after(ReceiveEvents))

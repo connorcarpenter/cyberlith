@@ -171,11 +171,12 @@ impl InputManager {
                         ResMut<TabManager>,
                         ResMut<VertexManager>,
                         ResMut<EdgeManager>,
+                        ResMut<AnimationManager>,
                     )> = SystemState::new(world);
-                    let (mut tab_manager, mut vertex_manager, mut edge_manager) =
+                    let (mut tab_manager, mut vertex_manager, mut edge_manager, mut animation_manager) =
                         system_state.get_mut(world);
 
-                    // reset last dragged vertex/edge
+                    // reset last dragged vertex
                     if let Some((vertex_2d_entity, old_pos, new_pos)) =
                         vertex_manager.take_last_vertex_dragged()
                     {
@@ -186,6 +187,7 @@ impl InputManager {
                                 new_pos,
                             ));
                     }
+                    // reset last dragged edge
                     if let Some((edge_2d_entity, old_angle, new_angle)) =
                         edge_manager.take_last_edge_dragged()
                     {
@@ -194,6 +196,17 @@ impl InputManager {
                                 edge_2d_entity,
                                 old_angle,
                                 new_angle,
+                            ));
+                    }
+                    // reset last dragged rotation
+                    if let Some((vertex_2d_entity, old_angle, new_angle)) =
+                        animation_manager.take_last_rotation_dragged()
+                    {
+                        tab_manager
+                            .buffer_anim_action(AnimAction::RotateVertex(
+                                vertex_2d_entity,
+                                old_angle,
+                                Some(new_angle),
                             ));
                     }
                 }

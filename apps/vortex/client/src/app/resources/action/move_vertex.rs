@@ -11,8 +11,8 @@ use render_api::{base::CpuMesh, components::Transform, Assets, Handle};
 
 use vortex_proto::components::{Face3d, Vertex3d};
 
-use crate::app::resources::{
-    action::ShapeAction, camera_manager::CameraManager, face_manager::FaceManager,
+use crate::app::resources::{canvas::Canvas,
+    action::ShapeAction, face_manager::FaceManager,
     vertex_manager::VertexManager,
 };
 
@@ -25,10 +25,10 @@ pub(crate) fn execute(
     info!("MoveVertex");
     let mut system_state: SystemState<(
         Client,
+        ResMut<Canvas>,
         ResMut<Assets<CpuMesh>>,
         ResMut<VertexManager>,
         Res<FaceManager>,
-        ResMut<CameraManager>,
         //Query<&mut Vertex3d>,
         Query<&Handle<CpuMesh>>,
         Query<&Face3d>,
@@ -37,10 +37,10 @@ pub(crate) fn execute(
     )> = SystemState::new(world);
     let (
         client,
+        mut canvas,
         mut meshes,
         vertex_manager,
         face_manager,
-        mut camera_manager,
         //mut vertex_3d_q,
         mesh_handle_q,
         face_3d_q,
@@ -69,7 +69,7 @@ pub(crate) fn execute(
         &vertex_3d_entity,
     );
 
-    camera_manager.recalculate_3d_view();
+    canvas.queue_resync_shapes();
 
     system_state.apply(world);
 

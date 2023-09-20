@@ -33,6 +33,8 @@ use crate::app::{
         input_manager::InputManager,
         shape_manager::ShapeManager,
         vertex_manager::VertexManager,
+        action::AnimAction,
+        animation_manager::AnimationManager,
     },
     ui::widgets::colors::{
         FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
@@ -104,6 +106,7 @@ impl TabManager {
         mut input_manager: ResMut<InputManager>,
         mut vertex_manager: ResMut<VertexManager>,
         mut edge_manager: ResMut<EdgeManager>,
+        mut animation_manager: ResMut<AnimationManager>,
         mut visibility_q: Query<(&mut Visibility, &OwnedByFileLocal)>,
     ) {
         tab_manager.on_sync_tabs(
@@ -111,6 +114,7 @@ impl TabManager {
             &mut input_manager,
             &mut vertex_manager,
             &mut edge_manager,
+            &mut animation_manager,
         );
         tab_manager.on_sync_tab_ownership(&file_manager, &mut camera_manager, &mut visibility_q);
     }
@@ -121,6 +125,7 @@ impl TabManager {
         input_manager: &mut InputManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
+        animation_manager: &mut AnimationManager,
     ) {
         if self.current_tab == self.last_tab {
             return;
@@ -130,7 +135,7 @@ impl TabManager {
 
         if self.current_tab.is_some() {
             canvas.set_visibility(true);
-            canvas.set_focused_timed(input_manager, vertex_manager, edge_manager);
+            canvas.set_focused_timed(input_manager, vertex_manager, edge_manager, animation_manager);
         } else {
             canvas.set_visibility(false);
         }
@@ -262,6 +267,14 @@ impl TabManager {
         if let Some(current_entity) = self.current_tab {
             if let Some(tab_state) = self.tab_map.get_mut(&current_entity) {
                 tab_state.action_stack.buffer_shape_action(action);
+            }
+        }
+    }
+
+    pub fn buffer_anim_action(&mut self, action: AnimAction) {
+        if let Some(current_entity) = self.current_tab {
+            if let Some(tab_state) = self.tab_map.get_mut(&current_entity) {
+                tab_state.action_stack.buffer_anim_action(action);
             }
         }
     }
