@@ -237,6 +237,8 @@ pub fn insert_file_component_events(
         );
         git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
 
+        git_manager.queue_client_open_dependency(&user_key, &project_key, &dependency_key);
+
         info!(
             "inserted FileDependency(file: `{:?}`, dependency: `{:?}`)",
             file_key.name(),

@@ -25,7 +25,6 @@ use crate::app::{
     components::{file_system::FileSystemUiState, OwnedByFileLocal},
     resources::{
         action::{TabActionStack, ShapeAction},
-        camera_manager::CameraManager,
         camera_state::CameraState,
         canvas::Canvas,
         edge_manager::EdgeManager,
@@ -102,7 +101,6 @@ impl TabManager {
         mut tab_manager: ResMut<TabManager>,
         file_manager: Res<FileManager>,
         mut canvas: ResMut<Canvas>,
-        mut camera_manager: ResMut<CameraManager>,
         mut input_manager: ResMut<InputManager>,
         mut vertex_manager: ResMut<VertexManager>,
         mut edge_manager: ResMut<EdgeManager>,
@@ -116,7 +114,7 @@ impl TabManager {
             &mut edge_manager,
             &mut animation_manager,
         );
-        tab_manager.on_sync_tab_ownership(&file_manager, &mut camera_manager, &mut visibility_q);
+        tab_manager.on_sync_tab_ownership(&file_manager, &mut canvas, &mut visibility_q);
     }
 
     pub fn on_sync_tabs(
@@ -150,7 +148,7 @@ impl TabManager {
     pub fn on_sync_tab_ownership(
         &mut self,
         file_manager: &FileManager,
-        camera_manager: &mut CameraManager,
+        canvas: &mut Canvas,
         visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
     ) {
         if !self.resync_tab_ownership {
@@ -169,7 +167,7 @@ impl TabManager {
             }
         }
 
-        camera_manager.recalculate_3d_view();
+        canvas.queue_resync_shapes();
     }
 
     pub fn open_tab(&mut self, client: &mut Client, row_entity: &Entity, file_ext: FileExtension) {

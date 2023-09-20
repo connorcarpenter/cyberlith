@@ -12,7 +12,7 @@ use bevy_ecs::{
 use bevy_log::info;
 use git2::{Cred, Repository, Tree};
 
-use naia_bevy_server::{BigMap, CommandsExt, ReplicationConfig, RoomKey, Server, UserKey, BigMapKey};
+use naia_bevy_server::{BigMap, CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};
 
 use vortex_proto::{
     components::{EntryKind, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild},
@@ -36,6 +36,7 @@ pub struct GitManager {
     project_keys: HashMap<String, ProjectKey>,
     content_entity_keys: HashMap<Entity, (ProjectKey, FileKey)>,
     queued_client_modify_files: Vec<(ProjectKey, FileKey)>,
+    queued_client_open_dependency: Vec<(UserKey, ProjectKey, FileKey)>,
 }
 
 impl Default for GitManager {
@@ -46,6 +47,7 @@ impl Default for GitManager {
             project_keys: HashMap::new(),
             content_entity_keys: HashMap::new(),
             queued_client_modify_files: Vec::new(),
+            queued_client_open_dependency: Vec::new(),
         }
     }
 }
@@ -102,18 +104,26 @@ impl GitManager {
             let project = self.projects.get_mut(project_key).unwrap();
             let dependency_file_keys = project.dependency_file_keys(file_key);
             for dependency_key in dependency_file_keys {
-                let project = self.projects.get_mut(project_key).unwrap();
-                if let Some(new_content_entities) =
-                    project.user_join_filespace(world, user_key, &dependency_key)
-                {
-                    self.register_content_entities(
-                        world,
-                        project_key,
-                        &dependency_key,
-                        &new_content_entities,
-                    );
-                }
+                self.on_client_open_dependency(world, user_key, project_key, &dependency_key);
             }
+        }
+    }
+
+    pub(crate) fn queue_client_open_dependency(&mut self, user_key: &UserKey, project_key: &ProjectKey, dependency_key: &FileKey) {
+        self.queued_client_open_dependency.push((*user_key, *project_key, dependency_key.clone()));
+    }
+
+    pub(crate) fn on_client_open_dependency(&mut self, world: &mut World, user_key: &UserKey, project_key: &ProjectKey, dependency_key: &FileKey) {
+        let project = self.projects.get_mut(project_key).unwrap();
+        if let Some(new_content_entities) =
+            project.user_join_filespace(world, user_key, &dependency_key)
+        {
+            self.register_content_entities(
+                world,
+                project_key,
+                &dependency_key,
+                &new_content_entities,
+            );
         }
     }
 
@@ -268,6 +278,12 @@ impl GitManager {
         }
 
         system_state.apply(world);
+
+        world.resource_scope(|world, mut git_manager: Mut<GitManager>| {
+            for (user_key, project_key, dependency_key) in std::mem::take(&mut git_manager.queued_client_open_dependency) {
+                git_manager.on_client_open_dependency(world, &user_key, &project_key, &dependency_key);
+            }
+        });
     }
 
     pub(crate) fn on_insert_content_entity(

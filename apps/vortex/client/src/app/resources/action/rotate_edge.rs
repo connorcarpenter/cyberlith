@@ -7,7 +7,7 @@ use bevy_log::info;
 use vortex_proto::components::EdgeAngle;
 
 use crate::app::resources::{
-    action::ShapeAction, camera_manager::CameraManager, edge_manager::EdgeManager,
+    action::ShapeAction, canvas::Canvas, edge_manager::EdgeManager,
 };
 
 pub(crate) fn execute(
@@ -22,10 +22,10 @@ pub(crate) fn execute(
     );
     let mut system_state: SystemState<(
         Res<EdgeManager>,
-        ResMut<CameraManager>,
+        ResMut<Canvas>,
         Query<&mut EdgeAngle>,
     )> = SystemState::new(world);
-    let (edge_manager, mut camera_manager, mut edge_angle_q) = system_state.get_mut(world);
+    let (edge_manager, mut canvas, mut edge_angle_q) = system_state.get_mut(world);
 
     let edge_3d_entity = edge_manager.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
 
@@ -34,7 +34,7 @@ pub(crate) fn execute(
     };
     edge_angle.set_radians(new_angle);
 
-    camera_manager.recalculate_3d_view();
+    canvas.queue_resync_shapes();
 
     system_state.apply(world);
 

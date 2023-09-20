@@ -528,7 +528,6 @@ impl ShapeWaitlist {
             }
         }
 
-        camera_manager.recalculate_3d_view();
         canvas.queue_resync_shapes();
     }
 
