@@ -698,9 +698,7 @@ impl VertexManager {
         };
         let edges = &vertex_data.edges_3d;
         for edge_entity in edges {
-            let edge_data = edge_manager.edges_3d.get(edge_entity).unwrap();
-            let vertex_a_3d_entity = edge_data.vertex_a_3d_entity;
-            let vertex_b_3d_entity = edge_data.vertex_b_3d_entity;
+            let (vertex_a_3d_entity, vertex_b_3d_entity) = edge_manager.edge_get_endpoints(edge_entity);
 
             if vertex_a_3d_entity != vertex_3d_entity {
                 set.insert(vertex_a_3d_entity);

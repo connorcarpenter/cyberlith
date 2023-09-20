@@ -227,10 +227,7 @@ impl FaceManager {
                 }
                 found_edge = true;
 
-                let Some(edge_3d_data) = edge_manager.edges_3d.get_mut(edge_entity) else {
-                    panic!("Edge3d entity: `{:?}` has not been registered", edge_entity);
-                };
-                edge_3d_data.add_face(*face_key);
+                edge_manager.edge_add_face(edge_entity, *face_key);
 
                 edge_entities.push(*edge_entity);
             }
@@ -543,9 +540,7 @@ impl FaceManager {
                 face_3d_data.edge_3d_b,
                 face_3d_data.edge_3d_c,
             ] {
-                if let Some(edge_3d_data) = edge_manager.edges_3d.get_mut(&edge_3d_entity) {
-                    edge_3d_data.remove_face(face_key);
-                }
+                edge_manager.edge_remove_face(&edge_3d_entity, face_key);
             }
 
             return Some(entity_2d);

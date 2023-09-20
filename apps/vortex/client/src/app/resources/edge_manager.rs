@@ -43,11 +43,11 @@ use crate::app::{
 pub struct EdgeManager {
     resync: bool,
     // 3d edge entity -> 3d edge data
-    pub(crate) edges_3d: HashMap<Entity, Edge3dData>,
+    edges_3d: HashMap<Entity, Edge3dData>,
     // 2d edge entity -> 3d edge entity
     edges_2d: HashMap<Entity, Entity>,
 
-    pub(crate) last_edge_dragged: Option<(Entity, f32, f32)>,
+    last_edge_dragged: Option<(Entity, f32, f32)>,
 
     edge_angle_visibility: bool,
 }
@@ -264,6 +264,22 @@ impl EdgeManager {
                 }
             }
         }
+    }
+
+    pub fn reset_last_edge_dragged(&mut self) {
+        self.last_edge_dragged = None;
+    }
+
+    pub fn update_last_edge_dragged(&mut self, edge_2d_entity: Entity, old_rot: f32, new_rot: f32) {
+        if let Some((_, old_rot, _)) = self.last_edge_dragged {
+            self.last_edge_dragged = Some((edge_2d_entity, old_rot, new_rot));
+        } else {
+            self.last_edge_dragged = Some((edge_2d_entity, old_rot, new_rot));
+        }
+    }
+
+    pub fn take_last_edge_dragged(&mut self) -> Option<(Entity, f32, f32)> {
+        self.last_edge_dragged.take()
     }
 
     // return (new edge 2d entity, new edge 3d entity)
@@ -606,6 +622,23 @@ impl EdgeManager {
         self.edges_3d
             .get(edge_3d_entity)
             .map(|data| data.faces_3d.iter().copied().collect())
+    }
+
+    pub(crate) fn edge_add_face(&mut self, edge_3d_entity: &Entity, face_key: FaceKey) {
+        self.edges_3d.get_mut(edge_3d_entity).unwrap().faces_3d.insert(face_key);
+    }
+
+    pub(crate) fn edge_remove_face(&mut self, edge_3d_entity: &Entity, face_key: &FaceKey) {
+        self.edges_3d.get_mut(edge_3d_entity).unwrap().faces_3d.remove(face_key);
+    }
+
+    pub(crate) fn edge_get_endpoints(&self, edge_3d_entity: &Entity) -> (Entity, Entity) {
+        let edge_data = self.edges_3d.get(edge_3d_entity).unwrap();
+        (edge_data.vertex_a_3d_entity, edge_data.vertex_b_3d_entity)
+    }
+
+    pub(crate) fn edge_get_base_circle_entity(&self, edge_3d_entity: &Entity) -> Entity {
+        self.edges_3d.get(edge_3d_entity).unwrap().angle_entities_opt.unwrap().0
     }
 
     pub fn edge_angle_visibility_toggle(

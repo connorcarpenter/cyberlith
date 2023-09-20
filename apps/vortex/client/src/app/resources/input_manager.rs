@@ -187,7 +187,7 @@ impl InputManager {
                             ));
                     }
                     if let Some((edge_2d_entity, old_angle, new_angle)) =
-                        edge_manager.last_edge_dragged.take()
+                        edge_manager.take_last_edge_dragged()
                     {
                         tab_manager
                             .buffer_shape_action(ShapeAction::RotateEdge(
@@ -1115,13 +1115,7 @@ impl InputManager {
                             let end_pos = get_2d_line_transform_endpoint(&edge_2d_transform);
                             let base_angle = angle_between(&start_pos, &end_pos);
 
-                            let edge_angle_entity = edge_manager
-                                .edges_3d
-                                .get(&edge_3d_entity)
-                                .unwrap()
-                                .angle_entities_opt
-                                .unwrap()
-                                .0;
+                            let edge_angle_entity = edge_manager.edge_get_base_circle_entity(&edge_3d_entity);
                             let edge_angle_pos = transform_q
                                 .get(edge_angle_entity)
                                 .unwrap()
@@ -1134,14 +1128,9 @@ impl InputManager {
                                     - FRAC_PI_2
                                     - base_angle,
                             );
-                            if let Some((_, prev_angle, _)) = edge_manager.last_edge_dragged {
-                                edge_manager.last_edge_dragged =
-                                    Some((edge_2d_entity, prev_angle, new_angle));
-                            } else {
-                                let old_angle = edge_angle.get_radians();
-                                edge_manager.last_edge_dragged =
-                                    Some((edge_2d_entity, old_angle, new_angle));
-                            }
+
+                            edge_manager.update_last_edge_dragged(edge_2d_entity, edge_angle.get_radians(), new_angle);
+
                             edge_angle.set_radians(new_angle);
 
                             // redraw
