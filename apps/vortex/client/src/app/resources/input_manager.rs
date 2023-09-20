@@ -126,27 +126,6 @@ impl InputManager {
         &mut self,
         input_actions: Vec<InputAction>,
         world: &mut World,
-        // // input
-
-        //
-        // // resources
-        // commands: &mut Commands,
-        // client: &mut Client,
-        // canvas: &mut Canvas,
-        // camera_manager: &mut CameraManager,
-        // animation_manager: &mut AnimationManager,
-        // file_manager: &FileManager,
-        // tab_manager: &mut TabManager,
-        // vertex_manager: &mut VertexManager,
-        // edge_manager: &mut EdgeManager,
-        // face_manager: &FaceManager,
-        //
-        // // queries
-        // transform_q: &mut Query<&mut Transform>,
-        // camera_q: &mut Query<(&mut Camera, &mut Projection)>,
-        // vertex_3d_q: &mut Query<&mut Vertex3d>,
-        // edge_angle_q: &mut Query<&mut EdgeAngle>,
-        // shape_name_q: &Query<&ShapeName>,
     ) {
         for action in input_actions {
             match action {
@@ -586,8 +565,6 @@ impl InputManager {
     pub(crate) fn handle_insert_key_press(
         &mut self,
         world: &mut World,
-        // file_manager: &FileManager,
-        // tab_manager: &mut TabManager,
     ) {
         if self.selected_shape.is_some() {
             return;

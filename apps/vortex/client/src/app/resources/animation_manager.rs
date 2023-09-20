@@ -80,7 +80,7 @@ impl AnimationManager {
             .remove(&(*frame_entity, vertex_name.to_string()));
     }
 
-    fn get_current_rotation(&self, vertex_name: &str) -> Option<&Entity> {
+    pub fn get_current_rotation(&self, vertex_name: &str) -> Option<&Entity> {
         let current_frame = self.current_frame?;
         self.vertex_names
             .get(&(current_frame, vertex_name.to_string()))
