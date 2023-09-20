@@ -151,14 +151,15 @@ impl AnimWriter {
         }
 
         // Write Frames
-        if let Some(biggest_order) = biggest_order_opt {
+        if let Some(mut biggest_order) = biggest_order_opt {
             for order in 0..=biggest_order {
                 let Some((frame_entity, transition)) = frame_map.remove(&order) else {
                     panic!("anim file should not have any gaps in frame orders");
                 };
-                let Some(poses) = frame_poses_map.remove(&frame_entity) else {
-                    // no rotations in frame currently
-                    continue;
+                let poses = if let Some(poses) = frame_poses_map.remove(&frame_entity) {
+                    poses
+                } else {
+                    HashMap::new()
                 };
                 info!("push frame action: {}", order);
                 actions.push(AnimAction::Frame(poses, transition));
