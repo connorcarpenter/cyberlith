@@ -505,10 +505,7 @@ impl EdgeManager {
         angle_entities_opt: Option<(Entity, Entity, Entity)>,
     ) {
         for vertex_3d_entity in [vertex_a_3d_entity, vertex_b_3d_entity] {
-            let Some(vertex_3d_data) = vertex_manager.vertices_3d.get_mut(&vertex_3d_entity) else {
-                panic!("Vertex3d entity: `{:?}` has not been registered", vertex_3d_entity);
-            };
-            vertex_3d_data.add_edge(edge_3d_entity);
+            vertex_manager.vertex_add_edge(&vertex_3d_entity, edge_3d_entity);
         }
 
         info!(
@@ -649,10 +646,7 @@ impl EdgeManager {
                 entity_3d_data.vertex_a_3d_entity,
                 entity_3d_data.vertex_b_3d_entity,
             ] {
-                if let Some(vertex_3d_data) = vertex_manager.vertices_3d.get_mut(&vertex_3d_entity)
-                {
-                    vertex_3d_data.remove_edge(edge_3d_entity);
-                }
+                vertex_manager.vertex_remove_edge(&vertex_3d_entity, edge_3d_entity);
             }
 
             return Some(edge_2d_entity);
@@ -668,11 +662,10 @@ impl EdgeManager {
     ) -> Option<Entity> {
         let vertex_3d_a = vertex_manager.vertex_entity_2d_to_3d(&vertex_2d_a)?;
         let vertex_3d_b = vertex_manager.vertex_entity_2d_to_3d(&vertex_2d_b)?;
-        let vertex_a_data = vertex_manager.vertices_3d.get(&vertex_3d_a)?;
-        let vertex_b_data = vertex_manager.vertices_3d.get(&vertex_3d_b)?;
-        let intersecting_edge_3d_entity = vertex_a_data
-            .edges_3d
-            .intersection(&vertex_b_data.edges_3d)
+        let vertex_a_edges = vertex_manager.vertex_get_edges(&vertex_3d_a)?;
+        let vertex_b_edges = vertex_manager.vertex_get_edges(&vertex_3d_b)?;
+        let intersecting_edge_3d_entity = vertex_a_edges
+            .intersection(&vertex_b_edges)
             .next()?;
         let edge_2d_entity = self.edge_entity_3d_to_2d(&intersecting_edge_3d_entity)?;
         Some(edge_2d_entity)

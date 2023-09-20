@@ -133,7 +133,7 @@ impl Canvas {
     ) {
         input_manager.queue_resync_selection_ui();
         if !new_focus {
-            vertex_manager.last_vertex_dragged = None;
+            vertex_manager.reset_last_vertex_dragged();
             edge_manager.last_edge_dragged = None;
             input_manager.hovered_entity = None;
         }

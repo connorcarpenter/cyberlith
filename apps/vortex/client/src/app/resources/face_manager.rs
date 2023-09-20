@@ -206,11 +206,7 @@ impl FaceManager {
 
         // add face to vertex data
         for vertex_3d_entity in [&vertex_3d_a, &vertex_3d_b, &vertex_3d_c] {
-            let vertex_3d_data = vertex_manager
-                .vertices_3d
-                .get_mut(vertex_3d_entity)
-                .unwrap();
-            vertex_3d_data.add_face(*face_key);
+            vertex_manager.vertex_add_face(vertex_3d_entity, *face_key)
         }
 
         // add face to edge data
@@ -221,8 +217,8 @@ impl FaceManager {
             (&vertex_3d_c, &vertex_3d_a),
         ] {
             // find edge in common
-            let vertex_a_edges = &vertex_manager.vertices_3d.get(vert_a).unwrap().edges_3d;
-            let vertex_b_edges = &vertex_manager.vertices_3d.get(vert_b).unwrap().edges_3d;
+            let vertex_a_edges = vertex_manager.vertex_get_edges(vert_a).unwrap();
+            let vertex_b_edges = vertex_manager.vertex_get_edges(vert_b).unwrap();
             let intersection = vertex_a_edges.intersection(vertex_b_edges);
             let mut found_edge = false;
             for edge_entity in intersection {
@@ -538,10 +534,7 @@ impl FaceManager {
                 face_key.vertex_3d_b,
                 face_key.vertex_3d_c,
             ] {
-                if let Some(vertex_3d_data) = vertex_manager.vertices_3d.get_mut(&vertex_3d_entity)
-                {
-                    vertex_3d_data.remove_face(face_key);
-                }
+                vertex_manager.vertex_remove_face(&vertex_3d_entity, face_key);
             }
 
             // remove face from edges

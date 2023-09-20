@@ -177,7 +177,7 @@ impl InputManager {
 
                     // reset last dragged vertex/edge
                     if let Some((vertex_2d_entity, old_pos, new_pos)) =
-                        vertex_manager.last_vertex_dragged.take()
+                        vertex_manager.take_last_vertex_dragged()
                     {
                         tab_manager
                             .buffer_shape_action(ShapeAction::MoveVertex(
@@ -1071,16 +1071,7 @@ impl InputManager {
                             // set networked 3d vertex position
                             let mut vertex_3d = vertex_3d_q.get_mut(vertex_3d_entity).unwrap();
 
-                            if let Some((_, old_3d_position, _)) =
-                                vertex_manager.last_vertex_dragged
-                            {
-                                vertex_manager.last_vertex_dragged =
-                                    Some((vertex_2d_entity, old_3d_position, new_3d_position));
-                            } else {
-                                let old_3d_position = vertex_3d.as_vec3();
-                                vertex_manager.last_vertex_dragged =
-                                    Some((vertex_2d_entity, old_3d_position, new_3d_position));
-                            }
+                            vertex_manager.update_last_vertex_dragged(vertex_2d_entity, vertex_3d.as_vec3(), new_3d_position);
 
                             vertex_3d.set_x(new_3d_position.x as i16);
                             vertex_3d.set_y(new_3d_position.y as i16);

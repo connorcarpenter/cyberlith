@@ -41,11 +41,11 @@ pub struct VertexManager {
     resync: bool,
 
     // 3d vertex entity -> 3d vertex data
-    pub(crate) vertices_3d: HashMap<Entity, Vertex3dData>,
+    vertices_3d: HashMap<Entity, Vertex3dData>,
     // 2d vertex entity -> 3d vertex entity
     vertices_2d: HashMap<Entity, Entity>,
 
-    pub(crate) last_vertex_dragged: Option<(Entity, Vec3, Vec3)>,
+    last_vertex_dragged: Option<(Entity, Vec3, Vec3)>,
 }
 
 impl Default for VertexManager {
@@ -203,6 +203,26 @@ impl VertexManager {
                 vertex_2d_transform.scale = Vec3::splat(vertex_2d_scale);
             }
         }
+    }
+
+    pub fn reset_last_vertex_dragged(&mut self) {
+        self.last_vertex_dragged = None;
+    }
+
+    pub fn update_last_vertex_dragged(&mut self, vertex_2d_entity: Entity, old_3d_position: Vec3, new_3d_position: Vec3) {
+        if let Some((_, old_3d_position, _)) =
+            self.last_vertex_dragged
+        {
+            self.last_vertex_dragged =
+                Some((vertex_2d_entity, old_3d_position, new_3d_position));
+        } else {
+            self.last_vertex_dragged =
+                Some((vertex_2d_entity, old_3d_position, new_3d_position));
+        }
+    }
+
+    pub fn take_last_vertex_dragged(&mut self) -> Option<(Entity, Vec3, Vec3)> {
+        self.last_vertex_dragged.take()
     }
 
     pub fn create_networked_vertex(
@@ -607,16 +627,44 @@ impl VertexManager {
         self.vertices_2d.get(entity_2d).copied()
     }
 
-    pub(crate) fn vertex_connected_edges(&self, vertex_3d_entity: &Entity) -> Option<Vec<Entity>> {
+    pub(crate) fn vertex_get_edges(&self, vertex_3d_entity: &Entity) -> Option<&HashSet<Entity>> {
         self.vertices_3d
             .get(vertex_3d_entity)
-            .map(|data| data.edges_3d.iter().map(|e| *e).collect())
+            .map(|data| &data.edges_3d)
     }
 
-    pub(crate) fn vertex_connected_faces(&self, vertex_3d_entity: &Entity) -> Option<Vec<FaceKey>> {
+    pub(crate) fn vertex_add_edge(&mut self, vertex_3d_entity: &Entity, edge_3d_entity: Entity) {
+        let Some(vertex_3d_data) = self.vertices_3d.get_mut(&vertex_3d_entity) else {
+            panic!("Vertex3d entity: `{:?}` has not been registered", vertex_3d_entity);
+        };
+        vertex_3d_data.add_edge(edge_3d_entity);
+    }
+
+    pub(crate) fn vertex_remove_edge(&mut self, vertex_3d_entity: &Entity, edge_3d_entity: &Entity) {
+        let Some(vertex_3d_data) = self.vertices_3d.get_mut(vertex_3d_entity) else {
+            panic!("Vertex3d entity: `{:?}` has not been registered", vertex_3d_entity);
+        };
+        vertex_3d_data.remove_edge(edge_3d_entity);
+    }
+
+    pub(crate) fn vertex_get_faces(&self, vertex_3d_entity: &Entity) -> Option<&HashSet<FaceKey>> {
         self.vertices_3d
             .get(vertex_3d_entity)
-            .map(|data| data.faces_3d.iter().copied().collect())
+            .map(|data| &data.faces_3d)
+    }
+
+    pub(crate) fn vertex_add_face(&mut self, vertex_3d_entity: &Entity, face_3d_key: FaceKey) {
+        let Some(vertex_3d_data) = self.vertices_3d.get_mut(vertex_3d_entity) else {
+            panic!("Vertex3d entity: `{:?}` has not been registered", vertex_3d_entity);
+        };
+        vertex_3d_data.add_face(face_3d_key);
+    }
+
+    pub(crate) fn vertex_remove_face(&mut self, vertex_3d_entity: &Entity, face_3d_key: &FaceKey) {
+        let Some(vertex_3d_data) = self.vertices_3d.get_mut(vertex_3d_entity) else {
+            panic!("Vertex3d entity: `{:?}` has not been registered", vertex_3d_entity);
+        };
+        vertex_3d_data.remove_face(face_3d_key);
     }
 
     // returns 2d vertex entity
@@ -626,6 +674,7 @@ impl VertexManager {
             self.vertices_2d.remove(&entity_2d);
 
             if let Some(parent_3d_entity) = data.parent_3d_entity_opt {
+
                 let Some(parent_3d_data) = self.vertices_3d.get_mut(&parent_3d_entity) else {
                     panic!("Vertex3d entity: `{:?}` has not been registered", parent_3d_entity);
                 };

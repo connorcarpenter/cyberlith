@@ -20,6 +20,7 @@ use crate::app::{
         vertex_manager::VertexManager,
     },
 };
+use crate::app::resources::shape_data::FaceKey;
 
 pub(crate) fn execute(
     world: &mut World,
@@ -144,9 +145,10 @@ pub(crate) fn execute(
             let mut connected_vertices_2d_entities = Vec::new();
             let mut connected_face_vertex_2d_entities = Vec::new();
 
-            let Some(connected_edges) = vertex_manager.vertex_connected_edges(&vertex_3d_entity) else {
+            let Some(connected_edges) = vertex_manager.vertex_get_edges(&vertex_3d_entity) else {
                 panic!("Failed to get connected edges for vertex entity {:?}!", vertex_3d_entity);
             };
+            let connected_edges = connected_edges.iter().map(|edge| *edge).collect::<Vec<_>>();
             for edge_3d_entity in connected_edges {
                 let (edge_3d, _) = edge_3d_q.get(edge_3d_entity).unwrap();
                 let start_vertex_3d_entity = edge_3d.start.get(&client).unwrap();
@@ -167,9 +169,10 @@ pub(crate) fn execute(
                 connected_vertices_2d_entities
                     .push((connected_vertex_2d_entity, Some(edge_2d_entity)));
             }
-            let Some(connected_faces) = vertex_manager.vertex_connected_faces(&vertex_3d_entity) else {
+            let Some(connected_faces) = vertex_manager.vertex_get_faces(&vertex_3d_entity) else {
                 panic!("Failed to get connected faces for vertex entity {:?}!", vertex_3d_entity);
             };
+            let connected_faces: Vec<FaceKey> = connected_faces.iter().map(|face| *face).collect();
             for face_key in connected_faces {
                 let face_3d_entity_exists = face_manager
                     .face_3d_entity_from_face_key(&face_key)
