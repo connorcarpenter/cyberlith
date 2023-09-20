@@ -34,6 +34,7 @@ use crate::app::{
         vertex_manager::VertexManager,
         action::AnimAction,
         animation_manager::AnimationManager,
+        camera_manager::CameraManager,
     },
     ui::widgets::colors::{
         FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
@@ -102,6 +103,7 @@ impl TabManager {
         file_manager: Res<FileManager>,
         mut canvas: ResMut<Canvas>,
         mut input_manager: ResMut<InputManager>,
+        mut camera_manager: ResMut<CameraManager>,
         mut vertex_manager: ResMut<VertexManager>,
         mut edge_manager: ResMut<EdgeManager>,
         mut animation_manager: ResMut<AnimationManager>,
@@ -110,6 +112,7 @@ impl TabManager {
         tab_manager.on_sync_tabs(
             &mut canvas,
             &mut input_manager,
+            &mut camera_manager,
             &mut vertex_manager,
             &mut edge_manager,
             &mut animation_manager,
@@ -121,6 +124,7 @@ impl TabManager {
         &mut self,
         canvas: &mut Canvas,
         input_manager: &mut InputManager,
+        camera_manager: &mut CameraManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
         animation_manager: &mut AnimationManager,
@@ -138,6 +142,7 @@ impl TabManager {
             canvas.set_visibility(false);
         }
 
+        camera_manager.recalculate_3d_view();
         self.resync_tab_ownership();
     }
 
