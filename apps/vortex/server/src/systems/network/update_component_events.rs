@@ -6,7 +6,7 @@ use bevy_log::info;
 
 use naia_bevy_server::{events::UpdateComponentEvents, Server};
 
-use vortex_proto::components::{FileSystemChild, FileSystemEntry, ShapeName, Vertex3d};
+use vortex_proto::components::{AnimRotation, EdgeAngle, FileSystemChild, FileSystemEntry, ShapeName, Vertex3d};
 
 use crate::resources::{GitManager, UserManager};
 
@@ -41,6 +41,13 @@ pub fn update_component_events(
             };
             git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
         }
+        // on EdgeAngle Update Event
+        for (_, entity) in events.read::<EdgeAngle>() {
+            let Some((project_key, file_key)) = git_manager.content_entity_keys(&entity) else {
+                panic!("no content entity keys!");
+            };
+            git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
+        }
         // on ShapeName Update Event
         for (_, entity) in events.read::<ShapeName>() {
             let shape_name = shape_name_q.get(entity).unwrap();
@@ -49,6 +56,13 @@ pub fn update_component_events(
                 entity, *shape_name.value
             );
 
+            let Some((project_key, file_key)) = git_manager.content_entity_keys(&entity) else {
+                panic!("no content entity keys!");
+            };
+            git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
+        }
+        // on AnimRotation Update Event
+        for (_, entity) in events.read::<AnimRotation>() {
             let Some((project_key, file_key)) = git_manager.content_entity_keys(&entity) else {
                 panic!("no content entity keys!");
             };
