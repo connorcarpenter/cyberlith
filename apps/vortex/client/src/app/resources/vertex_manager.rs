@@ -33,6 +33,7 @@ use crate::app::{
         face_manager::FaceManager,
         input_manager::InputManager,
         shape_data::{CanvasShape, FaceKey, Vertex3dData},
+        compass::Compass,
     },
 };
 
@@ -91,9 +92,7 @@ impl VertexManager {
             };
 
             // update 3d vertices
-            vertex_3d_transform.translation.x = vertex_3d.x().into();
-            vertex_3d_transform.translation.y = vertex_3d.y().into();
-            vertex_3d_transform.translation.z = vertex_3d.z().into();
+            vertex_3d_transform.translation = vertex_3d.as_vec3();
         }
 
         return true;
@@ -102,6 +101,7 @@ impl VertexManager {
     pub fn sync_vertices_3d_anim(
         &mut self,
         animation_manager: &AnimationManager,
+        compass: &Compass,
         vertex_3d_q: &Query<(Entity, &Vertex3d)>,
         transform_q: &mut Query<&mut Transform>,
         visibility_q: &Query<&Visibility>,
@@ -128,6 +128,7 @@ impl VertexManager {
             rotation_q,
             root_q,
         );
+        compass.sync_compass_vertices(vertex_3d_q, transform_q);
 
         return true;
     }

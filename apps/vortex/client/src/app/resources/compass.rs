@@ -155,6 +155,14 @@ impl Compass {
         vertex_3d.set_vec3(&vert_offset_3d);
     }
 
+    pub fn sync_compass_vertices(&self, vertex_3d_q: &Query<(Entity, &Vertex3d)>, transform_q: &mut Query<&mut Transform>) {
+        for vertex_entity in self.compass_vertices.iter() {
+            let (_, vertex_3d) = vertex_3d_q.get(*vertex_entity).unwrap();
+            let mut transform = transform_q.get_mut(*vertex_entity).unwrap();
+            transform.translation = vertex_3d.as_vec3();
+        }
+    }
+
     fn new_compass_arm(
         &mut self,
         commands: &mut Commands,

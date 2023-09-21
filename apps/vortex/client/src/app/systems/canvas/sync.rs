@@ -81,6 +81,7 @@ pub fn sync_vertices(
     tab_manager: Res<TabManager>,
     canvas: Res<Canvas>,
     camera_manager: Res<CameraManager>,
+    compass: Res<Compass>,
     mut vertex_manager: ResMut<VertexManager>,
     animation_manager: Res<AnimationManager>,
     local_shape_q: Query<&LocalShape>,
@@ -111,6 +112,7 @@ pub fn sync_vertices(
         }
         FileExtension::Anim => vertex_manager.sync_vertices_3d_anim(
             &animation_manager,
+            &compass,
             &vertex_3d_q,
             &mut transform_q,
             &visibility_q,
