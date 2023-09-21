@@ -267,15 +267,15 @@ impl TabManager {
         Some(tab_state)
     }
 
-    pub fn current_tab_execute_shape_action(&mut self, world: &mut World, action: ShapeAction) {
+    pub fn current_tab_execute_shape_action(&mut self, world: &mut World, input_manager: &mut InputManager, action: ShapeAction) {
         let current_tab_entity = *self.current_tab_entity().unwrap();
         let tab_state = self.current_tab_state_mut().unwrap();
-        tab_state.action_stack.execute_shape_action(world, Some(&current_tab_entity), action);
+        tab_state.action_stack.execute_shape_action(world, input_manager, current_tab_entity, action);
     }
 
-    pub fn current_tab_execute_anim_action(&mut self, world: &mut World, action: AnimAction) {
+    pub fn current_tab_execute_anim_action(&mut self, world: &mut World, input_manager: &mut InputManager, action: AnimAction) {
         let tab_state = self.current_tab_state_mut().unwrap();
-        tab_state.action_stack.execute_anim_action(world, action);
+        tab_state.action_stack.execute_anim_action(world, input_manager, action);
     }
 
     pub fn current_tab_camera_state_mut(&mut self) -> Option<&mut CameraState> {

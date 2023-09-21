@@ -4,7 +4,7 @@ use render_api::Window;
 use render_egui::EguiContext;
 
 use crate::app::{
-    resources::{action::FileActions, file_manager::FileManager, tab_manager::TabManager},
+    resources::{action::FileActions, tab_manager::TabManager},
     ui::{
         center_panel, consume_shortcuts, left_panel, login_modal, top_bar, TextInputModal, UiState,
     },

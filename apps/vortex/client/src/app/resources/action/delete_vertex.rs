@@ -4,14 +4,14 @@ use bevy_ecs::{
 };
 use bevy_log::{info, warn};
 
-use naia_bevy_client::{Client, CommandsExt};
+use naia_bevy_client::Client;
 
 use vortex_proto::components::{Edge3d, EdgeAngle, FileExtension, FileType, Vertex3d};
 
 use crate::app::{
     components::{VertexEntry, VertexTypeData},
     resources::{
-        action::{select_shape::select_shape, ShapeAction},
+        action::{select_shape::{select_shape, entity_request_release}, ShapeAction},
         canvas::Canvas,
         edge_manager::EdgeManager,
         face_manager::FaceManager,
@@ -24,6 +24,7 @@ use crate::app::{
 
 pub(crate) fn execute(
     world: &mut World,
+    input_manager: &mut InputManager,
     action: ShapeAction,
 ) -> Vec<ShapeAction> {
 
@@ -33,42 +34,39 @@ pub(crate) fn execute(
 
     info!("DeleteVertex({:?})", vertex_2d_entity);
 
-    let mut system_state: SystemState<(
-        Commands,
-        Client,
-        ResMut<Canvas>,
-        ResMut<InputManager>,
-        ResMut<VertexManager>,
-        ResMut<EdgeManager>,
-        ResMut<FaceManager>,
-        Query<(Entity, &Vertex3d)>,
-        Query<(&Edge3d, &EdgeAngle)>,
-        Query<&FileType>,
-    )> = SystemState::new(world);
-    let (
-        mut commands,
-        mut client,
-        mut canvas,
-        mut input_manager,
-        mut vertex_manager,
-        edge_manager,
-        face_manager,
-        vertex_q,
-        edge_3d_q,
-        file_type_q,
-    ) = system_state.get_mut(world);
-
-    let vertex_3d_entity = vertex_manager
+    let vertex_3d_entity = world.get_resource::<VertexManager>().unwrap()
         .vertex_entity_2d_to_3d(&vertex_2d_entity)
         .unwrap();
 
-    let Ok(file_type) = file_type_q.get(vertex_3d_entity) else {
+    let Ok(file_type) = world.query::<&FileType>().get(world, vertex_3d_entity) else {
         panic!("Failed to get FileType for vertex entity {:?}!", vertex_3d_entity);
     };
     let file_type_value = *file_type.value;
 
     match file_type_value {
         FileExtension::Skel => {
+
+            let mut system_state: SystemState<(
+                Commands,
+                Client,
+                ResMut<Canvas>,
+                ResMut<VertexManager>,
+                ResMut<EdgeManager>,
+                ResMut<FaceManager>,
+                Query<(Entity, &Vertex3d)>,
+                Query<(&Edge3d, &EdgeAngle)>,
+            )> = SystemState::new(world);
+            let (
+                mut commands,
+                mut client,
+                mut canvas,
+                mut vertex_manager,
+                edge_manager,
+                face_manager,
+                vertex_q,
+                edge_3d_q,
+            ) = system_state.get_mut(world);
+
             // get parent entity
             let (parent_vertex_2d_entity, edge_angle) = {
                 let mut parent_vertex_3d_entity = None;
@@ -129,7 +127,7 @@ pub(crate) fn execute(
                 &mut commands,
                 &mut client,
                 &mut canvas,
-                &mut input_manager,
+                input_manager,
                 &mut vertex_manager,
                 &edge_manager,
                 &face_manager,
@@ -146,6 +144,28 @@ pub(crate) fn execute(
             )];
         }
         FileExtension::Mesh => {
+
+            let mut system_state: SystemState<(
+                Commands,
+                Client,
+                ResMut<Canvas>,
+                ResMut<VertexManager>,
+                ResMut<EdgeManager>,
+                ResMut<FaceManager>,
+                Query<(Entity, &Vertex3d)>,
+                Query<&Edge3d>,
+            )> = SystemState::new(world);
+            let (
+                mut commands,
+                mut client,
+                mut canvas,
+                mut vertex_manager,
+                edge_manager,
+                face_manager,
+                vertex_q,
+                edge_3d_q,
+            ) = system_state.get_mut(world);
+
             let mut connected_vertices_2d_entities = Vec::new();
             let mut connected_face_vertex_2d_entities = Vec::new();
 
@@ -154,7 +174,9 @@ pub(crate) fn execute(
             };
             let connected_edges = connected_edges.iter().map(|edge| *edge).collect::<Vec<_>>();
             for edge_3d_entity in connected_edges {
-                let (edge_3d, _) = edge_3d_q.get(edge_3d_entity).unwrap();
+                let Ok(edge_3d) = edge_3d_q.get(edge_3d_entity) else {
+                    panic!("Failed to get Edge3d for edge entity {:?}!", edge_3d_entity);
+                };
                 let start_vertex_3d_entity = edge_3d.start.get(&client).unwrap();
                 let end_vertex_3d_entity = edge_3d.end.get(&client).unwrap();
 
@@ -219,7 +241,7 @@ pub(crate) fn execute(
                 &mut commands,
                 &mut client,
                 &mut canvas,
-                &mut input_manager,
+                input_manager,
                 &mut vertex_manager,
                 &edge_manager,
                 &face_manager,
@@ -261,24 +283,19 @@ fn handle_common_vertex_despawn(
     // cleanup mappings
     vertex_manager.cleanup_deleted_vertex(commands, canvas, input_manager, &vertex_3d_entity);
 
+    input_manager.deselect_shape(canvas);
+
     // select entities as needed
     if let Some((vertex_2d_to_select, vertex_type)) = vertex_2d_to_select_opt {
-        if let Some(vertex_3d_entity_to_request) = select_shape(
+        let entity_to_request = select_shape(
             canvas,
             input_manager,
             vertex_manager,
             edge_manager,
             face_manager,
             Some((vertex_2d_to_select, vertex_type)),
-        ) {
-            //info!("request_entities({:?})", vertex_3d_entity_to_request);
-            let mut entity_mut = commands.entity(vertex_3d_entity_to_request);
-            if entity_mut.authority(client).is_some() {
-                entity_mut.request_authority(client);
-            }
-        }
-    } else {
-        input_manager.deselect_shape(canvas);
+        );
+        entity_request_release(commands, client, entity_to_request, None);
     }
 }
 

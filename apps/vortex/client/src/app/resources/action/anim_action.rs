@@ -4,7 +4,7 @@ use math::Quat;
 
 use crate::app::resources::{
     action::{anim_rotate_vertex, anim_select_vertex, Action, ActionStack},
-    vertex_manager::VertexManager,
+    vertex_manager::VertexManager, input_manager::InputManager
 };
 
 #[derive(Clone)]
@@ -27,27 +27,27 @@ impl AnimAction {
             Self::RotateVertex(_, _, _) => AnimActionType::RotateVertex,
         }
     }
-}
 
-impl Action for AnimAction {
-    fn execute(
+    pub fn execute(
         self,
         world: &mut World,
-        _: Option<&Entity>,
-        _: &mut ActionStack<Self>,
+        input_manager: &mut InputManager,
     ) -> Vec<Self> {
 
         let action_type = self.get_type();
 
         match action_type {
             AnimActionType::SelectVertex => {
-                anim_select_vertex::execute(world, self)
+                anim_select_vertex::execute(world, input_manager, self)
             }
             AnimActionType::RotateVertex => {
                 anim_rotate_vertex::execute(world, self)
             }
         }
     }
+}
+
+impl Action for AnimAction {
 
     fn entity_update_auth_status_impl(
         buffered_check: &mut bool,

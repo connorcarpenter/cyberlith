@@ -13,6 +13,7 @@ use crate::app::{
         face_manager::FaceManager,
         shape_data::CanvasShape,
         vertex_manager::VertexManager,
+        input_manager::InputManager,
     },
 };
 
@@ -65,6 +66,50 @@ impl ShapeAction {
             Self::DeleteEdge(_, _) => ShapeActionType::DeleteEdge,
             Self::RotateEdge(_, _, _) => ShapeActionType::RotateEdge,
             Self::DeleteFace(_) => ShapeActionType::DeleteFace,
+        }
+    }
+
+    pub fn execute(
+        self,
+        world: &mut World,
+        input_manager: &mut InputManager,
+        tab_file_entity: Entity,
+        action_stack: &mut ActionStack<Self>,
+    ) -> Vec<Self> {
+        let action_type = self.get_type();
+        match action_type {
+            ShapeActionType::SelectShape => {
+                select_shape::execute(world, input_manager,self)
+            }
+            ShapeActionType::CreateVertex => {
+                create_vertex::execute(
+                    world,
+                    input_manager,
+                    action_stack,
+                    tab_file_entity,
+                    self,
+                )
+            }
+            ShapeActionType::DeleteVertex => {
+                delete_vertex::execute(world, input_manager,self)
+            }
+            ShapeActionType::MoveVertex => {
+                move_vertex::execute(world, self)
+            }
+            ShapeActionType::CreateEdge => create_edge::execute(
+                world,
+                input_manager,
+                action_stack,
+                tab_file_entity,
+                self,
+            ),
+            ShapeActionType::DeleteEdge => {
+                delete_edge::execute(world, input_manager,self)
+            }
+            ShapeActionType::RotateEdge => {
+                rotate_edge::execute(world, self)
+            }
+            ShapeActionType::DeleteFace => delete_face::execute(world, self),
         }
     }
 
@@ -223,49 +268,6 @@ impl ShapeAction {
 }
 
 impl Action for ShapeAction {
-    fn execute(
-        self,
-        world: &mut World,
-        tab_file_entity_opt: Option<&Entity>,
-        action_stack: &mut ActionStack<Self>,
-    ) -> Vec<Self> {
-        let Some(tab_file_entity) = tab_file_entity_opt else {
-            panic!("should be a tab file entity");
-        };
-        let action_type = self.get_type();
-        match action_type {
-            ShapeActionType::SelectShape => {
-                select_shape::execute(world, self)
-            }
-            ShapeActionType::CreateVertex => {
-                create_vertex::execute(
-                    world,
-                    action_stack,
-                    tab_file_entity,
-                    self,
-                )
-            }
-            ShapeActionType::DeleteVertex => {
-                delete_vertex::execute(world, self)
-            }
-            ShapeActionType::MoveVertex => {
-                move_vertex::execute(world, self)
-            }
-            ShapeActionType::CreateEdge => create_edge::execute(
-                world,
-                action_stack,
-                tab_file_entity,
-                self,
-            ),
-            ShapeActionType::DeleteEdge => {
-                delete_edge::execute(world, self)
-            }
-            ShapeActionType::RotateEdge => {
-                rotate_edge::execute(world, self)
-            }
-            ShapeActionType::DeleteFace => delete_face::execute(world, self),
-        }
-    }
 
     fn entity_update_auth_status_impl(
         buffered_check: &mut bool,

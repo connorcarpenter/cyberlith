@@ -13,15 +13,10 @@ use crate::app::resources::{
     canvas::Canvas,
     file_manager::FileManager,
     tab_manager::TabManager,
+    input_manager::InputManager,
 };
 
 pub trait Action: Clone {
-    fn execute(
-        self,
-        world: &mut World,
-        entity_opt: Option<&Entity>,
-        action_stack: &mut ActionStack<Self>,
-    ) -> Vec<Self>;
     fn entity_update_auth_status_impl(
         buffered_check: &mut bool,
         action_opt: Option<&Self>,
@@ -49,10 +44,11 @@ impl TabActionStack {
         }
     }
 
-    pub fn execute_shape_action(&mut self, world: &mut World, tab_file_entity_opt: Option<&Entity>, action: ShapeAction) {
+    pub fn execute_shape_action(&mut self, world: &mut World, input_manager: &mut InputManager, tab_file_entity: Entity, action: ShapeAction) {
         match self {
             Self::Shape(action_stack) => {
-                action_stack.execute_action(world, tab_file_entity_opt, action);
+                let reversed_actions = action_stack.execute_action(world, input_manager, tab_file_entity, action);
+                action_stack.post_action_execution(world, reversed_actions);
             }
             _ => {
                 panic!("buffer_shape_action() called on TabActionStack::Animation");
@@ -60,10 +56,11 @@ impl TabActionStack {
         }
     }
 
-    pub fn execute_anim_action(&mut self, world: &mut World, action: AnimAction) {
+    pub fn execute_anim_action(&mut self, world: &mut World, input_manager: &mut InputManager, action: AnimAction) {
         match self {
             Self::Animation(action_stack) => {
-                action_stack.execute_action(world, None, action);
+                let reversed_actions = action_stack.execute_action(world, input_manager, action);
+                action_stack.post_action_execution(world, reversed_actions);
             }
             _ => {
                 panic!("buffer_anim_action() called on TabActionStack::Shape");
@@ -85,24 +82,32 @@ impl TabActionStack {
         }
     }
 
-    pub fn undo_action(&mut self, world: &mut World, entity_opt: Option<&Entity>) {
+    pub fn undo_action(&mut self, world: &mut World, input_manager: &mut InputManager, tab_file_entity: Entity) {
         match self {
             Self::Shape(action_stack) => {
-                action_stack.undo_action(world, entity_opt);
+                let action = action_stack.pop_undo();
+                let reversed_actions = action_stack.execute_action(world, input_manager, tab_file_entity, action);
+                action_stack.post_execute_undo(world, reversed_actions);
             }
             Self::Animation(action_stack) => {
-                action_stack.undo_action(world, entity_opt);
+                let action = action_stack.pop_undo();
+                let reversed_actions = action_stack.execute_action(world, input_manager, action);
+                action_stack.post_execute_undo(world, reversed_actions);
             }
-        }
+        };
     }
 
-    pub fn redo_action(&mut self, world: &mut World, entity_opt: Option<&Entity>) {
+    pub fn redo_action(&mut self, world: &mut World, input_manager: &mut InputManager, tab_file_entity: Entity) {
         match self {
             Self::Shape(action_stack) => {
-                action_stack.redo_action(world, entity_opt);
+                let action = action_stack.pop_redo();
+                let reversed_actions = action_stack.execute_action(world, input_manager, tab_file_entity, action);
+                action_stack.post_execute_redo(world, reversed_actions);
             }
             Self::Animation(action_stack) => {
-                action_stack.redo_action(world, entity_opt);
+                let action = action_stack.pop_redo();
+                let reversed_actions = action_stack.execute_action(world, input_manager, action);
+                action_stack.post_execute_redo(world, reversed_actions);
             }
         }
     }
@@ -130,8 +135,7 @@ impl TabActionStack {
     }
 }
 
-pub struct ActionStack<A: Action> {
-    buffered_actions: Vec<A>,
+pub struct ActionStack<A> {
     undo_actions: Vec<A>,
     redo_actions: Vec<A>,
     undo_enabled: bool,
@@ -139,10 +143,9 @@ pub struct ActionStack<A: Action> {
     buffered_check: bool,
 }
 
-impl<A: Action> Default for ActionStack<A> {
+impl<A> Default for ActionStack<A> {
     fn default() -> Self {
         Self {
-            buffered_actions: Vec::new(),
             undo_actions: Vec::new(),
             redo_actions: Vec::new(),
             undo_enabled: true,
@@ -167,9 +170,11 @@ pub(crate) fn action_stack_undo(world: &mut World) {
             let tab_file_entity = *tab_file_entity;
             if let Some(tab_state) = tab_manager.current_tab_state_mut() {
                 if tab_state.action_stack.has_undo() {
-                    tab_state
-                        .action_stack
-                        .undo_action(world, Some(&tab_file_entity));
+                    world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
+                        tab_state
+                            .action_stack
+                            .undo_action(world, &mut input_manager, tab_file_entity);
+                    });
                 }
             }
         });
@@ -180,7 +185,7 @@ pub(crate) fn action_stack_undo(world: &mut World) {
             let project_root_entity = file_manager.project_root_entity;
 
             if file_actions.has_undo() {
-                file_actions.undo_action(world, Some(&project_root_entity));
+                file_actions.undo_action(world, project_root_entity);
             }
         });
     }
@@ -201,9 +206,11 @@ pub(crate) fn action_stack_redo(world: &mut World) {
             let tab_file_entity = *tab_file_entity;
             if let Some(tab_state) = tab_manager.current_tab_state_mut() {
                 if tab_state.action_stack.has_redo() {
-                    tab_state
-                        .action_stack
-                        .redo_action(world, Some(&tab_file_entity));
+                    world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
+                        tab_state
+                            .action_stack
+                            .redo_action(world, &mut input_manager, tab_file_entity);
+                    });
                 }
             }
         });
@@ -213,19 +220,13 @@ pub(crate) fn action_stack_redo(world: &mut World) {
             let project_root_entity = file_manager.project_root_entity;
 
             if file_actions.has_redo() {
-                file_actions.redo_action(world, Some(&project_root_entity));
+                file_actions.redo_action(world, project_root_entity);
             }
         });
     }
 }
 
 impl<A: Action> ActionStack<A> {
-    pub fn execute_action(&mut self, world: &mut World, entity_opt: Option<&Entity>, action: A) {
-        let mut reversed_actions = self.execute_action_old(world, entity_opt, action);
-        self.undo_actions.append(&mut reversed_actions);
-        self.redo_actions.clear();
-        self.enable_top(world);
-    }
 
     pub fn has_undo(&self) -> bool {
         !self.undo_actions.is_empty() && self.undo_enabled
@@ -235,7 +236,7 @@ impl<A: Action> ActionStack<A> {
         !self.redo_actions.is_empty() && self.redo_enabled
     }
 
-    pub fn undo_action(&mut self, world: &mut World, entity_opt: Option<&Entity>) {
+    pub fn pop_undo(&mut self) -> A {
         if !self.undo_enabled {
             panic!("Undo is disabled!");
         }
@@ -243,14 +244,17 @@ impl<A: Action> ActionStack<A> {
             panic!("No executed actions to undo!");
         };
 
-        let mut reversed_actions = self.execute_action_old(world, entity_opt, action);
+        action
+    }
+
+    pub fn post_execute_undo(&mut self, world: &mut World, mut reversed_actions: Vec<A>) {
 
         self.redo_actions.append(&mut reversed_actions);
 
         self.enable_top(world);
     }
 
-    pub fn redo_action(&mut self, world: &mut World, entity_opt: Option<&Entity>) {
+    pub fn pop_redo(&mut self) -> A {
         if !self.redo_enabled {
             panic!("Redo is disabled!");
         }
@@ -258,7 +262,10 @@ impl<A: Action> ActionStack<A> {
             panic!("No undone actions to redo!");
         };
 
-        let mut reversed_actions = self.execute_action_old(world, entity_opt, action);
+        action
+    }
+
+    pub fn post_execute_redo(&mut self, world: &mut World, mut reversed_actions: Vec<A>) {
 
         self.undo_actions.append(&mut reversed_actions);
 
@@ -270,15 +277,6 @@ impl<A: Action> ActionStack<A> {
             self.enable_top(world);
             self.buffered_check = false;
         }
-    }
-
-    fn execute_action_old(
-        &mut self,
-        world: &mut World,
-        entity_opt: Option<&Entity>,
-        action: A,
-    ) -> Vec<A> {
-        action.execute(world, entity_opt, self)
     }
 
     pub fn entity_update_auth_status(&mut self, entity: &Entity) {
@@ -317,9 +315,20 @@ impl<A: Action> ActionStack<A> {
         }
         return true;
     }
+
+    pub fn post_action_execution(&mut self, world: &mut World, mut reversed_actions: Vec<A>) {
+        self.undo_actions.append(&mut reversed_actions);
+        self.redo_actions.clear();
+        self.enable_top(world);
+    }
 }
 
 impl ActionStack<FileAction> {
+
+    pub fn execute_action(&mut self, world: &mut World, project_root_entity: Entity, action: FileAction) -> Vec<FileAction> {
+        action.execute(world, project_root_entity, self)
+    }
+
     pub(crate) fn migrate_file_entities(&mut self, old_entity: Entity, new_entity: Entity) {
         for action_list in [&mut self.undo_actions, &mut self.redo_actions] {
             for action in action_list.iter_mut() {
@@ -330,6 +339,11 @@ impl ActionStack<FileAction> {
 }
 
 impl ActionStack<ShapeAction> {
+
+    pub fn execute_action(&mut self, world: &mut World, input_manager: &mut InputManager, tab_file_entity: Entity, action: ShapeAction) -> Vec<ShapeAction> {
+        action.execute(world, input_manager, tab_file_entity, self)
+    }
+
     pub(crate) fn migrate_vertex_entities(
         &mut self,
         old_2d_entity: Entity,
@@ -363,5 +377,11 @@ impl ActionStack<ShapeAction> {
                 action.migrate_face_entities(old_2d_entity, new_2d_entity);
             }
         }
+    }
+}
+
+impl ActionStack<AnimAction> {
+    pub fn execute_action(&mut self, world: &mut World, input_manager: &mut InputManager, action: AnimAction) -> Vec<AnimAction> {
+        action.execute(world, input_manager)
     }
 }

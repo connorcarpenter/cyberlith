@@ -15,6 +15,7 @@ use crate::app::resources::{
 
 pub(crate) fn execute(
     world: &mut World,
+    input_manager: &mut InputManager,
     action: ShapeAction,
 ) -> Vec<ShapeAction> {
 
@@ -28,7 +29,6 @@ pub(crate) fn execute(
         Commands,
         Client,
         ResMut<Canvas>,
-        ResMut<InputManager>,
         Res<VertexManager>,
         Res<EdgeManager>,
         Res<FaceManager>,
@@ -37,7 +37,6 @@ pub(crate) fn execute(
         mut commands,
         mut client,
         mut canvas,
-        mut input_manager,
         vertex_manager,
         edge_manager,
         face_manager,
@@ -46,34 +45,20 @@ pub(crate) fn execute(
     // Deselect all selected shapes, select the new selected shapes
     let (deselected_entity, entity_to_release) = deselect_selected_shape(
         &mut canvas,
-        &mut input_manager,
+        input_manager,
         &vertex_manager,
         &edge_manager,
         &face_manager,
     );
     let entity_to_request = select_shape(
         &mut canvas,
-        &mut input_manager,
+        input_manager,
         &vertex_manager,
         &edge_manager,
         &face_manager,
         shape_2d_entity_opt,
     );
-
-    if entity_to_request != entity_to_release {
-        if let Some(entity) = entity_to_release {
-            let mut entity_mut = commands.entity(entity);
-            if entity_mut.authority(&client).is_some() {
-                entity_mut.release_authority(&mut client);
-            }
-        }
-        if let Some(entity) = entity_to_request {
-            let mut entity_mut = commands.entity(entity);
-            if entity_mut.authority(&client).is_some() {
-                entity_mut.request_authority(&mut client);
-            }
-        }
-    }
+    entity_request_release(&mut commands, &mut client, entity_to_request, entity_to_release);
 
     system_state.apply(world);
 
@@ -91,6 +76,23 @@ pub(crate) fn execute(
     }
 
     return vec![ShapeAction::SelectShape(deselected_entity)];
+}
+
+pub fn entity_request_release(commands: &mut Commands, mut client: &mut Client, entity_to_request: Option<Entity>, entity_to_release: Option<Entity>) {
+    if entity_to_request != entity_to_release {
+        if let Some(entity) = entity_to_release {
+            let mut entity_mut = commands.entity(entity);
+            if entity_mut.authority(&client).is_some() {
+                entity_mut.release_authority(&mut client);
+            }
+        }
+        if let Some(entity) = entity_to_request {
+            let mut entity_mut = commands.entity(entity);
+            if entity_mut.authority(&client).is_some() {
+                entity_mut.request_authority(&mut client);
+            }
+        }
+    }
 }
 
 // returns entity to request auth for

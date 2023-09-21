@@ -711,17 +711,17 @@ impl VertexManager {
     }
 
     pub(crate) fn vertex_add_face(&mut self, vertex_3d_entity: &Entity, face_3d_key: FaceKey) {
-        let Some(vertex_3d_data) = self.vertices_3d.get_mut(vertex_3d_entity) else {
-            panic!("Vertex3d entity: `{:?}` has not been registered", vertex_3d_entity);
+        // at this point, vertex_3d_entity may have already been deregistered
+        if let Some(vertex_3d_data) = self.vertices_3d.get_mut(vertex_3d_entity) {
+            vertex_3d_data.add_face(face_3d_key);
         };
-        vertex_3d_data.add_face(face_3d_key);
     }
 
     pub(crate) fn vertex_remove_face(&mut self, vertex_3d_entity: &Entity, face_3d_key: &FaceKey) {
-        let Some(vertex_3d_data) = self.vertices_3d.get_mut(vertex_3d_entity) else {
-            panic!("Vertex3d entity: `{:?}` has not been registered", vertex_3d_entity);
+        // at this point, vertex_3d_entity may have already been deregistered
+        if let Some(vertex_3d_data) = self.vertices_3d.get_mut(vertex_3d_entity) {
+            vertex_3d_data.remove_face(face_3d_key);
         };
-        vertex_3d_data.remove_face(face_3d_key);
     }
 
     // returns 2d vertex entity

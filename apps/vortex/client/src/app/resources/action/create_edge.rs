@@ -28,8 +28,9 @@ use crate::app::resources::{
 
 pub(crate) fn execute(
     world: &mut World,
+    input_manager: &mut InputManager,
     action_stack: &mut ActionStack<ShapeAction>,
-    tab_file_entity: &Entity,
+    tab_file_entity: Entity,
     action: ShapeAction,
 ) -> Vec<ShapeAction> {
 
@@ -62,7 +63,6 @@ pub(crate) fn execute(
             Client,
             ResMut<CameraManager>,
             ResMut<Canvas>,
-            ResMut<InputManager>,
             ResMut<VertexManager>,
             ResMut<EdgeManager>,
             ResMut<FaceManager>,
@@ -74,7 +74,6 @@ pub(crate) fn execute(
             mut client,
             mut camera_manager,
             mut canvas,
-            mut input_manager,
             mut vertex_manager,
             mut edge_manager,
             mut face_manager,
@@ -85,7 +84,7 @@ pub(crate) fn execute(
         // deselect all selected vertices
         let (deselected_shape_2d_entity, shape_3d_entity_to_release) = deselect_selected_shape(
             &mut canvas,
-            &mut input_manager,
+            input_manager,
             &vertex_manager,
             &edge_manager,
             &face_manager,
@@ -120,7 +119,7 @@ pub(crate) fn execute(
             vertex_3d_entity_a,
             vertex_2d_entity_b,
             vertex_3d_entity_b,
-            *tab_file_entity,
+            tab_file_entity,
             FileExtension::Mesh,
             None,
             &mut entities_to_release,
@@ -220,7 +219,7 @@ pub(crate) fn execute(
                     &mut edge_manager,
                     &mut meshes,
                     &mut materials,
-                    *tab_file_entity,
+                    tab_file_entity,
                     &face_key,
                 );
                 action_stack.migrate_face_entities(old_face_2d_entity, new_face_2d_entity);
@@ -238,7 +237,7 @@ pub(crate) fn execute(
                             edge_3d_entities[1],
                             edge_3d_entities[2],
                         ],
-                        *tab_file_entity,
+                        tab_file_entity,
                     );
                 }
             }

@@ -83,13 +83,11 @@ impl FileAction {
             }
         }
     }
-}
 
-impl Action for FileAction {
-    fn execute(
+    pub fn execute(
         self,
         world: &mut World,
-        entity_opt: Option<&Entity>,
+        project_root_entity: Entity,
         action_stack: &mut ActionStack<Self>,
     ) -> Vec<Self> {
 
@@ -98,7 +96,6 @@ impl Action for FileAction {
         match action_type {
             FileActionType::SelectFile => select_file::execute(world, self),
             FileActionType::CreateFile => {
-                let project_root_entity = *(entity_opt.unwrap());
                 create_file::execute(
                     world,
                     action_stack,
@@ -107,7 +104,6 @@ impl Action for FileAction {
                 )
             }
             FileActionType::DeleteFile => {
-                let project_root_entity = *(entity_opt.unwrap());
                 delete_file::execute(world, project_root_entity, self)
             }
             FileActionType::RenameFile => {
@@ -115,6 +111,9 @@ impl Action for FileAction {
             }
         }
     }
+}
+
+impl Action for FileAction {
 
     fn entity_update_auth_status_impl(
         buffered_check: &mut bool,

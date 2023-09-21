@@ -1,10 +1,8 @@
 use bevy_ecs::{
     entity::Entity,
-    prelude::ResMut,
     system::{Commands, Query, SystemState},
-    world::World,
+    world::{World, Mut},
 };
-use bevy_ecs::world::Mut;
 use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
@@ -223,7 +221,7 @@ impl ChangelistRowUiWidget {
     }
 
     pub fn on_row_click(world: &mut World, row_entity: &Entity) {
-        let mut has_auth: bool;
+        let has_auth: bool;
         {
             let mut system_state: SystemState<(
                 Commands,
@@ -256,7 +254,7 @@ impl ChangelistRowUiWidget {
             entities.push(*row_entity);
 
             world.resource_scope(|world, mut file_actions: Mut<FileActions>| {
-                file_actions.execute_action(world, FileAction::SelectFile(entities));
+                file_actions.execute_file_action(world, FileAction::SelectFile(entities));
             });
         }
     }

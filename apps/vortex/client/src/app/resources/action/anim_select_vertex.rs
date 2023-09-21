@@ -4,16 +4,16 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use naia_bevy_client::{Client, CommandsExt};
+use naia_bevy_client::Client;
 
 use vortex_proto::components::ShapeName;
 
 use crate::app::resources::{
-    action::AnimAction, animation_manager::AnimationManager, canvas::Canvas,
+    action::{AnimAction, select_shape::entity_request_release}, animation_manager::AnimationManager, canvas::Canvas,
     input_manager::InputManager, shape_data::CanvasShape, vertex_manager::VertexManager,
 };
 
-pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
+pub fn execute(world: &mut World, input_manager: &mut InputManager, action: AnimAction) -> Vec<AnimAction> {
 
     let AnimAction::SelectVertex(vertex_2d_entity_opt) = action else {
         panic!("Expected SelectVertex");
@@ -25,7 +25,6 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
         Commands,
         Client,
         ResMut<Canvas>,
-        ResMut<InputManager>,
         Res<VertexManager>,
         Res<AnimationManager>,
         Query<&ShapeName>,
@@ -34,7 +33,6 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
         mut commands,
         mut client,
         mut canvas,
-        mut input_manager,
         vertex_manager,
         animation_manager,
         name_q,
@@ -43,34 +41,20 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
     // Deselect all selected shapes, select the new selected shapes
     let (deselected_entity, entity_to_release) = deselect_selected_vertex(
         &mut canvas,
-        &mut input_manager,
+        input_manager,
         &vertex_manager,
         &animation_manager,
         &name_q,
     );
     let entity_to_request = select_vertex(
         &mut canvas,
-        &mut input_manager,
+        input_manager,
         &vertex_manager,
         &animation_manager,
         vertex_2d_entity_opt,
         &name_q,
     );
-
-    if entity_to_request != entity_to_release {
-        if let Some(entity) = entity_to_release {
-            let mut entity_mut = commands.entity(entity);
-            if entity_mut.authority(&client).is_some() {
-                entity_mut.release_authority(&mut client);
-            }
-        }
-        if let Some(entity) = entity_to_request {
-            let mut entity_mut = commands.entity(entity);
-            if entity_mut.authority(&client).is_some() {
-                entity_mut.request_authority(&mut client);
-            }
-        }
-    }
+    entity_request_release(&mut commands, &mut client, entity_to_request, entity_to_release);
 
     system_state.apply(world);
 

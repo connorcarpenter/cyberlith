@@ -385,7 +385,7 @@ impl FileTreeRowUiWidget {
             let mut entities = Vec::new();
             entities.push(*row_entity);
             world.resource_scope(|world, mut file_actions: Mut<FileActions>| {
-                file_actions.execute_action(world, FileAction::SelectFile(entities));
+                file_actions.execute_file_action(world, FileAction::SelectFile(entities));
             });
         }
     }
@@ -643,7 +643,7 @@ impl FileTreeRowUiWidget {
         }
 
         world.resource_scope(|world, mut file_actions: Mut<FileActions>| {
-            file_actions.execute_action(world, FileAction::CreateFile(
+            file_actions.execute_file_action(world, FileAction::CreateFile(
                 directory_entity,
                 entry_name.to_string(),
                 entry_kind,
@@ -662,12 +662,11 @@ impl FileTreeRowUiWidget {
         let mut system_state: SystemState<(
             Client,
             Res<FileManager>,
-            ResMut<FileActions>,
             Query<&FileSystemParent>,
             Query<&FileSystemEntry>,
             Query<&FileSystemChild>,
         )> = SystemState::new(world);
-        let (client, file_manager, mut file_actions, parent_query, entry_query, child_query) =
+        let (client, file_manager, parent_query, entry_query, child_query) =
             system_state.get_mut(world);
 
         let entry_kind = *(entry_query.get(*entry_entity).unwrap().kind);
@@ -693,15 +692,17 @@ impl FileTreeRowUiWidget {
             return;
         }
 
-        file_actions.execute_action(world, FileAction::RenameFile(
-            *entry_entity,
-            entry_name.to_string(),
-        ));
+        world.resource_scope(|world, mut file_actions: Mut<FileActions>| {
+            file_actions.execute_file_action(world, FileAction::RenameFile(
+                *entry_entity,
+                entry_name.to_string(),
+            ));
+        });
     }
 
     pub fn on_modal_response_delete(world: &mut World, row_entity: &Entity) {
-        let mut file_actions = world.get_resource_mut::<FileActions>().unwrap();
-
-        file_actions.execute_action(world, FileAction::DeleteFile(*row_entity, None));
+        world.resource_scope(|world, mut file_actions: Mut<FileActions>| {
+            file_actions.execute_file_action(world, FileAction::DeleteFile(*row_entity, None));
+        });
     }
 }

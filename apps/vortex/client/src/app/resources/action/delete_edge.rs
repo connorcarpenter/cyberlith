@@ -4,12 +4,12 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use naia_bevy_client::{Client, CommandsExt};
+use naia_bevy_client::Client;
 
 use vortex_proto::components::Edge3d;
 
 use crate::app::resources::{
-    action::{select_shape::select_shape, ShapeAction},
+    action::{select_shape::{select_shape, entity_request_release}, ShapeAction},
     canvas::Canvas,
     edge_manager::EdgeManager,
     face_manager::FaceManager,
@@ -20,6 +20,7 @@ use crate::app::resources::{
 
 pub(crate) fn execute(
     world: &mut World,
+    input_manager: &mut InputManager,
     action: ShapeAction,
 ) -> Vec<ShapeAction> {
 
@@ -32,7 +33,6 @@ pub(crate) fn execute(
         Commands,
         Client,
         ResMut<Canvas>,
-        ResMut<InputManager>,
         ResMut<VertexManager>,
         ResMut<EdgeManager>,
         ResMut<FaceManager>,
@@ -42,7 +42,6 @@ pub(crate) fn execute(
         mut commands,
         mut client,
         mut canvas,
-        mut input_manager,
         mut vertex_manager,
         mut edge_manager,
         mut face_manager,
@@ -110,30 +109,25 @@ pub(crate) fn execute(
     edge_manager.cleanup_deleted_edge(
         &mut commands,
         &mut canvas,
-        &mut input_manager,
+        input_manager,
         &mut vertex_manager,
         &mut face_manager,
         &edge_3d_entity,
     );
 
+    input_manager.deselect_shape(&mut canvas);
+
     // select entities as needed
     if let Some((shape_2d_to_select, shape_type)) = shape_2d_to_select_opt {
-        if let Some(shape_3d_entity_to_request) = select_shape(
+        let entity_to_request = select_shape(
             &mut canvas,
-            &mut input_manager,
+            input_manager,
             &vertex_manager,
             &edge_manager,
             &face_manager,
             Some((shape_2d_to_select, shape_type)),
-        ) {
-            //info!("request_entities({:?})", shape_3d_entity_to_request);
-            let mut entity_mut = commands.entity(shape_3d_entity_to_request);
-            if entity_mut.authority(&client).is_some() {
-                entity_mut.request_authority(&mut client);
-            }
-        }
-    } else {
-        input_manager.deselect_shape(&mut canvas);
+        );
+        entity_request_release(&mut commands, &mut client, entity_to_request, None);
     }
 
     system_state.apply(world);

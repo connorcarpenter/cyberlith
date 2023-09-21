@@ -30,8 +30,9 @@ use crate::app::{
 
 pub(crate) fn execute(
     world: &mut World,
+    input_manager: &mut InputManager,
     action_stack: &mut ActionStack<ShapeAction>,
-    tab_file_entity: &Entity,
+    tab_file_entity: Entity,
     action: ShapeAction,
 ) -> Vec<ShapeAction> {
 
@@ -49,7 +50,6 @@ pub(crate) fn execute(
         Client,
         ResMut<Canvas>,
         ResMut<CameraManager>,
-        ResMut<InputManager>,
         ResMut<VertexManager>,
         ResMut<EdgeManager>,
         ResMut<FaceManager>,
@@ -61,7 +61,6 @@ pub(crate) fn execute(
         mut client,
         mut canvas,
         mut camera_manager,
-        mut input_manager,
         mut vertex_manager,
         edge_manager,
         face_manager,
@@ -72,7 +71,7 @@ pub(crate) fn execute(
     // deselect all selected vertices
     let (deselected_vertex_2d_entity, vertex_3d_entity_to_release) = deselect_selected_shape(
         &mut canvas,
-        &mut input_manager,
+        input_manager,
         &vertex_manager,
         &edge_manager,
         &face_manager,
@@ -111,7 +110,7 @@ pub(crate) fn execute(
         &mut meshes,
         &mut materials,
         file_type_value,
-        *tab_file_entity,
+        tab_file_entity,
         parent_vertex_3d_entity_opt,
         position,
         &mut entities_to_release,
@@ -134,7 +133,6 @@ pub(crate) fn execute(
         Client,
         ResMut<Canvas>,
         ResMut<CameraManager>,
-        ResMut<InputManager>,
         ResMut<VertexManager>,
         ResMut<EdgeManager>,
         ResMut<FaceManager>,
@@ -147,7 +145,6 @@ pub(crate) fn execute(
         mut client,
         mut canvas,
         mut camera_manager,
-        mut input_manager,
         mut vertex_manager,
         mut edge_manager,
         mut face_manager,
@@ -171,7 +168,7 @@ pub(crate) fn execute(
                     new_vertex_2d_entity,
                     new_vertex_3d_entity,
                     children,
-                    *tab_file_entity,
+                    tab_file_entity,
                     &mut entities_to_release,
                 );
             }
@@ -190,7 +187,7 @@ pub(crate) fn execute(
                 parent_vertex_3d_entity,
                 new_vertex_2d_entity,
                 new_vertex_3d_entity,
-                *tab_file_entity,
+                tab_file_entity,
                 FileExtension::Skel,
                 Some(edge_angle),
                 &mut entities_to_release,
@@ -214,7 +211,7 @@ pub(crate) fn execute(
                     connected_vertex_3d_entity,
                     new_vertex_2d_entity,
                     new_vertex_3d_entity,
-                    *tab_file_entity,
+                    tab_file_entity,
                     FileExtension::Mesh,
                     None,
                     &mut entities_to_release,
@@ -251,7 +248,7 @@ pub(crate) fn execute(
                     &mut edge_manager,
                     &mut meshes,
                     &mut materials,
-                    *tab_file_entity,
+                    tab_file_entity,
                     &face_key,
                 );
                 action_stack.migrate_face_entities(old_face_2d_entity, new_face_2d_entity);
@@ -269,7 +266,7 @@ pub(crate) fn execute(
                             edge_3d_entities[1],
                             edge_3d_entities[2],
                         ],
-                        *tab_file_entity,
+                        tab_file_entity,
                     );
                 }
             }
