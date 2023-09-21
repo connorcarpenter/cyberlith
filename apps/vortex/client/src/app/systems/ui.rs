@@ -34,20 +34,13 @@ pub fn update(world: &mut World) {
         consume_shortcuts(&context, world);
 
         world.resource_scope(|world, mut file_actions: Mut<FileActions>| {
-            let file_manager = world.get_resource::<FileManager>().unwrap();
-            let project_root_entity = file_manager.project_root_entity;
-
-            file_actions.execute_actions(world, Some(&project_root_entity));
+            file_actions.check_top(world);
         });
         world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-            if let Some(tab_file_entity) = tab_manager.current_tab_entity() {
-                let tab_file_entity = *tab_file_entity;
-                let Some(tab_state) = tab_manager.current_tab_state_mut() else {
-                    return;
-                };
+            if let Some(tab_state) = tab_manager.current_tab_state_mut() {
                 tab_state
                     .action_stack
-                    .execute_actions(world, Some(&tab_file_entity));
+                    .check_top(world);
             }
         });
     } else {

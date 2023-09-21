@@ -4,6 +4,7 @@ use bevy_ecs::{
     system::{Commands, Query, SystemState},
     world::World,
 };
+use bevy_ecs::world::Mut;
 use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
@@ -222,36 +223,41 @@ impl ChangelistRowUiWidget {
     }
 
     pub fn on_row_click(world: &mut World, row_entity: &Entity) {
-        let mut system_state: SystemState<(
-            Commands,
-            Client,
-            ResMut<FileActions>,
-            Query<&ChangelistEntry>,
-        )> = SystemState::new(world);
-        let (mut commands, client, mut file_actions, query) = system_state.get_mut(world);
+        let mut has_auth: bool;
+        {
+            let mut system_state: SystemState<(
+                Commands,
+                Client,
+                Query<&ChangelistEntry>,
+            )> = SystemState::new(world);
+            let (mut commands, client, query) = system_state.get_mut(world);
 
-        let has_auth: bool = {
-            if let Ok(entry) = query.get(*row_entity) {
-                if *entry.status == ChangelistStatus::Deleted {
-                    true
-                } else if let Some(file_entity) = entry.file_entity.get(&client) {
-                    if let Some(authority) = commands.entity(file_entity).authority(&client) {
-                        !authority.is_denied()
+            has_auth = {
+                if let Ok(entry) = query.get(*row_entity) {
+                    if *entry.status == ChangelistStatus::Deleted {
+                        true
+                    } else if let Some(file_entity) = entry.file_entity.get(&client) {
+                        if let Some(authority) = commands.entity(file_entity).authority(&client) {
+                            !authority.is_denied()
+                        } else {
+                            true
+                        }
                     } else {
                         true
                     }
                 } else {
                     true
                 }
-            } else {
-                true
-            }
-        };
+            };
+        }
 
         if has_auth {
             let mut entities = Vec::new();
             entities.push(*row_entity);
-            file_actions.buffer_action(FileAction::SelectFile(entities));
+
+            world.resource_scope(|world, mut file_actions: Mut<FileActions>| {
+                file_actions.execute_action(world, FileAction::SelectFile(entities));
+            });
         }
     }
 

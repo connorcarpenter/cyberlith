@@ -49,10 +49,10 @@ impl TabActionStack {
         }
     }
 
-    pub fn buffer_shape_action(&mut self, action: ShapeAction) {
+    pub fn execute_shape_action(&mut self, world: &mut World, tab_file_entity_opt: Option<&Entity>, action: ShapeAction) {
         match self {
             Self::Shape(action_stack) => {
-                action_stack.buffer_action(action);
+                action_stack.execute_action(world, tab_file_entity_opt, action);
             }
             _ => {
                 panic!("buffer_shape_action() called on TabActionStack::Animation");
@@ -60,10 +60,10 @@ impl TabActionStack {
         }
     }
 
-    pub fn buffer_anim_action(&mut self, action: AnimAction) {
+    pub fn execute_anim_action(&mut self, world: &mut World, action: AnimAction) {
         match self {
             Self::Animation(action_stack) => {
-                action_stack.buffer_action(action);
+                action_stack.execute_action(world, None, action);
             }
             _ => {
                 panic!("buffer_anim_action() called on TabActionStack::Shape");
@@ -107,13 +107,13 @@ impl TabActionStack {
         }
     }
 
-    pub fn execute_actions(&mut self, world: &mut World, entity_opt: Option<&Entity>) {
+    pub fn check_top(&mut self, world: &mut World) {
         match self {
             Self::Shape(action_stack) => {
-                action_stack.execute_actions(world, entity_opt);
+                action_stack.check_top(world);
             }
             Self::Animation(action_stack) => {
-                action_stack.execute_actions(world, entity_opt);
+                action_stack.check_top(world);
             }
         }
     }
@@ -220,8 +220,11 @@ pub(crate) fn action_stack_redo(world: &mut World) {
 }
 
 impl<A: Action> ActionStack<A> {
-    pub fn buffer_action(&mut self, action: A) {
-        self.buffered_actions.push(action);
+    pub fn execute_action(&mut self, world: &mut World, entity_opt: Option<&Entity>, action: A) {
+        let mut reversed_actions = self.execute_action_old(world, entity_opt, action);
+        self.undo_actions.append(&mut reversed_actions);
+        self.redo_actions.clear();
+        self.enable_top(world);
     }
 
     pub fn has_undo(&self) -> bool {
@@ -240,7 +243,7 @@ impl<A: Action> ActionStack<A> {
             panic!("No executed actions to undo!");
         };
 
-        let mut reversed_actions = self.execute_action(world, entity_opt, action);
+        let mut reversed_actions = self.execute_action_old(world, entity_opt, action);
 
         self.redo_actions.append(&mut reversed_actions);
 
@@ -255,32 +258,21 @@ impl<A: Action> ActionStack<A> {
             panic!("No undone actions to redo!");
         };
 
-        let mut reversed_actions = self.execute_action(world, entity_opt, action);
+        let mut reversed_actions = self.execute_action_old(world, entity_opt, action);
 
         self.undo_actions.append(&mut reversed_actions);
 
         self.enable_top(world);
     }
 
-    pub fn execute_actions(&mut self, world: &mut World, entity_opt: Option<&Entity>) {
+    pub fn check_top(&mut self, world: &mut World) {
         if self.buffered_check {
             self.enable_top(world);
             self.buffered_check = false;
         }
-        if self.buffered_actions.is_empty() {
-            return;
-        }
-        let drained_actions: Vec<A> = self.buffered_actions.drain(..).collect();
-        for action in drained_actions {
-            let mut reversed_actions = self.execute_action(world, entity_opt, action);
-            self.undo_actions.append(&mut reversed_actions);
-        }
-        self.redo_actions.clear();
-
-        self.enable_top(world);
     }
 
-    fn execute_action(
+    fn execute_action_old(
         &mut self,
         world: &mut World,
         entity_opt: Option<&Entity>,

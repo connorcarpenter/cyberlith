@@ -267,26 +267,21 @@ impl TabManager {
         Some(tab_state)
     }
 
+    pub fn current_tab_execute_shape_action(&mut self, world: &mut World, action: ShapeAction) {
+        let current_tab_entity = *self.current_tab_entity().unwrap();
+        let tab_state = self.current_tab_state_mut().unwrap();
+        tab_state.action_stack.execute_shape_action(world, Some(&current_tab_entity), action);
+    }
+
+    pub fn current_tab_execute_anim_action(&mut self, world: &mut World, action: AnimAction) {
+        let tab_state = self.current_tab_state_mut().unwrap();
+        tab_state.action_stack.execute_anim_action(world, action);
+    }
+
     pub fn current_tab_camera_state_mut(&mut self) -> Option<&mut CameraState> {
         let current_entity = self.current_tab?;
         let tab_state = self.tab_map.get_mut(&current_entity)?;
         Some(&mut tab_state.camera_state)
-    }
-
-    pub fn buffer_shape_action(&mut self, action: ShapeAction) {
-        if let Some(current_entity) = self.current_tab {
-            if let Some(tab_state) = self.tab_map.get_mut(&current_entity) {
-                tab_state.action_stack.buffer_shape_action(action);
-            }
-        }
-    }
-
-    pub fn buffer_anim_action(&mut self, action: AnimAction) {
-        if let Some(current_entity) = self.current_tab {
-            if let Some(tab_state) = self.tab_map.get_mut(&current_entity) {
-                tab_state.action_stack.buffer_anim_action(action);
-            }
-        }
     }
 
     fn new_tab_id(&mut self) -> TabId {

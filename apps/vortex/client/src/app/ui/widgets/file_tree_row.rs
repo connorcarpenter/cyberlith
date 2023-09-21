@@ -368,20 +368,25 @@ impl FileTreeRowUiWidget {
         }
 
         // continue
-        let mut system_state: SystemState<(Commands, Client, ResMut<FileActions>)> =
-            SystemState::new(world);
-        let (mut commands, client, mut file_actions) = system_state.get_mut(world);
-
         let mut is_denied = false;
-        if let Some(authority) = commands.entity(*row_entity).authority(&client) {
-            if authority.is_denied() {
-                is_denied = true;
+        {
+            let mut system_state: SystemState<(Commands, Client)> =
+                SystemState::new(world);
+            let (mut commands, client) = system_state.get_mut(world);
+
+
+            if let Some(authority) = commands.entity(*row_entity).authority(&client) {
+                if authority.is_denied() {
+                    is_denied = true;
+                }
             }
         }
         if !is_denied {
             let mut entities = Vec::new();
             entities.push(*row_entity);
-            file_actions.buffer_action(FileAction::SelectFile(entities));
+            world.resource_scope(|world, mut file_actions: Mut<FileActions>| {
+                file_actions.execute_action(world, FileAction::SelectFile(entities));
+            });
         }
     }
 
@@ -621,10 +626,9 @@ impl FileTreeRowUiWidget {
     ) {
         let mut system_state: SystemState<(
             Res<FileManager>,
-            ResMut<FileActions>,
             Query<&FileSystemParent>,
         )> = SystemState::new(world);
-        let (file_manager, mut file_actions, parent_query) = system_state.get_mut(world);
+        let (file_manager, parent_query) = system_state.get_mut(world);
 
         let parent_entity = directory_entity.unwrap_or(file_manager.project_root_entity);
 
@@ -638,13 +642,15 @@ impl FileTreeRowUiWidget {
             return;
         }
 
-        file_actions.buffer_action(FileAction::CreateFile(
-            directory_entity,
-            entry_name.to_string(),
-            entry_kind,
-            None,
-            None,
-        ));
+        world.resource_scope(|world, mut file_actions: Mut<FileActions>| {
+            file_actions.execute_action(world, FileAction::CreateFile(
+                directory_entity,
+                entry_name.to_string(),
+                entry_kind,
+                None,
+                None,
+            ));
+        });
     }
 
     pub fn on_modal_response_rename(
@@ -687,7 +693,7 @@ impl FileTreeRowUiWidget {
             return;
         }
 
-        file_actions.buffer_action(FileAction::RenameFile(
+        file_actions.execute_action(world, FileAction::RenameFile(
             *entry_entity,
             entry_name.to_string(),
         ));
@@ -696,6 +702,6 @@ impl FileTreeRowUiWidget {
     pub fn on_modal_response_delete(world: &mut World, row_entity: &Entity) {
         let mut file_actions = world.get_resource_mut::<FileActions>().unwrap();
 
-        file_actions.buffer_action(FileAction::DeleteFile(*row_entity, None));
+        file_actions.execute_action(world, FileAction::DeleteFile(*row_entity, None));
     }
 }

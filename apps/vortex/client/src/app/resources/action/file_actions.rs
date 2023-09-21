@@ -1,6 +1,8 @@
+
 use bevy_ecs::{entity::Entity, prelude::Resource, world::World};
 
 use crate::app::resources::action::{ActionStack, FileAction};
+use crate::app::resources::file_manager::FileManager;
 
 #[derive(Resource)]
 pub struct FileActions {
@@ -16,8 +18,10 @@ impl Default for FileActions {
 }
 
 impl FileActions {
-    pub fn buffer_action(&mut self, action: FileAction) {
-        self.action_stack.buffer_action(action);
+    pub fn execute_action(&mut self, world: &mut World, action: FileAction) {
+        let file_manager = world.get_resource::<FileManager>().unwrap();
+        let project_entity = file_manager.project_root_entity;
+        self.action_stack.execute_action(world, Some(&project_entity), action);
     }
 
     pub(crate) fn has_undo(&self) -> bool {
@@ -40,7 +44,7 @@ impl FileActions {
         self.action_stack.entity_update_auth_status(entity);
     }
 
-    pub(crate) fn execute_actions(&mut self, world: &mut World, entity_opt: Option<&Entity>) {
-        self.action_stack.execute_actions(world, entity_opt);
+    pub(crate) fn check_top(&mut self, world: &mut World) {
+        self.action_stack.check_top(world);
     }
 }
