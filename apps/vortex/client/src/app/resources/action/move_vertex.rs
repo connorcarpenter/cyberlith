@@ -1,12 +1,11 @@
 use bevy_ecs::{
-    prelude::{Entity, Query, World},
+    prelude::{Query, World},
     system::{Res, ResMut, SystemState},
 };
 use bevy_log::info;
 
 use naia_bevy_client::Client;
 
-use math::Vec3;
 use render_api::{base::CpuMesh, components::Transform, Assets, Handle};
 
 use vortex_proto::components::{Face3d, Vertex3d};
@@ -17,11 +16,13 @@ use crate::app::resources::{
 
 pub(crate) fn execute(
     world: &mut World,
-    vertex_2d_entity: Entity,
-    old_position: Vec3,
-    new_position: Vec3,
-    already_moved: bool,
+    action: ShapeAction
 ) -> Vec<ShapeAction> {
+
+    let ShapeAction::MoveVertex(vertex_2d_entity, old_position, new_position, already_moved) = action else {
+        panic!("Expected MoveVertex");
+    };
+
     info!("MoveVertex({:?}, _, _, {})", vertex_2d_entity, already_moved);
     let mut system_state: SystemState<(
         Client,

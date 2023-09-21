@@ -1,5 +1,5 @@
 use bevy_ecs::{
-    prelude::{Commands, Entity, Query, World},
+    prelude::{Commands, Query, World},
     system::{ResMut, SystemState},
 };
 use bevy_log::info;
@@ -20,9 +20,13 @@ use crate::app::resources::{
 
 pub(crate) fn execute(
     world: &mut World,
-    edge_2d_entity: Entity,
-    shape_2d_to_select_opt: Option<(Entity, CanvasShape)>,
+    action: ShapeAction,
 ) -> Vec<ShapeAction> {
+
+    let ShapeAction::DeleteEdge(edge_2d_entity, shape_2d_to_select_opt) = action else {
+        panic!("Expected DeleteEdge");
+    };
+
     info!("DeleteEdge(edge_2d_entity: `{:?}`)", edge_2d_entity);
     let mut system_state: SystemState<(
         Commands,

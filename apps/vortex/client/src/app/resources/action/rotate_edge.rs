@@ -1,5 +1,5 @@
 use bevy_ecs::{
-    prelude::{Entity, World},
+    prelude::World,
     system::{Query, Res, ResMut, SystemState},
 };
 use bevy_log::info;
@@ -10,10 +10,13 @@ use crate::app::resources::{action::ShapeAction, canvas::Canvas, edge_manager::E
 
 pub(crate) fn execute(
     world: &mut World,
-    edge_2d_entity: Entity,
-    old_angle: f32,
-    new_angle: f32,
+    action: ShapeAction,
 ) -> Vec<ShapeAction> {
+
+    let ShapeAction::RotateEdge(edge_2d_entity, old_angle, new_angle) = action else {
+        panic!("Expected RotateEdge");
+    };
+
     info!(
         "RotateEdge(edge_2d_entity: `{:?}`, old_angle: `{:?}`, new_angle: `{:?}`)",
         edge_2d_entity, old_angle, new_angle

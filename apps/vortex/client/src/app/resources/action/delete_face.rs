@@ -1,5 +1,5 @@
 use bevy_ecs::{
-    prelude::{Commands, Entity, World},
+    prelude::{Commands, World},
     system::{ResMut, SystemState},
 };
 use bevy_log::info;
@@ -10,7 +10,14 @@ use crate::app::resources::{
     action::ShapeAction, face_manager::FaceManager, shape_data::CanvasShape,
 };
 
-pub(crate) fn execute(world: &mut World, face_2d_entity: Entity) -> Vec<ShapeAction> {
+pub(crate) fn execute(world: &mut World, action: ShapeAction) -> Vec<ShapeAction> {
+
+    let ShapeAction::DeleteFace(face_2d_entity) = action else {
+        panic!("Expected DeleteFace");
+    };
+
+    //, face_2d_entity: Entity
+
     info!("DeleteFace(face_2d_entity: `{:?}`)", face_2d_entity);
     let mut system_state: SystemState<(Commands, ResMut<FaceManager>, ResMut<Assets<CpuMesh>>)> =
         SystemState::new(world);

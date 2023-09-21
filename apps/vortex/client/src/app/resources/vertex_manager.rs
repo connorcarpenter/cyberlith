@@ -256,20 +256,6 @@ impl VertexManager {
         }
     }
 
-    pub fn cancel_drags(&mut self) {
-        if self.dragging_entity.is_some() {
-            // finish current drag
-            self.drags.push((
-                self.dragging_entity.unwrap(),
-                self.dragging_start.unwrap(),
-                self.dragging_end.unwrap(),
-            ));
-            self.dragging_entity = None;
-            self.dragging_start = None;
-            self.dragging_end = None;
-        }
-    }
-
     pub fn take_drags(&mut self) -> Option<Vec<(Entity, Vec3, Vec3)>> {
 
         if self.dragging_entity.is_some() {

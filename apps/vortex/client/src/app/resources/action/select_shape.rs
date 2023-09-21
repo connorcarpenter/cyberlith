@@ -15,8 +15,13 @@ use crate::app::resources::{
 
 pub(crate) fn execute(
     world: &mut World,
-    shape_2d_entity_opt: Option<(Entity, CanvasShape)>,
+    action: ShapeAction,
 ) -> Vec<ShapeAction> {
+
+    let ShapeAction::SelectShape(shape_2d_entity_opt) = action else {
+        panic!("Expected SelectShape");
+    };
+
     info!("SelectShape({:?})", shape_2d_entity_opt);
 
     let mut system_state: SystemState<(

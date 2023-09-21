@@ -42,7 +42,32 @@ pub enum ShapeAction {
     DeleteFace(Entity),
 }
 
+pub enum ShapeActionType {
+    SelectShape,
+    CreateVertex,
+    DeleteVertex,
+    MoveVertex,
+    CreateEdge,
+    DeleteEdge,
+    RotateEdge,
+    DeleteFace,
+}
+
 impl ShapeAction {
+
+    pub(crate) fn get_type(&self) -> ShapeActionType {
+        match self {
+            Self::SelectShape(_) => ShapeActionType::SelectShape,
+            Self::CreateVertex(_, _, _) => ShapeActionType::CreateVertex,
+            Self::DeleteVertex(_, _) => ShapeActionType::DeleteVertex,
+            Self::MoveVertex(_, _, _, _) => ShapeActionType::MoveVertex,
+            Self::CreateEdge(_, _, _, _, _) => ShapeActionType::CreateEdge,
+            Self::DeleteEdge(_, _) => ShapeActionType::DeleteEdge,
+            Self::RotateEdge(_, _, _) => ShapeActionType::RotateEdge,
+            Self::DeleteFace(_) => ShapeActionType::DeleteFace,
+        }
+    }
+
     pub(crate) fn migrate_vertex_entities(
         &mut self,
         old_2d_vert_entity: Entity,
@@ -207,49 +232,38 @@ impl Action for ShapeAction {
         let Some(tab_file_entity) = tab_file_entity_opt else {
             panic!("should be a tab file entity");
         };
-        match self {
-            Self::SelectShape(shape_2d_entity_opt) => {
-                select_shape::execute(world, shape_2d_entity_opt)
+        let action_type = self.get_type();
+        match action_type {
+            ShapeActionType::SelectShape => {
+                select_shape::execute(world, self)
             }
-            Self::CreateVertex(vertex_type_data, position, old_vertex_entities_opt) => {
+            ShapeActionType::CreateVertex => {
                 create_vertex::execute(
                     world,
                     action_stack,
                     tab_file_entity,
-                    vertex_type_data,
-                    position,
-                    old_vertex_entities_opt,
+                    self,
                 )
             }
-            Self::DeleteVertex(vertex_2d_entity, vertex_2d_to_select_opt) => {
-                delete_vertex::execute(world, vertex_2d_entity, vertex_2d_to_select_opt)
+            ShapeActionType::DeleteVertex => {
+                delete_vertex::execute(world, self)
             }
-            Self::MoveVertex(vertex_2d_entity, old_position, new_position, already_moved) => {
-                move_vertex::execute(world, vertex_2d_entity, old_position, new_position, already_moved)
+            ShapeActionType::MoveVertex => {
+                move_vertex::execute(world, self)
             }
-            Self::CreateEdge(
-                vertex_2d_entity_a,
-                vertex_2d_entity_b,
-                (shape_2d_entity_to_select, shape_2d_type_to_select),
-                face_to_create_opt,
-                old_edge_entities_opt,
-            ) => create_edge::execute(
+            ShapeActionType::CreateEdge => create_edge::execute(
                 world,
                 action_stack,
                 tab_file_entity,
-                vertex_2d_entity_a,
-                vertex_2d_entity_b,
-                (shape_2d_entity_to_select, shape_2d_type_to_select),
-                face_to_create_opt,
-                old_edge_entities_opt,
+                self,
             ),
-            Self::DeleteEdge(edge_2d_entity, shape_2d_to_select_opt) => {
-                delete_edge::execute(world, edge_2d_entity, shape_2d_to_select_opt)
+            ShapeActionType::DeleteEdge => {
+                delete_edge::execute(world, self)
             }
-            Self::RotateEdge(edge_2d_entity, old_angle, new_angle) => {
-                rotate_edge::execute(world, edge_2d_entity, old_angle, new_angle)
+            ShapeActionType::RotateEdge => {
+                rotate_edge::execute(world, self)
             }
-            Self::DeleteFace(face_2d_entity) => delete_face::execute(world, face_2d_entity),
+            ShapeActionType::DeleteFace => delete_face::execute(world, self),
         }
     }
 

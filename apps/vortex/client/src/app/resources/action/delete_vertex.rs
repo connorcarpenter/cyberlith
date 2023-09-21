@@ -24,9 +24,13 @@ use crate::app::{
 
 pub(crate) fn execute(
     world: &mut World,
-    vertex_2d_entity: Entity,
-    vertex_2d_to_select_opt: Option<(Entity, CanvasShape)>,
+    action: ShapeAction,
 ) -> Vec<ShapeAction> {
+
+    let ShapeAction::DeleteVertex(vertex_2d_entity, vertex_2d_to_select_opt) = action else {
+        panic!("Expected DeleteVertex");
+    };
+
     info!("DeleteVertex({:?})", vertex_2d_entity);
 
     let mut system_state: SystemState<(

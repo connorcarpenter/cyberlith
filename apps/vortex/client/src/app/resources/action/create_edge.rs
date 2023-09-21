@@ -30,12 +30,19 @@ pub(crate) fn execute(
     world: &mut World,
     action_stack: &mut ActionStack<ShapeAction>,
     tab_file_entity: &Entity,
-    vertex_2d_entity_a: Entity,
-    vertex_2d_entity_b: Entity,
-    shape_to_select: (Entity, CanvasShape),
-    face_to_create_opt: Option<Vec<(Entity, Entity, bool)>>,
-    old_edge_entities_opt: Option<Entity>,
+    action: ShapeAction,
 ) -> Vec<ShapeAction> {
+
+    let ShapeAction::CreateEdge(
+        vertex_2d_entity_a,
+        vertex_2d_entity_b,
+        shape_to_select,
+        face_to_create_opt,
+        old_edge_entities_opt,
+    ) = action else {
+        panic!("Expected CreateEdge");
+    };
+
     let (mut shape_2d_entity_to_select, shape_2d_type_to_select) = shape_to_select;
 
     info!(

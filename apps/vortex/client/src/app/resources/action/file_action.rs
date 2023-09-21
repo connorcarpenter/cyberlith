@@ -25,7 +25,24 @@ pub enum FileAction {
     RenameFile(Entity, String),
 }
 
+pub enum FileActionType {
+    SelectFile,
+    CreateFile,
+    DeleteFile,
+    RenameFile,
+}
+
 impl FileAction {
+
+    pub(crate) fn get_type(&self) -> FileActionType {
+        match self {
+            Self::SelectFile(_) => FileActionType::SelectFile,
+            Self::CreateFile(_, _, _, _, _) => FileActionType::CreateFile,
+            Self::DeleteFile(_, _) => FileActionType::DeleteFile,
+            Self::RenameFile(_, _) => FileActionType::RenameFile,
+        }
+    }
+
     pub(crate) fn migrate_file_entities(&mut self, old_entity: Entity, new_entity: Entity) {
         match self {
             FileAction::SelectFile(entities) => {

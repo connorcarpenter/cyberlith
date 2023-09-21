@@ -15,6 +15,20 @@ pub enum AnimAction {
     RotateVertex(Entity, Option<Quat>, Option<Quat>),
 }
 
+pub enum AnimActionType {
+    SelectVertex,
+    RotateVertex,
+}
+
+impl AnimAction {
+    pub fn get_type(&self) -> AnimActionType {
+        match self {
+            Self::SelectVertex(_) => AnimActionType::SelectVertex,
+            Self::RotateVertex(_, _, _) => AnimActionType::RotateVertex,
+        }
+    }
+}
+
 impl Action for AnimAction {
     fn execute(
         self,

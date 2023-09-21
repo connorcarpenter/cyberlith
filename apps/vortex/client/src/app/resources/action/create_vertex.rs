@@ -6,7 +6,6 @@ use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt};
 
-use math::Vec3;
 use render_api::{
     base::{CpuMaterial, CpuMesh},
     components::Transform,
@@ -33,10 +32,13 @@ pub(crate) fn execute(
     world: &mut World,
     action_stack: &mut ActionStack<ShapeAction>,
     tab_file_entity: &Entity,
-    vertex_type_data: VertexTypeData,
-    position: Vec3,
-    old_vertex_entities_opt: Option<(Entity, Entity)>,
+    action: ShapeAction,
 ) -> Vec<ShapeAction> {
+
+    let ShapeAction::CreateVertex(vertex_type_data, position, old_vertex_entities_opt) = action else {
+        panic!("Expected CreateVertex");
+    };
+
     let mut entities_to_release = Vec::new();
     let deselected_vertex_2d_entity_store;
     let selected_vertex_3d;
