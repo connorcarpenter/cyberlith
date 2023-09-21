@@ -4,13 +4,14 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use naia_bevy_client::Client;
 use math::Quat;
+use naia_bevy_client::Client;
 
 use vortex_proto::components::{AnimRotation, ShapeName};
 
-use crate::app::resources::{canvas::Canvas, vertex_manager::VertexManager, action::AnimAction,
-                            animation_manager::AnimationManager,
+use crate::app::resources::{
+    action::AnimAction, animation_manager::AnimationManager, canvas::Canvas,
+    vertex_manager::VertexManager,
 };
 
 pub fn execute(
@@ -19,7 +20,10 @@ pub fn execute(
     old_angle_opt: Option<Quat>,
     new_angle_opt: Option<Quat>,
 ) -> Vec<AnimAction> {
-    info!("AnimRotateVertex({:?}, {:?}, {:?})", vertex_2d_entity, old_angle_opt, new_angle_opt);
+    info!(
+        "AnimRotateVertex({:?}, {:?}, {:?})",
+        vertex_2d_entity, old_angle_opt, new_angle_opt
+    );
 
     let mut system_state: SystemState<(
         Commands,
@@ -37,7 +41,7 @@ pub fn execute(
         vertex_manager,
         mut animation_manager,
         name_q,
-        mut rotation_q
+        mut rotation_q,
     ) = system_state.get_mut(world);
 
     let vertex_3d_entity = vertex_manager

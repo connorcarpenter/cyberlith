@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use bevy_ecs::{
     entity::Entity,
     prelude::{Commands, World},
-    system::{ResMut, Query, SystemState},
+    system::{Query, ResMut, SystemState},
 };
 use bevy_log::info;
 
@@ -18,11 +18,11 @@ use vortex_proto::{
     SerdeQuat,
 };
 
+use crate::resources::AnimationManager;
 use crate::{
     files::FileWriter,
     resources::{ContentEntityData, Project},
 };
-use crate::resources::AnimationManager;
 
 // Actions
 enum AnimAction {
@@ -292,7 +292,8 @@ impl AnimReader {
         let mut shape_name_map = HashMap::new();
         let mut frame_index = 0;
 
-        let mut system_state: SystemState<(Commands, Server, ResMut<AnimationManager>)> = SystemState::new(world);
+        let mut system_state: SystemState<(Commands, Server, ResMut<AnimationManager>)> =
+            SystemState::new(world);
         let (mut commands, mut server, mut animation_manager) = system_state.get_mut(world);
 
         for action in actions {
@@ -318,8 +319,7 @@ impl AnimReader {
                         .configure_replication(ReplicationConfig::Delegated)
                         .insert(component)
                         .id();
-                    output
-                        .insert(entity, ContentEntityData::new_dependency(skel_file_key));
+                    output.insert(entity, ContentEntityData::new_dependency(skel_file_key));
                 }
                 AnimAction::ShapeIndex(shape_name) => {
                     shape_name_map.insert(shape_name_index, shape_name);

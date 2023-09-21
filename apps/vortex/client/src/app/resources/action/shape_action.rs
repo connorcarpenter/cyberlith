@@ -9,10 +9,10 @@ use crate::app::{
             create_edge, create_vertex, delete_edge, delete_face, delete_vertex, move_vertex,
             rotate_edge, select_shape, Action, ActionStack,
         },
-        shape_data::CanvasShape,
-        vertex_manager::VertexManager,
         edge_manager::EdgeManager,
         face_manager::FaceManager,
+        shape_data::CanvasShape,
+        vertex_manager::VertexManager,
     },
 };
 

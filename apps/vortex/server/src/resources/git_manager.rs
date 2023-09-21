@@ -109,11 +109,23 @@ impl GitManager {
         }
     }
 
-    pub(crate) fn queue_client_open_dependency(&mut self, user_key: &UserKey, project_key: &ProjectKey, dependency_key: &FileKey) {
-        self.queued_client_open_dependency.push((*user_key, *project_key, dependency_key.clone()));
+    pub(crate) fn queue_client_open_dependency(
+        &mut self,
+        user_key: &UserKey,
+        project_key: &ProjectKey,
+        dependency_key: &FileKey,
+    ) {
+        self.queued_client_open_dependency
+            .push((*user_key, *project_key, dependency_key.clone()));
     }
 
-    pub(crate) fn on_client_open_dependency(&mut self, world: &mut World, user_key: &UserKey, project_key: &ProjectKey, dependency_key: &FileKey) {
+    pub(crate) fn on_client_open_dependency(
+        &mut self,
+        world: &mut World,
+        user_key: &UserKey,
+        project_key: &ProjectKey,
+        dependency_key: &FileKey,
+    ) {
         let project = self.projects.get_mut(project_key).unwrap();
         if let Some(new_content_entities) =
             project.user_join_filespace(world, user_key, &dependency_key)
@@ -280,8 +292,15 @@ impl GitManager {
         system_state.apply(world);
 
         world.resource_scope(|world, mut git_manager: Mut<GitManager>| {
-            for (user_key, project_key, dependency_key) in std::mem::take(&mut git_manager.queued_client_open_dependency) {
-                git_manager.on_client_open_dependency(world, &user_key, &project_key, &dependency_key);
+            for (user_key, project_key, dependency_key) in
+                std::mem::take(&mut git_manager.queued_client_open_dependency)
+            {
+                git_manager.on_client_open_dependency(
+                    world,
+                    &user_key,
+                    &project_key,
+                    &dependency_key,
+                );
             }
         });
     }

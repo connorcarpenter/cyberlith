@@ -41,7 +41,10 @@ impl TabActionStack {
             FileExtension::Skel | FileExtension::Mesh => Self::Shape(ActionStack::default()),
             FileExtension::Anim => Self::Animation(ActionStack::default()),
             _ => {
-                panic!("TabActionStack::new() called with unsupported file extension: {:?}", file_ext);
+                panic!(
+                    "TabActionStack::new() called with unsupported file extension: {:?}",
+                    file_ext
+                );
             }
         }
     }
@@ -70,23 +73,15 @@ impl TabActionStack {
 
     pub fn has_undo(&self) -> bool {
         match self {
-            Self::Shape(action_stack) => {
-                action_stack.has_undo()
-            }
-            Self::Animation(action_stack) => {
-                action_stack.has_undo()
-            }
+            Self::Shape(action_stack) => action_stack.has_undo(),
+            Self::Animation(action_stack) => action_stack.has_undo(),
         }
     }
 
     pub fn has_redo(&self) -> bool {
         match self {
-            Self::Shape(action_stack) => {
-                action_stack.has_redo()
-            }
-            Self::Animation(action_stack) => {
-                action_stack.has_redo()
-            }
+            Self::Shape(action_stack) => action_stack.has_redo(),
+            Self::Animation(action_stack) => action_stack.has_redo(),
         }
     }
 

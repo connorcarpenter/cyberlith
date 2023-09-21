@@ -209,15 +209,16 @@ impl VertexManager {
         self.last_vertex_dragged = None;
     }
 
-    pub fn update_last_vertex_dragged(&mut self, vertex_2d_entity: Entity, old_3d_position: Vec3, new_3d_position: Vec3) {
-        if let Some((_, old_3d_position, _)) =
-            self.last_vertex_dragged
-        {
-            self.last_vertex_dragged =
-                Some((vertex_2d_entity, old_3d_position, new_3d_position));
+    pub fn update_last_vertex_dragged(
+        &mut self,
+        vertex_2d_entity: Entity,
+        old_3d_position: Vec3,
+        new_3d_position: Vec3,
+    ) {
+        if let Some((_, old_3d_position, _)) = self.last_vertex_dragged {
+            self.last_vertex_dragged = Some((vertex_2d_entity, old_3d_position, new_3d_position));
         } else {
-            self.last_vertex_dragged =
-                Some((vertex_2d_entity, old_3d_position, new_3d_position));
+            self.last_vertex_dragged = Some((vertex_2d_entity, old_3d_position, new_3d_position));
         }
     }
 
@@ -640,7 +641,11 @@ impl VertexManager {
         vertex_3d_data.add_edge(edge_3d_entity);
     }
 
-    pub(crate) fn vertex_remove_edge(&mut self, vertex_3d_entity: &Entity, edge_3d_entity: &Entity) {
+    pub(crate) fn vertex_remove_edge(
+        &mut self,
+        vertex_3d_entity: &Entity,
+        edge_3d_entity: &Entity,
+    ) {
         let Some(vertex_3d_data) = self.vertices_3d.get_mut(vertex_3d_entity) else {
             panic!("Vertex3d entity: `{:?}` has not been registered", vertex_3d_entity);
         };
@@ -674,7 +679,6 @@ impl VertexManager {
             self.vertices_2d.remove(&entity_2d);
 
             if let Some(parent_3d_entity) = data.parent_3d_entity_opt {
-
                 let Some(parent_3d_data) = self.vertices_3d.get_mut(&parent_3d_entity) else {
                     panic!("Vertex3d entity: `{:?}` has not been registered", parent_3d_entity);
                 };
@@ -698,7 +702,8 @@ impl VertexManager {
         };
         let edges = &vertex_data.edges_3d;
         for edge_entity in edges {
-            let (vertex_a_3d_entity, vertex_b_3d_entity) = edge_manager.edge_get_endpoints(edge_entity);
+            let (vertex_a_3d_entity, vertex_b_3d_entity) =
+                edge_manager.edge_get_endpoints(edge_entity);
 
             if vertex_a_3d_entity != vertex_3d_entity {
                 set.insert(vertex_a_3d_entity);

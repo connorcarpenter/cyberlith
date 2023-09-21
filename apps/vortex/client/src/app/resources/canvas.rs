@@ -5,7 +5,8 @@ use math::Vec2;
 use render_api::{base::CpuTexture2D, Handle};
 
 use crate::app::resources::{
-    edge_manager::EdgeManager, input_manager::InputManager, vertex_manager::VertexManager, animation_manager::AnimationManager
+    animation_manager::AnimationManager, edge_manager::EdgeManager, input_manager::InputManager,
+    vertex_manager::VertexManager,
 };
 
 #[derive(Resource)]
@@ -82,7 +83,13 @@ impl Canvas {
         }
         self.has_focus = focus;
 
-        Canvas::on_canvas_focus_changed(input_manager, vertex_manager, edge_manager, animation_manager, focus);
+        Canvas::on_canvas_focus_changed(
+            input_manager,
+            vertex_manager,
+            edge_manager,
+            animation_manager,
+            focus,
+        );
     }
 
     pub fn set_focused_timed(
@@ -95,7 +102,13 @@ impl Canvas {
         self.has_focus = true;
         self.focus_timer = 1;
 
-        Canvas::on_canvas_focus_changed(input_manager, vertex_manager, edge_manager, animation_manager, true);
+        Canvas::on_canvas_focus_changed(
+            input_manager,
+            vertex_manager,
+            edge_manager,
+            animation_manager,
+            true,
+        );
     }
 
     pub(crate) fn is_position_inside(&self, pos: Vec2) -> bool {

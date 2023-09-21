@@ -27,11 +27,11 @@ use crate::app::{
         Edge2dLocal, FaceIcon2d, LocalShape, SelectCircle, SelectTriangle, Vertex2d, VertexTypeData,
     },
     resources::{
-        action::ShapeAction, animation_manager::AnimationManager, camera_manager::CameraAngle,
-        camera_manager::CameraManager, camera_state::CameraState, canvas::Canvas,
-        edge_manager::EdgeManager, face_manager::FaceManager, file_manager::FileManager,
-        key_action_map::KeyActionMap, shape_data::CanvasShape, tab_manager::TabManager,
-        vertex_manager::VertexManager, action::AnimAction,
+        action::AnimAction, action::ShapeAction, animation_manager::AnimationManager,
+        camera_manager::CameraAngle, camera_manager::CameraManager, camera_state::CameraState,
+        canvas::Canvas, edge_manager::EdgeManager, face_manager::FaceManager,
+        file_manager::FileManager, key_action_map::KeyActionMap, shape_data::CanvasShape,
+        tab_manager::TabManager, vertex_manager::VertexManager,
     },
 };
 
@@ -122,11 +122,7 @@ impl Default for InputManager {
 }
 
 impl InputManager {
-    pub fn update_input(
-        &mut self,
-        input_actions: Vec<InputAction>,
-        world: &mut World,
-    ) {
+    pub fn update_input(&mut self, input_actions: Vec<InputAction>, world: &mut World) {
         for action in input_actions {
             match action {
                 InputAction::MouseClick(click_type, mouse_position) => {
@@ -173,41 +169,42 @@ impl InputManager {
                         ResMut<EdgeManager>,
                         ResMut<AnimationManager>,
                     )> = SystemState::new(world);
-                    let (mut tab_manager, mut vertex_manager, mut edge_manager, mut animation_manager) =
-                        system_state.get_mut(world);
+                    let (
+                        mut tab_manager,
+                        mut vertex_manager,
+                        mut edge_manager,
+                        mut animation_manager,
+                    ) = system_state.get_mut(world);
 
                     // reset last dragged vertex
                     if let Some((vertex_2d_entity, old_pos, new_pos)) =
                         vertex_manager.take_last_vertex_dragged()
                     {
-                        tab_manager
-                            .buffer_shape_action(ShapeAction::MoveVertex(
-                                vertex_2d_entity,
-                                old_pos,
-                                new_pos,
-                            ));
+                        tab_manager.buffer_shape_action(ShapeAction::MoveVertex(
+                            vertex_2d_entity,
+                            old_pos,
+                            new_pos,
+                        ));
                     }
                     // reset last dragged edge
                     if let Some((edge_2d_entity, old_angle, new_angle)) =
                         edge_manager.take_last_edge_dragged()
                     {
-                        tab_manager
-                            .buffer_shape_action(ShapeAction::RotateEdge(
-                                edge_2d_entity,
-                                old_angle,
-                                new_angle,
-                            ));
+                        tab_manager.buffer_shape_action(ShapeAction::RotateEdge(
+                            edge_2d_entity,
+                            old_angle,
+                            new_angle,
+                        ));
                     }
                     // reset last dragged rotation
                     if let Some((vertex_2d_entity, old_angle, new_angle)) =
                         animation_manager.take_last_rotation_dragged()
                     {
-                        tab_manager
-                            .buffer_anim_action(AnimAction::RotateVertex(
-                                vertex_2d_entity,
-                                old_angle,
-                                Some(new_angle),
-                            ));
+                        tab_manager.buffer_anim_action(AnimAction::RotateVertex(
+                            vertex_2d_entity,
+                            old_angle,
+                            Some(new_angle),
+                        ));
                     }
                 }
                 InputAction::KeyRelease(_) => {}
@@ -575,10 +572,7 @@ impl InputManager {
         }
     }
 
-    pub(crate) fn handle_insert_key_press(
-        &mut self,
-        world: &mut World,
-    ) {
+    pub(crate) fn handle_insert_key_press(&mut self, world: &mut World) {
         if self.selected_shape.is_some() {
             return;
         }
@@ -595,10 +589,10 @@ impl InputManager {
         }
 
         tab_manager.buffer_shape_action(ShapeAction::CreateVertex(
-                VertexTypeData::Mesh(Vec::new(), Vec::new()),
-                Vec3::ZERO,
-                None,
-            ));
+            VertexTypeData::Mesh(Vec::new(), Vec::new()),
+            Vec3::ZERO,
+            None,
+        ));
     }
 
     pub(crate) fn handle_delete_key_press(&mut self, world: &mut World) {
@@ -765,7 +759,12 @@ impl InputManager {
 
         // click_type, selected_shape, hovered_shape, current_file_type
         match (click_type, selected_shape, hovered_shape, current_file_type) {
-            (MouseButton::Left, Some(CanvasShape::Edge | CanvasShape::Face), _, FileExtension::Skel | FileExtension::Mesh) => {
+            (
+                MouseButton::Left,
+                Some(CanvasShape::Edge | CanvasShape::Face),
+                _,
+                FileExtension::Skel | FileExtension::Mesh,
+            ) => {
                 // should not ever be able to attach something to an edge or face?
                 // select hovered entity
                 tab_manager
@@ -775,7 +774,12 @@ impl InputManager {
                     .buffer_shape_action(ShapeAction::SelectShape(self.hovered_entity));
                 return;
             }
-            (MouseButton::Left, Some(CanvasShape::Vertex | CanvasShape::RootVertex), Some(_), FileExtension::Skel) => {
+            (
+                MouseButton::Left,
+                Some(CanvasShape::Vertex | CanvasShape::RootVertex),
+                Some(_),
+                FileExtension::Skel,
+            ) => {
                 // skel file type does nothing when trying to connect vertices together
                 // select hovered entity
                 tab_manager
@@ -793,7 +797,9 @@ impl InputManager {
                             .current_tab_state_mut()
                             .unwrap()
                             .action_stack
-                            .buffer_anim_action(AnimAction::SelectVertex(self.hovered_entity.map(|(e, _)| e)));
+                            .buffer_anim_action(AnimAction::SelectVertex(
+                                self.hovered_entity.map(|(e, _)| e),
+                            ));
                         return;
                     }
                     _ => {
@@ -879,7 +885,12 @@ impl InputManager {
                     .buffer_anim_action(AnimAction::SelectVertex(None));
                 return;
             }
-            (MouseButton::Left, Some(CanvasShape::Vertex | CanvasShape::RootVertex), None, FileExtension::Skel | FileExtension::Mesh) => {
+            (
+                MouseButton::Left,
+                Some(CanvasShape::Vertex | CanvasShape::RootVertex),
+                None,
+                FileExtension::Skel | FileExtension::Mesh,
+            ) => {
                 // create new vertex
 
                 // get camera
@@ -930,7 +941,12 @@ impl InputManager {
                         None,
                     ));
             }
-            (MouseButton::Left, None, Some(CanvasShape::RootVertex | CanvasShape::Vertex | CanvasShape::Edge), FileExtension::Skel | FileExtension::Mesh) => {
+            (
+                MouseButton::Left,
+                None,
+                Some(CanvasShape::RootVertex | CanvasShape::Vertex | CanvasShape::Edge),
+                FileExtension::Skel | FileExtension::Mesh,
+            ) => {
                 tab_manager
                     .current_tab_state_mut()
                     .unwrap()
@@ -942,7 +958,9 @@ impl InputManager {
                     .current_tab_state_mut()
                     .unwrap()
                     .action_stack
-                    .buffer_anim_action(AnimAction::SelectVertex(self.hovered_entity.map(|(e, _)| e)));
+                    .buffer_anim_action(AnimAction::SelectVertex(
+                        self.hovered_entity.map(|(e, _)| e),
+                    ));
             }
             (MouseButton::Left, None, Some(CanvasShape::Edge), FileExtension::Anim) => {
                 return;
@@ -1084,7 +1102,11 @@ impl InputManager {
                             // set networked 3d vertex position
                             let mut vertex_3d = vertex_3d_q.get_mut(vertex_3d_entity).unwrap();
 
-                            vertex_manager.update_last_vertex_dragged(vertex_2d_entity, vertex_3d.as_vec3(), new_3d_position);
+                            vertex_manager.update_last_vertex_dragged(
+                                vertex_2d_entity,
+                                vertex_3d.as_vec3(),
+                                new_3d_position,
+                            );
 
                             vertex_3d.set_x(new_3d_position.x as i16);
                             vertex_3d.set_y(new_3d_position.y as i16);
@@ -1128,7 +1150,8 @@ impl InputManager {
                             let end_pos = get_2d_line_transform_endpoint(&edge_2d_transform);
                             let base_angle = angle_between(&start_pos, &end_pos);
 
-                            let edge_angle_entity = edge_manager.edge_get_base_circle_entity(&edge_3d_entity);
+                            let edge_angle_entity =
+                                edge_manager.edge_get_base_circle_entity(&edge_3d_entity);
                             let edge_angle_pos = transform_q
                                 .get(edge_angle_entity)
                                 .unwrap()
@@ -1142,7 +1165,11 @@ impl InputManager {
                                     - base_angle,
                             );
 
-                            edge_manager.update_last_edge_dragged(edge_2d_entity, edge_angle.get_radians(), new_angle);
+                            edge_manager.update_last_edge_dragged(
+                                edge_2d_entity,
+                                edge_angle.get_radians(),
+                                new_angle,
+                            );
 
                             edge_angle.set_radians(new_angle);
 

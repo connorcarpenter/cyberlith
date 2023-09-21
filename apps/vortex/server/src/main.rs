@@ -1,4 +1,3 @@
-
 mod components;
 mod config;
 mod events;
@@ -19,8 +18,8 @@ use naia_bevy_server::{Plugin as ServerPlugin, ReceiveEvents, ServerConfig};
 
 use vortex_proto::{
     components::{
-        Edge3d, Face3d, FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-        FileType, OwnedByFile, ShapeName, Vertex3d, VertexRoot, AnimRotation, AnimFrame,
+        AnimFrame, AnimRotation, Edge3d, Face3d, FileDependency, FileSystemChild, FileSystemEntry,
+        FileSystemRootChild, FileType, OwnedByFile, ShapeName, Vertex3d, VertexRoot,
     },
     protocol,
 };
@@ -29,10 +28,10 @@ use crate::{
     config::{AppConfig, ConfigPlugin},
     events::InsertComponentEvent,
     resources::{
-        changelist_manager_process, ChangelistManager, ShapeManager, ShapeWaitlist, TabManager,
-        UserManager, AnimationManager, GitManager
+        changelist_manager_process, AnimationManager, ChangelistManager, GitManager, ShapeManager,
+        ShapeWaitlist, TabManager, UserManager,
     },
-    systems::{world_loop, network},
+    systems::{network, world_loop},
 };
 
 fn main() {

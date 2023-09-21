@@ -3,14 +3,12 @@ use std::collections::{HashMap, HashSet};
 use bevy_ecs::{entity::Entity, system::Resource};
 
 pub struct RotationData {
-    frame_entity: Entity
+    frame_entity: Entity,
 }
 
 impl RotationData {
     fn new(frame_entity: Entity) -> Self {
-        Self {
-            frame_entity
-        }
+        Self { frame_entity }
     }
 }
 
@@ -52,7 +50,6 @@ impl Default for AnimationManager {
 }
 
 impl AnimationManager {
-
     pub fn has_frame(&self, entity: &Entity) -> bool {
         self.frames.contains_key(entity)
     }
@@ -61,30 +58,18 @@ impl AnimationManager {
         self.rotations.contains_key(entity)
     }
 
-    pub fn on_create_frame(
-        &mut self,
-        frame_entity: Entity,
-    ) {
-        self.frames.insert(
-            frame_entity,
-            FrameData::new(),
-        );
+    pub fn on_create_frame(&mut self, frame_entity: Entity) {
+        self.frames.insert(frame_entity, FrameData::new());
     }
 
-    pub fn on_create_rotation(
-        &mut self,
-        frame_entity: Entity,
-        rot_entity: Entity,
-    ) {
+    pub fn on_create_rotation(&mut self, frame_entity: Entity, rot_entity: Entity) {
         let Some(frame_data) = self.frames.get_mut(&frame_entity) else {
             panic!("frame entity not found");
         };
         frame_data.add_rotation(rot_entity);
 
-        self.rotations.insert(
-            rot_entity,
-            RotationData::new(frame_entity),
-        );
+        self.rotations
+            .insert(rot_entity, RotationData::new(frame_entity));
     }
 
     pub fn deregister_frame(&mut self, entity: &Entity) -> Option<FrameData> {
@@ -105,17 +90,11 @@ impl AnimationManager {
         rot_data
     }
 
-    pub fn on_client_despawn_frame(
-        &mut self,
-        entity: &Entity,
-    ) {
+    pub fn on_client_despawn_frame(&mut self, entity: &Entity) {
         self.deregister_frame(entity);
     }
 
-    pub fn on_client_despawn_rotation(
-        &mut self,
-        entity: &Entity,
-    ) {
+    pub fn on_client_despawn_rotation(&mut self, entity: &Entity) {
         self.deregister_rotation(entity);
     }
 }

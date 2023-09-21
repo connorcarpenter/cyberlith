@@ -11,8 +11,8 @@ use naia_bevy_server::{events::InsertComponentEvents, Server};
 
 use vortex_proto::{
     components::{
-        Edge3d, Face3d, FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-        FileType, OwnedByFile, ShapeName, Vertex3d, VertexRoot, AnimFrame, AnimRotation
+        AnimFrame, AnimRotation, Edge3d, Face3d, FileDependency, FileSystemChild, FileSystemEntry,
+        FileSystemRootChild, FileType, OwnedByFile, ShapeName, Vertex3d, VertexRoot,
     },
     resources::FileKey,
 };
@@ -21,8 +21,8 @@ use crate::{
     events::InsertComponentEvent,
     resources::{
         file_waitlist::{file_process_insert, FSWaitlist, FSWaitlistInsert},
-        ContentEntityData, GitManager, ShapeManager, ShapeWaitlist, ShapeWaitlistInsert,
-        TabManager, UserManager, AnimationManager
+        AnimationManager, ContentEntityData, GitManager, ShapeManager, ShapeWaitlist,
+        ShapeWaitlistInsert, TabManager, UserManager,
     },
 };
 
@@ -120,12 +120,14 @@ pub fn insert_component_events(
 
         // on AnimRotation Insert Event
         for (user_key, entity) in events.read::<AnimRotation>() {
-            insert_rotation_event_writer.send(InsertComponentEvent::<AnimRotation>::new(user_key, entity));
+            insert_rotation_event_writer
+                .send(InsertComponentEvent::<AnimRotation>::new(user_key, entity));
         }
 
         // on AnimFrame Insert Event
         for (user_key, entity) in events.read::<AnimFrame>() {
-            insert_frame_event_writer.send(InsertComponentEvent::<AnimFrame>::new(user_key, entity));
+            insert_frame_event_writer
+                .send(InsertComponentEvent::<AnimFrame>::new(user_key, entity));
         }
     }
 }

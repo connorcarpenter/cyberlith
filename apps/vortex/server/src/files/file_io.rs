@@ -16,7 +16,7 @@ use vortex_proto::{
 
 use crate::{
     files::{AnimReader, AnimWriter, MeshReader, MeshWriter, SkelReader, SkelWriter},
-    resources::{ContentEntityData, Project, ShapeManager, AnimationManager},
+    resources::{AnimationManager, ContentEntityData, Project, ShapeManager},
 };
 
 pub trait FileWriter: Send + Sync {
@@ -182,9 +182,14 @@ pub fn despawn_file_content_entities(
     file_key: &FileKey,
     content_entities: &HashMap<Entity, ContentEntityData>,
 ) {
-    let mut system_state: SystemState<(Commands, Server, ResMut<ShapeManager>, ResMut<AnimationManager>)> =
-        SystemState::new(world);
-    let (mut commands, mut server, mut shape_manager, mut animation_manager) = system_state.get_mut(world);
+    let mut system_state: SystemState<(
+        Commands,
+        Server,
+        ResMut<ShapeManager>,
+        ResMut<AnimationManager>,
+    )> = SystemState::new(world);
+    let (mut commands, mut server, mut shape_manager, mut animation_manager) =
+        system_state.get_mut(world);
 
     for (entity, entity_data) in content_entities.iter() {
         info!("despawning entity: {:?}", entity);

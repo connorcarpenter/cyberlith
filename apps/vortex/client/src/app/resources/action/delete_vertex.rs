@@ -18,9 +18,9 @@ use crate::app::{
         input_manager::InputManager,
         shape_data::CanvasShape,
         vertex_manager::VertexManager,
+        shape_data::FaceKey,
     },
 };
-use crate::app::resources::shape_data::FaceKey;
 
 pub(crate) fn execute(
     world: &mut World,

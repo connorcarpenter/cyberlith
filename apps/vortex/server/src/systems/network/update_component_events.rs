@@ -6,7 +6,9 @@ use bevy_log::info;
 
 use naia_bevy_server::{events::UpdateComponentEvents, Server};
 
-use vortex_proto::components::{AnimRotation, EdgeAngle, FileSystemChild, FileSystemEntry, ShapeName, Vertex3d};
+use vortex_proto::components::{
+    AnimRotation, EdgeAngle, FileSystemChild, FileSystemEntry, ShapeName, Vertex3d,
+};
 
 use crate::resources::{GitManager, UserManager};
 

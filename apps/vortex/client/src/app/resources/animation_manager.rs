@@ -200,11 +200,14 @@ impl AnimationManager {
         if let Some(rotation_entity) = rotation_entity_opt {
             let (mut anim_rotation, _) = rotation_q.get_mut(rotation_entity).unwrap();
 
-            self.update_last_rotation_dragged(vertex_2d_entity, Some(anim_rotation.get_rotation()), rotation_angle);
+            self.update_last_rotation_dragged(
+                vertex_2d_entity,
+                Some(anim_rotation.get_rotation()),
+                rotation_angle,
+            );
 
             anim_rotation.set_rotation(rotation_angle);
         } else {
-
             self.update_last_rotation_dragged(vertex_2d_entity, None, rotation_angle);
 
             // create new rotation entity
@@ -226,7 +229,12 @@ impl AnimationManager {
         self.last_rotation_dragged = None;
     }
 
-    fn update_last_rotation_dragged(&mut self, vertex_2d_entity: Entity, old_rotation: Option<Quat>, new_rotation: Quat) {
+    fn update_last_rotation_dragged(
+        &mut self,
+        vertex_2d_entity: Entity,
+        old_rotation: Option<Quat>,
+        new_rotation: Quat,
+    ) {
         if let Some((_, old_rotation, _)) = self.last_rotation_dragged {
             self.last_rotation_dragged = Some((vertex_2d_entity, old_rotation, new_rotation));
         } else {
@@ -361,7 +369,9 @@ impl AnimationManager {
             if let Ok(name_component) = name_q.get(*child_vertex_3d_entity) {
                 let name = (*name_component.value).clone();
                 if let Some(rotation_entity) = self.vertex_names.get(&(frame_entity, name)) {
-                    if let Ok((anim_rotation, mut local_anim_rotation)) = rotation_q.get_mut(*rotation_entity) {
+                    if let Ok((anim_rotation, mut local_anim_rotation)) =
+                        rotation_q.get_mut(*rotation_entity)
+                    {
                         rotation = anim_rotation.get_rotation();
                         local_anim_rotation.last_synced_quat = rotation;
                     }

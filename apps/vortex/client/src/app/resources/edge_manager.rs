@@ -625,11 +625,19 @@ impl EdgeManager {
     }
 
     pub(crate) fn edge_add_face(&mut self, edge_3d_entity: &Entity, face_key: FaceKey) {
-        self.edges_3d.get_mut(edge_3d_entity).unwrap().faces_3d.insert(face_key);
+        self.edges_3d
+            .get_mut(edge_3d_entity)
+            .unwrap()
+            .faces_3d
+            .insert(face_key);
     }
 
     pub(crate) fn edge_remove_face(&mut self, edge_3d_entity: &Entity, face_key: &FaceKey) {
-        self.edges_3d.get_mut(edge_3d_entity).unwrap().faces_3d.remove(face_key);
+        self.edges_3d
+            .get_mut(edge_3d_entity)
+            .unwrap()
+            .faces_3d
+            .remove(face_key);
     }
 
     pub(crate) fn edge_get_endpoints(&self, edge_3d_entity: &Entity) -> (Entity, Entity) {
@@ -638,7 +646,12 @@ impl EdgeManager {
     }
 
     pub(crate) fn edge_get_base_circle_entity(&self, edge_3d_entity: &Entity) -> Entity {
-        self.edges_3d.get(edge_3d_entity).unwrap().angle_entities_opt.unwrap().0
+        self.edges_3d
+            .get(edge_3d_entity)
+            .unwrap()
+            .angle_entities_opt
+            .unwrap()
+            .0
     }
 
     pub fn edge_angle_visibility_toggle(
@@ -697,9 +710,7 @@ impl EdgeManager {
         let vertex_3d_b = vertex_manager.vertex_entity_2d_to_3d(&vertex_2d_b)?;
         let vertex_a_edges = vertex_manager.vertex_get_edges(&vertex_3d_a)?;
         let vertex_b_edges = vertex_manager.vertex_get_edges(&vertex_3d_b)?;
-        let intersecting_edge_3d_entity = vertex_a_edges
-            .intersection(&vertex_b_edges)
-            .next()?;
+        let intersecting_edge_3d_entity = vertex_a_edges.intersection(&vertex_b_edges).next()?;
         let edge_2d_entity = self.edge_entity_3d_to_2d(&intersecting_edge_3d_entity)?;
         Some(edge_2d_entity)
     }

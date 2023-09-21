@@ -2,13 +2,9 @@ use bevy_ecs::prelude::{Entity, World};
 
 use math::Quat;
 
-use crate::app::{
-    resources::{
-        action::{
-            Action, ActionStack, anim_select_vertex, anim_rotate_vertex,
-        },
-        vertex_manager::VertexManager,
-    },
+use crate::app::resources::{
+    action::{anim_rotate_vertex, anim_select_vertex, Action, ActionStack},
+    vertex_manager::VertexManager,
 };
 
 #[derive(Clone)]
@@ -16,7 +12,7 @@ pub enum AnimAction {
     // The 2D vertex entity to deselect (or None for deselect)
     SelectVertex(Option<Entity>),
     //
-    RotateVertex(Entity, Option<Quat>, Option<Quat>)
+    RotateVertex(Entity, Option<Quat>, Option<Quat>),
 }
 
 impl Action for AnimAction {

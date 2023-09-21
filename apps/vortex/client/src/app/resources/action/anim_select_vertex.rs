@@ -8,15 +8,12 @@ use naia_bevy_client::{Client, CommandsExt};
 
 use vortex_proto::components::ShapeName;
 
-use crate::app::resources::{canvas::Canvas, input_manager::InputManager,
-    shape_data::CanvasShape, vertex_manager::VertexManager, action::AnimAction,
-                            animation_manager::AnimationManager,
+use crate::app::resources::{
+    action::AnimAction, animation_manager::AnimationManager, canvas::Canvas,
+    input_manager::InputManager, shape_data::CanvasShape, vertex_manager::VertexManager,
 };
 
-pub fn execute(
-    world: &mut World,
-    vertex_2d_entity_opt: Option<Entity>,
-) -> Vec<AnimAction> {
+pub fn execute(world: &mut World, vertex_2d_entity_opt: Option<Entity>) -> Vec<AnimAction> {
     info!("AnimSelectVertex({:?})", vertex_2d_entity_opt);
 
     let mut system_state: SystemState<(
@@ -91,7 +88,9 @@ fn select_vertex(
         .unwrap();
     if let Ok(name) = name_q.get(vertex_3d_entity) {
         let name = name.value.as_str();
-        return animation_manager.get_current_rotation(name).map(|entity| *entity);
+        return animation_manager
+            .get_current_rotation(name)
+            .map(|entity| *entity);
     }
     return None;
 }

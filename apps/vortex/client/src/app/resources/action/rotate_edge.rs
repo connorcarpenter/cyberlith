@@ -6,9 +6,7 @@ use bevy_log::info;
 
 use vortex_proto::components::EdgeAngle;
 
-use crate::app::resources::{
-    action::ShapeAction, canvas::Canvas, edge_manager::EdgeManager,
-};
+use crate::app::resources::{action::ShapeAction, canvas::Canvas, edge_manager::EdgeManager};
 
 pub(crate) fn execute(
     world: &mut World,
@@ -20,11 +18,8 @@ pub(crate) fn execute(
         "RotateEdge(edge_2d_entity: `{:?}`, old_angle: `{:?}`, new_angle: `{:?}`)",
         edge_2d_entity, old_angle, new_angle
     );
-    let mut system_state: SystemState<(
-        Res<EdgeManager>,
-        ResMut<Canvas>,
-        Query<&mut EdgeAngle>,
-    )> = SystemState::new(world);
+    let mut system_state: SystemState<(Res<EdgeManager>, ResMut<Canvas>, Query<&mut EdgeAngle>)> =
+        SystemState::new(world);
     let (edge_manager, mut canvas, mut edge_angle_q) = system_state.get_mut(world);
 
     let edge_3d_entity = edge_manager.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();

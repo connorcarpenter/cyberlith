@@ -2,7 +2,7 @@ use std::collections::{HashMap, VecDeque};
 
 use bevy_ecs::{
     prelude::{Entity, Resource},
-    system::{Res, Query, ResMut, SystemState},
+    system::{Query, Res, ResMut, SystemState},
     world::World,
 };
 
@@ -16,7 +16,7 @@ use render_egui::{
 
 use vortex_proto::{
     channels::TabActionChannel,
-    components::{ChangelistStatus, FileSystemEntry, FileExtension},
+    components::{ChangelistStatus, FileExtension, FileSystemEntry},
     messages::{TabCloseMessage, TabOpenMessage},
     types::TabId,
 };
@@ -24,7 +24,10 @@ use vortex_proto::{
 use crate::app::{
     components::{file_system::FileSystemUiState, OwnedByFileLocal},
     resources::{
-        action::{TabActionStack, ShapeAction},
+        action::AnimAction,
+        action::{ShapeAction, TabActionStack},
+        animation_manager::AnimationManager,
+        camera_manager::CameraManager,
         camera_state::CameraState,
         canvas::Canvas,
         edge_manager::EdgeManager,
@@ -32,9 +35,6 @@ use crate::app::{
         input_manager::InputManager,
         shape_manager::ShapeManager,
         vertex_manager::VertexManager,
-        action::AnimAction,
-        animation_manager::AnimationManager,
-        camera_manager::CameraManager,
     },
     ui::widgets::colors::{
         FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
@@ -137,7 +137,12 @@ impl TabManager {
 
         if self.current_tab.is_some() {
             canvas.set_visibility(true);
-            canvas.set_focused_timed(input_manager, vertex_manager, edge_manager, animation_manager);
+            canvas.set_focused_timed(
+                input_manager,
+                vertex_manager,
+                edge_manager,
+                animation_manager,
+            );
         } else {
             canvas.set_visibility(false);
         }
@@ -189,8 +194,10 @@ impl TabManager {
 
             // insert new tab
             let new_tab_id = self.new_tab_id();
-            self.tab_map
-                .insert(*row_entity, TabState::new(new_tab_id, current_order, file_ext));
+            self.tab_map.insert(
+                *row_entity,
+                TabState::new(new_tab_id, current_order, file_ext),
+            );
             self.tab_order.insert(current_order, *row_entity);
 
             // send message to server

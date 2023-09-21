@@ -18,8 +18,8 @@ use render_egui::{
 
 use crate::app::{
     resources::{
-        camera_manager::CameraManager, canvas::Canvas, edge_manager::EdgeManager,
-        input_manager::InputManager, vertex_manager::VertexManager, animation_manager::AnimationManager
+        animation_manager::AnimationManager, camera_manager::CameraManager, canvas::Canvas,
+        edge_manager::EdgeManager, input_manager::InputManager, vertex_manager::VertexManager,
     },
     ui::UiState,
 };
