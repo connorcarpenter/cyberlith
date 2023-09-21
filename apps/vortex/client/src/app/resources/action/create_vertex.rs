@@ -18,7 +18,7 @@ use vortex_proto::components::FileExtension;
 use crate::app::{
     components::VertexTypeData,
     resources::{
-        action::{select_shape::deselect_all_selected_shapes, ActionStack, ShapeAction},
+        action::{select_shape::deselect_selected_shape, ActionStack, ShapeAction},
         camera_manager::CameraManager,
         canvas::Canvas,
         edge_manager::EdgeManager,
@@ -68,7 +68,7 @@ pub(crate) fn execute(
     ) = system_state.get_mut(world);
 
     // deselect all selected vertices
-    let (deselected_vertex_2d_entity, vertex_3d_entity_to_release) = deselect_all_selected_shapes(
+    let (deselected_vertex_2d_entity, vertex_3d_entity_to_release) = deselect_selected_shape(
         &mut canvas,
         &mut input_manager,
         &vertex_manager,

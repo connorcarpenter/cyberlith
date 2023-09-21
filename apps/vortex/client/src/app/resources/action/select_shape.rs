@@ -39,7 +39,7 @@ pub(crate) fn execute(
     ) = system_state.get_mut(world);
 
     // Deselect all selected shapes, select the new selected shapes
-    let (deselected_entity, entity_to_release) = deselect_all_selected_shapes(
+    let (deselected_entity, entity_to_release) = deselect_selected_shape(
         &mut canvas,
         &mut input_manager,
         &vertex_manager,
@@ -119,7 +119,7 @@ pub fn select_shape(
     return None;
 }
 
-pub fn deselect_all_selected_shapes(
+pub fn deselect_selected_shape(
     canvas: &mut Canvas,
     input_manager: &mut InputManager,
     vertex_manager: &VertexManager,

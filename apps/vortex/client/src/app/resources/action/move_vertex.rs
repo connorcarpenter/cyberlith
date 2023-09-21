@@ -20,8 +20,9 @@ pub(crate) fn execute(
     vertex_2d_entity: Entity,
     old_position: Vec3,
     new_position: Vec3,
+    already_moved: bool,
 ) -> Vec<ShapeAction> {
-    info!("MoveVertex");
+    info!("MoveVertex({:?}, _, _, {})", vertex_2d_entity, already_moved);
     let mut system_state: SystemState<(
         Client,
         ResMut<Canvas>,
@@ -51,12 +52,14 @@ pub(crate) fn execute(
         .vertex_entity_2d_to_3d(&vertex_2d_entity)
         .unwrap();
 
-    // MoveVertex action happens after the vertex has already been moved, so we wouldn't need to do anything here ..
-    // BUT we do need to update the vertex_3d's position here in order to apply when undo/redo is executed
-    let Ok(mut vertex_3d) = vertex_3d_q.get_mut(vertex_3d_entity) else {
-        panic!("Failed to get Vertex3d for vertex entity {:?}!", vertex_3d_entity);
-    };
-    vertex_3d.set_vec3(&new_position);
+    if !already_moved {
+        // MoveVertex action happens after the vertex has already been moved, so we wouldn't need to do anything here ..
+        // BUT we do need to update the vertex_3d's position here in order to apply when undo/redo is executed
+        let Ok(mut vertex_3d) = vertex_3d_q.get_mut(vertex_3d_entity) else {
+            panic!("Failed to get Vertex3d for vertex entity {:?}!", vertex_3d_entity);
+        };
+        vertex_3d.set_vec3(&new_position);
+    }
 
     vertex_manager.on_vertex_3d_moved(
         &client,
@@ -76,5 +79,6 @@ pub(crate) fn execute(
         vertex_2d_entity,
         new_position,
         old_position,
+        false,
     )];
 }

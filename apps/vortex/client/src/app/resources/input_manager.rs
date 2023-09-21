@@ -177,14 +177,15 @@ impl InputManager {
                     ) = system_state.get_mut(world);
 
                     // reset last dragged vertex
-                    if let Some((vertex_2d_entity, old_pos, new_pos)) =
-                        vertex_manager.take_last_vertex_dragged()
-                    {
-                        tab_manager.buffer_shape_action(ShapeAction::MoveVertex(
-                            vertex_2d_entity,
-                            old_pos,
-                            new_pos,
-                        ));
+                    if let Some(drags) = vertex_manager.take_drags() {
+                        for (vertex_2d_entity, old_pos, new_pos) in drags {
+                            tab_manager.buffer_shape_action(ShapeAction::MoveVertex(
+                                vertex_2d_entity,
+                                old_pos,
+                                new_pos,
+                                true,
+                            ));
+                        }
                     }
                     // reset last dragged edge
                     if let Some((edge_2d_entity, old_angle, new_angle)) =
@@ -421,6 +422,9 @@ impl InputManager {
 
     // SELECTION
     pub fn select_shape(&mut self, canvas: &mut Canvas, entity: &Entity, shape: CanvasShape) {
+        if self.selected_shape.is_some() {
+            panic!("must deselect before selecting");
+        }
         self.selected_shape = Some((*entity, shape));
         canvas.queue_resync_shapes();
     }
@@ -737,7 +741,7 @@ impl InputManager {
             Res<FileManager>,
             ResMut<TabManager>,
             Res<CameraManager>,
-            Res<VertexManager>,
+            ResMut<VertexManager>,
             Res<EdgeManager>,
             Query<(&Camera, &Projection)>,
             Query<&Transform>,
@@ -746,7 +750,7 @@ impl InputManager {
             file_manager,
             mut tab_manager,
             camera_manager,
-            vertex_manager,
+            mut vertex_manager,
             edge_manager,
             camera_q,
             transform_q,
@@ -1108,9 +1112,7 @@ impl InputManager {
                                 new_3d_position,
                             );
 
-                            vertex_3d.set_x(new_3d_position.x as i16);
-                            vertex_3d.set_y(new_3d_position.y as i16);
-                            vertex_3d.set_z(new_3d_position.z as i16);
+                            vertex_3d.set_vec3(&new_3d_position);
 
                             // redraw
                             canvas.queue_resync_shapes();

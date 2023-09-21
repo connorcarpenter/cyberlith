@@ -46,7 +46,10 @@ pub struct VertexManager {
     // 2d vertex entity -> 3d vertex entity
     vertices_2d: HashMap<Entity, Entity>,
 
-    last_vertex_dragged: Option<(Entity, Vec3, Vec3)>,
+    drags: Vec<(Entity, Vec3, Vec3)>,
+    dragging_entity: Option<Entity>,
+    dragging_start: Option<Vec3>,
+    dragging_end: Option<Vec3>,
 }
 
 impl Default for VertexManager {
@@ -55,7 +58,10 @@ impl Default for VertexManager {
             resync: false,
             vertices_3d: HashMap::new(),
             vertices_2d: HashMap::new(),
-            last_vertex_dragged: None,
+            drags: Vec::new(),
+            dragging_entity: None,
+            dragging_start: None,
+            dragging_end: None,
         }
     }
 }
@@ -207,7 +213,10 @@ impl VertexManager {
     }
 
     pub fn reset_last_vertex_dragged(&mut self) {
-        self.last_vertex_dragged = None;
+        self.drags = Vec::new();
+        self.dragging_entity = None;
+        self.dragging_start = None;
+        self.dragging_end = None;
     }
 
     pub fn update_last_vertex_dragged(
@@ -216,15 +225,71 @@ impl VertexManager {
         old_3d_position: Vec3,
         new_3d_position: Vec3,
     ) {
-        if let Some((_, old_3d_position, _)) = self.last_vertex_dragged {
-            self.last_vertex_dragged = Some((vertex_2d_entity, old_3d_position, new_3d_position));
+        if let Some(old_vertex_2d_entity) = self.dragging_entity {
+            // already dragging an entity
+            if old_vertex_2d_entity == vertex_2d_entity {
+                // dragging same entity
+                self.dragging_end = Some(new_3d_position);
+            } else {
+                // dragging different entity
+
+                // finish current drag
+                self.drags.push((
+                    self.dragging_entity.unwrap(),
+                    self.dragging_start.unwrap(),
+                    self.dragging_end.unwrap(),
+                ));
+                self.dragging_entity = None;
+                self.dragging_start = None;
+                self.dragging_end = None;
+
+                // start next drag
+                self.dragging_entity = Some(vertex_2d_entity);
+                self.dragging_start = Some(old_3d_position);
+                self.dragging_end = Some(new_3d_position);
+            }
         } else {
-            self.last_vertex_dragged = Some((vertex_2d_entity, old_3d_position, new_3d_position));
+            // not dragging an entity
+            self.dragging_entity = Some(vertex_2d_entity);
+            self.dragging_start = Some(old_3d_position);
+            self.dragging_end = Some(new_3d_position);
         }
     }
 
-    pub fn take_last_vertex_dragged(&mut self) -> Option<(Entity, Vec3, Vec3)> {
-        self.last_vertex_dragged.take()
+    pub fn cancel_drags(&mut self) {
+        if self.dragging_entity.is_some() {
+            // finish current drag
+            self.drags.push((
+                self.dragging_entity.unwrap(),
+                self.dragging_start.unwrap(),
+                self.dragging_end.unwrap(),
+            ));
+            self.dragging_entity = None;
+            self.dragging_start = None;
+            self.dragging_end = None;
+        }
+    }
+
+    pub fn take_drags(&mut self) -> Option<Vec<(Entity, Vec3, Vec3)>> {
+
+        if self.dragging_entity.is_some() {
+            // finish current drag
+            self.drags.push((
+                self.dragging_entity.unwrap(),
+                self.dragging_start.unwrap(),
+                self.dragging_end.unwrap(),
+            ));
+            self.dragging_entity = None;
+            self.dragging_start = None;
+            self.dragging_end = None;
+        }
+
+        if self.drags.is_empty() {
+            return None;
+        } else {
+            let drags = std::mem::take(&mut self.drags);
+            return Some(drags);
+        }
     }
 
     pub fn create_networked_vertex(

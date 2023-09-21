@@ -25,7 +25,7 @@ pub enum ShapeAction {
     // Delete Vertex (2d vertex entity, optional vertex 2d entity to select after delete)
     DeleteVertex(Entity, Option<(Entity, CanvasShape)>),
     // Move Vertex (2d vertex Entity, Old Position, New Position)
-    MoveVertex(Entity, Vec3, Vec3),
+    MoveVertex(Entity, Vec3, Vec3, bool),
     // Create Edge (2d vertex start entity, 2d vertex end entity, 2d shape to select, Option<Vec<(other 2d vertex entity to make a face with, old 2d face entity it was associated with)>>, Option<(older edge 2d entity)>)
     CreateEdge(
         Entity,
@@ -86,7 +86,7 @@ impl ShapeAction {
                     }
                 }
             }
-            Self::MoveVertex(entity, _, _) => {
+            Self::MoveVertex(entity, _, _, _) => {
                 if *entity == old_2d_vert_entity {
                     *entity = new_2d_vert_entity;
                 }
@@ -224,8 +224,8 @@ impl Action for ShapeAction {
             Self::DeleteVertex(vertex_2d_entity, vertex_2d_to_select_opt) => {
                 delete_vertex::execute(world, vertex_2d_entity, vertex_2d_to_select_opt)
             }
-            Self::MoveVertex(vertex_2d_entity, old_position, new_position) => {
-                move_vertex::execute(world, vertex_2d_entity, old_position, new_position)
+            Self::MoveVertex(vertex_2d_entity, old_position, new_position, already_moved) => {
+                move_vertex::execute(world, vertex_2d_entity, old_position, new_position, already_moved)
             }
             Self::CreateEdge(
                 vertex_2d_entity_a,
