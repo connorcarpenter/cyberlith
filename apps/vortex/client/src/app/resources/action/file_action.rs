@@ -92,33 +92,26 @@ impl Action for FileAction {
         entity_opt: Option<&Entity>,
         action_stack: &mut ActionStack<Self>,
     ) -> Vec<Self> {
-        match self {
-            Self::SelectFile(file_entities) => select_file::execute(world, file_entities),
-            Self::CreateFile(
-                parent_entity_opt,
-                new_file_name,
-                entry_kind,
-                old_entity_opt,
-                entry_contents_opt,
-            ) => {
+
+        let action_type = self.get_type();
+
+        match action_type {
+            FileActionType::SelectFile => select_file::execute(world, self),
+            FileActionType::CreateFile => {
                 let project_root_entity = *(entity_opt.unwrap());
                 create_file::execute(
                     world,
                     action_stack,
                     project_root_entity,
-                    parent_entity_opt,
-                    new_file_name,
-                    entry_kind,
-                    old_entity_opt,
-                    entry_contents_opt,
+                    self,
                 )
             }
-            Self::DeleteFile(file_entity, files_to_select_opt) => {
+            FileActionType::DeleteFile => {
                 let project_root_entity = *(entity_opt.unwrap());
-                delete_file::execute(world, project_root_entity, file_entity, files_to_select_opt)
+                delete_file::execute(world, project_root_entity, self)
             }
-            Self::RenameFile(file_entity, new_name) => {
-                rename_file::execute(world, file_entity, new_name)
+            FileActionType::RenameFile => {
+                rename_file::execute(world, self)
             }
         }
     }

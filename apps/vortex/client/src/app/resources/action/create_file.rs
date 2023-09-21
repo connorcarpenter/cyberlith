@@ -31,12 +31,13 @@ pub(crate) fn execute(
     world: &mut World,
     action_stack: &mut ActionStack<FileAction>,
     project_root_entity: Entity,
-    parent_entity_opt: Option<Entity>,
-    new_file_name: String,
-    entry_kind: EntryKind,
-    old_entity_opt: Option<Entity>,
-    entry_contents_opt: Option<Vec<FileTree>>,
+    action: FileAction,
 ) -> Vec<FileAction> {
+
+    let FileAction::CreateFile(parent_entity_opt, new_file_name, entry_kind, old_entity_opt, entry_contents_opt) = action else {
+        panic!("Expected CreateFile");
+    };
+
     info!("CreateFile({:?})", new_file_name);
 
     let mut system_state: SystemState<(

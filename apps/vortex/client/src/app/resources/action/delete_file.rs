@@ -24,9 +24,13 @@ use crate::app::{
 pub(crate) fn execute(
     world: &mut World,
     project_root_entity: Entity,
-    file_entity: Entity,
-    files_to_select_opt: Option<Vec<Entity>>,
+    action: FileAction,
 ) -> Vec<FileAction> {
+
+    let FileAction::DeleteFile(file_entity, files_to_select_opt) = action else {
+        panic!("Expected DeleteFile");
+    };
+
     info!("DeleteFile({:?})", file_entity);
     let mut system_state: SystemState<(
         Commands,
