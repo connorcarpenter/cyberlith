@@ -647,10 +647,10 @@ impl VertexManager {
         vertex_3d_entity: &Entity,
         edge_3d_entity: &Entity,
     ) {
-        let Some(vertex_3d_data) = self.vertices_3d.get_mut(vertex_3d_entity) else {
-            panic!("Vertex3d entity: `{:?}` has not been registered", vertex_3d_entity);
-        };
-        vertex_3d_data.remove_edge(edge_3d_entity);
+        // at this point, vertex_3d_entity may have already been deregistered
+        if let Some(vertex_3d_data) = self.vertices_3d.get_mut(vertex_3d_entity) {
+            vertex_3d_data.remove_edge(edge_3d_entity);
+        }
     }
 
     pub(crate) fn vertex_get_faces(&self, vertex_3d_entity: &Entity) -> Option<&HashSet<FaceKey>> {
@@ -680,10 +680,10 @@ impl VertexManager {
             self.vertices_2d.remove(&entity_2d);
 
             if let Some(parent_3d_entity) = data.parent_3d_entity_opt {
-                let Some(parent_3d_data) = self.vertices_3d.get_mut(&parent_3d_entity) else {
-                    panic!("Vertex3d entity: `{:?}` has not been registered", parent_3d_entity);
+                // at this point it's possible parent already deregistered
+                if let Some(parent_3d_data) = self.vertices_3d.get_mut(&parent_3d_entity) {
+                    parent_3d_data.remove_child(entity_3d);
                 };
-                parent_3d_data.remove_child(entity_3d);
             }
 
             return Some(entity_2d);

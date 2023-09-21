@@ -330,10 +330,12 @@ impl GitManager {
         let project = self.projects.get_mut(&project_key).unwrap();
         project.on_remove_content_entity(&file_key, entity);
 
-        let file_room_key = project.file_room_key(&file_key).unwrap();
-        let mut room_mut = server.room_mut(&file_room_key);
-        if room_mut.has_entity(entity) {
-            room_mut.remove_entity(entity);
+        // at this point, the room may have already despawned
+        if let Some(file_room_key) = project.file_room_key(&file_key) {
+            let mut room_mut = server.room_mut(&file_room_key);
+            if room_mut.has_entity(entity) {
+                room_mut.remove_entity(entity);
+            }
         }
     }
 
