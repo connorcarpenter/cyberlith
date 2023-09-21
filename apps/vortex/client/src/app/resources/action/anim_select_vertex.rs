@@ -13,7 +13,12 @@ use crate::app::resources::{
     input_manager::InputManager, shape_data::CanvasShape, vertex_manager::VertexManager,
 };
 
-pub fn execute(world: &mut World, vertex_2d_entity_opt: Option<Entity>) -> Vec<AnimAction> {
+pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
+
+    let AnimAction::SelectVertex(vertex_2d_entity_opt) = action else {
+        panic!("Expected SelectVertex");
+    };
+
     info!("AnimSelectVertex({:?})", vertex_2d_entity_opt);
 
     let mut system_state: SystemState<(

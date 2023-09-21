@@ -1,10 +1,9 @@
 use bevy_ecs::{
-    prelude::{Commands, Entity, World},
+    prelude::{Commands, World},
     system::{Query, Res, ResMut, SystemState},
 };
 use bevy_log::info;
 
-use math::Quat;
 use naia_bevy_client::Client;
 
 use vortex_proto::components::{AnimRotation, ShapeName};
@@ -16,10 +15,13 @@ use crate::app::resources::{
 
 pub fn execute(
     world: &mut World,
-    vertex_2d_entity: Entity,
-    old_angle_opt: Option<Quat>,
-    new_angle_opt: Option<Quat>,
+    action: AnimAction,
 ) -> Vec<AnimAction> {
+
+    let AnimAction::RotateVertex(vertex_2d_entity, old_angle_opt, new_angle_opt) = action else {
+        panic!("Expected RotateVertex");
+    };
+
     info!(
         "AnimRotateVertex({:?}, {:?}, {:?})",
         vertex_2d_entity, old_angle_opt, new_angle_opt

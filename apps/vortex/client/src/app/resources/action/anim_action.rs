@@ -36,12 +36,15 @@ impl Action for AnimAction {
         _: Option<&Entity>,
         _: &mut ActionStack<Self>,
     ) -> Vec<Self> {
-        match self {
-            Self::SelectVertex(vertex_2d_entity_opt) => {
-                anim_select_vertex::execute(world, vertex_2d_entity_opt)
+
+        let action_type = self.get_type();
+
+        match action_type {
+            AnimActionType::SelectVertex => {
+                anim_select_vertex::execute(world, self)
             }
-            Self::RotateVertex(vertex_2d_entity, old_angle_opt, new_angle) => {
-                anim_rotate_vertex::execute(world, vertex_2d_entity, old_angle_opt, new_angle)
+            AnimActionType::RotateVertex => {
+                anim_rotate_vertex::execute(world, self)
             }
         }
     }
