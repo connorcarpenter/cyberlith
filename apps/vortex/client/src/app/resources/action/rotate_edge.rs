@@ -8,11 +8,7 @@ use vortex_proto::components::EdgeAngle;
 
 use crate::app::resources::{action::ShapeAction, canvas::Canvas, edge_manager::EdgeManager};
 
-pub(crate) fn execute(
-    world: &mut World,
-    action: ShapeAction,
-) -> Vec<ShapeAction> {
-
+pub(crate) fn execute(world: &mut World, action: ShapeAction) -> Vec<ShapeAction> {
     let ShapeAction::RotateEdge(edge_2d_entity, old_angle, new_angle) = action else {
         panic!("Expected RotateEdge");
     };

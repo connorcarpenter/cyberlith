@@ -1,7 +1,7 @@
 use bevy_ecs::{
     entity::Entity,
     system::{Commands, Query, SystemState},
-    world::{World, Mut},
+    world::{Mut, World},
 };
 use bevy_log::info;
 
@@ -223,11 +223,8 @@ impl ChangelistRowUiWidget {
     pub fn on_row_click(world: &mut World, row_entity: &Entity) {
         let has_auth: bool;
         {
-            let mut system_state: SystemState<(
-                Commands,
-                Client,
-                Query<&ChangelistEntry>,
-            )> = SystemState::new(world);
+            let mut system_state: SystemState<(Commands, Client, Query<&ChangelistEntry>)> =
+                SystemState::new(world);
             let (mut commands, client, query) = system_state.get_mut(world);
 
             has_auth = {

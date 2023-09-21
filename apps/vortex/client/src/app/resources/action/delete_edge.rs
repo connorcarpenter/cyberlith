@@ -9,7 +9,10 @@ use naia_bevy_client::Client;
 use vortex_proto::components::Edge3d;
 
 use crate::app::resources::{
-    action::{select_shape::{select_shape, entity_request_release}, ShapeAction},
+    action::{
+        select_shape::{entity_request_release, select_shape},
+        ShapeAction,
+    },
     canvas::Canvas,
     edge_manager::EdgeManager,
     face_manager::FaceManager,
@@ -23,7 +26,6 @@ pub(crate) fn execute(
     input_manager: &mut InputManager,
     action: ShapeAction,
 ) -> Vec<ShapeAction> {
-
     let ShapeAction::DeleteEdge(edge_2d_entity, shape_2d_to_select_opt) = action else {
         panic!("Expected DeleteEdge");
     };

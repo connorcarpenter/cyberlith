@@ -11,7 +11,6 @@ use crate::app::resources::{
 };
 
 pub(crate) fn execute(world: &mut World, action: ShapeAction) -> Vec<ShapeAction> {
-
     let ShapeAction::DeleteFace(face_2d_entity) = action else {
         panic!("Expected DeleteFace");
     };

@@ -26,7 +26,6 @@ pub(crate) fn execute(
     project_root_entity: Entity,
     action: FileAction,
 ) -> Vec<FileAction> {
-
     let FileAction::DeleteFile(file_entity, files_to_select_opt) = action else {
         panic!("Expected DeleteFile");
     };

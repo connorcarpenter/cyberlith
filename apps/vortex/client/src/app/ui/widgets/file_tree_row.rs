@@ -370,10 +370,8 @@ impl FileTreeRowUiWidget {
         // continue
         let mut is_denied = false;
         {
-            let mut system_state: SystemState<(Commands, Client)> =
-                SystemState::new(world);
+            let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
             let (mut commands, client) = system_state.get_mut(world);
-
 
             if let Some(authority) = commands.entity(*row_entity).authority(&client) {
                 if authority.is_denied() {
@@ -624,10 +622,8 @@ impl FileTreeRowUiWidget {
         entry_kind: EntryKind,
         entry_name: &str,
     ) {
-        let mut system_state: SystemState<(
-            Res<FileManager>,
-            Query<&FileSystemParent>,
-        )> = SystemState::new(world);
+        let mut system_state: SystemState<(Res<FileManager>, Query<&FileSystemParent>)> =
+            SystemState::new(world);
         let (file_manager, parent_query) = system_state.get_mut(world);
 
         let parent_entity = directory_entity.unwrap_or(file_manager.project_root_entity);
@@ -643,13 +639,16 @@ impl FileTreeRowUiWidget {
         }
 
         world.resource_scope(|world, mut file_actions: Mut<FileActions>| {
-            file_actions.execute_file_action(world, FileAction::CreateFile(
-                directory_entity,
-                entry_name.to_string(),
-                entry_kind,
-                None,
-                None,
-            ));
+            file_actions.execute_file_action(
+                world,
+                FileAction::CreateFile(
+                    directory_entity,
+                    entry_name.to_string(),
+                    entry_kind,
+                    None,
+                    None,
+                ),
+            );
         });
     }
 
@@ -693,10 +692,10 @@ impl FileTreeRowUiWidget {
         }
 
         world.resource_scope(|world, mut file_actions: Mut<FileActions>| {
-            file_actions.execute_file_action(world, FileAction::RenameFile(
-                *entry_entity,
-                entry_name.to_string(),
-            ));
+            file_actions.execute_file_action(
+                world,
+                FileAction::RenameFile(*entry_entity, entry_name.to_string()),
+            );
         });
     }
 

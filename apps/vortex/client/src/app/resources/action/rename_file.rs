@@ -8,7 +8,6 @@ use vortex_proto::components::FileSystemEntry;
 use crate::app::resources::action::FileAction;
 
 pub(crate) fn execute(world: &mut World, action: FileAction) -> Vec<FileAction> {
-
     let FileAction::RenameFile(file_entity, new_name) = action else {
         panic!("Expected RenameFile");
     };

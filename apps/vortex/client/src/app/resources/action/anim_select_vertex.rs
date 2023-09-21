@@ -9,12 +9,19 @@ use naia_bevy_client::Client;
 use vortex_proto::components::ShapeName;
 
 use crate::app::resources::{
-    action::{AnimAction, select_shape::entity_request_release}, animation_manager::AnimationManager, canvas::Canvas,
-    input_manager::InputManager, shape_data::CanvasShape, vertex_manager::VertexManager,
+    action::{select_shape::entity_request_release, AnimAction},
+    animation_manager::AnimationManager,
+    canvas::Canvas,
+    input_manager::InputManager,
+    shape_data::CanvasShape,
+    vertex_manager::VertexManager,
 };
 
-pub fn execute(world: &mut World, input_manager: &mut InputManager, action: AnimAction) -> Vec<AnimAction> {
-
+pub fn execute(
+    world: &mut World,
+    input_manager: &mut InputManager,
+    action: AnimAction,
+) -> Vec<AnimAction> {
     let AnimAction::SelectVertex(vertex_2d_entity_opt) = action else {
         panic!("Expected SelectVertex");
     };
@@ -29,14 +36,8 @@ pub fn execute(world: &mut World, input_manager: &mut InputManager, action: Anim
         Res<AnimationManager>,
         Query<&ShapeName>,
     )> = SystemState::new(world);
-    let (
-        mut commands,
-        mut client,
-        mut canvas,
-        vertex_manager,
-        animation_manager,
-        name_q,
-    ) = system_state.get_mut(world);
+    let (mut commands, mut client, mut canvas, vertex_manager, animation_manager, name_q) =
+        system_state.get_mut(world);
 
     // Deselect all selected shapes, select the new selected shapes
     let (deselected_entity, entity_to_release) = deselect_selected_vertex(
@@ -54,7 +55,12 @@ pub fn execute(world: &mut World, input_manager: &mut InputManager, action: Anim
         vertex_2d_entity_opt,
         &name_q,
     );
-    entity_request_release(&mut commands, &mut client, entity_to_request, entity_to_release);
+    entity_request_release(
+        &mut commands,
+        &mut client,
+        entity_to_request,
+        entity_to_release,
+    );
 
     system_state.apply(world);
 

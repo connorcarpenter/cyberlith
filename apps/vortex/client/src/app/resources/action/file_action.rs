@@ -33,7 +33,6 @@ pub enum FileActionType {
 }
 
 impl FileAction {
-
     pub(crate) fn get_type(&self) -> FileActionType {
         match self {
             Self::SelectFile(_) => FileActionType::SelectFile,
@@ -90,31 +89,20 @@ impl FileAction {
         project_root_entity: Entity,
         action_stack: &mut ActionStack<Self>,
     ) -> Vec<Self> {
-
         let action_type = self.get_type();
 
         match action_type {
             FileActionType::SelectFile => select_file::execute(world, self),
             FileActionType::CreateFile => {
-                create_file::execute(
-                    world,
-                    action_stack,
-                    project_root_entity,
-                    self,
-                )
+                create_file::execute(world, action_stack, project_root_entity, self)
             }
-            FileActionType::DeleteFile => {
-                delete_file::execute(world, project_root_entity, self)
-            }
-            FileActionType::RenameFile => {
-                rename_file::execute(world, self)
-            }
+            FileActionType::DeleteFile => delete_file::execute(world, project_root_entity, self),
+            FileActionType::RenameFile => rename_file::execute(world, self),
         }
     }
 }
 
 impl Action for FileAction {
-
     fn entity_update_auth_status_impl(
         buffered_check: &mut bool,
         action_opt: Option<&Self>,

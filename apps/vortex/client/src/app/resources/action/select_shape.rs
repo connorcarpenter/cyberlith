@@ -18,7 +18,6 @@ pub(crate) fn execute(
     input_manager: &mut InputManager,
     action: ShapeAction,
 ) -> Vec<ShapeAction> {
-
     let ShapeAction::SelectShape(shape_2d_entity_opt) = action else {
         panic!("Expected SelectShape");
     };
@@ -33,14 +32,8 @@ pub(crate) fn execute(
         Res<EdgeManager>,
         Res<FaceManager>,
     )> = SystemState::new(world);
-    let (
-        mut commands,
-        mut client,
-        mut canvas,
-        vertex_manager,
-        edge_manager,
-        face_manager,
-    ) = system_state.get_mut(world);
+    let (mut commands, mut client, mut canvas, vertex_manager, edge_manager, face_manager) =
+        system_state.get_mut(world);
 
     // Deselect all selected shapes, select the new selected shapes
     let (deselected_entity, entity_to_release) = deselect_selected_shape(
@@ -58,7 +51,12 @@ pub(crate) fn execute(
         &face_manager,
         shape_2d_entity_opt,
     );
-    entity_request_release(&mut commands, &mut client, entity_to_request, entity_to_release);
+    entity_request_release(
+        &mut commands,
+        &mut client,
+        entity_to_request,
+        entity_to_release,
+    );
 
     system_state.apply(world);
 
@@ -78,7 +76,12 @@ pub(crate) fn execute(
     return vec![ShapeAction::SelectShape(deselected_entity)];
 }
 
-pub fn entity_request_release(commands: &mut Commands, mut client: &mut Client, entity_to_request: Option<Entity>, entity_to_release: Option<Entity>) {
+pub fn entity_request_release(
+    commands: &mut Commands,
+    mut client: &mut Client,
+    entity_to_request: Option<Entity>,
+    entity_to_release: Option<Entity>,
+) {
     if entity_to_request != entity_to_release {
         if let Some(entity) = entity_to_release {
             let mut entity_mut = commands.entity(entity);

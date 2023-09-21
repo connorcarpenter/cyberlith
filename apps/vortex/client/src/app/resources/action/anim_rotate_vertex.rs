@@ -13,11 +13,7 @@ use crate::app::resources::{
     vertex_manager::VertexManager,
 };
 
-pub fn execute(
-    world: &mut World,
-    action: AnimAction,
-) -> Vec<AnimAction> {
-
+pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
     let AnimAction::RotateVertex(vertex_2d_entity, old_angle_opt, new_angle_opt) = action else {
         panic!("Expected RotateVertex");
     };

@@ -165,40 +165,56 @@ impl InputManager {
                     }
 
                     // reset last dragged vertex
-                    if let Some(drags) = world.get_resource_mut::<VertexManager>().unwrap().take_drags() {
+                    if let Some(drags) = world
+                        .get_resource_mut::<VertexManager>()
+                        .unwrap()
+                        .take_drags()
+                    {
                         world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
                             for (vertex_2d_entity, old_pos, new_pos) in drags {
-                                tab_manager.current_tab_execute_shape_action(world, self,ShapeAction::MoveVertex(
-                                    vertex_2d_entity,
-                                    old_pos,
-                                    new_pos,
-                                    true,
-                                ));
+                                tab_manager.current_tab_execute_shape_action(
+                                    world,
+                                    self,
+                                    ShapeAction::MoveVertex(
+                                        vertex_2d_entity,
+                                        old_pos,
+                                        new_pos,
+                                        true,
+                                    ),
+                                );
                             }
                         });
                     }
                     // reset last dragged edge
-                    if let Some((edge_2d_entity, old_angle, new_angle)) =
-                        world.get_resource_mut::<EdgeManager>().unwrap().take_last_edge_dragged()
+                    if let Some((edge_2d_entity, old_angle, new_angle)) = world
+                        .get_resource_mut::<EdgeManager>()
+                        .unwrap()
+                        .take_last_edge_dragged()
                     {
                         world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                            tab_manager.current_tab_execute_shape_action(world, self, ShapeAction::RotateEdge(
-                                edge_2d_entity,
-                                old_angle,
-                                new_angle,
-                            ));
+                            tab_manager.current_tab_execute_shape_action(
+                                world,
+                                self,
+                                ShapeAction::RotateEdge(edge_2d_entity, old_angle, new_angle),
+                            );
                         });
                     }
                     // reset last dragged rotation
-                    if let Some((vertex_2d_entity, old_angle, new_angle)) =
-                        world.get_resource_mut::<AnimationManager>().unwrap().take_last_rotation_dragged()
+                    if let Some((vertex_2d_entity, old_angle, new_angle)) = world
+                        .get_resource_mut::<AnimationManager>()
+                        .unwrap()
+                        .take_last_rotation_dragged()
                     {
                         world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                            tab_manager.current_tab_execute_anim_action(world, self,AnimAction::RotateVertex(
-                                vertex_2d_entity,
-                                old_angle,
-                                Some(new_angle),
-                            ));
+                            tab_manager.current_tab_execute_anim_action(
+                                world,
+                                self,
+                                AnimAction::RotateVertex(
+                                    vertex_2d_entity,
+                                    old_angle,
+                                    Some(new_angle),
+                                ),
+                            );
                         });
                     }
                 }
@@ -575,19 +591,30 @@ impl InputManager {
             return;
         }
 
-        let current_file_entity = world.get_resource::<TabManager>().unwrap().current_tab_entity().unwrap();
-        let current_file_type = world.get_resource::<FileManager>().unwrap().get_file_type(&current_file_entity);
+        let current_file_entity = world
+            .get_resource::<TabManager>()
+            .unwrap()
+            .current_tab_entity()
+            .unwrap();
+        let current_file_type = world
+            .get_resource::<FileManager>()
+            .unwrap()
+            .get_file_type(&current_file_entity);
 
         if current_file_type != FileExtension::Mesh {
             return;
         }
 
         world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-            tab_manager.current_tab_execute_shape_action(world, self,ShapeAction::CreateVertex(
-                VertexTypeData::Mesh(Vec::new(), Vec::new()),
-                Vec3::ZERO,
-                None,
-            ));
+            tab_manager.current_tab_execute_shape_action(
+                world,
+                self,
+                ShapeAction::CreateVertex(
+                    VertexTypeData::Mesh(Vec::new(), Vec::new()),
+                    Vec3::ZERO,
+                    None,
+                ),
+            );
         });
     }
 
@@ -649,7 +676,11 @@ impl InputManager {
                 }
 
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_shape_action(world, self,ShapeAction::DeleteVertex(vertex_2d_entity, None));
+                    tab_manager.current_tab_execute_shape_action(
+                        world,
+                        self,
+                        ShapeAction::DeleteVertex(vertex_2d_entity, None),
+                    );
                 });
 
                 self.selected_shape = None;
@@ -679,7 +710,11 @@ impl InputManager {
                 }
 
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_shape_action(world, self,ShapeAction::DeleteEdge(edge_2d_entity, None));
+                    tab_manager.current_tab_execute_shape_action(
+                        world,
+                        self,
+                        ShapeAction::DeleteEdge(edge_2d_entity, None),
+                    );
                 });
 
                 self.selected_shape = None;
@@ -705,7 +740,11 @@ impl InputManager {
                 }
 
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_shape_action(world, self,ShapeAction::DeleteFace(face_2d_entity));
+                    tab_manager.current_tab_execute_shape_action(
+                        world,
+                        self,
+                        ShapeAction::DeleteFace(face_2d_entity),
+                    );
                 });
 
                 self.selected_shape = None;
@@ -757,7 +796,11 @@ impl InputManager {
                 // should not ever be able to attach something to an edge or face?
                 // select hovered entity
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_shape_action(world, self,ShapeAction::SelectShape(self.hovered_entity));
+                    tab_manager.current_tab_execute_shape_action(
+                        world,
+                        self,
+                        ShapeAction::SelectShape(self.hovered_entity),
+                    );
                 });
                 return;
             }
@@ -770,7 +813,11 @@ impl InputManager {
                 // skel file type does nothing when trying to connect vertices together
                 // select hovered entity
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_shape_action(world, self,ShapeAction::SelectShape(self.hovered_entity));
+                    tab_manager.current_tab_execute_shape_action(
+                        world,
+                        self,
+                        ShapeAction::SelectShape(self.hovered_entity),
+                    );
                 });
                 return;
             }
@@ -779,16 +826,22 @@ impl InputManager {
                     CanvasShape::RootVertex | CanvasShape::Vertex => {
                         // select hovered entity
                         world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                            tab_manager.current_tab_execute_anim_action(world, self,AnimAction::SelectVertex(
-                                self.hovered_entity.map(|(e, _)| e),
-                            ));
+                            tab_manager.current_tab_execute_anim_action(
+                                world,
+                                self,
+                                AnimAction::SelectVertex(self.hovered_entity.map(|(e, _)| e)),
+                            );
                         });
                         return;
                     }
                     _ => {
                         // deselect vertex
                         world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                            tab_manager.current_tab_execute_anim_action(world, self,AnimAction::SelectVertex(None));
+                            tab_manager.current_tab_execute_anim_action(
+                                world,
+                                self,
+                                AnimAction::SelectVertex(None),
+                            );
                         });
                         return;
                     }
@@ -803,7 +856,11 @@ impl InputManager {
                 // should not ever be able to attach something to an edge or face?
                 // select hovered entity
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_shape_action(world, self,ShapeAction::SelectShape(self.hovered_entity));
+                    tab_manager.current_tab_execute_shape_action(
+                        world,
+                        self,
+                        ShapeAction::SelectShape(self.hovered_entity),
+                    );
                 });
                 return;
             }
@@ -831,22 +888,30 @@ impl InputManager {
                 {
                     // select vertex
                     world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                        tab_manager.current_tab_execute_shape_action(world, self,ShapeAction::SelectShape(Some((
-                            vertex_2d_entity_b,
-                            CanvasShape::Vertex,
-                        ))));
+                        tab_manager.current_tab_execute_shape_action(
+                            world,
+                            self,
+                            ShapeAction::SelectShape(Some((
+                                vertex_2d_entity_b,
+                                CanvasShape::Vertex,
+                            ))),
+                        );
                     });
                     return;
                 } else {
                     // create edge
                     world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                        tab_manager.current_tab_execute_shape_action(world, self,ShapeAction::CreateEdge(
-                            vertex_2d_entity_a,
-                            vertex_2d_entity_b,
-                            (vertex_2d_entity_b, CanvasShape::Vertex),
-                            None,
-                            None,
-                        ));
+                        tab_manager.current_tab_execute_shape_action(
+                            world,
+                            self,
+                            ShapeAction::CreateEdge(
+                                vertex_2d_entity_a,
+                                vertex_2d_entity_b,
+                                (vertex_2d_entity_b, CanvasShape::Vertex),
+                                None,
+                                None,
+                            ),
+                        );
                     });
                     return;
                 }
@@ -854,7 +919,11 @@ impl InputManager {
             (MouseButton::Left, Some(CanvasShape::Vertex), None, FileExtension::Anim) => {
                 // deselect vertex
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_anim_action(world, self,AnimAction::SelectVertex(None));
+                    tab_manager.current_tab_execute_anim_action(
+                        world,
+                        self,
+                        AnimAction::SelectVertex(None),
+                    );
                 });
                 return;
             }
@@ -895,21 +964,25 @@ impl InputManager {
 
                 // spawn new vertex
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_shape_action(world, self,ShapeAction::CreateVertex(
-                        match current_file_type {
-                            FileExtension::Skel => {
-                                VertexTypeData::Skel(vertex_2d_entity, 0.0, None)
-                            }
-                            FileExtension::Mesh => {
-                                VertexTypeData::Mesh(vec![(vertex_2d_entity, None)], Vec::new())
-                            }
-                            _ => {
-                                panic!("");
-                            }
-                        },
-                        new_3d_position,
-                        None,
-                    ));
+                    tab_manager.current_tab_execute_shape_action(
+                        world,
+                        self,
+                        ShapeAction::CreateVertex(
+                            match current_file_type {
+                                FileExtension::Skel => {
+                                    VertexTypeData::Skel(vertex_2d_entity, 0.0, None)
+                                }
+                                FileExtension::Mesh => {
+                                    VertexTypeData::Mesh(vec![(vertex_2d_entity, None)], Vec::new())
+                                }
+                                _ => {
+                                    panic!("");
+                                }
+                            },
+                            new_3d_position,
+                            None,
+                        ),
+                    );
                 });
             }
             (
@@ -919,14 +992,20 @@ impl InputManager {
                 FileExtension::Skel | FileExtension::Mesh,
             ) => {
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_shape_action(world, self,ShapeAction::SelectShape(self.hovered_entity));
+                    tab_manager.current_tab_execute_shape_action(
+                        world,
+                        self,
+                        ShapeAction::SelectShape(self.hovered_entity),
+                    );
                 });
             }
             (MouseButton::Left, None, Some(CanvasShape::Vertex), FileExtension::Anim) => {
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_anim_action(world, self,AnimAction::SelectVertex(
-                        self.hovered_entity.map(|(e, _)| e),
-                    ));
+                    tab_manager.current_tab_execute_anim_action(
+                        world,
+                        self,
+                        AnimAction::SelectVertex(self.hovered_entity.map(|(e, _)| e)),
+                    );
                 });
             }
             (MouseButton::Left, None, Some(CanvasShape::Edge), FileExtension::Anim) => {
@@ -934,19 +1013,31 @@ impl InputManager {
             }
             (MouseButton::Left, None, Some(CanvasShape::Face), FileExtension::Mesh) => {
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_shape_action(world, self,ShapeAction::SelectShape(self.hovered_entity));
+                    tab_manager.current_tab_execute_shape_action(
+                        world,
+                        self,
+                        ShapeAction::SelectShape(self.hovered_entity),
+                    );
                 });
             }
             (MouseButton::Right, _, _, FileExtension::Skel | FileExtension::Mesh) => {
                 // deselect vertex
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_shape_action(world, self,ShapeAction::SelectShape(None));
+                    tab_manager.current_tab_execute_shape_action(
+                        world,
+                        self,
+                        ShapeAction::SelectShape(None),
+                    );
                 });
             }
             (MouseButton::Right, _, _, FileExtension::Anim) => {
                 // deselect vertex
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_anim_action(world, self,AnimAction::SelectVertex(None));
+                    tab_manager.current_tab_execute_anim_action(
+                        world,
+                        self,
+                        AnimAction::SelectVertex(None),
+                    );
                 });
             }
             _ => {}

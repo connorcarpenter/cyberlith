@@ -33,7 +33,6 @@ pub(crate) fn execute(
     tab_file_entity: Entity,
     action: ShapeAction,
 ) -> Vec<ShapeAction> {
-
     let ShapeAction::CreateEdge(
         vertex_2d_entity_a,
         vertex_2d_entity_b,

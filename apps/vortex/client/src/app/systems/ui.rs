@@ -38,9 +38,7 @@ pub fn update(world: &mut World) {
         });
         world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
             if let Some(tab_state) = tab_manager.current_tab_state_mut() {
-                tab_state
-                    .action_stack
-                    .check_top(world);
+                tab_state.action_stack.check_top(world);
             }
         });
     } else {

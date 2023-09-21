@@ -11,14 +11,17 @@ use vortex_proto::components::{Edge3d, EdgeAngle, FileExtension, FileType, Verte
 use crate::app::{
     components::{VertexEntry, VertexTypeData},
     resources::{
-        action::{select_shape::{select_shape, entity_request_release}, ShapeAction},
+        action::{
+            select_shape::{entity_request_release, select_shape},
+            ShapeAction,
+        },
         canvas::Canvas,
         edge_manager::EdgeManager,
         face_manager::FaceManager,
         input_manager::InputManager,
         shape_data::CanvasShape,
-        vertex_manager::VertexManager,
         shape_data::FaceKey,
+        vertex_manager::VertexManager,
     },
 };
 
@@ -27,14 +30,15 @@ pub(crate) fn execute(
     input_manager: &mut InputManager,
     action: ShapeAction,
 ) -> Vec<ShapeAction> {
-
     let ShapeAction::DeleteVertex(vertex_2d_entity, vertex_2d_to_select_opt) = action else {
         panic!("Expected DeleteVertex");
     };
 
     info!("DeleteVertex({:?})", vertex_2d_entity);
 
-    let vertex_3d_entity = world.get_resource::<VertexManager>().unwrap()
+    let vertex_3d_entity = world
+        .get_resource::<VertexManager>()
+        .unwrap()
         .vertex_entity_2d_to_3d(&vertex_2d_entity)
         .unwrap();
 
@@ -45,7 +49,6 @@ pub(crate) fn execute(
 
     match file_type_value {
         FileExtension::Skel => {
-
             let mut system_state: SystemState<(
                 Commands,
                 Client,
@@ -144,7 +147,6 @@ pub(crate) fn execute(
             )];
         }
         FileExtension::Mesh => {
-
             let mut system_state: SystemState<(
                 Commands,
                 Client,

@@ -29,11 +29,11 @@ use crate::app::{
         animation_manager::AnimationManager,
         camera_manager::CameraManager,
         canvas::Canvas,
+        compass::Compass,
         edge_manager::EdgeManager,
         face_manager::FaceManager,
         input_manager::InputManager,
         shape_data::{CanvasShape, FaceKey, Vertex3dData},
-        compass::Compass,
     },
 };
 
@@ -257,7 +257,6 @@ impl VertexManager {
     }
 
     pub fn take_drags(&mut self) -> Option<Vec<(Entity, Vec3, Vec3)>> {
-
         if self.dragging_entity.is_some() {
             // finish current drag
             self.drags.push((

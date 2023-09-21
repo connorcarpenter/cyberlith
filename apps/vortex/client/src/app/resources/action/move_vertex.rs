@@ -14,16 +14,15 @@ use crate::app::resources::{
     action::ShapeAction, canvas::Canvas, face_manager::FaceManager, vertex_manager::VertexManager,
 };
 
-pub(crate) fn execute(
-    world: &mut World,
-    action: ShapeAction
-) -> Vec<ShapeAction> {
-
+pub(crate) fn execute(world: &mut World, action: ShapeAction) -> Vec<ShapeAction> {
     let ShapeAction::MoveVertex(vertex_2d_entity, old_position, new_position, already_moved) = action else {
         panic!("Expected MoveVertex");
     };
 
-    info!("MoveVertex({:?}, _, _, {})", vertex_2d_entity, already_moved);
+    info!(
+        "MoveVertex({:?}, _, _, {})",
+        vertex_2d_entity, already_moved
+    );
     let mut system_state: SystemState<(
         Client,
         ResMut<Canvas>,

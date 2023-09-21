@@ -12,8 +12,8 @@ use crate::app::resources::{
     action::{AnimAction, FileAction, FileActions, ShapeAction},
     canvas::Canvas,
     file_manager::FileManager,
-    tab_manager::TabManager,
     input_manager::InputManager,
+    tab_manager::TabManager,
 };
 
 pub trait Action: Clone {
@@ -44,10 +44,17 @@ impl TabActionStack {
         }
     }
 
-    pub fn execute_shape_action(&mut self, world: &mut World, input_manager: &mut InputManager, tab_file_entity: Entity, action: ShapeAction) {
+    pub fn execute_shape_action(
+        &mut self,
+        world: &mut World,
+        input_manager: &mut InputManager,
+        tab_file_entity: Entity,
+        action: ShapeAction,
+    ) {
         match self {
             Self::Shape(action_stack) => {
-                let reversed_actions = action_stack.execute_action(world, input_manager, tab_file_entity, action);
+                let reversed_actions =
+                    action_stack.execute_action(world, input_manager, tab_file_entity, action);
                 action_stack.post_action_execution(world, reversed_actions);
             }
             _ => {
@@ -56,7 +63,12 @@ impl TabActionStack {
         }
     }
 
-    pub fn execute_anim_action(&mut self, world: &mut World, input_manager: &mut InputManager, action: AnimAction) {
+    pub fn execute_anim_action(
+        &mut self,
+        world: &mut World,
+        input_manager: &mut InputManager,
+        action: AnimAction,
+    ) {
         match self {
             Self::Animation(action_stack) => {
                 let reversed_actions = action_stack.execute_action(world, input_manager, action);
@@ -82,11 +94,17 @@ impl TabActionStack {
         }
     }
 
-    pub fn undo_action(&mut self, world: &mut World, input_manager: &mut InputManager, tab_file_entity: Entity) {
+    pub fn undo_action(
+        &mut self,
+        world: &mut World,
+        input_manager: &mut InputManager,
+        tab_file_entity: Entity,
+    ) {
         match self {
             Self::Shape(action_stack) => {
                 let action = action_stack.pop_undo();
-                let reversed_actions = action_stack.execute_action(world, input_manager, tab_file_entity, action);
+                let reversed_actions =
+                    action_stack.execute_action(world, input_manager, tab_file_entity, action);
                 action_stack.post_execute_undo(world, reversed_actions);
             }
             Self::Animation(action_stack) => {
@@ -97,11 +115,17 @@ impl TabActionStack {
         };
     }
 
-    pub fn redo_action(&mut self, world: &mut World, input_manager: &mut InputManager, tab_file_entity: Entity) {
+    pub fn redo_action(
+        &mut self,
+        world: &mut World,
+        input_manager: &mut InputManager,
+        tab_file_entity: Entity,
+    ) {
         match self {
             Self::Shape(action_stack) => {
                 let action = action_stack.pop_redo();
-                let reversed_actions = action_stack.execute_action(world, input_manager, tab_file_entity, action);
+                let reversed_actions =
+                    action_stack.execute_action(world, input_manager, tab_file_entity, action);
                 action_stack.post_execute_redo(world, reversed_actions);
             }
             Self::Animation(action_stack) => {
@@ -171,9 +195,11 @@ pub(crate) fn action_stack_undo(world: &mut World) {
             if let Some(tab_state) = tab_manager.current_tab_state_mut() {
                 if tab_state.action_stack.has_undo() {
                     world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
-                        tab_state
-                            .action_stack
-                            .undo_action(world, &mut input_manager, tab_file_entity);
+                        tab_state.action_stack.undo_action(
+                            world,
+                            &mut input_manager,
+                            tab_file_entity,
+                        );
                     });
                 }
             }
@@ -207,9 +233,11 @@ pub(crate) fn action_stack_redo(world: &mut World) {
             if let Some(tab_state) = tab_manager.current_tab_state_mut() {
                 if tab_state.action_stack.has_redo() {
                     world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
-                        tab_state
-                            .action_stack
-                            .redo_action(world, &mut input_manager, tab_file_entity);
+                        tab_state.action_stack.redo_action(
+                            world,
+                            &mut input_manager,
+                            tab_file_entity,
+                        );
                     });
                 }
             }
@@ -227,7 +255,6 @@ pub(crate) fn action_stack_redo(world: &mut World) {
 }
 
 impl<A: Action> ActionStack<A> {
-
     pub fn has_undo(&self) -> bool {
         !self.undo_actions.is_empty() && self.undo_enabled
     }
@@ -248,7 +275,6 @@ impl<A: Action> ActionStack<A> {
     }
 
     pub fn post_execute_undo(&mut self, world: &mut World, mut reversed_actions: Vec<A>) {
-
         self.redo_actions.append(&mut reversed_actions);
 
         self.enable_top(world);
@@ -266,7 +292,6 @@ impl<A: Action> ActionStack<A> {
     }
 
     pub fn post_execute_redo(&mut self, world: &mut World, mut reversed_actions: Vec<A>) {
-
         self.undo_actions.append(&mut reversed_actions);
 
         self.enable_top(world);
@@ -324,8 +349,12 @@ impl<A: Action> ActionStack<A> {
 }
 
 impl ActionStack<FileAction> {
-
-    pub fn execute_action(&mut self, world: &mut World, project_root_entity: Entity, action: FileAction) -> Vec<FileAction> {
+    pub fn execute_action(
+        &mut self,
+        world: &mut World,
+        project_root_entity: Entity,
+        action: FileAction,
+    ) -> Vec<FileAction> {
         action.execute(world, project_root_entity, self)
     }
 
@@ -339,8 +368,13 @@ impl ActionStack<FileAction> {
 }
 
 impl ActionStack<ShapeAction> {
-
-    pub fn execute_action(&mut self, world: &mut World, input_manager: &mut InputManager, tab_file_entity: Entity, action: ShapeAction) -> Vec<ShapeAction> {
+    pub fn execute_action(
+        &mut self,
+        world: &mut World,
+        input_manager: &mut InputManager,
+        tab_file_entity: Entity,
+        action: ShapeAction,
+    ) -> Vec<ShapeAction> {
         action.execute(world, input_manager, tab_file_entity, self)
     }
 
@@ -381,7 +415,12 @@ impl ActionStack<ShapeAction> {
 }
 
 impl ActionStack<AnimAction> {
-    pub fn execute_action(&mut self, world: &mut World, input_manager: &mut InputManager, action: AnimAction) -> Vec<AnimAction> {
+    pub fn execute_action(
+        &mut self,
+        world: &mut World,
+        input_manager: &mut InputManager,
+        action: AnimAction,
+    ) -> Vec<AnimAction> {
         action.execute(world, input_manager)
     }
 }

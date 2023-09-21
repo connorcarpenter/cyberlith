@@ -11,9 +11,9 @@ use crate::app::{
         },
         edge_manager::EdgeManager,
         face_manager::FaceManager,
+        input_manager::InputManager,
         shape_data::CanvasShape,
         vertex_manager::VertexManager,
-        input_manager::InputManager,
     },
 };
 
@@ -55,7 +55,6 @@ pub enum ShapeActionType {
 }
 
 impl ShapeAction {
-
     pub(crate) fn get_type(&self) -> ShapeActionType {
         match self {
             Self::SelectShape(_) => ShapeActionType::SelectShape,
@@ -78,37 +77,17 @@ impl ShapeAction {
     ) -> Vec<Self> {
         let action_type = self.get_type();
         match action_type {
-            ShapeActionType::SelectShape => {
-                select_shape::execute(world, input_manager,self)
-            }
+            ShapeActionType::SelectShape => select_shape::execute(world, input_manager, self),
             ShapeActionType::CreateVertex => {
-                create_vertex::execute(
-                    world,
-                    input_manager,
-                    action_stack,
-                    tab_file_entity,
-                    self,
-                )
+                create_vertex::execute(world, input_manager, action_stack, tab_file_entity, self)
             }
-            ShapeActionType::DeleteVertex => {
-                delete_vertex::execute(world, input_manager,self)
+            ShapeActionType::DeleteVertex => delete_vertex::execute(world, input_manager, self),
+            ShapeActionType::MoveVertex => move_vertex::execute(world, self),
+            ShapeActionType::CreateEdge => {
+                create_edge::execute(world, input_manager, action_stack, tab_file_entity, self)
             }
-            ShapeActionType::MoveVertex => {
-                move_vertex::execute(world, self)
-            }
-            ShapeActionType::CreateEdge => create_edge::execute(
-                world,
-                input_manager,
-                action_stack,
-                tab_file_entity,
-                self,
-            ),
-            ShapeActionType::DeleteEdge => {
-                delete_edge::execute(world, input_manager,self)
-            }
-            ShapeActionType::RotateEdge => {
-                rotate_edge::execute(world, self)
-            }
+            ShapeActionType::DeleteEdge => delete_edge::execute(world, input_manager, self),
+            ShapeActionType::RotateEdge => rotate_edge::execute(world, self),
             ShapeActionType::DeleteFace => delete_face::execute(world, self),
         }
     }
@@ -268,7 +247,6 @@ impl ShapeAction {
 }
 
 impl Action for ShapeAction {
-
     fn entity_update_auth_status_impl(
         buffered_check: &mut bool,
         action_opt: Option<&Self>,

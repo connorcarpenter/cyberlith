@@ -15,7 +15,6 @@ use crate::app::{
 };
 
 pub fn execute(world: &mut World, action: FileAction) -> Vec<FileAction> {
-
     let FileAction::SelectFile(file_entities) = action else {
         panic!("Expected SelectFile");
     };
