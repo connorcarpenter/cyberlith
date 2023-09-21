@@ -48,6 +48,10 @@ impl Canvas {
         self.canvas_texture_size = texture_size;
     }
 
+    pub fn canvas_texture_size(&self) -> Vec2 {
+        self.canvas_texture_size
+    }
+
     pub fn canvas_texture(&self) -> Handle<CpuTexture2D> {
         self.canvas_texture.unwrap()
     }

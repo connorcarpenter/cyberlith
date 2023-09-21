@@ -14,7 +14,7 @@ use vortex_proto::components::Vertex3d;
 
 use crate::app::{
     components::LocalShape,
-    resources::{
+    resources::{canvas::Canvas,
         camera_manager::CameraManager, camera_state::CameraState, edge_manager::EdgeManager,
         face_manager::FaceManager, vertex_manager::VertexManager,
     },
@@ -107,6 +107,7 @@ impl Compass {
 
     pub fn sync_compass(
         &mut self,
+        canvas: &Canvas,
         camera_3d_entity: &Entity,
         camera_state: &CameraState,
         vertex_3d_q: &mut Query<(Entity, &mut Vertex3d)>,
@@ -130,18 +131,20 @@ impl Compass {
         let up = right.cross(camera_transform.view_direction());
 
         let unit_length = 1.0 / camera_state.camera_3d_scale();
-        const COMPASS_POS: Vec2 = Vec2::new(530.0, 300.0);
+        let compass_length = unit_length * 25.0;
+        let mut compass_pos = canvas.canvas_texture_size() * 0.5;
+        compass_pos.x -= 32.0;
+        compass_pos.y -= 32.0;
         let offset_2d = camera_state.camera_3d_offset().round()
             + Vec2::new(
-                unit_length * -1.0 * COMPASS_POS.x,
-                unit_length * COMPASS_POS.y,
+                unit_length * -1.0 * compass_pos.x,
+                unit_length * compass_pos.y,
             );
         let offset_3d = (right * offset_2d.x) + (up * offset_2d.y);
 
         let vert_offset_3d = Vec3::ZERO + offset_3d;
         vertex_3d.set_vec3(&vert_offset_3d);
 
-        let compass_length = unit_length * 25.0;
         let vert_offset_3d = Vec3::new(compass_length, 0.0, 0.0) + offset_3d;
         let (_, mut vertex_3d) = vertex_3d_q.get_mut(self.compass_vertices[1]).unwrap();
         vertex_3d.set_vec3(&vert_offset_3d);

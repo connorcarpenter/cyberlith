@@ -61,6 +61,7 @@ pub fn queue_resyncs(
 }
 
 pub fn sync_compass(
+    canvas: Res<Canvas>,
     tab_manager: Res<TabManager>,
     camera_manager: Res<CameraManager>,
     mut compass: ResMut<Compass>,
@@ -73,7 +74,7 @@ pub fn sync_compass(
     let camera_state = &current_tab_state.camera_state;
     let camera_3d = camera_manager.camera_3d_entity().unwrap();
 
-    compass.sync_compass(&camera_3d, camera_state, &mut vertex_3d_q, &transform_q);
+    compass.sync_compass(&canvas, &camera_3d, camera_state, &mut vertex_3d_q, &transform_q);
 }
 
 pub fn sync_vertices(
