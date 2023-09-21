@@ -288,12 +288,16 @@ impl Action for ShapeAction {
                             entities.push(edge_3d_entity);
                         }
                         CanvasShape::Face => {
-                            let face_3d_entity = world
+                            // face 2d entities don't go away when 3d face entities are deleted
+                            // so they can exist on the action stack without a 3d counterpart,
+                            // which means we don't need to check their auth
+                            if let Some(face_3d_entity) = world
                                 .get_resource::<FaceManager>()
                                 .unwrap()
                                 .face_entity_2d_to_3d(shape_2d_entity)
-                                .unwrap();
-                            entities.push(face_3d_entity);
+                            {
+                                entities.push(face_3d_entity);
+                            }
                         }
                     }
                 }

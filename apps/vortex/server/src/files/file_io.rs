@@ -213,7 +213,7 @@ pub fn despawn_file_content_entities(
                 animation_manager.deregister_frame(entity);
             }
             ContentEntityData::Rotation => {
-                todo!();
+                animation_manager.deregister_rotation(entity);
             }
         }
     }
