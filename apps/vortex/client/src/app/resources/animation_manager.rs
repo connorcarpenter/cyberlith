@@ -11,7 +11,7 @@ use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
-use math::{convert_2d_to_3d, quat_look_to, Quat, Vec2, Vec3};
+use math::{convert_2d_to_3d, Quat, Vec2, Vec3};
 use render_api::components::{Camera, CameraProjection, Projection, Transform, Visibility};
 
 use vortex_proto::components::{AnimFrame, AnimRotation, ShapeName, Vertex3d, VertexRoot};
@@ -160,9 +160,6 @@ impl AnimationManager {
         // get old 3d position
         let original_3d_position = vertex_3d_q.get(vertex_3d_entity).unwrap().as_vec3();
 
-        // get base angle
-        let base_angle = quat_look_to(original_3d_position - parent_original_3d_position, Vec3::Y);
-
         // get camera
         let camera_3d = camera_manager.camera_3d_entity().unwrap();
         let camera_transform: Transform = *transform_q.get(camera_3d).unwrap();
@@ -184,8 +181,11 @@ impl AnimationManager {
             vertex_2d_transform.translation.z,
         );
 
-        let target_angle = quat_look_to(new_3d_position - parent_rotated_3d_position, Vec3::Y);
-        let mut rotation_angle = (target_angle * base_angle.inverse()).normalize();
+        let base_direction = (original_3d_position - parent_original_3d_position).normalize();
+        let target_direction = (new_3d_position - parent_rotated_3d_position).normalize();
+        let axis_of_rotation = base_direction.cross(target_direction).normalize();
+        let angle = base_direction.angle_between(target_direction);
+        let mut rotation_angle = Quat::from_axis_angle(axis_of_rotation, angle);
 
         get_inversed_final_rotation(
             &vertex_manager,
@@ -361,10 +361,10 @@ impl AnimationManager {
             if let Ok(name_component) = name_q.get(*child_vertex_3d_entity) {
                 let name = (*name_component.value).clone();
                 if let Some(rotation_entity) = self.vertex_names.get(&(frame_entity, name)) {
-                    let (anim_rotation, mut local_anim_rotation) =
-                        rotation_q.get_mut(*rotation_entity).unwrap();
-                    rotation = anim_rotation.get_rotation();
-                    local_anim_rotation.last_synced_quat = rotation;
+                    if let Ok((anim_rotation, mut local_anim_rotation)) = rotation_q.get_mut(*rotation_entity) {
+                        rotation = anim_rotation.get_rotation();
+                        local_anim_rotation.last_synced_quat = rotation;
+                    }
                 }
             }
 
