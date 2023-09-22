@@ -27,6 +27,8 @@ pub struct AnimationManager {
     current_frame: Option<Entity>,
     // (file_entity, order) -> frame_entity
     frames: HashMap<(Entity, u8), Entity>,
+    // rotation_entity -> (frame_entity, vertex_name)
+    rotations: HashMap<Entity, (Entity, String)>,
     // (frame_entity, vertex_name) -> rotation_entity
     vertex_names: HashMap<(Entity, String), Entity>,
 
@@ -39,6 +41,7 @@ impl Default for AnimationManager {
             current_skel_file: None,
             current_frame: None,
             frames: HashMap::new(),
+            rotations: HashMap::new(),
             vertex_names: HashMap::new(),
             last_rotation_dragged: None,
         }
@@ -63,9 +66,15 @@ impl AnimationManager {
         }
     }
 
-    pub(crate) fn deregister_frame(&mut self, file_entity: &Entity, frame: &AnimFrame) {
+    pub(crate) fn deregister_frame(&mut self, file_entity: &Entity, frame_entity: &Entity, frame: &AnimFrame) {
         let order = frame.get_order();
         self.frames.remove(&(*file_entity, order));
+
+        if let Some(current_frame_entity) = self.current_frame {
+            if current_frame_entity == *frame_entity {
+                self.current_frame = None;
+            }
+        }
     }
 
     pub(crate) fn register_rotation(
@@ -74,19 +83,19 @@ impl AnimationManager {
         rotation_entity: Entity,
         vertex_name: String,
     ) {
+        self.rotations.insert(rotation_entity, (frame_entity, vertex_name.clone()));
         self.vertex_names
             .insert((frame_entity, vertex_name), rotation_entity);
     }
 
-    pub(crate) fn deregister_rotation(&mut self, frame_entity: &Entity, vertex_name: &str) {
-        self.vertex_names
-            .remove(&(*frame_entity, vertex_name.to_string()));
+    pub(crate) fn deregister_rotation(&mut self, rotation_entity: &Entity) {
+        let (frame_entity, vertex_name) = self.rotations.remove(rotation_entity).unwrap();
+        self.vertex_names.remove(&(frame_entity, vertex_name));
     }
 
     pub fn get_current_rotation(&self, vertex_name: &str) -> Option<&Entity> {
         let current_frame = self.current_frame?;
-        self.vertex_names
-            .get(&(current_frame, vertex_name.to_string()))
+        self.vertex_names.get(&(current_frame, vertex_name.to_string()))
     }
 
     pub(crate) fn drag_vertex(

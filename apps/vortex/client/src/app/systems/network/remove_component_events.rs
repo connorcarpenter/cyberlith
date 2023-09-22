@@ -127,14 +127,12 @@ pub fn remove_component_events(
 
             let file_entity = frame.file_entity.get(&client).unwrap();
 
-            animation_manager.deregister_frame(&file_entity, &frame);
+            animation_manager.deregister_frame(&file_entity, &frame_entity, &frame);
         }
-        for (rot_entity, rot) in events.read::<AnimRotation>() {
+        for (rot_entity, _) in events.read::<AnimRotation>() {
             info!("entity: `{:?}`, removed AnimRotation", rot_entity);
 
-            let frame_entity = rot.frame_entity.get(&client).unwrap();
-
-            animation_manager.deregister_rotation(&frame_entity, &*rot.vertex_name);
+            animation_manager.deregister_rotation(&rot_entity);
         }
     }
 }

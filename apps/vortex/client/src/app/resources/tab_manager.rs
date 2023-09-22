@@ -35,6 +35,7 @@ use crate::app::{
         input_manager::InputManager,
         shape_manager::ShapeManager,
         vertex_manager::VertexManager,
+        shape_data::CanvasShape,
     },
     ui::widgets::colors::{
         FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
@@ -48,6 +49,7 @@ pub struct TabState {
     pub tab_id: TabId,
     pub camera_state: CameraState,
     pub action_stack: TabActionStack,
+    selected_shape_2d: Option<Option<(Entity, CanvasShape)>>,
 }
 
 impl TabState {
@@ -58,6 +60,7 @@ impl TabState {
             tab_id: id,
             camera_state: CameraState::default(),
             action_stack: TabActionStack::new(file_ext),
+            selected_shape_2d: None,
         }
     }
 }
@@ -133,6 +136,12 @@ impl TabManager {
             return;
         }
 
+        if let Some(last_tab_entity) = self.last_tab {
+            let last_selected_shape = input_manager.selected_shape_2d();
+            let tab_state = self.tab_map.get_mut(&last_tab_entity).unwrap();
+            tab_state.selected_shape_2d = Some(last_selected_shape);
+        }
+
         self.last_tab = self.current_tab;
 
         if self.current_tab.is_some() {
@@ -145,6 +154,12 @@ impl TabManager {
             );
         } else {
             canvas.set_visibility(false);
+        }
+
+        input_manager.deselect_shape(canvas);
+        let tab_state = self.current_tab_state_mut().unwrap();
+        if let Some(Some((entity, shape))) = tab_state.selected_shape_2d.take() {
+            input_manager.select_shape(canvas, &entity, shape);
         }
 
         camera_manager.recalculate_3d_view();

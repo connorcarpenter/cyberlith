@@ -82,10 +82,9 @@ impl AnimationManager {
         };
 
         let frame_entity = rot_data.frame_entity;
-        let Some(frame_data) = self.frames.get_mut(&frame_entity) else {
-            panic!("frame entity not found");
+        if let Some(frame_data) = self.frames.get_mut(&frame_entity) {
+            frame_data.remove_rotation(entity);
         };
-        frame_data.remove_rotation(entity);
 
         rot_data
     }

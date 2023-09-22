@@ -132,7 +132,6 @@ pub fn insert_component_events(
 
         // on Animation Frame Event
         for entity in events.read::<AnimFrame>() {
-            info!("received AnimFrame!");
             insert_anim_frame_event_writer.send(InsertComponentEvent::<AnimFrame>::new(entity));
         }
 

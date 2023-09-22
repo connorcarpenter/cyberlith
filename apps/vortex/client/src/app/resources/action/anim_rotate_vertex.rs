@@ -53,15 +53,14 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
 
     if old_angle_opt.is_some() {
         let rotation_entity = animation_manager.get_current_rotation(name).unwrap();
+        let rotation_entity = *rotation_entity;
         if let Some(new_angle) = new_angle_opt {
-            let mut rotation = rotation_q.get_mut(*rotation_entity).unwrap();
+            let mut rotation = rotation_q.get_mut(rotation_entity).unwrap();
             rotation.set_rotation(new_angle);
         } else {
             // despawn rotation
-            commands.entity(*rotation_entity).despawn();
-
-            let frame_entity = animation_manager.current_frame().unwrap();
-            animation_manager.deregister_rotation(&frame_entity, name);
+            commands.entity(rotation_entity).despawn();
+            animation_manager.deregister_rotation(&rotation_entity);
         }
     } else {
         let new_angle = new_angle_opt.unwrap();

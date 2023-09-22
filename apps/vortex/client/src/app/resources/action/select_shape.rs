@@ -141,16 +141,13 @@ pub fn deselect_selected_shape(
     if let Some((shape_2d_entity, shape_2d_type)) = input_manager.selected_shape_2d() {
         input_manager.deselect_shape(canvas);
         entity_to_deselect = Some((shape_2d_entity, shape_2d_type));
-        entity_to_release = Some(
-            ShapeManager::shape_entity_2d_to_3d(
-                vertex_manager,
-                edge_manager,
-                face_manager,
-                &shape_2d_entity,
-                shape_2d_type,
-            )
-            .unwrap(),
-        )
+        entity_to_release = ShapeManager::shape_entity_2d_to_3d(
+            vertex_manager,
+            edge_manager,
+            face_manager,
+            &shape_2d_entity,
+            shape_2d_type,
+        );
     }
     (entity_to_deselect, entity_to_release)
 }
