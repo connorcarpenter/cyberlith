@@ -5,6 +5,7 @@ use bevy_ecs::{
     query::With,
     system::{Commands, Query, Resource},
 };
+use bevy_ecs::change_detection::ResMut;
 use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt, Replicate, ReplicationConfig};
@@ -36,6 +37,7 @@ use crate::app::{
         shape_data::{CanvasShape, FaceKey, Vertex3dData},
     },
 };
+use crate::app::components::DefaultDraw;
 
 #[derive(Resource)]
 pub struct VertexManager {
@@ -50,6 +52,10 @@ pub struct VertexManager {
     dragging_entity: Option<Entity>,
     dragging_start: Option<Vec3>,
     dragging_end: Option<Vec3>,
+
+    pub mat_enabled_vertex: Handle<CpuMaterial>,
+    pub mat_disabled_vertex: Handle<CpuMaterial>,
+    pub mat_root_vertex: Handle<CpuMaterial>,
 }
 
 impl Default for VertexManager {
@@ -62,11 +68,21 @@ impl Default for VertexManager {
             dragging_entity: None,
             dragging_start: None,
             dragging_end: None,
+            mat_enabled_vertex: Handle::default(),
+            mat_disabled_vertex: Handle::default(),
+            mat_root_vertex: Handle::default(),
         }
     }
 }
 
 impl VertexManager {
+
+    pub fn setup(&mut self, materials: &mut Assets<CpuMaterial>) {
+        self.mat_enabled_vertex = materials.add(Vertex2d::ENABLED_COLOR);
+        self.mat_disabled_vertex = materials.add(Vertex2d::DISABLED_COLOR);
+        self.mat_root_vertex = materials.add(Vertex2d::ROOT_COLOR);
+    }
+
     pub fn queue_resync(&mut self) {
         self.resync = true;
     }
@@ -316,7 +332,8 @@ impl VertexManager {
             parent_vertex_3d_entity_opt,
             false,
             Some(file_entity),
-            Vertex2d::CHILD_COLOR,
+            Vertex2d::ENABLED_COLOR,
+            file_type == FileExtension::Mesh,
         );
 
         return (new_vertex_2d_entity, new_vertex_3d_entity);
@@ -412,6 +429,7 @@ impl VertexManager {
         is_root: bool,
         ownership_opt: Option<Entity>,
         color: Color,
+        default_draw: bool,
     ) -> Entity {
         // vertex 3d
         commands
@@ -440,6 +458,11 @@ impl VertexManager {
             .insert(camera_manager.layer_2d)
             .insert(Vertex2d)
             .id();
+
+        if default_draw {
+            commands.entity(vertex_2d_entity).insert(DefaultDraw);
+            commands.entity(vertex_3d_entity).insert(DefaultDraw);
+        }
 
         if let Some(file_entity) = ownership_opt {
             info!(
@@ -542,6 +565,7 @@ impl VertexManager {
             false,
             None,
             color,
+            true,
         );
 
         let mut new_edge_2d_entity_opt = None;
@@ -577,6 +601,7 @@ impl VertexManager {
                 color,
                 false,
                 None,
+                true,
             );
             new_edge_2d_entity_opt = Some(new_edge_2d_entity);
             new_edge_3d_entity_opt = Some(new_edge_3d_entity);

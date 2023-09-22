@@ -15,7 +15,8 @@ impl Vertex2d {
     pub const HOVER_RADIUS: f32 = Vertex2d::RADIUS + 1.0;
 
     pub const SUBDIVISIONS: u16 = 12;
-    pub const CHILD_COLOR: Color = Color::GREEN;
+    pub const ENABLED_COLOR: Color = Color::GREEN;
+    pub const DISABLED_COLOR: Color = Color::DARK_GREEN;
     pub const ROOT_COLOR: Color = Color::LIGHT_GREEN;
 }
 

@@ -6,6 +6,7 @@ mod face;
 mod ownership;
 mod select;
 mod vertex;
+mod draw;
 
 pub use animation::*;
 pub use edge::*;
@@ -13,3 +14,4 @@ pub use face::*;
 pub use ownership::*;
 pub use select::*;
 pub use vertex::*;
+pub use draw::*;

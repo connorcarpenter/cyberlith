@@ -412,7 +412,7 @@ impl ShapeWaitlist {
         match (shape_data, file_type) {
             (ShapeData::Vertex(parent_3d_entity_opt), FileExtension::Skel) => {
                 let color = match parent_3d_entity_opt {
-                    Some(_) => Vertex2d::CHILD_COLOR,
+                    Some(_) => Vertex2d::ENABLED_COLOR,
                     None => Vertex2d::ROOT_COLOR,
                 };
 
@@ -426,10 +426,11 @@ impl ShapeWaitlist {
                     parent_3d_entity_opt.is_none(),
                     Some(file_entity),
                     color,
+                    false,
                 );
             }
             (ShapeData::Vertex(_), FileExtension::Mesh) => {
-                let color = Vertex2d::CHILD_COLOR;
+                let color = Vertex2d::ENABLED_COLOR;
 
                 vertex_manager.vertex_3d_postprocess(
                     commands,
@@ -441,9 +442,10 @@ impl ShapeWaitlist {
                     false,
                     Some(file_entity),
                     color,
+                    true,
                 );
             }
-            (ShapeData::Edge(start_3d, end_3d, edge_angle_opt), _) => {
+            (ShapeData::Edge(start_3d, end_3d, edge_angle_opt), file_type) => {
                 let start_2d = vertex_manager.vertex_entity_3d_to_2d(&start_3d).unwrap();
                 let end_2d = vertex_manager.vertex_entity_3d_to_2d(&end_3d).unwrap();
 
@@ -460,9 +462,10 @@ impl ShapeWaitlist {
                     end_2d,
                     end_3d,
                     Some(file_entity),
-                    Vertex2d::CHILD_COLOR,
+                    Vertex2d::ENABLED_COLOR,
                     file_type == FileExtension::Skel,
                     edge_angle_opt,
+                    file_type == FileExtension::Mesh,
                 );
             }
             (ShapeData::Face(vertex_a, vertex_b, vertex_c, _edge_a, _edge_b, _edge_c), _) => {

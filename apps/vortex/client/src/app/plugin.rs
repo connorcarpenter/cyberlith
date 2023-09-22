@@ -27,6 +27,7 @@ use crate::app::{
     systems::{canvas, draw, network, ui},
     ui::{widgets::NamingBarState, UiState},
 };
+use crate::app::systems::draw_vertices_and_edges;
 
 pub struct VortexPlugin;
 
@@ -130,6 +131,7 @@ impl Plugin for VortexPlugin {
             .add_systems(Update, canvas::input)
             .add_systems(Update, canvas::update_mouse_hover)
             // Draw
-            .add_systems(Draw, draw);
+            .add_systems(Draw, draw)
+            .add_systems(Draw, draw_vertices_and_edges);
     }
 }

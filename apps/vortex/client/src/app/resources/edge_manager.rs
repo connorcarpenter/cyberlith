@@ -38,6 +38,7 @@ use crate::app::{
         create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,
     },
 };
+use crate::app::components::DefaultDraw;
 
 #[derive(Resource)]
 pub struct EdgeManager {
@@ -329,6 +330,8 @@ impl EdgeManager {
                 .insert(EdgeAngle::new(edge_angle_f32));
         }
 
+        let default_draw = file_type == FileExtension::Mesh;
+
         // create new 2d edge, add local components to 3d edge
         let new_edge_2d_entity = self.edge_3d_postprocess(
             commands,
@@ -343,9 +346,10 @@ impl EdgeManager {
             child_vertex_2d_entity,
             child_vertex_3d_entity,
             Some(file_entity),
-            Vertex2d::CHILD_COLOR,
+            Vertex2d::ENABLED_COLOR,
             file_type == FileExtension::Skel,
             edge_angle,
+            default_draw
         );
 
         entities_to_release.push(new_edge_3d_entity);
@@ -370,6 +374,7 @@ impl EdgeManager {
         color: Color,
         arrows_not_lines: bool,
         edge_angle_opt: Option<f32>,
+        default_draw: bool,
     ) -> Entity {
         // edge 3d
         let shape_components = if arrows_not_lines {
@@ -438,6 +443,8 @@ impl EdgeManager {
             edge_2d_entity
         };
 
+
+
         // Edge Angle
         let edge_angle_entities_opt = if let Some(_edge_angle) = edge_angle_opt {
             let shape_components = create_2d_edge_line(
@@ -492,6 +499,12 @@ impl EdgeManager {
         } else {
             None
         };
+
+        if default_draw {
+            commands.entity(edge_2d_entity).insert(DefaultDraw);
+            commands.entity(edge_3d_entity).insert(DefaultDraw);
+            //edge angle entities aren't here because theyre only in editor modes that DON'T use default draw ..
+        }
 
         // register 3d & 2d edges together
         self.register_3d_edge(

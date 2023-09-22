@@ -31,6 +31,7 @@ use crate::app::{
         vertex_manager::VertexManager,
     },
 };
+use crate::app::components::DefaultDraw;
 
 #[derive(Resource)]
 pub struct FaceManager {
@@ -192,6 +193,7 @@ impl FaceManager {
                 Some(1),
             ))
             .insert(camera_manager.layer_2d)
+            .insert(DefaultDraw)
             .id();
 
         info!("spawned 2d face entity: {:?}", entity_2d);
@@ -397,7 +399,8 @@ impl FaceManager {
                 Face3dLocal::COLOR,
             ))
             .insert(camera_manager.layer_3d)
-            .insert(Face3dLocal);
+            .insert(Face3dLocal)
+            .insert(DefaultDraw);
 
         self.register_3d_face(face_3d_entity, face_key);
 

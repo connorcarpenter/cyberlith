@@ -64,7 +64,7 @@ impl Color {
     /// Opaque light green
     pub const LIGHT_GREEN: Color = Color::new_opaque(16, 255, 16);
     /// Opaque dark green
-    pub const DARK_GREEN: Color = Color::new_opaque(0, 64, 0);
+    pub const DARK_GREEN: Color = Color::new_opaque(0, 16, 0);
     /// Opaque blue
     pub const BLUE: Color = Color::new_opaque(0, 64, 255);
     /// Opaque light blue

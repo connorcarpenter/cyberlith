@@ -4,4 +4,4 @@ pub mod network;
 pub mod ui;
 
 mod draw;
-pub use draw::draw;
+pub use draw::*;

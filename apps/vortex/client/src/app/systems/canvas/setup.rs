@@ -22,6 +22,7 @@ use crate::app::{
     },
     shapes::create_2d_edge_line,
 };
+use crate::app::components::DefaultDraw;
 
 pub fn setup(
     config: Res<AppConfig>,
@@ -46,6 +47,8 @@ pub fn setup(
     let canvas_texture_handle =
         new_render_texture(&texture_size, &mut textures, &mut user_textures);
     canvas.set_canvas_texture(texture_size, canvas_texture_handle.clone());
+
+    vertex_manager.setup(&mut materials);
 
     setup_3d_scene(
         &mut commands,
@@ -136,6 +139,7 @@ fn setup_2d_scene(
             .spawn(select_circle_components)
             .insert(camera_manager.layer_2d)
             .insert(SelectCircle)
+            .insert(DefaultDraw)
             .id();
         input_manager.select_circle_entity = Some(select_circle_entity);
     }
@@ -155,6 +159,7 @@ fn setup_2d_scene(
             .spawn(select_triangle_components)
             .insert(camera_manager.layer_2d)
             .insert(SelectTriangle)
+            .insert(DefaultDraw)
             .id();
         input_manager.select_triangle_entity = Some(select_triangle_entity);
     }
@@ -175,6 +180,7 @@ fn setup_2d_scene(
             .spawn(select_line_components)
             .insert(camera_manager.layer_2d)
             .insert(SelectLine)
+            .insert(DefaultDraw)
             .id();
         input_manager.select_line_entity = Some(select_line_entity);
     }
