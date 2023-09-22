@@ -3,7 +3,7 @@ use std::collections::{HashMap, VecDeque};
 use bevy_ecs::{
     prelude::{Entity, Resource},
     system::{Query, Res, ResMut, SystemState},
-    world::World,
+    world::{World, Mut},
 };
 
 use naia_bevy_client::Client;
@@ -36,6 +36,7 @@ use crate::app::{
         shape_manager::ShapeManager,
         vertex_manager::VertexManager,
         shape_data::CanvasShape,
+        tab_lifecycle::TabLifecycle,
     },
     ui::widgets::colors::{
         FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
@@ -101,65 +102,70 @@ impl Default for TabManager {
 }
 
 impl TabManager {
-    pub fn sync_tabs(
-        mut tab_manager: ResMut<TabManager>,
-        file_manager: Res<FileManager>,
-        mut canvas: ResMut<Canvas>,
-        mut input_manager: ResMut<InputManager>,
-        mut camera_manager: ResMut<CameraManager>,
-        mut vertex_manager: ResMut<VertexManager>,
-        mut edge_manager: ResMut<EdgeManager>,
-        mut animation_manager: ResMut<AnimationManager>,
-        mut visibility_q: Query<(&mut Visibility, &OwnedByFileLocal)>,
-    ) {
-        tab_manager.on_sync_tabs(
-            &mut canvas,
-            &mut input_manager,
-            &mut camera_manager,
-            &mut vertex_manager,
-            &mut edge_manager,
-            &mut animation_manager,
-        );
-        tab_manager.on_sync_tab_ownership(&file_manager, &mut canvas, &mut visibility_q);
+    pub fn sync_tabs(world: &mut World) {
+        world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+            tab_manager.on_sync_tabs(world);
+            tab_manager.on_sync_tab_ownership(world);
+        });
     }
 
     pub fn on_sync_tabs(
         &mut self,
-        canvas: &mut Canvas,
-        input_manager: &mut InputManager,
-        camera_manager: &mut CameraManager,
-        vertex_manager: &mut VertexManager,
-        edge_manager: &mut EdgeManager,
-        animation_manager: &mut AnimationManager,
+        world: &mut World,
     ) {
         if self.current_tab == self.last_tab {
             return;
         }
 
         if let Some(last_tab_entity) = self.last_tab {
-            let last_selected_shape = input_manager.selected_shape_2d();
+            let last_selected_shape = world.get_resource::<InputManager>().unwrap().selected_shape_2d();
             let tab_state = self.tab_map.get_mut(&last_tab_entity).unwrap();
             tab_state.selected_shape_2d = Some(last_selected_shape);
+
+            let file_ext = world.get_resource::<FileManager>().unwrap().get_file_type(&last_tab_entity);
+            file_ext.on_tab_close(world);
+        }
+
+        if let Some(current_tab_entity) = self.current_tab {
+            let file_ext = world.get_resource::<FileManager>().unwrap().get_file_type(&current_tab_entity);
+            file_ext.on_tab_open(world);
         }
 
         self.last_tab = self.current_tab;
 
+        let mut system_state: SystemState<(
+            ResMut<Canvas>,
+            ResMut<InputManager>,
+            ResMut<CameraManager>,
+            ResMut<VertexManager>,
+            ResMut<EdgeManager>,
+            ResMut<AnimationManager>,
+        )> = SystemState::new(world);
+        let (
+            mut canvas,
+            mut input_manager,
+            mut camera_manager,
+            mut vertex_manager,
+            mut edge_manager,
+            mut animation_manager,
+        ) = system_state.get_mut(world);
+
         if self.current_tab.is_some() {
             canvas.set_visibility(true);
             canvas.set_focused_timed(
-                input_manager,
-                vertex_manager,
-                edge_manager,
-                animation_manager,
+                &mut input_manager,
+                &mut vertex_manager,
+                &mut edge_manager,
+                &mut animation_manager,
             );
         } else {
             canvas.set_visibility(false);
         }
 
-        input_manager.deselect_shape(canvas);
+        input_manager.deselect_shape(&mut canvas);
         let tab_state = self.current_tab_state_mut().unwrap();
         if let Some(Some((entity, shape))) = tab_state.selected_shape_2d.take() {
-            input_manager.select_shape(canvas, &entity, shape);
+            input_manager.select_shape(&mut canvas, &entity, shape);
         }
 
         camera_manager.recalculate_3d_view();
@@ -172,9 +178,7 @@ impl TabManager {
 
     pub fn on_sync_tab_ownership(
         &mut self,
-        file_manager: &FileManager,
-        canvas: &mut Canvas,
-        visibility_q: &mut Query<(&mut Visibility, &OwnedByFileLocal)>,
+        world: &mut World,
     ) {
         if !self.resync_tab_ownership {
             return;
@@ -182,10 +186,21 @@ impl TabManager {
 
         self.resync_tab_ownership = false;
 
+        let mut system_state: SystemState<(
+            Res<FileManager>,
+            ResMut<Canvas>,
+            Query<(&mut Visibility, &OwnedByFileLocal)>,
+        )> = SystemState::new(world);
+        let (
+            file_manager,
+            mut canvas,
+            mut visibility_q,
+        ) = system_state.get_mut(world);
+
         if let Some(current_tab_file_entity) = self.current_tab_entity() {
             for (mut visibility, owned_by_tab) in visibility_q.iter_mut() {
                 visibility.visible = ShapeManager::is_owned_by_file(
-                    file_manager,
+                    &file_manager,
                     current_tab_file_entity,
                     Some(&owned_by_tab.file_entity),
                 );

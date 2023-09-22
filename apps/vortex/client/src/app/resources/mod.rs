@@ -17,3 +17,4 @@ pub mod shape_waitlist;
 pub mod tab_manager;
 pub mod toolbar;
 pub mod vertex_manager;
+pub mod tab_lifecycle;

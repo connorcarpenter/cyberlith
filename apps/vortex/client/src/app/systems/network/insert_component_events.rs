@@ -367,7 +367,7 @@ pub fn insert_vertex_events(
         );
     }
 
-    // on Vertex Name Event
+    // on ShapeName Event
     for event in shape_name_events.iter() {
         let entity = event.entity;
 
