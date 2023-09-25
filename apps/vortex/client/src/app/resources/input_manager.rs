@@ -20,7 +20,7 @@ use render_api::{
     },
 };
 
-use vortex_proto::components::{EdgeAngle, FileExtension, Vertex3d, VertexRoot};
+use vortex_proto::components::{EdgeAngle, FileExtension, ShapeName, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::{
@@ -321,10 +321,14 @@ impl InputManager {
     pub(crate) fn sync_mouse_hover_ui(
         &mut self,
         canvas: &mut Canvas,
+        vertex_manager: &VertexManager,
+        edge_manager: &EdgeManager,
+        file_ext: FileExtension,
         mouse_position: &Vec2,
         camera_state: &CameraState,
         transform_q: &mut Query<(&mut Transform, Option<&LocalShape>)>,
         visibility_q: &Query<&Visibility>,
+        shape_name_q: &Query<&ShapeName>,
         vertex_2d_q: &Query<(Entity, Option<&VertexRoot>), (With<Vertex2d>, Without<LocalShape>)>,
         edge_2d_q: &Query<(Entity, &Edge2dLocal), Without<LocalShape>>,
         face_2d_q: &Query<(Entity, &FaceIcon2d)>,
@@ -340,15 +344,23 @@ impl InputManager {
         let mut least_entity = None;
 
         // check for vertices
-        for (vertex_entity, root_opt) in vertex_2d_q.iter() {
-            let Ok(visibility) = visibility_q.get(vertex_entity) else {
+        for (vertex_2d_entity, root_opt) in vertex_2d_q.iter() {
+            let Ok(visibility) = visibility_q.get(vertex_2d_entity) else {
                 panic!("Vertex entity has no Visibility");
             };
             if !visibility.visible {
                 continue;
             }
+            if file_ext == FileExtension::Anim {
+                let vertex_3d_entity = vertex_manager.vertex_entity_2d_to_3d(&vertex_2d_entity).unwrap();
+                let Ok(shape_name) = shape_name_q.get(vertex_3d_entity) else { continue; };
+                let shape_name = shape_name.value.as_str();
+                if shape_name.len() == 0 {
+                    continue;
+                }
+            }
 
-            let (vertex_transform, _) = transform_q.get(vertex_entity).unwrap();
+            let (vertex_transform, _) = transform_q.get(vertex_2d_entity).unwrap();
             let vertex_position = vertex_transform.translation.truncate();
             let distance = vertex_position.distance(*mouse_position);
             if distance < least_distance {
@@ -359,7 +371,7 @@ impl InputManager {
                     None => CanvasShape::Vertex,
                 };
 
-                least_entity = Some((vertex_entity, shape));
+                least_entity = Some((vertex_2d_entity, shape));
             }
         }
 
@@ -367,23 +379,32 @@ impl InputManager {
 
         // check for edges
         if !is_hovering {
-            for (edge_entity, _) in edge_2d_q.iter() {
+            for (edge_2d_entity, _) in edge_2d_q.iter() {
                 // check visibility
-                let Ok(visibility) = visibility_q.get(edge_entity) else {
+                let Ok(visibility) = visibility_q.get(edge_2d_entity) else {
                     panic!("entity has no Visibility");
                 };
                 if !visibility.visible {
                     continue;
                 }
+                if file_ext == FileExtension::Anim {
+                    let edge_3d_entity = edge_manager.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
+                    let (_, end_vertex_3d_entity) = edge_manager.edge_get_endpoints(&edge_3d_entity);
+                    let Ok(shape_name) = shape_name_q.get(end_vertex_3d_entity) else { continue; };
+                    let shape_name = shape_name.value.as_str();
+                    if shape_name.len() == 0 {
+                        continue;
+                    }
+                }
 
-                let (edge_transform, _) = transform_q.get(edge_entity).unwrap();
+                let (edge_transform, _) = transform_q.get(edge_2d_entity).unwrap();
                 let edge_start = edge_transform.translation.truncate();
                 let edge_end = get_2d_line_transform_endpoint(&edge_transform);
 
                 let distance = distance_to_2d_line(*mouse_position, edge_start, edge_end);
                 if distance < least_distance {
                     least_distance = distance;
-                    least_entity = Some((edge_entity, CanvasShape::Edge));
+                    least_entity = Some((edge_2d_entity, CanvasShape::Edge));
                 }
             }
 

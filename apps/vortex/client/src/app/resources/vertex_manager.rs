@@ -5,7 +5,6 @@ use bevy_ecs::{
     query::With,
     system::{Commands, Query, Resource},
 };
-use bevy_ecs::change_detection::ResMut;
 use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt, Replicate, ReplicationConfig};
@@ -23,7 +22,7 @@ use vortex_proto::components::{
 
 use crate::app::{
     components::{
-        Edge3dLocal, LocalAnimRotation, LocalShape, OwnedByFileLocal, Vertex2d, VertexEntry,
+        Edge3dLocal, LocalAnimRotation, LocalShape, OwnedByFileLocal, Vertex2d, VertexEntry, DefaultDraw
     },
     resources::{
         action::{ActionStack, ShapeAction},
@@ -37,7 +36,6 @@ use crate::app::{
         shape_data::{CanvasShape, FaceKey, Vertex3dData},
     },
 };
-use crate::app::components::DefaultDraw;
 
 #[derive(Resource)]
 pub struct VertexManager {

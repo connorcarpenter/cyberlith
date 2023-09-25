@@ -8,11 +8,11 @@ use bevy_ecs::{
 use input::Input;
 use render_api::components::{Transform, Visibility};
 
-use vortex_proto::components::VertexRoot;
+use vortex_proto::components::{ShapeName, VertexRoot};
 
 use crate::app::{
     components::{Edge2dLocal, FaceIcon2d, LocalShape, Vertex2d},
-    resources::{canvas::Canvas, input_manager::InputManager, tab_manager::TabManager},
+    resources::{vertex_manager::VertexManager, file_manager::FileManager, edge_manager::EdgeManager, canvas::Canvas, input_manager::InputManager, tab_manager::TabManager},
 };
 
 pub fn input(world: &mut World) {
@@ -33,10 +33,14 @@ pub fn input(world: &mut World) {
 pub fn update_mouse_hover(
     mut canvas: ResMut<Canvas>,
     input: Res<Input>,
+    file_manager: Res<FileManager>,
     tab_manager: Res<TabManager>,
     mut input_manager: ResMut<InputManager>,
+    vertex_manager: Res<VertexManager>,
+    edge_manager: Res<EdgeManager>,
     mut transform_q: Query<(&mut Transform, Option<&LocalShape>)>,
     visibility_q: Query<&Visibility>,
+    shape_name_q: Query<&ShapeName>,
     vertex_2d_q: Query<(Entity, Option<&VertexRoot>), (With<Vertex2d>, Without<LocalShape>)>,
     edge_2d_q: Query<(Entity, &Edge2dLocal), Without<LocalShape>>,
     face_2d_q: Query<(Entity, &FaceIcon2d)>,
@@ -47,14 +51,24 @@ pub fn update_mouse_hover(
     let Some(current_tab_state) = tab_manager.current_tab_state() else {
         return;
     };
+    let Some(current_tab_entity) = tab_manager.current_tab_entity() else {
+        return;
+    };
+
+    let file_type = file_manager.get_file_type(current_tab_entity);
+
     let current_tab_camera_state = &current_tab_state.camera_state;
 
     input_manager.sync_mouse_hover_ui(
         &mut canvas,
+        &vertex_manager,
+        &edge_manager,
+        file_type,
         input.mouse_position(),
         current_tab_camera_state,
         &mut transform_q,
         &visibility_q,
+        &shape_name_q,
         &vertex_2d_q,
         &edge_2d_q,
         &face_2d_q,
