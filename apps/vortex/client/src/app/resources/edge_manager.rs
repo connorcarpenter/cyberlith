@@ -4,23 +4,20 @@ use bevy_ecs::{
     entity::Entity,
     system::{Commands, Query, Resource},
 };
-use bevy_ecs::change_detection::ResMut;
 use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
 use math::{Vec2, Vec3};
-use render_api::{base::{Color, CpuMaterial, CpuMesh}, components::{RenderObjectBundle, Transform, Visibility}, shapes::{
+use render_api::{base::{Color, CpuMaterial, CpuMesh}, components::{RenderLayer, RenderObjectBundle, Transform, Visibility}, resources::RenderFrame, shapes::{
     angle_between, get_2d_line_transform_endpoint, set_2d_line_transform,
     set_2d_line_transform_from_angle,
 }, Assets, Handle};
-use render_api::components::RenderLayer;
-use render_api::resources::RenderFrame;
 
 use vortex_proto::components::{Edge3d, EdgeAngle, FileExtension, FileType, OwnedByFile};
 
 use crate::app::{
-    components::{Edge2dLocal, Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d},
+    components::{DefaultDraw, Edge2dLocal, Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d},
     resources::{
         camera_manager::CameraManager,
         canvas::Canvas,
@@ -36,7 +33,6 @@ use crate::app::{
         create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,
     },
 };
-use crate::app::components::DefaultDraw;
 
 #[derive(Resource)]
 pub struct EdgeManager {
@@ -171,7 +167,7 @@ impl EdgeManager {
         let edge_angle_length = Edge2dLocal::EDGE_ANGLE_LENGTH * camera_3d_scale;
         let edge_angle_thickness = Edge2dLocal::EDGE_ANGLE_THICKNESS * camera_3d_scale;
         let local_shape_edge_3d_scale = LocalShape::EDGE_THICKNESS / camera_3d_scale;
-        let visible = self.edge_angle_visibility && file_ext == FileExtension::Skel;
+        let visible = self.edge_angles_are_visible(file_ext);
 
         for (edge_entity, edge_endpoints, edge_angle_opt) in edge_3d_q.iter() {
             // check visibility
@@ -674,15 +670,23 @@ impl EdgeManager {
         tab_manager: &TabManager,
         canvas: &mut Canvas,
     ) {
-        let current_file_entity = tab_manager.current_tab_entity().unwrap();
-        let current_file_type = file_manager.get_file_type(current_file_entity);
-        if current_file_type != FileExtension::Skel {
+        let current_file_type = FileManager::get_current_file_type(file_manager, tab_manager);
+        if !Self::edge_angles_are_visible_for_filetype(current_file_type) {
             return;
         }
 
         self.edge_angle_visibility = !self.edge_angle_visibility;
 
         canvas.queue_resync_shapes();
+    }
+
+    fn edge_angles_are_visible_for_filetype(
+        file_type: FileExtension,
+    ) -> bool {
+        match file_type {
+            FileExtension::Skel | FileExtension::Anim => true,
+            _ => false,
+        }
     }
 
     // returns 2d edge entity
@@ -737,10 +741,7 @@ impl EdgeManager {
         objects_q: &Query<(&Handle<CpuMesh>, &Transform, Option<&RenderLayer>)>,
         materials_q: &Query<&Handle<CpuMaterial>>,
     ) {
-        if !self.edge_angle_visibility {
-            return;
-        }
-        if file_ext != FileExtension::Skel {
+        if !self.edge_angles_are_visible(file_ext) {
             return;
         }
         let edge_3d_data = self.edges_3d.get(edge_3d_entity).unwrap();
@@ -752,5 +753,9 @@ impl EdgeManager {
             let mat_handle = materials_q.get(entity).unwrap();
             render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
         }
+    }
+
+    fn edge_angles_are_visible(&self, file_ext: FileExtension) -> bool {
+        self.edge_angle_visibility && Self::edge_angles_are_visible_for_filetype(file_ext)
     }
 }

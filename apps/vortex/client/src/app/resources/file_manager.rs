@@ -65,6 +65,14 @@ impl FileManager {
         }
     }
 
+    pub fn get_current_file_type(
+        file_manager: &FileManager,
+        tab_manager: &TabManager,
+    ) -> FileExtension {
+        let current_file_entity = tab_manager.current_tab_entity().unwrap();
+        file_manager.get_file_type(current_file_entity)
+    }
+
     pub fn on_file_create(&mut self, file_entity: &Entity, file_type: FileExtension) {
         self.file_entities
             .insert(*file_entity, FileData::new(file_type));

@@ -33,6 +33,7 @@ use crate::app::{
         file_manager::FileManager, key_action_map::KeyActionMap, shape_data::CanvasShape,
         tab_manager::TabManager, vertex_manager::VertexManager,
     },
+    ui::widgets::naming_bar_visibility_toggle,
 };
 
 #[derive(Clone, Copy)]
@@ -43,6 +44,8 @@ pub enum AppInputAction {
     CameraAngleYawRotate(bool),
     DeleteKeyPress,
     InsertKeyPress,
+    ToggleNamingBar,
+    ToggleEdgeAngleVisibility,
 }
 
 #[derive(Resource)]
@@ -66,8 +69,34 @@ pub struct InputManager {
 impl Default for InputManager {
     fn default() -> Self {
         let key_state = KeyActionMap::init(vec![
-            (Key::S, AppInputAction::SwitchTo3dMode),
-            (Key::W, AppInputAction::SwitchTo2dMode),
+            (
+                Key::S,
+                AppInputAction::SwitchTo3dMode
+            ),
+            (
+                Key::W,
+                AppInputAction::SwitchTo2dMode
+            ),
+            (
+                Key::D,
+                AppInputAction::SetCameraAngleFixed(CameraAngle::Side),
+            ),
+            (
+                Key::T,
+                AppInputAction::SetCameraAngleFixed(CameraAngle::Top),
+            ),
+            (
+                Key::F,
+                AppInputAction::SetCameraAngleFixed(CameraAngle::Front),
+            ),
+            (
+                Key::N,
+                AppInputAction::ToggleNamingBar,
+            ),
+            (
+                Key::E,
+                AppInputAction::ToggleEdgeAngleVisibility,
+            ),
             (
                 Key::Num1,
                 AppInputAction::SetCameraAngleFixed(CameraAngle::Ingame(1)),
@@ -89,21 +118,21 @@ impl Default for InputManager {
                 AppInputAction::SetCameraAngleFixed(CameraAngle::Ingame(5)),
             ),
             (
-                Key::D,
-                AppInputAction::SetCameraAngleFixed(CameraAngle::Side),
+                Key::PageUp,
+                AppInputAction::CameraAngleYawRotate(true)
             ),
             (
-                Key::T,
-                AppInputAction::SetCameraAngleFixed(CameraAngle::Top),
+                Key::PageDown,
+                AppInputAction::CameraAngleYawRotate(false)
             ),
             (
-                Key::F,
-                AppInputAction::SetCameraAngleFixed(CameraAngle::Front),
+                Key::Insert,
+                AppInputAction::InsertKeyPress
             ),
-            (Key::PageUp, AppInputAction::CameraAngleYawRotate(true)),
-            (Key::PageDown, AppInputAction::CameraAngleYawRotate(false)),
-            (Key::Insert, AppInputAction::InsertKeyPress),
-            (Key::Delete, AppInputAction::DeleteKeyPress),
+            (
+                Key::Delete,
+                AppInputAction::DeleteKeyPress
+            ),
         ]);
 
         Self {
@@ -306,6 +335,27 @@ impl InputManager {
                         }
                         AppInputAction::InsertKeyPress => {
                             self.handle_insert_key_press(world);
+                        }
+                        AppInputAction::ToggleNamingBar => {
+                            naming_bar_visibility_toggle(world);
+                        }
+                        AppInputAction::ToggleEdgeAngleVisibility => {
+                            let mut system_state: SystemState<(
+                                ResMut<Canvas>,
+                                ResMut<EdgeManager>,
+                                Res<FileManager>,
+                                Res<TabManager>,
+                            )> = SystemState::new(world);
+                            let (mut canvas, mut edge_manager, file_manager, tab_manager) =
+                                system_state.get_mut(world);
+
+                            edge_manager.edge_angle_visibility_toggle(
+                                &file_manager,
+                                &tab_manager,
+                                &mut canvas,
+                            );
+
+                            system_state.apply(world);
                         }
                     }
                 }

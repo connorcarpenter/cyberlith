@@ -31,11 +31,4 @@ pub fn consume_shortcuts(context: &egui::Context, world: &mut World) {
     if context.input_mut(|i| i.consume_shortcut(&SHORTCUT_REDO)) {
         action_stack_redo(world);
     }
-
-    let canvas = world.get_resource::<Canvas>().unwrap();
-    if canvas.is_visible() && canvas.has_focus() {
-        if context.input_mut(|i| i.consume_key(Modifiers::NONE, egui::Key::N)) {
-            naming_bar_visibility_toggle(world);
-        }
-    }
 }
