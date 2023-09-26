@@ -153,8 +153,6 @@ impl AnimationManager {
             }
         }
 
-        //
-
         // get parent 3d position
         let parent_vertex_3d_entity = vertex_manager
             .vertex_parent_3d_entity(&vertex_3d_entity)

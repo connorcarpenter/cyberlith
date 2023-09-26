@@ -2,6 +2,7 @@
 use bevy_ecs::{system::{Query, ResMut}, query::With, entity::Entity,
                query::Without,
                system::Res};
+use bevy_log::warn;
 
 use render_api::{
     base::{CpuMaterial, CpuMesh},
@@ -94,7 +95,10 @@ pub fn draw_vertices_and_edges(
         }
 
         // draw 3d vertex
-        let (mesh_handle, transform, render_layer_opt) = objects_q.get(vertex_3d_entity).unwrap();
+        let Ok((mesh_handle, transform, render_layer_opt)) = objects_q.get(vertex_3d_entity) else {
+            warn!("vertex 3d entity query {:?} not found", vertex_3d_entity);
+            continue;
+        };
 
         let mat_handle = get_shape_color(&vertex_manager, current_file, shape_name_opt, vertex_root_opt.is_some());
 
