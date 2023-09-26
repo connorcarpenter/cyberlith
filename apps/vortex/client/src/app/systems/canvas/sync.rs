@@ -143,6 +143,7 @@ pub fn sync_vertices(
 }
 
 pub fn sync_edges(
+    file_manager: Res<FileManager>,
     tab_manager: Res<TabManager>,
     canvas: Res<Canvas>,
     mut edge_manager: ResMut<EdgeManager>,
@@ -155,13 +156,20 @@ pub fn sync_edges(
     if !canvas.is_visible() {
         return;
     }
+    let Some(current_tab_entity) = tab_manager.current_tab_entity() else {
+        return;
+    };
     let Some(current_tab_state) = tab_manager.current_tab_state() else {
         return;
     };
+    let file_ext = file_manager.get_file_type(current_tab_entity);
+
+
     let camera_state = &current_tab_state.camera_state;
     let camera_3d_scale = camera_state.camera_3d_scale();
 
     edge_manager.sync_edges(
+        file_ext,
         &edge_2d_q,
         &edge_3d_q,
         &mut transform_q,

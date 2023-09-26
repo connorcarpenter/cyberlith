@@ -82,6 +82,7 @@ pub fn draw_vertices_and_edges(
     )>,
     vertices_q: Query<(Entity, &Visibility, Option<&ShapeName>, Option<&VertexRoot>), (With<Vertex3d>, Without<DefaultDraw>)>,
     edges_q: Query<(Entity, &Visibility), (With<Edge3d>, Without<DefaultDraw>)>,
+    materials_q: Query<&Handle<CpuMaterial>>,
 ) {
     let Some(current_tab) = tab_manager.current_tab_entity() else {
         return;
@@ -131,6 +132,9 @@ pub fn draw_vertices_and_edges(
 
         let (mesh_handle, transform, render_layer_opt) = objects_q.get(edge_2d_entity).unwrap();
         render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
+
+        // draw edge angles
+        edge_manager.draw_edge_angles(current_file, &edge_3d_entity, &mut render_frame, &objects_q, &materials_q);
     }
 }
 

@@ -4,20 +4,18 @@ use bevy_ecs::{
     entity::Entity,
     system::{Commands, Query, Resource},
 };
+use bevy_ecs::change_detection::ResMut;
 use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
 use math::{Vec2, Vec3};
-use render_api::{
-    base::{Color, CpuMaterial, CpuMesh},
-    components::{RenderObjectBundle, Transform, Visibility},
-    shapes::{
-        angle_between, get_2d_line_transform_endpoint, set_2d_line_transform,
-        set_2d_line_transform_from_angle,
-    },
-    Assets,
-};
+use render_api::{base::{Color, CpuMaterial, CpuMesh}, components::{RenderObjectBundle, Transform, Visibility}, shapes::{
+    angle_between, get_2d_line_transform_endpoint, set_2d_line_transform,
+    set_2d_line_transform_from_angle,
+}, Assets, Handle};
+use render_api::components::RenderLayer;
+use render_api::resources::RenderFrame;
 
 use vortex_proto::components::{Edge3d, EdgeAngle, FileExtension, FileType, OwnedByFile};
 
@@ -72,6 +70,7 @@ impl EdgeManager {
 
     pub fn sync_edges(
         &mut self,
+        file_ext: FileExtension,
         edge_2d_q: &Query<(Entity, &Edge2dLocal)>,
         edge_3d_q: &Query<(Entity, &Edge3dLocal, Option<&EdgeAngle>)>,
         transform_q: &mut Query<&mut Transform>,
@@ -93,6 +92,7 @@ impl EdgeManager {
             camera_3d_scale,
         );
         self.sync_3d_edges(
+            file_ext,
             edge_3d_q,
             transform_q,
             visibility_q,
@@ -157,6 +157,7 @@ impl EdgeManager {
 
     pub fn sync_3d_edges(
         &self,
+        file_ext: FileExtension,
         edge_3d_q: &Query<(Entity, &Edge3dLocal, Option<&EdgeAngle>)>,
         transform_q: &mut Query<&mut Transform>,
         visibility_q: &mut Query<&mut Visibility>,
@@ -170,6 +171,7 @@ impl EdgeManager {
         let edge_angle_length = Edge2dLocal::EDGE_ANGLE_LENGTH * camera_3d_scale;
         let edge_angle_thickness = Edge2dLocal::EDGE_ANGLE_THICKNESS * camera_3d_scale;
         let local_shape_edge_3d_scale = LocalShape::EDGE_THICKNESS / camera_3d_scale;
+        let visible = self.edge_angle_visibility && file_ext == FileExtension::Skel;
 
         for (edge_entity, edge_endpoints, edge_angle_opt) in edge_3d_q.iter() {
             // check visibility
@@ -210,15 +212,16 @@ impl EdgeManager {
                 let edge_3d_data = self.edges_3d.get(&edge_entity).unwrap();
                 let (base_circle_entity, angle_edge_entity, end_circle_entity) =
                     edge_3d_data.angle_entities_opt.unwrap();
+
                 for entity in [base_circle_entity, angle_edge_entity, end_circle_entity] {
                     let Ok(mut visibility) = visibility_q.get_mut(entity) else {
                         warn!("Edge angle entity {:?} has no transform", entity);
                         continue;
                     };
-                    visibility.visible = self.edge_angle_visibility;
+                    visibility.visible = visible;
                 }
 
-                if self.edge_angle_visibility {
+                if visible {
                     let edge_2d_entity = edge_3d_data.entity_2d;
 
                     let edge_2d_transform = transform_q.get(edge_2d_entity).unwrap();
@@ -442,8 +445,6 @@ impl EdgeManager {
             }
             edge_2d_entity
         };
-
-
 
         // Edge Angle
         let edge_angle_entities_opt = if let Some(_edge_angle) = edge_angle_opt {
@@ -726,5 +727,30 @@ impl EdgeManager {
         let intersecting_edge_3d_entity = vertex_a_edges.intersection(&vertex_b_edges).next()?;
         let edge_2d_entity = self.edge_entity_3d_to_2d(&intersecting_edge_3d_entity)?;
         Some(edge_2d_entity)
+    }
+
+    pub(crate) fn draw_edge_angles(
+        &self,
+        file_ext: FileExtension,
+        edge_3d_entity: &Entity,
+        render_frame: &mut RenderFrame,
+        objects_q: &Query<(&Handle<CpuMesh>, &Transform, Option<&RenderLayer>)>,
+        materials_q: &Query<&Handle<CpuMaterial>>,
+    ) {
+        if !self.edge_angle_visibility {
+            return;
+        }
+        if file_ext != FileExtension::Skel {
+            return;
+        }
+        let edge_3d_data = self.edges_3d.get(edge_3d_entity).unwrap();
+        let (base_circle_entity, angle_edge_entity, end_circle_entity) =
+            edge_3d_data.angle_entities_opt.unwrap();
+
+        for entity in [base_circle_entity, angle_edge_entity, end_circle_entity] {
+            let (mesh_handle, transform, render_layer_opt) = objects_q.get(entity).unwrap();
+            let mat_handle = materials_q.get(entity).unwrap();
+            render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
+        }
     }
 }
