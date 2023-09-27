@@ -72,40 +72,11 @@ impl EdgeManager {
         self.resync = true;
     }
 
-    pub fn sync_edges(
-        &mut self,
-        file_ext: FileExtension,
-        edge_2d_q: &Query<(Entity, &Edge2dLocal)>,
-        edge_3d_q: &Query<(Entity, &Edge3dLocal, Option<&EdgeAngle>)>,
-        transform_q: &mut Query<&mut Transform>,
-        visibility_q: &mut Query<&mut Visibility>,
-        local_shape_q: &Query<&LocalShape>,
-        camera_3d_scale: f32,
-    ) {
-        if !self.resync {
-            return;
-        }
+    pub fn get_should_sync(&self) -> bool { self.resync }
 
-        self.resync = false;
+    pub fn finish_sync(&mut self) { self.resync = false; }
 
-        Self::sync_2d_edges(
-            edge_2d_q,
-            transform_q,
-            visibility_q,
-            local_shape_q,
-            camera_3d_scale,
-        );
-        self.sync_3d_edges(
-            file_ext,
-            edge_3d_q,
-            transform_q,
-            visibility_q,
-            local_shape_q,
-            camera_3d_scale,
-        );
-    }
-
-    fn sync_2d_edges(
+    pub fn sync_2d_edges(
         edge_2d_q: &Query<(Entity, &Edge2dLocal)>,
         transform_q: &mut Query<&mut Transform>,
         visibility_q: &Query<&mut Visibility>,

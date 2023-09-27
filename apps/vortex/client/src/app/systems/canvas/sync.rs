@@ -167,15 +167,35 @@ pub fn sync_edges(
     let camera_state = &current_tab_state.camera_state;
     let camera_3d_scale = camera_state.camera_3d_scale();
 
-    edge_manager.sync_edges(
-        file_ext,
-        &edge_2d_q,
-        &edge_3d_q,
-        &mut transform_q,
-        &mut visibility_q,
-        &local_shape_q,
-        camera_3d_scale,
-    );
+    let should_sync = edge_manager.get_should_sync();
+    if should_sync {
+        match file_ext {
+            FileExtension::Skel | FileExtension::Mesh => {
+                edge_manager.sync_3d_edges(
+                    file_ext,
+                    &edge_3d_q,
+                    &mut transform_q,
+                    &mut visibility_q,
+                    &local_shape_q,
+                    camera_3d_scale,
+                );
+            }
+            FileExtension::Anim => {
+                // do nothing, as animation manager will take care of it?
+            }
+            _ => { },
+        };
+
+        EdgeManager::sync_2d_edges(
+            &edge_2d_q,
+            &mut transform_q,
+            &visibility_q,
+            &local_shape_q,
+            camera_3d_scale,
+        );
+
+        edge_manager.finish_sync();
+    }
 }
 
 pub fn sync_faces(
