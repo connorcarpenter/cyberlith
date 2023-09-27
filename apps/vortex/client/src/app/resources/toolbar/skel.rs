@@ -1,14 +1,12 @@
-use bevy_ecs::{
-    prelude::World,
-};
-use bevy_ecs::world::Mut;
+use bevy_ecs::{prelude::World, world::Mut};
 
 use render_egui::egui::Ui;
 
 use crate::app::{
     resources::{
-        input_manager::InputManager, shape_data::CanvasShape,
-        toolbar::{Toolbar, shared_buttons::button_toggle_edge_angle_visibility},
+        input_manager::InputManager,
+        shape_data::CanvasShape,
+        toolbar::{shared_buttons::button_toggle_edge_angle_visibility, Toolbar},
     },
     ui::widgets::naming_bar_visibility_toggle,
 };

@@ -9,10 +9,13 @@ use bevy_log::info;
 
 use naia_bevy_server::{
     BitReader, CommandsExt, FileBitWriter, ReplicationConfig, Serde, SerdeErr, Server,
-    UnsignedInteger, UnsignedVariableInteger,
+    UnsignedVariableInteger,
 };
 
-use vortex_proto::components::{Edge3d, EdgeAngle, FileExtension, FileType, SerdeRotation, ShapeName, Vertex3d, VertexRoot, VertexSerdeInt};
+use vortex_proto::components::{
+    Edge3d, EdgeAngle, FileExtension, FileType, SerdeRotation, ShapeName, Vertex3d, VertexRoot,
+    VertexSerdeInt,
+};
 
 use crate::{
     files::{file_io::ShapeType, FileWriter, SkelFileWaitlist, SkelWaitlistInsert},

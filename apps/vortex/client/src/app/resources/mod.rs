@@ -14,7 +14,7 @@ pub mod key_action_map;
 pub mod shape_data;
 pub mod shape_manager;
 pub mod shape_waitlist;
+pub mod tab_lifecycle;
 pub mod tab_manager;
 pub mod toolbar;
 pub mod vertex_manager;
-pub mod tab_lifecycle;

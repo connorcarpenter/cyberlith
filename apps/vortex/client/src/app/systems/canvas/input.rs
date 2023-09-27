@@ -12,7 +12,10 @@ use vortex_proto::components::{ShapeName, VertexRoot};
 
 use crate::app::{
     components::{Edge2dLocal, FaceIcon2d, LocalShape, Vertex2d},
-    resources::{vertex_manager::VertexManager, file_manager::FileManager, edge_manager::EdgeManager, canvas::Canvas, input_manager::InputManager, tab_manager::TabManager},
+    resources::{
+        canvas::Canvas, edge_manager::EdgeManager, file_manager::FileManager,
+        input_manager::InputManager, tab_manager::TabManager, vertex_manager::VertexManager,
+    },
 };
 
 pub fn input(world: &mut World) {

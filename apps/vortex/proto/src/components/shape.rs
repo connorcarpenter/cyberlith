@@ -189,7 +189,6 @@ pub struct EdgeAngle {
 }
 
 impl EdgeAngle {
-
     pub fn new(value_f32: f32) -> Self {
         let rotation = SerdeRotation::from_degrees(value_f32);
 
@@ -234,9 +233,7 @@ impl SerdeRotation {
         let value_u8 = (degrees * Self::MAX_ANGLES / Self::MAX_DEGREES) as u8;
         let integer = UnsignedInteger::<6>::new(value_u8);
 
-        Self {
-            value: integer,
-        }
+        Self { value: integer }
     }
 
     pub fn from_radians(radians: f32) -> Self {

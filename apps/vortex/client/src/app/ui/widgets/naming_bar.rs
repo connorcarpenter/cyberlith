@@ -212,12 +212,8 @@ pub fn naming_bar_visibility_toggle(world: &mut World, input_manager: &mut Input
         ResMut<EdgeManager>,
         ResMut<AnimationManager>,
     )> = SystemState::new(world);
-    let (
-        mut canvas,
-        mut vertex_manager,
-        mut edge_manager,
-        mut animation_manager,
-    ) = system_state.get_mut(world);
+    let (mut canvas, mut vertex_manager, mut edge_manager, mut animation_manager) =
+        system_state.get_mut(world);
 
     canvas.set_focused_timed(
         input_manager,

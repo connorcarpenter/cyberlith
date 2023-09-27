@@ -2,7 +2,9 @@ use bevy_ecs::world::World;
 
 use render_egui::egui::Ui;
 
-use crate::app::resources::toolbar::{shared_buttons::button_toggle_edge_angle_visibility, Toolbar};
+use crate::app::resources::toolbar::{
+    shared_buttons::button_toggle_edge_angle_visibility, Toolbar,
+};
 
 pub struct AnimationToolbar;
 

@@ -149,12 +149,10 @@ impl ConstBitLength for SerdeQuat {
 #[cfg(test)]
 mod tests {
     use glam::{Quat, Vec3};
-    use log::info;
     use naia_serde::{ConstBitLength, Serde};
     use rand::Rng;
 
-    use crate::{quat_from_spin_direction, reorder_triangle_winding, SerdeQuat, spin_direction_from_quat};
-    use crate::quat::angle_between_signed;
+    use crate::{quat_from_spin_direction, spin_direction_from_quat, SerdeQuat};
 
     #[test]
     fn identity() {
@@ -239,12 +237,13 @@ mod tests {
         let original_direction = Vec3::new(
             rng.gen_range(-10.0..10.0),
             rng.gen_range(-10.0..10.0),
-            rng.gen_range(-10.0..10.0)
-        ).normalize();
+            rng.gen_range(-10.0..10.0),
+        )
+        .normalize();
 
         println!("original_direction: {:?}", original_direction);
 
-        let original_spin = 30.0;//rng.gen_range(0.0..360.0);
+        let original_spin = 30.0; //rng.gen_range(0.0..360.0);
 
         println!("original_spin: {:?}", original_spin);
 
@@ -272,7 +271,7 @@ mod tests {
 pub fn quat_from_spin_direction(spin: f32, direction: Vec3) -> Quat {
     let base_quat = Quat::from_axis_angle(
         Vec3::Z.cross(direction).normalize(),
-        Vec3::Z.angle_between(direction)
+        Vec3::Z.angle_between(direction),
     );
     let spin_quat = Quat::from_axis_angle(direction, spin);
 
@@ -285,7 +284,7 @@ pub fn spin_direction_from_quat(quat: Quat) -> (f32, Vec3) {
     let output_spin: f32 = {
         let base_quat = Quat::from_axis_angle(
             Vec3::Z.cross(output_direction).normalize(),
-            Vec3::Z.angle_between(output_direction)
+            Vec3::Z.angle_between(output_direction),
         );
         angle_between_signed(quat, base_quat).to_degrees()
     };
@@ -310,16 +309,15 @@ fn acos_approx(val: f32) -> f32 {
 
     // 7-degree minimax approximation
     #[allow(clippy::approx_constant)]
-        let mut result = ((((((-0.001_262_491_1 * x + 0.006_670_09) * x - 0.017_088_126) * x
-        + 0.030_891_88)
-        * x
-        - 0.050_174_303)
-        * x
-        + 0.088_978_99)
-        * x
-        - 0.214_598_8)
-        * x
-        + 1.570_796_3;
+    let mut result =
+        ((((((-0.001_262_491_1 * x + 0.006_670_09) * x - 0.017_088_126) * x + 0.030_891_88) * x
+            - 0.050_174_303)
+            * x
+            + 0.088_978_99)
+            * x
+            - 0.214_598_8)
+            * x
+            + 1.570_796_3;
     result *= root;
 
     // acos(x) = pi - acos(-x) when x < 0

@@ -24,10 +24,9 @@ use crate::app::{
         file_manager::FileManager, input_manager::InputManager, shape_waitlist::ShapeWaitlist,
         tab_manager::TabManager, vertex_manager::VertexManager,
     },
-    systems::{canvas, draw, network, ui},
+    systems::{canvas, draw, draw_vertices_and_edges, network, ui},
     ui::{widgets::NamingBarState, UiState},
 };
-use crate::app::systems::draw_vertices_and_edges;
 
 pub struct VortexPlugin;
 

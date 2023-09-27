@@ -164,7 +164,6 @@ pub fn sync_edges(
     };
     let file_ext = file_manager.get_file_type(current_tab_entity);
 
-
     let camera_state = &current_tab_state.camera_state;
     let camera_3d_scale = camera_state.camera_3d_scale();
 

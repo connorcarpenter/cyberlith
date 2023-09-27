@@ -69,14 +69,8 @@ pub struct InputManager {
 impl Default for InputManager {
     fn default() -> Self {
         let key_state = KeyActionMap::init(vec![
-            (
-                Key::S,
-                AppInputAction::SwitchTo3dMode
-            ),
-            (
-                Key::W,
-                AppInputAction::SwitchTo2dMode
-            ),
+            (Key::S, AppInputAction::SwitchTo3dMode),
+            (Key::W, AppInputAction::SwitchTo2dMode),
             (
                 Key::D,
                 AppInputAction::SetCameraAngleFixed(CameraAngle::Side),
@@ -89,14 +83,8 @@ impl Default for InputManager {
                 Key::F,
                 AppInputAction::SetCameraAngleFixed(CameraAngle::Front),
             ),
-            (
-                Key::N,
-                AppInputAction::ToggleNamingBar,
-            ),
-            (
-                Key::E,
-                AppInputAction::ToggleEdgeAngleVisibility,
-            ),
+            (Key::N, AppInputAction::ToggleNamingBar),
+            (Key::E, AppInputAction::ToggleEdgeAngleVisibility),
             (
                 Key::Num1,
                 AppInputAction::SetCameraAngleFixed(CameraAngle::Ingame(1)),
@@ -117,22 +105,10 @@ impl Default for InputManager {
                 Key::Num5,
                 AppInputAction::SetCameraAngleFixed(CameraAngle::Ingame(5)),
             ),
-            (
-                Key::PageUp,
-                AppInputAction::CameraAngleYawRotate(true)
-            ),
-            (
-                Key::PageDown,
-                AppInputAction::CameraAngleYawRotate(false)
-            ),
-            (
-                Key::Insert,
-                AppInputAction::InsertKeyPress
-            ),
-            (
-                Key::Delete,
-                AppInputAction::DeleteKeyPress
-            ),
+            (Key::PageUp, AppInputAction::CameraAngleYawRotate(true)),
+            (Key::PageDown, AppInputAction::CameraAngleYawRotate(false)),
+            (Key::Insert, AppInputAction::InsertKeyPress),
+            (Key::Delete, AppInputAction::DeleteKeyPress),
         ]);
 
         Self {
@@ -402,7 +378,9 @@ impl InputManager {
                 continue;
             }
             if file_ext == FileExtension::Anim {
-                let vertex_3d_entity = vertex_manager.vertex_entity_2d_to_3d(&vertex_2d_entity).unwrap();
+                let vertex_3d_entity = vertex_manager
+                    .vertex_entity_2d_to_3d(&vertex_2d_entity)
+                    .unwrap();
                 let Ok(shape_name) = shape_name_q.get(vertex_3d_entity) else { continue; };
                 let shape_name = shape_name.value.as_str();
                 if shape_name.len() == 0 {
@@ -438,8 +416,10 @@ impl InputManager {
                     continue;
                 }
                 if file_ext == FileExtension::Anim {
-                    let edge_3d_entity = edge_manager.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
-                    let (_, end_vertex_3d_entity) = edge_manager.edge_get_endpoints(&edge_3d_entity);
+                    let edge_3d_entity =
+                        edge_manager.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
+                    let (_, end_vertex_3d_entity) =
+                        edge_manager.edge_get_endpoints(&edge_3d_entity);
                     let Ok(shape_name) = shape_name_q.get(end_vertex_3d_entity) else { continue; };
                     let shape_name = shape_name.value.as_str();
                     if shape_name.len() == 0 {
@@ -1070,7 +1050,12 @@ impl InputManager {
                     );
                 });
             }
-            (MouseButton::Left, None, Some(CanvasShape::Vertex | CanvasShape::Edge), FileExtension::Anim) => {
+            (
+                MouseButton::Left,
+                None,
+                Some(CanvasShape::Vertex | CanvasShape::Edge),
+                FileExtension::Anim,
+            ) => {
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
                     tab_manager.current_tab_execute_anim_action(
                         world,
@@ -1234,9 +1219,11 @@ impl InputManager {
                             canvas.queue_resync_shapes();
                         }
                         (edge_2d_entity, CanvasShape::Edge) => {
-
-                            let edge_3d_entity =
-                                world.get_resource::<EdgeManager>().unwrap().edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
+                            let edge_3d_entity = world
+                                .get_resource::<EdgeManager>()
+                                .unwrap()
+                                .edge_entity_2d_to_3d(&edge_2d_entity)
+                                .unwrap();
 
                             if current_file_type == FileExtension::Anim {
                                 world.resource_scope(

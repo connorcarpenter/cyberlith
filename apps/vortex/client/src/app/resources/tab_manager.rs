@@ -3,7 +3,7 @@ use std::collections::{HashMap, VecDeque};
 use bevy_ecs::{
     prelude::{Entity, Resource},
     system::{Query, Res, ResMut, SystemState},
-    world::{World, Mut},
+    world::{Mut, World},
 };
 
 use naia_bevy_client::Client;
@@ -33,10 +33,10 @@ use crate::app::{
         edge_manager::EdgeManager,
         file_manager::FileManager,
         input_manager::InputManager,
-        shape_manager::ShapeManager,
-        vertex_manager::VertexManager,
         shape_data::CanvasShape,
+        shape_manager::ShapeManager,
         tab_lifecycle::TabLifecycle,
+        vertex_manager::VertexManager,
     },
     ui::widgets::colors::{
         FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
@@ -109,25 +109,31 @@ impl TabManager {
         });
     }
 
-    pub fn on_sync_tabs(
-        &mut self,
-        world: &mut World,
-    ) {
+    pub fn on_sync_tabs(&mut self, world: &mut World) {
         if self.current_tab == self.last_tab {
             return;
         }
 
         if let Some(last_tab_entity) = self.last_tab {
-            let last_selected_shape = world.get_resource::<InputManager>().unwrap().selected_shape_2d();
+            let last_selected_shape = world
+                .get_resource::<InputManager>()
+                .unwrap()
+                .selected_shape_2d();
             let tab_state = self.tab_map.get_mut(&last_tab_entity).unwrap();
             tab_state.selected_shape_2d = Some(last_selected_shape);
 
-            let file_ext = world.get_resource::<FileManager>().unwrap().get_file_type(&last_tab_entity);
+            let file_ext = world
+                .get_resource::<FileManager>()
+                .unwrap()
+                .get_file_type(&last_tab_entity);
             file_ext.on_tab_close(world);
         }
 
         if let Some(current_tab_entity) = self.current_tab {
-            let file_ext = world.get_resource::<FileManager>().unwrap().get_file_type(&current_tab_entity);
+            let file_ext = world
+                .get_resource::<FileManager>()
+                .unwrap()
+                .get_file_type(&current_tab_entity);
             file_ext.on_tab_open(world);
         }
 
@@ -176,10 +182,7 @@ impl TabManager {
         self.resync_tab_ownership = true;
     }
 
-    pub fn on_sync_tab_ownership(
-        &mut self,
-        world: &mut World,
-    ) {
+    pub fn on_sync_tab_ownership(&mut self, world: &mut World) {
         if !self.resync_tab_ownership {
             return;
         }
@@ -191,11 +194,7 @@ impl TabManager {
             ResMut<Canvas>,
             Query<(&mut Visibility, &OwnedByFileLocal)>,
         )> = SystemState::new(world);
-        let (
-            file_manager,
-            mut canvas,
-            mut visibility_q,
-        ) = system_state.get_mut(world);
+        let (file_manager, mut canvas, mut visibility_q) = system_state.get_mut(world);
 
         if let Some(current_tab_file_entity) = self.current_tab_entity() {
             for (mut visibility, owned_by_tab) in visibility_q.iter_mut() {

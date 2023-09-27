@@ -1,4 +1,3 @@
-
 use bevy_ecs::world::World;
 
 use vortex_proto::components::FileExtension;
@@ -28,10 +27,6 @@ impl TabLifecycle for FileExtension {
     }
 }
 
-fn anim_on_tab_open(_world: &mut World) {
+fn anim_on_tab_open(_world: &mut World) {}
 
-}
-
-fn anim_on_tab_close(_world: &mut World) {
-
-}
+fn anim_on_tab_close(_world: &mut World) {}

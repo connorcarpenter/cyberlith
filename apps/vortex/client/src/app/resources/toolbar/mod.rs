@@ -1,7 +1,7 @@
 mod anim;
 mod mesh;
-mod skel;
 mod shared_buttons;
+mod skel;
 
 use bevy_ecs::world::World;
 

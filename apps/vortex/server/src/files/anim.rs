@@ -13,7 +13,10 @@ use naia_bevy_server::{
 };
 
 use vortex_proto::{
-    components::{AnimFrame, AnimRotation, EntryKind, FileDependency, FileExtension, Transition, SerdeRotation},
+    components::{
+        AnimFrame, AnimRotation, EntryKind, FileDependency, FileExtension, SerdeRotation,
+        Transition,
+    },
     resources::FileKey,
     SerdeQuat,
 };
@@ -60,7 +63,8 @@ impl AnimWriter {
         let mut biggest_order_opt: Option<u8> = None;
         //////////////////// order, frame_entity, duration_5ms
         let mut frame_map: HashMap<u8, (Entity, Transition)> = HashMap::new();
-        let mut frame_poses_map: HashMap<Entity, HashMap<u16, (SerdeQuat, SerdeRotation)>> = HashMap::new();
+        let mut frame_poses_map: HashMap<Entity, HashMap<u16, (SerdeQuat, SerdeRotation)>> =
+            HashMap::new();
 
         let content_entities = content_entities_opt.as_ref().unwrap();
         for (content_entity, content_data) in content_entities {
@@ -127,7 +131,13 @@ impl AnimWriter {
                         frame_poses_map.insert(frame_entity, HashMap::new());
                     }
                     let poses_map = frame_poses_map.get_mut(&frame_entity).unwrap();
-                    poses_map.insert(shape_index, (rotation.get_rotation_serde(), rotation.get_edge_angle_serde()));
+                    poses_map.insert(
+                        shape_index,
+                        (
+                            rotation.get_rotation_serde(),
+                            rotation.get_edge_angle_serde(),
+                        ),
+                    );
                 }
             }
         }
@@ -345,7 +355,8 @@ impl AnimReader {
                     for (shape_index, (rotation, edge_angle)) in poses {
                         let shape_name = shape_name_map.get(&shape_index).unwrap();
 
-                        let mut component = AnimRotation::new(shape_name.clone(), rotation, edge_angle);
+                        let mut component =
+                            AnimRotation::new(shape_name.clone(), rotation, edge_angle);
                         component.frame_entity.set(&server, &frame_entity);
 
                         let rotation_entity = commands

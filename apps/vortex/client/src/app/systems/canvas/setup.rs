@@ -13,7 +13,7 @@ use render_api::{
 use render_egui::EguiUserTextures;
 
 use crate::app::{
-    components::{SelectCircle, SelectLine, SelectTriangle, Vertex2d},
+    components::{DefaultDraw, SelectCircle, SelectLine, SelectTriangle, Vertex2d},
     config::AppConfig,
     resources::{
         camera_manager::CameraManager, canvas::Canvas, compass::Compass, edge_manager::EdgeManager,
@@ -22,7 +22,6 @@ use crate::app::{
     },
     shapes::create_2d_edge_line,
 };
-use crate::app::components::DefaultDraw;
 
 pub fn setup(
     config: Res<AppConfig>,

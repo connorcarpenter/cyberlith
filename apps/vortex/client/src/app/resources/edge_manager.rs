@@ -9,12 +9,20 @@ use bevy_log::{info, warn};
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
 use math::{Vec2, Vec3};
-use render_api::{base::{Color, CpuMaterial, CpuMesh}, components::{RenderLayer, RenderObjectBundle, Transform, Visibility}, resources::RenderFrame, shapes::{
-    angle_between, get_2d_line_transform_endpoint, set_2d_line_transform,
-    set_2d_line_transform_from_angle,
-}, Assets, Handle};
+use render_api::{
+    base::{Color, CpuMaterial, CpuMesh},
+    components::{RenderLayer, RenderObjectBundle, Transform, Visibility},
+    resources::RenderFrame,
+    shapes::{
+        angle_between, get_2d_line_transform_endpoint, set_2d_line_transform,
+        set_2d_line_transform_from_angle,
+    },
+    Assets, Handle,
+};
 
-use vortex_proto::components::{Edge3d, EdgeAngle, FileExtension, FileType, OwnedByFile, ShapeName};
+use vortex_proto::components::{
+    Edge3d, EdgeAngle, FileExtension, FileType, OwnedByFile, ShapeName,
+};
 
 use crate::app::{
     components::{DefaultDraw, Edge2dLocal, Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d},
@@ -348,7 +356,7 @@ impl EdgeManager {
             Vertex2d::ENABLED_COLOR,
             file_type == FileExtension::Skel,
             edge_angle,
-            default_draw
+            default_draw,
         );
 
         entities_to_release.push(new_edge_3d_entity);
@@ -680,9 +688,7 @@ impl EdgeManager {
         canvas.queue_resync_shapes();
     }
 
-    fn edge_angles_are_visible_for_filetype(
-        file_type: FileExtension,
-    ) -> bool {
+    fn edge_angles_are_visible_for_filetype(file_type: FileExtension) -> bool {
         match file_type {
             FileExtension::Skel | FileExtension::Anim => true,
             _ => false,
@@ -785,8 +791,6 @@ pub fn edge_is_enabled(current_file: FileExtension, shape_name_opt: Option<&Shap
                 false
             }
         }
-        _ => {
-            true
-        }
+        _ => true,
     }
 }

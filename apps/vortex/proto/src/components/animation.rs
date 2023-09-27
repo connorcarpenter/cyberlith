@@ -1,8 +1,11 @@
 use bevy_ecs::component::Component;
 
-use naia_bevy_shared::{EntityProperty, Property, Protocol, ProtocolPlugin, Replicate, Serde, UnsignedInteger, UnsignedVariableInteger};
+use naia_bevy_shared::{
+    EntityProperty, Property, Protocol, ProtocolPlugin, Replicate, Serde, UnsignedVariableInteger,
+};
 
 use math::{Quat, SerdeQuat};
+
 use crate::components::shape::SerdeRotation;
 
 pub struct AnimationComponentsPlugin;

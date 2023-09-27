@@ -10,10 +10,9 @@ use bevy_log::{info, warn};
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
 use math::{Vec2, Vec3};
-use render_api::components::Visibility;
 use render_api::{
     base::{CpuMaterial, CpuMesh},
-    components::{RenderObjectBundle, Transform},
+    components::{RenderObjectBundle, Transform, Visibility},
     shapes::{HollowTriangle, Triangle},
     Assets,
 };
@@ -21,7 +20,7 @@ use render_api::{
 use vortex_proto::components::{Face3d, OwnedByFile};
 
 use crate::app::{
-    components::{Face3dLocal, FaceIcon2d, OwnedByFileLocal},
+    components::{DefaultDraw, Face3dLocal, FaceIcon2d, OwnedByFileLocal},
     resources::{
         camera_manager::CameraManager,
         canvas::Canvas,
@@ -31,7 +30,6 @@ use crate::app::{
         vertex_manager::VertexManager,
     },
 };
-use crate::app::components::DefaultDraw;
 
 #[derive(Resource)]
 pub struct FaceManager {

@@ -105,7 +105,6 @@ fn deselect_selected_shape(
     let mut entity_to_deselect = None;
     let mut entity_to_release = None;
     if let Some((shape_2d_entity, shape_2d_type)) = input_manager.selected_shape_2d() {
-
         input_manager.deselect_shape(canvas);
         entity_to_deselect = Some((shape_2d_entity, shape_2d_type));
 
@@ -128,7 +127,6 @@ fn deselect_selected_shape(
                 panic!("Unexpected shape type");
             }
         }
-
     }
     (entity_to_deselect, entity_to_release)
 }

@@ -5,9 +5,9 @@ use math::Quat;
 use crate::app::resources::{
     action::{anim_rotate_vertex, anim_select_vertex, Action, ActionStack},
     input_manager::InputManager,
+    shape_data::CanvasShape,
     vertex_manager::VertexManager,
 };
-use crate::app::resources::shape_data::CanvasShape;
 
 #[derive(Clone)]
 pub enum AnimAction {

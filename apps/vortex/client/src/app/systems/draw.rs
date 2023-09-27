@@ -1,7 +1,10 @@
-
-use bevy_ecs::{system::{Query, ResMut}, query::With, entity::Entity,
-               query::Without,
-               system::Res};
+use bevy_ecs::{
+    entity::Entity,
+    query::With,
+    query::Without,
+    system::Res,
+    system::{Query, ResMut},
+};
 use bevy_log::warn;
 
 use render_api::{
@@ -15,22 +18,29 @@ use render_api::{
 };
 use vortex_proto::components::{Edge3d, FileExtension, ShapeName, Vertex3d, VertexRoot};
 
-use crate::app::{components::DefaultDraw, resources::{edge_manager::EdgeManager, file_manager::FileManager, tab_manager::TabManager,
-                             vertex_manager::VertexManager}};
-use crate::app::resources::edge_manager::edge_is_enabled;
+use crate::app::{
+    components::DefaultDraw,
+    resources::{
+        edge_manager::edge_is_enabled, edge_manager::EdgeManager, file_manager::FileManager,
+        tab_manager::TabManager, vertex_manager::VertexManager,
+    },
+};
 
 pub fn draw(
     mut render_frame: ResMut<RenderFrame>,
     // Cameras
     cameras_q: Query<(&Camera, &Transform, &Projection, Option<&RenderLayer>)>,
     // Objects
-    objects_q: Query<(
-        &Handle<CpuMesh>,
-        &Handle<CpuMaterial>,
-        &Transform,
-        &Visibility,
-        Option<&RenderLayer>,
-    ), With<DefaultDraw>>,
+    objects_q: Query<
+        (
+            &Handle<CpuMesh>,
+            &Handle<CpuMaterial>,
+            &Transform,
+            &Visibility,
+            Option<&RenderLayer>,
+        ),
+        With<DefaultDraw>,
+    >,
     // Lights
     ambient_lights_q: Query<(&Handle<AmbientLight>, Option<&RenderLayer>)>,
     point_lights_q: Query<(&PointLight, Option<&RenderLayer>)>,
@@ -76,12 +86,11 @@ pub fn draw_vertices_and_edges(
     edge_manager: Res<EdgeManager>,
 
     // Objects
-    objects_q: Query<(
-        &Handle<CpuMesh>,
-        &Transform,
-        Option<&RenderLayer>,
-    )>,
-    vertices_q: Query<(Entity, &Visibility, Option<&ShapeName>, Option<&VertexRoot>), (With<Vertex3d>, Without<DefaultDraw>)>,
+    objects_q: Query<(&Handle<CpuMesh>, &Transform, Option<&RenderLayer>)>,
+    vertices_q: Query<
+        (Entity, &Visibility, Option<&ShapeName>, Option<&VertexRoot>),
+        (With<Vertex3d>, Without<DefaultDraw>),
+    >,
     edges_q: Query<(Entity, &Visibility), (With<Edge3d>, Without<DefaultDraw>)>,
     materials_q: Query<&Handle<CpuMaterial>>,
 ) {
@@ -103,7 +112,12 @@ pub fn draw_vertices_and_edges(
         };
 
         let edge_is_enabled = edge_is_enabled(current_file, shape_name_opt);
-        let mat_handle = get_shape_color(&vertex_manager, current_file, vertex_root_opt.is_some(), edge_is_enabled);
+        let mat_handle = get_shape_color(
+            &vertex_manager,
+            current_file,
+            vertex_root_opt.is_some(),
+            edge_is_enabled,
+        );
 
         render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
 
@@ -126,7 +140,12 @@ pub fn draw_vertices_and_edges(
         let (_, end_vertex_3d_entity) = edge_manager.edge_get_endpoints(&edge_3d_entity);
         let (_, _, shape_name_opt, vertex_root_opt) = vertices_q.get(end_vertex_3d_entity).unwrap();
         let edge_is_enabled = edge_is_enabled(current_file, shape_name_opt);
-        let mat_handle = get_shape_color(&vertex_manager, current_file, vertex_root_opt.is_some(), edge_is_enabled);
+        let mat_handle = get_shape_color(
+            &vertex_manager,
+            current_file,
+            vertex_root_opt.is_some(),
+            edge_is_enabled,
+        );
 
         render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
 
@@ -138,7 +157,13 @@ pub fn draw_vertices_and_edges(
 
         if edge_is_enabled {
             // draw edge angles
-            edge_manager.draw_edge_angles(current_file, &edge_3d_entity, &mut render_frame, &objects_q, &materials_q);
+            edge_manager.draw_edge_angles(
+                current_file,
+                &edge_3d_entity,
+                &mut render_frame,
+                &objects_q,
+                &materials_q,
+            );
         }
     }
 }
@@ -147,7 +172,7 @@ fn get_shape_color(
     vertex_manager: &Res<VertexManager>,
     current_file: FileExtension,
     vertex_is_root: bool,
-    edge_is_enabled: bool
+    edge_is_enabled: bool,
 ) -> Handle<CpuMaterial> {
     if vertex_is_root {
         vertex_manager.mat_root_vertex

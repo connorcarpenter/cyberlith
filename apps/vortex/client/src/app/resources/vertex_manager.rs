@@ -22,7 +22,8 @@ use vortex_proto::components::{
 
 use crate::app::{
     components::{
-        Edge3dLocal, LocalAnimRotation, LocalShape, OwnedByFileLocal, Vertex2d, VertexEntry, DefaultDraw
+        DefaultDraw, Edge3dLocal, LocalAnimRotation, LocalShape, OwnedByFileLocal, Vertex2d,
+        VertexEntry,
     },
     resources::{
         action::{ActionStack, ShapeAction},
@@ -74,7 +75,6 @@ impl Default for VertexManager {
 }
 
 impl VertexManager {
-
     pub fn setup(&mut self, materials: &mut Assets<CpuMaterial>) {
         self.mat_enabled_vertex = materials.add(Vertex2d::ENABLED_COLOR);
         self.mat_disabled_vertex = materials.add(Vertex2d::DISABLED_COLOR);
