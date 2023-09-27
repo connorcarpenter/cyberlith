@@ -305,14 +305,11 @@ impl AnimationManager {
         edge_2d_entity: Entity,
         mouse_position: Vec2,
     ) {
-        info!("dragging");
-
         let Some(frame_entity) = self.current_frame else {
-            info!("no frame");
             return;
         };
 
-        let (vertex_3d_entity, _) = world
+        let (_, vertex_3d_entity) = world
             .get_resource::<EdgeManager>()
             .unwrap()
             .edge_get_endpoints(&edge_3d_entity);
@@ -376,9 +373,7 @@ impl AnimationManager {
 
         let edge_old_angle = edge_angle_q.get(edge_3d_entity).unwrap();
         let edge_old_angle: f32 = edge_old_angle.get_radians();
-        let edge_new_angle = normalize_angle(
-            angle_between(&edge_angle_pos, &mouse_position) - FRAC_PI_2 - edge_base_angle,
-        );
+        let edge_new_angle = angle_between(&edge_angle_pos, &mouse_position) - FRAC_PI_2 - edge_base_angle;
         let edge_diff_angle = rotation_diff(edge_old_angle, edge_new_angle);
         //
 

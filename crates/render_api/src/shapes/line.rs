@@ -61,20 +61,14 @@ pub fn angle_between(a: &Vec2, b: &Vec2) -> f32 {
     angle + if angle < 0.0 { 2.0 * PI } else { 0.0 }
 }
 
+// radians
 pub fn rotation_diff(a: f32, b: f32) -> f32 {
     // Normalize both angles to the [0, 2π] range
     let a_normalized = normalize_angle(a);
     let b_normalized = normalize_angle(b);
 
     // Calculate the absolute angular difference
-    let absolute_diff = (a_normalized - b_normalized).abs();
-
-    // Ensure the smaller angular difference is selected
-    if absolute_diff <= PI {
-        absolute_diff
-    } else {
-        2.0 * PI - absolute_diff
-    }
+    normalize_angle(a_normalized - b_normalized)
 }
 
 pub fn normalize_angle(angle: f32) -> f32 {

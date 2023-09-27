@@ -15,6 +15,7 @@ use crate::app::resources::{
     input_manager::InputManager,
     shape_data::CanvasShape,
     vertex_manager::VertexManager,
+    edge_manager::EdgeManager,
 };
 
 pub fn execute(
@@ -33,17 +34,26 @@ pub fn execute(
         Client,
         ResMut<Canvas>,
         Res<VertexManager>,
+        Res<EdgeManager>,
         Res<AnimationManager>,
         Query<&ShapeName>,
     )> = SystemState::new(world);
-    let (mut commands, mut client, mut canvas, vertex_manager, animation_manager, name_q) =
-        system_state.get_mut(world);
+    let (
+        mut commands,
+        mut client,
+        mut canvas,
+        vertex_manager,
+        edge_manager,
+        animation_manager,
+        name_q
+    ) = system_state.get_mut(world);
 
     // Deselect all selected shapes, select the new selected shapes
     let (deselected_entity, entity_to_release) = deselect_selected_shape(
         &mut canvas,
         input_manager,
         &vertex_manager,
+        &edge_manager,
         &animation_manager,
         &name_q,
     );
@@ -51,6 +61,7 @@ pub fn execute(
         &mut canvas,
         input_manager,
         &vertex_manager,
+        &edge_manager,
         &animation_manager,
         shape_2d_entity_opt,
         &name_q,
@@ -72,33 +83,47 @@ fn select_shape(
     canvas: &mut Canvas,
     input_manager: &mut InputManager,
     vertex_manager: &VertexManager,
+    edge_manager: &EdgeManager,
     animation_manager: &AnimationManager,
     shape_2d_entity_opt: Option<(Entity, CanvasShape)>,
     name_q: &Query<&ShapeName>,
 ) -> Option<Entity> {
     let (shape_2d_entity, shape) = shape_2d_entity_opt?;
     input_manager.select_shape(canvas, &shape_2d_entity, shape);
-    if let CanvasShape::Vertex = shape {
-        let vertex_3d_entity = vertex_manager
-            .vertex_entity_2d_to_3d(&shape_2d_entity)
-            .unwrap();
-        if let Ok(name) = name_q.get(vertex_3d_entity) {
-            let name = name.value.as_str();
-            return animation_manager
-                .get_current_rotation(name)
-                .map(|entity| *entity);
+
+    match shape {
+        CanvasShape::Vertex => {
+            let vertex_3d_entity = vertex_manager
+                .vertex_entity_2d_to_3d(&shape_2d_entity)
+                .unwrap();
+            return get_rotation_entity(animation_manager, name_q, vertex_3d_entity);
         }
+        CanvasShape::Edge => {
+            let edge_3d_entity = edge_manager
+                .edge_entity_2d_to_3d(&shape_2d_entity)
+                .unwrap();
+            let (_, vertex_3d_entity) = edge_manager.edge_get_endpoints(&edge_3d_entity);
+            return get_rotation_entity(animation_manager, name_q, vertex_3d_entity);
+        }
+        _ => {}
     }
 
-    // TODO: handle selecting edge
-
     return None;
+}
+
+fn get_rotation_entity(animation_manager: &AnimationManager, name_q: &Query<&ShapeName>, vertex_3d_entity: Entity) -> Option<Entity> {
+    let name = name_q.get(vertex_3d_entity).ok()?;
+    let name = name.value.as_str();
+    return animation_manager
+        .get_current_rotation(name)
+        .map(|entity| *entity);
 }
 
 fn deselect_selected_shape(
     canvas: &mut Canvas,
     input_manager: &mut InputManager,
     vertex_manager: &VertexManager,
+    edge_manager: &EdgeManager,
     animation_manager: &AnimationManager,
     name_q: &Query<&ShapeName>,
 ) -> (Option<(Entity, CanvasShape)>, Option<Entity>) {
@@ -113,15 +138,14 @@ fn deselect_selected_shape(
                 let vertex_3d_entity = vertex_manager
                     .vertex_entity_2d_to_3d(&shape_2d_entity)
                     .unwrap();
-                if let Ok(name) = name_q.get(vertex_3d_entity) {
-                    let name = name.value.as_str();
-                    if let Some(rotation_entity) = animation_manager.get_current_rotation(name) {
-                        entity_to_release = Some(*rotation_entity);
-                    }
-                }
+                entity_to_release = get_rotation_entity(animation_manager, name_q, vertex_3d_entity);
             }
             CanvasShape::Edge => {
-                // TODO
+                let edge_3d_entity = edge_manager
+                    .edge_entity_2d_to_3d(&shape_2d_entity)
+                    .unwrap();
+                let (_, vertex_3d_entity) = edge_manager.edge_get_endpoints(&edge_3d_entity);
+                entity_to_release = get_rotation_entity(animation_manager, name_q, vertex_3d_entity);
             }
             CanvasShape::Face => {
                 panic!("Unexpected shape type");
