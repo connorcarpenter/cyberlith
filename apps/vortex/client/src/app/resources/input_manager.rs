@@ -874,7 +874,7 @@ impl InputManager {
             }
             (MouseButton::Left, Some(_), Some(shape), FileExtension::Anim) => {
                 match shape {
-                    CanvasShape::RootVertex | CanvasShape::Vertex => {
+                    CanvasShape::Vertex | CanvasShape::Edge => {
                         // select hovered entity
                         world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
                             tab_manager.current_tab_execute_anim_action(
