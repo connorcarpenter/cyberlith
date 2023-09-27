@@ -1,4 +1,5 @@
-use std::{collections::HashMap, f32::consts::FRAC_PI_2};
+use std::collections::HashMap;
+use std::f32::consts::FRAC_PI_2;
 
 use bevy_ecs::{
     entity::Entity,
@@ -11,14 +12,15 @@ use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
-use math::{convert_2d_to_3d, Quat, Vec2, Vec3};
+use math::{convert_2d_to_3d, Quat, quat_from_spin_direction, Vec2, Vec3};
 use render_api::{
     components::{Camera, CameraProjection, Projection, Transform, Visibility},
-    shapes::{angle_between, get_2d_line_transform_endpoint, normalize_angle, rotation_diff},
+    shapes::{angle_between, get_2d_line_transform_endpoint},
 };
+use render_api::shapes::{normalize_angle, rotation_diff};
 
 use vortex_proto::components::{
-    AnimFrame, AnimRotation, EdgeAngle, SerdeRotation, ShapeName, Vertex3d, VertexRoot,
+    AnimFrame, AnimRotation, EdgeAngle, ShapeName, Vertex3d, VertexRoot,
 };
 
 use crate::app::{
@@ -40,7 +42,7 @@ pub struct AnimationManager {
     // (frame_entity, vertex_name) -> rotation_entity
     vertex_names: HashMap<(Entity, String), Entity>,
 
-    last_rotation_dragged: Option<(Entity, Option<(Quat, f32)>, (Quat, f32))>,
+    last_rotation_dragged: Option<(Entity, Option<Quat>, Quat)>,
 }
 
 impl Default for AnimationManager {
@@ -193,14 +195,6 @@ impl AnimationManager {
             .unwrap();
         let edge_old_angle = edge_angle_q.get(edge_3d_entity).unwrap();
         let edge_old_angle: f32 = edge_old_angle.get_radians();
-        let edge_diff_angle = match rotation_entity_opt {
-            Some(rotation_entity) => {
-                let (anim_rotation, _) = rotation_q.get(rotation_entity).unwrap();
-                anim_rotation.get_edge_angle_radians()
-            }
-            None => 0.0,
-        };
-        let edge_total_angle = normalize_angle(edge_old_angle + edge_diff_angle);
 
         // get camera
         let camera_3d = camera_manager.camera_3d_entity().unwrap();
@@ -225,10 +219,7 @@ impl AnimationManager {
 
         let base_direction = (original_3d_position - parent_original_3d_position).normalize();
         let target_direction = (new_3d_position - parent_rotated_3d_position).normalize();
-        let axis_of_rotation = base_direction.cross(target_direction).normalize();
-        let angle = base_direction.angle_between(target_direction);
-        let mut rotation_angle = Quat::from_axis_angle(axis_of_rotation, angle);
-        rotation_angle = Quat::from_axis_angle(target_direction, edge_total_angle) * rotation_angle;
+        let mut rotation_angle = quat_from_spin_direction(edge_old_angle, base_direction, target_direction);
 
         get_inversed_final_rotation(
             &vertex_manager,
@@ -249,7 +240,6 @@ impl AnimationManager {
             &mut rotation_q,
             rotation_entity_opt,
             rotation_angle,
-            None,
         );
 
         canvas.queue_resync_shapes();
@@ -267,27 +257,21 @@ impl AnimationManager {
         rotation_q: &mut Query<(&mut AnimRotation, &LocalAnimRotation)>,
         rotation_entity_opt: Option<Entity>,
         rotation_angle: Quat,
-        edge_angle_opt: Option<f32>,
     ) {
-        let edge_angle = edge_angle_opt.unwrap_or_default();
         if let Some(rotation_entity) = rotation_entity_opt {
             let (mut anim_rotation, _) = rotation_q.get_mut(rotation_entity).unwrap();
 
             self.update_last_rotation_dragged(
                 vertex_2d_entity,
-                Some((
-                    anim_rotation.get_rotation(),
-                    anim_rotation.get_edge_angle_radians(),
-                )),
-                (rotation_angle, edge_angle),
+                Some(
+                    anim_rotation.get_rotation()
+                ),
+                rotation_angle,
             );
 
             anim_rotation.set_rotation(rotation_angle);
-            if let Some(edge_angle) = edge_angle_opt {
-                anim_rotation.set_edge_angle_radians(edge_angle);
-            }
         } else {
-            self.update_last_rotation_dragged(vertex_2d_entity, None, (rotation_angle, edge_angle));
+            self.update_last_rotation_dragged(vertex_2d_entity, None, rotation_angle);
 
             // create new rotation entity
             self.create_networked_rotation(
@@ -296,7 +280,6 @@ impl AnimationManager {
                 frame_entity,
                 shape_name.to_string(),
                 rotation_angle,
-                edge_angle,
             );
         };
     }
@@ -416,10 +399,7 @@ impl AnimationManager {
 
         let base_direction = (original_3d_position - parent_original_3d_position).normalize();
         let target_direction = (rotated_3d_position - parent_rotated_3d_position).normalize();
-        let axis_of_rotation = base_direction.cross(target_direction).normalize();
-        let angle = base_direction.angle_between(target_direction);
-        let mut rotation_angle = Quat::from_axis_angle(axis_of_rotation, angle);
-        rotation_angle = Quat::from_axis_angle(target_direction, edge_new_angle) * rotation_angle;
+        let mut rotation_angle = quat_from_spin_direction(edge_diff_angle, base_direction, target_direction);
 
         get_inversed_final_rotation(
             &vertex_manager,
@@ -440,7 +420,6 @@ impl AnimationManager {
             &mut rotation_q,
             rotation_entity_opt,
             rotation_angle,
-            Some(edge_diff_angle),
         );
 
         canvas.queue_resync_shapes();
@@ -455,8 +434,8 @@ impl AnimationManager {
     fn update_last_rotation_dragged(
         &mut self,
         vertex_2d_entity: Entity,
-        old_rotation: Option<(Quat, f32)>,
-        new_rotation: (Quat, f32),
+        old_rotation: Option<Quat>,
+        new_rotation: Quat,
     ) {
         if let Some((_, old_rotation, _)) = self.last_rotation_dragged {
             self.last_rotation_dragged = Some((vertex_2d_entity, old_rotation, new_rotation));
@@ -467,7 +446,7 @@ impl AnimationManager {
 
     pub fn take_last_rotation_dragged(
         &mut self,
-    ) -> Option<(Entity, Option<(Quat, f32)>, (Quat, f32))> {
+    ) -> Option<(Entity, Option<Quat>, Quat)> {
         self.last_rotation_dragged.take()
     }
 
@@ -478,12 +457,10 @@ impl AnimationManager {
         frame_entity: Entity,
         name: String,
         rotation: Quat,
-        edge_angle: f32,
     ) -> Entity {
         let mut component = AnimRotation::new(
             name.clone(),
-            rotation.into(),
-            SerdeRotation::from_radians(edge_angle),
+            rotation.into()
         );
         component.frame_entity.set(client, &frame_entity);
         let new_rotation_entity = commands

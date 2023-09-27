@@ -14,7 +14,7 @@ pub enum AnimAction {
     // The 2D vertex entity to deselect (or None for deselect)
     SelectShape(Option<(Entity, CanvasShape)>),
     //
-    RotateVertex(Entity, Option<(Quat, f32)>, Option<(Quat, f32)>),
+    RotateVertex(Entity, Option<Quat>, Option<Quat>),
 }
 
 pub enum AnimActionType {

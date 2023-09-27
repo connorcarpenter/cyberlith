@@ -247,7 +247,7 @@ mod tests {
 
         println!("original_spin: {:?}", original_spin);
 
-        let quat = quat_from_spin_direction(f32::to_radians(original_spin), original_direction);
+        let quat = quat_from_spin_direction(f32::to_radians(original_spin), Vec3::Z, original_direction);
 
         println!("quat: {:?}", quat);
 
@@ -268,23 +268,23 @@ mod tests {
 }
 
 // spin is in radians
-pub fn quat_from_spin_direction(spin: f32, direction: Vec3) -> Quat {
+pub fn quat_from_spin_direction(spin: f32, base_direction: Vec3, target_direction: Vec3) -> Quat {
     let base_quat = Quat::from_axis_angle(
-        Vec3::Z.cross(direction).normalize(),
-        Vec3::Z.angle_between(direction),
+        base_direction.cross(target_direction).normalize(),
+        base_direction.angle_between(target_direction),
     );
-    let spin_quat = Quat::from_axis_angle(direction, spin);
+    let spin_quat = Quat::from_axis_angle(target_direction, spin);
 
     spin_quat * base_quat
 }
 
-pub fn spin_direction_from_quat(quat: Quat) -> (f32, Vec3) {
-    let output_direction = quat * Vec3::Z;
+pub fn spin_direction_from_quat(base_direction: Vec3, quat: Quat) -> (f32, Vec3) {
+    let output_direction = quat * base_direction;
 
     let output_spin: f32 = {
         let base_quat = Quat::from_axis_angle(
-            Vec3::Z.cross(output_direction).normalize(),
-            Vec3::Z.angle_between(output_direction),
+            base_direction.cross(output_direction).normalize(),
+            base_direction.angle_between(output_direction),
         );
         angle_between_signed(quat, base_quat).to_degrees()
     };

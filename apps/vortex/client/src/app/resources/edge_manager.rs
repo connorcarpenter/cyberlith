@@ -186,7 +186,8 @@ impl EdgeManager {
                 continue;
             }
 
-            let edge_angle_opt = edge_angle_opt.map(|angle| angle.get_radians());
+            let edge_angle_opt = edge_angle_opt.map(|e| e.get_radians());
+            let edge_angle = edge_angle_opt.unwrap_or_default();
 
             let edge_start_entity = edge_endpoints.start;
             let edge_end_entity = edge_endpoints.end;
@@ -205,14 +206,14 @@ impl EdgeManager {
             };
             let end_pos = end_transform.translation;
             let mut edge_transform = transform_q.get_mut(edge_entity).unwrap();
-            set_3d_line_transform(&mut edge_transform, start_pos, end_pos, edge_angle_opt);
+            set_3d_line_transform(&mut edge_transform, start_pos, end_pos, edge_angle);
             if local_shape_q.get(edge_entity).is_ok() {
                 edge_transform.scale.x = local_shape_edge_3d_scale;
                 edge_transform.scale.y = local_shape_edge_3d_scale;
             }
 
             // update 2d edge angle
-            if let Some(edge_angle) = edge_angle_opt {
+            if edge_angle_opt.is_some() {
                 let edge_3d_data = self.edges_3d.get(&edge_entity).unwrap();
                 let (base_circle_entity, angle_edge_entity, end_circle_entity) =
                     edge_3d_data.angle_entities_opt.unwrap();
