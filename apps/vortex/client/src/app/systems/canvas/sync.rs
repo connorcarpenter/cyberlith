@@ -147,6 +147,7 @@ pub fn sync_edges(
     tab_manager: Res<TabManager>,
     canvas: Res<Canvas>,
     mut edge_manager: ResMut<EdgeManager>,
+    animation_manager: Res<AnimationManager>,
     local_shape_q: Query<&LocalShape>,
     mut visibility_q: Query<&mut Visibility>,
     mut transform_q: Query<&mut Transform>,
@@ -168,34 +169,41 @@ pub fn sync_edges(
     let camera_3d_scale = camera_state.camera_3d_scale();
 
     let should_sync = edge_manager.get_should_sync();
-    if should_sync {
-        match file_ext {
-            FileExtension::Skel | FileExtension::Mesh => {
-                edge_manager.sync_3d_edges(
-                    file_ext,
-                    &edge_3d_q,
-                    &mut transform_q,
-                    &mut visibility_q,
-                    &local_shape_q,
-                    camera_3d_scale,
-                );
-            }
-            FileExtension::Anim => {
-                // do nothing, as animation manager will take care of it?
-            }
-            _ => { },
-        };
-
-        EdgeManager::sync_2d_edges(
-            &edge_2d_q,
-            &mut transform_q,
-            &visibility_q,
-            &local_shape_q,
-            camera_3d_scale,
-        );
-
-        edge_manager.finish_sync();
+    if !should_sync {
+        return;
     }
+
+    let should_sync = match file_ext {
+        FileExtension::Skel | FileExtension::Mesh => {
+            true
+        }
+        FileExtension::Anim => {
+            animation_manager.current_frame().is_none()
+        }
+        _ => false,
+    };
+    if !should_sync {
+        return;
+    }
+
+    edge_manager.sync_3d_edges(
+        file_ext,
+        &edge_3d_q,
+        &mut transform_q,
+        &mut visibility_q,
+        &local_shape_q,
+        camera_3d_scale,
+    );
+
+    EdgeManager::sync_2d_edges(
+        &edge_2d_q,
+        &mut transform_q,
+        &visibility_q,
+        &local_shape_q,
+        camera_3d_scale,
+    );
+
+    edge_manager.finish_sync();
 }
 
 pub fn sync_faces(
