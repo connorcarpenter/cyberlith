@@ -13,15 +13,14 @@ use naia_bevy_server::{
 };
 
 use vortex_proto::{
-    components::{AnimFrame, AnimRotation, EntryKind, FileDependency, FileExtension, Transition},
+    components::{AnimFrame, AnimRotation, EntryKind, FileDependency, FileExtension, Transition, SerdeRotation},
     resources::FileKey,
     SerdeQuat,
 };
 
-use crate::resources::AnimationManager;
 use crate::{
     files::FileWriter,
-    resources::{ContentEntityData, Project},
+    resources::{AnimationManager, ContentEntityData, Project},
 };
 
 // Actions
@@ -31,7 +30,7 @@ enum AnimAction {
     // shape name -> shape_index
     ShapeIndex(String),
     // shape_index -> rotation
-    Frame(HashMap<u16, SerdeQuat>, Transition),
+    Frame(HashMap<u16, (SerdeQuat, SerdeRotation)>, Transition),
 }
 
 #[derive(Serde, Clone, PartialEq)]
@@ -61,7 +60,7 @@ impl AnimWriter {
         let mut biggest_order_opt: Option<u8> = None;
         //////////////////// order, frame_entity, duration_5ms
         let mut frame_map: HashMap<u8, (Entity, Transition)> = HashMap::new();
-        let mut frame_poses_map: HashMap<Entity, HashMap<u16, SerdeQuat>> = HashMap::new();
+        let mut frame_poses_map: HashMap<Entity, HashMap<u16, (SerdeQuat, SerdeRotation)>> = HashMap::new();
 
         let content_entities = content_entities_opt.as_ref().unwrap();
         for (content_entity, content_data) in content_entities {
@@ -128,7 +127,7 @@ impl AnimWriter {
                         frame_poses_map.insert(frame_entity, HashMap::new());
                     }
                     let poses_map = frame_poses_map.get_mut(&frame_entity).unwrap();
-                    poses_map.insert(shape_index, rotation.get_rotation_serde());
+                    poses_map.insert(shape_index, (rotation.get_rotation_serde(), rotation.get_edge_angle_serde()));
                 }
             }
         }
@@ -187,12 +186,13 @@ impl AnimWriter {
                     info!("write AnimActionType::Frame");
                     AnimActionType::Frame.ser(&mut bit_writer);
                     transition.ser(&mut bit_writer);
-                    for (shape_index, pose) in poses {
+                    for (shape_index, (pose_quat, pose_rot)) in poses {
                         // continue bit
                         true.ser(&mut bit_writer);
 
                         UnsignedVariableInteger::<5>::from(shape_index).ser(&mut bit_writer);
-                        pose.ser(&mut bit_writer);
+                        pose_quat.ser(&mut bit_writer);
+                        pose_rot.ser(&mut bit_writer);
                     }
                     // continue bit
                     false.ser(&mut bit_writer);
@@ -262,8 +262,9 @@ impl AnimReader {
                         }
 
                         let shape_index: u16 = UnsignedVariableInteger::<5>::de(bit_reader)?.to();
-                        let pose = SerdeQuat::de(bit_reader)?;
-                        poses.insert(shape_index, pose);
+                        let pose_quat = SerdeQuat::de(bit_reader)?;
+                        let pose_rot = SerdeRotation::de(bit_reader)?;
+                        poses.insert(shape_index, (pose_quat, pose_rot));
                     }
                     info!("action push frame");
                     actions.push(AnimAction::Frame(poses, transition));
@@ -341,10 +342,10 @@ impl AnimReader {
 
                     animation_manager.on_create_frame(frame_entity);
 
-                    for (shape_index, rotation) in poses {
+                    for (shape_index, (rotation, edge_angle)) in poses {
                         let shape_name = shape_name_map.get(&shape_index).unwrap();
 
-                        let mut component = AnimRotation::new(shape_name.clone(), rotation);
+                        let mut component = AnimRotation::new(shape_name.clone(), rotation, edge_angle);
                         component.frame_entity.set(&server, &frame_entity);
 
                         let rotation_entity = commands

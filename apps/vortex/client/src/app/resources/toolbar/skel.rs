@@ -1,6 +1,7 @@
 use bevy_ecs::{
     prelude::World,
 };
+use bevy_ecs::world::Mut;
 
 use render_egui::egui::Ui;
 
@@ -23,7 +24,9 @@ impl SkeletonToolbar {
             // name selected shape
             let response = Toolbar::button(ui, "🔍", "Name shape", selected_shape_2d.is_some());
             if response.clicked() {
-                naming_bar_visibility_toggle(world);
+                world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
+                    naming_bar_visibility_toggle(world, &mut input_manager);
+                });
             }
         }
 

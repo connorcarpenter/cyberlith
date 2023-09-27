@@ -176,7 +176,7 @@ pub fn render_naming_bar(ui: &mut Ui, world: &mut World) {
         });
 }
 
-pub fn naming_bar_visibility_toggle(world: &mut World) {
+pub fn naming_bar_visibility_toggle(world: &mut World, input_manager: &mut InputManager) {
     // is skeleton toolbar open?
 
     // get current file extension
@@ -192,7 +192,6 @@ pub fn naming_bar_visibility_toggle(world: &mut World) {
     }
 
     // is vertex/edge selected?
-    let input_manager = world.get_resource::<InputManager>().unwrap();
     let selected_shape_2d = input_manager.selected_shape_2d();
     if selected_shape_2d.is_none() {
         return;
@@ -209,21 +208,19 @@ pub fn naming_bar_visibility_toggle(world: &mut World) {
     // set focus to canvas
     let mut system_state: SystemState<(
         ResMut<Canvas>,
-        ResMut<InputManager>,
         ResMut<VertexManager>,
         ResMut<EdgeManager>,
         ResMut<AnimationManager>,
     )> = SystemState::new(world);
     let (
         mut canvas,
-        mut input_manager,
         mut vertex_manager,
         mut edge_manager,
         mut animation_manager,
     ) = system_state.get_mut(world);
 
     canvas.set_focused_timed(
-        &mut input_manager,
+        input_manager,
         &mut vertex_manager,
         &mut edge_manager,
         &mut animation_manager,

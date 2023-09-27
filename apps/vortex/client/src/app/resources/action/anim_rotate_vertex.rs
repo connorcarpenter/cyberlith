@@ -54,21 +54,23 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
     if old_angle_opt.is_some() {
         let rotation_entity = animation_manager.get_current_rotation(name).unwrap();
         let rotation_entity = *rotation_entity;
-        if let Some(new_angle) = new_angle_opt {
+        if let Some((new_quat, new_edge_angle)) = new_angle_opt {
             let mut rotation = rotation_q.get_mut(rotation_entity).unwrap();
-            rotation.set_rotation(new_angle);
+            rotation.set_rotation(new_quat);
+            rotation.set_edge_angle_radians(new_edge_angle);
         } else {
             // despawn rotation
             commands.entity(rotation_entity).despawn();
             animation_manager.deregister_rotation(&rotation_entity);
         }
     } else {
-        let new_angle = new_angle_opt.unwrap();
+        let (new_quat, new_edge_angle) = new_angle_opt.unwrap();
 
         if let Some(rotation_entity) = animation_manager.get_current_rotation(name) {
             // already has a rotation entity, so just update it
             let mut rotation = rotation_q.get_mut(*rotation_entity).unwrap();
-            rotation.set_rotation(new_angle);
+            rotation.set_rotation(new_quat);
+            rotation.set_edge_angle_radians(new_edge_angle);
         } else {
             // create new rotation entity
             let frame_entity = animation_manager.current_frame().unwrap();
@@ -77,7 +79,8 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
                 &mut client,
                 frame_entity,
                 name.to_string(),
-                new_angle,
+                new_quat,
+                new_edge_angle,
             );
         }
     }

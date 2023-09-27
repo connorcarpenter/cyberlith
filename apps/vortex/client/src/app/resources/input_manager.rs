@@ -337,7 +337,7 @@ impl InputManager {
                             self.handle_insert_key_press(world);
                         }
                         AppInputAction::ToggleNamingBar => {
-                            naming_bar_visibility_toggle(world);
+                            naming_bar_visibility_toggle(world, self);
                         }
                         AppInputAction::ToggleEdgeAngleVisibility => {
                             let mut system_state: SystemState<(
@@ -900,7 +900,7 @@ impl InputManager {
                             tab_manager.current_tab_execute_anim_action(
                                 world,
                                 self,
-                                AnimAction::SelectVertex(self.hovered_entity.map(|(e, _)| e)),
+                                AnimAction::SelectShape(self.hovered_entity),
                             );
                         });
                         return;
@@ -911,7 +911,7 @@ impl InputManager {
                             tab_manager.current_tab_execute_anim_action(
                                 world,
                                 self,
-                                AnimAction::SelectVertex(None),
+                                AnimAction::SelectShape(None),
                             );
                         });
                         return;
@@ -993,7 +993,7 @@ impl InputManager {
                     tab_manager.current_tab_execute_anim_action(
                         world,
                         self,
-                        AnimAction::SelectVertex(None),
+                        AnimAction::SelectShape(None),
                     );
                 });
                 return;
@@ -1070,17 +1070,14 @@ impl InputManager {
                     );
                 });
             }
-            (MouseButton::Left, None, Some(CanvasShape::Vertex), FileExtension::Anim) => {
+            (MouseButton::Left, None, Some(CanvasShape::Vertex | CanvasShape::Edge), FileExtension::Anim) => {
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
                     tab_manager.current_tab_execute_anim_action(
                         world,
                         self,
-                        AnimAction::SelectVertex(self.hovered_entity.map(|(e, _)| e)),
+                        AnimAction::SelectShape(self.hovered_entity),
                     );
                 });
-            }
-            (MouseButton::Left, None, Some(CanvasShape::Edge), FileExtension::Anim) => {
-                return;
             }
             (MouseButton::Left, None, Some(CanvasShape::Face), FileExtension::Mesh) => {
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
@@ -1107,7 +1104,7 @@ impl InputManager {
                     tab_manager.current_tab_execute_anim_action(
                         world,
                         self,
-                        AnimAction::SelectVertex(None),
+                        AnimAction::SelectShape(None),
                     );
                 });
             }
@@ -1237,6 +1234,24 @@ impl InputManager {
                             canvas.queue_resync_shapes();
                         }
                         (edge_2d_entity, CanvasShape::Edge) => {
+
+                            let edge_3d_entity =
+                                world.get_resource::<EdgeManager>().unwrap().edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
+
+                            if current_file_type == FileExtension::Anim {
+                                world.resource_scope(
+                                    |world, mut animation_manager: Mut<AnimationManager>| {
+                                        animation_manager.drag_edge(
+                                            world,
+                                            edge_3d_entity,
+                                            edge_2d_entity,
+                                            mouse_position,
+                                        );
+                                    },
+                                );
+                                return;
+                            }
+
                             let mut system_state: SystemState<(
                                 Commands,
                                 Client,
@@ -1255,9 +1270,6 @@ impl InputManager {
                             ) = system_state.get_mut(world);
 
                             // rotate edge angle
-                            let edge_3d_entity =
-                                edge_manager.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
-
                             let auth_status =
                                 commands.entity(edge_3d_entity).authority(&client).unwrap();
                             if !(auth_status.is_requested() || auth_status.is_granted()) {

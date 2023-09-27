@@ -11,7 +11,7 @@ mod shape;
 use shape::VertexComponentsPlugin;
 pub use shape::{
     Edge3d, EdgeAngle, Face3d, FileExtension, FileType, OwnedByFile, ShapeName, Vertex3d,
-    VertexRoot, VertexSerdeInt,
+    VertexRoot, VertexSerdeInt, SerdeRotation,
 };
 
 mod animation;

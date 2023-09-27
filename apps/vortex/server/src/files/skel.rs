@@ -12,9 +12,7 @@ use naia_bevy_server::{
     UnsignedInteger, UnsignedVariableInteger,
 };
 
-use vortex_proto::components::{
-    Edge3d, EdgeAngle, FileExtension, FileType, ShapeName, Vertex3d, VertexRoot, VertexSerdeInt,
-};
+use vortex_proto::components::{Edge3d, EdgeAngle, FileExtension, FileType, SerdeRotation, ShapeName, Vertex3d, VertexRoot, VertexSerdeInt};
 
 use crate::{
     files::{file_io::ShapeType, FileWriter, SkelFileWaitlist, SkelWaitlistInsert},
@@ -29,7 +27,7 @@ enum SkelAction {
         i16,
         i16,
         i16,
-        Option<(u16, UnsignedInteger<6>)>,
+        Option<(u16, SerdeRotation)>,
         Option<String>,
         Option<String>,
     ),
@@ -79,7 +77,7 @@ impl SkelWriter {
                 i16,
                 i16,
                 i16,
-                Option<(Entity, UnsignedInteger<6>)>,
+                Option<(Entity, SerdeRotation)>,
                 Option<String>,
                 Option<String>,
             ),
@@ -143,7 +141,7 @@ impl SkelWriter {
                     let Ok(edge_angle) = edge_angle_q.get(edge_entity) else {
                         panic!("edge_entity {:?} does not have an EdgeAngle component!", edge_entity);
                     };
-                    (parent_entity, *edge_angle.value)
+                    (parent_entity, edge_angle.get_serde())
                 });
 
             let id = vertices.len();
@@ -277,7 +275,7 @@ impl SkelReader {
                 }
             };
             let parent_and_angle_opt = if let Some(parent_id) = parent_id_opt {
-                let angle = UnsignedInteger::<6>::de(bit_reader)?;
+                let angle = SerdeRotation::de(bit_reader)?;
                 Some((parent_id, angle))
             } else {
                 None
@@ -312,7 +310,7 @@ impl SkelReader {
             i16,
             i16,
             i16,
-            Option<(u16, UnsignedInteger<6>)>,
+            Option<(u16, SerdeRotation)>,
             Option<String>,
             Option<String>,
         )> = Vec::new();

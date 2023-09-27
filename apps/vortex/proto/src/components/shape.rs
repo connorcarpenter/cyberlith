@@ -185,18 +185,63 @@ impl ShapeName {
 // EdgeAngle
 #[derive(Component, Replicate)]
 pub struct EdgeAngle {
-    pub value: Property<UnsignedInteger<6>>,
+    value: Property<SerdeRotation>,
 }
 
 impl EdgeAngle {
+
+    pub fn new(value_f32: f32) -> Self {
+        let rotation = SerdeRotation::from_degrees(value_f32);
+
+        Self::new_complete(rotation)
+    }
+
+    // angle in degrees
+    pub fn get_radians(&self) -> f32 {
+        self.value.get_radians()
+    }
+
+    // angle in degrees
+    pub fn set_radians(&mut self, value: f32) {
+        self.value.set_radians(value);
+    }
+
+    // angle in degrees
+    pub fn get_degrees(&self) -> f32 {
+        self.value.get_degrees()
+    }
+
+    pub fn get_serde(&self) -> SerdeRotation {
+        *self.value
+    }
+
+    // angle in degrees
+    pub fn set_degrees(&mut self, value_f32: f32) {
+        self.value.set_degrees(value_f32);
+    }
+}
+
+#[derive(Serde, Copy, Clone, PartialEq, Debug)]
+pub struct SerdeRotation {
+    value: UnsignedInteger<6>,
+}
+
+impl SerdeRotation {
     const MAX_ANGLES: f32 = 64.0;
     const MAX_DEGREES: f32 = 360.0;
 
-    pub fn new(value_f32: f32) -> Self {
-        let value_u8 = (value_f32 * Self::MAX_ANGLES / Self::MAX_DEGREES) as u8;
+    pub fn from_degrees(degrees: f32) -> Self {
+        let value_u8 = (degrees * Self::MAX_ANGLES / Self::MAX_DEGREES) as u8;
         let integer = UnsignedInteger::<6>::new(value_u8);
 
-        Self::new_complete(integer)
+        Self {
+            value: integer,
+        }
+    }
+
+    pub fn from_radians(radians: f32) -> Self {
+        let degrees = f32::to_degrees(radians);
+        Self::from_degrees(degrees)
     }
 
     // angle in degrees
@@ -222,6 +267,6 @@ impl EdgeAngle {
     pub fn set_degrees(&mut self, value_f32: f32) {
         let value_u8 = (value_f32 * Self::MAX_ANGLES / Self::MAX_DEGREES) as u8;
         let integer = UnsignedInteger::<6>::new(value_u8);
-        *self.value = integer;
+        self.value = integer;
     }
 }

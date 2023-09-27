@@ -17,6 +17,7 @@ use vortex_proto::components::{Edge3d, FileExtension, ShapeName, Vertex3d, Verte
 
 use crate::app::{components::DefaultDraw, resources::{edge_manager::EdgeManager, file_manager::FileManager, tab_manager::TabManager,
                              vertex_manager::VertexManager}};
+use crate::app::resources::edge_manager::edge_is_enabled;
 
 pub fn draw(
     mut render_frame: ResMut<RenderFrame>,
@@ -138,25 +139,6 @@ pub fn draw_vertices_and_edges(
         if edge_is_enabled {
             // draw edge angles
             edge_manager.draw_edge_angles(current_file, &edge_3d_entity, &mut render_frame, &objects_q, &materials_q);
-        }
-    }
-}
-
-fn edge_is_enabled(current_file: FileExtension, shape_name_opt: Option<&ShapeName>) -> bool {
-    match current_file {
-        FileExtension::Anim => {
-            if let Some(shape_name) = shape_name_opt {
-                if shape_name.value.len() > 0 {
-                    true
-                } else {
-                    false
-                }
-            } else {
-                false
-            }
-        }
-        _ => {
-            true
         }
     }
 }

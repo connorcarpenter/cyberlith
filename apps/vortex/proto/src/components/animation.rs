@@ -1,10 +1,9 @@
 use bevy_ecs::component::Component;
 
-use naia_bevy_shared::{
-    EntityProperty, Property, Protocol, ProtocolPlugin, Replicate, Serde, UnsignedVariableInteger,
-};
+use naia_bevy_shared::{EntityProperty, Property, Protocol, ProtocolPlugin, Replicate, Serde, UnsignedInteger, UnsignedVariableInteger};
 
 use math::{Quat, SerdeQuat};
+use crate::components::shape::SerdeRotation;
 
 pub struct AnimationComponentsPlugin;
 
@@ -70,11 +69,12 @@ pub struct AnimRotation {
     pub frame_entity: EntityProperty,
     pub vertex_name: Property<String>,
     rotation: Property<SerdeQuat>,
+    edge_angle: Property<SerdeRotation>,
 }
 
 impl AnimRotation {
-    pub fn new(vertex_name: String, rotation: SerdeQuat) -> Self {
-        Self::new_complete(vertex_name, rotation)
+    pub fn new(vertex_name: String, rotation: SerdeQuat, edge_angle: SerdeRotation) -> Self {
+        Self::new_complete(vertex_name, rotation, edge_angle)
     }
 
     pub fn get_rotation(&self) -> Quat {
@@ -87,5 +87,17 @@ impl AnimRotation {
 
     pub fn get_rotation_serde(&self) -> SerdeQuat {
         *self.rotation
+    }
+
+    pub fn get_edge_angle_radians(&self) -> f32 {
+        self.edge_angle.get_radians()
+    }
+
+    pub fn set_edge_angle_radians(&mut self, rotation: f32) {
+        *self.edge_angle = SerdeRotation::from_degrees(f32::to_degrees(rotation));
+    }
+
+    pub fn get_edge_angle_serde(&self) -> SerdeRotation {
+        *self.edge_angle
     }
 }

@@ -7,13 +7,14 @@ use crate::app::resources::{
     input_manager::InputManager,
     vertex_manager::VertexManager,
 };
+use crate::app::resources::shape_data::CanvasShape;
 
 #[derive(Clone)]
 pub enum AnimAction {
     // The 2D vertex entity to deselect (or None for deselect)
-    SelectVertex(Option<Entity>),
+    SelectShape(Option<(Entity, CanvasShape)>),
     //
-    RotateVertex(Entity, Option<Quat>, Option<Quat>),
+    RotateVertex(Entity, Option<(Quat, f32)>, Option<(Quat, f32)>),
 }
 
 pub enum AnimActionType {
@@ -24,7 +25,7 @@ pub enum AnimActionType {
 impl AnimAction {
     pub fn get_type(&self) -> AnimActionType {
         match self {
-            Self::SelectVertex(_) => AnimActionType::SelectVertex,
+            Self::SelectShape(_) => AnimActionType::SelectVertex,
             Self::RotateVertex(_, _, _) => AnimActionType::RotateVertex,
         }
     }
@@ -46,11 +47,9 @@ impl Action for AnimAction {
         entity: &Entity,
     ) {
         match action_opt {
-            Some(Self::SelectVertex(vertex_2d_entity_opt)) => {
-                if let Some(vertex_2d_entity) = vertex_2d_entity_opt {
-                    if vertex_2d_entity == entity {
-                        *buffered_check = true;
-                    }
+            Some(Self::SelectShape(Some((vertex_2d_entity, CanvasShape::Vertex)))) => {
+                if vertex_2d_entity == entity {
+                    *buffered_check = true;
                 }
             }
             _ => {}
@@ -59,10 +58,10 @@ impl Action for AnimAction {
 
     fn enable_top_impl(world: &mut World, last_action: Option<&Self>, enabled: &mut bool) {
         match last_action {
-            Some(Self::SelectVertex(vertex_2d_entity_opt)) => {
+            Some(Self::SelectShape(vertex_2d_entity_opt)) => {
                 let mut entities = Vec::new();
 
-                if let Some(vertex_2d_entity) = vertex_2d_entity_opt {
+                if let Some((vertex_2d_entity, CanvasShape::Vertex)) = vertex_2d_entity_opt {
                     let vertex_3d_entity = world
                         .get_resource::<VertexManager>()
                         .unwrap()

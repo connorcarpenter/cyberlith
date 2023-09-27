@@ -14,7 +14,7 @@ use render_api::{base::{Color, CpuMaterial, CpuMesh}, components::{RenderLayer, 
     set_2d_line_transform_from_angle,
 }, Assets, Handle};
 
-use vortex_proto::components::{Edge3d, EdgeAngle, FileExtension, FileType, OwnedByFile};
+use vortex_proto::components::{Edge3d, EdgeAngle, FileExtension, FileType, OwnedByFile, ShapeName};
 
 use crate::app::{
     components::{DefaultDraw, Edge2dLocal, Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d},
@@ -167,7 +167,7 @@ impl EdgeManager {
         let edge_angle_length = Edge2dLocal::EDGE_ANGLE_LENGTH * camera_3d_scale;
         let edge_angle_thickness = Edge2dLocal::EDGE_ANGLE_THICKNESS * camera_3d_scale;
         let local_shape_edge_3d_scale = LocalShape::EDGE_THICKNESS / camera_3d_scale;
-        let visible = self.edge_angles_are_visible(file_ext);
+        let edge_angles_visible = self.edge_angles_are_visible(file_ext);
 
         for (edge_entity, edge_endpoints, edge_angle_opt) in edge_3d_q.iter() {
             // check visibility
@@ -214,10 +214,10 @@ impl EdgeManager {
                         warn!("Edge angle entity {:?} has no transform", entity);
                         continue;
                     };
-                    visibility.visible = visible;
+                    visibility.visible = edge_angles_visible;
                 }
 
-                if visible {
+                if edge_angles_visible {
                     let edge_2d_entity = edge_3d_data.entity_2d;
 
                     let edge_2d_transform = transform_q.get(edge_2d_entity).unwrap();
@@ -718,17 +718,29 @@ impl EdgeManager {
         return None;
     }
 
+    pub(crate) fn edge_3d_entity_from_vertices(
+        &self,
+        vertex_manager: &VertexManager,
+        vertex_3d_a: Entity,
+        vertex_3d_b: Entity,
+    ) -> Option<Entity> {
+        let vertex_a_edges = vertex_manager.vertex_get_edges(&vertex_3d_a)?;
+        let vertex_b_edges = vertex_manager.vertex_get_edges(&vertex_3d_b)?;
+        let intersecting_edge_3d_entity = vertex_a_edges.intersection(&vertex_b_edges).next()?;
+        Some(*intersecting_edge_3d_entity)
+    }
+
     pub(crate) fn edge_2d_entity_from_vertices(
         &self,
         vertex_manager: &VertexManager,
         vertex_2d_a: Entity,
         vertex_2d_b: Entity,
     ) -> Option<Entity> {
-        let vertex_3d_a = vertex_manager.vertex_entity_2d_to_3d(&vertex_2d_a)?;
-        let vertex_3d_b = vertex_manager.vertex_entity_2d_to_3d(&vertex_2d_b)?;
-        let vertex_a_edges = vertex_manager.vertex_get_edges(&vertex_3d_a)?;
-        let vertex_b_edges = vertex_manager.vertex_get_edges(&vertex_3d_b)?;
-        let intersecting_edge_3d_entity = vertex_a_edges.intersection(&vertex_b_edges).next()?;
+        let intersecting_edge_3d_entity = self.edge_3d_entity_from_vertices(
+            vertex_manager,
+            vertex_manager.vertex_entity_2d_to_3d(&vertex_2d_a)?,
+            vertex_manager.vertex_entity_2d_to_3d(&vertex_2d_b)?,
+        )?;
         let edge_2d_entity = self.edge_entity_3d_to_2d(&intersecting_edge_3d_entity)?;
         Some(edge_2d_entity)
     }
@@ -757,5 +769,24 @@ impl EdgeManager {
 
     fn edge_angles_are_visible(&self, file_ext: FileExtension) -> bool {
         self.edge_angle_visibility && Self::edge_angles_are_visible_for_filetype(file_ext)
+    }
+}
+
+pub fn edge_is_enabled(current_file: FileExtension, shape_name_opt: Option<&ShapeName>) -> bool {
+    match current_file {
+        FileExtension::Anim => {
+            if let Some(shape_name) = shape_name_opt {
+                if shape_name.value.len() > 0 {
+                    true
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
+        }
+        _ => {
+            true
+        }
     }
 }
