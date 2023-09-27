@@ -153,7 +153,8 @@ mod tests {
     use naia_serde::{ConstBitLength, Serde};
     use rand::Rng;
 
-    use crate::SerdeQuat;
+    use crate::{quat_from_spin_direction, reorder_triangle_winding, SerdeQuat, spin_direction_from_quat};
+    use crate::quat::angle_between_signed;
 
     #[test]
     fn identity() {
@@ -235,52 +236,96 @@ mod tests {
     fn quat_ops() {
         let mut rng = rand::thread_rng();
 
-        let x_rot = rng.gen_range(0.0..360.0);
-        let y_rot = rng.gen_range(0.0..360.0);
-        let z_rot = rng.gen_range(0.0..360.0);
+        let original_direction = Vec3::new(
+            rng.gen_range(-10.0..10.0),
+            rng.gen_range(-10.0..10.0),
+            rng.gen_range(-10.0..10.0)
+        ).normalize();
 
-        let quat_a = Quat::from_euler(
-            glam::EulerRot::XYZ,
-            f32::to_radians(x_rot),
-            f32::to_radians(y_rot),
-            f32::to_radians(z_rot),
-        )
-        .normalize();
+        println!("original_direction: {:?}", original_direction);
 
-        println!("quat_a: {:?}", quat_a);
+        let original_spin = 30.0;//rng.gen_range(0.0..360.0);
 
-        let quat_b = Quat::from_euler(
-            glam::EulerRot::XYZ,
-            f32::to_radians(x_rot),
-            f32::to_radians(y_rot),
-            f32::to_radians(z_rot),
-        )
-        .normalize();
+        println!("original_spin: {:?}", original_spin);
 
-        //println!("quat_b: {:?}", quat_b);
+        let quat = quat_from_spin_direction(f32::to_radians(original_spin), original_direction);
 
-        let quat_a_and_b = (quat_a * quat_b).normalize();
-        println!("quat_a * quat_b: {:?}", quat_a_and_b);
+        println!("quat: {:?}", quat);
 
-        let quat_c = Quat::from_euler(
-            glam::EulerRot::XYZ,
-            f32::to_radians(x_rot),
-            f32::to_radians(y_rot),
-            f32::to_radians(z_rot),
-        )
-        .normalize();
+        let (output_spin, output_direction) = spin_direction_from_quat(quat);
 
-        //println!("quat_c: {:?}", quat_c);
+        println!("output_direction: {:?}", output_direction);
 
-        let quat_a_and_b_and_c = (quat_a_and_b * quat_c).normalize();
-        println!("quat_a * quat_b * quat_c: {:?}", quat_a_and_b_and_c);
+        assert!(original_direction.abs_diff_eq(output_direction, 0.0001));
 
-        let quat_a_and_b = (quat_a_and_b_and_c * quat_c.inverse()).normalize();
-        println!("quat_a * quat_b: {:?}", quat_a_and_b);
+        println!("output_spin: {:?}", output_spin);
 
-        let quat_a = (quat_a_and_b * quat_b.inverse()).normalize();
-        println!("quat_a: {:?}", quat_a);
+        let spin_diff = (original_spin - output_spin).abs();
 
-        assert!(false);
+        println!("spin_diff: {:?}", spin_diff);
+
+        assert!(spin_diff < 0.0001);
+    }
+}
+
+// spin is in radians
+pub fn quat_from_spin_direction(spin: f32, direction: Vec3) -> Quat {
+    let base_quat = Quat::from_axis_angle(
+        Vec3::Z.cross(direction).normalize(),
+        Vec3::Z.angle_between(direction)
+    );
+    let spin_quat = Quat::from_axis_angle(direction, spin);
+
+    spin_quat * base_quat
+}
+
+pub fn spin_direction_from_quat(quat: Quat) -> (f32, Vec3) {
+    let output_direction = quat * Vec3::Z;
+
+    let output_spin: f32 = {
+        let base_quat = Quat::from_axis_angle(
+            Vec3::Z.cross(output_direction).normalize(),
+            Vec3::Z.angle_between(output_direction)
+        );
+        angle_between_signed(quat, base_quat).to_degrees()
+    };
+
+    (output_spin, output_direction)
+}
+
+fn angle_between_signed(a: Quat, b: Quat) -> f32 {
+    acos_approx(a.dot(b)) * 2.0
+}
+
+fn acos_approx(val: f32) -> f32 {
+    // Based on https://github.com/microsoft/DirectXMath `XMScalarAcos`
+    // Clamp input to [-1,1].
+    let nonnegative = val >= 0.0;
+    let x = val.abs();
+    let mut omx = 1.0 - x;
+    if omx < 0.0 {
+        omx = 0.0;
+    }
+    let root = omx.sqrt();
+
+    // 7-degree minimax approximation
+    #[allow(clippy::approx_constant)]
+        let mut result = ((((((-0.001_262_491_1 * x + 0.006_670_09) * x - 0.017_088_126) * x
+        + 0.030_891_88)
+        * x
+        - 0.050_174_303)
+        * x
+        + 0.088_978_99)
+        * x
+        - 0.214_598_8)
+        * x
+        + 1.570_796_3;
+    result *= root;
+
+    // acos(x) = pi - acos(-x) when x < 0
+    if nonnegative {
+        result
+    } else {
+        core::f32::consts::PI - result
     }
 }
