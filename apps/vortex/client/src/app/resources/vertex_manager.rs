@@ -2,7 +2,6 @@ use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{
     entity::Entity,
-    query::With,
     system::{Commands, Query, Resource},
 };
 use bevy_log::{info, warn};
@@ -16,21 +15,17 @@ use render_api::{
     Assets, Handle,
 };
 
-use vortex_proto::components::{
-    AnimRotation, Face3d, FileExtension, FileType, OwnedByFile, ShapeName, Vertex3d, VertexRoot,
-};
+use vortex_proto::components::{Face3d, FileExtension, FileType, OwnedByFile, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::{
-        DefaultDraw, Edge3dLocal, LocalAnimRotation, LocalShape, OwnedByFileLocal, Vertex2d,
+        DefaultDraw, Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d,
         VertexEntry,
     },
     resources::{
         action::{ActionStack, ShapeAction},
-        animation_manager::AnimationManager,
         camera_manager::CameraManager,
         canvas::Canvas,
-        compass::Compass,
         edge_manager::EdgeManager,
         face_manager::FaceManager,
         input_manager::InputManager,
@@ -91,11 +86,6 @@ impl VertexManager {
         transform_q: &mut Query<&mut Transform>,
         visibility_q: &Query<&Visibility>,
     ) -> bool {
-        if !self.resync {
-            return false;
-        }
-
-        self.resync = false;
 
         for (vertex_3d_entity, vertex_3d) in vertex_3d_q.iter() {
             // check visibility
@@ -118,39 +108,12 @@ impl VertexManager {
         return true;
     }
 
-    pub fn sync_vertices_3d_anim(
-        &mut self,
-        animation_manager: &AnimationManager,
-        compass: &Compass,
-        vertex_3d_q: &Query<(Entity, &Vertex3d)>,
-        transform_q: &mut Query<&mut Transform>,
-        visibility_q: &Query<&Visibility>,
-        name_q: &Query<&ShapeName>,
-        rotation_q: &mut Query<(&AnimRotation, &mut LocalAnimRotation)>,
-        root_q: &Query<Entity, With<VertexRoot>>,
-    ) -> bool {
-        if !self.resync {
-            return false;
-        }
+    pub fn should_sync(&self) -> bool {
+        self.resync
+    }
 
-        if animation_manager.current_frame().is_none() {
-            return self.sync_vertices_3d(vertex_3d_q, transform_q, visibility_q);
-        }
-
+    pub fn finish_resync(&mut self) {
         self.resync = false;
-
-        animation_manager.sync_vertices_3d(
-            self,
-            vertex_3d_q,
-            transform_q,
-            visibility_q,
-            name_q,
-            rotation_q,
-            root_q,
-        );
-        compass.sync_compass_vertices(vertex_3d_q, transform_q);
-
-        return true;
     }
 
     pub fn sync_vertices_2d(

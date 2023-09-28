@@ -17,7 +17,7 @@ use render_api::{
     components::{Camera, CameraProjection, Projection, Transform, Visibility},
     shapes::{angle_between, get_2d_line_transform_endpoint},
 };
-use render_api::shapes::{normalize_angle, rotation_diff};
+use render_api::shapes::rotation_diff;
 
 use vortex_proto::components::{
     AnimFrame, AnimRotation, EdgeAngle, ShapeName, Vertex3d, VertexRoot,
@@ -484,15 +484,17 @@ impl AnimationManager {
             .insert(LocalAnimRotation::new());
     }
 
-    pub(crate) fn sync_vertices_3d(
+    pub(crate) fn sync_shapes_3d(
         &self,
         vertex_manager: &VertexManager,
+        edge_manager: &EdgeManager,
         vertex_3d_q: &Query<(Entity, &Vertex3d)>,
         transform_q: &mut Query<&mut Transform>,
         visibility_q: &Query<&Visibility>,
         name_q: &Query<&ShapeName>,
         rotation_q: &mut Query<(&AnimRotation, &mut LocalAnimRotation)>,
         root_q: &Query<Entity, With<VertexRoot>>,
+        edge_angle_q: &Query<&EdgeAngle>,
     ) {
         let current_frame = self.current_frame.unwrap();
 
@@ -521,12 +523,14 @@ impl AnimationManager {
         let (_, vertex_3d) = vertex_3d_q.get(root_3d_vertex).unwrap();
         let vertex_pos = vertex_3d.as_vec3();
 
-        self.sync_vertices_3d_children(
+        self.sync_shapes_3d_children(
             vertex_manager,
+            edge_manager,
             vertex_3d_q,
             transform_q,
             name_q,
             rotation_q,
+            edge_angle_q,
             current_frame,
             root_3d_vertex,
             vertex_pos,
@@ -535,19 +539,22 @@ impl AnimationManager {
         );
     }
 
-    fn sync_vertices_3d_children(
+    fn sync_shapes_3d_children(
         &self,
         vertex_manager: &VertexManager,
+        edge_manager: &EdgeManager,
         vertex_3d_q: &Query<(Entity, &Vertex3d)>,
         transform_q: &mut Query<&mut Transform>,
         name_q: &Query<&ShapeName>,
         rotation_q: &mut Query<(&AnimRotation, &mut LocalAnimRotation)>,
+        edge_angle_q: &Query<&EdgeAngle>,
         frame_entity: Entity,
         parent_vertex_3d_entity: Entity,
         original_parent_pos: Vec3,
         rotated_parent_pos: Vec3,
         parent_rotation: Quat,
     ) {
+        // sync children vertices
         let Some(children) = vertex_manager.vertex_children_3d_entities(&parent_vertex_3d_entity) else {
             return;
         };
@@ -574,20 +581,39 @@ impl AnimationManager {
             let rotated_displacement = rotation * displacement;
             let rotated_child_pos = rotated_parent_pos + rotated_displacement;
 
-            // update transform
+            // update vertex transform
             let Ok(mut vertex_3d_transform) = transform_q.get_mut(*child_vertex_3d_entity) else {
                 warn!("Vertex3d entity {:?} has no Transform", child_vertex_3d_entity);
                 continue;
             };
             vertex_3d_transform.translation = rotated_child_pos;
 
+            // update edge transform
+            if let Some(edge_3d_entity) = edge_manager.edge_3d_entity_from_vertices(vertex_manager, parent_vertex_3d_entity, *child_vertex_3d_entity) {
+                let Ok(mut edge_3d_transform) = transform_q.get_mut(edge_3d_entity) else {
+                    warn!("Edge3d entity {:?} has no Transform", edge_3d_entity);
+                    continue;
+                };
+                edge_3d_transform.translation = rotated_parent_pos;
+
+                // get edge angle
+                let edge_angle = match edge_angle_q.get(edge_3d_entity) {
+                    Ok(edge_angle) => edge_angle.get_radians(),
+                    Err(_) => 0.0,
+                };
+
+                edge_3d_transform.rotation = quat_from_spin_direction(edge_angle, Vec3::Z, rotated_displacement);
+            }
+
             // recurse
-            self.sync_vertices_3d_children(
+            self.sync_shapes_3d_children(
                 vertex_manager,
+                edge_manager,
                 vertex_3d_q,
                 transform_q,
                 name_q,
                 rotation_q,
+                edge_angle_q,
                 frame_entity,
                 *child_vertex_3d_entity,
                 original_child_pos,
