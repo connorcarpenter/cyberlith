@@ -207,10 +207,7 @@ impl EdgeManager {
         edge_3d_q: &Query<(Entity, &Edge3dLocal, Option<&EdgeAngle>)>,
         transform_q: &mut Query<&mut Transform>,
         visibility_q: &mut Query<&mut Visibility>,
-        local_shape_q: &Query<&LocalShape>,
-        camera_3d_scale: f32,
     ) {
-        let local_shape_edge_3d_scale = LocalShape::EDGE_THICKNESS / camera_3d_scale;
 
         for (edge_entity, edge_endpoints, edge_angle_opt) in edge_3d_q.iter() {
             // check visibility
@@ -242,10 +239,44 @@ impl EdgeManager {
             let end_pos = end_transform.translation;
             let mut edge_transform = transform_q.get_mut(edge_entity).unwrap();
             set_3d_line_transform(&mut edge_transform, start_pos, end_pos, edge_angle);
-            if local_shape_q.get(edge_entity).is_ok() {
-                edge_transform.scale.x = local_shape_edge_3d_scale;
-                edge_transform.scale.y = local_shape_edge_3d_scale;
+        }
+    }
+
+    pub fn sync_3d_edges_local(
+        edge_3d_q: &Query<(Entity, &Edge3dLocal, Option<&EdgeAngle>)>,
+        transform_q: &mut Query<&mut Transform>,
+        local_shape_q: &Query<&LocalShape>,
+        camera_3d_scale: f32,
+    ) {
+        let local_shape_edge_3d_scale = LocalShape::EDGE_THICKNESS / camera_3d_scale;
+
+        for (edge_3d_entity, edge_endpoints, _) in edge_3d_q.iter() {
+
+            if local_shape_q.get(edge_3d_entity).is_err() {
+                continue;
             }
+
+            let edge_start_entity = edge_endpoints.start;
+            let edge_end_entity = edge_endpoints.end;
+
+            let Ok(start_transform) = transform_q.get(edge_start_entity) else {
+                warn!(
+                    "3d Edge start entity {:?} has no transform",
+                    edge_start_entity,
+                );
+                continue;
+            };
+            let start_pos = start_transform.translation;
+            let Ok(end_transform) = transform_q.get(edge_end_entity) else {
+                warn!("3d Edge end entity {:?} has no transform", edge_end_entity);
+                continue;
+            };
+            let end_pos = end_transform.translation;
+            let mut edge_transform = transform_q.get_mut(edge_3d_entity).unwrap();
+            set_3d_line_transform(&mut edge_transform, start_pos, end_pos, 0.0);
+
+            edge_transform.scale.x = local_shape_edge_3d_scale;
+            edge_transform.scale.y = local_shape_edge_3d_scale;
         }
     }
 

@@ -243,11 +243,15 @@ pub fn sync_edges(
             &edge_3d_q,
             &mut transform_q,
             &mut visibility_q,
-            &local_shape_q,
-            camera_3d_scale,
         );
     }
 
+    EdgeManager::sync_3d_edges_local(
+        &edge_3d_q,
+        &mut transform_q,
+        &local_shape_q,
+        camera_3d_scale,
+    );
     edge_manager.sync_2d_edges(
         file_ext,
         &edge_2d_q,
