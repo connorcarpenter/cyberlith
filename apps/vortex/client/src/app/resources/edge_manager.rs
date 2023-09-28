@@ -72,9 +72,13 @@ impl EdgeManager {
         self.resync = true;
     }
 
-    pub fn get_should_sync(&self) -> bool { self.resync }
+    pub fn get_should_sync(&self) -> bool {
+        self.resync
+    }
 
-    pub fn finish_sync(&mut self) { self.resync = false; }
+    pub fn finish_sync(&mut self) {
+        self.resync = false;
+    }
 
     pub fn sync_2d_edges(
         &self,
@@ -148,7 +152,6 @@ impl EdgeManager {
         let edge_angles_visible = self.edge_angles_are_visible(file_ext);
 
         for (edge_3d_entity, edge_angle) in edge_angle_q.iter() {
-
             let Some(edge_3d_data) = self.edges_3d.get(&edge_3d_entity) else {
                 continue;
             };
@@ -175,7 +178,6 @@ impl EdgeManager {
             }
 
             if edge_angles_visible {
-
                 let edge_2d_transform = transform_q.get(edge_2d_entity).unwrap();
                 let start_pos = edge_2d_transform.translation.truncate();
                 let end_pos = get_2d_line_transform_endpoint(&edge_2d_transform);
@@ -226,7 +228,6 @@ impl EdgeManager {
         transform_q: &mut Query<&mut Transform>,
         visibility_q: &mut Query<&mut Visibility>,
     ) {
-
         for (edge_entity, edge_endpoints, edge_angle_opt) in edge_3d_q.iter() {
             // check visibility
             let Ok(visibility) = visibility_q.get(edge_entity) else {
@@ -269,7 +270,6 @@ impl EdgeManager {
         let local_shape_edge_3d_scale = LocalShape::EDGE_THICKNESS / camera_3d_scale;
 
         for (edge_3d_entity, edge_endpoints, _) in edge_3d_q.iter() {
-
             if local_shape_q.get(edge_3d_entity).is_err() {
                 continue;
             }
@@ -696,7 +696,10 @@ impl EdgeManager {
             .0
     }
 
-    pub(crate) fn edge_angle_entities(&self, edge_3d_entity: &Entity) -> Option<(Entity, Entity, Entity)> {
+    pub(crate) fn edge_angle_entities(
+        &self,
+        edge_3d_entity: &Entity,
+    ) -> Option<(Entity, Entity, Entity)> {
         let data = self.edges_3d.get(edge_3d_entity)?;
         data.angle_entities_opt
     }

@@ -1,12 +1,7 @@
 use math::{quat_from_spin_direction, Vec3};
 use render_api::components::Transform;
 
-pub fn set_3d_line_transform(
-    transform: &mut Transform,
-    start: Vec3,
-    end: Vec3,
-    spin: f32,
-) {
+pub fn set_3d_line_transform(transform: &mut Transform, start: Vec3, end: Vec3, spin: f32) {
     transform.translation = start;
     let translation_diff = end - start;
     let target_direction = translation_diff.normalize();

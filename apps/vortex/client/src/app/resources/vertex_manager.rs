@@ -15,13 +15,12 @@ use render_api::{
     Assets, Handle,
 };
 
-use vortex_proto::components::{Face3d, FileExtension, FileType, OwnedByFile, Vertex3d, VertexRoot};
+use vortex_proto::components::{
+    Face3d, FileExtension, FileType, OwnedByFile, Vertex3d, VertexRoot,
+};
 
 use crate::app::{
-    components::{
-        DefaultDraw, Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d,
-        VertexEntry,
-    },
+    components::{DefaultDraw, Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d, VertexEntry},
     resources::{
         action::{ActionStack, ShapeAction},
         camera_manager::CameraManager,
@@ -86,7 +85,6 @@ impl VertexManager {
         transform_q: &mut Query<&mut Transform>,
         visibility_q: &Query<&Visibility>,
     ) -> bool {
-
         for (vertex_3d_entity, vertex_3d) in vertex_3d_q.iter() {
             // check visibility
             if let Ok(visibility) = visibility_q.get(vertex_3d_entity) {

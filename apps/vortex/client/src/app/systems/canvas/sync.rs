@@ -1,8 +1,8 @@
 use bevy_ecs::{
     entity::Entity,
     query::With,
-    system::{SystemState, Commands, Query, Res, ResMut},
-    world::{Mut, World}
+    system::{Commands, Query, Res, ResMut, SystemState},
+    world::{Mut, World},
 };
 
 use input::Input;
@@ -84,33 +84,43 @@ pub fn sync_compass(
     );
 }
 
-pub fn sync_vertices(
-    world: &mut World,
-) {
+pub fn sync_vertices(world: &mut World) {
     if !world.get_resource::<Canvas>().unwrap().is_visible() {
         return;
     }
     let Some(current_tab_state) = world.get_resource::<TabManager>().unwrap().current_tab_state() else {
         return;
     };
-    let current_file_entity = world.get_resource::<TabManager>().unwrap().current_tab_entity().unwrap();
-    let file_extension = world.get_resource::<FileManager>().unwrap().get_file_type(current_file_entity);
+    let current_file_entity = world
+        .get_resource::<TabManager>()
+        .unwrap()
+        .current_tab_entity()
+        .unwrap();
+    let file_extension = world
+        .get_resource::<FileManager>()
+        .unwrap()
+        .get_file_type(current_file_entity);
 
-    let camera_3d = world.get_resource::<CameraManager>().unwrap().camera_3d_entity().unwrap();
+    let camera_3d = world
+        .get_resource::<CameraManager>()
+        .unwrap()
+        .camera_3d_entity()
+        .unwrap();
     let camera_state = &current_tab_state.camera_state;
     let camera_3d_scale = camera_state.camera_3d_scale();
 
     world.resource_scope(|world, mut vertex_manager: Mut<VertexManager>| {
-
         let should_sync = vertex_manager.should_sync();
         if !should_sync {
             return;
         }
         let sync_normal_not_anim = match file_extension {
-            FileExtension::Skel | FileExtension::Mesh => {
-                true
-            }
-            FileExtension::Anim => world.get_resource::<AnimationManager>().unwrap().current_frame().is_none(),
+            FileExtension::Skel | FileExtension::Mesh => true,
+            FileExtension::Anim => world
+                .get_resource::<AnimationManager>()
+                .unwrap()
+                .current_frame()
+                .is_none(),
             _ => {
                 return;
             }
@@ -122,11 +132,7 @@ pub fn sync_vertices(
                 Query<&mut Transform>,
                 Query<&Visibility>,
             )> = SystemState::new(world);
-            let (
-                vertex_3d_q,
-                mut transform_q,
-                visibility_q
-            ) = system_state.get_mut(world);
+            let (vertex_3d_q, mut transform_q, visibility_q) = system_state.get_mut(world);
             vertex_manager.sync_vertices_3d(&vertex_3d_q, &mut transform_q, &visibility_q);
         } else {
             let mut system_state: SystemState<(
@@ -176,13 +182,8 @@ pub fn sync_vertices(
                 Query<&Visibility>,
                 Query<&LocalShape>,
             )> = SystemState::new(world);
-            let (
-                camera_q,
-                vertex_3d_q,
-                mut transform_q,
-                visibility_q,
-                local_shape_q,
-            ) = system_state.get_mut(world);
+            let (camera_q, vertex_3d_q, mut transform_q, visibility_q, local_shape_q) =
+                system_state.get_mut(world);
             vertex_manager.sync_vertices_2d(
                 &camera_3d,
                 camera_3d_scale,
@@ -231,22 +232,20 @@ pub fn sync_edges(
     }
 
     let should_sync_3d = match file_ext {
-        FileExtension::Skel | FileExtension::Mesh => {
-            true
-        }
-        FileExtension::Anim => {
-            animation_manager.current_frame().is_none()
-        }
+        FileExtension::Skel | FileExtension::Mesh => true,
+        FileExtension::Anim => animation_manager.current_frame().is_none(),
         _ => false,
     };
     if should_sync_3d {
         // animation manager will not handle this, so edge_manager must
-        EdgeManager::sync_3d_edges(
-            &edge_3d_q,
+        EdgeManager::sync_3d_edges(&edge_3d_q, &mut transform_q, &mut visibility_q);
+        edge_manager.sync_edge_angles(
+            file_ext,
+            &edge_angle_q,
             &mut transform_q,
             &mut visibility_q,
+            camera_3d_scale,
         );
-        edge_manager.sync_edge_angles(file_ext, &edge_angle_q, &mut transform_q, &mut visibility_q, camera_3d_scale);
     }
 
     EdgeManager::sync_local_3d_edges(

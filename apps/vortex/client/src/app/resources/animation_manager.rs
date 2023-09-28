@@ -11,18 +11,28 @@ use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
-use math::{convert_2d_to_3d, Quat, quat_from_spin_direction, spin_direction_from_quat, Vec2, Vec3};
+use math::{
+    convert_2d_to_3d, quat_from_spin_direction, spin_direction_from_quat, Quat, Vec2, Vec3,
+};
 use render_api::{
     components::{Camera, CameraProjection, Projection, Transform, Visibility},
-    shapes::{set_2d_line_transform_from_angle, rotation_diff, angle_between, get_2d_line_transform_endpoint},
+    shapes::{
+        angle_between, get_2d_line_transform_endpoint, rotation_diff,
+        set_2d_line_transform_from_angle,
+    },
 };
 
-use vortex_proto::components::{AnimFrame, AnimRotation, EdgeAngle, FileExtension, ShapeName, Vertex3d, VertexRoot};
+use vortex_proto::components::{
+    AnimFrame, AnimRotation, EdgeAngle, FileExtension, ShapeName, Vertex3d, VertexRoot,
+};
 
-use crate::app::{components::{LocalAnimRotation, Edge2dLocal}, resources::{
-    camera_manager::CameraManager, canvas::Canvas, edge_manager::EdgeManager,
-    vertex_manager::VertexManager,
-}};
+use crate::app::{
+    components::{Edge2dLocal, LocalAnimRotation},
+    resources::{
+        camera_manager::CameraManager, canvas::Canvas, edge_manager::EdgeManager,
+        vertex_manager::VertexManager,
+    },
+};
 
 #[derive(Resource)]
 pub struct AnimationManager {
@@ -112,9 +122,7 @@ impl AnimationManager {
         self.last_rotation_dragged = None;
     }
 
-    pub fn take_last_rotation_dragged(
-        &mut self,
-    ) -> Option<(Entity, Option<Quat>, Quat)> {
+    pub fn take_last_rotation_dragged(&mut self) -> Option<(Entity, Option<Quat>, Quat)> {
         self.last_rotation_dragged.take()
     }
 
@@ -126,10 +134,7 @@ impl AnimationManager {
         name: String,
         rotation: Quat,
     ) -> Entity {
-        let mut component = AnimRotation::new(
-            name.clone(),
-            rotation.into()
-        );
+        let mut component = AnimRotation::new(name.clone(), rotation.into());
         component.frame_entity.set(client, &frame_entity);
         let new_rotation_entity = commands
             .spawn_empty()
@@ -261,7 +266,8 @@ impl AnimationManager {
 
         let base_direction = (original_3d_position - parent_original_3d_position).normalize();
         let target_direction = (new_3d_position - parent_rotated_3d_position).normalize();
-        let mut rotation_angle = quat_from_spin_direction(edge_old_angle, base_direction, target_direction);
+        let mut rotation_angle =
+            quat_from_spin_direction(edge_old_angle, base_direction, target_direction);
 
         get_inversed_final_rotation(
             &vertex_manager,
@@ -364,7 +370,8 @@ impl AnimationManager {
 
         let edge_old_angle = edge_angle_q.get(edge_3d_entity).unwrap();
         let edge_old_angle: f32 = edge_old_angle.get_radians();
-        let edge_new_angle = angle_between(&edge_angle_pos, &mouse_position) - FRAC_PI_2 - edge_base_angle;
+        let edge_new_angle =
+            angle_between(&edge_angle_pos, &mouse_position) - FRAC_PI_2 - edge_base_angle;
         let edge_diff_angle = rotation_diff(edge_old_angle, edge_new_angle);
         //
 
@@ -385,7 +392,8 @@ impl AnimationManager {
 
         let base_direction = (original_3d_position - parent_original_3d_position).normalize();
         let target_direction = (rotated_3d_position - parent_rotated_3d_position).normalize();
-        let mut rotation_angle = quat_from_spin_direction(edge_diff_angle, base_direction, target_direction);
+        let mut rotation_angle =
+            quat_from_spin_direction(edge_diff_angle, base_direction, target_direction);
 
         get_inversed_final_rotation(
             &vertex_manager,
@@ -524,7 +532,11 @@ impl AnimationManager {
             vertex_3d_transform.translation = rotated_child_pos;
 
             // update edge transform
-            if let Some(edge_3d_entity) = edge_manager.edge_3d_entity_from_vertices(vertex_manager, parent_vertex_3d_entity, *child_vertex_3d_entity) {
+            if let Some(edge_3d_entity) = edge_manager.edge_3d_entity_from_vertices(
+                vertex_manager,
+                parent_vertex_3d_entity,
+                *child_vertex_3d_entity,
+            ) {
                 let Ok(mut edge_3d_transform) = transform_q.get_mut(edge_3d_entity) else {
                     warn!("Edge3d entity {:?} has no Transform", edge_3d_entity);
                     continue;
@@ -537,7 +549,11 @@ impl AnimationManager {
                     Err(_) => 0.0,
                 };
 
-                let (edge_quat, scale) = get_3d_line_rotation_and_scale(original_parent_pos, original_child_pos, edge_spin);
+                let (edge_quat, scale) = get_3d_line_rotation_and_scale(
+                    original_parent_pos,
+                    original_child_pos,
+                    edge_spin,
+                );
 
                 edge_3d_transform.translation = rotated_parent_pos;
                 edge_3d_transform.rotation = rotation * edge_quat;
@@ -592,9 +608,7 @@ impl AnimationManager {
 
             self.update_last_rotation_dragged(
                 vertex_2d_entity,
-                Some(
-                    anim_rotation.get_rotation()
-                ),
+                Some(anim_rotation.get_rotation()),
                 rotation_angle,
             );
 
@@ -667,7 +681,8 @@ fn sync_edge_angle(
         return;
     }
 
-    let (base_circle_entity, angle_edge_entity, end_circle_entity) = edge_manager.edge_angle_entities(&edge_3d_entity).unwrap();
+    let (base_circle_entity, angle_edge_entity, end_circle_entity) =
+        edge_manager.edge_angle_entities(&edge_3d_entity).unwrap();
 
     for entity in [base_circle_entity, angle_edge_entity, end_circle_entity] {
         let Ok(mut visibility) = visibility_q.get_mut(entity) else {
@@ -698,7 +713,10 @@ fn sync_edge_angle(
         };
 
         let (rotation_spin, rotation_dir) = spin_direction_from_quat(sure_dir, rotation);
-        info!("rotation_dir: {:?} . sure_dir: {:?}", rotation_dir, sure_dir);
+        info!(
+            "rotation_dir: {:?} . sure_dir: {:?}",
+            rotation_dir, sure_dir
+        );
 
         let edge_angle_drawn = base_angle + edge_angle + FRAC_PI_2 - rotation_spin;
         let edge_depth_drawn = edge_depth - 1.0;
@@ -732,17 +750,13 @@ fn sync_edge_angle(
     }
 }
 
-fn get_3d_line_rotation_and_scale(
-    start: Vec3,
-    end: Vec3,
-    spin: f32,
-) -> (Quat, f32) {
+fn get_3d_line_rotation_and_scale(start: Vec3, end: Vec3, spin: f32) -> (Quat, f32) {
     let translation_diff = end - start;
     let target_direction = translation_diff.normalize();
 
     (
         quat_from_spin_direction(spin, Vec3::Z, target_direction),
-        start.distance(end)
+        start.distance(end),
     )
 }
 
