@@ -108,6 +108,55 @@ impl AnimationManager {
             .get(&(current_frame, vertex_name.to_string()))
     }
 
+    pub fn reset_last_rotation_dragged(&mut self) {
+        self.last_rotation_dragged = None;
+    }
+
+    pub fn take_last_rotation_dragged(
+        &mut self,
+    ) -> Option<(Entity, Option<Quat>, Quat)> {
+        self.last_rotation_dragged.take()
+    }
+
+    pub fn create_networked_rotation(
+        &mut self,
+        commands: &mut Commands,
+        client: &mut Client,
+        frame_entity: Entity,
+        name: String,
+        rotation: Quat,
+    ) -> Entity {
+        let mut component = AnimRotation::new(
+            name.clone(),
+            rotation.into()
+        );
+        component.frame_entity.set(client, &frame_entity);
+        let new_rotation_entity = commands
+            .spawn_empty()
+            .enable_replication(client)
+            .configure_replication(ReplicationConfig::Delegated)
+            .insert(component)
+            .id();
+
+        self.rotation_postprocess(commands, frame_entity, new_rotation_entity, name);
+
+        return new_rotation_entity;
+    }
+
+    pub fn rotation_postprocess(
+        &mut self,
+        commands: &mut Commands,
+        frame_entity: Entity,
+        rotation_entity: Entity,
+        vertex_name: String,
+    ) {
+        self.register_rotation(frame_entity, rotation_entity, vertex_name);
+
+        commands
+            .entity(rotation_entity)
+            .insert(LocalAnimRotation::new());
+    }
+
     pub(crate) fn drag_vertex(
         &mut self,
         world: &mut World,
@@ -240,57 +289,6 @@ impl AnimationManager {
         system_state.apply(world);
     }
 
-    fn update_or_create_rotation(
-        &mut self,
-        vertex_2d_entity: Entity,
-        frame_entity: Entity,
-        shape_name: String,
-        mut commands: &mut Commands,
-        mut client: &mut Client,
-        rotation_q: &mut Query<(&mut AnimRotation, &LocalAnimRotation)>,
-        rotation_entity_opt: Option<Entity>,
-        rotation_angle: Quat,
-    ) {
-        if let Some(rotation_entity) = rotation_entity_opt {
-            let (mut anim_rotation, _) = rotation_q.get_mut(rotation_entity).unwrap();
-
-            self.update_last_rotation_dragged(
-                vertex_2d_entity,
-                Some(
-                    anim_rotation.get_rotation()
-                ),
-                rotation_angle,
-            );
-
-            anim_rotation.set_rotation(rotation_angle);
-        } else {
-            self.update_last_rotation_dragged(vertex_2d_entity, None, rotation_angle);
-
-            // create new rotation entity
-            self.create_networked_rotation(
-                &mut commands,
-                &mut client,
-                frame_entity,
-                shape_name.to_string(),
-                rotation_angle,
-            );
-        };
-    }
-
-    fn rotation_has_auth(
-        commands: &mut Commands,
-        client: &mut Client,
-        rotation_entity: Entity,
-    ) -> bool {
-        let auth_status = commands.entity(rotation_entity).authority(&client).unwrap();
-        if !(auth_status.is_requested() || auth_status.is_granted()) {
-            // only continue to mutate if requested or granted authority over vertex
-            info!("No authority over vertex rotation, skipping..");
-            return false;
-        }
-        return true;
-    }
-
     pub(crate) fn drag_edge(
         &mut self,
         world: &mut World,
@@ -413,68 +411,6 @@ impl AnimationManager {
         canvas.queue_resync_shapes();
 
         system_state.apply(world);
-    }
-
-    pub fn reset_last_rotation_dragged(&mut self) {
-        self.last_rotation_dragged = None;
-    }
-
-    fn update_last_rotation_dragged(
-        &mut self,
-        vertex_2d_entity: Entity,
-        old_rotation: Option<Quat>,
-        new_rotation: Quat,
-    ) {
-        if let Some((_, old_rotation, _)) = self.last_rotation_dragged {
-            self.last_rotation_dragged = Some((vertex_2d_entity, old_rotation, new_rotation));
-        } else {
-            self.last_rotation_dragged = Some((vertex_2d_entity, old_rotation, new_rotation));
-        }
-    }
-
-    pub fn take_last_rotation_dragged(
-        &mut self,
-    ) -> Option<(Entity, Option<Quat>, Quat)> {
-        self.last_rotation_dragged.take()
-    }
-
-    pub fn create_networked_rotation(
-        &mut self,
-        commands: &mut Commands,
-        client: &mut Client,
-        frame_entity: Entity,
-        name: String,
-        rotation: Quat,
-    ) -> Entity {
-        let mut component = AnimRotation::new(
-            name.clone(),
-            rotation.into()
-        );
-        component.frame_entity.set(client, &frame_entity);
-        let new_rotation_entity = commands
-            .spawn_empty()
-            .enable_replication(client)
-            .configure_replication(ReplicationConfig::Delegated)
-            .insert(component)
-            .id();
-
-        self.rotation_postprocess(commands, frame_entity, new_rotation_entity, name);
-
-        return new_rotation_entity;
-    }
-
-    pub fn rotation_postprocess(
-        &mut self,
-        commands: &mut Commands,
-        frame_entity: Entity,
-        rotation_entity: Entity,
-        vertex_name: String,
-    ) {
-        self.register_rotation(frame_entity, rotation_entity, vertex_name);
-
-        commands
-            .entity(rotation_entity)
-            .insert(LocalAnimRotation::new());
     }
 
     pub(crate) fn sync_shapes_3d(
@@ -634,6 +570,70 @@ impl AnimationManager {
                 rotated_child_pos,
                 rotation,
             );
+        }
+    }
+
+    fn update_or_create_rotation(
+        &mut self,
+        vertex_2d_entity: Entity,
+        frame_entity: Entity,
+        shape_name: String,
+        mut commands: &mut Commands,
+        mut client: &mut Client,
+        rotation_q: &mut Query<(&mut AnimRotation, &LocalAnimRotation)>,
+        rotation_entity_opt: Option<Entity>,
+        rotation_angle: Quat,
+    ) {
+        if let Some(rotation_entity) = rotation_entity_opt {
+            let (mut anim_rotation, _) = rotation_q.get_mut(rotation_entity).unwrap();
+
+            self.update_last_rotation_dragged(
+                vertex_2d_entity,
+                Some(
+                    anim_rotation.get_rotation()
+                ),
+                rotation_angle,
+            );
+
+            anim_rotation.set_rotation(rotation_angle);
+        } else {
+            self.update_last_rotation_dragged(vertex_2d_entity, None, rotation_angle);
+
+            // create new rotation entity
+            self.create_networked_rotation(
+                &mut commands,
+                &mut client,
+                frame_entity,
+                shape_name.to_string(),
+                rotation_angle,
+            );
+        };
+    }
+
+    fn rotation_has_auth(
+        commands: &mut Commands,
+        client: &mut Client,
+        rotation_entity: Entity,
+    ) -> bool {
+        let auth_status = commands.entity(rotation_entity).authority(&client).unwrap();
+        if !(auth_status.is_requested() || auth_status.is_granted()) {
+            // only continue to mutate if requested or granted authority over vertex
+            info!("No authority over vertex rotation, skipping..");
+            return false;
+        }
+        return true;
+    }
+
+    fn update_last_rotation_dragged(
+        &mut self,
+        vertex_2d_entity: Entity,
+        old_rotation: Option<Quat>,
+        new_rotation: Quat,
+    ) {
+        if let Some((_, old_rotation, _)) = self.last_rotation_dragged {
+            self.last_rotation_dragged = Some((vertex_2d_entity, old_rotation, new_rotation));
+        } else {
+            self.last_rotation_dragged = Some((vertex_2d_entity, old_rotation, new_rotation));
         }
     }
 }
