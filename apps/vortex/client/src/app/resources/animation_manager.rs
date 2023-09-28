@@ -1,5 +1,4 @@
-use std::collections::HashMap;
-use std::f32::consts::FRAC_PI_2;
+use std::{collections::HashMap, f32::consts::FRAC_PI_2};
 
 use bevy_ecs::{
     entity::Entity,
@@ -15,21 +14,17 @@ use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 use math::{convert_2d_to_3d, Quat, quat_from_spin_direction, Vec2, Vec3};
 use render_api::{
     components::{Camera, CameraProjection, Projection, Transform, Visibility},
-    shapes::{angle_between, get_2d_line_transform_endpoint},
+    shapes::{rotation_diff, angle_between, get_2d_line_transform_endpoint},
 };
-use render_api::shapes::rotation_diff;
 
 use vortex_proto::components::{
     AnimFrame, AnimRotation, EdgeAngle, ShapeName, Vertex3d, VertexRoot,
 };
 
-use crate::app::{
-    components::LocalAnimRotation,
-    resources::{
-        camera_manager::CameraManager, canvas::Canvas, edge_manager::EdgeManager,
-        vertex_manager::VertexManager,
-    },
-};
+use crate::app::{components::LocalAnimRotation, resources::{
+    camera_manager::CameraManager, canvas::Canvas, edge_manager::EdgeManager,
+    vertex_manager::VertexManager,
+}};
 
 #[derive(Resource)]
 pub struct AnimationManager {
@@ -597,12 +592,16 @@ impl AnimationManager {
                 edge_3d_transform.translation = rotated_parent_pos;
 
                 // get edge angle
-                let edge_angle = match edge_angle_q.get(edge_3d_entity) {
+                let edge_spin = match edge_angle_q.get(edge_3d_entity) {
                     Ok(edge_angle) => edge_angle.get_radians(),
                     Err(_) => 0.0,
                 };
 
-                edge_3d_transform.rotation = quat_from_spin_direction(edge_angle, Vec3::Z, rotated_displacement);
+                let (edge_quat, scale) = get_3d_line_rotation_and_scale(original_parent_pos, original_child_pos, edge_spin);
+
+                edge_3d_transform.translation = rotated_parent_pos;
+                edge_3d_transform.rotation = rotation * edge_quat;
+                edge_3d_transform.scale.z = scale;
             }
 
             // recurse
@@ -622,6 +621,20 @@ impl AnimationManager {
             );
         }
     }
+}
+
+fn get_3d_line_rotation_and_scale(
+    start: Vec3,
+    end: Vec3,
+    spin: f32,
+) -> (Quat, f32) {
+    let translation_diff = end - start;
+    let target_direction = translation_diff.normalize();
+
+    (
+        quat_from_spin_direction(spin, Vec3::Z, target_direction),
+        start.distance(end)
+    )
 }
 
 fn get_inversed_final_rotation(
