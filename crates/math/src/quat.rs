@@ -251,7 +251,8 @@ mod tests {
 
         println!("quat: {:?}", quat);
 
-        let (output_spin, output_direction) = spin_direction_from_quat(quat);
+        let (output_spin, output_direction) = spin_direction_from_quat(Vec3::Z, quat);
+        let output_spin = output_spin.to_degrees();
 
         println!("output_direction: {:?}", output_direction);
 
@@ -286,7 +287,7 @@ pub fn spin_direction_from_quat(base_direction: Vec3, quat: Quat) -> (f32, Vec3)
             base_direction.cross(output_direction).normalize(),
             base_direction.angle_between(output_direction),
         );
-        angle_between_signed(quat, base_quat).to_degrees()
+        angle_between_signed(quat, base_quat)
     };
 
     (output_spin, output_direction)

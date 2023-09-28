@@ -11,7 +11,7 @@ use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
-use math::{convert_2d_to_3d, Quat, quat_from_spin_direction, Vec2, Vec3};
+use math::{convert_2d_to_3d, Quat, quat_from_spin_direction, spin_direction_from_quat, Vec2, Vec3};
 use render_api::{
     components::{Camera, CameraProjection, Projection, Transform, Visibility},
     shapes::{set_2d_line_transform_from_angle, rotation_diff, angle_between, get_2d_line_transform_endpoint},
@@ -497,6 +497,7 @@ impl AnimationManager {
             let (_, vertex_3d) = vertex_3d_q.get(*child_vertex_3d_entity).unwrap();
             let original_child_pos = vertex_3d.as_vec3();
 
+            // a lot of this should be refactored to share code with edge_manager.rs
             let mut rotation = Quat::IDENTITY;
             if let Ok(name_component) = name_q.get(*child_vertex_3d_entity) {
                 let name = (*name_component.value).clone();
@@ -549,6 +550,8 @@ impl AnimationManager {
                     visibility_q,
                     camera_3d_scale,
                     edge_3d_entity,
+                    rotation,
+                    displacement.normalize(),
                     edge_spin,
                 );
             }
@@ -644,14 +647,12 @@ fn sync_edge_angle(
     visibility_q: &mut Query<&mut Visibility>,
     camera_3d_scale: f32,
     edge_3d_entity: Entity,
+    rotation: Quat,
+    sure_dir: Vec3,
     edge_angle: f32,
 ) {
-    let edge_angle_base_circle_scale =
-        Edge2dLocal::EDGE_ANGLE_BASE_CIRCLE_RADIUS * camera_3d_scale;
-    let edge_angle_end_circle_scale =
-        Edge2dLocal::EDGE_ANGLE_END_CIRCLE_RADIUS * camera_3d_scale;
-    let edge_angle_length = Edge2dLocal::EDGE_ANGLE_LENGTH * camera_3d_scale;
-    let edge_angle_thickness = Edge2dLocal::EDGE_ANGLE_THICKNESS * camera_3d_scale;
+    // a lot of this should be refactored to share code with edge_manager.rs
+
     let edge_angles_visible = edge_manager.edge_angles_are_visible(FileExtension::Anim);
 
     let Some(edge_2d_entity) = edge_manager.edge_entity_3d_to_2d(&edge_3d_entity) else {
@@ -677,6 +678,13 @@ fn sync_edge_angle(
     }
 
     if edge_angles_visible {
+        let edge_angle_base_circle_scale =
+            Edge2dLocal::EDGE_ANGLE_BASE_CIRCLE_RADIUS * camera_3d_scale;
+        let edge_angle_end_circle_scale =
+            Edge2dLocal::EDGE_ANGLE_END_CIRCLE_RADIUS * camera_3d_scale;
+        let edge_angle_length = Edge2dLocal::EDGE_ANGLE_LENGTH * camera_3d_scale;
+        let edge_angle_thickness = Edge2dLocal::EDGE_ANGLE_THICKNESS * camera_3d_scale;
+
         let edge_2d_transform = transform_q.get(edge_2d_entity).unwrap();
         let start_pos = edge_2d_transform.translation.truncate();
         let end_pos = get_2d_line_transform_endpoint(&edge_2d_transform);
@@ -689,7 +697,10 @@ fn sync_edge_angle(
             return;
         };
 
-        let edge_angle_drawn = base_angle + edge_angle + FRAC_PI_2;
+        let (rotation_spin, rotation_dir) = spin_direction_from_quat(sure_dir, rotation);
+        info!("rotation_dir: {:?} . sure_dir: {:?}", rotation_dir, sure_dir);
+
+        let edge_angle_drawn = base_angle + edge_angle + FRAC_PI_2 - rotation_spin;
         let edge_depth_drawn = edge_depth - 1.0;
         set_2d_line_transform_from_angle(
             &mut angle_transform,
