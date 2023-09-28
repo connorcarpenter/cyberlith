@@ -208,6 +208,7 @@ pub fn sync_edges(
     mut transform_q: Query<&mut Transform>,
     edge_2d_q: Query<(Entity, &Edge2dLocal)>,
     edge_3d_q: Query<(Entity, &Edge3dLocal, Option<&EdgeAngle>)>,
+    edge_angle_q: Query<&EdgeAngle>,
 ) {
     if !canvas.is_visible() {
         return;
@@ -238,8 +239,7 @@ pub fn sync_edges(
         _ => false,
     };
     if should_sync_3d {
-        edge_manager.sync_3d_edges(
-            file_ext,
+        EdgeManager::sync_3d_edges(
             &edge_3d_q,
             &mut transform_q,
             &mut visibility_q,
@@ -248,10 +248,12 @@ pub fn sync_edges(
         );
     }
 
-    EdgeManager::sync_2d_edges(
+    edge_manager.sync_2d_edges(
+        file_ext,
         &edge_2d_q,
+        &edge_angle_q,
         &mut transform_q,
-        &visibility_q,
+        &mut visibility_q,
         &local_shape_q,
         camera_3d_scale,
     );
