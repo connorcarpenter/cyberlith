@@ -423,17 +423,31 @@ impl AnimationManager {
 
     pub(crate) fn sync_shapes_3d(
         &self,
+        world: &mut World,
         vertex_manager: &VertexManager,
-        edge_manager: &EdgeManager,
-        vertex_3d_q: &Query<(Entity, &Vertex3d)>,
-        transform_q: &mut Query<&mut Transform>,
-        visibility_q: &mut Query<&mut Visibility>,
-        name_q: &Query<&ShapeName>,
-        rotation_q: &mut Query<(&AnimRotation, &mut LocalAnimRotation)>,
-        root_q: &Query<Entity, With<VertexRoot>>,
-        edge_angle_q: &Query<&EdgeAngle>,
         camera_3d_scale: f32,
     ) {
+        let mut system_state: SystemState<(
+            Res<EdgeManager>,
+            Query<(Entity, &Vertex3d)>,
+            Query<&mut Transform>,
+            Query<&mut Visibility>,
+            Query<&ShapeName>,
+            Query<(&AnimRotation, &mut LocalAnimRotation)>,
+            Query<Entity, With<VertexRoot>>,
+            Query<&EdgeAngle>,
+        )> = SystemState::new(world);
+        let (
+            edge_manager,
+            vertex_3d_q,
+            mut transform_q,
+            mut visibility_q,
+            name_q,
+            mut rotation_q,
+            root_q,
+            edge_angle_q,
+        ) = system_state.get_mut(world);
+
         let current_frame = self.current_frame.unwrap();
 
         // find root 3d vertex
@@ -463,13 +477,13 @@ impl AnimationManager {
 
         self.sync_shapes_3d_children(
             vertex_manager,
-            edge_manager,
-            vertex_3d_q,
-            transform_q,
-            visibility_q,
-            name_q,
-            rotation_q,
-            edge_angle_q,
+            &edge_manager,
+            &vertex_3d_q,
+            &mut transform_q,
+            &mut visibility_q,
+            &name_q,
+            &mut rotation_q,
+            &edge_angle_q,
             camera_3d_scale,
             current_frame,
             root_3d_vertex,

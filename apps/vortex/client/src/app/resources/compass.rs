@@ -1,6 +1,7 @@
 use bevy_ecs::{
     entity::Entity,
-    system::{Commands, Query, Resource},
+    system::{SystemState, Commands, Query, Resource},
+    world::World
 };
 
 use math::{Vec2, Vec3};
@@ -160,12 +161,15 @@ impl Compass {
 
     pub fn sync_compass_vertices(
         &self,
-        vertex_3d_q: &Query<(Entity, &Vertex3d)>,
-        transform_q: &mut Query<&mut Transform>,
+        world: &mut World,
     ) {
+        let mut system_state: SystemState<
+            Query<(&Vertex3d, &mut Transform)>,
+        > = SystemState::new(world);
+        let mut vertex_3d_q = system_state.get_mut(world);
+
         for vertex_entity in self.compass_vertices.iter() {
-            let (_, vertex_3d) = vertex_3d_q.get(*vertex_entity).unwrap();
-            let mut transform = transform_q.get_mut(*vertex_entity).unwrap();
+            let (vertex_3d, mut transform) = vertex_3d_q.get_mut(*vertex_entity).unwrap();
             transform.translation = vertex_3d.as_vec3();
         }
     }

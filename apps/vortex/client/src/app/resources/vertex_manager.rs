@@ -2,7 +2,8 @@ use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{
     entity::Entity,
-    system::{Commands, Query, Resource},
+    system::{SystemState, Commands, Query, Resource},
+    world::World
 };
 use bevy_log::{info, warn};
 
@@ -81,10 +82,16 @@ impl VertexManager {
 
     pub fn sync_vertices_3d(
         &mut self,
-        vertex_3d_q: &Query<(Entity, &Vertex3d)>,
-        transform_q: &mut Query<&mut Transform>,
-        visibility_q: &Query<&Visibility>,
+        world: &mut World,
     ) -> bool {
+
+        let mut system_state: SystemState<(
+            Query<(Entity, &Vertex3d)>,
+            Query<&mut Transform>,
+            Query<&Visibility>,
+        )> = SystemState::new(world);
+        let (vertex_3d_q, mut transform_q, visibility_q) = system_state.get_mut(world);
+
         for (vertex_3d_entity, vertex_3d) in vertex_3d_q.iter() {
             // check visibility
             if let Ok(visibility) = visibility_q.get(vertex_3d_entity) {

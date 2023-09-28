@@ -1,6 +1,5 @@
 use bevy_ecs::{
     entity::Entity,
-    query::With,
     system::{Commands, Query, Res, ResMut, SystemState},
     world::{Mut, World},
 };
@@ -14,11 +13,11 @@ use render_api::{
 };
 
 use vortex_proto::components::{
-    AnimRotation, EdgeAngle, FileExtension, ShapeName, Vertex3d, VertexRoot,
+    EdgeAngle, FileExtension, Vertex3d,
 };
 
 use crate::app::{
-    components::{Edge2dLocal, Edge3dLocal, FaceIcon2d, LocalAnimRotation, LocalShape},
+    components::{Edge2dLocal, Edge3dLocal, FaceIcon2d, LocalShape},
     resources::{
         animation_manager::AnimationManager, camera_manager::CameraManager, canvas::Canvas,
         compass::Compass, edge_manager::EdgeManager, face_manager::FaceManager,
@@ -127,51 +126,18 @@ pub fn sync_vertices(world: &mut World) {
         };
 
         if sync_normal_not_anim {
-            let mut system_state: SystemState<(
-                Query<(Entity, &Vertex3d)>,
-                Query<&mut Transform>,
-                Query<&Visibility>,
-            )> = SystemState::new(world);
-            let (vertex_3d_q, mut transform_q, visibility_q) = system_state.get_mut(world);
-            vertex_manager.sync_vertices_3d(&vertex_3d_q, &mut transform_q, &visibility_q);
+            vertex_manager.sync_vertices_3d(world);
         } else {
-            let mut system_state: SystemState<(
-                Res<AnimationManager>,
-                Res<EdgeManager>,
-                Res<Compass>,
-                Query<(Entity, &Vertex3d)>,
-                Query<&mut Transform>,
-                Query<&mut Visibility>,
-                Query<&ShapeName>,
-                Query<(&AnimRotation, &mut LocalAnimRotation)>,
-                Query<Entity, With<VertexRoot>>,
-                Query<&EdgeAngle>,
-            )> = SystemState::new(world);
-            let (
-                animation_manager,
-                edge_manager,
-                compass,
-                vertex_3d_q,
-                mut transform_q,
-                mut visibility_q,
-                name_q,
-                mut rotation_q,
-                root_q,
-                edge_angle_q,
-            ) = system_state.get_mut(world);
-            animation_manager.sync_shapes_3d(
-                &vertex_manager,
-                &edge_manager,
-                &vertex_3d_q,
-                &mut transform_q,
-                &mut visibility_q,
-                &name_q,
-                &mut rotation_q,
-                &root_q,
-                &edge_angle_q,
-                camera_3d_scale,
-            );
-            compass.sync_compass_vertices(&vertex_3d_q, &mut transform_q);
+            world.resource_scope(|world, animation_manager: Mut<AnimationManager>| {
+                animation_manager.sync_shapes_3d(
+                    world,
+                    &vertex_manager,
+                    camera_3d_scale,
+                );
+            });
+            world.resource_scope(|world, compass: Mut<Compass>| {
+                compass.sync_compass_vertices(world);
+            });
         }
 
         {
