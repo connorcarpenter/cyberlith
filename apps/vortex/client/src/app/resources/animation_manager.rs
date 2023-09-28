@@ -14,14 +14,12 @@ use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 use math::{convert_2d_to_3d, Quat, quat_from_spin_direction, Vec2, Vec3};
 use render_api::{
     components::{Camera, CameraProjection, Projection, Transform, Visibility},
-    shapes::{rotation_diff, angle_between, get_2d_line_transform_endpoint},
+    shapes::{set_2d_line_transform_from_angle, rotation_diff, angle_between, get_2d_line_transform_endpoint},
 };
 
-use vortex_proto::components::{
-    AnimFrame, AnimRotation, EdgeAngle, ShapeName, Vertex3d, VertexRoot,
-};
+use vortex_proto::components::{AnimFrame, AnimRotation, EdgeAngle, FileExtension, ShapeName, Vertex3d, VertexRoot};
 
-use crate::app::{components::LocalAnimRotation, resources::{
+use crate::app::{components::{LocalAnimRotation, Edge2dLocal}, resources::{
     camera_manager::CameraManager, canvas::Canvas, edge_manager::EdgeManager,
     vertex_manager::VertexManager,
 }};
@@ -485,11 +483,12 @@ impl AnimationManager {
         edge_manager: &EdgeManager,
         vertex_3d_q: &Query<(Entity, &Vertex3d)>,
         transform_q: &mut Query<&mut Transform>,
-        visibility_q: &Query<&Visibility>,
+        visibility_q: &mut Query<&mut Visibility>,
         name_q: &Query<&ShapeName>,
         rotation_q: &mut Query<(&AnimRotation, &mut LocalAnimRotation)>,
         root_q: &Query<Entity, With<VertexRoot>>,
         edge_angle_q: &Query<&EdgeAngle>,
+        camera_3d_scale: f32,
     ) {
         let current_frame = self.current_frame.unwrap();
 
@@ -523,9 +522,11 @@ impl AnimationManager {
             edge_manager,
             vertex_3d_q,
             transform_q,
+            visibility_q,
             name_q,
             rotation_q,
             edge_angle_q,
+            camera_3d_scale,
             current_frame,
             root_3d_vertex,
             vertex_pos,
@@ -540,9 +541,11 @@ impl AnimationManager {
         edge_manager: &EdgeManager,
         vertex_3d_q: &Query<(Entity, &Vertex3d)>,
         transform_q: &mut Query<&mut Transform>,
+        visibility_q: &mut Query<&mut Visibility>,
         name_q: &Query<&ShapeName>,
         rotation_q: &mut Query<(&AnimRotation, &mut LocalAnimRotation)>,
         edge_angle_q: &Query<&EdgeAngle>,
+        camera_3d_scale: f32,
         frame_entity: Entity,
         parent_vertex_3d_entity: Entity,
         original_parent_pos: Vec3,
@@ -602,6 +605,16 @@ impl AnimationManager {
                 edge_3d_transform.translation = rotated_parent_pos;
                 edge_3d_transform.rotation = rotation * edge_quat;
                 edge_3d_transform.scale.z = scale;
+
+                // update edge angle 2d representation
+                sync_edge_angle(
+                    edge_manager,
+                    transform_q,
+                    visibility_q,
+                    camera_3d_scale,
+                    edge_3d_entity,
+                    edge_spin,
+                );
             }
 
             // recurse
@@ -610,9 +623,11 @@ impl AnimationManager {
                 edge_manager,
                 vertex_3d_q,
                 transform_q,
+                visibility_q,
                 name_q,
                 rotation_q,
                 edge_angle_q,
+                camera_3d_scale,
                 frame_entity,
                 *child_vertex_3d_entity,
                 original_child_pos,
@@ -620,6 +635,89 @@ impl AnimationManager {
                 rotation,
             );
         }
+    }
+}
+
+fn sync_edge_angle(
+    edge_manager: &EdgeManager,
+    transform_q: &mut Query<&mut Transform>,
+    visibility_q: &mut Query<&mut Visibility>,
+    camera_3d_scale: f32,
+    edge_3d_entity: Entity,
+    edge_angle: f32,
+) {
+    let edge_angle_base_circle_scale =
+        Edge2dLocal::EDGE_ANGLE_BASE_CIRCLE_RADIUS * camera_3d_scale;
+    let edge_angle_end_circle_scale =
+        Edge2dLocal::EDGE_ANGLE_END_CIRCLE_RADIUS * camera_3d_scale;
+    let edge_angle_length = Edge2dLocal::EDGE_ANGLE_LENGTH * camera_3d_scale;
+    let edge_angle_thickness = Edge2dLocal::EDGE_ANGLE_THICKNESS * camera_3d_scale;
+    let edge_angles_visible = edge_manager.edge_angles_are_visible(FileExtension::Anim);
+
+    let Some(edge_2d_entity) = edge_manager.edge_entity_3d_to_2d(&edge_3d_entity) else {
+        return;
+    };
+
+    // visibility
+    let Ok(visibility) = visibility_q.get(edge_2d_entity) else {
+        panic!("entity has no Visibility");
+    };
+    if !visibility.visible {
+        return;
+    }
+
+    let (base_circle_entity, angle_edge_entity, end_circle_entity) = edge_manager.edge_angle_entities(&edge_3d_entity).unwrap();
+
+    for entity in [base_circle_entity, angle_edge_entity, end_circle_entity] {
+        let Ok(mut visibility) = visibility_q.get_mut(entity) else {
+            warn!("Edge angle entity {:?} has no transform", entity);
+            continue;
+        };
+        visibility.visible = edge_angles_visible;
+    }
+
+    if edge_angles_visible {
+        let edge_2d_transform = transform_q.get(edge_2d_entity).unwrap();
+        let start_pos = edge_2d_transform.translation.truncate();
+        let end_pos = get_2d_line_transform_endpoint(&edge_2d_transform);
+        let base_angle = angle_between(&start_pos, &end_pos);
+        let middle_pos = (start_pos + end_pos) / 2.0;
+        let edge_depth = edge_2d_transform.translation.z;
+
+        let Ok(mut angle_transform) = transform_q.get_mut(angle_edge_entity) else {
+            warn!("Edge angle entity {:?} has no transform", angle_edge_entity);
+            return;
+        };
+
+        let edge_angle_drawn = base_angle + edge_angle + FRAC_PI_2;
+        let edge_depth_drawn = edge_depth - 1.0;
+        set_2d_line_transform_from_angle(
+            &mut angle_transform,
+            middle_pos,
+            edge_angle_drawn,
+            edge_angle_length,
+            edge_depth_drawn,
+        );
+        angle_transform.scale.y = edge_angle_thickness;
+        let edge_angle_endpoint = get_2d_line_transform_endpoint(&angle_transform);
+
+        let Ok(mut base_circle_transform) = transform_q.get_mut(base_circle_entity) else {
+            warn!("Edge angle base circle entity {:?} has no transform", base_circle_entity);
+            return;
+        };
+        base_circle_transform.translation.x = middle_pos.x;
+        base_circle_transform.translation.y = middle_pos.y;
+        base_circle_transform.translation.z = edge_depth_drawn;
+        base_circle_transform.scale = Vec3::splat(edge_angle_base_circle_scale);
+
+        let Ok(mut end_circle_transform) = transform_q.get_mut(end_circle_entity) else {
+            warn!("Edge angle end circle entity {:?} has no transform", end_circle_entity);
+            return;
+        };
+        end_circle_transform.translation.x = edge_angle_endpoint.x;
+        end_circle_transform.translation.y = edge_angle_endpoint.y;
+        end_circle_transform.translation.z = edge_depth_drawn;
+        end_circle_transform.scale = Vec3::splat(edge_angle_end_circle_scale);
     }
 }
 

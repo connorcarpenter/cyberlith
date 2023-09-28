@@ -135,7 +135,7 @@ pub fn sync_vertices(
                 Res<Compass>,
                 Query<(Entity, &Vertex3d)>,
                 Query<&mut Transform>,
-                Query<&Visibility>,
+                Query<&mut Visibility>,
                 Query<&ShapeName>,
                 Query<(&AnimRotation, &mut LocalAnimRotation)>,
                 Query<Entity, With<VertexRoot>>,
@@ -147,7 +147,7 @@ pub fn sync_vertices(
                 compass,
                 vertex_3d_q,
                 mut transform_q,
-                visibility_q,
+                mut visibility_q,
                 name_q,
                 mut rotation_q,
                 root_q,
@@ -158,11 +158,12 @@ pub fn sync_vertices(
                 &edge_manager,
                 &vertex_3d_q,
                 &mut transform_q,
-                &visibility_q,
+                &mut visibility_q,
                 &name_q,
                 &mut rotation_q,
                 &root_q,
                 &edge_angle_q,
+                camera_3d_scale,
             );
             compass.sync_compass_vertices(&vertex_3d_q, &mut transform_q);
         }
@@ -208,7 +209,7 @@ pub fn sync_edges(
     mut transform_q: Query<&mut Transform>,
     edge_2d_q: Query<(Entity, &Edge2dLocal)>,
     edge_3d_q: Query<(Entity, &Edge3dLocal, Option<&EdgeAngle>)>,
-    edge_angle_q: Query<&EdgeAngle>,
+    edge_angle_q: Query<(Entity, &EdgeAngle)>,
 ) {
     if !canvas.is_visible() {
         return;
@@ -239,23 +240,23 @@ pub fn sync_edges(
         _ => false,
     };
     if should_sync_3d {
+        // animation manager will not handle this, so edge_manager must
         EdgeManager::sync_3d_edges(
             &edge_3d_q,
             &mut transform_q,
             &mut visibility_q,
         );
+        edge_manager.sync_edge_angles(file_ext, &edge_angle_q, &mut transform_q, &mut visibility_q, camera_3d_scale);
     }
 
-    EdgeManager::sync_3d_edges_local(
+    EdgeManager::sync_local_3d_edges(
         &edge_3d_q,
         &mut transform_q,
         &local_shape_q,
         camera_3d_scale,
     );
     edge_manager.sync_2d_edges(
-        file_ext,
         &edge_2d_q,
-        &edge_angle_q,
         &mut transform_q,
         &mut visibility_q,
         &local_shape_q,
