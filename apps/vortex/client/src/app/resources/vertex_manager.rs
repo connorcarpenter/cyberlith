@@ -2,8 +2,8 @@ use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{
     entity::Entity,
-    system::{SystemState, Commands, Query, Resource},
-    world::World
+    system::{Commands, Query, Resource, SystemState},
+    world::World,
 };
 use bevy_log::{info, warn};
 
@@ -80,11 +80,7 @@ impl VertexManager {
         self.resync = true;
     }
 
-    pub fn sync_vertices_3d(
-        &mut self,
-        world: &mut World,
-    ) -> bool {
-
+    pub fn sync_vertices_3d(&mut self, world: &mut World) -> bool {
         let mut system_state: SystemState<(
             Query<(Entity, &Vertex3d)>,
             Query<&mut Transform>,
@@ -123,14 +119,20 @@ impl VertexManager {
 
     pub fn sync_vertices_2d(
         &mut self,
+        world: &mut World,
         camera_3d_entity: &Entity,
         camera_3d_scale: f32,
-        camera_q: &Query<(&Camera, &Projection)>,
-        vertex_3d_q: &Query<(Entity, &Vertex3d)>,
-        transform_q: &mut Query<&mut Transform>,
-        visibility_q: &Query<&Visibility>,
-        local_shape_q: &Query<&LocalShape>,
     ) {
+        let mut system_state: SystemState<(
+            Query<(&Camera, &Projection)>,
+            Query<(Entity, &Vertex3d)>,
+            Query<&mut Transform>,
+            Query<&Visibility>,
+            Query<&LocalShape>,
+        )> = SystemState::new(world);
+        let (camera_q, vertex_3d_q, mut transform_q, visibility_q, local_shape_q) =
+            system_state.get_mut(world);
+
         let Ok((camera, camera_projection)) = camera_q.get(*camera_3d_entity) else {
             return;
         };

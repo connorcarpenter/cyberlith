@@ -1,6 +1,6 @@
 use bevy_ecs::{
     entity::Entity,
-    system::{Commands, Query, Res, ResMut, SystemState},
+    system::{Commands, Query, Res, ResMut},
     world::{Mut, World},
 };
 
@@ -8,13 +8,11 @@ use input::Input;
 
 use render_api::{
     base::{CpuMaterial, CpuMesh},
-    components::{Camera, Projection, Transform, Visibility},
+    components::{Transform, Visibility},
     Assets,
 };
 
-use vortex_proto::components::{
-    EdgeAngle, FileExtension, Vertex3d,
-};
+use vortex_proto::components::{EdgeAngle, FileExtension, Vertex3d};
 
 use crate::app::{
     components::{Edge2dLocal, Edge3dLocal, FaceIcon2d, LocalShape},
@@ -129,11 +127,7 @@ pub fn sync_vertices(world: &mut World) {
             vertex_manager.sync_vertices_3d(world);
         } else {
             world.resource_scope(|world, animation_manager: Mut<AnimationManager>| {
-                animation_manager.sync_shapes_3d(
-                    world,
-                    &vertex_manager,
-                    camera_3d_scale,
-                );
+                animation_manager.sync_shapes_3d(world, &vertex_manager, camera_3d_scale);
             });
             world.resource_scope(|world, compass: Mut<Compass>| {
                 compass.sync_compass_vertices(world);
@@ -141,24 +135,7 @@ pub fn sync_vertices(world: &mut World) {
         }
 
         {
-            let mut system_state: SystemState<(
-                Query<(&Camera, &Projection)>,
-                Query<(Entity, &Vertex3d)>,
-                Query<&mut Transform>,
-                Query<&Visibility>,
-                Query<&LocalShape>,
-            )> = SystemState::new(world);
-            let (camera_q, vertex_3d_q, mut transform_q, visibility_q, local_shape_q) =
-                system_state.get_mut(world);
-            vertex_manager.sync_vertices_2d(
-                &camera_3d,
-                camera_3d_scale,
-                &camera_q,
-                &vertex_3d_q,
-                &mut transform_q,
-                &visibility_q,
-                &local_shape_q,
-            );
+            vertex_manager.sync_vertices_2d(world, &camera_3d, camera_3d_scale);
         }
 
         vertex_manager.finish_resync();
