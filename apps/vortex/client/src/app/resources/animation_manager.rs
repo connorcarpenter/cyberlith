@@ -79,6 +79,7 @@ impl FileFrameData {
 pub struct AnimationManager {
     posing: bool,
     resync_hover: bool,
+    frame_size: Vec2,
 
     pub current_skel_file: Option<Entity>,
     current_frame_index: Option<usize>,
@@ -97,6 +98,7 @@ impl Default for AnimationManager {
         Self {
             posing: true,
             resync_hover: false,
+            frame_size: Vec2::new(30.0, 60.0),
             current_skel_file: None,
             current_frame_index: None,
             frame_data: HashMap::new(),
@@ -736,6 +738,17 @@ impl AnimationManager {
 
     }
 
+    pub fn framing_handle_mouse_wheel(&mut self, scroll_y: f32) {
+        let scroll_y = 0.8 + (((scroll_y + 24.0)/48.0)*0.4);
+        self.frame_size *= scroll_y;
+        if self.frame_size.x < 20.0 {
+            self.frame_size = Vec2::new(20.0, 40.0);
+        }
+        if self.frame_size.x > 200.0 {
+            self.frame_size = Vec2::new(200.0, 400.0);
+        }
+    }
+
     pub fn framing_queue_resync_hover_ui(&mut self) {
         self.resync_hover = true;
     }
@@ -779,7 +792,6 @@ impl AnimationManager {
         let mat_handle = materials.add(Color::DARK_GRAY);
 
         let mut start_position = Vec2::new(8.0, 8.0);
-        let rectangle_size = Vec2::new(30.0, 60.0);
         let buffer = Vec2::new(4.0, 4.0);
         for _frame_index in 0..frame_count {
             draw_rectangle(
@@ -788,9 +800,9 @@ impl AnimationManager {
                 &mesh_handle,
                 &mat_handle,
                 start_position,
-                rectangle_size
+                self.frame_size,
             );
-            start_position.x += rectangle_size.x + buffer.x;
+            start_position.x += self.frame_size.x + buffer.x;
         }
     }
 }

@@ -1354,6 +1354,18 @@ impl InputManager {
     }
 
     fn handle_mouse_scroll_wheel(world: &mut World, scroll_y: f32) {
+
+        let current_file_entity = world.get_resource::<TabManager>().unwrap().current_tab_entity().unwrap();
+        let current_file_type = world.get_resource::<FileManager>().unwrap().get_file_type(&current_file_entity);
+        if current_file_type == FileExtension::Anim {
+            if world.get_resource::<AnimationManager>().unwrap().is_framing() {
+                world.resource_scope(|world, mut animation_manager: Mut<AnimationManager>| {
+                    animation_manager.framing_handle_mouse_wheel(scroll_y);
+                });
+                return;
+            }
+        }
+
         let mut system_state: SystemState<(ResMut<CameraManager>, ResMut<TabManager>)> =
             SystemState::new(world);
         let (mut camera_manager, mut tab_manager) = system_state.get_mut(world);
