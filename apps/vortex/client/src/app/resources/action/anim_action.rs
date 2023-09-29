@@ -30,11 +30,11 @@ impl AnimAction {
         }
     }
 
-    pub fn execute(self, world: &mut World, input_manager: &mut InputManager) -> Vec<Self> {
+    pub fn execute(self, world: &mut World, input_manager: &mut InputManager, tab_file_entity: Entity) -> Vec<Self> {
         let action_type = self.get_type();
 
         match action_type {
-            AnimActionType::SelectVertex => anim_select_vertex::execute(world, input_manager, self),
+            AnimActionType::SelectVertex => anim_select_vertex::execute(world, input_manager, tab_file_entity, self),
             AnimActionType::RotateVertex => anim_rotate_vertex::execute(world, self),
         }
     }

@@ -17,11 +17,11 @@ use crate::app::resources::{
     shape_data::CanvasShape,
     vertex_manager::VertexManager,
 };
-use crate::app::resources::tab_manager::TabManager;
 
 pub fn execute(
     world: &mut World,
     input_manager: &mut InputManager,
+    tab_file_entity: Entity,
     action: AnimAction,
 ) -> Vec<AnimAction> {
     let AnimAction::SelectShape(shape_2d_entity_opt) = action else {
@@ -33,7 +33,6 @@ pub fn execute(
     let mut system_state: SystemState<(
         Commands,
         Client,
-        Res<TabManager>,
         ResMut<Canvas>,
         Res<VertexManager>,
         Res<EdgeManager>,
@@ -43,7 +42,6 @@ pub fn execute(
     let (
         mut commands,
         mut client,
-        tab_manager,
         mut canvas,
         vertex_manager,
         edge_manager,
@@ -51,7 +49,7 @@ pub fn execute(
         name_q,
     ) = system_state.get_mut(world);
 
-    let file_entity = *tab_manager.current_tab_entity().unwrap();
+    let file_entity = tab_file_entity;
 
     // Deselect all selected shapes, select the new selected shapes
     let (deselected_entity, entity_to_release) = deselect_selected_shape(

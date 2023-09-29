@@ -318,10 +318,11 @@ impl TabManager {
         input_manager: &mut InputManager,
         action: AnimAction,
     ) {
+        let tab_file_entity = *self.current_tab_entity().unwrap();
         let tab_state = self.current_tab_state_mut().unwrap();
         tab_state
             .action_stack
-            .execute_anim_action(world, input_manager, action);
+            .execute_anim_action(world, input_manager, tab_file_entity, action);
     }
 
     pub fn current_tab_camera_state_mut(&mut self) -> Option<&mut CameraState> {

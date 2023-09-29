@@ -29,15 +29,53 @@ use crate::app::{
     },
 };
 
+struct FileFrameData {
+    frames: Vec<Option<Entity>>,
+}
+
+impl FileFrameData {
+    pub fn new() -> Self {
+        Self {
+            frames: Vec::new(),
+        }
+    }
+
+    pub fn register_frame(&mut self, frame_entity: Entity, frame: &AnimFrame) {
+
+        let order = frame.get_order() as usize;
+        if order >= self.frames.len() {
+            self.frames.resize(order + 1, None);
+        }
+        self.frames[order] = Some(frame_entity);
+    }
+
+    pub fn deregister_frame(&mut self, frame_entity: &Entity, frame: &AnimFrame) {
+        let order = frame.get_order() as usize;
+        if order >= self.frames.len() {
+            panic!("Frame order out of bounds!");
+        }
+        if self.frames[order] == Some(*frame_entity) {
+            self.frames[order] = None;
+
+            // if deregistered frame was the last frame, remove trailing None by resizing the Vec
+            while self.frames.last().is_none() {
+                self.frames.pop();
+            }
+        } else {
+            panic!("Frame entity mismatch!");
+        }
+    }
+}
+
 #[derive(Resource)]
 pub struct AnimationManager {
     posing: bool,
     resync_hover: bool,
 
     pub current_skel_file: Option<Entity>,
-    current_frame_index: Option<u8>,
-    // (file_entity, order) -> frame_entity
-    frames: HashMap<(Entity, u8), Entity>,
+    current_frame_index: Option<usize>,
+    // file_entity -> file_frame_data
+    frame_data: HashMap<Entity, FileFrameData>,
     // rotation_entity -> (frame_entity, vertex_name)
     rotations: HashMap<Entity, (Entity, String)>,
     // (frame_entity, vertex_name) -> rotation_entity
@@ -53,7 +91,7 @@ impl Default for AnimationManager {
             resync_hover: false,
             current_skel_file: None,
             current_frame_index: None,
-            frames: HashMap::new(),
+            frame_data: HashMap::new(),
             rotations: HashMap::new(),
             vertex_names: HashMap::new(),
             last_rotation_dragged: None,
@@ -64,7 +102,8 @@ impl Default for AnimationManager {
 impl AnimationManager {
     pub(crate) fn current_frame_entity(&self, file_entity: &Entity) -> Option<Entity> {
         let current_frame_index = self.current_frame_index?;
-        self.frames.get(&(*file_entity, current_frame_index)).copied()
+        let frame_data = self.frame_data.get(file_entity)?;//&(*file_entity, current_frame_index)).copied()
+        frame_data.frames[current_frame_index]
     }
 
     pub(crate) fn register_frame(
@@ -73,11 +112,11 @@ impl AnimationManager {
         frame_entity: Entity,
         frame: &AnimFrame,
     ) {
-        let order = frame.get_order();
-        self.frames.insert((file_entity, order), frame_entity);
-        if self.current_frame_entity(&file_entity).is_none() {
-            self.current_frame_index = Some(order);
+        if !self.frame_data.contains_key(&file_entity) {
+            self.frame_data.insert(file_entity, FileFrameData::new());
         }
+        let frame_data = self.frame_data.get_mut(&file_entity).unwrap();
+        frame_data.register_frame(frame_entity, frame);
     }
 
     pub(crate) fn deregister_frame(
@@ -86,15 +125,19 @@ impl AnimationManager {
         frame_entity: &Entity,
         frame: &AnimFrame,
     ) {
-        let order = frame.get_order();
-        self.frames.remove(&(*file_entity, order));
-
-        if let Some(current_frame_entity) = self.current_frame_entity(file_entity) {
-            if current_frame_entity == *frame_entity {
-                self.current_frame_index = None;
-                // TODO: actually just move index to the left if there are other frames ...
-            }
+        if !self.frame_data.contains_key(file_entity) {
+            panic!("Frame data not found!");
         }
+
+        let frame_data = self.frame_data.get_mut(file_entity).unwrap();
+        frame_data.deregister_frame(frame_entity, frame);
+
+        if frame_data.frames.is_empty() {
+            self.frame_data.remove(file_entity);
+        }
+
+        // TODO: handle current selected frame ... harder to do because can we really suppose that
+        // the current tab file entity is the same as the file entity here?
     }
 
     pub(crate) fn register_rotation(

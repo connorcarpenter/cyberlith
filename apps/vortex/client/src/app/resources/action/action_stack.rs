@@ -67,11 +67,12 @@ impl TabActionStack {
         &mut self,
         world: &mut World,
         input_manager: &mut InputManager,
+        tab_file_entity: Entity,
         action: AnimAction,
     ) {
         match self {
             Self::Animation(action_stack) => {
-                let reversed_actions = action_stack.execute_action(world, input_manager, action);
+                let reversed_actions = action_stack.execute_action(world, input_manager, tab_file_entity, action);
                 action_stack.post_action_execution(world, reversed_actions);
             }
             _ => {
@@ -109,7 +110,7 @@ impl TabActionStack {
             }
             Self::Animation(action_stack) => {
                 let action = action_stack.pop_undo();
-                let reversed_actions = action_stack.execute_action(world, input_manager, action);
+                let reversed_actions = action_stack.execute_action(world, input_manager, tab_file_entity, action);
                 action_stack.post_execute_undo(world, reversed_actions);
             }
         };
@@ -130,7 +131,7 @@ impl TabActionStack {
             }
             Self::Animation(action_stack) => {
                 let action = action_stack.pop_redo();
-                let reversed_actions = action_stack.execute_action(world, input_manager, action);
+                let reversed_actions = action_stack.execute_action(world, input_manager, tab_file_entity, action);
                 action_stack.post_execute_redo(world, reversed_actions);
             }
         }
@@ -419,8 +420,9 @@ impl ActionStack<AnimAction> {
         &mut self,
         world: &mut World,
         input_manager: &mut InputManager,
+        tab_file_entity: Entity,
         action: AnimAction,
     ) -> Vec<AnimAction> {
-        action.execute(world, input_manager)
+        action.execute(world, input_manager, tab_file_entity)
     }
 }
