@@ -8,13 +8,13 @@ use bevy_ecs::{
 use input::Input;
 use render_api::components::{Transform, Visibility};
 
-use vortex_proto::components::{ShapeName, VertexRoot};
+use vortex_proto::components::{FileExtension, ShapeName, VertexRoot};
 
 use crate::app::{
     components::{Edge2dLocal, FaceIcon2d, LocalShape, Vertex2d},
     resources::{
         canvas::Canvas, edge_manager::EdgeManager, file_manager::FileManager,
-        input_manager::InputManager, tab_manager::TabManager, vertex_manager::VertexManager,
+        input_manager::InputManager, tab_manager::TabManager, vertex_manager::VertexManager, animation_manager::AnimationManager
     },
 };
 
@@ -41,6 +41,7 @@ pub fn update_mouse_hover(
     mut input_manager: ResMut<InputManager>,
     vertex_manager: Res<VertexManager>,
     edge_manager: Res<EdgeManager>,
+    mut animation_manager: ResMut<AnimationManager>,
     mut transform_q: Query<(&mut Transform, Option<&LocalShape>)>,
     visibility_q: Query<&Visibility>,
     shape_name_q: Query<&ShapeName>,
@@ -61,6 +62,13 @@ pub fn update_mouse_hover(
     let file_type = file_manager.get_file_type(current_tab_entity);
 
     let current_tab_camera_state = &current_tab_state.camera_state;
+
+    if file_type == FileExtension::Anim {
+        if animation_manager.is_framing() {
+            animation_manager.sync_mouse_hover_ui(current_tab_entity, input.mouse_position());
+            return;
+        }
+    }
 
     input_manager.sync_mouse_hover_ui(
         file_type,

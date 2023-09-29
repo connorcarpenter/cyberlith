@@ -80,6 +80,7 @@ pub struct AnimationManager {
     posing: bool,
     resync_hover: bool,
     frame_size: Vec2,
+    hover_frame: Option<usize>,
 
     pub current_skel_file: Option<Entity>,
     current_frame_index: Option<usize>,
@@ -99,6 +100,8 @@ impl Default for AnimationManager {
             posing: true,
             resync_hover: false,
             frame_size: Vec2::new(30.0, 60.0),
+            hover_frame: None,
+
             current_skel_file: None,
             current_frame_index: None,
             frame_data: HashMap::new(),
@@ -753,6 +756,33 @@ impl AnimationManager {
         self.resync_hover = true;
     }
 
+    pub fn sync_mouse_hover_ui(&mut self, current_file_entity: &Entity, mouse_position: &Vec2) {
+        if !self.resync_hover {
+            return;
+        }
+        self.resync_hover = false;
+
+        let Some(file_frame_data) = self.frame_data.get(current_file_entity) else {
+            return;
+        };
+
+        let frame_count = file_frame_data.frames.len();
+
+        let frame_positions = self.get_frame_positions(frame_count);
+
+        self.hover_frame = None;
+        for frame_position in frame_positions {
+            // assign hover frame
+            if mouse_position.x >= frame_position.x && mouse_position.x <= frame_position.x + self.frame_size.x {
+                if mouse_position.y >= frame_position.y && mouse_position.y <= frame_position.y + self.frame_size.y {
+                    let frame_index = (frame_position.x / (self.frame_size.x + 4.0)) as usize;
+                    self.hover_frame = Some(frame_index);
+                    return;
+                }
+            }
+        }
+    }
+
     pub fn draw(
         &self,
         world: &mut World,
@@ -791,19 +821,38 @@ impl AnimationManager {
         let mesh_handle = meshes.add(Line2d);
         let mat_handle = materials.add(Color::DARK_GRAY);
 
-        let mut start_position = Vec2::new(8.0, 8.0);
-        let buffer = Vec2::new(4.0, 4.0);
-        for _frame_index in 0..frame_count {
+        let frame_rects = self.get_frame_positions(frame_count);
+
+        for (frame_index, frame_pos) in frame_rects.iter().enumerate() {
+
+            // set thickness to 2.0 if frame is hovered, otherwise 1.0
+            let thickness = if Some(frame_index) == self.hover_frame {
+                4.0
+            } else {
+                2.0
+            };
+
             draw_rectangle(
                 &mut render_frame,
                 &render_layer,
                 &mesh_handle,
                 &mat_handle,
-                start_position,
+                *frame_pos,
                 self.frame_size,
+                thickness,
             );
+        }
+    }
+
+    fn get_frame_positions(&self, frame_count: usize) -> Vec<Vec2> {
+        let mut positions = Vec::new();
+        let mut start_position = Vec2::new(8.0, 8.0);
+        let buffer = Vec2::new(4.0, 4.0);
+        for _ in 0..frame_count {
+            positions.push(start_position);
             start_position.x += self.frame_size.x + buffer.x;
         }
+        positions
     }
 }
 
@@ -813,33 +862,34 @@ fn draw_rectangle(
     mesh_handle: &Handle<CpuMesh>,
     mat_handle: &Handle<CpuMaterial>,
     position: Vec2,
-    size: Vec2
+    size: Vec2,
+    thickness: f32,
 ) {
     // top
     let start = position;
     let mut end = position;
     end.x += size.x;
-    draw_line(render_frame, render_layer, mesh_handle, mat_handle, start, end);
+    draw_line(render_frame, render_layer, mesh_handle, mat_handle, start, end, thickness);
 
     // bottom
     let mut start = position;
     start.y += size.y;
     let mut end = start;
     end.x += size.x;
-    draw_line(render_frame, render_layer, mesh_handle, mat_handle, start, end);
+    draw_line(render_frame, render_layer, mesh_handle, mat_handle, start, end, thickness);
 
     // left
     let start = position;
     let mut end = position;
     end.y += size.y;
-    draw_line(render_frame, render_layer, mesh_handle, mat_handle, start, end);
+    draw_line(render_frame, render_layer, mesh_handle, mat_handle, start, end, thickness);
 
     // right
     let mut start = position;
     start.x += size.x;
     let mut end = start;
     end.y += size.y;
-    draw_line(render_frame, render_layer, mesh_handle, mat_handle, start, end);
+    draw_line(render_frame, render_layer, mesh_handle, mat_handle, start, end, thickness);
 }
 
 fn draw_line(
@@ -848,10 +898,11 @@ fn draw_line(
     mesh_handle: &Handle<CpuMesh>,
     mat_handle: &Handle<CpuMaterial>,
     start: Vec2,
-    end: Vec2
+    end: Vec2,
+    thickness: f32,
 ) {
     let mut transform = Transform::default();
-    transform.scale.y = 2.0;
+    transform.scale.y = thickness;
     set_2d_line_transform(&mut transform, start, end, 0.0);
     render_frame.draw_object(Some(render_layer), mesh_handle, mat_handle, &transform);
 }
