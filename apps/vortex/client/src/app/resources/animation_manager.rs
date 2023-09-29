@@ -734,7 +734,13 @@ impl AnimationManager {
 
     // Framing
     pub fn framing_handle_mouse_click(&mut self, world: &mut World, click_type: MouseButton, mouse_position: &Vec2) {
+        if click_type != MouseButton::Left {
+            return;
+        }
 
+        if self.frame_hover.is_some() {
+            self.current_frame_index = self.frame_hover;
+        }
     }
 
     pub fn framing_handle_mouse_drag(&mut self, world: &mut World, click_type: MouseButton, mouse_position: Vec2, delta: Vec2) {
