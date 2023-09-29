@@ -114,7 +114,7 @@ pub fn despawn_entity_events(
 
                 git_manager.queue_client_modify_file(entity);
 
-                animation_manager.on_client_despawn_rotation(entity);
+                animation_manager.on_despawn_rotation(entity);
 
                 git_manager.on_remove_content_entity(&mut server, &entity);
             }
@@ -124,7 +124,7 @@ pub fn despawn_entity_events(
 
                 git_manager.queue_client_modify_file(entity);
 
-                animation_manager.on_client_despawn_frame(entity);
+                animation_manager.on_despawn_frame(entity);
 
                 git_manager.on_remove_content_entity(&mut server, &entity);
             }

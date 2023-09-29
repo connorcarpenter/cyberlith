@@ -107,6 +107,7 @@ impl Default for AnimationManager {
             frame_data: HashMap::new(),
             rotations: HashMap::new(),
             vertex_names: HashMap::new(),
+
             last_rotation_dragged: None,
         }
     }

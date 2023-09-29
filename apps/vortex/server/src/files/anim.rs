@@ -338,7 +338,7 @@ impl AnimReader {
 
                     output.insert(frame_entity, ContentEntityData::new_frame());
 
-                    animation_manager.on_create_frame(frame_entity);
+                    animation_manager.on_create_frame(&file_entity, &frame_entity, frame_index as usize);
 
                     for (shape_index, rotation) in poses {
                         let shape_name = shape_name_map.get(&shape_index).unwrap();

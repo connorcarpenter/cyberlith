@@ -455,6 +455,7 @@ pub fn insert_animation_component_events(
         info!("entity: `{:?}`, inserted AnimFrame", frame_entity);
 
         let frame = frame_q.get(frame_entity).unwrap();
+        let frame_index = frame.get_order() as usize;
         let file_entity: Entity = frame.file_entity.get(&server).unwrap();
 
         let project_key = user_manager
@@ -464,7 +465,7 @@ pub fn insert_animation_component_events(
             .unwrap();
         let file_key = key_q.get(file_entity).unwrap().clone();
 
-        animation_manager.on_create_frame(frame_entity);
+        animation_manager.on_create_frame(&file_entity, &frame_entity, frame_index);
 
         let content_entity_data = ContentEntityData::new_frame();
         git_manager.on_insert_content_entity(
