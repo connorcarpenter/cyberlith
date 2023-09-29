@@ -17,7 +17,7 @@ use vortex_proto::components::{EdgeAngle, FileExtension, Vertex3d};
 use crate::app::{
     components::{Edge2dLocal, Edge3dLocal, FaceIcon2d, LocalShape},
     resources::{
-        animation_manager::AnimationManager, camera_manager::CameraManager, canvas::Canvas,
+        animation_manager::{AnimationManager, get_root_vertex}, camera_manager::CameraManager, canvas::Canvas,
         compass::Compass, edge_manager::EdgeManager, face_manager::FaceManager,
         file_manager::FileManager, input_manager::InputManager, tab_manager::TabManager,
         vertex_manager::VertexManager,
@@ -111,31 +111,33 @@ pub fn sync_vertices(world: &mut World) {
         if !should_sync {
             return;
         }
-        let sync_normal_not_anim = match file_extension {
-            FileExtension::Skel | FileExtension::Mesh => true,
-            FileExtension::Anim => world
-                .get_resource::<AnimationManager>()
-                .unwrap()
-                .current_frame()
-                .is_none(),
-            _ => {
-                return;
+        match file_extension {
+            FileExtension::Skel | FileExtension::Mesh => {
+                vertex_manager.sync_vertices_3d(world);
+                vertex_manager.sync_vertices_2d(world, &camera_3d, camera_3d_scale);
+            },
+            FileExtension::Anim => {
+                let animation_manager = world.get_resource::<AnimationManager>().unwrap();
+                if animation_manager.is_posing() {
+                    let current_frame_opt = animation_manager.current_frame();
+                    let root_vertex_opt = get_root_vertex(world);
+                    if current_frame_opt.is_some() && root_vertex_opt.is_some() {
+                        let frame_entity = current_frame_opt.unwrap();
+                        let root_3d_vertex = root_vertex_opt.unwrap();
+                        world.resource_scope(|world, animation_manager: Mut<AnimationManager>| {
+                            animation_manager.sync_shapes_3d(world, &vertex_manager, camera_3d_scale, frame_entity, root_3d_vertex, );
+                        });
+
+                        world.resource_scope(|world, compass: Mut<Compass>| {
+                            compass.sync_compass_vertices(world);
+                        });
+                    }
+                    vertex_manager.sync_vertices_2d(world, &camera_3d, camera_3d_scale);
+                }
             }
-        };
-
-        if sync_normal_not_anim {
-            vertex_manager.sync_vertices_3d(world);
-        } else {
-            world.resource_scope(|world, animation_manager: Mut<AnimationManager>| {
-                animation_manager.sync_shapes_3d(world, &vertex_manager, camera_3d_scale);
-            });
-            world.resource_scope(|world, compass: Mut<Compass>| {
-                compass.sync_compass_vertices(world);
-            });
-        }
-
-        {
-            vertex_manager.sync_vertices_2d(world, &camera_3d, camera_3d_scale);
+            _ => {
+                panic!("sync_vertices: unsupported file extension: {:?}", file_extension);
+            }
         }
 
         vertex_manager.finish_resync();

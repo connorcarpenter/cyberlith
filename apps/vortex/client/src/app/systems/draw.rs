@@ -1,9 +1,8 @@
 use bevy_ecs::{
     entity::Entity,
-    query::With,
-    query::Without,
-    system::Res,
-    system::{Query, ResMut},
+    query::{With, Without},
+    system::{Query, Res, SystemState, ResMut},
+    world::{Mut, World}
 };
 use bevy_log::warn;
 
@@ -16,11 +15,12 @@ use render_api::{
     resources::RenderFrame,
     Handle,
 };
+
 use vortex_proto::components::{Edge3d, FileExtension, ShapeName, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::DefaultDraw,
-    resources::{
+    resources::{animation_manager::AnimationManager,
         edge_manager::edge_is_enabled, edge_manager::EdgeManager, file_manager::FileManager,
         tab_manager::TabManager, vertex_manager::VertexManager,
     },
@@ -79,25 +79,49 @@ pub fn draw(
 }
 
 pub fn draw_vertices_and_edges(
-    mut render_frame: ResMut<RenderFrame>,
-    file_manager: Res<FileManager>,
-    tab_manager: Res<TabManager>,
-    vertex_manager: Res<VertexManager>,
-    edge_manager: Res<EdgeManager>,
-
-    // Objects
-    objects_q: Query<(&Handle<CpuMesh>, &Transform, Option<&RenderLayer>)>,
-    vertices_q: Query<
-        (Entity, &Visibility, Option<&ShapeName>, Option<&VertexRoot>),
-        (With<Vertex3d>, Without<DefaultDraw>),
-    >,
-    edges_q: Query<(Entity, &Visibility), (With<Edge3d>, Without<DefaultDraw>)>,
-    materials_q: Query<&Handle<CpuMaterial>>,
+    world: &mut World,
 ) {
-    let Some(current_tab) = tab_manager.current_tab_entity() else {
+    let Some(current_tab) = world.get_resource::<TabManager>().unwrap().current_tab_entity() else {
         return;
     };
-    let current_file = file_manager.get_file_type(current_tab);
+    let current_file = world.get_resource::<FileManager>().unwrap().get_file_type(current_tab);
+
+    if current_file == FileExtension::Anim {
+        if world.get_resource::<AnimationManager>().unwrap().is_framing() {
+            world.resource_scope(|world, animation_manager: Mut<AnimationManager>| {
+                animation_manager.draw(world);
+            });
+
+            return;
+        }
+    }
+
+    draw_vertices_and_edges_inner(world, current_file);
+}
+
+fn draw_vertices_and_edges_inner(world: &mut World, current_file: FileExtension) {
+
+    let mut system_state: SystemState<(
+        ResMut<RenderFrame>,
+        Res<VertexManager>,
+        Res<EdgeManager>,
+        Query<(&Handle<CpuMesh>, &Transform, Option<&RenderLayer>)>,
+        Query<
+            (Entity, &Visibility, Option<&ShapeName>, Option<&VertexRoot>),
+            (With<Vertex3d>, Without<DefaultDraw>),
+        >,
+        Query<(Entity, &Visibility), (With<Edge3d>, Without<DefaultDraw>)>,
+        Query<&Handle<CpuMaterial>>,
+    )> = SystemState::new(world);
+    let (
+        mut render_frame,
+        vertex_manager,
+        edge_manager,
+        objects_q,
+        vertices_q,
+        edges_q,
+        materials_q,
+    ) = system_state.get_mut(world);
 
     // draw vertices
     for (vertex_3d_entity, visibility, shape_name_opt, vertex_root_opt) in vertices_q.iter() {

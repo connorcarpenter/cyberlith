@@ -63,17 +63,17 @@ pub fn update_mouse_hover(
     let current_tab_camera_state = &current_tab_state.camera_state;
 
     input_manager.sync_mouse_hover_ui(
+        file_type,
         &mut canvas,
         &vertex_manager,
         &edge_manager,
-        file_type,
-        input.mouse_position(),
-        current_tab_camera_state,
         &mut transform_q,
         &visibility_q,
         &shape_name_q,
         &vertex_2d_q,
         &edge_2d_q,
         &face_2d_q,
+        current_tab_camera_state,
+        input.mouse_position(),
     );
 }

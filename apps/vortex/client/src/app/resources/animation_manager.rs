@@ -2,29 +2,24 @@ use std::{collections::HashMap, f32::consts::FRAC_PI_2};
 
 use bevy_ecs::{
     entity::Entity,
-    prelude::{Commands, Query},
-    query::With,
+    prelude::{With, Commands, Query},
     system::{Res, ResMut, Resource, SystemState},
     world::World,
 };
 use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
+use input::MouseButton;
 
 use math::{
     convert_2d_to_3d, quat_from_spin_direction, spin_direction_from_quat, Quat, Vec2, Vec3,
 };
-use render_api::{
-    components::{Camera, CameraProjection, Projection, Transform, Visibility},
-    shapes::{
-        angle_between, get_2d_line_transform_endpoint, rotation_diff,
-        set_2d_line_transform_from_angle,
-    },
-};
+use render_api::{components::{Camera, CameraProjection, Projection, Transform, Visibility}, Handle, shapes::{
+    angle_between, get_2d_line_transform_endpoint, rotation_diff,
+    set_2d_line_transform_from_angle,
+}};
 
-use vortex_proto::components::{
-    AnimFrame, AnimRotation, EdgeAngle, FileExtension, ShapeName, Vertex3d, VertexRoot,
-};
+use vortex_proto::components::{AnimFrame, AnimRotation, EdgeAngle, FileExtension, ShapeName, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::{Edge2dLocal, LocalAnimRotation},
@@ -36,6 +31,9 @@ use crate::app::{
 
 #[derive(Resource)]
 pub struct AnimationManager {
+    posing: bool,
+    resync_hover: bool,
+
     pub current_skel_file: Option<Entity>,
     current_frame: Option<Entity>,
     // (file_entity, order) -> frame_entity
@@ -51,6 +49,8 @@ pub struct AnimationManager {
 impl Default for AnimationManager {
     fn default() -> Self {
         Self {
+            posing: true,
+            resync_hover: false,
             current_skel_file: None,
             current_frame: None,
             frames: HashMap::new(),
@@ -112,6 +112,22 @@ impl AnimationManager {
         self.vertex_names.remove(&(frame_entity, vertex_name));
     }
 
+    pub fn is_posing(&self) -> bool {
+        self.posing
+    }
+
+    pub fn is_framing(&self) -> bool {
+        !self.posing
+    }
+
+    pub fn set_posing(&mut self) {
+        self.posing = true;
+    }
+
+    pub fn set_framing(&mut self) {
+        self.posing = false;
+    }
+
     pub fn get_current_rotation(&self, vertex_name: &str) -> Option<&Entity> {
         let current_frame = self.current_frame?;
         self.vertex_names
@@ -124,6 +140,26 @@ impl AnimationManager {
 
     pub fn take_last_rotation_dragged(&mut self) -> Option<(Entity, Option<Quat>, Quat)> {
         self.last_rotation_dragged.take()
+    }
+
+    pub fn framing_handle_mouse_click(&mut self, world: &mut World, click_type: MouseButton, mouse_position: &Vec2) {
+
+    }
+
+    pub fn framing_handle_mouse_drag(&mut self, world: &mut World, click_type: MouseButton, mouse_position: Vec2, delta: Vec2) {
+
+    }
+
+    pub fn framing_queue_resync_hover_ui(&mut self) {
+        self.resync_hover = true;
+    }
+
+
+    pub fn draw(
+        &self,
+        world: &mut World,
+    ) {
+
     }
 
     pub fn create_networked_rotation(
@@ -169,6 +205,10 @@ impl AnimationManager {
         vertex_2d_entity: Entity,
         mouse_position: Vec2,
     ) {
+        if !self.posing {
+            panic!("Not posing!");
+        }
+
         // get rotation
         let Some(frame_entity) = self.current_frame else {
             info!("no frame");
@@ -302,6 +342,10 @@ impl AnimationManager {
         edge_2d_entity: Entity,
         mouse_position: Vec2,
     ) {
+        if !self.posing {
+            panic!("Not posing!");
+        }
+
         let Some(frame_entity) = self.current_frame else {
             return;
         };
@@ -426,6 +470,8 @@ impl AnimationManager {
         world: &mut World,
         vertex_manager: &VertexManager,
         camera_3d_scale: f32,
+        frame_entity: Entity,
+        root_3d_vertex: Entity,
     ) {
         let mut system_state: SystemState<(
             Res<EdgeManager>,
@@ -434,7 +480,6 @@ impl AnimationManager {
             Query<&mut Visibility>,
             Query<&ShapeName>,
             Query<(&AnimRotation, &mut LocalAnimRotation)>,
-            Query<Entity, With<VertexRoot>>,
             Query<&EdgeAngle>,
         )> = SystemState::new(world);
         let (
@@ -444,33 +489,8 @@ impl AnimationManager {
             mut visibility_q,
             name_q,
             mut rotation_q,
-            root_q,
             edge_angle_q,
         ) = system_state.get_mut(world);
-
-        let current_frame = self.current_frame.unwrap();
-
-        // find root 3d vertex
-        let mut root_3d_vertex = None;
-        for vertex_3d_entity in root_q.iter() {
-            if let Ok(visibility) = visibility_q.get(vertex_3d_entity) {
-                if !visibility.visible {
-                    continue;
-                }
-            };
-            if vertex_3d_q.get(vertex_3d_entity).is_err() {
-                continue;
-            }
-            if root_3d_vertex.is_some() {
-                panic!("Multiple root 3d vertices found!");
-            }
-            root_3d_vertex = Some(vertex_3d_entity);
-        }
-
-        let Some(root_3d_vertex) = root_3d_vertex else {
-            info!("skipping");
-            return;
-        };
 
         let (_, vertex_3d) = vertex_3d_q.get(root_3d_vertex).unwrap();
         let vertex_pos = vertex_3d.as_vec3();
@@ -485,7 +505,7 @@ impl AnimationManager {
             &mut rotation_q,
             &edge_angle_q,
             camera_3d_scale,
-            current_frame,
+            frame_entity,
             root_3d_vertex,
             vertex_pos,
             vertex_pos,
@@ -676,7 +696,7 @@ fn sync_edge_angle(
     camera_3d_scale: f32,
     edge_3d_entity: Entity,
     rotation: Quat,
-    sure_dir: Vec3,
+    displacement: Vec3,
     edge_angle: f32,
 ) {
     // a lot of this should be refactored to share code with edge_manager.rs
@@ -726,11 +746,7 @@ fn sync_edge_angle(
             return;
         };
 
-        let (rotation_spin, rotation_dir) = spin_direction_from_quat(sure_dir, rotation);
-        info!(
-            "rotation_dir: {:?} . sure_dir: {:?}",
-            rotation_dir, sure_dir
-        );
+        let (rotation_spin, _) = spin_direction_from_quat(displacement, rotation);
 
         let edge_angle_drawn = base_angle + edge_angle + FRAC_PI_2 - rotation_spin;
         let edge_depth_drawn = edge_depth - 1.0;
@@ -803,4 +819,37 @@ fn get_inversed_final_rotation(
             target_rotation,
         );
     }
+}
+
+pub fn get_root_vertex(world: &mut World) -> Option<Entity> {
+
+    let mut system_state: SystemState<(
+        Query<(Entity, &Vertex3d)>,
+        Query<&Visibility>,
+        Query<Entity, With<VertexRoot>>,
+    )> = SystemState::new(world);
+    let (
+        vertex_3d_q,
+        visibility_q,
+        root_q,
+    ) = system_state.get_mut(world);
+
+    // find root 3d vertex
+    let mut root_3d_vertex = None;
+    for vertex_3d_entity in root_q.iter() {
+        if let Ok(visibility) = visibility_q.get(vertex_3d_entity) {
+            if !visibility.visible {
+                continue;
+            }
+        };
+        if vertex_3d_q.get(vertex_3d_entity).is_err() {
+            continue;
+        }
+        if root_3d_vertex.is_some() {
+            panic!("Multiple root 3d vertices found!");
+        }
+        root_3d_vertex = Some(vertex_3d_entity);
+    }
+
+    root_3d_vertex
 }

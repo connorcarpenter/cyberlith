@@ -62,7 +62,7 @@ impl Default for EdgeManager {
             edges_3d: HashMap::new(),
             edges_2d: HashMap::new(),
             last_edge_dragged: None,
-            edge_angle_visibility: false,
+            edge_angle_visibility: true,
         }
     }
 }

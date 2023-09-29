@@ -151,16 +151,19 @@ impl InputManager {
                 }
 
                 InputAction::MiddleMouseScroll(scroll_y) => {
-                    let mut system_state: SystemState<(ResMut<CameraManager>, ResMut<TabManager>)> =
-                        SystemState::new(world);
-                    let (mut camera_manager, mut tab_manager) = system_state.get_mut(world);
-
-                    camera_manager.camera_zoom(
-                        tab_manager.current_tab_camera_state_mut().unwrap(),
-                        scroll_y,
-                    );
+                    Self::handle_mouse_scroll_wheel(world, scroll_y);
                 }
                 InputAction::MouseMoved => {
+                    let current_file_entity = world.get_resource::<TabManager>().unwrap().current_tab_entity().unwrap();
+                    let current_file_type = world.get_resource::<FileManager>().unwrap().get_file_type(&current_file_entity);
+                    if current_file_type == FileExtension::Anim {
+                        let mut animation_manager = world.get_resource_mut::<AnimationManager>().unwrap();
+                        if animation_manager.is_framing() {
+                            animation_manager.framing_queue_resync_hover_ui();
+                            continue;
+                        }
+                    }
+
                     self.queue_resync_hover_ui();
                     self.queue_resync_selection_ui();
                 }
@@ -346,18 +349,18 @@ impl InputManager {
 
     pub(crate) fn sync_mouse_hover_ui(
         &mut self,
+        file_ext: FileExtension,
         canvas: &mut Canvas,
         vertex_manager: &VertexManager,
         edge_manager: &EdgeManager,
-        file_ext: FileExtension,
-        mouse_position: &Vec2,
-        camera_state: &CameraState,
         transform_q: &mut Query<(&mut Transform, Option<&LocalShape>)>,
         visibility_q: &Query<&Visibility>,
         shape_name_q: &Query<&ShapeName>,
         vertex_2d_q: &Query<(Entity, Option<&VertexRoot>), (With<Vertex2d>, Without<LocalShape>)>,
         edge_2d_q: &Query<(Entity, &Edge2dLocal), Without<LocalShape>>,
         face_2d_q: &Query<(Entity, &FaceIcon2d)>,
+        camera_state: &CameraState,
+        mouse_position: &Vec2,
     ) {
         if !self.resync_hover {
             return;
@@ -377,6 +380,8 @@ impl InputManager {
             if !visibility.visible {
                 continue;
             }
+
+            // don't hover over disabled vertices in Anim mode
             if file_ext == FileExtension::Anim {
                 let vertex_3d_entity = vertex_manager
                     .vertex_entity_2d_to_3d(&vertex_2d_entity)
@@ -812,9 +817,18 @@ impl InputManager {
         click_type: MouseButton,
         mouse_position: &Vec2,
     ) {
+        let current_file_entity = world.get_resource::<TabManager>().unwrap().current_tab_entity().unwrap();
+        let current_file_type = world.get_resource::<FileManager>().unwrap().get_file_type(&current_file_entity);
+        if current_file_type == FileExtension::Anim {
+            if world.get_resource::<AnimationManager>().unwrap().is_framing() {
+                world.resource_scope(|world, mut animation_manager: Mut<AnimationManager>| {
+                    animation_manager.framing_handle_mouse_click(world, click_type, mouse_position);
+                });
+                return;
+            }
+        }
+
         let mut system_state: SystemState<(
-            Res<FileManager>,
-            ResMut<TabManager>,
             Res<CameraManager>,
             Res<VertexManager>,
             Res<EdgeManager>,
@@ -822,8 +836,6 @@ impl InputManager {
             Query<&Transform>,
         )> = SystemState::new(world);
         let (
-            file_manager,
-            tab_manager,
             camera_manager,
             vertex_manager,
             edge_manager,
@@ -831,8 +843,6 @@ impl InputManager {
             transform_q,
         ) = system_state.get_mut(world);
 
-        let current_file_entity = tab_manager.current_tab_entity().unwrap();
-        let current_file_type = file_manager.get_file_type(&current_file_entity);
         let selected_shape = self.selected_shape.map(|(_, shape)| shape);
         let hovered_shape = self.hovered_entity.map(|(_, shape)| shape);
 
@@ -1104,15 +1114,16 @@ impl InputManager {
         mouse_position: Vec2,
         delta: Vec2,
     ) {
-        let current_file_entity = world
-            .get_resource::<TabManager>()
-            .unwrap()
-            .current_tab_entity()
-            .unwrap();
-        let current_file_type = world
-            .get_resource::<FileManager>()
-            .unwrap()
-            .get_file_type(&current_file_entity);
+        let current_file_entity = world.get_resource::<TabManager>().unwrap().current_tab_entity().unwrap();
+        let current_file_type = world.get_resource::<FileManager>().unwrap().get_file_type(&current_file_entity);
+        if current_file_type == FileExtension::Anim {
+            if world.get_resource::<AnimationManager>().unwrap().is_framing() {
+                world.resource_scope(|world, mut animation_manager: Mut<AnimationManager>| {
+                    animation_manager.framing_handle_mouse_drag(world, click_type, mouse_position, delta);
+                });
+                return;
+            }
+        }
 
         let vertex_is_selected = self.selected_shape.is_some();
         let shape_can_drag = vertex_is_selected
@@ -1322,6 +1333,17 @@ impl InputManager {
                 _ => {}
             }
         }
+    }
+
+    fn handle_mouse_scroll_wheel(world: &mut World, scroll_y: f32) {
+        let mut system_state: SystemState<(ResMut<CameraManager>, ResMut<TabManager>)> =
+            SystemState::new(world);
+        let (mut camera_manager, mut tab_manager) = system_state.get_mut(world);
+
+        camera_manager.camera_zoom(
+            tab_manager.current_tab_camera_state_mut().unwrap(),
+            scroll_y,
+        );
     }
 
     pub(crate) fn sync_hover_shape_scale(
