@@ -117,6 +117,10 @@ impl AnimationManager {
         }
         let frame_data = self.frame_data.get_mut(&file_entity).unwrap();
         frame_data.register_frame(frame_entity, frame);
+
+        if self.current_frame_index.is_none() {
+            self.current_frame_index = Some(frame.get_order() as usize);
+        }
     }
 
     pub(crate) fn deregister_frame(

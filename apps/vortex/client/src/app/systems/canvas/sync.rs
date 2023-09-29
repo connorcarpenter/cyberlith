@@ -125,13 +125,12 @@ pub fn sync_vertices(world: &mut World) {
                         let frame_entity = current_frame_opt.unwrap();
                         let root_3d_vertex = root_vertex_opt.unwrap();
                         world.resource_scope(|world, animation_manager: Mut<AnimationManager>| {
-                            animation_manager.sync_shapes_3d(world, &vertex_manager, camera_3d_scale, frame_entity, root_3d_vertex, );
-                        });
-
-                        world.resource_scope(|world, compass: Mut<Compass>| {
-                            compass.sync_compass_vertices(world);
+                            animation_manager.sync_shapes_3d(world, &vertex_manager, camera_3d_scale, frame_entity, root_3d_vertex);
                         });
                     }
+                    world.resource_scope(|world, compass: Mut<Compass>| {
+                        compass.sync_compass_vertices(world);
+                    });
                     vertex_manager.sync_vertices_2d(world, &camera_3d, camera_3d_scale);
                 }
             }
