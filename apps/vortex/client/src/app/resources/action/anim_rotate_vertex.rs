@@ -10,7 +10,7 @@ use vortex_proto::components::{AnimRotation, ShapeName};
 
 use crate::app::resources::{
     action::AnimAction, animation_manager::AnimationManager, canvas::Canvas,
-    vertex_manager::VertexManager,
+    vertex_manager::VertexManager, tab_manager::TabManager
 };
 
 pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
@@ -26,6 +26,7 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
     let mut system_state: SystemState<(
         Commands,
         Client,
+        Res<TabManager>,
         ResMut<Canvas>,
         Res<VertexManager>,
         ResMut<AnimationManager>,
@@ -35,12 +36,16 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
     let (
         mut commands,
         mut client,
+        tab_manager,
         mut canvas,
         vertex_manager,
         mut animation_manager,
         name_q,
         mut rotation_q,
     ) = system_state.get_mut(world);
+
+    // get current file entity from tab
+    let file_entity = *tab_manager.current_tab_entity().unwrap();
 
     let vertex_3d_entity = vertex_manager
         .vertex_entity_2d_to_3d(&vertex_2d_entity)
@@ -52,7 +57,7 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
     let name = name.value.as_str();
 
     if old_angle_opt.is_some() {
-        let rotation_entity = animation_manager.get_current_rotation(name).unwrap();
+        let rotation_entity = animation_manager.get_current_rotation(&file_entity, name).unwrap();
         let rotation_entity = *rotation_entity;
         if let Some(new_quat) = new_angle_opt {
             let mut rotation = rotation_q.get_mut(rotation_entity).unwrap();
@@ -65,13 +70,13 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
     } else {
         let new_quat = new_angle_opt.unwrap();
 
-        if let Some(rotation_entity) = animation_manager.get_current_rotation(name) {
+        if let Some(rotation_entity) = animation_manager.get_current_rotation(&file_entity,name) {
             // already has a rotation entity, so just update it
             let mut rotation = rotation_q.get_mut(*rotation_entity).unwrap();
             rotation.set_rotation(new_quat);
         } else {
             // create new rotation entity
-            let frame_entity = animation_manager.current_frame().unwrap();
+            let frame_entity = animation_manager.current_frame_entity(&file_entity).unwrap();
             animation_manager.create_networked_rotation(
                 &mut commands,
                 &mut client,

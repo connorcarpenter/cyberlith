@@ -88,7 +88,7 @@ pub fn sync_vertices(world: &mut World) {
     let Some(current_tab_state) = world.get_resource::<TabManager>().unwrap().current_tab_state() else {
         return;
     };
-    let current_file_entity = world
+    let current_file_entity = *world
         .get_resource::<TabManager>()
         .unwrap()
         .current_tab_entity()
@@ -96,7 +96,7 @@ pub fn sync_vertices(world: &mut World) {
     let file_extension = world
         .get_resource::<FileManager>()
         .unwrap()
-        .get_file_type(current_file_entity);
+        .get_file_type(&current_file_entity);
 
     let camera_3d = world
         .get_resource::<CameraManager>()
@@ -119,7 +119,7 @@ pub fn sync_vertices(world: &mut World) {
             FileExtension::Anim => {
                 let animation_manager = world.get_resource::<AnimationManager>().unwrap();
                 if animation_manager.is_posing() {
-                    let current_frame_opt = animation_manager.current_frame();
+                    let current_frame_opt = animation_manager.current_frame_entity(&current_file_entity);
                     let root_vertex_opt = get_root_vertex(world);
                     if current_frame_opt.is_some() && root_vertex_opt.is_some() {
                         let frame_entity = current_frame_opt.unwrap();
@@ -178,7 +178,7 @@ pub fn sync_edges(
 
     let should_sync_3d = match file_ext {
         FileExtension::Skel | FileExtension::Mesh => true,
-        FileExtension::Anim => animation_manager.current_frame().is_none(),
+        FileExtension::Anim => animation_manager.current_frame_entity(current_tab_entity).is_none(),
         _ => false,
     };
     if should_sync_3d {

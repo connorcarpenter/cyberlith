@@ -17,6 +17,7 @@ use crate::app::resources::{
     shape_data::CanvasShape,
     vertex_manager::VertexManager,
 };
+use crate::app::resources::tab_manager::TabManager;
 
 pub fn execute(
     world: &mut World,
@@ -32,6 +33,7 @@ pub fn execute(
     let mut system_state: SystemState<(
         Commands,
         Client,
+        Res<TabManager>,
         ResMut<Canvas>,
         Res<VertexManager>,
         Res<EdgeManager>,
@@ -41,12 +43,15 @@ pub fn execute(
     let (
         mut commands,
         mut client,
+        tab_manager,
         mut canvas,
         vertex_manager,
         edge_manager,
         animation_manager,
         name_q,
     ) = system_state.get_mut(world);
+
+    let file_entity = *tab_manager.current_tab_entity().unwrap();
 
     // Deselect all selected shapes, select the new selected shapes
     let (deselected_entity, entity_to_release) = deselect_selected_shape(
@@ -56,6 +61,7 @@ pub fn execute(
         &edge_manager,
         &animation_manager,
         &name_q,
+        &file_entity,
     );
     let entity_to_request = select_shape(
         &mut canvas,
@@ -63,6 +69,7 @@ pub fn execute(
         &vertex_manager,
         &edge_manager,
         &animation_manager,
+        &file_entity,
         shape_2d_entity_opt,
         &name_q,
     );
@@ -85,6 +92,7 @@ fn select_shape(
     vertex_manager: &VertexManager,
     edge_manager: &EdgeManager,
     animation_manager: &AnimationManager,
+    file_entity: &Entity,
     shape_2d_entity_opt: Option<(Entity, CanvasShape)>,
     name_q: &Query<&ShapeName>,
 ) -> Option<Entity> {
@@ -96,12 +104,12 @@ fn select_shape(
             let vertex_3d_entity = vertex_manager
                 .vertex_entity_2d_to_3d(&shape_2d_entity)
                 .unwrap();
-            return get_rotation_entity(animation_manager, name_q, vertex_3d_entity);
+            return get_rotation_entity(animation_manager, name_q, file_entity, vertex_3d_entity);
         }
         CanvasShape::Edge => {
             let edge_3d_entity = edge_manager.edge_entity_2d_to_3d(&shape_2d_entity).unwrap();
             let (_, vertex_3d_entity) = edge_manager.edge_get_endpoints(&edge_3d_entity);
-            return get_rotation_entity(animation_manager, name_q, vertex_3d_entity);
+            return get_rotation_entity(animation_manager, name_q, file_entity, vertex_3d_entity);
         }
         _ => {}
     }
@@ -112,12 +120,13 @@ fn select_shape(
 fn get_rotation_entity(
     animation_manager: &AnimationManager,
     name_q: &Query<&ShapeName>,
+    file_entity: &Entity,
     vertex_3d_entity: Entity,
 ) -> Option<Entity> {
     let name = name_q.get(vertex_3d_entity).ok()?;
     let name = name.value.as_str();
     return animation_manager
-        .get_current_rotation(name)
+        .get_current_rotation(file_entity,name)
         .map(|entity| *entity);
 }
 
@@ -128,6 +137,7 @@ fn deselect_selected_shape(
     edge_manager: &EdgeManager,
     animation_manager: &AnimationManager,
     name_q: &Query<&ShapeName>,
+    file_entity: &Entity,
 ) -> (Option<(Entity, CanvasShape)>, Option<Entity>) {
     let mut entity_to_deselect = None;
     let mut entity_to_release = None;
@@ -141,13 +151,13 @@ fn deselect_selected_shape(
                     .vertex_entity_2d_to_3d(&shape_2d_entity)
                     .unwrap();
                 entity_to_release =
-                    get_rotation_entity(animation_manager, name_q, vertex_3d_entity);
+                    get_rotation_entity(animation_manager, name_q, file_entity, vertex_3d_entity);
             }
             CanvasShape::Edge => {
                 let edge_3d_entity = edge_manager.edge_entity_2d_to_3d(&shape_2d_entity).unwrap();
                 let (_, vertex_3d_entity) = edge_manager.edge_get_endpoints(&edge_3d_entity);
                 entity_to_release =
-                    get_rotation_entity(animation_manager, name_q, vertex_3d_entity);
+                    get_rotation_entity(animation_manager, name_q, file_entity, vertex_3d_entity);
             }
             CanvasShape::Face => {
                 panic!("Unexpected shape type");

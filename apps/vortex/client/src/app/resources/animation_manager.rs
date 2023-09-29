@@ -14,7 +14,7 @@ use input::MouseButton;
 use math::{
     convert_2d_to_3d, quat_from_spin_direction, spin_direction_from_quat, Quat, Vec2, Vec3,
 };
-use render_api::{components::{Camera, CameraProjection, Projection, Transform, Visibility}, Handle, shapes::{
+use render_api::{components::{Camera, CameraProjection, Projection, Transform, Visibility}, shapes::{
     angle_between, get_2d_line_transform_endpoint, rotation_diff,
     set_2d_line_transform_from_angle,
 }};
@@ -35,7 +35,7 @@ pub struct AnimationManager {
     resync_hover: bool,
 
     pub current_skel_file: Option<Entity>,
-    current_frame: Option<Entity>,
+    current_frame_index: Option<u8>,
     // (file_entity, order) -> frame_entity
     frames: HashMap<(Entity, u8), Entity>,
     // rotation_entity -> (frame_entity, vertex_name)
@@ -52,7 +52,7 @@ impl Default for AnimationManager {
             posing: true,
             resync_hover: false,
             current_skel_file: None,
-            current_frame: None,
+            current_frame_index: None,
             frames: HashMap::new(),
             rotations: HashMap::new(),
             vertex_names: HashMap::new(),
@@ -62,8 +62,9 @@ impl Default for AnimationManager {
 }
 
 impl AnimationManager {
-    pub(crate) fn current_frame(&self) -> Option<Entity> {
-        self.current_frame
+    pub(crate) fn current_frame_entity(&self, file_entity: &Entity) -> Option<Entity> {
+        let current_frame_index = self.current_frame_index?;
+        self.frames.get(&(*file_entity, current_frame_index)).copied()
     }
 
     pub(crate) fn register_frame(
@@ -74,8 +75,8 @@ impl AnimationManager {
     ) {
         let order = frame.get_order();
         self.frames.insert((file_entity, order), frame_entity);
-        if self.current_frame.is_none() {
-            self.current_frame = Some(frame_entity);
+        if self.current_frame_entity(&file_entity).is_none() {
+            self.current_frame_index = Some(order);
         }
     }
 
@@ -88,9 +89,10 @@ impl AnimationManager {
         let order = frame.get_order();
         self.frames.remove(&(*file_entity, order));
 
-        if let Some(current_frame_entity) = self.current_frame {
+        if let Some(current_frame_entity) = self.current_frame_entity(file_entity) {
             if current_frame_entity == *frame_entity {
-                self.current_frame = None;
+                self.current_frame_index = None;
+                // TODO: actually just move index to the left if there are other frames ...
             }
         }
     }
@@ -128,8 +130,8 @@ impl AnimationManager {
         self.posing = false;
     }
 
-    pub fn get_current_rotation(&self, vertex_name: &str) -> Option<&Entity> {
-        let current_frame = self.current_frame?;
+    pub fn get_current_rotation(&self, file_entity: &Entity, vertex_name: &str) -> Option<&Entity> {
+        let current_frame = self.current_frame_entity(file_entity)?;
         self.vertex_names
             .get(&(current_frame, vertex_name.to_string()))
     }
@@ -153,7 +155,6 @@ impl AnimationManager {
     pub fn framing_queue_resync_hover_ui(&mut self) {
         self.resync_hover = true;
     }
-
 
     pub fn draw(
         &self,
@@ -201,6 +202,7 @@ impl AnimationManager {
     pub(crate) fn drag_vertex(
         &mut self,
         world: &mut World,
+        file_entity: &Entity,
         vertex_3d_entity: Entity,
         vertex_2d_entity: Entity,
         mouse_position: Vec2,
@@ -210,7 +212,7 @@ impl AnimationManager {
         }
 
         // get rotation
-        let Some(frame_entity) = self.current_frame else {
+        let Some(frame_entity) = self.current_frame_entity(file_entity) else {
             info!("no frame");
             return;
         };
@@ -251,7 +253,7 @@ impl AnimationManager {
         ) = system_state.get_mut(world);
 
         //
-        let rotation_entity_opt = self.get_current_rotation(&shape_name).copied();
+        let rotation_entity_opt = self.get_current_rotation(file_entity,&shape_name).copied();
         if let Some(rotation_entity) = rotation_entity_opt {
             if !Self::rotation_has_auth(&mut commands, &mut client, rotation_entity) {
                 return;
@@ -338,6 +340,7 @@ impl AnimationManager {
     pub(crate) fn drag_edge(
         &mut self,
         world: &mut World,
+        file_entity: &Entity,
         edge_3d_entity: Entity,
         edge_2d_entity: Entity,
         mouse_position: Vec2,
@@ -346,7 +349,7 @@ impl AnimationManager {
             panic!("Not posing!");
         }
 
-        let Some(frame_entity) = self.current_frame else {
+        let Some(frame_entity) = self.current_frame_entity(file_entity) else {
             return;
         };
 
@@ -392,7 +395,7 @@ impl AnimationManager {
         ) = system_state.get_mut(world);
 
         //
-        let rotation_entity_opt = self.get_current_rotation(&shape_name).copied();
+        let rotation_entity_opt = self.get_current_rotation(&file_entity, &shape_name).copied();
         if let Some(rotation_entity) = rotation_entity_opt {
             if !Self::rotation_has_auth(&mut commands, &mut client, rotation_entity) {
                 return;

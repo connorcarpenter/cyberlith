@@ -1130,7 +1130,7 @@ impl InputManager {
         mouse_position: Vec2,
         delta: Vec2,
     ) {
-        let current_file_entity = world.get_resource::<TabManager>().unwrap().current_tab_entity().unwrap();
+        let current_file_entity = *world.get_resource::<TabManager>().unwrap().current_tab_entity().unwrap();
         let current_file_type = world.get_resource::<FileManager>().unwrap().get_file_type(&current_file_entity);
         if current_file_type == FileExtension::Anim {
             if world.get_resource::<AnimationManager>().unwrap().is_framing() {
@@ -1168,6 +1168,7 @@ impl InputManager {
                                     |world, mut animation_manager: Mut<AnimationManager>| {
                                         animation_manager.drag_vertex(
                                             world,
+                                            &current_file_entity,
                                             vertex_3d_entity,
                                             vertex_2d_entity,
                                             mouse_position,
@@ -1257,6 +1258,7 @@ impl InputManager {
                                     |world, mut animation_manager: Mut<AnimationManager>| {
                                         animation_manager.drag_edge(
                                             world,
+                                            &current_file_entity,
                                             edge_3d_entity,
                                             edge_2d_entity,
                                             mouse_position,
