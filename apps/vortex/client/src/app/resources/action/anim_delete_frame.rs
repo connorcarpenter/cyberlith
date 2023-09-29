@@ -18,5 +18,7 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
 
     system_state.apply(world);
 
-    return vec![AnimAction::InsertFrame];
+    return vec![
+        // AnimAction::InsertFrame()
+    ];
 }

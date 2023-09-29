@@ -700,7 +700,7 @@ impl InputManager {
             return;
         }
 
-        let current_file_entity = world
+        let current_file_entity = *world
             .get_resource::<TabManager>()
             .unwrap()
             .current_tab_entity()
@@ -727,10 +727,12 @@ impl InputManager {
             FileExtension::Anim => {
                 if world.get_resource::<AnimationManager>().unwrap().is_framing() {
                     world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                        let animation_manager = world.get_resource::<AnimationManager>().unwrap();
+                        let current_frame_index = animation_manager.current_frame_index();
                         tab_manager.current_tab_execute_anim_action(
                             world,
                             self,
-                            AnimAction::InsertFrame,
+                            AnimAction::InsertFrame(current_file_entity, current_frame_index),
                         );
                     });
                 }

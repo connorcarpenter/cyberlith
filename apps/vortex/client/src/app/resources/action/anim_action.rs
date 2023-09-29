@@ -17,8 +17,8 @@ pub enum AnimAction {
     RotateVertex(Entity, Option<Quat>, Option<Quat>),
     //
     SelectFrame,
-    //
-    InsertFrame,
+    // file entity, frame index
+    InsertFrame(Entity, Option<usize>),
     //
     DeleteFrame,
 }
@@ -37,7 +37,7 @@ impl AnimAction {
             Self::SelectShape(_) => AnimActionType::SelectShape,
             Self::RotateVertex(_, _, _) => AnimActionType::RotateVertex,
             Self::SelectFrame => AnimActionType::SelectFrame,
-            Self::InsertFrame => AnimActionType::InsertFrame,
+            Self::InsertFrame(_, _) => AnimActionType::InsertFrame,
             Self::DeleteFrame => AnimActionType::DeleteFrame,
         }
     }

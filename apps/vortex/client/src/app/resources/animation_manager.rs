@@ -26,7 +26,7 @@ use render_api::{
     resources::RenderFrame
 };
 
-use vortex_proto::components::{AnimFrame, AnimRotation, EdgeAngle, FileExtension, ShapeName, Vertex3d, VertexRoot};
+use vortex_proto::components::{AnimFrame, AnimRotation, EdgeAngle, FileExtension, ShapeName, Transition, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::{Edge2dLocal, LocalAnimRotation},
@@ -48,13 +48,11 @@ impl FileFrameData {
         }
     }
 
-    pub fn register_frame(&mut self, frame_entity: Entity, frame: &AnimFrame) {
-
-        let order = frame.get_order() as usize;
-        if order >= self.frames.len() {
-            self.frames.resize(order + 1, None);
+    pub fn register_frame(&mut self, frame_entity: Entity, frame_order: usize) {
+        if frame_order >= self.frames.len() {
+            self.frames.resize(frame_order + 1, None);
         }
-        self.frames[order] = Some(frame_entity);
+        self.frames[frame_order] = Some(frame_entity);
     }
 
     pub fn deregister_frame(&mut self, frame_entity: &Entity, frame: &AnimFrame) {
@@ -113,6 +111,11 @@ impl Default for AnimationManager {
 }
 
 impl AnimationManager {
+
+    pub(crate) fn current_frame_index(&self) -> Option<usize> {
+        self.current_frame_index
+    }
+
     pub(crate) fn current_frame_entity(&self, file_entity: &Entity) -> Option<Entity> {
         let current_frame_index = self.current_frame_index?;
         let frame_data = self.frame_data.get(file_entity)?;//&(*file_entity, current_frame_index)).copied()
@@ -123,16 +126,16 @@ impl AnimationManager {
         &mut self,
         file_entity: Entity,
         frame_entity: Entity,
-        frame: &AnimFrame,
+        frame_order: usize,
     ) {
         if !self.frame_data.contains_key(&file_entity) {
             self.frame_data.insert(file_entity, FileFrameData::new());
         }
         let frame_data = self.frame_data.get_mut(&file_entity).unwrap();
-        frame_data.register_frame(frame_entity, frame);
+        frame_data.register_frame(frame_entity, frame_order);
 
         if self.current_frame_index.is_none() {
-            self.current_frame_index = Some(frame.get_order() as usize);
+            self.current_frame_index = Some(frame_order);
         }
     }
 
@@ -917,6 +920,35 @@ impl AnimationManager {
             start_position.x += self.frame_size.x + buffer.x;
         }
         positions
+    }
+
+    pub fn framing_insert_frame(&mut self, commands: &mut Commands, client: &mut Client, file_entity: Entity, frame_index: usize) -> Entity {
+        let mut frame_component = AnimFrame::new(frame_index as u8, Transition::new(50));
+        frame_component.file_entity.set(client, &file_entity);
+        let entity_id = commands
+            .spawn_empty()
+            .enable_replication(client)
+            .configure_replication(ReplicationConfig::Delegated)
+            .insert(frame_component)
+            .id();
+
+        // create new 2d vertex, add local components to 3d vertex
+        self.frame_postprocess(
+            file_entity,
+            entity_id,
+            frame_index,
+        );
+
+        entity_id
+    }
+
+    pub(crate) fn frame_postprocess(
+        &mut self,
+        file_entity: Entity,
+        frame_entity: Entity,
+        frame_order: usize,
+    ) {
+        self.register_frame(file_entity, frame_entity, frame_order);
     }
 }
 

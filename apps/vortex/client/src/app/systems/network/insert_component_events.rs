@@ -40,6 +40,7 @@ use crate::app::{
     systems::file_post_process,
 };
 
+// if this gets big, just switch to a &mut World
 pub fn insert_component_events(
     mut event_reader: EventReader<InsertComponentEvents>,
 
@@ -636,8 +637,9 @@ pub fn insert_animation_events(
 
         let frame = frame_q.get(entity).unwrap();
         let file_entity = frame.file_entity.get(&client).unwrap();
+        let frame_order = frame.get_order() as usize;
 
-        animation_manager.register_frame(file_entity, entity, frame);
+        animation_manager.frame_postprocess(file_entity, entity, frame_order);
     }
 
     // on AnimRotation Insert Event
