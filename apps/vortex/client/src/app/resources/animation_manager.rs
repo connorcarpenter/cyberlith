@@ -78,6 +78,7 @@ pub struct AnimationManager {
     posing: bool,
     resync_hover: bool,
     frame_size: Vec2,
+    frame_buffer: Vec2,
     frame_hover: Option<usize>,
 
     pub current_skel_file: Option<Entity>,
@@ -98,6 +99,7 @@ impl Default for AnimationManager {
             posing: true,
             resync_hover: false,
             frame_size: Vec2::new(30.0, 60.0),
+            frame_buffer: Vec2::new(12.0, 12.0),
             frame_hover: None,
 
             current_skel_file: None,
@@ -913,11 +915,10 @@ impl AnimationManager {
 
     fn get_frame_positions(&self, frame_count: usize) -> Vec<Vec2> {
         let mut positions = Vec::new();
-        let mut start_position = Vec2::new(8.0, 8.0);
-        let buffer = Vec2::new(4.0, 4.0);
+        let mut start_position = self.frame_buffer;
         for _ in 0..frame_count {
             positions.push(start_position);
-            start_position.x += self.frame_size.x + buffer.x;
+            start_position.x += self.frame_size.x + self.frame_buffer.x;
         }
         positions
     }
