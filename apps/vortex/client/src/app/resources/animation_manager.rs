@@ -80,7 +80,7 @@ pub struct AnimationManager {
     posing: bool,
     resync_hover: bool,
     frame_size: Vec2,
-    hover_frame: Option<usize>,
+    frame_hover: Option<usize>,
 
     pub current_skel_file: Option<Entity>,
     current_frame_index: Option<usize>,
@@ -100,7 +100,7 @@ impl Default for AnimationManager {
             posing: true,
             resync_hover: false,
             frame_size: Vec2::new(30.0, 60.0),
-            hover_frame: None,
+            frame_hover: None,
 
             current_skel_file: None,
             current_frame_index: None,
@@ -770,13 +770,13 @@ impl AnimationManager {
 
         let frame_positions = self.get_frame_positions(frame_count);
 
-        self.hover_frame = None;
+        self.frame_hover = None;
         for frame_position in frame_positions {
             // assign hover frame
             if mouse_position.x >= frame_position.x && mouse_position.x <= frame_position.x + self.frame_size.x {
                 if mouse_position.y >= frame_position.y && mouse_position.y <= frame_position.y + self.frame_size.y {
                     let frame_index = (frame_position.x / (self.frame_size.x + 4.0)) as usize;
-                    self.hover_frame = Some(frame_index);
+                    self.frame_hover = Some(frame_index);
                     return;
                 }
             }
@@ -819,14 +819,17 @@ impl AnimationManager {
 
         let render_layer = camera_manager.layer_2d;
         let mesh_handle = meshes.add(Line2d);
-        let mat_handle = materials.add(Color::DARK_GRAY);
+        let mat_handle_gray = materials.add(Color::DARK_GRAY);
+        let mat_handle_white = materials.add(Color::WHITE);
 
         let frame_rects = self.get_frame_positions(frame_count);
 
         for (frame_index, frame_pos) in frame_rects.iter().enumerate() {
 
-            // set thickness to 2.0 if frame is hovered, otherwise 1.0
-            let thickness = if Some(frame_index) == self.hover_frame {
+            let selected: bool = self.current_frame_index == Some(frame_index);
+
+            // set thickness to 4.0 if frame is hovered and not currently selected, otherwise 2.0
+            let thickness = if !selected && Some(frame_index) == self.frame_hover {
                 4.0
             } else {
                 2.0
@@ -836,11 +839,24 @@ impl AnimationManager {
                 &mut render_frame,
                 &render_layer,
                 &mesh_handle,
-                &mat_handle,
+                &mat_handle_gray,
                 *frame_pos,
                 self.frame_size,
                 thickness,
             );
+
+            if selected {
+                // draw white rectangle around selected frame
+                draw_rectangle(
+                    &mut render_frame,
+                    &render_layer,
+                    &mesh_handle,
+                    &mat_handle_white,
+                    (*frame_pos + Vec2::new(-4.0, -4.0)),
+                    (self.frame_size + Vec2::new(8.0, 8.0)),
+                    thickness,
+                );
+            }
         }
     }
 
