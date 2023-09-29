@@ -27,6 +27,9 @@ use crate::app::{
 };
 
 pub fn draw(
+    file_manager: Res<FileManager>,
+    tab_manager: Res<TabManager>,
+    animation_manager: Res<AnimationManager>,
     mut render_frame: ResMut<RenderFrame>,
     // Cameras
     cameras_q: Query<(&Camera, &Transform, &Projection, Option<&RenderLayer>)>,
@@ -67,6 +70,16 @@ pub fn draw(
     // Aggregate Ambient Lights
     for (handle, render_layer_opt) in ambient_lights_q.iter() {
         render_frame.draw_ambient_light(render_layer_opt, handle);
+    }
+
+    let Some(current_file_entity) = tab_manager.current_tab_entity() else {
+        return;
+    };
+    let current_file_type = file_manager.get_file_type(&current_file_entity);
+    if current_file_type == FileExtension::Anim {
+        if animation_manager.is_framing() {
+            return;
+        }
     }
 
     // Aggregate RenderObjects
