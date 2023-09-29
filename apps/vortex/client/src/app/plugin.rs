@@ -22,7 +22,7 @@ use crate::app::{
         action::FileActions, animation_manager::AnimationManager, camera_manager::CameraManager,
         canvas::Canvas, compass::Compass, edge_manager::EdgeManager, face_manager::FaceManager,
         file_manager::FileManager, input_manager::InputManager, shape_waitlist::ShapeWaitlist,
-        tab_manager::TabManager, vertex_manager::VertexManager,
+        tab_manager::TabManager, vertex_manager::VertexManager, grid::Grid
     },
     systems::{canvas, draw, draw_vertices_and_edges, network, ui},
     ui::{widgets::NamingBarState, UiState},
@@ -116,6 +116,7 @@ impl Plugin for VortexPlugin {
             .init_resource::<CameraManager>()
             .init_resource::<InputManager>()
             .init_resource::<Compass>()
+            .init_resource::<Grid>()
             .init_resource::<Canvas>()
             .add_systems(Startup, canvas::setup)
             .add_systems(Update, canvas::update_camera)

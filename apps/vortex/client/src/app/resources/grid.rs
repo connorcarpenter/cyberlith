@@ -1,10 +1,12 @@
-use bevy_ecs::{entity::Entity, system::Commands};
+use bevy_ecs::{entity::Entity, world::World, system::{Query, Resource, SystemState, Commands}};
 
 use math::Vec3;
 use render_api::{
+    components::Transform,
     base::{Color, CpuMaterial, CpuMesh},
     Assets,
 };
+use vortex_proto::components::Vertex3d;
 
 use crate::app::{
     components::LocalShape,
@@ -14,10 +16,46 @@ use crate::app::{
     },
 };
 
-pub struct Grid;
+#[derive(Resource)]
+pub struct Grid {
+    resync: bool,
+    grid_vertices_3d: Vec<Entity>,
+}
+
+impl Default for Grid {
+    fn default() -> Self {
+        Self {
+            resync: false,
+            grid_vertices_3d: Vec::new(),
+        }
+    }
+}
 
 impl Grid {
+
+    pub fn queue_resync(&mut self) {
+        self.resync = true;
+    }
+
+    pub fn sync_grid_vertices(&mut self, world: &mut World) {
+        if !self.resync {
+            return;
+        }
+
+        self.resync = false;
+
+        let mut system_state: SystemState<Query<(&Vertex3d, &mut Transform)>> =
+            SystemState::new(world);
+        let mut vertex_3d_q = system_state.get_mut(world);
+
+        for vertex_entity in self.grid_vertices_3d.iter() {
+            let (vertex_3d, mut transform) = vertex_3d_q.get_mut(*vertex_entity).unwrap();
+            transform.translation = vertex_3d.as_vec3();
+        }
+    }
+
     pub(crate) fn setup_grid(
+        &mut self,
         commands: &mut Commands,
         camera_manager: &mut CameraManager,
         vertex_manager: &mut VertexManager,
@@ -26,7 +64,7 @@ impl Grid {
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
     ) {
-        Self::new_grid_corner(
+        self.new_grid_corner(
             commands,
             camera_manager,
             vertex_manager,
@@ -38,7 +76,7 @@ impl Grid {
             true,
             true,
         );
-        Self::new_grid_corner(
+        self.new_grid_corner(
             commands,
             camera_manager,
             vertex_manager,
@@ -50,7 +88,7 @@ impl Grid {
             false,
             false,
         );
-        Self::new_grid_corner(
+        self.new_grid_corner(
             commands,
             camera_manager,
             vertex_manager,
@@ -62,7 +100,7 @@ impl Grid {
             true,
             false,
         );
-        Self::new_grid_corner(
+        self.new_grid_corner(
             commands,
             camera_manager,
             vertex_manager,
@@ -77,6 +115,7 @@ impl Grid {
     }
 
     fn new_grid_corner(
+        &mut self,
         commands: &mut Commands,
         camera_manager: &mut CameraManager,
         vertex_manager: &mut VertexManager,
@@ -106,10 +145,11 @@ impl Grid {
             Vec3::new(grid_size * xf, (grid_size * yf) + grid_size, grid_size * zf),
             Color::DARK_GRAY,
         );
+        self.grid_vertices_3d.push(root_vertex_3d_entity);
         commands.entity(root_vertex_2d_entity).insert(LocalShape);
         commands.entity(root_vertex_3d_entity).insert(LocalShape);
 
-        Self::new_grid_vertex(
+        self.new_grid_vertex(
             commands,
             camera_manager,
             vertex_manager,
@@ -124,7 +164,7 @@ impl Grid {
                 grid_size * zf,
             ),
         );
-        Self::new_grid_vertex(
+        self.new_grid_vertex(
             commands,
             camera_manager,
             vertex_manager,
@@ -139,7 +179,7 @@ impl Grid {
                 grid_size * zf,
             ),
         );
-        Self::new_grid_vertex(
+        self.new_grid_vertex(
             commands,
             camera_manager,
             vertex_manager,
@@ -157,6 +197,7 @@ impl Grid {
     }
 
     fn new_grid_vertex(
+        &mut self,
         commands: &mut Commands,
         camera_manager: &mut CameraManager,
         vertex_manager: &mut VertexManager,
@@ -180,6 +221,7 @@ impl Grid {
         ) else {
             panic!("No edges?");
         };
+        self.grid_vertices_3d.push(vertex_3d_entity);
         commands.entity(vertex_2d_entity).insert(LocalShape);
         commands.entity(edge_2d_entity).insert(LocalShape);
         commands.entity(vertex_3d_entity).insert(LocalShape);

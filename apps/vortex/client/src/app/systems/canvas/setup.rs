@@ -33,6 +33,7 @@ pub fn setup(
     mut camera_manager: ResMut<CameraManager>,
     mut input_manager: ResMut<InputManager>,
     mut compass: ResMut<Compass>,
+    mut grid: ResMut<Grid>,
     mut textures: ResMut<Assets<CpuTexture2D>>,
     mut user_textures: ResMut<EguiUserTextures>,
     mut meshes: ResMut<Assets<CpuMesh>>,
@@ -75,7 +76,7 @@ pub fn setup(
         &mut meshes,
         &mut materials,
     );
-    Grid::setup_grid(
+    grid.setup_grid(
         &mut commands,
         &mut camera_manager,
         &mut vertex_manager,

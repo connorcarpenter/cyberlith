@@ -24,21 +24,86 @@ use crate::app::{
 #[derive(Resource)]
 pub struct Compass {
     resync: bool,
-    compass_vertices: Vec<Entity>,
+    compass_vertices_3d: Vec<Entity>,
 }
 
 impl Default for Compass {
     fn default() -> Self {
         Self {
             resync: false,
-            compass_vertices: Vec::new(),
+            compass_vertices_3d: Vec::new(),
         }
     }
 }
 
 impl Compass {
+
     pub fn queue_resync(&mut self) {
         self.resync = true;
+    }
+
+    pub fn sync_compass(
+        &mut self,
+        canvas: &Canvas,
+        camera_3d_entity: &Entity,
+        camera_state: &CameraState,
+        vertex_3d_q: &mut Query<(Entity, &mut Vertex3d)>,
+        transform_q: &Query<&Transform>,
+    ) {
+        if !self.resync {
+            return;
+        }
+
+        self.resync = false;
+
+        let Ok(camera_transform) = transform_q.get(*camera_3d_entity) else {
+            return;
+        };
+
+        let Ok((_, mut vertex_3d)) = vertex_3d_q.get_mut(self.compass_vertices_3d[0]) else {
+            return;
+        };
+
+        let right = camera_transform.right_direction();
+        let up = right.cross(camera_transform.view_direction());
+
+        let unit_length = 1.0 / camera_state.camera_3d_scale();
+        let compass_length = unit_length * 25.0;
+        let mut compass_pos = canvas.canvas_texture_size() * 0.5;
+        compass_pos.x -= 32.0;
+        compass_pos.y -= 32.0;
+        let offset_2d = camera_state.camera_3d_offset().round()
+            + Vec2::new(
+            unit_length * -1.0 * compass_pos.x,
+            unit_length * compass_pos.y,
+        );
+        let offset_3d = (right * offset_2d.x) + (up * offset_2d.y);
+
+        let vert_offset_3d = Vec3::ZERO + offset_3d;
+        vertex_3d.set_vec3(&vert_offset_3d);
+
+        let vert_offset_3d = Vec3::new(compass_length, 0.0, 0.0) + offset_3d;
+        let (_, mut vertex_3d) = vertex_3d_q.get_mut(self.compass_vertices_3d[1]).unwrap();
+        vertex_3d.set_vec3(&vert_offset_3d);
+
+        let vert_offset_3d = Vec3::new(0.0, compass_length, 0.0) + offset_3d;
+        let (_, mut vertex_3d) = vertex_3d_q.get_mut(self.compass_vertices_3d[2]).unwrap();
+        vertex_3d.set_vec3(&vert_offset_3d);
+
+        let vert_offset_3d = Vec3::new(0.0, 0.0, compass_length) + offset_3d;
+        let (_, mut vertex_3d) = vertex_3d_q.get_mut(self.compass_vertices_3d[3]).unwrap();
+        vertex_3d.set_vec3(&vert_offset_3d);
+    }
+
+    pub fn sync_compass_vertices(&self, world: &mut World) {
+        let mut system_state: SystemState<Query<(&Vertex3d, &mut Transform)>> =
+            SystemState::new(world);
+        let mut vertex_3d_q = system_state.get_mut(world);
+
+        for vertex_entity in self.compass_vertices_3d.iter() {
+            let (vertex_3d, mut transform) = vertex_3d_q.get_mut(*vertex_entity).unwrap();
+            transform.translation = vertex_3d.as_vec3();
+        }
     }
 
     pub(crate) fn setup_compass(
@@ -62,7 +127,7 @@ impl Compass {
             Vec3::ZERO,
             Color::WHITE,
         );
-        self.compass_vertices.push(vertex_3d_entity);
+        self.compass_vertices_3d.push(vertex_3d_entity);
         commands.entity(root_vertex_2d_entity).insert(LocalShape);
         commands.entity(vertex_3d_entity).insert(LocalShape);
 
@@ -106,70 +171,6 @@ impl Compass {
         );
     }
 
-    pub fn sync_compass(
-        &mut self,
-        canvas: &Canvas,
-        camera_3d_entity: &Entity,
-        camera_state: &CameraState,
-        vertex_3d_q: &mut Query<(Entity, &mut Vertex3d)>,
-        transform_q: &Query<&Transform>,
-    ) {
-        if !self.resync {
-            return;
-        }
-
-        self.resync = false;
-
-        let Ok(camera_transform) = transform_q.get(*camera_3d_entity) else {
-            return;
-        };
-
-        let Ok((_, mut vertex_3d)) = vertex_3d_q.get_mut(self.compass_vertices[0]) else {
-            return;
-        };
-
-        let right = camera_transform.right_direction();
-        let up = right.cross(camera_transform.view_direction());
-
-        let unit_length = 1.0 / camera_state.camera_3d_scale();
-        let compass_length = unit_length * 25.0;
-        let mut compass_pos = canvas.canvas_texture_size() * 0.5;
-        compass_pos.x -= 32.0;
-        compass_pos.y -= 32.0;
-        let offset_2d = camera_state.camera_3d_offset().round()
-            + Vec2::new(
-                unit_length * -1.0 * compass_pos.x,
-                unit_length * compass_pos.y,
-            );
-        let offset_3d = (right * offset_2d.x) + (up * offset_2d.y);
-
-        let vert_offset_3d = Vec3::ZERO + offset_3d;
-        vertex_3d.set_vec3(&vert_offset_3d);
-
-        let vert_offset_3d = Vec3::new(compass_length, 0.0, 0.0) + offset_3d;
-        let (_, mut vertex_3d) = vertex_3d_q.get_mut(self.compass_vertices[1]).unwrap();
-        vertex_3d.set_vec3(&vert_offset_3d);
-
-        let vert_offset_3d = Vec3::new(0.0, compass_length, 0.0) + offset_3d;
-        let (_, mut vertex_3d) = vertex_3d_q.get_mut(self.compass_vertices[2]).unwrap();
-        vertex_3d.set_vec3(&vert_offset_3d);
-
-        let vert_offset_3d = Vec3::new(0.0, 0.0, compass_length) + offset_3d;
-        let (_, mut vertex_3d) = vertex_3d_q.get_mut(self.compass_vertices[3]).unwrap();
-        vertex_3d.set_vec3(&vert_offset_3d);
-    }
-
-    pub fn sync_compass_vertices(&self, world: &mut World) {
-        let mut system_state: SystemState<Query<(&Vertex3d, &mut Transform)>> =
-            SystemState::new(world);
-        let mut vertex_3d_q = system_state.get_mut(world);
-
-        for vertex_entity in self.compass_vertices.iter() {
-            let (vertex_3d, mut transform) = vertex_3d_q.get_mut(*vertex_entity).unwrap();
-            transform.translation = vertex_3d.as_vec3();
-        }
-    }
-
     fn new_compass_arm(
         &mut self,
         commands: &mut Commands,
@@ -196,7 +197,7 @@ impl Compass {
         ) else {
             panic!("No edges?");
         };
-        self.compass_vertices.push(vertex_3d_entity);
+        self.compass_vertices_3d.push(vertex_3d_entity);
         commands.entity(vertex_2d_entity).insert(LocalShape);
         commands.entity(vertex_3d_entity).insert(LocalShape);
         commands.entity(edge_2d_entity).insert(LocalShape);

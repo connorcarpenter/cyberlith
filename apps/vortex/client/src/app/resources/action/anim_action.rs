@@ -35,7 +35,7 @@ impl AnimAction {
 
         match action_type {
             AnimActionType::SelectVertex => anim_select_vertex::execute(world, input_manager, tab_file_entity, self),
-            AnimActionType::RotateVertex => anim_rotate_vertex::execute(world, self),
+            AnimActionType::RotateVertex => anim_rotate_vertex::execute(world, tab_file_entity, self),
         }
     }
 }

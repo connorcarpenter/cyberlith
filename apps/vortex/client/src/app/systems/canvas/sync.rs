@@ -19,7 +19,7 @@ use crate::app::{
     resources::{
         animation_manager::{AnimationManager, get_root_vertex}, camera_manager::CameraManager, canvas::Canvas,
         compass::Compass, edge_manager::EdgeManager, face_manager::FaceManager,
-        file_manager::FileManager, input_manager::InputManager, tab_manager::TabManager,
+        file_manager::FileManager, input_manager::InputManager, tab_manager::TabManager, grid::Grid,
         vertex_manager::VertexManager,
     },
 };
@@ -29,6 +29,7 @@ pub fn queue_resyncs(
     tab_manager: Res<TabManager>,
     camera_manager: Res<CameraManager>,
     mut compass: ResMut<Compass>,
+    mut grid: ResMut<Grid>,
     mut vertex_manager: ResMut<VertexManager>,
     mut edge_manager: ResMut<EdgeManager>,
     mut input_manager: ResMut<InputManager>,
@@ -52,6 +53,7 @@ pub fn queue_resyncs(
         input_manager.queue_resync_hover_ui();
         input_manager.queue_resync_selection_ui();
         compass.queue_resync();
+        grid.queue_resync();
         vertex_manager.queue_resync();
         edge_manager.queue_resync();
         face_manager.queue_resync();
@@ -130,6 +132,9 @@ pub fn sync_vertices(world: &mut World) {
                     }
                     world.resource_scope(|world, compass: Mut<Compass>| {
                         compass.sync_compass_vertices(world);
+                    });
+                    world.resource_scope(|world, mut grid: Mut<Grid>| {
+                        grid.sync_grid_vertices(world);
                     });
                     vertex_manager.sync_vertices_2d(world, &camera_3d, camera_3d_scale);
                 }

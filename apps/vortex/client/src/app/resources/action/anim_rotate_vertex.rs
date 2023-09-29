@@ -1,6 +1,7 @@
 use bevy_ecs::{
     prelude::{Commands, World},
     system::{Query, Res, ResMut, SystemState},
+    entity::Entity,
 };
 use bevy_log::info;
 
@@ -10,10 +11,10 @@ use vortex_proto::components::{AnimRotation, ShapeName};
 
 use crate::app::resources::{
     action::AnimAction, animation_manager::AnimationManager, canvas::Canvas,
-    vertex_manager::VertexManager, tab_manager::TabManager
+    vertex_manager::VertexManager,
 };
 
-pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
+pub fn execute(world: &mut World, tab_file_entity: Entity, action: AnimAction) -> Vec<AnimAction> {
     let AnimAction::RotateVertex(vertex_2d_entity, old_angle_opt, new_angle_opt) = action else {
         panic!("Expected RotateVertex");
     };
@@ -26,7 +27,6 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
     let mut system_state: SystemState<(
         Commands,
         Client,
-        Res<TabManager>,
         ResMut<Canvas>,
         Res<VertexManager>,
         ResMut<AnimationManager>,
@@ -36,7 +36,6 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
     let (
         mut commands,
         mut client,
-        tab_manager,
         mut canvas,
         vertex_manager,
         mut animation_manager,
@@ -45,7 +44,7 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
     ) = system_state.get_mut(world);
 
     // get current file entity from tab
-    let file_entity = *tab_manager.current_tab_entity().unwrap();
+    let file_entity = tab_file_entity;
 
     let vertex_3d_entity = vertex_manager
         .vertex_entity_2d_to_3d(&vertex_2d_entity)
