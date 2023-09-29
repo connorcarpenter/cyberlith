@@ -210,7 +210,7 @@ pub fn despawn_file_content_entities(
                 project.file_remove_dependency(&file_key, &dependency_key);
             }
             ContentEntityData::Frame => {
-                animation_manager.deregister_frame(entity);
+                animation_manager.deregister_frame(entity, None);
             }
             ContentEntityData::Rotation => {
                 animation_manager.deregister_rotation(entity);

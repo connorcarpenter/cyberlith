@@ -9,7 +9,7 @@ use naia_bevy_server::{
     Server,
 };
 
-use vortex_proto::components::ChangelistEntry;
+use vortex_proto::components::{AnimFrame, ChangelistEntry};
 
 use crate::resources::{AnimationManager, GitManager, ShapeManager, UserManager};
 
@@ -38,6 +38,7 @@ pub fn despawn_entity_events(
     mut animation_manager: ResMut<AnimationManager>,
     mut event_reader: EventReader<DespawnEntityEvent>,
     mut changelist_q: Query<&mut ChangelistEntry>,
+    mut frame_q: Query<&mut AnimFrame>,
 ) {
     for DespawnEntityEvent(user_key, entity) in event_reader.iter() {
         let Some(user_session_data) = user_manager.user_session_data(user_key) else {
@@ -124,7 +125,7 @@ pub fn despawn_entity_events(
 
                 git_manager.queue_client_modify_file(entity);
 
-                animation_manager.on_despawn_frame(entity);
+                animation_manager.on_despawn_frame(entity, Some(&mut frame_q));
 
                 git_manager.on_remove_content_entity(&mut server, &entity);
             }

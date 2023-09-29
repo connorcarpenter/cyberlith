@@ -445,7 +445,7 @@ pub fn insert_animation_component_events(
     mut frame_events: EventReader<InsertComponentEvent<AnimFrame>>,
     mut rotation_events: EventReader<InsertComponentEvent<AnimRotation>>,
     key_q: Query<&FileKey>,
-    frame_q: Query<&AnimFrame>,
+    mut frame_q: Query<&mut AnimFrame>,
     rot_q: Query<&AnimRotation>,
 ) {
     // on AnimFrame Insert Event
@@ -465,7 +465,7 @@ pub fn insert_animation_component_events(
             .unwrap();
         let file_key = key_q.get(file_entity).unwrap().clone();
 
-        animation_manager.on_create_frame(&file_entity, &frame_entity, frame_index);
+        animation_manager.on_create_frame(&file_entity, &frame_entity, frame_index, Some(&mut frame_q));
 
         let content_entity_data = ContentEntityData::new_frame();
         git_manager.on_insert_content_entity(
