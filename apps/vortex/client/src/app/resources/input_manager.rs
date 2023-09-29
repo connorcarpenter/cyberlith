@@ -710,21 +710,33 @@ impl InputManager {
             .unwrap()
             .get_file_type(&current_file_entity);
 
-        if current_file_type != FileExtension::Mesh {
-            return;
+        match current_file_type {
+            FileExtension::Mesh => {
+                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                    tab_manager.current_tab_execute_shape_action(
+                        world,
+                        self,
+                        ShapeAction::CreateVertex(
+                            VertexTypeData::Mesh(Vec::new(), Vec::new()),
+                            Vec3::ZERO,
+                            None,
+                        ),
+                    );
+                })
+            }
+            FileExtension::Anim => {
+                if world.get_resource::<AnimationManager>().unwrap().is_framing() {
+                    world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                        tab_manager.current_tab_execute_anim_action(
+                            world,
+                            self,
+                            AnimAction::InsertFrame,
+                        );
+                    });
+                }
+            }
+            _ => {}
         }
-
-        world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-            tab_manager.current_tab_execute_shape_action(
-                world,
-                self,
-                ShapeAction::CreateVertex(
-                    VertexTypeData::Mesh(Vec::new(), Vec::new()),
-                    Vec3::ZERO,
-                    None,
-                ),
-            );
-        });
     }
 
     pub(crate) fn handle_delete_key_press(&mut self, world: &mut World) {
