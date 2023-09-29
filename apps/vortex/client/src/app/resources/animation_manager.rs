@@ -32,7 +32,7 @@ use crate::app::{
     components::{Edge2dLocal, LocalAnimRotation},
     resources::{tab_manager::TabManager,
         camera_manager::CameraManager, canvas::Canvas, edge_manager::EdgeManager,
-        vertex_manager::VertexManager,
+        vertex_manager::VertexManager,input_manager::CardinalDirection,
     },
     shapes::Line2d
 };
@@ -747,6 +747,48 @@ impl AnimationManager {
 
     }
 
+    pub fn framing_navigate(&mut self, current_file_entity: &Entity, dir: CardinalDirection) {
+        let Some(mut current_index) = self.current_frame_index else {
+            return;
+        };
+        let Some(frame_data) = self.frame_data.get(current_file_entity) else {
+            return;
+        };
+        match dir {
+            CardinalDirection::West => {
+                if current_index <= 0 {
+                    return;
+                }
+                current_index -= 1;
+                // if no frame entity, continue decrementing
+                while frame_data.frames[current_index].is_none() {
+                    if current_index <= 0 {
+                        return;
+                    }
+                    current_index -= 1;
+                }
+                self.current_frame_index = Some(current_index);
+            }
+            CardinalDirection::East => {
+                if current_index >= frame_data.frames.len() - 1 {
+                    return;
+                }
+                current_index += 1;
+                // if no frame entity, continue incrementing
+                while frame_data.frames[current_index].is_none() {
+                    if current_index >= frame_data.frames.len() - 1 {
+                        return;
+                    }
+                    current_index += 1;
+                }
+                self.current_frame_index = Some(current_index);
+            }
+            _ => {
+                // TODO
+            }
+        }
+    }
+
     pub fn framing_handle_mouse_wheel(&mut self, scroll_y: f32) {
         let scroll_y = 0.8 + (((scroll_y + 24.0)/48.0)*0.4);
         self.frame_size *= scroll_y;
@@ -858,8 +900,8 @@ impl AnimationManager {
                     &render_layer,
                     &mesh_handle,
                     &mat_handle_white,
-                    (*frame_pos + Vec2::new(-4.0, -4.0)),
-                    (self.frame_size + Vec2::new(8.0, 8.0)),
+                    *frame_pos + Vec2::new(-4.0, -4.0),
+                    self.frame_size + Vec2::new(8.0, 8.0),
                     thickness,
                 );
             }

@@ -47,6 +47,15 @@ pub enum AppInputAction {
     ToggleNamingBar,
     ToggleEdgeAngleVisibility,
     ToggleAnimationFraming,
+    FrameNavigate(CardinalDirection),
+}
+
+#[derive(Clone, Copy)]
+pub enum CardinalDirection {
+    North,
+    East,
+    South,
+    West,
 }
 
 #[derive(Resource)]
@@ -117,6 +126,22 @@ impl Default for InputManager {
             (Key::PageDown, AppInputAction::CameraAngleYawRotate(false)),
             (Key::Insert, AppInputAction::InsertKeyPress),
             (Key::Delete, AppInputAction::DeleteKeyPress),
+            (
+                Key::ArrowLeft,
+                AppInputAction::FrameNavigate(CardinalDirection::West),
+            ),
+            (
+                Key::ArrowRight,
+                AppInputAction::FrameNavigate(CardinalDirection::East),
+            ),
+            (
+                Key::ArrowUp,
+                AppInputAction::FrameNavigate(CardinalDirection::North),
+            ),
+            (
+                Key::ArrowDown,
+                AppInputAction::FrameNavigate(CardinalDirection::South),
+            ),
         ]);
 
         Self {
@@ -351,6 +376,18 @@ impl InputManager {
                                 true => animation_manager.set_framing(),
                                 false => animation_manager.set_posing(),
                             }
+                        }
+                        AppInputAction::FrameNavigate(dir) => {
+                            let current_file_entity = *world.get_resource::<TabManager>().unwrap().current_tab_entity().unwrap();
+                            let current_file_type = world.get_resource::<FileManager>().unwrap().get_file_type(&current_file_entity);
+                            if current_file_type != FileExtension::Anim {
+                                continue;
+                            }
+                            let mut animation_manager = world.get_resource_mut::<AnimationManager>().unwrap();
+                            if !animation_manager.is_framing() {
+                                continue;
+                            }
+                            animation_manager.framing_navigate(&current_file_entity, dir);
                         }
                     }
                 }
@@ -1358,10 +1395,9 @@ impl InputManager {
         let current_file_entity = world.get_resource::<TabManager>().unwrap().current_tab_entity().unwrap();
         let current_file_type = world.get_resource::<FileManager>().unwrap().get_file_type(&current_file_entity);
         if current_file_type == FileExtension::Anim {
-            if world.get_resource::<AnimationManager>().unwrap().is_framing() {
-                world.resource_scope(|world, mut animation_manager: Mut<AnimationManager>| {
-                    animation_manager.framing_handle_mouse_wheel(scroll_y);
-                });
+            let mut animation_manager = world.get_resource_mut::<AnimationManager>().unwrap();
+            if animation_manager.is_framing() {
+                animation_manager.framing_handle_mouse_wheel(scroll_y);
                 return;
             }
         }
