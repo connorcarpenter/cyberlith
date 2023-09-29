@@ -156,12 +156,14 @@ fn draw_vertices_and_edges_inner(world: &mut World, current_file: FileExtension)
             edge_is_enabled,
         );
 
+        // can't we ONLY draw this when 3d mode is enabled?
         render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
 
         // draw vertex 2d
         let Some(vertex_2d_entity) = vertex_manager.vertex_entity_3d_to_2d(&vertex_3d_entity) else {continue};
 
         let (mesh_handle, transform, render_layer_opt) = objects_q.get(vertex_2d_entity).unwrap();
+        // can't we ONLY draw this when 2d mode is enabled?
         render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
     }
 

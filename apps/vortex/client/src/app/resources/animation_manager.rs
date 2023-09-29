@@ -14,19 +14,27 @@ use input::MouseButton;
 use math::{
     convert_2d_to_3d, quat_from_spin_direction, spin_direction_from_quat, Quat, Vec2, Vec3,
 };
-use render_api::{components::{Camera, CameraProjection, Projection, Transform, Visibility}, shapes::{
-    angle_between, get_2d_line_transform_endpoint, rotation_diff,
-    set_2d_line_transform_from_angle,
-}};
+use render_api::{
+    Assets,
+    components::{RenderLayer, Camera, CameraProjection, Projection, Transform, Visibility},
+    Handle,
+    shapes::{set_2d_line_transform,
+        angle_between, get_2d_line_transform_endpoint, rotation_diff,
+        set_2d_line_transform_from_angle,
+    },
+    base::{Color, CpuMaterial, CpuMesh},
+    resources::RenderFrame
+};
 
 use vortex_proto::components::{AnimFrame, AnimRotation, EdgeAngle, FileExtension, ShapeName, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::{Edge2dLocal, LocalAnimRotation},
-    resources::{
+    resources::{tab_manager::TabManager,
         camera_manager::CameraManager, canvas::Canvas, edge_manager::EdgeManager,
         vertex_manager::VertexManager,
     },
+    shapes::Line2d
 };
 
 struct FileFrameData {
@@ -189,25 +197,6 @@ impl AnimationManager {
 
     pub fn take_last_rotation_dragged(&mut self) -> Option<(Entity, Option<Quat>, Quat)> {
         self.last_rotation_dragged.take()
-    }
-
-    pub fn framing_handle_mouse_click(&mut self, world: &mut World, click_type: MouseButton, mouse_position: &Vec2) {
-
-    }
-
-    pub fn framing_handle_mouse_drag(&mut self, world: &mut World, click_type: MouseButton, mouse_position: Vec2, delta: Vec2) {
-
-    }
-
-    pub fn framing_queue_resync_hover_ui(&mut self) {
-        self.resync_hover = true;
-    }
-
-    pub fn draw(
-        &self,
-        world: &mut World,
-    ) {
-
     }
 
     pub fn create_networked_rotation(
@@ -737,6 +726,122 @@ impl AnimationManager {
             self.last_rotation_dragged = Some((vertex_2d_entity, old_rotation, new_rotation));
         }
     }
+
+    // Framing
+    pub fn framing_handle_mouse_click(&mut self, world: &mut World, click_type: MouseButton, mouse_position: &Vec2) {
+
+    }
+
+    pub fn framing_handle_mouse_drag(&mut self, world: &mut World, click_type: MouseButton, mouse_position: Vec2, delta: Vec2) {
+
+    }
+
+    pub fn framing_queue_resync_hover_ui(&mut self) {
+        self.resync_hover = true;
+    }
+
+    pub fn draw(
+        &self,
+        world: &mut World,
+    ) {
+        // get current file
+        let Some(current_file_entity) = world.get_resource::<TabManager>().unwrap().current_tab_entity() else {
+            return;
+        };
+        let current_file_entity = *current_file_entity;
+
+        let Some(file_frame_data) = self.frame_data.get(&current_file_entity) else {
+            return;
+        };
+
+        let frame_count = file_frame_data.frames.len();
+
+        // draw
+        let mut system_state: SystemState<(
+            ResMut<RenderFrame>,
+            Res<CameraManager>,
+            ResMut<Assets<CpuMesh>>,
+            ResMut<Assets<CpuMaterial>>,
+            Query<(&mut Camera, &mut Projection, &mut Transform)>,
+        )> = SystemState::new(world);
+        let (
+            mut render_frame,
+            camera_manager,
+            mut meshes,
+            mut materials,
+            mut camera_q,
+        ) = system_state.get_mut(world);
+
+        camera_manager.enable_cameras(&mut camera_q, true);
+
+        let render_layer = camera_manager.layer_2d;
+        let mesh_handle = meshes.add(Line2d);
+        let mat_handle = materials.add(Color::DARK_GRAY);
+
+        let mut start_position = Vec2::new(8.0, 8.0);
+        let rectangle_size = Vec2::new(30.0, 60.0);
+        let buffer = Vec2::new(4.0, 4.0);
+        for _frame_index in 0..frame_count {
+            draw_rectangle(
+                &mut render_frame,
+                &render_layer,
+                &mesh_handle,
+                &mat_handle,
+                start_position,
+                rectangle_size
+            );
+            start_position.x += rectangle_size.x + buffer.x;
+        }
+    }
+}
+
+fn draw_rectangle(
+    render_frame: &mut RenderFrame,
+    render_layer: &RenderLayer,
+    mesh_handle: &Handle<CpuMesh>,
+    mat_handle: &Handle<CpuMaterial>,
+    position: Vec2,
+    size: Vec2
+) {
+    // top
+    let start = position;
+    let mut end = position;
+    end.x += size.x;
+    draw_line(render_frame, render_layer, mesh_handle, mat_handle, start, end);
+
+    // bottom
+    let mut start = position;
+    start.y += size.y;
+    let mut end = start;
+    end.x += size.x;
+    draw_line(render_frame, render_layer, mesh_handle, mat_handle, start, end);
+
+    // left
+    let start = position;
+    let mut end = position;
+    end.y += size.y;
+    draw_line(render_frame, render_layer, mesh_handle, mat_handle, start, end);
+
+    // right
+    let mut start = position;
+    start.x += size.x;
+    let mut end = start;
+    end.y += size.y;
+    draw_line(render_frame, render_layer, mesh_handle, mat_handle, start, end);
+}
+
+fn draw_line(
+    render_frame: &mut RenderFrame,
+    render_layer: &RenderLayer,
+    mesh_handle: &Handle<CpuMesh>,
+    mat_handle: &Handle<CpuMaterial>,
+    start: Vec2,
+    end: Vec2
+) {
+    let mut transform = Transform::default();
+    transform.scale.y = 2.0;
+    set_2d_line_transform(&mut transform, start, end, 0.0);
+    render_frame.draw_object(Some(render_layer), mesh_handle, mat_handle, &transform);
 }
 
 fn sync_edge_angle(

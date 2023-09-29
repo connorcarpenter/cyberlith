@@ -201,7 +201,7 @@ impl CameraManager {
         self.recalculate_3d_view();
     }
 
-    fn enable_cameras(
+    pub fn enable_cameras(
         &self,
         camera_q: &mut Query<(&mut Camera, &mut Projection, &mut Transform)>,
         enable_2d: bool,
