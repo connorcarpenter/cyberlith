@@ -46,6 +46,7 @@ pub enum AppInputAction {
     InsertKeyPress,
     ToggleNamingBar,
     ToggleEdgeAngleVisibility,
+    ToggleAnimationFraming,
 }
 
 #[derive(Resource)]
@@ -83,8 +84,15 @@ impl Default for InputManager {
                 Key::F,
                 AppInputAction::SetCameraAngleFixed(CameraAngle::Front),
             ),
-            (Key::N, AppInputAction::ToggleNamingBar),
-            (Key::E, AppInputAction::ToggleEdgeAngleVisibility),
+            (
+                Key::N,
+                AppInputAction::ToggleNamingBar),
+            (
+                Key::E,
+                AppInputAction::ToggleEdgeAngleVisibility),
+            (
+                Key::X,
+                AppInputAction::ToggleAnimationFraming),
             (
                 Key::Num1,
                 AppInputAction::SetCameraAngleFixed(CameraAngle::Ingame(1)),
@@ -335,6 +343,14 @@ impl InputManager {
                             );
 
                             system_state.apply(world);
+                        }
+                        AppInputAction::ToggleAnimationFraming => {
+                            let mut animation_manager = world.get_resource_mut::<AnimationManager>().unwrap();
+                            let is_posing = animation_manager.is_posing();
+                            match is_posing {
+                                true => animation_manager.set_framing(),
+                                false => animation_manager.set_posing(),
+                            }
                         }
                     }
                 }
