@@ -2,6 +2,7 @@ use bevy_ecs::{
     entity::Entity,
     system::{Query, Resource},
 };
+use bevy_ecs::change_detection::Mut;
 use bevy_log::{info, warn};
 
 use math::{EulerRot, Quat, Vec2, Vec3};
@@ -74,21 +75,7 @@ impl CameraManager {
 
         self.camera_3d_recalc = false;
 
-        camera_transform.rotation = Quat::from_euler(
-            EulerRot::YXZ,
-            f32::to_radians(camera_3d_rotation.x),
-            f32::to_radians(camera_3d_rotation.y),
-            0.0,
-        );
-        camera_transform.scale = Vec3::splat(1.0 / camera_3d_scale);
-
-        let right = camera_transform.right_direction();
-        let up = right.cross(camera_transform.view_direction());
-
-        camera_transform.translation = camera_transform.view_direction() * -100.0; // 100 units away from where looking
-        let rounded_offset = camera_3d_offset.round();
-        camera_transform.translation += right * rounded_offset.x;
-        camera_transform.translation += up * rounded_offset.y;
+        set_camera_transform(&mut camera_transform, camera_3d_rotation, camera_3d_scale, camera_3d_offset);
 
         return true;
     }
@@ -290,4 +277,22 @@ impl CameraManager {
             camera.is_active = cameras_enabled;
         }
     }
+}
+
+pub fn set_camera_transform(camera_transform: &mut Transform, camera_3d_rotation: Vec2, camera_3d_scale: f32, camera_3d_offset: Vec2) {
+    camera_transform.rotation = Quat::from_euler(
+        EulerRot::YXZ,
+        f32::to_radians(camera_3d_rotation.x),
+        f32::to_radians(camera_3d_rotation.y),
+        0.0,
+    );
+    camera_transform.scale = Vec3::splat(1.0 / camera_3d_scale);
+
+    let right = camera_transform.right_direction();
+    let up = right.cross(camera_transform.view_direction());
+
+    camera_transform.translation = camera_transform.view_direction() * -100.0; // 100 units away from where looking
+    let rounded_offset = camera_3d_offset.round();
+    camera_transform.translation += right * rounded_offset.x;
+    camera_transform.translation += up * rounded_offset.y;
 }

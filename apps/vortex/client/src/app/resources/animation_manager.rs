@@ -6,14 +6,14 @@ use bevy_ecs::{
     system::{Res, ResMut, Resource, SystemState},
     world::World,
 };
+use bevy_ecs::query::Without;
+use bevy_ecs::world::Mut;
 use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 use input::MouseButton;
 
-use math::{
-    convert_2d_to_3d, quat_from_spin_direction, spin_direction_from_quat, Quat, Vec2, Vec3,
-};
+use math::{convert_2d_to_3d, quat_from_spin_direction, spin_direction_from_quat, Quat, Vec2, Vec3, convert_3d_to_2d, Mat4};
 use render_api::{
     Assets,
     components::{RenderLayer, Camera, CameraProjection, Projection, Transform, Visibility},
@@ -25,8 +25,9 @@ use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
     resources::RenderFrame
 };
+use render_api::shapes::Circle;
 
-use vortex_proto::components::{AnimFrame, AnimRotation, EdgeAngle, FileExtension, ShapeName, Transition, Vertex3d, VertexRoot};
+use vortex_proto::components::{AnimFrame, AnimRotation, Edge3d, EdgeAngle, FileExtension, ShapeName, Transition, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::{Edge2dLocal, LocalAnimRotation},
@@ -36,6 +37,8 @@ use crate::app::{
     },
     shapes::Line2d
 };
+use crate::app::components::{DefaultDraw, Vertex2d};
+use crate::app::resources::camera_manager::set_camera_transform;
 
 struct FileFrameData {
     frames: HashSet<Entity>,
@@ -86,7 +89,7 @@ impl Default for AnimationManager {
             posing: true,
             resync_hover: false,
             resync_frame_order: HashSet::new(),
-            frame_size: Vec2::new(30.0, 60.0),
+            frame_size: Vec2::new(60.0, 60.0),
             frame_buffer: Vec2::new(12.0, 12.0),
             frame_hover: None,
 
@@ -791,11 +794,11 @@ impl AnimationManager {
     pub fn framing_handle_mouse_wheel(&mut self, scroll_y: f32) {
         let scroll_y = 0.8 + (((scroll_y + 24.0)/48.0)*0.4);
         self.frame_size *= scroll_y;
-        if self.frame_size.x < 20.0 {
-            self.frame_size = Vec2::new(20.0, 40.0);
+        if self.frame_size.x < 40.0 {
+            self.frame_size = Vec2::new(40.0, 40.0);
         }
-        if self.frame_size.x > 200.0 {
-            self.frame_size = Vec2::new(200.0, 400.0);
+        if self.frame_size.x > 400.0 {
+            self.frame_size = Vec2::new(400.0, 400.0);
         }
     }
 
@@ -845,64 +848,271 @@ impl AnimationManager {
 
         let frame_count = file_frame_data.frame_list.len();
 
-        // draw
-        let mut system_state: SystemState<(
-            ResMut<RenderFrame>,
-            Res<CameraManager>,
-            ResMut<Assets<CpuMesh>>,
-            ResMut<Assets<CpuMaterial>>,
-            Query<(&mut Camera, &mut Projection, &mut Transform)>,
-        )> = SystemState::new(world);
         let (
-            mut render_frame,
-            camera_manager,
-            mut meshes,
-            mut materials,
-            mut camera_q,
-        ) = system_state.get_mut(world);
+            frame_rects,
+            render_layer,
+            camera_3d_entity,
+            point_mesh_handle,
+            line_mesh_handle,
+            mat_handle_green
+        ) = {
+            // draw
+            let mut system_state: SystemState<(
+                ResMut<RenderFrame>,
+                Res<CameraManager>,
+                ResMut<Assets<CpuMesh>>,
+                ResMut<Assets<CpuMaterial>>,
+                Query<(&mut Camera, &mut Projection, &mut Transform)>,
+            )> = SystemState::new(world);
+            let (
+                mut render_frame,
+                camera_manager,
+                mut meshes,
+                mut materials,
+                mut camera_q,
+            ) = system_state.get_mut(world);
 
-        camera_manager.enable_cameras(&mut camera_q, true);
+            camera_manager.enable_cameras(&mut camera_q, true);
 
-        let render_layer = camera_manager.layer_2d;
-        let mesh_handle = meshes.add(Line2d);
-        let mat_handle_gray = materials.add(Color::DARK_GRAY);
-        let mat_handle_white = materials.add(Color::WHITE);
+            let render_layer = camera_manager.layer_2d;
+            let camera_3d_entity = camera_manager.camera_3d_entity().unwrap();
+            let point_mesh_handle = meshes.add(Circle::new(Vertex2d::SUBDIVISIONS));
+            let line_mesh_handle = meshes.add(Line2d);
+            let mat_handle_gray = materials.add(Color::DARK_GRAY);
+            let mat_handle_white = materials.add(Color::WHITE);
+            let mat_handle_green = materials.add(Color::GREEN);
 
-        let frame_rects = self.get_frame_positions(frame_count);
+            let frame_rects = self.get_frame_positions(frame_count);
 
-        for (frame_index, frame_pos) in frame_rects.iter().enumerate() {
+            for (frame_index, frame_pos) in frame_rects.iter().enumerate() {
+                let selected: bool = self.current_frame_index == Some(frame_index);
 
-            let selected: bool = self.current_frame_index == Some(frame_index);
+                // set thickness to 4.0 if frame is hovered and not currently selected, otherwise 2.0
+                let thickness = if !selected && Some(frame_index) == self.frame_hover {
+                    4.0
+                } else {
+                    2.0
+                };
 
-            // set thickness to 4.0 if frame is hovered and not currently selected, otherwise 2.0
-            let thickness = if !selected && Some(frame_index) == self.frame_hover {
-                4.0
-            } else {
-                2.0
-            };
-
-            draw_rectangle(
-                &mut render_frame,
-                &render_layer,
-                &mesh_handle,
-                &mat_handle_gray,
-                *frame_pos,
-                self.frame_size,
-                thickness,
-            );
-
-            if selected {
-                // draw white rectangle around selected frame
                 draw_rectangle(
                     &mut render_frame,
                     &render_layer,
-                    &mesh_handle,
-                    &mat_handle_white,
-                    *frame_pos + Vec2::new(-4.0, -4.0),
-                    self.frame_size + Vec2::new(8.0, 8.0),
+                    &line_mesh_handle,
+                    &mat_handle_gray,
+                    *frame_pos,
+                    self.frame_size,
                     thickness,
                 );
+
+                if selected {
+                    // draw white rectangle around selected frame
+                    draw_rectangle(
+                        &mut render_frame,
+                        &render_layer,
+                        &line_mesh_handle,
+                        &mat_handle_white,
+                        *frame_pos + Vec2::new(-4.0, -4.0),
+                        self.frame_size + Vec2::new(8.0, 8.0),
+                        thickness,
+                    );
+                }
             }
+
+            (frame_rects, render_layer, camera_3d_entity, point_mesh_handle, line_mesh_handle, mat_handle_green)
+        };
+
+
+        let Some(root_3d_vertex) = get_root_vertex(world) else {
+            return;
+        };
+
+        //
+        let mut system_state: SystemState<(
+            Query<(&Camera, &Projection)>,
+            Query<&mut Transform>,
+        )> = SystemState::new(world);
+        let (camera_q, mut transform_q) =
+            system_state.get_mut(world);
+        let Ok((camera, camera_projection)) = camera_q.get(camera_3d_entity) else {
+            return;
+        };
+
+        let camera_viewport = camera.viewport.unwrap();
+        let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
+        let camera_viewport = camera_viewport.size_vec2();
+
+        let mut camera_transform = Transform::default();
+        set_camera_transform(&mut camera_transform, Vec2::ZERO, 4.0, Vec2::ZERO);
+        let view_matrix = camera_transform.view_matrix();
+
+        world.resource_scope(|world, vertex_manager: Mut<VertexManager>| {
+            for (frame_index, frame_pos) in frame_rects.iter().enumerate() {
+                let Some(frame_entity) = file_frame_data.frame_list[frame_index] else {
+                    continue;
+                };
+                self.draw_pose(
+                    world,
+                    &vertex_manager,
+                    frame_entity,
+                    root_3d_vertex,
+                    frame_pos,
+                    &render_layer,
+                    &point_mesh_handle,
+                    &line_mesh_handle,
+                    &mat_handle_green,
+                    &camera_viewport,
+                    &view_matrix,
+                    &projection_matrix,
+                );
+            }
+        });
+    }
+
+    fn draw_pose(
+        &self,
+        world: &mut World,
+        vertex_manager: &VertexManager,
+        frame_entity: Entity,
+        root_3d_vertex: Entity,
+        frame_pos: &Vec2,
+        render_layer: &RenderLayer,
+        point_mesh_handle: &Handle<CpuMesh>,
+        line_mesh_handle: &Handle<CpuMesh>,
+        mat_handle_green: &Handle<CpuMaterial>,
+        camera_viewport: &Vec2,
+        view_matrix: &Mat4,
+        projection_matrix: &Mat4,
+    ) {
+        self.sync_shapes_3d(world, vertex_manager, 1.0, frame_entity, root_3d_vertex);
+        let mut frame_size = self.frame_size;
+        frame_size.x *= 0.5;
+        let root_pos = *frame_pos + frame_size;
+        self.draw_shapes_3d(
+            world,
+            vertex_manager,
+            root_3d_vertex,
+            &root_pos,
+            frame_pos,
+            render_layer,
+            point_mesh_handle,
+            line_mesh_handle,
+            mat_handle_green,
+            camera_viewport,
+            view_matrix,
+            projection_matrix,
+        );
+    }
+
+    fn draw_shapes_3d(
+        &self,
+        world: &mut World,
+        vertex_manager: &VertexManager,
+        root_3d_vertex: Entity,
+        root_transform: &Vec2,
+        frame_pos: &Vec2,
+        render_layer: &RenderLayer,
+        point_mesh_handle: &Handle<CpuMesh>,
+        line_mesh_handle: &Handle<CpuMesh>,
+        mat_handle_green: &Handle<CpuMaterial>,
+        camera_viewport: &Vec2,
+        view_matrix: &Mat4,
+        projection_matrix: &Mat4,
+    ) {
+        let mut system_state: SystemState<(
+            Res<EdgeManager>,
+            ResMut<RenderFrame>,
+            Query<&Transform>,
+        )> = SystemState::new(world);
+        let (
+            edge_manager,
+            mut render_frame,
+            transform_q,
+        ) = system_state.get_mut(world);
+
+        self.draw_shapes_3d_children(
+            vertex_manager,
+            &edge_manager,
+            &mut render_frame,
+            &transform_q,
+            root_3d_vertex,
+            root_transform,
+            render_layer,
+            point_mesh_handle,
+            line_mesh_handle,
+            mat_handle_green,
+            camera_viewport,
+            view_matrix,
+            projection_matrix,
+            frame_pos,
+        );
+    }
+
+    fn draw_shapes_3d_children(
+        &self,
+        vertex_manager: &VertexManager,
+        edge_manager: &EdgeManager,
+        render_frame: &mut RenderFrame,
+        transform_q: &Query<&Transform>,
+        parent_vertex_3d_entity: Entity,
+        parent_position: &Vec2,
+        render_layer: &RenderLayer,
+        point_mesh_handle: &Handle<CpuMesh>,
+        line_mesh_handle: &Handle<CpuMesh>,
+        mat_handle_green: &Handle<CpuMaterial>,
+        camera_viewport: &Vec2,
+        view_matrix: &Mat4,
+        projection_matrix: &Mat4,
+        frame_pos: &Vec2,
+    ) {
+        // sync children vertices
+        let Some(children) = vertex_manager.vertex_children_3d_entities(&parent_vertex_3d_entity) else {
+            return;
+        };
+
+        for child_vertex_3d_entity in children.iter() {
+            // draw vertex 2d
+
+            // get 3d transform
+            let Ok(vertex_3d_transform) = transform_q.get(*child_vertex_3d_entity) else {
+                warn!("Vertex3d entity {:?} has no Transform", child_vertex_3d_entity);
+                continue;
+            };
+
+            // update 2d vertices
+            let (coords, _depth) = convert_3d_to_2d(
+                view_matrix,
+                projection_matrix,
+                &self.frame_size,
+                &vertex_3d_transform.translation,
+            );
+
+            let adjust = Vec2::new(0.0, self.frame_size.y * 0.5);
+            let child_position = coords + *frame_pos + adjust;
+            let child_transform = Transform::from_translation_2d(child_position);
+            render_frame.draw_object(Some(render_layer), point_mesh_handle, &mat_handle_green, &child_transform);
+
+            // draw edge 2d
+            let mut line_transform = Transform::default();
+            set_2d_line_transform(&mut line_transform, *parent_position, child_position, 0.0);
+            render_frame.draw_object(Some(render_layer), line_mesh_handle, &mat_handle_green, &line_transform);
+
+            // recurse
+            self.draw_shapes_3d_children(
+                vertex_manager,
+                edge_manager,
+                render_frame,
+                transform_q,
+                *child_vertex_3d_entity,
+                &child_position,
+                render_layer,
+                point_mesh_handle,
+                line_mesh_handle,
+                mat_handle_green,
+                camera_viewport,
+                view_matrix,
+                projection_matrix,
+                frame_pos,
+            );
         }
     }
 
