@@ -7,7 +7,7 @@ use bevy_log::info;
 use crate::app::resources::action::AnimAction;
 
 pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
-    let AnimAction::DeleteFrame = action else {
+    let AnimAction::DeleteFrame(_, _, _) = action else {
         panic!("Expected DeleteFrame");
     };
 

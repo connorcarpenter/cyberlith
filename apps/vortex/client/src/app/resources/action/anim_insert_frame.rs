@@ -4,37 +4,37 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use naia_bevy_client::Client;
+use naia_bevy_client::{Client, CommandsExt};
 
 use crate::app::resources::{action::AnimAction, animation_manager::AnimationManager};
 
 pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
-    let AnimAction::InsertFrame(file_entity, frame_index_opt) = action else {
+    let AnimAction::InsertFrame(file_entity, frame_index) = action else {
         panic!("Expected InsertFrame");
     };
 
-    info!("InsertFrame({:?}, {:?})", file_entity, frame_index_opt);
+    info!("InsertFrame({:?}, {:?})", file_entity, frame_index);
 
     let mut system_state: SystemState<(Commands, Client, ResMut<AnimationManager>)> = SystemState::new(world);
     let (mut commands, mut client, mut animation_manager) = system_state.get_mut(world);
 
     // TODO: deselect frame
     // TODO: release frame auth
-
-    let frame_index = match frame_index_opt {
-        Some(frame_index) => frame_index + 1,
-        None => 0,
-    };
+    let last_frame_index = animation_manager.current_frame_index();
+    let last_frame_entity = animation_manager.get_frame_entity(&file_entity, last_frame_index).unwrap();
+    commands.entity(last_frame_entity).release_authority(&mut client);
 
     let new_frame_entity = animation_manager.framing_insert_frame(&mut commands, &mut client, file_entity, frame_index);
 
+    animation_manager.set_current_frame_index(frame_index);
+
     // TODO: migrate undo/redo entities
 
-    // TODO: select new frame
+    // auth already granted for this frame
 
     system_state.apply(world);
 
-    return vec![AnimAction::DeleteFrame];
+    return vec![AnimAction::DeleteFrame(file_entity, frame_index, Some(last_frame_index))];
 }
 
 //info!("creating new fs entry: `{}`", new_file_name);

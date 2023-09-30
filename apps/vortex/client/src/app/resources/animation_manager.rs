@@ -4,10 +4,8 @@ use bevy_ecs::{
     entity::Entity,
     prelude::{With, Commands, Query},
     system::{Res, ResMut, Resource, SystemState},
-    world::World,
+    world::{World, Mut},
 };
-use bevy_ecs::query::Without;
-use bevy_ecs::world::Mut;
 use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
@@ -18,27 +16,24 @@ use render_api::{
     Assets,
     components::{RenderLayer, Camera, CameraProjection, Projection, Transform, Visibility},
     Handle,
-    shapes::{set_2d_line_transform,
+    shapes::{Circle, set_2d_line_transform,
         angle_between, get_2d_line_transform_endpoint, rotation_diff,
         set_2d_line_transform_from_angle,
     },
     base::{Color, CpuMaterial, CpuMesh},
     resources::RenderFrame
 };
-use render_api::shapes::Circle;
 
-use vortex_proto::components::{AnimFrame, AnimRotation, Edge3d, EdgeAngle, FileExtension, ShapeName, Transition, Vertex3d, VertexRoot};
+use vortex_proto::components::{AnimFrame, AnimRotation, EdgeAngle, FileExtension, ShapeName, Transition, Vertex3d, VertexRoot};
 
 use crate::app::{
-    components::{Edge2dLocal, LocalAnimRotation},
+    components::{Vertex2d, Edge2dLocal, LocalAnimRotation},
     resources::{tab_manager::TabManager,
-        camera_manager::CameraManager, canvas::Canvas, edge_manager::EdgeManager,
+        camera_manager::{CameraManager, set_camera_transform}, canvas::Canvas, edge_manager::EdgeManager,
         vertex_manager::VertexManager,input_manager::CardinalDirection,
     },
     shapes::Line2d
 };
-use crate::app::components::{DefaultDraw, Vertex2d};
-use crate::app::resources::camera_manager::set_camera_transform;
 
 struct FileFrameData {
     frames: HashSet<Entity>,
@@ -72,7 +67,7 @@ pub struct AnimationManager {
     resync_frame_order: HashSet<Entity>,
 
     pub current_skel_file: Option<Entity>,
-    current_frame_index: Option<usize>,
+    current_frame_index: usize,
     // file_entity -> file_frame_data
     frame_data: HashMap<Entity, FileFrameData>,
     // rotation_entity -> (frame_entity, vertex_name)
@@ -94,7 +89,7 @@ impl Default for AnimationManager {
             frame_hover: None,
 
             current_skel_file: None,
-            current_frame_index: None,
+            current_frame_index: 0,
             frame_data: HashMap::new(),
             rotations: HashMap::new(),
             vertex_names: HashMap::new(),
@@ -106,12 +101,23 @@ impl Default for AnimationManager {
 
 impl AnimationManager {
 
-    pub(crate) fn current_frame_index(&self) -> Option<usize> {
+    pub(crate) fn current_frame_index(&self) -> usize {
         self.current_frame_index
     }
 
+    pub fn set_current_frame_index(&mut self, frame_index: usize) {
+        self.current_frame_index = frame_index;
+    }
+
+    pub fn get_frame_entity(&self, file_entity: &Entity, frame_index: usize) -> Option<Entity> {
+        let frame_data = self.frame_data.get(file_entity)?;
+        let entity_opt = frame_data.frame_list.get(frame_index)?.as_ref();
+        let entity = entity_opt?;
+        Some(*entity)
+    }
+
     pub(crate) fn current_frame_entity(&self, file_entity: &Entity) -> Option<Entity> {
-        let current_frame_index = self.current_frame_index?;
+        let current_frame_index = self.current_frame_index;
         let frame_data = self.frame_data.get(file_entity)?;//&(*file_entity, current_frame_index)).copied()
         let entity_opt = frame_data.frame_list.get(current_frame_index)?.as_ref();
         let entity = entity_opt?;
@@ -122,17 +128,12 @@ impl AnimationManager {
         &mut self,
         file_entity: Entity,
         frame_entity: Entity,
-        frame_order: usize,
     ) {
         if !self.frame_data.contains_key(&file_entity) {
             self.frame_data.insert(file_entity, FileFrameData::new());
         }
         let frame_data = self.frame_data.get_mut(&file_entity).unwrap();
         frame_data.register_frame(frame_entity);
-
-        if self.current_frame_index.is_none() {
-            self.current_frame_index = Some(frame_order);
-        }
 
         self.framing_queue_resync_frame_order(&file_entity);
     }
@@ -735,24 +736,16 @@ impl AnimationManager {
     }
 
     // Framing
-    pub fn framing_handle_mouse_click(&mut self, world: &mut World, click_type: MouseButton, mouse_position: &Vec2) {
-        if click_type != MouseButton::Left {
-            return;
-        }
-
-        if self.frame_hover.is_some() {
-            self.current_frame_index = self.frame_hover;
-        }
-    }
-
     pub fn framing_handle_mouse_drag(&mut self, world: &mut World, click_type: MouseButton, mouse_position: Vec2, delta: Vec2) {
 
     }
 
+    pub fn frame_index_hover(&self) -> Option<usize> {
+        self.frame_hover
+    }
+
     pub fn framing_navigate(&mut self, current_file_entity: &Entity, dir: CardinalDirection) {
-        let Some(mut current_index) = self.current_frame_index else {
-            return;
-        };
+        let mut current_index = self.current_frame_index;
         let Some(frame_data) = self.frame_data.get(current_file_entity) else {
             return;
         };
@@ -769,7 +762,7 @@ impl AnimationManager {
                     }
                     current_index -= 1;
                 }
-                self.current_frame_index = Some(current_index);
+                self.current_frame_index = current_index;
             }
             CardinalDirection::East => {
                 if current_index >= frame_data.frame_list.len() - 1 {
@@ -783,7 +776,7 @@ impl AnimationManager {
                     }
                     current_index += 1;
                 }
-                self.current_frame_index = Some(current_index);
+                self.current_frame_index = current_index;
             }
             _ => {
                 // TODO
@@ -885,7 +878,7 @@ impl AnimationManager {
             let frame_rects = self.get_frame_positions(frame_count);
 
             for (frame_index, frame_pos) in frame_rects.iter().enumerate() {
-                let selected: bool = self.current_frame_index == Some(frame_index);
+                let selected: bool = self.current_frame_index == frame_index;
 
                 // set thickness to 4.0 if frame is hovered and not currently selected, otherwise 2.0
                 let thickness = if !selected && Some(frame_index) == self.frame_hover {
@@ -1203,7 +1196,7 @@ impl AnimationManager {
         frame_entity: Entity,
         frame_order: usize,
     ) {
-        self.register_frame(file_entity, frame_entity, frame_order);
+        self.register_frame(file_entity, frame_entity);
     }
 }
 

@@ -887,10 +887,25 @@ impl InputManager {
         let current_file_entity = world.get_resource::<TabManager>().unwrap().current_tab_entity().unwrap();
         let current_file_type = world.get_resource::<FileManager>().unwrap().get_file_type(&current_file_entity);
         if current_file_type == FileExtension::Anim {
-            if world.get_resource::<AnimationManager>().unwrap().is_framing() {
-                world.resource_scope(|world, mut animation_manager: Mut<AnimationManager>| {
-                    animation_manager.framing_handle_mouse_click(world, click_type, mouse_position);
-                });
+            let animation_manager = world.get_resource::<AnimationManager>().unwrap();
+            if animation_manager.is_framing() {
+
+                if click_type != MouseButton::Left {
+                    return;
+                }
+
+                let current_frame_index = animation_manager.current_frame_index();
+                let frame_index_hover = animation_manager.frame_index_hover();
+                if frame_index_hover.is_some() && current_frame_index != frame_index_hover.unwrap() {
+                    world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                        tab_manager.current_tab_execute_anim_action(
+                            world,
+                            self,
+                            AnimAction::SelectFrame(frame_index_hover.unwrap(), current_frame_index),
+                        );
+                    });
+                }
+
                 return;
             }
         }
