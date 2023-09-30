@@ -119,8 +119,9 @@ impl TabManager {
                 .get_resource::<InputManager>()
                 .unwrap()
                 .selected_shape_2d();
-            let tab_state = self.tab_map.get_mut(&last_tab_entity).unwrap();
-            tab_state.selected_shape_2d = Some(last_selected_shape);
+            if let Some(tab_state) = self.tab_map.get_mut(&last_tab_entity) {
+                tab_state.selected_shape_2d = Some(last_selected_shape);
+            }
 
             let file_ext = world
                 .get_resource::<FileManager>()
@@ -169,9 +170,10 @@ impl TabManager {
         }
 
         input_manager.deselect_shape(&mut canvas);
-        let tab_state = self.current_tab_state_mut().unwrap();
-        if let Some(Some((entity, shape))) = tab_state.selected_shape_2d.take() {
-            input_manager.select_shape(&mut canvas, &entity, shape);
+        if let Some(tab_state) = self.current_tab_state_mut() {
+            if let Some(Some((entity, shape))) = tab_state.selected_shape_2d.take() {
+                input_manager.select_shape(&mut canvas, &entity, shape);
+            }
         }
 
         camera_manager.recalculate_3d_view();

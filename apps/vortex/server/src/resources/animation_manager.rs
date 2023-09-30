@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
-use bevy_ecs::{entity::Entity, system::Resource};
-use bevy_ecs::prelude::Query;
+use bevy_ecs::{prelude::Query, entity::Entity, system::Resource};
+
 use vortex_proto::components::AnimFrame;
 
 pub struct RotationData {
@@ -34,26 +34,24 @@ impl FileFrameData {
         // add to frame_list
         if frame_order >= self.frame_list.len() {
             self.frame_list.resize(frame_order + 1, None);
+            // set frame entity
+            self.frame_list[frame_order] = Some(frame_entity);
         } else {
             // move all elements after frame_order up one
-            for i in (frame_order..self.frame_list.len()).rev() {
-                if i+1 >= self.frame_list.len() {
-                    self.frame_list.push(self.frame_list[i]);
-                } else {
-                    self.frame_list[i + 1] = self.frame_list[i];
-                }
-
+            for i in frame_order..self.frame_list.len() {
                 // update frame_order in AnimFrame using frame_q_opt
                 if let Some(frame_q) = frame_q_opt.as_mut() {
                     if let Ok(mut frame) = frame_q.get_mut(self.frame_list[i].unwrap()) {
-                        frame.set_order(i as u8);
+                        frame.set_order((i + 1) as u8);
                     }
                 }
             }
+            self.frame_list.insert(frame_order, Some(frame_entity));
         }
 
-        // set frame entity
-        self.frame_list[frame_order] = Some(frame_entity);
+        // for i in 0..self.frame_list.len() {
+        //     info!("index: {}, entity: {:?}", i, self.frame_list[i]);
+        // }
     }
 
     fn remove_frame(&mut self, frame_entity: &Entity, frame_q_opt: Option<&mut Query<&mut AnimFrame>>) -> Option<FrameData> {
@@ -201,12 +199,11 @@ impl AnimationManager {
         };
 
         let frame_entity = rot_data.frame_entity;
-        let Some(file_entity) = self.frames.get(&frame_entity) else {
-            panic!("frame entity not found");
-        };
-        if let Some(frame_data) = self.file_frame_data.get_mut(&file_entity) {
-            frame_data.remove_rotation(&frame_entity, rotation_entity);
-        };
+        if let Some(file_entity) = self.frames.get(&frame_entity) {
+            if let Some(frame_data) = self.file_frame_data.get_mut(&file_entity) {
+                frame_data.remove_rotation(&frame_entity, rotation_entity);
+            }
+        }
 
         rot_data
     }

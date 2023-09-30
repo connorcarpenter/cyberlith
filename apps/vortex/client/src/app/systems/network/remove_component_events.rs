@@ -127,7 +127,7 @@ pub fn remove_component_events(
 
             let file_entity = frame.file_entity.get(&client).unwrap();
 
-            animation_manager.deregister_frame(&file_entity, &frame_entity, &frame);
+            animation_manager.deregister_frame(&file_entity, &frame_entity);
         }
         for (rot_entity, _) in events.read::<AnimRotation>() {
             info!("entity: `{:?}`, removed AnimRotation", rot_entity);

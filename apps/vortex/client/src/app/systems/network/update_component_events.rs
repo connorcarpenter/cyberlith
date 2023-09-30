@@ -16,6 +16,7 @@ use crate::app::{
     resources::{
         canvas::Canvas,
         file_manager::{get_full_path, FileManager},
+        animation_manager::AnimationManager,
     },
 };
 
@@ -24,9 +25,11 @@ pub fn update_component_events(
     mut event_reader: EventReader<UpdateComponentEvents>,
     file_manager: ResMut<FileManager>,
     mut canvas: ResMut<Canvas>,
+    mut animation_manager: ResMut<AnimationManager>,
     entry_q: Query<(&FileSystemEntry, Option<&FileSystemChild>)>,
     mut entry_local_q: Query<&mut FileSystemEntryLocal>,
     mut cl_q: Query<(&ChangelistEntry, &mut ChangelistUiState)>,
+    frame_q: Query<&AnimFrame>,
 ) {
     for events in event_reader.iter() {
         // on FileSystemEntry Update Event
@@ -98,10 +101,14 @@ pub fn update_component_events(
             canvas.queue_resync_shapes();
         }
         for (_tick, _entity) in events.read::<ShapeName>() {
-            todo!();
+            // what to do here? update some caches?
         }
-        for (_tick, _entity) in events.read::<AnimFrame>() {
-            todo!();
+        for (_tick, frame_entity) in events.read::<AnimFrame>() {
+            let Ok(frame) = frame_q.get(frame_entity) else {
+                panic!("frame entity not found");
+            };
+            let file_entity = frame.file_entity.get(&client).unwrap();
+            animation_manager.framing_queue_resync_frame_order(&file_entity);
         }
     }
 }

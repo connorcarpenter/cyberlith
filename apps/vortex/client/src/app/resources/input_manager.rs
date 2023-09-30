@@ -696,9 +696,6 @@ impl InputManager {
     }
 
     pub(crate) fn handle_insert_key_press(&mut self, world: &mut World) {
-        if self.selected_shape.is_some() {
-            return;
-        }
 
         let current_file_entity = *world
             .get_resource::<TabManager>()
@@ -712,6 +709,9 @@ impl InputManager {
 
         match current_file_type {
             FileExtension::Mesh => {
+                if self.selected_shape.is_some() {
+                    return;
+                }
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
                     tab_manager.current_tab_execute_shape_action(
                         world,

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, f32::consts::FRAC_PI_2};
+use std::{collections::{HashMap, HashSet}, f32::consts::FRAC_PI_2};
 
 use bevy_ecs::{
     entity::Entity,
@@ -38,38 +38,24 @@ use crate::app::{
 };
 
 struct FileFrameData {
-    frames: Vec<Option<Entity>>,
+    frames: HashSet<Entity>,
+    frame_list: Vec<Option<Entity>>,
 }
 
 impl FileFrameData {
     pub fn new() -> Self {
         Self {
-            frames: Vec::new(),
+            frames: HashSet::new(),
+            frame_list: Vec::new(),
         }
     }
 
-    pub fn register_frame(&mut self, frame_entity: Entity, frame_order: usize) {
-        if frame_order >= self.frames.len() {
-            self.frames.resize(frame_order + 1, None);
-        }
-        self.frames[frame_order] = Some(frame_entity);
+    pub fn register_frame(&mut self, frame_entity: Entity) {
+        self.frames.insert(frame_entity);
     }
 
-    pub fn deregister_frame(&mut self, frame_entity: &Entity, frame: &AnimFrame) {
-        let order = frame.get_order() as usize;
-        if order >= self.frames.len() {
-            panic!("Frame order out of bounds!");
-        }
-        if self.frames[order] == Some(*frame_entity) {
-            self.frames[order] = None;
-
-            // if deregistered frame was the last frame, remove trailing None by resizing the Vec
-            while self.frames.last().is_none() {
-                self.frames.pop();
-            }
-        } else {
-            panic!("Frame entity mismatch!");
-        }
+    pub fn deregister_frame(&mut self, frame_entity: &Entity) {
+        self.frames.remove(frame_entity);
     }
 }
 
@@ -80,6 +66,7 @@ pub struct AnimationManager {
     frame_size: Vec2,
     frame_buffer: Vec2,
     frame_hover: Option<usize>,
+    resync_frame_order: HashSet<Entity>,
 
     pub current_skel_file: Option<Entity>,
     current_frame_index: Option<usize>,
@@ -98,6 +85,7 @@ impl Default for AnimationManager {
         Self {
             posing: true,
             resync_hover: false,
+            resync_frame_order: HashSet::new(),
             frame_size: Vec2::new(30.0, 60.0),
             frame_buffer: Vec2::new(12.0, 12.0),
             frame_hover: None,
@@ -122,7 +110,9 @@ impl AnimationManager {
     pub(crate) fn current_frame_entity(&self, file_entity: &Entity) -> Option<Entity> {
         let current_frame_index = self.current_frame_index?;
         let frame_data = self.frame_data.get(file_entity)?;//&(*file_entity, current_frame_index)).copied()
-        frame_data.frames[current_frame_index]
+        let entity_opt = frame_data.frame_list.get(current_frame_index)?.as_ref();
+        let entity = entity_opt?;
+        Some(*entity)
     }
 
     pub(crate) fn register_frame(
@@ -135,29 +125,32 @@ impl AnimationManager {
             self.frame_data.insert(file_entity, FileFrameData::new());
         }
         let frame_data = self.frame_data.get_mut(&file_entity).unwrap();
-        frame_data.register_frame(frame_entity, frame_order);
+        frame_data.register_frame(frame_entity);
 
         if self.current_frame_index.is_none() {
             self.current_frame_index = Some(frame_order);
         }
+
+        self.framing_queue_resync_frame_order(&file_entity);
     }
 
     pub(crate) fn deregister_frame(
         &mut self,
         file_entity: &Entity,
         frame_entity: &Entity,
-        frame: &AnimFrame,
     ) {
         if !self.frame_data.contains_key(file_entity) {
             panic!("Frame data not found!");
         }
 
         let frame_data = self.frame_data.get_mut(file_entity).unwrap();
-        frame_data.deregister_frame(frame_entity, frame);
+        frame_data.deregister_frame(frame_entity);
 
         if frame_data.frames.is_empty() {
             self.frame_data.remove(file_entity);
         }
+
+        self.framing_queue_resync_frame_order(file_entity);
 
         // TODO: handle current selected frame ... harder to do because can we really suppose that
         // the current tab file entity is the same as the file entity here?
@@ -767,7 +760,7 @@ impl AnimationManager {
                 }
                 current_index -= 1;
                 // if no frame entity, continue decrementing
-                while frame_data.frames[current_index].is_none() {
+                while frame_data.frame_list[current_index].is_none() {
                     if current_index <= 0 {
                         return;
                     }
@@ -776,13 +769,13 @@ impl AnimationManager {
                 self.current_frame_index = Some(current_index);
             }
             CardinalDirection::East => {
-                if current_index >= frame_data.frames.len() - 1 {
+                if current_index >= frame_data.frame_list.len() - 1 {
                     return;
                 }
                 current_index += 1;
                 // if no frame entity, continue incrementing
-                while frame_data.frames[current_index].is_none() {
-                    if current_index >= frame_data.frames.len() - 1 {
+                while frame_data.frame_list[current_index].is_none() {
+                    if current_index >= frame_data.frame_list.len() - 1 {
                         return;
                     }
                     current_index += 1;
@@ -820,17 +813,16 @@ impl AnimationManager {
             return;
         };
 
-        let frame_count = file_frame_data.frames.len();
+        let frame_count = file_frame_data.frame_list.len();
 
         let frame_positions = self.get_frame_positions(frame_count);
 
         self.frame_hover = None;
-        for frame_position in frame_positions {
+        for (index, frame_position) in frame_positions.iter().enumerate() {
             // assign hover frame
             if mouse_position.x >= frame_position.x && mouse_position.x <= frame_position.x + self.frame_size.x {
                 if mouse_position.y >= frame_position.y && mouse_position.y <= frame_position.y + self.frame_size.y {
-                    let frame_index = (frame_position.x / (self.frame_size.x + 4.0)) as usize;
-                    self.frame_hover = Some(frame_index);
+                    self.frame_hover = Some(index);
                     return;
                 }
             }
@@ -851,7 +843,7 @@ impl AnimationManager {
             return;
         };
 
-        let frame_count = file_frame_data.frames.len();
+        let frame_count = file_frame_data.frame_list.len();
 
         // draw
         let mut system_state: SystemState<(
@@ -924,7 +916,28 @@ impl AnimationManager {
         positions
     }
 
-    pub fn framing_insert_frame(&mut self, commands: &mut Commands, client: &mut Client, file_entity: Entity, frame_index: usize) -> Entity {
+    pub fn framing_queue_resync_frame_order(&mut self, file_entity: &Entity) {
+        self.resync_frame_order.insert(*file_entity);
+    }
+
+    pub fn framing_resync_frame_order(&mut self, client: &Client, frame_q: &Query<(Entity, &AnimFrame)>) {
+        if self.resync_frame_order.is_empty() {
+            return;
+        }
+        let resync_frame_order = std::mem::take(&mut self.resync_frame_order);
+        for file_entity in resync_frame_order {
+            // info!("resync_frame_order for entity: `{:?}`", file_entity);
+            self.framing_recalc_order(client, &file_entity, frame_q);
+        }
+    }
+
+    pub fn framing_insert_frame(
+        &mut self,
+        commands: &mut Commands,
+        client: &mut Client,
+        file_entity: Entity,
+        frame_index: usize,
+    ) -> Entity {
         let mut frame_component = AnimFrame::new(frame_index as u8, Transition::new(50));
         frame_component.file_entity.set(client, &file_entity);
         let entity_id = commands
@@ -942,6 +955,36 @@ impl AnimationManager {
         );
 
         entity_id
+    }
+
+    fn framing_recalc_order(&mut self, client: &Client, file_entity: &Entity, frame_q: &Query<(Entity, &AnimFrame)>) {
+        let Some(frame_data) = self.frame_data.get_mut(&file_entity) else {
+            return;
+        };
+
+        let mut new_frame_list = Vec::new();
+
+        for (frame_entity, frame) in frame_q.iter() {
+            let frames_file_entity = frame.file_entity.get(client).unwrap();
+            if frames_file_entity != *file_entity {
+                continue;
+            }
+            let frame_index = frame.get_order() as usize;
+            // resize if necessary
+            if frame_index >= new_frame_list.len() {
+                new_frame_list.resize(frame_index + 1, None);
+            }
+            if new_frame_list[frame_index].is_some() {
+                warn!("Duplicate frame order! {:?}", frame_index);
+            }
+            new_frame_list[frame_index] = Some(frame_entity);
+        }
+
+        for (index, frame_entity_opt) in new_frame_list.iter().enumerate() {
+            info!("frame order: {:?} -> {:?}", index, frame_entity_opt);
+        }
+
+        frame_data.frame_list = new_frame_list;
     }
 
     pub(crate) fn frame_postprocess(

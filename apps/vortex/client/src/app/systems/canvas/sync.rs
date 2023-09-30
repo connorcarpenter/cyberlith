@@ -4,6 +4,8 @@ use bevy_ecs::{
     world::{Mut, World},
 };
 
+use naia_bevy_client::Client;
+
 use input::Input;
 
 use render_api::{
@@ -12,7 +14,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{EdgeAngle, FileExtension, Vertex3d};
+use vortex_proto::components::{AnimFrame, EdgeAngle, FileExtension, Vertex3d};
 
 use crate::app::{
     components::{Edge2dLocal, Edge3dLocal, FaceIcon2d, LocalShape},
@@ -232,6 +234,24 @@ pub fn sync_faces(
     let camera_3d_scale = camera_state.camera_3d_scale();
 
     face_manager.sync_2d_faces(&face_2d_q, &mut transform_q, &visibility_q, camera_3d_scale);
+}
+
+pub fn sync_animation_frame_order(
+    client: Client,
+    file_manager: Res<FileManager>,
+    tab_manager: Res<TabManager>,
+    mut animation_manager: ResMut<AnimationManager>,
+    frame_q: Query<(Entity, &AnimFrame)>
+) {
+    // get file type
+    let Some(current_file_entity) = tab_manager.current_tab_entity() else {
+        return;
+    };
+    let file_ext = file_manager.get_file_type(current_file_entity);
+    if file_ext != FileExtension::Anim {
+        return;
+    }
+    animation_manager.framing_resync_frame_order(&client, &frame_q);
 }
 
 pub fn process_faces(
