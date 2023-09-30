@@ -744,42 +744,42 @@ impl AnimationManager {
         self.frame_hover
     }
 
-    pub fn framing_navigate(&mut self, current_file_entity: &Entity, dir: CardinalDirection) {
+    pub fn framing_navigate(&mut self, current_file_entity: &Entity, dir: CardinalDirection) -> Option<(usize, usize)> {
         let mut current_index = self.current_frame_index;
         let Some(frame_data) = self.frame_data.get(current_file_entity) else {
-            return;
+            return None;
         };
         match dir {
             CardinalDirection::West => {
                 if current_index <= 0 {
-                    return;
+                    return None;
                 }
                 current_index -= 1;
                 // if no frame entity, continue decrementing
                 while frame_data.frame_list[current_index].is_none() {
                     if current_index <= 0 {
-                        return;
+                        return None;
                     }
                     current_index -= 1;
                 }
-                self.current_frame_index = current_index;
+                return Some((self.current_frame_index, current_index));
             }
             CardinalDirection::East => {
                 if current_index >= frame_data.frame_list.len() - 1 {
-                    return;
+                    return None;
                 }
                 current_index += 1;
                 // if no frame entity, continue incrementing
                 while frame_data.frame_list[current_index].is_none() {
                     if current_index >= frame_data.frame_list.len() - 1 {
-                        return;
+                        return None;
                     }
                     current_index += 1;
                 }
-                self.current_frame_index = current_index;
+                return Some((self.current_frame_index, current_index));
             }
             _ => {
-                // TODO
+                return None;
             }
         }
     }

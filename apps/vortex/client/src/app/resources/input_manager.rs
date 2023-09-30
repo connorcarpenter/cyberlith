@@ -387,7 +387,15 @@ impl InputManager {
                             if !animation_manager.is_framing() {
                                 continue;
                             }
-                            animation_manager.framing_navigate(&current_file_entity, dir);
+                            if let Some((prev_index, next_index)) = animation_manager.framing_navigate(&current_file_entity, dir) {
+                                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                                    tab_manager.current_tab_execute_anim_action(
+                                        world,
+                                        self,
+                                        AnimAction::SelectFrame(current_file_entity, next_index, prev_index),
+                                    );
+                                });
+                            }
                         }
                     }
                 }
@@ -884,7 +892,7 @@ impl InputManager {
         click_type: MouseButton,
         mouse_position: &Vec2,
     ) {
-        let current_file_entity = world.get_resource::<TabManager>().unwrap().current_tab_entity().unwrap();
+        let current_file_entity = *world.get_resource::<TabManager>().unwrap().current_tab_entity().unwrap();
         let current_file_type = world.get_resource::<FileManager>().unwrap().get_file_type(&current_file_entity);
         if current_file_type == FileExtension::Anim {
             let animation_manager = world.get_resource::<AnimationManager>().unwrap();
@@ -901,7 +909,7 @@ impl InputManager {
                         tab_manager.current_tab_execute_anim_action(
                             world,
                             self,
-                            AnimAction::SelectFrame(frame_index_hover.unwrap(), current_frame_index),
+                            AnimAction::SelectFrame(current_file_entity, frame_index_hover.unwrap(), current_frame_index),
                         );
                     });
                 }

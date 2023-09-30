@@ -15,8 +15,8 @@ pub enum AnimAction {
     SelectShape(Option<(Entity, CanvasShape)>),
     //
     RotateVertex(Entity, Option<Quat>, Option<Quat>),
-    // next frame index, last frame index // TODO: put file entity here
-    SelectFrame(usize, usize),
+    // file entity, next frame index, last frame index
+    SelectFrame(Entity, usize, usize),
     // file entity, frame index
     InsertFrame(Entity, usize),
     // file entity, frame index, last frame index
@@ -36,7 +36,7 @@ impl AnimAction {
         match self {
             Self::SelectShape(_) => AnimActionType::SelectShape,
             Self::RotateVertex(_, _, _) => AnimActionType::RotateVertex,
-            Self::SelectFrame(_, _) => AnimActionType::SelectFrame,
+            Self::SelectFrame(_, _, _) => AnimActionType::SelectFrame,
             Self::InsertFrame(_, _) => AnimActionType::InsertFrame,
             Self::DeleteFrame(_, _, _) => AnimActionType::DeleteFrame,
         }
