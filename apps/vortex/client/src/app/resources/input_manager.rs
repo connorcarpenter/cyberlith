@@ -237,7 +237,7 @@ impl InputManager {
                     Key::Insert => {
                         self.handle_insert_key_press_anim_framing(world, current_file_entity)
                     }
-                    Key::X => {
+                    Key::Enter => {
                         let mut animation_manager =
                             world.get_resource_mut::<AnimationManager>().unwrap();
                         animation_manager.set_posing();
@@ -313,7 +313,7 @@ impl InputManager {
                     | Key::PageUp
                     | Key::PageDown => Self::handle_keypress_camera_controls(world, key),
                     Key::E => Self::handle_edge_angle_visibility_toggle(world),
-                    Key::X => {
+                    Key::Escape => {
                         let mut animation_manager =
                             world.get_resource_mut::<AnimationManager>().unwrap();
                         animation_manager.set_framing();
