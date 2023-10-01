@@ -14,9 +14,9 @@ use vortex_proto::components::{
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemEntryLocal},
     resources::{
+        animation_manager::AnimationManager,
         canvas::Canvas,
         file_manager::{get_full_path, FileManager},
-        animation_manager::AnimationManager,
     },
 };
 

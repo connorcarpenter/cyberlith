@@ -13,8 +13,9 @@ use vortex_proto::components::{FileExtension, ShapeName, VertexRoot};
 use crate::app::{
     components::{Edge2dLocal, FaceIcon2d, LocalShape, Vertex2d},
     resources::{
-        canvas::Canvas, edge_manager::EdgeManager, file_manager::FileManager,
-        input_manager::InputManager, tab_manager::TabManager, vertex_manager::VertexManager, animation_manager::AnimationManager
+        animation_manager::AnimationManager, canvas::Canvas, edge_manager::EdgeManager,
+        file_manager::FileManager, input_manager::InputManager, tab_manager::TabManager,
+        vertex_manager::VertexManager,
     },
 };
 

@@ -1,37 +1,48 @@
-use std::{collections::{HashMap, HashSet}, f32::consts::FRAC_PI_2};
+use std::{
+    collections::{HashMap, HashSet},
+    f32::consts::FRAC_PI_2,
+};
 
 use bevy_ecs::{
     entity::Entity,
-    prelude::{With, Commands, Query},
+    prelude::{Commands, Query, With},
     system::{Res, ResMut, Resource, SystemState},
-    world::{World, Mut},
+    world::{Mut, World},
 };
 use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
-use math::{convert_2d_to_3d, quat_from_spin_direction, spin_direction_from_quat, Quat, Vec2, Vec3, convert_3d_to_2d, Mat4};
+use math::{
+    convert_2d_to_3d, convert_3d_to_2d, quat_from_spin_direction, spin_direction_from_quat, Mat4,
+    Quat, Vec2, Vec3,
+};
 use render_api::{
-    Assets,
-    components::{RenderLayer, Camera, CameraProjection, Projection, Transform, Visibility},
-    Handle,
-    shapes::{Circle, set_2d_line_transform,
-        angle_between, get_2d_line_transform_endpoint, rotation_diff,
-        set_2d_line_transform_from_angle,
-    },
     base::{Color, CpuMaterial, CpuMesh},
-    resources::RenderFrame
+    components::{Camera, CameraProjection, Projection, RenderLayer, Transform, Visibility},
+    resources::RenderFrame,
+    shapes::{
+        angle_between, get_2d_line_transform_endpoint, rotation_diff, set_2d_line_transform,
+        set_2d_line_transform_from_angle, Circle,
+    },
+    Assets, Handle,
 };
 
-use vortex_proto::components::{AnimFrame, AnimRotation, EdgeAngle, FileExtension, ShapeName, Transition, Vertex3d, VertexRoot};
+use vortex_proto::components::{
+    AnimFrame, AnimRotation, EdgeAngle, FileExtension, ShapeName, Transition, Vertex3d, VertexRoot,
+};
 
 use crate::app::{
-    components::{Vertex2d, Edge2dLocal, LocalAnimRotation},
-    resources::{tab_manager::TabManager,
-        camera_manager::{CameraManager, set_camera_transform}, canvas::Canvas, edge_manager::EdgeManager,
-        vertex_manager::VertexManager,input_manager::CardinalDirection,
+    components::{Edge2dLocal, LocalAnimRotation, Vertex2d},
+    resources::{
+        camera_manager::{set_camera_transform, CameraManager},
+        canvas::Canvas,
+        edge_manager::EdgeManager,
+        input_manager::CardinalDirection,
+        tab_manager::TabManager,
+        vertex_manager::VertexManager,
     },
-    shapes::Line2d
+    shapes::Line2d,
 };
 
 struct FileFrameData {
@@ -99,7 +110,6 @@ impl Default for AnimationManager {
 }
 
 impl AnimationManager {
-
     pub(crate) fn current_frame_index(&self) -> usize {
         self.current_frame_index
     }
@@ -117,17 +127,13 @@ impl AnimationManager {
 
     pub(crate) fn current_frame_entity(&self, file_entity: &Entity) -> Option<Entity> {
         let current_frame_index = self.current_frame_index;
-        let frame_data = self.frame_data.get(file_entity)?;//&(*file_entity, current_frame_index)).copied()
+        let frame_data = self.frame_data.get(file_entity)?; //&(*file_entity, current_frame_index)).copied()
         let entity_opt = frame_data.frame_list.get(current_frame_index)?.as_ref();
         let entity = entity_opt?;
         Some(*entity)
     }
 
-    pub(crate) fn register_frame(
-        &mut self,
-        file_entity: Entity,
-        frame_entity: Entity,
-    ) {
+    pub(crate) fn register_frame(&mut self, file_entity: Entity, frame_entity: Entity) {
         if !self.frame_data.contains_key(&file_entity) {
             self.frame_data.insert(file_entity, FileFrameData::new());
         }
@@ -137,11 +143,7 @@ impl AnimationManager {
         self.framing_queue_resync_frame_order(&file_entity);
     }
 
-    pub(crate) fn deregister_frame(
-        &mut self,
-        file_entity: &Entity,
-        frame_entity: &Entity,
-    ) {
+    pub(crate) fn deregister_frame(&mut self, file_entity: &Entity, frame_entity: &Entity) {
         if !self.frame_data.contains_key(file_entity) {
             panic!("Frame data not found!");
         }
@@ -296,7 +298,7 @@ impl AnimationManager {
         ) = system_state.get_mut(world);
 
         //
-        let rotation_entity_opt = self.get_current_rotation(file_entity,&shape_name).copied();
+        let rotation_entity_opt = self.get_current_rotation(file_entity, &shape_name).copied();
         if let Some(rotation_entity) = rotation_entity_opt {
             if !Self::rotation_has_auth(&mut commands, &mut client, rotation_entity) {
                 return;
@@ -438,7 +440,9 @@ impl AnimationManager {
         ) = system_state.get_mut(world);
 
         //
-        let rotation_entity_opt = self.get_current_rotation(&file_entity, &shape_name).copied();
+        let rotation_entity_opt = self
+            .get_current_rotation(&file_entity, &shape_name)
+            .copied();
         if let Some(rotation_entity) = rotation_entity_opt {
             if !Self::rotation_has_auth(&mut commands, &mut client, rotation_entity) {
                 return;
@@ -740,7 +744,11 @@ impl AnimationManager {
         self.frame_hover
     }
 
-    pub fn framing_navigate(&mut self, current_file_entity: &Entity, dir: CardinalDirection) -> Option<(usize, usize)> {
+    pub fn framing_navigate(
+        &mut self,
+        current_file_entity: &Entity,
+        dir: CardinalDirection,
+    ) -> Option<(usize, usize)> {
         let mut current_index = self.current_frame_index;
         let Some(frame_data) = self.frame_data.get(current_file_entity) else {
             return None;
@@ -781,7 +789,7 @@ impl AnimationManager {
     }
 
     pub fn framing_handle_mouse_wheel(&mut self, scroll_y: f32) {
-        let scroll_y = 0.8 + (((scroll_y + 24.0)/48.0)*0.4);
+        let scroll_y = 0.8 + (((scroll_y + 24.0) / 48.0) * 0.4);
         self.frame_size *= scroll_y;
         if self.frame_size.x < 40.0 {
             self.frame_size = Vec2::new(40.0, 40.0);
@@ -812,8 +820,12 @@ impl AnimationManager {
         self.frame_hover = None;
         for (index, frame_position) in frame_positions.iter().enumerate() {
             // assign hover frame
-            if mouse_position.x >= frame_position.x && mouse_position.x <= frame_position.x + self.frame_size.x {
-                if mouse_position.y >= frame_position.y && mouse_position.y <= frame_position.y + self.frame_size.y {
+            if mouse_position.x >= frame_position.x
+                && mouse_position.x <= frame_position.x + self.frame_size.x
+            {
+                if mouse_position.y >= frame_position.y
+                    && mouse_position.y <= frame_position.y + self.frame_size.y
+                {
                     self.frame_hover = Some(index);
                     return;
                 }
@@ -821,10 +833,7 @@ impl AnimationManager {
         }
     }
 
-    pub fn draw(
-        &self,
-        world: &mut World,
-    ) {
+    pub fn draw(&self, world: &mut World) {
         // get current file
         let Some(current_file_entity) = world.get_resource::<TabManager>().unwrap().current_tab_entity() else {
             return;
@@ -843,7 +852,7 @@ impl AnimationManager {
             camera_3d_entity,
             point_mesh_handle,
             line_mesh_handle,
-            mat_handle_green
+            mat_handle_green,
         ) = {
             // draw
             let mut system_state: SystemState<(
@@ -853,13 +862,8 @@ impl AnimationManager {
                 ResMut<Assets<CpuMaterial>>,
                 Query<(&mut Camera, &mut Projection, &mut Transform)>,
             )> = SystemState::new(world);
-            let (
-                mut render_frame,
-                camera_manager,
-                mut meshes,
-                mut materials,
-                mut camera_q,
-            ) = system_state.get_mut(world);
+            let (mut render_frame, camera_manager, mut meshes, mut materials, mut camera_q) =
+                system_state.get_mut(world);
 
             camera_manager.enable_cameras(&mut camera_q, true);
 
@@ -907,9 +911,15 @@ impl AnimationManager {
                 }
             }
 
-            (frame_rects, render_layer, camera_3d_entity, point_mesh_handle, line_mesh_handle, mat_handle_green)
+            (
+                frame_rects,
+                render_layer,
+                camera_3d_entity,
+                point_mesh_handle,
+                line_mesh_handle,
+                mat_handle_green,
+            )
         };
-
 
         let Some(root_3d_vertex) = get_root_vertex(world) else {
             return;
@@ -1007,11 +1017,7 @@ impl AnimationManager {
             ResMut<RenderFrame>,
             Query<&Transform>,
         )> = SystemState::new(world);
-        let (
-            edge_manager,
-            mut render_frame,
-            transform_q,
-        ) = system_state.get_mut(world);
+        let (edge_manager, mut render_frame, transform_q) = system_state.get_mut(world);
 
         self.draw_shapes_3d_children(
             vertex_manager,
@@ -1073,12 +1079,22 @@ impl AnimationManager {
             let adjust = Vec2::new(0.0, self.frame_size.y * 0.5);
             let child_position = coords + *frame_pos + adjust;
             let child_transform = Transform::from_translation_2d(child_position);
-            render_frame.draw_object(Some(render_layer), point_mesh_handle, &mat_handle_green, &child_transform);
+            render_frame.draw_object(
+                Some(render_layer),
+                point_mesh_handle,
+                &mat_handle_green,
+                &child_transform,
+            );
 
             // draw edge 2d
             let mut line_transform = Transform::default();
             set_2d_line_transform(&mut line_transform, *parent_position, child_position, 0.0);
-            render_frame.draw_object(Some(render_layer), line_mesh_handle, &mat_handle_green, &line_transform);
+            render_frame.draw_object(
+                Some(render_layer),
+                line_mesh_handle,
+                &mat_handle_green,
+                &line_transform,
+            );
 
             // recurse
             self.draw_shapes_3d_children(
@@ -1114,7 +1130,11 @@ impl AnimationManager {
         self.resync_frame_order.insert(*file_entity);
     }
 
-    pub fn framing_resync_frame_order(&mut self, client: &Client, frame_q: &Query<(Entity, &AnimFrame)>) {
+    pub fn framing_resync_frame_order(
+        &mut self,
+        client: &Client,
+        frame_q: &Query<(Entity, &AnimFrame)>,
+    ) {
         if self.resync_frame_order.is_empty() {
             return;
         }
@@ -1142,16 +1162,17 @@ impl AnimationManager {
             .id();
 
         // create new 2d vertex, add local components to 3d vertex
-        self.frame_postprocess(
-            file_entity,
-            entity_id,
-            frame_index,
-        );
+        self.frame_postprocess(file_entity, entity_id, frame_index);
 
         entity_id
     }
 
-    fn framing_recalc_order(&mut self, client: &Client, file_entity: &Entity, frame_q: &Query<(Entity, &AnimFrame)>) {
+    fn framing_recalc_order(
+        &mut self,
+        client: &Client,
+        file_entity: &Entity,
+        frame_q: &Query<(Entity, &AnimFrame)>,
+    ) {
         let Some(frame_data) = self.frame_data.get_mut(&file_entity) else {
             return;
         };
@@ -1204,27 +1225,59 @@ fn draw_rectangle(
     let start = position;
     let mut end = position;
     end.x += size.x;
-    draw_line(render_frame, render_layer, mesh_handle, mat_handle, start, end, thickness);
+    draw_line(
+        render_frame,
+        render_layer,
+        mesh_handle,
+        mat_handle,
+        start,
+        end,
+        thickness,
+    );
 
     // bottom
     let mut start = position;
     start.y += size.y;
     let mut end = start;
     end.x += size.x;
-    draw_line(render_frame, render_layer, mesh_handle, mat_handle, start, end, thickness);
+    draw_line(
+        render_frame,
+        render_layer,
+        mesh_handle,
+        mat_handle,
+        start,
+        end,
+        thickness,
+    );
 
     // left
     let start = position;
     let mut end = position;
     end.y += size.y;
-    draw_line(render_frame, render_layer, mesh_handle, mat_handle, start, end, thickness);
+    draw_line(
+        render_frame,
+        render_layer,
+        mesh_handle,
+        mat_handle,
+        start,
+        end,
+        thickness,
+    );
 
     // right
     let mut start = position;
     start.x += size.x;
     let mut end = start;
     end.y += size.y;
-    draw_line(render_frame, render_layer, mesh_handle, mat_handle, start, end, thickness);
+    draw_line(
+        render_frame,
+        render_layer,
+        mesh_handle,
+        mat_handle,
+        start,
+        end,
+        thickness,
+    );
 }
 
 fn draw_line(
@@ -1375,17 +1428,12 @@ fn get_inversed_final_rotation(
 }
 
 pub fn get_root_vertex(world: &mut World) -> Option<Entity> {
-
     let mut system_state: SystemState<(
         Query<(Entity, &Vertex3d)>,
         Query<&Visibility>,
         Query<Entity, With<VertexRoot>>,
     )> = SystemState::new(world);
-    let (
-        vertex_3d_q,
-        visibility_q,
-        root_q,
-    ) = system_state.get_mut(world);
+    let (vertex_3d_q, visibility_q, root_q) = system_state.get_mut(world);
 
     // find root 3d vertex
     let mut root_3d_vertex = None;

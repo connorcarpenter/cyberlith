@@ -1,7 +1,7 @@
 use bevy_ecs::{
+    entity::Entity,
     prelude::{Commands, World},
     system::{Query, Res, ResMut, SystemState},
-    entity::Entity,
 };
 use bevy_log::info;
 
@@ -56,7 +56,9 @@ pub fn execute(world: &mut World, tab_file_entity: Entity, action: AnimAction) -
     let name = name.value.as_str();
 
     if old_angle_opt.is_some() {
-        let rotation_entity = animation_manager.get_current_rotation(&file_entity, name).unwrap();
+        let rotation_entity = animation_manager
+            .get_current_rotation(&file_entity, name)
+            .unwrap();
         let rotation_entity = *rotation_entity;
         if let Some(new_quat) = new_angle_opt {
             let mut rotation = rotation_q.get_mut(rotation_entity).unwrap();
@@ -69,13 +71,15 @@ pub fn execute(world: &mut World, tab_file_entity: Entity, action: AnimAction) -
     } else {
         let new_quat = new_angle_opt.unwrap();
 
-        if let Some(rotation_entity) = animation_manager.get_current_rotation(&file_entity,name) {
+        if let Some(rotation_entity) = animation_manager.get_current_rotation(&file_entity, name) {
             // already has a rotation entity, so just update it
             let mut rotation = rotation_q.get_mut(*rotation_entity).unwrap();
             rotation.set_rotation(new_quat);
         } else {
             // create new rotation entity
-            let frame_entity = animation_manager.current_frame_entity(&file_entity).unwrap();
+            let frame_entity = animation_manager
+                .current_frame_entity(&file_entity)
+                .unwrap();
             animation_manager.create_networked_rotation(
                 &mut commands,
                 &mut client,

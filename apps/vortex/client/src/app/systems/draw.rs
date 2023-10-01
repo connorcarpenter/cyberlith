@@ -1,8 +1,8 @@
 use bevy_ecs::{
     entity::Entity,
     query::{With, Without},
-    system::{Query, Res, SystemState, ResMut},
-    world::{Mut, World}
+    system::{Query, Res, ResMut, SystemState},
+    world::{Mut, World},
 };
 use bevy_log::warn;
 
@@ -20,9 +20,10 @@ use vortex_proto::components::{Edge3d, FileExtension, ShapeName, Vertex3d, Verte
 
 use crate::app::{
     components::DefaultDraw,
-    resources::{animation_manager::AnimationManager,
-        edge_manager::edge_is_enabled, edge_manager::EdgeManager, file_manager::FileManager,
-        tab_manager::TabManager, vertex_manager::VertexManager,
+    resources::{
+        animation_manager::AnimationManager, edge_manager::edge_is_enabled,
+        edge_manager::EdgeManager, file_manager::FileManager, tab_manager::TabManager,
+        vertex_manager::VertexManager,
     },
 };
 
@@ -91,16 +92,21 @@ pub fn draw(
     }
 }
 
-pub fn draw_vertices_and_edges(
-    world: &mut World,
-) {
+pub fn draw_vertices_and_edges(world: &mut World) {
     let Some(current_tab) = world.get_resource::<TabManager>().unwrap().current_tab_entity() else {
         return;
     };
-    let current_file = world.get_resource::<FileManager>().unwrap().get_file_type(current_tab);
+    let current_file = world
+        .get_resource::<FileManager>()
+        .unwrap()
+        .get_file_type(current_tab);
 
     if current_file == FileExtension::Anim {
-        if world.get_resource::<AnimationManager>().unwrap().is_framing() {
+        if world
+            .get_resource::<AnimationManager>()
+            .unwrap()
+            .is_framing()
+        {
             world.resource_scope(|world, animation_manager: Mut<AnimationManager>| {
                 animation_manager.draw(world);
             });
@@ -113,7 +119,6 @@ pub fn draw_vertices_and_edges(
 }
 
 fn draw_vertices_and_edges_inner(world: &mut World, current_file: FileExtension) {
-
     let mut system_state: SystemState<(
         ResMut<RenderFrame>,
         Res<VertexManager>,

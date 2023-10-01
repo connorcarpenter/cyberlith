@@ -37,7 +37,6 @@ impl Default for Compass {
 }
 
 impl Compass {
-
     pub fn queue_resync(&mut self) {
         self.resync = true;
     }
@@ -74,9 +73,9 @@ impl Compass {
         compass_pos.y -= 32.0;
         let offset_2d = camera_state.camera_3d_offset().round()
             + Vec2::new(
-            unit_length * -1.0 * compass_pos.x,
-            unit_length * compass_pos.y,
-        );
+                unit_length * -1.0 * compass_pos.x,
+                unit_length * compass_pos.y,
+            );
         let offset_3d = (right * offset_2d.x) + (up * offset_2d.y);
 
         let vert_offset_3d = Vec3::ZERO + offset_3d;

@@ -1,9 +1,13 @@
-use bevy_ecs::{entity::Entity, world::World, system::{Query, Resource, SystemState, Commands}};
+use bevy_ecs::{
+    entity::Entity,
+    system::{Commands, Query, Resource, SystemState},
+    world::World,
+};
 
 use math::Vec3;
 use render_api::{
-    components::Transform,
     base::{Color, CpuMaterial, CpuMesh},
+    components::Transform,
     Assets,
 };
 use vortex_proto::components::Vertex3d;
@@ -32,7 +36,6 @@ impl Default for Grid {
 }
 
 impl Grid {
-
     pub fn queue_resync(&mut self) {
         self.resync = true;
     }

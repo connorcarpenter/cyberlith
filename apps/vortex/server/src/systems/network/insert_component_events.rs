@@ -465,7 +465,12 @@ pub fn insert_animation_component_events(
             .unwrap();
         let file_key = key_q.get(file_entity).unwrap().clone();
 
-        animation_manager.on_create_frame(&file_entity, &frame_entity, frame_index, Some(&mut frame_q));
+        animation_manager.on_create_frame(
+            &file_entity,
+            &frame_entity,
+            frame_index,
+            Some(&mut frame_q),
+        );
 
         let content_entity_data = ContentEntityData::new_frame();
         git_manager.on_insert_content_entity(

@@ -1,6 +1,9 @@
 mod action_stack;
 mod anim_action;
+mod anim_delete_frame;
+mod anim_insert_frame;
 mod anim_rotate_vertex;
+mod anim_select_frame;
 mod anim_select_vertex;
 mod create_edge;
 mod create_file;
@@ -17,9 +20,6 @@ mod rotate_edge;
 mod select_file;
 mod select_shape;
 mod shape_action;
-mod anim_select_frame;
-mod anim_insert_frame;
-mod anim_delete_frame;
 
 pub use action_stack::*;
 pub use anim_action::*;

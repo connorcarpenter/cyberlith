@@ -74,7 +74,12 @@ impl CameraManager {
 
         self.camera_3d_recalc = false;
 
-        set_camera_transform(&mut camera_transform, camera_3d_rotation, camera_3d_scale, camera_3d_offset);
+        set_camera_transform(
+            &mut camera_transform,
+            camera_3d_rotation,
+            camera_3d_scale,
+            camera_3d_offset,
+        );
 
         return true;
     }
@@ -278,7 +283,12 @@ impl CameraManager {
     }
 }
 
-pub fn set_camera_transform(camera_transform: &mut Transform, camera_3d_rotation: Vec2, camera_3d_scale: f32, camera_3d_offset: Vec2) {
+pub fn set_camera_transform(
+    camera_transform: &mut Transform,
+    camera_3d_rotation: Vec2,
+    camera_3d_scale: f32,
+    camera_3d_offset: Vec2,
+) {
     camera_transform.rotation = Quat::from_euler(
         EulerRot::YXZ,
         f32::to_radians(camera_3d_rotation.x),

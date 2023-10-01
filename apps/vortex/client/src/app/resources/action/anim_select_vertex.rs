@@ -124,7 +124,7 @@ fn get_rotation_entity(
     let name = name_q.get(vertex_3d_entity).ok()?;
     let name = name.value.as_str();
     return animation_manager
-        .get_current_rotation(file_entity,name)
+        .get_current_rotation(file_entity, name)
         .map(|entity| *entity);
 }
 

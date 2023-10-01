@@ -3,7 +3,10 @@ use bevy_ecs::prelude::{Entity, World};
 use math::Quat;
 
 use crate::app::resources::{
-    action::{anim_rotate_vertex, anim_select_vertex, Action, ActionStack, anim_delete_frame, anim_insert_frame, anim_select_frame},
+    action::{
+        anim_delete_frame, anim_insert_frame, anim_rotate_vertex, anim_select_frame,
+        anim_select_vertex, Action, ActionStack,
+    },
     input_manager::InputManager,
     shape_data::CanvasShape,
     vertex_manager::VertexManager,
@@ -42,12 +45,21 @@ impl AnimAction {
         }
     }
 
-    pub fn execute(self, world: &mut World, input_manager: &mut InputManager, tab_file_entity: Entity) -> Vec<Self> {
+    pub fn execute(
+        self,
+        world: &mut World,
+        input_manager: &mut InputManager,
+        tab_file_entity: Entity,
+    ) -> Vec<Self> {
         let action_type = self.get_type();
 
         match action_type {
-            AnimActionType::SelectShape => anim_select_vertex::execute(world, input_manager, tab_file_entity, self),
-            AnimActionType::RotateVertex => anim_rotate_vertex::execute(world, tab_file_entity, self),
+            AnimActionType::SelectShape => {
+                anim_select_vertex::execute(world, input_manager, tab_file_entity, self)
+            }
+            AnimActionType::RotateVertex => {
+                anim_rotate_vertex::execute(world, tab_file_entity, self)
+            }
             AnimActionType::SelectFrame => anim_select_frame::execute(world, self),
             AnimActionType::InsertFrame => anim_insert_frame::execute(world, self),
             AnimActionType::DeleteFrame => anim_delete_frame::execute(world, self),

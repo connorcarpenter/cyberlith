@@ -19,9 +19,16 @@ use vortex_proto::components::{AnimFrame, EdgeAngle, FileExtension, Vertex3d};
 use crate::app::{
     components::{Edge2dLocal, Edge3dLocal, FaceIcon2d, LocalShape},
     resources::{
-        animation_manager::{AnimationManager, get_root_vertex}, camera_manager::CameraManager, canvas::Canvas,
-        compass::Compass, edge_manager::EdgeManager, face_manager::FaceManager,
-        file_manager::FileManager, input_manager::InputManager, tab_manager::TabManager, grid::Grid,
+        animation_manager::{get_root_vertex, AnimationManager},
+        camera_manager::CameraManager,
+        canvas::Canvas,
+        compass::Compass,
+        edge_manager::EdgeManager,
+        face_manager::FaceManager,
+        file_manager::FileManager,
+        grid::Grid,
+        input_manager::InputManager,
+        tab_manager::TabManager,
         vertex_manager::VertexManager,
     },
 };
@@ -119,17 +126,24 @@ pub fn sync_vertices(world: &mut World) {
             FileExtension::Skel | FileExtension::Mesh => {
                 vertex_manager.sync_vertices_3d(world);
                 vertex_manager.sync_vertices_2d(world, &camera_3d, camera_3d_scale);
-            },
+            }
             FileExtension::Anim => {
                 let animation_manager = world.get_resource::<AnimationManager>().unwrap();
                 if animation_manager.is_posing() {
-                    let current_frame_opt = animation_manager.current_frame_entity(&current_file_entity);
+                    let current_frame_opt =
+                        animation_manager.current_frame_entity(&current_file_entity);
                     let root_vertex_opt = get_root_vertex(world);
                     if current_frame_opt.is_some() && root_vertex_opt.is_some() {
                         let frame_entity = current_frame_opt.unwrap();
                         let root_3d_vertex = root_vertex_opt.unwrap();
                         world.resource_scope(|world, animation_manager: Mut<AnimationManager>| {
-                            animation_manager.sync_shapes_3d(world, &vertex_manager, camera_3d_scale, frame_entity, root_3d_vertex);
+                            animation_manager.sync_shapes_3d(
+                                world,
+                                &vertex_manager,
+                                camera_3d_scale,
+                                frame_entity,
+                                root_3d_vertex,
+                            );
                         });
                     }
                     world.resource_scope(|world, compass: Mut<Compass>| {
@@ -142,7 +156,10 @@ pub fn sync_vertices(world: &mut World) {
                 }
             }
             _ => {
-                panic!("sync_vertices: unsupported file extension: {:?}", file_extension);
+                panic!(
+                    "sync_vertices: unsupported file extension: {:?}",
+                    file_extension
+                );
             }
         }
 
@@ -184,7 +201,9 @@ pub fn sync_edges(
 
     let should_sync_3d = match file_ext {
         FileExtension::Skel | FileExtension::Mesh => true,
-        FileExtension::Anim => animation_manager.current_frame_entity(current_tab_entity).is_none(),
+        FileExtension::Anim => animation_manager
+            .current_frame_entity(current_tab_entity)
+            .is_none(),
         _ => false,
     };
     if should_sync_3d {
@@ -241,7 +260,7 @@ pub fn sync_animation_frame_order(
     file_manager: Res<FileManager>,
     tab_manager: Res<TabManager>,
     mut animation_manager: ResMut<AnimationManager>,
-    frame_q: Query<(Entity, &AnimFrame)>
+    frame_q: Query<(Entity, &AnimFrame)>,
 ) {
     // get file type
     let Some(current_file_entity) = tab_manager.current_tab_entity() else {

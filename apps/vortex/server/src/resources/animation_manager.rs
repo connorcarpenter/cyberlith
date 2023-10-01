@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use bevy_ecs::{prelude::Query, entity::Entity, system::Resource};
+use bevy_ecs::{entity::Entity, prelude::Query, system::Resource};
 
 use vortex_proto::components::AnimFrame;
 
@@ -28,7 +28,12 @@ impl FileFrameData {
         }
     }
 
-    fn add_frame(&mut self, frame_entity: Entity, frame_order: usize, mut frame_q_opt: Option<&mut Query<&mut AnimFrame>>) {
+    fn add_frame(
+        &mut self,
+        frame_entity: Entity,
+        frame_order: usize,
+        mut frame_q_opt: Option<&mut Query<&mut AnimFrame>>,
+    ) {
         self.frames.insert(frame_entity, FrameData::new());
 
         // add to frame_list
@@ -54,7 +59,11 @@ impl FileFrameData {
         // }
     }
 
-    fn remove_frame(&mut self, frame_entity: &Entity, frame_q_opt: Option<&mut Query<&mut AnimFrame>>) -> Option<FrameData> {
+    fn remove_frame(
+        &mut self,
+        frame_entity: &Entity,
+        frame_q_opt: Option<&mut Query<&mut AnimFrame>>,
+    ) -> Option<FrameData> {
         let output = self.frames.remove(frame_entity);
 
         // get frame_order of frame_entity
@@ -145,9 +154,16 @@ impl AnimationManager {
         self.rotations.contains_key(rotation_entity)
     }
 
-    pub fn on_create_frame(&mut self, file_entity: &Entity, frame_entity: &Entity, frame_index: usize, frame_q_opt: Option<&mut Query<&mut AnimFrame>>) {
+    pub fn on_create_frame(
+        &mut self,
+        file_entity: &Entity,
+        frame_entity: &Entity,
+        frame_index: usize,
+        frame_q_opt: Option<&mut Query<&mut AnimFrame>>,
+    ) {
         if !self.file_frame_data.contains_key(file_entity) {
-            self.file_frame_data.insert(*file_entity, FileFrameData::new());
+            self.file_frame_data
+                .insert(*file_entity, FileFrameData::new());
         }
         let file_frame_data = self.file_frame_data.get_mut(file_entity).unwrap();
         file_frame_data.add_frame(*frame_entity, frame_index, frame_q_opt);
@@ -169,7 +185,11 @@ impl AnimationManager {
             .insert(rot_entity, RotationData::new(frame_entity));
     }
 
-    pub fn on_despawn_frame(&mut self, frame_entity: &Entity, frame_q_opt: Option<&mut Query<&mut AnimFrame>>) {
+    pub fn on_despawn_frame(
+        &mut self,
+        frame_entity: &Entity,
+        frame_q_opt: Option<&mut Query<&mut AnimFrame>>,
+    ) {
         self.deregister_frame(frame_entity, frame_q_opt);
     }
 
@@ -177,7 +197,11 @@ impl AnimationManager {
         self.deregister_rotation(rotation_entity);
     }
 
-    pub fn deregister_frame(&mut self, frame_entity: &Entity, frame_q_opt: Option<&mut Query<&mut AnimFrame>>) -> Option<FrameData> {
+    pub fn deregister_frame(
+        &mut self,
+        frame_entity: &Entity,
+        frame_q_opt: Option<&mut Query<&mut AnimFrame>>,
+    ) -> Option<FrameData> {
         let Some(file_entity) = self.frames.remove(frame_entity) else {
             panic!("frame entity not found");
         };

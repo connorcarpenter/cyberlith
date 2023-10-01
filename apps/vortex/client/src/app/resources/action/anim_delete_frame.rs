@@ -1,7 +1,4 @@
-use bevy_ecs::{
-    prelude::World,
-    system::SystemState,
-};
+use bevy_ecs::{prelude::World, system::SystemState};
 use bevy_log::info;
 
 use crate::app::resources::action::AnimAction;

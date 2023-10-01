@@ -5,7 +5,8 @@ use render_api::components::{Camera, Projection, Transform};
 use vortex_proto::components::FileExtension;
 
 use crate::app::resources::{
-    camera_manager::CameraManager, canvas::Canvas, tab_manager::TabManager, file_manager::FileManager, animation_manager::AnimationManager
+    animation_manager::AnimationManager, camera_manager::CameraManager, canvas::Canvas,
+    file_manager::FileManager, tab_manager::TabManager,
 };
 
 pub fn update_camera(

@@ -21,8 +21,8 @@ use crate::app::{
     resources::{
         action::FileActions, animation_manager::AnimationManager, camera_manager::CameraManager,
         canvas::Canvas, compass::Compass, edge_manager::EdgeManager, face_manager::FaceManager,
-        file_manager::FileManager, input_manager::InputManager, shape_waitlist::ShapeWaitlist,
-        tab_manager::TabManager, vertex_manager::VertexManager, grid::Grid
+        file_manager::FileManager, grid::Grid, input_manager::InputManager,
+        shape_waitlist::ShapeWaitlist, tab_manager::TabManager, vertex_manager::VertexManager,
     },
     systems::{canvas, draw, draw_vertices_and_edges, network, ui},
     ui::{widgets::NamingBarState, UiState},
