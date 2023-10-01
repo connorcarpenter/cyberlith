@@ -245,9 +245,12 @@ impl InputManager {
                         self.handle_insert_key_press_anim_framing(world, current_file_entity)
                     }
                     Key::Enter => {
-                        let mut animation_manager =
-                            world.get_resource_mut::<AnimationManager>().unwrap();
-                        animation_manager.set_posing();
+                        let mut system_state: SystemState<(
+                            ResMut<Canvas>,
+                            ResMut<AnimationManager>,
+                        )> = SystemState::new(world);
+                        let (mut canvas, mut animation_manager) = system_state.get_mut(world);
+                        animation_manager.set_posing(&mut canvas);
                     }
                     Key::ArrowLeft | Key::ArrowRight | Key::ArrowUp | Key::ArrowDown => {
                         let dir = match key {
@@ -1240,8 +1243,12 @@ impl InputManager {
             }
 
             if double_clicked {
-                let mut animation_manager = world.get_resource_mut::<AnimationManager>().unwrap();
-                animation_manager.set_posing();
+                let mut system_state: SystemState<(
+                    ResMut<Canvas>,
+                    ResMut<AnimationManager>,
+                )> = SystemState::new(world);
+                let (mut canvas, mut animation_manager) = system_state.get_mut(world);
+                animation_manager.set_posing(&mut canvas);
             }
         }
     }

@@ -91,7 +91,7 @@ pub struct AnimationManager {
 impl Default for AnimationManager {
     fn default() -> Self {
         Self {
-            posing: true,
+            posing: false,
             resync_hover: false,
             resync_frame_order: HashSet::new(),
             frame_size: Vec2::new(60.0, 60.0),
@@ -186,8 +186,10 @@ impl AnimationManager {
         !self.posing
     }
 
-    pub fn set_posing(&mut self) {
+    pub fn set_posing(&mut self, canvas: &mut Canvas) {
         self.posing = true;
+
+        canvas.queue_resync_shapes();
     }
 
     pub fn set_framing(&mut self) {
