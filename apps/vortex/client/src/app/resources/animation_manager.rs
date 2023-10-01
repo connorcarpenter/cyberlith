@@ -9,7 +9,6 @@ use bevy_ecs::{
 use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
-use input::MouseButton;
 
 use math::{convert_2d_to_3d, quat_from_spin_direction, spin_direction_from_quat, Quat, Vec2, Vec3, convert_3d_to_2d, Mat4};
 use render_api::{
@@ -736,9 +735,6 @@ impl AnimationManager {
     }
 
     // Framing
-    pub fn framing_handle_mouse_drag(&mut self, world: &mut World, click_type: MouseButton, mouse_position: Vec2, delta: Vec2) {
-
-    }
 
     pub fn frame_index_hover(&self) -> Option<usize> {
         self.frame_hover
@@ -919,13 +915,8 @@ impl AnimationManager {
             return;
         };
 
-        //
-        let mut system_state: SystemState<(
-            Query<(&Camera, &Projection)>,
-            Query<&mut Transform>,
-        )> = SystemState::new(world);
-        let (camera_q, mut transform_q) =
-            system_state.get_mut(world);
+        let mut system_state: SystemState<Query<(&Camera, &Projection)>> = SystemState::new(world);
+        let camera_q = system_state.get_mut(world);
         let Ok((camera, camera_projection)) = camera_q.get(camera_3d_entity) else {
             return;
         };
