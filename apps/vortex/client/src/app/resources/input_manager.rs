@@ -153,7 +153,7 @@ impl InputManager {
     fn update_input_anim_framing(&mut self, input_actions: Vec<InputAction>, world: &mut World, current_file_entity: Entity) {
         for action in input_actions {
             match action {
-                InputAction::MouseClick(click_type, mouse_position) => self.handle_mouse_click_anim(world, click_type, &mouse_position),
+                InputAction::MouseClick(click_type, mouse_position) => self.handle_mouse_click_anim_framing(world, click_type, &mouse_position),
                 InputAction::MiddleMouseScroll(scroll_y) => Self::handle_mouse_scroll_anim_framing(world, scroll_y),
                 InputAction::MouseMoved => {
                     let mut animation_manager = world.get_resource_mut::<AnimationManager>().unwrap();
@@ -161,7 +161,7 @@ impl InputManager {
                 }
                 InputAction::KeyPress(key) => {
                     match key {
-                        Key::Delete => self.handle_delete_key_press_anim_framing(world),
+                        Key::Delete => Self::handle_delete_key_press_anim_framing(world),
                         Key::Insert => self.handle_insert_key_press_anim_framing(world, current_file_entity),
                         Key::X => {
                             let mut animation_manager = world.get_resource_mut::<AnimationManager>().unwrap();
@@ -198,7 +198,7 @@ impl InputManager {
     fn update_input_anim_posing(&mut self, input_actions: Vec<InputAction>, world: &mut World) {
         for action in input_actions {
             match action {
-                InputAction::MouseClick(click_type, mouse_position) => self.handle_mouse_click_anim(world, click_type, &mouse_position),
+                InputAction::MouseClick(click_type, mouse_position) => self.handle_mouse_click_anim_posing(world, click_type, &mouse_position),
                 InputAction::MouseDragged(click_type, mouse_position, delta) => self.handle_mouse_drag_anim(world, click_type, mouse_position, delta),
                 InputAction::MiddleMouseScroll(scroll_y) => Self::handle_mouse_scroll_wheel(world, scroll_y),
                 InputAction::MouseMoved => {
@@ -818,7 +818,7 @@ impl InputManager {
         }
     }
 
-    pub(crate) fn handle_delete_key_press_anim_framing(&mut self, _world: &mut World) {
+    pub(crate) fn handle_delete_key_press_anim_framing(_world: &mut World) {
         todo!();
     }
 
@@ -1107,7 +1107,42 @@ impl InputManager {
         }
     }
 
-    pub(crate) fn handle_mouse_click_anim(
+    pub(crate) fn handle_mouse_click_anim_framing(
+        &mut self,
+        world: &mut World,
+        click_type: MouseButton,
+        mouse_position: &Vec2,
+    ) {
+        if click_type != MouseButton::Left {
+            return;
+        }
+
+        // check if mouse position is outside of canvas
+        if !world
+            .get_resource::<Canvas>()
+            .unwrap()
+            .is_position_inside(*mouse_position)
+        {
+            return
+        }
+
+        let animation_manager = world.get_resource::<AnimationManager>().unwrap();
+
+        let current_frame_index = animation_manager.current_frame_index();
+        let frame_index_hover = animation_manager.frame_index_hover();
+        if frame_index_hover.is_some() && current_frame_index != frame_index_hover.unwrap() {
+            world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                let current_file_entity = *tab_manager.current_tab_entity().unwrap();
+                tab_manager.current_tab_execute_anim_action(
+                    world,
+                    self,
+                    AnimAction::SelectFrame(current_file_entity, frame_index_hover.unwrap(), current_frame_index),
+                );
+            });
+        }
+    }
+
+    pub(crate) fn handle_mouse_click_anim_posing(
         &mut self,
         world: &mut World,
         click_type: MouseButton,
@@ -1120,29 +1155,6 @@ impl InputManager {
             .is_position_inside(*mouse_position)
         {
             return
-        }
-
-        let animation_manager = world.get_resource::<AnimationManager>().unwrap();
-        if animation_manager.is_framing() {
-
-            if click_type != MouseButton::Left {
-                return;
-            }
-
-            let current_frame_index = animation_manager.current_frame_index();
-            let frame_index_hover = animation_manager.frame_index_hover();
-            if frame_index_hover.is_some() && current_frame_index != frame_index_hover.unwrap() {
-                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    let current_file_entity = *tab_manager.current_tab_entity().unwrap();
-                    tab_manager.current_tab_execute_anim_action(
-                        world,
-                        self,
-                        AnimAction::SelectFrame(current_file_entity, frame_index_hover.unwrap(), current_frame_index),
-                    );
-                });
-            }
-
-            return;
         }
 
         let selected_shape = self.selected_shape.map(|(_, shape)| shape);
@@ -1391,20 +1403,7 @@ impl InputManager {
                 _ => {}
             }
         } else {
-            let mut system_state: SystemState<(ResMut<TabManager>, ResMut<CameraManager>)> =
-                SystemState::new(world);
-            let (mut tab_manager, mut camera_manager) = system_state.get_mut(world);
-
-            let camera_state = &mut tab_manager.current_tab_state_mut().unwrap().camera_state;
-            match click_type {
-                MouseButton::Left => {
-                    camera_manager.camera_pan(camera_state, delta);
-                }
-                MouseButton::Right => {
-                    camera_manager.camera_orbit(camera_state, delta);
-                }
-                _ => {}
-            }
+            Self::handle_drag_empty_space(world, click_type, delta);
         }
     }
 
@@ -1485,20 +1484,24 @@ impl InputManager {
                 _ => {}
             }
         } else {
-            let mut system_state: SystemState<(ResMut<TabManager>, ResMut<CameraManager>)> =
-                SystemState::new(world);
-            let (mut tab_manager, mut camera_manager) = system_state.get_mut(world);
+            Self::handle_drag_empty_space(world, click_type, delta);
+        }
+    }
 
-            let camera_state = &mut tab_manager.current_tab_state_mut().unwrap().camera_state;
-            match click_type {
-                MouseButton::Left => {
-                    camera_manager.camera_pan(camera_state, delta);
-                }
-                MouseButton::Right => {
-                    camera_manager.camera_orbit(camera_state, delta);
-                }
-                _ => {}
+    fn handle_drag_empty_space(world: &mut World, click_type: MouseButton, delta: Vec2) {
+        let mut system_state: SystemState<(ResMut<TabManager>, ResMut<CameraManager>)> =
+            SystemState::new(world);
+        let (mut tab_manager, mut camera_manager) = system_state.get_mut(world);
+
+        let camera_state = &mut tab_manager.current_tab_state_mut().unwrap().camera_state;
+        match click_type {
+            MouseButton::Left => {
+                camera_manager.camera_pan(camera_state, delta);
             }
+            MouseButton::Right => {
+                camera_manager.camera_orbit(camera_state, delta);
+            }
+            _ => {}
         }
     }
 
