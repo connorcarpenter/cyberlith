@@ -8,7 +8,7 @@ use bevy_ecs::{
 };
 use bevy_log::{info, warn};
 
-use naia_bevy_client::{Client, CommandsExt};
+use naia_bevy_client::{Client, CommandsExt, Instant};
 
 use input::{InputAction, Key, MouseButton};
 use math::{convert_2d_to_3d, Vec2, Vec3};
@@ -58,6 +58,10 @@ pub struct InputManager {
     pub select_circle_entity: Option<Entity>,
     pub select_triangle_entity: Option<Entity>,
     pub select_line_entity: Option<Entity>,
+
+    //doubleclick
+    last_left_click_instant: Instant,
+    last_frame_index_hover: usize,
 }
 
 impl Default for InputManager {
@@ -72,6 +76,9 @@ impl Default for InputManager {
             select_triangle_entity: None,
             select_line_entity: None,
             selected_shape: None,
+
+            last_left_click_instant: Instant::now(),
+            last_frame_index_hover: 0,
         }
     }
 }
@@ -1208,19 +1215,34 @@ impl InputManager {
 
         let current_frame_index = animation_manager.current_frame_index();
         let frame_index_hover = animation_manager.frame_index_hover();
-        if frame_index_hover.is_some() && current_frame_index != frame_index_hover.unwrap() {
-            world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                let current_file_entity = *tab_manager.current_tab_entity().unwrap();
-                tab_manager.current_tab_execute_anim_action(
-                    world,
-                    self,
-                    AnimAction::SelectFrame(
-                        current_file_entity,
-                        frame_index_hover.unwrap(),
-                        current_frame_index,
-                    ),
-                );
-            });
+
+        if frame_index_hover.is_some() {
+
+            let frame_index_hover = frame_index_hover.unwrap();
+
+            let double_clicked = frame_index_hover == self.last_frame_index_hover && self.last_left_click_instant.elapsed().as_millis() < 500;
+            self.last_left_click_instant = Instant::now();
+            self.last_frame_index_hover = frame_index_hover;
+
+            if current_frame_index != frame_index_hover {
+                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                    let current_file_entity = *tab_manager.current_tab_entity().unwrap();
+                    tab_manager.current_tab_execute_anim_action(
+                        world,
+                        self,
+                        AnimAction::SelectFrame(
+                            current_file_entity,
+                            frame_index_hover,
+                            current_frame_index,
+                        ),
+                    );
+                });
+            }
+
+            if double_clicked {
+                let mut animation_manager = world.get_resource_mut::<AnimationManager>().unwrap();
+                animation_manager.set_posing();
+            }
         }
     }
 
