@@ -10,7 +10,6 @@ pub mod file_manager;
 pub mod file_tree;
 pub mod grid;
 pub mod input_manager;
-pub mod key_action_map;
 pub mod shape_data;
 pub mod shape_manager;
 pub mod shape_waitlist;
