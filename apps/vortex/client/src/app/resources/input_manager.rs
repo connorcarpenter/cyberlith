@@ -80,11 +80,11 @@ impl Default for InputManager {
 impl InputManager {
     pub fn update_input(&mut self, input_actions: Vec<InputAction>, world: &mut World) {
         let current_file_entity = world.get_resource::<TabManager>().unwrap().current_tab_entity().unwrap();
-        let current_file_type = world.get_resource::<FileManager>().unwrap().get_file_type(&current_file_entity);
+        let current_file_type = world.get_resource::<FileManager>().unwrap().get_file_type(current_file_entity);
         match current_file_type {
             FileExtension::Skel => self.update_input_skel(input_actions, world),
             FileExtension::Mesh => self.update_input_mesh(input_actions, world),
-            FileExtension::Anim => self.update_input_anim(input_actions, world),
+            FileExtension::Anim => self.update_input_anim(input_actions, world, *current_file_entity),
             _ => {}
         }
     }
@@ -107,7 +107,6 @@ impl InputManager {
                     match key {
                         Key::S | Key::W | Key::D | Key::T | Key::F | Key::Num1 | Key::Num2 | Key::Num3 | Key::Num4 | Key::Num5 | Key::PageUp | Key::PageDown => Self::handle_keypress_camera_controls(world, key),
                         Key::Delete => self.handle_delete_key_press_skel(world),
-                        Key::Insert => self.handle_insert_key_press(world),
                         Key::N => naming_bar_visibility_toggle(world, self),
                         Key::E => Self::handle_edge_angle_visibility_toggle(world),
                         _ => {}
@@ -133,7 +132,7 @@ impl InputManager {
                     match key {
                         Key::S | Key::W | Key::D | Key::T | Key::F | Key::Num1 | Key::Num2 | Key::Num3 | Key::Num4 | Key::Num5 | Key::PageUp | Key::PageDown => Self::handle_keypress_camera_controls(world, key),
                         Key::Delete => self.handle_delete_key_press_mesh(world),
-                        Key::Insert => self.handle_insert_key_press(world),
+                        Key::Insert => self.handle_insert_key_press_mesh(world),
                         _ => {}
                     }
                 }
@@ -142,17 +141,16 @@ impl InputManager {
         }
     }
 
-    fn update_input_anim(&mut self, input_actions: Vec<InputAction>, world: &mut World) {
+    fn update_input_anim(&mut self, input_actions: Vec<InputAction>, world: &mut World, current_file_entity: Entity) {
         let animation_manager = world.get_resource_mut::<AnimationManager>().unwrap();
         if animation_manager.is_posing() {
             self.update_input_anim_posing(input_actions, world);
         } else {
-            self.update_input_anim_framing(input_actions, world);
+            self.update_input_anim_framing(input_actions, world, current_file_entity);
         }
     }
 
-    fn update_input_anim_framing(&mut self, input_actions: Vec<InputAction>, world: &mut World) {
-
+    fn update_input_anim_framing(&mut self, input_actions: Vec<InputAction>, world: &mut World, current_file_entity: Entity) {
         for action in input_actions {
             match action {
                 InputAction::MouseClick(click_type, mouse_position) => self.handle_mouse_click_anim(world, click_type, &mouse_position),
@@ -164,7 +162,7 @@ impl InputManager {
                 InputAction::KeyPress(key) => {
                     match key {
                         Key::Delete => self.handle_delete_key_press_anim_framing(world),
-                        Key::Insert => self.handle_insert_key_press(world),
+                        Key::Insert => self.handle_insert_key_press_anim_framing(world, current_file_entity),
                         Key::X => {
                             let mut animation_manager = world.get_resource_mut::<AnimationManager>().unwrap();
                             animation_manager.set_posing();
@@ -211,7 +209,6 @@ impl InputManager {
                 InputAction::KeyPress(key) => {
                     match key {
                         Key::S | Key::W | Key::D | Key::T | Key::F | Key::Num1 | Key::Num2 | Key::Num3 | Key::Num4 | Key::Num5 | Key::PageUp | Key::PageDown => Self::handle_keypress_camera_controls(world, key),
-                        Key::Insert => self.handle_insert_key_press(world),
                         Key::E => Self::handle_edge_angle_visibility_toggle(world),
                         Key::X => {
                             let mut animation_manager = world.get_resource_mut::<AnimationManager>().unwrap();
@@ -699,50 +696,34 @@ impl InputManager {
         }
     }
 
-    pub(crate) fn handle_insert_key_press(&mut self, world: &mut World) {
+    pub(crate) fn handle_insert_key_press_mesh(&mut self, world: &mut World) {
 
-        let current_file_entity = *world
-            .get_resource::<TabManager>()
-            .unwrap()
-            .current_tab_entity()
-            .unwrap();
-        let current_file_type = world
-            .get_resource::<FileManager>()
-            .unwrap()
-            .get_file_type(&current_file_entity);
-
-        match current_file_type {
-            FileExtension::Mesh => {
-                if self.selected_shape.is_some() {
-                    return;
-                }
-                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_shape_action(
-                        world,
-                        self,
-                        ShapeAction::CreateVertex(
-                            VertexTypeData::Mesh(Vec::new(), Vec::new()),
-                            Vec3::ZERO,
-                            None,
-                        ),
-                    );
-                })
-            }
-            FileExtension::Anim => {
-                if world.get_resource::<AnimationManager>().unwrap().is_framing() {
-                    world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                        let animation_manager = world.get_resource::<AnimationManager>().unwrap();
-                        let current_frame_index = animation_manager.current_frame_index();
-                        tab_manager.current_tab_execute_anim_action(
-                            world,
-                            self,
-                            AnimAction::InsertFrame(current_file_entity, current_frame_index),
-                        );
-                    });
-                }
-            }
-            _ => {}
+        if self.selected_shape.is_some() {
+            return;
         }
+        world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+            tab_manager.current_tab_execute_shape_action(
+                world,
+                self,
+                ShapeAction::CreateVertex(
+                    VertexTypeData::Mesh(Vec::new(), Vec::new()),
+                    Vec3::ZERO,
+                    None,
+                ),
+            );
+        })
+    }
+
+    pub(crate) fn handle_insert_key_press_anim_framing(&mut self, world: &mut World, current_file_entity: Entity) {
+        world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+            let animation_manager = world.get_resource::<AnimationManager>().unwrap();
+            let current_frame_index = animation_manager.current_frame_index();
+            tab_manager.current_tab_execute_anim_action(
+                world,
+                self,
+                AnimAction::InsertFrame(current_file_entity, current_frame_index),
+            );
+        });
     }
 
     pub(crate) fn handle_delete_key_press_skel(&mut self, world: &mut World) {
