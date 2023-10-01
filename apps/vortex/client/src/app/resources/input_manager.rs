@@ -27,6 +27,7 @@ use crate::app::{
         Edge2dLocal, FaceIcon2d, LocalShape, SelectCircle, SelectTriangle, Vertex2d, VertexTypeData,
     },
     resources::{
+        animation_manager::anim_file_insert_frame,
         action::AnimAction, action::ShapeAction, animation_manager::AnimationManager,
         camera_manager::CameraAngle, camera_manager::CameraManager, camera_state::CameraState,
         canvas::Canvas, edge_manager::EdgeManager, face_manager::FaceManager,
@@ -98,7 +99,7 @@ impl InputManager {
             FileExtension::Skel => self.update_input_skel(input_actions, world),
             FileExtension::Mesh => self.update_input_mesh(input_actions, world),
             FileExtension::Anim => {
-                self.update_input_anim(input_actions, world, *current_file_entity)
+                self.update_input_anim(input_actions, world)
             }
             _ => {}
         }
@@ -210,13 +211,12 @@ impl InputManager {
         &mut self,
         input_actions: Vec<InputAction>,
         world: &mut World,
-        current_file_entity: Entity,
     ) {
         let animation_manager = world.get_resource_mut::<AnimationManager>().unwrap();
         if animation_manager.is_posing() {
             self.update_input_anim_posing(input_actions, world);
         } else {
-            self.update_input_anim_framing(input_actions, world, current_file_entity);
+            self.update_input_anim_framing(input_actions, world);
         }
     }
 
@@ -224,7 +224,6 @@ impl InputManager {
         &mut self,
         input_actions: Vec<InputAction>,
         world: &mut World,
-        current_file_entity: Entity,
     ) {
         for action in input_actions {
             match action {
@@ -241,9 +240,7 @@ impl InputManager {
                 }
                 InputAction::KeyPress(key) => match key {
                     Key::Delete => Self::handle_delete_key_press_anim_framing(world),
-                    Key::Insert => {
-                        self.handle_insert_key_press_anim_framing(world, current_file_entity)
-                    }
+                    Key::Insert => anim_file_insert_frame(self, world),
                     Key::Enter => {
                         let mut system_state: SystemState<(
                             ResMut<Canvas>,
@@ -810,22 +807,6 @@ impl InputManager {
                 ),
             );
         })
-    }
-
-    pub(crate) fn handle_insert_key_press_anim_framing(
-        &mut self,
-        world: &mut World,
-        current_file_entity: Entity,
-    ) {
-        world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-            let animation_manager = world.get_resource::<AnimationManager>().unwrap();
-            let current_frame_index = animation_manager.current_frame_index();
-            tab_manager.current_tab_execute_anim_action(
-                world,
-                self,
-                AnimAction::InsertFrame(current_file_entity, current_frame_index),
-            );
-        });
     }
 
     pub(crate) fn handle_delete_key_press_skel(&mut self, world: &mut World) {

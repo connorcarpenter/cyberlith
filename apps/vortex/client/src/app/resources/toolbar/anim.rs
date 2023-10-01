@@ -1,8 +1,8 @@
-use bevy_ecs::world::World;
+use bevy_ecs::world::{Mut, World};
 
 use render_egui::egui::Ui;
 
-use crate::app::resources::{animation_manager::AnimationManager, toolbar::{
+use crate::app::resources::{input_manager::InputManager, animation_manager::{AnimationManager, anim_file_insert_frame}, toolbar::{
     shared_buttons::button_toggle_edge_angle_visibility, Toolbar,
 }};
 
@@ -25,7 +25,11 @@ impl AnimationToolbar {
         let _response = Toolbar::button(ui, "🔍", "Show skeleton file name", true);
 
         // new frame
-        let _response = Toolbar::button(ui, "➕", "New frame", true);
+        if Toolbar::button(ui, "➕", "New frame", true).clicked() {
+            world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
+                anim_file_insert_frame(&mut input_manager, world);
+            });
+        }
 
         // delete frame
         let _response = Toolbar::button(ui, "🗑", "Delete frame", true);

@@ -41,6 +41,8 @@ use crate::app::{
         input_manager::CardinalDirection,
         tab_manager::TabManager,
         vertex_manager::VertexManager,
+        action::AnimAction,
+        input_manager::InputManager,
     },
     shapes::Line2d,
 };
@@ -94,7 +96,7 @@ impl Default for AnimationManager {
             posing: false,
             resync_hover: false,
             resync_frame_order: HashSet::new(),
-            frame_size: Vec2::new(60.0, 60.0),
+            frame_size: Vec2::new(100.0, 100.0),
             frame_buffer: Vec2::new(12.0, 12.0),
             frame_hover: None,
 
@@ -1455,4 +1457,20 @@ pub fn get_root_vertex(world: &mut World) -> Option<Entity> {
     }
 
     root_3d_vertex
+}
+
+pub(crate) fn anim_file_insert_frame(
+    input_manager: &mut InputManager,
+    world: &mut World,
+) {
+    world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+        let current_file_entity = *tab_manager.current_tab_entity().unwrap();
+        let animation_manager = world.get_resource::<AnimationManager>().unwrap();
+        let current_frame_index = animation_manager.current_frame_index();
+        tab_manager.current_tab_execute_anim_action(
+            world,
+            input_manager,
+            AnimAction::InsertFrame(current_file_entity, current_frame_index),
+        );
+    });
 }
