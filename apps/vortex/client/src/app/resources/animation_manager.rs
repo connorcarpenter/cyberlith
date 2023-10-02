@@ -205,7 +205,7 @@ impl AnimationManager {
         Some(*entity)
     }
 
-    pub(crate) fn current_frame_count(&self, file_entity: &Entity) -> Option<usize> {
+    pub(crate) fn get_frame_count(&self, file_entity: &Entity) -> Option<usize> {
         let frame_data = self.frame_data.get(file_entity)?;
         Some(frame_data.frame_list.len())
     }
@@ -1265,6 +1265,7 @@ impl AnimationManager {
     }
 
     pub fn framing_queue_resync_frame_order(&mut self, file_entity: &Entity) {
+        info!("framing_queue_resync_frame_order for entity: `{:?}`", file_entity);
         self.resync_frame_order.insert(*file_entity);
     }
 
@@ -1593,10 +1594,26 @@ pub(crate) fn anim_file_insert_frame(input_manager: &mut InputManager, world: &m
         let current_file_entity = *tab_manager.current_tab_entity().unwrap();
         let animation_manager = world.get_resource::<AnimationManager>().unwrap();
         let current_frame_index = animation_manager.current_frame_index();
+
+        // copy all rotations from current frame
+        let mut rotations = Vec::new();
+        let current_frame_entity = animation_manager.current_frame_entity(&current_file_entity).unwrap();
+        let rotation_entities: Vec<Entity> = animation_manager.get_frame_rotations(&current_file_entity, &current_frame_entity).unwrap().iter().copied().collect();
+        let mut rot_q = world.query::<&AnimRotation>();
+        for rotation_entity in rotation_entities.iter() {
+            let Ok(rot) = rot_q.get(world, *rotation_entity) else {
+                continue;
+            };
+            let name: String = (*rot.vertex_name).clone();
+            let quat = rot.get_rotation();
+            rotations.push((name, quat));
+        }
+
+        // execute insertion
         tab_manager.current_tab_execute_anim_action(
             world,
             input_manager,
-            AnimAction::InsertFrame(current_file_entity, current_frame_index, None),
+            AnimAction::InsertFrame(current_file_entity, current_frame_index+1, Some(rotations)),
         );
     });
 }
@@ -1609,7 +1626,7 @@ pub(crate) fn anim_file_delete_frame(input_manager: &mut InputManager, world: &m
 
     let mut system_state: SystemState<(Commands, Client, Res<AnimationManager>)> =
         SystemState::new(world);
-    let (mut commands, mut client, animation_manager) = system_state.get_mut(world);
+    let (mut commands, client, animation_manager) = system_state.get_mut(world);
 
     // delete vertex
     let Some(current_frame_entity) = animation_manager.current_frame_entity(&current_file_entity) else {
@@ -1631,39 +1648,13 @@ pub(crate) fn anim_file_delete_frame(input_manager: &mut InputManager, world: &m
         return;
     }
 
-    // let auth_status = commands
-    //     .entity(current_frame_entity)
-    //     .authority(&client)
-    //     .unwrap();
-    // if !auth_status.is_granted() {
-    //     // request authority if needed
-    //     commands
-    //         .entity(current_frame_entity)
-    //         .request_authority(&mut client);
-    // }
-
     let current_frame_index = animation_manager.current_frame_index();
-    let current_frame_count = animation_manager
-        .current_frame_count(&current_file_entity)
-        .unwrap();
 
     world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
         tab_manager.current_tab_execute_anim_action(
             world,
             input_manager,
-            AnimAction::DeleteFrame(current_file_entity, current_frame_index, None),
+            AnimAction::DeleteFrame(current_file_entity, current_frame_index),
         );
     });
-
-    if current_frame_index == current_frame_count - 1 {
-        let new_frame_index = if current_frame_index == 0 {
-            current_frame_index
-        } else {
-            current_frame_index - 1
-        };
-        world
-            .get_resource_mut::<AnimationManager>()
-            .unwrap()
-            .set_current_frame_index(new_frame_index);
-    }
 }

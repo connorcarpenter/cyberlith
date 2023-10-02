@@ -5,6 +5,7 @@ use bevy_ecs::{
     prelude::Query,
     system::{Commands, Resource},
 };
+use bevy_log::info;
 
 use naia_bevy_server::{CommandsExt, Server};
 
@@ -40,6 +41,12 @@ impl FileFrameData {
         frame_order: usize,
         mut frame_q_opt: Option<&mut Query<&mut AnimFrame>>,
     ) {
+        info!("--- add frame ---");
+        for i in 0..self.frame_list.len() {
+            info!("index: {}, entity: {:?}", i, self.frame_list[i]);
+        }
+        info!("- op -");
+
         self.frames.insert(frame_entity, FrameData::new());
 
         // add to frame_list
@@ -48,21 +55,25 @@ impl FileFrameData {
             // set frame entity
             self.frame_list[frame_order] = Some(frame_entity);
         } else {
+            info!("add_frame: index: {:?}, entity: `{:?}`", frame_order, frame_entity);
+            self.frame_list.insert(frame_order, Some(frame_entity));
+
             // move all elements after frame_order up one
-            for i in frame_order..self.frame_list.len() {
+            for i in frame_order+1..self.frame_list.len() {
                 // update frame_order in AnimFrame using frame_q_opt
                 if let Some(frame_q) = frame_q_opt.as_mut() {
-                    if let Ok(mut frame) = frame_q.get_mut(self.frame_list[i].unwrap()) {
-                        frame.set_order((i + 1) as u8);
-                    }
+                    let Ok(mut frame) = frame_q.get_mut(self.frame_list[i].unwrap()) else {
+                        panic!("frame not found");
+                    };
+                    frame.set_order(i as u8);
                 }
             }
-            self.frame_list.insert(frame_order, Some(frame_entity));
         }
 
-        // for i in 0..self.frame_list.len() {
-        //     info!("index: {}, entity: {:?}", i, self.frame_list[i]);
-        // }
+        info!("--- result ---");
+        for i in 0..self.frame_list.len() {
+            info!("index: {}, entity: {:?}", i, self.frame_list[i]);
+        }
     }
 
     fn remove_frame(

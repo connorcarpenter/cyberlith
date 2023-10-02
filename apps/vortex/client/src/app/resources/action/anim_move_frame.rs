@@ -2,7 +2,7 @@ use bevy_ecs::{
     prelude::World,
     system::{Commands, Query, ResMut, SystemState},
 };
-use bevy_log::info;
+use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt};
 
@@ -30,19 +30,23 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
         system_state.get_mut(world);
 
     let Some(current_frame_entity) = animation_manager.get_frame_entity(&file_entity, current_frame_index) else {
+        warn!("Failed to get frame entity for file `{:?}` and frame index `{:?}`!",file_entity, current_frame_index);
         return vec![];
     };
     let Some(next_frame_entity) = animation_manager.get_frame_entity(&file_entity, next_frame_index) else {
+        warn!("Failed to get frame entity for file `{:?}` and frame index `{:?}`!",file_entity, next_frame_index);
         return vec![];
     };
 
     if let Some(auth) = commands.entity(current_frame_entity).authority(&client) {
         if !auth.is_requested() && !auth.is_granted() {
+            warn!("current frame entity `{:?}` does not have auth!", current_frame_entity);
             return vec![];
         }
     }
     if let Some(auth) = commands.entity(next_frame_entity).authority(&client) {
         if auth.is_denied() {
+            warn!("Auth for next frame entity `{:?}` is denied!", next_frame_entity);
             return vec![];
         }
         if auth.is_available() || auth.is_releasing() {

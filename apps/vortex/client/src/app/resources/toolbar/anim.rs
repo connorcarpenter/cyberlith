@@ -50,7 +50,7 @@ impl AnimationToolbar {
         let animation_manager = world.get_resource::<AnimationManager>().unwrap();
         let current_frame_index = animation_manager.current_frame_index();
         let frame_count = animation_manager
-            .current_frame_count(&current_file_entity)
+            .get_frame_count(&current_file_entity)
             .unwrap_or_default();
 
         {
