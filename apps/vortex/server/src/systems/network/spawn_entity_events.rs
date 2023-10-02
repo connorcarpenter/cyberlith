@@ -109,6 +109,16 @@ pub fn despawn_entity_events(
 
                 git_manager.on_remove_content_entity(&mut server, &entity);
             }
+            Some(DespawnType::Frame) => {
+                // edge
+                info!("entity: `{:?}` (which is an Frame), despawned", entity);
+
+                git_manager.queue_client_modify_file(entity);
+
+                animation_manager.on_despawn_frame(&mut commands, &mut server, entity, Some(&mut frame_q));
+
+                git_manager.on_remove_content_entity(&mut server, &entity);
+            }
             Some(DespawnType::Rotation) => {
                 // edge
                 info!("entity: `{:?}` (which is an Rotation), despawned", entity);
@@ -116,16 +126,6 @@ pub fn despawn_entity_events(
                 git_manager.queue_client_modify_file(entity);
 
                 animation_manager.on_despawn_rotation(entity);
-
-                git_manager.on_remove_content_entity(&mut server, &entity);
-            }
-            Some(DespawnType::Frame) => {
-                // edge
-                info!("entity: `{:?}` (which is an Frame), despawned", entity);
-
-                git_manager.queue_client_modify_file(entity);
-
-                animation_manager.on_despawn_frame(entity, Some(&mut frame_q));
 
                 git_manager.on_remove_content_entity(&mut server, &entity);
             }

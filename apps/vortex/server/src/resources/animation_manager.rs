@@ -1,6 +1,8 @@
 use std::collections::{HashMap, HashSet};
 
-use bevy_ecs::{entity::Entity, prelude::Query, system::Resource};
+use bevy_ecs::{entity::Entity, prelude::Query, system::{Resource, Commands}};
+
+use naia_bevy_server::{CommandsExt, Server};
 
 use vortex_proto::components::AnimFrame;
 
@@ -197,10 +199,16 @@ impl AnimationManager {
 
     pub fn on_despawn_frame(
         &mut self,
+        commands: &mut Commands,
+        server: &mut Server,
         frame_entity: &Entity,
         frame_q_opt: Option<&mut Query<&mut AnimFrame>>,
     ) {
-        self.deregister_frame(frame_entity, frame_q_opt);
+        let frame_data = self.deregister_frame(frame_entity, frame_q_opt).unwrap();
+        for rotation_entity in frame_data.rotations {
+            commands.entity(rotation_entity).take_authority(server).despawn();
+            self.deregister_rotation(&rotation_entity);
+        }
     }
 
     pub fn on_despawn_rotation(&mut self, rotation_entity: &Entity) {
