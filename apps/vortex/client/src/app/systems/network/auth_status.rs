@@ -5,21 +5,23 @@ use bevy_ecs::{
 };
 use bevy_log::{info, warn};
 
-use naia_bevy_client::events::{
+use naia_bevy_client::{events::{
     EntityAuthDeniedEvent, EntityAuthGrantedEvent, EntityAuthResetEvent,
-};
+}, Client};
+
+use vortex_proto::components::AnimFrame;
 
 use crate::app::{
     components::OwnedByFileLocal,
     resources::{
+        animation_manager::AnimationManager, file_manager::FileManager,
         action::FileActions, edge_manager::EdgeManager, face_manager::FaceManager,
         shape_manager::ShapeManager, tab_manager::TabManager, vertex_manager::VertexManager,
     },
 };
-use crate::app::resources::animation_manager::AnimationManager;
-use crate::app::resources::file_manager::FileManager;
 
 pub fn auth_granted_events(
+    client: Client,
     file_manager: Res<FileManager>,
     mut file_actions: ResMut<FileActions>,
     vertex_manager: Res<VertexManager>,
@@ -29,9 +31,11 @@ pub fn auth_granted_events(
     mut tab_manager: ResMut<TabManager>,
     mut event_reader: EventReader<EntityAuthGrantedEvent>,
     owned_by_q: Query<&OwnedByFileLocal>,
+    frame_q: Query<&AnimFrame>,
 ) {
     for EntityAuthGrantedEvent(entity) in event_reader.iter() {
         process_entity_auth_status(
+            &client,
             &file_manager,
             &mut file_actions,
             &vertex_manager,
@@ -40,6 +44,7 @@ pub fn auth_granted_events(
             &animation_manager,
             &mut tab_manager,
             &owned_by_q,
+            &frame_q,
             entity,
             "granted",
         );
@@ -47,6 +52,7 @@ pub fn auth_granted_events(
 }
 
 pub fn auth_denied_events(
+    client: Client,
     file_manager: Res<FileManager>,
     mut file_actions: ResMut<FileActions>,
     vertex_manager: Res<VertexManager>,
@@ -56,9 +62,11 @@ pub fn auth_denied_events(
     mut tab_manager: ResMut<TabManager>,
     mut event_reader: EventReader<EntityAuthDeniedEvent>,
     owned_by_q: Query<&OwnedByFileLocal>,
+    frame_q: Query<&AnimFrame>,
 ) {
     for EntityAuthDeniedEvent(entity) in event_reader.iter() {
         process_entity_auth_status(
+            &client,
             &file_manager,
             &mut file_actions,
             &vertex_manager,
@@ -67,6 +75,7 @@ pub fn auth_denied_events(
             &animation_manager,
             &mut tab_manager,
             &owned_by_q,
+            &frame_q,
             entity,
             "denied",
         );
@@ -74,6 +83,7 @@ pub fn auth_denied_events(
 }
 
 pub fn auth_reset_events(
+    client: Client,
     file_manager: Res<FileManager>,
     mut file_actions: ResMut<FileActions>,
     vertex_manager: Res<VertexManager>,
@@ -83,9 +93,11 @@ pub fn auth_reset_events(
     mut tab_manager: ResMut<TabManager>,
     mut event_reader: EventReader<EntityAuthResetEvent>,
     owned_by_q: Query<&OwnedByFileLocal>,
+    frame_q: Query<&AnimFrame>,
 ) {
     for EntityAuthResetEvent(entity) in event_reader.iter() {
         process_entity_auth_status(
+            &client,
             &file_manager,
             &mut file_actions,
             &vertex_manager,
@@ -94,6 +106,7 @@ pub fn auth_reset_events(
             &animation_manager,
             &mut tab_manager,
             &owned_by_q,
+            &frame_q,
             entity,
             "reset",
         );
@@ -101,6 +114,7 @@ pub fn auth_reset_events(
 }
 
 fn process_entity_auth_status(
+    client: &Client,
     file_manager: &FileManager,
     file_actions: &mut FileActions,
     vertex_manager: &VertexManager,
@@ -109,6 +123,7 @@ fn process_entity_auth_status(
     animation_manager: &AnimationManager,
     tab_manager: &mut TabManager,
     owned_by_q: &Query<&OwnedByFileLocal>,
+    frame_q: &Query<&AnimFrame>,
     entity: &Entity,
     status: &str,
 ) {
@@ -136,7 +151,7 @@ fn process_entity_auth_status(
                 );
             }
         } else {
-            warn!("no owning file entity found for entity: {:?}", entity);
+            warn!("no owning file entity found for shape entity: {:?}", entity);
         }
     } else if file_manager.entity_is_file(entity) {
         // entity is file
@@ -150,19 +165,19 @@ fn process_entity_auth_status(
             "auth processing for frame entity `{:?}`: `{:?}`",
             entity, status
         );
-        if let Ok(owning_file_entity) = owned_by_q.get(*entity) {
-            if let Some(tab_state) = tab_manager.tab_state_mut(&owning_file_entity.file_entity) {
-                tab_state
-                    .action_stack
-                    .entity_update_auth_status(&entity);
-            } else {
-                warn!(
-                    "no tab state found for file entity: {:?}",
-                    owning_file_entity.file_entity
-                );
-            }
+        let Ok(frame_component) = frame_q.get(*entity) else {
+            panic!("component for frame entity `{:?}` not found", entity);
+        };
+        let owning_file_entity = frame_component.file_entity.get(client).unwrap();
+        if let Some(tab_state) = tab_manager.tab_state_mut(&owning_file_entity) {
+            tab_state
+                .action_stack
+                .entity_update_auth_status(&entity);
         } else {
-            warn!("no owning file entity found for entity: {:?}", entity);
+            warn!(
+                "no tab state found for file entity: {:?}",
+                owning_file_entity
+            );
         }
     } else {
         panic!("unhandled auth status: entity `{:?}`: {:?}", entity, status);

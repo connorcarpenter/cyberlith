@@ -20,6 +20,8 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
     let (mut commands, mut client, mut animation_manager) = system_state.get_mut(world);
 
     let last_frame_index = animation_manager.current_frame_index();
+    info!("current frame index: {}", last_frame_index);
+
     let last_frame_entity = animation_manager
         .get_frame_entity(&file_entity, last_frame_index)
         .unwrap();

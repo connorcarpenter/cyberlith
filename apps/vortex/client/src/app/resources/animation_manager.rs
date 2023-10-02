@@ -92,6 +92,8 @@ pub struct AnimationManager {
     current_frame_index: usize,
     // file_entity -> file_frame_data
     frame_data: HashMap<Entity, FileFrameData>,
+    // frame entities
+    frames: HashSet<Entity>,
     // rotation_entity -> (frame_entity, vertex_name)
     rotations: HashMap<Entity, (Entity, String)>,
     // (frame_entity, vertex_name) -> rotation_entity
@@ -113,6 +115,7 @@ impl Default for AnimationManager {
             current_skel_file: None,
             current_frame_index: 0,
             frame_data: HashMap::new(),
+            frames: HashSet::new(),
             rotations: HashMap::new(),
             vertex_names: HashMap::new(),
 
@@ -130,8 +133,14 @@ impl AnimationManager {
         self.current_frame_index = frame_index;
     }
 
+    pub fn entity_is_frame(&self, entity: &Entity) -> bool {
+        self.frames.contains(entity)
+    }
+
     pub fn get_frame_entity(&self, file_entity: &Entity, frame_index: usize) -> Option<Entity> {
+        info!("get_frame_entity({:?}, {:?})", file_entity, frame_index);
         let frame_data = self.frame_data.get(file_entity)?;
+        info!("frame list: {:?}", frame_data.frame_list);
         let entity_opt = frame_data.frame_list.get(frame_index)?.as_ref();
         let entity = entity_opt?;
         Some(*entity)
@@ -157,6 +166,8 @@ impl AnimationManager {
         let frame_data = self.frame_data.get_mut(&file_entity).unwrap();
         frame_data.register_frame(frame_entity);
 
+        self.frames.insert(frame_entity);
+
         self.framing_queue_resync_frame_order(&file_entity);
     }
 
@@ -171,6 +182,8 @@ impl AnimationManager {
         if frame_data.frames.is_empty() {
             self.frame_data.remove(file_entity);
         }
+
+        self.frames.remove(frame_entity);
 
         self.framing_queue_resync_frame_order(file_entity);
 
@@ -1189,7 +1202,7 @@ impl AnimationManager {
             .id();
 
         // create new 2d vertex, add local components to 3d vertex
-        self.frame_postprocess(file_entity, entity_id, frame_index);
+        self.frame_postprocess(file_entity, entity_id);
 
         entity_id
     }
@@ -1233,7 +1246,6 @@ impl AnimationManager {
         &mut self,
         file_entity: Entity,
         frame_entity: Entity,
-        frame_order: usize,
     ) {
         self.register_frame(file_entity, frame_entity);
     }

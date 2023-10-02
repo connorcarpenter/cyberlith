@@ -631,15 +631,15 @@ pub fn insert_animation_events(
 ) {
     // on AnimFrame Insert Event
     for event in frame_events.iter() {
-        let entity = event.entity;
+        let frame_entity = event.entity;
 
-        info!("entity: {:?} - inserted AnimFrame", entity);
+        info!("entity: {:?} - inserted AnimFrame", frame_entity);
 
-        let frame = frame_q.get(entity).unwrap();
+        let frame = frame_q.get(frame_entity).unwrap();
         let file_entity = frame.file_entity.get(&client).unwrap();
-        let frame_order = frame.get_order() as usize;
+        let _frame_order = frame.get_order() as usize;
 
-        animation_manager.frame_postprocess(file_entity, entity, frame_order);
+        animation_manager.frame_postprocess(file_entity, frame_entity);
     }
 
     // on AnimRotation Insert Event
