@@ -107,7 +107,7 @@ pub fn draw_vertices_and_edges(world: &mut World) {
             .unwrap()
             .is_framing()
         {
-            world.resource_scope(|world, animation_manager: Mut<AnimationManager>| {
+            world.resource_scope(|world, mut animation_manager: Mut<AnimationManager>| {
                 animation_manager.draw(world);
             });
 

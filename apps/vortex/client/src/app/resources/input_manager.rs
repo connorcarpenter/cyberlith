@@ -228,6 +228,9 @@ impl InputManager {
                 InputAction::MouseClick(click_type, mouse_position) => {
                     self.handle_mouse_click_anim_framing(world, click_type, &mouse_position)
                 }
+                InputAction::MouseDragged(click_type, mouse_position, delta) => {
+                    self.handle_mouse_drag_anim_framing(world, click_type, mouse_position, delta)
+                }
                 InputAction::MiddleMouseScroll(scroll_y) => {
                     Self::handle_mouse_scroll_anim_framing(world, scroll_y)
                 }
@@ -292,7 +295,7 @@ impl InputManager {
                     self.handle_mouse_click_anim_posing(world, click_type, &mouse_position)
                 }
                 InputAction::MouseDragged(click_type, mouse_position, delta) => {
-                    self.handle_mouse_drag_anim(world, click_type, mouse_position, delta)
+                    self.handle_mouse_drag_anim_posing(world, click_type, mouse_position, delta)
                 }
                 InputAction::MiddleMouseScroll(scroll_y) => {
                     Self::handle_mouse_scroll_wheel(world, scroll_y)
@@ -1487,7 +1490,25 @@ impl InputManager {
         }
     }
 
-    pub(crate) fn handle_mouse_drag_anim(
+    pub(crate) fn handle_mouse_drag_anim_framing(
+        &mut self,
+        world: &mut World,
+        click_type: MouseButton,
+        _mouse_position: Vec2,
+        delta: Vec2,
+    ) {
+        if !world.get_resource::<Canvas>().unwrap().has_focus() {
+            return;
+        }
+
+        if click_type != MouseButton::Left {
+            return;
+        }
+
+        world.get_resource_mut::<AnimationManager>().unwrap().handle_mouse_drag_anim_framing(delta.y);
+    }
+
+    pub(crate) fn handle_mouse_drag_anim_posing(
         &mut self,
         world: &mut World,
         click_type: MouseButton,
