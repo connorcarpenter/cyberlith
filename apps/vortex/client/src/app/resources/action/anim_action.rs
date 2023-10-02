@@ -21,7 +21,7 @@ pub enum AnimAction {
     // file entity, next frame index, last frame index
     SelectFrame(Entity, usize, usize),
     // file entity, frame index
-    InsertFrame(Entity, usize),
+    InsertFrame(Entity, usize, Option<Vec<(String, Quat)>>),
     // file entity, frame index, last frame index
     DeleteFrame(Entity, usize, Option<usize>),
 }
@@ -40,7 +40,7 @@ impl AnimAction {
             Self::SelectShape(_) => AnimActionType::SelectShape,
             Self::RotateVertex(_, _, _) => AnimActionType::RotateVertex,
             Self::SelectFrame(_, _, _) => AnimActionType::SelectFrame,
-            Self::InsertFrame(_, _) => AnimActionType::InsertFrame,
+            Self::InsertFrame(_, _, _) => AnimActionType::InsertFrame,
             Self::DeleteFrame(_, _, _) => AnimActionType::DeleteFrame,
         }
     }

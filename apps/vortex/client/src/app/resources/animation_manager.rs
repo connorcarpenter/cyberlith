@@ -47,25 +47,55 @@ use crate::app::{
     shapes::Line2d,
 };
 
+struct FrameData {
+    rotations: HashSet<Entity>,
+}
+
+impl FrameData {
+    pub fn new() -> Self {
+        Self {
+            rotations: HashSet::new(),
+        }
+    }
+
+    pub fn add_rotation(&mut self, rotation_entity: Entity) {
+        self.rotations.insert(rotation_entity);
+    }
+
+    pub fn remove_rotation(&mut self, rotation_entity: &Entity) {
+        self.rotations.remove(rotation_entity);
+    }
+}
+
 struct FileFrameData {
-    frames: HashSet<Entity>,
+    frames: HashMap<Entity, FrameData>,
     frame_list: Vec<Option<Entity>>,
 }
 
 impl FileFrameData {
     pub fn new() -> Self {
         Self {
-            frames: HashSet::new(),
+            frames: HashMap::new(),
             frame_list: Vec::new(),
         }
     }
 
     pub fn register_frame(&mut self, frame_entity: Entity) {
-        self.frames.insert(frame_entity);
+        self.frames.insert(frame_entity, FrameData::new());
     }
 
     pub fn deregister_frame(&mut self, frame_entity: &Entity) {
         self.frames.remove(frame_entity);
+    }
+
+    pub fn add_rotation(&mut self, frame_entity: Entity, rotation_entity: Entity) {
+        let frame_data = self.frames.get_mut(&frame_entity).unwrap();
+        frame_data.add_rotation(rotation_entity);
+    }
+
+    pub fn remove_rotation(&mut self, frame_entity: &Entity, rotation_entity: &Entity) {
+        let frame_data = self.frames.get_mut(&frame_entity).unwrap();
+        frame_data.remove_rotation(rotation_entity);
     }
 
     pub fn count(&self) -> usize {
@@ -92,8 +122,8 @@ pub struct AnimationManager {
     current_frame_index: usize,
     // file_entity -> file_frame_data
     frame_data: HashMap<Entity, FileFrameData>,
-    // frame entities
-    frames: HashSet<Entity>,
+    // frame entity -> file_entity
+    frames: HashMap<Entity, Entity>,
     // rotation_entity -> (frame_entity, vertex_name)
     rotations: HashMap<Entity, (Entity, String)>,
     // (frame_entity, vertex_name) -> rotation_entity
@@ -115,7 +145,7 @@ impl Default for AnimationManager {
             current_skel_file: None,
             current_frame_index: 0,
             frame_data: HashMap::new(),
-            frames: HashSet::new(),
+            frames: HashMap::new(),
             rotations: HashMap::new(),
             vertex_names: HashMap::new(),
 
@@ -134,16 +164,30 @@ impl AnimationManager {
     }
 
     pub fn entity_is_frame(&self, entity: &Entity) -> bool {
-        self.frames.contains(entity)
+        self.frames.contains_key(entity)
+    }
+
+    pub fn entity_is_rotation(&self, entity: &Entity) -> bool {
+        self.rotations.contains_key(entity)
+    }
+
+    pub fn get_rotations_frame_entity(&self, entity: &Entity) -> Option<Entity> {
+        self.rotations.get(entity).map(|(frame_entity, _)| *frame_entity)
     }
 
     pub fn get_frame_entity(&self, file_entity: &Entity, frame_index: usize) -> Option<Entity> {
-        info!("get_frame_entity({:?}, {:?})", file_entity, frame_index);
+        //info!("get_frame_entity({:?}, {:?})", file_entity, frame_index);
         let frame_data = self.frame_data.get(file_entity)?;
-        info!("frame list: {:?}", frame_data.frame_list);
+        //info!("frame list: {:?}", frame_data.frame_list);
         let entity_opt = frame_data.frame_list.get(frame_index)?.as_ref();
         let entity = entity_opt?;
         Some(*entity)
+    }
+
+    pub fn get_frame_rotations(&self, file_entity: &Entity, frame_entity: &Entity) -> Option<&HashSet<Entity>> {
+        let frame_data = self.frame_data.get(file_entity)?;
+        let frame_data = frame_data.frames.get(frame_entity)?;
+        Some(&frame_data.rotations)
     }
 
     pub(crate) fn current_frame_entity(&self, file_entity: &Entity) -> Option<Entity> {
@@ -166,7 +210,7 @@ impl AnimationManager {
         let frame_data = self.frame_data.get_mut(&file_entity).unwrap();
         frame_data.register_frame(frame_entity);
 
-        self.frames.insert(frame_entity);
+        self.frames.insert(frame_entity, file_entity);
 
         self.framing_queue_resync_frame_order(&file_entity);
     }
@@ -201,11 +245,20 @@ impl AnimationManager {
             .insert(rotation_entity, (frame_entity, vertex_name.clone()));
         self.vertex_names
             .insert((frame_entity, vertex_name), rotation_entity);
+        let file_entity = self.frames.get(&frame_entity).unwrap();
+        let frame_data = self.frame_data.get_mut(file_entity).unwrap();
+        frame_data.add_rotation(frame_entity, rotation_entity);
     }
 
     pub(crate) fn deregister_rotation(&mut self, rotation_entity: &Entity) {
         let (frame_entity, vertex_name) = self.rotations.remove(rotation_entity).unwrap();
         self.vertex_names.remove(&(frame_entity, vertex_name));
+
+        if let Some(file_entity) = self.frames.get(&frame_entity) {
+            if let Some(frame_data) = self.frame_data.get_mut(file_entity) {
+                frame_data.remove_rotation(&frame_entity, rotation_entity);
+            }
+        }
     }
 
     pub fn is_posing(&self) -> bool {
@@ -1505,7 +1558,7 @@ pub(crate) fn anim_file_insert_frame(
         tab_manager.current_tab_execute_anim_action(
             world,
             input_manager,
-            AnimAction::InsertFrame(current_file_entity, current_frame_index),
+            AnimAction::InsertFrame(current_file_entity, current_frame_index, None),
         );
     });
 }

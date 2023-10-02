@@ -179,6 +179,26 @@ fn process_entity_auth_status(
                 owning_file_entity
             );
         }
+    } else if animation_manager.entity_is_rotation(entity) {
+        info!(
+            "auth processing for rotation entity `{:?}`: `{:?}`",
+            entity, status
+        );
+        let frame_entity = animation_manager.get_rotations_frame_entity(entity).unwrap();
+        let Ok(frame_component) = frame_q.get(frame_entity) else {
+            panic!("component for rotation entity `{:?}` not found", frame_entity);
+        };
+        let owning_file_entity = frame_component.file_entity.get(client).unwrap();
+        if let Some(tab_state) = tab_manager.tab_state_mut(&owning_file_entity) {
+            tab_state
+                .action_stack
+                .entity_update_auth_status(&entity);
+        } else {
+            warn!(
+                "no tab state found for file entity: {:?}",
+                owning_file_entity
+            );
+        }
     } else {
         panic!("unhandled auth status: entity `{:?}`: {:?}", entity, status);
     }
