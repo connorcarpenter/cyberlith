@@ -607,10 +607,7 @@ impl AnimationManager {
         system_state.apply(world);
     }
 
-    pub(crate) fn handle_mouse_drag_anim_framing(
-        &mut self,
-        delta_y: f32,
-    ) {
+    pub(crate) fn handle_mouse_drag_anim_framing(&mut self, delta_y: f32) {
         self.framing_y += delta_y;
     }
 
@@ -902,7 +899,12 @@ impl AnimationManager {
         self.resync_hover = true;
     }
 
-    pub fn sync_mouse_hover_ui(&mut self, current_file_entity: &Entity, canvas_size: Vec2, mouse_position: &Vec2) {
+    pub fn sync_mouse_hover_ui(
+        &mut self,
+        current_file_entity: &Entity,
+        canvas_size: Vec2,
+        mouse_position: &Vec2,
+    ) {
         if !self.resync_hover {
             return;
         }
@@ -944,7 +946,10 @@ impl AnimationManager {
         };
 
         let frame_count = file_frame_data.count();
-        let canvas_size = world.get_resource::<Canvas>().unwrap().canvas_texture_size();
+        let canvas_size = world
+            .get_resource::<Canvas>()
+            .unwrap()
+            .canvas_texture_size();
         let frame_rects = self.get_frame_positions(canvas_size, frame_count);
 
         let file_frame_data = self.frame_data.get(&current_file_entity).unwrap();
@@ -965,13 +970,8 @@ impl AnimationManager {
                 ResMut<Assets<CpuMaterial>>,
                 Query<(&mut Camera, &mut Projection, &mut Transform)>,
             )> = SystemState::new(world);
-            let (
-                mut render_frame,
-                camera_manager,
-                mut meshes,
-                mut materials,
-                mut camera_q
-            ) = system_state.get_mut(world);
+            let (mut render_frame, camera_manager, mut meshes, mut materials, mut camera_q) =
+                system_state.get_mut(world);
 
             camera_manager.enable_cameras(&mut camera_q, true);
 
@@ -1265,7 +1265,10 @@ impl AnimationManager {
     }
 
     pub fn framing_queue_resync_frame_order(&mut self, file_entity: &Entity) {
-        info!("framing_queue_resync_frame_order for entity: `{:?}`", file_entity);
+        info!(
+            "framing_queue_resync_frame_order for entity: `{:?}`",
+            file_entity
+        );
         self.resync_frame_order.insert(*file_entity);
     }
 
@@ -1597,8 +1600,15 @@ pub(crate) fn anim_file_insert_frame(input_manager: &mut InputManager, world: &m
 
         // copy all rotations from current frame
         let mut rotations = Vec::new();
-        let current_frame_entity = animation_manager.current_frame_entity(&current_file_entity).unwrap();
-        let rotation_entities: Vec<Entity> = animation_manager.get_frame_rotations(&current_file_entity, &current_frame_entity).unwrap().iter().copied().collect();
+        let current_frame_entity = animation_manager
+            .current_frame_entity(&current_file_entity)
+            .unwrap();
+        let rotation_entities: Vec<Entity> = animation_manager
+            .get_frame_rotations(&current_file_entity, &current_frame_entity)
+            .unwrap()
+            .iter()
+            .copied()
+            .collect();
         let mut rot_q = world.query::<&AnimRotation>();
         for rotation_entity in rotation_entities.iter() {
             let Ok(rot) = rot_q.get(world, *rotation_entity) else {
@@ -1613,7 +1623,11 @@ pub(crate) fn anim_file_insert_frame(input_manager: &mut InputManager, world: &m
         tab_manager.current_tab_execute_anim_action(
             world,
             input_manager,
-            AnimAction::InsertFrame(current_file_entity, current_frame_index+1, Some(rotations)),
+            AnimAction::InsertFrame(
+                current_file_entity,
+                current_frame_index + 1,
+                Some(rotations),
+            ),
         );
     });
 }

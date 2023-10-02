@@ -67,8 +67,7 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
     }
 
     {
-        let mut system_state: SystemState<(Commands, Client)> =
-            SystemState::new(world);
+        let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
         let (mut commands, mut client) = system_state.get_mut(world);
 
         for entity in entities_to_release {
@@ -78,8 +77,5 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
         system_state.apply(world);
     }
 
-    return vec![AnimAction::DeleteFrame(
-        file_entity,
-        frame_index,
-    )];
+    return vec![AnimAction::DeleteFrame(file_entity, frame_index)];
 }

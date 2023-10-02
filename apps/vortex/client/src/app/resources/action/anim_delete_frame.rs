@@ -15,13 +15,14 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
         panic!("Expected DeleteFrame");
     };
 
-    info!(
-        "DeleteFrame({:?}, {:?})",
-        file_entity, frame_index
-    );
+    info!("DeleteFrame({:?}, {:?})", file_entity, frame_index);
 
-    let mut system_state: SystemState<(Commands, Client, ResMut<AnimationManager>, Query<&AnimRotation>)> =
-        SystemState::new(world);
+    let mut system_state: SystemState<(
+        Commands,
+        Client,
+        ResMut<AnimationManager>,
+        Query<&AnimRotation>,
+    )> = SystemState::new(world);
     let (mut commands, mut client, mut animation_manager, rot_q) = system_state.get_mut(world);
 
     let frame_entity = animation_manager
@@ -31,7 +32,10 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
     // check auth
     if let Some(auth) = commands.entity(frame_entity).authority(&client) {
         if !auth.is_requested() && !auth.is_granted() {
-            panic!("current frame entity `{:?}` does not have auth!", frame_entity);
+            panic!(
+                "current frame entity `{:?}` does not have auth!",
+                frame_entity
+            );
         }
     }
 
@@ -58,12 +62,13 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
 
     // select frame - 1
     if frame_index > 0 {
-
         let next_frame_index = frame_index - 1;
         let next_frame_entity = animation_manager
             .get_frame_entity(&file_entity, next_frame_index)
             .unwrap();
-        commands.entity(next_frame_entity).request_authority(&mut client);
+        commands
+            .entity(next_frame_entity)
+            .request_authority(&mut client);
         animation_manager.set_current_frame_index(next_frame_index);
     }
 

@@ -1505,7 +1505,10 @@ impl InputManager {
             return;
         }
 
-        world.get_resource_mut::<AnimationManager>().unwrap().handle_mouse_drag_anim_framing(delta.y);
+        world
+            .get_resource_mut::<AnimationManager>()
+            .unwrap()
+            .handle_mouse_drag_anim_framing(delta.y);
     }
 
     pub(crate) fn handle_mouse_drag_anim_posing(

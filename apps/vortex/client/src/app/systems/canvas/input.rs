@@ -70,7 +70,7 @@ pub fn update_mouse_hover(
             animation_manager.sync_mouse_hover_ui(
                 current_tab_entity,
                 canvas_size,
-                input.mouse_position()
+                input.mouse_position(),
             );
             return;
         }

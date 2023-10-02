@@ -40,13 +40,19 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
 
     if let Some(auth) = commands.entity(current_frame_entity).authority(&client) {
         if !auth.is_requested() && !auth.is_granted() {
-            warn!("current frame entity `{:?}` does not have auth!", current_frame_entity);
+            warn!(
+                "current frame entity `{:?}` does not have auth!",
+                current_frame_entity
+            );
             return vec![];
         }
     }
     if let Some(auth) = commands.entity(next_frame_entity).authority(&client) {
         if auth.is_denied() {
-            warn!("Auth for next frame entity `{:?}` is denied!", next_frame_entity);
+            warn!(
+                "Auth for next frame entity `{:?}` is denied!",
+                next_frame_entity
+            );
             return vec![];
         }
         if auth.is_available() || auth.is_releasing() {
