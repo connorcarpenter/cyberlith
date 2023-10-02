@@ -35,14 +35,14 @@ use vortex_proto::components::{
 use crate::app::{
     components::{Edge2dLocal, LocalAnimRotation, Vertex2d},
     resources::{
+        action::AnimAction,
         camera_manager::{set_camera_transform, CameraManager},
         canvas::Canvas,
         edge_manager::EdgeManager,
         input_manager::CardinalDirection,
+        input_manager::InputManager,
         tab_manager::TabManager,
         vertex_manager::VertexManager,
-        action::AnimAction,
-        input_manager::InputManager,
     },
     shapes::Line2d,
 };
@@ -172,7 +172,9 @@ impl AnimationManager {
     }
 
     pub fn get_rotations_frame_entity(&self, entity: &Entity) -> Option<Entity> {
-        self.rotations.get(entity).map(|(frame_entity, _)| *frame_entity)
+        self.rotations
+            .get(entity)
+            .map(|(frame_entity, _)| *frame_entity)
     }
 
     pub fn get_frame_entity(&self, file_entity: &Entity, frame_index: usize) -> Option<Entity> {
@@ -184,7 +186,11 @@ impl AnimationManager {
         Some(*entity)
     }
 
-    pub fn get_frame_rotations(&self, file_entity: &Entity, frame_entity: &Entity) -> Option<&HashSet<Entity>> {
+    pub fn get_frame_rotations(
+        &self,
+        file_entity: &Entity,
+        frame_entity: &Entity,
+    ) -> Option<&HashSet<Entity>> {
         let frame_data = self.frame_data.get(file_entity)?;
         let frame_data = frame_data.frames.get(frame_entity)?;
         Some(&frame_data.rotations)
@@ -1025,7 +1031,6 @@ impl AnimationManager {
         let view_matrix = camera_transform.view_matrix();
 
         world.resource_scope(|world, vertex_manager: Mut<VertexManager>| {
-
             let mut frame_index = 0;
             for frame_opt in file_frame_data.frame_list.iter() {
                 if frame_opt.is_none() {
@@ -1295,11 +1300,7 @@ impl AnimationManager {
         frame_data.frame_list = new_frame_list;
     }
 
-    pub(crate) fn frame_postprocess(
-        &mut self,
-        file_entity: Entity,
-        frame_entity: Entity,
-    ) {
+    pub(crate) fn frame_postprocess(&mut self, file_entity: Entity, frame_entity: Entity) {
         self.register_frame(file_entity, frame_entity);
     }
 }
@@ -1547,10 +1548,7 @@ pub fn get_root_vertex(world: &mut World) -> Option<Entity> {
     root_3d_vertex
 }
 
-pub(crate) fn anim_file_insert_frame(
-    input_manager: &mut InputManager,
-    world: &mut World,
-) {
+pub(crate) fn anim_file_insert_frame(input_manager: &mut InputManager, world: &mut World) {
     world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
         let current_file_entity = *tab_manager.current_tab_entity().unwrap();
         let animation_manager = world.get_resource::<AnimationManager>().unwrap();
@@ -1561,4 +1559,71 @@ pub(crate) fn anim_file_insert_frame(
             AnimAction::InsertFrame(current_file_entity, current_frame_index, None),
         );
     });
+}
+
+pub(crate) fn anim_file_delete_frame(input_manager: &mut InputManager, world: &mut World) {
+    let Some(current_file_entity) = world.get_resource::<TabManager>().unwrap().current_tab_entity() else {
+        return;
+    };
+    let current_file_entity = *current_file_entity;
+
+    let mut system_state: SystemState<(Commands, Client, Res<AnimationManager>)> =
+        SystemState::new(world);
+    let (mut commands, mut client, animation_manager) = system_state.get_mut(world);
+
+    // delete vertex
+    let Some(current_frame_entity) = animation_manager.current_frame_entity(&current_file_entity) else {
+        return;
+    };
+
+    // check whether we can delete vertex
+    let auth_status = commands
+        .entity(current_frame_entity)
+        .authority(&client)
+        .unwrap();
+    if !auth_status.is_granted() && !auth_status.is_available() {
+        // do nothing, file is not available
+        // TODO: queue for deletion? check before this?
+        warn!(
+            "Frame `{:?}` is not available for deletion!",
+            current_frame_entity
+        );
+        return;
+    }
+
+    // let auth_status = commands
+    //     .entity(current_frame_entity)
+    //     .authority(&client)
+    //     .unwrap();
+    // if !auth_status.is_granted() {
+    //     // request authority if needed
+    //     commands
+    //         .entity(current_frame_entity)
+    //         .request_authority(&mut client);
+    // }
+
+    let current_frame_index = animation_manager.current_frame_index();
+    let current_frame_count = animation_manager
+        .current_frame_count(&current_file_entity)
+        .unwrap();
+
+    world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+        tab_manager.current_tab_execute_anim_action(
+            world,
+            input_manager,
+            AnimAction::DeleteFrame(current_file_entity, current_frame_index, None),
+        );
+    });
+
+    if current_frame_index == current_frame_count - 1 {
+        let new_frame_index = if current_frame_index == 0 {
+            current_frame_index
+        } else {
+            current_frame_index - 1
+        };
+        world
+            .get_resource_mut::<AnimationManager>()
+            .unwrap()
+            .set_current_frame_index(new_frame_index);
+    }
 }

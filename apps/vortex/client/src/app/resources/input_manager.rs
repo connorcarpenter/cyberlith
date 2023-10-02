@@ -27,11 +27,19 @@ use crate::app::{
         Edge2dLocal, FaceIcon2d, LocalShape, SelectCircle, SelectTriangle, Vertex2d, VertexTypeData,
     },
     resources::{
-        animation_manager::anim_file_insert_frame,
-        action::AnimAction, action::ShapeAction, animation_manager::AnimationManager,
-        camera_manager::CameraAngle, camera_manager::CameraManager, camera_state::CameraState,
-        canvas::Canvas, edge_manager::EdgeManager, face_manager::FaceManager,
-        file_manager::FileManager, shape_data::CanvasShape, tab_manager::TabManager,
+        action::AnimAction,
+        action::ShapeAction,
+        animation_manager::AnimationManager,
+        animation_manager::{anim_file_delete_frame, anim_file_insert_frame},
+        camera_manager::CameraAngle,
+        camera_manager::CameraManager,
+        camera_state::CameraState,
+        canvas::Canvas,
+        edge_manager::EdgeManager,
+        face_manager::FaceManager,
+        file_manager::FileManager,
+        shape_data::CanvasShape,
+        tab_manager::TabManager,
         vertex_manager::VertexManager,
     },
     ui::widgets::naming_bar_visibility_toggle,
@@ -98,9 +106,7 @@ impl InputManager {
         match current_file_type {
             FileExtension::Skel => self.update_input_skel(input_actions, world),
             FileExtension::Mesh => self.update_input_mesh(input_actions, world),
-            FileExtension::Anim => {
-                self.update_input_anim(input_actions, world)
-            }
+            FileExtension::Anim => self.update_input_anim(input_actions, world),
             _ => {}
         }
     }
@@ -207,11 +213,7 @@ impl InputManager {
         }
     }
 
-    fn update_input_anim(
-        &mut self,
-        input_actions: Vec<InputAction>,
-        world: &mut World,
-    ) {
+    fn update_input_anim(&mut self, input_actions: Vec<InputAction>, world: &mut World) {
         let animation_manager = world.get_resource_mut::<AnimationManager>().unwrap();
         if animation_manager.is_posing() {
             self.update_input_anim_posing(input_actions, world);
@@ -220,11 +222,7 @@ impl InputManager {
         }
     }
 
-    fn update_input_anim_framing(
-        &mut self,
-        input_actions: Vec<InputAction>,
-        world: &mut World,
-    ) {
+    fn update_input_anim_framing(&mut self, input_actions: Vec<InputAction>, world: &mut World) {
         for action in input_actions {
             match action {
                 InputAction::MouseClick(click_type, mouse_position) => {
@@ -239,7 +237,7 @@ impl InputManager {
                     animation_manager.framing_queue_resync_hover_ui();
                 }
                 InputAction::KeyPress(key) => match key {
-                    Key::Delete => self.handle_delete_key_press_anim_framing(world),
+                    Key::Delete => anim_file_delete_frame(self, world),
                     Key::Insert => anim_file_insert_frame(self, world),
                     Key::Enter => {
                         let mut system_state: SystemState<(
@@ -896,65 +894,6 @@ impl InputManager {
         }
     }
 
-    pub(crate) fn handle_delete_key_press_anim_framing(&mut self, world: &mut World) {
-
-        let Some(current_file_entity) = world.get_resource::<TabManager>().unwrap().current_tab_entity() else {
-            return;
-        };
-        let current_file_entity = *current_file_entity;
-
-        let mut system_state: SystemState<(Commands, Client, Res<AnimationManager>)> =
-            SystemState::new(world);
-        let (mut commands, mut client, animation_manager) = system_state.get_mut(world);
-
-        // delete vertex
-        let Some(current_frame_entity) = animation_manager.current_frame_entity(&current_file_entity) else {
-            return;
-        };
-
-        // check whether we can delete vertex
-        let auth_status = commands
-            .entity(current_frame_entity)
-            .authority(&client)
-            .unwrap();
-        if !auth_status.is_granted() && !auth_status.is_available() {
-            // do nothing, file is not available
-            // TODO: queue for deletion? check before this?
-            warn!(
-                "Frame `{:?}` is not available for deletion!",
-                current_frame_entity
-            );
-            return;
-        }
-
-        let auth_status = commands
-            .entity(current_frame_entity)
-            .authority(&client)
-            .unwrap();
-        if !auth_status.is_granted() {
-            // request authority if needed
-            commands
-                .entity(current_frame_entity)
-                .request_authority(&mut client);
-        }
-
-        let current_frame_index = animation_manager.current_frame_index();
-        let current_frame_count = animation_manager.current_frame_count(&current_file_entity).unwrap();
-
-        world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-            tab_manager.current_tab_execute_anim_action(
-                world,
-                self,
-                AnimAction::DeleteFrame(current_file_entity, current_frame_index, None),
-            );
-        });
-
-        if current_frame_index == current_frame_count-1 {
-            let new_frame_index = if current_frame_index == 0 {current_frame_index} else {current_frame_index-1};
-            world.get_resource_mut::<AnimationManager>().unwrap().set_current_frame_index(new_frame_index);
-        }
-    }
-
     fn handle_delete_vertex_action(&mut self, world: &mut World, vertex_2d_entity: &Entity) {
         let mut system_state: SystemState<(Commands, Client, Res<VertexManager>)> =
             SystemState::new(world);
@@ -1256,10 +1195,10 @@ impl InputManager {
         let frame_index_hover = animation_manager.frame_index_hover();
 
         if frame_index_hover.is_some() {
-
             let frame_index_hover = frame_index_hover.unwrap();
 
-            let double_clicked = frame_index_hover == self.last_frame_index_hover && self.last_left_click_instant.elapsed().as_millis() < 500;
+            let double_clicked = frame_index_hover == self.last_frame_index_hover
+                && self.last_left_click_instant.elapsed().as_millis() < 500;
             self.last_left_click_instant = Instant::now();
             self.last_frame_index_hover = frame_index_hover;
 
@@ -1279,10 +1218,8 @@ impl InputManager {
             }
 
             if double_clicked {
-                let mut system_state: SystemState<(
-                    ResMut<Canvas>,
-                    ResMut<AnimationManager>,
-                )> = SystemState::new(world);
+                let mut system_state: SystemState<(ResMut<Canvas>, ResMut<AnimationManager>)> =
+                    SystemState::new(world);
                 let (mut canvas, mut animation_manager) = system_state.get_mut(world);
                 animation_manager.set_posing(&mut canvas);
             }

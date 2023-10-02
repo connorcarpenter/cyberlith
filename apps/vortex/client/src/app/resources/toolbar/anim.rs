@@ -2,9 +2,13 @@ use bevy_ecs::world::{Mut, World};
 
 use render_egui::egui::Ui;
 
-use crate::app::resources::{tab_manager::TabManager, action::AnimAction, input_manager::InputManager, animation_manager::{AnimationManager, anim_file_insert_frame}, toolbar::{
-    shared_buttons::button_toggle_edge_angle_visibility, Toolbar,
-}};
+use crate::app::resources::{
+    action::AnimAction,
+    animation_manager::{anim_file_delete_frame, anim_file_insert_frame, AnimationManager},
+    input_manager::InputManager,
+    tab_manager::TabManager,
+    toolbar::{shared_buttons::button_toggle_edge_angle_visibility, Toolbar},
+};
 
 pub struct AnimationToolbar;
 
@@ -20,7 +24,6 @@ impl AnimationToolbar {
     }
 
     fn framing_render(ui: &mut Ui, world: &mut World) {
-
         // skeleton file name visibility toggle
         let _response = Toolbar::button(ui, "🔍", "Show skeleton file name", true);
 
@@ -32,18 +35,28 @@ impl AnimationToolbar {
         }
 
         // delete frame
-        let _response = Toolbar::button(ui, "🗑", "Delete frame", true);
+        if Toolbar::button(ui, "🗑", "Delete frame", true).clicked() {
+            world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
+                anim_file_delete_frame(&mut input_manager, world);
+            });
+        }
 
         // move frame left / right
-        let current_file_entity = *world.get_resource::<TabManager>().unwrap().current_tab_entity().unwrap();
+        let current_file_entity = *world
+            .get_resource::<TabManager>()
+            .unwrap()
+            .current_tab_entity()
+            .unwrap();
         let animation_manager = world.get_resource::<AnimationManager>().unwrap();
         let current_frame_index = animation_manager.current_frame_index();
-        let frame_count = animation_manager.current_frame_count(&current_file_entity).unwrap_or_default();
+        let frame_count = animation_manager
+            .current_frame_count(&current_file_entity)
+            .unwrap_or_default();
 
         {
             // move frame left
             let enabled = current_frame_index > 0;
-            let response = Toolbar::button(ui, "⬅", "Move frame left",  enabled);
+            let response = Toolbar::button(ui, "⬅", "Move frame left", enabled);
             if enabled && response.clicked() {
                 world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
                     world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
@@ -53,8 +66,8 @@ impl AnimationToolbar {
                             AnimAction::MoveFrame(
                                 current_file_entity,
                                 current_frame_index,
-                                current_frame_index - 1
-                            )
+                                current_frame_index - 1,
+                            ),
                         );
                     });
                 });
@@ -74,8 +87,8 @@ impl AnimationToolbar {
                             AnimAction::MoveFrame(
                                 current_file_entity,
                                 current_frame_index,
-                                current_frame_index + 1
-                            )
+                                current_frame_index + 1,
+                            ),
                         );
                     });
                 });
@@ -84,9 +97,8 @@ impl AnimationToolbar {
     }
 
     fn posing_render(ui: &mut Ui, world: &mut World) {
-
         // back to framing (up arrow for icon)
-        if Toolbar::button(ui, "⬆","Back to framing", true).clicked() {
+        if Toolbar::button(ui, "⬆", "Back to framing", true).clicked() {
             let mut animation_manager = world.get_resource_mut::<AnimationManager>().unwrap();
             animation_manager.set_framing();
         }

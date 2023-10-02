@@ -20,9 +20,14 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
         file_entity, current_frame_index, next_frame_index
     );
 
-    let mut system_state: SystemState<(Commands, Client, ResMut<AnimationManager>, Query<&mut AnimFrame>)> =
-        SystemState::new(world);
-    let (mut commands, mut client, mut animation_manager, mut frame_q) = system_state.get_mut(world);
+    let mut system_state: SystemState<(
+        Commands,
+        Client,
+        ResMut<AnimationManager>,
+        Query<&mut AnimFrame>,
+    )> = SystemState::new(world);
+    let (mut commands, mut client, mut animation_manager, mut frame_q) =
+        system_state.get_mut(world);
 
     let Some(current_frame_entity) = animation_manager.get_frame_entity(&file_entity, current_frame_index) else {
         return vec![];
@@ -41,7 +46,9 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
             return vec![];
         }
         if auth.is_available() || auth.is_releasing() {
-            commands.entity(next_frame_entity).request_authority(&mut client);
+            commands
+                .entity(next_frame_entity)
+                .request_authority(&mut client);
         }
     }
 
@@ -64,7 +71,9 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
     animation_manager.set_current_frame_index(next_frame_index);
     animation_manager.framing_queue_resync_frame_order(&file_entity);
 
-    commands.entity(next_frame_entity).release_authority(&mut client);
+    commands
+        .entity(next_frame_entity)
+        .release_authority(&mut client);
 
     system_state.apply(world);
 

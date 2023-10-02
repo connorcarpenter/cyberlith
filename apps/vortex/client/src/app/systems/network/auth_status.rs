@@ -5,18 +5,19 @@ use bevy_ecs::{
 };
 use bevy_log::{info, warn};
 
-use naia_bevy_client::{events::{
-    EntityAuthDeniedEvent, EntityAuthGrantedEvent, EntityAuthResetEvent,
-}, Client};
+use naia_bevy_client::{
+    events::{EntityAuthDeniedEvent, EntityAuthGrantedEvent, EntityAuthResetEvent},
+    Client,
+};
 
 use vortex_proto::components::AnimFrame;
 
 use crate::app::{
     components::OwnedByFileLocal,
     resources::{
-        animation_manager::AnimationManager, file_manager::FileManager,
-        action::FileActions, edge_manager::EdgeManager, face_manager::FaceManager,
-        shape_manager::ShapeManager, tab_manager::TabManager, vertex_manager::VertexManager,
+        action::FileActions, animation_manager::AnimationManager, edge_manager::EdgeManager,
+        face_manager::FaceManager, file_manager::FileManager, shape_manager::ShapeManager,
+        tab_manager::TabManager, vertex_manager::VertexManager,
     },
 };
 
@@ -170,9 +171,7 @@ fn process_entity_auth_status(
         };
         let owning_file_entity = frame_component.file_entity.get(client).unwrap();
         if let Some(tab_state) = tab_manager.tab_state_mut(&owning_file_entity) {
-            tab_state
-                .action_stack
-                .entity_update_auth_status(&entity);
+            tab_state.action_stack.entity_update_auth_status(&entity);
         } else {
             warn!(
                 "no tab state found for file entity: {:?}",
@@ -184,15 +183,15 @@ fn process_entity_auth_status(
             "auth processing for rotation entity `{:?}`: `{:?}`",
             entity, status
         );
-        let frame_entity = animation_manager.get_rotations_frame_entity(entity).unwrap();
+        let frame_entity = animation_manager
+            .get_rotations_frame_entity(entity)
+            .unwrap();
         let Ok(frame_component) = frame_q.get(frame_entity) else {
             panic!("component for rotation entity `{:?}` not found", frame_entity);
         };
         let owning_file_entity = frame_component.file_entity.get(client).unwrap();
         if let Some(tab_state) = tab_manager.tab_state_mut(&owning_file_entity) {
-            tab_state
-                .action_stack
-                .entity_update_auth_status(&entity);
+            tab_state.action_stack.entity_update_auth_status(&entity);
         } else {
             warn!(
                 "no tab state found for file entity: {:?}",

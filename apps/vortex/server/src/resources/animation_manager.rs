@@ -1,6 +1,10 @@
 use std::collections::{HashMap, HashSet};
 
-use bevy_ecs::{entity::Entity, prelude::Query, system::{Resource, Commands}};
+use bevy_ecs::{
+    entity::Entity,
+    prelude::Query,
+    system::{Commands, Resource},
+};
 
 use naia_bevy_server::{CommandsExt, Server};
 
@@ -85,9 +89,8 @@ impl FileFrameData {
 
         // get frame_order of frame_entity
         if let Some(frame_q) = frame_q_opt {
-
             // move all elements after frame_order down one
-            for i in frame_order..self.frame_list.len()-1 {
+            for i in frame_order..self.frame_list.len() - 1 {
                 self.frame_list[i] = self.frame_list[i + 1];
 
                 // update frame_order in AnimFrame using frame_q_opt
@@ -206,7 +209,10 @@ impl AnimationManager {
     ) {
         let frame_data = self.deregister_frame(frame_entity, frame_q_opt).unwrap();
         for rotation_entity in frame_data.rotations {
-            commands.entity(rotation_entity).take_authority(server).despawn();
+            commands
+                .entity(rotation_entity)
+                .take_authority(server)
+                .despawn();
             self.deregister_rotation(&rotation_entity);
         }
     }

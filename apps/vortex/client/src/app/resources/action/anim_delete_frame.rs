@@ -1,4 +1,7 @@
-use bevy_ecs::{prelude::World, system::{SystemState, Commands, Query, ResMut}};
+use bevy_ecs::{
+    prelude::World,
+    system::{Commands, Query, ResMut, SystemState},
+};
 use bevy_log::info;
 
 use vortex_proto::components::AnimRotation;
@@ -10,12 +13,18 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
         panic!("Expected DeleteFrame");
     };
 
-    info!("DeleteFrame({:?}, {:?}, {:?})", file_entity, frame_index, last_frame_index_opt);
+    info!(
+        "DeleteFrame({:?}, {:?}, {:?})",
+        file_entity, frame_index, last_frame_index_opt
+    );
 
-    let mut system_state: SystemState<(Commands, ResMut<AnimationManager>, Query<&AnimRotation>)> = SystemState::new(world);
+    let mut system_state: SystemState<(Commands, ResMut<AnimationManager>, Query<&AnimRotation>)> =
+        SystemState::new(world);
     let (mut commands, mut animation_manager, rot_q) = system_state.get_mut(world);
 
-    let frame_entity = animation_manager.get_frame_entity(&file_entity, frame_index).unwrap();
+    let frame_entity = animation_manager
+        .get_frame_entity(&file_entity, frame_index)
+        .unwrap();
 
     let Some(rotation_entities) = animation_manager.get_frame_rotations(&file_entity, &frame_entity) else {
         panic!("Expected frame rotations");
@@ -37,7 +46,9 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
 
     system_state.apply(world);
 
-    return vec![
-        AnimAction::InsertFrame(file_entity, frame_index, Some(rotations)),
-    ];
+    return vec![AnimAction::InsertFrame(
+        file_entity,
+        frame_index,
+        Some(rotations),
+    )];
 }

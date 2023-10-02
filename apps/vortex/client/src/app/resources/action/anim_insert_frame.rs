@@ -13,7 +13,10 @@ pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
         panic!("Expected InsertFrame");
     };
 
-    info!("InsertFrame({:?}, {:?}, {:?})", file_entity, frame_index, content_opt);
+    info!(
+        "InsertFrame({:?}, {:?}, {:?})",
+        file_entity, frame_index, content_opt
+    );
 
     let mut system_state: SystemState<(Commands, Client, ResMut<AnimationManager>)> =
         SystemState::new(world);
