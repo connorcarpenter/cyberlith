@@ -5,6 +5,7 @@ mod anim_insert_frame;
 mod anim_rotate_vertex;
 mod anim_select_frame;
 mod anim_select_vertex;
+mod anim_move_frame;
 mod create_edge;
 mod create_file;
 mod create_vertex;

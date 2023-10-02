@@ -2,7 +2,7 @@ use bevy_ecs::world::{Mut, World};
 
 use render_egui::egui::Ui;
 
-use crate::app::resources::{input_manager::InputManager, animation_manager::{AnimationManager, anim_file_insert_frame}, toolbar::{
+use crate::app::resources::{tab_manager::TabManager, action::AnimAction, input_manager::InputManager, animation_manager::{AnimationManager, anim_file_insert_frame}, toolbar::{
     shared_buttons::button_toggle_edge_angle_visibility, Toolbar,
 }};
 
@@ -34,11 +34,53 @@ impl AnimationToolbar {
         // delete frame
         let _response = Toolbar::button(ui, "🗑", "Delete frame", true);
 
-        // move frame left
-        let _response = Toolbar::button(ui, "⬅", "Move frame left", true);
+        // move frame left / right
+        let current_file_entity = *world.get_resource::<TabManager>().unwrap().current_tab_entity().unwrap();
+        let animation_manager = world.get_resource::<AnimationManager>().unwrap();
+        let current_frame_index = animation_manager.current_frame_index();
+        let frame_count = animation_manager.current_frame_count(&current_file_entity).unwrap_or_default();
 
-        // move frame right
-        let _response = Toolbar::button(ui, "➡", "Move frame right", true);
+        {
+            // move frame left
+            let enabled = current_frame_index > 0;
+            let response = Toolbar::button(ui, "⬅", "Move frame left",  enabled);
+            if enabled && response.clicked() {
+                world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
+                    world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                        tab_manager.current_tab_execute_anim_action(
+                            world,
+                            &mut input_manager,
+                            AnimAction::MoveFrame(
+                                current_file_entity,
+                                current_frame_index,
+                                current_frame_index - 1
+                            )
+                        );
+                    });
+                });
+            }
+        }
+
+        {
+            // move frame right
+            let enabled = frame_count > 0 && current_frame_index < frame_count - 1;
+            let response = Toolbar::button(ui, "➡", "Move frame right", enabled);
+            if enabled && response.clicked() {
+                world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
+                    world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                        tab_manager.current_tab_execute_anim_action(
+                            world,
+                            &mut input_manager,
+                            AnimAction::MoveFrame(
+                                current_file_entity,
+                                current_frame_index,
+                                current_frame_index + 1
+                            )
+                        );
+                    });
+                });
+            }
+        }
     }
 
     fn posing_render(ui: &mut Ui, world: &mut World) {

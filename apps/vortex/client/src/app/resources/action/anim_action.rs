@@ -5,7 +5,7 @@ use math::Quat;
 use crate::app::resources::{
     action::{
         anim_delete_frame, anim_insert_frame, anim_rotate_vertex, anim_select_frame,
-        anim_select_vertex, Action, ActionStack,
+        anim_select_vertex, Action, ActionStack, anim_move_frame,
     },
     input_manager::InputManager,
     shape_data::CanvasShape,
@@ -24,6 +24,8 @@ pub enum AnimAction {
     InsertFrame(Entity, usize, Option<Vec<(String, Quat)>>),
     // file entity, frame index, last frame index
     DeleteFrame(Entity, usize, Option<usize>),
+    // file entity, frame index, last frame index
+    MoveFrame(Entity, usize, usize),
 }
 
 pub enum AnimActionType {
@@ -32,6 +34,7 @@ pub enum AnimActionType {
     SelectFrame,
     InsertFrame,
     DeleteFrame,
+    MoveFrame,
 }
 
 impl AnimAction {
@@ -42,6 +45,7 @@ impl AnimAction {
             Self::SelectFrame(_, _, _) => AnimActionType::SelectFrame,
             Self::InsertFrame(_, _, _) => AnimActionType::InsertFrame,
             Self::DeleteFrame(_, _, _) => AnimActionType::DeleteFrame,
+            Self::MoveFrame(_, _, _) => AnimActionType::MoveFrame,
         }
     }
 
@@ -63,6 +67,7 @@ impl AnimAction {
             AnimActionType::SelectFrame => anim_select_frame::execute(world, self),
             AnimActionType::InsertFrame => anim_insert_frame::execute(world, self),
             AnimActionType::DeleteFrame => anim_delete_frame::execute(world, self),
+            AnimActionType::MoveFrame => anim_move_frame::execute(world, self),
         }
     }
 }
