@@ -65,8 +65,13 @@ pub fn update_mouse_hover(
     let current_tab_camera_state = &current_tab_state.camera_state;
 
     if file_type == FileExtension::Anim {
+        let canvas_width = canvas.canvas_texture_size().x;
         if animation_manager.is_framing() {
-            animation_manager.sync_mouse_hover_ui(current_tab_entity, input.mouse_position());
+            animation_manager.sync_mouse_hover_ui(
+                current_tab_entity,
+                canvas_width,
+                input.mouse_position()
+            );
             return;
         }
     }

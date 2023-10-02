@@ -894,7 +894,7 @@ impl AnimationManager {
         self.resync_hover = true;
     }
 
-    pub fn sync_mouse_hover_ui(&mut self, current_file_entity: &Entity, mouse_position: &Vec2) {
+    pub fn sync_mouse_hover_ui(&mut self, current_file_entity: &Entity, canvas_width: f32, mouse_position: &Vec2) {
         if !self.resync_hover {
             return;
         }
@@ -906,7 +906,7 @@ impl AnimationManager {
 
         let frame_count = file_frame_data.frame_list.len();
 
-        let frame_positions = self.get_frame_positions(frame_count);
+        let frame_positions = self.get_frame_positions(canvas_width, frame_count);
 
         self.frame_hover = None;
         for (index, frame_position) in frame_positions.iter().enumerate() {
@@ -947,14 +947,21 @@ impl AnimationManager {
         ) = {
             // draw
             let mut system_state: SystemState<(
+                Res<Canvas>,
                 ResMut<RenderFrame>,
                 Res<CameraManager>,
                 ResMut<Assets<CpuMesh>>,
                 ResMut<Assets<CpuMaterial>>,
                 Query<(&mut Camera, &mut Projection, &mut Transform)>,
             )> = SystemState::new(world);
-            let (mut render_frame, camera_manager, mut meshes, mut materials, mut camera_q) =
-                system_state.get_mut(world);
+            let (
+                canvas,
+                mut render_frame,
+                camera_manager,
+                mut meshes,
+                mut materials,
+                mut camera_q
+            ) = system_state.get_mut(world);
 
             camera_manager.enable_cameras(&mut camera_q, true);
 
@@ -965,8 +972,9 @@ impl AnimationManager {
             let mat_handle_gray = materials.add(Color::DARK_GRAY);
             let mat_handle_white = materials.add(Color::WHITE);
             let mat_handle_green = materials.add(Color::GREEN);
+            let canvas_width = canvas.canvas_texture_size().x;
 
-            let frame_rects = self.get_frame_positions(frame_count);
+            let frame_rects = self.get_frame_positions(canvas_width, frame_count);
 
             for (frame_index, frame_pos) in frame_rects.iter().enumerate() {
                 let selected: bool = self.current_frame_index == frame_index;
@@ -1214,12 +1222,18 @@ impl AnimationManager {
         }
     }
 
-    fn get_frame_positions(&self, frame_count: usize) -> Vec<Vec2> {
+    fn get_frame_positions(&self, canvas_width: f32, frame_count: usize) -> Vec<Vec2> {
         let mut positions = Vec::new();
         let mut start_position = self.frame_buffer;
         for _ in 0..frame_count {
             positions.push(start_position);
-            start_position.x += self.frame_size.x + self.frame_buffer.x;
+            let next_x = start_position.x + self.frame_size.x + self.frame_buffer.x;
+            if next_x + self.frame_size.x > canvas_width {
+                start_position.x = self.frame_buffer.x;
+                start_position.y += self.frame_size.y + self.frame_buffer.y;
+            } else {
+                start_position.x = next_x;
+            }
         }
         positions
     }
