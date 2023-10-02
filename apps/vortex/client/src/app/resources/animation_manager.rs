@@ -67,6 +67,16 @@ impl FileFrameData {
     pub fn deregister_frame(&mut self, frame_entity: &Entity) {
         self.frames.remove(frame_entity);
     }
+
+    pub fn count(&self) -> usize {
+        let mut count = 0;
+        for val_opt in &self.frame_list {
+            if val_opt.is_some() {
+                count += 1;
+            }
+        }
+        count
+    }
 }
 
 #[derive(Resource)]
@@ -133,6 +143,11 @@ impl AnimationManager {
         let entity_opt = frame_data.frame_list.get(current_frame_index)?.as_ref();
         let entity = entity_opt?;
         Some(*entity)
+    }
+
+    pub(crate) fn current_frame_count(&self, file_entity: &Entity) -> Option<usize> {
+        let frame_data = self.frame_data.get(file_entity)?;
+        Some(frame_data.frame_list.len())
     }
 
     pub(crate) fn register_frame(&mut self, file_entity: Entity, frame_entity: Entity) {
@@ -848,7 +863,7 @@ impl AnimationManager {
             return;
         };
 
-        let frame_count = file_frame_data.frame_list.len();
+        let frame_count = file_frame_data.count();
 
         let (
             frame_rects,
@@ -944,16 +959,22 @@ impl AnimationManager {
         let view_matrix = camera_transform.view_matrix();
 
         world.resource_scope(|world, vertex_manager: Mut<VertexManager>| {
-            for (frame_index, frame_pos) in frame_rects.iter().enumerate() {
-                let Some(frame_entity) = file_frame_data.frame_list[frame_index] else {
+
+            let mut frame_index = 0;
+            for frame_opt in file_frame_data.frame_list.iter() {
+                if frame_opt.is_none() {
                     continue;
-                };
+                }
+                let frame_entity = frame_opt.unwrap();
+
+                let frame_pos = frame_rects[frame_index];
+
                 self.draw_pose(
                     world,
                     &vertex_manager,
                     frame_entity,
                     root_3d_vertex,
-                    frame_pos,
+                    &frame_pos,
                     &render_layer,
                     &point_mesh_handle,
                     &line_mesh_handle,
@@ -962,6 +983,8 @@ impl AnimationManager {
                     &view_matrix,
                     &projection_matrix,
                 );
+
+                frame_index += 1;
             }
         });
     }

@@ -64,20 +64,28 @@ impl FileFrameData {
         frame_entity: &Entity,
         frame_q_opt: Option<&mut Query<&mut AnimFrame>>,
     ) -> Option<FrameData> {
-        let output = self.frames.remove(frame_entity);
+        let Some(frame_data) = self.frames.remove(frame_entity) else {
+            panic!("frame data not found");
+        };
+
+        let frame_order = {
+            let mut frame_order_opt = None;
+            for (frame_index, frame_item) in self.frame_list.iter().enumerate() {
+                if let Some(frame_item) = frame_item {
+                    if frame_item == frame_entity {
+                        frame_order_opt = Some(frame_index);
+                        break;
+                    }
+                }
+            }
+            frame_order_opt.unwrap()
+        };
 
         // get frame_order of frame_entity
         if let Some(frame_q) = frame_q_opt {
-            let Ok(frame) = frame_q.get_mut(*frame_entity) else {
-                panic!("frame entity not found");
-            };
-            let frame_order = frame.get_order() as usize;
-
-            // remove from frame_list
-            self.frame_list[frame_order] = None;
 
             // move all elements after frame_order down one
-            for i in (frame_order + 1)..self.frame_list.len() {
+            for i in frame_order..self.frame_list.len()-1 {
                 self.frame_list[i] = self.frame_list[i + 1];
 
                 // update frame_order in AnimFrame using frame_q_opt
@@ -85,9 +93,11 @@ impl FileFrameData {
                     frame.set_order(i as u8);
                 }
             }
+
+            self.frame_list.truncate(self.frame_list.len() - 1);
         }
 
-        output
+        Some(frame_data)
     }
 
     fn add_rotation(&mut self, frame_entity: Entity, rotation_entity: Entity) {

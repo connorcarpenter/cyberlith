@@ -239,7 +239,7 @@ impl InputManager {
                     animation_manager.framing_queue_resync_hover_ui();
                 }
                 InputAction::KeyPress(key) => match key {
-                    Key::Delete => Self::handle_delete_key_press_anim_framing(world),
+                    Key::Delete => self.handle_delete_key_press_anim_framing(world),
                     Key::Insert => anim_file_insert_frame(self, world),
                     Key::Enter => {
                         let mut system_state: SystemState<(
@@ -896,8 +896,63 @@ impl InputManager {
         }
     }
 
-    pub(crate) fn handle_delete_key_press_anim_framing(_world: &mut World) {
-        todo!();
+    pub(crate) fn handle_delete_key_press_anim_framing(&mut self, world: &mut World) {
+
+        let Some(current_file_entity) = world.get_resource::<TabManager>().unwrap().current_tab_entity() else {
+            return;
+        };
+        let current_file_entity = *current_file_entity;
+
+        let mut system_state: SystemState<(Commands, Client, Res<AnimationManager>)> =
+            SystemState::new(world);
+        let (mut commands, mut client, animation_manager) = system_state.get_mut(world);
+
+        // delete vertex
+        let Some(current_frame_entity) = animation_manager.current_frame_entity(&current_file_entity) else {
+            return;
+        };
+
+        // check whether we can delete vertex
+        let auth_status = commands
+            .entity(current_frame_entity)
+            .authority(&client)
+            .unwrap();
+        if !auth_status.is_granted() && !auth_status.is_available() {
+            // do nothing, file is not available
+            // TODO: queue for deletion? check before this?
+            warn!(
+                "Frame `{:?}` is not available for deletion!",
+                current_frame_entity
+            );
+            return;
+        }
+
+        let auth_status = commands
+            .entity(current_frame_entity)
+            .authority(&client)
+            .unwrap();
+        if !auth_status.is_granted() {
+            // request authority if needed
+            commands
+                .entity(current_frame_entity)
+                .request_authority(&mut client);
+        }
+
+        let current_frame_index = animation_manager.current_frame_index();
+        let current_frame_count = animation_manager.current_frame_count(&current_file_entity).unwrap();
+
+        world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+            tab_manager.current_tab_execute_anim_action(
+                world,
+                self,
+                AnimAction::DeleteFrame(current_file_entity, current_frame_index, None),
+            );
+        });
+
+        if current_frame_index == current_frame_count-1 {
+            let new_frame_index = if current_frame_index == 0 {current_frame_index} else {current_frame_index-1};
+            world.get_resource_mut::<AnimationManager>().unwrap().set_current_frame_index(new_frame_index);
+        }
     }
 
     fn handle_delete_vertex_action(&mut self, world: &mut World, vertex_2d_entity: &Entity) {

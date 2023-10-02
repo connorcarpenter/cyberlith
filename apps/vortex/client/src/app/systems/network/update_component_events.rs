@@ -105,7 +105,7 @@ pub fn update_component_events(
         }
         for (_tick, frame_entity) in events.read::<AnimFrame>() {
             let Ok(frame) = frame_q.get(frame_entity) else {
-                panic!("frame entity not found");
+                panic!("frame component not found for entity `{:?}`", frame_entity);
             };
             let file_entity = frame.file_entity.get(&client).unwrap();
             animation_manager.framing_queue_resync_frame_order(&file_entity);
