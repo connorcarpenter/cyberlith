@@ -126,7 +126,7 @@ impl Plugin for VortexPlugin {
             .add_systems(Update, canvas::sync_vertices)
             .add_systems(Update, canvas::sync_edges)
             .add_systems(Update, canvas::sync_faces)
-            .add_systems(Update, canvas::sync_animation_frame_order)
+            .add_systems(Update, canvas::update_animation)
             .add_systems(Update, canvas::process_faces)
             .add_systems(Update, canvas::update_select_line)
             .add_systems(Update, canvas::input)

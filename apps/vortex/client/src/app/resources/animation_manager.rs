@@ -11,7 +11,7 @@ use bevy_ecs::{
 };
 use bevy_log::{info, warn};
 
-use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
+use naia_bevy_client::{Client, CommandsExt, Instant, ReplicationConfig};
 
 use math::{
     convert_2d_to_3d, convert_3d_to_2d, quat_from_spin_direction, spin_direction_from_quat, Mat4,
@@ -131,6 +131,11 @@ pub struct AnimationManager {
     vertex_names: HashMap<(Entity, String), Entity>,
     //
     framing_y: f32,
+
+    preview_playing: bool,
+    last_preview_instant: Instant,
+    preview_elapsed_ms: u16,
+    preview_frame_index: usize,
 }
 
 impl Default for AnimationManager {
@@ -151,6 +156,11 @@ impl Default for AnimationManager {
             rotations: HashMap::new(),
             vertex_names: HashMap::new(),
             framing_y: 0.0,
+
+            preview_playing: false,
+            last_preview_instant: Instant::now(),
+            preview_elapsed_ms: 0,
+            preview_frame_index: 0,
         }
     }
 }
@@ -162,6 +172,19 @@ impl AnimationManager {
 
     pub fn set_current_frame_index(&mut self, frame_index: usize) {
         self.current_frame_index = frame_index;
+    }
+
+    pub fn preview_is_playing(&self) -> bool {
+        self.preview_playing
+    }
+
+    pub fn preview_play(&mut self) {
+        self.preview_playing = true;
+        self.last_preview_instant = Instant::now();
+    }
+
+    pub fn preview_pause(&mut self) {
+        self.preview_playing = false;
     }
 
     pub fn entity_is_frame(&self, entity: &Entity) -> bool {
@@ -914,7 +937,7 @@ impl AnimationManager {
             return;
         };
 
-        let frame_count = file_frame_data.frame_list.len();
+        let frame_count = file_frame_data.count();
 
         let frame_positions = self.get_frame_positions(canvas_size, frame_count);
 
@@ -1346,6 +1369,40 @@ impl AnimationManager {
 
     pub(crate) fn frame_postprocess(&mut self, file_entity: Entity, frame_entity: Entity) {
         self.register_frame(file_entity, frame_entity);
+    }
+
+    pub(crate) fn preview_update(&mut self, current_file_entity: &Entity, frame_q: &Query<(Entity, &AnimFrame)>) {
+        if !self.preview_playing {
+            return;
+        }
+
+        let ms_elapsed = self.last_preview_instant.elapsed().as_millis() as u16;
+        self.last_preview_instant = Instant::now();
+
+        let Some(preview_frame_count) = self.get_frame_count(current_file_entity) else {
+            return;
+        };
+
+        let Some(frame_entity) = self.get_frame_entity(current_file_entity, self.preview_frame_index) else {
+            return;
+        };
+        let Ok((_, frame_component)) = frame_q.get(frame_entity) else {
+            return;
+        };
+        let mut frame_duration = frame_component.transition.get_duration_ms();
+
+        self.preview_elapsed_ms += ms_elapsed;
+        while self.preview_elapsed_ms > frame_duration {
+            self.preview_elapsed_ms -= frame_duration;
+            self.preview_frame_index += 1;
+            if self.preview_frame_index >= preview_frame_count {
+                self.preview_frame_index = 0;
+            }
+            let Ok((_, frame_component)) = frame_q.get(frame_entity) else {
+                break;
+            };
+            frame_duration = frame_component.transition.get_duration_ms();
+        }
     }
 }
 

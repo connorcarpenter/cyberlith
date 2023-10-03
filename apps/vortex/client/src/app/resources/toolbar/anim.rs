@@ -24,8 +24,20 @@ impl AnimationToolbar {
     }
 
     fn framing_render(ui: &mut Ui, world: &mut World) {
-        // skeleton file name visibility toggle
-        let _response = Toolbar::button(ui, "🔍", "Show skeleton file name", true);
+
+        {
+            // play / pause button
+            let mut animation_manager = world.get_resource_mut::<AnimationManager>().unwrap();
+            if animation_manager.preview_is_playing() {
+                if Toolbar::button(ui, "⏸", "Pause", true).clicked() {
+                    animation_manager.preview_pause();
+                }
+            } else {
+                if Toolbar::button(ui, "▶", "Play", true).clicked() {
+                    animation_manager.preview_play();
+                }
+            }
+        }
 
         // new frame
         if Toolbar::button(ui, "➕", "New frame", true).clicked() {
@@ -94,6 +106,9 @@ impl AnimationToolbar {
                 });
             }
         }
+
+        // skeleton file name visibility toggle
+        let _response = Toolbar::button(ui, "🔍", "Show skeleton file name", true);
     }
 
     fn posing_render(ui: &mut Ui, world: &mut World) {

@@ -255,7 +255,7 @@ pub fn sync_faces(
     face_manager.sync_2d_faces(&face_2d_q, &mut transform_q, &visibility_q, camera_3d_scale);
 }
 
-pub fn sync_animation_frame_order(
+pub fn update_animation(
     client: Client,
     file_manager: Res<FileManager>,
     tab_manager: Res<TabManager>,
@@ -271,6 +271,7 @@ pub fn sync_animation_frame_order(
         return;
     }
     animation_manager.framing_resync_frame_order(&client, &frame_q);
+    animation_manager.preview_update(current_file_entity, &frame_q);
 }
 
 pub fn process_faces(
