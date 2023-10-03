@@ -134,7 +134,7 @@ pub struct AnimationManager {
 
     preview_playing: bool,
     last_preview_instant: Instant,
-    preview_elapsed_ms: u16,
+    preview_elapsed_ms: f32,
     preview_frame_index: usize,
 }
 
@@ -159,7 +159,7 @@ impl Default for AnimationManager {
 
             preview_playing: false,
             last_preview_instant: Instant::now(),
-            preview_elapsed_ms: 0,
+            preview_elapsed_ms: 0.0,
             preview_frame_index: 0,
         }
     }
@@ -983,6 +983,7 @@ impl AnimationManager {
             camera_3d_entity,
             point_mesh_handle,
             line_mesh_handle,
+            mat_handle_white,
             mat_handle_green,
         ) = {
             // draw
@@ -1046,6 +1047,7 @@ impl AnimationManager {
                 camera_3d_entity,
                 point_mesh_handle,
                 line_mesh_handle,
+                mat_handle_white,
                 mat_handle_green,
             )
         };
@@ -1096,6 +1098,59 @@ impl AnimationManager {
                 frame_index += 1;
             }
         });
+
+        self.draw_preview_time_line(world, &current_file_entity, &render_layer, &line_mesh_handle, &mat_handle_white, &frame_rects);
+    }
+
+    fn draw_preview_time_line(
+        &self,
+        world: &mut World,
+        current_file_entity: &Entity,
+        render_layer: &RenderLayer,
+        line_mesh_handle: &Handle<CpuMesh>,
+        mat_handle_white: &Handle<CpuMaterial>,
+        frame_positions: &Vec<Vec2>
+    ) {
+        let Some(frame_entity) = self.get_frame_entity(current_file_entity, self.preview_frame_index) else {
+            return;
+        };
+        let Ok(frame_component) = world.query::<&AnimFrame>().get(world, frame_entity) else {
+            return;
+        };
+        let frame_duration = frame_component.transition.get_duration_ms() as f32;
+        let complete = (self.preview_elapsed_ms / frame_duration);
+        let frame_width = (self.frame_size.x + self.frame_buffer.x);
+
+        let mut start: Vec2;
+        if complete < 0.5 {
+            start = frame_positions[self.preview_frame_index];
+
+            start.x += frame_width * complete;
+        } else {
+            let mut next_frame_index = self.preview_frame_index + 1;
+            if next_frame_index >= frame_positions.len() {
+                next_frame_index = 0;
+            }
+            start = frame_positions[next_frame_index];
+            start.x -= frame_width * (1.0-complete);
+        }
+
+        start.x += self.frame_size.x * 0.5;
+        start.y -= self.frame_buffer.y;
+
+        let mut end = start;
+        end.y += self.frame_size.y + (self.frame_buffer.y * 2.0);
+
+        let mut render_frame = world.get_resource_mut::<RenderFrame>().unwrap();
+        draw_line(
+            &mut render_frame,
+            render_layer,
+            line_mesh_handle,
+            mat_handle_white,
+            start,
+            end,
+            2.0,
+        );
     }
 
     fn draw_pose(
@@ -1376,7 +1431,7 @@ impl AnimationManager {
             return;
         }
 
-        let ms_elapsed = self.last_preview_instant.elapsed().as_millis() as u16;
+        let ms_elapsed = self.last_preview_instant.elapsed().as_millis() as f32;
         self.last_preview_instant = Instant::now();
 
         let Some(preview_frame_count) = self.get_frame_count(current_file_entity) else {
@@ -1389,9 +1444,9 @@ impl AnimationManager {
         let Ok((_, frame_component)) = frame_q.get(frame_entity) else {
             return;
         };
-        let mut frame_duration = frame_component.transition.get_duration_ms();
+        let mut frame_duration = frame_component.transition.get_duration_ms() as f32;
 
-        self.preview_elapsed_ms += ms_elapsed;
+        self.preview_elapsed_ms += (ms_elapsed / 10.0); // change this back to 1 for real speeds! maybe should be configurable..
         while self.preview_elapsed_ms > frame_duration {
             self.preview_elapsed_ms -= frame_duration;
             self.preview_frame_index += 1;
@@ -1401,7 +1456,7 @@ impl AnimationManager {
             let Ok((_, frame_component)) = frame_q.get(frame_entity) else {
                 break;
             };
-            frame_duration = frame_component.transition.get_duration_ms();
+            frame_duration = frame_component.transition.get_duration_ms() as f32;
         }
     }
 }
