@@ -142,6 +142,7 @@ pub fn sync_vertices(world: &mut World) {
                                 &vertex_manager,
                                 camera_3d_scale,
                                 frame_entity,
+                                None,
                                 root_3d_vertex,
                             );
                         });
