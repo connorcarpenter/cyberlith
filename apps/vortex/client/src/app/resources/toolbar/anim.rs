@@ -24,7 +24,6 @@ impl AnimationToolbar {
     }
 
     fn framing_render(ui: &mut Ui, world: &mut World) {
-
         {
             // play / pause button
             let mut animation_manager = world.get_resource_mut::<AnimationManager>().unwrap();

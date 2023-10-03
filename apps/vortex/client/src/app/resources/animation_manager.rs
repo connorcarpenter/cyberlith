@@ -736,7 +736,8 @@ impl AnimationManager {
             let mut rotation = Quat::IDENTITY;
             if let Ok(name_component) = name_q.get(*child_vertex_3d_entity) {
                 let name = (*name_component.value).clone();
-                if let Some(rotation_entity) = self.vertex_names.get(&(frame_entity, name.clone())) {
+                if let Some(rotation_entity) = self.vertex_names.get(&(frame_entity, name.clone()))
+                {
                     if let Ok((anim_rotation, mut local_anim_rotation)) =
                         rotation_q.get_mut(*rotation_entity)
                     {
@@ -748,11 +749,12 @@ impl AnimationManager {
                     if let Some(rotation_entity) =
                         self.vertex_names.get(&(interp_frame_entity, name))
                     {
-                        let interp_rotation = if let Ok((anim_rotation, _)) = rotation_q.get(*rotation_entity) {
-                            anim_rotation.get_rotation()
-                        } else {
-                            Quat::IDENTITY
-                        };
+                        let interp_rotation =
+                            if let Ok((anim_rotation, _)) = rotation_q.get(*rotation_entity) {
+                                anim_rotation.get_rotation()
+                            } else {
+                                Quat::IDENTITY
+                            };
                         rotation = rotation.slerp(interp_rotation, interp_amount);
                     }
                 }
@@ -1120,20 +1122,31 @@ impl AnimationManager {
 
             {
                 // draw preview frame
-                if let Some(Some(preview_current_frame_entity)) = file_frame_data.frame_list.get(self.preview_frame_index) {
+                if let Some(Some(preview_current_frame_entity)) =
+                    file_frame_data.frame_list.get(self.preview_frame_index)
+                {
                     let mut preview_next_frame_index = self.preview_frame_index + 1;
                     if preview_next_frame_index >= frame_count {
                         preview_next_frame_index -= frame_count;
                     }
-                    if let Some(preview_next_frame_entity) = file_frame_data.frame_list[preview_next_frame_index] {
+                    if let Some(preview_next_frame_entity) =
+                        file_frame_data.frame_list[preview_next_frame_index]
+                    {
                         let frame_pos = frame_rects[frame_index];
-                        if let Ok(frame_component) = world.query::<&AnimFrame>().get(world, *preview_current_frame_entity) {
-                            let frame_duration = frame_component.transition.get_duration_ms() as f32;
+                        if let Ok(frame_component) = world
+                            .query::<&AnimFrame>()
+                            .get(world, *preview_current_frame_entity)
+                        {
+                            let frame_duration =
+                                frame_component.transition.get_duration_ms() as f32;
                             self.draw_pose(
                                 world,
                                 &vertex_manager,
                                 *preview_current_frame_entity,
-                                Some((preview_next_frame_entity, self.preview_elapsed_ms / frame_duration)),
+                                Some((
+                                    preview_next_frame_entity,
+                                    self.preview_elapsed_ms / frame_duration,
+                                )),
                                 root_3d_vertex,
                                 &frame_pos,
                                 &render_layer,
@@ -1179,7 +1192,14 @@ impl AnimationManager {
             }
         });
 
-        self.draw_preview_time_line(world, &current_file_entity, &render_layer, &line_mesh_handle, &mat_handle_white, &frame_rects);
+        self.draw_preview_time_line(
+            world,
+            &current_file_entity,
+            &render_layer,
+            &line_mesh_handle,
+            &mat_handle_white,
+            &frame_rects,
+        );
     }
 
     fn draw_preview_time_line(
@@ -1189,7 +1209,7 @@ impl AnimationManager {
         render_layer: &RenderLayer,
         line_mesh_handle: &Handle<CpuMesh>,
         mat_handle_white: &Handle<CpuMaterial>,
-        frame_positions: &Vec<Vec2>
+        frame_positions: &Vec<Vec2>,
     ) {
         let Some(frame_entity) = self.get_frame_entity(current_file_entity, self.preview_frame_index) else {
             return;
@@ -1218,7 +1238,7 @@ impl AnimationManager {
                 next_frame_index -= frame_count - 1;
             }
             start = frame_positions[next_frame_index];
-            start.x -= frame_width * (1.0-complete);
+            start.x -= frame_width * (1.0 - complete);
         }
 
         start.x += self.frame_size.x * 0.5;
@@ -1255,7 +1275,14 @@ impl AnimationManager {
         view_matrix: &Mat4,
         projection_matrix: &Mat4,
     ) {
-        self.sync_shapes_3d(world, vertex_manager, 1.0, frame_entity, interp_opt, root_3d_vertex);
+        self.sync_shapes_3d(
+            world,
+            vertex_manager,
+            1.0,
+            frame_entity,
+            interp_opt,
+            root_3d_vertex,
+        );
         let mut frame_size = self.frame_size;
         frame_size.x *= 0.5;
         let root_pos = *frame_pos + frame_size;
@@ -1513,7 +1540,12 @@ impl AnimationManager {
         self.register_frame(file_entity, frame_entity);
     }
 
-    pub(crate) fn preview_update(&mut self, canvas: &mut Canvas, current_file_entity: &Entity, frame_q: &Query<(Entity, &AnimFrame)>) {
+    pub(crate) fn preview_update(
+        &mut self,
+        canvas: &mut Canvas,
+        current_file_entity: &Entity,
+        frame_q: &Query<(Entity, &AnimFrame)>,
+    ) {
         if !self.preview_playing {
             return;
         }

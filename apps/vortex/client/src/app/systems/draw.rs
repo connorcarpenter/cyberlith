@@ -149,7 +149,8 @@ fn draw_vertices_and_edges_inner(world: &mut World, current_file: FileExtension)
             edge_angles_are_visible = false;
         }
     }
-    let must_check_edge_enabled = current_file == FileExtension::Anim && !animation_manager.preview_frame_selected();
+    let must_check_edge_enabled =
+        current_file == FileExtension::Anim && !animation_manager.preview_frame_selected();
 
     // draw vertices
     for (vertex_3d_entity, visibility, shape_name_opt, vertex_root_opt) in vertices_q.iter() {
@@ -163,7 +164,11 @@ fn draw_vertices_and_edges_inner(world: &mut World, current_file: FileExtension)
             continue;
         };
 
-        let edge_is_enabled = if must_check_edge_enabled { edge_is_enabled(shape_name_opt) } else { true };
+        let edge_is_enabled = if must_check_edge_enabled {
+            edge_is_enabled(shape_name_opt)
+        } else {
+            true
+        };
         let mat_handle = get_shape_color(
             &vertex_manager,
             current_file,
@@ -193,7 +198,11 @@ fn draw_vertices_and_edges_inner(world: &mut World, current_file: FileExtension)
 
         let (_, end_vertex_3d_entity) = edge_manager.edge_get_endpoints(&edge_3d_entity);
         let (_, _, shape_name_opt, vertex_root_opt) = vertices_q.get(end_vertex_3d_entity).unwrap();
-        let edge_is_enabled = if must_check_edge_enabled { edge_is_enabled(shape_name_opt) } else { true };
+        let edge_is_enabled = if must_check_edge_enabled {
+            edge_is_enabled(shape_name_opt)
+        } else {
+            true
+        };
         let mat_handle = get_shape_color(
             &vertex_manager,
             current_file,

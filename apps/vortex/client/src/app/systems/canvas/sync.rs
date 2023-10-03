@@ -132,43 +132,60 @@ pub fn sync_vertices(world: &mut World) {
                 if animation_manager.is_posing() {
                     if let Some(root_3d_vertex) = get_root_vertex(world) {
                         let (frame_entity_opt, interp_opt) = {
-                            let animation_manager = world.get_resource::<AnimationManager>().unwrap();
+                            let animation_manager =
+                                world.get_resource::<AnimationManager>().unwrap();
                             if animation_manager.preview_frame_selected() {
                                 let mut prev_frame_index = animation_manager.preview_frame_index();
-                                let frame_entity = animation_manager.get_frame_entity(&current_file_entity, prev_frame_index).unwrap();
-                                let frame_count = animation_manager.get_frame_count(&current_file_entity).unwrap();
+                                let frame_entity = animation_manager
+                                    .get_frame_entity(&current_file_entity, prev_frame_index)
+                                    .unwrap();
+                                let frame_count = animation_manager
+                                    .get_frame_count(&current_file_entity)
+                                    .unwrap();
                                 let elapsed_ms = animation_manager.preview_elapsed_ms();
 
-                                let frame_component = world.query::<&AnimFrame>().get(world, frame_entity).unwrap();
-                                let frame_duration = frame_component.transition.get_duration_ms() as f32;
+                                let frame_component = world
+                                    .query::<&AnimFrame>()
+                                    .get(world, frame_entity)
+                                    .unwrap();
+                                let frame_duration =
+                                    frame_component.transition.get_duration_ms() as f32;
 
                                 prev_frame_index += 1;
                                 if prev_frame_index >= frame_count {
                                     prev_frame_index -= frame_count;
                                 }
 
-                                let animation_manager = world.get_resource::<AnimationManager>().unwrap();
-                                let next_entity = animation_manager.get_frame_entity(&current_file_entity, prev_frame_index).unwrap();
+                                let animation_manager =
+                                    world.get_resource::<AnimationManager>().unwrap();
+                                let next_entity = animation_manager
+                                    .get_frame_entity(&current_file_entity, prev_frame_index)
+                                    .unwrap();
 
                                 let interp = elapsed_ms / frame_duration;
                                 (Some(frame_entity), Some((next_entity, interp)))
                             } else {
-                                (animation_manager.current_frame_entity(&current_file_entity), None)
+                                (
+                                    animation_manager.current_frame_entity(&current_file_entity),
+                                    None,
+                                )
                             }
                         };
 
                         if frame_entity_opt.is_some() {
                             let frame_entity = frame_entity_opt.unwrap();
-                            world.resource_scope(|world, animation_manager: Mut<AnimationManager>| {
-                                animation_manager.sync_shapes_3d(
-                                    world,
-                                    &vertex_manager,
-                                    camera_3d_scale,
-                                    frame_entity,
-                                    interp_opt,
-                                    root_3d_vertex,
-                                );
-                            });
+                            world.resource_scope(
+                                |world, animation_manager: Mut<AnimationManager>| {
+                                    animation_manager.sync_shapes_3d(
+                                        world,
+                                        &vertex_manager,
+                                        camera_3d_scale,
+                                        frame_entity,
+                                        interp_opt,
+                                        root_3d_vertex,
+                                    );
+                                },
+                            );
                         }
                     }
                     world.resource_scope(|world, compass: Mut<Compass>| {

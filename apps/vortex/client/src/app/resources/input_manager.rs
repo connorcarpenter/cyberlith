@@ -29,7 +29,9 @@ use crate::app::{
     resources::{
         action::AnimAction,
         action::ShapeAction,
-        animation_manager::{AnimationManager, anim_file_play_pause, anim_file_delete_frame, anim_file_insert_frame},
+        animation_manager::{
+            anim_file_delete_frame, anim_file_insert_frame, anim_file_play_pause, AnimationManager,
+        },
         camera_manager::CameraAngle,
         camera_manager::CameraManager,
         camera_state::CameraState,
@@ -1262,7 +1264,11 @@ impl InputManager {
             return;
         }
 
-        if world.get_resource::<AnimationManager>().unwrap().preview_frame_selected() {
+        if world
+            .get_resource::<AnimationManager>()
+            .unwrap()
+            .preview_frame_selected()
+        {
             return;
         }
 
