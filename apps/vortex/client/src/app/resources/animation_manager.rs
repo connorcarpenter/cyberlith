@@ -1729,3 +1729,12 @@ pub(crate) fn anim_file_delete_frame(input_manager: &mut InputManager, world: &m
         );
     });
 }
+
+pub(crate) fn anim_file_play_pause(world: &mut World) {
+    let mut animation_manager = world.get_resource_mut::<AnimationManager>().unwrap();
+    if animation_manager.preview_is_playing() {
+        animation_manager.preview_pause();
+    } else {
+        animation_manager.preview_play();
+    }
+}

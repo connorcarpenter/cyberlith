@@ -29,8 +29,7 @@ use crate::app::{
     resources::{
         action::AnimAction,
         action::ShapeAction,
-        animation_manager::AnimationManager,
-        animation_manager::{anim_file_delete_frame, anim_file_insert_frame},
+        animation_manager::{AnimationManager, anim_file_play_pause, anim_file_delete_frame, anim_file_insert_frame},
         camera_manager::CameraAngle,
         camera_manager::CameraManager,
         camera_state::CameraState,
@@ -242,6 +241,7 @@ impl InputManager {
                 InputAction::KeyPress(key) => match key {
                     Key::Delete => anim_file_delete_frame(self, world),
                     Key::Insert => anim_file_insert_frame(self, world),
+                    Key::Space => anim_file_play_pause(world),
                     Key::Enter => {
                         let mut system_state: SystemState<(
                             ResMut<Canvas>,
