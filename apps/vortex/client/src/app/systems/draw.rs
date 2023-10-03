@@ -123,6 +123,7 @@ fn draw_vertices_and_edges_inner(world: &mut World, current_file: FileExtension)
         ResMut<RenderFrame>,
         Res<VertexManager>,
         Res<EdgeManager>,
+        Res<AnimationManager>,
         Query<(&Handle<CpuMesh>, &Transform, Option<&RenderLayer>)>,
         Query<
             (Entity, &Visibility, Option<&ShapeName>, Option<&VertexRoot>),
@@ -135,11 +136,20 @@ fn draw_vertices_and_edges_inner(world: &mut World, current_file: FileExtension)
         mut render_frame,
         vertex_manager,
         edge_manager,
+        animation_manager,
         objects_q,
         vertices_q,
         edges_q,
         materials_q,
     ) = system_state.get_mut(world);
+
+    let mut edge_angles_are_visible = edge_manager.edge_angles_are_visible(current_file);
+    if current_file == FileExtension::Anim {
+        if animation_manager.preview_frame_selected() {
+            edge_angles_are_visible = false;
+        }
+    }
+    let must_check_edge_enabled = current_file == FileExtension::Anim && !animation_manager.preview_frame_selected();
 
     // draw vertices
     for (vertex_3d_entity, visibility, shape_name_opt, vertex_root_opt) in vertices_q.iter() {
@@ -153,7 +163,7 @@ fn draw_vertices_and_edges_inner(world: &mut World, current_file: FileExtension)
             continue;
         };
 
-        let edge_is_enabled = edge_is_enabled(current_file, shape_name_opt);
+        let edge_is_enabled = if must_check_edge_enabled { edge_is_enabled(shape_name_opt) } else { true };
         let mat_handle = get_shape_color(
             &vertex_manager,
             current_file,
@@ -183,7 +193,7 @@ fn draw_vertices_and_edges_inner(world: &mut World, current_file: FileExtension)
 
         let (_, end_vertex_3d_entity) = edge_manager.edge_get_endpoints(&edge_3d_entity);
         let (_, _, shape_name_opt, vertex_root_opt) = vertices_q.get(end_vertex_3d_entity).unwrap();
-        let edge_is_enabled = edge_is_enabled(current_file, shape_name_opt);
+        let edge_is_enabled = if must_check_edge_enabled { edge_is_enabled(shape_name_opt) } else { true };
         let mat_handle = get_shape_color(
             &vertex_manager,
             current_file,
@@ -199,10 +209,9 @@ fn draw_vertices_and_edges_inner(world: &mut World, current_file: FileExtension)
         let (mesh_handle, transform, render_layer_opt) = objects_q.get(edge_2d_entity).unwrap();
         render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
 
-        if edge_is_enabled {
+        if edge_angles_are_visible && edge_is_enabled {
             // draw edge angles
             edge_manager.draw_edge_angles(
-                current_file,
                 &edge_3d_entity,
                 &mut render_frame,
                 &objects_q,

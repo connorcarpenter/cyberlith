@@ -785,15 +785,11 @@ impl EdgeManager {
 
     pub(crate) fn draw_edge_angles(
         &self,
-        file_ext: FileExtension,
         edge_3d_entity: &Entity,
         render_frame: &mut RenderFrame,
         objects_q: &Query<(&Handle<CpuMesh>, &Transform, Option<&RenderLayer>)>,
         materials_q: &Query<&Handle<CpuMaterial>>,
     ) {
-        if !self.edge_angles_are_visible(file_ext) {
-            return;
-        }
         let edge_3d_data = self.edges_3d.get(edge_3d_entity).unwrap();
         let (base_circle_entity, angle_edge_entity, end_circle_entity) =
             edge_3d_data.angle_entities_opt.unwrap();
@@ -810,19 +806,14 @@ impl EdgeManager {
     }
 }
 
-pub fn edge_is_enabled(current_file: FileExtension, shape_name_opt: Option<&ShapeName>) -> bool {
-    match current_file {
-        FileExtension::Anim => {
-            if let Some(shape_name) = shape_name_opt {
-                if shape_name.value.len() > 0 {
-                    true
-                } else {
-                    false
-                }
-            } else {
-                false
-            }
+pub fn edge_is_enabled(shape_name_opt: Option<&ShapeName>) -> bool {
+    if let Some(shape_name) = shape_name_opt {
+        if shape_name.value.len() > 0 {
+            true
+        } else {
+            false
         }
-        _ => true,
+    } else {
+        false
     }
 }

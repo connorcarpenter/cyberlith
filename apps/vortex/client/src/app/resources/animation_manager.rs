@@ -136,6 +136,7 @@ pub struct AnimationManager {
     last_preview_instant: Instant,
     preview_elapsed_ms: f32,
     preview_frame_index: usize,
+    preview_frame_selected: bool,
 }
 
 impl Default for AnimationManager {
@@ -161,6 +162,7 @@ impl Default for AnimationManager {
             last_preview_instant: Instant::now(),
             preview_elapsed_ms: 0.0,
             preview_frame_index: 0,
+            preview_frame_selected: false,
         }
     }
 }
@@ -185,6 +187,14 @@ impl AnimationManager {
 
     pub fn preview_pause(&mut self) {
         self.preview_playing = false;
+    }
+
+    pub fn preview_frame_index(&self) -> usize {
+        self.preview_frame_index
+    }
+
+    pub fn preview_elapsed_ms(&self) -> f32 {
+        self.preview_elapsed_ms
     }
 
     pub fn entity_is_frame(&self, entity: &Entity) -> bool {
@@ -307,6 +317,15 @@ impl AnimationManager {
 
     pub fn set_framing(&mut self) {
         self.posing = false;
+        self.preview_frame_selected = false;
+    }
+
+    pub fn set_preview_frame_selected(&mut self) {
+        self.preview_frame_selected = true;
+    }
+
+    pub fn preview_frame_selected(&self) -> bool {
+        self.preview_frame_selected
     }
 
     pub fn get_current_rotation(&self, file_entity: &Entity, vertex_name: &str) -> Option<&Entity> {
@@ -738,7 +757,6 @@ impl AnimationManager {
                     }
                 }
             }
-
 
             let rotation = (parent_rotation * rotation).normalize();
             let displacement = original_child_pos - original_parent_pos;
@@ -1495,7 +1513,7 @@ impl AnimationManager {
         self.register_frame(file_entity, frame_entity);
     }
 
-    pub(crate) fn preview_update(&mut self, current_file_entity: &Entity, frame_q: &Query<(Entity, &AnimFrame)>) {
+    pub(crate) fn preview_update(&mut self, canvas: &mut Canvas, current_file_entity: &Entity, frame_q: &Query<(Entity, &AnimFrame)>) {
         if !self.preview_playing {
             return;
         }
@@ -1527,6 +1545,8 @@ impl AnimationManager {
             };
             frame_duration = frame_component.transition.get_duration_ms() as f32;
         }
+
+        canvas.queue_resync_shapes();
     }
 }
 

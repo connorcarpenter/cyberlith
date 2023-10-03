@@ -81,6 +81,7 @@ pub fn update_mouse_hover(
         &mut canvas,
         &vertex_manager,
         &edge_manager,
+        &animation_manager,
         &mut transform_q,
         &visibility_q,
         &shape_name_q,

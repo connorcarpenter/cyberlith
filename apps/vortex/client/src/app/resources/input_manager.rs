@@ -504,6 +504,7 @@ impl InputManager {
         canvas: &mut Canvas,
         vertex_manager: &VertexManager,
         edge_manager: &EdgeManager,
+        animation_manager: &AnimationManager,
         transform_q: &mut Query<(&mut Transform, Option<&LocalShape>)>,
         visibility_q: &Query<&Visibility>,
         shape_name_q: &Query<&ShapeName>,
@@ -517,6 +518,12 @@ impl InputManager {
             return;
         }
         self.resync_hover = false;
+
+        if file_ext == FileExtension::Anim {
+            if animation_manager.preview_frame_selected() {
+                return;
+            }
+        }
 
         let camera_3d_scale = camera_state.camera_3d_scale();
 
@@ -1207,6 +1214,13 @@ impl InputManager {
 
             if frame_index_hover == 0 {
                 // clicked preview frame
+                if double_clicked {
+                    let mut system_state: SystemState<(ResMut<Canvas>, ResMut<AnimationManager>)> =
+                        SystemState::new(world);
+                    let (mut canvas, mut animation_manager) = system_state.get_mut(world);
+                    animation_manager.set_posing(&mut canvas);
+                    animation_manager.set_preview_frame_selected();
+                }
             } else {
                 if current_frame_index != frame_index_hover - 1 {
                     world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
@@ -1245,6 +1259,10 @@ impl InputManager {
             .unwrap()
             .is_position_inside(*mouse_position)
         {
+            return;
+        }
+
+        if world.get_resource::<AnimationManager>().unwrap().preview_frame_selected() {
             return;
         }
 
@@ -1538,8 +1556,12 @@ impl InputManager {
                 CanvasShape::RootVertex | CanvasShape::Vertex | CanvasShape::Edge => true,
                 _ => false,
             };
+        let preview_frame_selected = world
+            .get_resource::<AnimationManager>()
+            .unwrap()
+            .preview_frame_selected();
 
-        if shape_is_selected && shape_can_drag {
+        if shape_is_selected && shape_can_drag && !preview_frame_selected {
             match click_type {
                 MouseButton::Left => {
                     match self.selected_shape.unwrap() {
