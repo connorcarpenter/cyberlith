@@ -1324,7 +1324,7 @@ impl InputManager {
         let shape_is_selected = self.selected_shape.is_some();
         let shape_can_drag = shape_is_selected
             && match self.selected_shape.unwrap().1 {
-                CanvasShape::RootVertex | CanvasShape::Vertex => true,
+                CanvasShape::Vertex => true,
                 CanvasShape::Edge => current_file_type != FileExtension::Mesh,
                 _ => false,
             };
