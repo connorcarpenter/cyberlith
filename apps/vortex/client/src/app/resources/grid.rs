@@ -146,7 +146,7 @@ impl Grid {
             materials,
             None,
             Vec3::new(grid_size * xf, (grid_size * yf) + grid_size, grid_size * zf),
-            Color::DARK_GRAY,
+            Color::LIGHT_GRAY,
         );
         self.grid_vertices_3d.push(root_vertex_3d_entity);
         commands.entity(root_vertex_2d_entity).insert(LocalShape);
@@ -220,7 +220,7 @@ impl Grid {
             materials,
             Some(parent_vertex_2d_entity),
             position,
-            Color::DARK_GRAY,
+            Color::LIGHT_GRAY,
         ) else {
             panic!("No edges?");
         };

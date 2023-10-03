@@ -78,7 +78,11 @@ impl Color {
     /// Opaque black
     pub const BLACK: Color = Color::new_opaque(0, 0, 0);
     /// Opaque dark gray
-    pub const DARK_GRAY: Color = Color::new_opaque(64, 64, 64);
+    pub const LIGHT_GRAY: Color = Color::new_opaque(64, 64, 64);
+    /// Opaque gray
+    pub const GRAY: Color = Color::new_opaque(40, 40, 40);
+    /// Opaque light gray
+    pub const DARK_GRAY: Color = Color::new_opaque(16, 16, 16);
 
     /// Convert to [`Vec3`] by mapping the red, green and blue component to the range `0.0..=1.0`.
     pub fn to_vec3(&self) -> Vec3 {

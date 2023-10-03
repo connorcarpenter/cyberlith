@@ -1003,12 +1003,14 @@ impl AnimationManager {
             let camera_3d_entity = camera_manager.camera_3d_entity().unwrap();
             let point_mesh_handle = meshes.add(Circle::new(Vertex2d::SUBDIVISIONS));
             let line_mesh_handle = meshes.add(Line2d);
-            let mat_handle_gray = materials.add(Color::DARK_GRAY);
             let mat_handle_white = materials.add(Color::WHITE);
+            let mat_handle_gray = materials.add(Color::GRAY);
+            let mat_handle_dark_gray = materials.add(Color::DARK_GRAY);
             let mat_handle_green = materials.add(Color::GREEN);
 
             for (frame_index, frame_pos) in frame_rects.iter().enumerate() {
-                let selected: bool = self.current_frame_index == frame_index;
+                // frame_index 0 is preview frame
+                let selected: bool = frame_index > 0 && self.current_frame_index == frame_index - 1;
 
                 // set thickness to 4.0 if frame is hovered and not currently selected, otherwise 2.0
                 let thickness = if !selected && Some(frame_index) == self.frame_hover {
@@ -1017,11 +1019,17 @@ impl AnimationManager {
                     2.0
                 };
 
+                let mat = if frame_index == 0 {
+                    mat_handle_dark_gray
+                } else {
+                    mat_handle_gray
+                };
+
                 draw_rectangle(
                     &mut render_frame,
                     &render_layer,
                     &line_mesh_handle,
-                    &mat_handle_gray,
+                    &mat,
                     *frame_pos,
                     self.frame_size,
                     thickness,
@@ -1078,7 +1086,7 @@ impl AnimationManager {
                 }
                 let frame_entity = frame_opt.unwrap();
 
-                let frame_pos = frame_rects[frame_index];
+                let frame_pos = frame_rects[frame_index + 1];
 
                 self.draw_pose(
                     world,
@@ -1120,16 +1128,22 @@ impl AnimationManager {
         let frame_duration = frame_component.transition.get_duration_ms() as f32;
         let complete = (self.preview_elapsed_ms / frame_duration);
         let frame_width = (self.frame_size.x + self.frame_buffer.x);
+        let frame_count = frame_positions.len();
 
         let mut start: Vec2;
         if complete < 0.5 {
-            start = frame_positions[self.preview_frame_index];
+            let mut preview_frame_index = self.preview_frame_index + 1;
+            if preview_frame_index >= frame_count {
+                preview_frame_index -= (frame_count - 1);
+            }
+
+            start = frame_positions[preview_frame_index];
 
             start.x += frame_width * complete;
         } else {
-            let mut next_frame_index = self.preview_frame_index + 1;
-            if next_frame_index >= frame_positions.len() {
-                next_frame_index = 0;
+            let mut next_frame_index = self.preview_frame_index + 2;
+            if next_frame_index >= frame_count {
+                next_frame_index -= (frame_count - 1);
             }
             start = frame_positions[next_frame_index];
             start.x -= frame_width * (1.0-complete);
@@ -1311,7 +1325,7 @@ impl AnimationManager {
         let mut positions = Vec::new();
         let mut start_position = self.frame_buffer;
 
-        for _ in 0..frame_count {
+        for _ in 0..=frame_count {
             positions.push(start_position);
             let next_x = start_position.x + self.frame_size.x + self.frame_buffer.x;
             if next_x + self.frame_size.x > canvas_size.x {

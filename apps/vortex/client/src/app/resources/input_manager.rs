@@ -1205,26 +1205,30 @@ impl InputManager {
             self.last_left_click_instant = Instant::now();
             self.last_frame_index_hover = frame_index_hover;
 
-            if current_frame_index != frame_index_hover {
-                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    let current_file_entity = *tab_manager.current_tab_entity().unwrap();
-                    tab_manager.current_tab_execute_anim_action(
-                        world,
-                        self,
-                        AnimAction::SelectFrame(
-                            current_file_entity,
-                            frame_index_hover,
-                            current_frame_index,
-                        ),
-                    );
-                });
-            }
+            if frame_index_hover == 0 {
+                // clicked preview frame
+            } else {
+                if current_frame_index != frame_index_hover - 1 {
+                    world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                        let current_file_entity = *tab_manager.current_tab_entity().unwrap();
+                        tab_manager.current_tab_execute_anim_action(
+                            world,
+                            self,
+                            AnimAction::SelectFrame(
+                                current_file_entity,
+                                frame_index_hover - 1,
+                                current_frame_index,
+                            ),
+                        );
+                    });
+                }
 
-            if double_clicked {
-                let mut system_state: SystemState<(ResMut<Canvas>, ResMut<AnimationManager>)> =
-                    SystemState::new(world);
-                let (mut canvas, mut animation_manager) = system_state.get_mut(world);
-                animation_manager.set_posing(&mut canvas);
+                if double_clicked {
+                    let mut system_state: SystemState<(ResMut<Canvas>, ResMut<AnimationManager>)> =
+                        SystemState::new(world);
+                    let (mut canvas, mut animation_manager) = system_state.get_mut(world);
+                    animation_manager.set_posing(&mut canvas);
+                }
             }
         }
     }
