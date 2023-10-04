@@ -6,9 +6,7 @@ use bevy_log::info;
 
 use naia_bevy_server::{events::UpdateComponentEvents, Server};
 
-use vortex_proto::components::{
-    AnimRotation, EdgeAngle, FileSystemChild, FileSystemEntry, ShapeName, Vertex3d,
-};
+use vortex_proto::components::{AnimFrame, AnimRotation, EdgeAngle, FileSystemChild, FileSystemEntry, ShapeName, Vertex3d};
 
 use crate::resources::{GitManager, UserManager};
 
@@ -58,6 +56,13 @@ pub fn update_component_events(
                 entity, *shape_name.value
             );
 
+            let Some((project_key, file_key)) = git_manager.content_entity_keys(&entity) else {
+                panic!("no content entity keys!");
+            };
+            git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
+        }
+        // on AnimFrame Update Event
+        for (_, entity) in events.read::<AnimFrame>() {
             let Some((project_key, file_key)) = git_manager.content_entity_keys(&entity) else {
                 panic!("no content entity keys!");
             };

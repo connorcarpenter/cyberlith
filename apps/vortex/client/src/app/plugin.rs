@@ -25,7 +25,7 @@ use crate::app::{
         shape_waitlist::ShapeWaitlist, tab_manager::TabManager, vertex_manager::VertexManager,
     },
     systems::{canvas, draw, draw_vertices_and_edges, network, ui},
-    ui::{widgets::NamingBarState, UiState},
+    ui::{widgets::{NamingBarState, FrameInspectBarState}, UiState},
 };
 
 pub struct VortexPlugin;
@@ -104,6 +104,7 @@ impl Plugin for VortexPlugin {
             // UI Configuration
             .init_resource::<UiState>()
             .init_resource::<NamingBarState>()
+            .init_resource::<FrameInspectBarState>()
             .insert_resource(file_manager)
             .init_resource::<FileActions>()
             .init_resource::<TabManager>()

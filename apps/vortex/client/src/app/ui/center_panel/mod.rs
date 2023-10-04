@@ -8,10 +8,10 @@ use render_egui::{egui, egui::Frame};
 use vortex_proto::components::FileExtension;
 
 use crate::app::{
-    resources::{file_manager::FileManager, tab_manager::render_tab_bar, tab_manager::TabManager},
+    resources::{animation_manager::AnimationManager, file_manager::FileManager, tab_manager::render_tab_bar, tab_manager::TabManager},
     ui::{
         render_tool_bar,
-        widgets::{render_bind_button, render_naming_bar, NamingBarState},
+        widgets::{render_frame_inspect_bar, render_bind_button, render_naming_bar, NamingBarState},
     },
 };
 
@@ -22,6 +22,7 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
             render_tab_bar(ui, world);
             render_tool_bar(ui, world);
 
+            let mut render_frame_inspect = false;
             let tab_manager = world.get_resource::<TabManager>().unwrap();
             if let Some(current_file_entity) = tab_manager.current_tab_entity() {
                 let current_file_entity = *current_file_entity;
@@ -34,6 +35,11 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                     ) {
                         render_bind_button(ui, world, &current_file_entity);
                         return;
+                    }
+
+                    let animation_manager = world.get_resource::<AnimationManager>().unwrap();
+                    if animation_manager.is_framing() {
+                        render_frame_inspect = true;
                     }
                 }
             }
@@ -48,6 +54,10 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                     });
             } else {
                 render_canvas(ui, world);
+            }
+
+            if render_frame_inspect {
+                render_frame_inspect_bar(ui, world);
             }
         });
 }

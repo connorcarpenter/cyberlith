@@ -31,7 +31,7 @@ impl SkeletonToolbar {
         {
             // delete selected vertex
             let button_enabled = if let Some((_, shape)) = selected_shape_2d {
-                shape == CanvasShape::Vertex || shape == CanvasShape::RootVertex
+                shape == CanvasShape::Vertex
             } else {
                 false
             };
