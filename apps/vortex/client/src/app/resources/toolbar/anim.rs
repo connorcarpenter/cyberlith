@@ -24,19 +24,8 @@ impl AnimationToolbar {
     }
 
     fn framing_render(ui: &mut Ui, world: &mut World) {
-        {
-            // play / pause button
-            let mut animation_manager = world.get_resource_mut::<AnimationManager>().unwrap();
-            if animation_manager.preview_is_playing() {
-                if Toolbar::button(ui, "⏸", "Pause", true).clicked() {
-                    animation_manager.preview_pause();
-                }
-            } else {
-                if Toolbar::button(ui, "▶", "Play", true).clicked() {
-                    animation_manager.preview_play();
-                }
-            }
-        }
+
+        button_toggle_play_pause(ui, world);
 
         // new frame
         if Toolbar::button(ui, "➕", "New frame", true).clicked() {
@@ -117,6 +106,24 @@ impl AnimationToolbar {
             animation_manager.set_framing();
         }
 
-        button_toggle_edge_angle_visibility(ui, world);
+        if world.get_resource::<AnimationManager>().unwrap().preview_frame_selected() {
+            button_toggle_play_pause(ui, world);
+        } else {
+            button_toggle_edge_angle_visibility(ui, world);
+        }
+    }
+}
+
+fn button_toggle_play_pause(ui: &mut Ui, world: &mut World) {
+    // play / pause button
+    let mut animation_manager = world.get_resource_mut::<AnimationManager>().unwrap();
+    if animation_manager.preview_is_playing() {
+        if Toolbar::button(ui, "⏸", "Pause", true).clicked() {
+            animation_manager.preview_pause();
+        }
+    } else {
+        if Toolbar::button(ui, "▶", "Play", true).clicked() {
+            animation_manager.preview_play();
+        }
     }
 }

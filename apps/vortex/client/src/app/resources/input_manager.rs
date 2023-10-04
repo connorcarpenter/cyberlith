@@ -323,6 +323,14 @@ impl InputManager {
                     | Key::PageUp
                     | Key::PageDown => Self::handle_keypress_camera_controls(world, key),
                     Key::E => Self::handle_edge_angle_visibility_toggle(world),
+                    Key::Space => {
+                        if world
+                            .get_resource::<AnimationManager>()
+                            .unwrap()
+                            .preview_frame_selected() {
+                            anim_file_play_pause(world);
+                        }
+                    }
                     Key::Escape => {
                         let mut animation_manager =
                             world.get_resource_mut::<AnimationManager>().unwrap();
