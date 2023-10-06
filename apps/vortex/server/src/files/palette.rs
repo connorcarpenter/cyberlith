@@ -135,6 +135,7 @@ impl PaletteReader {
 
     fn actions_to_world(
         world: &mut World,
+        file_entity: &Entity,
         actions: Vec<PaletteAction>,
     ) -> HashMap<Entity, ContentEntityData> {
 
@@ -148,11 +149,13 @@ impl PaletteReader {
         for action in actions {
             match action {
                 PaletteAction::Color(r, g, b) => {
+                    let mut color_component = PaletteColor::new(index, r, g, b);
+                    color_component.file_entity.set(&mut server, file_entity);
                     let entity_id = commands
                         .spawn_empty()
                         .enable_replication(&mut server)
                         .configure_replication(ReplicationConfig::Delegated)
-                        .insert(PaletteColor::new(index, r,g,b))
+                        .insert(color_component)
                         .id();
                     info!("palette color entity: `{:?}`, rgb:({}, {}, {})", entity_id, r, g, b);
                     output.insert(entity_id, ContentEntityData::Color);
@@ -170,6 +173,7 @@ impl PaletteReader {
     pub fn read(
         &self,
         world: &mut World,
+        file_entity: &Entity,
         bytes: &Box<[u8]>,
     ) -> HashMap<Entity, ContentEntityData> {
         let mut bit_reader = BitReader::new(bytes);
@@ -178,7 +182,7 @@ impl PaletteReader {
             panic!("Error reading .palette file");
         };
 
-        let result = Self::actions_to_world(world, actions);
+        let result = Self::actions_to_world(world, file_entity, actions);
 
         result
     }

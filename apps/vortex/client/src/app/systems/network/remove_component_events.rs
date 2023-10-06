@@ -8,17 +8,14 @@ use naia_bevy_client::{events::RemoveComponentEvents, Client};
 
 use render_api::{base::CpuMesh, Assets};
 
-use vortex_proto::components::{
-    AnimFrame, AnimRotation, ChangelistEntry, ChangelistStatus, Edge3d, Face3d, FileDependency,
-    FileSystemChild, FileSystemEntry, FileSystemRootChild, ShapeName, Vertex3d,
-};
+use vortex_proto::components::{AnimFrame, AnimRotation, ChangelistEntry, ChangelistStatus, Edge3d, Face3d, FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild, PaletteColor, ShapeName, Vertex3d};
 
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
     resources::{
         animation_manager::AnimationManager, canvas::Canvas, edge_manager::EdgeManager,
         face_manager::FaceManager, file_manager::FileManager, input_manager::InputManager,
-        tab_manager::TabManager, vertex_manager::VertexManager,
+        tab_manager::TabManager, vertex_manager::VertexManager, palette_manager::PaletteManager,
     },
 };
 
@@ -33,6 +30,7 @@ pub fn remove_component_events(
     mut face_manager: ResMut<FaceManager>,
     mut tab_manager: ResMut<TabManager>,
     mut animation_manager: ResMut<AnimationManager>,
+    mut palette_manager: ResMut<PaletteManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut event_reader: EventReader<RemoveComponentEvents>,
     mut parent_q: Query<&mut FileSystemParent>,
@@ -53,7 +51,6 @@ pub fn remove_component_events(
             };
             parent.remove_child(&entity);
         }
-
         for (entity, component) in events.read::<FileSystemChild>() {
             info!("entity: `{:?}`, removed FileSystemChild", entity);
 
@@ -133,6 +130,14 @@ pub fn remove_component_events(
             info!("entity: `{:?}`, removed AnimRotation", rot_entity);
 
             animation_manager.deregister_rotation(&rot_entity);
+        }
+        for (color_entity, color) in events.read::<PaletteColor>() {
+            info!("entity: `{:?}`, removed PaletteColor", color_entity);
+
+            let file_entity = color.file_entity.get(&client).unwrap();
+            let color_index = *color.index as usize;
+
+            palette_manager.deregister_color(&file_entity, &color_entity, color_index);
         }
     }
 }

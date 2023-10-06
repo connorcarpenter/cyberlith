@@ -9,7 +9,7 @@ use vortex_proto::{
     components::{
         AnimFrame, AnimRotation, ChangelistEntry, Edge3d, EdgeAngle, EntryKind, Face3d,
         FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType,
-        OwnedByFile, ShapeName, Vertex3d, VertexRoot,
+        OwnedByFile, ShapeName, Vertex3d, VertexRoot, PaletteColor,
     },
     protocol,
 };
@@ -23,6 +23,7 @@ use crate::app::{
         canvas::Canvas, compass::Compass, edge_manager::EdgeManager, face_manager::FaceManager,
         file_manager::FileManager, grid::Grid, input_manager::InputManager,
         shape_waitlist::ShapeWaitlist, tab_manager::TabManager, vertex_manager::VertexManager,
+        palette_manager::PaletteManager,
     },
     systems::{canvas, draw, draw_vertices_and_edges, network, ui},
     ui::{widgets::{NamingBarState, FrameInspectBarState}, UiState},
@@ -90,6 +91,7 @@ impl Plugin for VortexPlugin {
             .add_event::<InsertComponentEvent<FileDependency>>()
             .add_event::<InsertComponentEvent<AnimFrame>>()
             .add_event::<InsertComponentEvent<AnimRotation>>()
+            .add_event::<InsertComponentEvent<PaletteColor>>()
             // shape waitlist
             .init_resource::<ShapeWaitlist>()
             // Insert Component Systems
@@ -101,6 +103,7 @@ impl Plugin for VortexPlugin {
             .add_systems(Update, network::insert_owned_by_file_events)
             .add_systems(Update, network::insert_file_type_events)
             .add_systems(Update, network::insert_animation_events)
+            .add_systems(Update, network::insert_palette_events)
             // UI Configuration
             .init_resource::<UiState>()
             .init_resource::<NamingBarState>()
@@ -114,6 +117,7 @@ impl Plugin for VortexPlugin {
             .init_resource::<EdgeManager>()
             .init_resource::<FaceManager>()
             .init_resource::<AnimationManager>()
+            .init_resource::<PaletteManager>()
             .init_resource::<CameraManager>()
             .init_resource::<InputManager>()
             .init_resource::<Compass>()

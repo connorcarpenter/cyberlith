@@ -8,7 +8,7 @@ use render_egui::{egui, egui::Frame};
 use vortex_proto::components::FileExtension;
 
 use crate::app::{
-    resources::{animation_manager::AnimationManager, file_manager::FileManager, tab_manager::render_tab_bar, tab_manager::TabManager},
+    resources::{animation_manager::AnimationManager, file_manager::FileManager, tab_manager::render_tab_bar, tab_manager::TabManager, palette_manager::PaletteManager},
     ui::{
         render_tool_bar,
         widgets::{render_frame_inspect_bar, render_bind_button, render_naming_bar, NamingBarState},
@@ -21,7 +21,6 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
         .show(context, |ui| {
             render_tab_bar(ui, world);
 
-
             let mut render_frame_inspect = false;
             let tab_manager = world.get_resource::<TabManager>().unwrap();
             if let Some(current_file_entity) = tab_manager.current_tab_entity() {
@@ -29,22 +28,32 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                 let file_manager = world.get_resource::<FileManager>().unwrap();
                 let current_file_type = file_manager.get_file_type(&current_file_entity);
 
-                render_tool_bar(ui, world, current_file_type);
+                match current_file_type {
+                    FileExtension::Skel | FileExtension::Mesh => {
+                        render_tool_bar(ui, world, current_file_type);
+                    }
+                    FileExtension::Anim => {
+                        render_tool_bar(ui, world, current_file_type);
 
-                let file_manager = world.get_resource::<FileManager>().unwrap();
-                if current_file_type == FileExtension::Anim {
-                    if !file_manager.file_has_dependency_with_extension(
-                        &current_file_entity,
-                        FileExtension::Skel,
-                    ) {
-                        render_bind_button(ui, world, &current_file_entity);
+                        let file_manager = world.get_resource::<FileManager>().unwrap();
+                        if !file_manager.file_has_dependency_with_extension(
+                            &current_file_entity,
+                            FileExtension::Skel,
+                        ) {
+                            render_bind_button(ui, world, &current_file_entity);
+                            return;
+                        }
+
+                        let animation_manager = world.get_resource::<AnimationManager>().unwrap();
+                        if animation_manager.is_framing() {
+                            render_frame_inspect = true;
+                        }
+                    }
+                    FileExtension::Palette => {
+                        PaletteManager::render(ui, world, current_file_entity);
                         return;
                     }
-
-                    let animation_manager = world.get_resource::<AnimationManager>().unwrap();
-                    if animation_manager.is_framing() {
-                        render_frame_inspect = true;
-                    }
+                    _ => {}
                 }
             }
 

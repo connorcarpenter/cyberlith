@@ -280,6 +280,7 @@ pub struct PaletteColor {
     pub r: Property<u8>,
     pub g: Property<u8>,
     pub b: Property<u8>,
+    pub file_entity: EntityProperty,
 }
 
 impl PaletteColor {

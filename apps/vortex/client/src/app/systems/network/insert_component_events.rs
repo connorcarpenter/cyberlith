@@ -3,11 +3,12 @@ use std::collections::HashMap;
 use bevy_ecs::{
     entity::Entity,
     event::{EventReader, EventWriter},
-    system::{Commands, Query, ResMut},
+    system::{SystemState, Commands, Query, ResMut},
+    world::World,
 };
 use bevy_log::{info, warn};
 
-use naia_bevy_client::{events::InsertComponentEvents, Client};
+use naia_bevy_client::{events::InsertComponentEvents, Client, Replicate};
 
 use render_api::{
     base::{CpuMaterial, CpuMesh},
@@ -15,11 +16,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{
-    AnimFrame, AnimRotation, ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind,
-    Face3d, FileDependency, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-    FileType, OwnedByFile, ShapeName, Vertex3d, VertexRoot,
-};
+use vortex_proto::components::{AnimFrame, AnimRotation, ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind, Face3d, FileDependency, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::file_system::{
@@ -39,108 +36,46 @@ use crate::app::{
     },
     systems::file_post_process,
 };
+use crate::app::resources::palette_manager::PaletteManager;
 
 // if this gets big, just switch to a &mut World
 pub fn insert_component_events(
-    mut event_reader: EventReader<InsertComponentEvents>,
-
-    // for filesystem
-    mut insert_fs_entry_event_writer: EventWriter<InsertComponentEvent<FileSystemEntry>>,
-    mut insert_fs_root_event_writer: EventWriter<InsertComponentEvent<FileSystemRootChild>>,
-    mut insert_fs_child_event_writer: EventWriter<InsertComponentEvent<FileSystemChild>>,
-    mut insert_fs_dependency_event_writer: EventWriter<InsertComponentEvent<FileDependency>>,
-    mut insert_cl_entry_event_writer: EventWriter<InsertComponentEvent<ChangelistEntry>>,
-
-    // for vertices
-    mut insert_vertex_3d_event_writer: EventWriter<InsertComponentEvent<Vertex3d>>,
-    mut insert_vertex_root_event_writer: EventWriter<InsertComponentEvent<VertexRoot>>,
-    mut insert_shape_name_event_writer: EventWriter<InsertComponentEvent<ShapeName>>,
-    mut insert_owned_by_event_writer: EventWriter<InsertComponentEvent<OwnedByFile>>,
-    mut insert_file_type_event_writer: EventWriter<InsertComponentEvent<FileType>>,
-    mut insert_edge_3d_event_writer: EventWriter<InsertComponentEvent<Edge3d>>,
-    mut insert_edge_angle_event_writer: EventWriter<InsertComponentEvent<EdgeAngle>>,
-    mut insert_face_3d_event_writer: EventWriter<InsertComponentEvent<Face3d>>,
-    mut insert_anim_frame_event_writer: EventWriter<InsertComponentEvent<AnimFrame>>,
-    mut insert_anim_rotation_event_writer: EventWriter<InsertComponentEvent<AnimRotation>>,
+    world: &mut World,
 ) {
-    for events in event_reader.iter() {
-        // on FileSystemEntry Insert Event
-        for entity in events.read::<FileSystemEntry>() {
-            insert_fs_entry_event_writer.send(InsertComponentEvent::<FileSystemEntry>::new(entity));
-        }
+    let mut system_state: SystemState<EventReader<InsertComponentEvents>> = SystemState::new(world);
+    let mut events_reader = system_state.get_mut(world);
 
-        // on FileSystemRootChild Insert Event
-        for entity in events.read::<FileSystemRootChild>() {
-            insert_fs_root_event_writer
-                .send(InsertComponentEvent::<FileSystemRootChild>::new(entity));
-        }
+    let mut events_collection: Vec<InsertComponentEvents> = Vec::new();
+    for events in events_reader.iter() {
+        events_collection.push(events.clone());
+    }
 
-        // on FileSystemChild Insert Event
-        for entity in events.read::<FileSystemChild>() {
-            insert_fs_child_event_writer.send(InsertComponentEvent::<FileSystemChild>::new(entity));
-        }
+    for events in events_collection {
+        insert_component_event::<FileSystemEntry>       (world, &events);
+        insert_component_event::<FileSystemRootChild>   (world, &events);
+        insert_component_event::<FileSystemChild>       (world, &events);
+        insert_component_event::<FileDependency>        (world, &events);
+        insert_component_event::<ChangelistEntry>       (world, &events);
+        insert_component_event::<Vertex3d>              (world, &events);
+        insert_component_event::<VertexRoot>            (world, &events);
+        insert_component_event::<ShapeName>             (world, &events);
+        insert_component_event::<OwnedByFile>           (world, &events);
+        insert_component_event::<FileType>              (world, &events);
+        insert_component_event::<Edge3d>                (world, &events);
+        insert_component_event::<EdgeAngle>             (world, &events);
+        insert_component_event::<Face3d>                (world, &events);
+        insert_component_event::<AnimFrame>             (world, &events);
+        insert_component_event::<AnimRotation>          (world, &events);
+        insert_component_event::<PaletteColor>          (world, &events);
+    }
+}
 
-        // on FileDependency Insert Event
-        for entity in events.read::<FileDependency>() {
-            insert_fs_dependency_event_writer
-                .send(InsertComponentEvent::<FileDependency>::new(entity));
-        }
+fn insert_component_event<T: Replicate>(world: &mut World, events: &InsertComponentEvents) {
+    let mut system_state: SystemState<EventWriter<InsertComponentEvent<T>>> = SystemState::new(world);
+    let mut event_writer = system_state.get_mut(world);
 
-        // on ChangelistEntry Insert Event
-        for entity in events.read::<ChangelistEntry>() {
-            insert_cl_entry_event_writer.send(InsertComponentEvent::<ChangelistEntry>::new(entity));
-        }
-
-        // on Vertex3d Insert Event
-        for entity in events.read::<Vertex3d>() {
-            insert_vertex_3d_event_writer.send(InsertComponentEvent::<Vertex3d>::new(entity));
-        }
-
-        // on Vertex Root Child Event
-        for entity in events.read::<VertexRoot>() {
-            insert_vertex_root_event_writer.send(InsertComponentEvent::<VertexRoot>::new(entity));
-        }
-
-        // on Shape Name Event
-        for entity in events.read::<ShapeName>() {
-            insert_shape_name_event_writer.send(InsertComponentEvent::<ShapeName>::new(entity));
-        }
-
-        // on OwnedByFile Insert Event
-        for entity in events.read::<OwnedByFile>() {
-            insert_owned_by_event_writer.send(InsertComponentEvent::<OwnedByFile>::new(entity));
-        }
-
-        // on FileType Insert Event
-        for entity in events.read::<FileType>() {
-            insert_file_type_event_writer.send(InsertComponentEvent::<FileType>::new(entity));
-        }
-
-        // on Edge3d Insert Event
-        for entity in events.read::<Edge3d>() {
-            insert_edge_3d_event_writer.send(InsertComponentEvent::<Edge3d>::new(entity));
-        }
-
-        // on EdgeAngle Insert Event
-        for entity in events.read::<EdgeAngle>() {
-            insert_edge_angle_event_writer.send(InsertComponentEvent::<EdgeAngle>::new(entity));
-        }
-
-        // on Face3d Insert Event
-        for entity in events.read::<Face3d>() {
-            insert_face_3d_event_writer.send(InsertComponentEvent::<Face3d>::new(entity));
-        }
-
-        // on Animation Frame Event
-        for entity in events.read::<AnimFrame>() {
-            insert_anim_frame_event_writer.send(InsertComponentEvent::<AnimFrame>::new(entity));
-        }
-
-        // on Animation Rotation Event
-        for entity in events.read::<AnimRotation>() {
-            insert_anim_rotation_event_writer
-                .send(InsertComponentEvent::<AnimRotation>::new(entity));
-        }
+    for entity in events.read::<T>() {
+        event_writer.send(InsertComponentEvent::<T>::new(entity));
     }
 }
 
@@ -660,5 +595,28 @@ pub fn insert_animation_events(
             rotation_entity,
             vertex_name,
         );
+    }
+}
+
+pub fn insert_palette_events(
+    client: Client,
+    mut color_events: EventReader<InsertComponentEvent<PaletteColor>>,
+    mut palette_manager: ResMut<PaletteManager>,
+    color_q: Query<&PaletteColor>,
+) {
+    // on PaletteColor Insert Event
+    for event in color_events.iter() {
+        let color_entity = event.entity;
+
+        info!("entity: {:?} - inserted PaletteColor", color_entity);
+
+        let Ok(color_component) = color_q.get(color_entity) else {
+            continue;
+        };
+
+        let file_entity = color_component.file_entity.get(&client).unwrap();
+        let color_index = *color_component.index as usize;
+
+        palette_manager.register_color(file_entity, color_entity, color_index);
     }
 }

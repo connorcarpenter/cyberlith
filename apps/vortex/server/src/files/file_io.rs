@@ -53,7 +53,7 @@ impl FileReader for FileExtension {
             FileExtension::Skel => SkelReader.read(world, bytes),
             FileExtension::Mesh => MeshReader.read(world, bytes),
             FileExtension::Anim => AnimReader.read(world, project, file_key, file_entity, bytes),
-            FileExtension::Palette => PaletteReader.read(world, bytes),
+            FileExtension::Palette => PaletteReader.read(world, file_entity, bytes),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }
