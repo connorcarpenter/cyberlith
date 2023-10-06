@@ -8,6 +8,7 @@ use vortex_proto::components::PaletteColor;
 
 #[derive(Resource)]
 pub struct PaletteManager {
+    selected_color_index: usize,
     // file entity -> color entities
     colors: HashMap<Entity, Vec<Option<Entity>>>,
 }
@@ -15,6 +16,7 @@ pub struct PaletteManager {
 impl Default for PaletteManager {
     fn default() -> Self {
         Self {
+            selected_color_index: 0,
             colors: HashMap::new(),
         }
     }
@@ -91,6 +93,10 @@ impl PaletteManager {
         }
     }
 
+    fn select_color(&mut self, color_index: usize) {
+        self.selected_color_index = color_index;
+    }
+
     fn render_selection_colors(&mut self, ui: &mut Ui, world: &mut World, file_entity: Entity) {
 
         let Some(colors) = self.colors.get(&file_entity) else {
@@ -100,10 +106,12 @@ impl PaletteManager {
         let mut color_q = world.query::<&PaletteColor>();
 
         let size = Vec2::new(32.0, 32.0);
+        let mut color_index_picked = None;
 
         ui.with_layout(Layout::left_to_right(Align::Min).with_main_wrap(true), |ui| {
             Frame::none().inner_margin(8.0).show(ui, |ui| {
-                for color_entity_opt in colors.iter() {
+                ui.spacing_mut().item_spacing = Vec2::new(10.0, 10.0);
+                for (color_index, color_entity_opt) in colors.iter().enumerate() {
                     let Some(color_entity) = color_entity_opt else {
                         continue;
                     };
@@ -115,12 +123,26 @@ impl PaletteManager {
                     let b = *color_component.b;
                     let color = Color32::from_rgb(r, g, b);
 
-                    let (rect, response) = ui.allocate_exact_size(size, Sense::click());
+                    let (mut rect, response) = ui.allocate_exact_size(size, Sense::click());
+                    if response.hovered() {
+                        rect = rect.expand(2.0);
+                    }
 
                     if ui.is_rect_visible(rect) {
                         ui.painter().rect_filled(rect, 0.0, color);
+                        if color_index == self.selected_color_index {
+                            rect = rect.expand(2.0);
+                            ui.painter().rect_stroke(rect, 0.0, (2.0, Color32::WHITE));
+                        } else if response.clicked() {
+                            color_index_picked = Some(color_index);
+                        }
                     }
                 }
+
+                let Some(color_index_picked) = color_index_picked else {
+                    return;
+                };
+                self.selected_color_index = color_index_picked;
             });
         });
     }
