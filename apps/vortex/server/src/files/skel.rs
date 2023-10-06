@@ -51,11 +51,9 @@ impl SkelWriter {
     fn world_to_actions(
         &self,
         world: &mut World,
-        content_entities_opt: &Option<HashMap<Entity, ContentEntityData>>,
+        content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Vec<SkelAction> {
-        let content_entities = content_entities_opt
-            .as_ref()
-            .unwrap()
+        let content_entities = content_entities
             .keys()
             .cloned()
             .collect::<Vec<Entity>>();
@@ -234,9 +232,9 @@ impl FileWriter for SkelWriter {
         &self,
         world: &mut World,
         _project: &Project,
-        content_entities_opt: &Option<HashMap<Entity, ContentEntityData>>,
+        content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]> {
-        let actions = self.world_to_actions(world, content_entities_opt);
+        let actions = self.world_to_actions(world, content_entities);
         self.write_from_actions(actions)
     }
 

@@ -552,7 +552,7 @@ impl GitManager {
         project_key: &ProjectKey,
         file_key: &FileKey,
         world: &mut World,
-        content_entities: &Option<HashMap<Entity, ContentEntityData>>,
+        content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]> {
         let project = self.projects.get(project_key).unwrap();
         project.write(world, file_key, content_entities)

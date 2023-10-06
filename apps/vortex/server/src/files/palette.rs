@@ -86,7 +86,7 @@ impl FileWriter for PaletteWriter {
         &self,
         world: &mut World,
         _project: &Project,
-        _content_entities_opt: &Option<HashMap<Entity, ContentEntityData>>,
+        _content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]> {
         let actions = self.world_to_actions(world);
         self.write_from_actions(actions)

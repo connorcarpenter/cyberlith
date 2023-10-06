@@ -20,7 +20,7 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
         .frame(Frame::none().inner_margin(0.0))
         .show(context, |ui| {
             render_tab_bar(ui, world);
-            render_tool_bar(ui, world);
+
 
             let mut render_frame_inspect = false;
             let tab_manager = world.get_resource::<TabManager>().unwrap();
@@ -28,6 +28,10 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                 let current_file_entity = *current_file_entity;
                 let file_manager = world.get_resource::<FileManager>().unwrap();
                 let current_file_type = file_manager.get_file_type(&current_file_entity);
+
+                render_tool_bar(ui, world, current_file_type);
+
+                let file_manager = world.get_resource::<FileManager>().unwrap();
                 if current_file_type == FileExtension::Anim {
                     if !file_manager.file_has_dependency_with_extension(
                         &current_file_entity,

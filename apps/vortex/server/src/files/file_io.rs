@@ -24,7 +24,7 @@ pub trait FileWriter: Send + Sync {
         &self,
         world: &mut World,
         project: &Project,
-        content_entities_opt: &Option<HashMap<Entity, ContentEntityData>>,
+        content_entities_opt: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]>;
     fn write_new_default(&self) -> Box<[u8]>;
 }
@@ -64,13 +64,13 @@ impl FileWriter for FileExtension {
         &self,
         world: &mut World,
         project: &Project,
-        content_entities_opt: &Option<HashMap<Entity, ContentEntityData>>,
+        content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]> {
         match self {
-            FileExtension::Skel => SkelWriter.write(world, project, content_entities_opt),
-            FileExtension::Mesh => MeshWriter.write(world, project, content_entities_opt),
-            FileExtension::Anim => AnimWriter.write(world, project, content_entities_opt),
-            FileExtension::Palette => PaletteWriter.write(world, project, content_entities_opt),
+            FileExtension::Skel => SkelWriter.write(world, project, content_entities),
+            FileExtension::Mesh => MeshWriter.write(world, project, content_entities),
+            FileExtension::Anim => AnimWriter.write(world, project, content_entities),
+            FileExtension::Palette => PaletteWriter.write(world, project, content_entities),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }

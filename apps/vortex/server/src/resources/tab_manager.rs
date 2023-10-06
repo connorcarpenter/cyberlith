@@ -181,8 +181,13 @@ impl TabManager {
                     if !git_manager.can_write(project_key, file_key) {
                         panic!("can't write file: `{:?}`", file_key.name());
                     }
+                    if content_entities_opt.is_none() {
+                        // other users have the file open, continue
+                        continue;
+                    }
+                    let content_entity = content_entities_opt.as_ref().unwrap();
                     let bytes =
-                        git_manager.write(project_key, file_key, world, content_entities_opt);
+                        git_manager.write(project_key, file_key, world, content_entity);
                     output.push((project_key, file_key, bytes));
                 }
 

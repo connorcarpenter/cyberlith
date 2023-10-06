@@ -49,7 +49,7 @@ impl AnimWriter {
         &self,
         world: &mut World,
         project: &Project,
-        content_entities_opt: &Option<HashMap<Entity, ContentEntityData>>,
+        content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Vec<AnimAction> {
         let working_file_entries = project.working_file_entries();
 
@@ -62,7 +62,6 @@ impl AnimWriter {
         let mut frame_map: HashMap<u8, (Entity, Transition)> = HashMap::new();
         let mut frame_poses_map: HashMap<Entity, HashMap<u16, SerdeQuat>> = HashMap::new();
 
-        let content_entities = content_entities_opt.as_ref().unwrap();
         for (content_entity, content_data) in content_entities {
             match content_data {
                 ContentEntityData::Shape(_) | ContentEntityData::Color => {
@@ -211,9 +210,9 @@ impl FileWriter for AnimWriter {
         &self,
         world: &mut World,
         project: &Project,
-        content_entities_opt: &Option<HashMap<Entity, ContentEntityData>>,
+        content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]> {
-        let actions = self.world_to_actions(world, project, content_entities_opt);
+        let actions = self.world_to_actions(world, project, content_entities);
         self.write_from_actions(actions)
     }
 
