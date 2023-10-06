@@ -127,6 +127,7 @@ impl TabManager {
 
         let mut system_state: SystemState<(
             ResMut<Canvas>,
+            Res<FileManager>,
             ResMut<InputManager>,
             ResMut<CameraManager>,
             ResMut<VertexManager>,
@@ -135,6 +136,7 @@ impl TabManager {
         )> = SystemState::new(world);
         let (
             mut canvas,
+            file_manager,
             mut input_manager,
             mut camera_manager,
             mut vertex_manager,
@@ -142,7 +144,17 @@ impl TabManager {
             mut animation_manager,
         ) = system_state.get_mut(world);
 
-        if self.current_tab.is_some() {
+        let mut canvas_is_visible = false;
+        if let Some(current_file_entity) = self.current_tab {
+            let current_file_type = file_manager.get_file_type(&current_file_entity);
+            canvas_is_visible = match current_file_type {
+                FileExtension::Palette => false,
+                FileExtension::Skel | FileExtension::Mesh | FileExtension::Anim => true,
+                _ => false,
+            };
+        }
+
+        if canvas_is_visible {
             canvas.set_visibility(true);
             canvas.set_focused_timed(
                 &mut input_manager,

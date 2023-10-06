@@ -96,7 +96,14 @@ impl FileWriter for PaletteWriter {
 
         let mut actions = Vec::new();
 
-        actions.push(Some(PaletteAction::Color(255,255,255)));
+        actions.push(Some(PaletteAction::Color(255,255,255))); // white
+        actions.push(Some(PaletteAction::Color(0,0,0))); // black
+        actions.push(Some(PaletteAction::Color(255,0,0))); // red
+        actions.push(Some(PaletteAction::Color(0,255,0))); // green
+        actions.push(Some(PaletteAction::Color(0,0,255))); // blue
+        actions.push(Some(PaletteAction::Color(255,255,0))); // yellow
+        actions.push(Some(PaletteAction::Color(0,255,255))); // cyan
+        actions.push(Some(PaletteAction::Color(255,0,255))); // magenta
 
         self.write_from_actions(actions)
     }
