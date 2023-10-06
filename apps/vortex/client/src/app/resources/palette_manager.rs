@@ -71,6 +71,12 @@ impl PaletteManager {
         let Some(color_list) = self.colors.get_mut(file_entity) else {
             return;
         };
+        let Some(Some(found_entity)) = color_list.get(color_index) else {
+            return;
+        };
+        if found_entity != color_entity {
+            panic!("no match");
+        }
         color_list[color_index] = None;
 
         // remove None from the end of the list
