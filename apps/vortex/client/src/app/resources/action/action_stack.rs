@@ -9,7 +9,7 @@ use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
 use vortex_proto::components::FileExtension;
 
 use crate::app::resources::{
-    action::{AnimAction, FileAction, FileActions, ShapeAction},
+    action::{PaletteAction, AnimAction, FileAction, FileActions, ShapeAction},
     canvas::Canvas,
     file_manager::FileManager,
     input_manager::InputManager,
@@ -28,6 +28,7 @@ pub trait Action: Clone {
 pub enum TabActionStack {
     Shape(ActionStack<ShapeAction>),
     Animation(ActionStack<AnimAction>),
+    Palette(ActionStack<PaletteAction>),
 }
 
 impl TabActionStack {
@@ -35,6 +36,7 @@ impl TabActionStack {
         match file_ext {
             FileExtension::Skel | FileExtension::Mesh => Self::Shape(ActionStack::default()),
             FileExtension::Anim => Self::Animation(ActionStack::default()),
+            FileExtension::Palette => Self::Palette(ActionStack::default()),
             _ => {
                 panic!(
                     "TabActionStack::new() called with unsupported file extension: {:?}",
@@ -86,6 +88,7 @@ impl TabActionStack {
         match self {
             Self::Shape(action_stack) => action_stack.has_undo(),
             Self::Animation(action_stack) => action_stack.has_undo(),
+            Self::Palette(action_stack) => action_stack.has_undo(),
         }
     }
 
@@ -93,6 +96,7 @@ impl TabActionStack {
         match self {
             Self::Shape(action_stack) => action_stack.has_redo(),
             Self::Animation(action_stack) => action_stack.has_redo(),
+            Self::Palette(action_stack) => action_stack.has_redo(),
         }
     }
 
@@ -110,6 +114,12 @@ impl TabActionStack {
                 action_stack.post_execute_undo(world, reversed_actions);
             }
             Self::Animation(action_stack) => {
+                let action = action_stack.pop_undo();
+                let reversed_actions =
+                    action_stack.execute_action(world, input_manager, tab_file_entity, action);
+                action_stack.post_execute_undo(world, reversed_actions);
+            }
+            Self::Palette(action_stack) => {
                 let action = action_stack.pop_undo();
                 let reversed_actions =
                     action_stack.execute_action(world, input_manager, tab_file_entity, action);
@@ -137,6 +147,12 @@ impl TabActionStack {
                     action_stack.execute_action(world, input_manager, tab_file_entity, action);
                 action_stack.post_execute_redo(world, reversed_actions);
             }
+            Self::Palette(action_stack) => {
+                let action = action_stack.pop_redo();
+                let reversed_actions =
+                    action_stack.execute_action(world, input_manager, tab_file_entity, action);
+                action_stack.post_execute_redo(world, reversed_actions);
+            }
         }
     }
 
@@ -148,6 +164,9 @@ impl TabActionStack {
             Self::Animation(action_stack) => {
                 action_stack.check_top(world);
             }
+            Self::Palette(action_stack) => {
+                action_stack.check_top(world);
+            }
         }
     }
 
@@ -157,6 +176,9 @@ impl TabActionStack {
                 action_stack.entity_update_auth_status(entity);
             }
             Self::Animation(action_stack) => {
+                action_stack.entity_update_auth_status(entity);
+            }
+            Self::Palette(action_stack) => {
                 action_stack.entity_update_auth_status(entity);
             }
         }
@@ -426,6 +448,18 @@ impl ActionStack<AnimAction> {
         tab_file_entity: Entity,
         action: AnimAction,
     ) -> Vec<AnimAction> {
+        action.execute(world, input_manager, tab_file_entity)
+    }
+}
+
+impl ActionStack<PaletteAction> {
+    pub fn execute_action(
+        &mut self,
+        world: &mut World,
+        input_manager: &mut InputManager,
+        tab_file_entity: Entity,
+        action: PaletteAction,
+    ) -> Vec<PaletteAction> {
         action.execute(world, input_manager, tab_file_entity)
     }
 }

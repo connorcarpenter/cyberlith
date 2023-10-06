@@ -361,7 +361,7 @@ impl ShapeWaitlist {
                     (FileExtension::Skel, ShapeType::Face) => {
                         panic!("not possible");
                     }
-                    (FileExtension::Anim, _) | (FileExtension::Unknown, _) => {
+                    (_, _) => {
                         panic!("not possible");
                     }
                 }

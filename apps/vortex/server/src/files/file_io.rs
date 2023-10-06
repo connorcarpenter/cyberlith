@@ -15,7 +15,7 @@ use vortex_proto::{
 };
 
 use crate::{
-    files::{AnimReader, AnimWriter, MeshReader, MeshWriter, SkelReader, SkelWriter},
+    files::{PaletteReader, PaletteWriter, AnimReader, AnimWriter, MeshReader, MeshWriter, SkelReader, SkelWriter},
     resources::{AnimationManager, ContentEntityData, Project, ShapeManager},
 };
 
@@ -53,6 +53,7 @@ impl FileReader for FileExtension {
             FileExtension::Skel => SkelReader.read(world, bytes),
             FileExtension::Mesh => MeshReader.read(world, bytes),
             FileExtension::Anim => AnimReader.read(world, project, file_key, file_entity, bytes),
+            FileExtension::Palette => PaletteReader.read(world, bytes),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }
@@ -69,6 +70,7 @@ impl FileWriter for FileExtension {
             FileExtension::Skel => SkelWriter.write(world, project, content_entities_opt),
             FileExtension::Mesh => MeshWriter.write(world, project, content_entities_opt),
             FileExtension::Anim => AnimWriter.write(world, project, content_entities_opt),
+            FileExtension::Palette => PaletteWriter.write(world, project, content_entities_opt),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }
@@ -78,6 +80,7 @@ impl FileWriter for FileExtension {
             FileExtension::Skel => SkelWriter.write_new_default(),
             FileExtension::Mesh => MeshWriter.write_new_default(),
             FileExtension::Anim => AnimWriter.write_new_default(),
+            FileExtension::Palette => PaletteWriter.write_new_default(),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }
@@ -215,6 +218,7 @@ pub fn despawn_file_content_entities(
             ContentEntityData::Rotation => {
                 animation_manager.deregister_rotation(entity);
             }
+            ContentEntityData::Color => {}
         }
     }
 

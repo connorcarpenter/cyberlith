@@ -21,9 +21,11 @@ mod rotate_edge;
 mod select_file;
 mod select_shape;
 mod shape_action;
+mod palette_action;
 
 pub use action_stack::*;
 pub use anim_action::*;
 pub use file_action::*;
 pub use file_actions::*;
 pub use shape_action::*;
+pub use palette_action::*;

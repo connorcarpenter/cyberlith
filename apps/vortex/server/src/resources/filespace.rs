@@ -17,6 +17,7 @@ pub enum ContentEntityData {
     Dependency(FileKey),
     Frame,
     Rotation,
+    Color,
 }
 
 impl ContentEntityData {
@@ -34,6 +35,10 @@ impl ContentEntityData {
 
     pub fn new_rotation() -> Self {
         Self::Rotation
+    }
+
+    pub fn new_color() -> Self {
+        Self::Color
     }
 }
 

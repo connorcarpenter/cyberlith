@@ -259,10 +259,7 @@ pub(crate) fn execute(
                 Some((vertex_2d_entity, vertex_3d_entity)),
             )];
         }
-        FileExtension::Anim => {
-            panic!("");
-        }
-        FileExtension::Unknown => {
+        _ => {
             panic!("");
         }
     }

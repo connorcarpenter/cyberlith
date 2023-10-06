@@ -19,7 +19,8 @@ impl ProtocolPlugin for VertexComponentsPlugin {
             .add_component::<Face3d>()
             .add_component::<OwnedByFile>()
             .add_component::<FileType>()
-            .add_component::<ShapeName>();
+            .add_component::<ShapeName>()
+            .add_component::<PaletteColor>();
     }
 }
 
@@ -129,6 +130,8 @@ pub enum FileExtension {
     Skel,
     Mesh,
     Anim,
+    Palette,
+    Skin,
     Unknown,
 }
 
@@ -145,6 +148,8 @@ impl From<&str> for FileExtension {
             "skel" => FileExtension::Skel,
             "mesh" => FileExtension::Mesh,
             "anim" => FileExtension::Anim,
+            "palette" => FileExtension::Palette,
+            "skin" => FileExtension::Skin,
             _ => FileExtension::Unknown,
         }
     }
@@ -153,7 +158,7 @@ impl From<&str> for FileExtension {
 impl FileExtension {
     pub fn can_io(&self) -> bool {
         match self {
-            FileExtension::Skel | FileExtension::Mesh | FileExtension::Anim => true,
+            FileExtension::Skel | FileExtension::Mesh | FileExtension::Anim | FileExtension::Palette => true,
             _ => false,
         }
     }
@@ -265,5 +270,20 @@ impl SerdeRotation {
         let value_u8 = (value_f32 * Self::MAX_ANGLES / Self::MAX_DEGREES) as u8;
         let integer = UnsignedInteger::<6>::new(value_u8);
         self.value = integer;
+    }
+}
+
+// PaletteColor
+#[derive(Component, Replicate)]
+pub struct PaletteColor {
+    pub index: Property<u8>,
+    pub r: Property<u8>,
+    pub g: Property<u8>,
+    pub b: Property<u8>,
+}
+
+impl PaletteColor {
+    pub fn new(index: u8, r: u8, g: u8, b: u8) -> Self {
+        Self::new_complete(index, r, g, b)
     }
 }

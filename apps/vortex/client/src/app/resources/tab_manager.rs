@@ -35,7 +35,6 @@ use crate::app::{
         input_manager::InputManager,
         shape_data::CanvasShape,
         shape_manager::ShapeManager,
-        tab_lifecycle::TabLifecycle,
         vertex_manager::VertexManager,
     },
     ui::widgets::colors::{
@@ -122,20 +121,6 @@ impl TabManager {
             if let Some(tab_state) = self.tab_map.get_mut(&last_tab_entity) {
                 tab_state.selected_shape_2d = Some(last_selected_shape);
             }
-
-            let file_ext = world
-                .get_resource::<FileManager>()
-                .unwrap()
-                .get_file_type(&last_tab_entity);
-            file_ext.on_tab_close(world);
-        }
-
-        if let Some(current_tab_entity) = self.current_tab {
-            let file_ext = world
-                .get_resource::<FileManager>()
-                .unwrap()
-                .get_file_type(&current_tab_entity);
-            file_ext.on_tab_open(world);
         }
 
         self.last_tab = self.current_tab;

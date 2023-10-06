@@ -95,11 +95,12 @@ impl Default for InputManager {
 
 impl InputManager {
     pub fn update_input(&mut self, input_actions: Vec<InputAction>, world: &mut World) {
-        let current_file_entity = world
+        let Some(current_file_entity) = world
             .get_resource::<TabManager>()
             .unwrap()
-            .current_tab_entity()
-            .unwrap();
+            .current_tab_entity() else {
+            return;
+        };
         let current_file_type = world
             .get_resource::<FileManager>()
             .unwrap()

@@ -65,8 +65,8 @@ impl AnimWriter {
         let content_entities = content_entities_opt.as_ref().unwrap();
         for (content_entity, content_data) in content_entities {
             match content_data {
-                ContentEntityData::Shape(_) => {
-                    panic!("animation should not have any shape entity in it");
+                ContentEntityData::Shape(_) | ContentEntityData::Color => {
+                    panic!("animation should not have this content entity type");
                 }
                 ContentEntityData::Dependency(dependency_key) => {
                     let dependency_value = working_file_entries.get(dependency_key).unwrap();

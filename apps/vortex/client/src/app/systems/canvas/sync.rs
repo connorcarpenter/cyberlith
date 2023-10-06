@@ -197,6 +197,9 @@ pub fn sync_vertices(world: &mut World) {
                     vertex_manager.sync_vertices_2d(world, &camera_3d, camera_3d_scale);
                 }
             }
+            FileExtension::Palette => {
+                // skip, no vertices here
+            }
             _ => {
                 panic!(
                     "sync_vertices: unsupported file extension: {:?}",
