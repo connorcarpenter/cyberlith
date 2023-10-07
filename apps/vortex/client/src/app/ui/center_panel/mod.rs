@@ -50,7 +50,7 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                         }
                     }
                     FileExtension::Palette => {
-                        PaletteManager::render(ui, world, current_file_entity);
+                        PaletteManager::render(ui, world, &current_file_entity);
                         return;
                     }
                     _ => {}
