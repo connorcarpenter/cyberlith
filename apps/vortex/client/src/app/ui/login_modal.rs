@@ -32,7 +32,7 @@ pub fn login_modal(context: &egui::Context, world: &mut World) {
 
         modal.show(|ui| {
             modal.frame(ui, |ui| {
-                ui.with_layout(Layout::top_down(Align::Min), |ui| {
+                ui.with_layout(Layout::top_down(Align::Center), |ui| {
                     ui_with_margin(ui, margin, |ui| {
                         ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
                             ui_with_margin(ui, margin, |ui| {

@@ -17,7 +17,7 @@ use render_egui::{
 
 use vortex_proto::components::PaletteColor;
 
-use crate::app::resources::{action::palette::PaletteAction, tab_manager::TabManager};
+use crate::app::resources::{toolbar::Toolbar, action::palette::PaletteAction, tab_manager::TabManager};
 
 #[derive(Resource)]
 pub struct PaletteManager {
@@ -124,14 +124,23 @@ impl PaletteManager {
         egui::SidePanel::right("right_panel")
             .resizable(true)
             .show_inside(ui, |ui| {
-                let size = ui.available_size();
-                let size_x = size.x.min(size.y / 3.0);
-                egui::CentralPanel::default().show_inside(ui, |ui| {
-                    ui.with_layout(Layout::top_down(Align::Center), |ui| {
-                        Self::edit_render(ui, world, file_entity, size_x);
+                ui.vertical_centered(|ui| {
+                    Frame::none().inner_margin(8.0).show(ui, |ui| {
+                        let margin = ui.style().spacing.item_spacing.x;
+                        ui.allocate_ui_with_layout(
+                            Vec2::new((26.0 + margin) * 4.0, 32.0),
+                            Layout::top_down(Align::Center),
+                            |ui| {
+                                Self::edit_buttons_render(ui, world);
+                            },
+                        );
                     });
                 });
-                ui.allocate_space(size);
+                ui.vertical_centered(|ui| {
+                    Frame::none().inner_margin(0.0).show(ui, |ui| {
+                        Self::edit_color_picker_render(ui, world, file_entity);
+                    });
+                });
             });
     }
 
@@ -141,9 +150,15 @@ impl PaletteManager {
         });
     }
 
-    fn edit_render(ui: &mut Ui, world: &mut World, file_entity: &Entity, size: f32) {
+    fn edit_buttons_render(ui: &mut Ui, world: &mut World) {
         world.resource_scope(|world, mut palette_manager: Mut<PaletteManager>| {
-            palette_manager.render_edit(ui, world, file_entity, size);
+            palette_manager.render_edit_buttons_impl(ui, world);
+        });
+    }
+
+    fn edit_color_picker_render(ui: &mut Ui, world: &mut World, file_entity: &Entity) {
+        world.resource_scope(|world, mut palette_manager: Mut<PaletteManager>| {
+            palette_manager.render_edit_color_picker_impl(ui, world, file_entity);
         });
     }
 
@@ -164,11 +179,11 @@ impl PaletteManager {
                     ui.spacing_mut().item_spacing = Vec2::new(10.0, 10.0);
                     for (color_index, color_entity_opt) in colors.iter().enumerate() {
                         let Some(color_entity) = color_entity_opt else {
-                        continue;
-                    };
+                            continue;
+                        };
                         let Ok(color_component) = color_q.get(world, *color_entity) else {
-                        continue;
-                    };
+                            continue;
+                        };
                         let r = *color_component.r;
                         let g = *color_component.g;
                         let b = *color_component.b;
@@ -214,7 +229,87 @@ impl PaletteManager {
         });
     }
 
-    fn render_edit(&mut self, ui: &mut Ui, world: &mut World, file_entity: &Entity, size: f32) {
+    fn render_edit_buttons_impl(&mut self, ui: &mut Ui, world: &mut World) {
+        ui.horizontal(|ui| {
+            Frame::none().inner_margin(0.0).show(ui, |ui| {
+                // new frame
+                if Toolbar::button(ui, "➕", "New color", true).clicked() {
+                    // world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
+                    //     anim_file_insert_frame(&mut input_manager, world);
+                    // });
+                }
+
+                // delete frame
+                if Toolbar::button(ui, "-", "Delete color", true).clicked() {
+                    // world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
+                    //     anim_file_delete_frame(&mut input_manager, world);
+                    // });
+                }
+
+                // move frame left / right
+                // let current_file_entity = *world
+                //     .get_resource::<TabManager>()
+                //     .unwrap()
+                //     .current_tab_entity()
+                //     .unwrap();
+                // let animation_manager = world.get_resource::<AnimationManager>().unwrap();
+                // let current_frame_index = animation_manager.current_frame_index();
+                // let frame_count = animation_manager
+                //     .get_frame_count(&current_file_entity)
+                //     .unwrap_or_default();
+
+                {
+                    // move frame left
+                    let enabled = true; //current_frame_index > 0;
+                    let response = Toolbar::button(ui, "⬅", "Move color left", enabled);
+                    // if enabled && response.clicked() {
+                    //     world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
+                    //         world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                    //             tab_manager.current_tab_execute_anim_action(
+                    //                 world,
+                    //                 &mut input_manager,
+                    //                 AnimAction::MoveFrame(
+                    //                     current_file_entity,
+                    //                     current_frame_index,
+                    //                     current_frame_index - 1,
+                    //                 ),
+                    //             );
+                    //         });
+                    //     });
+                    // }
+                }
+
+                {
+                    // move frame right
+                    let enabled = true; //frame_count > 0 && current_frame_index < frame_count - 1;
+                    let response = Toolbar::button(ui, "➡", "Move color right", enabled);
+                    // if enabled && response.clicked() {
+                    //     world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
+                    //         world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                    //             tab_manager.current_tab_execute_anim_action(
+                    //                 world,
+                    //                 &mut input_manager,
+                    //                 AnimAction::MoveFrame(
+                    //                     current_file_entity,
+                    //                     current_frame_index,
+                    //                     current_frame_index + 1,
+                    //                 ),
+                    //             );
+                    //         });
+                    //     });
+                    // }
+                }
+            });
+        });
+    }
+
+    fn render_edit_color_picker_impl(&mut self, ui: &mut Ui, world: &mut World, file_entity: &Entity) {
+
+        let size = ui.available_size();
+        let size_x = size.x.min(size.y / 3.0);
+
+        ui.spacing_mut().item_spacing = Vec2::new(10.0, 10.0);
+
         let Some(color_entity) = self.get_color_entity(file_entity, self.selected_color_index) else {
             return;
         };
@@ -232,7 +327,7 @@ impl PaletteManager {
         let mut color_changed = false;
         if color_slider_1d(
             ui,
-            size,
+            size_x,
             h,
             |h| {
                 HsvaGamma {
@@ -241,7 +336,7 @@ impl PaletteManager {
                     v: 1.0,
                     a: 1.0,
                 }
-                .into()
+                    .into()
             }
         )
             .on_hover_text("Hue")
@@ -253,7 +348,7 @@ impl PaletteManager {
 
         if color_slider_2d(
             ui,
-            size,
+            size_x,
             s,
             v,
             |s, v| HsvaGamma { s, v, ..opaque }.into()
@@ -270,6 +365,8 @@ impl PaletteManager {
             *color_component.g = new_color.g();
             *color_component.b = new_color.b();
         }
+
+        ui.allocate_space(size);
     }
 }
 
