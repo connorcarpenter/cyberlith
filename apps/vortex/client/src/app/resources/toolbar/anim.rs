@@ -24,7 +24,6 @@ impl AnimationToolbar {
     }
 
     fn framing_render(ui: &mut Ui, world: &mut World) {
-
         button_toggle_play_pause(ui, world);
 
         // new frame
@@ -106,7 +105,11 @@ impl AnimationToolbar {
             animation_manager.set_framing();
         }
 
-        if world.get_resource::<AnimationManager>().unwrap().preview_frame_selected() {
+        if world
+            .get_resource::<AnimationManager>()
+            .unwrap()
+            .preview_frame_selected()
+        {
             button_toggle_play_pause(ui, world);
         } else {
             button_toggle_edge_angle_visibility(ui, world);

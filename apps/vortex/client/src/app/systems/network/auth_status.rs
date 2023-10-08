@@ -12,6 +12,7 @@ use naia_bevy_client::{
 
 use vortex_proto::components::{AnimFrame, PaletteColor};
 
+use crate::app::resources::palette_manager::PaletteManager;
 use crate::app::{
     components::OwnedByFileLocal,
     resources::{
@@ -20,7 +21,6 @@ use crate::app::{
         tab_manager::TabManager, vertex_manager::VertexManager,
     },
 };
-use crate::app::resources::palette_manager::PaletteManager;
 
 pub fn auth_granted_events(
     client: Client,

@@ -13,9 +13,7 @@ use vortex_proto::components::AnimFrame;
 
 use crate::app::resources::{
     animation_manager::AnimationManager, canvas::Canvas, edge_manager::EdgeManager,
-    input_manager::InputManager,
-    tab_manager::TabManager,
-    vertex_manager::VertexManager,
+    input_manager::InputManager, tab_manager::TabManager, vertex_manager::VertexManager,
 };
 
 #[derive(Resource)]
@@ -43,7 +41,8 @@ pub fn render_frame_inspect_bar(ui: &mut Ui, world: &mut World) {
                 let tab_manager = world.get_resource::<TabManager>().unwrap();
                 let current_file_entity = *tab_manager.current_tab_entity().unwrap();
                 let animation_manager = world.get_resource::<AnimationManager>().unwrap();
-                let selected_frame_entity = animation_manager.current_frame_entity(&current_file_entity);
+                let selected_frame_entity =
+                    animation_manager.current_frame_entity(&current_file_entity);
 
                 let state = world.get_resource::<FrameInspectBarState>().unwrap();
                 if state.selected_frame_opt != selected_frame_entity {
@@ -51,8 +50,7 @@ pub fn render_frame_inspect_bar(ui: &mut Ui, world: &mut World) {
                         ResMut<FrameInspectBarState>,
                         Query<&AnimFrame>,
                     )> = SystemState::new(world);
-                    let (mut state, frame_q) =
-                        system_state.get_mut(world);
+                    let (mut state, frame_q) = system_state.get_mut(world);
 
                     let official_name = if let Some(frame_entity) = selected_frame_entity {
                         if let Ok(frame) = frame_q.get(frame_entity) {

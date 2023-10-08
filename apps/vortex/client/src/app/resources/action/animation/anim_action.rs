@@ -3,10 +3,12 @@ use bevy_ecs::prelude::{Entity, World};
 use math::Quat;
 
 use crate::app::resources::{
-    action::{Action, ActionStack, animation::{
-        delete_frame, insert_frame, move_frame, rotate_vertex,
-        select_frame, select_vertex,
-    }},
+    action::{
+        animation::{
+            delete_frame, insert_frame, move_frame, rotate_vertex, select_frame, select_vertex,
+        },
+        Action, ActionStack,
+    },
     input_manager::InputManager,
     shape_data::CanvasShape,
     vertex_manager::VertexManager,
@@ -61,9 +63,7 @@ impl AnimAction {
             AnimActionType::SelectShape => {
                 select_vertex::execute(world, input_manager, tab_file_entity, self)
             }
-            AnimActionType::RotateVertex => {
-                rotate_vertex::execute(world, tab_file_entity, self)
-            }
+            AnimActionType::RotateVertex => rotate_vertex::execute(world, tab_file_entity, self),
             AnimActionType::SelectFrame => select_frame::execute(world, self),
             AnimActionType::InsertFrame => insert_frame::execute(world, self),
             AnimActionType::DeleteFrame => delete_frame::execute(world, self),

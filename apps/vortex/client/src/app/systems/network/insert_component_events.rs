@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use bevy_ecs::{
     entity::Entity,
     event::{EventReader, EventWriter},
-    system::{SystemState, Commands, Query, ResMut},
+    system::{Commands, Query, ResMut, SystemState},
     world::World,
 };
 use bevy_log::{info, warn};
@@ -16,8 +16,13 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{AnimFrame, AnimRotation, ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind, Face3d, FileDependency, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot};
+use vortex_proto::components::{
+    AnimFrame, AnimRotation, ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind,
+    Face3d, FileDependency, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild,
+    FileType, OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot,
+};
 
+use crate::app::resources::palette_manager::PaletteManager;
 use crate::app::{
     components::file_system::{
         ChangelistUiState, FileSystemEntryLocal, FileSystemParent, FileSystemUiState,
@@ -36,12 +41,9 @@ use crate::app::{
     },
     systems::file_post_process,
 };
-use crate::app::resources::palette_manager::PaletteManager;
 
 // if this gets big, just switch to a &mut World
-pub fn insert_component_events(
-    world: &mut World,
-) {
+pub fn insert_component_events(world: &mut World) {
     let mut system_state: SystemState<EventReader<InsertComponentEvents>> = SystemState::new(world);
     let mut events_reader = system_state.get_mut(world);
 
@@ -51,27 +53,28 @@ pub fn insert_component_events(
     }
 
     for events in events_collection {
-        insert_component_event::<FileSystemEntry>       (world, &events);
-        insert_component_event::<FileSystemRootChild>   (world, &events);
-        insert_component_event::<FileSystemChild>       (world, &events);
-        insert_component_event::<FileDependency>        (world, &events);
-        insert_component_event::<ChangelistEntry>       (world, &events);
-        insert_component_event::<Vertex3d>              (world, &events);
-        insert_component_event::<VertexRoot>            (world, &events);
-        insert_component_event::<ShapeName>             (world, &events);
-        insert_component_event::<OwnedByFile>           (world, &events);
-        insert_component_event::<FileType>              (world, &events);
-        insert_component_event::<Edge3d>                (world, &events);
-        insert_component_event::<EdgeAngle>             (world, &events);
-        insert_component_event::<Face3d>                (world, &events);
-        insert_component_event::<AnimFrame>             (world, &events);
-        insert_component_event::<AnimRotation>          (world, &events);
-        insert_component_event::<PaletteColor>          (world, &events);
+        insert_component_event::<FileSystemEntry>(world, &events);
+        insert_component_event::<FileSystemRootChild>(world, &events);
+        insert_component_event::<FileSystemChild>(world, &events);
+        insert_component_event::<FileDependency>(world, &events);
+        insert_component_event::<ChangelistEntry>(world, &events);
+        insert_component_event::<Vertex3d>(world, &events);
+        insert_component_event::<VertexRoot>(world, &events);
+        insert_component_event::<ShapeName>(world, &events);
+        insert_component_event::<OwnedByFile>(world, &events);
+        insert_component_event::<FileType>(world, &events);
+        insert_component_event::<Edge3d>(world, &events);
+        insert_component_event::<EdgeAngle>(world, &events);
+        insert_component_event::<Face3d>(world, &events);
+        insert_component_event::<AnimFrame>(world, &events);
+        insert_component_event::<AnimRotation>(world, &events);
+        insert_component_event::<PaletteColor>(world, &events);
     }
 }
 
 fn insert_component_event<T: Replicate>(world: &mut World, events: &InsertComponentEvents) {
-    let mut system_state: SystemState<EventWriter<InsertComponentEvent<T>>> = SystemState::new(world);
+    let mut system_state: SystemState<EventWriter<InsertComponentEvent<T>>> =
+        SystemState::new(world);
     let mut event_writer = system_state.get_mut(world);
 
     for entity in events.read::<T>() {

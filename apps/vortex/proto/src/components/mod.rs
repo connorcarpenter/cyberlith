@@ -10,8 +10,8 @@ pub use file_system::{
 mod shape;
 use shape::VertexComponentsPlugin;
 pub use shape::{
-    Edge3d, EdgeAngle, Face3d, FileExtension, FileType, OwnedByFile, SerdeRotation, ShapeName,
-    Vertex3d, VertexRoot, VertexSerdeInt, PaletteColor,
+    Edge3d, EdgeAngle, Face3d, FileExtension, FileType, OwnedByFile, PaletteColor, SerdeRotation,
+    ShapeName, Vertex3d, VertexRoot, VertexSerdeInt,
 };
 
 mod animation;

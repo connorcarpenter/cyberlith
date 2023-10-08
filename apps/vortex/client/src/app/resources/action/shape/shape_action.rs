@@ -6,8 +6,11 @@ use crate::app::{
     components::VertexTypeData,
     resources::{
         action::{
-            shape::{create_edge, create_vertex, delete_edge, delete_face, delete_vertex, move_vertex,
-            rotate_edge, select_shape}, Action, ActionStack,
+            shape::{
+                create_edge, create_vertex, delete_edge, delete_face, delete_vertex, move_vertex,
+                rotate_edge, select_shape,
+            },
+            Action, ActionStack,
         },
         edge_manager::EdgeManager,
         face_manager::FaceManager,

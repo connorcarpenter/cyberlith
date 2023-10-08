@@ -7,7 +7,9 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use naia_bevy_server::{BitReader, CommandsExt, FileBitWriter, ReplicationConfig, Serde, SerdeErr, Server};
+use naia_bevy_server::{
+    BitReader, CommandsExt, FileBitWriter, ReplicationConfig, Serde, SerdeErr, Server,
+};
 
 use vortex_proto::components::PaletteColor;
 
@@ -20,7 +22,7 @@ use crate::{
 #[derive(Clone)]
 enum PaletteAction {
     // red, green, blue
-    Color(u8, u8, u8)
+    Color(u8, u8, u8),
 }
 
 #[derive(Serde, Clone, PartialEq)]
@@ -33,11 +35,7 @@ enum PaletteActionType {
 pub struct PaletteWriter;
 
 impl PaletteWriter {
-    fn world_to_actions(
-        &self,
-        world: &mut World,
-    ) -> Vec<Option<PaletteAction>> {
-
+    fn world_to_actions(&self, world: &mut World) -> Vec<Option<PaletteAction>> {
         let mut system_state: SystemState<Query<&PaletteColor>> = SystemState::new(world);
         let color_q = system_state.get_mut(world);
 
@@ -93,17 +91,16 @@ impl FileWriter for PaletteWriter {
     }
 
     fn write_new_default(&self) -> Box<[u8]> {
-
         let mut actions = Vec::new();
 
-        actions.push(Some(PaletteAction::Color(255,255,255))); // white
-        actions.push(Some(PaletteAction::Color(0,0,0))); // black
-        actions.push(Some(PaletteAction::Color(255,0,0))); // red
-        actions.push(Some(PaletteAction::Color(0,255,0))); // green
-        actions.push(Some(PaletteAction::Color(0,0,255))); // blue
-        actions.push(Some(PaletteAction::Color(255,255,0))); // yellow
-        actions.push(Some(PaletteAction::Color(0,255,255))); // cyan
-        actions.push(Some(PaletteAction::Color(255,0,255))); // magenta
+        actions.push(Some(PaletteAction::Color(255, 255, 255))); // white
+        actions.push(Some(PaletteAction::Color(0, 0, 0))); // black
+        actions.push(Some(PaletteAction::Color(255, 0, 0))); // red
+        actions.push(Some(PaletteAction::Color(0, 255, 0))); // green
+        actions.push(Some(PaletteAction::Color(0, 0, 255))); // blue
+        actions.push(Some(PaletteAction::Color(255, 255, 0))); // yellow
+        actions.push(Some(PaletteAction::Color(0, 255, 255))); // cyan
+        actions.push(Some(PaletteAction::Color(255, 0, 255))); // magenta
 
         self.write_from_actions(actions)
     }
@@ -126,7 +123,9 @@ impl PaletteReader {
                     let b = u8::de(bit_reader)?;
                     actions.push(PaletteAction::Color(r, g, b));
                 }
-                PaletteActionType::None => { break; }
+                PaletteActionType::None => {
+                    break;
+                }
             }
         }
 
@@ -138,12 +137,10 @@ impl PaletteReader {
         file_entity: &Entity,
         actions: Vec<PaletteAction>,
     ) -> HashMap<Entity, ContentEntityData> {
-
         let mut output = HashMap::new();
         let mut index = 0;
 
-        let mut system_state: SystemState<(Commands, Server)> =
-            SystemState::new(world);
+        let mut system_state: SystemState<(Commands, Server)> = SystemState::new(world);
         let (mut commands, mut server) = system_state.get_mut(world);
 
         for action in actions {
@@ -157,7 +154,10 @@ impl PaletteReader {
                         .configure_replication(ReplicationConfig::Delegated)
                         .insert(color_component)
                         .id();
-                    info!("palette color entity: `{:?}`, rgb:({}, {}, {})", entity_id, r, g, b);
+                    info!(
+                        "palette color entity: `{:?}`, rgb:({}, {}, {})",
+                        entity_id, r, g, b
+                    );
                     output.insert(entity_id, ContentEntityData::Color);
                 }
             }

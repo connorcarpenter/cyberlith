@@ -53,10 +53,7 @@ impl SkelWriter {
         world: &mut World,
         content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Vec<SkelAction> {
-        let content_entities = content_entities
-            .keys()
-            .cloned()
-            .collect::<Vec<Entity>>();
+        let content_entities = content_entities.keys().cloned().collect::<Vec<Entity>>();
 
         let mut system_state: SystemState<(
             Res<ShapeManager>,

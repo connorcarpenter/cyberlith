@@ -13,7 +13,10 @@ use vortex_proto::components::{
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemParent, FileSystemUiState},
     resources::{
-        action::file::{select_file::{request_entities, select_files}, FileAction},
+        action::file::{
+            select_file::{request_entities, select_files},
+            FileAction,
+        },
         file_manager::FileManager,
         file_tree::FileTree,
         tab_manager::TabManager,

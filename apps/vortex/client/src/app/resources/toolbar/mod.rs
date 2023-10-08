@@ -11,8 +11,9 @@ use render_egui::{
 };
 use vortex_proto::components::FileExtension;
 
-use crate::app::resources::
-    toolbar::{anim::AnimationToolbar, mesh::MeshToolbar, skel::SkeletonToolbar};
+use crate::app::resources::toolbar::{
+    anim::AnimationToolbar, mesh::MeshToolbar, skel::SkeletonToolbar,
+};
 
 pub struct Toolbar;
 

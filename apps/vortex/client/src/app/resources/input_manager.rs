@@ -327,7 +327,8 @@ impl InputManager {
                         if world
                             .get_resource::<AnimationManager>()
                             .unwrap()
-                            .preview_frame_selected() {
+                            .preview_frame_selected()
+                        {
                             anim_file_play_pause(world);
                         }
                     }

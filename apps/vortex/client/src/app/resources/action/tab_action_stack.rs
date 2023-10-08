@@ -1,10 +1,14 @@
-use bevy_ecs::{prelude::{Entity, World}, world::Mut};
+use bevy_ecs::{
+    prelude::{Entity, World},
+    world::Mut,
+};
 
 use vortex_proto::components::FileExtension;
 
-use crate::app::resources::{palette_manager::PaletteManager,
-    action::{ActionStack, palette::PaletteAction, animation::AnimAction, shape::ShapeAction},
+use crate::app::resources::{
+    action::{animation::AnimAction, palette::PaletteAction, shape::ShapeAction, ActionStack},
     input_manager::InputManager,
+    palette_manager::PaletteManager,
 };
 
 pub enum TabActionStack {
@@ -74,8 +78,7 @@ impl TabActionStack {
     ) {
         match self {
             Self::Palette(action_stack) => {
-                let reversed_actions =
-                    action_stack.execute_action(world, palette_manager, action);
+                let reversed_actions = action_stack.execute_action(world, palette_manager, action);
                 action_stack.post_action_execution(world, reversed_actions);
             }
             _ => {

@@ -186,8 +186,7 @@ impl TabManager {
                         continue;
                     }
                     let content_entity = content_entities_opt.as_ref().unwrap();
-                    let bytes =
-                        git_manager.write(project_key, file_key, world, content_entity);
+                    let bytes = git_manager.write(project_key, file_key, world, content_entity);
                     output.push((project_key, file_key, bytes));
                 }
 

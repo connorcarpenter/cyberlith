@@ -17,7 +17,10 @@ use crate::app::{
     },
     resources::{
         action::{
-            file::{select_file::{deselect_all_selected_files, release_entities}, FileAction},
+            file::{
+                select_file::{deselect_all_selected_files, release_entities},
+                FileAction,
+            },
             ActionStack,
         },
         file_manager::FileManager,

@@ -11,9 +11,9 @@ use vortex_proto::components::{Edge3d, EdgeAngle, FileExtension, FileType, Verte
 use crate::app::{
     components::{VertexEntry, VertexTypeData},
     resources::{
-        action::{
-            shape::{select_shape::{entity_request_release, select_shape},
-            ShapeAction},
+        action::shape::{
+            select_shape::{entity_request_release, select_shape},
+            ShapeAction,
         },
         canvas::Canvas,
         edge_manager::EdgeManager,

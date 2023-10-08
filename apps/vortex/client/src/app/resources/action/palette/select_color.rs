@@ -8,7 +8,11 @@ use naia_bevy_client::{Client, CommandsExt};
 
 use crate::app::resources::{action::palette::PaletteAction, palette_manager::PaletteManager};
 
-pub fn execute(world: &mut World, palette_manager: &mut PaletteManager, action: PaletteAction) -> Vec<PaletteAction> {
+pub fn execute(
+    world: &mut World,
+    palette_manager: &mut PaletteManager,
+    action: PaletteAction,
+) -> Vec<PaletteAction> {
     let PaletteAction::SelectColor(file_entity, next_color_index, last_color_index) = action else {
         panic!("Expected SelectColor");
     };
@@ -18,8 +22,7 @@ pub fn execute(world: &mut World, palette_manager: &mut PaletteManager, action: 
         file_entity, last_color_index, next_color_index
     );
 
-    let mut system_state: SystemState<(Commands, Client)> =
-        SystemState::new(world);
+    let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
     let (mut commands, mut client) = system_state.get_mut(world);
 
     // release the last color entity

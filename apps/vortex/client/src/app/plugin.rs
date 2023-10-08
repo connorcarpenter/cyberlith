@@ -9,7 +9,7 @@ use vortex_proto::{
     components::{
         AnimFrame, AnimRotation, ChangelistEntry, Edge3d, EdgeAngle, EntryKind, Face3d,
         FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType,
-        OwnedByFile, ShapeName, Vertex3d, VertexRoot, PaletteColor,
+        OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot,
     },
     protocol,
 };
@@ -19,14 +19,17 @@ use crate::app::{
     config::ConfigPlugin,
     events::{InsertComponentEvent, LoginEvent},
     resources::{
-        action::file::FileActions, animation_manager::AnimationManager, camera_manager::CameraManager,
-        canvas::Canvas, compass::Compass, edge_manager::EdgeManager, face_manager::FaceManager,
-        file_manager::FileManager, grid::Grid, input_manager::InputManager,
+        action::file::FileActions, animation_manager::AnimationManager,
+        camera_manager::CameraManager, canvas::Canvas, compass::Compass, edge_manager::EdgeManager,
+        face_manager::FaceManager, file_manager::FileManager, grid::Grid,
+        input_manager::InputManager, palette_manager::PaletteManager,
         shape_waitlist::ShapeWaitlist, tab_manager::TabManager, vertex_manager::VertexManager,
-        palette_manager::PaletteManager,
     },
     systems::{canvas, draw, draw_vertices_and_edges, network, ui},
-    ui::{widgets::{NamingBarState, FrameInspectBarState}, UiState},
+    ui::{
+        widgets::{FrameInspectBarState, NamingBarState},
+        UiState,
+    },
 };
 
 pub struct VortexPlugin;

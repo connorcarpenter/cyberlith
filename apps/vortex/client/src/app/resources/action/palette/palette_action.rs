@@ -1,7 +1,8 @@
 use bevy_ecs::prelude::{Entity, World};
 
 use crate::app::resources::{
-    action::{Action, palette::select_color}, palette_manager::PaletteManager
+    action::{palette::select_color, Action},
+    palette_manager::PaletteManager,
 };
 
 #[derive(Clone)]
@@ -11,7 +12,7 @@ pub enum PaletteAction {
 }
 
 pub enum PaletteActionType {
-    SelectColor
+    SelectColor,
 }
 
 impl PaletteAction {
@@ -21,17 +22,11 @@ impl PaletteAction {
         }
     }
 
-    pub fn execute(
-        self,
-        world: &mut World,
-        palette_manager: &mut PaletteManager,
-    ) -> Vec<Self> {
+    pub fn execute(self, world: &mut World, palette_manager: &mut PaletteManager) -> Vec<Self> {
         let action_type = self.get_type();
 
         match action_type {
-            PaletteActionType::SelectColor => {
-                select_color::execute(world, palette_manager, self)
-            }
+            PaletteActionType::SelectColor => select_color::execute(world, palette_manager, self),
         }
     }
 }

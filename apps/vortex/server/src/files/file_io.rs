@@ -15,7 +15,10 @@ use vortex_proto::{
 };
 
 use crate::{
-    files::{PaletteReader, PaletteWriter, AnimReader, AnimWriter, MeshReader, MeshWriter, SkelReader, SkelWriter},
+    files::{
+        AnimReader, AnimWriter, MeshReader, MeshWriter, PaletteReader, PaletteWriter, SkelReader,
+        SkelWriter,
+    },
     resources::{AnimationManager, ContentEntityData, Project, ShapeManager},
 };
 

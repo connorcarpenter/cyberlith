@@ -158,7 +158,10 @@ impl From<&str> for FileExtension {
 impl FileExtension {
     pub fn can_io(&self) -> bool {
         match self {
-            FileExtension::Skel | FileExtension::Mesh | FileExtension::Anim | FileExtension::Palette => true,
+            FileExtension::Skel
+            | FileExtension::Mesh
+            | FileExtension::Anim
+            | FileExtension::Palette => true,
             _ => false,
         }
     }

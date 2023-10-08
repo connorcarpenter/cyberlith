@@ -8,10 +8,15 @@ use render_egui::{egui, egui::Frame};
 use vortex_proto::components::FileExtension;
 
 use crate::app::{
-    resources::{animation_manager::AnimationManager, file_manager::FileManager, tab_manager::render_tab_bar, tab_manager::TabManager, palette_manager::PaletteManager},
+    resources::{
+        animation_manager::AnimationManager, file_manager::FileManager,
+        palette_manager::PaletteManager, tab_manager::render_tab_bar, tab_manager::TabManager,
+    },
     ui::{
         render_tool_bar,
-        widgets::{render_frame_inspect_bar, render_bind_button, render_naming_bar, NamingBarState},
+        widgets::{
+            render_bind_button, render_frame_inspect_bar, render_naming_bar, NamingBarState,
+        },
     },
 };
 

@@ -24,7 +24,9 @@ use vortex_proto::{
 use crate::app::{
     components::{file_system::FileSystemUiState, OwnedByFileLocal},
     resources::{
-        action::{palette::PaletteAction, animation::AnimAction, shape::ShapeAction, TabActionStack},
+        action::{
+            animation::AnimAction, palette::PaletteAction, shape::ShapeAction, TabActionStack,
+        },
         animation_manager::AnimationManager,
         camera_manager::CameraManager,
         camera_state::CameraState,
@@ -32,10 +34,10 @@ use crate::app::{
         edge_manager::EdgeManager,
         file_manager::FileManager,
         input_manager::InputManager,
+        palette_manager::PaletteManager,
         shape_data::CanvasShape,
         shape_manager::ShapeManager,
         vertex_manager::VertexManager,
-        palette_manager::PaletteManager,
     },
     ui::widgets::colors::{
         FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,

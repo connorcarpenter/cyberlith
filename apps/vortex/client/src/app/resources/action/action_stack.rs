@@ -7,11 +7,16 @@ use bevy_ecs::{
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
 
 use crate::app::resources::{
-    palette_manager::PaletteManager,
-    action::{palette::PaletteAction, animation::AnimAction, file::{FileAction, FileActions}, shape::ShapeAction},
+    action::{
+        animation::AnimAction,
+        file::{FileAction, FileActions},
+        palette::PaletteAction,
+        shape::ShapeAction,
+    },
     canvas::Canvas,
     file_manager::FileManager,
     input_manager::InputManager,
+    palette_manager::PaletteManager,
     tab_manager::TabManager,
 };
 
