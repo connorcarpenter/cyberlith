@@ -60,6 +60,7 @@ impl Plugin for VortexPlugin {
             .add_event::<LoginEvent>()
             // Networking Systems
             .add_systems(Update, network::login)
+            .add_systems(Startup, network::insert_component_event_startup)
             .add_systems(
                 Update,
                 (

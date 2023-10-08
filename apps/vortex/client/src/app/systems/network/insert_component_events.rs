@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use bevy_ecs::{
     entity::Entity,
     event::{EventReader, EventWriter},
-    system::{Commands, Query, ResMut, SystemState},
-    world::World,
+    system::{Resource, Commands, Query, ResMut, SystemState},
+    world::{World, Mut},
 };
 use bevy_log::{info, warn};
 
@@ -42,15 +42,31 @@ use crate::app::{
     systems::file_post_process,
 };
 
+#[derive(Resource)]
+struct CachedInsertComponentEventsState {
+    event_state: SystemState<EventReader<'static, 'static, InsertComponentEvents>>,
+}
+
+pub fn insert_component_event_startup(world: &mut World) {
+    let initial_state: SystemState<EventReader<InsertComponentEvents>> = SystemState::new(world);
+    world.insert_resource(CachedInsertComponentEventsState {
+        event_state: initial_state,
+    });
+}
+
 // if this gets big, just switch to a &mut World
 pub fn insert_component_events(world: &mut World) {
-    let mut system_state: SystemState<EventReader<InsertComponentEvents>> = SystemState::new(world);
-    let mut events_reader = system_state.get_mut(world);
 
     let mut events_collection: Vec<InsertComponentEvents> = Vec::new();
-    for events in events_reader.iter() {
-        events_collection.push(events.clone());
-    }
+
+    world.resource_scope(|world, mut events_reader_state: Mut<CachedInsertComponentEventsState>| {
+        let mut events_reader = events_reader_state.event_state.get_mut(world);
+
+        for events in events_reader.iter() {
+            events_collection.push(events.clone());
+        }
+    });
+
 
     for events in events_collection {
         insert_component_event::<FileSystemEntry>(world, &events);
