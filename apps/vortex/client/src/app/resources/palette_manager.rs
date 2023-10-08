@@ -387,7 +387,8 @@ impl PaletteManager {
         let Ok(mut color_component) = color_q.get_mut(world, color_entity) else {
             return;
         };
-        let current_color = Color32::from_rgb(*color_component.r, *color_component.g, *color_component.b);
+        let current_color_rgb = Color32::from_rgb(*color_component.r, *color_component.g, *color_component.b);
+        let mut current_color_hsv = Hsv::from(current_color_rgb);
 
         ui.horizontal(|ui| {
             Frame::none().inner_margin(4.0).show(ui, |ui| {
@@ -396,7 +397,7 @@ impl PaletteManager {
 
                 // text edit
                 // TODO: put into palette manager state ..
-                let mut text = color_to_hex(current_color);
+                let mut text = color_to_hex(current_color_rgb);
 
                 if ui.text_edit_singleline(&mut text).lost_focus() {
                     let new_color = hex_to_color(&text);
@@ -410,6 +411,7 @@ impl PaletteManager {
         });
 
         egui::Grid::new("component-edit").show(ui, |ui| {
+            // R
             {
                 let mut text = color_component.r.to_string();
                 ui.add(egui::Label::new("R"));
@@ -421,8 +423,26 @@ impl PaletteManager {
                         *color_component.r = r;
                     }
                 }
-                ui.end_row();
             }
+            // H
+            {
+                let mut text = current_color_hsv.h.to_string();
+                ui.add(egui::Label::new("H"));
+                if ui.add(egui::TextEdit::singleline(&mut text).desired_width(50.0))
+                    .lost_focus()
+                {
+                    // change h value
+                    if let Ok(h) = text.parse::<u16>() {
+                        current_color_hsv.h = h;
+                        let (r, g, b) = current_color_hsv.to_rgb();
+                        *color_component.r = r;
+                        *color_component.g = g;
+                        *color_component.b = b;
+                    }
+                }
+            }
+            ui.end_row();
+            // G
             {
                 let mut text = color_component.g.to_string();
                 ui.add(egui::Label::new("G"));
@@ -434,8 +454,26 @@ impl PaletteManager {
                         *color_component.g = g;
                     }
                 }
-                ui.end_row();
             }
+            // S
+            {
+                let mut text = current_color_hsv.s.to_string();
+                ui.add(egui::Label::new("S"));
+                if ui.add(egui::TextEdit::singleline(&mut text).desired_width(50.0))
+                    .lost_focus()
+                {
+                    // change s value
+                    if let Ok(s) = text.parse::<u8>() {
+                        current_color_hsv.s = s;
+                        let (r, g, b) = current_color_hsv.to_rgb();
+                        *color_component.r = r;
+                        *color_component.g = g;
+                        *color_component.b = b;
+                    }
+                }
+            }
+            ui.end_row();
+            // B
             {
                 let mut text = color_component.b.to_string();
                 ui.add(egui::Label::new("B"));
@@ -447,8 +485,25 @@ impl PaletteManager {
                         *color_component.b = b;
                     }
                 }
-                ui.end_row();
             }
+            // V
+            {
+                let mut text = current_color_hsv.v.to_string();
+                ui.add(egui::Label::new("V"));
+                if ui.add(egui::TextEdit::singleline(&mut text).desired_width(50.0))
+                    .lost_focus()
+                {
+                    // change v value
+                    if let Ok(v) = text.parse::<u8>() {
+                        current_color_hsv.v = v;
+                        let (r, g, b) = current_color_hsv.to_rgb();
+                        *color_component.r = r;
+                        *color_component.g = g;
+                        *color_component.b = b;
+                    }
+                }
+            }
+            ui.end_row();
         });
     }
 }
@@ -590,4 +645,32 @@ fn hex_to_color(hex: &str) -> Option<Color32> {
     let g = u8::from_str_radix(&hex[3..5], 16).ok()?;
     let b = u8::from_str_radix(&hex[5..7], 16).ok()?;
     Some(Color32::from_rgb(r, g, b))
+}
+
+struct Hsv {
+    h: u16,
+    s: u8,
+    v: u8,
+}
+
+impl From<Color32> for Hsv {
+    fn from(color: Color32) -> Self {
+        let base = HsvaGamma::from(color);
+        Self {
+            h: (base.h * 360.0) as u16,
+            s: (base.s * 100.0) as u8,
+            v: (base.v * 100.0) as u8,
+        }
+    }
+}
+
+impl Hsv {
+    fn to_rgb(&self) -> (u8, u8, u8) {
+        let h = self.h as f32 / 360.0;
+        let s = self.s as f32 / 100.0;
+        let v = self.v as f32 / 100.0;
+        let hsvg = HsvaGamma { h, s, v, a: 1.0 };
+        let rgb = Color32::from(hsvg);
+        (rgb.r(), rgb.g(), rgb.b())
+    }
 }
