@@ -1,8 +1,8 @@
-use bevy_ecs::prelude::{Entity, World};
+use bevy_ecs::{prelude::{Entity, World}, world::Mut};
 
 use vortex_proto::components::FileExtension;
 
-use crate::app::resources::{
+use crate::app::resources::{palette_manager::PaletteManager,
     action::{ActionStack, palette::PaletteAction, animation::AnimAction, shape::ShapeAction},
     input_manager::InputManager,
 };
@@ -42,7 +42,7 @@ impl TabActionStack {
                 action_stack.post_action_execution(world, reversed_actions);
             }
             _ => {
-                panic!("buffer_shape_action() called on TabActionStack::Animation");
+                panic!("buffer_shape_action() called on TabActionStack::Shape");
             }
         }
     }
@@ -61,7 +61,25 @@ impl TabActionStack {
                 action_stack.post_action_execution(world, reversed_actions);
             }
             _ => {
-                panic!("buffer_anim_action() called on TabActionStack::Shape");
+                panic!("buffer_anim_action() called on TabActionStack::Animation");
+            }
+        }
+    }
+
+    pub fn execute_palette_action(
+        &mut self,
+        world: &mut World,
+        palette_manager: &mut PaletteManager,
+        action: PaletteAction,
+    ) {
+        match self {
+            Self::Palette(action_stack) => {
+                let reversed_actions =
+                    action_stack.execute_action(world, palette_manager, action);
+                action_stack.post_action_execution(world, reversed_actions);
+            }
+            _ => {
+                panic!("buffer_anim_action() called on TabActionStack::Palette");
             }
         }
     }
@@ -103,9 +121,11 @@ impl TabActionStack {
             }
             Self::Palette(action_stack) => {
                 let action = action_stack.pop_undo();
-                let reversed_actions =
-                    action_stack.execute_action(world, input_manager, tab_file_entity, action);
-                action_stack.post_execute_undo(world, reversed_actions);
+                world.resource_scope(|world, mut palette_manager: Mut<PaletteManager>| {
+                    let reversed_actions =
+                        action_stack.execute_action(world, &mut palette_manager, action);
+                    action_stack.post_execute_undo(world, reversed_actions);
+                });
             }
         };
     }
@@ -131,9 +151,11 @@ impl TabActionStack {
             }
             Self::Palette(action_stack) => {
                 let action = action_stack.pop_redo();
-                let reversed_actions =
-                    action_stack.execute_action(world, input_manager, tab_file_entity, action);
-                action_stack.post_execute_redo(world, reversed_actions);
+                world.resource_scope(|world, mut palette_manager: Mut<PaletteManager>| {
+                    let reversed_actions =
+                        action_stack.execute_action(world, &mut palette_manager, action);
+                    action_stack.post_execute_redo(world, reversed_actions);
+                });
             }
         }
     }

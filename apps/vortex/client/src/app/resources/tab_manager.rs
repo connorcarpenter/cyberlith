@@ -24,7 +24,7 @@ use vortex_proto::{
 use crate::app::{
     components::{file_system::FileSystemUiState, OwnedByFileLocal},
     resources::{
-        action::{animation::AnimAction, shape::ShapeAction, TabActionStack},
+        action::{palette::PaletteAction, animation::AnimAction, shape::ShapeAction, TabActionStack},
         animation_manager::AnimationManager,
         camera_manager::CameraManager,
         camera_state::CameraState,
@@ -35,6 +35,7 @@ use crate::app::{
         shape_data::CanvasShape,
         shape_manager::ShapeManager,
         vertex_manager::VertexManager,
+        palette_manager::PaletteManager,
     },
     ui::widgets::colors::{
         FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
@@ -321,6 +322,18 @@ impl TabManager {
         tab_state
             .action_stack
             .execute_anim_action(world, input_manager, tab_file_entity, action);
+    }
+
+    pub fn current_tab_execute_palette_action(
+        &mut self,
+        world: &mut World,
+        palette_manager: &mut PaletteManager,
+        action: PaletteAction,
+    ) {
+        let tab_state = self.current_tab_state_mut().unwrap();
+        tab_state
+            .action_stack
+            .execute_palette_action(world, palette_manager, action);
     }
 
     pub fn current_tab_camera_state_mut(&mut self) -> Option<&mut CameraState> {

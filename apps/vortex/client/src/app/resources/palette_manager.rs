@@ -6,23 +6,87 @@ use render_egui::{egui::{ecolor::HsvaGamma, lerp, Mesh, pos2, remap_clamp, Respo
 
 use vortex_proto::components::PaletteColor;
 
+use crate::app::resources::{action::palette::PaletteAction, tab_manager::TabManager};
+
 #[derive(Resource)]
 pub struct PaletteManager {
     selected_color_index: usize,
     // file entity -> color entities
-    colors: HashMap<Entity, Vec<Option<Entity>>>,
+    file_colors: HashMap<Entity, Vec<Option<Entity>>>,
+    // color entity -> file entity
+    colors: HashMap<Entity, Entity>,
 }
 
 impl Default for PaletteManager {
     fn default() -> Self {
         Self {
             selected_color_index: 0,
+            file_colors: HashMap::new(),
             colors: HashMap::new(),
         }
     }
 }
 
 impl PaletteManager {
+
+    pub fn entity_is_color(&self, entity: &Entity) -> bool {
+        self.colors.contains_key(entity)
+    }
+
+    pub fn register_color(&mut self, file_entity: Entity, color_entity: Entity, color_index: usize) {
+
+        if !self.file_colors.contains_key(&file_entity) {
+            self.file_colors.insert(file_entity, Vec::new());
+        }
+        let color_list = self.file_colors.get_mut(&file_entity).unwrap();
+
+        if color_list.len() <= color_index {
+            color_list.resize(color_index + 1, None);
+        }
+
+        color_list[color_index] = Some(color_entity);
+
+        self.colors.insert(color_entity, file_entity);
+    }
+
+    pub fn deregister_color(&mut self, file_entity: &Entity, color_entity: &Entity, color_index: usize) {
+
+        let Some(color_list) = self.file_colors.get_mut(file_entity) else {
+            return;
+        };
+        let Some(Some(found_entity)) = color_list.get(color_index) else {
+            return;
+        };
+        if found_entity != color_entity {
+            panic!("no match");
+        }
+        color_list[color_index] = None;
+
+        // remove None from the end of the list
+        while let Some(None) = color_list.last() {
+            color_list.pop();
+        }
+
+        color_list.truncate(color_list.len());
+
+        if color_list.len() == 0 {
+            self.file_colors.remove(file_entity);
+        }
+
+        self.colors.remove(color_entity);
+    }
+
+    pub(crate) fn select_color(&mut self, color_index: usize) {
+        self.selected_color_index = color_index;
+    }
+
+    pub(crate) fn get_color_entity(&self, file_entity: &Entity, color_index: usize) -> Option<Entity> {
+        let colors = self.file_colors.get(file_entity)?;
+        let color_entity_opt = colors.get(color_index)?.as_ref();
+        let color_entity = color_entity_opt?;
+        Some(*color_entity)
+    }
+
     pub fn render(ui: &mut Ui, world: &mut World, file_entity: &Entity) {
         Self::render_right(ui, world, file_entity);
         Self::render_left(ui, world, file_entity);
@@ -56,52 +120,9 @@ impl PaletteManager {
         });
     }
 
-    pub fn register_color(&mut self, file_entity: Entity, color_entity: Entity, color_index: usize) {
-
-        if !self.colors.contains_key(&file_entity) {
-            self.colors.insert(file_entity, Vec::new());
-        }
-        let color_list = self.colors.get_mut(&file_entity).unwrap();
-
-        if color_list.len() <= color_index {
-            color_list.resize(color_index + 1, None);
-        }
-
-        color_list[color_index] = Some(color_entity);
-    }
-
-    pub fn deregister_color(&mut self, file_entity: &Entity, color_entity: &Entity, color_index: usize) {
-
-        let Some(color_list) = self.colors.get_mut(file_entity) else {
-            return;
-        };
-        let Some(Some(found_entity)) = color_list.get(color_index) else {
-            return;
-        };
-        if found_entity != color_entity {
-            panic!("no match");
-        }
-        color_list[color_index] = None;
-
-        // remove None from the end of the list
-        while let Some(None) = color_list.last() {
-            color_list.pop();
-        }
-
-        color_list.truncate(color_list.len());
-
-        if color_list.len() == 0 {
-            self.colors.remove(file_entity);
-        }
-    }
-
-    fn select_color(&mut self, color_index: usize) {
-        self.selected_color_index = color_index;
-    }
-
     fn render_selection_colors(&mut self, ui: &mut Ui, world: &mut World, file_entity: &Entity) {
 
-        let Some(colors) = self.colors.get(&file_entity) else {
+        let Some(colors) = self.file_colors.get(&file_entity) else {
             return;
         };
 
@@ -140,20 +161,28 @@ impl PaletteManager {
                         }
                     }
                 }
-
-                let Some(color_index_picked) = color_index_picked else {
-                    return;
-                };
-                self.selected_color_index = color_index_picked;
             });
         });
-    }
 
-    fn get_color_entity(&self, file_entity: &Entity, color_index: usize) -> Option<Entity> {
-        let colors = self.colors.get(file_entity)?;
-        let color_entity_opt = colors.get(color_index)?.as_ref();
-        let color_entity = color_entity_opt?;
-        Some(*color_entity)
+        let Some(color_index_picked) = color_index_picked else {
+            return;
+        };
+        if color_index_picked == self.selected_color_index {
+            return;
+        }
+        let selected_color_index = self.selected_color_index;
+        world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+            let current_file_entity = *tab_manager.current_tab_entity().unwrap();
+            tab_manager.current_tab_execute_palette_action(
+                world,
+                self,
+                PaletteAction::SelectColor(
+                    current_file_entity,
+                    color_index_picked,
+                    selected_color_index,
+                ),
+            );
+        });
     }
 
     fn render_edit(&mut self, ui: &mut Ui, world: &mut World, file_entity: &Entity) {

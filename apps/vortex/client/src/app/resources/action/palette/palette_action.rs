@@ -1,37 +1,36 @@
 use bevy_ecs::prelude::{Entity, World};
 
 use crate::app::resources::{
-    action::Action,
-    input_manager::InputManager,
+    action::{Action, palette::select_color}, palette_manager::PaletteManager
 };
 
 #[derive(Clone)]
 pub enum PaletteAction {
-    None
+    // file entity, next color index, last color index
+    SelectColor(Entity, usize, usize),
 }
 
 pub enum PaletteActionType {
-    None
+    SelectColor
 }
 
 impl PaletteAction {
     pub fn get_type(&self) -> PaletteActionType {
         match self {
-            Self::None => PaletteActionType::None,
+            Self::SelectColor(_, _, _) => PaletteActionType::SelectColor,
         }
     }
 
     pub fn execute(
         self,
         world: &mut World,
-        input_manager: &mut InputManager,
-        tab_file_entity: Entity,
+        palette_manager: &mut PaletteManager,
     ) -> Vec<Self> {
         let action_type = self.get_type();
 
         match action_type {
-            PaletteActionType::None => {
-                Vec::new()
+            PaletteActionType::SelectColor => {
+                select_color::execute(world, palette_manager, self)
             }
         }
     }
@@ -44,20 +43,14 @@ impl Action for PaletteAction {
         entity: &Entity,
     ) {
         match action_opt {
-            Some(Self::None) => {
-
-            }
             _ => {}
         }
     }
 
     fn enable_top_impl(world: &mut World, last_action: Option<&Self>, enabled: &mut bool) {
         match last_action {
-            Some(PaletteAction::None) => {
-
-            }
             _ => {
-
+                *enabled = true;
             }
         }
     }

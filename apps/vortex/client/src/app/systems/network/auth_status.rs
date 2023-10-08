@@ -10,7 +10,7 @@ use naia_bevy_client::{
     Client,
 };
 
-use vortex_proto::components::AnimFrame;
+use vortex_proto::components::{AnimFrame, PaletteColor};
 
 use crate::app::{
     components::OwnedByFileLocal,
@@ -20,6 +20,7 @@ use crate::app::{
         tab_manager::TabManager, vertex_manager::VertexManager,
     },
 };
+use crate::app::resources::palette_manager::PaletteManager;
 
 pub fn auth_granted_events(
     client: Client,
@@ -30,9 +31,11 @@ pub fn auth_granted_events(
     face_manager: Res<FaceManager>,
     animation_manager: Res<AnimationManager>,
     mut tab_manager: ResMut<TabManager>,
+    palette_manager: Res<PaletteManager>,
     mut event_reader: EventReader<EntityAuthGrantedEvent>,
     owned_by_q: Query<&OwnedByFileLocal>,
     frame_q: Query<&AnimFrame>,
+    color_q: Query<&PaletteColor>,
 ) {
     for EntityAuthGrantedEvent(entity) in event_reader.iter() {
         process_entity_auth_status(
@@ -44,8 +47,10 @@ pub fn auth_granted_events(
             &face_manager,
             &animation_manager,
             &mut tab_manager,
+            &palette_manager,
             &owned_by_q,
             &frame_q,
+            &color_q,
             entity,
             "granted",
         );
@@ -60,10 +65,12 @@ pub fn auth_denied_events(
     edge_manager: Res<EdgeManager>,
     face_manager: Res<FaceManager>,
     animation_manager: Res<AnimationManager>,
+    palette_manager: Res<PaletteManager>,
     mut tab_manager: ResMut<TabManager>,
     mut event_reader: EventReader<EntityAuthDeniedEvent>,
     owned_by_q: Query<&OwnedByFileLocal>,
     frame_q: Query<&AnimFrame>,
+    color_q: Query<&PaletteColor>,
 ) {
     for EntityAuthDeniedEvent(entity) in event_reader.iter() {
         process_entity_auth_status(
@@ -75,8 +82,10 @@ pub fn auth_denied_events(
             &face_manager,
             &animation_manager,
             &mut tab_manager,
+            &palette_manager,
             &owned_by_q,
             &frame_q,
+            &color_q,
             entity,
             "denied",
         );
@@ -91,10 +100,12 @@ pub fn auth_reset_events(
     edge_manager: Res<EdgeManager>,
     face_manager: Res<FaceManager>,
     animation_manager: Res<AnimationManager>,
+    palette_manager: Res<PaletteManager>,
     mut tab_manager: ResMut<TabManager>,
     mut event_reader: EventReader<EntityAuthResetEvent>,
     owned_by_q: Query<&OwnedByFileLocal>,
     frame_q: Query<&AnimFrame>,
+    color_q: Query<&PaletteColor>,
 ) {
     for EntityAuthResetEvent(entity) in event_reader.iter() {
         process_entity_auth_status(
@@ -106,8 +117,10 @@ pub fn auth_reset_events(
             &face_manager,
             &animation_manager,
             &mut tab_manager,
+            &palette_manager,
             &owned_by_q,
             &frame_q,
+            &color_q,
             entity,
             "reset",
         );
@@ -123,8 +136,10 @@ fn process_entity_auth_status(
     face_manager: &FaceManager,
     animation_manager: &AnimationManager,
     tab_manager: &mut TabManager,
+    palette_manager: &PaletteManager,
     owned_by_q: &Query<&OwnedByFileLocal>,
     frame_q: &Query<&AnimFrame>,
+    color_q: &Query<&PaletteColor>,
     entity: &Entity,
     status: &str,
 ) {
@@ -190,6 +205,23 @@ fn process_entity_auth_status(
             panic!("component for rotation entity `{:?}` not found", frame_entity);
         };
         let owning_file_entity = frame_component.file_entity.get(client).unwrap();
+        if let Some(tab_state) = tab_manager.tab_state_mut(&owning_file_entity) {
+            tab_state.action_stack.entity_update_auth_status(&entity);
+        } else {
+            warn!(
+                "no tab state found for file entity: {:?}",
+                owning_file_entity
+            );
+        }
+    } else if palette_manager.entity_is_color(entity) {
+        info!(
+            "auth processing for color entity `{:?}`: `{:?}`",
+            entity, status
+        );
+        let Ok(color_component) = color_q.get(*entity) else {
+            panic!("component for color entity `{:?}` not found", entity);
+        };
+        let owning_file_entity = color_component.file_entity.get(client).unwrap();
         if let Some(tab_state) = tab_manager.tab_state_mut(&owning_file_entity) {
             tab_state.action_stack.entity_update_auth_status(&entity);
         } else {

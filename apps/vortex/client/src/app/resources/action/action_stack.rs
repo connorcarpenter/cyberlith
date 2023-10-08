@@ -7,6 +7,7 @@ use bevy_ecs::{
 use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
 
 use crate::app::resources::{
+    palette_manager::PaletteManager,
     action::{palette::PaletteAction, animation::AnimAction, file::{FileAction, FileActions}, shape::ShapeAction},
     canvas::Canvas,
     file_manager::FileManager,
@@ -294,10 +295,9 @@ impl ActionStack<PaletteAction> {
     pub fn execute_action(
         &mut self,
         world: &mut World,
-        input_manager: &mut InputManager,
-        tab_file_entity: Entity,
+        palette_manager: &mut PaletteManager,
         action: PaletteAction,
     ) -> Vec<PaletteAction> {
-        action.execute(world, input_manager, tab_file_entity)
+        action.execute(world, palette_manager)
     }
 }
