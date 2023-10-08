@@ -4,8 +4,8 @@ use math::Quat;
 
 use crate::app::resources::{
     action::{Action, ActionStack, animation::{
-        anim_delete_frame, anim_insert_frame, anim_move_frame, anim_rotate_vertex,
-        anim_select_frame, anim_select_vertex,
+        delete_frame, insert_frame, move_frame, rotate_vertex,
+        select_frame, select_vertex,
     }},
     input_manager::InputManager,
     shape_data::CanvasShape,
@@ -59,15 +59,15 @@ impl AnimAction {
 
         match action_type {
             AnimActionType::SelectShape => {
-                anim_select_vertex::execute(world, input_manager, tab_file_entity, self)
+                select_vertex::execute(world, input_manager, tab_file_entity, self)
             }
             AnimActionType::RotateVertex => {
-                anim_rotate_vertex::execute(world, tab_file_entity, self)
+                rotate_vertex::execute(world, tab_file_entity, self)
             }
-            AnimActionType::SelectFrame => anim_select_frame::execute(world, self),
-            AnimActionType::InsertFrame => anim_insert_frame::execute(world, self),
-            AnimActionType::DeleteFrame => anim_delete_frame::execute(world, self),
-            AnimActionType::MoveFrame => anim_move_frame::execute(world, self),
+            AnimActionType::SelectFrame => select_frame::execute(world, self),
+            AnimActionType::InsertFrame => insert_frame::execute(world, self),
+            AnimActionType::DeleteFrame => delete_frame::execute(world, self),
+            AnimActionType::MoveFrame => move_frame::execute(world, self),
         }
     }
 }
