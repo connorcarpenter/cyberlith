@@ -26,6 +26,15 @@ pub struct PaletteManager {
     file_colors: HashMap<Entity, Vec<Option<Entity>>>,
     // color entity -> file entity
     colors: HashMap<Entity, Entity>,
+    //
+    current_color_entity: Option<Entity>,
+    text_hex: String,
+    text_r: String,
+    text_g: String,
+    text_b: String,
+    text_h: String,
+    text_s: String,
+    text_v: String,
 }
 
 impl Default for PaletteManager {
@@ -34,6 +43,14 @@ impl Default for PaletteManager {
             selected_color_index: 0,
             file_colors: HashMap::new(),
             colors: HashMap::new(),
+            current_color_entity: None,
+            text_hex: String::new(),
+            text_r: String::new(),
+            text_g: String::new(),
+            text_b: String::new(),
+            text_h: String::new(),
+            text_s: String::new(),
+            text_v: String::new(),
         }
     }
 }
@@ -124,6 +141,9 @@ impl PaletteManager {
         egui::SidePanel::right("right_panel")
             .resizable(true)
             .show_inside(ui, |ui| {
+                let size = ui.available_size();
+                let size = size.x.min(size.y / 3.0);
+
                 ui.vertical_centered(|ui| {
                     Frame::none().inner_margin(4.0).show(ui, |ui| {
                         let margin = ui.style().spacing.item_spacing.x;
@@ -138,12 +158,18 @@ impl PaletteManager {
                 });
                 ui.vertical_centered(|ui| {
                     Frame::none().inner_margin(4.0).show(ui, |ui| {
-                        Self::edit_color_picker_render(ui, world, file_entity);
+                        Self::edit_color_picker_render(ui, world, file_entity, size);
                     });
                 });
                 ui.vertical_centered(|ui| {
                     Frame::none().inner_margin(4.0).show(ui, |ui| {
-                        Self::edit_text_input_render(ui, world, file_entity);
+                        ui.allocate_ui_with_layout(
+                            Vec2::new(size,size),
+                            Layout::top_down(Align::Center),
+                            |ui| {
+                                Self::edit_text_input_render(ui, world, file_entity);
+                            }
+                        );
                     });
                 });
             });
@@ -161,9 +187,9 @@ impl PaletteManager {
         });
     }
 
-    fn edit_color_picker_render(ui: &mut Ui, world: &mut World, file_entity: &Entity) {
+    fn edit_color_picker_render(ui: &mut Ui, world: &mut World, file_entity: &Entity, size: f32) {
         world.resource_scope(|world, mut palette_manager: Mut<PaletteManager>| {
-            palette_manager.render_edit_color_picker_impl(ui, world, file_entity);
+            palette_manager.render_edit_color_picker_impl(ui, world, file_entity, size);
         });
     }
 
@@ -242,82 +268,77 @@ impl PaletteManager {
 
     fn render_edit_buttons_impl(&mut self, ui: &mut Ui, world: &mut World) {
         ui.horizontal(|ui| {
-            Frame::none().inner_margin(0.0).show(ui, |ui| {
-                // new frame
-                if Toolbar::button(ui, "➕", "New color", true).clicked() {
-                    // world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
-                    //     anim_file_insert_frame(&mut input_manager, world);
-                    // });
-                }
+            // new frame
+            if Toolbar::button(ui, "➕", "New color", true).clicked() {
+                // world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
+                //     anim_file_insert_frame(&mut input_manager, world);
+                // });
+            }
 
-                // delete frame
-                if Toolbar::button(ui, "-", "Delete color", true).clicked() {
-                    // world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
-                    //     anim_file_delete_frame(&mut input_manager, world);
-                    // });
-                }
+            // delete frame
+            if Toolbar::button(ui, "-", "Delete color", true).clicked() {
+                // world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
+                //     anim_file_delete_frame(&mut input_manager, world);
+                // });
+            }
 
-                // move frame left / right
-                // let current_file_entity = *world
-                //     .get_resource::<TabManager>()
-                //     .unwrap()
-                //     .current_tab_entity()
-                //     .unwrap();
-                // let animation_manager = world.get_resource::<AnimationManager>().unwrap();
-                // let current_frame_index = animation_manager.current_frame_index();
-                // let frame_count = animation_manager
-                //     .get_frame_count(&current_file_entity)
-                //     .unwrap_or_default();
+            // move frame left / right
+            // let current_file_entity = *world
+            //     .get_resource::<TabManager>()
+            //     .unwrap()
+            //     .current_tab_entity()
+            //     .unwrap();
+            // let animation_manager = world.get_resource::<AnimationManager>().unwrap();
+            // let current_frame_index = animation_manager.current_frame_index();
+            // let frame_count = animation_manager
+            //     .get_frame_count(&current_file_entity)
+            //     .unwrap_or_default();
 
-                {
-                    // move frame left
-                    let enabled = true; //current_frame_index > 0;
-                    let response = Toolbar::button(ui, "⬅", "Move color left", enabled);
-                    // if enabled && response.clicked() {
-                    //     world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
-                    //         world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    //             tab_manager.current_tab_execute_anim_action(
-                    //                 world,
-                    //                 &mut input_manager,
-                    //                 AnimAction::MoveFrame(
-                    //                     current_file_entity,
-                    //                     current_frame_index,
-                    //                     current_frame_index - 1,
-                    //                 ),
-                    //             );
-                    //         });
-                    //     });
-                    // }
-                }
+            {
+                // move frame left
+                let enabled = true; //current_frame_index > 0;
+                let response = Toolbar::button(ui, "⬅", "Move color left", enabled);
+                // if enabled && response.clicked() {
+                //     world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
+                //         world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                //             tab_manager.current_tab_execute_anim_action(
+                //                 world,
+                //                 &mut input_manager,
+                //                 AnimAction::MoveFrame(
+                //                     current_file_entity,
+                //                     current_frame_index,
+                //                     current_frame_index - 1,
+                //                 ),
+                //             );
+                //         });
+                //     });
+                // }
+            }
 
-                {
-                    // move frame right
-                    let enabled = true; //frame_count > 0 && current_frame_index < frame_count - 1;
-                    let response = Toolbar::button(ui, "➡", "Move color right", enabled);
-                    // if enabled && response.clicked() {
-                    //     world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
-                    //         world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    //             tab_manager.current_tab_execute_anim_action(
-                    //                 world,
-                    //                 &mut input_manager,
-                    //                 AnimAction::MoveFrame(
-                    //                     current_file_entity,
-                    //                     current_frame_index,
-                    //                     current_frame_index + 1,
-                    //                 ),
-                    //             );
-                    //         });
-                    //     });
-                    // }
-                }
-            });
+            {
+                // move frame right
+                let enabled = true; //frame_count > 0 && current_frame_index < frame_count - 1;
+                let response = Toolbar::button(ui, "➡", "Move color right", enabled);
+                // if enabled && response.clicked() {
+                //     world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
+                //         world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                //             tab_manager.current_tab_execute_anim_action(
+                //                 world,
+                //                 &mut input_manager,
+                //                 AnimAction::MoveFrame(
+                //                     current_file_entity,
+                //                     current_frame_index,
+                //                     current_frame_index + 1,
+                //                 ),
+                //             );
+                //         });
+                //     });
+                // }
+            }
         });
     }
 
-    fn render_edit_color_picker_impl(&mut self, ui: &mut Ui, world: &mut World, file_entity: &Entity) {
-
-        let size = ui.available_size();
-        let size_x = size.x.min(size.y / 3.0);
+    fn render_edit_color_picker_impl(&mut self, ui: &mut Ui, world: &mut World, file_entity: &Entity, size: f32) {
 
         ui.spacing_mut().item_spacing = Vec2::new(10.0, 10.0);
 
@@ -338,7 +359,7 @@ impl PaletteManager {
         let mut color_changed = false;
         if color_slider_1d(
             ui,
-            size_x,
+            size,
             h,
             |h| {
                 HsvaGamma {
@@ -359,7 +380,7 @@ impl PaletteManager {
 
         if color_slider_2d(
             ui,
-            size_x,
+            size,
             s,
             v,
             |s, v| HsvaGamma { s, v, ..opaque }.into()
@@ -387,21 +408,30 @@ impl PaletteManager {
         let Ok(mut color_component) = color_q.get_mut(world, color_entity) else {
             return;
         };
+
         let current_color_rgb = Color32::from_rgb(*color_component.r, *color_component.g, *color_component.b);
         let mut current_color_hsv = Hsv::from(current_color_rgb);
 
+        // update state
+        if self.current_color_entity != Some(color_entity) {
+            self.current_color_entity = Some(color_entity);
+            self.text_hex = color_to_hex(current_color_rgb);
+            self.text_r = color_component.r.to_string();
+            self.text_g = color_component.g.to_string();
+            self.text_b = color_component.b.to_string();
+            self.text_h = current_color_hsv.h.to_string();
+            self.text_s = current_color_hsv.s.to_string();
+            self.text_v = current_color_hsv.v.to_string();
+        }
+
+        // continue rendering
         ui.horizontal(|ui| {
             Frame::none().inner_margin(4.0).show(ui, |ui| {
                 // label
                 ui.label("Hex color:");
-
                 // text edit
-                // TODO: put into palette manager state ..
-                let mut text = color_to_hex(current_color_rgb);
-
-                if ui.text_edit_singleline(&mut text).lost_focus() {
-                    let new_color = hex_to_color(&text);
-                    if let Some(new_color) = new_color {
+                if ui.text_edit_singleline(&mut self.text_hex).changed() {
+                    if let Some(new_color) = hex_to_color(&self.text_hex) {
                         *color_component.r = new_color.r();
                         *color_component.g = new_color.g();
                         *color_component.b = new_color.b();
@@ -410,100 +440,86 @@ impl PaletteManager {
             });
         });
 
-        egui::Grid::new("component-edit").show(ui, |ui| {
-            // R
-            {
-                let mut text = color_component.r.to_string();
-                ui.add(egui::Label::new("R"));
-                if ui.add(egui::TextEdit::singleline(&mut text).desired_width(50.0))
-                    .lost_focus()
-                {
-                    // change r value
-                    if let Ok(r) = text.parse::<u8>() {
-                        *color_component.r = r;
+        ui.vertical_centered(|ui| {
+            Frame::none().inner_margin(4.0).show(ui, |ui| {
+                egui::Grid::new("component-edit").show(ui, |ui| {
+                    // R
+                    {
+                        ui.add(egui::Label::new("R"));
+                        if ui.text_edit_singleline(&mut self.text_r).changed() {
+                            // change r value
+                            if let Ok(r) = self.text_r.parse::<u8>() {
+                                *color_component.r = r;
+                            }
+                        }
                     }
-                }
-            }
-            // H
-            {
-                let mut text = current_color_hsv.h.to_string();
-                ui.add(egui::Label::new("H"));
-                if ui.add(egui::TextEdit::singleline(&mut text).desired_width(50.0))
-                    .lost_focus()
-                {
-                    // change h value
-                    if let Ok(h) = text.parse::<u16>() {
-                        current_color_hsv.h = h;
-                        let (r, g, b) = current_color_hsv.to_rgb();
-                        *color_component.r = r;
-                        *color_component.g = g;
-                        *color_component.b = b;
+                    // H
+                    {
+                        ui.add(egui::Label::new("H"));
+                        if ui.text_edit_singleline(&mut self.text_h).changed() {
+                            // change h value
+                            if let Ok(h) = self.text_h.parse::<u16>() {
+                                current_color_hsv.h = h;
+                                let (r, g, b) = current_color_hsv.to_rgb();
+                                *color_component.r = r;
+                                *color_component.g = g;
+                                *color_component.b = b;
+                            }
+                        }
                     }
-                }
-            }
-            ui.end_row();
-            // G
-            {
-                let mut text = color_component.g.to_string();
-                ui.add(egui::Label::new("G"));
-                if ui.add(egui::TextEdit::singleline(&mut text).desired_width(50.0))
-                    .lost_focus()
-                {
-                    // change g value
-                    if let Ok(g) = text.parse::<u8>() {
-                        *color_component.g = g;
+                    ui.end_row();
+                    // G
+                    {
+                        ui.add(egui::Label::new("G"));
+                        if ui.text_edit_singleline(&mut self.text_g).changed() {
+                            // change g value
+                            if let Ok(g) = self.text_g.parse::<u8>() {
+                                *color_component.g = g;
+                            }
+                        }
                     }
-                }
-            }
-            // S
-            {
-                let mut text = current_color_hsv.s.to_string();
-                ui.add(egui::Label::new("S"));
-                if ui.add(egui::TextEdit::singleline(&mut text).desired_width(50.0))
-                    .lost_focus()
-                {
-                    // change s value
-                    if let Ok(s) = text.parse::<u8>() {
-                        current_color_hsv.s = s;
-                        let (r, g, b) = current_color_hsv.to_rgb();
-                        *color_component.r = r;
-                        *color_component.g = g;
-                        *color_component.b = b;
+                    // S
+                    {
+                        ui.add(egui::Label::new("S"));
+                        if ui.text_edit_singleline(&mut self.text_s).changed() {
+                            // change s value
+                            if let Ok(s) = self.text_s.parse::<u8>() {
+                                current_color_hsv.s = s;
+                                let (r, g, b) = current_color_hsv.to_rgb();
+                                *color_component.r = r;
+                                *color_component.g = g;
+                                *color_component.b = b;
+                            }
+                        }
                     }
-                }
-            }
-            ui.end_row();
-            // B
-            {
-                let mut text = color_component.b.to_string();
-                ui.add(egui::Label::new("B"));
-                if ui.add(egui::TextEdit::singleline(&mut text).desired_width(50.0))
-                    .lost_focus()
-                {
-                    // change b value
-                    if let Ok(b) = text.parse::<u8>() {
-                        *color_component.b = b;
+                    ui.end_row();
+                    // B
+                    {
+                        ui.add(egui::Label::new("B"));
+                        if ui.text_edit_singleline(&mut self.text_b).changed() {
+                            // change b value
+                            if let Ok(b) = self.text_b.parse::<u8>() {
+                                *color_component.b = b;
+                            }
+                        }
                     }
-                }
-            }
-            // V
-            {
-                let mut text = current_color_hsv.v.to_string();
-                ui.add(egui::Label::new("V"));
-                if ui.add(egui::TextEdit::singleline(&mut text).desired_width(50.0))
-                    .lost_focus()
-                {
-                    // change v value
-                    if let Ok(v) = text.parse::<u8>() {
-                        current_color_hsv.v = v;
-                        let (r, g, b) = current_color_hsv.to_rgb();
-                        *color_component.r = r;
-                        *color_component.g = g;
-                        *color_component.b = b;
+                    // V
+                    {
+                        ui.add(egui::Label::new("V"));
+                        if ui.text_edit_singleline(&mut self.text_v).changed() {
+                            // change v value
+                            if let Ok(v) = self.text_v.parse::<u8>() {
+                                current_color_hsv.v = v;
+                                let (r, g, b) = current_color_hsv.to_rgb();
+                                *color_component.r = r;
+                                *color_component.g = g;
+                                *color_component.b = b;
+                            }
+                        }
                     }
-                }
-            }
-            ui.end_row();
+                    ui.end_row();
+                });
+            });
         });
     }
 }
