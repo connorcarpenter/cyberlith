@@ -9,9 +9,9 @@ use naia_bevy_server::{
     Server,
 };
 
-use vortex_proto::components::{AnimFrame, ChangelistEntry};
+use vortex_proto::components::{AnimFrame, ChangelistEntry, PaletteColor};
 
-use crate::resources::{AnimationManager, GitManager, ShapeManager, UserManager};
+use crate::resources::{AnimationManager, GitManager, PaletteManager, ShapeManager, UserManager};
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
     for SpawnEntityEvent(_user_key, entity) in event_reader.iter() {
@@ -27,6 +27,7 @@ enum DespawnType {
     Face,
     Rotation,
     Frame,
+    Color,
 }
 
 pub fn despawn_entity_events(
@@ -36,9 +37,11 @@ pub fn despawn_entity_events(
     mut git_manager: ResMut<GitManager>,
     mut shape_manager: ResMut<ShapeManager>,
     mut animation_manager: ResMut<AnimationManager>,
+    mut palette_manager: ResMut<PaletteManager>,
     mut event_reader: EventReader<DespawnEntityEvent>,
     mut changelist_q: Query<&mut ChangelistEntry>,
     mut frame_q: Query<&mut AnimFrame>,
+    mut color_q: Query<&mut PaletteColor>,
 ) {
     for DespawnEntityEvent(user_key, entity) in event_reader.iter() {
         let Some(user_session_data) = user_manager.user_session_data(user_key) else {
@@ -61,6 +64,8 @@ pub fn despawn_entity_events(
             despawn_type = Some(DespawnType::Rotation);
         } else if animation_manager.has_frame(entity) {
             despawn_type = Some(DespawnType::Frame);
+        } else if palette_manager.has_color(entity) {
+            despawn_type = Some(DespawnType::Color);
         }
 
         match despawn_type {
@@ -100,7 +105,7 @@ pub fn despawn_entity_events(
                 git_manager.on_remove_content_entity(&mut server, &entity);
             }
             Some(DespawnType::Face) => {
-                // edge
+                // face
                 info!("entity: `{:?}` (which is an Face), despawned", entity);
 
                 git_manager.queue_client_modify_file(entity);
@@ -110,7 +115,7 @@ pub fn despawn_entity_events(
                 git_manager.on_remove_content_entity(&mut server, &entity);
             }
             Some(DespawnType::Frame) => {
-                // edge
+                // frame
                 info!("entity: `{:?}` (which is an Frame), despawned", entity);
 
                 git_manager.queue_client_modify_file(entity);
@@ -125,12 +130,25 @@ pub fn despawn_entity_events(
                 git_manager.on_remove_content_entity(&mut server, &entity);
             }
             Some(DespawnType::Rotation) => {
-                // edge
+                // rotation
                 info!("entity: `{:?}` (which is an Rotation), despawned", entity);
 
                 git_manager.queue_client_modify_file(entity);
 
                 animation_manager.on_despawn_rotation(entity);
+
+                git_manager.on_remove_content_entity(&mut server, &entity);
+            }
+            Some(DespawnType::Color) => {
+                // color
+                info!("entity: `{:?}` (which is an Color), despawned", entity);
+
+                git_manager.queue_client_modify_file(entity);
+
+                palette_manager.on_despawn_color(
+                    entity,
+                    Some(&mut color_q),
+                );
 
                 git_manager.on_remove_content_entity(&mut server, &entity);
             }

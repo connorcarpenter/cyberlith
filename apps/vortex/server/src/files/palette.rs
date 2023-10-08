@@ -5,6 +5,7 @@ use bevy_ecs::{
     prelude::{Commands, World},
     system::{Query, SystemState},
 };
+use bevy_ecs::system::ResMut;
 use bevy_log::info;
 
 use naia_bevy_server::{
@@ -17,6 +18,7 @@ use crate::{
     files::FileWriter,
     resources::{ContentEntityData, Project},
 };
+use crate::resources::PaletteManager;
 
 // Actions
 #[derive(Clone)]
@@ -140,8 +142,8 @@ impl PaletteReader {
         let mut output = HashMap::new();
         let mut index = 0;
 
-        let mut system_state: SystemState<(Commands, Server)> = SystemState::new(world);
-        let (mut commands, mut server) = system_state.get_mut(world);
+        let mut system_state: SystemState<(Commands, Server, ResMut<PaletteManager>)> = SystemState::new(world);
+        let (mut commands, mut server, mut palette_manager) = system_state.get_mut(world);
 
         for action in actions {
             match action {
@@ -158,7 +160,14 @@ impl PaletteReader {
                         "palette color entity: `{:?}`, rgb:({}, {}, {})",
                         entity_id, r, g, b
                     );
-                    output.insert(entity_id, ContentEntityData::Color);
+                    output.insert(entity_id, ContentEntityData::new_color());
+
+                    palette_manager.on_create_color(
+                        &file_entity,
+                        &entity_id,
+                        index as usize,
+                        None,
+                    );
                 }
             }
 

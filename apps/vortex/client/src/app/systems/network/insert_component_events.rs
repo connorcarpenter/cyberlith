@@ -171,12 +171,12 @@ pub fn insert_file_component_events(
         let file_entity = component.file_entity.get(&client).unwrap();
         let dependency_entity = component.dependency_entity.get(&client).unwrap();
 
-        file_manager.file_add_dependency(&file_entity, &dependency_entity);
-
         info!(
             "received FileDependency(file: `{:?}`, dependency: `{:?}`)",
             file_entity, dependency_entity
         );
+
+        file_manager.file_add_dependency(&file_entity, &dependency_entity);
 
         tab_manager.resync_tab_ownership();
     }

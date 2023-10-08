@@ -23,6 +23,7 @@ use vortex_proto::{
     },
     protocol,
 };
+use vortex_proto::components::PaletteColor;
 
 use crate::{
     config::{AppConfig, ConfigPlugin},
@@ -33,6 +34,7 @@ use crate::{
     },
     systems::{network, world_loop},
 };
+use crate::resources::PaletteManager;
 
 fn main() {
     info!("Vortex Server starting up");
@@ -55,6 +57,7 @@ fn main() {
         .init_resource::<ShapeWaitlist>()
         .init_resource::<ShapeManager>()
         .init_resource::<AnimationManager>()
+        .init_resource::<PaletteManager>()
         // Network Systems
         .add_systems(Startup, network::init)
         .add_systems(
@@ -84,6 +87,7 @@ fn main() {
                 network::insert_face_component_events,
                 network::insert_shape_component_events,
                 network::insert_animation_component_events,
+                network::insert_palette_component_events,
                 apply_deferred,
                 network::message_events,
             )
@@ -104,6 +108,7 @@ fn main() {
         .add_event::<InsertComponentEvent<FileDependency>>()
         .add_event::<InsertComponentEvent<AnimRotation>>()
         .add_event::<InsertComponentEvent<AnimFrame>>()
+        .add_event::<InsertComponentEvent<PaletteColor>>()
         // Other Systems
         .add_systems(Startup, setup)
         .add_systems(Update, world_loop.after(ReceiveEvents))

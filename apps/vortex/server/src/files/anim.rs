@@ -308,6 +308,7 @@ impl AnimReader {
                     let skel_file_entity = project.file_entity(&skel_file_key).unwrap();
 
                     // get all users in room with file entity
+                    info!("creating new FileDependency!");
                     let mut component = FileDependency::new();
                     component.file_entity.set(&server, file_entity);
                     component.dependency_entity.set(&server, &skel_file_entity);

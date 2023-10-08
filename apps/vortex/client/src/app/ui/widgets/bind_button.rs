@@ -3,6 +3,7 @@ use bevy_ecs::{
     system::{Commands, SystemState},
     world::World,
 };
+use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
@@ -37,6 +38,9 @@ pub fn render_bind_button(ui: &mut Ui, world: &mut World, current_file_entity: &
                     }
                     BindingState::BindResult(dependency_file_entity) => {
                         let mut file_manager = world.get_resource_mut::<FileManager>().unwrap();
+
+                        info!("received bind result for dependency");
+
                         file_manager
                             .file_add_dependency(&current_file_entity, &dependency_file_entity);
 

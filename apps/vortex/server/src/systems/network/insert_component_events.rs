@@ -16,6 +16,7 @@ use vortex_proto::{
     },
     resources::FileKey,
 };
+use vortex_proto::components::PaletteColor;
 
 use crate::{
     events::InsertComponentEvent,
@@ -25,6 +26,7 @@ use crate::{
         ShapeWaitlistInsert, TabManager, UserManager,
     },
 };
+use crate::resources::PaletteManager;
 
 pub fn insert_component_events(
     mut event_reader: EventReader<InsertComponentEvents>,
@@ -48,6 +50,8 @@ pub fn insert_component_events(
     // for animations
     mut insert_rotation_event_writer: EventWriter<InsertComponentEvent<AnimRotation>>,
     mut insert_frame_event_writer: EventWriter<InsertComponentEvent<AnimFrame>>,
+
+    mut insert_color_event_writer: EventWriter<InsertComponentEvent<PaletteColor>>,
 ) {
     for events in event_reader.iter() {
         // on FileSystemEntry Insert Event
@@ -128,6 +132,12 @@ pub fn insert_component_events(
         for (user_key, entity) in events.read::<AnimFrame>() {
             insert_frame_event_writer
                 .send(InsertComponentEvent::<AnimFrame>::new(user_key, entity));
+        }
+
+        // on PaletteColor Insert Event
+        for (user_key, entity) in events.read::<PaletteColor>() {
+            insert_color_event_writer
+                .send(InsertComponentEvent::<PaletteColor>::new(user_key, entity));
         }
     }
 }
@@ -511,6 +521,53 @@ pub fn insert_animation_component_events(
             &project_key,
             &file_key,
             &rot_entity,
+            &content_entity_data,
+        );
+
+        git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
+    }
+}
+
+pub fn insert_palette_component_events(
+    mut commands: Commands,
+    mut server: Server,
+    user_manager: ResMut<UserManager>,
+    mut git_manager: ResMut<GitManager>,
+    mut palette_manager: ResMut<PaletteManager>,
+    mut color_events: EventReader<InsertComponentEvent<PaletteColor>>,
+    key_q: Query<&FileKey>,
+    mut color_q: Query<&mut PaletteColor>,
+) {
+    // on PaletteColor Insert Event
+    for event in color_events.iter() {
+        let user_key = event.user_key;
+        let color_entity = event.entity;
+        info!("entity: `{:?}`, inserted PaletteColor", color_entity);
+
+        let color = color_q.get(color_entity).unwrap();
+        let color_index = *color.index as usize;
+        let file_entity: Entity = color.file_entity.get(&server).unwrap();
+
+        let project_key = user_manager
+            .user_session_data(&user_key)
+            .unwrap()
+            .project_key()
+            .unwrap();
+        let file_key = key_q.get(file_entity).unwrap().clone();
+
+        palette_manager.on_create_color(
+            &file_entity,
+            &color_entity,
+            color_index,
+            Some(&mut color_q),
+        );
+
+        let content_entity_data = ContentEntityData::new_frame();
+        git_manager.on_insert_content_entity(
+            &mut server,
+            &project_key,
+            &file_key,
+            &color_entity,
             &content_entity_data,
         );
 

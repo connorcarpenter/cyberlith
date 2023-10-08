@@ -10,8 +10,10 @@ mod shape_waitlist;
 mod tab_manager;
 mod user_manager;
 mod user_tab_state;
+mod palette_manager;
 
 pub use animation_manager::*;
+pub use palette_manager::*;
 pub use changelist_manager::*;
 pub use file_entry::*;
 pub use filespace::*;
