@@ -124,8 +124,14 @@ impl PaletteManager {
         egui::SidePanel::right("right_panel")
             .resizable(true)
             .show_inside(ui, |ui| {
-                Self::edit_render(ui, world, file_entity);
-                ui.allocate_space(ui.available_size());
+                let size = ui.available_size();
+                let size_x = size.x.min(size.y / 3.0);
+                egui::CentralPanel::default().show_inside(ui, |ui| {
+                    ui.with_layout(Layout::top_down(Align::Center), |ui| {
+                        Self::edit_render(ui, world, file_entity, size_x);
+                    });
+                });
+                ui.allocate_space(size);
             });
     }
 
@@ -135,9 +141,9 @@ impl PaletteManager {
         });
     }
 
-    fn edit_render(ui: &mut Ui, world: &mut World, file_entity: &Entity) {
+    fn edit_render(ui: &mut Ui, world: &mut World, file_entity: &Entity, size: f32) {
         world.resource_scope(|world, mut palette_manager: Mut<PaletteManager>| {
-            palette_manager.render_edit(ui, world, file_entity);
+            palette_manager.render_edit(ui, world, file_entity, size);
         });
     }
 
@@ -208,7 +214,7 @@ impl PaletteManager {
         });
     }
 
-    fn render_edit(&mut self, ui: &mut Ui, world: &mut World, file_entity: &Entity) {
+    fn render_edit(&mut self, ui: &mut Ui, world: &mut World, file_entity: &Entity, size: f32) {
         let Some(color_entity) = self.get_color_entity(file_entity, self.selected_color_index) else {
             return;
         };
@@ -224,23 +230,34 @@ impl PaletteManager {
         let HsvaGamma { h, s, v, a: _ } = &mut hsvag;
 
         let mut color_changed = false;
-        if color_slider_1d(ui, h, |h| {
-            HsvaGamma {
-                h,
-                s: 1.0,
-                v: 1.0,
-                a: 1.0,
+        if color_slider_1d(
+            ui,
+            size,
+            h,
+            |h| {
+                HsvaGamma {
+                    h,
+                    s: 1.0,
+                    v: 1.0,
+                    a: 1.0,
+                }
+                .into()
             }
-            .into()
-        })
-        .on_hover_text("Hue")
-        .interact_pointer_pos()
-        .is_some()
+        )
+            .on_hover_text("Hue")
+            .interact_pointer_pos()
+            .is_some()
         {
             color_changed = true;
         }
 
-        if color_slider_2d(ui, s, v, |s, v| HsvaGamma { s, v, ..opaque }.into())
+        if color_slider_2d(
+            ui,
+            size,
+            s,
+            v,
+            |s, v| HsvaGamma { s, v, ..opaque }.into()
+        )
             .interact_pointer_pos()
             .is_some()
         {
@@ -261,9 +278,9 @@ impl PaletteManager {
 /// Should always be a multiple of 6 to hit the peak hues in HSV/HSL (every 60°).
 const N: u32 = 6 * 6;
 
-fn color_slider_1d(ui: &mut Ui, value: &mut f32, color_at: impl Fn(f32) -> Color32) -> Response {
-    let desired_size = vec2(ui.spacing().slider_width, ui.spacing().interact_size.y);
-    let (rect, response) = ui.allocate_at_least(desired_size, Sense::click_and_drag());
+fn color_slider_1d(ui: &mut Ui, width: f32, value: &mut f32, color_at: impl Fn(f32) -> Color32) -> Response {
+    let desired_size = vec2(width, 20.0);
+    let (rect, response) = ui.allocate_exact_size(desired_size, Sense::click_and_drag());
 
     if let Some(mpos) = response.interact_pointer_pos() {
         *value = remap_clamp(mpos.x, rect.left()..=rect.right(), 0.0..=1.0);
@@ -319,12 +336,13 @@ fn color_slider_1d(ui: &mut Ui, value: &mut f32, color_at: impl Fn(f32) -> Color
 ///
 fn color_slider_2d(
     ui: &mut Ui,
+    size: f32,
     x_value: &mut f32,
     y_value: &mut f32,
     color_at: impl Fn(f32, f32) -> Color32,
 ) -> Response {
-    let desired_size = Vec2::splat(ui.spacing().slider_width);
-    let (rect, response) = ui.allocate_at_least(desired_size, Sense::click_and_drag());
+    let desired_size = Vec2::splat(size);
+    let (rect, response) = ui.allocate_exact_size(desired_size, Sense::click_and_drag());
 
     if let Some(mpos) = response.interact_pointer_pos() {
         *x_value = remap_clamp(mpos.x, rect.left()..=rect.right(), 0.0..=1.0);
