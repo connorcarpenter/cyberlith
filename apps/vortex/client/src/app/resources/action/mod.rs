@@ -4,4 +4,7 @@ pub mod palette;
 pub mod shape;
 
 mod action_stack;
+mod tab_action_stack;
+
 pub use action_stack::*;
+pub use tab_action_stack::*;
