@@ -125,7 +125,7 @@ impl PaletteManager {
             .resizable(true)
             .show_inside(ui, |ui| {
                 ui.vertical_centered(|ui| {
-                    Frame::none().inner_margin(8.0).show(ui, |ui| {
+                    Frame::none().inner_margin(4.0).show(ui, |ui| {
                         let margin = ui.style().spacing.item_spacing.x;
                         ui.allocate_ui_with_layout(
                             Vec2::new((26.0 + margin) * 4.0, 32.0),
@@ -137,8 +137,13 @@ impl PaletteManager {
                     });
                 });
                 ui.vertical_centered(|ui| {
-                    Frame::none().inner_margin(0.0).show(ui, |ui| {
+                    Frame::none().inner_margin(4.0).show(ui, |ui| {
                         Self::edit_color_picker_render(ui, world, file_entity);
+                    });
+                });
+                ui.vertical_centered(|ui| {
+                    Frame::none().inner_margin(4.0).show(ui, |ui| {
+                        Self::edit_text_input_render(ui, world, file_entity);
                     });
                 });
             });
@@ -159,6 +164,12 @@ impl PaletteManager {
     fn edit_color_picker_render(ui: &mut Ui, world: &mut World, file_entity: &Entity) {
         world.resource_scope(|world, mut palette_manager: Mut<PaletteManager>| {
             palette_manager.render_edit_color_picker_impl(ui, world, file_entity);
+        });
+    }
+
+    fn edit_text_input_render(ui: &mut Ui, world: &mut World, file_entity: &Entity) {
+        world.resource_scope(|world, mut palette_manager: Mut<PaletteManager>| {
+            palette_manager.render_edit_text_input_impl(ui, world, file_entity);
         });
     }
 
@@ -365,8 +376,80 @@ impl PaletteManager {
             *color_component.g = new_color.g();
             *color_component.b = new_color.b();
         }
+    }
 
-        ui.allocate_space(size);
+    fn render_edit_text_input_impl(&mut self, ui: &mut Ui, world: &mut World, file_entity: &Entity) {
+
+        let Some(color_entity) = self.get_color_entity(file_entity, self.selected_color_index) else {
+            return;
+        };
+        let mut color_q = world.query::<&mut PaletteColor>();
+        let Ok(mut color_component) = color_q.get_mut(world, color_entity) else {
+            return;
+        };
+        let current_color = Color32::from_rgb(*color_component.r, *color_component.g, *color_component.b);
+
+        ui.horizontal(|ui| {
+            Frame::none().inner_margin(4.0).show(ui, |ui| {
+                // label
+                ui.label("Hex color:");
+
+                // text edit
+                // TODO: put into palette manager state ..
+                let mut text = color_to_hex(current_color);
+
+                if ui.text_edit_singleline(&mut text).lost_focus() {
+                    let new_color = hex_to_color(&text);
+                    if let Some(new_color) = new_color {
+                        *color_component.r = new_color.r();
+                        *color_component.g = new_color.g();
+                        *color_component.b = new_color.b();
+                    }
+                }
+            });
+        });
+
+        egui::Grid::new("component-edit").show(ui, |ui| {
+            {
+                let mut text = color_component.r.to_string();
+                ui.add(egui::Label::new("R"));
+                if ui.add(egui::TextEdit::singleline(&mut text).desired_width(50.0))
+                    .lost_focus()
+                {
+                    // change r value
+                    if let Ok(r) = text.parse::<u8>() {
+                        *color_component.r = r;
+                    }
+                }
+                ui.end_row();
+            }
+            {
+                let mut text = color_component.g.to_string();
+                ui.add(egui::Label::new("G"));
+                if ui.add(egui::TextEdit::singleline(&mut text).desired_width(50.0))
+                    .lost_focus()
+                {
+                    // change g value
+                    if let Ok(g) = text.parse::<u8>() {
+                        *color_component.g = g;
+                    }
+                }
+                ui.end_row();
+            }
+            {
+                let mut text = color_component.b.to_string();
+                ui.add(egui::Label::new("B"));
+                if ui.add(egui::TextEdit::singleline(&mut text).desired_width(50.0))
+                    .lost_focus()
+                {
+                    // change b value
+                    if let Ok(b) = text.parse::<u8>() {
+                        *color_component.b = b;
+                    }
+                }
+                ui.end_row();
+            }
+        });
     }
 }
 
@@ -493,4 +576,18 @@ fn contrast_color(color: impl Into<Rgba>) -> Color32 {
     } else {
         Color32::BLACK
     }
+}
+
+fn color_to_hex(color: Color32) -> String {
+    format!("#{:02X}{:02X}{:02X}", color.r(), color.g(), color.b())
+}
+
+fn hex_to_color(hex: &str) -> Option<Color32> {
+    if hex.len() != 7 {
+        return None;
+    }
+    let r = u8::from_str_radix(&hex[1..3], 16).ok()?;
+    let g = u8::from_str_radix(&hex[3..5], 16).ok()?;
+    let b = u8::from_str_radix(&hex[5..7], 16).ok()?;
+    Some(Color32::from_rgb(r, g, b))
 }
