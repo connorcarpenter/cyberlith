@@ -11,7 +11,7 @@ use render_api::{base::CpuMesh, components::Transform, Assets, Handle};
 use vortex_proto::components::{Face3d, Vertex3d};
 
 use crate::app::resources::{
-    action::ShapeAction, canvas::Canvas, face_manager::FaceManager, vertex_manager::VertexManager,
+    action::shape::ShapeAction, canvas::Canvas, face_manager::FaceManager, vertex_manager::VertexManager,
 };
 
 pub(crate) fn execute(world: &mut World, action: ShapeAction) -> Vec<ShapeAction> {

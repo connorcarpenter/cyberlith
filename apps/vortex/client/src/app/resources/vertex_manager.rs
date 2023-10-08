@@ -23,7 +23,7 @@ use vortex_proto::components::{
 use crate::app::{
     components::{DefaultDraw, Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d, VertexEntry},
     resources::{
-        action::{ActionStack, ShapeAction},
+        action::{ActionStack, shape::ShapeAction},
         camera_manager::CameraManager,
         canvas::Canvas,
         edge_manager::EdgeManager,

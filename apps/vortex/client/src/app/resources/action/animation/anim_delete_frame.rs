@@ -8,7 +8,7 @@ use naia_bevy_client::{Client, CommandsExt};
 
 use vortex_proto::components::AnimRotation;
 
-use crate::app::resources::{action::AnimAction, animation_manager::AnimationManager};
+use crate::app::resources::{action::animation::AnimAction, animation_manager::AnimationManager};
 
 pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
     let AnimAction::DeleteFrame(file_entity, frame_index) = action else {

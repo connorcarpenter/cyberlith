@@ -3,10 +3,10 @@ use bevy_ecs::prelude::{Entity, World};
 use math::Quat;
 
 use crate::app::resources::{
-    action::{
+    action::{Action, ActionStack, animation::{
         anim_delete_frame, anim_insert_frame, anim_move_frame, anim_rotate_vertex,
-        anim_select_frame, anim_select_vertex, Action, ActionStack,
-    },
+        anim_select_frame, anim_select_vertex,
+    }},
     input_manager::InputManager,
     shape_data::CanvasShape,
     vertex_manager::VertexManager,

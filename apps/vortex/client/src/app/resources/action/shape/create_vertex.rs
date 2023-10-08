@@ -17,7 +17,7 @@ use vortex_proto::components::FileExtension;
 use crate::app::{
     components::VertexTypeData,
     resources::{
-        action::{select_shape::deselect_selected_shape, ActionStack, ShapeAction},
+        action::{shape::{select_shape::deselect_selected_shape, ShapeAction}, ActionStack},
         camera_manager::CameraManager,
         canvas::Canvas,
         edge_manager::EdgeManager,

@@ -35,7 +35,7 @@ use vortex_proto::components::{
 use crate::app::{
     components::{Edge2dLocal, LocalAnimRotation, Vertex2d},
     resources::{
-        action::AnimAction,
+        action::animation::AnimAction,
         camera_manager::{set_camera_transform, CameraManager},
         canvas::Canvas,
         edge_manager::EdgeManager,

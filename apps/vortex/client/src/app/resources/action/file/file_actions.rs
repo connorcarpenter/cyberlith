@@ -1,7 +1,7 @@
 use bevy_ecs::{entity::Entity, prelude::Resource, world::World};
 
 use crate::app::resources::{
-    action::{ActionStack, FileAction},
+    action::{ActionStack, file::FileAction},
     file_manager::FileManager,
 };
 

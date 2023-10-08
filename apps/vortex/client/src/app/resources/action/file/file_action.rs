@@ -3,7 +3,7 @@ use bevy_ecs::prelude::{Entity, World};
 use vortex_proto::components::EntryKind;
 
 use crate::app::resources::{
-    action::{create_file, delete_file, rename_file, select_file, Action, ActionStack},
+    action::{file::{create_file, delete_file, rename_file, select_file}, Action, ActionStack},
     file_tree::FileTree,
 };
 

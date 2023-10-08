@@ -3,7 +3,7 @@ use bevy_ecs::world::{Mut, World};
 use render_egui::egui::Ui;
 
 use crate::app::resources::{
-    action::AnimAction,
+    action::animation::AnimAction,
     animation_manager::{anim_file_delete_frame, anim_file_insert_frame, AnimationManager},
     input_manager::InputManager,
     tab_manager::TabManager,

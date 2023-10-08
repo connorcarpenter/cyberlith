@@ -9,7 +9,7 @@ use naia_bevy_client::Client;
 use vortex_proto::components::ShapeName;
 
 use crate::app::resources::{
-    action::{select_shape::entity_request_release, AnimAction},
+    action::{shape::entity_request_release, animation::AnimAction},
     animation_manager::AnimationManager,
     canvas::Canvas,
     edge_manager::EdgeManager,

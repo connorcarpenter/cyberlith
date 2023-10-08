@@ -6,7 +6,7 @@ use bevy_log::info;
 
 use vortex_proto::components::EdgeAngle;
 
-use crate::app::resources::{action::ShapeAction, canvas::Canvas, edge_manager::EdgeManager};
+use crate::app::resources::{action::shape::ShapeAction, canvas::Canvas, edge_manager::EdgeManager};
 
 pub(crate) fn execute(world: &mut World, action: ShapeAction) -> Vec<ShapeAction> {
     let ShapeAction::RotateEdge(edge_2d_entity, old_angle, new_angle) = action else {

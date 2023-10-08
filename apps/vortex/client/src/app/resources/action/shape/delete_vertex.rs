@@ -12,8 +12,8 @@ use crate::app::{
     components::{VertexEntry, VertexTypeData},
     resources::{
         action::{
-            select_shape::{entity_request_release, select_shape},
-            ShapeAction,
+            shape::{select_shape::{entity_request_release, select_shape},
+            ShapeAction},
         },
         canvas::Canvas,
         edge_manager::EdgeManager,

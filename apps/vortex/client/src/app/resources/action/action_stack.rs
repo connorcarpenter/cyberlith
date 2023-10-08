@@ -9,7 +9,7 @@ use naia_bevy_client::{Client, CommandsExt, EntityAuthStatus};
 use vortex_proto::components::FileExtension;
 
 use crate::app::resources::{
-    action::{PaletteAction, AnimAction, FileAction, FileActions, ShapeAction},
+    action::{palette::PaletteAction, animation::AnimAction, file::{FileAction, FileActions}, shape::ShapeAction},
     canvas::Canvas,
     file_manager::FileManager,
     input_manager::InputManager,

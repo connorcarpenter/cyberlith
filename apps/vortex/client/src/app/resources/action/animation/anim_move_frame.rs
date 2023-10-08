@@ -8,7 +8,7 @@ use naia_bevy_client::{Client, CommandsExt};
 
 use vortex_proto::components::AnimFrame;
 
-use crate::app::resources::{action::AnimAction, animation_manager::AnimationManager};
+use crate::app::resources::{action::animation::AnimAction, animation_manager::AnimationManager};
 
 pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
     let AnimAction::MoveFrame(file_entity, current_frame_index, next_frame_index) = action else {

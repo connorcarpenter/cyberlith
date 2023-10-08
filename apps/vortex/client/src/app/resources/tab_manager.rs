@@ -24,8 +24,7 @@ use vortex_proto::{
 use crate::app::{
     components::{file_system::FileSystemUiState, OwnedByFileLocal},
     resources::{
-        action::AnimAction,
-        action::{ShapeAction, TabActionStack},
+        action::{animation::AnimAction, shape::ShapeAction, TabActionStack},
         animation_manager::AnimationManager,
         camera_manager::CameraManager,
         camera_state::CameraState,

@@ -10,8 +10,8 @@ use vortex_proto::components::Edge3d;
 
 use crate::app::resources::{
     action::{
-        select_shape::{entity_request_release, select_shape},
-        ShapeAction,
+        shape::{select_shape::{entity_request_release, select_shape},
+        ShapeAction},
     },
     canvas::Canvas,
     edge_manager::EdgeManager,

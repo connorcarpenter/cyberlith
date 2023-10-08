@@ -7,11 +7,12 @@ use bevy_ecs::{
 };
 
 use naia_bevy_client::{Client, CommandsExt};
+
 use vortex_proto::components::{ChangelistEntry, ChangelistStatus};
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemUiState},
-    resources::action::FileAction,
+    resources::action::file::FileAction,
 };
 
 pub fn execute(world: &mut World, action: FileAction) -> Vec<FileAction> {

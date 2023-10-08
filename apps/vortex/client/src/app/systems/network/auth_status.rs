@@ -15,7 +15,7 @@ use vortex_proto::components::AnimFrame;
 use crate::app::{
     components::OwnedByFileLocal,
     resources::{
-        action::FileActions, animation_manager::AnimationManager, edge_manager::EdgeManager,
+        action::file::FileActions, animation_manager::AnimationManager, edge_manager::EdgeManager,
         face_manager::FaceManager, file_manager::FileManager, shape_manager::ShapeManager,
         tab_manager::TabManager, vertex_manager::VertexManager,
     },

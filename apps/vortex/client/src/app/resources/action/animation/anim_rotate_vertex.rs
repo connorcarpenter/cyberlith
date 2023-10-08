@@ -10,7 +10,7 @@ use naia_bevy_client::Client;
 use vortex_proto::components::{AnimRotation, ShapeName};
 
 use crate::app::resources::{
-    action::AnimAction, animation_manager::AnimationManager, canvas::Canvas,
+    action::animation::AnimAction, animation_manager::AnimationManager, canvas::Canvas,
     vertex_manager::VertexManager,
 };
 

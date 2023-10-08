@@ -26,7 +26,7 @@ use crate::app::{
         ContextMenuAction, FileSystemParent, FileSystemUiState, ModalRequestType,
     },
     resources::{
-        action::{FileAction, FileActions},
+        action::file::{FileAction, FileActions},
         file_manager::FileManager,
         tab_manager::TabManager,
     },

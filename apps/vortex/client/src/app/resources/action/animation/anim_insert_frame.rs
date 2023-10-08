@@ -8,7 +8,7 @@ use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt};
 
-use crate::app::resources::{action::AnimAction, animation_manager::AnimationManager};
+use crate::app::resources::{action::animation::AnimAction, animation_manager::AnimationManager};
 
 pub fn execute(world: &mut World, action: AnimAction) -> Vec<AnimAction> {
     let AnimAction::InsertFrame(file_entity, frame_index, content_opt) = action else {

@@ -19,7 +19,7 @@ use crate::app::{
     config::ConfigPlugin,
     events::{InsertComponentEvent, LoginEvent},
     resources::{
-        action::FileActions, animation_manager::AnimationManager, camera_manager::CameraManager,
+        action::file::FileActions, animation_manager::AnimationManager, camera_manager::CameraManager,
         canvas::Canvas, compass::Compass, edge_manager::EdgeManager, face_manager::FaceManager,
         file_manager::FileManager, grid::Grid, input_manager::InputManager,
         shape_waitlist::ShapeWaitlist, tab_manager::TabManager, vertex_manager::VertexManager,

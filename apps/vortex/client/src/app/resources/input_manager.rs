@@ -27,8 +27,7 @@ use crate::app::{
         Edge2dLocal, FaceIcon2d, LocalShape, SelectCircle, SelectTriangle, Vertex2d, VertexTypeData,
     },
     resources::{
-        action::AnimAction,
-        action::ShapeAction,
+        action::{animation::AnimAction, shape::ShapeAction},
         animation_manager::{
             anim_file_delete_frame, anim_file_insert_frame, anim_file_play_pause, AnimationManager,
         },
