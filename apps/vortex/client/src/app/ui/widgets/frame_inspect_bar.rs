@@ -12,8 +12,8 @@ use render_egui::{
 use vortex_proto::components::AnimFrame;
 
 use crate::app::resources::{
-    animation_manager::AnimationManager, canvas::Canvas, edge_manager::EdgeManager,
-    input_manager::InputManager, tab_manager::TabManager, vertex_manager::VertexManager,
+    animation_manager::AnimationManager,
+    tab_manager::TabManager,
 };
 
 #[derive(Resource)]
@@ -116,30 +116,7 @@ pub fn render_frame_inspect_bar(ui: &mut Ui, world: &mut World) {
                 let text_edit = TextEdit::singleline(&mut state.text);
                 let response = ui.add_enabled(selected_frame_entity.is_some(), text_edit);
                 if response.has_focus() {
-                    let mut system_state: SystemState<(
-                        ResMut<Canvas>,
-                        ResMut<InputManager>,
-                        ResMut<VertexManager>,
-                        ResMut<EdgeManager>,
-                        ResMut<AnimationManager>,
-                    )> = SystemState::new(world);
-                    let (
-                        mut canvas,
-                        mut input_manager,
-                        mut vertex_manager,
-                        mut edge_manager,
-                        mut animation_manager,
-                    ) = system_state.get_mut(world);
-
-                    canvas.set_focus(
-                        &mut input_manager,
-                        &mut vertex_manager,
-                        &mut edge_manager,
-                        &mut animation_manager,
-                        false,
-                    );
-
-                    system_state.apply(world);
+                    world.get_resource_mut::<TabManager>().unwrap().set_focus(false);
                 }
 
                 ui.label("frame duration: ");

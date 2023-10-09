@@ -679,7 +679,6 @@ impl InputManager {
 
     pub(crate) fn sync_selection_ui(
         &mut self,
-        canvas: &Canvas,
         file_manager: &FileManager,
         tab_manager: &TabManager,
         transform_q: &mut Query<&mut Transform>,
@@ -753,7 +752,7 @@ impl InputManager {
                 select_shape_visibilities[0].visible = true; // select circle is visible
                 select_shape_visibilities[1].visible = false; // no select triangle visible
                 select_shape_visibilities[2].visible =
-                    current_file_type != FileExtension::Anim && canvas.has_focus();
+                    current_file_type != FileExtension::Anim && tab_manager.has_focus();
                 // select line is visible
             }
             Some((selected_edge_entity, CanvasShape::Edge)) => {
@@ -1354,7 +1353,7 @@ impl InputManager {
         mouse_position: Vec2,
         delta: Vec2,
     ) {
-        if !world.get_resource::<Canvas>().unwrap().has_focus() {
+        if !world.get_resource::<TabManager>().unwrap().has_focus() {
             return;
         }
 
@@ -1534,7 +1533,7 @@ impl InputManager {
         _mouse_position: Vec2,
         delta: Vec2,
     ) {
-        if !world.get_resource::<Canvas>().unwrap().has_focus() {
+        if !world.get_resource::<TabManager>().unwrap().has_focus() {
             return;
         }
 
@@ -1555,7 +1554,7 @@ impl InputManager {
         mouse_position: Vec2,
         delta: Vec2,
     ) {
-        if !world.get_resource::<Canvas>().unwrap().has_focus() {
+        if !world.get_resource::<TabManager>().unwrap().has_focus() {
             return;
         }
 

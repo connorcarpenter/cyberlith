@@ -34,8 +34,6 @@ pub struct PaletteManager {
     resync_color_order: HashSet<Entity>,
     //
     current_color_entity: Option<Entity>,
-    //
-    has_focus: bool,
 
     text_hex: String,
     text_r: String,
@@ -54,7 +52,6 @@ impl Default for PaletteManager {
             colors: HashMap::new(),
             current_color_entity: None,
             resync_color_order: HashSet::new(),
-            has_focus: false,
 
             text_hex: String::new(),
             text_r: String::new(),
@@ -68,8 +65,6 @@ impl Default for PaletteManager {
 }
 
 impl PaletteManager {
-
-    pub fn has_focus(&self) -> bool { self.has_focus }
 
     pub fn entity_is_color(&self, entity: &Entity) -> bool {
         self.colors.contains_key(entity)
@@ -236,18 +231,18 @@ impl PaletteManager {
 
         if ui.input(|i| i.pointer.any_click()) {
             let mouse_position = ui.input(|i| i.pointer.interact_pos().unwrap());
-            let mut palette_manager = world.get_resource_mut::<PaletteManager>().unwrap();
+            let mut tab_manager = world.get_resource_mut::<TabManager>().unwrap();
             if right_rect.contains(mouse_position) || left_rect.contains(mouse_position) {
-                palette_manager.has_focus = true;
+                tab_manager.set_focus(true);
             } else {
-                palette_manager.has_focus = false;
+                tab_manager.set_focus(false);
             }
         }
     }
 
     fn render_left(ui: &mut Ui, world: &mut World, file_entity: &Entity) -> Rect {
         let mut frame = Frame::central_panel(ui.style());
-        if world.get_resource::<PaletteManager>().unwrap().has_focus {
+        if world.get_resource::<TabManager>().unwrap().has_focus() {
             frame.stroke.color = Color32::WHITE;
             frame.stroke.width = 1.0;
         }

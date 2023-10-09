@@ -13,7 +13,7 @@ use vortex_proto::components::{FileExtension, ShapeName};
 
 use crate::app::{
     resources::{
-        animation_manager::AnimationManager, canvas::Canvas, edge_manager::EdgeManager,
+        edge_manager::EdgeManager,
         face_manager::FaceManager, file_manager::FileManager, input_manager::InputManager,
         shape_data::CanvasShape, shape_manager::ShapeManager, tab_manager::TabManager,
         vertex_manager::VertexManager,
@@ -145,30 +145,7 @@ pub fn render_naming_bar(ui: &mut Ui, world: &mut World) {
                 let text_edit = TextEdit::singleline(&mut state.text);
                 let response = ui.add_enabled(selected_shape_2d.is_some(), text_edit);
                 if response.has_focus() {
-                    let mut system_state: SystemState<(
-                        ResMut<Canvas>,
-                        ResMut<InputManager>,
-                        ResMut<VertexManager>,
-                        ResMut<EdgeManager>,
-                        ResMut<AnimationManager>,
-                    )> = SystemState::new(world);
-                    let (
-                        mut canvas,
-                        mut input_manager,
-                        mut vertex_manager,
-                        mut edge_manager,
-                        mut animation_manager,
-                    ) = system_state.get_mut(world);
-
-                    canvas.set_focus(
-                        &mut input_manager,
-                        &mut vertex_manager,
-                        &mut edge_manager,
-                        &mut animation_manager,
-                        false,
-                    );
-
-                    system_state.apply(world);
+                    world.get_resource_mut::<TabManager>().unwrap().set_focus(false);
                 }
 
                 ui.label("name: ");
@@ -206,21 +183,5 @@ pub fn naming_bar_visibility_toggle(world: &mut World, input_manager: &mut Input
     ui_state.resized_window = true;
 
     // set focus to canvas
-    let mut system_state: SystemState<(
-        ResMut<Canvas>,
-        ResMut<VertexManager>,
-        ResMut<EdgeManager>,
-        ResMut<AnimationManager>,
-    )> = SystemState::new(world);
-    let (mut canvas, mut vertex_manager, mut edge_manager, mut animation_manager) =
-        system_state.get_mut(world);
-
-    canvas.set_focused_timed(
-        input_manager,
-        &mut vertex_manager,
-        &mut edge_manager,
-        &mut animation_manager,
-    );
-
-    system_state.apply(world);
+    world.get_resource_mut::<TabManager>().unwrap().set_focus(true);
 }

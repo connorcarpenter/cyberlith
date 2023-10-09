@@ -13,7 +13,6 @@ use crate::app::resources::{
         palette::PaletteAction,
         shape::ShapeAction,
     },
-    canvas::Canvas,
     file_manager::FileManager,
     input_manager::InputManager,
     palette_manager::PaletteManager,
@@ -50,55 +49,48 @@ impl<A> Default for ActionStack<A> {
 }
 
 pub(crate) fn action_stack_undo(world: &mut World) {
-    let Some(canvas) = world.get_resource::<Canvas>() else {
-        return;
-    };
-    let Some(palette_manager) = world.get_resource::<PaletteManager>() else {
-        return;
-    };
 
-    let tab_content_has_focus = canvas.has_focus() || palette_manager.has_focus();
+    world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+        let tab_content_has_focus = tab_manager.has_focus();
 
-    if tab_content_has_focus {
-        world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-            let Some(tab_file_entity) = tab_manager.current_tab_entity() else {
-                return;
-            };
-            let tab_file_entity = *tab_file_entity;
-            if let Some(tab_state) = tab_manager.current_tab_state_mut() {
-                if tab_state.action_stack.has_undo() {
-                    world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
-                        tab_state.action_stack.undo_action(
-                            world,
-                            &mut input_manager,
-                            tab_file_entity,
-                        );
-                    });
+        if tab_content_has_focus {
+
+                let Some(tab_file_entity) = tab_manager.current_tab_entity() else {
+                    return;
+                };
+                let tab_file_entity = *tab_file_entity;
+                if let Some(tab_state) = tab_manager.current_tab_state_mut() {
+                    if tab_state.action_stack.has_undo() {
+                        world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
+                            tab_state.action_stack.undo_action(
+                                world,
+                                &mut input_manager,
+                                tab_file_entity,
+                            );
+                        });
+                    }
                 }
-            }
-        });
-    } else {
-        world.resource_scope(|world, mut file_actions: Mut<FileActions>| {
-            let file_manager = world.get_resource::<FileManager>().unwrap();
 
-            let project_root_entity = file_manager.project_root_entity;
+        } else {
+            world.resource_scope(|world, mut file_actions: Mut<FileActions>| {
+                let file_manager = world.get_resource::<FileManager>().unwrap();
 
-            if file_actions.has_undo() {
-                file_actions.undo_action(world, project_root_entity);
-            }
-        });
-    }
+                let project_root_entity = file_manager.project_root_entity;
+
+                if file_actions.has_undo() {
+                    file_actions.undo_action(world, project_root_entity);
+                }
+            });
+        }
+    });
 }
 
 pub(crate) fn action_stack_redo(world: &mut World) {
-    let Some(canvas) = world.get_resource::<Canvas>() else {
-        return;
-    };
 
-    let canvas_has_focus = canvas.has_focus();
+    world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+        let tab_content_has_focus = tab_manager.has_focus();
 
-    if canvas_has_focus {
-        world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+        if tab_content_has_focus {
             let Some(tab_file_entity) = tab_manager.current_tab_entity() else {
                 return;
             };
@@ -114,17 +106,17 @@ pub(crate) fn action_stack_redo(world: &mut World) {
                     });
                 }
             }
-        });
-    } else {
-        world.resource_scope(|world, mut file_actions: Mut<FileActions>| {
-            let file_manager = world.get_resource::<FileManager>().unwrap();
-            let project_root_entity = file_manager.project_root_entity;
+        } else {
+            world.resource_scope(|world, mut file_actions: Mut<FileActions>| {
+                let file_manager = world.get_resource::<FileManager>().unwrap();
+                let project_root_entity = file_manager.project_root_entity;
 
-            if file_actions.has_redo() {
-                file_actions.redo_action(world, project_root_entity);
-            }
-        });
-    }
+                if file_actions.has_redo() {
+                    file_actions.redo_action(world, project_root_entity);
+                }
+            });
+        }
+    });
 }
 
 impl<A: Action> ActionStack<A> {

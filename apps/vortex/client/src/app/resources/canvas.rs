@@ -6,7 +6,7 @@ use render_api::{base::CpuTexture2D, Handle};
 
 use crate::app::resources::{
     animation_manager::AnimationManager, edge_manager::EdgeManager, input_manager::InputManager,
-    vertex_manager::VertexManager,
+    vertex_manager::VertexManager, tab_manager::TabManager
 };
 
 #[derive(Resource)]
@@ -15,9 +15,8 @@ pub struct Canvas {
     canvas_texture_size: Vec2,
     is_visible: bool,
     next_visible: bool,
-    has_focus: bool,
-    focus_timer: u8,
     resync_shapes: u8,
+    last_focused: bool,
 }
 
 impl Default for Canvas {
@@ -27,9 +26,8 @@ impl Default for Canvas {
             is_visible: false,
             canvas_texture: None,
             canvas_texture_size: Vec2::new(1280.0, 720.0),
-            has_focus: false,
-            focus_timer: 0,
             resync_shapes: 0,
+            last_focused: false,
         }
     }
 }
@@ -42,6 +40,28 @@ impl Canvas {
         }
         self.is_visible = self.next_visible;
         return true;
+    }
+
+    pub fn update_sync_focus(
+        &mut self,
+        tab_manager: &TabManager,
+        input_manager: &mut InputManager,
+        vertex_manager: &mut VertexManager,
+        edge_manager: &mut EdgeManager,
+        animation_manager: &mut AnimationManager
+    ) {
+        if self.last_focused == tab_manager.has_focus() {
+            return;
+        }
+        self.last_focused = tab_manager.has_focus();
+
+        input_manager.queue_resync_selection_ui();
+        if !self.last_focused {
+            vertex_manager.reset_last_vertex_dragged();
+            edge_manager.reset_last_edge_dragged();
+            animation_manager.reset_last_rotation_dragged();
+            input_manager.hovered_entity = None;
+        }
     }
 
     pub fn update_canvas_size(&mut self, texture_size: Vec2) {
@@ -67,52 +87,6 @@ impl Canvas {
 
     pub fn set_visibility(&mut self, visible: bool) {
         self.next_visible = visible;
-    }
-
-    pub fn has_focus(&self) -> bool {
-        self.has_focus
-    }
-
-    pub fn set_focus(
-        &mut self,
-        input_manager: &mut InputManager,
-        vertex_manager: &mut VertexManager,
-        edge_manager: &mut EdgeManager,
-        animation_manager: &mut AnimationManager,
-        focus: bool,
-    ) {
-        if !focus && self.has_focus && self.focus_timer > 0 {
-            self.focus_timer -= 1;
-            return;
-        }
-        self.has_focus = focus;
-
-        Canvas::on_canvas_focus_changed(
-            input_manager,
-            vertex_manager,
-            edge_manager,
-            animation_manager,
-            focus,
-        );
-    }
-
-    pub fn set_focused_timed(
-        &mut self,
-        input_manager: &mut InputManager,
-        vertex_manager: &mut VertexManager,
-        edge_manager: &mut EdgeManager,
-        animation_manager: &mut AnimationManager,
-    ) {
-        self.has_focus = true;
-        self.focus_timer = 1;
-
-        Canvas::on_canvas_focus_changed(
-            input_manager,
-            vertex_manager,
-            edge_manager,
-            animation_manager,
-            true,
-        );
     }
 
     pub(crate) fn is_position_inside(&self, pos: Vec2) -> bool {
@@ -142,21 +116,5 @@ impl Canvas {
         self.resync_shapes -= 1;
 
         return true;
-    }
-
-    pub(crate) fn on_canvas_focus_changed(
-        input_manager: &mut InputManager,
-        vertex_manager: &mut VertexManager,
-        edge_manager: &mut EdgeManager,
-        animation_manager: &mut AnimationManager,
-        new_focus: bool,
-    ) {
-        input_manager.queue_resync_selection_ui();
-        if !new_focus {
-            vertex_manager.reset_last_vertex_dragged();
-            edge_manager.reset_last_edge_dragged();
-            animation_manager.reset_last_rotation_dragged();
-            input_manager.hovered_entity = None;
-        }
     }
 }

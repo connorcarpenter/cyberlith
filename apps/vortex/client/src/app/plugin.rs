@@ -129,6 +129,7 @@ impl Plugin for VortexPlugin {
             .init_resource::<Canvas>()
             .add_systems(Startup, canvas::setup)
             .add_systems(Update, canvas::update_camera)
+            .add_systems(Update, canvas::update_tab_content_focus)
             .add_systems(Update, canvas::queue_resyncs)
             .add_systems(Update, TabManager::sync_tabs)
             .add_systems(Update, canvas::sync_compass)

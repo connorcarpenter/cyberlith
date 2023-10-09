@@ -27,17 +27,14 @@ use crate::app::{
         action::{
             animation::AnimAction, palette::PaletteAction, shape::ShapeAction, TabActionStack,
         },
-        animation_manager::AnimationManager,
         camera_manager::CameraManager,
         camera_state::CameraState,
         canvas::Canvas,
-        edge_manager::EdgeManager,
         file_manager::FileManager,
         input_manager::InputManager,
         palette_manager::PaletteManager,
         shape_data::CanvasShape,
         shape_manager::ShapeManager,
-        vertex_manager::VertexManager,
     },
     ui::widgets::colors::{
         FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
@@ -86,6 +83,8 @@ pub struct TabManager {
     tab_order: Vec<Entity>,
     new_tab_id: TabId,
     recycled_tab_ids: VecDeque<TabId>,
+
+    content_has_focus: bool,
 }
 
 impl Default for TabManager {
@@ -98,6 +97,8 @@ impl Default for TabManager {
             tab_order: Vec::new(),
             new_tab_id: 0,
             recycled_tab_ids: VecDeque::new(),
+
+            content_has_focus: false,
         }
     }
 }
@@ -132,18 +133,12 @@ impl TabManager {
             Res<FileManager>,
             ResMut<InputManager>,
             ResMut<CameraManager>,
-            ResMut<VertexManager>,
-            ResMut<EdgeManager>,
-            ResMut<AnimationManager>,
         )> = SystemState::new(world);
         let (
             mut canvas,
             file_manager,
             mut input_manager,
             mut camera_manager,
-            mut vertex_manager,
-            mut edge_manager,
-            mut animation_manager,
         ) = system_state.get_mut(world);
 
         let mut canvas_is_visible = false;
@@ -158,14 +153,10 @@ impl TabManager {
 
         if canvas_is_visible {
             canvas.set_visibility(true);
-            canvas.set_focused_timed(
-                &mut input_manager,
-                &mut vertex_manager,
-                &mut edge_manager,
-                &mut animation_manager,
-            );
+            self.set_focus(true);
         } else {
             canvas.set_visibility(false);
+            self.set_focus(false);
         }
 
         input_manager.deselect_shape(&mut canvas);
@@ -208,6 +199,17 @@ impl TabManager {
         }
 
         canvas.queue_resync_shapes();
+    }
+
+    pub fn has_focus(&self) -> bool {
+        self.content_has_focus
+    }
+
+    pub fn set_focus(
+        &mut self,
+        focus: bool,
+    ) {
+        self.content_has_focus = focus;
     }
 
     pub fn open_tab(&mut self, client: &mut Client, row_entity: &Entity, file_ext: FileExtension) {

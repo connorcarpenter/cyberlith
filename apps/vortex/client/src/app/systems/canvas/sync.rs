@@ -374,7 +374,6 @@ pub fn update_select_line(
     }
 
     input_manager.sync_selection_ui(
-        &canvas,
         &file_manager,
         &tab_manager,
         &mut transform_q,

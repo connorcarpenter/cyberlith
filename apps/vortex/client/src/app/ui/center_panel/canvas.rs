@@ -18,8 +18,7 @@ use render_egui::{
 
 use crate::app::{
     resources::{
-        animation_manager::AnimationManager, camera_manager::CameraManager, canvas::Canvas,
-        edge_manager::EdgeManager, input_manager::InputManager, vertex_manager::VertexManager,
+        camera_manager::CameraManager, canvas::Canvas, tab_manager::TabManager,
     },
     ui::UiState,
 };
@@ -31,12 +30,9 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
             let mut did_resize = resize_finished(ui, world, "left_panel");
 
             let mut system_state: SystemState<(
+                ResMut<TabManager>,
                 ResMut<Canvas>,
                 ResMut<CameraManager>,
-                ResMut<InputManager>,
-                ResMut<VertexManager>,
-                ResMut<EdgeManager>,
-                ResMut<AnimationManager>,
                 ResMut<Assets<CpuTexture2D>>,
                 ResMut<EguiUserTextures>,
                 ResMut<UiState>,
@@ -44,12 +40,9 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
                 Query<(&mut Camera, &mut Transform, &mut Projection)>,
             )> = SystemState::new(world);
             let (
+                mut tab_manager,
                 mut canvas,
                 mut camera_manager,
-                mut input_manager,
-                mut vertex_manager,
-                mut edge_manager,
-                mut animation_manager,
                 mut textures,
                 mut user_textures,
                 mut ui_state,
@@ -67,7 +60,7 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
 
             let mut frame = Frame::central_panel(ui.style()).inner_margin(1.0);
             if canvas.is_visible() {
-                if canvas.has_focus() {
+                if tab_manager.has_focus() {
                     frame = frame.fill(Color32::DARK_GRAY);
                 } else {
                     frame = frame.fill(Color32::BLACK);
@@ -114,25 +107,13 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
 
                         if canvas_response.clicked() || canvas_response.dragged() {
                             canvas_response.request_focus();
-                            canvas.set_focus(
-                                &mut input_manager,
-                                &mut vertex_manager,
-                                &mut edge_manager,
-                                &mut animation_manager,
-                                true,
-                            );
+                            tab_manager.set_focus(true);
                         } else if canvas_response.clicked_elsewhere() {
                             canvas_response.surrender_focus();
-                            canvas.set_focus(
-                                &mut input_manager,
-                                &mut vertex_manager,
-                                &mut edge_manager,
-                                &mut animation_manager,
-                                false,
-                            );
+                            tab_manager.set_focus(false);
                         }
 
-                        let has_focus = canvas.has_focus();
+                        let has_focus = tab_manager.has_focus();
                         input.set_enabled(has_focus);
                     } else {
                         input.set_enabled(false);
