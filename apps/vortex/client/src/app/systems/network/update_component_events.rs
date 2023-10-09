@@ -6,14 +6,12 @@ use bevy_log::info;
 
 use naia_bevy_client::{events::UpdateComponentEvents, Client};
 
-use vortex_proto::components::{
-    AnimFrame, AnimRotation, ChangelistEntry, EdgeAngle, FileSystemChild, FileSystemEntry,
-    FileSystemRootChild, ShapeName, Vertex3d,
-};
+use vortex_proto::components::{AnimFrame, AnimRotation, ChangelistEntry, EdgeAngle, FileSystemChild, FileSystemEntry, FileSystemRootChild, PaletteColor, ShapeName, Vertex3d};
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemEntryLocal},
     resources::{
+        palette_manager::PaletteManager,
         animation_manager::AnimationManager,
         canvas::Canvas,
         file_manager::{get_full_path, FileManager},
@@ -26,10 +24,12 @@ pub fn update_component_events(
     file_manager: ResMut<FileManager>,
     mut canvas: ResMut<Canvas>,
     mut animation_manager: ResMut<AnimationManager>,
+    mut palette_manager: ResMut<PaletteManager>,
     entry_q: Query<(&FileSystemEntry, Option<&FileSystemChild>)>,
     mut entry_local_q: Query<&mut FileSystemEntryLocal>,
     mut cl_q: Query<(&ChangelistEntry, &mut ChangelistUiState)>,
     frame_q: Query<&AnimFrame>,
+    color_q: Query<&PaletteColor>,
 ) {
     for events in event_reader.iter() {
         // on FileSystemEntry Update Event
@@ -108,7 +108,24 @@ pub fn update_component_events(
                 panic!("frame component not found for entity `{:?}`", frame_entity);
             };
             let file_entity = frame.file_entity.get(&client).unwrap();
-            animation_manager.framing_queue_resync_frame_order(&file_entity);
+            // check that index has changed
+            let frame_index = frame.get_order() as usize;
+            let existing_frame_entity = animation_manager.get_frame_entity(&file_entity, frame_index);
+            if existing_frame_entity != Some(frame_entity) {
+                animation_manager.framing_queue_resync_frame_order(&file_entity);
+            }
+        }
+        for (_tick, color_entity) in events.read::<PaletteColor>() {
+            let Ok(color) = color_q.get(color_entity) else {
+                panic!("color component not found for entity `{:?}`", color_entity);
+            };
+            let file_entity = color.file_entity.get(&client).unwrap();
+            // check that index has changed
+            let color_index = *color.index as usize;
+            let existing_color_entity = palette_manager.get_color_entity(&file_entity, color_index);
+            if existing_color_entity != Some(color_entity) {
+                palette_manager.queue_resync_color_order(&file_entity);
+            }
         }
     }
 }

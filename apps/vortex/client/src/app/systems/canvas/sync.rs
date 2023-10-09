@@ -14,7 +14,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{AnimFrame, EdgeAngle, FileExtension, Vertex3d};
+use vortex_proto::components::{AnimFrame, EdgeAngle, FileExtension, PaletteColor, Vertex3d};
 
 use crate::app::{
     components::{Edge2dLocal, Edge3dLocal, FaceIcon2d, LocalShape},
@@ -32,6 +32,7 @@ use crate::app::{
         vertex_manager::VertexManager,
     },
 };
+use crate::app::resources::palette_manager::PaletteManager;
 
 pub fn queue_resyncs(
     mut canvas: ResMut<Canvas>,
@@ -318,6 +319,24 @@ pub fn update_animation(
     }
     animation_manager.framing_resync_frame_order(&client, &frame_q);
     animation_manager.preview_update(&mut canvas, current_file_entity, &frame_q);
+}
+
+pub fn update_palette(
+    client: Client,
+    file_manager: Res<FileManager>,
+    tab_manager: Res<TabManager>,
+    mut palette_manager: ResMut<PaletteManager>,
+    color_q: Query<(Entity, &PaletteColor)>,
+) {
+    // get file type
+    let Some(current_file_entity) = tab_manager.current_tab_entity() else {
+        return;
+    };
+    let file_ext = file_manager.get_file_type(current_file_entity);
+    if file_ext != FileExtension::Palette {
+        return;
+    }
+    palette_manager.resync_color_order(&client, &color_q);
 }
 
 pub fn process_faces(

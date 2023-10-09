@@ -1,10 +1,13 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{
     entity::Entity,
-    system::Resource,
+    system::{Resource, Commands, Query, SystemState},
     world::{Mut, World},
 };
+use bevy_log::{info, warn};
+
+use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
 use render_egui::{
     egui,
@@ -27,7 +30,10 @@ pub struct PaletteManager {
     // color entity -> file entity
     colors: HashMap<Entity, Entity>,
     //
+    resync_color_order: HashSet<Entity>,
+    //
     current_color_entity: Option<Entity>,
+
     text_hex: String,
     text_r: String,
     text_g: String,
@@ -44,6 +50,8 @@ impl Default for PaletteManager {
             file_colors: HashMap::new(),
             colors: HashMap::new(),
             current_color_entity: None,
+            resync_color_order: HashSet::new(),
+
             text_hex: String::new(),
             text_r: String::new(),
             text_g: String::new(),
@@ -58,6 +66,10 @@ impl Default for PaletteManager {
 impl PaletteManager {
     pub fn entity_is_color(&self, entity: &Entity) -> bool {
         self.colors.contains_key(entity)
+    }
+
+    pub fn current_color_index(&self) -> usize {
+        self.selected_color_index
     }
 
     pub fn register_color(
@@ -124,6 +136,91 @@ impl PaletteManager {
         let color_entity_opt = colors.get(color_index)?.as_ref();
         let color_entity = color_entity_opt?;
         Some(*color_entity)
+    }
+
+    pub(crate) fn get_color_count(&self, file_entity: &Entity) -> Option<usize> {
+        let color_data = self.file_colors.get(file_entity)?;
+        Some(color_data.len())
+    }
+
+    pub fn queue_resync_color_order(&mut self, file_entity: &Entity) {
+        info!(
+            "queue_resync_color_order for entity: `{:?}`",
+            file_entity
+        );
+        self.resync_color_order.insert(*file_entity);
+    }
+
+    pub fn resync_color_order(
+        &mut self,
+        client: &Client,
+        color_q: &Query<(Entity, &PaletteColor)>,
+    ) {
+        if self.resync_color_order.is_empty() {
+            return;
+        }
+        let resync_color_order = std::mem::take(&mut self.resync_color_order);
+        for file_entity in resync_color_order {
+            self.recalc_order(client, &file_entity, color_q);
+        }
+    }
+
+    fn recalc_order(
+        &mut self,
+        client: &Client,
+        file_entity: &Entity,
+        color_q: &Query<(Entity, &PaletteColor)>,
+    ) {
+        let Some(color_list) = self.file_colors.get_mut(&file_entity) else {
+            return;
+        };
+
+        let mut new_color_list = Vec::new();
+
+        for (color_entity, color) in color_q.iter() {
+            let colors_file_entity = color.file_entity.get(client).unwrap();
+            if colors_file_entity != *file_entity {
+                continue;
+            }
+            let color_index = *color.index as usize;
+            // resize if necessary
+            if color_index >= new_color_list.len() {
+                new_color_list.resize(color_index + 1, None);
+            }
+            if new_color_list[color_index].is_some() {
+                warn!("Duplicate color order! {:?}", color_index);
+            }
+            new_color_list[color_index] = Some(color_entity);
+        }
+
+        for (index, color_entity_opt) in new_color_list.iter().enumerate() {
+            info!("color order: {:?} -> {:?}", index, color_entity_opt);
+        }
+
+        *color_list = new_color_list;
+    }
+
+    pub fn insert_color(
+        &mut self,
+        commands: &mut Commands,
+        client: &mut Client,
+        file_entity: Entity,
+        color_index: usize,
+        color: Color32,
+    ) -> Entity {
+        let mut color_component = PaletteColor::new(color_index as u8, color.r(), color.g(), color.b());
+        color_component.file_entity.set(client, &file_entity);
+        let entity_id = commands
+            .spawn_empty()
+            .enable_replication(client)
+            .configure_replication(ReplicationConfig::Delegated)
+            .insert(color_component)
+            .id();
+
+        // create new 2d vertex, add local components to 3d vertex
+        self.register_color(file_entity, entity_id, color_index);
+
+        entity_id
     }
 
     pub fn render(ui: &mut Ui, world: &mut World, file_entity: &Entity) {
@@ -252,72 +349,63 @@ impl PaletteManager {
 
     fn render_edit_buttons_impl(&mut self, ui: &mut Ui, world: &mut World) {
         ui.horizontal(|ui| {
-            // new frame
+            // new color
             if Toolbar::button(ui, "➕", "New color", true).clicked() {
-                // world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
-                //     anim_file_insert_frame(&mut input_manager, world);
-                // });
+                palette_file_insert_color(self, world);
             }
 
-            // delete frame
+            // delete color
             if Toolbar::button(ui, "-", "Delete color", true).clicked() {
-                // world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
-                //     anim_file_delete_frame(&mut input_manager, world);
-                // });
+                palette_file_delete_color(self, world);
             }
 
             // move frame left / right
-            // let current_file_entity = *world
-            //     .get_resource::<TabManager>()
-            //     .unwrap()
-            //     .current_tab_entity()
-            //     .unwrap();
-            // let animation_manager = world.get_resource::<AnimationManager>().unwrap();
-            // let current_frame_index = animation_manager.current_frame_index();
-            // let frame_count = animation_manager
-            //     .get_frame_count(&current_file_entity)
-            //     .unwrap_or_default();
+            let current_file_entity = *world
+                .get_resource::<TabManager>()
+                .unwrap()
+                .current_tab_entity()
+                .unwrap();
+            let current_color_index = self.current_color_index();
+            let color_count = self
+                .get_color_count(&current_file_entity)
+                .unwrap_or_default();
 
             {
                 // move frame left
-                let enabled = true; //current_frame_index > 0;
+                let enabled = current_color_index > 0;
                 let response = Toolbar::button(ui, "⬅", "Move color left", enabled);
-                // if enabled && response.clicked() {
-                //     world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
-                //         world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                //             tab_manager.current_tab_execute_anim_action(
-                //                 world,
-                //                 &mut input_manager,
-                //                 AnimAction::MoveFrame(
-                //                     current_file_entity,
-                //                     current_frame_index,
-                //                     current_frame_index - 1,
-                //                 ),
-                //             );
-                //         });
-                //     });
-                // }
+                if enabled && response.clicked() {
+                    world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                        tab_manager.current_tab_execute_palette_action(
+                            world,
+                            self,
+                            PaletteAction::MoveColor(
+                                current_file_entity,
+                                current_color_index,
+                                current_color_index - 1,
+                            ),
+                        );
+                    });
+                }
             }
 
             {
                 // move frame right
-                let enabled = true; //frame_count > 0 && current_frame_index < frame_count - 1;
+                let enabled = color_count > 0 && current_color_index < color_count - 1;
                 let response = Toolbar::button(ui, "➡", "Move color right", enabled);
-                // if enabled && response.clicked() {
-                //     world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
-                //         world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                //             tab_manager.current_tab_execute_anim_action(
-                //                 world,
-                //                 &mut input_manager,
-                //                 AnimAction::MoveFrame(
-                //                     current_file_entity,
-                //                     current_frame_index,
-                //                     current_frame_index + 1,
-                //                 ),
-                //             );
-                //         });
-                //     });
-                // }
+                if enabled && response.clicked() {
+                    world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                        tab_manager.current_tab_execute_palette_action(
+                            world,
+                            self,
+                            PaletteAction::MoveColor(
+                                current_file_entity,
+                                current_color_index,
+                                current_color_index + 1,
+                            ),
+                        );
+                    });
+                }
             }
         });
     }
@@ -673,4 +761,74 @@ impl Hsv {
         let rgb = Color32::from(hsvg);
         (rgb.r(), rgb.g(), rgb.b())
     }
+}
+
+pub(crate) fn palette_file_insert_color(palette_manager: &mut PaletteManager, world: &mut World) {
+    world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+        let current_file_entity = *tab_manager.current_tab_entity().unwrap();
+        let current_color_index = palette_manager.current_color_index();
+
+        // copy all rotations from current frame
+        let stored_color;
+        let current_color_entity = palette_manager
+            .get_color_entity(&current_file_entity, current_color_index)
+            .unwrap();
+        let mut color_q = world.query::<&PaletteColor>();
+        let Ok(color) = color_q.get(world, current_color_entity) else {
+            return;
+        };
+        stored_color = Color32::from_rgb(*color.r, *color.g, *color.b);
+
+        // execute insertion
+        tab_manager.current_tab_execute_palette_action(
+            world,
+            palette_manager,
+            PaletteAction::InsertColor(
+                current_file_entity,
+                current_color_index + 1,
+                Some(stored_color),
+            ),
+        );
+    });
+}
+
+pub(crate) fn palette_file_delete_color(palette_manager: &mut PaletteManager, world: &mut World) {
+    let Some(current_file_entity) = world.get_resource::<TabManager>().unwrap().current_tab_entity() else {
+        return;
+    };
+    let current_file_entity = *current_file_entity;
+
+    let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+    let (mut commands, client) = system_state.get_mut(world);
+
+    // delete color
+    let current_color_index = palette_manager.current_color_index();
+    let Some(current_frame_entity) = palette_manager.get_color_entity(&current_file_entity, current_color_index) else {
+        return;
+    };
+
+    // check whether we can delete vertex
+    let auth_status = commands
+        .entity(current_frame_entity)
+        .authority(&client)
+        .unwrap();
+    if !auth_status.is_granted() && !auth_status.is_available() {
+        // do nothing, file is not available
+        // TODO: queue for deletion? check before this?
+        warn!(
+            "Color `{:?}` is not available for deletion!",
+            current_frame_entity
+        );
+        return;
+    }
+
+    let current_color_index = palette_manager.current_color_index();
+
+    world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+        tab_manager.current_tab_execute_palette_action(
+            world,
+            palette_manager,
+            PaletteAction::DeleteColor(current_file_entity, current_color_index),
+        );
+    });
 }

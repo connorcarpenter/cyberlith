@@ -1,7 +1,9 @@
 use bevy_ecs::prelude::{Entity, World};
 
+use render_egui::egui::Color32;
+
 use crate::app::resources::{
-    action::{palette::select_color, Action},
+    action::{palette::{select_color, delete_color, insert_color, move_color}, Action},
     palette_manager::PaletteManager,
 };
 
@@ -9,16 +11,28 @@ use crate::app::resources::{
 pub enum PaletteAction {
     // file entity, next color index, last color index
     SelectColor(Entity, usize, usize),
+    // file entity, color index
+    InsertColor(Entity, usize, Option<Color32>),
+    // file entity, color index
+    DeleteColor(Entity, usize),
+    // file entity, color index, last color index
+    MoveColor(Entity, usize, usize),
 }
 
 pub enum PaletteActionType {
     SelectColor,
+    InsertColor,
+    DeleteColor,
+    MoveColor,
 }
 
 impl PaletteAction {
     pub fn get_type(&self) -> PaletteActionType {
         match self {
             Self::SelectColor(_, _, _) => PaletteActionType::SelectColor,
+            Self::InsertColor(_, _, _) => PaletteActionType::InsertColor,
+            Self::DeleteColor(_, _) => PaletteActionType::DeleteColor,
+            Self::MoveColor(_, _, _) => PaletteActionType::MoveColor,
         }
     }
 
@@ -27,6 +41,9 @@ impl PaletteAction {
 
         match action_type {
             PaletteActionType::SelectColor => select_color::execute(world, palette_manager, self),
+            PaletteActionType::InsertColor => insert_color::execute(world, palette_manager, self),
+            PaletteActionType::DeleteColor => delete_color::execute(world, palette_manager, self),
+            PaletteActionType::MoveColor => move_color::execute(world, palette_manager, self),
         }
     }
 }
