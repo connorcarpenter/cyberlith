@@ -12,12 +12,12 @@ use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 use render_egui::{
     egui,
     egui::{
+        Rect,
         epaint,
         ecolor::HsvaGamma, lerp, pos2, remap_clamp, vec2, Align, Color32, Frame, Layout, Mesh,
         Response, Rgba, Sense, Shape, Stroke, Ui, Vec2,
     },
 };
-use render_egui::egui::Rect;
 
 use vortex_proto::components::PaletteColor;
 
@@ -68,6 +68,9 @@ impl Default for PaletteManager {
 }
 
 impl PaletteManager {
+
+    pub fn has_focus(&self) -> bool { self.has_focus }
+
     pub fn entity_is_color(&self, entity: &Entity) -> bool {
         self.colors.contains_key(entity)
     }

@@ -53,10 +53,13 @@ pub(crate) fn action_stack_undo(world: &mut World) {
     let Some(canvas) = world.get_resource::<Canvas>() else {
         return;
     };
+    let Some(palette_manager) = world.get_resource::<PaletteManager>() else {
+        return;
+    };
 
-    let canvas_has_focus = canvas.has_focus();
+    let tab_content_has_focus = canvas.has_focus() || palette_manager.has_focus();
 
-    if canvas_has_focus {
+    if tab_content_has_focus {
         world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
             let Some(tab_file_entity) = tab_manager.current_tab_entity() else {
                 return;
