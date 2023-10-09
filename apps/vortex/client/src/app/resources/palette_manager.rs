@@ -237,7 +237,7 @@ impl PaletteManager {
     }
 
     fn render_right(ui: &mut Ui, world: &mut World, file_entity: &Entity) {
-        egui::SidePanel::right("right_panel")
+        egui::SidePanel::right("palette_right_panel")
             .resizable(true)
             .show_inside(ui, |ui| {
                 let size = ui.available_size();
