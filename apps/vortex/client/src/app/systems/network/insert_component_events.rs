@@ -22,13 +22,13 @@ use vortex_proto::components::{
     FileType, OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot,
 };
 
-use crate::app::resources::palette_manager::PaletteManager;
 use crate::app::{
     components::file_system::{
         ChangelistUiState, FileSystemEntryLocal, FileSystemParent, FileSystemUiState,
     },
     events::InsertComponentEvent,
     resources::{
+        palette_manager::PaletteManager,
         animation_manager::AnimationManager,
         camera_manager::CameraManager,
         canvas::Canvas,

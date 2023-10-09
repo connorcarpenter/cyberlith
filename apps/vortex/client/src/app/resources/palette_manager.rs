@@ -133,7 +133,9 @@ impl PaletteManager {
 
     fn render_left(ui: &mut Ui, world: &mut World, file_entity: &Entity) {
         egui::CentralPanel::default().show_inside(ui, |ui| {
-            Self::selection_render(ui, world, file_entity);
+            world.resource_scope(|world, mut palette_manager: Mut<PaletteManager>| {
+                palette_manager.render_selection_colors(ui, world, file_entity);
+            });
         });
     }
 
@@ -151,14 +153,18 @@ impl PaletteManager {
                             Vec2::new((26.0 + margin) * 4.0, 32.0),
                             Layout::top_down(Align::Center),
                             |ui| {
-                                Self::edit_buttons_render(ui, world);
+                                world.resource_scope(|world, mut palette_manager: Mut<PaletteManager>| {
+                                    palette_manager.render_edit_buttons_impl(ui, world);
+                                });
                             },
                         );
                     });
                 });
                 ui.vertical_centered(|ui| {
                     Frame::none().inner_margin(4.0).show(ui, |ui| {
-                        Self::edit_color_picker_render(ui, world, file_entity, size);
+                        world.resource_scope(|world, mut palette_manager: Mut<PaletteManager>| {
+                            palette_manager.render_edit_color_picker_impl(ui, world, file_entity, size);
+                        });
                     });
                 });
                 ui.vertical_centered(|ui| {
@@ -167,36 +173,14 @@ impl PaletteManager {
                             Vec2::new(size,size),
                             Layout::top_down(Align::Center),
                             |ui| {
-                                Self::edit_text_input_render(ui, world, file_entity);
+                                world.resource_scope(|world, mut palette_manager: Mut<PaletteManager>| {
+                                    palette_manager.render_edit_text_input_impl(ui, world, file_entity);
+                                });
                             }
                         );
                     });
                 });
             });
-    }
-
-    fn selection_render(ui: &mut Ui, world: &mut World, file_entity: &Entity) {
-        world.resource_scope(|world, mut palette_manager: Mut<PaletteManager>| {
-            palette_manager.render_selection_colors(ui, world, file_entity);
-        });
-    }
-
-    fn edit_buttons_render(ui: &mut Ui, world: &mut World) {
-        world.resource_scope(|world, mut palette_manager: Mut<PaletteManager>| {
-            palette_manager.render_edit_buttons_impl(ui, world);
-        });
-    }
-
-    fn edit_color_picker_render(ui: &mut Ui, world: &mut World, file_entity: &Entity, size: f32) {
-        world.resource_scope(|world, mut palette_manager: Mut<PaletteManager>| {
-            palette_manager.render_edit_color_picker_impl(ui, world, file_entity, size);
-        });
-    }
-
-    fn edit_text_input_render(ui: &mut Ui, world: &mut World, file_entity: &Entity) {
-        world.resource_scope(|world, mut palette_manager: Mut<PaletteManager>| {
-            palette_manager.render_edit_text_input_impl(ui, world, file_entity);
-        });
     }
 
     fn render_selection_colors(&mut self, ui: &mut Ui, world: &mut World, file_entity: &Entity) {
