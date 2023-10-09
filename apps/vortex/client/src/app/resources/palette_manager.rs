@@ -17,6 +17,7 @@ use render_egui::{
         Response, Rgba, Sense, Shape, Stroke, Ui, Vec2,
     },
 };
+use render_egui::egui::Rect;
 
 use vortex_proto::components::PaletteColor;
 
@@ -33,6 +34,8 @@ pub struct PaletteManager {
     resync_color_order: HashSet<Entity>,
     //
     current_color_entity: Option<Entity>,
+    //
+    has_focus: bool,
 
     text_hex: String,
     text_r: String,
@@ -51,6 +54,7 @@ impl Default for PaletteManager {
             colors: HashMap::new(),
             current_color_entity: None,
             resync_color_order: HashSet::new(),
+            has_focus: false,
 
             text_hex: String::new(),
             text_r: String::new(),
@@ -224,22 +228,42 @@ impl PaletteManager {
     }
 
     pub fn render(ui: &mut Ui, world: &mut World, file_entity: &Entity) {
-        Self::render_right(ui, world, file_entity);
-        Self::render_left(ui, world, file_entity);
+        let right_rect = Self::render_right(ui, world, file_entity);
+        let left_rect = Self::render_left(ui, world, file_entity);
+
+        if ui.input(|i| i.pointer.any_click()) {
+            let mouse_position = ui.input(|i| i.pointer.interact_pos().unwrap());
+            let mut palette_manager = world.get_resource_mut::<PaletteManager>().unwrap();
+            if right_rect.contains(mouse_position) || left_rect.contains(mouse_position) {
+                palette_manager.has_focus = true;
+            } else {
+                palette_manager.has_focus = false;
+            }
+        }
     }
 
-    fn render_left(ui: &mut Ui, world: &mut World, file_entity: &Entity) {
-        egui::CentralPanel::default().show_inside(ui, |ui| {
+    fn render_left(ui: &mut Ui, world: &mut World, file_entity: &Entity) -> Rect {
+        let mut frame = Frame::central_panel(ui.style());
+        if world.get_resource::<PaletteManager>().unwrap().has_focus {
+            frame.stroke.color = Color32::WHITE;
+            frame.stroke.width = 1.0;
+        }
+        let mut panel_rect: Rect = Rect::NOTHING;
+        egui::CentralPanel::default().frame(frame).show_inside(ui, |ui| {
             world.resource_scope(|world, mut palette_manager: Mut<PaletteManager>| {
+                panel_rect = ui.available_rect_before_wrap();
                 palette_manager.render_selection_colors(ui, world, file_entity);
             });
         });
+        panel_rect
     }
 
-    fn render_right(ui: &mut Ui, world: &mut World, file_entity: &Entity) {
+    fn render_right(ui: &mut Ui, world: &mut World, file_entity: &Entity) -> Rect {
+        let mut panel_rect: Rect = Rect::NOTHING;
         egui::SidePanel::right("palette_right_panel")
             .resizable(true)
             .show_inside(ui, |ui| {
+                panel_rect = ui.available_rect_before_wrap();
                 let size = ui.available_size();
                 let size = size.x.min(size.y / 3.0);
 
@@ -278,6 +302,7 @@ impl PaletteManager {
                     });
                 });
             });
+        panel_rect
     }
 
     fn render_selection_colors(&mut self, ui: &mut Ui, world: &mut World, file_entity: &Entity) {
@@ -704,7 +729,7 @@ fn color_slider_2d(
         let picked_color = color_at(*x_value, *y_value);
         ui.painter().add(epaint::CircleShape {
             center: pos2(x, y),
-            radius: rect.width() / 12.0,
+            radius: rect.width() / 24.0,
             fill: picked_color,
             stroke: Stroke::new(visuals.fg_stroke.width, contrast_color(picked_color)),
         });
