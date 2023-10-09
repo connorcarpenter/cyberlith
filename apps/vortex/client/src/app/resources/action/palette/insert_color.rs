@@ -11,7 +11,11 @@ use render_egui::egui::Color32;
 
 use crate::app::resources::{action::palette::PaletteAction, palette_manager::PaletteManager};
 
-pub fn execute(world: &mut World, palette_manager: &mut PaletteManager, action: PaletteAction) -> Vec<PaletteAction> {
+pub fn execute(
+    world: &mut World,
+    palette_manager: &mut PaletteManager,
+    action: PaletteAction,
+) -> Vec<PaletteAction> {
     let PaletteAction::InsertColor(file_entity, color_index, content_opt) = action else {
         panic!("Expected InsertColor");
     };
@@ -24,8 +28,7 @@ pub fn execute(world: &mut World, palette_manager: &mut PaletteManager, action: 
     let last_color_index: usize;
 
     {
-        let mut system_state: SystemState<(Commands, Client)> =
-            SystemState::new(world);
+        let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
         let (mut commands, mut client) = system_state.get_mut(world);
 
         last_color_index = palette_manager.current_color_index();

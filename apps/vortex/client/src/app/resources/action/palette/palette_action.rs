@@ -3,7 +3,10 @@ use bevy_ecs::prelude::{Entity, World};
 use render_egui::egui::Color32;
 
 use crate::app::resources::{
-    action::{palette::{select_color, delete_color, insert_color, move_color}, Action},
+    action::{
+        palette::{delete_color, insert_color, move_color, select_color},
+        Action,
+    },
     palette_manager::PaletteManager,
 };
 

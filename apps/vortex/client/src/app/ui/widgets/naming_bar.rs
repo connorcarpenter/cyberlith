@@ -13,10 +13,9 @@ use vortex_proto::components::{FileExtension, ShapeName};
 
 use crate::app::{
     resources::{
-        edge_manager::EdgeManager,
-        face_manager::FaceManager, file_manager::FileManager, input_manager::InputManager,
-        shape_data::CanvasShape, shape_manager::ShapeManager, tab_manager::TabManager,
-        vertex_manager::VertexManager,
+        edge_manager::EdgeManager, face_manager::FaceManager, file_manager::FileManager,
+        input_manager::InputManager, shape_data::CanvasShape, shape_manager::ShapeManager,
+        tab_manager::TabManager, vertex_manager::VertexManager,
     },
     ui::UiState,
 };
@@ -145,7 +144,10 @@ pub fn render_naming_bar(ui: &mut Ui, world: &mut World) {
                 let text_edit = TextEdit::singleline(&mut state.text);
                 let response = ui.add_enabled(selected_shape_2d.is_some(), text_edit);
                 if response.has_focus() {
-                    world.get_resource_mut::<TabManager>().unwrap().set_focus(false);
+                    world
+                        .get_resource_mut::<TabManager>()
+                        .unwrap()
+                        .set_focus(false);
                 }
 
                 ui.label("name: ");
@@ -183,5 +185,8 @@ pub fn naming_bar_visibility_toggle(world: &mut World, input_manager: &mut Input
     ui_state.resized_window = true;
 
     // set focus to canvas
-    world.get_resource_mut::<TabManager>().unwrap().set_focus(true);
+    world
+        .get_resource_mut::<TabManager>()
+        .unwrap()
+        .set_focus(true);
 }

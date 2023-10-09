@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use bevy_ecs::{
     entity::Entity,
     event::{EventReader, EventWriter},
-    system::{Resource, Commands, Query, ResMut, SystemState},
-    world::{World, Mut},
+    system::{Commands, Query, ResMut, Resource, SystemState},
+    world::{Mut, World},
 };
 use bevy_log::{info, warn};
 
@@ -28,13 +28,13 @@ use crate::app::{
     },
     events::InsertComponentEvent,
     resources::{
-        palette_manager::PaletteManager,
         animation_manager::AnimationManager,
         camera_manager::CameraManager,
         canvas::Canvas,
         edge_manager::EdgeManager,
         face_manager::FaceManager,
         file_manager::{get_full_path, FileManager},
+        palette_manager::PaletteManager,
         shape_waitlist::{ShapeWaitlist, ShapeWaitlistInsert},
         tab_manager::TabManager,
         vertex_manager::VertexManager,
@@ -56,17 +56,17 @@ pub fn insert_component_event_startup(world: &mut World) {
 
 // if this gets big, just switch to a &mut World
 pub fn insert_component_events(world: &mut World) {
-
     let mut events_collection: Vec<InsertComponentEvents> = Vec::new();
 
-    world.resource_scope(|world, mut events_reader_state: Mut<CachedInsertComponentEventsState>| {
-        let mut events_reader = events_reader_state.event_state.get_mut(world);
+    world.resource_scope(
+        |world, mut events_reader_state: Mut<CachedInsertComponentEventsState>| {
+            let mut events_reader = events_reader_state.event_state.get_mut(world);
 
-        for events in events_reader.iter() {
-            events_collection.push(events.clone());
-        }
-    });
-
+            for events in events_reader.iter() {
+                events_collection.push(events.clone());
+            }
+        },
+    );
 
     for events in events_collection {
         insert_component_event::<FileSystemEntry>(world, &events);

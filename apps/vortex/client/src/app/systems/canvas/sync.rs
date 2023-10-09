@@ -28,11 +28,11 @@ use crate::app::{
         file_manager::FileManager,
         grid::Grid,
         input_manager::InputManager,
+        palette_manager::PaletteManager,
         tab_manager::TabManager,
         vertex_manager::VertexManager,
     },
 };
-use crate::app::resources::palette_manager::PaletteManager;
 
 pub fn queue_resyncs(
     mut canvas: ResMut<Canvas>,

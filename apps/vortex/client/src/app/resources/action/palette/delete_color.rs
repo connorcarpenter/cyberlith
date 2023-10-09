@@ -12,18 +12,19 @@ use vortex_proto::components::PaletteColor;
 
 use crate::app::resources::{action::palette::PaletteAction, palette_manager::PaletteManager};
 
-pub fn execute(world: &mut World, palette_manager: &mut PaletteManager, action: PaletteAction) -> Vec<PaletteAction> {
+pub fn execute(
+    world: &mut World,
+    palette_manager: &mut PaletteManager,
+    action: PaletteAction,
+) -> Vec<PaletteAction> {
     let PaletteAction::DeleteColor(file_entity, color_index) = action else {
         panic!("Expected DeleteColor");
     };
 
     info!("DeleteColor({:?}, {:?})", file_entity, color_index);
 
-    let mut system_state: SystemState<(
-        Commands,
-        Client,
-        Query<&PaletteColor>,
-    )> = SystemState::new(world);
+    let mut system_state: SystemState<(Commands, Client, Query<&PaletteColor>)> =
+        SystemState::new(world);
     let (mut commands, mut client, color_q) = system_state.get_mut(world);
 
     let color_entity = palette_manager

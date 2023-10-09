@@ -10,7 +10,11 @@ use vortex_proto::components::PaletteColor;
 
 use crate::app::resources::{action::palette::PaletteAction, palette_manager::PaletteManager};
 
-pub fn execute(world: &mut World, palette_manager: &mut PaletteManager, action: PaletteAction) -> Vec<PaletteAction> {
+pub fn execute(
+    world: &mut World,
+    palette_manager: &mut PaletteManager,
+    action: PaletteAction,
+) -> Vec<PaletteAction> {
     let PaletteAction::MoveColor(file_entity, current_color_index, next_color_index) = action else {
         panic!("Expected MoveColor");
     };
@@ -20,13 +24,9 @@ pub fn execute(world: &mut World, palette_manager: &mut PaletteManager, action: 
         file_entity, current_color_index, next_color_index
     );
 
-    let mut system_state: SystemState<(
-        Commands,
-        Client,
-        Query<&mut PaletteColor>,
-    )> = SystemState::new(world);
-    let (mut commands, mut client, mut color_q) =
-        system_state.get_mut(world);
+    let mut system_state: SystemState<(Commands, Client, Query<&mut PaletteColor>)> =
+        SystemState::new(world);
+    let (mut commands, mut client, mut color_q) = system_state.get_mut(world);
 
     let Some(current_color_entity) = palette_manager.get_color_entity(&file_entity, current_color_index) else {
         warn!("Failed to get color entity for file `{:?}` and color index `{:?}`!", file_entity, current_color_index);

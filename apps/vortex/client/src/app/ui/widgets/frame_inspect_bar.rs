@@ -11,10 +11,7 @@ use render_egui::{
 
 use vortex_proto::components::AnimFrame;
 
-use crate::app::resources::{
-    animation_manager::AnimationManager,
-    tab_manager::TabManager,
-};
+use crate::app::resources::{animation_manager::AnimationManager, tab_manager::TabManager};
 
 #[derive(Resource)]
 pub struct FrameInspectBarState {
@@ -116,7 +113,10 @@ pub fn render_frame_inspect_bar(ui: &mut Ui, world: &mut World) {
                 let text_edit = TextEdit::singleline(&mut state.text);
                 let response = ui.add_enabled(selected_frame_entity.is_some(), text_edit);
                 if response.has_focus() {
-                    world.get_resource_mut::<TabManager>().unwrap().set_focus(false);
+                    world
+                        .get_resource_mut::<TabManager>()
+                        .unwrap()
+                        .set_focus(false);
                 }
 
                 ui.label("frame duration: ");

@@ -12,21 +12,19 @@ use naia_bevy_server::{events::InsertComponentEvents, Server};
 use vortex_proto::{
     components::{
         AnimFrame, AnimRotation, Edge3d, Face3d, FileDependency, FileSystemChild, FileSystemEntry,
-        FileSystemRootChild, FileType, OwnedByFile, ShapeName, Vertex3d, VertexRoot,
+        FileSystemRootChild, FileType, OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot,
     },
     resources::FileKey,
 };
-use vortex_proto::components::PaletteColor;
 
 use crate::{
     events::InsertComponentEvent,
     resources::{
         file_waitlist::{file_process_insert, FSWaitlist, FSWaitlistInsert},
-        AnimationManager, ContentEntityData, GitManager, ShapeManager, ShapeWaitlist,
-        ShapeWaitlistInsert, TabManager, UserManager,
+        AnimationManager, ContentEntityData, GitManager, PaletteManager, ShapeManager,
+        ShapeWaitlist, ShapeWaitlistInsert, TabManager, UserManager,
     },
 };
-use crate::resources::PaletteManager;
 
 pub fn insert_component_events(
     mut event_reader: EventReader<InsertComponentEvents>,

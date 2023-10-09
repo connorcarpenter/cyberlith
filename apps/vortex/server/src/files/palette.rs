@@ -3,9 +3,8 @@ use std::collections::HashMap;
 use bevy_ecs::{
     entity::Entity,
     prelude::{Commands, World},
-    system::{Query, SystemState},
+    system::{Query, ResMut, SystemState},
 };
-use bevy_ecs::system::ResMut;
 use bevy_log::info;
 
 use naia_bevy_server::{
@@ -16,9 +15,8 @@ use vortex_proto::components::PaletteColor;
 
 use crate::{
     files::FileWriter,
-    resources::{ContentEntityData, Project},
+    resources::{ContentEntityData, PaletteManager, Project},
 };
-use crate::resources::PaletteManager;
 
 // Actions
 #[derive(Clone)]
@@ -142,7 +140,8 @@ impl PaletteReader {
         let mut output = HashMap::new();
         let mut index = 0;
 
-        let mut system_state: SystemState<(Commands, Server, ResMut<PaletteManager>)> = SystemState::new(world);
+        let mut system_state: SystemState<(Commands, Server, ResMut<PaletteManager>)> =
+            SystemState::new(world);
         let (mut commands, mut server, mut palette_manager) = system_state.get_mut(world);
 
         for action in actions {
@@ -162,12 +161,7 @@ impl PaletteReader {
                     );
                     output.insert(entity_id, ContentEntityData::new_color());
 
-                    palette_manager.on_create_color(
-                        &file_entity,
-                        &entity_id,
-                        index as usize,
-                        None,
-                    );
+                    palette_manager.on_create_color(&file_entity, &entity_id, index as usize, None);
                 }
             }
 

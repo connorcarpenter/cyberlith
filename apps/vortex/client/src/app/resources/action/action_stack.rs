@@ -49,28 +49,25 @@ impl<A> Default for ActionStack<A> {
 }
 
 pub(crate) fn action_stack_undo(world: &mut World) {
-
     world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
         let tab_content_has_focus = tab_manager.has_focus();
 
         if tab_content_has_focus {
-
-                let Some(tab_file_entity) = tab_manager.current_tab_entity() else {
+            let Some(tab_file_entity) = tab_manager.current_tab_entity() else {
                     return;
                 };
-                let tab_file_entity = *tab_file_entity;
-                if let Some(tab_state) = tab_manager.current_tab_state_mut() {
-                    if tab_state.action_stack.has_undo() {
-                        world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
-                            tab_state.action_stack.undo_action(
-                                world,
-                                &mut input_manager,
-                                tab_file_entity,
-                            );
-                        });
-                    }
+            let tab_file_entity = *tab_file_entity;
+            if let Some(tab_state) = tab_manager.current_tab_state_mut() {
+                if tab_state.action_stack.has_undo() {
+                    world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
+                        tab_state.action_stack.undo_action(
+                            world,
+                            &mut input_manager,
+                            tab_file_entity,
+                        );
+                    });
                 }
-
+            }
         } else {
             world.resource_scope(|world, mut file_actions: Mut<FileActions>| {
                 let file_manager = world.get_resource::<FileManager>().unwrap();
@@ -86,7 +83,6 @@ pub(crate) fn action_stack_undo(world: &mut World) {
 }
 
 pub(crate) fn action_stack_redo(world: &mut World) {
-
     world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
         let tab_content_has_focus = tab_manager.has_focus();
 

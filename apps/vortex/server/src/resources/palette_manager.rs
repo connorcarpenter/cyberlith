@@ -1,10 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use bevy_ecs::{
-    entity::Entity,
-    prelude::Query,
-    system::Resource,
-};
+use bevy_ecs::{entity::Entity, prelude::Query, system::Resource};
 use bevy_log::info;
 
 use vortex_proto::components::PaletteColor;

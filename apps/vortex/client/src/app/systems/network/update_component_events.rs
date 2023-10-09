@@ -6,15 +6,18 @@ use bevy_log::info;
 
 use naia_bevy_client::{events::UpdateComponentEvents, Client};
 
-use vortex_proto::components::{AnimFrame, AnimRotation, ChangelistEntry, EdgeAngle, FileSystemChild, FileSystemEntry, FileSystemRootChild, PaletteColor, ShapeName, Vertex3d};
+use vortex_proto::components::{
+    AnimFrame, AnimRotation, ChangelistEntry, EdgeAngle, FileSystemChild, FileSystemEntry,
+    FileSystemRootChild, PaletteColor, ShapeName, Vertex3d,
+};
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemEntryLocal},
     resources::{
-        palette_manager::PaletteManager,
         animation_manager::AnimationManager,
         canvas::Canvas,
         file_manager::{get_full_path, FileManager},
+        palette_manager::PaletteManager,
     },
 };
 
@@ -110,7 +113,8 @@ pub fn update_component_events(
             let file_entity = frame.file_entity.get(&client).unwrap();
             // check that index has changed
             let frame_index = frame.get_order() as usize;
-            let existing_frame_entity = animation_manager.get_frame_entity(&file_entity, frame_index);
+            let existing_frame_entity =
+                animation_manager.get_frame_entity(&file_entity, frame_index);
             if existing_frame_entity != Some(frame_entity) {
                 animation_manager.framing_queue_resync_frame_order(&file_entity);
             }

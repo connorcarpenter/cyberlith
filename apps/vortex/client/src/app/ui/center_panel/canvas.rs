@@ -17,9 +17,7 @@ use render_egui::{
 };
 
 use crate::app::{
-    resources::{
-        camera_manager::CameraManager, canvas::Canvas, tab_manager::TabManager,
-    },
+    resources::{camera_manager::CameraManager, canvas::Canvas, tab_manager::TabManager},
     ui::UiState,
 };
 

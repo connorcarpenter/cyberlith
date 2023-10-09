@@ -145,10 +145,7 @@ pub fn despawn_entity_events(
 
                 git_manager.queue_client_modify_file(entity);
 
-                palette_manager.on_despawn_color(
-                    entity,
-                    Some(&mut color_q),
-                );
+                palette_manager.on_despawn_color(entity, Some(&mut color_q));
 
                 git_manager.on_remove_content_entity(&mut server, &entity);
             }

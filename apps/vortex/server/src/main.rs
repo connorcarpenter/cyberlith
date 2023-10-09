@@ -19,22 +19,20 @@ use naia_bevy_server::{Plugin as ServerPlugin, ReceiveEvents, ServerConfig};
 use vortex_proto::{
     components::{
         AnimFrame, AnimRotation, Edge3d, Face3d, FileDependency, FileSystemChild, FileSystemEntry,
-        FileSystemRootChild, FileType, OwnedByFile, ShapeName, Vertex3d, VertexRoot,
+        FileSystemRootChild, FileType, OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot,
     },
     protocol,
 };
-use vortex_proto::components::PaletteColor;
 
 use crate::{
     config::{AppConfig, ConfigPlugin},
     events::InsertComponentEvent,
     resources::{
-        changelist_manager_process, AnimationManager, ChangelistManager, GitManager, ShapeManager,
-        ShapeWaitlist, TabManager, UserManager,
+        changelist_manager_process, AnimationManager, ChangelistManager, GitManager,
+        PaletteManager, ShapeManager, ShapeWaitlist, TabManager, UserManager,
     },
     systems::{network, world_loop},
 };
-use crate::resources::PaletteManager;
 
 fn main() {
     info!("Vortex Server starting up");

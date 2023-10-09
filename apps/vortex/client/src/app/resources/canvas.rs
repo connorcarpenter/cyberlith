@@ -6,7 +6,7 @@ use render_api::{base::CpuTexture2D, Handle};
 
 use crate::app::resources::{
     animation_manager::AnimationManager, edge_manager::EdgeManager, input_manager::InputManager,
-    vertex_manager::VertexManager, tab_manager::TabManager
+    tab_manager::TabManager, vertex_manager::VertexManager,
 };
 
 #[derive(Resource)]
@@ -48,7 +48,7 @@ impl Canvas {
         input_manager: &mut InputManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
-        animation_manager: &mut AnimationManager
+        animation_manager: &mut AnimationManager,
     ) {
         if self.last_focused == tab_manager.has_focus() {
             return;

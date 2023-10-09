@@ -134,12 +134,8 @@ impl TabManager {
             ResMut<InputManager>,
             ResMut<CameraManager>,
         )> = SystemState::new(world);
-        let (
-            mut canvas,
-            file_manager,
-            mut input_manager,
-            mut camera_manager,
-        ) = system_state.get_mut(world);
+        let (mut canvas, file_manager, mut input_manager, mut camera_manager) =
+            system_state.get_mut(world);
 
         let mut canvas_is_visible = false;
         if let Some(current_file_entity) = self.current_tab {
@@ -205,10 +201,7 @@ impl TabManager {
         self.content_has_focus
     }
 
-    pub fn set_focus(
-        &mut self,
-        focus: bool,
-    ) {
+    pub fn set_focus(&mut self, focus: bool) {
         self.content_has_focus = focus;
     }
 

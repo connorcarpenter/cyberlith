@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{
     entity::Entity,
-    system::{Resource, Commands, Query, SystemState},
+    system::{Commands, Query, Resource, SystemState},
     world::{Mut, World},
 };
 use bevy_log::{info, warn};
@@ -12,16 +12,16 @@ use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 use render_egui::{
     egui,
     egui::{
-        Rect,
-        epaint,
-        ecolor::HsvaGamma, lerp, pos2, remap_clamp, vec2, Align, Color32, Frame, Layout, Mesh,
-        Response, Rgba, Sense, Shape, Stroke, Ui, Vec2,
+        ecolor::HsvaGamma, epaint, lerp, pos2, remap_clamp, vec2, Align, Color32, Frame, Layout,
+        Mesh, Rect, Response, Rgba, Sense, Shape, Stroke, Ui, Vec2,
     },
 };
 
 use vortex_proto::components::PaletteColor;
 
-use crate::app::resources::{toolbar::Toolbar, action::palette::PaletteAction, tab_manager::TabManager};
+use crate::app::resources::{
+    action::palette::PaletteAction, tab_manager::TabManager, toolbar::Toolbar,
+};
 
 #[derive(Resource)]
 pub struct PaletteManager {
@@ -65,7 +65,6 @@ impl Default for PaletteManager {
 }
 
 impl PaletteManager {
-
     pub fn entity_is_color(&self, entity: &Entity) -> bool {
         self.colors.contains_key(entity)
     }
@@ -146,10 +145,7 @@ impl PaletteManager {
     }
 
     pub fn queue_resync_color_order(&mut self, file_entity: &Entity) {
-        info!(
-            "queue_resync_color_order for entity: `{:?}`",
-            file_entity
-        );
+        info!("queue_resync_color_order for entity: `{:?}`", file_entity);
         self.resync_color_order.insert(*file_entity);
     }
 
@@ -210,7 +206,8 @@ impl PaletteManager {
         color_index: usize,
         color: Color32,
     ) -> Entity {
-        let mut color_component = PaletteColor::new(color_index as u8, color.r(), color.g(), color.b());
+        let mut color_component =
+            PaletteColor::new(color_index as u8, color.r(), color.g(), color.b());
         color_component.file_entity.set(client, &file_entity);
         let entity_id = commands
             .spawn_empty()
@@ -247,12 +244,14 @@ impl PaletteManager {
             frame.stroke.width = 1.0;
         }
         let mut panel_rect: Rect = Rect::NOTHING;
-        egui::CentralPanel::default().frame(frame).show_inside(ui, |ui| {
-            world.resource_scope(|world, mut palette_manager: Mut<PaletteManager>| {
-                panel_rect = ui.available_rect_before_wrap();
-                palette_manager.render_selection_colors(ui, world, file_entity);
+        egui::CentralPanel::default()
+            .frame(frame)
+            .show_inside(ui, |ui| {
+                world.resource_scope(|world, mut palette_manager: Mut<PaletteManager>| {
+                    panel_rect = ui.available_rect_before_wrap();
+                    palette_manager.render_selection_colors(ui, world, file_entity);
+                });
             });
-        });
         panel_rect
     }
 
@@ -272,9 +271,11 @@ impl PaletteManager {
                             Vec2::new((26.0 + margin) * 4.0, 32.0),
                             Layout::top_down(Align::Center),
                             |ui| {
-                                world.resource_scope(|world, mut palette_manager: Mut<PaletteManager>| {
-                                    palette_manager.render_edit_buttons_impl(ui, world);
-                                });
+                                world.resource_scope(
+                                    |world, mut palette_manager: Mut<PaletteManager>| {
+                                        palette_manager.render_edit_buttons_impl(ui, world);
+                                    },
+                                );
                             },
                         );
                     });
@@ -282,20 +283,31 @@ impl PaletteManager {
                 ui.vertical_centered(|ui| {
                     Frame::none().inner_margin(4.0).show(ui, |ui| {
                         world.resource_scope(|world, mut palette_manager: Mut<PaletteManager>| {
-                            palette_manager.render_edit_color_picker_impl(ui, world, file_entity, size);
+                            palette_manager.render_edit_color_picker_impl(
+                                ui,
+                                world,
+                                file_entity,
+                                size,
+                            );
                         });
                     });
                 });
                 ui.vertical_centered(|ui| {
                     Frame::none().inner_margin(4.0).show(ui, |ui| {
                         ui.allocate_ui_with_layout(
-                            Vec2::new(size,size),
+                            Vec2::new(size, size),
                             Layout::top_down(Align::Center),
                             |ui| {
-                                world.resource_scope(|world, mut palette_manager: Mut<PaletteManager>| {
-                                    palette_manager.render_edit_text_input_impl(ui, world, file_entity);
-                                });
-                            }
+                                world.resource_scope(
+                                    |world, mut palette_manager: Mut<PaletteManager>| {
+                                        palette_manager.render_edit_text_input_impl(
+                                            ui,
+                                            world,
+                                            file_entity,
+                                        );
+                                    },
+                                );
+                            },
                         );
                     });
                 });
@@ -433,8 +445,13 @@ impl PaletteManager {
         });
     }
 
-    fn render_edit_color_picker_impl(&mut self, ui: &mut Ui, world: &mut World, file_entity: &Entity, size: f32) {
-
+    fn render_edit_color_picker_impl(
+        &mut self,
+        ui: &mut Ui,
+        world: &mut World,
+        file_entity: &Entity,
+        size: f32,
+    ) {
         ui.spacing_mut().item_spacing = Vec2::new(10.0, 10.0);
 
         let Some(color_entity) = self.get_color_entity(file_entity, self.selected_color_index) else {
@@ -452,34 +469,23 @@ impl PaletteManager {
         let HsvaGamma { h, s, v, a: _ } = &mut hsvag;
 
         let mut color_changed = false;
-        if color_slider_1d(
-            ui,
-            size,
-            h,
-            |h| {
-                HsvaGamma {
-                    h,
-                    s: 1.0,
-                    v: 1.0,
-                    a: 1.0,
-                }
-                    .into()
+        if color_slider_1d(ui, size, h, |h| {
+            HsvaGamma {
+                h,
+                s: 1.0,
+                v: 1.0,
+                a: 1.0,
             }
-        )
-            .on_hover_text("Hue")
-            .interact_pointer_pos()
-            .is_some()
+            .into()
+        })
+        .on_hover_text("Hue")
+        .interact_pointer_pos()
+        .is_some()
         {
             color_changed = true;
         }
 
-        if color_slider_2d(
-            ui,
-            size,
-            s,
-            v,
-            |s, v| HsvaGamma { s, v, ..opaque }.into()
-        )
+        if color_slider_2d(ui, size, s, v, |s, v| HsvaGamma { s, v, ..opaque }.into())
             .interact_pointer_pos()
             .is_some()
         {
@@ -494,8 +500,12 @@ impl PaletteManager {
         }
     }
 
-    fn render_edit_text_input_impl(&mut self, ui: &mut Ui, world: &mut World, file_entity: &Entity) {
-
+    fn render_edit_text_input_impl(
+        &mut self,
+        ui: &mut Ui,
+        world: &mut World,
+        file_entity: &Entity,
+    ) {
         let Some(color_entity) = self.get_color_entity(file_entity, self.selected_color_index) else {
             return;
         };
@@ -504,7 +514,8 @@ impl PaletteManager {
             return;
         };
 
-        let current_color_rgb = Color32::from_rgb(*color_component.r, *color_component.g, *color_component.b);
+        let current_color_rgb =
+            Color32::from_rgb(*color_component.r, *color_component.g, *color_component.b);
         let mut current_color_hsv = Hsv::from(current_color_rgb);
 
         // update state
@@ -624,7 +635,12 @@ impl PaletteManager {
 /// Should always be a multiple of 6 to hit the peak hues in HSV/HSL (every 60°).
 const N: u32 = 6 * 6;
 
-fn color_slider_1d(ui: &mut Ui, width: f32, value: &mut f32, color_at: impl Fn(f32) -> Color32) -> Response {
+fn color_slider_1d(
+    ui: &mut Ui,
+    width: f32,
+    value: &mut f32,
+    color_at: impl Fn(f32) -> Color32,
+) -> Response {
     let desired_size = vec2(width, 20.0);
     let (rect, response) = ui.allocate_exact_size(desired_size, Sense::click_and_drag());
 
