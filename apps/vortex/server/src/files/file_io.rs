@@ -17,7 +17,7 @@ use vortex_proto::{
 use crate::{
     files::{
         AnimReader, AnimWriter, MeshReader, MeshWriter, PaletteReader, PaletteWriter, SkelReader,
-        SkelWriter,
+        SkelWriter, SkinReader, SkinWriter,
     },
     resources::{AnimationManager, ContentEntityData, Project, ShapeManager},
 };
@@ -57,6 +57,7 @@ impl FileReader for FileExtension {
             FileExtension::Mesh => MeshReader.read(world, bytes),
             FileExtension::Anim => AnimReader.read(world, project, file_key, file_entity, bytes),
             FileExtension::Palette => PaletteReader.read(world, file_entity, bytes),
+            FileExtension::Skin => SkinReader.read(world, bytes),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }
@@ -84,6 +85,7 @@ impl FileWriter for FileExtension {
             FileExtension::Mesh => MeshWriter.write_new_default(),
             FileExtension::Anim => AnimWriter.write_new_default(),
             FileExtension::Palette => PaletteWriter.write_new_default(),
+            FileExtension::Skin => SkinWriter.write_new_default(),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }

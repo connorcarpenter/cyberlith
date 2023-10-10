@@ -2,6 +2,7 @@ pub mod animation;
 pub mod file;
 pub mod palette;
 pub mod shape;
+pub mod skin;
 
 mod action_stack;
 mod tab_action_stack;

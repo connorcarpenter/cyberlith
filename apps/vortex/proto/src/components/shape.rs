@@ -161,7 +161,8 @@ impl FileExtension {
             FileExtension::Skel
             | FileExtension::Mesh
             | FileExtension::Anim
-            | FileExtension::Palette => true,
+            | FileExtension::Palette
+            | FileExtension::Skin => true,
             _ => false,
         }
     }
