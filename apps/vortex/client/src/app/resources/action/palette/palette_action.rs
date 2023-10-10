@@ -4,7 +4,7 @@ use render_egui::egui::Color32;
 
 use crate::app::resources::{
     action::{
-        palette::{delete_color, insert_color, move_color, select_color},
+        palette::{edit_color, delete_color, insert_color, move_color, select_color},
         Action,
     },
     palette_manager::PaletteManager,
@@ -20,6 +20,8 @@ pub enum PaletteAction {
     DeleteColor(Entity, usize),
     // file entity, color index, last color index
     MoveColor(Entity, usize, usize),
+    //
+    EditColor(Entity, Color32, Color32, bool),
 }
 
 pub enum PaletteActionType {
@@ -27,6 +29,7 @@ pub enum PaletteActionType {
     InsertColor,
     DeleteColor,
     MoveColor,
+    EditColor,
 }
 
 impl PaletteAction {
@@ -36,6 +39,7 @@ impl PaletteAction {
             Self::InsertColor(_, _, _) => PaletteActionType::InsertColor,
             Self::DeleteColor(_, _) => PaletteActionType::DeleteColor,
             Self::MoveColor(_, _, _) => PaletteActionType::MoveColor,
+            Self::EditColor(_, _, _, _) => PaletteActionType::EditColor,
         }
     }
 
@@ -47,6 +51,7 @@ impl PaletteAction {
             PaletteActionType::InsertColor => insert_color::execute(world, palette_manager, self),
             PaletteActionType::DeleteColor => delete_color::execute(world, palette_manager, self),
             PaletteActionType::MoveColor => move_color::execute(world, palette_manager, self),
+            PaletteActionType::EditColor => edit_color::execute(world, self),
         }
     }
 }

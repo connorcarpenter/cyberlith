@@ -34,6 +34,10 @@ pub struct PaletteManager {
     resync_color_order: HashSet<Entity>,
     //
     current_color_entity: Option<Entity>,
+    //
+    last_old_color: Option<(Entity, Color32)>,
+    last_new_color: Option<(Entity, Color32)>,
+    sliding: bool,
 
     text_hex: String,
     text_r: String,
@@ -52,6 +56,9 @@ impl Default for PaletteManager {
             colors: HashMap::new(),
             current_color_entity: None,
             resync_color_order: HashSet::new(),
+            last_old_color: None,
+            last_new_color: None,
+            sliding: false,
 
             text_hex: String::new(),
             text_r: String::new(),
@@ -71,6 +78,35 @@ impl PaletteManager {
 
     pub fn current_color_index(&self) -> usize {
         self.selected_color_index
+    }
+
+    pub fn track_old_color(&mut self, color_entity: Entity, old_color: Color32) {
+        self.last_old_color = Some((color_entity, old_color));
+    }
+
+    pub fn track_new_color(&mut self, color_entity: Entity, new_color: Color32) {
+        self.last_new_color = Some((color_entity, new_color));
+    }
+
+    pub fn flush_tracked_color(&mut self, tab_manager: &mut TabManager, world: &mut World) {
+        let Some((color_entity_1, new_color)) = self.last_new_color.take() else {
+            return;
+        };
+        let Some((color_entity_2, old_color)) = self.last_old_color.take() else {
+            panic!("no old color");
+        };
+
+        if color_entity_2 != color_entity_1 {
+            panic!("color entities don't match");
+        }
+
+        tab_manager.current_tab_execute_palette_action(
+            world,
+            self,
+            PaletteAction::EditColor(color_entity_1, old_color, new_color, true),
+        );
+
+        self.track_old_color(color_entity_2, new_color);
     }
 
     pub fn register_color(
@@ -497,6 +533,22 @@ impl PaletteManager {
             *color_component.r = new_color.r();
             *color_component.g = new_color.g();
             *color_component.b = new_color.b();
+            self.track_new_color(color_entity, new_color);
+            if !self.sliding {
+                self.sliding = true;
+            }
+        } else {
+            if self.sliding {
+                // released
+                self.sliding = false;
+
+                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                    self.flush_tracked_color(
+                        &mut tab_manager,
+                        world,
+                    );
+                });
+            }
         }
     }
 
@@ -517,6 +569,7 @@ impl PaletteManager {
         let current_color_rgb =
             Color32::from_rgb(*color_component.r, *color_component.g, *color_component.b);
         let mut current_color_hsv = Hsv::from(current_color_rgb);
+        let mut should_flush_color = false;
 
         // update state
         if self.current_color_entity != Some(color_entity) {
@@ -528,6 +581,7 @@ impl PaletteManager {
             self.text_h = current_color_hsv.h.to_string();
             self.text_s = current_color_hsv.s.to_string();
             self.text_v = current_color_hsv.v.to_string();
+            self.track_old_color(color_entity, current_color_rgb);
         }
 
         // continue rendering
@@ -552,17 +606,23 @@ impl PaletteManager {
                     // R
                     {
                         ui.add(egui::Label::new("R"));
-                        if ui.text_edit_singleline(&mut self.text_r).changed() {
+                        let edit_response = ui.text_edit_singleline(&mut self.text_r);
+                        if edit_response.changed() {
                             // change r value
                             if let Ok(r) = self.text_r.parse::<u8>() {
                                 *color_component.r = r;
+                                self.track_new_color(color_entity, Color32::from_rgb(r, *color_component.g, *color_component.b));
                             }
+                        }
+                        if edit_response.lost_focus() {
+                            should_flush_color = true;
                         }
                     }
                     // H
                     {
                         ui.add(egui::Label::new("H"));
-                        if ui.text_edit_singleline(&mut self.text_h).changed() {
+                        let edit_response = ui.text_edit_singleline(&mut self.text_h);
+                        if edit_response.changed() {
                             // change h value
                             if let Ok(h) = self.text_h.parse::<u16>() {
                                 current_color_hsv.h = h;
@@ -570,24 +630,34 @@ impl PaletteManager {
                                 *color_component.r = r;
                                 *color_component.g = g;
                                 *color_component.b = b;
+                                self.track_new_color(color_entity, Color32::from_rgb(r, g, b));
                             }
+                        }
+                        if edit_response.lost_focus() {
+                            should_flush_color = true;
                         }
                     }
                     ui.end_row();
                     // G
                     {
                         ui.add(egui::Label::new("G"));
-                        if ui.text_edit_singleline(&mut self.text_g).changed() {
+                        let edit_response = ui.text_edit_singleline(&mut self.text_g);
+                        if edit_response.changed() {
                             // change g value
                             if let Ok(g) = self.text_g.parse::<u8>() {
                                 *color_component.g = g;
+                                self.track_new_color(color_entity, Color32::from_rgb(*color_component.r, g, *color_component.b));
                             }
+                        }
+                        if edit_response.lost_focus() {
+                            should_flush_color = true;
                         }
                     }
                     // S
                     {
                         ui.add(egui::Label::new("S"));
-                        if ui.text_edit_singleline(&mut self.text_s).changed() {
+                        let edit_response = ui.text_edit_singleline(&mut self.text_s);
+                        if edit_response.changed() {
                             // change s value
                             if let Ok(s) = self.text_s.parse::<u8>() {
                                 current_color_hsv.s = s;
@@ -595,24 +665,34 @@ impl PaletteManager {
                                 *color_component.r = r;
                                 *color_component.g = g;
                                 *color_component.b = b;
+                                self.track_new_color(color_entity, Color32::from_rgb(r, g, b));
                             }
+                        }
+                        if edit_response.lost_focus() {
+                            should_flush_color = true;
                         }
                     }
                     ui.end_row();
                     // B
                     {
                         ui.add(egui::Label::new("B"));
-                        if ui.text_edit_singleline(&mut self.text_b).changed() {
+                        let edit_response = ui.text_edit_singleline(&mut self.text_b);
+                        if edit_response.changed() {
                             // change b value
                             if let Ok(b) = self.text_b.parse::<u8>() {
                                 *color_component.b = b;
+                                self.track_new_color(color_entity, Color32::from_rgb(*color_component.r, *color_component.g, b));
                             }
+                        }
+                        if edit_response.lost_focus() {
+                            should_flush_color = true;
                         }
                     }
                     // V
                     {
                         ui.add(egui::Label::new("V"));
-                        if ui.text_edit_singleline(&mut self.text_v).changed() {
+                        let edit_response = ui.text_edit_singleline(&mut self.text_v);
+                        if edit_response.changed() {
                             // change v value
                             if let Ok(v) = self.text_v.parse::<u8>() {
                                 current_color_hsv.v = v;
@@ -620,13 +700,27 @@ impl PaletteManager {
                                 *color_component.r = r;
                                 *color_component.g = g;
                                 *color_component.b = b;
+                                self.track_new_color(color_entity, Color32::from_rgb(r, g, b));
                             }
+                        }
+                        if edit_response.lost_focus() {
+                            should_flush_color = true;
                         }
                     }
                     ui.end_row();
                 });
             });
         });
+
+        // flush color
+        if should_flush_color {
+            world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                self.flush_tracked_color(
+                    &mut tab_manager,
+                    world,
+                );
+            });
+        }
     }
 }
 
