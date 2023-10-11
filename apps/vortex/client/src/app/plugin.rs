@@ -108,6 +108,7 @@ impl Plugin for VortexPlugin {
             .add_systems(Update, network::insert_file_type_events)
             .add_systems(Update, network::insert_animation_events)
             .add_systems(Update, network::insert_palette_events)
+            .add_systems(Update, network::insert_skin_events)
             // UI Configuration
             .init_resource::<UiState>()
             .init_resource::<NamingBarState>()

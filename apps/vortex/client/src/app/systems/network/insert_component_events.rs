@@ -16,11 +16,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{
-    AnimFrame, AnimRotation, ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind,
-    Face3d, FileDependency, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-    FileType, OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot,
-};
+use vortex_proto::components::{AnimFrame, AnimRotation, ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind, Face3d, FaceColor, FileDependency, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::file_system::{
@@ -41,6 +37,7 @@ use crate::app::{
     },
     systems::file_post_process,
 };
+use crate::app::resources::skin_manager::SkinManager;
 
 #[derive(Resource)]
 struct CachedInsertComponentEventsState {
@@ -85,6 +82,7 @@ pub fn insert_component_events(world: &mut World) {
         insert_component_event::<AnimFrame>(world, &events);
         insert_component_event::<AnimRotation>(world, &events);
         insert_component_event::<PaletteColor>(world, &events);
+        insert_component_event::<FaceColor>(world, &events);
     }
 }
 
@@ -637,5 +635,28 @@ pub fn insert_palette_events(
         let color_index = *color_component.index as usize;
 
         palette_manager.register_color(file_entity, color_entity, color_index);
+    }
+}
+
+pub fn insert_skin_events(
+    client: Client,
+    mut color_events: EventReader<InsertComponentEvent<FaceColor>>,
+    mut skin_manager: ResMut<SkinManager>,
+    color_q: Query<&FaceColor>,
+) {
+    // on FaceColor Insert Event
+    for event in color_events.iter() {
+        let color_entity = event.entity;
+
+        info!("entity: {:?} - inserted FaceColor", color_entity);
+
+        let Ok(color_component) = color_q.get(color_entity) else {
+            continue;
+        };
+
+        //let file_entity = color_component.file_entity.get(&client).unwrap();
+        let face_3d_entity = color_component.face_3d_entity.get(&client).unwrap();
+
+        skin_manager.register_face_color(face_3d_entity, color_entity);
     }
 }
