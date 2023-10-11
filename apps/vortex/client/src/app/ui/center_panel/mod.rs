@@ -38,16 +38,17 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                         render_tool_bar(ui, world, current_file_type);
                     }
                     FileExtension::Anim => {
-                        render_tool_bar(ui, world, current_file_type);
 
                         let file_manager = world.get_resource::<FileManager>().unwrap();
                         if !file_manager.file_has_dependency_with_extension(
                             &current_file_entity,
                             FileExtension::Skel,
                         ) {
-                            render_bind_button(ui, world, &current_file_entity);
+                            render_bind_button(ui, world, &current_file_entity, FileExtension::Skel);
                             return;
                         }
+
+                        render_tool_bar(ui, world, current_file_type);
 
                         let animation_manager = world.get_resource::<AnimationManager>().unwrap();
                         if animation_manager.is_framing() {
@@ -57,6 +58,31 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                     FileExtension::Palette => {
                         PaletteManager::render(ui, world, &current_file_entity);
                         return;
+                    }
+                    FileExtension::Skin => {
+
+                        let file_manager = world.get_resource::<FileManager>().unwrap();
+
+                        // Palette Dependency
+                        if !file_manager.file_has_dependency_with_extension(
+                            &current_file_entity,
+                            FileExtension::Palette,
+                        ) {
+                            render_bind_button(ui, world, &current_file_entity, FileExtension::Palette);
+                            return;
+                        }
+
+                        // Mesh Dependency
+                        if !file_manager.file_has_dependency_with_extension(
+                            &current_file_entity,
+                            FileExtension::Mesh,
+                        ) {
+                            render_bind_button(ui, world, &current_file_entity, FileExtension::Mesh);
+                            return;
+                        }
+
+                        // Toolbar
+                        render_tool_bar(ui, world, current_file_type);
                     }
                     _ => {}
                 }

@@ -166,6 +166,17 @@ impl FileExtension {
             _ => false,
         }
     }
+
+    pub fn to_string(&self) -> String {
+        match self {
+            FileExtension::Skel => ".skel".to_string(),
+            FileExtension::Mesh => ".mesh".to_string(),
+            FileExtension::Anim => ".anim".to_string(),
+            FileExtension::Palette => ".palette".to_string(),
+            FileExtension::Skin => ".skin".to_string(),
+            FileExtension::Unknown => "<UNKNOWN>".to_string(),
+        }
+    }
 }
 
 #[derive(Component, Replicate)]

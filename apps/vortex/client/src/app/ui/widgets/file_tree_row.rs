@@ -303,7 +303,7 @@ impl FileTreeRowUiWidget {
             ui_state.context_menu_response = Some(action);
             if just_opened {
                 // context menu just opened
-                Self::on_row_click(world, row_entity);
+                Self::on_row_click(world, file_extension, row_entity);
             }
         } else {
             if let Some(action) = ui_state.context_menu_response.clone() {
@@ -348,7 +348,7 @@ impl FileTreeRowUiWidget {
 
         // Left-button click
         if left_clicked {
-            Self::on_row_click(world, row_entity);
+            Self::on_row_click(world, file_extension, row_entity);
             return;
         }
 
@@ -359,13 +359,15 @@ impl FileTreeRowUiWidget {
         }
     }
 
-    pub fn on_row_click(world: &mut World, row_entity: &Entity) {
+    pub fn on_row_click(world: &mut World, file_ext: FileExtension, row_entity: &Entity) {
         // check to see if we are binding first
         let mut ui_state = world.get_resource_mut::<UiState>().unwrap();
-        if ui_state.binding_file == BindingState::Binding {
-            ui_state.binding_file = BindingState::BindResult(*row_entity);
-            return;
-        }
+        if let BindingState::Binding(ext_required) = ui_state.binding_file {
+            if file_ext == ext_required {
+                ui_state.binding_file = BindingState::BindResult(*row_entity);
+                return;
+            }
+        };
 
         // continue
         let mut is_denied = false;
@@ -390,7 +392,7 @@ impl FileTreeRowUiWidget {
 
     pub fn on_row_double_click(world: &mut World, file_ext: FileExtension, row_entity: &Entity) {
         // select the row
-        Self::on_row_click(world, row_entity);
+        Self::on_row_click(world, file_ext, row_entity);
 
         // add to tabs
         if file_ext.can_io() {

@@ -75,6 +75,7 @@ impl FileWriter for FileExtension {
             FileExtension::Mesh => MeshWriter.write(world, project, content_entities),
             FileExtension::Anim => AnimWriter.write(world, project, content_entities),
             FileExtension::Palette => PaletteWriter.write(world, project, content_entities),
+            FileExtension::Skin => SkinWriter.write(world, project, content_entities),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }

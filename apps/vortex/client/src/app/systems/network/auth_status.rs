@@ -176,6 +176,13 @@ fn process_entity_auth_status(
             entity, status
         );
         file_actions.entity_update_auth_status(entity);
+    } else if file_manager.entity_is_dependency(entity) {
+        // entity is file
+        info!(
+            "auth processing for dependency entity `{:?}`: `{:?}`",
+            entity, status
+        );
+        file_actions.entity_update_auth_status(entity);
     } else if animation_manager.entity_is_frame(entity) {
         info!(
             "auth processing for frame entity `{:?}`: `{:?}`",

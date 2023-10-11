@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashSet, HashMap};
 
 use bevy_ecs::{
     prelude::{Entity, Resource},
@@ -7,8 +7,6 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_client::Client;
-
-use render_egui::egui::epaint::ahash::HashSet;
 
 use vortex_proto::{
     components::{FileExtension, FileSystemChild, FileSystemEntry},
@@ -54,6 +52,7 @@ pub struct FileManager {
     pub project_root_entity: Entity,
     changelist: BTreeMap<FileKey, ChangelistData>,
     file_entities: HashMap<Entity, FileData>,
+    file_dependencies: HashSet<Entity>,
 }
 
 impl FileManager {
@@ -62,6 +61,7 @@ impl FileManager {
             project_root_entity,
             changelist: BTreeMap::new(),
             file_entities: HashMap::new(),
+            file_dependencies: HashSet::new(),
         }
     }
 
@@ -75,6 +75,10 @@ impl FileManager {
 
     pub fn entity_is_file(&self, entity: &Entity) -> bool {
         self.file_entities.contains_key(entity)
+    }
+
+    pub fn entity_is_dependency(&self, entity: &Entity) -> bool {
+        self.file_dependencies.contains(entity)
     }
 
     pub fn on_file_create(&mut self, file_entity: &Entity, file_type: FileExtension) {
@@ -187,7 +191,7 @@ impl FileManager {
         file_data.file_dependencies.contains(dependency_file_entity)
     }
 
-    pub fn file_add_dependency(&mut self, file_entity: &Entity, dependency_file_entity: &Entity) {
+    pub fn file_add_dependency(&mut self, relationship_entity: &Entity, file_entity: &Entity, dependency_file_entity: &Entity) {
         info!(
             "file_add_dependency({:?}, {:?})",
             file_entity, dependency_file_entity
@@ -225,6 +229,9 @@ impl FileManager {
 
             dependency_file_data.file_dependents.insert(*file_entity);
         }
+
+        // register in list
+        self.file_dependencies.insert(*relationship_entity);
     }
 
     pub fn file_remove_dependency(

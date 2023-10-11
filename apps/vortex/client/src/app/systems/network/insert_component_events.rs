@@ -192,7 +192,7 @@ pub fn insert_file_component_events(
             file_entity, dependency_entity
         );
 
-        file_manager.file_add_dependency(&file_entity, &dependency_entity);
+        file_manager.file_add_dependency(&entity, &file_entity, &dependency_entity);
 
         tab_manager.resync_tab_ownership();
     }
