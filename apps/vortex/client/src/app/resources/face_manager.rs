@@ -284,8 +284,14 @@ impl FaceManager {
             ResMut<Assets<CpuMaterial>>,
             Query<&Transform>,
         )> = SystemState::new(world);
-        let (mut commands, mut client, camera_manager, mut meshes, mut materials, transform_q) =
-            system_state.get_mut(world);
+        let (
+            mut commands,
+            mut client,
+            camera_manager,
+            mut meshes,
+            mut materials,
+            transform_q
+        ) = system_state.get_mut(world);
 
         self.create_networked_face(
             &mut commands,

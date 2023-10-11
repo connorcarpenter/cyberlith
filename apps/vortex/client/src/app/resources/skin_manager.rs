@@ -1,31 +1,90 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{entity::Entity, system::{Resource, Query, Res, SystemState}, world::World};
+use bevy_ecs::{entity::Entity, system::{Resource, Commands, Query, Res, SystemState}, world::World};
+
+use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
 use render_egui::{egui::{Ui, Vec2, Align, Color32, Frame, Layout, Sense}, egui};
 
-use vortex_proto::components::{FileExtension, PaletteColor};
+use vortex_proto::components::{FaceColor, FileExtension, PaletteColor};
 
 use crate::app::resources::{file_manager::FileManager, palette_manager::PaletteManager};
 
 #[derive(Resource)]
 pub struct SkinManager {
-    face_colors: HashMap<Entity, Entity>,
+    // face 3d entity -> face color entity
+    face_to_color_entity: HashMap<Entity, Entity>,
+    // face color entity -> face 3d entity
+    color_to_face_entity: HashMap<Entity, Entity>,
+    //
     selected_color_index: usize,
 }
 
 impl Default for SkinManager {
     fn default() -> Self {
         Self {
-            face_colors: HashMap::new(),
+            face_to_color_entity: HashMap::new(),
+            color_to_face_entity: HashMap::new(),
             selected_color_index: 0,
         }
     }
 }
 
 impl SkinManager {
-    pub(crate) fn get_face_color(&self, face_3d_entity: Entity) -> Option<&Entity> {
-        self.face_colors.get(&face_3d_entity)
+
+    pub(crate) fn selected_color_index(&self) -> usize {
+        self.selected_color_index
+    }
+
+    pub(crate) fn face_to_color_entity(&self, face_3d_entity: Entity) -> Option<&Entity> {
+        self.face_to_color_entity.get(&face_3d_entity)
+    }
+
+    pub(crate) fn create_networked_face_color_from_world(
+        &mut self,
+        world: &mut World,
+        face_3d_entity: Entity,
+        palette_color_entity: Entity,
+    ) -> Entity {
+
+        let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+        let (mut commands, mut client) = system_state.get_mut(world);
+
+        let mut component = FaceColor::new();
+        component.face_3d_entity.set(&client, &face_3d_entity);
+        component.palette_color_entity.set(&client, &palette_color_entity);
+        let face_color_entity = commands
+            .spawn_empty()
+            .enable_replication(&mut client)
+            .configure_replication(ReplicationConfig::Delegated)
+            .insert(component)
+            .id();
+
+        self.face_color_postprocess(
+            face_3d_entity,
+            face_color_entity,
+        );
+
+        face_color_entity
+    }
+
+    pub(crate) fn face_color_postprocess(&mut self, face_3d_entity: Entity, color_entity: Entity) {
+
+        // TODO: change 3D face color
+        // TODO: change 2D face color
+
+        self.register_face_color(face_3d_entity, color_entity);
+    }
+
+    pub(crate) fn register_face_color(&mut self, face_3d_entity: Entity, face_color_entity: Entity) {
+        self.face_to_color_entity.insert(face_3d_entity, face_color_entity);
+        self.color_to_face_entity.insert(face_color_entity, face_3d_entity);
+    }
+
+    pub(crate) fn deregister_face_color(&mut self, face_color_entity: &Entity) {
+        if let Some(face_3d_entity) = self.color_to_face_entity.remove(face_color_entity) {
+            self.face_to_color_entity.remove(&face_3d_entity);
+        }
     }
 
     pub(crate) fn render_sidebar(

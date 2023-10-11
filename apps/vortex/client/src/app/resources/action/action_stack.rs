@@ -300,8 +300,13 @@ impl ActionStack<PaletteAction> {
 }
 
 impl ActionStack<SkinAction> {
-    pub fn execute_action(&mut self, world: &mut World, input_manager: &mut InputManager,
-                          action: SkinAction, ) -> Vec<SkinAction> {
-        action.execute(world, input_manager)
+    pub fn execute_action(
+        &mut self,
+        world: &mut World,
+        input_manager: &mut InputManager,
+        tab_file_entity: Entity,
+        action: SkinAction
+    ) -> Vec<SkinAction> {
+        action.execute(world, input_manager, tab_file_entity)
     }
 }
