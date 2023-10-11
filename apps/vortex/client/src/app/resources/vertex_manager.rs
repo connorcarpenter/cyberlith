@@ -80,21 +80,27 @@ impl VertexManager {
         self.resync = true;
     }
 
-    pub fn sync_vertices_3d(&mut self, world: &mut World) -> bool {
+    pub fn sync_vertices_3d(&mut self, file_ext: FileExtension, world: &mut World) -> bool {
+
+        // TODO: really should only do this if Vertex3d component was updated from server
+
         let mut system_state: SystemState<(
             Query<(Entity, &Vertex3d)>,
             Query<&mut Transform>,
-            Query<&Visibility>,
+            Query<&mut Visibility>,
+            Query<&LocalShape>,
         )> = SystemState::new(world);
-        let (vertex_3d_q, mut transform_q, visibility_q) = system_state.get_mut(world);
+        let (vertex_3d_q, mut transform_q, mut visibility_q, local_shape) = system_state.get_mut(world);
 
         for (vertex_3d_entity, vertex_3d) in vertex_3d_q.iter() {
             // check visibility
-            if let Ok(visibility) = visibility_q.get(vertex_3d_entity) {
-                if !visibility.visible {
-                    continue;
-                }
-            };
+            if local_shape.get(vertex_3d_entity).is_err() {
+                if let Ok(mut visibility) = visibility_q.get_mut(vertex_3d_entity) {
+                    if file_ext == FileExtension::Skin {
+                        visibility.visible = false;
+                    }
+                };
+            }
 
             // get transform
             let Ok(mut vertex_3d_transform) = transform_q.get_mut(vertex_3d_entity) else {
@@ -119,6 +125,7 @@ impl VertexManager {
 
     pub fn sync_vertices_2d(
         &mut self,
+        file_ext: FileExtension,
         world: &mut World,
         camera_3d_entity: &Entity,
         camera_3d_scale: f32,
@@ -127,10 +134,10 @@ impl VertexManager {
             Query<(&Camera, &Projection)>,
             Query<(Entity, &Vertex3d)>,
             Query<&mut Transform>,
-            Query<&Visibility>,
+            Query<&mut Visibility>,
             Query<&LocalShape>,
         )> = SystemState::new(world);
-        let (camera_q, vertex_3d_q, mut transform_q, visibility_q, local_shape_q) =
+        let (camera_q, vertex_3d_q, mut transform_q, mut visibility_q, local_shape_q) =
             system_state.get_mut(world);
 
         let Ok((camera, camera_projection)) = camera_q.get(*camera_3d_entity) else {
@@ -149,23 +156,27 @@ impl VertexManager {
         let compass_vertex_2d_scale = Vertex2d::RADIUS;
 
         for (vertex_3d_entity, _) in vertex_3d_q.iter() {
-            // check visibility
-            if let Ok(visibility) = visibility_q.get(vertex_3d_entity) {
-                if !visibility.visible {
-                    continue;
-                }
-            };
-
             // get 3d transform
             let Ok(mut vertex_3d_transform) = transform_q.get_mut(vertex_3d_entity) else {
                 warn!("Vertex3d entity {:?} has no Transform", vertex_3d_entity);
                 continue;
             };
-
+            let Some(vertex_2d_entity) = self.vertex_entity_3d_to_2d(&vertex_3d_entity) else {
+                warn!("Vertex3d entity {:?} has no corresponding Vertex2d entity", vertex_3d_entity);
+                continue;
+            };
             if local_shape_q.get(vertex_3d_entity).is_ok() {
                 vertex_3d_transform.scale = Vec3::splat(compass_vertex_3d_scale);
             } else {
                 // vertex_3d_transform.scale = should put 3d vertex scale here?
+
+                // change visibility
+                let Ok(mut visibility) = visibility_q.get_mut(vertex_2d_entity) else {
+                    panic!("Vertex2d entity {:?} has no Visibility", vertex_2d_entity);
+                };
+                if file_ext == FileExtension::Skin {
+                    visibility.visible = false;
+                }
             }
 
             // update 2d vertices
@@ -176,9 +187,6 @@ impl VertexManager {
                 &vertex_3d_transform.translation,
             );
 
-            let Some(vertex_2d_entity) = self.vertex_entity_3d_to_2d(&vertex_3d_entity) else {
-                panic!("Vertex3d entity {:?} has no corresponding Vertex2d entity", vertex_3d_entity);
-            };
             let Ok(mut vertex_2d_transform) = transform_q.get_mut(vertex_2d_entity) else {
                 panic!("Vertex2d entity {:?} has no Transform", vertex_2d_entity);
             };

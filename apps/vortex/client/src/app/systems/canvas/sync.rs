@@ -125,8 +125,8 @@ pub fn sync_vertices(world: &mut World) {
         }
         match file_extension {
             FileExtension::Skel | FileExtension::Mesh | FileExtension::Skin => {
-                vertex_manager.sync_vertices_3d(world);
-                vertex_manager.sync_vertices_2d(world, &camera_3d, camera_3d_scale);
+                vertex_manager.sync_vertices_3d(file_extension, world);
+                vertex_manager.sync_vertices_2d(file_extension, world, &camera_3d, camera_3d_scale);
             }
             FileExtension::Anim => {
                 let animation_manager = world.get_resource::<AnimationManager>().unwrap();
@@ -195,7 +195,7 @@ pub fn sync_vertices(world: &mut World) {
                     world.resource_scope(|world, mut grid: Mut<Grid>| {
                         grid.sync_grid_vertices(world);
                     });
-                    vertex_manager.sync_vertices_2d(world, &camera_3d, camera_3d_scale);
+                    vertex_manager.sync_vertices_2d(file_extension, world, &camera_3d, camera_3d_scale);
                 }
             }
             FileExtension::Palette => {
@@ -254,7 +254,7 @@ pub fn sync_edges(
     };
     if should_sync_3d {
         // animation manager will not handle this, so edge_manager must
-        EdgeManager::sync_3d_edges(&edge_3d_q, &mut transform_q, &mut visibility_q);
+        EdgeManager::sync_3d_edges(file_ext, &edge_3d_q, &mut transform_q, &mut visibility_q, &local_shape_q);
         edge_manager.sync_edge_angles(
             file_ext,
             &edge_angle_q,

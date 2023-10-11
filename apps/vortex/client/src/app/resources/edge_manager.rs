@@ -224,17 +224,25 @@ impl EdgeManager {
     }
 
     pub fn sync_3d_edges(
+        file_ext: FileExtension,
         edge_3d_q: &Query<(Entity, &Edge3dLocal, Option<&EdgeAngle>)>,
         transform_q: &mut Query<&mut Transform>,
         visibility_q: &mut Query<&mut Visibility>,
+        local_shape: &Query<&LocalShape>,
     ) {
         for (edge_entity, edge_endpoints, edge_angle_opt) in edge_3d_q.iter() {
             // check visibility
-            let Ok(visibility) = visibility_q.get(edge_entity) else {
+            let Ok(mut visibility) = visibility_q.get_mut(edge_entity) else {
                 panic!("entity has no Visibility");
             };
             if !visibility.visible {
                 continue;
+            }
+            if file_ext == FileExtension::Skin {
+                if local_shape.get(edge_entity).is_err() {
+                    visibility.visible = false;
+                    continue;
+                }
             }
 
             let edge_angle_opt = edge_angle_opt.map(|e| e.get_radians());
