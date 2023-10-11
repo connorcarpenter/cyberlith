@@ -13,10 +13,7 @@ pub(crate) fn execute(world: &mut World, action: PaletteAction) -> Vec<PaletteAc
         panic!("Expected EditColor");
     };
 
-    info!(
-        "EditColor({:?}, _, _, {})",
-        color_entity, already_edited
-    );
+    info!("EditColor({:?}, _, _, {})", color_entity, already_edited);
     let mut system_state: SystemState<Query<&mut PaletteColor>> = SystemState::new(world);
     let mut color_q = system_state.get_mut(world);
 

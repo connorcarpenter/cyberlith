@@ -38,13 +38,17 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                         render_tool_bar(ui, world, current_file_type);
                     }
                     FileExtension::Anim => {
-
                         let file_manager = world.get_resource::<FileManager>().unwrap();
                         if !file_manager.file_has_dependency_with_extension(
                             &current_file_entity,
                             FileExtension::Skel,
                         ) {
-                            render_bind_button(ui, world, &current_file_entity, FileExtension::Skel);
+                            render_bind_button(
+                                ui,
+                                world,
+                                &current_file_entity,
+                                FileExtension::Skel,
+                            );
                             return;
                         }
 
@@ -60,7 +64,6 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                         return;
                     }
                     FileExtension::Skin => {
-
                         let file_manager = world.get_resource::<FileManager>().unwrap();
 
                         // Palette Dependency
@@ -68,7 +71,12 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                             &current_file_entity,
                             FileExtension::Palette,
                         ) {
-                            render_bind_button(ui, world, &current_file_entity, FileExtension::Palette);
+                            render_bind_button(
+                                ui,
+                                world,
+                                &current_file_entity,
+                                FileExtension::Palette,
+                            );
                             return;
                         }
 
@@ -77,7 +85,12 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                             &current_file_entity,
                             FileExtension::Mesh,
                         ) {
-                            render_bind_button(ui, world, &current_file_entity, FileExtension::Mesh);
+                            render_bind_button(
+                                ui,
+                                world,
+                                &current_file_entity,
+                                FileExtension::Mesh,
+                            );
                             return;
                         }
 

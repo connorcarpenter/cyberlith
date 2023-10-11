@@ -218,18 +218,12 @@ impl InputManager {
     fn update_input_skin(&mut self, input_actions: Vec<InputAction>, world: &mut World) {
         for action in input_actions {
             match action {
-                InputAction::MouseClick(click_type, mouse_position) => self
-                    .handle_mouse_click_skin(
-                        world,
-                        click_type,
-                        &mouse_position,
-                    ),
-                InputAction::MouseDragged(click_type, _mouse_position, delta) => self
-                    .handle_mouse_drag_skin(
-                        world,
-                        click_type,
-                        delta,
-                    ),
+                InputAction::MouseClick(click_type, mouse_position) => {
+                    self.handle_mouse_click_skin(world, click_type, &mouse_position)
+                }
+                InputAction::MouseDragged(click_type, _mouse_position, delta) => {
+                    self.handle_mouse_drag_skin(world, click_type, delta)
+                }
                 InputAction::MiddleMouseScroll(scroll_y) => {
                     Self::handle_mouse_scroll_wheel(world, scroll_y)
                 }
@@ -1270,11 +1264,7 @@ impl InputManager {
 
         // click_type, selected_shape, hovered_shape
         match (click_type, selected_shape, hovered_shape) {
-            (
-                MouseButton::Left,
-                _,
-                Some(CanvasShape::Face)
-            ) => {
+            (MouseButton::Left, _, Some(CanvasShape::Face)) => {
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
                     let hovered_entity = self.hovered_entity.map(|(e, s)| e);
                     tab_manager.current_tab_execute_skin_action(
@@ -1287,10 +1277,8 @@ impl InputManager {
             (MouseButton::Right, Some(CanvasShape::Face), _) => {
                 // deselect vertex
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_skin_action(
-                        world,
-                        SkinAction::SelectFace(None),
-                    );
+                    tab_manager
+                        .current_tab_execute_skin_action(world, SkinAction::SelectFace(None));
                 });
             }
             _ => {}

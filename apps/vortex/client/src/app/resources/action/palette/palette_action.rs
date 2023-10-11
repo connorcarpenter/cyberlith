@@ -4,7 +4,7 @@ use render_egui::egui::Color32;
 
 use crate::app::resources::{
     action::{
-        palette::{edit_color, delete_color, insert_color, move_color, select_color},
+        palette::{delete_color, edit_color, insert_color, move_color, select_color},
         Action,
     },
     palette_manager::PaletteManager,

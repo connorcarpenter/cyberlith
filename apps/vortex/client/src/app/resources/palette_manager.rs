@@ -543,10 +543,7 @@ impl PaletteManager {
                 self.sliding = false;
 
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    self.flush_tracked_color(
-                        &mut tab_manager,
-                        world,
-                    );
+                    self.flush_tracked_color(&mut tab_manager, world);
                 });
             }
         }
@@ -611,7 +608,10 @@ impl PaletteManager {
                             // change r value
                             if let Ok(r) = self.text_r.parse::<u8>() {
                                 *color_component.r = r;
-                                self.track_new_color(color_entity, Color32::from_rgb(r, *color_component.g, *color_component.b));
+                                self.track_new_color(
+                                    color_entity,
+                                    Color32::from_rgb(r, *color_component.g, *color_component.b),
+                                );
                             }
                         }
                         if edit_response.lost_focus() {
@@ -646,7 +646,10 @@ impl PaletteManager {
                             // change g value
                             if let Ok(g) = self.text_g.parse::<u8>() {
                                 *color_component.g = g;
-                                self.track_new_color(color_entity, Color32::from_rgb(*color_component.r, g, *color_component.b));
+                                self.track_new_color(
+                                    color_entity,
+                                    Color32::from_rgb(*color_component.r, g, *color_component.b),
+                                );
                             }
                         }
                         if edit_response.lost_focus() {
@@ -681,7 +684,10 @@ impl PaletteManager {
                             // change b value
                             if let Ok(b) = self.text_b.parse::<u8>() {
                                 *color_component.b = b;
-                                self.track_new_color(color_entity, Color32::from_rgb(*color_component.r, *color_component.g, b));
+                                self.track_new_color(
+                                    color_entity,
+                                    Color32::from_rgb(*color_component.r, *color_component.g, b),
+                                );
                             }
                         }
                         if edit_response.lost_focus() {
@@ -715,10 +721,7 @@ impl PaletteManager {
         // flush color
         if should_flush_color {
             world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                self.flush_tracked_color(
-                    &mut tab_manager,
-                    world,
-                );
+                self.flush_tracked_color(&mut tab_manager, world);
             });
         }
     }

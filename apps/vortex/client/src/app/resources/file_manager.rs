@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashSet, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 use bevy_ecs::{
     prelude::{Entity, Resource},
@@ -191,7 +191,12 @@ impl FileManager {
         file_data.file_dependencies.contains(dependency_file_entity)
     }
 
-    pub fn file_add_dependency(&mut self, relationship_entity: &Entity, file_entity: &Entity, dependency_file_entity: &Entity) {
+    pub fn file_add_dependency(
+        &mut self,
+        relationship_entity: &Entity,
+        file_entity: &Entity,
+        dependency_file_entity: &Entity,
+    ) {
         info!(
             "file_add_dependency({:?}, {:?})",
             file_entity, dependency_file_entity

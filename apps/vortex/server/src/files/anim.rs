@@ -19,7 +19,7 @@ use vortex_proto::{
 };
 
 use crate::{
-    files::{FileWriter, add_file_dependency},
+    files::{add_file_dependency, FileWriter},
     resources::{AnimationManager, ContentEntityData, Project},
 };
 
@@ -297,7 +297,7 @@ impl AnimReader {
                         &mut server,
                         FileExtension::Skel,
                         &skel_path,
-                        &skel_file_name
+                        &skel_file_name,
                     );
                     output.insert(new_entity, ContentEntityData::new_dependency(new_file_key));
                 }

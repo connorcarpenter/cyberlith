@@ -6,7 +6,10 @@ use bevy_ecs::{
 use vortex_proto::components::FileExtension;
 
 use crate::app::resources::{
-    action::{animation::AnimAction, palette::PaletteAction, shape::ShapeAction, skin::SkinAction, ActionStack},
+    action::{
+        animation::AnimAction, palette::PaletteAction, shape::ShapeAction, skin::SkinAction,
+        ActionStack,
+    },
     input_manager::InputManager,
     palette_manager::PaletteManager,
 };
@@ -53,15 +56,10 @@ impl TabActionStack {
         }
     }
 
-    pub fn execute_skin_action(
-        &mut self,
-        world: &mut World,
-        action: SkinAction,
-    ) {
+    pub fn execute_skin_action(&mut self, world: &mut World, action: SkinAction) {
         match self {
             Self::Skin(action_stack) => {
-                let reversed_actions =
-                    action_stack.execute_action(world, action);
+                let reversed_actions = action_stack.execute_action(world, action);
                 action_stack.post_action_execution(world, reversed_actions);
             }
             _ => {

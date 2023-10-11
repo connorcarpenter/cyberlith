@@ -10,7 +10,7 @@ use bevy_log::info;
 use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
 use vortex_proto::{
-    components::{FileExtension, FileType, OwnedByFile, EntryKind, FileDependency},
+    components::{EntryKind, FileDependency, FileExtension, FileType, OwnedByFile},
     resources::FileKey,
 };
 
@@ -239,12 +239,17 @@ pub fn add_file_dependency(
     server: &mut Server,
     dependency_file_ext: FileExtension,
     dependency_path: &str,
-    dependency_file_name: &str
+    dependency_file_name: &str,
 ) -> (Entity, FileKey) {
-    let dependency_file_key = FileKey::new(&dependency_path, &dependency_file_name, EntryKind::File);
+    let dependency_file_key =
+        FileKey::new(&dependency_path, &dependency_file_name, EntryKind::File);
     let file_extension = project.file_extension(&dependency_file_key).unwrap();
     if file_extension != dependency_file_ext {
-        panic!("new file of type {} is not of the required type: {}", file_extension.to_string(), dependency_file_ext.to_string());
+        panic!(
+            "new file of type {} is not of the required type: {}",
+            file_extension.to_string(),
+            dependency_file_ext.to_string()
+        );
     }
 
     project.file_add_dependency(file_key, &dependency_file_key);
@@ -254,7 +259,9 @@ pub fn add_file_dependency(
     info!("creating new FileDependency!");
     let mut component = FileDependency::new();
     component.file_entity.set(server, file_entity);
-    component.dependency_entity.set(server, &palette_file_entity);
+    component
+        .dependency_entity
+        .set(server, &palette_file_entity);
     let entity = commands
         .spawn_empty()
         .enable_replication(server)

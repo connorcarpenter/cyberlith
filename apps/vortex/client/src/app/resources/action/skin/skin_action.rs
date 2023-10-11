@@ -1,8 +1,6 @@
 use bevy_ecs::prelude::{Entity, World};
 
-use crate::app::resources::{
-    action::Action,
-};
+use crate::app::resources::action::Action;
 
 #[derive(Clone)]
 pub enum SkinAction {
@@ -28,8 +26,8 @@ impl SkinAction {
         let action_type = self.get_type();
 
         match action_type {
-            SkinActionType::SelectFace => { Vec::new() }
-            SkinActionType::None => { Vec::new() },
+            SkinActionType::SelectFace => Vec::new(),
+            SkinActionType::None => Vec::new(),
         }
     }
 }

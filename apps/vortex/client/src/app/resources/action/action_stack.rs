@@ -300,11 +300,7 @@ impl ActionStack<PaletteAction> {
 }
 
 impl ActionStack<SkinAction> {
-    pub fn execute_action(
-        &mut self,
-        world: &mut World,
-        action: SkinAction,
-    ) -> Vec<SkinAction> {
+    pub fn execute_action(&mut self, world: &mut World, action: SkinAction) -> Vec<SkinAction> {
         action.execute(world)
     }
 }

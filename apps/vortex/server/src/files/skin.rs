@@ -7,14 +7,12 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use naia_bevy_server::{
-    BitReader, FileBitWriter, Serde, SerdeErr, Server,
-};
+use naia_bevy_server::{BitReader, FileBitWriter, Serde, SerdeErr, Server};
 
 use vortex_proto::{components::FileExtension, resources::FileKey};
 
 use crate::{
-    files::{FileWriter, add_file_dependency},
+    files::{add_file_dependency, FileWriter},
     resources::{ContentEntityData, Project},
 };
 
@@ -42,9 +40,8 @@ impl SkinWriter {
         &self,
         _world: &mut World,
         project: &Project,
-        content_entities: &HashMap<Entity, ContentEntityData>
+        content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Vec<SkinAction> {
-
         let working_file_entries = project.working_file_entries();
 
         let mut palette_dependency_key_opt = None;
@@ -66,7 +63,6 @@ impl SkinWriter {
                             panic!("skin file should depend on a single .mesh file & a single .palette");
                         }
                     }
-
                 }
                 _ => {
                     panic!("skin should not have this content entity type");
@@ -193,7 +189,7 @@ impl SkinReader {
                         &mut server,
                         FileExtension::Palette,
                         &palette_path,
-                        &palette_file_name
+                        &palette_file_name,
                     );
                     output.insert(new_entity, ContentEntityData::new_dependency(new_file_key));
                 }
@@ -206,7 +202,7 @@ impl SkinReader {
                         &mut server,
                         FileExtension::Mesh,
                         &mesh_path,
-                        &mesh_file_name
+                        &mesh_file_name,
                     );
                     output.insert(new_entity, ContentEntityData::new_dependency(new_file_key));
                 }
