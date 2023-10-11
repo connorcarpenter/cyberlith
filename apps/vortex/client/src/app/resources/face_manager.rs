@@ -17,7 +17,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{Face3d, OwnedByFile};
+use vortex_proto::components::{Face3d, FileExtension, OwnedByFile};
 
 use crate::app::{
     components::{DefaultDraw, Face3dLocal, FaceIcon2d, OwnedByFileLocal},
@@ -63,9 +63,10 @@ impl FaceManager {
 
     pub fn sync_2d_faces(
         &mut self,
+        file_ext: FileExtension,
         face_2d_q: &Query<(Entity, &FaceIcon2d)>,
         transform_q: &mut Query<&mut Transform>,
-        visibility_q: &Query<&Visibility>,
+        visibility_q: &mut Query<&mut Visibility>,
         camera_3d_scale: f32,
     ) {
         if !self.resync {
@@ -78,11 +79,20 @@ impl FaceManager {
 
         for (face_2d_entity, face_icon) in face_2d_q.iter() {
             // check visibility
-            let Ok(visibility) = visibility_q.get(face_2d_entity) else {
+            let Ok(mut visibility) = visibility_q.get_mut(face_2d_entity) else {
                 panic!("entity has no Visibility");
             };
             if !visibility.visible {
                 continue;
+            }
+            if file_ext == FileExtension::Skin {
+                let face_key = self.face_key_from_2d_entity(&face_2d_entity).unwrap();
+                let Some(Some(face_data)) = self.face_keys.get(&face_key) else {
+                    panic!("FaceKey: `{:?}` has not been registered", face_key);
+                };
+                if face_data.entity_3d.is_none() {
+                    visibility.visible = false;
+                }
             }
 
             // find center of all of face_icon's vertices

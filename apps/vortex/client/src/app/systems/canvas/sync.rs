@@ -282,11 +282,12 @@ pub fn sync_edges(
 }
 
 pub fn sync_faces(
+    file_manager: Res<FileManager>,
     tab_manager: Res<TabManager>,
     canvas: Res<Canvas>,
     mut face_manager: ResMut<FaceManager>,
     mut transform_q: Query<&mut Transform>,
-    visibility_q: Query<&Visibility>,
+    mut visibility_q: Query<&mut Visibility>,
     face_2d_q: Query<(Entity, &FaceIcon2d)>,
 ) {
     if !canvas.is_visible() {
@@ -295,10 +296,15 @@ pub fn sync_faces(
     let Some(current_tab_state) = tab_manager.current_tab_state() else {
         return;
     };
+    let Some(current_file_entity) = tab_manager.current_tab_entity() else {
+        return;
+    };
+    let file_ext = file_manager.get_file_type(current_file_entity);
+
     let camera_state = &current_tab_state.camera_state;
     let camera_3d_scale = camera_state.camera_3d_scale();
 
-    face_manager.sync_2d_faces(&face_2d_q, &mut transform_q, &visibility_q, camera_3d_scale);
+    face_manager.sync_2d_faces(file_ext, &face_2d_q, &mut transform_q, &mut visibility_q, camera_3d_scale);
 }
 
 pub fn update_animation(
