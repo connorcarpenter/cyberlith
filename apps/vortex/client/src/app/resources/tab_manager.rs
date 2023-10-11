@@ -42,6 +42,7 @@ use crate::app::{
         TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED,
     },
 };
+use crate::app::ui::UiState;
 
 pub struct TabState {
     pub selected: bool,
@@ -184,9 +185,10 @@ impl TabManager {
         let mut system_state: SystemState<(
             Res<FileManager>,
             ResMut<Canvas>,
+            ResMut<UiState>,
             Query<(&mut Visibility, &OwnedByFileLocal)>,
         )> = SystemState::new(world);
-        let (file_manager, mut canvas, mut visibility_q) = system_state.get_mut(world);
+        let (file_manager, mut canvas, mut ui_state, mut visibility_q) = system_state.get_mut(world);
 
         if let Some(current_tab_file_entity) = self.current_tab_entity() {
             for (mut visibility, owned_by_tab) in visibility_q.iter_mut() {
@@ -197,6 +199,8 @@ impl TabManager {
                 );
             }
         }
+
+        ui_state.canvas_coords = None;
 
         canvas.queue_resync_shapes();
     }
