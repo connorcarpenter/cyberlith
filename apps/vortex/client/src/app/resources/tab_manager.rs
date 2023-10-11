@@ -25,7 +25,7 @@ use crate::app::{
     components::{file_system::FileSystemUiState, OwnedByFileLocal},
     resources::{
         action::{
-            animation::AnimAction, palette::PaletteAction, shape::ShapeAction, TabActionStack,
+            animation::AnimAction, palette::PaletteAction, shape::ShapeAction, TabActionStack, skin::SkinAction,
         },
         camera_manager::CameraManager,
         camera_state::CameraState,
@@ -142,7 +142,7 @@ impl TabManager {
             let current_file_type = file_manager.get_file_type(&current_file_entity);
             canvas_is_visible = match current_file_type {
                 FileExtension::Palette => false,
-                FileExtension::Skel | FileExtension::Mesh | FileExtension::Anim => true,
+                FileExtension::Skel | FileExtension::Mesh | FileExtension::Anim | FileExtension::Skin => true,
                 _ => false,
             };
         }
@@ -304,6 +304,18 @@ impl TabManager {
             world,
             input_manager,
             current_tab_entity,
+            action,
+        );
+    }
+
+    pub fn current_tab_execute_skin_action(
+        &mut self,
+        world: &mut World,
+        action: SkinAction,
+    ) {
+        let tab_state = self.current_tab_state_mut().unwrap();
+        tab_state.action_stack.execute_skin_action(
+            world,
             action,
         );
     }

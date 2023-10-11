@@ -27,7 +27,7 @@ use crate::app::{
         Edge2dLocal, FaceIcon2d, LocalShape, SelectCircle, SelectTriangle, Vertex2d, VertexTypeData,
     },
     resources::{
-        action::{animation::AnimAction, shape::ShapeAction},
+        action::{animation::AnimAction, shape::ShapeAction, skin::SkinAction},
         animation_manager::{
             anim_file_delete_frame, anim_file_insert_frame, anim_file_play_pause, AnimationManager,
         },
@@ -108,6 +108,7 @@ impl InputManager {
             FileExtension::Skel => self.update_input_skel(input_actions, world),
             FileExtension::Mesh => self.update_input_mesh(input_actions, world),
             FileExtension::Anim => self.update_input_anim(input_actions, world),
+            FileExtension::Skin => self.update_input_skin(input_actions, world),
             _ => {}
         }
     }
@@ -207,6 +208,49 @@ impl InputManager {
                     | Key::PageDown => Self::handle_keypress_camera_controls(world, key),
                     Key::Delete => self.handle_delete_key_press_mesh(world),
                     Key::Insert => self.handle_insert_key_press_mesh(world),
+                    _ => {}
+                },
+                _ => {}
+            }
+        }
+    }
+
+    fn update_input_skin(&mut self, input_actions: Vec<InputAction>, world: &mut World) {
+        for action in input_actions {
+            match action {
+                InputAction::MouseClick(click_type, mouse_position) => self
+                    .handle_mouse_click_skin(
+                        world,
+                        click_type,
+                        &mouse_position,
+                    ),
+                InputAction::MouseDragged(click_type, _mouse_position, delta) => self
+                    .handle_mouse_drag_skin(
+                        world,
+                        click_type,
+                        delta,
+                    ),
+                InputAction::MiddleMouseScroll(scroll_y) => {
+                    Self::handle_mouse_scroll_wheel(world, scroll_y)
+                }
+                InputAction::MouseMoved => {
+                    self.queue_resync_hover_ui();
+                    self.queue_resync_selection_ui();
+                }
+                InputAction::KeyPress(key) => match key {
+                    Key::S
+                    | Key::W
+                    | Key::D
+                    | Key::T
+                    | Key::F
+                    | Key::Num1
+                    | Key::Num2
+                    | Key::Num3
+                    | Key::Num4
+                    | Key::Num5
+                    | Key::PageUp
+                    | Key::PageDown => Self::handle_keypress_camera_controls(world, key),
+                    Key::Delete => self.handle_delete_key_press_skin(world),
                     _ => {}
                 },
                 _ => {}
@@ -540,79 +584,82 @@ impl InputManager {
 
         let mut least_distance = f32::MAX;
         let mut least_entity = None;
+        let mut is_hovering = false;
 
         // check for vertices
-        for (vertex_2d_entity, root_opt) in vertex_2d_q.iter() {
-            let Ok(visibility) = visibility_q.get(vertex_2d_entity) else {
-                panic!("Vertex entity has no Visibility");
-            };
-            if !visibility.visible {
-                continue;
-            }
-
-            // don't hover over disabled vertices in Anim mode
-            if file_ext == FileExtension::Anim {
-                let vertex_3d_entity = vertex_manager
-                    .vertex_entity_2d_to_3d(&vertex_2d_entity)
-                    .unwrap();
-                let Ok(shape_name) = shape_name_q.get(vertex_3d_entity) else { continue; };
-                let shape_name = shape_name.value.as_str();
-                if shape_name.len() == 0 {
-                    continue;
-                }
-            }
-
-            let (vertex_transform, _) = transform_q.get(vertex_2d_entity).unwrap();
-            let vertex_position = vertex_transform.translation.truncate();
-            let distance = vertex_position.distance(*mouse_position);
-            if distance < least_distance {
-                least_distance = distance;
-
-                let shape = match root_opt {
-                    Some(_) => CanvasShape::RootVertex,
-                    None => CanvasShape::Vertex,
-                };
-
-                least_entity = Some((vertex_2d_entity, shape));
-            }
-        }
-
-        let mut is_hovering = least_distance <= (Vertex2d::DETECT_RADIUS * camera_3d_scale);
-
-        // check for edges
-        if !is_hovering {
-            for (edge_2d_entity, _) in edge_2d_q.iter() {
-                // check visibility
-                let Ok(visibility) = visibility_q.get(edge_2d_entity) else {
-                    panic!("entity has no Visibility");
+        if file_ext != FileExtension::Skin {
+            for (vertex_2d_entity, root_opt) in vertex_2d_q.iter() {
+                let Ok(visibility) = visibility_q.get(vertex_2d_entity) else {
+                    panic!("Vertex entity has no Visibility");
                 };
                 if !visibility.visible {
                     continue;
                 }
+
+                // don't hover over disabled vertices in Anim mode
                 if file_ext == FileExtension::Anim {
-                    let edge_3d_entity =
-                        edge_manager.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
-                    let (_, end_vertex_3d_entity) =
-                        edge_manager.edge_get_endpoints(&edge_3d_entity);
-                    let Ok(shape_name) = shape_name_q.get(end_vertex_3d_entity) else { continue; };
+                    let vertex_3d_entity = vertex_manager
+                        .vertex_entity_2d_to_3d(&vertex_2d_entity)
+                        .unwrap();
+                    let Ok(shape_name) = shape_name_q.get(vertex_3d_entity) else { continue; };
                     let shape_name = shape_name.value.as_str();
                     if shape_name.len() == 0 {
                         continue;
                     }
                 }
 
-                let (edge_transform, _) = transform_q.get(edge_2d_entity).unwrap();
-                let edge_start = edge_transform.translation.truncate();
-                let edge_end = get_2d_line_transform_endpoint(&edge_transform);
-
-                let distance = distance_to_2d_line(*mouse_position, edge_start, edge_end);
+                let (vertex_transform, _) = transform_q.get(vertex_2d_entity).unwrap();
+                let vertex_position = vertex_transform.translation.truncate();
+                let distance = vertex_position.distance(*mouse_position);
                 if distance < least_distance {
                     least_distance = distance;
-                    least_entity = Some((edge_2d_entity, CanvasShape::Edge));
+
+                    let shape = match root_opt {
+                        Some(_) => CanvasShape::RootVertex,
+                        None => CanvasShape::Vertex,
+                    };
+
+                    least_entity = Some((vertex_2d_entity, shape));
                 }
             }
 
-            is_hovering = least_distance <= (Edge2dLocal::DETECT_THICKNESS * camera_3d_scale);
+            is_hovering = least_distance <= (Vertex2d::DETECT_RADIUS * camera_3d_scale);
+
+            // check for edges
+            if !is_hovering {
+                for (edge_2d_entity, _) in edge_2d_q.iter() {
+                    // check visibility
+                    let Ok(visibility) = visibility_q.get(edge_2d_entity) else {
+                        panic!("entity has no Visibility");
+                    };
+                    if !visibility.visible {
+                        continue;
+                    }
+                    if file_ext == FileExtension::Anim {
+                        let edge_3d_entity =
+                            edge_manager.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
+                        let (_, end_vertex_3d_entity) =
+                            edge_manager.edge_get_endpoints(&edge_3d_entity);
+                        let Ok(shape_name) = shape_name_q.get(end_vertex_3d_entity) else { continue; };
+                        let shape_name = shape_name.value.as_str();
+                        if shape_name.len() == 0 {
+                            continue;
+                        }
+                    }
+
+                    let (edge_transform, _) = transform_q.get(edge_2d_entity).unwrap();
+                    let edge_start = edge_transform.translation.truncate();
+                    let edge_end = get_2d_line_transform_endpoint(&edge_transform);
+
+                    let distance = distance_to_2d_line(*mouse_position, edge_start, edge_end);
+                    if distance < least_distance {
+                        least_distance = distance;
+                        least_entity = Some((edge_2d_entity, CanvasShape::Edge));
+                    }
+                }
+
+                is_hovering = least_distance <= (Edge2dLocal::DETECT_THICKNESS * camera_3d_scale);
+            }
         }
 
         // check for faces
@@ -914,6 +961,19 @@ impl InputManager {
         }
     }
 
+    pub(crate) fn handle_delete_key_press_skin(&mut self, _world: &mut World) {
+        match self.selected_shape {
+            Some((face_2d_entity, CanvasShape::Face)) => {
+                // let mut system_state: SystemState<(Commands, Client, Res<FaceManager>)> =
+                //     SystemState::new(world);
+                // let (mut commands, mut client, face_manager) = system_state.get_mut(world);
+                //
+                // let face_3d_entity = face_manager.face_entity_2d_to_3d(&face_2d_entity).unwrap();
+            }
+            _ => {}
+        }
+    }
+
     fn handle_delete_vertex_action(&mut self, world: &mut World, vertex_2d_entity: &Entity) {
         let mut system_state: SystemState<(Commands, Client, Res<VertexManager>)> =
             SystemState::new(world);
@@ -1183,6 +1243,53 @@ impl InputManager {
                         world,
                         self,
                         ShapeAction::SelectShape(None),
+                    );
+                });
+            }
+            _ => {}
+        }
+    }
+
+    pub(crate) fn handle_mouse_click_skin(
+        &mut self,
+        world: &mut World,
+        click_type: MouseButton,
+        mouse_position: &Vec2,
+    ) {
+        // check if mouse position is outside of canvas
+        if !world
+            .get_resource::<Canvas>()
+            .unwrap()
+            .is_position_inside(*mouse_position)
+        {
+            return;
+        }
+
+        let selected_shape = self.selected_shape.map(|(_, shape)| shape);
+        let hovered_shape = self.hovered_entity.map(|(_, shape)| shape);
+
+        // click_type, selected_shape, hovered_shape
+        match (click_type, selected_shape, hovered_shape) {
+            (
+                MouseButton::Left,
+                _,
+                Some(CanvasShape::Face)
+            ) => {
+                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                    let hovered_entity = self.hovered_entity.map(|(e, s)| e);
+                    tab_manager.current_tab_execute_skin_action(
+                        world,
+                        SkinAction::SelectFace(hovered_entity),
+                    );
+                });
+                return;
+            }
+            (MouseButton::Right, Some(CanvasShape::Face), _) => {
+                // deselect vertex
+                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                    tab_manager.current_tab_execute_skin_action(
+                        world,
+                        SkinAction::SelectFace(None),
                     );
                 });
             }
@@ -1524,6 +1631,19 @@ impl InputManager {
         } else {
             Self::handle_drag_empty_space(world, click_type, delta);
         }
+    }
+
+    pub(crate) fn handle_mouse_drag_skin(
+        &mut self,
+        world: &mut World,
+        click_type: MouseButton,
+        delta: Vec2,
+    ) {
+        if !world.get_resource::<TabManager>().unwrap().has_focus() {
+            return;
+        }
+
+        Self::handle_drag_empty_space(world, click_type, delta);
     }
 
     pub(crate) fn handle_mouse_drag_anim_framing(

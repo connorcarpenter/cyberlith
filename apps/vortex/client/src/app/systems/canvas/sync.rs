@@ -124,7 +124,7 @@ pub fn sync_vertices(world: &mut World) {
             return;
         }
         match file_extension {
-            FileExtension::Skel | FileExtension::Mesh => {
+            FileExtension::Skel | FileExtension::Mesh | FileExtension::Skin => {
                 vertex_manager.sync_vertices_3d(world);
                 vertex_manager.sync_vertices_2d(world, &camera_3d, camera_3d_scale);
             }
@@ -246,7 +246,7 @@ pub fn sync_edges(
     }
 
     let should_sync_3d = match file_ext {
-        FileExtension::Skel | FileExtension::Mesh => true,
+        FileExtension::Skel | FileExtension::Mesh | FileExtension::Skin => true,
         FileExtension::Anim => animation_manager
             .current_frame_entity(current_tab_entity)
             .is_none(),

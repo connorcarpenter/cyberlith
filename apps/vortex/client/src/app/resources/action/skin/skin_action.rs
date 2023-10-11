@@ -6,16 +6,20 @@ use crate::app::resources::{
 
 #[derive(Clone)]
 pub enum SkinAction {
+    // The 2D face entity to deselect (or None for deselect)
+    SelectFace(Option<Entity>),
     None,
 }
 
 pub enum SkinActionType {
+    SelectFace,
     None,
 }
 
 impl SkinAction {
     pub fn get_type(&self) -> SkinActionType {
         match self {
+            Self::SelectFace(_) => SkinActionType::SelectFace,
             Self::None => SkinActionType::None,
         }
     }
@@ -24,6 +28,7 @@ impl SkinAction {
         let action_type = self.get_type();
 
         match action_type {
+            SkinActionType::SelectFace => { Vec::new() }
             SkinActionType::None => { Vec::new() },
         }
     }

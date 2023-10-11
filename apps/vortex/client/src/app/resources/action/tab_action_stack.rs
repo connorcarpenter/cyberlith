@@ -48,7 +48,24 @@ impl TabActionStack {
                 action_stack.post_action_execution(world, reversed_actions);
             }
             _ => {
-                panic!("buffer_shape_action() called on TabActionStack::Shape");
+                panic!("execute_shape_action() called on non-TabActionStack::Shape");
+            }
+        }
+    }
+
+    pub fn execute_skin_action(
+        &mut self,
+        world: &mut World,
+        action: SkinAction,
+    ) {
+        match self {
+            Self::Skin(action_stack) => {
+                let reversed_actions =
+                    action_stack.execute_action(world, action);
+                action_stack.post_action_execution(world, reversed_actions);
+            }
+            _ => {
+                panic!("execute_skin_action() called on non-TabActionStack::Skin");
             }
         }
     }
