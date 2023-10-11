@@ -20,7 +20,8 @@ impl ProtocolPlugin for VertexComponentsPlugin {
             .add_component::<OwnedByFile>()
             .add_component::<FileType>()
             .add_component::<ShapeName>()
-            .add_component::<PaletteColor>();
+            .add_component::<PaletteColor>()
+            .add_component::<FaceColor>();
     }
 }
 
@@ -301,5 +302,18 @@ pub struct PaletteColor {
 impl PaletteColor {
     pub fn new(index: u8, r: u8, g: u8, b: u8) -> Self {
         Self::new_complete(index, r, g, b)
+    }
+}
+
+// FaceColor
+#[derive(Component, Replicate)]
+pub struct FaceColor {
+    pub face_entity: EntityProperty,
+    pub color_entity: EntityProperty,
+}
+
+impl FaceColor {
+    pub fn new() -> Self {
+        Self::new_complete()
     }
 }

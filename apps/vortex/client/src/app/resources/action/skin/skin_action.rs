@@ -1,33 +1,31 @@
 use bevy_ecs::prelude::{Entity, World};
 
-use crate::app::resources::action::Action;
+use crate::app::resources::{action::{Action, skin::select_face}, shape_data::CanvasShape, input_manager::InputManager};
 
 #[derive(Clone)]
 pub enum SkinAction {
     // The 2D face entity to deselect (or None for deselect)
-    SelectFace(Option<Entity>),
-    None,
+    SelectFace(Option<(Entity, CanvasShape)>),
 }
 
 pub enum SkinActionType {
     SelectFace,
-    None,
 }
 
 impl SkinAction {
     pub fn get_type(&self) -> SkinActionType {
         match self {
             Self::SelectFace(_) => SkinActionType::SelectFace,
-            Self::None => SkinActionType::None,
         }
     }
 
-    pub fn execute(self, world: &mut World) -> Vec<Self> {
+    pub fn execute(self, world: &mut World, input_manager: &mut InputManager) -> Vec<Self> {
         let action_type = self.get_type();
 
         match action_type {
-            SkinActionType::SelectFace => Vec::new(),
-            SkinActionType::None => Vec::new(),
+            SkinActionType::SelectFace => {
+                select_face::execute(world, input_manager, self)
+            }
         }
     }
 }

@@ -316,9 +316,9 @@ impl TabManager {
         );
     }
 
-    pub fn current_tab_execute_skin_action(&mut self, world: &mut World, action: SkinAction) {
+    pub fn current_tab_execute_skin_action(&mut self, world: &mut World, input_manager: &mut InputManager, action: SkinAction) {
         let tab_state = self.current_tab_state_mut().unwrap();
-        tab_state.action_stack.execute_skin_action(world, action);
+        tab_state.action_stack.execute_skin_action(world, input_manager, action);
     }
 
     pub fn current_tab_execute_anim_action(

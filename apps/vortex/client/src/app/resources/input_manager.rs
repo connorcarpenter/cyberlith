@@ -1266,10 +1266,10 @@ impl InputManager {
         match (click_type, selected_shape, hovered_shape) {
             (MouseButton::Left, _, Some(CanvasShape::Face)) => {
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    let hovered_entity = self.hovered_entity.map(|(e, s)| e);
                     tab_manager.current_tab_execute_skin_action(
                         world,
-                        SkinAction::SelectFace(hovered_entity),
+                        self,
+                        SkinAction::SelectFace(self.hovered_entity),
                     );
                 });
                 return;
@@ -1278,7 +1278,7 @@ impl InputManager {
                 // deselect vertex
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
                     tab_manager
-                        .current_tab_execute_skin_action(world, SkinAction::SelectFace(None));
+                        .current_tab_execute_skin_action(world, self, SkinAction::SelectFace(None));
                 });
             }
             _ => {}
