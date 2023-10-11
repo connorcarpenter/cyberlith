@@ -159,7 +159,7 @@ impl PaletteReader {
                         "palette color entity: `{:?}`, rgb:({}, {}, {})",
                         entity_id, r, g, b
                     );
-                    output.insert(entity_id, ContentEntityData::new_color());
+                    output.insert(entity_id, ContentEntityData::new_palette_color());
 
                     palette_manager.on_create_color(&file_entity, &entity_id, index as usize, None);
                 }

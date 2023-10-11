@@ -308,6 +308,7 @@ impl PaletteColor {
 // FaceColor
 #[derive(Component, Replicate)]
 pub struct FaceColor {
+    pub skin_file_entity: EntityProperty,
     pub face_3d_entity: EntityProperty,
     pub palette_color_entity: EntityProperty,
 }

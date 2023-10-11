@@ -19,7 +19,7 @@ use naia_bevy_server::{Plugin as ServerPlugin, ReceiveEvents, ServerConfig};
 use vortex_proto::{
     components::{
         AnimFrame, AnimRotation, Edge3d, Face3d, FileDependency, FileSystemChild, FileSystemEntry,
-        FileSystemRootChild, FileType, OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot,
+        FaceColor, FileSystemRootChild, FileType, OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot,
     },
     protocol,
 };
@@ -29,7 +29,7 @@ use crate::{
     events::InsertComponentEvent,
     resources::{
         changelist_manager_process, AnimationManager, ChangelistManager, GitManager,
-        PaletteManager, ShapeManager, ShapeWaitlist, TabManager, UserManager,
+        PaletteManager, ShapeManager, ShapeWaitlist, TabManager, UserManager, SkinManager,
     },
     systems::{network, world_loop},
 };
@@ -56,6 +56,7 @@ fn main() {
         .init_resource::<ShapeManager>()
         .init_resource::<AnimationManager>()
         .init_resource::<PaletteManager>()
+        .init_resource::<SkinManager>()
         // Network Systems
         .add_systems(Startup, network::init)
         .add_systems(
@@ -86,6 +87,7 @@ fn main() {
                 network::insert_shape_component_events,
                 network::insert_animation_component_events,
                 network::insert_palette_component_events,
+                network::insert_skin_component_events,
                 apply_deferred,
                 network::message_events,
             )
@@ -107,6 +109,7 @@ fn main() {
         .add_event::<InsertComponentEvent<AnimRotation>>()
         .add_event::<InsertComponentEvent<AnimFrame>>()
         .add_event::<InsertComponentEvent<PaletteColor>>()
+        .add_event::<InsertComponentEvent<FaceColor>>()
         // Other Systems
         .add_systems(Startup, setup)
         .add_systems(Update, world_loop.after(ReceiveEvents))

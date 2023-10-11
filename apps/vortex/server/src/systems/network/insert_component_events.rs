@@ -12,7 +12,7 @@ use naia_bevy_server::{events::InsertComponentEvents, Server};
 use vortex_proto::{
     components::{
         AnimFrame, AnimRotation, Edge3d, Face3d, FileDependency, FileSystemChild, FileSystemEntry,
-        FileSystemRootChild, FileType, OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot,
+        FileSystemRootChild, FileType, OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot, FaceColor,
     },
     resources::FileKey,
 };
@@ -22,7 +22,7 @@ use crate::{
     resources::{
         file_waitlist::{file_process_insert, FSWaitlist, FSWaitlistInsert},
         AnimationManager, ContentEntityData, GitManager, PaletteManager, ShapeManager,
-        ShapeWaitlist, ShapeWaitlistInsert, TabManager, UserManager,
+        ShapeWaitlist, ShapeWaitlistInsert, TabManager, UserManager, SkinManager,
     },
 };
 
@@ -49,7 +49,8 @@ pub fn insert_component_events(
     mut insert_rotation_event_writer: EventWriter<InsertComponentEvent<AnimRotation>>,
     mut insert_frame_event_writer: EventWriter<InsertComponentEvent<AnimFrame>>,
 
-    mut insert_color_event_writer: EventWriter<InsertComponentEvent<PaletteColor>>,
+    mut insert_palette_color_event_writer: EventWriter<InsertComponentEvent<PaletteColor>>,
+    mut insert_face_color_event_writer: EventWriter<InsertComponentEvent<FaceColor>>,
 ) {
     for events in event_reader.iter() {
         // on FileSystemEntry Insert Event
@@ -134,8 +135,14 @@ pub fn insert_component_events(
 
         // on PaletteColor Insert Event
         for (user_key, entity) in events.read::<PaletteColor>() {
-            insert_color_event_writer
+            insert_palette_color_event_writer
                 .send(InsertComponentEvent::<PaletteColor>::new(user_key, entity));
+        }
+
+        // on FaceColor Insert Event
+        for (user_key, entity) in events.read::<FaceColor>() {
+            insert_face_color_event_writer
+                .send(InsertComponentEvent::<FaceColor>::new(user_key, entity));
         }
     }
 }
@@ -560,7 +567,52 @@ pub fn insert_palette_component_events(
             Some(&mut color_q),
         );
 
-        let content_entity_data = ContentEntityData::new_frame();
+        let content_entity_data = ContentEntityData::new_palette_color();
+        git_manager.on_insert_content_entity(
+            &mut server,
+            &project_key,
+            &file_key,
+            &color_entity,
+            &content_entity_data,
+        );
+
+        git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
+    }
+}
+
+pub fn insert_skin_component_events(
+    mut commands: Commands,
+    mut server: Server,
+    user_manager: ResMut<UserManager>,
+    mut git_manager: ResMut<GitManager>,
+    mut skin_manager: ResMut<SkinManager>,
+    mut color_events: EventReader<InsertComponentEvent<PaletteColor>>,
+    key_q: Query<&FileKey>,
+    color_q: Query<&FaceColor>,
+) {
+    // on FaceColor Insert Event
+    for event in color_events.iter() {
+        let user_key = event.user_key;
+        let color_entity = event.entity;
+        info!("entity: `{:?}`, inserted FaceColor", color_entity);
+
+        let color = color_q.get(color_entity).unwrap();
+        let face_3d_entity: Entity = color.face_3d_entity.get(&server).unwrap();
+        let skin_file_entity: Entity = color.skin_file_entity.get(&server).unwrap();
+
+        let project_key = user_manager
+            .user_session_data(&user_key)
+            .unwrap()
+            .project_key()
+            .unwrap();
+        let file_key = key_q.get(skin_file_entity).unwrap().clone();
+
+        skin_manager.on_create_face_color(
+            &face_3d_entity,
+            &color_entity,
+        );
+
+        let content_entity_data = ContentEntityData::new_skin_color();
         git_manager.on_insert_content_entity(
             &mut server,
             &project_key,

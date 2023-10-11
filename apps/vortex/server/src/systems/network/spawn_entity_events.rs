@@ -11,7 +11,7 @@ use naia_bevy_server::{
 
 use vortex_proto::components::{AnimFrame, ChangelistEntry, PaletteColor};
 
-use crate::resources::{AnimationManager, GitManager, PaletteManager, ShapeManager, UserManager};
+use crate::resources::{AnimationManager, GitManager, PaletteManager, ShapeManager, SkinManager, UserManager};
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
     for SpawnEntityEvent(_user_key, entity) in event_reader.iter() {
@@ -27,7 +27,8 @@ enum DespawnType {
     Face,
     Rotation,
     Frame,
-    Color,
+    PaletteColor,
+    FaceColor,
 }
 
 pub fn despawn_entity_events(
@@ -38,6 +39,7 @@ pub fn despawn_entity_events(
     mut shape_manager: ResMut<ShapeManager>,
     mut animation_manager: ResMut<AnimationManager>,
     mut palette_manager: ResMut<PaletteManager>,
+    mut skin_manager: ResMut<SkinManager>,
     mut event_reader: EventReader<DespawnEntityEvent>,
     mut changelist_q: Query<&mut ChangelistEntry>,
     mut frame_q: Query<&mut AnimFrame>,
@@ -65,7 +67,9 @@ pub fn despawn_entity_events(
         } else if animation_manager.has_frame(entity) {
             despawn_type = Some(DespawnType::Frame);
         } else if palette_manager.has_color(entity) {
-            despawn_type = Some(DespawnType::Color);
+            despawn_type = Some(DespawnType::PaletteColor);
+        } else if skin_manager.has_face_color(entity) {
+            despawn_type = Some(DespawnType::FaceColor);
         }
 
         match despawn_type {
@@ -139,13 +143,23 @@ pub fn despawn_entity_events(
 
                 git_manager.on_remove_content_entity(&mut server, &entity);
             }
-            Some(DespawnType::Color) => {
+            Some(DespawnType::PaletteColor) => {
                 // color
-                info!("entity: `{:?}` (which is an Color), despawned", entity);
+                info!("entity: `{:?}` (which is a Palette Color), despawned", entity);
 
                 git_manager.queue_client_modify_file(entity);
 
                 palette_manager.on_despawn_color(entity, Some(&mut color_q));
+
+                git_manager.on_remove_content_entity(&mut server, &entity);
+            }
+            Some(DespawnType::FaceColor) => {
+                // color
+                info!("entity: `{:?}` (which is a Face Color), despawned", entity);
+
+                git_manager.queue_client_modify_file(entity);
+
+                skin_manager.on_despawn_face_color(entity);
 
                 git_manager.on_remove_content_entity(&mut server, &entity);
             }

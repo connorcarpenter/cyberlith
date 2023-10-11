@@ -11,6 +11,7 @@ mod shape_waitlist;
 mod tab_manager;
 mod user_manager;
 mod user_tab_state;
+mod skin_manager;
 
 pub use animation_manager::*;
 pub use changelist_manager::*;
@@ -18,6 +19,7 @@ pub use file_entry::*;
 pub use filespace::*;
 pub use git_manager::*;
 pub use palette_manager::*;
+pub use skin_manager::*;
 pub use project::*;
 pub use shape_manager::*;
 pub use shape_waitlist::*;

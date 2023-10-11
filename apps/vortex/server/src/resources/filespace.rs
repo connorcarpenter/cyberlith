@@ -17,7 +17,8 @@ pub enum ContentEntityData {
     Dependency(FileKey),
     Frame,
     Rotation,
-    Color,
+    PaletteColor,
+    FaceColor,
 }
 
 impl ContentEntityData {
@@ -37,8 +38,12 @@ impl ContentEntityData {
         Self::Rotation
     }
 
-    pub fn new_color() -> Self {
-        Self::Color
+    pub fn new_palette_color() -> Self {
+        Self::PaletteColor
+    }
+
+    pub fn new_skin_color() -> Self {
+        Self::FaceColor
     }
 }
 

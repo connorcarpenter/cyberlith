@@ -19,7 +19,7 @@ use crate::{
         AnimReader, AnimWriter, MeshReader, MeshWriter, PaletteReader, PaletteWriter, SkelReader,
         SkelWriter, SkinReader, SkinWriter,
     },
-    resources::{AnimationManager, ContentEntityData, Project, ShapeManager},
+    resources::{PaletteManager, SkinManager, AnimationManager, ContentEntityData, Project, ShapeManager},
 };
 
 pub trait FileWriter: Send + Sync {
@@ -196,9 +196,17 @@ pub fn despawn_file_content_entities(
         Server,
         ResMut<ShapeManager>,
         ResMut<AnimationManager>,
+        ResMut<PaletteManager>,
+        ResMut<SkinManager>,
     )> = SystemState::new(world);
-    let (mut commands, mut server, mut shape_manager, mut animation_manager) =
-        system_state.get_mut(world);
+    let (
+        mut commands,
+        mut server,
+        mut shape_manager,
+        mut animation_manager,
+        mut palette_manager,
+        mut skin_manager,
+    ) = system_state.get_mut(world);
 
     for (entity, entity_data) in content_entities.iter() {
         info!("despawning entity: {:?}", entity);
@@ -224,7 +232,12 @@ pub fn despawn_file_content_entities(
             ContentEntityData::Rotation => {
                 animation_manager.deregister_rotation(entity);
             }
-            ContentEntityData::Color => {}
+            ContentEntityData::PaletteColor => {
+                palette_manager.deregister_color(entity, None);
+            }
+            ContentEntityData::FaceColor => {
+                skin_manager.deregister_face_color(entity);
+            }
         }
     }
 
