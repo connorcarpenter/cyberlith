@@ -1250,6 +1250,10 @@ impl InputManager {
         click_type: MouseButton,
         mouse_position: &Vec2,
     ) {
+        if self.selected_shape == self.hovered_entity {
+            return;
+        }
+
         // check if mouse position is outside of canvas
         if !world
             .get_resource::<Canvas>()
