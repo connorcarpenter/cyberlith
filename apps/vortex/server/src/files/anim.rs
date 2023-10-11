@@ -13,13 +13,13 @@ use naia_bevy_server::{
 };
 
 use vortex_proto::{
-    components::{AnimFrame, AnimRotation, EntryKind, FileDependency, FileExtension, Transition},
+    components::{AnimFrame, AnimRotation, FileExtension, Transition},
     resources::FileKey,
     SerdeQuat,
 };
 
 use crate::{
-    files::FileWriter,
+    files::{FileWriter, add_file_dependency},
     resources::{AnimationManager, ContentEntityData, Project},
 };
 
@@ -235,27 +235,23 @@ impl AnimReader {
 
         loop {
             let action_type = AnimActionType::de(bit_reader)?;
-            info!("reading action");
+
             match action_type {
                 AnimActionType::SkelFile => {
-                    info!("read dep");
                     let path = String::de(bit_reader)?;
                     let file_name = String::de(bit_reader)?;
                     actions.push(AnimAction::SkelFile(path, file_name));
                 }
                 AnimActionType::ShapeIndex => {
-                    info!("read shape");
                     let name = String::de(bit_reader)?;
                     actions.push(AnimAction::ShapeIndex(name));
                 }
                 AnimActionType::Frame => {
-                    info!("read frame");
                     let transition = Transition::de(bit_reader)?;
                     let mut poses = HashMap::new();
                     loop {
                         let continue_bit = bool::de(bit_reader)?;
                         if !continue_bit {
-                            info!("hit false continue bit");
                             break;
                         }
 
@@ -263,16 +259,12 @@ impl AnimReader {
                         let pose_quat = SerdeQuat::de(bit_reader)?;
                         poses.insert(shape_index, pose_quat);
                     }
-                    info!("action push frame");
                     actions.push(AnimAction::Frame(poses, transition));
                 }
                 AnimActionType::None => {
-                    info!("read none");
                     break;
                 }
             }
-            info!("done reading action");
-            info!("...")
         }
 
         Ok(actions)
@@ -297,28 +289,17 @@ impl AnimReader {
         for action in actions {
             match action {
                 AnimAction::SkelFile(skel_path, skel_file_name) => {
-                    let skel_file_key = FileKey::new(&skel_path, &skel_file_name, EntryKind::File);
-                    let file_extension = project.file_extension(&skel_file_key).unwrap();
-                    if file_extension != FileExtension::Skel {
-                        panic!("anim file should depend on a single .skel file");
-                    }
-
-                    project.file_add_dependency(file_key, &skel_file_key);
-
-                    let skel_file_entity = project.file_entity(&skel_file_key).unwrap();
-
-                    // get all users in room with file entity
-                    info!("creating new FileDependency!");
-                    let mut component = FileDependency::new();
-                    component.file_entity.set(&server, file_entity);
-                    component.dependency_entity.set(&server, &skel_file_entity);
-                    let entity = commands
-                        .spawn_empty()
-                        .enable_replication(&mut server)
-                        .configure_replication(ReplicationConfig::Delegated)
-                        .insert(component)
-                        .id();
-                    output.insert(entity, ContentEntityData::new_dependency(skel_file_key));
+                    let (new_entity, new_file_key) = add_file_dependency(
+                        project,
+                        file_key,
+                        file_entity,
+                        &mut commands,
+                        &mut server,
+                        FileExtension::Skel,
+                        &skel_path,
+                        &skel_file_name
+                    );
+                    output.insert(new_entity, ContentEntityData::new_dependency(new_file_key));
                 }
                 AnimAction::ShapeIndex(shape_name) => {
                     shape_name_map.insert(shape_name_index, shape_name);

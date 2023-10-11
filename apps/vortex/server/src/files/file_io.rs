@@ -7,10 +7,10 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use naia_bevy_server::{CommandsExt, Server};
+use naia_bevy_server::{CommandsExt, ReplicationConfig, Server};
 
 use vortex_proto::{
-    components::{FileExtension, FileType, OwnedByFile},
+    components::{FileExtension, FileType, OwnedByFile, EntryKind, FileDependency},
     resources::FileKey,
 };
 
@@ -57,7 +57,7 @@ impl FileReader for FileExtension {
             FileExtension::Mesh => MeshReader.read(world, bytes),
             FileExtension::Anim => AnimReader.read(world, project, file_key, file_entity, bytes),
             FileExtension::Palette => PaletteReader.read(world, file_entity, bytes),
-            FileExtension::Skin => SkinReader.read(world, bytes),
+            FileExtension::Skin => SkinReader.read(world, project, file_key, file_entity, bytes),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }
@@ -229,4 +229,38 @@ pub fn despawn_file_content_entities(
     }
 
     system_state.apply(world);
+}
+
+pub fn add_file_dependency(
+    project: &mut Project,
+    file_key: &FileKey,
+    file_entity: &Entity,
+    commands: &mut Commands,
+    server: &mut Server,
+    dependency_file_ext: FileExtension,
+    dependency_path: &str,
+    dependency_file_name: &str
+) -> (Entity, FileKey) {
+    let dependency_file_key = FileKey::new(&dependency_path, &dependency_file_name, EntryKind::File);
+    let file_extension = project.file_extension(&dependency_file_key).unwrap();
+    if file_extension != dependency_file_ext {
+        panic!("new file of type {} is not of the required type: {}", file_extension.to_string(), dependency_file_ext.to_string());
+    }
+
+    project.file_add_dependency(file_key, &dependency_file_key);
+
+    let palette_file_entity = project.file_entity(&dependency_file_key).unwrap();
+
+    info!("creating new FileDependency!");
+    let mut component = FileDependency::new();
+    component.file_entity.set(server, file_entity);
+    component.dependency_entity.set(server, &palette_file_entity);
+    let entity = commands
+        .spawn_empty()
+        .enable_replication(server)
+        .configure_replication(ReplicationConfig::Delegated)
+        .insert(component)
+        .id();
+
+    return (entity, dependency_file_key);
 }
