@@ -109,6 +109,10 @@ impl PaletteManager {
         self.track_old_color(color_entity_2, new_color);
     }
 
+    pub fn get_file_colors(&self, file_entity: &Entity) -> Option<&Vec<Option<Entity>>> {
+        self.file_colors.get(file_entity)
+    }
+
     pub fn register_color(
         &mut self,
         file_entity: Entity,

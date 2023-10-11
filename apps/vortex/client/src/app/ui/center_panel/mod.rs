@@ -1,7 +1,7 @@
 mod canvas;
 use canvas::render_canvas;
 
-use bevy_ecs::world::World;
+use bevy_ecs::world::{Mut, World};
 
 use render_egui::{egui, egui::Frame};
 
@@ -9,7 +9,7 @@ use vortex_proto::components::FileExtension;
 
 use crate::app::{
     resources::{
-        animation_manager::AnimationManager, file_manager::FileManager,
+        animation_manager::AnimationManager, file_manager::FileManager, skin_manager::SkinManager,
         palette_manager::PaletteManager, tab_manager::render_tab_bar, tab_manager::TabManager,
     },
     ui::{
@@ -95,7 +95,9 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                         }
 
                         // Toolbar
-                        render_tool_bar(ui, world, current_file_type);
+                        world.resource_scope(|world, mut skin_manager: Mut<SkinManager>| {
+                           skin_manager.render_sidebar(ui, world, &current_file_entity);
+                        });
                     }
                     _ => {}
                 }
