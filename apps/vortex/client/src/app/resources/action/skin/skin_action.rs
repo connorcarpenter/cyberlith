@@ -13,8 +13,8 @@ use crate::app::resources::{
 pub enum SkinAction {
     // The 2D face entity to deselect (or None for deselect)
     SelectFace(Option<(Entity, CanvasShape)>),
-    // 2D face entity, old palette color entity, new palette color entity
-    EditColor(Entity, Option<Entity>, Option<Entity>),
+    // 2D face entity, new palette color entity (or None to destroy)
+    EditColor(Entity, Option<Entity>),
 }
 
 pub enum SkinActionType {
@@ -26,7 +26,7 @@ impl SkinAction {
     pub fn get_type(&self) -> SkinActionType {
         match self {
             Self::SelectFace(_) => SkinActionType::SelectFace,
-            Self::EditColor(_, _, _) => SkinActionType::EditColor,
+            Self::EditColor(_, _) => SkinActionType::EditColor,
         }
     }
 

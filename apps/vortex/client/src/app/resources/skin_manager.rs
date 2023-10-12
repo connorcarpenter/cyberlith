@@ -19,7 +19,7 @@ use vortex_proto::components::{FaceColor, FileExtension, PaletteColor};
 
 use crate::app::{
     events::ShapeColorResyncEvent,
-    resources::{file_manager::FileManager, palette_manager::PaletteManager},
+    resources::{shape_data::CanvasShape, input_manager::InputManager, action::skin::SkinAction, file_manager::FileManager, palette_manager::PaletteManager},
 };
 
 #[derive(Resource)]
@@ -131,7 +131,10 @@ impl SkinManager {
         ui: &mut Ui,
         world: &mut World,
         current_file_entity: &Entity,
-    ) {
+    ) -> Option<SkinAction> {
+
+        let mut color_index_picked = None;
+
         egui::SidePanel::right("skin_right_panel")
             .exact_width(8.0*2.0 + 48.0*2.0 + 2.0 + 10.0*2.0)
             .resizable(false)
@@ -139,13 +142,11 @@ impl SkinManager {
                 let mut system_state: SystemState<(
                     Res<FileManager>,
                     Res<PaletteManager>,
-                    EventWriter<ShapeColorResyncEvent>,
                     Query<&PaletteColor>,
                 )> = SystemState::new(world);
                 let (
                     file_manager,
                     palette_manager,
-                    mut shape_color_resync_events,
                     palette_color_q
                 ) = system_state.get_mut(world);
 
@@ -192,7 +193,6 @@ impl SkinManager {
                 ui.separator();
 
                 let size = Vec2::new(16.0, 16.0);
-                let mut color_index_picked = None;
 
                 ui.with_layout(
                     Layout::left_to_right(Align::Min).with_main_wrap(true),
@@ -200,10 +200,10 @@ impl SkinManager {
                         Frame::none().inner_margin(8.0).show(ui, |ui| {
                             ui.spacing_mut().item_spacing = Vec2::new(10.0, 10.0);
                             for (color_index, color_entity_opt) in colors.iter().enumerate() {
-                                let Some(color_entity) = color_entity_opt else {
+                                let Some(palette_color_entity) = color_entity_opt else {
                                     continue;
                                 };
-                                let Ok(color_component) = palette_color_q.get(*color_entity) else {
+                                let Ok(color_component) = palette_color_q.get(*palette_color_entity) else {
                                     continue;
                                 };
                                 let r = *color_component.r;
@@ -223,37 +223,53 @@ impl SkinManager {
                                         rect = rect.expand(2.0);
                                         ui.painter().rect_stroke(rect, 0.0, (2.0, Color32::WHITE));
                                     } else if response.clicked_by(PointerButton::Primary) {
-                                        color_index_picked = Some((color_index, PointerButton::Primary));
-                                    } else if response.clicked_by(PointerButton::Secondary) {
-                                        color_index_picked = Some((color_index, PointerButton::Secondary));
+                                        color_index_picked = Some((color_index, *palette_color_entity, PointerButton::Primary));
+                                    }
+                                    if response.clicked_by(PointerButton::Secondary) {
+                                        color_index_picked = Some((color_index, *palette_color_entity, PointerButton::Secondary));
                                     }
                                 }
                             }
                         });
-                    },
-                );
-
-                let Some((color_index_picked, click_type)) = color_index_picked else {
-                    return;
-                };
-                match click_type {
-                    PointerButton::Primary => {
-                        if color_index_picked == self.selected_color_index {
-                            return;
-                        }
-                        self.selected_color_index = color_index_picked;
-                        shape_color_resync_events.send(ShapeColorResyncEvent);
-                    }
-                    PointerButton::Secondary => {
-                        if color_index_picked == self.background_color_index {
-                            return;
-                        }
-                        self.background_color_index = color_index_picked;
-                        shape_color_resync_events.send(ShapeColorResyncEvent);
-                    }
-                    _ => {}
-                }
-
+                    });
+                return;
             });
+
+        let Some((color_index_picked, palette_color_entity, click_type)) = color_index_picked else {
+            return None;
+        };
+        match click_type {
+            PointerButton::Primary => {
+                if color_index_picked == self.selected_color_index {
+                    return None;
+                }
+                self.selected_color_index = color_index_picked;
+
+                let selected_shape = world.get_resource::<InputManager>().unwrap().selected_shape_2d();
+                if selected_shape.is_some() {
+                    let Some((face_2d_entity, CanvasShape::Face)) = selected_shape else {
+                        panic!("expected face entity");
+                    };
+                    return Some(SkinAction::EditColor(face_2d_entity, Some(palette_color_entity)));
+                }
+            }
+            PointerButton::Secondary => {
+                if color_index_picked == self.background_color_index {
+                    return None;
+                }
+                self.background_color_index = color_index_picked;
+
+                let mut system_state: SystemState<(
+                    EventWriter<ShapeColorResyncEvent>,
+                )> = SystemState::new(world);
+                let (
+                    mut shape_color_resync_events,
+                ) = system_state.get_mut(world);
+                shape_color_resync_events.send(ShapeColorResyncEvent);
+            }
+            _ => {}
+        }
+
+        return None;
     }
 }

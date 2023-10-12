@@ -1,13 +1,13 @@
 use bevy_ecs::{
     prelude::{Commands, Entity, World},
-    system::{Res, ResMut, SystemState},
+    system::{Query, Res, ResMut, SystemState},
     world::Mut,
 };
 use bevy_log::info;
 
 use naia_bevy_client::Client;
 
-use vortex_proto::components::FileExtension;
+use vortex_proto::components::{FaceColor, FileExtension};
 
 use crate::app::resources::{
     action::{shape::entity_request_release, skin::SkinAction},
@@ -40,6 +40,7 @@ pub fn execute(
         Res<FaceManager>,
         Res<SkinManager>,
         Res<PaletteManager>,
+        Query<&mut FaceColor>,
     )> = SystemState::new(world);
     let (
         mut commands,
@@ -49,6 +50,7 @@ pub fn execute(
         face_manager,
         skin_manager,
         palette_manager,
+        mut face_color_q,
     ) = system_state.get_mut(world);
 
     // Deselect all selected shapes, select the new selected shapes
@@ -69,21 +71,36 @@ pub fn execute(
     );
 
     if let Some((face_2d_entity, CanvasShape::Face)) = shape_2d_entity_opt {
-        if entity_to_request.is_none() {
-            let face_3d_entity = face_manager.face_entity_2d_to_3d(&face_2d_entity).unwrap();
 
-            let palette_color_index = skin_manager.selected_color_index();
-            let Some(palette_file_entity) = file_manager.file_get_dependency(
-                &current_file_entity,
-                FileExtension::Palette,
-            ) else {
-                panic!("Expected palette file dependency");
+        let face_3d_entity = face_manager.face_entity_2d_to_3d(&face_2d_entity).unwrap();
+
+        let palette_color_index = skin_manager.selected_color_index();
+        let Some(palette_file_entity) = file_manager.file_get_dependency(
+            &current_file_entity,
+            FileExtension::Palette,
+        ) else {
+            panic!("Expected palette file dependency");
+        };
+        let next_palette_color_entity = palette_manager
+            .get_color_entity(&palette_file_entity, palette_color_index)
+            .unwrap();
+
+        if let Some(face_color_entity) = entity_to_request {
+            // edit face color
+            let Ok(mut face_color) = face_color_q.get_mut(face_color_entity) else {
+                panic!("Failed to get FaceColor for face color entity {:?}!", face_color_entity);
             };
 
-            let next_palette_color_entity = palette_manager
-                .get_color_entity(&palette_file_entity, palette_color_index)
-                .unwrap();
+            let prev_palette_entity= face_color.palette_color_entity.get(&client).unwrap();
 
+            face_color.palette_color_entity.set(&client, &next_palette_color_entity);
+
+            return vec![
+                SkinAction::SelectFace(deselected_entity),
+                SkinAction::EditColor(face_2d_entity, Some(prev_palette_entity)),
+            ];
+        } else {
+            // create face color
             world.resource_scope(|world, mut skin_manager: Mut<SkinManager>| {
                 skin_manager.create_networked_face_color_from_world(
                     world,
@@ -97,7 +114,7 @@ pub fn execute(
 
             return vec![
                 SkinAction::SelectFace(deselected_entity),
-                SkinAction::EditColor(face_2d_entity, Some(next_palette_color_entity), None),
+                SkinAction::EditColor(face_2d_entity, None),
             ];
         }
     }
