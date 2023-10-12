@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use bevy_ecs::{
     entity::Entity,
     event::{EventReader, EventWriter},
-    system::{Res, Commands, Query, ResMut, Resource, SystemState},
+    system::{Commands, Query, ResMut, Resource, SystemState},
     world::{Mut, World},
 };
 use bevy_log::{info, warn};
@@ -652,14 +652,11 @@ pub fn insert_palette_events(
 }
 
 pub fn insert_skin_events(
-    mut commands: Commands,
     client: Client,
-    face_manager: Res<FaceManager>,
-    mut materials: ResMut<Assets<CpuMaterial>>,
     mut color_events: EventReader<InsertComponentEvent<FaceColor>>,
     mut skin_manager: ResMut<SkinManager>,
-    palette_color_q: Query<&PaletteColor>,
     face_color_q: Query<&FaceColor>,
+    mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
 ) {
     // on FaceColor Insert Event
     for event in color_events.iter() {
@@ -673,16 +670,11 @@ pub fn insert_skin_events(
 
         //let file_entity = color_component.file_entity.get(&client).unwrap();
         let face_3d_entity = color_component.face_3d_entity.get(&client).unwrap();
-        let palette_color_entity = color_component.palette_color_entity.get(&client).unwrap();
 
         skin_manager.face_color_postprocess(
-            &mut commands,
-            &face_manager,
-            &mut materials,
             face_3d_entity,
-            palette_color_entity,
             face_color_entity,
-            &palette_color_q,
+            &mut shape_color_resync_events,
         );
     }
 }

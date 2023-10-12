@@ -1,17 +1,15 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{entity::Entity, system::{ResMut, Resource, Commands, Query, Res, SystemState}, world::World};
+use bevy_ecs::{entity::Entity, event::EventWriter, system::{Resource, Commands, Query, Res, SystemState}, world::World};
 use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
-
-use render_api::{Assets, base::{Color, CpuMaterial}};
 
 use render_egui::{egui::{Ui, Vec2, Align, Color32, Frame, Layout, Sense}, egui};
 
 use vortex_proto::components::{FaceColor, FileExtension, PaletteColor};
 
-use crate::app::resources::{face_manager::FaceManager, file_manager::FileManager, palette_manager::PaletteManager};
+use crate::app::{events::ShapeColorResyncEvent, resources::{file_manager::FileManager, palette_manager::PaletteManager}};
 
 #[derive(Resource)]
 pub struct SkinManager {
@@ -43,8 +41,8 @@ impl SkinManager {
         self.color_to_face_entity.contains_key(face_color_entity)
     }
 
-    pub(crate) fn face_to_color_entity(&self, face_3d_entity: Entity) -> Option<&Entity> {
-        self.face_to_color_entity.get(&face_3d_entity)
+    pub(crate) fn face_to_color_entity(&self, face_3d_entity: &Entity) -> Option<&Entity> {
+        self.face_to_color_entity.get(face_3d_entity)
     }
 
     pub(crate) fn create_networked_face_color_from_world(
@@ -58,16 +56,12 @@ impl SkinManager {
         let mut system_state: SystemState<(
             Commands,
             Client,
-            Res<FaceManager>,
-            ResMut<Assets<CpuMaterial>>,
-            Query<&PaletteColor>,
+            EventWriter<ShapeColorResyncEvent>,
         )> = SystemState::new(world);
         let (
             mut commands,
             mut client,
-            face_manager,
-            mut materials,
-            palette_color_q,
+            mut shape_color_resync_events,
         ) = system_state.get_mut(world);
 
         let mut component = FaceColor::new();
@@ -82,13 +76,9 @@ impl SkinManager {
             .id();
 
         self.face_color_postprocess(
-            &mut commands,
-            &face_manager,
-            &mut materials,
             face_3d_entity,
-            palette_color_entity,
             face_color_entity,
-            &palette_color_q,
+            &mut shape_color_resync_events,
         );
 
         system_state.apply(world);
@@ -98,35 +88,11 @@ impl SkinManager {
 
     pub(crate) fn face_color_postprocess(
         &mut self,
-        commands: &mut Commands,
-        face_manager: &FaceManager,
-        materials: &mut Assets<CpuMaterial>,
         face_3d_entity: Entity,
-        palette_color_entity: Entity,
         face_color_entity: Entity,
-        palette_color_q: &Query<&PaletteColor>,
+        shape_color_resync_events: &mut EventWriter<ShapeColorResyncEvent>,
     ) {
-        let Ok(palette_color) = palette_color_q.get(palette_color_entity) else {
-            panic!("no palette color!");
-        };
-        let r = *palette_color.r;
-        let g = *palette_color.g;
-        let b = *palette_color.b;
-
-        info!("setting new color: {:?} {:?} {:?}", r, g, b);
-
-        let mat_handle = materials.add(Color::new_opaque(r, g, b));
-
-        // change 3D face color
-        commands
-            .entity(face_3d_entity)
-            .insert(mat_handle);
-
-        // change 2D face color
-        let face_2d_entity = face_manager.face_entity_3d_to_2d(&face_3d_entity).unwrap();
-        commands
-            .entity(face_2d_entity)
-            .insert(mat_handle);
+        shape_color_resync_events.send(ShapeColorResyncEvent);
 
         // register
         self.register_face_color(face_3d_entity, face_color_entity);

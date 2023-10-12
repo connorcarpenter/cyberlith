@@ -1,18 +1,15 @@
 use std::collections::{HashMap, VecDeque};
 
 use bevy_ecs::{
+    query::{With, Without},
     prelude::{Entity, Resource},
     system::{Query, Res, ResMut, SystemState},
     world::{Mut, World},
 };
-use bevy_ecs::query::{With, Without};
-use bevy_log::info;
 
 use naia_bevy_client::Client;
-use render_api::base::{Color, CpuMaterial};
 
-use render_api::components::Visibility;
-use render_api::{Assets, Handle};
+use render_api::{components::Visibility, Assets, Handle, base::{Color, CpuMaterial}};
 use render_egui::{
     egui,
     egui::{vec2, Id, NumExt, Rect, Response, Rounding, Sense, Stroke, TextStyle, Ui, WidgetText},
@@ -20,13 +17,13 @@ use render_egui::{
 
 use vortex_proto::{
     channels::TabActionChannel,
-    components::{ChangelistStatus, FileExtension, FileSystemEntry},
+    components::{FaceColor, PaletteColor, ChangelistStatus, FileExtension, FileSystemEntry},
     messages::{TabCloseMessage, TabOpenMessage},
     types::TabId,
 };
 
 use crate::app::{
-    components::{file_system::FileSystemUiState, OwnedByFileLocal},
+    components::{Edge2dLocal, Face3dLocal, FaceIcon2d, LocalShape, Vertex2d, file_system::FileSystemUiState, OwnedByFileLocal},
     resources::{
         action::{
             animation::AnimAction, palette::PaletteAction, shape::ShapeAction, skin::SkinAction,
@@ -40,14 +37,14 @@ use crate::app::{
         palette_manager::PaletteManager,
         shape_data::CanvasShape,
         shape_manager::ShapeManager,
+        face_manager::FaceManager,
+        skin_manager::SkinManager,
     },
-    ui::widgets::colors::{
+    ui::{UiState, widgets::colors::{
         FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
         TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED,
-    },
+    }},
 };
-use crate::app::components::{Edge2dLocal, LocalShape, Vertex2d};
-use crate::app::ui::UiState;
 
 pub struct TabState {
     pub selected: bool,
@@ -691,25 +688,70 @@ pub fn render_tab_bar(ui: &mut Ui, world: &mut World) {
 }
 
 fn file_ext_specific_sync_tabs_shape_colors(file_ext: FileExtension, world: &mut World) {
-    info!("file_ext_specific_sync_tabs_shape_colors");
     let mut system_state: SystemState<(
+        Client,
+        Res<FaceManager>,
+        Res<SkinManager>,
         ResMut<Assets<CpuMaterial>>,
-        Query<(&mut Handle<CpuMaterial>), (With<Edge2dLocal>, Without<LocalShape>)>,
+        Query<&mut Handle<CpuMaterial>, (With<Edge2dLocal>, Without<LocalShape>)>,
+        Query<&mut Handle<CpuMaterial>, (With<FaceIcon2d>, Without<Edge2dLocal>, Without<Face3dLocal>)>,
+        Query<(Entity, &mut Handle<CpuMaterial>), (With<Face3dLocal>, Without<Edge2dLocal>, Without<FaceIcon2d>)>,
+        Query<&PaletteColor>,
+        Query<&FaceColor>,
     )> = SystemState::new(world);
-    let (mut materials, mut edge_2d_q) = system_state.get_mut(world);
+    let (
+        client,
+        face_manager,
+        skin_manager,
+        mut materials,
+        mut edge_2d_q,
+        mut face_2d_q,
+        mut face_3d_q,
+        palette_color_q,
+        face_color_q,
+    ) = system_state.get_mut(world);
 
     match file_ext {
         FileExtension::Skin => {
-            let white_mat_handle = materials.add(Color::WHITE);
+            let gray_mat_handle = materials.add(Color::LIGHT_GRAY);
 
-            for (mut mat_handle) in edge_2d_q.iter_mut() {
-                *mat_handle = white_mat_handle;
+            for mut mat_handle in edge_2d_q.iter_mut() {
+                *mat_handle = gray_mat_handle;
+            }
+            for (face_3d_entity, mut face_3d_material) in face_3d_q.iter_mut() {
+                let new_mat_handle;
+                if let Some(face_color_entity) = skin_manager.face_to_color_entity(&face_3d_entity) {
+                    // use face color
+                    let face_color = face_color_q.get(*face_color_entity).unwrap();
+                    let palette_color_entity = face_color.palette_color_entity.get(&client).unwrap();
+                    let palette_color = palette_color_q.get(palette_color_entity).unwrap();
+                    new_mat_handle = materials.add(Color::new_opaque(
+                        *palette_color.r,
+                        *palette_color.g,
+                        *palette_color.b,
+                    ));
+                } else {
+                    // TODO: use selected background FaceColor
+                    new_mat_handle = gray_mat_handle;
+                }
+
+                *face_3d_material = new_mat_handle;
+
+                let face_2d_entity = face_manager.face_entity_3d_to_2d(&face_3d_entity).unwrap();
+                let mut face_2d_material = face_2d_q.get_mut(face_2d_entity).unwrap();
+                *face_2d_material = new_mat_handle;
             }
         }
         _ => {
             let enabled_mat_handle = materials.add(Vertex2d::ENABLED_COLOR);
 
-            for (mut mat_handle) in edge_2d_q.iter_mut() {
+            for mut mat_handle in edge_2d_q.iter_mut() {
+                *mat_handle = enabled_mat_handle;
+            }
+            for mut mat_handle in face_2d_q.iter_mut() {
+                *mat_handle = enabled_mat_handle;
+            }
+            for (_, mut mat_handle) in face_3d_q.iter_mut() {
                 *mat_handle = enabled_mat_handle;
             }
         }

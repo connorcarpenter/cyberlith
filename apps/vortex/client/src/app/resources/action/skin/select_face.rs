@@ -123,7 +123,7 @@ fn select_shape(
             let face_3d_entity = face_manager
                 .face_entity_2d_to_3d(&shape_2d_entity)
                 .unwrap();
-            return get_color_entity(skin_manager, face_3d_entity);
+            return get_color_entity(skin_manager, &face_3d_entity);
         }
         _ => {
             panic!("unexpected shape type");
@@ -133,7 +133,7 @@ fn select_shape(
 
 fn get_color_entity(
     skin_manager: &SkinManager,
-    face_3d_entity: Entity,
+    face_3d_entity: &Entity,
 ) -> Option<Entity> {
     return skin_manager
         .face_to_color_entity(face_3d_entity)
@@ -158,7 +158,7 @@ fn deselect_selected_shape(
                     .face_entity_2d_to_3d(&shape_2d_entity)
                     .unwrap();
                 entity_to_release =
-                    get_color_entity(skin_manager, face_3d_entity);
+                    get_color_entity(skin_manager, &face_3d_entity);
             }
             _ => {
                 panic!("unexpected shape type");
