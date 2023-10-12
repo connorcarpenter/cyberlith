@@ -3,6 +3,7 @@ use bevy_ecs::{
     system::{Commands, Query, Res, ResMut},
     world::{Mut, World},
 };
+use bevy_ecs::event::EventReader;
 
 use naia_bevy_client::Client;
 
@@ -33,6 +34,7 @@ use crate::app::{
         vertex_manager::VertexManager,
     },
 };
+use crate::app::events::ShapeColorResyncEvent;
 
 pub fn queue_resyncs(
     mut canvas: ResMut<Canvas>,
@@ -67,6 +69,16 @@ pub fn queue_resyncs(
         vertex_manager.queue_resync();
         edge_manager.queue_resync();
         face_manager.queue_resync();
+    }
+}
+
+pub fn queue_shape_color_resync(mut tab_manager: ResMut<TabManager>, mut event_reader: EventReader<ShapeColorResyncEvent>) {
+    let mut did_receive = false;
+    for _event in event_reader.iter() {
+        did_receive = true;
+    }
+    if did_receive {
+        tab_manager.resync_shape_colors();
     }
 }
 

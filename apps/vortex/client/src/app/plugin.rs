@@ -31,6 +31,7 @@ use crate::app::{
         UiState,
     },
 };
+use crate::app::events::ShapeColorResyncEvent;
 
 pub struct VortexPlugin;
 
@@ -135,6 +136,7 @@ impl Plugin for VortexPlugin {
             .add_systems(Update, canvas::update_tab_content_focus)
             .add_systems(Update, canvas::queue_resyncs)
             .add_systems(Update, TabManager::sync_tabs)
+            .add_systems(Update, canvas::queue_shape_color_resync)
             .add_systems(Update, canvas::sync_compass)
             .add_systems(Update, canvas::sync_vertices)
             .add_systems(Update, canvas::sync_edges)
@@ -145,6 +147,7 @@ impl Plugin for VortexPlugin {
             .add_systems(Update, canvas::update_select_line)
             .add_systems(Update, canvas::input)
             .add_systems(Update, canvas::update_mouse_hover)
+            .add_event::<ShapeColorResyncEvent>()
             // Draw
             .add_systems(Draw, draw)
             .add_systems(Draw, draw_vertices_and_edges);

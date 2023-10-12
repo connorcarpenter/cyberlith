@@ -4,6 +4,7 @@ use bevy_ecs::{
     entity::Entity,
     system::{Commands, Query, Resource},
 };
+use bevy_ecs::event::EventWriter;
 use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
@@ -41,6 +42,7 @@ use crate::app::{
         create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,
     },
 };
+use crate::app::events::ShapeColorResyncEvent;
 
 #[derive(Resource)]
 pub struct EdgeManager {
@@ -332,6 +334,7 @@ impl EdgeManager {
         face_manager: &mut FaceManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
+        shape_color_resync_events: &mut EventWriter<ShapeColorResyncEvent>,
         parent_vertex_2d_entity: Entity,
         parent_vertex_3d_entity: Entity,
         child_vertex_2d_entity: Entity,
@@ -379,6 +382,7 @@ impl EdgeManager {
             camera_manager,
             vertex_manager,
             face_manager,
+            Some(shape_color_resync_events),
             new_edge_3d_entity,
             parent_vertex_2d_entity,
             parent_vertex_3d_entity,
@@ -404,6 +408,7 @@ impl EdgeManager {
         camera_manager: &CameraManager,
         vertex_manager: &mut VertexManager,
         face_manager: &mut FaceManager,
+        shape_color_resync_events_opt: Option<&mut EventWriter<ShapeColorResyncEvent>>,
         edge_3d_entity: Entity,
         vertex_a_2d_entity: Entity,
         vertex_a_3d_entity: Entity,
@@ -415,6 +420,12 @@ impl EdgeManager {
         edge_angle_opt: Option<f32>,
         default_draw: bool,
     ) -> Entity {
+
+        if let Some(shape_color_resync_events) = shape_color_resync_events_opt {
+            // send shape color resync event
+            shape_color_resync_events.send(ShapeColorResyncEvent);
+        }
+
         // edge 3d
         let shape_components = if arrows_not_lines {
             create_3d_edge_diamond(

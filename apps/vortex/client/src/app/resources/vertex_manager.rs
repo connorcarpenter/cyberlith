@@ -5,6 +5,7 @@ use bevy_ecs::{
     system::{Commands, Query, Resource, SystemState},
     world::World,
 };
+use bevy_ecs::event::EventWriter;
 use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt, Replicate, ReplicationConfig};
@@ -32,6 +33,7 @@ use crate::app::{
         shape_data::{CanvasShape, FaceKey, Vertex3dData},
     },
 };
+use crate::app::events::ShapeColorResyncEvent;
 
 #[derive(Resource)]
 pub struct VertexManager {
@@ -325,6 +327,7 @@ impl VertexManager {
         face_manager: &mut FaceManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
+        shape_color_resync_events: &mut EventWriter<ShapeColorResyncEvent>,
         parent_vertex_2d_entity: Entity,
         parent_vertex_3d_entity: Entity,
         children: Vec<VertexEntry>,
@@ -365,6 +368,7 @@ impl VertexManager {
                 face_manager,
                 meshes,
                 materials,
+                shape_color_resync_events,
                 parent_vertex_2d_entity,
                 parent_vertex_3d_entity,
                 new_child_vertex_2d_entity,
@@ -384,6 +388,7 @@ impl VertexManager {
                     face_manager,
                     meshes,
                     materials,
+                    shape_color_resync_events,
                     new_child_vertex_2d_entity,
                     new_child_vertex_3d_entity,
                     grandchildren,
@@ -568,6 +573,7 @@ impl VertexManager {
                 camera_manager,
                 self,
                 face_manager,
+                None,
                 new_edge_3d_entity,
                 parent_vertex_2d_entity,
                 parent_vertex_3d_entity,

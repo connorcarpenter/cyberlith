@@ -5,10 +5,14 @@ use bevy_ecs::{
     system::{Query, Res, ResMut, SystemState},
     world::{Mut, World},
 };
+use bevy_ecs::query::{With, Without};
+use bevy_log::info;
 
 use naia_bevy_client::Client;
+use render_api::base::{Color, CpuMaterial};
 
 use render_api::components::Visibility;
+use render_api::{Assets, Handle};
 use render_egui::{
     egui,
     egui::{vec2, Id, NumExt, Rect, Response, Rounding, Sense, Stroke, TextStyle, Ui, WidgetText},
@@ -42,6 +46,7 @@ use crate::app::{
         TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED,
     },
 };
+use crate::app::components::{Edge2dLocal, LocalShape, Vertex2d};
 use crate::app::ui::UiState;
 
 pub struct TabState {
@@ -80,6 +85,7 @@ pub struct TabManager {
     current_tab: Option<Entity>,
     last_tab: Option<Entity>,
     resync_tab_ownership: bool,
+    resync_shape_colors: bool,
     // entity is file entity here
     tab_map: HashMap<Entity, TabState>,
     tab_order: Vec<Entity>,
@@ -95,6 +101,7 @@ impl Default for TabManager {
             current_tab: None,
             last_tab: None,
             resync_tab_ownership: false,
+            resync_shape_colors: false,
             tab_map: HashMap::new(),
             tab_order: Vec::new(),
             new_tab_id: 0,
@@ -110,6 +117,7 @@ impl TabManager {
         world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
             tab_manager.on_sync_tabs(world);
             tab_manager.on_sync_tab_ownership(world);
+            tab_manager.on_sync_shape_colors(world);
         });
     }
 
@@ -150,6 +158,7 @@ impl TabManager {
                 | FileExtension::Skin => true,
                 _ => false,
             };
+
         }
 
         if canvas_is_visible {
@@ -169,10 +178,15 @@ impl TabManager {
 
         camera_manager.recalculate_3d_view();
         self.resync_tab_ownership();
+        self.resync_shape_colors();
     }
 
     pub fn resync_tab_ownership(&mut self) {
         self.resync_tab_ownership = true;
+    }
+
+    pub fn resync_shape_colors(&mut self) {
+        self.resync_shape_colors = true;
     }
 
     pub fn on_sync_tab_ownership(&mut self, world: &mut World) {
@@ -203,6 +217,19 @@ impl TabManager {
         ui_state.canvas_coords = None;
 
         canvas.queue_resync_shapes();
+    }
+
+    pub fn on_sync_shape_colors(&mut self, world: &mut World) {
+        if !self.resync_shape_colors {
+            return;
+        }
+
+        self.resync_shape_colors = false;
+
+        if let Some(current_file_entity) = self.current_tab {
+            let file_ext = world.get_resource::<FileManager>().unwrap().get_file_type(&current_file_entity);
+            file_ext_specific_sync_tabs_shape_colors(file_ext, world);
+        }
     }
 
     pub fn has_focus(&self) -> bool {
@@ -661,4 +688,30 @@ pub fn render_tab_bar(ui: &mut Ui, world: &mut World) {
             system_state.apply(world);
         });
     });
+}
+
+fn file_ext_specific_sync_tabs_shape_colors(file_ext: FileExtension, world: &mut World) {
+    info!("file_ext_specific_sync_tabs_shape_colors");
+    let mut system_state: SystemState<(
+        ResMut<Assets<CpuMaterial>>,
+        Query<(&mut Handle<CpuMaterial>), (With<Edge2dLocal>, Without<LocalShape>)>,
+    )> = SystemState::new(world);
+    let (mut materials, mut edge_2d_q) = system_state.get_mut(world);
+
+    match file_ext {
+        FileExtension::Skin => {
+            let white_mat_handle = materials.add(Color::WHITE);
+
+            for (mut mat_handle) in edge_2d_q.iter_mut() {
+                *mat_handle = white_mat_handle;
+            }
+        }
+        _ => {
+            let enabled_mat_handle = materials.add(Vertex2d::ENABLED_COLOR);
+
+            for (mut mat_handle) in edge_2d_q.iter_mut() {
+                *mat_handle = enabled_mat_handle;
+            }
+        }
+    }
 }

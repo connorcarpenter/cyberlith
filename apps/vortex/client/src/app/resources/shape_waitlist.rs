@@ -4,6 +4,7 @@ use bevy_ecs::{
     entity::Entity,
     system::{Commands, Query, Resource},
 };
+use bevy_ecs::event::EventWriter;
 use bevy_log::info;
 use math::Vec3;
 
@@ -21,6 +22,7 @@ use crate::app::{
         face_manager::FaceManager, shape_data::FaceKey, vertex_manager::VertexManager,
     },
 };
+use crate::app::events::ShapeColorResyncEvent;
 
 pub enum ShapeWaitlistInsert {
     Vertex,
@@ -215,6 +217,7 @@ impl ShapeWaitlist {
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
         face_manager: &mut FaceManager,
+        shape_color_resync_events: &mut EventWriter<ShapeColorResyncEvent>,
         transform_q: &Query<&Transform>,
         entity: &Entity,
         insert: ShapeWaitlistInsert,
@@ -386,6 +389,7 @@ impl ShapeWaitlist {
                 vertex_manager,
                 edge_manager,
                 face_manager,
+                shape_color_resync_events,
                 transform_q,
                 entity,
                 entry,
@@ -403,6 +407,7 @@ impl ShapeWaitlist {
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
         face_manager: &mut FaceManager,
+        shape_color_resync_events: &mut EventWriter<ShapeColorResyncEvent>,
         transform_q: &Query<&Transform>,
         entity: Entity,
         entry: ShapeWaitlistEntry,
@@ -456,6 +461,7 @@ impl ShapeWaitlist {
                     camera_manager,
                     vertex_manager,
                     face_manager,
+                    Some(shape_color_resync_events),
                     entity,
                     start_2d,
                     start_3d,
@@ -524,6 +530,7 @@ impl ShapeWaitlist {
                     vertex_manager,
                     edge_manager,
                     face_manager,
+                    shape_color_resync_events,
                     transform_q,
                     child_entity,
                     child_entry,
