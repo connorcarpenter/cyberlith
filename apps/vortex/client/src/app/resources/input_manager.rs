@@ -955,14 +955,54 @@ impl InputManager {
         }
     }
 
-    pub(crate) fn handle_delete_key_press_skin(&mut self, _world: &mut World) {
+    pub(crate) fn handle_delete_key_press_skin(&mut self, world: &mut World) {
         match self.selected_shape {
             Some((face_2d_entity, CanvasShape::Face)) => {
-                // let mut system_state: SystemState<(Commands, Client, Res<FaceManager>)> =
+                // let mut system_state: SystemState<(Commands, Client, Res<FaceManager>, Res<SkinManager>)> =
                 //     SystemState::new(world);
-                // let (mut commands, mut client, face_manager) = system_state.get_mut(world);
+                // let (mut commands, mut client, face_manager, skin_manager) = system_state.get_mut(world);
+
+                // // get face color
+                // let face_3d_entity = face_manager
+                //     .face_entity_2d_to_3d(&face_2d_entity)
+                //     .unwrap();
+                // let face_color_entity = skin_manager.face_to_color_entity(&face_3d_entity).unwrap();
+
+                // // check whether we can delete face color
+                // let auth_status = commands
+                //     .entity(*face_color_entity)
+                //     .authority(&client)
+                //     .unwrap();
+                // if !auth_status.is_granted() && !auth_status.is_available() {
+                //     // do nothing, face color is not available
+                //     // TODO: queue for deletion? check before this?
+                //     warn!(
+                //         "Face Color {:?} is not available for deletion!",
+                //         face_color_entity
+                //     );
+                //     return;
+                // }
                 //
-                // let face_3d_entity = face_manager.face_entity_2d_to_3d(&face_2d_entity).unwrap();
+                // let auth_status = commands
+                //     .entity(face_3d_entity)
+                //     .authority(&client)
+                //     .unwrap();
+                // if !auth_status.is_granted() {
+                //     // request authority if needed
+                //     commands
+                //         .entity(face_3d_entity)
+                //         .request_authority(&mut client);
+                // }
+
+                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                    tab_manager.current_tab_execute_skin_action(
+                        world,
+                        self,
+                        SkinAction::EditColor(face_2d_entity, None),
+                    );
+                });
+
+                self.selected_shape = None;
             }
             _ => {}
         }
