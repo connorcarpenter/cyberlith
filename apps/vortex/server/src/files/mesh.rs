@@ -26,8 +26,8 @@ enum MeshAction {
     Vertex(i16, i16, i16),
     //// id1, id2 // (vertex ids)
     Edge(u16, u16),
-    //// id1, id2, id3 // (vertex ids) // id4, id5, id6 (edge ids)
-    Face(u16, u16, u16, u16, u16, u16),
+    //// order_index, id1, id2, id3 // (vertex ids) // id4, id5, id6 (edge ids)
+    Face(u16, u16, u16, u16, u16, u16, u16),
 }
 
 #[derive(Serde, Clone, PartialEq)]
@@ -53,7 +53,7 @@ impl MeshWriter {
             Server,
             Query<&Vertex3d>,
             Query<&Edge3d>,
-            Query<&Face3d>,
+            Query<(&Face3d, &FaceIndex)>,
             Query<&FileType>,
         )> = SystemState::new(world);
         let (server, vertex_q, edge_q, face_q, file_type_q) = system_state.get_mut(world);
@@ -281,6 +281,7 @@ impl MeshReader {
 
     fn actions_to_world(
         world: &mut World,
+        file_entity: &Entity,
         actions: Vec<MeshAction>,
     ) -> HashMap<Entity, ContentEntityData> {
         let mut system_state: SystemState<(Commands, Server, ResMut<ShapeManager>)> =
@@ -331,6 +332,7 @@ impl MeshReader {
                     ));
                 }
                 MeshAction::Face(
+                    face_index,
                     vertex_a_index,
                     vertex_b_index,
                     vertex_c_index,
@@ -365,6 +367,7 @@ impl MeshReader {
                     output.push((
                         entity_id,
                         ShapeTypeData::Face(
+                            face_index as usize,
                             vertex_a_entity,
                             vertex_b_entity,
                             vertex_c_entity,
@@ -377,7 +380,7 @@ impl MeshReader {
             }
         }
 
-        let output = MeshReader::post_process_entities(&mut shape_manager, output);
+        let output = MeshReader::post_process_entities(&mut commands, &mut shape_manager, file_entity, output);
 
         system_state.apply(world);
 
@@ -386,14 +389,14 @@ impl MeshReader {
 }
 
 impl MeshReader {
-    pub fn read(&self, world: &mut World, bytes: &Box<[u8]>) -> HashMap<Entity, ContentEntityData> {
+    pub fn read(&self, world: &mut World, file_entity: &Entity, bytes: &Box<[u8]>) -> HashMap<Entity, ContentEntityData> {
         let mut bit_reader = BitReader::new(bytes);
 
         let Ok(actions) = Self::read_to_actions(&mut bit_reader) else {
             panic!("Error reading .mesh file");
         };
 
-        let result = Self::actions_to_world(world, actions);
+        let result = Self::actions_to_world(world, file_entity, actions);
 
         result
     }
@@ -401,7 +404,9 @@ impl MeshReader {
 
 impl MeshReader {
     pub fn post_process_entities(
+        commands: &mut Commands,
         shape_manager: &mut ShapeManager,
+        file_entity: &Entity,
         shape_entities: Vec<(Entity, ShapeTypeData)>,
     ) -> HashMap<Entity, ContentEntityData> {
         let mut new_content_entities = HashMap::new();
@@ -417,9 +422,9 @@ impl MeshReader {
                 ShapeTypeData::Edge(start, end) => {
                     shape_manager.on_create_mesh_edge(start, entity, end);
                 }
-                ShapeTypeData::Face(vert_a, vert_b, vert_c, edge_a, edge_b, edge_c) => {
+                ShapeTypeData::Face(index, vert_a, vert_b, vert_c, edge_a, edge_b, edge_c) => {
                     shape_manager
-                        .on_create_face(entity, vert_a, vert_b, vert_c, edge_a, edge_b, edge_c);
+                        .on_create_face(commands, file_entity, index, entity, vert_a, vert_b, vert_c, edge_a, edge_b, edge_c);
                 }
             }
         }

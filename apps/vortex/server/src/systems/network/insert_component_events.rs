@@ -279,6 +279,7 @@ pub fn insert_vertex_component_events(
         info!("entity: `{:?}`, inserted Vertex3d", entity);
 
         shape_waitlist.process_insert(
+            &mut None,
             &mut server,
             &mut git_manager,
             &mut shape_manager,
@@ -292,6 +293,7 @@ pub fn insert_vertex_component_events(
         info!("entity: `{:?}`, inserted VertexRoot", entity);
 
         shape_waitlist.process_insert(
+            &mut None,
             &mut server,
             &mut git_manager,
             &mut shape_manager,
@@ -321,6 +323,7 @@ pub fn insert_edge_component_events(
             panic!("no child entity!")
         };
         shape_waitlist.process_insert(
+            &mut None,
             &mut server,
             &mut git_manager,
             &mut shape_manager,
@@ -330,6 +333,7 @@ pub fn insert_edge_component_events(
 }
 
 pub fn insert_face_component_events(
+    mut commands: Commands,
     mut server: Server,
     mut git_manager: ResMut<GitManager>,
     mut shape_waitlist: ResMut<ShapeWaitlist>,
@@ -355,6 +359,7 @@ pub fn insert_face_component_events(
         );
 
         shape_waitlist.process_insert(
+            &mut Some(&mut commands),
             &mut server,
             &mut git_manager,
             &mut shape_manager,
@@ -398,6 +403,7 @@ pub fn insert_shape_component_events(
         );
 
         shape_waitlist.process_insert(
+            &mut None,
             &mut server,
             &mut git_manager,
             &mut shape_manager,
@@ -428,6 +434,7 @@ pub fn insert_shape_component_events(
         );
 
         shape_waitlist.process_insert(
+            &mut None,
             &mut server,
             &mut git_manager,
             &mut shape_manager,

@@ -56,7 +56,7 @@ impl FileReader for FileExtension {
     ) -> HashMap<Entity, ContentEntityData> {
         match self {
             FileExtension::Skel => SkelReader.read(world, bytes),
-            FileExtension::Mesh => MeshReader.read(world, bytes),
+            FileExtension::Mesh => MeshReader.read(world, file_entity, bytes),
             FileExtension::Anim => AnimReader.read(world, project, file_key, file_entity, bytes),
             FileExtension::Palette => PaletteReader.read(world, file_entity, bytes),
             FileExtension::Skin => SkinReader.read(world, project, file_key, file_entity, bytes),
@@ -105,7 +105,7 @@ pub enum ShapeType {
 pub enum ShapeTypeData {
     Vertex,
     Edge(Entity, Entity),
-    Face(Entity, Entity, Entity, Entity, Entity, Entity),
+    Face(usize, Entity, Entity, Entity, Entity, Entity, Entity),
 }
 
 impl From<ShapeTypeData> for ShapeType {
@@ -113,7 +113,7 @@ impl From<ShapeTypeData> for ShapeType {
         match shape_type_data {
             ShapeTypeData::Vertex => ShapeType::Vertex,
             ShapeTypeData::Edge(_, _) => ShapeType::Edge,
-            ShapeTypeData::Face(_, _, _, _, _, _) => ShapeType::Face,
+            ShapeTypeData::Face(_, _, _, _, _, _, _) => ShapeType::Face,
         }
     }
 }

@@ -7,6 +7,7 @@ use bevy_ecs::{
 use bevy_log::{info, warn};
 
 use naia_bevy_server::{CommandsExt, Server};
+use crate::components::FaceIndex;
 
 pub enum VertexData {
     Skel(SkelVertexData),
@@ -125,6 +126,8 @@ pub struct ShapeManager {
     edges: HashMap<Entity, EdgeData>,
     // face entity -> connected vertices
     faces: HashMap<Entity, FaceData>,
+    //
+    file_face_indices: HashMap<Entity, Vec<Entity>>,
 }
 
 impl Default for ShapeManager {
@@ -133,6 +136,7 @@ impl Default for ShapeManager {
             vertices: HashMap::new(),
             edges: HashMap::new(),
             faces: HashMap::new(),
+            file_face_indices: HashMap::new(),
         }
     }
 }
@@ -226,6 +230,9 @@ impl ShapeManager {
 
     pub fn on_create_face(
         &mut self,
+        commands: &mut Commands,
+        file_entity: &Entity,
+        old_index_opt: Option<usize>,
         face_entity: Entity,
         vertex_a: Entity,
         vertex_b: Entity,
@@ -248,6 +255,28 @@ impl ShapeManager {
         }
 
         // TODO: add face to edges
+
+        // assign index
+        self.assign_index_to_new_face(commands, file_entity, old_index_opt, &face_entity);
+    }
+
+    fn assign_index_to_new_face(&mut self, commands: &mut Commands, file_entity: &Entity, old_index_opt: Option<usize>, face_3d_entity: &Entity) {
+        if !self.file_face_indices.contains_key(file_entity) {
+            self.file_face_indices.insert(*file_entity, Vec::new());
+        }
+        let file_face_indices = self.file_face_indices.get_mut(file_entity).unwrap();
+
+        let new_index = file_face_indices.len();
+
+        if let Some(old_index) = old_index_opt {
+            if new_index != old_index {
+                panic!("something went wrong, got new index `{:?}` but old index was `{:?}`", new_index, old_index);
+            }
+        }
+
+        file_face_indices.push(*face_3d_entity);
+
+        commands.entity(*face_3d_entity).insert(FaceIndex::new(new_index));
     }
 
     pub fn deregister_vertex(&mut self, vertex_entity: &Entity) -> Option<VertexData> {
