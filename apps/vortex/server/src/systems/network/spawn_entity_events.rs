@@ -11,7 +11,9 @@ use naia_bevy_server::{
 
 use vortex_proto::components::{AnimFrame, ChangelistEntry, PaletteColor};
 
-use crate::resources::{AnimationManager, GitManager, PaletteManager, ShapeManager, SkinManager, UserManager};
+use crate::resources::{
+    AnimationManager, GitManager, PaletteManager, ShapeManager, SkinManager, UserManager,
+};
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
     for SpawnEntityEvent(_user_key, entity) in event_reader.iter() {
@@ -145,7 +147,10 @@ pub fn despawn_entity_events(
             }
             Some(DespawnType::PaletteColor) => {
                 // color
-                info!("entity: `{:?}` (which is a Palette Color), despawned", entity);
+                info!(
+                    "entity: `{:?}` (which is a Palette Color), despawned",
+                    entity
+                );
 
                 git_manager.queue_client_modify_file(entity);
 

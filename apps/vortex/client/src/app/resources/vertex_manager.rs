@@ -2,10 +2,10 @@ use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{
     entity::Entity,
+    event::EventWriter,
     system::{Commands, Query, Resource, SystemState},
     world::World,
 };
-use bevy_ecs::event::EventWriter;
 use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt, Replicate, ReplicationConfig};
@@ -23,6 +23,7 @@ use vortex_proto::components::{
 
 use crate::app::{
     components::{DefaultDraw, Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d, VertexEntry},
+    events::ShapeColorResyncEvent,
     resources::{
         action::{shape::ShapeAction, ActionStack},
         camera_manager::CameraManager,
@@ -33,7 +34,6 @@ use crate::app::{
         shape_data::{CanvasShape, FaceKey, Vertex3dData},
     },
 };
-use crate::app::events::ShapeColorResyncEvent;
 
 #[derive(Resource)]
 pub struct VertexManager {
@@ -83,7 +83,6 @@ impl VertexManager {
     }
 
     pub fn sync_vertices_3d(&mut self, file_ext: FileExtension, world: &mut World) -> bool {
-
         // TODO: really should only do this if Vertex3d component was updated from server
 
         let mut system_state: SystemState<(
@@ -92,7 +91,8 @@ impl VertexManager {
             Query<&mut Visibility>,
             Query<&LocalShape>,
         )> = SystemState::new(world);
-        let (vertex_3d_q, mut transform_q, mut visibility_q, local_shape) = system_state.get_mut(world);
+        let (vertex_3d_q, mut transform_q, mut visibility_q, local_shape) =
+            system_state.get_mut(world);
 
         for (vertex_3d_entity, vertex_3d) in vertex_3d_q.iter() {
             // check visibility

@@ -2,9 +2,9 @@ use std::{collections::HashMap, f32::consts::FRAC_PI_2};
 
 use bevy_ecs::{
     entity::Entity,
+    event::EventWriter,
     system::{Commands, Query, Resource},
 };
-use bevy_ecs::event::EventWriter;
 use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
@@ -27,6 +27,7 @@ use vortex_proto::components::{
 
 use crate::app::{
     components::{DefaultDraw, Edge2dLocal, Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d},
+    events::ShapeColorResyncEvent,
     resources::{
         camera_manager::CameraManager,
         canvas::Canvas,
@@ -42,7 +43,6 @@ use crate::app::{
         create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,
     },
 };
-use crate::app::events::ShapeColorResyncEvent;
 
 #[derive(Resource)]
 pub struct EdgeManager {
@@ -420,7 +420,6 @@ impl EdgeManager {
         edge_angle_opt: Option<f32>,
         default_draw: bool,
     ) -> Entity {
-
         if let Some(shape_color_resync_events) = shape_color_resync_events_opt {
             // send shape color resync event
             shape_color_resync_events.send(ShapeColorResyncEvent);

@@ -1,13 +1,20 @@
 use bevy_ecs::prelude::{Entity, World};
 
-use crate::app::resources::{action::{Action, skin::{select_face, edit_color}}, shape_data::CanvasShape, input_manager::InputManager};
+use crate::app::resources::{
+    action::{
+        skin::{edit_color, select_face},
+        Action,
+    },
+    input_manager::InputManager,
+    shape_data::CanvasShape,
+};
 
 #[derive(Clone)]
 pub enum SkinAction {
     // The 2D face entity to deselect (or None for deselect)
     SelectFace(Option<(Entity, CanvasShape)>),
     // 2D face entity, old palette color entity, new palette color entity
-    EditColor(Entity, Option<Entity>, Option<Entity>)
+    EditColor(Entity, Option<Entity>, Option<Entity>),
 }
 
 pub enum SkinActionType {
@@ -35,9 +42,7 @@ impl SkinAction {
             SkinActionType::SelectFace => {
                 select_face::execute(world, input_manager, current_file_entity, self)
             }
-            SkinActionType::EditColor => {
-                edit_color::execute(world, self)
-            }
+            SkinActionType::EditColor => edit_color::execute(world, self),
         }
     }
 }

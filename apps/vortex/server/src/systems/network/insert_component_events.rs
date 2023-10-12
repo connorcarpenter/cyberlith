@@ -11,8 +11,9 @@ use naia_bevy_server::{events::InsertComponentEvents, Server};
 
 use vortex_proto::{
     components::{
-        AnimFrame, AnimRotation, Edge3d, Face3d, FileDependency, FileSystemChild, FileSystemEntry,
-        FileSystemRootChild, FileType, OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot, FaceColor,
+        AnimFrame, AnimRotation, Edge3d, Face3d, FaceColor, FileDependency, FileSystemChild,
+        FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, PaletteColor, ShapeName,
+        Vertex3d, VertexRoot,
     },
     resources::FileKey,
 };
@@ -22,7 +23,7 @@ use crate::{
     resources::{
         file_waitlist::{file_process_insert, FSWaitlist, FSWaitlistInsert},
         AnimationManager, ContentEntityData, GitManager, PaletteManager, ShapeManager,
-        ShapeWaitlist, ShapeWaitlistInsert, TabManager, UserManager, SkinManager,
+        ShapeWaitlist, ShapeWaitlistInsert, SkinManager, TabManager, UserManager,
     },
 };
 
@@ -607,10 +608,7 @@ pub fn insert_skin_component_events(
             .unwrap();
         let file_key = key_q.get(skin_file_entity).unwrap().clone();
 
-        skin_manager.on_create_face_color(
-            &face_3d_entity,
-            &color_entity,
-        );
+        skin_manager.on_create_face_color(&face_3d_entity, &color_entity);
 
         let content_entity_data = ContentEntityData::new_skin_color();
         git_manager.on_insert_content_entity(

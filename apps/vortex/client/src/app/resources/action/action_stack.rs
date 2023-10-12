@@ -305,7 +305,7 @@ impl ActionStack<SkinAction> {
         world: &mut World,
         input_manager: &mut InputManager,
         tab_file_entity: Entity,
-        action: SkinAction
+        action: SkinAction,
     ) -> Vec<SkinAction> {
         action.execute(world, input_manager, tab_file_entity)
     }

@@ -1,9 +1,9 @@
 use bevy_ecs::{
     entity::Entity,
+    event::EventReader,
     system::{Commands, Query, Res, ResMut},
     world::{Mut, World},
 };
-use bevy_ecs::event::EventReader;
 
 use naia_bevy_client::Client;
 
@@ -19,6 +19,7 @@ use vortex_proto::components::{AnimFrame, EdgeAngle, FileExtension, PaletteColor
 
 use crate::app::{
     components::{Edge2dLocal, Edge3dLocal, FaceIcon2d, LocalShape},
+    events::ShapeColorResyncEvent,
     resources::{
         animation_manager::{get_root_vertex, AnimationManager},
         camera_manager::CameraManager,
@@ -34,7 +35,6 @@ use crate::app::{
         vertex_manager::VertexManager,
     },
 };
-use crate::app::events::ShapeColorResyncEvent;
 
 pub fn queue_resyncs(
     mut canvas: ResMut<Canvas>,
@@ -72,7 +72,10 @@ pub fn queue_resyncs(
     }
 }
 
-pub fn queue_shape_color_resync(mut tab_manager: ResMut<TabManager>, mut event_reader: EventReader<ShapeColorResyncEvent>) {
+pub fn queue_shape_color_resync(
+    mut tab_manager: ResMut<TabManager>,
+    mut event_reader: EventReader<ShapeColorResyncEvent>,
+) {
     let mut did_receive = false;
     for _event in event_reader.iter() {
         did_receive = true;
@@ -207,7 +210,12 @@ pub fn sync_vertices(world: &mut World) {
                     world.resource_scope(|world, mut grid: Mut<Grid>| {
                         grid.sync_grid_vertices(world);
                     });
-                    vertex_manager.sync_vertices_2d(file_extension, world, &camera_3d, camera_3d_scale);
+                    vertex_manager.sync_vertices_2d(
+                        file_extension,
+                        world,
+                        &camera_3d,
+                        camera_3d_scale,
+                    );
                 }
             }
             FileExtension::Palette => {
@@ -266,7 +274,13 @@ pub fn sync_edges(
     };
     if should_sync_3d {
         // animation manager will not handle this, so edge_manager must
-        EdgeManager::sync_3d_edges(file_ext, &edge_3d_q, &mut transform_q, &mut visibility_q, &local_shape_q);
+        EdgeManager::sync_3d_edges(
+            file_ext,
+            &edge_3d_q,
+            &mut transform_q,
+            &mut visibility_q,
+            &local_shape_q,
+        );
         edge_manager.sync_edge_angles(
             file_ext,
             &edge_angle_q,
@@ -316,7 +330,13 @@ pub fn sync_faces(
     let camera_state = &current_tab_state.camera_state;
     let camera_3d_scale = camera_state.camera_3d_scale();
 
-    face_manager.sync_2d_faces(file_ext, &face_2d_q, &mut transform_q, &mut visibility_q, camera_3d_scale);
+    face_manager.sync_2d_faces(
+        file_ext,
+        &face_2d_q,
+        &mut transform_q,
+        &mut visibility_q,
+        camera_3d_scale,
+    );
 }
 
 pub fn update_animation(

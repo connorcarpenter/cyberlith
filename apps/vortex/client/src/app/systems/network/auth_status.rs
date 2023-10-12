@@ -15,10 +15,10 @@ use vortex_proto::components::{AnimFrame, FaceColor, PaletteColor};
 use crate::app::{
     components::OwnedByFileLocal,
     resources::{
-        palette_manager::PaletteManager,
         action::file::FileActions, animation_manager::AnimationManager, edge_manager::EdgeManager,
-        face_manager::FaceManager, file_manager::FileManager, shape_manager::ShapeManager,
-        tab_manager::TabManager, vertex_manager::VertexManager, skin_manager::SkinManager,
+        face_manager::FaceManager, file_manager::FileManager, palette_manager::PaletteManager,
+        shape_manager::ShapeManager, skin_manager::SkinManager, tab_manager::TabManager,
+        vertex_manager::VertexManager,
     },
 };
 

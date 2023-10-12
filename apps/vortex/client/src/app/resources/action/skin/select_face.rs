@@ -10,14 +10,14 @@ use naia_bevy_client::Client;
 use vortex_proto::components::FileExtension;
 
 use crate::app::resources::{
-    palette_manager::PaletteManager,
-    file_manager::FileManager,
-    face_manager::FaceManager,
-    skin_manager::SkinManager,
-    action::{skin::SkinAction, shape::entity_request_release},
+    action::{shape::entity_request_release, skin::SkinAction},
     canvas::Canvas,
+    face_manager::FaceManager,
+    file_manager::FileManager,
     input_manager::InputManager,
+    palette_manager::PaletteManager,
     shape_data::CanvasShape,
+    skin_manager::SkinManager,
 };
 
 pub fn execute(
@@ -52,12 +52,8 @@ pub fn execute(
     ) = system_state.get_mut(world);
 
     // Deselect all selected shapes, select the new selected shapes
-    let (deselected_entity, entity_to_release) = deselect_selected_shape(
-        &mut canvas,
-        input_manager,
-        &face_manager,
-        &skin_manager,
-    );
+    let (deselected_entity, entity_to_release) =
+        deselect_selected_shape(&mut canvas, input_manager, &face_manager, &skin_manager);
     let entity_to_request = select_shape(
         &mut canvas,
         input_manager,
@@ -74,10 +70,7 @@ pub fn execute(
 
     if let Some((face_2d_entity, CanvasShape::Face)) = shape_2d_entity_opt {
         if entity_to_request.is_none() {
-
-            let face_3d_entity = face_manager
-                .face_entity_2d_to_3d(&face_2d_entity)
-                .unwrap();
+            let face_3d_entity = face_manager.face_entity_2d_to_3d(&face_2d_entity).unwrap();
 
             let palette_color_index = skin_manager.selected_color_index();
             let Some(palette_file_entity) = file_manager.file_get_dependency(
@@ -87,10 +80,17 @@ pub fn execute(
                 panic!("Expected palette file dependency");
             };
 
-            let next_palette_color_entity = palette_manager.get_color_entity(&palette_file_entity, palette_color_index).unwrap();
+            let next_palette_color_entity = palette_manager
+                .get_color_entity(&palette_file_entity, palette_color_index)
+                .unwrap();
 
             world.resource_scope(|world, mut skin_manager: Mut<SkinManager>| {
-                skin_manager.create_networked_face_color_from_world(world, current_file_entity, face_3d_entity, next_palette_color_entity);
+                skin_manager.create_networked_face_color_from_world(
+                    world,
+                    current_file_entity,
+                    face_3d_entity,
+                    next_palette_color_entity,
+                );
             });
 
             system_state.apply(world);
@@ -120,9 +120,7 @@ fn select_shape(
 
     match shape {
         CanvasShape::Face => {
-            let face_3d_entity = face_manager
-                .face_entity_2d_to_3d(&shape_2d_entity)
-                .unwrap();
+            let face_3d_entity = face_manager.face_entity_2d_to_3d(&shape_2d_entity).unwrap();
             return get_color_entity(skin_manager, &face_3d_entity);
         }
         _ => {
@@ -131,10 +129,7 @@ fn select_shape(
     }
 }
 
-fn get_color_entity(
-    skin_manager: &SkinManager,
-    face_3d_entity: &Entity,
-) -> Option<Entity> {
+fn get_color_entity(skin_manager: &SkinManager, face_3d_entity: &Entity) -> Option<Entity> {
     return skin_manager
         .face_to_color_entity(face_3d_entity)
         .map(|entity| *entity);
@@ -154,11 +149,8 @@ fn deselect_selected_shape(
 
         match shape_2d_type {
             CanvasShape::Face => {
-                let face_3d_entity = face_manager
-                    .face_entity_2d_to_3d(&shape_2d_entity)
-                    .unwrap();
-                entity_to_release =
-                    get_color_entity(skin_manager, &face_3d_entity);
+                let face_3d_entity = face_manager.face_entity_2d_to_3d(&shape_2d_entity).unwrap();
+                entity_to_release = get_color_entity(skin_manager, &face_3d_entity);
             }
             _ => {
                 panic!("unexpected shape type");

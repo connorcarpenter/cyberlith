@@ -16,13 +16,17 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{AnimFrame, AnimRotation, ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind, Face3d, FaceColor, FileDependency, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot};
+use vortex_proto::components::{
+    AnimFrame, AnimRotation, ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind,
+    Face3d, FaceColor, FileDependency, FileExtension, FileSystemChild, FileSystemEntry,
+    FileSystemRootChild, FileType, OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot,
+};
 
 use crate::app::{
     components::file_system::{
         ChangelistUiState, FileSystemEntryLocal, FileSystemParent, FileSystemUiState,
     },
-    events::InsertComponentEvent,
+    events::{InsertComponentEvent, ShapeColorResyncEvent},
     resources::{
         animation_manager::AnimationManager,
         camera_manager::CameraManager,
@@ -32,13 +36,12 @@ use crate::app::{
         file_manager::{get_full_path, FileManager},
         palette_manager::PaletteManager,
         shape_waitlist::{ShapeWaitlist, ShapeWaitlistInsert},
+        skin_manager::SkinManager,
         tab_manager::TabManager,
         vertex_manager::VertexManager,
     },
     systems::file_post_process,
 };
-use crate::app::events::ShapeColorResyncEvent;
-use crate::app::resources::skin_manager::SkinManager;
 
 #[derive(Resource)]
 struct CachedInsertComponentEventsState {

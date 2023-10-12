@@ -2,10 +2,11 @@ use std::collections::HashMap;
 
 use bevy_ecs::{
     entity::Entity,
+    event::EventWriter,
     system::{Commands, Query, Resource},
 };
-use bevy_ecs::event::EventWriter;
 use bevy_log::info;
+
 use math::Vec3;
 
 use render_api::{
@@ -13,16 +14,17 @@ use render_api::{
     components::Transform,
     Assets,
 };
+
 use vortex_proto::{components::FileExtension, resources::DependencyMap};
 
 use crate::app::{
     components::{OwnedByFileLocal, Vertex2d},
+    events::ShapeColorResyncEvent,
     resources::{
         camera_manager::CameraManager, canvas::Canvas, edge_manager::EdgeManager,
         face_manager::FaceManager, shape_data::FaceKey, vertex_manager::VertexManager,
     },
 };
-use crate::app::events::ShapeColorResyncEvent;
 
 pub enum ShapeWaitlistInsert {
     Vertex,

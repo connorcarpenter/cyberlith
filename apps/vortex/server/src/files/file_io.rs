@@ -19,7 +19,9 @@ use crate::{
         AnimReader, AnimWriter, MeshReader, MeshWriter, PaletteReader, PaletteWriter, SkelReader,
         SkelWriter, SkinReader, SkinWriter,
     },
-    resources::{PaletteManager, SkinManager, AnimationManager, ContentEntityData, Project, ShapeManager},
+    resources::{
+        AnimationManager, ContentEntityData, PaletteManager, Project, ShapeManager, SkinManager,
+    },
 };
 
 pub trait FileWriter: Send + Sync {

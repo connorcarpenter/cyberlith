@@ -1,15 +1,19 @@
 use std::collections::{HashMap, VecDeque};
 
 use bevy_ecs::{
-    query::{With, Without},
     prelude::{Entity, Resource},
+    query::{With, Without},
     system::{Query, Res, ResMut, SystemState},
     world::{Mut, World},
 };
 
 use naia_bevy_client::Client;
 
-use render_api::{components::Visibility, Assets, Handle, base::{Color, CpuMaterial}};
+use render_api::{
+    base::{Color, CpuMaterial},
+    components::Visibility,
+    Assets, Handle,
+};
 use render_egui::{
     egui,
     egui::{vec2, Id, NumExt, Rect, Response, Rounding, Sense, Stroke, TextStyle, Ui, WidgetText},
@@ -17,13 +21,16 @@ use render_egui::{
 
 use vortex_proto::{
     channels::TabActionChannel,
-    components::{FaceColor, PaletteColor, ChangelistStatus, FileExtension, FileSystemEntry},
+    components::{ChangelistStatus, FaceColor, FileExtension, FileSystemEntry, PaletteColor},
     messages::{TabCloseMessage, TabOpenMessage},
     types::TabId,
 };
 
 use crate::app::{
-    components::{Edge2dLocal, Face3dLocal, FaceIcon2d, LocalShape, Vertex2d, file_system::FileSystemUiState, OwnedByFileLocal},
+    components::{
+        file_system::FileSystemUiState, Edge2dLocal, Face3dLocal, FaceIcon2d, LocalShape,
+        OwnedByFileLocal, Vertex2d,
+    },
     resources::{
         action::{
             animation::AnimAction, palette::PaletteAction, shape::ShapeAction, skin::SkinAction,
@@ -32,18 +39,21 @@ use crate::app::{
         camera_manager::CameraManager,
         camera_state::CameraState,
         canvas::Canvas,
+        face_manager::FaceManager,
         file_manager::FileManager,
         input_manager::InputManager,
         palette_manager::PaletteManager,
         shape_data::CanvasShape,
         shape_manager::ShapeManager,
-        face_manager::FaceManager,
         skin_manager::SkinManager,
     },
-    ui::{UiState, widgets::colors::{
-        FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
-        TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED,
-    }},
+    ui::{
+        widgets::colors::{
+            FILE_ROW_COLORS_HOVER, FILE_ROW_COLORS_SELECTED, FILE_ROW_COLORS_UNSELECTED,
+            TEXT_COLORS_HOVER, TEXT_COLORS_SELECTED, TEXT_COLORS_UNSELECTED,
+        },
+        UiState,
+    },
 };
 
 pub struct TabState {
@@ -155,7 +165,6 @@ impl TabManager {
                 | FileExtension::Skin => true,
                 _ => false,
             };
-
         }
 
         if canvas_is_visible {
@@ -199,7 +208,8 @@ impl TabManager {
             ResMut<UiState>,
             Query<(&mut Visibility, &OwnedByFileLocal)>,
         )> = SystemState::new(world);
-        let (file_manager, mut canvas, mut ui_state, mut visibility_q) = system_state.get_mut(world);
+        let (file_manager, mut canvas, mut ui_state, mut visibility_q) =
+            system_state.get_mut(world);
 
         if let Some(current_tab_file_entity) = self.current_tab_entity() {
             for (mut visibility, owned_by_tab) in visibility_q.iter_mut() {
@@ -224,7 +234,10 @@ impl TabManager {
         self.resync_shape_colors = false;
 
         if let Some(current_file_entity) = self.current_tab {
-            let file_ext = world.get_resource::<FileManager>().unwrap().get_file_type(&current_file_entity);
+            let file_ext = world
+                .get_resource::<FileManager>()
+                .unwrap()
+                .get_file_type(&current_file_entity);
             file_ext_specific_sync_tabs_shape_colors(file_ext, world);
         }
     }
@@ -344,7 +357,7 @@ impl TabManager {
         &mut self,
         world: &mut World,
         input_manager: &mut InputManager,
-        action: SkinAction
+        action: SkinAction,
     ) {
         let current_tab_entity = *self.current_tab_entity().unwrap();
         let tab_state = self.current_tab_state_mut().unwrap();
@@ -352,7 +365,7 @@ impl TabManager {
             world,
             input_manager,
             current_tab_entity,
-            action
+            action,
         );
     }
 
@@ -694,8 +707,14 @@ fn file_ext_specific_sync_tabs_shape_colors(file_ext: FileExtension, world: &mut
         Res<SkinManager>,
         ResMut<Assets<CpuMaterial>>,
         Query<&mut Handle<CpuMaterial>, (With<Edge2dLocal>, Without<LocalShape>)>,
-        Query<&mut Handle<CpuMaterial>, (With<FaceIcon2d>, Without<Edge2dLocal>, Without<Face3dLocal>)>,
-        Query<(Entity, &mut Handle<CpuMaterial>), (With<Face3dLocal>, Without<Edge2dLocal>, Without<FaceIcon2d>)>,
+        Query<
+            &mut Handle<CpuMaterial>,
+            (With<FaceIcon2d>, Without<Edge2dLocal>, Without<Face3dLocal>),
+        >,
+        Query<
+            (Entity, &mut Handle<CpuMaterial>),
+            (With<Face3dLocal>, Without<Edge2dLocal>, Without<FaceIcon2d>),
+        >,
         Query<&PaletteColor>,
         Query<&FaceColor>,
     )> = SystemState::new(world);
@@ -720,10 +739,12 @@ fn file_ext_specific_sync_tabs_shape_colors(file_ext: FileExtension, world: &mut
             }
             for (face_3d_entity, mut face_3d_material) in face_3d_q.iter_mut() {
                 let new_mat_handle;
-                if let Some(face_color_entity) = skin_manager.face_to_color_entity(&face_3d_entity) {
+                if let Some(face_color_entity) = skin_manager.face_to_color_entity(&face_3d_entity)
+                {
                     // use face color
                     let face_color = face_color_q.get(*face_color_entity).unwrap();
-                    let palette_color_entity = face_color.palette_color_entity.get(&client).unwrap();
+                    let palette_color_entity =
+                        face_color.palette_color_entity.get(&client).unwrap();
                     let palette_color = palette_color_q.get(palette_color_entity).unwrap();
                     new_mat_handle = materials.add(Color::new_opaque(
                         *palette_color.r,

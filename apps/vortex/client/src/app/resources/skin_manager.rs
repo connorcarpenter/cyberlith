@@ -1,15 +1,26 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{entity::Entity, event::EventWriter, system::{Resource, Commands, Query, Res, SystemState}, world::World};
+use bevy_ecs::{
+    entity::Entity,
+    event::EventWriter,
+    system::{Commands, Query, Res, Resource, SystemState},
+    world::World,
+};
 use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
-use render_egui::{egui::{Ui, Vec2, Align, Color32, Frame, Layout, Sense}, egui};
+use render_egui::{
+    egui,
+    egui::{Align, Color32, Frame, Layout, Sense, Ui, Vec2},
+};
 
 use vortex_proto::components::{FaceColor, FileExtension, PaletteColor};
 
-use crate::app::{events::ShapeColorResyncEvent, resources::{file_manager::FileManager, palette_manager::PaletteManager}};
+use crate::app::{
+    events::ShapeColorResyncEvent,
+    resources::{file_manager::FileManager, palette_manager::PaletteManager},
+};
 
 #[derive(Resource)]
 pub struct SkinManager {
@@ -32,7 +43,6 @@ impl Default for SkinManager {
 }
 
 impl SkinManager {
-
     pub(crate) fn selected_color_index(&self) -> usize {
         self.selected_color_index
     }
@@ -53,21 +63,16 @@ impl SkinManager {
         palette_color_entity: Entity,
     ) -> Entity {
         info!("creating networked face color!");
-        let mut system_state: SystemState<(
-            Commands,
-            Client,
-            EventWriter<ShapeColorResyncEvent>,
-        )> = SystemState::new(world);
-        let (
-            mut commands,
-            mut client,
-            mut shape_color_resync_events,
-        ) = system_state.get_mut(world);
+        let mut system_state: SystemState<(Commands, Client, EventWriter<ShapeColorResyncEvent>)> =
+            SystemState::new(world);
+        let (mut commands, mut client, mut shape_color_resync_events) = system_state.get_mut(world);
 
         let mut component = FaceColor::new();
         component.skin_file_entity.set(&client, &skin_file_entity);
         component.face_3d_entity.set(&client, &face_3d_entity);
-        component.palette_color_entity.set(&client, &palette_color_entity);
+        component
+            .palette_color_entity
+            .set(&client, &palette_color_entity);
         let face_color_entity = commands
             .spawn_empty()
             .enable_replication(&mut client)
@@ -98,9 +103,15 @@ impl SkinManager {
         self.register_face_color(face_3d_entity, face_color_entity);
     }
 
-    pub(crate) fn register_face_color(&mut self, face_3d_entity: Entity, face_color_entity: Entity) {
-        self.face_to_color_entity.insert(face_3d_entity, face_color_entity);
-        self.color_to_face_entity.insert(face_color_entity, face_3d_entity);
+    pub(crate) fn register_face_color(
+        &mut self,
+        face_3d_entity: Entity,
+        face_color_entity: Entity,
+    ) {
+        self.face_to_color_entity
+            .insert(face_3d_entity, face_color_entity);
+        self.color_to_face_entity
+            .insert(face_color_entity, face_3d_entity);
     }
 
     pub(crate) fn deregister_face_color(&mut self, face_color_entity: &Entity) {
@@ -113,12 +124,11 @@ impl SkinManager {
         &mut self,
         ui: &mut Ui,
         world: &mut World,
-        current_file_entity: &Entity
+        current_file_entity: &Entity,
     ) {
         egui::SidePanel::right("skin_right_panel")
             .resizable(true)
             .show_inside(ui, |ui| {
-
                 let mut system_state: SystemState<(
                     Res<FileManager>,
                     Res<PaletteManager>,
@@ -156,7 +166,8 @@ impl SkinManager {
                                 let b = *color_component.b;
                                 let color = Color32::from_rgb(r, g, b);
 
-                                let (mut rect, response) = ui.allocate_exact_size(size, Sense::click());
+                                let (mut rect, response) =
+                                    ui.allocate_exact_size(size, Sense::click());
                                 if response.hovered() {
                                     rect = rect.expand(2.0);
                                 }

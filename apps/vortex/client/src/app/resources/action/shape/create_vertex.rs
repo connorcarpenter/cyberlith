@@ -1,8 +1,8 @@
 use bevy_ecs::{
+    event::EventWriter,
     prelude::{Commands, Entity, Query, World},
     system::{ResMut, SystemState},
 };
-use bevy_ecs::event::EventWriter;
 use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt};
@@ -17,6 +17,7 @@ use vortex_proto::components::FileExtension;
 
 use crate::app::{
     components::VertexTypeData,
+    events::ShapeColorResyncEvent,
     resources::{
         action::{
             shape::{select_shape::deselect_selected_shape, ShapeAction},
@@ -31,7 +32,6 @@ use crate::app::{
         vertex_manager::VertexManager,
     },
 };
-use crate::app::events::ShapeColorResyncEvent;
 
 pub(crate) fn execute(
     world: &mut World,

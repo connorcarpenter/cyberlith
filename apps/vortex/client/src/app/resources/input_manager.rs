@@ -1281,8 +1281,11 @@ impl InputManager {
             (MouseButton::Right, Some(CanvasShape::Face), _) => {
                 // deselect vertex
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager
-                        .current_tab_execute_skin_action(world, self, SkinAction::SelectFace(None));
+                    tab_manager.current_tab_execute_skin_action(
+                        world,
+                        self,
+                        SkinAction::SelectFace(None),
+                    );
                 });
             }
             _ => {}

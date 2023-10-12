@@ -7,13 +7,14 @@ use render_api::{resources::WindowSettings, Draw};
 
 use vortex_proto::{
     components::{
-        AnimFrame, AnimRotation, ChangelistEntry, Edge3d, EdgeAngle, EntryKind, Face3d,
+        AnimFrame, AnimRotation, ChangelistEntry, Edge3d, EdgeAngle, EntryKind, Face3d, FaceColor,
         FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType,
-        OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot, FaceColor,
+        OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot,
     },
     protocol,
 };
 
+use crate::app::events::ShapeColorResyncEvent;
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
     config::ConfigPlugin,
@@ -23,7 +24,8 @@ use crate::app::{
         camera_manager::CameraManager, canvas::Canvas, compass::Compass, edge_manager::EdgeManager,
         face_manager::FaceManager, file_manager::FileManager, grid::Grid,
         input_manager::InputManager, palette_manager::PaletteManager,
-        shape_waitlist::ShapeWaitlist, tab_manager::TabManager, vertex_manager::VertexManager, skin_manager::SkinManager
+        shape_waitlist::ShapeWaitlist, skin_manager::SkinManager, tab_manager::TabManager,
+        vertex_manager::VertexManager,
     },
     systems::{canvas, draw, draw_vertices_and_edges, network, ui},
     ui::{
@@ -31,7 +33,6 @@ use crate::app::{
         UiState,
     },
 };
-use crate::app::events::ShapeColorResyncEvent;
 
 pub struct VortexPlugin;
 
