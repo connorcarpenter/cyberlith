@@ -72,8 +72,6 @@ pub fn execute(
         entity_to_release,
     );
 
-
-
     if let Some((face_2d_entity, CanvasShape::Face)) = shape_2d_entity_opt {
         if entity_to_request.is_none() {
 
@@ -92,7 +90,7 @@ pub fn execute(
             let next_palette_color_entity = palette_manager.get_color_entity(&palette_file_entity, palette_color_index).unwrap();
 
             world.resource_scope(|world, mut skin_manager: Mut<SkinManager>| {
-                skin_manager.create_networked_face_color_from_world(world, face_3d_entity, next_palette_color_entity);
+                skin_manager.create_networked_face_color_from_world(world, current_file_entity, face_3d_entity, next_palette_color_entity);
             });
 
             system_state.apply(world);

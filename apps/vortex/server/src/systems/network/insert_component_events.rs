@@ -586,7 +586,7 @@ pub fn insert_skin_component_events(
     user_manager: ResMut<UserManager>,
     mut git_manager: ResMut<GitManager>,
     mut skin_manager: ResMut<SkinManager>,
-    mut color_events: EventReader<InsertComponentEvent<PaletteColor>>,
+    mut color_events: EventReader<InsertComponentEvent<FaceColor>>,
     key_q: Query<&FileKey>,
     color_q: Query<&FaceColor>,
 ) {

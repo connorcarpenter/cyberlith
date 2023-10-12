@@ -10,15 +10,15 @@ use naia_bevy_client::{
     Client,
 };
 
-use vortex_proto::components::{AnimFrame, PaletteColor};
+use vortex_proto::components::{AnimFrame, FaceColor, PaletteColor};
 
-use crate::app::resources::palette_manager::PaletteManager;
 use crate::app::{
     components::OwnedByFileLocal,
     resources::{
+        palette_manager::PaletteManager,
         action::file::FileActions, animation_manager::AnimationManager, edge_manager::EdgeManager,
         face_manager::FaceManager, file_manager::FileManager, shape_manager::ShapeManager,
-        tab_manager::TabManager, vertex_manager::VertexManager,
+        tab_manager::TabManager, vertex_manager::VertexManager, skin_manager::SkinManager,
     },
 };
 
@@ -32,10 +32,12 @@ pub fn auth_granted_events(
     animation_manager: Res<AnimationManager>,
     mut tab_manager: ResMut<TabManager>,
     palette_manager: Res<PaletteManager>,
+    skin_manager: Res<SkinManager>,
     mut event_reader: EventReader<EntityAuthGrantedEvent>,
     owned_by_q: Query<&OwnedByFileLocal>,
     frame_q: Query<&AnimFrame>,
-    color_q: Query<&PaletteColor>,
+    palette_color_q: Query<&PaletteColor>,
+    face_color_q: Query<&FaceColor>,
 ) {
     for EntityAuthGrantedEvent(entity) in event_reader.iter() {
         process_entity_auth_status(
@@ -48,9 +50,11 @@ pub fn auth_granted_events(
             &animation_manager,
             &mut tab_manager,
             &palette_manager,
+            &skin_manager,
             &owned_by_q,
             &frame_q,
-            &color_q,
+            &palette_color_q,
+            &face_color_q,
             entity,
             "granted",
         );
@@ -67,10 +71,12 @@ pub fn auth_denied_events(
     animation_manager: Res<AnimationManager>,
     palette_manager: Res<PaletteManager>,
     mut tab_manager: ResMut<TabManager>,
+    skin_manager: Res<SkinManager>,
     mut event_reader: EventReader<EntityAuthDeniedEvent>,
     owned_by_q: Query<&OwnedByFileLocal>,
     frame_q: Query<&AnimFrame>,
-    color_q: Query<&PaletteColor>,
+    palette_color_q: Query<&PaletteColor>,
+    face_color_q: Query<&FaceColor>,
 ) {
     for EntityAuthDeniedEvent(entity) in event_reader.iter() {
         process_entity_auth_status(
@@ -83,9 +89,11 @@ pub fn auth_denied_events(
             &animation_manager,
             &mut tab_manager,
             &palette_manager,
+            &skin_manager,
             &owned_by_q,
             &frame_q,
-            &color_q,
+            &palette_color_q,
+            &face_color_q,
             entity,
             "denied",
         );
@@ -102,10 +110,12 @@ pub fn auth_reset_events(
     animation_manager: Res<AnimationManager>,
     palette_manager: Res<PaletteManager>,
     mut tab_manager: ResMut<TabManager>,
+    skin_manager: Res<SkinManager>,
     mut event_reader: EventReader<EntityAuthResetEvent>,
     owned_by_q: Query<&OwnedByFileLocal>,
     frame_q: Query<&AnimFrame>,
-    color_q: Query<&PaletteColor>,
+    palette_color_q: Query<&PaletteColor>,
+    face_color_q: Query<&FaceColor>,
 ) {
     for EntityAuthResetEvent(entity) in event_reader.iter() {
         process_entity_auth_status(
@@ -118,9 +128,11 @@ pub fn auth_reset_events(
             &animation_manager,
             &mut tab_manager,
             &palette_manager,
+            &skin_manager,
             &owned_by_q,
             &frame_q,
-            &color_q,
+            &palette_color_q,
+            &face_color_q,
             entity,
             "reset",
         );
@@ -137,9 +149,11 @@ fn process_entity_auth_status(
     animation_manager: &AnimationManager,
     tab_manager: &mut TabManager,
     palette_manager: &PaletteManager,
+    skin_manager: &SkinManager,
     owned_by_q: &Query<&OwnedByFileLocal>,
     frame_q: &Query<&AnimFrame>,
-    color_q: &Query<&PaletteColor>,
+    palette_color_q: &Query<&PaletteColor>,
+    face_color_q: &Query<&FaceColor>,
     entity: &Entity,
     status: &str,
 ) {
@@ -225,10 +239,27 @@ fn process_entity_auth_status(
             "auth processing for color entity `{:?}`: `{:?}`",
             entity, status
         );
-        let Ok(color_component) = color_q.get(*entity) else {
+        let Ok(color_component) = palette_color_q.get(*entity) else {
             panic!("component for color entity `{:?}` not found", entity);
         };
         let owning_file_entity = color_component.file_entity.get(client).unwrap();
+        if let Some(tab_state) = tab_manager.tab_state_mut(&owning_file_entity) {
+            tab_state.action_stack.entity_update_auth_status(&entity);
+        } else {
+            warn!(
+                "no tab state found for file entity: {:?}",
+                owning_file_entity
+            );
+        }
+    } else if skin_manager.entity_is_face_color(entity) {
+        info!(
+            "auth processing for face color entity `{:?}`: `{:?}`",
+            entity, status
+        );
+        let Ok(color_component) = face_color_q.get(*entity) else {
+            panic!("component for face color entity `{:?}` not found", entity);
+        };
+        let owning_file_entity = color_component.skin_file_entity.get(client).unwrap();
         if let Some(tab_state) = tab_manager.tab_state_mut(&owning_file_entity) {
             tab_state.action_stack.entity_update_auth_status(&entity);
         } else {

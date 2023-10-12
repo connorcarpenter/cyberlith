@@ -1,14 +1,17 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{entity::Entity, system::{Resource, Commands, Query, Res, SystemState}, world::World};
+use bevy_ecs::{entity::Entity, system::{ResMut, Resource, Commands, Query, Res, SystemState}, world::World};
+use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
+
+use render_api::{Assets, base::{Color, CpuMaterial}};
 
 use render_egui::{egui::{Ui, Vec2, Align, Color32, Frame, Layout, Sense}, egui};
 
 use vortex_proto::components::{FaceColor, FileExtension, PaletteColor};
 
-use crate::app::resources::{file_manager::FileManager, palette_manager::PaletteManager};
+use crate::app::resources::{face_manager::FaceManager, file_manager::FileManager, palette_manager::PaletteManager};
 
 #[derive(Resource)]
 pub struct SkinManager {
@@ -36,6 +39,10 @@ impl SkinManager {
         self.selected_color_index
     }
 
+    pub(crate) fn entity_is_face_color(&self, face_color_entity: &Entity) -> bool {
+        self.color_to_face_entity.contains_key(face_color_entity)
+    }
+
     pub(crate) fn face_to_color_entity(&self, face_3d_entity: Entity) -> Option<&Entity> {
         self.face_to_color_entity.get(&face_3d_entity)
     }
@@ -43,14 +50,28 @@ impl SkinManager {
     pub(crate) fn create_networked_face_color_from_world(
         &mut self,
         world: &mut World,
+        skin_file_entity: Entity,
         face_3d_entity: Entity,
         palette_color_entity: Entity,
     ) -> Entity {
-
-        let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
-        let (mut commands, mut client) = system_state.get_mut(world);
+        info!("creating networked face color!");
+        let mut system_state: SystemState<(
+            Commands,
+            Client,
+            Res<FaceManager>,
+            ResMut<Assets<CpuMaterial>>,
+            Query<&PaletteColor>,
+        )> = SystemState::new(world);
+        let (
+            mut commands,
+            mut client,
+            face_manager,
+            mut materials,
+            palette_color_q,
+        ) = system_state.get_mut(world);
 
         let mut component = FaceColor::new();
+        component.skin_file_entity.set(&client, &skin_file_entity);
         component.face_3d_entity.set(&client, &face_3d_entity);
         component.palette_color_entity.set(&client, &palette_color_entity);
         let face_color_entity = commands
@@ -61,19 +82,54 @@ impl SkinManager {
             .id();
 
         self.face_color_postprocess(
+            &mut commands,
+            &face_manager,
+            &mut materials,
             face_3d_entity,
+            palette_color_entity,
             face_color_entity,
+            &palette_color_q,
         );
+
+        system_state.apply(world);
 
         face_color_entity
     }
 
-    pub(crate) fn face_color_postprocess(&mut self, face_3d_entity: Entity, color_entity: Entity) {
+    pub(crate) fn face_color_postprocess(
+        &mut self,
+        commands: &mut Commands,
+        face_manager: &FaceManager,
+        materials: &mut Assets<CpuMaterial>,
+        face_3d_entity: Entity,
+        palette_color_entity: Entity,
+        face_color_entity: Entity,
+        palette_color_q: &Query<&PaletteColor>,
+    ) {
+        let Ok(palette_color) = palette_color_q.get(palette_color_entity) else {
+            panic!("no palette color!");
+        };
+        let r = *palette_color.r;
+        let g = *palette_color.g;
+        let b = *palette_color.b;
 
-        // TODO: change 3D face color
-        // TODO: change 2D face color
+        info!("setting new color: {:?} {:?} {:?}", r, g, b);
 
-        self.register_face_color(face_3d_entity, color_entity);
+        let mat_handle = materials.add(Color::new_opaque(r, g, b));
+
+        // change 3D face color
+        commands
+            .entity(face_3d_entity)
+            .insert(mat_handle);
+
+        // change 2D face color
+        let face_2d_entity = face_manager.face_entity_3d_to_2d(&face_3d_entity).unwrap();
+        commands
+            .entity(face_2d_entity)
+            .insert(mat_handle);
+
+        // register
+        self.register_face_color(face_3d_entity, face_color_entity);
     }
 
     pub(crate) fn register_face_color(&mut self, face_3d_entity: Entity, face_color_entity: Entity) {
