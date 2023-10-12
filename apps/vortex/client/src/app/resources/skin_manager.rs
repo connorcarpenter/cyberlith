@@ -139,9 +139,15 @@ impl SkinManager {
                 let mut system_state: SystemState<(
                     Res<FileManager>,
                     Res<PaletteManager>,
+                    EventWriter<ShapeColorResyncEvent>,
                     Query<&PaletteColor>,
                 )> = SystemState::new(world);
-                let (file_manager, palette_manager, palette_color_q) = system_state.get_mut(world);
+                let (
+                    file_manager,
+                    palette_manager,
+                    mut shape_color_resync_events,
+                    palette_color_q
+                ) = system_state.get_mut(world);
 
                 let Some(palette_file_entity) = file_manager.file_get_dependency(
                     current_file_entity,
@@ -236,12 +242,14 @@ impl SkinManager {
                             return;
                         }
                         self.selected_color_index = color_index_picked;
+                        shape_color_resync_events.send(ShapeColorResyncEvent);
                     }
                     PointerButton::Secondary => {
                         if color_index_picked == self.background_color_index {
                             return;
                         }
                         self.background_color_index = color_index_picked;
+                        shape_color_resync_events.send(ShapeColorResyncEvent);
                     }
                     _ => {}
                 }

@@ -238,7 +238,7 @@ impl TabManager {
                 .get_resource::<FileManager>()
                 .unwrap()
                 .get_file_type(&current_file_entity);
-            file_ext_specific_sync_tabs_shape_colors(file_ext, world);
+            file_ext_specific_sync_tabs_shape_colors(file_ext, &current_file_entity, world);
         }
     }
 
@@ -700,10 +700,12 @@ pub fn render_tab_bar(ui: &mut Ui, world: &mut World) {
     });
 }
 
-fn file_ext_specific_sync_tabs_shape_colors(file_ext: FileExtension, world: &mut World) {
+fn file_ext_specific_sync_tabs_shape_colors(file_ext: FileExtension, current_file_entity: &Entity, world: &mut World) {
     let mut system_state: SystemState<(
         Client,
+        Res<FileManager>,
         Res<FaceManager>,
+        Res<PaletteManager>,
         Res<SkinManager>,
         ResMut<Assets<CpuMaterial>>,
         Query<&mut Handle<CpuMaterial>, (With<Edge2dLocal>, Without<LocalShape>)>,
@@ -720,7 +722,9 @@ fn file_ext_specific_sync_tabs_shape_colors(file_ext: FileExtension, world: &mut
     )> = SystemState::new(world);
     let (
         client,
+        file_manager,
         face_manager,
+        palette_manager,
         skin_manager,
         mut materials,
         mut edge_2d_q,
@@ -733,6 +737,24 @@ fn file_ext_specific_sync_tabs_shape_colors(file_ext: FileExtension, world: &mut
     match file_ext {
         FileExtension::Skin => {
             let gray_mat_handle = materials.add(Color::LIGHT_GRAY);
+
+            // get background color
+            let background_index = skin_manager.background_color_index();
+            let Some(dependency_file_entity) = file_manager.file_get_dependency(current_file_entity, FileExtension::Palette) else {
+                return;
+            };
+            let Some(colors) = palette_manager.get_file_colors(&dependency_file_entity) else {
+                panic!("no colors for given file");
+            };
+            let Some(background_color_entity) = colors.get(background_index).unwrap() else {
+                return;
+            };
+            let background_color = palette_color_q.get(*background_color_entity).unwrap();
+            let bckg_mat_handle = materials.add(Color::new_opaque(
+                *background_color.r,
+                *background_color.g,
+                *background_color.b,
+            ));
 
             for mut mat_handle in edge_2d_q.iter_mut() {
                 *mat_handle = gray_mat_handle;
@@ -752,8 +774,8 @@ fn file_ext_specific_sync_tabs_shape_colors(file_ext: FileExtension, world: &mut
                         *palette_color.b,
                     ));
                 } else {
-                    // TODO: use selected background FaceColor
-                    new_mat_handle = gray_mat_handle;
+                    // use background color
+                    new_mat_handle = bckg_mat_handle;
                 }
 
                 *face_3d_material = new_mat_handle;
