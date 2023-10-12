@@ -12,14 +12,17 @@ use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
 use render_egui::{
     egui,
-    egui::{PointerButton, Align, Color32, Frame, Layout, Sense, Ui, Vec2},
+    egui::{Align, Color32, Frame, Layout, PointerButton, Sense, Ui, Vec2},
 };
 
 use vortex_proto::components::{FaceColor, FileExtension, PaletteColor};
 
 use crate::app::{
     events::ShapeColorResyncEvent,
-    resources::{shape_data::CanvasShape, input_manager::InputManager, action::skin::SkinAction, file_manager::FileManager, palette_manager::PaletteManager},
+    resources::{
+        action::skin::SkinAction, file_manager::FileManager, input_manager::InputManager,
+        palette_manager::PaletteManager, shape_data::CanvasShape,
+    },
 };
 
 #[derive(Resource)]
@@ -132,7 +135,6 @@ impl SkinManager {
         world: &mut World,
         current_file_entity: &Entity,
     ) -> Option<SkinAction> {
-
         let mut color_index_picked = None;
 
         egui::SidePanel::right("skin_right_panel")
@@ -245,12 +247,18 @@ impl SkinManager {
                 }
                 self.selected_color_index = color_index_picked;
 
-                let selected_shape = world.get_resource::<InputManager>().unwrap().selected_shape_2d();
+                let selected_shape = world
+                    .get_resource::<InputManager>()
+                    .unwrap()
+                    .selected_shape_2d();
                 if selected_shape.is_some() {
                     let Some((face_2d_entity, CanvasShape::Face)) = selected_shape else {
                         panic!("expected face entity");
                     };
-                    return Some(SkinAction::EditColor(face_2d_entity, Some(palette_color_entity)));
+                    return Some(SkinAction::EditColor(
+                        face_2d_entity,
+                        Some(palette_color_entity),
+                    ));
                 }
             }
             PointerButton::Secondary => {
@@ -259,12 +267,9 @@ impl SkinManager {
                 }
                 self.background_color_index = color_index_picked;
 
-                let mut system_state: SystemState<(
-                    EventWriter<ShapeColorResyncEvent>,
-                )> = SystemState::new(world);
-                let (
-                    mut shape_color_resync_events,
-                ) = system_state.get_mut(world);
+                let mut system_state: SystemState<(EventWriter<ShapeColorResyncEvent>,)> =
+                    SystemState::new(world);
+                let (mut shape_color_resync_events,) = system_state.get_mut(world);
                 shape_color_resync_events.send(ShapeColorResyncEvent);
             }
             _ => {}

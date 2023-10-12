@@ -1,6 +1,6 @@
 use bevy_ecs::{
-    prelude::World,
     event::EventWriter,
+    prelude::World,
     system::{Commands, Query, Res, ResMut, SystemState},
 };
 use bevy_log::info;
@@ -9,9 +9,13 @@ use naia_bevy_client::Client;
 
 use vortex_proto::components::FaceColor;
 
-use crate::app::{events::ShapeColorResyncEvent, resources::{
-    action::skin::SkinAction, canvas::Canvas, face_manager::FaceManager, skin_manager::SkinManager,
-}};
+use crate::app::{
+    events::ShapeColorResyncEvent,
+    resources::{
+        action::skin::SkinAction, canvas::Canvas, face_manager::FaceManager,
+        skin_manager::SkinManager,
+    },
+};
 
 pub(crate) fn execute(world: &mut World, action: SkinAction) -> Vec<SkinAction> {
     let SkinAction::EditColor(face_2d_entity, new_palette_color_opt) = action else {
@@ -38,7 +42,7 @@ pub(crate) fn execute(world: &mut World, action: SkinAction) -> Vec<SkinAction> 
         face_manager,
         mut skin_manager,
         mut shape_color_resync_event_writer,
-        mut face_color_q
+        mut face_color_q,
     ) = system_state.get_mut(world);
 
     let face_3d_entity = face_manager.face_entity_2d_to_3d(&face_2d_entity).unwrap();

@@ -700,7 +700,11 @@ pub fn render_tab_bar(ui: &mut Ui, world: &mut World) {
     });
 }
 
-fn file_ext_specific_sync_tabs_shape_colors(file_ext: FileExtension, current_file_entity: &Entity, world: &mut World) {
+fn file_ext_specific_sync_tabs_shape_colors(
+    file_ext: FileExtension,
+    current_file_entity: &Entity,
+    world: &mut World,
+) {
     let mut system_state: SystemState<(
         Client,
         Res<FileManager>,

@@ -9,10 +9,9 @@ use vortex_proto::components::FileExtension;
 
 use crate::app::{
     resources::{
-        input_manager::InputManager,
         animation_manager::AnimationManager, file_manager::FileManager,
-        palette_manager::PaletteManager, skin_manager::SkinManager, tab_manager::render_tab_bar,
-        tab_manager::TabManager,
+        input_manager::InputManager, palette_manager::PaletteManager, skin_manager::SkinManager,
+        tab_manager::render_tab_bar, tab_manager::TabManager,
     },
     ui::{
         render_tool_bar,
@@ -99,17 +98,20 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                         // Toolbar
                         let mut some_action = None;
                         world.resource_scope(|world, mut skin_manager: Mut<SkinManager>| {
-                            some_action = skin_manager.render_sidebar(ui, world, &current_file_entity);
+                            some_action =
+                                skin_manager.render_sidebar(ui, world, &current_file_entity);
                         });
                         if let Some(skin_action) = some_action {
                             world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                                world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
-                                    tab_manager.current_tab_execute_skin_action(
-                                        world,
-                                        &mut input_manager,
-                                        skin_action,
-                                    );
-                                });
+                                world.resource_scope(
+                                    |world, mut input_manager: Mut<InputManager>| {
+                                        tab_manager.current_tab_execute_skin_action(
+                                            world,
+                                            &mut input_manager,
+                                            skin_action,
+                                        );
+                                    },
+                                );
                             });
                         }
                     }

@@ -71,7 +71,6 @@ pub fn execute(
     );
 
     if let Some((face_2d_entity, CanvasShape::Face)) = shape_2d_entity_opt {
-
         let face_3d_entity = face_manager.face_entity_2d_to_3d(&face_2d_entity).unwrap();
 
         let palette_color_index = skin_manager.selected_color_index();
@@ -91,9 +90,11 @@ pub fn execute(
                 panic!("Failed to get FaceColor for face color entity {:?}!", face_color_entity);
             };
 
-            let prev_palette_entity= face_color.palette_color_entity.get(&client).unwrap();
+            let prev_palette_entity = face_color.palette_color_entity.get(&client).unwrap();
 
-            face_color.palette_color_entity.set(&client, &next_palette_color_entity);
+            face_color
+                .palette_color_entity
+                .set(&client, &next_palette_color_entity);
 
             return vec![
                 SkinAction::SelectFace(deselected_entity),
