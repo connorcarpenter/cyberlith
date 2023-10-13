@@ -94,9 +94,6 @@ struct FaceData {
     vertex_a: Entity,
     vertex_b: Entity,
     vertex_c: Entity,
-    _edge_a: Entity,
-    _edge_b: Entity,
-    _edge_c: Entity,
 }
 
 impl FaceData {
@@ -106,9 +103,6 @@ impl FaceData {
         vertex_a: Entity,
         vertex_b: Entity,
         vertex_c: Entity,
-        edge_a: Entity,
-        edge_b: Entity,
-        edge_c: Entity,
     ) -> Self {
         Self {
             file_entity,
@@ -116,9 +110,6 @@ impl FaceData {
             vertex_a,
             vertex_b,
             vertex_c,
-            _edge_a: edge_a,
-            _edge_b: edge_b,
-            _edge_c: edge_c,
         }
     }
 }
@@ -249,16 +240,13 @@ impl ShapeManager {
         vertex_a: Entity,
         vertex_b: Entity,
         vertex_c: Entity,
-        edge_a: Entity,
-        edge_b: Entity,
-        edge_c: Entity,
     ) {
         // assign index
         let face_index = self.assign_index_to_new_face(file_entity, old_index_opt, &face_entity);
 
         self.faces.insert(
             face_entity,
-            FaceData::new(*file_entity, face_index, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c),
+            FaceData::new(*file_entity, face_index, vertex_a, vertex_b, vertex_c),
         );
 
         // add faces to vertices

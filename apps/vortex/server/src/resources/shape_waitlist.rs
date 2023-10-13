@@ -23,7 +23,7 @@ pub enum ShapeWaitlistInsert {
     //// parent, edge, child
     Edge(Entity, Entity, Entity),
     //// (face_entity, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c)
-    Face(Entity, Entity, Entity, Entity, Entity, Entity, Entity),
+    Face(Entity, Entity, Entity, Entity),
     //// shape, filetype
     FileType(Entity, FileExtension),
     //// shape, project key, file key
@@ -46,9 +46,6 @@ enum ShapeData {
         Entity,
         Entity,
         Entity,
-        Entity,
-        Entity,
-        Entity,
     ),
 }
 
@@ -57,7 +54,7 @@ pub struct ShapeWaitlistEntry {
     shape: Option<ShapeType>,
     edge_and_parent_opt: Option<Option<(Entity, Entity)>>,
     edge_entities: Option<(Entity, Entity)>,
-    face_entities: Option<(Entity, Entity, Entity, Entity, Entity, Entity)>,
+    face_entities: Option<(Entity, Entity, Entity)>,
     file_type: Option<FileExtension>,
     owned_by_file: Option<(ProjectKey, FileKey)>,
 }
@@ -121,11 +118,8 @@ impl ShapeWaitlistEntry {
         vertex_a: Entity,
         vertex_b: Entity,
         vertex_c: Entity,
-        edge_a: Entity,
-        edge_b: Entity,
-        edge_c: Entity,
     ) {
-        self.face_entities = Some((vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c));
+        self.face_entities = Some((vertex_a, vertex_b, vertex_c));
     }
 
     fn set_shape_type(&mut self, shape_type: ShapeType) {
@@ -162,7 +156,7 @@ impl ShapeWaitlistEntry {
                 return ShapeData::MeshEdge(project_key, file_key, start, end);
             }
             (Some(FileExtension::Mesh), Some(ShapeType::Face)) => {
-                let (vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c) =
+                let (vertex_a, vertex_b, vertex_c) =
                     self.face_entities.unwrap();
                 return ShapeData::MeshFace(
                     project_key,
@@ -170,9 +164,6 @@ impl ShapeWaitlistEntry {
                     vertex_a,
                     vertex_b,
                     vertex_c,
-                    edge_a,
-                    edge_b,
-                    edge_c,
                 );
             }
             _ => {
@@ -260,10 +251,7 @@ impl ShapeWaitlist {
                 face_entity,
                 vertex_a,
                 vertex_b,
-                vertex_c,
-                edge_a,
-                edge_b,
-                edge_c,
+                vertex_c
             ) => {
                 if !self.contains_key(&face_entity) {
                     self.insert_incomplete(face_entity, ShapeWaitlistEntry::new());
@@ -271,7 +259,7 @@ impl ShapeWaitlist {
                 let entry = self.get_mut(&face_entity).unwrap();
                 entry.set_shape_type(ShapeType::Face);
                 entry.set_file_type(FileExtension::Mesh);
-                entry.set_face_entities(vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c);
+                entry.set_face_entities(vertex_a, vertex_b, vertex_c);
                 possibly_ready_entities.push(face_entity);
             }
             ShapeWaitlistInsert::FileType(shape_entity, file_type) => {
@@ -422,13 +410,10 @@ impl ShapeWaitlist {
                 vertex_a,
                 vertex_b,
                 vertex_c,
-                edge_a,
-                edge_b,
-                edge_c,
             ) => {
                 let file_entity = git_manager.file_entity(&project_key, &file_key).unwrap();
                 shape_manager
-                    .on_create_face(&file_entity, None, entity, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c);
+                    .on_create_face(&file_entity, None, entity, vertex_a, vertex_b, vertex_c);
                 (project_key, file_key, ShapeType::Face)
             }
         };

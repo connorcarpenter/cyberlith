@@ -410,9 +410,6 @@ impl MeshReader {
                             vertex_a_entity,
                             vertex_b_entity,
                             vertex_c_entity,
-                            edge_a_entity,
-                            edge_b_entity,
-                            edge_c_entity,
                         ),
                     ));
                 }
@@ -460,9 +457,9 @@ impl MeshReader {
                 ShapeTypeData::Edge(start, end) => {
                     shape_manager.on_create_mesh_edge(start, entity, end);
                 }
-                ShapeTypeData::Face(index, vert_a, vert_b, vert_c, edge_a, edge_b, edge_c) => {
+                ShapeTypeData::Face(index, vert_a, vert_b, vert_c) => {
                     shape_manager
-                        .on_create_face(file_entity, Some(index), entity, vert_a, vert_b, vert_c, edge_a, edge_b, edge_c);
+                        .on_create_face(file_entity, Some(index), entity, vert_a, vert_b, vert_c);
                 }
             }
         }

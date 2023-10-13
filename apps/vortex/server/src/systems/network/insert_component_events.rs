@@ -345,13 +345,10 @@ pub fn insert_face_component_events(
         let vertex_a = face_3d.vertex_a.get(&server).unwrap();
         let vertex_b = face_3d.vertex_b.get(&server).unwrap();
         let vertex_c = face_3d.vertex_c.get(&server).unwrap();
-        let edge_a = face_3d.edge_a.get(&server).unwrap();
-        let edge_b = face_3d.edge_b.get(&server).unwrap();
-        let edge_c = face_3d.edge_c.get(&server).unwrap();
 
         info!(
-            "entity: `{:?}`, inserted Face3d(vertices({:?}, {:?}, {:?}), edges({:?}, {:?}, {:?}))",
-            face_entity, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c
+            "entity: `{:?}`, inserted Face3d(vertices({:?}, {:?}, {:?}))",
+            face_entity, vertex_a, vertex_b, vertex_c
         );
 
         shape_waitlist.process_insert(
@@ -362,10 +359,7 @@ pub fn insert_face_component_events(
                 face_entity,
                 vertex_a,
                 vertex_b,
-                vertex_c,
-                edge_a,
-                edge_b,
-                edge_c,
+                vertex_c
             ),
         );
     }
