@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use bevy_ecs::{entity::Entity, system::Resource};
-use bevy_ecs::system::Commands;
 use bevy_log::info;
 
 use naia_bevy_server::Server;
@@ -202,7 +201,6 @@ impl Default for ShapeWaitlist {
 impl ShapeWaitlist {
     pub fn process_insert(
         &mut self,
-        commands_opt: &mut Option<&mut Commands>,
         server: &mut Server,
         git_manager: &mut GitManager,
         shape_manager: &mut ShapeManager,
@@ -383,7 +381,6 @@ impl ShapeWaitlist {
 
         for (entity, entry) in entities_to_process {
             self.process_complete(
-                commands_opt,
                 server,
                 git_manager,
                 shape_manager,
@@ -395,7 +392,6 @@ impl ShapeWaitlist {
 
     fn process_complete(
         &mut self,
-        commands_opt: &mut Option<&mut Commands>,
         server: &mut Server,
         git_manager: &mut GitManager,
         shape_manager: &mut ShapeManager,
@@ -430,10 +426,9 @@ impl ShapeWaitlist {
                 edge_b,
                 edge_c,
             ) => {
-                let commands = commands_opt.as_mut().unwrap(); // required!
                 let file_entity = git_manager.file_entity(&project_key, &file_key).unwrap();
                 shape_manager
-                    .on_create_face(commands, &file_entity, entity, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c);
+                    .on_create_face(&file_entity, None, entity, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c);
                 (project_key, file_key, ShapeType::Face)
             }
         };
@@ -460,7 +455,6 @@ impl ShapeWaitlist {
                     child_entity, entity
                 );
                 self.process_complete(
-                    commands_opt,
                     server,
                     git_manager,
                     shape_manager,

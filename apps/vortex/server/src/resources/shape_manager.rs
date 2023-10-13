@@ -7,7 +7,6 @@ use bevy_ecs::{
 use bevy_log::{info, warn};
 
 use naia_bevy_server::{CommandsExt, Server};
-use crate::components::FaceIndex;
 
 pub enum VertexData {
     Skel(SkelVertexData),
@@ -90,6 +89,8 @@ impl EdgeData {
 }
 
 struct FaceData {
+    file_entity: Entity,
+    face_index: usize,
     vertex_a: Entity,
     vertex_b: Entity,
     vertex_c: Entity,
@@ -100,6 +101,8 @@ struct FaceData {
 
 impl FaceData {
     pub fn new(
+        file_entity: Entity,
+        face_index: usize,
         vertex_a: Entity,
         vertex_b: Entity,
         vertex_c: Entity,
@@ -108,6 +111,8 @@ impl FaceData {
         edge_c: Entity,
     ) -> Self {
         Self {
+            file_entity,
+            face_index,
             vertex_a,
             vertex_b,
             vertex_c,
@@ -162,6 +167,14 @@ impl ShapeManager {
                     panic!("should not call this on a mesh vertex!");
                 }
             }
+        } else {
+            None
+        }
+    }
+
+    pub fn get_face_index(&self, entity: &Entity) -> Option<usize> {
+        if let Some(face_data) = self.faces.get(entity) {
+            Some(face_data.face_index)
         } else {
             None
         }
@@ -230,7 +243,6 @@ impl ShapeManager {
 
     pub fn on_create_face(
         &mut self,
-        commands: &mut Commands,
         file_entity: &Entity,
         old_index_opt: Option<usize>,
         face_entity: Entity,
@@ -241,9 +253,12 @@ impl ShapeManager {
         edge_b: Entity,
         edge_c: Entity,
     ) {
+        // assign index
+        let face_index = self.assign_index_to_new_face(file_entity, old_index_opt, &face_entity);
+
         self.faces.insert(
             face_entity,
-            FaceData::new(vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c),
+            FaceData::new(*file_entity, face_index, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c),
         );
 
         // add faces to vertices
@@ -256,11 +271,10 @@ impl ShapeManager {
 
         // TODO: add face to edges
 
-        // assign index
-        self.assign_index_to_new_face(commands, file_entity, old_index_opt, &face_entity);
+
     }
 
-    fn assign_index_to_new_face(&mut self, commands: &mut Commands, file_entity: &Entity, old_index_opt: Option<usize>, face_3d_entity: &Entity) {
+    fn assign_index_to_new_face(&mut self, file_entity: &Entity, old_index_opt: Option<usize>, face_3d_entity: &Entity) -> usize {
         if !self.file_face_indices.contains_key(file_entity) {
             self.file_face_indices.insert(*file_entity, Vec::new());
         }
@@ -276,7 +290,7 @@ impl ShapeManager {
 
         file_face_indices.push(*face_3d_entity);
 
-        commands.entity(*face_3d_entity).insert(FaceIndex::new(new_index));
+        new_index
     }
 
     pub fn deregister_vertex(&mut self, vertex_entity: &Entity) -> Option<VertexData> {
@@ -380,6 +394,7 @@ impl ShapeManager {
     pub(crate) fn on_client_despawn_face(&mut self, face_entity: &Entity) {
         let face_data = self.faces.remove(face_entity).unwrap();
 
+        // remove face from vertex data
         for vertex_entity in [face_data.vertex_a, face_data.vertex_b, face_data.vertex_c] {
             if let Some(VertexData::Mesh(data)) = self.vertices.get_mut(&vertex_entity) {
                 info!(
@@ -388,6 +403,17 @@ impl ShapeManager {
                 );
                 data.remove_face(face_entity);
             }
+        }
+
+        // remove face from file face list
+        let file_entity = face_data.file_entity;
+        let face_index = face_data.face_index;
+        let file_face_indices = self.file_face_indices.get_mut(&file_entity).unwrap();
+        file_face_indices.remove(face_index);
+        for i in face_index..file_face_indices.len() {
+            let face_entity = file_face_indices[i];
+            let face_data = self.faces.get_mut(&face_entity).unwrap();
+            face_data.face_index = i;
         }
     }
 

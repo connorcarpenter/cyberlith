@@ -5,6 +5,7 @@ use bevy_ecs::{
     prelude::{Commands, World},
     system::{Query, ResMut, SystemState},
 };
+use bevy_ecs::system::Res;
 use bevy_log::info;
 
 use naia_bevy_server::{
@@ -20,7 +21,7 @@ use crate::{
 };
 
 // Actions
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum MeshAction {
     //////// x,   y,   z //
     Vertex(i16, i16, i16),
@@ -51,18 +52,27 @@ impl MeshWriter {
 
         let mut system_state: SystemState<(
             Server,
+            Res<ShapeManager>,
             Query<&Vertex3d>,
             Query<&Edge3d>,
-            Query<(&Face3d, &FaceIndex)>,
+            Query<&Face3d>,
             Query<&FileType>,
         )> = SystemState::new(world);
-        let (server, vertex_q, edge_q, face_q, file_type_q) = system_state.get_mut(world);
+        let (
+            server,
+            shape_manager,
+            vertex_q,
+            edge_q,
+            face_q,
+            file_type_q
+        ) = system_state.get_mut(world);
 
         let mut output = Vec::new();
 
         /////////////////////////////////////  id /////////////////
         let mut vertex_map: HashMap<Entity, usize> = HashMap::new();
         let mut edge_map: HashMap<Entity, usize> = HashMap::new();
+        let mut face_list: Vec<Option<MeshAction>> = Vec::new();
 
         info!(
             "writing in world_to_actions(), content_entities: `{:?}`",
@@ -113,6 +123,10 @@ impl MeshWriter {
             }
 
             if let Ok(face) = face_q.get(*entity) {
+                let Some(face_index) = shape_manager.get_face_index(entity) else {
+                    panic!("face entity {:?} does not have an index!", entity);
+                };
+
                 // entity is a face
                 let vertex_a_entity = face.vertex_a.get(&server).unwrap();
                 let vertex_b_entity = face.vertex_b.get(&server).unwrap();
@@ -128,7 +142,9 @@ impl MeshWriter {
                 let edge_b_id = *edge_map.get(&edge_b_entity).unwrap();
                 let edge_c_id = *edge_map.get(&edge_c_entity).unwrap();
 
+
                 let face_info = MeshAction::Face(
+                    face_index as u16,
                     vertex_a_id as u16,
                     vertex_b_id as u16,
                     vertex_c_id as u16,
@@ -136,10 +152,21 @@ impl MeshWriter {
                     edge_b_id as u16,
                     edge_c_id as u16,
                 );
-                output.push(face_info);
+                if face_index >= face_list.len() {
+                    face_list.resize(face_index + 1, None);
+                }
+                face_list[face_index] = Some(face_info);
+
             } else {
                 panic!("entity is not a vertex, edge, or face");
             }
+        }
+
+        for face_info_opt in face_list {
+            let Some(face_info) = face_info_opt else {
+                panic!("face_list contains None");
+            };
+            output.push(face_info);
         }
 
         output
@@ -148,6 +175,7 @@ impl MeshWriter {
     fn write_from_actions(&self, actions: Vec<MeshAction>) -> Box<[u8]> {
         let mut bit_writer = FileBitWriter::new();
 
+        let mut test_face_index = 0;
         for (action_id, action) in actions.iter().enumerate() {
             match action {
                 MeshAction::Vertex(x, y, z) => {
@@ -170,7 +198,12 @@ impl MeshWriter {
 
                     info!("writing edge : ({}, {})", vertex_a, vertex_b);
                 }
-                MeshAction::Face(vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c) => {
+                MeshAction::Face(face_index, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c) => {
+
+                    if *face_index != test_face_index {
+                        panic!("face_index {:?} does not match test_face_index {:?}", face_index, test_face_index);
+                    }
+
                     // continue bit
                     MeshActionType::Face.ser(&mut bit_writer);
 
@@ -186,6 +219,8 @@ impl MeshWriter {
                         "writing face : ({}, {}, {}, {}, {}, {})",
                         vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c
                     );
+
+                    test_face_index += 1;
                 }
             }
         }
@@ -241,6 +276,8 @@ impl MeshReader {
             return Ok(output);
         }
 
+        let mut face_index = 0;
+
         // read loop
         loop {
             let continue_type = MeshActionType::de(bit_reader)?;
@@ -271,8 +308,10 @@ impl MeshReader {
                     let edge_c: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
 
                     output.push(MeshAction::Face(
-                        vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c,
+                        face_index, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c,
                     ));
+
+                    face_index += 1;
                 }
             }
         }
@@ -380,7 +419,7 @@ impl MeshReader {
             }
         }
 
-        let output = MeshReader::post_process_entities(&mut commands, &mut shape_manager, file_entity, output);
+        let output = MeshReader::post_process_entities(&mut shape_manager, file_entity, output);
 
         system_state.apply(world);
 
@@ -404,7 +443,6 @@ impl MeshReader {
 
 impl MeshReader {
     pub fn post_process_entities(
-        commands: &mut Commands,
         shape_manager: &mut ShapeManager,
         file_entity: &Entity,
         shape_entities: Vec<(Entity, ShapeTypeData)>,
@@ -424,7 +462,7 @@ impl MeshReader {
                 }
                 ShapeTypeData::Face(index, vert_a, vert_b, vert_c, edge_a, edge_b, edge_c) => {
                     shape_manager
-                        .on_create_face(commands, file_entity, index, entity, vert_a, vert_b, vert_c, edge_a, edge_b, edge_c);
+                        .on_create_face(file_entity, Some(index), entity, vert_a, vert_b, vert_c, edge_a, edge_b, edge_c);
                 }
             }
         }
