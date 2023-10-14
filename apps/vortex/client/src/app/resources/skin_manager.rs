@@ -109,6 +109,10 @@ impl SkinManager {
         self.face_to_color_entity.get(face_3d_entity)
     }
 
+    pub(crate) fn file_to_bckg_entity(&self, file_entity: &Entity) -> Option<&Entity> {
+        self.file_to_bckg_entity.get(file_entity)
+    }
+
     pub(crate) fn create_networked_face_color_from_world(
         &mut self,
         world: &mut World,

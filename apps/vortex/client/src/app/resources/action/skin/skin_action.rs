@@ -8,6 +8,7 @@ use crate::app::resources::{
     input_manager::InputManager,
     shape_data::CanvasShape,
 };
+use crate::app::resources::action::skin::edit_bckg_color;
 
 #[derive(Clone)]
 pub enum SkinAction {
@@ -15,11 +16,14 @@ pub enum SkinAction {
     SelectFace(Option<(Entity, CanvasShape)>),
     // 2D face entity, new palette color entity (or None to destroy)
     EditColor(Entity, Option<Entity>),
+    // new palette color entity (or None to destroy)
+    EditBckgColor(Entity),
 }
 
 pub enum SkinActionType {
     SelectFace,
     EditColor,
+    EditBckgColor,
 }
 
 impl SkinAction {
@@ -27,6 +31,7 @@ impl SkinAction {
         match self {
             Self::SelectFace(_) => SkinActionType::SelectFace,
             Self::EditColor(_, _) => SkinActionType::EditColor,
+            Self::EditBckgColor(_) => SkinActionType::EditBckgColor,
         }
     }
 
@@ -43,6 +48,7 @@ impl SkinAction {
                 select_face::execute(world, input_manager, current_file_entity, self)
             }
             SkinActionType::EditColor => edit_color::execute(world, self),
+            SkinActionType::EditBckgColor => edit_bckg_color::execute(world, current_file_entity, self),
         }
     }
 }
