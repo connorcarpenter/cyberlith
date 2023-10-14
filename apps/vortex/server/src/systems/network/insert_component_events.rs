@@ -604,7 +604,7 @@ pub fn insert_skin_component_events(
 
         skin_manager.on_create_face_color(&face_3d_entity, &color_entity);
 
-        let content_entity_data = ContentEntityData::new_skin_color();
+        let content_entity_data = ContentEntityData::new_skin_color(None);
         git_manager.on_insert_content_entity(
             &mut server,
             &project_key,

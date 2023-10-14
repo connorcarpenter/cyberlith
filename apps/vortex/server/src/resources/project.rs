@@ -60,6 +60,22 @@ pub struct Project {
 }
 
 impl Project {
+    pub(crate) fn file_find_dependency(&self, file_key: &FileKey, dependency_ext: FileExtension) -> Option<Entity> {
+        let file_entry_val = self.working_file_entries.get(file_key).unwrap();
+        if let Some(dependencies) = file_entry_val.dependencies() {
+            for dependency_key in dependencies {
+                let dependency_file_ext = self.file_extension(dependency_key).unwrap();
+                if dependency_file_ext == dependency_ext {
+                    let dependency_entity = self.file_entity(dependency_key).unwrap();
+                    return Some(dependency_entity);
+                }
+            }
+        }
+        None
+    }
+}
+
+impl Project {
     pub fn new(
         room_key: RoomKey,
         file_entries: HashMap<FileKey, FileEntryValue>,

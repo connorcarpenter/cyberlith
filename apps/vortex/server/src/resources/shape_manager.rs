@@ -122,7 +122,7 @@ pub struct ShapeManager {
     edges: HashMap<Entity, EdgeData>,
     // face entity -> connected vertices
     faces: HashMap<Entity, FaceData>,
-    //
+    // file entity -> face entity list
     file_face_indices: HashMap<Entity, Vec<Entity>>,
 }
 
@@ -166,6 +166,14 @@ impl ShapeManager {
     pub fn get_face_index(&self, entity: &Entity) -> Option<usize> {
         if let Some(face_data) = self.faces.get(entity) {
             Some(face_data.face_index)
+        } else {
+            None
+        }
+    }
+
+    pub fn face_entity_from_index(&self, file_entity: &Entity, face_index: usize) -> Option<Entity> {
+        if let Some(file_face_indices) = self.file_face_indices.get(file_entity) {
+            Some(file_face_indices[face_index])
         } else {
             None
         }
@@ -263,6 +271,7 @@ impl ShapeManager {
     }
 
     fn assign_index_to_new_face(&mut self, file_entity: &Entity, old_index_opt: Option<usize>, face_3d_entity: &Entity) -> usize {
+        info!("assign_index_to_new_face(entity: `{:?}`, index: {:?})", face_3d_entity, old_index_opt);
         if !self.file_face_indices.contains_key(file_entity) {
             self.file_face_indices.insert(*file_entity, Vec::new());
         }

@@ -402,7 +402,7 @@ impl MeshReader {
                         .configure_replication(ReplicationConfig::Delegated)
                         .insert(face_component)
                         .id();
-                    info!("spawning mesh face entity {:?}", entity_id);
+                    info!("spawning mesh face entity `{:?}`, index is {:?}", entity_id, face_index);
                     output.push((
                         entity_id,
                         ShapeTypeData::Face(

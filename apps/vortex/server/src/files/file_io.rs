@@ -132,6 +132,7 @@ pub fn load_content_entities(
     let mut system_state: SystemState<(Commands, Server)> = SystemState::new(world);
     let (mut commands, mut server) = system_state.get_mut(world);
 
+    // TODO: handle this in initial read
     post_process_loaded_networked_entities(
         &mut commands,
         &mut server,
@@ -145,6 +146,7 @@ pub fn load_content_entities(
     new_entities
 }
 
+// TODO: remove this and handle in initial read
 fn post_process_loaded_networked_entities(
     commands: &mut Commands,
     server: &mut Server,
@@ -237,7 +239,7 @@ pub fn despawn_file_content_entities(
             ContentEntityData::PaletteColor => {
                 palette_manager.deregister_color(entity, None);
             }
-            ContentEntityData::FaceColor => {
+            ContentEntityData::FaceColor(_) => {
                 skin_manager.deregister_face_color(entity);
             }
         }
@@ -269,14 +271,14 @@ pub fn add_file_dependency(
 
     project.file_add_dependency(file_key, &dependency_file_key);
 
-    let palette_file_entity = project.file_entity(&dependency_file_key).unwrap();
+    let dependency_entity = project.file_entity(&dependency_file_key).unwrap();
 
     info!("creating new FileDependency!");
     let mut component = FileDependency::new();
     component.file_entity.set(server, file_entity);
     component
         .dependency_entity
-        .set(server, &palette_file_entity);
+        .set(server, &dependency_entity);
     let entity = commands
         .spawn_empty()
         .enable_replication(server)

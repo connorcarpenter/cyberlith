@@ -9,6 +9,7 @@ use bevy_ecs::{
     system::{Commands, ResMut, Resource, SystemState},
     world::{Mut, World},
 };
+use bevy_ecs::system::{Query, Res};
 use bevy_log::info;
 use git2::{Cred, Repository, Tree};
 
@@ -19,6 +20,7 @@ use vortex_proto::{
     messages::ChangelistMessage,
     resources::FileKey,
 };
+use vortex_proto::components::FaceColor;
 
 use crate::{
     config::GitConfig,
@@ -27,6 +29,7 @@ use crate::{
         UserManager,
     },
 };
+use crate::resources::{PaletteManager, ShapeManager};
 
 #[derive(Resource)]
 pub struct GitManager {
@@ -89,6 +92,9 @@ impl GitManager {
         project_key: &ProjectKey,
         file_key: &FileKey,
     ) {
+        let mut new_content_entities_opt = None;
+        let mut file_has_dependencies = false;
+
         {
             // user join filespace
             let project = self.projects.get_mut(project_key).unwrap();
@@ -96,6 +102,7 @@ impl GitManager {
                 project.user_join_filespace(world, user_key, file_key)
             {
                 self.register_content_entities(world, project_key, file_key, &new_content_entities);
+                new_content_entities_opt = Some(new_content_entities);
             }
         }
 
@@ -103,10 +110,79 @@ impl GitManager {
             // user join dependency filespaces
             let project = self.projects.get_mut(project_key).unwrap();
             let dependency_file_keys = project.dependency_file_keys(file_key);
+            if !dependency_file_keys.is_empty() {
+                file_has_dependencies = true;
+            }
             for dependency_key in dependency_file_keys {
                 self.on_client_open_dependency(world, user_key, project_key, &dependency_key);
             }
         }
+
+        {
+            // process content entities that depend on dependencies
+            if file_has_dependencies {
+                if let Some(content_entities) = new_content_entities_opt {
+                    let file_entity = self.file_entity(project_key, file_key).unwrap();
+                    self.process_content_entities_with_dependencies(world, project_key, file_key, &file_entity, content_entities);
+                }
+            }
+        }
+    }
+
+    fn process_content_entities_with_dependencies(
+        &mut self,
+        world: &mut World,
+        project_key: &ProjectKey,
+        file_key: &FileKey,
+        file_entity: &Entity,
+        content_entities: HashMap<Entity, ContentEntityData>
+    ) {
+
+        let mut system_state: SystemState<(Server, Res<ShapeManager>, Res<PaletteManager>, Query<&mut FaceColor>)> = SystemState::new(world);
+        let (server, shape_manager, palette_manager, mut face_color_q) = system_state.get_mut(world);
+
+        for (entity, data) in content_entities {
+            if let ContentEntityData::FaceColor(file_data_opt) = data {
+                let Some((face_index, palette_index)) = file_data_opt else {
+                    panic!("Could not find file data for entity: {:?}", entity);
+                };
+
+                let mesh_file_entity = self.file_find_dependency(project_key, file_key, file_entity, FileExtension::Mesh).unwrap();
+                let palette_file_entity = self.file_find_dependency(project_key, file_key, file_entity, FileExtension::Palette).unwrap();
+
+                // find face_3d_entity from face_index
+                let face_3d_entity = shape_manager.face_entity_from_index(
+                    &mesh_file_entity,
+                    face_index as usize
+                ).unwrap();
+
+                // find palette_color_entity from palette_index
+                let palette_color_entity = palette_manager.color_entity_from_index(
+                    &palette_file_entity,
+                    palette_index as usize
+                ).unwrap();
+
+                // set face_3d_entity and palette_color_entity into FaceColor component
+                let Ok(mut face_color) = face_color_q.get_mut(entity) else {
+                    panic!("Could not find face color for entity: {:?}", entity);
+                };
+                face_color.face_3d_entity.set(&server, &face_3d_entity);
+                face_color.palette_color_entity.set(&server, &palette_color_entity);
+            }
+        }
+
+        system_state.apply(world);
+    }
+
+    pub fn file_find_dependency(
+        &self,
+        project_key: &ProjectKey,
+        file_key: &FileKey,
+        file_entity: &Entity,
+        file_extension: FileExtension
+    ) -> Option<Entity> {
+        let project = self.projects.get(project_key).unwrap();
+        project.file_find_dependency(file_key, file_extension)
     }
 
     pub(crate) fn queue_client_open_dependency(

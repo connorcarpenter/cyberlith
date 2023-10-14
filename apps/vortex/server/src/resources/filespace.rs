@@ -18,7 +18,7 @@ pub enum ContentEntityData {
     Frame,
     Rotation,
     PaletteColor,
-    FaceColor,
+    FaceColor(Option<(u16, u8)>),
 }
 
 impl ContentEntityData {
@@ -42,8 +42,8 @@ impl ContentEntityData {
         Self::PaletteColor
     }
 
-    pub fn new_skin_color() -> Self {
-        Self::FaceColor
+    pub fn new_skin_color(file_data_opt: Option<(u16, u8)>) -> Self {
+        Self::FaceColor(file_data_opt)
     }
 }
 

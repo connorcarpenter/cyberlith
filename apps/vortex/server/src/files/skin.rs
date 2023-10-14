@@ -5,15 +5,17 @@ use bevy_ecs::{
     prelude::{Commands, World},
     system::SystemState,
 };
+use bevy_ecs::system::{Query, Res};
 use bevy_log::info;
 
-use naia_bevy_server::{BitReader, FileBitWriter, Serde, SerdeErr, Server};
+use naia_bevy_server::{BitReader, CommandsExt, FileBitWriter, ReplicationConfig, Serde, SerdeErr, Server};
 
 use vortex_proto::{components::FileExtension, resources::FileKey};
+use vortex_proto::components::{FaceColor, PaletteColor};
 
 use crate::{
     files::{add_file_dependency, FileWriter},
-    resources::{ContentEntityData, Project},
+    resources::{ShapeManager, ContentEntityData, Project},
 };
 
 // Actions
@@ -23,12 +25,15 @@ enum SkinAction {
     PaletteFile(String, String),
     // path, file_name
     MeshFile(String, String),
+    // mesh face index, palette color index
+    SkinColor(u16, u8),
 }
 
 #[derive(Serde, Clone, PartialEq)]
 enum SkinActionType {
     PaletteFile,
     MeshFile,
+    SkinColor,
     None,
 }
 
@@ -38,7 +43,7 @@ pub struct SkinWriter;
 impl SkinWriter {
     fn world_to_actions(
         &self,
-        _world: &mut World,
+        world: &mut World,
         project: &Project,
         content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Vec<SkinAction> {
@@ -46,8 +51,9 @@ impl SkinWriter {
 
         let mut palette_dependency_key_opt = None;
         let mut mesh_dependency_key_opt = None;
+        let mut face_color_entities = Vec::new();
 
-        for (_content_entity, content_data) in content_entities {
+        for (content_entity, content_data) in content_entities {
             match content_data {
                 ContentEntityData::Dependency(dependency_key) => {
                     let dependency_value = working_file_entries.get(dependency_key).unwrap();
@@ -63,6 +69,9 @@ impl SkinWriter {
                             panic!("skin file should depend on a single .mesh file & a single .palette");
                         }
                     }
+                }
+                ContentEntityData::FaceColor(_) => {
+                    face_color_entities.push(*content_entity);
                 }
                 _ => {
                     panic!("skin should not have this content entity type");
@@ -90,6 +99,32 @@ impl SkinWriter {
             ));
         }
 
+        for face_color_entity in face_color_entities {
+            let mut system_state: SystemState<(
+                Server,
+                Res<ShapeManager>,
+                Query<&PaletteColor>,
+                Query<&FaceColor>
+            )> = SystemState::new(world);
+            let (
+                server,
+                shape_manager,
+                palette_color_q,
+                face_color_q
+            ) = system_state.get_mut(world);
+
+            let face_color = face_color_q.get(face_color_entity).unwrap();
+
+            let face_3d_entity = face_color.face_3d_entity.get(&server).unwrap();
+            let face_index = shape_manager.get_face_index(&face_3d_entity).unwrap() as u16;
+
+            let palette_entity = face_color.palette_color_entity.get(&server).unwrap();
+            let palette_color = palette_color_q.get(palette_entity).unwrap();
+            let palette_color_index = *palette_color.index;
+
+            actions.push(SkinAction::SkinColor(face_index, palette_color_index));
+        }
+
         actions
     }
 
@@ -107,6 +142,13 @@ impl SkinWriter {
                     SkinActionType::MeshFile.ser(&mut bit_writer);
                     path.ser(&mut bit_writer);
                     file_name.ser(&mut bit_writer);
+                }
+                SkinAction::SkinColor(face_index, palette_color_index) => {
+                    SkinActionType::SkinColor.ser(&mut bit_writer);
+
+                    // TODO: could optimize these a bit more .. unlikely to use all this bits
+                    face_index.ser(&mut bit_writer);
+                    palette_color_index.ser(&mut bit_writer);
                 }
             }
         }
@@ -157,6 +199,11 @@ impl SkinReader {
                     let file_name = String::de(bit_reader)?;
                     actions.push(SkinAction::MeshFile(path, file_name));
                 }
+                SkinActionType::SkinColor => {
+                    let face_index = u16::de(bit_reader)?;
+                    let palette_color_index = u8::de(bit_reader)?;
+                    actions.push(SkinAction::SkinColor(face_index, palette_color_index));
+                }
                 SkinActionType::None => {
                     break;
                 }
@@ -205,6 +252,21 @@ impl SkinReader {
                         &mesh_file_name,
                     );
                     output.insert(new_entity, ContentEntityData::new_dependency(new_file_key));
+                }
+                SkinAction::SkinColor(face_index, palette_index) => {
+
+                    let mut face_color_component = FaceColor::new();
+                    face_color_component.skin_file_entity.set(&server, file_entity);
+
+                    let entity_id = commands
+                        .spawn_empty()
+                        .enable_replication(&mut server)
+                        // setting to Delegated to match client-created faces
+                        .configure_replication(ReplicationConfig::Delegated)
+                        .insert(face_color_component)
+                        .id();
+                    info!("spawning face color entity {:?}", entity_id);
+                    output.insert(entity_id, ContentEntityData::new_skin_color(Some((face_index, palette_index))));
                 }
             }
         }

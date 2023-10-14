@@ -66,7 +66,7 @@ impl AnimWriter {
             match content_data {
                 ContentEntityData::Shape(_)
                 | ContentEntityData::PaletteColor
-                | ContentEntityData::FaceColor => {
+                | ContentEntityData::FaceColor(_) => {
                     panic!("animation should not have this content entity type");
                 }
                 ContentEntityData::Dependency(dependency_key) => {
