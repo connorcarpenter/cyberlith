@@ -268,7 +268,13 @@ fn process_entity_auth_status(
                 owning_file_entity
             );
         }
+    } else if skin_manager.entity_is_bckg_color(entity) {
+        info!(
+            "auth processing for background skin color entity `{:?}`: `{:?}`",
+            entity, status
+        );
+        // no need to set auth status on action stack because auth for background color is automatically given (and reset upon update)
     } else {
-        panic!("unhandled auth status: entity `{:?}`: {:?}", entity, status);
+        warn!("unhandled auth status: entity `{:?}`: {:?}", entity, status);
     }
 }

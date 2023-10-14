@@ -1,7 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{entity::Entity, prelude::Query, system::Resource};
-use bevy_log::info;
 
 use vortex_proto::components::PaletteColor;
 
@@ -25,11 +24,11 @@ impl FileColorData {
         color_order: usize,
         mut color_q_opt: Option<&mut Query<&mut PaletteColor>>,
     ) {
-        info!("--- add color ---");
-        for i in 0..self.color_list.len() {
-            info!("index: {}, entity: {:?}", i, self.color_list[i]);
-        }
-        info!("- op -");
+        // info!("--- add color ---");
+        // for i in 0..self.color_list.len() {
+        //     info!("index: {}, entity: {:?}", i, self.color_list[i]);
+        // }
+        // info!("- op -");
 
         self.colors.insert(color_entity);
 
@@ -39,10 +38,10 @@ impl FileColorData {
             // set color entity
             self.color_list[color_order] = Some(color_entity);
         } else {
-            info!(
-                "add_color: index: {:?}, entity: `{:?}`",
-                color_order, color_entity
-            );
+            // info!(
+            //     "add_color: index: {:?}, entity: `{:?}`",
+            //     color_order, color_entity
+            // );
             self.color_list.insert(color_order, Some(color_entity));
 
             // move all elements after color_order up one
@@ -57,10 +56,10 @@ impl FileColorData {
             }
         }
 
-        info!("--- result ---");
-        for i in 0..self.color_list.len() {
-            info!("index: {}, entity: {:?}", i, self.color_list[i]);
-        }
+        // info!("--- result ---");
+        // for i in 0..self.color_list.len() {
+        //     info!("index: {}, entity: {:?}", i, self.color_list[i]);
+        // }
     }
 
     fn remove_color(

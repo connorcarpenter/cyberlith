@@ -52,6 +52,7 @@ impl SkinWriter {
 
         let mut palette_dependency_key_opt = None;
         let mut mesh_dependency_key_opt = None;
+        let mut bckg_color_entity = None;
         let mut face_color_entities = Vec::new();
 
         for (content_entity, content_data) in content_entities {
@@ -70,6 +71,9 @@ impl SkinWriter {
                             panic!("skin file should depend on a single .mesh file & a single .palette");
                         }
                     }
+                }
+                ContentEntityData::BackgroundSkinColor(_) => {
+                    bckg_color_entity = Some(*content_entity);
                 }
                 ContentEntityData::FaceColor(_) => {
                     face_color_entities.push(*content_entity);
@@ -98,6 +102,29 @@ impl SkinWriter {
                 dependency_key.path().to_string(),
                 dependency_key.name().to_string(),
             ));
+        }
+
+        // Write Background Color
+        if let Some(bckg_entity) = bckg_color_entity {
+            info!("writing background color");
+            let mut system_state: SystemState<(
+                Server,
+                Query<&PaletteColor>,
+                Query<&BackgroundSkinColor>
+            )> = SystemState::new(world);
+            let (
+                server,
+                palette_color_q,
+                bckg_color_q
+            ) = system_state.get_mut(world);
+
+            let bckg_color = bckg_color_q.get(bckg_entity).unwrap();
+
+            let palette_entity = bckg_color.palette_color_entity.get(&server).unwrap();
+            let palette_color = palette_color_q.get(palette_entity).unwrap();
+            let palette_color_index = *palette_color.index;
+
+            actions.push(SkinAction::BackgroundColor(palette_color_index));
         }
 
         for face_color_entity in face_color_entities {
@@ -179,9 +206,7 @@ impl FileWriter for SkinWriter {
     }
 
     fn write_new_default(&self) -> Box<[u8]> {
-        let mut actions = Vec::new();
-
-        actions.push(SkinAction::BackgroundColor(0));
+        let actions = Vec::new();
 
         self.write_from_actions(actions)
     }

@@ -242,7 +242,7 @@ pub fn despawn_file_content_entities(
                 palette_manager.deregister_color(entity, None);
             }
             ContentEntityData::BackgroundSkinColor(_) => {
-                // register with skin_manager?
+                // deregister with skin_manager?
             }
             ContentEntityData::FaceColor(_) => {
                 skin_manager.deregister_face_color(entity);

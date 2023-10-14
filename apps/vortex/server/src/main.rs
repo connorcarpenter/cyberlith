@@ -20,7 +20,7 @@ use vortex_proto::{
     components::{
         AnimFrame, AnimRotation, Edge3d, Face3d, FaceColor, FileDependency, FileSystemChild,
         FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, PaletteColor, ShapeName,
-        Vertex3d, VertexRoot,
+        Vertex3d, VertexRoot, BackgroundSkinColor,
     },
     protocol,
 };
@@ -77,6 +77,7 @@ fn main() {
             )
                 .in_set(ReceiveEvents),
         )
+        .add_systems(Startup, network::insert_component_event_startup)
         .add_systems(
             Update,
             (
@@ -110,6 +111,7 @@ fn main() {
         .add_event::<InsertComponentEvent<AnimRotation>>()
         .add_event::<InsertComponentEvent<AnimFrame>>()
         .add_event::<InsertComponentEvent<PaletteColor>>()
+        .add_event::<InsertComponentEvent<BackgroundSkinColor>>()
         .add_event::<InsertComponentEvent<FaceColor>>()
         // Other Systems
         .add_systems(Startup, setup)

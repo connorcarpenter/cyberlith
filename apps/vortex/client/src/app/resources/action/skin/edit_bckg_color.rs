@@ -1,12 +1,12 @@
 use bevy_ecs::{
+    entity::Entity,
     event::EventWriter,
     prelude::World,
-    system::{Query, ResMut, SystemState},
+    system::{Commands, Query, ResMut, SystemState},
 };
-use bevy_ecs::entity::Entity;
-use bevy_log::info;
+use bevy_log::{info, warn};
 
-use naia_bevy_client::Client;
+use naia_bevy_client::{Client, CommandsExt};
 
 use vortex_proto::components::{BackgroundSkinColor};
 
@@ -28,6 +28,7 @@ pub(crate) fn execute(world: &mut World, current_file_entity: Entity, action: Sk
         new_palette_color_entity
     );
     let mut system_state: SystemState<(
+        Commands,
         Client,
         ResMut<Canvas>,
         ResMut<SkinManager>,
@@ -35,7 +36,8 @@ pub(crate) fn execute(world: &mut World, current_file_entity: Entity, action: Sk
         Query<&mut BackgroundSkinColor>,
     )> = SystemState::new(world);
     let (
-        client,
+        mut commands,
+        mut client,
         mut canvas,
         skin_manager,
         mut shape_color_resync_event_writer,
@@ -43,11 +45,28 @@ pub(crate) fn execute(world: &mut World, current_file_entity: Entity, action: Sk
     ) = system_state.get_mut(world);
 
     let bckg_color_entity = *skin_manager.file_to_bckg_entity(&current_file_entity).unwrap();
+
+    // check that we have auth
+    let auth = commands.entity(bckg_color_entity).authority(&client).unwrap();
+    if auth.is_denied() {
+        warn!("EditBckgColor action denied, we do not have auth");
+        return vec![];
+    }
+    let mut must_request_auth = true;
+    if auth.is_requested() || auth.is_granted() {
+        must_request_auth = false;
+    }
+    if must_request_auth {
+        commands.entity(bckg_color_entity).request_authority(&mut client);
+    }
+
+    // get palette color entity
     let Ok(mut bckg_color) = bckg_color_q.get_mut(bckg_color_entity) else {
         panic!("Failed to get BackgroundSkinColor for face color entity {:?}!", bckg_color_entity);
     };
     let old_palette_color_entity = bckg_color.palette_color_entity.get(&client).unwrap();
 
+    // set palette color entity
     bckg_color
         .palette_color_entity
         .set(&client, &new_palette_color_entity);

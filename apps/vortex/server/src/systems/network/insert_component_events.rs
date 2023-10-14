@@ -3,17 +3,18 @@ use std::collections::HashMap;
 use bevy_ecs::{
     entity::Entity,
     event::{EventReader, EventWriter},
-    system::{Commands, Local, Query, Res, ResMut},
+    system::{Resource, SystemState, Commands, Local, Query, Res, ResMut},
+    world::{Mut, World},
 };
 use bevy_log::info;
 
-use naia_bevy_server::{events::InsertComponentEvents, Server};
+use naia_bevy_server::{events::InsertComponentEvents, Replicate, Server};
 
 use vortex_proto::{
     components::{
         AnimFrame, AnimRotation, Edge3d, Face3d, FaceColor, FileDependency, FileSystemChild,
         FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, PaletteColor, ShapeName,
-        Vertex3d, VertexRoot,
+        Vertex3d, VertexRoot, BackgroundSkinColor
     },
     resources::FileKey,
 };
@@ -27,124 +28,61 @@ use crate::{
     },
 };
 
-pub fn insert_component_events(
-    mut event_reader: EventReader<InsertComponentEvents>,
+#[derive(Resource)]
+struct CachedInsertComponentEventsState {
+    event_state: SystemState<EventReader<'static, 'static, InsertComponentEvents>>,
+}
 
-    // for filesystem
-    mut insert_fs_entry_event_writer: EventWriter<InsertComponentEvent<FileSystemEntry>>,
-    mut insert_fs_root_event_writer: EventWriter<InsertComponentEvent<FileSystemRootChild>>,
-    mut insert_fs_child_event_writer: EventWriter<InsertComponentEvent<FileSystemChild>>,
-    mut insert_fs_dependency_event_writer: EventWriter<InsertComponentEvent<FileDependency>>,
+pub fn insert_component_event_startup(world: &mut World) {
+    let initial_state: SystemState<EventReader<InsertComponentEvents>> = SystemState::new(world);
+    world.insert_resource(CachedInsertComponentEventsState {
+        event_state: initial_state,
+    });
+}
 
-    // for vertices
-    mut insert_vertex_3d_event_writer: EventWriter<InsertComponentEvent<Vertex3d>>,
-    mut insert_vertex_root_event_writer: EventWriter<InsertComponentEvent<VertexRoot>>,
+pub fn insert_component_events(world: &mut World) {
+    let mut events_collection: Vec<InsertComponentEvents> = Vec::new();
 
-    mut insert_edge_3d_event_writer: EventWriter<InsertComponentEvent<Edge3d>>,
-    mut insert_face_3d_event_writer: EventWriter<InsertComponentEvent<Face3d>>,
-    mut insert_file_type_event_writer: EventWriter<InsertComponentEvent<FileType>>,
-    mut insert_owned_by_event_writer: EventWriter<InsertComponentEvent<OwnedByFile>>,
-    mut insert_shape_name_event_writer: EventWriter<InsertComponentEvent<ShapeName>>,
+    world.resource_scope(
+        |world, mut events_reader_state: Mut<CachedInsertComponentEventsState>| {
+            let mut events_reader = events_reader_state.event_state.get_mut(world);
 
-    // for animations
-    mut insert_rotation_event_writer: EventWriter<InsertComponentEvent<AnimRotation>>,
-    mut insert_frame_event_writer: EventWriter<InsertComponentEvent<AnimFrame>>,
+            for events in events_reader.iter() {
+                events_collection.push(events.clone());
+            }
+        },
+    );
 
-    mut insert_palette_color_event_writer: EventWriter<InsertComponentEvent<PaletteColor>>,
-    mut insert_face_color_event_writer: EventWriter<InsertComponentEvent<FaceColor>>,
-) {
-    for events in event_reader.iter() {
-        // on FileSystemEntry Insert Event
-        for (user_key, entity) in events.read::<FileSystemEntry>() {
-            insert_fs_entry_event_writer.send(InsertComponentEvent::<FileSystemEntry>::new(
-                user_key, entity,
-            ));
-        }
+    for events in events_collection {
+        insert_component_event::<FileSystemEntry>(world, &events);
+        insert_component_event::<FileSystemRootChild>(world, &events);
+        insert_component_event::<FileSystemChild>(world, &events);
+        insert_component_event::<FileDependency>(world, &events);
 
-        // on FileSystemRootChild Insert Event
-        for (user_key, entity) in events.read::<FileSystemRootChild>() {
-            insert_fs_root_event_writer.send(InsertComponentEvent::<FileSystemRootChild>::new(
-                user_key, entity,
-            ));
-        }
+        insert_component_event::<Vertex3d>(world, &events);
+        insert_component_event::<VertexRoot>(world, &events);
 
-        // on FileSystemChild Insert Event
-        for (user_key, entity) in events.read::<FileSystemChild>() {
-            insert_fs_child_event_writer.send(InsertComponentEvent::<FileSystemChild>::new(
-                user_key, entity,
-            ));
-        }
+        insert_component_event::<Edge3d>(world, &events);
+        insert_component_event::<Face3d>(world, &events);
 
-        // on FileDependency Insert Event
-        for (user_key, entity) in events.read::<FileDependency>() {
-            insert_fs_dependency_event_writer.send(InsertComponentEvent::<FileDependency>::new(
-                user_key, entity,
-            ));
-        }
+        insert_component_event::<FileType>(world, &events);
+        insert_component_event::<OwnedByFile>(world, &events);
+        insert_component_event::<ShapeName>(world, &events);
+        insert_component_event::<AnimFrame>(world, &events);
+        insert_component_event::<AnimRotation>(world, &events);
+        insert_component_event::<PaletteColor>(world, &events);
+        insert_component_event::<BackgroundSkinColor>(world, &events);
+        insert_component_event::<FaceColor>(world, &events);
+    }
+}
 
-        // on Vertex3d Insert Event
-        for (user_key, entity) in events.read::<Vertex3d>() {
-            insert_vertex_3d_event_writer
-                .send(InsertComponentEvent::<Vertex3d>::new(user_key, entity));
-        }
+fn insert_component_event<T: Replicate>(world: &mut World, events: &InsertComponentEvents) {
+    let mut system_state: SystemState<EventWriter<InsertComponentEvent<T>>> =
+        SystemState::new(world);
+    let mut event_writer = system_state.get_mut(world);
 
-        // on Vertex Root Child Event
-        for (user_key, entity) in events.read::<VertexRoot>() {
-            insert_vertex_root_event_writer
-                .send(InsertComponentEvent::<VertexRoot>::new(user_key, entity));
-        }
-
-        // on OwnedByFile Insert Event
-        for (user_key, entity) in events.read::<OwnedByFile>() {
-            insert_owned_by_event_writer
-                .send(InsertComponentEvent::<OwnedByFile>::new(user_key, entity));
-        }
-
-        // on FileType Insert Event
-        for (user_key, entity) in events.read::<FileType>() {
-            insert_file_type_event_writer
-                .send(InsertComponentEvent::<FileType>::new(user_key, entity));
-        }
-
-        // on Edge3d Insert Event
-        for (user_key, entity) in events.read::<Edge3d>() {
-            insert_edge_3d_event_writer.send(InsertComponentEvent::<Edge3d>::new(user_key, entity));
-        }
-
-        // on Face3d Insert Event
-        for (user_key, entity) in events.read::<Face3d>() {
-            insert_face_3d_event_writer.send(InsertComponentEvent::<Face3d>::new(user_key, entity));
-        }
-
-        // on ShapeName Insert Event
-        for (user_key, entity) in events.read::<ShapeName>() {
-            insert_shape_name_event_writer
-                .send(InsertComponentEvent::<ShapeName>::new(user_key, entity));
-        }
-
-        // on AnimRotation Insert Event
-        for (user_key, entity) in events.read::<AnimRotation>() {
-            insert_rotation_event_writer
-                .send(InsertComponentEvent::<AnimRotation>::new(user_key, entity));
-        }
-
-        // on AnimFrame Insert Event
-        for (user_key, entity) in events.read::<AnimFrame>() {
-            insert_frame_event_writer
-                .send(InsertComponentEvent::<AnimFrame>::new(user_key, entity));
-        }
-
-        // on PaletteColor Insert Event
-        for (user_key, entity) in events.read::<PaletteColor>() {
-            insert_palette_color_event_writer
-                .send(InsertComponentEvent::<PaletteColor>::new(user_key, entity));
-        }
-
-        // on FaceColor Insert Event
-        for (user_key, entity) in events.read::<FaceColor>() {
-            insert_face_color_event_writer
-                .send(InsertComponentEvent::<FaceColor>::new(user_key, entity));
-        }
+    for (user_key, entity) in events.read::<T>() {
+        event_writer.send(InsertComponentEvent::<T>::new(user_key, entity));
     }
 }
 
@@ -581,10 +519,39 @@ pub fn insert_skin_component_events(
     user_manager: ResMut<UserManager>,
     mut git_manager: ResMut<GitManager>,
     mut skin_manager: ResMut<SkinManager>,
+    mut bckg_events: EventReader<InsertComponentEvent<BackgroundSkinColor>>,
     mut color_events: EventReader<InsertComponentEvent<FaceColor>>,
     key_q: Query<&FileKey>,
+    bckg_q: Query<&BackgroundSkinColor>,
     color_q: Query<&FaceColor>,
 ) {
+    // on BackgroundSkinColor Insert Event
+    for event in bckg_events.iter() {
+        let user_key = event.user_key;
+        let color_entity = event.entity;
+        info!("entity: `{:?}`, inserted BackgroundSkinColor", color_entity);
+
+        let color = bckg_q.get(color_entity).unwrap();
+        let skin_file_entity: Entity = color.skin_file_entity.get(&server).unwrap();
+
+        let project_key = user_manager
+            .user_session_data(&user_key)
+            .unwrap()
+            .project_key()
+            .unwrap();
+        let file_key = key_q.get(skin_file_entity).unwrap().clone();
+
+        let content_entity_data = ContentEntityData::new_background_skin_color(None);
+        git_manager.on_insert_content_entity(
+            &mut server,
+            &project_key,
+            &file_key,
+            &color_entity,
+            &content_entity_data,
+        );
+
+        git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
+    }
     // on FaceColor Insert Event
     for event in color_events.iter() {
         let user_key = event.user_key;

@@ -1,4 +1,5 @@
 use bevy_ecs::{
+    prelude::EventWriter,
     event::EventReader,
     system::{Query, ResMut},
 };
@@ -6,12 +7,10 @@ use bevy_log::info;
 
 use naia_bevy_client::{events::UpdateComponentEvents, Client};
 
-use vortex_proto::components::{
-    AnimFrame, AnimRotation, ChangelistEntry, EdgeAngle, FileSystemChild, FileSystemEntry,
-    FileSystemRootChild, PaletteColor, ShapeName, Vertex3d,
-};
+use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, EdgeAngle, FaceColor, FileSystemChild, FileSystemEntry, FileSystemRootChild, PaletteColor, ShapeName, Vertex3d};
 
 use crate::app::{
+    events::ShapeColorResyncEvent,
     components::file_system::{ChangelistUiState, FileSystemEntryLocal},
     resources::{
         animation_manager::AnimationManager,
@@ -33,6 +32,7 @@ pub fn update_component_events(
     mut cl_q: Query<(&ChangelistEntry, &mut ChangelistUiState)>,
     frame_q: Query<&AnimFrame>,
     color_q: Query<&PaletteColor>,
+    mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
 ) {
     for events in event_reader.iter() {
         // on FileSystemEntry Update Event
@@ -130,6 +130,17 @@ pub fn update_component_events(
             if existing_color_entity != Some(color_entity) {
                 palette_manager.queue_resync_color_order(&file_entity);
             }
+        }
+        let mut updated_colors = false;
+        for (_tick, _entity) in events.read::<BackgroundSkinColor>() {
+            updated_colors = true;
+        }
+        for (_tick, _entity) in events.read::<FaceColor>() {
+            updated_colors = true;
+        }
+
+        if updated_colors {
+            shape_color_resync_events.send(ShapeColorResyncEvent);
         }
     }
 }

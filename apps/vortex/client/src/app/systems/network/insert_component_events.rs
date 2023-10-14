@@ -51,7 +51,6 @@ pub fn insert_component_event_startup(world: &mut World) {
     });
 }
 
-// if this gets big, just switch to a &mut World
 pub fn insert_component_events(world: &mut World) {
     let mut events_collection: Vec<InsertComponentEvents> = Vec::new();
 

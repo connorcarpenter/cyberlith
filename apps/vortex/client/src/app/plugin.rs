@@ -9,16 +9,15 @@ use vortex_proto::{
     components::{
         AnimFrame, AnimRotation, ChangelistEntry, Edge3d, EdgeAngle, EntryKind, Face3d, FaceColor,
         FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType,
-        OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot,
+        OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot, BackgroundSkinColor,
     },
     protocol,
 };
 
-use crate::app::events::ShapeColorResyncEvent;
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
     config::ConfigPlugin,
-    events::{InsertComponentEvent, LoginEvent},
+    events::{ShapeColorResyncEvent, InsertComponentEvent, LoginEvent},
     resources::{
         action::file::FileActions, animation_manager::AnimationManager,
         camera_manager::CameraManager, canvas::Canvas, compass::Compass, edge_manager::EdgeManager,
@@ -98,6 +97,7 @@ impl Plugin for VortexPlugin {
             .add_event::<InsertComponentEvent<AnimFrame>>()
             .add_event::<InsertComponentEvent<AnimRotation>>()
             .add_event::<InsertComponentEvent<PaletteColor>>()
+            .add_event::<InsertComponentEvent<BackgroundSkinColor>>()
             .add_event::<InsertComponentEvent<FaceColor>>()
             // shape waitlist
             .init_resource::<ShapeWaitlist>()

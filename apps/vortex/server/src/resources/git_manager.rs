@@ -6,30 +6,27 @@ use std::{
 
 use bevy_ecs::{
     entity::Entity,
-    system::{Commands, ResMut, Resource, SystemState},
+    system::{Query, Res, Commands, ResMut, Resource, SystemState},
     world::{Mut, World},
 };
-use bevy_ecs::system::{Query, Res};
 use bevy_log::info;
 use git2::{Cred, Repository, Tree};
 
 use naia_bevy_server::{BigMap, CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};
 
 use vortex_proto::{
-    components::{EntryKind, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild},
+    components::{BackgroundSkinColor, FaceColor, EntryKind, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild},
     messages::ChangelistMessage,
     resources::FileKey,
 };
-use vortex_proto::components::FaceColor;
 
 use crate::{
     config::GitConfig,
-    resources::{
+    resources::{PaletteManager, ShapeManager, SkinManager,
         project::Project, project::ProjectKey, ContentEntityData, FileEntryValue, RollbackResult,
         UserManager,
     },
 };
-use crate::resources::{PaletteManager, ShapeManager};
 
 #[derive(Resource)]
 pub struct GitManager {
@@ -135,37 +132,63 @@ impl GitManager {
         file_key: &FileKey,
         content_entities: HashMap<Entity, ContentEntityData>
     ) {
-
-        let mut system_state: SystemState<(Server, Res<ShapeManager>, Res<PaletteManager>, Query<&mut FaceColor>)> = SystemState::new(world);
-        let (server, shape_manager, palette_manager, mut face_color_q) = system_state.get_mut(world);
+        info!("processing content entities with dependencies");
+        let mut system_state: SystemState<(Server, Res<ShapeManager>, Res<PaletteManager>, ResMut<SkinManager>, Query<&mut BackgroundSkinColor>, Query<&mut FaceColor>)> = SystemState::new(world);
+        let (server, shape_manager, palette_manager, mut skin_manager, mut bckg_color_q, mut face_color_q) = system_state.get_mut(world);
 
         for (entity, data) in content_entities {
-            if let ContentEntityData::FaceColor(file_data_opt) = data {
-                let Some((face_index, palette_index)) = file_data_opt else {
-                    panic!("Could not find file data for entity: {:?}", entity);
-                };
+            match data {
+                ContentEntityData::BackgroundSkinColor(file_data_opt) => {
+                    let Some(palette_index) = file_data_opt else {
+                        panic!("Could not find file data for entity: {:?}", entity);
+                    };
 
-                let mesh_file_entity = self.file_find_dependency(project_key, file_key, FileExtension::Mesh).unwrap();
-                let palette_file_entity = self.file_find_dependency(project_key, file_key, FileExtension::Palette).unwrap();
+                    let palette_file_entity = self.file_find_dependency(project_key, file_key, FileExtension::Palette).unwrap();
 
-                // find face_3d_entity from face_index
-                let face_3d_entity = shape_manager.face_entity_from_index(
-                    &mesh_file_entity,
-                    face_index as usize
-                ).unwrap();
+                    // find palette_color_entity from palette_index
+                    let palette_color_entity = palette_manager.color_entity_from_index(
+                        &palette_file_entity,
+                        palette_index as usize
+                    ).unwrap();
 
-                // find palette_color_entity from palette_index
-                let palette_color_entity = palette_manager.color_entity_from_index(
-                    &palette_file_entity,
-                    palette_index as usize
-                ).unwrap();
+                    // set face_3d_entity and palette_color_entity into FaceColor component
+                    let Ok(mut bckg_color) = bckg_color_q.get_mut(entity) else {
+                        panic!("Could not find background skin color for entity: {:?}", entity);
+                    };
+                    bckg_color.palette_color_entity.set(&server, &palette_color_entity);
+                    info!("setting palette color entity for new background color");
+                }
+                ContentEntityData::FaceColor(file_data_opt) => {
+                    let Some((face_index, palette_index)) = file_data_opt else {
+                        panic!("Could not find file data for entity: {:?}", entity);
+                    };
 
-                // set face_3d_entity and palette_color_entity into FaceColor component
-                let Ok(mut face_color) = face_color_q.get_mut(entity) else {
-                    panic!("Could not find face color for entity: {:?}", entity);
-                };
-                face_color.face_3d_entity.set(&server, &face_3d_entity);
-                face_color.palette_color_entity.set(&server, &palette_color_entity);
+                    let mesh_file_entity = self.file_find_dependency(project_key, file_key, FileExtension::Mesh).unwrap();
+                    let palette_file_entity = self.file_find_dependency(project_key, file_key, FileExtension::Palette).unwrap();
+
+                    // find face_3d_entity from face_index
+                    let face_3d_entity = shape_manager.face_entity_from_index(
+                        &mesh_file_entity,
+                        face_index as usize
+                    ).unwrap();
+
+                    // find palette_color_entity from palette_index
+                    let palette_color_entity = palette_manager.color_entity_from_index(
+                        &palette_file_entity,
+                        palette_index as usize
+                    ).unwrap();
+
+                    // set face_3d_entity and palette_color_entity into FaceColor component
+                    let Ok(mut face_color) = face_color_q.get_mut(entity) else {
+                        panic!("Could not find face color for entity: {:?}", entity);
+                    };
+                    face_color.face_3d_entity.set(&server, &face_3d_entity);
+                    face_color.palette_color_entity.set(&server, &palette_color_entity);
+
+                    // register with skin manager
+                    skin_manager.on_create_face_color(&face_3d_entity, &entity);
+                }
+                _ => {}
             }
         }
 

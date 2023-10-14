@@ -21,7 +21,7 @@ use crate::app::{
     events::ShapeColorResyncEvent,
     resources::{
         action::skin::SkinAction, file_manager::FileManager, input_manager::InputManager,
-        palette_manager::PaletteManager, shape_data::CanvasShape,
+        palette_manager::PaletteManager, shape_data::CanvasShape, tab_manager::TabManager,
     },
 };
 
@@ -74,27 +74,6 @@ impl SkinManager {
         }
 
         0
-    }
-
-    pub(crate) fn set_background_color_index(
-        &self,
-        client: &Client,
-        palette_manager: &PaletteManager,
-        file_entity: &Entity,
-        back_color_q: &mut Query<&mut BackgroundSkinColor>,
-        new_index: usize,
-    ) {
-        if let Some(bckg_color_entity) = self.file_to_bckg_entity.get(file_entity) {
-            if let Ok(mut bck_color) = back_color_q.get_mut(*bckg_color_entity) {
-                let Some(new_palette_color_entity) = palette_manager.get_color_entity(
-                    file_entity,
-                    new_index,
-                ) else {
-                  panic!("expected palette color entity");
-                };
-                bck_color.palette_color_entity.set(client, &new_palette_color_entity);
-            }
-        }
     }
 
     pub(crate) fn entity_is_face_color(&self, face_color_entity: &Entity) -> bool {
@@ -152,13 +131,13 @@ impl SkinManager {
     pub(crate) fn bckg_color_postprocess(
         &mut self,
         file_entity: Entity,
-        face_color_entity: Entity,
+        bckg_color_entity: Entity,
         shape_color_resync_events: &mut EventWriter<ShapeColorResyncEvent>,
     ) {
         shape_color_resync_events.send(ShapeColorResyncEvent);
 
         // register
-        self.register_bckg_color(file_entity, face_color_entity);
+        self.register_bckg_color(file_entity, bckg_color_entity);
     }
 
     pub(crate) fn face_color_postprocess(
@@ -207,12 +186,59 @@ impl SkinManager {
         }
     }
 
+    fn init_background_color(&mut self, world: &mut World, current_file_entity: &Entity) {
+        let mut system_state: SystemState<(
+            Commands,
+            Client,
+            Res<FileManager>,
+            Res<PaletteManager>,
+            EventWriter<ShapeColorResyncEvent>,
+        )> = SystemState::new(world);
+        let (
+            mut commands,
+            mut client,
+            file_manager,
+            palette_manager,
+            mut shape_color_resync_events,
+        ) = system_state.get_mut(world);
+
+        // get Palette File Dependency
+        let Some(palette_file_entity) = file_manager.file_get_dependency(
+            current_file_entity,
+            FileExtension::Palette,
+        ) else {
+            return;
+        };
+        let Some(palette_color_entity) = palette_manager.get_color_entity(&palette_file_entity, 0) else {
+            return;
+        };
+
+        // spawn background color entity
+        let mut component = BackgroundSkinColor::new();
+        component.skin_file_entity.set(&client, &current_file_entity);
+        component.palette_color_entity.set(&client, &palette_color_entity);
+        let bck_color_entity = commands.spawn_empty()
+            .enable_replication(&mut client)
+            .configure_replication(ReplicationConfig::Delegated)
+            .insert(component)
+            .id();
+
+        self.bckg_color_postprocess(*current_file_entity, bck_color_entity, &mut shape_color_resync_events);
+
+        system_state.apply(world);
+    }
+
     pub(crate) fn render_sidebar(
         &mut self,
         ui: &mut Ui,
         world: &mut World,
         current_file_entity: &Entity,
     ) -> Option<SkinAction> {
+
+        if self.file_to_bckg_entity(current_file_entity).is_none() {
+            self.init_background_color(world, current_file_entity);
+        }
+
         let mut color_index_picked = None;
 
         let mut system_state: SystemState<(
@@ -356,21 +382,12 @@ impl SkinManager {
                     return None;
                 }
 
-                let mut system_state: SystemState<(
-                    Client,
-                    EventWriter<ShapeColorResyncEvent>,
-                    Res<PaletteManager>,
-                    Query<&mut BackgroundSkinColor>,
-                )> = SystemState::new(world);
-                let (client, mut shape_color_resync_events, palette_manager, mut bckg_color_q) = system_state.get_mut(world);
-                shape_color_resync_events.send(ShapeColorResyncEvent);
+                let palette_color_entity = world.get_resource::<PaletteManager>().unwrap().get_color_entity(
+                    &palette_file_entity,
+                    color_index_picked,
+                ).unwrap();
 
-                self.set_background_color_index(
-                    &client,
-                    &palette_manager,
-                    current_file_entity,
-                    &mut bckg_color_q,
-                    color_index_picked,)
+                return Some(SkinAction::EditBckgColor(palette_color_entity));
             }
             _ => {}
         }
