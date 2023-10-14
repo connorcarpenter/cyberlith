@@ -3,15 +3,13 @@ use std::collections::HashMap;
 use bevy_ecs::{
     entity::Entity,
     prelude::{Commands, World},
-    system::SystemState,
+    system::{SystemState, Query, Res},
 };
-use bevy_ecs::system::{Query, Res};
 use bevy_log::info;
 
 use naia_bevy_server::{BitReader, CommandsExt, FileBitWriter, ReplicationConfig, Serde, SerdeErr, Server};
 
-use vortex_proto::{components::FileExtension, resources::FileKey};
-use vortex_proto::components::{FaceColor, PaletteColor};
+use vortex_proto::{components::{BackgroundSkinColor, FileExtension, FaceColor, PaletteColor}, resources::FileKey};
 
 use crate::{
     files::{add_file_dependency, FileWriter},
@@ -25,6 +23,8 @@ enum SkinAction {
     PaletteFile(String, String),
     // path, file_name
     MeshFile(String, String),
+    // palette color index
+    BackgroundColor(u8),
     // mesh face index, palette color index
     SkinColor(u16, u8),
 }
@@ -33,6 +33,7 @@ enum SkinAction {
 enum SkinActionType {
     PaletteFile,
     MeshFile,
+    BackgroundColor,
     SkinColor,
     None,
 }
@@ -143,10 +144,16 @@ impl SkinWriter {
                     path.ser(&mut bit_writer);
                     file_name.ser(&mut bit_writer);
                 }
+                SkinAction::BackgroundColor(palette_color_index) => {
+                    SkinActionType::BackgroundColor.ser(&mut bit_writer);
+
+                    // TODO: could optimize these a bit more .. unlikely to use all these bits
+                    palette_color_index.ser(&mut bit_writer);
+                }
                 SkinAction::SkinColor(face_index, palette_color_index) => {
                     SkinActionType::SkinColor.ser(&mut bit_writer);
 
-                    // TODO: could optimize these a bit more .. unlikely to use all this bits
+                    // TODO: could optimize these a bit more .. unlikely to use all these bits
                     face_index.ser(&mut bit_writer);
                     palette_color_index.ser(&mut bit_writer);
                 }
@@ -172,7 +179,9 @@ impl FileWriter for SkinWriter {
     }
 
     fn write_new_default(&self) -> Box<[u8]> {
-        let actions = Vec::new();
+        let mut actions = Vec::new();
+
+        actions.push(SkinAction::BackgroundColor(0));
 
         self.write_from_actions(actions)
     }
@@ -198,6 +207,10 @@ impl SkinReader {
                     let path = String::de(bit_reader)?;
                     let file_name = String::de(bit_reader)?;
                     actions.push(SkinAction::MeshFile(path, file_name));
+                }
+                SkinActionType::BackgroundColor => {
+                    let palette_color_index = u8::de(bit_reader)?;
+                    actions.push(SkinAction::BackgroundColor(palette_color_index));
                 }
                 SkinActionType::SkinColor => {
                     let face_index = u16::de(bit_reader)?;
@@ -253,6 +266,19 @@ impl SkinReader {
                     );
                     output.insert(new_entity, ContentEntityData::new_dependency(new_file_key));
                 }
+                SkinAction::BackgroundColor(palette_index) => {
+                    let mut background_color_component = BackgroundSkinColor::new();
+                    background_color_component.skin_file_entity.set(&server, file_entity);
+
+                    let entity_id = commands
+                        .spawn_empty()
+                        .enable_replication(&mut server)
+                        .configure_replication(ReplicationConfig::Delegated)
+                        .insert(background_color_component)
+                        .id();
+                    info!("spawning background skin color entity {:?}", entity_id);
+                    output.insert(entity_id, ContentEntityData::new_background_skin_color(Some(palette_index)));
+                }
                 SkinAction::SkinColor(face_index, palette_index) => {
 
                     let mut face_color_component = FaceColor::new();
@@ -261,7 +287,6 @@ impl SkinReader {
                     let entity_id = commands
                         .spawn_empty()
                         .enable_replication(&mut server)
-                        // setting to Delegated to match client-created faces
                         .configure_replication(ReplicationConfig::Delegated)
                         .insert(face_color_component)
                         .id();

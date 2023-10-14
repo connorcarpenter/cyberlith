@@ -19,6 +19,7 @@ pub enum ContentEntityData {
     Rotation,
     PaletteColor,
     FaceColor(Option<(u16, u8)>),
+    BackgroundSkinColor(Option<u8>),
 }
 
 impl ContentEntityData {
@@ -44,6 +45,10 @@ impl ContentEntityData {
 
     pub fn new_skin_color(file_data_opt: Option<(u16, u8)>) -> Self {
         Self::FaceColor(file_data_opt)
+    }
+
+    pub fn new_background_skin_color(file_data_opt: Option<u8>) -> Self {
+        Self::BackgroundSkinColor(file_data_opt)
     }
 }
 

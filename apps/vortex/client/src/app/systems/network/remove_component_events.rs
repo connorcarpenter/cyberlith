@@ -8,11 +8,7 @@ use naia_bevy_client::{events::RemoveComponentEvents, Client};
 
 use render_api::{base::CpuMesh, Assets};
 
-use vortex_proto::components::{
-    AnimFrame, AnimRotation, ChangelistEntry, ChangelistStatus, Edge3d, Face3d, FaceColor,
-    FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild, PaletteColor, ShapeName,
-    Vertex3d,
-};
+use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d, Face3d, FaceColor, FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild, PaletteColor, ShapeName, Vertex3d};
 
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
@@ -144,6 +140,11 @@ pub fn remove_component_events(
             let color_index = *color.index as usize;
 
             palette_manager.deregister_color(&file_entity, &color_entity, color_index);
+        }
+        for (color_entity, _color) in events.read::<BackgroundSkinColor>() {
+            info!("entity: `{:?}`, removed BackgroundSkinColor", color_entity);
+
+            skin_manager.deregister_bckg_color(&color_entity);
         }
         for (color_entity, _color) in events.read::<FaceColor>() {
             info!("entity: `{:?}`, removed FaceColor", color_entity);

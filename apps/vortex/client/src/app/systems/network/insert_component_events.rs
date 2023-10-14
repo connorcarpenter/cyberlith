@@ -16,11 +16,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{
-    AnimFrame, AnimRotation, ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind,
-    Face3d, FaceColor, FileDependency, FileExtension, FileSystemChild, FileSystemEntry,
-    FileSystemRootChild, FileType, OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot,
-};
+use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind, Face3d, FaceColor, FileDependency, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::file_system::{
@@ -87,6 +83,7 @@ pub fn insert_component_events(world: &mut World) {
         insert_component_event::<AnimRotation>(world, &events);
         insert_component_event::<PaletteColor>(world, &events);
         insert_component_event::<FaceColor>(world, &events);
+        insert_component_event::<BackgroundSkinColor>(world, &events);
     }
 }
 
@@ -656,11 +653,32 @@ pub fn insert_palette_events(
 
 pub fn insert_skin_events(
     client: Client,
+    mut bckg_color_events: EventReader<InsertComponentEvent<BackgroundSkinColor>>,
     mut color_events: EventReader<InsertComponentEvent<FaceColor>>,
     mut skin_manager: ResMut<SkinManager>,
+    bckg_color_q: Query<&BackgroundSkinColor>,
     face_color_q: Query<&FaceColor>,
     mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
 ) {
+    // on BackgroundSkinColor Insert Event
+    for event in bckg_color_events.iter() {
+        let bckg_color_entity = event.entity;
+
+        info!("entity: {:?} - inserted BackgroundSkinColor", bckg_color_entity);
+
+        let Ok(color_component) = bckg_color_q.get(bckg_color_entity) else {
+            continue;
+        };
+
+        let file_entity = color_component.skin_file_entity.get(&client).unwrap();
+
+        skin_manager.bckg_color_postprocess(
+            file_entity,
+            bckg_color_entity,
+            &mut shape_color_resync_events,
+        );
+    }
+
     // on FaceColor Insert Event
     for event in color_events.iter() {
         let face_color_entity = event.entity;

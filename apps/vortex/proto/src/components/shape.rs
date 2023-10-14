@@ -21,6 +21,7 @@ impl ProtocolPlugin for VertexComponentsPlugin {
             .add_component::<FileType>()
             .add_component::<ShapeName>()
             .add_component::<PaletteColor>()
+            .add_component::<BackgroundSkinColor>()
             .add_component::<FaceColor>();
     }
 }
@@ -314,6 +315,19 @@ pub struct FaceColor {
 }
 
 impl FaceColor {
+    pub fn new() -> Self {
+        Self::new_complete()
+    }
+}
+
+// FaceColor
+#[derive(Component, Replicate)]
+pub struct BackgroundSkinColor {
+    pub skin_file_entity: EntityProperty,
+    pub palette_color_entity: EntityProperty,
+}
+
+impl BackgroundSkinColor {
     pub fn new() -> Self {
         Self::new_complete()
     }

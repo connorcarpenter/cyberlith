@@ -226,7 +226,9 @@ pub fn despawn_file_content_entities(
             ContentEntityData::Shape(ShapeType::Edge) => {
                 shape_manager.deregister_edge(entity);
             }
-            ContentEntityData::Shape(ShapeType::Face) => {}
+            ContentEntityData::Shape(ShapeType::Face) => {
+                shape_manager.deregister_face(entity);
+            }
             ContentEntityData::Dependency(dependency_key) => {
                 project.file_remove_dependency(&file_key, &dependency_key);
             }
@@ -238,6 +240,9 @@ pub fn despawn_file_content_entities(
             }
             ContentEntityData::PaletteColor => {
                 palette_manager.deregister_color(entity, None);
+            }
+            ContentEntityData::BackgroundSkinColor(_) => {
+                // register with skin_manager?
             }
             ContentEntityData::FaceColor(_) => {
                 skin_manager.deregister_face_color(entity);

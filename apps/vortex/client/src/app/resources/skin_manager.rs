@@ -15,7 +15,7 @@ use render_egui::{
     egui::{Align, Color32, Frame, Layout, PointerButton, Sense, Ui, Vec2},
 };
 
-use vortex_proto::components::{FaceColor, FileExtension, PaletteColor};
+use vortex_proto::components::{BackgroundSkinColor, FaceColor, FileExtension, PaletteColor};
 
 use crate::app::{
     events::ShapeColorResyncEvent,
@@ -31,9 +31,12 @@ pub struct SkinManager {
     face_to_color_entity: HashMap<Entity, Entity>,
     // face color entity -> face 3d entity
     color_to_face_entity: HashMap<Entity, Entity>,
-    //
+    // skin file entity -> bckg color entity
+    file_to_bckg_entity: HashMap<Entity, Entity>,
+    // bckg color entity -> skin file entity
+    bckg_to_file_entity: HashMap<Entity, Entity>,
+
     selected_color_index: usize,
-    background_color_index: usize,
 }
 
 impl Default for SkinManager {
@@ -41,8 +44,9 @@ impl Default for SkinManager {
         Self {
             face_to_color_entity: HashMap::new(),
             color_to_face_entity: HashMap::new(),
+            file_to_bckg_entity: HashMap::new(),
+            bckg_to_file_entity: HashMap::new(),
             selected_color_index: 0,
-            background_color_index: 0,
         }
     }
 }
@@ -52,12 +56,53 @@ impl SkinManager {
         self.selected_color_index
     }
 
-    pub(crate) fn background_color_index(&self) -> usize {
-        self.background_color_index
+    pub(crate) fn background_color_index(
+        &self,
+        client: &Client,
+        file_entity: &Entity,
+        bck_color_q: &Query<&BackgroundSkinColor>,
+        palette_q: &Query<&PaletteColor>
+    ) -> usize {
+        if let Some(bckg_color_entity) = self.file_to_bckg_entity.get(file_entity) {
+            if let Ok(bck_color) = bck_color_q.get(*bckg_color_entity) {
+                if let Some(palette_color_entity) = bck_color.palette_color_entity.get(client) {
+                    if let Ok(palette_color) = palette_q.get(palette_color_entity) {
+                        return *palette_color.index as usize;
+                    }
+                }
+            }
+        }
+
+        0
+    }
+
+    pub(crate) fn set_background_color_index(
+        &self,
+        client: &Client,
+        palette_manager: &PaletteManager,
+        file_entity: &Entity,
+        back_color_q: &mut Query<&mut BackgroundSkinColor>,
+        new_index: usize,
+    ) {
+        if let Some(bckg_color_entity) = self.file_to_bckg_entity.get(file_entity) {
+            if let Ok(mut bck_color) = back_color_q.get_mut(*bckg_color_entity) {
+                let Some(new_palette_color_entity) = palette_manager.get_color_entity(
+                    file_entity,
+                    new_index,
+                ) else {
+                  panic!("expected palette color entity");
+                };
+                bck_color.palette_color_entity.set(client, &new_palette_color_entity);
+            }
+        }
     }
 
     pub(crate) fn entity_is_face_color(&self, face_color_entity: &Entity) -> bool {
         self.color_to_face_entity.contains_key(face_color_entity)
+    }
+
+    pub(crate) fn entity_is_bckg_color(&self, bckg_color_entity: &Entity) -> bool {
+        self.bckg_to_file_entity.contains_key(bckg_color_entity)
     }
 
     pub(crate) fn face_to_color_entity(&self, face_3d_entity: &Entity) -> Option<&Entity> {
@@ -100,6 +145,18 @@ impl SkinManager {
         face_color_entity
     }
 
+    pub(crate) fn bckg_color_postprocess(
+        &mut self,
+        file_entity: Entity,
+        face_color_entity: Entity,
+        shape_color_resync_events: &mut EventWriter<ShapeColorResyncEvent>,
+    ) {
+        shape_color_resync_events.send(ShapeColorResyncEvent);
+
+        // register
+        self.register_bckg_color(file_entity, face_color_entity);
+    }
+
     pub(crate) fn face_color_postprocess(
         &mut self,
         face_3d_entity: Entity,
@@ -110,6 +167,17 @@ impl SkinManager {
 
         // register
         self.register_face_color(face_3d_entity, face_color_entity);
+    }
+
+    pub(crate) fn register_bckg_color(
+        &mut self,
+        file_entity: Entity,
+        bckg_color_entity: Entity,
+    ) {
+        self.file_to_bckg_entity
+            .insert(file_entity, bckg_color_entity);
+        self.bckg_to_file_entity
+            .insert(bckg_color_entity, file_entity);
     }
 
     pub(crate) fn register_face_color(
@@ -129,6 +197,12 @@ impl SkinManager {
         }
     }
 
+    pub(crate) fn deregister_bckg_color(&mut self, bckg_color_entity: &Entity) {
+        if let Some(file_entity) = self.bckg_to_file_entity.remove(bckg_color_entity) {
+            self.file_to_bckg_entity.remove(&file_entity);
+        }
+    }
+
     pub(crate) fn render_sidebar(
         &mut self,
         ui: &mut Ui,
@@ -137,37 +211,49 @@ impl SkinManager {
     ) -> Option<SkinAction> {
         let mut color_index_picked = None;
 
+        let mut system_state: SystemState<(
+            Client,
+            Res<FileManager>,
+            Res<PaletteManager>,
+            Query<&BackgroundSkinColor>,
+            Query<&PaletteColor>,
+        )> = SystemState::new(world);
+        let (
+            client,
+            file_manager,
+            palette_manager,
+            bckg_color_q,
+            palette_color_q
+        ) = system_state.get_mut(world);
+
+        let Some(palette_file_entity) = file_manager.file_get_dependency(
+            current_file_entity,
+            FileExtension::Palette,
+        ) else {
+            panic!("Expected palette file dependency");
+        };
+        let Some(colors) = palette_manager.get_file_colors(&palette_file_entity) else {
+            return None;
+        };
+        let bckg_color_index = self.background_color_index(
+            &client,
+            current_file_entity,
+            &bckg_color_q,
+            &palette_color_q
+        );
+
         egui::SidePanel::right("skin_right_panel")
             .exact_width(8.0*2.0 + 48.0*2.0 + 2.0 + 10.0*2.0)
             .resizable(false)
             .show_inside(ui, |ui| {
-                let mut system_state: SystemState<(
-                    Res<FileManager>,
-                    Res<PaletteManager>,
-                    Query<&PaletteColor>,
-                )> = SystemState::new(world);
-                let (
-                    file_manager,
-                    palette_manager,
-                    palette_color_q
-                ) = system_state.get_mut(world);
-
-                let Some(palette_file_entity) = file_manager.file_get_dependency(
-                    current_file_entity,
-                    FileExtension::Palette,
-                ) else {
-                    panic!("Expected palette file dependency");
-                };
-                let Some(colors) = palette_manager.get_file_colors(&palette_file_entity) else {
-                    return;
-                };
 
                 let size = Vec2::new(48.0, 48.0);
 
                 ui.horizontal_top(|ui| {
                     Frame::none().inner_margin(8.0).show(ui, |ui| {
                         ui.spacing_mut().item_spacing = Vec2::new(10.0, 10.0);
-                        for color_index in [self.selected_color_index, self.background_color_index].iter() {
+
+                        for color_index in [self.selected_color_index, bckg_color_index].iter() {
                             let color_entity_opt = colors.get(*color_index).unwrap();
                             let Some(color_entity) = color_entity_opt else {
                                 continue;
@@ -262,15 +348,25 @@ impl SkinManager {
                 }
             }
             PointerButton::Secondary => {
-                if color_index_picked == self.background_color_index {
+                if color_index_picked == bckg_color_index {
                     return None;
                 }
-                self.background_color_index = color_index_picked;
 
-                let mut system_state: SystemState<(EventWriter<ShapeColorResyncEvent>,)> =
-                    SystemState::new(world);
-                let (mut shape_color_resync_events,) = system_state.get_mut(world);
+                let mut system_state: SystemState<(
+                    Client,
+                    EventWriter<ShapeColorResyncEvent>,
+                    Res<PaletteManager>,
+                    Query<&mut BackgroundSkinColor>,
+                )> = SystemState::new(world);
+                let (client, mut shape_color_resync_events, palette_manager, mut bckg_color_q) = system_state.get_mut(world);
                 shape_color_resync_events.send(ShapeColorResyncEvent);
+
+                self.set_background_color_index(
+                    &client,
+                    &palette_manager,
+                    current_file_entity,
+                    &mut bckg_color_q,
+                    color_index_picked,)
             }
             _ => {}
         }

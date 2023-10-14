@@ -80,6 +80,35 @@ impl PaletteManager {
         self.selected_color_index
     }
 
+    pub fn get_file_colors(&self, file_entity: &Entity) -> Option<&Vec<Option<Entity>>> {
+        self.file_colors.get(file_entity)
+    }
+
+    pub(crate) fn select_color(&mut self, color_index: usize) {
+        self.selected_color_index = color_index;
+    }
+
+    pub(crate) fn get_color_entity(
+        &self,
+        file_entity: &Entity,
+        color_index: usize,
+    ) -> Option<Entity> {
+        let colors = self.file_colors.get(file_entity)?;
+        let color_entity_opt = colors.get(color_index)?.as_ref();
+        let color_entity = color_entity_opt?;
+        Some(*color_entity)
+    }
+
+    pub(crate) fn get_color_count(&self, file_entity: &Entity) -> Option<usize> {
+        let color_data = self.file_colors.get(file_entity)?;
+        Some(color_data.len())
+    }
+
+    pub fn queue_resync_color_order(&mut self, file_entity: &Entity) {
+        info!("queue_resync_color_order for entity: `{:?}`", file_entity);
+        self.resync_color_order.insert(*file_entity);
+    }
+
     pub fn track_old_color(&mut self, color_entity: Entity, old_color: Color32) {
         self.last_old_color = Some((color_entity, old_color));
     }
@@ -107,10 +136,6 @@ impl PaletteManager {
         );
 
         self.track_old_color(color_entity_2, new_color);
-    }
-
-    pub fn get_file_colors(&self, file_entity: &Entity) -> Option<&Vec<Option<Entity>>> {
-        self.file_colors.get(file_entity)
     }
 
     pub fn register_color(
@@ -162,31 +187,6 @@ impl PaletteManager {
         }
 
         self.colors.remove(color_entity);
-    }
-
-    pub(crate) fn select_color(&mut self, color_index: usize) {
-        self.selected_color_index = color_index;
-    }
-
-    pub(crate) fn get_color_entity(
-        &self,
-        file_entity: &Entity,
-        color_index: usize,
-    ) -> Option<Entity> {
-        let colors = self.file_colors.get(file_entity)?;
-        let color_entity_opt = colors.get(color_index)?.as_ref();
-        let color_entity = color_entity_opt?;
-        Some(*color_entity)
-    }
-
-    pub(crate) fn get_color_count(&self, file_entity: &Entity) -> Option<usize> {
-        let color_data = self.file_colors.get(file_entity)?;
-        Some(color_data.len())
-    }
-
-    pub fn queue_resync_color_order(&mut self, file_entity: &Entity) {
-        info!("queue_resync_color_order for entity: `{:?}`", file_entity);
-        self.resync_color_order.insert(*file_entity);
     }
 
     pub fn resync_color_order(

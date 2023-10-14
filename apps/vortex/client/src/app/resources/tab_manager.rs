@@ -21,7 +21,7 @@ use render_egui::{
 
 use vortex_proto::{
     channels::TabActionChannel,
-    components::{ChangelistStatus, FaceColor, FileExtension, FileSystemEntry, PaletteColor},
+    components::{BackgroundSkinColor, ChangelistStatus, FaceColor, FileExtension, FileSystemEntry, PaletteColor},
     messages::{TabCloseMessage, TabOpenMessage},
     types::TabId,
 };
@@ -722,6 +722,7 @@ fn file_ext_specific_sync_tabs_shape_colors(
             (With<Face3dLocal>, Without<Edge2dLocal>, Without<FaceIcon2d>),
         >,
         Query<&PaletteColor>,
+        Query<&BackgroundSkinColor>,
         Query<&FaceColor>,
     )> = SystemState::new(world);
     let (
@@ -735,6 +736,7 @@ fn file_ext_specific_sync_tabs_shape_colors(
         mut face_2d_q,
         mut face_3d_q,
         palette_color_q,
+        bckg_color_q,
         face_color_q,
     ) = system_state.get_mut(world);
 
@@ -743,7 +745,12 @@ fn file_ext_specific_sync_tabs_shape_colors(
             let gray_mat_handle = materials.add(Color::LIGHT_GRAY);
 
             // get background color
-            let background_index = skin_manager.background_color_index();
+            let background_index = skin_manager.background_color_index(
+                &client,
+                current_file_entity,
+                &bckg_color_q,
+                &palette_color_q,
+            );
             let Some(dependency_file_entity) = file_manager.file_get_dependency(current_file_entity, FileExtension::Palette) else {
                 return;
             };

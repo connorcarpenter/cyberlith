@@ -88,7 +88,7 @@ impl EdgeData {
     }
 }
 
-struct FaceData {
+pub struct FaceData {
     file_entity: Entity,
     face_index: usize,
     vertex_a: Entity,
@@ -298,6 +298,25 @@ impl ShapeManager {
         self.edges.remove(edge_entity)
     }
 
+    pub fn deregister_face(&mut self, face_entity: &Entity) -> Option<FaceData> {
+        let Some(face_data) = self.faces.remove(face_entity) else {
+            return None;
+        };
+
+        // remove face from file face list
+        let file_entity = face_data.file_entity;
+        let face_index = face_data.face_index;
+        let file_face_indices = self.file_face_indices.get_mut(&file_entity).unwrap();
+        file_face_indices.remove(face_index);
+        for i in face_index..file_face_indices.len() {
+            let face_entity = file_face_indices[i];
+            let face_data = self.faces.get_mut(&face_entity).unwrap();
+            face_data.face_index = i;
+        }
+
+        Some(face_data)
+    }
+
     pub fn on_client_despawn_vertex(
         &mut self,
         commands: &mut Commands,
@@ -389,7 +408,10 @@ impl ShapeManager {
     }
 
     pub(crate) fn on_client_despawn_face(&mut self, face_entity: &Entity) {
-        let face_data = self.faces.remove(face_entity).unwrap();
+        let Some(face_data) = self.deregister_face(face_entity) else {
+            warn!("face entity `{:?}` not found, perhaps was already despawned?", face_entity);
+            return;
+        };
 
         // remove face from vertex data
         for vertex_entity in [face_data.vertex_a, face_data.vertex_b, face_data.vertex_c] {
@@ -400,17 +422,6 @@ impl ShapeManager {
                 );
                 data.remove_face(face_entity);
             }
-        }
-
-        // remove face from file face list
-        let file_entity = face_data.file_entity;
-        let face_index = face_data.face_index;
-        let file_face_indices = self.file_face_indices.get_mut(&file_entity).unwrap();
-        file_face_indices.remove(face_index);
-        for i in face_index..file_face_indices.len() {
-            let face_entity = file_face_indices[i];
-            let face_data = self.faces.get_mut(&face_entity).unwrap();
-            face_data.face_index = i;
         }
     }
 
