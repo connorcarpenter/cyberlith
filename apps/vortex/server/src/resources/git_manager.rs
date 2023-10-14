@@ -122,8 +122,7 @@ impl GitManager {
             // process content entities that depend on dependencies
             if file_has_dependencies {
                 if let Some(content_entities) = new_content_entities_opt {
-                    let file_entity = self.file_entity(project_key, file_key).unwrap();
-                    self.process_content_entities_with_dependencies(world, project_key, file_key, &file_entity, content_entities);
+                    self.process_content_entities_with_dependencies(world, project_key, file_key, content_entities);
                 }
             }
         }
@@ -134,7 +133,6 @@ impl GitManager {
         world: &mut World,
         project_key: &ProjectKey,
         file_key: &FileKey,
-        file_entity: &Entity,
         content_entities: HashMap<Entity, ContentEntityData>
     ) {
 
@@ -147,8 +145,8 @@ impl GitManager {
                     panic!("Could not find file data for entity: {:?}", entity);
                 };
 
-                let mesh_file_entity = self.file_find_dependency(project_key, file_key, file_entity, FileExtension::Mesh).unwrap();
-                let palette_file_entity = self.file_find_dependency(project_key, file_key, file_entity, FileExtension::Palette).unwrap();
+                let mesh_file_entity = self.file_find_dependency(project_key, file_key, FileExtension::Mesh).unwrap();
+                let palette_file_entity = self.file_find_dependency(project_key, file_key, FileExtension::Palette).unwrap();
 
                 // find face_3d_entity from face_index
                 let face_3d_entity = shape_manager.face_entity_from_index(
@@ -178,7 +176,6 @@ impl GitManager {
         &self,
         project_key: &ProjectKey,
         file_key: &FileKey,
-        file_entity: &Entity,
         file_extension: FileExtension
     ) -> Option<Entity> {
         let project = self.projects.get(project_key).unwrap();
