@@ -171,7 +171,11 @@ impl ShapeManager {
         }
     }
 
-    pub fn face_entity_from_index(&self, file_entity: &Entity, face_index: usize) -> Option<Entity> {
+    pub fn face_entity_from_index(
+        &self,
+        file_entity: &Entity,
+        face_index: usize,
+    ) -> Option<Entity> {
         if let Some(file_face_indices) = self.file_face_indices.get(file_entity) {
             Some(file_face_indices[face_index])
         } else {
@@ -266,12 +270,18 @@ impl ShapeManager {
         }
 
         // TODO: add face to edges
-
-
     }
 
-    fn assign_index_to_new_face(&mut self, file_entity: &Entity, old_index_opt: Option<usize>, face_3d_entity: &Entity) -> usize {
-        info!("assign_index_to_new_face(entity: `{:?}`, index: {:?})", face_3d_entity, old_index_opt);
+    fn assign_index_to_new_face(
+        &mut self,
+        file_entity: &Entity,
+        old_index_opt: Option<usize>,
+        face_3d_entity: &Entity,
+    ) -> usize {
+        info!(
+            "assign_index_to_new_face(entity: `{:?}`, index: {:?})",
+            face_3d_entity, old_index_opt
+        );
         if !self.file_face_indices.contains_key(file_entity) {
             self.file_face_indices.insert(*file_entity, Vec::new());
         }
@@ -281,7 +291,10 @@ impl ShapeManager {
 
         if let Some(old_index) = old_index_opt {
             if new_index != old_index {
-                panic!("something went wrong, got new index `{:?}` but old index was `{:?}`", new_index, old_index);
+                panic!(
+                    "something went wrong, got new index `{:?}` but old index was `{:?}`",
+                    new_index, old_index
+                );
             }
         }
 

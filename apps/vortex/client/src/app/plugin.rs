@@ -7,9 +7,9 @@ use render_api::{resources::WindowSettings, Draw};
 
 use vortex_proto::{
     components::{
-        AnimFrame, AnimRotation, ChangelistEntry, Edge3d, EdgeAngle, EntryKind, Face3d, FaceColor,
-        FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType,
-        OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot, BackgroundSkinColor,
+        AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, Edge3d, EdgeAngle,
+        EntryKind, Face3d, FaceColor, FileDependency, FileSystemChild, FileSystemEntry,
+        FileSystemRootChild, FileType, OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot,
     },
     protocol,
 };
@@ -17,7 +17,7 @@ use vortex_proto::{
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
     config::ConfigPlugin,
-    events::{ShapeColorResyncEvent, InsertComponentEvent, LoginEvent},
+    events::{InsertComponentEvent, LoginEvent, ShapeColorResyncEvent},
     resources::{
         action::file::FileActions, animation_manager::AnimationManager,
         camera_manager::CameraManager, canvas::Canvas, compass::Compass, edge_manager::EdgeManager,

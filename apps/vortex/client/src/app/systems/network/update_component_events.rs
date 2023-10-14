@@ -1,17 +1,20 @@
 use bevy_ecs::{
-    prelude::EventWriter,
     event::EventReader,
+    prelude::EventWriter,
     system::{Query, ResMut},
 };
 use bevy_log::info;
 
 use naia_bevy_client::{events::UpdateComponentEvents, Client};
 
-use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, EdgeAngle, FaceColor, FileSystemChild, FileSystemEntry, FileSystemRootChild, PaletteColor, ShapeName, Vertex3d};
+use vortex_proto::components::{
+    AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, EdgeAngle, FaceColor,
+    FileSystemChild, FileSystemEntry, FileSystemRootChild, PaletteColor, ShapeName, Vertex3d,
+};
 
 use crate::app::{
-    events::ShapeColorResyncEvent,
     components::file_system::{ChangelistUiState, FileSystemEntryLocal},
+    events::ShapeColorResyncEvent,
     resources::{
         animation_manager::AnimationManager,
         canvas::Canvas,

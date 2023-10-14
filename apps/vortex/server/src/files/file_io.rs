@@ -281,9 +281,7 @@ pub fn add_file_dependency(
     info!("creating new FileDependency!");
     let mut component = FileDependency::new();
     component.file_entity.set(server, file_entity);
-    component
-        .dependency_entity
-        .set(server, &dependency_entity);
+    component.dependency_entity.set(server, &dependency_entity);
     let entity = commands
         .spawn_empty()
         .enable_replication(server)

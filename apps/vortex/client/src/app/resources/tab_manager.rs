@@ -21,7 +21,10 @@ use render_egui::{
 
 use vortex_proto::{
     channels::TabActionChannel,
-    components::{BackgroundSkinColor, ChangelistStatus, FaceColor, FileExtension, FileSystemEntry, PaletteColor},
+    components::{
+        BackgroundSkinColor, ChangelistStatus, FaceColor, FileExtension, FileSystemEntry,
+        PaletteColor,
+    },
     messages::{TabCloseMessage, TabOpenMessage},
     types::TabId,
 };

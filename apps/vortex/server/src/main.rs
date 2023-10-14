@@ -18,9 +18,9 @@ use naia_bevy_server::{Plugin as ServerPlugin, ReceiveEvents, ServerConfig};
 
 use vortex_proto::{
     components::{
-        AnimFrame, AnimRotation, Edge3d, Face3d, FaceColor, FileDependency, FileSystemChild,
-        FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, PaletteColor, ShapeName,
-        Vertex3d, VertexRoot, BackgroundSkinColor,
+        AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency,
+        FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, PaletteColor,
+        ShapeName, Vertex3d, VertexRoot,
     },
     protocol,
 };

@@ -2,13 +2,12 @@ use bevy_ecs::prelude::{Entity, World};
 
 use crate::app::resources::{
     action::{
-        skin::{edit_color, select_face},
+        skin::{edit_bckg_color, edit_color, select_face},
         Action,
     },
     input_manager::InputManager,
     shape_data::CanvasShape,
 };
-use crate::app::resources::action::skin::edit_bckg_color;
 
 #[derive(Clone)]
 pub enum SkinAction {
@@ -48,7 +47,9 @@ impl SkinAction {
                 select_face::execute(world, input_manager, current_file_entity, self)
             }
             SkinActionType::EditColor => edit_color::execute(world, self),
-            SkinActionType::EditBckgColor => edit_bckg_color::execute(world, current_file_entity, self),
+            SkinActionType::EditBckgColor => {
+                edit_bckg_color::execute(world, current_file_entity, self)
+            }
         }
     }
 }

@@ -16,7 +16,12 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind, Face3d, FaceColor, FileDependency, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot};
+use vortex_proto::components::{
+    AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d,
+    EdgeAngle, EntryKind, Face3d, FaceColor, FileDependency, FileExtension, FileSystemChild,
+    FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, PaletteColor, ShapeName, Vertex3d,
+    VertexRoot,
+};
 
 use crate::app::{
     components::file_system::{
@@ -663,7 +668,10 @@ pub fn insert_skin_events(
     for event in bckg_color_events.iter() {
         let bckg_color_entity = event.entity;
 
-        info!("entity: {:?} - inserted BackgroundSkinColor", bckg_color_entity);
+        info!(
+            "entity: {:?} - inserted BackgroundSkinColor",
+            bckg_color_entity
+        );
 
         let Ok(color_component) = bckg_color_q.get(bckg_color_entity) else {
             continue;

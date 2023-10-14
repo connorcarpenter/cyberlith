@@ -3,17 +3,22 @@ use std::collections::HashMap;
 use bevy_ecs::{
     entity::Entity,
     prelude::{Commands, World},
-    system::{SystemState, Query, Res},
+    system::{Query, Res, SystemState},
 };
 use bevy_log::info;
 
-use naia_bevy_server::{BitReader, CommandsExt, FileBitWriter, ReplicationConfig, Serde, SerdeErr, Server};
+use naia_bevy_server::{
+    BitReader, CommandsExt, FileBitWriter, ReplicationConfig, Serde, SerdeErr, Server,
+};
 
-use vortex_proto::{components::{BackgroundSkinColor, FileExtension, FaceColor, PaletteColor}, resources::FileKey};
+use vortex_proto::{
+    components::{BackgroundSkinColor, FaceColor, FileExtension, PaletteColor},
+    resources::FileKey,
+};
 
 use crate::{
     files::{add_file_dependency, FileWriter},
-    resources::{ShapeManager, ContentEntityData, Project},
+    resources::{ContentEntityData, Project, ShapeManager},
 };
 
 // Actions
@@ -110,13 +115,9 @@ impl SkinWriter {
             let mut system_state: SystemState<(
                 Server,
                 Query<&PaletteColor>,
-                Query<&BackgroundSkinColor>
+                Query<&BackgroundSkinColor>,
             )> = SystemState::new(world);
-            let (
-                server,
-                palette_color_q,
-                bckg_color_q
-            ) = system_state.get_mut(world);
+            let (server, palette_color_q, bckg_color_q) = system_state.get_mut(world);
 
             let bckg_color = bckg_color_q.get(bckg_entity).unwrap();
 
@@ -132,14 +133,10 @@ impl SkinWriter {
                 Server,
                 Res<ShapeManager>,
                 Query<&PaletteColor>,
-                Query<&FaceColor>
+                Query<&FaceColor>,
             )> = SystemState::new(world);
-            let (
-                server,
-                shape_manager,
-                palette_color_q,
-                face_color_q
-            ) = system_state.get_mut(world);
+            let (server, shape_manager, palette_color_q, face_color_q) =
+                system_state.get_mut(world);
 
             let face_color = face_color_q.get(face_color_entity).unwrap();
 
@@ -293,7 +290,9 @@ impl SkinReader {
                 }
                 SkinAction::BackgroundColor(palette_index) => {
                     let mut background_color_component = BackgroundSkinColor::new();
-                    background_color_component.skin_file_entity.set(&server, file_entity);
+                    background_color_component
+                        .skin_file_entity
+                        .set(&server, file_entity);
 
                     let entity_id = commands
                         .spawn_empty()
@@ -302,12 +301,16 @@ impl SkinReader {
                         .insert(background_color_component)
                         .id();
                     info!("spawning background skin color entity {:?}", entity_id);
-                    output.insert(entity_id, ContentEntityData::new_background_skin_color(Some(palette_index)));
+                    output.insert(
+                        entity_id,
+                        ContentEntityData::new_background_skin_color(Some(palette_index)),
+                    );
                 }
                 SkinAction::SkinColor(face_index, palette_index) => {
-
                     let mut face_color_component = FaceColor::new();
-                    face_color_component.skin_file_entity.set(&server, file_entity);
+                    face_color_component
+                        .skin_file_entity
+                        .set(&server, file_entity);
 
                     let entity_id = commands
                         .spawn_empty()
@@ -316,7 +319,10 @@ impl SkinReader {
                         .insert(face_color_component)
                         .id();
                     info!("spawning face color entity {:?}", entity_id);
-                    output.insert(entity_id, ContentEntityData::new_skin_color(Some((face_index, palette_index))));
+                    output.insert(
+                        entity_id,
+                        ContentEntityData::new_skin_color(Some((face_index, palette_index))),
+                    );
                 }
             }
         }

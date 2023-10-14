@@ -61,7 +61,7 @@ impl SkinManager {
         client: &Client,
         file_entity: &Entity,
         bck_color_q: &Query<&BackgroundSkinColor>,
-        palette_q: &Query<&PaletteColor>
+        palette_q: &Query<&PaletteColor>,
     ) -> usize {
         if let Some(bckg_color_entity) = self.file_to_bckg_entity.get(file_entity) {
             if let Ok(bck_color) = bck_color_q.get(*bckg_color_entity) {
@@ -152,11 +152,7 @@ impl SkinManager {
         self.register_face_color(face_3d_entity, face_color_entity);
     }
 
-    pub(crate) fn register_bckg_color(
-        &mut self,
-        file_entity: Entity,
-        bckg_color_entity: Entity,
-    ) {
+    pub(crate) fn register_bckg_color(&mut self, file_entity: Entity, bckg_color_entity: Entity) {
         self.file_to_bckg_entity
             .insert(file_entity, bckg_color_entity);
         self.bckg_to_file_entity
@@ -215,15 +211,24 @@ impl SkinManager {
 
         // spawn background color entity
         let mut component = BackgroundSkinColor::new();
-        component.skin_file_entity.set(&client, &current_file_entity);
-        component.palette_color_entity.set(&client, &palette_color_entity);
-        let bck_color_entity = commands.spawn_empty()
+        component
+            .skin_file_entity
+            .set(&client, &current_file_entity);
+        component
+            .palette_color_entity
+            .set(&client, &palette_color_entity);
+        let bck_color_entity = commands
+            .spawn_empty()
             .enable_replication(&mut client)
             .configure_replication(ReplicationConfig::Delegated)
             .insert(component)
             .id();
 
-        self.bckg_color_postprocess(*current_file_entity, bck_color_entity, &mut shape_color_resync_events);
+        self.bckg_color_postprocess(
+            *current_file_entity,
+            bck_color_entity,
+            &mut shape_color_resync_events,
+        );
 
         system_state.apply(world);
     }
@@ -234,7 +239,6 @@ impl SkinManager {
         world: &mut World,
         current_file_entity: &Entity,
     ) -> Option<SkinAction> {
-
         if self.file_to_bckg_entity(current_file_entity).is_none() {
             self.init_background_color(world, current_file_entity);
         }
@@ -248,13 +252,8 @@ impl SkinManager {
             Query<&BackgroundSkinColor>,
             Query<&PaletteColor>,
         )> = SystemState::new(world);
-        let (
-            client,
-            file_manager,
-            palette_manager,
-            bckg_color_q,
-            palette_color_q
-        ) = system_state.get_mut(world);
+        let (client, file_manager, palette_manager, bckg_color_q, palette_color_q) =
+            system_state.get_mut(world);
 
         let Some(palette_file_entity) = file_manager.file_get_dependency(
             current_file_entity,
@@ -269,7 +268,7 @@ impl SkinManager {
             &client,
             current_file_entity,
             &bckg_color_q,
-            &palette_color_q
+            &palette_color_q,
         );
 
         egui::SidePanel::right("skin_right_panel")
@@ -382,10 +381,11 @@ impl SkinManager {
                     return None;
                 }
 
-                let palette_color_entity = world.get_resource::<PaletteManager>().unwrap().get_color_entity(
-                    &palette_file_entity,
-                    color_index_picked,
-                ).unwrap();
+                let palette_color_entity = world
+                    .get_resource::<PaletteManager>()
+                    .unwrap()
+                    .get_color_entity(&palette_file_entity, color_index_picked)
+                    .unwrap();
 
                 return Some(SkinAction::EditBckgColor(palette_color_entity));
             }

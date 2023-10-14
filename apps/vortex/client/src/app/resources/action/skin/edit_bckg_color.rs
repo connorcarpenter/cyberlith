@@ -8,25 +8,23 @@ use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt};
 
-use vortex_proto::components::{BackgroundSkinColor};
+use vortex_proto::components::BackgroundSkinColor;
 
 use crate::app::{
     events::ShapeColorResyncEvent,
-    resources::{
-        action::skin::SkinAction, canvas::Canvas,
-        skin_manager::SkinManager,
-    },
+    resources::{action::skin::SkinAction, canvas::Canvas, skin_manager::SkinManager},
 };
 
-pub(crate) fn execute(world: &mut World, current_file_entity: Entity, action: SkinAction) -> Vec<SkinAction> {
+pub(crate) fn execute(
+    world: &mut World,
+    current_file_entity: Entity,
+    action: SkinAction,
+) -> Vec<SkinAction> {
     let SkinAction::EditBckgColor(new_palette_color_entity) = action else {
         panic!("Expected EditBckgColor");
     };
 
-    info!(
-        "EditBckgColor(new_color: `{:?}`)",
-        new_palette_color_entity
-    );
+    info!("EditBckgColor(new_color: `{:?}`)", new_palette_color_entity);
     let mut system_state: SystemState<(
         Commands,
         Client,
@@ -44,10 +42,15 @@ pub(crate) fn execute(world: &mut World, current_file_entity: Entity, action: Sk
         mut bckg_color_q,
     ) = system_state.get_mut(world);
 
-    let bckg_color_entity = *skin_manager.file_to_bckg_entity(&current_file_entity).unwrap();
+    let bckg_color_entity = *skin_manager
+        .file_to_bckg_entity(&current_file_entity)
+        .unwrap();
 
     // check that we have auth
-    let auth = commands.entity(bckg_color_entity).authority(&client).unwrap();
+    let auth = commands
+        .entity(bckg_color_entity)
+        .authority(&client)
+        .unwrap();
     if auth.is_denied() {
         warn!("EditBckgColor action denied, we do not have auth");
         return vec![];
@@ -57,7 +60,9 @@ pub(crate) fn execute(world: &mut World, current_file_entity: Entity, action: Sk
         must_request_auth = false;
     }
     if must_request_auth {
-        commands.entity(bckg_color_entity).request_authority(&mut client);
+        commands
+            .entity(bckg_color_entity)
+            .request_authority(&mut client);
     }
 
     // get palette color entity
@@ -76,7 +81,5 @@ pub(crate) fn execute(world: &mut World, current_file_entity: Entity, action: Sk
 
     system_state.apply(world);
 
-    return vec![SkinAction::EditBckgColor(
-        old_palette_color_entity,
-    )];
+    return vec![SkinAction::EditBckgColor(old_palette_color_entity)];
 }

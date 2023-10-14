@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use bevy_ecs::{
     entity::Entity,
     event::{EventReader, EventWriter},
-    system::{Resource, SystemState, Commands, Local, Query, Res, ResMut},
+    system::{Commands, Local, Query, Res, ResMut, Resource, SystemState},
     world::{Mut, World},
 };
 use bevy_log::info;
@@ -12,9 +12,9 @@ use naia_bevy_server::{events::InsertComponentEvents, Replicate, Server};
 
 use vortex_proto::{
     components::{
-        AnimFrame, AnimRotation, Edge3d, Face3d, FaceColor, FileDependency, FileSystemChild,
-        FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, PaletteColor, ShapeName,
-        Vertex3d, VertexRoot, BackgroundSkinColor
+        AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency,
+        FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, PaletteColor,
+        ShapeName, Vertex3d, VertexRoot,
     },
     resources::FileKey,
 };
@@ -293,12 +293,7 @@ pub fn insert_face_component_events(
             &mut server,
             &mut git_manager,
             &mut shape_manager,
-            ShapeWaitlistInsert::Face(
-                face_entity,
-                vertex_a,
-                vertex_b,
-                vertex_c
-            ),
+            ShapeWaitlistInsert::Face(face_entity, vertex_a, vertex_b, vertex_c),
         );
     }
 }

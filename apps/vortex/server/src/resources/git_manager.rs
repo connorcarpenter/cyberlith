@@ -6,7 +6,7 @@ use std::{
 
 use bevy_ecs::{
     entity::Entity,
-    system::{Query, Res, Commands, ResMut, Resource, SystemState},
+    system::{Commands, Query, Res, ResMut, Resource, SystemState},
     world::{Mut, World},
 };
 use bevy_log::info;
@@ -15,16 +15,19 @@ use git2::{Cred, Repository, Tree};
 use naia_bevy_server::{BigMap, CommandsExt, ReplicationConfig, RoomKey, Server, UserKey};
 
 use vortex_proto::{
-    components::{BackgroundSkinColor, FaceColor, EntryKind, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild},
+    components::{
+        BackgroundSkinColor, EntryKind, FaceColor, FileExtension, FileSystemChild, FileSystemEntry,
+        FileSystemRootChild,
+    },
     messages::ChangelistMessage,
     resources::FileKey,
 };
 
 use crate::{
     config::GitConfig,
-    resources::{PaletteManager, ShapeManager, SkinManager,
-        project::Project, project::ProjectKey, ContentEntityData, FileEntryValue, RollbackResult,
-        UserManager,
+    resources::{
+        project::Project, project::ProjectKey, ContentEntityData, FileEntryValue, PaletteManager,
+        RollbackResult, ShapeManager, SkinManager, UserManager,
     },
 };
 
@@ -119,7 +122,12 @@ impl GitManager {
             // process content entities that depend on dependencies
             if file_has_dependencies {
                 if let Some(content_entities) = new_content_entities_opt {
-                    self.process_content_entities_with_dependencies(world, project_key, file_key, content_entities);
+                    self.process_content_entities_with_dependencies(
+                        world,
+                        project_key,
+                        file_key,
+                        content_entities,
+                    );
                 }
             }
         }
@@ -130,11 +138,25 @@ impl GitManager {
         world: &mut World,
         project_key: &ProjectKey,
         file_key: &FileKey,
-        content_entities: HashMap<Entity, ContentEntityData>
+        content_entities: HashMap<Entity, ContentEntityData>,
     ) {
         info!("processing content entities with dependencies");
-        let mut system_state: SystemState<(Server, Res<ShapeManager>, Res<PaletteManager>, ResMut<SkinManager>, Query<&mut BackgroundSkinColor>, Query<&mut FaceColor>)> = SystemState::new(world);
-        let (server, shape_manager, palette_manager, mut skin_manager, mut bckg_color_q, mut face_color_q) = system_state.get_mut(world);
+        let mut system_state: SystemState<(
+            Server,
+            Res<ShapeManager>,
+            Res<PaletteManager>,
+            ResMut<SkinManager>,
+            Query<&mut BackgroundSkinColor>,
+            Query<&mut FaceColor>,
+        )> = SystemState::new(world);
+        let (
+            server,
+            shape_manager,
+            palette_manager,
+            mut skin_manager,
+            mut bckg_color_q,
+            mut face_color_q,
+        ) = system_state.get_mut(world);
 
         for (entity, data) in content_entities {
             match data {
@@ -143,19 +165,22 @@ impl GitManager {
                         panic!("Could not find file data for entity: {:?}", entity);
                     };
 
-                    let palette_file_entity = self.file_find_dependency(project_key, file_key, FileExtension::Palette).unwrap();
+                    let palette_file_entity = self
+                        .file_find_dependency(project_key, file_key, FileExtension::Palette)
+                        .unwrap();
 
                     // find palette_color_entity from palette_index
-                    let palette_color_entity = palette_manager.color_entity_from_index(
-                        &palette_file_entity,
-                        palette_index as usize
-                    ).unwrap();
+                    let palette_color_entity = palette_manager
+                        .color_entity_from_index(&palette_file_entity, palette_index as usize)
+                        .unwrap();
 
                     // set face_3d_entity and palette_color_entity into FaceColor component
                     let Ok(mut bckg_color) = bckg_color_q.get_mut(entity) else {
                         panic!("Could not find background skin color for entity: {:?}", entity);
                     };
-                    bckg_color.palette_color_entity.set(&server, &palette_color_entity);
+                    bckg_color
+                        .palette_color_entity
+                        .set(&server, &palette_color_entity);
                     info!("setting palette color entity for new background color");
                 }
                 ContentEntityData::FaceColor(file_data_opt) => {
@@ -163,27 +188,31 @@ impl GitManager {
                         panic!("Could not find file data for entity: {:?}", entity);
                     };
 
-                    let mesh_file_entity = self.file_find_dependency(project_key, file_key, FileExtension::Mesh).unwrap();
-                    let palette_file_entity = self.file_find_dependency(project_key, file_key, FileExtension::Palette).unwrap();
+                    let mesh_file_entity = self
+                        .file_find_dependency(project_key, file_key, FileExtension::Mesh)
+                        .unwrap();
+                    let palette_file_entity = self
+                        .file_find_dependency(project_key, file_key, FileExtension::Palette)
+                        .unwrap();
 
                     // find face_3d_entity from face_index
-                    let face_3d_entity = shape_manager.face_entity_from_index(
-                        &mesh_file_entity,
-                        face_index as usize
-                    ).unwrap();
+                    let face_3d_entity = shape_manager
+                        .face_entity_from_index(&mesh_file_entity, face_index as usize)
+                        .unwrap();
 
                     // find palette_color_entity from palette_index
-                    let palette_color_entity = palette_manager.color_entity_from_index(
-                        &palette_file_entity,
-                        palette_index as usize
-                    ).unwrap();
+                    let palette_color_entity = palette_manager
+                        .color_entity_from_index(&palette_file_entity, palette_index as usize)
+                        .unwrap();
 
                     // set face_3d_entity and palette_color_entity into FaceColor component
                     let Ok(mut face_color) = face_color_q.get_mut(entity) else {
                         panic!("Could not find face color for entity: {:?}", entity);
                     };
                     face_color.face_3d_entity.set(&server, &face_3d_entity);
-                    face_color.palette_color_entity.set(&server, &palette_color_entity);
+                    face_color
+                        .palette_color_entity
+                        .set(&server, &palette_color_entity);
 
                     // register with skin manager
                     skin_manager.on_create_face_color(&face_3d_entity, &entity);
@@ -199,7 +228,7 @@ impl GitManager {
         &self,
         project_key: &ProjectKey,
         file_key: &FileKey,
-        file_extension: FileExtension
+        file_extension: FileExtension,
     ) -> Option<Entity> {
         let project = self.projects.get(project_key).unwrap();
         project.file_find_dependency(file_key, file_extension)

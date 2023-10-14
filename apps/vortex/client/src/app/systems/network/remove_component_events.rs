@@ -8,7 +8,11 @@ use naia_bevy_client::{events::RemoveComponentEvents, Client};
 
 use render_api::{base::CpuMesh, Assets};
 
-use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d, Face3d, FaceColor, FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild, PaletteColor, ShapeName, Vertex3d};
+use vortex_proto::components::{
+    AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d,
+    Face3d, FaceColor, FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild,
+    PaletteColor, ShapeName, Vertex3d,
+};
 
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},

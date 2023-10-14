@@ -126,7 +126,11 @@ impl PaletteManager {
         self.colors.contains_key(color_entity)
     }
 
-    pub fn color_entity_from_index(&self, file_entity: &Entity, palette_index: usize) -> Option<Entity> {
+    pub fn color_entity_from_index(
+        &self,
+        file_entity: &Entity,
+        palette_index: usize,
+    ) -> Option<Entity> {
         let file_color_data = self.file_color_data.get(file_entity).unwrap();
         file_color_data.color_list[palette_index]
     }

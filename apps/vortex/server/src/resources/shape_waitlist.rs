@@ -40,13 +40,7 @@ enum ShapeData {
     // (ProjectKey, FileKey, Start, End)
     MeshEdge(ProjectKey, FileKey, Entity, Entity),
     // (ProjectKey, FileKey, VertexA, VertexB, VertexC, EdgeA, EdgeB, EdgeC)
-    MeshFace(
-        ProjectKey,
-        FileKey,
-        Entity,
-        Entity,
-        Entity,
-    ),
+    MeshFace(ProjectKey, FileKey, Entity, Entity, Entity),
 }
 
 #[derive(Clone)]
@@ -113,12 +107,7 @@ impl ShapeWaitlistEntry {
         self.edge_entities = Some((start, end));
     }
 
-    fn set_face_entities(
-        &mut self,
-        vertex_a: Entity,
-        vertex_b: Entity,
-        vertex_c: Entity,
-    ) {
+    fn set_face_entities(&mut self, vertex_a: Entity, vertex_b: Entity, vertex_c: Entity) {
         self.face_entities = Some((vertex_a, vertex_b, vertex_c));
     }
 
@@ -156,15 +145,8 @@ impl ShapeWaitlistEntry {
                 return ShapeData::MeshEdge(project_key, file_key, start, end);
             }
             (Some(FileExtension::Mesh), Some(ShapeType::Face)) => {
-                let (vertex_a, vertex_b, vertex_c) =
-                    self.face_entities.unwrap();
-                return ShapeData::MeshFace(
-                    project_key,
-                    file_key,
-                    vertex_a,
-                    vertex_b,
-                    vertex_c,
-                );
+                let (vertex_a, vertex_b, vertex_c) = self.face_entities.unwrap();
+                return ShapeData::MeshFace(project_key, file_key, vertex_a, vertex_b, vertex_c);
             }
             _ => {
                 panic!("shouldn't be able to happen!");
@@ -247,12 +229,7 @@ impl ShapeWaitlist {
                     possibly_ready_entities
                 );
             }
-            ShapeWaitlistInsert::Face(
-                face_entity,
-                vertex_a,
-                vertex_b,
-                vertex_c
-            ) => {
+            ShapeWaitlistInsert::Face(face_entity, vertex_a, vertex_b, vertex_c) => {
                 if !self.contains_key(&face_entity) {
                     self.insert_incomplete(face_entity, ShapeWaitlistEntry::new());
                 }
@@ -361,20 +338,13 @@ impl ShapeWaitlist {
                     entity
                 );
                 entities_to_process.push((entity, entry));
-
             } else {
                 info!("entity `{:?}` is not ready yet...", possibly_ready_entity);
             }
         }
 
         for (entity, entry) in entities_to_process {
-            self.process_complete(
-                server,
-                git_manager,
-                shape_manager,
-                entity,
-                entry,
-            );
+            self.process_complete(server, git_manager, shape_manager, entity, entry);
         }
     }
 
@@ -404,16 +374,16 @@ impl ShapeWaitlist {
                 shape_manager.on_create_mesh_edge(start, entity, end);
                 (project_key, file_key, ShapeType::Vertex)
             }
-            ShapeData::MeshFace(
-                project_key,
-                file_key,
-                vertex_a,
-                vertex_b,
-                vertex_c,
-            ) => {
+            ShapeData::MeshFace(project_key, file_key, vertex_a, vertex_b, vertex_c) => {
                 let file_entity = git_manager.file_entity(&project_key, &file_key).unwrap();
-                shape_manager
-                    .on_create_face(&file_entity, None, entity, vertex_a, vertex_b, vertex_c);
+                shape_manager.on_create_face(
+                    &file_entity,
+                    None,
+                    entity,
+                    vertex_a,
+                    vertex_b,
+                    vertex_c,
+                );
                 (project_key, file_key, ShapeType::Face)
             }
         };
