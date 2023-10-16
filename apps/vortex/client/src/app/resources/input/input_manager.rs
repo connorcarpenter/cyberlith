@@ -11,14 +11,16 @@ use naia_bevy_client::{Client, CommandsExt, Instant};
 use input::{InputAction, Key, MouseButton};
 use math::{convert_2d_to_3d, Vec2, Vec3};
 use render_api::{
-    components::{Transform, Visibility, Camera, CameraProjection, Projection},
+    components::{Camera, CameraProjection, Projection, Transform, Visibility},
     shapes::{distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform},
 };
 
 use vortex_proto::components::{FileExtension, ShapeName, Vertex3d, VertexRoot};
 
 use crate::app::{
-    components::{Edge2dLocal, FaceIcon2d, LocalShape, SelectCircle, SelectTriangle, Vertex2d},
+    components::{
+        Edge2dLocal, FaceIcon2d, LocalShape, SelectCircle, SelectTriangle, Vertex2d, VertexTypeData,
+    },
     resources::{
         action::shape::ShapeAction,
         animation_manager::AnimationManager,
@@ -406,6 +408,58 @@ impl InputManager {
 
     pub fn queue_resync_selection_ui(&mut self) {
         self.resync_selection = true;
+    }
+
+    pub(crate) fn handle_create_new_vertex(
+        world: &mut World,
+        input_manager: &mut InputManager,
+        mouse_position: &&Vec2,
+        vertex_2d_entity: Entity,
+        vertex_type_data: VertexTypeData,
+    ) {
+        // create new vertex
+
+        let mut system_state: SystemState<(
+            Res<CameraManager>,
+            Query<(&Camera, &Projection)>,
+            Query<&Transform>,
+        )> = SystemState::new(world);
+        let (camera_manager, camera_q, transform_q) = system_state.get_mut(world);
+
+        // get camera
+        let camera_3d = camera_manager.camera_3d_entity().unwrap();
+        let camera_transform: Transform = *transform_q.get(camera_3d).unwrap();
+        let (camera, camera_projection) = camera_q.get(camera_3d).unwrap();
+
+        let camera_viewport = camera.viewport.unwrap();
+        let view_matrix = camera_transform.view_matrix();
+        let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
+
+        // get 2d vertex transform
+        let Ok(vertex_2d_transform) = transform_q.get(vertex_2d_entity) else {
+            warn!(
+                "Selected vertex entity: {:?} has no Transform",
+                vertex_2d_entity
+            );
+            return;
+        };
+        // convert 2d to 3d
+        let new_3d_position = convert_2d_to_3d(
+            &view_matrix,
+            &projection_matrix,
+            &camera_viewport.size_vec2(),
+            &mouse_position,
+            vertex_2d_transform.translation.z,
+        );
+
+        // spawn new vertex
+        world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+            tab_manager.current_tab_execute_shape_action(
+                world,
+                input_manager,
+                ShapeAction::CreateVertex(vertex_type_data, new_3d_position, None),
+            );
+        });
     }
 
     pub(crate) fn sync_selection_ui(

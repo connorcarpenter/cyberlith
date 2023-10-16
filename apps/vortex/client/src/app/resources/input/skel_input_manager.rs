@@ -1,17 +1,17 @@
 use std::f32::consts::FRAC_PI_2;
 
 use bevy_ecs::{
-    system::{Commands, Query, Res, ResMut, SystemState},
+    system::{Commands, Query, ResMut, SystemState},
     world::{Mut, World},
 };
-use bevy_log::{info, warn};
+use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt};
 
 use input::{InputAction, Key, MouseButton};
-use math::{convert_2d_to_3d, Vec2};
+use math::Vec2;
 use render_api::{
-    components::{Camera, CameraProjection, Projection, Transform},
+    components::Transform,
     shapes::{angle_between, get_2d_line_transform_endpoint, normalize_angle},
 };
 
@@ -20,9 +20,8 @@ use vortex_proto::components::EdgeAngle;
 use crate::app::{
     components::VertexTypeData,
     resources::{
-        action::shape::ShapeAction, camera_manager::CameraManager, canvas::Canvas,
-        edge_manager::EdgeManager, input::InputManager, shape_data::CanvasShape,
-        tab_manager::TabManager,
+        action::shape::ShapeAction, canvas::Canvas, edge_manager::EdgeManager, input::InputManager,
+        shape_data::CanvasShape, tab_manager::TabManager,
     },
     ui::widgets::naming_bar_visibility_toggle,
 };
@@ -118,20 +117,13 @@ impl SkelInputManager {
             return;
         }
 
-        let mut system_state: SystemState<(
-            Res<CameraManager>,
-            Query<(&Camera, &Projection)>,
-            Query<&Transform>,
-        )> = SystemState::new(world);
-        let (camera_manager, camera_q, transform_q) = system_state.get_mut(world);
-
         let selected_shape = input_manager.selected_shape.map(|(_, shape)| shape);
         let hovered_shape = input_manager.hovered_entity.map(|(_, shape)| shape);
 
         // click_type, selected_shape, hovered_shape, current_file_type
         match (click_type, selected_shape, hovered_shape) {
-            (MouseButton::Left, Some(CanvasShape::Edge | CanvasShape::Face), _) => {
-                // should not ever be able to attach something to an edge or face?
+            (MouseButton::Left, Some(CanvasShape::Edge), _) => {
+                // should not ever be able to attach something to an edge
                 // select hovered entity
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
                     tab_manager.current_tab_execute_shape_action(
@@ -155,47 +147,15 @@ impl SkelInputManager {
                 return;
             }
             (MouseButton::Left, Some(CanvasShape::Vertex | CanvasShape::RootVertex), None) => {
-                // create new vertex
-
-                // get camera
-                let camera_3d = camera_manager.camera_3d_entity().unwrap();
-                let camera_transform: Transform = *transform_q.get(camera_3d).unwrap();
-                let (camera, camera_projection) = camera_q.get(camera_3d).unwrap();
-
-                let camera_viewport = camera.viewport.unwrap();
-                let view_matrix = camera_transform.view_matrix();
-                let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
-
-                // get 2d vertex transform
                 let (vertex_2d_entity, _) = input_manager.selected_shape.unwrap();
-                let Ok(vertex_2d_transform) = transform_q.get(vertex_2d_entity) else {
-                    warn!(
-                        "Selected vertex entity: {:?} has no Transform",
-                        vertex_2d_entity
-                    );
-                    return;
-                };
-                // convert 2d to 3d
-                let new_3d_position = convert_2d_to_3d(
-                    &view_matrix,
-                    &projection_matrix,
-                    &camera_viewport.size_vec2(),
+                let vertex_type_data = VertexTypeData::Skel(vertex_2d_entity, 0.0, None);
+                InputManager::handle_create_new_vertex(
+                    world,
+                    input_manager,
                     &mouse_position,
-                    vertex_2d_transform.translation.z,
+                    vertex_2d_entity,
+                    vertex_type_data,
                 );
-
-                // spawn new vertex
-                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_shape_action(
-                        world,
-                        input_manager,
-                        ShapeAction::CreateVertex(
-                            VertexTypeData::Skel(vertex_2d_entity, 0.0, None),
-                            new_3d_position,
-                            None,
-                        ),
-                    );
-                });
             }
             (
                 MouseButton::Left,
@@ -236,7 +196,9 @@ impl SkelInputManager {
         }
 
         match (click_type, input_manager.selected_shape) {
-            (MouseButton::Left, Some((vertex_2d_entity, CanvasShape::Vertex))) => InputManager::handle_vertex_drag(world, &vertex_2d_entity, &mouse_position),
+            (MouseButton::Left, Some((vertex_2d_entity, CanvasShape::Vertex))) => {
+                InputManager::handle_vertex_drag(world, &vertex_2d_entity, &mouse_position)
+            }
             (MouseButton::Left, Some((edge_2d_entity, CanvasShape::Edge))) => {
                 let edge_3d_entity = world
                     .get_resource::<EdgeManager>()
@@ -262,8 +224,7 @@ impl SkelInputManager {
                 ) = system_state.get_mut(world);
 
                 // rotate edge angle
-                let auth_status =
-                    commands.entity(edge_3d_entity).authority(&client).unwrap();
+                let auth_status = commands.entity(edge_3d_entity).authority(&client).unwrap();
                 if !(auth_status.is_requested() || auth_status.is_granted()) {
                     // only continue to mutate if requested or granted authority over edge
                     info!("No authority over edge, skipping..");
@@ -275,8 +236,7 @@ impl SkelInputManager {
                 let end_pos = get_2d_line_transform_endpoint(&edge_2d_transform);
                 let base_angle = angle_between(&start_pos, &end_pos);
 
-                let edge_angle_entity =
-                    edge_manager.edge_get_base_circle_entity(&edge_3d_entity);
+                let edge_angle_entity = edge_manager.edge_get_base_circle_entity(&edge_3d_entity);
                 let edge_angle_pos = transform_q
                     .get(edge_angle_entity)
                     .unwrap()
@@ -285,9 +245,7 @@ impl SkelInputManager {
 
                 let mut edge_angle = edge_angle_q.get_mut(edge_3d_entity).unwrap();
                 let new_angle = normalize_angle(
-                    angle_between(&edge_angle_pos, &mouse_position)
-                        - FRAC_PI_2
-                        - base_angle,
+                    angle_between(&edge_angle_pos, &mouse_position) - FRAC_PI_2 - base_angle,
                 );
 
                 edge_manager.update_last_edge_dragged(

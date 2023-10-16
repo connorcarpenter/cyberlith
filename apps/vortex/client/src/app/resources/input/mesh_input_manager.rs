@@ -1,5 +1,5 @@
 use bevy_ecs::{
-    system::{Commands, Query, Res, SystemState},
+    system::{Commands, Res, SystemState},
     world::{Mut, World},
 };
 use bevy_log::warn;
@@ -7,15 +7,14 @@ use bevy_log::warn;
 use naia_bevy_client::{Client, CommandsExt};
 
 use input::{InputAction, Key, MouseButton};
-use math::{convert_2d_to_3d, Vec2, Vec3};
-use render_api::components::{Camera, CameraProjection, Projection, Transform};
+use math::{Vec2, Vec3};
 
 use crate::app::{
     components::VertexTypeData,
     resources::{
-        action::shape::ShapeAction, camera_manager::CameraManager, canvas::Canvas,
-        edge_manager::EdgeManager, face_manager::FaceManager, input::InputManager,
-        shape_data::CanvasShape, tab_manager::TabManager, vertex_manager::VertexManager,
+        action::shape::ShapeAction, canvas::Canvas, edge_manager::EdgeManager,
+        face_manager::FaceManager, input::InputManager, shape_data::CanvasShape,
+        tab_manager::TabManager, vertex_manager::VertexManager,
     },
 };
 
@@ -177,16 +176,6 @@ impl MeshInputManager {
             return;
         }
 
-        let mut system_state: SystemState<(
-            Res<CameraManager>,
-            Res<VertexManager>,
-            Res<EdgeManager>,
-            Query<(&Camera, &Projection)>,
-            Query<&Transform>,
-        )> = SystemState::new(world);
-        let (camera_manager, vertex_manager, edge_manager, camera_q, transform_q) =
-            system_state.get_mut(world);
-
         let selected_shape = input_manager.selected_shape.map(|(_, shape)| shape);
         let hovered_shape = input_manager.hovered_entity.map(|(_, shape)| shape);
 
@@ -216,105 +205,22 @@ impl MeshInputManager {
                 });
                 return;
             }
-            (
-                MouseButton::Left,
-                Some(CanvasShape::Vertex | CanvasShape::RootVertex),
-                Some(CanvasShape::Vertex | CanvasShape::RootVertex),
-            ) => {
-                // link vertices together
-                let (vertex_2d_entity_a, _) = input_manager.selected_shape.unwrap();
-                let (vertex_2d_entity_b, _) = input_manager.hovered_entity.unwrap();
-                if vertex_2d_entity_a == vertex_2d_entity_b {
-                    return;
-                }
-
-                // check if edge already exists
-                if edge_manager
-                    .edge_2d_entity_from_vertices(
-                        &vertex_manager,
-                        vertex_2d_entity_a,
-                        vertex_2d_entity_b,
-                    )
-                    .is_some()
-                {
-                    // select vertex
-                    world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                        tab_manager.current_tab_execute_shape_action(
-                            world,
-                            input_manager,
-                            ShapeAction::SelectShape(Some((
-                                vertex_2d_entity_b,
-                                CanvasShape::Vertex,
-                            ))),
-                        );
-                    });
-                    return;
-                } else {
-                    // create edge
-                    world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                        tab_manager.current_tab_execute_shape_action(
-                            world,
-                            input_manager,
-                            ShapeAction::CreateEdge(
-                                vertex_2d_entity_a,
-                                vertex_2d_entity_b,
-                                (vertex_2d_entity_b, CanvasShape::Vertex),
-                                None,
-                                None,
-                            ),
-                        );
-                    });
-                    return;
-                }
+            (MouseButton::Left, Some(CanvasShape::Vertex), Some(CanvasShape::Vertex)) => {
+                Self::link_vertices(world, input_manager);
             }
-            (MouseButton::Left, Some(CanvasShape::Vertex | CanvasShape::RootVertex), None) => {
-                // create new vertex
-
-                // get camera
-                let camera_3d = camera_manager.camera_3d_entity().unwrap();
-                let camera_transform: Transform = *transform_q.get(camera_3d).unwrap();
-                let (camera, camera_projection) = camera_q.get(camera_3d).unwrap();
-
-                let camera_viewport = camera.viewport.unwrap();
-                let view_matrix = camera_transform.view_matrix();
-                let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
-
-                // get 2d vertex transform
+            (MouseButton::Left, Some(CanvasShape::Vertex), None) => {
                 let (vertex_2d_entity, _) = input_manager.selected_shape.unwrap();
-                let Ok(vertex_2d_transform) = transform_q.get(vertex_2d_entity) else {
-                    warn!(
-                        "Selected vertex entity: {:?} has no Transform",
-                        vertex_2d_entity
-                    );
-                    return;
-                };
-                // convert 2d to 3d
-                let new_3d_position = convert_2d_to_3d(
-                    &view_matrix,
-                    &projection_matrix,
-                    &camera_viewport.size_vec2(),
+                let vertex_type_data =
+                    VertexTypeData::Mesh(vec![(vertex_2d_entity, None)], Vec::new());
+                InputManager::handle_create_new_vertex(
+                    world,
+                    input_manager,
                     &mouse_position,
-                    vertex_2d_transform.translation.z,
+                    vertex_2d_entity,
+                    vertex_type_data,
                 );
-
-                // spawn new vertex
-                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_shape_action(
-                        world,
-                        input_manager,
-                        ShapeAction::CreateVertex(
-                            VertexTypeData::Mesh(vec![(vertex_2d_entity, None)], Vec::new()),
-                            new_3d_position,
-                            None,
-                        ),
-                    );
-                });
             }
-            (
-                MouseButton::Left,
-                None,
-                Some(CanvasShape::RootVertex | CanvasShape::Vertex | CanvasShape::Edge),
-            ) => {
+            (MouseButton::Left, None, Some(CanvasShape::Vertex | CanvasShape::Edge)) => {
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
                     tab_manager.current_tab_execute_shape_action(
                         world,
@@ -346,6 +252,49 @@ impl MeshInputManager {
         }
     }
 
+    fn link_vertices(world: &mut World, input_manager: &mut InputManager) {
+        let mut system_state: SystemState<(Res<VertexManager>, Res<EdgeManager>)> =
+            SystemState::new(world);
+        let (vertex_manager, edge_manager) = system_state.get_mut(world);
+
+        // link vertices together
+        let (vertex_2d_entity_a, _) = input_manager.selected_shape.unwrap();
+        let (vertex_2d_entity_b, _) = input_manager.hovered_entity.unwrap();
+        if vertex_2d_entity_a == vertex_2d_entity_b {
+            return;
+        }
+
+        // check if edge already exists
+        if edge_manager
+            .edge_2d_entity_from_vertices(&vertex_manager, vertex_2d_entity_a, vertex_2d_entity_b)
+            .is_some()
+        {
+            // select vertex
+            world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                tab_manager.current_tab_execute_shape_action(
+                    world,
+                    input_manager,
+                    ShapeAction::SelectShape(Some((vertex_2d_entity_b, CanvasShape::Vertex))),
+                );
+            });
+        } else {
+            // create edge
+            world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                tab_manager.current_tab_execute_shape_action(
+                    world,
+                    input_manager,
+                    ShapeAction::CreateEdge(
+                        vertex_2d_entity_a,
+                        vertex_2d_entity_b,
+                        (vertex_2d_entity_b, CanvasShape::Vertex),
+                        None,
+                        None,
+                    ),
+                );
+            });
+        }
+    }
+
     pub(crate) fn handle_mouse_drag(
         world: &mut World,
         input_manager: &mut InputManager,
@@ -358,7 +307,9 @@ impl MeshInputManager {
         }
 
         match (click_type, input_manager.selected_shape) {
-            (MouseButton::Left, Some((vertex_2d_entity, CanvasShape::Vertex))) => InputManager::handle_vertex_drag(world, &vertex_2d_entity, &mouse_position),
+            (MouseButton::Left, Some((vertex_2d_entity, CanvasShape::Vertex))) => {
+                InputManager::handle_vertex_drag(world, &vertex_2d_entity, &mouse_position)
+            }
             (_, _) => InputManager::handle_drag_empty_space(world, click_type, delta),
         }
     }
