@@ -235,100 +235,73 @@ impl SkelInputManager {
             return;
         }
 
-        let shape_is_selected = input_manager.selected_shape.is_some();
-        let shape_can_drag = shape_is_selected
-            && match input_manager.selected_shape.unwrap().1 {
-                CanvasShape::Vertex | CanvasShape::Edge => true,
-                _ => false,
-            };
+        match (click_type, input_manager.selected_shape) {
+            (MouseButton::Left, Some((vertex_2d_entity, CanvasShape::Vertex))) => InputManager::handle_vertex_drag(world, &vertex_2d_entity, &mouse_position),
+            (MouseButton::Left, Some((edge_2d_entity, CanvasShape::Edge))) => {
+                let edge_3d_entity = world
+                    .get_resource::<EdgeManager>()
+                    .unwrap()
+                    .edge_entity_2d_to_3d(&edge_2d_entity)
+                    .unwrap();
 
-        if shape_is_selected && shape_can_drag {
-            match click_type {
-                MouseButton::Left => {
-                    match input_manager.selected_shape.unwrap() {
-                        (vertex_2d_entity, CanvasShape::Vertex) => {
-                            InputManager::handle_vertex_drag(
-                                world,
-                                &vertex_2d_entity,
-                                &mouse_position,
-                            )
-                        }
-                        (edge_2d_entity, CanvasShape::Edge) => {
-                            let edge_3d_entity = world
-                                .get_resource::<EdgeManager>()
-                                .unwrap()
-                                .edge_entity_2d_to_3d(&edge_2d_entity)
-                                .unwrap();
+                let mut system_state: SystemState<(
+                    Commands,
+                    Client,
+                    ResMut<EdgeManager>,
+                    ResMut<Canvas>,
+                    Query<&Transform>,
+                    Query<&mut EdgeAngle>,
+                )> = SystemState::new(world);
+                let (
+                    mut commands,
+                    client,
+                    mut edge_manager,
+                    mut canvas,
+                    transform_q,
+                    mut edge_angle_q,
+                ) = system_state.get_mut(world);
 
-                            let mut system_state: SystemState<(
-                                Commands,
-                                Client,
-                                ResMut<EdgeManager>,
-                                ResMut<Canvas>,
-                                Query<&Transform>,
-                                Query<&mut EdgeAngle>,
-                            )> = SystemState::new(world);
-                            let (
-                                mut commands,
-                                client,
-                                mut edge_manager,
-                                mut canvas,
-                                transform_q,
-                                mut edge_angle_q,
-                            ) = system_state.get_mut(world);
-
-                            // rotate edge angle
-                            let auth_status =
-                                commands.entity(edge_3d_entity).authority(&client).unwrap();
-                            if !(auth_status.is_requested() || auth_status.is_granted()) {
-                                // only continue to mutate if requested or granted authority over edge
-                                info!("No authority over edge, skipping..");
-                                return;
-                            }
-
-                            let edge_2d_transform = transform_q.get(edge_2d_entity).unwrap();
-                            let start_pos = edge_2d_transform.translation.truncate();
-                            let end_pos = get_2d_line_transform_endpoint(&edge_2d_transform);
-                            let base_angle = angle_between(&start_pos, &end_pos);
-
-                            let edge_angle_entity =
-                                edge_manager.edge_get_base_circle_entity(&edge_3d_entity);
-                            let edge_angle_pos = transform_q
-                                .get(edge_angle_entity)
-                                .unwrap()
-                                .translation
-                                .truncate();
-
-                            let mut edge_angle = edge_angle_q.get_mut(edge_3d_entity).unwrap();
-                            let new_angle = normalize_angle(
-                                angle_between(&edge_angle_pos, &mouse_position)
-                                    - FRAC_PI_2
-                                    - base_angle,
-                            );
-
-                            edge_manager.update_last_edge_dragged(
-                                edge_2d_entity,
-                                edge_angle.get_radians(),
-                                new_angle,
-                            );
-
-                            edge_angle.set_radians(new_angle);
-
-                            // redraw
-                            canvas.queue_resync_shapes();
-                        }
-                        _ => {
-                            panic!("Shouldn't be possible");
-                        }
-                    }
+                // rotate edge angle
+                let auth_status =
+                    commands.entity(edge_3d_entity).authority(&client).unwrap();
+                if !(auth_status.is_requested() || auth_status.is_granted()) {
+                    // only continue to mutate if requested or granted authority over edge
+                    info!("No authority over edge, skipping..");
+                    return;
                 }
-                MouseButton::Right => {
-                    // TODO: dunno if this is possible? shouldn't the vertex be deselected?
-                }
-                _ => {}
+
+                let edge_2d_transform = transform_q.get(edge_2d_entity).unwrap();
+                let start_pos = edge_2d_transform.translation.truncate();
+                let end_pos = get_2d_line_transform_endpoint(&edge_2d_transform);
+                let base_angle = angle_between(&start_pos, &end_pos);
+
+                let edge_angle_entity =
+                    edge_manager.edge_get_base_circle_entity(&edge_3d_entity);
+                let edge_angle_pos = transform_q
+                    .get(edge_angle_entity)
+                    .unwrap()
+                    .translation
+                    .truncate();
+
+                let mut edge_angle = edge_angle_q.get_mut(edge_3d_entity).unwrap();
+                let new_angle = normalize_angle(
+                    angle_between(&edge_angle_pos, &mouse_position)
+                        - FRAC_PI_2
+                        - base_angle,
+                );
+
+                edge_manager.update_last_edge_dragged(
+                    edge_2d_entity,
+                    edge_angle.get_radians(),
+                    new_angle,
+                );
+
+                edge_angle.set_radians(new_angle);
+
+                // redraw
+                canvas.queue_resync_shapes();
             }
-        } else {
-            InputManager::handle_drag_empty_space(world, click_type, delta);
+            (_, _) => InputManager::handle_drag_empty_space(world, click_type, delta),
         }
     }
 }

@@ -333,7 +333,7 @@ impl MeshInputManager {
                 });
             }
             (MouseButton::Right, _, _) => {
-                // deselect vertex
+                // deselect shape
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
                     tab_manager.current_tab_execute_shape_action(
                         world,
@@ -357,31 +357,9 @@ impl MeshInputManager {
             return;
         }
 
-        let shape_is_selected = input_manager.selected_shape.is_some();
-        let shape_can_drag = shape_is_selected
-            && match input_manager.selected_shape.unwrap().1 {
-                CanvasShape::Vertex => true,
-                CanvasShape::Edge => false,
-                _ => false,
-            };
-
-        if shape_is_selected && shape_can_drag {
-            match click_type {
-                MouseButton::Left => match input_manager.selected_shape.unwrap() {
-                    (vertex_2d_entity, CanvasShape::Vertex) => {
-                        InputManager::handle_vertex_drag(world, &vertex_2d_entity, &mouse_position)
-                    }
-                    _ => {
-                        panic!("Shouldn't be possible");
-                    }
-                },
-                MouseButton::Right => {
-                    // TODO: dunno if this is possible? shouldn't the vertex be deselected?
-                }
-                _ => {}
-            }
-        } else {
-            InputManager::handle_drag_empty_space(world, click_type, delta);
+        match (click_type, input_manager.selected_shape) {
+            (MouseButton::Left, Some((vertex_2d_entity, CanvasShape::Vertex))) => InputManager::handle_vertex_drag(world, &vertex_2d_entity, &mouse_position),
+            (_, _) => InputManager::handle_drag_empty_space(world, click_type, delta),
         }
     }
 }
