@@ -1,24 +1,28 @@
-use bevy_ecs::system::{Commands, Query, Res, ResMut, SystemState};
-use bevy_ecs::world::{Mut, World};
-use bevy_log::{info, warn};
-use naia_bevy_client::{Client, CommandsExt};
 use std::f32::consts::FRAC_PI_2;
+
+use bevy_ecs::{
+    system::{Commands, Query, Res, ResMut, SystemState},
+    world::{Mut, World},
+};
+use bevy_log::{info, warn};
+
+use naia_bevy_client::{Client, CommandsExt};
 
 use input::{InputAction, Key, MouseButton};
 use math::{convert_2d_to_3d, Vec2};
-use render_api::components::{Camera, CameraProjection, Projection, Transform};
-use render_api::shapes::{angle_between, get_2d_line_transform_endpoint, normalize_angle};
+use render_api::{
+    components::{Camera, CameraProjection, Projection, Transform},
+    shapes::{angle_between, get_2d_line_transform_endpoint, normalize_angle},
+};
 
 use vortex_proto::components::{EdgeAngle, FileExtension, Vertex3d};
 
-use crate::app::components::VertexTypeData;
-use crate::app::resources::camera_manager::CameraManager;
-use crate::app::resources::canvas::Canvas;
-use crate::app::resources::vertex_manager::VertexManager;
 use crate::app::{
+    components::VertexTypeData,
     resources::{
-        action::shape::ShapeAction, edge_manager::EdgeManager, input::InputManager,
-        shape_data::CanvasShape, tab_manager::TabManager,
+        action::shape::ShapeAction, camera_manager::CameraManager, canvas::Canvas,
+        edge_manager::EdgeManager, input::InputManager, shape_data::CanvasShape,
+        tab_manager::TabManager, vertex_manager::VertexManager,
     },
     ui::widgets::naming_bar_visibility_toggle,
 };
@@ -34,8 +38,8 @@ impl SkelInputManager {
         for action in input_actions {
             match action {
                 InputAction::MouseClick(click_type, mouse_position) => Self::handle_mouse_click(
-                    input_manager,
                     world,
+                    input_manager,
                     FileExtension::Skel,
                     click_type,
                     &mouse_position,
@@ -111,8 +115,8 @@ impl SkelInputManager {
     }
 
     pub(crate) fn handle_mouse_click(
-        input_manager: &mut InputManager,
         world: &mut World,
+        input_manager: &mut InputManager,
         current_file_type: FileExtension,
         click_type: MouseButton,
         mouse_position: &Vec2,

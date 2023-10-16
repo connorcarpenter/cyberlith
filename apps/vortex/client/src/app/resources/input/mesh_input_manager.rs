@@ -37,16 +37,16 @@ impl MeshInputManager {
         for action in input_actions {
             match action {
                 InputAction::MouseClick(click_type, mouse_position) => Self::handle_mouse_click(
-                    input_manager,
                     world,
+                    input_manager,
                     FileExtension::Mesh,
                     click_type,
                     &mouse_position,
                 ),
                 InputAction::MouseDragged(click_type, mouse_position, delta) => {
                     Self::handle_mouse_drag(
-                        input_manager,
                         world,
+                        input_manager,
                         FileExtension::Mesh,
                         click_type,
                         mouse_position,
@@ -181,8 +181,8 @@ impl MeshInputManager {
     }
 
     pub(crate) fn handle_mouse_click(
-        input_manager: &mut InputManager,
         world: &mut World,
+        input_manager: &mut InputManager,
         current_file_type: FileExtension,
         click_type: MouseButton,
         mouse_position: &Vec2,
@@ -410,8 +410,8 @@ impl MeshInputManager {
     }
 
     pub(crate) fn handle_mouse_drag(
-        input_manager: &mut InputManager,
         world: &mut World,
+        input_manager: &mut InputManager,
         current_file_type: FileExtension,
         click_type: MouseButton,
         mouse_position: Vec2,
