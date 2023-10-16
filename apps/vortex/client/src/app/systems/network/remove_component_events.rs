@@ -18,7 +18,7 @@ use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
     resources::{
         animation_manager::AnimationManager, canvas::Canvas, edge_manager::EdgeManager,
-        face_manager::FaceManager, file_manager::FileManager, input_manager::InputManager,
+        face_manager::FaceManager, file_manager::FileManager, input::InputManager,
         palette_manager::PaletteManager, skin_manager::SkinManager, tab_manager::TabManager,
         vertex_manager::VertexManager,
     },

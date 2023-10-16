@@ -35,12 +35,10 @@ use vortex_proto::components::{
 use crate::app::{
     components::{Edge2dLocal, LocalAnimRotation, Vertex2d},
     resources::{
-        action::animation::AnimAction,
         camera_manager::{set_camera_transform, CameraManager},
         canvas::Canvas,
         edge_manager::EdgeManager,
-        input_manager::CardinalDirection,
-        input_manager::InputManager,
+        input::CardinalDirection,
         tab_manager::TabManager,
         vertex_manager::VertexManager,
     },
@@ -1823,94 +1821,4 @@ pub fn get_root_vertex(world: &mut World) -> Option<Entity> {
     }
 
     root_3d_vertex
-}
-
-pub(crate) fn anim_file_insert_frame(input_manager: &mut InputManager, world: &mut World) {
-    world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-        let current_file_entity = *tab_manager.current_tab_entity().unwrap();
-        let animation_manager = world.get_resource::<AnimationManager>().unwrap();
-        let current_frame_index = animation_manager.current_frame_index();
-
-        // copy all rotations from current frame
-        let mut rotations = Vec::new();
-        let current_frame_entity = animation_manager
-            .current_frame_entity(&current_file_entity)
-            .unwrap();
-        let rotation_entities: Vec<Entity> = animation_manager
-            .get_frame_rotations(&current_file_entity, &current_frame_entity)
-            .unwrap()
-            .iter()
-            .copied()
-            .collect();
-        let mut rot_q = world.query::<&AnimRotation>();
-        for rotation_entity in rotation_entities.iter() {
-            let Ok(rot) = rot_q.get(world, *rotation_entity) else {
-                continue;
-            };
-            let name: String = (*rot.vertex_name).clone();
-            let quat = rot.get_rotation();
-            rotations.push((name, quat));
-        }
-
-        // execute insertion
-        tab_manager.current_tab_execute_anim_action(
-            world,
-            input_manager,
-            AnimAction::InsertFrame(
-                current_file_entity,
-                current_frame_index + 1,
-                Some(rotations),
-            ),
-        );
-    });
-}
-
-pub(crate) fn anim_file_delete_frame(input_manager: &mut InputManager, world: &mut World) {
-    let Some(current_file_entity) = world.get_resource::<TabManager>().unwrap().current_tab_entity() else {
-        return;
-    };
-    let current_file_entity = *current_file_entity;
-
-    let mut system_state: SystemState<(Commands, Client, Res<AnimationManager>)> =
-        SystemState::new(world);
-    let (mut commands, client, animation_manager) = system_state.get_mut(world);
-
-    // delete vertex
-    let Some(current_frame_entity) = animation_manager.current_frame_entity(&current_file_entity) else {
-        return;
-    };
-
-    // check whether we can delete vertex
-    let auth_status = commands
-        .entity(current_frame_entity)
-        .authority(&client)
-        .unwrap();
-    if !auth_status.is_granted() && !auth_status.is_available() {
-        // do nothing, file is not available
-        // TODO: queue for deletion? check before this?
-        warn!(
-            "Frame `{:?}` is not available for deletion!",
-            current_frame_entity
-        );
-        return;
-    }
-
-    let current_frame_index = animation_manager.current_frame_index();
-
-    world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-        tab_manager.current_tab_execute_anim_action(
-            world,
-            input_manager,
-            AnimAction::DeleteFrame(current_file_entity, current_frame_index),
-        );
-    });
-}
-
-pub(crate) fn anim_file_play_pause(world: &mut World) {
-    let mut animation_manager = world.get_resource_mut::<AnimationManager>().unwrap();
-    if animation_manager.preview_is_playing() {
-        animation_manager.preview_pause();
-    } else {
-        animation_manager.preview_play();
-    }
 }

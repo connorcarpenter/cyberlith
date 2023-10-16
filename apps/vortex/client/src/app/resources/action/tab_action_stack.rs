@@ -7,10 +7,10 @@ use vortex_proto::components::FileExtension;
 
 use crate::app::resources::{
     action::{
-        animation::AnimAction, palette::PaletteAction, shape::ShapeAction, skin::SkinAction, model::ModelAction, scene::SceneAction,
-        ActionStack,
+        animation::AnimAction, model::ModelAction, palette::PaletteAction, scene::SceneAction,
+        shape::ShapeAction, skin::SkinAction, ActionStack,
     },
-    input_manager::InputManager,
+    input::InputManager,
     palette_manager::PaletteManager,
 };
 
@@ -20,7 +20,7 @@ pub enum TabActionStack {
     Palette(ActionStack<PaletteAction>),
     Skin(ActionStack<SkinAction>),
     Model(ActionStack<ModelAction>),
-    Scene(ActionStack<SceneAction>)
+    Scene(ActionStack<SceneAction>),
 }
 
 impl TabActionStack {

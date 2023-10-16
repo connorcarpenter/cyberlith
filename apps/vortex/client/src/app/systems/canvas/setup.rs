@@ -17,8 +17,7 @@ use crate::app::{
     config::AppConfig,
     resources::{
         camera_manager::CameraManager, canvas::Canvas, compass::Compass, edge_manager::EdgeManager,
-        face_manager::FaceManager, grid::Grid, input_manager::InputManager,
-        vertex_manager::VertexManager,
+        face_manager::FaceManager, grid::Grid, input::InputManager, vertex_manager::VertexManager,
     },
     shapes::create_2d_edge_line,
 };

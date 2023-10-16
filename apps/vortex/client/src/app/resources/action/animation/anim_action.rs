@@ -9,7 +9,7 @@ use crate::app::resources::{
         },
         Action, ActionStack,
     },
-    input_manager::InputManager,
+    input::InputManager,
     shape_data::CanvasShape,
     vertex_manager::VertexManager,
 };

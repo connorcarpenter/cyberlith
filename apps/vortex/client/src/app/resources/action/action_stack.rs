@@ -10,14 +10,14 @@ use crate::app::resources::{
     action::{
         animation::AnimAction,
         file::{FileAction, FileActions},
+        model::ModelAction,
         palette::PaletteAction,
+        scene::SceneAction,
         shape::ShapeAction,
         skin::SkinAction,
-        model::ModelAction,
-        scene::SceneAction,
     },
     file_manager::FileManager,
-    input_manager::InputManager,
+    input::InputManager,
     palette_manager::PaletteManager,
     tab_manager::TabManager,
 };

@@ -16,7 +16,7 @@ use crate::app::resources::{
     canvas::Canvas,
     edge_manager::EdgeManager,
     face_manager::FaceManager,
-    input_manager::InputManager,
+    input::InputManager,
     shape_data::CanvasShape,
     vertex_manager::VertexManager,
 };

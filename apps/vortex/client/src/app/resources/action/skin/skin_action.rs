@@ -5,7 +5,7 @@ use crate::app::resources::{
         skin::{edit_bckg_color, edit_color, select_face},
         Action,
     },
-    input_manager::InputManager,
+    input::InputManager,
     shape_data::CanvasShape,
 };
 

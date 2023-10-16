@@ -11,10 +11,7 @@ use naia_bevy_server::{
     BitReader, CommandsExt, FileBitWriter, ReplicationConfig, Serde, SerdeErr, Server,
 };
 
-use vortex_proto::{
-    components::{FileExtension},
-    resources::FileKey,
-};
+use vortex_proto::{components::FileExtension, resources::FileKey};
 
 use crate::{
     files::{add_file_dependency, FileWriter},

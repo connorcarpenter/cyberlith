@@ -13,7 +13,7 @@ use crate::app::resources::{
     animation_manager::AnimationManager,
     canvas::Canvas,
     edge_manager::EdgeManager,
-    input_manager::InputManager,
+    input::InputManager,
     shape_data::CanvasShape,
     vertex_manager::VertexManager,
 };

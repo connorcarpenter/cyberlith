@@ -44,7 +44,7 @@ use crate::app::{
         canvas::Canvas,
         face_manager::FaceManager,
         file_manager::FileManager,
-        input_manager::InputManager,
+        input::InputManager,
         palette_manager::PaletteManager,
         shape_data::CanvasShape,
         shape_manager::ShapeManager,

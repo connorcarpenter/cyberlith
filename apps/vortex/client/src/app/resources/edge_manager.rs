@@ -33,7 +33,7 @@ use crate::app::{
         canvas::Canvas,
         face_manager::FaceManager,
         file_manager::FileManager,
-        input_manager::InputManager,
+        input::InputManager,
         shape_data::{CanvasShape, Edge3dData, FaceKey},
         tab_manager::TabManager,
         vertex_manager::VertexManager,

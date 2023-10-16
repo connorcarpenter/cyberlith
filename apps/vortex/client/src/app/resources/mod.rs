@@ -9,7 +9,7 @@ pub mod face_manager;
 pub mod file_manager;
 pub mod file_tree;
 pub mod grid;
-pub mod input_manager;
+pub mod input;
 pub mod palette_manager;
 pub mod shape_data;
 pub mod shape_manager;

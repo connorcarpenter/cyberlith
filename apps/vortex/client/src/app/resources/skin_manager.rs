@@ -20,7 +20,7 @@ use vortex_proto::components::{BackgroundSkinColor, FaceColor, FileExtension, Pa
 use crate::app::{
     events::ShapeColorResyncEvent,
     resources::{
-        action::skin::SkinAction, file_manager::FileManager, input_manager::InputManager,
+        action::skin::SkinAction, file_manager::FileManager, input::InputManager,
         palette_manager::PaletteManager, shape_data::CanvasShape,
     },
 };

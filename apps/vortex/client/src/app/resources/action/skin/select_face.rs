@@ -14,7 +14,7 @@ use crate::app::resources::{
     canvas::Canvas,
     face_manager::FaceManager,
     file_manager::FileManager,
-    input_manager::InputManager,
+    input::InputManager,
     palette_manager::PaletteManager,
     shape_data::CanvasShape,
     skin_manager::SkinManager,

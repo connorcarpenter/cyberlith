@@ -21,10 +21,9 @@ use crate::app::{
     resources::{
         action::file::FileActions, animation_manager::AnimationManager,
         camera_manager::CameraManager, canvas::Canvas, compass::Compass, edge_manager::EdgeManager,
-        face_manager::FaceManager, file_manager::FileManager, grid::Grid,
-        input_manager::InputManager, palette_manager::PaletteManager,
-        shape_waitlist::ShapeWaitlist, skin_manager::SkinManager, tab_manager::TabManager,
-        vertex_manager::VertexManager,
+        face_manager::FaceManager, file_manager::FileManager, grid::Grid, input::InputManager,
+        palette_manager::PaletteManager, shape_waitlist::ShapeWaitlist, skin_manager::SkinManager,
+        tab_manager::TabManager, vertex_manager::VertexManager,
     },
     systems::{canvas, draw, draw_vertices_and_edges, network, ui},
     ui::{

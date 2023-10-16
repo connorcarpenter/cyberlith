@@ -9,7 +9,7 @@ use naia_bevy_client::{Client, CommandsExt};
 
 use crate::app::resources::{
     action::shape::ShapeAction, canvas::Canvas, edge_manager::EdgeManager,
-    face_manager::FaceManager, input_manager::InputManager, shape_data::CanvasShape,
+    face_manager::FaceManager, input::InputManager, shape_data::CanvasShape,
     shape_manager::ShapeManager, vertex_manager::VertexManager,
 };
 

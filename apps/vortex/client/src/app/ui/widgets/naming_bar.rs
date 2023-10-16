@@ -14,7 +14,7 @@ use vortex_proto::components::{FileExtension, ShapeName};
 use crate::app::{
     resources::{
         edge_manager::EdgeManager, face_manager::FaceManager, file_manager::FileManager,
-        input_manager::InputManager, shape_data::CanvasShape, shape_manager::ShapeManager,
+        input::InputManager, shape_data::CanvasShape, shape_manager::ShapeManager,
         tab_manager::TabManager, vertex_manager::VertexManager,
     },
     ui::UiState,

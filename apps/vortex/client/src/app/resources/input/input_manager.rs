@@ -22,27 +22,20 @@ use render_api::{
 
 use vortex_proto::components::{EdgeAngle, FileExtension, ShapeName, Vertex3d, VertexRoot};
 
+use crate::app::resources::input::mesh_input_manager::MeshInputManager;
+use crate::app::resources::input::skel_input_manager::SkelInputManager;
+use crate::app::resources::input::skin_input_manager::SkinInputManager;
+use crate::app::resources::input::AnimInputManager;
 use crate::app::{
     components::{
         Edge2dLocal, FaceIcon2d, LocalShape, SelectCircle, SelectTriangle, Vertex2d, VertexTypeData,
     },
     resources::{
-        action::{animation::AnimAction, shape::ShapeAction, skin::SkinAction},
-        animation_manager::{
-            anim_file_delete_frame, anim_file_insert_frame, anim_file_play_pause, AnimationManager,
-        },
-        camera_manager::CameraAngle,
-        camera_manager::CameraManager,
-        camera_state::CameraState,
-        canvas::Canvas,
-        edge_manager::EdgeManager,
-        face_manager::FaceManager,
-        file_manager::FileManager,
-        shape_data::CanvasShape,
-        tab_manager::TabManager,
-        vertex_manager::VertexManager,
+        action::shape::ShapeAction, animation_manager::AnimationManager,
+        camera_manager::CameraAngle, camera_manager::CameraManager, camera_state::CameraState,
+        canvas::Canvas, edge_manager::EdgeManager, file_manager::FileManager,
+        shape_data::CanvasShape, tab_manager::TabManager, vertex_manager::VertexManager,
     },
-    ui::widgets::naming_bar_visibility_toggle,
 };
 
 #[derive(Clone, Copy)]
@@ -63,14 +56,14 @@ pub struct InputManager {
     //// selection
     resync_selection: bool,
     // Option<(2d shape entity, shape type)>
-    selected_shape: Option<(Entity, CanvasShape)>,
+    pub(crate) selected_shape: Option<(Entity, CanvasShape)>,
     pub select_circle_entity: Option<Entity>,
     pub select_triangle_entity: Option<Entity>,
     pub select_line_entity: Option<Entity>,
 
     //doubleclick
-    last_left_click_instant: Instant,
-    last_frame_index_hover: usize,
+    pub(crate) last_left_click_instant: Instant,
+    pub(crate) last_frame_index_hover: usize, //TODO: move this to AnimInputManager?
 }
 
 impl Default for InputManager {
@@ -105,284 +98,15 @@ impl InputManager {
             .unwrap()
             .get_file_type(current_file_entity);
         match current_file_type {
-            FileExtension::Skel => self.update_input_skel(input_actions, world),
-            FileExtension::Mesh => self.update_input_mesh(input_actions, world),
-            FileExtension::Anim => self.update_input_anim(input_actions, world),
-            FileExtension::Skin => self.update_input_skin(input_actions, world),
+            FileExtension::Skel => SkelInputManager::update_input_skel(self, world, input_actions),
+            FileExtension::Mesh => MeshInputManager::update_input_mesh(self, world, input_actions),
+            FileExtension::Anim => AnimInputManager::update_input_anim(self, world, input_actions),
+            FileExtension::Skin => SkinInputManager::update_input_skin(self, world, input_actions),
             _ => {}
         }
     }
 
-    fn update_input_skel(&mut self, input_actions: Vec<InputAction>, world: &mut World) {
-        for action in input_actions {
-            match action {
-                InputAction::MouseClick(click_type, mouse_position) => self
-                    .handle_mouse_click_skelmesh(
-                        world,
-                        FileExtension::Skel,
-                        click_type,
-                        &mouse_position,
-                    ),
-                InputAction::MouseDragged(click_type, mouse_position, delta) => self
-                    .handle_mouse_drag_skelmesh(
-                        world,
-                        FileExtension::Skel,
-                        click_type,
-                        mouse_position,
-                        delta,
-                    ),
-                InputAction::MiddleMouseScroll(scroll_y) => {
-                    Self::handle_mouse_scroll_wheel(world, scroll_y)
-                }
-                InputAction::MouseMoved => {
-                    self.queue_resync_hover_ui();
-                    self.queue_resync_selection_ui();
-                }
-                InputAction::MouseRelease(MouseButton::Left) => {
-                    self.reset_last_dragged_vertex(world);
-                    self.reset_last_dragged_edge(world);
-                }
-                InputAction::KeyPress(key) => match key {
-                    Key::S
-                    | Key::W
-                    | Key::D
-                    | Key::T
-                    | Key::F
-                    | Key::Num1
-                    | Key::Num2
-                    | Key::Num3
-                    | Key::Num4
-                    | Key::Num5
-                    | Key::PageUp
-                    | Key::PageDown => Self::handle_keypress_camera_controls(world, key),
-                    Key::Delete => self.handle_delete_key_press_skel(world),
-                    Key::N => naming_bar_visibility_toggle(world, self),
-                    Key::E => Self::handle_edge_angle_visibility_toggle(world),
-                    _ => {}
-                },
-                _ => {}
-            }
-        }
-    }
-
-    fn update_input_mesh(&mut self, input_actions: Vec<InputAction>, world: &mut World) {
-        for action in input_actions {
-            match action {
-                InputAction::MouseClick(click_type, mouse_position) => self
-                    .handle_mouse_click_skelmesh(
-                        world,
-                        FileExtension::Mesh,
-                        click_type,
-                        &mouse_position,
-                    ),
-                InputAction::MouseDragged(click_type, mouse_position, delta) => self
-                    .handle_mouse_drag_skelmesh(
-                        world,
-                        FileExtension::Mesh,
-                        click_type,
-                        mouse_position,
-                        delta,
-                    ),
-                InputAction::MiddleMouseScroll(scroll_y) => {
-                    Self::handle_mouse_scroll_wheel(world, scroll_y)
-                }
-                InputAction::MouseMoved => {
-                    self.queue_resync_hover_ui();
-                    self.queue_resync_selection_ui();
-                }
-                InputAction::MouseRelease(MouseButton::Left) => {
-                    self.reset_last_dragged_vertex(world)
-                }
-                InputAction::KeyPress(key) => match key {
-                    Key::S
-                    | Key::W
-                    | Key::D
-                    | Key::T
-                    | Key::F
-                    | Key::Num1
-                    | Key::Num2
-                    | Key::Num3
-                    | Key::Num4
-                    | Key::Num5
-                    | Key::PageUp
-                    | Key::PageDown => Self::handle_keypress_camera_controls(world, key),
-                    Key::Delete => self.handle_delete_key_press_mesh(world),
-                    Key::Insert => self.handle_insert_key_press_mesh(world),
-                    _ => {}
-                },
-                _ => {}
-            }
-        }
-    }
-
-    fn update_input_skin(&mut self, input_actions: Vec<InputAction>, world: &mut World) {
-        for action in input_actions {
-            match action {
-                InputAction::MouseClick(click_type, mouse_position) => {
-                    self.handle_mouse_click_skin(world, click_type, &mouse_position)
-                }
-                InputAction::MouseDragged(click_type, _mouse_position, delta) => {
-                    self.handle_mouse_drag_skin(world, click_type, delta)
-                }
-                InputAction::MiddleMouseScroll(scroll_y) => {
-                    Self::handle_mouse_scroll_wheel(world, scroll_y)
-                }
-                InputAction::MouseMoved => {
-                    self.queue_resync_hover_ui();
-                    self.queue_resync_selection_ui();
-                }
-                InputAction::KeyPress(key) => match key {
-                    Key::S
-                    | Key::W
-                    | Key::D
-                    | Key::T
-                    | Key::F
-                    | Key::Num1
-                    | Key::Num2
-                    | Key::Num3
-                    | Key::Num4
-                    | Key::Num5
-                    | Key::PageUp
-                    | Key::PageDown => Self::handle_keypress_camera_controls(world, key),
-                    Key::Delete => self.handle_delete_key_press_skin(world),
-                    _ => {}
-                },
-                _ => {}
-            }
-        }
-    }
-
-    fn update_input_anim(&mut self, input_actions: Vec<InputAction>, world: &mut World) {
-        let animation_manager = world.get_resource_mut::<AnimationManager>().unwrap();
-        if animation_manager.is_posing() {
-            self.update_input_anim_posing(input_actions, world);
-        } else {
-            self.update_input_anim_framing(input_actions, world);
-        }
-    }
-
-    fn update_input_anim_framing(&mut self, input_actions: Vec<InputAction>, world: &mut World) {
-        for action in input_actions {
-            match action {
-                InputAction::MouseClick(click_type, mouse_position) => {
-                    self.handle_mouse_click_anim_framing(world, click_type, &mouse_position)
-                }
-                InputAction::MouseDragged(click_type, mouse_position, delta) => {
-                    self.handle_mouse_drag_anim_framing(world, click_type, mouse_position, delta)
-                }
-                InputAction::MiddleMouseScroll(scroll_y) => {
-                    Self::handle_mouse_scroll_anim_framing(world, scroll_y)
-                }
-                InputAction::MouseMoved => {
-                    let mut animation_manager =
-                        world.get_resource_mut::<AnimationManager>().unwrap();
-                    animation_manager.framing_queue_resync_hover_ui();
-                }
-                InputAction::KeyPress(key) => match key {
-                    Key::Delete => anim_file_delete_frame(self, world),
-                    Key::Insert => anim_file_insert_frame(self, world),
-                    Key::Space => anim_file_play_pause(world),
-                    Key::Enter => {
-                        let mut system_state: SystemState<(
-                            ResMut<Canvas>,
-                            ResMut<AnimationManager>,
-                        )> = SystemState::new(world);
-                        let (mut canvas, mut animation_manager) = system_state.get_mut(world);
-                        animation_manager.set_posing(&mut canvas);
-                    }
-                    Key::ArrowLeft | Key::ArrowRight | Key::ArrowUp | Key::ArrowDown => {
-                        let dir = match key {
-                            Key::ArrowLeft => CardinalDirection::West,
-                            Key::ArrowRight => CardinalDirection::East,
-                            Key::ArrowUp => CardinalDirection::North,
-                            Key::ArrowDown => CardinalDirection::South,
-                            _ => panic!("Unexpected key: {:?}", key),
-                        };
-                        let current_file_entity = *world
-                            .get_resource::<TabManager>()
-                            .unwrap()
-                            .current_tab_entity()
-                            .unwrap();
-                        let mut animation_manager =
-                            world.get_resource_mut::<AnimationManager>().unwrap();
-                        if let Some((prev_index, next_index)) =
-                            animation_manager.framing_navigate(&current_file_entity, dir)
-                        {
-                            world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                                tab_manager.current_tab_execute_anim_action(
-                                    world,
-                                    self,
-                                    AnimAction::SelectFrame(
-                                        current_file_entity,
-                                        next_index,
-                                        prev_index,
-                                    ),
-                                );
-                            });
-                        }
-                    }
-                    _ => {}
-                },
-                _ => {}
-            }
-        }
-    }
-
-    fn update_input_anim_posing(&mut self, input_actions: Vec<InputAction>, world: &mut World) {
-        for action in input_actions {
-            match action {
-                InputAction::MouseClick(click_type, mouse_position) => {
-                    self.handle_mouse_click_anim_posing(world, click_type, &mouse_position)
-                }
-                InputAction::MouseDragged(click_type, mouse_position, delta) => {
-                    self.handle_mouse_drag_anim_posing(world, click_type, mouse_position, delta)
-                }
-                InputAction::MiddleMouseScroll(scroll_y) => {
-                    Self::handle_mouse_scroll_wheel(world, scroll_y)
-                }
-                InputAction::MouseMoved => {
-                    self.queue_resync_hover_ui();
-                    self.queue_resync_selection_ui();
-                }
-                InputAction::MouseRelease(MouseButton::Left) => {
-                    self.reset_last_dragged_rotation(world)
-                }
-                InputAction::KeyPress(key) => match key {
-                    Key::S
-                    | Key::W
-                    | Key::D
-                    | Key::T
-                    | Key::F
-                    | Key::Num1
-                    | Key::Num2
-                    | Key::Num3
-                    | Key::Num4
-                    | Key::Num5
-                    | Key::PageUp
-                    | Key::PageDown => Self::handle_keypress_camera_controls(world, key),
-                    Key::E => Self::handle_edge_angle_visibility_toggle(world),
-                    Key::Space => {
-                        if world
-                            .get_resource::<AnimationManager>()
-                            .unwrap()
-                            .preview_frame_selected()
-                        {
-                            anim_file_play_pause(world);
-                        }
-                    }
-                    Key::Escape => {
-                        let mut animation_manager =
-                            world.get_resource_mut::<AnimationManager>().unwrap();
-                        animation_manager.set_framing();
-                    }
-                    _ => {}
-                },
-                _ => {}
-            }
-        }
-    }
-
-    fn reset_last_dragged_vertex(&mut self, world: &mut World) {
+    pub(crate) fn reset_last_dragged_vertex(&mut self, world: &mut World) {
         // reset last dragged vertex
         if let Some(drags) = world
             .get_resource_mut::<VertexManager>()
@@ -401,41 +125,7 @@ impl InputManager {
         }
     }
 
-    fn reset_last_dragged_edge(&mut self, world: &mut World) {
-        // reset last dragged edge
-        if let Some((edge_2d_entity, old_angle, new_angle)) = world
-            .get_resource_mut::<EdgeManager>()
-            .unwrap()
-            .take_last_edge_dragged()
-        {
-            world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                tab_manager.current_tab_execute_shape_action(
-                    world,
-                    self,
-                    ShapeAction::RotateEdge(edge_2d_entity, old_angle, new_angle),
-                );
-            });
-        }
-    }
-
-    fn reset_last_dragged_rotation(&mut self, world: &mut World) {
-        // reset last dragged rotation
-        if let Some((vertex_2d_entity, old_angle, new_angle)) = world
-            .get_resource_mut::<AnimationManager>()
-            .unwrap()
-            .take_last_rotation_dragged()
-        {
-            world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                tab_manager.current_tab_execute_anim_action(
-                    world,
-                    self,
-                    AnimAction::RotateVertex(vertex_2d_entity, old_angle, Some(new_angle)),
-                );
-            });
-        }
-    }
-
-    fn handle_edge_angle_visibility_toggle(world: &mut World) {
+    pub(crate) fn handle_edge_angle_visibility_toggle(world: &mut World) {
         let mut system_state: SystemState<(
             ResMut<Canvas>,
             ResMut<EdgeManager>,
@@ -449,7 +139,7 @@ impl InputManager {
         system_state.apply(world);
     }
 
-    fn handle_keypress_camera_controls(world: &mut World, key: Key) {
+    pub(crate) fn handle_keypress_camera_controls(world: &mut World, key: Key) {
         match key {
             Key::S => {
                 // disable 2d camera, enable 3d camera
@@ -851,164 +541,11 @@ impl InputManager {
         }
     }
 
-    pub(crate) fn handle_insert_key_press_mesh(&mut self, world: &mut World) {
-        if self.selected_shape.is_some() {
-            return;
-        }
-        world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-            tab_manager.current_tab_execute_shape_action(
-                world,
-                self,
-                ShapeAction::CreateVertex(
-                    VertexTypeData::Mesh(Vec::new(), Vec::new()),
-                    Vec3::ZERO,
-                    None,
-                ),
-            );
-        })
-    }
-
-    pub(crate) fn handle_delete_key_press_skel(&mut self, world: &mut World) {
-        match self.selected_shape {
-            Some((vertex_2d_entity, CanvasShape::Vertex)) => {
-                self.handle_delete_vertex_action(world, &vertex_2d_entity)
-            }
-            _ => {}
-        }
-    }
-
-    pub(crate) fn handle_delete_key_press_mesh(&mut self, world: &mut World) {
-        match self.selected_shape {
-            Some((vertex_2d_entity, CanvasShape::Vertex)) => {
-                self.handle_delete_vertex_action(world, &vertex_2d_entity)
-            }
-            Some((edge_2d_entity, CanvasShape::Edge)) => {
-                let mut system_state: SystemState<(Commands, Client, Res<EdgeManager>)> =
-                    SystemState::new(world);
-                let (mut commands, mut client, edge_manager) = system_state.get_mut(world);
-
-                // delete edge
-                let edge_3d_entity = edge_manager.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
-
-                // check whether we can delete edge
-                let auth_status = commands.entity(edge_3d_entity).authority(&client).unwrap();
-                if !auth_status.is_granted() && !auth_status.is_available() {
-                    // do nothing, edge is not available
-                    // TODO: queue for deletion? check before this?
-                    warn!("Edge {:?} is not available for deletion!", edge_3d_entity);
-                    return;
-                }
-
-                let auth_status = commands.entity(edge_3d_entity).authority(&client).unwrap();
-                if !auth_status.is_granted() {
-                    // request authority if needed
-                    commands
-                        .entity(edge_3d_entity)
-                        .request_authority(&mut client);
-                }
-
-                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_shape_action(
-                        world,
-                        self,
-                        ShapeAction::DeleteEdge(edge_2d_entity, None),
-                    );
-                });
-
-                self.selected_shape = None;
-            }
-            Some((face_2d_entity, CanvasShape::Face)) => {
-                let mut system_state: SystemState<(Commands, Client, Res<FaceManager>)> =
-                    SystemState::new(world);
-                let (mut commands, mut client, face_manager) = system_state.get_mut(world);
-
-                let face_3d_entity = face_manager.face_entity_2d_to_3d(&face_2d_entity).unwrap();
-
-                // check whether we can delete edge
-                let auth_status = commands.entity(face_3d_entity).authority(&client).unwrap();
-                if !auth_status.is_granted() && !auth_status.is_available() {
-                    // do nothing, face is not available
-                    // TODO: queue for deletion? check before this?
-                    warn!("Face `{:?}` is not available for deletion!", face_3d_entity);
-                    return;
-                }
-
-                let auth_status = commands.entity(face_3d_entity).authority(&client).unwrap();
-                if !auth_status.is_granted() {
-                    // request authority if needed
-                    commands
-                        .entity(face_3d_entity)
-                        .request_authority(&mut client);
-                }
-
-                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_shape_action(
-                        world,
-                        self,
-                        ShapeAction::DeleteFace(face_2d_entity),
-                    );
-                });
-
-                self.selected_shape = None;
-            }
-            _ => {}
-        }
-    }
-
-    pub(crate) fn handle_delete_key_press_skin(&mut self, world: &mut World) {
-        match self.selected_shape {
-            Some((face_2d_entity, CanvasShape::Face)) => {
-                // let mut system_state: SystemState<(Commands, Client, Res<FaceManager>, Res<SkinManager>)> =
-                //     SystemState::new(world);
-                // let (mut commands, mut client, face_manager, skin_manager) = system_state.get_mut(world);
-
-                // // get face color
-                // let face_3d_entity = face_manager
-                //     .face_entity_2d_to_3d(&face_2d_entity)
-                //     .unwrap();
-                // let face_color_entity = skin_manager.face_to_color_entity(&face_3d_entity).unwrap();
-
-                // // check whether we can delete face color
-                // let auth_status = commands
-                //     .entity(*face_color_entity)
-                //     .authority(&client)
-                //     .unwrap();
-                // if !auth_status.is_granted() && !auth_status.is_available() {
-                //     // do nothing, face color is not available
-                //     // TODO: queue for deletion? check before this?
-                //     warn!(
-                //         "Face Color {:?} is not available for deletion!",
-                //         face_color_entity
-                //     );
-                //     return;
-                // }
-                //
-                // let auth_status = commands
-                //     .entity(face_3d_entity)
-                //     .authority(&client)
-                //     .unwrap();
-                // if !auth_status.is_granted() {
-                //     // request authority if needed
-                //     commands
-                //         .entity(face_3d_entity)
-                //         .request_authority(&mut client);
-                // }
-
-                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_skin_action(
-                        world,
-                        self,
-                        SkinAction::EditColor(face_2d_entity, None),
-                    );
-                });
-
-                self.selected_shape = None;
-            }
-            _ => {}
-        }
-    }
-
-    fn handle_delete_vertex_action(&mut self, world: &mut World, vertex_2d_entity: &Entity) {
+    pub(crate) fn handle_delete_vertex_action(
+        &mut self,
+        world: &mut World,
+        vertex_2d_entity: &Entity,
+    ) {
         let mut system_state: SystemState<(Commands, Client, Res<VertexManager>)> =
             SystemState::new(world);
         let (mut commands, mut client, vertex_manager) = system_state.get_mut(world);
@@ -1284,209 +821,6 @@ impl InputManager {
         }
     }
 
-    pub(crate) fn handle_mouse_click_skin(
-        &mut self,
-        world: &mut World,
-        click_type: MouseButton,
-        mouse_position: &Vec2,
-    ) {
-        if self.selected_shape == self.hovered_entity {
-            return;
-        }
-
-        // check if mouse position is outside of canvas
-        if !world
-            .get_resource::<Canvas>()
-            .unwrap()
-            .is_position_inside(*mouse_position)
-        {
-            return;
-        }
-
-        let selected_shape = self.selected_shape.map(|(_, shape)| shape);
-        let hovered_shape = self.hovered_entity.map(|(_, shape)| shape);
-
-        // click_type, selected_shape, hovered_shape
-        match (click_type, selected_shape, hovered_shape) {
-            (MouseButton::Left, _, Some(CanvasShape::Face)) => {
-                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_skin_action(
-                        world,
-                        self,
-                        SkinAction::SelectFace(self.hovered_entity),
-                    );
-                });
-                return;
-            }
-            (MouseButton::Right, Some(CanvasShape::Face), _) => {
-                // deselect vertex
-                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_skin_action(
-                        world,
-                        self,
-                        SkinAction::SelectFace(None),
-                    );
-                });
-            }
-            _ => {}
-        }
-    }
-
-    pub(crate) fn handle_mouse_click_anim_framing(
-        &mut self,
-        world: &mut World,
-        click_type: MouseButton,
-        mouse_position: &Vec2,
-    ) {
-        if click_type != MouseButton::Left {
-            return;
-        }
-
-        // check if mouse position is outside of canvas
-        if !world
-            .get_resource::<Canvas>()
-            .unwrap()
-            .is_position_inside(*mouse_position)
-        {
-            return;
-        }
-
-        let animation_manager = world.get_resource::<AnimationManager>().unwrap();
-
-        let current_frame_index = animation_manager.current_frame_index();
-        let frame_index_hover = animation_manager.frame_index_hover();
-
-        if frame_index_hover.is_some() {
-            let frame_index_hover = frame_index_hover.unwrap();
-
-            let double_clicked = frame_index_hover == self.last_frame_index_hover
-                && self.last_left_click_instant.elapsed().as_millis() < 500;
-            self.last_left_click_instant = Instant::now();
-            self.last_frame_index_hover = frame_index_hover;
-
-            if frame_index_hover == 0 {
-                // clicked preview frame
-                if double_clicked {
-                    let mut system_state: SystemState<(ResMut<Canvas>, ResMut<AnimationManager>)> =
-                        SystemState::new(world);
-                    let (mut canvas, mut animation_manager) = system_state.get_mut(world);
-                    animation_manager.set_posing(&mut canvas);
-                    animation_manager.set_preview_frame_selected();
-                }
-            } else {
-                if current_frame_index != frame_index_hover - 1 {
-                    world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                        let current_file_entity = *tab_manager.current_tab_entity().unwrap();
-                        tab_manager.current_tab_execute_anim_action(
-                            world,
-                            self,
-                            AnimAction::SelectFrame(
-                                current_file_entity,
-                                frame_index_hover - 1,
-                                current_frame_index,
-                            ),
-                        );
-                    });
-                }
-
-                if double_clicked {
-                    let mut system_state: SystemState<(ResMut<Canvas>, ResMut<AnimationManager>)> =
-                        SystemState::new(world);
-                    let (mut canvas, mut animation_manager) = system_state.get_mut(world);
-                    animation_manager.set_posing(&mut canvas);
-                }
-            }
-        }
-    }
-
-    pub(crate) fn handle_mouse_click_anim_posing(
-        &mut self,
-        world: &mut World,
-        click_type: MouseButton,
-        mouse_position: &Vec2,
-    ) {
-        // check if mouse position is outside of canvas
-        if !world
-            .get_resource::<Canvas>()
-            .unwrap()
-            .is_position_inside(*mouse_position)
-        {
-            return;
-        }
-
-        if world
-            .get_resource::<AnimationManager>()
-            .unwrap()
-            .preview_frame_selected()
-        {
-            return;
-        }
-
-        let selected_shape = self.selected_shape.map(|(_, shape)| shape);
-        let hovered_shape = self.hovered_entity.map(|(_, shape)| shape);
-
-        // click_type, selected_shape, hovered_shape, current_file_type
-        match (click_type, selected_shape, hovered_shape) {
-            (MouseButton::Left, Some(_), Some(shape)) => {
-                match shape {
-                    CanvasShape::Vertex | CanvasShape::Edge => {
-                        // select hovered entity
-                        world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                            tab_manager.current_tab_execute_anim_action(
-                                world,
-                                self,
-                                AnimAction::SelectShape(self.hovered_entity),
-                            );
-                        });
-                        return;
-                    }
-                    _ => {
-                        // deselect vertex
-                        world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                            tab_manager.current_tab_execute_anim_action(
-                                world,
-                                self,
-                                AnimAction::SelectShape(None),
-                            );
-                        });
-                        return;
-                    }
-                }
-            }
-            (MouseButton::Left, Some(CanvasShape::Vertex), None) => {
-                // deselect vertex
-                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_anim_action(
-                        world,
-                        self,
-                        AnimAction::SelectShape(None),
-                    );
-                });
-                return;
-            }
-            (MouseButton::Left, None, Some(CanvasShape::Vertex | CanvasShape::Edge)) => {
-                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_anim_action(
-                        world,
-                        self,
-                        AnimAction::SelectShape(self.hovered_entity),
-                    );
-                });
-            }
-            (MouseButton::Right, _, _) => {
-                // deselect vertex
-                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_anim_action(
-                        world,
-                        self,
-                        AnimAction::SelectShape(None),
-                    );
-                });
-            }
-            _ => {}
-        }
-    }
-
     pub(crate) fn handle_mouse_drag_skelmesh(
         &mut self,
         world: &mut World,
@@ -1668,129 +1002,7 @@ impl InputManager {
         }
     }
 
-    pub(crate) fn handle_mouse_drag_skin(
-        &mut self,
-        world: &mut World,
-        click_type: MouseButton,
-        delta: Vec2,
-    ) {
-        if !world.get_resource::<TabManager>().unwrap().has_focus() {
-            return;
-        }
-
-        Self::handle_drag_empty_space(world, click_type, delta);
-    }
-
-    pub(crate) fn handle_mouse_drag_anim_framing(
-        &mut self,
-        world: &mut World,
-        click_type: MouseButton,
-        _mouse_position: Vec2,
-        delta: Vec2,
-    ) {
-        if !world.get_resource::<TabManager>().unwrap().has_focus() {
-            return;
-        }
-
-        if click_type != MouseButton::Left {
-            return;
-        }
-
-        world
-            .get_resource_mut::<AnimationManager>()
-            .unwrap()
-            .handle_mouse_drag_anim_framing(delta.y);
-    }
-
-    pub(crate) fn handle_mouse_drag_anim_posing(
-        &mut self,
-        world: &mut World,
-        click_type: MouseButton,
-        mouse_position: Vec2,
-        delta: Vec2,
-    ) {
-        if !world.get_resource::<TabManager>().unwrap().has_focus() {
-            return;
-        }
-
-        let current_file_entity = *world
-            .get_resource::<TabManager>()
-            .unwrap()
-            .current_tab_entity()
-            .unwrap();
-
-        let shape_is_selected = self.selected_shape.is_some();
-        let shape_can_drag = shape_is_selected
-            && match self.selected_shape.unwrap().1 {
-                CanvasShape::RootVertex | CanvasShape::Vertex | CanvasShape::Edge => true,
-                _ => false,
-            };
-        let preview_frame_selected = world
-            .get_resource::<AnimationManager>()
-            .unwrap()
-            .preview_frame_selected();
-
-        if shape_is_selected && shape_can_drag && !preview_frame_selected {
-            match click_type {
-                MouseButton::Left => {
-                    match self.selected_shape.unwrap() {
-                        (vertex_2d_entity, CanvasShape::Vertex) => {
-                            // move vertex
-                            let Some(vertex_3d_entity) = world.get_resource::<VertexManager>().unwrap().vertex_entity_2d_to_3d(&vertex_2d_entity) else {
-                                warn!(
-                                    "Selected vertex entity: {:?} has no 3d counterpart",
-                                    vertex_2d_entity
-                                );
-                                return;
-                            };
-
-                            world.resource_scope(
-                                |world, mut animation_manager: Mut<AnimationManager>| {
-                                    animation_manager.drag_vertex(
-                                        world,
-                                        &current_file_entity,
-                                        vertex_3d_entity,
-                                        vertex_2d_entity,
-                                        mouse_position,
-                                    );
-                                },
-                            );
-                        }
-                        (edge_2d_entity, CanvasShape::Edge) => {
-                            let edge_3d_entity = world
-                                .get_resource::<EdgeManager>()
-                                .unwrap()
-                                .edge_entity_2d_to_3d(&edge_2d_entity)
-                                .unwrap();
-
-                            world.resource_scope(
-                                |world, mut animation_manager: Mut<AnimationManager>| {
-                                    animation_manager.drag_edge(
-                                        world,
-                                        &current_file_entity,
-                                        edge_3d_entity,
-                                        edge_2d_entity,
-                                        mouse_position,
-                                    );
-                                },
-                            );
-                        }
-                        _ => {
-                            panic!("Shouldn't be possible");
-                        }
-                    }
-                }
-                MouseButton::Right => {
-                    // TODO: dunno if this is possible? shouldn't the vertex be deselected?
-                }
-                _ => {}
-            }
-        } else {
-            Self::handle_drag_empty_space(world, click_type, delta);
-        }
-    }
-
-    fn handle_drag_empty_space(world: &mut World, click_type: MouseButton, delta: Vec2) {
+    pub(crate) fn handle_drag_empty_space(world: &mut World, click_type: MouseButton, delta: Vec2) {
         let mut system_state: SystemState<(ResMut<TabManager>, ResMut<CameraManager>)> =
             SystemState::new(world);
         let (mut tab_manager, mut camera_manager) = system_state.get_mut(world);
@@ -1807,7 +1019,7 @@ impl InputManager {
         }
     }
 
-    fn handle_mouse_scroll_wheel(world: &mut World, scroll_y: f32) {
+    pub(crate) fn handle_mouse_scroll_wheel(world: &mut World, scroll_y: f32) {
         let mut system_state: SystemState<(ResMut<CameraManager>, ResMut<TabManager>)> =
             SystemState::new(world);
         let (mut camera_manager, mut tab_manager) = system_state.get_mut(world);
@@ -1816,11 +1028,6 @@ impl InputManager {
             tab_manager.current_tab_camera_state_mut().unwrap(),
             scroll_y,
         );
-    }
-
-    fn handle_mouse_scroll_anim_framing(world: &mut World, scroll_y: f32) {
-        let mut animation_manager = world.get_resource_mut::<AnimationManager>().unwrap();
-        animation_manager.framing_handle_mouse_wheel(scroll_y);
     }
 
     pub(crate) fn sync_hover_shape_scale(

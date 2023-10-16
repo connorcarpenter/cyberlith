@@ -1,13 +1,6 @@
 use bevy_ecs::prelude::{Entity, World};
 
-use crate::app::resources::{
-    action::{
-        model::{},
-        Action,
-    },
-    input_manager::InputManager,
-    shape_data::CanvasShape,
-};
+use crate::app::resources::{action::Action, input::InputManager, shape_data::CanvasShape};
 
 #[derive(Clone)]
 pub enum SceneAction {

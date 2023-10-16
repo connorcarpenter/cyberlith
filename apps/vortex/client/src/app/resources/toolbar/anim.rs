@@ -2,10 +2,11 @@ use bevy_ecs::world::{Mut, World};
 
 use render_egui::egui::Ui;
 
+use crate::app::resources::input::AnimInputManager;
 use crate::app::resources::{
     action::animation::AnimAction,
-    animation_manager::{anim_file_delete_frame, anim_file_insert_frame, AnimationManager},
-    input_manager::InputManager,
+    animation_manager::AnimationManager,
+    input::InputManager,
     tab_manager::TabManager,
     toolbar::{shared_buttons::button_toggle_edge_angle_visibility, Toolbar},
 };
@@ -29,14 +30,14 @@ impl AnimationToolbar {
         // new frame
         if Toolbar::button(ui, "➕", "New frame", true).clicked() {
             world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
-                anim_file_insert_frame(&mut input_manager, world);
+                AnimInputManager::anim_file_insert_frame(&mut input_manager, world);
             });
         }
 
         // delete frame
         if Toolbar::button(ui, "🗑", "Delete frame", true).clicked() {
             world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
-                anim_file_delete_frame(&mut input_manager, world);
+                AnimInputManager::anim_file_delete_frame(&mut input_manager, world);
             });
         }
 

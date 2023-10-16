@@ -9,9 +9,9 @@ use vortex_proto::components::FileExtension;
 
 use crate::app::{
     resources::{
-        animation_manager::AnimationManager, file_manager::FileManager,
-        input_manager::InputManager, palette_manager::PaletteManager, skin_manager::SkinManager,
-        tab_manager::render_tab_bar, tab_manager::TabManager,
+        animation_manager::AnimationManager, file_manager::FileManager, input::InputManager,
+        palette_manager::PaletteManager, skin_manager::SkinManager, tab_manager::render_tab_bar,
+        tab_manager::TabManager,
     },
     ui::{
         render_tool_bar,

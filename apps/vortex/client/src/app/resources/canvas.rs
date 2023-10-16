@@ -5,7 +5,7 @@ use math::Vec2;
 use render_api::{base::CpuTexture2D, Handle};
 
 use crate::app::resources::{
-    animation_manager::AnimationManager, edge_manager::EdgeManager, input_manager::InputManager,
+    animation_manager::AnimationManager, edge_manager::EdgeManager, input::InputManager,
     tab_manager::TabManager, vertex_manager::VertexManager,
 };
 

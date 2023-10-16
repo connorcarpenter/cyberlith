@@ -4,7 +4,7 @@ use render_egui::egui::Ui;
 
 use crate::app::{
     resources::{
-        input_manager::InputManager,
+        input::InputManager,
         shape_data::CanvasShape,
         toolbar::{shared_buttons::button_toggle_edge_angle_visibility, Toolbar},
     },

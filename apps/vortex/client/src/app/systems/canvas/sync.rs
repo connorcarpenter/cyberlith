@@ -29,7 +29,7 @@ use crate::app::{
         face_manager::FaceManager,
         file_manager::FileManager,
         grid::Grid,
-        input_manager::InputManager,
+        input::InputManager,
         palette_manager::PaletteManager,
         tab_manager::TabManager,
         vertex_manager::VertexManager,

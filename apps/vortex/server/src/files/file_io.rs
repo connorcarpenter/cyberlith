@@ -16,8 +16,8 @@ use vortex_proto::{
 
 use crate::{
     files::{
-        AnimReader, AnimWriter, MeshReader, MeshWriter, PaletteReader, PaletteWriter, SkelReader,
-        SkelWriter, SkinReader, SkinWriter, ModelReader, ModelWriter, SceneReader, SceneWriter,
+        AnimReader, AnimWriter, MeshReader, MeshWriter, ModelReader, ModelWriter, PaletteReader,
+        PaletteWriter, SceneReader, SceneWriter, SkelReader, SkelWriter, SkinReader, SkinWriter,
     },
     resources::{
         AnimationManager, ContentEntityData, PaletteManager, Project, ShapeManager, SkinManager,

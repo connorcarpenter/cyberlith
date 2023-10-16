@@ -6,7 +6,7 @@ use vortex_proto::components::FileExtension;
 
 use crate::app::resources::{
     animation_manager::AnimationManager, camera_manager::CameraManager, canvas::Canvas,
-    edge_manager::EdgeManager, file_manager::FileManager, input_manager::InputManager,
+    edge_manager::EdgeManager, file_manager::FileManager, input::InputManager,
     tab_manager::TabManager, vertex_manager::VertexManager,
 };
 
