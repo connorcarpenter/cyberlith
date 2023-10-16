@@ -67,7 +67,7 @@ pub fn update_mouse_hover(
     if file_type == FileExtension::Anim {
         let canvas_size = canvas.canvas_texture_size();
         if animation_manager.is_framing() {
-            animation_manager.sync_mouse_hover_ui(
+            animation_manager.sync_mouse_hover_ui_framing(
                 current_tab_entity,
                 canvas_size,
                 input.mouse_position(),

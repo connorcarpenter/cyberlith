@@ -170,7 +170,9 @@ impl SkelInputManager {
         }
 
         match (click_type, input_manager.selected_shape) {
-            (MouseButton::Left, Some((vertex_2d_entity, CanvasShape::Vertex))) => InputManager::handle_vertex_drag(world, &vertex_2d_entity, &mouse_position),
+            (MouseButton::Left, Some((vertex_2d_entity, CanvasShape::Vertex))) => {
+                InputManager::handle_vertex_drag(world, &vertex_2d_entity, &mouse_position)
+            }
             (MouseButton::Left, Some((edge_2d_entity, CanvasShape::Edge))) => {
                 let edge_3d_entity = world
                     .get_resource::<EdgeManager>()

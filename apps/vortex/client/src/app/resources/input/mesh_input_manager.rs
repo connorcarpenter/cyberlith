@@ -276,7 +276,9 @@ impl MeshInputManager {
         }
 
         match (click_type, input_manager.selected_shape) {
-            (MouseButton::Left, Some((vertex_2d_entity, CanvasShape::Vertex))) => InputManager::handle_vertex_drag(world, &vertex_2d_entity, &mouse_position),
+            (MouseButton::Left, Some((vertex_2d_entity, CanvasShape::Vertex))) => {
+                InputManager::handle_vertex_drag(world, &vertex_2d_entity, &mouse_position)
+            }
             (_, _) => InputManager::handle_drag_empty_space(world, click_type, delta),
         }
     }

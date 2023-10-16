@@ -184,7 +184,7 @@ impl AnimInputManager {
         }
     }
 
-    pub(crate) fn handle_mouse_click_framing(
+    fn handle_mouse_click_framing(
         world: &mut World,
         input_manager: &mut InputManager,
         click_type: MouseButton,
@@ -251,7 +251,7 @@ impl AnimInputManager {
         }
     }
 
-    pub(crate) fn handle_mouse_click_posing(
+    fn handle_mouse_click_posing(
         world: &mut World,
         input_manager: &mut InputManager,
         click_type: MouseButton,
@@ -277,46 +277,10 @@ impl AnimInputManager {
         let selected_shape = input_manager.selected_shape.map(|(_, shape)| shape);
         let hovered_shape = input_manager.hovered_entity.map(|(_, shape)| shape);
 
-        // click_type, selected_shape, hovered_shape, current_file_type
+        // click_type, selected_shape, hovered_shape
         match (click_type, selected_shape, hovered_shape) {
-            (MouseButton::Left, Some(_), Some(shape)) => {
-                match shape {
-                    CanvasShape::Vertex | CanvasShape::Edge => {
-                        // select hovered entity
-                        world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                            tab_manager.current_tab_execute_anim_action(
-                                world,
-                                input_manager,
-                                AnimAction::SelectShape(input_manager.hovered_entity),
-                            );
-                        });
-                        return;
-                    }
-                    _ => {
-                        // deselect vertex
-                        world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                            tab_manager.current_tab_execute_anim_action(
-                                world,
-                                input_manager,
-                                AnimAction::SelectShape(None),
-                            );
-                        });
-                        return;
-                    }
-                }
-            }
-            (MouseButton::Left, Some(CanvasShape::Vertex), None) => {
-                // deselect vertex
-                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_anim_action(
-                        world,
-                        input_manager,
-                        AnimAction::SelectShape(None),
-                    );
-                });
-                return;
-            }
-            (MouseButton::Left, None, Some(CanvasShape::Vertex | CanvasShape::Edge)) => {
+            (MouseButton::Left, _, Some(CanvasShape::Vertex | CanvasShape::Edge) | None) => {
+                // select hovered entity
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
                     tab_manager.current_tab_execute_anim_action(
                         world,
@@ -339,11 +303,7 @@ impl AnimInputManager {
         }
     }
 
-    pub(crate) fn handle_mouse_drag_framing(
-        world: &mut World,
-        click_type: MouseButton,
-        delta: Vec2,
-    ) {
+    fn handle_mouse_drag_framing(world: &mut World, click_type: MouseButton, delta: Vec2) {
         if !world.get_resource::<TabManager>().unwrap().has_focus() {
             return;
         }
@@ -358,7 +318,7 @@ impl AnimInputManager {
             .handle_mouse_drag_anim_framing(delta.y);
     }
 
-    pub(crate) fn handle_mouse_drag_posing(
+    fn handle_mouse_drag_posing(
         world: &mut World,
         input_manager: &mut InputManager,
         mouse_position: Vec2,
@@ -374,75 +334,55 @@ impl AnimInputManager {
             .unwrap()
             .current_tab_entity()
             .unwrap();
-
-        let shape_is_selected = input_manager.selected_shape.is_some();
-        let shape_can_drag = shape_is_selected
-            && match input_manager.selected_shape.unwrap().1 {
-                CanvasShape::RootVertex | CanvasShape::Vertex | CanvasShape::Edge => true,
-                _ => false,
-            };
         let preview_frame_selected = world
             .get_resource::<AnimationManager>()
             .unwrap()
             .preview_frame_selected();
 
-        if shape_is_selected && shape_can_drag && !preview_frame_selected {
-            match click_type {
-                MouseButton::Left => {
-                    match input_manager.selected_shape.unwrap() {
-                        (vertex_2d_entity, CanvasShape::Vertex) => {
-                            // move vertex
-                            let Some(vertex_3d_entity) = world.get_resource::<VertexManager>().unwrap().vertex_entity_2d_to_3d(&vertex_2d_entity) else {
-                                warn!(
-                                    "Selected vertex entity: {:?} has no 3d counterpart",
-                                    vertex_2d_entity
-                                );
-                                return;
-                            };
+        match (
+            preview_frame_selected,
+            click_type,
+            input_manager.selected_shape,
+        ) {
+            (false, MouseButton::Left, Some((vertex_2d_entity, CanvasShape::Vertex))) => {
+                // move vertex
+                let Some(vertex_3d_entity) = world.get_resource::<VertexManager>().unwrap().vertex_entity_2d_to_3d(&vertex_2d_entity) else {
+                    warn!(
+                        "Selected vertex entity: {:?} has no 3d counterpart",
+                        vertex_2d_entity
+                    );
+                    return;
+                };
 
-                            world.resource_scope(
-                                |world, mut animation_manager: Mut<AnimationManager>| {
-                                    animation_manager.drag_vertex(
-                                        world,
-                                        &current_file_entity,
-                                        vertex_3d_entity,
-                                        vertex_2d_entity,
-                                        mouse_position,
-                                    );
-                                },
-                            );
-                        }
-                        (edge_2d_entity, CanvasShape::Edge) => {
-                            let edge_3d_entity = world
-                                .get_resource::<EdgeManager>()
-                                .unwrap()
-                                .edge_entity_2d_to_3d(&edge_2d_entity)
-                                .unwrap();
-
-                            world.resource_scope(
-                                |world, mut animation_manager: Mut<AnimationManager>| {
-                                    animation_manager.drag_edge(
-                                        world,
-                                        &current_file_entity,
-                                        edge_3d_entity,
-                                        edge_2d_entity,
-                                        mouse_position,
-                                    );
-                                },
-                            );
-                        }
-                        _ => {
-                            panic!("Shouldn't be possible");
-                        }
-                    }
-                }
-                MouseButton::Right => {
-                    // TODO: dunno if this is possible? shouldn't the vertex be deselected?
-                }
-                _ => {}
+                world.resource_scope(|world, mut animation_manager: Mut<AnimationManager>| {
+                    animation_manager.drag_vertex(
+                        world,
+                        &current_file_entity,
+                        vertex_3d_entity,
+                        vertex_2d_entity,
+                        mouse_position,
+                    );
+                });
             }
-        } else {
-            InputManager::handle_drag_empty_space(world, click_type, delta);
+            (false, MouseButton::Left, Some((edge_2d_entity, CanvasShape::Edge))) => {
+                // move edge
+                let edge_3d_entity = world
+                    .get_resource::<EdgeManager>()
+                    .unwrap()
+                    .edge_entity_2d_to_3d(&edge_2d_entity)
+                    .unwrap();
+
+                world.resource_scope(|world, mut animation_manager: Mut<AnimationManager>| {
+                    animation_manager.drag_edge(
+                        world,
+                        &current_file_entity,
+                        edge_3d_entity,
+                        edge_2d_entity,
+                        mouse_position,
+                    );
+                });
+            }
+            _ => InputManager::handle_drag_empty_space(world, click_type, delta),
         }
     }
 

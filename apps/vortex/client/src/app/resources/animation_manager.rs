@@ -959,7 +959,7 @@ impl AnimationManager {
         self.resync_hover = true;
     }
 
-    pub fn sync_mouse_hover_ui(
+    pub fn sync_mouse_hover_ui_framing(
         &mut self,
         current_file_entity: &Entity,
         canvas_size: Vec2,
