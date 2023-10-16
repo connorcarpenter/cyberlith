@@ -61,9 +61,7 @@ impl AnimInputManager {
                     Self::handle_mouse_scroll_framing(world, scroll_y)
                 }
                 InputAction::MouseMoved => {
-                    let mut animation_manager =
-                        world.get_resource_mut::<AnimationManager>().unwrap();
-                    animation_manager.framing_queue_resync_hover_ui();
+                    input_manager.queue_resync_hover_ui();
                 }
                 InputAction::KeyPress(key) => match key {
                     Key::Delete => Self::handle_delete_frame(world, input_manager),

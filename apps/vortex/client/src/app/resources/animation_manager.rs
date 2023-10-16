@@ -110,7 +110,6 @@ impl FileFrameData {
 #[derive(Resource)]
 pub struct AnimationManager {
     posing: bool,
-    resync_hover: bool,
     frame_size: Vec2,
     frame_buffer: Vec2,
     frame_hover: Option<usize>,
@@ -141,7 +140,6 @@ impl Default for AnimationManager {
     fn default() -> Self {
         Self {
             posing: false,
-            resync_hover: false,
             resync_frame_order: HashSet::new(),
             frame_size: Vec2::new(100.0, 100.0),
             frame_buffer: Vec2::new(12.0, 12.0),
@@ -955,20 +953,12 @@ impl AnimationManager {
         }
     }
 
-    pub fn framing_queue_resync_hover_ui(&mut self) {
-        self.resync_hover = true;
-    }
-
     pub fn sync_mouse_hover_ui_framing(
         &mut self,
         current_file_entity: &Entity,
         canvas_size: Vec2,
         mouse_position: &Vec2,
     ) {
-        if !self.resync_hover {
-            return;
-        }
-        self.resync_hover = false;
 
         let Some(file_frame_data) = self.frame_data.get(current_file_entity) else {
             return;
