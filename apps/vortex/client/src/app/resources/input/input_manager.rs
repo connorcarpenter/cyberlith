@@ -4,18 +4,18 @@ use bevy_ecs::{
     system::{Commands, Query, Res, ResMut, Resource, SystemState},
     world::{Mut, World},
 };
-use bevy_log::warn;
+use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt, Instant};
 
 use input::{InputAction, Key, MouseButton};
-use math::{Vec2, Vec3};
+use math::{convert_2d_to_3d, Vec2, Vec3};
 use render_api::{
-    components::{Transform, Visibility},
+    components::{Transform, Visibility, Camera, CameraProjection, Projection},
     shapes::{distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform},
 };
 
-use vortex_proto::components::{FileExtension, ShapeName, VertexRoot};
+use vortex_proto::components::{FileExtension, ShapeName, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::{Edge2dLocal, FaceIcon2d, LocalShape, SelectCircle, SelectTriangle, Vertex2d},
@@ -590,6 +590,88 @@ impl InputManager {
         });
 
         self.selected_shape = None;
+    }
+
+    pub(crate) fn handle_vertex_drag(
+        world: &mut World,
+        vertex_2d_entity: &Entity,
+        mouse_position: &Vec2,
+    ) {
+        // move vertex
+        let Some(vertex_3d_entity) = world.get_resource::<VertexManager>().unwrap().vertex_entity_2d_to_3d(&vertex_2d_entity) else {
+            warn!(
+                "Selected vertex entity: {:?} has no 3d counterpart",
+                vertex_2d_entity
+            );
+            return;
+        };
+
+        let mut system_state: SystemState<(
+            Commands,
+            Client,
+            Res<CameraManager>,
+            ResMut<VertexManager>,
+            ResMut<Canvas>,
+            Query<(&Camera, &Projection)>,
+            Query<&Transform>,
+            Query<&mut Vertex3d>,
+        )> = SystemState::new(world);
+        let (
+            mut commands,
+            client,
+            camera_manager,
+            mut vertex_manager,
+            mut canvas,
+            camera_q,
+            transform_q,
+            mut vertex_3d_q,
+        ) = system_state.get_mut(world);
+
+        // check status
+        let auth_status = commands
+            .entity(vertex_3d_entity)
+            .authority(&client)
+            .unwrap();
+        if !(auth_status.is_requested() || auth_status.is_granted()) {
+            // only continue to mutate if requested or granted authority over vertex
+            info!("No authority over vertex, skipping..");
+            return;
+        }
+
+        // get camera
+        let camera_3d = camera_manager.camera_3d_entity().unwrap();
+        let camera_transform: Transform = *transform_q.get(camera_3d).unwrap();
+        let (camera, camera_projection) = camera_q.get(camera_3d).unwrap();
+
+        let camera_viewport = camera.viewport.unwrap();
+        let view_matrix = camera_transform.view_matrix();
+        let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
+
+        // get 2d vertex transform
+        let vertex_2d_transform = transform_q.get(*vertex_2d_entity).unwrap();
+
+        // convert 2d to 3d
+        let new_3d_position = convert_2d_to_3d(
+            &view_matrix,
+            &projection_matrix,
+            &camera_viewport.size_vec2(),
+            &mouse_position,
+            vertex_2d_transform.translation.z,
+        );
+
+        // set networked 3d vertex position
+        let mut vertex_3d = vertex_3d_q.get_mut(vertex_3d_entity).unwrap();
+
+        vertex_manager.update_last_vertex_dragged(
+            *vertex_2d_entity,
+            vertex_3d.as_vec3(),
+            new_3d_position,
+        );
+
+        vertex_3d.set_vec3(&new_3d_position);
+
+        // redraw
+        canvas.queue_resync_shapes();
     }
 
     pub(crate) fn handle_drag_empty_space(world: &mut World, click_type: MouseButton, delta: Vec2) {
