@@ -1,6 +1,5 @@
 use bevy_ecs::{
     entity::Entity,
-    query::{With, Without},
     system::{Commands, Query, Res, ResMut, Resource, SystemState},
     world::{Mut, World},
 };
@@ -12,10 +11,10 @@ use input::{InputAction, Key, MouseButton};
 use math::{convert_2d_to_3d, Vec2, Vec3};
 use render_api::{
     components::{Camera, CameraProjection, Projection, Transform, Visibility},
-    shapes::{distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform},
+    shapes::set_2d_line_transform,
 };
 
-use vortex_proto::components::{FileExtension, ShapeName, Vertex3d, VertexRoot};
+use vortex_proto::components::{FileExtension, Vertex3d};
 
 use crate::app::{
     components::{
@@ -23,7 +22,6 @@ use crate::app::{
     },
     resources::{
         action::shape::ShapeAction,
-        animation_manager::AnimationManager,
         camera_manager::CameraAngle,
         camera_manager::CameraManager,
         canvas::Canvas,
@@ -103,6 +101,38 @@ impl InputManager {
             FileExtension::Mesh => MeshInputManager::update_input(world, self, input_actions),
             FileExtension::Anim => AnimInputManager::update_input(world, self, input_actions),
             FileExtension::Skin => SkinInputManager::update_input(world, self, input_actions),
+            _ => {}
+        }
+    }
+
+    pub(crate) fn sync_mouse_hover_ui(
+        &mut self,
+        world: &mut World,
+        file_ext: FileExtension,
+        current_file_entity: &Entity,
+        mouse_position: &Vec2,
+    ) {
+        if !self.resync_hover {
+            return;
+        }
+        self.resync_hover = false;
+
+        match file_ext {
+            FileExtension::Skel => {
+                SkelInputManager::sync_mouse_hover_ui(world, self, mouse_position)
+            }
+            FileExtension::Mesh => {
+                MeshInputManager::sync_mouse_hover_ui(world, self, mouse_position)
+            }
+            FileExtension::Anim => AnimInputManager::sync_mouse_hover_ui(
+                world,
+                self,
+                current_file_entity,
+                mouse_position,
+            ),
+            FileExtension::Skin => {
+                SkinInputManager::sync_mouse_hover_ui(world, self, mouse_position)
+            }
             _ => {}
         }
     }
@@ -236,190 +266,6 @@ impl InputManager {
     // HOVER
     pub fn queue_resync_hover_ui(&mut self) {
         self.resync_hover = true;
-    }
-
-    pub(crate) fn sync_mouse_hover_ui(
-        &mut self,
-        world: &mut World,
-        file_ext: FileExtension,
-        current_file_entity: &Entity,
-        mouse_position: &Vec2,
-    ) {
-        if !self.resync_hover {
-            return;
-        }
-        self.resync_hover = false;
-
-        let mut system_state: SystemState<(
-            ResMut<Canvas>,
-            Res<TabManager>,
-            Res<VertexManager>,
-            Res<EdgeManager>,
-            ResMut<AnimationManager>,
-            Query<(&mut Transform, Option<&LocalShape>)>,
-            Query<&Visibility>,
-            Query<&ShapeName>,
-            Query<(Entity, Option<&VertexRoot>), (With<Vertex2d>, Without<LocalShape>)>,
-            Query<(Entity, &Edge2dLocal), Without<LocalShape>>,
-            Query<(Entity, &FaceIcon2d)>,
-        )> = SystemState::new(world);
-        let (
-            mut canvas,
-            tab_manager,
-            vertex_manager,
-            edge_manager,
-            mut animation_manager,
-            mut transform_q,
-            visibility_q,
-            shape_name_q,
-            vertex_2d_q,
-            edge_2d_q,
-            face_2d_q,
-        ) = system_state.get_mut(world);
-
-        if file_ext == FileExtension::Anim {
-            let canvas_size = canvas.canvas_texture_size();
-            if animation_manager.is_framing() {
-                animation_manager.sync_mouse_hover_ui_framing(
-                    current_file_entity,
-                    canvas_size,
-                    mouse_position,
-                );
-                return;
-            }
-        }
-
-       let Some(current_tab_state) = tab_manager.current_tab_state() else {
-            return;
-        };
-        let camera_state = &current_tab_state.camera_state;
-
-        if file_ext == FileExtension::Anim {
-            if animation_manager.preview_frame_selected() {
-                return;
-            }
-        }
-
-        let camera_3d_scale = camera_state.camera_3d_scale();
-
-        let mut least_distance = f32::MAX;
-        let mut least_entity = None;
-        let mut is_hovering = false;
-
-        // check for vertices
-        if file_ext != FileExtension::Skin {
-            for (vertex_2d_entity, root_opt) in vertex_2d_q.iter() {
-                let Ok(visibility) = visibility_q.get(vertex_2d_entity) else {
-                    panic!("Vertex entity has no Visibility");
-                };
-                if !visibility.visible {
-                    continue;
-                }
-
-                // don't hover over disabled vertices in Anim mode
-                if file_ext == FileExtension::Anim {
-                    let vertex_3d_entity = vertex_manager
-                        .vertex_entity_2d_to_3d(&vertex_2d_entity)
-                        .unwrap();
-                    let Ok(shape_name) = shape_name_q.get(vertex_3d_entity) else { continue; };
-                    let shape_name = shape_name.value.as_str();
-                    if shape_name.len() == 0 {
-                        continue;
-                    }
-                }
-
-                let (vertex_transform, _) = transform_q.get(vertex_2d_entity).unwrap();
-                let vertex_position = vertex_transform.translation.truncate();
-                let distance = vertex_position.distance(*mouse_position);
-                if distance < least_distance {
-                    least_distance = distance;
-
-                    let shape = match root_opt {
-                        Some(_) => CanvasShape::RootVertex,
-                        None => CanvasShape::Vertex,
-                    };
-
-                    least_entity = Some((vertex_2d_entity, shape));
-                }
-            }
-
-            is_hovering = least_distance <= (Vertex2d::DETECT_RADIUS * camera_3d_scale);
-
-            // check for edges
-            if !is_hovering {
-                for (edge_2d_entity, _) in edge_2d_q.iter() {
-                    // check visibility
-                    let Ok(visibility) = visibility_q.get(edge_2d_entity) else {
-                        panic!("entity has no Visibility");
-                    };
-                    if !visibility.visible {
-                        continue;
-                    }
-                    if file_ext == FileExtension::Anim {
-                        let edge_3d_entity =
-                            edge_manager.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
-                        let (_, end_vertex_3d_entity) =
-                            edge_manager.edge_get_endpoints(&edge_3d_entity);
-                        let Ok(shape_name) = shape_name_q.get(end_vertex_3d_entity) else { continue; };
-                        let shape_name = shape_name.value.as_str();
-                        if shape_name.len() == 0 {
-                            continue;
-                        }
-                    }
-
-                    let (edge_transform, _) = transform_q.get(edge_2d_entity).unwrap();
-                    let edge_start = edge_transform.translation.truncate();
-                    let edge_end = get_2d_line_transform_endpoint(&edge_transform);
-
-                    let distance = distance_to_2d_line(*mouse_position, edge_start, edge_end);
-                    if distance < least_distance {
-                        least_distance = distance;
-                        least_entity = Some((edge_2d_entity, CanvasShape::Edge));
-                    }
-                }
-
-                is_hovering = least_distance <= (Edge2dLocal::DETECT_THICKNESS * camera_3d_scale);
-            }
-        }
-
-        // check for faces
-        if !is_hovering {
-            for (face_entity, _) in face_2d_q.iter() {
-                // check tab ownership, skip faces from other tabs
-                let Ok(visibility) = visibility_q.get(face_entity) else {
-                    panic!("entity has no Visibility");
-                };
-                if !visibility.visible {
-                    continue;
-                }
-
-                let (face_transform, _) = transform_q.get(face_entity).unwrap();
-                let face_position = face_transform.translation.truncate();
-                let distance = face_position.distance(*mouse_position);
-                if distance < least_distance {
-                    least_distance = distance;
-
-                    least_entity = Some((face_entity, CanvasShape::Face));
-                }
-            }
-
-            is_hovering = least_distance <= (FaceIcon2d::DETECT_RADIUS * camera_3d_scale);
-        }
-
-        // define old and new hovered states
-        let old_hovered_entity = self.hovered_entity;
-        let next_hovered_entity = if is_hovering { least_entity } else { None };
-
-        self.sync_hover_shape_scale(&mut transform_q, camera_3d_scale);
-
-        // hover state did not change
-        if old_hovered_entity == next_hovered_entity {
-            return;
-        }
-
-        // apply
-        self.hovered_entity = next_hovered_entity;
-        canvas.queue_resync_shapes_light();
     }
 
     // SELECTION

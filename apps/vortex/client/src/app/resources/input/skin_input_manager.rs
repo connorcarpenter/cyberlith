@@ -1,11 +1,19 @@
-use bevy_ecs::world::{Mut, World};
+use bevy_ecs::{
+    entity::Entity,
+    system::{Query, Res, ResMut, SystemState},
+    world::{Mut, World},
+};
 
 use input::{InputAction, Key, MouseButton};
 use math::Vec2;
+use render_api::components::{Transform, Visibility};
 
-use crate::app::resources::{
-    action::skin::SkinAction, canvas::Canvas, input::InputManager, shape_data::CanvasShape,
-    tab_manager::TabManager,
+use crate::app::{
+    components::{FaceIcon2d, LocalShape},
+    resources::{
+        action::skin::SkinAction, canvas::Canvas, input::InputManager, shape_data::CanvasShape,
+        tab_manager::TabManager,
+    },
 };
 
 pub struct SkinInputManager;
@@ -159,5 +167,71 @@ impl SkinInputManager {
         }
 
         InputManager::handle_drag_empty_space(world, click_type, delta);
+    }
+
+    pub(crate) fn sync_mouse_hover_ui(
+        world: &mut World,
+        input_manager: &mut InputManager,
+        mouse_position: &Vec2,
+    ) {
+        let mut system_state: SystemState<(
+            ResMut<Canvas>,
+            Res<TabManager>,
+            Query<(&mut Transform, Option<&LocalShape>)>,
+            Query<&Visibility>,
+            Query<(Entity, &FaceIcon2d)>,
+        )> = SystemState::new(world);
+        let (mut canvas, tab_manager, mut transform_q, visibility_q, face_2d_q) =
+            system_state.get_mut(world);
+
+        let Some(current_tab_state) = tab_manager.current_tab_state() else {
+            return;
+        };
+        let camera_state = &current_tab_state.camera_state;
+
+        let camera_3d_scale = camera_state.camera_3d_scale();
+
+        let mut least_distance = f32::MAX;
+        let mut least_entity = None;
+        let mut is_hovering = false;
+
+        // check for faces
+        if !is_hovering {
+            for (face_entity, _) in face_2d_q.iter() {
+                // check tab ownership, skip faces from other tabs
+                let Ok(visibility) = visibility_q.get(face_entity) else {
+                    panic!("entity has no Visibility");
+                };
+                if !visibility.visible {
+                    continue;
+                }
+
+                let (face_transform, _) = transform_q.get(face_entity).unwrap();
+                let face_position = face_transform.translation.truncate();
+                let distance = face_position.distance(*mouse_position);
+                if distance < least_distance {
+                    least_distance = distance;
+
+                    least_entity = Some((face_entity, CanvasShape::Face));
+                }
+            }
+
+            is_hovering = least_distance <= (FaceIcon2d::DETECT_RADIUS * camera_3d_scale);
+        }
+
+        // define old and new hovered states
+        let old_hovered_entity = input_manager.hovered_entity;
+        let next_hovered_entity = if is_hovering { least_entity } else { None };
+
+        input_manager.sync_hover_shape_scale(&mut transform_q, camera_3d_scale);
+
+        // hover state did not change
+        if old_hovered_entity == next_hovered_entity {
+            return;
+        }
+
+        // apply
+        input_manager.hovered_entity = next_hovered_entity;
+        canvas.queue_resync_shapes_light();
     }
 }

@@ -5,11 +5,8 @@ use bevy_ecs::{
 
 use input::Input;
 
-use crate::app::{
-    resources::{
-        canvas::Canvas,
-        file_manager::FileManager, input::InputManager, tab_manager::TabManager,
-    },
+use crate::app::resources::{
+    canvas::Canvas, file_manager::FileManager, input::InputManager, tab_manager::TabManager,
 };
 
 pub fn input(world: &mut World) {
@@ -27,9 +24,7 @@ pub fn input(world: &mut World) {
     });
 }
 
-pub fn update_mouse_hover(
-    world: &mut World,
-) {
+pub fn update_mouse_hover(world: &mut World) {
     if !world.get_resource::<Canvas>().unwrap().is_visible() {
         return;
     }
@@ -39,17 +34,15 @@ pub fn update_mouse_hover(
     };
     let current_tab_entity = *current_tab_entity;
 
-    let file_type = world.get_resource::<FileManager>().unwrap().get_file_type(&current_tab_entity);
+    let file_type = world
+        .get_resource::<FileManager>()
+        .unwrap()
+        .get_file_type(&current_tab_entity);
 
     let mouse_pos = world.get_resource::<Input>().unwrap().mouse_position();
     let mouse_pos = *mouse_pos;
 
     world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
-        input_manager.sync_mouse_hover_ui(
-            world,
-            file_type,
-            &current_tab_entity,
-            &mouse_pos,
-        );
+        input_manager.sync_mouse_hover_ui(world, file_type, &current_tab_entity, &mouse_pos);
     });
 }

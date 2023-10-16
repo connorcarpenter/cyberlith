@@ -959,7 +959,6 @@ impl AnimationManager {
         canvas_size: Vec2,
         mouse_position: &Vec2,
     ) {
-
         let Some(file_frame_data) = self.frame_data.get(current_file_entity) else {
             return;
         };
