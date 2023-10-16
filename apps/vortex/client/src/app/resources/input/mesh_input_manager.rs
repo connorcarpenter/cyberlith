@@ -179,36 +179,13 @@ impl MeshInputManager {
         let selected_shape = input_manager.selected_shape.map(|(_, shape)| shape);
         let hovered_shape = input_manager.hovered_entity.map(|(_, shape)| shape);
 
-        // click_type, selected_shape, hovered_shape, current_file_type
+        // click_type, selected_shape, hovered_shape
         match (click_type, selected_shape, hovered_shape) {
-            (MouseButton::Left, Some(CanvasShape::Edge | CanvasShape::Face), _) => {
-                // should not ever be able to attach something to an edge or face?
-                // select hovered entity
-                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_shape_action(
-                        world,
-                        input_manager,
-                        ShapeAction::SelectShape(input_manager.hovered_entity),
-                    );
-                });
-                return;
-            }
-            (MouseButton::Left, Some(_), Some(CanvasShape::Edge | CanvasShape::Face)) => {
-                // should not ever be able to attach something to an edge or face?
-                // select hovered entity
-                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_shape_action(
-                        world,
-                        input_manager,
-                        ShapeAction::SelectShape(input_manager.hovered_entity),
-                    );
-                });
-                return;
-            }
             (MouseButton::Left, Some(CanvasShape::Vertex), Some(CanvasShape::Vertex)) => {
                 Self::link_vertices(world, input_manager);
             }
             (MouseButton::Left, Some(CanvasShape::Vertex), None) => {
+                // create new vertex
                 let (vertex_2d_entity, _) = input_manager.selected_shape.unwrap();
                 let vertex_type_data =
                     VertexTypeData::Mesh(vec![(vertex_2d_entity, None)], Vec::new());
@@ -220,16 +197,8 @@ impl MeshInputManager {
                     vertex_type_data,
                 );
             }
-            (MouseButton::Left, None, Some(CanvasShape::Vertex | CanvasShape::Edge)) => {
-                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_shape_action(
-                        world,
-                        input_manager,
-                        ShapeAction::SelectShape(input_manager.hovered_entity),
-                    );
-                });
-            }
-            (MouseButton::Left, None, Some(CanvasShape::Face)) => {
+            (MouseButton::Left, _, _) => {
+                // select hovered shape (or None if there is no hovered shape)
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
                     tab_manager.current_tab_execute_shape_action(
                         world,
@@ -307,9 +276,7 @@ impl MeshInputManager {
         }
 
         match (click_type, input_manager.selected_shape) {
-            (MouseButton::Left, Some((vertex_2d_entity, CanvasShape::Vertex))) => {
-                InputManager::handle_vertex_drag(world, &vertex_2d_entity, &mouse_position)
-            }
+            (MouseButton::Left, Some((vertex_2d_entity, CanvasShape::Vertex))) => InputManager::handle_vertex_drag(world, &vertex_2d_entity, &mouse_position),
             (_, _) => InputManager::handle_drag_empty_space(world, click_type, delta),
         }
     }

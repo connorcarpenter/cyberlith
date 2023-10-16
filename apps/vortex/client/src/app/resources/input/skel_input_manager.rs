@@ -120,33 +120,10 @@ impl SkelInputManager {
         let selected_shape = input_manager.selected_shape.map(|(_, shape)| shape);
         let hovered_shape = input_manager.hovered_entity.map(|(_, shape)| shape);
 
-        // click_type, selected_shape, hovered_shape, current_file_type
+        // click_type, selected_shape, hovered_shape
         match (click_type, selected_shape, hovered_shape) {
-            (MouseButton::Left, Some(CanvasShape::Edge), _) => {
-                // should not ever be able to attach something to an edge
-                // select hovered entity
-                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_shape_action(
-                        world,
-                        input_manager,
-                        ShapeAction::SelectShape(input_manager.hovered_entity),
-                    );
-                });
-                return;
-            }
-            (MouseButton::Left, Some(CanvasShape::Vertex | CanvasShape::RootVertex), Some(_)) => {
-                // skel file type does nothing when trying to connect vertices together
-                // select hovered entity
-                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_shape_action(
-                        world,
-                        input_manager,
-                        ShapeAction::SelectShape(input_manager.hovered_entity),
-                    );
-                });
-                return;
-            }
             (MouseButton::Left, Some(CanvasShape::Vertex | CanvasShape::RootVertex), None) => {
+                // create new vertex
                 let (vertex_2d_entity, _) = input_manager.selected_shape.unwrap();
                 let vertex_type_data = VertexTypeData::Skel(vertex_2d_entity, 0.0, None);
                 InputManager::handle_create_new_vertex(
@@ -157,11 +134,8 @@ impl SkelInputManager {
                     vertex_type_data,
                 );
             }
-            (
-                MouseButton::Left,
-                None,
-                Some(CanvasShape::RootVertex | CanvasShape::Vertex | CanvasShape::Edge),
-            ) => {
+            (MouseButton::Left, _, _) => {
+                // select hovered shape (or None if there is no hovered shape)
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
                     tab_manager.current_tab_execute_shape_action(
                         world,
@@ -196,9 +170,7 @@ impl SkelInputManager {
         }
 
         match (click_type, input_manager.selected_shape) {
-            (MouseButton::Left, Some((vertex_2d_entity, CanvasShape::Vertex))) => {
-                InputManager::handle_vertex_drag(world, &vertex_2d_entity, &mouse_position)
-            }
+            (MouseButton::Left, Some((vertex_2d_entity, CanvasShape::Vertex))) => InputManager::handle_vertex_drag(world, &vertex_2d_entity, &mouse_position),
             (MouseButton::Left, Some((edge_2d_entity, CanvasShape::Edge))) => {
                 let edge_3d_entity = world
                     .get_resource::<EdgeManager>()
