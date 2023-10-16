@@ -17,7 +17,7 @@ use vortex_proto::{
 use crate::{
     files::{
         AnimReader, AnimWriter, MeshReader, MeshWriter, PaletteReader, PaletteWriter, SkelReader,
-        SkelWriter, SkinReader, SkinWriter,
+        SkelWriter, SkinReader, SkinWriter, ModelReader, ModelWriter, SceneReader, SceneWriter,
     },
     resources::{
         AnimationManager, ContentEntityData, PaletteManager, Project, ShapeManager, SkinManager,
@@ -60,6 +60,8 @@ impl FileReader for FileExtension {
             FileExtension::Anim => AnimReader.read(world, project, file_key, file_entity, bytes),
             FileExtension::Palette => PaletteReader.read(world, file_entity, bytes),
             FileExtension::Skin => SkinReader.read(world, project, file_key, file_entity, bytes),
+            FileExtension::Model => ModelReader.read(world, project, file_key, file_entity, bytes),
+            FileExtension::Scene => SceneReader.read(world, project, file_key, file_entity, bytes),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }
@@ -78,6 +80,8 @@ impl FileWriter for FileExtension {
             FileExtension::Anim => AnimWriter.write(world, project, content_entities),
             FileExtension::Palette => PaletteWriter.write(world, project, content_entities),
             FileExtension::Skin => SkinWriter.write(world, project, content_entities),
+            FileExtension::Model => ModelWriter.write(world, project, content_entities),
+            FileExtension::Scene => SceneWriter.write(world, project, content_entities),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }
@@ -89,6 +93,8 @@ impl FileWriter for FileExtension {
             FileExtension::Anim => AnimWriter.write_new_default(),
             FileExtension::Palette => PaletteWriter.write_new_default(),
             FileExtension::Skin => SkinWriter.write_new_default(),
+            FileExtension::Model => ModelWriter.write_new_default(),
+            FileExtension::Scene => SceneWriter.write_new_default(),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }

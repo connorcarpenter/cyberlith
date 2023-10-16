@@ -21,7 +21,7 @@ use crate::app::{
     events::ShapeColorResyncEvent,
     resources::{
         action::skin::SkinAction, file_manager::FileManager, input_manager::InputManager,
-        palette_manager::PaletteManager, shape_data::CanvasShape, tab_manager::TabManager,
+        palette_manager::PaletteManager, shape_data::CanvasShape,
     },
 };
 

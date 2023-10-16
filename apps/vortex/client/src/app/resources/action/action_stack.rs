@@ -13,6 +13,8 @@ use crate::app::resources::{
         palette::PaletteAction,
         shape::ShapeAction,
         skin::SkinAction,
+        model::ModelAction,
+        scene::SceneAction,
     },
     file_manager::FileManager,
     input_manager::InputManager,
@@ -307,6 +309,30 @@ impl ActionStack<SkinAction> {
         tab_file_entity: Entity,
         action: SkinAction,
     ) -> Vec<SkinAction> {
+        action.execute(world, input_manager, tab_file_entity)
+    }
+}
+
+impl ActionStack<ModelAction> {
+    pub fn execute_action(
+        &mut self,
+        world: &mut World,
+        input_manager: &mut InputManager,
+        tab_file_entity: Entity,
+        action: ModelAction,
+    ) -> Vec<ModelAction> {
+        action.execute(world, input_manager, tab_file_entity)
+    }
+}
+
+impl ActionStack<SceneAction> {
+    pub fn execute_action(
+        &mut self,
+        world: &mut World,
+        input_manager: &mut InputManager,
+        tab_file_entity: Entity,
+        action: SceneAction,
+    ) -> Vec<SceneAction> {
         action.execute(world, input_manager, tab_file_entity)
     }
 }

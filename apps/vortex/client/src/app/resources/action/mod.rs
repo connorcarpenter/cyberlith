@@ -3,6 +3,8 @@ pub mod file;
 pub mod palette;
 pub mod shape;
 pub mod skin;
+pub mod model;
+pub mod scene;
 
 mod action_stack;
 mod tab_action_stack;

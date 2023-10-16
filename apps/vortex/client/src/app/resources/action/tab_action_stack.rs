@@ -7,7 +7,7 @@ use vortex_proto::components::FileExtension;
 
 use crate::app::resources::{
     action::{
-        animation::AnimAction, palette::PaletteAction, shape::ShapeAction, skin::SkinAction,
+        animation::AnimAction, palette::PaletteAction, shape::ShapeAction, skin::SkinAction, model::ModelAction, scene::SceneAction,
         ActionStack,
     },
     input_manager::InputManager,
@@ -19,6 +19,8 @@ pub enum TabActionStack {
     Animation(ActionStack<AnimAction>),
     Palette(ActionStack<PaletteAction>),
     Skin(ActionStack<SkinAction>),
+    Model(ActionStack<ModelAction>),
+    Scene(ActionStack<SceneAction>)
 }
 
 impl TabActionStack {
@@ -28,6 +30,8 @@ impl TabActionStack {
             FileExtension::Anim => Self::Animation(ActionStack::default()),
             FileExtension::Palette => Self::Palette(ActionStack::default()),
             FileExtension::Skin => Self::Skin(ActionStack::default()),
+            FileExtension::Model => Self::Model(ActionStack::default()),
+            FileExtension::Scene => Self::Scene(ActionStack::default()),
             _ => {
                 panic!(
                     "TabActionStack::new() called with unsupported file extension: {:?}",
@@ -117,6 +121,8 @@ impl TabActionStack {
             Self::Animation(action_stack) => action_stack.has_undo(),
             Self::Palette(action_stack) => action_stack.has_undo(),
             Self::Skin(action_stack) => action_stack.has_undo(),
+            Self::Model(action_stack) => action_stack.has_undo(),
+            Self::Scene(action_stack) => action_stack.has_undo(),
         }
     }
 
@@ -126,6 +132,8 @@ impl TabActionStack {
             Self::Animation(action_stack) => action_stack.has_redo(),
             Self::Palette(action_stack) => action_stack.has_redo(),
             Self::Skin(action_stack) => action_stack.has_redo(),
+            Self::Model(action_stack) => action_stack.has_redo(),
+            Self::Scene(action_stack) => action_stack.has_redo(),
         }
     }
 
@@ -157,6 +165,18 @@ impl TabActionStack {
                 });
             }
             Self::Skin(action_stack) => {
+                let action = action_stack.pop_undo();
+                let reversed_actions =
+                    action_stack.execute_action(world, input_manager, tab_file_entity, action);
+                action_stack.post_execute_undo(world, reversed_actions);
+            }
+            Self::Model(action_stack) => {
+                let action = action_stack.pop_undo();
+                let reversed_actions =
+                    action_stack.execute_action(world, input_manager, tab_file_entity, action);
+                action_stack.post_execute_undo(world, reversed_actions);
+            }
+            Self::Scene(action_stack) => {
                 let action = action_stack.pop_undo();
                 let reversed_actions =
                     action_stack.execute_action(world, input_manager, tab_file_entity, action);
@@ -198,6 +218,18 @@ impl TabActionStack {
                     action_stack.execute_action(world, input_manager, tab_file_entity, action);
                 action_stack.post_execute_redo(world, reversed_actions);
             }
+            Self::Model(action_stack) => {
+                let action = action_stack.pop_redo();
+                let reversed_actions =
+                    action_stack.execute_action(world, input_manager, tab_file_entity, action);
+                action_stack.post_execute_redo(world, reversed_actions);
+            }
+            Self::Scene(action_stack) => {
+                let action = action_stack.pop_redo();
+                let reversed_actions =
+                    action_stack.execute_action(world, input_manager, tab_file_entity, action);
+                action_stack.post_execute_redo(world, reversed_actions);
+            }
         }
     }
 
@@ -215,6 +247,12 @@ impl TabActionStack {
             Self::Skin(action_stack) => {
                 action_stack.check_top(world);
             }
+            Self::Model(action_stack) => {
+                action_stack.check_top(world);
+            }
+            Self::Scene(action_stack) => {
+                action_stack.check_top(world);
+            }
         }
     }
 
@@ -230,6 +268,12 @@ impl TabActionStack {
                 action_stack.entity_update_auth_status(entity);
             }
             Self::Skin(action_stack) => {
+                action_stack.entity_update_auth_status(entity);
+            }
+            Self::Model(action_stack) => {
+                action_stack.entity_update_auth_status(entity);
+            }
+            Self::Scene(action_stack) => {
                 action_stack.entity_update_auth_status(entity);
             }
         }
