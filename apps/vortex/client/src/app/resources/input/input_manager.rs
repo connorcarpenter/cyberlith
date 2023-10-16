@@ -1,40 +1,40 @@
-use std::f32::consts::FRAC_PI_2;
-
 use bevy_ecs::{
     entity::Entity,
     query::{With, Without},
     system::{Commands, Query, Res, ResMut, Resource, SystemState},
     world::{Mut, World},
 };
-use bevy_log::{info, warn};
+use bevy_log::warn;
 
 use naia_bevy_client::{Client, CommandsExt, Instant};
 
 use input::{InputAction, Key, MouseButton};
-use math::{convert_2d_to_3d, Vec2, Vec3};
+use math::{Vec2, Vec3};
 use render_api::{
-    components::{Camera, CameraProjection, Projection, Transform, Visibility},
-    shapes::{
-        angle_between, distance_to_2d_line, get_2d_line_transform_endpoint, normalize_angle,
-        set_2d_line_transform,
-    },
+    components::{Transform, Visibility},
+    shapes::{distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform},
 };
 
-use vortex_proto::components::{EdgeAngle, FileExtension, ShapeName, Vertex3d, VertexRoot};
+use vortex_proto::components::{FileExtension, ShapeName, VertexRoot};
 
-use crate::app::resources::input::mesh_input_manager::MeshInputManager;
-use crate::app::resources::input::skel_input_manager::SkelInputManager;
-use crate::app::resources::input::skin_input_manager::SkinInputManager;
-use crate::app::resources::input::AnimInputManager;
 use crate::app::{
-    components::{
-        Edge2dLocal, FaceIcon2d, LocalShape, SelectCircle, SelectTriangle, Vertex2d, VertexTypeData,
-    },
+    components::{Edge2dLocal, FaceIcon2d, LocalShape, SelectCircle, SelectTriangle, Vertex2d},
     resources::{
-        action::shape::ShapeAction, animation_manager::AnimationManager,
-        camera_manager::CameraAngle, camera_manager::CameraManager, camera_state::CameraState,
-        canvas::Canvas, edge_manager::EdgeManager, file_manager::FileManager,
-        shape_data::CanvasShape, tab_manager::TabManager, vertex_manager::VertexManager,
+        action::shape::ShapeAction,
+        animation_manager::AnimationManager,
+        camera_manager::CameraAngle,
+        camera_manager::CameraManager,
+        camera_state::CameraState,
+        canvas::Canvas,
+        edge_manager::EdgeManager,
+        file_manager::FileManager,
+        input::{
+            mesh_input_manager::MeshInputManager, skel_input_manager::SkelInputManager,
+            skin_input_manager::SkinInputManager, AnimInputManager,
+        },
+        shape_data::CanvasShape,
+        tab_manager::TabManager,
+        vertex_manager::VertexManager,
     },
 };
 
@@ -590,416 +590,6 @@ impl InputManager {
         });
 
         self.selected_shape = None;
-    }
-
-    pub(crate) fn handle_mouse_click_skelmesh(
-        &mut self,
-        world: &mut World,
-        current_file_type: FileExtension,
-        click_type: MouseButton,
-        mouse_position: &Vec2,
-    ) {
-        // check if mouse position is outside of canvas
-        if !world
-            .get_resource::<Canvas>()
-            .unwrap()
-            .is_position_inside(*mouse_position)
-        {
-            return;
-        }
-
-        let mut system_state: SystemState<(
-            Res<CameraManager>,
-            Res<VertexManager>,
-            Res<EdgeManager>,
-            Query<(&Camera, &Projection)>,
-            Query<&Transform>,
-        )> = SystemState::new(world);
-        let (camera_manager, vertex_manager, edge_manager, camera_q, transform_q) =
-            system_state.get_mut(world);
-
-        let selected_shape = self.selected_shape.map(|(_, shape)| shape);
-        let hovered_shape = self.hovered_entity.map(|(_, shape)| shape);
-
-        // click_type, selected_shape, hovered_shape, current_file_type
-        match (click_type, selected_shape, hovered_shape, current_file_type) {
-            (
-                MouseButton::Left,
-                Some(CanvasShape::Edge | CanvasShape::Face),
-                _,
-                FileExtension::Skel | FileExtension::Mesh,
-            ) => {
-                // should not ever be able to attach something to an edge or face?
-                // select hovered entity
-                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_shape_action(
-                        world,
-                        self,
-                        ShapeAction::SelectShape(self.hovered_entity),
-                    );
-                });
-                return;
-            }
-            (
-                MouseButton::Left,
-                Some(CanvasShape::Vertex | CanvasShape::RootVertex),
-                Some(_),
-                FileExtension::Skel,
-            ) => {
-                // skel file type does nothing when trying to connect vertices together
-                // select hovered entity
-                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_shape_action(
-                        world,
-                        self,
-                        ShapeAction::SelectShape(self.hovered_entity),
-                    );
-                });
-                return;
-            }
-            (
-                MouseButton::Left,
-                Some(_),
-                Some(CanvasShape::Edge | CanvasShape::Face),
-                FileExtension::Mesh,
-            ) => {
-                // should not ever be able to attach something to an edge or face?
-                // select hovered entity
-                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_shape_action(
-                        world,
-                        self,
-                        ShapeAction::SelectShape(self.hovered_entity),
-                    );
-                });
-                return;
-            }
-            (
-                MouseButton::Left,
-                Some(CanvasShape::Vertex | CanvasShape::RootVertex),
-                Some(CanvasShape::Vertex | CanvasShape::RootVertex),
-                FileExtension::Mesh,
-            ) => {
-                // link vertices together
-                let (vertex_2d_entity_a, _) = self.selected_shape.unwrap();
-                let (vertex_2d_entity_b, _) = self.hovered_entity.unwrap();
-                if vertex_2d_entity_a == vertex_2d_entity_b {
-                    return;
-                }
-
-                // check if edge already exists
-                if edge_manager
-                    .edge_2d_entity_from_vertices(
-                        &vertex_manager,
-                        vertex_2d_entity_a,
-                        vertex_2d_entity_b,
-                    )
-                    .is_some()
-                {
-                    // select vertex
-                    world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                        tab_manager.current_tab_execute_shape_action(
-                            world,
-                            self,
-                            ShapeAction::SelectShape(Some((
-                                vertex_2d_entity_b,
-                                CanvasShape::Vertex,
-                            ))),
-                        );
-                    });
-                    return;
-                } else {
-                    // create edge
-                    world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                        tab_manager.current_tab_execute_shape_action(
-                            world,
-                            self,
-                            ShapeAction::CreateEdge(
-                                vertex_2d_entity_a,
-                                vertex_2d_entity_b,
-                                (vertex_2d_entity_b, CanvasShape::Vertex),
-                                None,
-                                None,
-                            ),
-                        );
-                    });
-                    return;
-                }
-            }
-            (
-                MouseButton::Left,
-                Some(CanvasShape::Vertex | CanvasShape::RootVertex),
-                None,
-                FileExtension::Skel | FileExtension::Mesh,
-            ) => {
-                // create new vertex
-
-                // get camera
-                let camera_3d = camera_manager.camera_3d_entity().unwrap();
-                let camera_transform: Transform = *transform_q.get(camera_3d).unwrap();
-                let (camera, camera_projection) = camera_q.get(camera_3d).unwrap();
-
-                let camera_viewport = camera.viewport.unwrap();
-                let view_matrix = camera_transform.view_matrix();
-                let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
-
-                // get 2d vertex transform
-                let (vertex_2d_entity, _) = self.selected_shape.unwrap();
-                let Ok(vertex_2d_transform) = transform_q.get(vertex_2d_entity) else {
-                    warn!(
-                        "Selected vertex entity: {:?} has no Transform",
-                        vertex_2d_entity
-                    );
-                    return;
-                };
-                // convert 2d to 3d
-                let new_3d_position = convert_2d_to_3d(
-                    &view_matrix,
-                    &projection_matrix,
-                    &camera_viewport.size_vec2(),
-                    &mouse_position,
-                    vertex_2d_transform.translation.z,
-                );
-
-                // spawn new vertex
-                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_shape_action(
-                        world,
-                        self,
-                        ShapeAction::CreateVertex(
-                            match current_file_type {
-                                FileExtension::Skel => {
-                                    VertexTypeData::Skel(vertex_2d_entity, 0.0, None)
-                                }
-                                FileExtension::Mesh => {
-                                    VertexTypeData::Mesh(vec![(vertex_2d_entity, None)], Vec::new())
-                                }
-                                _ => {
-                                    panic!("");
-                                }
-                            },
-                            new_3d_position,
-                            None,
-                        ),
-                    );
-                });
-            }
-            (
-                MouseButton::Left,
-                None,
-                Some(CanvasShape::RootVertex | CanvasShape::Vertex | CanvasShape::Edge),
-                FileExtension::Skel | FileExtension::Mesh,
-            ) => {
-                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_shape_action(
-                        world,
-                        self,
-                        ShapeAction::SelectShape(self.hovered_entity),
-                    );
-                });
-            }
-            (MouseButton::Left, None, Some(CanvasShape::Face), FileExtension::Mesh) => {
-                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_shape_action(
-                        world,
-                        self,
-                        ShapeAction::SelectShape(self.hovered_entity),
-                    );
-                });
-            }
-            (MouseButton::Right, _, _, FileExtension::Skel | FileExtension::Mesh) => {
-                // deselect vertex
-                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_shape_action(
-                        world,
-                        self,
-                        ShapeAction::SelectShape(None),
-                    );
-                });
-            }
-            _ => {}
-        }
-    }
-
-    pub(crate) fn handle_mouse_drag_skelmesh(
-        &mut self,
-        world: &mut World,
-        current_file_type: FileExtension,
-        click_type: MouseButton,
-        mouse_position: Vec2,
-        delta: Vec2,
-    ) {
-        if !world.get_resource::<TabManager>().unwrap().has_focus() {
-            return;
-        }
-
-        let shape_is_selected = self.selected_shape.is_some();
-        let shape_can_drag = shape_is_selected
-            && match self.selected_shape.unwrap().1 {
-                CanvasShape::Vertex => true,
-                CanvasShape::Edge => current_file_type != FileExtension::Mesh,
-                _ => false,
-            };
-
-        if shape_is_selected && shape_can_drag {
-            match click_type {
-                MouseButton::Left => {
-                    match self.selected_shape.unwrap() {
-                        (vertex_2d_entity, CanvasShape::Vertex) => {
-                            // move vertex
-                            let Some(vertex_3d_entity) = world.get_resource::<VertexManager>().unwrap().vertex_entity_2d_to_3d(&vertex_2d_entity) else {
-                                warn!(
-                                    "Selected vertex entity: {:?} has no 3d counterpart",
-                                    vertex_2d_entity
-                                );
-                                return;
-                            };
-
-                            let mut system_state: SystemState<(
-                                Commands,
-                                Client,
-                                Res<CameraManager>,
-                                ResMut<VertexManager>,
-                                ResMut<Canvas>,
-                                Query<(&Camera, &Projection)>,
-                                Query<&Transform>,
-                                Query<&mut Vertex3d>,
-                            )> = SystemState::new(world);
-                            let (
-                                mut commands,
-                                client,
-                                camera_manager,
-                                mut vertex_manager,
-                                mut canvas,
-                                camera_q,
-                                transform_q,
-                                mut vertex_3d_q,
-                            ) = system_state.get_mut(world);
-
-                            // check status
-                            let auth_status = commands
-                                .entity(vertex_3d_entity)
-                                .authority(&client)
-                                .unwrap();
-                            if !(auth_status.is_requested() || auth_status.is_granted()) {
-                                // only continue to mutate if requested or granted authority over vertex
-                                info!("No authority over vertex, skipping..");
-                                return;
-                            }
-
-                            // get camera
-                            let camera_3d = camera_manager.camera_3d_entity().unwrap();
-                            let camera_transform: Transform = *transform_q.get(camera_3d).unwrap();
-                            let (camera, camera_projection) = camera_q.get(camera_3d).unwrap();
-
-                            let camera_viewport = camera.viewport.unwrap();
-                            let view_matrix = camera_transform.view_matrix();
-                            let projection_matrix =
-                                camera_projection.projection_matrix(&camera_viewport);
-
-                            // get 2d vertex transform
-                            let vertex_2d_transform = transform_q.get(vertex_2d_entity).unwrap();
-
-                            // convert 2d to 3d
-                            let new_3d_position = convert_2d_to_3d(
-                                &view_matrix,
-                                &projection_matrix,
-                                &camera_viewport.size_vec2(),
-                                &mouse_position,
-                                vertex_2d_transform.translation.z,
-                            );
-
-                            // set networked 3d vertex position
-                            let mut vertex_3d = vertex_3d_q.get_mut(vertex_3d_entity).unwrap();
-
-                            vertex_manager.update_last_vertex_dragged(
-                                vertex_2d_entity,
-                                vertex_3d.as_vec3(),
-                                new_3d_position,
-                            );
-
-                            vertex_3d.set_vec3(&new_3d_position);
-
-                            // redraw
-                            canvas.queue_resync_shapes();
-                        }
-                        (edge_2d_entity, CanvasShape::Edge) => {
-                            let edge_3d_entity = world
-                                .get_resource::<EdgeManager>()
-                                .unwrap()
-                                .edge_entity_2d_to_3d(&edge_2d_entity)
-                                .unwrap();
-
-                            let mut system_state: SystemState<(
-                                Commands,
-                                Client,
-                                ResMut<EdgeManager>,
-                                ResMut<Canvas>,
-                                Query<&Transform>,
-                                Query<&mut EdgeAngle>,
-                            )> = SystemState::new(world);
-                            let (
-                                mut commands,
-                                client,
-                                mut edge_manager,
-                                mut canvas,
-                                transform_q,
-                                mut edge_angle_q,
-                            ) = system_state.get_mut(world);
-
-                            // rotate edge angle
-                            let auth_status =
-                                commands.entity(edge_3d_entity).authority(&client).unwrap();
-                            if !(auth_status.is_requested() || auth_status.is_granted()) {
-                                // only continue to mutate if requested or granted authority over edge
-                                info!("No authority over edge, skipping..");
-                                return;
-                            }
-
-                            let edge_2d_transform = transform_q.get(edge_2d_entity).unwrap();
-                            let start_pos = edge_2d_transform.translation.truncate();
-                            let end_pos = get_2d_line_transform_endpoint(&edge_2d_transform);
-                            let base_angle = angle_between(&start_pos, &end_pos);
-
-                            let edge_angle_entity =
-                                edge_manager.edge_get_base_circle_entity(&edge_3d_entity);
-                            let edge_angle_pos = transform_q
-                                .get(edge_angle_entity)
-                                .unwrap()
-                                .translation
-                                .truncate();
-
-                            let mut edge_angle = edge_angle_q.get_mut(edge_3d_entity).unwrap();
-                            let new_angle = normalize_angle(
-                                angle_between(&edge_angle_pos, &mouse_position)
-                                    - FRAC_PI_2
-                                    - base_angle,
-                            );
-
-                            edge_manager.update_last_edge_dragged(
-                                edge_2d_entity,
-                                edge_angle.get_radians(),
-                                new_angle,
-                            );
-
-                            edge_angle.set_radians(new_angle);
-
-                            // redraw
-                            canvas.queue_resync_shapes();
-                        }
-                        _ => {
-                            panic!("Shouldn't be possible");
-                        }
-                    }
-                }
-                MouseButton::Right => {
-                    // TODO: dunno if this is possible? shouldn't the vertex be deselected?
-                }
-                _ => {}
-            }
-        } else {
-            Self::handle_drag_empty_space(world, click_type, delta);
-        }
     }
 
     pub(crate) fn handle_drag_empty_space(world: &mut World, click_type: MouseButton, delta: Vec2) {
