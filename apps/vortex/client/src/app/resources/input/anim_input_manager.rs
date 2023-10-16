@@ -26,39 +26,39 @@ use crate::app::resources::{
 pub struct AnimInputManager;
 
 impl AnimInputManager {
-    pub fn update_input_anim(
-        input_manager: &mut InputManager,
+    pub fn update_input(
         world: &mut World,
+        input_manager: &mut InputManager,
         input_actions: Vec<InputAction>,
     ) {
         let animation_manager = world.get_resource_mut::<AnimationManager>().unwrap();
         if animation_manager.is_posing() {
-            Self::update_input_anim_posing(input_manager, input_actions, world);
+            Self::update_input_posing(world, input_manager, input_actions);
         } else {
-            Self::update_input_anim_framing(input_manager, input_actions, world);
+            Self::update_input_framing(world, input_manager, input_actions);
         }
     }
 
-    fn update_input_anim_framing(
+    fn update_input_framing(
+        world: &mut World,
         input_manager: &mut InputManager,
         input_actions: Vec<InputAction>,
-        world: &mut World,
     ) {
         for action in input_actions {
             match action {
                 InputAction::MouseClick(click_type, mouse_position) => {
-                    Self::handle_mouse_click_anim_framing(
-                        input_manager,
+                    Self::handle_mouse_click_framing(
                         world,
+                        input_manager,
                         click_type,
                         &mouse_position,
                     )
                 }
                 InputAction::MouseDragged(click_type, _mouse_position, delta) => {
-                    Self::handle_mouse_drag_anim_framing(world, click_type, delta)
+                    Self::handle_mouse_drag_framing(world, click_type, delta)
                 }
                 InputAction::MiddleMouseScroll(scroll_y) => {
-                    Self::handle_mouse_scroll_anim_framing(world, scroll_y)
+                    Self::handle_mouse_scroll_framing(world, scroll_y)
                 }
                 InputAction::MouseMoved => {
                     let mut animation_manager =
@@ -66,9 +66,9 @@ impl AnimInputManager {
                     animation_manager.framing_queue_resync_hover_ui();
                 }
                 InputAction::KeyPress(key) => match key {
-                    Key::Delete => Self::anim_file_delete_frame(input_manager, world),
-                    Key::Insert => Self::anim_file_insert_frame(input_manager, world),
-                    Key::Space => Self::anim_file_play_pause(world),
+                    Key::Delete => Self::handle_delete_frame(world, input_manager),
+                    Key::Insert => Self::handle_insert_frame(world, input_manager),
+                    Key::Space => Self::handle_play_pause(world),
                     Key::Enter => {
                         let mut system_state: SystemState<(
                             ResMut<Canvas>,
@@ -115,27 +115,27 @@ impl AnimInputManager {
         }
     }
 
-    fn update_input_anim_posing(
+    fn update_input_posing(
+        world: &mut World,
         input_manager: &mut InputManager,
         input_actions: Vec<InputAction>,
-        world: &mut World,
     ) {
         for action in input_actions {
             match action {
                 InputAction::MouseClick(click_type, mouse_position) => {
-                    Self::handle_mouse_click_anim_posing(
-                        input_manager,
+                    Self::handle_mouse_click_posing(
                         world,
+                        input_manager,
                         click_type,
                         &mouse_position,
                     )
                 }
                 InputAction::MouseDragged(click_type, mouse_position, delta) => {
-                    Self::handle_mouse_drag_anim_posing(
-                        input_manager,
+                    Self::handle_mouse_drag_posing(
                         world,
-                        click_type,
+                        input_manager,
                         mouse_position,
+                        click_type,
                         delta,
                     )
                 }
@@ -169,7 +169,7 @@ impl AnimInputManager {
                             .unwrap()
                             .preview_frame_selected()
                         {
-                            Self::anim_file_play_pause(world);
+                            Self::handle_play_pause(world);
                         }
                     }
                     Key::Escape => {
@@ -184,9 +184,9 @@ impl AnimInputManager {
         }
     }
 
-    pub(crate) fn handle_mouse_click_anim_framing(
-        input_manager: &mut InputManager,
+    pub(crate) fn handle_mouse_click_framing(
         world: &mut World,
+        input_manager: &mut InputManager,
         click_type: MouseButton,
         mouse_position: &Vec2,
     ) {
@@ -251,9 +251,9 @@ impl AnimInputManager {
         }
     }
 
-    pub(crate) fn handle_mouse_click_anim_posing(
-        input_manager: &mut InputManager,
+    pub(crate) fn handle_mouse_click_posing(
         world: &mut World,
+        input_manager: &mut InputManager,
         click_type: MouseButton,
         mouse_position: &Vec2,
     ) {
@@ -339,7 +339,7 @@ impl AnimInputManager {
         }
     }
 
-    pub(crate) fn handle_mouse_drag_anim_framing(
+    pub(crate) fn handle_mouse_drag_framing(
         world: &mut World,
         click_type: MouseButton,
         delta: Vec2,
@@ -358,11 +358,11 @@ impl AnimInputManager {
             .handle_mouse_drag_anim_framing(delta.y);
     }
 
-    pub(crate) fn handle_mouse_drag_anim_posing(
-        input_manager: &mut InputManager,
+    pub(crate) fn handle_mouse_drag_posing(
         world: &mut World,
-        click_type: MouseButton,
+        input_manager: &mut InputManager,
         mouse_position: Vec2,
+        click_type: MouseButton,
         delta: Vec2,
     ) {
         if !world.get_resource::<TabManager>().unwrap().has_focus() {
@@ -446,7 +446,7 @@ impl AnimInputManager {
         }
     }
 
-    fn handle_mouse_scroll_anim_framing(world: &mut World, scroll_y: f32) {
+    fn handle_mouse_scroll_framing(world: &mut World, scroll_y: f32) {
         let mut animation_manager = world.get_resource_mut::<AnimationManager>().unwrap();
         animation_manager.framing_handle_mouse_wheel(scroll_y);
     }
@@ -468,7 +468,7 @@ impl AnimInputManager {
         }
     }
 
-    pub(crate) fn anim_file_insert_frame(input_manager: &mut InputManager, world: &mut World) {
+    pub(crate) fn handle_insert_frame(world: &mut World, input_manager: &mut InputManager) {
         world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
             let current_file_entity = *tab_manager.current_tab_entity().unwrap();
             let animation_manager = world.get_resource::<AnimationManager>().unwrap();
@@ -508,7 +508,7 @@ impl AnimInputManager {
         });
     }
 
-    pub(crate) fn anim_file_delete_frame(input_manager: &mut InputManager, world: &mut World) {
+    pub(crate) fn handle_delete_frame(world: &mut World, input_manager: &mut InputManager) {
         let Some(current_file_entity) = world.get_resource::<TabManager>().unwrap().current_tab_entity() else {
             return;
         };
@@ -549,7 +549,7 @@ impl AnimInputManager {
         });
     }
 
-    fn anim_file_play_pause(world: &mut World) {
+    fn handle_play_pause(world: &mut World) {
         let mut animation_manager = world.get_resource_mut::<AnimationManager>().unwrap();
         if animation_manager.preview_is_playing() {
             animation_manager.preview_pause();

@@ -30,14 +30,14 @@ impl AnimationToolbar {
         // new frame
         if Toolbar::button(ui, "➕", "New frame", true).clicked() {
             world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
-                AnimInputManager::anim_file_insert_frame(&mut input_manager, world);
+                AnimInputManager::handle_insert_frame(world, &mut input_manager);
             });
         }
 
         // delete frame
         if Toolbar::button(ui, "🗑", "Delete frame", true).clicked() {
             world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
-                AnimInputManager::anim_file_delete_frame(&mut input_manager, world);
+                AnimInputManager::handle_delete_frame(world, &mut input_manager);
             });
         }
 

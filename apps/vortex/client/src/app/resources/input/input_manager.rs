@@ -98,10 +98,10 @@ impl InputManager {
             .unwrap()
             .get_file_type(current_file_entity);
         match current_file_type {
-            FileExtension::Skel => SkelInputManager::update_input_skel(self, world, input_actions),
-            FileExtension::Mesh => MeshInputManager::update_input_mesh(self, world, input_actions),
-            FileExtension::Anim => AnimInputManager::update_input_anim(self, world, input_actions),
-            FileExtension::Skin => SkinInputManager::update_input_skin(self, world, input_actions),
+            FileExtension::Skel => SkelInputManager::update_input(world, self, input_actions),
+            FileExtension::Mesh => MeshInputManager::update_input(world, self, input_actions),
+            FileExtension::Anim => AnimInputManager::update_input(world, self, input_actions),
+            FileExtension::Skin => SkinInputManager::update_input(world, self, input_actions),
             _ => {}
         }
     }

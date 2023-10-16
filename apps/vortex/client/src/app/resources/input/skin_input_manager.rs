@@ -11,18 +11,18 @@ use crate::app::resources::{
 pub struct SkinInputManager;
 
 impl SkinInputManager {
-    pub fn update_input_skin(
-        input_manager: &mut InputManager,
+    pub fn update_input(
         world: &mut World,
+        input_manager: &mut InputManager,
         input_actions: Vec<InputAction>,
     ) {
         for action in input_actions {
             match action {
                 InputAction::MouseClick(click_type, mouse_position) => {
-                    Self::handle_mouse_click_skin(input_manager, world, click_type, &mouse_position)
+                    Self::handle_mouse_click(world, input_manager, &mouse_position, click_type)
                 }
                 InputAction::MouseDragged(click_type, _mouse_position, delta) => {
-                    Self::handle_mouse_drag_skin(world, click_type, delta)
+                    Self::handle_mouse_drag(world, click_type, delta)
                 }
                 InputAction::MiddleMouseScroll(scroll_y) => {
                     InputManager::handle_mouse_scroll_wheel(world, scroll_y)
@@ -44,7 +44,7 @@ impl SkinInputManager {
                     | Key::Num5
                     | Key::PageUp
                     | Key::PageDown => InputManager::handle_keypress_camera_controls(world, key),
-                    Key::Delete => Self::handle_delete_key_press_skin(input_manager, world),
+                    Key::Delete => Self::handle_delete_key_press(world, input_manager),
                     _ => {}
                 },
                 _ => {}
@@ -52,10 +52,7 @@ impl SkinInputManager {
         }
     }
 
-    pub(crate) fn handle_delete_key_press_skin(
-        input_manager: &mut InputManager,
-        world: &mut World,
-    ) {
+    pub(crate) fn handle_delete_key_press(world: &mut World, input_manager: &mut InputManager) {
         match input_manager.selected_shape {
             Some((face_2d_entity, CanvasShape::Face)) => {
                 // let mut system_state: SystemState<(Commands, Client, Res<FaceManager>, Res<SkinManager>)> =
@@ -108,11 +105,11 @@ impl SkinInputManager {
         }
     }
 
-    pub(crate) fn handle_mouse_click_skin(
-        input_manager: &mut InputManager,
+    pub(crate) fn handle_mouse_click(
         world: &mut World,
-        click_type: MouseButton,
+        input_manager: &mut InputManager,
         mouse_position: &Vec2,
+        click_type: MouseButton,
     ) {
         if input_manager.selected_shape == input_manager.hovered_entity {
             return;
@@ -156,7 +153,7 @@ impl SkinInputManager {
         }
     }
 
-    pub(crate) fn handle_mouse_drag_skin(world: &mut World, click_type: MouseButton, delta: Vec2) {
+    pub(crate) fn handle_mouse_drag(world: &mut World, click_type: MouseButton, delta: Vec2) {
         if !world.get_resource::<TabManager>().unwrap().has_focus() {
             return;
         }

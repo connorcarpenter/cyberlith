@@ -15,9 +15,9 @@ use crate::app::{
 pub struct SkelInputManager;
 
 impl SkelInputManager {
-    pub fn update_input_skel(
-        input_manager: &mut InputManager,
+    pub fn update_input(
         world: &mut World,
+        input_manager: &mut InputManager,
         input_actions: Vec<InputAction>,
     ) {
         for action in input_actions {
@@ -46,7 +46,7 @@ impl SkelInputManager {
                 }
                 InputAction::MouseRelease(MouseButton::Left) => {
                     input_manager.reset_last_dragged_vertex(world);
-                    Self::reset_last_dragged_edge(input_manager, world);
+                    Self::reset_last_dragged_edge(world, input_manager);
                 }
                 InputAction::KeyPress(key) => match key {
                     Key::S
@@ -61,7 +61,7 @@ impl SkelInputManager {
                     | Key::Num5
                     | Key::PageUp
                     | Key::PageDown => InputManager::handle_keypress_camera_controls(world, key),
-                    Key::Delete => Self::handle_delete_key_press_skel(input_manager, world),
+                    Key::Delete => Self::handle_delete_key_press(world, input_manager),
                     Key::N => naming_bar_visibility_toggle(world, input_manager),
                     Key::E => InputManager::handle_edge_angle_visibility_toggle(world),
                     _ => {}
@@ -71,10 +71,7 @@ impl SkelInputManager {
         }
     }
 
-    pub(crate) fn handle_delete_key_press_skel(
-        input_manager: &mut InputManager,
-        world: &mut World,
-    ) {
+    pub(crate) fn handle_delete_key_press(world: &mut World, input_manager: &mut InputManager) {
         match input_manager.selected_shape {
             Some((vertex_2d_entity, CanvasShape::Vertex)) => {
                 input_manager.handle_delete_vertex_action(world, &vertex_2d_entity)
@@ -83,7 +80,7 @@ impl SkelInputManager {
         }
     }
 
-    fn reset_last_dragged_edge(input_manager: &mut InputManager, world: &mut World) {
+    fn reset_last_dragged_edge(world: &mut World, input_manager: &mut InputManager) {
         // reset last dragged edge
         if let Some((edge_2d_entity, old_angle, new_angle)) = world
             .get_resource_mut::<EdgeManager>()
