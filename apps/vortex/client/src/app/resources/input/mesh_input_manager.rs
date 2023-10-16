@@ -1,5 +1,3 @@
-use std::f32::consts::FRAC_PI_2;
-
 use bevy_ecs::{
     system::{Commands, Query, Res, ResMut, SystemState},
     world::{Mut, World},
@@ -10,12 +8,9 @@ use naia_bevy_client::{Client, CommandsExt};
 
 use input::{InputAction, Key, MouseButton};
 use math::{convert_2d_to_3d, Vec2, Vec3};
-use render_api::{
-    components::{Camera, CameraProjection, Projection, Transform},
-    shapes::{angle_between, get_2d_line_transform_endpoint, normalize_angle},
-};
+use render_api::components::{Camera, CameraProjection, Projection, Transform};
 
-use vortex_proto::components::{EdgeAngle, FileExtension, Vertex3d};
+use vortex_proto::components::Vertex3d;
 
 use crate::app::{
     components::VertexTypeData,
@@ -36,22 +31,11 @@ impl MeshInputManager {
     ) {
         for action in input_actions {
             match action {
-                InputAction::MouseClick(click_type, mouse_position) => Self::handle_mouse_click(
-                    world,
-                    input_manager,
-                    FileExtension::Mesh,
-                    click_type,
-                    &mouse_position,
-                ),
+                InputAction::MouseClick(click_type, mouse_position) => {
+                    Self::handle_mouse_click(world, input_manager, &mouse_position, click_type)
+                }
                 InputAction::MouseDragged(click_type, mouse_position, delta) => {
-                    Self::handle_mouse_drag(
-                        world,
-                        input_manager,
-                        FileExtension::Mesh,
-                        click_type,
-                        mouse_position,
-                        delta,
-                    )
+                    Self::handle_mouse_drag(world, input_manager, mouse_position, delta, click_type)
                 }
                 InputAction::MiddleMouseScroll(scroll_y) => {
                     InputManager::handle_mouse_scroll_wheel(world, scroll_y)
@@ -183,9 +167,8 @@ impl MeshInputManager {
     pub(crate) fn handle_mouse_click(
         world: &mut World,
         input_manager: &mut InputManager,
-        current_file_type: FileExtension,
-        click_type: MouseButton,
         mouse_position: &Vec2,
+        click_type: MouseButton,
     ) {
         // check if mouse position is outside of canvas
         if !world
@@ -210,13 +193,8 @@ impl MeshInputManager {
         let hovered_shape = input_manager.hovered_entity.map(|(_, shape)| shape);
 
         // click_type, selected_shape, hovered_shape, current_file_type
-        match (click_type, selected_shape, hovered_shape, current_file_type) {
-            (
-                MouseButton::Left,
-                Some(CanvasShape::Edge | CanvasShape::Face),
-                _,
-                FileExtension::Skel | FileExtension::Mesh,
-            ) => {
+        match (click_type, selected_shape, hovered_shape) {
+            (MouseButton::Left, Some(CanvasShape::Edge | CanvasShape::Face), _) => {
                 // should not ever be able to attach something to an edge or face?
                 // select hovered entity
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
@@ -228,29 +206,7 @@ impl MeshInputManager {
                 });
                 return;
             }
-            (
-                MouseButton::Left,
-                Some(CanvasShape::Vertex | CanvasShape::RootVertex),
-                Some(_),
-                FileExtension::Skel,
-            ) => {
-                // skel file type does nothing when trying to connect vertices together
-                // select hovered entity
-                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_shape_action(
-                        world,
-                        input_manager,
-                        ShapeAction::SelectShape(input_manager.hovered_entity),
-                    );
-                });
-                return;
-            }
-            (
-                MouseButton::Left,
-                Some(_),
-                Some(CanvasShape::Edge | CanvasShape::Face),
-                FileExtension::Mesh,
-            ) => {
+            (MouseButton::Left, Some(_), Some(CanvasShape::Edge | CanvasShape::Face)) => {
                 // should not ever be able to attach something to an edge or face?
                 // select hovered entity
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
@@ -266,7 +222,6 @@ impl MeshInputManager {
                 MouseButton::Left,
                 Some(CanvasShape::Vertex | CanvasShape::RootVertex),
                 Some(CanvasShape::Vertex | CanvasShape::RootVertex),
-                FileExtension::Mesh,
             ) => {
                 // link vertices together
                 let (vertex_2d_entity_a, _) = input_manager.selected_shape.unwrap();
@@ -314,12 +269,7 @@ impl MeshInputManager {
                     return;
                 }
             }
-            (
-                MouseButton::Left,
-                Some(CanvasShape::Vertex | CanvasShape::RootVertex),
-                None,
-                FileExtension::Skel | FileExtension::Mesh,
-            ) => {
+            (MouseButton::Left, Some(CanvasShape::Vertex | CanvasShape::RootVertex), None) => {
                 // create new vertex
 
                 // get camera
@@ -355,17 +305,7 @@ impl MeshInputManager {
                         world,
                         input_manager,
                         ShapeAction::CreateVertex(
-                            match current_file_type {
-                                FileExtension::Skel => {
-                                    VertexTypeData::Skel(vertex_2d_entity, 0.0, None)
-                                }
-                                FileExtension::Mesh => {
-                                    VertexTypeData::Mesh(vec![(vertex_2d_entity, None)], Vec::new())
-                                }
-                                _ => {
-                                    panic!("");
-                                }
-                            },
+                            VertexTypeData::Mesh(vec![(vertex_2d_entity, None)], Vec::new()),
                             new_3d_position,
                             None,
                         ),
@@ -376,7 +316,6 @@ impl MeshInputManager {
                 MouseButton::Left,
                 None,
                 Some(CanvasShape::RootVertex | CanvasShape::Vertex | CanvasShape::Edge),
-                FileExtension::Skel | FileExtension::Mesh,
             ) => {
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
                     tab_manager.current_tab_execute_shape_action(
@@ -386,7 +325,7 @@ impl MeshInputManager {
                     );
                 });
             }
-            (MouseButton::Left, None, Some(CanvasShape::Face), FileExtension::Mesh) => {
+            (MouseButton::Left, None, Some(CanvasShape::Face)) => {
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
                     tab_manager.current_tab_execute_shape_action(
                         world,
@@ -395,7 +334,7 @@ impl MeshInputManager {
                     );
                 });
             }
-            (MouseButton::Right, _, _, FileExtension::Skel | FileExtension::Mesh) => {
+            (MouseButton::Right, _, _) => {
                 // deselect vertex
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
                     tab_manager.current_tab_execute_shape_action(
@@ -412,10 +351,9 @@ impl MeshInputManager {
     pub(crate) fn handle_mouse_drag(
         world: &mut World,
         input_manager: &mut InputManager,
-        current_file_type: FileExtension,
-        click_type: MouseButton,
         mouse_position: Vec2,
         delta: Vec2,
+        click_type: MouseButton,
     ) {
         if !world.get_resource::<TabManager>().unwrap().has_focus() {
             return;
@@ -425,7 +363,7 @@ impl MeshInputManager {
         let shape_can_drag = shape_is_selected
             && match input_manager.selected_shape.unwrap().1 {
                 CanvasShape::Vertex => true,
-                CanvasShape::Edge => current_file_type != FileExtension::Mesh,
+                CanvasShape::Edge => false,
                 _ => false,
             };
 
@@ -507,70 +445,6 @@ impl MeshInputManager {
                             );
 
                             vertex_3d.set_vec3(&new_3d_position);
-
-                            // redraw
-                            canvas.queue_resync_shapes();
-                        }
-                        (edge_2d_entity, CanvasShape::Edge) => {
-                            let edge_3d_entity = world
-                                .get_resource::<EdgeManager>()
-                                .unwrap()
-                                .edge_entity_2d_to_3d(&edge_2d_entity)
-                                .unwrap();
-
-                            let mut system_state: SystemState<(
-                                Commands,
-                                Client,
-                                ResMut<EdgeManager>,
-                                ResMut<Canvas>,
-                                Query<&Transform>,
-                                Query<&mut EdgeAngle>,
-                            )> = SystemState::new(world);
-                            let (
-                                mut commands,
-                                client,
-                                mut edge_manager,
-                                mut canvas,
-                                transform_q,
-                                mut edge_angle_q,
-                            ) = system_state.get_mut(world);
-
-                            // rotate edge angle
-                            let auth_status =
-                                commands.entity(edge_3d_entity).authority(&client).unwrap();
-                            if !(auth_status.is_requested() || auth_status.is_granted()) {
-                                // only continue to mutate if requested or granted authority over edge
-                                info!("No authority over edge, skipping..");
-                                return;
-                            }
-
-                            let edge_2d_transform = transform_q.get(edge_2d_entity).unwrap();
-                            let start_pos = edge_2d_transform.translation.truncate();
-                            let end_pos = get_2d_line_transform_endpoint(&edge_2d_transform);
-                            let base_angle = angle_between(&start_pos, &end_pos);
-
-                            let edge_angle_entity =
-                                edge_manager.edge_get_base_circle_entity(&edge_3d_entity);
-                            let edge_angle_pos = transform_q
-                                .get(edge_angle_entity)
-                                .unwrap()
-                                .translation
-                                .truncate();
-
-                            let mut edge_angle = edge_angle_q.get_mut(edge_3d_entity).unwrap();
-                            let new_angle = normalize_angle(
-                                angle_between(&edge_angle_pos, &mouse_position)
-                                    - FRAC_PI_2
-                                    - base_angle,
-                            );
-
-                            edge_manager.update_last_edge_dragged(
-                                edge_2d_entity,
-                                edge_angle.get_radians(),
-                                new_angle,
-                            );
-
-                            edge_angle.set_radians(new_angle);
 
                             // redraw
                             canvas.queue_resync_shapes();
