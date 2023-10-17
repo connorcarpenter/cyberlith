@@ -1,11 +1,8 @@
 use bevy_ecs::component::Component;
 
-use naia_bevy_shared::{
-    EntityProperty, Property, Protocol, ProtocolPlugin, Replicate, Serde, SignedVariableInteger,
-    UnsignedInteger,
-};
+use naia_bevy_shared::{EntityProperty, Property, Protocol, ProtocolPlugin, Replicate, Serde, SignedVariableInteger, UnsignedInteger, UnsignedVariableInteger};
 
-use math::Vec3;
+use math::{Quat, SerdeQuat, Vec3};
 
 pub struct VertexComponentsPlugin;
 
@@ -22,7 +19,8 @@ impl ProtocolPlugin for VertexComponentsPlugin {
             .add_component::<ShapeName>()
             .add_component::<PaletteColor>()
             .add_component::<BackgroundSkinColor>()
-            .add_component::<FaceColor>();
+            .add_component::<FaceColor>()
+            .add_component::<ModelTransform>();
     }
 }
 
@@ -328,7 +326,7 @@ impl FaceColor {
     }
 }
 
-// FaceColor
+// BackgroundSkinColor
 #[derive(Component, Replicate)]
 pub struct BackgroundSkinColor {
     pub skin_file_entity: EntityProperty,
@@ -338,5 +336,123 @@ pub struct BackgroundSkinColor {
 impl BackgroundSkinColor {
     pub fn new() -> Self {
         Self::new_complete()
+    }
+}
+
+// ModelTransform
+#[derive(Component, Replicate)]
+pub struct ModelTransform {
+    pub vertex_name: Property<String>,
+    rotation: Property<SerdeQuat>,
+    translation_x: Property<SignedVariableInteger<4>>,
+    translation_y: Property<SignedVariableInteger<4>>,
+    translation_z: Property<SignedVariableInteger<4>>,
+    scale_x: Property<UnsignedVariableInteger<4>>,
+    scale_y: Property<UnsignedVariableInteger<4>>,
+    scale_z: Property<UnsignedVariableInteger<4>>,
+}
+
+impl ModelTransform {
+    pub fn new(
+        vertex_name: String,
+        rotation: SerdeQuat,
+        translation_x: i16,
+        translation_y: i16,
+        translation_z: i16,
+        scale_x: f32,
+        scale_y: f32,
+        scale_z: f32,
+    ) -> Self {
+        let scale_x = (scale_x * 100.0) as u16;
+        let scale_y = (scale_y * 100.0) as u16;
+        let scale_z = (scale_z * 100.0) as u16;
+
+        Self::new_complete(
+            vertex_name,
+            rotation,
+            translation_x.into(),
+            translation_y.into(),
+            translation_z.into(),
+            scale_x.into(),
+            scale_y.into(),
+            scale_z.into(),
+        )
+    }
+
+    pub fn rotation(&self) -> Quat {
+        (*self.rotation).into()
+    }
+
+    pub fn set_rotation(&mut self, rotation: Quat) {
+        *self.rotation = SerdeQuat::from(rotation);
+    }
+
+    pub fn get_rotation_serde(&self) -> SerdeQuat {
+        *self.rotation
+    }
+
+    pub fn translation_x(&self) -> i16 {
+        self.translation_x.to()
+    }
+
+    pub fn translation_y(&self) -> i16 {
+        self.translation_y.to()
+    }
+
+    pub fn translation_z(&self) -> i16 {
+        self.translation_z.to()
+    }
+
+    pub fn set_translation_x(&mut self, x: i16) {
+        *self.translation_x = x.into();
+    }
+
+    pub fn set_translation_y(&mut self, y: i16) {
+        *self.translation_y = y.into();
+    }
+
+    pub fn set_translation_z(&mut self, z: i16) {
+        *self.translation_z = z.into();
+    }
+
+    pub fn translation_as_vec3(&self) -> Vec3 {
+        Vec3::new(
+            self.translation_x() as f32,
+            self.translation_y() as f32,
+            self.translation_z() as f32
+        )
+    }
+
+    pub fn translation_set_vec3(&mut self, vec3: &Vec3) {
+        self.set_translation_x(vec3.x as i16);
+        self.set_translation_y(vec3.y as i16);
+        self.set_translation_z(vec3.z as i16);
+    }
+
+    pub fn scale_x(&self) -> f32 {
+        let scale_x: u16 = self.scale_x.to();
+        scale_x as f32 / 100.0
+    }
+
+    pub fn scale_y(&self) -> f32 {
+        let scale_y: u16 = self.scale_y.to();
+        scale_y as f32 / 100.0
+    }
+
+    pub fn scale_z(&self) -> f32 {
+        let scale_z: u16 = self.scale_z.to();
+        scale_z as f32 / 100.0
+    }
+
+    pub fn set_scale_x(&mut self, val: f32) {
+        *self.scale_x = ((val * 100.0) as u16).into();
+    }
+
+    pub fn set_scale_y(&mut self, val: f32) {
+        *self.scale_y = ((val * 100.0) as u16).into();
+    }
+
+    pub fn set_scale_z(&mut self, val: f32) {
+        *self.scale_z = ((val * 100.0) as u16).into();
     }
 }
