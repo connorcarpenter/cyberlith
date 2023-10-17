@@ -108,7 +108,7 @@ pub fn draw_vertices_and_edges(world: &mut World) {
             .is_framing()
         {
             world.resource_scope(|world, mut animation_manager: Mut<AnimationManager>| {
-                animation_manager.draw(world);
+                animation_manager.draw_framing(world);
             });
 
             return;
@@ -150,7 +150,7 @@ fn draw_vertices_and_edges_inner(world: &mut World, current_file: FileExtension)
         }
     }
     let must_check_edge_enabled =
-        current_file == FileExtension::Anim && !animation_manager.preview_frame_selected();
+        (current_file == FileExtension::Anim && !animation_manager.preview_frame_selected()) || current_file == FileExtension::Model;
 
     // draw vertices
     for (vertex_3d_entity, visibility, shape_name_opt, vertex_root_opt) in vertices_q.iter() {
@@ -240,7 +240,7 @@ fn get_shape_color(
         vertex_manager.mat_root_vertex
     } else {
         match current_file {
-            FileExtension::Anim => {
+            FileExtension::Anim | FileExtension::Model => {
                 if edge_is_enabled {
                     vertex_manager.mat_enabled_vertex
                 } else {

@@ -983,7 +983,7 @@ impl AnimationManager {
         }
     }
 
-    pub fn draw(&mut self, world: &mut World) {
+    pub fn draw_framing(&mut self, world: &mut World) {
         // get current file
         let Some(current_file_entity) = world.get_resource::<TabManager>().unwrap().current_tab_entity() else {
             return;

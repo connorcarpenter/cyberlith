@@ -1,7 +1,7 @@
 use bevy_ecs::{
     entity::Entity,
-    query::{With, Without},
-    system::{Query, SystemState},
+    query::{Without},
+    system::{Res, Query, SystemState},
     world::World,
 };
 
@@ -9,10 +9,12 @@ use input::{InputAction, Key, MouseButton};
 use math::Vec2;
 use render_api::components::{Transform, Visibility};
 
+use vortex_proto::components::ShapeName;
+
 use crate::app::{
     components::{Edge2dLocal, LocalShape},
     resources::{
-        canvas::Canvas, input::InputManager, shape_data::CanvasShape, tab_manager::TabManager,
+        canvas::Canvas, input::InputManager, shape_data::CanvasShape, tab_manager::TabManager, edge_manager::EdgeManager
     },
 };
 
@@ -147,11 +149,19 @@ impl ModelInputManager {
         mouse_position: &Vec2,
     ) -> Option<(Entity, CanvasShape)> {
         let mut system_state: SystemState<(
+            Res<EdgeManager>,
             Query<(&Transform, Option<&LocalShape>)>,
             Query<&Visibility>,
+            Query<&ShapeName>,
             Query<(Entity, &Edge2dLocal), Without<LocalShape>>,
         )> = SystemState::new(world);
-        let (transform_q, visibility_q, edge_2d_q) = system_state.get_mut(world);
+        let (
+            edge_manager,
+            transform_q,
+            visibility_q,
+            shape_name_q,
+            edge_2d_q
+        ) = system_state.get_mut(world);
 
         let mut least_distance = f32::MAX;
         let mut least_entity = None;
@@ -161,7 +171,7 @@ impl ModelInputManager {
             &transform_q,
             &visibility_q,
             &edge_2d_q,
-            None,
+            Some((&edge_manager, &shape_name_q)),
             camera_3d_scale,
             mouse_position,
             &mut least_distance,
