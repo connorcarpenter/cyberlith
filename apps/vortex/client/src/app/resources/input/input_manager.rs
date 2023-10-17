@@ -166,12 +166,11 @@ impl InputManager {
             .queue_resync_shapes_light();
     }
 
-    pub(crate) fn handle_vertex_and_edge_hover(
+    pub(crate) fn handle_vertex_hover(
         transform_q: &Query<(&Transform, Option<&LocalShape>)>,
         visibility_q: &Query<&Visibility>,
         vertex_2d_q: &Query<(Entity, Option<&VertexRoot>), (With<Vertex2d>, Without<LocalShape>)>,
-        edge_2d_q: &Query<(Entity, &Edge2dLocal), Without<LocalShape>>,
-        anim_opt: Option<(&VertexManager, &EdgeManager, &Query<&ShapeName>)>,
+        anim_opt: Option<(&VertexManager, &Query<&ShapeName>)>,
         camera_3d_scale: f32,
         mouse_position: &Vec2,
         least_distance: &mut f32,
@@ -187,7 +186,7 @@ impl InputManager {
                 continue;
             }
 
-            if let Some((vertex_manager, _, shape_name_q)) = anim_opt {
+            if let Some((vertex_manager, shape_name_q)) = anim_opt {
                 // don't hover over disabled vertices in Anim mode
                 let vertex_3d_entity = vertex_manager
                     .vertex_entity_2d_to_3d(&vertex_2d_entity)
@@ -215,7 +214,19 @@ impl InputManager {
         }
 
         *is_hovering = *least_distance <= (Vertex2d::DETECT_RADIUS * camera_3d_scale);
+    }
 
+    pub(crate) fn handle_edge_hover(
+        transform_q: &Query<(&Transform, Option<&LocalShape>)>,
+        visibility_q: &Query<&Visibility>,
+        edge_2d_q: &Query<(Entity, &Edge2dLocal), Without<LocalShape>>,
+        anim_opt: Option<(&EdgeManager, &Query<&ShapeName>)>,
+        camera_3d_scale: f32,
+        mouse_position: &Vec2,
+        least_distance: &mut f32,
+        least_entity: &mut Option<(Entity, CanvasShape)>,
+        is_hovering: &mut bool
+    ) {
         // check for edges
         if !*is_hovering {
             for (edge_2d_entity, _) in edge_2d_q.iter() {
@@ -227,7 +238,7 @@ impl InputManager {
                     continue;
                 }
 
-                if let Some((_, edge_manager, shape_name_q)) = anim_opt {
+                if let Some((edge_manager, shape_name_q)) = anim_opt {
                     let edge_3d_entity =
                         edge_manager.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
                     let (_, end_vertex_3d_entity) =

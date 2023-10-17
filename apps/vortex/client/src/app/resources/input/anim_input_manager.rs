@@ -450,12 +450,23 @@ impl AnimInputManager {
         let mut least_entity = None;
         let mut is_hovering = false;
 
-        InputManager::handle_vertex_and_edge_hover(
+        InputManager::handle_vertex_hover(
             &transform_q,
             &visibility_q,
             &vertex_2d_q,
+            Some((&vertex_manager, &shape_name_q)),
+            camera_3d_scale,
+            mouse_position,
+            &mut least_distance,
+            &mut least_entity,
+            &mut is_hovering,
+        );
+
+        InputManager::handle_edge_hover(
+            &transform_q,
+            &visibility_q,
             &edge_2d_q,
-            Some((&vertex_manager, &edge_manager, &shape_name_q)),
+            Some((&edge_manager, &shape_name_q)),
             camera_3d_scale,
             mouse_position,
             &mut least_distance,

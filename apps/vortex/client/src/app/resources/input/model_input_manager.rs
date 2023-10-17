@@ -2,7 +2,7 @@ use bevy_ecs::{
     entity::Entity,
     query::{With, Without},
     system::{Query, SystemState},
-    world::{Mut, World},
+    world::World,
 };
 
 use input::{InputAction, Key, MouseButton};
@@ -66,7 +66,7 @@ impl ModelInputManager {
         }
     }
 
-    pub(crate) fn handle_delete_key_press(world: &mut World, input_manager: &mut InputManager) {
+    pub(crate) fn handle_delete_key_press(_world: &mut World, _input_manager: &mut InputManager) {
         // todo
     }
 
@@ -131,7 +131,7 @@ impl ModelInputManager {
     pub(crate) fn handle_mouse_drag(
         world: &mut World,
         input_manager: &mut InputManager,
-        mouse_position: Vec2,
+        _mouse_position: Vec2,
         delta: Vec2,
         click_type: MouseButton,
     ) {
@@ -152,19 +152,17 @@ impl ModelInputManager {
         let mut system_state: SystemState<(
             Query<(&Transform, Option<&LocalShape>)>,
             Query<&Visibility>,
-            Query<(Entity, Option<&VertexRoot>), (With<Vertex2d>, Without<LocalShape>)>,
             Query<(Entity, &Edge2dLocal), Without<LocalShape>>,
         )> = SystemState::new(world);
-        let (transform_q, visibility_q, vertex_2d_q, edge_2d_q) = system_state.get_mut(world);
+        let (transform_q, visibility_q, edge_2d_q) = system_state.get_mut(world);
 
         let mut least_distance = f32::MAX;
         let mut least_entity = None;
         let mut is_hovering = false;
 
-        InputManager::handle_vertex_and_edge_hover(
+        InputManager::handle_edge_hover(
             &transform_q,
             &visibility_q,
-            &vertex_2d_q,
             &edge_2d_q,
             None,
             camera_3d_scale,
