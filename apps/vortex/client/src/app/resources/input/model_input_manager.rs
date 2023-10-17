@@ -9,10 +9,8 @@ use input::{InputAction, Key, MouseButton};
 use math::Vec2;
 use render_api::components::{Transform, Visibility};
 
-use vortex_proto::components::VertexRoot;
-
 use crate::app::{
-    components::{Edge2dLocal, LocalShape, Vertex2d},
+    components::{Edge2dLocal, LocalShape},
     resources::{
         canvas::Canvas, input::InputManager, shape_data::CanvasShape, tab_manager::TabManager,
     },
@@ -95,34 +93,33 @@ impl ModelInputManager {
                 _,
                 Some(CanvasShape::Vertex | CanvasShape::RootVertex | CanvasShape::Face),
             ) => {
-                // // unselect shape
-                // world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                //     tab_manager.current_tab_execute_shape_action(
-                //         world,
-                //         input_manager,
-                //         ShapeAction::SelectShape(None),
-                //     );
-                // });
+                // deselect shape
+                let mut canvas = world.get_resource_mut::<Canvas>().unwrap();
+                input_manager.deselect_shape(&mut canvas);
             }
-            (MouseButton::Left, _, _) => {
-                // // select hovered shape (or None if there is no hovered shape)
-                // world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                //     tab_manager.current_tab_execute_shape_action(
-                //         world,
-                //         input_manager,
-                //         ShapeAction::SelectShape(input_manager.hovered_entity),
-                //     );
-                // });
+            (MouseButton::Left, _, shape) => {
+                // select hovered shape (or None if there is no hovered shape)
+                let mut canvas = world.get_resource_mut::<Canvas>().unwrap();
+                match shape {
+                    Some(CanvasShape::Edge) => {
+
+                        if input_manager.selected_shape_2d().is_some() {
+                            input_manager.deselect_shape(&mut canvas);
+                        }
+
+                        let entity = input_manager.hovered_entity.unwrap().0;
+                        input_manager.select_shape(&mut canvas, &entity, CanvasShape::Edge);
+                    }
+                    None => {
+                        input_manager.deselect_shape(&mut canvas);
+                    }
+                    _ => panic!(""),
+                }
             }
             (MouseButton::Right, _, _) => {
-                // // deselect shape
-                // world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                //     tab_manager.current_tab_execute_shape_action(
-                //         world,
-                //         input_manager,
-                //         ShapeAction::SelectShape(None),
-                //     );
-                // });
+                // deselect shape
+                let mut canvas = world.get_resource_mut::<Canvas>().unwrap();
+                input_manager.deselect_shape(&mut canvas);
             }
             _ => {}
         }
