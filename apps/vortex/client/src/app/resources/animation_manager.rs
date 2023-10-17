@@ -995,10 +995,7 @@ impl AnimationManager {
         };
 
         let frame_count = file_frame_data.count();
-        let canvas_size = world
-            .get_resource::<Canvas>()
-            .unwrap()
-            .texture_size();
+        let canvas_size = world.get_resource::<Canvas>().unwrap().texture_size();
         let frame_rects = self.get_frame_positions(canvas_size, frame_count);
 
         let file_frame_data = self.frame_data.get(&current_file_entity).unwrap();

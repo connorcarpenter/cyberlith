@@ -10,10 +10,7 @@ use naia_bevy_client::{Client, CommandsExt, Instant};
 
 use input::{InputAction, Key, MouseButton};
 use math::Vec2;
-use render_api::{
-    components::{Transform, Visibility},
-    shapes::{distance_to_2d_line, get_2d_line_transform_endpoint},
-};
+use render_api::components::{Transform, Visibility};
 
 use vortex_proto::components::{AnimRotation, ShapeName, VertexRoot};
 
@@ -400,29 +397,31 @@ impl AnimInputManager {
     pub(crate) fn sync_mouse_hover_ui(
         world: &mut World,
         current_file_entity: &Entity,
+        camera_3d_scale: f32,
         mouse_position: &Vec2,
     ) -> Option<(Entity, CanvasShape)> {
-
-        if world.get_resource::<AnimationManager>().unwrap().is_framing() {
+        if world
+            .get_resource::<AnimationManager>()
+            .unwrap()
+            .is_framing()
+        {
             let canvas_size = world.get_resource::<Canvas>().unwrap().texture_size();
-            world.get_resource_mut::<AnimationManager>().unwrap().sync_mouse_hover_ui_framing(
-                current_file_entity,
-                canvas_size,
-                mouse_position,
-            );
+            world
+                .get_resource_mut::<AnimationManager>()
+                .unwrap()
+                .sync_mouse_hover_ui_framing(current_file_entity, canvas_size, mouse_position);
             return None;
         } else {
-            Self::sync_mouse_hover_ui_posing(world, mouse_position)
+            Self::sync_mouse_hover_ui_posing(world, camera_3d_scale, mouse_position)
         }
     }
 
     fn sync_mouse_hover_ui_posing(
         world: &mut World,
+        camera_3d_scale: f32,
         mouse_position: &Vec2,
     ) -> Option<(Entity, CanvasShape)> {
-
         let mut system_state: SystemState<(
-            Res<TabManager>,
             Res<VertexManager>,
             Res<EdgeManager>,
             Res<AnimationManager>,
@@ -433,7 +432,6 @@ impl AnimInputManager {
             Query<(Entity, &Edge2dLocal), Without<LocalShape>>,
         )> = SystemState::new(world);
         let (
-            tab_manager,
             vertex_manager,
             edge_manager,
             animation_manager,
@@ -444,90 +442,32 @@ impl AnimInputManager {
             edge_2d_q,
         ) = system_state.get_mut(world);
 
-        let Some(current_tab_state) = tab_manager.current_tab_state() else {
-            return None;
-        };
-        let camera_state = &current_tab_state.camera_state;
         if animation_manager.preview_frame_selected() {
             return None;
         }
 
-        let camera_3d_scale = camera_state.camera_3d_scale();
-
         let mut least_distance = f32::MAX;
         let mut least_entity = None;
-        let mut is_hovering;
+        let mut is_hovering = false;
 
-        // check for vertices
-        for (vertex_2d_entity, root_opt) in vertex_2d_q.iter() {
-            let Ok(visibility) = visibility_q.get(vertex_2d_entity) else {
-                panic!("Vertex entity has no Visibility");
-            };
-            if !visibility.visible {
-                continue;
-            }
+        InputManager::handle_vertex_and_edge_hover(
+            &transform_q,
+            &visibility_q,
+            &vertex_2d_q,
+            &edge_2d_q,
+            Some((&vertex_manager, &edge_manager, &shape_name_q)),
+            camera_3d_scale,
+            mouse_position,
+            &mut least_distance,
+            &mut least_entity,
+            &mut is_hovering,
+        );
 
-            // don't hover over disabled vertices in Anim mode
-            let vertex_3d_entity = vertex_manager
-                .vertex_entity_2d_to_3d(&vertex_2d_entity)
-                .unwrap();
-            let Ok(shape_name) = shape_name_q.get(vertex_3d_entity) else { continue; };
-            let shape_name = shape_name.value.as_str();
-            if shape_name.len() == 0 {
-                continue;
-            }
-
-            let (vertex_transform, _) = transform_q.get(vertex_2d_entity).unwrap();
-            let vertex_position = vertex_transform.translation.truncate();
-            let distance = vertex_position.distance(*mouse_position);
-            if distance < least_distance {
-                least_distance = distance;
-
-                let shape = match root_opt {
-                    Some(_) => CanvasShape::RootVertex,
-                    None => CanvasShape::Vertex,
-                };
-
-                least_entity = Some((vertex_2d_entity, shape));
-            }
+        if is_hovering {
+            least_entity
+        } else {
+            None
         }
-
-        is_hovering = least_distance <= (Vertex2d::DETECT_RADIUS * camera_3d_scale);
-
-        // check for edges
-        if !is_hovering {
-            for (edge_2d_entity, _) in edge_2d_q.iter() {
-                // check visibility
-                let Ok(visibility) = visibility_q.get(edge_2d_entity) else {
-                    panic!("entity has no Visibility");
-                };
-                if !visibility.visible {
-                    continue;
-                }
-
-                let edge_3d_entity = edge_manager.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
-                let (_, end_vertex_3d_entity) = edge_manager.edge_get_endpoints(&edge_3d_entity);
-                let Ok(shape_name) = shape_name_q.get(end_vertex_3d_entity) else { continue; };
-                let shape_name = shape_name.value.as_str();
-                if shape_name.len() == 0 {
-                    continue;
-                }
-
-                let (edge_transform, _) = transform_q.get(edge_2d_entity).unwrap();
-                let edge_start = edge_transform.translation.truncate();
-                let edge_end = get_2d_line_transform_endpoint(&edge_transform);
-
-                let distance = distance_to_2d_line(*mouse_position, edge_start, edge_end);
-                if distance < least_distance {
-                    least_distance = distance;
-                    least_entity = Some((edge_2d_entity, CanvasShape::Edge));
-                }
-            }
-
-            is_hovering = least_distance <= (Edge2dLocal::DETECT_THICKNESS * camera_3d_scale);
-        }
-
-        if is_hovering { least_entity } else { None }
     }
 
     fn reset_last_dragged_rotation(input_manager: &mut InputManager, world: &mut World) {

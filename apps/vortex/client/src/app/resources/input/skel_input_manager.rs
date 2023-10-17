@@ -3,7 +3,7 @@ use std::f32::consts::FRAC_PI_2;
 use bevy_ecs::{
     entity::Entity,
     query::{With, Without},
-    system::{Commands, Query, Res, ResMut, SystemState},
+    system::{Commands, Query, ResMut, SystemState},
     world::{Mut, World},
 };
 use bevy_log::info;
@@ -14,7 +14,7 @@ use input::{InputAction, Key, MouseButton};
 use math::Vec2;
 use render_api::{
     components::{Transform, Visibility},
-    shapes::{angle_between, distance_to_2d_line, get_2d_line_transform_endpoint, normalize_angle},
+    shapes::{angle_between, get_2d_line_transform_endpoint, normalize_angle},
 };
 
 use vortex_proto::components::{EdgeAngle, VertexRoot};
@@ -241,80 +241,38 @@ impl SkelInputManager {
 
     pub(crate) fn sync_mouse_hover_ui(
         world: &mut World,
+        camera_3d_scale: f32,
         mouse_position: &Vec2,
     ) -> Option<(Entity, CanvasShape)> {
         let mut system_state: SystemState<(
-            Res<TabManager>,
             Query<(&Transform, Option<&LocalShape>)>,
             Query<&Visibility>,
             Query<(Entity, Option<&VertexRoot>), (With<Vertex2d>, Without<LocalShape>)>,
             Query<(Entity, &Edge2dLocal), Without<LocalShape>>,
         )> = SystemState::new(world);
-        let (tab_manager, transform_q, visibility_q, vertex_2d_q, edge_2d_q) =
-            system_state.get_mut(world);
-
-        let Some(current_tab_state) = tab_manager.current_tab_state() else {
-            return None;
-        };
-        let camera_state = &current_tab_state.camera_state;
-
-        let camera_3d_scale = camera_state.camera_3d_scale();
+        let (transform_q, visibility_q, vertex_2d_q, edge_2d_q) = system_state.get_mut(world);
 
         let mut least_distance = f32::MAX;
         let mut least_entity = None;
-        let mut is_hovering;
+        let mut is_hovering = false;
 
-        // check for vertices
-        for (vertex_2d_entity, root_opt) in vertex_2d_q.iter() {
-            let Ok(visibility) = visibility_q.get(vertex_2d_entity) else {
-                panic!("Vertex entity has no Visibility");
-            };
-            if !visibility.visible {
-                continue;
-            }
+        InputManager::handle_vertex_and_edge_hover(
+            &transform_q,
+            &visibility_q,
+            &vertex_2d_q,
+            &edge_2d_q,
+            None,
+            camera_3d_scale,
+            mouse_position,
+            &mut least_distance,
+            &mut least_entity,
+            &mut is_hovering,
+        );
 
-            let (vertex_transform, _) = transform_q.get(vertex_2d_entity).unwrap();
-            let vertex_position = vertex_transform.translation.truncate();
-            let distance = vertex_position.distance(*mouse_position);
-            if distance < least_distance {
-                least_distance = distance;
-
-                let shape = match root_opt {
-                    Some(_) => CanvasShape::RootVertex,
-                    None => CanvasShape::Vertex,
-                };
-
-                least_entity = Some((vertex_2d_entity, shape));
-            }
+        if is_hovering {
+            least_entity
+        } else {
+            None
         }
-
-        is_hovering = least_distance <= (Vertex2d::DETECT_RADIUS * camera_3d_scale);
-
-        // check for edges
-        if !is_hovering {
-            for (edge_2d_entity, _) in edge_2d_q.iter() {
-                // check visibility
-                let Ok(visibility) = visibility_q.get(edge_2d_entity) else {
-                    panic!("entity has no Visibility");
-                };
-                if !visibility.visible {
-                    continue;
-                }
-
-                let (edge_transform, _) = transform_q.get(edge_2d_entity).unwrap();
-                let edge_start = edge_transform.translation.truncate();
-                let edge_end = get_2d_line_transform_endpoint(&edge_transform);
-
-                let distance = distance_to_2d_line(*mouse_position, edge_start, edge_end);
-                if distance < least_distance {
-                    least_distance = distance;
-                    least_entity = Some((edge_2d_entity, CanvasShape::Edge));
-                }
-            }
-
-            is_hovering = least_distance <= (Edge2dLocal::DETECT_THICKNESS * camera_3d_scale);
-        }
-
-        if is_hovering { least_entity } else { None }
     }
 }

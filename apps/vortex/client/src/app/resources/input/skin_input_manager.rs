@@ -1,6 +1,6 @@
 use bevy_ecs::{
     entity::Entity,
-    system::{Query, Res, SystemState},
+    system::{Query, SystemState},
     world::{Mut, World},
 };
 
@@ -171,52 +171,35 @@ impl SkinInputManager {
 
     pub(crate) fn sync_mouse_hover_ui(
         world: &mut World,
+        camera_3d_scale: f32,
         mouse_position: &Vec2,
     ) -> Option<(Entity, CanvasShape)> {
         let mut system_state: SystemState<(
-            Res<TabManager>,
             Query<(&Transform, Option<&LocalShape>)>,
             Query<&Visibility>,
             Query<(Entity, &FaceIcon2d)>,
         )> = SystemState::new(world);
-        let (tab_manager, transform_q, visibility_q, face_2d_q) =
-            system_state.get_mut(world);
-
-        let Some(current_tab_state) = tab_manager.current_tab_state() else {
-            return None;
-        };
-        let camera_state = &current_tab_state.camera_state;
-
-        let camera_3d_scale = camera_state.camera_3d_scale();
+        let (transform_q, visibility_q, face_2d_q) = system_state.get_mut(world);
 
         let mut least_distance = f32::MAX;
         let mut least_entity = None;
         let mut is_hovering = false;
 
-        // check for faces
-        if !is_hovering {
-            for (face_entity, _) in face_2d_q.iter() {
-                // check tab ownership, skip faces from other tabs
-                let Ok(visibility) = visibility_q.get(face_entity) else {
-                    panic!("entity has no Visibility");
-                };
-                if !visibility.visible {
-                    continue;
-                }
+        InputManager::handle_face_hover(
+            &transform_q,
+            &visibility_q,
+            &face_2d_q,
+            mouse_position,
+            camera_3d_scale,
+            &mut least_distance,
+            &mut least_entity,
+            &mut is_hovering,
+        );
 
-                let (face_transform, _) = transform_q.get(face_entity).unwrap();
-                let face_position = face_transform.translation.truncate();
-                let distance = face_position.distance(*mouse_position);
-                if distance < least_distance {
-                    least_distance = distance;
-
-                    least_entity = Some((face_entity, CanvasShape::Face));
-                }
-            }
-
-            is_hovering = least_distance <= (FaceIcon2d::DETECT_RADIUS * camera_3d_scale);
+        if is_hovering {
+            least_entity
+        } else {
+            None
         }
-
-        if is_hovering { least_entity } else { None }
     }
 }
