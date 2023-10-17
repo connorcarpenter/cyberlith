@@ -98,7 +98,7 @@ impl VertexManager {
             // check visibility
             if local_shape.get(vertex_3d_entity).is_err() {
                 if let Ok(mut visibility) = visibility_q.get_mut(vertex_3d_entity) {
-                    if file_ext == FileExtension::Skin {
+                    if file_ext == FileExtension::Skin || file_ext == FileExtension::Model {
                         visibility.visible = false;
                     }
                 };
@@ -176,7 +176,7 @@ impl VertexManager {
                 let Ok(mut visibility) = visibility_q.get_mut(vertex_2d_entity) else {
                     panic!("Vertex2d entity {:?} has no Visibility", vertex_2d_entity);
                 };
-                if file_ext == FileExtension::Skin {
+                if file_ext == FileExtension::Skin || file_ext == FileExtension::Model {
                     visibility.visible = false;
                 }
             }
