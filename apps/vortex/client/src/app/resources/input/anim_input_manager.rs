@@ -399,52 +399,57 @@ impl AnimInputManager {
 
     pub(crate) fn sync_mouse_hover_ui(
         world: &mut World,
-        input_manager: &mut InputManager,
         current_file_entity: &Entity,
         mouse_position: &Vec2,
-    ) {
+    ) -> Option<(Entity, CanvasShape)> {
+
+        if world.get_resource::<AnimationManager>().unwrap().is_framing() {
+            let canvas_size = world.get_resource::<Canvas>().unwrap().canvas_texture_size();
+            world.get_resource_mut::<AnimationManager>().unwrap().sync_mouse_hover_ui_framing(
+                current_file_entity,
+                canvas_size,
+                mouse_position,
+            );
+            return None;
+        } else {
+            Self::sync_mouse_hover_ui_posing(world, mouse_position)
+        }
+    }
+
+    fn sync_mouse_hover_ui_posing(
+        world: &mut World,
+        mouse_position: &Vec2,
+    ) -> Option<(Entity, CanvasShape)> {
+
         let mut system_state: SystemState<(
-            ResMut<Canvas>,
             Res<TabManager>,
             Res<VertexManager>,
             Res<EdgeManager>,
-            ResMut<AnimationManager>,
-            Query<(&mut Transform, Option<&LocalShape>)>,
+            Res<AnimationManager>,
+            Query<(&Transform, Option<&LocalShape>)>,
             Query<&Visibility>,
             Query<&ShapeName>,
             Query<(Entity, Option<&VertexRoot>), (With<Vertex2d>, Without<LocalShape>)>,
             Query<(Entity, &Edge2dLocal), Without<LocalShape>>,
         )> = SystemState::new(world);
         let (
-            mut canvas,
             tab_manager,
             vertex_manager,
             edge_manager,
-            mut animation_manager,
-            mut transform_q,
+            animation_manager,
+            transform_q,
             visibility_q,
             shape_name_q,
             vertex_2d_q,
             edge_2d_q,
         ) = system_state.get_mut(world);
 
-        let canvas_size = canvas.canvas_texture_size();
-        if animation_manager.is_framing() {
-            animation_manager.sync_mouse_hover_ui_framing(
-                current_file_entity,
-                canvas_size,
-                mouse_position,
-            );
-            return;
-        }
-
         let Some(current_tab_state) = tab_manager.current_tab_state() else {
-            return;
+            return None;
         };
         let camera_state = &current_tab_state.camera_state;
-
         if animation_manager.preview_frame_selected() {
-            return;
+            return None;
         }
 
         let camera_3d_scale = camera_state.camera_3d_scale();
@@ -522,20 +527,7 @@ impl AnimInputManager {
             is_hovering = least_distance <= (Edge2dLocal::DETECT_THICKNESS * camera_3d_scale);
         }
 
-        // define old and new hovered states
-        let old_hovered_entity = input_manager.hovered_entity;
-        let next_hovered_entity = if is_hovering { least_entity } else { None };
-
-        input_manager.sync_hover_shape_scale(&mut transform_q, camera_3d_scale);
-
-        // hover state did not change
-        if old_hovered_entity == next_hovered_entity {
-            return;
-        }
-
-        // apply
-        input_manager.hovered_entity = next_hovered_entity;
-        canvas.queue_resync_shapes_light();
+        if is_hovering { least_entity } else { None }
     }
 
     fn reset_last_dragged_rotation(input_manager: &mut InputManager, world: &mut World) {

@@ -1,7 +1,7 @@
 use bevy_ecs::{
     entity::Entity,
     query::{With, Without},
-    system::{Commands, Query, Res, ResMut, SystemState},
+    system::{Commands, Query, Res, SystemState},
     world::{Mut, World},
 };
 use bevy_log::warn;
@@ -293,22 +293,19 @@ impl MeshInputManager {
 
     pub(crate) fn sync_mouse_hover_ui(
         world: &mut World,
-        input_manager: &mut InputManager,
         mouse_position: &Vec2,
-    ) {
+    ) -> Option<(Entity, CanvasShape)> {
         let mut system_state: SystemState<(
-            ResMut<Canvas>,
             Res<TabManager>,
-            Query<(&mut Transform, Option<&LocalShape>)>,
+            Query<(&Transform, Option<&LocalShape>)>,
             Query<&Visibility>,
             Query<(Entity, Option<&VertexRoot>), (With<Vertex2d>, Without<LocalShape>)>,
             Query<(Entity, &Edge2dLocal), Without<LocalShape>>,
             Query<(Entity, &FaceIcon2d)>,
         )> = SystemState::new(world);
         let (
-            mut canvas,
             tab_manager,
-            mut transform_q,
+            transform_q,
             visibility_q,
             vertex_2d_q,
             edge_2d_q,
@@ -316,7 +313,7 @@ impl MeshInputManager {
         ) = system_state.get_mut(world);
 
         let Some(current_tab_state) = tab_manager.current_tab_state() else {
-            return;
+            return None;
         };
         let camera_state = &current_tab_state.camera_state;
 
@@ -401,19 +398,6 @@ impl MeshInputManager {
             is_hovering = least_distance <= (FaceIcon2d::DETECT_RADIUS * camera_3d_scale);
         }
 
-        // define old and new hovered states
-        let old_hovered_entity = input_manager.hovered_entity;
-        let next_hovered_entity = if is_hovering { least_entity } else { None };
-
-        input_manager.sync_hover_shape_scale(&mut transform_q, camera_3d_scale);
-
-        // hover state did not change
-        if old_hovered_entity == next_hovered_entity {
-            return;
-        }
-
-        // apply
-        input_manager.hovered_entity = next_hovered_entity;
-        canvas.queue_resync_shapes_light();
+        if is_hovering { least_entity } else { None }
     }
 }

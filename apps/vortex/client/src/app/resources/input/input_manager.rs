@@ -117,24 +117,51 @@ impl InputManager {
         }
         self.resync_hover = false;
 
-        match file_ext {
+        let next_hovered_entity = match file_ext {
             FileExtension::Skel => {
-                SkelInputManager::sync_mouse_hover_ui(world, self, mouse_position)
+                SkelInputManager::sync_mouse_hover_ui(world, mouse_position)
             }
             FileExtension::Mesh => {
-                MeshInputManager::sync_mouse_hover_ui(world, self, mouse_position)
+                MeshInputManager::sync_mouse_hover_ui(world, mouse_position)
             }
             FileExtension::Anim => AnimInputManager::sync_mouse_hover_ui(
                 world,
-                self,
                 current_file_entity,
                 mouse_position,
             ),
             FileExtension::Skin => {
-                SkinInputManager::sync_mouse_hover_ui(world, self, mouse_position)
+                SkinInputManager::sync_mouse_hover_ui(world, mouse_position)
             }
-            _ => {}
+            _ => {
+                return;
+            }
+        };
+
+        let mut system_state: SystemState<(
+            ResMut<Canvas>,
+            Res<TabManager>,
+            Query<(&mut Transform, Option<&LocalShape>)>,
+        )> = SystemState::new(world);
+        let (mut canvas, tab_manager, mut transform_q) =
+            system_state.get_mut(world);
+
+        let Some(current_tab_state) = tab_manager.current_tab_state() else {
+            return;
+        };
+        let camera_state = &current_tab_state.camera_state;
+        let camera_3d_scale = camera_state.camera_3d_scale();
+
+        // define old and new hovered states
+        self.sync_hover_shape_scale(&mut transform_q, camera_3d_scale);
+
+        // hover state did not change
+        if self.hovered_entity == next_hovered_entity {
+            return;
         }
+
+        // apply
+        self.hovered_entity = next_hovered_entity;
+        canvas.queue_resync_shapes_light();
     }
 
     pub(crate) fn reset_last_dragged_vertex(&mut self, world: &mut World) {
