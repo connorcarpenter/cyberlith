@@ -68,7 +68,7 @@ impl Compass {
 
         let unit_length = 1.0 / camera_state.camera_3d_scale();
         let compass_length = unit_length * 25.0;
-        let mut compass_pos = canvas.canvas_texture_size() * 0.5;
+        let mut compass_pos = canvas.texture_size() * 0.5;
         compass_pos.x -= 32.0;
         compass_pos.y -= 32.0;
         let offset_2d = camera_state.camera_3d_offset().round()

@@ -45,7 +45,7 @@ pub fn setup(
     let texture_size = Vec2::new(1130.0, 672.0);
     let canvas_texture_handle =
         new_render_texture(&texture_size, &mut textures, &mut user_textures);
-    canvas.set_canvas_texture(texture_size, canvas_texture_handle.clone());
+    canvas.set_texture(texture_size, canvas_texture_handle.clone());
 
     vertex_manager.setup(&mut materials);
 

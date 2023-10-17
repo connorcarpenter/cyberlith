@@ -69,7 +69,7 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
                 .frame(frame)
                 .show_inside(ui, |ui| {
                     // change textures
-                    let texture_handle = canvas.canvas_texture();
+                    let texture_handle = canvas.texture_handle();
                     let Some(texture_id) = user_textures.texture_id(&texture_handle) else {
                         // The user texture may not be synced yet, return early.
                         return;
@@ -92,7 +92,7 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
 
                         // Update the camera to match the new texture size.
                         let native_texture_size = Vec2::new(texture_size.x, texture_size.y);
-                        canvas.update_canvas_size(native_texture_size);
+                        canvas.update_texture_size(native_texture_size);
                         camera_manager
                             .update_camera_viewports(native_texture_size, &mut camera_query);
                     }

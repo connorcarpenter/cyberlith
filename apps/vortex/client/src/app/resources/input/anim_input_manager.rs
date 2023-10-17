@@ -404,7 +404,7 @@ impl AnimInputManager {
     ) -> Option<(Entity, CanvasShape)> {
 
         if world.get_resource::<AnimationManager>().unwrap().is_framing() {
-            let canvas_size = world.get_resource::<Canvas>().unwrap().canvas_texture_size();
+            let canvas_size = world.get_resource::<Canvas>().unwrap().texture_size();
             world.get_resource_mut::<AnimationManager>().unwrap().sync_mouse_hover_ui_framing(
                 current_file_entity,
                 canvas_size,

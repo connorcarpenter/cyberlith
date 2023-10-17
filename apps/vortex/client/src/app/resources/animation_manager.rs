@@ -998,7 +998,7 @@ impl AnimationManager {
         let canvas_size = world
             .get_resource::<Canvas>()
             .unwrap()
-            .canvas_texture_size();
+            .texture_size();
         let frame_rects = self.get_frame_positions(canvas_size, frame_count);
 
         let file_frame_data = self.frame_data.get(&current_file_entity).unwrap();

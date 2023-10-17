@@ -11,8 +11,8 @@ use crate::app::resources::{
 
 #[derive(Resource)]
 pub struct Canvas {
-    canvas_texture: Option<Handle<CpuTexture2D>>,
-    canvas_texture_size: Vec2,
+    texture_handle: Option<Handle<CpuTexture2D>>,
+    texture_size: Vec2,
     is_visible: bool,
     next_visible: bool,
     resync_shapes: u8,
@@ -24,8 +24,8 @@ impl Default for Canvas {
         Self {
             next_visible: false,
             is_visible: false,
-            canvas_texture: None,
-            canvas_texture_size: Vec2::new(1280.0, 720.0),
+            texture_handle: None,
+            texture_size: Vec2::new(1280.0, 720.0),
             resync_shapes: 0,
             last_focused: false,
         }
@@ -64,21 +64,21 @@ impl Canvas {
         }
     }
 
-    pub fn update_canvas_size(&mut self, texture_size: Vec2) {
-        self.canvas_texture_size = texture_size;
+    pub fn update_texture_size(&mut self, texture_size: Vec2) {
+        self.texture_size = texture_size;
     }
 
-    pub fn canvas_texture_size(&self) -> Vec2 {
-        self.canvas_texture_size
+    pub fn texture_size(&self) -> Vec2 {
+        self.texture_size
     }
 
-    pub fn canvas_texture(&self) -> Handle<CpuTexture2D> {
-        self.canvas_texture.unwrap()
+    pub fn texture_handle(&self) -> Handle<CpuTexture2D> {
+        self.texture_handle.unwrap()
     }
 
-    pub fn set_canvas_texture(&mut self, texture_size: Vec2, texture: Handle<CpuTexture2D>) {
-        self.canvas_texture = Some(texture);
-        self.canvas_texture_size = texture_size;
+    pub fn set_texture(&mut self, texture_size: Vec2, texture_handle: Handle<CpuTexture2D>) {
+        self.texture_handle = Some(texture_handle);
+        self.texture_size = texture_size;
     }
 
     pub fn is_visible(&self) -> bool {
@@ -90,11 +90,11 @@ impl Canvas {
     }
 
     pub(crate) fn is_position_inside(&self, pos: Vec2) -> bool {
-        // check if position is inside self.canvas_texture_size
+        // check if position is inside self.texture_size
         if pos.x < 2.0 || pos.y < 2.0 {
             return false;
         }
-        if pos.x > self.canvas_texture_size.x - 2.0 || pos.y > self.canvas_texture_size.y - 2.0 {
+        if pos.x > self.texture_size.x - 2.0 || pos.y > self.texture_size.y - 2.0 {
             return false;
         }
         return true;
