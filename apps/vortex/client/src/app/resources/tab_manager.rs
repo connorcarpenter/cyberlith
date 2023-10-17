@@ -36,8 +36,8 @@ use crate::app::{
     },
     resources::{
         action::{
-            animation::AnimAction, palette::PaletteAction, shape::ShapeAction, skin::SkinAction,
-            TabActionStack,
+            animation::AnimAction, model::ModelAction, palette::PaletteAction, shape::ShapeAction,
+            skin::SkinAction, TabActionStack,
         },
         camera_manager::CameraManager,
         camera_state::CameraState,
@@ -165,7 +165,8 @@ impl TabManager {
                 FileExtension::Skel
                 | FileExtension::Mesh
                 | FileExtension::Anim
-                | FileExtension::Skin => true,
+                | FileExtension::Skin
+                | FileExtension::Model => true,
                 _ => false,
             };
         }
@@ -395,6 +396,22 @@ impl TabManager {
         tab_state
             .action_stack
             .execute_palette_action(world, palette_manager, action);
+    }
+
+    pub fn current_tab_execute_model_action(
+        &mut self,
+        world: &mut World,
+        input_manager: &mut InputManager,
+        action: ModelAction,
+    ) {
+        let current_tab_entity = *self.current_tab_entity().unwrap();
+        let tab_state = self.current_tab_state_mut().unwrap();
+        tab_state.action_stack.execute_model_action(
+            world,
+            input_manager,
+            current_tab_entity,
+            action,
+        );
     }
 
     pub fn current_tab_camera_state_mut(&mut self) -> Option<&mut CameraState> {

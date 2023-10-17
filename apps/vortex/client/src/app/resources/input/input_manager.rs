@@ -29,8 +29,9 @@ use crate::app::{
         edge_manager::EdgeManager,
         file_manager::FileManager,
         input::{
-            mesh_input_manager::MeshInputManager, skel_input_manager::SkelInputManager,
-            skin_input_manager::SkinInputManager, AnimInputManager,
+            mesh_input_manager::MeshInputManager, model_input_manager::ModelInputManager,
+            skel_input_manager::SkelInputManager, skin_input_manager::SkinInputManager,
+            AnimInputManager,
         },
         shape_data::CanvasShape,
         tab_manager::TabManager,
@@ -102,6 +103,7 @@ impl InputManager {
             FileExtension::Mesh => MeshInputManager::update_input(world, self, input_actions),
             FileExtension::Anim => AnimInputManager::update_input(world, self, input_actions),
             FileExtension::Skin => SkinInputManager::update_input(world, self, input_actions),
+            FileExtension::Model => ModelInputManager::update_input(world, self, input_actions),
             _ => {}
         }
     }
@@ -139,6 +141,9 @@ impl InputManager {
             ),
             FileExtension::Skin => {
                 SkinInputManager::sync_mouse_hover_ui(world, camera_3d_scale, mouse_position)
+            }
+            FileExtension::Model => {
+                ModelInputManager::sync_mouse_hover_ui(world, camera_3d_scale, mouse_position)
             }
             _ => {
                 return;

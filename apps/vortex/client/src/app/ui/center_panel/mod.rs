@@ -115,6 +115,23 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                             });
                         }
                     }
+                    FileExtension::Model => {
+                        let file_manager = world.get_resource::<FileManager>().unwrap();
+                        if !file_manager.file_has_dependency_with_extension(
+                            &current_file_entity,
+                            FileExtension::Skel,
+                        ) {
+                            render_bind_button(
+                                ui,
+                                world,
+                                &current_file_entity,
+                                FileExtension::Skel,
+                            );
+                            return;
+                        }
+
+                        render_tool_bar(ui, world, current_file_type);
+                    }
                     _ => {}
                 }
             }

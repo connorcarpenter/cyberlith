@@ -98,6 +98,25 @@ impl TabActionStack {
         }
     }
 
+    pub fn execute_model_action(
+        &mut self,
+        world: &mut World,
+        input_manager: &mut InputManager,
+        tab_file_entity: Entity,
+        action: ModelAction,
+    ) {
+        match self {
+            Self::Model(action_stack) => {
+                let reversed_actions =
+                    action_stack.execute_action(world, input_manager, tab_file_entity, action);
+                action_stack.post_action_execution(world, reversed_actions);
+            }
+            _ => {
+                panic!("execute_model_action() called on non-TabActionStack::Model");
+            }
+        }
+    }
+
     pub fn execute_palette_action(
         &mut self,
         world: &mut World,
