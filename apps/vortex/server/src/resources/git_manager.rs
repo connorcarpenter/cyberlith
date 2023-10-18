@@ -85,7 +85,7 @@ impl GitManager {
         project.file_entity(file_key)
     }
 
-    pub(crate) fn on_client_open_tab(
+    pub(crate) fn user_join_filespace(
         &mut self,
         world: &mut World,
         user_key: &UserKey,
@@ -104,9 +104,7 @@ impl GitManager {
                 self.register_content_entities(world, project_key, file_key, &new_content_entities);
                 new_content_entities_opt = Some(new_content_entities);
             }
-        }
 
-        {
             // user join dependency filespaces
             let project = self.projects.get_mut(project_key).unwrap();
             let dependency_file_keys = project.dependency_file_keys(file_key);
@@ -114,7 +112,7 @@ impl GitManager {
                 file_has_dependencies = true;
             }
             for dependency_key in dependency_file_keys {
-                self.on_client_open_dependency(world, user_key, project_key, &dependency_key);
+                self.user_join_filespace(world, user_key, project_key, &dependency_key);
             }
         }
 
@@ -242,26 +240,6 @@ impl GitManager {
     ) {
         self.queued_client_open_dependency
             .push((*user_key, *project_key, dependency_key.clone()));
-    }
-
-    pub(crate) fn on_client_open_dependency(
-        &mut self,
-        world: &mut World,
-        user_key: &UserKey,
-        project_key: &ProjectKey,
-        dependency_key: &FileKey,
-    ) {
-        let project = self.projects.get_mut(project_key).unwrap();
-        if let Some(new_content_entities) =
-            project.user_join_filespace(world, user_key, &dependency_key)
-        {
-            self.register_content_entities(
-                world,
-                project_key,
-                &dependency_key,
-                &new_content_entities,
-            );
-        }
     }
 
     pub(crate) fn on_client_close_tab(
@@ -420,7 +398,7 @@ impl GitManager {
             for (user_key, project_key, dependency_key) in
                 std::mem::take(&mut git_manager.queued_client_open_dependency)
             {
-                git_manager.on_client_open_dependency(
+                git_manager.user_join_filespace(
                     world,
                     &user_key,
                     &project_key,

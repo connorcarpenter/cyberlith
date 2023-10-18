@@ -130,7 +130,7 @@ impl TabManager {
 
             {
                 for (user_key, project_key, file_key) in git_opens {
-                    git_manager.on_client_open_tab(world, &user_key, &project_key, &file_key);
+                    git_manager.user_join_filespace(world, &user_key, &project_key, &file_key);
                 }
             }
         });
