@@ -1,7 +1,7 @@
 use bevy_ecs::{
     entity::Entity,
-    query::{Without},
-    system::{Res, Query, SystemState},
+    query::Without,
+    system::{Query, Res, SystemState},
     world::World,
 };
 
@@ -14,7 +14,8 @@ use vortex_proto::components::ShapeName;
 use crate::app::{
     components::{Edge2dLocal, LocalShape},
     resources::{
-        canvas::Canvas, input::InputManager, shape_data::CanvasShape, tab_manager::TabManager, edge_manager::EdgeManager
+        canvas::Canvas, edge_manager::EdgeManager, input::InputManager, shape_data::CanvasShape,
+        tab_manager::TabManager,
     },
 };
 
@@ -104,7 +105,6 @@ impl ModelInputManager {
                 let mut canvas = world.get_resource_mut::<Canvas>().unwrap();
                 match shape {
                     Some(CanvasShape::Edge) => {
-
                         if input_manager.selected_shape_2d().is_some() {
                             input_manager.deselect_shape(&mut canvas);
                         }
@@ -155,13 +155,8 @@ impl ModelInputManager {
             Query<&ShapeName>,
             Query<(Entity, &Edge2dLocal), Without<LocalShape>>,
         )> = SystemState::new(world);
-        let (
-            edge_manager,
-            transform_q,
-            visibility_q,
-            shape_name_q,
-            edge_2d_q
-        ) = system_state.get_mut(world);
+        let (edge_manager, transform_q, visibility_q, shape_name_q, edge_2d_q) =
+            system_state.get_mut(world);
 
         let mut least_distance = f32::MAX;
         let mut least_entity = None;

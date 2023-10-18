@@ -1,6 +1,9 @@
 use bevy_ecs::component::Component;
 
-use naia_bevy_shared::{EntityProperty, Property, Protocol, ProtocolPlugin, Replicate, Serde, SignedVariableInteger, UnsignedInteger, UnsignedVariableInteger};
+use naia_bevy_shared::{
+    EntityProperty, Property, Protocol, ProtocolPlugin, Replicate, Serde, SignedVariableInteger,
+    UnsignedInteger, UnsignedVariableInteger,
+};
 
 use math::{Quat, SerdeQuat, Vec3};
 
@@ -419,7 +422,7 @@ impl ModelTransform {
         Vec3::new(
             self.translation_x() as f32,
             self.translation_y() as f32,
-            self.translation_z() as f32
+            self.translation_z() as f32,
         )
     }
 

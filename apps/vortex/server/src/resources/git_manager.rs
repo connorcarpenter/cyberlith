@@ -98,6 +98,7 @@ impl GitManager {
         {
             // user join filespace
             let project = self.projects.get_mut(project_key).unwrap();
+            let dependency_file_keys = project.dependency_file_keys(file_key);
             if let Some(new_content_entities) =
                 project.user_join_filespace(world, user_key, file_key)
             {
@@ -106,8 +107,6 @@ impl GitManager {
             }
 
             // user join dependency filespaces
-            let project = self.projects.get_mut(project_key).unwrap();
-            let dependency_file_keys = project.dependency_file_keys(file_key);
             if !dependency_file_keys.is_empty() {
                 file_has_dependencies = true;
             }
@@ -254,20 +253,15 @@ impl GitManager {
             Option<HashMap<Entity, ContentEntityData>>,
         )>,
     ) {
-        {
-            // user leave filespace
-            let project = self.projects.get_mut(project_key).unwrap();
-            let content_entities_opt = project.user_leave_filespace(server, user_key, file_key);
-            output.push((*project_key, file_key.clone(), content_entities_opt));
-        }
+        // user leave filespace
+        let project = self.projects.get_mut(project_key).unwrap();
+        let dependency_file_keys = project.dependency_file_keys(&file_key);
+        let content_entities_opt = project.user_leave_filespace(server, user_key, file_key);
+        output.push((*project_key, file_key.clone(), content_entities_opt));
 
-        {
-            // user leave dependency filespaces
-            let project = self.projects.get_mut(project_key).unwrap();
-            let dependency_file_keys = project.dependency_file_keys(&file_key);
-            for dependency_key in dependency_file_keys {
-                self.user_leave_filespace(server, project_key, &dependency_key, user_key, output);
-            }
+        // user leave dependency filespaces
+        for dependency_key in dependency_file_keys {
+            self.user_leave_filespace(server, project_key, &dependency_key, user_key, output);
         }
     }
 
@@ -410,12 +404,7 @@ impl GitManager {
             for (user_key, project_key, dependency_key) in
                 std::mem::take(&mut git_manager.queued_client_open_dependency)
             {
-                git_manager.user_join_filespace(
-                    world,
-                    &user_key,
-                    &project_key,
-                    &dependency_key,
-                );
+                git_manager.user_join_filespace(world, &user_key, &project_key, &dependency_key);
             }
         });
     }

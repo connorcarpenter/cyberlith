@@ -225,7 +225,7 @@ impl InputManager {
         mouse_position: &Vec2,
         least_distance: &mut f32,
         least_entity: &mut Option<(Entity, CanvasShape)>,
-        is_hovering: &mut bool
+        is_hovering: &mut bool,
     ) {
         // check for edges
         if !*is_hovering {
