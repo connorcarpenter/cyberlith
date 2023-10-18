@@ -242,6 +242,35 @@ impl GitManager {
             .push((*user_key, *project_key, dependency_key.clone()));
     }
 
+    fn user_leave_filespace(
+        &mut self,
+        server: &mut Server,
+        project_key: &ProjectKey,
+        file_key: &FileKey,
+        user_key: &UserKey,
+        output: &mut Vec<(
+            ProjectKey,
+            FileKey,
+            Option<HashMap<Entity, ContentEntityData>>,
+        )>,
+    ) {
+        {
+            // user leave filespace
+            let project = self.projects.get_mut(project_key).unwrap();
+            let content_entities_opt = project.user_leave_filespace(server, user_key, file_key);
+            output.push((*project_key, file_key.clone(), content_entities_opt));
+        }
+
+        {
+            // user leave dependency filespaces
+            let project = self.projects.get_mut(project_key).unwrap();
+            let dependency_file_keys = project.dependency_file_keys(&file_key);
+            for dependency_key in dependency_file_keys {
+                self.user_leave_filespace(server, project_key, &dependency_key, user_key, output);
+            }
+        }
+    }
+
     pub(crate) fn on_client_close_tab(
         &mut self,
         server: &mut Server,
@@ -259,24 +288,7 @@ impl GitManager {
             Option<HashMap<Entity, ContentEntityData>>,
         )> = Vec::new();
 
-        {
-            // user leave filespace
-            let project = self.projects.get_mut(project_key).unwrap();
-            let content_entities_opt = project.user_leave_filespace(server, user_key, file_key);
-            output.push((*project_key, file_key.clone(), content_entities_opt));
-        }
-
-        {
-            // user leave dependency filespaces
-            let project = self.projects.get_mut(project_key).unwrap();
-            let dependency_file_keys = project.dependency_file_keys(&file_key);
-            for dependency_key in dependency_file_keys {
-                let project = self.projects.get_mut(project_key).unwrap();
-                let content_entities_opt =
-                    project.user_leave_filespace(server, user_key, &dependency_key);
-                output.push((*project_key, dependency_key, content_entities_opt));
-            }
-        }
+        self.user_leave_filespace(server, project_key, file_key, user_key, &mut output);
 
         output
     }
