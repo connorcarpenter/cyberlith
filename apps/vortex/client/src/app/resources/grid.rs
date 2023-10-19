@@ -149,8 +149,6 @@ impl Grid {
             Color::LIGHT_GRAY,
         );
         self.grid_vertices_3d.push(root_vertex_3d_entity);
-        commands.entity(root_vertex_2d_entity).insert(LocalShape);
-        commands.entity(root_vertex_3d_entity).insert(LocalShape);
 
         self.new_grid_vertex(
             commands,
@@ -211,7 +209,7 @@ impl Grid {
         parent_vertex_2d_entity: Entity,
         position: Vec3,
     ) {
-        let (vertex_2d_entity, vertex_3d_entity, Some(edge_2d_entity), Some(edge_3d_entity)) = vertex_manager.new_local_vertex(
+        let (vertex_2d_entity, vertex_3d_entity, _, _) = vertex_manager.new_local_vertex(
             commands,
             camera_manager,
             edge_manager,
@@ -225,9 +223,5 @@ impl Grid {
             panic!("No edges?");
         };
         self.grid_vertices_3d.push(vertex_3d_entity);
-        commands.entity(vertex_2d_entity).insert(LocalShape);
-        commands.entity(edge_2d_entity).insert(LocalShape);
-        commands.entity(vertex_3d_entity).insert(LocalShape);
-        commands.entity(edge_3d_entity).insert(LocalShape);
     }
 }

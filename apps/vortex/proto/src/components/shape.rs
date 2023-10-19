@@ -422,7 +422,7 @@ impl ModelTransform {
         *self.translation_z = z.into();
     }
 
-    pub fn translation_as_vec3(&self) -> Vec3 {
+    pub fn translation_vec3(&self) -> Vec3 {
         Vec3::new(
             self.translation_x() as f32,
             self.translation_y() as f32,
@@ -461,5 +461,9 @@ impl ModelTransform {
 
     pub fn set_scale_z(&mut self, val: f32) {
         *self.scale_z = ((val * 100.0) as u16).into();
+    }
+
+    pub fn scale_vec3(&self) -> Vec3 {
+        Vec3::new(self.scale_x(), self.scale_y(), self.scale_z())
     }
 }

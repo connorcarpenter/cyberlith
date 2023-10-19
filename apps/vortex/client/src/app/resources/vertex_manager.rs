@@ -549,6 +549,9 @@ impl VertexManager {
             true,
         );
 
+        commands.entity(new_vertex_2d_entity).insert(LocalShape);
+        commands.entity(new_vertex_3d_entity).insert(LocalShape);
+
         let mut new_edge_2d_entity_opt = None;
         let mut new_edge_3d_entity_opt = None;
 
@@ -585,6 +588,10 @@ impl VertexManager {
                 None,
                 true,
             );
+
+            commands.entity(new_edge_2d_entity).insert(LocalShape);
+            commands.entity(new_edge_3d_entity).insert(LocalShape);
+
             new_edge_2d_entity_opt = Some(new_edge_2d_entity);
             new_edge_3d_entity_opt = Some(new_edge_3d_entity);
         }

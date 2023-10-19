@@ -15,7 +15,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{AnimFrame, EdgeAngle, FileExtension, PaletteColor, Vertex3d};
+use vortex_proto::components::{AnimFrame, EdgeAngle, FileExtension, ModelTransform, PaletteColor, Vertex3d};
 
 use crate::app::{
     components::{Edge2dLocal, Edge3dLocal, FaceIcon2d, LocalShape},
@@ -33,6 +33,7 @@ use crate::app::{
         palette_manager::PaletteManager,
         tab_manager::TabManager,
         vertex_manager::VertexManager,
+        model_manager::ModelManager,
     },
 };
 
@@ -46,6 +47,7 @@ pub fn queue_resyncs(
     mut edge_manager: ResMut<EdgeManager>,
     mut input_manager: ResMut<InputManager>,
     mut face_manager: ResMut<FaceManager>,
+    mut model_manager: ResMut<ModelManager>,
 ) {
     if !canvas.is_visible() {
         return;
@@ -69,6 +71,7 @@ pub fn queue_resyncs(
         vertex_manager.queue_resync();
         edge_manager.queue_resync();
         face_manager.queue_resync();
+        model_manager.queue_resync();
     }
 }
 
@@ -341,6 +344,33 @@ pub fn sync_faces(
         &mut transform_q,
         &mut visibility_q,
         camera_3d_scale,
+    );
+}
+
+pub fn sync_model_transforms(
+    file_manager: Res<FileManager>,
+    tab_manager: Res<TabManager>,
+    mut model_manager: ResMut<ModelManager>,
+    transform_q: Query<&ModelTransform>,
+    mut vertex_3d_q: Query<&mut Vertex3d>,
+) {
+    let Some(current_file_entity) = tab_manager.current_tab_entity() else {
+        return;
+    };
+    let file_ext = file_manager.get_file_type(&current_file_entity);
+    if file_ext != FileExtension::Model {
+        return;
+    }
+
+    let Some(current_tab_state) = tab_manager.current_tab_state() else {
+        return;
+    };
+    let camera_state = &current_tab_state.camera_state;
+
+    model_manager.sync_transform_controls(
+        camera_state,
+        &mut vertex_3d_q,
+        &transform_q,
     );
 }
 

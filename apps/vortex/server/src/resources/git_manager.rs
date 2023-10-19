@@ -95,10 +95,11 @@ impl GitManager {
         let mut new_content_entities_opt = None;
         let mut file_has_dependencies = false;
 
+        info!("user joining file: {:?}", file_key);
+
         {
             // user join filespace
             let project = self.projects.get_mut(project_key).unwrap();
-            let dependency_file_keys = project.dependency_file_keys(file_key);
             if let Some(new_content_entities) =
                 project.user_join_filespace(world, user_key, file_key)
             {
@@ -107,6 +108,9 @@ impl GitManager {
             }
 
             // user join dependency filespaces
+            // get the newly created/associated dependency keys after read above (in user_join_filespace())
+            let project = self.projects.get_mut(project_key).unwrap();
+            let dependency_file_keys = project.dependency_file_keys(file_key);
             if !dependency_file_keys.is_empty() {
                 file_has_dependencies = true;
             }

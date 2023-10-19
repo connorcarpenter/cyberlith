@@ -127,8 +127,6 @@ impl Compass {
             Color::WHITE,
         );
         self.compass_vertices_3d.push(vertex_3d_entity);
-        commands.entity(root_vertex_2d_entity).insert(LocalShape);
-        commands.entity(vertex_3d_entity).insert(LocalShape);
 
         self.new_compass_arm(
             commands,
@@ -183,7 +181,7 @@ impl Compass {
         position: Vec3,
         color: Color,
     ) {
-        let (vertex_2d_entity, vertex_3d_entity, Some(edge_2d_entity), Some(edge_3d_entity)) = vertex_manager.new_local_vertex(
+        let (_, vertex_3d_entity, _, _) = vertex_manager.new_local_vertex(
             commands,
             camera_manager,
             edge_manager,
@@ -197,9 +195,5 @@ impl Compass {
             panic!("No edges?");
         };
         self.compass_vertices_3d.push(vertex_3d_entity);
-        commands.entity(vertex_2d_entity).insert(LocalShape);
-        commands.entity(vertex_3d_entity).insert(LocalShape);
-        commands.entity(edge_2d_entity).insert(LocalShape);
-        commands.entity(edge_3d_entity).insert(LocalShape);
     }
 }
