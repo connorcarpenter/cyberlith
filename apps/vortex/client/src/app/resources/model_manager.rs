@@ -24,6 +24,7 @@ use crate::app::resources::{
 };
 
 struct ModelTransformData {
+    edge_2d_entity: Entity,
     translation_entity_2d: Entity,
     translation_entity_3d: Entity,
     rotation_entity_2d: Entity,
@@ -34,6 +35,7 @@ struct ModelTransformData {
 
 impl ModelTransformData {
     pub fn new(
+        edge_2d_entity: Entity,
         translation_entity_2d: Entity,
         translation_entity_3d: Entity,
         rotation_entity_2d: Entity,
@@ -42,6 +44,7 @@ impl ModelTransformData {
         scale_entity_3d: Entity,
     ) -> Self {
         Self {
+            edge_2d_entity,
             translation_entity_3d,
             rotation_entity_3d,
             scale_entity_3d,
@@ -55,6 +58,7 @@ impl ModelTransformData {
 #[derive(Resource)]
 pub struct ModelManager {
     model_transforms: HashMap<Entity, ModelTransformData>,
+    edge_2d_to_model_transform: HashMap<Entity, Entity>,
     resync: bool,
 }
 
@@ -62,6 +66,7 @@ impl Default for ModelManager {
     fn default() -> Self {
         Self {
             model_transforms: HashMap::new(),
+            edge_2d_to_model_transform: HashMap::new(),
             resync: false,
         }
     }
@@ -157,6 +162,7 @@ impl ModelManager {
             &mut meshes,
             &mut materials,
             new_model_transform_entity,
+            edge_2d_entity,
             translation,
         );
 
@@ -175,6 +181,7 @@ impl ModelManager {
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         new_model_transform_entity: Entity,
+        edge_2d_entity: Entity,
         translation: Vec3,
     ) {
         // translation control
@@ -216,6 +223,7 @@ impl ModelManager {
 
         self.register_model_transform_controls(
             new_model_transform_entity,
+            edge_2d_entity,
             translation_entity_2d,
             translation_entity_3d,
             rotation_entity_2d,
@@ -228,6 +236,7 @@ impl ModelManager {
     pub fn register_model_transform_controls(
         &mut self,
         model_transform_entity: Entity,
+        edge_2d_entity: Entity,
         translation_entity_2d: Entity,
         translation_entity_3d: Entity,
         rotation_entity_2d: Entity,
@@ -238,6 +247,7 @@ impl ModelManager {
         self.model_transforms.insert(
             model_transform_entity,
             ModelTransformData::new(
+                edge_2d_entity,
                 translation_entity_2d,
                 translation_entity_3d,
                 rotation_entity_2d,
@@ -246,6 +256,11 @@ impl ModelManager {
                 scale_entity_3d,
             ),
         );
+        self.edge_2d_to_model_transform.insert(edge_2d_entity, model_transform_entity);
+    }
+
+    pub(crate) fn edge_2d_has_model_transform(&self, edge_2d_entity: &Entity) -> bool {
+        self.edge_2d_to_model_transform.contains_key(edge_2d_entity)
     }
 
     pub fn queue_resync(&mut self) {
