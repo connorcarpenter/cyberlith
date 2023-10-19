@@ -362,9 +362,9 @@ impl FileTreeRowUiWidget {
     pub fn on_row_click(world: &mut World, file_ext: FileExtension, row_entity: &Entity) {
         // check to see if we are binding first
         let mut ui_state = world.get_resource_mut::<UiState>().unwrap();
-        if let BindingState::Binding(ext_required) = ui_state.binding_file {
-            if file_ext == ext_required {
-                ui_state.binding_file = BindingState::BindResult(*row_entity);
+        if let BindingState::Binding(exts_required) = &ui_state.binding_file {
+            if exts_required.contains(&file_ext) {
+                ui_state.binding_file = BindingState::BindResult(file_ext, *row_entity);
                 return;
             }
         };

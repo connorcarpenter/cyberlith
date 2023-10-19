@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use bevy_ecs::{entity::Entity, system::Resource};
 
 use render_egui::egui::Pos2;
@@ -13,12 +15,12 @@ pub enum LoggingInState {
     LoginFailed,
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum BindingState {
     NotBinding,
-    Binding(FileExtension),
+    Binding(HashSet<FileExtension>),
     // file entity
-    BindResult(Entity),
+    BindResult(FileExtension, Entity),
 }
 
 #[derive(Resource)]

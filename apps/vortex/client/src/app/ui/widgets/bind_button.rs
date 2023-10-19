@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use bevy_ecs::{
     entity::Entity,
     system::{Commands, SystemState},
@@ -30,14 +32,17 @@ pub fn render_bind_button(
             Frame::none().inner_margin(300.0).show(ui, |ui| {
                 let file_ext_str = file_ext.to_string();
 
-                let mut ui_state = world.get_resource_mut::<UiState>().unwrap();
-                match ui_state.binding_file {
+                let (file_ext_opt, dependency_file_entity_opt) = match &world.get_resource::<UiState>().unwrap().binding_file {
                     BindingState::NotBinding => {
                         if ui
                             .button(format!("Bind to {} File", file_ext_str))
                             .clicked()
                         {
-                            ui_state.binding_file = BindingState::Binding(file_ext);
+                            let mut file_exts = HashSet::new();
+                            file_exts.insert(file_ext);
+                            (Some(file_exts), None)
+                        } else {
+                            (None, None)
                         }
                     }
                     BindingState::Binding(_ext_req) => {
@@ -48,51 +53,67 @@ pub fn render_bind_button(
                                 file_ext_str
                             )),
                         );
+                        (None, None)
                     }
-                    BindingState::BindResult(dependency_file_entity) => {
+                    BindingState::BindResult(_dependency_file_ext, dependency_file_entity) => {
                         info!("received bind result for dependency");
+                        (None, Some(*dependency_file_entity))
+                    }
+                };
 
-                        let mut ui_state = world.get_resource_mut::<UiState>().unwrap();
-                        ui_state.binding_file = BindingState::NotBinding;
-
-                        // send message to server
-                        let mut system_state: SystemState<(Commands, Client)> =
-                            SystemState::new(world);
-                        let (mut commands, mut client) = system_state.get_mut(world);
-
-                        let mut component = FileDependency::new();
-                        component.file_entity.set(&client, &current_file_entity);
-                        component
-                            .dependency_entity
-                            .set(&client, &dependency_file_entity);
-                        let dependency_entity = commands
-                            .spawn_empty()
-                            .enable_replication(&mut client)
-                            .configure_replication(ReplicationConfig::Delegated)
-                            .insert(component)
-                            .id();
-
-                        system_state.apply(world);
-
-                        let mut file_manager = world.get_resource_mut::<FileManager>().unwrap();
-                        file_manager.file_add_dependency(
-                            &dependency_entity,
-                            &current_file_entity,
+                match (file_ext_opt, dependency_file_entity_opt) {
+                    (Some(file_ext), None) => {
+                        world.get_resource_mut::<UiState>().unwrap().binding_file = BindingState::Binding(file_ext);
+                    }
+                    (None, Some(dependency_file_entity)) => {
+                        world.get_resource_mut::<UiState>().unwrap().binding_file = BindingState::NotBinding;
+                        create_networked_dependency(
+                            world,
+                            current_file_entity,
                             &dependency_file_entity,
                         );
-
-                        let mut system_state: SystemState<(Commands, Client)> =
-                            SystemState::new(world);
-                        let (mut commands, mut client) = system_state.get_mut(world);
-
-                        commands
-                            .entity(dependency_entity)
-                            .release_authority(&mut client);
-
-                        system_state.apply(world);
                     }
+                    _ => {}
                 }
             });
         });
     });
+}
+
+pub fn create_networked_dependency(world: &mut World, current_file_entity: &Entity, dependency_file_entity: &Entity) {
+    // send message to server
+    let mut system_state: SystemState<(Commands, Client)> =
+        SystemState::new(world);
+    let (mut commands, mut client) = system_state.get_mut(world);
+
+    let mut component = FileDependency::new();
+    component.file_entity.set(&client, &current_file_entity);
+    component
+        .dependency_entity
+        .set(&client, &dependency_file_entity);
+    let dependency_entity = commands
+        .spawn_empty()
+        .enable_replication(&mut client)
+        .configure_replication(ReplicationConfig::Delegated)
+        .insert(component)
+        .id();
+
+    system_state.apply(world);
+
+    let mut file_manager = world.get_resource_mut::<FileManager>().unwrap();
+    file_manager.file_add_dependency(
+        &dependency_entity,
+        &current_file_entity,
+        &dependency_file_entity,
+    );
+
+    let mut system_state: SystemState<(Commands, Client)> =
+        SystemState::new(world);
+    let (mut commands, mut client) = system_state.get_mut(world);
+
+    commands
+        .entity(dependency_entity)
+        .release_authority(&mut client);
+
+    system_state.apply(world);
 }

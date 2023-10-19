@@ -1,11 +1,13 @@
 use bevy_ecs::prelude::{Entity, World};
 
+use vortex_proto::components::FileExtension;
+
 use crate::app::resources::{action::{Action, model::{create_model_transform, delete_model_transform}}, input::InputManager};
 
 #[derive(Clone)]
 pub enum ModelAction {
-    // edge_2d_entity
-    CreateModelTransform(Entity),
+    // edge_2d_entity, dependency file ext, dependency file entity
+    CreateModelTransform(Entity, FileExtension, Entity),
     // edge_2d_entity
     DeleteModelTransform(Entity),
 }
@@ -19,7 +21,7 @@ pub enum ModelActionType {
 impl ModelAction {
     pub fn get_type(&self) -> ModelActionType {
         match self {
-            Self::CreateModelTransform(_) => ModelActionType::CreateModelTransform,
+            Self::CreateModelTransform(_, _, _) => ModelActionType::CreateModelTransform,
             Self::DeleteModelTransform(_) => ModelActionType::DeleteModelTransform,
         }
     }

@@ -1,10 +1,11 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{
     entity::Entity,
     system::{Commands, Query, ResMut, Resource, SystemState},
-    world::World,
+    world::{World, Mut},
 };
+use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
@@ -14,14 +15,15 @@ use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
     Assets,
 };
+use render_egui::{egui, egui::{Button, Direction, Frame, Layout, Ui}};
 
-use vortex_proto::components::{EdgeAngle, ModelTransform, ShapeName, Vertex3d};
+use vortex_proto::components::{EdgeAngle, FileExtension, ModelTransform, ModelTransformEntityType, ShapeName, Vertex3d};
 
-use crate::app::resources::{
+use crate::app::{resources::{
     camera_manager::CameraManager, camera_state::CameraState, canvas::Canvas,
     edge_manager::EdgeManager, face_manager::FaceManager, input::InputManager,
-    vertex_manager::VertexManager,
-};
+    vertex_manager::VertexManager, action::model::ModelAction, tab_manager::TabManager,
+}, ui::{BindingState, widgets::create_networked_dependency}};
 
 pub struct ModelTransformData {
     edge_2d_entity: Entity,
@@ -60,6 +62,9 @@ pub struct ModelManager {
     model_transforms: HashMap<Entity, ModelTransformData>,
     edge_2d_to_model_transform: HashMap<Entity, Entity>,
     resync: bool,
+    // Option<edge_2d_entity>
+    binding_edge_opt: Option<Entity>,
+    binding_file: BindingState,
 }
 
 impl Default for ModelManager {
@@ -68,15 +73,86 @@ impl Default for ModelManager {
             model_transforms: HashMap::new(),
             edge_2d_to_model_transform: HashMap::new(),
             resync: false,
+            binding_edge_opt: None,
+            binding_file: BindingState::NotBinding,
         }
     }
 }
 
 impl ModelManager {
+
+    pub fn edge_is_binding(&self) -> bool {
+        self.binding_edge_opt.is_some()
+    }
+
+    pub fn edge_init_assign_skin_or_scene(&mut self, edge_2d_entity: &Entity) {
+        self.binding_edge_opt = Some(*edge_2d_entity);
+        let mut file_exts = HashSet::new();
+        file_exts.insert(FileExtension::Skin);
+        file_exts.insert(FileExtension::Scene);
+        self.binding_file = BindingState::Binding(file_exts);
+    }
+
+    pub fn render_bind_button(&mut self, ui: &mut Ui, world: &mut World, current_file_entity: &Entity) {
+        egui::CentralPanel::default().show_inside(ui, |ui| {
+            ui.with_layout(Layout::centered_and_justified(Direction::TopDown), |ui| {
+                Frame::none().inner_margin(300.0).show(ui, |ui| {
+
+                    let dependency_file_entity_opt = match &self.binding_file {
+                        BindingState::NotBinding => {
+                            panic!("not possible");
+                        }
+                        BindingState::Binding(ext_req) => {
+                            let ext_reqs_str = get_ext_reqs_string(ext_req);
+                            ui.add_enabled(
+                                false,
+                                Button::new(format!(
+                                    "Click on {} File in sidebar to bind.",
+                                    ext_reqs_str,
+                                )),
+                            );
+                            None
+                        }
+                        BindingState::BindResult(file_ext, dependency_file_entity) => {
+                            info!("received bind result for dependency");
+
+                            Some((*file_ext, *dependency_file_entity))
+                        }
+                    };
+
+                    if let Some((dependency_file_ext, dependency_file_entity)) = dependency_file_entity_opt {
+
+                        let edge_2d_entity = self.binding_edge_opt.unwrap();
+                        self.binding_edge_opt = None;
+                        self.binding_file = BindingState::NotBinding;
+
+                        create_networked_dependency(world, &current_file_entity, &dependency_file_entity);
+
+                        world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
+                            world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                                tab_manager.current_tab_execute_model_action(
+                                    world,
+                                    &mut input_manager,
+                                    ModelAction::CreateModelTransform(
+                                        edge_2d_entity,
+                                        dependency_file_ext,
+                                        dependency_file_entity,
+                                    ),
+                                );
+                            });
+                        });
+                    }
+                });
+            });
+        });
+    }
+
     pub fn create_networked_model_transform(
         &mut self,
         world: &mut World,
-        edge_2d_entity: Entity,
+        edge_2d_entity: &Entity,
+        dependency_file_ext: &FileExtension,
+        dependency_file_entity: &Entity,
     ) -> Entity {
         let mut system_state: SystemState<(
             Commands,
@@ -135,7 +211,7 @@ impl ModelManager {
         // TODO: this is naive .. find scale by comparing edge length to skin/scene size
         let scale = Vec3::splat(1.0);
 
-        let component = ModelTransform::new(
+        let mut component = ModelTransform::new(
             vertex_name,
             SerdeQuat::from(rotation),
             translation.x,
@@ -145,6 +221,14 @@ impl ModelManager {
             scale.y,
             scale.z,
         );
+        let dependency_file_type = match dependency_file_ext {
+            FileExtension::Skin => ModelTransformEntityType::Skin,
+            FileExtension::Scene => ModelTransformEntityType::Scene,
+            _ => {
+                panic!("not possible");
+            }
+        };
+        component.set_entity(&client, *dependency_file_entity, dependency_file_type);
         let new_model_transform_entity = commands
             .spawn_empty()
             .enable_replication(&mut client)
@@ -162,7 +246,7 @@ impl ModelManager {
             &mut meshes,
             &mut materials,
             new_model_transform_entity,
-            edge_2d_entity,
+            *edge_2d_entity,
             translation,
         );
 
@@ -339,4 +423,19 @@ impl ModelManager {
     //         transform.translation = vertex_3d.as_vec3();
     //     }
     // }
+}
+
+fn get_ext_reqs_string(exts: &HashSet<FileExtension>) -> String {
+    let mut output = String::new();
+
+    let mut had_one = false;
+    for ext in exts.iter() {
+        if had_one {
+            output.push_str("/");
+        }
+        output.push_str(&ext.to_string());
+        had_one = true;
+    }
+
+    output
 }

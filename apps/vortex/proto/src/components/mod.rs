@@ -12,7 +12,7 @@ use shape::VertexComponentsPlugin;
 pub use shape::{
     BackgroundSkinColor, Edge3d, EdgeAngle, Face3d, FaceColor, FileExtension, FileType,
     ModelTransform, OwnedByFile, PaletteColor, SerdeRotation, ShapeName, Vertex3d, VertexRoot,
-    VertexSerdeInt,
+    VertexSerdeInt, ModelTransformEntityType,
 };
 
 mod animation;

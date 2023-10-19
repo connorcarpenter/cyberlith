@@ -126,7 +126,7 @@ impl Face3d {
 }
 
 // FileType
-#[derive(Serde, Copy, Clone, PartialEq, Debug)]
+#[derive(Serde, Copy, Clone, PartialEq, Debug, Hash, Eq)]
 pub enum FileExtension {
     Skel,
     Mesh,

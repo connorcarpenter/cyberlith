@@ -8,7 +8,7 @@ pub fn execute(
     world: &mut World,
     action: ModelAction,
 ) -> Vec<ModelAction> {
-    let ModelAction::CreateModelTransform(edge_2d_entity) = action else {
+    let ModelAction::CreateModelTransform(edge_2d_entity, dependency_file_ext, dependency_file_entity) = action else {
         panic!("Expected CreateModelTransform");
     };
 
@@ -18,7 +18,7 @@ pub fn execute(
     );
 
     world.resource_scope(|world, mut model_manager: Mut<ModelManager>| {
-        model_manager.create_networked_model_transform(world, edge_2d_entity);
+        model_manager.create_networked_model_transform(world, &edge_2d_entity, &dependency_file_ext, &dependency_file_entity);
     });
 
     // TODO: migrate undo/redo entities

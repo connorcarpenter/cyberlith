@@ -11,7 +11,7 @@ use crate::app::{
     resources::{
         animation_manager::AnimationManager, file_manager::FileManager, input::InputManager,
         palette_manager::PaletteManager, skin_manager::SkinManager, tab_manager::render_tab_bar,
-        tab_manager::TabManager,
+        tab_manager::TabManager, model_manager::ModelManager,
     },
     ui::{
         render_tool_bar,
@@ -127,6 +127,13 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                                 &current_file_entity,
                                 FileExtension::Skel,
                             );
+                            return;
+                        }
+
+                        if world.get_resource::<ModelManager>().unwrap().edge_is_binding() {
+                            world.resource_scope(|world, mut model_manager: Mut<ModelManager>| {
+                                model_manager.render_bind_button(ui, world, &current_file_entity);
+                            });
                             return;
                         }
 
