@@ -16,7 +16,12 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind, Face3d, FaceColor, FileDependency, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, ModelTransform, OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot};
+use vortex_proto::components::{
+    AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d,
+    EdgeAngle, EntryKind, Face3d, FaceColor, FileDependency, FileExtension, FileSystemChild,
+    FileSystemEntry, FileSystemRootChild, FileType, ModelTransform, OwnedByFile, PaletteColor,
+    ShapeName, Vertex3d, VertexRoot,
+};
 
 use crate::app::{
     components::file_system::{

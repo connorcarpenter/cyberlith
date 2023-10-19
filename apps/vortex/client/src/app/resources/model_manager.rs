@@ -1,23 +1,26 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{system::{Commands, Query, Resource, ResMut, SystemState}, world::World, entity::Entity};
+use bevy_ecs::{
+    entity::Entity,
+    system::{Commands, Query, ResMut, Resource, SystemState},
+    world::World,
+};
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
 use math::{quat_from_spin_direction, SerdeQuat, Vec3};
 
-use render_api::{base::{Color, CpuMaterial, CpuMesh}, Assets};
+use render_api::{
+    base::{Color, CpuMaterial, CpuMesh},
+    Assets,
+};
 
 use vortex_proto::components::{EdgeAngle, ModelTransform, ShapeName, Vertex3d};
 
 use crate::app::resources::{
-    camera_state::CameraState,
+    camera_manager::CameraManager, camera_state::CameraState, canvas::Canvas,
+    edge_manager::EdgeManager, face_manager::FaceManager, input::InputManager,
     vertex_manager::VertexManager,
-    face_manager::FaceManager,
-    edge_manager::EdgeManager,
-    camera_manager::CameraManager,
-    canvas::Canvas,
-    input::InputManager
 };
 
 struct ModelTransformData {
@@ -65,8 +68,11 @@ impl Default for ModelManager {
 }
 
 impl ModelManager {
-    pub fn create_networked_model_transform(&mut self, world: &mut World, edge_2d_entity: Entity) -> Entity {
-
+    pub fn create_networked_model_transform(
+        &mut self,
+        world: &mut World,
+        edge_2d_entity: Entity,
+    ) -> Entity {
         let mut system_state: SystemState<(
             Commands,
             Client,
@@ -103,7 +109,8 @@ impl ModelManager {
         let edge_3d_entity = edge_manager.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
 
         // get vertex from edge, in order to get name
-        let (parent_vertex_3d_entity, vertex_3d_entity) = edge_manager.edge_get_endpoints(&edge_3d_entity);
+        let (parent_vertex_3d_entity, vertex_3d_entity) =
+            edge_manager.edge_get_endpoints(&edge_3d_entity);
         let shape_name = shape_name_q.get(vertex_3d_entity).unwrap();
         let vertex_name = (*shape_name.value).clone();
 
@@ -170,7 +177,6 @@ impl ModelManager {
         new_model_transform_entity: Entity,
         translation: Vec3,
     ) {
-
         // translation control
         let (translation_entity_2d, translation_entity_3d, _, _) = vertex_manager.new_local_vertex(
             commands,
@@ -215,7 +221,8 @@ impl ModelManager {
             rotation_entity_2d,
             rotation_entity_3d,
             scale_entity_2d,
-            scale_entity_3d);
+            scale_entity_3d,
+        );
     }
 
     pub fn register_model_transform_controls(
@@ -226,7 +233,7 @@ impl ModelManager {
         rotation_entity_2d: Entity,
         rotation_entity_3d: Entity,
         scale_entity_2d: Entity,
-        scale_entity_3d: Entity
+        scale_entity_3d: Entity,
     ) {
         self.model_transforms.insert(
             model_transform_entity,
@@ -236,8 +243,8 @@ impl ModelManager {
                 rotation_entity_2d,
                 rotation_entity_3d,
                 scale_entity_2d,
-                scale_entity_3d
-            )
+                scale_entity_3d,
+            ),
         );
     }
 
@@ -265,7 +272,8 @@ impl ModelManager {
             // translation
             let translation = model_transform.translation_vec3();
             let translation_control_entity = data.translation_entity_3d;
-            let mut translation_control_3d = vertex_3d_q.get_mut(translation_control_entity).unwrap();
+            let mut translation_control_3d =
+                vertex_3d_q.get_mut(translation_control_entity).unwrap();
             translation_control_3d.set_vec3(&translation);
 
             // rotation

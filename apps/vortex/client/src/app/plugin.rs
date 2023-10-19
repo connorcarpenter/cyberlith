@@ -5,6 +5,7 @@ use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin, ReceiveEvents};
 
 use render_api::{resources::WindowSettings, Draw};
 
+use vortex_proto::components::ModelTransform;
 use vortex_proto::{
     components::{
         AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, Edge3d, EdgeAngle,
@@ -13,8 +14,8 @@ use vortex_proto::{
     },
     protocol,
 };
-use vortex_proto::components::ModelTransform;
 
+use crate::app::resources::model_manager::ModelManager;
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
     config::ConfigPlugin,
@@ -32,7 +33,6 @@ use crate::app::{
         UiState,
     },
 };
-use crate::app::resources::model_manager::ModelManager;
 
 pub struct VortexPlugin;
 

@@ -15,7 +15,9 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{AnimFrame, EdgeAngle, FileExtension, ModelTransform, PaletteColor, Vertex3d};
+use vortex_proto::components::{
+    AnimFrame, EdgeAngle, FileExtension, ModelTransform, PaletteColor, Vertex3d,
+};
 
 use crate::app::{
     components::{Edge2dLocal, Edge3dLocal, FaceIcon2d, LocalShape},
@@ -30,10 +32,10 @@ use crate::app::{
         file_manager::FileManager,
         grid::Grid,
         input::InputManager,
+        model_manager::ModelManager,
         palette_manager::PaletteManager,
         tab_manager::TabManager,
         vertex_manager::VertexManager,
-        model_manager::ModelManager,
     },
 };
 
@@ -367,11 +369,7 @@ pub fn sync_model_transforms(
     };
     let camera_state = &current_tab_state.camera_state;
 
-    model_manager.sync_transform_controls(
-        camera_state,
-        &mut vertex_3d_q,
-        &transform_q,
-    );
+    model_manager.sync_transform_controls(camera_state, &mut vertex_3d_q, &transform_q);
 }
 
 pub fn update_animation(

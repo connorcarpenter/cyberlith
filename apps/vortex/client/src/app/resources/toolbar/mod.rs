@@ -1,8 +1,8 @@
 mod anim;
 mod mesh;
+mod model;
 mod shared_buttons;
 mod skel;
-mod model;
 
 use bevy_ecs::world::World;
 
@@ -14,7 +14,7 @@ use render_egui::{
 use vortex_proto::components::FileExtension;
 
 use crate::app::resources::toolbar::{
-    anim::AnimationToolbar, mesh::MeshToolbar, skel::SkeletonToolbar, model::ModelToolbar,
+    anim::AnimationToolbar, mesh::MeshToolbar, model::ModelToolbar, skel::SkeletonToolbar,
 };
 
 pub struct Toolbar;
