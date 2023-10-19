@@ -16,12 +16,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{
-    AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d,
-    EdgeAngle, EntryKind, Face3d, FaceColor, FileDependency, FileExtension, FileSystemChild,
-    FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, PaletteColor, ShapeName, Vertex3d,
-    VertexRoot,
-};
+use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind, Face3d, FaceColor, FileDependency, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, ModelTransform, OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::file_system::{
@@ -88,6 +83,7 @@ pub fn insert_component_events(world: &mut World) {
         insert_component_event::<PaletteColor>(world, &events);
         insert_component_event::<FaceColor>(world, &events);
         insert_component_event::<BackgroundSkinColor>(world, &events);
+        insert_component_event::<ModelTransform>(world, &events);
     }
 }
 
@@ -703,6 +699,20 @@ pub fn insert_skin_events(
             face_3d_entity,
             face_color_entity,
             &mut shape_color_resync_events,
+        );
+    }
+}
+
+pub fn insert_model_events(
+    mut model_transform_events: EventReader<InsertComponentEvent<ModelTransform>>,
+) {
+    // on ModelTransform Insert Event
+    for event in model_transform_events.iter() {
+        let model_transform_entity = event.entity;
+
+        info!(
+            "entity: {:?} - inserted ModelTransform",
+            model_transform_entity
         );
     }
 }

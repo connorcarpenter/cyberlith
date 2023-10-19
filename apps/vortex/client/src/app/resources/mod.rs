@@ -18,3 +18,4 @@ pub mod skin_manager;
 pub mod tab_manager;
 pub mod toolbar;
 pub mod vertex_manager;
+pub mod model_manager;

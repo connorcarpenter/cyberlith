@@ -359,13 +359,17 @@ impl ModelTransform {
     pub fn new(
         vertex_name: String,
         rotation: SerdeQuat,
-        translation_x: i16,
-        translation_y: i16,
-        translation_z: i16,
+        translation_x: f32,
+        translation_y: f32,
+        translation_z: f32,
         scale_x: f32,
         scale_y: f32,
         scale_z: f32,
     ) -> Self {
+        let translation_x = translation_x as i16;
+        let translation_y = translation_y as i16;
+        let translation_z = translation_z as i16;
+
         let scale_x = (scale_x * 100.0) as u16;
         let scale_y = (scale_y * 100.0) as u16;
         let scale_z = (scale_z * 100.0) as u16;

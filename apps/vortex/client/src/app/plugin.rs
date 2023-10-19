@@ -13,6 +13,7 @@ use vortex_proto::{
     },
     protocol,
 };
+use vortex_proto::components::ModelTransform;
 
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
@@ -31,6 +32,7 @@ use crate::app::{
         UiState,
     },
 };
+use crate::app::resources::model_manager::ModelManager;
 
 pub struct VortexPlugin;
 
@@ -98,6 +100,7 @@ impl Plugin for VortexPlugin {
             .add_event::<InsertComponentEvent<PaletteColor>>()
             .add_event::<InsertComponentEvent<BackgroundSkinColor>>()
             .add_event::<InsertComponentEvent<FaceColor>>()
+            .add_event::<InsertComponentEvent<ModelTransform>>()
             // shape waitlist
             .init_resource::<ShapeWaitlist>()
             // Insert Component Systems
@@ -111,6 +114,7 @@ impl Plugin for VortexPlugin {
             .add_systems(Update, network::insert_animation_events)
             .add_systems(Update, network::insert_palette_events)
             .add_systems(Update, network::insert_skin_events)
+            .add_systems(Update, network::insert_model_events)
             // UI Configuration
             .init_resource::<UiState>()
             .init_resource::<NamingBarState>()
@@ -128,6 +132,7 @@ impl Plugin for VortexPlugin {
             .init_resource::<CameraManager>()
             .init_resource::<InputManager>()
             .init_resource::<SkinManager>()
+            .init_resource::<ModelManager>()
             .init_resource::<Compass>()
             .init_resource::<Grid>()
             .init_resource::<Canvas>()
