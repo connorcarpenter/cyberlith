@@ -3,6 +3,7 @@ use bevy_ecs::{prelude::World, world::Mut};
 use render_egui::egui::Ui;
 
 use crate::app::resources::{
+    action::model::ModelAction, tab_manager::TabManager,
     input::InputManager, model_manager::ModelManager, shape_data::CanvasShape, toolbar::Toolbar,
 };
 
@@ -31,9 +32,16 @@ impl ModelToolbar {
             // assign skin / scene
             let response = Toolbar::button(ui, "+", "Assign Skin/Scene", edge_2d_entity_opt.is_some() && !edge_has_model_transform);
             if response.clicked() {
-                world.resource_scope(|world, mut model_manager: Mut<ModelManager>| {
-                    model_manager
-                        .create_networked_model_transform(world, edge_2d_entity_opt.unwrap());
+                world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
+                   world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                       tab_manager.current_tab_execute_model_action(
+                           world,
+                           &mut input_manager,
+                           ModelAction::CreateModelTransform(
+                               edge_2d_entity_opt.unwrap(),
+                           ),
+                       );
+                   });
                 });
             }
         }

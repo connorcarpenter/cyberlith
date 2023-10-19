@@ -1,34 +1,45 @@
 use bevy_ecs::prelude::{Entity, World};
 
-use crate::app::resources::{action::Action, input::InputManager, shape_data::CanvasShape};
+use crate::app::resources::{action::{Action, model::{create_model_transform, delete_model_transform}}, input::InputManager};
 
 #[derive(Clone)]
 pub enum ModelAction {
-    None,
+    // edge_2d_entity
+    CreateModelTransform(Entity),
+    // edge_2d_entity
+    DeleteModelTransform(Entity),
 }
 
 pub enum ModelActionType {
+    CreateModelTransform,
+    DeleteModelTransform,
     None,
 }
 
 impl ModelAction {
     pub fn get_type(&self) -> ModelActionType {
         match self {
-            Self::None => ModelActionType::None,
+            Self::CreateModelTransform(_) => ModelActionType::CreateModelTransform,
+            Self::DeleteModelTransform(_) => ModelActionType::DeleteModelTransform,
         }
     }
 
     pub fn execute(
         self,
         world: &mut World,
-        input_manager: &mut InputManager,
-        current_file_entity: Entity,
+        _input_manager: &mut InputManager,
+        _current_file_entity: Entity,
     ) -> Vec<Self> {
         let action_type = self.get_type();
 
         match action_type {
-            ModelActionType::None => {
-                //select_face::execute(world, input_manager, current_file_entity, self)
+            ModelActionType::CreateModelTransform => {
+                create_model_transform::execute(world, self)
+            }
+            ModelActionType::DeleteModelTransform => {
+                delete_model_transform::execute(world, self)
+            }
+            _ => {
                 Vec::new()
             }
         }

@@ -23,7 +23,7 @@ use crate::app::resources::{
     vertex_manager::VertexManager,
 };
 
-struct ModelTransformData {
+pub struct ModelTransformData {
     edge_2d_entity: Entity,
     translation_entity_2d: Entity,
     translation_entity_3d: Entity,
@@ -261,6 +261,26 @@ impl ModelManager {
 
     pub(crate) fn edge_2d_has_model_transform(&self, edge_2d_entity: &Entity) -> bool {
         self.edge_2d_to_model_transform.contains_key(edge_2d_entity)
+    }
+
+    pub(crate) fn model_transform_from_edge_2d(&self, edge_2d_entity: &Entity) -> Option<Entity> {
+        self.edge_2d_to_model_transform.get(edge_2d_entity).cloned()
+    }
+
+    pub(crate) fn on_despawn_model_transform(&mut self, commands: &mut Commands, model_transform_entity: &Entity) {
+        let model_transform_data = self.deregister_model_transform_controls(model_transform_entity);
+        commands.entity(model_transform_data.translation_entity_2d).despawn();
+        commands.entity(model_transform_data.translation_entity_3d).despawn();
+        commands.entity(model_transform_data.rotation_entity_2d).despawn();
+        commands.entity(model_transform_data.rotation_entity_3d).despawn();
+        commands.entity(model_transform_data.scale_entity_2d).despawn();
+        commands.entity(model_transform_data.scale_entity_3d).despawn();
+    }
+
+    pub(crate) fn deregister_model_transform_controls(&mut self, model_transform_entity: &Entity) -> ModelTransformData {
+        let model_transform_data = self.model_transforms.remove(model_transform_entity).unwrap();
+        self.edge_2d_to_model_transform.remove(&model_transform_data.edge_2d_entity);
+        model_transform_data
     }
 
     pub fn queue_resync(&mut self) {
