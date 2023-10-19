@@ -1,9 +1,7 @@
 use bevy_ecs::component::Component;
+use bevy_ecs::entity::Entity;
 
-use naia_bevy_shared::{
-    EntityProperty, Property, Protocol, ProtocolPlugin, Replicate, Serde, SignedVariableInteger,
-    UnsignedInteger, UnsignedVariableInteger,
-};
+use naia_bevy_shared::{EntityAndGlobalEntityConverter, EntityProperty, Property, Protocol, ProtocolPlugin, Replicate, Serde, SignedVariableInteger, UnsignedInteger, UnsignedVariableInteger};
 
 use math::{Quat, SerdeQuat, Vec3};
 
@@ -342,10 +340,20 @@ impl BackgroundSkinColor {
     }
 }
 
+// ModelTransformEntityType
+#[derive(Serde, Copy, Clone, PartialEq, Debug)]
+pub enum ModelTransformEntityType {
+    Uninit,
+    Skin,
+    Scene,
+}
+
 // ModelTransform
 #[derive(Component, Replicate)]
 pub struct ModelTransform {
     pub vertex_name: Property<String>,
+    pub skin_or_scene_entity: EntityProperty,
+    pub entity_type: Property<ModelTransformEntityType>,
     rotation: Property<SerdeQuat>,
     translation_x: Property<SignedVariableInteger<4>>,
     translation_y: Property<SignedVariableInteger<4>>,
@@ -376,6 +384,7 @@ impl ModelTransform {
 
         Self::new_complete(
             vertex_name,
+            ModelTransformEntityType::Uninit,
             rotation,
             translation_x.into(),
             translation_y.into(),
@@ -384,6 +393,11 @@ impl ModelTransform {
             scale_y.into(),
             scale_z.into(),
         )
+    }
+
+    pub fn set_entity(&mut self, converter: &dyn EntityAndGlobalEntityConverter<Entity>, skin_or_scene_entity: Entity, entity_type: ModelTransformEntityType) {
+        self.skin_or_scene_entity.set(converter, &skin_or_scene_entity);
+        *self.entity_type = entity_type;
     }
 
     pub fn rotation(&self) -> Quat {

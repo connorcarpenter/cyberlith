@@ -1,8 +1,6 @@
-use bevy_ecs::{prelude::World, world::Mut};
-use bevy_ecs::system::{Commands, ResMut, SystemState};
+use bevy_ecs::{prelude::World, system::{Commands, ResMut, SystemState}};
 
 use bevy_log::info;
-use naia_bevy_client::Client;
 
 use crate::app::resources::{action::model::ModelAction, model_manager::ModelManager};
 
