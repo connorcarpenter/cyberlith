@@ -10,15 +10,12 @@ use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
 use math::{quat_from_spin_direction, SerdeQuat, Vec3};
 
-use render_api::{
-    base::{Color, CpuMaterial, CpuMesh},
-    Assets,
-};
+use render_api::{base::{Color, CpuMaterial, CpuMesh}, Assets, Handle, components::Visibility};
 
 use vortex_proto::components::{EdgeAngle, FileExtension, ModelTransform, ModelTransformEntityType, ShapeName, Vertex3d};
 
 use crate::app::{components::ModelTransformControl, resources::{
-    camera_manager::CameraManager, camera_state::CameraState, canvas::Canvas,
+    camera_manager::CameraManager, canvas::Canvas,
     edge_manager::EdgeManager, face_manager::FaceManager, input::InputManager,
     vertex_manager::VertexManager, action::model::ModelAction, tab_manager::TabManager,
 }, ui::{BindingState, UiState, widgets::create_networked_dependency}};
@@ -286,13 +283,13 @@ impl ModelManager {
         );
 
         commands.entity(rotation_entity_2d).insert(ModelTransformControl);
-        commands.entity(rotation_entity_3d).insert(ModelTransformControl);
+        commands.entity(rotation_entity_3d).insert(ModelTransformControl).remove::<Handle<CpuMesh>>().remove::<Handle<CpuMaterial>>().remove::<Visibility>();
 
         if let Some(edge_2d_entity) = edge_2d_entity_opt {
             commands.entity(edge_2d_entity).insert(ModelTransformControl);
         }
         if let Some(edge_3d_entity) = edge_3d_entity_opt {
-            commands.entity(edge_3d_entity).insert(ModelTransformControl);
+            commands.entity(edge_3d_entity).insert(ModelTransformControl).remove::<Handle<CpuMesh>>().remove::<Handle<CpuMaterial>>().remove::<Visibility>();
         }
 
         (rotation_entity_2d, rotation_entity_3d)
@@ -358,7 +355,6 @@ impl ModelManager {
 
     pub fn sync_transform_controls(
         &mut self,
-        camera_state: &CameraState,
         vertex_3d_q: &mut Query<&mut Vertex3d>,
         model_transform_q: &Query<&ModelTransform>,
     ) {

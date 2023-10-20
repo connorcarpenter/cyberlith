@@ -371,12 +371,7 @@ pub fn sync_model_transforms(
         return;
     }
 
-    let Some(current_tab_state) = tab_manager.current_tab_state() else {
-        return;
-    };
-    let camera_state = &current_tab_state.camera_state;
-
-    model_manager.sync_transform_controls(camera_state, &mut vertex_3d_q, &transform_q);
+    model_manager.sync_transform_controls(&mut vertex_3d_q, &transform_q);
 }
 
 pub fn update_animation(

@@ -240,7 +240,7 @@ impl EdgeManager {
         for (edge_entity, edge_endpoints, edge_angle_opt) in edge_3d_q.iter() {
             // check visibility
             let Ok(mut visibility) = visibility_q.get_mut(edge_entity) else {
-                panic!("entity has no Visibility");
+                continue;
             };
             if !visibility.visible {
                 continue;
