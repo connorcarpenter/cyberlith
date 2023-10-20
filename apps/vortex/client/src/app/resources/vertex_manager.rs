@@ -34,6 +34,7 @@ use crate::app::{
         shape_data::{CanvasShape, FaceKey, Vertex3dData},
     },
 };
+use crate::app::components::ModelTransformControl;
 
 #[derive(Resource)]
 pub struct VertexManager {
@@ -90,21 +91,36 @@ impl VertexManager {
             Query<&mut Transform>,
             Query<&mut Visibility>,
             Query<&LocalShape>,
+            Query<Option<&ModelTransformControl>>
         )> = SystemState::new(world);
-        let (vertex_3d_q, mut transform_q, mut visibility_q, local_shape) =
-            system_state.get_mut(world);
+        let (
+            vertex_3d_q,
+            mut transform_q,
+            mut visibility_q,
+            local_shape_q,
+            model_transform_control_q
+        ) = system_state.get_mut(world);
 
         for (vertex_3d_entity, vertex_3d) in vertex_3d_q.iter() {
             // check visibility
-            if local_shape.get(vertex_3d_entity).is_err() {
-                if let Ok(mut visibility) = visibility_q.get_mut(vertex_3d_entity) {
-                    match file_ext {
-                        FileExtension::Skin | FileExtension::Model => {
-                            visibility.visible = false;
+            match file_ext {
+                FileExtension::Skin | FileExtension::Model => {
+                    let mut disable = false;
+                    if local_shape_q.get(vertex_3d_entity).is_err() {
+                        disable = true;
+                    } else {
+                        if model_transform_control_q.get(vertex_3d_entity).unwrap().is_some() {
+                            disable = true;
                         }
-                        _ => {}
                     }
-                };
+
+                    if disable {
+                        if let Ok(mut visibility) = visibility_q.get_mut(vertex_3d_entity) {
+                            visibility.visible = false;
+                        };
+                    }
+                }
+                _ => {}
             }
 
             // get transform
@@ -141,9 +157,16 @@ impl VertexManager {
             Query<&mut Transform>,
             Query<&mut Visibility>,
             Query<&LocalShape>,
+            Query<Option<&ModelTransformControl>>,
         )> = SystemState::new(world);
-        let (camera_q, vertex_3d_q, mut transform_q, mut visibility_q, local_shape_q) =
-            system_state.get_mut(world);
+        let (
+            camera_q,
+            vertex_3d_q,
+            mut transform_q,
+            mut visibility_q,
+            local_shape_q,
+            model_transform_control_q
+        ) = system_state.get_mut(world);
 
         let Ok((camera, camera_projection)) = camera_q.get(*camera_3d_entity) else {
             return;
@@ -174,13 +197,12 @@ impl VertexManager {
                 vertex_3d_transform.scale = Vec3::splat(compass_vertex_3d_scale);
             } else {
                 // vertex_3d_transform.scale = should put 3d vertex scale here?
-
-                // change visibility
-                let Ok(mut visibility) = visibility_q.get_mut(vertex_2d_entity) else {
-                    panic!("Vertex2d entity {:?} has no Visibility", vertex_2d_entity);
-                };
                 match file_ext {
                     FileExtension::Skin | FileExtension::Model => {
+                        // change visibility
+                        let Ok(mut visibility) = visibility_q.get_mut(vertex_2d_entity) else {
+                            panic!("Vertex2d entity {:?} has no Visibility", vertex_2d_entity);
+                        };
                         visibility.visible = false;
                     }
                     _ => {}
@@ -204,11 +226,14 @@ impl VertexManager {
             vertex_2d_transform.translation.z = depth;
 
             // update 2d compass
+            let mut vertex_scale = Vec3::splat(vertex_2d_scale);
             if local_shape_q.get(vertex_2d_entity).is_ok() {
-                vertex_2d_transform.scale = Vec3::splat(compass_vertex_2d_scale);
-            } else {
-                vertex_2d_transform.scale = Vec3::splat(vertex_2d_scale);
+                if model_transform_control_q.get(vertex_2d_entity).unwrap().is_none() {
+                    vertex_scale = Vec3::splat(compass_vertex_2d_scale);
+                }
             }
+
+            vertex_2d_transform.scale = vertex_scale;
         }
     }
 

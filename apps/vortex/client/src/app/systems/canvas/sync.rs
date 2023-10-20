@@ -38,6 +38,7 @@ use crate::app::{
         vertex_manager::VertexManager,
     },
 };
+use crate::app::components::ModelTransformControl;
 
 pub fn queue_resyncs(
     mut canvas: ResMut<Canvas>,
@@ -253,6 +254,7 @@ pub fn sync_edges(
     edge_2d_q: Query<(Entity, &Edge2dLocal)>,
     edge_3d_q: Query<(Entity, &Edge3dLocal, Option<&EdgeAngle>)>,
     edge_angle_q: Query<(Entity, &EdgeAngle)>,
+    model_transform_control_q: Query<Option<&ModelTransformControl>>,
 ) {
     if !canvas.is_visible() {
         return;
@@ -311,6 +313,7 @@ pub fn sync_edges(
         &mut transform_q,
         &mut visibility_q,
         &local_shape_q,
+        &model_transform_control_q,
         camera_3d_scale,
     );
 

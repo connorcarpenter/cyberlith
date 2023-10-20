@@ -43,6 +43,7 @@ use crate::app::{
         create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,
     },
 };
+use crate::app::components::ModelTransformControl;
 
 #[derive(Resource)]
 pub struct EdgeManager {
@@ -88,6 +89,7 @@ impl EdgeManager {
         transform_q: &mut Query<&mut Transform>,
         visibility_q: &mut Query<&mut Visibility>,
         local_shape_q: &Query<&LocalShape>,
+        model_transform_control_q: &Query<Option<&ModelTransformControl>>,
         camera_3d_scale: f32,
     ) {
         let edge_2d_scale = Edge2dLocal::NORMAL_THICKNESS * camera_3d_scale;
@@ -129,11 +131,14 @@ impl EdgeManager {
 
             set_2d_line_transform(&mut edge_2d_transform, start_pos, end_pos, depth);
 
+            let mut edge_2d_scale_y = edge_2d_scale;
             if local_shape_q.get(edge_2d_entity).is_ok() {
-                edge_2d_transform.scale.y = Edge2dLocal::NORMAL_THICKNESS;
-            } else {
-                edge_2d_transform.scale.y = edge_2d_scale;
+                if model_transform_control_q.get(edge_2d_entity).unwrap().is_none() {
+                    edge_2d_scale_y = Edge2dLocal::NORMAL_THICKNESS;
+                }
             }
+
+            edge_2d_transform.scale.y = edge_2d_scale_y;
         }
     }
 
@@ -230,7 +235,7 @@ impl EdgeManager {
         edge_3d_q: &Query<(Entity, &Edge3dLocal, Option<&EdgeAngle>)>,
         transform_q: &mut Query<&mut Transform>,
         visibility_q: &mut Query<&mut Visibility>,
-        local_shape: &Query<&LocalShape>,
+        local_shape_q: &Query<&LocalShape>,
     ) {
         for (edge_entity, edge_endpoints, edge_angle_opt) in edge_3d_q.iter() {
             // check visibility
@@ -242,9 +247,8 @@ impl EdgeManager {
             }
             match file_ext {
                 FileExtension::Skin => {
-                    if local_shape.get(edge_entity).is_err() {
+                    if local_shape_q.get(edge_entity).is_err() {
                         visibility.visible = false;
-                        continue;
                     }
                 }
                 _ => {}

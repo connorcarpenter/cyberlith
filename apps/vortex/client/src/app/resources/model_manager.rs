@@ -17,7 +17,7 @@ use render_api::{
 
 use vortex_proto::components::{EdgeAngle, FileExtension, ModelTransform, ModelTransformEntityType, ShapeName, Vertex3d};
 
-use crate::app::{resources::{
+use crate::app::{components::ModelTransformControl, resources::{
     camera_manager::CameraManager, camera_state::CameraState, canvas::Canvas,
     edge_manager::EdgeManager, face_manager::FaceManager, input::InputManager,
     vertex_manager::VertexManager, action::model::ModelAction, tab_manager::TabManager,
@@ -238,41 +238,16 @@ impl ModelManager {
         translation: Vec3,
     ) {
         // translation control
-        let (translation_entity_2d, translation_entity_3d, _, _) = vertex_manager.new_local_vertex(
-            commands,
-            camera_manager,
-            edge_manager,
-            face_manager,
-            meshes,
-            materials,
-            None,
-            translation,
-            Color::LIGHT_BLUE,
-        );
+        let (translation_entity_2d, translation_entity_3d) = Self::new_model_transform_control(
+            commands, camera_manager, vertex_manager, edge_manager, face_manager, meshes, materials, translation, None, Color::LIGHT_BLUE);
+
         // rotation control
-        let (rotation_entity_2d, rotation_entity_3d, _, _) = vertex_manager.new_local_vertex(
-            commands,
-            camera_manager,
-            edge_manager,
-            face_manager,
-            meshes,
-            materials,
-            Some(translation_entity_2d),
-            translation,
-            Color::RED,
-        );
+        let (rotation_entity_2d, rotation_entity_3d) = Self::new_model_transform_control(
+            commands, camera_manager, vertex_manager, edge_manager, face_manager, meshes, materials, translation, Some(translation_entity_2d), Color::RED);
+
         // scale control
-        let (scale_entity_2d, scale_entity_3d, _, _) = vertex_manager.new_local_vertex(
-            commands,
-            camera_manager,
-            edge_manager,
-            face_manager,
-            meshes,
-            materials,
-            Some(translation_entity_2d),
-            translation,
-            Color::WHITE,
-        );
+        let (scale_entity_2d, scale_entity_3d) = Self::new_model_transform_control(
+            commands, camera_manager, vertex_manager, edge_manager, face_manager, meshes, materials, translation, Some(translation_entity_2d), Color::WHITE);
 
         self.register_model_transform_controls(
             new_model_transform_entity,
@@ -284,6 +259,43 @@ impl ModelManager {
             scale_entity_2d,
             scale_entity_3d,
         );
+    }
+
+    fn new_model_transform_control(
+        commands: &mut Commands,
+        camera_manager: &mut CameraManager,
+        vertex_manager: &mut VertexManager,
+        edge_manager: &mut EdgeManager,
+        face_manager: &mut FaceManager,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+        translation: Vec3,
+        translation_entity_2d_opt: Option<Entity>,
+        color: Color,
+    ) -> (Entity, Entity) {
+        let (rotation_entity_2d, rotation_entity_3d, edge_2d_entity_opt, edge_3d_entity_opt) = vertex_manager.new_local_vertex(
+            commands,
+            camera_manager,
+            edge_manager,
+            face_manager,
+            meshes,
+            materials,
+            translation_entity_2d_opt,
+            translation,
+            color,
+        );
+
+        commands.entity(rotation_entity_2d).insert(ModelTransformControl);
+        commands.entity(rotation_entity_3d).insert(ModelTransformControl);
+
+        if let Some(edge_2d_entity) = edge_2d_entity_opt {
+            commands.entity(edge_2d_entity).insert(ModelTransformControl);
+        }
+        if let Some(edge_3d_entity) = edge_3d_entity_opt {
+            commands.entity(edge_3d_entity).insert(ModelTransformControl);
+        }
+
+        (rotation_entity_2d, rotation_entity_3d)
     }
 
     pub fn register_model_transform_controls(
