@@ -5,7 +5,6 @@ use bevy_ecs::{
     system::{Commands, Query, ResMut, Resource, SystemState},
     world::{World, Mut},
 };
-use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
@@ -15,7 +14,6 @@ use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
     Assets,
 };
-use render_egui::{egui, egui::{Button, Direction, Frame, Layout, Ui}};
 
 use vortex_proto::components::{EdgeAngle, FileExtension, ModelTransform, ModelTransformEntityType, ShapeName, Vertex3d};
 
@@ -23,7 +21,7 @@ use crate::app::{resources::{
     camera_manager::CameraManager, camera_state::CameraState, canvas::Canvas,
     edge_manager::EdgeManager, face_manager::FaceManager, input::InputManager,
     vertex_manager::VertexManager, action::model::ModelAction, tab_manager::TabManager,
-}, ui::{BindingState, widgets::create_networked_dependency}};
+}, ui::{BindingState, UiState, widgets::create_networked_dependency}};
 
 pub struct ModelTransformData {
     edge_2d_entity: Entity,
@@ -64,7 +62,6 @@ pub struct ModelManager {
     resync: bool,
     // Option<edge_2d_entity>
     binding_edge_opt: Option<Entity>,
-    binding_file: BindingState,
 }
 
 impl Default for ModelManager {
@@ -74,7 +71,6 @@ impl Default for ModelManager {
             edge_2d_to_model_transform: HashMap::new(),
             resync: false,
             binding_edge_opt: None,
-            binding_file: BindingState::NotBinding,
         }
     }
 }
@@ -85,64 +81,38 @@ impl ModelManager {
         self.binding_edge_opt.is_some()
     }
 
-    pub fn edge_init_assign_skin_or_scene(&mut self, edge_2d_entity: &Entity) {
+    pub fn edge_init_assign_skin_or_scene(&mut self, ui_state: &mut UiState, edge_2d_entity: &Entity) {
         self.binding_edge_opt = Some(*edge_2d_entity);
         let mut file_exts = HashSet::new();
         file_exts.insert(FileExtension::Skin);
         file_exts.insert(FileExtension::Scene);
-        self.binding_file = BindingState::Binding(file_exts);
+        ui_state.binding_file = BindingState::Binding(file_exts);
     }
 
-    pub fn render_bind_button(&mut self, ui: &mut Ui, world: &mut World, current_file_entity: &Entity) {
-        egui::CentralPanel::default().show_inside(ui, |ui| {
-            ui.with_layout(Layout::centered_and_justified(Direction::TopDown), |ui| {
-                Frame::none().inner_margin(300.0).show(ui, |ui| {
+    pub fn take_binding_edge(&mut self) -> Entity {
+        self.binding_edge_opt.take().unwrap()
+    }
 
-                    let dependency_file_entity_opt = match &self.binding_file {
-                        BindingState::NotBinding => {
-                            panic!("not possible");
-                        }
-                        BindingState::Binding(ext_req) => {
-                            let ext_reqs_str = get_ext_reqs_string(ext_req);
-                            ui.add_enabled(
-                                false,
-                                Button::new(format!(
-                                    "Click on {} File in sidebar to bind.",
-                                    ext_reqs_str,
-                                )),
-                            );
-                            None
-                        }
-                        BindingState::BindResult(file_ext, dependency_file_entity) => {
-                            info!("received bind result for dependency");
+    pub fn process_render_bind_button_result(
+        world: &mut World,
+        current_file_entity: &Entity,
+        dependency_file_ext: &FileExtension,
+        dependency_file_entity: &Entity,
+        edge_2d_entity: &Entity,
+    ) {
+        create_networked_dependency(world, current_file_entity, dependency_file_entity);
 
-                            Some((*file_ext, *dependency_file_entity))
-                        }
-                    };
-
-                    if let Some((dependency_file_ext, dependency_file_entity)) = dependency_file_entity_opt {
-
-                        let edge_2d_entity = self.binding_edge_opt.unwrap();
-                        self.binding_edge_opt = None;
-                        self.binding_file = BindingState::NotBinding;
-
-                        create_networked_dependency(world, &current_file_entity, &dependency_file_entity);
-
-                        world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
-                            world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                                tab_manager.current_tab_execute_model_action(
-                                    world,
-                                    &mut input_manager,
-                                    ModelAction::CreateModelTransform(
-                                        edge_2d_entity,
-                                        dependency_file_ext,
-                                        dependency_file_entity,
-                                    ),
-                                );
-                            });
-                        });
-                    }
-                });
+        world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
+            world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                tab_manager.current_tab_execute_model_action(
+                    world,
+                    &mut input_manager,
+                    ModelAction::CreateModelTransform(
+                        *edge_2d_entity,
+                        *dependency_file_ext,
+                        *dependency_file_entity,
+                    ),
+                );
             });
         });
     }
@@ -150,6 +120,7 @@ impl ModelManager {
     pub fn create_networked_model_transform(
         &mut self,
         world: &mut World,
+        input_manager: &mut InputManager,
         edge_2d_entity: &Entity,
         dependency_file_ext: &FileExtension,
         dependency_file_entity: &Entity,
@@ -158,7 +129,6 @@ impl ModelManager {
             Commands,
             Client,
             ResMut<Canvas>,
-            ResMut<InputManager>,
             ResMut<CameraManager>,
             ResMut<VertexManager>,
             ResMut<EdgeManager>,
@@ -173,7 +143,6 @@ impl ModelManager {
             mut commands,
             mut client,
             mut canvas,
-            mut input_manager,
             mut camera_manager,
             mut vertex_manager,
             mut edge_manager,
@@ -423,19 +392,4 @@ impl ModelManager {
     //         transform.translation = vertex_3d.as_vec3();
     //     }
     // }
-}
-
-fn get_ext_reqs_string(exts: &HashSet<FileExtension>) -> String {
-    let mut output = String::new();
-
-    let mut had_one = false;
-    for ext in exts.iter() {
-        if had_one {
-            output.push_str("/");
-        }
-        output.push_str(&ext.to_string());
-        had_one = true;
-    }
-
-    output
 }

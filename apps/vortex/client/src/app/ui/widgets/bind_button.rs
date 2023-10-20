@@ -24,25 +24,24 @@ use crate::app::{
 pub fn render_bind_button(
     ui: &mut Ui,
     world: &mut World,
-    current_file_entity: &Entity,
-    file_ext: FileExtension,
-) {
+    file_exts: &[FileExtension],
+) -> Option<(FileExtension, Entity)> {
+
+    let file_ext_str = get_ext_reqs_string(file_exts);
+    let mut init_binding = false;
+    let mut result = None;
+
     egui::CentralPanel::default().show_inside(ui, |ui| {
         ui.with_layout(Layout::centered_and_justified(Direction::TopDown), |ui| {
             Frame::none().inner_margin(300.0).show(ui, |ui| {
-                let file_ext_str = file_ext.to_string();
 
-                let (file_ext_opt, dependency_file_entity_opt) = match &world.get_resource::<UiState>().unwrap().binding_file {
+                match &world.get_resource::<UiState>().unwrap().binding_file {
                     BindingState::NotBinding => {
                         if ui
                             .button(format!("Bind to {} File", file_ext_str))
                             .clicked()
                         {
-                            let mut file_exts = HashSet::new();
-                            file_exts.insert(file_ext);
-                            (Some(file_exts), None)
-                        } else {
-                            (None, None)
+                            init_binding = true;
                         }
                     }
                     BindingState::Binding(_ext_req) => {
@@ -53,31 +52,34 @@ pub fn render_bind_button(
                                 file_ext_str
                             )),
                         );
-                        (None, None)
                     }
-                    BindingState::BindResult(_dependency_file_ext, dependency_file_entity) => {
+                    BindingState::BindResult(dependency_file_ext, dependency_file_entity) => {
                         info!("received bind result for dependency");
-                        (None, Some(*dependency_file_entity))
+                        result = Some((*dependency_file_ext, *dependency_file_entity));
                     }
                 };
-
-                match (file_ext_opt, dependency_file_entity_opt) {
-                    (Some(file_ext), None) => {
-                        world.get_resource_mut::<UiState>().unwrap().binding_file = BindingState::Binding(file_ext);
-                    }
-                    (None, Some(dependency_file_entity)) => {
-                        world.get_resource_mut::<UiState>().unwrap().binding_file = BindingState::NotBinding;
-                        create_networked_dependency(
-                            world,
-                            current_file_entity,
-                            &dependency_file_entity,
-                        );
-                    }
-                    _ => {}
-                }
             });
         });
     });
+
+    if init_binding {
+        let mut exts_set = HashSet::new();
+        for ext in file_exts {
+            exts_set.insert(*ext);
+        }
+        world.get_resource_mut::<UiState>().unwrap().binding_file = BindingState::Binding(exts_set);
+    }
+
+    return result;
+}
+
+pub fn render_bind_button_result(world: &mut World, current_file_entity: &Entity, dependency_file_entity: &Entity) {
+    world.get_resource_mut::<UiState>().unwrap().binding_file = BindingState::NotBinding;
+    create_networked_dependency(
+        world,
+        current_file_entity,
+        &dependency_file_entity,
+    );
 }
 
 pub fn create_networked_dependency(world: &mut World, current_file_entity: &Entity, dependency_file_entity: &Entity) {
@@ -116,4 +118,20 @@ pub fn create_networked_dependency(world: &mut World, current_file_entity: &Enti
         .release_authority(&mut client);
 
     system_state.apply(world);
+}
+
+
+fn get_ext_reqs_string(exts: &[FileExtension]) -> String {
+    let mut output = String::new();
+
+    let mut had_one = false;
+    for ext in exts.iter() {
+        if had_one {
+            output.push_str("/");
+        }
+        output.push_str(&ext.to_string());
+        had_one = true;
+    }
+
+    output
 }

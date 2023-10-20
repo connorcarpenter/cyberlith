@@ -29,14 +29,14 @@ impl ModelAction {
     pub fn execute(
         self,
         world: &mut World,
-        _input_manager: &mut InputManager,
+        input_manager: &mut InputManager,
         _current_file_entity: Entity,
     ) -> Vec<Self> {
         let action_type = self.get_type();
 
         match action_type {
             ModelActionType::CreateModelTransform => {
-                create_model_transform::execute(world, self)
+                create_model_transform::execute(world, input_manager, self)
             }
             ModelActionType::DeleteModelTransform => {
                 delete_model_transform::execute(world, self)

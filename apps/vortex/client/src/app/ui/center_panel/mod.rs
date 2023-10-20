@@ -16,7 +16,7 @@ use crate::app::{
     ui::{
         render_tool_bar,
         widgets::{
-            render_bind_button, render_frame_inspect_bar, render_naming_bar, NamingBarState,
+            render_bind_button_result, render_bind_button, render_frame_inspect_bar, render_naming_bar, NamingBarState,
         },
     },
 };
@@ -44,12 +44,14 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                             &current_file_entity,
                             FileExtension::Skel,
                         ) {
-                            render_bind_button(
+                            if let Some((_file_ext, file_ent)) = render_bind_button(
                                 ui,
                                 world,
-                                &current_file_entity,
-                                FileExtension::Skel,
-                            );
+
+                                &[FileExtension::Skel],
+                            ) {
+                                render_bind_button_result(world, &current_file_entity, &file_ent);
+                            }
                             return;
                         }
 
@@ -72,12 +74,13 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                             &current_file_entity,
                             FileExtension::Palette,
                         ) {
-                            render_bind_button(
+                            if let Some((_file_ext, file_ent)) = render_bind_button(
                                 ui,
                                 world,
-                                &current_file_entity,
-                                FileExtension::Palette,
-                            );
+                                &[FileExtension::Palette],
+                            ) {
+                                render_bind_button_result(world, &current_file_entity, &file_ent);
+                            }
                             return;
                         }
 
@@ -86,12 +89,13 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                             &current_file_entity,
                             FileExtension::Mesh,
                         ) {
-                            render_bind_button(
+                            if let Some((_file_ext, file_ent)) = render_bind_button(
                                 ui,
                                 world,
-                                &current_file_entity,
-                                FileExtension::Mesh,
-                            );
+                                &[FileExtension::Mesh],
+                            ) {
+                                render_bind_button_result(world, &current_file_entity, &file_ent);
+                            }
                             return;
                         }
 
@@ -121,19 +125,26 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                             &current_file_entity,
                             FileExtension::Skel,
                         ) {
-                            render_bind_button(
+                            if let Some((_file_ext, file_ent)) = render_bind_button(
                                 ui,
                                 world,
-                                &current_file_entity,
-                                FileExtension::Skel,
-                            );
+
+                                &[FileExtension::Skel],
+                            ) {
+                                render_bind_button_result(world, &current_file_entity, &file_ent);
+                            }
                             return;
                         }
 
                         if world.get_resource::<ModelManager>().unwrap().edge_is_binding() {
-                            world.resource_scope(|world, mut model_manager: Mut<ModelManager>| {
-                                model_manager.render_bind_button(ui, world, &current_file_entity);
-                            });
+                            if let Some((dependency_file_ext, dependency_file_entity)) = render_bind_button(
+                                ui,
+                                world,
+                                &[FileExtension::Skin, FileExtension::Scene],
+                            ) {
+                                let edge_2d_entity = world.get_resource_mut::<ModelManager>().unwrap().take_binding_edge();
+                                ModelManager::process_render_bind_button_result(world, &current_file_entity, &dependency_file_ext, &dependency_file_entity, &edge_2d_entity);
+                            }
                             return;
                         }
 

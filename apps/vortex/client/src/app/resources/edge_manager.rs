@@ -240,11 +240,14 @@ impl EdgeManager {
             if !visibility.visible {
                 continue;
             }
-            if file_ext == FileExtension::Skin {
-                if local_shape.get(edge_entity).is_err() {
-                    visibility.visible = false;
-                    continue;
+            match file_ext {
+                FileExtension::Skin => {
+                    if local_shape.get(edge_entity).is_err() {
+                        visibility.visible = false;
+                        continue;
+                    }
                 }
+                _ => {}
             }
 
             let edge_angle_opt = edge_angle_opt.map(|e| e.get_radians());

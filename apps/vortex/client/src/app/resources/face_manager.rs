@@ -85,14 +85,20 @@ impl FaceManager {
             if !visibility.visible {
                 continue;
             }
-            if file_ext == FileExtension::Skin {
-                let face_key = self.face_key_from_2d_entity(&face_2d_entity).unwrap();
-                let Some(Some(face_data)) = self.face_keys.get(&face_key) else {
-                    panic!("FaceKey: `{:?}` has not been registered", face_key);
-                };
-                if face_data.entity_3d.is_none() {
+            match file_ext {
+                FileExtension::Skin => {
+                    let face_key = self.face_key_from_2d_entity(&face_2d_entity).unwrap();
+                    let Some(Some(face_data)) = self.face_keys.get(&face_key) else {
+                        panic!("FaceKey: `{:?}` has not been registered", face_key);
+                    };
+                    if face_data.entity_3d.is_none() {
+                        visibility.visible = false;
+                    }
+                }
+                FileExtension::Model => {
                     visibility.visible = false;
                 }
+                _ => {}
             }
 
             // find center of all of face_icon's vertices
