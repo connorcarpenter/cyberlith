@@ -82,7 +82,7 @@ impl VertexManager {
         self.resync = true;
     }
 
-    pub fn sync_vertices_3d(&mut self, file_ext: FileExtension, world: &mut World) -> bool {
+    pub fn sync_3d_vertices(&mut self, file_ext: FileExtension, world: &mut World) -> bool {
         // TODO: really should only do this if Vertex3d component was updated from server
 
         let mut system_state: SystemState<(

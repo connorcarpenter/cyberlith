@@ -4,6 +4,7 @@ use bevy_ecs::{
     system::{Commands, Query, Res, ResMut},
     world::{Mut, World},
 };
+use bevy_ecs::system::SystemState;
 
 use naia_bevy_client::Client;
 
@@ -146,10 +147,14 @@ pub fn sync_vertices(world: &mut World) {
         match file_extension {
             FileExtension::Skel
             | FileExtension::Mesh
-            | FileExtension::Skin
-            | FileExtension::Model => {
-                vertex_manager.sync_vertices_3d(file_extension, world);
+            | FileExtension::Skin => {
+                vertex_manager.sync_3d_vertices(file_extension, world);
                 vertex_manager.sync_2d_vertices(file_extension, world, &camera_3d, camera_3d_scale);
+            }
+            FileExtension::Model => {
+                world.resource_scope(|world, model_manager: Mut<ModelManager>| {
+                    model_manager.sync_vertices(world, &vertex_manager);
+                });
             }
             FileExtension::Anim => {
                 let animation_manager = world.get_resource::<AnimationManager>().unwrap();
@@ -242,65 +247,119 @@ pub fn sync_vertices(world: &mut World) {
 }
 
 pub fn sync_edges(
-    file_manager: Res<FileManager>,
-    tab_manager: Res<TabManager>,
-    canvas: Res<Canvas>,
-    mut edge_manager: ResMut<EdgeManager>,
-    animation_manager: Res<AnimationManager>,
-    local_shape_q: Query<&LocalShape>,
-    mut visibility_q: Query<&mut Visibility>,
-    mut transform_q: Query<&mut Transform>,
-    edge_2d_q: Query<(Entity, &Edge2dLocal)>,
-    edge_3d_q: Query<(Entity, &Edge3dLocal, Option<&EdgeAngle>)>,
-    edge_angle_q: Query<(Entity, &EdgeAngle)>,
-    model_transform_control_q: Query<Option<&ModelTransformControl>>,
+    world: &mut World,
 ) {
-    if !canvas.is_visible() {
-        return;
-    }
-    let Some(current_tab_entity) = tab_manager.current_tab_entity() else {
-        return;
-    };
-    let Some(current_tab_state) = tab_manager.current_tab_state() else {
-        return;
-    };
-    let file_ext = file_manager.get_file_type(current_tab_entity);
-
-    let camera_state = &current_tab_state.camera_state;
-    let camera_3d_scale = camera_state.camera_3d_scale();
-
-    let should_sync = edge_manager.get_should_sync();
+    let should_sync = world.get_resource::<EdgeManager>().unwrap().get_should_sync();
     if !should_sync {
         return;
     }
 
-    let should_sync_3d = match file_ext {
-        FileExtension::Skel | FileExtension::Mesh | FileExtension::Skin | FileExtension::Model => {
-            true
-        }
-        FileExtension::Anim => animation_manager
-            .current_frame_entity(current_tab_entity)
-            .is_none(),
-        _ => false,
-    };
-    if should_sync_3d {
-        // animation manager will not handle this, so edge_manager must
-        EdgeManager::sync_3d_edges(
-            file_ext,
-            &edge_3d_q,
-            &mut transform_q,
-            &mut visibility_q,
-            &local_shape_q,
-        );
-        edge_manager.sync_edge_angles(
-            file_ext,
-            &edge_angle_q,
-            &mut transform_q,
-            &mut visibility_q,
-            camera_3d_scale,
-        );
+    if !world.get_resource::<Canvas>().unwrap().is_visible() {
+        return;
     }
+    let Some(current_tab_entity) = world.get_resource::<TabManager>().unwrap().current_tab_entity() else {
+        return;
+    };
+    let current_tab_entity = *current_tab_entity;
 
+    let file_ext = world.get_resource::<FileManager>().unwrap().get_file_type(&current_tab_entity);
+
+    match file_ext {
+        FileExtension::Skel | FileExtension::Mesh | FileExtension::Skin => {
+            let mut system_state: SystemState<(
+                Res<TabManager>,
+                ResMut<EdgeManager>,
+                Query<&LocalShape>,
+                Query<&mut Visibility>,
+                Query<&mut Transform>,
+                Query<(Entity, &Edge2dLocal)>,
+                Query<(Entity, &Edge3dLocal, Option<&EdgeAngle>)>,
+                Query<(Entity, &EdgeAngle)>,
+                Query<Option<&ModelTransformControl>>,
+            )> = SystemState::new(world);
+            let (
+                tab_manager,
+                mut edge_manager,
+                local_shape_q,
+                mut visibility_q,
+                mut transform_q,
+                edge_2d_q,
+                edge_3d_q,
+                edge_angle_q,
+                model_transform_control_q,
+            ) = system_state.get_mut(world);
+
+            let current_tab_state = tab_manager.current_tab_state().unwrap();
+            let camera_state = &current_tab_state.camera_state;
+            let camera_3d_scale = camera_state.camera_3d_scale();
+            sync_3d_edges(&mut edge_manager, &local_shape_q, &mut visibility_q, &mut transform_q, &edge_3d_q, &edge_angle_q, file_ext, camera_3d_scale);
+            sync_2d_edges(&mut edge_manager, &local_shape_q, &mut visibility_q, &mut transform_q, &edge_2d_q, &edge_3d_q, &model_transform_control_q, camera_3d_scale);
+        }
+        FileExtension::Anim => {
+            let mut system_state: SystemState<(
+                Res<TabManager>,
+                ResMut<EdgeManager>,
+                Res<AnimationManager>,
+                Query<&LocalShape>,
+                Query<&mut Visibility>,
+                Query<&mut Transform>,
+                Query<(Entity, &Edge2dLocal)>,
+                Query<(Entity, &Edge3dLocal, Option<&EdgeAngle>)>,
+                Query<(Entity, &EdgeAngle)>,
+                Query<Option<&ModelTransformControl>>,
+            )> = SystemState::new(world);
+            let (
+                tab_manager,
+                mut edge_manager,
+                animation_manager,
+                local_shape_q,
+                mut visibility_q,
+                mut transform_q,
+                edge_2d_q,
+                edge_3d_q,
+                edge_angle_q,
+                model_transform_control_q,
+            ) = system_state.get_mut(world);
+
+            let current_tab_state = tab_manager.current_tab_state().unwrap();
+            let camera_state = &current_tab_state.camera_state;
+            let camera_3d_scale = camera_state.camera_3d_scale();
+            if animation_manager
+                .current_frame_entity(&current_tab_entity)
+                .is_none()
+            {
+                sync_3d_edges(&mut edge_manager, &local_shape_q, &mut visibility_q, &mut transform_q, &edge_3d_q, &edge_angle_q, file_ext, camera_3d_scale);
+            }
+            sync_2d_edges(&mut edge_manager, &local_shape_q, &mut visibility_q, &mut transform_q, &edge_2d_q, &edge_3d_q, &model_transform_control_q, camera_3d_scale);
+        }
+        FileExtension::Model => {
+            // handles in "sync_vertices"
+        }
+        _ => { },
+    };
+
+    world.get_resource_mut::<EdgeManager>().unwrap().finish_sync();
+}
+
+fn sync_3d_edges(edge_manager: &mut EdgeManager, local_shape_q: &Query<&LocalShape>, mut visibility_q: &mut Query<&mut Visibility>, mut transform_q: &mut Query<&mut Transform>, edge_3d_q: &Query<(Entity, &Edge3dLocal, Option<&EdgeAngle>)>, edge_angle_q: &Query<(Entity, &EdgeAngle)>, file_ext: FileExtension, camera_3d_scale: f32) {
+// animation manager will not handle this, so edge_manager must
+    EdgeManager::sync_3d_edges(
+        file_ext,
+        &edge_3d_q,
+        &mut transform_q,
+        &mut visibility_q,
+        &local_shape_q,
+    );
+    edge_manager.sync_edge_angles(
+        file_ext,
+        &edge_angle_q,
+        &mut transform_q,
+        &mut visibility_q,
+        camera_3d_scale,
+    );
+}
+
+fn sync_2d_edges(edge_manager: &mut ResMut<EdgeManager>, local_shape_q: &Query<&LocalShape>, mut visibility_q: &mut Query<&mut Visibility>, mut transform_q: &mut Query<&mut Transform>, edge_2d_q: &Query<(Entity, &Edge2dLocal)>, edge_3d_q: &Query<(Entity, &Edge3dLocal, Option<&EdgeAngle>)>, model_transform_control_q: &Query<Option<&ModelTransformControl>>, camera_3d_scale: f32) {
     EdgeManager::sync_local_3d_edges(
         &edge_3d_q,
         &mut transform_q,
@@ -315,8 +374,6 @@ pub fn sync_edges(
         &model_transform_control_q,
         camera_3d_scale,
     );
-
-    edge_manager.finish_sync();
 }
 
 pub fn sync_faces(

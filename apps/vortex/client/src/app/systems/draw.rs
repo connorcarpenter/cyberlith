@@ -26,6 +26,7 @@ use crate::app::{
         vertex_manager::VertexManager,
     },
 };
+use crate::app::resources::model_manager::ModelManager;
 
 pub fn draw(
     file_manager: Res<FileManager>,
@@ -77,10 +78,16 @@ pub fn draw(
         return;
     };
     let current_file_type = file_manager.get_file_type(&current_file_entity);
-    if current_file_type == FileExtension::Anim {
-        if animation_manager.is_framing() {
+    match current_file_type {
+        FileExtension::Anim => {
+            if animation_manager.is_framing() {
+                return;
+            }
+        }
+        FileExtension::Model => {
             return;
         }
+        _ => {}
     }
 
     // Aggregate RenderObjects
@@ -101,18 +108,27 @@ pub fn draw_vertices_and_edges(world: &mut World) {
         .unwrap()
         .get_file_type(current_tab);
 
-    if current_file == FileExtension::Anim {
-        if world
-            .get_resource::<AnimationManager>()
-            .unwrap()
-            .is_framing()
-        {
-            world.resource_scope(|world, mut animation_manager: Mut<AnimationManager>| {
-                animation_manager.draw_framing(world);
-            });
+    match current_file {
+        FileExtension::Anim => {
+            if world
+                .get_resource::<AnimationManager>()
+                .unwrap()
+                .is_framing()
+            {
+                world.resource_scope(|world, mut animation_manager: Mut<AnimationManager>| {
+                    animation_manager.draw_framing(world);
+                });
 
-            return;
+                return;
+            }
         }
+        FileExtension::Model => {
+            world.resource_scope(|world, mut model_manager: Mut<ModelManager>| {
+                model_manager.draw(world);
+                return;
+            });
+        }
+        _ => {}
     }
 
     draw_vertices_and_edges_inner(world, current_file);
@@ -150,8 +166,7 @@ fn draw_vertices_and_edges_inner(world: &mut World, current_file: FileExtension)
         }
     }
     let must_check_edge_enabled = (current_file == FileExtension::Anim
-        && !animation_manager.preview_frame_selected())
-        || current_file == FileExtension::Model;
+        && !animation_manager.preview_frame_selected());
 
     // draw vertices
     for (vertex_3d_entity, visibility, shape_name_opt, vertex_root_opt) in vertices_q.iter() {

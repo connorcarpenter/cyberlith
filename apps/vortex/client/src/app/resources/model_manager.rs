@@ -482,4 +482,12 @@ impl ModelManager {
     //         transform.translation = vertex_3d.as_vec3();
     //     }
     // }
+
+    pub fn sync_vertices(&self, world: &mut World, vertex_manager: &VertexManager) {
+        // only triggers when canvas is redrawn ... what happens here?
+    }
+
+    pub fn draw(&self, world: &mut World) {
+        // actually draw
+    }
 }
