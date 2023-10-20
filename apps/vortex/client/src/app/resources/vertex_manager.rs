@@ -180,6 +180,7 @@ impl VertexManager {
         let view_matrix = camera_transform.view_matrix();
         let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
         let vertex_2d_scale = Vertex2d::RADIUS * camera_3d_scale;
+        let model_transform_control_2d_scale = ModelTransformControl::RADIUS * camera_3d_scale;
         let compass_vertex_3d_scale = LocalShape::VERTEX_RADIUS / camera_3d_scale;
         let compass_vertex_2d_scale = Vertex2d::RADIUS;
 
@@ -226,14 +227,15 @@ impl VertexManager {
             vertex_2d_transform.translation.z = depth;
 
             // update 2d compass
-            let mut vertex_scale = Vec3::splat(vertex_2d_scale);
-            if local_shape_q.get(vertex_2d_entity).is_ok() {
+            vertex_2d_transform.scale = if local_shape_q.get(vertex_2d_entity).is_ok() {
                 if model_transform_control_q.get(vertex_2d_entity).unwrap().is_none() {
-                    vertex_scale = Vec3::splat(compass_vertex_2d_scale);
+                    Vec3::splat(compass_vertex_2d_scale)
+                } else {
+                    Vec3::splat(model_transform_control_2d_scale)
                 }
-            }
-
-            vertex_2d_transform.scale = vertex_scale;
+            } else {
+                Vec3::splat(vertex_2d_scale)
+            };
         }
     }
 

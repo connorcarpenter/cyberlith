@@ -364,7 +364,7 @@ impl ModelManager {
     ) {
         self.resync = false;
 
-        let unit_length = 50.0 / camera_state.camera_3d_scale();
+        let unit_length = 10.0;
 
         for (model_transform_entity, data) in self.model_transforms.iter() {
             let model_transform = model_transform_q.get(*model_transform_entity).unwrap();
@@ -387,7 +387,7 @@ impl ModelManager {
 
             // scale
             let scale = model_transform.scale_vec3();
-            let scale_with_offset = scale + translation;
+            let scale_with_offset = (scale * unit_length) + translation;
             let scale_control_entity = data.scale_entity_3d;
             let mut scale_control_3d = vertex_3d_q.get_mut(scale_control_entity).unwrap();
             scale_control_3d.set_vec3(&scale_with_offset);
