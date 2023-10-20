@@ -22,7 +22,7 @@ use vortex_proto::components::{
 };
 
 use crate::app::{
-    components::{DefaultDraw, Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d, VertexEntry},
+    components::{ModelTransformControl, DefaultDraw, Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d, VertexEntry},
     events::ShapeColorResyncEvent,
     resources::{
         action::{shape::ShapeAction, ActionStack},
@@ -34,7 +34,6 @@ use crate::app::{
         shape_data::{CanvasShape, FaceKey, Vertex3dData},
     },
 };
-use crate::app::components::ModelTransformControl;
 
 #[derive(Resource)]
 pub struct VertexManager {
@@ -91,14 +90,14 @@ impl VertexManager {
             Query<&mut Transform>,
             Query<&mut Visibility>,
             Query<&LocalShape>,
-            Query<Option<&ModelTransformControl>>
+            Query<Option<&ModelTransformControl>>,
         )> = SystemState::new(world);
         let (
             vertex_3d_q,
             mut transform_q,
             mut visibility_q,
             local_shape_q,
-            model_transform_control_q
+            model_transform_control_q,
         ) = system_state.get_mut(world);
 
         for (vertex_3d_entity, vertex_3d) in vertex_3d_q.iter() {
@@ -109,7 +108,11 @@ impl VertexManager {
                     if local_shape_q.get(vertex_3d_entity).is_err() {
                         disable = true;
                     } else {
-                        if model_transform_control_q.get(vertex_3d_entity).unwrap().is_some() {
+                        if model_transform_control_q
+                            .get(vertex_3d_entity)
+                            .unwrap()
+                            .is_some()
+                        {
                             disable = true;
                         }
                     }
@@ -144,7 +147,7 @@ impl VertexManager {
         self.resync = false;
     }
 
-    pub fn sync_vertices_2d(
+    pub fn sync_2d_vertices(
         &mut self,
         file_ext: FileExtension,
         world: &mut World,
@@ -165,7 +168,7 @@ impl VertexManager {
             mut transform_q,
             mut visibility_q,
             local_shape_q,
-            model_transform_control_q
+            model_transform_control_q,
         ) = system_state.get_mut(world);
 
         let Ok((camera, camera_projection)) = camera_q.get(*camera_3d_entity) else {
@@ -228,7 +231,11 @@ impl VertexManager {
 
             // update 2d compass
             vertex_2d_transform.scale = if local_shape_q.get(vertex_2d_entity).is_ok() {
-                if model_transform_control_q.get(vertex_2d_entity).unwrap().is_none() {
+                if model_transform_control_q
+                    .get(vertex_2d_entity)
+                    .unwrap()
+                    .is_none()
+                {
                     Vec3::splat(compass_vertex_2d_scale)
                 } else {
                     Vec3::splat(model_transform_control_2d_scale)

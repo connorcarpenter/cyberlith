@@ -3,22 +3,32 @@ use std::collections::{HashMap, HashSet};
 use bevy_ecs::{
     entity::Entity,
     system::{Commands, Query, ResMut, Resource, SystemState},
-    world::{World, Mut},
+    world::{Mut, World},
 };
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
 use math::{quat_from_spin_direction, SerdeQuat, Vec3};
 
-use render_api::{base::{Color, CpuMaterial, CpuMesh}, Assets, Handle, components::Visibility};
+use render_api::{
+    base::{Color, CpuMaterial, CpuMesh},
+    components::Visibility,
+    Assets, Handle,
+};
 
-use vortex_proto::components::{EdgeAngle, FileExtension, ModelTransform, ModelTransformEntityType, ShapeName, Vertex3d};
+use vortex_proto::components::{
+    EdgeAngle, FileExtension, ModelTransform, ModelTransformEntityType, ShapeName, Vertex3d,
+};
 
-use crate::app::{components::ModelTransformControl, resources::{
-    camera_manager::CameraManager, canvas::Canvas,
-    edge_manager::EdgeManager, face_manager::FaceManager, input::InputManager,
-    vertex_manager::VertexManager, action::model::ModelAction, tab_manager::TabManager,
-}, ui::{BindingState, UiState, widgets::create_networked_dependency}};
+use crate::app::{
+    components::ModelTransformControl,
+    resources::{
+        action::model::ModelAction, camera_manager::CameraManager, canvas::Canvas,
+        edge_manager::EdgeManager, face_manager::FaceManager, input::InputManager,
+        tab_manager::TabManager, vertex_manager::VertexManager,
+    },
+    ui::{widgets::create_networked_dependency, BindingState, UiState},
+};
 
 pub struct ModelTransformData {
     edge_2d_entity: Entity,
@@ -73,12 +83,15 @@ impl Default for ModelManager {
 }
 
 impl ModelManager {
-
     pub fn edge_is_binding(&self) -> bool {
         self.binding_edge_opt.is_some()
     }
 
-    pub fn edge_init_assign_skin_or_scene(&mut self, ui_state: &mut UiState, edge_2d_entity: &Entity) {
+    pub fn edge_init_assign_skin_or_scene(
+        &mut self,
+        ui_state: &mut UiState,
+        edge_2d_entity: &Entity,
+    ) {
         self.binding_edge_opt = Some(*edge_2d_entity);
         let mut file_exts = HashSet::new();
         file_exts.insert(FileExtension::Skin);
@@ -236,15 +249,45 @@ impl ModelManager {
     ) {
         // translation control
         let (translation_entity_2d, translation_entity_3d) = Self::new_model_transform_control(
-            commands, camera_manager, vertex_manager, edge_manager, face_manager, meshes, materials, translation, None, Color::LIGHT_BLUE);
+            commands,
+            camera_manager,
+            vertex_manager,
+            edge_manager,
+            face_manager,
+            meshes,
+            materials,
+            translation,
+            None,
+            Color::LIGHT_BLUE,
+        );
 
         // rotation control
         let (rotation_entity_2d, rotation_entity_3d) = Self::new_model_transform_control(
-            commands, camera_manager, vertex_manager, edge_manager, face_manager, meshes, materials, translation, Some(translation_entity_2d), Color::RED);
+            commands,
+            camera_manager,
+            vertex_manager,
+            edge_manager,
+            face_manager,
+            meshes,
+            materials,
+            translation,
+            Some(translation_entity_2d),
+            Color::RED,
+        );
 
         // scale control
         let (scale_entity_2d, scale_entity_3d) = Self::new_model_transform_control(
-            commands, camera_manager, vertex_manager, edge_manager, face_manager, meshes, materials, translation, Some(translation_entity_2d), Color::WHITE);
+            commands,
+            camera_manager,
+            vertex_manager,
+            edge_manager,
+            face_manager,
+            meshes,
+            materials,
+            translation,
+            Some(translation_entity_2d),
+            Color::WHITE,
+        );
 
         self.register_model_transform_controls(
             new_model_transform_entity,
@@ -270,26 +313,41 @@ impl ModelManager {
         translation_entity_2d_opt: Option<Entity>,
         color: Color,
     ) -> (Entity, Entity) {
-        let (rotation_entity_2d, rotation_entity_3d, edge_2d_entity_opt, edge_3d_entity_opt) = vertex_manager.new_local_vertex(
-            commands,
-            camera_manager,
-            edge_manager,
-            face_manager,
-            meshes,
-            materials,
-            translation_entity_2d_opt,
-            translation,
-            color,
-        );
+        let (rotation_entity_2d, rotation_entity_3d, edge_2d_entity_opt, edge_3d_entity_opt) =
+            vertex_manager.new_local_vertex(
+                commands,
+                camera_manager,
+                edge_manager,
+                face_manager,
+                meshes,
+                materials,
+                translation_entity_2d_opt,
+                translation,
+                color,
+            );
 
-        commands.entity(rotation_entity_2d).insert(ModelTransformControl);
-        commands.entity(rotation_entity_3d).insert(ModelTransformControl).remove::<Handle<CpuMesh>>().remove::<Handle<CpuMaterial>>().remove::<Visibility>();
+        commands
+            .entity(rotation_entity_2d)
+            .insert(ModelTransformControl);
+        commands
+            .entity(rotation_entity_3d)
+            .insert(ModelTransformControl)
+            .remove::<Handle<CpuMesh>>()
+            .remove::<Handle<CpuMaterial>>()
+            .remove::<Visibility>();
 
         if let Some(edge_2d_entity) = edge_2d_entity_opt {
-            commands.entity(edge_2d_entity).insert(ModelTransformControl);
+            commands
+                .entity(edge_2d_entity)
+                .insert(ModelTransformControl);
         }
         if let Some(edge_3d_entity) = edge_3d_entity_opt {
-            commands.entity(edge_3d_entity).insert(ModelTransformControl).remove::<Handle<CpuMesh>>().remove::<Handle<CpuMaterial>>().remove::<Visibility>();
+            commands
+                .entity(edge_3d_entity)
+                .insert(ModelTransformControl)
+                .remove::<Handle<CpuMesh>>()
+                .remove::<Handle<CpuMaterial>>()
+                .remove::<Visibility>();
         }
 
         (rotation_entity_2d, rotation_entity_3d)
@@ -318,7 +376,8 @@ impl ModelManager {
                 scale_entity_3d,
             ),
         );
-        self.edge_2d_to_model_transform.insert(edge_2d_entity, model_transform_entity);
+        self.edge_2d_to_model_transform
+            .insert(edge_2d_entity, model_transform_entity);
     }
 
     pub(crate) fn edge_2d_has_model_transform(&self, edge_2d_entity: &Entity) -> bool {
@@ -329,19 +388,42 @@ impl ModelManager {
         self.edge_2d_to_model_transform.get(edge_2d_entity).cloned()
     }
 
-    pub(crate) fn on_despawn_model_transform(&mut self, commands: &mut Commands, model_transform_entity: &Entity) {
+    pub(crate) fn on_despawn_model_transform(
+        &mut self,
+        commands: &mut Commands,
+        model_transform_entity: &Entity,
+    ) {
         let model_transform_data = self.deregister_model_transform_controls(model_transform_entity);
-        commands.entity(model_transform_data.translation_entity_2d).despawn();
-        commands.entity(model_transform_data.translation_entity_3d).despawn();
-        commands.entity(model_transform_data.rotation_entity_2d).despawn();
-        commands.entity(model_transform_data.rotation_entity_3d).despawn();
-        commands.entity(model_transform_data.scale_entity_2d).despawn();
-        commands.entity(model_transform_data.scale_entity_3d).despawn();
+        commands
+            .entity(model_transform_data.translation_entity_2d)
+            .despawn();
+        commands
+            .entity(model_transform_data.translation_entity_3d)
+            .despawn();
+        commands
+            .entity(model_transform_data.rotation_entity_2d)
+            .despawn();
+        commands
+            .entity(model_transform_data.rotation_entity_3d)
+            .despawn();
+        commands
+            .entity(model_transform_data.scale_entity_2d)
+            .despawn();
+        commands
+            .entity(model_transform_data.scale_entity_3d)
+            .despawn();
     }
 
-    pub(crate) fn deregister_model_transform_controls(&mut self, model_transform_entity: &Entity) -> ModelTransformData {
-        let model_transform_data = self.model_transforms.remove(model_transform_entity).unwrap();
-        self.edge_2d_to_model_transform.remove(&model_transform_data.edge_2d_entity);
+    pub(crate) fn deregister_model_transform_controls(
+        &mut self,
+        model_transform_entity: &Entity,
+    ) -> ModelTransformData {
+        let model_transform_data = self
+            .model_transforms
+            .remove(model_transform_entity)
+            .unwrap();
+        self.edge_2d_to_model_transform
+            .remove(&model_transform_data.edge_2d_entity);
         model_transform_data
     }
 

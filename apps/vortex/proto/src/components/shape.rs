@@ -1,7 +1,9 @@
-use bevy_ecs::component::Component;
-use bevy_ecs::entity::Entity;
+use bevy_ecs::{component::Component, entity::Entity};
 
-use naia_bevy_shared::{EntityAndGlobalEntityConverter, EntityProperty, Property, Protocol, ProtocolPlugin, Replicate, Serde, SignedVariableInteger, UnsignedInteger, UnsignedVariableInteger};
+use naia_bevy_shared::{
+    EntityAndGlobalEntityConverter, EntityProperty, Property, Protocol, ProtocolPlugin, Replicate,
+    Serde, SignedVariableInteger, UnsignedInteger, UnsignedVariableInteger,
+};
 
 use math::{Quat, SerdeQuat, Vec3};
 
@@ -395,8 +397,14 @@ impl ModelTransform {
         )
     }
 
-    pub fn set_entity(&mut self, converter: &dyn EntityAndGlobalEntityConverter<Entity>, skin_or_scene_entity: Entity, entity_type: ModelTransformEntityType) {
-        self.skin_or_scene_entity.set(converter, &skin_or_scene_entity);
+    pub fn set_entity(
+        &mut self,
+        converter: &dyn EntityAndGlobalEntityConverter<Entity>,
+        skin_or_scene_entity: Entity,
+        entity_type: ModelTransformEntityType,
+    ) {
+        self.skin_or_scene_entity
+            .set(converter, &skin_or_scene_entity);
         *self.entity_type = entity_type;
     }
 

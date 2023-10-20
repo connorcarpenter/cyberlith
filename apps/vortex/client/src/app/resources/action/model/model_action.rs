@@ -2,7 +2,13 @@ use bevy_ecs::prelude::{Entity, World};
 
 use vortex_proto::components::FileExtension;
 
-use crate::app::resources::{action::{Action, model::{create_model_transform, delete_model_transform}}, input::InputManager};
+use crate::app::resources::{
+    action::{
+        model::{create_model_transform, delete_model_transform},
+        Action,
+    },
+    input::InputManager,
+};
 
 #[derive(Clone)]
 pub enum ModelAction {
@@ -38,12 +44,8 @@ impl ModelAction {
             ModelActionType::CreateModelTransform => {
                 create_model_transform::execute(world, input_manager, self)
             }
-            ModelActionType::DeleteModelTransform => {
-                delete_model_transform::execute(world, self)
-            }
-            _ => {
-                Vec::new()
-            }
+            ModelActionType::DeleteModelTransform => delete_model_transform::execute(world, self),
+            _ => Vec::new(),
         }
     }
 }

@@ -20,7 +20,7 @@ use vortex_proto::components::{
 };
 
 use crate::app::{
-    components::{Edge2dLocal, Edge3dLocal, FaceIcon2d, LocalShape},
+    components::{ModelTransformControl, Edge2dLocal, Edge3dLocal, FaceIcon2d, LocalShape},
     events::ShapeColorResyncEvent,
     resources::{
         animation_manager::{get_root_vertex, AnimationManager},
@@ -38,7 +38,6 @@ use crate::app::{
         vertex_manager::VertexManager,
     },
 };
-use crate::app::components::ModelTransformControl;
 
 pub fn queue_resyncs(
     mut canvas: ResMut<Canvas>,
@@ -150,7 +149,7 @@ pub fn sync_vertices(world: &mut World) {
             | FileExtension::Skin
             | FileExtension::Model => {
                 vertex_manager.sync_vertices_3d(file_extension, world);
-                vertex_manager.sync_vertices_2d(file_extension, world, &camera_3d, camera_3d_scale);
+                vertex_manager.sync_2d_vertices(file_extension, world, &camera_3d, camera_3d_scale);
             }
             FileExtension::Anim => {
                 let animation_manager = world.get_resource::<AnimationManager>().unwrap();
@@ -219,7 +218,7 @@ pub fn sync_vertices(world: &mut World) {
                     world.resource_scope(|world, mut grid: Mut<Grid>| {
                         grid.sync_grid_vertices(world);
                     });
-                    vertex_manager.sync_vertices_2d(
+                    vertex_manager.sync_2d_vertices(
                         file_extension,
                         world,
                         &camera_3d,

@@ -2,7 +2,9 @@ use bevy_ecs::{prelude::World, world::Mut};
 
 use bevy_log::info;
 
-use crate::app::resources::{input::InputManager, action::model::ModelAction, model_manager::ModelManager};
+use crate::app::resources::{
+    action::model::ModelAction, input::InputManager, model_manager::ModelManager,
+};
 
 pub fn execute(
     world: &mut World,
@@ -13,13 +15,16 @@ pub fn execute(
         panic!("Expected CreateModelTransform");
     };
 
-    info!(
-        "CreateModelTransform({:?})",
-        edge_2d_entity,
-    );
+    info!("CreateModelTransform({:?})", edge_2d_entity,);
 
     world.resource_scope(|world, mut model_manager: Mut<ModelManager>| {
-        model_manager.create_networked_model_transform(world, input_manager, &edge_2d_entity, &dependency_file_ext, &dependency_file_entity);
+        model_manager.create_networked_model_transform(
+            world,
+            input_manager,
+            &edge_2d_entity,
+            &dependency_file_ext,
+            &dependency_file_entity,
+        );
     });
 
     // TODO: migrate undo/redo entities

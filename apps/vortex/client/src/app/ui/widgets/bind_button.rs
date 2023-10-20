@@ -26,7 +26,6 @@ pub fn render_bind_button(
     world: &mut World,
     file_exts: &[FileExtension],
 ) -> Option<(FileExtension, Entity)> {
-
     let file_ext_str = get_ext_reqs_string(file_exts);
     let mut init_binding = false;
     let mut result = None;
@@ -34,7 +33,6 @@ pub fn render_bind_button(
     egui::CentralPanel::default().show_inside(ui, |ui| {
         ui.with_layout(Layout::centered_and_justified(Direction::TopDown), |ui| {
             Frame::none().inner_margin(300.0).show(ui, |ui| {
-
                 match &world.get_resource::<UiState>().unwrap().binding_file {
                     BindingState::NotBinding => {
                         if ui
@@ -73,19 +71,22 @@ pub fn render_bind_button(
     return result;
 }
 
-pub fn render_bind_button_result(world: &mut World, current_file_entity: &Entity, dependency_file_entity: &Entity) {
+pub fn render_bind_button_result(
+    world: &mut World,
+    current_file_entity: &Entity,
+    dependency_file_entity: &Entity,
+) {
     world.get_resource_mut::<UiState>().unwrap().binding_file = BindingState::NotBinding;
-    create_networked_dependency(
-        world,
-        current_file_entity,
-        &dependency_file_entity,
-    );
+    create_networked_dependency(world, current_file_entity, &dependency_file_entity);
 }
 
-pub fn create_networked_dependency(world: &mut World, current_file_entity: &Entity, dependency_file_entity: &Entity) {
+pub fn create_networked_dependency(
+    world: &mut World,
+    current_file_entity: &Entity,
+    dependency_file_entity: &Entity,
+) {
     // send message to server
-    let mut system_state: SystemState<(Commands, Client)> =
-        SystemState::new(world);
+    let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
     let (mut commands, mut client) = system_state.get_mut(world);
 
     let mut component = FileDependency::new();
@@ -109,8 +110,7 @@ pub fn create_networked_dependency(world: &mut World, current_file_entity: &Enti
         &dependency_file_entity,
     );
 
-    let mut system_state: SystemState<(Commands, Client)> =
-        SystemState::new(world);
+    let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
     let (mut commands, mut client) = system_state.get_mut(world);
 
     commands
@@ -119,7 +119,6 @@ pub fn create_networked_dependency(world: &mut World, current_file_entity: &Enti
 
     system_state.apply(world);
 }
-
 
 fn get_ext_reqs_string(exts: &[FileExtension]) -> String {
     let mut output = String::new();

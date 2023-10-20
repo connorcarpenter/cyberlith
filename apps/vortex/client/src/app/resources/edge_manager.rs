@@ -26,7 +26,7 @@ use vortex_proto::components::{
 };
 
 use crate::app::{
-    components::{DefaultDraw, Edge2dLocal, Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d},
+    components::{ModelTransformControl, DefaultDraw, Edge2dLocal, Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d},
     events::ShapeColorResyncEvent,
     resources::{
         camera_manager::CameraManager,
@@ -43,7 +43,6 @@ use crate::app::{
         create_2d_edge_arrow, create_2d_edge_line, create_3d_edge_diamond, create_3d_edge_line,
     },
 };
-use crate::app::components::ModelTransformControl;
 
 #[derive(Resource)]
 pub struct EdgeManager {
@@ -133,7 +132,11 @@ impl EdgeManager {
 
             let mut edge_2d_scale_y = edge_2d_scale;
             if local_shape_q.get(edge_2d_entity).is_ok() {
-                if model_transform_control_q.get(edge_2d_entity).unwrap().is_none() {
+                if model_transform_control_q
+                    .get(edge_2d_entity)
+                    .unwrap()
+                    .is_none()
+                {
                     edge_2d_scale_y = Edge2dLocal::NORMAL_THICKNESS;
                 }
             }

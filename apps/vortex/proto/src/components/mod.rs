@@ -11,8 +11,8 @@ mod shape;
 use shape::VertexComponentsPlugin;
 pub use shape::{
     BackgroundSkinColor, Edge3d, EdgeAngle, Face3d, FaceColor, FileExtension, FileType,
-    ModelTransform, OwnedByFile, PaletteColor, SerdeRotation, ShapeName, Vertex3d, VertexRoot,
-    VertexSerdeInt, ModelTransformEntityType,
+    ModelTransform, ModelTransformEntityType, OwnedByFile, PaletteColor, SerdeRotation, ShapeName,
+    Vertex3d, VertexRoot, VertexSerdeInt,
 };
 
 mod animation;

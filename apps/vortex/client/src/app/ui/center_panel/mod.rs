@@ -10,13 +10,14 @@ use vortex_proto::components::FileExtension;
 use crate::app::{
     resources::{
         animation_manager::AnimationManager, file_manager::FileManager, input::InputManager,
-        palette_manager::PaletteManager, skin_manager::SkinManager, tab_manager::render_tab_bar,
-        tab_manager::TabManager, model_manager::ModelManager,
+        model_manager::ModelManager, palette_manager::PaletteManager, skin_manager::SkinManager,
+        tab_manager::render_tab_bar, tab_manager::TabManager,
     },
     ui::{
         render_tool_bar,
         widgets::{
-            render_bind_button_result, render_bind_button, render_frame_inspect_bar, render_naming_bar, NamingBarState,
+            render_bind_button, render_bind_button_result, render_frame_inspect_bar,
+            render_naming_bar, NamingBarState,
         },
     },
 };
@@ -44,12 +45,9 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                             &current_file_entity,
                             FileExtension::Skel,
                         ) {
-                            if let Some((_file_ext, file_ent)) = render_bind_button(
-                                ui,
-                                world,
-
-                                &[FileExtension::Skel],
-                            ) {
+                            if let Some((_file_ext, file_ent)) =
+                                render_bind_button(ui, world, &[FileExtension::Skel])
+                            {
                                 render_bind_button_result(world, &current_file_entity, &file_ent);
                             }
                             return;
@@ -74,11 +72,9 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                             &current_file_entity,
                             FileExtension::Palette,
                         ) {
-                            if let Some((_file_ext, file_ent)) = render_bind_button(
-                                ui,
-                                world,
-                                &[FileExtension::Palette],
-                            ) {
+                            if let Some((_file_ext, file_ent)) =
+                                render_bind_button(ui, world, &[FileExtension::Palette])
+                            {
                                 render_bind_button_result(world, &current_file_entity, &file_ent);
                             }
                             return;
@@ -89,11 +85,9 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                             &current_file_entity,
                             FileExtension::Mesh,
                         ) {
-                            if let Some((_file_ext, file_ent)) = render_bind_button(
-                                ui,
-                                world,
-                                &[FileExtension::Mesh],
-                            ) {
+                            if let Some((_file_ext, file_ent)) =
+                                render_bind_button(ui, world, &[FileExtension::Mesh])
+                            {
                                 render_bind_button_result(world, &current_file_entity, &file_ent);
                             }
                             return;
@@ -125,25 +119,37 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                             &current_file_entity,
                             FileExtension::Skel,
                         ) {
-                            if let Some((_file_ext, file_ent)) = render_bind_button(
-                                ui,
-                                world,
-
-                                &[FileExtension::Skel],
-                            ) {
+                            if let Some((_file_ext, file_ent)) =
+                                render_bind_button(ui, world, &[FileExtension::Skel])
+                            {
                                 render_bind_button_result(world, &current_file_entity, &file_ent);
                             }
                             return;
                         }
 
-                        if world.get_resource::<ModelManager>().unwrap().edge_is_binding() {
-                            if let Some((dependency_file_ext, dependency_file_entity)) = render_bind_button(
-                                ui,
-                                world,
-                                &[FileExtension::Skin, FileExtension::Scene],
-                            ) {
-                                let edge_2d_entity = world.get_resource_mut::<ModelManager>().unwrap().take_binding_edge();
-                                ModelManager::process_render_bind_button_result(world, &current_file_entity, &dependency_file_ext, &dependency_file_entity, &edge_2d_entity);
+                        if world
+                            .get_resource::<ModelManager>()
+                            .unwrap()
+                            .edge_is_binding()
+                        {
+                            if let Some((dependency_file_ext, dependency_file_entity)) =
+                                render_bind_button(
+                                    ui,
+                                    world,
+                                    &[FileExtension::Skin, FileExtension::Scene],
+                                )
+                            {
+                                let edge_2d_entity = world
+                                    .get_resource_mut::<ModelManager>()
+                                    .unwrap()
+                                    .take_binding_edge();
+                                ModelManager::process_render_bind_button_result(
+                                    world,
+                                    &current_file_entity,
+                                    &dependency_file_ext,
+                                    &dependency_file_entity,
+                                    &edge_2d_entity,
+                                );
                             }
                             return;
                         }
