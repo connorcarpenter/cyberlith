@@ -340,16 +340,16 @@ impl ModelManager {
         self.resync = true;
     }
 
+    pub fn will_resync(&self) -> bool {
+        self.resync
+    }
+
     pub fn sync_transform_controls(
         &mut self,
         camera_state: &CameraState,
         vertex_3d_q: &mut Query<&mut Vertex3d>,
         model_transform_q: &Query<&ModelTransform>,
     ) {
-        if !self.resync {
-            return;
-        }
-
         self.resync = false;
 
         let unit_length = 50.0 / camera_state.camera_3d_scale();

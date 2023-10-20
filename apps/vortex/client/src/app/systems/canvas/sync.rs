@@ -356,6 +356,10 @@ pub fn sync_model_transforms(
     transform_q: Query<&ModelTransform>,
     mut vertex_3d_q: Query<&mut Vertex3d>,
 ) {
+    if !model_manager.will_resync() {
+        return;
+    }
+
     let Some(current_file_entity) = tab_manager.current_tab_entity() else {
         return;
     };
