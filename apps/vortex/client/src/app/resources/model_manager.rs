@@ -484,10 +484,20 @@ impl ModelManager {
     // }
 
     pub fn sync_vertices(&self, world: &mut World, vertex_manager: &VertexManager) {
-        // only triggers when canvas is redrawn ... what happens here?
+        // only triggers when canvas is redrawn
+
+        // TODO: for skel bones & modeltransformcontrols,
+        // cast Replicate data to 3d Transform
+        // then cast to 2d transform
     }
 
     pub fn draw(&self, world: &mut World) {
         // actually draw
+
+        // TODO: - only draw skel bones when no model is assigned
+        // - draw skel bones with enabled/disabled color
+        // - draw 2d model transform controls
+        // - draw meshes with appropriate transformations
+        // - draw compass & grid
     }
 }
