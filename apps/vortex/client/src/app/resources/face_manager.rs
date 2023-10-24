@@ -75,6 +75,10 @@ impl FaceManager {
 
         self.resync = false;
 
+        if file_ext == FileExtension::Model {
+            return;
+        }
+
         let face_2d_scale = FaceIcon2d::SIZE * camera_3d_scale;
 
         for (face_2d_entity, face_icon) in face_2d_q.iter() {

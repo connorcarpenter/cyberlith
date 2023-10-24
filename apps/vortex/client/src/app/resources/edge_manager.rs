@@ -26,7 +26,7 @@ use vortex_proto::components::{
 };
 
 use crate::app::{
-    components::{ModelTransformControl, DefaultDraw, Edge2dLocal, Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d},
+    components::{DefaultDraw, Edge2dLocal, Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d},
     events::ShapeColorResyncEvent,
     resources::{
         camera_manager::CameraManager,
@@ -88,7 +88,6 @@ impl EdgeManager {
         transform_q: &mut Query<&mut Transform>,
         visibility_q: &mut Query<&mut Visibility>,
         local_shape_q: &Query<&LocalShape>,
-        model_transform_control_q: &Query<Option<&ModelTransformControl>>,
         camera_3d_scale: f32,
     ) {
         let edge_2d_scale = Edge2dLocal::NORMAL_THICKNESS * camera_3d_scale;
@@ -102,47 +101,49 @@ impl EdgeManager {
                 continue;
             }
 
-            let Ok(start_transform) = transform_q.get(edge_endpoints.start) else {
-                warn!(
-                    "2d Edge start entity {:?} has no transform",
-                    edge_endpoints.start,
-                );
-                continue;
-            };
+            Self::sync_2d_edge(transform_q, &edge_2d_entity, edge_endpoints);
 
-            let start_pos = start_transform.translation.truncate();
-
-            let Ok(end_transform) = transform_q.get(edge_endpoints.end) else {
-                warn!(
-                    "2d Edge end entity {:?} has no transform",
-                    edge_endpoints.end,
-                );
-                continue;
-            };
-
-            let end_pos = end_transform.translation.truncate();
-            let depth = (start_transform.translation.z + end_transform.translation.z) / 2.0;
+            let mut edge_2d_scale_y = edge_2d_scale;
+            if local_shape_q.get(edge_2d_entity).is_ok() {
+                edge_2d_scale_y = Edge2dLocal::NORMAL_THICKNESS;
+            }
 
             let Ok(mut edge_2d_transform) = transform_q.get_mut(edge_2d_entity) else {
                 warn!("2d Edge entity {:?} has no transform", edge_2d_entity);
                 continue;
             };
-
-            set_2d_line_transform(&mut edge_2d_transform, start_pos, end_pos, depth);
-
-            let mut edge_2d_scale_y = edge_2d_scale;
-            if local_shape_q.get(edge_2d_entity).is_ok() {
-                if model_transform_control_q
-                    .get(edge_2d_entity)
-                    .unwrap()
-                    .is_none()
-                {
-                    edge_2d_scale_y = Edge2dLocal::NORMAL_THICKNESS;
-                }
-            }
-
             edge_2d_transform.scale.y = edge_2d_scale_y;
         }
+    }
+
+    pub fn sync_2d_edge(transform_q: &mut Query<&mut Transform>, edge_2d_entity: &Entity, edge_endpoints: &Edge2dLocal) {
+        let Ok(start_transform) = transform_q.get(edge_endpoints.start) else {
+            warn!(
+                    "2d Edge start entity {:?} has no transform",
+                    edge_endpoints.start,
+                );
+            return;
+        };
+
+        let start_pos = start_transform.translation.truncate();
+
+        let Ok(end_transform) = transform_q.get(edge_endpoints.end) else {
+            warn!(
+                    "2d Edge end entity {:?} has no transform",
+                    edge_endpoints.end,
+                );
+            return;
+        };
+
+        let end_pos = end_transform.translation.truncate();
+        let depth = (start_transform.translation.z + end_transform.translation.z) / 2.0;
+
+        let Ok(mut edge_2d_transform) = transform_q.get_mut(*edge_2d_entity) else {
+            warn!("2d Edge entity {:?} has no transform", edge_2d_entity);
+            return;
+        };
+
+        set_2d_line_transform(&mut edge_2d_transform, start_pos, end_pos, depth);
     }
 
     pub fn sync_edge_angles(
@@ -257,28 +258,32 @@ impl EdgeManager {
                 _ => {}
             }
 
-            let edge_angle_opt = edge_angle_opt.map(|e| e.get_radians());
-            let edge_angle = edge_angle_opt.unwrap_or_default();
-
-            let edge_start_entity = edge_endpoints.start;
-            let edge_end_entity = edge_endpoints.end;
-
-            let Ok(start_transform) = transform_q.get(edge_start_entity) else {
-                warn!(
-                    "3d Edge start entity {:?} has no transform",
-                    edge_start_entity,
-                );
-                continue;
-            };
-            let start_pos = start_transform.translation;
-            let Ok(end_transform) = transform_q.get(edge_end_entity) else {
-                warn!("3d Edge end entity {:?} has no transform", edge_end_entity);
-                continue;
-            };
-            let end_pos = end_transform.translation;
-            let mut edge_transform = transform_q.get_mut(edge_entity).unwrap();
-            set_3d_line_transform(&mut edge_transform, start_pos, end_pos, edge_angle);
+            Self::sync_3d_edge(transform_q, &edge_entity, edge_endpoints, edge_angle_opt);
         }
+    }
+
+    pub fn sync_3d_edge(transform_q: &mut Query<&mut Transform>, edge_entity: &Entity, edge_endpoints: &Edge3dLocal, edge_angle_opt: Option<&EdgeAngle>) {
+        let edge_angle_opt = edge_angle_opt.map(|e| e.get_radians());
+        let edge_angle = edge_angle_opt.unwrap_or_default();
+
+        let edge_start_entity = edge_endpoints.start;
+        let edge_end_entity = edge_endpoints.end;
+
+        let Ok(start_transform) = transform_q.get(edge_start_entity) else {
+            warn!(
+                "3d Edge start entity {:?} has no transform",
+                edge_start_entity,
+            );
+            return;
+        };
+        let start_pos = start_transform.translation;
+        let Ok(end_transform) = transform_q.get(edge_end_entity) else {
+            warn!("3d Edge end entity {:?} has no transform", edge_end_entity);
+            return;
+        };
+        let end_pos = end_transform.translation;
+        let mut edge_transform = transform_q.get_mut(*edge_entity).unwrap();
+        set_3d_line_transform(&mut edge_transform, start_pos, end_pos, edge_angle);
     }
 
     pub fn sync_local_3d_edges(
@@ -684,8 +689,8 @@ impl EdgeManager {
         self.edges_2d.get(entity_2d).copied()
     }
 
-    pub(crate) fn edge_entity_3d_to_2d(&self, entity_2d: &Entity) -> Option<Entity> {
-        self.edges_3d.get(entity_2d).map(|data| data.entity_2d)
+    pub(crate) fn edge_entity_3d_to_2d(&self, entity_3d: &Entity) -> Option<Entity> {
+        self.edges_3d.get(entity_3d).map(|data| data.entity_2d)
     }
 
     pub(crate) fn edge_connected_faces(&self, edge_3d_entity: &Entity) -> Option<Vec<FaceKey>> {

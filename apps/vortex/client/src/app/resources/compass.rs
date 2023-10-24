@@ -14,9 +14,8 @@ use render_api::{
 use vortex_proto::components::Vertex3d;
 
 use crate::app::{
-    components::LocalShape,
     resources::{
-        camera_manager::CameraManager, camera_state::CameraState, canvas::Canvas,
+        camera_manager::CameraManager, canvas::Canvas, tab_manager::TabManager,
         edge_manager::EdgeManager, face_manager::FaceManager, vertex_manager::VertexManager,
     },
 };
@@ -44,8 +43,8 @@ impl Compass {
     pub fn sync_compass(
         &mut self,
         canvas: &Canvas,
-        camera_3d_entity: &Entity,
-        camera_state: &CameraState,
+        tab_manager: &TabManager,
+        camera_manager: &CameraManager,
         vertex_3d_q: &mut Query<(Entity, &mut Vertex3d)>,
         transform_q: &Query<&Transform>,
     ) {
@@ -55,7 +54,28 @@ impl Compass {
 
         self.resync = false;
 
-        let Ok(camera_transform) = transform_q.get(*camera_3d_entity) else {
+        self.sync_compass_impl(canvas, tab_manager, camera_manager, vertex_3d_q, transform_q);
+    }
+
+    pub fn vertices(&self) -> &Vec<Entity> {
+        &self.compass_vertices_3d
+    }
+
+    fn sync_compass_impl(
+        &self,
+        canvas: &Canvas,
+        tab_manager: &TabManager,
+        camera_manager: &CameraManager,
+        vertex_3d_q: &mut Query<(Entity, &mut Vertex3d)>,
+        transform_q: &Query<&Transform>
+    ) {
+        let Some(current_tab_state) = tab_manager.current_tab_state() else {
+            return;
+        };
+        let camera_state = &current_tab_state.camera_state;
+        let camera_3d_entity = camera_manager.camera_3d_entity().unwrap();
+
+        let Ok(camera_transform) = transform_q.get(camera_3d_entity) else {
             return;
         };
 
@@ -73,9 +93,9 @@ impl Compass {
         compass_pos.y -= 32.0;
         let offset_2d = camera_state.camera_3d_offset().round()
             + Vec2::new(
-                unit_length * -1.0 * compass_pos.x,
-                unit_length * compass_pos.y,
-            );
+            unit_length * -1.0 * compass_pos.x,
+            unit_length * compass_pos.y,
+        );
         let offset_3d = (right * offset_2d.x) + (up * offset_2d.y);
 
         let vert_offset_3d = Vec3::ZERO + offset_3d;
@@ -191,9 +211,7 @@ impl Compass {
             Some(root_vertex_2d_entity),
             position,
             color,
-        ) else {
-            panic!("No edges?");
-        };
+        );
         self.compass_vertices_3d.push(vertex_3d_entity);
     }
 }

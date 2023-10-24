@@ -13,7 +13,6 @@ use render_api::{
 use vortex_proto::components::Vertex3d;
 
 use crate::app::{
-    components::LocalShape,
     resources::{
         camera_manager::CameraManager, edge_manager::EdgeManager, face_manager::FaceManager,
         vertex_manager::VertexManager,
@@ -55,6 +54,10 @@ impl Grid {
             let (vertex_3d, mut transform) = vertex_3d_q.get_mut(*vertex_entity).unwrap();
             transform.translation = vertex_3d.as_vec3();
         }
+    }
+
+    pub fn vertices(&self) -> &Vec<Entity> {
+        &self.grid_vertices_3d
     }
 
     pub(crate) fn setup_grid(
@@ -209,7 +212,7 @@ impl Grid {
         parent_vertex_2d_entity: Entity,
         position: Vec3,
     ) {
-        let (vertex_2d_entity, vertex_3d_entity, _, _) = vertex_manager.new_local_vertex(
+        let (_, vertex_3d_entity, _, _) = vertex_manager.new_local_vertex(
             commands,
             camera_manager,
             edge_manager,
@@ -219,9 +222,7 @@ impl Grid {
             Some(parent_vertex_2d_entity),
             position,
             Color::LIGHT_GRAY,
-        ) else {
-            panic!("No edges?");
-        };
+        );
         self.grid_vertices_3d.push(vertex_3d_entity);
     }
 }

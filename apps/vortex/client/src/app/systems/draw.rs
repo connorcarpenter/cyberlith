@@ -123,7 +123,7 @@ pub fn draw_vertices_and_edges(world: &mut World) {
             }
         }
         FileExtension::Model => {
-            world.resource_scope(|world, mut model_manager: Mut<ModelManager>| {
+            world.resource_scope(|world, model_manager: Mut<ModelManager>| {
                 model_manager.draw(world);
                 return;
             });
@@ -165,8 +165,8 @@ fn draw_vertices_and_edges_inner(world: &mut World, current_file: FileExtension)
             edge_angles_are_visible = false;
         }
     }
-    let must_check_edge_enabled = (current_file == FileExtension::Anim
-        && !animation_manager.preview_frame_selected());
+    let must_check_edge_enabled = current_file == FileExtension::Anim
+        && !animation_manager.preview_frame_selected();
 
     // draw vertices
     for (vertex_3d_entity, visibility, shape_name_opt, vertex_root_opt) in vertices_q.iter() {

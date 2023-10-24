@@ -82,7 +82,7 @@ impl VertexManager {
         self.resync = true;
     }
 
-    pub fn sync_3d_vertices(&mut self, file_ext: FileExtension, world: &mut World) -> bool {
+    pub fn sync_3d_vertices(&mut self, file_ext: FileExtension, world: &mut World) {
         // TODO: really should only do this if Vertex3d component was updated from server
 
         let mut system_state: SystemState<(
@@ -103,7 +103,7 @@ impl VertexManager {
         for (vertex_3d_entity, vertex_3d) in vertex_3d_q.iter() {
             // check visibility
             match file_ext {
-                FileExtension::Skin | FileExtension::Model => {
+                FileExtension::Skin => {
                     let mut disable = false;
                     if local_shape_q.get(vertex_3d_entity).is_err() {
                         disable = true;
@@ -135,8 +135,6 @@ impl VertexManager {
             // update 3d vertices
             vertex_3d_transform.translation = vertex_3d.as_vec3();
         }
-
-        return true;
     }
 
     pub fn should_sync(&self) -> bool {
@@ -160,7 +158,6 @@ impl VertexManager {
             Query<&mut Transform>,
             Query<&mut Visibility>,
             Query<&LocalShape>,
-            Query<Option<&ModelTransformControl>>,
         )> = SystemState::new(world);
         let (
             camera_q,
@@ -168,7 +165,6 @@ impl VertexManager {
             mut transform_q,
             mut visibility_q,
             local_shape_q,
-            model_transform_control_q,
         ) = system_state.get_mut(world);
 
         let Ok((camera, camera_projection)) = camera_q.get(*camera_3d_entity) else {
@@ -183,7 +179,6 @@ impl VertexManager {
         let view_matrix = camera_transform.view_matrix();
         let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
         let vertex_2d_scale = Vertex2d::RADIUS * camera_3d_scale;
-        let model_transform_control_2d_scale = ModelTransformControl::RADIUS * camera_3d_scale;
         let compass_vertex_3d_scale = LocalShape::VERTEX_RADIUS / camera_3d_scale;
         let compass_vertex_2d_scale = Vertex2d::RADIUS;
 
@@ -202,7 +197,7 @@ impl VertexManager {
             } else {
                 // vertex_3d_transform.scale = should put 3d vertex scale here?
                 match file_ext {
-                    FileExtension::Skin | FileExtension::Model => {
+                    FileExtension::Skin => {
                         // change visibility
                         let Ok(mut visibility) = visibility_q.get_mut(vertex_2d_entity) else {
                             panic!("Vertex2d entity {:?} has no Visibility", vertex_2d_entity);
@@ -231,15 +226,7 @@ impl VertexManager {
 
             // update 2d compass
             vertex_2d_transform.scale = if local_shape_q.get(vertex_2d_entity).is_ok() {
-                if model_transform_control_q
-                    .get(vertex_2d_entity)
-                    .unwrap()
-                    .is_none()
-                {
-                    Vec3::splat(compass_vertex_2d_scale)
-                } else {
-                    Vec3::splat(model_transform_control_2d_scale)
-                }
+                Vec3::splat(compass_vertex_2d_scale)
             } else {
                 Vec3::splat(vertex_2d_scale)
             };
@@ -793,6 +780,10 @@ impl VertexManager {
             return Some(entity_2d);
         }
         return None;
+    }
+
+    pub(crate) fn get_vertex_3d_data(&self, entity: &Entity) -> Option<&Vertex3dData> {
+        self.vertices_3d.get(entity)
     }
 
     pub(crate) fn get_connected_vertices(

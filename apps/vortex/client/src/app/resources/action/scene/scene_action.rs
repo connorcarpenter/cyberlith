@@ -1,6 +1,6 @@
 use bevy_ecs::prelude::{Entity, World};
 
-use crate::app::resources::{action::Action, input::InputManager, shape_data::CanvasShape};
+use crate::app::resources::{action::Action, input::InputManager};
 
 #[derive(Clone)]
 pub enum SceneAction {
@@ -20,9 +20,9 @@ impl SceneAction {
 
     pub fn execute(
         self,
-        world: &mut World,
-        input_manager: &mut InputManager,
-        current_file_entity: Entity,
+        _world: &mut World,
+        _input_manager: &mut InputManager,
+        _current_file_entity: Entity,
     ) -> Vec<Self> {
         let action_type = self.get_type();
 
@@ -37,16 +37,16 @@ impl SceneAction {
 
 impl Action for SceneAction {
     fn entity_update_auth_status_impl(
-        buffered_check: &mut bool,
+        _buffered_check: &mut bool,
         action_opt: Option<&Self>,
-        entity: &Entity,
+        _entity: &Entity,
     ) {
         match action_opt {
             _ => {}
         }
     }
 
-    fn enable_top_impl(world: &mut World, last_action: Option<&Self>, enabled: &mut bool) {
+    fn enable_top_impl(_world: &mut World, last_action: Option<&Self>, enabled: &mut bool) {
         match last_action {
             _ => {
                 *enabled = true;

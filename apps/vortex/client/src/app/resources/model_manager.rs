@@ -4,28 +4,28 @@ use bevy_ecs::{
     entity::Entity,
     system::{Commands, Query, ResMut, Resource, SystemState},
     world::{Mut, World},
+    query::With,
+    system::Res,
 };
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
-use math::{quat_from_spin_direction, SerdeQuat, Vec3};
+use math::{convert_3d_to_2d, quat_from_spin_direction, SerdeQuat, Vec3};
 
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
-    components::Visibility,
+    components::{Camera, Visibility, CameraProjection, Projection, Transform},
     Assets, Handle,
 };
 
-use vortex_proto::components::{
-    EdgeAngle, FileExtension, ModelTransform, ModelTransformEntityType, ShapeName, Vertex3d,
-};
+use vortex_proto::components::{EdgeAngle, FileExtension, FileType, ModelTransform, ModelTransformEntityType, ShapeName, Vertex3d};
 
 use crate::app::{
-    components::ModelTransformControl,
+    components::{ModelTransformControl, Edge2dLocal, Edge3dLocal},
     resources::{
         action::model::ModelAction, camera_manager::CameraManager, canvas::Canvas,
         edge_manager::EdgeManager, face_manager::FaceManager, input::InputManager,
-        tab_manager::TabManager, vertex_manager::VertexManager,
+        tab_manager::TabManager, vertex_manager::VertexManager, compass::Compass, grid::Grid
     },
     ui::{widgets::create_networked_dependency, BindingState, UiState},
 };
@@ -66,7 +66,6 @@ impl ModelTransformData {
 pub struct ModelManager {
     model_transforms: HashMap<Entity, ModelTransformData>,
     edge_2d_to_model_transform: HashMap<Entity, Entity>,
-    resync: bool,
     // Option<edge_2d_entity>
     binding_edge_opt: Option<Entity>,
 }
@@ -76,7 +75,6 @@ impl Default for ModelManager {
         Self {
             model_transforms: HashMap::new(),
             edge_2d_to_model_transform: HashMap::new(),
-            resync: false,
             binding_edge_opt: None,
         }
     }
@@ -427,21 +425,11 @@ impl ModelManager {
         model_transform_data
     }
 
-    pub fn queue_resync(&mut self) {
-        self.resync = true;
-    }
-
-    pub fn will_resync(&self) -> bool {
-        self.resync
-    }
-
     pub fn sync_transform_controls(
-        &mut self,
+        &self,
         vertex_3d_q: &mut Query<&mut Vertex3d>,
         model_transform_q: &Query<&ModelTransform>,
     ) {
-        self.resync = false;
-
         let unit_length = 10.0;
 
         for (model_transform_entity, data) in self.model_transforms.iter() {
@@ -472,26 +460,143 @@ impl ModelManager {
         }
     }
 
-    // pub fn sync_compass_vertices(&self, world: &mut World) {
-    //     let mut system_state: SystemState<Query<(&Vertex3d, &mut Transform)>> =
-    //         SystemState::new(world);
-    //     let mut vertex_3d_q = system_state.get_mut(world);
-    //
-    //     for vertex_entity in self.compass_vertices_3d.iter() {
-    //         let (vertex_3d, mut transform) = vertex_3d_q.get_mut(*vertex_entity).unwrap();
-    //         transform.translation = vertex_3d.as_vec3();
-    //     }
-    // }
-
-    pub fn sync_vertices(&self, world: &mut World, vertex_manager: &VertexManager) {
-        // only triggers when canvas is redrawn
-
-        // TODO: for skel bones & modeltransformcontrols,
-        // cast Replicate data to 3d Transform
-        // then cast to 2d transform
+    fn model_transform_3d_vertices(&self) -> Vec<Entity> {
+        let mut vertices = Vec::new();
+        for (_, data) in self.model_transforms.iter() {
+            vertices.push(data.translation_entity_3d);
+            vertices.push(data.rotation_entity_3d);
+            vertices.push(data.scale_entity_3d);
+        }
+        vertices
     }
 
-    pub fn draw(&self, world: &mut World) {
+    pub fn sync_vertices(&self, world: &mut World, vertex_manager: &VertexManager, camera_3d_entity: &Entity, camera_is_2d: bool) {
+        // only triggers when canvas is redrawn
+
+        // ModelTransformControls
+        // (setting Vertex3d)
+        let mut system_state: SystemState<(Query<&mut Vertex3d>, Query<&ModelTransform>)> = SystemState::new(world);
+        let (mut vertex_3d_q, model_transform_q) = system_state.get_mut(world);
+        self.sync_transform_controls(&mut vertex_3d_q, &model_transform_q);
+
+        // gather 3D entities for Skel Vertices, Compass/Grid/ModelTransformControls Vertices
+        let mut vertex_3d_entities: HashSet<Entity> = HashSet::new();
+        let compass_3d_entities = world.get_resource::<Compass>().unwrap().vertices();
+        let grid_3d_entities = world.get_resource::<Grid>().unwrap().vertices();
+        let mtc_3d_entites = self.model_transform_3d_vertices();
+        vertex_3d_entities.extend(compass_3d_entities);
+        vertex_3d_entities.extend(grid_3d_entities);
+        vertex_3d_entities.extend(mtc_3d_entites);
+
+        let mut system_state: SystemState<Query<(Entity, &FileType), With<Vertex3d>>> = SystemState::new(world);
+        let vert_q = system_state.get_mut(world);
+        for (entity, file_type) in vert_q.iter() {
+            if *file_type.value == FileExtension::Skel {
+                vertex_3d_entities.insert(entity);
+            }
+        }
+
+        // from 3D vertex entities, get list of 3D edge entities
+        let mut edge_3d_entities: HashSet<Entity> = HashSet::new();
+
+        for vertex_3d_entity in vertex_3d_entities.iter() {
+            let Some(vertex_data) = vertex_manager.get_vertex_3d_data(vertex_3d_entity) else {
+                panic!("vertex_3d_entity {:?} has no vertex_data", vertex_3d_entity);
+            };
+
+            for edge_3d_entity in vertex_data.edges_3d.iter() {
+                edge_3d_entities.insert(*edge_3d_entity);
+            }
+        }
+
+        // for ALL gathered 3D vertex entities, convert Vertex3D -> 3d Transform
+        let mut system_state: SystemState<Query<(&Vertex3d, &mut Transform)>> = SystemState::new(world);
+        let mut vertex_3d_q = system_state.get_mut(world);
+
+        for vertex_3d_entity in vertex_3d_entities.iter() {
+            let (vertex_3d, mut transform) = vertex_3d_q.get_mut(*vertex_3d_entity).unwrap();
+            transform.translation = vertex_3d.as_vec3();
+        }
+
+        // for ALL gathered 3D edge entities, sync with 3d vertex transforms
+        let mut system_state: SystemState<(Query<(&Edge3dLocal, Option<&EdgeAngle>)>, Query<&mut Transform>)> = SystemState::new(world);
+        let (edge_3d_q, mut transform_q) = system_state.get_mut(world);
+
+        for edge_3d_entity in edge_3d_entities.iter() {
+            let (edge_3d_local, edge_angle_opt) = edge_3d_q.get(*edge_3d_entity).unwrap();
+            EdgeManager::sync_3d_edge(&mut transform_q, edge_3d_entity, edge_3d_local, edge_angle_opt);
+        }
+
+        if !camera_is_2d {
+            return;
+        }
+
+        let mut system_state: SystemState<(
+            Res<EdgeManager>,
+            Query<(&Camera, &Projection)>,
+            Query<&mut Transform>,
+            Query<&Edge2dLocal>,
+        )> = SystemState::new(world);
+        let (
+            edge_manager,
+            camera_q,
+            mut transform_q,
+            edge_2d_local_q,
+        ) = system_state.get_mut(world);
+
+        let Ok((camera, camera_projection)) = camera_q.get(*camera_3d_entity) else {
+            return;
+        };
+        let Ok(camera_transform) = transform_q.get(*camera_3d_entity) else {
+            return;
+        };
+        let camera_viewport = camera.viewport.unwrap();
+        let view_matrix = camera_transform.view_matrix();
+        let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
+
+        // for ALL gathered 2D vertex entities, derive 2d transform from 3d transform
+        for vertex_3d_entity in vertex_3d_entities.iter() {
+            let Some(vertex_data) = vertex_manager.get_vertex_3d_data(vertex_3d_entity) else {
+                panic!("vertex_3d_entity {:?} has no vertex_data", vertex_3d_entity);
+            };
+            let vertex_2d_entity = vertex_data.entity_2d;
+
+            // get 3d transform
+            let Ok(vertex_3d_transform) = transform_q.get(*vertex_3d_entity) else {
+                panic!("Vertex3d entity {:?} has no Transform", vertex_3d_entity);
+            };
+            // derive 2d transform from 3d transform
+            let (coords, depth) = convert_3d_to_2d(
+                &view_matrix,
+                &projection_matrix,
+                &camera_viewport.size_vec2(),
+                &vertex_3d_transform.translation,
+            );
+
+            // get 2d transform
+            let Ok(mut vertex_2d_transform) = transform_q.get_mut(vertex_2d_entity) else {
+                panic!("Vertex2d entity {:?} has no Transform", vertex_2d_entity);
+            };
+            vertex_2d_transform.translation.x = coords.x;
+            vertex_2d_transform.translation.y = coords.y;
+            vertex_2d_transform.translation.z = depth;
+        }
+
+        // for ALL gathered 2D edge entities, derive 2d transform from 2d vertex data
+        for edge_3d_entity in edge_3d_entities.iter() {
+            let Some(edge_2d_entity) = edge_manager.edge_entity_3d_to_2d(edge_3d_entity) else {
+                panic!("edge_3d_entity {:?} has no edge_2d_entity", edge_3d_entity);
+            };
+
+            // derive 2d transform from 2d vertex data
+            let Ok(edge_endpoints) = edge_2d_local_q.get(edge_2d_entity) else {
+                panic!("Edge2d entity {:?} has no Edge2dLocal", edge_2d_entity);
+            };
+            EdgeManager::sync_2d_edge(&mut transform_q, &edge_2d_entity, edge_endpoints);
+        }
+    }
+
+    pub fn draw(&self, _world: &mut World) {
         // actually draw
 
         // TODO: - only draw skel bones when no model is assigned
