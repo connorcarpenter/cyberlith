@@ -562,7 +562,9 @@ impl ModelManager {
         let (edge_3d_q, mut transform_q) = system_state.get_mut(world);
 
         for edge_3d_entity in edge_3d_entities.iter() {
-            let (edge_3d_local, edge_angle_opt) = edge_3d_q.get(*edge_3d_entity).unwrap();
+            let Ok((edge_3d_local, edge_angle_opt)) = edge_3d_q.get(*edge_3d_entity) else {
+                continue;
+            };
             EdgeManager::sync_3d_edge(&mut transform_q, edge_3d_entity, edge_3d_local, edge_angle_opt);
         }
 
@@ -603,7 +605,8 @@ impl ModelManager {
 
             // get 3d transform
             let Ok(vertex_3d_transform) = transform_q.get(*vertex_3d_entity) else {
-                panic!("Vertex3d entity {:?} has no Transform", vertex_3d_entity);
+                warn!("Vertex3d entity {:?} has no Transform", vertex_3d_entity);
+                continue;
             };
             // derive 2d transform from 3d transform
             let (coords, depth) = convert_3d_to_2d(
@@ -630,7 +633,8 @@ impl ModelManager {
 
             // derive 2d transform from 2d vertex data
             let Ok(edge_endpoints) = edge_2d_local_q.get(edge_2d_entity) else {
-                panic!("Edge2d entity {:?} has no Edge2dLocal", edge_2d_entity);
+                warn!("Edge2d entity {:?} has no Edge2dLocal", edge_2d_entity);
+                continue;
             };
             EdgeManager::sync_2d_edge(&mut transform_q, &edge_2d_entity, edge_endpoints);
         }
@@ -646,7 +650,7 @@ impl ModelManager {
         if camera_is_2d {
             self.draw_2d(world, current_file_entity);
         } else {
-            self.draw_3d(world);
+            self.draw_3d(world, current_file_entity);
         }
 
 
@@ -658,7 +662,7 @@ impl ModelManager {
     }
 
     fn draw_2d(&self, world: &mut World, current_file_entity: &Entity) {
-        // vertices (model transform controls, compass, grid)
+
         let mut vertex_3d_entities: HashSet<Entity> = HashSet::new();
         let compass_3d_entities = world.get_resource::<Compass>().unwrap().vertices();
         let grid_3d_entities = world.get_resource::<Grid>().unwrap().vertices();
@@ -666,6 +670,57 @@ impl ModelManager {
         vertex_3d_entities.extend(compass_3d_entities);
         vertex_3d_entities.extend(grid_3d_entities);
         vertex_3d_entities.extend(mtc_3d_entites);
+
+        let mut edge_2d_entities = HashSet::new();
+
+        let mut system_state: SystemState<(
+            ResMut<RenderFrame>,
+            Res<VertexManager>,
+            Res<EdgeManager>,
+            Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>, &Transform, Option<&RenderLayer>)>,
+        )> = SystemState::new(world);
+        let (
+            mut render_frame,
+            vertex_manager,
+            edge_manager,
+            objects_q,
+        ) = system_state.get_mut(world);
+
+        // draw vertices (compass, grid, model transform controls)
+        for vertex_3d_entity in vertex_3d_entities.iter() {
+
+            // draw vertex 2d
+            let Some(data) = vertex_manager.get_vertex_3d_data(&vertex_3d_entity) else {continue};
+
+            let (mesh_handle, mat_handle, transform, render_layer_opt) = objects_q.get(data.entity_2d).unwrap();
+            render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
+
+            for edge_3d_entity in data.edges_3d.iter() {
+                let edge_2d_entity = edge_manager.edge_entity_3d_to_2d(edge_3d_entity).unwrap();
+                edge_2d_entities.insert(edge_2d_entity);
+            }
+        }
+
+        // draw edges (compass, grid, model transform controls)
+        for edge_2d_entity in edge_2d_entities.iter() {
+            let (mesh_handle, mat_handle, transform, render_layer_opt) = objects_q.get(*edge_2d_entity).unwrap();
+            render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
+        }
+
+        // TODO: edges (skel bones without model, models)
+
+        // TODO: render select line and select circle
+    }
+
+    fn draw_3d(&self, world: &mut World, _current_file_entity: &Entity) {
+
+        let mut vertex_3d_entities: HashSet<Entity> = HashSet::new();
+        let compass_3d_entities = world.get_resource::<Compass>().unwrap().vertices();
+        let grid_3d_entities = world.get_resource::<Grid>().unwrap().vertices();
+        vertex_3d_entities.extend(compass_3d_entities);
+        vertex_3d_entities.extend(grid_3d_entities);
+
+        let mut edge_3d_entities = HashSet::new();
 
         let mut system_state: SystemState<(
             ResMut<RenderFrame>,
@@ -678,21 +733,28 @@ impl ModelManager {
             objects_q,
         ) = system_state.get_mut(world);
 
-        // draw vertices
+        // draw vertices (compass, grid)
         for vertex_3d_entity in vertex_3d_entities.iter() {
 
             // draw vertex 2d
-            let Some(vertex_2d_entity) = vertex_manager.vertex_entity_3d_to_2d(&vertex_3d_entity) else {continue};
+            let Some(data) = vertex_manager.get_vertex_3d_data(&vertex_3d_entity) else {continue};
 
-            let (mesh_handle, mat_handle, transform, render_layer_opt) = objects_q.get(vertex_2d_entity).unwrap();
-            // can't we ONLY draw this when 2d mode is enabled?
+            let (mesh_handle, mat_handle, transform, render_layer_opt) = objects_q.get(*vertex_3d_entity).unwrap();
+            render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
+
+            for edge_3d_entity in data.edges_3d.iter() {
+                edge_3d_entities.insert(*edge_3d_entity);
+            }
+        }
+
+        // draw edges (compass, grid)
+        for edge_3d_entity in edge_3d_entities.iter() {
+            let (mesh_handle, mat_handle, transform, render_layer_opt) = objects_q.get(*edge_3d_entity).unwrap();
             render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
         }
 
-        // edges (skel bones without model, compass, grid, model transform controls, models)
-    }
+        // TODO: edges (skel bones without model)
 
-    fn draw_3d(&self, _world: &mut World) {
-
+        // TODO: skin faces
     }
 }
