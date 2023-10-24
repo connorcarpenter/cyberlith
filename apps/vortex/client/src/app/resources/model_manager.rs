@@ -7,6 +7,7 @@ use bevy_ecs::{
     query::With,
     system::Res,
 };
+use bevy_log::warn;
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
@@ -14,8 +15,9 @@ use math::{convert_3d_to_2d, quat_from_spin_direction, SerdeQuat, Vec3};
 
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
-    components::{Camera, Visibility, CameraProjection, Projection, Transform},
+    components::{RenderLayer, Camera, Visibility, CameraProjection, Projection, Transform},
     Assets, Handle,
+    resources::RenderFrame,
 };
 
 use vortex_proto::components::{EdgeAngle, FileExtension, FileType, ModelTransform, ModelTransformEntityType, ShapeName, Vertex3d};
@@ -32,6 +34,7 @@ use crate::app::{
 
 pub struct ModelTransformData {
     edge_2d_entity: Entity,
+    owning_file_entity: Entity,
     translation_entity_2d: Entity,
     translation_entity_3d: Entity,
     rotation_entity_2d: Entity,
@@ -43,6 +46,7 @@ pub struct ModelTransformData {
 impl ModelTransformData {
     pub fn new(
         edge_2d_entity: Entity,
+        owning_file_entity: Entity,
         translation_entity_2d: Entity,
         translation_entity_3d: Entity,
         rotation_entity_2d: Entity,
@@ -52,6 +56,7 @@ impl ModelTransformData {
     ) -> Self {
         Self {
             edge_2d_entity,
+            owning_file_entity,
             translation_entity_3d,
             rotation_entity_3d,
             scale_entity_3d,
@@ -64,6 +69,7 @@ impl ModelTransformData {
 
 #[derive(Resource)]
 pub struct ModelManager {
+    file_to_model_transforms: HashMap<Entity, HashSet<Entity>>,
     model_transforms: HashMap<Entity, ModelTransformData>,
     edge_2d_to_model_transform: HashMap<Entity, Entity>,
     // Option<edge_2d_entity>
@@ -73,6 +79,7 @@ pub struct ModelManager {
 impl Default for ModelManager {
     fn default() -> Self {
         Self {
+            file_to_model_transforms: HashMap::new(),
             model_transforms: HashMap::new(),
             edge_2d_to_model_transform: HashMap::new(),
             binding_edge_opt: None,
@@ -130,6 +137,7 @@ impl ModelManager {
         world: &mut World,
         input_manager: &mut InputManager,
         edge_2d_entity: &Entity,
+        current_file_entity: &Entity,
         dependency_file_ext: &FileExtension,
         dependency_file_entity: &Entity,
     ) -> Entity {
@@ -205,6 +213,7 @@ impl ModelManager {
                 panic!("not possible");
             }
         };
+        component.set_owner(&client, current_file_entity);
         component.set_entity(&client, *dependency_file_entity, dependency_file_type);
         let new_model_transform_entity = commands
             .spawn_empty()
@@ -224,6 +233,7 @@ impl ModelManager {
             &mut materials,
             new_model_transform_entity,
             *edge_2d_entity,
+            current_file_entity,
             translation,
         );
 
@@ -243,6 +253,7 @@ impl ModelManager {
         materials: &mut Assets<CpuMaterial>,
         new_model_transform_entity: Entity,
         edge_2d_entity: Entity,
+        owning_file_entity: &Entity,
         translation: Vec3,
     ) {
         // translation control
@@ -290,6 +301,7 @@ impl ModelManager {
         self.register_model_transform_controls(
             new_model_transform_entity,
             edge_2d_entity,
+            owning_file_entity,
             translation_entity_2d,
             translation_entity_3d,
             rotation_entity_2d,
@@ -355,6 +367,7 @@ impl ModelManager {
         &mut self,
         model_transform_entity: Entity,
         edge_2d_entity: Entity,
+        owning_file_entity: &Entity,
         translation_entity_2d: Entity,
         translation_entity_3d: Entity,
         rotation_entity_2d: Entity,
@@ -366,6 +379,7 @@ impl ModelManager {
             model_transform_entity,
             ModelTransformData::new(
                 edge_2d_entity,
+                *owning_file_entity,
                 translation_entity_2d,
                 translation_entity_3d,
                 rotation_entity_2d,
@@ -376,6 +390,12 @@ impl ModelManager {
         );
         self.edge_2d_to_model_transform
             .insert(edge_2d_entity, model_transform_entity);
+
+        if !self.file_to_model_transforms.contains_key(owning_file_entity) {
+            self.file_to_model_transforms.insert(*owning_file_entity, HashSet::new());
+        }
+        let model_transforms = self.file_to_model_transforms.get_mut(owning_file_entity).unwrap();
+        model_transforms.insert(model_transform_entity);
     }
 
     pub(crate) fn edge_2d_has_model_transform(&self, edge_2d_entity: &Entity) -> bool {
@@ -422,17 +442,30 @@ impl ModelManager {
             .unwrap();
         self.edge_2d_to_model_transform
             .remove(&model_transform_data.edge_2d_entity);
+
+        let model_transforms = self.file_to_model_transforms.get_mut(&model_transform_data.owning_file_entity).unwrap();
+        model_transforms.remove(model_transform_entity);
+        if model_transforms.is_empty() {
+            self.file_to_model_transforms.remove(&model_transform_data.owning_file_entity);
+        }
+
         model_transform_data
     }
 
-    pub fn sync_transform_controls(
+    fn sync_transform_controls(
         &self,
+        file_entity: &Entity,
         vertex_3d_q: &mut Query<&mut Vertex3d>,
         model_transform_q: &Query<&ModelTransform>,
     ) {
+        let Some(model_transform_entities) = self.file_to_model_transforms.get(file_entity) else {
+            return;
+        };
+
         let unit_length = 10.0;
 
-        for (model_transform_entity, data) in self.model_transforms.iter() {
+        for model_transform_entity in model_transform_entities.iter() {
+            let data = self.model_transforms.get(model_transform_entity).unwrap();
             let model_transform = model_transform_q.get(*model_transform_entity).unwrap();
 
             // translation
@@ -460,30 +493,33 @@ impl ModelManager {
         }
     }
 
-    fn model_transform_3d_vertices(&self) -> Vec<Entity> {
+    fn model_transform_3d_vertices(&self, file_entity: &Entity) -> Vec<Entity> {
         let mut vertices = Vec::new();
-        for (_, data) in self.model_transforms.iter() {
-            vertices.push(data.translation_entity_3d);
-            vertices.push(data.rotation_entity_3d);
-            vertices.push(data.scale_entity_3d);
+        if let Some(model_transform_entities) = self.file_to_model_transforms.get(file_entity) {
+            for model_transform_entity in model_transform_entities.iter() {
+                let data = self.model_transforms.get(model_transform_entity).unwrap();
+                vertices.push(data.translation_entity_3d);
+                vertices.push(data.rotation_entity_3d);
+                vertices.push(data.scale_entity_3d);
+            }
         }
         vertices
     }
 
-    pub fn sync_vertices(&self, world: &mut World, vertex_manager: &VertexManager, camera_3d_entity: &Entity, camera_is_2d: bool) {
+    pub fn sync_vertices(&self, world: &mut World, vertex_manager: &VertexManager, file_entity: &Entity, camera_3d_entity: &Entity, camera_is_2d: bool) {
         // only triggers when canvas is redrawn
 
         // ModelTransformControls
         // (setting Vertex3d)
         let mut system_state: SystemState<(Query<&mut Vertex3d>, Query<&ModelTransform>)> = SystemState::new(world);
         let (mut vertex_3d_q, model_transform_q) = system_state.get_mut(world);
-        self.sync_transform_controls(&mut vertex_3d_q, &model_transform_q);
+        self.sync_transform_controls(file_entity, &mut vertex_3d_q, &model_transform_q);
 
         // gather 3D entities for Skel Vertices, Compass/Grid/ModelTransformControls Vertices
         let mut vertex_3d_entities: HashSet<Entity> = HashSet::new();
         let compass_3d_entities = world.get_resource::<Compass>().unwrap().vertices();
         let grid_3d_entities = world.get_resource::<Grid>().unwrap().vertices();
-        let mtc_3d_entites = self.model_transform_3d_vertices();
+        let mtc_3d_entites = self.model_transform_3d_vertices(file_entity);
         vertex_3d_entities.extend(compass_3d_entities);
         vertex_3d_entities.extend(grid_3d_entities);
         vertex_3d_entities.extend(mtc_3d_entites);
@@ -501,7 +537,8 @@ impl ModelManager {
 
         for vertex_3d_entity in vertex_3d_entities.iter() {
             let Some(vertex_data) = vertex_manager.get_vertex_3d_data(vertex_3d_entity) else {
-                panic!("vertex_3d_entity {:?} has no vertex_data", vertex_3d_entity);
+                warn!("vertex_3d_entity {:?} has no vertex_data", vertex_3d_entity);
+                continue;
             };
 
             for edge_3d_entity in vertex_data.edges_3d.iter() {
@@ -514,7 +551,9 @@ impl ModelManager {
         let mut vertex_3d_q = system_state.get_mut(world);
 
         for vertex_3d_entity in vertex_3d_entities.iter() {
-            let (vertex_3d, mut transform) = vertex_3d_q.get_mut(*vertex_3d_entity).unwrap();
+            let Ok((vertex_3d, mut transform)) = vertex_3d_q.get_mut(*vertex_3d_entity) else {
+                continue;
+            };
             transform.translation = vertex_3d.as_vec3();
         }
 
@@ -557,7 +596,8 @@ impl ModelManager {
         // for ALL gathered 2D vertex entities, derive 2d transform from 3d transform
         for vertex_3d_entity in vertex_3d_entities.iter() {
             let Some(vertex_data) = vertex_manager.get_vertex_3d_data(vertex_3d_entity) else {
-                panic!("vertex_3d_entity {:?} has no vertex_data", vertex_3d_entity);
+                warn!("vertex_3d_entity {:?} has no vertex_data", vertex_3d_entity);
+                continue;
             };
             let vertex_2d_entity = vertex_data.entity_2d;
 
@@ -596,13 +636,63 @@ impl ModelManager {
         }
     }
 
-    pub fn draw(&self, _world: &mut World) {
-        // actually draw
+    pub fn draw(&self, world: &mut World, current_file_entity: &Entity) {
+
+        let Some(current_tab_state) = world.get_resource::<TabManager>().unwrap().current_tab_state() else {
+            return;
+        };
+        let camera_state = &current_tab_state.camera_state;
+        let camera_is_2d = camera_state.is_2d();
+        if camera_is_2d {
+            self.draw_2d(world, current_file_entity);
+        } else {
+            self.draw_3d(world);
+        }
+
 
         // TODO: - only draw skel bones when no model is assigned
         // - draw skel bones with enabled/disabled color
         // - draw 2d model transform controls
         // - draw meshes with appropriate transformations
         // - draw compass & grid
+    }
+
+    fn draw_2d(&self, world: &mut World, current_file_entity: &Entity) {
+        // vertices (model transform controls, compass, grid)
+        let mut vertex_3d_entities: HashSet<Entity> = HashSet::new();
+        let compass_3d_entities = world.get_resource::<Compass>().unwrap().vertices();
+        let grid_3d_entities = world.get_resource::<Grid>().unwrap().vertices();
+        let mtc_3d_entites = self.model_transform_3d_vertices(current_file_entity);
+        vertex_3d_entities.extend(compass_3d_entities);
+        vertex_3d_entities.extend(grid_3d_entities);
+        vertex_3d_entities.extend(mtc_3d_entites);
+
+        let mut system_state: SystemState<(
+            ResMut<RenderFrame>,
+            Res<VertexManager>,
+            Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>, &Transform, Option<&RenderLayer>)>,
+        )> = SystemState::new(world);
+        let (
+            mut render_frame,
+            vertex_manager,
+            objects_q,
+        ) = system_state.get_mut(world);
+
+        // draw vertices
+        for vertex_3d_entity in vertex_3d_entities.iter() {
+
+            // draw vertex 2d
+            let Some(vertex_2d_entity) = vertex_manager.vertex_entity_3d_to_2d(&vertex_3d_entity) else {continue};
+
+            let (mesh_handle, mat_handle, transform, render_layer_opt) = objects_q.get(vertex_2d_entity).unwrap();
+            // can't we ONLY draw this when 2d mode is enabled?
+            render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
+        }
+
+        // edges (skel bones without model, compass, grid, model transform controls, models)
+    }
+
+    fn draw_3d(&self, _world: &mut World) {
+
     }
 }

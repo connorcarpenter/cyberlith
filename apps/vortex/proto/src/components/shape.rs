@@ -353,6 +353,7 @@ pub enum ModelTransformEntityType {
 // ModelTransform
 #[derive(Component, Replicate)]
 pub struct ModelTransform {
+    pub model_file_entity: EntityProperty,
     pub vertex_name: Property<String>,
     pub skin_or_scene_entity: EntityProperty,
     pub entity_type: Property<ModelTransformEntityType>,
@@ -395,6 +396,10 @@ impl ModelTransform {
             scale_y.into(),
             scale_z.into(),
         )
+    }
+
+    pub fn set_owner(&mut self, converter: &dyn EntityAndGlobalEntityConverter<Entity>, file_entity: &Entity) {
+        self.model_file_entity.set(converter, file_entity);
     }
 
     pub fn set_entity(

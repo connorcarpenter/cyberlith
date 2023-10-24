@@ -146,7 +146,7 @@ pub fn sync_vertices(world: &mut World) {
             }
             FileExtension::Model => {
                 world.resource_scope(|world, model_manager: Mut<ModelManager>| {
-                    model_manager.sync_vertices(world, &vertex_manager, &camera_3d_entity, camera_is_2d);
+                    model_manager.sync_vertices(world, &vertex_manager, &current_file_entity, &camera_3d_entity, camera_is_2d);
                 });
             }
             FileExtension::Anim => {

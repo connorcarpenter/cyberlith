@@ -107,6 +107,7 @@ pub fn draw_vertices_and_edges(world: &mut World) {
         .get_resource::<FileManager>()
         .unwrap()
         .get_file_type(current_tab);
+    let current_file_entity = *current_tab;
 
     match current_file {
         FileExtension::Anim => {
@@ -124,9 +125,10 @@ pub fn draw_vertices_and_edges(world: &mut World) {
         }
         FileExtension::Model => {
             world.resource_scope(|world, model_manager: Mut<ModelManager>| {
-                model_manager.draw(world);
-                return;
+                model_manager.draw(world, &current_file_entity);
             });
+
+            return;
         }
         _ => {}
     }
@@ -256,7 +258,7 @@ fn get_shape_color(
         vertex_manager.mat_root_vertex
     } else {
         match current_file {
-            FileExtension::Anim | FileExtension::Model => {
+            FileExtension::Anim => {
                 if edge_is_enabled {
                     vertex_manager.mat_enabled_vertex
                 } else {

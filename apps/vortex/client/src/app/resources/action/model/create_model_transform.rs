@@ -1,5 +1,4 @@
-use bevy_ecs::{prelude::World, world::Mut};
-
+use bevy_ecs::{prelude::World, world::Mut, entity::Entity};
 use bevy_log::info;
 
 use crate::app::resources::{
@@ -9,6 +8,7 @@ use crate::app::resources::{
 pub fn execute(
     world: &mut World,
     input_manager: &mut InputManager,
+    current_file_entity: &Entity,
     action: ModelAction,
 ) -> Vec<ModelAction> {
     let ModelAction::CreateModelTransform(edge_2d_entity, dependency_file_ext, dependency_file_entity) = action else {
@@ -22,6 +22,7 @@ pub fn execute(
             world,
             input_manager,
             &edge_2d_entity,
+            current_file_entity,
             &dependency_file_ext,
             &dependency_file_entity,
         );
