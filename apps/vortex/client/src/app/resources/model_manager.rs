@@ -27,7 +27,7 @@ use crate::app::{
     resources::{
         action::model::ModelAction, camera_manager::CameraManager, canvas::Canvas, shape_data::CanvasShape, shape_manager::ShapeManager,
         edge_manager::EdgeManager, face_manager::FaceManager, input::InputManager, file_manager::FileManager,
-        tab_manager::TabManager, vertex_manager::VertexManager, compass::Compass, grid::Grid
+        tab_manager::TabManager, vertex_manager::VertexManager, compass::Compass, grid::Grid, edge_manager::edge_is_enabled
     },
     ui::{widgets::create_networked_dependency, BindingState, UiState},
 };
@@ -684,6 +684,7 @@ impl ModelManager {
             Res<EdgeManager>,
             Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>, &Transform, Option<&RenderLayer>)>,
             Query<(Entity, &OwnedByFileLocal, &FileType), With<Edge3d>>,
+            Query<Option<&ShapeName>>,
         )> = SystemState::new(world);
         let (
             mut render_frame,
@@ -693,6 +694,7 @@ impl ModelManager {
             edge_manager,
             objects_q,
             edge_q,
+            shape_name_q,
         ) = system_state.get_mut(world);
 
         // draw vertices (compass, grid, model transform controls)
@@ -732,7 +734,6 @@ impl ModelManager {
         let hover_edge_2d_scale = Edge2dLocal::HOVER_THICKNESS * camera_3d_scale;
 
         // skel bones
-        // TODO: use enabled/disabled color
         for (edge_3d_entity, owned_by_file, file_type) in edge_q.iter() {
             if *file_type.value != FileExtension::Skel {
                 continue;
@@ -750,9 +751,18 @@ impl ModelManager {
             if self.edge_2d_has_model_transform(&edge_2d_entity) {
                 continue;
             }
+
+            let (_, end_vertex_3d_entity) = edge_manager.edge_get_endpoints(&edge_3d_entity);
+            let shape_name_opt = shape_name_q.get(end_vertex_3d_entity).unwrap();
+            let edge_is_enabled = edge_is_enabled(shape_name_opt);
+            let mat_handle = get_shape_color(
+                &vertex_manager,
+                edge_is_enabled,
+            );
+
             let (
                 mesh_handle,
-                mat_handle,
+                _,
                 transform,
                 render_layer_opt
             ) = objects_q.get(edge_2d_entity).unwrap();
@@ -763,7 +773,7 @@ impl ModelManager {
                     new_transform.scale.y = hover_edge_2d_scale;
                 }
             }
-            render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, &new_transform);
+            render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, &new_transform);
         }
 
         // TODO: models
@@ -788,6 +798,7 @@ impl ModelManager {
             Res<EdgeManager>,
             Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>, &Transform, Option<&RenderLayer>)>,
             Query<(Entity, &OwnedByFileLocal, &FileType), With<Edge3d>>,
+            Query<Option<&ShapeName>>,
         )> = SystemState::new(world);
         let (
             mut render_frame,
@@ -796,6 +807,7 @@ impl ModelManager {
             edge_manager,
             objects_q,
             edge_q,
+            shape_name_q,
         ) = system_state.get_mut(world);
 
         // draw vertices (compass, grid)
@@ -837,10 +849,35 @@ impl ModelManager {
             if self.edge_2d_has_model_transform(&edge_2d_entity) {
                 continue;
             }
-            let (mesh_handle, mat_handle, transform, render_layer_opt) = objects_q.get(edge_3d_entity).unwrap();
-            render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
+
+            let (_, end_vertex_3d_entity) = edge_manager.edge_get_endpoints(&edge_3d_entity);
+            let shape_name_opt = shape_name_q.get(end_vertex_3d_entity).unwrap();
+            let edge_is_enabled = edge_is_enabled(shape_name_opt);
+            let mat_handle = get_shape_color(
+                &vertex_manager,
+                edge_is_enabled,
+            );
+
+            let (
+                mesh_handle,
+                _,
+                transform,
+                render_layer_opt
+            ) = objects_q.get(edge_3d_entity).unwrap();
+            render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
         }
 
         // TODO: skin faces
+    }
+}
+
+fn get_shape_color(
+    vertex_manager: &Res<VertexManager>,
+    edge_is_enabled: bool,
+) -> Handle<CpuMaterial> {
+    if edge_is_enabled {
+        vertex_manager.mat_enabled_vertex
+    } else {
+        vertex_manager.mat_disabled_vertex
     }
 }
