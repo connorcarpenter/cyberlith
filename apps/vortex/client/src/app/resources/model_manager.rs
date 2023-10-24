@@ -20,20 +20,17 @@ use render_api::{
     resources::RenderFrame,
 };
 
-use vortex_proto::components::{Edge3d, EdgeAngle, FileExtension, FileType, ModelTransform, ModelTransformEntityType, OwnedByFile, ShapeName, Vertex3d};
+use vortex_proto::components::{Edge3d, EdgeAngle, FileExtension, FileType, ModelTransform, ModelTransformEntityType, ShapeName, Vertex3d};
 
 use crate::app::{
-    components::{ModelTransformControl, Edge2dLocal, Edge3dLocal},
+    components::{OwnedByFileLocal, ModelTransformControl, Edge2dLocal, Edge3dLocal},
     resources::{
-        action::model::ModelAction, camera_manager::CameraManager, canvas::Canvas,
-        edge_manager::EdgeManager, face_manager::FaceManager, input::InputManager,
+        action::model::ModelAction, camera_manager::CameraManager, canvas::Canvas, shape_data::CanvasShape, shape_manager::ShapeManager,
+        edge_manager::EdgeManager, face_manager::FaceManager, input::InputManager, file_manager::FileManager,
         tab_manager::TabManager, vertex_manager::VertexManager, compass::Compass, grid::Grid
     },
     ui::{widgets::create_networked_dependency, BindingState, UiState},
 };
-use crate::app::components::OwnedByFileLocal;
-use crate::app::resources::file_manager::FileManager;
-use crate::app::resources::shape_manager::ShapeManager;
 
 pub struct ModelTransformData {
     edge_2d_entity: Entity,
@@ -655,9 +652,10 @@ impl ModelManager {
             return;
         };
         let camera_state = &current_tab_state.camera_state;
+        let camera_3d_scale = camera_state.camera_3d_scale();
         let camera_is_2d = camera_state.is_2d();
         if camera_is_2d {
-            self.draw_2d(world, current_file_entity);
+            self.draw_2d(world, current_file_entity, camera_3d_scale);
         } else {
             self.draw_3d(world, current_file_entity);
         }
@@ -670,7 +668,7 @@ impl ModelManager {
         // - draw compass & grid
     }
 
-    fn draw_2d(&self, world: &mut World, current_file_entity: &Entity) {
+    fn draw_2d(&self, world: &mut World, current_file_entity: &Entity, camera_3d_scale: f32) {
 
         let mut vertex_3d_entities: HashSet<Entity> = HashSet::new();
         let compass_3d_entities = world.get_resource::<Compass>().unwrap().vertices();
@@ -685,6 +683,7 @@ impl ModelManager {
         let mut system_state: SystemState<(
             ResMut<RenderFrame>,
             Res<FileManager>,
+            Res<InputManager>,
             Res<VertexManager>,
             Res<EdgeManager>,
             Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>, &Transform, Option<&RenderLayer>)>,
@@ -693,6 +692,7 @@ impl ModelManager {
         let (
             mut render_frame,
             file_manager,
+            input_manager,
             vertex_manager,
             edge_manager,
             objects_q,
@@ -720,6 +720,9 @@ impl ModelManager {
             render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
         }
 
+        let normal_edge_2d_scale = Edge2dLocal::NORMAL_THICKNESS * camera_3d_scale;
+        let hover_edge_2d_scale = Edge2dLocal::HOVER_THICKNESS * camera_3d_scale;
+
         // skel bones
         // TODO: don't draw any with model transform
         // TODO: use enabled/disabled color
@@ -738,7 +741,14 @@ impl ModelManager {
                 continue;
             };
             let (mesh_handle, mat_handle, transform, render_layer_opt) = objects_q.get(edge_2d_entity).unwrap();
-            render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
+            let mut new_transform = transform.clone();
+            new_transform.scale.y = normal_edge_2d_scale;
+            if let Some((hover_entity, CanvasShape::Edge)) = input_manager.hovered_entity {
+                if hover_entity == edge_2d_entity {
+                    new_transform.scale.y = hover_edge_2d_scale;
+                }
+            }
+            render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, &new_transform);
         }
 
         // TODO: models
