@@ -77,7 +77,7 @@ impl ShapeManager {
         }
     }
 
-    // returns true if vertex is owned by tab
+    // returns true if shape is owned by tab
     pub(crate) fn is_owned_by_file(
         file_manager: &FileManager,
         file_entity: &Entity,
@@ -91,7 +91,7 @@ impl ShapeManager {
         }
     }
 
-    // returns true if vertex is owned by tab
+    // returns true if shape is owned by tab
     fn is_owned_by_file_internal(
         file_manager: &FileManager,
         file_entity: &Entity,

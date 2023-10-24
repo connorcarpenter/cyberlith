@@ -20,7 +20,7 @@ use render_api::{
     resources::RenderFrame,
 };
 
-use vortex_proto::components::{EdgeAngle, FileExtension, FileType, ModelTransform, ModelTransformEntityType, ShapeName, Vertex3d};
+use vortex_proto::components::{Edge3d, EdgeAngle, FileExtension, FileType, ModelTransform, ModelTransformEntityType, OwnedByFile, ShapeName, Vertex3d};
 
 use crate::app::{
     components::{ModelTransformControl, Edge2dLocal, Edge3dLocal},
@@ -31,6 +31,9 @@ use crate::app::{
     },
     ui::{widgets::create_networked_dependency, BindingState, UiState},
 };
+use crate::app::components::OwnedByFileLocal;
+use crate::app::resources::file_manager::FileManager;
+use crate::app::resources::shape_manager::ShapeManager;
 
 pub struct ModelTransformData {
     edge_2d_entity: Entity,
@@ -524,11 +527,17 @@ impl ModelManager {
         vertex_3d_entities.extend(grid_3d_entities);
         vertex_3d_entities.extend(mtc_3d_entites);
 
-        let mut system_state: SystemState<Query<(Entity, &FileType), With<Vertex3d>>> = SystemState::new(world);
-        let vert_q = system_state.get_mut(world);
-        for (entity, file_type) in vert_q.iter() {
+        let mut system_state: SystemState<(Res<FileManager>, Query<(Entity, &FileType, &OwnedByFileLocal), With<Vertex3d>>)> = SystemState::new(world);
+        let (file_manager, vert_q) = system_state.get_mut(world);
+        for (entity, file_type, owned_by_file_local) in vert_q.iter() {
             if *file_type.value == FileExtension::Skel {
-                vertex_3d_entities.insert(entity);
+                if ShapeManager::is_owned_by_file(
+                    &file_manager,
+                    file_entity,
+                    Some(&owned_by_file_local.file_entity),
+                ) {
+                    vertex_3d_entities.insert(entity);
+                }
             }
         }
 
@@ -675,15 +684,19 @@ impl ModelManager {
 
         let mut system_state: SystemState<(
             ResMut<RenderFrame>,
+            Res<FileManager>,
             Res<VertexManager>,
             Res<EdgeManager>,
             Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>, &Transform, Option<&RenderLayer>)>,
+            Query<(Entity, &OwnedByFileLocal, &FileType), With<Edge3d>>,
         )> = SystemState::new(world);
         let (
             mut render_frame,
+            file_manager,
             vertex_manager,
             edge_manager,
             objects_q,
+            edge_q,
         ) = system_state.get_mut(world);
 
         // draw vertices (compass, grid, model transform controls)
@@ -707,12 +720,33 @@ impl ModelManager {
             render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
         }
 
-        // TODO: edges (skel bones without model, models)
+        // skel bones
+        // TODO: don't draw any with model transform
+        // TODO: use enabled/disabled color
+        for (edge_3d_entity, owned_by_file, file_type) in edge_q.iter() {
+            if *file_type.value != FileExtension::Skel {
+                continue;
+            }
+            if !ShapeManager::is_owned_by_file(
+                &file_manager,
+                current_file_entity,
+                Some(&owned_by_file.file_entity),
+            ) {
+                continue;
+            }
+            let Some(edge_2d_entity) = edge_manager.edge_entity_3d_to_2d(&edge_3d_entity) else {
+                continue;
+            };
+            let (mesh_handle, mat_handle, transform, render_layer_opt) = objects_q.get(edge_2d_entity).unwrap();
+            render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
+        }
+
+        // TODO: models
 
         // TODO: render select line and select circle
     }
 
-    fn draw_3d(&self, world: &mut World, _current_file_entity: &Entity) {
+    fn draw_3d(&self, world: &mut World, current_file_entity: &Entity) {
 
         let mut vertex_3d_entities: HashSet<Entity> = HashSet::new();
         let compass_3d_entities = world.get_resource::<Compass>().unwrap().vertices();
@@ -724,13 +758,17 @@ impl ModelManager {
 
         let mut system_state: SystemState<(
             ResMut<RenderFrame>,
+            Res<FileManager>,
             Res<VertexManager>,
             Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>, &Transform, Option<&RenderLayer>)>,
+            Query<(Entity, &OwnedByFileLocal, &FileType), With<Edge3d>>,
         )> = SystemState::new(world);
         let (
             mut render_frame,
+            file_manager,
             vertex_manager,
             objects_q,
+            edge_q,
         ) = system_state.get_mut(world);
 
         // draw vertices (compass, grid)
@@ -753,7 +791,23 @@ impl ModelManager {
             render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
         }
 
-        // TODO: edges (skel bones without model)
+        // skel bone edges
+        // TODO: don't draw any with model transform
+        // TODO: use enabled/disabled color
+        for (edge_3d_entity, owned_by_file, file_type) in edge_q.iter() {
+            if *file_type.value != FileExtension::Skel {
+                continue;
+            }
+            if !ShapeManager::is_owned_by_file(
+                &file_manager,
+                current_file_entity,
+                Some(&owned_by_file.file_entity),
+            ) {
+                continue;
+            }
+            let (mesh_handle, mat_handle, transform, render_layer_opt) = objects_q.get(edge_3d_entity).unwrap();
+            render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
+        }
 
         // TODO: skin faces
     }
