@@ -778,7 +778,33 @@ impl ModelManager {
 
         // TODO: models
 
-        // TODO: render select line and select circle
+        // render select line
+        match input_manager.selected_shape_2d() {
+            Some((_, CanvasShape::Edge)) => {
+                if let Some(select_line_entity) = input_manager.select_line_entity {
+                    let (
+                        mesh_handle,
+                        mat_handle,
+                        transform,
+                        render_layer_opt
+                    ) = objects_q.get(select_line_entity).unwrap();
+                    render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
+                }
+            }
+            Some((_, CanvasShape::Vertex)) => {
+                // render select circle
+                if let Some(select_circle_entity) = input_manager.select_circle_entity {
+                    let (
+                        mesh_handle,
+                        mat_handle,
+                        transform,
+                        render_layer_opt
+                    ) = objects_q.get(select_circle_entity).unwrap();
+                    render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
+                }
+            }
+            _ => {}
+        }
     }
 
     fn draw_3d(&self, world: &mut World, current_file_entity: &Entity) {
@@ -831,7 +857,6 @@ impl ModelManager {
         }
 
         // skel bone edges
-        // TODO: use enabled/disabled color
         for (edge_3d_entity, owned_by_file, file_type) in edge_q.iter() {
             if *file_type.value != FileExtension::Skel {
                 continue;

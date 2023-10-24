@@ -2,7 +2,7 @@ use bevy_ecs::{prelude::World, world::Mut, entity::Entity};
 use bevy_log::info;
 
 use crate::app::resources::{
-    action::model::ModelAction, input::InputManager, model_manager::ModelManager,
+    action::model::ModelAction, input::InputManager, model_manager::ModelManager, canvas::Canvas
 };
 
 pub fn execute(
@@ -27,6 +27,10 @@ pub fn execute(
             &dependency_file_entity,
         );
     });
+
+    let mut canvas = world.get_resource_mut::<Canvas>().unwrap();
+    input_manager.deselect_shape(&mut canvas);
+    input_manager.queue_resync_selection_ui();
 
     // TODO: migrate undo/redo entities
 
