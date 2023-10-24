@@ -115,7 +115,10 @@ impl ModelManager {
         dependency_file_entity: &Entity,
         edge_2d_entity: &Entity,
     ) {
-        create_networked_dependency(world, current_file_entity, dependency_file_entity);
+        let file_manager = world.get_resource::<FileManager>().unwrap();
+        if !file_manager.file_has_dependency(current_file_entity, dependency_file_entity) {
+            create_networked_dependency(world, current_file_entity, dependency_file_entity);
+        }
 
         world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
             world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
@@ -659,13 +662,6 @@ impl ModelManager {
         } else {
             self.draw_3d(world, current_file_entity);
         }
-
-
-        // TODO: - only draw skel bones when no model is assigned
-        // - draw skel bones with enabled/disabled color
-        // - draw 2d model transform controls
-        // - draw meshes with appropriate transformations
-        // - draw compass & grid
     }
 
     fn draw_2d(&self, world: &mut World, current_file_entity: &Entity, camera_3d_scale: f32) {
@@ -703,9 +699,16 @@ impl ModelManager {
         for vertex_3d_entity in vertex_3d_entities.iter() {
 
             // draw vertex 2d
-            let Some(data) = vertex_manager.get_vertex_3d_data(&vertex_3d_entity) else {continue};
+            let Some(data) = vertex_manager.get_vertex_3d_data(&vertex_3d_entity) else {
+                continue;
+            };
 
-            let (mesh_handle, mat_handle, transform, render_layer_opt) = objects_q.get(data.entity_2d).unwrap();
+            let (
+                mesh_handle,
+                mat_handle,
+                transform,
+                render_layer_opt
+            ) = objects_q.get(data.entity_2d).unwrap();
             render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
 
             for edge_3d_entity in data.edges_3d.iter() {
@@ -716,7 +719,12 @@ impl ModelManager {
 
         // draw edges (compass, grid, model transform controls)
         for edge_2d_entity in edge_2d_entities.iter() {
-            let (mesh_handle, mat_handle, transform, render_layer_opt) = objects_q.get(*edge_2d_entity).unwrap();
+            let (
+                mesh_handle,
+                mat_handle,
+                transform,
+                render_layer_opt
+            ) = objects_q.get(*edge_2d_entity).unwrap();
             render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
         }
 
@@ -724,7 +732,6 @@ impl ModelManager {
         let hover_edge_2d_scale = Edge2dLocal::HOVER_THICKNESS * camera_3d_scale;
 
         // skel bones
-        // TODO: don't draw any with model transform
         // TODO: use enabled/disabled color
         for (edge_3d_entity, owned_by_file, file_type) in edge_q.iter() {
             if *file_type.value != FileExtension::Skel {
@@ -740,7 +747,15 @@ impl ModelManager {
             let Some(edge_2d_entity) = edge_manager.edge_entity_3d_to_2d(&edge_3d_entity) else {
                 continue;
             };
-            let (mesh_handle, mat_handle, transform, render_layer_opt) = objects_q.get(edge_2d_entity).unwrap();
+            if self.edge_2d_has_model_transform(&edge_2d_entity) {
+                continue;
+            }
+            let (
+                mesh_handle,
+                mat_handle,
+                transform,
+                render_layer_opt
+            ) = objects_q.get(edge_2d_entity).unwrap();
             let mut new_transform = transform.clone();
             new_transform.scale.y = normal_edge_2d_scale;
             if let Some((hover_entity, CanvasShape::Edge)) = input_manager.hovered_entity {
@@ -770,6 +785,7 @@ impl ModelManager {
             ResMut<RenderFrame>,
             Res<FileManager>,
             Res<VertexManager>,
+            Res<EdgeManager>,
             Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>, &Transform, Option<&RenderLayer>)>,
             Query<(Entity, &OwnedByFileLocal, &FileType), With<Edge3d>>,
         )> = SystemState::new(world);
@@ -777,6 +793,7 @@ impl ModelManager {
             mut render_frame,
             file_manager,
             vertex_manager,
+            edge_manager,
             objects_q,
             edge_q,
         ) = system_state.get_mut(world);
@@ -802,7 +819,6 @@ impl ModelManager {
         }
 
         // skel bone edges
-        // TODO: don't draw any with model transform
         // TODO: use enabled/disabled color
         for (edge_3d_entity, owned_by_file, file_type) in edge_q.iter() {
             if *file_type.value != FileExtension::Skel {
@@ -813,6 +829,12 @@ impl ModelManager {
                 current_file_entity,
                 Some(&owned_by_file.file_entity),
             ) {
+                continue;
+            }
+            let Some(edge_2d_entity) = edge_manager.edge_entity_3d_to_2d(&edge_3d_entity) else {
+                continue;
+            };
+            if self.edge_2d_has_model_transform(&edge_2d_entity) {
                 continue;
             }
             let (mesh_handle, mat_handle, transform, render_layer_opt) = objects_q.get(edge_3d_entity).unwrap();
