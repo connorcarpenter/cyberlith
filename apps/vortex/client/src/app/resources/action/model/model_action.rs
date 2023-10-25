@@ -3,8 +3,9 @@ use bevy_ecs::prelude::{Entity, World};
 use vortex_proto::components::FileExtension;
 
 use crate::app::resources::{
+    shape_data::CanvasShape,
     action::{
-        model::{create_model_transform, delete_model_transform},
+        model::{create_model_transform, select_shape, delete_model_transform},
         Action,
     },
     input::InputManager,
@@ -12,6 +13,8 @@ use crate::app::resources::{
 
 #[derive(Clone)]
 pub enum ModelAction {
+    // The 2D shape entity to deselect (or None for deselect)
+    SelectShape(Option<(Entity, CanvasShape)>),
     // edge_2d_entity, dependency file ext, dependency file entity
     CreateModelTransform(Entity, FileExtension, Entity),
     // edge_2d_entity
@@ -19,6 +22,7 @@ pub enum ModelAction {
 }
 
 pub enum ModelActionType {
+    SelectShape,
     CreateModelTransform,
     DeleteModelTransform,
     None,
@@ -27,6 +31,7 @@ pub enum ModelActionType {
 impl ModelAction {
     pub fn get_type(&self) -> ModelActionType {
         match self {
+            Self::SelectShape(_) => ModelActionType::SelectShape,
             Self::CreateModelTransform(_, _, _) => ModelActionType::CreateModelTransform,
             Self::DeleteModelTransform(_) => ModelActionType::DeleteModelTransform,
         }
@@ -41,10 +46,15 @@ impl ModelAction {
         let action_type = self.get_type();
 
         match action_type {
+            ModelActionType::SelectShape => {
+                select_shape::execute(world, input_manager, self)
+            }
             ModelActionType::CreateModelTransform => {
                 create_model_transform::execute(world, input_manager, &current_file_entity, self)
             }
-            ModelActionType::DeleteModelTransform => delete_model_transform::execute(world, self),
+            ModelActionType::DeleteModelTransform => {
+                delete_model_transform::execute(world, self)
+            },
             _ => Vec::new(),
         }
     }

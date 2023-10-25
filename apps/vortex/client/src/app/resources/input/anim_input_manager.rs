@@ -292,7 +292,7 @@ impl AnimInputManager {
                     );
                 });
             }
-            (MouseButton::Right, _, _) => {
+            (MouseButton::Right, Some(_), _) => {
                 // deselect vertex
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
                     tab_manager.current_tab_execute_anim_action(
