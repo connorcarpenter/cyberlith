@@ -4,7 +4,6 @@ use bevy_ecs::{
     prelude::{Entity, Resource},
     system::Query,
 };
-use bevy_log::info;
 
 use naia_bevy_client::Client;
 
@@ -197,10 +196,10 @@ impl FileManager {
         file_entity: &Entity,
         dependency_file_entity: &Entity,
     ) {
-        info!(
-            "file_add_dependency({:?}, {:?})",
-            file_entity, dependency_file_entity
-        );
+        // info!(
+        //     "file_add_dependency({:?}, {:?})",
+        //     file_entity, dependency_file_entity
+        // );
 
         // add dependency to dependent
         {

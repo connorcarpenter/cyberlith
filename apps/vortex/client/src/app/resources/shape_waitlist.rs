@@ -5,7 +5,7 @@ use bevy_ecs::{
     event::EventWriter,
     system::{Commands, Query, Resource},
 };
-use bevy_log::info;
+use bevy_log::{info, warn};
 
 use math::Vec3;
 
@@ -36,7 +36,7 @@ pub enum ShapeWaitlistInsert {
     FileType(FileExtension),
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 enum ShapeType {
     Vertex,
     Edge,
@@ -48,6 +48,16 @@ enum ShapeData {
     Vertex(Option<Entity>),
     Edge(Entity, Entity, Option<f32>),
     Face(Entity, Entity, Entity, Entity, Entity, Entity),
+}
+
+impl ShapeData {
+    pub fn to_type(&self) -> ShapeType {
+        match self {
+            ShapeData::Vertex(_) => ShapeType::Vertex,
+            ShapeData::Edge(_, _, _) => ShapeType::Edge,
+            ShapeData::Face(_, _, _, _, _, _) => ShapeType::Face,
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -252,10 +262,10 @@ impl ShapeWaitlist {
                     possibly_ready_entities.push(end_entity);
                 };
 
-                info!(
-                    "Entities to check for readiness... `{:?}`",
-                    possibly_ready_entities
-                );
+                // info!(
+                //     "Entities to check for readiness... `{:?}`",
+                //     possibly_ready_entities
+                // );
             }
             ShapeWaitlistInsert::EdgeAngle(angle) => {
                 self.get_mut(&entity).unwrap().set_edge_angle(angle);
@@ -291,7 +301,7 @@ impl ShapeWaitlist {
 
             // entity is ready!
             let entity = possibly_ready_entity;
-            info!("entity `{:?}` is ready!", entity);
+            // info!("entity `{:?}` is ready!", entity);
 
             let entry = self.remove(&entity).unwrap();
             let entry_shape = entry.shape.unwrap();
@@ -416,6 +426,8 @@ impl ShapeWaitlist {
     ) {
         let (shape_data, file_entity, file_type) = entry.decompose();
 
+        let shape_type = shape_data.to_type();
+
         match (shape_data, file_type) {
             (ShapeData::Vertex(parent_3d_entity_opt), FileExtension::Skel) => {
                 let color = match parent_3d_entity_opt {
@@ -484,6 +496,7 @@ impl ShapeWaitlist {
                     positions[index] = transform.translation;
                 }
 
+                warn!("removing face key: {:?}", face_key);
                 face_manager.remove_new_face_key(&face_key);
                 if !face_manager.has_2d_face(&face_key) {
                     face_manager.process_new_face(
@@ -514,8 +527,8 @@ impl ShapeWaitlist {
 
         // if the waitlist has any children entities of this one, process them
         info!(
-            "processing complete shape {:?}. checking for children",
-            entity
+            "processing complete for shape `{:?}` of type: {:?}. checking for children..",
+            entity, shape_type,
         );
         if let Some(child_entries) = self.dependency_map.on_dependency_complete(entity) {
             for (child_entity, child_entry) in child_entries {

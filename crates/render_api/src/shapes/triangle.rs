@@ -1,4 +1,4 @@
-use bevy_log::info;
+
 use math::{Vec2, Vec3};
 
 use crate::{
@@ -58,7 +58,7 @@ impl From<Triangle> for CpuMesh {
         let indices: Indices = Indices(Some(vec![0u16, 1, 2]));
         let normals = vec![Vec3::Z, Vec3::Z, Vec3::Z];
 
-        info!("Triangle Positions: {:?}", positions);
+        // info!("Triangle Positions: {:?}", positions);
 
         CpuMesh {
             indices,

@@ -129,10 +129,10 @@ impl SkelFileWaitlist {
                         self.insert_incomplete(vertex_entity, SkelWaitlistEntry::new());
                     }
                     let vertex_entry = self.get_mut(&vertex_entity).unwrap();
-                    info!(
-                        "Setting parent of {:?} to {:?}",
-                        vertex_entity, parent_entity
-                    );
+                    // info!(
+                    //     "Setting parent of {:?} to {:?}",
+                    //     vertex_entity, parent_entity
+                    // );
                     vertex_entry.set_edge_and_parent(Some((edge_entity, parent_entity)));
                     vertex_entry.set_shape_type(ShapeType::Vertex);
                     possibly_ready_entities.push(vertex_entity);
@@ -147,10 +147,10 @@ impl SkelFileWaitlist {
                     possibly_ready_entities.push(edge_entity);
                 }
 
-                info!(
-                    "Entities to check for readiness... `{:?}`",
-                    possibly_ready_entities
-                );
+                // info!(
+                //     "Entities to check for readiness... `{:?}`",
+                //     possibly_ready_entities
+                // );
             }
         }
 
@@ -162,7 +162,7 @@ impl SkelFileWaitlist {
                 .is_ready()
             {
                 let entity = possibly_ready_entity;
-                info!("entity `{:?}` is ready!", entity);
+                // info!("entity `{:?}` is ready!", entity);
                 let entry = self.remove(&entity).unwrap();
 
                 match entry.shape.unwrap() {
@@ -171,11 +171,11 @@ impl SkelFileWaitlist {
                             let (_, parent_entity) = entry.get_edge_and_parent().unwrap();
                             if !shape_manager.has_vertex(&parent_entity) {
                                 // need to put in parent waitlist
-                                info!(
-                                    "vert entity {:?} requires parent {:?}. putting in parent waitlist",
-                                    entity,
-                                    parent_entity
-                                );
+                                // info!(
+                                //     "vert entity {:?} requires parent {:?}. putting in parent waitlist",
+                                //     entity,
+                                //     parent_entity
+                                // );
                                 self.dependency_map.insert_waiting_dependencies(
                                     vec![parent_entity],
                                     entity,

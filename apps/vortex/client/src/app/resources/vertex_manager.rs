@@ -471,10 +471,10 @@ impl VertexManager {
         }
 
         if let Some(file_entity) = ownership_opt {
-            info!(
-                "adding OwnedByFileLocal({:?}) to entity 2d: `{:?}` & 3d: `{:?}`",
-                file_entity, vertex_2d_entity, vertex_3d_entity,
-            );
+            // info!(
+            //     "adding OwnedByFileLocal({:?}) to entity 2d: `{:?}` & 3d: `{:?}`",
+            //     file_entity, vertex_2d_entity, vertex_3d_entity,
+            // );
             commands
                 .entity(vertex_2d_entity)
                 .insert(OwnedByFileLocal::new(file_entity));

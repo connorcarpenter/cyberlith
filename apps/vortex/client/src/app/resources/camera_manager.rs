@@ -2,7 +2,7 @@ use bevy_ecs::{
     entity::Entity,
     system::{Query, Resource},
 };
-use bevy_log::{info, warn};
+use bevy_log::warn;
 
 use math::{EulerRot, Quat, Vec2, Vec3};
 use render_api::components::{
@@ -271,11 +271,11 @@ impl CameraManager {
     ) {
         let cameras_enabled = visible;
 
-        if cameras_enabled {
-            info!("Camera are ENABLED");
-        } else {
-            info!("Camera are DISABLED");
-        }
+        // if cameras_enabled {
+        //     info!("Camera are ENABLED");
+        // } else {
+        //     info!("Camera are DISABLED");
+        // }
 
         for (mut camera, _, _) in camera_q.iter_mut() {
             camera.is_active = cameras_enabled;

@@ -608,10 +608,10 @@ impl EdgeManager {
             vertex_manager.vertex_add_edge(&vertex_3d_entity, edge_3d_entity);
         }
 
-        info!(
-            "register_3d_edge(3d: `{:?}`, 2d: `{:?}`)",
-            edge_3d_entity, edge_2d_entity
-        );
+        // info!(
+        //     "register_3d_edge(3d: `{:?}`, 2d: `{:?}`)",
+        //     edge_3d_entity, edge_2d_entity
+        // );
 
         self.edges_3d.insert(
             edge_3d_entity,
@@ -778,10 +778,10 @@ impl EdgeManager {
         if let Some(entity_3d_data) = self.edges_3d.remove(edge_3d_entity) {
             let edge_2d_entity = entity_3d_data.entity_2d;
 
-            info!(
-                "deregister_3d_edge(3d: `{:?}`, 2d: `{:?}`)",
-                edge_3d_entity, edge_2d_entity
-            );
+            // info!(
+            //     "deregister_3d_edge(3d: `{:?}`, 2d: `{:?}`)",
+            //     edge_3d_entity, edge_2d_entity
+            // );
 
             self.edges_2d.remove(&edge_2d_entity);
 

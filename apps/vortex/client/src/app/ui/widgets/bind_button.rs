@@ -5,7 +5,6 @@ use bevy_ecs::{
     system::{Commands, SystemState},
     world::World,
 };
-use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
@@ -52,7 +51,7 @@ pub fn render_bind_button(
                         );
                     }
                     BindingState::BindResult(dependency_file_ext, dependency_file_entity) => {
-                        info!("received bind result for dependency");
+                        // info!("received bind result for dependency");
                         result = Some((*dependency_file_ext, *dependency_file_entity));
                     }
                 };

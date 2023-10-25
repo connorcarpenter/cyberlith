@@ -205,10 +205,10 @@ impl ShapeWaitlist {
                         self.insert_incomplete(vertex_entity, ShapeWaitlistEntry::new());
                     }
                     let vertex_entry = self.get_mut(&vertex_entity).unwrap();
-                    info!(
-                        "Setting parent of {:?} to {:?}",
-                        vertex_entity, parent_entity
-                    );
+                    // info!(
+                    //     "Setting parent of {:?} to {:?}",
+                    //     vertex_entity, parent_entity
+                    // );
                     vertex_entry.set_edge_and_parent(Some((edge_entity, parent_entity)));
                     vertex_entry.set_shape_type(ShapeType::Vertex);
                     possibly_ready_entities.push(vertex_entity);
@@ -224,10 +224,10 @@ impl ShapeWaitlist {
                     possibly_ready_entities.push(edge_entity);
                 }
 
-                info!(
-                    "Entities to check for readiness... `{:?}`",
-                    possibly_ready_entities
-                );
+                // info!(
+                //     "Entities to check for readiness... `{:?}`",
+                //     possibly_ready_entities
+                // );
             }
             ShapeWaitlistInsert::Face(face_entity, vertex_a, vertex_b, vertex_c) => {
                 if !self.contains_key(&face_entity) {

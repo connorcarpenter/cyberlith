@@ -1,5 +1,4 @@
 use bevy_ecs::{entity::Entity, system::Commands};
-use bevy_log::info;
 
 use vortex_proto::components::FileSystemEntry;
 
@@ -26,7 +25,7 @@ pub fn parent_add_child_entry(
     let entry_kind = (*(child_entry.kind)).clone();
     let child_name = (*(child_entry.name)).clone();
 
-    info!("added child of name: `{}`, to parent", &child_name);
+    //info!("added child of name: `{}`, to parent", &child_name);
 
     parent.add_child(entry_kind, child_name, child_entity);
 }
