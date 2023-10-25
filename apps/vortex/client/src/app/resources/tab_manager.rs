@@ -21,7 +21,7 @@ use render_egui::{
 
 use vortex_proto::{
     channels::TabActionChannel,
-    components::{
+    components::{ModelTransform, ModelTransformEntityType,
         BackgroundSkinColor, ChangelistStatus, FaceColor, FileExtension, FileSystemEntry,
         PaletteColor,
     },
@@ -49,6 +49,7 @@ use crate::app::{
         shape_data::CanvasShape,
         shape_manager::ShapeManager,
         skin_manager::SkinManager,
+        model_manager::ModelManager,
     },
     ui::{
         widgets::colors::{
@@ -725,98 +726,138 @@ fn file_ext_specific_sync_tabs_shape_colors(
     current_file_entity: &Entity,
     world: &mut World,
 ) {
-    let mut system_state: SystemState<(
-        Client,
-        Res<FileManager>,
-        Res<FaceManager>,
-        Res<PaletteManager>,
-        Res<SkinManager>,
-        ResMut<Assets<CpuMaterial>>,
-        Query<&mut Handle<CpuMaterial>, (With<Edge2dLocal>, Without<LocalShape>)>,
-        Query<
-            &mut Handle<CpuMaterial>,
-            (With<FaceIcon2d>, Without<Edge2dLocal>, Without<Face3dLocal>),
-        >,
-        Query<
-            (Entity, &mut Handle<CpuMaterial>),
-            (With<Face3dLocal>, Without<Edge2dLocal>, Without<FaceIcon2d>),
-        >,
-        Query<&PaletteColor>,
-        Query<&BackgroundSkinColor>,
-        Query<&FaceColor>,
-    )> = SystemState::new(world);
-    let (
-        client,
-        file_manager,
-        face_manager,
-        palette_manager,
-        skin_manager,
-        mut materials,
-        mut edge_2d_q,
-        mut face_2d_q,
-        mut face_3d_q,
-        palette_color_q,
-        bckg_color_q,
-        face_color_q,
-    ) = system_state.get_mut(world);
-
     match file_ext {
         FileExtension::Skin => {
+            let mut system_state: SystemState<(
+                Client,
+                Res<FileManager>,
+                Res<FaceManager>,
+                Res<PaletteManager>,
+                Res<SkinManager>,
+                ResMut<Assets<CpuMaterial>>,
+                Query<&mut Handle<CpuMaterial>, (With<Edge2dLocal>, Without<LocalShape>)>,
+                Query<
+                    &mut Handle<CpuMaterial>,
+                    (With<FaceIcon2d>, Without<Edge2dLocal>, Without<Face3dLocal>),
+                >,
+                Query<
+                    (Entity, &mut Handle<CpuMaterial>, &OwnedByFileLocal),
+                    (With<Face3dLocal>, Without<Edge2dLocal>, Without<FaceIcon2d>),
+                >,
+                Query<&PaletteColor>,
+                Query<&BackgroundSkinColor>,
+                Query<&FaceColor>,
+            )> = SystemState::new(world);
+            let (
+                client,
+                file_manager,
+                face_manager,
+                palette_manager,
+                skin_manager,
+                mut materials,
+                mut edge_2d_q,
+                mut face_2d_q,
+                mut face_3d_q,
+                palette_color_q,
+                bckg_color_q,
+                face_color_q,
+            ) = system_state.get_mut(world);
+
             let gray_mat_handle = materials.add(Color::LIGHT_GRAY);
-
-            // get background color
-            let background_index = skin_manager.background_color_index(
-                &client,
-                current_file_entity,
-                &bckg_color_q,
-                &palette_color_q,
-            );
-            let Some(dependency_file_entity) = file_manager.file_get_dependency(current_file_entity, FileExtension::Palette) else {
-                return;
-            };
-            let Some(colors) = palette_manager.get_file_colors(&dependency_file_entity) else {
-                panic!("no colors for given file");
-            };
-            let Some(background_color_entity) = colors.get(background_index).unwrap() else {
-                return;
-            };
-            let background_color = palette_color_q.get(*background_color_entity).unwrap();
-            let bckg_mat_handle = materials.add(Color::new_opaque(
-                *background_color.r,
-                *background_color.g,
-                *background_color.b,
-            ));
-
             for mut mat_handle in edge_2d_q.iter_mut() {
                 *mat_handle = gray_mat_handle;
             }
-            for (face_3d_entity, mut face_3d_material) in face_3d_q.iter_mut() {
-                let new_mat_handle;
-                if let Some(face_color_entity) = skin_manager.face_to_color_entity(&face_3d_entity)
-                {
-                    // use face color
-                    let face_color = face_color_q.get(*face_color_entity).unwrap();
-                    let palette_color_entity =
-                        face_color.palette_color_entity.get(&client).unwrap();
-                    let palette_color = palette_color_q.get(palette_color_entity).unwrap();
-                    new_mat_handle = materials.add(Color::new_opaque(
-                        *palette_color.r,
-                        *palette_color.g,
-                        *palette_color.b,
-                    ));
-                } else {
-                    // use background color
-                    new_mat_handle = bckg_mat_handle;
+
+            set_face_3d_colors(
+                current_file_entity,
+                &client,
+                &file_manager,
+                &palette_manager,
+                &skin_manager,
+                &mut materials,
+                &mut face_3d_q,
+                &palette_color_q,
+                &bckg_color_q,
+                &face_color_q,
+                &mut Some((&face_manager, &mut face_2d_q)),
+            );
+        }
+        FileExtension::Model => {
+
+            let mut system_state: SystemState<(
+                Client,
+                Res<FileManager>,
+                Res<PaletteManager>,
+                Res<SkinManager>,
+                Res<ModelManager>,
+                ResMut<Assets<CpuMaterial>>,
+                Query<
+                    (Entity, &mut Handle<CpuMaterial>, &OwnedByFileLocal),
+                    (With<Face3dLocal>, Without<Edge2dLocal>, Without<FaceIcon2d>),
+                >,
+                Query<&PaletteColor>,
+                Query<&BackgroundSkinColor>,
+                Query<&FaceColor>,
+                Query<&ModelTransform>,
+            )> = SystemState::new(world);
+            let (
+                client,
+                file_manager,
+                palette_manager,
+                skin_manager,
+                model_manager,
+                mut materials,
+                mut face_3d_q,
+                palette_color_q,
+                bckg_color_q,
+                face_color_q,
+                model_transform_q,
+            ) = system_state.get_mut(world);
+
+            let Some(model_transform_entities) = model_manager.model_file_transform_entities(current_file_entity) else {
+                return;
+            };
+            for model_transform_entity in model_transform_entities {
+                let model_transform = model_transform_q.get(model_transform_entity).unwrap();
+                if ModelTransformEntityType::Skin != *model_transform.entity_type {
+                    todo!("support scene entity type");
                 }
-
-                *face_3d_material = new_mat_handle;
-
-                let face_2d_entity = face_manager.face_entity_3d_to_2d(&face_3d_entity).unwrap();
-                let mut face_2d_material = face_2d_q.get_mut(face_2d_entity).unwrap();
-                *face_2d_material = new_mat_handle;
+                let skin_file_entity: Entity = model_transform.skin_or_scene_entity.get(&client).unwrap();
+                set_face_3d_colors(
+                    &skin_file_entity,
+                    &client,
+                    &file_manager,
+                    &palette_manager,
+                    &skin_manager,
+                    &mut materials,
+                    &mut face_3d_q,
+                    &palette_color_q,
+                    &bckg_color_q,
+                    &face_color_q,
+                    &mut None,
+                );
             }
         }
         _ => {
+            let mut system_state: SystemState<(
+                ResMut<Assets<CpuMaterial>>,
+                Query<&mut Handle<CpuMaterial>, (With<Edge2dLocal>, Without<LocalShape>)>,
+                Query<
+                    &mut Handle<CpuMaterial>,
+                    (With<FaceIcon2d>, Without<Edge2dLocal>, Without<Face3dLocal>),
+                >,
+                Query<
+                    (Entity, &mut Handle<CpuMaterial>),
+                    (With<Face3dLocal>, Without<Edge2dLocal>, Without<FaceIcon2d>),
+                >,
+            )> = SystemState::new(world);
+            let (
+                mut materials,
+                mut edge_2d_q,
+                mut face_2d_q,
+                mut face_3d_q,
+            ) = system_state.get_mut(world);
+
             let enabled_mat_handle = materials.add(Vertex2d::ENABLED_COLOR);
 
             for mut mat_handle in edge_2d_q.iter_mut() {
@@ -828,6 +869,82 @@ fn file_ext_specific_sync_tabs_shape_colors(
             for (_, mut mat_handle) in face_3d_q.iter_mut() {
                 *mat_handle = enabled_mat_handle;
             }
+        }
+    }
+}
+
+fn set_face_3d_colors(
+    skin_file_entity: &Entity,
+    client: &Client,
+    file_manager: &FileManager,
+    palette_manager: &PaletteManager,
+    skin_manager: &SkinManager,
+    materials: &mut Assets<CpuMaterial>,
+    face_3d_q: &mut Query<(Entity, &mut Handle<CpuMaterial>, &OwnedByFileLocal), (With<Face3dLocal>, Without<Edge2dLocal>, Without<FaceIcon2d>)>,
+    palette_color_q: &Query<&PaletteColor>,
+    bckg_color_q: &Query<&BackgroundSkinColor>,
+    face_color_q: &Query<&FaceColor>,
+    face_2d_opt: &mut Option<(
+        &FaceManager,
+        &mut Query<&mut Handle<CpuMaterial>, (With<FaceIcon2d>, Without<Edge2dLocal>, Without<Face3dLocal>)>
+    )>,
+) {
+    // get background color
+    let background_index = skin_manager.background_color_index(
+        client,
+        skin_file_entity,
+        bckg_color_q,
+        palette_color_q,
+    );
+    let Some(palette_file_entity) = file_manager.file_get_dependency(skin_file_entity, FileExtension::Palette) else {
+        return;
+    };
+    let Some(mesh_file_entity) = file_manager.file_get_dependency(skin_file_entity, FileExtension::Mesh) else {
+        return;
+    };
+    let Some(colors) = palette_manager.get_file_colors(&palette_file_entity) else {
+        panic!("no colors for given file");
+    };
+    let Some(background_color_entity) = colors.get(background_index).unwrap() else {
+        return;
+    };
+    let background_color = palette_color_q.get(*background_color_entity).unwrap();
+    let bckg_mat_handle = materials.add(Color::new_opaque(
+        *background_color.r,
+        *background_color.g,
+        *background_color.b,
+    ));
+
+    for (face_3d_entity, mut face_3d_material, owned_by_file) in face_3d_q.iter_mut() {
+
+        if owned_by_file.file_entity != mesh_file_entity {
+            continue;
+        }
+
+        let new_mat_handle;
+        if let Some(face_color_entity) = skin_manager.face_to_color_entity(&face_3d_entity)
+        {
+            // use face color
+            let face_color = face_color_q.get(*face_color_entity).unwrap();
+            let palette_color_entity =
+                face_color.palette_color_entity.get(client).unwrap();
+            let palette_color = palette_color_q.get(palette_color_entity).unwrap();
+            new_mat_handle = materials.add(Color::new_opaque(
+                *palette_color.r,
+                *palette_color.g,
+                *palette_color.b,
+            ));
+        } else {
+            // use background color
+            new_mat_handle = bckg_mat_handle;
+        }
+
+        *face_3d_material = new_mat_handle;
+
+        if let Some((face_manager, face_2d_q)) = face_2d_opt {
+            let face_2d_entity = face_manager.face_entity_3d_to_2d(&face_3d_entity).unwrap();
+            let mut face_2d_material = face_2d_q.get_mut(face_2d_entity).unwrap();
+            *face_2d_material = new_mat_handle;
         }
     }
 }

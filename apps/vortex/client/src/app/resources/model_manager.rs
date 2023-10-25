@@ -43,7 +43,7 @@ use crate::app::{
 
 pub struct ModelTransformData {
     edge_2d_entity: Entity,
-    owning_file_entity: Entity,
+    model_file_entity: Entity,
     translation_entity_2d: Entity,
     translation_entity_3d: Entity,
     rotation_entity_2d: Entity,
@@ -54,8 +54,8 @@ pub struct ModelTransformData {
 
 impl ModelTransformData {
     pub fn new(
+        model_file_entity: Entity,
         edge_2d_entity: Entity,
-        owning_file_entity: Entity,
         translation_entity_2d: Entity,
         translation_entity_3d: Entity,
         rotation_entity_2d: Entity,
@@ -65,7 +65,7 @@ impl ModelTransformData {
     ) -> Self {
         Self {
             edge_2d_entity,
-            owning_file_entity,
+            model_file_entity,
             translation_entity_3d,
             rotation_entity_3d,
             scale_entity_3d,
@@ -78,7 +78,7 @@ impl ModelTransformData {
 
 #[derive(Resource)]
 pub struct ModelManager {
-    file_to_model_transforms: HashMap<Entity, HashSet<Entity>>,
+    model_file_to_transform_entity: HashMap<Entity, HashSet<Entity>>,
     model_transforms: HashMap<Entity, ModelTransformData>,
     edge_2d_to_model_transform: HashMap<Entity, Entity>,
     // Option<edge_2d_entity>
@@ -88,7 +88,7 @@ pub struct ModelManager {
 impl Default for ModelManager {
     fn default() -> Self {
         Self {
-            file_to_model_transforms: HashMap::new(),
+            model_file_to_transform_entity: HashMap::new(),
             model_transforms: HashMap::new(),
             edge_2d_to_model_transform: HashMap::new(),
             binding_edge_opt: None,
@@ -311,9 +311,9 @@ impl ModelManager {
         );
 
         self.register_model_transform_controls(
+            owning_file_entity,
             new_model_transform_entity,
             edge_2d_entity,
-            owning_file_entity,
             translation_entity_2d,
             translation_entity_3d,
             rotation_entity_2d,
@@ -377,9 +377,9 @@ impl ModelManager {
 
     pub fn register_model_transform_controls(
         &mut self,
+        model_file_entity: &Entity,
         model_transform_entity: Entity,
         edge_2d_entity: Entity,
-        owning_file_entity: &Entity,
         translation_entity_2d: Entity,
         translation_entity_3d: Entity,
         rotation_entity_2d: Entity,
@@ -390,8 +390,8 @@ impl ModelManager {
         self.model_transforms.insert(
             model_transform_entity,
             ModelTransformData::new(
+                *model_file_entity,
                 edge_2d_entity,
-                *owning_file_entity,
                 translation_entity_2d,
                 translation_entity_3d,
                 rotation_entity_2d,
@@ -404,17 +404,21 @@ impl ModelManager {
             .insert(edge_2d_entity, model_transform_entity);
 
         if !self
-            .file_to_model_transforms
-            .contains_key(owning_file_entity)
+            .model_file_to_transform_entity
+            .contains_key(model_file_entity)
         {
-            self.file_to_model_transforms
-                .insert(*owning_file_entity, HashSet::new());
+            self.model_file_to_transform_entity
+                .insert(*model_file_entity, HashSet::new());
         }
         let model_transforms = self
-            .file_to_model_transforms
-            .get_mut(owning_file_entity)
+            .model_file_to_transform_entity
+            .get_mut(model_file_entity)
             .unwrap();
         model_transforms.insert(model_transform_entity);
+    }
+
+    pub(crate) fn model_file_transform_entities(&self, model_file_entity: &Entity) -> Option<Vec<Entity>> {
+        self.model_file_to_transform_entity.get(model_file_entity).map(|set| set.iter().cloned().collect())
     }
 
     pub(crate) fn edge_2d_has_model_transform(&self, edge_2d_entity: &Entity) -> bool {
@@ -463,13 +467,13 @@ impl ModelManager {
             .remove(&model_transform_data.edge_2d_entity);
 
         let model_transforms = self
-            .file_to_model_transforms
-            .get_mut(&model_transform_data.owning_file_entity)
+            .model_file_to_transform_entity
+            .get_mut(&model_transform_data.model_file_entity)
             .unwrap();
         model_transforms.remove(model_transform_entity);
         if model_transforms.is_empty() {
-            self.file_to_model_transforms
-                .remove(&model_transform_data.owning_file_entity);
+            self.model_file_to_transform_entity
+                .remove(&model_transform_data.model_file_entity);
         }
 
         model_transform_data
@@ -481,7 +485,7 @@ impl ModelManager {
         vertex_3d_q: &mut Query<&mut Vertex3d>,
         model_transform_q: &Query<&ModelTransform>,
     ) {
-        let Some(model_transform_entities) = self.file_to_model_transforms.get(file_entity) else {
+        let Some(model_transform_entities) = self.model_file_to_transform_entity.get(file_entity) else {
             return;
         };
 
@@ -518,7 +522,7 @@ impl ModelManager {
 
     fn model_transform_3d_vertices(&self, file_entity: &Entity) -> Vec<Entity> {
         let mut vertices = Vec::new();
-        if let Some(model_transform_entities) = self.file_to_model_transforms.get(file_entity) {
+        if let Some(model_transform_entities) = self.model_file_to_transform_entity.get(file_entity) {
             for model_transform_entity in model_transform_entities.iter() {
                 let data = self.model_transforms.get(model_transform_entity).unwrap();
                 vertices.push(data.translation_entity_3d);
@@ -838,7 +842,7 @@ impl ModelManager {
 
         {
             // draw models in correct positions
-            let Some(model_transform_entities) = self.file_to_model_transforms.get(current_file_entity) else {
+            let Some(model_transform_entities) = self.model_file_to_transform_entity.get(current_file_entity) else {
                 return;
             };
 
@@ -886,17 +890,16 @@ impl ModelManager {
                 let ModelTransformEntityType::Skin = *model_transform.entity_type else {
                     panic!("not possible ... yet");
                 };
-                let skin_entity = model_transform.skin_or_scene_entity.get(&client).unwrap();
+                let skin_file_entity = model_transform.skin_or_scene_entity.get(&client).unwrap();
+                let Some(mesh_file_entity) = file_manager.file_get_dependency(&skin_file_entity, FileExtension::Mesh) else {
+                    continue;
+                };
                 let mut model_transform = ModelTransformLocal::to_transform(model_transform);
                 model_transform.rotation = model_transform.rotation * corrective_rot;
                 let model_transform = model_transform.compute_matrix();
 
                 for (owned_by_file, edge_3d_local) in edge_q.iter() {
-                    if !ShapeManager::is_owned_by_file(
-                        &file_manager,
-                        &skin_entity,
-                        Some(&owned_by_file.file_entity),
-                    ) {
+                    if owned_by_file.file_entity != mesh_file_entity {
                         continue;
                     }
 
@@ -1032,7 +1035,7 @@ impl ModelManager {
 
         {
             // draw skins in correct positions
-            let Some(model_transform_entities) = self.file_to_model_transforms.get(current_file_entity) else {
+            let Some(model_transform_entities) = self.model_file_to_transform_entity.get(current_file_entity) else {
                 return;
             };
 
@@ -1044,7 +1047,7 @@ impl ModelManager {
                 Res<VertexManager>,
                 Query<(Entity, &OwnedByFileLocal), With<Face3d>>,
                 Query<&ModelTransform>,
-                Query<(&Handle<CpuMesh>, &Transform)>,
+                Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>, &Transform)>,
             )> = SystemState::new(world);
             let (
                 mut render_frame,
@@ -1058,7 +1061,6 @@ impl ModelManager {
             ) = system_state.get_mut(world);
 
             let render_layer = camera_manager.layer_3d;
-            let temp_mat = vertex_manager.mat_disabled_vertex;
             let corrective_rot = Quat::from_rotation_x(f32::to_radians(90.0));
 
             for model_transform_entity in model_transform_entities {
@@ -1068,20 +1070,17 @@ impl ModelManager {
                 let ModelTransformEntityType::Skin = *model_transform.entity_type else {
                     panic!("not possible ... yet");
                 };
-                let skin_entity = model_transform.skin_or_scene_entity.get(&client).unwrap();
+                let skin_file_entity = model_transform.skin_or_scene_entity.get(&client).unwrap();
+                let mesh_file_entity = file_manager.file_get_dependency(&skin_file_entity, FileExtension::Mesh).unwrap();
                 let mut model_transform = ModelTransformLocal::to_transform(model_transform);
                 model_transform.rotation = model_transform.rotation * corrective_rot;
 
                 for (face_3d_entity, owned_by_file) in face_q.iter() {
-                    if !ShapeManager::is_owned_by_file(
-                        &file_manager,
-                        &skin_entity,
-                        Some(&owned_by_file.file_entity),
-                    ) {
+                    if owned_by_file.file_entity != mesh_file_entity {
                         continue;
                     }
 
-                    let (mesh_handle, transform) = object_q.get(face_3d_entity).unwrap();
+                    let (mesh_handle, mat_handle, transform) = object_q.get(face_3d_entity).unwrap();
 
                     let transform = *transform;
                     let transform = model_transform * transform;
@@ -1090,7 +1089,7 @@ impl ModelManager {
                     render_frame.draw_object(
                         Some(&render_layer),
                         mesh_handle,
-                        &temp_mat,
+                        mat_handle,
                         &transform,
                     );
                 }
