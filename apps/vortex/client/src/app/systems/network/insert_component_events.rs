@@ -12,7 +12,6 @@ use naia_bevy_client::{events::InsertComponentEvents, Client, Replicate};
 
 use render_api::{
     base::{CpuMaterial, CpuMesh},
-    components::Transform,
     Assets,
 };
 
@@ -282,7 +281,7 @@ pub fn insert_vertex_events(
     mut materials: ResMut<Assets<CpuMaterial>>,
     mut shape_waitlist: ResMut<ShapeWaitlist>,
     mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
-    transform_q: Query<&Transform>,
+    vertex_3d_q: Query<&Vertex3d>,
     shape_name_q: Query<&ShapeName>,
 ) {
     // on Vertex Insert Event
@@ -301,7 +300,7 @@ pub fn insert_vertex_events(
             &mut edge_manager,
             &mut face_manager,
             &mut shape_color_resync_events,
-            &transform_q,
+            &vertex_3d_q,
             &entity,
             ShapeWaitlistInsert::Vertex,
         );
@@ -323,7 +322,7 @@ pub fn insert_vertex_events(
             &mut edge_manager,
             &mut face_manager,
             &mut shape_color_resync_events,
-            &transform_q,
+            &vertex_3d_q,
             &entity,
             ShapeWaitlistInsert::VertexRoot,
         );
@@ -362,7 +361,7 @@ pub fn insert_edge_events(
 
     edge_3d_q: Query<&Edge3d>,
     edge_angle_q: Query<&EdgeAngle>,
-    transform_q: Query<&Transform>,
+    vertex_3d_q: Query<&Vertex3d>,
 ) {
     // on Edge3d Insert Event
     for event in edge_3d_events.iter() {
@@ -391,7 +390,7 @@ pub fn insert_edge_events(
             &mut edge_manager,
             &mut face_manager,
             &mut shape_color_resync_events,
-            &transform_q,
+            &vertex_3d_q,
             &edge_entity,
             ShapeWaitlistInsert::Edge(start_entity, end_entity),
         );
@@ -416,7 +415,7 @@ pub fn insert_edge_events(
             &mut edge_manager,
             &mut face_manager,
             &mut shape_color_resync_events,
-            &transform_q,
+            &vertex_3d_q,
             &edge_entity,
             ShapeWaitlistInsert::EdgeAngle(edge_3d.get_radians()),
         );
@@ -438,7 +437,7 @@ pub fn insert_face_events(
     mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
 
     face_3d_q: Query<&Face3d>,
-    transform_q: Query<&Transform>,
+    vertex_3d_q: Query<&Vertex3d>,
 ) {
     // on Face3d Insert Event
     for event in face_3d_events.iter() {
@@ -483,7 +482,7 @@ pub fn insert_face_events(
             &mut edge_manager,
             &mut face_manager,
             &mut shape_color_resync_events,
-            &transform_q,
+            &vertex_3d_q,
             &face_entity,
             ShapeWaitlistInsert::Face(
                 vertex_a_entity,
@@ -514,7 +513,7 @@ pub fn insert_owned_by_file_events(
     mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
 
     owned_by_tab_q: Query<&OwnedByFile>,
-    transform_q: Query<&Transform>,
+    vertex_3d_q: Query<&Vertex3d>,
 ) {
     // on OwnedByFile Insert Event
     for event in owned_by_events.iter() {
@@ -536,7 +535,7 @@ pub fn insert_owned_by_file_events(
             &mut edge_manager,
             &mut face_manager,
             &mut shape_color_resync_events,
-            &transform_q,
+            &vertex_3d_q,
             &entity,
             ShapeWaitlistInsert::OwnedByFile(file_entity),
         );
@@ -559,7 +558,7 @@ pub fn insert_file_type_events(
     mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
 
     file_type_q: Query<&FileType>,
-    transform_q: Query<&Transform>,
+    vertex_3d_q: Query<&Vertex3d>,
 ) {
     // on FileType Insert Event
     for event in file_type_events.iter() {
@@ -583,7 +582,7 @@ pub fn insert_file_type_events(
             &mut edge_manager,
             &mut face_manager,
             &mut shape_color_resync_events,
-            &transform_q,
+            &vertex_3d_q,
             &entity,
             ShapeWaitlistInsert::FileType(file_type_value),
         );

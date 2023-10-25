@@ -11,11 +11,10 @@ use math::Vec3;
 
 use render_api::{
     base::{CpuMaterial, CpuMesh},
-    components::Transform,
     Assets,
 };
 
-use vortex_proto::{components::FileExtension, resources::DependencyMap};
+use vortex_proto::{components::{FileExtension, Vertex3d}, resources::DependencyMap};
 
 use crate::app::{
     components::{OwnedByFileLocal, Vertex2d},
@@ -230,7 +229,7 @@ impl ShapeWaitlist {
         edge_manager: &mut EdgeManager,
         face_manager: &mut FaceManager,
         shape_color_resync_events: &mut EventWriter<ShapeColorResyncEvent>,
-        transform_q: &Query<&Transform>,
+        vertex_3d_q: &Query<&Vertex3d>,
         entity: &Entity,
         insert: ShapeWaitlistInsert,
     ) {
@@ -402,7 +401,7 @@ impl ShapeWaitlist {
                 edge_manager,
                 face_manager,
                 shape_color_resync_events,
-                transform_q,
+                vertex_3d_q,
                 entity,
                 entry,
             );
@@ -420,7 +419,7 @@ impl ShapeWaitlist {
         edge_manager: &mut EdgeManager,
         face_manager: &mut FaceManager,
         shape_color_resync_events: &mut EventWriter<ShapeColorResyncEvent>,
-        transform_q: &Query<&Transform>,
+        vertex_3d_q: &Query<&Vertex3d>,
         entity: Entity,
         entry: ShapeWaitlistEntry,
     ) {
@@ -492,8 +491,8 @@ impl ShapeWaitlist {
                 let face_key = FaceKey::new(vertex_a, vertex_b, vertex_c);
                 let mut positions = [Vec3::ZERO, Vec3::ZERO, Vec3::ZERO];
                 for (index, vertex_3d_entity) in [vertex_a, vertex_b, vertex_c].iter().enumerate() {
-                    let transform = transform_q.get(*vertex_3d_entity).unwrap();
-                    positions[index] = transform.translation;
+                    let vertex_3d = vertex_3d_q.get(*vertex_3d_entity).unwrap();
+                    positions[index] = vertex_3d.as_vec3();
                 }
 
                 warn!("removing face key: {:?}", face_key);
@@ -546,7 +545,7 @@ impl ShapeWaitlist {
                     edge_manager,
                     face_manager,
                     shape_color_resync_events,
-                    transform_q,
+                    vertex_3d_q,
                     child_entity,
                     child_entry,
                 );
