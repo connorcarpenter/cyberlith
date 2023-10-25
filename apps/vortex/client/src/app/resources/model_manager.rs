@@ -11,7 +11,7 @@ use bevy_log::warn;
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
-use math::{convert_3d_to_2d, Mat4, quat_from_spin_direction, SerdeQuat, Vec3};
+use math::{convert_3d_to_2d, Mat4, Quat, quat_from_spin_direction, SerdeQuat, Vec3};
 
 use render_api::{base::{Color, CpuMaterial, CpuMesh}, components::{RenderLayer, Camera, Visibility, CameraProjection, Projection, Transform}, Assets, Handle, resources::RenderFrame, shapes, shapes::set_2d_line_transform};
 
@@ -843,6 +843,7 @@ impl ModelManager {
             let render_layer = camera_manager.layer_2d;
             let line_mesh = meshes.add(shapes::Line);
             let line_mat = vertex_manager.mat_disabled_vertex;
+            let corrective_rot = Quat::from_rotation_x(f32::to_radians(90.0));
 
             for model_transform_entity in model_transform_entities {
                 let Ok(model_transform) = model_transform_q.get(*model_transform_entity) else {
@@ -852,7 +853,9 @@ impl ModelManager {
                     panic!("not possible ... yet");
                 };
                 let skin_entity = model_transform.skin_or_scene_entity.get(&client).unwrap();
-                let model_transform = ModelTransformLocal::to_transform(model_transform).compute_matrix();
+                let mut model_transform = ModelTransformLocal::to_transform(model_transform);
+                model_transform.rotation = model_transform.rotation * corrective_rot;
+                let model_transform = model_transform.compute_matrix();
 
                 for (owned_by_file, edge_3d_local) in edge_q.iter() {
 
@@ -1017,6 +1020,7 @@ impl ModelManager {
 
             let render_layer = camera_manager.layer_3d;
             let temp_mat = vertex_manager.mat_disabled_vertex;
+            let corrective_rot = Quat::from_rotation_x(f32::to_radians(90.0));
 
             for model_transform_entity in model_transform_entities {
                 let Ok(model_transform) = model_transform_q.get(*model_transform_entity) else {
@@ -1026,7 +1030,8 @@ impl ModelManager {
                     panic!("not possible ... yet");
                 };
                 let skin_entity = model_transform.skin_or_scene_entity.get(&client).unwrap();
-                let model_transform = ModelTransformLocal::to_transform(model_transform);
+                let mut model_transform = ModelTransformLocal::to_transform(model_transform);
+                model_transform.rotation = model_transform.rotation * corrective_rot;
 
                 for (face_3d_entity, owned_by_file) in face_q.iter() {
 
@@ -1040,10 +1045,11 @@ impl ModelManager {
 
                     let (mesh_handle, transform) = object_q.get(face_3d_entity).unwrap();
 
-                    let new_transform = model_transform * *transform;
+                    let transform = *transform;
+                    let transform = model_transform * transform;
 
-                    // draw edge
-                    render_frame.draw_object(Some(&render_layer), mesh_handle, &temp_mat, &new_transform);
+                    // draw face
+                    render_frame.draw_object(Some(&render_layer), mesh_handle, &temp_mat, &transform);
                 }
             }
         }
