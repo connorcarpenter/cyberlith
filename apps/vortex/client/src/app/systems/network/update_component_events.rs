@@ -1,16 +1,16 @@
 use bevy_ecs::{
     event::EventReader,
     prelude::EventWriter,
-    system::{Query, ResMut},
+    system::{Query, ResMut, Res, Resource, SystemState},
+    world::{Mut, World}
 };
 use bevy_log::info;
 
 use naia_bevy_client::{events::UpdateComponentEvents, Client};
 
-use vortex_proto::components::{
-    AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, EdgeAngle, FaceColor,
-    FileSystemChild, FileSystemEntry, FileSystemRootChild, PaletteColor, ShapeName, Vertex3d,
-};
+use render_api::{Assets, Handle, base::CpuMesh, components::Transform};
+
+use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, EdgeAngle, Face3d, FaceColor, FileSystemChild, FileSystemEntry, FileSystemRootChild, PaletteColor, ShapeName, Vertex3d};
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemEntryLocal},
@@ -20,24 +20,52 @@ use crate::app::{
         canvas::Canvas,
         file_manager::{get_full_path, FileManager},
         palette_manager::PaletteManager,
+        vertex_manager::VertexManager,
+        face_manager::FaceManager,
     },
 };
 
-pub fn update_component_events(
-    client: Client,
-    mut event_reader: EventReader<UpdateComponentEvents>,
-    file_manager: ResMut<FileManager>,
-    mut canvas: ResMut<Canvas>,
-    mut animation_manager: ResMut<AnimationManager>,
-    mut palette_manager: ResMut<PaletteManager>,
-    entry_q: Query<(&FileSystemEntry, Option<&FileSystemChild>)>,
-    mut entry_local_q: Query<&mut FileSystemEntryLocal>,
-    mut cl_q: Query<(&ChangelistEntry, &mut ChangelistUiState)>,
-    frame_q: Query<&AnimFrame>,
-    color_q: Query<&PaletteColor>,
-    mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
-) {
-    for events in event_reader.iter() {
+#[derive(Resource)]
+struct CachedUpdateComponentEventsState {
+    event_state: SystemState<EventReader<'static, 'static, UpdateComponentEvents>>,
+}
+
+pub fn update_component_event_startup(world: &mut World) {
+    let initial_state: SystemState<EventReader<UpdateComponentEvents>> = SystemState::new(world);
+    world.insert_resource(CachedUpdateComponentEventsState {
+        event_state: initial_state,
+    });
+}
+
+pub fn update_component_events(world: &mut World) {
+    let mut events_collection: Vec<UpdateComponentEvents> = Vec::new();
+
+    world.resource_scope(
+        |world, mut events_reader_state: Mut<CachedUpdateComponentEventsState>| {
+            let mut event_reader = events_reader_state.event_state.get_mut(world);
+
+            for events in event_reader.iter() {
+                events_collection.push(events.clone());
+            }
+        },
+    );
+    for events in events_collection {
+
+        let mut system_state: SystemState<(
+            Client,
+            ResMut<FileManager>,
+            Query<(&FileSystemEntry, Option<&FileSystemChild>)>,
+            Query<&mut FileSystemEntryLocal>,
+            Query<(&ChangelistEntry, &mut ChangelistUiState)>,
+        )> = SystemState::new(world);
+        let (
+            client,
+            file_manager,
+            entry_q,
+            mut entry_local_q,
+            mut cl_q,
+        ) = system_state.get_mut(world);
+
         // on FileSystemEntry Update Event
         for (_, entry_entity) in events.read::<FileSystemEntry>() {
             let (entry, _) = entry_q.get(entry_entity).unwrap();
@@ -89,19 +117,58 @@ pub fn update_component_events(
             );
             todo!();
         }
+
+        let mut system_state: SystemState<(
+            Client,
+            ResMut<Canvas>,
+            Res<VertexManager>,
+            Res<FaceManager>,
+            ResMut<AnimationManager>,
+            ResMut<PaletteManager>,
+            ResMut<Assets<CpuMesh>>,
+            Query<&AnimFrame>,
+            Query<&PaletteColor>,
+            Query<&Handle<CpuMesh>>,
+            Query<&Face3d>,
+            Query<&mut Transform>,
+            EventWriter<ShapeColorResyncEvent>,
+        )> = SystemState::new(world);
+        let (
+            client,
+            mut canvas,
+            vertex_manager,
+            face_manager,
+            mut animation_manager,
+            mut palette_manager,
+            mut meshes,
+            frame_q,
+            color_q,
+            mesh_handle_q,
+            face_3d_q,
+            mut transform_q,
+            mut shape_color_resync_events,
+        ) = system_state.get_mut(world);
+
         // on Shape Update Event
         let mut updated_shapes = false;
-        for (_, _) in events.read::<Vertex3d>() {
+        for (_, vertex_3d_entity) in events.read::<Vertex3d>() {
             updated_shapes = true;
-            break;
+            vertex_manager.on_vertex_3d_moved(
+                &client,
+                &face_manager,
+                &mut meshes,
+                &mesh_handle_q,
+                &face_3d_q,
+                &mut transform_q,
+                &vertex_3d_entity
+            );
         }
+
         for (_, _) in events.read::<EdgeAngle>() {
             updated_shapes = true;
-            break;
         }
         for (_, _) in events.read::<AnimRotation>() {
             updated_shapes = true;
-            break;
         }
         if updated_shapes {
             canvas.queue_resync_shapes();

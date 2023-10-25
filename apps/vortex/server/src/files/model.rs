@@ -54,6 +54,9 @@ impl ModelWriter {
                         FileExtension::Skel => {
                             skel_dependency_key_opt = Some(dependency_key);
                         }
+                        FileExtension::Skin => {
+                            todo!();
+                        }
                         _ => {
                             panic!("model file should depend on a single .skel file & potentially many .skin or .scene files");
                         }

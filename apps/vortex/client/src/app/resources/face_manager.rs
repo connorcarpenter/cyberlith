@@ -516,6 +516,10 @@ impl FaceManager {
         self.face_2d_entity_from_face_key(face_key)
     }
 
+    pub(crate) fn face_entity_3d_to_key(&self, entity_3d: &Entity) -> Option<FaceKey> {
+        self.faces_3d.get(entity_3d).copied()
+    }
+
     pub(crate) fn face_2d_entity_from_face_key(&self, face_key: &FaceKey) -> Option<Entity> {
         let Some(Some(face_3d_data)) = self.face_keys.get(face_key) else {
             return None;

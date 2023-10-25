@@ -63,6 +63,7 @@ impl Plugin for VortexPlugin {
             // Networking Systems
             .add_systems(Update, network::login)
             .add_systems(Startup, network::insert_component_event_startup)
+            .add_systems(Startup, network::update_component_event_startup)
             .add_systems(
                 Update,
                 (
