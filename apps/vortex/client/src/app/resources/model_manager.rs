@@ -11,19 +11,14 @@ use bevy_log::warn;
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
-use math::{convert_3d_to_2d, quat_from_spin_direction, SerdeQuat, Vec3};
+use math::{convert_3d_to_2d, Mat4, quat_from_spin_direction, SerdeQuat, Vec3};
 
-use render_api::{
-    base::{Color, CpuMaterial, CpuMesh},
-    components::{RenderLayer, Camera, Visibility, CameraProjection, Projection, Transform},
-    Assets, Handle,
-    resources::RenderFrame,
-};
+use render_api::{base::{Color, CpuMaterial, CpuMesh}, components::{RenderLayer, Camera, Visibility, CameraProjection, Projection, Transform}, Assets, Handle, resources::RenderFrame, shapes, shapes::set_2d_line_transform};
 
 use vortex_proto::components::{Edge3d, EdgeAngle, FileExtension, FileType, ModelTransform, ModelTransformEntityType, ShapeName, Vertex3d};
 
 use crate::app::{
-    components::{OwnedByFileLocal, ModelTransformControl, Edge2dLocal, Edge3dLocal},
+    components::{ModelTransformLocal, OwnedByFileLocal, ModelTransformControl, Edge2dLocal, Edge3dLocal},
     resources::{
         action::model::ModelAction, camera_manager::CameraManager, canvas::Canvas, shape_data::CanvasShape, shape_manager::ShapeManager,
         edge_manager::EdgeManager, face_manager::FaceManager, input::InputManager, file_manager::FileManager,
@@ -665,145 +660,245 @@ impl ModelManager {
     }
 
     fn draw_2d(&self, world: &mut World, current_file_entity: &Entity, camera_3d_scale: f32) {
+        {
+            let mut vertex_3d_entities: HashSet<Entity> = HashSet::new();
+            let compass_3d_entities = world.get_resource::<Compass>().unwrap().vertices();
+            let grid_3d_entities = world.get_resource::<Grid>().unwrap().vertices();
+            let mtc_3d_entites = self.model_transform_3d_vertices(current_file_entity);
+            vertex_3d_entities.extend(compass_3d_entities);
+            vertex_3d_entities.extend(grid_3d_entities);
+            vertex_3d_entities.extend(mtc_3d_entites);
 
-        let mut vertex_3d_entities: HashSet<Entity> = HashSet::new();
-        let compass_3d_entities = world.get_resource::<Compass>().unwrap().vertices();
-        let grid_3d_entities = world.get_resource::<Grid>().unwrap().vertices();
-        let mtc_3d_entites = self.model_transform_3d_vertices(current_file_entity);
-        vertex_3d_entities.extend(compass_3d_entities);
-        vertex_3d_entities.extend(grid_3d_entities);
-        vertex_3d_entities.extend(mtc_3d_entites);
+            let mut edge_2d_entities = HashSet::new();
 
-        let mut edge_2d_entities = HashSet::new();
+            let mut system_state: SystemState<(
+                ResMut<RenderFrame>,
+                Res<FileManager>,
+                Res<InputManager>,
+                Res<VertexManager>,
+                Res<EdgeManager>,
+                Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>, &Transform, Option<&RenderLayer>)>,
+                Query<(Entity, &OwnedByFileLocal, &FileType), With<Edge3d>>,
+                Query<Option<&ShapeName>>,
+            )> = SystemState::new(world);
+            let (
+                mut render_frame,
+                file_manager,
+                input_manager,
+                vertex_manager,
+                edge_manager,
+                objects_q,
+                edge_q,
+                shape_name_q,
+            ) = system_state.get_mut(world);
 
-        let mut system_state: SystemState<(
-            ResMut<RenderFrame>,
-            Res<FileManager>,
-            Res<InputManager>,
-            Res<VertexManager>,
-            Res<EdgeManager>,
-            Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>, &Transform, Option<&RenderLayer>)>,
-            Query<(Entity, &OwnedByFileLocal, &FileType), With<Edge3d>>,
-            Query<Option<&ShapeName>>,
-        )> = SystemState::new(world);
-        let (
-            mut render_frame,
-            file_manager,
-            input_manager,
-            vertex_manager,
-            edge_manager,
-            objects_q,
-            edge_q,
-            shape_name_q,
-        ) = system_state.get_mut(world);
+            // draw vertices (compass, grid, model transform controls)
+            for vertex_3d_entity in vertex_3d_entities.iter() {
 
-        // draw vertices (compass, grid, model transform controls)
-        for vertex_3d_entity in vertex_3d_entities.iter() {
+                // draw vertex 2d
+                let Some(data) = vertex_manager.get_vertex_3d_data(&vertex_3d_entity) else {
+                    continue;
+                };
 
-            // draw vertex 2d
-            let Some(data) = vertex_manager.get_vertex_3d_data(&vertex_3d_entity) else {
-                continue;
+                let (
+                    mesh_handle,
+                    mat_handle,
+                    transform,
+                    render_layer_opt
+                ) = objects_q.get(data.entity_2d).unwrap();
+                render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
+
+                for edge_3d_entity in data.edges_3d.iter() {
+                    let edge_2d_entity = edge_manager.edge_entity_3d_to_2d(edge_3d_entity).unwrap();
+                    edge_2d_entities.insert(edge_2d_entity);
+                }
+            }
+
+            // draw edges (compass, grid, model transform controls)
+            for edge_2d_entity in edge_2d_entities.iter() {
+                let (
+                    mesh_handle,
+                    mat_handle,
+                    transform,
+                    render_layer_opt
+                ) = objects_q.get(*edge_2d_entity).unwrap();
+                render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
+            }
+
+            let normal_edge_2d_scale = Edge2dLocal::NORMAL_THICKNESS * camera_3d_scale;
+            let hover_edge_2d_scale = Edge2dLocal::HOVER_THICKNESS * camera_3d_scale;
+
+            // draw skel bones
+            for (edge_3d_entity, owned_by_file, file_type) in edge_q.iter() {
+                if *file_type.value != FileExtension::Skel {
+                    continue;
+                }
+                if !ShapeManager::is_owned_by_file(
+                    &file_manager,
+                    current_file_entity,
+                    Some(&owned_by_file.file_entity),
+                ) {
+                    continue;
+                }
+                let Some(edge_2d_entity) = edge_manager.edge_entity_3d_to_2d(&edge_3d_entity) else {
+                    continue;
+                };
+                if self.edge_2d_has_model_transform(&edge_2d_entity) {
+                    continue;
+                }
+
+                let (_, end_vertex_3d_entity) = edge_manager.edge_get_endpoints(&edge_3d_entity);
+                let shape_name_opt = shape_name_q.get(end_vertex_3d_entity).unwrap();
+                let edge_is_enabled = edge_is_enabled(shape_name_opt);
+                let mat_handle = get_shape_color(
+                    &vertex_manager,
+                    edge_is_enabled,
+                );
+
+                let (
+                    mesh_handle,
+                    _,
+                    transform,
+                    render_layer_opt
+                ) = objects_q.get(edge_2d_entity).unwrap();
+                let mut new_transform = transform.clone();
+                new_transform.scale.y = normal_edge_2d_scale;
+                if let Some((hover_entity, CanvasShape::Edge)) = input_manager.hovered_entity {
+                    if hover_entity == edge_2d_entity {
+                        new_transform.scale.y = hover_edge_2d_scale;
+                    }
+                }
+                render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, &new_transform);
+            }
+
+            match input_manager.selected_shape_2d() {
+                Some((_, CanvasShape::Edge)) => {
+                    // draw select line
+                    if let Some(select_line_entity) = input_manager.select_line_entity {
+                        let (
+                            mesh_handle,
+                            mat_handle,
+                            transform,
+                            render_layer_opt
+                        ) = objects_q.get(select_line_entity).unwrap();
+                        render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
+                    }
+                }
+                Some((_, CanvasShape::Vertex)) => {
+                    // draw select circle
+                    if let Some(select_circle_entity) = input_manager.select_circle_entity {
+                        let (
+                            mesh_handle,
+                            mat_handle,
+                            transform,
+                            render_layer_opt
+                        ) = objects_q.get(select_circle_entity).unwrap();
+                        render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        {
+            // draw models in correct positions
+            let Some(model_transform_entities) = self.file_to_model_transforms.get(current_file_entity) else {
+                return;
             };
 
+            let mut system_state: SystemState<(
+                ResMut<RenderFrame>,
+                Client,
+                Res<FileManager>,
+                Res<CameraManager>,
+                Res<VertexManager>,
+                ResMut<Assets<CpuMesh>>,
+                Query<(&Camera, &Projection, &Transform)>,
+                Query<&Vertex3d>,
+                Query<(&OwnedByFileLocal, &Edge3dLocal), With<Edge3d>>,
+                Query<&ModelTransform>,
+            )> = SystemState::new(world);
             let (
-                mesh_handle,
-                mat_handle,
-                transform,
-                render_layer_opt
-            ) = objects_q.get(data.entity_2d).unwrap();
-            render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
-
-            for edge_3d_entity in data.edges_3d.iter() {
-                let edge_2d_entity = edge_manager.edge_entity_3d_to_2d(edge_3d_entity).unwrap();
-                edge_2d_entities.insert(edge_2d_entity);
-            }
-        }
-
-        // draw edges (compass, grid, model transform controls)
-        for edge_2d_entity in edge_2d_entities.iter() {
-            let (
-                mesh_handle,
-                mat_handle,
-                transform,
-                render_layer_opt
-            ) = objects_q.get(*edge_2d_entity).unwrap();
-            render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
-        }
-
-        let normal_edge_2d_scale = Edge2dLocal::NORMAL_THICKNESS * camera_3d_scale;
-        let hover_edge_2d_scale = Edge2dLocal::HOVER_THICKNESS * camera_3d_scale;
-
-        // skel bones
-        for (edge_3d_entity, owned_by_file, file_type) in edge_q.iter() {
-            if *file_type.value != FileExtension::Skel {
-                continue;
-            }
-            if !ShapeManager::is_owned_by_file(
-                &file_manager,
-                current_file_entity,
-                Some(&owned_by_file.file_entity),
-            ) {
-                continue;
-            }
-            let Some(edge_2d_entity) = edge_manager.edge_entity_3d_to_2d(&edge_3d_entity) else {
-                continue;
+                mut render_frame,
+                client,
+                file_manager,
+                camera_manager,
+                vertex_manager,
+                mut meshes,
+                camera_q,
+                vertex_q,
+                edge_q,
+                model_transform_q,
+            ) = system_state.get_mut(world);
+            let camera_3d_entity = camera_manager
+                .camera_3d_entity()
+                .unwrap();
+            let Ok((camera, camera_projection, camera_transform)) = camera_q.get(camera_3d_entity) else {
+                return;
             };
-            if self.edge_2d_has_model_transform(&edge_2d_entity) {
-                continue;
-            }
+            let camera_viewport = camera.viewport.unwrap();
+            let view_matrix = camera_transform.view_matrix();
+            let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
 
-            let (_, end_vertex_3d_entity) = edge_manager.edge_get_endpoints(&edge_3d_entity);
-            let shape_name_opt = shape_name_q.get(end_vertex_3d_entity).unwrap();
-            let edge_is_enabled = edge_is_enabled(shape_name_opt);
-            let mat_handle = get_shape_color(
-                &vertex_manager,
-                edge_is_enabled,
-            );
+            let render_layer = camera_manager.layer_2d;
+            let line_mesh = meshes.add(shapes::Line);
+            let line_mat = vertex_manager.mat_disabled_vertex;
 
-            let (
-                mesh_handle,
-                _,
-                transform,
-                render_layer_opt
-            ) = objects_q.get(edge_2d_entity).unwrap();
-            let mut new_transform = transform.clone();
-            new_transform.scale.y = normal_edge_2d_scale;
-            if let Some((hover_entity, CanvasShape::Edge)) = input_manager.hovered_entity {
-                if hover_entity == edge_2d_entity {
-                    new_transform.scale.y = hover_edge_2d_scale;
+            for model_transform_entity in model_transform_entities {
+                let Ok(model_transform) = model_transform_q.get(*model_transform_entity) else {
+                    continue;
+                };
+                let ModelTransformEntityType::Skin = *model_transform.entity_type else {
+                    panic!("not possible ... yet");
+                };
+                let skin_entity = model_transform.skin_or_scene_entity.get(&client).unwrap();
+                let model_transform = ModelTransformLocal::to_transform(model_transform).compute_matrix();
+
+                for (owned_by_file, edge_3d_local) in edge_q.iter() {
+
+                    if !ShapeManager::is_owned_by_file(
+                        &file_manager,
+                        &skin_entity,
+                        Some(&owned_by_file.file_entity),
+                    ) {
+                        continue;
+                    }
+
+                    let mut vertices = [Vec3::ZERO, Vec3::ZERO];
+                    for (index, vertex_3d_entity) in [edge_3d_local.start, edge_3d_local.end].iter().enumerate() {
+                        let Ok(vertex_3d) = vertex_q.get(*vertex_3d_entity) else {
+                            continue;
+                        };
+                        let point = vertex_3d.as_vec3();
+
+                        // transform by model_transform
+                        let point = transform_point(&model_transform, &point);
+
+                        // transform to 2D
+                        let (coords, depth) = convert_3d_to_2d(
+                            &view_matrix,
+                            &projection_matrix,
+                            &camera_viewport.size_vec2(),
+                            &point,
+                        );
+
+                        let point = Vec3::new(coords.x, coords.y, depth);
+
+                        // load into output
+                        vertices[index] = point;
+                    }
+
+                    // get edge transform between both 2d vertex transforms
+                    let mut line_transform = Transform::default();
+                    let start = vertices[0].truncate();
+                    let end = vertices[1].truncate();
+                    let depth = (vertices[0].z + vertices[1].z) / 2.0;
+                    set_2d_line_transform(&mut line_transform, start, end, depth);
+
+                    // draw edge
+                    render_frame.draw_object(Some(&render_layer), &line_mesh, &line_mat, &line_transform);
                 }
             }
-            render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, &new_transform);
-        }
-
-        // TODO: models
-
-        // render select line
-        match input_manager.selected_shape_2d() {
-            Some((_, CanvasShape::Edge)) => {
-                if let Some(select_line_entity) = input_manager.select_line_entity {
-                    let (
-                        mesh_handle,
-                        mat_handle,
-                        transform,
-                        render_layer_opt
-                    ) = objects_q.get(select_line_entity).unwrap();
-                    render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
-                }
-            }
-            Some((_, CanvasShape::Vertex)) => {
-                // render select circle
-                if let Some(select_circle_entity) = input_manager.select_circle_entity {
-                    let (
-                        mesh_handle,
-                        mat_handle,
-                        transform,
-                        render_layer_opt
-                    ) = objects_q.get(select_circle_entity).unwrap();
-                    render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
-                }
-            }
-            _ => {}
         }
     }
 
@@ -905,4 +1000,16 @@ fn get_shape_color(
     } else {
         vertex_manager.mat_disabled_vertex
     }
+}
+
+fn transform_point(transform_mat: &Mat4, point: &Vec3) -> Vec3 {
+
+    // Convert the point to a 4D vector (homogeneous coordinates)
+    let mut point4 = point.extend(1.0);
+
+    // Apply the transformation
+    point4 = *transform_mat * point4;
+
+    // Convert the result back to a 3D vector
+    point4.truncate()
 }

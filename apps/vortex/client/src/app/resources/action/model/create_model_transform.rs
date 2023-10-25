@@ -15,7 +15,7 @@ pub fn execute(
         panic!("Expected CreateModelTransform");
     };
 
-    info!("CreateModelTransform({:?})", edge_2d_entity,);
+    info!("CreateModelTransform(edge_2d_entity: {:?}, dependency_file_ext: {:?}, dependency_file_entity: {:?})", edge_2d_entity, dependency_file_ext, dependency_file_entity);
 
     world.resource_scope(|world, mut model_manager: Mut<ModelManager>| {
         model_manager.create_networked_model_transform(
