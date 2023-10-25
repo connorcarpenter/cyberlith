@@ -22,7 +22,10 @@ use vortex_proto::components::{
 };
 
 use crate::app::{
-    components::{ModelTransformControl, DefaultDraw, Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d, VertexEntry},
+    components::{
+        DefaultDraw, Edge3dLocal, LocalShape, ModelTransformControl, OwnedByFileLocal, Vertex2d,
+        VertexEntry,
+    },
     events::ShapeColorResyncEvent,
     resources::{
         action::{shape::ShapeAction, ActionStack},
@@ -159,13 +162,8 @@ impl VertexManager {
             Query<&mut Visibility>,
             Query<&LocalShape>,
         )> = SystemState::new(world);
-        let (
-            camera_q,
-            vertex_3d_q,
-            mut transform_q,
-            mut visibility_q,
-            local_shape_q,
-        ) = system_state.get_mut(world);
+        let (camera_q, vertex_3d_q, mut transform_q, mut visibility_q, local_shape_q) =
+            system_state.get_mut(world);
 
         let Ok((camera, camera_projection)) = camera_q.get(*camera_3d_entity) else {
             return;

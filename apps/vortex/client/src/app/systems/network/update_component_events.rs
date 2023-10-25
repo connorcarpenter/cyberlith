@@ -1,16 +1,19 @@
 use bevy_ecs::{
     event::EventReader,
     prelude::EventWriter,
-    system::{Query, ResMut, Res, Resource, SystemState},
-    world::{Mut, World}
+    system::{Query, Res, ResMut, Resource, SystemState},
+    world::{Mut, World},
 };
 use bevy_log::info;
 
 use naia_bevy_client::{events::UpdateComponentEvents, Client};
 
-use render_api::{Assets, Handle, base::CpuMesh, components::Transform};
+use render_api::{base::CpuMesh, components::Transform, Assets, Handle};
 
-use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, EdgeAngle, Face3d, FaceColor, FileSystemChild, FileSystemEntry, FileSystemRootChild, PaletteColor, ShapeName, Vertex3d};
+use vortex_proto::components::{
+    AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, EdgeAngle, Face3d, FaceColor,
+    FileSystemChild, FileSystemEntry, FileSystemRootChild, PaletteColor, ShapeName, Vertex3d,
+};
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemEntryLocal},
@@ -18,10 +21,10 @@ use crate::app::{
     resources::{
         animation_manager::AnimationManager,
         canvas::Canvas,
+        face_manager::FaceManager,
         file_manager::{get_full_path, FileManager},
         palette_manager::PaletteManager,
         vertex_manager::VertexManager,
-        face_manager::FaceManager,
     },
 };
 
@@ -50,7 +53,6 @@ pub fn update_component_events(world: &mut World) {
         },
     );
     for events in events_collection {
-
         let mut system_state: SystemState<(
             Client,
             ResMut<FileManager>,
@@ -58,13 +60,8 @@ pub fn update_component_events(world: &mut World) {
             Query<&mut FileSystemEntryLocal>,
             Query<(&ChangelistEntry, &mut ChangelistUiState)>,
         )> = SystemState::new(world);
-        let (
-            client,
-            file_manager,
-            entry_q,
-            mut entry_local_q,
-            mut cl_q,
-        ) = system_state.get_mut(world);
+        let (client, file_manager, entry_q, mut entry_local_q, mut cl_q) =
+            system_state.get_mut(world);
 
         // on FileSystemEntry Update Event
         for (_, entry_entity) in events.read::<FileSystemEntry>() {
@@ -160,7 +157,7 @@ pub fn update_component_events(world: &mut World) {
                 &mesh_handle_q,
                 &face_3d_q,
                 &mut transform_q,
-                &vertex_3d_entity
+                &vertex_3d_entity,
             );
         }
 

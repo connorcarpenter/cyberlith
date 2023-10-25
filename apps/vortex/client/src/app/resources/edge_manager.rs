@@ -116,7 +116,11 @@ impl EdgeManager {
         }
     }
 
-    pub fn sync_2d_edge(transform_q: &mut Query<&mut Transform>, edge_2d_entity: &Entity, edge_endpoints: &Edge2dLocal) {
+    pub fn sync_2d_edge(
+        transform_q: &mut Query<&mut Transform>,
+        edge_2d_entity: &Entity,
+        edge_endpoints: &Edge2dLocal,
+    ) {
         let Ok(start_transform) = transform_q.get(edge_endpoints.start) else {
             warn!(
                     "2d Edge start entity {:?} has no transform",
@@ -262,7 +266,12 @@ impl EdgeManager {
         }
     }
 
-    pub fn sync_3d_edge(transform_q: &mut Query<&mut Transform>, edge_entity: &Entity, edge_endpoints: &Edge3dLocal, edge_angle_opt: Option<&EdgeAngle>) {
+    pub fn sync_3d_edge(
+        transform_q: &mut Query<&mut Transform>,
+        edge_entity: &Entity,
+        edge_endpoints: &Edge3dLocal,
+        edge_angle_opt: Option<&EdgeAngle>,
+    ) {
         let edge_angle_opt = edge_angle_opt.map(|e| e.get_radians());
         let edge_angle = edge_angle_opt.unwrap_or_default();
 

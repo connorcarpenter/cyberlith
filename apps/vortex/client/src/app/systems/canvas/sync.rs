@@ -1,7 +1,7 @@
 use bevy_ecs::{
     entity::Entity,
     event::EventReader,
-    system::{SystemState, Commands, Query, Res, ResMut},
+    system::{Commands, Query, Res, ResMut, SystemState},
     world::{Mut, World},
 };
 
@@ -15,9 +15,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{
-    AnimFrame, EdgeAngle, FileExtension, PaletteColor, Vertex3d,
-};
+use vortex_proto::components::{AnimFrame, EdgeAngle, FileExtension, PaletteColor, Vertex3d};
 
 use crate::app::{
     components::{Edge2dLocal, Edge3dLocal, FaceIcon2d, LocalShape},
@@ -136,17 +134,25 @@ pub fn sync_vertices(world: &mut World) {
     let camera_3d_scale = camera_state.camera_3d_scale();
 
     world.resource_scope(|world, mut vertex_manager: Mut<VertexManager>| {
-
         match file_extension {
-            FileExtension::Skel
-            | FileExtension::Mesh
-            | FileExtension::Skin => {
+            FileExtension::Skel | FileExtension::Mesh | FileExtension::Skin => {
                 vertex_manager.sync_3d_vertices(file_extension, world);
-                vertex_manager.sync_2d_vertices(file_extension, world, &camera_3d_entity, camera_3d_scale);
+                vertex_manager.sync_2d_vertices(
+                    file_extension,
+                    world,
+                    &camera_3d_entity,
+                    camera_3d_scale,
+                );
             }
             FileExtension::Model => {
                 world.resource_scope(|world, model_manager: Mut<ModelManager>| {
-                    model_manager.sync_vertices(world, &vertex_manager, &current_file_entity, &camera_3d_entity, camera_is_2d);
+                    model_manager.sync_vertices(
+                        world,
+                        &vertex_manager,
+                        &current_file_entity,
+                        &camera_3d_entity,
+                        camera_is_2d,
+                    );
                 });
             }
             FileExtension::Anim => {
@@ -239,10 +245,11 @@ pub fn sync_vertices(world: &mut World) {
     });
 }
 
-pub fn sync_edges(
-    world: &mut World,
-) {
-    let should_sync = world.get_resource::<EdgeManager>().unwrap().get_should_sync();
+pub fn sync_edges(world: &mut World) {
+    let should_sync = world
+        .get_resource::<EdgeManager>()
+        .unwrap()
+        .get_should_sync();
     if !should_sync {
         return;
     }
@@ -255,7 +262,10 @@ pub fn sync_edges(
     };
     let current_tab_entity = *current_tab_entity;
 
-    let file_ext = world.get_resource::<FileManager>().unwrap().get_file_type(&current_tab_entity);
+    let file_ext = world
+        .get_resource::<FileManager>()
+        .unwrap()
+        .get_file_type(&current_tab_entity);
 
     match file_ext {
         FileExtension::Skel | FileExtension::Mesh | FileExtension::Skin => {
@@ -283,8 +293,25 @@ pub fn sync_edges(
             let current_tab_state = tab_manager.current_tab_state().unwrap();
             let camera_state = &current_tab_state.camera_state;
             let camera_3d_scale = camera_state.camera_3d_scale();
-            sync_3d_edges(&mut edge_manager, &local_shape_q, &mut visibility_q, &mut transform_q, &edge_3d_q, &edge_angle_q, file_ext, camera_3d_scale);
-            sync_2d_edges(&mut edge_manager, &local_shape_q, &mut visibility_q, &mut transform_q, &edge_2d_q, &edge_3d_q, camera_3d_scale);
+            sync_3d_edges(
+                &mut edge_manager,
+                &local_shape_q,
+                &mut visibility_q,
+                &mut transform_q,
+                &edge_3d_q,
+                &edge_angle_q,
+                file_ext,
+                camera_3d_scale,
+            );
+            sync_2d_edges(
+                &mut edge_manager,
+                &local_shape_q,
+                &mut visibility_q,
+                &mut transform_q,
+                &edge_2d_q,
+                &edge_3d_q,
+                camera_3d_scale,
+            );
         }
         FileExtension::Anim => {
             let mut system_state: SystemState<(
@@ -317,17 +344,37 @@ pub fn sync_edges(
                 .current_frame_entity(&current_tab_entity)
                 .is_none()
             {
-                sync_3d_edges(&mut edge_manager, &local_shape_q, &mut visibility_q, &mut transform_q, &edge_3d_q, &edge_angle_q, file_ext, camera_3d_scale);
+                sync_3d_edges(
+                    &mut edge_manager,
+                    &local_shape_q,
+                    &mut visibility_q,
+                    &mut transform_q,
+                    &edge_3d_q,
+                    &edge_angle_q,
+                    file_ext,
+                    camera_3d_scale,
+                );
             }
-            sync_2d_edges(&mut edge_manager, &local_shape_q, &mut visibility_q, &mut transform_q, &edge_2d_q, &edge_3d_q, camera_3d_scale);
+            sync_2d_edges(
+                &mut edge_manager,
+                &local_shape_q,
+                &mut visibility_q,
+                &mut transform_q,
+                &edge_2d_q,
+                &edge_3d_q,
+                camera_3d_scale,
+            );
         }
         FileExtension::Model => {
             // handles in "sync_vertices"
         }
-        _ => { },
+        _ => {}
     };
 
-    world.get_resource_mut::<EdgeManager>().unwrap().finish_sync();
+    world
+        .get_resource_mut::<EdgeManager>()
+        .unwrap()
+        .finish_sync();
 }
 
 fn sync_3d_edges(
@@ -338,7 +385,7 @@ fn sync_3d_edges(
     edge_3d_q: &Query<(Entity, &Edge3dLocal, Option<&EdgeAngle>)>,
     edge_angle_q: &Query<(Entity, &EdgeAngle)>,
     file_ext: FileExtension,
-    camera_3d_scale: f32
+    camera_3d_scale: f32,
 ) {
     // animation manager will not handle this, so edge_manager must
     EdgeManager::sync_3d_edges(
@@ -364,7 +411,7 @@ fn sync_2d_edges(
     mut transform_q: &mut Query<&mut Transform>,
     edge_2d_q: &Query<(Entity, &Edge2dLocal)>,
     edge_3d_q: &Query<(Entity, &Edge3dLocal, Option<&EdgeAngle>)>,
-    camera_3d_scale: f32
+    camera_3d_scale: f32,
 ) {
     EdgeManager::sync_local_3d_edges(
         &edge_3d_q,

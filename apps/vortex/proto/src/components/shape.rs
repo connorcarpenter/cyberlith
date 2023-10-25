@@ -398,7 +398,11 @@ impl ModelTransform {
         )
     }
 
-    pub fn set_owner(&mut self, converter: &dyn EntityAndGlobalEntityConverter<Entity>, file_entity: &Entity) {
+    pub fn set_owner(
+        &mut self,
+        converter: &dyn EntityAndGlobalEntityConverter<Entity>,
+        file_entity: &Entity,
+    ) {
         self.model_file_entity.set(converter, file_entity);
     }
 

@@ -2,27 +2,41 @@ use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{
     entity::Entity,
-    system::{Commands, Query, ResMut, Resource, SystemState},
-    world::{Mut, World},
     query::With,
     system::Res,
+    system::{Commands, Query, ResMut, Resource, SystemState},
+    world::{Mut, World},
 };
 use bevy_log::warn;
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
-use math::{convert_3d_to_2d, Mat4, Quat, quat_from_spin_direction, SerdeQuat, Vec3};
+use math::{convert_3d_to_2d, quat_from_spin_direction, Mat4, Quat, SerdeQuat, Vec3};
 
-use render_api::{base::{Color, CpuMaterial, CpuMesh}, components::{RenderLayer, Camera, Visibility, CameraProjection, Projection, Transform}, Assets, Handle, resources::RenderFrame, shapes, shapes::set_2d_line_transform};
+use render_api::{
+    base::{Color, CpuMaterial, CpuMesh},
+    components::{Camera, CameraProjection, Projection, RenderLayer, Transform, Visibility},
+    resources::RenderFrame,
+    shapes,
+    shapes::set_2d_line_transform,
+    Assets, Handle,
+};
 
-use vortex_proto::components::{Edge3d, EdgeAngle, Face3d, FileExtension, FileType, ModelTransform, ModelTransformEntityType, ShapeName, Vertex3d};
+use vortex_proto::components::{
+    Edge3d, EdgeAngle, Face3d, FileExtension, FileType, ModelTransform, ModelTransformEntityType,
+    ShapeName, Vertex3d,
+};
 
 use crate::app::{
-    components::{ModelTransformLocal, OwnedByFileLocal, ModelTransformControl, Edge2dLocal, Edge3dLocal},
+    components::{
+        Edge2dLocal, Edge3dLocal, ModelTransformControl, ModelTransformLocal, OwnedByFileLocal,
+    },
     resources::{
-        action::model::ModelAction, camera_manager::CameraManager, canvas::Canvas, shape_data::CanvasShape, shape_manager::ShapeManager,
-        edge_manager::EdgeManager, face_manager::FaceManager, input::InputManager, file_manager::FileManager,
-        tab_manager::TabManager, vertex_manager::VertexManager, compass::Compass, grid::Grid, edge_manager::edge_is_enabled
+        action::model::ModelAction, camera_manager::CameraManager, canvas::Canvas,
+        compass::Compass, edge_manager::edge_is_enabled, edge_manager::EdgeManager,
+        face_manager::FaceManager, file_manager::FileManager, grid::Grid, input::InputManager,
+        shape_data::CanvasShape, shape_manager::ShapeManager, tab_manager::TabManager,
+        vertex_manager::VertexManager,
     },
     ui::{widgets::create_networked_dependency, BindingState, UiState},
 };
@@ -389,10 +403,17 @@ impl ModelManager {
         self.edge_2d_to_model_transform
             .insert(edge_2d_entity, model_transform_entity);
 
-        if !self.file_to_model_transforms.contains_key(owning_file_entity) {
-            self.file_to_model_transforms.insert(*owning_file_entity, HashSet::new());
+        if !self
+            .file_to_model_transforms
+            .contains_key(owning_file_entity)
+        {
+            self.file_to_model_transforms
+                .insert(*owning_file_entity, HashSet::new());
         }
-        let model_transforms = self.file_to_model_transforms.get_mut(owning_file_entity).unwrap();
+        let model_transforms = self
+            .file_to_model_transforms
+            .get_mut(owning_file_entity)
+            .unwrap();
         model_transforms.insert(model_transform_entity);
     }
 
@@ -441,10 +462,14 @@ impl ModelManager {
         self.edge_2d_to_model_transform
             .remove(&model_transform_data.edge_2d_entity);
 
-        let model_transforms = self.file_to_model_transforms.get_mut(&model_transform_data.owning_file_entity).unwrap();
+        let model_transforms = self
+            .file_to_model_transforms
+            .get_mut(&model_transform_data.owning_file_entity)
+            .unwrap();
         model_transforms.remove(model_transform_entity);
         if model_transforms.is_empty() {
-            self.file_to_model_transforms.remove(&model_transform_data.owning_file_entity);
+            self.file_to_model_transforms
+                .remove(&model_transform_data.owning_file_entity);
         }
 
         model_transform_data
@@ -504,12 +529,20 @@ impl ModelManager {
         vertices
     }
 
-    pub fn sync_vertices(&self, world: &mut World, vertex_manager: &VertexManager, file_entity: &Entity, camera_3d_entity: &Entity, camera_is_2d: bool) {
+    pub fn sync_vertices(
+        &self,
+        world: &mut World,
+        vertex_manager: &VertexManager,
+        file_entity: &Entity,
+        camera_3d_entity: &Entity,
+        camera_is_2d: bool,
+    ) {
         // only triggers when canvas is redrawn
 
         // ModelTransformControls
         // (setting Vertex3d)
-        let mut system_state: SystemState<(Query<&mut Vertex3d>, Query<&ModelTransform>)> = SystemState::new(world);
+        let mut system_state: SystemState<(Query<&mut Vertex3d>, Query<&ModelTransform>)> =
+            SystemState::new(world);
         let (mut vertex_3d_q, model_transform_q) = system_state.get_mut(world);
         self.sync_transform_controls(file_entity, &mut vertex_3d_q, &model_transform_q);
 
@@ -522,7 +555,10 @@ impl ModelManager {
         vertex_3d_entities.extend(grid_3d_entities);
         vertex_3d_entities.extend(mtc_3d_entites);
 
-        let mut system_state: SystemState<(Res<FileManager>, Query<(Entity, &FileType, &OwnedByFileLocal), With<Vertex3d>>)> = SystemState::new(world);
+        let mut system_state: SystemState<(
+            Res<FileManager>,
+            Query<(Entity, &FileType, &OwnedByFileLocal), With<Vertex3d>>,
+        )> = SystemState::new(world);
         let (file_manager, vert_q) = system_state.get_mut(world);
         for (entity, file_type, owned_by_file_local) in vert_q.iter() {
             if *file_type.value == FileExtension::Skel {
@@ -551,7 +587,8 @@ impl ModelManager {
         }
 
         // for ALL gathered 3D vertex entities, convert Vertex3D -> 3d Transform
-        let mut system_state: SystemState<Query<(&Vertex3d, &mut Transform)>> = SystemState::new(world);
+        let mut system_state: SystemState<Query<(&Vertex3d, &mut Transform)>> =
+            SystemState::new(world);
         let mut vertex_3d_q = system_state.get_mut(world);
 
         for vertex_3d_entity in vertex_3d_entities.iter() {
@@ -562,14 +599,22 @@ impl ModelManager {
         }
 
         // for ALL gathered 3D edge entities, sync with 3d vertex transforms
-        let mut system_state: SystemState<(Query<(&Edge3dLocal, Option<&EdgeAngle>)>, Query<&mut Transform>)> = SystemState::new(world);
+        let mut system_state: SystemState<(
+            Query<(&Edge3dLocal, Option<&EdgeAngle>)>,
+            Query<&mut Transform>,
+        )> = SystemState::new(world);
         let (edge_3d_q, mut transform_q) = system_state.get_mut(world);
 
         for edge_3d_entity in edge_3d_entities.iter() {
             let Ok((edge_3d_local, edge_angle_opt)) = edge_3d_q.get(*edge_3d_entity) else {
                 continue;
             };
-            EdgeManager::sync_3d_edge(&mut transform_q, edge_3d_entity, edge_3d_local, edge_angle_opt);
+            EdgeManager::sync_3d_edge(
+                &mut transform_q,
+                edge_3d_entity,
+                edge_3d_local,
+                edge_angle_opt,
+            );
         }
 
         if !camera_is_2d {
@@ -582,12 +627,8 @@ impl ModelManager {
             Query<&mut Transform>,
             Query<&Edge2dLocal>,
         )> = SystemState::new(world);
-        let (
-            edge_manager,
-            camera_q,
-            mut transform_q,
-            edge_2d_local_q,
-        ) = system_state.get_mut(world);
+        let (edge_manager, camera_q, mut transform_q, edge_2d_local_q) =
+            system_state.get_mut(world);
 
         let Ok((camera, camera_projection)) = camera_q.get(*camera_3d_entity) else {
             return;
@@ -645,7 +686,6 @@ impl ModelManager {
     }
 
     pub fn draw(&self, world: &mut World, current_file_entity: &Entity) {
-
         let Some(current_tab_state) = world.get_resource::<TabManager>().unwrap().current_tab_state() else {
             return;
         };
@@ -677,7 +717,12 @@ impl ModelManager {
                 Res<InputManager>,
                 Res<VertexManager>,
                 Res<EdgeManager>,
-                Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>, &Transform, Option<&RenderLayer>)>,
+                Query<(
+                    &Handle<CpuMesh>,
+                    &Handle<CpuMaterial>,
+                    &Transform,
+                    Option<&RenderLayer>,
+                )>,
                 Query<(Entity, &OwnedByFileLocal, &FileType), With<Edge3d>>,
                 Query<Option<&ShapeName>>,
             )> = SystemState::new(world);
@@ -694,18 +739,13 @@ impl ModelManager {
 
             // draw vertices (compass, grid, model transform controls)
             for vertex_3d_entity in vertex_3d_entities.iter() {
-
                 // draw vertex 2d
                 let Some(data) = vertex_manager.get_vertex_3d_data(&vertex_3d_entity) else {
                     continue;
                 };
 
-                let (
-                    mesh_handle,
-                    mat_handle,
-                    transform,
-                    render_layer_opt
-                ) = objects_q.get(data.entity_2d).unwrap();
+                let (mesh_handle, mat_handle, transform, render_layer_opt) =
+                    objects_q.get(data.entity_2d).unwrap();
                 render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
 
                 for edge_3d_entity in data.edges_3d.iter() {
@@ -716,12 +756,8 @@ impl ModelManager {
 
             // draw edges (compass, grid, model transform controls)
             for edge_2d_entity in edge_2d_entities.iter() {
-                let (
-                    mesh_handle,
-                    mat_handle,
-                    transform,
-                    render_layer_opt
-                ) = objects_q.get(*edge_2d_entity).unwrap();
+                let (mesh_handle, mat_handle, transform, render_layer_opt) =
+                    objects_q.get(*edge_2d_entity).unwrap();
                 render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
             }
 
@@ -750,17 +786,10 @@ impl ModelManager {
                 let (_, end_vertex_3d_entity) = edge_manager.edge_get_endpoints(&edge_3d_entity);
                 let shape_name_opt = shape_name_q.get(end_vertex_3d_entity).unwrap();
                 let edge_is_enabled = edge_is_enabled(shape_name_opt);
-                let mat_handle = get_shape_color(
-                    &vertex_manager,
-                    edge_is_enabled,
-                );
+                let mat_handle = get_shape_color(&vertex_manager, edge_is_enabled);
 
-                let (
-                    mesh_handle,
-                    _,
-                    transform,
-                    render_layer_opt
-                ) = objects_q.get(edge_2d_entity).unwrap();
+                let (mesh_handle, _, transform, render_layer_opt) =
+                    objects_q.get(edge_2d_entity).unwrap();
                 let mut new_transform = transform.clone();
                 new_transform.scale.y = normal_edge_2d_scale;
                 if let Some((hover_entity, CanvasShape::Edge)) = input_manager.hovered_entity {
@@ -768,32 +797,39 @@ impl ModelManager {
                         new_transform.scale.y = hover_edge_2d_scale;
                     }
                 }
-                render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, &new_transform);
+                render_frame.draw_object(
+                    render_layer_opt,
+                    mesh_handle,
+                    &mat_handle,
+                    &new_transform,
+                );
             }
 
             match input_manager.selected_shape_2d() {
                 Some((_, CanvasShape::Edge)) => {
                     // draw select line
                     if let Some(select_line_entity) = input_manager.select_line_entity {
-                        let (
+                        let (mesh_handle, mat_handle, transform, render_layer_opt) =
+                            objects_q.get(select_line_entity).unwrap();
+                        render_frame.draw_object(
+                            render_layer_opt,
                             mesh_handle,
-                            mat_handle,
+                            &mat_handle,
                             transform,
-                            render_layer_opt
-                        ) = objects_q.get(select_line_entity).unwrap();
-                        render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
+                        );
                     }
                 }
                 Some((_, CanvasShape::Vertex)) => {
                     // draw select circle
                     if let Some(select_circle_entity) = input_manager.select_circle_entity {
-                        let (
+                        let (mesh_handle, mat_handle, transform, render_layer_opt) =
+                            objects_q.get(select_circle_entity).unwrap();
+                        render_frame.draw_object(
+                            render_layer_opt,
                             mesh_handle,
-                            mat_handle,
+                            &mat_handle,
                             transform,
-                            render_layer_opt
-                        ) = objects_q.get(select_circle_entity).unwrap();
-                        render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
+                        );
                     }
                 }
                 _ => {}
@@ -830,9 +866,7 @@ impl ModelManager {
                 edge_q,
                 model_transform_q,
             ) = system_state.get_mut(world);
-            let camera_3d_entity = camera_manager
-                .camera_3d_entity()
-                .unwrap();
+            let camera_3d_entity = camera_manager.camera_3d_entity().unwrap();
             let Ok((camera, camera_projection, camera_transform)) = camera_q.get(camera_3d_entity) else {
                 return;
             };
@@ -858,7 +892,6 @@ impl ModelManager {
                 let model_transform = model_transform.compute_matrix();
 
                 for (owned_by_file, edge_3d_local) in edge_q.iter() {
-
                     if !ShapeManager::is_owned_by_file(
                         &file_manager,
                         &skin_entity,
@@ -868,7 +901,9 @@ impl ModelManager {
                     }
 
                     let mut vertices = [Vec3::ZERO, Vec3::ZERO];
-                    for (index, vertex_3d_entity) in [edge_3d_local.start, edge_3d_local.end].iter().enumerate() {
+                    for (index, vertex_3d_entity) in
+                        [edge_3d_local.start, edge_3d_local.end].iter().enumerate()
+                    {
                         let Ok(vertex_3d) = vertex_q.get(*vertex_3d_entity) else {
                             continue;
                         };
@@ -899,7 +934,12 @@ impl ModelManager {
                     set_2d_line_transform(&mut line_transform, start, end, depth);
 
                     // draw edge
-                    render_frame.draw_object(Some(&render_layer), &line_mesh, &line_mat, &line_transform);
+                    render_frame.draw_object(
+                        Some(&render_layer),
+                        &line_mesh,
+                        &line_mat,
+                        &line_transform,
+                    );
                 }
             }
         }
@@ -920,7 +960,12 @@ impl ModelManager {
                 Res<FileManager>,
                 Res<VertexManager>,
                 Res<EdgeManager>,
-                Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>, &Transform, Option<&RenderLayer>)>,
+                Query<(
+                    &Handle<CpuMesh>,
+                    &Handle<CpuMaterial>,
+                    &Transform,
+                    Option<&RenderLayer>,
+                )>,
                 Query<(Entity, &OwnedByFileLocal, &FileType), With<Edge3d>>,
                 Query<Option<&ShapeName>>,
             )> = SystemState::new(world);
@@ -936,11 +981,11 @@ impl ModelManager {
 
             // draw vertices (compass, grid)
             for vertex_3d_entity in vertex_3d_entities.iter() {
-
                 // draw vertex 2d
                 let Some(data) = vertex_manager.get_vertex_3d_data(&vertex_3d_entity) else { continue };
 
-                let (mesh_handle, mat_handle, transform, render_layer_opt) = objects_q.get(*vertex_3d_entity).unwrap();
+                let (mesh_handle, mat_handle, transform, render_layer_opt) =
+                    objects_q.get(*vertex_3d_entity).unwrap();
                 render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
 
                 for edge_3d_entity in data.edges_3d.iter() {
@@ -950,7 +995,8 @@ impl ModelManager {
 
             // draw edges (compass, grid)
             for edge_3d_entity in edge_3d_entities.iter() {
-                let (mesh_handle, mat_handle, transform, render_layer_opt) = objects_q.get(*edge_3d_entity).unwrap();
+                let (mesh_handle, mat_handle, transform, render_layer_opt) =
+                    objects_q.get(*edge_3d_entity).unwrap();
                 render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
             }
 
@@ -976,17 +1022,10 @@ impl ModelManager {
                 let (_, end_vertex_3d_entity) = edge_manager.edge_get_endpoints(&edge_3d_entity);
                 let shape_name_opt = shape_name_q.get(end_vertex_3d_entity).unwrap();
                 let edge_is_enabled = edge_is_enabled(shape_name_opt);
-                let mat_handle = get_shape_color(
-                    &vertex_manager,
-                    edge_is_enabled,
-                );
+                let mat_handle = get_shape_color(&vertex_manager, edge_is_enabled);
 
-                let (
-                    mesh_handle,
-                    _,
-                    transform,
-                    render_layer_opt
-                ) = objects_q.get(edge_3d_entity).unwrap();
+                let (mesh_handle, _, transform, render_layer_opt) =
+                    objects_q.get(edge_3d_entity).unwrap();
                 render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
             }
         }
@@ -1034,7 +1073,6 @@ impl ModelManager {
                 model_transform.rotation = model_transform.rotation * corrective_rot;
 
                 for (face_3d_entity, owned_by_file) in face_q.iter() {
-
                     if !ShapeManager::is_owned_by_file(
                         &file_manager,
                         &skin_entity,
@@ -1049,7 +1087,12 @@ impl ModelManager {
                     let transform = model_transform * transform;
 
                     // draw face
-                    render_frame.draw_object(Some(&render_layer), mesh_handle, &temp_mat, &transform);
+                    render_frame.draw_object(
+                        Some(&render_layer),
+                        mesh_handle,
+                        &temp_mat,
+                        &transform,
+                    );
                 }
             }
         }
@@ -1068,7 +1111,6 @@ fn get_shape_color(
 }
 
 fn transform_point(transform_mat: &Mat4, point: &Vec3) -> Vec3 {
-
     // Convert the point to a 4D vector (homogeneous coordinates)
     let mut point4 = point.extend(1.0);
 

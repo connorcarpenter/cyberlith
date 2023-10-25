@@ -13,11 +13,9 @@ use render_api::{
 
 use vortex_proto::components::Vertex3d;
 
-use crate::app::{
-    resources::{
-        camera_manager::CameraManager, canvas::Canvas, tab_manager::TabManager,
-        edge_manager::EdgeManager, face_manager::FaceManager, vertex_manager::VertexManager,
-    },
+use crate::app::resources::{
+    camera_manager::CameraManager, canvas::Canvas, edge_manager::EdgeManager,
+    face_manager::FaceManager, tab_manager::TabManager, vertex_manager::VertexManager,
 };
 
 #[derive(Resource)]
@@ -54,7 +52,13 @@ impl Compass {
 
         self.resync = false;
 
-        self.sync_compass_impl(canvas, tab_manager, camera_manager, vertex_3d_q, transform_q);
+        self.sync_compass_impl(
+            canvas,
+            tab_manager,
+            camera_manager,
+            vertex_3d_q,
+            transform_q,
+        );
     }
 
     pub fn vertices(&self) -> &Vec<Entity> {
@@ -67,7 +71,7 @@ impl Compass {
         tab_manager: &TabManager,
         camera_manager: &CameraManager,
         vertex_3d_q: &mut Query<(Entity, &mut Vertex3d)>,
-        transform_q: &Query<&Transform>
+        transform_q: &Query<&Transform>,
     ) {
         let Some(current_tab_state) = tab_manager.current_tab_state() else {
             return;
@@ -93,9 +97,9 @@ impl Compass {
         compass_pos.y -= 32.0;
         let offset_2d = camera_state.camera_3d_offset().round()
             + Vec2::new(
-            unit_length * -1.0 * compass_pos.x,
-            unit_length * compass_pos.y,
-        );
+                unit_length * -1.0 * compass_pos.x,
+                unit_length * compass_pos.y,
+            );
         let offset_3d = (right * offset_2d.x) + (up * offset_2d.y);
 
         let vert_offset_3d = Vec3::ZERO + offset_3d;

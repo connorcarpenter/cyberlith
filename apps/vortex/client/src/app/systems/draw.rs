@@ -23,10 +23,9 @@ use crate::app::{
     resources::{
         animation_manager::AnimationManager, edge_manager::edge_is_enabled,
         edge_manager::EdgeManager, file_manager::FileManager, tab_manager::TabManager,
-        vertex_manager::VertexManager,
+        vertex_manager::VertexManager, model_manager::ModelManager
     },
 };
-use crate::app::resources::model_manager::ModelManager;
 
 pub fn draw(
     file_manager: Res<FileManager>,
@@ -167,8 +166,8 @@ fn draw_vertices_and_edges_inner(world: &mut World, current_file: FileExtension)
             edge_angles_are_visible = false;
         }
     }
-    let must_check_edge_enabled = current_file == FileExtension::Anim
-        && !animation_manager.preview_frame_selected();
+    let must_check_edge_enabled =
+        current_file == FileExtension::Anim && !animation_manager.preview_frame_selected();
 
     // draw vertices
     for (vertex_3d_entity, visibility, shape_name_opt, vertex_root_opt) in vertices_q.iter() {

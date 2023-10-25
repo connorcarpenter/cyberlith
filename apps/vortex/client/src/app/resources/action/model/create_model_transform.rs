@@ -1,8 +1,8 @@
-use bevy_ecs::{prelude::World, world::Mut, entity::Entity};
+use bevy_ecs::{entity::Entity, prelude::World, world::Mut};
 use bevy_log::info;
 
 use crate::app::resources::{
-    action::model::ModelAction, input::InputManager, model_manager::ModelManager, canvas::Canvas
+    action::model::ModelAction, canvas::Canvas, input::InputManager, model_manager::ModelManager,
 };
 
 pub fn execute(
