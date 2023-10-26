@@ -152,6 +152,7 @@ pub fn sync_vertices(world: &mut World) {
                         &current_file_entity,
                         &camera_3d_entity,
                         camera_is_2d,
+                        camera_3d_scale,
                     );
                 });
             }

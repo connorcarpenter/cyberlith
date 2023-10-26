@@ -29,13 +29,13 @@ use vortex_proto::components::{
 
 use crate::app::{
     components::{
-        Edge2dLocal, Edge3dLocal, ModelTransformControl, ModelTransformLocal, OwnedByFileLocal,
+        Edge2dLocal, Edge3dLocal, ModelTransformControl, ModelTransformLocal, OwnedByFileLocal, LocalShape, Vertex2d
     },
     resources::{
         action::model::ModelAction, camera_manager::CameraManager, canvas::Canvas,
         compass::Compass, edge_manager::edge_is_enabled, edge_manager::EdgeManager,
         face_manager::FaceManager, file_manager::FileManager, grid::Grid, input::InputManager,
-        shape_data::CanvasShape, shape_manager::ShapeManager, tab_manager::TabManager,
+        shape_data::CanvasShape, tab_manager::TabManager,
         vertex_manager::VertexManager,
     },
     ui::{widgets::create_networked_dependency, BindingState, UiState},
@@ -540,44 +540,51 @@ impl ModelManager {
         file_entity: &Entity,
         camera_3d_entity: &Entity,
         camera_is_2d: bool,
+        camera_3d_scale: f32,
     ) {
         // only triggers when canvas is redrawn
+        let local_vertex_3d_scale = LocalShape::VERTEX_RADIUS / camera_3d_scale;
+        let local_vertex_3d_scale = Vec3::splat(local_vertex_3d_scale);
+        let local_edge_3d_scale = LocalShape::EDGE_THICKNESS / camera_3d_scale;
+
+        let mut system_state: SystemState<(Res<FileManager>, Query<&mut Vertex3d>, Query<&ModelTransform>)> =
+            SystemState::new(world);
+        let (file_manager, mut vertex_3d_q, model_transform_q) = system_state.get_mut(world);
+        let Some(skel_file_entity) = file_manager.file_get_dependency(&file_entity, FileExtension::Skel) else {
+            return;
+        };
 
         // ModelTransformControls
         // (setting Vertex3d)
-        let mut system_state: SystemState<(Query<&mut Vertex3d>, Query<&ModelTransform>)> =
-            SystemState::new(world);
-        let (mut vertex_3d_q, model_transform_q) = system_state.get_mut(world);
         self.sync_transform_controls(file_entity, &mut vertex_3d_q, &model_transform_q);
 
-        // gather 3D entities for Skel Vertices, Compass/Grid/ModelTransformControls Vertices
+        // gather 3D entities for Compass/Grid/ModelTransformControls Vertices
         let mut vertex_3d_entities: HashSet<Entity> = HashSet::new();
+        let mut local_vertex_3d_entities: HashSet<Entity> = HashSet::new();
+
         let compass_3d_entities = world.get_resource::<Compass>().unwrap().vertices();
         let grid_3d_entities = world.get_resource::<Grid>().unwrap().vertices();
-        let mtc_3d_entites = self.model_transform_3d_vertices(file_entity);
         vertex_3d_entities.extend(compass_3d_entities);
         vertex_3d_entities.extend(grid_3d_entities);
+        local_vertex_3d_entities.extend(compass_3d_entities);
+        local_vertex_3d_entities.extend(grid_3d_entities);
+
+        let mtc_3d_entites = self.model_transform_3d_vertices(file_entity);
         vertex_3d_entities.extend(mtc_3d_entites);
 
-        let mut system_state: SystemState<(
-            Res<FileManager>,
-            Query<(Entity, &FileType, &OwnedByFileLocal), With<Vertex3d>>,
-        )> = SystemState::new(world);
-        let (file_manager, vert_q) = system_state.get_mut(world);
-        for (entity, file_type, owned_by_file_local) in vert_q.iter() {
-            if *file_type.value == FileExtension::Skel {
-                if ShapeManager::is_owned_by_file(
-                    &file_manager,
-                    file_entity,
-                    Some(&owned_by_file_local.file_entity),
-                ) {
-                    vertex_3d_entities.insert(entity);
-                }
+        let mut system_state: SystemState<Query<(Entity, &OwnedByFileLocal), With<Vertex3d>>> = SystemState::new(world);
+        let vert_q = system_state.get_mut(world);
+
+        // gather 3d entities for Skel vertices
+        for (entity, owned_by_file_local) in vert_q.iter() {
+            if skel_file_entity == owned_by_file_local.file_entity {
+                vertex_3d_entities.insert(entity);
             }
         }
 
         // from 3D vertex entities, get list of 3D edge entities
         let mut edge_3d_entities: HashSet<Entity> = HashSet::new();
+        let mut local_edge_3d_entities = HashSet::new();
 
         for vertex_3d_entity in vertex_3d_entities.iter() {
             let Some(vertex_data) = vertex_manager.get_vertex_3d_data(vertex_3d_entity) else {
@@ -587,6 +594,10 @@ impl ModelManager {
 
             for edge_3d_entity in vertex_data.edges_3d.iter() {
                 edge_3d_entities.insert(*edge_3d_entity);
+
+                if local_vertex_3d_entities.contains(vertex_3d_entity) {
+                    local_edge_3d_entities.insert(*edge_3d_entity);
+                }
             }
         }
 
@@ -600,6 +611,10 @@ impl ModelManager {
                 continue;
             };
             transform.translation = vertex_3d.as_vec3();
+
+            if local_vertex_3d_entities.contains(vertex_3d_entity) {
+                transform.scale = local_vertex_3d_scale;
+            }
         }
 
         // for ALL gathered 3D edge entities, sync with 3d vertex transforms
@@ -619,19 +634,35 @@ impl ModelManager {
                 edge_3d_local,
                 edge_angle_opt,
             );
+            if local_edge_3d_entities.contains(edge_3d_entity) {
+                let mut transform = transform_q.get_mut(*edge_3d_entity).unwrap();
+                transform.scale.x = local_edge_3d_scale;
+                transform.scale.y = local_edge_3d_scale;
+            }
         }
 
         if !camera_is_2d {
             return;
         }
 
+        // let vertex_2d_scale = Vec3::splat(LocalShape::VERTEX_RADIUS * camera_3d_scale);
+        // let edge_2d_scale = LocalShape::EDGE_THICKNESS * camera_3d_scale;
+        let local_vertex_2d_scale = LocalShape::VERTEX_RADIUS;
+        let normal_vertex_2d_scale = Vertex2d::RADIUS * camera_3d_scale;
+        let hover_vertex_2d_scale = Vertex2d::HOVER_RADIUS * camera_3d_scale;
+
+        let local_edge_2d_scale = LocalShape::EDGE_THICKNESS;
+        let normal_edge_2d_scale = Edge2dLocal::NORMAL_THICKNESS * camera_3d_scale;
+        let hover_edge_2d_scale = Edge2dLocal::HOVER_THICKNESS * camera_3d_scale;
+
         let mut system_state: SystemState<(
+            Res<InputManager>,
             Res<EdgeManager>,
             Query<(&Camera, &Projection)>,
             Query<&mut Transform>,
             Query<&Edge2dLocal>,
         )> = SystemState::new(world);
-        let (edge_manager, camera_q, mut transform_q, edge_2d_local_q) =
+        let (input_manager, edge_manager, camera_q, mut transform_q, edge_2d_local_q) =
             system_state.get_mut(world);
 
         let Ok((camera, camera_projection)) = camera_q.get(*camera_3d_entity) else {
@@ -672,6 +703,20 @@ impl ModelManager {
             vertex_2d_transform.translation.x = coords.x;
             vertex_2d_transform.translation.y = coords.y;
             vertex_2d_transform.translation.z = depth;
+
+            if local_vertex_3d_entities.contains(vertex_3d_entity) {
+                vertex_2d_transform.scale.x = local_vertex_2d_scale;
+                vertex_2d_transform.scale.y = local_vertex_2d_scale;
+            } else {
+                vertex_2d_transform.scale.x = normal_vertex_2d_scale;
+                vertex_2d_transform.scale.y = normal_vertex_2d_scale;
+                if let Some((hover_entity, CanvasShape::Vertex)) = input_manager.hovered_entity {
+                    if hover_entity == vertex_2d_entity {
+                        vertex_2d_transform.scale.x = hover_vertex_2d_scale;
+                        vertex_2d_transform.scale.y = hover_vertex_2d_scale;
+                    }
+                }
+            }
         }
 
         // for ALL gathered 2D edge entities, derive 2d transform from 2d vertex data
@@ -686,6 +731,17 @@ impl ModelManager {
                 continue;
             };
             EdgeManager::sync_2d_edge(&mut transform_q, &edge_2d_entity, edge_endpoints);
+            let mut transform = transform_q.get_mut(edge_2d_entity).unwrap();
+            if local_edge_3d_entities.contains(edge_3d_entity) {
+                transform.scale.y = local_edge_2d_scale;
+            } else {
+                transform.scale.y = normal_edge_2d_scale;
+                if let Some((hover_entity, CanvasShape::Edge)) = input_manager.hovered_entity {
+                    if hover_entity == edge_2d_entity {
+                        transform.scale.y = hover_edge_2d_scale;
+                    }
+                }
+            }
         }
     }
 
@@ -727,7 +783,7 @@ impl ModelManager {
                     &Transform,
                     Option<&RenderLayer>,
                 )>,
-                Query<(Entity, &OwnedByFileLocal, &FileType), With<Edge3d>>,
+                Query<(Entity, &OwnedByFileLocal), With<Edge3d>>,
                 Query<Option<&ShapeName>>,
             )> = SystemState::new(world);
             let (
@@ -740,6 +796,9 @@ impl ModelManager {
                 edge_q,
                 shape_name_q,
             ) = system_state.get_mut(world);
+            let Some(skel_file_entity) = file_manager.file_get_dependency(current_file_entity, FileExtension::Skel) else {
+                return;
+            };
 
             // draw vertices (compass, grid, model transform controls)
             for vertex_3d_entity in vertex_3d_entities.iter() {
@@ -765,19 +824,9 @@ impl ModelManager {
                 render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
             }
 
-            let normal_edge_2d_scale = Edge2dLocal::NORMAL_THICKNESS * camera_3d_scale;
-            let hover_edge_2d_scale = Edge2dLocal::HOVER_THICKNESS * camera_3d_scale;
-
             // draw skel bones
-            for (edge_3d_entity, owned_by_file, file_type) in edge_q.iter() {
-                if *file_type.value != FileExtension::Skel {
-                    continue;
-                }
-                if !ShapeManager::is_owned_by_file(
-                    &file_manager,
-                    current_file_entity,
-                    Some(&owned_by_file.file_entity),
-                ) {
+            for (edge_3d_entity, owned_by_file) in edge_q.iter() {
+                if owned_by_file.file_entity != skel_file_entity {
                     continue;
                 }
                 let Some(edge_2d_entity) = edge_manager.edge_entity_3d_to_2d(&edge_3d_entity) else {
@@ -794,18 +843,11 @@ impl ModelManager {
 
                 let (mesh_handle, _, transform, render_layer_opt) =
                     objects_q.get(edge_2d_entity).unwrap();
-                let mut new_transform = transform.clone();
-                new_transform.scale.y = normal_edge_2d_scale;
-                if let Some((hover_entity, CanvasShape::Edge)) = input_manager.hovered_entity {
-                    if hover_entity == edge_2d_entity {
-                        new_transform.scale.y = hover_edge_2d_scale;
-                    }
-                }
                 render_frame.draw_object(
                     render_layer_opt,
                     mesh_handle,
                     &mat_handle,
-                    &new_transform,
+                    transform,
                 );
             }
 
@@ -969,7 +1011,7 @@ impl ModelManager {
                     &Transform,
                     Option<&RenderLayer>,
                 )>,
-                Query<(Entity, &OwnedByFileLocal, &FileType), With<Edge3d>>,
+                Query<(Entity, &OwnedByFileLocal), With<Edge3d>>,
                 Query<Option<&ShapeName>>,
             )> = SystemState::new(world);
             let (
@@ -981,6 +1023,9 @@ impl ModelManager {
                 edge_q,
                 shape_name_q,
             ) = system_state.get_mut(world);
+            let Some(skel_file_entity) = file_manager.file_get_dependency(current_file_entity, FileExtension::Skel) else {
+                return;
+            };
 
             // draw vertices (compass, grid)
             for vertex_3d_entity in vertex_3d_entities.iter() {
@@ -1003,16 +1048,9 @@ impl ModelManager {
                 render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
             }
 
-            // skel bone edges
-            for (edge_3d_entity, owned_by_file, file_type) in edge_q.iter() {
-                if *file_type.value != FileExtension::Skel {
-                    continue;
-                }
-                if !ShapeManager::is_owned_by_file(
-                    &file_manager,
-                    current_file_entity,
-                    Some(&owned_by_file.file_entity),
-                ) {
+            // draw skel bone edges
+            for (edge_3d_entity, owned_by_file) in edge_q.iter() {
+                if owned_by_file.file_entity != skel_file_entity {
                     continue;
                 }
                 let Some(edge_2d_entity) = edge_manager.edge_entity_3d_to_2d(&edge_3d_entity) else {
