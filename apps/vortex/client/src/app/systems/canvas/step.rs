@@ -4,7 +4,7 @@ use render_api::components::{Camera, Projection, Transform};
 
 use vortex_proto::components::FileExtension;
 
-use crate::app::resources::{
+use crate::app::resources::{model_manager::ModelManager,
     animation_manager::AnimationManager, camera_manager::CameraManager, canvas::Canvas,
     edge_manager::EdgeManager, file_manager::FileManager, input::InputManager,
     tab_manager::TabManager, vertex_manager::VertexManager,
@@ -47,6 +47,7 @@ pub fn update_tab_content_focus(
     mut vertex_manager: ResMut<VertexManager>,
     mut edge_manager: ResMut<EdgeManager>,
     mut animation_manager: ResMut<AnimationManager>,
+    mut model_manager: ResMut<ModelManager>,
 ) {
     canvas.update_sync_focus(
         &tab_manager,
@@ -54,5 +55,6 @@ pub fn update_tab_content_focus(
         &mut vertex_manager,
         &mut edge_manager,
         &mut animation_manager,
+        &mut model_manager,
     );
 }

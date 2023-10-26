@@ -1,19 +1,22 @@
 use bevy_ecs::{
     entity::Entity,
     query::With,
-    system::{Query, Res, SystemState},
+    system::{Commands, ResMut, Query, Res, SystemState},
     world::{World, Mut},
 };
+use bevy_log::info;
+
+use naia_bevy_client::{Client, CommandsExt};
 
 use input::{InputAction, Key, MouseButton};
-use math::Vec2;
-use render_api::components::Transform;
+use math::{convert_2d_to_3d, Vec2};
+use render_api::components::{Camera, CameraProjection, Projection, Transform};
 
-use vortex_proto::components::{FileExtension, ShapeName, VertexRoot};
+use vortex_proto::components::{FileExtension, ModelTransform, ShapeName, VertexRoot};
 
 use crate::app::{
-    components::{OwnedByFileLocal, Vertex2d, Edge2dLocal},
-    resources::{file_manager::FileManager, model_manager::ModelManager,
+    components::{ModelTransformControl, ModelTransformLocal, OwnedByFileLocal, Vertex2d, Edge2dLocal},
+    resources::{file_manager::FileManager, model_manager::ModelManager, camera_manager::CameraManager,
         canvas::Canvas, edge_manager::EdgeManager, input::InputManager, shape_data::CanvasShape,
         tab_manager::TabManager, action::model::ModelAction
     },
@@ -43,8 +46,9 @@ impl ModelInputManager {
                     input_manager.queue_resync_selection_ui();
                 }
                 InputAction::MouseRelease(MouseButton::Left) => {
-                    // input_manager.reset_last_dragged_vertex(world);
-                    // Self::reset_last_dragged_edge(world, input_manager);
+                    world.resource_scope(|world, mut model_manager: Mut<ModelManager>| {
+                        model_manager.on_drag_transform_end(world, input_manager);
+                    });
                 }
                 InputAction::KeyPress(key) => match key {
                     Key::S
@@ -122,7 +126,7 @@ impl ModelInputManager {
     pub(crate) fn handle_mouse_drag(
         world: &mut World,
         input_manager: &mut InputManager,
-        _mouse_position: Vec2,
+        mouse_position: Vec2,
         delta: Vec2,
         click_type: MouseButton,
     ) {
@@ -131,6 +135,9 @@ impl ModelInputManager {
         }
 
         match (click_type, input_manager.selected_shape) {
+            (MouseButton::Left, Some((vertex_2d_entity, CanvasShape::Vertex))) => {
+                Self::handle_vertex_drag(world, &vertex_2d_entity, &mouse_position)
+            }
             (_, _) => InputManager::handle_drag_empty_space(world, click_type, delta),
         }
     }
@@ -244,5 +251,89 @@ impl ModelInputManager {
 
             *is_hovering = *least_distance <= (Edge2dLocal::DETECT_THICKNESS * camera_3d_scale);
         }
+    }
+
+    fn handle_vertex_drag(
+        world: &mut World,
+        vertex_2d_entity: &Entity,
+        mouse_position: &Vec2,
+    ) {
+        let mut system_state: SystemState<(
+            Commands,
+            Client,
+            Res<CameraManager>,
+            ResMut<ModelManager>,
+            ResMut<Canvas>,
+            Query<(&Camera, &Projection)>,
+            Query<&Transform>,
+            Query<&mut ModelTransform>,
+            Query<&ModelTransformControl, With<Vertex2d>>,
+        )> = SystemState::new(world);
+        let (
+            mut commands,
+            client,
+            camera_manager,
+            mut model_manager,
+            mut canvas,
+            camera_q,
+            transform_q,
+            mut model_transform_q,
+            mtc_q,
+        ) = system_state.get_mut(world);
+
+        let Ok(mtc_component) = mtc_q.get(*vertex_2d_entity) else {
+            panic!("Expected MTC");
+        };
+        let mtc_entity = mtc_component.model_transform_entity;
+
+        // check status
+        let auth_status = commands
+            .entity(mtc_entity)
+            .authority(&client)
+            .unwrap();
+        if !(auth_status.is_requested() || auth_status.is_granted()) {
+            // only continue to mutate if requested or granted authority over mtc
+            info!("No authority over mtc, skipping..");
+            return;
+        }
+
+        // get camera
+        let camera_3d = camera_manager.camera_3d_entity().unwrap();
+        let camera_transform: Transform = *transform_q.get(camera_3d).unwrap();
+        let (camera, camera_projection) = camera_q.get(camera_3d).unwrap();
+
+        let camera_viewport = camera.viewport.unwrap();
+        let view_matrix = camera_transform.view_matrix();
+        let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
+
+        // get 2d vertex transform
+        let vertex_2d_transform = transform_q.get(*vertex_2d_entity).unwrap();
+
+        // convert 2d to 3d
+        let new_3d_position = convert_2d_to_3d(
+            &view_matrix,
+            &projection_matrix,
+            &camera_viewport.size_vec2(),
+            &mouse_position,
+            vertex_2d_transform.translation.z,
+        );
+
+        // set networked 3d vertex position
+        let mut model_transform = model_transform_q.get_mut(mtc_entity).unwrap();
+
+        let old_transform = ModelTransformLocal::to_transform(&model_transform);
+
+        model_transform.set_translation_vec3(&new_3d_position);
+
+        let new_transform = ModelTransformLocal::to_transform(&model_transform);
+
+        model_manager.update_last_transform_dragged(
+            mtc_entity,
+            old_transform,
+            new_transform,
+        );
+
+        // redraw
+        canvas.queue_resync_shapes();
     }
 }

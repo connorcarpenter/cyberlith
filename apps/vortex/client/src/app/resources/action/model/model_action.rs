@@ -1,11 +1,13 @@
 use bevy_ecs::prelude::{Entity, World};
 
+use render_api::components::Transform;
+
 use vortex_proto::components::FileExtension;
 
 use crate::app::resources::{
     shape_data::CanvasShape,
     action::{
-        model::{create_model_transform, select_shape, delete_model_transform},
+        model::{move_transform, create_model_transform, select_shape, delete_model_transform},
         Action,
     },
     input::InputManager,
@@ -19,12 +21,15 @@ pub enum ModelAction {
     CreateModelTransform(Entity, FileExtension, Entity),
     // edge_2d_entity
     DeleteModelTransform(Entity),
+    // Move Transform (Transform Entity, Old Transform, New Transform, ?)
+    MoveTransform(Entity, Transform, Transform, bool),
 }
 
 pub enum ModelActionType {
     SelectShape,
     CreateModelTransform,
     DeleteModelTransform,
+    MoveTransform,
     None,
 }
 
@@ -34,6 +39,7 @@ impl ModelAction {
             Self::SelectShape(_) => ModelActionType::SelectShape,
             Self::CreateModelTransform(_, _, _) => ModelActionType::CreateModelTransform,
             Self::DeleteModelTransform(_) => ModelActionType::DeleteModelTransform,
+            Self::MoveTransform(_, _, _, _) => ModelActionType::MoveTransform,
         }
     }
 
@@ -55,6 +61,9 @@ impl ModelAction {
             ModelActionType::DeleteModelTransform => {
                 delete_model_transform::execute(world, self)
             },
+            ModelActionType::MoveTransform => {
+                move_transform::execute(world, self)
+            }
             _ => Vec::new(),
         }
     }

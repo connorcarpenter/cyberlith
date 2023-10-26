@@ -4,7 +4,7 @@ use math::Vec2;
 
 use render_api::{base::CpuTexture2D, Handle};
 
-use crate::app::resources::{
+use crate::app::resources::{model_manager::ModelManager,
     animation_manager::AnimationManager, edge_manager::EdgeManager, input::InputManager,
     tab_manager::TabManager, vertex_manager::VertexManager,
 };
@@ -49,6 +49,7 @@ impl Canvas {
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
         animation_manager: &mut AnimationManager,
+        model_manager: &mut ModelManager,
     ) {
         if self.last_focused == tab_manager.has_focus() {
             return;
@@ -60,6 +61,7 @@ impl Canvas {
             vertex_manager.reset_last_vertex_dragged();
             edge_manager.reset_last_edge_dragged();
             animation_manager.reset_last_rotation_dragged();
+            model_manager.reset_last_transform_dragged();
             input_manager.hovered_entity = None;
         }
     }

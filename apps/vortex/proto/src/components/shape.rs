@@ -461,7 +461,7 @@ impl ModelTransform {
         )
     }
 
-    pub fn translation_set_vec3(&mut self, vec3: &Vec3) {
+    pub fn set_translation_vec3(&mut self, vec3: &Vec3) {
         self.set_translation_x(vec3.x as i16);
         self.set_translation_y(vec3.y as i16);
         self.set_translation_z(vec3.z as i16);
@@ -496,5 +496,11 @@ impl ModelTransform {
 
     pub fn scale_vec3(&self) -> Vec3 {
         Vec3::new(self.scale_x(), self.scale_y(), self.scale_z())
+    }
+
+    pub fn set_scale_vec3(&mut self, vec3: &Vec3) {
+        self.set_scale_x(vec3.x);
+        self.set_scale_y(vec3.y);
+        self.set_scale_z(vec3.z);
     }
 }

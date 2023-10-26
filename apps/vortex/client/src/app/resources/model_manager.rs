@@ -83,6 +83,11 @@ pub struct ModelManager {
     edge_2d_to_transform_entity: HashMap<Entity, Entity>,
     // Option<edge_2d_entity>
     binding_edge_opt: Option<Entity>,
+
+    drags: Vec<(Entity, Transform, Transform)>,
+    dragging_entity: Option<Entity>,
+    dragging_start: Option<Transform>,
+    dragging_end: Option<Transform>,
 }
 
 impl Default for ModelManager {
@@ -92,6 +97,11 @@ impl Default for ModelManager {
             transform_entities: HashMap::new(),
             edge_2d_to_transform_entity: HashMap::new(),
             binding_edge_opt: None,
+
+            drags: Vec::new(),
+            dragging_entity: None,
+            dragging_start: None,
+            dragging_end: None,
         }
     }
 }
@@ -1163,6 +1173,88 @@ impl ModelManager {
                     );
                 }
             }
+        }
+    }
+
+    pub fn on_drag_transform_end(&mut self, world: &mut World, input_manager: &mut InputManager) {
+        // reset last dragged transform
+        if let Some(drags) = self
+            .take_drags()
+        {
+            world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                for (transform_entity, old_transform, new_transform) in drags {
+                    tab_manager.current_tab_execute_model_action(
+                        world,
+                        input_manager,
+                        ModelAction::MoveTransform(transform_entity, old_transform, new_transform, true),
+                    );
+                }
+            });
+        }
+    }
+
+    pub fn reset_last_transform_dragged(&mut self) {
+        self.drags = Vec::new();
+        self.dragging_entity = None;
+        self.dragging_start = None;
+        self.dragging_end = None;
+    }
+
+    pub fn update_last_transform_dragged(
+        &mut self,
+        transform_entity: Entity,
+        old_transform: Transform,
+        new_transform: Transform,
+    ) {
+        if let Some(old_transform_entity) = self.dragging_entity {
+            // already dragging an entity
+            if old_transform_entity == transform_entity {
+                // dragging same entity
+                self.dragging_end = Some(new_transform);
+            } else {
+                // dragging different entity
+
+                // finish current drag
+                self.drags.push((
+                    self.dragging_entity.unwrap(),
+                    self.dragging_start.unwrap(),
+                    self.dragging_end.unwrap(),
+                ));
+                self.dragging_entity = None;
+                self.dragging_start = None;
+                self.dragging_end = None;
+
+                // start next drag
+                self.dragging_entity = Some(transform_entity);
+                self.dragging_start = Some(old_transform);
+                self.dragging_end = Some(new_transform);
+            }
+        } else {
+            // not dragging an entity
+            self.dragging_entity = Some(transform_entity);
+            self.dragging_start = Some(old_transform);
+            self.dragging_end = Some(new_transform);
+        }
+    }
+
+    pub fn take_drags(&mut self) -> Option<Vec<(Entity, Transform, Transform)>> {
+        if self.dragging_entity.is_some() {
+            // finish current drag
+            self.drags.push((
+                self.dragging_entity.unwrap(),
+                self.dragging_start.unwrap(),
+                self.dragging_end.unwrap(),
+            ));
+            self.dragging_entity = None;
+            self.dragging_start = None;
+            self.dragging_end = None;
+        }
+
+        if self.drags.is_empty() {
+            return None;
+        } else {
+            let drags = std::mem::take(&mut self.drags);
+            return Some(drags);
         }
     }
 }

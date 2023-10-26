@@ -28,4 +28,10 @@ impl ModelTransformLocal {
         transform.scale = model_transform.scale_vec3();
         return transform;
     }
+
+    pub fn set_transform(model_transform: &mut ModelTransform, transform: &Transform) {
+        model_transform.set_translation_vec3(&transform.translation);
+        model_transform.set_rotation(transform.rotation);
+        model_transform.set_scale_vec3(&transform.scale);
+    }
 }
