@@ -519,7 +519,7 @@ impl ModelManager {
             return;
         };
 
-        let unit_length = 10.0;
+        const UNIT_LENGTH: f32 = 20.0;
 
         for model_transform_entity in model_transform_entities.iter() {
             let data = self.transform_entities.get(model_transform_entity).unwrap();
@@ -533,7 +533,7 @@ impl ModelManager {
             translation_control_3d.set_vec3(&translation);
 
             // rotation
-            let mut rotation_vector = Vec3::new(0.0, 0.0, unit_length);
+            let mut rotation_vector = Vec3::new(0.0, 0.0, UNIT_LENGTH);
             let rotation = model_transform.rotation();
             rotation_vector = rotation * rotation_vector;
             let rotation_with_offset = rotation_vector + translation;
@@ -543,7 +543,7 @@ impl ModelManager {
 
             // scale
             let scale = model_transform.scale_vec3();
-            let scale_with_offset = (scale * unit_length) + translation;
+            let scale_with_offset = (scale * UNIT_LENGTH) + translation;
             let scale_control_entity = data.scale_entity_3d;
             let mut scale_control_3d = vertex_3d_q.get_mut(scale_control_entity).unwrap();
             scale_control_3d.set_vec3(&scale_with_offset);
