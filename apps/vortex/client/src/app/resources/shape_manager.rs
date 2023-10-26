@@ -9,7 +9,6 @@ use crate::app::resources::{
 pub struct ShapeManager;
 
 impl ShapeManager {
-
     pub(crate) fn shape_entity_2d_to_3d(
         vertex_manager: &VertexManager,
         edge_manager: &EdgeManager,

@@ -22,8 +22,8 @@ use crate::app::{
     components::DefaultDraw,
     resources::{
         animation_manager::AnimationManager, edge_manager::edge_is_enabled,
-        edge_manager::EdgeManager, file_manager::FileManager, tab_manager::TabManager,
-        vertex_manager::VertexManager, model_manager::ModelManager
+        edge_manager::EdgeManager, file_manager::FileManager, model_manager::ModelManager,
+        tab_manager::TabManager, vertex_manager::VertexManager,
     },
 };
 

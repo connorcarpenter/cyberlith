@@ -4,9 +4,9 @@ use math::Vec2;
 
 use render_api::{base::CpuTexture2D, Handle};
 
-use crate::app::resources::{model_manager::ModelManager,
+use crate::app::resources::{
     animation_manager::AnimationManager, edge_manager::EdgeManager, input::InputManager,
-    tab_manager::TabManager, vertex_manager::VertexManager,
+    model_manager::ModelManager, tab_manager::TabManager, vertex_manager::VertexManager,
 };
 
 #[derive(Resource)]

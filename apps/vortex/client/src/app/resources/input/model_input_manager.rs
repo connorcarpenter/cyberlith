@@ -1,8 +1,8 @@
 use bevy_ecs::{
     entity::Entity,
     query::With,
-    system::{Commands, ResMut, Query, Res, SystemState},
-    world::{World, Mut},
+    system::{Commands, Query, Res, ResMut, SystemState},
+    world::{Mut, World},
 };
 use bevy_log::info;
 
@@ -15,10 +15,13 @@ use render_api::components::{Camera, CameraProjection, Projection, Transform};
 use vortex_proto::components::{FileExtension, ModelTransform, ShapeName, VertexRoot};
 
 use crate::app::{
-    components::{ModelTransformControl, ModelTransformLocal, OwnedByFileLocal, Vertex2d, Edge2dLocal},
-    resources::{file_manager::FileManager, model_manager::ModelManager, camera_manager::CameraManager,
-        canvas::Canvas, edge_manager::EdgeManager, input::InputManager, shape_data::CanvasShape,
-        tab_manager::TabManager, action::model::ModelAction
+    components::{
+        Edge2dLocal, ModelTransformControl, ModelTransformLocal, OwnedByFileLocal, Vertex2d,
+    },
+    resources::{
+        action::model::ModelAction, camera_manager::CameraManager, canvas::Canvas,
+        edge_manager::EdgeManager, file_manager::FileManager, input::InputManager,
+        model_manager::ModelManager, shape_data::CanvasShape, tab_manager::TabManager,
     },
 };
 
@@ -99,7 +102,8 @@ impl ModelInputManager {
                 MouseButton::Left,
                 Some(_),
                 Some(CanvasShape::RootVertex | CanvasShape::Face) | None,
-            ) | (MouseButton::Right, _, _) => {
+            )
+            | (MouseButton::Right, _, _) => {
                 // deselect shape
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
                     tab_manager.current_tab_execute_model_action(
@@ -155,7 +159,7 @@ impl ModelInputManager {
             Query<&Transform>,
             Query<&ShapeName>,
             Query<&VertexRoot>,
-            Query<(Entity, &OwnedByFileLocal), With<Edge2dLocal>>
+            Query<(Entity, &OwnedByFileLocal), With<Edge2dLocal>>,
         )> = SystemState::new(world);
         let (
             file_manager,
@@ -226,7 +230,15 @@ impl ModelInputManager {
         // check for vertices
         for vertex_2d_entity in vertex_2d_entities {
             let root_opt = vertex_root_q.get(vertex_2d_entity).ok();
-            InputManager::hover_check_vertex(transform_q, None, mouse_position, least_distance, least_entity, &vertex_2d_entity, root_opt);
+            InputManager::hover_check_vertex(
+                transform_q,
+                None,
+                mouse_position,
+                least_distance,
+                least_entity,
+                &vertex_2d_entity,
+                root_opt,
+            );
         }
 
         *is_hovering = *least_distance <= (Vertex2d::DETECT_RADIUS * camera_3d_scale);
@@ -246,18 +258,21 @@ impl ModelInputManager {
         // check for edges
         if !*is_hovering {
             for edge_2d_entity in edge_2d_entities {
-                InputManager::hover_check_edge(transform_q, Some((edge_manager, shape_name_q)), mouse_position, least_distance, least_entity, &edge_2d_entity);
+                InputManager::hover_check_edge(
+                    transform_q,
+                    Some((edge_manager, shape_name_q)),
+                    mouse_position,
+                    least_distance,
+                    least_entity,
+                    &edge_2d_entity,
+                );
             }
 
             *is_hovering = *least_distance <= (Edge2dLocal::DETECT_THICKNESS * camera_3d_scale);
         }
     }
 
-    fn handle_vertex_drag(
-        world: &mut World,
-        vertex_2d_entity: &Entity,
-        mouse_position: &Vec2,
-    ) {
+    fn handle_vertex_drag(world: &mut World, vertex_2d_entity: &Entity, mouse_position: &Vec2) {
         let mut system_state: SystemState<(
             Commands,
             Client,
@@ -287,10 +302,7 @@ impl ModelInputManager {
         let mtc_entity = mtc_component.model_transform_entity;
 
         // check status
-        let auth_status = commands
-            .entity(mtc_entity)
-            .authority(&client)
-            .unwrap();
+        let auth_status = commands.entity(mtc_entity).authority(&client).unwrap();
         if !(auth_status.is_requested() || auth_status.is_granted()) {
             // only continue to mutate if requested or granted authority over mtc
             info!("No authority over mtc, skipping..");
@@ -327,11 +339,7 @@ impl ModelInputManager {
 
         let new_transform = ModelTransformLocal::to_transform(&model_transform);
 
-        model_manager.update_last_transform_dragged(
-            mtc_entity,
-            old_transform,
-            new_transform,
-        );
+        model_manager.update_last_transform_dragged(mtc_entity, old_transform, new_transform);
 
         // redraw
         canvas.queue_resync_shapes();

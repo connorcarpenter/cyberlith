@@ -1,17 +1,18 @@
 use bevy_ecs::{
     prelude::{Entity, World},
-    system::{ResMut, SystemState, Commands, Query},
     query::With,
+    system::{Commands, Query, ResMut, SystemState},
 };
 use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt};
 
-use crate::app::{resources::{
-    action::model::ModelAction, canvas::Canvas,
-    input::InputManager, shape_data::CanvasShape,
-},
-                 components::{ModelTransformControl, Vertex2d}};
+use crate::app::{
+    components::{ModelTransformControl, Vertex2d},
+    resources::{
+        action::model::ModelAction, canvas::Canvas, input::InputManager, shape_data::CanvasShape,
+    },
+};
 
 pub(crate) fn execute(
     world: &mut World,
@@ -24,7 +25,12 @@ pub(crate) fn execute(
 
     info!("SelectShape({:?})", shape_2d_entity_opt);
 
-    let mut system_state: SystemState<(Commands, Client, ResMut<Canvas>, Query<&ModelTransformControl, With<Vertex2d>>)> = SystemState::new(world);
+    let mut system_state: SystemState<(
+        Commands,
+        Client,
+        ResMut<Canvas>,
+        Query<&ModelTransformControl, With<Vertex2d>>,
+    )> = SystemState::new(world);
     let (mut commands, mut client, mut canvas, mtc_2d_q) = system_state.get_mut(world);
 
     let mut deselected_entity: Option<(Entity, CanvasShape)> = None;

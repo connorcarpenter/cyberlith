@@ -14,7 +14,10 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::{components::{FileExtension, Vertex3d}, resources::DependencyMap};
+use vortex_proto::{
+    components::{FileExtension, Vertex3d},
+    resources::DependencyMap,
+};
 
 use crate::app::{
     components::{OwnedByFileLocal, Vertex2d},

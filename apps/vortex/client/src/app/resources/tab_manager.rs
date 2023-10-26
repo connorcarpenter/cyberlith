@@ -21,9 +21,9 @@ use render_egui::{
 
 use vortex_proto::{
     channels::TabActionChannel,
-    components::{ModelTransform, ModelTransformEntityType,
+    components::{
         BackgroundSkinColor, ChangelistStatus, FaceColor, FileExtension, FileSystemEntry,
-        PaletteColor,
+        ModelTransform, ModelTransformEntityType, PaletteColor,
     },
     messages::{TabCloseMessage, TabOpenMessage},
     types::TabId,
@@ -45,11 +45,11 @@ use crate::app::{
         face_manager::FaceManager,
         file_manager::FileManager,
         input::InputManager,
+        model_manager::ModelManager,
         palette_manager::PaletteManager,
         shape_data::CanvasShape,
         shape_manager::ShapeManager,
         skin_manager::SkinManager,
-        model_manager::ModelManager,
     },
     ui::{
         widgets::colors::{
@@ -783,7 +783,6 @@ fn file_ext_specific_sync_tabs_shape_colors(
             );
         }
         FileExtension::Model => {
-
             let mut system_state: SystemState<(
                 Client,
                 Res<FileManager>,
@@ -822,7 +821,8 @@ fn file_ext_specific_sync_tabs_shape_colors(
                 if ModelTransformEntityType::Skin != *model_transform.entity_type {
                     todo!("support scene entity type");
                 }
-                let skin_file_entity: Entity = model_transform.skin_or_scene_entity.get(&client).unwrap();
+                let skin_file_entity: Entity =
+                    model_transform.skin_or_scene_entity.get(&client).unwrap();
                 set_face_3d_colors(
                     &skin_file_entity,
                     &client,
@@ -851,12 +851,8 @@ fn file_ext_specific_sync_tabs_shape_colors(
                     (With<Face3dLocal>, Without<Edge2dLocal>, Without<FaceIcon2d>),
                 >,
             )> = SystemState::new(world);
-            let (
-                mut materials,
-                mut edge_2d_q,
-                mut face_2d_q,
-                mut face_3d_q,
-            ) = system_state.get_mut(world);
+            let (mut materials, mut edge_2d_q, mut face_2d_q, mut face_3d_q) =
+                system_state.get_mut(world);
 
             let enabled_mat_handle = materials.add(Vertex2d::ENABLED_COLOR);
 
@@ -880,13 +876,19 @@ fn set_face_3d_colors(
     palette_manager: &PaletteManager,
     skin_manager: &SkinManager,
     materials: &mut Assets<CpuMaterial>,
-    face_3d_q: &mut Query<(Entity, &mut Handle<CpuMaterial>, &OwnedByFileLocal), (With<Face3dLocal>, Without<Edge2dLocal>, Without<FaceIcon2d>)>,
+    face_3d_q: &mut Query<
+        (Entity, &mut Handle<CpuMaterial>, &OwnedByFileLocal),
+        (With<Face3dLocal>, Without<Edge2dLocal>, Without<FaceIcon2d>),
+    >,
     palette_color_q: &Query<&PaletteColor>,
     bckg_color_q: &Query<&BackgroundSkinColor>,
     face_color_q: &Query<&FaceColor>,
     face_2d_opt: &mut Option<(
         &FaceManager,
-        &mut Query<&mut Handle<CpuMaterial>, (With<FaceIcon2d>, Without<Edge2dLocal>, Without<Face3dLocal>)>
+        &mut Query<
+            &mut Handle<CpuMaterial>,
+            (With<FaceIcon2d>, Without<Edge2dLocal>, Without<Face3dLocal>),
+        >,
     )>,
 ) {
     // get background color
@@ -916,18 +918,15 @@ fn set_face_3d_colors(
     ));
 
     for (face_3d_entity, mut face_3d_material, owned_by_file) in face_3d_q.iter_mut() {
-
         if owned_by_file.file_entity != mesh_file_entity {
             continue;
         }
 
         let new_mat_handle;
-        if let Some(face_color_entity) = skin_manager.face_to_color_entity(&face_3d_entity)
-        {
+        if let Some(face_color_entity) = skin_manager.face_to_color_entity(&face_3d_entity) {
             // use face color
             let face_color = face_color_q.get(*face_color_entity).unwrap();
-            let palette_color_entity =
-                face_color.palette_color_entity.get(client).unwrap();
+            let palette_color_entity = face_color.palette_color_entity.get(client).unwrap();
             let palette_color = palette_color_q.get(palette_color_entity).unwrap();
             new_mat_handle = materials.add(Color::new_opaque(
                 *palette_color.r,

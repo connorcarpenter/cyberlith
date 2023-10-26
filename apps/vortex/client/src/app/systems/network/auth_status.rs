@@ -11,28 +11,36 @@ use naia_bevy_client::{
     Client,
 };
 
-use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency, FileSystemEntry, ModelTransform, PaletteColor, Vertex3d};
+use vortex_proto::components::{
+    AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency,
+    FileSystemEntry, ModelTransform, PaletteColor, Vertex3d,
+};
 
 use crate::app::{
     components::OwnedByFileLocal,
     resources::{
         action::file::FileActions, animation_manager::AnimationManager, edge_manager::EdgeManager,
-        face_manager::FaceManager,
-        shape_manager::ShapeManager, tab_manager::TabManager,
+        face_manager::FaceManager, shape_manager::ShapeManager, tab_manager::TabManager,
         vertex_manager::VertexManager,
     },
 };
 
 #[derive(Resource)]
 struct CachedAuthEventsState {
-    event_state: SystemState<(EventReader<'static, 'static, EntityAuthGrantedEvent>, EventReader<'static, 'static, EntityAuthDeniedEvent>, EventReader<'static, 'static, EntityAuthResetEvent>)>,
+    event_state: SystemState<(
+        EventReader<'static, 'static, EntityAuthGrantedEvent>,
+        EventReader<'static, 'static, EntityAuthDeniedEvent>,
+        EventReader<'static, 'static, EntityAuthResetEvent>,
+    )>,
 }
 
 pub fn auth_event_startup(world: &mut World) {
-    let event_state = SystemState::<(EventReader<EntityAuthGrantedEvent>, EventReader<EntityAuthDeniedEvent>, EventReader<EntityAuthResetEvent>)>::new(world);
-    world.insert_resource(CachedAuthEventsState {
-        event_state,
-    });
+    let event_state = SystemState::<(
+        EventReader<EntityAuthGrantedEvent>,
+        EventReader<EntityAuthDeniedEvent>,
+        EventReader<EntityAuthResetEvent>,
+    )>::new(world);
+    world.insert_resource(CachedAuthEventsState { event_state });
 }
 
 pub fn auth_events(world: &mut World) {
@@ -42,7 +50,8 @@ pub fn auth_events(world: &mut World) {
 
     world.resource_scope(
         |world, mut events_reader_state: Mut<CachedAuthEventsState>| {
-            let (mut granted_events, mut denied_events, mut reset_events) = events_reader_state.event_state.get_mut(world);
+            let (mut granted_events, mut denied_events, mut reset_events) =
+                events_reader_state.event_state.get_mut(world);
 
             for EntityAuthGrantedEvent(entity) in granted_events.iter() {
                 auth_granted_events.push(*entity);
@@ -58,7 +67,10 @@ pub fn auth_events(world: &mut World) {
         },
     );
 
-    if auth_granted_events.is_empty() && auth_reset_events.is_empty() && auth_denied_events.is_empty() {
+    if auth_granted_events.is_empty()
+        && auth_reset_events.is_empty()
+        && auth_denied_events.is_empty()
+    {
         return;
     }
 
@@ -81,7 +93,7 @@ pub fn auth_events(world: &mut World) {
             Option<&PaletteColor>,
             Option<&FaceColor>,
             Option<&BackgroundSkinColor>,
-            Option<&ModelTransform>
+            Option<&ModelTransform>,
         )>,
         Query<&OwnedByFileLocal>,
         Query<&AnimFrame>,
@@ -99,7 +111,11 @@ pub fn auth_events(world: &mut World) {
         frame_q,
     ) = system_state.get_mut(world);
 
-    for (entities, msg) in [(auth_granted_events, "granted"), (auth_denied_events, "denied"), (auth_reset_events, "reset")] {
+    for (entities, msg) in [
+        (auth_granted_events, "granted"),
+        (auth_denied_events, "denied"),
+        (auth_reset_events, "reset"),
+    ] {
         if entities.is_empty() {
             continue;
         }
@@ -142,7 +158,7 @@ fn process_entity_auth_status(
         Option<&PaletteColor>,
         Option<&FaceColor>,
         Option<&BackgroundSkinColor>,
-        Option<&ModelTransform>
+        Option<&ModelTransform>,
     )>,
     owned_by_q: &Query<&OwnedByFileLocal>,
     frame_q: &Query<&AnimFrame>,
@@ -265,7 +281,10 @@ fn process_entity_auth_status(
             "auth processing for model transform entity `{:?}`: `{:?}`",
             entity, status
         );
-        let owning_file_entity = model_transform_component.model_file_entity.get(client).unwrap();
+        let owning_file_entity = model_transform_component
+            .model_file_entity
+            .get(client)
+            .unwrap();
         if let Some(tab_state) = tab_manager.tab_state_mut(&owning_file_entity) {
             tab_state.action_stack.entity_update_auth_status(&entity);
         } else {

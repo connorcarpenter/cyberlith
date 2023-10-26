@@ -5,12 +5,12 @@ use render_api::components::Transform;
 use vortex_proto::components::FileExtension;
 
 use crate::app::resources::{
-    shape_data::CanvasShape,
     action::{
-        model::{move_transform, create_model_transform, select_shape, delete_model_transform},
+        model::{create_model_transform, delete_model_transform, move_transform, select_shape},
         Action,
     },
     input::InputManager,
+    shape_data::CanvasShape,
 };
 
 #[derive(Clone)]
@@ -52,18 +52,12 @@ impl ModelAction {
         let action_type = self.get_type();
 
         match action_type {
-            ModelActionType::SelectShape => {
-                select_shape::execute(world, input_manager, self)
-            }
+            ModelActionType::SelectShape => select_shape::execute(world, input_manager, self),
             ModelActionType::CreateModelTransform => {
                 create_model_transform::execute(world, input_manager, &current_file_entity, self)
             }
-            ModelActionType::DeleteModelTransform => {
-                delete_model_transform::execute(world, self)
-            },
-            ModelActionType::MoveTransform => {
-                move_transform::execute(world, self)
-            }
+            ModelActionType::DeleteModelTransform => delete_model_transform::execute(world, self),
+            ModelActionType::MoveTransform => move_transform::execute(world, self),
             _ => Vec::new(),
         }
     }

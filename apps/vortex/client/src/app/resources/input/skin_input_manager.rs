@@ -1,8 +1,8 @@
 use bevy_ecs::{
     entity::Entity,
+    query::With,
     system::{Query, SystemState},
     world::{Mut, World},
-    query::With,
 };
 
 use input::{InputAction, Key, MouseButton};

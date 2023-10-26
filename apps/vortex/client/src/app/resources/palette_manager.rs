@@ -72,7 +72,6 @@ impl Default for PaletteManager {
 }
 
 impl PaletteManager {
-
     pub fn current_color_index(&self) -> usize {
         self.selected_color_index
     }

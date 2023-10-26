@@ -6,9 +6,10 @@ use bevy_log::info;
 
 use vortex_proto::components::ModelTransform;
 
-use crate::app::{resources::{
-    action::model::ModelAction, canvas::Canvas,
-}, components::ModelTransformLocal};
+use crate::app::{
+    components::ModelTransformLocal,
+    resources::{action::model::ModelAction, canvas::Canvas},
+};
 
 pub(crate) fn execute(world: &mut World, action: ModelAction) -> Vec<ModelAction> {
     let ModelAction::MoveTransform(transform_entity, old_transform, new_transform, already_moved) = action else {
@@ -19,14 +20,9 @@ pub(crate) fn execute(world: &mut World, action: ModelAction) -> Vec<ModelAction
         "MoveTransform({:?}, _, _, {})",
         transform_entity, already_moved
     );
-    let mut system_state: SystemState<(
-        ResMut<Canvas>,
-        Query<&mut ModelTransform>,
-    )> = SystemState::new(world);
-    let (
-        mut canvas,
-        mut model_transform_q,
-    ) = system_state.get_mut(world);
+    let mut system_state: SystemState<(ResMut<Canvas>, Query<&mut ModelTransform>)> =
+        SystemState::new(world);
+    let (mut canvas, mut model_transform_q) = system_state.get_mut(world);
 
     if !already_moved {
         // MoveTransform action happens after the transform has already been moved, so we wouldn't need to do anything here ..

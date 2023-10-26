@@ -142,9 +142,12 @@ impl InputManager {
             FileExtension::Skin => {
                 SkinInputManager::sync_mouse_hover_ui(world, camera_3d_scale, mouse_position)
             }
-            FileExtension::Model => {
-                ModelInputManager::sync_mouse_hover_ui(world, current_file_entity, camera_3d_scale, mouse_position)
-            }
+            FileExtension::Model => ModelInputManager::sync_mouse_hover_ui(
+                world,
+                current_file_entity,
+                camera_3d_scale,
+                mouse_position,
+            ),
             _ => {
                 return;
             }
@@ -186,7 +189,15 @@ impl InputManager {
                 continue;
             }
 
-            Self::hover_check_vertex(transform_q, anim_opt, mouse_position, least_distance, least_entity, &vertex_2d_entity, root_opt);
+            Self::hover_check_vertex(
+                transform_q,
+                anim_opt,
+                mouse_position,
+                least_distance,
+                least_entity,
+                &vertex_2d_entity,
+                root_opt,
+            );
         }
 
         *is_hovering = *least_distance <= (Vertex2d::DETECT_RADIUS * camera_3d_scale);
@@ -199,7 +210,7 @@ impl InputManager {
         least_distance: &mut f32,
         least_entity: &mut Option<(Entity, CanvasShape)>,
         vertex_2d_entity: &Entity,
-        root_opt: Option<&VertexRoot>
+        root_opt: Option<&VertexRoot>,
     ) {
         if let Some((vertex_manager, shape_name_q)) = anim_opt {
             // don't hover over disabled vertices in Anim mode
@@ -250,7 +261,14 @@ impl InputManager {
                     continue;
                 }
 
-                Self::hover_check_edge(transform_q, anim_opt, mouse_position, least_distance, least_entity, &edge_2d_entity);
+                Self::hover_check_edge(
+                    transform_q,
+                    anim_opt,
+                    mouse_position,
+                    least_distance,
+                    least_entity,
+                    &edge_2d_entity,
+                );
             }
 
             *is_hovering = *least_distance <= (Edge2dLocal::DETECT_THICKNESS * camera_3d_scale);
@@ -263,13 +281,11 @@ impl InputManager {
         mouse_position: &Vec2,
         least_distance: &mut f32,
         least_entity: &mut Option<(Entity, CanvasShape)>,
-        edge_2d_entity: &Entity
+        edge_2d_entity: &Entity,
     ) {
         if let Some((edge_manager, shape_name_q)) = anim_opt {
-            let edge_3d_entity =
-                edge_manager.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
-            let (_, end_vertex_3d_entity) =
-                edge_manager.edge_get_endpoints(&edge_3d_entity);
+            let edge_3d_entity = edge_manager.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
+            let (_, end_vertex_3d_entity) = edge_manager.edge_get_endpoints(&edge_3d_entity);
             let Ok(shape_name) = shape_name_q.get(end_vertex_3d_entity) else { return; };
             let shape_name = shape_name.value.as_str();
             if shape_name.len() == 0 {

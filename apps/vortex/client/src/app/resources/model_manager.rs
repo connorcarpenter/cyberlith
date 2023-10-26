@@ -23,20 +23,20 @@ use render_api::{
 };
 
 use vortex_proto::components::{
-    Edge3d, EdgeAngle, Face3d, FileExtension, ModelTransform, ModelTransformEntityType,
-    ShapeName, Vertex3d,
+    Edge3d, EdgeAngle, Face3d, FileExtension, ModelTransform, ModelTransformEntityType, ShapeName,
+    Vertex3d,
 };
 
 use crate::app::{
     components::{
-        Edge2dLocal, Edge3dLocal, ModelTransformControl, ModelTransformLocal, OwnedByFileLocal, LocalShape, Vertex2d
+        Edge2dLocal, Edge3dLocal, LocalShape, ModelTransformControl, ModelTransformLocal,
+        OwnedByFileLocal, Vertex2d,
     },
     resources::{
         action::model::ModelAction, camera_manager::CameraManager, canvas::Canvas,
         compass::Compass, edge_manager::edge_is_enabled, edge_manager::EdgeManager,
         face_manager::FaceManager, file_manager::FileManager, grid::Grid, input::InputManager,
-        shape_data::CanvasShape, tab_manager::TabManager,
-        vertex_manager::VertexManager,
+        shape_data::CanvasShape, tab_manager::TabManager, vertex_manager::VertexManager,
     },
     ui::{widgets::create_networked_dependency, BindingState, UiState},
 };
@@ -107,7 +107,6 @@ impl Default for ModelManager {
 }
 
 impl ModelManager {
-
     pub fn edge_is_binding(&self) -> bool {
         self.binding_edge_opt.is_some()
     }
@@ -264,16 +263,12 @@ impl ModelManager {
 
         //
 
-        let mut system_state: SystemState<(
-            Commands,
-            Client,
-        )> = SystemState::new(world);
-        let (
-            mut commands,
-            mut client,
-        ) = system_state.get_mut(world);
+        let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+        let (mut commands, mut client) = system_state.get_mut(world);
 
-        commands.entity(new_model_transform_entity).release_authority(&mut client);
+        commands
+            .entity(new_model_transform_entity)
+            .release_authority(&mut client);
 
         new_model_transform_entity
     }
@@ -447,16 +442,24 @@ impl ModelManager {
         model_transforms.insert(model_transform_entity);
     }
 
-    pub(crate) fn model_file_transform_entities(&self, model_file_entity: &Entity) -> Option<Vec<Entity>> {
-        self.model_file_to_transform_entity.get(model_file_entity).map(|set| set.iter().cloned().collect())
+    pub(crate) fn model_file_transform_entities(
+        &self,
+        model_file_entity: &Entity,
+    ) -> Option<Vec<Entity>> {
+        self.model_file_to_transform_entity
+            .get(model_file_entity)
+            .map(|set| set.iter().cloned().collect())
     }
 
     pub(crate) fn edge_2d_has_model_transform(&self, edge_2d_entity: &Entity) -> bool {
-        self.edge_2d_to_transform_entity.contains_key(edge_2d_entity)
+        self.edge_2d_to_transform_entity
+            .contains_key(edge_2d_entity)
     }
 
     pub(crate) fn model_transform_from_edge_2d(&self, edge_2d_entity: &Entity) -> Option<Entity> {
-        self.edge_2d_to_transform_entity.get(edge_2d_entity).cloned()
+        self.edge_2d_to_transform_entity
+            .get(edge_2d_entity)
+            .cloned()
     }
 
     pub(crate) fn on_despawn_model_transform(
@@ -552,7 +555,8 @@ impl ModelManager {
 
     fn model_transform_3d_vertices(&self, file_entity: &Entity) -> Vec<Entity> {
         let mut vertices = Vec::new();
-        if let Some(model_transform_entities) = self.model_file_to_transform_entity.get(file_entity) {
+        if let Some(model_transform_entities) = self.model_file_to_transform_entity.get(file_entity)
+        {
             for model_transform_entity in model_transform_entities.iter() {
                 let data = self.transform_entities.get(model_transform_entity).unwrap();
                 vertices.push(data.translation_entity_3d);
@@ -565,7 +569,8 @@ impl ModelManager {
 
     pub fn model_transform_2d_vertices(&self, file_entity: &Entity) -> Vec<Entity> {
         let mut vertices = Vec::new();
-        if let Some(model_transform_entities) = self.model_file_to_transform_entity.get(file_entity) {
+        if let Some(model_transform_entities) = self.model_file_to_transform_entity.get(file_entity)
+        {
             for model_transform_entity in model_transform_entities.iter() {
                 let data = self.transform_entities.get(model_transform_entity).unwrap();
                 vertices.push(data.translation_entity_2d);
@@ -590,8 +595,11 @@ impl ModelManager {
         let local_vertex_3d_scale = Vec3::splat(local_vertex_3d_scale);
         let local_edge_3d_scale = LocalShape::EDGE_THICKNESS / camera_3d_scale;
 
-        let mut system_state: SystemState<(Res<FileManager>, Query<&mut Vertex3d>, Query<&ModelTransform>)> =
-            SystemState::new(world);
+        let mut system_state: SystemState<(
+            Res<FileManager>,
+            Query<&mut Vertex3d>,
+            Query<&ModelTransform>,
+        )> = SystemState::new(world);
         let (file_manager, mut vertex_3d_q, model_transform_q) = system_state.get_mut(world);
         let Some(skel_file_entity) = file_manager.file_get_dependency(&file_entity, FileExtension::Skel) else {
             return;
@@ -615,7 +623,8 @@ impl ModelManager {
         let mtc_3d_entites = self.model_transform_3d_vertices(file_entity);
         vertex_3d_entities.extend(mtc_3d_entites);
 
-        let mut system_state: SystemState<Query<(Entity, &OwnedByFileLocal), With<Vertex3d>>> = SystemState::new(world);
+        let mut system_state: SystemState<Query<(Entity, &OwnedByFileLocal), With<Vertex3d>>> =
+            SystemState::new(world);
         let vert_q = system_state.get_mut(world);
 
         // gather 3d entities for Skel vertices
@@ -885,12 +894,7 @@ impl ModelManager {
 
                 let (mesh_handle, _, transform, render_layer_opt) =
                     objects_q.get(edge_2d_entity).unwrap();
-                render_frame.draw_object(
-                    render_layer_opt,
-                    mesh_handle,
-                    &mat_handle,
-                    transform,
-                );
+                render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
             }
 
             // draw select line & circle
@@ -1150,7 +1154,9 @@ impl ModelManager {
                     panic!("not possible ... yet");
                 };
                 let skin_file_entity = model_transform.skin_or_scene_entity.get(&client).unwrap();
-                let mesh_file_entity = file_manager.file_get_dependency(&skin_file_entity, FileExtension::Mesh).unwrap();
+                let mesh_file_entity = file_manager
+                    .file_get_dependency(&skin_file_entity, FileExtension::Mesh)
+                    .unwrap();
                 let mut model_transform = ModelTransformLocal::to_transform(model_transform);
                 model_transform.rotation = model_transform.rotation * corrective_rot;
 
@@ -1159,7 +1165,8 @@ impl ModelManager {
                         continue;
                     }
 
-                    let (mesh_handle, mat_handle, transform) = object_q.get(face_3d_entity).unwrap();
+                    let (mesh_handle, mat_handle, transform) =
+                        object_q.get(face_3d_entity).unwrap();
 
                     let transform = *transform;
                     let transform = model_transform * transform;
@@ -1178,15 +1185,18 @@ impl ModelManager {
 
     pub fn on_drag_transform_end(&mut self, world: &mut World, input_manager: &mut InputManager) {
         // reset last dragged transform
-        if let Some(drags) = self
-            .take_drags()
-        {
+        if let Some(drags) = self.take_drags() {
             world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
                 for (transform_entity, old_transform, new_transform) in drags {
                     tab_manager.current_tab_execute_model_action(
                         world,
                         input_manager,
-                        ModelAction::MoveTransform(transform_entity, old_transform, new_transform, true),
+                        ModelAction::MoveTransform(
+                            transform_entity,
+                            old_transform,
+                            new_transform,
+                            true,
+                        ),
                     );
                 }
             });
