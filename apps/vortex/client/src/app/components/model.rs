@@ -1,14 +1,22 @@
-use bevy_ecs::prelude::Component;
+use bevy_ecs::{entity::Entity, prelude::Component};
 
 use render_api::components::Transform;
 
 use vortex_proto::components::ModelTransform;
 
-#[derive(Component)]
-pub struct ModelTransformControl;
+#[derive(Component, Clone)]
+pub struct ModelTransformControl {
+    pub model_transform_entity: Entity,
+}
 
 impl ModelTransformControl {
     pub const RADIUS: f32 = 1.5;
+
+    pub fn new(model_transform_entity: Entity) -> Self {
+        Self {
+            model_transform_entity,
+        }
+    }
 }
 
 pub struct ModelTransformLocal;

@@ -76,14 +76,6 @@ impl SkinManager {
         0
     }
 
-    pub(crate) fn entity_is_face_color(&self, face_color_entity: &Entity) -> bool {
-        self.color_to_face_entity.contains_key(face_color_entity)
-    }
-
-    pub(crate) fn entity_is_bckg_color(&self, bckg_color_entity: &Entity) -> bool {
-        self.bckg_to_file_entity.contains_key(bckg_color_entity)
-    }
-
     pub(crate) fn face_to_color_entity(&self, face_3d_entity: &Entity) -> Option<&Entity> {
         self.face_to_color_entity.get(face_3d_entity)
     }

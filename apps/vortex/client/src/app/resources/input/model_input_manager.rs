@@ -94,9 +94,9 @@ impl ModelInputManager {
             (
                 MouseButton::Left,
                 Some(_),
-                Some(CanvasShape::Vertex | CanvasShape::RootVertex | CanvasShape::Face) | None,
+                Some(CanvasShape::RootVertex | CanvasShape::Face) | None,
             ) | (MouseButton::Right, _, _) => {
-                // deselect vertex
+                // deselect shape
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
                     tab_manager.current_tab_execute_model_action(
                         world,
@@ -105,8 +105,8 @@ impl ModelInputManager {
                     );
                 });
             }
-            (MouseButton::Left, _, Some(CanvasShape::Edge)) => {
-                // select hovered shape (or None if there is no hovered shape)
+            (MouseButton::Left, _, Some(CanvasShape::Vertex | CanvasShape::Edge)) => {
+                // select hovered shape
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
                     tab_manager.current_tab_execute_model_action(
                         world,

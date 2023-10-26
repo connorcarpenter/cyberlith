@@ -9,17 +9,6 @@ use crate::app::resources::{
 pub struct ShapeManager;
 
 impl ShapeManager {
-    // SHAPES
-    pub(crate) fn has_shape_entity_3d(
-        vertex_manager: &VertexManager,
-        edge_manager: &EdgeManager,
-        face_manager: &FaceManager,
-        entity_3d: &Entity,
-    ) -> bool {
-        face_manager.has_face_entity_3d(entity_3d)
-            || edge_manager.has_edge_entity_3d(entity_3d)
-            || vertex_manager.has_vertex_entity_3d(entity_3d)
-    }
 
     pub(crate) fn shape_entity_2d_to_3d(
         vertex_manager: &VertexManager,

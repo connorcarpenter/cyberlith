@@ -1,7 +1,8 @@
 use bevy_ecs::{
     entity::Entity,
     event::EventReader,
-    system::{Query, Res, ResMut},
+    system::{Query, Res, ResMut, Resource, SystemState},
+    world::{Mut, World},
 };
 use bevy_log::{info, warn};
 
@@ -10,161 +11,155 @@ use naia_bevy_client::{
     Client,
 };
 
-use vortex_proto::components::{AnimFrame, FaceColor, PaletteColor};
+use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency, FileSystemEntry, ModelTransform, PaletteColor, Vertex3d};
 
 use crate::app::{
     components::OwnedByFileLocal,
     resources::{
         action::file::FileActions, animation_manager::AnimationManager, edge_manager::EdgeManager,
-        face_manager::FaceManager, file_manager::FileManager, palette_manager::PaletteManager,
-        shape_manager::ShapeManager, skin_manager::SkinManager, tab_manager::TabManager,
+        face_manager::FaceManager,
+        shape_manager::ShapeManager, tab_manager::TabManager,
         vertex_manager::VertexManager,
     },
 };
 
-pub fn auth_granted_events(
-    client: Client,
-    file_manager: Res<FileManager>,
-    mut file_actions: ResMut<FileActions>,
-    vertex_manager: Res<VertexManager>,
-    edge_manager: Res<EdgeManager>,
-    face_manager: Res<FaceManager>,
-    animation_manager: Res<AnimationManager>,
-    mut tab_manager: ResMut<TabManager>,
-    palette_manager: Res<PaletteManager>,
-    skin_manager: Res<SkinManager>,
-    mut event_reader: EventReader<EntityAuthGrantedEvent>,
-    owned_by_q: Query<&OwnedByFileLocal>,
-    frame_q: Query<&AnimFrame>,
-    palette_color_q: Query<&PaletteColor>,
-    face_color_q: Query<&FaceColor>,
-) {
-    for EntityAuthGrantedEvent(entity) in event_reader.iter() {
-        process_entity_auth_status(
-            &client,
-            &file_manager,
-            &mut file_actions,
-            &vertex_manager,
-            &edge_manager,
-            &face_manager,
-            &animation_manager,
-            &mut tab_manager,
-            &palette_manager,
-            &skin_manager,
-            &owned_by_q,
-            &frame_q,
-            &palette_color_q,
-            &face_color_q,
-            entity,
-            "granted",
-        );
-    }
+#[derive(Resource)]
+struct CachedAuthEventsState {
+    event_state: SystemState<(EventReader<'static, 'static, EntityAuthGrantedEvent>, EventReader<'static, 'static, EntityAuthDeniedEvent>, EventReader<'static, 'static, EntityAuthResetEvent>)>,
 }
 
-pub fn auth_denied_events(
-    client: Client,
-    file_manager: Res<FileManager>,
-    mut file_actions: ResMut<FileActions>,
-    vertex_manager: Res<VertexManager>,
-    edge_manager: Res<EdgeManager>,
-    face_manager: Res<FaceManager>,
-    animation_manager: Res<AnimationManager>,
-    palette_manager: Res<PaletteManager>,
-    mut tab_manager: ResMut<TabManager>,
-    skin_manager: Res<SkinManager>,
-    mut event_reader: EventReader<EntityAuthDeniedEvent>,
-    owned_by_q: Query<&OwnedByFileLocal>,
-    frame_q: Query<&AnimFrame>,
-    palette_color_q: Query<&PaletteColor>,
-    face_color_q: Query<&FaceColor>,
-) {
-    for EntityAuthDeniedEvent(entity) in event_reader.iter() {
-        process_entity_auth_status(
-            &client,
-            &file_manager,
-            &mut file_actions,
-            &vertex_manager,
-            &edge_manager,
-            &face_manager,
-            &animation_manager,
-            &mut tab_manager,
-            &palette_manager,
-            &skin_manager,
-            &owned_by_q,
-            &frame_q,
-            &palette_color_q,
-            &face_color_q,
-            entity,
-            "denied",
-        );
-    }
+pub fn auth_event_startup(world: &mut World) {
+    let event_state = SystemState::<(EventReader<EntityAuthGrantedEvent>, EventReader<EntityAuthDeniedEvent>, EventReader<EntityAuthResetEvent>)>::new(world);
+    world.insert_resource(CachedAuthEventsState {
+        event_state,
+    });
 }
 
-pub fn auth_reset_events(
-    client: Client,
-    file_manager: Res<FileManager>,
-    mut file_actions: ResMut<FileActions>,
-    vertex_manager: Res<VertexManager>,
-    edge_manager: Res<EdgeManager>,
-    face_manager: Res<FaceManager>,
-    animation_manager: Res<AnimationManager>,
-    palette_manager: Res<PaletteManager>,
-    mut tab_manager: ResMut<TabManager>,
-    skin_manager: Res<SkinManager>,
-    mut event_reader: EventReader<EntityAuthResetEvent>,
-    owned_by_q: Query<&OwnedByFileLocal>,
-    frame_q: Query<&AnimFrame>,
-    palette_color_q: Query<&PaletteColor>,
-    face_color_q: Query<&FaceColor>,
-) {
-    for EntityAuthResetEvent(entity) in event_reader.iter() {
-        process_entity_auth_status(
-            &client,
-            &file_manager,
-            &mut file_actions,
-            &vertex_manager,
-            &edge_manager,
-            &face_manager,
-            &animation_manager,
-            &mut tab_manager,
-            &palette_manager,
-            &skin_manager,
-            &owned_by_q,
-            &frame_q,
-            &palette_color_q,
-            &face_color_q,
-            entity,
-            "reset",
-        );
+pub fn auth_events(world: &mut World) {
+    let mut auth_granted_events: Vec<Entity> = Vec::new();
+    let mut auth_denied_events: Vec<Entity> = Vec::new();
+    let mut auth_reset_events: Vec<Entity> = Vec::new();
+
+    world.resource_scope(
+        |world, mut events_reader_state: Mut<CachedAuthEventsState>| {
+            let (mut granted_events, mut denied_events, mut reset_events) = events_reader_state.event_state.get_mut(world);
+
+            for EntityAuthGrantedEvent(entity) in granted_events.iter() {
+                auth_granted_events.push(*entity);
+            }
+
+            for EntityAuthDeniedEvent(entity) in denied_events.iter() {
+                auth_denied_events.push(*entity);
+            }
+
+            for EntityAuthResetEvent(entity) in reset_events.iter() {
+                auth_reset_events.push(*entity);
+            }
+        },
+    );
+
+    if auth_granted_events.is_empty() && auth_reset_events.is_empty() && auth_denied_events.is_empty() {
+        return;
+    }
+
+    let mut system_state: SystemState<(
+        Client,
+        ResMut<FileActions>,
+        ResMut<TabManager>,
+        Res<VertexManager>,
+        Res<EdgeManager>,
+        Res<FaceManager>,
+        Res<AnimationManager>,
+        Query<(
+            Option<&FileSystemEntry>,
+            Option<&FileDependency>,
+            Option<&Vertex3d>,
+            Option<&Edge3d>,
+            Option<&Face3d>,
+            Option<&AnimFrame>,
+            Option<&AnimRotation>,
+            Option<&PaletteColor>,
+            Option<&FaceColor>,
+            Option<&BackgroundSkinColor>,
+            Option<&ModelTransform>
+        )>,
+        Query<&OwnedByFileLocal>,
+        Query<&AnimFrame>,
+    )> = SystemState::new(world);
+    let (
+        client,
+        mut file_actions,
+        mut tab_manager,
+        vertex_manager,
+        edge_manager,
+        face_manager,
+        animation_manager,
+        big_q,
+        owned_by_q,
+        frame_q,
+    ) = system_state.get_mut(world);
+
+    for (entities, msg) in [(auth_granted_events, "granted"), (auth_denied_events, "denied"), (auth_reset_events, "reset")] {
+        if entities.is_empty() {
+            continue;
+        }
+
+        for entity in entities {
+            process_entity_auth_status(
+                &client,
+                &mut file_actions,
+                &mut tab_manager,
+                &vertex_manager,
+                &edge_manager,
+                &face_manager,
+                &animation_manager,
+                &big_q,
+                &owned_by_q,
+                &frame_q,
+                &entity,
+                msg,
+            );
+        }
     }
 }
 
 fn process_entity_auth_status(
     client: &Client,
-    file_manager: &FileManager,
     file_actions: &mut FileActions,
+    tab_manager: &mut TabManager,
     vertex_manager: &VertexManager,
     edge_manager: &EdgeManager,
     face_manager: &FaceManager,
     animation_manager: &AnimationManager,
-    tab_manager: &mut TabManager,
-    palette_manager: &PaletteManager,
-    skin_manager: &SkinManager,
+    big_q: &Query<(
+        Option<&FileSystemEntry>,
+        Option<&FileDependency>,
+        Option<&Vertex3d>,
+        Option<&Edge3d>,
+        Option<&Face3d>,
+        Option<&AnimFrame>,
+        Option<&AnimRotation>,
+        Option<&PaletteColor>,
+        Option<&FaceColor>,
+        Option<&BackgroundSkinColor>,
+        Option<&ModelTransform>
+    )>,
     owned_by_q: &Query<&OwnedByFileLocal>,
     frame_q: &Query<&AnimFrame>,
-    palette_color_q: &Query<&PaletteColor>,
-    face_color_q: &Query<&FaceColor>,
     entity: &Entity,
     status: &str,
 ) {
-    if ShapeManager::has_shape_entity_3d(vertex_manager, edge_manager, face_manager, entity) {
+    let Ok((fs_entry_opt, dep_opt, vertex_opt, edge_opt, face_opt, frame_opt, rot_opt, palette_opt, face_color_opt, bckg_color_opt, model_opt)) = big_q.get(*entity) else {
+        panic!("hm?");
+    };
+    if vertex_opt.is_some() || edge_opt.is_some() || face_opt.is_some() {
         info!(
             "auth processing for shape entity `{:?}`: `{:?}`",
             entity, status
         );
         if let Ok(owning_file_entity) = owned_by_q.get(*entity) {
             if let Some(tab_state) = tab_manager.tab_state_mut(&owning_file_entity.file_entity) {
-                let shape_3d_entity = ShapeManager::shape_entity_3d_to_2d(
+                let shape_2d_entity = ShapeManager::shape_entity_3d_to_2d(
                     vertex_manager,
                     edge_manager,
                     face_manager,
@@ -173,7 +168,7 @@ fn process_entity_auth_status(
                 .unwrap();
                 tab_state
                     .action_stack
-                    .entity_update_auth_status(&shape_3d_entity);
+                    .entity_update_auth_status(&shape_2d_entity);
             } else {
                 warn!(
                     "no tab state found for file entity: {:?}",
@@ -183,28 +178,25 @@ fn process_entity_auth_status(
         } else {
             warn!("no owning file entity found for shape entity: {:?}", entity);
         }
-    } else if file_manager.entity_is_file(entity) {
+    } else if fs_entry_opt.is_some() {
         // entity is file
         info!(
             "auth processing for file entity `{:?}`: `{:?}`",
             entity, status
         );
         file_actions.entity_update_auth_status(entity);
-    } else if file_manager.entity_is_dependency(entity) {
-        // entity is file
+    } else if dep_opt.is_some() {
+        // entity is dependency
         info!(
             "auth processing for dependency entity `{:?}`: `{:?}`",
             entity, status
         );
         file_actions.entity_update_auth_status(entity);
-    } else if animation_manager.entity_is_frame(entity) {
+    } else if let Some(frame_component) = frame_opt {
         info!(
             "auth processing for frame entity `{:?}`: `{:?}`",
             entity, status
         );
-        let Ok(frame_component) = frame_q.get(*entity) else {
-            panic!("component for frame entity `{:?}` not found", entity);
-        };
         let owning_file_entity = frame_component.file_entity.get(client).unwrap();
         if let Some(tab_state) = tab_manager.tab_state_mut(&owning_file_entity) {
             tab_state.action_stack.entity_update_auth_status(&entity);
@@ -214,7 +206,7 @@ fn process_entity_auth_status(
                 owning_file_entity
             );
         }
-    } else if animation_manager.entity_is_rotation(entity) {
+    } else if rot_opt.is_some() {
         info!(
             "auth processing for rotation entity `{:?}`: `{:?}`",
             entity, status
@@ -234,14 +226,11 @@ fn process_entity_auth_status(
                 owning_file_entity
             );
         }
-    } else if palette_manager.entity_is_color(entity) {
+    } else if let Some(color_component) = palette_opt {
         info!(
             "auth processing for color entity `{:?}`: `{:?}`",
             entity, status
         );
-        let Ok(color_component) = palette_color_q.get(*entity) else {
-            panic!("component for color entity `{:?}` not found", entity);
-        };
         let owning_file_entity = color_component.file_entity.get(client).unwrap();
         if let Some(tab_state) = tab_manager.tab_state_mut(&owning_file_entity) {
             tab_state.action_stack.entity_update_auth_status(&entity);
@@ -251,14 +240,11 @@ fn process_entity_auth_status(
                 owning_file_entity
             );
         }
-    } else if skin_manager.entity_is_face_color(entity) {
+    } else if let Some(color_component) = face_color_opt {
         info!(
             "auth processing for face color entity `{:?}`: `{:?}`",
             entity, status
         );
-        let Ok(color_component) = face_color_q.get(*entity) else {
-            panic!("component for face color entity `{:?}` not found", entity);
-        };
         let owning_file_entity = color_component.skin_file_entity.get(client).unwrap();
         if let Some(tab_state) = tab_manager.tab_state_mut(&owning_file_entity) {
             tab_state.action_stack.entity_update_auth_status(&entity);
@@ -268,12 +254,26 @@ fn process_entity_auth_status(
                 owning_file_entity
             );
         }
-    } else if skin_manager.entity_is_bckg_color(entity) {
+    } else if bckg_color_opt.is_some() {
         info!(
             "auth processing for background skin color entity `{:?}`: `{:?}`",
             entity, status
         );
         // no need to set auth status on action stack because auth for background color is automatically given (and reset upon update)
+    } else if let Some(model_transform_component) = model_opt {
+        info!(
+            "auth processing for model transform entity `{:?}`: `{:?}`",
+            entity, status
+        );
+        let owning_file_entity = model_transform_component.model_file_entity.get(client).unwrap();
+        if let Some(tab_state) = tab_manager.tab_state_mut(&owning_file_entity) {
+            tab_state.action_stack.entity_update_auth_status(&entity);
+        } else {
+            warn!(
+                "no tab state found for file entity: {:?}",
+                owning_file_entity
+            );
+        }
     } else {
         warn!("unhandled auth status: entity `{:?}`: {:?}", entity, status);
     }

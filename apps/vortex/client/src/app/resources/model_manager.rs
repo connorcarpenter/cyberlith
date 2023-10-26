@@ -79,8 +79,8 @@ impl ModelTransformData {
 #[derive(Resource)]
 pub struct ModelManager {
     model_file_to_transform_entity: HashMap<Entity, HashSet<Entity>>,
-    model_transforms: HashMap<Entity, ModelTransformData>,
-    edge_2d_to_model_transform: HashMap<Entity, Entity>,
+    transform_entities: HashMap<Entity, ModelTransformData>,
+    edge_2d_to_transform_entity: HashMap<Entity, Entity>,
     // Option<edge_2d_entity>
     binding_edge_opt: Option<Entity>,
 }
@@ -89,14 +89,15 @@ impl Default for ModelManager {
     fn default() -> Self {
         Self {
             model_file_to_transform_entity: HashMap::new(),
-            model_transforms: HashMap::new(),
-            edge_2d_to_model_transform: HashMap::new(),
+            transform_entities: HashMap::new(),
+            edge_2d_to_transform_entity: HashMap::new(),
             binding_edge_opt: None,
         }
     }
 }
 
 impl ModelManager {
+
     pub fn edge_is_binding(&self) -> bool {
         self.binding_edge_opt.is_some()
     }
@@ -251,6 +252,19 @@ impl ModelManager {
 
         system_state.apply(world);
 
+        //
+
+        let mut system_state: SystemState<(
+            Commands,
+            Client,
+        )> = SystemState::new(world);
+        let (
+            mut commands,
+            mut client,
+        ) = system_state.get_mut(world);
+
+        commands.entity(new_model_transform_entity).release_authority(&mut client);
+
         new_model_transform_entity
     }
 
@@ -277,6 +291,7 @@ impl ModelManager {
             face_manager,
             meshes,
             materials,
+            new_model_transform_entity,
             translation,
             None,
             Color::LIGHT_BLUE,
@@ -291,6 +306,7 @@ impl ModelManager {
             face_manager,
             meshes,
             materials,
+            new_model_transform_entity,
             translation,
             Some(translation_entity_2d),
             Color::RED,
@@ -305,6 +321,7 @@ impl ModelManager {
             face_manager,
             meshes,
             materials,
+            new_model_transform_entity,
             translation,
             Some(translation_entity_2d),
             Color::WHITE,
@@ -331,6 +348,7 @@ impl ModelManager {
         face_manager: &mut FaceManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
+        new_model_transform_entity: Entity,
         translation: Vec3,
         translation_entity_2d_opt: Option<Entity>,
         color: Color,
@@ -348,12 +366,14 @@ impl ModelManager {
                 color,
             );
 
+        let mtc_component = ModelTransformControl::new(new_model_transform_entity);
+
         commands
             .entity(rotation_entity_2d)
-            .insert(ModelTransformControl);
+            .insert(mtc_component.clone());
         commands
             .entity(rotation_entity_3d)
-            .insert(ModelTransformControl)
+            .insert(mtc_component.clone())
             .remove::<Handle<CpuMesh>>()
             .remove::<Handle<CpuMaterial>>()
             .remove::<Visibility>();
@@ -361,12 +381,12 @@ impl ModelManager {
         if let Some(edge_2d_entity) = edge_2d_entity_opt {
             commands
                 .entity(edge_2d_entity)
-                .insert(ModelTransformControl);
+                .insert(mtc_component.clone());
         }
         if let Some(edge_3d_entity) = edge_3d_entity_opt {
             commands
                 .entity(edge_3d_entity)
-                .insert(ModelTransformControl)
+                .insert(mtc_component.clone())
                 .remove::<Handle<CpuMesh>>()
                 .remove::<Handle<CpuMaterial>>()
                 .remove::<Visibility>();
@@ -387,7 +407,7 @@ impl ModelManager {
         scale_entity_2d: Entity,
         scale_entity_3d: Entity,
     ) {
-        self.model_transforms.insert(
+        self.transform_entities.insert(
             model_transform_entity,
             ModelTransformData::new(
                 *model_file_entity,
@@ -400,7 +420,7 @@ impl ModelManager {
                 scale_entity_3d,
             ),
         );
-        self.edge_2d_to_model_transform
+        self.edge_2d_to_transform_entity
             .insert(edge_2d_entity, model_transform_entity);
 
         if !self
@@ -422,11 +442,11 @@ impl ModelManager {
     }
 
     pub(crate) fn edge_2d_has_model_transform(&self, edge_2d_entity: &Entity) -> bool {
-        self.edge_2d_to_model_transform.contains_key(edge_2d_entity)
+        self.edge_2d_to_transform_entity.contains_key(edge_2d_entity)
     }
 
     pub(crate) fn model_transform_from_edge_2d(&self, edge_2d_entity: &Entity) -> Option<Entity> {
-        self.edge_2d_to_model_transform.get(edge_2d_entity).cloned()
+        self.edge_2d_to_transform_entity.get(edge_2d_entity).cloned()
     }
 
     pub(crate) fn on_despawn_model_transform(
@@ -460,10 +480,10 @@ impl ModelManager {
         model_transform_entity: &Entity,
     ) -> ModelTransformData {
         let model_transform_data = self
-            .model_transforms
+            .transform_entities
             .remove(model_transform_entity)
             .unwrap();
-        self.edge_2d_to_model_transform
+        self.edge_2d_to_transform_entity
             .remove(&model_transform_data.edge_2d_entity);
 
         let model_transforms = self
@@ -492,7 +512,7 @@ impl ModelManager {
         let unit_length = 10.0;
 
         for model_transform_entity in model_transform_entities.iter() {
-            let data = self.model_transforms.get(model_transform_entity).unwrap();
+            let data = self.transform_entities.get(model_transform_entity).unwrap();
             let model_transform = model_transform_q.get(*model_transform_entity).unwrap();
 
             // translation
@@ -524,7 +544,7 @@ impl ModelManager {
         let mut vertices = Vec::new();
         if let Some(model_transform_entities) = self.model_file_to_transform_entity.get(file_entity) {
             for model_transform_entity in model_transform_entities.iter() {
-                let data = self.model_transforms.get(model_transform_entity).unwrap();
+                let data = self.transform_entities.get(model_transform_entity).unwrap();
                 vertices.push(data.translation_entity_3d);
                 vertices.push(data.rotation_entity_3d);
                 vertices.push(data.scale_entity_3d);
@@ -537,7 +557,7 @@ impl ModelManager {
         let mut vertices = Vec::new();
         if let Some(model_transform_entities) = self.model_file_to_transform_entity.get(file_entity) {
             for model_transform_entity in model_transform_entities.iter() {
-                let data = self.model_transforms.get(model_transform_entity).unwrap();
+                let data = self.transform_entities.get(model_transform_entity).unwrap();
                 vertices.push(data.translation_entity_2d);
                 vertices.push(data.rotation_entity_2d);
                 vertices.push(data.scale_entity_2d);

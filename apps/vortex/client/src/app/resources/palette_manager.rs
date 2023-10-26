@@ -72,9 +72,6 @@ impl Default for PaletteManager {
 }
 
 impl PaletteManager {
-    pub fn entity_is_color(&self, entity: &Entity) -> bool {
-        self.colors.contains_key(entity)
-    }
 
     pub fn current_color_index(&self) -> usize {
         self.selected_color_index

@@ -193,14 +193,6 @@ impl AnimationManager {
         self.preview_elapsed_ms
     }
 
-    pub fn entity_is_frame(&self, entity: &Entity) -> bool {
-        self.frames.contains_key(entity)
-    }
-
-    pub fn entity_is_rotation(&self, entity: &Entity) -> bool {
-        self.rotations.contains_key(entity)
-    }
-
     pub fn get_rotations_frame_entity(&self, entity: &Entity) -> Option<Entity> {
         self.rotations
             .get(entity)

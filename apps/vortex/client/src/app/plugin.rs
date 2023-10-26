@@ -64,6 +64,7 @@ impl Plugin for VortexPlugin {
             .add_systems(Update, network::login)
             .add_systems(Startup, network::insert_component_event_startup)
             .add_systems(Startup, network::update_component_event_startup)
+            .add_systems(Startup, network::auth_event_startup)
             .add_systems(
                 Update,
                 (
@@ -76,9 +77,7 @@ impl Plugin for VortexPlugin {
                     network::insert_component_events,
                     network::update_component_events,
                     network::remove_component_events.before(network::despawn_entity_events),
-                    network::auth_granted_events,
-                    network::auth_denied_events,
-                    network::auth_reset_events,
+                    network::auth_events,
                 )
                     .in_set(ReceiveEvents),
             )

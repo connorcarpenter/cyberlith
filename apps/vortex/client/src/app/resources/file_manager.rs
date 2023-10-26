@@ -72,14 +72,6 @@ impl FileManager {
         file_manager.get_file_type(current_file_entity)
     }
 
-    pub fn entity_is_file(&self, entity: &Entity) -> bool {
-        self.file_entities.contains_key(entity)
-    }
-
-    pub fn entity_is_dependency(&self, entity: &Entity) -> bool {
-        self.file_dependencies.contains(entity)
-    }
-
     pub fn on_file_create(&mut self, file_entity: &Entity, file_type: FileExtension) {
         self.file_entities
             .insert(*file_entity, FileData::new(file_type));
