@@ -533,6 +533,19 @@ impl ModelManager {
         vertices
     }
 
+    pub fn model_transform_2d_vertices(&self, file_entity: &Entity) -> Vec<Entity> {
+        let mut vertices = Vec::new();
+        if let Some(model_transform_entities) = self.model_file_to_transform_entity.get(file_entity) {
+            for model_transform_entity in model_transform_entities.iter() {
+                let data = self.model_transforms.get(model_transform_entity).unwrap();
+                vertices.push(data.translation_entity_2d);
+                vertices.push(data.rotation_entity_2d);
+                vertices.push(data.scale_entity_2d);
+            }
+        }
+        vertices
+    }
+
     pub fn sync_vertices(
         &self,
         world: &mut World,
@@ -850,6 +863,7 @@ impl ModelManager {
                 );
             }
 
+            // draw select line & circle
             match input_manager.selected_shape_2d() {
                 Some((_, CanvasShape::Edge)) => {
                     // draw select line

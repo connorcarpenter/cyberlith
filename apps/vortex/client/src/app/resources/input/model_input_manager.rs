@@ -1,19 +1,19 @@
 use bevy_ecs::{
     entity::Entity,
-    query::{, With},
+    query::With,
     system::{Query, Res, SystemState},
     world::{World, Mut},
 };
 
 use input::{InputAction, Key, MouseButton};
 use math::Vec2;
-use render_api::components::{Transform, Visibility};
+use render_api::components::Transform;
 
-use vortex_proto::components::{ShapeName, VertexRoot};
+use vortex_proto::components::{FileExtension, ShapeName, VertexRoot};
 
 use crate::app::{
-    components::{Vertex2d, Edge2dLocal, LocalShape},
-    resources::{
+    components::{OwnedByFileLocal, Vertex2d, Edge2dLocal},
+    resources::{file_manager::FileManager, model_manager::ModelManager,
         canvas::Canvas, edge_manager::EdgeManager, input::InputManager, shape_data::CanvasShape,
         tab_manager::TabManager, action::model::ModelAction
     },
@@ -137,35 +137,42 @@ impl ModelInputManager {
 
     pub(crate) fn sync_mouse_hover_ui(
         world: &mut World,
+        current_file_entity: &Entity,
         camera_3d_scale: f32,
         mouse_position: &Vec2,
     ) -> Option<(Entity, CanvasShape)> {
         let mut system_state: SystemState<(
+            Res<FileManager>,
             Res<EdgeManager>,
+            Res<ModelManager>,
             Query<&Transform>,
-            Query<&Visibility>,
             Query<&ShapeName>,
-            Query<(Entity, Option<&VertexRoot>), (With<Vertex2d>, Without<LocalShape>)>,
-            Query<(Entity, &Edge2dLocal), Without<LocalShape>>,
+            Query<&VertexRoot>,
+            Query<(Entity, &OwnedByFileLocal), With<Edge2dLocal>>
         )> = SystemState::new(world);
         let (
+            file_manager,
             edge_manager,
+            model_manager,
             transform_q,
-            visibility_q,
             shape_name_q,
-            vertex_2d_q,
-            edge_2d_q
+            vertex_root_q,
+            edge_2d_q,
         ) = system_state.get_mut(world);
+        let Some(skel_file_entity) = file_manager.file_get_dependency(current_file_entity, FileExtension::Skel) else {
+            return None;
+        };
 
         let mut least_distance = f32::MAX;
         let mut least_entity = None;
         let mut is_hovering = false;
 
-        InputManager::handle_vertex_hover(
+        let mtc_2d_entites = model_manager.model_transform_2d_vertices(current_file_entity);
+
+        Self::handle_vertex_hover(
             &transform_q,
-            &visibility_q,
-            &vertex_2d_q,
-            None,
+            mtc_2d_entites,
+            &vertex_root_q,
             camera_3d_scale,
             mouse_position,
             &mut least_distance,
@@ -173,11 +180,18 @@ impl ModelInputManager {
             &mut is_hovering,
         );
 
-        InputManager::handle_edge_hover(
+        let mut skel_edge_2d_entities = Vec::new();
+        for (edge_2d_entity, owned_by_local) in edge_2d_q.iter() {
+            if owned_by_local.file_entity == skel_file_entity {
+                skel_edge_2d_entities.push(edge_2d_entity);
+            }
+        }
+
+        Self::handle_edge_hover(
             &transform_q,
-            &visibility_q,
-            &edge_2d_q,
-            Some((&edge_manager, &shape_name_q)),
+            skel_edge_2d_entities,
+            &edge_manager,
+            &shape_name_q,
             camera_3d_scale,
             mouse_position,
             &mut least_distance,
@@ -189,6 +203,46 @@ impl ModelInputManager {
             least_entity
         } else {
             None
+        }
+    }
+
+    fn handle_vertex_hover(
+        transform_q: &Query<&Transform>,
+        vertex_2d_entities: Vec<Entity>,
+        vertex_root_q: &Query<&VertexRoot>,
+        camera_3d_scale: f32,
+        mouse_position: &Vec2,
+        least_distance: &mut f32,
+        least_entity: &mut Option<(Entity, CanvasShape)>,
+        is_hovering: &mut bool,
+    ) {
+        // check for vertices
+        for vertex_2d_entity in vertex_2d_entities {
+            let root_opt = vertex_root_q.get(vertex_2d_entity).ok();
+            InputManager::hover_check_vertex(transform_q, None, mouse_position, least_distance, least_entity, &vertex_2d_entity, root_opt);
+        }
+
+        *is_hovering = *least_distance <= (Vertex2d::DETECT_RADIUS * camera_3d_scale);
+    }
+
+    fn handle_edge_hover(
+        transform_q: &Query<&Transform>,
+        edge_2d_entities: Vec<Entity>,
+        edge_manager: &EdgeManager,
+        shape_name_q: &Query<&ShapeName>,
+        camera_3d_scale: f32,
+        mouse_position: &Vec2,
+        least_distance: &mut f32,
+        least_entity: &mut Option<(Entity, CanvasShape)>,
+        is_hovering: &mut bool,
+    ) {
+        // check for edges
+        if !*is_hovering {
+            for edge_2d_entity in edge_2d_entities {
+                InputManager::hover_check_edge(transform_q, Some((edge_manager, shape_name_q)), mouse_position, least_distance, least_entity, &edge_2d_entity);
+            }
+
+            *is_hovering = *least_distance <= (Edge2dLocal::DETECT_THICKNESS * camera_3d_scale);
         }
     }
 }

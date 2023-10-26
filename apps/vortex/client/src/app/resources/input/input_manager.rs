@@ -143,7 +143,7 @@ impl InputManager {
                 SkinInputManager::sync_mouse_hover_ui(world, camera_3d_scale, mouse_position)
             }
             FileExtension::Model => {
-                ModelInputManager::sync_mouse_hover_ui(world, camera_3d_scale, mouse_position)
+                ModelInputManager::sync_mouse_hover_ui(world, current_file_entity, camera_3d_scale, mouse_position)
             }
             _ => {
                 return;
@@ -192,7 +192,7 @@ impl InputManager {
         *is_hovering = *least_distance <= (Vertex2d::DETECT_RADIUS * camera_3d_scale);
     }
 
-    fn hover_check_vertex(
+    pub fn hover_check_vertex(
         transform_q: &Query<&Transform>,
         anim_opt: Option<(&VertexManager, &Query<&ShapeName>)>,
         mouse_position: &Vec2,
@@ -257,7 +257,7 @@ impl InputManager {
         }
     }
 
-    fn hover_check_edge(
+    pub fn hover_check_edge(
         transform_q: &Query<&Transform>,
         anim_opt: Option<(&EdgeManager, &Query<&ShapeName>)>,
         mouse_position: &Vec2,
