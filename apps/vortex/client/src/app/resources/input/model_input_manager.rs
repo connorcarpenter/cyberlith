@@ -1,6 +1,6 @@
 use bevy_ecs::{
     entity::Entity,
-    query::Without,
+    query::{, With},
     system::{Query, Res, SystemState},
     world::{World, Mut},
 };
@@ -9,10 +9,10 @@ use input::{InputAction, Key, MouseButton};
 use math::Vec2;
 use render_api::components::{Transform, Visibility};
 
-use vortex_proto::components::ShapeName;
+use vortex_proto::components::{ShapeName, VertexRoot};
 
 use crate::app::{
-    components::{Edge2dLocal, LocalShape},
+    components::{Vertex2d, Edge2dLocal, LocalShape},
     resources::{
         canvas::Canvas, edge_manager::EdgeManager, input::InputManager, shape_data::CanvasShape,
         tab_manager::TabManager, action::model::ModelAction
@@ -142,17 +142,36 @@ impl ModelInputManager {
     ) -> Option<(Entity, CanvasShape)> {
         let mut system_state: SystemState<(
             Res<EdgeManager>,
-            Query<(&Transform, Option<&LocalShape>)>,
+            Query<&Transform>,
             Query<&Visibility>,
             Query<&ShapeName>,
+            Query<(Entity, Option<&VertexRoot>), (With<Vertex2d>, Without<LocalShape>)>,
             Query<(Entity, &Edge2dLocal), Without<LocalShape>>,
         )> = SystemState::new(world);
-        let (edge_manager, transform_q, visibility_q, shape_name_q, edge_2d_q) =
-            system_state.get_mut(world);
+        let (
+            edge_manager,
+            transform_q,
+            visibility_q,
+            shape_name_q,
+            vertex_2d_q,
+            edge_2d_q
+        ) = system_state.get_mut(world);
 
         let mut least_distance = f32::MAX;
         let mut least_entity = None;
         let mut is_hovering = false;
+
+        InputManager::handle_vertex_hover(
+            &transform_q,
+            &visibility_q,
+            &vertex_2d_q,
+            None,
+            camera_3d_scale,
+            mouse_position,
+            &mut least_distance,
+            &mut least_entity,
+            &mut is_hovering,
+        );
 
         InputManager::handle_edge_hover(
             &transform_q,

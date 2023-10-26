@@ -2,6 +2,7 @@ use bevy_ecs::{
     entity::Entity,
     system::{Query, SystemState},
     world::{Mut, World},
+    query::With,
 };
 
 use input::{InputAction, Key, MouseButton};
@@ -9,7 +10,7 @@ use math::Vec2;
 use render_api::components::{Transform, Visibility};
 
 use crate::app::{
-    components::{FaceIcon2d, LocalShape},
+    components::FaceIcon2d,
     resources::{
         action::skin::SkinAction, canvas::Canvas, input::InputManager, shape_data::CanvasShape,
         tab_manager::TabManager,
@@ -175,9 +176,9 @@ impl SkinInputManager {
         mouse_position: &Vec2,
     ) -> Option<(Entity, CanvasShape)> {
         let mut system_state: SystemState<(
-            Query<(&Transform, Option<&LocalShape>)>,
+            Query<&Transform>,
             Query<&Visibility>,
-            Query<(Entity, &FaceIcon2d)>,
+            Query<Entity, With<FaceIcon2d>>,
         )> = SystemState::new(world);
         let (transform_q, visibility_q, face_2d_q) = system_state.get_mut(world);
 

@@ -245,7 +245,7 @@ impl SkelInputManager {
         mouse_position: &Vec2,
     ) -> Option<(Entity, CanvasShape)> {
         let mut system_state: SystemState<(
-            Query<(&Transform, Option<&LocalShape>)>,
+            Query<&Transform>,
             Query<&Visibility>,
             Query<(Entity, Option<&VertexRoot>), (With<Vertex2d>, Without<LocalShape>)>,
             Query<(Entity, &Edge2dLocal), Without<LocalShape>>,

@@ -425,7 +425,7 @@ impl AnimInputManager {
             Res<VertexManager>,
             Res<EdgeManager>,
             Res<AnimationManager>,
-            Query<(&Transform, Option<&LocalShape>)>,
+            Query<&Transform>,
             Query<&Visibility>,
             Query<&ShapeName>,
             Query<(Entity, Option<&VertexRoot>), (With<Vertex2d>, Without<LocalShape>)>,

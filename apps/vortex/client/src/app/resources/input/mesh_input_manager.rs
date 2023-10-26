@@ -294,11 +294,11 @@ impl MeshInputManager {
         mouse_position: &Vec2,
     ) -> Option<(Entity, CanvasShape)> {
         let mut system_state: SystemState<(
-            Query<(&Transform, Option<&LocalShape>)>,
+            Query<&Transform>,
             Query<&Visibility>,
             Query<(Entity, Option<&VertexRoot>), (With<Vertex2d>, Without<LocalShape>)>,
             Query<(Entity, &Edge2dLocal), Without<LocalShape>>,
-            Query<(Entity, &FaceIcon2d)>,
+            Query<Entity, With<FaceIcon2d>>,
         )> = SystemState::new(world);
         let (transform_q, visibility_q, vertex_2d_q, edge_2d_q, face_2d_q) =
             system_state.get_mut(world);

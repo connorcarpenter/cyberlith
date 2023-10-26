@@ -167,7 +167,7 @@ impl InputManager {
     }
 
     pub(crate) fn handle_vertex_hover(
-        transform_q: &Query<(&Transform, Option<&LocalShape>)>,
+        transform_q: &Query<&Transform>,
         visibility_q: &Query<&Visibility>,
         vertex_2d_q: &Query<(Entity, Option<&VertexRoot>), (With<Vertex2d>, Without<LocalShape>)>,
         anim_opt: Option<(&VertexManager, &Query<&ShapeName>)>,
@@ -186,38 +186,50 @@ impl InputManager {
                 continue;
             }
 
-            if let Some((vertex_manager, shape_name_q)) = anim_opt {
-                // don't hover over disabled vertices in Anim mode
-                let vertex_3d_entity = vertex_manager
-                    .vertex_entity_2d_to_3d(&vertex_2d_entity)
-                    .unwrap();
-                let Ok(shape_name) = shape_name_q.get(vertex_3d_entity) else { continue; };
-                let shape_name = shape_name.value.as_str();
-                if shape_name.len() == 0 {
-                    continue;
-                }
-            }
-
-            let (vertex_transform, _) = transform_q.get(vertex_2d_entity).unwrap();
-            let vertex_position = vertex_transform.translation.truncate();
-            let distance = vertex_position.distance(*mouse_position);
-            if distance < *least_distance {
-                *least_distance = distance;
-
-                let shape = match root_opt {
-                    Some(_) => CanvasShape::RootVertex,
-                    None => CanvasShape::Vertex,
-                };
-
-                *least_entity = Some((vertex_2d_entity, shape));
-            }
+            Self::hover_check_vertex(transform_q, anim_opt, mouse_position, least_distance, least_entity, &vertex_2d_entity, root_opt);
         }
 
         *is_hovering = *least_distance <= (Vertex2d::DETECT_RADIUS * camera_3d_scale);
     }
 
+    fn hover_check_vertex(
+        transform_q: &Query<&Transform>,
+        anim_opt: Option<(&VertexManager, &Query<&ShapeName>)>,
+        mouse_position: &Vec2,
+        least_distance: &mut f32,
+        least_entity: &mut Option<(Entity, CanvasShape)>,
+        vertex_2d_entity: &Entity,
+        root_opt: Option<&VertexRoot>
+    ) {
+        if let Some((vertex_manager, shape_name_q)) = anim_opt {
+            // don't hover over disabled vertices in Anim mode
+            let vertex_3d_entity = vertex_manager
+                .vertex_entity_2d_to_3d(&vertex_2d_entity)
+                .unwrap();
+            let Ok(shape_name) = shape_name_q.get(vertex_3d_entity) else { return; };
+            let shape_name = shape_name.value.as_str();
+            if shape_name.len() == 0 {
+                return;
+            }
+        }
+
+        let vertex_transform = transform_q.get(*vertex_2d_entity).unwrap();
+        let vertex_position = vertex_transform.translation.truncate();
+        let distance = vertex_position.distance(*mouse_position);
+        if distance < *least_distance {
+            *least_distance = distance;
+
+            let shape = match root_opt {
+                Some(_) => CanvasShape::RootVertex,
+                None => CanvasShape::Vertex,
+            };
+
+            *least_entity = Some((*vertex_2d_entity, shape));
+        }
+    }
+
     pub(crate) fn handle_edge_hover(
-        transform_q: &Query<(&Transform, Option<&LocalShape>)>,
+        transform_q: &Query<&Transform>,
         visibility_q: &Query<&Visibility>,
         edge_2d_q: &Query<(Entity, &Edge2dLocal), Without<LocalShape>>,
         anim_opt: Option<(&EdgeManager, &Query<&ShapeName>)>,
@@ -238,37 +250,48 @@ impl InputManager {
                     continue;
                 }
 
-                if let Some((edge_manager, shape_name_q)) = anim_opt {
-                    let edge_3d_entity =
-                        edge_manager.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
-                    let (_, end_vertex_3d_entity) =
-                        edge_manager.edge_get_endpoints(&edge_3d_entity);
-                    let Ok(shape_name) = shape_name_q.get(end_vertex_3d_entity) else { continue; };
-                    let shape_name = shape_name.value.as_str();
-                    if shape_name.len() == 0 {
-                        continue;
-                    }
-                }
-
-                let (edge_transform, _) = transform_q.get(edge_2d_entity).unwrap();
-                let edge_start = edge_transform.translation.truncate();
-                let edge_end = get_2d_line_transform_endpoint(&edge_transform);
-
-                let distance = distance_to_2d_line(*mouse_position, edge_start, edge_end);
-                if distance < *least_distance {
-                    *least_distance = distance;
-                    *least_entity = Some((edge_2d_entity, CanvasShape::Edge));
-                }
+                Self::hover_check_edge(transform_q, anim_opt, mouse_position, least_distance, least_entity, &edge_2d_entity);
             }
 
             *is_hovering = *least_distance <= (Edge2dLocal::DETECT_THICKNESS * camera_3d_scale);
         }
     }
 
+    fn hover_check_edge(
+        transform_q: &Query<&Transform>,
+        anim_opt: Option<(&EdgeManager, &Query<&ShapeName>)>,
+        mouse_position: &Vec2,
+        least_distance: &mut f32,
+        least_entity: &mut Option<(Entity, CanvasShape)>,
+        edge_2d_entity: &Entity
+    ) {
+        if let Some((edge_manager, shape_name_q)) = anim_opt {
+            let edge_3d_entity =
+                edge_manager.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
+            let (_, end_vertex_3d_entity) =
+                edge_manager.edge_get_endpoints(&edge_3d_entity);
+            let Ok(shape_name) = shape_name_q.get(end_vertex_3d_entity) else { return; };
+            let shape_name = shape_name.value.as_str();
+            if shape_name.len() == 0 {
+                return;
+            }
+        }
+
+        let edge_transform = transform_q.get(*edge_2d_entity).unwrap();
+        let edge_start = edge_transform.translation.truncate();
+        let edge_end = get_2d_line_transform_endpoint(&edge_transform);
+
+        let distance = distance_to_2d_line(*mouse_position, edge_start, edge_end);
+        if distance < *least_distance {
+            *least_distance = distance;
+            *least_entity = Some((*edge_2d_entity, CanvasShape::Edge));
+        }
+    }
+
     pub(crate) fn handle_face_hover(
-        transform_q: &Query<(&Transform, Option<&LocalShape>)>,
+        transform_q: &Query<&Transform>,
         visibility_q: &Query<&Visibility>,
-        face_2d_q: &Query<(Entity, &FaceIcon2d)>,
+        face_2d_q: &Query<Entity, With<FaceIcon2d>>,
         mouse_position: &Vec2,
         camera_3d_scale: f32,
         least_distance: &mut f32,
@@ -277,7 +300,7 @@ impl InputManager {
     ) {
         // check for faces
         if !*is_hovering {
-            for (face_entity, _) in face_2d_q.iter() {
+            for face_entity in face_2d_q.iter() {
                 // check tab ownership, skip faces from other tabs
                 let Ok(visibility) = visibility_q.get(face_entity) else {
                     panic!("entity has no Visibility");
@@ -286,7 +309,7 @@ impl InputManager {
                     continue;
                 }
 
-                let (face_transform, _) = transform_q.get(face_entity).unwrap();
+                let face_transform = transform_q.get(face_entity).unwrap();
                 let face_position = face_transform.translation.truncate();
                 let distance = face_position.distance(*mouse_position);
                 if distance < *least_distance {

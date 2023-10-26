@@ -23,7 +23,7 @@ use render_api::{
 };
 
 use vortex_proto::components::{
-    Edge3d, EdgeAngle, Face3d, FileExtension, FileType, ModelTransform, ModelTransformEntityType,
+    Edge3d, EdgeAngle, Face3d, FileExtension, ModelTransform, ModelTransformEntityType,
     ShapeName, Vertex3d,
 };
 
@@ -750,16 +750,15 @@ impl ModelManager {
             return;
         };
         let camera_state = &current_tab_state.camera_state;
-        let camera_3d_scale = camera_state.camera_3d_scale();
         let camera_is_2d = camera_state.is_2d();
         if camera_is_2d {
-            self.draw_2d(world, current_file_entity, camera_3d_scale);
+            self.draw_2d(world, current_file_entity);
         } else {
             self.draw_3d(world, current_file_entity);
         }
     }
 
-    fn draw_2d(&self, world: &mut World, current_file_entity: &Entity, camera_3d_scale: f32) {
+    fn draw_2d(&self, world: &mut World, current_file_entity: &Entity) {
         {
             let mut vertex_3d_entities: HashSet<Entity> = HashSet::new();
             let compass_3d_entities = world.get_resource::<Compass>().unwrap().vertices();
