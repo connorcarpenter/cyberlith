@@ -9,7 +9,7 @@ use bevy_log::info;
 use naia_bevy_client::{Client, CommandsExt};
 
 use input::{InputAction, Key, MouseButton};
-use math::{convert_2d_to_3d, Vec2};
+use math::{convert_2d_to_3d, quat_from_spin_direction, Vec2, Vec3};
 use render_api::components::{Camera, CameraProjection, Projection, Transform};
 
 use vortex_proto::components::{FileExtension, ModelTransform, ShapeName, VertexRoot};
@@ -341,12 +341,19 @@ impl ModelInputManager {
                 model_transform.set_translation_vec3(&new_3d_position);
             }
             ModelTransformControlType::Rotation => {
+                let edge_angle = 0.0; //todo, find edge angle
 
+                let rotation_with_offset = new_3d_position;
+                let translation = model_transform.translation_vec3();
+                let mut rotation_vector = rotation_with_offset - translation;
+                let base_direction = Vec3::Z;
+                let target_direction = rotation_vector.normalize();
+                let rotation_angle = quat_from_spin_direction(edge_angle, base_direction, target_direction);
+                model_transform.set_rotation(rotation_angle);
             }
             ModelTransformControlType::Scale => {
-                let scale_with_offset = new_3d_position;
                 let translation = model_transform.translation_vec3();
-                let scale = (scale_with_offset - translation) / ModelTransformControl::EDGE_LENGTH;
+                let scale = (new_3d_position - translation) / ModelTransformControl::EDGE_LENGTH;
                 model_transform.set_scale_vec3(&scale);
             }
             _ => {
