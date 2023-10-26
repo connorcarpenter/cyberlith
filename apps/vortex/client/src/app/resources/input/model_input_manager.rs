@@ -15,7 +15,7 @@ use render_api::components::{Camera, CameraProjection, Projection, Transform};
 use vortex_proto::components::{FileExtension, ModelTransform, ShapeName, VertexRoot};
 
 use crate::app::{
-    components::{
+    components::{ ModelTransformControlType,
         Edge2dLocal, ModelTransformControl, ModelTransformLocal, OwnedByFileLocal, Vertex2d,
     },
     resources::{
@@ -139,8 +139,8 @@ impl ModelInputManager {
         }
 
         match (click_type, input_manager.selected_shape) {
-            (MouseButton::Left, Some((vertex_2d_entity, CanvasShape::Vertex))) => {
-                Self::handle_vertex_drag(world, &vertex_2d_entity, &mouse_position)
+            (MouseButton::Left, Some((transform_entity, CanvasShape::Vertex))) => {
+                Self::handle_transform_drag(world, &transform_entity, &mouse_position)
             }
             (_, _) => InputManager::handle_drag_empty_space(world, click_type, delta),
         }
@@ -272,7 +272,7 @@ impl ModelInputManager {
         }
     }
 
-    fn handle_vertex_drag(world: &mut World, vertex_2d_entity: &Entity, mouse_position: &Vec2) {
+    fn handle_transform_drag(world: &mut World, control_2d_entity: &Entity, mouse_position: &Vec2) {
         let mut system_state: SystemState<(
             Commands,
             Client,
@@ -296,10 +296,11 @@ impl ModelInputManager {
             mtc_q,
         ) = system_state.get_mut(world);
 
-        let Ok(mtc_component) = mtc_q.get(*vertex_2d_entity) else {
+        let Ok(mtc_component) = mtc_q.get(*control_2d_entity) else {
             panic!("Expected MTC");
         };
         let mtc_entity = mtc_component.model_transform_entity;
+        let mtc_type = mtc_component.control_type;
 
         // check status
         let auth_status = commands.entity(mtc_entity).authority(&client).unwrap();
@@ -319,7 +320,7 @@ impl ModelInputManager {
         let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
 
         // get 2d vertex transform
-        let vertex_2d_transform = transform_q.get(*vertex_2d_entity).unwrap();
+        let control_2d_transform = transform_q.get(*control_2d_entity).unwrap();
 
         // convert 2d to 3d
         let new_3d_position = convert_2d_to_3d(
@@ -327,7 +328,7 @@ impl ModelInputManager {
             &projection_matrix,
             &camera_viewport.size_vec2(),
             &mouse_position,
-            vertex_2d_transform.translation.z,
+            control_2d_transform.translation.z,
         );
 
         // set networked 3d vertex position
@@ -335,7 +336,23 @@ impl ModelInputManager {
 
         let old_transform = ModelTransformLocal::to_transform(&model_transform);
 
-        model_transform.set_translation_vec3(&new_3d_position);
+        match mtc_type {
+            ModelTransformControlType::Translation => {
+                model_transform.set_translation_vec3(&new_3d_position);
+            }
+            ModelTransformControlType::Rotation => {
+
+            }
+            ModelTransformControlType::Scale => {
+                let scale_with_offset = new_3d_position;
+                let translation = model_transform.translation_vec3();
+                let scale = (scale_with_offset - translation) / ModelTransformControl::EDGE_LENGTH;
+                model_transform.set_scale_vec3(&scale);
+            }
+            _ => {
+                panic!("Unexpected MTC type");
+            }
+        }
 
         let new_transform = ModelTransformLocal::to_transform(&model_transform);
 

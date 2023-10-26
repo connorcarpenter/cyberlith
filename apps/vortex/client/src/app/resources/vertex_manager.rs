@@ -93,14 +93,12 @@ impl VertexManager {
             Query<&mut Transform>,
             Query<&mut Visibility>,
             Query<&LocalShape>,
-            Query<Option<&ModelTransformControl>>,
         )> = SystemState::new(world);
         let (
             vertex_3d_q,
             mut transform_q,
             mut visibility_q,
             local_shape_q,
-            model_transform_control_q,
         ) = system_state.get_mut(world);
 
         for (vertex_3d_entity, vertex_3d) in vertex_3d_q.iter() {
@@ -110,14 +108,6 @@ impl VertexManager {
                     let mut disable = false;
                     if local_shape_q.get(vertex_3d_entity).is_err() {
                         disable = true;
-                    } else {
-                        if model_transform_control_q
-                            .get(vertex_3d_entity)
-                            .unwrap()
-                            .is_some()
-                        {
-                            disable = true;
-                        }
                     }
 
                     if disable {

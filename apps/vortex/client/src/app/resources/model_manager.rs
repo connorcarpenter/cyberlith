@@ -30,7 +30,7 @@ use vortex_proto::components::{
 use crate::app::{
     components::{
         Edge2dLocal, Edge3dLocal, LocalShape, ModelTransformControl, ModelTransformLocal,
-        OwnedByFileLocal, Vertex2d,
+        OwnedByFileLocal, Vertex2d, ModelTransformControlType,
     },
     resources::{
         action::model::ModelAction, camera_manager::CameraManager, canvas::Canvas,
@@ -300,6 +300,7 @@ impl ModelManager {
             translation,
             None,
             Color::LIGHT_BLUE,
+            ModelTransformControlType::Translation,
         );
 
         // rotation control
@@ -315,6 +316,7 @@ impl ModelManager {
             translation,
             Some(translation_entity_2d),
             Color::RED,
+            ModelTransformControlType::Rotation,
         );
 
         // scale control
@@ -330,6 +332,7 @@ impl ModelManager {
             translation,
             Some(translation_entity_2d),
             Color::WHITE,
+            ModelTransformControlType::Scale,
         );
 
         self.register_model_transform_controls(
@@ -353,12 +356,13 @@ impl ModelManager {
         face_manager: &mut FaceManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
-        new_model_transform_entity: Entity,
+        transform_entity: Entity,
         translation: Vec3,
         translation_entity_2d_opt: Option<Entity>,
         color: Color,
+        control_type: ModelTransformControlType,
     ) -> (Entity, Entity) {
-        let (rotation_entity_2d, rotation_entity_3d, edge_2d_entity_opt, edge_3d_entity_opt) =
+        let (vertex_entity_2d, vertex_entity_3d, edge_2d_entity_opt, edge_3d_entity_opt) =
             vertex_manager.new_local_vertex(
                 commands,
                 camera_manager,
@@ -371,14 +375,12 @@ impl ModelManager {
                 color,
             );
 
-        let mtc_component = ModelTransformControl::new(new_model_transform_entity);
-
         commands
-            .entity(rotation_entity_2d)
-            .insert(mtc_component.clone());
+            .entity(vertex_entity_2d)
+            .insert(ModelTransformControl::new(transform_entity, control_type));
         commands
-            .entity(rotation_entity_3d)
-            .insert(mtc_component.clone())
+            .entity(vertex_entity_3d)
+            .insert(ModelTransformControl::new(transform_entity, ModelTransformControlType::NA))
             .remove::<Handle<CpuMesh>>()
             .remove::<Handle<CpuMaterial>>()
             .remove::<Visibility>();
@@ -386,18 +388,18 @@ impl ModelManager {
         if let Some(edge_2d_entity) = edge_2d_entity_opt {
             commands
                 .entity(edge_2d_entity)
-                .insert(mtc_component.clone());
+                .insert(ModelTransformControl::new(transform_entity, ModelTransformControlType::NA));
         }
         if let Some(edge_3d_entity) = edge_3d_entity_opt {
             commands
                 .entity(edge_3d_entity)
-                .insert(mtc_component.clone())
+                .insert(ModelTransformControl::new(transform_entity, ModelTransformControlType::NA))
                 .remove::<Handle<CpuMesh>>()
                 .remove::<Handle<CpuMaterial>>()
                 .remove::<Visibility>();
         }
 
-        (rotation_entity_2d, rotation_entity_3d)
+        (vertex_entity_2d, vertex_entity_3d)
     }
 
     pub fn register_model_transform_controls(
@@ -522,8 +524,6 @@ impl ModelManager {
             return;
         };
 
-        const UNIT_LENGTH: f32 = 20.0;
-
         for model_transform_entity in model_transform_entities.iter() {
             let data = self.transform_entities.get(model_transform_entity).unwrap();
             let model_transform = model_transform_q.get(*model_transform_entity).unwrap();
@@ -536,7 +536,7 @@ impl ModelManager {
             translation_control_3d.set_vec3(&translation);
 
             // rotation
-            let mut rotation_vector = Vec3::new(0.0, 0.0, UNIT_LENGTH);
+            let mut rotation_vector = Vec3::new(0.0, 0.0, ModelTransformControl::EDGE_LENGTH);
             let rotation = model_transform.rotation();
             rotation_vector = rotation * rotation_vector;
             let rotation_with_offset = rotation_vector + translation;
@@ -546,7 +546,7 @@ impl ModelManager {
 
             // scale
             let scale = model_transform.scale_vec3();
-            let scale_with_offset = (scale * UNIT_LENGTH) + translation;
+            let scale_with_offset = (scale * ModelTransformControl::EDGE_LENGTH) + translation;
             let scale_control_entity = data.scale_entity_3d;
             let mut scale_control_3d = vertex_3d_q.get_mut(scale_control_entity).unwrap();
             scale_control_3d.set_vec3(&scale_with_offset);
