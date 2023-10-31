@@ -3,12 +3,12 @@ use std::collections::HashMap;
 use bevy_ecs::{
     entity::Entity,
     prelude::{Commands, World},
-    system::{Query, Res, SystemState},
+    system::SystemState,
 };
 use bevy_log::info;
 
 use naia_bevy_server::{
-    BitReader, CommandsExt, FileBitWriter, ReplicationConfig, Serde, SerdeErr, Server,
+    BitReader, FileBitWriter, Serde, SerdeErr, Server,
 };
 
 use vortex_proto::{components::FileExtension, resources::FileKey};
@@ -23,11 +23,13 @@ use crate::{
 enum ModelAction {
     // path, file_name
     SkelFile(String, String),
+    SkinFile(String, String),
 }
 
 #[derive(Serde, Clone, PartialEq)]
 enum ModelActionType {
     SkelFile,
+    SkinFile,
     None,
 }
 
@@ -37,15 +39,16 @@ pub struct ModelWriter;
 impl ModelWriter {
     fn world_to_actions(
         &self,
-        world: &mut World,
+        _world: &mut World,
         project: &Project,
         content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Vec<ModelAction> {
         let working_file_entries = project.working_file_entries();
 
         let mut skel_dependency_key_opt = None;
+        let mut skin_dependency_keys = Vec::new();
 
-        for (content_entity, content_data) in content_entities {
+        for (_content_entity, content_data) in content_entities {
             match content_data {
                 ContentEntityData::Dependency(dependency_key) => {
                     let dependency_value = working_file_entries.get(dependency_key).unwrap();
@@ -55,7 +58,7 @@ impl ModelWriter {
                             skel_dependency_key_opt = Some(dependency_key);
                         }
                         FileExtension::Skin => {
-                            todo!();
+                            skin_dependency_keys.push(dependency_key);
                         }
                         _ => {
                             panic!("model file should depend on a single .skel file & potentially many .skin or .scene files");
@@ -79,6 +82,15 @@ impl ModelWriter {
             ));
         }
 
+        // Write Skin Dependencies
+        for dependency_key in skin_dependency_keys {
+            info!("writing skin dependency: {}", dependency_key.full_path());
+            actions.push(ModelAction::SkinFile(
+                dependency_key.path().to_string(),
+                dependency_key.name().to_string(),
+            ));
+        }
+
         actions
     }
 
@@ -89,6 +101,11 @@ impl ModelWriter {
             match action {
                 ModelAction::SkelFile(path, file_name) => {
                     ModelActionType::SkelFile.ser(&mut bit_writer);
+                    path.ser(&mut bit_writer);
+                    file_name.ser(&mut bit_writer);
+                }
+                ModelAction::SkinFile(path, file_name) => {
+                    ModelActionType::SkinFile.ser(&mut bit_writer);
                     path.ser(&mut bit_writer);
                     file_name.ser(&mut bit_writer);
                 }
@@ -136,6 +153,11 @@ impl ModelReader {
                     let file_name = String::de(bit_reader)?;
                     actions.push(ModelAction::SkelFile(path, file_name));
                 }
+                ModelActionType::SkinFile => {
+                    let path = String::de(bit_reader)?;
+                    let file_name = String::de(bit_reader)?;
+                    actions.push(ModelAction::SkinFile(path, file_name));
+                }
                 ModelActionType::None => {
                     break;
                 }
@@ -159,7 +181,7 @@ impl ModelReader {
 
         for action in actions {
             match action {
-                ModelAction::SkelFile(palette_path, palette_file_name) => {
+                ModelAction::SkelFile(path, file_name) => {
                     let (new_entity, new_file_key) = add_file_dependency(
                         project,
                         file_key,
@@ -167,8 +189,21 @@ impl ModelReader {
                         &mut commands,
                         &mut server,
                         FileExtension::Skel,
-                        &palette_path,
-                        &palette_file_name,
+                        &path,
+                        &file_name,
+                    );
+                    output.insert(new_entity, ContentEntityData::new_dependency(new_file_key));
+                }
+                ModelAction::SkinFile(path, file_name) => {
+                    let (new_entity, new_file_key) = add_file_dependency(
+                        project,
+                        file_key,
+                        file_entity,
+                        &mut commands,
+                        &mut server,
+                        FileExtension::Skin,
+                        &path,
+                        &file_name,
                     );
                     output.insert(new_entity, ContentEntityData::new_dependency(new_file_key));
                 }

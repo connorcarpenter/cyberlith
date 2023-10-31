@@ -3,18 +3,17 @@ use std::collections::HashMap;
 use bevy_ecs::{
     entity::Entity,
     prelude::{Commands, World},
-    system::{Query, Res, SystemState},
+    system::SystemState,
 };
-use bevy_log::info;
 
 use naia_bevy_server::{
-    BitReader, CommandsExt, FileBitWriter, ReplicationConfig, Serde, SerdeErr, Server,
+    BitReader, FileBitWriter, Serde, SerdeErr, Server,
 };
 
-use vortex_proto::{components::FileExtension, resources::FileKey};
+use vortex_proto::resources::FileKey;
 
 use crate::{
-    files::{add_file_dependency, FileWriter},
+    files::FileWriter,
     resources::{ContentEntityData, Project},
 };
 
@@ -35,9 +34,9 @@ pub struct SceneWriter;
 impl SceneWriter {
     fn world_to_actions(
         &self,
-        world: &mut World,
-        project: &Project,
-        content_entities: &HashMap<Entity, ContentEntityData>,
+        _world: &mut World,
+        _project: &Project,
+        _content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Vec<SceneAction> {
         // let working_file_entries = project.working_file_entries();
         //
@@ -51,7 +50,7 @@ impl SceneWriter {
         //     }
         // }
 
-        let mut actions = Vec::new();
+        let actions = Vec::new();
 
         actions
     }
@@ -95,7 +94,7 @@ pub struct SceneReader;
 
 impl SceneReader {
     fn read_to_actions(bit_reader: &mut BitReader) -> Result<Vec<SceneAction>, SerdeErr> {
-        let mut actions = Vec::new();
+        let actions = Vec::new();
 
         loop {
             let action_type = SceneActionType::de(bit_reader)?;
@@ -112,15 +111,15 @@ impl SceneReader {
 
     fn actions_to_world(
         world: &mut World,
-        project: &mut Project,
-        file_key: &FileKey,
-        file_entity: &Entity,
+        _project: &mut Project,
+        _file_key: &FileKey,
+        _file_entity: &Entity,
         actions: Vec<SceneAction>,
     ) -> HashMap<Entity, ContentEntityData> {
-        let mut output = HashMap::new();
+        let output = HashMap::new();
 
         let mut system_state: SystemState<(Commands, Server)> = SystemState::new(world);
-        let (mut commands, mut server) = system_state.get_mut(world);
+        let (_commands, _server) = system_state.get_mut(world);
 
         for action in actions {
             match action {
