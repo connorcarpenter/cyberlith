@@ -5,10 +5,17 @@ use render_api::components::Transform;
 use vortex_proto::components::ModelTransform;
 
 #[derive(Clone, Copy)]
+pub enum ScaleAxis {
+    X,
+    Y,
+    Z,
+}
+
+#[derive(Clone, Copy)]
 pub enum ModelTransformControlType {
     Translation,
     Rotation,
-    Scale,
+    Scale(ScaleAxis),
     NA,
 }
 
@@ -22,6 +29,8 @@ impl ModelTransformControl {
     pub const RADIUS: f32 = 1.5;
 
     pub const EDGE_LENGTH: f32 = 20.0;
+
+    pub const SCALE_EDGE_LENGTH: f32 = 14.0;
 
     pub fn new(model_transform_entity: Entity, control_type: ModelTransformControlType) -> Self {
         Self {

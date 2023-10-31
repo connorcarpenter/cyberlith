@@ -30,7 +30,7 @@ use vortex_proto::components::{
 use crate::app::{
     components::{
         Edge2dLocal, Edge3dLocal, LocalShape, ModelTransformControl, ModelTransformLocal,
-        OwnedByFileLocal, Vertex2d, ModelTransformControlType,
+        OwnedByFileLocal, Vertex2d, ModelTransformControlType, ScaleAxis,
     },
     resources::{
         action::model::ModelAction, camera_manager::CameraManager, canvas::Canvas,
@@ -48,8 +48,12 @@ pub struct ModelTransformData {
     translation_entity_3d: Entity,
     rotation_entity_2d: Entity,
     rotation_entity_3d: Entity,
-    scale_entity_3d: Entity,
-    scale_entity_2d: Entity,
+    scale_x_entity_3d: Entity,
+    scale_x_entity_2d: Entity,
+    scale_y_entity_3d: Entity,
+    scale_y_entity_2d: Entity,
+    scale_z_entity_3d: Entity,
+    scale_z_entity_2d: Entity,
 }
 
 impl ModelTransformData {
@@ -60,18 +64,26 @@ impl ModelTransformData {
         translation_entity_3d: Entity,
         rotation_entity_2d: Entity,
         rotation_entity_3d: Entity,
-        scale_entity_2d: Entity,
-        scale_entity_3d: Entity,
+        scale_x_entity_2d: Entity,
+        scale_x_entity_3d: Entity,
+        scale_y_entity_2d: Entity,
+        scale_y_entity_3d: Entity,
+        scale_z_entity_2d: Entity,
+        scale_z_entity_3d: Entity,
     ) -> Self {
         Self {
             edge_2d_entity,
             model_file_entity,
             translation_entity_3d,
             rotation_entity_3d,
-            scale_entity_3d,
+            scale_x_entity_3d,
+            scale_y_entity_3d,
+            scale_z_entity_3d,
             translation_entity_2d,
             rotation_entity_2d,
-            scale_entity_2d,
+            scale_x_entity_2d,
+            scale_y_entity_2d,
+            scale_z_entity_2d,
         }
     }
 }
@@ -319,8 +331,8 @@ impl ModelManager {
             ModelTransformControlType::Rotation,
         );
 
-        // scale control
-        let (scale_entity_2d, scale_entity_3d) = Self::new_model_transform_control(
+        // scale x control
+        let (scale_x_entity_2d, scale_x_entity_3d) = Self::new_model_transform_control(
             commands,
             camera_manager,
             vertex_manager,
@@ -332,7 +344,39 @@ impl ModelManager {
             translation,
             Some(translation_entity_2d),
             Color::WHITE,
-            ModelTransformControlType::Scale,
+            ModelTransformControlType::Scale(ScaleAxis::X),
+        );
+
+        // scale y control
+        let (scale_y_entity_2d, scale_y_entity_3d) = Self::new_model_transform_control(
+            commands,
+            camera_manager,
+            vertex_manager,
+            edge_manager,
+            face_manager,
+            meshes,
+            materials,
+            new_model_transform_entity,
+            translation,
+            Some(translation_entity_2d),
+            Color::WHITE,
+            ModelTransformControlType::Scale(ScaleAxis::Y),
+        );
+
+        // scale z control
+        let (scale_z_entity_2d, scale_z_entity_3d) = Self::new_model_transform_control(
+            commands,
+            camera_manager,
+            vertex_manager,
+            edge_manager,
+            face_manager,
+            meshes,
+            materials,
+            new_model_transform_entity,
+            translation,
+            Some(translation_entity_2d),
+            Color::WHITE,
+            ModelTransformControlType::Scale(ScaleAxis::Z),
         );
 
         self.register_model_transform_controls(
@@ -343,8 +387,12 @@ impl ModelManager {
             translation_entity_3d,
             rotation_entity_2d,
             rotation_entity_3d,
-            scale_entity_2d,
-            scale_entity_3d,
+            scale_x_entity_2d,
+            scale_x_entity_3d,
+            scale_y_entity_2d,
+            scale_y_entity_3d,
+            scale_z_entity_2d,
+            scale_z_entity_3d,
         );
     }
 
@@ -411,8 +459,12 @@ impl ModelManager {
         translation_entity_3d: Entity,
         rotation_entity_2d: Entity,
         rotation_entity_3d: Entity,
-        scale_entity_2d: Entity,
-        scale_entity_3d: Entity,
+        scale_x_entity_2d: Entity,
+        scale_x_entity_3d: Entity,
+        scale_y_entity_2d: Entity,
+        scale_y_entity_3d: Entity,
+        scale_z_entity_2d: Entity,
+        scale_z_entity_3d: Entity,
     ) {
         self.transform_entities.insert(
             model_transform_entity,
@@ -423,8 +475,12 @@ impl ModelManager {
                 translation_entity_3d,
                 rotation_entity_2d,
                 rotation_entity_3d,
-                scale_entity_2d,
-                scale_entity_3d,
+                scale_x_entity_2d,
+                scale_x_entity_3d,
+                scale_y_entity_2d,
+                scale_y_entity_3d,
+                scale_z_entity_2d,
+                scale_z_entity_3d,
             ),
         );
         self.edge_2d_to_transform_entity
@@ -483,10 +539,22 @@ impl ModelManager {
             .entity(model_transform_data.rotation_entity_3d)
             .despawn();
         commands
-            .entity(model_transform_data.scale_entity_2d)
+            .entity(model_transform_data.scale_x_entity_2d)
             .despawn();
         commands
-            .entity(model_transform_data.scale_entity_3d)
+            .entity(model_transform_data.scale_x_entity_3d)
+            .despawn();
+        commands
+            .entity(model_transform_data.scale_y_entity_2d)
+            .despawn();
+        commands
+            .entity(model_transform_data.scale_y_entity_3d)
+            .despawn();
+        commands
+            .entity(model_transform_data.scale_z_entity_2d)
+            .despawn();
+        commands
+            .entity(model_transform_data.scale_z_entity_3d)
             .despawn();
     }
 
@@ -546,10 +614,33 @@ impl ModelManager {
 
             // scale
             let scale = model_transform.scale_vec3();
-            let scale_with_offset = (scale * ModelTransformControl::EDGE_LENGTH) + translation;
-            let scale_control_entity = data.scale_entity_3d;
-            let mut scale_control_3d = vertex_3d_q.get_mut(scale_control_entity).unwrap();
-            scale_control_3d.set_vec3(&scale_with_offset);
+
+            {
+                // scale x
+                let scale_x = Vec3::new(scale.x, 0.0, 0.0);
+                let scale_x_with_offset = (scale_x * ModelTransformControl::SCALE_EDGE_LENGTH) + translation;
+                let scale_x_control_entity = data.scale_x_entity_3d;
+                let mut scale_x_control_3d = vertex_3d_q.get_mut(scale_x_control_entity).unwrap();
+                scale_x_control_3d.set_vec3(&scale_x_with_offset);
+            }
+
+            {
+                // scale y
+                let scale_y = Vec3::new(0.0, scale.y, 0.0);
+                let scale_y_with_offset = (scale_y * ModelTransformControl::SCALE_EDGE_LENGTH) + translation;
+                let scale_y_control_entity = data.scale_y_entity_3d;
+                let mut scale_y_control_3d = vertex_3d_q.get_mut(scale_y_control_entity).unwrap();
+                scale_y_control_3d.set_vec3(&scale_y_with_offset);
+            }
+
+            {
+                // scale z
+                let scale_z = Vec3::new(0.0, 0.0, scale.z);
+                let scale_z_with_offset = (scale_z * ModelTransformControl::SCALE_EDGE_LENGTH) + translation;
+                let scale_z_control_entity = data.scale_z_entity_3d;
+                let mut scale_z_control_3d = vertex_3d_q.get_mut(scale_z_control_entity).unwrap();
+                scale_z_control_3d.set_vec3(&scale_z_with_offset);
+            }
         }
     }
 
@@ -561,7 +652,9 @@ impl ModelManager {
                 let data = self.transform_entities.get(model_transform_entity).unwrap();
                 vertices.push(data.translation_entity_3d);
                 vertices.push(data.rotation_entity_3d);
-                vertices.push(data.scale_entity_3d);
+                vertices.push(data.scale_x_entity_3d);
+                vertices.push(data.scale_y_entity_3d);
+                vertices.push(data.scale_z_entity_3d);
             }
         }
         vertices
@@ -575,7 +668,9 @@ impl ModelManager {
                 let data = self.transform_entities.get(model_transform_entity).unwrap();
                 vertices.push(data.translation_entity_2d);
                 vertices.push(data.rotation_entity_2d);
-                vertices.push(data.scale_entity_2d);
+                vertices.push(data.scale_x_entity_2d);
+                vertices.push(data.scale_y_entity_2d);
+                vertices.push(data.scale_z_entity_2d);
             }
         }
         vertices
