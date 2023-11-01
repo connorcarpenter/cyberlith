@@ -11,7 +11,7 @@ use bevy_log::warn;
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
-use math::{convert_3d_to_2d, quat_from_spin_direction, Mat4, Quat, SerdeQuat, Vec3};
+use math::{convert_3d_to_2d, Mat4, Quat, SerdeQuat, Vec3};
 
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
@@ -43,7 +43,7 @@ use crate::app::{
 
 pub struct ModelTransformData {
     model_file_entity: Entity,
-    skel_edge_name: String,
+    skel_edge_name: String, // todo: maybe should just get this from component when necessary
     translation_entity_2d: Entity,
     translation_entity_3d: Entity,
     rotation_entity_2d: Entity,
@@ -586,9 +586,11 @@ impl ModelManager {
         for model_transform_entity in model_transform_entities.iter() {
             let data = self.transform_entities.get(model_transform_entity).unwrap();
             let model_transform = model_transform_q.get(*model_transform_entity).unwrap();
+            let model_transform = ModelTransformLocal::to_transform(model_transform);
+            // TODO: Connor: apply parent transform from bone to model_transform!
 
             // translation
-            let translation = model_transform.translation_vec3();
+            let translation = model_transform.translation;
             let translation_control_entity = data.translation_entity_3d;
             let Ok(mut translation_control_3d) = vertex_3d_q.get_mut(translation_control_entity) else {
                 continue;
@@ -597,7 +599,7 @@ impl ModelManager {
 
             // rotation
             let mut rotation_vector = Vec3::new(0.0, 0.0, ModelTransformControl::EDGE_LENGTH);
-            let rotation = model_transform.rotation();
+            let rotation = model_transform.rotation;
             rotation_vector = rotation * rotation_vector;
             let rotation_with_offset = rotation_vector + translation;
             let rotation_control_entity = data.rotation_entity_3d;
@@ -605,7 +607,7 @@ impl ModelManager {
             rotation_control_3d.set_vec3(&rotation_with_offset);
 
             // scale
-            let scale = model_transform.scale_vec3();
+            let scale = model_transform.scale;
 
             {
                 // scale x
@@ -1080,6 +1082,7 @@ impl ModelManager {
                 };
                 let mut model_transform = ModelTransformLocal::to_transform(model_transform);
                 model_transform.rotation = model_transform.rotation * corrective_rot;
+                // TODO: Connor: apply parent transform from bone to model_transform!
                 let model_transform = model_transform.compute_matrix();
 
                 for (owned_by_file, edge_3d_local) in edge_q.iter() {
@@ -1196,9 +1199,6 @@ impl ModelManager {
                 if owned_by_file.file_entity != skel_file_entity {
                     continue;
                 }
-                let Some(edge_2d_entity) = edge_manager.edge_entity_3d_to_2d(&edge_3d_entity) else {
-                    continue;
-                };
 
                 let (_, end_vertex_3d_entity) = edge_manager.edge_get_endpoints(&edge_3d_entity);
                 let shape_name_opt = shape_name_q.get(end_vertex_3d_entity).unwrap();
@@ -1261,17 +1261,17 @@ impl ModelManager {
                 };
                 let mut model_transform = ModelTransformLocal::to_transform(model_transform);
                 model_transform.rotation = model_transform.rotation * corrective_rot;
+                // TODO: Connor: apply parent transform from bone to model_transform!
 
                 for (face_3d_entity, owned_by_file) in face_q.iter() {
                     if owned_by_file.file_entity != mesh_file_entity {
                         continue;
                     }
 
-                    let (mesh_handle, mat_handle, transform) =
+                    let (mesh_handle, mat_handle, face_transform) =
                         object_q.get(face_3d_entity).unwrap();
 
-                    let transform = *transform;
-                    let transform = model_transform * transform;
+                    let transform = model_transform.multiply(face_transform);
 
                     // draw face
                     render_frame.draw_object(

@@ -30,7 +30,6 @@ pub enum ModelActionType {
     CreateModelTransform,
     DeleteModelTransform,
     MoveTransform,
-    None,
 }
 
 impl ModelAction {
@@ -60,23 +59,22 @@ impl ModelAction {
                 delete_model_transform::execute(world, &current_file_entity, self)
             }
             ModelActionType::MoveTransform => move_transform::execute(world, self),
-            _ => Vec::new(),
         }
     }
 }
 
 impl Action for ModelAction {
     fn entity_update_auth_status_impl(
-        buffered_check: &mut bool,
+        _buffered_check: &mut bool,
         action_opt: Option<&Self>,
-        entity: &Entity,
+        _entity: &Entity,
     ) {
         match action_opt {
             _ => {}
         }
     }
 
-    fn enable_top_impl(world: &mut World, last_action: Option<&Self>, enabled: &mut bool) {
+    fn enable_top_impl(_world: &mut World, last_action: Option<&Self>, enabled: &mut bool) {
         match last_action {
             _ => {
                 *enabled = true;

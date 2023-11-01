@@ -26,7 +26,6 @@ pub struct ModelTransformControl {
 }
 
 impl ModelTransformControl {
-    pub const RADIUS: f32 = 1.5;
 
     pub const EDGE_LENGTH: f32 = 20.0;
 

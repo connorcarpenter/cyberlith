@@ -58,16 +58,16 @@ impl PaletteAction {
 
 impl Action for PaletteAction {
     fn entity_update_auth_status_impl(
-        buffered_check: &mut bool,
+        _buffered_check: &mut bool,
         action_opt: Option<&Self>,
-        entity: &Entity,
+        _entity: &Entity,
     ) {
         match action_opt {
             _ => {}
         }
     }
 
-    fn enable_top_impl(world: &mut World, last_action: Option<&Self>, enabled: &mut bool) {
+    fn enable_top_impl(_world: &mut World, last_action: Option<&Self>, enabled: &mut bool) {
         match last_action {
             _ => {
                 *enabled = true;

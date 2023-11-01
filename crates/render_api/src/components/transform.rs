@@ -1,4 +1,4 @@
-use std::{default::Default, ops::Mul};
+use std::default::Default;
 
 use bevy_ecs::component::Component;
 
@@ -135,7 +135,7 @@ impl Transform {
         self.compute_matrix().inverse()
     }
 
-    pub fn mul_transform(&self, transform: Transform) -> Self {
+    pub fn multiply(&self, transform: &Transform) -> Self {
         let translation = self.transform_point(transform.translation);
         let rotation = self.rotation * transform.rotation;
         let scale = self.scale * transform.scale;
@@ -175,13 +175,5 @@ impl Transform {
 impl Default for Transform {
     fn default() -> Self {
         Self::IDENTITY
-    }
-}
-
-impl Mul<Transform> for Transform {
-    type Output = Transform;
-
-    fn mul(self, transform: Transform) -> Self::Output {
-        self.mul_transform(transform)
     }
 }

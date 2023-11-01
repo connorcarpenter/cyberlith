@@ -480,7 +480,6 @@ impl VertexManager {
             parent_vertex_3d_entity_opt,
             vertex_3d_entity,
             vertex_2d_entity,
-            ownership_opt,
         );
 
         vertex_2d_entity
@@ -491,11 +490,10 @@ impl VertexManager {
         parent_vertex_3d_entity_opt: Option<Entity>,
         entity_3d: Entity,
         entity_2d: Entity,
-        ownership_opt: Option<Entity>,
     ) {
         self.vertices_3d.insert(
             entity_3d,
-            Vertex3dData::new(parent_vertex_3d_entity_opt, entity_2d, ownership_opt),
+            Vertex3dData::new(parent_vertex_3d_entity_opt, entity_2d),
         );
         self.vertices_2d.insert(entity_2d, entity_3d);
 

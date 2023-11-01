@@ -336,26 +336,28 @@ impl ModelInputManager {
         let mut model_transform = model_transform_q.get_mut(mtc_entity).unwrap();
 
         let old_transform = ModelTransformLocal::to_transform(&model_transform);
+        let mut new_transform = old_transform;
+        // TODO: Connor: apply parent bone transform to new_transform!
 
         match mtc_type {
             ModelTransformControlType::Translation => {
-                model_transform.set_translation_vec3(&new_3d_position);
+                new_transform.translation = new_3d_position;
             }
             ModelTransformControlType::Rotation => {
                 let edge_angle = 0.0; //todo, find edge angle
 
                 let rotation_with_offset = new_3d_position;
-                let translation = model_transform.translation_vec3();
+                let translation = new_transform.translation;
                 let rotation_vector = rotation_with_offset - translation;
                 let base_direction = Vec3::Z;
                 let target_direction = rotation_vector.normalize();
                 let rotation_angle =
                     quat_from_spin_direction(edge_angle, base_direction, target_direction);
-                model_transform.set_rotation(rotation_angle);
+                new_transform.rotation = rotation_angle;
             }
             ModelTransformControlType::Scale(axis) => {
-                let translation = model_transform.translation_vec3();
-                let old_scale = model_transform.scale_vec3();
+                let translation = new_transform.translation;
+                let old_scale = new_transform.scale;
 
                 let new_scale = match axis {
                     ScaleAxis::X => {
@@ -380,14 +382,16 @@ impl ModelInputManager {
                         output
                     }
                 };
-                model_transform.set_scale_vec3(&new_scale);
+                new_transform.scale = new_scale;
             }
             _ => {
                 panic!("Unexpected MTC type");
             }
         }
 
-        let new_transform = ModelTransformLocal::to_transform(&model_transform);
+        // TODO: Connor: remove parent transform from new_transform!
+
+        ModelTransformLocal::set_transform(&mut model_transform, &new_transform);
 
         model_manager.update_last_transform_dragged(mtc_entity, old_transform, new_transform);
 

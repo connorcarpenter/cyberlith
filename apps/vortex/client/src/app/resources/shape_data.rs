@@ -14,7 +14,6 @@ pub struct Vertex3dData {
     pub(crate) entity_2d: Entity,
     pub(crate) edges_3d: HashSet<Entity>,
     pub(crate) faces_3d: HashSet<FaceKey>,
-    pub(crate) owner_opt: Option<Entity>,
     pub(crate) parent_3d_entity_opt: Option<Entity>,
     pub(crate) children_3d_entities_opt: Option<HashSet<Entity>>,
 }
@@ -23,14 +22,12 @@ impl Vertex3dData {
     pub fn new(
         parent_3d_entity_opt: Option<Entity>,
         entity_2d: Entity,
-        owner_opt: Option<Entity>,
     ) -> Self {
         Self {
             parent_3d_entity_opt,
             entity_2d,
             edges_3d: HashSet::new(),
             faces_3d: HashSet::new(),
-            owner_opt,
             children_3d_entities_opt: None,
         }
     }
