@@ -98,8 +98,17 @@ impl ModelTransformData {
         )
     }
 
-    pub(crate) fn get_or_update_bone_transform(&mut self, transform_entity: &Entity) -> Transform {
-        let (edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end) = self.get_or_update_skel_entities(transform_entity);
+    pub(crate) fn get_or_update_bone_transform(
+        &mut self,
+        file_manager: &FileManager,
+        edge_manager: &EdgeManager,
+        edge_3d_q: &Query<(Entity, &ShapeName, &OwnedByFileLocal), With<Edge3d>>
+    ) -> Transform {
+        let (edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end) = self.get_or_update_skel_entities(
+            file_manager,
+            edge_manager,
+            edge_3d_q
+        );
 
         self.get_bone_transform_from_entities(
             &edge_3d_entity,
@@ -117,7 +126,12 @@ impl ModelTransformData {
         return None;
     }
 
-    fn get_bone_transform_from_entities(&self, edge_3d_entity: &Entity, vertex_3d_entity_start: &Entity, vertex_3d_entity_end: &Entity) -> Transform {
+    fn get_bone_transform_from_entities(
+        &self,
+        edge_3d_entity: &Entity,
+        vertex_3d_entity_start: &Entity,
+        vertex_3d_entity_end: &Entity
+    ) -> Transform {
         todo!("get start_pos, end_pos, and spin from entities");
         let start_pos = Vec3::ZERO;
         let end_pos = Vec3::ZERO;
@@ -127,15 +141,32 @@ impl ModelTransformData {
 
     fn get_or_update_skel_entities(
         &mut self,
-        transform_entity: &Entity,
+        file_manager: &FileManager,
+        edge_manager: &EdgeManager,
+        edge_3d_q: &Query<(Entity, &ShapeName, &OwnedByFileLocal), With<Edge3d>>,
     ) -> (Entity, Entity, Entity) {
         if let Some((edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end)) = self.skel_entities {
             return (edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end);
         }
 
+        let skel_file_entity = file_manager.file_get_dependency(&self.model_file_entity, FileExtension::Skel).unwrap();
+
         // go fetch entities ..
-        // cache for later
-        todo!()
+        let bone_name: &str = &self.skel_edge_name;
+
+        for (edge_3d_entity, shape_name, owned_by) in edge_3d_q.iter() {
+            if owned_by.file_entity != skel_file_entity {
+                continue;
+            }
+            if *shape_name.value != bone_name {
+                continue;
+            }
+            let (vertex_3d_entity_start, vertex_3d_entity_end) = edge_manager.edge_get_endpoints(&edge_3d_entity);
+            self.skel_entities = Some((edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end));
+            return (edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end);
+        }
+
+        panic!("could not find skel edge for bone {}", bone_name);
     }
 }
 
@@ -634,10 +665,19 @@ impl ModelManager {
         };
 
         let mut system_state: SystemState<(
+            Res<FileManager>,
+            Res<EdgeManager>,
             Query<&mut Vertex3d>,
+            Query<(Entity, &ShapeName, &OwnedByFileLocal), With<Edge3d>>,
             Query<&ModelTransform>,
         )> = SystemState::new(world);
-        let (mut vertex_3d_q, model_transform_q) = system_state.get_mut(world);
+        let (
+            file_manager,
+            edge_manager,
+            mut vertex_3d_q,
+            edge_3d_q,
+            model_transform_q
+        ) = system_state.get_mut(world);
 
         for model_transform_entity in model_transform_entities.iter() {
             let model_transform_data = self.transform_entities.get_mut(model_transform_entity).unwrap();
@@ -645,7 +685,10 @@ impl ModelManager {
             let model_transform = ModelTransformLocal::to_transform(model_transform);
 
             // apply bone transform to model_transform
-            let bone_transform = model_transform_data.get_or_update_bone_transform(model_transform_entity);
+            let bone_transform = model_transform_data.get_or_update_bone_transform(
+                &file_manager,
+                &edge_manager,
+                &edge_3d_q);
             let model_transform = bone_transform.multiply(&model_transform);
 
             // translation
