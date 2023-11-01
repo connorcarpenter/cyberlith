@@ -11,7 +11,7 @@ use bevy_log::warn;
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
-use math::{convert_3d_to_2d, Mat4, Quat, SerdeQuat, Vec3};
+use math::{convert_3d_to_2d, matrix_transform_point, Quat, SerdeQuat, Vec3};
 
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
@@ -728,7 +728,7 @@ impl ModelManager {
             let model_transform = ModelTransformLocal::to_transform(model_transform);
 
             // apply bone transform to model_transform
-            let model_transform = bone_transform.multiply(&model_transform);
+            let model_transform = model_transform.multiply(&bone_transform);
 
             // translation
             let translation = model_transform.translation;
@@ -1230,7 +1230,7 @@ impl ModelManager {
                 model_transform.rotation = model_transform.rotation * corrective_rot;
 
                 // apply bone transform to model_transform
-                let model_transform = bone_transform.multiply(&model_transform);
+                let model_transform = model_transform.multiply(&bone_transform);
 
                 let model_transform_matrix = model_transform.compute_matrix();
 
@@ -1249,7 +1249,7 @@ impl ModelManager {
                         let point = vertex_3d.as_vec3();
 
                         // transform by model_transform
-                        let point = transform_point(&model_transform_matrix, &point);
+                        let point = matrix_transform_point(&model_transform_matrix, &point);
 
                         // transform to 2D
                         let (coords, depth) = convert_3d_to_2d(
@@ -1423,7 +1423,7 @@ impl ModelManager {
                 ) else {
                     continue;
                 };
-                let model_transform = bone_transform.multiply(&model_transform);
+                let model_transform = model_transform.multiply(&bone_transform);
 
                 for (face_3d_entity, owned_by_file) in face_q.iter() {
                     if owned_by_file.file_entity != mesh_file_entity {
@@ -1433,14 +1433,14 @@ impl ModelManager {
                     let (mesh_handle, mat_handle, face_transform) =
                         object_q.get(face_3d_entity).unwrap();
 
-                    let transform = model_transform.multiply(face_transform);
+                    let face_transform = face_transform.multiply(&model_transform);
 
                     // draw face
                     render_frame.draw_object(
                         Some(&render_layer),
                         mesh_handle,
                         mat_handle,
-                        &transform,
+                        &face_transform,
                     );
                 }
             }
@@ -1552,15 +1552,4 @@ fn get_shape_color(
     } else {
         vertex_manager.mat_disabled_vertex
     }
-}
-
-fn transform_point(transform_mat: &Mat4, point: &Vec3) -> Vec3 {
-    // Convert the point to a 4D vector (homogeneous coordinates)
-    let mut point4 = point.extend(1.0);
-
-    // Apply the transformation
-    point4 = *transform_mat * point4;
-
-    // Convert the result back to a 3D vector
-    point4.truncate()
 }

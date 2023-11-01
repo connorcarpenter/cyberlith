@@ -1,4 +1,4 @@
-use glam::{Mat3, Quat, Vec3};
+use glam::{Mat3, Mat4, Quat, Vec3};
 
 use naia_serde::{
     BitReader, BitWrite, ConstBitLength, SerdeErr, SerdeInternal as Serde, SignedInteger,
@@ -328,4 +328,15 @@ fn acos_approx(val: f32) -> f32 {
     } else {
         core::f32::consts::PI - result
     }
+}
+
+pub fn matrix_transform_point(transform_mat: &Mat4, point: &Vec3) -> Vec3 {
+    // Convert the point to a 4D vector (homogeneous coordinates)
+    let mut point4 = point.extend(1.0);
+
+    // Apply the transformation
+    point4 = *transform_mat * point4;
+
+    // Convert the result back to a 3D vector
+    point4.truncate()
 }

@@ -333,7 +333,7 @@ impl ModelReader {
         for action in actions {
             match action {
                 ModelAction::SkelFile(path, file_name) => {
-                    let (new_dependency_entity, dependency_file_entity, dependency_file_key) =
+                    let (new_dependency_entity, _dependency_file_entity, dependency_file_key) =
                         add_file_dependency(
                             project,
                             file_key,

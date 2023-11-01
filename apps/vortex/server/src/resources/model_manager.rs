@@ -10,11 +10,11 @@ impl Default for ModelManager {
 }
 
 impl ModelManager {
-    pub fn has_model_transform(&self, model_entity: &Entity) -> bool {
+    pub fn has_model_transform(&self, _model_entity: &Entity) -> bool {
         todo!()
     }
 
-    pub fn on_create_model_transform(&mut self, model_entity: &Entity) {
+    pub fn on_create_model_transform(&mut self, _model_entity: &Entity) {
         todo!()
     }
 
@@ -22,5 +22,5 @@ impl ModelManager {
         self.deregister_model_transform(model_entity);
     }
 
-    pub fn deregister_model_transform(&mut self, model_entity: &Entity) {}
+    pub fn deregister_model_transform(&mut self, _model_entity: &Entity) {}
 }

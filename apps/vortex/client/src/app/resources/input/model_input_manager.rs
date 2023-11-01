@@ -352,7 +352,7 @@ impl ModelInputManager {
         let new_transform = old_transform;
 
         // apply parent bone transform to new_transform
-        let mut new_transform = bone_transform.multiply(&new_transform);
+        let mut new_transform = new_transform.multiply(&bone_transform);
 
         match mtc_type {
             ModelTransformControlType::Translation => {
@@ -405,7 +405,9 @@ impl ModelInputManager {
         }
 
         // remove parent transform from new_transform
-        let new_transform = bone_transform.inverse().multiply(&new_transform);
+        let mut bone_transform_inverse = bone_transform.inverse();
+        bone_transform_inverse.scale = Vec3::ONE;
+        let new_transform = new_transform.multiply(&bone_transform_inverse);
 
         ModelTransformLocal::set_transform(&mut model_transform, &new_transform);
 
