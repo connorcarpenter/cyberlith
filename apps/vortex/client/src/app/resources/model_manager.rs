@@ -27,23 +27,21 @@ use vortex_proto::components::{
     Vertex3d,
 };
 
-use crate::app::{
-    components::{
-        Edge2dLocal, Edge3dLocal, LocalShape, ModelTransformControl, ModelTransformControlType,
-        ModelTransformLocal, OwnedByFileLocal, ScaleAxis, Vertex2d,
-    },
-    resources::{
-        action::model::ModelAction, camera_manager::CameraManager, canvas::Canvas,
-        compass::Compass, edge_manager::edge_is_enabled, edge_manager::EdgeManager,
-        face_manager::FaceManager, file_manager::FileManager, grid::Grid, input::InputManager,
-        shape_data::CanvasShape, tab_manager::TabManager, vertex_manager::VertexManager,
-    },
-    ui::{widgets::create_networked_dependency, BindingState, UiState},
-};
+use crate::app::{components::{
+    Edge2dLocal, Edge3dLocal, LocalShape, ModelTransformControl, ModelTransformControlType,
+    ModelTransformLocal, OwnedByFileLocal, ScaleAxis, Vertex2d,
+}, resources::{
+    action::model::ModelAction, camera_manager::CameraManager, canvas::Canvas,
+    compass::Compass, edge_manager::edge_is_enabled, edge_manager::EdgeManager,
+    face_manager::FaceManager, file_manager::FileManager, grid::Grid, input::InputManager,
+    shape_data::CanvasShape, tab_manager::TabManager, vertex_manager::VertexManager,
+}, transform_from_endpoints_and_spin, ui::{widgets::create_networked_dependency, BindingState, UiState}};
 
 pub struct ModelTransformData {
     model_file_entity: Entity,
     skel_edge_name: String, // todo: maybe should just get this from component when necessary
+    // Option<(edge 3d entity, vertex 3d entity start, vertex 3d entity end)>
+    skel_entities: Option<(Entity, Entity, Entity)>,
     translation_entity_2d: Entity,
     translation_entity_3d: Entity,
     rotation_entity_2d: Entity,
@@ -73,6 +71,7 @@ impl ModelTransformData {
     ) -> Self {
         Self {
             model_file_entity,
+            skel_entities: None,
             skel_edge_name,
             translation_entity_3d,
             rotation_entity_3d,
@@ -85,6 +84,58 @@ impl ModelTransformData {
             scale_y_entity_2d,
             scale_z_entity_2d,
         }
+    }
+
+    pub(crate) fn get_bone_transform(&self) -> Option<Transform> {
+        let (edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end) = self.get_skel_entities()?;
+
+        Some(
+            self.get_bone_transform_from_entities(
+                &edge_3d_entity,
+                &vertex_3d_entity_start,
+                &vertex_3d_entity_end
+            )
+        )
+    }
+
+    pub(crate) fn get_or_update_bone_transform(&mut self, transform_entity: &Entity) -> Transform {
+        let (edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end) = self.get_or_update_skel_entities(transform_entity);
+
+        self.get_bone_transform_from_entities(
+            &edge_3d_entity,
+            &vertex_3d_entity_start,
+            &vertex_3d_entity_end
+        )
+    }
+
+    fn get_skel_entities(
+        &self,
+    ) -> Option<(Entity, Entity, Entity)> {
+        if let Some((edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end)) = self.skel_entities {
+            return Some((edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end));
+        }
+        return None;
+    }
+
+    fn get_bone_transform_from_entities(&self, edge_3d_entity: &Entity, vertex_3d_entity_start: &Entity, vertex_3d_entity_end: &Entity) -> Transform {
+        todo!("get start_pos, end_pos, and spin from entities");
+        let start_pos = Vec3::ZERO;
+        let end_pos = Vec3::ZERO;
+        let spin = 0.0;
+        transform_from_endpoints_and_spin(start_pos, end_pos, spin)
+    }
+
+    fn get_or_update_skel_entities(
+        &mut self,
+        transform_entity: &Entity,
+    ) -> (Entity, Entity, Entity) {
+        if let Some((edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end)) = self.skel_entities {
+            return (edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end);
+        }
+
+        // go fetch entities ..
+        // cache for later
+        todo!()
     }
 }
 
@@ -574,24 +625,32 @@ impl ModelManager {
     }
 
     fn sync_transform_controls(
-        &self,
+        &mut self,
+        world: &mut World,
         file_entity: &Entity,
-        vertex_3d_q: &mut Query<&mut Vertex3d>,
-        model_transform_q: &Query<&ModelTransform>,
     ) {
         let Some(model_transform_entities) = self.model_file_to_transform_entity.get(file_entity) else {
             return;
         };
 
+        let mut system_state: SystemState<(
+            Query<&mut Vertex3d>,
+            Query<&ModelTransform>,
+        )> = SystemState::new(world);
+        let (mut vertex_3d_q, model_transform_q) = system_state.get_mut(world);
+
         for model_transform_entity in model_transform_entities.iter() {
-            let data = self.transform_entities.get(model_transform_entity).unwrap();
+            let model_transform_data = self.transform_entities.get_mut(model_transform_entity).unwrap();
             let model_transform = model_transform_q.get(*model_transform_entity).unwrap();
             let model_transform = ModelTransformLocal::to_transform(model_transform);
-            // TODO: Connor: apply parent transform from bone to model_transform!
+
+            // apply bone transform to model_transform
+            let bone_transform = model_transform_data.get_or_update_bone_transform(model_transform_entity);
+            let model_transform = bone_transform.multiply(&model_transform);
 
             // translation
             let translation = model_transform.translation;
-            let translation_control_entity = data.translation_entity_3d;
+            let translation_control_entity = model_transform_data.translation_entity_3d;
             let Ok(mut translation_control_3d) = vertex_3d_q.get_mut(translation_control_entity) else {
                 continue;
             };
@@ -602,7 +661,7 @@ impl ModelManager {
             let rotation = model_transform.rotation;
             rotation_vector = rotation * rotation_vector;
             let rotation_with_offset = rotation_vector + translation;
-            let rotation_control_entity = data.rotation_entity_3d;
+            let rotation_control_entity = model_transform_data.rotation_entity_3d;
             let mut rotation_control_3d = vertex_3d_q.get_mut(rotation_control_entity).unwrap();
             rotation_control_3d.set_vec3(&rotation_with_offset);
 
@@ -614,7 +673,7 @@ impl ModelManager {
                 let scale_x = Vec3::new(scale.x, 0.0, 0.0);
                 let scale_x_with_offset =
                     (scale_x * ModelTransformControl::SCALE_EDGE_LENGTH) + translation;
-                let scale_x_control_entity = data.scale_x_entity_3d;
+                let scale_x_control_entity = model_transform_data.scale_x_entity_3d;
                 let mut scale_x_control_3d = vertex_3d_q.get_mut(scale_x_control_entity).unwrap();
                 scale_x_control_3d.set_vec3(&scale_x_with_offset);
             }
@@ -624,7 +683,7 @@ impl ModelManager {
                 let scale_y = Vec3::new(0.0, scale.y, 0.0);
                 let scale_y_with_offset =
                     (scale_y * ModelTransformControl::SCALE_EDGE_LENGTH) + translation;
-                let scale_y_control_entity = data.scale_y_entity_3d;
+                let scale_y_control_entity = model_transform_data.scale_y_entity_3d;
                 let mut scale_y_control_3d = vertex_3d_q.get_mut(scale_y_control_entity).unwrap();
                 scale_y_control_3d.set_vec3(&scale_y_with_offset);
             }
@@ -634,7 +693,7 @@ impl ModelManager {
                 let scale_z = Vec3::new(0.0, 0.0, scale.z);
                 let scale_z_with_offset =
                     (scale_z * ModelTransformControl::SCALE_EDGE_LENGTH) + translation;
-                let scale_z_control_entity = data.scale_z_entity_3d;
+                let scale_z_control_entity = model_transform_data.scale_z_entity_3d;
                 let mut scale_z_control_3d = vertex_3d_q.get_mut(scale_z_control_entity).unwrap();
                 scale_z_control_3d.set_vec3(&scale_z_with_offset);
             }
@@ -674,7 +733,7 @@ impl ModelManager {
     }
 
     pub fn sync_vertices(
-        &self,
+        &mut self,
         world: &mut World,
         vertex_manager: &VertexManager,
         file_entity: &Entity,
@@ -687,19 +746,13 @@ impl ModelManager {
         let local_vertex_3d_scale = Vec3::splat(local_vertex_3d_scale);
         let local_edge_3d_scale = LocalShape::EDGE_THICKNESS / camera_3d_scale;
 
-        let mut system_state: SystemState<(
-            Res<FileManager>,
-            Query<&mut Vertex3d>,
-            Query<&ModelTransform>,
-        )> = SystemState::new(world);
-        let (file_manager, mut vertex_3d_q, model_transform_q) = system_state.get_mut(world);
-        let Some(skel_file_entity) = file_manager.file_get_dependency(&file_entity, FileExtension::Skel) else {
+        let Some(skel_file_entity) = world.get_resource::<FileManager>().unwrap().file_get_dependency(&file_entity, FileExtension::Skel) else {
             return;
         };
 
         // ModelTransformControls
         // (setting Vertex3d)
-        self.sync_transform_controls(file_entity, &mut vertex_3d_q, &model_transform_q);
+        self.sync_transform_controls(world, file_entity);
 
         // gather 3D entities for Compass/Grid/ModelTransformControls Vertices
         let mut vertex_3d_entities: HashSet<Entity> = HashSet::new();
@@ -1080,10 +1133,17 @@ impl ModelManager {
                 let Some(mesh_file_entity) = file_manager.file_get_dependency(&skin_file_entity, FileExtension::Mesh) else {
                     continue;
                 };
+                let model_transform_data = self.transform_entities.get(model_transform_entity).unwrap();
+                let Some(bone_transform) = model_transform_data.get_bone_transform() else {
+                    continue;
+                };
                 let mut model_transform = ModelTransformLocal::to_transform(model_transform);
                 model_transform.rotation = model_transform.rotation * corrective_rot;
-                // TODO: Connor: apply parent transform from bone to model_transform!
-                let model_transform = model_transform.compute_matrix();
+
+                // apply bone transform to model_transform
+                let model_transform = bone_transform.multiply(&model_transform);
+
+                let model_transform_matrix = model_transform.compute_matrix();
 
                 for (owned_by_file, edge_3d_local) in edge_q.iter() {
                     if owned_by_file.file_entity != mesh_file_entity {
@@ -1100,7 +1160,7 @@ impl ModelManager {
                         let point = vertex_3d.as_vec3();
 
                         // transform by model_transform
-                        let point = transform_point(&model_transform, &point);
+                        let point = transform_point(&model_transform_matrix, &point);
 
                         // transform to 2D
                         let (coords, depth) = convert_3d_to_2d(
@@ -1259,9 +1319,15 @@ impl ModelManager {
                     .file_get_dependency(&skin_file_entity, FileExtension::Mesh) else {
                     continue;
                 };
+                let model_transform_data = self.transform_entities.get(model_transform_entity).unwrap();
                 let mut model_transform = ModelTransformLocal::to_transform(model_transform);
                 model_transform.rotation = model_transform.rotation * corrective_rot;
-                // TODO: Connor: apply parent transform from bone to model_transform!
+
+                // apply bone transform to model_transform
+                let Some(bone_transform) = model_transform_data.get_bone_transform() else {
+                    continue;
+                };
+                let model_transform = bone_transform.multiply(&model_transform);
 
                 for (face_3d_entity, owned_by_file) in face_q.iter() {
                     if owned_by_file.file_entity != mesh_file_entity {
@@ -1368,6 +1434,11 @@ impl ModelManager {
             let drags = std::mem::take(&mut self.drags);
             return Some(drags);
         }
+    }
+
+    pub fn get_bone_transform(&self, mtc_entity: &Entity) -> Option<Transform> {
+        let mtc_data = self.transform_entities.get(mtc_entity)?;
+        return mtc_data.get_bone_transform();
     }
 }
 

@@ -303,6 +303,11 @@ impl ModelInputManager {
         let mtc_entity = mtc_component.model_transform_entity;
         let mtc_type = mtc_component.control_type;
 
+        // get bone transform
+        let Some(bone_transform) = model_manager.get_bone_transform(&mtc_entity) else {
+            return;
+        };
+
         // check status
         let auth_status = commands.entity(mtc_entity).authority(&client).unwrap();
         if !(auth_status.is_requested() || auth_status.is_granted()) {
@@ -336,8 +341,10 @@ impl ModelInputManager {
         let mut model_transform = model_transform_q.get_mut(mtc_entity).unwrap();
 
         let old_transform = ModelTransformLocal::to_transform(&model_transform);
-        let mut new_transform = old_transform;
-        // TODO: Connor: apply parent bone transform to new_transform!
+        let new_transform = old_transform;
+
+        // apply parent bone transform to new_transform
+        let mut new_transform = bone_transform.multiply(&new_transform);
 
         match mtc_type {
             ModelTransformControlType::Translation => {
@@ -389,7 +396,8 @@ impl ModelInputManager {
             }
         }
 
-        // TODO: Connor: remove parent transform from new_transform!
+        // remove parent transform from new_transform
+        let new_transform = bone_transform.inverse().multiply(&new_transform);
 
         ModelTransformLocal::set_transform(&mut model_transform, &new_transform);
 

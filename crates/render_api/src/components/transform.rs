@@ -135,6 +135,11 @@ impl Transform {
         self.compute_matrix().inverse()
     }
 
+    pub fn inverse(&self) -> Self {
+        let inverse_matrix = self.compute_matrix().inverse();
+        Transform::from_matrix(inverse_matrix)
+    }
+
     pub fn multiply(&self, transform: &Transform) -> Self {
         let translation = self.transform_point(transform.translation);
         let rotation = self.rotation * transform.rotation;
