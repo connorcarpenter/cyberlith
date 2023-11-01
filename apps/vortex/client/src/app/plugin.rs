@@ -5,9 +5,8 @@ use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin, ReceiveEvents};
 
 use render_api::{resources::WindowSettings, Draw};
 
-use vortex_proto::components::ModelTransform;
 use vortex_proto::{
-    components::{
+    components::{ModelTransform,
         AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, Edge3d, EdgeAngle,
         EntryKind, Face3d, FaceColor, FileDependency, FileSystemChild, FileSystemEntry,
         FileSystemRootChild, FileType, OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot,
@@ -15,12 +14,12 @@ use vortex_proto::{
     protocol,
 };
 
-use crate::app::resources::model_manager::ModelManager;
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
     config::ConfigPlugin,
-    events::{InsertComponentEvent, LoginEvent, ShapeColorResyncEvent},
+    events::{RemoveComponentEvent, InsertComponentEvent, LoginEvent, ShapeColorResyncEvent},
     resources::{
+        model_manager::ModelManager,
         action::file::FileActions, animation_manager::AnimationManager,
         camera_manager::CameraManager, canvas::Canvas, compass::Compass, edge_manager::EdgeManager,
         face_manager::FaceManager, file_manager::FileManager, grid::Grid, input::InputManager,
@@ -63,6 +62,7 @@ impl Plugin for VortexPlugin {
             // Networking Systems
             .add_systems(Update, network::login)
             .add_systems(Startup, network::insert_component_event_startup)
+            .add_systems(Startup, network::remove_component_event_startup)
             .add_systems(Startup, network::update_component_event_startup)
             .add_systems(Startup, network::auth_event_startup)
             .add_systems(
@@ -76,7 +76,7 @@ impl Plugin for VortexPlugin {
                     network::despawn_entity_events,
                     network::insert_component_events,
                     network::update_component_events,
-                    network::remove_component_events.before(network::despawn_entity_events),
+                    network::remove_component_events,
                     network::auth_events,
                 )
                     .in_set(ReceiveEvents),
@@ -101,6 +101,23 @@ impl Plugin for VortexPlugin {
             .add_event::<InsertComponentEvent<BackgroundSkinColor>>()
             .add_event::<InsertComponentEvent<FaceColor>>()
             .add_event::<InsertComponentEvent<ModelTransform>>()
+            // Remove Component Events
+            .add_event::<RemoveComponentEvent<FileSystemEntry>>()
+            .add_event::<RemoveComponentEvent<FileSystemRootChild>>()
+            .add_event::<RemoveComponentEvent<FileSystemChild>>()
+            .add_event::<RemoveComponentEvent<ChangelistEntry>>()
+            .add_event::<RemoveComponentEvent<FileDependency>>()
+            .add_event::<RemoveComponentEvent<Vertex3d>>()
+            .add_event::<RemoveComponentEvent<VertexRoot>>()
+            .add_event::<RemoveComponentEvent<Edge3d>>()
+            .add_event::<RemoveComponentEvent<Face3d>>()
+            .add_event::<RemoveComponentEvent<ShapeName>>()
+            .add_event::<RemoveComponentEvent<AnimFrame>>()
+            .add_event::<RemoveComponentEvent<AnimRotation>>()
+            .add_event::<RemoveComponentEvent<PaletteColor>>()
+            .add_event::<RemoveComponentEvent<BackgroundSkinColor>>()
+            .add_event::<RemoveComponentEvent<FaceColor>>()
+            .add_event::<RemoveComponentEvent<ModelTransform>>()
             // shape waitlist
             .init_resource::<ShapeWaitlist>()
             // Insert Component Systems
@@ -115,6 +132,13 @@ impl Plugin for VortexPlugin {
             .add_systems(Update, network::insert_palette_events)
             .add_systems(Update, network::insert_skin_events)
             .add_systems(Update, network::insert_model_events)
+            // Remove Component Systems
+            // todo... possibly need to ensure one of these systems runs BEFORE `despawn_entity_events`
+            .add_systems(Update, network::remove_file_component_events)
+            .add_systems(Update, network::remove_shape_component_events)
+            .add_systems(Update, network::remove_animation_component_events)
+            .add_systems(Update, network::remove_color_component_events)
+            .add_systems(Update, network::remove_model_component_events)
             // UI Configuration
             .init_resource::<UiState>()
             .init_resource::<NamingBarState>()

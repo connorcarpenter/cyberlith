@@ -345,7 +345,7 @@ impl ModelInputManager {
 
                 let rotation_with_offset = new_3d_position;
                 let translation = model_transform.translation_vec3();
-                let mut rotation_vector = rotation_with_offset - translation;
+                let rotation_vector = rotation_with_offset - translation;
                 let base_direction = Vec3::Z;
                 let target_direction = rotation_vector.normalize();
                 let rotation_angle = quat_from_spin_direction(edge_angle, base_direction, target_direction);

@@ -1,10 +1,8 @@
 use bevy_ecs::{
-    event::EventReader,
-    system::{Commands, Query, ResMut},
+    event::{EventReader, EventWriter},
+    system::{Commands, Query, ResMut, Resource, SystemState},
+    world::{Mut, World},
 };
-use bevy_ecs::event::EventWriter;
-use bevy_ecs::system::{Resource, SystemState};
-use bevy_ecs::world::{Mut, World};
 use bevy_log::info;
 
 use naia_bevy_client::{events::RemoveComponentEvents, Client, Replicate};
@@ -14,6 +12,7 @@ use render_api::{base::CpuMesh, Assets};
 use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d, Face3d, FaceColor, FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild, ModelTransform, PaletteColor, ShapeName, Vertex3d};
 
 use crate::app::{
+    events::RemoveComponentEvent,
     components::file_system::{FileSystemParent, FileSystemUiState},
     resources::{
         animation_manager::AnimationManager, canvas::Canvas, edge_manager::EdgeManager,
@@ -22,8 +21,6 @@ use crate::app::{
         vertex_manager::VertexManager, model_manager::ModelManager,
     },
 };
-use crate::app::events::RemoveComponentEvent;
-
 
 #[derive(Resource)]
 struct CachedRemoveComponentEventsState {
@@ -78,143 +75,205 @@ fn remove_component_event<T: Replicate>(world: &mut World, events: &RemoveCompon
     }
 }
 
-todo!(convert this to separate systems!);
-pub fn remove_component_events_old(
-    mut commands: Commands,
+pub fn remove_file_component_events(
+    mut entry_events: EventReader<RemoveComponentEvent<FileSystemEntry>>,
+    mut root_child_events: EventReader<RemoveComponentEvent<FileSystemRootChild>>,
+    mut child_events: EventReader<RemoveComponentEvent<FileSystemChild>>,
+    mut cl_events: EventReader<RemoveComponentEvent<ChangelistEntry>>,
+    mut dependencies_events: EventReader<RemoveComponentEvent<FileDependency>>,
     mut client: Client,
-    mut canvas: ResMut<Canvas>,
     mut file_manager: ResMut<FileManager>,
+    mut tab_manager: ResMut<TabManager>,
+    mut parent_q: Query<&mut FileSystemParent>,
+    mut fs_state_q: Query<&mut FileSystemUiState>,
+) {
+    for event in entry_events.iter() {
+
+        let entity = event.entity;
+
+        info!("entity: `{:?}`, removed FileSystemEntry", entity);
+
+        file_manager.on_file_delete(&mut client, &mut tab_manager, &entity);
+    }
+
+    for event in root_child_events.iter() {
+
+        let entity = event.entity;
+
+        info!("entity: `{:?}`, removed FileSystemRootChild", entity);
+
+        let Ok(mut parent) = parent_q.get_mut(file_manager.project_root_entity) else {
+            continue;
+        };
+        parent.remove_child(&entity);
+    }
+
+    for event in child_events.iter() {
+
+        let entity = event.entity;
+
+        info!("entity: `{:?}`, removed FileSystemChild", entity);
+
+        let Some(parent_entity) = event.component.parent_id.get(&client) else {
+            continue;
+        };
+        let Ok(mut parent) = parent_q.get_mut(parent_entity) else {
+            continue;
+        };
+        parent.remove_child(&entity);
+    }
+
+    for event in cl_events.iter() {
+
+        let entity = event.entity;
+
+        info!("entity: `{:?}`, removed ChangelistEntry", entity);
+
+        let entry = event.component.file_key();
+        file_manager.remove_changelist_entry(&entry);
+
+        if *event.component.status != ChangelistStatus::Deleted {
+            if let Some(file_entity) = event.component.file_entity.get(&client) {
+                if let Ok(mut fs_state) = fs_state_q.get_mut(file_entity) {
+                    fs_state.change_status = None;
+                }
+            }
+        }
+    }
+    for event in dependencies_events.iter() {
+
+        let entity = event.entity;
+
+        info!("entity: `{:?}`, removed FileDependency", entity);
+
+        let file_entity = event.component.file_entity.get(&client).unwrap();
+        let dependency_entity = event.component.dependency_entity.get(&client).unwrap();
+
+        file_manager.file_remove_dependency(&file_entity, &dependency_entity);
+    }
+}
+
+pub fn remove_shape_component_events(
+    mut shape_name_events: EventReader<RemoveComponentEvent<ShapeName>>,
+    mut vertex_events: EventReader<RemoveComponentEvent<Vertex3d>>,
+    mut edge_events: EventReader<RemoveComponentEvent<Edge3d>>,
+    mut face_events: EventReader<RemoveComponentEvent<Face3d>>,
+    mut commands: Commands,
+    mut canvas: ResMut<Canvas>,
     mut input_manager: ResMut<InputManager>,
     mut vertex_manager: ResMut<VertexManager>,
     mut edge_manager: ResMut<EdgeManager>,
     mut face_manager: ResMut<FaceManager>,
-    mut tab_manager: ResMut<TabManager>,
+    mut meshes: ResMut<Assets<CpuMesh>>,
+) {
+    for event in shape_name_events.iter() {
+        let entity = event.entity;
+
+        let name = (*event.component.value).clone();
+
+        info!(
+            "entity: `{:?}`, removed ShapeName(name: {:?})",
+            entity, name
+        );
+    }
+
+    for event in vertex_events.iter() {
+        let entity = event.entity;
+        info!("entity: `{:?}`, removed Vertex3d", entity);
+
+        vertex_manager.cleanup_deleted_vertex(
+            &mut commands,
+            &mut canvas,
+            &mut input_manager,
+            &entity,
+        );
+    }
+    for event in edge_events.iter() {
+        let entity = event.entity;
+        info!("entity: `{:?}`, removed Edge3d", entity);
+
+        edge_manager.cleanup_deleted_edge(
+            &mut commands,
+            &mut canvas,
+            &mut input_manager,
+            &mut vertex_manager,
+            &mut face_manager,
+            &entity,
+        );
+    }
+    for event in face_events.iter() {
+        let entity = event.entity;
+
+        info!("entity: `{:?}`, removed Face3d", entity);
+
+        face_manager.cleanup_deleted_face_3d(&mut commands, &mut meshes, &entity);
+    }
+}
+
+pub fn remove_animation_component_events(
+    mut anim_frame_events: EventReader<RemoveComponentEvent<AnimFrame>>,
+    mut anim_rotation_events: EventReader<RemoveComponentEvent<AnimRotation>>,
+    client: Client,
     mut animation_manager: ResMut<AnimationManager>,
+) {
+    for event in anim_frame_events.iter() {
+        let entity = event.entity;
+        info!("entity: `{:?}`, removed AnimFrame", entity);
+
+        let file_entity = event.component.file_entity.get(&client).unwrap();
+
+        animation_manager.deregister_frame(&file_entity, &entity);
+    }
+    for event in anim_rotation_events.iter() {
+        let entity = event.entity;
+        info!("entity: `{:?}`, removed AnimRotation", entity);
+
+        animation_manager.deregister_rotation(&entity);
+    }
+}
+
+pub fn remove_color_component_events(
+    mut palette_events: EventReader<RemoveComponentEvent<PaletteColor>>,
+    mut bck_color_events: EventReader<RemoveComponentEvent<BackgroundSkinColor>>,
+    mut face_color_events: EventReader<RemoveComponentEvent<FaceColor>>,
+    client: Client,
     mut palette_manager: ResMut<PaletteManager>,
     mut skin_manager: ResMut<SkinManager>,
-    mut model_manager: ResMut<ModelManager>,
-    mut meshes: ResMut<Assets<CpuMesh>>,
-    mut event_reader: EventReader<RemoveComponentEvents>,
-    mut parent_q: Query<&mut FileSystemParent>,
-    mut fs_state_q: Query<&mut FileSystemUiState>,
 ) {
-    for events in event_reader.iter() {
-        for (entity, _component) in events.read::<FileSystemEntry>() {
-            info!("entity: `{:?}`, removed FileSystemEntry", entity);
+    for event in palette_events.iter() {
+        let entity = event.entity;
+        info!("entity: `{:?}`, removed PaletteColor", entity);
 
-            file_manager.on_file_delete(&mut client, &mut tab_manager, &entity);
-        }
+        let file_entity = event.component.file_entity.get(&client).unwrap();
+        let color_index = *event.component.index as usize;
 
-        for (entity, _component) in events.read::<FileSystemRootChild>() {
-            info!("entity: `{:?}`, removed FileSystemRootChild", entity);
+        palette_manager.deregister_color(&file_entity, &entity, color_index);
+    }
 
-            let Ok(mut parent) = parent_q.get_mut(file_manager.project_root_entity) else {
-                continue;
-            };
-            parent.remove_child(&entity);
-        }
-        for (entity, component) in events.read::<FileSystemChild>() {
-            info!("entity: `{:?}`, removed FileSystemChild", entity);
+    for event in bck_color_events.iter() {
+        let entity = event.entity;
+        info!("entity: `{:?}`, removed BackgroundSkinColor", entity);
 
-            let Some(parent_entity) = component.parent_id.get(&client) else {
-                continue;
-            };
-            let Ok(mut parent) = parent_q.get_mut(parent_entity) else {
-                continue;
-            };
-            parent.remove_child(&entity);
-        }
-        for (entity, component) in events.read::<ChangelistEntry>() {
-            info!("entity: `{:?}`, removed ChangelistEntry", entity);
+        skin_manager.deregister_bckg_color(&entity);
+    }
 
-            let entry = component.file_key();
-            file_manager.remove_changelist_entry(&entry);
+    for event in face_color_events.iter() {
+        let entity = event.entity;
+        info!("entity: `{:?}`, removed FaceColor", entity);
 
-            if *component.status != ChangelistStatus::Deleted {
-                if let Some(file_entity) = component.file_entity.get(&client) {
-                    if let Ok(mut fs_state) = fs_state_q.get_mut(file_entity) {
-                        fs_state.change_status = None;
-                    }
-                }
-            }
-        }
-        for (entity, component) in events.read::<FileDependency>() {
-            info!("entity: `{:?}`, removed FileDependency", entity);
+        skin_manager.deregister_face_color(&entity);
+    }
+}
 
-            let file_entity = component.file_entity.get(&client).unwrap();
-            let dependency_entity = component.dependency_entity.get(&client).unwrap();
+pub fn remove_model_component_events(
+    mut model_transform_events: EventReader<RemoveComponentEvent<ModelTransform>>,
+    mut commands: Commands,
+    mut model_manager: ResMut<ModelManager>,
+) {
+    for event in model_transform_events.iter() {
+        let entity = event.entity;
+        info!("entity: `{:?}`, removed ModelTransform", entity);
 
-            file_manager.file_remove_dependency(&file_entity, &dependency_entity);
-        }
-        for (vertex_entity_3d, shape_name) in events.read::<ShapeName>() {
-            let name = (*shape_name.value).clone();
-
-            info!(
-                "entity: `{:?}`, removed ShapeName(name: {:?})",
-                vertex_entity_3d, name
-            );
-        }
-        for (vertex_entity_3d, _) in events.read::<Vertex3d>() {
-            info!("entity: `{:?}`, removed Vertex3d", vertex_entity_3d);
-
-            vertex_manager.cleanup_deleted_vertex(
-                &mut commands,
-                &mut canvas,
-                &mut input_manager,
-                &vertex_entity_3d,
-            );
-        }
-        for (edge_3d_entity, _) in events.read::<Edge3d>() {
-            info!("entity: `{:?}`, removed Edge3d", edge_3d_entity);
-
-            edge_manager.cleanup_deleted_edge(
-                &mut commands,
-                &mut canvas,
-                &mut input_manager,
-                &mut vertex_manager,
-                &mut face_manager,
-                &edge_3d_entity,
-            );
-        }
-        for (face_entity_3d, _) in events.read::<Face3d>() {
-            info!("entity: `{:?}`, removed Face3d", face_entity_3d);
-
-            face_manager.cleanup_deleted_face_3d(&mut commands, &mut meshes, &face_entity_3d);
-        }
-        for (frame_entity, frame) in events.read::<AnimFrame>() {
-            info!("entity: `{:?}`, removed AnimFrame", frame_entity);
-
-            let file_entity = frame.file_entity.get(&client).unwrap();
-
-            animation_manager.deregister_frame(&file_entity, &frame_entity);
-        }
-        for (rot_entity, _) in events.read::<AnimRotation>() {
-            info!("entity: `{:?}`, removed AnimRotation", rot_entity);
-
-            animation_manager.deregister_rotation(&rot_entity);
-        }
-        for (color_entity, color) in events.read::<PaletteColor>() {
-            info!("entity: `{:?}`, removed PaletteColor", color_entity);
-
-            let file_entity = color.file_entity.get(&client).unwrap();
-            let color_index = *color.index as usize;
-
-            palette_manager.deregister_color(&file_entity, &color_entity, color_index);
-        }
-        for (color_entity, _color) in events.read::<BackgroundSkinColor>() {
-            info!("entity: `{:?}`, removed BackgroundSkinColor", color_entity);
-
-            skin_manager.deregister_bckg_color(&color_entity);
-        }
-        for (color_entity, _color) in events.read::<FaceColor>() {
-            info!("entity: `{:?}`, removed FaceColor", color_entity);
-
-            skin_manager.deregister_face_color(&color_entity);
-        }
-        for (entity, _transform) in events.read::<ModelTransform>() {
-            info!("entity: `{:?}`, removed ModelTransform", entity);
-
-            model_manager.on_despawn_model_transform(&mut commands, &entity);
-        }
+        model_manager.on_despawn_model_transform(&mut commands, &entity);
     }
 }

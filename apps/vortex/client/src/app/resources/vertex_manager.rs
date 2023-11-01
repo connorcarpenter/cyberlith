@@ -23,7 +23,7 @@ use vortex_proto::components::{
 
 use crate::app::{
     components::{
-        DefaultDraw, Edge3dLocal, LocalShape, ModelTransformControl, OwnedByFileLocal, Vertex2d,
+        DefaultDraw, Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d,
         VertexEntry,
     },
     events::ShapeColorResyncEvent,
