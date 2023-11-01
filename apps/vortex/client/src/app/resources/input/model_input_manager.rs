@@ -12,7 +12,7 @@ use input::{InputAction, Key, MouseButton};
 use math::{convert_2d_to_3d, quat_from_spin_direction, Vec2, Vec3};
 use render_api::components::{Camera, CameraProjection, Projection, Transform};
 
-use vortex_proto::components::{FileExtension, ModelTransform, ShapeName, VertexRoot};
+use vortex_proto::components::{EdgeAngle, FileExtension, ModelTransform, ShapeName, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::{
@@ -281,6 +281,8 @@ impl ModelInputManager {
             ResMut<ModelManager>,
             ResMut<Canvas>,
             Query<(&Camera, &Projection)>,
+            Query<&Vertex3d>,
+            Query<&EdgeAngle>,
             Query<&Transform>,
             Query<&mut ModelTransform>,
             Query<&ModelTransformControl, With<Vertex2d>>,
@@ -292,6 +294,8 @@ impl ModelInputManager {
             mut model_manager,
             mut canvas,
             camera_q,
+            vertex_3d_q,
+            edge_angle_q,
             transform_q,
             mut model_transform_q,
             mtc_q,
@@ -304,7 +308,11 @@ impl ModelInputManager {
         let mtc_type = mtc_component.control_type;
 
         // get bone transform
-        let Some(bone_transform) = model_manager.get_bone_transform(&mtc_entity) else {
+        let Some(bone_transform) = model_manager.get_bone_transform(
+            &vertex_3d_q,
+            &edge_angle_q,
+            &mtc_entity
+        ) else {
             return;
         };
 

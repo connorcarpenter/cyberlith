@@ -86,15 +86,19 @@ impl ModelTransformData {
         }
     }
 
-    pub(crate) fn get_bone_transform(&self) -> Option<Transform> {
+    pub(crate) fn get_bone_transform(
+        &self,
+        vertex_3d_q: &Query<&Vertex3d>,
+        edge_angle_q: &Query<&EdgeAngle>,
+    ) -> Option<Transform> {
         let (edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end) = self.get_skel_entities()?;
 
-        Some(
-            self.get_bone_transform_from_entities(
-                &edge_3d_entity,
-                &vertex_3d_entity_start,
-                &vertex_3d_entity_end
-            )
+        self.get_bone_transform_from_entities(
+            vertex_3d_q,
+            edge_angle_q,
+            &edge_3d_entity,
+            &vertex_3d_entity_start,
+            &vertex_3d_entity_end
         )
     }
 
@@ -102,15 +106,21 @@ impl ModelTransformData {
         &mut self,
         file_manager: &FileManager,
         edge_manager: &EdgeManager,
-        edge_3d_q: &Query<(Entity, &ShapeName, &OwnedByFileLocal), With<Edge3d>>
-    ) -> Transform {
+        vertex_3d_q: &Query<&Vertex3d>,
+        edge_3d_q: &Query<(Entity, &OwnedByFileLocal), With<Edge3d>>,
+        edge_angle_q: &Query<&EdgeAngle>,
+        shape_name_q: &Query<&ShapeName>,
+    ) -> Option<Transform> {
         let (edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end) = self.get_or_update_skel_entities(
             file_manager,
             edge_manager,
-            edge_3d_q
-        );
+            edge_3d_q,
+            shape_name_q,
+        )?;
 
         self.get_bone_transform_from_entities(
+            vertex_3d_q,
+            edge_angle_q,
             &edge_3d_entity,
             &vertex_3d_entity_start,
             &vertex_3d_entity_end
@@ -128,25 +138,38 @@ impl ModelTransformData {
 
     fn get_bone_transform_from_entities(
         &self,
+        vertex_3d_q: &Query<&Vertex3d>,
+        edge_angle_q: &Query<&EdgeAngle>,
         edge_3d_entity: &Entity,
         vertex_3d_entity_start: &Entity,
-        vertex_3d_entity_end: &Entity
-    ) -> Transform {
-        todo!("get start_pos, end_pos, and spin from entities");
-        let start_pos = Vec3::ZERO;
-        let end_pos = Vec3::ZERO;
-        let spin = 0.0;
-        transform_from_endpoints_and_spin(start_pos, end_pos, spin)
+        vertex_3d_entity_end: &Entity,
+    ) -> Option<Transform> {
+        let Ok(vertex_3d) = vertex_3d_q.get(*vertex_3d_entity_start) else {
+            return None;
+        };
+        let start_pos = vertex_3d.as_vec3();
+        let Ok(vertex_3d) = vertex_3d_q.get(*vertex_3d_entity_end) else {
+            return None;
+        };
+        let end_pos = vertex_3d.as_vec3();
+
+        let Ok(edge_angle) = edge_angle_q.get(*edge_3d_entity) else {
+            return None;
+        };
+        let spin = edge_angle.get_radians();
+
+        Some(transform_from_endpoints_and_spin(start_pos, end_pos, spin))
     }
 
     fn get_or_update_skel_entities(
         &mut self,
         file_manager: &FileManager,
         edge_manager: &EdgeManager,
-        edge_3d_q: &Query<(Entity, &ShapeName, &OwnedByFileLocal), With<Edge3d>>,
-    ) -> (Entity, Entity, Entity) {
+        edge_3d_q: &Query<(Entity, &OwnedByFileLocal), With<Edge3d>>,
+        shape_name_q: &Query<&ShapeName>,
+    ) -> Option<(Entity, Entity, Entity)> {
         if let Some((edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end)) = self.skel_entities {
-            return (edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end);
+            return Some((edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end));
         }
 
         let skel_file_entity = file_manager.file_get_dependency(&self.model_file_entity, FileExtension::Skel).unwrap();
@@ -154,19 +177,22 @@ impl ModelTransformData {
         // go fetch entities ..
         let bone_name: &str = &self.skel_edge_name;
 
-        for (edge_3d_entity, shape_name, owned_by) in edge_3d_q.iter() {
+        for (edge_3d_entity, owned_by) in edge_3d_q.iter() {
             if owned_by.file_entity != skel_file_entity {
                 continue;
             }
+            let (vertex_3d_entity_start, vertex_3d_entity_end) = edge_manager.edge_get_endpoints(&edge_3d_entity);
+            let Ok(shape_name) = shape_name_q.get(vertex_3d_entity_end) else {
+                continue;
+            };
             if *shape_name.value != bone_name {
                 continue;
             }
-            let (vertex_3d_entity_start, vertex_3d_entity_end) = edge_manager.edge_get_endpoints(&edge_3d_entity);
             self.skel_entities = Some((edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end));
-            return (edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end);
+            return Some((edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end));
         }
 
-        panic!("could not find skel edge for bone {}", bone_name);
+        return None;
     }
 }
 
@@ -667,37 +693,47 @@ impl ModelManager {
         let mut system_state: SystemState<(
             Res<FileManager>,
             Res<EdgeManager>,
-            Query<&mut Vertex3d>,
-            Query<(Entity, &ShapeName, &OwnedByFileLocal), With<Edge3d>>,
+            Query<&Vertex3d>,
+            Query<(Entity, &OwnedByFileLocal), With<Edge3d>>,
+            Query<&EdgeAngle>,
+            Query<&ShapeName>,
             Query<&ModelTransform>,
         )> = SystemState::new(world);
         let (
             file_manager,
             edge_manager,
-            mut vertex_3d_q,
+            vertex_3d_q,
             edge_3d_q,
+            edge_angle_q,
+            shape_name_q,
             model_transform_q
         ) = system_state.get_mut(world);
 
+        let mut vertex_3d_mutations = Vec::new();
+
         for model_transform_entity in model_transform_entities.iter() {
             let model_transform_data = self.transform_entities.get_mut(model_transform_entity).unwrap();
+            let Some(bone_transform) = model_transform_data.get_or_update_bone_transform(
+                &file_manager,
+                &edge_manager,
+                &vertex_3d_q,
+                &edge_3d_q,
+                &edge_angle_q,
+                &shape_name_q,
+            ) else {
+                continue;
+            };
+
             let model_transform = model_transform_q.get(*model_transform_entity).unwrap();
             let model_transform = ModelTransformLocal::to_transform(model_transform);
 
             // apply bone transform to model_transform
-            let bone_transform = model_transform_data.get_or_update_bone_transform(
-                &file_manager,
-                &edge_manager,
-                &edge_3d_q);
             let model_transform = bone_transform.multiply(&model_transform);
 
             // translation
             let translation = model_transform.translation;
             let translation_control_entity = model_transform_data.translation_entity_3d;
-            let Ok(mut translation_control_3d) = vertex_3d_q.get_mut(translation_control_entity) else {
-                continue;
-            };
-            translation_control_3d.set_vec3(&translation);
+            vertex_3d_mutations.push((translation_control_entity, translation));
 
             // rotation
             let mut rotation_vector = Vec3::new(0.0, 0.0, ModelTransformControl::EDGE_LENGTH);
@@ -705,8 +741,7 @@ impl ModelManager {
             rotation_vector = rotation * rotation_vector;
             let rotation_with_offset = rotation_vector + translation;
             let rotation_control_entity = model_transform_data.rotation_entity_3d;
-            let mut rotation_control_3d = vertex_3d_q.get_mut(rotation_control_entity).unwrap();
-            rotation_control_3d.set_vec3(&rotation_with_offset);
+            vertex_3d_mutations.push((rotation_control_entity, rotation_with_offset));
 
             // scale
             let scale = model_transform.scale;
@@ -717,8 +752,7 @@ impl ModelManager {
                 let scale_x_with_offset =
                     (scale_x * ModelTransformControl::SCALE_EDGE_LENGTH) + translation;
                 let scale_x_control_entity = model_transform_data.scale_x_entity_3d;
-                let mut scale_x_control_3d = vertex_3d_q.get_mut(scale_x_control_entity).unwrap();
-                scale_x_control_3d.set_vec3(&scale_x_with_offset);
+                vertex_3d_mutations.push((scale_x_control_entity, scale_x_with_offset));
             }
 
             {
@@ -727,8 +761,7 @@ impl ModelManager {
                 let scale_y_with_offset =
                     (scale_y * ModelTransformControl::SCALE_EDGE_LENGTH) + translation;
                 let scale_y_control_entity = model_transform_data.scale_y_entity_3d;
-                let mut scale_y_control_3d = vertex_3d_q.get_mut(scale_y_control_entity).unwrap();
-                scale_y_control_3d.set_vec3(&scale_y_with_offset);
+                vertex_3d_mutations.push((scale_y_control_entity, scale_y_with_offset));
             }
 
             {
@@ -737,9 +770,16 @@ impl ModelManager {
                 let scale_z_with_offset =
                     (scale_z * ModelTransformControl::SCALE_EDGE_LENGTH) + translation;
                 let scale_z_control_entity = model_transform_data.scale_z_entity_3d;
-                let mut scale_z_control_3d = vertex_3d_q.get_mut(scale_z_control_entity).unwrap();
-                scale_z_control_3d.set_vec3(&scale_z_with_offset);
+                vertex_3d_mutations.push((scale_z_control_entity, scale_z_with_offset));
             }
+        }
+
+        let mut system_state: SystemState<Query<&mut Vertex3d>> = SystemState::new(world);
+        let mut vertex_3d_q= system_state.get_mut(world);
+
+        for (vertex_3d_entity, new_translation) in vertex_3d_mutations {
+            let mut vertex_3d = vertex_3d_q.get_mut(vertex_3d_entity).unwrap();
+            vertex_3d.set_vec3(&new_translation);
         }
     }
 
@@ -1138,6 +1178,7 @@ impl ModelManager {
                 Query<(&Camera, &Projection, &Transform)>,
                 Query<&Vertex3d>,
                 Query<(&OwnedByFileLocal, &Edge3dLocal), With<Edge3d>>,
+                Query<&EdgeAngle>,
                 Query<&ModelTransform>,
             )> = SystemState::new(world);
             let (
@@ -1148,10 +1189,12 @@ impl ModelManager {
                 vertex_manager,
                 mut meshes,
                 camera_q,
-                vertex_q,
+                vertex_3d_q,
                 edge_q,
+                edge_angle_q,
                 model_transform_q,
             ) = system_state.get_mut(world);
+
             let camera_3d_entity = camera_manager.camera_3d_entity().unwrap();
             let Ok((camera, camera_projection, camera_transform)) = camera_q.get(camera_3d_entity) else {
                 return;
@@ -1177,7 +1220,10 @@ impl ModelManager {
                     continue;
                 };
                 let model_transform_data = self.transform_entities.get(model_transform_entity).unwrap();
-                let Some(bone_transform) = model_transform_data.get_bone_transform() else {
+                let Some(bone_transform) = model_transform_data.get_bone_transform(
+                    &vertex_3d_q,
+                    &edge_angle_q,
+                ) else {
                     continue;
                 };
                 let mut model_transform = ModelTransformLocal::to_transform(model_transform);
@@ -1197,7 +1243,7 @@ impl ModelManager {
                     for (index, vertex_3d_entity) in
                         [edge_3d_local.start, edge_3d_local.end].iter().enumerate()
                     {
-                        let Ok(vertex_3d) = vertex_q.get(*vertex_3d_entity) else {
+                        let Ok(vertex_3d) = vertex_3d_q.get(*vertex_3d_entity) else {
                             continue;
                         };
                         let point = vertex_3d.as_vec3();
@@ -1333,6 +1379,8 @@ impl ModelManager {
                 Client,
                 Res<FileManager>,
                 Res<CameraManager>,
+                Query<&Vertex3d>,
+                Query<&EdgeAngle>,
                 Query<(Entity, &OwnedByFileLocal), With<Face3d>>,
                 Query<&ModelTransform>,
                 Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>, &Transform)>,
@@ -1342,6 +1390,8 @@ impl ModelManager {
                 client,
                 file_manager,
                 camera_manager,
+                vertex_3d_q,
+                edge_angle_q,
                 face_q,
                 model_transform_q,
                 object_q,
@@ -1367,7 +1417,10 @@ impl ModelManager {
                 model_transform.rotation = model_transform.rotation * corrective_rot;
 
                 // apply bone transform to model_transform
-                let Some(bone_transform) = model_transform_data.get_bone_transform() else {
+                let Some(bone_transform) = model_transform_data.get_bone_transform(
+                    &vertex_3d_q,
+                    &edge_angle_q,
+                ) else {
                     continue;
                 };
                 let model_transform = bone_transform.multiply(&model_transform);
@@ -1479,9 +1532,14 @@ impl ModelManager {
         }
     }
 
-    pub fn get_bone_transform(&self, mtc_entity: &Entity) -> Option<Transform> {
+    pub fn get_bone_transform(
+        &self,
+        vertex_3d_q: &Query<&Vertex3d>,
+        edge_angle_q: &Query<&EdgeAngle>,
+        mtc_entity: &Entity
+    ) -> Option<Transform> {
         let mtc_data = self.transform_entities.get(mtc_entity)?;
-        return mtc_data.get_bone_transform();
+        return mtc_data.get_bone_transform(vertex_3d_q, edge_angle_q);
     }
 }
 

@@ -16,6 +16,7 @@ pub fn set_3d_line_transform(transform: &mut Transform, start: Vec3, end: Vec3, 
     transform.scale.z = start.distance(end);
 }
 
+// spin is in radians
 pub fn transform_from_endpoints_and_spin(start: Vec3, end: Vec3, spin: f32) -> Transform {
     let mut output = Transform::default();
     output.translation = start;
