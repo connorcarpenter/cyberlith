@@ -9,16 +9,20 @@ use naia_bevy_client::{events::RemoveComponentEvents, Client, Replicate};
 
 use render_api::{base::CpuMesh, Assets};
 
-use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d, Face3d, FaceColor, FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild, ModelTransform, PaletteColor, ShapeName, Vertex3d};
+use vortex_proto::components::{
+    AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d,
+    Face3d, FaceColor, FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild,
+    ModelTransform, PaletteColor, ShapeName, Vertex3d,
+};
 
 use crate::app::{
-    events::RemoveComponentEvent,
     components::file_system::{FileSystemParent, FileSystemUiState},
+    events::RemoveComponentEvent,
     resources::{
         animation_manager::AnimationManager, canvas::Canvas, edge_manager::EdgeManager,
         face_manager::FaceManager, file_manager::FileManager, input::InputManager,
-        palette_manager::PaletteManager, skin_manager::SkinManager, tab_manager::TabManager,
-        vertex_manager::VertexManager, model_manager::ModelManager,
+        model_manager::ModelManager, palette_manager::PaletteManager, skin_manager::SkinManager,
+        tab_manager::TabManager, vertex_manager::VertexManager,
     },
 };
 
@@ -88,7 +92,6 @@ pub fn remove_file_component_events(
     mut fs_state_q: Query<&mut FileSystemUiState>,
 ) {
     for event in entry_events.iter() {
-
         let entity = event.entity;
 
         info!("entity: `{:?}`, removed FileSystemEntry", entity);
@@ -97,7 +100,6 @@ pub fn remove_file_component_events(
     }
 
     for event in root_child_events.iter() {
-
         let entity = event.entity;
 
         info!("entity: `{:?}`, removed FileSystemRootChild", entity);
@@ -109,7 +111,6 @@ pub fn remove_file_component_events(
     }
 
     for event in child_events.iter() {
-
         let entity = event.entity;
 
         info!("entity: `{:?}`, removed FileSystemChild", entity);
@@ -124,7 +125,6 @@ pub fn remove_file_component_events(
     }
 
     for event in cl_events.iter() {
-
         let entity = event.entity;
 
         info!("entity: `{:?}`, removed ChangelistEntry", entity);
@@ -141,7 +141,6 @@ pub fn remove_file_component_events(
         }
     }
     for event in dependencies_events.iter() {
-
         let entity = event.entity;
 
         info!("entity: `{:?}`, removed FileDependency", entity);

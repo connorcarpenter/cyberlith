@@ -25,9 +25,6 @@ pub struct RemoveComponentEvent<T: Replicate> {
 
 impl<T: Replicate> RemoveComponentEvent<T> {
     pub fn new(entity: Entity, component: T) -> Self {
-        Self {
-            entity,
-            component,
-        }
+        Self { entity, component }
     }
 }

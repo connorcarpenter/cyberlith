@@ -1,4 +1,9 @@
-use bevy_ecs::{entity::Entity, system::{Query, Res, SystemState}, prelude::World, world::Mut};
+use bevy_ecs::{
+    entity::Entity,
+    prelude::World,
+    system::{Query, Res, SystemState},
+    world::Mut,
+};
 
 use render_egui::egui::Ui;
 
@@ -6,8 +11,9 @@ use vortex_proto::components::ShapeName;
 
 use crate::app::{
     resources::{
-        action::model::ModelAction, input::InputManager, model_manager::ModelManager,
-        shape_data::CanvasShape, tab_manager::TabManager, toolbar::Toolbar, edge_manager::EdgeManager
+        action::model::ModelAction, edge_manager::EdgeManager, input::InputManager,
+        model_manager::ModelManager, shape_data::CanvasShape, tab_manager::TabManager,
+        toolbar::Toolbar,
     },
     ui::UiState,
 };
@@ -28,17 +34,12 @@ impl ModelToolbar {
         // check whether model transform already exists
         let mut edge_has_model_transform = false;
         if let Some(edge_2d_entity) = edge_2d_entity_opt {
-
             let mut system_state: SystemState<(
                 Res<ModelManager>,
                 Res<EdgeManager>,
                 Query<Option<&ShapeName>>,
             )> = SystemState::new(world);
-            let (
-                model_manager,
-                edge_manager,
-                shape_name_q,
-            ) = system_state.get_mut(world);
+            let (model_manager, edge_manager, shape_name_q) = system_state.get_mut(world);
 
             if let Some(edge_3d_entity) = edge_manager.edge_entity_2d_to_3d(&edge_2d_entity) {
                 let (_, end_vertex_3d_entity) = edge_manager.edge_get_endpoints(&edge_3d_entity);

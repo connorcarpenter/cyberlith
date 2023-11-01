@@ -15,8 +15,9 @@ use render_api::components::{Camera, CameraProjection, Projection, Transform};
 use vortex_proto::components::{FileExtension, ModelTransform, ShapeName, VertexRoot};
 
 use crate::app::{
-    components::{ ScaleAxis, ModelTransformControlType,
-        Edge2dLocal, ModelTransformControl, ModelTransformLocal, OwnedByFileLocal, Vertex2d,
+    components::{
+        Edge2dLocal, ModelTransformControl, ModelTransformControlType, ModelTransformLocal,
+        OwnedByFileLocal, ScaleAxis, Vertex2d,
     },
     resources::{
         action::model::ModelAction, camera_manager::CameraManager, canvas::Canvas,
@@ -348,30 +349,33 @@ impl ModelInputManager {
                 let rotation_vector = rotation_with_offset - translation;
                 let base_direction = Vec3::Z;
                 let target_direction = rotation_vector.normalize();
-                let rotation_angle = quat_from_spin_direction(edge_angle, base_direction, target_direction);
+                let rotation_angle =
+                    quat_from_spin_direction(edge_angle, base_direction, target_direction);
                 model_transform.set_rotation(rotation_angle);
             }
             ModelTransformControlType::Scale(axis) => {
-
                 let translation = model_transform.translation_vec3();
                 let old_scale = model_transform.scale_vec3();
 
                 let new_scale = match axis {
                     ScaleAxis::X => {
                         let mut output = old_scale;
-                        let new_x = (new_3d_position.x - translation.x) / ModelTransformControl::SCALE_EDGE_LENGTH;
+                        let new_x = (new_3d_position.x - translation.x)
+                            / ModelTransformControl::SCALE_EDGE_LENGTH;
                         output.x = new_x;
                         output
                     }
                     ScaleAxis::Y => {
                         let mut output = old_scale;
-                        let new_y = (new_3d_position.y - translation.y) / ModelTransformControl::SCALE_EDGE_LENGTH;
+                        let new_y = (new_3d_position.y - translation.y)
+                            / ModelTransformControl::SCALE_EDGE_LENGTH;
                         output.y = new_y;
                         output
                     }
                     ScaleAxis::Z => {
                         let mut output = old_scale;
-                        let new_z = (new_3d_position.z - translation.z) / ModelTransformControl::SCALE_EDGE_LENGTH;
+                        let new_z = (new_3d_position.z - translation.z)
+                            / ModelTransformControl::SCALE_EDGE_LENGTH;
                         output.z = new_z;
                         output
                     }

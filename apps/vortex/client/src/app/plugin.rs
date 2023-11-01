@@ -6,10 +6,11 @@ use naia_bevy_client::{ClientConfig, Plugin as ClientPlugin, ReceiveEvents};
 use render_api::{resources::WindowSettings, Draw};
 
 use vortex_proto::{
-    components::{ModelTransform,
+    components::{
         AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, Edge3d, EdgeAngle,
         EntryKind, Face3d, FaceColor, FileDependency, FileSystemChild, FileSystemEntry,
-        FileSystemRootChild, FileType, OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot,
+        FileSystemRootChild, FileType, ModelTransform, OwnedByFile, PaletteColor, ShapeName,
+        Vertex3d, VertexRoot,
     },
     protocol,
 };
@@ -17,14 +18,14 @@ use vortex_proto::{
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
     config::ConfigPlugin,
-    events::{RemoveComponentEvent, InsertComponentEvent, LoginEvent, ShapeColorResyncEvent},
+    events::{InsertComponentEvent, LoginEvent, RemoveComponentEvent, ShapeColorResyncEvent},
     resources::{
-        model_manager::ModelManager,
         action::file::FileActions, animation_manager::AnimationManager,
         camera_manager::CameraManager, canvas::Canvas, compass::Compass, edge_manager::EdgeManager,
         face_manager::FaceManager, file_manager::FileManager, grid::Grid, input::InputManager,
-        palette_manager::PaletteManager, shape_waitlist::ShapeWaitlist, skin_manager::SkinManager,
-        tab_manager::TabManager, vertex_manager::VertexManager,
+        model_manager::ModelManager, palette_manager::PaletteManager,
+        shape_waitlist::ShapeWaitlist, skin_manager::SkinManager, tab_manager::TabManager,
+        vertex_manager::VertexManager,
     },
     systems::{canvas, draw, draw_vertices_and_edges, network, ui},
     ui::{

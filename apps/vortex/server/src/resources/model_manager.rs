@@ -1,16 +1,11 @@
-
 use bevy_ecs::{entity::Entity, system::Resource};
 
 #[derive(Resource)]
-pub struct ModelManager {
-
-}
+pub struct ModelManager {}
 
 impl Default for ModelManager {
     fn default() -> Self {
-        Self {
-
-        }
+        Self {}
     }
 }
 
@@ -27,7 +22,5 @@ impl ModelManager {
         self.deregister_model_transform(model_entity);
     }
 
-    pub fn deregister_model_transform(&mut self, model_entity: &Entity) {
-
-    }
+    pub fn deregister_model_transform(&mut self, model_entity: &Entity) {}
 }

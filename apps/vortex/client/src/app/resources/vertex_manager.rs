@@ -22,10 +22,7 @@ use vortex_proto::components::{
 };
 
 use crate::app::{
-    components::{
-        DefaultDraw, Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d,
-        VertexEntry,
-    },
+    components::{DefaultDraw, Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d, VertexEntry},
     events::ShapeColorResyncEvent,
     resources::{
         action::{shape::ShapeAction, ActionStack},
@@ -94,12 +91,8 @@ impl VertexManager {
             Query<&mut Visibility>,
             Query<&LocalShape>,
         )> = SystemState::new(world);
-        let (
-            vertex_3d_q,
-            mut transform_q,
-            mut visibility_q,
-            local_shape_q,
-        ) = system_state.get_mut(world);
+        let (vertex_3d_q, mut transform_q, mut visibility_q, local_shape_q) =
+            system_state.get_mut(world);
 
         for (vertex_3d_entity, vertex_3d) in vertex_3d_q.iter() {
             // check visibility

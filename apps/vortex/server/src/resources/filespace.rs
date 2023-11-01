@@ -20,7 +20,7 @@ pub enum ContentEntityData {
     PaletteColor,
     FaceColor(Option<(u16, u8)>),
     BackgroundSkinColor(Option<u8>),
-    ModelTransform
+    ModelTransform,
 }
 
 impl ContentEntityData {

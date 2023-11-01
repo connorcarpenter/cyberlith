@@ -6,9 +6,7 @@ use bevy_ecs::{
     system::SystemState,
 };
 
-use naia_bevy_server::{
-    BitReader, FileBitWriter, Serde, SerdeErr, Server,
-};
+use naia_bevy_server::{BitReader, FileBitWriter, Serde, SerdeErr, Server};
 
 use vortex_proto::resources::FileKey;
 

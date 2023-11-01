@@ -10,6 +10,7 @@ use bevy_log::info;
 
 use naia_bevy_server::{events::InsertComponentEvents, Replicate, Server};
 
+use vortex_proto::components::ModelTransform;
 use vortex_proto::{
     components::{
         AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency,
@@ -18,14 +19,13 @@ use vortex_proto::{
     },
     resources::FileKey,
 };
-use vortex_proto::components::ModelTransform;
 
 use crate::{
     events::InsertComponentEvent,
     resources::{
         file_waitlist::{file_process_insert, FSWaitlist, FSWaitlistInsert},
-        AnimationManager, ContentEntityData, GitManager, PaletteManager, ShapeManager,
-        ShapeWaitlist, ShapeWaitlistInsert, SkinManager, TabManager, UserManager, ModelManager,
+        AnimationManager, ContentEntityData, GitManager, ModelManager, PaletteManager,
+        ShapeManager, ShapeWaitlist, ShapeWaitlistInsert, SkinManager, TabManager, UserManager,
     },
 };
 

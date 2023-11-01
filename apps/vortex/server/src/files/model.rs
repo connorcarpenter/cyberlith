@@ -3,13 +3,20 @@ use std::collections::HashMap;
 use bevy_ecs::{
     entity::Entity,
     prelude::{Commands, World},
-    system::{SystemState, Query},
+    system::{Query, SystemState},
 };
 use bevy_log::info;
 
-use naia_bevy_server::{BitReader, CommandsExt, FileBitWriter, ReplicationConfig, Serde, SerdeErr, Server, SignedVariableInteger, UnsignedVariableInteger};
+use naia_bevy_server::{
+    BitReader, CommandsExt, FileBitWriter, ReplicationConfig, Serde, SerdeErr, Server,
+    SignedVariableInteger, UnsignedVariableInteger,
+};
 
-use vortex_proto::{components::{ModelTransformEntityType, FileExtension, ModelTransform}, resources::FileKey, SerdeQuat};
+use vortex_proto::{
+    components::{FileExtension, ModelTransform, ModelTransformEntityType},
+    resources::FileKey,
+    SerdeQuat,
+};
 
 use crate::{
     files::{add_file_dependency, FileWriter},
@@ -22,7 +29,7 @@ enum ModelAction {
     // path, file_name
     SkelFile(String, String),
     SkinOrSceneFile(String, String, ModelTransformEntityType),
-    ModelTransform(u16, String, i16, i16, i16, f32, f32, f32, SerdeQuat)
+    ModelTransform(u16, String, i16, i16, i16, f32, f32, f32, SerdeQuat),
 }
 
 #[derive(Serde, Clone, PartialEq)]
@@ -66,13 +73,18 @@ impl ModelWriter {
                         FileExtension::Skin => {
                             let skin_index = skin_dependencies.len() as u16;
                             skin_dependency_to_index.insert(dependency_entity, skin_index);
-                            info!("writing skin index for entity: `{:?}`, skin_index: `{}`", dependency_entity, skin_index);
-                            skin_dependencies.push((dependency_key, ModelTransformEntityType::Skin));
+                            info!(
+                                "writing skin index for entity: `{:?}`, skin_index: `{}`",
+                                dependency_entity, skin_index
+                            );
+                            skin_dependencies
+                                .push((dependency_key, ModelTransformEntityType::Skin));
                         }
                         FileExtension::Scene => {
                             let skin_index = skin_dependencies.len() as u16;
                             skin_dependency_to_index.insert(dependency_entity, skin_index);
-                            skin_dependencies.push((dependency_key, ModelTransformEntityType::Scene));
+                            skin_dependencies
+                                .push((dependency_key, ModelTransformEntityType::Scene));
                         }
                         _ => {
                             panic!("model file should depend on a single .skel file & potentially many .skin or .scene files");
@@ -101,7 +113,10 @@ impl ModelWriter {
 
         // Write Skin Dependencies
         for (dependency_key, dependency_type) in skin_dependencies {
-            info!("writing skin/scene dependency: {}", dependency_key.full_path());
+            info!(
+                "writing skin/scene dependency: {}",
+                dependency_key.full_path()
+            );
             actions.push(ModelAction::SkinOrSceneFile(
                 dependency_key.path().to_string(),
                 dependency_key.name().to_string(),
@@ -111,14 +126,17 @@ impl ModelWriter {
 
         // Write ModelTransforms
         for content_entity in model_transform_entities {
-
-            let mut system_state: SystemState<(Server, Query<&ModelTransform>)> = SystemState::new(world);
+            let mut system_state: SystemState<(Server, Query<&ModelTransform>)> =
+                SystemState::new(world);
             let (server, transform_q) = system_state.get_mut(world);
             let Ok(transform) = transform_q.get(content_entity) else {
                 panic!("Error getting model transform");
             };
             let skin_entity: Entity = transform.skin_or_scene_entity.get(&server).unwrap();
-            info!("in writing model transform, skin entity is: `{:?}`", skin_entity);
+            info!(
+                "in writing model transform, skin entity is: `{:?}`",
+                skin_entity
+            );
             let Some(skin_index) = skin_dependency_to_index.get(&skin_entity) else {
                 panic!("skin entity not found in skin_dependency_to_index: `{:?}`", skin_entity);
             };
@@ -132,7 +150,10 @@ impl ModelWriter {
             let scale_z = transform.scale_z();
             let rotation = transform.get_rotation_serde();
 
-            info!("writing action for model transform for bone: `{}`, skin index is: {}", bone_name, skin_index);
+            info!(
+                "writing action for model transform for bone: `{}`, skin index is: {}",
+                bone_name, skin_index
+            );
             actions.push(ModelAction::ModelTransform(
                 *skin_index,
                 bone_name,
@@ -174,9 +195,8 @@ impl ModelWriter {
                     scale_x,
                     scale_y,
                     scale_z,
-                    rotation
+                    rotation,
                 ) => {
-
                     info!("writing model transform for bone: `{}`", vertex_name);
                     ModelActionType::ModelTransform.ser(&mut bit_writer);
 
@@ -253,7 +273,6 @@ impl ModelReader {
                     actions.push(ModelAction::SkinOrSceneFile(path, file_name, file_type));
                 }
                 ModelActionType::ModelTransform => {
-
                     let skin_index: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
 
                     let vertex_name = String::de(bit_reader)?;
@@ -271,7 +290,10 @@ impl ModelReader {
 
                     let rotation = SerdeQuat::de(bit_reader)?;
 
-                    info!("reading model transform for bone: `{}`, into action", vertex_name);
+                    info!(
+                        "reading model transform for bone: `{}`, into action",
+                        vertex_name
+                    );
 
                     actions.push(ModelAction::ModelTransform(
                         skin_index,
@@ -306,22 +328,26 @@ impl ModelReader {
         let mut system_state: SystemState<(Commands, Server)> = SystemState::new(world);
         let (mut commands, mut server) = system_state.get_mut(world);
 
-        let mut skin_files =  Vec::new();
+        let mut skin_files = Vec::new();
 
         for action in actions {
             match action {
                 ModelAction::SkelFile(path, file_name) => {
-                    let (new_dependency_entity, dependency_file_entity, dependency_file_key) = add_file_dependency(
-                        project,
-                        file_key,
-                        file_entity,
-                        &mut commands,
-                        &mut server,
-                        FileExtension::Skel,
-                        &path,
-                        &file_name,
+                    let (new_dependency_entity, dependency_file_entity, dependency_file_key) =
+                        add_file_dependency(
+                            project,
+                            file_key,
+                            file_entity,
+                            &mut commands,
+                            &mut server,
+                            FileExtension::Skel,
+                            &path,
+                            &file_name,
+                        );
+                    output.insert(
+                        new_dependency_entity,
+                        ContentEntityData::new_dependency(dependency_file_key),
                     );
-                    output.insert(new_dependency_entity, ContentEntityData::new_dependency(dependency_file_key));
                 }
                 ModelAction::SkinOrSceneFile(path, file_name, file_type) => {
                     let dependency_file_ext = match file_type {
@@ -329,19 +355,27 @@ impl ModelReader {
                         ModelTransformEntityType::Skin => FileExtension::Skin,
                         ModelTransformEntityType::Scene => FileExtension::Scene,
                     };
-                    let (new_dependency_entity, dependency_file_entity, dependency_file_key) = add_file_dependency(
-                        project,
-                        file_key,
-                        file_entity,
-                        &mut commands,
-                        &mut server,
-                        dependency_file_ext,
-                        &path,
-                        &file_name,
+                    let (new_dependency_entity, dependency_file_entity, dependency_file_key) =
+                        add_file_dependency(
+                            project,
+                            file_key,
+                            file_entity,
+                            &mut commands,
+                            &mut server,
+                            dependency_file_ext,
+                            &path,
+                            &file_name,
+                        );
+                    output.insert(
+                        new_dependency_entity,
+                        ContentEntityData::new_dependency(dependency_file_key),
                     );
-                    output.insert(new_dependency_entity, ContentEntityData::new_dependency(dependency_file_key));
 
-                    info!("reading new skin file at index: {}, entity: `{:?}`", skin_files.len(), dependency_file_entity);
+                    info!(
+                        "reading new skin file at index: {}, entity: `{:?}`",
+                        skin_files.len(),
+                        dependency_file_entity
+                    );
                     skin_files.push((file_type, dependency_file_entity));
                 }
                 ModelAction::ModelTransform(
@@ -353,9 +387,8 @@ impl ModelReader {
                     scale_x,
                     scale_y,
                     scale_z,
-                    rotation
+                    rotation,
                 ) => {
-
                     let mut component = ModelTransform::new(
                         vertex_name.clone(),
                         rotation,
@@ -385,7 +418,10 @@ impl ModelReader {
                         .insert(component)
                         .id();
 
-                    output.insert(model_transform_entity, ContentEntityData::new_model_transform());
+                    output.insert(
+                        model_transform_entity,
+                        ContentEntityData::new_model_transform(),
+                    );
                 }
             }
         }

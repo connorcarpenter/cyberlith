@@ -19,8 +19,8 @@ use naia_bevy_server::{Plugin as ServerPlugin, ReceiveEvents, ServerConfig};
 use vortex_proto::{
     components::{
         AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency,
-        FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, PaletteColor,
-        ShapeName, Vertex3d, VertexRoot, ModelTransform,
+        FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, ModelTransform,
+        OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot,
     },
     protocol,
 };
@@ -29,7 +29,7 @@ use crate::{
     config::{AppConfig, ConfigPlugin},
     events::InsertComponentEvent,
     resources::{
-        ModelManager, changelist_manager_process, AnimationManager, ChangelistManager, GitManager,
+        changelist_manager_process, AnimationManager, ChangelistManager, GitManager, ModelManager,
         PaletteManager, ShapeManager, ShapeWaitlist, SkinManager, TabManager, UserManager,
     },
     systems::{network, world_loop},

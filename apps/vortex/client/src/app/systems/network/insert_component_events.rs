@@ -15,7 +15,12 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind, Face3d, FaceColor, FileDependency, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, ModelTransform, OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot};
+use vortex_proto::components::{
+    AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d,
+    EdgeAngle, EntryKind, Face3d, FaceColor, FileDependency, FileExtension, FileSystemChild,
+    FileSystemEntry, FileSystemRootChild, FileType, ModelTransform, OwnedByFile, PaletteColor,
+    ShapeName, Vertex3d, VertexRoot,
+};
 
 use crate::app::{
     components::file_system::{
@@ -29,12 +34,12 @@ use crate::app::{
         edge_manager::EdgeManager,
         face_manager::FaceManager,
         file_manager::{get_full_path, FileManager},
+        model_manager::ModelManager,
         palette_manager::PaletteManager,
         shape_waitlist::{ShapeWaitlist, ShapeWaitlistInsert},
         skin_manager::SkinManager,
         tab_manager::TabManager,
         vertex_manager::VertexManager,
-        model_manager::ModelManager,
     },
     systems::file_post_process,
 };

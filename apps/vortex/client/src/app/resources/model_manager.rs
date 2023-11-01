@@ -29,8 +29,8 @@ use vortex_proto::components::{
 
 use crate::app::{
     components::{
-        Edge2dLocal, Edge3dLocal, LocalShape, ModelTransformControl, ModelTransformLocal,
-        OwnedByFileLocal, Vertex2d, ModelTransformControlType, ScaleAxis,
+        Edge2dLocal, Edge3dLocal, LocalShape, ModelTransformControl, ModelTransformControlType,
+        ModelTransformLocal, OwnedByFileLocal, ScaleAxis, Vertex2d,
     },
     resources::{
         action::model::ModelAction, camera_manager::CameraManager, canvas::Canvas,
@@ -399,7 +399,10 @@ impl ModelManager {
             .insert(ModelTransformControl::new(transform_entity, control_type));
         commands
             .entity(vertex_entity_3d)
-            .insert(ModelTransformControl::new(transform_entity, ModelTransformControlType::NA))
+            .insert(ModelTransformControl::new(
+                transform_entity,
+                ModelTransformControlType::NA,
+            ))
             .remove::<Handle<CpuMesh>>()
             .remove::<Handle<CpuMaterial>>()
             .remove::<Visibility>();
@@ -407,12 +410,18 @@ impl ModelManager {
         if let Some(edge_2d_entity) = edge_2d_entity_opt {
             commands
                 .entity(edge_2d_entity)
-                .insert(ModelTransformControl::new(transform_entity, ModelTransformControlType::NA));
+                .insert(ModelTransformControl::new(
+                    transform_entity,
+                    ModelTransformControlType::NA,
+                ));
         }
         if let Some(edge_3d_entity) = edge_3d_entity_opt {
             commands
                 .entity(edge_3d_entity)
-                .insert(ModelTransformControl::new(transform_entity, ModelTransformControlType::NA))
+                .insert(ModelTransformControl::new(
+                    transform_entity,
+                    ModelTransformControlType::NA,
+                ))
                 .remove::<Handle<CpuMesh>>()
                 .remove::<Handle<CpuMaterial>>()
                 .remove::<Visibility>();
@@ -481,12 +490,20 @@ impl ModelManager {
             .map(|set| set.iter().cloned().collect())
     }
 
-    pub(crate) fn model_transform_exists(&self, model_file_entity: &Entity, skel_bone_name: &str) -> bool {
+    pub(crate) fn model_transform_exists(
+        &self,
+        model_file_entity: &Entity,
+        skel_bone_name: &str,
+    ) -> bool {
         let key: (Entity, String) = (*model_file_entity, skel_bone_name.to_string());
         self.name_to_transform_entity.contains_key(&key)
     }
 
-    pub(crate) fn find_model_transform(&self, model_file_entity: &Entity, skel_bone_name: &str) -> Option<Entity> {
+    pub(crate) fn find_model_transform(
+        &self,
+        model_file_entity: &Entity,
+        skel_bone_name: &str,
+    ) -> Option<Entity> {
         let key: (Entity, String) = (*model_file_entity, skel_bone_name.to_string());
         self.name_to_transform_entity.get(&key).cloned()
     }
@@ -537,7 +554,10 @@ impl ModelManager {
             .transform_entities
             .remove(model_transform_entity)
             .unwrap();
-        let key: (Entity, String) = (model_transform_data.model_file_entity, model_transform_data.skel_edge_name.clone());
+        let key: (Entity, String) = (
+            model_transform_data.model_file_entity,
+            model_transform_data.skel_edge_name.clone(),
+        );
         self.name_to_transform_entity.remove(&key);
 
         let model_transforms = self
@@ -590,7 +610,8 @@ impl ModelManager {
             {
                 // scale x
                 let scale_x = Vec3::new(scale.x, 0.0, 0.0);
-                let scale_x_with_offset = (scale_x * ModelTransformControl::SCALE_EDGE_LENGTH) + translation;
+                let scale_x_with_offset =
+                    (scale_x * ModelTransformControl::SCALE_EDGE_LENGTH) + translation;
                 let scale_x_control_entity = data.scale_x_entity_3d;
                 let mut scale_x_control_3d = vertex_3d_q.get_mut(scale_x_control_entity).unwrap();
                 scale_x_control_3d.set_vec3(&scale_x_with_offset);
@@ -599,7 +620,8 @@ impl ModelManager {
             {
                 // scale y
                 let scale_y = Vec3::new(0.0, scale.y, 0.0);
-                let scale_y_with_offset = (scale_y * ModelTransformControl::SCALE_EDGE_LENGTH) + translation;
+                let scale_y_with_offset =
+                    (scale_y * ModelTransformControl::SCALE_EDGE_LENGTH) + translation;
                 let scale_y_control_entity = data.scale_y_entity_3d;
                 let mut scale_y_control_3d = vertex_3d_q.get_mut(scale_y_control_entity).unwrap();
                 scale_y_control_3d.set_vec3(&scale_y_with_offset);
@@ -608,7 +630,8 @@ impl ModelManager {
             {
                 // scale z
                 let scale_z = Vec3::new(0.0, 0.0, scale.z);
-                let scale_z_with_offset = (scale_z * ModelTransformControl::SCALE_EDGE_LENGTH) + translation;
+                let scale_z_with_offset =
+                    (scale_z * ModelTransformControl::SCALE_EDGE_LENGTH) + translation;
                 let scale_z_control_entity = data.scale_z_entity_3d;
                 let mut scale_z_control_3d = vertex_3d_q.get_mut(scale_z_control_entity).unwrap();
                 scale_z_control_3d.set_vec3(&scale_z_with_offset);
