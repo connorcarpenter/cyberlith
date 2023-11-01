@@ -289,7 +289,7 @@ impl AnimReader {
         for action in actions {
             match action {
                 AnimAction::SkelFile(skel_path, skel_file_name) => {
-                    let (new_entity, new_file_key) = add_file_dependency(
+                    let (new_entity, _, new_file_key) = add_file_dependency(
                         project,
                         file_key,
                         file_entity,

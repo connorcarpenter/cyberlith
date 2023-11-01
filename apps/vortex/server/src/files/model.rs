@@ -66,6 +66,7 @@ impl ModelWriter {
                         FileExtension::Skin => {
                             let skin_index = skin_dependencies.len() as u16;
                             skin_dependency_to_index.insert(dependency_entity, skin_index);
+                            info!("writing skin index for entity: `{:?}`, skin_index: `{}`", dependency_entity, skin_index);
                             skin_dependencies.push((dependency_key, ModelTransformEntityType::Skin));
                         }
                         FileExtension::Scene => {
@@ -117,7 +118,10 @@ impl ModelWriter {
                 panic!("Error getting model transform");
             };
             let skin_entity: Entity = transform.skin_or_scene_entity.get(&server).unwrap();
-            let skin_index: u16 = *skin_dependency_to_index.get(&skin_entity).unwrap();
+            info!("in writing model transform, skin entity is: `{:?}`", skin_entity);
+            let Some(skin_index) = skin_dependency_to_index.get(&skin_entity) else {
+                panic!("skin entity not found in skin_dependency_to_index: `{:?}`", skin_entity);
+            };
 
             let bone_name = (*transform.vertex_name).clone();
             let translation_x = transform.translation_x();
@@ -128,9 +132,9 @@ impl ModelWriter {
             let scale_z = transform.scale_z();
             let rotation = transform.get_rotation_serde();
 
-            info!("writing action for model transform for bone: `{}`", bone_name);
+            info!("writing action for model transform for bone: `{}`, skin index is: {}", bone_name, skin_index);
             actions.push(ModelAction::ModelTransform(
-                skin_index,
+                *skin_index,
                 bone_name,
                 translation_x,
                 translation_y,
@@ -307,7 +311,7 @@ impl ModelReader {
         for action in actions {
             match action {
                 ModelAction::SkelFile(path, file_name) => {
-                    let (new_entity, new_file_key) = add_file_dependency(
+                    let (new_dependency_entity, dependency_file_entity, dependency_file_key) = add_file_dependency(
                         project,
                         file_key,
                         file_entity,
@@ -317,7 +321,7 @@ impl ModelReader {
                         &path,
                         &file_name,
                     );
-                    output.insert(new_entity, ContentEntityData::new_dependency(new_file_key));
+                    output.insert(new_dependency_entity, ContentEntityData::new_dependency(dependency_file_key));
                 }
                 ModelAction::SkinOrSceneFile(path, file_name, file_type) => {
                     let dependency_file_ext = match file_type {
@@ -325,7 +329,7 @@ impl ModelReader {
                         ModelTransformEntityType::Skin => FileExtension::Skin,
                         ModelTransformEntityType::Scene => FileExtension::Scene,
                     };
-                    let (new_entity, new_file_key) = add_file_dependency(
+                    let (new_dependency_entity, dependency_file_entity, dependency_file_key) = add_file_dependency(
                         project,
                         file_key,
                         file_entity,
@@ -335,9 +339,10 @@ impl ModelReader {
                         &path,
                         &file_name,
                     );
-                    output.insert(new_entity, ContentEntityData::new_dependency(new_file_key));
+                    output.insert(new_dependency_entity, ContentEntityData::new_dependency(dependency_file_key));
 
-                    skin_files.push((file_type, new_entity));
+                    info!("reading new skin file at index: {}, entity: `{:?}`", skin_files.len(), dependency_file_entity);
+                    skin_files.push((file_type, dependency_file_entity));
                 }
                 ModelAction::ModelTransform(
                     skin_index,
@@ -350,9 +355,9 @@ impl ModelReader {
                     scale_z,
                     rotation
                 ) => {
-                    info!("reading model transform for bone: `{}`, into world", vertex_name);
+
                     let mut component = ModelTransform::new(
-                        vertex_name,
+                        vertex_name.clone(),
                         rotation,
                         translation_x as f32,
                         translation_y as f32,
@@ -366,6 +371,10 @@ impl ModelReader {
                         panic!("skin index out of bounds");
                     };
                     component.set_entity(&server, *skin_or_scene_entity, *skin_or_scene_type);
+                    info!("reading model transform for bone: `{}`, into world. skin index: {} -> entity: `{:?}`",
+                        vertex_name.clone(),
+                        skin_index,
+                        skin_or_scene_entity);
 
                     component.model_file_entity.set(&mut server, file_entity);
 

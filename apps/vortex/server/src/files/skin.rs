@@ -263,7 +263,7 @@ impl SkinReader {
         for action in actions {
             match action {
                 SkinAction::PaletteFile(palette_path, palette_file_name) => {
-                    let (new_entity, new_file_key) = add_file_dependency(
+                    let (new_entity, _, new_file_key) = add_file_dependency(
                         project,
                         file_key,
                         file_entity,
@@ -276,7 +276,7 @@ impl SkinReader {
                     output.insert(new_entity, ContentEntityData::new_dependency(new_file_key));
                 }
                 SkinAction::MeshFile(mesh_path, mesh_file_name) => {
-                    let (new_entity, new_file_key) = add_file_dependency(
+                    let (new_entity, _, new_file_key) = add_file_dependency(
                         project,
                         file_key,
                         file_entity,

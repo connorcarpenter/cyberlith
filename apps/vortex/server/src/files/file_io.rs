@@ -271,7 +271,7 @@ pub fn add_file_dependency(
     dependency_file_ext: FileExtension,
     dependency_path: &str,
     dependency_file_name: &str,
-) -> (Entity, FileKey) {
+) -> (Entity, Entity, FileKey) {
     let dependency_file_key =
         FileKey::new(&dependency_path, &dependency_file_name, EntryKind::File);
     let file_extension = project.file_extension(&dependency_file_key).unwrap();
@@ -285,18 +285,18 @@ pub fn add_file_dependency(
 
     project.file_add_dependency(file_key, &dependency_file_key);
 
-    let dependency_entity = project.file_entity(&dependency_file_key).unwrap();
+    let dependency_file_entity = project.file_entity(&dependency_file_key).unwrap();
 
     info!("creating new FileDependency!");
     let mut component = FileDependency::new();
     component.file_entity.set(server, file_entity);
-    component.dependency_entity.set(server, &dependency_entity);
-    let entity = commands
+    component.dependency_entity.set(server, &dependency_file_entity);
+    let dependency_entity = commands
         .spawn_empty()
         .enable_replication(server)
         .configure_replication(ReplicationConfig::Delegated)
         .insert(component)
         .id();
 
-    return (entity, dependency_file_key);
+    return (dependency_entity, dependency_file_entity, dependency_file_key);
 }

@@ -817,7 +817,9 @@ fn file_ext_specific_sync_tabs_shape_colors(
                 return;
             };
             for model_transform_entity in model_transform_entities {
-                let model_transform = model_transform_q.get(model_transform_entity).unwrap();
+                let Ok(model_transform) = model_transform_q.get(model_transform_entity) else {
+                    continue;
+                };
                 if ModelTransformEntityType::Skin != *model_transform.entity_type {
                     todo!("support scene entity type");
                 }
