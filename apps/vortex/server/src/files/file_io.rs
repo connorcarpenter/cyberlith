@@ -253,6 +253,9 @@ pub fn despawn_file_content_entities(
             ContentEntityData::FaceColor(_) => {
                 skin_manager.deregister_face_color(entity);
             }
+            ContentEntityData::ModelTransform => {
+                // deregister with model_manager?
+            }
         }
     }
 

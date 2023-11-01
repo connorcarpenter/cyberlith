@@ -1,11 +1,13 @@
-use bevy_ecs::{prelude::World, world::Mut};
+use bevy_ecs::{entity::Entity, system::{Query, Res, SystemState}, prelude::World, world::Mut};
 
 use render_egui::egui::Ui;
+
+use vortex_proto::components::ShapeName;
 
 use crate::app::{
     resources::{
         action::model::ModelAction, input::InputManager, model_manager::ModelManager,
-        shape_data::CanvasShape, tab_manager::TabManager, toolbar::Toolbar,
+        shape_data::CanvasShape, tab_manager::TabManager, toolbar::Toolbar, edge_manager::EdgeManager
     },
     ui::UiState,
 };
@@ -13,7 +15,7 @@ use crate::app::{
 pub struct ModelToolbar;
 
 impl ModelToolbar {
-    pub(crate) fn render(ui: &mut Ui, world: &mut World) {
+    pub(crate) fn render(ui: &mut Ui, world: &mut World, file_entity: &Entity) {
         let input_manager = world.get_resource::<InputManager>().unwrap();
         let selected_shape_2d = input_manager.selected_shape_2d();
 
@@ -26,12 +28,28 @@ impl ModelToolbar {
         // check whether model transform already exists
         let mut edge_has_model_transform = false;
         if let Some(edge_2d_entity) = edge_2d_entity_opt {
-            if world
-                .get_resource::<ModelManager>()
-                .unwrap()
-                .edge_2d_has_model_transform(&edge_2d_entity)
-            {
-                edge_has_model_transform = true;
+
+            let mut system_state: SystemState<(
+                Res<ModelManager>,
+                Res<EdgeManager>,
+                Query<Option<&ShapeName>>,
+            )> = SystemState::new(world);
+            let (
+                model_manager,
+                edge_manager,
+                shape_name_q,
+            ) = system_state.get_mut(world);
+
+            if let Some(edge_3d_entity) = edge_manager.edge_entity_2d_to_3d(&edge_2d_entity) {
+                let (_, end_vertex_3d_entity) = edge_manager.edge_get_endpoints(&edge_3d_entity);
+                let shape_name_opt = shape_name_q.get(end_vertex_3d_entity).unwrap();
+
+                if let Some(shape_name) = shape_name_opt {
+                    let shape_name: &str = &(*shape_name.value);
+                    if model_manager.model_transform_exists(file_entity, shape_name) {
+                        edge_has_model_transform = true;
+                    }
+                }
             }
         }
 

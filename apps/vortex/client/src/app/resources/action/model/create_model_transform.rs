@@ -1,8 +1,10 @@
 use bevy_ecs::{entity::Entity, prelude::World, world::Mut};
+use bevy_ecs::system::{Query, Res, SystemState};
 use bevy_log::info;
+use vortex_proto::components::ShapeName;
 
 use crate::app::resources::{
-    action::model::ModelAction, canvas::Canvas, input::InputManager, model_manager::ModelManager,
+    action::model::ModelAction, canvas::Canvas, input::InputManager, model_manager::ModelManager, edge_manager::EdgeManager
 };
 
 pub fn execute(
@@ -17,14 +19,29 @@ pub fn execute(
 
     info!("CreateModelTransform(edge_2d_entity: {:?}, dependency_file_ext: {:?}, dependency_file_entity: {:?})", edge_2d_entity, dependency_file_ext, dependency_file_entity);
 
+    let mut system_state: SystemState<(
+        Res<EdgeManager>,
+        Query<&ShapeName>,
+    )> = SystemState::new(world);
+    let (
+        edge_manager,
+        shape_name_q,
+    ) = system_state.get_mut(world);
+
+    let edge_3d_entity = edge_manager.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
+    let (_, vertex_3d_entity) =
+        edge_manager.edge_get_endpoints(&edge_3d_entity);
+    let shape_name = shape_name_q.get(vertex_3d_entity).unwrap();
+    let vertex_name = (*shape_name.value).clone();
+
     world.resource_scope(|world, mut model_manager: Mut<ModelManager>| {
         model_manager.create_networked_model_transform(
             world,
             input_manager,
-            &edge_2d_entity,
             current_file_entity,
             &dependency_file_ext,
             &dependency_file_entity,
+            vertex_name,
         );
     });
 

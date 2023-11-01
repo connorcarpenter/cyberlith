@@ -163,11 +163,12 @@ impl FileManager {
         file_entity: &Entity,
         file_ext: FileExtension,
     ) -> Option<Entity> {
-        let file_data = self.file_entities.get(&file_entity).unwrap();
-        for dependency_file_entity in file_data.file_dependencies.iter() {
-            let dependency_file_data = self.file_entities.get(dependency_file_entity).unwrap();
-            if dependency_file_data.file_type == file_ext {
-                return Some(*dependency_file_entity);
+        if let Some(file_data) = self.file_entities.get(&file_entity) {
+            for dependency_file_entity in file_data.file_dependencies.iter() {
+                let dependency_file_data = self.file_entities.get(dependency_file_entity).unwrap();
+                if dependency_file_data.file_type == file_ext {
+                    return Some(*dependency_file_entity);
+                }
             }
         }
         None

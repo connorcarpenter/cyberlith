@@ -64,12 +64,6 @@ impl AnimWriter {
 
         for (content_entity, content_data) in content_entities {
             match content_data {
-                ContentEntityData::Shape(_)
-                | ContentEntityData::PaletteColor
-                | ContentEntityData::FaceColor(_)
-                | ContentEntityData::BackgroundSkinColor(_) => {
-                    panic!("animation should not have this content entity type");
-                }
                 ContentEntityData::Dependency(dependency_key) => {
                     let dependency_value = working_file_entries.get(dependency_key).unwrap();
                     if dependency_value.extension().unwrap() != FileExtension::Skel {
@@ -130,6 +124,9 @@ impl AnimWriter {
                     }
                     let poses_map = frame_poses_map.get_mut(&frame_entity).unwrap();
                     poses_map.insert(shape_index, rotation.get_rotation_serde());
+                }
+                _ => {
+                    panic!("animation should not have this content entity type");
                 }
             }
         }

@@ -37,7 +37,7 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
 
                 match current_file_type {
                     FileExtension::Skel | FileExtension::Mesh => {
-                        render_tool_bar(ui, world, current_file_type);
+                        render_tool_bar(ui, world, &current_file_entity, current_file_type);
                     }
                     FileExtension::Anim => {
                         let file_manager = world.get_resource::<FileManager>().unwrap();
@@ -53,7 +53,7 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                             return;
                         }
 
-                        render_tool_bar(ui, world, current_file_type);
+                        render_tool_bar(ui, world, &current_file_entity, current_file_type);
 
                         let animation_manager = world.get_resource::<AnimationManager>().unwrap();
                         if animation_manager.is_framing() {
@@ -154,7 +154,7 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                             return;
                         }
 
-                        render_tool_bar(ui, world, current_file_type);
+                        render_tool_bar(ui, world, &current_file_entity, current_file_type);
                     }
                     _ => {}
                 }

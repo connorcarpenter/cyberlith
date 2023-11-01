@@ -4,7 +4,7 @@ mod model;
 mod shared_buttons;
 mod skel;
 
-use bevy_ecs::world::World;
+use bevy_ecs::{entity::Entity, world::World};
 
 use render_egui::{
     egui,
@@ -25,7 +25,7 @@ impl Toolbar {
         ui.add_enabled(enabled, button).on_hover_text(tooltip)
     }
 
-    pub fn render(ui: &mut Ui, world: &mut World, file_ext: FileExtension) {
+    pub fn render(ui: &mut Ui, world: &mut World, file_entity: &Entity, file_ext: FileExtension) {
         match file_ext {
             FileExtension::Skel => {
                 SkeletonToolbar::render(ui, world);
@@ -37,7 +37,7 @@ impl Toolbar {
                 AnimationToolbar::render(ui, world);
             }
             FileExtension::Model => {
-                ModelToolbar::render(ui, world);
+                ModelToolbar::render(ui, world, file_entity);
             }
             _ => {}
         }

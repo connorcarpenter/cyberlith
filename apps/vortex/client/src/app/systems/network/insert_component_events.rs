@@ -6,6 +6,7 @@ use bevy_ecs::{
     system::{Commands, Query, ResMut, Resource, SystemState},
     world::{Mut, World},
 };
+use bevy_ecs::system::Res;
 use bevy_log::{info, warn};
 
 use naia_bevy_client::{events::InsertComponentEvents, Client, Replicate};
@@ -15,12 +16,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{
-    AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d,
-    EdgeAngle, EntryKind, Face3d, FaceColor, FileDependency, FileExtension, FileSystemChild,
-    FileSystemEntry, FileSystemRootChild, FileType, ModelTransform, OwnedByFile, PaletteColor,
-    ShapeName, Vertex3d, VertexRoot,
-};
+use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind, Face3d, FaceColor, FileDependency, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, ModelTransform, ModelTransformEntityType, OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::file_system::{
@@ -42,6 +38,7 @@ use crate::app::{
     },
     systems::file_post_process,
 };
+use crate::app::resources::model_manager::ModelManager;
 
 #[derive(Resource)]
 struct CachedInsertComponentEventsState {
@@ -709,6 +706,17 @@ pub fn insert_skin_events(
 
 pub fn insert_model_events(
     mut model_transform_events: EventReader<InsertComponentEvent<ModelTransform>>,
+    mut commands: Commands,
+    client: Client,
+    mut camera_manager: ResMut<CameraManager>,
+    file_manager: Res<FileManager>,
+    mut vertex_manager: ResMut<VertexManager>,
+    mut edge_manager: ResMut<EdgeManager>,
+    mut face_manager: ResMut<FaceManager>,
+    mut meshes: ResMut<Assets<CpuMesh>>,
+    mut materials: ResMut<Assets<CpuMaterial>>,
+    mut model_manager: ResMut<ModelManager>,
+    model_q: Query<&ModelTransform>,
 ) {
     // on ModelTransform Insert Event
     for event in model_transform_events.iter() {
@@ -717,6 +725,29 @@ pub fn insert_model_events(
         info!(
             "entity: {:?} - inserted ModelTransform",
             model_transform_entity
+        );
+
+        let Ok(model) = model_q.get(model_transform_entity) else {
+            warn!("entity: `{:?}` has no ModelTransform component", model_transform_entity);
+            continue;
+        };
+        let model_file_entity = model.model_file_entity.get(&client).unwrap();
+        let skel_bone_name = (*model.vertex_name).clone();
+
+        let translation = model.translation_vec3();
+
+        model_manager.model_transform_postprocess(
+            &mut commands,
+            &mut camera_manager,
+            &mut vertex_manager,
+            &mut edge_manager,
+            &mut face_manager,
+            &mut meshes,
+            &mut materials,
+            &model_file_entity,
+            skel_bone_name,
+            model_transform_entity,
+            translation,
         );
     }
 }

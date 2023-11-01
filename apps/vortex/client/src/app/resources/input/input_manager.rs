@@ -224,7 +224,9 @@ impl InputManager {
             }
         }
 
-        let vertex_transform = transform_q.get(*vertex_2d_entity).unwrap();
+        let Ok(vertex_transform) = transform_q.get(*vertex_2d_entity) else {
+            return;
+        };
         let vertex_position = vertex_transform.translation.truncate();
         let distance = vertex_position.distance(*mouse_position);
         if distance < *least_distance {

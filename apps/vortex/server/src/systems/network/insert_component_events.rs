@@ -18,13 +18,14 @@ use vortex_proto::{
     },
     resources::FileKey,
 };
+use vortex_proto::components::ModelTransform;
 
 use crate::{
     events::InsertComponentEvent,
     resources::{
         file_waitlist::{file_process_insert, FSWaitlist, FSWaitlistInsert},
         AnimationManager, ContentEntityData, GitManager, PaletteManager, ShapeManager,
-        ShapeWaitlist, ShapeWaitlistInsert, SkinManager, TabManager, UserManager,
+        ShapeWaitlist, ShapeWaitlistInsert, SkinManager, TabManager, UserManager, ModelManager,
     },
 };
 
@@ -73,6 +74,8 @@ pub fn insert_component_events(world: &mut World) {
         insert_component_event::<PaletteColor>(world, &events);
         insert_component_event::<BackgroundSkinColor>(world, &events);
         insert_component_event::<FaceColor>(world, &events);
+
+        insert_component_event::<ModelTransform>(world, &events);
     }
 }
 
@@ -572,6 +575,45 @@ pub fn insert_skin_component_events(
             &project_key,
             &file_key,
             &color_entity,
+            &content_entity_data,
+        );
+
+        git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
+    }
+}
+
+pub fn insert_model_component_events(
+    mut commands: Commands,
+    mut server: Server,
+    user_manager: ResMut<UserManager>,
+    mut git_manager: ResMut<GitManager>,
+    _model_manager: ResMut<ModelManager>,
+    mut events: EventReader<InsertComponentEvent<ModelTransform>>,
+    key_q: Query<&FileKey>,
+    model_q: Query<&ModelTransform>,
+) {
+    // on ModelTransform Insert Event
+    for event in events.iter() {
+        let user_key = event.user_key;
+        let entity = event.entity;
+        info!("entity: `{:?}`, inserted ModelTransform", entity);
+
+        let model = model_q.get(entity).unwrap();
+        let model_file_entity = model.model_file_entity.get(&server).unwrap();
+
+        let project_key = user_manager
+            .user_session_data(&user_key)
+            .unwrap()
+            .project_key()
+            .unwrap();
+        let file_key = key_q.get(model_file_entity).unwrap().clone();
+
+        let content_entity_data = ContentEntityData::new_model_transform();
+        git_manager.on_insert_content_entity(
+            &mut server,
+            &project_key,
+            &file_key,
+            &entity,
             &content_entity_data,
         );
 

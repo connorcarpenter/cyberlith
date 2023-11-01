@@ -20,7 +20,7 @@ use vortex_proto::{
     components::{
         AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency,
         FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, PaletteColor,
-        ShapeName, Vertex3d, VertexRoot,
+        ShapeName, Vertex3d, VertexRoot, ModelTransform,
     },
     protocol,
 };
@@ -29,7 +29,7 @@ use crate::{
     config::{AppConfig, ConfigPlugin},
     events::InsertComponentEvent,
     resources::{
-        changelist_manager_process, AnimationManager, ChangelistManager, GitManager,
+        ModelManager, changelist_manager_process, AnimationManager, ChangelistManager, GitManager,
         PaletteManager, ShapeManager, ShapeWaitlist, SkinManager, TabManager, UserManager,
     },
     systems::{network, world_loop},
@@ -58,6 +58,7 @@ fn main() {
         .init_resource::<AnimationManager>()
         .init_resource::<PaletteManager>()
         .init_resource::<SkinManager>()
+        .init_resource::<ModelManager>()
         // Network Systems
         .add_systems(Startup, network::init)
         .add_systems(
@@ -90,6 +91,7 @@ fn main() {
                 network::insert_animation_component_events,
                 network::insert_palette_component_events,
                 network::insert_skin_component_events,
+                network::insert_model_component_events,
                 apply_deferred,
                 network::message_events,
             )
@@ -113,6 +115,7 @@ fn main() {
         .add_event::<InsertComponentEvent<PaletteColor>>()
         .add_event::<InsertComponentEvent<BackgroundSkinColor>>()
         .add_event::<InsertComponentEvent<FaceColor>>()
+        .add_event::<InsertComponentEvent<ModelTransform>>()
         // Other Systems
         .add_systems(Startup, setup)
         .add_systems(Update, world_loop.after(ReceiveEvents))

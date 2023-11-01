@@ -56,7 +56,7 @@ impl ModelAction {
             ModelActionType::CreateModelTransform => {
                 create_model_transform::execute(world, input_manager, &current_file_entity, self)
             }
-            ModelActionType::DeleteModelTransform => delete_model_transform::execute(world, self),
+            ModelActionType::DeleteModelTransform => delete_model_transform::execute(world, &current_file_entity, self),
             ModelActionType::MoveTransform => move_transform::execute(world, self),
             _ => Vec::new(),
         }

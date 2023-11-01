@@ -1,4 +1,5 @@
-use bevy_ecs::world::World;
+
+use bevy_ecs::{world::World, entity::Entity};
 
 use render_egui::{
     egui,
@@ -9,7 +10,7 @@ use vortex_proto::components::FileExtension;
 
 use crate::app::resources::toolbar::Toolbar;
 
-pub fn render_tool_bar(ui: &mut Ui, world: &mut World, file_ext: FileExtension) {
+pub fn render_tool_bar(ui: &mut Ui, world: &mut World, file_entity: &Entity, file_ext: FileExtension) {
     egui::SidePanel::right("right_panel")
         .frame(Frame::side_top_panel(ui.style()).inner_margin(Margin {
             left: 3.0,
@@ -22,7 +23,7 @@ pub fn render_tool_bar(ui: &mut Ui, world: &mut World, file_ext: FileExtension) 
         .show_inside(ui, |ui| {
             ui.style_mut().override_text_style = Some(egui::TextStyle::Heading);
             ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
-                Toolbar::render(ui, world, file_ext);
+                Toolbar::render(ui, world, file_entity, file_ext);
 
                 ui.allocate_space(ui.available_size());
             });

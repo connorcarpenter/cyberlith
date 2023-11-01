@@ -20,6 +20,7 @@ pub enum ContentEntityData {
     PaletteColor,
     FaceColor(Option<(u16, u8)>),
     BackgroundSkinColor(Option<u8>),
+    ModelTransform
 }
 
 impl ContentEntityData {
@@ -49,6 +50,10 @@ impl ContentEntityData {
 
     pub fn new_background_skin_color(file_data_opt: Option<u8>) -> Self {
         Self::BackgroundSkinColor(file_data_opt)
+    }
+
+    pub fn new_model_transform() -> Self {
+        Self::ModelTransform
     }
 }
 

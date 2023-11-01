@@ -42,8 +42,8 @@ use crate::app::{
 };
 
 pub struct ModelTransformData {
-    edge_2d_entity: Entity,
     model_file_entity: Entity,
+    skel_edge_name: String,
     translation_entity_2d: Entity,
     translation_entity_3d: Entity,
     rotation_entity_2d: Entity,
@@ -59,7 +59,7 @@ pub struct ModelTransformData {
 impl ModelTransformData {
     pub fn new(
         model_file_entity: Entity,
-        edge_2d_entity: Entity,
+        skel_edge_name: String,
         translation_entity_2d: Entity,
         translation_entity_3d: Entity,
         rotation_entity_2d: Entity,
@@ -72,8 +72,8 @@ impl ModelTransformData {
         scale_z_entity_3d: Entity,
     ) -> Self {
         Self {
-            edge_2d_entity,
             model_file_entity,
+            skel_edge_name,
             translation_entity_3d,
             rotation_entity_3d,
             scale_x_entity_3d,
@@ -92,7 +92,8 @@ impl ModelTransformData {
 pub struct ModelManager {
     model_file_to_transform_entity: HashMap<Entity, HashSet<Entity>>,
     transform_entities: HashMap<Entity, ModelTransformData>,
-    edge_2d_to_transform_entity: HashMap<Entity, Entity>,
+    // (.model file entity, edge name) -> model transform entity
+    name_to_transform_entity: HashMap<(Entity, String), Entity>,
     // Option<edge_2d_entity>
     binding_edge_opt: Option<Entity>,
 
@@ -107,7 +108,7 @@ impl Default for ModelManager {
         Self {
             model_file_to_transform_entity: HashMap::new(),
             transform_entities: HashMap::new(),
-            edge_2d_to_transform_entity: HashMap::new(),
+            name_to_transform_entity: HashMap::new(),
             binding_edge_opt: None,
 
             drags: Vec::new(),
@@ -170,10 +171,10 @@ impl ModelManager {
         &mut self,
         world: &mut World,
         input_manager: &mut InputManager,
-        edge_2d_entity: &Entity,
         current_file_entity: &Entity,
         dependency_file_ext: &FileExtension,
         dependency_file_entity: &Entity,
+        skel_bone_name: String,
     ) -> Entity {
         let mut system_state: SystemState<(
             Commands,
@@ -185,9 +186,6 @@ impl ModelManager {
             ResMut<FaceManager>,
             ResMut<Assets<CpuMesh>>,
             ResMut<Assets<CpuMaterial>>,
-            Query<&Vertex3d>,
-            Query<&EdgeAngle>,
-            Query<&ShapeName>,
         )> = SystemState::new(world);
         let (
             mut commands,
@@ -199,46 +197,19 @@ impl ModelManager {
             mut face_manager,
             mut meshes,
             mut materials,
-            vertex_3d_q,
-            edge_angle_q,
-            shape_name_q,
         ) = system_state.get_mut(world);
 
         input_manager.deselect_shape(&mut canvas);
 
-        let edge_3d_entity = edge_manager.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
-
-        // get vertex from edge, in order to get name
-        let (parent_vertex_3d_entity, vertex_3d_entity) =
-            edge_manager.edge_get_endpoints(&edge_3d_entity);
-        let shape_name = shape_name_q.get(vertex_3d_entity).unwrap();
-        let vertex_name = (*shape_name.value).clone();
-
-        // get translation for model transform (midpoint of edge)
-        let parent_original_3d_position =
-            vertex_3d_q.get(parent_vertex_3d_entity).unwrap().as_vec3();
-        let original_3d_position = vertex_3d_q.get(vertex_3d_entity).unwrap().as_vec3();
-        let translation = (parent_original_3d_position + original_3d_position) * 0.5;
-
-        // get rotation
-        let target_direction = (original_3d_position - parent_original_3d_position).normalize();
-        let edge_old_angle = edge_angle_q.get(edge_3d_entity).unwrap();
-        let edge_old_angle: f32 = edge_old_angle.get_radians();
-        let rotation = quat_from_spin_direction(edge_old_angle, Vec3::Z, target_direction);
-
-        // get scale
-        // TODO: this is naive .. find scale by comparing edge length to skin/scene size
-        let scale = Vec3::splat(1.0);
-
         let mut component = ModelTransform::new(
-            vertex_name,
-            SerdeQuat::from(rotation),
-            translation.x,
-            translation.y,
-            translation.z,
-            scale.x,
-            scale.y,
-            scale.z,
+            skel_bone_name.clone(),
+            SerdeQuat::from(Quat::IDENTITY),
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            1.0,
+            1.0,
         );
         let dependency_file_type = match dependency_file_ext {
             FileExtension::Skin => ModelTransformEntityType::Skin,
@@ -265,10 +236,10 @@ impl ModelManager {
             &mut face_manager,
             &mut meshes,
             &mut materials,
-            new_model_transform_entity,
-            *edge_2d_entity,
             current_file_entity,
-            translation,
+            skel_bone_name.clone(),
+            new_model_transform_entity,
+            Vec3::ZERO,
         );
 
         system_state.apply(world);
@@ -294,9 +265,9 @@ impl ModelManager {
         face_manager: &mut FaceManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
-        new_model_transform_entity: Entity,
-        edge_2d_entity: Entity,
-        owning_file_entity: &Entity,
+        model_file_entity: &Entity,
+        skel_bone_name: String,
+        model_transform_entity: Entity,
         translation: Vec3,
     ) {
         // translation control
@@ -308,7 +279,7 @@ impl ModelManager {
             face_manager,
             meshes,
             materials,
-            new_model_transform_entity,
+            model_transform_entity,
             translation,
             None,
             Color::LIGHT_BLUE,
@@ -324,7 +295,7 @@ impl ModelManager {
             face_manager,
             meshes,
             materials,
-            new_model_transform_entity,
+            model_transform_entity,
             translation,
             Some(translation_entity_2d),
             Color::RED,
@@ -340,7 +311,7 @@ impl ModelManager {
             face_manager,
             meshes,
             materials,
-            new_model_transform_entity,
+            model_transform_entity,
             translation,
             Some(translation_entity_2d),
             Color::WHITE,
@@ -356,7 +327,7 @@ impl ModelManager {
             face_manager,
             meshes,
             materials,
-            new_model_transform_entity,
+            model_transform_entity,
             translation,
             Some(translation_entity_2d),
             Color::WHITE,
@@ -372,7 +343,7 @@ impl ModelManager {
             face_manager,
             meshes,
             materials,
-            new_model_transform_entity,
+            model_transform_entity,
             translation,
             Some(translation_entity_2d),
             Color::WHITE,
@@ -380,9 +351,9 @@ impl ModelManager {
         );
 
         self.register_model_transform_controls(
-            owning_file_entity,
-            new_model_transform_entity,
-            edge_2d_entity,
+            model_file_entity,
+            model_transform_entity,
+            skel_bone_name,
             translation_entity_2d,
             translation_entity_3d,
             rotation_entity_2d,
@@ -454,7 +425,7 @@ impl ModelManager {
         &mut self,
         model_file_entity: &Entity,
         model_transform_entity: Entity,
-        edge_2d_entity: Entity,
+        skel_bone_name: String,
         translation_entity_2d: Entity,
         translation_entity_3d: Entity,
         rotation_entity_2d: Entity,
@@ -470,7 +441,7 @@ impl ModelManager {
             model_transform_entity,
             ModelTransformData::new(
                 *model_file_entity,
-                edge_2d_entity,
+                skel_bone_name.clone(),
                 translation_entity_2d,
                 translation_entity_3d,
                 rotation_entity_2d,
@@ -483,8 +454,9 @@ impl ModelManager {
                 scale_z_entity_3d,
             ),
         );
-        self.edge_2d_to_transform_entity
-            .insert(edge_2d_entity, model_transform_entity);
+        let key: (Entity, String) = (*model_file_entity, skel_bone_name.clone());
+        self.name_to_transform_entity
+            .insert(key, model_transform_entity);
 
         if !self
             .model_file_to_transform_entity
@@ -509,15 +481,14 @@ impl ModelManager {
             .map(|set| set.iter().cloned().collect())
     }
 
-    pub(crate) fn edge_2d_has_model_transform(&self, edge_2d_entity: &Entity) -> bool {
-        self.edge_2d_to_transform_entity
-            .contains_key(edge_2d_entity)
+    pub(crate) fn model_transform_exists(&self, model_file_entity: &Entity, skel_bone_name: &str) -> bool {
+        let key: (Entity, String) = (*model_file_entity, skel_bone_name.to_string());
+        self.name_to_transform_entity.contains_key(&key)
     }
 
-    pub(crate) fn model_transform_from_edge_2d(&self, edge_2d_entity: &Entity) -> Option<Entity> {
-        self.edge_2d_to_transform_entity
-            .get(edge_2d_entity)
-            .cloned()
+    pub(crate) fn find_model_transform(&self, model_file_entity: &Entity, skel_bone_name: &str) -> Option<Entity> {
+        let key: (Entity, String) = (*model_file_entity, skel_bone_name.to_string());
+        self.name_to_transform_entity.get(&key).cloned()
     }
 
     pub(crate) fn on_despawn_model_transform(
@@ -566,8 +537,8 @@ impl ModelManager {
             .transform_entities
             .remove(model_transform_entity)
             .unwrap();
-        self.edge_2d_to_transform_entity
-            .remove(&model_transform_data.edge_2d_entity);
+        let key: (Entity, String) = (model_transform_data.model_file_entity, model_transform_data.skel_edge_name.clone());
+        self.name_to_transform_entity.remove(&key);
 
         let model_transforms = self
             .model_file_to_transform_entity
@@ -599,8 +570,9 @@ impl ModelManager {
             // translation
             let translation = model_transform.translation_vec3();
             let translation_control_entity = data.translation_entity_3d;
-            let mut translation_control_3d =
-                vertex_3d_q.get_mut(translation_control_entity).unwrap();
+            let Ok(mut translation_control_3d) = vertex_3d_q.get_mut(translation_control_entity) else {
+                continue;
+            };
             translation_control_3d.set_vec3(&translation);
 
             // rotation
@@ -978,12 +950,17 @@ impl ModelManager {
                 let Some(edge_2d_entity) = edge_manager.edge_entity_3d_to_2d(&edge_3d_entity) else {
                     continue;
                 };
-                if self.edge_2d_has_model_transform(&edge_2d_entity) {
-                    continue;
-                }
 
                 let (_, end_vertex_3d_entity) = edge_manager.edge_get_endpoints(&edge_3d_entity);
                 let shape_name_opt = shape_name_q.get(end_vertex_3d_entity).unwrap();
+
+                if let Some(shape_name) = shape_name_opt {
+                    let shape_name: &str = &(*shape_name.value);
+                    if self.model_transform_exists(current_file_entity, shape_name) {
+                        continue;
+                    }
+                }
+
                 let edge_is_enabled = edge_is_enabled(shape_name_opt);
                 let mat_handle = get_shape_color(&vertex_manager, edge_is_enabled);
 
@@ -1165,6 +1142,7 @@ impl ModelManager {
                 edge_q,
                 shape_name_q,
             ) = system_state.get_mut(world);
+
             let Some(skel_file_entity) = file_manager.file_get_dependency(current_file_entity, FileExtension::Skel) else {
                 return;
             };
@@ -1198,12 +1176,17 @@ impl ModelManager {
                 let Some(edge_2d_entity) = edge_manager.edge_entity_3d_to_2d(&edge_3d_entity) else {
                     continue;
                 };
-                if self.edge_2d_has_model_transform(&edge_2d_entity) {
-                    continue;
-                }
 
                 let (_, end_vertex_3d_entity) = edge_manager.edge_get_endpoints(&edge_3d_entity);
                 let shape_name_opt = shape_name_q.get(end_vertex_3d_entity).unwrap();
+
+                if let Some(shape_name) = shape_name_opt {
+                    let shape_name: &str = &(*shape_name.value);
+                    if self.model_transform_exists(current_file_entity, shape_name) {
+                        continue;
+                    }
+                }
+
                 let edge_is_enabled = edge_is_enabled(shape_name_opt);
                 let mat_handle = get_shape_color(&vertex_manager, edge_is_enabled);
 
@@ -1249,9 +1232,10 @@ impl ModelManager {
                     panic!("not possible ... yet");
                 };
                 let skin_file_entity = model_transform.skin_or_scene_entity.get(&client).unwrap();
-                let mesh_file_entity = file_manager
-                    .file_get_dependency(&skin_file_entity, FileExtension::Mesh)
-                    .unwrap();
+                let Some(mesh_file_entity) = file_manager
+                    .file_get_dependency(&skin_file_entity, FileExtension::Mesh) else {
+                    continue;
+                };
                 let mut model_transform = ModelTransformLocal::to_transform(model_transform);
                 model_transform.rotation = model_transform.rotation * corrective_rot;
 
