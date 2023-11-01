@@ -6,7 +6,6 @@ use bevy_ecs::{
     system::{Commands, Query, ResMut, Resource, SystemState},
     world::{Mut, World},
 };
-use bevy_ecs::system::Res;
 use bevy_log::{info, warn};
 
 use naia_bevy_client::{events::InsertComponentEvents, Client, Replicate};
@@ -35,10 +34,10 @@ use crate::app::{
         skin_manager::SkinManager,
         tab_manager::TabManager,
         vertex_manager::VertexManager,
+        model_manager::ModelManager,
     },
     systems::file_post_process,
 };
-use crate::app::resources::model_manager::ModelManager;
 
 #[derive(Resource)]
 struct CachedInsertComponentEventsState {
@@ -709,7 +708,6 @@ pub fn insert_model_events(
     mut commands: Commands,
     client: Client,
     mut camera_manager: ResMut<CameraManager>,
-    file_manager: Res<FileManager>,
     mut vertex_manager: ResMut<VertexManager>,
     mut edge_manager: ResMut<EdgeManager>,
     mut face_manager: ResMut<FaceManager>,

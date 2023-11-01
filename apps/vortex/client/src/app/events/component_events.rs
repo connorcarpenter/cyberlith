@@ -16,3 +16,18 @@ impl<T: Replicate> InsertComponentEvent<T> {
         }
     }
 }
+
+#[derive(Event)]
+pub struct RemoveComponentEvent<T: Replicate> {
+    pub entity: Entity,
+    pub component: T,
+}
+
+impl<T: Replicate> RemoveComponentEvent<T> {
+    pub fn new(entity: Entity, component: T) -> Self {
+        Self {
+            entity,
+            component,
+        }
+    }
+}
