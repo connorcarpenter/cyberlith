@@ -146,7 +146,7 @@ pub fn sync_vertices(world: &mut World) {
             }
             FileExtension::Model => {
                 world.resource_scope(|world, mut model_manager: Mut<ModelManager>| {
-                    model_manager.sync_vertices(
+                    model_manager.sync_shapes(
                         world,
                         &vertex_manager,
                         &current_file_entity,

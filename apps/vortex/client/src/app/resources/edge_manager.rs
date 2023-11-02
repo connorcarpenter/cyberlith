@@ -180,7 +180,6 @@ impl EdgeManager {
                 continue;
             }
 
-            let edge_angle = edge_angle.get_radians();
             let (base_circle_entity, angle_edge_entity, end_circle_entity) =
                 edge_3d_data.angle_entities_opt.unwrap();
 
@@ -193,49 +192,76 @@ impl EdgeManager {
             }
 
             if edge_angles_visible {
-                let edge_2d_transform = transform_q.get(edge_2d_entity).unwrap();
-                let start_pos = edge_2d_transform.translation.truncate();
-                let end_pos = get_2d_line_transform_endpoint(&edge_2d_transform);
-                let base_angle = angle_between(&start_pos, &end_pos);
-                let middle_pos = (start_pos + end_pos) / 2.0;
-                let edge_depth = edge_2d_transform.translation.z;
-
-                let Ok(mut angle_transform) = transform_q.get_mut(angle_edge_entity) else {
-                    warn!("Edge angle entity {:?} has no transform", angle_edge_entity);
-                    continue;
-                };
-
-                let edge_angle_drawn = base_angle + edge_angle + FRAC_PI_2;
-                let edge_depth_drawn = edge_depth - 1.0;
-                set_2d_line_transform_from_angle(
-                    &mut angle_transform,
-                    middle_pos,
-                    edge_angle_drawn,
+                Self::sync_edge_angle(
+                    edge_angle_base_circle_scale,
+                    edge_angle_end_circle_scale,
                     edge_angle_length,
-                    edge_depth_drawn,
+                    edge_angle_thickness,
+                    base_circle_entity,
+                    angle_edge_entity,
+                    end_circle_entity,
+                    transform_q,
+                    edge_2d_entity,
+                    edge_angle
                 );
-                angle_transform.scale.y = edge_angle_thickness;
-                let edge_angle_endpoint = get_2d_line_transform_endpoint(&angle_transform);
-
-                let Ok(mut base_circle_transform) = transform_q.get_mut(base_circle_entity) else {
-                    warn!("Edge angle base circle entity {:?} has no transform", base_circle_entity);
-                    continue;
-                };
-                base_circle_transform.translation.x = middle_pos.x;
-                base_circle_transform.translation.y = middle_pos.y;
-                base_circle_transform.translation.z = edge_depth_drawn;
-                base_circle_transform.scale = Vec3::splat(edge_angle_base_circle_scale);
-
-                let Ok(mut end_circle_transform) = transform_q.get_mut(end_circle_entity) else {
-                    warn!("Edge angle end circle entity {:?} has no transform", end_circle_entity);
-                    continue;
-                };
-                end_circle_transform.translation.x = edge_angle_endpoint.x;
-                end_circle_transform.translation.y = edge_angle_endpoint.y;
-                end_circle_transform.translation.z = edge_depth_drawn;
-                end_circle_transform.scale = Vec3::splat(edge_angle_end_circle_scale);
             }
         }
+    }
+
+    pub fn sync_edge_angle(
+        edge_angle_base_circle_scale: f32,
+        edge_angle_end_circle_scale: f32,
+        edge_angle_length: f32,
+        edge_angle_thickness: f32,
+        base_circle_entity: Entity,
+        angle_edge_entity: Entity,
+        end_circle_entity: Entity,
+        transform_q: &mut Query<&mut Transform>,
+        edge_2d_entity: Entity,
+        edge_angle: &EdgeAngle
+    ) {
+        let edge_angle = edge_angle.get_radians();
+        let edge_2d_transform = transform_q.get(edge_2d_entity).unwrap();
+        let start_pos = edge_2d_transform.translation.truncate();
+        let end_pos = get_2d_line_transform_endpoint(&edge_2d_transform);
+        let base_angle = angle_between(&start_pos, &end_pos);
+        let middle_pos = (start_pos + end_pos) / 2.0;
+        let edge_depth = edge_2d_transform.translation.z;
+
+        let Ok(mut angle_transform) = transform_q.get_mut(angle_edge_entity) else {
+            warn!("Edge angle entity {:?} has no transform", angle_edge_entity);
+            return;
+        };
+
+        let edge_angle_drawn = base_angle + edge_angle + FRAC_PI_2;
+        let edge_depth_drawn = edge_depth - 1.0;
+        set_2d_line_transform_from_angle(
+            &mut angle_transform,
+            middle_pos,
+            edge_angle_drawn,
+            edge_angle_length,
+            edge_depth_drawn,
+        );
+        angle_transform.scale.y = edge_angle_thickness;
+        let edge_angle_endpoint = get_2d_line_transform_endpoint(&angle_transform);
+
+        let Ok(mut base_circle_transform) = transform_q.get_mut(base_circle_entity) else {
+            warn!("Edge angle base circle entity {:?} has no transform", base_circle_entity);
+            return;
+        };
+        base_circle_transform.translation.x = middle_pos.x;
+        base_circle_transform.translation.y = middle_pos.y;
+        base_circle_transform.translation.z = edge_depth_drawn;
+        base_circle_transform.scale = Vec3::splat(edge_angle_base_circle_scale);
+
+        let Ok(mut end_circle_transform) = transform_q.get_mut(end_circle_entity) else {
+            warn!("Edge angle end circle entity {:?} has no transform", end_circle_entity);
+            return;
+        };
+        end_circle_transform.translation.x = edge_angle_endpoint.x;
+        end_circle_transform.translation.y = edge_angle_endpoint.y;
+        end_circle_transform.translation.z = edge_depth_drawn;
+        end_circle_transform.scale = Vec3::splat(edge_angle_end_circle_scale);
     }
 
     pub fn sync_3d_edges(
@@ -764,7 +790,7 @@ impl EdgeManager {
 
     fn edge_angles_are_visible_for_filetype(file_type: FileExtension) -> bool {
         match file_type {
-            FileExtension::Skel | FileExtension::Anim => true,
+            FileExtension::Skel | FileExtension::Anim | FileExtension::Model => true,
             _ => false,
         }
     }

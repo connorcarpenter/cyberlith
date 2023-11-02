@@ -17,9 +17,7 @@ use render_api::{
     Assets, Handle,
 };
 
-use vortex_proto::components::{
-    Face3d, FileExtension, FileType, OwnedByFile, Vertex3d, VertexRoot,
-};
+use vortex_proto::components::{EdgeAngle, Face3d, FileExtension, FileType, OwnedByFile, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::{DefaultDraw, Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d, VertexEntry},
@@ -574,6 +572,11 @@ impl VertexManager {
                     new_vertex_3d_entity,
                 ))
                 .id();
+
+            // add edge angle if necessary
+            if let Some(edge_angle) = edge_angle_opt {
+                commands.entity(new_edge_3d_entity).insert(EdgeAngle::new(edge_angle));
+            }
 
             // edge 2d
             let new_edge_2d_entity = edge_manager.edge_3d_postprocess(

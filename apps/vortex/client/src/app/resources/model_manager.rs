@@ -822,7 +822,7 @@ impl ModelManager {
         vertices
     }
 
-    pub fn sync_vertices(
+    pub fn sync_shapes(
         &mut self,
         world: &mut World,
         vertex_manager: &VertexManager,
@@ -831,13 +831,40 @@ impl ModelManager {
         camera_is_2d: bool,
         camera_3d_scale: f32,
     ) {
+        let (
+            vertex_3d_entities,
+            local_vertex_3d_entities,
+            edge_3d_entities,
+            local_edge_3d_entities
+        ) = match self.sync_3d_shapes(world, vertex_manager, &file_entity, camera_3d_scale) {
+            Some(value) => value,
+            None => return,
+        };
+
+        if !camera_is_2d {
+            return;
+        }
+
+        Self::sync_2d_shapes(
+            world,
+            vertex_manager,
+            camera_3d_entity,
+            camera_3d_scale,
+            vertex_3d_entities,
+            local_vertex_3d_entities,
+            edge_3d_entities,
+            local_edge_3d_entities
+        );
+    }
+
+    fn sync_3d_shapes(&mut self, world: &mut World, vertex_manager: &VertexManager, file_entity: &&Entity, camera_3d_scale: f32) -> Option<(HashSet<Entity>, HashSet<Entity>, HashSet<Entity>, HashSet<Entity>)> {
         // only triggers when canvas is redrawn
         let local_vertex_3d_scale = LocalShape::VERTEX_RADIUS / camera_3d_scale;
         let local_vertex_3d_scale = Vec3::splat(local_vertex_3d_scale);
         let local_edge_3d_scale = LocalShape::EDGE_THICKNESS / camera_3d_scale;
 
         let Some(skel_file_entity) = world.get_resource::<FileManager>().unwrap().file_get_dependency(&file_entity, FileExtension::Skel) else {
-            return;
+            return None;
         };
 
         // ModelTransformControls
@@ -927,11 +954,19 @@ impl ModelManager {
                 transform.scale.y = local_edge_3d_scale;
             }
         }
+        Some((vertex_3d_entities, local_vertex_3d_entities, edge_3d_entities, local_edge_3d_entities))
+    }
 
-        if !camera_is_2d {
-            return;
-        }
-
+    fn sync_2d_shapes(
+        world: &mut World,
+        vertex_manager: &VertexManager,
+        camera_3d_entity: &Entity,
+        camera_3d_scale: f32,
+        vertex_3d_entities: HashSet<Entity>,
+        local_vertex_3d_entities: HashSet<Entity>,
+        edge_3d_entities: HashSet<Entity>,
+        local_edge_3d_entities: HashSet<Entity>
+    ) {
         // let vertex_2d_scale = Vec3::splat(LocalShape::VERTEX_RADIUS * camera_3d_scale);
         // let edge_2d_scale = LocalShape::EDGE_THICKNESS * camera_3d_scale;
         let local_vertex_2d_scale = LocalShape::VERTEX_RADIUS;
@@ -948,9 +983,16 @@ impl ModelManager {
             Query<(&Camera, &Projection)>,
             Query<&mut Transform>,
             Query<&Edge2dLocal>,
+            Query<&EdgeAngle, With<ModelTransformControl>>,
         )> = SystemState::new(world);
-        let (input_manager, edge_manager, camera_q, mut transform_q, edge_2d_local_q) =
-            system_state.get_mut(world);
+        let (
+            input_manager,
+            edge_manager,
+            camera_q,
+            mut transform_q,
+            edge_2d_local_q,
+            edge_angle_q,
+        ) = system_state.get_mut(world);
 
         let Ok((camera, camera_projection)) = camera_q.get(*camera_3d_entity) else {
             return;
@@ -1006,6 +1048,14 @@ impl ModelManager {
             }
         }
 
+        // edge angle attributes
+        let edge_angle_base_circle_scale =
+            Edge2dLocal::EDGE_ANGLE_BASE_CIRCLE_RADIUS * camera_3d_scale;
+        let edge_angle_end_circle_scale =
+            Edge2dLocal::EDGE_ANGLE_END_CIRCLE_RADIUS * camera_3d_scale;
+        let edge_angle_length = Edge2dLocal::EDGE_ANGLE_LENGTH * camera_3d_scale;
+        let edge_angle_thickness = Edge2dLocal::EDGE_ANGLE_THICKNESS * camera_3d_scale;
+
         // for ALL gathered 2D edge entities, derive 2d transform from 2d vertex data
         for edge_3d_entity in edge_3d_entities.iter() {
             let Some(edge_2d_entity) = edge_manager.edge_entity_3d_to_2d(edge_3d_entity) else {
@@ -1028,6 +1078,25 @@ impl ModelManager {
                         transform.scale.y = hover_edge_2d_scale;
                     }
                 }
+            }
+
+            // sync edge angle if it exists (only for ModelControlTransform "rotation" edges)
+            if let Ok(edge_angle) = edge_angle_q.get(*edge_3d_entity) {
+                let Some((base_circle_entity, angle_edge_entity, end_circle_entity)) = edge_manager.edge_angle_entities(edge_3d_entity) else {
+                    panic!("edge_3d_entity {:?} has no edge_angle_entities", edge_3d_entity);
+                };
+                EdgeManager::sync_edge_angle(
+                    edge_angle_base_circle_scale,
+                    edge_angle_end_circle_scale,
+                    edge_angle_length,
+                    edge_angle_thickness,
+                    base_circle_entity,
+                    angle_edge_entity,
+                    end_circle_entity,
+                    &mut transform_q,
+                    edge_2d_entity,
+                    edge_angle
+                );
             }
         }
     }
