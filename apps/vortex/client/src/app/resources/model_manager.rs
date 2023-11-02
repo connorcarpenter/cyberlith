@@ -45,7 +45,8 @@ pub struct ModelTransformData {
     translation_entity_2d: Entity,
     translation_entity_3d: Entity,
     rotation_entity_2d: Entity,
-    rotation_entity_3d: Entity,
+    rotation_entity_vert_3d: Entity,
+    rotation_entity_edge_3d: Entity,
     scale_x_entity_3d: Entity,
     scale_x_entity_2d: Entity,
     scale_y_entity_3d: Entity,
@@ -61,7 +62,8 @@ impl ModelTransformData {
         translation_entity_2d: Entity,
         translation_entity_3d: Entity,
         rotation_entity_2d: Entity,
-        rotation_entity_3d: Entity,
+        rotation_entity_vert_3d: Entity,
+        rotation_entity_edge_3d: Entity,
         scale_x_entity_2d: Entity,
         scale_x_entity_3d: Entity,
         scale_y_entity_2d: Entity,
@@ -74,7 +76,8 @@ impl ModelTransformData {
             skel_entities: None,
             skel_edge_name,
             translation_entity_3d,
-            rotation_entity_3d,
+            rotation_entity_vert_3d,
+            rotation_entity_edge_3d,
             scale_x_entity_3d,
             scale_y_entity_3d,
             scale_z_entity_3d,
@@ -193,6 +196,39 @@ impl ModelTransformData {
         }
 
         return None;
+    }
+
+    pub(crate) fn cleanup_deleted_transform(
+        self,
+        commands: &mut Commands,
+        canvas: &mut Canvas,
+        input_manager: &mut InputManager,
+        vertex_manager: &mut VertexManager,
+        edge_manager: &mut EdgeManager,
+    ) {
+        let mut vertex_3d_entities = Vec::new();
+
+        vertex_3d_entities.push(self.translation_entity_3d);
+        vertex_3d_entities.push(self.rotation_entity_vert_3d);
+        vertex_3d_entities.push(self.scale_x_entity_3d);
+        vertex_3d_entities.push(self.scale_y_entity_3d);
+        vertex_3d_entities.push(self.scale_z_entity_3d);
+
+        let mut edges = Vec::new();
+
+        edges.push(self.rotation_entity_edge_3d);
+        // TODO:
+        // scale_x_entity_3d.edge
+        // scale_y_entity_3d.edge
+        // scale_z_entity_3d.edge
+
+        for vertex_3d_entity in vertex_3d_entities {
+            vertex_manager.cleanup_deleted_vertex(commands, canvas, input_manager,&vertex_3d_entity);
+        }
+
+        for edge_3d_entity in edges {
+            edge_manager.cleanup_deleted_edge(commands, canvas, input_manager, vertex_manager, None, &edge_3d_entity);
+        }
     }
 }
 
@@ -379,7 +415,7 @@ impl ModelManager {
         translation: Vec3,
     ) {
         // translation control
-        let (translation_entity_2d, translation_entity_3d) = Self::new_model_transform_control(
+        let (translation_entity_2d, translation_entity_3d, _) = Self::new_model_transform_control(
             commands,
             camera_manager,
             vertex_manager,
@@ -395,7 +431,7 @@ impl ModelManager {
         );
 
         // rotation control
-        let (rotation_entity_2d, rotation_entity_3d) = Self::new_model_transform_control(
+        let (rotation_entity_2d, rotation_entity_vert_3d, Some(rotation_entity_edge_3d)) = Self::new_model_transform_control(
             commands,
             camera_manager,
             vertex_manager,
@@ -408,10 +444,12 @@ impl ModelManager {
             Some(translation_entity_2d),
             Color::RED,
             ModelTransformControlType::Rotation,
-        );
+        ) else {
+            panic!("should def have a rotation edge here");
+        };
 
         // scale x control
-        let (scale_x_entity_2d, scale_x_entity_3d) = Self::new_model_transform_control(
+        let (scale_x_entity_2d, scale_x_entity_3d, _) = Self::new_model_transform_control(
             commands,
             camera_manager,
             vertex_manager,
@@ -427,7 +465,7 @@ impl ModelManager {
         );
 
         // scale y control
-        let (scale_y_entity_2d, scale_y_entity_3d) = Self::new_model_transform_control(
+        let (scale_y_entity_2d, scale_y_entity_3d, _) = Self::new_model_transform_control(
             commands,
             camera_manager,
             vertex_manager,
@@ -443,7 +481,7 @@ impl ModelManager {
         );
 
         // scale z control
-        let (scale_z_entity_2d, scale_z_entity_3d) = Self::new_model_transform_control(
+        let (scale_z_entity_2d, scale_z_entity_3d, _) = Self::new_model_transform_control(
             commands,
             camera_manager,
             vertex_manager,
@@ -465,7 +503,8 @@ impl ModelManager {
             translation_entity_2d,
             translation_entity_3d,
             rotation_entity_2d,
-            rotation_entity_3d,
+            rotation_entity_vert_3d,
+            rotation_entity_edge_3d,
             scale_x_entity_2d,
             scale_x_entity_3d,
             scale_y_entity_2d,
@@ -488,7 +527,7 @@ impl ModelManager {
         translation_entity_2d_opt: Option<Entity>,
         color: Color,
         control_type: ModelTransformControlType,
-    ) -> (Entity, Entity) {
+    ) -> (Entity, Entity, Option<Entity>) {
 
         let edge_angle_opt = match control_type {
             ModelTransformControlType::Rotation => Some(0.0),
@@ -542,7 +581,7 @@ impl ModelManager {
                 .remove::<Visibility>();
         }
 
-        (vertex_entity_2d, vertex_entity_3d)
+        (vertex_entity_2d, vertex_entity_3d, edge_3d_entity_opt)
     }
 
     pub fn register_model_transform_controls(
@@ -553,7 +592,8 @@ impl ModelManager {
         translation_entity_2d: Entity,
         translation_entity_3d: Entity,
         rotation_entity_2d: Entity,
-        rotation_entity_3d: Entity,
+        rotation_entity_vert_3d: Entity,
+        rotation_entity_edge_3d: Entity,
         scale_x_entity_2d: Entity,
         scale_x_entity_3d: Entity,
         scale_y_entity_2d: Entity,
@@ -569,7 +609,8 @@ impl ModelManager {
                 translation_entity_2d,
                 translation_entity_3d,
                 rotation_entity_2d,
-                rotation_entity_3d,
+                rotation_entity_vert_3d,
+                rotation_entity_edge_3d,
                 scale_x_entity_2d,
                 scale_x_entity_3d,
                 scale_y_entity_2d,
@@ -626,39 +667,14 @@ impl ModelManager {
     pub(crate) fn on_despawn_model_transform(
         &mut self,
         commands: &mut Commands,
+        canvas: &mut Canvas,
+        input_manager: &mut InputManager,
+        vertex_manager: &mut VertexManager,
+        edge_manager: &mut EdgeManager,
         model_transform_entity: &Entity,
     ) {
         let model_transform_data = self.deregister_model_transform_controls(model_transform_entity);
-        commands
-            .entity(model_transform_data.translation_entity_2d)
-            .despawn();
-        commands
-            .entity(model_transform_data.translation_entity_3d)
-            .despawn();
-        commands
-            .entity(model_transform_data.rotation_entity_2d)
-            .despawn();
-        commands
-            .entity(model_transform_data.rotation_entity_3d)
-            .despawn();
-        commands
-            .entity(model_transform_data.scale_x_entity_2d)
-            .despawn();
-        commands
-            .entity(model_transform_data.scale_x_entity_3d)
-            .despawn();
-        commands
-            .entity(model_transform_data.scale_y_entity_2d)
-            .despawn();
-        commands
-            .entity(model_transform_data.scale_y_entity_3d)
-            .despawn();
-        commands
-            .entity(model_transform_data.scale_z_entity_2d)
-            .despawn();
-        commands
-            .entity(model_transform_data.scale_z_entity_3d)
-            .despawn();
+        model_transform_data.cleanup_deleted_transform(commands, canvas, input_manager, vertex_manager, edge_manager);
     }
 
     pub(crate) fn deregister_model_transform_controls(
@@ -747,7 +763,7 @@ impl ModelManager {
             let rotation = model_transform.rotation;
             rotation_vector = rotation * rotation_vector;
             let rotation_with_offset = rotation_vector + translation;
-            let rotation_control_entity = model_transform_data.rotation_entity_3d;
+            let rotation_control_entity = model_transform_data.rotation_entity_vert_3d;
             vertex_3d_mutations.push((rotation_control_entity, rotation_with_offset));
 
             // scale
@@ -797,13 +813,25 @@ impl ModelManager {
             for model_transform_entity in model_transform_entities.iter() {
                 let data = self.transform_entities.get(model_transform_entity).unwrap();
                 vertices.push(data.translation_entity_3d);
-                vertices.push(data.rotation_entity_3d);
+                vertices.push(data.rotation_entity_vert_3d);
                 vertices.push(data.scale_x_entity_3d);
                 vertices.push(data.scale_y_entity_3d);
                 vertices.push(data.scale_z_entity_3d);
             }
         }
         vertices
+    }
+
+    fn model_transform_rotation_edge_3d_entities(&self, file_entity: &Entity) -> Vec<Entity> {
+        let mut output = Vec::new();
+        if let Some(model_transform_entities) = self.model_file_to_transform_entity.get(file_entity)
+        {
+            for model_transform_entity in model_transform_entities.iter() {
+                let data = self.transform_entities.get(model_transform_entity).unwrap();
+                output.push(data.rotation_entity_edge_3d);
+            }
+        }
+        output
     }
 
     pub fn model_transform_2d_vertices(&self, file_entity: &Entity) -> Vec<Entity> {
@@ -1126,6 +1154,8 @@ impl ModelManager {
 
             let mut edge_2d_entities = HashSet::new();
 
+            let mtc_rotation_edge_3d_entities = self.model_transform_rotation_edge_3d_entities(current_file_entity);
+
             let mut system_state: SystemState<(
                 ResMut<RenderFrame>,
                 Res<FileManager>,
@@ -1134,10 +1164,10 @@ impl ModelManager {
                 Res<EdgeManager>,
                 Query<(
                     &Handle<CpuMesh>,
-                    &Handle<CpuMaterial>,
                     &Transform,
                     Option<&RenderLayer>,
                 )>,
+                Query<&Handle<CpuMaterial>>,
                 Query<(Entity, &OwnedByFileLocal), With<Edge3d>>,
                 Query<Option<&ShapeName>>,
             )> = SystemState::new(world);
@@ -1148,6 +1178,7 @@ impl ModelManager {
                 vertex_manager,
                 edge_manager,
                 objects_q,
+                materials_q,
                 edge_q,
                 shape_name_q,
             ) = system_state.get_mut(world);
@@ -1162,8 +1193,9 @@ impl ModelManager {
                     continue;
                 };
 
-                let (mesh_handle, mat_handle, transform, render_layer_opt) =
+                let (mesh_handle, transform, render_layer_opt) =
                     objects_q.get(data.entity_2d).unwrap();
+                let mat_handle = materials_q.get(data.entity_2d).unwrap();
                 render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
 
                 for edge_3d_entity in data.edges_3d.iter() {
@@ -1174,9 +1206,20 @@ impl ModelManager {
 
             // draw edges (compass, grid, model transform controls)
             for edge_2d_entity in edge_2d_entities.iter() {
-                let (mesh_handle, mat_handle, transform, render_layer_opt) =
+                let (mesh_handle, transform, render_layer_opt) =
                     objects_q.get(*edge_2d_entity).unwrap();
+                let mat_handle = materials_q.get(*edge_2d_entity).unwrap();
                 render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
+            }
+
+            // draw edge angles (model transform controls (rotation only))
+            for edge_3d_entity in mtc_rotation_edge_3d_entities.iter() {
+                edge_manager.draw_edge_angles(
+                    &edge_3d_entity,
+                    &mut render_frame,
+                    &objects_q,
+                    &materials_q,
+                );
             }
 
             // draw skel bones
@@ -1201,7 +1244,7 @@ impl ModelManager {
                 let edge_is_enabled = edge_is_enabled(shape_name_opt);
                 let mat_handle = get_shape_color(&vertex_manager, edge_is_enabled);
 
-                let (mesh_handle, _, transform, render_layer_opt) =
+                let (mesh_handle, transform, render_layer_opt) =
                     objects_q.get(edge_2d_entity).unwrap();
                 render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
             }
@@ -1211,8 +1254,9 @@ impl ModelManager {
                 Some((_, CanvasShape::Edge)) => {
                     // draw select line
                     if let Some(select_line_entity) = input_manager.select_line_entity {
-                        let (mesh_handle, mat_handle, transform, render_layer_opt) =
+                        let (mesh_handle, transform, render_layer_opt) =
                             objects_q.get(select_line_entity).unwrap();
+                        let mat_handle = materials_q.get(select_line_entity).unwrap();
                         render_frame.draw_object(
                             render_layer_opt,
                             mesh_handle,
@@ -1224,8 +1268,9 @@ impl ModelManager {
                 Some((_, CanvasShape::Vertex)) => {
                     // draw select circle
                     if let Some(select_circle_entity) = input_manager.select_circle_entity {
-                        let (mesh_handle, mat_handle, transform, render_layer_opt) =
+                        let (mesh_handle, transform, render_layer_opt) =
                             objects_q.get(select_circle_entity).unwrap();
+                        let mat_handle = materials_q.get(select_circle_entity).unwrap();
                         render_frame.draw_object(
                             render_layer_opt,
                             mesh_handle,

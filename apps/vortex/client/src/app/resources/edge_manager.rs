@@ -668,7 +668,7 @@ impl EdgeManager {
         canvas: &mut Canvas,
         input_manager: &mut InputManager,
         vertex_manager: &mut VertexManager,
-        face_manager: &mut FaceManager,
+        face_manager_opt: Option<&mut FaceManager>,
         entity_3d: &Entity,
     ) -> (Entity, Vec<Entity>) {
         let mut deleted_face_2d_entities = Vec::new();
@@ -682,16 +682,21 @@ impl EdgeManager {
                 .iter()
                 .copied()
                 .collect();
-            for face_3d_key in face_3d_keys {
-                let face_2d_entity = face_manager.cleanup_deleted_face_key(
-                    commands,
-                    canvas,
-                    input_manager,
-                    vertex_manager,
-                    self,
-                    &face_3d_key,
-                );
-                deleted_face_2d_entities.push(face_2d_entity);
+            if !face_3d_keys.is_empty() {
+                let Some(face_manager) = face_manager_opt else {
+                    panic!("cleanup_deleted_edge called with no face manager, for edge with faces");
+                };
+                for face_3d_key in face_3d_keys {
+                    let face_2d_entity = face_manager.cleanup_deleted_face_key(
+                        commands,
+                        canvas,
+                        input_manager,
+                        vertex_manager,
+                        self,
+                        &face_3d_key,
+                    );
+                    deleted_face_2d_entities.push(face_2d_entity);
+                }
             }
         }
 

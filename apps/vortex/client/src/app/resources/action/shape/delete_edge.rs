@@ -113,7 +113,7 @@ pub(crate) fn execute(
         &mut canvas,
         input_manager,
         &mut vertex_manager,
-        &mut face_manager,
+        Some(&mut face_manager),
         &edge_3d_entity,
     );
 

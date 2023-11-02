@@ -196,7 +196,7 @@ pub fn remove_shape_component_events(
             &mut canvas,
             &mut input_manager,
             &mut vertex_manager,
-            &mut face_manager,
+            Some(&mut face_manager),
             &entity,
         );
     }
@@ -267,12 +267,16 @@ pub fn remove_color_component_events(
 pub fn remove_model_component_events(
     mut model_transform_events: EventReader<RemoveComponentEvent<ModelTransform>>,
     mut commands: Commands,
+    mut canvas: ResMut<Canvas>,
+    mut input_manager: ResMut<InputManager>,
+    mut vertex_manager: ResMut<VertexManager>,
+    mut edge_manager: ResMut<EdgeManager>,
     mut model_manager: ResMut<ModelManager>,
 ) {
     for event in model_transform_events.iter() {
         let entity = event.entity;
         info!("entity: `{:?}`, removed ModelTransform", entity);
 
-        model_manager.on_despawn_model_transform(&mut commands, &entity);
+        model_manager.on_despawn_model_transform(&mut commands, &mut canvas, &mut input_manager, &mut vertex_manager, &mut edge_manager, &entity);
     }
 }

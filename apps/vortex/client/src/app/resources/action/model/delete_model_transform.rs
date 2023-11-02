@@ -1,7 +1,8 @@
-use bevy_ecs::entity::Entity;
+
 use bevy_ecs::{
     prelude::World,
-    system::{Commands, Query, Res, ResMut, SystemState},
+    entity::Entity,
+    system::{Commands, Query, ResMut, SystemState},
 };
 use bevy_log::info;
 
@@ -12,7 +13,7 @@ use vortex_proto::components::{
 };
 
 use crate::app::resources::{
-    action::model::ModelAction, edge_manager::EdgeManager, model_manager::ModelManager,
+    action::model::ModelAction, edge_manager::EdgeManager, model_manager::ModelManager, canvas::Canvas, input::InputManager, vertex_manager::VertexManager
 };
 
 pub fn execute(
@@ -29,13 +30,25 @@ pub fn execute(
     let mut system_state: SystemState<(
         Commands,
         Client,
-        Res<EdgeManager>,
+        ResMut<Canvas>,
+        ResMut<InputManager>,
+        ResMut<VertexManager>,
+        ResMut<EdgeManager>,
         ResMut<ModelManager>,
         Query<&ModelTransform>,
         Query<&ShapeName>,
     )> = SystemState::new(world);
-    let (mut commands, client, edge_manager, mut model_manager, model_transform_q, shape_name_q) =
-        system_state.get_mut(world);
+    let (
+        mut commands,
+        client,
+        mut canvas,
+        mut input_manager,
+        mut vertex_manager,
+        mut edge_manager,
+        mut model_manager,
+        model_transform_q,
+        shape_name_q
+    ) = system_state.get_mut(world);
 
     let edge_3d_entity = edge_manager.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
     let (_, vertex_3d_entity) = edge_manager.edge_get_endpoints(&edge_3d_entity);
@@ -55,7 +68,7 @@ pub fn execute(
 
     commands.entity(model_transform_entity).despawn();
 
-    model_manager.on_despawn_model_transform(&mut commands, &model_transform_entity);
+    model_manager.on_despawn_model_transform(&mut commands, &mut canvas, &mut input_manager, &mut vertex_manager, &mut edge_manager, &model_transform_entity);
 
     system_state.apply(world);
 
