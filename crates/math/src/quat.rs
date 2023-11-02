@@ -281,7 +281,7 @@ pub fn quat_from_spin_direction(spin: f32, base_direction: Vec3, target_directio
 }
 
 pub fn spin_direction_from_quat(base_direction: Vec3, quat: Quat) -> (f32, Vec3) {
-    let output_direction = quat * base_direction;
+    let output_direction = (quat * base_direction).normalize();
 
     let output_spin: f32 = {
         let base_quat = Quat::from_axis_angle(
