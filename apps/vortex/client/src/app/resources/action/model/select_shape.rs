@@ -29,7 +29,7 @@ pub(crate) fn execute(
         Commands,
         Client,
         ResMut<Canvas>,
-        Query<&ModelTransformControl, With<Vertex2d>>,
+        Query<&ModelTransformControl>,
     )> = SystemState::new(world);
     let (mut commands, mut client, mut canvas, mtc_2d_q) = system_state.get_mut(world);
 
@@ -40,20 +40,25 @@ pub(crate) fn execute(
         input_manager.deselect_shape(&mut canvas);
         deselected_entity = Some((shape_2d_entity, shape));
 
+        let mtc_entity_opt = if let Ok(mtc) = mtc_2d_q.get(shape_2d_entity) {
+            Some(mtc.model_transform_entity)
+        } else {
+            None
+        };
+
         match shape {
             CanvasShape::Vertex => {
                 // deselected model transform control vertex?
-                let mtc_entity = if let Ok(mtc) = mtc_2d_q.get(shape_2d_entity) {
-                    mtc.model_transform_entity
-                } else {
-                    panic!("Expected MTC");
-                };
-
+                let mtc_entity = mtc_entity_opt.expect("Expected MTC");
                 entity_to_release = Some(mtc_entity);
             }
             CanvasShape::Edge => {
-                // deselected skel bone edge?
-                todo!("check if it's a model transform control edge (rotation)");
+                if let Some(mtc_entity) = mtc_entity_opt {
+                    // deselected model transform control edge (rotation)
+                    entity_to_release = Some(mtc_entity);
+                } else {
+                    // deselected skel bone edge
+                }
             }
             _ => {}
         }
@@ -62,20 +67,25 @@ pub(crate) fn execute(
     if let Some((shape_2d_entity, shape)) = shape_2d_entity_opt {
         input_manager.select_shape(&mut canvas, &shape_2d_entity, shape);
 
+        let mtc_entity_opt = if let Ok(mtc) = mtc_2d_q.get(shape_2d_entity) {
+            Some(mtc.model_transform_entity)
+        } else {
+            None
+        };
+
         match shape {
             CanvasShape::Vertex => {
                 // selected model transform control vertex?
-                let mtc_entity = if let Ok(mtc) = mtc_2d_q.get(shape_2d_entity) {
-                    mtc.model_transform_entity
-                } else {
-                    panic!("Expected MTC");
-                };
-
+                let mtc_entity = mtc_entity_opt.expect("Expected MTC");
                 entity_to_request = Some(mtc_entity);
             }
             CanvasShape::Edge => {
-                // selected skel bone edge?
-                // todo: check if it's a model transform control edge (rotation)
+                if let Some(mtc_entity) = mtc_entity_opt {
+                    // selected model transform control edge (rotation)
+                    entity_to_request = Some(mtc_entity);
+                } else {
+                    // selected skel bone edge
+                }
             }
             _ => {}
         }
