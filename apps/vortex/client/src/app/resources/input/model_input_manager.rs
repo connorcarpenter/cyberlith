@@ -9,22 +9,19 @@ use bevy_log::{info, warn};
 use naia_bevy_client::{Client, CommandsExt};
 
 use input::{InputAction, Key, MouseButton};
-use math::{convert_2d_to_3d, quat_from_spin_direction, Vec2, Vec3};
-use render_api::components::{Camera, CameraProjection, Projection, Transform};
+use math::{quat_from_spin_direction, Vec2, Vec3};
+use render_api::components::{Camera, Projection, Transform};
 
 use vortex_proto::components::{EdgeAngle, FileExtension, ModelTransform, ShapeName, Vertex3d, VertexRoot};
 
-use crate::app::{
-    components::{
-        Edge2dLocal, ModelTransformControl, ModelTransformControlType, ModelTransformLocal,
-        OwnedByFileLocal, ScaleAxis, Vertex2d,
-    },
-    resources::{
-        action::model::ModelAction, camera_manager::CameraManager, canvas::Canvas,
-        edge_manager::EdgeManager, file_manager::FileManager, input::InputManager,
-        model_manager::ModelManager, shape_data::CanvasShape, tab_manager::TabManager,
-    },
-};
+use crate::app::{components::{
+    Edge2dLocal, ModelTransformControl, ModelTransformControlType, ModelTransformLocal,
+    OwnedByFileLocal, ScaleAxis, Vertex2d,
+}, get_new_3d_position, resources::{
+    action::model::ModelAction, camera_manager::CameraManager, canvas::Canvas,
+    edge_manager::EdgeManager, file_manager::FileManager, input::InputManager,
+    model_manager::ModelManager, shape_data::CanvasShape, tab_manager::TabManager,
+}};
 
 pub struct ModelInputManager;
 
@@ -353,13 +350,13 @@ impl ModelInputManager {
 
         match (shape, mtc_type) {
             (CanvasShape::Vertex, ModelTransformControlType::Translation) => {
-                let new_3d_position = Self::get_new_3d_position(camera_manager, camera_q, transform_q, &mouse_position, control_2d_entity);
+                let new_3d_position = get_new_3d_position(&camera_manager, &camera_q, &transform_q, &mouse_position, control_2d_entity);
                 new_transform.translation = new_3d_position;
             }
             (CanvasShape::Vertex, ModelTransformControlType::RotationVertex) => {
                 let edge_angle = 0.0; //todo, find edge angle
 
-                let new_3d_position = Self::get_new_3d_position(camera_manager, camera_q, transform_q, &mouse_position, control_2d_entity);
+                let new_3d_position = get_new_3d_position(&camera_manager, &camera_q, &transform_q, &mouse_position, control_2d_entity);
                 let rotation_with_offset = new_3d_position;
                 let translation = new_transform.translation;
                 let rotation_vector = rotation_with_offset - translation;
@@ -376,7 +373,7 @@ impl ModelInputManager {
                 let translation = new_transform.translation;
                 let old_scale = new_transform.scale;
 
-                let new_3d_position = Self::get_new_3d_position(camera_manager, camera_q, transform_q, &mouse_position, control_2d_entity);
+                let new_3d_position = get_new_3d_position(&camera_manager, &camera_q, &transform_q, &mouse_position, control_2d_entity);
 
                 let new_scale = match axis {
                     ScaleAxis::X => {
@@ -417,28 +414,5 @@ impl ModelInputManager {
 
         // redraw
         canvas.queue_resync_shapes();
-    }
-
-    fn get_new_3d_position(camera_manager: Res<CameraManager>, camera_q: Query<(&Camera, &Projection)>, transform_q: Query<&Transform>, mouse_position: &&Vec2, control_2d_entity: &Entity) -> Vec3 {
-        let camera_3d = camera_manager.camera_3d_entity().unwrap();
-        let camera_transform: Transform = *transform_q.get(camera_3d).unwrap();
-        let (camera, camera_projection) = camera_q.get(camera_3d).unwrap();
-
-        let camera_viewport = camera.viewport.unwrap();
-        let view_matrix = camera_transform.view_matrix();
-        let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
-
-        // get 2d vertex transform
-        let control_2d_transform = transform_q.get(*control_2d_entity).unwrap();
-
-        // convert 2d to 3d
-        let new_3d_position = convert_2d_to_3d(
-            &view_matrix,
-            &projection_matrix,
-            &camera_viewport.size_vec2(),
-            &mouse_position,
-            control_2d_transform.translation.z,
-        );
-        new_3d_position
     }
 }

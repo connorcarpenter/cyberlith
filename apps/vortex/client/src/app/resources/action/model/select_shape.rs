@@ -1,6 +1,5 @@
 use bevy_ecs::{
     prelude::{Entity, World},
-    query::With,
     system::{Commands, Query, ResMut, SystemState},
 };
 use bevy_log::info;
@@ -8,7 +7,7 @@ use bevy_log::info;
 use naia_bevy_client::{Client, CommandsExt};
 
 use crate::app::{
-    components::{ModelTransformControl, Vertex2d},
+    components::ModelTransformControl,
     resources::{
         action::model::ModelAction, canvas::Canvas, input::InputManager, shape_data::CanvasShape,
     },

@@ -9,35 +9,32 @@ use bevy_log::{info, warn};
 use naia_bevy_client::{Client, CommandsExt, Instant};
 
 use input::{InputAction, Key, MouseButton};
-use math::{convert_2d_to_3d, Vec2, Vec3};
+use math::{Vec2, Vec3};
 use render_api::{
-    components::{Camera, CameraProjection, Projection, Transform, Visibility},
+    components::{Camera, Projection, Transform, Visibility},
     shapes::{distance_to_2d_line, get_2d_line_transform_endpoint, set_2d_line_transform},
 };
 
 use vortex_proto::components::{FileExtension, ShapeName, Vertex3d, VertexRoot};
 
-use crate::app::{
-    components::{
-        Edge2dLocal, FaceIcon2d, LocalShape, SelectCircle, SelectTriangle, Vertex2d, VertexTypeData,
+use crate::app::{components::{
+    Edge2dLocal, FaceIcon2d, LocalShape, SelectCircle, SelectTriangle, Vertex2d, VertexTypeData,
+}, get_new_3d_position, resources::{
+    action::shape::ShapeAction,
+    camera_manager::CameraAngle,
+    camera_manager::CameraManager,
+    canvas::Canvas,
+    edge_manager::EdgeManager,
+    file_manager::FileManager,
+    input::{
+        mesh_input_manager::MeshInputManager, model_input_manager::ModelInputManager,
+        skel_input_manager::SkelInputManager, skin_input_manager::SkinInputManager,
+        AnimInputManager,
     },
-    resources::{
-        action::shape::ShapeAction,
-        camera_manager::CameraAngle,
-        camera_manager::CameraManager,
-        canvas::Canvas,
-        edge_manager::EdgeManager,
-        file_manager::FileManager,
-        input::{
-            mesh_input_manager::MeshInputManager, model_input_manager::ModelInputManager,
-            skel_input_manager::SkelInputManager, skin_input_manager::SkinInputManager,
-            AnimInputManager,
-        },
-        shape_data::CanvasShape,
-        tab_manager::TabManager,
-        vertex_manager::VertexManager,
-    },
-};
+    shape_data::CanvasShape,
+    tab_manager::TabManager,
+    vertex_manager::VertexManager,
+}};
 
 #[derive(Clone, Copy)]
 pub enum CardinalDirection {
@@ -510,31 +507,7 @@ impl InputManager {
         )> = SystemState::new(world);
         let (camera_manager, camera_q, transform_q) = system_state.get_mut(world);
 
-        // get camera
-        let camera_3d = camera_manager.camera_3d_entity().unwrap();
-        let camera_transform: Transform = *transform_q.get(camera_3d).unwrap();
-        let (camera, camera_projection) = camera_q.get(camera_3d).unwrap();
-
-        let camera_viewport = camera.viewport.unwrap();
-        let view_matrix = camera_transform.view_matrix();
-        let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
-
-        // get 2d vertex transform
-        let Ok(vertex_2d_transform) = transform_q.get(vertex_2d_entity) else {
-            warn!(
-                "Selected vertex entity: {:?} has no Transform",
-                vertex_2d_entity
-            );
-            return;
-        };
-        // convert 2d to 3d
-        let new_3d_position = convert_2d_to_3d(
-            &view_matrix,
-            &projection_matrix,
-            &camera_viewport.size_vec2(),
-            &mouse_position,
-            vertex_2d_transform.translation.z,
-        );
+        let new_3d_position = get_new_3d_position(&camera_manager, &camera_q, &transform_q, &mouse_position, &vertex_2d_entity);
 
         // spawn new vertex
         world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
@@ -775,26 +748,7 @@ impl InputManager {
             return;
         }
 
-        // get camera
-        let camera_3d = camera_manager.camera_3d_entity().unwrap();
-        let camera_transform: Transform = *transform_q.get(camera_3d).unwrap();
-        let (camera, camera_projection) = camera_q.get(camera_3d).unwrap();
-
-        let camera_viewport = camera.viewport.unwrap();
-        let view_matrix = camera_transform.view_matrix();
-        let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
-
-        // get 2d vertex transform
-        let vertex_2d_transform = transform_q.get(*vertex_2d_entity).unwrap();
-
-        // convert 2d to 3d
-        let new_3d_position = convert_2d_to_3d(
-            &view_matrix,
-            &projection_matrix,
-            &camera_viewport.size_vec2(),
-            &mouse_position,
-            vertex_2d_transform.translation.z,
-        );
+        let new_3d_position = get_new_3d_position(&camera_manager, &camera_q, &transform_q, &mouse_position, &vertex_2d_entity);
 
         // set networked 3d vertex position
         let mut vertex_3d = vertex_3d_q.get_mut(vertex_3d_entity).unwrap();
