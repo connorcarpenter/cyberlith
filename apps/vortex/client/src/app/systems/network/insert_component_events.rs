@@ -15,12 +15,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{
-    AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d,
-    EdgeAngle, EntryKind, Face3d, FaceColor, FileDependency, FileExtension, FileSystemChild,
-    FileSystemEntry, FileSystemRootChild, FileType, NetTransform, OwnedByFile, PaletteColor,
-    ShapeName, Vertex3d, VertexRoot,
-};
+use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind, Face3d, FaceColor, FileDependency, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, NetTransform, OwnedByFile, PaletteColor, ShapeName, SkinOrSceneEntity, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::file_system::{
@@ -89,6 +84,7 @@ pub fn insert_component_events(world: &mut World) {
         insert_component_event::<FaceColor>(world, &events);
         insert_component_event::<BackgroundSkinColor>(world, &events);
         insert_component_event::<NetTransform>(world, &events);
+        insert_component_event::<SkinOrSceneEntity>(world, &events);
     }
 }
 
@@ -271,7 +267,6 @@ pub fn insert_vertex_events(
     mut commands: Commands,
     mut vertex_3d_events: EventReader<InsertComponentEvent<Vertex3d>>,
     mut vertex_root_events: EventReader<InsertComponentEvent<VertexRoot>>,
-    mut shape_name_events: EventReader<InsertComponentEvent<ShapeName>>,
 
     mut camera_manager: ResMut<CameraManager>,
     mut canvas: ResMut<Canvas>,
@@ -283,7 +278,6 @@ pub fn insert_vertex_events(
     mut component_waitlist: ResMut<ComponentWaitlist>,
     mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
     vertex_3d_q: Query<&Vertex3d>,
-    shape_name_q: Query<&ShapeName>,
 ) {
     // on Vertex Insert Event
     for event in vertex_3d_events.iter() {
@@ -328,19 +322,6 @@ pub fn insert_vertex_events(
             &vertex_3d_q,
             &entity,
             ComponentWaitlistInsert::VertexRoot,
-        );
-    }
-
-    // on ShapeName Event
-    for event in shape_name_events.iter() {
-        let entity = event.entity;
-
-        let shape_name = shape_name_q.get(entity).unwrap();
-        let shape_name = (*shape_name.value).clone();
-
-        info!(
-            "entity: {:?} - inserted ShapeName(name: {:?})",
-            entity, shape_name
         );
     }
 }
@@ -718,9 +699,11 @@ pub fn insert_skin_events(
 }
 
 pub fn insert_model_events(
-    mut events: EventReader<InsertComponentEvent<NetTransform>>,
-    mut commands: Commands,
+    mut transform_events: EventReader<InsertComponentEvent<NetTransform>>,
+    mut skin_or_scene_events: EventReader<InsertComponentEvent<SkinOrSceneEntity>>,
 
+    mut commands: Commands,
+    client: Client,
     mut camera_manager: ResMut<CameraManager>,
     mut canvas: ResMut<Canvas>,
     mut vertex_manager: ResMut<VertexManager>,
@@ -732,19 +715,16 @@ pub fn insert_model_events(
     mut component_waitlist: ResMut<ComponentWaitlist>,
     mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
 
-    file_type_q: Query<&FileType>,
     vertex_3d_q: Query<&Vertex3d>,
+    skin_or_scene_q: Query<&SkinOrSceneEntity>,
 ) {
     // on NetTransform Insert Event
-    for event in events.iter() {
+    for event in transform_events.iter() {
         let entity = event.entity;
 
-        let file_type = file_type_q.get(entity).unwrap();
-        let file_type_value = *file_type.value;
-
         info!(
-            "entity: {:?} - inserted FileType::{:?}",
-            entity, file_type_value
+            "entity: {:?} - inserted NetTransform",
+            entity
         );
 
         component_waitlist.process_insert(
@@ -760,7 +740,82 @@ pub fn insert_model_events(
             &mut shape_color_resync_events,
             &vertex_3d_q,
             &entity,
-            ComponentWaitlistInsert::FileType(file_type_value),
+            ComponentWaitlistInsert::NetTransform,
+        );
+    }
+
+    // on SkinOrSceneEntity Event
+    for event in skin_or_scene_events.iter() {
+        let entity = event.entity;
+
+        info!("entity: {:?} - inserted SkinOrSceneEntity", entity);
+
+        let skin_or_scene = skin_or_scene_q.get(entity).unwrap();
+        let skin_or_scene_entity = skin_or_scene.value.get(&client).unwrap();
+        let skin_or_scene_type = *skin_or_scene.value_type;
+
+        component_waitlist.process_insert(
+            &mut commands,
+            &mut meshes,
+            &mut materials,
+            &mut camera_manager,
+            &mut canvas,
+            &mut vertex_manager,
+            &mut edge_manager,
+            &mut face_manager,
+            &mut Some(&mut model_manager),
+            &mut shape_color_resync_events,
+            &vertex_3d_q,
+            &entity,
+            ComponentWaitlistInsert::SkinOrSceneEntity(skin_or_scene_entity, skin_or_scene_type),
+        );
+    }
+}
+
+pub fn insert_shape_name_events(
+    mut shape_name_events: EventReader<InsertComponentEvent<ShapeName>>,
+
+    mut commands: Commands,
+    mut camera_manager: ResMut<CameraManager>,
+    mut canvas: ResMut<Canvas>,
+    mut vertex_manager: ResMut<VertexManager>,
+    mut edge_manager: ResMut<EdgeManager>,
+    mut face_manager: ResMut<FaceManager>,
+    mut model_manager: ResMut<ModelManager>,
+    mut meshes: ResMut<Assets<CpuMesh>>,
+    mut materials: ResMut<Assets<CpuMaterial>>,
+    mut component_waitlist: ResMut<ComponentWaitlist>,
+    mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
+
+    vertex_3d_q: Query<&Vertex3d>,
+    shape_name_q: Query<&ShapeName>,
+) {
+    // on ShapeName Event
+    for event in shape_name_events.iter() {
+        let entity = event.entity;
+
+        let shape_name = shape_name_q.get(entity).unwrap();
+        let shape_name = (*shape_name.value).clone();
+
+        info!(
+            "entity: {:?} - inserted ShapeName(name: {:?})",
+            entity, shape_name
+        );
+
+        component_waitlist.process_insert(
+            &mut commands,
+            &mut meshes,
+            &mut materials,
+            &mut camera_manager,
+            &mut canvas,
+            &mut vertex_manager,
+            &mut edge_manager,
+            &mut face_manager,
+            &mut Some(&mut model_manager),
+            &mut shape_color_resync_events,
+            &vertex_3d_q,
+            &entity,
+            ComponentWaitlistInsert::ShapeName(shape_name),
         );
     }
 }

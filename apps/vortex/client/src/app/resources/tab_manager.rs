@@ -23,7 +23,7 @@ use vortex_proto::{
     channels::TabActionChannel,
     components::{
         BackgroundSkinColor, ChangelistStatus, FaceColor, FileExtension, FileSystemEntry,
-        NetTransform, NetTransformEntityType, PaletteColor,
+        NetTransformEntityType, PaletteColor, SkinOrSceneEntity,
     },
     messages::{TabCloseMessage, TabOpenMessage},
     types::TabId,
@@ -797,7 +797,7 @@ fn file_ext_specific_sync_tabs_shape_colors(
                 Query<&PaletteColor>,
                 Query<&BackgroundSkinColor>,
                 Query<&FaceColor>,
-                Query<&NetTransform>,
+                Query<&SkinOrSceneEntity>,
             )> = SystemState::new(world);
             let (
                 client,
@@ -810,21 +810,20 @@ fn file_ext_specific_sync_tabs_shape_colors(
                 palette_color_q,
                 bckg_color_q,
                 face_color_q,
-                net_transform_q,
+                skin_or_scene_q,
             ) = system_state.get_mut(world);
 
             let Some(net_transform_entities) = model_manager.model_file_transform_entities(current_file_entity) else {
                 return;
             };
             for net_transform_entity in net_transform_entities {
-                let Ok(net_transform) = net_transform_q.get(net_transform_entity) else {
+                let Ok(skin_or_scene_entity) = skin_or_scene_q.get(net_transform_entity) else {
                     continue;
                 };
-                if NetTransformEntityType::Skin != *net_transform.entity_type {
+                if NetTransformEntityType::Skin != *skin_or_scene_entity.value_type {
                     todo!("support scene entity type");
                 }
-                let skin_file_entity: Entity =
-                    net_transform.skin_or_scene_entity.get(&client).unwrap();
+                let skin_file_entity: Entity = skin_or_scene_entity.value.get(&client).unwrap();
                 set_face_3d_colors(
                     &skin_file_entity,
                     &client,

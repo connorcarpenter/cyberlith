@@ -1363,7 +1363,7 @@ impl ModelManager {
                 Query<&Vertex3d>,
                 Query<(&OwnedByFileLocal, &Edge3dLocal), With<Edge3d>>,
                 Query<&EdgeAngle>,
-                Query<&NetTransform>,
+                Query<(&NetTransform, &SkinOrSceneEntity)>,
             )> = SystemState::new(world);
             let (
                 mut render_frame,
@@ -1393,13 +1393,13 @@ impl ModelManager {
             let corrective_rot = Quat::from_rotation_x(f32::to_radians(90.0));
 
             for net_transform_entity in net_transform_entities {
-                let Ok(net_transform) = net_transform_q.get(*net_transform_entity) else {
+                let Ok((net_transform, skin_or_scene_entity)) = net_transform_q.get(*net_transform_entity) else {
                     continue;
                 };
-                let NetTransformEntityType::Skin = *net_transform.entity_type else {
+                let NetTransformEntityType::Skin = *skin_or_scene_entity.value_type else {
                     panic!("not possible ... yet");
                 };
-                let skin_file_entity = net_transform.skin_or_scene_entity.get(&client).unwrap();
+                let skin_file_entity = skin_or_scene_entity.value.get(&client).unwrap();
                 let Some(mesh_file_entity) = file_manager.file_get_dependency(&skin_file_entity, FileExtension::Mesh) else {
                     continue;
                 };
@@ -1566,7 +1566,7 @@ impl ModelManager {
                 Query<&Vertex3d>,
                 Query<&EdgeAngle>,
                 Query<(Entity, &OwnedByFileLocal), With<Face3d>>,
-                Query<&NetTransform>,
+                Query<(&NetTransform, &SkinOrSceneEntity)>,
                 Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>, &Transform)>,
             )> = SystemState::new(world);
             let (
@@ -1585,13 +1585,13 @@ impl ModelManager {
             let corrective_rot = Quat::from_rotation_x(f32::to_radians(90.0));
 
             for net_transform_entity in net_transform_entities {
-                let Ok(net_transform) = net_transform_q.get(*net_transform_entity) else {
+                let Ok((net_transform, skin_or_scene_entity)) = net_transform_q.get(*net_transform_entity) else {
                     continue;
                 };
-                let NetTransformEntityType::Skin = *net_transform.entity_type else {
+                let NetTransformEntityType::Skin = *skin_or_scene_entity.value_type else {
                     panic!("not possible ... yet");
                 };
-                let skin_file_entity = net_transform.skin_or_scene_entity.get(&client).unwrap();
+                let skin_file_entity = skin_or_scene_entity.value.get(&client).unwrap();
                 let Some(mesh_file_entity) = file_manager
                     .file_get_dependency(&skin_file_entity, FileExtension::Mesh) else {
                     continue;

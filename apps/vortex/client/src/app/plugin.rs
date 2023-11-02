@@ -10,7 +10,7 @@ use vortex_proto::{
         AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, Edge3d, EdgeAngle,
         EntryKind, Face3d, FaceColor, FileDependency, FileSystemChild, FileSystemEntry,
         FileSystemRootChild, FileType, NetTransform, OwnedByFile, PaletteColor, ShapeName,
-        Vertex3d, VertexRoot,
+        Vertex3d, VertexRoot, SkinOrSceneEntity
     },
     protocol,
 };
@@ -102,6 +102,7 @@ impl Plugin for VortexPlugin {
             .add_event::<InsertComponentEvent<BackgroundSkinColor>>()
             .add_event::<InsertComponentEvent<FaceColor>>()
             .add_event::<InsertComponentEvent<NetTransform>>()
+            .add_event::<InsertComponentEvent<SkinOrSceneEntity>>()
             // Remove Component Events
             .add_event::<RemoveComponentEvent<FileSystemEntry>>()
             .add_event::<RemoveComponentEvent<FileSystemRootChild>>()
@@ -131,6 +132,7 @@ impl Plugin for VortexPlugin {
             .add_systems(Update, network::insert_palette_events)
             .add_systems(Update, network::insert_skin_events)
             .add_systems(Update, network::insert_model_events)
+            .add_systems(Update, network::insert_shape_name_events)
             // Remove Component Systems
             // todo... possibly need to ensure one of these systems runs BEFORE `despawn_entity_events`
             .add_systems(Update, network::remove_file_component_events)

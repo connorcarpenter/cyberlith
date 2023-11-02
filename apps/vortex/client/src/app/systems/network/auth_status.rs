@@ -11,10 +11,7 @@ use naia_bevy_client::{
     Client,
 };
 
-use vortex_proto::components::{
-    AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency,
-    FileSystemEntry, NetTransform, PaletteColor, Vertex3d,
-};
+use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency, FileSystemEntry, NetTransform, OwnedByFile, PaletteColor, Vertex3d};
 
 use crate::app::{
     components::OwnedByFileLocal,
@@ -94,6 +91,7 @@ pub fn auth_events(world: &mut World) {
             Option<&FaceColor>,
             Option<&BackgroundSkinColor>,
             Option<&NetTransform>,
+            Option<&OwnedByFile>,
         )>,
         Query<&OwnedByFileLocal>,
         Query<&AnimFrame>,
@@ -159,6 +157,7 @@ fn process_entity_auth_status(
         Option<&FaceColor>,
         Option<&BackgroundSkinColor>,
         Option<&NetTransform>,
+        Option<&OwnedByFile>,
     )>,
     owned_by_q: &Query<&OwnedByFileLocal>,
     frame_q: &Query<&AnimFrame>,
@@ -177,7 +176,8 @@ fn process_entity_auth_status(
            palette_opt,
            face_color_opt,
            bckg_color_opt,
-            net_transform_opt
+           net_transform_opt,
+           owned_by_file_opt,
         )
     ) = big_q.get(*entity) else {
         panic!("hm?");
@@ -290,13 +290,14 @@ fn process_entity_auth_status(
             entity, status
         );
         // no need to set auth status on action stack because auth for background color is automatically given (and reset upon update)
-    } else if let Some(net_transform_component) = net_transform_opt {
+    } else if let Some(_owned_by_component) = net_transform_opt {
         info!(
             "auth processing for net transform entity `{:?}`: `{:?}`",
             entity, status
         );
-        let owning_file_entity = net_transform_component
-            .owning_file_entity
+        let owned_by_component = owned_by_file_opt.unwrap();
+        let owning_file_entity = owned_by_component
+            .file_entity
             .get(client)
             .unwrap();
         if let Some(tab_state) = tab_manager.tab_state_mut(&owning_file_entity) {
