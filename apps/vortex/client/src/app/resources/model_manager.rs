@@ -44,7 +44,8 @@ pub struct ModelTransformData {
     skel_entities: Option<(Entity, Entity, Entity)>,
     translation_entity_2d: Entity,
     translation_entity_3d: Entity,
-    rotation_entity_2d: Entity,
+    rotation_entity_vert_2d: Entity,
+    rotation_entity_edge_2d: Entity,
     rotation_entity_vert_3d: Entity,
     rotation_entity_edge_3d: Entity,
     scale_x_entity_3d: Entity,
@@ -61,7 +62,8 @@ impl ModelTransformData {
         skel_edge_name: String,
         translation_entity_2d: Entity,
         translation_entity_3d: Entity,
-        rotation_entity_2d: Entity,
+        rotation_entity_vert_2d: Entity,
+        rotation_entity_edge_2d: Entity,
         rotation_entity_vert_3d: Entity,
         rotation_entity_edge_3d: Entity,
         scale_x_entity_2d: Entity,
@@ -82,7 +84,8 @@ impl ModelTransformData {
             scale_y_entity_3d,
             scale_z_entity_3d,
             translation_entity_2d,
-            rotation_entity_2d,
+            rotation_entity_vert_2d,
+            rotation_entity_edge_2d,
             scale_x_entity_2d,
             scale_y_entity_2d,
             scale_z_entity_2d,
@@ -431,7 +434,7 @@ impl ModelManager {
         );
 
         // rotation control
-        let (rotation_entity_2d, rotation_entity_vert_3d, Some(rotation_entity_edge_3d)) = Self::new_model_transform_control(
+        let (rotation_entity_vert_2d, rotation_entity_vert_3d, Some((rotation_entity_edge_3d, rotation_entity_edge_2d))) = Self::new_model_transform_control(
             commands,
             camera_manager,
             vertex_manager,
@@ -502,7 +505,8 @@ impl ModelManager {
             skel_bone_name,
             translation_entity_2d,
             translation_entity_3d,
-            rotation_entity_2d,
+            rotation_entity_vert_2d,
+            rotation_entity_edge_2d,
             rotation_entity_vert_3d,
             rotation_entity_edge_3d,
             scale_x_entity_2d,
@@ -527,7 +531,7 @@ impl ModelManager {
         translation_entity_2d_opt: Option<Entity>,
         color: Color,
         control_type: ModelTransformControlType,
-    ) -> (Entity, Entity, Option<Entity>) {
+    ) -> (Entity, Entity, Option<(Entity, Entity)>) {
 
         let edge_angle_opt = match control_type {
             ModelTransformControlType::RotationVertex => Some(0.0),
@@ -586,7 +590,15 @@ impl ModelManager {
                 .remove::<Visibility>();
         }
 
-        (vertex_entity_2d, vertex_entity_3d, edge_3d_entity_opt)
+        let mut edge_entity_opt = None;
+        if let Some(edge_3d_entity) = edge_3d_entity_opt {
+            let Some(edge_2d_entity) = edge_2d_entity_opt else {
+                panic!("both should exist or neither");
+            };
+            edge_entity_opt = Some((edge_3d_entity, edge_2d_entity));
+        }
+
+        (vertex_entity_2d, vertex_entity_3d, edge_entity_opt)
     }
 
     pub fn register_model_transform_controls(
@@ -596,7 +608,8 @@ impl ModelManager {
         skel_bone_name: String,
         translation_entity_2d: Entity,
         translation_entity_3d: Entity,
-        rotation_entity_2d: Entity,
+        rotation_entity_vert_2d: Entity,
+        rotation_entity_edge_2d: Entity,
         rotation_entity_vert_3d: Entity,
         rotation_entity_edge_3d: Entity,
         scale_x_entity_2d: Entity,
@@ -613,7 +626,8 @@ impl ModelManager {
                 skel_bone_name.clone(),
                 translation_entity_2d,
                 translation_entity_3d,
-                rotation_entity_2d,
+                rotation_entity_vert_2d,
+                rotation_entity_edge_2d,
                 rotation_entity_vert_3d,
                 rotation_entity_edge_3d,
                 scale_x_entity_2d,
@@ -827,6 +841,22 @@ impl ModelManager {
         vertices
     }
 
+    pub fn model_transform_2d_vertices(&self, file_entity: &Entity) -> Vec<Entity> {
+        let mut vertices = Vec::new();
+        if let Some(model_transform_entities) = self.model_file_to_transform_entity.get(file_entity)
+        {
+            for model_transform_entity in model_transform_entities.iter() {
+                let data = self.transform_entities.get(model_transform_entity).unwrap();
+                vertices.push(data.translation_entity_2d);
+                vertices.push(data.rotation_entity_vert_2d);
+                vertices.push(data.scale_x_entity_2d);
+                vertices.push(data.scale_y_entity_2d);
+                vertices.push(data.scale_z_entity_2d);
+            }
+        }
+        vertices
+    }
+
     fn model_transform_rotation_edge_3d_entities(&self, file_entity: &Entity) -> Vec<Entity> {
         let mut output = Vec::new();
         if let Some(model_transform_entities) = self.model_file_to_transform_entity.get(file_entity)
@@ -839,20 +869,16 @@ impl ModelManager {
         output
     }
 
-    pub fn model_transform_2d_vertices(&self, file_entity: &Entity) -> Vec<Entity> {
-        let mut vertices = Vec::new();
+    pub(crate) fn model_transform_rotation_edge_2d_entities(&self, file_entity: &Entity) -> Vec<Entity> {
+        let mut output = Vec::new();
         if let Some(model_transform_entities) = self.model_file_to_transform_entity.get(file_entity)
         {
             for model_transform_entity in model_transform_entities.iter() {
                 let data = self.transform_entities.get(model_transform_entity).unwrap();
-                vertices.push(data.translation_entity_2d);
-                vertices.push(data.rotation_entity_2d);
-                vertices.push(data.scale_x_entity_2d);
-                vertices.push(data.scale_y_entity_2d);
-                vertices.push(data.scale_z_entity_2d);
+                output.push(data.rotation_entity_edge_2d);
             }
         }
-        vertices
+        output
     }
 
     pub fn sync_shapes(

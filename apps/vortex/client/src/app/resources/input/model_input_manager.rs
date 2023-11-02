@@ -179,11 +179,11 @@ impl ModelInputManager {
         let mut least_entity = None;
         let mut is_hovering = false;
 
-        let mtc_2d_entites = model_manager.model_transform_2d_vertices(current_file_entity);
+        let mtc_2d_vertices = model_manager.model_transform_2d_vertices(current_file_entity);
 
         Self::handle_vertex_hover(
             &transform_q,
-            mtc_2d_entites,
+            mtc_2d_vertices,
             &vertex_root_q,
             camera_3d_scale,
             mouse_position,
@@ -192,18 +192,36 @@ impl ModelInputManager {
             &mut is_hovering,
         );
 
-        let mut skel_edge_2d_entities = Vec::new();
+        // check skel edge entities
+        let mut edge_2d_entities = Vec::new();
         for (edge_2d_entity, owned_by_local) in edge_2d_q.iter() {
             if owned_by_local.file_entity == skel_file_entity {
-                skel_edge_2d_entities.push(edge_2d_entity);
+                edge_2d_entities.push(edge_2d_entity);
             }
         }
 
         Self::handle_edge_hover(
             &transform_q,
-            skel_edge_2d_entities,
-            &edge_manager,
-            &shape_name_q,
+            edge_2d_entities,
+            Some((&edge_manager, &shape_name_q)),
+            camera_3d_scale,
+            mouse_position,
+            &mut least_distance,
+            &mut least_entity,
+            &mut is_hovering,
+        );
+
+        // check rotation edge entities
+        let mut edge_2d_entities = Vec::new();
+        let mtc_2d_edges = model_manager.model_transform_rotation_edge_2d_entities(current_file_entity);
+        for mtc_2d_edge in mtc_2d_edges {
+            edge_2d_entities.push(mtc_2d_edge);
+        }
+
+        Self::handle_edge_hover(
+            &transform_q,
+            edge_2d_entities,
+            None,
             camera_3d_scale,
             mouse_position,
             &mut least_distance,
@@ -248,8 +266,7 @@ impl ModelInputManager {
     fn handle_edge_hover(
         transform_q: &Query<&Transform>,
         edge_2d_entities: Vec<Entity>,
-        edge_manager: &EdgeManager,
-        shape_name_q: &Query<&ShapeName>,
+        anim_opt: Option<(&EdgeManager, &Query<&ShapeName>)>,
         camera_3d_scale: f32,
         mouse_position: &Vec2,
         least_distance: &mut f32,
@@ -261,7 +278,7 @@ impl ModelInputManager {
             for edge_2d_entity in edge_2d_entities {
                 InputManager::hover_check_edge(
                     transform_q,
-                    Some((edge_manager, shape_name_q)),
+                    anim_opt,
                     mouse_position,
                     least_distance,
                     least_entity,
@@ -285,7 +302,7 @@ impl ModelInputManager {
             Query<&EdgeAngle>,
             Query<&Transform>,
             Query<&mut ModelTransform>,
-            Query<&ModelTransformControl, With<Vertex2d>>,
+            Query<&ModelTransformControl>,
         )> = SystemState::new(world);
         let (
             mut commands,

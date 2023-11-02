@@ -53,7 +53,7 @@ pub(crate) fn execute(
             }
             CanvasShape::Edge => {
                 // deselected skel bone edge?
-                // todo: check if it's a model transform control edge (rotation)
+                todo!("check if it's a model transform control edge (rotation)");
             }
             _ => {}
         }
