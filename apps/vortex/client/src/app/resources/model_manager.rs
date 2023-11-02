@@ -489,6 +489,12 @@ impl ModelManager {
         color: Color,
         control_type: ModelTransformControlType,
     ) -> (Entity, Entity) {
+
+        let edge_angle_opt = match control_type {
+            ModelTransformControlType::Rotation => Some(0.0),
+            _ => None,
+        };
+
         let (vertex_entity_2d, vertex_entity_3d, edge_2d_entity_opt, edge_3d_entity_opt) =
             vertex_manager.new_local_vertex(
                 commands,
@@ -500,6 +506,7 @@ impl ModelManager {
                 translation_entity_2d_opt,
                 translation,
                 color,
+                edge_angle_opt,
             );
 
         commands

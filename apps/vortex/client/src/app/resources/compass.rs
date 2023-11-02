@@ -149,6 +149,7 @@ impl Compass {
             None,
             Vec3::ZERO,
             Color::WHITE,
+            None,
         );
         self.compass_vertices_3d.push(vertex_3d_entity);
 
@@ -215,6 +216,7 @@ impl Compass {
             Some(root_vertex_2d_entity),
             position,
             color,
+            None,
         );
         self.compass_vertices_3d.push(vertex_3d_entity);
     }

@@ -529,6 +529,7 @@ impl VertexManager {
         parent_vertex_2d_entity_opt: Option<Entity>,
         position: Vec3,
         color: Color,
+        edge_angle_opt: Option<f32>,
     ) -> (Entity, Entity, Option<Entity>, Option<Entity>) {
         // vertex 3d
         let mut vertex_3d_component = Vertex3d::new(0, 0, 0);
@@ -591,7 +592,7 @@ impl VertexManager {
                 None,
                 color,
                 false,
-                None,
+                edge_angle_opt,
                 true,
             );
 
