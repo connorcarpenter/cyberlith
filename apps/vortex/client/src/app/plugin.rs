@@ -24,7 +24,7 @@ use crate::app::{
         camera_manager::CameraManager, canvas::Canvas, compass::Compass, edge_manager::EdgeManager,
         face_manager::FaceManager, file_manager::FileManager, grid::Grid, input::InputManager,
         model_manager::ModelManager, palette_manager::PaletteManager,
-        shape_waitlist::ShapeWaitlist, skin_manager::SkinManager, tab_manager::TabManager,
+        component_waitlist::ComponentWaitlist, skin_manager::SkinManager, tab_manager::TabManager,
         vertex_manager::VertexManager,
     },
     systems::{canvas, draw, draw_vertices_and_edges, network, ui},
@@ -119,8 +119,6 @@ impl Plugin for VortexPlugin {
             .add_event::<RemoveComponentEvent<BackgroundSkinColor>>()
             .add_event::<RemoveComponentEvent<FaceColor>>()
             .add_event::<RemoveComponentEvent<NetTransform>>()
-            // shape waitlist
-            .init_resource::<ShapeWaitlist>()
             // Insert Component Systems
             .add_systems(Update, network::insert_file_component_events)
             .add_systems(Update, network::insert_changelist_entry_events)
@@ -140,6 +138,8 @@ impl Plugin for VortexPlugin {
             .add_systems(Update, network::remove_animation_component_events)
             .add_systems(Update, network::remove_color_component_events)
             .add_systems(Update, network::remove_model_component_events)
+            // Resources
+            .init_resource::<ComponentWaitlist>()
             // UI Configuration
             .init_resource::<UiState>()
             .init_resource::<NamingBarState>()

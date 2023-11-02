@@ -36,7 +36,7 @@ use crate::app::{
         file_manager::{get_full_path, FileManager},
         model_manager::ModelManager,
         palette_manager::PaletteManager,
-        shape_waitlist::{ShapeWaitlist, ShapeWaitlistInsert},
+        component_waitlist::{ComponentWaitlist, ShapeWaitlistInsert},
         skin_manager::SkinManager,
         tab_manager::TabManager,
         vertex_manager::VertexManager,
@@ -280,7 +280,7 @@ pub fn insert_vertex_events(
     mut face_manager: ResMut<FaceManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
-    mut shape_waitlist: ResMut<ShapeWaitlist>,
+    mut shape_waitlist: ResMut<ComponentWaitlist>,
     mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
     vertex_3d_q: Query<&Vertex3d>,
     shape_name_q: Query<&ShapeName>,
@@ -357,7 +357,7 @@ pub fn insert_edge_events(
     mut face_manager: ResMut<FaceManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
-    mut shape_waitlist: ResMut<ShapeWaitlist>,
+    mut shape_waitlist: ResMut<ComponentWaitlist>,
     mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
 
     edge_3d_q: Query<&Edge3d>,
@@ -434,7 +434,7 @@ pub fn insert_face_events(
     mut face_manager: ResMut<FaceManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
-    mut shape_waitlist: ResMut<ShapeWaitlist>,
+    mut shape_waitlist: ResMut<ComponentWaitlist>,
     mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
 
     face_3d_q: Query<&Face3d>,
@@ -510,7 +510,7 @@ pub fn insert_owned_by_file_events(
     mut face_manager: ResMut<FaceManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
-    mut shape_waitlist: ResMut<ShapeWaitlist>,
+    mut shape_waitlist: ResMut<ComponentWaitlist>,
     mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
 
     owned_by_tab_q: Query<&OwnedByFile>,
@@ -555,7 +555,7 @@ pub fn insert_file_type_events(
     mut face_manager: ResMut<FaceManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
-    mut shape_waitlist: ResMut<ShapeWaitlist>,
+    mut shape_waitlist: ResMut<ComponentWaitlist>,
     mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
 
     file_type_q: Query<&FileType>,

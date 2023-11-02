@@ -14,7 +14,7 @@ pub mod model_manager;
 pub mod palette_manager;
 pub mod shape_data;
 pub mod shape_manager;
-pub mod shape_waitlist;
+pub mod component_waitlist;
 pub mod skin_manager;
 pub mod tab_manager;
 pub mod toolbar;

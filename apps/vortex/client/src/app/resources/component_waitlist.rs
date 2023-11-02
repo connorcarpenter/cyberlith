@@ -39,45 +39,46 @@ pub enum ShapeWaitlistInsert {
 }
 
 #[derive(Clone, Copy, Debug)]
-enum ShapeType {
+enum ComponentType {
     Vertex,
     Edge,
     Face,
 }
 
-enum ShapeData {
+enum ComponentData {
     //parent_3d_entity_opt
     Vertex(Option<Entity>),
     Edge(Entity, Entity, Option<f32>),
     Face(Entity, Entity, Entity, Entity, Entity, Entity),
 }
 
-impl ShapeData {
-    pub fn to_type(&self) -> ShapeType {
+impl ComponentData {
+    pub fn to_type(&self) -> ComponentType {
         match self {
-            ShapeData::Vertex(_) => ShapeType::Vertex,
-            ShapeData::Edge(_, _, _) => ShapeType::Edge,
-            ShapeData::Face(_, _, _, _, _, _) => ShapeType::Face,
+            ComponentData::Vertex(_) => ComponentType::Vertex,
+            ComponentData::Edge(_, _, _) => ComponentType::Edge,
+            ComponentData::Face(_, _, _, _, _, _) => ComponentType::Face,
         }
     }
 }
 
 #[derive(Clone)]
-pub struct ShapeWaitlistEntry {
-    shape: Option<ShapeType>,
-    vertex_parent: Option<Option<Entity>>,
+pub struct ComponentWaitlistEntry {
+    component_type: Option<ComponentType>,
+    file_type: Option<FileExtension>,
     file_entity: Option<Entity>,
+
+    vertex_parent: Option<Option<Entity>>,
     edge_entities: Option<(Entity, Entity)>,
     edge_angle: Option<f32>,
     // Option<vertex a, vertex b, vertex c, edge a, edge b, edge c>
     face_entities: Option<(Entity, Entity, Entity, Entity, Entity, Entity)>,
-    file_type: Option<FileExtension>,
 }
 
-impl ShapeWaitlistEntry {
+impl ComponentWaitlistEntry {
     fn new() -> Self {
         Self {
-            shape: None,
+            component_type: None,
             vertex_parent: None,
             file_entity: None,
             edge_entities: None,
@@ -88,8 +89,8 @@ impl ShapeWaitlistEntry {
     }
 
     fn is_ready(&self) -> bool {
-        match self.shape {
-            Some(ShapeType::Vertex) => match self.file_type {
+        match self.component_type {
+            Some(ComponentType::Vertex) => match self.file_type {
                 None => return false,
                 Some(FileExtension::Skel) => {
                     return self.file_entity.is_some() && self.vertex_parent.is_some()
@@ -99,7 +100,7 @@ impl ShapeWaitlistEntry {
                     panic!("");
                 }
             },
-            Some(ShapeType::Edge) => match self.file_type {
+            Some(ComponentType::Edge) => match self.file_type {
                 None => return false,
                 Some(FileExtension::Skel) => {
                     return self.file_entity.is_some()
@@ -113,7 +114,7 @@ impl ShapeWaitlistEntry {
                     panic!("");
                 }
             },
-            Some(ShapeType::Face) => {
+            Some(ComponentType::Face) => {
                 self.file_type.is_some()
                     && self.file_entity.is_some()
                     && self.face_entities.is_some()
@@ -123,7 +124,7 @@ impl ShapeWaitlistEntry {
     }
 
     fn set_parent(&mut self, parent: Option<Entity>) {
-        self.shape = Some(ShapeType::Vertex);
+        self.component_type = Some(ComponentType::Vertex);
         self.vertex_parent = Some(parent);
     }
 
@@ -139,11 +140,11 @@ impl ShapeWaitlistEntry {
     }
 
     fn set_vertex(&mut self) {
-        self.shape = Some(ShapeType::Vertex);
+        self.component_type = Some(ComponentType::Vertex);
     }
 
     fn set_edge(&mut self, start: Entity, end: Entity) {
-        self.shape = Some(ShapeType::Edge);
+        self.component_type = Some(ComponentType::Edge);
         self.edge_entities = Some((start, end));
     }
 
@@ -160,7 +161,7 @@ impl ShapeWaitlistEntry {
         edge_b: Entity,
         edge_c: Entity,
     ) {
-        self.shape = Some(ShapeType::Face);
+        self.component_type = Some(ComponentType::Face);
         self.face_entities = Some((vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c));
         self.file_type = Some(FileExtension::Mesh);
     }
@@ -173,28 +174,28 @@ impl ShapeWaitlistEntry {
         self.file_type = Some(file_type);
     }
 
-    fn decompose(self) -> (ShapeData, Entity, FileExtension) {
-        let shape = self.shape.unwrap();
+    fn decompose(self) -> (ComponentData, Entity, FileExtension) {
+        let shape = self.component_type.unwrap();
         let file_type = self.file_type.unwrap();
 
         let shape_data = match (shape, file_type) {
-            (ShapeType::Vertex, FileExtension::Skel) => {
-                ShapeData::Vertex(self.vertex_parent.unwrap())
+            (ComponentType::Vertex, FileExtension::Skel) => {
+                ComponentData::Vertex(self.vertex_parent.unwrap())
             }
-            (ShapeType::Vertex, FileExtension::Mesh) => ShapeData::Vertex(None),
-            (ShapeType::Edge, FileExtension::Mesh) => {
+            (ComponentType::Vertex, FileExtension::Mesh) => ComponentData::Vertex(None),
+            (ComponentType::Edge, FileExtension::Mesh) => {
                 let entities = self.edge_entities.unwrap();
-                ShapeData::Edge(entities.0, entities.1, None)
+                ComponentData::Edge(entities.0, entities.1, None)
             }
-            (ShapeType::Edge, FileExtension::Skel) => {
+            (ComponentType::Edge, FileExtension::Skel) => {
                 let entities = self.edge_entities.unwrap();
                 let edge_angle = self.edge_angle.unwrap();
-                ShapeData::Edge(entities.0, entities.1, Some(edge_angle))
+                ComponentData::Edge(entities.0, entities.1, Some(edge_angle))
             }
-            (ShapeType::Face, _) => {
+            (ComponentType::Face, _) => {
                 let (vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c) =
                     self.face_entities.unwrap();
-                ShapeData::Face(vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c)
+                ComponentData::Face(vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c)
             }
             (_, _) => {
                 panic!("");
@@ -205,13 +206,13 @@ impl ShapeWaitlistEntry {
 }
 
 #[derive(Resource)]
-pub struct ShapeWaitlist {
+pub struct ComponentWaitlist {
     // incomplete entity -> entry
-    incomplete_entries: HashMap<Entity, ShapeWaitlistEntry>,
-    dependency_map: DependencyMap<Entity, ShapeWaitlistEntry>,
+    incomplete_entries: HashMap<Entity, ComponentWaitlistEntry>,
+    dependency_map: DependencyMap<Entity, ComponentWaitlistEntry>,
 }
 
-impl Default for ShapeWaitlist {
+impl Default for ComponentWaitlist {
     fn default() -> Self {
         Self {
             incomplete_entries: HashMap::new(),
@@ -220,7 +221,7 @@ impl Default for ShapeWaitlist {
     }
 }
 
-impl ShapeWaitlist {
+impl ComponentWaitlist {
     pub fn process_insert(
         &mut self,
         commands: &mut Commands,
@@ -237,7 +238,7 @@ impl ShapeWaitlist {
         insert: ShapeWaitlistInsert,
     ) {
         if !self.contains_key(&entity) {
-            self.insert_incomplete(*entity, ShapeWaitlistEntry::new());
+            self.insert_incomplete(*entity, ComponentWaitlistEntry::new());
         }
 
         let mut possibly_ready_entities = vec![*entity];
@@ -306,11 +307,11 @@ impl ShapeWaitlist {
             // info!("entity `{:?}` is ready!", entity);
 
             let entry = self.remove(&entity).unwrap();
-            let entry_shape = entry.shape.unwrap();
+            let entry_shape = entry.component_type.unwrap();
             let entry_file_type = entry.file_type.unwrap();
 
             match (entry_shape, entry_file_type) {
-                (ShapeType::Vertex, FileExtension::Skel) => {
+                (ComponentType::Vertex, FileExtension::Skel) => {
                     if entry.has_parent() {
                         let parent_entity = entry.get_parent().unwrap();
                         if !vertex_manager.has_vertex_entity_3d(&parent_entity) {
@@ -328,7 +329,7 @@ impl ShapeWaitlist {
                         }
                     }
                 }
-                (ShapeType::Edge, _) => {
+                (ComponentType::Edge, _) => {
                     let entities = entry.edge_entities.unwrap();
 
                     let mut dependencies = Vec::new();
@@ -353,8 +354,8 @@ impl ShapeWaitlist {
                         continue;
                     }
                 }
-                (ShapeType::Vertex, FileExtension::Mesh) => {}
-                (ShapeType::Face, _) => {
+                (ComponentType::Vertex, FileExtension::Mesh) => {}
+                (ComponentType::Face, _) => {
                     let entities = entry.face_entities.unwrap();
 
                     let mut dependencies = Vec::new();
@@ -424,14 +425,14 @@ impl ShapeWaitlist {
         shape_color_resync_events: &mut EventWriter<ShapeColorResyncEvent>,
         vertex_3d_q: &Query<&Vertex3d>,
         entity: Entity,
-        entry: ShapeWaitlistEntry,
+        entry: ComponentWaitlistEntry,
     ) {
         let (shape_data, file_entity, file_type) = entry.decompose();
 
         let shape_type = shape_data.to_type();
 
         match (shape_data, file_type) {
-            (ShapeData::Vertex(parent_3d_entity_opt), FileExtension::Skel) => {
+            (ComponentData::Vertex(parent_3d_entity_opt), FileExtension::Skel) => {
                 let color = match parent_3d_entity_opt {
                     Some(_) => Vertex2d::ENABLED_COLOR,
                     None => Vertex2d::ROOT_COLOR,
@@ -450,7 +451,7 @@ impl ShapeWaitlist {
                     false,
                 );
             }
-            (ShapeData::Vertex(_), FileExtension::Mesh) => {
+            (ComponentData::Vertex(_), FileExtension::Mesh) => {
                 let color = Vertex2d::ENABLED_COLOR;
 
                 vertex_manager.vertex_3d_postprocess(
@@ -466,7 +467,7 @@ impl ShapeWaitlist {
                     true,
                 );
             }
-            (ShapeData::Edge(start_3d, end_3d, edge_angle_opt), file_type) => {
+            (ComponentData::Edge(start_3d, end_3d, edge_angle_opt), file_type) => {
                 let start_2d = vertex_manager.vertex_entity_3d_to_2d(&start_3d).unwrap();
                 let end_2d = vertex_manager.vertex_entity_3d_to_2d(&end_3d).unwrap();
 
@@ -490,7 +491,7 @@ impl ShapeWaitlist {
                     file_type == FileExtension::Mesh,
                 );
             }
-            (ShapeData::Face(vertex_a, vertex_b, vertex_c, _edge_a, _edge_b, _edge_c), _) => {
+            (ComponentData::Face(vertex_a, vertex_b, vertex_c, _edge_a, _edge_b, _edge_c), _) => {
                 let face_key = FaceKey::new(vertex_a, vertex_b, vertex_c);
                 let mut positions = [Vec3::ZERO, Vec3::ZERO, Vec3::ZERO];
                 for (index, vertex_3d_entity) in [vertex_a, vertex_b, vertex_c].iter().enumerate() {
@@ -562,15 +563,15 @@ impl ShapeWaitlist {
         self.incomplete_entries.contains_key(entity)
     }
 
-    fn insert_incomplete(&mut self, entity: Entity, entry: ShapeWaitlistEntry) {
+    fn insert_incomplete(&mut self, entity: Entity, entry: ComponentWaitlistEntry) {
         self.incomplete_entries.insert(entity, entry);
     }
 
-    fn get_mut(&mut self, entity: &Entity) -> Option<&mut ShapeWaitlistEntry> {
+    fn get_mut(&mut self, entity: &Entity) -> Option<&mut ComponentWaitlistEntry> {
         self.incomplete_entries.get_mut(entity)
     }
 
-    fn remove(&mut self, entity: &Entity) -> Option<ShapeWaitlistEntry> {
+    fn remove(&mut self, entity: &Entity) -> Option<ComponentWaitlistEntry> {
         self.incomplete_entries.remove(entity)
     }
 }
