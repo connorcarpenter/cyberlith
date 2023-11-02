@@ -1,19 +1,17 @@
-
 use bevy_ecs::{
-    prelude::World,
     entity::Entity,
+    prelude::World,
     system::{Commands, Query, ResMut, SystemState},
 };
 use bevy_log::info;
 
 use naia_bevy_client::Client;
 
-use vortex_proto::components::{
-    FileExtension, NetTransform, NetTransformEntityType, ShapeName,
-};
+use vortex_proto::components::{FileExtension, NetTransform, NetTransformEntityType, ShapeName};
 
 use crate::app::resources::{
-    action::model::ModelAction, edge_manager::EdgeManager, model_manager::ModelManager, canvas::Canvas, input::InputManager, vertex_manager::VertexManager
+    action::model::ModelAction, canvas::Canvas, edge_manager::EdgeManager, input::InputManager,
+    model_manager::ModelManager, vertex_manager::VertexManager,
 };
 
 pub fn execute(
@@ -47,7 +45,7 @@ pub fn execute(
         mut edge_manager,
         mut model_manager,
         net_transform_q,
-        shape_name_q
+        shape_name_q,
     ) = system_state.get_mut(world);
 
     let edge_3d_entity = edge_manager.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
@@ -68,7 +66,14 @@ pub fn execute(
 
     commands.entity(net_transform_entity).despawn();
 
-    model_manager.on_despawn_net_transform(&mut commands, &mut canvas, &mut input_manager, &mut vertex_manager, &mut edge_manager, &net_transform_entity);
+    model_manager.on_despawn_net_transform(
+        &mut commands,
+        &mut canvas,
+        &mut input_manager,
+        &mut vertex_manager,
+        &mut edge_manager,
+        &net_transform_entity,
+    );
 
     system_state.apply(world);
 

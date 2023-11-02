@@ -24,8 +24,8 @@ use crate::{
     events::InsertComponentEvent,
     resources::{
         file_waitlist::{file_process_insert, FSWaitlist, FSWaitlistInsert},
-        AnimationManager, ContentEntityData, GitManager, PaletteManager,
-        ShapeManager, ShapeWaitlist, ShapeWaitlistInsert, SkinManager, TabManager, UserManager,
+        AnimationManager, ContentEntityData, GitManager, PaletteManager, ShapeManager,
+        ShapeWaitlist, ShapeWaitlistInsert, SkinManager, TabManager, UserManager,
     },
 };
 

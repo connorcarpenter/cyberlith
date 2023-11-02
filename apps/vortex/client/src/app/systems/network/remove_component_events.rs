@@ -277,6 +277,13 @@ pub fn remove_model_component_events(
         let entity = event.entity;
         info!("entity: `{:?}`, removed NetTransform", entity);
 
-        model_manager.on_despawn_net_transform(&mut commands, &mut canvas, &mut input_manager, &mut vertex_manager, &mut edge_manager, &entity);
+        model_manager.on_despawn_net_transform(
+            &mut commands,
+            &mut canvas,
+            &mut input_manager,
+            &mut vertex_manager,
+            &mut edge_manager,
+            &entity,
+        );
     }
 }

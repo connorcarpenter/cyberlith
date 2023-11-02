@@ -17,24 +17,28 @@ use render_api::{
 
 use vortex_proto::components::{FileExtension, ShapeName, Vertex3d, VertexRoot};
 
-use crate::app::{components::{
-    Edge2dLocal, FaceIcon2d, LocalShape, SelectCircle, SelectTriangle, Vertex2d, VertexTypeData,
-}, get_new_3d_position, resources::{
-    action::shape::ShapeAction,
-    camera_manager::CameraAngle,
-    camera_manager::CameraManager,
-    canvas::Canvas,
-    edge_manager::EdgeManager,
-    file_manager::FileManager,
-    input::{
-        mesh_input_manager::MeshInputManager, model_input_manager::ModelInputManager,
-        skel_input_manager::SkelInputManager, skin_input_manager::SkinInputManager,
-        AnimInputManager,
+use crate::app::{
+    components::{
+        Edge2dLocal, FaceIcon2d, LocalShape, SelectCircle, SelectTriangle, Vertex2d, VertexTypeData,
     },
-    shape_data::CanvasShape,
-    tab_manager::TabManager,
-    vertex_manager::VertexManager,
-}};
+    get_new_3d_position,
+    resources::{
+        action::shape::ShapeAction,
+        camera_manager::CameraAngle,
+        camera_manager::CameraManager,
+        canvas::Canvas,
+        edge_manager::EdgeManager,
+        file_manager::FileManager,
+        input::{
+            mesh_input_manager::MeshInputManager, model_input_manager::ModelInputManager,
+            skel_input_manager::SkelInputManager, skin_input_manager::SkinInputManager,
+            AnimInputManager,
+        },
+        shape_data::CanvasShape,
+        tab_manager::TabManager,
+        vertex_manager::VertexManager,
+    },
+};
 
 #[derive(Clone, Copy)]
 pub enum CardinalDirection {
@@ -507,7 +511,13 @@ impl InputManager {
         )> = SystemState::new(world);
         let (camera_manager, camera_q, transform_q) = system_state.get_mut(world);
 
-        let new_3d_position = get_new_3d_position(&camera_manager, &camera_q, &transform_q, &mouse_position, &vertex_2d_entity);
+        let new_3d_position = get_new_3d_position(
+            &camera_manager,
+            &camera_q,
+            &transform_q,
+            &mouse_position,
+            &vertex_2d_entity,
+        );
 
         // spawn new vertex
         world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
@@ -748,7 +758,13 @@ impl InputManager {
             return;
         }
 
-        let new_3d_position = get_new_3d_position(&camera_manager, &camera_q, &transform_q, &mouse_position, &vertex_2d_entity);
+        let new_3d_position = get_new_3d_position(
+            &camera_manager,
+            &camera_q,
+            &transform_q,
+            &mouse_position,
+            &vertex_2d_entity,
+        );
 
         // set networked 3d vertex position
         let mut vertex_3d = vertex_3d_q.get_mut(vertex_3d_entity).unwrap();

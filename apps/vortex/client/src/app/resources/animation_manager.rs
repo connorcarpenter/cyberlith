@@ -14,8 +14,7 @@ use bevy_log::{info, warn};
 use naia_bevy_client::{Client, CommandsExt, Instant, ReplicationConfig};
 
 use math::{
-    convert_3d_to_2d, quat_from_spin_direction, spin_direction_from_quat, Mat4,
-    Quat, Vec2, Vec3,
+    convert_3d_to_2d, quat_from_spin_direction, spin_direction_from_quat, Mat4, Quat, Vec2, Vec3,
 };
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
@@ -32,14 +31,19 @@ use vortex_proto::components::{
     AnimFrame, AnimRotation, EdgeAngle, FileExtension, ShapeName, Transition, Vertex3d, VertexRoot,
 };
 
-use crate::app::{components::{Edge2dLocal, LocalAnimRotation, Vertex2d}, get_new_3d_position, resources::{
-    camera_manager::{set_camera_transform, CameraManager},
-    canvas::Canvas,
-    edge_manager::EdgeManager,
-    input::CardinalDirection,
-    tab_manager::TabManager,
-    vertex_manager::VertexManager,
-}, shapes::Line2d};
+use crate::app::{
+    components::{Edge2dLocal, LocalAnimRotation, Vertex2d},
+    get_new_3d_position,
+    resources::{
+        camera_manager::{set_camera_transform, CameraManager},
+        canvas::Canvas,
+        edge_manager::EdgeManager,
+        input::CardinalDirection,
+        tab_manager::TabManager,
+        vertex_manager::VertexManager,
+    },
+    shapes::Line2d,
+};
 
 struct FrameData {
     rotations: HashSet<Entity>,
@@ -448,7 +452,13 @@ impl AnimationManager {
         let edge_old_angle = edge_angle_q.get(edge_3d_entity).unwrap();
         let edge_old_angle: f32 = edge_old_angle.get_radians();
 
-        let new_3d_position = get_new_3d_position(&camera_manager, &camera_q, &transform_q, &mouse_position, &vertex_2d_entity);
+        let new_3d_position = get_new_3d_position(
+            &camera_manager,
+            &camera_q,
+            &transform_q,
+            &mouse_position,
+            &vertex_2d_entity,
+        );
 
         let base_direction = (original_3d_position - parent_original_3d_position).normalize();
         let target_direction = (new_3d_position - parent_rotated_3d_position).normalize();

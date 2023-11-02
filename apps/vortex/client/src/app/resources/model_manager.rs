@@ -27,15 +27,20 @@ use vortex_proto::components::{
     Vertex3d,
 };
 
-use crate::app::{components::{EdgeAngleLocal,
-                              Edge2dLocal, Edge3dLocal, LocalShape, NetTransformControl, NetTransformControlType,
-                              NetTransformLocal, OwnedByFileLocal, ScaleAxis, Vertex2d,
-}, resources::{
-    action::model::ModelAction, camera_manager::CameraManager, canvas::Canvas,
-    compass::Compass, edge_manager::edge_is_enabled, edge_manager::EdgeManager,
-    face_manager::FaceManager, file_manager::FileManager, grid::Grid, input::InputManager,
-    shape_data::CanvasShape, tab_manager::TabManager, vertex_manager::VertexManager,
-}, transform_from_endpoints_and_spin, ui::{widgets::create_networked_dependency, BindingState, UiState}};
+use crate::app::{
+    components::{
+        Edge2dLocal, Edge3dLocal, EdgeAngleLocal, LocalShape, NetTransformControl,
+        NetTransformControlType, NetTransformLocal, OwnedByFileLocal, ScaleAxis, Vertex2d,
+    },
+    resources::{
+        action::model::ModelAction, camera_manager::CameraManager, canvas::Canvas,
+        compass::Compass, edge_manager::edge_is_enabled, edge_manager::EdgeManager,
+        face_manager::FaceManager, file_manager::FileManager, grid::Grid, input::InputManager,
+        shape_data::CanvasShape, tab_manager::TabManager, vertex_manager::VertexManager,
+    },
+    transform_from_endpoints_and_spin,
+    ui::{widgets::create_networked_dependency, BindingState, UiState},
+};
 
 pub struct NetTransformData {
     model_file_entity: Entity,
@@ -97,14 +102,15 @@ impl NetTransformData {
         vertex_3d_q: &Query<&Vertex3d>,
         edge_angle_q: &Query<&EdgeAngle>,
     ) -> Option<Transform> {
-        let (edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end) = self.get_skel_entities()?;
+        let (edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end) =
+            self.get_skel_entities()?;
 
         self.get_bone_transform_from_entities(
             vertex_3d_q,
             edge_angle_q,
             &edge_3d_entity,
             &vertex_3d_entity_start,
-            &vertex_3d_entity_end
+            &vertex_3d_entity_end,
         )
     }
 
@@ -117,26 +123,22 @@ impl NetTransformData {
         edge_angle_q: &Query<&EdgeAngle>,
         shape_name_q: &Query<&ShapeName>,
     ) -> Option<Transform> {
-        let (edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end) = self.get_or_update_skel_entities(
-            file_manager,
-            edge_manager,
-            edge_3d_q,
-            shape_name_q,
-        )?;
+        let (edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end) =
+            self.get_or_update_skel_entities(file_manager, edge_manager, edge_3d_q, shape_name_q)?;
 
         self.get_bone_transform_from_entities(
             vertex_3d_q,
             edge_angle_q,
             &edge_3d_entity,
             &vertex_3d_entity_start,
-            &vertex_3d_entity_end
+            &vertex_3d_entity_end,
         )
     }
 
-    fn get_skel_entities(
-        &self,
-    ) -> Option<(Entity, Entity, Entity)> {
-        if let Some((edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end)) = self.skel_entities {
+    fn get_skel_entities(&self) -> Option<(Entity, Entity, Entity)> {
+        if let Some((edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end)) =
+            self.skel_entities
+        {
             return Some((edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end));
         }
         return None;
@@ -174,11 +176,15 @@ impl NetTransformData {
         edge_3d_q: &Query<(Entity, &OwnedByFileLocal), With<Edge3d>>,
         shape_name_q: &Query<&ShapeName>,
     ) -> Option<(Entity, Entity, Entity)> {
-        if let Some((edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end)) = self.skel_entities {
+        if let Some((edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end)) =
+            self.skel_entities
+        {
             return Some((edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end));
         }
 
-        let skel_file_entity = file_manager.file_get_dependency(&self.model_file_entity, FileExtension::Skel).unwrap();
+        let skel_file_entity = file_manager
+            .file_get_dependency(&self.model_file_entity, FileExtension::Skel)
+            .unwrap();
 
         // go fetch entities ..
         let bone_name: &str = &self.skel_edge_name;
@@ -187,14 +193,16 @@ impl NetTransformData {
             if owned_by.file_entity != skel_file_entity {
                 continue;
             }
-            let (vertex_3d_entity_start, vertex_3d_entity_end) = edge_manager.edge_get_endpoints(&edge_3d_entity);
+            let (vertex_3d_entity_start, vertex_3d_entity_end) =
+                edge_manager.edge_get_endpoints(&edge_3d_entity);
             let Ok(shape_name) = shape_name_q.get(vertex_3d_entity_end) else {
                 continue;
             };
             if *shape_name.value != bone_name {
                 continue;
             }
-            self.skel_entities = Some((edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end));
+            self.skel_entities =
+                Some((edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end));
             return Some((edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end));
         }
 
@@ -226,11 +234,23 @@ impl NetTransformData {
         // scale_z_entity_3d.edge
 
         for vertex_3d_entity in vertex_3d_entities {
-            vertex_manager.cleanup_deleted_vertex(commands, canvas, input_manager,&vertex_3d_entity);
+            vertex_manager.cleanup_deleted_vertex(
+                commands,
+                canvas,
+                input_manager,
+                &vertex_3d_entity,
+            );
         }
 
         for edge_3d_entity in edges {
-            edge_manager.cleanup_deleted_edge(commands, canvas, input_manager, vertex_manager, None, &edge_3d_entity);
+            edge_manager.cleanup_deleted_edge(
+                commands,
+                canvas,
+                input_manager,
+                vertex_manager,
+                None,
+                &edge_3d_entity,
+            );
         }
     }
 }
@@ -532,7 +552,6 @@ impl ModelManager {
         color: Color,
         control_type: NetTransformControlType,
     ) -> (Entity, Entity, Option<(Entity, Entity)>) {
-
         let edge_angle_opt = match control_type {
             NetTransformControlType::RotationVertex => Some(0.0),
             _ => None,
@@ -573,10 +592,7 @@ impl ModelManager {
             };
             commands
                 .entity(edge_2d_entity)
-                .insert(NetTransformControl::new(
-                    transform_entity,
-                    control_type,
-                ));
+                .insert(NetTransformControl::new(transform_entity, control_type));
         }
         if let Some(edge_3d_entity) = edge_3d_entity_opt {
             commands
@@ -656,7 +672,10 @@ impl ModelManager {
         net_transforms.insert(net_transform_entity);
     }
 
-    pub(crate) fn get_rotation_edge_3d_entity(&self, net_transform_entity: &Entity) -> Option<Entity> {
+    pub(crate) fn get_rotation_edge_3d_entity(
+        &self,
+        net_transform_entity: &Entity,
+    ) -> Option<Entity> {
         let net_transform_data = self.transform_entities.get(net_transform_entity)?;
         Some(net_transform_data.rotation_entity_edge_3d)
     }
@@ -698,7 +717,13 @@ impl ModelManager {
         net_transform_entity: &Entity,
     ) {
         let net_transform_data = self.deregister_transform_controls(net_transform_entity);
-        net_transform_data.cleanup_deleted_transform(commands, canvas, input_manager, vertex_manager, edge_manager);
+        net_transform_data.cleanup_deleted_transform(
+            commands,
+            canvas,
+            input_manager,
+            vertex_manager,
+            edge_manager,
+        );
     }
 
     pub(crate) fn deregister_transform_controls(
@@ -728,11 +753,7 @@ impl ModelManager {
         net_transform_data
     }
 
-    fn sync_transform_controls(
-        &mut self,
-        world: &mut World,
-        file_entity: &Entity,
-    ) {
+    fn sync_transform_controls(&mut self, world: &mut World, file_entity: &Entity) {
         let Some(net_transform_entities) = self.model_file_to_transform_entity.get(file_entity) else {
             return;
         };
@@ -753,13 +774,16 @@ impl ModelManager {
             edge_3d_q,
             edge_angle_q,
             shape_name_q,
-            net_transform_q
+            net_transform_q,
         ) = system_state.get_mut(world);
 
         let mut vertex_3d_mutations = Vec::new();
 
         for net_transform_entity in net_transform_entities.iter() {
-            let net_transform_data = self.transform_entities.get_mut(net_transform_entity).unwrap();
+            let net_transform_data = self
+                .transform_entities
+                .get_mut(net_transform_entity)
+                .unwrap();
             let Some(bone_transform) = net_transform_data.get_or_update_bone_transform(
                 &file_manager,
                 &edge_manager,
@@ -822,7 +846,7 @@ impl ModelManager {
         }
 
         let mut system_state: SystemState<Query<&mut Vertex3d>> = SystemState::new(world);
-        let mut vertex_3d_q= system_state.get_mut(world);
+        let mut vertex_3d_q = system_state.get_mut(world);
 
         for (vertex_3d_entity, new_translation) in vertex_3d_mutations {
             let mut vertex_3d = vertex_3d_q.get_mut(vertex_3d_entity).unwrap();
@@ -832,8 +856,7 @@ impl ModelManager {
 
     fn net_transform_3d_vertices(&self, file_entity: &Entity) -> Vec<Entity> {
         let mut vertices = Vec::new();
-        if let Some(net_transform_entities) = self.model_file_to_transform_entity.get(file_entity)
-        {
+        if let Some(net_transform_entities) = self.model_file_to_transform_entity.get(file_entity) {
             for net_transform_entity in net_transform_entities.iter() {
                 let data = self.transform_entities.get(net_transform_entity).unwrap();
                 vertices.push(data.translation_entity_3d);
@@ -848,8 +871,7 @@ impl ModelManager {
 
     pub fn net_transform_2d_vertices(&self, file_entity: &Entity) -> Vec<Entity> {
         let mut vertices = Vec::new();
-        if let Some(net_transform_entities) = self.model_file_to_transform_entity.get(file_entity)
-        {
+        if let Some(net_transform_entities) = self.model_file_to_transform_entity.get(file_entity) {
             for net_transform_entity in net_transform_entities.iter() {
                 let data = self.transform_entities.get(net_transform_entity).unwrap();
                 vertices.push(data.translation_entity_2d);
@@ -864,8 +886,7 @@ impl ModelManager {
 
     fn net_transform_rotation_edge_3d_entities(&self, file_entity: &Entity) -> Vec<Entity> {
         let mut output = Vec::new();
-        if let Some(net_transform_entities) = self.model_file_to_transform_entity.get(file_entity)
-        {
+        if let Some(net_transform_entities) = self.model_file_to_transform_entity.get(file_entity) {
             for net_transform_entity in net_transform_entities.iter() {
                 let data = self.transform_entities.get(net_transform_entity).unwrap();
                 output.push(data.rotation_entity_edge_3d);
@@ -874,10 +895,12 @@ impl ModelManager {
         output
     }
 
-    pub(crate) fn net_transform_rotation_edge_2d_entities(&self, file_entity: &Entity) -> Vec<Entity> {
+    pub(crate) fn net_transform_rotation_edge_2d_entities(
+        &self,
+        file_entity: &Entity,
+    ) -> Vec<Entity> {
         let mut output = Vec::new();
-        if let Some(net_transform_entities) = self.model_file_to_transform_entity.get(file_entity)
-        {
+        if let Some(net_transform_entities) = self.model_file_to_transform_entity.get(file_entity) {
             for net_transform_entity in net_transform_entities.iter() {
                 let data = self.transform_entities.get(net_transform_entity).unwrap();
                 output.push(data.rotation_entity_edge_2d);
@@ -899,7 +922,7 @@ impl ModelManager {
             vertex_3d_entities,
             local_vertex_3d_entities,
             edge_3d_entities,
-            local_edge_3d_entities
+            local_edge_3d_entities,
         ) = match self.sync_3d_shapes(world, vertex_manager, &file_entity, camera_3d_scale) {
             Some(value) => value,
             None => return,
@@ -917,11 +940,22 @@ impl ModelManager {
             vertex_3d_entities,
             local_vertex_3d_entities,
             edge_3d_entities,
-            local_edge_3d_entities
+            local_edge_3d_entities,
         );
     }
 
-    fn sync_3d_shapes(&mut self, world: &mut World, vertex_manager: &VertexManager, file_entity: &Entity, camera_3d_scale: f32) -> Option<(HashSet<Entity>, HashSet<Entity>, HashSet<Entity>, HashSet<Entity>)> {
+    fn sync_3d_shapes(
+        &mut self,
+        world: &mut World,
+        vertex_manager: &VertexManager,
+        file_entity: &Entity,
+        camera_3d_scale: f32,
+    ) -> Option<(
+        HashSet<Entity>,
+        HashSet<Entity>,
+        HashSet<Entity>,
+        HashSet<Entity>,
+    )> {
         // only triggers when canvas is redrawn
         let local_vertex_3d_scale = LocalShape::VERTEX_RADIUS / camera_3d_scale;
         let local_vertex_3d_scale = Vec3::splat(local_vertex_3d_scale);
@@ -1018,7 +1052,12 @@ impl ModelManager {
                 transform.scale.y = local_edge_3d_scale;
             }
         }
-        Some((vertex_3d_entities, local_vertex_3d_entities, edge_3d_entities, local_edge_3d_entities))
+        Some((
+            vertex_3d_entities,
+            local_vertex_3d_entities,
+            edge_3d_entities,
+            local_edge_3d_entities,
+        ))
     }
 
     fn sync_2d_shapes(
@@ -1029,7 +1068,7 @@ impl ModelManager {
         vertex_3d_entities: HashSet<Entity>,
         local_vertex_3d_entities: HashSet<Entity>,
         edge_3d_entities: HashSet<Entity>,
-        local_edge_3d_entities: HashSet<Entity>
+        local_edge_3d_entities: HashSet<Entity>,
     ) {
         // let vertex_2d_scale = Vec3::splat(LocalShape::VERTEX_RADIUS * camera_3d_scale);
         // let edge_2d_scale = LocalShape::EDGE_THICKNESS * camera_3d_scale;
@@ -1049,14 +1088,8 @@ impl ModelManager {
             Query<&Edge2dLocal>,
             Query<&EdgeAngleLocal, With<NetTransformControl>>,
         )> = SystemState::new(world);
-        let (
-            input_manager,
-            edge_manager,
-            camera_q,
-            mut transform_q,
-            edge_2d_local_q,
-            edge_angle_q,
-        ) = system_state.get_mut(world);
+        let (input_manager, edge_manager, camera_q, mut transform_q, edge_2d_local_q, edge_angle_q) =
+            system_state.get_mut(world);
 
         let Ok((camera, camera_projection)) = camera_q.get(*camera_3d_entity) else {
             return;
@@ -1190,7 +1223,8 @@ impl ModelManager {
 
             let mut edge_2d_entities = HashSet::new();
 
-            let ntc_rotation_edge_3d_entities = self.net_transform_rotation_edge_3d_entities(current_file_entity);
+            let ntc_rotation_edge_3d_entities =
+                self.net_transform_rotation_edge_3d_entities(current_file_entity);
 
             let mut system_state: SystemState<(
                 ResMut<RenderFrame>,
@@ -1198,11 +1232,7 @@ impl ModelManager {
                 Res<InputManager>,
                 Res<VertexManager>,
                 Res<EdgeManager>,
-                Query<(
-                    &Handle<CpuMesh>,
-                    &Transform,
-                    Option<&RenderLayer>,
-                )>,
+                Query<(&Handle<CpuMesh>, &Transform, Option<&RenderLayer>)>,
                 Query<&Handle<CpuMaterial>>,
                 Query<(Entity, &OwnedByFileLocal), With<Edge3d>>,
                 Query<Option<&ShapeName>>,
@@ -1693,7 +1723,7 @@ impl ModelManager {
         &self,
         vertex_3d_q: &Query<&Vertex3d>,
         edge_angle_q: &Query<&EdgeAngle>,
-        mtc_entity: &Entity
+        mtc_entity: &Entity,
     ) -> Option<Transform> {
         let mtc_data = self.transform_entities.get(mtc_entity)?;
         return mtc_data.get_bone_transform(vertex_3d_q, edge_angle_q);

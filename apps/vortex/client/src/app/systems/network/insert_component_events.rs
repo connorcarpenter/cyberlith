@@ -725,19 +725,16 @@ pub fn insert_model_events(
     for event in net_transform_events.iter() {
         let net_transform_entity = event.entity;
 
-        info!(
-            "entity: {:?} - inserted NetTransform",
-            net_transform_entity
-        );
+        info!("entity: {:?} - inserted NetTransform", net_transform_entity);
 
-        let Ok(model) = net_transform_q.get(net_transform_entity) else {
+        let Ok(transform) = net_transform_q.get(net_transform_entity) else {
             warn!("entity: `{:?}` has no NetTransform component", net_transform_entity);
             continue;
         };
-        let model_file_entity = model.owning_file_entity.get(&client).unwrap();
-        let skel_bone_name = (*model.vertex_name).clone();
+        let model_file_entity = transform.owning_file_entity.get(&client).unwrap();
+        let skel_bone_name = (*transform.vertex_name).clone();
 
-        let translation = model.translation_vec3();
+        let translation = transform.translation_vec3();
 
         model_manager.net_transform_postprocess(
             &mut commands,

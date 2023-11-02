@@ -1,8 +1,8 @@
+use crate::app::resources::camera_manager::CameraManager;
 use bevy_ecs::entity::Entity;
 use bevy_ecs::system::Query;
 use math::{convert_2d_to_3d, quat_from_spin_direction, Vec2, Vec3};
 use render_api::components::{Camera, CameraProjection, Projection, Transform};
-use crate::app::resources::camera_manager::CameraManager;
 
 pub fn set_3d_line_transform(transform: &mut Transform, start: Vec3, end: Vec3, spin: f32) {
     transform.translation = start;
@@ -41,7 +41,7 @@ pub fn get_new_3d_position(
     camera_q: &Query<(&Camera, &Projection)>,
     transform_q: &Query<&Transform>,
     mouse_position: &Vec2,
-    entity_2d: &Entity
+    entity_2d: &Entity,
 ) -> Vec3 {
     let camera_3d = camera_manager.camera_3d_entity().unwrap();
     let camera_transform: Transform = *transform_q.get(camera_3d).unwrap();

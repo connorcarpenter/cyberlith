@@ -27,7 +27,6 @@ pub struct NetTransformControl {
 }
 
 impl NetTransformControl {
-
     pub const EDGE_LENGTH: f32 = 20.0;
 
     pub const SCALE_EDGE_LENGTH: f32 = 14.0;

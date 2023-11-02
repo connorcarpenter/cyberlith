@@ -2,7 +2,7 @@ use std::default::Default;
 
 use bevy_ecs::component::Component;
 
-use math::{Mat4, Quat, Vec2, Vec3, matrix_transform_point};
+use math::{matrix_transform_point, Mat4, Quat, Vec2, Vec3};
 
 #[derive(Clone, Component, Copy)]
 pub struct Transform {

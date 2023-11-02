@@ -42,9 +42,7 @@ pub struct EdgeAngleLocal {
 
 impl EdgeAngleLocal {
     pub fn new(radians: f32) -> Self {
-        Self {
-            radians,
-        }
+        Self { radians }
     }
 
     // angle in degrees

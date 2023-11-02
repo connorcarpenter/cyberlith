@@ -77,14 +77,12 @@ impl ModelWriter {
                                 "writing skin index for entity: `{:?}`, skin_index: `{}`",
                                 dependency_entity, skin_index
                             );
-                            skin_dependencies
-                                .push((dependency_key, NetTransformEntityType::Skin));
+                            skin_dependencies.push((dependency_key, NetTransformEntityType::Skin));
                         }
                         FileExtension::Scene => {
                             let skin_index = skin_dependencies.len() as u16;
                             skin_dependency_to_index.insert(dependency_entity, skin_index);
-                            skin_dependencies
-                                .push((dependency_key, NetTransformEntityType::Scene));
+                            skin_dependencies.push((dependency_key, NetTransformEntityType::Scene));
                         }
                         _ => {
                             panic!("model file should depend on a single .skel file & potentially many .skin or .scene files");
@@ -418,10 +416,7 @@ impl ModelReader {
                         .insert(component)
                         .id();
 
-                    output.insert(
-                        net_transform_entity,
-                        ContentEntityData::new_net_transform(),
-                    );
+                    output.insert(net_transform_entity, ContentEntityData::new_net_transform());
                 }
             }
         }
