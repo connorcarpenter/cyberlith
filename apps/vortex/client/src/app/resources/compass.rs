@@ -15,7 +15,7 @@ use vortex_proto::components::Vertex3d;
 
 use crate::app::resources::{
     camera_manager::CameraManager, canvas::Canvas, edge_manager::EdgeManager,
-    face_manager::FaceManager, tab_manager::TabManager, vertex_manager::VertexManager,
+    tab_manager::TabManager, vertex_manager::VertexManager,
 };
 
 #[derive(Resource)]
@@ -135,7 +135,6 @@ impl Compass {
         camera_manager: &mut CameraManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
-        face_manager: &mut FaceManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
     ) {
@@ -143,7 +142,6 @@ impl Compass {
             commands,
             camera_manager,
             edge_manager,
-            face_manager,
             meshes,
             materials,
             None,
@@ -158,7 +156,6 @@ impl Compass {
             camera_manager,
             vertex_manager,
             edge_manager,
-            face_manager,
             meshes,
             materials,
             root_vertex_2d_entity,
@@ -171,7 +168,6 @@ impl Compass {
             camera_manager,
             vertex_manager,
             edge_manager,
-            face_manager,
             meshes,
             materials,
             root_vertex_2d_entity,
@@ -184,7 +180,6 @@ impl Compass {
             camera_manager,
             vertex_manager,
             edge_manager,
-            face_manager,
             meshes,
             materials,
             root_vertex_2d_entity,
@@ -199,7 +194,6 @@ impl Compass {
         camera_manager: &mut CameraManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
-        face_manager: &mut FaceManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         root_vertex_2d_entity: Entity,
@@ -210,7 +204,6 @@ impl Compass {
             commands,
             camera_manager,
             edge_manager,
-            face_manager,
             meshes,
             materials,
             Some(root_vertex_2d_entity),

@@ -17,7 +17,7 @@ use crate::app::{
     config::AppConfig,
     resources::{
         camera_manager::CameraManager, canvas::Canvas, compass::Compass, edge_manager::EdgeManager,
-        face_manager::FaceManager, grid::Grid, input::InputManager, vertex_manager::VertexManager,
+        grid::Grid, input::InputManager, vertex_manager::VertexManager,
     },
     shapes::create_2d_edge_line,
 };
@@ -28,7 +28,6 @@ pub fn setup(
     mut canvas: ResMut<Canvas>,
     mut vertex_manager: ResMut<VertexManager>,
     mut edge_manager: ResMut<EdgeManager>,
-    mut face_manager: ResMut<FaceManager>,
     mut camera_manager: ResMut<CameraManager>,
     mut input_manager: ResMut<InputManager>,
     mut compass: ResMut<Compass>,
@@ -71,7 +70,6 @@ pub fn setup(
         &mut camera_manager,
         &mut vertex_manager,
         &mut edge_manager,
-        &mut face_manager,
         &mut meshes,
         &mut materials,
     );
@@ -80,7 +78,6 @@ pub fn setup(
         &mut camera_manager,
         &mut vertex_manager,
         &mut edge_manager,
-        &mut face_manager,
         &mut meshes,
         &mut materials,
     );

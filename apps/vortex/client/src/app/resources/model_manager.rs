@@ -35,7 +35,7 @@ use crate::app::{
     resources::{
         action::model::ModelAction, camera_manager::CameraManager, canvas::Canvas,
         compass::Compass, edge_manager::edge_is_enabled, edge_manager::EdgeManager,
-        face_manager::FaceManager, file_manager::FileManager, grid::Grid, input::InputManager,
+        file_manager::FileManager, grid::Grid, input::InputManager,
         shape_data::CanvasShape, tab_manager::TabManager, vertex_manager::VertexManager,
     },
     transform_from_endpoints_and_spin,
@@ -44,7 +44,7 @@ use crate::app::{
 
 pub struct NetTransformData {
     model_file_entity: Entity,
-    skel_edge_name: String, // todo: maybe should just get this from component when necessary
+    skel_edge_name: Option<String>, // todo: maybe should just get this from component when necessary
     // Option<(edge 3d entity, vertex 3d entity start, vertex 3d entity end)>
     skel_entities: Option<(Entity, Entity, Entity)>,
     translation_entity_2d: Entity,
@@ -64,7 +64,7 @@ pub struct NetTransformData {
 impl NetTransformData {
     pub fn new(
         model_file_entity: Entity,
-        skel_edge_name: String,
+        skel_edge_name: Option<String>,
         translation_entity_2d: Entity,
         translation_entity_3d: Entity,
         rotation_entity_vert_2d: Entity,
@@ -80,8 +80,8 @@ impl NetTransformData {
     ) -> Self {
         Self {
             model_file_entity,
-            skel_entities: None,
             skel_edge_name,
+            skel_entities: None,
             translation_entity_3d,
             rotation_entity_vert_3d,
             rotation_entity_edge_3d,
@@ -187,7 +187,7 @@ impl NetTransformData {
             .unwrap();
 
         // go fetch entities ..
-        let bone_name: &str = &self.skel_edge_name;
+        let bone_name: String = self.skel_edge_name.as_ref().unwrap().clone();
 
         for (edge_3d_entity, owned_by) in edge_3d_q.iter() {
             if owned_by.file_entity != skel_file_entity {
@@ -257,7 +257,7 @@ impl NetTransformData {
 
 #[derive(Resource)]
 pub struct ModelManager {
-    model_file_to_transform_entity: HashMap<Entity, HashSet<Entity>>,
+    model_file_to_transform_entities: HashMap<Entity, HashSet<Entity>>,
     transform_entities: HashMap<Entity, NetTransformData>,
     // (.model file entity, edge name) -> net transform entity
     name_to_transform_entity: HashMap<(Entity, String), Entity>,
@@ -273,7 +273,7 @@ pub struct ModelManager {
 impl Default for ModelManager {
     fn default() -> Self {
         Self {
-            model_file_to_transform_entity: HashMap::new(),
+            model_file_to_transform_entities: HashMap::new(),
             transform_entities: HashMap::new(),
             name_to_transform_entity: HashMap::new(),
             binding_edge_opt: None,
@@ -350,7 +350,6 @@ impl ModelManager {
             ResMut<CameraManager>,
             ResMut<VertexManager>,
             ResMut<EdgeManager>,
-            ResMut<FaceManager>,
             ResMut<Assets<CpuMesh>>,
             ResMut<Assets<CpuMaterial>>,
         )> = SystemState::new(world);
@@ -361,7 +360,6 @@ impl ModelManager {
             mut camera_manager,
             mut vertex_manager,
             mut edge_manager,
-            mut face_manager,
             mut meshes,
             mut materials,
         ) = system_state.get_mut(world);
@@ -400,13 +398,11 @@ impl ModelManager {
             &mut camera_manager,
             &mut vertex_manager,
             &mut edge_manager,
-            &mut face_manager,
             &mut meshes,
             &mut materials,
             current_file_entity,
-            skel_bone_name.clone(),
+            Some(skel_bone_name.clone()),
             new_net_transform_entity,
-            Vec3::ZERO,
         );
 
         system_state.apply(world);
@@ -429,13 +425,11 @@ impl ModelManager {
         camera_manager: &mut CameraManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
-        face_manager: &mut FaceManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
-        model_file_entity: &Entity,
-        skel_bone_name: String,
+        owning_file_entity: &Entity,
+        skel_bone_name_opt: Option<String>,
         net_transform_entity: Entity,
-        translation: Vec3,
     ) {
         // translation control
         let (translation_entity_2d, translation_entity_3d, _) = Self::new_net_transform_control(
@@ -443,11 +437,9 @@ impl ModelManager {
             camera_manager,
             vertex_manager,
             edge_manager,
-            face_manager,
             meshes,
             materials,
             net_transform_entity,
-            translation,
             None,
             Color::LIGHT_BLUE,
             NetTransformControlType::Translation,
@@ -459,11 +451,9 @@ impl ModelManager {
             camera_manager,
             vertex_manager,
             edge_manager,
-            face_manager,
             meshes,
             materials,
             net_transform_entity,
-            translation,
             Some(translation_entity_2d),
             Color::RED,
             NetTransformControlType::RotationVertex,
@@ -477,11 +467,9 @@ impl ModelManager {
             camera_manager,
             vertex_manager,
             edge_manager,
-            face_manager,
             meshes,
             materials,
             net_transform_entity,
-            translation,
             Some(translation_entity_2d),
             Color::WHITE,
             NetTransformControlType::Scale(ScaleAxis::X),
@@ -493,11 +481,9 @@ impl ModelManager {
             camera_manager,
             vertex_manager,
             edge_manager,
-            face_manager,
             meshes,
             materials,
             net_transform_entity,
-            translation,
             Some(translation_entity_2d),
             Color::WHITE,
             NetTransformControlType::Scale(ScaleAxis::Y),
@@ -509,20 +495,18 @@ impl ModelManager {
             camera_manager,
             vertex_manager,
             edge_manager,
-            face_manager,
             meshes,
             materials,
             net_transform_entity,
-            translation,
             Some(translation_entity_2d),
             Color::WHITE,
             NetTransformControlType::Scale(ScaleAxis::Z),
         );
 
         self.register_net_transform_controls(
-            model_file_entity,
+            owning_file_entity,
             net_transform_entity,
-            skel_bone_name,
+            skel_bone_name_opt,
             translation_entity_2d,
             translation_entity_3d,
             rotation_entity_vert_2d,
@@ -543,11 +527,9 @@ impl ModelManager {
         camera_manager: &mut CameraManager,
         vertex_manager: &mut VertexManager,
         edge_manager: &mut EdgeManager,
-        face_manager: &mut FaceManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         transform_entity: Entity,
-        translation: Vec3,
         translation_entity_2d_opt: Option<Entity>,
         color: Color,
         control_type: NetTransformControlType,
@@ -562,11 +544,10 @@ impl ModelManager {
                 commands,
                 camera_manager,
                 edge_manager,
-                face_manager,
                 meshes,
                 materials,
                 translation_entity_2d_opt,
-                translation,
+                Vec3::ZERO,
                 color,
                 edge_angle_opt,
             );
@@ -621,7 +602,7 @@ impl ModelManager {
         &mut self,
         model_file_entity: &Entity,
         net_transform_entity: Entity,
-        skel_bone_name: String,
+        skel_bone_name_opt: Option<String>,
         translation_entity_2d: Entity,
         translation_entity_3d: Entity,
         rotation_entity_vert_2d: Entity,
@@ -639,7 +620,7 @@ impl ModelManager {
             net_transform_entity,
             NetTransformData::new(
                 *model_file_entity,
-                skel_bone_name.clone(),
+                skel_bone_name_opt.clone(),
                 translation_entity_2d,
                 translation_entity_3d,
                 rotation_entity_vert_2d,
@@ -654,19 +635,21 @@ impl ModelManager {
                 scale_z_entity_3d,
             ),
         );
-        let key: (Entity, String) = (*model_file_entity, skel_bone_name.clone());
-        self.name_to_transform_entity
-            .insert(key, net_transform_entity);
+        if let Some(skel_bone_name) = skel_bone_name_opt {
+            let key: (Entity, String) = (*model_file_entity, skel_bone_name);
+            self.name_to_transform_entity
+                .insert(key, net_transform_entity);
+        }
 
         if !self
-            .model_file_to_transform_entity
+            .model_file_to_transform_entities
             .contains_key(model_file_entity)
         {
-            self.model_file_to_transform_entity
+            self.model_file_to_transform_entities
                 .insert(*model_file_entity, HashSet::new());
         }
         let net_transforms = self
-            .model_file_to_transform_entity
+            .model_file_to_transform_entities
             .get_mut(model_file_entity)
             .unwrap();
         net_transforms.insert(net_transform_entity);
@@ -684,7 +667,7 @@ impl ModelManager {
         &self,
         model_file_entity: &Entity,
     ) -> Option<Vec<Entity>> {
-        self.model_file_to_transform_entity
+        self.model_file_to_transform_entities
             .get(model_file_entity)
             .map(|set| set.iter().cloned().collect())
     }
@@ -734,19 +717,21 @@ impl ModelManager {
             .transform_entities
             .remove(net_transform_entity)
             .unwrap();
-        let key: (Entity, String) = (
-            net_transform_data.model_file_entity,
-            net_transform_data.skel_edge_name.clone(),
-        );
-        self.name_to_transform_entity.remove(&key);
+        if let Some(skel_edge_name) = &net_transform_data.skel_edge_name {
+            let key: (Entity, String) = (
+                net_transform_data.model_file_entity,
+                skel_edge_name.clone(),
+            );
+            self.name_to_transform_entity.remove(&key);
+        }
 
         let net_transforms = self
-            .model_file_to_transform_entity
+            .model_file_to_transform_entities
             .get_mut(&net_transform_data.model_file_entity)
             .unwrap();
         net_transforms.remove(net_transform_entity);
         if net_transforms.is_empty() {
-            self.model_file_to_transform_entity
+            self.model_file_to_transform_entities
                 .remove(&net_transform_data.model_file_entity);
         }
 
@@ -754,7 +739,7 @@ impl ModelManager {
     }
 
     fn sync_transform_controls(&mut self, world: &mut World, file_entity: &Entity) {
-        let Some(net_transform_entities) = self.model_file_to_transform_entity.get(file_entity) else {
+        let Some(net_transform_entities) = self.model_file_to_transform_entities.get(file_entity) else {
             return;
         };
 
@@ -856,7 +841,7 @@ impl ModelManager {
 
     fn net_transform_3d_vertices(&self, file_entity: &Entity) -> Vec<Entity> {
         let mut vertices = Vec::new();
-        if let Some(net_transform_entities) = self.model_file_to_transform_entity.get(file_entity) {
+        if let Some(net_transform_entities) = self.model_file_to_transform_entities.get(file_entity) {
             for net_transform_entity in net_transform_entities.iter() {
                 let data = self.transform_entities.get(net_transform_entity).unwrap();
                 vertices.push(data.translation_entity_3d);
@@ -871,7 +856,7 @@ impl ModelManager {
 
     pub fn net_transform_2d_vertices(&self, file_entity: &Entity) -> Vec<Entity> {
         let mut vertices = Vec::new();
-        if let Some(net_transform_entities) = self.model_file_to_transform_entity.get(file_entity) {
+        if let Some(net_transform_entities) = self.model_file_to_transform_entities.get(file_entity) {
             for net_transform_entity in net_transform_entities.iter() {
                 let data = self.transform_entities.get(net_transform_entity).unwrap();
                 vertices.push(data.translation_entity_2d);
@@ -886,7 +871,7 @@ impl ModelManager {
 
     fn net_transform_rotation_edge_3d_entities(&self, file_entity: &Entity) -> Vec<Entity> {
         let mut output = Vec::new();
-        if let Some(net_transform_entities) = self.model_file_to_transform_entity.get(file_entity) {
+        if let Some(net_transform_entities) = self.model_file_to_transform_entities.get(file_entity) {
             for net_transform_entity in net_transform_entities.iter() {
                 let data = self.transform_entities.get(net_transform_entity).unwrap();
                 output.push(data.rotation_entity_edge_3d);
@@ -900,7 +885,7 @@ impl ModelManager {
         file_entity: &Entity,
     ) -> Vec<Entity> {
         let mut output = Vec::new();
-        if let Some(net_transform_entities) = self.model_file_to_transform_entity.get(file_entity) {
+        if let Some(net_transform_entities) = self.model_file_to_transform_entities.get(file_entity) {
             for net_transform_entity in net_transform_entities.iter() {
                 let data = self.transform_entities.get(net_transform_entity).unwrap();
                 output.push(data.rotation_entity_edge_2d);
@@ -1351,7 +1336,7 @@ impl ModelManager {
 
         {
             // draw models in correct positions
-            let Some(net_transform_entities) = self.model_file_to_transform_entity.get(current_file_entity) else {
+            let Some(net_transform_entities) = self.model_file_to_transform_entities.get(current_file_entity) else {
                 return;
             };
 
@@ -1557,7 +1542,7 @@ impl ModelManager {
 
         {
             // draw skins in correct positions
-            let Some(net_transform_entities) = self.model_file_to_transform_entity.get(current_file_entity) else {
+            let Some(net_transform_entities) = self.model_file_to_transform_entities.get(current_file_entity) else {
                 return;
             };
 

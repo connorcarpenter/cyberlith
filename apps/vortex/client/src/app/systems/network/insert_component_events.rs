@@ -36,7 +36,7 @@ use crate::app::{
         file_manager::{get_full_path, FileManager},
         model_manager::ModelManager,
         palette_manager::PaletteManager,
-        component_waitlist::{ComponentWaitlist, ShapeWaitlistInsert},
+        component_waitlist::{ComponentWaitlist, ComponentWaitlistInsert},
         skin_manager::SkinManager,
         tab_manager::TabManager,
         vertex_manager::VertexManager,
@@ -280,7 +280,7 @@ pub fn insert_vertex_events(
     mut face_manager: ResMut<FaceManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
-    mut shape_waitlist: ResMut<ComponentWaitlist>,
+    mut component_waitlist: ResMut<ComponentWaitlist>,
     mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
     vertex_3d_q: Query<&Vertex3d>,
     shape_name_q: Query<&ShapeName>,
@@ -291,7 +291,7 @@ pub fn insert_vertex_events(
 
         info!("entity: {:?} - inserted Vertex3d", entity);
 
-        shape_waitlist.process_insert(
+        component_waitlist.process_insert(
             &mut commands,
             &mut meshes,
             &mut materials,
@@ -300,10 +300,11 @@ pub fn insert_vertex_events(
             &mut vertex_manager,
             &mut edge_manager,
             &mut face_manager,
+            &mut None,
             &mut shape_color_resync_events,
             &vertex_3d_q,
             &entity,
-            ShapeWaitlistInsert::Vertex,
+            ComponentWaitlistInsert::Vertex,
         );
     }
 
@@ -313,7 +314,7 @@ pub fn insert_vertex_events(
 
         info!("entity: {:?} - inserted VertexRoot", entity);
 
-        shape_waitlist.process_insert(
+        component_waitlist.process_insert(
             &mut commands,
             &mut meshes,
             &mut materials,
@@ -322,10 +323,11 @@ pub fn insert_vertex_events(
             &mut vertex_manager,
             &mut edge_manager,
             &mut face_manager,
+            &mut None,
             &mut shape_color_resync_events,
             &vertex_3d_q,
             &entity,
-            ShapeWaitlistInsert::VertexRoot,
+            ComponentWaitlistInsert::VertexRoot,
         );
     }
 
@@ -357,7 +359,7 @@ pub fn insert_edge_events(
     mut face_manager: ResMut<FaceManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
-    mut shape_waitlist: ResMut<ComponentWaitlist>,
+    mut component_waitlist: ResMut<ComponentWaitlist>,
     mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
 
     edge_3d_q: Query<&Edge3d>,
@@ -381,7 +383,7 @@ pub fn insert_edge_events(
             continue;
         };
 
-        shape_waitlist.process_insert(
+        component_waitlist.process_insert(
             &mut commands,
             &mut meshes,
             &mut materials,
@@ -390,10 +392,11 @@ pub fn insert_edge_events(
             &mut vertex_manager,
             &mut edge_manager,
             &mut face_manager,
+            &mut None,
             &mut shape_color_resync_events,
             &vertex_3d_q,
             &edge_entity,
-            ShapeWaitlistInsert::Edge(start_entity, end_entity),
+            ComponentWaitlistInsert::Edge(start_entity, end_entity),
         );
     }
 
@@ -406,7 +409,7 @@ pub fn insert_edge_events(
 
         let edge_3d = edge_angle_q.get(edge_entity).unwrap();
 
-        shape_waitlist.process_insert(
+        component_waitlist.process_insert(
             &mut commands,
             &mut meshes,
             &mut materials,
@@ -415,10 +418,11 @@ pub fn insert_edge_events(
             &mut vertex_manager,
             &mut edge_manager,
             &mut face_manager,
+            &mut None,
             &mut shape_color_resync_events,
             &vertex_3d_q,
             &edge_entity,
-            ShapeWaitlistInsert::EdgeAngle(edge_3d.get_radians()),
+            ComponentWaitlistInsert::EdgeAngle(edge_3d.get_radians()),
         );
     }
 }
@@ -434,7 +438,7 @@ pub fn insert_face_events(
     mut face_manager: ResMut<FaceManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
-    mut shape_waitlist: ResMut<ComponentWaitlist>,
+    mut component_waitlist: ResMut<ComponentWaitlist>,
     mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
 
     face_3d_q: Query<&Face3d>,
@@ -473,7 +477,7 @@ pub fn insert_face_events(
             continue;
         };
 
-        shape_waitlist.process_insert(
+        component_waitlist.process_insert(
             &mut commands,
             &mut meshes,
             &mut materials,
@@ -482,10 +486,11 @@ pub fn insert_face_events(
             &mut vertex_manager,
             &mut edge_manager,
             &mut face_manager,
+            &mut None,
             &mut shape_color_resync_events,
             &vertex_3d_q,
             &face_entity,
-            ShapeWaitlistInsert::Face(
+            ComponentWaitlistInsert::Face(
                 vertex_a_entity,
                 vertex_b_entity,
                 vertex_c_entity,
@@ -508,9 +513,10 @@ pub fn insert_owned_by_file_events(
     mut vertex_manager: ResMut<VertexManager>,
     mut edge_manager: ResMut<EdgeManager>,
     mut face_manager: ResMut<FaceManager>,
+    mut model_manager: ResMut<ModelManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
-    mut shape_waitlist: ResMut<ComponentWaitlist>,
+    mut component_waitlist: ResMut<ComponentWaitlist>,
     mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
 
     owned_by_tab_q: Query<&OwnedByFile>,
@@ -526,7 +532,7 @@ pub fn insert_owned_by_file_events(
         let file_entity = owned_by_file.file_entity.get(&client).unwrap();
 
         // this leaks memory!!! some OwnedByFile components are never removed
-        shape_waitlist.process_insert(
+        component_waitlist.process_insert(
             &mut commands,
             &mut meshes,
             &mut materials,
@@ -535,10 +541,11 @@ pub fn insert_owned_by_file_events(
             &mut vertex_manager,
             &mut edge_manager,
             &mut face_manager,
+            &mut Some(&mut model_manager),
             &mut shape_color_resync_events,
             &vertex_3d_q,
             &entity,
-            ShapeWaitlistInsert::OwnedByFile(file_entity),
+            ComponentWaitlistInsert::OwnedByFile(file_entity),
         );
     }
 }
@@ -553,9 +560,10 @@ pub fn insert_file_type_events(
     mut vertex_manager: ResMut<VertexManager>,
     mut edge_manager: ResMut<EdgeManager>,
     mut face_manager: ResMut<FaceManager>,
+    mut model_manager: ResMut<ModelManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
-    mut shape_waitlist: ResMut<ComponentWaitlist>,
+    mut component_waitlist: ResMut<ComponentWaitlist>,
     mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
 
     file_type_q: Query<&FileType>,
@@ -573,7 +581,7 @@ pub fn insert_file_type_events(
             entity, file_type_value
         );
 
-        shape_waitlist.process_insert(
+        component_waitlist.process_insert(
             &mut commands,
             &mut meshes,
             &mut materials,
@@ -582,10 +590,11 @@ pub fn insert_file_type_events(
             &mut vertex_manager,
             &mut edge_manager,
             &mut face_manager,
+            &mut Some(&mut model_manager),
             &mut shape_color_resync_events,
             &vertex_3d_q,
             &entity,
-            ShapeWaitlistInsert::FileType(file_type_value),
+            ComponentWaitlistInsert::FileType(file_type_value),
         );
     }
 }
@@ -709,45 +718,49 @@ pub fn insert_skin_events(
 }
 
 pub fn insert_model_events(
-    mut net_transform_events: EventReader<InsertComponentEvent<NetTransform>>,
+    mut events: EventReader<InsertComponentEvent<NetTransform>>,
     mut commands: Commands,
-    client: Client,
+
     mut camera_manager: ResMut<CameraManager>,
+    mut canvas: ResMut<Canvas>,
     mut vertex_manager: ResMut<VertexManager>,
     mut edge_manager: ResMut<EdgeManager>,
     mut face_manager: ResMut<FaceManager>,
+    mut model_manager: ResMut<ModelManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
-    mut model_manager: ResMut<ModelManager>,
-    net_transform_q: Query<&NetTransform>,
+    mut component_waitlist: ResMut<ComponentWaitlist>,
+    mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
+
+    file_type_q: Query<&FileType>,
+    vertex_3d_q: Query<&Vertex3d>,
 ) {
     // on NetTransform Insert Event
-    for event in net_transform_events.iter() {
-        let net_transform_entity = event.entity;
+    for event in events.iter() {
+        let entity = event.entity;
 
-        info!("entity: {:?} - inserted NetTransform", net_transform_entity);
+        let file_type = file_type_q.get(entity).unwrap();
+        let file_type_value = *file_type.value;
 
-        let Ok(transform) = net_transform_q.get(net_transform_entity) else {
-            warn!("entity: `{:?}` has no NetTransform component", net_transform_entity);
-            continue;
-        };
-        let model_file_entity = transform.owning_file_entity.get(&client).unwrap();
-        let skel_bone_name = (*transform.vertex_name).clone();
+        info!(
+            "entity: {:?} - inserted FileType::{:?}",
+            entity, file_type_value
+        );
 
-        let translation = transform.translation_vec3();
-
-        model_manager.net_transform_postprocess(
+        component_waitlist.process_insert(
             &mut commands,
+            &mut meshes,
+            &mut materials,
             &mut camera_manager,
+            &mut canvas,
             &mut vertex_manager,
             &mut edge_manager,
             &mut face_manager,
-            &mut meshes,
-            &mut materials,
-            &model_file_entity,
-            skel_bone_name,
-            net_transform_entity,
-            translation,
+            &mut Some(&mut model_manager),
+            &mut shape_color_resync_events,
+            &vertex_3d_q,
+            &entity,
+            ComponentWaitlistInsert::FileType(file_type_value),
         );
     }
 }

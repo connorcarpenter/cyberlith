@@ -430,7 +430,7 @@ impl EdgeManager {
             materials,
             camera_manager,
             vertex_manager,
-            face_manager,
+            Some(face_manager),
             Some(shape_color_resync_events),
             new_edge_3d_entity,
             parent_vertex_2d_entity,
@@ -456,7 +456,7 @@ impl EdgeManager {
         materials: &mut Assets<CpuMaterial>,
         camera_manager: &CameraManager,
         vertex_manager: &mut VertexManager,
-        face_manager: &mut FaceManager,
+        face_manager_opt: Option<&mut FaceManager>,
         shape_color_resync_events_opt: Option<&mut EventWriter<ShapeColorResyncEvent>>,
         edge_3d_entity: Entity,
         vertex_a_2d_entity: Entity,
@@ -605,7 +605,7 @@ impl EdgeManager {
         // register 3d & 2d edges together
         self.register_3d_edge(
             vertex_manager,
-            face_manager,
+            face_manager_opt,
             edge_3d_entity,
             edge_2d_entity,
             vertex_a_3d_entity,
@@ -620,7 +620,7 @@ impl EdgeManager {
     pub fn register_3d_edge(
         &mut self,
         vertex_manager: &mut VertexManager,
-        face_manager: &mut FaceManager,
+        face_manager_opt: Option<&mut FaceManager>,
         edge_3d_entity: Entity,
         edge_2d_entity: Entity,
         vertex_a_3d_entity: Entity,
@@ -650,12 +650,13 @@ impl EdgeManager {
         self.edges_2d.insert(edge_2d_entity, edge_3d_entity);
 
         if let Some(file_entity) = ownership_opt {
+            let face_manager = face_manager_opt.unwrap();
             face_manager.check_for_new_faces(
                 vertex_manager,
                 &self,
+                file_entity,
                 vertex_a_3d_entity,
                 vertex_b_3d_entity,
-                file_entity,
             );
         }
     }

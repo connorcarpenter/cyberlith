@@ -592,9 +592,9 @@ impl FaceManager {
         &mut self,
         vertex_manager: &VertexManager,
         edge_manager: &EdgeManager,
+        file_entity: Entity,
         vertex_a_3d_entity: Entity,
         vertex_b_3d_entity: Entity,
-        file_entity: Entity,
     ) {
         let vertex_a_connected_vertices =
             vertex_manager.get_connected_vertices(edge_manager, vertex_a_3d_entity);
