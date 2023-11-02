@@ -649,8 +649,8 @@ impl EdgeManager {
         );
         self.edges_2d.insert(edge_2d_entity, edge_3d_entity);
 
-        if let Some(file_entity) = ownership_opt {
-            let face_manager = face_manager_opt.unwrap();
+        if let Some(face_manager) = face_manager_opt {
+            let file_entity = ownership_opt.unwrap();
             face_manager.check_for_new_faces(
                 vertex_manager,
                 &self,

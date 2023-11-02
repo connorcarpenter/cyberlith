@@ -56,7 +56,7 @@ enum ComponentData {
     Edge(Entity, Entity, Option<f32>),
     Face(Entity, Entity, Entity, Entity, Entity, Entity),
     // SkinOrSceneEntity, Option<ShapeName>
-    NetTransform(Entity, NetTransformEntityType, Option<String>),
+    NetTransform(Option<String>),
 }
 
 impl ComponentData {
@@ -65,7 +65,7 @@ impl ComponentData {
             ComponentData::Vertex(_) => ComponentType::Vertex,
             ComponentData::Edge(_, _, _) => ComponentType::Edge,
             ComponentData::Face(_, _, _, _, _, _) => ComponentType::Face,
-            ComponentData::NetTransform(_, _, _) => ComponentType::NetTransform,
+            ComponentData::NetTransform(_) => ComponentType::NetTransform,
         }
     }
 }
@@ -236,12 +236,10 @@ impl ComponentWaitlistEntry {
                 ComponentData::Face(vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c)
             }
             (ComponentType::NetTransform, FileExtension::Model) => {
-                let (skin_or_scene_entity, skin_or_scene_type) = self.skin_or_scene_entity.unwrap();
-                ComponentData::NetTransform(skin_or_scene_entity, skin_or_scene_type, Some(self.shape_name.unwrap()))
+                ComponentData::NetTransform(Some(self.shape_name.unwrap()))
             }
             (ComponentType::NetTransform, FileExtension::Scene) => {
-                let (skin_or_scene_entity, skin_or_scene_type) = self.skin_or_scene_entity.unwrap();
-                ComponentData::NetTransform(skin_or_scene_entity, skin_or_scene_type, None)
+                ComponentData::NetTransform(None)
             }
             (_, _) => {
                 panic!("");
@@ -609,7 +607,7 @@ impl ComponentWaitlist {
                     positions,
                 );
             }
-            (FileExtension::Model, ComponentData::NetTransform(_skin_or_scene_entity, _skin_or_scene_type, Some(shape_name))) => {
+            (FileExtension::Model, ComponentData::NetTransform(Some(shape_name))) => {
 
                 model_manager_opt.as_mut().unwrap().net_transform_postprocess(
                     commands,
@@ -623,7 +621,7 @@ impl ComponentWaitlist {
                     entity,
                 );
             }
-            (FileExtension::Scene, ComponentData::NetTransform(_skin_or_scene_entity, _skin_or_scene_type, None)) => {
+            (FileExtension::Scene, ComponentData::NetTransform(None)) => {
 
                 model_manager_opt.as_mut().unwrap().net_transform_postprocess(
                     commands,

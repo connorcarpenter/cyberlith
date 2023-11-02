@@ -17,7 +17,7 @@ use bevy_log::{info, LogPlugin};
 use naia_bevy_server::{Plugin as ServerPlugin, ReceiveEvents, ServerConfig};
 
 use vortex_proto::{
-    components::{
+    components::{SkinOrSceneEntity,
         AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency,
         FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, NetTransform, OwnedByFile,
         PaletteColor, ShapeName, Vertex3d, VertexRoot,
@@ -115,6 +115,7 @@ fn main() {
         .add_event::<InsertComponentEvent<BackgroundSkinColor>>()
         .add_event::<InsertComponentEvent<FaceColor>>()
         .add_event::<InsertComponentEvent<NetTransform>>()
+        .add_event::<InsertComponentEvent<SkinOrSceneEntity>>()
         // Other Systems
         .add_systems(Startup, setup)
         .add_systems(Update, world_loop.after(ReceiveEvents))

@@ -76,6 +76,7 @@ pub fn insert_component_events(world: &mut World) {
         insert_component_event::<FaceColor>(world, &events);
 
         insert_component_event::<NetTransform>(world, &events);
+        insert_component_event::<SkinOrSceneEntity>(world, &events);
     }
 }
 
