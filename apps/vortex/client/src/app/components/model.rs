@@ -14,7 +14,8 @@ pub enum ScaleAxis {
 #[derive(Clone, Copy)]
 pub enum ModelTransformControlType {
     Translation,
-    Rotation,
+    RotationVertex,
+    RotationEdge,
     Scale(ScaleAxis),
     NA,
 }

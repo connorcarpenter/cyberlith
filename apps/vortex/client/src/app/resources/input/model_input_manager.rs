@@ -4,7 +4,7 @@ use bevy_ecs::{
     system::{Commands, Query, Res, ResMut, SystemState},
     world::{Mut, World},
 };
-use bevy_log::info;
+use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt};
 
@@ -140,8 +140,8 @@ impl ModelInputManager {
         }
 
         match (click_type, input_manager.selected_shape) {
-            (MouseButton::Left, Some((transform_entity, CanvasShape::Vertex))) => {
-                Self::handle_transform_drag(world, &transform_entity, &mouse_position)
+            (MouseButton::Left, Some((transform_entity, shape))) => {
+                Self::handle_transform_drag(world, &transform_entity, shape, &mouse_position)
             }
             (_, _) => InputManager::handle_drag_empty_space(world, click_type, delta),
         }
@@ -273,7 +273,7 @@ impl ModelInputManager {
         }
     }
 
-    fn handle_transform_drag(world: &mut World, control_2d_entity: &Entity, mouse_position: &Vec2) {
+    fn handle_transform_drag(world: &mut World, control_2d_entity: &Entity, shape: CanvasShape, mouse_position: &Vec2) {
         let mut system_state: SystemState<(
             Commands,
             Client,
@@ -302,7 +302,8 @@ impl ModelInputManager {
         ) = system_state.get_mut(world);
 
         let Ok(mtc_component) = mtc_q.get(*control_2d_entity) else {
-            panic!("Expected MTC");
+            warn!("Expected MTC");
+            return;
         };
         let mtc_entity = mtc_component.model_transform_entity;
         let mtc_type = mtc_component.control_type;
@@ -324,27 +325,6 @@ impl ModelInputManager {
             return;
         }
 
-        // get camera
-        let camera_3d = camera_manager.camera_3d_entity().unwrap();
-        let camera_transform: Transform = *transform_q.get(camera_3d).unwrap();
-        let (camera, camera_projection) = camera_q.get(camera_3d).unwrap();
-
-        let camera_viewport = camera.viewport.unwrap();
-        let view_matrix = camera_transform.view_matrix();
-        let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
-
-        // get 2d vertex transform
-        let control_2d_transform = transform_q.get(*control_2d_entity).unwrap();
-
-        // convert 2d to 3d
-        let new_3d_position = convert_2d_to_3d(
-            &view_matrix,
-            &projection_matrix,
-            &camera_viewport.size_vec2(),
-            &mouse_position,
-            control_2d_transform.translation.z,
-        );
-
         // set networked 3d vertex position
         let mut model_transform = model_transform_q.get_mut(mtc_entity).unwrap();
 
@@ -354,13 +334,15 @@ impl ModelInputManager {
         // apply parent bone transform to new_transform
         let mut new_transform = new_transform.multiply(&bone_transform);
 
-        match mtc_type {
-            ModelTransformControlType::Translation => {
+        match (shape, mtc_type) {
+            (CanvasShape::Vertex, ModelTransformControlType::Translation) => {
+                let new_3d_position = Self::get_new_3d_position(camera_manager, camera_q, transform_q, &mouse_position, control_2d_entity);
                 new_transform.translation = new_3d_position;
             }
-            ModelTransformControlType::Rotation => {
+            (CanvasShape::Vertex, ModelTransformControlType::RotationVertex) => {
                 let edge_angle = 0.0; //todo, find edge angle
 
+                let new_3d_position = Self::get_new_3d_position(camera_manager, camera_q, transform_q, &mouse_position, control_2d_entity);
                 let rotation_with_offset = new_3d_position;
                 let translation = new_transform.translation;
                 let rotation_vector = rotation_with_offset - translation;
@@ -370,9 +352,14 @@ impl ModelInputManager {
                     quat_from_spin_direction(edge_angle, base_direction, target_direction);
                 new_transform.rotation = rotation_angle;
             }
-            ModelTransformControlType::Scale(axis) => {
+            (CanvasShape::Edge, ModelTransformControlType::RotationEdge) => {
+                todo!();
+            }
+            (CanvasShape::Vertex, ModelTransformControlType::Scale(axis)) => {
                 let translation = new_transform.translation;
                 let old_scale = new_transform.scale;
+
+                let new_3d_position = Self::get_new_3d_position(camera_manager, camera_q, transform_q, &mouse_position, control_2d_entity);
 
                 let new_scale = match axis {
                     ScaleAxis::X => {
@@ -399,9 +386,7 @@ impl ModelInputManager {
                 };
                 new_transform.scale = new_scale;
             }
-            _ => {
-                panic!("Unexpected MTC type");
-            }
+            _ => panic!("Unexpected MTC type"),
         }
 
         // remove parent transform from new_transform
@@ -415,5 +400,28 @@ impl ModelInputManager {
 
         // redraw
         canvas.queue_resync_shapes();
+    }
+
+    fn get_new_3d_position(camera_manager: Res<CameraManager>, camera_q: Query<(&Camera, &Projection)>, transform_q: Query<&Transform>, mouse_position: &&Vec2, control_2d_entity: &Entity) -> Vec3 {
+        let camera_3d = camera_manager.camera_3d_entity().unwrap();
+        let camera_transform: Transform = *transform_q.get(camera_3d).unwrap();
+        let (camera, camera_projection) = camera_q.get(camera_3d).unwrap();
+
+        let camera_viewport = camera.viewport.unwrap();
+        let view_matrix = camera_transform.view_matrix();
+        let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
+
+        // get 2d vertex transform
+        let control_2d_transform = transform_q.get(*control_2d_entity).unwrap();
+
+        // convert 2d to 3d
+        let new_3d_position = convert_2d_to_3d(
+            &view_matrix,
+            &projection_matrix,
+            &camera_viewport.size_vec2(),
+            &mouse_position,
+            control_2d_transform.translation.z,
+        );
+        new_3d_position
     }
 }

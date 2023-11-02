@@ -443,7 +443,7 @@ impl ModelManager {
             translation,
             Some(translation_entity_2d),
             Color::RED,
-            ModelTransformControlType::Rotation,
+            ModelTransformControlType::RotationVertex,
         ) else {
             panic!("should def have a rotation edge here");
         };
@@ -530,7 +530,7 @@ impl ModelManager {
     ) -> (Entity, Entity, Option<Entity>) {
 
         let edge_angle_opt = match control_type {
-            ModelTransformControlType::Rotation => Some(0.0),
+            ModelTransformControlType::RotationVertex => Some(0.0),
             _ => None,
         };
 
@@ -562,11 +562,16 @@ impl ModelManager {
             .remove::<Visibility>();
 
         if let Some(edge_2d_entity) = edge_2d_entity_opt {
+            let control_type = if edge_angle_opt.is_some() {
+                ModelTransformControlType::RotationEdge
+            } else {
+                ModelTransformControlType::NA
+            };
             commands
                 .entity(edge_2d_entity)
                 .insert(ModelTransformControl::new(
                     transform_entity,
-                    ModelTransformControlType::NA,
+                    control_type,
                 ));
         }
         if let Some(edge_3d_entity) = edge_3d_entity_opt {
