@@ -25,7 +25,7 @@ use crate::{
     resources::{
         file_waitlist::{file_process_insert, FSWaitlist, FSWaitlistInsert},
         AnimationManager, ContentEntityData, GitManager, PaletteManager, ShapeManager,
-        ShapeWaitlist, ShapeWaitlistInsert, SkinManager, TabManager, UserManager,
+        ComponentWaitlist, ComponentWaitlistInsert, SkinManager, TabManager, UserManager,
     },
 };
 
@@ -209,7 +209,7 @@ pub fn insert_file_component_events(
 pub fn insert_vertex_component_events(
     mut server: Server,
     mut git_manager: ResMut<GitManager>,
-    mut shape_waitlist: ResMut<ShapeWaitlist>,
+    mut shape_waitlist: ResMut<ComponentWaitlist>,
     mut shape_manager: ResMut<ShapeManager>,
     mut vert_3d_events: EventReader<InsertComponentEvent<Vertex3d>>,
     mut vert_root_events: EventReader<InsertComponentEvent<VertexRoot>>,
@@ -223,7 +223,7 @@ pub fn insert_vertex_component_events(
             &mut server,
             &mut git_manager,
             &mut shape_manager,
-            ShapeWaitlistInsert::Vertex(entity),
+            ComponentWaitlistInsert::Vertex(entity),
         );
     }
 
@@ -236,7 +236,7 @@ pub fn insert_vertex_component_events(
             &mut server,
             &mut git_manager,
             &mut shape_manager,
-            ShapeWaitlistInsert::VertexRoot(entity),
+            ComponentWaitlistInsert::VertexRoot(entity),
         );
     }
 }
@@ -244,7 +244,7 @@ pub fn insert_vertex_component_events(
 pub fn insert_edge_component_events(
     mut server: Server,
     mut git_manager: ResMut<GitManager>,
-    mut shape_waitlist: ResMut<ShapeWaitlist>,
+    mut shape_waitlist: ResMut<ComponentWaitlist>,
     mut shape_manager: ResMut<ShapeManager>,
     mut edge_3d_events: EventReader<InsertComponentEvent<Edge3d>>,
     edge_3d_q: Query<&Edge3d>,
@@ -265,7 +265,7 @@ pub fn insert_edge_component_events(
             &mut server,
             &mut git_manager,
             &mut shape_manager,
-            ShapeWaitlistInsert::Edge(start_entity, edge_entity, end_entity),
+            ComponentWaitlistInsert::Edge(start_entity, edge_entity, end_entity),
         );
     }
 }
@@ -273,7 +273,7 @@ pub fn insert_edge_component_events(
 pub fn insert_face_component_events(
     mut server: Server,
     mut git_manager: ResMut<GitManager>,
-    mut shape_waitlist: ResMut<ShapeWaitlist>,
+    mut shape_waitlist: ResMut<ComponentWaitlist>,
     mut shape_manager: ResMut<ShapeManager>,
     mut face_3d_events: EventReader<InsertComponentEvent<Face3d>>,
     face_3d_q: Query<&Face3d>,
@@ -296,7 +296,7 @@ pub fn insert_face_component_events(
             &mut server,
             &mut git_manager,
             &mut shape_manager,
-            ShapeWaitlistInsert::Face(face_entity, vertex_a, vertex_b, vertex_c),
+            ComponentWaitlistInsert::Face(face_entity, vertex_a, vertex_b, vertex_c),
         );
     }
 }
@@ -306,7 +306,7 @@ pub fn insert_shape_component_events(
     mut server: Server,
     user_manager: Res<UserManager>,
     mut git_manager: ResMut<GitManager>,
-    mut shape_waitlist: ResMut<ShapeWaitlist>,
+    mut shape_waitlist: ResMut<ComponentWaitlist>,
     mut shape_manager: ResMut<ShapeManager>,
     mut file_type_events: EventReader<InsertComponentEvent<FileType>>,
     mut owned_by_file_events: EventReader<InsertComponentEvent<OwnedByFile>>,
@@ -331,7 +331,7 @@ pub fn insert_shape_component_events(
             &mut server,
             &mut git_manager,
             &mut shape_manager,
-            ShapeWaitlistInsert::FileType(entity, file_type_value),
+            ComponentWaitlistInsert::FileType(entity, file_type_value),
         );
     }
 
@@ -361,7 +361,7 @@ pub fn insert_shape_component_events(
             &mut server,
             &mut git_manager,
             &mut shape_manager,
-            ShapeWaitlistInsert::OwnedByFile(entity, project_key, file_key.clone()),
+            ComponentWaitlistInsert::OwnedByFile(entity, project_key, file_key.clone()),
         );
     }
 

@@ -15,7 +15,7 @@ use crate::{
     resources::{project::ProjectKey, ContentEntityData, GitManager, ShapeManager},
 };
 
-pub enum ShapeWaitlistInsert {
+pub enum ComponentWaitlistInsert {
     //// shape
     Vertex(Entity),
     //// shape
@@ -30,7 +30,7 @@ pub enum ShapeWaitlistInsert {
     OwnedByFile(Entity, ProjectKey, FileKey),
 }
 
-enum ShapeData {
+enum ComponentData {
     // (ProjectKey, FileKey, Option<Edge, Parent>)
     SkelVertex(ProjectKey, FileKey, Option<(Entity, Entity)>),
     // ProjectKey, FileKey
@@ -44,7 +44,7 @@ enum ShapeData {
 }
 
 #[derive(Clone)]
-pub struct ShapeWaitlistEntry {
+pub struct ComponentWaitlistEntry {
     shape: Option<ShapeType>,
     edge_and_parent_opt: Option<Option<(Entity, Entity)>>,
     edge_entities: Option<(Entity, Entity)>,
@@ -53,7 +53,7 @@ pub struct ShapeWaitlistEntry {
     owned_by_file: Option<(ProjectKey, FileKey)>,
 }
 
-impl ShapeWaitlistEntry {
+impl ComponentWaitlistEntry {
     fn new() -> Self {
         Self {
             shape: None,
@@ -123,30 +123,30 @@ impl ShapeWaitlistEntry {
         self.owned_by_file = Some((project_key, file_key));
     }
 
-    fn decompose(self) -> ShapeData {
+    fn decompose(self) -> ComponentData {
         let (project_key, file_key) = self.owned_by_file.unwrap();
 
         match (self.file_type, self.shape) {
             (Some(FileExtension::Skel), Some(ShapeType::Vertex)) => {
-                return ShapeData::SkelVertex(
+                return ComponentData::SkelVertex(
                     project_key,
                     file_key,
                     self.edge_and_parent_opt.unwrap(),
                 );
             }
             (Some(FileExtension::Skel), Some(ShapeType::Edge)) => {
-                return ShapeData::SkelEdge(project_key, file_key);
+                return ComponentData::SkelEdge(project_key, file_key);
             }
             (Some(FileExtension::Mesh), Some(ShapeType::Vertex)) => {
-                return ShapeData::MeshVertex(project_key, file_key);
+                return ComponentData::MeshVertex(project_key, file_key);
             }
             (Some(FileExtension::Mesh), Some(ShapeType::Edge)) => {
                 let (start, end) = self.edge_entities.unwrap();
-                return ShapeData::MeshEdge(project_key, file_key, start, end);
+                return ComponentData::MeshEdge(project_key, file_key, start, end);
             }
             (Some(FileExtension::Mesh), Some(ShapeType::Face)) => {
                 let (vertex_a, vertex_b, vertex_c) = self.face_entities.unwrap();
-                return ShapeData::MeshFace(project_key, file_key, vertex_a, vertex_b, vertex_c);
+                return ComponentData::MeshFace(project_key, file_key, vertex_a, vertex_b, vertex_c);
             }
             _ => {
                 panic!("shouldn't be able to happen!");
@@ -156,13 +156,13 @@ impl ShapeWaitlistEntry {
 }
 
 #[derive(Resource)]
-pub struct ShapeWaitlist {
+pub struct ComponentWaitlist {
     // incomplete entity -> entry
-    incomplete_entries: HashMap<Entity, ShapeWaitlistEntry>,
-    dependency_map: DependencyMap<Entity, ShapeWaitlistEntry>,
+    incomplete_entries: HashMap<Entity, ComponentWaitlistEntry>,
+    dependency_map: DependencyMap<Entity, ComponentWaitlistEntry>,
 }
 
-impl Default for ShapeWaitlist {
+impl Default for ComponentWaitlist {
     fn default() -> Self {
         Self {
             incomplete_entries: HashMap::new(),
@@ -171,38 +171,38 @@ impl Default for ShapeWaitlist {
     }
 }
 
-impl ShapeWaitlist {
+impl ComponentWaitlist {
     pub fn process_insert(
         &mut self,
         server: &mut Server,
         git_manager: &mut GitManager,
         shape_manager: &mut ShapeManager,
-        insert: ShapeWaitlistInsert,
+        insert: ComponentWaitlistInsert,
     ) {
         let mut possibly_ready_entities = Vec::new();
 
         match insert {
-            ShapeWaitlistInsert::Vertex(vertex_entity) => {
+            ComponentWaitlistInsert::Vertex(vertex_entity) => {
                 if !self.contains_key(&vertex_entity) {
-                    self.insert_incomplete(vertex_entity, ShapeWaitlistEntry::new());
+                    self.insert_incomplete(vertex_entity, ComponentWaitlistEntry::new());
                 }
                 self.get_mut(&vertex_entity)
                     .unwrap()
                     .set_shape_type(ShapeType::Vertex);
             }
-            ShapeWaitlistInsert::VertexRoot(vertex_entity) => {
+            ComponentWaitlistInsert::VertexRoot(vertex_entity) => {
                 if !self.contains_key(&vertex_entity) {
-                    self.insert_incomplete(vertex_entity, ShapeWaitlistEntry::new());
+                    self.insert_incomplete(vertex_entity, ComponentWaitlistEntry::new());
                 }
                 let entry = self.get_mut(&vertex_entity).unwrap();
                 entry.set_edge_and_parent(None);
                 entry.set_shape_type(ShapeType::Vertex);
                 possibly_ready_entities.push(vertex_entity);
             }
-            ShapeWaitlistInsert::Edge(parent_entity, edge_entity, vertex_entity) => {
+            ComponentWaitlistInsert::Edge(parent_entity, edge_entity, vertex_entity) => {
                 {
                     if !self.contains_key(&vertex_entity) {
-                        self.insert_incomplete(vertex_entity, ShapeWaitlistEntry::new());
+                        self.insert_incomplete(vertex_entity, ComponentWaitlistEntry::new());
                     }
                     let vertex_entry = self.get_mut(&vertex_entity).unwrap();
                     // info!(
@@ -216,7 +216,7 @@ impl ShapeWaitlist {
 
                 {
                     if !self.contains_key(&edge_entity) {
-                        self.insert_incomplete(edge_entity, ShapeWaitlistEntry::new());
+                        self.insert_incomplete(edge_entity, ComponentWaitlistEntry::new());
                     }
                     let edge_entry = self.get_mut(&edge_entity).unwrap();
                     edge_entry.set_shape_type(ShapeType::Edge);
@@ -229,9 +229,9 @@ impl ShapeWaitlist {
                 //     possibly_ready_entities
                 // );
             }
-            ShapeWaitlistInsert::Face(face_entity, vertex_a, vertex_b, vertex_c) => {
+            ComponentWaitlistInsert::Face(face_entity, vertex_a, vertex_b, vertex_c) => {
                 if !self.contains_key(&face_entity) {
-                    self.insert_incomplete(face_entity, ShapeWaitlistEntry::new());
+                    self.insert_incomplete(face_entity, ComponentWaitlistEntry::new());
                 }
                 let entry = self.get_mut(&face_entity).unwrap();
                 entry.set_shape_type(ShapeType::Face);
@@ -239,18 +239,18 @@ impl ShapeWaitlist {
                 entry.set_face_entities(vertex_a, vertex_b, vertex_c);
                 possibly_ready_entities.push(face_entity);
             }
-            ShapeWaitlistInsert::FileType(shape_entity, file_type) => {
+            ComponentWaitlistInsert::FileType(shape_entity, file_type) => {
                 if !self.contains_key(&shape_entity) {
-                    self.insert_incomplete(shape_entity, ShapeWaitlistEntry::new());
+                    self.insert_incomplete(shape_entity, ComponentWaitlistEntry::new());
                 }
                 self.get_mut(&shape_entity)
                     .unwrap()
                     .set_file_type(file_type);
                 possibly_ready_entities.push(shape_entity);
             }
-            ShapeWaitlistInsert::OwnedByFile(shape_entity, project_key, file_key) => {
+            ComponentWaitlistInsert::OwnedByFile(shape_entity, project_key, file_key) => {
                 if !self.contains_key(&shape_entity) {
-                    self.insert_incomplete(shape_entity, ShapeWaitlistEntry::new());
+                    self.insert_incomplete(shape_entity, ComponentWaitlistEntry::new());
                 }
                 self.get_mut(&shape_entity)
                     .unwrap()
@@ -354,27 +354,27 @@ impl ShapeWaitlist {
         git_manager: &mut GitManager,
         shape_manager: &mut ShapeManager,
         entity: Entity,
-        entry: ShapeWaitlistEntry,
+        entry: ComponentWaitlistEntry,
     ) {
         // info!("processing complete vertex {:?}", entity);
 
         let data = entry.decompose();
 
         let (project_key, file_key, shape_type) = match data {
-            ShapeData::SkelVertex(project_key, file_key, edge_and_parent_opt) => {
+            ComponentData::SkelVertex(project_key, file_key, edge_and_parent_opt) => {
                 shape_manager.on_create_skel_vertex(entity, edge_and_parent_opt);
                 (project_key, file_key, ShapeType::Vertex)
             }
-            ShapeData::SkelEdge(project_key, file_key) => (project_key, file_key, ShapeType::Edge),
-            ShapeData::MeshVertex(project_key, file_key) => {
+            ComponentData::SkelEdge(project_key, file_key) => (project_key, file_key, ShapeType::Edge),
+            ComponentData::MeshVertex(project_key, file_key) => {
                 shape_manager.on_create_mesh_vertex(entity);
                 (project_key, file_key, ShapeType::Vertex)
             }
-            ShapeData::MeshEdge(project_key, file_key, start, end) => {
+            ComponentData::MeshEdge(project_key, file_key, start, end) => {
                 shape_manager.on_create_mesh_edge(start, entity, end);
                 (project_key, file_key, ShapeType::Vertex)
             }
-            ShapeData::MeshFace(project_key, file_key, vertex_a, vertex_b, vertex_c) => {
+            ComponentData::MeshFace(project_key, file_key, vertex_a, vertex_b, vertex_c) => {
                 let file_entity = git_manager.file_entity(&project_key, &file_key).unwrap();
                 shape_manager.on_create_face(
                     &file_entity,
@@ -424,15 +424,15 @@ impl ShapeWaitlist {
         self.incomplete_entries.contains_key(entity)
     }
 
-    fn insert_incomplete(&mut self, entity: Entity, entry: ShapeWaitlistEntry) {
+    fn insert_incomplete(&mut self, entity: Entity, entry: ComponentWaitlistEntry) {
         self.incomplete_entries.insert(entity, entry);
     }
 
-    fn get_mut(&mut self, entity: &Entity) -> Option<&mut ShapeWaitlistEntry> {
+    fn get_mut(&mut self, entity: &Entity) -> Option<&mut ComponentWaitlistEntry> {
         self.incomplete_entries.get_mut(entity)
     }
 
-    fn remove(&mut self, entity: &Entity) -> Option<ShapeWaitlistEntry> {
+    fn remove(&mut self, entity: &Entity) -> Option<ComponentWaitlistEntry> {
         self.incomplete_entries.remove(entity)
     }
 }

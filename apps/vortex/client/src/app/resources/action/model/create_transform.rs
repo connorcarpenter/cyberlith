@@ -36,7 +36,7 @@ pub fn execute(
             current_file_entity,
             &dependency_file_ext,
             &dependency_file_entity,
-            vertex_name,
+            Some(vertex_name),
         );
     });
 

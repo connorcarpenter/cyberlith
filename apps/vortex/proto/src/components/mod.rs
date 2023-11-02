@@ -8,16 +8,27 @@ pub use file_system::{
 };
 
 mod shape;
-use shape::VertexComponentsPlugin;
+use shape::ShapeComponentsPlugin;
 pub use shape::{
-    BackgroundSkinColor, Edge3d, EdgeAngle, Face3d, FaceColor, FileExtension, FileType,
-    NetTransform, NetTransformEntityType, OwnedByFile, PaletteColor, SerdeRotation, ShapeName,
+    Edge3d, EdgeAngle, Face3d, SerdeRotation, ShapeName,
     Vertex3d, VertexRoot, VertexSerdeInt,
 };
 
 mod animation;
 use animation::AnimationComponentsPlugin;
 pub use animation::{AnimFrame, AnimRotation, Transition};
+
+mod color;
+use color::ColorComponentsPlugin;
+pub use color::{BackgroundSkinColor, FaceColor, PaletteColor};
+
+mod transform;
+use transform::TransformComponentsPlugin;
+pub use transform::{NetTransform, NetTransformEntityType, SkinOrSceneEntity};
+
+mod ownership;
+use ownership::OwnershipComponentsPlugin;
+pub use ownership::{OwnedByFile, FileType, FileExtension};
 
 // Plugin
 pub struct ComponentsPlugin;
@@ -26,7 +37,10 @@ impl ProtocolPlugin for ComponentsPlugin {
     fn build(&self, protocol: &mut Protocol) {
         protocol
             .add_plugin(FileSystemComponentsPlugin)
-            .add_plugin(VertexComponentsPlugin)
-            .add_plugin(AnimationComponentsPlugin);
+            .add_plugin(ShapeComponentsPlugin)
+            .add_plugin(AnimationComponentsPlugin)
+            .add_plugin(ColorComponentsPlugin)
+            .add_plugin(TransformComponentsPlugin)
+            .add_plugin(OwnershipComponentsPlugin);
     }
 }

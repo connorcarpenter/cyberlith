@@ -22,10 +22,7 @@ use render_api::{
     Assets, Handle,
 };
 
-use vortex_proto::components::{
-    Edge3d, EdgeAngle, Face3d, FileExtension, NetTransform, NetTransformEntityType, ShapeName,
-    Vertex3d,
-};
+use vortex_proto::components::{Edge3d, EdgeAngle, Face3d, FileExtension, FileType, NetTransform, NetTransformEntityType, OwnedByFile, ShapeName, SkinOrSceneEntity, Vertex3d};
 
 use crate::app::{
     components::{
@@ -341,7 +338,7 @@ impl ModelManager {
         current_file_entity: &Entity,
         dependency_file_ext: &FileExtension,
         dependency_file_entity: &Entity,
-        skel_bone_name: String,
+        skel_bone_name_opt: Option<String>,
     ) -> Entity {
         let mut system_state: SystemState<(
             Commands,
@@ -366,16 +363,15 @@ impl ModelManager {
 
         input_manager.deselect_shape(&mut canvas);
 
-        let mut component = NetTransform::new(
-            skel_bone_name.clone(),
-            SerdeQuat::from(Quat::IDENTITY),
-            0.0,
-            0.0,
-            0.0,
-            1.0,
-            1.0,
-            1.0,
-        );
+        let file_type = if skel_bone_name_opt.is_some() {
+            FileExtension::Model
+        } else {
+            FileExtension::Scene
+        };
+
+        let mut owned_by_component = OwnedByFile::new();
+        owned_by_component.file_entity.set(&client, current_file_entity);
+
         let dependency_file_type = match dependency_file_ext {
             FileExtension::Skin => NetTransformEntityType::Skin,
             FileExtension::Scene => NetTransformEntityType::Scene,
@@ -383,14 +379,30 @@ impl ModelManager {
                 panic!("not possible");
             }
         };
-        component.set_owner(&client, current_file_entity);
-        component.set_entity(&client, *dependency_file_entity, dependency_file_type);
+        let mut skin_or_scene_component = SkinOrSceneEntity::new(dependency_file_type);
+        skin_or_scene_component.value.set(&client, dependency_file_entity);
+
         let new_net_transform_entity = commands
             .spawn_empty()
             .enable_replication(&mut client)
             .configure_replication(ReplicationConfig::Delegated)
-            .insert(component)
+            .insert(NetTransform::new(
+                SerdeQuat::from(Quat::IDENTITY),
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                1.0,
+                1.0,
+            ))
+            .insert(FileType::new(file_type))
+            .insert(owned_by_component)
+            .insert(skin_or_scene_component)
             .id();
+
+        if let Some(edge_name) = &skel_bone_name_opt {
+            commands.entity(new_net_transform_entity).insert(ShapeName::new(edge_name.clone()));
+        }
 
         // postprocess
         self.net_transform_postprocess(
@@ -401,7 +413,7 @@ impl ModelManager {
             &mut meshes,
             &mut materials,
             current_file_entity,
-            Some(skel_bone_name.clone()),
+            skel_bone_name_opt,
             new_net_transform_entity,
         );
 
