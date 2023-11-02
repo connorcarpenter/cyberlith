@@ -25,10 +25,9 @@ use crate::app::{
     events::ShapeColorResyncEvent,
     resources::{
         camera_manager::CameraManager, canvas::Canvas, edge_manager::EdgeManager,
-        face_manager::FaceManager, shape_data::FaceKey, vertex_manager::VertexManager,
+        face_manager::FaceManager, shape_data::FaceKey, vertex_manager::VertexManager, model_manager::ModelManager
     },
 };
-use crate::app::resources::model_manager::ModelManager;
 
 pub enum ComponentWaitlistInsert {
     FileType(FileExtension),
@@ -38,6 +37,7 @@ pub enum ComponentWaitlistInsert {
     Edge(Entity, Entity),
     Face(Entity, Entity, Entity, Entity, Entity, Entity),
     EdgeAngle(f32),
+    NetTransform,
     SkinOrSceneEntity(Entity, NetTransformEntityType),
     ShapeName(String),
 }
@@ -200,8 +200,11 @@ impl ComponentWaitlistEntry {
         self.file_type = Some(FileExtension::Mesh);
     }
 
-    fn set_skin_or_scene_entity(&mut self, entity: Entity, entity_type: NetTransformEntityType) {
+    fn set_transform(&mut self) {
         self.component_type = Some(ComponentType::NetTransform);
+    }
+
+    fn set_skin_or_scene_entity(&mut self, entity: Entity, entity_type: NetTransformEntityType) {
         self.skin_or_scene_entity = Some((entity, entity_type));
     }
 
@@ -340,6 +343,9 @@ impl ComponentWaitlist {
             }
             ComponentWaitlistInsert::ShapeName(shape_name) => {
                 self.get_mut(&entity).unwrap().set_shape_name(shape_name);
+            }
+            ComponentWaitlistInsert::NetTransform => {
+                self.get_mut(&entity).unwrap().set_transform();
             }
         }
 

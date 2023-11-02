@@ -13,7 +13,7 @@ use naia_bevy_server::{
 };
 
 use vortex_proto::{
-    components::{FileExtension, NetTransform, NetTransformEntityType},
+    components::{FileType, OwnedByFile, ShapeName, SkinOrSceneEntity, FileExtension, NetTransform, NetTransformEntityType},
     resources::FileKey,
     SerdeQuat,
 };
@@ -123,14 +123,14 @@ impl ModelWriter {
         }
 
         // Write NetTransforms
-        for content_entity in net_transform_entities {
-            let mut system_state: SystemState<(Server, Query<&NetTransform>)> =
+        for net_transform_entity in net_transform_entities {
+            let mut system_state: SystemState<(Server, Query<(&NetTransform, &SkinOrSceneEntity, &ShapeName)>)> =
                 SystemState::new(world);
             let (server, transform_q) = system_state.get_mut(world);
-            let Ok(transform) = transform_q.get(content_entity) else {
+            let Ok((transform, skin_or_scene_entity, shape_name)) = transform_q.get(net_transform_entity) else {
                 panic!("Error getting net transform");
             };
-            let skin_entity: Entity = transform.skin_or_scene_entity.get(&server).unwrap();
+            let skin_entity: Entity = skin_or_scene_entity.value.get(&server).unwrap();
             info!(
                 "in writing net transform, skin entity is: `{:?}`",
                 skin_entity
@@ -139,7 +139,7 @@ impl ModelWriter {
                 panic!("skin entity not found in skin_dependency_to_index: `{:?}`", skin_entity);
             };
 
-            let bone_name = (*transform.vertex_name).clone();
+            let bone_name = (*shape_name.value).clone();
             let translation_x = transform.translation_x();
             let translation_y = transform.translation_y();
             let translation_z = transform.translation_z();
@@ -387,33 +387,36 @@ impl ModelReader {
                     scale_z,
                     rotation,
                 ) => {
-                    let mut component = NetTransform::new(
-                        vertex_name.clone(),
-                        rotation,
-                        translation_x as f32,
-                        translation_y as f32,
-                        translation_z as f32,
-                        scale_x,
-                        scale_y,
-                        scale_z,
-                    );
-
                     let Some((skin_or_scene_type, skin_or_scene_entity)) = skin_files.get(skin_index as usize) else {
                         panic!("skin index out of bounds");
                     };
-                    component.set_entity(&server, *skin_or_scene_entity, *skin_or_scene_type);
+                    let mut skin_or_scene_component = SkinOrSceneEntity::new(*skin_or_scene_type);
+                    skin_or_scene_component.value.set(&server, skin_or_scene_entity);
                     info!("reading net transform for bone: `{}`, into world. skin index: {} -> entity: `{:?}`",
                         vertex_name.clone(),
                         skin_index,
                         skin_or_scene_entity);
 
-                    component.owning_file_entity.set(&mut server, file_entity);
+                    let mut owning_file_component = OwnedByFile::new();
+                    owning_file_component.file_entity.set(&mut server, file_entity);
 
                     let net_transform_entity = commands
                         .spawn_empty()
                         .enable_replication(&mut server)
                         .configure_replication(ReplicationConfig::Delegated)
-                        .insert(component)
+                        .insert(NetTransform::new(
+                            rotation,
+                            translation_x as f32,
+                            translation_y as f32,
+                            translation_z as f32,
+                            scale_x,
+                            scale_y,
+                            scale_z,
+                        ))
+                        .insert(ShapeName::new(vertex_name.clone()))
+                        .insert(skin_or_scene_component)
+                        .insert(owning_file_component)
+                        .insert(FileType::new(FileExtension::Model))
                         .id();
 
                     output.insert(net_transform_entity, ContentEntityData::new_net_transform());

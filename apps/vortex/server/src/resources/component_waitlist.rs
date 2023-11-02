@@ -16,18 +16,32 @@ use crate::{
 };
 
 pub enum ComponentWaitlistInsert {
+    //// filetype
+    FileType(FileExtension),
+    //// project key, file key
+    OwnedByFile(ProjectKey, FileKey),
     //// shape
-    Vertex(Entity),
+    Vertex,
     //// shape
-    VertexRoot(Entity),
-    //// parent, edge, child
-    Edge(Entity, Entity, Entity),
-    //// (face_entity, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c)
-    Face(Entity, Entity, Entity, Entity),
-    //// shape, filetype
-    FileType(Entity, FileExtension),
-    //// shape, project key, file key
-    OwnedByFile(Entity, ProjectKey, FileKey),
+    VertexRoot,
+    //// parent, child
+    Edge(Entity, Entity),
+    //// (vertex_a, vertex_b, vertex_c)
+    Face(Entity, Entity, Entity),
+    ////
+    NetTransform,
+    ////
+    SkinOrSceneEntity,
+    ////
+    ShapeName,
+}
+
+#[derive(Clone, Copy, Debug)]
+enum ComponentType {
+    Vertex,
+    Edge,
+    Face,
+    NetTransform,
 }
 
 enum ComponentData {
@@ -41,46 +55,64 @@ enum ComponentData {
     MeshEdge(ProjectKey, FileKey, Entity, Entity),
     // (ProjectKey, FileKey, VertexA, VertexB, VertexC, EdgeA, EdgeB, EdgeC)
     MeshFace(ProjectKey, FileKey, Entity, Entity, Entity),
+    //
+    ModelTransform(ProjectKey, FileKey),
+    //
+    SceneTransform(ProjectKey, FileKey),
 }
 
 #[derive(Clone)]
 pub struct ComponentWaitlistEntry {
-    shape: Option<ShapeType>,
+    component_type: Option<ComponentType>,
+    file_type: Option<FileExtension>,
+    owned_by_file: Option<(ProjectKey, FileKey)>,
+
     edge_and_parent_opt: Option<Option<(Entity, Entity)>>,
     edge_entities: Option<(Entity, Entity)>,
     face_entities: Option<(Entity, Entity, Entity)>,
-    file_type: Option<FileExtension>,
-    owned_by_file: Option<(ProjectKey, FileKey)>,
+
+    skin_or_scene_entity: bool,
+    shape_name: bool,
 }
 
 impl ComponentWaitlistEntry {
     fn new() -> Self {
         Self {
-            shape: None,
+            component_type: None,
+            file_type: None,
+            owned_by_file: None,
+
             edge_and_parent_opt: None,
             edge_entities: None,
             face_entities: None,
-            file_type: None,
-            owned_by_file: None,
+
+            skin_or_scene_entity: false,
+            shape_name: false,
         }
     }
 
     fn is_ready(&self) -> bool {
-        match (self.file_type, self.shape) {
-            (Some(FileExtension::Skel), Some(ShapeType::Vertex)) => {
+        match (self.file_type, self.component_type) {
+            (Some(FileExtension::Skel), Some(ComponentType::Vertex)) => {
                 return self.owned_by_file.is_some() && self.edge_and_parent_opt.is_some();
             }
-            (Some(FileExtension::Skel), Some(ShapeType::Edge)) => {
+            (Some(FileExtension::Skel), Some(ComponentType::Edge)) => {
                 return self.owned_by_file.is_some();
             }
-            (Some(FileExtension::Mesh), Some(ShapeType::Vertex)) => {
+            (Some(FileExtension::Mesh), Some(ComponentType::Vertex)) => {
                 return self.owned_by_file.is_some();
             }
-            (Some(FileExtension::Mesh), Some(ShapeType::Edge)) => {
+            (Some(FileExtension::Mesh), Some(ComponentType::Edge)) => {
                 return self.owned_by_file.is_some() && self.edge_entities.is_some();
             }
-            (Some(FileExtension::Mesh), Some(ShapeType::Face)) => {
+            (Some(FileExtension::Mesh), Some(ComponentType::Face)) => {
                 return self.owned_by_file.is_some() && self.face_entities.is_some();
+            }
+            (Some(FileExtension::Model), Some(ComponentType::NetTransform)) => {
+                return self.owned_by_file.is_some() && self.skin_or_scene_entity && self.shape_name
+            }
+            (Some(FileExtension::Scene), Some(ComponentType::NetTransform)) => {
+                return self.owned_by_file.is_some() && self.skin_or_scene_entity
             }
             _ => {
                 return false;
@@ -111,8 +143,8 @@ impl ComponentWaitlistEntry {
         self.face_entities = Some((vertex_a, vertex_b, vertex_c));
     }
 
-    fn set_shape_type(&mut self, shape_type: ShapeType) {
-        self.shape = Some(shape_type);
+    fn set_component_type(&mut self, component_type: ComponentType) {
+        self.component_type = Some(component_type);
     }
 
     fn set_file_type(&mut self, file_type: FileExtension) {
@@ -123,30 +155,48 @@ impl ComponentWaitlistEntry {
         self.owned_by_file = Some((project_key, file_key));
     }
 
+    fn set_transform(&mut self) {
+        self.component_type = Some(ComponentType::NetTransform);
+    }
+
+    fn set_skin_or_scene_entity(&mut self) {
+        self.skin_or_scene_entity = true;
+    }
+
+    fn set_shape_name(&mut self) {
+        self.shape_name = true;
+    }
+
     fn decompose(self) -> ComponentData {
         let (project_key, file_key) = self.owned_by_file.unwrap();
 
-        match (self.file_type, self.shape) {
-            (Some(FileExtension::Skel), Some(ShapeType::Vertex)) => {
+        match (self.file_type, self.component_type) {
+            (Some(FileExtension::Skel), Some(ComponentType::Vertex)) => {
                 return ComponentData::SkelVertex(
                     project_key,
                     file_key,
                     self.edge_and_parent_opt.unwrap(),
                 );
             }
-            (Some(FileExtension::Skel), Some(ShapeType::Edge)) => {
+            (Some(FileExtension::Skel), Some(ComponentType::Edge)) => {
                 return ComponentData::SkelEdge(project_key, file_key);
             }
-            (Some(FileExtension::Mesh), Some(ShapeType::Vertex)) => {
+            (Some(FileExtension::Mesh), Some(ComponentType::Vertex)) => {
                 return ComponentData::MeshVertex(project_key, file_key);
             }
-            (Some(FileExtension::Mesh), Some(ShapeType::Edge)) => {
+            (Some(FileExtension::Mesh), Some(ComponentType::Edge)) => {
                 let (start, end) = self.edge_entities.unwrap();
                 return ComponentData::MeshEdge(project_key, file_key, start, end);
             }
-            (Some(FileExtension::Mesh), Some(ShapeType::Face)) => {
+            (Some(FileExtension::Mesh), Some(ComponentType::Face)) => {
                 let (vertex_a, vertex_b, vertex_c) = self.face_entities.unwrap();
                 return ComponentData::MeshFace(project_key, file_key, vertex_a, vertex_b, vertex_c);
+            }
+            (Some(FileExtension::Model), Some(ComponentType::NetTransform)) => {
+                return ComponentData::ModelTransform(project_key, file_key);
+            }
+            (Some(FileExtension::Scene), Some(ComponentType::NetTransform)) => {
+                return ComponentData::SceneTransform(project_key, file_key);
             }
             _ => {
                 panic!("shouldn't be able to happen!");
@@ -177,29 +227,30 @@ impl ComponentWaitlist {
         server: &mut Server,
         git_manager: &mut GitManager,
         shape_manager: &mut ShapeManager,
+        entity: &Entity,
         insert: ComponentWaitlistInsert,
     ) {
         let mut possibly_ready_entities = Vec::new();
 
         match insert {
-            ComponentWaitlistInsert::Vertex(vertex_entity) => {
-                if !self.contains_key(&vertex_entity) {
-                    self.insert_incomplete(vertex_entity, ComponentWaitlistEntry::new());
+            ComponentWaitlistInsert::Vertex => {
+                if !self.contains_key(entity) {
+                    self.insert_incomplete(*entity, ComponentWaitlistEntry::new());
                 }
-                self.get_mut(&vertex_entity)
+                self.get_mut(entity)
                     .unwrap()
-                    .set_shape_type(ShapeType::Vertex);
+                    .set_component_type(ComponentType::Vertex);
             }
-            ComponentWaitlistInsert::VertexRoot(vertex_entity) => {
-                if !self.contains_key(&vertex_entity) {
-                    self.insert_incomplete(vertex_entity, ComponentWaitlistEntry::new());
+            ComponentWaitlistInsert::VertexRoot => {
+                if !self.contains_key(entity) {
+                    self.insert_incomplete(*entity, ComponentWaitlistEntry::new());
                 }
-                let entry = self.get_mut(&vertex_entity).unwrap();
+                let entry = self.get_mut(entity).unwrap();
                 entry.set_edge_and_parent(None);
-                entry.set_shape_type(ShapeType::Vertex);
-                possibly_ready_entities.push(vertex_entity);
+                entry.set_component_type(ComponentType::Vertex);
+                possibly_ready_entities.push(*entity);
             }
-            ComponentWaitlistInsert::Edge(parent_entity, edge_entity, vertex_entity) => {
+            ComponentWaitlistInsert::Edge(parent_entity, vertex_entity) => {
                 {
                     if !self.contains_key(&vertex_entity) {
                         self.insert_incomplete(vertex_entity, ComponentWaitlistEntry::new());
@@ -209,19 +260,19 @@ impl ComponentWaitlist {
                     //     "Setting parent of {:?} to {:?}",
                     //     vertex_entity, parent_entity
                     // );
-                    vertex_entry.set_edge_and_parent(Some((edge_entity, parent_entity)));
-                    vertex_entry.set_shape_type(ShapeType::Vertex);
+                    vertex_entry.set_edge_and_parent(Some((*entity, parent_entity)));
+                    vertex_entry.set_component_type(ComponentType::Vertex);
                     possibly_ready_entities.push(vertex_entity);
                 }
 
                 {
-                    if !self.contains_key(&edge_entity) {
-                        self.insert_incomplete(edge_entity, ComponentWaitlistEntry::new());
+                    if !self.contains_key(entity) {
+                        self.insert_incomplete(*entity, ComponentWaitlistEntry::new());
                     }
-                    let edge_entry = self.get_mut(&edge_entity).unwrap();
-                    edge_entry.set_shape_type(ShapeType::Edge);
+                    let edge_entry = self.get_mut(entity).unwrap();
+                    edge_entry.set_component_type(ComponentType::Edge);
                     edge_entry.set_edge_entities(parent_entity, vertex_entity);
-                    possibly_ready_entities.push(edge_entity);
+                    possibly_ready_entities.push(*entity);
                 }
 
                 // info!(
@@ -229,33 +280,44 @@ impl ComponentWaitlist {
                 //     possibly_ready_entities
                 // );
             }
-            ComponentWaitlistInsert::Face(face_entity, vertex_a, vertex_b, vertex_c) => {
-                if !self.contains_key(&face_entity) {
-                    self.insert_incomplete(face_entity, ComponentWaitlistEntry::new());
+            ComponentWaitlistInsert::Face(vertex_a, vertex_b, vertex_c) => {
+                if !self.contains_key(entity) {
+                    self.insert_incomplete(*entity, ComponentWaitlistEntry::new());
                 }
-                let entry = self.get_mut(&face_entity).unwrap();
-                entry.set_shape_type(ShapeType::Face);
+                let entry = self.get_mut(entity).unwrap();
+                entry.set_component_type(ComponentType::Face);
                 entry.set_file_type(FileExtension::Mesh);
                 entry.set_face_entities(vertex_a, vertex_b, vertex_c);
-                possibly_ready_entities.push(face_entity);
+                possibly_ready_entities.push(*entity);
             }
-            ComponentWaitlistInsert::FileType(shape_entity, file_type) => {
-                if !self.contains_key(&shape_entity) {
-                    self.insert_incomplete(shape_entity, ComponentWaitlistEntry::new());
+            ComponentWaitlistInsert::FileType(file_type) => {
+                if !self.contains_key(entity) {
+                    self.insert_incomplete(*entity, ComponentWaitlistEntry::new());
                 }
-                self.get_mut(&shape_entity)
+                self.get_mut(entity)
                     .unwrap()
                     .set_file_type(file_type);
-                possibly_ready_entities.push(shape_entity);
+                possibly_ready_entities.push(*entity);
             }
-            ComponentWaitlistInsert::OwnedByFile(shape_entity, project_key, file_key) => {
-                if !self.contains_key(&shape_entity) {
-                    self.insert_incomplete(shape_entity, ComponentWaitlistEntry::new());
+            ComponentWaitlistInsert::OwnedByFile(project_key, file_key) => {
+                if !self.contains_key(entity) {
+                    self.insert_incomplete(*entity, ComponentWaitlistEntry::new());
                 }
-                self.get_mut(&shape_entity)
+                self.get_mut(entity)
                     .unwrap()
                     .set_owned_by_file(project_key, file_key);
-                possibly_ready_entities.push(shape_entity);
+                possibly_ready_entities.push(*entity);
+            }
+            ComponentWaitlistInsert::SkinOrSceneEntity => {
+                self.get_mut(entity)
+                    .unwrap()
+                    .set_skin_or_scene_entity();
+            }
+            ComponentWaitlistInsert::ShapeName => {
+                self.get_mut(entity).unwrap().set_shape_name();
+            }
+            ComponentWaitlistInsert::NetTransform => {
+                self.get_mut(entity).unwrap().set_transform();
             }
         }
 
@@ -271,8 +333,8 @@ impl ComponentWaitlist {
                 info!("entity `{:?}` is ready!", entity);
                 let entry = self.remove(&entity).unwrap();
 
-                match (entry.file_type.unwrap(), entry.shape.unwrap()) {
-                    (FileExtension::Skel, ShapeType::Vertex) => {
+                match (entry.file_type.unwrap(), entry.component_type.unwrap()) {
+                    (FileExtension::Skel, ComponentType::Vertex) => {
                         if entry.has_edge_and_parent() {
                             let (_, parent_entity) = entry.get_edge_and_parent().unwrap();
                             if !shape_manager.has_vertex(&parent_entity) {
@@ -291,13 +353,13 @@ impl ComponentWaitlist {
                             }
                         }
                     }
-                    (FileExtension::Skel, ShapeType::Edge) => {
+                    (FileExtension::Skel, ComponentType::Edge) => {
                         info!("`{:?}` Skel Edge complete!", entity);
                     }
-                    (FileExtension::Mesh, ShapeType::Vertex) => {
+                    (FileExtension::Mesh, ComponentType::Vertex) => {
                         info!("`{:?}` Mesh Vertex complete!", entity);
                     }
-                    (FileExtension::Mesh, ShapeType::Edge) => {
+                    (FileExtension::Mesh, ComponentType::Edge) => {
                         let edge_entities = entry.edge_entities.unwrap();
                         let mut dependencies = Vec::new();
 
@@ -321,10 +383,10 @@ impl ComponentWaitlist {
                             continue;
                         }
                     }
-                    (FileExtension::Mesh, ShapeType::Face) => {
+                    (FileExtension::Mesh, ComponentType::Face) => {
                         info!("`{:?}` Mesh Face complete!", entity);
                     }
-                    (FileExtension::Skel, ShapeType::Face) => {
+                    (FileExtension::Skel, ComponentType::Face) => {
                         panic!("not possible");
                     }
                     (_, _) => {
@@ -334,7 +396,7 @@ impl ComponentWaitlist {
 
                 info!(
                     "processing shape type: `{:?}`, entity: `{:?}`",
-                    entry.shape.unwrap(),
+                    entry.component_type.unwrap(),
                     entity
                 );
                 entities_to_process.push((entity, entry));
@@ -360,19 +422,19 @@ impl ComponentWaitlist {
 
         let data = entry.decompose();
 
-        let (project_key, file_key, shape_type) = match data {
+        let (project_key, file_key, component_type) = match data {
             ComponentData::SkelVertex(project_key, file_key, edge_and_parent_opt) => {
                 shape_manager.on_create_skel_vertex(entity, edge_and_parent_opt);
-                (project_key, file_key, ShapeType::Vertex)
+                (project_key, file_key, ComponentType::Vertex)
             }
-            ComponentData::SkelEdge(project_key, file_key) => (project_key, file_key, ShapeType::Edge),
+            ComponentData::SkelEdge(project_key, file_key) => (project_key, file_key, ComponentType::Edge),
             ComponentData::MeshVertex(project_key, file_key) => {
                 shape_manager.on_create_mesh_vertex(entity);
-                (project_key, file_key, ShapeType::Vertex)
+                (project_key, file_key, ComponentType::Vertex)
             }
             ComponentData::MeshEdge(project_key, file_key, start, end) => {
                 shape_manager.on_create_mesh_edge(start, entity, end);
-                (project_key, file_key, ShapeType::Vertex)
+                (project_key, file_key, ComponentType::Vertex)
             }
             ComponentData::MeshFace(project_key, file_key, vertex_a, vertex_b, vertex_c) => {
                 let file_entity = git_manager.file_entity(&project_key, &file_key).unwrap();
@@ -384,11 +446,22 @@ impl ComponentWaitlist {
                     vertex_b,
                     vertex_c,
                 );
-                (project_key, file_key, ShapeType::Face)
+                (project_key, file_key, ComponentType::Face)
+            }
+            ComponentData::ModelTransform(project_key, file_key) => {
+                (project_key, file_key, ComponentType::NetTransform)
+            }
+            ComponentData::SceneTransform(project_key, file_key) => {
+                (project_key, file_key, ComponentType::NetTransform)
             }
         };
 
-        let content_entity_data = ContentEntityData::new_shape(shape_type);
+        let content_entity_data = match component_type {
+            ComponentType::Vertex => ContentEntityData::new_shape(ShapeType::Vertex),
+            ComponentType::Edge => ContentEntityData::new_shape(ShapeType::Edge),
+            ComponentType::Face => ContentEntityData::new_shape(ShapeType::Face),
+            ComponentType::NetTransform => ContentEntityData::new_net_transform(),
+        };
         git_manager.on_insert_content_entity(
             server,
             &project_key,

@@ -10,7 +10,7 @@ use bevy_log::info;
 
 use naia_bevy_server::{events::InsertComponentEvents, Replicate, Server};
 
-use vortex_proto::components::NetTransform;
+use vortex_proto::components::{NetTransform, SkinOrSceneEntity};
 use vortex_proto::{
     components::{
         AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency,
@@ -209,7 +209,7 @@ pub fn insert_file_component_events(
 pub fn insert_vertex_component_events(
     mut server: Server,
     mut git_manager: ResMut<GitManager>,
-    mut shape_waitlist: ResMut<ComponentWaitlist>,
+    mut component_waitlist: ResMut<ComponentWaitlist>,
     mut shape_manager: ResMut<ShapeManager>,
     mut vert_3d_events: EventReader<InsertComponentEvent<Vertex3d>>,
     mut vert_root_events: EventReader<InsertComponentEvent<VertexRoot>>,
@@ -219,11 +219,12 @@ pub fn insert_vertex_component_events(
         let entity = event.entity;
         info!("entity: `{:?}`, inserted Vertex3d", entity);
 
-        shape_waitlist.process_insert(
+        component_waitlist.process_insert(
             &mut server,
             &mut git_manager,
             &mut shape_manager,
-            ComponentWaitlistInsert::Vertex(entity),
+            &entity,
+            ComponentWaitlistInsert::Vertex,
         );
     }
 
@@ -232,11 +233,12 @@ pub fn insert_vertex_component_events(
         let entity = event.entity;
         info!("entity: `{:?}`, inserted VertexRoot", entity);
 
-        shape_waitlist.process_insert(
+        component_waitlist.process_insert(
             &mut server,
             &mut git_manager,
             &mut shape_manager,
-            ComponentWaitlistInsert::VertexRoot(entity),
+            &entity,
+            ComponentWaitlistInsert::VertexRoot,
         );
     }
 }
@@ -244,7 +246,7 @@ pub fn insert_vertex_component_events(
 pub fn insert_edge_component_events(
     mut server: Server,
     mut git_manager: ResMut<GitManager>,
-    mut shape_waitlist: ResMut<ComponentWaitlist>,
+    mut component_waitlist: ResMut<ComponentWaitlist>,
     mut shape_manager: ResMut<ShapeManager>,
     mut edge_3d_events: EventReader<InsertComponentEvent<Edge3d>>,
     edge_3d_q: Query<&Edge3d>,
@@ -261,11 +263,12 @@ pub fn insert_edge_component_events(
         let Some(end_entity) = edge_3d.end.get(&server) else {
             panic!("no child entity!")
         };
-        shape_waitlist.process_insert(
+        component_waitlist.process_insert(
             &mut server,
             &mut git_manager,
             &mut shape_manager,
-            ComponentWaitlistInsert::Edge(start_entity, edge_entity, end_entity),
+            &edge_entity,
+            ComponentWaitlistInsert::Edge(start_entity, end_entity),
         );
     }
 }
@@ -273,15 +276,15 @@ pub fn insert_edge_component_events(
 pub fn insert_face_component_events(
     mut server: Server,
     mut git_manager: ResMut<GitManager>,
-    mut shape_waitlist: ResMut<ComponentWaitlist>,
+    mut component_waitlist: ResMut<ComponentWaitlist>,
     mut shape_manager: ResMut<ShapeManager>,
     mut face_3d_events: EventReader<InsertComponentEvent<Face3d>>,
     face_3d_q: Query<&Face3d>,
 ) {
     // on Face3d Insert Event
     for event in face_3d_events.iter() {
-        let face_entity = event.entity;
-        let face_3d = face_3d_q.get(face_entity).unwrap();
+        let entity = event.entity;
+        let face_3d = face_3d_q.get(entity).unwrap();
 
         let vertex_a = face_3d.vertex_a.get(&server).unwrap();
         let vertex_b = face_3d.vertex_b.get(&server).unwrap();
@@ -289,24 +292,24 @@ pub fn insert_face_component_events(
 
         info!(
             "entity: `{:?}`, inserted Face3d(vertices({:?}, {:?}, {:?}))",
-            face_entity, vertex_a, vertex_b, vertex_c
+            entity, vertex_a, vertex_b, vertex_c
         );
 
-        shape_waitlist.process_insert(
+        component_waitlist.process_insert(
             &mut server,
             &mut git_manager,
             &mut shape_manager,
-            ComponentWaitlistInsert::Face(face_entity, vertex_a, vertex_b, vertex_c),
+            &entity,
+            ComponentWaitlistInsert::Face(vertex_a, vertex_b, vertex_c),
         );
     }
 }
 
 pub fn insert_shape_component_events(
-    mut commands: Commands,
     mut server: Server,
     user_manager: Res<UserManager>,
     mut git_manager: ResMut<GitManager>,
-    mut shape_waitlist: ResMut<ComponentWaitlist>,
+    mut component_waitlist: ResMut<ComponentWaitlist>,
     mut shape_manager: ResMut<ShapeManager>,
     mut file_type_events: EventReader<InsertComponentEvent<FileType>>,
     mut owned_by_file_events: EventReader<InsertComponentEvent<OwnedByFile>>,
@@ -327,11 +330,12 @@ pub fn insert_shape_component_events(
             entity, file_type_value
         );
 
-        shape_waitlist.process_insert(
+        component_waitlist.process_insert(
             &mut server,
             &mut git_manager,
             &mut shape_manager,
-            ComponentWaitlistInsert::FileType(entity, file_type_value),
+            &entity,
+            ComponentWaitlistInsert::FileType(file_type_value),
         );
     }
 
@@ -357,11 +361,12 @@ pub fn insert_shape_component_events(
             entity, file_entity
         );
 
-        shape_waitlist.process_insert(
+        component_waitlist.process_insert(
             &mut server,
             &mut git_manager,
             &mut shape_manager,
-            ComponentWaitlistInsert::OwnedByFile(entity, project_key, file_key.clone()),
+            &entity,
+            ComponentWaitlistInsert::OwnedByFile(project_key, file_key.clone()),
         );
     }
 
@@ -375,10 +380,13 @@ pub fn insert_shape_component_events(
             entity, shape_name
         );
 
-        let Some((project_key, file_key)) = git_manager.content_entity_keys(&entity) else {
-            panic!("no content entity keys!");
-        };
-        git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
+        component_waitlist.process_insert(
+            &mut server,
+            &mut git_manager,
+            &mut shape_manager,
+            &entity,
+            ComponentWaitlistInsert::ShapeName,
+        );
     }
 }
 
@@ -583,39 +591,48 @@ pub fn insert_skin_component_events(
 }
 
 pub fn insert_model_component_events(
-    mut commands: Commands,
+    mut transform_events: EventReader<InsertComponentEvent<NetTransform>>,
+    mut skin_or_scene_events: EventReader<InsertComponentEvent<SkinOrSceneEntity>>,
     mut server: Server,
-    user_manager: ResMut<UserManager>,
     mut git_manager: ResMut<GitManager>,
-    mut events: EventReader<InsertComponentEvent<NetTransform>>,
-    key_q: Query<&FileKey>,
-    net_transform_q: Query<&NetTransform>,
+    mut shape_manager: ResMut<ShapeManager>,
+    mut component_waitlist: ResMut<ComponentWaitlist>,
 ) {
     // on NetTransform Insert Event
-    for event in events.iter() {
-        let user_key = event.user_key;
+    for event in transform_events.iter() {
+
         let entity = event.entity;
-        info!("entity: `{:?}`, inserted NetTransform", entity);
 
-        let model = net_transform_q.get(entity).unwrap();
-        let model_file_entity = model.owning_file_entity.get(&server).unwrap();
-
-        let project_key = user_manager
-            .user_session_data(&user_key)
-            .unwrap()
-            .project_key()
-            .unwrap();
-        let file_key = key_q.get(model_file_entity).unwrap().clone();
-
-        let content_entity_data = ContentEntityData::new_net_transform();
-        git_manager.on_insert_content_entity(
-            &mut server,
-            &project_key,
-            &file_key,
-            &entity,
-            &content_entity_data,
+        info!(
+            "entity: `{:?}`, inserted NetTransform",
+            entity,
         );
 
-        git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
+        component_waitlist.process_insert(
+            &mut server,
+            &mut git_manager,
+            &mut shape_manager,
+            &entity,
+            ComponentWaitlistInsert::NetTransform,
+        );
+    }
+
+    // on SkinOrSceneEntity Insert Event
+    for event in skin_or_scene_events.iter() {
+
+        let entity = event.entity;
+
+        info!(
+            "entity: `{:?}`, inserted SkinOrSceneEntity",
+            entity,
+        );
+
+        component_waitlist.process_insert(
+            &mut server,
+            &mut git_manager,
+            &mut shape_manager,
+            &entity,
+            ComponentWaitlistInsert::SkinOrSceneEntity,
+        );
     }
 }
