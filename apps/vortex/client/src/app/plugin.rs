@@ -9,7 +9,7 @@ use vortex_proto::{
     components::{
         AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, Edge3d, EdgeAngle,
         EntryKind, Face3d, FaceColor, FileDependency, FileSystemChild, FileSystemEntry,
-        FileSystemRootChild, FileType, ModelTransform, OwnedByFile, PaletteColor, ShapeName,
+        FileSystemRootChild, FileType, NetTransform, OwnedByFile, PaletteColor, ShapeName,
         Vertex3d, VertexRoot,
     },
     protocol,
@@ -101,7 +101,7 @@ impl Plugin for VortexPlugin {
             .add_event::<InsertComponentEvent<PaletteColor>>()
             .add_event::<InsertComponentEvent<BackgroundSkinColor>>()
             .add_event::<InsertComponentEvent<FaceColor>>()
-            .add_event::<InsertComponentEvent<ModelTransform>>()
+            .add_event::<InsertComponentEvent<NetTransform>>()
             // Remove Component Events
             .add_event::<RemoveComponentEvent<FileSystemEntry>>()
             .add_event::<RemoveComponentEvent<FileSystemRootChild>>()
@@ -118,7 +118,7 @@ impl Plugin for VortexPlugin {
             .add_event::<RemoveComponentEvent<PaletteColor>>()
             .add_event::<RemoveComponentEvent<BackgroundSkinColor>>()
             .add_event::<RemoveComponentEvent<FaceColor>>()
-            .add_event::<RemoveComponentEvent<ModelTransform>>()
+            .add_event::<RemoveComponentEvent<NetTransform>>()
             // shape waitlist
             .init_resource::<ShapeWaitlist>()
             // Insert Component Systems

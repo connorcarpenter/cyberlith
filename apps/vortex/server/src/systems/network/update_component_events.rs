@@ -8,7 +8,7 @@ use naia_bevy_server::{events::UpdateComponentEvents, CommandsExt, EntityAuthSta
 
 use vortex_proto::components::{
     AnimFrame, AnimRotation, BackgroundSkinColor, EdgeAngle, FaceColor, FileSystemChild,
-    FileSystemEntry, ModelTransform, PaletteColor, ShapeName, Vertex3d,
+    FileSystemEntry, NetTransform, PaletteColor, ShapeName, Vertex3d,
 };
 
 use crate::resources::{GitManager, UserManager};
@@ -106,8 +106,8 @@ pub fn update_component_events(
             };
             git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
         }
-        // on ModelTransform Update Event
-        for (_, entity) in events.read::<ModelTransform>() {
+        // on NetTransform Update Event
+        for (_, entity) in events.read::<NetTransform>() {
             let Some((project_key, file_key)) = git_manager.content_entity_keys(&entity) else {
                 panic!("no content entity keys!");
             };

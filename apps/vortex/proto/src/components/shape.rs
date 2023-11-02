@@ -23,7 +23,7 @@ impl ProtocolPlugin for VertexComponentsPlugin {
             .add_component::<PaletteColor>()
             .add_component::<BackgroundSkinColor>()
             .add_component::<FaceColor>()
-            .add_component::<ModelTransform>();
+            .add_component::<NetTransform>();
     }
 }
 
@@ -342,21 +342,21 @@ impl BackgroundSkinColor {
     }
 }
 
-// ModelTransformEntityType
+// NetTransformEntityType
 #[derive(Serde, Copy, Clone, PartialEq, Debug)]
-pub enum ModelTransformEntityType {
+pub enum NetTransformEntityType {
     Uninit,
     Skin,
     Scene,
 }
 
-// ModelTransform
+// NetTransform
 #[derive(Component, Replicate)]
-pub struct ModelTransform {
-    pub model_file_entity: EntityProperty,
+pub struct NetTransform {
+    pub owning_file_entity: EntityProperty,
     pub vertex_name: Property<String>,
     pub skin_or_scene_entity: EntityProperty,
-    pub entity_type: Property<ModelTransformEntityType>,
+    pub entity_type: Property<NetTransformEntityType>,
     rotation: Property<SerdeQuat>,
     translation_x: Property<SignedVariableInteger<4>>,
     translation_y: Property<SignedVariableInteger<4>>,
@@ -366,7 +366,7 @@ pub struct ModelTransform {
     scale_z: Property<UnsignedVariableInteger<4>>,
 }
 
-impl ModelTransform {
+impl NetTransform {
     pub fn new(
         vertex_name: String,
         rotation: SerdeQuat,
@@ -387,7 +387,7 @@ impl ModelTransform {
 
         Self::new_complete(
             vertex_name,
-            ModelTransformEntityType::Uninit,
+            NetTransformEntityType::Uninit,
             rotation,
             translation_x.into(),
             translation_y.into(),
@@ -403,14 +403,14 @@ impl ModelTransform {
         converter: &dyn EntityAndGlobalEntityConverter<Entity>,
         file_entity: &Entity,
     ) {
-        self.model_file_entity.set(converter, file_entity);
+        self.owning_file_entity.set(converter, file_entity);
     }
 
     pub fn set_entity(
         &mut self,
         converter: &dyn EntityAndGlobalEntityConverter<Entity>,
         skin_or_scene_entity: Entity,
-        entity_type: ModelTransformEntityType,
+        entity_type: NetTransformEntityType,
     ) {
         self.skin_or_scene_entity
             .set(converter, &skin_or_scene_entity);

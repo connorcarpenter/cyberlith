@@ -18,7 +18,7 @@ use render_api::{
 use vortex_proto::components::{
     AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d,
     EdgeAngle, EntryKind, Face3d, FaceColor, FileDependency, FileExtension, FileSystemChild,
-    FileSystemEntry, FileSystemRootChild, FileType, ModelTransform, OwnedByFile, PaletteColor,
+    FileSystemEntry, FileSystemRootChild, FileType, NetTransform, OwnedByFile, PaletteColor,
     ShapeName, Vertex3d, VertexRoot,
 };
 
@@ -88,7 +88,7 @@ pub fn insert_component_events(world: &mut World) {
         insert_component_event::<PaletteColor>(world, &events);
         insert_component_event::<FaceColor>(world, &events);
         insert_component_event::<BackgroundSkinColor>(world, &events);
-        insert_component_event::<ModelTransform>(world, &events);
+        insert_component_event::<NetTransform>(world, &events);
     }
 }
 
@@ -709,7 +709,7 @@ pub fn insert_skin_events(
 }
 
 pub fn insert_model_events(
-    mut model_transform_events: EventReader<InsertComponentEvent<ModelTransform>>,
+    mut net_transform_events: EventReader<InsertComponentEvent<NetTransform>>,
     mut commands: Commands,
     client: Client,
     mut camera_manager: ResMut<CameraManager>,
@@ -719,27 +719,27 @@ pub fn insert_model_events(
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
     mut model_manager: ResMut<ModelManager>,
-    model_q: Query<&ModelTransform>,
+    net_transform_q: Query<&NetTransform>,
 ) {
-    // on ModelTransform Insert Event
-    for event in model_transform_events.iter() {
-        let model_transform_entity = event.entity;
+    // on NetTransform Insert Event
+    for event in net_transform_events.iter() {
+        let net_transform_entity = event.entity;
 
         info!(
-            "entity: {:?} - inserted ModelTransform",
-            model_transform_entity
+            "entity: {:?} - inserted NetTransform",
+            net_transform_entity
         );
 
-        let Ok(model) = model_q.get(model_transform_entity) else {
-            warn!("entity: `{:?}` has no ModelTransform component", model_transform_entity);
+        let Ok(model) = net_transform_q.get(net_transform_entity) else {
+            warn!("entity: `{:?}` has no NetTransform component", net_transform_entity);
             continue;
         };
-        let model_file_entity = model.model_file_entity.get(&client).unwrap();
+        let model_file_entity = model.owning_file_entity.get(&client).unwrap();
         let skel_bone_name = (*model.vertex_name).clone();
 
         let translation = model.translation_vec3();
 
-        model_manager.model_transform_postprocess(
+        model_manager.net_transform_postprocess(
             &mut commands,
             &mut camera_manager,
             &mut vertex_manager,
@@ -749,7 +749,7 @@ pub fn insert_model_events(
             &mut materials,
             &model_file_entity,
             skel_bone_name,
-            model_transform_entity,
+            net_transform_entity,
             translation,
         );
     }

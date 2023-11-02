@@ -9,7 +9,7 @@ use bevy_log::info;
 use naia_bevy_client::Client;
 
 use vortex_proto::components::{
-    FileExtension, ModelTransform, ModelTransformEntityType, ShapeName,
+    FileExtension, NetTransform, NetTransformEntityType, ShapeName,
 };
 
 use crate::app::resources::{
@@ -21,11 +21,11 @@ pub fn execute(
     model_file_entity: &Entity,
     action: ModelAction,
 ) -> Vec<ModelAction> {
-    let ModelAction::DeleteModelTransform(edge_2d_entity) = action else {
-        panic!("Expected DeleteModelTransform");
+    let ModelAction::DeleteTransform(edge_2d_entity) = action else {
+        panic!("Expected DeleteTransform");
     };
 
-    info!("DeleteModelTransform({:?})", edge_2d_entity,);
+    info!("DeleteTransform({:?})", edge_2d_entity,);
 
     let mut system_state: SystemState<(
         Commands,
@@ -35,7 +35,7 @@ pub fn execute(
         ResMut<VertexManager>,
         ResMut<EdgeManager>,
         ResMut<ModelManager>,
-        Query<&ModelTransform>,
+        Query<&NetTransform>,
         Query<&ShapeName>,
     )> = SystemState::new(world);
     let (
@@ -46,7 +46,7 @@ pub fn execute(
         mut vertex_manager,
         mut edge_manager,
         mut model_manager,
-        model_transform_q,
+        net_transform_q,
         shape_name_q
     ) = system_state.get_mut(world);
 
@@ -55,20 +55,20 @@ pub fn execute(
     let shape_name = shape_name_q.get(vertex_3d_entity).unwrap();
     let vertex_name = (*shape_name.value).clone();
 
-    let model_transform_entity = model_manager
-        .find_model_transform(model_file_entity, &vertex_name)
+    let net_transform_entity = model_manager
+        .find_net_transform(model_file_entity, &vertex_name)
         .unwrap();
-    let model_transform = model_transform_q.get(model_transform_entity).unwrap();
-    let dependency_file_entity = model_transform.skin_or_scene_entity.get(&client).unwrap();
-    let dependency_file_ext = match *model_transform.entity_type {
-        ModelTransformEntityType::Skin => FileExtension::Skin,
-        ModelTransformEntityType::Scene => FileExtension::Scene,
+    let net_transform = net_transform_q.get(net_transform_entity).unwrap();
+    let dependency_file_entity = net_transform.skin_or_scene_entity.get(&client).unwrap();
+    let dependency_file_ext = match *net_transform.entity_type {
+        NetTransformEntityType::Skin => FileExtension::Skin,
+        NetTransformEntityType::Scene => FileExtension::Scene,
         _ => panic!("Expected skin or scene"),
     };
 
-    commands.entity(model_transform_entity).despawn();
+    commands.entity(net_transform_entity).despawn();
 
-    model_manager.on_despawn_model_transform(&mut commands, &mut canvas, &mut input_manager, &mut vertex_manager, &mut edge_manager, &model_transform_entity);
+    model_manager.on_despawn_net_transform(&mut commands, &mut canvas, &mut input_manager, &mut vertex_manager, &mut edge_manager, &net_transform_entity);
 
     system_state.apply(world);
 
@@ -76,7 +76,7 @@ pub fn execute(
 
     // TODO: store previous transform state here
 
-    return vec![ModelAction::CreateModelTransform(
+    return vec![ModelAction::CreateTransform(
         edge_2d_entity,
         dependency_file_ext,
         dependency_file_entity,

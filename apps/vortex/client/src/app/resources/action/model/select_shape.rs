@@ -7,7 +7,7 @@ use bevy_log::info;
 use naia_bevy_client::{Client, CommandsExt};
 
 use crate::app::{
-    components::ModelTransformControl,
+    components::NetTransformControl,
     resources::{
         action::model::ModelAction, canvas::Canvas, input::InputManager, shape_data::CanvasShape,
     },
@@ -28,9 +28,9 @@ pub(crate) fn execute(
         Commands,
         Client,
         ResMut<Canvas>,
-        Query<&ModelTransformControl>,
+        Query<&NetTransformControl>,
     )> = SystemState::new(world);
-    let (mut commands, mut client, mut canvas, mtc_2d_q) = system_state.get_mut(world);
+    let (mut commands, mut client, mut canvas, ntc_2d_q) = system_state.get_mut(world);
 
     let mut deselected_entity: Option<(Entity, CanvasShape)> = None;
     let mut entity_to_request = None;
@@ -39,22 +39,22 @@ pub(crate) fn execute(
         input_manager.deselect_shape(&mut canvas);
         deselected_entity = Some((shape_2d_entity, shape));
 
-        let mtc_entity_opt = if let Ok(mtc) = mtc_2d_q.get(shape_2d_entity) {
-            Some(mtc.model_transform_entity)
+        let ntc_entity_opt = if let Ok(ntc) = ntc_2d_q.get(shape_2d_entity) {
+            Some(ntc.net_transform_entity)
         } else {
             None
         };
 
         match shape {
             CanvasShape::Vertex => {
-                // deselected model transform control vertex?
-                let mtc_entity = mtc_entity_opt.expect("Expected MTC");
-                entity_to_release = Some(mtc_entity);
+                // deselected net transform control vertex?
+                let ntc_entity = ntc_entity_opt.expect("Expected MTC");
+                entity_to_release = Some(ntc_entity);
             }
             CanvasShape::Edge => {
-                if let Some(mtc_entity) = mtc_entity_opt {
-                    // deselected model transform control edge (rotation)
-                    entity_to_release = Some(mtc_entity);
+                if let Some(ntc_entity) = ntc_entity_opt {
+                    // deselected net transform control edge (rotation)
+                    entity_to_release = Some(ntc_entity);
                 } else {
                     // deselected skel bone edge
                 }
@@ -66,22 +66,22 @@ pub(crate) fn execute(
     if let Some((shape_2d_entity, shape)) = shape_2d_entity_opt {
         input_manager.select_shape(&mut canvas, &shape_2d_entity, shape);
 
-        let mtc_entity_opt = if let Ok(mtc) = mtc_2d_q.get(shape_2d_entity) {
-            Some(mtc.model_transform_entity)
+        let ntc_entity_opt = if let Ok(ntc) = ntc_2d_q.get(shape_2d_entity) {
+            Some(ntc.net_transform_entity)
         } else {
             None
         };
 
         match shape {
             CanvasShape::Vertex => {
-                // selected model transform control vertex?
-                let mtc_entity = mtc_entity_opt.expect("Expected MTC");
-                entity_to_request = Some(mtc_entity);
+                // selected net transform control vertex?
+                let ntc_entity = ntc_entity_opt.expect("Expected NTC");
+                entity_to_request = Some(ntc_entity);
             }
             CanvasShape::Edge => {
-                if let Some(mtc_entity) = mtc_entity_opt {
-                    // selected model transform control edge (rotation)
-                    entity_to_request = Some(mtc_entity);
+                if let Some(ntc_entity) = ntc_entity_opt {
+                    // selected net transform control edge (rotation)
+                    entity_to_request = Some(ntc_entity);
                 } else {
                     // selected skel bone edge
                 }

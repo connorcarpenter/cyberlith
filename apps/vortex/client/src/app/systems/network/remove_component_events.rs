@@ -12,7 +12,7 @@ use render_api::{base::CpuMesh, Assets};
 use vortex_proto::components::{
     AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d,
     Face3d, FaceColor, FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-    ModelTransform, PaletteColor, ShapeName, Vertex3d,
+    NetTransform, PaletteColor, ShapeName, Vertex3d,
 };
 
 use crate::app::{
@@ -65,7 +65,7 @@ pub fn remove_component_events(world: &mut World) {
         remove_component_event::<PaletteColor>(world, &events);
         remove_component_event::<FaceColor>(world, &events);
         remove_component_event::<BackgroundSkinColor>(world, &events);
-        remove_component_event::<ModelTransform>(world, &events);
+        remove_component_event::<NetTransform>(world, &events);
     }
 }
 
@@ -265,7 +265,7 @@ pub fn remove_color_component_events(
 }
 
 pub fn remove_model_component_events(
-    mut model_transform_events: EventReader<RemoveComponentEvent<ModelTransform>>,
+    mut net_transform_events: EventReader<RemoveComponentEvent<NetTransform>>,
     mut commands: Commands,
     mut canvas: ResMut<Canvas>,
     mut input_manager: ResMut<InputManager>,
@@ -273,10 +273,10 @@ pub fn remove_model_component_events(
     mut edge_manager: ResMut<EdgeManager>,
     mut model_manager: ResMut<ModelManager>,
 ) {
-    for event in model_transform_events.iter() {
+    for event in net_transform_events.iter() {
         let entity = event.entity;
-        info!("entity: `{:?}`, removed ModelTransform", entity);
+        info!("entity: `{:?}`, removed NetTransform", entity);
 
-        model_manager.on_despawn_model_transform(&mut commands, &mut canvas, &mut input_manager, &mut vertex_manager, &mut edge_manager, &entity);
+        model_manager.on_despawn_net_transform(&mut commands, &mut canvas, &mut input_manager, &mut vertex_manager, &mut edge_manager, &entity);
     }
 }

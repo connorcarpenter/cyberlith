@@ -13,7 +13,7 @@ use naia_bevy_client::{
 
 use vortex_proto::components::{
     AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency,
-    FileSystemEntry, ModelTransform, PaletteColor, Vertex3d,
+    FileSystemEntry, NetTransform, PaletteColor, Vertex3d,
 };
 
 use crate::app::{
@@ -93,7 +93,7 @@ pub fn auth_events(world: &mut World) {
             Option<&PaletteColor>,
             Option<&FaceColor>,
             Option<&BackgroundSkinColor>,
-            Option<&ModelTransform>,
+            Option<&NetTransform>,
         )>,
         Query<&OwnedByFileLocal>,
         Query<&AnimFrame>,
@@ -158,14 +158,28 @@ fn process_entity_auth_status(
         Option<&PaletteColor>,
         Option<&FaceColor>,
         Option<&BackgroundSkinColor>,
-        Option<&ModelTransform>,
+        Option<&NetTransform>,
     )>,
     owned_by_q: &Query<&OwnedByFileLocal>,
     frame_q: &Query<&AnimFrame>,
     entity: &Entity,
     status: &str,
 ) {
-    let Ok((fs_entry_opt, dep_opt, vertex_opt, edge_opt, face_opt, frame_opt, rot_opt, palette_opt, face_color_opt, bckg_color_opt, model_opt)) = big_q.get(*entity) else {
+    let Ok(
+        (
+           fs_entry_opt,
+           dep_opt,
+           vertex_opt,
+           edge_opt,
+           face_opt,
+           frame_opt,
+           rot_opt,
+           palette_opt,
+           face_color_opt,
+           bckg_color_opt,
+            net_transform_opt
+        )
+    ) = big_q.get(*entity) else {
         panic!("hm?");
     };
     if vertex_opt.is_some() || edge_opt.is_some() || face_opt.is_some() {
@@ -276,13 +290,13 @@ fn process_entity_auth_status(
             entity, status
         );
         // no need to set auth status on action stack because auth for background color is automatically given (and reset upon update)
-    } else if let Some(model_transform_component) = model_opt {
+    } else if let Some(net_transform_component) = net_transform_opt {
         info!(
-            "auth processing for model transform entity `{:?}`: `{:?}`",
+            "auth processing for net transform entity `{:?}`: `{:?}`",
             entity, status
         );
-        let owning_file_entity = model_transform_component
-            .model_file_entity
+        let owning_file_entity = net_transform_component
+            .owning_file_entity
             .get(client)
             .unwrap();
         if let Some(tab_state) = tab_manager.tab_state_mut(&owning_file_entity) {

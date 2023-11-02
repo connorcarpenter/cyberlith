@@ -14,11 +14,11 @@ pub fn execute(
     current_file_entity: &Entity,
     action: ModelAction,
 ) -> Vec<ModelAction> {
-    let ModelAction::CreateModelTransform(edge_2d_entity, dependency_file_ext, dependency_file_entity) = action else {
-        panic!("Expected CreateModelTransform");
+    let ModelAction::CreateTransform(edge_2d_entity, dependency_file_ext, dependency_file_entity) = action else {
+        panic!("Expected CreateTransform");
     };
 
-    info!("CreateModelTransform(edge_2d_entity: {:?}, dependency_file_ext: {:?}, dependency_file_entity: {:?})", edge_2d_entity, dependency_file_ext, dependency_file_entity);
+    info!("CreateTransform(edge_2d_entity: {:?}, dependency_file_ext: {:?}, dependency_file_entity: {:?})", edge_2d_entity, dependency_file_ext, dependency_file_entity);
 
     let mut system_state: SystemState<(Res<EdgeManager>, Query<&ShapeName>)> =
         SystemState::new(world);
@@ -30,7 +30,7 @@ pub fn execute(
     let vertex_name = (*shape_name.value).clone();
 
     world.resource_scope(|world, mut model_manager: Mut<ModelManager>| {
-        model_manager.create_networked_model_transform(
+        model_manager.create_networked_transform(
             world,
             input_manager,
             current_file_entity,
@@ -46,5 +46,5 @@ pub fn execute(
 
     // TODO: migrate undo/redo entities
 
-    return vec![ModelAction::DeleteModelTransform(edge_2d_entity)];
+    return vec![ModelAction::DeleteTransform(edge_2d_entity)];
 }

@@ -19,7 +19,7 @@ use naia_bevy_server::{Plugin as ServerPlugin, ReceiveEvents, ServerConfig};
 use vortex_proto::{
     components::{
         AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency,
-        FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, ModelTransform,
+        FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, NetTransform,
         OwnedByFile, PaletteColor, ShapeName, Vertex3d, VertexRoot,
     },
     protocol,
@@ -29,7 +29,7 @@ use crate::{
     config::{AppConfig, ConfigPlugin},
     events::InsertComponentEvent,
     resources::{
-        changelist_manager_process, AnimationManager, ChangelistManager, GitManager, ModelManager,
+        changelist_manager_process, AnimationManager, ChangelistManager, GitManager,
         PaletteManager, ShapeManager, ShapeWaitlist, SkinManager, TabManager, UserManager,
     },
     systems::{network, world_loop},
@@ -58,7 +58,6 @@ fn main() {
         .init_resource::<AnimationManager>()
         .init_resource::<PaletteManager>()
         .init_resource::<SkinManager>()
-        .init_resource::<ModelManager>()
         // Network Systems
         .add_systems(Startup, network::init)
         .add_systems(
@@ -115,7 +114,7 @@ fn main() {
         .add_event::<InsertComponentEvent<PaletteColor>>()
         .add_event::<InsertComponentEvent<BackgroundSkinColor>>()
         .add_event::<InsertComponentEvent<FaceColor>>()
-        .add_event::<InsertComponentEvent<ModelTransform>>()
+        .add_event::<InsertComponentEvent<NetTransform>>()
         // Other Systems
         .add_systems(Startup, setup)
         .add_systems(Update, world_loop.after(ReceiveEvents))

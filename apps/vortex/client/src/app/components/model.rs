@@ -2,7 +2,7 @@ use bevy_ecs::{entity::Entity, prelude::Component};
 
 use render_api::components::Transform;
 
-use vortex_proto::components::ModelTransform;
+use vortex_proto::components::NetTransform;
 
 #[derive(Clone, Copy)]
 pub enum ScaleAxis {
@@ -12,7 +12,7 @@ pub enum ScaleAxis {
 }
 
 #[derive(Clone, Copy)]
-pub enum ModelTransformControlType {
+pub enum NetTransformControlType {
     Translation,
     RotationVertex,
     RotationEdge,
@@ -21,38 +21,38 @@ pub enum ModelTransformControlType {
 }
 
 #[derive(Component, Clone)]
-pub struct ModelTransformControl {
-    pub model_transform_entity: Entity,
-    pub control_type: ModelTransformControlType,
+pub struct NetTransformControl {
+    pub net_transform_entity: Entity,
+    pub control_type: NetTransformControlType,
 }
 
-impl ModelTransformControl {
+impl NetTransformControl {
 
     pub const EDGE_LENGTH: f32 = 20.0;
 
     pub const SCALE_EDGE_LENGTH: f32 = 14.0;
 
-    pub fn new(model_transform_entity: Entity, control_type: ModelTransformControlType) -> Self {
+    pub fn new(net_transform_entity: Entity, control_type: NetTransformControlType) -> Self {
         Self {
-            model_transform_entity,
+            net_transform_entity,
             control_type,
         }
     }
 }
 
-pub struct ModelTransformLocal;
+pub struct NetTransformLocal;
 
-impl ModelTransformLocal {
-    pub fn to_transform(model_transform: &ModelTransform) -> Transform {
-        let mut transform = Transform::from_translation(model_transform.translation_vec3());
-        transform.rotation = model_transform.rotation();
-        transform.scale = model_transform.scale_vec3();
+impl NetTransformLocal {
+    pub fn to_transform(net_transform: &NetTransform) -> Transform {
+        let mut transform = Transform::from_translation(net_transform.translation_vec3());
+        transform.rotation = net_transform.rotation();
+        transform.scale = net_transform.scale_vec3();
         return transform;
     }
 
-    pub fn set_transform(model_transform: &mut ModelTransform, transform: &Transform) {
-        model_transform.set_translation_vec3(&transform.translation);
-        model_transform.set_rotation(transform.rotation);
-        model_transform.set_scale_vec3(&transform.scale);
+    pub fn set_transform(net_transform: &mut NetTransform, transform: &Transform) {
+        net_transform.set_translation_vec3(&transform.translation);
+        net_transform.set_rotation(transform.rotation);
+        net_transform.set_scale_vec3(&transform.scale);
     }
 }

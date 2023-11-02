@@ -23,7 +23,7 @@ use vortex_proto::{
     channels::TabActionChannel,
     components::{
         BackgroundSkinColor, ChangelistStatus, FaceColor, FileExtension, FileSystemEntry,
-        ModelTransform, ModelTransformEntityType, PaletteColor,
+        NetTransform, NetTransformEntityType, PaletteColor,
     },
     messages::{TabCloseMessage, TabOpenMessage},
     types::TabId,
@@ -797,7 +797,7 @@ fn file_ext_specific_sync_tabs_shape_colors(
                 Query<&PaletteColor>,
                 Query<&BackgroundSkinColor>,
                 Query<&FaceColor>,
-                Query<&ModelTransform>,
+                Query<&NetTransform>,
             )> = SystemState::new(world);
             let (
                 client,
@@ -810,21 +810,21 @@ fn file_ext_specific_sync_tabs_shape_colors(
                 palette_color_q,
                 bckg_color_q,
                 face_color_q,
-                model_transform_q,
+                net_transform_q,
             ) = system_state.get_mut(world);
 
-            let Some(model_transform_entities) = model_manager.model_file_transform_entities(current_file_entity) else {
+            let Some(net_transform_entities) = model_manager.model_file_transform_entities(current_file_entity) else {
                 return;
             };
-            for model_transform_entity in model_transform_entities {
-                let Ok(model_transform) = model_transform_q.get(model_transform_entity) else {
+            for net_transform_entity in net_transform_entities {
+                let Ok(net_transform) = net_transform_q.get(net_transform_entity) else {
                     continue;
                 };
-                if ModelTransformEntityType::Skin != *model_transform.entity_type {
+                if NetTransformEntityType::Skin != *net_transform.entity_type {
                     todo!("support scene entity type");
                 }
                 let skin_file_entity: Entity =
-                    model_transform.skin_or_scene_entity.get(&client).unwrap();
+                    net_transform.skin_or_scene_entity.get(&client).unwrap();
                 set_face_3d_colors(
                     &skin_file_entity,
                     &client,

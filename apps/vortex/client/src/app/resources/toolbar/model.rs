@@ -31,8 +31,8 @@ impl ModelToolbar {
             edge_2d_entity_opt = Some(edge_2d_entity);
         }
 
-        // check whether model transform already exists
-        let mut edge_has_model_transform = false;
+        // check whether net transform already exists
+        let mut edge_has_net_transform = false;
         if let Some(edge_2d_entity) = edge_2d_entity_opt {
             let mut system_state: SystemState<(
                 Res<ModelManager>,
@@ -47,8 +47,8 @@ impl ModelToolbar {
 
                 if let Some(shape_name) = shape_name_opt {
                     let shape_name: &str = &(*shape_name.value);
-                    if model_manager.model_transform_exists(file_entity, shape_name) {
-                        edge_has_model_transform = true;
+                    if model_manager.net_transform_exists(file_entity, shape_name) {
+                        edge_has_net_transform = true;
                     }
                 }
             }
@@ -56,7 +56,7 @@ impl ModelToolbar {
 
         {
             // assign skin / scene
-            let button_enabled = edge_2d_entity_opt.is_some() && !edge_has_model_transform;
+            let button_enabled = edge_2d_entity_opt.is_some() && !edge_has_net_transform;
             let response = Toolbar::button(ui, "+", "Assign Skin/Scene", button_enabled);
             if button_enabled && response.clicked() {
                 world.resource_scope(|world, mut model_manager: Mut<ModelManager>| {
@@ -75,7 +75,7 @@ impl ModelToolbar {
                 ui,
                 "-",
                 "Delete Skin/Scene reference",
-                edge_2d_entity_opt.is_some() && edge_has_model_transform,
+                edge_2d_entity_opt.is_some() && edge_has_net_transform,
             );
             if response.clicked() {
                 world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
@@ -83,7 +83,7 @@ impl ModelToolbar {
                         tab_manager.current_tab_execute_model_action(
                             world,
                             &mut input_manager,
-                            ModelAction::DeleteModelTransform(edge_2d_entity_opt.unwrap()),
+                            ModelAction::DeleteTransform(edge_2d_entity_opt.unwrap()),
                         );
                     });
                 });

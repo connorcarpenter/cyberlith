@@ -13,7 +13,7 @@ use naia_bevy_server::{
 };
 
 use vortex_proto::{
-    components::{FileExtension, ModelTransform, ModelTransformEntityType},
+    components::{FileExtension, NetTransform, NetTransformEntityType},
     resources::FileKey,
     SerdeQuat,
 };
@@ -28,15 +28,15 @@ use crate::{
 enum ModelAction {
     // path, file_name
     SkelFile(String, String),
-    SkinOrSceneFile(String, String, ModelTransformEntityType),
-    ModelTransform(u16, String, i16, i16, i16, f32, f32, f32, SerdeQuat),
+    SkinOrSceneFile(String, String, NetTransformEntityType),
+    NetTransform(u16, String, i16, i16, i16, f32, f32, f32, SerdeQuat),
 }
 
 #[derive(Serde, Clone, PartialEq)]
 enum ModelActionType {
     SkelFile,
     SkinFile,
-    ModelTransform,
+    NetTransform,
     None,
 }
 
@@ -58,7 +58,7 @@ impl ModelWriter {
         let mut skel_dependency_key_opt = None;
         let mut skin_dependencies = Vec::new();
         let mut skin_dependency_to_index = HashMap::new();
-        let mut model_transform_entities = Vec::new();
+        let mut net_transform_entities = Vec::new();
 
         for (content_entity, content_data) in content_entities {
             match content_data {
@@ -78,21 +78,21 @@ impl ModelWriter {
                                 dependency_entity, skin_index
                             );
                             skin_dependencies
-                                .push((dependency_key, ModelTransformEntityType::Skin));
+                                .push((dependency_key, NetTransformEntityType::Skin));
                         }
                         FileExtension::Scene => {
                             let skin_index = skin_dependencies.len() as u16;
                             skin_dependency_to_index.insert(dependency_entity, skin_index);
                             skin_dependencies
-                                .push((dependency_key, ModelTransformEntityType::Scene));
+                                .push((dependency_key, NetTransformEntityType::Scene));
                         }
                         _ => {
                             panic!("model file should depend on a single .skel file & potentially many .skin or .scene files");
                         }
                     }
                 }
-                ContentEntityData::ModelTransform => {
-                    model_transform_entities.push(*content_entity);
+                ContentEntityData::NetTransform => {
+                    net_transform_entities.push(*content_entity);
                 }
                 _ => {
                     panic!("model should not have this content entity type");
@@ -124,17 +124,17 @@ impl ModelWriter {
             ));
         }
 
-        // Write ModelTransforms
-        for content_entity in model_transform_entities {
-            let mut system_state: SystemState<(Server, Query<&ModelTransform>)> =
+        // Write NetTransforms
+        for content_entity in net_transform_entities {
+            let mut system_state: SystemState<(Server, Query<&NetTransform>)> =
                 SystemState::new(world);
             let (server, transform_q) = system_state.get_mut(world);
             let Ok(transform) = transform_q.get(content_entity) else {
-                panic!("Error getting model transform");
+                panic!("Error getting net transform");
             };
             let skin_entity: Entity = transform.skin_or_scene_entity.get(&server).unwrap();
             info!(
-                "in writing model transform, skin entity is: `{:?}`",
+                "in writing net transform, skin entity is: `{:?}`",
                 skin_entity
             );
             let Some(skin_index) = skin_dependency_to_index.get(&skin_entity) else {
@@ -151,10 +151,10 @@ impl ModelWriter {
             let rotation = transform.get_rotation_serde();
 
             info!(
-                "writing action for model transform for bone: `{}`, skin index is: {}",
+                "writing action for net transform for bone: `{}`, skin index is: {}",
                 bone_name, skin_index
             );
-            actions.push(ModelAction::ModelTransform(
+            actions.push(ModelAction::NetTransform(
                 *skin_index,
                 bone_name,
                 translation_x,
@@ -186,7 +186,7 @@ impl ModelWriter {
                     file_name.ser(&mut bit_writer);
                     file_type.ser(&mut bit_writer);
                 }
-                ModelAction::ModelTransform(
+                ModelAction::NetTransform(
                     skin_index,
                     vertex_name,
                     translation_x,
@@ -197,8 +197,8 @@ impl ModelWriter {
                     scale_z,
                     rotation,
                 ) => {
-                    info!("writing model transform for bone: `{}`", vertex_name);
-                    ModelActionType::ModelTransform.ser(&mut bit_writer);
+                    info!("writing net transform for bone: `{}`", vertex_name);
+                    ModelActionType::NetTransform.ser(&mut bit_writer);
 
                     UnsignedVariableInteger::<6>::new(skin_index).ser(&mut bit_writer);
 
@@ -269,10 +269,10 @@ impl ModelReader {
                 ModelActionType::SkinFile => {
                     let path = String::de(bit_reader)?;
                     let file_name = String::de(bit_reader)?;
-                    let file_type = ModelTransformEntityType::de(bit_reader)?;
+                    let file_type = NetTransformEntityType::de(bit_reader)?;
                     actions.push(ModelAction::SkinOrSceneFile(path, file_name, file_type));
                 }
-                ModelActionType::ModelTransform => {
+                ModelActionType::NetTransform => {
                     let skin_index: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
 
                     let vertex_name = String::de(bit_reader)?;
@@ -291,11 +291,11 @@ impl ModelReader {
                     let rotation = SerdeQuat::de(bit_reader)?;
 
                     info!(
-                        "reading model transform for bone: `{}`, into action",
+                        "reading net transform for bone: `{}`, into action",
                         vertex_name
                     );
 
-                    actions.push(ModelAction::ModelTransform(
+                    actions.push(ModelAction::NetTransform(
                         skin_index,
                         vertex_name,
                         translation_x,
@@ -351,9 +351,9 @@ impl ModelReader {
                 }
                 ModelAction::SkinOrSceneFile(path, file_name, file_type) => {
                     let dependency_file_ext = match file_type {
-                        ModelTransformEntityType::Uninit => panic!("shouldn't happen"),
-                        ModelTransformEntityType::Skin => FileExtension::Skin,
-                        ModelTransformEntityType::Scene => FileExtension::Scene,
+                        NetTransformEntityType::Uninit => panic!("shouldn't happen"),
+                        NetTransformEntityType::Skin => FileExtension::Skin,
+                        NetTransformEntityType::Scene => FileExtension::Scene,
                     };
                     let (new_dependency_entity, dependency_file_entity, dependency_file_key) =
                         add_file_dependency(
@@ -378,7 +378,7 @@ impl ModelReader {
                     );
                     skin_files.push((file_type, dependency_file_entity));
                 }
-                ModelAction::ModelTransform(
+                ModelAction::NetTransform(
                     skin_index,
                     vertex_name,
                     translation_x,
@@ -389,7 +389,7 @@ impl ModelReader {
                     scale_z,
                     rotation,
                 ) => {
-                    let mut component = ModelTransform::new(
+                    let mut component = NetTransform::new(
                         vertex_name.clone(),
                         rotation,
                         translation_x as f32,
@@ -404,14 +404,14 @@ impl ModelReader {
                         panic!("skin index out of bounds");
                     };
                     component.set_entity(&server, *skin_or_scene_entity, *skin_or_scene_type);
-                    info!("reading model transform for bone: `{}`, into world. skin index: {} -> entity: `{:?}`",
+                    info!("reading net transform for bone: `{}`, into world. skin index: {} -> entity: `{:?}`",
                         vertex_name.clone(),
                         skin_index,
                         skin_or_scene_entity);
 
-                    component.model_file_entity.set(&mut server, file_entity);
+                    component.owning_file_entity.set(&mut server, file_entity);
 
-                    let model_transform_entity = commands
+                    let net_transform_entity = commands
                         .spawn_empty()
                         .enable_replication(&mut server)
                         .configure_replication(ReplicationConfig::Delegated)
@@ -419,8 +419,8 @@ impl ModelReader {
                         .id();
 
                     output.insert(
-                        model_transform_entity,
-                        ContentEntityData::new_model_transform(),
+                        net_transform_entity,
+                        ContentEntityData::new_net_transform(),
                     );
                 }
             }

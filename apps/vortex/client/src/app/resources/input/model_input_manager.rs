@@ -14,10 +14,10 @@ use input::{InputAction, Key, MouseButton};
 use math::{quat_from_spin_direction, spin_direction_from_quat, Vec2, Vec3};
 use render_api::{components::{Camera, Projection, Transform}, shapes::{angle_between, get_2d_line_transform_endpoint, normalize_angle}};
 
-use vortex_proto::components::{EdgeAngle, FileExtension, ModelTransform, ShapeName, Vertex3d, VertexRoot};
+use vortex_proto::components::{EdgeAngle, FileExtension, NetTransform, ShapeName, Vertex3d, VertexRoot};
 
 use crate::app::{components::{
-    Edge2dLocal, EdgeAngleLocal, ModelTransformControl, ModelTransformControlType, ModelTransformLocal,
+    Edge2dLocal, EdgeAngleLocal, NetTransformControl, NetTransformControlType, NetTransformLocal,
     OwnedByFileLocal, ScaleAxis, Vertex2d,
 }, get_new_3d_position, resources::{
     action::model::ModelAction, camera_manager::CameraManager, canvas::Canvas,
@@ -178,7 +178,7 @@ impl ModelInputManager {
         let mut least_entity = None;
         let mut is_hovering = false;
 
-        let mtc_2d_vertices = model_manager.model_transform_2d_vertices(current_file_entity);
+        let mtc_2d_vertices = model_manager.net_transform_2d_vertices(current_file_entity);
 
         Self::handle_vertex_hover(
             &transform_q,
@@ -212,7 +212,7 @@ impl ModelInputManager {
 
         // check rotation edge entities
         let mut edge_2d_entities = Vec::new();
-        let mtc_2d_edges = model_manager.model_transform_rotation_edge_2d_entities(current_file_entity);
+        let mtc_2d_edges = model_manager.net_transform_rotation_edge_2d_entities(current_file_entity);
         for mtc_2d_edge in mtc_2d_edges {
             edge_2d_entities.push(mtc_2d_edge);
         }
@@ -296,8 +296,8 @@ impl ModelInputManager {
             Res<ModelManager>,
             Query<&Vertex3d>,
             Query<&EdgeAngle>,
-            Query<&ModelTransform>,
-            Query<&ModelTransformControl>,
+            Query<&NetTransform>,
+            Query<&NetTransformControl>,
         )> = SystemState::new(world);
         let (
             mut commands,
@@ -305,7 +305,7 @@ impl ModelInputManager {
             model_manager,
             vertex_3d_q,
             edge_angle_q,
-            model_transform_q,
+            net_transform_q,
             mtc_q,
         ) = system_state.get_mut(world);
 
@@ -313,7 +313,7 @@ impl ModelInputManager {
             warn!("Expected MTC");
             return;
         };
-        let mtc_entity = mtc_component.model_transform_entity;
+        let mtc_entity = mtc_component.net_transform_entity;
         let mtc_type = mtc_component.control_type;
 
         // get bone transform
@@ -334,16 +334,16 @@ impl ModelInputManager {
         }
 
         // set networked 3d vertex position
-        let model_transform = model_transform_q.get(mtc_entity).unwrap();
+        let net_transform = net_transform_q.get(mtc_entity).unwrap();
 
-        let old_transform = ModelTransformLocal::to_transform(&model_transform);
+        let old_transform = NetTransformLocal::to_transform(&net_transform);
         let new_transform = old_transform;
 
         // apply parent bone transform to new_transform
         let mut new_transform = new_transform.multiply(&bone_transform);
 
         match (shape, mtc_type) {
-            (CanvasShape::Vertex, ModelTransformControlType::Translation) => {
+            (CanvasShape::Vertex, NetTransformControlType::Translation) => {
 
                 let mut system_state: SystemState<(
                     Res<CameraManager>,
@@ -359,7 +359,7 @@ impl ModelInputManager {
                 let new_3d_position = get_new_3d_position(&camera_manager, &camera_q, &transform_q, &mouse_position, control_2d_entity);
                 new_transform.translation = new_3d_position;
             }
-            (CanvasShape::Vertex, ModelTransformControlType::RotationVertex) => {
+            (CanvasShape::Vertex, NetTransformControlType::RotationVertex) => {
 
                 let rotation_edge_3d_entity = model_manager.get_rotation_edge_3d_entity(&mtc_entity).unwrap();
 
@@ -385,7 +385,7 @@ impl ModelInputManager {
                     quat_from_spin_direction(edge_angle, Vec3::Z, target_direction);
                 new_transform.rotation = rotation_angle;
             }
-            (CanvasShape::Edge, ModelTransformControlType::RotationEdge) => {
+            (CanvasShape::Edge, NetTransformControlType::RotationEdge) => {
 
                 let mut system_state: SystemState<(
                     Res<EdgeManager>,
@@ -423,7 +423,7 @@ impl ModelInputManager {
                 let rotation_angle = quat_from_spin_direction(new_angle, Vec3::Z, old_direction);
                 new_transform.rotation = rotation_angle;
             }
-            (CanvasShape::Vertex, ModelTransformControlType::Scale(axis)) => {
+            (CanvasShape::Vertex, NetTransformControlType::Scale(axis)) => {
 
                 let mut system_state: SystemState<(
                     Res<CameraManager>,
@@ -445,21 +445,21 @@ impl ModelInputManager {
                     ScaleAxis::X => {
                         let mut output = old_scale;
                         let new_x = (new_3d_position.x - translation.x)
-                            / ModelTransformControl::SCALE_EDGE_LENGTH;
+                            / NetTransformControl::SCALE_EDGE_LENGTH;
                         output.x = new_x;
                         output
                     }
                     ScaleAxis::Y => {
                         let mut output = old_scale;
                         let new_y = (new_3d_position.y - translation.y)
-                            / ModelTransformControl::SCALE_EDGE_LENGTH;
+                            / NetTransformControl::SCALE_EDGE_LENGTH;
                         output.y = new_y;
                         output
                     }
                     ScaleAxis::Z => {
                         let mut output = old_scale;
                         let new_z = (new_3d_position.z - translation.z)
-                            / ModelTransformControl::SCALE_EDGE_LENGTH;
+                            / NetTransformControl::SCALE_EDGE_LENGTH;
                         output.z = new_z;
                         output
                     }
@@ -472,12 +472,12 @@ impl ModelInputManager {
         let mut system_state: SystemState<(
             ResMut<Canvas>,
             ResMut<ModelManager>,
-            Query<&mut ModelTransform>,
+            Query<&mut NetTransform>,
         )> = SystemState::new(world);
         let (
             mut canvas,
             mut model_manager,
-            mut model_transform_q,
+            mut net_transform_q,
         ) = system_state.get_mut(world);
 
         // remove parent transform from new_transform
@@ -485,8 +485,8 @@ impl ModelInputManager {
         bone_transform_inverse.scale = Vec3::ONE;
         let new_transform = new_transform.multiply(&bone_transform_inverse);
 
-        let mut model_transform = model_transform_q.get_mut(mtc_entity).unwrap();
-        ModelTransformLocal::set_transform(&mut model_transform, &new_transform);
+        let mut net_transform = net_transform_q.get_mut(mtc_entity).unwrap();
+        NetTransformLocal::set_transform(&mut net_transform, &new_transform);
 
         model_manager.update_last_transform_dragged(mtc_entity, old_transform, new_transform);
 

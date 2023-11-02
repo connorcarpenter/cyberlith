@@ -10,7 +10,7 @@ use bevy_log::info;
 
 use naia_bevy_server::{events::InsertComponentEvents, Replicate, Server};
 
-use vortex_proto::components::ModelTransform;
+use vortex_proto::components::NetTransform;
 use vortex_proto::{
     components::{
         AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency,
@@ -24,7 +24,7 @@ use crate::{
     events::InsertComponentEvent,
     resources::{
         file_waitlist::{file_process_insert, FSWaitlist, FSWaitlistInsert},
-        AnimationManager, ContentEntityData, GitManager, ModelManager, PaletteManager,
+        AnimationManager, ContentEntityData, GitManager, PaletteManager,
         ShapeManager, ShapeWaitlist, ShapeWaitlistInsert, SkinManager, TabManager, UserManager,
     },
 };
@@ -75,7 +75,7 @@ pub fn insert_component_events(world: &mut World) {
         insert_component_event::<BackgroundSkinColor>(world, &events);
         insert_component_event::<FaceColor>(world, &events);
 
-        insert_component_event::<ModelTransform>(world, &events);
+        insert_component_event::<NetTransform>(world, &events);
     }
 }
 
@@ -587,19 +587,18 @@ pub fn insert_model_component_events(
     mut server: Server,
     user_manager: ResMut<UserManager>,
     mut git_manager: ResMut<GitManager>,
-    _model_manager: ResMut<ModelManager>,
-    mut events: EventReader<InsertComponentEvent<ModelTransform>>,
+    mut events: EventReader<InsertComponentEvent<NetTransform>>,
     key_q: Query<&FileKey>,
-    model_q: Query<&ModelTransform>,
+    net_transform_q: Query<&NetTransform>,
 ) {
-    // on ModelTransform Insert Event
+    // on NetTransform Insert Event
     for event in events.iter() {
         let user_key = event.user_key;
         let entity = event.entity;
-        info!("entity: `{:?}`, inserted ModelTransform", entity);
+        info!("entity: `{:?}`, inserted NetTransform", entity);
 
-        let model = model_q.get(entity).unwrap();
-        let model_file_entity = model.model_file_entity.get(&server).unwrap();
+        let model = net_transform_q.get(entity).unwrap();
+        let model_file_entity = model.owning_file_entity.get(&server).unwrap();
 
         let project_key = user_manager
             .user_session_data(&user_key)
@@ -608,7 +607,7 @@ pub fn insert_model_component_events(
             .unwrap();
         let file_key = key_q.get(model_file_entity).unwrap().clone();
 
-        let content_entity_data = ContentEntityData::new_model_transform();
+        let content_entity_data = ContentEntityData::new_net_transform();
         git_manager.on_insert_content_entity(
             &mut server,
             &project_key,
