@@ -1,3 +1,5 @@
+use std::f32::consts::FRAC_PI_2;
+
 use bevy_ecs::{
     entity::Entity,
     query::With,
@@ -10,7 +12,7 @@ use naia_bevy_client::{Client, CommandsExt};
 
 use input::{InputAction, Key, MouseButton};
 use math::{quat_from_spin_direction, Vec2, Vec3};
-use render_api::components::{Camera, Projection, Transform};
+use render_api::{components::{Camera, Projection, Transform}, shapes::{angle_between, get_2d_line_transform_endpoint, normalize_angle}};
 
 use vortex_proto::components::{EdgeAngle, FileExtension, ModelTransform, ShapeName, Vertex3d, VertexRoot};
 
@@ -291,27 +293,19 @@ impl ModelInputManager {
         let mut system_state: SystemState<(
             Commands,
             Client,
-            Res<CameraManager>,
-            ResMut<ModelManager>,
-            ResMut<Canvas>,
-            Query<(&Camera, &Projection)>,
+            Res<ModelManager>,
             Query<&Vertex3d>,
             Query<&EdgeAngle>,
-            Query<&Transform>,
-            Query<&mut ModelTransform>,
+            Query<&ModelTransform>,
             Query<&ModelTransformControl>,
         )> = SystemState::new(world);
         let (
             mut commands,
             client,
-            camera_manager,
-            mut model_manager,
-            mut canvas,
-            camera_q,
+            model_manager,
             vertex_3d_q,
             edge_angle_q,
-            transform_q,
-            mut model_transform_q,
+            model_transform_q,
             mtc_q,
         ) = system_state.get_mut(world);
 
@@ -340,7 +334,7 @@ impl ModelInputManager {
         }
 
         // set networked 3d vertex position
-        let mut model_transform = model_transform_q.get_mut(mtc_entity).unwrap();
+        let model_transform = model_transform_q.get(mtc_entity).unwrap();
 
         let old_transform = ModelTransformLocal::to_transform(&model_transform);
         let new_transform = old_transform;
@@ -350,11 +344,35 @@ impl ModelInputManager {
 
         match (shape, mtc_type) {
             (CanvasShape::Vertex, ModelTransformControlType::Translation) => {
+
+                let mut system_state: SystemState<(
+                    Res<CameraManager>,
+                    Query<(&Camera, &Projection)>,
+                    Query<&Transform>,
+                )> = SystemState::new(world);
+                let (
+                    camera_manager,
+                    camera_q,
+                    transform_q,
+                ) = system_state.get_mut(world);
+
                 let new_3d_position = get_new_3d_position(&camera_manager, &camera_q, &transform_q, &mouse_position, control_2d_entity);
                 new_transform.translation = new_3d_position;
             }
             (CanvasShape::Vertex, ModelTransformControlType::RotationVertex) => {
-                let edge_angle = 0.0; //todo, find edge angle
+
+                let mut system_state: SystemState<(
+                    Res<CameraManager>,
+                    Query<(&Camera, &Projection)>,
+                    Query<&Transform>,
+                )> = SystemState::new(world);
+                let (
+                    camera_manager,
+                    camera_q,
+                    transform_q,
+                ) = system_state.get_mut(world);
+
+                let edge_angle: f32 = 0.0; // TODO!
 
                 let new_3d_position = get_new_3d_position(&camera_manager, &camera_q, &transform_q, &mouse_position, control_2d_entity);
                 let rotation_with_offset = new_3d_position;
@@ -365,11 +383,55 @@ impl ModelInputManager {
                 let rotation_angle =
                     quat_from_spin_direction(edge_angle, base_direction, target_direction);
                 new_transform.rotation = rotation_angle;
-            }
-            (CanvasShape::Edge, ModelTransformControlType::RotationEdge) => {
+
                 todo!();
             }
+            (CanvasShape::Edge, ModelTransformControlType::RotationEdge) => {
+
+                let mut system_state: SystemState<(
+                    Res<EdgeManager>,
+                    Query<&mut EdgeAngle>,
+                    Query<&Transform>,
+                )> = SystemState::new(world);
+                let (
+                    edge_manager,
+                    mut edge_angle_q,
+                    transform_q,
+                ) = system_state.get_mut(world);
+
+                let edge_3d_entity = edge_manager.edge_entity_2d_to_3d(control_2d_entity).unwrap();
+                let edge_2d_transform = transform_q.get(*control_2d_entity).unwrap();
+                let start_pos = edge_2d_transform.translation.truncate();
+                let end_pos = get_2d_line_transform_endpoint(&edge_2d_transform);
+                let base_angle = angle_between(&start_pos, &end_pos);
+
+                let edge_angle_entity = edge_manager.edge_get_base_circle_entity(&edge_3d_entity);
+                let edge_angle_pos = transform_q
+                    .get(edge_angle_entity)
+                    .unwrap()
+                    .translation
+                    .truncate();
+
+                let mut edge_angle = edge_angle_q.get_mut(edge_3d_entity).unwrap();
+                let new_angle = normalize_angle(
+                    angle_between(&edge_angle_pos, &mouse_position) - FRAC_PI_2 - base_angle,
+                );
+
+                edge_angle.set_radians(new_angle);
+            }
             (CanvasShape::Vertex, ModelTransformControlType::Scale(axis)) => {
+
+                let mut system_state: SystemState<(
+                    Res<CameraManager>,
+                    Query<(&Camera, &Projection)>,
+                    Query<&Transform>,
+                )> = SystemState::new(world);
+                let (
+                    camera_manager,
+                    camera_q,
+                    transform_q,
+                ) = system_state.get_mut(world);
+
                 let translation = new_transform.translation;
                 let old_scale = new_transform.scale;
 
@@ -403,11 +465,23 @@ impl ModelInputManager {
             _ => panic!("Unexpected MTC type"),
         }
 
+        let mut system_state: SystemState<(
+            ResMut<Canvas>,
+            ResMut<ModelManager>,
+            Query<&mut ModelTransform>,
+        )> = SystemState::new(world);
+        let (
+            mut canvas,
+            mut model_manager,
+            mut model_transform_q,
+        ) = system_state.get_mut(world);
+
         // remove parent transform from new_transform
         let mut bone_transform_inverse = bone_transform.inverse();
         bone_transform_inverse.scale = Vec3::ONE;
         let new_transform = new_transform.multiply(&bone_transform_inverse);
 
+        let mut model_transform = model_transform_q.get_mut(mtc_entity).unwrap();
         ModelTransformLocal::set_transform(&mut model_transform, &new_transform);
 
         model_manager.update_last_transform_dragged(mtc_entity, old_transform, new_transform);
