@@ -11,13 +11,13 @@ use bevy_log::{info, warn};
 use naia_bevy_client::{Client, CommandsExt};
 
 use input::{InputAction, Key, MouseButton};
-use math::{quat_from_spin_direction, Vec2, Vec3};
+use math::{quat_from_spin_direction, spin_direction_from_quat, Vec2, Vec3};
 use render_api::{components::{Camera, Projection, Transform}, shapes::{angle_between, get_2d_line_transform_endpoint, normalize_angle}};
 
 use vortex_proto::components::{EdgeAngle, FileExtension, ModelTransform, ShapeName, Vertex3d, VertexRoot};
 
 use crate::app::{components::{
-    Edge2dLocal, ModelTransformControl, ModelTransformControlType, ModelTransformLocal,
+    Edge2dLocal, EdgeAngleLocal, ModelTransformControl, ModelTransformControlType, ModelTransformLocal,
     OwnedByFileLocal, ScaleAxis, Vertex2d,
 }, get_new_3d_position, resources::{
     action::model::ModelAction, camera_manager::CameraManager, canvas::Canvas,
@@ -361,36 +361,35 @@ impl ModelInputManager {
             }
             (CanvasShape::Vertex, ModelTransformControlType::RotationVertex) => {
 
+                let rotation_edge_3d_entity = model_manager.get_rotation_edge_3d_entity(&mtc_entity).unwrap();
+
                 let mut system_state: SystemState<(
                     Res<CameraManager>,
                     Query<(&Camera, &Projection)>,
                     Query<&Transform>,
+                    Query<&EdgeAngleLocal>,
                 )> = SystemState::new(world);
                 let (
                     camera_manager,
                     camera_q,
                     transform_q,
+                    edge_angle_q,
                 ) = system_state.get_mut(world);
 
-                let edge_angle: f32 = 0.0; // TODO!
+                let edge_angle = edge_angle_q.get(rotation_edge_3d_entity).unwrap();
+                let edge_angle = edge_angle.get_radians();
 
                 let new_3d_position = get_new_3d_position(&camera_manager, &camera_q, &transform_q, &mouse_position, control_2d_entity);
-                let rotation_with_offset = new_3d_position;
-                let translation = new_transform.translation;
-                let rotation_vector = rotation_with_offset - translation;
-                let base_direction = Vec3::Z;
-                let target_direction = rotation_vector.normalize();
+                let target_direction = (new_3d_position - new_transform.translation).normalize();
                 let rotation_angle =
-                    quat_from_spin_direction(edge_angle, base_direction, target_direction);
+                    quat_from_spin_direction(edge_angle, Vec3::Z, target_direction);
                 new_transform.rotation = rotation_angle;
-
-                todo!();
             }
             (CanvasShape::Edge, ModelTransformControlType::RotationEdge) => {
 
                 let mut system_state: SystemState<(
                     Res<EdgeManager>,
-                    Query<&mut EdgeAngle>,
+                    Query<&mut EdgeAngleLocal>,
                     Query<&Transform>,
                 )> = SystemState::new(world);
                 let (
@@ -418,6 +417,11 @@ impl ModelInputManager {
                 );
 
                 edge_angle.set_radians(new_angle);
+
+                // set transform
+                let (_, old_direction) = spin_direction_from_quat(Vec3::Z, new_transform.rotation);
+                let rotation_angle = quat_from_spin_direction(new_angle, Vec3::Z, old_direction);
+                new_transform.rotation = rotation_angle;
             }
             (CanvasShape::Vertex, ModelTransformControlType::Scale(axis)) => {
 

@@ -27,7 +27,7 @@ use vortex_proto::components::{
     Vertex3d,
 };
 
-use crate::app::{components::{
+use crate::app::{components::{EdgeAngleLocal,
     Edge2dLocal, Edge3dLocal, LocalShape, ModelTransformControl, ModelTransformControlType,
     ModelTransformLocal, OwnedByFileLocal, ScaleAxis, Vertex2d,
 }, resources::{
@@ -656,6 +656,16 @@ impl ModelManager {
         model_transforms.insert(model_transform_entity);
     }
 
+    pub(crate) fn get_rotation_vertex_3d_entity(&self, model_transform_entity: &Entity) -> Option<Entity> {
+        let model_transform_data = self.transform_entities.get(model_transform_entity)?;
+        Some(model_transform_data.rotation_entity_vert_3d)
+    }
+
+    pub(crate) fn get_rotation_edge_3d_entity(&self, model_transform_entity: &Entity) -> Option<Entity> {
+        let model_transform_data = self.transform_entities.get(model_transform_entity)?;
+        Some(model_transform_data.rotation_entity_edge_3d)
+    }
+
     pub(crate) fn model_file_transform_entities(
         &self,
         model_file_entity: &Entity,
@@ -916,7 +926,7 @@ impl ModelManager {
         );
     }
 
-    fn sync_3d_shapes(&mut self, world: &mut World, vertex_manager: &VertexManager, file_entity: &&Entity, camera_3d_scale: f32) -> Option<(HashSet<Entity>, HashSet<Entity>, HashSet<Entity>, HashSet<Entity>)> {
+    fn sync_3d_shapes(&mut self, world: &mut World, vertex_manager: &VertexManager, file_entity: &Entity, camera_3d_scale: f32) -> Option<(HashSet<Entity>, HashSet<Entity>, HashSet<Entity>, HashSet<Entity>)> {
         // only triggers when canvas is redrawn
         let local_vertex_3d_scale = LocalShape::VERTEX_RADIUS / camera_3d_scale;
         let local_vertex_3d_scale = Vec3::splat(local_vertex_3d_scale);
@@ -1042,7 +1052,7 @@ impl ModelManager {
             Query<(&Camera, &Projection)>,
             Query<&mut Transform>,
             Query<&Edge2dLocal>,
-            Query<&EdgeAngle, With<ModelTransformControl>>,
+            Query<&EdgeAngleLocal, With<ModelTransformControl>>,
         )> = SystemState::new(world);
         let (
             input_manager,
@@ -1154,7 +1164,7 @@ impl ModelManager {
                     end_circle_entity,
                     &mut transform_q,
                     edge_2d_entity,
-                    edge_angle
+                    edge_angle.get_radians(),
                 );
             }
         }

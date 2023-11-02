@@ -33,3 +33,38 @@ impl Edge3dLocal {
         Self { start, end }
     }
 }
+
+// EdgeAngle
+#[derive(Component)]
+pub struct EdgeAngleLocal {
+    radians: f32,
+}
+
+impl EdgeAngleLocal {
+    pub fn new(radians: f32) -> Self {
+        Self {
+            radians,
+        }
+    }
+
+    // angle in degrees
+    pub fn get_radians(&self) -> f32 {
+        self.radians
+    }
+
+    // angle in degrees
+    pub fn set_radians(&mut self, radians: f32) {
+        self.radians = radians;
+    }
+
+    // angle in degrees
+    pub fn get_degrees(&self) -> f32 {
+        f32::to_degrees(self.radians)
+    }
+
+    // angle in degrees
+    pub fn set_degrees(&mut self, degrees: f32) {
+        let radians = f32::to_radians(degrees);
+        self.radians = radians;
+    }
+}

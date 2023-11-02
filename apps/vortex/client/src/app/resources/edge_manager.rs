@@ -202,7 +202,7 @@ impl EdgeManager {
                     end_circle_entity,
                     transform_q,
                     edge_2d_entity,
-                    edge_angle
+                    edge_angle.get_radians(),
                 );
             }
         }
@@ -218,9 +218,8 @@ impl EdgeManager {
         end_circle_entity: Entity,
         transform_q: &mut Query<&mut Transform>,
         edge_2d_entity: Entity,
-        edge_angle: &EdgeAngle
+        edge_angle: f32,
     ) {
-        let edge_angle = edge_angle.get_radians();
         let edge_2d_transform = transform_q.get(edge_2d_entity).unwrap();
         let start_pos = edge_2d_transform.translation.truncate();
         let end_pos = get_2d_line_transform_endpoint(&edge_2d_transform);
