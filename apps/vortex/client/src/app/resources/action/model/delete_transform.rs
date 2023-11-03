@@ -16,14 +16,14 @@ use crate::app::resources::{
 
 pub fn execute(
     world: &mut World,
-    model_file_entity: &Entity,
+    _model_file_entity: &Entity,
     action: ModelAction,
 ) -> Vec<ModelAction> {
-    let ModelAction::DeleteTransform(edge_2d_entity) = action else {
+    let ModelAction::DeleteTransform(net_transform_entity) = action else {
         panic!("Expected DeleteTransform");
     };
 
-    info!("DeleteTransform({:?})", edge_2d_entity,);
+    info!("DeleteTransform({:?})", net_transform_entity);
 
     let mut system_state: SystemState<(
         Commands,
@@ -33,7 +33,6 @@ pub fn execute(
         ResMut<VertexManager>,
         ResMut<EdgeManager>,
         ResMut<ModelManager>,
-        Query<&ShapeName>,
         Query<&SkinOrSceneEntity>,
     )> = SystemState::new(world);
     let (
@@ -44,18 +43,9 @@ pub fn execute(
         mut vertex_manager,
         mut edge_manager,
         mut model_manager,
-        shape_name_q,
         skin_or_scene_q,
     ) = system_state.get_mut(world);
 
-    let edge_3d_entity = edge_manager.edge_entity_2d_to_3d(&edge_2d_entity).unwrap();
-    let (_, vertex_3d_entity) = edge_manager.edge_get_endpoints(&edge_3d_entity);
-    let vertex_name = shape_name_q.get(vertex_3d_entity).unwrap();
-    let vertex_name = (*vertex_name.value).clone();
-
-    let net_transform_entity = model_manager
-        .find_net_transform(model_file_entity, &vertex_name)
-        .unwrap();
     let skin_or_scene = skin_or_scene_q.get(net_transform_entity).unwrap();
     let dependency_file_entity = skin_or_scene.value.get(&client).unwrap();
     let dependency_file_ext = match *skin_or_scene.value_type {
@@ -63,6 +53,10 @@ pub fn execute(
         NetTransformEntityType::Scene => FileExtension::Scene,
         _ => panic!("Expected skin or scene"),
     };
+
+    let edge_2d_entity_opt = model_manager.get_edge_2d_entity(
+        &net_transform_entity
+    );
 
     commands.entity(net_transform_entity).despawn();
 
@@ -82,7 +76,7 @@ pub fn execute(
     // TODO: store previous transform state here
 
     return vec![ModelAction::CreateTransform(
-        edge_2d_entity,
+        edge_2d_entity_opt,
         dependency_file_ext,
         dependency_file_entity,
     )];

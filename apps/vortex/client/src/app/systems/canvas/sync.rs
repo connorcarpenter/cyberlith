@@ -144,7 +144,7 @@ pub fn sync_vertices(world: &mut World) {
                     camera_3d_scale,
                 );
             }
-            FileExtension::Model => {
+            FileExtension::Model | FileExtension::Scene => {
                 world.resource_scope(|world, mut model_manager: Mut<ModelManager>| {
                     model_manager.sync_shapes(
                         world,
@@ -366,7 +366,7 @@ pub fn sync_edges(world: &mut World) {
                 camera_3d_scale,
             );
         }
-        FileExtension::Model => {
+        FileExtension::Model | FileExtension::Scene => {
             // handles in "sync_vertices"
         }
         _ => {}

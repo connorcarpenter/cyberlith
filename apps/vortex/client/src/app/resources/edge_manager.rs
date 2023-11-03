@@ -795,7 +795,7 @@ impl EdgeManager {
 
     fn edge_angles_are_visible_for_filetype(file_type: FileExtension) -> bool {
         match file_type {
-            FileExtension::Skel | FileExtension::Anim | FileExtension::Model => true,
+            FileExtension::Skel | FileExtension::Anim | FileExtension::Model | FileExtension::Scene => true,
             _ => false,
         }
     }

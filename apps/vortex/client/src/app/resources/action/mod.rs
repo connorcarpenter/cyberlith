@@ -2,7 +2,6 @@ pub mod animation;
 pub mod file;
 pub mod model;
 pub mod palette;
-pub mod scene;
 pub mod shape;
 pub mod skin;
 

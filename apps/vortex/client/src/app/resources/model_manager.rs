@@ -42,8 +42,8 @@ use crate::app::{
 pub struct NetTransformData {
     model_file_entity: Entity,
     skel_edge_name: Option<String>, // todo: maybe should just get this from component when necessary
-    // Option<(edge 3d entity, vertex 3d entity start, vertex 3d entity end)>
-    skel_entities: Option<(Entity, Entity, Entity)>,
+    // Option<(edge 2d entity, edge 3d entity, vertex 3d entity start, vertex 3d entity end)>
+    skel_entities: Option<(Entity, Entity, Entity, Entity)>,
     translation_entity_2d: Entity,
     translation_entity_3d: Entity,
     rotation_entity_vert_2d: Entity,
@@ -94,6 +94,56 @@ impl NetTransformData {
         }
     }
 
+    fn get_skel_entities(&self) -> Option<(Entity, Entity, Entity)> {
+        if let Some((_, edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end)) =
+            self.skel_entities
+        {
+            return Some((edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end));
+        }
+        return None;
+    }
+
+    fn get_or_update_skel_entities(
+        &mut self,
+        file_manager: &FileManager,
+        edge_manager: &EdgeManager,
+        edge_3d_q: &Query<(Entity, &OwnedByFileLocal), With<Edge3d>>,
+        shape_name_q: &Query<&ShapeName>,
+    ) -> Option<(Entity, Entity, Entity)> {
+        if let Some((_, edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end)) =
+            self.skel_entities
+        {
+            return Some((edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end));
+        }
+
+        let skel_file_entity = file_manager
+            .file_get_dependency(&self.model_file_entity, FileExtension::Skel)
+            .unwrap();
+
+        // go fetch entities ..
+        let bone_name: String = self.skel_edge_name.as_ref().unwrap().clone();
+
+        for (edge_3d_entity, owned_by) in edge_3d_q.iter() {
+            if owned_by.file_entity != skel_file_entity {
+                continue;
+            }
+            let (vertex_3d_entity_start, vertex_3d_entity_end) =
+                edge_manager.edge_get_endpoints(&edge_3d_entity);
+            let Ok(shape_name) = shape_name_q.get(vertex_3d_entity_end) else {
+                continue;
+            };
+            if *shape_name.value != bone_name {
+                continue;
+            }
+            let edge_2d_entity = edge_manager.edge_entity_3d_to_2d(&edge_3d_entity).unwrap();
+            self.skel_entities =
+                Some((edge_2d_entity, edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end));
+            return Some((edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end));
+        }
+
+        return None;
+    }
+
     pub(crate) fn get_bone_transform(
         &self,
         vertex_3d_q: &Query<&Vertex3d>,
@@ -132,15 +182,6 @@ impl NetTransformData {
         )
     }
 
-    fn get_skel_entities(&self) -> Option<(Entity, Entity, Entity)> {
-        if let Some((edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end)) =
-            self.skel_entities
-        {
-            return Some((edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end));
-        }
-        return None;
-    }
-
     fn get_bone_transform_from_entities(
         &self,
         vertex_3d_q: &Query<&Vertex3d>,
@@ -164,46 +205,6 @@ impl NetTransformData {
         let spin = edge_angle.get_radians();
 
         Some(transform_from_endpoints_and_spin(start_pos, end_pos, spin))
-    }
-
-    fn get_or_update_skel_entities(
-        &mut self,
-        file_manager: &FileManager,
-        edge_manager: &EdgeManager,
-        edge_3d_q: &Query<(Entity, &OwnedByFileLocal), With<Edge3d>>,
-        shape_name_q: &Query<&ShapeName>,
-    ) -> Option<(Entity, Entity, Entity)> {
-        if let Some((edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end)) =
-            self.skel_entities
-        {
-            return Some((edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end));
-        }
-
-        let skel_file_entity = file_manager
-            .file_get_dependency(&self.model_file_entity, FileExtension::Skel)
-            .unwrap();
-
-        // go fetch entities ..
-        let bone_name: String = self.skel_edge_name.as_ref().unwrap().clone();
-
-        for (edge_3d_entity, owned_by) in edge_3d_q.iter() {
-            if owned_by.file_entity != skel_file_entity {
-                continue;
-            }
-            let (vertex_3d_entity_start, vertex_3d_entity_end) =
-                edge_manager.edge_get_endpoints(&edge_3d_entity);
-            let Ok(shape_name) = shape_name_q.get(vertex_3d_entity_end) else {
-                continue;
-            };
-            if *shape_name.value != bone_name {
-                continue;
-            }
-            self.skel_entities =
-                Some((edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end));
-            return Some((edge_3d_entity, vertex_3d_entity_start, vertex_3d_entity_end));
-        }
-
-        return None;
     }
 
     pub(crate) fn cleanup_deleted_transform(
@@ -258,8 +259,8 @@ pub struct ModelManager {
     transform_entities: HashMap<Entity, NetTransformData>,
     // (.model file entity, edge name) -> net transform entity
     name_to_transform_entity: HashMap<(Entity, String), Entity>,
-    // Option<edge_2d_entity>
-    binding_edge_opt: Option<Entity>,
+    // Option<Option<edge_2d_entity>>
+    transform_binding_opt: Option<Option<Entity>>,
 
     drags: Vec<(Entity, Transform, Transform)>,
     dragging_entity: Option<Entity>,
@@ -273,7 +274,7 @@ impl Default for ModelManager {
             model_file_to_transform_entities: HashMap::new(),
             transform_entities: HashMap::new(),
             name_to_transform_entity: HashMap::new(),
-            binding_edge_opt: None,
+            transform_binding_opt: None,
 
             drags: Vec::new(),
             dragging_entity: None,
@@ -284,24 +285,25 @@ impl Default for ModelManager {
 }
 
 impl ModelManager {
-    pub fn edge_is_binding(&self) -> bool {
-        self.binding_edge_opt.is_some()
+    pub fn transform_is_binding(&self) -> bool {
+        self.transform_binding_opt.is_some()
     }
 
-    pub fn edge_init_assign_skin_or_scene(
+    pub fn init_assign_skin_or_scene(
         &mut self,
         ui_state: &mut UiState,
-        edge_2d_entity: &Entity,
+        edge_2d_entity_opt: Option<&Entity>,
     ) {
-        self.binding_edge_opt = Some(*edge_2d_entity);
+        let edge_2d_entity_opt = edge_2d_entity_opt.map(|edge_2d_entity| *edge_2d_entity);
+        self.transform_binding_opt = Some(edge_2d_entity_opt);
         let mut file_exts = HashSet::new();
         file_exts.insert(FileExtension::Skin);
         file_exts.insert(FileExtension::Scene);
         ui_state.binding_file = BindingState::Binding(file_exts);
     }
 
-    pub fn take_binding_edge(&mut self) -> Entity {
-        self.binding_edge_opt.take().unwrap()
+    pub fn take_binding_result(&mut self) -> Option<Entity> {
+        self.transform_binding_opt.take().unwrap()
     }
 
     pub fn process_render_bind_button_result(
@@ -309,12 +311,14 @@ impl ModelManager {
         current_file_entity: &Entity,
         dependency_file_ext: &FileExtension,
         dependency_file_entity: &Entity,
-        edge_2d_entity: &Entity,
+        edge_2d_entity_opt: Option<&Entity>,
     ) {
         let file_manager = world.get_resource::<FileManager>().unwrap();
         if !file_manager.file_has_dependency(current_file_entity, dependency_file_entity) {
             create_networked_dependency(world, current_file_entity, dependency_file_entity);
         }
+
+        let edge_2d_entity_opt = edge_2d_entity_opt.map(|edge_2d_entity| *edge_2d_entity);
 
         world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
             world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
@@ -322,7 +326,7 @@ impl ModelManager {
                     world,
                     &mut input_manager,
                     ModelAction::CreateTransform(
-                        *edge_2d_entity,
+                        edge_2d_entity_opt,
                         *dependency_file_ext,
                         *dependency_file_entity,
                     ),
@@ -667,14 +671,6 @@ impl ModelManager {
         net_transforms.insert(net_transform_entity);
     }
 
-    pub(crate) fn get_rotation_edge_3d_entity(
-        &self,
-        net_transform_entity: &Entity,
-    ) -> Option<Entity> {
-        let net_transform_data = self.transform_entities.get(net_transform_entity)?;
-        Some(net_transform_data.rotation_entity_edge_3d)
-    }
-
     pub(crate) fn model_file_transform_entities(
         &self,
         model_file_entity: &Entity,
@@ -691,15 +687,6 @@ impl ModelManager {
     ) -> bool {
         let key: (Entity, String) = (*model_file_entity, skel_bone_name.to_string());
         self.name_to_transform_entity.contains_key(&key)
-    }
-
-    pub(crate) fn find_net_transform(
-        &self,
-        model_file_entity: &Entity,
-        skel_bone_name: &str,
-    ) -> Option<Entity> {
-        let key: (Entity, String) = (*model_file_entity, skel_bone_name.to_string());
-        self.name_to_transform_entity.get(&key).cloned()
     }
 
     pub(crate) fn on_despawn_net_transform(
@@ -849,61 +836,6 @@ impl ModelManager {
             let mut vertex_3d = vertex_3d_q.get_mut(vertex_3d_entity).unwrap();
             vertex_3d.set_vec3(&new_translation);
         }
-    }
-
-    fn net_transform_3d_vertices(&self, file_entity: &Entity) -> Vec<Entity> {
-        let mut vertices = Vec::new();
-        if let Some(net_transform_entities) = self.model_file_to_transform_entities.get(file_entity) {
-            for net_transform_entity in net_transform_entities.iter() {
-                let data = self.transform_entities.get(net_transform_entity).unwrap();
-                vertices.push(data.translation_entity_3d);
-                vertices.push(data.rotation_entity_vert_3d);
-                vertices.push(data.scale_x_entity_3d);
-                vertices.push(data.scale_y_entity_3d);
-                vertices.push(data.scale_z_entity_3d);
-            }
-        }
-        vertices
-    }
-
-    pub fn net_transform_2d_vertices(&self, file_entity: &Entity) -> Vec<Entity> {
-        let mut vertices = Vec::new();
-        if let Some(net_transform_entities) = self.model_file_to_transform_entities.get(file_entity) {
-            for net_transform_entity in net_transform_entities.iter() {
-                let data = self.transform_entities.get(net_transform_entity).unwrap();
-                vertices.push(data.translation_entity_2d);
-                vertices.push(data.rotation_entity_vert_2d);
-                vertices.push(data.scale_x_entity_2d);
-                vertices.push(data.scale_y_entity_2d);
-                vertices.push(data.scale_z_entity_2d);
-            }
-        }
-        vertices
-    }
-
-    fn net_transform_rotation_edge_3d_entities(&self, file_entity: &Entity) -> Vec<Entity> {
-        let mut output = Vec::new();
-        if let Some(net_transform_entities) = self.model_file_to_transform_entities.get(file_entity) {
-            for net_transform_entity in net_transform_entities.iter() {
-                let data = self.transform_entities.get(net_transform_entity).unwrap();
-                output.push(data.rotation_entity_edge_3d);
-            }
-        }
-        output
-    }
-
-    pub(crate) fn net_transform_rotation_edge_2d_entities(
-        &self,
-        file_entity: &Entity,
-    ) -> Vec<Entity> {
-        let mut output = Vec::new();
-        if let Some(net_transform_entities) = self.model_file_to_transform_entities.get(file_entity) {
-            for net_transform_entity in net_transform_entities.iter() {
-                let data = self.transform_entities.get(net_transform_entity).unwrap();
-                output.push(data.rotation_entity_edge_2d);
-            }
-        }
-        output
     }
 
     pub fn sync_shapes(
@@ -1724,6 +1656,75 @@ impl ModelManager {
     ) -> Option<Transform> {
         let mtc_data = self.transform_entities.get(mtc_entity)?;
         return mtc_data.get_bone_transform(vertex_3d_q, edge_angle_q);
+    }
+
+    pub(crate) fn get_rotation_edge_3d_entity(
+        &self,
+        net_transform_entity: &Entity,
+    ) -> Option<Entity> {
+        let net_transform_data = self.transform_entities.get(net_transform_entity)?;
+        Some(net_transform_data.rotation_entity_edge_3d)
+    }
+
+    pub(crate) fn get_edge_2d_entity(&self, net_transform_entity: &Entity) -> Option<Entity> {
+        let net_transform_data = self.transform_entities.get(net_transform_entity)?;
+        let (edge_2d_entity, _, _, _) = net_transform_data.skel_entities?;
+        Some(edge_2d_entity)
+    }
+
+    fn net_transform_3d_vertices(&self, file_entity: &Entity) -> Vec<Entity> {
+        let mut vertices = Vec::new();
+        if let Some(net_transform_entities) = self.model_file_to_transform_entities.get(file_entity) {
+            for net_transform_entity in net_transform_entities.iter() {
+                let data = self.transform_entities.get(net_transform_entity).unwrap();
+                vertices.push(data.translation_entity_3d);
+                vertices.push(data.rotation_entity_vert_3d);
+                vertices.push(data.scale_x_entity_3d);
+                vertices.push(data.scale_y_entity_3d);
+                vertices.push(data.scale_z_entity_3d);
+            }
+        }
+        vertices
+    }
+
+    pub fn net_transform_2d_vertices(&self, file_entity: &Entity) -> Vec<Entity> {
+        let mut vertices = Vec::new();
+        if let Some(net_transform_entities) = self.model_file_to_transform_entities.get(file_entity) {
+            for net_transform_entity in net_transform_entities.iter() {
+                let data = self.transform_entities.get(net_transform_entity).unwrap();
+                vertices.push(data.translation_entity_2d);
+                vertices.push(data.rotation_entity_vert_2d);
+                vertices.push(data.scale_x_entity_2d);
+                vertices.push(data.scale_y_entity_2d);
+                vertices.push(data.scale_z_entity_2d);
+            }
+        }
+        vertices
+    }
+
+    fn net_transform_rotation_edge_3d_entities(&self, file_entity: &Entity) -> Vec<Entity> {
+        let mut output = Vec::new();
+        if let Some(net_transform_entities) = self.model_file_to_transform_entities.get(file_entity) {
+            for net_transform_entity in net_transform_entities.iter() {
+                let data = self.transform_entities.get(net_transform_entity).unwrap();
+                output.push(data.rotation_entity_edge_3d);
+            }
+        }
+        output
+    }
+
+    pub(crate) fn net_transform_rotation_edge_2d_entities(
+        &self,
+        file_entity: &Entity,
+    ) -> Vec<Entity> {
+        let mut output = Vec::new();
+        if let Some(net_transform_entities) = self.model_file_to_transform_entities.get(file_entity) {
+            for net_transform_entity in net_transform_entities.iter() {
+                let data = self.transform_entities.get(net_transform_entity).unwrap();
+                output.push(data.rotation_entity_edge_2d);
+            }
+        }
+        output
     }
 }
 

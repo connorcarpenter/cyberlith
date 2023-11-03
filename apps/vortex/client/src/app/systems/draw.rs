@@ -83,7 +83,7 @@ pub fn draw(
                 return;
             }
         }
-        FileExtension::Model => {
+        FileExtension::Model | FileExtension::Scene => {
             return;
         }
         _ => {}
@@ -122,7 +122,7 @@ pub fn draw_vertices_and_edges(world: &mut World) {
                 return;
             }
         }
-        FileExtension::Model => {
+        FileExtension::Model | FileExtension::Scene => {
             world.resource_scope(|world, model_manager: Mut<ModelManager>| {
                 model_manager.draw(world, &current_file_entity);
             });

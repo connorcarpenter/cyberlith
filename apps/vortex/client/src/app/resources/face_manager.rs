@@ -75,7 +75,7 @@ impl FaceManager {
 
         self.resync = false;
 
-        if file_ext == FileExtension::Model {
+        if file_ext == FileExtension::Model || file_ext == FileExtension::Scene {
             return;
         }
 
@@ -98,9 +98,6 @@ impl FaceManager {
                     if face_data.entity_3d.is_none() {
                         visibility.visible = false;
                     }
-                }
-                FileExtension::Model => {
-                    visibility.visible = false;
                 }
                 _ => {}
             }

@@ -61,9 +61,9 @@ impl ModelToolbar {
             if button_enabled && response.clicked() {
                 world.resource_scope(|world, mut model_manager: Mut<ModelManager>| {
                     let mut ui_state = world.get_resource_mut::<UiState>().unwrap();
-                    model_manager.edge_init_assign_skin_or_scene(
+                    model_manager.init_assign_skin_or_scene(
                         &mut ui_state,
-                        &edge_2d_entity_opt.unwrap(),
+                        edge_2d_entity_opt.as_ref(),
                     );
                 });
             }
@@ -75,7 +75,7 @@ impl ModelToolbar {
                 ui,
                 "-",
                 "Delete Skin/Scene reference",
-                edge_2d_entity_opt.is_some() && edge_has_net_transform,
+                edge_2d_entity_opt.is_some() && edge_has_net_transform, // TODO: check whether or not net transform is selected
             );
             if response.clicked() {
                 world.resource_scope(|world, mut input_manager: Mut<InputManager>| {

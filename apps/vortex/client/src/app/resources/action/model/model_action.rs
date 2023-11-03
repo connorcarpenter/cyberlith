@@ -17,9 +17,9 @@ use crate::app::resources::{
 pub enum ModelAction {
     // The 2D shape entity to deselect (or None for deselect)
     SelectShape(Option<(Entity, CanvasShape)>),
-    // edge_2d_entity, dependency file ext, dependency file entity
-    CreateTransform(Entity, FileExtension, Entity),
-    // edge_2d_entity
+    // Option<edge_2d_entity>, dependency file ext, dependency file entity
+    CreateTransform(Option<Entity>, FileExtension, Entity),
+    // net_transform_entity
     DeleteTransform(Entity),
     // Move Transform (Transform Entity, Old Transform, New Transform, ?)
     MoveTransform(Entity, Transform, Transform, bool),

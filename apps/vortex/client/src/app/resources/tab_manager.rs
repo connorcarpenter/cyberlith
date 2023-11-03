@@ -167,7 +167,8 @@ impl TabManager {
                 | FileExtension::Mesh
                 | FileExtension::Anim
                 | FileExtension::Skin
-                | FileExtension::Model => true,
+                | FileExtension::Model
+                | FileExtension::Scene => true,
                 _ => false,
             };
         }
@@ -782,7 +783,7 @@ fn file_ext_specific_sync_tabs_shape_colors(
                 &mut Some((&face_manager, &mut face_2d_q)),
             );
         }
-        FileExtension::Model => {
+        FileExtension::Model | FileExtension::Scene => {
             let mut system_state: SystemState<(
                 Client,
                 Res<FileManager>,
