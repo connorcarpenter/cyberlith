@@ -240,6 +240,7 @@ impl ComponentWaitlist {
                 self.get_mut(entity)
                     .unwrap()
                     .set_component_type(ComponentType::Vertex);
+                possibly_ready_entities.push(*entity);
             }
             ComponentWaitlistInsert::VertexRoot => {
                 if !self.contains_key(entity) {
@@ -312,12 +313,15 @@ impl ComponentWaitlist {
                 self.get_mut(entity)
                     .unwrap()
                     .set_skin_or_scene_entity();
+                possibly_ready_entities.push(*entity);
             }
             ComponentWaitlistInsert::ShapeName => {
                 self.get_mut(entity).unwrap().set_shape_name();
+                possibly_ready_entities.push(*entity);
             }
             ComponentWaitlistInsert::NetTransform => {
                 self.get_mut(entity).unwrap().set_transform();
+                possibly_ready_entities.push(*entity);
             }
         }
 
@@ -388,6 +392,12 @@ impl ComponentWaitlist {
                     }
                     (FileExtension::Skel, ComponentType::Face) => {
                         panic!("not possible");
+                    }
+                    (FileExtension::Model, ComponentType::NetTransform) => {
+                        info!("`{:?}` Model Transform complete!", entity);
+                    }
+                    (FileExtension::Scene, ComponentType::NetTransform) => {
+                        info!("`{:?}` Scene Transform complete!", entity);
                     }
                     (_, _) => {
                         panic!("not possible");
