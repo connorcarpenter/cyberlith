@@ -149,6 +149,7 @@ pub fn sync_vertices(world: &mut World) {
                     model_manager.sync_shapes(
                         world,
                         &vertex_manager,
+                        &file_extension,
                         &current_file_entity,
                         &camera_3d_entity,
                         camera_is_2d,

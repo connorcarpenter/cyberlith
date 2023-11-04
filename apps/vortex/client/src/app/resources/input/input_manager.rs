@@ -104,7 +104,7 @@ impl InputManager {
             FileExtension::Mesh => MeshInputManager::update_input(world, self, input_actions),
             FileExtension::Anim => AnimInputManager::update_input(world, self, input_actions),
             FileExtension::Skin => SkinInputManager::update_input(world, self, input_actions),
-            FileExtension::Model | FileExtension::Scene => ModelInputManager::update_input(world, self, input_actions),
+            FileExtension::Model | FileExtension::Scene => ModelInputManager::update_input(world, self, &current_file_type, input_actions),
             _ => {}
         }
     }
@@ -145,6 +145,7 @@ impl InputManager {
             }
             FileExtension::Model | FileExtension::Scene => ModelInputManager::sync_mouse_hover_ui(
                 world,
+                &file_ext,
                 current_file_entity,
                 camera_3d_scale,
                 mouse_position,

@@ -41,7 +41,7 @@ use crate::app::{
 
 pub struct NetTransformData {
     model_file_entity: Entity,
-    skel_edge_name: Option<String>, // todo: maybe should just get this from component when necessary
+    skel_edge_name: Option<String>, // todo: can we get this from component when necessary? (ehh... probably not)
     // Option<(edge 2d entity, edge 3d entity, vertex 3d entity start, vertex 3d entity end)>
     skel_entities: Option<(Entity, Entity, Entity, Entity)>,
     translation_entity_2d: Entity,
@@ -226,10 +226,9 @@ impl NetTransformData {
         let mut edges = Vec::new();
 
         edges.push(self.rotation_entity_edge_3d);
-        // TODO:
-        // scale_x_entity_3d.edge
-        // scale_y_entity_3d.edge
-        // scale_z_entity_3d.edge
+        edges.push(self.scale_x_entity_3d);
+        edges.push(self.scale_y_entity_3d);
+        edges.push(self.scale_z_entity_3d);
 
         for vertex_3d_entity in vertex_3d_entities {
             vertex_manager.cleanup_deleted_vertex(
@@ -737,7 +736,7 @@ impl ModelManager {
         net_transform_data
     }
 
-    fn sync_transform_controls(&mut self, world: &mut World, file_entity: &Entity) {
+    fn sync_transform_controls(&mut self, world: &mut World, file_ext: &FileExtension, file_entity: &Entity) {
         let Some(net_transform_entities) = self.model_file_to_transform_entities.get(file_entity) else {
             return;
         };
@@ -768,22 +767,31 @@ impl ModelManager {
                 .transform_entities
                 .get_mut(net_transform_entity)
                 .unwrap();
-            let Some(bone_transform) = net_transform_data.get_or_update_bone_transform(
-                &file_manager,
-                &edge_manager,
-                &vertex_3d_q,
-                &edge_3d_q,
-                &edge_angle_q,
-                &shape_name_q,
-            ) else {
-                continue;
+            let bone_transform_opt = match file_ext {
+                FileExtension::Model => {
+                    let Some(bone_transform) = net_transform_data.get_or_update_bone_transform(
+                        &file_manager,
+                        &edge_manager,
+                        &vertex_3d_q,
+                        &edge_3d_q,
+                        &edge_angle_q,
+                        &shape_name_q,
+                    ) else {
+                        continue;
+                    };
+                    Some(bone_transform)
+                }
+                FileExtension::Scene => None,
+                _ => panic!("not possible"),
             };
 
             let net_transform = net_transform_q.get(*net_transform_entity).unwrap();
-            let net_transform = NetTransformLocal::to_transform(net_transform);
+            let mut net_transform = NetTransformLocal::to_transform(net_transform);
 
-            // apply bone transform to net_transform
-            let net_transform = net_transform.multiply(&bone_transform);
+            if let Some(bone_transform) = bone_transform_opt {
+                // apply bone transform to net_transform
+                net_transform = net_transform.multiply(&bone_transform);
+            }
 
             // translation
             let translation = net_transform.translation;
@@ -842,6 +850,7 @@ impl ModelManager {
         &mut self,
         world: &mut World,
         vertex_manager: &VertexManager,
+        file_ext: &FileExtension,
         file_entity: &Entity,
         camera_3d_entity: &Entity,
         camera_is_2d: bool,
@@ -852,7 +861,7 @@ impl ModelManager {
             local_vertex_3d_entities,
             edge_3d_entities,
             local_edge_3d_entities,
-        ) = match self.sync_3d_shapes(world, vertex_manager, &file_entity, camera_3d_scale) {
+        ) = match self.sync_3d_shapes(world, vertex_manager, file_ext, &file_entity, camera_3d_scale) {
             Some(value) => value,
             None => return,
         };
@@ -877,6 +886,7 @@ impl ModelManager {
         &mut self,
         world: &mut World,
         vertex_manager: &VertexManager,
+        file_ext: &FileExtension,
         file_entity: &Entity,
         camera_3d_scale: f32,
     ) -> Option<(
@@ -890,13 +900,17 @@ impl ModelManager {
         let local_vertex_3d_scale = Vec3::splat(local_vertex_3d_scale);
         let local_edge_3d_scale = LocalShape::EDGE_THICKNESS / camera_3d_scale;
 
-        let Some(skel_file_entity) = world.get_resource::<FileManager>().unwrap().file_get_dependency(&file_entity, FileExtension::Skel) else {
-            return None;
+        let skel_file_entity_opt = match file_ext {
+            FileExtension::Model => {
+                let file_manager = world.get_resource::<FileManager>().unwrap();
+                file_manager.file_get_dependency(file_entity, FileExtension::Skel)
+            }
+            _ => None,
         };
 
         // TransformControls
         // (setting Vertex3d)
-        self.sync_transform_controls(world, file_entity);
+        self.sync_transform_controls(world, file_ext, file_entity);
 
         // gather 3D entities for Compass/Grid/NetTransformControls Vertices
         let mut vertex_3d_entities: HashSet<Entity> = HashSet::new();
@@ -916,10 +930,12 @@ impl ModelManager {
             SystemState::new(world);
         let vert_q = system_state.get_mut(world);
 
-        // gather 3d entities for Skel vertices
-        for (entity, owned_by_file_local) in vert_q.iter() {
-            if skel_file_entity == owned_by_file_local.file_entity {
-                vertex_3d_entities.insert(entity);
+        if let Some(skel_file_entity) = skel_file_entity_opt {
+            // gather 3d entities for Skel vertices
+            for (entity, owned_by_file_local) in vert_q.iter() {
+                if skel_file_entity == owned_by_file_local.file_entity {
+                    vertex_3d_entities.insert(entity);
+                }
             }
         }
 
@@ -1127,20 +1143,20 @@ impl ModelManager {
         }
     }
 
-    pub fn draw(&self, world: &mut World, current_file_entity: &Entity) {
+    pub fn draw(&self, world: &mut World, file_ext: &FileExtension, current_file_entity: &Entity) {
         let Some(current_tab_state) = world.get_resource::<TabManager>().unwrap().current_tab_state() else {
             return;
         };
         let camera_state = &current_tab_state.camera_state;
         let camera_is_2d = camera_state.is_2d();
         if camera_is_2d {
-            self.draw_2d(world, current_file_entity);
+            self.draw_2d(world, file_ext, current_file_entity);
         } else {
-            self.draw_3d(world, current_file_entity);
+            self.draw_3d(world, file_ext, current_file_entity);
         }
     }
 
-    fn draw_2d(&self, world: &mut World, current_file_entity: &Entity) {
+    fn draw_2d(&self, world: &mut World, file_ext: &FileExtension, current_file_entity: &Entity) {
         {
             let mut vertex_3d_entities: HashSet<Entity> = HashSet::new();
             let compass_3d_entities = world.get_resource::<Compass>().unwrap().vertices();
@@ -1177,8 +1193,12 @@ impl ModelManager {
                 edge_q,
                 shape_name_q,
             ) = system_state.get_mut(world);
-            let Some(skel_file_entity) = file_manager.file_get_dependency(current_file_entity, FileExtension::Skel) else {
-                return;
+
+            let skel_file_entity_opt = match file_ext {
+                FileExtension::Model => {
+                    file_manager.file_get_dependency(current_file_entity, FileExtension::Skel)
+                }
+                _ => None,
             };
 
             // draw vertices (compass, grid, net transform controls)
@@ -1217,31 +1237,33 @@ impl ModelManager {
                 );
             }
 
-            // draw skel bones
-            for (edge_3d_entity, owned_by_file) in edge_q.iter() {
-                if owned_by_file.file_entity != skel_file_entity {
-                    continue;
-                }
-                let Some(edge_2d_entity) = edge_manager.edge_entity_3d_to_2d(&edge_3d_entity) else {
-                    continue;
-                };
-
-                let (_, end_vertex_3d_entity) = edge_manager.edge_get_endpoints(&edge_3d_entity);
-                let shape_name_opt = shape_name_q.get(end_vertex_3d_entity).unwrap();
-
-                if let Some(shape_name) = shape_name_opt {
-                    let shape_name: &str = &(*shape_name.value);
-                    if self.net_transform_exists(current_file_entity, shape_name) {
+            if let Some(skel_file_entity) = skel_file_entity_opt {
+                // draw skel bones
+                for (edge_3d_entity, owned_by_file) in edge_q.iter() {
+                    if owned_by_file.file_entity != skel_file_entity {
                         continue;
                     }
+                    let Some(edge_2d_entity) = edge_manager.edge_entity_3d_to_2d(&edge_3d_entity) else {
+                        continue;
+                    };
+
+                    let (_, end_vertex_3d_entity) = edge_manager.edge_get_endpoints(&edge_3d_entity);
+                    let shape_name_opt = shape_name_q.get(end_vertex_3d_entity).unwrap();
+
+                    if let Some(shape_name) = shape_name_opt {
+                        let shape_name: &str = &(*shape_name.value);
+                        if self.net_transform_exists(current_file_entity, shape_name) {
+                            continue;
+                        }
+                    }
+
+                    let edge_is_enabled = edge_is_enabled(shape_name_opt);
+                    let mat_handle = get_shape_color(&vertex_manager, edge_is_enabled);
+
+                    let (mesh_handle, transform, render_layer_opt) =
+                        objects_q.get(edge_2d_entity).unwrap();
+                    render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
                 }
-
-                let edge_is_enabled = edge_is_enabled(shape_name_opt);
-                let mat_handle = get_shape_color(&vertex_manager, edge_is_enabled);
-
-                let (mesh_handle, transform, render_layer_opt) =
-                    objects_q.get(edge_2d_entity).unwrap();
-                render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
             }
 
             // draw select line & circle
@@ -1400,7 +1422,7 @@ impl ModelManager {
         }
     }
 
-    fn draw_3d(&self, world: &mut World, current_file_entity: &Entity) {
+    fn draw_3d(&self, world: &mut World, file_ext: &FileExtension, current_file_entity: &Entity) {
         {
             let mut vertex_3d_entities: HashSet<Entity> = HashSet::new();
             let compass_3d_entities = world.get_resource::<Compass>().unwrap().vertices();
@@ -1434,8 +1456,11 @@ impl ModelManager {
                 shape_name_q,
             ) = system_state.get_mut(world);
 
-            let Some(skel_file_entity) = file_manager.file_get_dependency(current_file_entity, FileExtension::Skel) else {
-                return;
+            let skel_file_entity_opt = match file_ext {
+                FileExtension::Model => {
+                    file_manager.file_get_dependency(current_file_entity, FileExtension::Skel)
+                }
+                _ => None,
             };
 
             // draw vertices (compass, grid)
@@ -1459,28 +1484,30 @@ impl ModelManager {
                 render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
             }
 
-            // draw skel bone edges
-            for (edge_3d_entity, owned_by_file) in edge_q.iter() {
-                if owned_by_file.file_entity != skel_file_entity {
-                    continue;
-                }
-
-                let (_, end_vertex_3d_entity) = edge_manager.edge_get_endpoints(&edge_3d_entity);
-                let shape_name_opt = shape_name_q.get(end_vertex_3d_entity).unwrap();
-
-                if let Some(shape_name) = shape_name_opt {
-                    let shape_name: &str = &(*shape_name.value);
-                    if self.net_transform_exists(current_file_entity, shape_name) {
+            if let Some(skel_file_entity) = skel_file_entity_opt {
+                // draw skel bone edges
+                for (edge_3d_entity, owned_by_file) in edge_q.iter() {
+                    if owned_by_file.file_entity != skel_file_entity {
                         continue;
                     }
+
+                    let (_, end_vertex_3d_entity) = edge_manager.edge_get_endpoints(&edge_3d_entity);
+                    let shape_name_opt = shape_name_q.get(end_vertex_3d_entity).unwrap();
+
+                    if let Some(shape_name) = shape_name_opt {
+                        let shape_name: &str = &(*shape_name.value);
+                        if self.net_transform_exists(current_file_entity, shape_name) {
+                            continue;
+                        }
+                    }
+
+                    let edge_is_enabled = edge_is_enabled(shape_name_opt);
+                    let mat_handle = get_shape_color(&vertex_manager, edge_is_enabled);
+
+                    let (mesh_handle, _, transform, render_layer_opt) =
+                        objects_q.get(edge_3d_entity).unwrap();
+                    render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
                 }
-
-                let edge_is_enabled = edge_is_enabled(shape_name_opt);
-                let mat_handle = get_shape_color(&vertex_manager, edge_is_enabled);
-
-                let (mesh_handle, _, transform, render_layer_opt) =
-                    objects_q.get(edge_3d_entity).unwrap();
-                render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
             }
         }
 
@@ -1532,14 +1559,20 @@ impl ModelManager {
                 let mut net_transform = NetTransformLocal::to_transform(net_transform);
                 net_transform.rotation = net_transform.rotation * corrective_rot;
 
-                // apply bone transform to net_transform
-                let Some(bone_transform) = net_transform_data.get_bone_transform(
-                    &vertex_3d_q,
-                    &edge_angle_q,
-                ) else {
-                    continue;
-                };
-                let net_transform = net_transform.multiply(&bone_transform);
+                match file_ext {
+                    FileExtension::Model => {
+                        // apply bone transform to net_transform
+                        let Some(bone_transform) = net_transform_data.get_bone_transform(
+                            &vertex_3d_q,
+                            &edge_angle_q,
+                        ) else {
+                            continue;
+                        };
+                        net_transform = net_transform.multiply(&bone_transform);
+                    }
+                    FileExtension::Scene => {},
+                    _ => panic!("invalid"),
+                }
 
                 for (face_3d_entity, owned_by_file) in face_q.iter() {
                     if owned_by_file.file_entity != mesh_file_entity {

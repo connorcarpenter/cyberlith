@@ -40,6 +40,7 @@ impl ModelInputManager {
     pub fn update_input(
         world: &mut World,
         input_manager: &mut InputManager,
+        file_ext: &FileExtension,
         input_actions: Vec<InputAction>,
     ) {
         for action in input_actions {
@@ -48,7 +49,7 @@ impl ModelInputManager {
                     Self::handle_mouse_click(world, input_manager, &mouse_position, click_type)
                 }
                 InputAction::MouseDragged(click_type, mouse_position, delta) => {
-                    Self::handle_mouse_drag(world, input_manager, mouse_position, delta, click_type)
+                    Self::handle_mouse_drag(world, input_manager, file_ext, mouse_position, delta, click_type)
                 }
                 InputAction::MiddleMouseScroll(scroll_y) => {
                     InputManager::handle_mouse_scroll_wheel(world, scroll_y)
@@ -139,6 +140,7 @@ impl ModelInputManager {
     pub(crate) fn handle_mouse_drag(
         world: &mut World,
         input_manager: &mut InputManager,
+        file_ext: &FileExtension,
         mouse_position: Vec2,
         delta: Vec2,
         click_type: MouseButton,
@@ -149,7 +151,7 @@ impl ModelInputManager {
 
         match (click_type, input_manager.selected_shape) {
             (MouseButton::Left, Some((transform_entity, shape))) => {
-                Self::handle_transform_drag(world, &transform_entity, shape, &mouse_position)
+                Self::handle_transform_drag(world, file_ext, &transform_entity, shape, &mouse_position)
             }
             (_, _) => InputManager::handle_drag_empty_space(world, click_type, delta),
         }
@@ -157,6 +159,7 @@ impl ModelInputManager {
 
     pub(crate) fn sync_mouse_hover_ui(
         world: &mut World,
+        file_ext: &FileExtension,
         current_file_entity: &Entity,
         camera_3d_scale: f32,
         mouse_position: &Vec2,
@@ -179,8 +182,16 @@ impl ModelInputManager {
             vertex_root_q,
             edge_2d_q,
         ) = system_state.get_mut(world);
-        let Some(skel_file_entity) = file_manager.file_get_dependency(current_file_entity, FileExtension::Skel) else {
-            return None;
+
+        let skel_file_entity_opt = match file_ext {
+            FileExtension::Model => {
+                let Some(skel_file_entity) = file_manager.file_get_dependency(current_file_entity, FileExtension::Skel) else {
+                    return None;
+                };
+                Some(skel_file_entity)
+            }
+            FileExtension::Scene => None,
+            _ => panic!("invalid"),
         };
 
         let mut least_distance = f32::MAX;
@@ -200,24 +211,26 @@ impl ModelInputManager {
             &mut is_hovering,
         );
 
-        // check skel edge entities
-        let mut edge_2d_entities = Vec::new();
-        for (edge_2d_entity, owned_by_local) in edge_2d_q.iter() {
-            if owned_by_local.file_entity == skel_file_entity {
-                edge_2d_entities.push(edge_2d_entity);
+        if let Some(skel_file_entity) = skel_file_entity_opt {
+            // check skel edge entities
+            let mut edge_2d_entities = Vec::new();
+            for (edge_2d_entity, owned_by_local) in edge_2d_q.iter() {
+                if owned_by_local.file_entity == skel_file_entity {
+                    edge_2d_entities.push(edge_2d_entity);
+                }
             }
-        }
 
-        Self::handle_edge_hover(
-            &transform_q,
-            edge_2d_entities,
-            Some((&edge_manager, &shape_name_q)),
-            camera_3d_scale,
-            mouse_position,
-            &mut least_distance,
-            &mut least_entity,
-            &mut is_hovering,
-        );
+            Self::handle_edge_hover(
+                &transform_q,
+                edge_2d_entities,
+                Some((&edge_manager, &shape_name_q)),
+                camera_3d_scale,
+                mouse_position,
+                &mut least_distance,
+                &mut least_entity,
+                &mut is_hovering,
+            );
+        }
 
         // check rotation edge entities
         let mut edge_2d_entities = Vec::new();
@@ -301,6 +314,7 @@ impl ModelInputManager {
 
     fn handle_transform_drag(
         world: &mut World,
+        file_ext: &FileExtension,
         control_2d_entity: &Entity,
         shape: CanvasShape,
         mouse_position: &Vec2,
@@ -332,12 +346,19 @@ impl ModelInputManager {
         let mtc_type = mtc_component.control_type;
 
         // get bone transform
-        let Some(bone_transform) = model_manager.get_bone_transform(
-            &vertex_3d_q,
-            &edge_angle_q,
-            &mtc_entity
-        ) else {
-            return;
+        let bone_transform_opt = match file_ext {
+            FileExtension::Model => {
+                let Some(bone_transform) = model_manager.get_bone_transform(
+                    &vertex_3d_q,
+                    &edge_angle_q,
+                    &mtc_entity
+                ) else {
+                    return;
+                };
+                Some(bone_transform)
+            }
+            FileExtension::Scene => None,
+            _ => panic!("invalid"),
         };
 
         // check status
@@ -352,10 +373,12 @@ impl ModelInputManager {
         let net_transform = net_transform_q.get(mtc_entity).unwrap();
 
         let old_transform = NetTransformLocal::to_transform(&net_transform);
-        let new_transform = old_transform;
+        let mut new_transform = old_transform;
 
-        // apply parent bone transform to new_transform
-        let mut new_transform = new_transform.multiply(&bone_transform);
+        if let Some(bone_transform) = bone_transform_opt {
+            // apply parent bone transform to new_transform
+            new_transform = new_transform.multiply(&bone_transform);
+        }
 
         match (shape, mtc_type) {
             (CanvasShape::Vertex, NetTransformControlType::Translation) => {
@@ -493,10 +516,12 @@ impl ModelInputManager {
         )> = SystemState::new(world);
         let (mut canvas, mut model_manager, mut net_transform_q) = system_state.get_mut(world);
 
-        // remove parent transform from new_transform
-        let mut bone_transform_inverse = bone_transform.inverse();
-        bone_transform_inverse.scale = Vec3::ONE;
-        let new_transform = new_transform.multiply(&bone_transform_inverse);
+        if let Some(bone_transform) = bone_transform_opt {
+            // remove parent transform from new_transform
+            let mut bone_transform_inverse = bone_transform.inverse();
+            bone_transform_inverse.scale = Vec3::ONE;
+            new_transform = new_transform.multiply(&bone_transform_inverse);
+        }
 
         let mut net_transform = net_transform_q.get_mut(mtc_entity).unwrap();
         NetTransformLocal::set_transform(&mut net_transform, &new_transform);

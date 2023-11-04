@@ -102,13 +102,13 @@ pub fn draw_vertices_and_edges(world: &mut World) {
     let Some(current_tab) = world.get_resource::<TabManager>().unwrap().current_tab_entity() else {
         return;
     };
-    let current_file = world
+    let file_ext = world
         .get_resource::<FileManager>()
         .unwrap()
         .get_file_type(current_tab);
     let current_file_entity = *current_tab;
 
-    match current_file {
+    match file_ext {
         FileExtension::Anim => {
             if world
                 .get_resource::<AnimationManager>()
@@ -124,7 +124,7 @@ pub fn draw_vertices_and_edges(world: &mut World) {
         }
         FileExtension::Model | FileExtension::Scene => {
             world.resource_scope(|world, model_manager: Mut<ModelManager>| {
-                model_manager.draw(world, &current_file_entity);
+                model_manager.draw(world, &file_ext, &current_file_entity);
             });
 
             return;
@@ -132,7 +132,7 @@ pub fn draw_vertices_and_edges(world: &mut World) {
         _ => {}
     }
 
-    draw_vertices_and_edges_inner(world, current_file);
+    draw_vertices_and_edges_inner(world, file_ext);
 }
 
 fn draw_vertices_and_edges_inner(world: &mut World, current_file: FileExtension) {
