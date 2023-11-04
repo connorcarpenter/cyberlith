@@ -56,6 +56,9 @@ pub struct NetTransformData {
     scale_y_entity_2d: Entity,
     scale_z_entity_3d: Entity,
     scale_z_entity_2d: Entity,
+    scale_x_entity_edge_3d: Entity,
+    scale_y_entity_edge_3d: Entity,
+    scale_z_entity_edge_3d: Entity,
 }
 
 impl NetTransformData {
@@ -74,6 +77,9 @@ impl NetTransformData {
         scale_y_entity_3d: Entity,
         scale_z_entity_2d: Entity,
         scale_z_entity_3d: Entity,
+        scale_x_entity_edge_3d: Entity,
+        scale_y_entity_edge_3d: Entity,
+        scale_z_entity_edge_3d: Entity,
     ) -> Self {
         Self {
             model_file_entity,
@@ -91,6 +97,9 @@ impl NetTransformData {
             scale_x_entity_2d,
             scale_y_entity_2d,
             scale_z_entity_2d,
+            scale_x_entity_edge_3d,
+            scale_y_entity_edge_3d,
+            scale_z_entity_edge_3d,
         }
     }
 
@@ -226,9 +235,9 @@ impl NetTransformData {
         let mut edges = Vec::new();
 
         edges.push(self.rotation_entity_edge_3d);
-        edges.push(self.scale_x_entity_3d);
-        edges.push(self.scale_y_entity_3d);
-        edges.push(self.scale_z_entity_3d);
+        edges.push(self.scale_x_entity_edge_3d);
+        edges.push(self.scale_y_entity_edge_3d);
+        edges.push(self.scale_z_entity_edge_3d);
 
         for vertex_3d_entity in vertex_3d_entities {
             vertex_manager.cleanup_deleted_vertex(
@@ -473,11 +482,11 @@ impl ModelManager {
             Color::RED,
             NetTransformControlType::RotationVertex,
         ) else {
-            panic!("should def have a rotation edge here");
+            panic!("should def have an edge here");
         };
 
         // scale x control
-        let (scale_x_entity_2d, scale_x_entity_3d, _) = Self::new_net_transform_control(
+        let (scale_x_entity_2d, scale_x_entity_3d, Some((scale_x_entity_edge_3d, _))) = Self::new_net_transform_control(
             commands,
             camera_manager,
             vertex_manager,
@@ -488,10 +497,12 @@ impl ModelManager {
             Some(translation_entity_2d),
             Color::WHITE,
             NetTransformControlType::Scale(ScaleAxis::X),
-        );
+        ) else {
+            panic!("should def have an edge here");
+        };
 
         // scale y control
-        let (scale_y_entity_2d, scale_y_entity_3d, _) = Self::new_net_transform_control(
+        let (scale_y_entity_2d, scale_y_entity_3d, Some((scale_y_entity_edge_3d, _))) = Self::new_net_transform_control(
             commands,
             camera_manager,
             vertex_manager,
@@ -502,10 +513,12 @@ impl ModelManager {
             Some(translation_entity_2d),
             Color::WHITE,
             NetTransformControlType::Scale(ScaleAxis::Y),
-        );
+        ) else {
+            panic!("should def have an edge here");
+        };
 
         // scale z control
-        let (scale_z_entity_2d, scale_z_entity_3d, _) = Self::new_net_transform_control(
+        let (scale_z_entity_2d, scale_z_entity_3d, Some((scale_z_entity_edge_3d, _))) = Self::new_net_transform_control(
             commands,
             camera_manager,
             vertex_manager,
@@ -516,7 +529,9 @@ impl ModelManager {
             Some(translation_entity_2d),
             Color::WHITE,
             NetTransformControlType::Scale(ScaleAxis::Z),
-        );
+        ) else {
+            panic!("should def have an edge here");
+        };
 
         self.register_net_transform_controls(
             owning_file_entity,
@@ -534,6 +549,9 @@ impl ModelManager {
             scale_y_entity_3d,
             scale_z_entity_2d,
             scale_z_entity_3d,
+            scale_x_entity_edge_3d,
+            scale_y_entity_edge_3d,
+            scale_z_entity_edge_3d,
         );
     }
 
@@ -630,6 +648,9 @@ impl ModelManager {
         scale_y_entity_3d: Entity,
         scale_z_entity_2d: Entity,
         scale_z_entity_3d: Entity,
+        scale_x_entity_edge_3d: Entity,
+        scale_y_entity_edge_3d: Entity,
+        scale_z_entity_edge_3d: Entity,
     ) {
         self.transform_entities.insert(
             net_transform_entity,
@@ -648,6 +669,9 @@ impl ModelManager {
                 scale_y_entity_3d,
                 scale_z_entity_2d,
                 scale_z_entity_3d,
+                scale_x_entity_edge_3d,
+                scale_y_entity_edge_3d,
+                scale_z_entity_edge_3d,
             ),
         );
         if let Some(skel_bone_name) = skel_bone_name_opt {
@@ -1358,17 +1382,27 @@ impl ModelManager {
                     continue;
                 };
                 let net_transform_data = self.transform_entities.get(net_transform_entity).unwrap();
-                let Some(bone_transform) = net_transform_data.get_bone_transform(
-                    &vertex_3d_q,
-                    &edge_angle_q,
-                ) else {
-                    continue;
+
+                let bone_transform_opt = match file_ext {
+                    FileExtension::Model => {
+                        let Some(bone_transform) = net_transform_data.get_bone_transform(
+                            &vertex_3d_q,
+                            &edge_angle_q,
+                        ) else {
+                            continue;
+                        };
+                        Some(bone_transform)
+                    }
+                    FileExtension::Scene => None,
+                    _ => panic!("invalid"),
                 };
                 let mut net_transform = NetTransformLocal::to_transform(net_transform);
                 net_transform.rotation = net_transform.rotation * corrective_rot;
 
-                // apply bone transform to net_transform
-                let net_transform = net_transform.multiply(&bone_transform);
+                if let Some(bone_transform) = bone_transform_opt {
+                    // apply bone transform to net_transform
+                    net_transform = net_transform.multiply(&bone_transform);
+                }
 
                 let net_transform_matrix = net_transform.compute_matrix();
 
