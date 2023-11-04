@@ -17,10 +17,10 @@ use vortex_proto::{
 use crate::{
     files::{
         AnimReader, AnimWriter, MeshReader, MeshWriter, ModelReader, ModelWriter, PaletteReader,
-        PaletteWriter, SceneReader, SceneWriter, SkelReader, SkelWriter, SkinReader, SkinWriter,
+        PaletteWriter, SceneReader, SceneWriter, SkelReader, SkelWriter, SkinReader, SkinWriter, IconReader, IconWriter
     },
     resources::{
-        AnimationManager, ContentEntityData, PaletteManager, Project, ShapeManager, SkinManager,
+        IconManager, AnimationManager, ContentEntityData, PaletteManager, Project, ShapeManager, SkinManager,
     },
 };
 
@@ -62,6 +62,7 @@ impl FileReader for FileExtension {
             FileExtension::Skin => SkinReader.read(world, project, file_key, file_entity, bytes),
             FileExtension::Model => ModelReader.read(world, project, file_key, file_entity, bytes),
             FileExtension::Scene => SceneReader.read(world, project, file_key, file_entity, bytes),
+            FileExtension::Icon => IconReader.read(world, file_entity, bytes),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }
@@ -82,6 +83,7 @@ impl FileWriter for FileExtension {
             FileExtension::Skin => SkinWriter.write(world, project, content_entities),
             FileExtension::Model => ModelWriter.write(world, project, content_entities),
             FileExtension::Scene => SceneWriter.write(world, project, content_entities),
+            FileExtension::Icon => IconWriter.write(world, project, content_entities),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }
@@ -95,6 +97,7 @@ impl FileWriter for FileExtension {
             FileExtension::Skin => SkinWriter.write_new_default(),
             FileExtension::Model => ModelWriter.write_new_default(),
             FileExtension::Scene => SceneWriter.write_new_default(),
+            FileExtension::Icon => IconWriter.write_new_default(),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }
@@ -190,6 +193,14 @@ fn post_process_loaded_networked_entities(
                     _ => panic!("File extension {:?} not implemented", file_extension),
                 }
             }
+            ContentEntityData::IconShape(_) => {
+                // add file ownership
+                let mut file_ownership_component = OwnedByFile::new();
+                file_ownership_component
+                    .file_entity
+                    .set(server, file_entity);
+                commands.entity(*entity).insert(file_ownership_component);
+            }
             _ => {}
         }
     }
@@ -205,6 +216,7 @@ pub fn despawn_file_content_entities(
         Commands,
         Server,
         ResMut<ShapeManager>,
+        ResMut<IconManager>,
         ResMut<AnimationManager>,
         ResMut<PaletteManager>,
         ResMut<SkinManager>,
@@ -213,6 +225,7 @@ pub fn despawn_file_content_entities(
         mut commands,
         mut server,
         mut shape_manager,
+        mut icon_manager,
         mut animation_manager,
         mut palette_manager,
         mut skin_manager,
@@ -226,14 +239,31 @@ pub fn despawn_file_content_entities(
             .despawn();
 
         match entity_data {
-            ContentEntityData::Shape(ShapeType::Vertex) => {
-                shape_manager.deregister_vertex(entity);
+            ContentEntityData::Shape(shape_type) => {
+                match shape_type {
+                    ShapeType::Vertex => {
+                        shape_manager.deregister_vertex(entity);
+                    }
+                    ShapeType::Edge => {
+                        shape_manager.deregister_edge(entity);
+                    }
+                    ShapeType::Face => {
+                        shape_manager.deregister_face(entity);
+                    }
+                }
             }
-            ContentEntityData::Shape(ShapeType::Edge) => {
-                shape_manager.deregister_edge(entity);
-            }
-            ContentEntityData::Shape(ShapeType::Face) => {
-                shape_manager.deregister_face(entity);
+            ContentEntityData::IconShape(shape_type) => {
+                match shape_type {
+                    ShapeType::Vertex => {
+                        icon_manager.deregister_vertex(entity);
+                    }
+                    ShapeType::Edge => {
+                        icon_manager.deregister_edge(entity);
+                    }
+                    ShapeType::Face => {
+                        icon_manager.deregister_face(entity);
+                    }
+                }
             }
             ContentEntityData::Dependency(dependency_key) => {
                 project.file_remove_dependency(&file_key, &dependency_key);

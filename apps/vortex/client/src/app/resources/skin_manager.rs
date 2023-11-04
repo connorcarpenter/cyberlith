@@ -97,8 +97,8 @@ impl SkinManager {
         let (mut commands, mut client, mut shape_color_resync_events) = system_state.get_mut(world);
 
         let mut component = FaceColor::new();
-        component.skin_file_entity.set(&client, &skin_file_entity);
-        component.face_3d_entity.set(&client, &face_3d_entity);
+        component.owning_file_entity.set(&client, &skin_file_entity);
+        component.face_entity.set(&client, &face_3d_entity);
         component
             .palette_color_entity
             .set(&client, &palette_color_entity);
@@ -204,7 +204,7 @@ impl SkinManager {
         // spawn background color entity
         let mut component = BackgroundSkinColor::new();
         component
-            .skin_file_entity
+            .owning_file_entity
             .set(&client, &current_file_entity);
         component
             .palette_color_entity

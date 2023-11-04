@@ -8,6 +8,7 @@ mod model;
 mod ownership;
 mod select;
 mod vertex;
+mod icon;
 
 pub use animation::*;
 pub use draw::*;
@@ -17,3 +18,4 @@ pub use model::*;
 pub use ownership::*;
 pub use select::*;
 pub use vertex::*;
+pub use icon::*;

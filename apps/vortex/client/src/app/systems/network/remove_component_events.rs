@@ -243,7 +243,7 @@ pub fn remove_color_component_events(
         let entity = event.entity;
         info!("entity: `{:?}`, removed PaletteColor", entity);
 
-        let file_entity = event.component.file_entity.get(&client).unwrap();
+        let file_entity = event.component.owning_file_entity.get(&client).unwrap();
         let color_index = *event.component.index as usize;
 
         palette_manager.deregister_color(&file_entity, &entity, color_index);

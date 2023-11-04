@@ -18,11 +18,11 @@ impl ProtocolPlugin for ColorComponentsPlugin {
 // PaletteColor
 #[derive(Component, Replicate)]
 pub struct PaletteColor {
+    pub owning_file_entity: EntityProperty,
     pub index: Property<u8>,
     pub r: Property<u8>,
     pub g: Property<u8>,
     pub b: Property<u8>,
-    pub file_entity: EntityProperty,
 }
 
 impl PaletteColor {
@@ -34,8 +34,8 @@ impl PaletteColor {
 // FaceColor
 #[derive(Component, Replicate)]
 pub struct FaceColor {
-    pub skin_file_entity: EntityProperty,
-    pub face_3d_entity: EntityProperty,
+    pub owning_file_entity: EntityProperty,
+    pub face_entity: EntityProperty,
     pub palette_color_entity: EntityProperty,
 }
 
@@ -48,7 +48,7 @@ impl FaceColor {
 // BackgroundSkinColor
 #[derive(Component, Replicate)]
 pub struct BackgroundSkinColor {
-    pub skin_file_entity: EntityProperty,
+    pub owning_file_entity: EntityProperty,
     pub palette_color_entity: EntityProperty,
 }
 

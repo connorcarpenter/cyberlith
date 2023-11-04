@@ -30,7 +30,7 @@ use crate::{
     events::InsertComponentEvent,
     resources::{
         changelist_manager_process, AnimationManager, ChangelistManager, GitManager,
-        PaletteManager, ShapeManager, ComponentWaitlist, SkinManager, TabManager, UserManager,
+        PaletteManager, ShapeManager, ComponentWaitlist, SkinManager, TabManager, UserManager, IconManager
     },
     systems::{network, world_loop},
 };
@@ -55,6 +55,7 @@ fn main() {
         .init_resource::<ChangelistManager>()
         .init_resource::<ComponentWaitlist>()
         .init_resource::<ShapeManager>()
+        .init_resource::<IconManager>()
         .init_resource::<AnimationManager>()
         .init_resource::<PaletteManager>()
         .init_resource::<SkinManager>()
@@ -91,6 +92,7 @@ fn main() {
                 network::insert_palette_component_events,
                 network::insert_skin_component_events,
                 network::insert_model_component_events,
+                network::insert_icon_component_events,
                 apply_deferred,
                 network::message_events,
             )

@@ -7,6 +7,7 @@ mod scene;
 mod skel;
 mod skel_file_waitlist;
 mod skin;
+mod icon;
 
 pub use anim::*;
 pub use file_io::*;
@@ -17,3 +18,4 @@ pub use scene::*;
 pub use skel::*;
 pub use skel_file_waitlist::*;
 pub use skin::*;
+pub use icon::*;

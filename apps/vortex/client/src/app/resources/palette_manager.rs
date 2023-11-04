@@ -212,7 +212,7 @@ impl PaletteManager {
         let mut new_color_list = Vec::new();
 
         for (color_entity, color) in color_q.iter() {
-            let colors_file_entity = color.file_entity.get(client).unwrap();
+            let colors_file_entity = color.owning_file_entity.get(client).unwrap();
             if colors_file_entity != *file_entity {
                 continue;
             }
@@ -244,7 +244,7 @@ impl PaletteManager {
     ) -> Entity {
         let mut color_component =
             PaletteColor::new(color_index as u8, color.r(), color.g(), color.b());
-        color_component.file_entity.set(client, &file_entity);
+        color_component.owning_file_entity.set(client, &file_entity);
         let entity_id = commands
             .spawn_empty()
             .enable_replication(client)

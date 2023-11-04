@@ -148,7 +148,7 @@ impl PaletteReader {
             match action {
                 PaletteAction::Color(r, g, b) => {
                     let mut color_component = PaletteColor::new(index, r, g, b);
-                    color_component.file_entity.set(&mut server, file_entity);
+                    color_component.owning_file_entity.set(&mut server, file_entity);
                     let entity_id = commands
                         .spawn_empty()
                         .enable_replication(&mut server)

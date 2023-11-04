@@ -190,7 +190,7 @@ pub fn update_component_events(world: &mut World) {
             let Ok(color) = color_q.get(color_entity) else {
                 panic!("color component not found for entity `{:?}`", color_entity);
             };
-            let file_entity = color.file_entity.get(&client).unwrap();
+            let file_entity = color.owning_file_entity.get(&client).unwrap();
             // check that index has changed
             let color_index = *color.index as usize;
             let existing_color_entity = palette_manager.get_color_entity(&file_entity, color_index);

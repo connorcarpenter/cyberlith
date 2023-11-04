@@ -11,9 +11,7 @@ use naia_bevy_server::{
 
 use vortex_proto::components::{AnimFrame, ChangelistEntry, PaletteColor};
 
-use crate::resources::{
-    AnimationManager, GitManager, PaletteManager, ShapeManager, SkinManager, UserManager,
-};
+use crate::resources::{AnimationManager, GitManager, IconManager, PaletteManager, ShapeManager, SkinManager, UserManager};
 
 pub fn spawn_entity_events(mut event_reader: EventReader<SpawnEntityEvent>) {
     for SpawnEntityEvent(_user_key, entity) in event_reader.iter() {
@@ -27,6 +25,9 @@ enum DespawnType {
     Vertex,
     Edge,
     Face,
+    IconVertex,
+    IconEdge,
+    IconFace,
     Rotation,
     Frame,
     PaletteColor,
@@ -39,6 +40,7 @@ pub fn despawn_entity_events(
     user_manager: Res<UserManager>,
     mut git_manager: ResMut<GitManager>,
     mut shape_manager: ResMut<ShapeManager>,
+    mut icon_manager: ResMut<IconManager>,
     mut animation_manager: ResMut<AnimationManager>,
     mut palette_manager: ResMut<PaletteManager>,
     mut skin_manager: ResMut<SkinManager>,
@@ -64,6 +66,12 @@ pub fn despawn_entity_events(
             despawn_type = Some(DespawnType::Edge);
         } else if shape_manager.has_face(entity) {
             despawn_type = Some(DespawnType::Face);
+        } else if icon_manager.has_vertex(entity) {
+            despawn_type = Some(DespawnType::IconVertex);
+        } else if icon_manager.has_edge(entity) {
+            despawn_type = Some(DespawnType::IconEdge);
+        } else if icon_manager.has_face(entity) {
+            despawn_type = Some(DespawnType::IconFace);
         } else if animation_manager.has_rotation(entity) {
             despawn_type = Some(DespawnType::Rotation);
         } else if animation_manager.has_frame(entity) {
@@ -117,6 +125,40 @@ pub fn despawn_entity_events(
                 git_manager.queue_client_modify_file(entity);
 
                 shape_manager.on_client_despawn_face(entity);
+
+                git_manager.on_remove_content_entity(&mut server, &entity);
+            }
+            Some(DespawnType::IconVertex) => {
+                // vertex
+                info!("entity: `{:?}` (which is a IconVertex), despawned", entity);
+
+                git_manager.queue_client_modify_file(entity);
+
+                let other_entities_to_despawn =
+                    icon_manager.on_client_despawn_vertex(&mut commands, &mut server, entity);
+
+                git_manager.on_remove_content_entity(&mut server, &entity);
+                for other_entity in other_entities_to_despawn {
+                    git_manager.on_remove_content_entity(&mut server, &other_entity);
+                }
+            }
+            Some(DespawnType::IconEdge) => {
+                // edge
+                info!("entity: `{:?}` (which is an IconEdge), despawned", entity);
+
+                git_manager.queue_client_modify_file(entity);
+
+                icon_manager.on_client_despawn_edge(entity);
+
+                git_manager.on_remove_content_entity(&mut server, &entity);
+            }
+            Some(DespawnType::IconFace) => {
+                // face
+                info!("entity: `{:?}` (which is an IconFace), despawned", entity);
+
+                git_manager.queue_client_modify_file(entity);
+
+                icon_manager.on_client_despawn_face(entity);
 
                 git_manager.on_remove_content_entity(&mut server, &entity);
             }

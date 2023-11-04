@@ -48,7 +48,7 @@ pub(crate) fn execute(
         match shape {
             CanvasShape::Vertex => {
                 // deselected net transform control vertex?
-                let ntc_entity = ntc_entity_opt.expect("Expected MTC");
+                let ntc_entity = ntc_entity_opt.expect("Expected NTC");
                 entity_to_release = Some(ntc_entity);
             }
             CanvasShape::Edge => {

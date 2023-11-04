@@ -30,6 +30,7 @@ use crate::{
         RollbackResult, ShapeManager, SkinManager, UserManager,
     },
 };
+use crate::resources::IconManager;
 
 #[derive(Resource)]
 pub struct GitManager {
@@ -145,6 +146,7 @@ impl GitManager {
         let mut system_state: SystemState<(
             Server,
             Res<ShapeManager>,
+            Res<IconManager>,
             Res<PaletteManager>,
             ResMut<SkinManager>,
             Query<&mut BackgroundSkinColor>,
@@ -153,6 +155,7 @@ impl GitManager {
         let (
             server,
             shape_manager,
+            icon_manager,
             palette_manager,
             mut skin_manager,
             mut bckg_color_q,
@@ -189,34 +192,51 @@ impl GitManager {
                         panic!("Could not find file data for entity: {:?}", entity);
                     };
 
-                    let mesh_file_entity = self
-                        .file_find_dependency(project_key, file_key, FileExtension::Mesh)
-                        .unwrap();
                     let palette_file_entity = self
                         .file_find_dependency(project_key, file_key, FileExtension::Palette)
                         .unwrap();
 
-                    // find face_3d_entity from face_index
-                    let face_3d_entity = shape_manager
-                        .face_entity_from_index(&mesh_file_entity, face_index as usize)
-                        .unwrap();
+                    let face_entity;
+
+                    let file_ext = self.working_file_extension(project_key, file_key);
+                    match file_ext {
+                        FileExtension::Skin => {
+                            let mesh_file_entity = self
+                                .file_find_dependency(project_key, file_key, FileExtension::Mesh)
+                                .unwrap();
+
+                            // find face_3d_entity from face_index
+                            face_entity = shape_manager
+                                .face_entity_from_index(&mesh_file_entity, face_index as usize)
+                                .unwrap();
+                        }
+                        FileExtension::Icon => {
+                            let icon_file_entity = self.file_entity(project_key, file_key).unwrap();
+
+                            // find face_3d_entity from face_index
+                            face_entity = icon_manager
+                                .face_entity_from_index(&icon_file_entity, face_index as usize)
+                                .unwrap();
+                        }
+                        _ => panic!("invalid"),
+                    }
 
                     // find palette_color_entity from palette_index
                     let palette_color_entity = palette_manager
                         .color_entity_from_index(&palette_file_entity, palette_index as usize)
                         .unwrap();
 
-                    // set face_3d_entity and palette_color_entity into FaceColor component
+                    // set face_entity and palette_color_entity into FaceColor component
                     let Ok(mut face_color) = face_color_q.get_mut(entity) else {
                         panic!("Could not find face color for entity: {:?}", entity);
                     };
-                    face_color.face_3d_entity.set(&server, &face_3d_entity);
+                    face_color.face_entity.set(&server, &face_entity);
                     face_color
                         .palette_color_entity
                         .set(&server, &palette_color_entity);
 
                     // register with skin manager
-                    skin_manager.on_create_face_color(&face_3d_entity, &entity);
+                    skin_manager.on_create_face_color(&face_entity, &entity);
                 }
                 _ => {}
             }

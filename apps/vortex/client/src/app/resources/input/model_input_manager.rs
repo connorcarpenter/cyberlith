@@ -198,11 +198,11 @@ impl ModelInputManager {
         let mut least_entity = None;
         let mut is_hovering = false;
 
-        let mtc_2d_vertices = model_manager.net_transform_2d_vertices(current_file_entity);
+        let ntc_2d_vertices = model_manager.net_transform_2d_vertices(current_file_entity);
 
         Self::handle_vertex_hover(
             &transform_q,
-            mtc_2d_vertices,
+            ntc_2d_vertices,
             &vertex_root_q,
             camera_3d_scale,
             mouse_position,
@@ -234,10 +234,10 @@ impl ModelInputManager {
 
         // check rotation edge entities
         let mut edge_2d_entities = Vec::new();
-        let mtc_2d_edges =
+        let ntc_2d_edges =
             model_manager.net_transform_rotation_edge_2d_entities(current_file_entity);
-        for mtc_2d_edge in mtc_2d_edges {
-            edge_2d_entities.push(mtc_2d_edge);
+        for ntc_2d_edge in ntc_2d_edges {
+            edge_2d_entities.push(ntc_2d_edge);
         }
 
         Self::handle_edge_hover(
@@ -335,15 +335,15 @@ impl ModelInputManager {
             vertex_3d_q,
             edge_angle_q,
             net_transform_q,
-            mtc_q,
+            ntc_q,
         ) = system_state.get_mut(world);
 
-        let Ok(mtc_component) = mtc_q.get(*control_2d_entity) else {
-            warn!("Expected MTC");
+        let Ok(ntc_component) = ntc_q.get(*control_2d_entity) else {
+            warn!("Expected NTC");
             return;
         };
-        let mtc_entity = mtc_component.net_transform_entity;
-        let mtc_type = mtc_component.control_type;
+        let ntc_entity = ntc_component.net_transform_entity;
+        let ntc_type = ntc_component.control_type;
 
         // get bone transform
         let bone_transform_opt = match file_ext {
@@ -351,7 +351,7 @@ impl ModelInputManager {
                 let Some(bone_transform) = model_manager.get_bone_transform(
                     &vertex_3d_q,
                     &edge_angle_q,
-                    &mtc_entity
+                    &ntc_entity
                 ) else {
                     return;
                 };
@@ -362,15 +362,15 @@ impl ModelInputManager {
         };
 
         // check status
-        let auth_status = commands.entity(mtc_entity).authority(&client).unwrap();
+        let auth_status = commands.entity(ntc_entity).authority(&client).unwrap();
         if !(auth_status.is_requested() || auth_status.is_granted()) {
-            // only continue to mutate if requested or granted authority over mtc
-            info!("No authority over mtc, skipping..");
+            // only continue to mutate if requested or granted authority over ntc
+            info!("No authority over ntc, skipping..");
             return;
         }
 
         // set networked 3d vertex position
-        let net_transform = net_transform_q.get(mtc_entity).unwrap();
+        let net_transform = net_transform_q.get(ntc_entity).unwrap();
 
         let old_transform = NetTransformLocal::to_transform(&net_transform);
         let mut new_transform = old_transform;
@@ -380,7 +380,7 @@ impl ModelInputManager {
             new_transform = new_transform.multiply(&bone_transform);
         }
 
-        match (shape, mtc_type) {
+        match (shape, ntc_type) {
             (CanvasShape::Vertex, NetTransformControlType::Translation) => {
                 let mut system_state: SystemState<(
                     Res<CameraManager>,
@@ -400,7 +400,7 @@ impl ModelInputManager {
             }
             (CanvasShape::Vertex, NetTransformControlType::RotationVertex) => {
                 let rotation_edge_3d_entity = model_manager
-                    .get_rotation_edge_3d_entity(&mtc_entity)
+                    .get_rotation_edge_3d_entity(&ntc_entity)
                     .unwrap();
 
                 let mut system_state: SystemState<(
@@ -506,7 +506,7 @@ impl ModelInputManager {
                 };
                 new_transform.scale = new_scale;
             }
-            _ => panic!("Unexpected MTC type"),
+            _ => panic!("Unexpected NTC type"),
         }
 
         let mut system_state: SystemState<(
@@ -523,10 +523,10 @@ impl ModelInputManager {
             new_transform = new_transform.multiply(&bone_transform_inverse);
         }
 
-        let mut net_transform = net_transform_q.get_mut(mtc_entity).unwrap();
+        let mut net_transform = net_transform_q.get_mut(ntc_entity).unwrap();
         NetTransformLocal::set_transform(&mut net_transform, &new_transform);
 
-        model_manager.update_last_transform_dragged(mtc_entity, old_transform, new_transform);
+        model_manager.update_last_transform_dragged(ntc_entity, old_transform, new_transform);
 
         // redraw
         canvas.queue_resync_shapes();

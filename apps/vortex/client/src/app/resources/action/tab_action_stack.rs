@@ -30,6 +30,7 @@ impl TabActionStack {
             FileExtension::Palette => Self::Palette(ActionStack::default()),
             FileExtension::Skin => Self::Skin(ActionStack::default()),
             FileExtension::Model | FileExtension::Scene => Self::Model(ActionStack::default()),
+            FileExtension::Icon => Self::Icon(ActionStack::default()),
             _ => {
                 panic!(
                     "TabActionStack::new() called with unsupported file extension: {:?}",

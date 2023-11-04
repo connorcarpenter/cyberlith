@@ -929,7 +929,8 @@ impl ModelManager {
                 let file_manager = world.get_resource::<FileManager>().unwrap();
                 file_manager.file_get_dependency(file_entity, FileExtension::Skel)
             }
-            _ => None,
+            FileExtension::Scene => None,
+            _ => panic!("invalid"),
         };
 
         // TransformControls
@@ -947,8 +948,8 @@ impl ModelManager {
         local_vertex_3d_entities.extend(compass_3d_entities);
         local_vertex_3d_entities.extend(grid_3d_entities);
 
-        let mtc_3d_entites = self.net_transform_3d_vertices(file_entity);
-        vertex_3d_entities.extend(mtc_3d_entites);
+        let ntc_3d_entites = self.net_transform_3d_vertices(file_entity);
+        vertex_3d_entities.extend(ntc_3d_entites);
 
         let mut system_state: SystemState<Query<(Entity, &OwnedByFileLocal), With<Vertex3d>>> =
             SystemState::new(world);
@@ -1185,10 +1186,10 @@ impl ModelManager {
             let mut vertex_3d_entities: HashSet<Entity> = HashSet::new();
             let compass_3d_entities = world.get_resource::<Compass>().unwrap().vertices();
             let grid_3d_entities = world.get_resource::<Grid>().unwrap().vertices();
-            let mtc_3d_entites = self.net_transform_3d_vertices(current_file_entity);
+            let ntc_3d_entites = self.net_transform_3d_vertices(current_file_entity);
             vertex_3d_entities.extend(compass_3d_entities);
             vertex_3d_entities.extend(grid_3d_entities);
-            vertex_3d_entities.extend(mtc_3d_entites);
+            vertex_3d_entities.extend(ntc_3d_entites);
 
             let mut edge_2d_entities = HashSet::new();
 
@@ -1222,7 +1223,8 @@ impl ModelManager {
                 FileExtension::Model => {
                     file_manager.file_get_dependency(current_file_entity, FileExtension::Skel)
                 }
-                _ => None,
+                FileExtension::Scene => None,
+                _ => panic!("invalid"),
             };
 
             // draw vertices (compass, grid, net transform controls)
@@ -1494,7 +1496,8 @@ impl ModelManager {
                 FileExtension::Model => {
                     file_manager.file_get_dependency(current_file_entity, FileExtension::Skel)
                 }
-                _ => None,
+                FileExtension::Scene => None,
+                _ => panic!("invalid"),
             };
 
             // draw vertices (compass, grid)
@@ -1719,10 +1722,10 @@ impl ModelManager {
         &self,
         vertex_3d_q: &Query<&Vertex3d>,
         edge_angle_q: &Query<&EdgeAngle>,
-        mtc_entity: &Entity,
+        ntc_entity: &Entity,
     ) -> Option<Transform> {
-        let mtc_data = self.transform_entities.get(mtc_entity)?;
-        return mtc_data.get_bone_transform(vertex_3d_q, edge_angle_q);
+        let ntc_data = self.transform_entities.get(ntc_entity)?;
+        return ntc_data.get_bone_transform(vertex_3d_q, edge_angle_q);
     }
 
     pub(crate) fn get_rotation_edge_3d_entity(

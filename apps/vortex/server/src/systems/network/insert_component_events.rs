@@ -10,7 +10,7 @@ use bevy_log::info;
 
 use naia_bevy_server::{events::InsertComponentEvents, Replicate, Server};
 
-use vortex_proto::components::{NetTransform, SkinOrSceneEntity};
+use vortex_proto::components::{FileExtension, IconEdge, IconFace, IconVertex, NetTransform, SkinOrSceneEntity};
 use vortex_proto::{
     components::{
         AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency,
@@ -62,9 +62,12 @@ pub fn insert_component_events(world: &mut World) {
 
         insert_component_event::<Vertex3d>(world, &events);
         insert_component_event::<VertexRoot>(world, &events);
-
         insert_component_event::<Edge3d>(world, &events);
         insert_component_event::<Face3d>(world, &events);
+
+        insert_component_event::<IconVertex>(world, &events);
+        insert_component_event::<IconEdge>(world, &events);
+        insert_component_event::<IconFace>(world, &events);
 
         insert_component_event::<FileType>(world, &events);
         insert_component_event::<OwnedByFile>(world, &events);
@@ -391,6 +394,97 @@ pub fn insert_shape_component_events(
     }
 }
 
+pub fn insert_icon_component_events(
+    mut server: Server,
+    mut git_manager: ResMut<GitManager>,
+    mut component_waitlist: ResMut<ComponentWaitlist>,
+    mut shape_manager: ResMut<ShapeManager>,
+    mut vertex_events: EventReader<InsertComponentEvent<IconVertex>>,
+    mut edge_events: EventReader<InsertComponentEvent<IconEdge>>,
+    mut face_events: EventReader<InsertComponentEvent<IconFace>>,
+    edge_q: Query<&IconEdge>,
+    face_q: Query<&IconFace>,
+) {
+    // on IconVertex Insert Event
+    for event in vertex_events.iter() {
+        let entity = event.entity;
+        info!("entity: `{:?}`, inserted IconVertex", entity);
+
+        component_waitlist.process_insert(
+            &mut server,
+            &mut git_manager,
+            &mut shape_manager,
+            &entity,
+            ComponentWaitlistInsert::Vertex,
+        );
+        component_waitlist.process_insert(
+            &mut server,
+            &mut git_manager,
+            &mut shape_manager,
+            &entity,
+            ComponentWaitlistInsert::FileType(FileExtension::Icon),
+        );
+    }
+
+    // on IconEdge Insert Event
+    for event in edge_events.iter() {
+        let entity = event.entity;
+        info!("entity: `{:?}`, inserted IconEdge", entity);
+
+        let edge = edge_q.get(entity).unwrap();
+        let Some(start_entity) = edge.start.get(&server) else {
+            panic!("no parent entity!")
+        };
+        let Some(end_entity) = edge.end.get(&server) else {
+            panic!("no child entity!")
+        };
+        component_waitlist.process_insert(
+            &mut server,
+            &mut git_manager,
+            &mut shape_manager,
+            &entity,
+            ComponentWaitlistInsert::Edge(start_entity, end_entity),
+        );
+        component_waitlist.process_insert(
+            &mut server,
+            &mut git_manager,
+            &mut shape_manager,
+            &entity,
+            ComponentWaitlistInsert::FileType(FileExtension::Icon),
+        );
+    }
+
+    // on IconFace Insert Event
+    for event in face_events.iter() {
+        let entity = event.entity;
+        let face = face_q.get(entity).unwrap();
+
+        let vertex_a = face.vertex_a.get(&server).unwrap();
+        let vertex_b = face.vertex_b.get(&server).unwrap();
+        let vertex_c = face.vertex_c.get(&server).unwrap();
+
+        info!(
+            "entity: `{:?}`, inserted IconFace(vertices({:?}, {:?}, {:?}))",
+            entity, vertex_a, vertex_b, vertex_c
+        );
+
+        component_waitlist.process_insert(
+            &mut server,
+            &mut git_manager,
+            &mut shape_manager,
+            &entity,
+            ComponentWaitlistInsert::Face(vertex_a, vertex_b, vertex_c),
+        );
+        component_waitlist.process_insert(
+            &mut server,
+            &mut git_manager,
+            &mut shape_manager,
+            &entity,
+            ComponentWaitlistInsert::FileType(FileExtension::Icon),
+        );
+    }
+}
+
 pub fn insert_animation_component_events(
     mut commands: Commands,
     mut server: Server,
@@ -491,7 +585,7 @@ pub fn insert_palette_component_events(
 
         let color = color_q.get(color_entity).unwrap();
         let color_index = *color.index as usize;
-        let file_entity: Entity = color.file_entity.get(&server).unwrap();
+        let file_entity: Entity = color.owning_file_entity.get(&server).unwrap();
 
         let project_key = user_manager
             .user_session_data(&user_key)
@@ -539,7 +633,7 @@ pub fn insert_skin_component_events(
         info!("entity: `{:?}`, inserted BackgroundSkinColor", color_entity);
 
         let color = bckg_q.get(color_entity).unwrap();
-        let skin_file_entity: Entity = color.skin_file_entity.get(&server).unwrap();
+        let skin_file_entity: Entity = color.owning_file_entity.get(&server).unwrap();
 
         let project_key = user_manager
             .user_session_data(&user_key)
@@ -566,8 +660,8 @@ pub fn insert_skin_component_events(
         info!("entity: `{:?}`, inserted FaceColor", color_entity);
 
         let color = color_q.get(color_entity).unwrap();
-        let face_3d_entity: Entity = color.face_3d_entity.get(&server).unwrap();
-        let skin_file_entity: Entity = color.skin_file_entity.get(&server).unwrap();
+        let face_3d_entity: Entity = color.face_entity.get(&server).unwrap();
+        let skin_file_entity: Entity = color.owning_file_entity.get(&server).unwrap();
 
         let project_key = user_manager
             .user_session_data(&user_key)

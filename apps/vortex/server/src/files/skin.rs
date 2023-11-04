@@ -140,7 +140,7 @@ impl SkinWriter {
 
             let face_color = face_color_q.get(face_color_entity).unwrap();
 
-            let face_3d_entity = face_color.face_3d_entity.get(&server).unwrap();
+            let face_3d_entity = face_color.face_entity.get(&server).unwrap();
             let face_index = shape_manager.get_face_index(&face_3d_entity).unwrap() as u16;
 
             let palette_entity = face_color.palette_color_entity.get(&server).unwrap();
@@ -291,7 +291,7 @@ impl SkinReader {
                 SkinAction::BackgroundColor(palette_index) => {
                     let mut background_color_component = BackgroundSkinColor::new();
                     background_color_component
-                        .skin_file_entity
+                        .owning_file_entity
                         .set(&server, file_entity);
 
                     let entity_id = commands
@@ -309,7 +309,7 @@ impl SkinReader {
                 SkinAction::SkinColor(face_index, palette_index) => {
                     let mut face_color_component = FaceColor::new();
                     face_color_component
-                        .skin_file_entity
+                        .owning_file_entity
                         .set(&server, file_entity);
 
                     let entity_id = commands

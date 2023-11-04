@@ -6,10 +6,7 @@ use bevy_log::info;
 
 use naia_bevy_server::{events::UpdateComponentEvents, CommandsExt, EntityAuthStatus, Server};
 
-use vortex_proto::components::{
-    AnimFrame, AnimRotation, BackgroundSkinColor, EdgeAngle, FaceColor, FileSystemChild,
-    FileSystemEntry, NetTransform, PaletteColor, ShapeName, Vertex3d,
-};
+use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, EdgeAngle, FaceColor, FileSystemChild, FileSystemEntry, IconVertex, NetTransform, PaletteColor, ShapeName, Vertex3d};
 
 use crate::resources::{GitManager, UserManager};
 
@@ -39,6 +36,13 @@ pub fn update_component_events(
         }
         // on Vertex3D Update Event
         for (_, entity) in events.read::<Vertex3d>() {
+            let Some((project_key, file_key)) = git_manager.content_entity_keys(&entity) else {
+                panic!("no content entity keys!");
+            };
+            git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
+        }
+        // on IconVertex Update Event
+        for (_, entity) in events.read::<IconVertex>() {
             let Some((project_key, file_key)) = git_manager.content_entity_keys(&entity) else {
                 panic!("no content entity keys!");
             };

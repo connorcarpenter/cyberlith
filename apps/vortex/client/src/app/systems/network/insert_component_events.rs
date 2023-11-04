@@ -639,7 +639,7 @@ pub fn insert_palette_events(
             continue;
         };
 
-        let file_entity = color_component.file_entity.get(&client).unwrap();
+        let file_entity = color_component.owning_file_entity.get(&client).unwrap();
         let color_index = *color_component.index as usize;
 
         palette_manager.register_color(file_entity, color_entity, color_index);
@@ -668,7 +668,7 @@ pub fn insert_skin_events(
             continue;
         };
 
-        let file_entity = color_component.skin_file_entity.get(&client).unwrap();
+        let file_entity = color_component.owning_file_entity.get(&client).unwrap();
 
         skin_manager.bckg_color_postprocess(
             file_entity,
@@ -688,7 +688,7 @@ pub fn insert_skin_events(
         };
 
         //let file_entity = color_component.file_entity.get(&client).unwrap();
-        let face_3d_entity = color_component.face_3d_entity.get(&client).unwrap();
+        let face_3d_entity = color_component.face_entity.get(&client).unwrap();
 
         skin_manager.face_color_postprocess(
             face_3d_entity,

@@ -14,6 +14,7 @@ use crate::files::ShapeType;
 #[derive(Clone, Debug)]
 pub enum ContentEntityData {
     Shape(ShapeType),
+    IconShape(ShapeType),
     Dependency(FileKey),
     Frame,
     Rotation,
@@ -26,6 +27,10 @@ pub enum ContentEntityData {
 impl ContentEntityData {
     pub fn new_shape(shape_type: ShapeType) -> Self {
         Self::Shape(shape_type)
+    }
+
+    pub fn new_icon_shape(shape_type: ShapeType) -> Self {
+        Self::IconShape(shape_type)
     }
 
     pub fn new_dependency(dependency_key: FileKey) -> Self {

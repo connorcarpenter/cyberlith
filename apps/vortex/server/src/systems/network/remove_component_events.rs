@@ -3,10 +3,7 @@ use bevy_log::info;
 
 use naia_bevy_server::events::RemoveComponentEvents;
 
-use vortex_proto::components::{
-    AnimFrame, AnimRotation, Edge3d, Face3d, FileSystemChild, FileSystemRootChild, PaletteColor,
-    ShapeName, Vertex3d, VertexRoot,
-};
+use vortex_proto::components::{AnimFrame, AnimRotation, Edge3d, Face3d, FileSystemChild, FileSystemRootChild, IconEdge, IconFace, IconVertex, PaletteColor, ShapeName, Vertex3d, VertexRoot};
 
 pub fn remove_component_events(mut event_reader: EventReader<RemoveComponentEvents>) {
     for events in event_reader.iter() {
@@ -37,6 +34,19 @@ pub fn remove_component_events(mut event_reader: EventReader<RemoveComponentEven
                 entity
             );
         }
+        // on IconVertex Remove Event
+        for (_user_key, entity, _component) in events.read::<IconVertex>() {
+            info!("entity: `{:?}`, removed IconVertex", entity);
+        }
+        // on IconEdge Remove Event
+        for (_user_key, entity, _) in events.read::<IconEdge>() {
+            info!("entity: `{:?}`, removed IconEdge", entity);
+        }
+        // on IconFace Remove Event
+        for (_user_key, entity, _) in events.read::<IconFace>() {
+            info!("entity: `{:?}`, removed IconFace", entity);
+        }
+
         // on ShapeName Remove Event
         for (_, entity, _) in events.read::<ShapeName>() {
             info!("entity: `{:?}`, removed ShapeName", entity);

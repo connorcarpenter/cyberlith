@@ -37,6 +37,7 @@ pub enum FileExtension {
     Skin,
     Model,
     Scene,
+    Icon,
     Unknown,
 }
 
@@ -57,6 +58,7 @@ impl From<&str> for FileExtension {
             "skin" => FileExtension::Skin,
             "model" => FileExtension::Model,
             "scene" => FileExtension::Scene,
+            "icon" => FileExtension::Icon,
             _ => FileExtension::Unknown,
         }
     }
@@ -71,7 +73,8 @@ impl FileExtension {
             | FileExtension::Palette
             | FileExtension::Skin
             | FileExtension::Model
-            | FileExtension::Scene => true,
+            | FileExtension::Scene
+            | FileExtension::Icon => true,
             _ => false,
         }
     }
@@ -85,6 +88,7 @@ impl FileExtension {
             FileExtension::Skin => ".skin".to_string(),
             FileExtension::Model => ".model".to_string(),
             FileExtension::Scene => ".scene".to_string(),
+            FileExtension::Icon => ".icon".to_string(),
             FileExtension::Unknown => "<UNKNOWN>".to_string(),
         }
     }

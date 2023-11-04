@@ -261,7 +261,7 @@ fn process_entity_auth_status(
             "auth processing for color entity `{:?}`: `{:?}`",
             entity, status
         );
-        let owning_file_entity = color_component.file_entity.get(client).unwrap();
+        let owning_file_entity = color_component.owning_file_entity.get(client).unwrap();
         if let Some(tab_state) = tab_manager.tab_state_mut(&owning_file_entity) {
             tab_state.action_stack.entity_update_auth_status(&entity);
         } else {
@@ -275,7 +275,7 @@ fn process_entity_auth_status(
             "auth processing for face color entity `{:?}`: `{:?}`",
             entity, status
         );
-        let owning_file_entity = color_component.skin_file_entity.get(client).unwrap();
+        let owning_file_entity = color_component.owning_file_entity.get(client).unwrap();
         if let Some(tab_state) = tab_manager.tab_state_mut(&owning_file_entity) {
             tab_state.action_stack.entity_update_auth_status(&entity);
         } else {

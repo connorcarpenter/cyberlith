@@ -30,6 +30,10 @@ mod ownership;
 use ownership::OwnershipComponentsPlugin;
 pub use ownership::{OwnedByFile, FileType, FileExtension};
 
+mod icon;
+use icon::IconComponentsPlugin;
+pub use icon::{IconVertex, IconEdge, IconFace};
+
 // Plugin
 pub struct ComponentsPlugin;
 
@@ -41,6 +45,7 @@ impl ProtocolPlugin for ComponentsPlugin {
             .add_plugin(AnimationComponentsPlugin)
             .add_plugin(ColorComponentsPlugin)
             .add_plugin(TransformComponentsPlugin)
-            .add_plugin(OwnershipComponentsPlugin);
+            .add_plugin(OwnershipComponentsPlugin)
+            .add_plugin(IconComponentsPlugin);
     }
 }
