@@ -4,7 +4,6 @@ mod delete_edge;
 mod delete_face;
 mod delete_vertex;
 mod move_vertex;
-mod rotate_edge;
 mod select_shape;
 mod icon_action;
 

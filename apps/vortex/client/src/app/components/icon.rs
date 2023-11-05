@@ -4,13 +4,13 @@ use math::Vec3;
 
 // for stored children vertexes undo/redo ...
 #[derive(Clone)]
-pub struct VertexEntry {
+pub struct IconVertexEntry {
     entity_2d: Entity,
     position: Vec3,
-    children: Option<Vec<VertexEntry>>,
+    children: Option<Vec<IconVertexEntry>>,
 }
 
-impl VertexEntry {
+impl IconVertexEntry {
     pub fn new(entity_2d: Entity, position: Vec3) -> Self {
         Self {
             entity_2d,
@@ -19,7 +19,7 @@ impl VertexEntry {
         }
     }
 
-    pub fn set_children(&mut self, children: Vec<VertexEntry>) {
+    pub fn set_children(&mut self, children: Vec<IconVertexEntry>) {
         self.children = Some(children);
     }
 
@@ -31,36 +31,36 @@ impl VertexEntry {
         self.position
     }
 
-    pub fn children(&self) -> Option<Vec<VertexEntry>> {
+    pub fn children(&self) -> Option<Vec<IconVertexEntry>> {
         self.children.clone()
     }
 }
 
 // IconVertexData
 #[derive(Clone)]
-pub struct IconVertexData {
+pub struct IconVertexActionData {
     pub(crate) connected_vertices: Vec<(Entity, Option<Entity>)>,
     pub(crate) face_data: Vec<(Entity, Entity, Entity, bool)>,
 }
 
-impl IconVertexData {
+impl IconVertexActionData {
 
     pub fn migrate_vertex_entities(
         &mut self,
-        old_2d_entity: Entity,
-        new_2d_entity: Entity,
+        old_entity: Entity,
+        new_entity: Entity,
     ) {
         for (connected_vertex, _) in self.connected_vertices {
-            if *connected_vertex == old_2d_entity {
-                *connected_vertex = new_2d_entity;
+            if *connected_vertex == old_entity {
+                *connected_vertex = new_entity;
             }
         }
         for (connected_vertex_a, connected_vertex_b, _, _) in self.face_data {
-            if *connected_vertex_a == old_2d_entity {
-                *connected_vertex_a = new_2d_entity;
+            if *connected_vertex_a == old_entity {
+                *connected_vertex_a = new_entity;
             }
-            if *connected_vertex_b == old_2d_entity {
-                *connected_vertex_b = new_2d_entity;
+            if *connected_vertex_b == old_entity {
+                *connected_vertex_b = new_entity;
             }
         }
     }
@@ -85,7 +85,7 @@ impl IconVertexData {
 }
 
 fn migrate_vertex_trees(
-    vertex_trees_opt: &mut Option<Vec<VertexEntry>>,
+    vertex_trees_opt: &mut Option<Vec<IconVertexEntry>>,
     old_2d_entity: Entity,
     new_2d_entity: Entity,
 ) {

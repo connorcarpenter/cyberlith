@@ -20,7 +20,7 @@ use vortex_proto::{
     components::{SkinOrSceneEntity,
         AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency,
         FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, NetTransform, OwnedByFile,
-        PaletteColor, ShapeName, Vertex3d, VertexRoot,
+        PaletteColor, ShapeName, Vertex3d, VertexRoot, IconEdge, IconFace, IconVertex,
     },
     protocol,
 };
@@ -107,6 +107,11 @@ fn main() {
         .add_event::<InsertComponentEvent<VertexRoot>>()
         .add_event::<InsertComponentEvent<Edge3d>>()
         .add_event::<InsertComponentEvent<Face3d>>()
+
+        .add_event::<InsertComponentEvent<IconVertex>>()
+        .add_event::<InsertComponentEvent<IconEdge>>()
+        .add_event::<InsertComponentEvent<IconFace>>()
+
         .add_event::<InsertComponentEvent<FileType>>()
         .add_event::<InsertComponentEvent<OwnedByFile>>()
         .add_event::<InsertComponentEvent<ShapeName>>()

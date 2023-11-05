@@ -3,7 +3,6 @@ use bevy_ecs::{
     prelude::{Commands, Entity, Query, World},
     system::{ResMut, SystemState},
 };
-use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt};
 
@@ -13,10 +12,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::FileExtension;
-
 use crate::app::{
-    components::VertexTypeData,
     events::ShapeColorResyncEvent,
     resources::{
         action::{
@@ -25,11 +21,10 @@ use crate::app::{
         },
         camera_manager::CameraManager,
         canvas::Canvas,
-        edge_manager::EdgeManager,
-        face_manager::FaceManager,
         input::InputManager,
-        shape_data::{CanvasShape, FaceKey},
-        vertex_manager::VertexManager,
+        shape_data::CanvasShape,
+        icon_manager::IconManager,
+        icon_data::IconFaceKey,
     },
 };
 
@@ -45,18 +40,15 @@ pub(crate) fn execute(
     };
 
     let mut entities_to_release = Vec::new();
-    let deselected_vertex_2d_entity_store;
-    let selected_vertex_3d;
-    let selected_vertex_2d;
+    let deselected_vertex_entity_store;
+    let selected_vertex;
 
     let mut system_state: SystemState<(
         Commands,
         Client,
         ResMut<Canvas>,
         ResMut<CameraManager>,
-        ResMut<VertexManager>,
-        ResMut<EdgeManager>,
-        ResMut<FaceManager>,
+        ResMut<IconManager>,
         ResMut<Assets<CpuMesh>>,
         ResMut<Assets<CpuMaterial>>,
     )> = SystemState::new(world);
@@ -65,23 +57,18 @@ pub(crate) fn execute(
         mut client,
         mut canvas,
         mut camera_manager,
-        mut vertex_manager,
-        edge_manager,
-        face_manager,
+        mut icon_manager,
         mut meshes,
         mut materials,
     ) = system_state.get_mut(world);
 
     // deselect all selected vertices
-    let (deselected_vertex_2d_entity, vertex_3d_entity_to_release) = deselect_selected_shape(
+    let deselected_vertex_entity = deselect_selected_shape(
         &mut canvas,
         input_manager,
-        &vertex_manager,
-        &edge_manager,
-        &face_manager,
     );
-    deselected_vertex_2d_entity_store = deselected_vertex_2d_entity;
-    if let Some(entity) = vertex_3d_entity_to_release {
+    deselected_vertex_entity_store = deselected_vertex_entity;
+    if let Some((entity, _)) = deselected_vertex_entity {
         let mut entity_mut = commands.entity(entity);
         if entity_mut.authority(&client).is_some() {
             entity_mut.release_authority(&mut client);
@@ -89,7 +76,7 @@ pub(crate) fn execute(
     }
 
     // create vertex
-    let new_vertex_2d_entity = icon_manager.create_networked_vertex(
+    let new_vertex_entity = icon_manager.create_networked_vertex(
         &mut commands,
         &mut client,
         &mut camera_manager,
@@ -101,10 +88,10 @@ pub(crate) fn execute(
     );
 
     // migrate undo entities
-    if let Some(old_vertex_2d_entity) = old_vertex_entities_opt {
+    if let Some(old_vertex_entity) = old_vertex_entities_opt {
         action_stack.migrate_vertex_entities(
-            old_vertex_2d_entity,
-            new_vertex_2d_entity,
+            old_vertex_entity,
+            new_vertex_entity,
         );
     }
 
@@ -115,9 +102,7 @@ pub(crate) fn execute(
         Client,
         ResMut<Canvas>,
         ResMut<CameraManager>,
-        ResMut<VertexManager>,
-        ResMut<EdgeManager>,
-        ResMut<FaceManager>,
+        ResMut<IconManager>,
         ResMut<Assets<CpuMesh>>,
         ResMut<Assets<CpuMaterial>>,
         EventWriter<ShapeColorResyncEvent>,
@@ -128,62 +113,58 @@ pub(crate) fn execute(
         mut client,
         mut canvas,
         mut camera_manager,
-        mut vertex_manager,
-        mut edge_manager,
-        mut face_manager,
+        mut icon_manager,
         mut meshes,
         mut materials,
         mut shape_color_resync_events,
         transform_q,
     ) = system_state.get_mut(world);
 
-    let mut edge_3d_entities = Vec::new();
-    for (connected_vertex_2d_entity, old_edge_opt) in icon_vertex_data.connected_vertices {
-        let new_edge_2d_entity = icon_manager.create_networked_edge(
+    let mut edge_entities = Vec::new();
+    for (connected_vertex_entity, old_edge_opt) in icon_vertex_data.connected_vertices {
+        let new_edge_entity = icon_manager.create_networked_edge(
             &mut commands,
             &mut client,
             &mut camera_manager,
-            &mut vertex_manager,
-            &mut face_manager,
+            &mut icon_manager,
             &mut meshes,
             &mut materials,
             &mut shape_color_resync_events,
-            connected_vertex_2d_entity,
-            new_vertex_2d_entity,
+            connected_vertex_entity,
+            new_vertex_entity,
             tab_file_entity,
             &mut entities_to_release,
         );
-        if let Some(old_edge_2d_entity) = old_edge_opt {
-            action_stack.migrate_edge_entities(old_edge_2d_entity, new_edge_2d_entity);
+        if let Some(old_edge_entity) = old_edge_opt {
+            action_stack.migrate_edge_entities(old_edge_entity, new_edge_entity);
         }
     }
     for (
-        connected_face_vertex_a_2d,
-        connected_face_vertex_b_2d,
-        old_face_2d_entity,
-        create_face_3d,
+        connected_face_vertex_a,
+        connected_face_vertex_b,
+        old_local_face_entity,
+        create_net_face,
     ) in icon_vertex_data.face_data
     {
-        let face_key = FaceKey::new(
-            new_vertex_2d_entity,
-            connected_face_vertex_a_2d,
-            connected_face_vertex_b_2d,
+        let face_key = IconFaceKey::new(
+            new_vertex_entity,
+            connected_face_vertex_a,
+            connected_face_vertex_b,
         );
 
-        face_manager.remove_new_face_key(&face_key);
-        let new_face_2d_entity = face_manager.process_new_face(
+        icon_manager.remove_new_face_key(&face_key);
+        let new_face_entity = icon_manager.process_new_face(
             &mut commands,
             &mut camera_manager,
-            &mut vertex_manager,
-            &mut edge_manager,
+            &mut icon_manager,
             &mut meshes,
             &mut materials,
             tab_file_entity,
             &face_key,
         );
-        action_stack.migrate_face_entities(old_face_2d_entity, new_face_2d_entity);
-        if create_face_3d {
-            face_manager.create_networked_face(
+        action_stack.migrate_face_entities(old_local_face_entity, new_face_entity);
+        if create_net_face {
+            icon_manager.create_networked_face(
                 &mut commands,
                 &mut client,
                 &mut meshes,
@@ -192,9 +173,9 @@ pub(crate) fn execute(
                 &transform_q,
                 &face_key,
                 [
-                    edge_3d_entities[0],
-                    edge_3d_entities[1],
-                    edge_3d_entities[2],
+                    edge_entities[0],
+                    edge_entities[1],
+                    edge_entities[2],
                 ],
                 tab_file_entity,
             );
@@ -202,8 +183,8 @@ pub(crate) fn execute(
     }
 
     // select vertex
-    input_manager.select_shape(&mut canvas, &new_vertex_2d_entity, CanvasShape::Vertex);
-    selected_vertex_2d = new_vertex_2d_entity;
+    input_manager.select_shape(&mut canvas, &new_vertex_entity, CanvasShape::Vertex);
+    selected_vertex = new_vertex_entity;
 
     system_state.apply(world);
 
@@ -213,7 +194,7 @@ pub(crate) fn execute(
         let (mut commands, mut client) = system_state.get_mut(world);
 
         for entity_to_release in entities_to_release {
-            if entity_to_release != selected_vertex_3d {
+            if entity_to_release != selected_vertex {
                 commands
                     .entity(entity_to_release)
                     .release_authority(&mut client);
@@ -224,7 +205,7 @@ pub(crate) fn execute(
     }
 
     return vec![IconAction::DeleteVertex(
-        selected_vertex_2d,
-        deselected_vertex_2d_entity_store,
+        selected_vertex,
+        deselected_vertex_entity_store,
     )];
 }

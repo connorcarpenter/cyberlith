@@ -20,3 +20,4 @@ pub mod tab_manager;
 pub mod toolbar;
 pub mod vertex_manager;
 pub mod icon_manager;
+pub mod icon_data;

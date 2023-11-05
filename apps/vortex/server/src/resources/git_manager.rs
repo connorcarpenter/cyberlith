@@ -213,7 +213,7 @@ impl GitManager {
                         FileExtension::Icon => {
                             let icon_file_entity = self.file_entity(project_key, file_key).unwrap();
 
-                            // find face_3d_entity from face_index
+                            // find face_entity from face_index
                             face_entity = icon_manager
                                 .face_entity_from_index(&icon_file_entity, face_index as usize)
                                 .unwrap();

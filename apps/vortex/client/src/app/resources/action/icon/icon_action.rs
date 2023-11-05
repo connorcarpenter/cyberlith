@@ -3,7 +3,7 @@ use bevy_ecs::prelude::{Entity, World};
 use math::Vec3;
 
 use crate::app::{
-    components::IconVertexData,
+    components::IconVertexActionData,
     resources::{
         action::{
             icon::{
@@ -24,8 +24,8 @@ use crate::app::{
 pub enum IconAction {
     // The 2D shape entity to deselect (or None for deselect)
     SelectShape(Option<(Entity, CanvasShape)>),
-    // Create Vertex (Vertex-specific data, Position, older vertex 2d entity & 3d entity it was associated with)
-    CreateVertex(IconVertexData, Vec3, Option<(Entity, Entity)>),
+    // Create Vertex (Vertex-specific data, Position, older vertex entity it was associated with)
+    CreateVertex(IconVertexActionData, Vec3, Option<Entity>),
     // Delete Vertex (2d vertex entity, optional vertex 2d entity to select after delete)
     DeleteVertex(Entity, Option<(Entity, CanvasShape)>),
     // Move Vertex (2d vertex Entity, Old Position, New Position)
@@ -244,16 +244,16 @@ impl IconAction {
     }
 }
 
-impl Action for ShapeAction {
+impl Action for IconAction {
     fn entity_update_auth_status_impl(
         buffered_check: &mut bool,
         action_opt: Option<&Self>,
         entity: &Entity,
     ) {
         match action_opt {
-            Some(Self::SelectShape(vertex_2d_entity_opt)) => {
-                if let Some((vertex_2d_entity, CanvasShape::Vertex)) = vertex_2d_entity_opt {
-                    if vertex_2d_entity == entity {
+            Some(Self::SelectShape(vertex_entity_opt)) => {
+                if let Some((vertex_entity, CanvasShape::Vertex)) = vertex_entity_opt {
+                    if vertex_entity == entity {
                         *buffered_check = true;
                     }
                 }
@@ -264,40 +264,11 @@ impl Action for ShapeAction {
 
     fn enable_top_impl(world: &mut World, last_action: Option<&Self>, enabled: &mut bool) {
         match last_action {
-            Some(Self::SelectShape(vertex_2d_entity_opt)) => {
+            Some(Self::SelectShape(shape_entity_opt)) => {
                 let mut entities = Vec::new();
 
-                if let Some((shape_2d_entity, shape_type)) = vertex_2d_entity_opt {
-                    match shape_type {
-                        CanvasShape::RootVertex | CanvasShape::Vertex => {
-                            let vertex_3d_entity = world
-                                .get_resource::<VertexManager>()
-                                .unwrap()
-                                .vertex_entity_2d_to_3d(shape_2d_entity)
-                                .unwrap();
-                            entities.push(vertex_3d_entity);
-                        }
-                        CanvasShape::Edge => {
-                            let edge_3d_entity = world
-                                .get_resource::<EdgeManager>()
-                                .unwrap()
-                                .edge_entity_2d_to_3d(shape_2d_entity)
-                                .unwrap();
-                            entities.push(edge_3d_entity);
-                        }
-                        CanvasShape::Face => {
-                            // face 2d entities don't go away when 3d face entities are deleted
-                            // so they can exist on the action stack without a 3d counterpart,
-                            // which means we don't need to check their auth
-                            if let Some(face_3d_entity) = world
-                                .get_resource::<FaceManager>()
-                                .unwrap()
-                                .face_entity_2d_to_3d(shape_2d_entity)
-                            {
-                                entities.push(face_3d_entity);
-                            }
-                        }
-                    }
+                if let Some((shape_entity, _)) = shape_entity_opt {
+                    entities.push(*shape_entity);
                 }
 
                 *enabled = ActionStack::<Self>::should_be_enabled(world, &entities);

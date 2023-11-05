@@ -1,0 +1,106 @@
+use std::collections::HashSet;
+
+use bevy_ecs::entity::Entity;
+
+pub struct IconVertexData {
+    pub(crate) edges: HashSet<Entity>,
+    pub(crate) faces: HashSet<IconFaceKey>,
+}
+
+impl IconVertexData {
+    pub fn new() -> Self {
+        Self {
+            edges: HashSet::new(),
+            faces: HashSet::new(),
+        }
+    }
+
+    pub fn add_edge(&mut self, edge_entity: Entity) {
+        self.edges.insert(edge_entity);
+    }
+
+    pub fn remove_edge(&mut self, edge_entity: &Entity) {
+        self.edges.remove(edge_entity);
+    }
+
+    pub fn add_face(&mut self, face_key: IconFaceKey) {
+        self.faces.insert(face_key);
+    }
+
+    pub fn remove_face(&mut self, face_key: &IconFaceKey) {
+        self.faces.remove(face_key);
+    }
+}
+
+pub struct IconEdgeData {
+    pub(crate) vertex_a_entity: Entity,
+    pub(crate) vertex_b_entity: Entity,
+    pub(crate) faces: HashSet<IconFaceKey>,
+}
+
+impl IconEdgeData {
+    pub fn new(
+        vertex_a_entity: Entity,
+        vertex_b_entity: Entity,
+    ) -> Self {
+        Self {
+            vertex_a_entity,
+            vertex_b_entity,
+            faces: HashSet::new(),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Debug)]
+pub struct IconFaceKey {
+    pub vertex_a: Entity,
+    pub vertex_b: Entity,
+    pub vertex_c: Entity,
+}
+
+impl IconFaceKey {
+    pub fn new(vertex_a: Entity, vertex_b: Entity, vertex_c: Entity) -> Self {
+        let mut vertices = vec![vertex_a, vertex_b, vertex_c];
+
+        vertices.sort();
+
+        Self {
+            vertex_a: vertices[0],
+            vertex_b: vertices[1],
+            vertex_c: vertices[2],
+        }
+    }
+}
+
+pub struct IconFaceData {
+
+    pub(crate) file_entity: Entity,
+
+    pub(crate) local_entity: Entity,
+    pub(crate) net_entity: Option<Entity>,
+
+    pub(crate) edge_a: Entity,
+    pub(crate) edge_b: Entity,
+    pub(crate) edge_c: Entity,
+}
+
+impl IconFaceData {
+    pub fn new(
+        file_entity: Entity,
+        wire_entity: Entity,
+        edge_a: Entity,
+        edge_b: Entity,
+        edge_c: Entity,
+    ) -> Self {
+        Self {
+            file_entity,
+
+            local_entity: wire_entity,
+            net_entity: None,
+
+            edge_a,
+            edge_b,
+            edge_c,
+        }
+    }
+}
