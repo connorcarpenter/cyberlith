@@ -1,4 +1,5 @@
-use bevy_ecs::entity::Entity;
+
+use bevy_ecs::{entity::Entity, component::Component};
 
 use math::Vec3;
 
@@ -50,12 +51,12 @@ impl IconVertexActionData {
         old_entity: Entity,
         new_entity: Entity,
     ) {
-        for (connected_vertex, _) in self.connected_vertices {
+        for (connected_vertex, _) in &mut self.connected_vertices {
             if *connected_vertex == old_entity {
                 *connected_vertex = new_entity;
             }
         }
-        for (connected_vertex_a, connected_vertex_b, _, _) in self.face_data {
+        for (connected_vertex_a, connected_vertex_b, _, _) in &mut self.face_data {
             if *connected_vertex_a == old_entity {
                 *connected_vertex_a = new_entity;
             }
@@ -65,40 +66,35 @@ impl IconVertexActionData {
         }
     }
 
-    pub fn migrate_edge_entities(&mut self, old_2d_entity: Entity, new_2d_entity: Entity) {
-        for (_, connected_edge_opt) in self.connected_vertices {
+    pub fn migrate_edge_entities(&mut self, old_entity: Entity, new_entity: Entity) {
+        for (_, connected_edge_opt) in &mut self.connected_vertices {
             if let Some(connected_edge) = connected_edge_opt {
-                if *connected_edge == old_2d_entity {
-                    *connected_edge = new_2d_entity;
+                if *connected_edge == old_entity {
+                    *connected_edge = new_entity;
                 }
             }
         }
     }
 
-    pub fn migrate_face_entities(&mut self, old_2d_entity: Entity, new_2d_entity: Entity) {
-        for (_, _, face_2d_entity, _) in self.face_data {
-            if *face_2d_entity == old_2d_entity {
-                *face_2d_entity = new_2d_entity;
+    pub fn migrate_face_entities(&mut self, old_entity: Entity, new_entity: Entity) {
+        for (_, _, face_entity, _) in &mut self.face_data {
+            if *face_entity == old_entity {
+                *face_entity = new_entity;
             }
         }
     }
 }
 
-fn migrate_vertex_trees(
-    vertex_trees_opt: &mut Option<Vec<IconVertexEntry>>,
-    old_2d_entity: Entity,
-    new_2d_entity: Entity,
-) {
-    if let Some(vertex_trees) = vertex_trees_opt {
-        for vertex_tree in vertex_trees {
-            if vertex_tree.entity_2d == old_2d_entity {
-                vertex_tree.entity_2d = new_2d_entity;
-            }
-            migrate_vertex_trees(
-                &mut vertex_tree.children,
-                old_2d_entity,
-                new_2d_entity,
-            );
-        }
+
+#[derive(Component)]
+pub struct IconEdgeLocal {
+    pub start: Entity,
+    pub end: Entity,
+}
+
+impl IconEdgeLocal {
+
+    pub fn new(start: Entity, end: Entity) -> Self {
+        Self { start, end }
     }
 }

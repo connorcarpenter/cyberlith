@@ -14,6 +14,7 @@ use crate::app::resources::{
         palette::PaletteAction,
         shape::ShapeAction,
         skin::SkinAction,
+        icon::IconAction,
     },
     file_manager::FileManager,
     input::InputManager,
@@ -321,5 +322,48 @@ impl ActionStack<ModelAction> {
         action: ModelAction,
     ) -> Vec<ModelAction> {
         action.execute(world, input_manager, tab_file_entity)
+    }
+}
+
+impl ActionStack<IconAction> {
+    pub fn execute_action(
+        &mut self,
+        world: &mut World,
+        input_manager: &mut InputManager,
+        tab_file_entity: Entity,
+        action: IconAction,
+    ) -> Vec<IconAction> {
+        action.execute(world, input_manager, tab_file_entity, self)
+    }
+
+    pub(crate) fn migrate_vertex_entities(
+        &mut self,
+        old_entity: Entity,
+        new_entity: Entity,
+    ) {
+        for action_list in [&mut self.undo_actions, &mut self.redo_actions] {
+            for action in action_list.iter_mut() {
+                action.migrate_vertex_entities(
+                    old_entity,
+                    new_entity,
+                );
+            }
+        }
+    }
+
+    pub(crate) fn migrate_edge_entities(&mut self, old_entity: Entity, new_entity: Entity) {
+        for action_list in [&mut self.undo_actions, &mut self.redo_actions] {
+            for action in action_list.iter_mut() {
+                action.migrate_edge_entities(old_entity, new_entity);
+            }
+        }
+    }
+
+    pub(crate) fn migrate_face_entities(&mut self, old_entity: Entity, new_entity: Entity) {
+        for action_list in [&mut self.undo_actions, &mut self.redo_actions] {
+            for action in action_list.iter_mut() {
+                action.migrate_face_entities(old_entity, new_entity);
+            }
+        }
     }
 }

@@ -52,7 +52,7 @@ pub(crate) fn execute(
 
     info!(
         "CreateEdge(vertex_a: {:?}, vertex_b: {:?}, (shape_entity_to_select: {:?}, {:?}), face_to_create_opt: {:?})",
-        vertex_2d_entity_a, vertex_2d_entity_b, shape_entity_to_select, shape_type_to_select, face_to_create_opt
+        vertex_entity_a, vertex_entity_b, shape_entity_to_select, shape_type_to_select, face_to_create_opt
     );
 
     let mut entities_to_release = Vec::new();
@@ -101,14 +101,12 @@ pub(crate) fn execute(
             &mut commands,
             &mut client,
             &mut camera_manager,
-            &mut icon_manager,
             &mut meshes,
             &mut materials,
             &mut shape_color_resync_events,
             vertex_entity_a,
             vertex_entity_b,
             tab_file_entity,
-            None,
             &mut entities_to_release,
         );
         created_edge_entity = new_edge_entity;
@@ -116,7 +114,7 @@ pub(crate) fn execute(
 
         // migrate undo entities
         if let Some(old_edge_entity) = old_edge_entities_opt {
-            action_stack.migrate_edge_entities(old_edge_entity);
+            action_stack.migrate_edge_entities(old_edge_entity, new_edge_entity);
             if shape_type_to_select == CanvasShape::Edge {
                 if shape_entity_to_select == old_edge_entity {
                     shape_entity_to_select = new_edge_entity;

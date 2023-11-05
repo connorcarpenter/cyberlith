@@ -4,6 +4,8 @@ use naia_bevy_shared::{
     EntityProperty, Property, Protocol, ProtocolPlugin, Replicate,
 };
 
+use math::Vec2;
+
 use crate::components::VertexSerdeInt;
 
 pub struct IconComponentsPlugin;
@@ -43,6 +45,10 @@ impl IconVertex {
 
     pub fn set_y(&mut self, y: i16) {
         *self.y = y.into();
+    }
+
+    pub fn from_vec2(vec2: Vec2) -> Self {
+        Self::new(vec2.x as i16, vec2.y as i16)
     }
 }
 
