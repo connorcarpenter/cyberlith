@@ -23,7 +23,7 @@ use crate::app::{
     resources::{
         animation_manager::AnimationManager, edge_manager::edge_is_enabled,
         edge_manager::EdgeManager, file_manager::FileManager, model_manager::ModelManager,
-        tab_manager::TabManager, vertex_manager::VertexManager,
+        tab_manager::TabManager, vertex_manager::VertexManager, icon_manager::IconManager,
     },
 };
 
@@ -125,6 +125,13 @@ pub fn draw_vertices_and_edges(world: &mut World) {
         FileExtension::Model | FileExtension::Scene => {
             world.resource_scope(|world, model_manager: Mut<ModelManager>| {
                 model_manager.draw(world, &file_ext, &current_file_entity);
+            });
+
+            return;
+        }
+        FileExtension::Icon => {
+            world.resource_scope(|world, icon_manager: Mut<IconManager>| {
+                icon_manager.draw(world, &current_file_entity);
             });
 
             return;

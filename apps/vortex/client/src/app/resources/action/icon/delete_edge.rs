@@ -92,7 +92,6 @@ pub(crate) fn execute(
         &mut commands,
         &mut canvas,
         input_manager,
-        &mut icon_manager,
         &edge_entity,
     );
 

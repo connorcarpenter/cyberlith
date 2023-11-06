@@ -2,31 +2,26 @@ use bevy_ecs::{
     prelude::{Commands, Entity, Query, World},
     system::{ResMut, SystemState},
 };
-use bevy_log::{info, warn};
+use bevy_log::{info};
 
 use naia_bevy_client::Client;
 
-use vortex_proto::components::{Edge3d, EdgeAngle, FileType, IconEdge, IconVertex, Vertex3d};
+use vortex_proto::components::{IconEdge, IconVertex};
 
 use crate::app::{
-    components::{IconVertexEntry, VertexTypeData},
+    components::IconVertexActionData,
     resources::{
         action::icon::{
             select_shape::{entity_request_release, select_shape},
             IconAction,
         },
         canvas::Canvas,
-        edge_manager::EdgeManager,
-        face_manager::FaceManager,
         input::InputManager,
         shape_data::CanvasShape,
-        shape_data::FaceKey,
-        vertex_manager::VertexManager,
         icon_data::IconFaceKey,
         icon_manager::IconManager,
     },
 };
-use crate::app::components::IconVertexActionData;
 
 pub(crate) fn execute(
     world: &mut World,
@@ -43,9 +38,6 @@ pub(crate) fn execute(
         Commands,
         Client,
         ResMut<Canvas>,
-        ResMut<VertexManager>,
-        ResMut<EdgeManager>,
-        ResMut<FaceManager>,
         ResMut<IconManager>,
         Query<(Entity, &IconVertex)>,
         Query<&IconEdge>,
@@ -54,9 +46,6 @@ pub(crate) fn execute(
         mut commands,
         mut client,
         mut canvas,
-        mut vertex_manager,
-        edge_manager,
-        face_manager,
         mut icon_manager,
         vertex_q,
         edge_q,
@@ -91,7 +80,7 @@ pub(crate) fn execute(
     let connected_faces: Vec<IconFaceKey> = connected_faces.iter().map(|face| *face).collect();
     for face_key in connected_faces {
         let face_net_entity_exists = icon_manager
-            .face_net_entity_from_face_key(&face_key)
+            .net_face_entity_from_face_key(&face_key)
             .is_some();
 
         let mut vertices = vec![
@@ -102,7 +91,7 @@ pub(crate) fn execute(
         vertices.retain(|vertex| *vertex != vertex_entity);
 
         let face_local_entity = icon_manager
-            .face_local_entity_from_face_key(&face_key)
+            .local_face_entity_from_face_key(&face_key)
             .unwrap();
 
         connected_face_vertex_entities.push((
@@ -121,16 +110,14 @@ pub(crate) fn execute(
     let Ok((_, vertex)) = vertex_q.get(vertex_entity) else {
         panic!("Failed to get IconVertex for vertex entity {:?}!", vertex_entity);
     };
-    let vertex_position = vertex.as_vec3();
+    let vertex_position = vertex.as_vec2();
 
     handle_vertex_despawn(
         &mut commands,
         &mut client,
         &mut canvas,
         input_manager,
-        &mut vertex_manager,
-        &edge_manager,
-        &face_manager,
+        &mut icon_manager,
         vertex_entity,
         vertex_to_select_opt,
     );
@@ -157,7 +144,7 @@ fn handle_vertex_despawn(
     commands.entity(vertex_entity).despawn();
 
     // cleanup mappings
-    icon_manager.cleanup_deleted_vertex(commands, canvas, input_manager, &vertex_entity);
+    icon_manager.cleanup_deleted_vertex(canvas, input_manager, &vertex_entity);
 
     input_manager.deselect_shape(canvas);
 
@@ -166,7 +153,6 @@ fn handle_vertex_despawn(
         let entity_to_request = select_shape(
             canvas,
             input_manager,
-            icon_manager,
             Some((vertex_to_select, vertex_type)),
         );
         entity_request_release(commands, client, entity_to_request, None);

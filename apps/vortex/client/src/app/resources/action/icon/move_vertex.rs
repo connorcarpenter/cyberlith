@@ -1,6 +1,6 @@
 use bevy_ecs::{
     prelude::{Query, World},
-    system::{Res, ResMut, SystemState},
+    system::{ResMut, SystemState},
 };
 use bevy_log::info;
 
@@ -50,7 +50,7 @@ pub(crate) fn execute(world: &mut World, action: IconAction) -> Vec<IconAction> 
         let Ok(mut vertex) = vertex_q.get_mut(vertex_entity) else {
             panic!("Failed to get IconVertex for vertex entity {:?}!", vertex_entity);
         };
-        vertex.set_vec3(&new_position);
+        vertex.set_vec2(&new_position);
     }
 
     icon_manager.on_vertex_moved(

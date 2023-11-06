@@ -107,9 +107,9 @@ impl IconAction {
                     new_vertex_entity,
                 );
 
-                if let Some((other_2d_entity, other_3d_entity)) = entity_opt {
-                    if *other_2d_entity == old_vertex_entity {
-                        *other_2d_entity = new_vertex_entity;
+                if let Some(other_entity) = entity_opt {
+                    if *other_entity == old_vertex_entity {
+                        *other_entity = new_vertex_entity;
                     }
                 }
             }

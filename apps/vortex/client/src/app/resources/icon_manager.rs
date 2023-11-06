@@ -1,18 +1,19 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{
     entity::Entity,
     query::With,
     system::{Commands, Query, Res, ResMut, Resource, SystemState},
-    world::World,
+    world::{World, Mut},
     event::EventWriter,
 };
+use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
 use math::{Vec2, Vec3};
 
-use render_api::{base::{Color, CpuMaterial, CpuMesh}, components::{RenderObjectBundle, RenderLayer, Transform}, resources::RenderFrame, Handle, Assets};
+use render_api::{base::{Color, CpuMaterial, CpuMesh}, components::{RenderObjectBundle, RenderLayer, Transform}, resources::RenderFrame, Handle, Assets, shapes::{HollowTriangle, Triangle}};
 
 use vortex_proto::components::{IconEdge, OwnedByFile, IconVertex, IconFace};
 
@@ -21,9 +22,11 @@ use crate::app::{
         IconEdgeLocal,
         OwnedByFileLocal,
         Edge2dLocal, Vertex2d,
+        Face3dLocal, FaceIcon2d, IconLocalFace,
     },
     resources::{
-        icon_data::{IconFaceKey, IconVertexData},
+        action::icon::IconAction,
+        icon_data::{IconFaceData, IconFaceKey, IconVertexData},
         input::InputManager,
         shape_data::CanvasShape, tab_manager::TabManager, camera_manager::CameraManager, canvas::Canvas, icon_data::IconEdgeData
     },
@@ -33,13 +36,45 @@ use crate::app::{
 
 #[derive(Resource)]
 pub struct IconManager {
+    // vertices
+    vertices: HashMap<Entity, IconVertexData>,
 
+    drags: Vec<(Entity, Vec2, Vec2)>,
+    dragging_entity: Option<Entity>,
+    dragging_start: Option<Vec2>,
+    dragging_end: Option<Vec2>,
+
+    // edges
+    edges: HashMap<Entity, IconEdgeData>,
+
+    // faces
+    face_keys: HashMap<IconFaceKey, Option<IconFaceData>>,
+    // net face entity -> face key
+    net_faces: HashMap<Entity, IconFaceKey>,
+    // local face entity -> face key
+    local_faces: HashMap<Entity, IconFaceKey>,
+    // queue of new faces to process
+    new_face_keys: Vec<(IconFaceKey, Entity)>,
 }
 
 impl Default for IconManager {
     fn default() -> Self {
         Self {
+            // vertices
+            vertices: HashMap::new(),
+            drags: Vec::new(),
+            dragging_entity: None,
+            dragging_start: None,
+            dragging_end: None,
 
+            // edges
+            edges: HashMap::new(),
+
+            // faces
+            new_face_keys: Vec::new(),
+            face_keys: HashMap::new(),
+            local_faces: HashMap::new(),
+            net_faces: HashMap::new(),
         }
     }
 }
@@ -135,6 +170,25 @@ impl IconManager {
     }
 
     // Vertices
+
+    pub(crate) fn reset_last_dragged_vertex(&mut self, world: &mut World, input_manager: &mut InputManager,) {
+        // reset last dragged vertex
+        if let Some(drags) = self.take_drags() {
+            world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                for (vertex_entity, old_pos, new_pos) in drags {
+                    tab_manager.current_tab_execute_icon_action(
+                        world,
+                        input_manager,
+                        IconAction::MoveVertex(vertex_entity, old_pos, new_pos, true),
+                    );
+                }
+            });
+        }
+    }
+
+    pub(crate) fn has_vertex_entity(&self, entity: &Entity) -> bool {
+        self.vertices.contains_key(entity)
+    }
 
     pub fn reset_last_vertex_dragged(&mut self) {
         self.drags = Vec::new();
@@ -254,7 +308,7 @@ impl IconManager {
 
         commands
             .entity(vertex_entity)
-            .spawn(RenderObjectBundle::circle(
+            .insert(RenderObjectBundle::circle(
                 meshes,
                 materials,
                 Vec2::ZERO,
@@ -263,8 +317,7 @@ impl IconManager {
                 color,
                 None,
             ))
-            .insert(camera_manager.layer_2d)
-            .id();
+            .insert(camera_manager.layer_2d);
 
         if let Some(file_entity) = ownership_opt {
             commands
@@ -508,8 +561,7 @@ impl IconManager {
             .entity(edge_entity)
             .insert(shape_components)
             .insert(camera_manager.layer_2d)
-            .insert(IconEdgeLocal::new(vertex_entity_a, vertex_entity_b))
-            .id();
+            .insert(IconEdgeLocal::new(vertex_entity_a, vertex_entity_b));
         if let Some(file_entity) = ownership_opt {
             commands
                 .entity(edge_entity)
@@ -655,4 +707,457 @@ impl IconManager {
     }
 
     // Faces
+
+    pub fn process_new_faces(
+        &mut self,
+        commands: &mut Commands,
+        canvas: &mut Canvas,
+        camera_manager: &CameraManager,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+    ) {
+        if self.new_face_keys.is_empty() {
+            return;
+        }
+
+        let keys = std::mem::take(&mut self.new_face_keys);
+        for (face_key, file_entity) in keys {
+            self.process_new_local_face(
+                commands,
+                camera_manager,
+                meshes,
+                materials,
+                file_entity,
+                &face_key,
+            );
+        }
+
+        canvas.queue_resync_shapes();
+    }
+
+    // return local face entity
+    pub fn process_new_local_face(
+        &mut self,
+        commands: &mut Commands,
+        camera_manager: &CameraManager,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+        file_entity: Entity,
+        face_key: &IconFaceKey,
+    ) -> Entity {
+        if self.has_local_face(face_key) {
+            panic!("face key already registered! `{:?}`", face_key);
+        }
+        info!("processing new face: `{:?}`", face_key);
+        let vertex_a = face_key.vertex_a;
+        let vertex_b = face_key.vertex_b;
+        let vertex_c = face_key.vertex_c;
+
+        // local face needs to have it's own button mesh, matching the vertices
+
+        let new_entity = commands
+            .spawn_empty()
+            .insert(IconLocalFace::new(vertex_a, vertex_b, vertex_c))
+            .insert(RenderObjectBundle::equilateral_triangle(
+                meshes,
+                materials,
+                Vec2::ZERO,
+                FaceIcon2d::SIZE,
+                FaceIcon2d::COLOR,
+                Some(1),
+            ))
+            .insert(camera_manager.layer_2d)
+            .id();
+
+        info!("spawned face entity: {:?}", new_entity);
+
+        info!(
+            "adding OwnedByFile({:?}) to entity {:?}",
+            file_entity, new_entity
+        );
+        commands
+            .entity(new_entity)
+            .insert(OwnedByFileLocal::new(file_entity));
+
+        // add face to vertex data
+        for vertex_entity in [&vertex_a, &vertex_b, &vertex_c] {
+            self.vertex_add_face(vertex_entity, *face_key)
+        }
+
+        // add face to edge data
+        let mut edge_entities = Vec::new();
+        for (vert_a, vert_b) in [
+            (&vertex_a, &vertex_b),
+            (&vertex_b, &vertex_c),
+            (&vertex_c, &vertex_a),
+        ] {
+            // find edge in common
+            let vertex_a_edges = self.vertex_get_edges(vert_a).unwrap();
+            let vertex_b_edges = self.vertex_get_edges(vert_b).unwrap();
+            let intersection = vertex_a_edges.intersection(vertex_b_edges);
+            let mut found_edge = None;
+            for edge_entity in intersection {
+                if found_edge.is_some() {
+                    panic!("should only be one edge between any two vertices!");
+                }
+                found_edge = Some(*edge_entity);
+            }
+
+            if let Some(edge_entity) = found_edge {
+                self.edge_add_face(&edge_entity, *face_key);
+
+                edge_entities.push(edge_entity);
+            }
+        }
+
+        // register face data
+        self.face_keys.insert(
+            *face_key,
+            Some(IconFaceData::new(
+                new_entity,
+                file_entity,
+                edge_entities[0],
+                edge_entities[1],
+                edge_entities[2],
+            )),
+        );
+        self.local_faces.insert(new_entity, *face_key);
+
+        new_entity
+    }
+
+    pub fn create_networked_face_from_world(&mut self, world: &mut World, local_face_entity: Entity) {
+        let Some(face_key) = self.face_key_from_local_entity(&local_face_entity) else {
+            panic!(
+                "LocalFace entity: `{:?}` has no corresponding FaceKey",
+                local_face_entity
+            );
+        };
+        let Some(Some(face_data)) = self.face_keys.get(&face_key) else {
+            panic!(
+                "NetFace entity: `{:?}` has not been registered",
+                face_key
+            );
+        };
+        if face_data.net_entity.is_some() {
+            panic!("already created net face entity! cannot do this twice!");
+        }
+
+        let mut system_state: SystemState<(
+            Commands,
+            Client,
+            Res<CameraManager>,
+            ResMut<Assets<CpuMesh>>,
+            ResMut<Assets<CpuMaterial>>,
+            Query<&Transform>,
+        )> = SystemState::new(world);
+        let (
+            mut commands,
+            mut client,
+            camera_manager,
+            mut meshes,
+            mut materials,
+            transform_q
+        ) = system_state.get_mut(world);
+
+        self.create_networked_face(
+            &mut commands,
+            &mut client,
+            &mut meshes,
+            &mut materials,
+            &camera_manager,
+            &transform_q,
+            &face_key,
+            [
+                face_data.edge_a,
+                face_data.edge_b,
+                face_data.edge_c,
+            ],
+            face_data.file_entity,
+        );
+
+        system_state.apply(world);
+    }
+
+    pub fn create_networked_face(
+        &mut self,
+        commands: &mut Commands,
+        client: &mut Client,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+        camera_manager: &CameraManager,
+        transform_q: &Query<&Transform>,
+        face_key: &IconFaceKey,
+        edge_entities: [Entity; 3],
+        file_entity: Entity,
+    ) {
+        // get vertex entities & positions
+        let mut positions = [Vec3::ZERO, Vec3::ZERO, Vec3::ZERO];
+        let mut vertex_entities = [
+            Entity::PLACEHOLDER,
+            Entity::PLACEHOLDER,
+            Entity::PLACEHOLDER,
+        ];
+
+        for (index, vertex_entity) in [
+            face_key.vertex_a,
+            face_key.vertex_b,
+            face_key.vertex_c,
+        ]
+            .iter()
+            .enumerate()
+        {
+            let vertex_transform = transform_q.get(*vertex_entity).unwrap();
+            positions[index] = vertex_transform.translation;
+            vertex_entities[index] = *vertex_entity;
+        }
+
+        // possibly reorder vertices to be counter-clockwise with respect to camera
+        let camera_2d_entity = camera_manager.camera_2d.unwrap();
+        let camera_transform = transform_q.get(camera_2d_entity).unwrap();
+        if math::reorder_triangle_winding(&mut positions, camera_transform.translation, true) {
+            vertex_entities.swap(1, 2);
+        }
+
+        // set up networked face component
+        let mut face_component = IconFace::new();
+        face_component
+            .vertex_a
+            .set(client, &vertex_entities[0]);
+        face_component
+            .vertex_b
+            .set(client, &vertex_entities[1]);
+        face_component
+            .vertex_c
+            .set(client, &vertex_entities[2]);
+        face_component.edge_a.set(client, &edge_entities[0]);
+        face_component.edge_b.set(client, &edge_entities[1]);
+        face_component.edge_c.set(client, &edge_entities[2]);
+
+        // get owned_by_file component
+        let mut owned_by_file_component = OwnedByFile::new();
+        owned_by_file_component
+            .file_entity
+            .set(client, &file_entity);
+
+        // set up 3d entity
+        let face_net_entity = commands
+            .spawn_empty()
+            .enable_replication(client)
+            .configure_replication(ReplicationConfig::Delegated)
+            .insert(owned_by_file_component)
+            .insert(OwnedByFileLocal::new(file_entity))
+            .insert(face_component)
+            .id();
+
+        self.net_face_postprocess(
+            commands,
+            meshes,
+            materials,
+            &camera_manager,
+            face_key,
+            face_net_entity,
+            positions,
+        );
+    }
+
+    pub fn net_face_postprocess(
+        &mut self,
+        commands: &mut Commands,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+        camera_manager: &CameraManager,
+        face_key: &IconFaceKey,
+        net_face_entity: Entity,
+        positions: [Vec3; 3],
+    ) {
+        commands
+            .entity(net_face_entity)
+            .insert(RenderObjectBundle::world_triangle(
+                meshes,
+                materials,
+                positions,
+                Face3dLocal::COLOR,
+            ))
+            .insert(camera_manager.layer_2d);
+
+        self.register_net_face(net_face_entity, face_key);
+
+        // change local face to use non-hollow triangle
+        let local_face_entity = self.local_face_entity_from_face_key(&face_key).unwrap();
+        commands
+            .entity(local_face_entity)
+            .insert(meshes.add(Triangle::new_2d_equilateral()));
+    }
+
+    // returns 2d face entity
+    pub fn register_net_face(&mut self, net_face_entity: Entity, face_key: &IconFaceKey) {
+        self.net_faces.insert(net_face_entity, *face_key);
+
+        let Some(Some(face_data)) = self.face_keys.get_mut(face_key) else {
+            panic!("FaceKey: `{:?}` has not been registered", face_key);
+        };
+        face_data.net_entity = Some(net_face_entity);
+    }
+
+    pub fn remove_new_face_key(&mut self, face_key: &IconFaceKey) {
+        self.new_face_keys.retain(|(key, _)| key != face_key);
+    }
+
+    pub(crate) fn cleanup_deleted_net_face(
+        &mut self,
+        commands: &mut Commands,
+        meshes: &mut Assets<CpuMesh>,
+        net_face_entity: &Entity,
+    ) {
+        // unregister face
+        if let Some(local_face_entity) = self.unregister_net_face(net_face_entity) {
+            commands
+                .entity(local_face_entity)
+                .insert(meshes.add(HollowTriangle::new_2d_equilateral()));
+        }
+    }
+
+    // returns local face entity
+    pub(crate) fn cleanup_deleted_face_key(
+        &mut self,
+        commands: &mut Commands,
+        canvas: &mut Canvas,
+        input_manager: &mut InputManager,
+        face_key: &IconFaceKey,
+    ) -> Entity {
+        // unregister face
+        let Some(local_face_entity) = self.unregister_face_key(face_key) else {
+            panic!(
+                "FaceKey: `{:?}` has no corresponding local Face entity",
+                face_key
+            );
+        };
+
+        // despawn local face
+        info!("despawn local face {:?}", local_face_entity);
+        commands.entity(local_face_entity).despawn();
+
+        if input_manager.hovered_entity == Some((local_face_entity, CanvasShape::Face)) {
+            input_manager.hovered_entity = None;
+        }
+
+        canvas.queue_resync_shapes();
+
+        local_face_entity
+    }
+
+    pub(crate) fn has_local_face(&self, face_key: &IconFaceKey) -> bool {
+        if let Some(Some(_)) = self.face_keys.get(face_key) {
+            return true;
+        }
+        return false;
+    }
+
+    pub(crate) fn face_entity_local_to_net(&self, local_entity: &Entity) -> Option<Entity> {
+        let Some(face_key) = self.local_faces.get(local_entity) else {
+            return None;
+        };
+        let Some(Some(face_data)) = self.face_keys.get(face_key) else {
+            return None;
+        };
+        face_data.net_entity
+    }
+
+    pub(crate) fn face_entity_net_to_local(&self, net_entity: &Entity) -> Option<Entity> {
+        let Some(face_key) = self.net_faces.get(net_entity) else {
+            return None;
+        };
+        self.local_face_entity_from_face_key(face_key)
+    }
+
+    pub(crate) fn local_face_entity_from_face_key(&self, face_key: &IconFaceKey) -> Option<Entity> {
+        let Some(Some(face_data)) = self.face_keys.get(face_key) else {
+            return None;
+        };
+        Some(face_data.local_entity)
+    }
+
+    fn face_key_from_local_entity(&self, local_entity: &Entity) -> Option<IconFaceKey> {
+        self.local_faces.get(local_entity).copied()
+    }
+
+    pub(crate) fn net_face_entity_from_face_key(&self, face_key: &IconFaceKey) -> Option<Entity> {
+        let Some(Some(face_data)) = self.face_keys.get(face_key) else {
+            return None;
+        };
+        face_data.net_entity
+    }
+
+    // returns local face entity
+    fn unregister_face_key(
+        &mut self,
+        face_key: &IconFaceKey,
+    ) -> Option<Entity> {
+        info!("unregistering face key: `{:?}`", face_key);
+        if let Some(Some(face_data)) = self.face_keys.remove(&face_key) {
+            let local_entity = face_data.local_entity;
+            self.local_faces.remove(&local_entity);
+
+            // remove face from vertices
+            for vertex_entity in [
+                face_key.vertex_a,
+                face_key.vertex_b,
+                face_key.vertex_c,
+            ] {
+                self.vertex_remove_face(&vertex_entity, face_key);
+            }
+
+            // remove face from edges
+            for edge_entity in [
+                face_data.edge_a,
+                face_data.edge_b,
+                face_data.edge_c,
+            ] {
+                self.edge_remove_face(&edge_entity, face_key);
+            }
+
+            return Some(local_entity);
+        } else {
+            return None;
+        }
+    }
+
+    // returns local face entity
+    fn unregister_net_face(&mut self, net_entity: &Entity) -> Option<Entity> {
+        info!("unregistering net face entity: `{:?}`", net_entity);
+        let Some(face_key) = self.net_faces.remove(net_entity) else {
+            panic!("no net face found for entity {:?}", net_entity);
+        };
+
+        if let Some(Some(face_data)) = self.face_keys.get_mut(&face_key) {
+            face_data.net_entity = None;
+            info!("remove net entity: `{:?}` from face data", net_entity);
+
+            let local_face_entity = face_data.local_entity;
+            return Some(local_face_entity);
+        }
+
+        return None;
+    }
+
+    pub(crate) fn check_for_new_faces(
+        &mut self,
+        file_entity: Entity,
+        vertex_entity_a: Entity,
+        vertex_entity_b: Entity,
+    ) {
+        let vertex_a_connected_vertices = self.get_connected_vertices(vertex_entity_a);
+        let vertex_b_connected_vertices = self.get_connected_vertices(vertex_entity_b);
+
+        let common_vertices =
+            vertex_a_connected_vertices.intersection(&vertex_b_connected_vertices);
+        for common_vertex in common_vertices {
+            let face_key = IconFaceKey::new(vertex_entity_a, vertex_entity_b, *common_vertex);
+            if !self.face_keys.contains_key(&face_key) {
+                self.face_keys.insert(face_key, None);
+                self.new_face_keys.push((face_key, file_entity));
+            }
+        }
+    }
 }

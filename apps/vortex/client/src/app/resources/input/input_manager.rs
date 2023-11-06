@@ -32,7 +32,7 @@ use crate::app::{
         input::{
             mesh_input_manager::MeshInputManager, model_input_manager::ModelInputManager,
             skel_input_manager::SkelInputManager, skin_input_manager::SkinInputManager,
-            AnimInputManager,
+            AnimInputManager, icon_input_manager::IconInputManager,
         },
         shape_data::CanvasShape,
         tab_manager::TabManager,
@@ -105,6 +105,7 @@ impl InputManager {
             FileExtension::Anim => AnimInputManager::update_input(world, self, input_actions),
             FileExtension::Skin => SkinInputManager::update_input(world, self, input_actions),
             FileExtension::Model | FileExtension::Scene => ModelInputManager::update_input(world, self, &current_file_type, input_actions),
+            FileExtension::Icon => IconInputManager::update_input(world, self, input_actions),
             _ => {}
         }
     }
@@ -150,6 +151,9 @@ impl InputManager {
                 camera_3d_scale,
                 mouse_position,
             ),
+            FileExtension::Icon => {
+                IconInputManager::sync_mouse_hover_ui(world, mouse_position)
+            }
             _ => {
                 return;
             }

@@ -15,15 +15,14 @@ use render_api::{
 };
 
 use vortex_proto::{
-    components::{FileExtension, Vertex3d},
+    components::{NetTransformEntityType, FileExtension, Vertex3d},
     resources::DependencyMap,
 };
-use vortex_proto::components::NetTransformEntityType;
 
 use crate::app::{
     components::{OwnedByFileLocal, Vertex2d},
     events::ShapeColorResyncEvent,
-    resources::{
+    resources::{icon_manager::IconManager,
         camera_manager::CameraManager, canvas::Canvas, edge_manager::EdgeManager,
         face_manager::FaceManager, shape_data::FaceKey, vertex_manager::VertexManager, model_manager::ModelManager
     },
@@ -277,6 +276,7 @@ impl ComponentWaitlist {
         edge_manager: &mut EdgeManager,
         face_manager: &mut FaceManager,
         model_manager_opt: &mut Option<&mut ModelManager>,
+        icon_manager: &mut Option<&mut IconManager>,
         shape_color_resync_events: &mut EventWriter<ShapeColorResyncEvent>,
         vertex_3d_q: &Query<&Vertex3d>,
         entity: &Entity,
@@ -385,7 +385,7 @@ impl ComponentWaitlist {
                         }
                     }
                 }
-                (ComponentType::Edge, _) => {
+                (ComponentType::Edge, FileExtension::Skel | FileExtension::Mesh) => {
                     let entities = entry.edge_entities.unwrap();
 
                     let mut dependencies = Vec::new();
@@ -410,7 +410,7 @@ impl ComponentWaitlist {
                         continue;
                     }
                 }
-                (ComponentType::Face, _) => {
+                (ComponentType::Face, FileExtension::Mesh) => {
                     let entities = entry.face_entities.unwrap();
 
                     let mut dependencies = Vec::new();
@@ -446,9 +446,77 @@ impl ComponentWaitlist {
                         continue;
                     }
                 }
+                (ComponentType::Edge, FileExtension::Icon) => {
+                    let entities = entry.edge_entities.unwrap();
+                    let Some(icon_manager) = icon_manager else {
+                        panic!("hmm");
+                    };
+
+                    let mut dependencies = Vec::new();
+                    for vertex_entity in [&entities.0, &entities.1] {
+                        if !icon_manager.has_vertex_entity(vertex_entity) {
+                            // need to put in parent waitlist
+                            info!(
+                                "edge entity {:?} requires parent {:?}. putting in parent waitlist",
+                                entity, vertex_entity
+                            );
+                            dependencies.push(*vertex_entity);
+                        }
+                    }
+
+                    if !dependencies.is_empty() {
+                        self.dependency_map.insert_waiting_dependencies(
+                            dependencies,
+                            entity,
+                            entry,
+                        );
+
+                        continue;
+                    }
+                }
+                (ComponentType::Face, FileExtension::Icon) => {
+                    let entities = entry.face_entities.unwrap();
+                    let Some(icon_manager) = icon_manager else {
+                        panic!("hmm");
+                    };
+
+                    let mut dependencies = Vec::new();
+
+                    for vertex_entity in [&entities.0, &entities.1, &entities.2] {
+                        if !icon_manager.has_vertex_entity(vertex_entity) {
+                            // need to put in parent waitlist
+                            info!(
+                                "face entity {:?} requires parent vertex {:?}. putting in parent waitlist",
+                                entity, vertex_entity
+                            );
+                            dependencies.push(*vertex_entity);
+                        }
+                    }
+
+                    for edge_entity in [&entities.3, &entities.4, &entities.5] {
+                        if !icon_manager.has_edge_entity(edge_entity) {
+                            // need to put in parent waitlist
+                            info!(
+                                "face entity {:?} requires parent edge {:?}. putting in parent waitlist",
+                                entity, edge_entity
+                            );
+                            dependencies.push(*edge_entity);
+                        }
+                    }
+
+                    if !dependencies.is_empty() {
+                        self.dependency_map.insert_waiting_dependencies(
+                            dependencies,
+                            entity,
+                            entry,
+                        );
+                        continue;
+                    }
+                }
                 (ComponentType::Vertex, FileExtension::Mesh) | (ComponentType::NetTransform, FileExtension::Model | FileExtension::Scene) => {
                     // no dependencies
                 }
+
                 (_, _) => {
                     panic!("");
                 }

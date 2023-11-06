@@ -126,7 +126,6 @@ pub(crate) fn execute(
             &mut commands,
             &mut client,
             &mut camera_manager,
-            &mut icon_manager,
             &mut meshes,
             &mut materials,
             &mut shape_color_resync_events,
@@ -135,6 +134,7 @@ pub(crate) fn execute(
             tab_file_entity,
             &mut entities_to_release,
         );
+        edge_entities.push(new_edge_entity);
         if let Some(old_edge_entity) = old_edge_opt {
             action_stack.migrate_edge_entities(old_edge_entity, new_edge_entity);
         }
@@ -153,10 +153,9 @@ pub(crate) fn execute(
         );
 
         icon_manager.remove_new_face_key(&face_key);
-        let new_face_entity = icon_manager.process_new_face(
+        let new_face_entity = icon_manager.process_new_local_face(
             &mut commands,
             &mut camera_manager,
-            &mut icon_manager,
             &mut meshes,
             &mut materials,
             tab_file_entity,

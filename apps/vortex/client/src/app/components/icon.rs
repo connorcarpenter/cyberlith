@@ -1,42 +1,6 @@
 
 use bevy_ecs::{entity::Entity, component::Component};
 
-use math::Vec3;
-
-// for stored children vertexes undo/redo ...
-#[derive(Clone)]
-pub struct IconVertexEntry {
-    entity_2d: Entity,
-    position: Vec3,
-    children: Option<Vec<IconVertexEntry>>,
-}
-
-impl IconVertexEntry {
-    pub fn new(entity_2d: Entity, position: Vec3) -> Self {
-        Self {
-            entity_2d,
-            position,
-            children: None,
-        }
-    }
-
-    pub fn set_children(&mut self, children: Vec<IconVertexEntry>) {
-        self.children = Some(children);
-    }
-
-    pub fn entity_2d(&self) -> Entity {
-        self.entity_2d
-    }
-
-    pub fn position(&self) -> Vec3 {
-        self.position
-    }
-
-    pub fn children(&self) -> Option<Vec<IconVertexEntry>> {
-        self.children.clone()
-    }
-}
-
 // IconVertexData
 #[derive(Clone)]
 pub struct IconVertexActionData {
@@ -45,6 +9,16 @@ pub struct IconVertexActionData {
 }
 
 impl IconVertexActionData {
+
+    pub fn new(
+        connected_vertices: Vec<(Entity, Option<Entity>)>,
+        face_data: Vec<(Entity, Entity, Entity, bool)>
+    ) -> Self {
+        Self {
+            connected_vertices,
+            face_data,
+        }
+    }
 
     pub fn migrate_vertex_entities(
         &mut self,
@@ -85,6 +59,7 @@ impl IconVertexActionData {
     }
 }
 
+// Edges
 
 #[derive(Component)]
 pub struct IconEdgeLocal {
@@ -93,8 +68,39 @@ pub struct IconEdgeLocal {
 }
 
 impl IconEdgeLocal {
-
     pub fn new(start: Entity, end: Entity) -> Self {
         Self { start, end }
+    }
+}
+
+// Just a marker
+#[derive(Component)]
+pub struct IconLocalFace {
+    // DON'T REMOVE THESE JUST YET! WE WILL NEED THEM WHEN SYNCING
+    vertex_a: Entity,
+    vertex_b: Entity,
+    vertex_c: Entity,
+}
+
+impl IconLocalFace {
+
+    pub fn new(vertex_a: Entity, vertex_b: Entity, vertex_c: Entity) -> Self {
+        Self {
+            vertex_a,
+            vertex_b,
+            vertex_c,
+        }
+    }
+
+    pub fn vertex_a(&self) -> Entity {
+        self.vertex_a
+    }
+
+    pub fn vertex_b(&self) -> Entity {
+        self.vertex_b
+    }
+
+    pub fn vertex_c(&self) -> Entity {
+        self.vertex_c
     }
 }

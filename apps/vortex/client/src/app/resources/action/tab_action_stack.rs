@@ -8,7 +8,7 @@ use vortex_proto::components::FileExtension;
 use crate::app::resources::{
     action::{
         animation::AnimAction, model::ModelAction, palette::PaletteAction,
-        shape::ShapeAction, skin::SkinAction, ActionStack,
+        shape::ShapeAction, skin::SkinAction, ActionStack, icon::IconAction,
     },
     input::InputManager,
     palette_manager::PaletteManager,
@@ -20,6 +20,7 @@ pub enum TabActionStack {
     Palette(ActionStack<PaletteAction>),
     Skin(ActionStack<SkinAction>),
     Model(ActionStack<ModelAction>),
+    Icon(ActionStack<IconAction>),
 }
 
 impl TabActionStack {
@@ -133,6 +134,25 @@ impl TabActionStack {
         }
     }
 
+    pub fn execute_icon_action(
+        &mut self,
+        world: &mut World,
+        input_manager: &mut InputManager,
+        tab_file_entity: Entity,
+        action: IconAction,
+    ) {
+        match self {
+            Self::Icon(action_stack) => {
+                let reversed_actions =
+                    action_stack.execute_action(world, input_manager, tab_file_entity, action);
+                action_stack.post_action_execution(world, reversed_actions);
+            }
+            _ => {
+                panic!("execute_icon_action() called on non-TabActionStack::Icon");
+            }
+        }
+    }
+
     pub fn has_undo(&self) -> bool {
         match self {
             Self::Shape(action_stack) => action_stack.has_undo(),
@@ -140,6 +160,7 @@ impl TabActionStack {
             Self::Palette(action_stack) => action_stack.has_undo(),
             Self::Skin(action_stack) => action_stack.has_undo(),
             Self::Model(action_stack) => action_stack.has_undo(),
+            Self::Icon(action_stack) => action_stack.has_undo(),
         }
     }
 
@@ -150,6 +171,7 @@ impl TabActionStack {
             Self::Palette(action_stack) => action_stack.has_redo(),
             Self::Skin(action_stack) => action_stack.has_redo(),
             Self::Model(action_stack) => action_stack.has_redo(),
+            Self::Icon(action_stack) => action_stack.has_redo(),
         }
     }
 
@@ -187,6 +209,12 @@ impl TabActionStack {
                 action_stack.post_execute_undo(world, reversed_actions);
             }
             Self::Model(action_stack) => {
+                let action = action_stack.pop_undo();
+                let reversed_actions =
+                    action_stack.execute_action(world, input_manager, tab_file_entity, action);
+                action_stack.post_execute_undo(world, reversed_actions);
+            }
+            Self::Icon(action_stack) => {
                 let action = action_stack.pop_undo();
                 let reversed_actions =
                     action_stack.execute_action(world, input_manager, tab_file_entity, action);
@@ -234,6 +262,12 @@ impl TabActionStack {
                     action_stack.execute_action(world, input_manager, tab_file_entity, action);
                 action_stack.post_execute_redo(world, reversed_actions);
             }
+            Self::Icon(action_stack) => {
+                let action = action_stack.pop_redo();
+                let reversed_actions =
+                    action_stack.execute_action(world, input_manager, tab_file_entity, action);
+                action_stack.post_execute_redo(world, reversed_actions);
+            }
         }
     }
 
@@ -254,6 +288,9 @@ impl TabActionStack {
             Self::Model(action_stack) => {
                 action_stack.check_top(world);
             }
+            Self::Icon(action_stack) => {
+                action_stack.check_top(world);
+            }
         }
     }
 
@@ -272,6 +309,9 @@ impl TabActionStack {
                 action_stack.entity_update_auth_status(entity);
             }
             Self::Model(action_stack) => {
+                action_stack.entity_update_auth_status(entity);
+            }
+            Self::Icon(action_stack) => {
                 action_stack.entity_update_auth_status(entity);
             }
         }

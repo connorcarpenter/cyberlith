@@ -47,8 +47,17 @@ impl IconVertex {
         *self.y = y.into();
     }
 
+    pub fn set_vec2(&mut self, value: &Vec2) {
+        *self.x = (value.x as i16).into();
+        *self.y = (value.y as i16).into();
+    }
+
     pub fn from_vec2(vec2: Vec2) -> Self {
         Self::new(vec2.x as i16, vec2.y as i16)
+    }
+
+    pub fn as_vec2(&self) -> Vec2 {
+        Vec2::new(self.x() as f32, self.y() as f32)
     }
 }
 

@@ -75,8 +75,11 @@ impl FaceManager {
 
         self.resync = false;
 
-        if file_ext == FileExtension::Model || file_ext == FileExtension::Scene {
-            return;
+        match file_ext {
+            FileExtension::Model | FileExtension::Scene | FileExtension::Icon => {
+                return;
+            }
+            _ => {}
         }
 
         let face_2d_scale = FaceIcon2d::SIZE * camera_3d_scale;

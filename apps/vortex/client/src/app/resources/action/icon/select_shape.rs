@@ -36,7 +36,7 @@ pub(crate) fn execute(
     ) = system_state.get_mut(world);
 
     // Deselect all selected shapes, select the new selected shapes
-    let (deselected_entity, entity_to_release) = deselect_selected_shape(
+    let deselected_entity = deselect_selected_shape(
         &mut canvas,
         input_manager,
     );
@@ -45,6 +45,9 @@ pub(crate) fn execute(
         input_manager,
         shape_entity_opt,
     );
+    let entity_to_release = deselected_entity.map(|(entity, _)| {
+        entity
+    });
     entity_request_release(
         &mut commands,
         &mut client,
@@ -58,7 +61,7 @@ pub(crate) fn execute(
     if let Some((face_entity, CanvasShape::Face)) = shape_entity_opt {
         if entity_to_request.is_none() {
             world.resource_scope(|world, mut icon_manager: Mut<IconManager>| {
-                icon_manager.create_net_face_from_world(world, face_entity);
+                icon_manager.create_networked_face_from_world(world, face_entity);
             });
             return vec![
                 IconAction::SelectShape(deselected_entity),

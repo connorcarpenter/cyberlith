@@ -33,7 +33,7 @@ use crate::app::{
         model_manager::ModelManager,
         palette_manager::PaletteManager,
         tab_manager::TabManager,
-        vertex_manager::VertexManager,
+        vertex_manager::VertexManager, icon_manager::IconManager,
     },
 };
 
@@ -507,6 +507,7 @@ pub fn process_faces(
     mut vertex_manager: ResMut<VertexManager>,
     mut edge_manager: ResMut<EdgeManager>,
     mut face_manager: ResMut<FaceManager>,
+    mut icon_manager: ResMut<IconManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
 ) {
@@ -516,6 +517,13 @@ pub fn process_faces(
         &camera_manager,
         &mut vertex_manager,
         &mut edge_manager,
+        &mut meshes,
+        &mut materials,
+    );
+    icon_manager.process_new_faces(
+        &mut commands,
+        &mut canvas,
+        &camera_manager,
         &mut meshes,
         &mut materials,
     );

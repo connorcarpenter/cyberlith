@@ -191,14 +191,14 @@ impl MeshInputManager {
             }
             (MouseButton::Left, Some(CanvasShape::Vertex), None) => {
                 // create new vertex
-                let (vertex_2d_entity, _) = input_manager.selected_shape.unwrap();
+                let (selected_vertex_2d_entity, _) = input_manager.selected_shape.unwrap();
                 let vertex_type_data =
-                    VertexTypeData::Mesh(vec![(vertex_2d_entity, None)], Vec::new());
+                    VertexTypeData::Mesh(vec![(selected_vertex_2d_entity, None)], Vec::new());
                 InputManager::handle_create_new_vertex(
                     world,
                     input_manager,
                     &mouse_position,
-                    vertex_2d_entity,
+                    selected_vertex_2d_entity,
                     vertex_type_data,
                 );
             }

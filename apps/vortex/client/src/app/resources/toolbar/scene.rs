@@ -19,7 +19,7 @@ use crate::app::{
 pub struct SceneToolbar;
 
 impl SceneToolbar {
-    pub(crate) fn render(ui: &mut Ui, world: &mut World, file_entity: &Entity) {
+    pub(crate) fn render(ui: &mut Ui, world: &mut World, _file_entity: &Entity) {
 
         {
             // assign skin / scene
@@ -44,8 +44,8 @@ impl SceneToolbar {
                 true, // TODO: check whether net transform is selected
             );
             if response.clicked() {
-                world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
-                    world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                world.resource_scope(|world, _input_manager: Mut<InputManager>| {
+                    world.resource_scope(|_world, _tab_manager: Mut<TabManager>| {
                         // TODO: uncomment
                         // tab_manager.current_tab_execute_model_action(
                         //     world,

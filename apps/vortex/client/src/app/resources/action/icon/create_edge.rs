@@ -13,11 +13,10 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::FileExtension;
-
 use crate::app::{
     events::ShapeColorResyncEvent,
     resources::{
+        icon_data::IconFaceKey,
         action::{
             icon::{select_shape::deselect_selected_shape, IconAction},
             ActionStack,
@@ -25,8 +24,7 @@ use crate::app::{
         camera_manager::CameraManager,
         canvas::Canvas,
         input::InputManager,
-        shape_data::{CanvasShape, FaceKey},
-        shape_manager::ShapeManager,
+        shape_data::CanvasShape,
         icon_manager::IconManager,
     },
 };
@@ -174,13 +172,12 @@ pub(crate) fn execute(
             for (vertex_of_face_to_create, old_local_face_entity, create_net_face) in
             vertex_entities
             {
-                let face_key = FaceKey::new(vertex_entity_a, vertex_entity_b, vertex_of_face_to_create);
+                let face_key = IconFaceKey::new(vertex_entity_a, vertex_entity_b, vertex_of_face_to_create);
 
                 icon_manager.remove_new_face_key(&face_key);
-                let new_face_entity = icon_manager.process_new_face(
+                let new_face_entity = icon_manager.process_new_local_face(
                     &mut commands,
                     &mut camera_manager,
-                    &mut icon_manager,
                     &mut meshes,
                     &mut materials,
                     tab_file_entity,

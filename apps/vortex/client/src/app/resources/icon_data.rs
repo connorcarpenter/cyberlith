@@ -33,19 +33,19 @@ impl IconVertexData {
 }
 
 pub struct IconEdgeData {
-    pub(crate) vertex_a_entity: Entity,
-    pub(crate) vertex_b_entity: Entity,
+    pub(crate) vertex_entity_a: Entity,
+    pub(crate) vertex_entity_b: Entity,
     pub(crate) faces: HashSet<IconFaceKey>,
 }
 
 impl IconEdgeData {
     pub fn new(
-        vertex_a_entity: Entity,
-        vertex_b_entity: Entity,
+        vertex_entity_a: Entity,
+        vertex_entity_b: Entity,
     ) -> Self {
         Self {
-            vertex_a_entity,
-            vertex_b_entity,
+            vertex_entity_a,
+            vertex_entity_b,
             faces: HashSet::new(),
         }
     }
