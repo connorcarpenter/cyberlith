@@ -10,12 +10,12 @@ use naia_bevy_client::{Client, CommandsExt};
 
 use input::{InputAction, Key, MouseButton};
 use math::Vec2;
-use render_api::{components::{Transform, Visibility}, shapes::{distance_to_2d_line, get_2d_line_transform_endpoint}};
+use render_api::{components::Transform, shapes::{distance_to_2d_line, get_2d_line_transform_endpoint}};
 
 use vortex_proto::components::IconVertex;
 
 use crate::app::{
-    components::{IconVertexActionData, Edge2dLocal, FaceIcon2d, IconEdgeLocal, IconLocalFace, Vertex2d},
+    components::{OwnedByFileLocal, IconVertexActionData, Edge2dLocal, FaceIcon2d, IconEdgeLocal, IconLocalFace, Vertex2d},
     resources::{
         action::icon::IconAction, canvas::Canvas,
         input::InputManager, shape_data::CanvasShape,
@@ -352,18 +352,17 @@ impl IconInputManager {
 
     pub(crate) fn sync_mouse_hover_ui(
         world: &mut World,
+        current_file_entity: &Entity,
         mouse_position: &Vec2,
     ) -> Option<(Entity, CanvasShape)> {
         let mut system_state: SystemState<(
             Query<&Transform>,
-            Query<&Visibility>,
-            Query<Entity, With<IconVertex>>,
-            Query<(Entity, &IconEdgeLocal)>,
-            Query<Entity, With<IconLocalFace>>,
+            Query<(Entity, &OwnedByFileLocal), With<IconVertex>>,
+            Query<(Entity, &OwnedByFileLocal), With<IconEdgeLocal>>,
+            Query<(Entity, &OwnedByFileLocal), With<IconLocalFace>>,
         )> = SystemState::new(world);
         let (
             transform_q,
-            visibility_q,
             vertex_q,
             edge_q,
             face_q
@@ -375,8 +374,8 @@ impl IconInputManager {
 
         Self::handle_vertex_hover(
             &transform_q,
-            &visibility_q,
             &vertex_q,
+            current_file_entity,
             mouse_position,
             &mut least_distance,
             &mut least_entity,
@@ -385,8 +384,8 @@ impl IconInputManager {
 
         Self::handle_edge_hover(
             &transform_q,
-            &visibility_q,
             &edge_q,
+            current_file_entity,
             mouse_position,
             &mut least_distance,
             &mut least_entity,
@@ -395,8 +394,8 @@ impl IconInputManager {
 
         Self::handle_face_hover(
             &transform_q,
-            &visibility_q,
             &face_q,
+            current_file_entity,
             mouse_position,
             &mut least_distance,
             &mut least_entity,
@@ -412,22 +411,18 @@ impl IconInputManager {
 
     fn handle_vertex_hover(
         transform_q: &Query<&Transform>,
-        visibility_q: &Query<&Visibility>,
-        vertex_q: &Query<Entity, With<IconVertex>>,
+        vertex_q: &Query<(Entity, &OwnedByFileLocal), With<IconVertex>>,
+        current_file_entity: &Entity,
         mouse_position: &Vec2,
         least_distance: &mut f32,
         least_entity: &mut Option<(Entity, CanvasShape)>,
         is_hovering: &mut bool,
     ) {
         // check for vertices
-        for vertex_entity in vertex_q.iter() {
-            let Ok(visibility) = visibility_q.get(vertex_entity) else {
-                panic!("Vertex entity has no Visibility");
-            };
-            if !visibility.visible {
+        for (vertex_entity, owned_by_file) in vertex_q.iter() {
+            if owned_by_file.file_entity != *current_file_entity {
                 continue;
             }
-
             Self::hover_check_vertex(
                 transform_q,
                 mouse_position,
@@ -460,8 +455,8 @@ impl IconInputManager {
 
     fn handle_edge_hover(
         transform_q: &Query<&Transform>,
-        visibility_q: &Query<&Visibility>,
-        edge_q: &Query<(Entity, &IconEdgeLocal)>,
+        edge_q: &Query<(Entity, &OwnedByFileLocal), With<IconEdgeLocal>>,
+        current_file_entity: &Entity,
         mouse_position: &Vec2,
         least_distance: &mut f32,
         least_entity: &mut Option<(Entity, CanvasShape)>,
@@ -469,12 +464,8 @@ impl IconInputManager {
     ) {
         // check for edges
         if !*is_hovering {
-            for (edge_entity, _) in edge_q.iter() {
-                // check visibility
-                let Ok(visibility) = visibility_q.get(edge_entity) else {
-                    panic!("entity has no Visibility");
-                };
-                if !visibility.visible {
+            for (edge_entity, owned_by_file) in edge_q.iter() {
+                if owned_by_file.file_entity != *current_file_entity {
                     continue;
                 }
 
@@ -512,8 +503,8 @@ impl IconInputManager {
 
     fn handle_face_hover(
         transform_q: &Query<&Transform>,
-        visibility_q: &Query<&Visibility>,
-        face_q: &Query<Entity, With<IconLocalFace>>,
+        face_q: &Query<(Entity, &OwnedByFileLocal), With<IconLocalFace>>,
+        current_file_entity: &Entity,
         mouse_position: &Vec2,
         least_distance: &mut f32,
         least_entity: &mut Option<(Entity, CanvasShape)>,
@@ -521,12 +512,8 @@ impl IconInputManager {
     ) {
         // check for faces
         if !*is_hovering {
-            for face_entity in face_q.iter() {
-                // check tab ownership, skip faces from other tabs
-                let Ok(visibility) = visibility_q.get(face_entity) else {
-                    panic!("entity has no Visibility");
-                };
-                if !visibility.visible {
+            for (face_entity, owned_by_file) in face_q.iter() {
+                if owned_by_file.file_entity != *current_file_entity {
                     continue;
                 }
 

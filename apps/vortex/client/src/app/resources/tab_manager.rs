@@ -169,7 +169,8 @@ impl TabManager {
                 | FileExtension::Anim
                 | FileExtension::Skin
                 | FileExtension::Model
-                | FileExtension::Scene => true,
+                | FileExtension::Scene
+                | FileExtension::Icon => true,
                 _ => false,
             };
         }

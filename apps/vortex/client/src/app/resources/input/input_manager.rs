@@ -152,7 +152,7 @@ impl InputManager {
                 mouse_position,
             ),
             FileExtension::Icon => {
-                IconInputManager::sync_mouse_hover_ui(world, mouse_position)
+                IconInputManager::sync_mouse_hover_ui(world, current_file_entity, mouse_position)
             }
             _ => {
                 return;

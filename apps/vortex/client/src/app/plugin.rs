@@ -25,7 +25,7 @@ use crate::app::{
         face_manager::FaceManager, file_manager::FileManager, grid::Grid, input::InputManager,
         model_manager::ModelManager, palette_manager::PaletteManager,
         component_waitlist::ComponentWaitlist, skin_manager::SkinManager, tab_manager::TabManager,
-        vertex_manager::VertexManager,
+        vertex_manager::VertexManager, icon_manager::IconManager,
     },
     systems::{canvas, draw, draw_vertices_and_edges, network, ui},
     ui::{
@@ -160,6 +160,7 @@ impl Plugin for VortexPlugin {
             .init_resource::<InputManager>()
             .init_resource::<SkinManager>()
             .init_resource::<ModelManager>()
+            .init_resource::<IconManager>()
             .init_resource::<Compass>()
             .init_resource::<Grid>()
             .init_resource::<Canvas>()

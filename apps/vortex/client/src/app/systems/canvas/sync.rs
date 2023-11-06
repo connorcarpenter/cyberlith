@@ -235,6 +235,9 @@ pub fn sync_vertices(world: &mut World) {
             FileExtension::Palette => {
                 // skip, no vertices here
             }
+            FileExtension::Icon => {
+                // no need to sync - everything is 2d
+            }
             _ => {
                 panic!(
                     "sync_vertices: unsupported file extension: {:?}",
