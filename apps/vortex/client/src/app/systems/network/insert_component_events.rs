@@ -280,10 +280,8 @@ pub fn insert_vertex_events(
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
     mut component_waitlist: ResMut<ComponentWaitlist>,
-    mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
-    vertex_3d_q: Query<&Vertex3d>,
 ) {
-    // on Vertex Insert Event
+    // on Vertex3d Insert Event
     for event in vertex_3d_events.iter() {
         let entity = event.entity;
 
@@ -300,8 +298,8 @@ pub fn insert_vertex_events(
             &mut face_manager,
             &mut None,
             &mut None,
-            &mut shape_color_resync_events,
-            &vertex_3d_q,
+            None,
+            None,
             &entity,
             ComponentWaitlistInsert::Vertex,
         );
@@ -324,8 +322,8 @@ pub fn insert_vertex_events(
             &mut face_manager,
             &mut None,
             &mut None,
-            &mut shape_color_resync_events,
-            &vertex_3d_q,
+            None,
+            None,
             &entity,
             ComponentWaitlistInsert::VertexRoot,
         );
@@ -347,11 +345,9 @@ pub fn insert_edge_events(
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
     mut component_waitlist: ResMut<ComponentWaitlist>,
-    mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
 
     edge_3d_q: Query<&Edge3d>,
     edge_angle_q: Query<&EdgeAngle>,
-    vertex_3d_q: Query<&Vertex3d>,
 ) {
     // on Edge3d Insert Event
     for event in edge_3d_events.iter() {
@@ -381,8 +377,8 @@ pub fn insert_edge_events(
             &mut face_manager,
             &mut None,
             &mut None,
-            &mut shape_color_resync_events,
-            &vertex_3d_q,
+            None,
+            None,
             &edge_entity,
             ComponentWaitlistInsert::Edge(start_entity, end_entity),
         );
@@ -408,8 +404,8 @@ pub fn insert_edge_events(
             &mut face_manager,
             &mut None,
             &mut None,
-            &mut shape_color_resync_events,
-            &vertex_3d_q,
+            None,
+            None,
             &edge_entity,
             ComponentWaitlistInsert::EdgeAngle(edge_3d.get_radians()),
         );
@@ -428,7 +424,6 @@ pub fn insert_face_events(
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
     mut component_waitlist: ResMut<ComponentWaitlist>,
-    mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
 
     face_3d_q: Query<&Face3d>,
     vertex_3d_q: Query<&Vertex3d>,
@@ -477,8 +472,8 @@ pub fn insert_face_events(
             &mut face_manager,
             &mut None,
             &mut None,
-            &mut shape_color_resync_events,
-            &vertex_3d_q,
+            Some(&vertex_3d_q),
+            None,
             &face_entity,
             ComponentWaitlistInsert::Face(
                 vertex_a_entity,
@@ -492,10 +487,9 @@ pub fn insert_face_events(
     }
 }
 
-pub fn insert_vertex_events(
+pub fn insert_icon_events(
     mut commands: Commands,
-    mut vertex_3d_events: EventReader<InsertComponentEvent<Vertex3d>>,
-    mut vertex_root_events: EventReader<InsertComponentEvent<VertexRoot>>,
+    mut vertex_events: EventReader<InsertComponentEvent<IconVertex>>,
 
     mut camera_manager: ResMut<CameraManager>,
     mut canvas: ResMut<Canvas>,
@@ -505,11 +499,11 @@ pub fn insert_vertex_events(
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
     mut component_waitlist: ResMut<ComponentWaitlist>,
-    mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
-    vertex_3d_q: Query<&Vertex3d>,
+
+    vertex_q: Query<&IconVertex>,
 ) {
     // on Vertex Insert Event
-    for event in vertex_3d_events.iter() {
+    for event in vertex_events.iter() {
         let entity = event.entity;
 
         info!("entity: {:?} - inserted Vertex3d", entity);
@@ -525,8 +519,8 @@ pub fn insert_vertex_events(
             &mut face_manager,
             &mut None,
             &mut None,
-            &mut shape_color_resync_events,
-            &vertex_3d_q,
+            None,
+            Some(&vertex_q),
             &entity,
             ComponentWaitlistInsert::Vertex,
         );
@@ -549,10 +543,10 @@ pub fn insert_owned_by_file_events(
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
     mut component_waitlist: ResMut<ComponentWaitlist>,
-    mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
 
     owned_by_tab_q: Query<&OwnedByFile>,
     vertex_3d_q: Query<&Vertex3d>,
+    icon_vertex_q: Query<&IconVertex>,
 ) {
     // on OwnedByFile Insert Event
     for event in owned_by_events.iter() {
@@ -563,7 +557,7 @@ pub fn insert_owned_by_file_events(
         let owned_by_file = owned_by_tab_q.get(entity).unwrap();
         let file_entity = owned_by_file.file_entity.get(&client).unwrap();
 
-        // this leaks memory!!! some OwnedByFile components are never removed
+        // TODO: FIX! this leaks memory!!! some OwnedByFile components are never removed
         component_waitlist.process_insert(
             &mut commands,
             &mut meshes,
@@ -575,8 +569,8 @@ pub fn insert_owned_by_file_events(
             &mut face_manager,
             &mut Some(&mut model_manager),
             &mut Some(&mut icon_manager),
-            &mut shape_color_resync_events,
-            &vertex_3d_q,
+            Some(&vertex_3d_q),
+            Some(&icon_vertex_q),
             &entity,
             ComponentWaitlistInsert::OwnedByFile(file_entity),
         );
@@ -597,7 +591,6 @@ pub fn insert_file_type_events(
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
     mut component_waitlist: ResMut<ComponentWaitlist>,
-    mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
 
     file_type_q: Query<&FileType>,
     vertex_3d_q: Query<&Vertex3d>,
@@ -625,8 +618,8 @@ pub fn insert_file_type_events(
             &mut face_manager,
             &mut Some(&mut model_manager),
             &mut None,
-            &mut shape_color_resync_events,
-            &vertex_3d_q,
+            Some(&vertex_3d_q),
+            None,
             &entity,
             ComponentWaitlistInsert::FileType(file_type_value),
         );
@@ -766,9 +759,7 @@ pub fn insert_model_events(
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
     mut component_waitlist: ResMut<ComponentWaitlist>,
-    mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
 
-    vertex_3d_q: Query<&Vertex3d>,
     skin_or_scene_q: Query<&SkinOrSceneEntity>,
 ) {
     // on NetTransform Insert Event
@@ -791,8 +782,8 @@ pub fn insert_model_events(
             &mut face_manager,
             &mut Some(&mut model_manager),
             &mut None,
-            &mut shape_color_resync_events,
-            &vertex_3d_q,
+            None,
+            None,
             &entity,
             ComponentWaitlistInsert::NetTransform,
         );
@@ -819,8 +810,8 @@ pub fn insert_model_events(
             &mut face_manager,
             &mut Some(&mut model_manager),
             &mut None,
-            &mut shape_color_resync_events,
-            &vertex_3d_q,
+            None,
+            None,
             &entity,
             ComponentWaitlistInsert::SkinOrSceneEntity(skin_or_scene_entity, skin_or_scene_type),
         );
@@ -840,9 +831,7 @@ pub fn insert_shape_name_events(
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
     mut component_waitlist: ResMut<ComponentWaitlist>,
-    mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
 
-    vertex_3d_q: Query<&Vertex3d>,
     shape_name_q: Query<&ShapeName>,
 ) {
     // on ShapeName Event
@@ -868,8 +857,8 @@ pub fn insert_shape_name_events(
             &mut face_manager,
             &mut Some(&mut model_manager),
             &mut None,
-            &mut shape_color_resync_events,
-            &vertex_3d_q,
+            None,
+            None,
             &entity,
             ComponentWaitlistInsert::ShapeName(shape_name),
         );

@@ -2,12 +2,11 @@ use std::collections::HashMap;
 
 use bevy_ecs::{
     entity::Entity,
-    event::EventWriter,
     system::{Commands, Query, Resource},
 };
 use bevy_log::{info, warn};
 
-use math::Vec3;
+use math::{Vec2, Vec3};
 
 use render_api::{
     base::{CpuMaterial, CpuMesh},
@@ -15,14 +14,13 @@ use render_api::{
 };
 
 use vortex_proto::{
-    components::{NetTransformEntityType, FileExtension, Vertex3d},
+    components::{IconVertex, NetTransformEntityType, FileExtension, Vertex3d},
     resources::DependencyMap,
 };
 
 use crate::app::{
     components::{OwnedByFileLocal, Vertex2d},
-    events::ShapeColorResyncEvent,
-    resources::{icon_manager::IconManager,
+    resources::{icon_manager::IconManager, icon_data::IconFaceKey,
         camera_manager::CameraManager, canvas::Canvas, edge_manager::EdgeManager,
         face_manager::FaceManager, shape_data::FaceKey, vertex_manager::VertexManager, model_manager::ModelManager
     },
@@ -276,9 +274,9 @@ impl ComponentWaitlist {
         edge_manager: &mut EdgeManager,
         face_manager: &mut FaceManager,
         model_manager_opt: &mut Option<&mut ModelManager>,
-        icon_manager: &mut Option<&mut IconManager>,
-        shape_color_resync_events: &mut EventWriter<ShapeColorResyncEvent>,
-        vertex_3d_q: &Query<&Vertex3d>,
+        icon_manager_opt: &mut Option<&mut IconManager>,
+        vertex_3d_q_opt: Option<&Query<&Vertex3d>>,
+        icon_vertex_q_opt: Option<&Query<&IconVertex>>,
         entity: &Entity,
         insert: ComponentWaitlistInsert,
     ) {
@@ -360,7 +358,6 @@ impl ComponentWaitlist {
 
             // entity is ready!
             let entity = possibly_ready_entity;
-            // info!("entity `{:?}` is ready!", entity);
 
             let entry = self.remove(&entity).unwrap();
             let entry_shape = entry.component_type.unwrap();
@@ -448,8 +445,8 @@ impl ComponentWaitlist {
                 }
                 (ComponentType::Edge, FileExtension::Icon) => {
                     let entities = entry.edge_entities.unwrap();
-                    let Some(icon_manager) = icon_manager else {
-                        panic!("hmm");
+                    let Some(icon_manager) = icon_manager_opt else {
+                        panic!("icon manager not available");
                     };
 
                     let mut dependencies = Vec::new();
@@ -476,8 +473,8 @@ impl ComponentWaitlist {
                 }
                 (ComponentType::Face, FileExtension::Icon) => {
                     let entities = entry.face_entities.unwrap();
-                    let Some(icon_manager) = icon_manager else {
-                        panic!("hmm");
+                    let Some(icon_manager) = icon_manager_opt else {
+                        panic!("icon manager not available");
                     };
 
                     let mut dependencies = Vec::new();
@@ -531,8 +528,9 @@ impl ComponentWaitlist {
                 edge_manager,
                 face_manager,
                 model_manager_opt,
-                shape_color_resync_events,
-                vertex_3d_q,
+                icon_manager_opt,
+                vertex_3d_q_opt,
+                icon_vertex_q_opt,
                 entity,
                 entry,
             );
@@ -550,8 +548,9 @@ impl ComponentWaitlist {
         edge_manager: &mut EdgeManager,
         face_manager: &mut FaceManager,
         model_manager_opt: &mut Option<&mut ModelManager>,
-        shape_color_resync_events: &mut EventWriter<ShapeColorResyncEvent>,
-        vertex_3d_q: &Query<&Vertex3d>,
+        icon_manager_opt: &mut Option<&mut IconManager>,
+        vertex_3d_q_opt: Option<&Query<&Vertex3d>>,
+        icon_vertex_q_opt: Option<&Query<&IconVertex>>,
         entity: Entity,
         entry: ComponentWaitlistEntry,
     ) {
@@ -606,7 +605,6 @@ impl ComponentWaitlist {
                     camera_manager,
                     vertex_manager,
                     None,
-                    None,
                     entity,
                     start_2d,
                     start_3d,
@@ -630,7 +628,6 @@ impl ComponentWaitlist {
                     camera_manager,
                     vertex_manager,
                     Some(face_manager),
-                    Some(shape_color_resync_events),
                     entity,
                     start_2d,
                     start_3d,
@@ -643,7 +640,10 @@ impl ComponentWaitlist {
                     true,
                 );
             }
-            (_, ComponentData::Face(vertex_a, vertex_b, vertex_c, _edge_a, _edge_b, _edge_c)) => {
+            (FileExtension::Mesh, ComponentData::Face(vertex_a, vertex_b, vertex_c, _edge_a, _edge_b, _edge_c)) => {
+                let Some(vertex_3d_q) = vertex_3d_q_opt else {
+                    panic!("vertex 3d q not available");
+                };
                 let face_key = FaceKey::new(vertex_a, vertex_b, vertex_c);
                 let mut positions = [Vec3::ZERO, Vec3::ZERO, Vec3::ZERO];
                 for (index, vertex_3d_entity) in [vertex_a, vertex_b, vertex_c].iter().enumerate() {
@@ -666,6 +666,76 @@ impl ComponentWaitlist {
                     );
                 }
                 face_manager.face_3d_postprocess(
+                    commands,
+                    meshes,
+                    materials,
+                    camera_manager,
+                    &face_key,
+                    entity,
+                    positions,
+                );
+            }
+            (FileExtension::Icon, ComponentData::Vertex(None)) => {
+                let Some(icon_manager) = icon_manager_opt else {
+                    panic!("icon manager not available");
+                };
+
+                let color = Vertex2d::ENABLED_COLOR;
+
+                icon_manager.vertex_postprocess(
+                    commands,
+                    meshes,
+                    materials,
+                    camera_manager,
+                    entity,
+                    Some(file_entity),
+                    color,
+                );
+            }
+            (FileExtension::Icon, ComponentData::Edge(start, end, None)) => {
+                let Some(icon_manager) = icon_manager_opt else {
+                    panic!("icon manager not available");
+                };
+                icon_manager.edge_postprocess(
+                    commands,
+                    meshes,
+                    materials,
+                    camera_manager,
+                    entity,
+                    start,
+                    end,
+                    Some(file_entity),
+                    Vertex2d::ENABLED_COLOR,
+                );
+            }
+            (FileExtension::Icon, ComponentData::Face(vertex_a, vertex_b, vertex_c, _edge_a, _edge_b, _edge_c)) => {
+                let Some(icon_manager) = icon_manager_opt else {
+                    panic!("icon manager not available");
+                };
+                let Some(icon_vertex_q) = icon_vertex_q_opt else {
+                    panic!("icon vertex q not available");
+                };
+                let face_key = IconFaceKey::new(vertex_a, vertex_b, vertex_c);
+                let mut positions = [Vec2::ZERO, Vec2::ZERO, Vec2::ZERO];
+                for (index, vertex_3d_entity) in [vertex_a, vertex_b, vertex_c].iter().enumerate() {
+                    let icon_vertex = icon_vertex_q.get(*vertex_3d_entity).unwrap();
+                    positions[index] = icon_vertex.as_vec2();
+                }
+
+                warn!("removing icon face key: {:?}", face_key);
+                icon_manager.remove_new_face_key(&face_key);
+                if !icon_manager.has_local_face(&face_key) {
+                    icon_manager.process_new_local_face(
+                        commands,
+                        camera_manager,
+
+                        meshes,
+                        materials,
+                        file_entity,
+                        &face_key,
+                    );
+                }
+                icon_manager.net_face_postprocess(
                     commands,
                     meshes,
                     materials,
@@ -729,8 +799,9 @@ impl ComponentWaitlist {
                     edge_manager,
                     face_manager,
                     model_manager_opt,
-                    shape_color_resync_events,
-                    vertex_3d_q,
+                    icon_manager_opt,
+                    vertex_3d_q_opt,
+                    icon_vertex_q_opt,
                     child_entity,
                     child_entry,
                 );

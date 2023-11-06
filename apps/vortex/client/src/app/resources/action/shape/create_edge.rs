@@ -1,5 +1,4 @@
 use bevy_ecs::{
-    event::EventWriter,
     prelude::{Commands, Entity, Query, World},
     system::{ResMut, SystemState},
 };
@@ -16,7 +15,6 @@ use render_api::{
 use vortex_proto::components::FileExtension;
 
 use crate::app::{
-    events::ShapeColorResyncEvent,
     resources::{
         action::{
             shape::{select_shape::deselect_selected_shape, ShapeAction},
@@ -74,7 +72,6 @@ pub(crate) fn execute(
             ResMut<FaceManager>,
             ResMut<Assets<CpuMesh>>,
             ResMut<Assets<CpuMaterial>>,
-            EventWriter<ShapeColorResyncEvent>,
         )> = SystemState::new(world);
         let (
             mut commands,
@@ -86,7 +83,6 @@ pub(crate) fn execute(
             mut face_manager,
             mut meshes,
             mut materials,
-            mut shape_color_resync_events,
         ) = system_state.get_mut(world);
 
         // deselect all selected vertices
@@ -123,7 +119,6 @@ pub(crate) fn execute(
             &mut face_manager,
             &mut meshes,
             &mut materials,
-            &mut shape_color_resync_events,
             vertex_2d_entity_a,
             vertex_3d_entity_a,
             vertex_2d_entity_b,

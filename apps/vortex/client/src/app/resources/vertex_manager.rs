@@ -2,7 +2,6 @@ use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{
     entity::Entity,
-    event::EventWriter,
     system::{Commands, Query, Resource, SystemState},
     world::World,
 };
@@ -26,7 +25,6 @@ use crate::app::{
         DefaultDraw, Edge3dLocal, EdgeAngleLocal, LocalShape, OwnedByFileLocal, Vertex2d,
         VertexEntry,
     },
-    events::ShapeColorResyncEvent,
     resources::{
         action::{shape::ShapeAction, ActionStack},
         camera_manager::CameraManager,
@@ -338,7 +336,6 @@ impl VertexManager {
         face_manager: &mut FaceManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
-        shape_color_resync_events: &mut EventWriter<ShapeColorResyncEvent>,
         parent_vertex_2d_entity: Entity,
         parent_vertex_3d_entity: Entity,
         children: Vec<VertexEntry>,
@@ -379,7 +376,6 @@ impl VertexManager {
                 face_manager,
                 meshes,
                 materials,
-                shape_color_resync_events,
                 parent_vertex_2d_entity,
                 parent_vertex_3d_entity,
                 new_child_vertex_2d_entity,
@@ -399,7 +395,6 @@ impl VertexManager {
                     face_manager,
                     meshes,
                     materials,
-                    shape_color_resync_events,
                     new_child_vertex_2d_entity,
                     new_child_vertex_3d_entity,
                     grandchildren,
@@ -591,7 +586,6 @@ impl VertexManager {
                 materials,
                 camera_manager,
                 self,
-                None,
                 None,
                 new_edge_3d_entity,
                 parent_vertex_2d_entity,

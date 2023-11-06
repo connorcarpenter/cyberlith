@@ -126,6 +126,7 @@ impl Plugin for VortexPlugin {
             .add_systems(Update, network::insert_vertex_events)
             .add_systems(Update, network::insert_edge_events)
             .add_systems(Update, network::insert_face_events)
+            .add_systems(Update, network::insert_icon_events)
             .add_systems(Update, network::insert_owned_by_file_events)
             .add_systems(Update, network::insert_file_type_events)
             .add_systems(Update, network::insert_animation_events)

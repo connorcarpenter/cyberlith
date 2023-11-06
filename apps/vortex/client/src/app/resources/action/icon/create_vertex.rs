@@ -1,5 +1,4 @@
 use bevy_ecs::{
-    event::EventWriter,
     prelude::{Commands, Entity, Query, World},
     system::{ResMut, SystemState},
 };
@@ -13,7 +12,6 @@ use render_api::{
 };
 
 use crate::app::{
-    events::ShapeColorResyncEvent,
     resources::{
         action::{
             icon::{select_shape::deselect_selected_shape, IconAction},
@@ -105,7 +103,6 @@ pub(crate) fn execute(
         ResMut<IconManager>,
         ResMut<Assets<CpuMesh>>,
         ResMut<Assets<CpuMaterial>>,
-        EventWriter<ShapeColorResyncEvent>,
         Query<&Transform>,
     )> = SystemState::new(world);
     let (
@@ -116,7 +113,6 @@ pub(crate) fn execute(
         mut icon_manager,
         mut meshes,
         mut materials,
-        mut shape_color_resync_events,
         transform_q,
     ) = system_state.get_mut(world);
 
@@ -128,7 +124,6 @@ pub(crate) fn execute(
             &mut camera_manager,
             &mut meshes,
             &mut materials,
-            &mut shape_color_resync_events,
             connected_vertex_entity,
             new_vertex_entity,
             tab_file_entity,

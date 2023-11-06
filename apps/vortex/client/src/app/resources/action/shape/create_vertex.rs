@@ -1,5 +1,4 @@
 use bevy_ecs::{
-    event::EventWriter,
     prelude::{Commands, Entity, Query, World},
     system::{ResMut, SystemState},
 };
@@ -17,7 +16,6 @@ use vortex_proto::components::FileExtension;
 
 use crate::app::{
     components::VertexTypeData,
-    events::ShapeColorResyncEvent,
     resources::{
         action::{
             shape::{select_shape::deselect_selected_shape, ShapeAction},
@@ -142,7 +140,6 @@ pub(crate) fn execute(
         ResMut<FaceManager>,
         ResMut<Assets<CpuMesh>>,
         ResMut<Assets<CpuMaterial>>,
-        EventWriter<ShapeColorResyncEvent>,
         Query<&Transform>,
     )> = SystemState::new(world);
     let (
@@ -155,7 +152,6 @@ pub(crate) fn execute(
         mut face_manager,
         mut meshes,
         mut materials,
-        mut shape_color_resync_events,
         transform_q,
     ) = system_state.get_mut(world);
 
@@ -171,7 +167,6 @@ pub(crate) fn execute(
                     &mut face_manager,
                     &mut meshes,
                     &mut materials,
-                    &mut shape_color_resync_events,
                     new_vertex_2d_entity,
                     new_vertex_3d_entity,
                     children,
@@ -190,7 +185,6 @@ pub(crate) fn execute(
                 &mut face_manager,
                 &mut meshes,
                 &mut materials,
-                &mut shape_color_resync_events,
                 parent_vertex_2d_entity,
                 parent_vertex_3d_entity,
                 new_vertex_2d_entity,
@@ -215,7 +209,6 @@ pub(crate) fn execute(
                     &mut face_manager,
                     &mut meshes,
                     &mut materials,
-                    &mut shape_color_resync_events,
                     connected_vertex_2d_entity,
                     connected_vertex_3d_entity,
                     new_vertex_2d_entity,

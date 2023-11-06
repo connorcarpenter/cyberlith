@@ -2,7 +2,6 @@ use std::{collections::HashMap, f32::consts::FRAC_PI_2};
 
 use bevy_ecs::{
     entity::Entity,
-    event::EventWriter,
     system::{Commands, Query, Resource},
 };
 use bevy_log::{info, warn};
@@ -27,7 +26,6 @@ use vortex_proto::components::{
 
 use crate::app::{
     components::{DefaultDraw, Edge2dLocal, Edge3dLocal, LocalShape, OwnedByFileLocal, Vertex2d},
-    events::ShapeColorResyncEvent,
     resources::{
         camera_manager::CameraManager,
         canvas::Canvas,
@@ -383,7 +381,6 @@ impl EdgeManager {
         face_manager: &mut FaceManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
-        shape_color_resync_events: &mut EventWriter<ShapeColorResyncEvent>,
         parent_vertex_2d_entity: Entity,
         parent_vertex_3d_entity: Entity,
         child_vertex_2d_entity: Entity,
@@ -431,7 +428,6 @@ impl EdgeManager {
             camera_manager,
             vertex_manager,
             Some(face_manager),
-            Some(shape_color_resync_events),
             new_edge_3d_entity,
             parent_vertex_2d_entity,
             parent_vertex_3d_entity,
@@ -457,7 +453,6 @@ impl EdgeManager {
         camera_manager: &CameraManager,
         vertex_manager: &mut VertexManager,
         face_manager_opt: Option<&mut FaceManager>,
-        shape_color_resync_events_opt: Option<&mut EventWriter<ShapeColorResyncEvent>>,
         edge_3d_entity: Entity,
         vertex_a_2d_entity: Entity,
         vertex_a_3d_entity: Entity,
@@ -469,10 +464,6 @@ impl EdgeManager {
         edge_angle_opt: Option<f32>,
         default_draw: bool,
     ) -> Entity {
-        if let Some(shape_color_resync_events) = shape_color_resync_events_opt {
-            // send shape color resync event
-            shape_color_resync_events.send(ShapeColorResyncEvent);
-        }
 
         // edge 3d
         let shape_components = if arrows_not_lines {

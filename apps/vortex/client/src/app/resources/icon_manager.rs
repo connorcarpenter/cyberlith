@@ -5,7 +5,6 @@ use bevy_ecs::{
     query::With,
     system::{Commands, Query, Res, ResMut, Resource, SystemState},
     world::{World, Mut},
-    event::EventWriter,
 };
 use bevy_log::info;
 
@@ -31,7 +30,6 @@ use crate::app::{
         input::InputManager,
         shape_data::CanvasShape, tab_manager::TabManager, camera_manager::CameraManager, canvas::Canvas, icon_data::IconEdgeData
     },
-    events::ShapeColorResyncEvent,
     shapes::create_2d_edge_line
 };
 
@@ -490,7 +488,6 @@ impl IconManager {
         camera_manager: &mut CameraManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
-        shape_color_resync_events: &mut EventWriter<ShapeColorResyncEvent>,
         vertex_entity_a: Entity,
         vertex_entity_b: Entity,
         file_entity: Entity,
@@ -522,7 +519,6 @@ impl IconManager {
             meshes,
             materials,
             camera_manager,
-            Some(shape_color_resync_events),
             new_edge_entity,
             vertex_entity_a,
             vertex_entity_b,
@@ -541,18 +537,12 @@ impl IconManager {
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         camera_manager: &CameraManager,
-        shape_color_resync_events_opt: Option<&mut EventWriter<ShapeColorResyncEvent>>,
         edge_entity: Entity,
         vertex_entity_a: Entity,
         vertex_entity_b: Entity,
         ownership_opt: Option<Entity>,
         color: Color,
     ) {
-        if let Some(shape_color_resync_events) = shape_color_resync_events_opt {
-            // send shape color resync event
-            shape_color_resync_events.send(ShapeColorResyncEvent);
-        }
-
         // edge
         let shape_components = create_2d_edge_line(
             meshes,
@@ -714,7 +704,7 @@ impl IconManager {
 
     // Faces
 
-    pub fn process_new_faces(
+    pub fn process_new_local_faces(
         &mut self,
         commands: &mut Commands,
         canvas: &mut Canvas,
@@ -956,6 +946,7 @@ impl IconManager {
             .insert(face_component)
             .id();
 
+        let positions = positions.map(|vec3| vec3.truncate());
         self.net_face_postprocess(
             commands,
             meshes,
@@ -975,8 +966,9 @@ impl IconManager {
         camera_manager: &CameraManager,
         face_key: &IconFaceKey,
         net_face_entity: Entity,
-        positions: [Vec3; 3],
+        positions: [Vec2; 3],
     ) {
+        let positions = positions.map(|vec2| vec2.extend(0.0));
         commands
             .entity(net_face_entity)
             .insert(RenderObjectBundle::world_triangle(
