@@ -193,7 +193,7 @@ impl IconManager {
             ));
             camera_bundle.camera.target = RenderTarget::Image(canvas_texture_handle);
             camera_bundle.camera.is_active = false;
-            camera_bundle.camera.order = 1;
+            camera_bundle.camera.order = 2;
             self.camera_entity = commands
                 .spawn(camera_bundle)
                 .insert(self.render_layer)
@@ -282,6 +282,26 @@ impl IconManager {
             .looking_at(Vec3::new(center.x, center.y, 0.0), Vec3::NEG_Y);
         *projection =
             Projection::Orthographic(OrthographicProjection::new(texture_size.y, 0.0, 10.0));
+    }
+
+    pub fn enable_camera(
+        &self,
+        camera_q: &mut Query<(&mut Camera, &mut Projection, &mut Transform)>,
+    ) {
+        let Ok((mut camera, _, _)) = camera_q.get_mut(self.camera_entity) else {
+            return;
+        };
+        camera.is_active = true;
+    }
+
+    pub fn disable_camera(
+        &self,
+        camera_q: &mut Query<(&mut Camera, &mut Projection, &mut Transform)>,
+    ) {
+        let Ok((mut camera, _, _)) = camera_q.get_mut(self.camera_entity) else {
+            return;
+        };
+        camera.is_active = false;
     }
 
     pub fn handle_keypress_camera_controls(&mut self, key: Key) {

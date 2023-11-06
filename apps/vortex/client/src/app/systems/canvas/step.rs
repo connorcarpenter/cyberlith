@@ -16,6 +16,7 @@ pub fn update_camera(
     mut camera_manager: ResMut<CameraManager>,
     tab_manager: ResMut<TabManager>,
     animation_manager: Res<AnimationManager>,
+    mut icon_manager: ResMut<IconManager>,
     mut camera_q: Query<(&mut Camera, &mut Projection, &mut Transform)>,
 ) {
     if canvas.update_visibility() {
@@ -25,6 +26,11 @@ pub fn update_camera(
         return;
     };
     let file_ext = file_manager.get_file_type(current_tab_entity);
+    if file_ext == FileExtension::Icon {
+        icon_manager.enable_camera(&mut camera_q);
+    } else {
+        icon_manager.disable_camera(&mut camera_q);
+    }
     if file_ext == FileExtension::Anim {
         if animation_manager.is_framing() {
             return;
