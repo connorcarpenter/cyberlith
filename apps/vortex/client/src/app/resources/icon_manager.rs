@@ -10,6 +10,7 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
+use input::Key;
 
 use math::{Vec2, Vec3};
 
@@ -36,6 +37,9 @@ use crate::app::{
 
 #[derive(Resource)]
 pub struct IconManager {
+
+    wireframe: bool,
+
     // vertices
     vertices: HashMap<Entity, IconVertexData>,
 
@@ -60,6 +64,7 @@ pub struct IconManager {
 impl Default for IconManager {
     fn default() -> Self {
         Self {
+            wireframe: true,
             // vertices
             vertices: HashMap::new(),
             drags: Vec::new(),
@@ -82,17 +87,6 @@ impl Default for IconManager {
 impl IconManager {
 
     pub fn draw(&self, world: &mut World, current_file_entity: &Entity) {
-        let Some(current_tab_state) = world.get_resource::<TabManager>().unwrap().current_tab_state() else {
-            return;
-        };
-        let camera_state = &current_tab_state.camera_state;
-        let camera_is_2d = camera_state.is_2d();
-        if camera_is_2d {
-            self.draw_2d(world, current_file_entity);
-        }
-    }
-
-    fn draw_2d(&self, world: &mut World, current_file_entity: &Entity) {
         {
 
             let mut system_state: SystemState<(
@@ -166,6 +160,18 @@ impl IconManager {
                 }
                 _ => {}
             }
+        }
+    }
+
+    pub fn handle_keypress_camera_controls(&mut self, key: Key) {
+        match key {
+            Key::S => {
+                self.wireframe = false;
+            }
+            Key::W => {
+                self.wireframe = true;
+            }
+            _ => panic!("Unexpected key: {:?}", key),
         }
     }
 

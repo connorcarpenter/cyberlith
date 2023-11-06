@@ -53,18 +53,12 @@ impl IconInputManager {
                 }
                 InputAction::KeyPress(key) => match key {
                     Key::S
-                    | Key::W
-                    | Key::D
-                    | Key::T
-                    | Key::F
-                    | Key::Num1
-                    | Key::Num2
-                    | Key::Num3
-                    | Key::Num4
-                    | Key::Num5
-                    | Key::PageUp
-                    | Key::PageDown => InputManager::handle_keypress_camera_controls(world, key),
-                    Key::Delete => Self::handle_delete_key_press(input_manager, world),
+                    | Key::W => {
+                        world.resource_scope(|_world, mut icon_manager: Mut<IconManager>| {
+                            icon_manager.handle_keypress_camera_controls(key);
+                        });
+                    },
+                    Key::Delete => Self::handle_delete_key_press(world, input_manager),
                     Key::Insert => Self::handle_insert_key_press(world, input_manager),
                     _ => {}
                 },
@@ -90,7 +84,7 @@ impl IconInputManager {
         })
     }
 
-    pub(crate) fn handle_delete_key_press(input_manager: &mut InputManager, world: &mut World) {
+    pub(crate) fn handle_delete_key_press(world: &mut World, input_manager: &mut InputManager) {
         match input_manager.selected_shape {
             Some((vertex_entity, CanvasShape::Vertex)) => {
                 input_manager.handle_delete_vertex_action(world, &vertex_entity)
