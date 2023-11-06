@@ -1,5 +1,5 @@
 use bevy_ecs::{
-    system::{Query, ResMut, SystemState},
+    system::{Res, Query, ResMut, SystemState},
     world::World,
 };
 
@@ -17,7 +17,7 @@ use render_egui::{
 };
 
 use crate::app::{
-    resources::{camera_manager::CameraManager, canvas::Canvas, tab_manager::TabManager},
+    resources::{icon_manager::IconManager, camera_manager::CameraManager, canvas::Canvas, tab_manager::TabManager},
     ui::UiState,
 };
 
@@ -31,6 +31,7 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
                 ResMut<TabManager>,
                 ResMut<Canvas>,
                 ResMut<CameraManager>,
+                Res<IconManager>,
                 ResMut<Assets<CpuTexture2D>>,
                 ResMut<EguiUserTextures>,
                 ResMut<UiState>,
@@ -41,6 +42,7 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
                 mut tab_manager,
                 mut canvas,
                 mut camera_manager,
+                icon_manager,
                 mut textures,
                 mut user_textures,
                 mut ui_state,
@@ -95,6 +97,7 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
                         canvas.update_texture_size(native_texture_size);
                         camera_manager
                             .update_camera_viewports(native_texture_size, &mut camera_query);
+                        icon_manager.update_camera_viewport(native_texture_size, &mut camera_query);
                     }
 
                     if canvas.is_visible() {

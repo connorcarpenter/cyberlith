@@ -17,7 +17,7 @@ use crate::app::{
     config::AppConfig,
     resources::{
         camera_manager::CameraManager, canvas::Canvas, compass::Compass, edge_manager::EdgeManager,
-        grid::Grid, input::InputManager, vertex_manager::VertexManager,
+        grid::Grid, input::InputManager, vertex_manager::VertexManager, icon_manager::IconManager,
     },
     shapes::create_2d_edge_line,
 };
@@ -30,6 +30,7 @@ pub fn setup(
     mut edge_manager: ResMut<EdgeManager>,
     mut camera_manager: ResMut<CameraManager>,
     mut input_manager: ResMut<InputManager>,
+    mut icon_manager: ResMut<IconManager>,
     mut compass: ResMut<Compass>,
     mut grid: ResMut<Grid>,
     mut textures: ResMut<Assets<CpuTexture2D>>,
@@ -58,6 +59,15 @@ pub fn setup(
     setup_2d_scene(
         &mut commands,
         &mut camera_manager,
+        &mut input_manager,
+        &mut meshes,
+        &mut materials,
+        &mut ambient_lights,
+        &texture_size,
+        canvas_texture_handle,
+    );
+    icon_manager.setup_scene(
+        &mut commands,
         &mut input_manager,
         &mut meshes,
         &mut materials,

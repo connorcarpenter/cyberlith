@@ -719,7 +719,6 @@ impl ComponentWaitlist {
                     commands,
                     meshes,
                     materials,
-                    camera_manager,
                     entity,
                     Some(file_entity),
                     color,
@@ -733,7 +732,6 @@ impl ComponentWaitlist {
                     commands,
                     meshes,
                     materials,
-                    camera_manager,
                     entity,
                     start,
                     end,
@@ -760,8 +758,6 @@ impl ComponentWaitlist {
                 if !icon_manager.has_local_face(&face_key) {
                     icon_manager.process_new_local_face(
                         commands,
-                        camera_manager,
-
                         meshes,
                         materials,
                         file_entity,
@@ -772,7 +768,6 @@ impl ComponentWaitlist {
                     commands,
                     meshes,
                     materials,
-                    camera_manager,
                     &face_key,
                     entity,
                     positions,

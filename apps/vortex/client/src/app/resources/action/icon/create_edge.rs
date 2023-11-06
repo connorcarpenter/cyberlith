@@ -19,7 +19,6 @@ use crate::app::{
             icon::{select_shape::deselect_selected_shape, IconAction},
             ActionStack,
         },
-        camera_manager::CameraManager,
         canvas::Canvas,
         input::InputManager,
         shape_data::CanvasShape,
@@ -61,7 +60,6 @@ pub(crate) fn execute(
         let mut system_state: SystemState<(
             Commands,
             Client,
-            ResMut<CameraManager>,
             ResMut<Canvas>,
             ResMut<IconManager>,
             ResMut<Assets<CpuMesh>>,
@@ -70,7 +68,6 @@ pub(crate) fn execute(
         let (
             mut commands,
             mut client,
-            mut camera_manager,
             mut canvas,
             mut icon_manager,
             mut meshes,
@@ -94,7 +91,6 @@ pub(crate) fn execute(
         let new_edge_entity = icon_manager.create_networked_edge(
             &mut commands,
             &mut client,
-            &mut camera_manager,
             &mut meshes,
             &mut materials,
             vertex_entity_a,
@@ -148,7 +144,6 @@ pub(crate) fn execute(
             let mut system_state: SystemState<(
                 Commands,
                 Client,
-                ResMut<CameraManager>,
                 ResMut<IconManager>,
                 ResMut<Assets<CpuMesh>>,
                 ResMut<Assets<CpuMaterial>>,
@@ -157,7 +152,6 @@ pub(crate) fn execute(
             let (
                 mut commands,
                 mut client,
-                mut camera_manager,
                 mut icon_manager,
                 mut meshes,
                 mut materials,
@@ -172,7 +166,6 @@ pub(crate) fn execute(
                 icon_manager.remove_new_face_key(&face_key);
                 let new_face_entity = icon_manager.process_new_local_face(
                     &mut commands,
-                    &mut camera_manager,
                     &mut meshes,
                     &mut materials,
                     tab_file_entity,
@@ -185,7 +178,6 @@ pub(crate) fn execute(
                         &mut client,
                         &mut meshes,
                         &mut materials,
-                        &mut camera_manager,
                         &transform_q,
                         &face_key,
                         [

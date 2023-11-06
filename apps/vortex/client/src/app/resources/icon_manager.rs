@@ -13,7 +13,7 @@ use input::Key;
 
 use math::{Vec2, Vec3};
 
-use render_api::{base::{Color, CpuMaterial, CpuMesh}, components::{RenderObjectBundle, RenderLayer, Transform}, resources::RenderFrame, Handle, Assets, shapes::{HollowTriangle, Triangle}};
+use render_api::{base::{CpuTexture2D, Color, CpuMaterial, CpuMesh}, components::{AmbientLight, Camera, CameraBundle, OrthographicProjection, Projection, RenderLayers, RenderTarget, Viewport, RenderObjectBundle, RenderLayer, Transform}, resources::RenderFrame, Handle, Assets, shapes::{HollowTriangle, Triangle}};
 
 use vortex_proto::components::{IconEdge, OwnedByFile, IconVertex, IconFace};
 
@@ -22,13 +22,13 @@ use crate::app::{
         IconEdgeLocal,
         OwnedByFileLocal,
         Edge2dLocal, Vertex2d,
-        Face3dLocal, FaceIcon2d, IconLocalFace,
+        Face3dLocal, FaceIcon2d, IconLocalFace, DefaultDraw, SelectCircle, SelectLine, SelectTriangle,
     },
     resources::{
         action::icon::IconAction,
         icon_data::{IconFaceData, IconFaceKey, IconVertexData},
         input::InputManager,
-        shape_data::CanvasShape, tab_manager::TabManager, camera_manager::CameraManager, canvas::Canvas, icon_data::IconEdgeData
+        shape_data::CanvasShape, tab_manager::TabManager, canvas::Canvas, icon_data::IconEdgeData
     },
     shapes::create_2d_edge_line
 };
@@ -37,6 +37,8 @@ use crate::app::{
 pub struct IconManager {
 
     wireframe: bool,
+    camera_entity: Entity,
+    render_layer: RenderLayer,
 
     // vertices
     vertices: HashMap<Entity, IconVertexData>,
@@ -63,6 +65,9 @@ impl Default for IconManager {
     fn default() -> Self {
         Self {
             wireframe: true,
+            camera_entity: Entity::PLACEHOLDER,
+            render_layer: RenderLayer::default(),
+
             // vertices
             vertices: HashMap::new(),
             drags: Vec::new(),
@@ -159,6 +164,124 @@ impl IconManager {
                 _ => {}
             }
         }
+    }
+
+    pub fn setup_scene(
+        &mut self,
+        commands: &mut Commands,
+        input_manager: &mut InputManager,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+        ambient_lights: &mut Assets<AmbientLight>,
+        texture_size: &Vec2,
+        canvas_texture_handle: Handle<CpuTexture2D>,
+    ) {
+        self.render_layer = RenderLayers::layer(4);
+
+        // light
+        {
+            commands
+                .spawn(ambient_lights.add(AmbientLight::new(1.0, Color::WHITE)))
+                .insert(self.render_layer);
+        }
+
+        // camera
+        {
+            let mut camera_bundle = CameraBundle::new_2d(&Viewport::new_at_origin(
+                texture_size.x as u32,
+                texture_size.y as u32,
+            ));
+            camera_bundle.camera.target = RenderTarget::Image(canvas_texture_handle);
+            camera_bundle.camera.is_active = false;
+            camera_bundle.camera.order = 1;
+            self.camera_entity = commands
+                .spawn(camera_bundle)
+                .insert(self.render_layer)
+                .id();
+        }
+
+        // select circle
+        {
+            let mut select_circle_components = RenderObjectBundle::circle(
+                meshes,
+                materials,
+                Vec2::ZERO,
+                SelectCircle::RADIUS,
+                Vertex2d::SUBDIVISIONS,
+                Color::WHITE,
+                Some(1),
+            );
+            select_circle_components.visibility.visible = false;
+            let select_circle_entity = commands
+                .spawn(select_circle_components)
+                .insert(self.render_layer)
+                .insert(SelectCircle)
+                .insert(DefaultDraw)
+                .id();
+            input_manager.select_circle_entity = Some(select_circle_entity);
+        }
+
+        // select triangle
+        {
+            let mut select_triangle_components = RenderObjectBundle::equilateral_triangle(
+                meshes,
+                materials,
+                Vec2::ZERO,
+                SelectTriangle::SIZE,
+                Color::WHITE,
+                Some(1),
+            );
+            select_triangle_components.visibility.visible = false;
+            let select_triangle_entity = commands
+                .spawn(select_triangle_components)
+                .insert(self.render_layer)
+                .insert(SelectTriangle)
+                .insert(DefaultDraw)
+                .id();
+            input_manager.select_triangle_entity = Some(select_triangle_entity);
+        }
+
+        // select line
+        {
+            let mut select_line_components = create_2d_edge_line(
+                meshes,
+                materials,
+                Vec2::ZERO,
+                Vec2::X,
+                0.0,
+                Color::WHITE,
+                SelectLine::THICKNESS,
+            );
+            select_line_components.visibility.visible = false;
+            let select_line_entity = commands
+                .spawn(select_line_components)
+                .insert(self.render_layer)
+                .insert(SelectLine)
+                .insert(DefaultDraw)
+                .id();
+            input_manager.select_line_entity = Some(select_line_entity);
+        }
+    }
+
+    pub fn update_camera_viewport(
+        &self,
+        texture_size: Vec2,
+        camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>,
+    ) {
+        let Ok((mut camera, mut transform, mut projection)) = camera_query.get_mut(self.camera_entity) else {
+            return;
+        };
+        camera.viewport = Some(Viewport::new_at_origin(
+            texture_size.x as u32,
+            texture_size.y as u32,
+        ));
+
+        let center = texture_size * 0.5;
+
+        *transform = Transform::from_xyz(center.x, center.y, 1.0)
+            .looking_at(Vec3::new(center.x, center.y, 0.0), Vec3::NEG_Y);
+        *projection =
+            Projection::Orthographic(OrthographicProjection::new(texture_size.y, 0.0, 10.0));
     }
 
     pub fn handle_keypress_camera_controls(&mut self, key: Key) {
@@ -263,7 +386,6 @@ impl IconManager {
         &mut self,
         commands: &mut Commands,
         client: &mut Client,
-        camera_manager: &mut CameraManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         file_entity: Entity,
@@ -290,7 +412,6 @@ impl IconManager {
             commands,
             meshes,
             materials,
-            camera_manager,
             new_vertex_entity,
             Some(file_entity),
             Vertex2d::ENABLED_COLOR,
@@ -304,7 +425,6 @@ impl IconManager {
         commands: &mut Commands,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
-        camera_manager: &CameraManager,
         vertex_entity: Entity,
         ownership_opt: Option<Entity>,
         color: Color,
@@ -321,7 +441,7 @@ impl IconManager {
                 color,
                 None,
             ))
-            .insert(camera_manager.layer_2d);
+            .insert(self.render_layer);
 
         if let Some(file_entity) = ownership_opt {
             commands
@@ -485,7 +605,6 @@ impl IconManager {
         &mut self,
         commands: &mut Commands,
         client: &mut Client,
-        camera_manager: &mut CameraManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         vertex_entity_a: Entity,
@@ -518,7 +637,6 @@ impl IconManager {
             commands,
             meshes,
             materials,
-            camera_manager,
             new_edge_entity,
             vertex_entity_a,
             vertex_entity_b,
@@ -536,7 +654,6 @@ impl IconManager {
         commands: &mut Commands,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
-        camera_manager: &CameraManager,
         edge_entity: Entity,
         vertex_entity_a: Entity,
         vertex_entity_b: Entity,
@@ -556,7 +673,7 @@ impl IconManager {
         commands
             .entity(edge_entity)
             .insert(shape_components)
-            .insert(camera_manager.layer_2d)
+            .insert(self.render_layer)
             .insert(IconEdgeLocal::new(vertex_entity_a, vertex_entity_b));
         if let Some(file_entity) = ownership_opt {
             commands
@@ -708,7 +825,6 @@ impl IconManager {
         &mut self,
         commands: &mut Commands,
         canvas: &mut Canvas,
-        camera_manager: &CameraManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
     ) {
@@ -720,7 +836,6 @@ impl IconManager {
         for (face_key, file_entity) in keys {
             self.process_new_local_face(
                 commands,
-                camera_manager,
                 meshes,
                 materials,
                 file_entity,
@@ -735,7 +850,6 @@ impl IconManager {
     pub fn process_new_local_face(
         &mut self,
         commands: &mut Commands,
-        camera_manager: &CameraManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         file_entity: Entity,
@@ -762,7 +876,7 @@ impl IconManager {
                 FaceIcon2d::COLOR,
                 Some(1),
             ))
-            .insert(camera_manager.layer_2d)
+            .insert(self.render_layer)
             .id();
 
         info!("spawned face entity: {:?}", new_entity);
@@ -842,7 +956,6 @@ impl IconManager {
         let mut system_state: SystemState<(
             Commands,
             Client,
-            Res<CameraManager>,
             ResMut<Assets<CpuMesh>>,
             ResMut<Assets<CpuMaterial>>,
             Query<&Transform>,
@@ -850,7 +963,6 @@ impl IconManager {
         let (
             mut commands,
             mut client,
-            camera_manager,
             mut meshes,
             mut materials,
             transform_q
@@ -861,7 +973,6 @@ impl IconManager {
             &mut client,
             &mut meshes,
             &mut materials,
-            &camera_manager,
             &transform_q,
             &face_key,
             [
@@ -881,7 +992,6 @@ impl IconManager {
         client: &mut Client,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
-        camera_manager: &CameraManager,
         transform_q: &Query<&Transform>,
         face_key: &IconFaceKey,
         edge_entities: [Entity; 3],
@@ -909,8 +1019,7 @@ impl IconManager {
         }
 
         // possibly reorder vertices to be counter-clockwise with respect to camera
-        let camera_2d_entity = camera_manager.camera_2d.unwrap();
-        let camera_transform = transform_q.get(camera_2d_entity).unwrap();
+        let camera_transform = transform_q.get(self.camera_entity).unwrap();
         if math::reorder_triangle_winding(&mut positions, camera_transform.translation, true) {
             vertex_entities.swap(1, 2);
         }
@@ -951,7 +1060,6 @@ impl IconManager {
             commands,
             meshes,
             materials,
-            &camera_manager,
             face_key,
             face_net_entity,
             positions,
@@ -963,7 +1071,6 @@ impl IconManager {
         commands: &mut Commands,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
-        camera_manager: &CameraManager,
         face_key: &IconFaceKey,
         net_face_entity: Entity,
         positions: [Vec2; 3],
@@ -977,7 +1084,7 @@ impl IconManager {
                 positions,
                 Face3dLocal::COLOR,
             ))
-            .insert(camera_manager.layer_2d);
+            .insert(self.render_layer);
 
         self.register_net_face(net_face_entity, face_key);
 
