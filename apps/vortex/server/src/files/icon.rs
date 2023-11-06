@@ -12,13 +12,12 @@ use naia_bevy_server::{
     UnsignedVariableInteger,
 };
 
-use vortex_proto::components::{Edge3d, Face3d, IconEdge, IconFace, IconVertex, Vertex3d, VertexSerdeInt};
+use vortex_proto::components::{IconEdge, IconFace, IconVertex, VertexSerdeInt};
 
 use crate::{
     files::{FileWriter, ShapeTypeData},
-    resources::{ContentEntityData, Project},
+    resources::{IconManager, ContentEntityData, Project},
 };
-use crate::resources::IconManager;
 
 // Actions
 #[derive(Debug, Clone)]
@@ -53,9 +52,9 @@ impl IconWriter {
         let mut system_state: SystemState<(
             Server,
             Res<IconManager>,
-            Query<&Vertex3d>,
-            Query<&Edge3d>,
-            Query<&Face3d>,
+            Query<&IconVertex>,
+            Query<&IconEdge>,
+            Query<&IconFace>,
         )> = SystemState::new(world);
         let (server, icon_manager, vertex_q, edge_q, face_q) =
             system_state.get_mut(world);
@@ -171,7 +170,7 @@ impl IconWriter {
                     // continue bit
                     IconActionType::Vertex.ser(&mut bit_writer);
 
-                    // encode X, Y, Z
+                    // encode X, Y
                     VertexSerdeInt::from(*x).ser(&mut bit_writer);
                     VertexSerdeInt::from(*y).ser(&mut bit_writer);
 

@@ -10,7 +10,7 @@ use vortex_proto::{
         AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, Edge3d, EdgeAngle,
         EntryKind, Face3d, FaceColor, FileDependency, FileSystemChild, FileSystemEntry,
         FileSystemRootChild, FileType, NetTransform, OwnedByFile, PaletteColor, ShapeName,
-        Vertex3d, VertexRoot, SkinOrSceneEntity
+        Vertex3d, VertexRoot, SkinOrSceneEntity, IconEdge, IconFace, IconVertex
     },
     protocol,
 };
@@ -92,6 +92,9 @@ impl Plugin for VortexPlugin {
             .add_event::<InsertComponentEvent<Edge3d>>()
             .add_event::<InsertComponentEvent<EdgeAngle>>()
             .add_event::<InsertComponentEvent<Face3d>>()
+            .add_event::<InsertComponentEvent<IconVertex>>()
+            .add_event::<InsertComponentEvent<IconEdge>>()
+            .add_event::<InsertComponentEvent<IconFace>>()
             .add_event::<InsertComponentEvent<FileType>>()
             .add_event::<InsertComponentEvent<OwnedByFile>>()
             .add_event::<InsertComponentEvent<ShapeName>>()

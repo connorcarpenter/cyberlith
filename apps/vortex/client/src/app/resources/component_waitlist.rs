@@ -99,50 +99,40 @@ impl ComponentWaitlistEntry {
     }
 
     fn is_ready(&self) -> bool {
-        match self.component_type {
-            Some(ComponentType::Vertex) => match self.file_type {
-                None => return false,
-                Some(FileExtension::Skel) => {
-                    return self.file_entity.is_some() && self.vertex_parent.is_some()
-                }
-                Some(FileExtension::Mesh) => return self.file_entity.is_some(),
-                Some(_) => {
-                    panic!("");
-                }
+        match (self.file_type, self.component_type) {
+            (Some(FileExtension::Skel), Some(ComponentType::Vertex)) => {
+                return self.file_entity.is_some() && self.vertex_parent.is_some();
             },
-            Some(ComponentType::Edge) => match self.file_type {
-                None => return false,
-                Some(FileExtension::Skel) => {
-                    return self.file_entity.is_some()
-                        && self.edge_entities.is_some()
-                        && self.edge_angle.is_some()
-                }
-                Some(FileExtension::Mesh) => {
-                    return self.file_entity.is_some() && self.edge_entities.is_some()
-                }
-                Some(_) => {
-                    panic!("");
-                }
+            (Some(FileExtension::Mesh), Some(ComponentType::Vertex)) => {
+                return self.file_entity.is_some();
             },
-            Some(ComponentType::Face) => {
-                self.file_type.is_some()
-                    && self.file_entity.is_some()
-                    && self.face_entities.is_some()
+            (Some(FileExtension::Icon), Some(ComponentType::Vertex)) => {
+                return self.file_entity.is_some();
+            },
+            (Some(FileExtension::Skel), Some(ComponentType::Edge)) => {
+                return self.file_entity.is_some()
+                    && self.edge_entities.is_some()
+                    && self.edge_angle.is_some();
+            },
+            (Some(FileExtension::Mesh), Some(ComponentType::Edge)) => {
+                return self.file_entity.is_some() && self.edge_entities.is_some();
+            },
+            (Some(FileExtension::Icon), Some(ComponentType::Edge)) => {
+                return self.file_entity.is_some() && self.edge_entities.is_some();
+            },
+            (Some(FileExtension::Mesh), Some(ComponentType::Face)) => {
+                self.file_entity.is_some() && self.face_entities.is_some()
             }
-            Some(ComponentType::NetTransform) => match self.file_type {
-                None => return false,
-                Some(FileExtension::Model) => {
-                    return self.file_entity.is_some() && self.skin_or_scene_entity.is_some() && self.shape_name.is_some()
-                }
-                Some(FileExtension::Scene) => {
-                    return self.file_entity.is_some() && self.skin_or_scene_entity.is_some()
-                }
-                Some(_) => {
-                    panic!("");
-                }
+            (Some(FileExtension::Icon), Some(ComponentType::Face)) => {
+                self.file_entity.is_some() && self.face_entities.is_some()
             }
-
-            None => false,
+            (Some(FileExtension::Model), Some(ComponentType::NetTransform)) => {
+                return self.file_entity.is_some() && self.skin_or_scene_entity.is_some() && self.shape_name.is_some();
+            }
+            (Some(FileExtension::Scene), Some(ComponentType::NetTransform)) => {
+                return self.file_entity.is_some() && self.skin_or_scene_entity.is_some();
+            }
+            (_, _) => false,
         }
     }
 
@@ -270,9 +260,9 @@ impl ComponentWaitlist {
         materials: &mut Assets<CpuMaterial>,
         camera_manager: &mut CameraManager,
         canvas: &mut Canvas,
-        vertex_manager: &mut VertexManager,
-        edge_manager: &mut EdgeManager,
-        face_manager: &mut FaceManager,
+        vertex_manager_opt: &mut Option<&mut VertexManager>,
+        edge_manager_opt: &mut Option<&mut EdgeManager>,
+        face_manager_opt: &mut Option<&mut FaceManager>,
         model_manager_opt: &mut Option<&mut ModelManager>,
         icon_manager_opt: &mut Option<&mut IconManager>,
         vertex_3d_q_opt: Option<&Query<&Vertex3d>>,
@@ -366,6 +356,10 @@ impl ComponentWaitlist {
             match (entry_shape, entry_file_type) {
                 (ComponentType::Vertex, FileExtension::Skel) => {
                     if entry.has_parent() {
+                        let Some(vertex_manager) = vertex_manager_opt else {
+                            panic!("vertex manager not available");
+                        };
+
                         let parent_entity = entry.get_parent().unwrap();
                         if !vertex_manager.has_vertex_entity_3d(&parent_entity) {
                             // need to put in parent waitlist
@@ -383,6 +377,9 @@ impl ComponentWaitlist {
                     }
                 }
                 (ComponentType::Edge, FileExtension::Skel | FileExtension::Mesh) => {
+                    let Some(vertex_manager) = vertex_manager_opt else {
+                        panic!("vertex manager not available");
+                    };
                     let entities = entry.edge_entities.unwrap();
 
                     let mut dependencies = Vec::new();
@@ -408,6 +405,12 @@ impl ComponentWaitlist {
                     }
                 }
                 (ComponentType::Face, FileExtension::Mesh) => {
+                    let Some(vertex_manager) = vertex_manager_opt else {
+                        panic!("vertex manager not available");
+                    };
+                    let Some(edge_manager) = edge_manager_opt else {
+                        panic!("edge manager not available");
+                    };
                     let entities = entry.face_entities.unwrap();
 
                     let mut dependencies = Vec::new();
@@ -524,9 +527,9 @@ impl ComponentWaitlist {
                 materials,
                 camera_manager,
                 canvas,
-                vertex_manager,
-                edge_manager,
-                face_manager,
+                vertex_manager_opt,
+                edge_manager_opt,
+                face_manager_opt,
                 model_manager_opt,
                 icon_manager_opt,
                 vertex_3d_q_opt,
@@ -544,9 +547,9 @@ impl ComponentWaitlist {
         materials: &mut Assets<CpuMaterial>,
         camera_manager: &mut CameraManager,
         canvas: &mut Canvas,
-        vertex_manager: &mut VertexManager,
-        edge_manager: &mut EdgeManager,
-        face_manager: &mut FaceManager,
+        vertex_manager_opt: &mut Option<&mut VertexManager>,
+        edge_manager_opt: &mut Option<&mut EdgeManager>,
+        face_manager_opt: &mut Option<&mut FaceManager>,
         model_manager_opt: &mut Option<&mut ModelManager>,
         icon_manager_opt: &mut Option<&mut IconManager>,
         vertex_3d_q_opt: Option<&Query<&Vertex3d>>,
@@ -560,6 +563,9 @@ impl ComponentWaitlist {
 
         match (file_type, shape_data) {
             (FileExtension::Skel, ComponentData::Vertex(parent_3d_entity_opt)) => {
+                let Some(vertex_manager) = vertex_manager_opt else {
+                    panic!("vertex manager not available");
+                };
                 let color = match parent_3d_entity_opt {
                     Some(_) => Vertex2d::ENABLED_COLOR,
                     None => Vertex2d::ROOT_COLOR,
@@ -579,6 +585,9 @@ impl ComponentWaitlist {
                 );
             }
             (FileExtension::Mesh, ComponentData::Vertex(_)) => {
+                let Some(vertex_manager) = vertex_manager_opt else {
+                    panic!("vertex manager not available");
+                };
                 let color = Vertex2d::ENABLED_COLOR;
 
                 vertex_manager.vertex_3d_postprocess(
@@ -594,7 +603,13 @@ impl ComponentWaitlist {
                     true,
                 );
             }
-            (FileExtension::Skel, ComponentData::Edge(start_3d, end_3d, edge_angle_opt)) => {
+            (FileExtension::Skel, ComponentData::Edge(start_3d, end_3d, Some(edge_angle))) => {
+                let Some(vertex_manager) = vertex_manager_opt else {
+                    panic!("vertex manager not available");
+                };
+                let Some(edge_manager) = edge_manager_opt else {
+                    panic!("edge manager not available");
+                };
                 let start_2d = vertex_manager.vertex_entity_3d_to_2d(&start_3d).unwrap();
                 let end_2d = vertex_manager.vertex_entity_3d_to_2d(&end_3d).unwrap();
 
@@ -613,11 +628,20 @@ impl ComponentWaitlist {
                     Some(file_entity),
                     Vertex2d::ENABLED_COLOR,
                     true,
-                    edge_angle_opt,
+                    Some(edge_angle),
                     false,
                 );
             }
             (FileExtension::Mesh, ComponentData::Edge(start_3d, end_3d, None)) => {
+                let Some(vertex_manager) = vertex_manager_opt else {
+                    panic!("vertex manager not available");
+                };
+                let Some(edge_manager) = edge_manager_opt else {
+                    panic!("edge manager not available");
+                };
+                let Some(face_manager) = face_manager_opt else {
+                    panic!("face manager not available");
+                };
                 let start_2d = vertex_manager.vertex_entity_3d_to_2d(&start_3d).unwrap();
                 let end_2d = vertex_manager.vertex_entity_3d_to_2d(&end_3d).unwrap();
 
@@ -641,6 +665,15 @@ impl ComponentWaitlist {
                 );
             }
             (FileExtension::Mesh, ComponentData::Face(vertex_a, vertex_b, vertex_c, _edge_a, _edge_b, _edge_c)) => {
+                let Some(vertex_manager) = vertex_manager_opt else {
+                    panic!("vertex manager not available");
+                };
+                let Some(edge_manager) = edge_manager_opt else {
+                    panic!("edge manager not available");
+                };
+                let Some(face_manager) = face_manager_opt else {
+                    panic!("face manager not available");
+                };
                 let Some(vertex_3d_q) = vertex_3d_q_opt else {
                     panic!("vertex 3d q not available");
                 };
@@ -746,6 +779,12 @@ impl ComponentWaitlist {
                 );
             }
             (FileExtension::Model, ComponentData::NetTransform(Some(shape_name))) => {
+                let Some(vertex_manager) = vertex_manager_opt else {
+                    panic!("vertex manager not available");
+                };
+                let Some(edge_manager) = edge_manager_opt else {
+                    panic!("edge manager not available");
+                };
 
                 model_manager_opt.as_mut().unwrap().net_transform_postprocess(
                     commands,
@@ -760,6 +799,12 @@ impl ComponentWaitlist {
                 );
             }
             (FileExtension::Scene, ComponentData::NetTransform(None)) => {
+                let Some(vertex_manager) = vertex_manager_opt else {
+                    panic!("vertex manager not available");
+                };
+                let Some(edge_manager) = edge_manager_opt else {
+                    panic!("edge manager not available");
+                };
 
                 model_manager_opt.as_mut().unwrap().net_transform_postprocess(
                     commands,
@@ -795,9 +840,9 @@ impl ComponentWaitlist {
                     materials,
                     camera_manager,
                     canvas,
-                    vertex_manager,
-                    edge_manager,
-                    face_manager,
+                    vertex_manager_opt,
+                    edge_manager_opt,
+                    face_manager_opt,
                     model_manager_opt,
                     icon_manager_opt,
                     vertex_3d_q_opt,

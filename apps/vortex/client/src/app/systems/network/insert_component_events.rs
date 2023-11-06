@@ -275,8 +275,6 @@ pub fn insert_vertex_events(
     mut camera_manager: ResMut<CameraManager>,
     mut canvas: ResMut<Canvas>,
     mut vertex_manager: ResMut<VertexManager>,
-    mut edge_manager: ResMut<EdgeManager>,
-    mut face_manager: ResMut<FaceManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
     mut component_waitlist: ResMut<ComponentWaitlist>,
@@ -293,9 +291,9 @@ pub fn insert_vertex_events(
             &mut materials,
             &mut camera_manager,
             &mut canvas,
-            &mut vertex_manager,
-            &mut edge_manager,
-            &mut face_manager,
+            &mut Some(&mut vertex_manager),
+            &mut None,
+            &mut None,
             &mut None,
             &mut None,
             None,
@@ -317,9 +315,9 @@ pub fn insert_vertex_events(
             &mut materials,
             &mut camera_manager,
             &mut canvas,
-            &mut vertex_manager,
-            &mut edge_manager,
-            &mut face_manager,
+            &mut Some(&mut vertex_manager),
+            &mut None,
+            &mut None,
             &mut None,
             &mut None,
             None,
@@ -372,9 +370,9 @@ pub fn insert_edge_events(
             &mut materials,
             &mut camera_manager,
             &mut canvas,
-            &mut vertex_manager,
-            &mut edge_manager,
-            &mut face_manager,
+            &mut Some(&mut vertex_manager),
+            &mut Some(&mut edge_manager),
+                      &mut Some(&mut face_manager),
             &mut None,
             &mut None,
             None,
@@ -399,9 +397,9 @@ pub fn insert_edge_events(
             &mut materials,
             &mut camera_manager,
             &mut canvas,
-            &mut vertex_manager,
-            &mut edge_manager,
-            &mut face_manager,
+            &mut Some(&mut vertex_manager),
+            &mut Some(&mut edge_manager),
+            &mut None,
             &mut None,
             &mut None,
             None,
@@ -425,8 +423,8 @@ pub fn insert_face_events(
     mut materials: ResMut<Assets<CpuMaterial>>,
     mut component_waitlist: ResMut<ComponentWaitlist>,
 
-    face_3d_q: Query<&Face3d>,
     vertex_3d_q: Query<&Vertex3d>,
+    face_3d_q: Query<&Face3d>,
 ) {
     // on Face3d Insert Event
     for event in face_3d_events.iter() {
@@ -467,9 +465,9 @@ pub fn insert_face_events(
             &mut materials,
             &mut camera_manager,
             &mut canvas,
-            &mut vertex_manager,
-            &mut edge_manager,
-            &mut face_manager,
+            &mut Some(&mut vertex_manager),
+            &mut Some(&mut edge_manager),
+                      &mut Some(&mut face_manager),
             &mut None,
             &mut None,
             Some(&vertex_3d_q),
@@ -489,24 +487,27 @@ pub fn insert_face_events(
 
 pub fn insert_icon_events(
     mut commands: Commands,
+    client: Client,
     mut vertex_events: EventReader<InsertComponentEvent<IconVertex>>,
+    mut edge_events: EventReader<InsertComponentEvent<IconEdge>>,
+    mut face_events: EventReader<InsertComponentEvent<IconFace>>,
 
     mut camera_manager: ResMut<CameraManager>,
     mut canvas: ResMut<Canvas>,
-    mut vertex_manager: ResMut<VertexManager>,
-    mut edge_manager: ResMut<EdgeManager>,
-    mut face_manager: ResMut<FaceManager>,
+    mut icon_manager: ResMut<IconManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
     mut component_waitlist: ResMut<ComponentWaitlist>,
 
     vertex_q: Query<&IconVertex>,
+    edge_q: Query<&IconEdge>,
+    face_q: Query<&IconFace>,
 ) {
     // on Vertex Insert Event
     for event in vertex_events.iter() {
         let entity = event.entity;
 
-        info!("entity: {:?} - inserted Vertex3d", entity);
+        info!("entity: {:?} - inserted IconVertex", entity);
 
         component_waitlist.process_insert(
             &mut commands,
@@ -514,15 +515,108 @@ pub fn insert_icon_events(
             &mut materials,
             &mut camera_manager,
             &mut canvas,
-            &mut vertex_manager,
-            &mut edge_manager,
-            &mut face_manager,
             &mut None,
             &mut None,
+            &mut None,
+            &mut None,
+            &mut Some(&mut icon_manager),
             None,
-            Some(&vertex_q),
+            None,
             &entity,
             ComponentWaitlistInsert::Vertex,
+        );
+    }
+
+    // on Edge Insert Event
+    for event in edge_events.iter() {
+
+        let edge_entity = event.entity;
+
+        info!("entity: {:?} - inserted IconEdge", edge_entity);
+
+        let edge = edge_q.get(edge_entity).unwrap();
+        let Some(start_entity) = edge.start.get(&client) else {
+            warn!("IconEdge component of entity: `{:?}` has no start entity", edge_entity);
+            continue;
+        };
+        let Some(end_entity) = edge.end.get(&client) else {
+            warn!("IconEdge component of entity: `{:?}` has no start entity", edge_entity);
+            continue;
+        };
+
+        component_waitlist.process_insert(
+            &mut commands,
+            &mut meshes,
+            &mut materials,
+            &mut camera_manager,
+            &mut canvas,
+            &mut None,
+            &mut None,
+            &mut None,
+            &mut None,
+            &mut Some(&mut icon_manager),
+            None,
+            None,
+            &edge_entity,
+            ComponentWaitlistInsert::Edge(start_entity, end_entity),
+        );
+    }
+
+    // on Face Insert Event
+    for event in face_events.iter() {
+        // handle face
+        let face_entity = event.entity;
+
+        info!("entity: {:?} - inserted IconFace", face_entity);
+
+        let face = face_q.get(face_entity).unwrap();
+        let Some(vertex_a_entity) = face.vertex_a.get(&client) else {
+            warn!("IconFace component of entity: `{:?}` has no entity", face_entity);
+            continue;
+        };
+        let Some(vertex_b_entity) = face.vertex_b.get(&client) else {
+            warn!("IconFace component of entity: `{:?}` has no entity", face_entity);
+            continue;
+        };
+        let Some(vertex_c_entity) = face.vertex_c.get(&client) else {
+            warn!("IconFace component of entity: `{:?}` has no entity", face_entity);
+            continue;
+        };
+        let Some(edge_a_entity) = face.edge_a.get(&client) else {
+            warn!("IconFace component of entity: `{:?}` has no entity", face_entity);
+            continue;
+        };
+        let Some(edge_b_entity) = face.edge_b.get(&client) else {
+            warn!("IconFace component of entity: `{:?}` has no entity", face_entity);
+            continue;
+        };
+        let Some(edge_c_entity) = face.edge_c.get(&client) else {
+            warn!("IconFace component of entity: `{:?}` has no entity", face_entity);
+            continue;
+        };
+
+        component_waitlist.process_insert(
+            &mut commands,
+            &mut meshes,
+            &mut materials,
+            &mut camera_manager,
+            &mut canvas,
+            &mut None,
+            &mut None,
+            &mut None,
+            &mut None,
+            &mut Some(&mut icon_manager),
+            None,
+            Some(&vertex_q),
+            &face_entity,
+            ComponentWaitlistInsert::Face(
+                vertex_a_entity,
+                vertex_b_entity,
+                vertex_c_entity,
+                edge_a_entity,
+                edge_b_entity,
+                edge_c_entity,
+            ),
         );
     }
 }
@@ -557,16 +651,16 @@ pub fn insert_owned_by_file_events(
         let owned_by_file = owned_by_tab_q.get(entity).unwrap();
         let file_entity = owned_by_file.file_entity.get(&client).unwrap();
 
-        // TODO: FIX! this leaks memory!!! some OwnedByFile components are never removed
+        // TODO: FIX! this leaks memory!!! some OwnedByFile components are never removed?
         component_waitlist.process_insert(
             &mut commands,
             &mut meshes,
             &mut materials,
             &mut camera_manager,
             &mut canvas,
-            &mut vertex_manager,
-            &mut edge_manager,
-            &mut face_manager,
+            &mut Some(&mut vertex_manager),
+            &mut Some(&mut edge_manager),
+            &mut Some(&mut face_manager),
             &mut Some(&mut model_manager),
             &mut Some(&mut icon_manager),
             Some(&vertex_3d_q),
@@ -613,9 +707,9 @@ pub fn insert_file_type_events(
             &mut materials,
             &mut camera_manager,
             &mut canvas,
-            &mut vertex_manager,
-            &mut edge_manager,
-            &mut face_manager,
+            &mut Some(&mut vertex_manager),
+            &mut Some(&mut edge_manager),
+            &mut Some(&mut face_manager),
             &mut Some(&mut model_manager),
             &mut None,
             Some(&vertex_3d_q),
@@ -752,9 +846,6 @@ pub fn insert_model_events(
     client: Client,
     mut camera_manager: ResMut<CameraManager>,
     mut canvas: ResMut<Canvas>,
-    mut vertex_manager: ResMut<VertexManager>,
-    mut edge_manager: ResMut<EdgeManager>,
-    mut face_manager: ResMut<FaceManager>,
     mut model_manager: ResMut<ModelManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
@@ -777,9 +868,9 @@ pub fn insert_model_events(
             &mut materials,
             &mut camera_manager,
             &mut canvas,
-            &mut vertex_manager,
-            &mut edge_manager,
-            &mut face_manager,
+            &mut None,
+            &mut None,
+            &mut None,
             &mut Some(&mut model_manager),
             &mut None,
             None,
@@ -805,9 +896,9 @@ pub fn insert_model_events(
             &mut materials,
             &mut camera_manager,
             &mut canvas,
-            &mut vertex_manager,
-            &mut edge_manager,
-            &mut face_manager,
+            &mut None,
+            &mut None,
+            &mut None,
             &mut Some(&mut model_manager),
             &mut None,
             None,
@@ -824,9 +915,6 @@ pub fn insert_shape_name_events(
     mut commands: Commands,
     mut camera_manager: ResMut<CameraManager>,
     mut canvas: ResMut<Canvas>,
-    mut vertex_manager: ResMut<VertexManager>,
-    mut edge_manager: ResMut<EdgeManager>,
-    mut face_manager: ResMut<FaceManager>,
     mut model_manager: ResMut<ModelManager>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
@@ -846,15 +934,16 @@ pub fn insert_shape_name_events(
             entity, shape_name
         );
 
+        // primarily this is for the model manager ..
         component_waitlist.process_insert(
             &mut commands,
             &mut meshes,
             &mut materials,
             &mut camera_manager,
             &mut canvas,
-            &mut vertex_manager,
-            &mut edge_manager,
-            &mut face_manager,
+            &mut None,
+            &mut None,
+            &mut None,
             &mut Some(&mut model_manager),
             &mut None,
             None,
