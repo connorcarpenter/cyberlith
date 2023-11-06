@@ -12,7 +12,7 @@ use vortex_proto::{
 
 use crate::{
     files::ShapeType,
-    resources::{project::ProjectKey, ContentEntityData, GitManager, ShapeManager},
+    resources::{IconManager, project::ProjectKey, ContentEntityData, GitManager, ShapeManager},
 };
 
 pub enum ComponentWaitlistInsert {
@@ -55,6 +55,12 @@ enum ComponentData {
     MeshEdge(ProjectKey, FileKey, Entity, Entity),
     // (ProjectKey, FileKey, VertexA, VertexB, VertexC, EdgeA, EdgeB, EdgeC)
     MeshFace(ProjectKey, FileKey, Entity, Entity, Entity),
+    // ProjectKey, FileKey
+    IconVertex(ProjectKey, FileKey),
+    // (ProjectKey, FileKey, Start, End)
+    IconEdge(ProjectKey, FileKey, Entity, Entity),
+    // (ProjectKey, FileKey, VertexA, VertexB, VertexC, EdgeA, EdgeB, EdgeC)
+    IconFace(ProjectKey, FileKey, Entity, Entity, Entity),
     //
     ModelTransform(ProjectKey, FileKey),
     //
@@ -113,6 +119,15 @@ impl ComponentWaitlistEntry {
             }
             (Some(FileExtension::Scene), Some(ComponentType::NetTransform)) => {
                 return self.owned_by_file.is_some() && self.skin_or_scene_entity
+            }
+            (Some(FileExtension::Icon), Some(ComponentType::Vertex)) => {
+                return self.owned_by_file.is_some();
+            }
+            (Some(FileExtension::Icon), Some(ComponentType::Edge)) => {
+                return self.owned_by_file.is_some() && self.edge_entities.is_some();
+            }
+            (Some(FileExtension::Icon), Some(ComponentType::Face)) => {
+                return self.owned_by_file.is_some() && self.face_entities.is_some();
             }
             _ => {
                 return false;
@@ -198,6 +213,17 @@ impl ComponentWaitlistEntry {
             (Some(FileExtension::Scene), Some(ComponentType::NetTransform)) => {
                 return ComponentData::SceneTransform(project_key, file_key);
             }
+            (Some(FileExtension::Icon), Some(ComponentType::Vertex)) => {
+                return ComponentData::IconVertex(project_key, file_key);
+            }
+            (Some(FileExtension::Icon), Some(ComponentType::Edge)) => {
+                let (start, end) = self.edge_entities.unwrap();
+                return ComponentData::IconEdge(project_key, file_key, start, end);
+            }
+            (Some(FileExtension::Icon), Some(ComponentType::Face)) => {
+                let (vertex_a, vertex_b, vertex_c) = self.face_entities.unwrap();
+                return ComponentData::IconFace(project_key, file_key, vertex_a, vertex_b, vertex_c);
+            }
             _ => {
                 panic!("shouldn't be able to happen!");
             }
@@ -226,7 +252,8 @@ impl ComponentWaitlist {
         &mut self,
         server: &mut Server,
         git_manager: &mut GitManager,
-        shape_manager: &mut ShapeManager,
+        shape_manager_opt: &mut Option<&mut ShapeManager>,
+        icon_manager_opt: &mut Option<&mut IconManager>,
         entity: &Entity,
         insert: ComponentWaitlistInsert,
     ) {
@@ -340,6 +367,11 @@ impl ComponentWaitlist {
                 match (entry.file_type.unwrap(), entry.component_type.unwrap()) {
                     (FileExtension::Skel, ComponentType::Vertex) => {
                         if entry.has_edge_and_parent() {
+
+                            let Some(shape_manager) = shape_manager_opt else {
+                                panic!("shape manager not available");
+                            };
+
                             let (_, parent_entity) = entry.get_edge_and_parent().unwrap();
                             if !shape_manager.has_vertex(&parent_entity) {
                                 // need to put in parent waitlist
@@ -366,6 +398,9 @@ impl ComponentWaitlist {
                     (FileExtension::Mesh, ComponentType::Edge) => {
                         let edge_entities = entry.edge_entities.unwrap();
                         let mut dependencies = Vec::new();
+                        let Some(shape_manager) = shape_manager_opt else {
+                            panic!("shape manager not available");
+                        };
 
                         for vertex_entity in [&edge_entities.0, &edge_entities.1] {
                             if !shape_manager.has_vertex(vertex_entity) {
@@ -389,6 +424,39 @@ impl ComponentWaitlist {
                     }
                     (FileExtension::Mesh, ComponentType::Face) => {
                         info!("`{:?}` Mesh Face complete!", entity);
+                    }
+                    (FileExtension::Icon, ComponentType::Vertex) => {
+                        info!("`{:?}` Icon Vertex complete!", entity);
+                    }
+                    (FileExtension::Icon, ComponentType::Edge) => {
+                        let edge_entities = entry.edge_entities.unwrap();
+                        let mut dependencies = Vec::new();
+                        let Some(icon_manager) = icon_manager_opt else {
+                            panic!("icon manager not available");
+                        };
+
+                        for vertex_entity in [&edge_entities.0, &edge_entities.1] {
+                            if !icon_manager.has_vertex(vertex_entity) {
+                                // need to put in parent waitlist
+                                info!(
+                                    "edge entity {:?} requires parent {:?}. putting in parent waitlist",
+                                    entity, vertex_entity
+                                );
+                                dependencies.push(*vertex_entity);
+                            }
+                        }
+
+                        if !dependencies.is_empty() {
+                            self.dependency_map.insert_waiting_dependencies(
+                                dependencies,
+                                entity,
+                                entry,
+                            );
+                            continue;
+                        }
+                    }
+                    (FileExtension::Icon, ComponentType::Face) => {
+                        info!("`{:?}` Icon Face complete!", entity);
                     }
                     (FileExtension::Skel, ComponentType::Face) => {
                         panic!("not possible");
@@ -416,7 +484,7 @@ impl ComponentWaitlist {
         }
 
         for (entity, entry) in entities_to_process {
-            self.process_complete(server, git_manager, shape_manager, entity, entry);
+            self.process_complete(server, git_manager, shape_manager_opt, icon_manager_opt, entity, entry);
         }
     }
 
@@ -424,7 +492,8 @@ impl ComponentWaitlist {
         &mut self,
         server: &mut Server,
         git_manager: &mut GitManager,
-        shape_manager: &mut ShapeManager,
+        shape_manager_opt: &mut Option<&mut ShapeManager>,
+        icon_manager_opt: &mut Option<&mut IconManager>,
         entity: Entity,
         entry: ComponentWaitlistEntry,
     ) {
@@ -434,21 +503,62 @@ impl ComponentWaitlist {
 
         let (project_key, file_key, component_type) = match data {
             ComponentData::SkelVertex(project_key, file_key, edge_and_parent_opt) => {
+                let Some(shape_manager) = shape_manager_opt else {
+                    panic!("shape manager not available");
+                };
                 shape_manager.on_create_skel_vertex(entity, edge_and_parent_opt);
                 (project_key, file_key, ComponentType::Vertex)
             }
             ComponentData::SkelEdge(project_key, file_key) => (project_key, file_key, ComponentType::Edge),
             ComponentData::MeshVertex(project_key, file_key) => {
+                let Some(shape_manager) = shape_manager_opt else {
+                    panic!("shape manager not available");
+                };
                 shape_manager.on_create_mesh_vertex(entity);
                 (project_key, file_key, ComponentType::Vertex)
             }
             ComponentData::MeshEdge(project_key, file_key, start, end) => {
+                let Some(shape_manager) = shape_manager_opt else {
+                    panic!("shape manager not available");
+                };
                 shape_manager.on_create_mesh_edge(start, entity, end);
                 (project_key, file_key, ComponentType::Vertex)
             }
             ComponentData::MeshFace(project_key, file_key, vertex_a, vertex_b, vertex_c) => {
+                let Some(shape_manager) = shape_manager_opt else {
+                    panic!("shape manager not available");
+                };
                 let file_entity = git_manager.file_entity(&project_key, &file_key).unwrap();
                 shape_manager.on_create_face(
+                    &file_entity,
+                    None,
+                    entity,
+                    vertex_a,
+                    vertex_b,
+                    vertex_c,
+                );
+                (project_key, file_key, ComponentType::Face)
+            }
+            ComponentData::IconVertex(project_key, file_key) => {
+                let Some(icon_manager) = icon_manager_opt else {
+                    panic!("icon manager not available");
+                };
+                icon_manager.on_create_vertex(entity);
+                (project_key, file_key, ComponentType::Vertex)
+            }
+            ComponentData::IconEdge(project_key, file_key, start, end) => {
+                let Some(icon_manager) = icon_manager_opt else {
+                    panic!("icon manager not available");
+                };
+                icon_manager.on_create_edge(start, entity, end);
+                (project_key, file_key, ComponentType::Vertex)
+            }
+            ComponentData::IconFace(project_key, file_key, vertex_a, vertex_b, vertex_c) => {
+                let Some(icon_manager) = icon_manager_opt else {
+                    panic!("icon manager not available");
+                };
+                let file_entity = git_manager.file_entity(&project_key, &file_key).unwrap();
+                icon_manager.on_create_face(
                     &file_entity,
                     None,
                     entity,
@@ -495,7 +605,8 @@ impl ComponentWaitlist {
                 self.process_complete(
                     server,
                     git_manager,
-                    shape_manager,
+                    shape_manager_opt,
+                    icon_manager_opt,
                     child_entity,
                     child_entry,
                 );

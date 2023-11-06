@@ -10,12 +10,11 @@ use bevy_log::info;
 
 use naia_bevy_server::{events::InsertComponentEvents, Replicate, Server};
 
-use vortex_proto::components::{FileExtension, IconEdge, IconFace, IconVertex, NetTransform, SkinOrSceneEntity};
 use vortex_proto::{
     components::{
         AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency,
         FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, PaletteColor,
-        ShapeName, Vertex3d, VertexRoot,
+        ShapeName, Vertex3d, VertexRoot, FileExtension, IconEdge, IconFace, IconVertex, NetTransform, SkinOrSceneEntity,
     },
     resources::FileKey,
 };
@@ -28,6 +27,7 @@ use crate::{
         ComponentWaitlist, ComponentWaitlistInsert, SkinManager, TabManager, UserManager,
     },
 };
+use crate::resources::IconManager;
 
 #[derive(Resource)]
 struct CachedInsertComponentEventsState {
@@ -226,7 +226,8 @@ pub fn insert_vertex_component_events(
         component_waitlist.process_insert(
             &mut server,
             &mut git_manager,
-            &mut shape_manager,
+            &mut Some(&mut shape_manager),
+            &mut None,
             &entity,
             ComponentWaitlistInsert::Vertex,
         );
@@ -240,7 +241,8 @@ pub fn insert_vertex_component_events(
         component_waitlist.process_insert(
             &mut server,
             &mut git_manager,
-            &mut shape_manager,
+            &mut Some(&mut shape_manager),
+            &mut None,
             &entity,
             ComponentWaitlistInsert::VertexRoot,
         );
@@ -270,7 +272,8 @@ pub fn insert_edge_component_events(
         component_waitlist.process_insert(
             &mut server,
             &mut git_manager,
-            &mut shape_manager,
+            &mut Some(&mut shape_manager),
+            &mut None,
             &edge_entity,
             ComponentWaitlistInsert::Edge(start_entity, end_entity),
         );
@@ -302,7 +305,8 @@ pub fn insert_face_component_events(
         component_waitlist.process_insert(
             &mut server,
             &mut git_manager,
-            &mut shape_manager,
+            &mut Some(&mut shape_manager),
+            &mut None,
             &entity,
             ComponentWaitlistInsert::Face(vertex_a, vertex_b, vertex_c),
         );
@@ -315,6 +319,7 @@ pub fn insert_shape_component_events(
     mut git_manager: ResMut<GitManager>,
     mut component_waitlist: ResMut<ComponentWaitlist>,
     mut shape_manager: ResMut<ShapeManager>,
+    mut icon_manager: ResMut<IconManager>,
     mut file_type_events: EventReader<InsertComponentEvent<FileType>>,
     mut owned_by_file_events: EventReader<InsertComponentEvent<OwnedByFile>>,
     mut shape_name_events: EventReader<InsertComponentEvent<ShapeName>>,
@@ -323,7 +328,7 @@ pub fn insert_shape_component_events(
     owned_by_file_q: Query<&OwnedByFile>,
     shape_name_q: Query<&ShapeName>,
 ) {
-    // on Shape FileType Insert Event
+    // on FileType Insert Event
     for event in file_type_events.iter() {
         let entity = event.entity;
 
@@ -337,7 +342,8 @@ pub fn insert_shape_component_events(
         component_waitlist.process_insert(
             &mut server,
             &mut git_manager,
-            &mut shape_manager,
+            &mut Some(&mut shape_manager),
+            &mut None,
             &entity,
             ComponentWaitlistInsert::FileType(file_type_value),
         );
@@ -368,7 +374,8 @@ pub fn insert_shape_component_events(
         component_waitlist.process_insert(
             &mut server,
             &mut git_manager,
-            &mut shape_manager,
+            &mut Some(&mut shape_manager),
+            &mut Some(&mut icon_manager),
             &entity,
             ComponentWaitlistInsert::OwnedByFile(project_key, file_key.clone()),
         );
@@ -387,7 +394,8 @@ pub fn insert_shape_component_events(
         component_waitlist.process_insert(
             &mut server,
             &mut git_manager,
-            &mut shape_manager,
+            &mut Some(&mut shape_manager),
+            &mut None,
             &entity,
             ComponentWaitlistInsert::ShapeName,
         );
@@ -398,7 +406,7 @@ pub fn insert_icon_component_events(
     mut server: Server,
     mut git_manager: ResMut<GitManager>,
     mut component_waitlist: ResMut<ComponentWaitlist>,
-    mut shape_manager: ResMut<ShapeManager>,
+    mut icon_manager: ResMut<IconManager>,
     mut vertex_events: EventReader<InsertComponentEvent<IconVertex>>,
     mut edge_events: EventReader<InsertComponentEvent<IconEdge>>,
     mut face_events: EventReader<InsertComponentEvent<IconFace>>,
@@ -413,14 +421,16 @@ pub fn insert_icon_component_events(
         component_waitlist.process_insert(
             &mut server,
             &mut git_manager,
-            &mut shape_manager,
+            &mut None,
+            &mut Some(&mut icon_manager),
             &entity,
             ComponentWaitlistInsert::Vertex,
         );
         component_waitlist.process_insert(
             &mut server,
             &mut git_manager,
-            &mut shape_manager,
+            &mut None,
+            &mut Some(&mut icon_manager),
             &entity,
             ComponentWaitlistInsert::FileType(FileExtension::Icon),
         );
@@ -441,14 +451,16 @@ pub fn insert_icon_component_events(
         component_waitlist.process_insert(
             &mut server,
             &mut git_manager,
-            &mut shape_manager,
+            &mut None,
+            &mut Some(&mut icon_manager),
             &entity,
             ComponentWaitlistInsert::Edge(start_entity, end_entity),
         );
         component_waitlist.process_insert(
             &mut server,
             &mut git_manager,
-            &mut shape_manager,
+            &mut None,
+            &mut Some(&mut icon_manager),
             &entity,
             ComponentWaitlistInsert::FileType(FileExtension::Icon),
         );
@@ -471,14 +483,16 @@ pub fn insert_icon_component_events(
         component_waitlist.process_insert(
             &mut server,
             &mut git_manager,
-            &mut shape_manager,
+            &mut None,
+            &mut Some(&mut icon_manager),
             &entity,
             ComponentWaitlistInsert::Face(vertex_a, vertex_b, vertex_c),
         );
         component_waitlist.process_insert(
             &mut server,
             &mut git_manager,
-            &mut shape_manager,
+            &mut None,
+            &mut Some(&mut icon_manager),
             &entity,
             ComponentWaitlistInsert::FileType(FileExtension::Icon),
         );
@@ -690,7 +704,6 @@ pub fn insert_model_component_events(
     mut skin_or_scene_events: EventReader<InsertComponentEvent<SkinOrSceneEntity>>,
     mut server: Server,
     mut git_manager: ResMut<GitManager>,
-    mut shape_manager: ResMut<ShapeManager>,
     mut component_waitlist: ResMut<ComponentWaitlist>,
 ) {
     // on NetTransform Insert Event
@@ -706,7 +719,8 @@ pub fn insert_model_component_events(
         component_waitlist.process_insert(
             &mut server,
             &mut git_manager,
-            &mut shape_manager,
+            &mut None,
+            &mut None,
             &entity,
             ComponentWaitlistInsert::NetTransform,
         );
@@ -725,7 +739,8 @@ pub fn insert_model_component_events(
         component_waitlist.process_insert(
             &mut server,
             &mut git_manager,
-            &mut shape_manager,
+            &mut None,
+            &mut None,
             &entity,
             ComponentWaitlistInsert::SkinOrSceneEntity,
         );

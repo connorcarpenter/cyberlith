@@ -15,7 +15,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind, Face3d, FaceColor, FileDependency, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, NetTransform, OwnedByFile, PaletteColor, ShapeName, SkinOrSceneEntity, Vertex3d, VertexRoot};
+use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind, Face3d, FaceColor, FileDependency, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, IconEdge, IconFace, IconVertex, NetTransform, OwnedByFile, PaletteColor, ShapeName, SkinOrSceneEntity, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::file_system::{
@@ -79,6 +79,9 @@ pub fn insert_component_events(world: &mut World) {
         insert_component_event::<Edge3d>(world, &events);
         insert_component_event::<EdgeAngle>(world, &events);
         insert_component_event::<Face3d>(world, &events);
+        insert_component_event::<IconVertex>(world, &events);
+        insert_component_event::<IconEdge>(world, &events);
+        insert_component_event::<IconFace>(world, &events);
         insert_component_event::<AnimFrame>(world, &events);
         insert_component_event::<AnimRotation>(world, &events);
         insert_component_event::<PaletteColor>(world, &events);
@@ -485,6 +488,47 @@ pub fn insert_face_events(
                 edge_b_entity,
                 edge_c_entity,
             ),
+        );
+    }
+}
+
+pub fn insert_vertex_events(
+    mut commands: Commands,
+    mut vertex_3d_events: EventReader<InsertComponentEvent<Vertex3d>>,
+    mut vertex_root_events: EventReader<InsertComponentEvent<VertexRoot>>,
+
+    mut camera_manager: ResMut<CameraManager>,
+    mut canvas: ResMut<Canvas>,
+    mut vertex_manager: ResMut<VertexManager>,
+    mut edge_manager: ResMut<EdgeManager>,
+    mut face_manager: ResMut<FaceManager>,
+    mut meshes: ResMut<Assets<CpuMesh>>,
+    mut materials: ResMut<Assets<CpuMaterial>>,
+    mut component_waitlist: ResMut<ComponentWaitlist>,
+    mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
+    vertex_3d_q: Query<&Vertex3d>,
+) {
+    // on Vertex Insert Event
+    for event in vertex_3d_events.iter() {
+        let entity = event.entity;
+
+        info!("entity: {:?} - inserted Vertex3d", entity);
+
+        component_waitlist.process_insert(
+            &mut commands,
+            &mut meshes,
+            &mut materials,
+            &mut camera_manager,
+            &mut canvas,
+            &mut vertex_manager,
+            &mut edge_manager,
+            &mut face_manager,
+            &mut None,
+            &mut None,
+            &mut shape_color_resync_events,
+            &vertex_3d_q,
+            &entity,
+            ComponentWaitlistInsert::Vertex,
         );
     }
 }
