@@ -417,34 +417,18 @@ impl IconInputManager {
             if owned_by_file.file_entity != *current_file_entity {
                 continue;
             }
-            Self::hover_check_vertex(
-                transform_q,
-                mouse_position,
-                least_distance,
-                least_entity,
-                &vertex_entity,
-            );
+            let Ok(vertex_transform) = transform_q.get(vertex_entity) else {
+                continue;
+            };
+            let vertex_position = vertex_transform.translation.truncate();
+            let distance = vertex_position.distance(*mouse_position);
+            if distance < *least_distance {
+                *least_distance = distance;
+                *least_entity = Some((vertex_entity, CanvasShape::Vertex));
+            }
         }
 
         *is_hovering = *least_distance <= Vertex2d::DETECT_RADIUS;
-    }
-
-    fn hover_check_vertex(
-        transform_q: &Query<&Transform>,
-        mouse_position: &Vec2,
-        least_distance: &mut f32,
-        least_entity: &mut Option<(Entity, CanvasShape)>,
-        vertex_entity: &Entity,
-    ) {
-        let Ok(vertex_transform) = transform_q.get(*vertex_entity) else {
-            return;
-        };
-        let vertex_position = vertex_transform.translation.truncate();
-        let distance = vertex_position.distance(*mouse_position);
-        if distance < *least_distance {
-            *least_distance = distance;
-            *least_entity = Some((*vertex_entity, CanvasShape::Vertex));
-        }
     }
 
     fn handle_edge_hover(
@@ -463,34 +447,18 @@ impl IconInputManager {
                     continue;
                 }
 
-                Self::hover_check_edge(
-                    transform_q,
-                    mouse_position,
-                    least_distance,
-                    least_entity,
-                    &edge_entity,
-                );
+                let edge_transform = transform_q.get(edge_entity).unwrap();
+                let edge_start = edge_transform.translation.truncate();
+                let edge_end = get_2d_line_transform_endpoint(&edge_transform);
+
+                let distance = distance_to_2d_line(*mouse_position, edge_start, edge_end);
+                if distance < *least_distance {
+                    *least_distance = distance;
+                    *least_entity = Some((edge_entity, CanvasShape::Edge));
+                }
             }
 
             *is_hovering = *least_distance <= Edge2dLocal::DETECT_THICKNESS;
-        }
-    }
-
-    fn hover_check_edge(
-        transform_q: &Query<&Transform>,
-        mouse_position: &Vec2,
-        least_distance: &mut f32,
-        least_entity: &mut Option<(Entity, CanvasShape)>,
-        edge_entity: &Entity,
-    ) {
-        let edge_transform = transform_q.get(*edge_entity).unwrap();
-        let edge_start = edge_transform.translation.truncate();
-        let edge_end = get_2d_line_transform_endpoint(&edge_transform);
-
-        let distance = distance_to_2d_line(*mouse_position, edge_start, edge_end);
-        if distance < *least_distance {
-            *least_distance = distance;
-            *least_entity = Some((*edge_entity, CanvasShape::Edge));
         }
     }
 

@@ -346,15 +346,15 @@ impl IconManager {
         }
         self.resync_hover = false;
 
-        let mut system_state: SystemState<(Res<Canvas>, Query<&mut Transform>)> =
+        let mut system_state: SystemState<(Res<Canvas>, Query<&Transform>)> =
             SystemState::new(world);
-        let (canvas, mut transform_q) = system_state.get_mut(world);
+        let (canvas, transform_q) = system_state.get_mut(world);
 
         // get canvas size
         let canvas_size = canvas.texture_size();
 
         // get camera scale
-        let Ok(mut camera_transform) = transform_q.get(self.camera_entity) else {
+        let Ok(camera_transform) = transform_q.get(self.camera_entity) else {
             return;
         };
 
