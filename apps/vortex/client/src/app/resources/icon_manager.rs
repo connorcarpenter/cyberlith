@@ -25,6 +25,7 @@ use crate::app::{
         Face3dLocal, FaceIcon2d, IconLocalFace, DefaultDraw, SelectCircle, SelectLine, SelectTriangle,
     },
     resources::{
+        canvas::Canvas,
         input::IconInputManager,
         action::icon::IconAction,
         icon_data::{IconFaceData, IconFaceKey, IconVertexData},
@@ -129,7 +130,7 @@ impl IconManager {
             transform.translation.y = 0.0 - camera_state.camera_3d_offset().y;
             transform.translation.z = 1.0;
             let camera_scale = 1.0 / camera_state.camera_3d_scale();
-            info!("3d: {}, Icon: {}", camera_state.camera_3d_scale(), camera_scale);
+            //info!("3d: {}, Icon: {}", camera_state.camera_3d_scale(), camera_scale);
             transform.scale = Vec3::new(camera_scale, camera_scale, 1.0);
 
             let mut edge_entities = HashSet::new();
@@ -359,14 +360,35 @@ impl IconManager {
         &mut self,
         world: &mut World,
         current_file_entity: &Entity,
-        mouse_position: &Vec2,
+        screen_mouse_position: &Vec2,
     ) {
         if !self.resync_hover {
             return;
         }
         self.resync_hover = false;
 
-        IconInputManager::sync_mouse_hover_ui(world, current_file_entity, mouse_position);
+        let mut system_state: SystemState<(
+            Res<Canvas>,
+            Query<&mut Transform>,
+        )> = SystemState::new(world);
+        let (
+            canvas,
+            mut transform_q,
+        ) = system_state.get_mut(world);
+
+        // get canvas size
+        let canvas_size = canvas.texture_size();
+
+        // get camera scale
+        let Ok(mut camera_transform) = transform_q.get(self.camera_entity) else {
+            return;
+        };
+
+        let vx = (((screen_mouse_position.x / canvas_size.x) - 0.5) * camera_transform.scale.x * canvas_size.x) + camera_transform.translation.x;
+        let vy = (((screen_mouse_position.y / canvas_size.y) - 0.5) * camera_transform.scale.y * canvas_size.y) + camera_transform.translation.y;
+
+        // sync to hover
+        IconInputManager::sync_mouse_hover_ui(world, current_file_entity, &Vec2::new(vx, vy));
     }
 
     pub fn select_shape(&mut self, entity: &Entity, shape: CanvasShape) {
