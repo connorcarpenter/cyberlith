@@ -1239,6 +1239,8 @@ impl IconManager {
         edge_entities: [Entity; 3],
         file_entity: Entity,
     ) {
+        info!("creating networked face");
+
         // get vertex entities & positions
         let mut positions = [Vec3::ZERO, Vec3::ZERO, Vec3::ZERO];
         let mut vertex_entities = [

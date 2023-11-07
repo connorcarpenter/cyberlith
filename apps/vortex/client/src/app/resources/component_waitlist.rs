@@ -187,7 +187,6 @@ impl ComponentWaitlistEntry {
     ) {
         self.component_type = Some(ComponentType::Face);
         self.face_entities = Some((vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c));
-        self.file_type = Some(FileExtension::Mesh);
     }
 
     fn set_transform(&mut self) {

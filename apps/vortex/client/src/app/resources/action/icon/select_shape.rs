@@ -41,9 +41,7 @@ pub(crate) fn execute(
     // create net face if necessary
     if let Some((face_entity, CanvasShape::Face)) = shape_entity_opt {
         if entity_to_request.is_none() {
-            world.resource_scope(|world, mut icon_manager: Mut<IconManager>| {
-                icon_manager.create_networked_face_from_world(world, face_entity);
-            });
+            icon_manager.create_networked_face_from_world(world, face_entity);
             return vec![
                 IconAction::SelectShape(deselected_entity),
                 IconAction::DeleteFace(face_entity),
@@ -83,7 +81,16 @@ pub fn select_shape(
 ) -> Option<Entity> {
     if let Some((shape_entity, shape)) = shape_entity_opt {
         icon_manager.select_shape(&shape_entity, shape);
-        return Some(shape_entity);
+
+        match shape {
+            CanvasShape::Vertex | CanvasShape::Edge => {
+                return Some(shape_entity);
+            }
+            CanvasShape::Face => {
+                return icon_manager.face_entity_local_to_net(&shape_entity);
+            }
+            _ => return None,
+        }
     }
     return None;
 }

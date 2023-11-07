@@ -488,6 +488,22 @@ pub fn insert_face_events(
                 edge_c_entity,
             ),
         );
+        component_waitlist.process_insert(
+            &mut commands,
+            &mut meshes,
+            &mut materials,
+            &mut camera_manager,
+            &mut canvas,
+            &mut Some(&mut vertex_manager),
+            &mut Some(&mut edge_manager),
+            &mut Some(&mut face_manager),
+            &mut None,
+            &mut None,
+            Some(&vertex_3d_q),
+            None,
+            &face_entity,
+            ComponentWaitlistInsert::FileType(FileExtension::Mesh),
+        );
     }
 }
 

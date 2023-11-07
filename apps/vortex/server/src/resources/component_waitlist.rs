@@ -326,7 +326,6 @@ impl ComponentWaitlist {
                 }
                 let entry = self.get_mut(entity).unwrap();
                 entry.set_component_type(ComponentType::Face);
-                entry.set_file_type(FileExtension::Mesh);
                 entry.set_face_entities(vertex_a, vertex_b, vertex_c);
                 possibly_ready_entities.push(*entity);
             }

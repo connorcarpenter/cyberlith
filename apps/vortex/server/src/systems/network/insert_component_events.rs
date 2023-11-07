@@ -311,6 +311,14 @@ pub fn insert_face_component_events(
             &entity,
             ComponentWaitlistInsert::Face(vertex_a, vertex_b, vertex_c),
         );
+        component_waitlist.process_insert(
+            &mut server,
+            &mut git_manager,
+            &mut Some(&mut shape_manager),
+            &mut None,
+            &entity,
+            ComponentWaitlistInsert::FileType(FileExtension::Mesh),
+        );
     }
 }
 
