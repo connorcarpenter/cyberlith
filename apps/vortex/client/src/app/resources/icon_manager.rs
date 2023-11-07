@@ -264,24 +264,6 @@ impl IconManager {
 
             // draw select line & circle
             match self.selected_shape() {
-                Some((edge_entity, CanvasShape::Edge)) => {
-
-                    let edge_transform = *transform_q.get(edge_entity).unwrap();
-
-                    // draw select line
-                    let (mesh_handle, mat_handle, render_layer_opt) =
-                        object_q.get(self.select_line_entity).unwrap();
-
-                    let mut transform = transform_q.get_mut(self.select_line_entity).unwrap();
-                    transform.translation.x = edge_transform.translation.x;
-                    transform.translation.y = edge_transform.translation.y;
-                    transform.translation.z = edge_transform.translation.z + 1.0;
-                    transform.rotation = edge_transform.rotation;
-                    transform.scale.x = edge_transform.scale.x;
-                    transform.scale.y = edge_transform.scale.y + 2.0;
-
-                    render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, &transform);
-                }
                 Some((vertex_entity, CanvasShape::Vertex)) => {
 
                     // draw select circle
@@ -302,6 +284,37 @@ impl IconManager {
 
                     let mut transform = transform_q.get_mut(self.select_line_entity).unwrap();
                     set_2d_line_transform(&mut transform, vertex_translation.truncate(), view_mouse_position, vertex_translation.z + 1.0);
+
+                    render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, &transform);
+                }
+                Some((edge_entity, CanvasShape::Edge)) => {
+
+                    let edge_transform = *transform_q.get(edge_entity).unwrap();
+
+                    // draw select line
+                    let (mesh_handle, mat_handle, render_layer_opt) =
+                        object_q.get(self.select_line_entity).unwrap();
+
+                    let mut transform = transform_q.get_mut(self.select_line_entity).unwrap();
+                    transform.translation.x = edge_transform.translation.x;
+                    transform.translation.y = edge_transform.translation.y;
+                    transform.translation.z = edge_transform.translation.z + 1.0;
+                    transform.rotation = edge_transform.rotation;
+                    transform.scale.x = edge_transform.scale.x;
+                    transform.scale.y = edge_transform.scale.y + 2.0;
+
+                    render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, &transform);
+                }
+                Some((face_entity, CanvasShape::Face)) => {
+
+                    let face_translation = transform_q.get(face_entity).unwrap().translation;
+
+                    // draw select triangle
+                    let (mesh_handle, mat_handle, render_layer_opt) =
+                        object_q.get(self.select_triangle_entity).unwrap();
+
+                    let mut transform = transform_q.get_mut(self.select_triangle_entity).unwrap();
+                    transform.translation = face_translation;
 
                     render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, &transform);
                 }
