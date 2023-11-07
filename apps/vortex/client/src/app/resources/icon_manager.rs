@@ -7,7 +7,7 @@ use bevy_ecs::{
 };
 use bevy_log::{info, warn};
 
-use input::Key;
+use input::{Input, Key};
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
 use math::{Vec2, Vec3};
@@ -114,14 +114,18 @@ impl IconManager {
         {
             let mut system_state: SystemState<(
                 ResMut<RenderFrame>,
+                Res<Canvas>,
                 Res<TabManager>,
+                Res<Input>,
                 Query<(Entity, &IconVertex, &OwnedByFileLocal)>,
                 Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>, Option<&RenderLayer>)>,
                 Query<&mut Transform>,
             )> = SystemState::new(world);
             let (
                 mut render_frame,
+                canvas,
                 tab_manager,
+                input,
                 vertex_q,
                 object_q,
                 mut transform_q
@@ -137,6 +141,7 @@ impl IconManager {
             camera_transform.translation.z = 1.0;
             let camera_scale = 1.0 / camera_state.camera_3d_scale();
             camera_transform.scale = Vec3::new(camera_scale, camera_scale, 1.0);
+            let camera_transform = *camera_transform;
 
             let mut edge_entities = HashSet::new();
 
@@ -208,22 +213,44 @@ impl IconManager {
 
             // draw select line & circle
             match self.selected_shape() {
-                Some((_, CanvasShape::Edge)) => {
+                Some((edge_entity, CanvasShape::Edge)) => {
+
+                    let edge_transform = *transform_q.get(edge_entity).unwrap();
+
                     // draw select line
                     let (mesh_handle, mat_handle, render_layer_opt) =
                         object_q.get(self.select_line_entity).unwrap();
-                    let transform = transform_q.get(self.select_line_entity).unwrap();
-                    render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
+
+                    let mut transform = transform_q.get_mut(self.select_line_entity).unwrap();
+                    transform.translation.x = edge_transform.translation.x;
+                    transform.translation.y = edge_transform.translation.y;
+                    transform.translation.z = edge_transform.translation.z + 1.0;
+                    transform.rotation = edge_transform.rotation;
+                    transform.scale.x = edge_transform.scale.x;
+                    transform.scale.y = edge_transform.scale.y + 2.0;
+
+                    render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, &transform);
                 }
                 Some((vertex_entity, CanvasShape::Vertex)) => {
 
+                    // draw select circle
                     let vertex_translation = transform_q.get(vertex_entity).unwrap().translation;
 
-                    // draw select circle
                     let (mesh_handle, mat_handle, render_layer_opt) =
                         object_q.get(self.select_circle_entity).unwrap();
                     let mut transform = transform_q.get_mut(self.select_circle_entity).unwrap();
                     transform.translation = vertex_translation;
+
+                    render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, &transform);
+
+                    // draw select line
+                    let screen_mouse_position = input.mouse_position();
+                    let view_mouse_position = Self::screen_to_view(&canvas, &camera_transform, screen_mouse_position);
+                    let (mesh_handle, mat_handle, render_layer_opt) =
+                        object_q.get(self.select_line_entity).unwrap();
+
+                    let mut transform = transform_q.get_mut(self.select_line_entity).unwrap();
+                    set_2d_line_transform(&mut transform, vertex_translation.truncate(), view_mouse_position, vertex_translation.z + 1.0);
 
                     render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, &transform);
                 }
