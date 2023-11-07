@@ -74,14 +74,10 @@ impl IconAction {
         let action_type = self.get_type();
         match action_type {
             IconActionType::SelectShape => select_shape::execute(world, icon_manager, self),
-            IconActionType::CreateVertex => {
-                create_vertex::execute(world, icon_manager, action_stack, tab_file_entity, self)
-            }
+            IconActionType::CreateVertex => create_vertex::execute(world, icon_manager, action_stack, tab_file_entity, self),
             IconActionType::DeleteVertex => delete_vertex::execute(world, icon_manager, self),
-            IconActionType::MoveVertex => move_vertex::execute(world, self),
-            IconActionType::CreateEdge => {
-                create_edge::execute(world, icon_manager, action_stack, tab_file_entity, self)
-            }
+            IconActionType::MoveVertex => move_vertex::execute(world, icon_manager, self),
+            IconActionType::CreateEdge => create_edge::execute(world, icon_manager, action_stack, tab_file_entity, self),
             IconActionType::DeleteEdge => delete_edge::execute(world, icon_manager, self),
             IconActionType::DeleteFace => delete_face::execute(world, icon_manager, self),
         }

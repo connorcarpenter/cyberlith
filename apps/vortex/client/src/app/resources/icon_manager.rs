@@ -368,7 +368,51 @@ impl IconManager {
             + camera_transform.translation.y;
 
         // sync to hover
-        IconInputManager::sync_mouse_hover_ui(world, current_file_entity, &Vec2::new(vx, vy));
+        let new_hover_entity = IconInputManager::sync_mouse_hover_ui(world, current_file_entity, &Vec2::new(vx, vy));
+        if new_hover_entity == self.hovered_entity {
+            return;
+        }
+
+        // reset scale of old hovered entity
+        if let Some((hover_entity, hover_shape)) = self.hovered_entity {
+            self.sync_hover_shape_scale(world, hover_entity, hover_shape, false);
+        }
+
+        // set hovered entity to new entity
+        self.hovered_entity = new_hover_entity;
+
+        // set scale of new hovered entity
+        if let Some((hover_entity, hover_shape)) = self.hovered_entity {
+            let visually_hovering = self.hovered_entity != self.selected_shape;
+            self.sync_hover_shape_scale(world, hover_entity, hover_shape, visually_hovering);
+        }
+    }
+
+    fn sync_hover_shape_scale(&mut self, world: &mut World, hover_entity: Entity, hover_shape: CanvasShape, hovering: bool) {
+
+        let mut system_state: SystemState<Query<&mut Transform>> = SystemState::new(world);
+        let mut transform_q = system_state.get_mut(world);
+
+        match hover_shape {
+            CanvasShape::Vertex => {
+                let scale = if hovering { Vertex2d::HOVER_RADIUS } else { Vertex2d::RADIUS };
+                let mut hover_vert_transform = transform_q.get_mut(hover_entity).unwrap();
+                hover_vert_transform.scale.x = scale;
+                hover_vert_transform.scale.y = scale;
+            }
+            CanvasShape::Edge => {
+                let scale = if hovering { Edge2dLocal::HOVER_THICKNESS } else { Edge2dLocal::NORMAL_THICKNESS };
+                let mut hover_edge_transform = transform_q.get_mut(hover_entity).unwrap();
+                hover_edge_transform.scale.y = scale;
+            }
+            CanvasShape::Face => {
+                let scale = if hovering { FaceIcon2d::HOVER_SIZE } else { FaceIcon2d::SIZE };
+                let mut hover_face_transform = transform_q.get_mut(hover_entity).unwrap();
+                hover_face_transform.scale.x = scale;
+                hover_face_transform.scale.y = scale;
+            }
+            _ => panic!(""),
+        }
     }
 
     pub fn select_shape(&mut self, entity: &Entity, shape: CanvasShape) {

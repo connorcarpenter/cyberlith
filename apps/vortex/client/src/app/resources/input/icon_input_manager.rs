@@ -293,7 +293,7 @@ impl IconInputManager {
 
         match (click_type, icon_manager.selected_shape) {
             (MouseButton::Left, Some((vertex_entity, CanvasShape::Vertex))) => {
-                Self::handle_vertex_drag(world, &vertex_entity, &mouse_position)
+                Self::handle_vertex_drag(world, icon_manager, &vertex_entity, &mouse_position)
             }
             (_, _) => Self::handle_drag_empty_space(world, click_type, delta),
         }
@@ -301,6 +301,7 @@ impl IconInputManager {
 
     pub(crate) fn handle_vertex_drag(
         world: &mut World,
+        icon_manager: &mut IconManager,
         vertex_entity: &Entity,
         mouse_position: &Vec2,
     ) {
@@ -309,11 +310,10 @@ impl IconInputManager {
         let mut system_state: SystemState<(
             Commands,
             Client,
-            ResMut<IconManager>,
             ResMut<Canvas>,
             Query<&mut IconVertex>,
         )> = SystemState::new(world);
-        let (mut commands, client, mut icon_manager, mut canvas, mut vertex_q) =
+        let (mut commands, client, mut canvas, mut vertex_q) =
             system_state.get_mut(world);
 
         // check status

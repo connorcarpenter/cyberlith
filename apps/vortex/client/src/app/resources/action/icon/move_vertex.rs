@@ -12,7 +12,7 @@ use vortex_proto::components::{IconFace, IconVertex};
 
 use crate::app::resources::{action::icon::IconAction, canvas::Canvas, icon_manager::IconManager};
 
-pub(crate) fn execute(world: &mut World, action: IconAction) -> Vec<IconAction> {
+pub(crate) fn execute(world: &mut World, icon_manager: &mut IconManager, action: IconAction) -> Vec<IconAction> {
     let IconAction::MoveVertex(vertex_entity, old_position, new_position, already_moved) = action else {
         panic!("Expected MoveVertex");
     };
@@ -22,7 +22,6 @@ pub(crate) fn execute(world: &mut World, action: IconAction) -> Vec<IconAction> 
         Client,
         ResMut<Canvas>,
         ResMut<Assets<CpuMesh>>,
-        ResMut<IconManager>,
         Query<&Handle<CpuMesh>>,
         Query<&IconFace>,
         Query<&mut Transform>,
@@ -32,7 +31,6 @@ pub(crate) fn execute(world: &mut World, action: IconAction) -> Vec<IconAction> 
         client,
         mut canvas,
         mut meshes,
-        icon_manager,
         mesh_handle_q,
         face_q,
         mut transform_q,
