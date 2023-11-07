@@ -180,7 +180,8 @@ fn process_entity_auth_status(
            owned_by_file_opt,
         )
     ) = big_q.get(*entity) else {
-        panic!("hm?");
+        warn!("process_entity_auth_status() for non-existent entity!: {:?}", entity);
+        return;
     };
     if vertex_opt.is_some() || edge_opt.is_some() || face_opt.is_some() {
         info!(

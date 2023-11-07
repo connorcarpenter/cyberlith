@@ -194,15 +194,17 @@ impl IconInputManager {
                     vertex_type_data,
                 );
             }
-            (MouseButton::Left, _, _) => {
-                // select hovered shape (or None if there is no hovered shape)
-                world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                    tab_manager.current_tab_execute_icon_action(
-                        world,
-                        input_manager,
-                        IconAction::SelectShape(input_manager.hovered_entity),
-                    );
-                });
+            (MouseButton::Left, before, after) => {
+                if before != after {
+                    // select hovered shape (or None if there is no hovered shape)
+                    world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                        tab_manager.current_tab_execute_icon_action(
+                            world,
+                            input_manager,
+                            IconAction::SelectShape(input_manager.hovered_entity),
+                        );
+                    });
+                }
             }
             (MouseButton::Right, Some(_), _) => {
                 // deselect shape
@@ -277,7 +279,7 @@ impl IconInputManager {
         }
     }
 
-    pub(crate) fn handle_mouse_drag(
+    fn handle_mouse_drag(
         world: &mut World,
         input_manager: &mut InputManager,
         mouse_position: Vec2,

@@ -434,6 +434,12 @@ impl TabManager {
         );
     }
 
+    pub fn current_tab_camera_state(&self) -> Option<&CameraState> {
+        let current_entity = self.current_tab?;
+        let tab_state = self.tab_map.get(&current_entity)?;
+        Some(&tab_state.camera_state)
+    }
+
     pub fn current_tab_camera_state_mut(&mut self) -> Option<&mut CameraState> {
         let current_entity = self.current_tab?;
         let tab_state = self.tab_map.get_mut(&current_entity)?;

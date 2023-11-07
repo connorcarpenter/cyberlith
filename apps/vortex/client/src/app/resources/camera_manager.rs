@@ -41,6 +41,10 @@ impl Default for CameraManager {
 }
 
 impl CameraManager {
+
+    pub const MIN_SCALE: f32 = 1.0;
+    pub const MAX_SCALE: f32 = 8.0;
+
     pub fn camera_3d_entity(&self) -> Option<Entity> {
         self.camera_3d
     }
@@ -167,7 +171,7 @@ impl CameraManager {
 
     pub fn camera_zoom(&mut self, camera_state: &mut CameraState, zoom_delta: f32) {
         let old_scale = camera_state.camera_3d_scale();
-        let new_scale = (old_scale + (zoom_delta * 0.01)).min(8.0).max(1.0);
+        let new_scale = (old_scale + (zoom_delta * 0.01)).min(Self::MAX_SCALE).max(Self::MIN_SCALE);
         let scale_diff = new_scale - old_scale;
         camera_state.set_camera_3d_scale(new_scale);
 

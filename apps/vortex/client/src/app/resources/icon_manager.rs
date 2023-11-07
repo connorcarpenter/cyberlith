@@ -32,6 +32,7 @@ use crate::app::{
     },
     shapes::create_2d_edge_line
 };
+use crate::app::resources::camera_manager::CameraManager;
 
 #[derive(Resource)]
 pub struct IconManager {
@@ -100,16 +101,37 @@ impl IconManager {
 
             let mut system_state: SystemState<(
                 ResMut<RenderFrame>,
+                Res<TabManager>,
                 Res<InputManager>,
                 Query<(Entity, &OwnedByFileLocal), With<IconVertex>>,
-                Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>, &Transform, Option<&RenderLayer>)>,
+                Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>, Option<&RenderLayer>)>,
+                Query<&mut Transform>,
             )> = SystemState::new(world);
             let (
                 mut render_frame,
+                tab_manager,
                 input_manager,
                 vertex_q,
                 object_q,
+                mut transform_q,
             ) = system_state.get_mut(world);
+
+            // camera
+            let camera_state = tab_manager.current_tab_camera_state().unwrap();
+            let Ok(mut transform) = transform_q.get_mut(self.camera_entity) else {
+                return;
+            };
+            transform.translation.x = 0.0 - camera_state.camera_3d_offset().x;
+            transform.translation.y = 0.0 - camera_state.camera_3d_offset().y;
+            transform.translation.z = 1.0;
+            let camera_scale = (camera_state.camera_3d_scale() - CameraManager::MIN_SCALE) / (CameraManager::MAX_SCALE - CameraManager::MIN_SCALE);
+            let camera_scale = 1.0 - camera_scale;
+            const MIN_SCALE: f32 = 0.125; // this is max zoom-in
+            const MAX_SCALE: f32 = 1.0; // this is max zoom-out ... this looks right
+            const SCALE_RANGE: f32 = MAX_SCALE - MIN_SCALE;
+            let camera_scale = (camera_scale * SCALE_RANGE) + MIN_SCALE;
+            info!("3d: {}, Icon: {}", camera_state.camera_3d_scale(), camera_scale);
+            transform.scale = Vec3::new(camera_scale, camera_scale, 1.0);
 
             let mut edge_entities = HashSet::new();
 
@@ -124,7 +146,12 @@ impl IconManager {
                     continue;
                 };
 
-                let (mesh_handle, mat_handle, transform, render_layer_opt) = object_q.get(vertex_entity).unwrap();
+                let (
+                    mesh_handle,
+                    mat_handle,
+                    render_layer_opt
+                ) = object_q.get(vertex_entity).unwrap();
+                let transform = transform_q.get(vertex_entity).unwrap();
                 render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
 
                 for edge_entity in data.edges.iter() {
@@ -134,8 +161,9 @@ impl IconManager {
 
             // draw edges
             for edge_entity in edge_entities.iter() {
-                let (mesh_handle, mat_handle, transform, render_layer_opt) =
+                let (mesh_handle, mat_handle, render_layer_opt) =
                     object_q.get(*edge_entity).unwrap();
+                let transform = transform_q.get(*edge_entity).unwrap();
                 render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
             }
 
@@ -144,8 +172,12 @@ impl IconManager {
                 Some((_, CanvasShape::Edge)) => {
                     // draw select line
                     if let Some(select_line_entity) = input_manager.select_line_entity {
-                        let (mesh_handle, mat_handle, transform, render_layer_opt) =
-                            object_q.get(select_line_entity).unwrap();
+                        let (
+                            mesh_handle,
+                            mat_handle,
+                            render_layer_opt
+                        ) = object_q.get(select_line_entity).unwrap();
+                        let transform = transform_q.get(select_line_entity).unwrap();
                         render_frame.draw_object(
                             render_layer_opt,
                             mesh_handle,
@@ -157,8 +189,12 @@ impl IconManager {
                 Some((_, CanvasShape::Vertex)) => {
                     // draw select circle
                     if let Some(select_circle_entity) = input_manager.select_circle_entity {
-                        let (mesh_handle, mat_handle, transform, render_layer_opt) =
-                            object_q.get(select_circle_entity).unwrap();
+                        let (
+                            mesh_handle,
+                            mat_handle,
+                            render_layer_opt
+                        ) = object_q.get(select_circle_entity).unwrap();
+                        let transform = transform_q.get(select_circle_entity).unwrap();
                         render_frame.draw_object(
                             render_layer_opt,
                             mesh_handle,
@@ -539,13 +575,11 @@ impl IconManager {
         vertex_entity: &Entity,
     ) {
         // unregister vertex
-        self.unregister_3d_vertex(vertex_entity);
+        self.unregister_vertex(vertex_entity);
 
         if input_manager.hovered_entity == Some((*vertex_entity, CanvasShape::Vertex)) {
             input_manager.hovered_entity = None;
         }
-
-        canvas.queue_resync_shapes();
     }
 
     pub(crate) fn vertex_get_edges(&self, vertex_entity: &Entity) -> Option<&HashSet<Entity>> {
@@ -592,7 +626,7 @@ impl IconManager {
         };
     }
 
-    fn unregister_3d_vertex(&mut self, entity: &Entity) {
+    fn unregister_vertex(&mut self, entity: &Entity) {
         self.vertices.remove(entity);
     }
 
@@ -704,7 +738,7 @@ impl IconManager {
                 .insert(OwnedByFileLocal::new(file_entity));
         }
 
-        // register 3d & 2d edges together
+        // register edge
         self.register_edge(
             edge_entity,
             vertex_entity_a,
@@ -774,13 +808,11 @@ impl IconManager {
         }
 
         // unregister edge
-        self.unregister_3d_edge(edge_entity);
+        self.unregister_edge(edge_entity);
 
         if input_manager.hovered_entity == Some((*edge_entity, CanvasShape::Edge)) {
             input_manager.hovered_entity = None;
         }
-
-        canvas.queue_resync_shapes();
 
         (*edge_entity, deleted_local_face_entities)
     }
@@ -816,7 +848,7 @@ impl IconManager {
         (edge_data.vertex_entity_a, edge_data.vertex_entity_b)
     }
 
-    fn unregister_3d_edge(
+    fn unregister_edge(
         &mut self,
         edge_entity: &Entity,
     ) {
@@ -865,8 +897,6 @@ impl IconManager {
                 &face_key,
             );
         }
-
-        canvas.queue_resync_shapes();
     }
 
     // return local face entity
@@ -1068,7 +1098,7 @@ impl IconManager {
             .file_entity
             .set(client, &file_entity);
 
-        // set up 3d entity
+        // set up net entity
         let face_net_entity = commands
             .spawn_empty()
             .enable_replication(client)
@@ -1118,7 +1148,6 @@ impl IconManager {
             .insert(meshes.add(Triangle::new_2d_equilateral()));
     }
 
-    // returns 2d face entity
     pub fn register_net_face(&mut self, net_face_entity: Entity, face_key: &IconFaceKey) {
         self.net_faces.insert(net_face_entity, *face_key);
 
@@ -1169,8 +1198,6 @@ impl IconManager {
         if input_manager.hovered_entity == Some((local_face_entity, CanvasShape::Face)) {
             input_manager.hovered_entity = None;
         }
-
-        canvas.queue_resync_shapes();
 
         local_face_entity
     }
