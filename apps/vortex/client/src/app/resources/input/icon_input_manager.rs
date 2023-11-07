@@ -20,6 +20,7 @@ use crate::app::{
         action::icon::IconAction, canvas::Canvas,
         input::InputManager, shape_data::CanvasShape,
         tab_manager::TabManager, icon_manager::IconManager,
+        camera_manager::CameraManager,
     },
 };
 
@@ -290,7 +291,7 @@ impl IconInputManager {
             (MouseButton::Left, Some((vertex_entity, CanvasShape::Vertex))) => {
                 Self::handle_vertex_drag(world, &vertex_entity, &mouse_position)
             }
-            (_, _) => InputManager::handle_drag_empty_space(world, click_type, delta),
+            (_, _) => Self::handle_drag_empty_space(world, click_type, delta),
         }
     }
 
@@ -340,6 +341,20 @@ impl IconInputManager {
 
         // redraw
         canvas.queue_resync_shapes();
+    }
+
+    fn handle_drag_empty_space(world: &mut World, click_type: MouseButton, delta: Vec2) {
+        let mut system_state: SystemState<(ResMut<TabManager>, ResMut<CameraManager>)> =
+            SystemState::new(world);
+        let (mut tab_manager, mut camera_manager) = system_state.get_mut(world);
+
+        let camera_state = &mut tab_manager.current_tab_state_mut().unwrap().camera_state;
+        match click_type {
+            MouseButton::Left => {
+                camera_manager.camera_pan(camera_state, delta);
+            }
+            _ => {}
+        }
     }
 
     pub(crate) fn sync_mouse_hover_ui(

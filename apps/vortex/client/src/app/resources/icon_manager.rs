@@ -25,7 +25,7 @@ use crate::app::{
         Face3dLocal, FaceIcon2d, IconLocalFace, DefaultDraw, SelectCircle, SelectLine, SelectTriangle,
     },
     resources::{
-        camera_manager::CameraManager, input::IconInputManager,
+        input::IconInputManager,
         action::icon::IconAction,
         icon_data::{IconFaceData, IconFaceKey, IconVertexData},
         shape_data::CanvasShape, tab_manager::TabManager, icon_data::IconEdgeData
@@ -128,13 +128,8 @@ impl IconManager {
             transform.translation.x = 0.0 - camera_state.camera_3d_offset().x;
             transform.translation.y = 0.0 - camera_state.camera_3d_offset().y;
             transform.translation.z = 1.0;
-            let camera_scale = (camera_state.camera_3d_scale() - CameraManager::MIN_SCALE) / (CameraManager::MAX_SCALE - CameraManager::MIN_SCALE);
-            let camera_scale = 1.0 - camera_scale;
-            const MIN_SCALE: f32 = 0.125; // this is max zoom-in
-            const MAX_SCALE: f32 = 1.0; // this is max zoom-out ... this looks right
-            const SCALE_RANGE: f32 = MAX_SCALE - MIN_SCALE;
-            let camera_scale = (camera_scale * SCALE_RANGE) + MIN_SCALE;
-            //info!("3d: {}, Icon: {}", camera_state.camera_3d_scale(), camera_scale);
+            let camera_scale = 1.0 / camera_state.camera_3d_scale();
+            info!("3d: {}, Icon: {}", camera_state.camera_3d_scale(), camera_scale);
             transform.scale = Vec3::new(camera_scale, camera_scale, 1.0);
 
             let mut edge_entities = HashSet::new();
@@ -150,16 +145,12 @@ impl IconManager {
                     continue;
                 };
 
-
-
                 let (
                     mesh_handle,
                     mat_handle,
                     render_layer_opt
                 ) = object_q.get(vertex_entity).unwrap();
                 let transform = transform_q.get(vertex_entity).unwrap();
-
-                info!("drawing vertex entity: {:?}. scale: {:?}", vertex_entity, transform.scale);
 
                 render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
 
