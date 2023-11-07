@@ -2,7 +2,6 @@ use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{
     entity::Entity,
-    query::With,
     system::{Commands, Query, Res, ResMut, Resource, SystemState},
     world::{Mut, World},
 };
@@ -20,7 +19,7 @@ use render_api::{
         RenderLayers, RenderObjectBundle, RenderTarget, Transform, Viewport,
     },
     resources::RenderFrame,
-    shapes::{HollowTriangle, Triangle},
+    shapes::{set_2d_line_transform, HollowTriangle, Triangle},
     Assets, Handle,
 };
 
@@ -168,10 +167,43 @@ impl IconManager {
 
             // draw edges
             for edge_entity in edge_entities.iter() {
+
+                let (start, end) = self.edge_get_endpoints(edge_entity);
+
+                // sync
+                let Ok(start_transform) = transform_q.get(start) else {
+                    warn!(
+                        "Edge start entity {:?} has no transform",
+                        start,
+                    );
+                    continue;
+                };
+
+                let start_pos = start_transform.translation.truncate();
+
+                let Ok(end_transform) = transform_q.get(end) else {
+                    warn!(
+                        "2d Edge end entity {:?} has no transform",
+                        end,
+                    );
+                    continue;
+                };
+
+                let end_pos = end_transform.translation.truncate();
+                let depth = (start_transform.translation.z + end_transform.translation.z) / 2.0;
+
+                let Ok(mut edge_transform) = transform_q.get_mut(*edge_entity) else {
+                    warn!("2d Edge entity {:?} has no transform", edge_entity);
+                    return;
+                };
+
+                set_2d_line_transform(&mut edge_transform, start_pos, end_pos, depth);
+
+                // draw
+
                 let (mesh_handle, mat_handle, render_layer_opt) =
                     object_q.get(*edge_entity).unwrap();
-                let transform = transform_q.get(*edge_entity).unwrap();
-                render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
+                render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, &edge_transform);
             }
 
             // draw select line & circle
