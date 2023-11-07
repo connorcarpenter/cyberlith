@@ -203,29 +203,29 @@ impl ComponentWaitlistEntry {
         let shape = self.component_type.unwrap();
         let file_type = self.file_type.unwrap();
 
-        let shape_data = match (shape, file_type) {
-            (ComponentType::Vertex, FileExtension::Skel) => {
+        let shape_data = match (file_type, shape) {
+            (FileExtension::Skel, ComponentType::Vertex) => {
                 ComponentData::Vertex(self.vertex_parent.unwrap())
             }
-            (ComponentType::Vertex, FileExtension::Mesh) => ComponentData::Vertex(None),
-            (ComponentType::Edge, FileExtension::Mesh) => {
+            (FileExtension::Mesh | FileExtension::Icon, ComponentType::Vertex) => ComponentData::Vertex(None),
+            (FileExtension::Mesh | FileExtension::Icon, ComponentType::Edge) => {
                 let entities = self.edge_entities.unwrap();
                 ComponentData::Edge(entities.0, entities.1, None)
             }
-            (ComponentType::Edge, FileExtension::Skel) => {
+            (FileExtension::Skel, ComponentType::Edge) => {
                 let entities = self.edge_entities.unwrap();
                 let edge_angle = self.edge_angle.unwrap();
                 ComponentData::Edge(entities.0, entities.1, Some(edge_angle))
             }
-            (ComponentType::Face, _) => {
+            (FileExtension::Mesh | FileExtension::Icon, ComponentType::Face) => {
                 let (vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c) =
                     self.face_entities.unwrap();
                 ComponentData::Face(vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c)
             }
-            (ComponentType::NetTransform, FileExtension::Model) => {
+            (FileExtension::Model, ComponentType::NetTransform) => {
                 ComponentData::NetTransform(Some(self.shape_name.unwrap()))
             }
-            (ComponentType::NetTransform, FileExtension::Scene) => {
+            (FileExtension::Scene, ComponentType::NetTransform) => {
                 ComponentData::NetTransform(None)
             }
             (_, _) => {
@@ -353,8 +353,8 @@ impl ComponentWaitlist {
             let entry_shape = entry.component_type.unwrap();
             let entry_file_type = entry.file_type.unwrap();
 
-            match (entry_shape, entry_file_type) {
-                (ComponentType::Vertex, FileExtension::Skel) => {
+            match (entry_file_type, entry_shape) {
+                (FileExtension::Skel, ComponentType::Vertex) => {
                     if entry.has_parent() {
                         let Some(vertex_manager) = vertex_manager_opt else {
                             panic!("vertex manager not available");
@@ -376,7 +376,7 @@ impl ComponentWaitlist {
                         }
                     }
                 }
-                (ComponentType::Edge, FileExtension::Skel | FileExtension::Mesh) => {
+                (FileExtension::Skel | FileExtension::Mesh, ComponentType::Edge) => {
                     let Some(vertex_manager) = vertex_manager_opt else {
                         panic!("vertex manager not available");
                     };
@@ -404,7 +404,7 @@ impl ComponentWaitlist {
                         continue;
                     }
                 }
-                (ComponentType::Face, FileExtension::Mesh) => {
+                (FileExtension::Mesh, ComponentType::Face) => {
                     let Some(vertex_manager) = vertex_manager_opt else {
                         panic!("vertex manager not available");
                     };
@@ -446,7 +446,7 @@ impl ComponentWaitlist {
                         continue;
                     }
                 }
-                (ComponentType::Edge, FileExtension::Icon) => {
+                (FileExtension::Icon, ComponentType::Edge) => {
                     let entities = entry.edge_entities.unwrap();
                     let Some(icon_manager) = icon_manager_opt else {
                         panic!("icon manager not available");
@@ -474,7 +474,7 @@ impl ComponentWaitlist {
                         continue;
                     }
                 }
-                (ComponentType::Face, FileExtension::Icon) => {
+                (FileExtension::Icon, ComponentType::Face) => {
                     let entities = entry.face_entities.unwrap();
                     let Some(icon_manager) = icon_manager_opt else {
                         panic!("icon manager not available");
@@ -513,10 +513,10 @@ impl ComponentWaitlist {
                         continue;
                     }
                 }
-                (ComponentType::Vertex, FileExtension::Mesh) | (ComponentType::NetTransform, FileExtension::Model | FileExtension::Scene) => {
+                (FileExtension::Mesh | FileExtension::Icon, ComponentType::Vertex)
+                | (FileExtension::Model | FileExtension::Scene, ComponentType::NetTransform) => {
                     // no dependencies
                 }
-
                 (_, _) => {
                     panic!("");
                 }

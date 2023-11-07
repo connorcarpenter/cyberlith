@@ -68,7 +68,6 @@ pub fn setup(
     );
     icon_manager.setup_scene(
         &mut commands,
-        &mut input_manager,
         &mut meshes,
         &mut materials,
         &mut ambient_lights,

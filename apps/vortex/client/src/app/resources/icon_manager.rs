@@ -39,6 +39,9 @@ pub struct IconManager {
     wireframe: bool,
     camera_entity: Entity,
     render_layer: RenderLayer,
+    select_circle_entity: Entity,
+    select_triangle_entity: Entity,
+    select_line_entity: Entity,
 
     // vertices
     vertices: HashMap<Entity, IconVertexData>,
@@ -67,6 +70,9 @@ impl Default for IconManager {
             wireframe: true,
             camera_entity: Entity::PLACEHOLDER,
             render_layer: RenderLayer::default(),
+            select_circle_entity: Entity::PLACEHOLDER,
+            select_triangle_entity: Entity::PLACEHOLDER,
+            select_line_entity: Entity::PLACEHOLDER,
 
             // vertices
             vertices: HashMap::new(),
@@ -169,7 +175,6 @@ impl IconManager {
     pub fn setup_scene(
         &mut self,
         commands: &mut Commands,
-        input_manager: &mut InputManager,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
         ambient_lights: &mut Assets<AmbientLight>,
@@ -218,7 +223,7 @@ impl IconManager {
                 .insert(SelectCircle)
                 .insert(DefaultDraw)
                 .id();
-            input_manager.select_circle_entity = Some(select_circle_entity);
+            self.select_circle_entity = select_circle_entity;
         }
 
         // select triangle
@@ -238,7 +243,7 @@ impl IconManager {
                 .insert(SelectTriangle)
                 .insert(DefaultDraw)
                 .id();
-            input_manager.select_triangle_entity = Some(select_triangle_entity);
+            self.select_triangle_entity = select_triangle_entity;
         }
 
         // select line
@@ -259,7 +264,7 @@ impl IconManager {
                 .insert(SelectLine)
                 .insert(DefaultDraw)
                 .id();
-            input_manager.select_line_entity = Some(select_line_entity);
+            self.select_line_entity = select_line_entity;
         }
     }
 

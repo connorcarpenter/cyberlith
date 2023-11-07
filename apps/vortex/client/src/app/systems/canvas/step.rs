@@ -16,7 +16,7 @@ pub fn update_camera(
     mut camera_manager: ResMut<CameraManager>,
     tab_manager: ResMut<TabManager>,
     animation_manager: Res<AnimationManager>,
-    mut icon_manager: ResMut<IconManager>,
+    icon_manager: ResMut<IconManager>,
     mut camera_q: Query<(&mut Camera, &mut Projection, &mut Transform)>,
 ) {
     if canvas.update_visibility() {

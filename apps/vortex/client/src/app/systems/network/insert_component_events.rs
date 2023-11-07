@@ -526,6 +526,22 @@ pub fn insert_icon_events(
             &entity,
             ComponentWaitlistInsert::Vertex,
         );
+        component_waitlist.process_insert(
+            &mut commands,
+            &mut meshes,
+            &mut materials,
+            &mut camera_manager,
+            &mut canvas,
+            &mut None,
+            &mut None,
+            &mut None,
+            &mut None,
+            &mut Some(&mut icon_manager),
+            None,
+            None,
+            &entity,
+            ComponentWaitlistInsert::FileType(FileExtension::Icon),
+        );
     }
 
     // on Edge Insert Event
@@ -560,6 +576,22 @@ pub fn insert_icon_events(
             None,
             &edge_entity,
             ComponentWaitlistInsert::Edge(start_entity, end_entity),
+        );
+        component_waitlist.process_insert(
+            &mut commands,
+            &mut meshes,
+            &mut materials,
+            &mut camera_manager,
+            &mut canvas,
+            &mut None,
+            &mut None,
+            &mut None,
+            &mut None,
+            &mut Some(&mut icon_manager),
+            None,
+            None,
+            &edge_entity,
+            ComponentWaitlistInsert::FileType(FileExtension::Icon),
         );
     }
 
@@ -618,6 +650,22 @@ pub fn insert_icon_events(
                 edge_b_entity,
                 edge_c_entity,
             ),
+        );
+        component_waitlist.process_insert(
+            &mut commands,
+            &mut meshes,
+            &mut materials,
+            &mut camera_manager,
+            &mut canvas,
+            &mut None,
+            &mut None,
+            &mut None,
+            &mut None,
+            &mut Some(&mut icon_manager),
+            None,
+            Some(&vertex_q),
+            &face_entity,
+            ComponentWaitlistInsert::FileType(FileExtension::Icon),
         );
     }
 }
