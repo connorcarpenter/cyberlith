@@ -2,6 +2,7 @@ use bevy_ecs::{
     prelude::{Commands, Entity, Query, World},
     system::{ResMut, SystemState},
 };
+use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt};
 
@@ -31,6 +32,8 @@ pub(crate) fn execute(
     let IconAction::CreateVertex(icon_vertex_data, position, old_vertex_entities_opt) = action else {
         panic!("Expected CreateVertex");
     };
+
+    info!("CreateVertex");
 
     let mut entities_to_release = Vec::new();
     let deselected_vertex_entity_store;

@@ -1,7 +1,7 @@
 use bevy_ecs::{
     entity::Entity,
     query::With,
-    system::{Commands, Query, ResMut, SystemState},
+    system::{Res, Commands, Query, ResMut, SystemState},
     world::{Mut, World},
 };
 use bevy_log::{info, warn};
@@ -192,10 +192,21 @@ impl IconInputManager {
                 let (vertex_entity, _) = icon_manager.selected_shape.unwrap();
                 let vertex_type_data =
                     IconVertexActionData::new(vec![(vertex_entity, None)], Vec::new());
+
+                // convert screen mouse to view mouse
+                let mut system_state: SystemState<(Res<Canvas>, Query<&Transform>)> =
+                    SystemState::new(world);
+                let (canvas, transform_q) = system_state.get_mut(world);
+
+                let Ok(camera_transform) = transform_q.get(icon_manager.camera_entity) else {
+                    return;
+                };
+                let view_mouse_position = IconManager::screen_to_view(&canvas, camera_transform, mouse_position);
+
                 Self::handle_create_new_vertex(
                     world,
                     icon_manager,
-                    &mouse_position,
+                    &view_mouse_position,
                     vertex_type_data,
                 );
             }

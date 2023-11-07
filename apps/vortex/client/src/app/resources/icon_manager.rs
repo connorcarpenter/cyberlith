@@ -46,7 +46,7 @@ use crate::app::{
 #[derive(Resource)]
 pub struct IconManager {
     wireframe: bool,
-    camera_entity: Entity,
+    pub(crate) camera_entity: Entity,
     render_layer: RenderLayer,
 
     resync_hover: bool,
@@ -350,25 +350,13 @@ impl IconManager {
             SystemState::new(world);
         let (canvas, transform_q) = system_state.get_mut(world);
 
-        // get canvas size
-        let canvas_size = canvas.texture_size();
-
-        // get camera scale
         let Ok(camera_transform) = transform_q.get(self.camera_entity) else {
             return;
         };
-
-        let vx = (((screen_mouse_position.x / canvas_size.x) - 0.5)
-            * camera_transform.scale.x
-            * canvas_size.x)
-            + camera_transform.translation.x;
-        let vy = (((screen_mouse_position.y / canvas_size.y) - 0.5)
-            * camera_transform.scale.y
-            * canvas_size.y)
-            + camera_transform.translation.y;
+        let view_mouse_position = Self::screen_to_view(&canvas, camera_transform, screen_mouse_position);
 
         // sync to hover
-        let new_hover_entity = IconInputManager::sync_mouse_hover_ui(world, current_file_entity, &Vec2::new(vx, vy));
+        let new_hover_entity = IconInputManager::sync_mouse_hover_ui(world, current_file_entity, &view_mouse_position);
         if new_hover_entity == self.hovered_entity {
             return;
         }
@@ -386,6 +374,22 @@ impl IconManager {
             let visually_hovering = self.hovered_entity != self.selected_shape;
             self.sync_hover_shape_scale(world, hover_entity, hover_shape, visually_hovering);
         }
+    }
+
+    pub fn screen_to_view(canvas: &Canvas, camera_transform: &Transform, pos: &Vec2) -> Vec2 {
+
+        // get canvas size
+        let canvas_size = canvas.texture_size();
+
+        let vx = (((pos.x / canvas_size.x) - 0.5)
+            * camera_transform.scale.x
+            * canvas_size.x)
+            + camera_transform.translation.x;
+        let vy = (((pos.y / canvas_size.y) - 0.5)
+            * camera_transform.scale.y
+            * canvas_size.y)
+            + camera_transform.translation.y;
+        Vec2::new(vx, vy)
     }
 
     fn sync_hover_shape_scale(&mut self, world: &mut World, hover_entity: Entity, hover_shape: CanvasShape, hovering: bool) {
