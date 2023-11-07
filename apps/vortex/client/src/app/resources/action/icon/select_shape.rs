@@ -1,6 +1,6 @@
 use bevy_ecs::{
     prelude::{Commands, Entity, World},
-    system::{ResMut, SystemState},
+    system::SystemState,
     world::Mut,
 };
 use bevy_log::info;
@@ -8,14 +8,14 @@ use bevy_log::info;
 use naia_bevy_client::{Client, CommandsExt};
 
 use crate::app::resources::{
-    action::icon::IconAction, canvas::Canvas,
-    input::InputManager, shape_data::CanvasShape,
+    action::icon::IconAction,
+    shape_data::CanvasShape,
     icon_manager::IconManager
 };
 
 pub(crate) fn execute(
     world: &mut World,
-    input_manager: &mut InputManager,
+    icon_manager: &mut IconManager,
     action: IconAction,
 ) -> Vec<IconAction> {
     let IconAction::SelectShape(shape_entity_opt) = action else {
@@ -27,22 +27,18 @@ pub(crate) fn execute(
     let mut system_state: SystemState<(
         Commands,
         Client,
-        ResMut<Canvas>,
     )> = SystemState::new(world);
     let (
         mut commands,
         mut client,
-        mut canvas,
     ) = system_state.get_mut(world);
 
     // Deselect all selected shapes, select the new selected shapes
     let deselected_entity = deselect_selected_shape(
-        &mut canvas,
-        input_manager,
+        icon_manager,
     );
     let entity_to_request = select_shape(
-        &mut canvas,
-        input_manager,
+        icon_manager,
         shape_entity_opt,
     );
     let entity_to_release = deselected_entity.map(|(entity, _)| {
@@ -97,24 +93,22 @@ pub fn entity_request_release(
 
 // returns entity to request auth for
 pub fn select_shape(
-    canvas: &mut Canvas,
-    input_manager: &mut InputManager,
+    icon_manager: &mut IconManager,
     shape_entity_opt: Option<(Entity, CanvasShape)>,
 ) -> Option<Entity> {
     if let Some((shape_entity, shape)) = shape_entity_opt {
-        input_manager.select_shape(canvas, &shape_entity, shape);
+        icon_manager.select_shape(&shape_entity, shape);
         return Some(shape_entity);
     }
     return None;
 }
 
 pub fn deselect_selected_shape(
-    canvas: &mut Canvas,
-    input_manager: &mut InputManager,
+    icon_manager: &mut IconManager,
 ) -> Option<(Entity, CanvasShape)> {
     let mut entity_to_deselect = None;
-    if let Some((shape_entity, shape_type)) = input_manager.selected_shape_2d() {
-        input_manager.deselect_shape(canvas);
+    if let Some((shape_entity, shape_type)) = icon_manager.selected_shape_2d() {
+        icon_manager.deselect_shape();
         entity_to_deselect = Some((shape_entity, shape_type));
     }
     entity_to_deselect

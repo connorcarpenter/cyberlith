@@ -525,7 +525,6 @@ pub fn process_faces(
     );
     icon_manager.process_new_local_faces(
         &mut commands,
-        &mut canvas,
         &mut meshes,
         &mut materials,
     );

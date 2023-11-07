@@ -1,6 +1,6 @@
 use bevy_ecs::{
     prelude::{Commands, Entity, Query, World},
-    system::{ResMut, SystemState},
+    system::SystemState,
 };
 use bevy_log::{info};
 
@@ -15,8 +15,6 @@ use crate::app::{
             select_shape::{entity_request_release, select_shape},
             IconAction,
         },
-        canvas::Canvas,
-        input::InputManager,
         shape_data::CanvasShape,
         icon_data::IconFaceKey,
         icon_manager::IconManager,
@@ -25,7 +23,7 @@ use crate::app::{
 
 pub(crate) fn execute(
     world: &mut World,
-    input_manager: &mut InputManager,
+    icon_manager: &mut IconManager,
     action: IconAction,
 ) -> Vec<IconAction> {
     let IconAction::DeleteVertex(vertex_entity, vertex_to_select_opt) = action else {
@@ -37,16 +35,12 @@ pub(crate) fn execute(
     let mut system_state: SystemState<(
         Commands,
         Client,
-        ResMut<Canvas>,
-        ResMut<IconManager>,
         Query<(Entity, &IconVertex)>,
         Query<&IconEdge>,
     )> = SystemState::new(world);
     let (
         mut commands,
         mut client,
-        mut canvas,
-        mut icon_manager,
         vertex_q,
         edge_q,
     ) = system_state.get_mut(world);
@@ -115,9 +109,7 @@ pub(crate) fn execute(
     handle_vertex_despawn(
         &mut commands,
         &mut client,
-        &mut canvas,
-        input_manager,
-        &mut icon_manager,
+        icon_manager,
         vertex_entity,
         vertex_to_select_opt,
     );
@@ -134,8 +126,6 @@ pub(crate) fn execute(
 fn handle_vertex_despawn(
     commands: &mut Commands,
     client: &mut Client,
-    canvas: &mut Canvas,
-    input_manager: &mut InputManager,
     icon_manager: &mut IconManager,
     vertex_entity: Entity,
     vertex_to_select_opt: Option<(Entity, CanvasShape)>,
@@ -144,15 +134,14 @@ fn handle_vertex_despawn(
     commands.entity(vertex_entity).despawn();
 
     // cleanup mappings
-    icon_manager.cleanup_deleted_vertex(canvas, input_manager, &vertex_entity);
+    icon_manager.cleanup_deleted_vertex(&vertex_entity);
 
-    input_manager.deselect_shape(canvas);
+    icon_manager.deselect_shape();
 
     // select entities as needed
     if let Some((vertex_to_select, vertex_type)) = vertex_to_select_opt {
         let entity_to_request = select_shape(
-            canvas,
-            input_manager,
+            icon_manager,
             Some((vertex_to_select, vertex_type)),
         );
         entity_request_release(commands, client, entity_to_request, None);

@@ -6,7 +6,7 @@ use bevy_ecs::{
     system::{Commands, Query, Res, ResMut, Resource, SystemState},
     world::{World, Mut},
 };
-use bevy_log::info;
+use bevy_log::{info, warn};
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 use input::Key;
@@ -25,14 +25,13 @@ use crate::app::{
         Face3dLocal, FaceIcon2d, IconLocalFace, DefaultDraw, SelectCircle, SelectLine, SelectTriangle,
     },
     resources::{
+        camera_manager::CameraManager, input::IconInputManager,
         action::icon::IconAction,
         icon_data::{IconFaceData, IconFaceKey, IconVertexData},
-        input::InputManager,
-        shape_data::CanvasShape, tab_manager::TabManager, canvas::Canvas, icon_data::IconEdgeData
+        shape_data::CanvasShape, tab_manager::TabManager, icon_data::IconEdgeData
     },
     shapes::create_2d_edge_line
 };
-use crate::app::resources::camera_manager::CameraManager;
 
 #[derive(Resource)]
 pub struct IconManager {
@@ -40,6 +39,10 @@ pub struct IconManager {
     wireframe: bool,
     camera_entity: Entity,
     render_layer: RenderLayer,
+
+    resync_hover: bool,
+    pub(crate) hovered_entity: Option<(Entity, CanvasShape)>,
+    pub(crate) selected_shape: Option<(Entity, CanvasShape)>,
     select_circle_entity: Entity,
     select_triangle_entity: Entity,
     select_line_entity: Entity,
@@ -71,6 +74,10 @@ impl Default for IconManager {
             wireframe: true,
             camera_entity: Entity::PLACEHOLDER,
             render_layer: RenderLayer::default(),
+
+            resync_hover: false,
+            hovered_entity: None,
+            selected_shape: None,
             select_circle_entity: Entity::PLACEHOLDER,
             select_triangle_entity: Entity::PLACEHOLDER,
             select_line_entity: Entity::PLACEHOLDER,
@@ -98,11 +105,9 @@ impl IconManager {
 
     pub fn draw(&self, world: &mut World, current_file_entity: &Entity) {
         {
-
             let mut system_state: SystemState<(
                 ResMut<RenderFrame>,
                 Res<TabManager>,
-                Res<InputManager>,
                 Query<(Entity, &OwnedByFileLocal), With<IconVertex>>,
                 Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>, Option<&RenderLayer>)>,
                 Query<&mut Transform>,
@@ -110,7 +115,6 @@ impl IconManager {
             let (
                 mut render_frame,
                 tab_manager,
-                input_manager,
                 vertex_q,
                 object_q,
                 mut transform_q,
@@ -130,7 +134,7 @@ impl IconManager {
             const MAX_SCALE: f32 = 1.0; // this is max zoom-out ... this looks right
             const SCALE_RANGE: f32 = MAX_SCALE - MIN_SCALE;
             let camera_scale = (camera_scale * SCALE_RANGE) + MIN_SCALE;
-            info!("3d: {}, Icon: {}", camera_state.camera_3d_scale(), camera_scale);
+            //info!("3d: {}, Icon: {}", camera_state.camera_3d_scale(), camera_scale);
             transform.scale = Vec3::new(camera_scale, camera_scale, 1.0);
 
             let mut edge_entities = HashSet::new();
@@ -146,12 +150,17 @@ impl IconManager {
                     continue;
                 };
 
+
+
                 let (
                     mesh_handle,
                     mat_handle,
                     render_layer_opt
                 ) = object_q.get(vertex_entity).unwrap();
                 let transform = transform_q.get(vertex_entity).unwrap();
+
+                info!("drawing vertex entity: {:?}. scale: {:?}", vertex_entity, transform.scale);
+
                 render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
 
                 for edge_entity in data.edges.iter() {
@@ -168,40 +177,36 @@ impl IconManager {
             }
 
             // draw select line & circle
-            match input_manager.selected_shape_2d() {
+            match self.selected_shape_2d() {
                 Some((_, CanvasShape::Edge)) => {
                     // draw select line
-                    if let Some(select_line_entity) = input_manager.select_line_entity {
-                        let (
-                            mesh_handle,
-                            mat_handle,
-                            render_layer_opt
-                        ) = object_q.get(select_line_entity).unwrap();
-                        let transform = transform_q.get(select_line_entity).unwrap();
-                        render_frame.draw_object(
-                            render_layer_opt,
-                            mesh_handle,
-                            &mat_handle,
-                            transform,
-                        );
-                    }
+                    let (
+                        mesh_handle,
+                        mat_handle,
+                        render_layer_opt
+                    ) = object_q.get(self.select_line_entity).unwrap();
+                    let transform = transform_q.get(self.select_line_entity).unwrap();
+                    render_frame.draw_object(
+                        render_layer_opt,
+                        mesh_handle,
+                        &mat_handle,
+                        transform,
+                    );
                 }
                 Some((_, CanvasShape::Vertex)) => {
                     // draw select circle
-                    if let Some(select_circle_entity) = input_manager.select_circle_entity {
-                        let (
-                            mesh_handle,
-                            mat_handle,
-                            render_layer_opt
-                        ) = object_q.get(select_circle_entity).unwrap();
-                        let transform = transform_q.get(select_circle_entity).unwrap();
-                        render_frame.draw_object(
-                            render_layer_opt,
-                            mesh_handle,
-                            &mat_handle,
-                            transform,
-                        );
-                    }
+                    let (
+                        mesh_handle,
+                        mat_handle,
+                        render_layer_opt
+                    ) = object_q.get(self.select_circle_entity).unwrap();
+                    let transform = transform_q.get(self.select_circle_entity).unwrap();
+                    render_frame.draw_object(
+                        render_layer_opt,
+                        mesh_handle,
+                        &mat_handle,
+                        transform,
+                    );
                 }
                 _ => {}
             }
@@ -355,16 +360,97 @@ impl IconManager {
         }
     }
 
+    pub fn queue_resync_hover_ui(&mut self) {
+        self.resync_hover = true;
+    }
+
+    pub(crate) fn sync_mouse_hover_ui(
+        &mut self,
+        world: &mut World,
+        current_file_entity: &Entity,
+        mouse_position: &Vec2,
+    ) {
+        if !self.resync_hover {
+            return;
+        }
+        self.resync_hover = false;
+
+        IconInputManager::sync_mouse_hover_ui(world, current_file_entity, mouse_position);
+    }
+
+    pub fn select_shape(&mut self, entity: &Entity, shape: CanvasShape) {
+        if self.selected_shape.is_some() {
+            panic!("must deselect before selecting");
+        }
+        self.selected_shape = Some((*entity, shape));
+    }
+
+    pub fn deselect_shape(&mut self) {
+        self.selected_shape = None;
+    }
+
+    pub fn selected_shape_2d(&self) -> Option<(Entity, CanvasShape)> {
+        self.selected_shape
+    }
+
     // Vertices
 
-    pub(crate) fn reset_last_dragged_vertex(&mut self, world: &mut World, input_manager: &mut InputManager,) {
+    pub(crate) fn handle_delete_vertex_action(
+        &mut self,
+        world: &mut World,
+        vertex_entity: &Entity,
+    ) {
+        let mut system_state: SystemState<(Commands, Client)> =
+            SystemState::new(world);
+        let (mut commands, mut client) = system_state.get_mut(world);
+
+        // delete vertex
+
+        // check whether we can delete vertex
+        let auth_status = commands
+            .entity(*vertex_entity)
+            .authority(&client)
+            .unwrap();
+        if !auth_status.is_granted() && !auth_status.is_available() {
+            // do nothing, vertex is not available
+            // TODO: queue for deletion? check before this?
+            warn!(
+                "Vertex {:?} is not available for deletion!",
+                vertex_entity
+            );
+            return;
+        }
+
+        let auth_status = commands
+            .entity(*vertex_entity)
+            .authority(&client)
+            .unwrap();
+        if !auth_status.is_granted() {
+            // request authority if needed
+            commands
+                .entity(*vertex_entity)
+                .request_authority(&mut client);
+        }
+
+        world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+            tab_manager.current_tab_execute_icon_action(
+                world,
+                self,
+                IconAction::DeleteVertex(*vertex_entity, None),
+            );
+        });
+
+        self.selected_shape = None;
+    }
+
+    pub(crate) fn reset_last_dragged_vertex(&mut self, world: &mut World) {
         // reset last dragged vertex
         if let Some(drags) = self.take_drags() {
             world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
                 for (vertex_entity, old_pos, new_pos) in drags {
                     tab_manager.current_tab_execute_icon_action(
                         world,
-                        input_manager,
+                        self,
                         IconAction::MoveVertex(vertex_entity, old_pos, new_pos, true),
                     );
                 }
@@ -570,15 +656,13 @@ impl IconManager {
 
     pub fn cleanup_deleted_vertex(
         &mut self,
-        canvas: &mut Canvas,
-        input_manager: &mut InputManager,
         vertex_entity: &Entity,
     ) {
         // unregister vertex
         self.unregister_vertex(vertex_entity);
 
-        if input_manager.hovered_entity == Some((*vertex_entity, CanvasShape::Vertex)) {
-            input_manager.hovered_entity = None;
+        if self.hovered_entity == Some((*vertex_entity, CanvasShape::Vertex)) {
+            self.hovered_entity = None;
         }
     }
 
@@ -778,8 +862,6 @@ impl IconManager {
     pub fn cleanup_deleted_edge(
         &mut self,
         commands: &mut Commands,
-        canvas: &mut Canvas,
-        input_manager: &mut InputManager,
         edge_entity: &Entity,
     ) -> (Entity, Vec<Entity>) {
         let mut deleted_local_face_entities = Vec::new();
@@ -798,8 +880,6 @@ impl IconManager {
                 for face_key in face_keys {
                     let local_face_entity = self.cleanup_deleted_face_key(
                         commands,
-                        canvas,
-                        input_manager,
                         &face_key,
                     );
                     deleted_local_face_entities.push(local_face_entity);
@@ -810,8 +890,8 @@ impl IconManager {
         // unregister edge
         self.unregister_edge(edge_entity);
 
-        if input_manager.hovered_entity == Some((*edge_entity, CanvasShape::Edge)) {
-            input_manager.hovered_entity = None;
+        if self.hovered_entity == Some((*edge_entity, CanvasShape::Edge)) {
+            self.hovered_entity = None;
         }
 
         (*edge_entity, deleted_local_face_entities)
@@ -879,7 +959,6 @@ impl IconManager {
     pub fn process_new_local_faces(
         &mut self,
         commands: &mut Commands,
-        canvas: &mut Canvas,
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
     ) {
@@ -1179,8 +1258,6 @@ impl IconManager {
     pub(crate) fn cleanup_deleted_face_key(
         &mut self,
         commands: &mut Commands,
-        canvas: &mut Canvas,
-        input_manager: &mut InputManager,
         face_key: &IconFaceKey,
     ) -> Entity {
         // unregister face
@@ -1195,8 +1272,8 @@ impl IconManager {
         info!("despawn local face {:?}", local_face_entity);
         commands.entity(local_face_entity).despawn();
 
-        if input_manager.hovered_entity == Some((local_face_entity, CanvasShape::Face)) {
-            input_manager.hovered_entity = None;
+        if self.hovered_entity == Some((local_face_entity, CanvasShape::Face)) {
+            self.hovered_entity = None;
         }
 
         local_face_entity

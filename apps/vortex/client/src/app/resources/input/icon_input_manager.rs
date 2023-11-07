@@ -1,7 +1,7 @@
 use bevy_ecs::{
     entity::Entity,
     query::With,
-    system::{ResMut, Commands, Query, Res, SystemState},
+    system::{ResMut, Commands, Query, SystemState},
     world::{Mut, World},
 };
 use bevy_log::{info, warn};
@@ -28,38 +28,37 @@ pub struct IconInputManager;
 impl IconInputManager {
     pub fn update_input(
         world: &mut World,
-        input_manager: &mut InputManager,
+        icon_manager: &mut IconManager,
         input_actions: Vec<InputAction>,
     ) {
         for action in input_actions {
             match action {
                 InputAction::MouseClick(click_type, mouse_position) => {
-                    Self::handle_mouse_click(world, input_manager, &mouse_position, click_type)
+                    Self::handle_mouse_click(world, icon_manager, &mouse_position, click_type)
                 }
                 InputAction::MouseDragged(click_type, mouse_position, delta) => {
-                    Self::handle_mouse_drag(world, input_manager, mouse_position, delta, click_type)
+                    Self::handle_mouse_drag(world, icon_manager, mouse_position, delta, click_type)
                 }
                 InputAction::MiddleMouseScroll(scroll_y) => {
                     InputManager::handle_mouse_scroll_wheel(world, scroll_y)
                 }
                 InputAction::MouseMoved => {
-                    input_manager.queue_resync_hover_ui();
-                    input_manager.queue_resync_selection_ui();
+                    icon_manager.queue_resync_hover_ui();
                 }
                 InputAction::MouseRelease(MouseButton::Left) => {
-                    world.resource_scope(|world, mut icon_manager: Mut<IconManager>| {
-                        icon_manager.reset_last_dragged_vertex(world, input_manager)
-                    });
+                    icon_manager.reset_last_dragged_vertex(world)
                 }
                 InputAction::KeyPress(key) => match key {
                     Key::S
                     | Key::W => {
-                        world.resource_scope(|_world, mut icon_manager: Mut<IconManager>| {
-                            icon_manager.handle_keypress_camera_controls(key);
-                        });
+                        icon_manager.handle_keypress_camera_controls(key);
                     },
-                    Key::Delete => Self::handle_delete_key_press(world, input_manager),
-                    Key::Insert => Self::handle_insert_key_press(world, input_manager),
+                    Key::Delete => {
+                        Self::handle_delete_key_press(world, icon_manager);
+                    },
+                    Key::Insert => {
+                        Self::handle_insert_key_press(world, icon_manager);
+                    },
                     _ => {}
                 },
                 _ => {}
@@ -67,14 +66,14 @@ impl IconInputManager {
         }
     }
 
-    pub(crate) fn handle_insert_key_press(world: &mut World, input_manager: &mut InputManager) {
-        if input_manager.selected_shape.is_some() {
+    pub(crate) fn handle_insert_key_press(world: &mut World, icon_manager: &mut IconManager) {
+        if icon_manager.selected_shape.is_some() {
             return;
         }
         world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
             tab_manager.current_tab_execute_icon_action(
                 world,
-                input_manager,
+                icon_manager,
                 IconAction::CreateVertex(
                     IconVertexActionData::new(Vec::new(), Vec::new()),
                     Vec2::ZERO,
@@ -84,10 +83,10 @@ impl IconInputManager {
         })
     }
 
-    pub(crate) fn handle_delete_key_press(world: &mut World, input_manager: &mut InputManager) {
-        match input_manager.selected_shape {
+    pub(crate) fn handle_delete_key_press(world: &mut World, icon_manager: &mut IconManager) {
+        match icon_manager.selected_shape {
             Some((vertex_entity, CanvasShape::Vertex)) => {
-                input_manager.handle_delete_vertex_action(world, &vertex_entity)
+                icon_manager.handle_delete_vertex_action(world, &vertex_entity)
             }
             Some((edge_entity, CanvasShape::Edge)) => {
                 let mut system_state: SystemState<(Commands, Client)> =
@@ -114,17 +113,17 @@ impl IconInputManager {
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
                     tab_manager.current_tab_execute_icon_action(
                         world,
-                        input_manager,
+                        icon_manager,
                         IconAction::DeleteEdge(edge_entity, None),
                     );
                 });
 
-                input_manager.selected_shape = None;
+                icon_manager.selected_shape = None;
             }
             Some((local_face_entity, CanvasShape::Face)) => {
-                let mut system_state: SystemState<(Commands, Client, Res<IconManager>)> =
+                let mut system_state: SystemState<(Commands, Client)> =
                     SystemState::new(world);
-                let (mut commands, mut client, icon_manager) = system_state.get_mut(world);
+                let (mut commands, mut client) = system_state.get_mut(world);
 
                 let net_face_entity = icon_manager.face_entity_local_to_net(&local_face_entity).unwrap();
 
@@ -148,12 +147,12 @@ impl IconInputManager {
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
                     tab_manager.current_tab_execute_icon_action(
                         world,
-                        input_manager,
+                        icon_manager,
                         IconAction::DeleteFace(local_face_entity),
                     );
                 });
 
-                input_manager.selected_shape = None;
+                icon_manager.selected_shape = None;
             }
             _ => {}
         }
@@ -161,7 +160,7 @@ impl IconInputManager {
 
     pub(crate) fn handle_mouse_click(
         world: &mut World,
-        input_manager: &mut InputManager,
+        icon_manager: &mut IconManager,
         mouse_position: &Vec2,
         click_type: MouseButton,
     ) {
@@ -174,22 +173,22 @@ impl IconInputManager {
             return;
         }
 
-        let selected_shape = input_manager.selected_shape.map(|(_, shape)| shape);
-        let hovered_shape = input_manager.hovered_entity.map(|(_, shape)| shape);
+        let selected_shape = icon_manager.selected_shape.map(|(_, shape)| shape);
+        let hovered_shape = icon_manager.hovered_entity.map(|(_, shape)| shape);
 
         // click_type, selected_shape, hovered_shape
         match (click_type, selected_shape, hovered_shape) {
             (MouseButton::Left, Some(CanvasShape::Vertex), Some(CanvasShape::Vertex)) => {
-                Self::link_vertices(world, input_manager);
+                Self::link_vertices(world, icon_manager);
             }
             (MouseButton::Left, Some(CanvasShape::Vertex), None) => {
                 // create new vertex
-                let (vertex_entity, _) = input_manager.selected_shape.unwrap();
+                let (vertex_entity, _) = icon_manager.selected_shape.unwrap();
                 let vertex_type_data =
                     IconVertexActionData::new(vec![(vertex_entity, None)], Vec::new());
                 Self::handle_create_new_vertex(
                     world,
-                    input_manager,
+                    icon_manager,
                     &mouse_position,
                     vertex_type_data,
                 );
@@ -200,8 +199,8 @@ impl IconInputManager {
                     world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
                         tab_manager.current_tab_execute_icon_action(
                             world,
-                            input_manager,
-                            IconAction::SelectShape(input_manager.hovered_entity),
+                            icon_manager,
+                            IconAction::SelectShape(icon_manager.hovered_entity),
                         );
                     });
                 }
@@ -211,7 +210,7 @@ impl IconInputManager {
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
                     tab_manager.current_tab_execute_icon_action(
                         world,
-                        input_manager,
+                        icon_manager,
                         IconAction::SelectShape(None),
                     );
                 });
@@ -222,7 +221,7 @@ impl IconInputManager {
 
     fn handle_create_new_vertex(
         world: &mut World,
-        input_manager: &mut InputManager,
+        icon_manager: &mut IconManager,
         mouse_position: &Vec2,
         vertex_type_data: IconVertexActionData,
     ) {
@@ -230,20 +229,17 @@ impl IconInputManager {
         world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
             tab_manager.current_tab_execute_icon_action(
                 world,
-                input_manager,
+                icon_manager,
                 IconAction::CreateVertex(vertex_type_data, *mouse_position, None),
             );
         });
     }
 
-    fn link_vertices(world: &mut World, input_manager: &mut InputManager) {
-        let mut system_state: SystemState<Res<IconManager>> =
-            SystemState::new(world);
-        let icon_manager = system_state.get_mut(world);
+    fn link_vertices(world: &mut World, icon_manager: &mut IconManager) {
 
         // link vertices together
-        let (vertex_entity_a, _) = input_manager.selected_shape.unwrap();
-        let (vertex_entity_b, _) = input_manager.hovered_entity.unwrap();
+        let (vertex_entity_a, _) = icon_manager.selected_shape.unwrap();
+        let (vertex_entity_b, _) = icon_manager.hovered_entity.unwrap();
         if vertex_entity_a == vertex_entity_b {
             return;
         }
@@ -257,7 +253,7 @@ impl IconInputManager {
             world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
                 tab_manager.current_tab_execute_icon_action(
                     world,
-                    input_manager,
+                    icon_manager,
                     IconAction::SelectShape(Some((vertex_entity_b, CanvasShape::Vertex))),
                 );
             });
@@ -266,7 +262,7 @@ impl IconInputManager {
             world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
                 tab_manager.current_tab_execute_icon_action(
                     world,
-                    input_manager,
+                    icon_manager,
                     IconAction::CreateEdge(
                         vertex_entity_a,
                         vertex_entity_b,
@@ -281,7 +277,7 @@ impl IconInputManager {
 
     fn handle_mouse_drag(
         world: &mut World,
-        input_manager: &mut InputManager,
+        icon_manager: &mut IconManager,
         mouse_position: Vec2,
         delta: Vec2,
         click_type: MouseButton,
@@ -290,7 +286,7 @@ impl IconInputManager {
             return;
         }
 
-        match (click_type, input_manager.selected_shape) {
+        match (click_type, icon_manager.selected_shape) {
             (MouseButton::Left, Some((vertex_entity, CanvasShape::Vertex))) => {
                 Self::handle_vertex_drag(world, &vertex_entity, &mouse_position)
             }

@@ -39,6 +39,7 @@ use crate::app::{
         vertex_manager::VertexManager,
     },
 };
+use crate::app::resources::icon_manager::IconManager;
 
 #[derive(Clone, Copy)]
 pub enum CardinalDirection {
@@ -105,7 +106,11 @@ impl InputManager {
             FileExtension::Anim => AnimInputManager::update_input(world, self, input_actions),
             FileExtension::Skin => SkinInputManager::update_input(world, self, input_actions),
             FileExtension::Model | FileExtension::Scene => ModelInputManager::update_input(world, self, &current_file_type, input_actions),
-            FileExtension::Icon => IconInputManager::update_input(world, self, input_actions),
+            FileExtension::Icon => {
+                world.resource_scope(|world, mut icon_manager: Mut<IconManager>| {
+                    IconInputManager::update_input(world, &mut icon_manager, input_actions);
+                });
+            },
             _ => {}
         }
     }
@@ -152,7 +157,7 @@ impl InputManager {
                 mouse_position,
             ),
             FileExtension::Icon => {
-                IconInputManager::sync_mouse_hover_ui(world, current_file_entity, mouse_position)
+                return;
             }
             _ => {
                 return;

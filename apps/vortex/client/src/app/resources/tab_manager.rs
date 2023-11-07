@@ -421,14 +421,14 @@ impl TabManager {
     pub fn current_tab_execute_icon_action(
         &mut self,
         world: &mut World,
-        input_manager: &mut InputManager,
+        icon_manager: &mut IconManager,
         action: IconAction,
     ) {
         let current_tab_entity = *self.current_tab_entity().unwrap();
         let tab_state = self.current_tab_state_mut().unwrap();
         tab_state.action_stack.execute_icon_action(
             world,
-            input_manager,
+            icon_manager,
             current_tab_entity,
             action,
         );

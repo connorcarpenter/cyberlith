@@ -19,8 +19,6 @@ use crate::app::{
             icon::{select_shape::deselect_selected_shape, IconAction},
             ActionStack,
         },
-        canvas::Canvas,
-        input::InputManager,
         shape_data::CanvasShape,
         icon_manager::IconManager,
     },
@@ -28,7 +26,7 @@ use crate::app::{
 
 pub(crate) fn execute(
     world: &mut World,
-    input_manager: &mut InputManager,
+    icon_manager: &mut IconManager,
     action_stack: &mut ActionStack<IconAction>,
     tab_file_entity: Entity,
     action: IconAction,
@@ -60,24 +58,19 @@ pub(crate) fn execute(
         let mut system_state: SystemState<(
             Commands,
             Client,
-            ResMut<Canvas>,
-            ResMut<IconManager>,
             ResMut<Assets<CpuMesh>>,
             ResMut<Assets<CpuMaterial>>,
         )> = SystemState::new(world);
         let (
             mut commands,
             mut client,
-            mut canvas,
-            mut icon_manager,
             mut meshes,
             mut materials,
         ) = system_state.get_mut(world);
 
         // deselect all selected vertices
         let deselected_shape_entity = deselect_selected_shape(
-            &mut canvas,
-            input_manager,
+            icon_manager,
         );
         deselected_shape_entity_store = deselected_shape_entity;
         if let Some((entity, _)) = deselected_shape_entity {
@@ -112,8 +105,7 @@ pub(crate) fn execute(
         }
 
         // select vertex
-        input_manager.select_shape(
-            &mut canvas,
+        icon_manager.select_shape(
             &shape_entity_to_select,
             shape_type_to_select,
         );
@@ -144,7 +136,6 @@ pub(crate) fn execute(
             let mut system_state: SystemState<(
                 Commands,
                 Client,
-                ResMut<IconManager>,
                 ResMut<Assets<CpuMesh>>,
                 ResMut<Assets<CpuMaterial>>,
                 Query<&Transform>,
@@ -152,7 +143,6 @@ pub(crate) fn execute(
             let (
                 mut commands,
                 mut client,
-                mut icon_manager,
                 mut meshes,
                 mut materials,
                 transform_q,

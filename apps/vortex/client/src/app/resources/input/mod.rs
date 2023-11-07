@@ -9,3 +9,5 @@ mod icon_input_manager;
 
 mod input_manager;
 pub use input_manager::*;
+
+pub use icon_input_manager::IconInputManager;

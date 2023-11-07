@@ -12,8 +12,8 @@ use crate::app::{
             },
             Action, ActionStack,
         },
-        input::InputManager,
         shape_data::CanvasShape,
+        icon_manager::IconManager,
     },
 };
 
@@ -67,23 +67,23 @@ impl IconAction {
     pub fn execute(
         self,
         world: &mut World,
-        input_manager: &mut InputManager,
+        icon_manager: &mut IconManager,
         tab_file_entity: Entity,
         action_stack: &mut ActionStack<Self>,
     ) -> Vec<Self> {
         let action_type = self.get_type();
         match action_type {
-            IconActionType::SelectShape => select_shape::execute(world, input_manager, self),
+            IconActionType::SelectShape => select_shape::execute(world, icon_manager, self),
             IconActionType::CreateVertex => {
-                create_vertex::execute(world, input_manager, action_stack, tab_file_entity, self)
+                create_vertex::execute(world, icon_manager, action_stack, tab_file_entity, self)
             }
-            IconActionType::DeleteVertex => delete_vertex::execute(world, input_manager, self),
+            IconActionType::DeleteVertex => delete_vertex::execute(world, icon_manager, self),
             IconActionType::MoveVertex => move_vertex::execute(world, self),
             IconActionType::CreateEdge => {
-                create_edge::execute(world, input_manager, action_stack, tab_file_entity, self)
+                create_edge::execute(world, icon_manager, action_stack, tab_file_entity, self)
             }
-            IconActionType::DeleteEdge => delete_edge::execute(world, input_manager, self),
-            IconActionType::DeleteFace => delete_face::execute(world, self),
+            IconActionType::DeleteEdge => delete_edge::execute(world, icon_manager, self),
+            IconActionType::DeleteFace => delete_face::execute(world, icon_manager, self),
         }
     }
 

@@ -4,10 +4,12 @@ use bevy_ecs::{
 };
 
 use input::Input;
+use vortex_proto::components::FileExtension;
 
 use crate::app::resources::{
     canvas::Canvas, file_manager::FileManager, input::InputManager, tab_manager::TabManager,
 };
+use crate::app::resources::icon_manager::IconManager;
 
 pub fn input(world: &mut World) {
     let mut system_state: SystemState<(Res<Canvas>, ResMut<Input>)> = SystemState::new(world);
@@ -42,7 +44,13 @@ pub fn update_mouse_hover(world: &mut World) {
     let mouse_pos = world.get_resource::<Input>().unwrap().mouse_position();
     let mouse_pos = *mouse_pos;
 
-    world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
-        input_manager.sync_mouse_hover_ui(world, file_type, &current_tab_entity, &mouse_pos);
-    });
+    if file_type == FileExtension::Icon {
+        world.resource_scope(|world, mut icon_manager: Mut<IconManager>| {
+            icon_manager.sync_mouse_hover_ui(world, &current_tab_entity, &mouse_pos);
+        });
+    } else {
+        world.resource_scope(|world, mut input_manager: Mut<InputManager>| {
+            input_manager.sync_mouse_hover_ui(world, file_type, &current_tab_entity, &mouse_pos);
+        });
+    }
 }

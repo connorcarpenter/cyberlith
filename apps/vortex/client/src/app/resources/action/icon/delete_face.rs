@@ -10,15 +10,15 @@ use crate::app::resources::{
     action::icon::IconAction, icon_manager::IconManager, shape_data::CanvasShape,
 };
 
-pub(crate) fn execute(world: &mut World, action: IconAction) -> Vec<IconAction> {
+pub(crate) fn execute(world: &mut World, icon_manager: &mut IconManager, action: IconAction) -> Vec<IconAction> {
     let IconAction::DeleteFace(local_face_entity) = action else {
         panic!("Expected DeleteFace");
     };
 
     info!("DeleteFace(local_face_entity: `{:?}`)", local_face_entity);
-    let mut system_state: SystemState<(Commands, ResMut<IconManager>, ResMut<Assets<CpuMesh>>)> =
+    let mut system_state: SystemState<(Commands, ResMut<Assets<CpuMesh>>)> =
         SystemState::new(world);
-    let (mut commands, mut icon_manager, mut meshes) = system_state.get_mut(world);
+    let (mut commands, mut meshes) = system_state.get_mut(world);
 
     let Some(net_face_entity) = icon_manager.face_entity_local_to_net(&local_face_entity) else {
         panic!("failed to get net face entity for local face entity `{:?}`!", local_face_entity)

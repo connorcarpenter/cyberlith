@@ -21,6 +21,7 @@ use crate::app::resources::{
     palette_manager::PaletteManager,
     tab_manager::TabManager,
 };
+use crate::app::resources::icon_manager::IconManager;
 
 pub trait Action: Clone {
     fn entity_update_auth_status_impl(
@@ -329,11 +330,11 @@ impl ActionStack<IconAction> {
     pub fn execute_action(
         &mut self,
         world: &mut World,
-        input_manager: &mut InputManager,
+        icon_manager: &mut IconManager,
         tab_file_entity: Entity,
         action: IconAction,
     ) -> Vec<IconAction> {
-        action.execute(world, input_manager, tab_file_entity, self)
+        action.execute(world, icon_manager, tab_file_entity, self)
     }
 
     pub(crate) fn migrate_vertex_entities(

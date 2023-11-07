@@ -1,6 +1,6 @@
 use bevy_ecs::{
     prelude::{Commands, Query, World},
-    system::{ResMut, SystemState},
+    system::{SystemState},
 };
 use bevy_log::info;
 
@@ -13,15 +13,13 @@ use crate::app::resources::{
         select_shape::{entity_request_release, select_shape},
         IconAction,
     },
-    canvas::Canvas,
     icon_manager::IconManager,
-    input::InputManager,
     shape_data::CanvasShape,
 };
 
 pub(crate) fn execute(
     world: &mut World,
-    input_manager: &mut InputManager,
+    icon_manager: &mut IconManager,
     action: IconAction,
 ) -> Vec<IconAction> {
     let IconAction::DeleteEdge(edge_entity, shape_to_select_opt) = action else {
@@ -32,15 +30,11 @@ pub(crate) fn execute(
     let mut system_state: SystemState<(
         Commands,
         Client,
-        ResMut<Canvas>,
-        ResMut<IconManager>,
         Query<&IconEdge>,
     )> = SystemState::new(world);
     let (
         mut commands,
         mut client,
-        mut canvas,
-        mut icon_manager,
         edge_q,
     ) = system_state.get_mut(world);
 
@@ -90,18 +84,15 @@ pub(crate) fn execute(
     // cleanup mappings
     icon_manager.cleanup_deleted_edge(
         &mut commands,
-        &mut canvas,
-        input_manager,
         &edge_entity,
     );
 
-    input_manager.deselect_shape(&mut canvas);
+    icon_manager.deselect_shape();
 
     // select entities as needed
     if let Some((shape_to_select, shape_type)) = shape_to_select_opt {
         let entity_to_request = select_shape(
-            &mut canvas,
-            input_manager,
+            icon_manager,
             Some((shape_to_select, shape_type)),
         );
         entity_request_release(&mut commands, &mut client, entity_to_request, None);
