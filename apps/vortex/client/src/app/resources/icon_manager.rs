@@ -199,6 +199,8 @@ impl IconManager {
             camera_bundle.camera.target = RenderTarget::Image(canvas_texture_handle);
             camera_bundle.camera.is_active = false;
             camera_bundle.camera.order = 2;
+            camera_bundle.transform = Transform::from_xyz(0.0, 0.0, 1.0)
+                .looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::NEG_Y);
             self.camera_entity = commands
                 .spawn(camera_bundle)
                 .insert(self.render_layer)
@@ -271,9 +273,9 @@ impl IconManager {
     pub fn update_camera_viewport(
         &self,
         texture_size: Vec2,
-        camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>,
+        camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>
     ) {
-        let Ok((mut camera, mut transform, mut projection)) = camera_query.get_mut(self.camera_entity) else {
+        let Ok((mut camera, _, mut projection)) = camera_query.get_mut(self.camera_entity) else {
             return;
         };
         camera.viewport = Some(Viewport::new_at_origin(
@@ -281,10 +283,6 @@ impl IconManager {
             texture_size.y as u32,
         ));
 
-        let center = texture_size * 0.5;
-
-        *transform = Transform::from_xyz(center.x, center.y, 1.0)
-            .looking_at(Vec3::new(center.x, center.y, 0.0), Vec3::NEG_Y);
         *projection =
             Projection::Orthographic(OrthographicProjection::new(texture_size.y, 0.0, 10.0));
     }
