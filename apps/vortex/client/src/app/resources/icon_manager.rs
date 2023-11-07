@@ -116,28 +116,33 @@ impl IconManager {
             let mut system_state: SystemState<(
                 ResMut<RenderFrame>,
                 Res<TabManager>,
-                Query<(Entity, &OwnedByFileLocal), With<IconVertex>>,
+                Query<(Entity, &IconVertex, &OwnedByFileLocal)>,
                 Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>, Option<&RenderLayer>)>,
                 Query<&mut Transform>,
             )> = SystemState::new(world);
-            let (mut render_frame, tab_manager, vertex_q, object_q, mut transform_q) =
-                system_state.get_mut(world);
+            let (
+                mut render_frame,
+                tab_manager,
+                vertex_q,
+                object_q,
+                mut transform_q
+            ) = system_state.get_mut(world);
 
             // camera
             let camera_state = tab_manager.current_tab_camera_state().unwrap();
-            let Ok(mut transform) = transform_q.get_mut(self.camera_entity) else {
+            let Ok(mut camera_transform) = transform_q.get_mut(self.camera_entity) else {
                 return;
             };
-            transform.translation.x = 0.0 - camera_state.camera_3d_offset().x;
-            transform.translation.y = 0.0 - camera_state.camera_3d_offset().y;
-            transform.translation.z = 1.0;
+            camera_transform.translation.x = 0.0 - camera_state.camera_3d_offset().x;
+            camera_transform.translation.y = 0.0 - camera_state.camera_3d_offset().y;
+            camera_transform.translation.z = 1.0;
             let camera_scale = 1.0 / camera_state.camera_3d_scale();
-            transform.scale = Vec3::new(camera_scale, camera_scale, 1.0);
+            camera_transform.scale = Vec3::new(camera_scale, camera_scale, 1.0);
 
             let mut edge_entities = HashSet::new();
 
             // draw vertices, collect edges
-            for (vertex_entity, owned_by_file) in vertex_q.iter() {
+            for (vertex_entity, vertex, owned_by_file) in vertex_q.iter() {
                 if owned_by_file.file_entity != *current_file_entity {
                     continue;
                 }
@@ -149,9 +154,12 @@ impl IconManager {
 
                 let (mesh_handle, mat_handle, render_layer_opt) =
                     object_q.get(vertex_entity).unwrap();
-                let transform = transform_q.get(vertex_entity).unwrap();
+                let mut transform = transform_q.get_mut(vertex_entity).unwrap();
 
-                render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
+                transform.translation.x = vertex.x() as f32;
+                transform.translation.y = vertex.y() as f32;
+
+                render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, &transform);
 
                 for edge_entity in data.edges.iter() {
                     edge_entities.insert(*edge_entity);
@@ -175,12 +183,17 @@ impl IconManager {
                     let transform = transform_q.get(self.select_line_entity).unwrap();
                     render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
                 }
-                Some((_, CanvasShape::Vertex)) => {
+                Some((vertex_entity, CanvasShape::Vertex)) => {
+
+                    let vertex_translation = transform_q.get(vertex_entity).unwrap().translation;
+
                     // draw select circle
                     let (mesh_handle, mat_handle, render_layer_opt) =
                         object_q.get(self.select_circle_entity).unwrap();
-                    let transform = transform_q.get(self.select_circle_entity).unwrap();
-                    render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
+                    let mut transform = transform_q.get_mut(self.select_circle_entity).unwrap();
+                    transform.translation = vertex_translation;
+
+                    render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, &transform);
                 }
                 _ => {}
             }

@@ -314,7 +314,7 @@ impl IconInputManager {
         world: &mut World,
         icon_manager: &mut IconManager,
         vertex_entity: &Entity,
-        mouse_position: &Vec2,
+        screen_mouse_position: &Vec2,
     ) {
         // move vertex
 
@@ -323,8 +323,9 @@ impl IconInputManager {
             Client,
             ResMut<Canvas>,
             Query<&mut IconVertex>,
+            Query<&Transform>,
         )> = SystemState::new(world);
-        let (mut commands, client, mut canvas, mut vertex_q) =
+        let (mut commands, client, mut canvas, mut vertex_q, transform_q) =
             system_state.get_mut(world);
 
         // check status
@@ -335,12 +336,17 @@ impl IconInputManager {
             return;
         }
 
+        let Ok(camera_transform) = transform_q.get(icon_manager.camera_entity) else {
+            return;
+        };
+        let view_mouse_position = IconManager::screen_to_view(&canvas, camera_transform, screen_mouse_position);
+
         // set networked 3d vertex position
         let mut vertex = vertex_q.get_mut(*vertex_entity).unwrap();
 
-        icon_manager.update_last_vertex_dragged(*vertex_entity, vertex.as_vec2(), *mouse_position);
+        icon_manager.update_last_vertex_dragged(*vertex_entity, vertex.as_vec2(), view_mouse_position);
 
-        vertex.set_vec2(mouse_position);
+        vertex.set_vec2(&view_mouse_position);
 
         // redraw
         canvas.queue_resync_shapes();
