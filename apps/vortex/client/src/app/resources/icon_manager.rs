@@ -118,6 +118,7 @@ impl IconManager {
                 Res<TabManager>,
                 Res<Input>,
                 Query<(Entity, &IconVertex, &OwnedByFileLocal)>,
+                Query<&IconLocalFace>,
                 Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>, Option<&RenderLayer>)>,
                 Query<&mut Transform>,
             )> = SystemState::new(world);
@@ -127,6 +128,7 @@ impl IconManager {
                 tab_manager,
                 input,
                 vertex_q,
+                face_q,
                 object_q,
                 mut transform_q
             ) = system_state.get_mut(world);
@@ -144,6 +146,7 @@ impl IconManager {
             let camera_transform = *camera_transform;
 
             let mut edge_entities = HashSet::new();
+            let mut face_keys = HashSet::new();
 
             // draw vertices, collect edges
             for (vertex_entity, vertex, owned_by_file) in vertex_q.iter() {
@@ -167,6 +170,9 @@ impl IconManager {
 
                 for edge_entity in data.edges.iter() {
                     edge_entities.insert(*edge_entity);
+                }
+                for face_key in data.faces.iter() {
+                    face_keys.insert(*face_key);
                 }
             }
 
@@ -209,6 +215,51 @@ impl IconManager {
                 let (mesh_handle, mat_handle, render_layer_opt) =
                     object_q.get(*edge_entity).unwrap();
                 render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, &edge_transform);
+            }
+
+            // draw local faces
+            for face_key in face_keys.iter() {
+                let face_entity = self.local_face_entity_from_face_key(face_key).unwrap();
+
+                let Ok(face_icon) = face_q.get(face_entity) else {
+                    warn!("Face entity {:?} has no face icon", face_entity);
+                    continue;
+                };
+
+                let Ok(vertex_a_transform) = transform_q.get(face_icon.vertex_a()) else {
+                    warn!("Face entity {:?}'s vertex_a has no transform", face_entity);
+                    continue;
+                };
+                let Ok(vertex_b_transform) = transform_q.get(face_icon.vertex_b()) else {
+                    warn!("Face entity {:?}'s vertex_b has no transform", face_entity);
+                    continue;
+                };
+                let Ok(vertex_c_transform) = transform_q.get(face_icon.vertex_c()) else {
+                    warn!("Face entity {:?}'s vertex_c has no transform", face_entity);
+                    continue;
+                };
+
+                let center_translation = Vec3::new(
+                    (vertex_a_transform.translation.x
+                        + vertex_b_transform.translation.x
+                        + vertex_c_transform.translation.x)
+                        / 3.0,
+                    (vertex_a_transform.translation.y
+                        + vertex_b_transform.translation.y
+                        + vertex_c_transform.translation.y)
+                        / 3.0,
+                    (vertex_a_transform.translation.z
+                        + vertex_b_transform.translation.z
+                        + vertex_c_transform.translation.z)
+                        / 3.0,
+                );
+
+                let (mesh_handle, mat_handle, render_layer_opt) =
+                    object_q.get(face_entity).unwrap();
+                let mut face_transform = transform_q.get_mut(face_entity).unwrap();
+                face_transform.translation = center_translation;
+
+                render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, &face_transform);
             }
 
             // draw select line & circle
@@ -1106,8 +1157,8 @@ impl IconManager {
         self.face_keys.insert(
             *face_key,
             Some(IconFaceData::new(
-                new_entity,
                 file_entity,
+                new_entity,
                 edge_entities[0],
                 edge_entities[1],
                 edge_entities[2],
@@ -1117,6 +1168,7 @@ impl IconManager {
 
         new_entity
     }
+
 
     pub fn create_networked_face_from_world(
         &mut self,
