@@ -1,7 +1,7 @@
 use bevy_ecs::{
     entity::Entity,
     query::With,
-    system::{ResMut, Commands, Query, SystemState},
+    system::{Commands, Query, ResMut, SystemState},
     world::{Mut, World},
 };
 use bevy_log::{info, warn};
@@ -10,17 +10,22 @@ use naia_bevy_client::{Client, CommandsExt};
 
 use input::{InputAction, Key, MouseButton};
 use math::Vec2;
-use render_api::{components::Transform, shapes::{distance_to_2d_line, get_2d_line_transform_endpoint}};
+use render_api::{
+    components::Transform,
+    shapes::{distance_to_2d_line, get_2d_line_transform_endpoint},
+};
 
 use vortex_proto::components::IconVertex;
 
 use crate::app::{
-    components::{OwnedByFileLocal, IconVertexActionData, Edge2dLocal, FaceIcon2d, IconEdgeLocal, IconLocalFace, Vertex2d},
+    components::{
+        Edge2dLocal, FaceIcon2d, IconEdgeLocal, IconLocalFace, IconVertexActionData,
+        OwnedByFileLocal, Vertex2d,
+    },
     resources::{
-        action::icon::IconAction, canvas::Canvas,
-        input::InputManager, shape_data::CanvasShape,
-        tab_manager::TabManager, icon_manager::IconManager,
-        camera_manager::CameraManager,
+        action::icon::IconAction, camera_manager::CameraManager, canvas::Canvas,
+        icon_manager::IconManager, input::InputManager, shape_data::CanvasShape,
+        tab_manager::TabManager,
     },
 };
 
@@ -50,16 +55,15 @@ impl IconInputManager {
                     icon_manager.reset_last_dragged_vertex(world)
                 }
                 InputAction::KeyPress(key) => match key {
-                    Key::S
-                    | Key::W => {
+                    Key::S | Key::W => {
                         icon_manager.handle_keypress_camera_controls(key);
-                    },
+                    }
                     Key::Delete => {
                         Self::handle_delete_key_press(world, icon_manager);
-                    },
+                    }
                     Key::Insert => {
                         Self::handle_insert_key_press(world, icon_manager);
-                    },
+                    }
                     _ => {}
                 },
                 _ => {}
@@ -90,10 +94,9 @@ impl IconInputManager {
                 icon_manager.handle_delete_vertex_action(world, &vertex_entity)
             }
             Some((edge_entity, CanvasShape::Edge)) => {
-                let mut system_state: SystemState<(Commands, Client)> =
-                    SystemState::new(world);
+                let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
                 let (mut commands, mut client) = system_state.get_mut(world);
-                
+
                 // check whether we can delete edge
                 let auth_status = commands.entity(edge_entity).authority(&client).unwrap();
                 if !auth_status.is_granted() && !auth_status.is_available() {
@@ -106,9 +109,7 @@ impl IconInputManager {
                 let auth_status = commands.entity(edge_entity).authority(&client).unwrap();
                 if !auth_status.is_granted() {
                     // request authority if needed
-                    commands
-                        .entity(edge_entity)
-                        .request_authority(&mut client);
+                    commands.entity(edge_entity).request_authority(&mut client);
                 }
 
                 world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
@@ -122,18 +123,22 @@ impl IconInputManager {
                 icon_manager.selected_shape = None;
             }
             Some((local_face_entity, CanvasShape::Face)) => {
-                let mut system_state: SystemState<(Commands, Client)> =
-                    SystemState::new(world);
+                let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
                 let (mut commands, mut client) = system_state.get_mut(world);
 
-                let net_face_entity = icon_manager.face_entity_local_to_net(&local_face_entity).unwrap();
+                let net_face_entity = icon_manager
+                    .face_entity_local_to_net(&local_face_entity)
+                    .unwrap();
 
                 // check whether we can delete edge
                 let auth_status = commands.entity(net_face_entity).authority(&client).unwrap();
                 if !auth_status.is_granted() && !auth_status.is_available() {
                     // do nothing, face is not available
                     // TODO: queue for deletion? check before this?
-                    warn!("Face `{:?}` is not available for deletion!", net_face_entity);
+                    warn!(
+                        "Face `{:?}` is not available for deletion!",
+                        net_face_entity
+                    );
                     return;
                 }
 
@@ -237,7 +242,6 @@ impl IconInputManager {
     }
 
     fn link_vertices(world: &mut World, icon_manager: &mut IconManager) {
-
         // link vertices together
         let (vertex_entity_a, _) = icon_manager.selected_shape.unwrap();
         let (vertex_entity_b, _) = icon_manager.hovered_entity.unwrap();
@@ -309,19 +313,11 @@ impl IconInputManager {
             ResMut<Canvas>,
             Query<&mut IconVertex>,
         )> = SystemState::new(world);
-        let (
-            mut commands,
-            client,
-            mut icon_manager,
-            mut canvas,
-            mut vertex_q,
-        ) = system_state.get_mut(world);
+        let (mut commands, client, mut icon_manager, mut canvas, mut vertex_q) =
+            system_state.get_mut(world);
 
         // check status
-        let auth_status = commands
-            .entity(*vertex_entity)
-            .authority(&client)
-            .unwrap();
+        let auth_status = commands.entity(*vertex_entity).authority(&client).unwrap();
         if !(auth_status.is_requested() || auth_status.is_granted()) {
             // only continue to mutate if requested or granted authority over vertex
             info!("No authority over vertex, skipping..");
@@ -331,11 +327,7 @@ impl IconInputManager {
         // set networked 3d vertex position
         let mut vertex = vertex_q.get_mut(*vertex_entity).unwrap();
 
-        icon_manager.update_last_vertex_dragged(
-            *vertex_entity,
-            vertex.as_vec2(),
-            *mouse_position,
-        );
+        icon_manager.update_last_vertex_dragged(*vertex_entity, vertex.as_vec2(), *mouse_position);
 
         vertex.set_vec2(mouse_position);
 
@@ -368,12 +360,7 @@ impl IconInputManager {
             Query<(Entity, &OwnedByFileLocal), With<IconEdgeLocal>>,
             Query<(Entity, &OwnedByFileLocal), With<IconLocalFace>>,
         )> = SystemState::new(world);
-        let (
-            transform_q,
-            vertex_q,
-            edge_q,
-            face_q
-        ) = system_state.get_mut(world);
+        let (transform_q, vertex_q, edge_q, face_q) = system_state.get_mut(world);
 
         let mut least_distance = f32::MAX;
         let mut least_entity = None;
@@ -496,7 +483,6 @@ impl IconInputManager {
         least_entity: &mut Option<(Entity, CanvasShape)>,
         edge_entity: &Entity,
     ) {
-
         let edge_transform = transform_q.get(*edge_entity).unwrap();
         let edge_start = edge_transform.translation.truncate();
         let edge_end = get_2d_line_transform_endpoint(&edge_transform);

@@ -11,7 +11,10 @@ use naia_bevy_client::{
     Client,
 };
 
-use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency, FileSystemEntry, NetTransform, OwnedByFile, PaletteColor, Vertex3d};
+use vortex_proto::components::{
+    AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency,
+    FileSystemEntry, NetTransform, OwnedByFile, PaletteColor, Vertex3d,
+};
 
 use crate::app::{
     components::OwnedByFileLocal,
@@ -297,10 +300,7 @@ fn process_entity_auth_status(
             entity, status
         );
         let owned_by_component = owned_by_file_opt.unwrap();
-        let owning_file_entity = owned_by_component
-            .file_entity
-            .get(client)
-            .unwrap();
+        let owning_file_entity = owned_by_component.file_entity.get(client).unwrap();
         if let Some(tab_state) = tab_manager.tab_state_mut(&owning_file_entity) {
             tab_state.action_stack.entity_update_auth_status(&entity);
         } else {

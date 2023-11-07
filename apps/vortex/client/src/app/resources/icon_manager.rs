@@ -4,39 +4,47 @@ use bevy_ecs::{
     entity::Entity,
     query::With,
     system::{Commands, Query, Res, ResMut, Resource, SystemState},
-    world::{World, Mut},
+    world::{Mut, World},
 };
 use bevy_log::{info, warn};
 
-use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 use input::Key;
+use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
 use math::{Vec2, Vec3};
 
-use render_api::{base::{CpuTexture2D, Color, CpuMaterial, CpuMesh}, components::{AmbientLight, Camera, CameraBundle, OrthographicProjection, Projection, RenderLayers, RenderTarget, Viewport, RenderObjectBundle, RenderLayer, Transform}, resources::RenderFrame, Handle, Assets, shapes::{HollowTriangle, Triangle}};
+use render_api::{
+    base::{Color, CpuMaterial, CpuMesh, CpuTexture2D},
+    components::{
+        AmbientLight, Camera, CameraBundle, OrthographicProjection, Projection, RenderLayer,
+        RenderLayers, RenderObjectBundle, RenderTarget, Transform, Viewport,
+    },
+    resources::RenderFrame,
+    shapes::{HollowTriangle, Triangle},
+    Assets, Handle,
+};
 
-use vortex_proto::components::{IconEdge, OwnedByFile, IconVertex, IconFace};
+use vortex_proto::components::{IconEdge, IconFace, IconVertex, OwnedByFile};
 
 use crate::app::{
     components::{
-        IconEdgeLocal,
-        OwnedByFileLocal,
-        Edge2dLocal, Vertex2d,
-        Face3dLocal, FaceIcon2d, IconLocalFace, DefaultDraw, SelectCircle, SelectLine, SelectTriangle,
+        DefaultDraw, Edge2dLocal, Face3dLocal, FaceIcon2d, IconEdgeLocal, IconLocalFace,
+        OwnedByFileLocal, SelectCircle, SelectLine, SelectTriangle, Vertex2d,
     },
     resources::{
-        canvas::Canvas,
-        input::IconInputManager,
         action::icon::IconAction,
+        canvas::Canvas,
+        icon_data::IconEdgeData,
         icon_data::{IconFaceData, IconFaceKey, IconVertexData},
-        shape_data::CanvasShape, tab_manager::TabManager, icon_data::IconEdgeData
+        input::IconInputManager,
+        shape_data::CanvasShape,
+        tab_manager::TabManager,
     },
-    shapes::create_2d_edge_line
+    shapes::create_2d_edge_line,
 };
 
 #[derive(Resource)]
 pub struct IconManager {
-
     wireframe: bool,
     camera_entity: Entity,
     render_layer: RenderLayer,
@@ -103,7 +111,6 @@ impl Default for IconManager {
 }
 
 impl IconManager {
-
     pub fn draw(&self, world: &mut World, current_file_entity: &Entity) {
         {
             let mut system_state: SystemState<(
@@ -113,13 +120,8 @@ impl IconManager {
                 Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>, Option<&RenderLayer>)>,
                 Query<&mut Transform>,
             )> = SystemState::new(world);
-            let (
-                mut render_frame,
-                tab_manager,
-                vertex_q,
-                object_q,
-                mut transform_q,
-            ) = system_state.get_mut(world);
+            let (mut render_frame, tab_manager, vertex_q, object_q, mut transform_q) =
+                system_state.get_mut(world);
 
             // camera
             let camera_state = tab_manager.current_tab_camera_state().unwrap();
@@ -130,7 +132,6 @@ impl IconManager {
             transform.translation.y = 0.0 - camera_state.camera_3d_offset().y;
             transform.translation.z = 1.0;
             let camera_scale = 1.0 / camera_state.camera_3d_scale();
-            //info!("3d: {}, Icon: {}", camera_state.camera_3d_scale(), camera_scale);
             transform.scale = Vec3::new(camera_scale, camera_scale, 1.0);
 
             let mut edge_entities = HashSet::new();
@@ -141,16 +142,13 @@ impl IconManager {
                     continue;
                 }
 
-                // draw vertex 2d
+                // draw vertex
                 let Some(data) = self.get_vertex_data(&vertex_entity) else {
                     continue;
                 };
 
-                let (
-                    mesh_handle,
-                    mat_handle,
-                    render_layer_opt
-                ) = object_q.get(vertex_entity).unwrap();
+                let (mesh_handle, mat_handle, render_layer_opt) =
+                    object_q.get(vertex_entity).unwrap();
                 let transform = transform_q.get(vertex_entity).unwrap();
 
                 render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
@@ -169,36 +167,20 @@ impl IconManager {
             }
 
             // draw select line & circle
-            match self.selected_shape_2d() {
+            match self.selected_shape() {
                 Some((_, CanvasShape::Edge)) => {
                     // draw select line
-                    let (
-                        mesh_handle,
-                        mat_handle,
-                        render_layer_opt
-                    ) = object_q.get(self.select_line_entity).unwrap();
+                    let (mesh_handle, mat_handle, render_layer_opt) =
+                        object_q.get(self.select_line_entity).unwrap();
                     let transform = transform_q.get(self.select_line_entity).unwrap();
-                    render_frame.draw_object(
-                        render_layer_opt,
-                        mesh_handle,
-                        &mat_handle,
-                        transform,
-                    );
+                    render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
                 }
                 Some((_, CanvasShape::Vertex)) => {
                     // draw select circle
-                    let (
-                        mesh_handle,
-                        mat_handle,
-                        render_layer_opt
-                    ) = object_q.get(self.select_circle_entity).unwrap();
+                    let (mesh_handle, mat_handle, render_layer_opt) =
+                        object_q.get(self.select_circle_entity).unwrap();
                     let transform = transform_q.get(self.select_circle_entity).unwrap();
-                    render_frame.draw_object(
-                        render_layer_opt,
-                        mesh_handle,
-                        &mat_handle,
-                        transform,
-                    );
+                    render_frame.draw_object(render_layer_opt, mesh_handle, &mat_handle, transform);
                 }
                 _ => {}
             }
@@ -234,10 +216,7 @@ impl IconManager {
             camera_bundle.camera.order = 2;
             camera_bundle.transform = Transform::from_xyz(0.0, 0.0, 1.0)
                 .looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::NEG_Y);
-            self.camera_entity = commands
-                .spawn(camera_bundle)
-                .insert(self.render_layer)
-                .id();
+            self.camera_entity = commands.spawn(camera_bundle).insert(self.render_layer).id();
         }
 
         // select circle
@@ -306,7 +285,7 @@ impl IconManager {
     pub fn update_camera_viewport(
         &self,
         texture_size: Vec2,
-        camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>
+        camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>,
     ) {
         let Ok((mut camera, _, mut projection)) = camera_query.get_mut(self.camera_entity) else {
             return;
@@ -367,14 +346,9 @@ impl IconManager {
         }
         self.resync_hover = false;
 
-        let mut system_state: SystemState<(
-            Res<Canvas>,
-            Query<&mut Transform>,
-        )> = SystemState::new(world);
-        let (
-            canvas,
-            mut transform_q,
-        ) = system_state.get_mut(world);
+        let mut system_state: SystemState<(Res<Canvas>, Query<&mut Transform>)> =
+            SystemState::new(world);
+        let (canvas, mut transform_q) = system_state.get_mut(world);
 
         // get canvas size
         let canvas_size = canvas.texture_size();
@@ -384,8 +358,14 @@ impl IconManager {
             return;
         };
 
-        let vx = (((screen_mouse_position.x / canvas_size.x) - 0.5) * camera_transform.scale.x * canvas_size.x) + camera_transform.translation.x;
-        let vy = (((screen_mouse_position.y / canvas_size.y) - 0.5) * camera_transform.scale.y * canvas_size.y) + camera_transform.translation.y;
+        let vx = (((screen_mouse_position.x / canvas_size.x) - 0.5)
+            * camera_transform.scale.x
+            * canvas_size.x)
+            + camera_transform.translation.x;
+        let vy = (((screen_mouse_position.y / canvas_size.y) - 0.5)
+            * camera_transform.scale.y
+            * canvas_size.y)
+            + camera_transform.translation.y;
 
         // sync to hover
         IconInputManager::sync_mouse_hover_ui(world, current_file_entity, &Vec2::new(vx, vy));
@@ -402,7 +382,7 @@ impl IconManager {
         self.selected_shape = None;
     }
 
-    pub fn selected_shape_2d(&self) -> Option<(Entity, CanvasShape)> {
+    pub fn selected_shape(&self) -> Option<(Entity, CanvasShape)> {
         self.selected_shape
     }
 
@@ -413,31 +393,21 @@ impl IconManager {
         world: &mut World,
         vertex_entity: &Entity,
     ) {
-        let mut system_state: SystemState<(Commands, Client)> =
-            SystemState::new(world);
+        let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
         let (mut commands, mut client) = system_state.get_mut(world);
 
         // delete vertex
 
         // check whether we can delete vertex
-        let auth_status = commands
-            .entity(*vertex_entity)
-            .authority(&client)
-            .unwrap();
+        let auth_status = commands.entity(*vertex_entity).authority(&client).unwrap();
         if !auth_status.is_granted() && !auth_status.is_available() {
             // do nothing, vertex is not available
             // TODO: queue for deletion? check before this?
-            warn!(
-                "Vertex {:?} is not available for deletion!",
-                vertex_entity
-            );
+            warn!("Vertex {:?} is not available for deletion!", vertex_entity);
             return;
         }
 
-        let auth_status = commands
-            .entity(*vertex_entity)
-            .authority(&client)
-            .unwrap();
+        let auth_status = commands.entity(*vertex_entity).authority(&client).unwrap();
         if !auth_status.is_granted() {
             // request authority if needed
             commands
@@ -587,7 +557,6 @@ impl IconManager {
         ownership_opt: Option<Entity>,
         color: Color,
     ) {
-
         commands
             .entity(vertex_entity)
             .insert(RenderObjectBundle::circle(
@@ -607,17 +576,11 @@ impl IconManager {
                 .insert(OwnedByFileLocal::new(file_entity));
         }
 
-        self.register_vertex(vertex_entity, );
+        self.register_vertex(vertex_entity);
     }
 
-    pub fn register_vertex(
-        &mut self,
-        entity: Entity,
-    ) {
-        self.vertices.insert(
-            entity,
-            IconVertexData::new(),
-        );
+    pub fn register_vertex(&mut self, entity: Entity) {
+        self.vertices.insert(entity, IconVertexData::new());
     }
 
     pub fn on_vertex_moved(
@@ -667,10 +630,7 @@ impl IconManager {
         }
     }
 
-    pub fn cleanup_deleted_vertex(
-        &mut self,
-        vertex_entity: &Entity,
-    ) {
+    pub fn cleanup_deleted_vertex(&mut self, vertex_entity: &Entity) {
         // unregister vertex
         self.unregister_vertex(vertex_entity);
 
@@ -680,9 +640,7 @@ impl IconManager {
     }
 
     pub(crate) fn vertex_get_edges(&self, vertex_entity: &Entity) -> Option<&HashSet<Entity>> {
-        self.vertices
-            .get(vertex_entity)
-            .map(|data| &data.edges)
+        self.vertices.get(vertex_entity).map(|data| &data.edges)
     }
 
     pub(crate) fn vertex_add_edge(&mut self, vertex_entity: &Entity, edge_entity: Entity) {
@@ -692,11 +650,7 @@ impl IconManager {
         vertex_data.add_edge(edge_entity);
     }
 
-    pub(crate) fn vertex_remove_edge(
-        &mut self,
-        vertex_entity: &Entity,
-        edge_entity: &Entity,
-    ) {
+    pub(crate) fn vertex_remove_edge(&mut self, vertex_entity: &Entity, edge_entity: &Entity) {
         // at this point, vertex_entity may have already been deregistered
         if let Some(vertex_data) = self.vertices.get_mut(vertex_entity) {
             vertex_data.remove_edge(edge_entity);
@@ -704,9 +658,7 @@ impl IconManager {
     }
 
     pub(crate) fn vertex_get_faces(&self, vertex_entity: &Entity) -> Option<&HashSet<IconFaceKey>> {
-        self.vertices
-            .get(vertex_entity)
-            .map(|data| &data.faces)
+        self.vertices.get(vertex_entity).map(|data| &data.faces)
     }
 
     pub(crate) fn vertex_add_face(&mut self, vertex_entity: &Entity, face_key: IconFaceKey) {
@@ -731,10 +683,7 @@ impl IconManager {
         self.vertices.get(entity)
     }
 
-    pub(crate) fn get_connected_vertices(
-        &self,
-        vertex_entity: Entity,
-    ) -> HashSet<Entity> {
+    pub(crate) fn get_connected_vertices(&self, vertex_entity: Entity) -> HashSet<Entity> {
         let mut set = HashSet::new();
 
         let Some(vertex_data) = self.vertices.get(&vertex_entity) else {
@@ -768,12 +717,8 @@ impl IconManager {
     ) -> Entity {
         // create new edge
         let mut new_edge_component = IconEdge::new();
-        new_edge_component
-            .start
-            .set(client, &vertex_entity_a);
-        new_edge_component
-            .end
-            .set(client, &vertex_entity_b);
+        new_edge_component.start.set(client, &vertex_entity_a);
+        new_edge_component.end.set(client, &vertex_entity_b);
         let mut owned_by_file_component = OwnedByFile::new();
         owned_by_file_component
             .file_entity
@@ -836,12 +781,7 @@ impl IconManager {
         }
 
         // register edge
-        self.register_edge(
-            edge_entity,
-            vertex_entity_a,
-            vertex_entity_b,
-            ownership_opt,
-        );
+        self.register_edge(edge_entity, vertex_entity_a, vertex_entity_b, ownership_opt);
     }
 
     pub fn register_edge(
@@ -857,21 +797,14 @@ impl IconManager {
 
         self.edges.insert(
             edge_entity,
-            IconEdgeData::new(
-                vertex_entity_a,
-                vertex_entity_b,
-            ),
+            IconEdgeData::new(vertex_entity_a, vertex_entity_b),
         );
 
         let file_entity = ownership_opt.unwrap();
-        self.check_for_new_faces(
-            file_entity,
-            vertex_entity_a,
-            vertex_entity_b,
-        );
+        self.check_for_new_faces(file_entity, vertex_entity_a, vertex_entity_b);
     }
 
-    // returns (deleted edge entity 2d, Vec<(deleted face entity 2d, deleted face entity 3d)>
+    // returns (deleted edge entity, Vec<deleted face entity>
     pub fn cleanup_deleted_edge(
         &mut self,
         commands: &mut Commands,
@@ -889,12 +822,8 @@ impl IconManager {
                 .copied()
                 .collect();
             if !face_keys.is_empty() {
-
                 for face_key in face_keys {
-                    let local_face_entity = self.cleanup_deleted_face_key(
-                        commands,
-                        &face_key,
-                    );
+                    let local_face_entity = self.cleanup_deleted_face_key(commands, &face_key);
                     deleted_local_face_entities.push(local_face_entity);
                 }
             }
@@ -941,16 +870,10 @@ impl IconManager {
         (edge_data.vertex_entity_a, edge_data.vertex_entity_b)
     }
 
-    fn unregister_edge(
-        &mut self,
-        edge_entity: &Entity,
-    ) {
+    fn unregister_edge(&mut self, edge_entity: &Entity) {
         if let Some(edge_data) = self.edges.remove(edge_entity) {
             // remove edge from vertices
-            for vertex_entity in [
-                edge_data.vertex_entity_a,
-                edge_data.vertex_entity_b,
-            ] {
+            for vertex_entity in [edge_data.vertex_entity_a, edge_data.vertex_entity_b] {
                 self.vertex_remove_edge(&vertex_entity, edge_entity);
             }
         }
@@ -981,13 +904,7 @@ impl IconManager {
 
         let keys = std::mem::take(&mut self.new_face_keys);
         for (face_key, file_entity) in keys {
-            self.process_new_local_face(
-                commands,
-                meshes,
-                materials,
-                file_entity,
-                &face_key,
-            );
+            self.process_new_local_face(commands, meshes, materials, file_entity, &face_key);
         }
     }
 
@@ -1081,7 +998,11 @@ impl IconManager {
         new_entity
     }
 
-    pub fn create_networked_face_from_world(&mut self, world: &mut World, local_face_entity: Entity) {
+    pub fn create_networked_face_from_world(
+        &mut self,
+        world: &mut World,
+        local_face_entity: Entity,
+    ) {
         let Some(face_key) = self.face_key_from_local_entity(&local_face_entity) else {
             panic!(
                 "LocalFace entity: `{:?}` has no corresponding FaceKey",
@@ -1105,13 +1026,8 @@ impl IconManager {
             ResMut<Assets<CpuMaterial>>,
             Query<&Transform>,
         )> = SystemState::new(world);
-        let (
-            mut commands,
-            mut client,
-            mut meshes,
-            mut materials,
-            transform_q
-        ) = system_state.get_mut(world);
+        let (mut commands, mut client, mut meshes, mut materials, transform_q) =
+            system_state.get_mut(world);
 
         self.create_networked_face(
             &mut commands,
@@ -1120,11 +1036,7 @@ impl IconManager {
             &mut materials,
             &transform_q,
             &face_key,
-            [
-                face_data.edge_a,
-                face_data.edge_b,
-                face_data.edge_c,
-            ],
+            [face_data.edge_a, face_data.edge_b, face_data.edge_c],
             face_data.file_entity,
         );
 
@@ -1150,11 +1062,7 @@ impl IconManager {
             Entity::PLACEHOLDER,
         ];
 
-        for (index, vertex_entity) in [
-            face_key.vertex_a,
-            face_key.vertex_b,
-            face_key.vertex_c,
-        ]
+        for (index, vertex_entity) in [face_key.vertex_a, face_key.vertex_b, face_key.vertex_c]
             .iter()
             .enumerate()
         {
@@ -1171,15 +1079,9 @@ impl IconManager {
 
         // set up networked face component
         let mut face_component = IconFace::new();
-        face_component
-            .vertex_a
-            .set(client, &vertex_entities[0]);
-        face_component
-            .vertex_b
-            .set(client, &vertex_entities[1]);
-        face_component
-            .vertex_c
-            .set(client, &vertex_entities[2]);
+        face_component.vertex_a.set(client, &vertex_entities[0]);
+        face_component.vertex_b.set(client, &vertex_entities[1]);
+        face_component.vertex_c.set(client, &vertex_entities[2]);
         face_component.edge_a.set(client, &edge_entities[0]);
         face_component.edge_b.set(client, &edge_entities[1]);
         face_component.edge_c.set(client, &edge_entities[2]);
@@ -1335,30 +1237,19 @@ impl IconManager {
     }
 
     // returns local face entity
-    fn unregister_face_key(
-        &mut self,
-        face_key: &IconFaceKey,
-    ) -> Option<Entity> {
+    fn unregister_face_key(&mut self, face_key: &IconFaceKey) -> Option<Entity> {
         info!("unregistering face key: `{:?}`", face_key);
         if let Some(Some(face_data)) = self.face_keys.remove(&face_key) {
             let local_entity = face_data.local_entity;
             self.local_faces.remove(&local_entity);
 
             // remove face from vertices
-            for vertex_entity in [
-                face_key.vertex_a,
-                face_key.vertex_b,
-                face_key.vertex_c,
-            ] {
+            for vertex_entity in [face_key.vertex_a, face_key.vertex_b, face_key.vertex_c] {
                 self.vertex_remove_face(&vertex_entity, face_key);
             }
 
             // remove face from edges
-            for edge_entity in [
-                face_data.edge_a,
-                face_data.edge_b,
-                face_data.edge_c,
-            ] {
+            for edge_entity in [face_data.edge_a, face_data.edge_b, face_data.edge_c] {
                 self.edge_remove_face(&edge_entity, face_key);
             }
 

@@ -15,7 +15,12 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind, Face3d, FaceColor, FileDependency, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, IconEdge, IconFace, IconVertex, NetTransform, OwnedByFile, PaletteColor, ShapeName, SkinOrSceneEntity, Vertex3d, VertexRoot};
+use vortex_proto::components::{
+    AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d,
+    EdgeAngle, EntryKind, Face3d, FaceColor, FileDependency, FileExtension, FileSystemChild,
+    FileSystemEntry, FileSystemRootChild, FileType, IconEdge, IconFace, IconVertex, NetTransform,
+    OwnedByFile, PaletteColor, ShapeName, SkinOrSceneEntity, Vertex3d, VertexRoot,
+};
 
 use crate::app::{
     components::file_system::{
@@ -26,16 +31,16 @@ use crate::app::{
         animation_manager::AnimationManager,
         camera_manager::CameraManager,
         canvas::Canvas,
+        component_waitlist::{ComponentWaitlist, ComponentWaitlistInsert},
         edge_manager::EdgeManager,
         face_manager::FaceManager,
         file_manager::{get_full_path, FileManager},
+        icon_manager::IconManager,
         model_manager::ModelManager,
         palette_manager::PaletteManager,
-        component_waitlist::{ComponentWaitlist, ComponentWaitlistInsert},
         skin_manager::SkinManager,
         tab_manager::TabManager,
         vertex_manager::VertexManager,
-        icon_manager::IconManager,
     },
     systems::file_post_process,
 };
@@ -373,7 +378,7 @@ pub fn insert_edge_events(
             &mut canvas,
             &mut Some(&mut vertex_manager),
             &mut Some(&mut edge_manager),
-                      &mut Some(&mut face_manager),
+            &mut Some(&mut face_manager),
             &mut None,
             &mut None,
             Some(&vertex_3d_q),
@@ -468,7 +473,7 @@ pub fn insert_face_events(
             &mut canvas,
             &mut Some(&mut vertex_manager),
             &mut Some(&mut edge_manager),
-                      &mut Some(&mut face_manager),
+            &mut Some(&mut face_manager),
             &mut None,
             &mut None,
             Some(&vertex_3d_q),
@@ -546,7 +551,6 @@ pub fn insert_icon_events(
 
     // on Edge Insert Event
     for event in edge_events.iter() {
-
         let edge_entity = event.entity;
 
         info!("entity: {:?} - inserted IconEdge", edge_entity);
@@ -908,10 +912,7 @@ pub fn insert_model_events(
     for event in transform_events.iter() {
         let entity = event.entity;
 
-        info!(
-            "entity: {:?} - inserted NetTransform",
-            entity
-        );
+        info!("entity: {:?} - inserted NetTransform", entity);
 
         component_waitlist.process_insert(
             &mut commands,

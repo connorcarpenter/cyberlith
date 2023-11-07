@@ -12,16 +12,14 @@ use render_api::{
     Assets,
 };
 
-use crate::app::{
-    resources::{
-        icon_data::IconFaceKey,
-        action::{
-            icon::{select_shape::deselect_selected_shape, IconAction},
-            ActionStack,
-        },
-        shape_data::CanvasShape,
-        icon_manager::IconManager,
+use crate::app::resources::{
+    action::{
+        icon::{select_shape::deselect_selected_shape, IconAction},
+        ActionStack,
     },
+    icon_data::IconFaceKey,
+    icon_manager::IconManager,
+    shape_data::CanvasShape,
 };
 
 pub(crate) fn execute(
@@ -61,17 +59,10 @@ pub(crate) fn execute(
             ResMut<Assets<CpuMesh>>,
             ResMut<Assets<CpuMaterial>>,
         )> = SystemState::new(world);
-        let (
-            mut commands,
-            mut client,
-            mut meshes,
-            mut materials,
-        ) = system_state.get_mut(world);
+        let (mut commands, mut client, mut meshes, mut materials) = system_state.get_mut(world);
 
         // deselect all selected vertices
-        let deselected_shape_entity = deselect_selected_shape(
-            icon_manager,
-        );
+        let deselected_shape_entity = deselect_selected_shape(icon_manager);
         deselected_shape_entity_store = deselected_shape_entity;
         if let Some((entity, _)) = deselected_shape_entity {
             let mut entity_mut = commands.entity(entity);
@@ -105,10 +96,7 @@ pub(crate) fn execute(
         }
 
         // select vertex
-        icon_manager.select_shape(
-            &shape_entity_to_select,
-            shape_type_to_select,
-        );
+        icon_manager.select_shape(&shape_entity_to_select, shape_type_to_select);
         selected_shape = shape_entity_to_select;
 
         system_state.apply(world);
@@ -140,18 +128,14 @@ pub(crate) fn execute(
                 ResMut<Assets<CpuMaterial>>,
                 Query<&Transform>,
             )> = SystemState::new(world);
-            let (
-                mut commands,
-                mut client,
-                mut meshes,
-                mut materials,
-                transform_q,
-            ) = system_state.get_mut(world);
+            let (mut commands, mut client, mut meshes, mut materials, transform_q) =
+                system_state.get_mut(world);
 
             for (vertex_of_face_to_create, old_local_face_entity, create_net_face) in
-            vertex_entities
+                vertex_entities
             {
-                let face_key = IconFaceKey::new(vertex_entity_a, vertex_entity_b, vertex_of_face_to_create);
+                let face_key =
+                    IconFaceKey::new(vertex_entity_a, vertex_entity_b, vertex_of_face_to_create);
 
                 icon_manager.remove_new_face_key(&face_key);
                 let new_face_entity = icon_manager.process_new_local_face(
@@ -170,11 +154,7 @@ pub(crate) fn execute(
                         &mut materials,
                         &transform_q,
                         &face_key,
-                        [
-                            edge_entities[0],
-                            edge_entities[1],
-                            edge_entities[2],
-                        ],
+                        [edge_entities[0], edge_entities[1], edge_entities[2]],
                         tab_file_entity,
                     );
                 }

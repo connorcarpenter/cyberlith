@@ -1,5 +1,4 @@
-
-use bevy_ecs::{entity::Entity, component::Component};
+use bevy_ecs::{component::Component, entity::Entity};
 
 // IconVertexData
 #[derive(Clone)]
@@ -9,10 +8,9 @@ pub struct IconVertexActionData {
 }
 
 impl IconVertexActionData {
-
     pub fn new(
         connected_vertices: Vec<(Entity, Option<Entity>)>,
-        face_data: Vec<(Entity, Entity, Entity, bool)>
+        face_data: Vec<(Entity, Entity, Entity, bool)>,
     ) -> Self {
         Self {
             connected_vertices,
@@ -20,11 +18,7 @@ impl IconVertexActionData {
         }
     }
 
-    pub fn migrate_vertex_entities(
-        &mut self,
-        old_entity: Entity,
-        new_entity: Entity,
-    ) {
+    pub fn migrate_vertex_entities(&mut self, old_entity: Entity, new_entity: Entity) {
         for (connected_vertex, _) in &mut self.connected_vertices {
             if *connected_vertex == old_entity {
                 *connected_vertex = new_entity;
@@ -83,7 +77,6 @@ pub struct IconLocalFace {
 }
 
 impl IconLocalFace {
-
     pub fn new(vertex_a: Entity, vertex_b: Entity, vertex_c: Entity) -> Self {
         Self {
             vertex_a,

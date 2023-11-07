@@ -1,9 +1,6 @@
 use bevy_ecs::component::Component;
 
-use naia_bevy_shared::{
-    EntityProperty, Property, Protocol, ProtocolPlugin, Replicate,
-    Serde,
-};
+use naia_bevy_shared::{EntityProperty, Property, Protocol, ProtocolPlugin, Replicate, Serde};
 
 pub struct OwnershipComponentsPlugin;
 

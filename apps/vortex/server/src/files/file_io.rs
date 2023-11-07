@@ -16,11 +16,13 @@ use vortex_proto::{
 
 use crate::{
     files::{
-        AnimReader, AnimWriter, MeshReader, MeshWriter, ModelReader, ModelWriter, PaletteReader,
-        PaletteWriter, SceneReader, SceneWriter, SkelReader, SkelWriter, SkinReader, SkinWriter, IconReader, IconWriter
+        AnimReader, AnimWriter, IconReader, IconWriter, MeshReader, MeshWriter, ModelReader,
+        ModelWriter, PaletteReader, PaletteWriter, SceneReader, SceneWriter, SkelReader,
+        SkelWriter, SkinReader, SkinWriter,
     },
     resources::{
-        IconManager, AnimationManager, ContentEntityData, PaletteManager, Project, ShapeManager, SkinManager,
+        AnimationManager, ContentEntityData, IconManager, PaletteManager, Project, ShapeManager,
+        SkinManager,
     },
 };
 
@@ -239,32 +241,28 @@ pub fn despawn_file_content_entities(
             .despawn();
 
         match entity_data {
-            ContentEntityData::Shape(shape_type) => {
-                match shape_type {
-                    ShapeType::Vertex => {
-                        shape_manager.deregister_vertex(entity);
-                    }
-                    ShapeType::Edge => {
-                        shape_manager.deregister_edge(entity);
-                    }
-                    ShapeType::Face => {
-                        shape_manager.deregister_face(entity);
-                    }
+            ContentEntityData::Shape(shape_type) => match shape_type {
+                ShapeType::Vertex => {
+                    shape_manager.deregister_vertex(entity);
                 }
-            }
-            ContentEntityData::IconShape(shape_type) => {
-                match shape_type {
-                    ShapeType::Vertex => {
-                        icon_manager.deregister_vertex(entity);
-                    }
-                    ShapeType::Edge => {
-                        icon_manager.deregister_edge(entity);
-                    }
-                    ShapeType::Face => {
-                        icon_manager.deregister_face(entity);
-                    }
+                ShapeType::Edge => {
+                    shape_manager.deregister_edge(entity);
                 }
-            }
+                ShapeType::Face => {
+                    shape_manager.deregister_face(entity);
+                }
+            },
+            ContentEntityData::IconShape(shape_type) => match shape_type {
+                ShapeType::Vertex => {
+                    icon_manager.deregister_vertex(entity);
+                }
+                ShapeType::Edge => {
+                    icon_manager.deregister_edge(entity);
+                }
+                ShapeType::Face => {
+                    icon_manager.deregister_face(entity);
+                }
+            },
             ContentEntityData::Dependency(dependency_key) => {
                 project.file_remove_dependency(&file_key, &dependency_key);
             }

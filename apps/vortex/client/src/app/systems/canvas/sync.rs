@@ -29,11 +29,12 @@ use crate::app::{
         face_manager::FaceManager,
         file_manager::FileManager,
         grid::Grid,
+        icon_manager::IconManager,
         input::InputManager,
         model_manager::ModelManager,
         palette_manager::PaletteManager,
         tab_manager::TabManager,
-        vertex_manager::VertexManager, icon_manager::IconManager,
+        vertex_manager::VertexManager,
     },
 };
 
@@ -523,11 +524,7 @@ pub fn process_faces(
         &mut meshes,
         &mut materials,
     );
-    icon_manager.process_new_local_faces(
-        &mut commands,
-        &mut meshes,
-        &mut materials,
-    );
+    icon_manager.process_new_local_faces(&mut commands, &mut meshes, &mut materials);
 }
 
 pub fn update_select_line(

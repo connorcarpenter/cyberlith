@@ -39,10 +39,7 @@ pub struct IconEdgeData {
 }
 
 impl IconEdgeData {
-    pub fn new(
-        vertex_entity_a: Entity,
-        vertex_entity_b: Entity,
-    ) -> Self {
+    pub fn new(vertex_entity_a: Entity, vertex_entity_b: Entity) -> Self {
         Self {
             vertex_entity_a,
             vertex_entity_b,
@@ -73,7 +70,6 @@ impl IconFaceKey {
 }
 
 pub struct IconFaceData {
-
     pub(crate) file_entity: Entity,
 
     pub(crate) local_entity: Entity,

@@ -7,13 +7,13 @@ use vortex_proto::components::FileExtension;
 
 use crate::app::resources::{
     action::{
-        animation::AnimAction, model::ModelAction, palette::PaletteAction,
-        shape::ShapeAction, skin::SkinAction, ActionStack, icon::IconAction,
+        animation::AnimAction, icon::IconAction, model::ModelAction, palette::PaletteAction,
+        shape::ShapeAction, skin::SkinAction, ActionStack,
     },
+    icon_manager::IconManager,
     input::InputManager,
     palette_manager::PaletteManager,
 };
-use crate::app::resources::icon_manager::IconManager;
 
 pub enum TabActionStack {
     Shape(ActionStack<ShapeAction>),
@@ -218,10 +218,14 @@ impl TabActionStack {
             Self::Icon(action_stack) => {
                 let action = action_stack.pop_undo();
                 world.resource_scope(|world, mut icon_manager: Mut<IconManager>| {
-                    let reversed_actions = action_stack.execute_action(world, &mut icon_manager, tab_file_entity, action);
+                    let reversed_actions = action_stack.execute_action(
+                        world,
+                        &mut icon_manager,
+                        tab_file_entity,
+                        action,
+                    );
                     action_stack.post_execute_undo(world, reversed_actions);
                 });
-
             }
         };
     }
@@ -268,8 +272,12 @@ impl TabActionStack {
             Self::Icon(action_stack) => {
                 let action = action_stack.pop_redo();
                 world.resource_scope(|world, mut icon_manager: Mut<IconManager>| {
-                    let reversed_actions =
-                        action_stack.execute_action(world, &mut icon_manager, tab_file_entity, action);
+                    let reversed_actions = action_stack.execute_action(
+                        world,
+                        &mut icon_manager,
+                        tab_file_entity,
+                        action,
+                    );
                     action_stack.post_execute_redo(world, reversed_actions);
                 });
             }

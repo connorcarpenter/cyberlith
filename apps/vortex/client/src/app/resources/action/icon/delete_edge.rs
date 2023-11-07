@@ -1,6 +1,6 @@
 use bevy_ecs::{
     prelude::{Commands, Query, World},
-    system::{SystemState},
+    system::SystemState,
 };
 use bevy_log::info;
 
@@ -27,16 +27,9 @@ pub(crate) fn execute(
     };
 
     info!("DeleteEdge(edge_entity: `{:?}`)", edge_entity);
-    let mut system_state: SystemState<(
-        Commands,
-        Client,
-        Query<&IconEdge>,
-    )> = SystemState::new(world);
-    let (
-        mut commands,
-        mut client,
-        edge_q,
-    ) = system_state.get_mut(world);
+    let mut system_state: SystemState<(Commands, Client, Query<&IconEdge>)> =
+        SystemState::new(world);
+    let (mut commands, mut client, edge_q) = system_state.get_mut(world);
 
     let edge = edge_q.get(edge_entity).unwrap();
     let vertex_start = edge.start.get(&client).unwrap();
@@ -57,11 +50,7 @@ pub(crate) fn execute(
                 .net_face_entity_from_face_key(&face_key)
                 .is_some();
 
-            let mut vertices = vec![
-                face_key.vertex_a,
-                face_key.vertex_b,
-                face_key.vertex_c,
-            ];
+            let mut vertices = vec![face_key.vertex_a, face_key.vertex_b, face_key.vertex_c];
             vertices.retain(|vertex| *vertex != vertex_start && *vertex != vertex_end);
             if vertices.len() != 1 {
                 panic!("expected 1 vertices, got {}!", vertices.len());
@@ -82,19 +71,13 @@ pub(crate) fn execute(
     };
 
     // cleanup mappings
-    icon_manager.cleanup_deleted_edge(
-        &mut commands,
-        &edge_entity,
-    );
+    icon_manager.cleanup_deleted_edge(&mut commands, &edge_entity);
 
     icon_manager.deselect_shape();
 
     // select entities as needed
     if let Some((shape_to_select, shape_type)) = shape_to_select_opt {
-        let entity_to_request = select_shape(
-            icon_manager,
-            Some((shape_to_select, shape_type)),
-        );
+        let entity_to_request = select_shape(icon_manager, Some((shape_to_select, shape_type)));
         entity_request_release(&mut commands, &mut client, entity_to_request, None);
     }
 

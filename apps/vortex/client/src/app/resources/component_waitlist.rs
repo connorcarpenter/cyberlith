@@ -14,15 +14,16 @@ use render_api::{
 };
 
 use vortex_proto::{
-    components::{IconVertex, NetTransformEntityType, FileExtension, Vertex3d},
+    components::{FileExtension, IconVertex, NetTransformEntityType, Vertex3d},
     resources::DependencyMap,
 };
 
 use crate::app::{
     components::{OwnedByFileLocal, Vertex2d},
-    resources::{icon_manager::IconManager, icon_data::IconFaceKey,
+    resources::{
         camera_manager::CameraManager, canvas::Canvas, edge_manager::EdgeManager,
-        face_manager::FaceManager, shape_data::FaceKey, vertex_manager::VertexManager, model_manager::ModelManager
+        face_manager::FaceManager, icon_data::IconFaceKey, icon_manager::IconManager,
+        model_manager::ModelManager, shape_data::FaceKey, vertex_manager::VertexManager,
     },
 };
 
@@ -102,24 +103,24 @@ impl ComponentWaitlistEntry {
         match (self.file_type, self.component_type) {
             (Some(FileExtension::Skel), Some(ComponentType::Vertex)) => {
                 return self.file_entity.is_some() && self.vertex_parent.is_some();
-            },
+            }
             (Some(FileExtension::Mesh), Some(ComponentType::Vertex)) => {
                 return self.file_entity.is_some();
-            },
+            }
             (Some(FileExtension::Icon), Some(ComponentType::Vertex)) => {
                 return self.file_entity.is_some();
-            },
+            }
             (Some(FileExtension::Skel), Some(ComponentType::Edge)) => {
                 return self.file_entity.is_some()
                     && self.edge_entities.is_some()
                     && self.edge_angle.is_some();
-            },
+            }
             (Some(FileExtension::Mesh), Some(ComponentType::Edge)) => {
                 return self.file_entity.is_some() && self.edge_entities.is_some();
-            },
+            }
             (Some(FileExtension::Icon), Some(ComponentType::Edge)) => {
                 return self.file_entity.is_some() && self.edge_entities.is_some();
-            },
+            }
             (Some(FileExtension::Mesh), Some(ComponentType::Face)) => {
                 self.file_entity.is_some() && self.face_entities.is_some()
             }
@@ -127,7 +128,9 @@ impl ComponentWaitlistEntry {
                 self.file_entity.is_some() && self.face_entities.is_some()
             }
             (Some(FileExtension::Model), Some(ComponentType::NetTransform)) => {
-                return self.file_entity.is_some() && self.skin_or_scene_entity.is_some() && self.shape_name.is_some();
+                return self.file_entity.is_some()
+                    && self.skin_or_scene_entity.is_some()
+                    && self.shape_name.is_some();
             }
             (Some(FileExtension::Scene), Some(ComponentType::NetTransform)) => {
                 return self.file_entity.is_some() && self.skin_or_scene_entity.is_some();
@@ -207,7 +210,9 @@ impl ComponentWaitlistEntry {
             (FileExtension::Skel, ComponentType::Vertex) => {
                 ComponentData::Vertex(self.vertex_parent.unwrap())
             }
-            (FileExtension::Mesh | FileExtension::Icon, ComponentType::Vertex) => ComponentData::Vertex(None),
+            (FileExtension::Mesh | FileExtension::Icon, ComponentType::Vertex) => {
+                ComponentData::Vertex(None)
+            }
             (FileExtension::Mesh | FileExtension::Icon, ComponentType::Edge) => {
                 let entities = self.edge_entities.unwrap();
                 ComponentData::Edge(entities.0, entities.1, None)
@@ -322,7 +327,10 @@ impl ComponentWaitlist {
                     .unwrap()
                     .set_face(vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c);
             }
-            ComponentWaitlistInsert::SkinOrSceneEntity(skin_or_scene_entity, skin_or_scene_type) => {
+            ComponentWaitlistInsert::SkinOrSceneEntity(
+                skin_or_scene_entity,
+                skin_or_scene_type,
+            ) => {
                 self.get_mut(&entity)
                     .unwrap()
                     .set_skin_or_scene_entity(skin_or_scene_entity, skin_or_scene_type);
@@ -664,7 +672,10 @@ impl ComponentWaitlist {
                     true,
                 );
             }
-            (FileExtension::Mesh, ComponentData::Face(vertex_a, vertex_b, vertex_c, _edge_a, _edge_b, _edge_c)) => {
+            (
+                FileExtension::Mesh,
+                ComponentData::Face(vertex_a, vertex_b, vertex_c, _edge_a, _edge_b, _edge_c),
+            ) => {
                 let Some(vertex_manager) = vertex_manager_opt else {
                     panic!("vertex manager not available");
                 };
@@ -739,7 +750,10 @@ impl ComponentWaitlist {
                     Vertex2d::ENABLED_COLOR,
                 );
             }
-            (FileExtension::Icon, ComponentData::Face(vertex_a, vertex_b, vertex_c, _edge_a, _edge_b, _edge_c)) => {
+            (
+                FileExtension::Icon,
+                ComponentData::Face(vertex_a, vertex_b, vertex_c, _edge_a, _edge_b, _edge_c),
+            ) => {
                 let Some(icon_manager) = icon_manager_opt else {
                     panic!("icon manager not available");
                 };
@@ -765,12 +779,7 @@ impl ComponentWaitlist {
                     );
                 }
                 icon_manager.net_face_postprocess(
-                    commands,
-                    meshes,
-                    materials,
-                    &face_key,
-                    entity,
-                    positions,
+                    commands, meshes, materials, &face_key, entity, positions,
                 );
             }
             (FileExtension::Model, ComponentData::NetTransform(Some(shape_name))) => {
@@ -781,17 +790,20 @@ impl ComponentWaitlist {
                     panic!("edge manager not available");
                 };
 
-                model_manager_opt.as_mut().unwrap().net_transform_postprocess(
-                    commands,
-                    camera_manager,
-                    vertex_manager,
-                    edge_manager,
-                    meshes,
-                    materials,
-                    &file_entity,
-                    Some(shape_name),
-                    entity,
-                );
+                model_manager_opt
+                    .as_mut()
+                    .unwrap()
+                    .net_transform_postprocess(
+                        commands,
+                        camera_manager,
+                        vertex_manager,
+                        edge_manager,
+                        meshes,
+                        materials,
+                        &file_entity,
+                        Some(shape_name),
+                        entity,
+                    );
             }
             (FileExtension::Scene, ComponentData::NetTransform(None)) => {
                 let Some(vertex_manager) = vertex_manager_opt else {
@@ -801,17 +813,20 @@ impl ComponentWaitlist {
                     panic!("edge manager not available");
                 };
 
-                model_manager_opt.as_mut().unwrap().net_transform_postprocess(
-                    commands,
-                    camera_manager,
-                    vertex_manager,
-                    edge_manager,
-                    meshes,
-                    materials,
-                    &file_entity,
-                    None,
-                    entity,
-                );
+                model_manager_opt
+                    .as_mut()
+                    .unwrap()
+                    .net_transform_postprocess(
+                        commands,
+                        camera_manager,
+                        vertex_manager,
+                        edge_manager,
+                        meshes,
+                        materials,
+                        &file_entity,
+                        None,
+                        entity,
+                    );
             }
             (_, _) => {
                 panic!("");

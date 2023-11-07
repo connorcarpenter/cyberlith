@@ -8,9 +8,7 @@ use bevy_log::info;
 use naia_bevy_client::{Client, CommandsExt};
 
 use crate::app::resources::{
-    action::icon::IconAction,
-    shape_data::CanvasShape,
-    icon_manager::IconManager
+    action::icon::IconAction, icon_manager::IconManager, shape_data::CanvasShape,
 };
 
 pub(crate) fn execute(
@@ -24,26 +22,13 @@ pub(crate) fn execute(
 
     info!("SelectShape({:?})", shape_entity_opt);
 
-    let mut system_state: SystemState<(
-        Commands,
-        Client,
-    )> = SystemState::new(world);
-    let (
-        mut commands,
-        mut client,
-    ) = system_state.get_mut(world);
+    let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+    let (mut commands, mut client) = system_state.get_mut(world);
 
     // Deselect all selected shapes, select the new selected shapes
-    let deselected_entity = deselect_selected_shape(
-        icon_manager,
-    );
-    let entity_to_request = select_shape(
-        icon_manager,
-        shape_entity_opt,
-    );
-    let entity_to_release = deselected_entity.map(|(entity, _)| {
-        entity
-    });
+    let deselected_entity = deselect_selected_shape(icon_manager);
+    let entity_to_request = select_shape(icon_manager, shape_entity_opt);
+    let entity_to_release = deselected_entity.map(|(entity, _)| entity);
     entity_request_release(
         &mut commands,
         &mut client,
@@ -103,11 +88,9 @@ pub fn select_shape(
     return None;
 }
 
-pub fn deselect_selected_shape(
-    icon_manager: &mut IconManager,
-) -> Option<(Entity, CanvasShape)> {
+pub fn deselect_selected_shape(icon_manager: &mut IconManager) -> Option<(Entity, CanvasShape)> {
     let mut entity_to_deselect = None;
-    if let Some((shape_entity, shape_type)) = icon_manager.selected_shape_2d() {
+    if let Some((shape_entity, shape_type)) = icon_manager.selected_shape() {
         icon_manager.deselect_shape();
         entity_to_deselect = Some((shape_entity, shape_type));
     }

@@ -26,11 +26,10 @@ use vortex_proto::{
 use crate::{
     config::GitConfig,
     resources::{
-        project::Project, project::ProjectKey, ContentEntityData, FileEntryValue, PaletteManager,
-        RollbackResult, ShapeManager, SkinManager, UserManager,
+        project::Project, project::ProjectKey, ContentEntityData, FileEntryValue, IconManager,
+        PaletteManager, RollbackResult, ShapeManager, SkinManager, UserManager,
     },
 };
-use crate::resources::IconManager;
 
 #[derive(Resource)]
 pub struct GitManager {

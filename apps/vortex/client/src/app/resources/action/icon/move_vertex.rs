@@ -10,19 +10,14 @@ use render_api::{base::CpuMesh, components::Transform, Assets, Handle};
 
 use vortex_proto::components::{IconFace, IconVertex};
 
-use crate::app::resources::{
-    action::icon::IconAction, canvas::Canvas, icon_manager::IconManager,
-};
+use crate::app::resources::{action::icon::IconAction, canvas::Canvas, icon_manager::IconManager};
 
 pub(crate) fn execute(world: &mut World, action: IconAction) -> Vec<IconAction> {
     let IconAction::MoveVertex(vertex_entity, old_position, new_position, already_moved) = action else {
         panic!("Expected MoveVertex");
     };
 
-    info!(
-        "MoveVertex({:?}, _, _, {})",
-        vertex_entity, already_moved
-    );
+    info!("MoveVertex({:?}, _, _, {})", vertex_entity, already_moved);
     let mut system_state: SystemState<(
         Client,
         ResMut<Canvas>,

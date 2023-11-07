@@ -9,8 +9,8 @@ use vortex_proto::{
     components::{
         AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, Edge3d, EdgeAngle,
         EntryKind, Face3d, FaceColor, FileDependency, FileSystemChild, FileSystemEntry,
-        FileSystemRootChild, FileType, NetTransform, OwnedByFile, PaletteColor, ShapeName,
-        Vertex3d, VertexRoot, SkinOrSceneEntity, IconEdge, IconFace, IconVertex
+        FileSystemRootChild, FileType, IconEdge, IconFace, IconVertex, NetTransform, OwnedByFile,
+        PaletteColor, ShapeName, SkinOrSceneEntity, Vertex3d, VertexRoot,
     },
     protocol,
 };
@@ -21,11 +21,12 @@ use crate::app::{
     events::{InsertComponentEvent, LoginEvent, RemoveComponentEvent, ShapeColorResyncEvent},
     resources::{
         action::file::FileActions, animation_manager::AnimationManager,
-        camera_manager::CameraManager, canvas::Canvas, compass::Compass, edge_manager::EdgeManager,
-        face_manager::FaceManager, file_manager::FileManager, grid::Grid, input::InputManager,
-        model_manager::ModelManager, palette_manager::PaletteManager,
-        component_waitlist::ComponentWaitlist, skin_manager::SkinManager, tab_manager::TabManager,
-        vertex_manager::VertexManager, icon_manager::IconManager,
+        camera_manager::CameraManager, canvas::Canvas, compass::Compass,
+        component_waitlist::ComponentWaitlist, edge_manager::EdgeManager,
+        face_manager::FaceManager, file_manager::FileManager, grid::Grid,
+        icon_manager::IconManager, input::InputManager, model_manager::ModelManager,
+        palette_manager::PaletteManager, skin_manager::SkinManager, tab_manager::TabManager,
+        vertex_manager::VertexManager,
     },
     systems::{canvas, draw, draw_vertices_and_edges, network, ui},
     ui::{

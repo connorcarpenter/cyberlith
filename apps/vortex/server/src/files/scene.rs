@@ -13,7 +13,10 @@ use naia_bevy_server::{
 };
 
 use vortex_proto::{
-    components::{FileType, OwnedByFile, SkinOrSceneEntity, FileExtension, NetTransform, NetTransformEntityType},
+    components::{
+        FileExtension, FileType, NetTransform, NetTransformEntityType, OwnedByFile,
+        SkinOrSceneEntity,
+    },
     resources::FileKey,
     SerdeQuat,
 };
@@ -108,8 +111,10 @@ impl SceneWriter {
 
         // Write NetTransforms
         for net_transform_entity in net_transform_entities {
-            let mut system_state: SystemState<(Server, Query<(&NetTransform, &SkinOrSceneEntity)>)> =
-                SystemState::new(world);
+            let mut system_state: SystemState<(
+                Server,
+                Query<(&NetTransform, &SkinOrSceneEntity)>,
+            )> = SystemState::new(world);
             let (server, transform_q) = system_state.get_mut(world);
             let Ok((transform, skin_or_scene_entity)) = transform_q.get(net_transform_entity) else {
                 panic!("Error getting net transform");
@@ -335,15 +340,18 @@ impl SceneReader {
                         panic!("skin index out of bounds");
                     };
                     let mut skin_or_scene_component = SkinOrSceneEntity::new(*skin_or_scene_type);
-                    skin_or_scene_component.value.set(&server, skin_or_scene_entity);
+                    skin_or_scene_component
+                        .value
+                        .set(&server, skin_or_scene_entity);
                     info!(
                         "reading net transform into world. skin index: {} -> entity: `{:?}`",
-                        skin_index,
-                        skin_or_scene_entity
+                        skin_index, skin_or_scene_entity
                     );
 
                     let mut owning_file_component = OwnedByFile::new();
-                    owning_file_component.file_entity.set(&mut server, file_entity);
+                    owning_file_component
+                        .file_entity
+                        .set(&mut server, file_entity);
 
                     let net_transform_entity = commands
                         .spawn_empty()

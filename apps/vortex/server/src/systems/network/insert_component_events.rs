@@ -13,8 +13,9 @@ use naia_bevy_server::{events::InsertComponentEvents, Replicate, Server};
 use vortex_proto::{
     components::{
         AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency,
-        FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, OwnedByFile, PaletteColor,
-        ShapeName, Vertex3d, VertexRoot, FileExtension, IconEdge, IconFace, IconVertex, NetTransform, SkinOrSceneEntity,
+        FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, IconEdge,
+        IconFace, IconVertex, NetTransform, OwnedByFile, PaletteColor, ShapeName,
+        SkinOrSceneEntity, Vertex3d, VertexRoot,
     },
     resources::FileKey,
 };
@@ -23,11 +24,11 @@ use crate::{
     events::InsertComponentEvent,
     resources::{
         file_waitlist::{file_process_insert, FSWaitlist, FSWaitlistInsert},
-        AnimationManager, ContentEntityData, GitManager, PaletteManager, ShapeManager,
-        ComponentWaitlist, ComponentWaitlistInsert, SkinManager, TabManager, UserManager,
+        AnimationManager, ComponentWaitlist, ComponentWaitlistInsert, ContentEntityData,
+        GitManager, IconManager, PaletteManager, ShapeManager, SkinManager, TabManager,
+        UserManager,
     },
 };
-use crate::resources::IconManager;
 
 #[derive(Resource)]
 struct CachedInsertComponentEventsState {
@@ -708,13 +709,9 @@ pub fn insert_model_component_events(
 ) {
     // on NetTransform Insert Event
     for event in transform_events.iter() {
-
         let entity = event.entity;
 
-        info!(
-            "entity: `{:?}`, inserted NetTransform",
-            entity,
-        );
+        info!("entity: `{:?}`, inserted NetTransform", entity,);
 
         component_waitlist.process_insert(
             &mut server,
@@ -728,13 +725,9 @@ pub fn insert_model_component_events(
 
     // on SkinOrSceneEntity Insert Event
     for event in skin_or_scene_events.iter() {
-
         let entity = event.entity;
 
-        info!(
-            "entity: `{:?}`, inserted SkinOrSceneEntity",
-            entity,
-        );
+        info!("entity: `{:?}`, inserted SkinOrSceneEntity", entity,);
 
         component_waitlist.process_insert(
             &mut server,

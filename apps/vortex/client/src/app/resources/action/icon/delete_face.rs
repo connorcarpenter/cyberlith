@@ -10,7 +10,11 @@ use crate::app::resources::{
     action::icon::IconAction, icon_manager::IconManager, shape_data::CanvasShape,
 };
 
-pub(crate) fn execute(world: &mut World, icon_manager: &mut IconManager, action: IconAction) -> Vec<IconAction> {
+pub(crate) fn execute(
+    world: &mut World,
+    icon_manager: &mut IconManager,
+    action: IconAction,
+) -> Vec<IconAction> {
     let IconAction::DeleteFace(local_face_entity) = action else {
         panic!("Expected DeleteFace");
     };

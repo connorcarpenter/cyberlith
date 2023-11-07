@@ -20,15 +20,15 @@ use crate::app::{
     ui::{BindingState, UiState},
 };
 
-pub fn render_simple_bind(world: &mut World, ui: &mut Ui, current_file_entity: &Entity, binding_ext: FileExtension) -> bool {
+pub fn render_simple_bind(
+    world: &mut World,
+    ui: &mut Ui,
+    current_file_entity: &Entity,
+    binding_ext: FileExtension,
+) -> bool {
     let file_manager = world.get_resource::<FileManager>().unwrap();
-    if !file_manager.file_has_dependency_with_extension(
-        &current_file_entity,
-        binding_ext,
-    ) {
-        if let Some((_file_ext, file_ent)) =
-            render_bind_button(ui, world, &[binding_ext])
-        {
+    if !file_manager.file_has_dependency_with_extension(&current_file_entity, binding_ext) {
+        if let Some((_file_ext, file_ent)) = render_bind_button(ui, world, &[binding_ext]) {
             render_bind_button_result(world, &current_file_entity, &file_ent);
         }
         return false;

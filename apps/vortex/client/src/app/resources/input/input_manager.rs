@@ -29,17 +29,17 @@ use crate::app::{
         canvas::Canvas,
         edge_manager::EdgeManager,
         file_manager::FileManager,
+        icon_manager::IconManager,
         input::{
-            mesh_input_manager::MeshInputManager, model_input_manager::ModelInputManager,
-            skel_input_manager::SkelInputManager, skin_input_manager::SkinInputManager,
-            AnimInputManager, icon_input_manager::IconInputManager,
+            icon_input_manager::IconInputManager, mesh_input_manager::MeshInputManager,
+            model_input_manager::ModelInputManager, skel_input_manager::SkelInputManager,
+            skin_input_manager::SkinInputManager, AnimInputManager,
         },
         shape_data::CanvasShape,
         tab_manager::TabManager,
         vertex_manager::VertexManager,
     },
 };
-use crate::app::resources::icon_manager::IconManager;
 
 #[derive(Clone, Copy)]
 pub enum CardinalDirection {
@@ -105,12 +105,14 @@ impl InputManager {
             FileExtension::Mesh => MeshInputManager::update_input(world, self, input_actions),
             FileExtension::Anim => AnimInputManager::update_input(world, self, input_actions),
             FileExtension::Skin => SkinInputManager::update_input(world, self, input_actions),
-            FileExtension::Model | FileExtension::Scene => ModelInputManager::update_input(world, self, &current_file_type, input_actions),
+            FileExtension::Model | FileExtension::Scene => {
+                ModelInputManager::update_input(world, self, &current_file_type, input_actions)
+            }
             FileExtension::Icon => {
                 world.resource_scope(|world, mut icon_manager: Mut<IconManager>| {
                     IconInputManager::update_input(world, &mut icon_manager, input_actions);
                 });
-            },
+            }
             _ => {}
         }
     }

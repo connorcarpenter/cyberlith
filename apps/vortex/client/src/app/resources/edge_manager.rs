@@ -464,7 +464,6 @@ impl EdgeManager {
         edge_angle_opt: Option<f32>,
         default_draw: bool,
     ) -> Entity {
-
         // edge 3d
         let shape_components = if arrows_not_lines {
             create_3d_edge_diamond(
@@ -786,7 +785,10 @@ impl EdgeManager {
 
     fn edge_angles_are_visible_for_filetype(file_type: FileExtension) -> bool {
         match file_type {
-            FileExtension::Skel | FileExtension::Anim | FileExtension::Model | FileExtension::Scene => true,
+            FileExtension::Skel
+            | FileExtension::Anim
+            | FileExtension::Model
+            | FileExtension::Scene => true,
             _ => false,
         }
     }

@@ -7,9 +7,9 @@ use input::Input;
 use vortex_proto::components::FileExtension;
 
 use crate::app::resources::{
-    canvas::Canvas, file_manager::FileManager, input::InputManager, tab_manager::TabManager,
+    canvas::Canvas, file_manager::FileManager, icon_manager::IconManager, input::InputManager,
+    tab_manager::TabManager,
 };
-use crate::app::resources::icon_manager::IconManager;
 
 pub fn input(world: &mut World) {
     let mut system_state: SystemState<(Res<Canvas>, ResMut<Input>)> = SystemState::new(world);

@@ -22,7 +22,7 @@ use render_egui::{
 use vortex_proto::{
     channels::TabActionChannel,
     components::{
-        IconFace, BackgroundSkinColor, ChangelistStatus, FaceColor, FileExtension, FileSystemEntry,
+        BackgroundSkinColor, ChangelistStatus, FaceColor, FileExtension, FileSystemEntry, IconFace,
         NetTransformEntityType, PaletteColor, SkinOrSceneEntity,
     },
     messages::{TabCloseMessage, TabOpenMessage},
@@ -31,26 +31,26 @@ use vortex_proto::{
 
 use crate::app::{
     components::{
-        file_system::FileSystemUiState, Edge2dLocal, Face3dLocal, FaceIcon2d, LocalShape,
-        OwnedByFileLocal, Vertex2d, IconLocalFace,
+        file_system::FileSystemUiState, Edge2dLocal, Face3dLocal, FaceIcon2d, IconLocalFace,
+        LocalShape, OwnedByFileLocal, Vertex2d,
     },
     resources::{
         action::{
-            animation::AnimAction, model::ModelAction, palette::PaletteAction, shape::ShapeAction,
-            skin::SkinAction, TabActionStack, icon::IconAction,
+            animation::AnimAction, icon::IconAction, model::ModelAction, palette::PaletteAction,
+            shape::ShapeAction, skin::SkinAction, TabActionStack,
         },
         camera_manager::CameraManager,
         camera_state::CameraState,
         canvas::Canvas,
         face_manager::FaceManager,
         file_manager::FileManager,
+        icon_manager::IconManager,
         input::InputManager,
         model_manager::ModelManager,
         palette_manager::PaletteManager,
         shape_data::CanvasShape,
         shape_manager::ShapeManager,
         skin_manager::SkinManager,
-        icon_manager::IconManager,
     },
     ui::{
         widgets::colors::{
@@ -426,12 +426,9 @@ impl TabManager {
     ) {
         let current_tab_entity = *self.current_tab_entity().unwrap();
         let tab_state = self.current_tab_state_mut().unwrap();
-        tab_state.action_stack.execute_icon_action(
-            world,
-            icon_manager,
-            current_tab_entity,
-            action,
-        );
+        tab_state
+            .action_stack
+            .execute_icon_action(world, icon_manager, current_tab_entity, action);
     }
 
     pub fn current_tab_camera_state(&self) -> Option<&CameraState> {
@@ -873,7 +870,10 @@ fn file_ext_specific_sync_tabs_shape_colors(
                 Res<SkinManager>,
                 ResMut<Assets<CpuMaterial>>,
                 Query<&mut Handle<CpuMaterial>, (With<IconLocalFace>, Without<IconFace>)>,
-                Query<(Entity, &mut Handle<CpuMaterial>, &OwnedByFileLocal), (With<IconFace>, Without<IconLocalFace>)>,
+                Query<
+                    (Entity, &mut Handle<CpuMaterial>, &OwnedByFileLocal),
+                    (With<IconFace>, Without<IconLocalFace>),
+                >,
                 Query<&PaletteColor>,
                 Query<&BackgroundSkinColor>,
                 Query<&FaceColor>,
@@ -1082,7 +1082,9 @@ fn set_icon_face_colors(
         *net_face_material = new_mat_handle;
 
         if let Some((icon_manager, local_face_q)) = local_face_opt {
-            let local_face_entity = icon_manager.face_entity_net_to_local(&net_face_entity).unwrap();
+            let local_face_entity = icon_manager
+                .face_entity_net_to_local(&net_face_entity)
+                .unwrap();
             let mut local_face_material = local_face_q.get_mut(local_face_entity).unwrap();
             *local_face_material = new_mat_handle;
         }

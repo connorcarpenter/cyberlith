@@ -13,8 +13,7 @@ use render_api::{
 use vortex_proto::components::Vertex3d;
 
 use crate::app::resources::{
-    camera_manager::CameraManager, edge_manager::EdgeManager,
-    vertex_manager::VertexManager,
+    camera_manager::CameraManager, edge_manager::EdgeManager, vertex_manager::VertexManager,
 };
 
 #[derive(Resource)]

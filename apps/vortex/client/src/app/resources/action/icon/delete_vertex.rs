@@ -2,7 +2,7 @@ use bevy_ecs::{
     prelude::{Commands, Entity, Query, World},
     system::SystemState,
 };
-use bevy_log::{info};
+use bevy_log::info;
 
 use naia_bevy_client::Client;
 
@@ -15,9 +15,9 @@ use crate::app::{
             select_shape::{entity_request_release, select_shape},
             IconAction,
         },
-        shape_data::CanvasShape,
         icon_data::IconFaceKey,
         icon_manager::IconManager,
+        shape_data::CanvasShape,
     },
 };
 
@@ -38,12 +38,7 @@ pub(crate) fn execute(
         Query<(Entity, &IconVertex)>,
         Query<&IconEdge>,
     )> = SystemState::new(world);
-    let (
-        mut commands,
-        mut client,
-        vertex_q,
-        edge_q,
-    ) = system_state.get_mut(world);
+    let (mut commands, mut client, vertex_q, edge_q) = system_state.get_mut(world);
 
     let mut connected_vertices_entities = Vec::new();
     let mut connected_face_vertex_entities = Vec::new();
@@ -65,8 +60,7 @@ pub(crate) fn execute(
             start_vertex_entity
         };
 
-        connected_vertices_entities
-            .push((connected_vertex_entity, Some(edge_entity)));
+        connected_vertices_entities.push((connected_vertex_entity, Some(edge_entity)));
     }
     let Some(connected_faces) = icon_manager.vertex_get_faces(&vertex_entity) else {
         panic!("Failed to get connected faces for vertex entity {:?}!", vertex_entity);
@@ -77,11 +71,7 @@ pub(crate) fn execute(
             .net_face_entity_from_face_key(&face_key)
             .is_some();
 
-        let mut vertices = vec![
-            face_key.vertex_a,
-            face_key.vertex_b,
-            face_key.vertex_c,
-        ];
+        let mut vertices = vec![face_key.vertex_a, face_key.vertex_b, face_key.vertex_c];
         vertices.retain(|vertex| *vertex != vertex_entity);
 
         let face_local_entity = icon_manager
@@ -96,10 +86,8 @@ pub(crate) fn execute(
         ));
     }
 
-    let rev_vertex_type_data = IconVertexActionData::new(
-        connected_vertices_entities,
-        connected_face_vertex_entities,
-    );
+    let rev_vertex_type_data =
+        IconVertexActionData::new(connected_vertices_entities, connected_face_vertex_entities);
 
     let Ok((_, vertex)) = vertex_q.get(vertex_entity) else {
         panic!("Failed to get IconVertex for vertex entity {:?}!", vertex_entity);
@@ -140,10 +128,7 @@ fn handle_vertex_despawn(
 
     // select entities as needed
     if let Some((vertex_to_select, vertex_type)) = vertex_to_select_opt {
-        let entity_to_request = select_shape(
-            icon_manager,
-            Some((vertex_to_select, vertex_type)),
-        );
+        let entity_to_request = select_shape(icon_manager, Some((vertex_to_select, vertex_type)));
         entity_request_release(commands, client, entity_to_request, None);
     }
 }

@@ -16,7 +16,7 @@ use vortex_proto::components::{IconEdge, IconFace, IconVertex, VertexSerdeInt};
 
 use crate::{
     files::{FileWriter, ShapeTypeData},
-    resources::{IconManager, ContentEntityData, Project},
+    resources::{ContentEntityData, IconManager, Project},
 };
 
 // Actions
@@ -56,8 +56,7 @@ impl IconWriter {
             Query<&IconEdge>,
             Query<&IconFace>,
         )> = SystemState::new(world);
-        let (server, icon_manager, vertex_q, edge_q, face_q) =
-            system_state.get_mut(world);
+        let (server, icon_manager, vertex_q, edge_q, face_q) = system_state.get_mut(world);
 
         let mut output = Vec::new();
 
@@ -439,8 +438,10 @@ impl IconReader {
         let mut new_content_entities = HashMap::new();
 
         for (entity, shape_type_data) in shape_entities {
-            new_content_entities
-                .insert(entity, ContentEntityData::new_icon_shape(shape_type_data.into()));
+            new_content_entities.insert(
+                entity,
+                ContentEntityData::new_icon_shape(shape_type_data.into()),
+            );
 
             match shape_type_data {
                 ShapeTypeData::Vertex => {

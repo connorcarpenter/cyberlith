@@ -6,8 +6,9 @@ use vortex_proto::components::FileExtension;
 
 use crate::app::resources::{
     animation_manager::AnimationManager, camera_manager::CameraManager, canvas::Canvas,
-    edge_manager::EdgeManager, file_manager::FileManager, input::InputManager,
-    model_manager::ModelManager, tab_manager::TabManager, vertex_manager::VertexManager, icon_manager::IconManager,
+    edge_manager::EdgeManager, file_manager::FileManager, icon_manager::IconManager,
+    input::InputManager, model_manager::ModelManager, tab_manager::TabManager,
+    vertex_manager::VertexManager,
 };
 
 pub fn update_camera(

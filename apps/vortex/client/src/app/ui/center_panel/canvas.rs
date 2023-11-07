@@ -1,5 +1,5 @@
 use bevy_ecs::{
-    system::{Res, Query, ResMut, SystemState},
+    system::{Query, Res, ResMut, SystemState},
     world::World,
 };
 
@@ -17,7 +17,10 @@ use render_egui::{
 };
 
 use crate::app::{
-    resources::{icon_manager::IconManager, camera_manager::CameraManager, canvas::Canvas, tab_manager::TabManager},
+    resources::{
+        camera_manager::CameraManager, canvas::Canvas, icon_manager::IconManager,
+        tab_manager::TabManager,
+    },
     ui::UiState,
 };
 

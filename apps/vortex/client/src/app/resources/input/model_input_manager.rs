@@ -49,7 +49,14 @@ impl ModelInputManager {
                     Self::handle_mouse_click(world, input_manager, &mouse_position, click_type)
                 }
                 InputAction::MouseDragged(click_type, mouse_position, delta) => {
-                    Self::handle_mouse_drag(world, input_manager, file_ext, mouse_position, delta, click_type)
+                    Self::handle_mouse_drag(
+                        world,
+                        input_manager,
+                        file_ext,
+                        mouse_position,
+                        delta,
+                        click_type,
+                    )
                 }
                 InputAction::MiddleMouseScroll(scroll_y) => {
                     InputManager::handle_mouse_scroll_wheel(world, scroll_y)
@@ -150,9 +157,13 @@ impl ModelInputManager {
         }
 
         match (click_type, input_manager.selected_shape) {
-            (MouseButton::Left, Some((transform_entity, shape))) => {
-                Self::handle_transform_drag(world, file_ext, &transform_entity, shape, &mouse_position)
-            }
+            (MouseButton::Left, Some((transform_entity, shape))) => Self::handle_transform_drag(
+                world,
+                file_ext,
+                &transform_entity,
+                shape,
+                &mouse_position,
+            ),
             (_, _) => InputManager::handle_drag_empty_space(world, click_type, delta),
         }
     }

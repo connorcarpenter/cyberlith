@@ -12,8 +12,8 @@ use crate::app::{
             },
             Action, ActionStack,
         },
-        shape_data::CanvasShape,
         icon_manager::IconManager,
+        shape_data::CanvasShape,
     },
 };
 
@@ -102,10 +102,7 @@ impl IconAction {
                 _ => {}
             },
             Self::CreateVertex(vertex_type_data, _, entity_opt) => {
-                vertex_type_data.migrate_vertex_entities(
-                    old_vertex_entity,
-                    new_vertex_entity,
-                );
+                vertex_type_data.migrate_vertex_entities(old_vertex_entity, new_vertex_entity);
 
                 if let Some(other_entity) = entity_opt {
                     if *other_entity == old_vertex_entity {

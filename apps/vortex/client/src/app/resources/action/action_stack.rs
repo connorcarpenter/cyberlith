@@ -10,18 +10,18 @@ use crate::app::resources::{
     action::{
         animation::AnimAction,
         file::{FileAction, FileActions},
+        icon::IconAction,
         model::ModelAction,
         palette::PaletteAction,
         shape::ShapeAction,
         skin::SkinAction,
-        icon::IconAction,
     },
     file_manager::FileManager,
+    icon_manager::IconManager,
     input::InputManager,
     palette_manager::PaletteManager,
     tab_manager::TabManager,
 };
-use crate::app::resources::icon_manager::IconManager;
 
 pub trait Action: Clone {
     fn entity_update_auth_status_impl(
@@ -337,17 +337,10 @@ impl ActionStack<IconAction> {
         action.execute(world, icon_manager, tab_file_entity, self)
     }
 
-    pub(crate) fn migrate_vertex_entities(
-        &mut self,
-        old_entity: Entity,
-        new_entity: Entity,
-    ) {
+    pub(crate) fn migrate_vertex_entities(&mut self, old_entity: Entity, new_entity: Entity) {
         for action_list in [&mut self.undo_actions, &mut self.redo_actions] {
             for action in action_list.iter_mut() {
-                action.migrate_vertex_entities(
-                    old_entity,
-                    new_entity,
-                );
+                action.migrate_vertex_entities(old_entity, new_entity);
             }
         }
     }

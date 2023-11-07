@@ -17,8 +17,8 @@ use crate::app::{
     ui::{
         render_tool_bar,
         widgets::{
-            render_bind_button, render_frame_inspect_bar,
-            render_naming_bar, NamingBarState, render_simple_bind,
+            render_bind_button, render_frame_inspect_bar, render_naming_bar, render_simple_bind,
+            NamingBarState,
         },
     },
 };
@@ -41,7 +41,8 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                         render_tool_bar(ui, world, &current_file_entity, current_file_type);
                     }
                     FileExtension::Anim => {
-                        if !render_simple_bind(world, ui, &current_file_entity, FileExtension::Skel) {
+                        if !render_simple_bind(world, ui, &current_file_entity, FileExtension::Skel)
+                        {
                             return;
                         }
 
@@ -57,14 +58,19 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                         return;
                     }
                     FileExtension::Skin => {
-
                         // Palette Dependency
-                        if !render_simple_bind(world, ui, &current_file_entity, FileExtension::Palette) {
+                        if !render_simple_bind(
+                            world,
+                            ui,
+                            &current_file_entity,
+                            FileExtension::Palette,
+                        ) {
                             return;
                         }
 
                         // Mesh Dependency
-                        if !render_simple_bind(world, ui, &current_file_entity, FileExtension::Mesh) {
+                        if !render_simple_bind(world, ui, &current_file_entity, FileExtension::Mesh)
+                        {
                             return;
                         }
 
@@ -89,8 +95,8 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                         }
                     }
                     FileExtension::Model => {
-
-                        if !render_simple_bind(world, ui, &current_file_entity, FileExtension::Skel) {
+                        if !render_simple_bind(world, ui, &current_file_entity, FileExtension::Skel)
+                        {
                             return;
                         }
 
@@ -140,7 +146,9 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                                 if world
                                     .get_resource_mut::<ModelManager>()
                                     .unwrap()
-                                    .take_binding_result().is_some() {
+                                    .take_binding_result()
+                                    .is_some()
+                                {
                                     panic!("Should not get an edge entity in this case");
                                 }
                                 ModelManager::process_render_bind_button_result(

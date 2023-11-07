@@ -61,10 +61,8 @@ impl ModelToolbar {
             if button_enabled && response.clicked() {
                 world.resource_scope(|world, mut model_manager: Mut<ModelManager>| {
                     let mut ui_state = world.get_resource_mut::<UiState>().unwrap();
-                    model_manager.init_assign_skin_or_scene(
-                        &mut ui_state,
-                        edge_2d_entity_opt.as_ref(),
-                    );
+                    model_manager
+                        .init_assign_skin_or_scene(&mut ui_state, edge_2d_entity_opt.as_ref());
                 });
             }
         }

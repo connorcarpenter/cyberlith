@@ -12,7 +12,7 @@ use vortex_proto::{
 
 use crate::{
     files::ShapeType,
-    resources::{IconManager, project::ProjectKey, ContentEntityData, GitManager, ShapeManager},
+    resources::{project::ProjectKey, ContentEntityData, GitManager, IconManager, ShapeManager},
 };
 
 pub enum ComponentWaitlistInsert {
@@ -205,7 +205,13 @@ impl ComponentWaitlistEntry {
             }
             (Some(FileExtension::Mesh), Some(ComponentType::Face)) => {
                 let (vertex_a, vertex_b, vertex_c) = self.face_entities.unwrap();
-                return ComponentData::MeshFace(project_key, file_key, vertex_a, vertex_b, vertex_c);
+                return ComponentData::MeshFace(
+                    project_key,
+                    file_key,
+                    vertex_a,
+                    vertex_b,
+                    vertex_c,
+                );
             }
             (Some(FileExtension::Model), Some(ComponentType::NetTransform)) => {
                 return ComponentData::ModelTransform(project_key, file_key);
@@ -222,7 +228,13 @@ impl ComponentWaitlistEntry {
             }
             (Some(FileExtension::Icon), Some(ComponentType::Face)) => {
                 let (vertex_a, vertex_b, vertex_c) = self.face_entities.unwrap();
-                return ComponentData::IconFace(project_key, file_key, vertex_a, vertex_b, vertex_c);
+                return ComponentData::IconFace(
+                    project_key,
+                    file_key,
+                    vertex_a,
+                    vertex_b,
+                    vertex_c,
+                );
             }
             _ => {
                 panic!("shouldn't be able to happen!");
@@ -322,9 +334,7 @@ impl ComponentWaitlist {
                 if !self.contains_key(entity) {
                     self.insert_incomplete(*entity, ComponentWaitlistEntry::new());
                 }
-                self.get_mut(entity)
-                    .unwrap()
-                    .set_file_type(file_type);
+                self.get_mut(entity).unwrap().set_file_type(file_type);
                 possibly_ready_entities.push(*entity);
             }
             ComponentWaitlistInsert::OwnedByFile(project_key, file_key) => {
@@ -337,9 +347,7 @@ impl ComponentWaitlist {
                 possibly_ready_entities.push(*entity);
             }
             ComponentWaitlistInsert::SkinOrSceneEntity => {
-                self.get_mut(entity)
-                    .unwrap()
-                    .set_skin_or_scene_entity();
+                self.get_mut(entity).unwrap().set_skin_or_scene_entity();
                 possibly_ready_entities.push(*entity);
             }
             ComponentWaitlistInsert::ShapeName => {
@@ -367,7 +375,6 @@ impl ComponentWaitlist {
                 match (entry.file_type.unwrap(), entry.component_type.unwrap()) {
                     (FileExtension::Skel, ComponentType::Vertex) => {
                         if entry.has_edge_and_parent() {
-
                             let Some(shape_manager) = shape_manager_opt else {
                                 panic!("shape manager not available");
                             };
@@ -484,7 +491,14 @@ impl ComponentWaitlist {
         }
 
         for (entity, entry) in entities_to_process {
-            self.process_complete(server, git_manager, shape_manager_opt, icon_manager_opt, entity, entry);
+            self.process_complete(
+                server,
+                git_manager,
+                shape_manager_opt,
+                icon_manager_opt,
+                entity,
+                entry,
+            );
         }
     }
 
@@ -509,7 +523,9 @@ impl ComponentWaitlist {
                 shape_manager.on_create_skel_vertex(entity, edge_and_parent_opt);
                 (project_key, file_key, ComponentType::Vertex)
             }
-            ComponentData::SkelEdge(project_key, file_key) => (project_key, file_key, ComponentType::Edge),
+            ComponentData::SkelEdge(project_key, file_key) => {
+                (project_key, file_key, ComponentType::Edge)
+            }
             ComponentData::MeshVertex(project_key, file_key) => {
                 let Some(shape_manager) = shape_manager_opt else {
                     panic!("shape manager not available");

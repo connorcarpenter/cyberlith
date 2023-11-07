@@ -54,9 +54,7 @@ pub fn execute(
         _ => panic!("Expected skin or scene"),
     };
 
-    let edge_2d_entity_opt = model_manager.get_edge_2d_entity(
-        &net_transform_entity
-    );
+    let edge_2d_entity_opt = model_manager.get_edge_2d_entity(&net_transform_entity);
 
     commands.entity(net_transform_entity).despawn();
 

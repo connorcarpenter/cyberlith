@@ -10,8 +10,7 @@ pub use file_system::{
 mod shape;
 use shape::ShapeComponentsPlugin;
 pub use shape::{
-    Edge3d, EdgeAngle, Face3d, SerdeRotation, ShapeName,
-    Vertex3d, VertexRoot, VertexSerdeInt,
+    Edge3d, EdgeAngle, Face3d, SerdeRotation, ShapeName, Vertex3d, VertexRoot, VertexSerdeInt,
 };
 
 mod animation;
@@ -28,11 +27,11 @@ pub use transform::{NetTransform, NetTransformEntityType, SkinOrSceneEntity};
 
 mod ownership;
 use ownership::OwnershipComponentsPlugin;
-pub use ownership::{OwnedByFile, FileType, FileExtension};
+pub use ownership::{FileExtension, FileType, OwnedByFile};
 
 mod icon;
 use icon::IconComponentsPlugin;
-pub use icon::{IconVertex, IconEdge, IconFace};
+pub use icon::{IconEdge, IconFace, IconVertex};
 
 // Plugin
 pub struct ComponentsPlugin;

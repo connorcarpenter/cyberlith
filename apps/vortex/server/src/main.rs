@@ -17,10 +17,11 @@ use bevy_log::{info, LogPlugin};
 use naia_bevy_server::{Plugin as ServerPlugin, ReceiveEvents, ServerConfig};
 
 use vortex_proto::{
-    components::{SkinOrSceneEntity,
+    components::{
         AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency,
-        FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, NetTransform, OwnedByFile,
-        PaletteColor, ShapeName, Vertex3d, VertexRoot, IconEdge, IconFace, IconVertex,
+        FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, IconEdge, IconFace,
+        IconVertex, NetTransform, OwnedByFile, PaletteColor, ShapeName, SkinOrSceneEntity,
+        Vertex3d, VertexRoot,
     },
     protocol,
 };
@@ -29,8 +30,9 @@ use crate::{
     config::{AppConfig, ConfigPlugin},
     events::InsertComponentEvent,
     resources::{
-        changelist_manager_process, AnimationManager, ChangelistManager, GitManager,
-        PaletteManager, ShapeManager, ComponentWaitlist, SkinManager, TabManager, UserManager, IconManager
+        changelist_manager_process, AnimationManager, ChangelistManager, ComponentWaitlist,
+        GitManager, IconManager, PaletteManager, ShapeManager, SkinManager, TabManager,
+        UserManager,
     },
     systems::{network, world_loop},
 };
@@ -107,11 +109,9 @@ fn main() {
         .add_event::<InsertComponentEvent<VertexRoot>>()
         .add_event::<InsertComponentEvent<Edge3d>>()
         .add_event::<InsertComponentEvent<Face3d>>()
-
         .add_event::<InsertComponentEvent<IconVertex>>()
         .add_event::<InsertComponentEvent<IconEdge>>()
         .add_event::<InsertComponentEvent<IconFace>>()
-
         .add_event::<InsertComponentEvent<FileType>>()
         .add_event::<InsertComponentEvent<OwnedByFile>>()
         .add_event::<InsertComponentEvent<ShapeName>>()

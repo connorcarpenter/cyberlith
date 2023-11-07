@@ -14,21 +14,19 @@ use render_api::{
 
 use vortex_proto::components::FileExtension;
 
-use crate::app::{
-    resources::{
-        action::{
-            shape::{select_shape::deselect_selected_shape, ShapeAction},
-            ActionStack,
-        },
-        camera_manager::CameraManager,
-        canvas::Canvas,
-        edge_manager::EdgeManager,
-        face_manager::FaceManager,
-        input::InputManager,
-        shape_data::{CanvasShape, FaceKey},
-        shape_manager::ShapeManager,
-        vertex_manager::VertexManager,
+use crate::app::resources::{
+    action::{
+        shape::{select_shape::deselect_selected_shape, ShapeAction},
+        ActionStack,
     },
+    camera_manager::CameraManager,
+    canvas::Canvas,
+    edge_manager::EdgeManager,
+    face_manager::FaceManager,
+    input::InputManager,
+    shape_data::{CanvasShape, FaceKey},
+    shape_manager::ShapeManager,
+    vertex_manager::VertexManager,
 };
 
 pub(crate) fn execute(

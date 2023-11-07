@@ -141,8 +141,7 @@ impl IconManager {
 
         info!("inserting icon vert entity: `{:?}`", vertex_entity,);
 
-        self.vertices
-            .insert(vertex_entity, IconVertexData::new());
+        self.vertices.insert(vertex_entity, IconVertexData::new());
     }
 
     pub fn on_create_edge(
