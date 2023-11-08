@@ -14,6 +14,7 @@ use vortex_proto::{
     },
     protocol,
 };
+use vortex_proto::components::IconFrame;
 
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
@@ -96,6 +97,7 @@ impl Plugin for VortexPlugin {
             .add_event::<InsertComponentEvent<IconVertex>>()
             .add_event::<InsertComponentEvent<IconEdge>>()
             .add_event::<InsertComponentEvent<IconFace>>()
+            .add_event::<InsertComponentEvent<IconFrame>>()
             .add_event::<InsertComponentEvent<FileType>>()
             .add_event::<InsertComponentEvent<OwnedByFile>>()
             .add_event::<InsertComponentEvent<ShapeName>>()
@@ -117,6 +119,10 @@ impl Plugin for VortexPlugin {
             .add_event::<RemoveComponentEvent<VertexRoot>>()
             .add_event::<RemoveComponentEvent<Edge3d>>()
             .add_event::<RemoveComponentEvent<Face3d>>()
+            .add_event::<RemoveComponentEvent<IconVertex>>()
+            .add_event::<RemoveComponentEvent<IconEdge>>()
+            .add_event::<RemoveComponentEvent<IconFace>>()
+            .add_event::<RemoveComponentEvent<IconFrame>>()
             .add_event::<RemoveComponentEvent<ShapeName>>()
             .add_event::<RemoveComponentEvent<AnimFrame>>()
             .add_event::<RemoveComponentEvent<AnimRotation>>()
@@ -145,6 +151,7 @@ impl Plugin for VortexPlugin {
             .add_systems(Update, network::remove_animation_component_events)
             .add_systems(Update, network::remove_color_component_events)
             .add_systems(Update, network::remove_model_component_events)
+            .add_systems(Update, network::remove_icon_component_events)
             // Resources
             .init_resource::<ComponentWaitlist>()
             // UI Configuration

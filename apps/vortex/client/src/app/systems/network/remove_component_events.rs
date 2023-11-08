@@ -9,11 +9,7 @@ use naia_bevy_client::{events::RemoveComponentEvents, Client, Replicate};
 
 use render_api::{base::CpuMesh, Assets};
 
-use vortex_proto::components::{
-    AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d,
-    Face3d, FaceColor, FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild,
-    NetTransform, PaletteColor, ShapeName, Vertex3d,
-};
+use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d, Face3d, FaceColor, FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild, IconEdge, IconFace, IconFrame, IconVertex, NetTransform, PaletteColor, ShapeName, Vertex3d};
 
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
@@ -25,6 +21,7 @@ use crate::app::{
         tab_manager::TabManager, vertex_manager::VertexManager,
     },
 };
+use crate::app::resources::icon_manager::IconManager;
 
 #[derive(Resource)]
 struct CachedRemoveComponentEventsState {
@@ -60,6 +57,10 @@ pub fn remove_component_events(world: &mut World) {
         remove_component_event::<Vertex3d>(world, &events);
         remove_component_event::<Edge3d>(world, &events);
         remove_component_event::<Face3d>(world, &events);
+        remove_component_event::<IconVertex>(world, &events);
+        remove_component_event::<IconEdge>(world, &events);
+        remove_component_event::<IconFace>(world, &events);
+        remove_component_event::<IconFrame>(world, &events);
         remove_component_event::<AnimFrame>(world, &events);
         remove_component_event::<AnimRotation>(world, &events);
         remove_component_event::<PaletteColor>(world, &events);
@@ -206,6 +207,52 @@ pub fn remove_shape_component_events(
         info!("entity: `{:?}`, removed Face3d", entity);
 
         face_manager.cleanup_deleted_face_3d(&mut commands, &mut meshes, &entity);
+    }
+}
+
+pub fn remove_icon_component_events(
+    client: Client,
+
+    mut vertex_events: EventReader<RemoveComponentEvent<IconVertex>>,
+    mut edge_events: EventReader<RemoveComponentEvent<IconEdge>>,
+    mut face_events: EventReader<RemoveComponentEvent<IconFace>>,
+    mut frame_events: EventReader<RemoveComponentEvent<IconFrame>>,
+
+    mut commands: Commands,
+    mut icon_manager: ResMut<IconManager>,
+    mut meshes: ResMut<Assets<CpuMesh>>,
+) {
+    for event in vertex_events.iter() {
+        let entity = event.entity;
+        info!("entity: `{:?}`, removed IconVertex", entity);
+
+        icon_manager.cleanup_deleted_vertex(
+            &entity,
+        );
+    }
+    for event in edge_events.iter() {
+        let entity = event.entity;
+        info!("entity: `{:?}`, removed IconEdge", entity);
+
+        icon_manager.cleanup_deleted_edge(
+            &mut commands,
+            &entity,
+        );
+    }
+    for event in face_events.iter() {
+        let entity = event.entity;
+
+        info!("entity: `{:?}`, removed IconFace", entity);
+
+        icon_manager.cleanup_deleted_net_face(&mut commands, &mut meshes, &entity);
+    }
+    for event in frame_events.iter() {
+        let entity = event.entity;
+        info!("entity: `{:?}`, removed IconFrame", entity);
+
+        let file_entity = event.component.file_entity.get(&client).unwrap();
+
+        icon_manager.deregister_frame(&file_entity, &entity);
     }
 }
 

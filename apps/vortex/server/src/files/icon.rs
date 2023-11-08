@@ -22,17 +22,23 @@ use crate::{
 // Actions
 #[derive(Debug, Clone)]
 enum IconAction {
-    //////// x,   y//
-    Vertex(i16, i16),
-    //// id1, id2 // (vertex ids)
-    Edge(u16, u16),
-    //// order_index, id1, id2, id3 // (vertex ids) // id4, id5, id6 (edge ids)
-    Face(u16, u16, u16, u16, u16, u16, u16),
+    // path, file_name
+    PaletteFile(String, String),
+    // palette color index
+    BackgroundColor(u8),
+    //////// frame_index, x, y//
+    Vertex(u16, i16, i16),
+    //// frame_index, vertex id1, vertex id2 //
+    Edge(u16, u16, u16),
+    //// frame_index, order_index, id1, id2, id3 // (vertex ids) // id4, id5, id6 (edge ids) // TODO: remove order_index?
+    Face(u16, u16, u16, u16, u16, u16, u16, u16),
 }
 
 #[derive(Serde, Clone, PartialEq)]
 enum IconActionType {
     None,
+    PaletteFile,
+    BackgroundColor,
     Vertex,
     Edge,
     Face,

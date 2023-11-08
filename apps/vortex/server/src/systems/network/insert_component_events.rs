@@ -19,6 +19,7 @@ use vortex_proto::{
     },
     resources::FileKey,
 };
+use vortex_proto::components::IconFrame;
 
 use crate::{
     events::InsertComponentEvent,
@@ -413,14 +414,22 @@ pub fn insert_shape_component_events(
 
 pub fn insert_icon_component_events(
     mut server: Server,
-    mut git_manager: ResMut<GitManager>,
-    mut component_waitlist: ResMut<ComponentWaitlist>,
-    mut icon_manager: ResMut<IconManager>,
+    mut commands: Commands,
+
     mut vertex_events: EventReader<InsertComponentEvent<IconVertex>>,
     mut edge_events: EventReader<InsertComponentEvent<IconEdge>>,
     mut face_events: EventReader<InsertComponentEvent<IconFace>>,
+    mut frame_events: EventReader<InsertComponentEvent<IconFrame>>,
+
+    mut git_manager: ResMut<GitManager>,
+    user_manager: Res<UserManager>,
+    mut component_waitlist: ResMut<ComponentWaitlist>,
+    mut icon_manager: ResMut<IconManager>,
+
+    key_q: Query<&FileKey>,
     edge_q: Query<&IconEdge>,
     face_q: Query<&IconFace>,
+    mut frame_q: Query<&mut IconFrame>,
 ) {
     // on IconVertex Insert Event
     for event in vertex_events.iter() {
@@ -505,6 +514,42 @@ pub fn insert_icon_component_events(
             &entity,
             ComponentWaitlistInsert::FileType(FileExtension::Icon),
         );
+    }
+
+    // on IconFrame Insert Event
+    for event in frame_events.iter() {
+        let user_key = event.user_key;
+        let frame_entity = event.entity;
+        info!("entity: `{:?}`, inserted IconFrame", frame_entity);
+
+        let frame = frame_q.get(frame_entity).unwrap();
+        let frame_index = frame.get_order() as usize;
+        let file_entity: Entity = frame.file_entity.get(&server).unwrap();
+
+        let project_key = user_manager
+            .user_session_data(&user_key)
+            .unwrap()
+            .project_key()
+            .unwrap();
+        let file_key = key_q.get(file_entity).unwrap().clone();
+
+        icon_manager.on_create_frame(
+            &file_entity,
+            &frame_entity,
+            frame_index,
+            Some(&mut frame_q),
+        );
+
+        let content_entity_data = ContentEntityData::new_frame();
+        git_manager.on_insert_content_entity(
+            &mut server,
+            &project_key,
+            &file_key,
+            &frame_entity,
+            &content_entity_data,
+        );
+
+        git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
     }
 }
 

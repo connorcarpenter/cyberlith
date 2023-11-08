@@ -15,12 +15,7 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{
-    AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d,
-    EdgeAngle, EntryKind, Face3d, FaceColor, FileDependency, FileExtension, FileSystemChild,
-    FileSystemEntry, FileSystemRootChild, FileType, IconEdge, IconFace, IconVertex, NetTransform,
-    OwnedByFile, PaletteColor, ShapeName, SkinOrSceneEntity, Vertex3d, VertexRoot,
-};
+use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind, Face3d, FaceColor, FileDependency, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, IconEdge, IconFace, IconFrame, IconVertex, NetTransform, OwnedByFile, PaletteColor, ShapeName, SkinOrSceneEntity, Vertex3d, VertexRoot};
 
 use crate::app::{
     components::file_system::{
@@ -87,6 +82,7 @@ pub fn insert_component_events(world: &mut World) {
         insert_component_event::<IconVertex>(world, &events);
         insert_component_event::<IconEdge>(world, &events);
         insert_component_event::<IconFace>(world, &events);
+        insert_component_event::<IconFrame>(world, &events);
         insert_component_event::<AnimFrame>(world, &events);
         insert_component_event::<AnimRotation>(world, &events);
         insert_component_event::<PaletteColor>(world, &events);
@@ -513,6 +509,7 @@ pub fn insert_icon_events(
     mut vertex_events: EventReader<InsertComponentEvent<IconVertex>>,
     mut edge_events: EventReader<InsertComponentEvent<IconEdge>>,
     mut face_events: EventReader<InsertComponentEvent<IconFace>>,
+    mut frame_events: EventReader<InsertComponentEvent<IconFrame>>,
 
     mut camera_manager: ResMut<CameraManager>,
     mut canvas: ResMut<Canvas>,
@@ -524,6 +521,7 @@ pub fn insert_icon_events(
     vertex_q: Query<&IconVertex>,
     edge_q: Query<&IconEdge>,
     face_q: Query<&IconFace>,
+    frame_q: Query<&IconFrame>,
 ) {
     // on Vertex Insert Event
     for event in vertex_events.iter() {
@@ -687,6 +685,19 @@ pub fn insert_icon_events(
             &face_entity,
             ComponentWaitlistInsert::FileType(FileExtension::Icon),
         );
+    }
+
+    // on IconFrame Insert Event
+    for event in frame_events.iter() {
+        let frame_entity = event.entity;
+
+        info!("entity: {:?} - inserted IconFrame", frame_entity);
+
+        let frame = frame_q.get(frame_entity).unwrap();
+        let file_entity = frame.file_entity.get(&client).unwrap();
+        let _frame_order = frame.get_order() as usize;
+
+        icon_manager.frame_postprocess(file_entity, frame_entity);
     }
 }
 

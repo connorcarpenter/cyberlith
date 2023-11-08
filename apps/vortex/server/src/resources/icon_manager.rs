@@ -4,9 +4,11 @@ use bevy_ecs::{
     entity::Entity,
     system::{Commands, Resource},
 };
+use bevy_ecs::system::Query;
 use bevy_log::{info, warn};
 
 use naia_bevy_server::{CommandsExt, Server};
+use vortex_proto::components::IconFrame;
 
 pub struct IconVertexData {
     edges: HashSet<Entity>,
@@ -80,6 +82,100 @@ impl IconFaceData {
     }
 }
 
+pub struct FileFrameData {
+    frames: HashSet<Entity>,
+    frame_list: Vec<Option<Entity>>,
+}
+
+impl FileFrameData {
+    fn new() -> Self {
+        Self {
+            frames: HashSet::new(),
+            frame_list: Vec::new(),
+        }
+    }
+
+    fn add_frame(
+        &mut self,
+        frame_entity: Entity,
+        frame_order: usize,
+        mut frame_q_opt: Option<&mut Query<&mut IconFrame>>,
+    ) {
+        info!("--- add frame ---");
+        for i in 0..self.frame_list.len() {
+            info!("index: {}, entity: {:?}", i, self.frame_list[i]);
+        }
+        info!("- op -");
+
+        self.frames.insert(frame_entity);
+
+        // add to frame_list
+        if frame_order >= self.frame_list.len() {
+            self.frame_list.resize(frame_order + 1, None);
+            // set frame entity
+            self.frame_list[frame_order] = Some(frame_entity);
+        } else {
+            info!(
+                "add_frame: index: {:?}, entity: `{:?}`",
+                frame_order, frame_entity
+            );
+            self.frame_list.insert(frame_order, Some(frame_entity));
+
+            // move all elements after frame_order up one
+            for i in frame_order + 1..self.frame_list.len() {
+                // update frame_order in AnimFrame using frame_q_opt
+                if let Some(frame_q) = frame_q_opt.as_mut() {
+                    let Ok(mut frame) = frame_q.get_mut(self.frame_list[i].unwrap()) else {
+                        panic!("frame not found");
+                    };
+                    frame.set_order(i as u8);
+                }
+            }
+        }
+
+        info!("--- result ---");
+        for i in 0..self.frame_list.len() {
+            info!("index: {}, entity: {:?}", i, self.frame_list[i]);
+        }
+    }
+
+    fn remove_frame(
+        &mut self,
+        frame_entity: &Entity,
+        frame_q_opt: Option<&mut Query<&mut IconFrame>>,
+    ) {
+        self.frames.remove(frame_entity);
+
+        let frame_order = {
+            let mut frame_order_opt = None;
+            for (frame_index, frame_item) in self.frame_list.iter().enumerate() {
+                if let Some(frame_item) = frame_item {
+                    if frame_item == frame_entity {
+                        frame_order_opt = Some(frame_index);
+                        break;
+                    }
+                }
+            }
+            frame_order_opt.unwrap()
+        };
+
+        // get frame_order of frame_entity
+        if let Some(frame_q) = frame_q_opt {
+            // move all elements after frame_order down one
+            for i in frame_order..self.frame_list.len() - 1 {
+                self.frame_list[i] = self.frame_list[i + 1];
+
+                // update frame_order in IconFrame using frame_q_opt
+                if let Ok(mut frame) = frame_q.get_mut(self.frame_list[i].unwrap()) {
+                    frame.set_order(i as u8);
+                }
+            }
+
+            self.frame_list.truncate(self.frame_list.len() - 1);
+        }
+    }
+}
+
 #[derive(Resource)]
 pub struct IconManager {
     // vertex entity -> vertex data
@@ -90,6 +186,10 @@ pub struct IconManager {
     faces: HashMap<Entity, IconFaceData>,
     // file entity -> face entity list
     file_face_indices: HashMap<Entity, Vec<Entity>>,
+    // file entity -> file frame data
+    file_frame_data: HashMap<Entity, FileFrameData>,
+    // frame_entity -> file_entity
+    frames: HashMap<Entity, Entity>,
 }
 
 impl Default for IconManager {
@@ -99,6 +199,8 @@ impl Default for IconManager {
             edges: HashMap::new(),
             faces: HashMap::new(),
             file_face_indices: HashMap::new(),
+            file_frame_data: HashMap::new(),
+            frames: HashMap::new(),
         }
     }
 }
@@ -114,6 +216,10 @@ impl IconManager {
 
     pub fn has_face(&self, entity: &Entity) -> bool {
         self.faces.contains_key(entity)
+    }
+
+    pub fn has_frame(&self, frame_entity: &Entity) -> bool {
+        self.frames.contains_key(frame_entity)
     }
 
     pub fn get_face_index(&self, entity: &Entity) -> Option<usize> {
@@ -189,6 +295,51 @@ impl IconManager {
         }
 
         // TODO: add face to edges
+    }
+
+    pub fn on_create_frame(
+        &mut self,
+        file_entity: &Entity,
+        frame_entity: &Entity,
+        frame_index: usize,
+        frame_q_opt: Option<&mut Query<&mut IconFrame>>,
+    ) {
+        if !self.file_frame_data.contains_key(file_entity) {
+            self.file_frame_data
+                .insert(*file_entity, FileFrameData::new());
+        }
+        let file_frame_data = self.file_frame_data.get_mut(file_entity).unwrap();
+        file_frame_data.add_frame(*frame_entity, frame_index, frame_q_opt);
+
+        self.frames.insert(*frame_entity, *file_entity);
+    }
+
+    pub fn on_despawn_frame(
+        &mut self,
+        frame_entity: &Entity,
+        frame_q_opt: Option<&mut Query<&mut IconFrame>>,
+    ) {
+        self.deregister_frame(frame_entity, frame_q_opt);
+    }
+
+    pub fn deregister_frame(
+        &mut self,
+        frame_entity: &Entity,
+        frame_q_opt: Option<&mut Query<&mut IconFrame>>,
+    ) {
+        let Some(file_entity) = self.frames.remove(frame_entity) else {
+            panic!("frame entity not found");
+        };
+
+        let Some(file_frame_data) = self.file_frame_data.get_mut(&file_entity) else {
+            panic!("frame entity not found for file");
+        };
+        let output = file_frame_data.remove_frame(frame_entity, frame_q_opt);
+        if file_frame_data.frames.is_empty() {
+            self.file_frame_data.remove(&file_entity);
+        }
+
+        output
     }
 
     fn assign_index_to_new_face(

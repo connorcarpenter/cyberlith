@@ -6,10 +6,7 @@ use bevy_log::info;
 
 use naia_bevy_server::{events::UpdateComponentEvents, CommandsExt, EntityAuthStatus, Server};
 
-use vortex_proto::components::{
-    AnimFrame, AnimRotation, BackgroundSkinColor, EdgeAngle, FaceColor, FileSystemChild,
-    FileSystemEntry, IconVertex, NetTransform, PaletteColor, ShapeName, Vertex3d,
-};
+use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, EdgeAngle, FaceColor, FileSystemChild, FileSystemEntry, IconFrame, IconVertex, NetTransform, PaletteColor, ShapeName, Vertex3d};
 
 use crate::resources::{GitManager, UserManager};
 
@@ -21,6 +18,7 @@ pub fn update_component_events(
     mut event_reader: EventReader<UpdateComponentEvents>,
     shape_name_q: Query<&ShapeName>,
 ) {
+    let mut modified_content_entities = Vec::new();
     for events in event_reader.iter() {
         // on FileSystemEntry Update Event
         for (user_key, entity) in events.read::<FileSystemEntry>() {
@@ -39,24 +37,19 @@ pub fn update_component_events(
         }
         // on Vertex3D Update Event
         for (_, entity) in events.read::<Vertex3d>() {
-            let Some((project_key, file_key)) = git_manager.content_entity_keys(&entity) else {
-                panic!("no content entity keys!");
-            };
-            git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
+            modified_content_entities.push(entity);
         }
         // on IconVertex Update Event
         for (_, entity) in events.read::<IconVertex>() {
-            let Some((project_key, file_key)) = git_manager.content_entity_keys(&entity) else {
-                panic!("no content entity keys!");
-            };
-            git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
+            modified_content_entities.push(entity);
+        }
+        // on IconFrame Update Event
+        for (_, entity) in events.read::<IconFrame>() {
+            modified_content_entities.push(entity);
         }
         // on EdgeAngle Update Event
         for (_, entity) in events.read::<EdgeAngle>() {
-            let Some((project_key, file_key)) = git_manager.content_entity_keys(&entity) else {
-                panic!("no content entity keys!");
-            };
-            git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
+            modified_content_entities.push(entity);
         }
         // on ShapeName Update Event
         for (_, entity) in events.read::<ShapeName>() {
@@ -66,39 +59,23 @@ pub fn update_component_events(
                 entity, *shape_name.value
             );
 
-            let Some((project_key, file_key)) = git_manager.content_entity_keys(&entity) else {
-                panic!("no content entity keys!");
-            };
-            git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
+            modified_content_entities.push(entity);
         }
         // on AnimFrame Update Event
         for (_, entity) in events.read::<AnimFrame>() {
-            let Some((project_key, file_key)) = git_manager.content_entity_keys(&entity) else {
-                panic!("no content entity keys!");
-            };
-            git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
+            modified_content_entities.push(entity);
         }
         // on AnimRotation Update Event
         for (_, entity) in events.read::<AnimRotation>() {
-            let Some((project_key, file_key)) = git_manager.content_entity_keys(&entity) else {
-                panic!("no content entity keys!");
-            };
-            git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
+            modified_content_entities.push(entity);
         }
         // on PaletteColor Update Event
         for (_, entity) in events.read::<PaletteColor>() {
-            let Some((project_key, file_key)) = git_manager.content_entity_keys(&entity) else {
-                panic!("no content entity keys!");
-            };
-            git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
+            modified_content_entities.push(entity);
         }
         // on BackgroundSkinColor Update Event
         for (_, entity) in events.read::<BackgroundSkinColor>() {
-            let Some((project_key, file_key)) = git_manager.content_entity_keys(&entity) else {
-                panic!("no content entity keys!");
-            };
-
-            git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
+            modified_content_entities.push(entity);
 
             let auth = commands.entity(entity).authority(&server).unwrap();
             if auth != EntityAuthStatus::Available {
@@ -108,17 +85,18 @@ pub fn update_component_events(
         }
         // on FaceColor Update Event
         for (_, entity) in events.read::<FaceColor>() {
-            let Some((project_key, file_key)) = git_manager.content_entity_keys(&entity) else {
-                panic!("no content entity keys!");
-            };
-            git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
+            modified_content_entities.push(entity);
         }
         // on NetTransform Update Event
         for (_, entity) in events.read::<NetTransform>() {
-            let Some((project_key, file_key)) = git_manager.content_entity_keys(&entity) else {
-                panic!("no content entity keys!");
-            };
-            git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
+            modified_content_entities.push(entity);
         }
+    }
+
+    for modified_content_entity in modified_content_entities {
+        let Some((project_key, file_key)) = git_manager.content_entity_keys(&modified_content_entity) else {
+            panic!("no content entity keys!");
+        };
+        git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
     }
 }
