@@ -130,7 +130,7 @@ pub fn draw_vertices_and_edges(world: &mut World) {
             return;
         }
         FileExtension::Icon => {
-            world.resource_scope(|world, icon_manager: Mut<IconManager>| {
+            world.resource_scope(|world, mut icon_manager: Mut<IconManager>| {
                 icon_manager.draw(world, &current_file_entity);
             });
 

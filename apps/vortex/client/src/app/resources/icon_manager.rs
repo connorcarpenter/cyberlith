@@ -8,7 +8,7 @@ use bevy_ecs::{
 use bevy_log::{info, warn};
 
 use input::{Input, Key};
-use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
+use naia_bevy_client::{Client, CommandsExt, Instant, ReplicationConfig};
 
 use math::{Vec2, Vec3};
 
@@ -22,8 +22,9 @@ use render_api::{
     shapes::{set_2d_line_transform, HollowTriangle, Triangle},
     Assets, Handle,
 };
+use render_api::shapes::Circle;
 
-use vortex_proto::components::{IconEdge, IconFace, IconVertex, OwnedByFile};
+use vortex_proto::components::{IconEdge, IconFace, IconFrame, IconVertex, OwnedByFile};
 
 use crate::app::{
     components::{
@@ -41,6 +42,8 @@ use crate::app::{
     },
     shapes::create_2d_edge_line,
 };
+use crate::app::resources::input::CardinalDirection;
+use crate::app::shapes::Line2d;
 
 #[derive(Resource)]
 pub struct IconManager {
@@ -54,6 +57,31 @@ pub struct IconManager {
     select_circle_entity: Entity,
     select_triangle_entity: Entity,
     select_line_entity: Entity,
+
+    // framing
+    meshing: bool,
+    frame_size: Vec2,
+    frame_buffer: Vec2,
+    frame_hover: Option<usize>,
+    resync_frame_order: HashSet<Entity>,
+    current_frame_index: usize,
+    framing_y: f32,
+    frame_duration_ms: f32,
+
+    // file_entity -> file_frame_data
+    file_frame_data: HashMap<Entity, FileFrameData>,
+    // frame entity -> file_entity
+    frames: HashMap<Entity, Entity>,
+
+    preview_playing: bool,
+    last_preview_instant: Instant,
+    preview_elapsed_ms: f32,
+    preview_frame_index: usize,
+    preview_frame_selected: bool,
+
+    //doubleclick
+    pub(crate) last_left_click_instant: Instant,
+    pub(crate) last_frame_index_hover: usize, //TODO: move this to IconInputManager?
 
     // vertices
     vertices: HashMap<Entity, IconVertexData>,
@@ -90,6 +118,28 @@ impl Default for IconManager {
             select_triangle_entity: Entity::PLACEHOLDER,
             select_line_entity: Entity::PLACEHOLDER,
 
+            // framing
+            meshing: false,
+            resync_frame_order: HashSet::new(),
+            frame_size: Vec2::new(100.0, 100.0),
+            frame_buffer: Vec2::new(12.0, 12.0),
+            frame_hover: None,
+            current_frame_index: 0,
+            framing_y: 0.0,
+            frame_duration_ms: 40.0,
+
+            file_frame_data: HashMap::new(),
+            frames: HashMap::new(),
+
+            preview_playing: false,
+            last_preview_instant: Instant::now(),
+            preview_elapsed_ms: 0.0,
+            preview_frame_index: 0,
+            preview_frame_selected: false,
+
+            last_left_click_instant: Instant::now(),
+            last_frame_index_hover: 0,
+
             // vertices
             vertices: HashMap::new(),
             drags: Vec::new(),
@@ -110,7 +160,16 @@ impl Default for IconManager {
 }
 
 impl IconManager {
-    pub fn draw(&self, world: &mut World, current_file_entity: &Entity) {
+
+    pub fn draw(&mut self, world: &mut World, current_file_entity: &Entity) {
+        if self.meshing {
+            self.draw_meshing(world, current_file_entity);
+        } else {
+            self.draw_framing(world);
+        }
+    }
+
+    fn draw_meshing(&self, world: &mut World, current_file_entity: &Entity) {
         {
             let mut system_state: SystemState<(
                 ResMut<RenderFrame>,
@@ -482,6 +541,22 @@ impl IconManager {
         }
         self.resync_hover = false;
 
+        if self.meshing {
+            self.sync_mouse_hover_ui_meshing(world, current_file_entity, screen_mouse_position);
+        } else {
+            let mut system_state: SystemState<Res<Canvas>> = SystemState::new(world);
+            let canvas = system_state.get_mut(world);
+            let canvas_size = canvas.texture_size();
+            self.sync_mouse_hover_ui_framing(current_file_entity, canvas_size, screen_mouse_position);
+        }
+    }
+
+    fn sync_mouse_hover_ui_meshing(
+        &mut self,
+        world: &mut World,
+        current_file_entity: &Entity,
+        screen_mouse_position: &Vec2,
+    ) {
         let mut system_state: SystemState<(Res<Canvas>, Query<&Transform>)> =
             SystemState::new(world);
         let (canvas, transform_q) = system_state.get_mut(world);
@@ -673,7 +748,7 @@ impl IconManager {
         }
     }
 
-    pub fn take_drags(&mut self) -> Option<Vec<(Entity, Vec2, Vec2)>> {
+    fn take_drags(&mut self) -> Option<Vec<(Entity, Vec2, Vec2)>> {
         if self.dragging_entity.is_some() {
             // finish current drag
             self.drags.push((
@@ -763,7 +838,7 @@ impl IconManager {
         self.register_vertex(vertex_entity);
     }
 
-    pub fn register_vertex(&mut self, entity: Entity) {
+    fn register_vertex(&mut self, entity: Entity) {
         self.vertices.insert(entity, IconVertexData::new());
     }
 
@@ -827,14 +902,14 @@ impl IconManager {
         self.vertices.get(vertex_entity).map(|data| &data.edges)
     }
 
-    pub(crate) fn vertex_add_edge(&mut self, vertex_entity: &Entity, edge_entity: Entity) {
+    fn vertex_add_edge(&mut self, vertex_entity: &Entity, edge_entity: Entity) {
         let Some(vertex_data) = self.vertices.get_mut(&vertex_entity) else {
             panic!("Vertex entity: `{:?}` has not been registered", vertex_entity);
         };
         vertex_data.add_edge(edge_entity);
     }
 
-    pub(crate) fn vertex_remove_edge(&mut self, vertex_entity: &Entity, edge_entity: &Entity) {
+    fn vertex_remove_edge(&mut self, vertex_entity: &Entity, edge_entity: &Entity) {
         // at this point, vertex_entity may have already been deregistered
         if let Some(vertex_data) = self.vertices.get_mut(vertex_entity) {
             vertex_data.remove_edge(edge_entity);
@@ -845,14 +920,14 @@ impl IconManager {
         self.vertices.get(vertex_entity).map(|data| &data.faces)
     }
 
-    pub(crate) fn vertex_add_face(&mut self, vertex_entity: &Entity, face_key: IconFaceKey) {
+    fn vertex_add_face(&mut self, vertex_entity: &Entity, face_key: IconFaceKey) {
         // at this point, vertex_entity may have already been deregistered
         if let Some(vertex_data) = self.vertices.get_mut(vertex_entity) {
             vertex_data.add_face(face_key);
         };
     }
 
-    pub(crate) fn vertex_remove_face(&mut self, vertex_entity: &Entity, face_key: &IconFaceKey) {
+    fn vertex_remove_face(&mut self, vertex_entity: &Entity, face_key: &IconFaceKey) {
         // at this point, vertex_entity may have already been deregistered
         if let Some(vertex_data) = self.vertices.get_mut(vertex_entity) {
             vertex_data.remove_face(face_key);
@@ -863,11 +938,11 @@ impl IconManager {
         self.vertices.remove(entity);
     }
 
-    pub(crate) fn get_vertex_data(&self, entity: &Entity) -> Option<&IconVertexData> {
+    fn get_vertex_data(&self, entity: &Entity) -> Option<&IconVertexData> {
         self.vertices.get(entity)
     }
 
-    pub(crate) fn get_connected_vertices(&self, vertex_entity: Entity) -> HashSet<Entity> {
+    fn get_connected_vertices(&self, vertex_entity: Entity) -> HashSet<Entity> {
         let mut set = HashSet::new();
 
         let Some(vertex_data) = self.vertices.get(&vertex_entity) else {
@@ -968,7 +1043,7 @@ impl IconManager {
         self.register_edge(edge_entity, vertex_entity_a, vertex_entity_b, ownership_opt);
     }
 
-    pub fn register_edge(
+    fn register_edge(
         &mut self,
         edge_entity: Entity,
         vertex_entity_a: Entity,
@@ -1033,7 +1108,7 @@ impl IconManager {
             .map(|data| data.faces.iter().copied().collect())
     }
 
-    pub(crate) fn edge_add_face(&mut self, edge_entity: &Entity, face_key: IconFaceKey) {
+    fn edge_add_face(&mut self, edge_entity: &Entity, face_key: IconFaceKey) {
         self.edges
             .get_mut(edge_entity)
             .unwrap()
@@ -1041,7 +1116,7 @@ impl IconManager {
             .insert(face_key);
     }
 
-    pub(crate) fn edge_remove_face(&mut self, edge_entity: &Entity, face_key: &IconFaceKey) {
+    fn edge_remove_face(&mut self, edge_entity: &Entity, face_key: &IconFaceKey) {
         self.edges
             .get_mut(edge_entity)
             .unwrap()
@@ -1049,7 +1124,7 @@ impl IconManager {
             .remove(face_key);
     }
 
-    pub(crate) fn edge_get_endpoints(&self, edge_entity: &Entity) -> (Entity, Entity) {
+    fn edge_get_endpoints(&self, edge_entity: &Entity) -> (Entity, Entity) {
         let edge_data = self.edges.get(edge_entity).unwrap();
         (edge_data.vertex_entity_a, edge_data.vertex_entity_b)
     }
@@ -1329,7 +1404,7 @@ impl IconManager {
             .insert(meshes.add(Triangle::new_2d_equilateral()));
     }
 
-    pub fn register_net_face(&mut self, net_face_entity: Entity, face_key: &IconFaceKey) {
+    fn register_net_face(&mut self, net_face_entity: Entity, face_key: &IconFaceKey) {
         self.net_faces.insert(net_face_entity, *face_key);
 
         let Some(Some(face_data)) = self.face_keys.get_mut(face_key) else {
@@ -1357,7 +1432,7 @@ impl IconManager {
     }
 
     // returns local face entity
-    pub(crate) fn cleanup_deleted_face_key(
+    fn cleanup_deleted_face_key(
         &mut self,
         commands: &mut Commands,
         face_key: &IconFaceKey,
@@ -1464,7 +1539,7 @@ impl IconManager {
         return None;
     }
 
-    pub(crate) fn check_for_new_faces(
+    fn check_for_new_faces(
         &mut self,
         file_entity: Entity,
         vertex_entity_a: Entity,
@@ -1483,4 +1558,653 @@ impl IconManager {
             }
         }
     }
+
+    // Framing
+
+    pub(crate) fn current_frame_index(&self) -> usize {
+        self.current_frame_index
+    }
+
+    pub fn set_current_frame_index(&mut self, frame_index: usize) {
+        self.current_frame_index = frame_index;
+    }
+
+    pub fn preview_is_playing(&self) -> bool {
+        self.preview_playing
+    }
+
+    pub fn preview_play(&mut self) {
+        self.preview_playing = true;
+        self.last_preview_instant = Instant::now();
+    }
+
+    pub fn preview_pause(&mut self) {
+        self.preview_playing = false;
+    }
+
+    pub fn preview_frame_index(&self) -> usize {
+        self.preview_frame_index
+    }
+
+    pub fn preview_elapsed_ms(&self) -> f32 {
+        self.preview_elapsed_ms
+    }
+
+    pub fn frame_index_hover(&self) -> Option<usize> {
+        self.frame_hover
+    }
+
+    pub fn is_meshing(&self) -> bool {
+        self.meshing
+    }
+
+    pub fn is_framing(&self) -> bool {
+        !self.meshing
+    }
+
+    pub fn set_meshing(&mut self) {
+        self.meshing = true;
+    }
+
+    pub fn set_framing(&mut self) {
+        self.meshing = false;
+        self.preview_frame_selected = false;
+    }
+
+    pub fn set_preview_frame_selected(&mut self) {
+        self.preview_frame_selected = true;
+    }
+
+    pub fn preview_frame_selected(&self) -> bool {
+        self.preview_frame_selected
+    }
+
+    pub fn get_frame_entity(&self, file_entity: &Entity, frame_index: usize) -> Option<Entity> {
+        //info!("get_frame_entity({:?}, {:?})", file_entity, frame_index);
+        let frame_data = self.file_frame_data.get(file_entity)?;
+        //info!("frame list: {:?}", frame_data.frame_list);
+        let entity_opt = frame_data.frame_list.get(frame_index)?.as_ref();
+        let entity = entity_opt?;
+        Some(*entity)
+    }
+
+    pub(crate) fn current_frame_entity(&self, file_entity: &Entity) -> Option<Entity> {
+        let current_frame_index = self.current_frame_index;
+        let frame_data = self.file_frame_data.get(file_entity)?; //&(*file_entity, current_frame_index)).copied()
+        let entity_opt = frame_data.frame_list.get(current_frame_index)?.as_ref();
+        let entity = entity_opt?;
+        Some(*entity)
+    }
+
+    pub(crate) fn get_frame_count(&self, file_entity: &Entity) -> Option<usize> {
+        let frame_data = self.file_frame_data.get(file_entity)?;
+        Some(frame_data.frame_list.len())
+    }
+
+    pub(crate) fn register_frame(&mut self, file_entity: Entity, frame_entity: Entity) {
+        if !self.file_frame_data.contains_key(&file_entity) {
+            self.file_frame_data.insert(file_entity, FileFrameData::new());
+        }
+        let frame_data = self.file_frame_data.get_mut(&file_entity).unwrap();
+        frame_data.register_frame(frame_entity);
+
+        self.frames.insert(frame_entity, file_entity);
+
+        self.framing_queue_resync_frame_order(&file_entity);
+    }
+
+    pub(crate) fn deregister_frame(&mut self, file_entity: &Entity, frame_entity: &Entity) {
+        if !self.file_frame_data.contains_key(file_entity) {
+            panic!("Frame data not found!");
+        }
+
+        let frame_data = self.file_frame_data.get_mut(file_entity).unwrap();
+        frame_data.deregister_frame(frame_entity);
+
+        if frame_data.frames.is_empty() {
+            self.file_frame_data.remove(file_entity);
+        }
+
+        self.frames.remove(frame_entity);
+
+        self.framing_queue_resync_frame_order(file_entity);
+
+        // TODO: handle current selected frame ... harder to do because can we really suppose that
+        // the current tab file entity is the same as the file entity here?
+    }
+
+    fn get_frame_positions(&mut self, canvas_size: Vec2, frame_count: usize) -> Vec<Vec2> {
+        let mut positions = Vec::new();
+        let mut start_position = self.frame_buffer;
+
+        for _ in 0..=frame_count {
+            positions.push(start_position);
+            let next_x = start_position.x + self.frame_size.x + self.frame_buffer.x;
+            if next_x + self.frame_size.x > canvas_size.x {
+                start_position.x = self.frame_buffer.x;
+                start_position.y += self.frame_size.y + self.frame_buffer.y;
+            } else {
+                start_position.x = next_x;
+            }
+        }
+
+        let last_y = start_position.y + self.frame_size.y + self.frame_buffer.y;
+        let y_diff = last_y - canvas_size.y;
+        if y_diff <= 0.0 {
+            self.framing_y = 0.0;
+        } else {
+            if self.framing_y > 0.0 {
+                self.framing_y = 0.0;
+            }
+            if self.framing_y < -y_diff {
+                self.framing_y = -y_diff;
+            }
+        }
+
+        for position in positions.iter_mut() {
+            position.y += self.framing_y;
+        }
+
+        positions
+    }
+
+    pub fn framing_queue_resync_frame_order(&mut self, file_entity: &Entity) {
+        info!(
+            "framing_queue_resync_frame_order for entity: `{:?}`",
+            file_entity
+        );
+        self.resync_frame_order.insert(*file_entity);
+    }
+
+    pub fn framing_resync_frame_order(
+        &mut self,
+        client: &Client,
+        frame_q: &Query<(Entity, &IconFrame)>,
+    ) {
+        if self.resync_frame_order.is_empty() {
+            return;
+        }
+        let resync_frame_order = std::mem::take(&mut self.resync_frame_order);
+        for file_entity in resync_frame_order {
+            // info!("resync_frame_order for entity: `{:?}`", file_entity);
+            self.framing_recalc_order(client, &file_entity, frame_q);
+        }
+    }
+
+    pub fn framing_insert_frame(
+        &mut self,
+        commands: &mut Commands,
+        client: &mut Client,
+        file_entity: Entity,
+        frame_index: usize,
+    ) -> Entity {
+        let mut frame_component = IconFrame::new(frame_index as u8);
+        frame_component.file_entity.set(client, &file_entity);
+        let entity_id = commands
+            .spawn_empty()
+            .enable_replication(client)
+            .configure_replication(ReplicationConfig::Delegated)
+            .insert(frame_component)
+            .id();
+
+        // create new 2d vertex, add local components to 3d vertex
+        self.frame_postprocess(file_entity, entity_id);
+
+        entity_id
+    }
+
+    fn framing_recalc_order(
+        &mut self,
+        client: &Client,
+        file_entity: &Entity,
+        frame_q: &Query<(Entity, &IconFrame)>,
+    ) {
+        let Some(frame_data) = self.file_frame_data.get_mut(&file_entity) else {
+            return;
+        };
+
+        let mut new_frame_list = Vec::new();
+
+        for (frame_entity, frame) in frame_q.iter() {
+            let frames_file_entity = frame.file_entity.get(client).unwrap();
+            if frames_file_entity != *file_entity {
+                continue;
+            }
+            let frame_index = frame.get_order() as usize;
+            // resize if necessary
+            if frame_index >= new_frame_list.len() {
+                new_frame_list.resize(frame_index + 1, None);
+            }
+            if new_frame_list[frame_index].is_some() {
+                warn!("Duplicate frame order! {:?}", frame_index);
+            }
+            new_frame_list[frame_index] = Some(frame_entity);
+        }
+
+        for (index, frame_entity_opt) in new_frame_list.iter().enumerate() {
+            info!("frame order: {:?} -> {:?}", index, frame_entity_opt);
+        }
+
+        frame_data.frame_list = new_frame_list;
+    }
+
+    pub(crate) fn frame_postprocess(&mut self, file_entity: Entity, frame_entity: Entity) {
+        self.register_frame(file_entity, frame_entity);
+    }
+
+    pub(crate) fn handle_mouse_drag_framing(&mut self, delta_y: f32) {
+        self.framing_y += delta_y;
+    }
+
+    pub fn framing_navigate(
+        &mut self,
+        current_file_entity: &Entity,
+        dir: CardinalDirection,
+    ) -> Option<(usize, usize)> {
+        let mut current_index = self.current_frame_index;
+        let Some(frame_data) = self.file_frame_data.get(current_file_entity) else {
+            return None;
+        };
+        match dir {
+            CardinalDirection::West => {
+                if current_index <= 0 {
+                    return None;
+                }
+                current_index -= 1;
+                // if no frame entity, continue decrementing
+                while frame_data.frame_list[current_index].is_none() {
+                    if current_index <= 0 {
+                        return None;
+                    }
+                    current_index -= 1;
+                }
+                return Some((self.current_frame_index, current_index));
+            }
+            CardinalDirection::East => {
+                if current_index >= frame_data.frame_list.len() - 1 {
+                    return None;
+                }
+                current_index += 1;
+                // if no frame entity, continue incrementing
+                while frame_data.frame_list[current_index].is_none() {
+                    if current_index >= frame_data.frame_list.len() - 1 {
+                        return None;
+                    }
+                    current_index += 1;
+                }
+                return Some((self.current_frame_index, current_index));
+            }
+            _ => {
+                return None;
+            }
+        }
+    }
+
+    pub fn framing_handle_mouse_wheel(&mut self, scroll_y: f32) {
+        let scroll_y = 0.8 + (((scroll_y + 24.0) / 48.0) * 0.4);
+        self.frame_size *= scroll_y;
+        if self.frame_size.x < 40.0 {
+            self.frame_size = Vec2::new(40.0, 40.0);
+        }
+        if self.frame_size.x > 400.0 {
+            self.frame_size = Vec2::new(400.0, 400.0);
+        }
+    }
+
+    fn sync_mouse_hover_ui_framing(
+        &mut self,
+        current_file_entity: &Entity,
+        canvas_size: Vec2,
+        mouse_position: &Vec2,
+    ) {
+        let Some(file_frame_data) = self.file_frame_data.get(current_file_entity) else {
+            return;
+        };
+
+        let frame_count = file_frame_data.count();
+
+        let frame_positions = self.get_frame_positions(canvas_size, frame_count);
+
+        self.frame_hover = None;
+        for (index, frame_position) in frame_positions.iter().enumerate() {
+            // assign hover frame
+            if mouse_position.x >= frame_position.x
+                && mouse_position.x <= frame_position.x + self.frame_size.x
+            {
+                if mouse_position.y >= frame_position.y
+                    && mouse_position.y <= frame_position.y + self.frame_size.y
+                {
+                    self.frame_hover = Some(index);
+                    return;
+                }
+            }
+        }
+    }
+
+    fn draw_framing(&mut self, world: &mut World) {
+        // get current file
+        let Some(current_file_entity) = world.get_resource::<TabManager>().unwrap().current_tab_entity() else {
+            return;
+        };
+        let current_file_entity = *current_file_entity;
+
+        let Some(file_frame_data) = self.file_frame_data.get(&current_file_entity) else {
+            return;
+        };
+
+        let frame_count = file_frame_data.count();
+        let canvas_size = world.get_resource::<Canvas>().unwrap().texture_size();
+        let frame_rects = self.get_frame_positions(canvas_size, frame_count);
+
+        let file_frame_data = self.file_frame_data.get(&current_file_entity).unwrap();
+
+        let (
+            frame_rects,
+            point_mesh_handle,
+            line_mesh_handle,
+            mat_handle_white,
+            mat_handle_green,
+        ) = {
+            // draw
+            let mut system_state: SystemState<(
+                ResMut<RenderFrame>,
+                ResMut<Assets<CpuMesh>>,
+                ResMut<Assets<CpuMaterial>>,
+            )> = SystemState::new(world);
+            let (
+                mut render_frame,
+                mut meshes,
+                mut materials,
+            ) = system_state.get_mut(world);
+
+            let render_layer = self.render_layer;
+            let point_mesh_handle = meshes.add(Circle::new(Vertex2d::SUBDIVISIONS));
+            let line_mesh_handle = meshes.add(Line2d);
+            let mat_handle_white = materials.add(Color::WHITE);
+            let mat_handle_gray = materials.add(Color::GRAY);
+            let mat_handle_dark_gray = materials.add(Color::DARK_GRAY);
+            let mat_handle_green = materials.add(Color::GREEN);
+
+            for (frame_index, frame_pos) in frame_rects.iter().enumerate() {
+                // frame_index 0 is preview frame
+                let selected: bool = frame_index > 0 && self.current_frame_index == frame_index - 1;
+
+                // set thickness to 4.0 if frame is hovered and not currently selected, otherwise 2.0
+                let thickness = if !selected && Some(frame_index) == self.frame_hover {
+                    4.0
+                } else {
+                    2.0
+                };
+
+                let mat = if frame_index == 0 {
+                    mat_handle_dark_gray
+                } else {
+                    mat_handle_gray
+                };
+
+                draw_rectangle(
+                    &mut render_frame,
+                    &render_layer,
+                    &line_mesh_handle,
+                    &mat,
+                    *frame_pos,
+                    self.frame_size,
+                    thickness,
+                );
+
+                if selected {
+                    // draw white rectangle around selected frame
+                    draw_rectangle(
+                        &mut render_frame,
+                        &render_layer,
+                        &line_mesh_handle,
+                        &mat_handle_white,
+                        *frame_pos + Vec2::new(-4.0, -4.0),
+                        self.frame_size + Vec2::new(8.0, 8.0),
+                        thickness,
+                    );
+                }
+            }
+
+            (
+                frame_rects,
+                point_mesh_handle,
+                line_mesh_handle,
+                mat_handle_white,
+                mat_handle_green,
+            )
+        };
+
+        let mut frame_index = 0;
+
+        {
+            // draw preview frame
+            if let Some(Some(preview_current_frame_entity)) =
+                file_frame_data.frame_list.get(self.preview_frame_index)
+            {
+
+                let frame_pos = frame_rects[frame_index];
+
+                todo!();
+                // self.draw_pose(
+                //     world,
+                //     &vertex_manager,
+                //     *preview_current_frame_entity,
+                //     Some((
+                //         preview_next_frame_entity,
+                //         self.preview_elapsed_ms / frame_duration,
+                //     )),
+                //     root_3d_vertex,
+                //     &frame_pos,
+                //     &render_layer,
+                //     &point_mesh_handle,
+                //     &line_mesh_handle,
+                //     &mat_handle_green,
+                //     &camera_viewport,
+                //     &view_matrix,
+                //     &projection_matrix,
+                // );
+            }
+
+            frame_index += 1;
+        }
+
+        for frame_opt in file_frame_data.frame_list.iter() {
+            if frame_opt.is_none() {
+                continue;
+            }
+            let frame_entity = frame_opt.unwrap();
+
+            let frame_pos = frame_rects[frame_index];
+
+            todo!();
+            // self.draw_pose(
+            //     world,
+            //     &vertex_manager,
+            //     frame_entity,
+            //     None,
+            //     root_3d_vertex,
+            //     &frame_pos,
+            //     &render_layer,
+            //     &point_mesh_handle,
+            //     &line_mesh_handle,
+            //     &mat_handle_green,
+            //     &camera_viewport,
+            //     &view_matrix,
+            //     &projection_matrix,
+            // );
+
+            frame_index += 1;
+        }
+
+        self.draw_preview_time_line(
+            world,
+            &line_mesh_handle,
+            &mat_handle_white,
+            &frame_rects,
+        );
+    }
+
+    fn draw_preview_time_line(
+        &self,
+        world: &mut World,
+        line_mesh_handle: &Handle<CpuMesh>,
+        mat_handle_white: &Handle<CpuMaterial>,
+        frame_positions: &Vec<Vec2>,
+    ) {
+        let complete = self.preview_elapsed_ms / self.frame_duration_ms;
+        let frame_width = self.frame_size.x + self.frame_buffer.x;
+        let frame_count = frame_positions.len();
+
+        let mut start: Vec2;
+        if complete < 0.5 {
+            let mut preview_frame_index = self.preview_frame_index + 1;
+            if preview_frame_index >= frame_count {
+                preview_frame_index -= frame_count - 1;
+            }
+
+            start = frame_positions[preview_frame_index];
+
+            start.x += frame_width * complete;
+        } else {
+            let mut next_frame_index = self.preview_frame_index + 2;
+            if next_frame_index >= frame_count {
+                next_frame_index -= frame_count - 1;
+            }
+            start = frame_positions[next_frame_index];
+            start.x -= frame_width * (1.0 - complete);
+        }
+
+        start.x += self.frame_size.x * 0.5;
+        start.y -= self.frame_buffer.y;
+
+        let mut end = start;
+        end.y += self.frame_size.y + (self.frame_buffer.y * 2.0);
+
+        let mut render_frame = world.get_resource_mut::<RenderFrame>().unwrap();
+        draw_line(
+            &mut render_frame,
+            &self.render_layer,
+            line_mesh_handle,
+            mat_handle_white,
+            start,
+            end,
+            2.0,
+        );
+    }
+}
+
+struct FileFrameData {
+    frames: HashSet<Entity>,
+    frame_list: Vec<Option<Entity>>,
+}
+
+impl FileFrameData {
+    pub fn new() -> Self {
+        Self {
+            frames: HashSet::new(),
+            frame_list: Vec::new(),
+        }
+    }
+
+    pub fn register_frame(&mut self, frame_entity: Entity) {
+        self.frames.insert(frame_entity);
+    }
+
+    pub fn deregister_frame(&mut self, frame_entity: &Entity) {
+        self.frames.remove(frame_entity);
+    }
+
+    pub fn count(&self) -> usize {
+        let mut count = 0;
+        for val_opt in &self.frame_list {
+            if val_opt.is_some() {
+                count += 1;
+            }
+        }
+        count
+    }
+}
+
+fn draw_rectangle(
+    render_frame: &mut RenderFrame,
+    render_layer: &RenderLayer,
+    mesh_handle: &Handle<CpuMesh>,
+    mat_handle: &Handle<CpuMaterial>,
+    position: Vec2,
+    size: Vec2,
+    thickness: f32,
+) {
+    // top
+    let start = position;
+    let mut end = position;
+    end.x += size.x;
+    draw_line(
+        render_frame,
+        render_layer,
+        mesh_handle,
+        mat_handle,
+        start,
+        end,
+        thickness,
+    );
+
+    // bottom
+    let mut start = position;
+    start.y += size.y;
+    let mut end = start;
+    end.x += size.x;
+    draw_line(
+        render_frame,
+        render_layer,
+        mesh_handle,
+        mat_handle,
+        start,
+        end,
+        thickness,
+    );
+
+    // left
+    let start = position;
+    let mut end = position;
+    end.y += size.y;
+    draw_line(
+        render_frame,
+        render_layer,
+        mesh_handle,
+        mat_handle,
+        start,
+        end,
+        thickness,
+    );
+
+    // right
+    let mut start = position;
+    start.x += size.x;
+    let mut end = start;
+    end.y += size.y;
+    draw_line(
+        render_frame,
+        render_layer,
+        mesh_handle,
+        mat_handle,
+        start,
+        end,
+        thickness,
+    );
+}
+
+fn draw_line(
+    render_frame: &mut RenderFrame,
+    render_layer: &RenderLayer,
+    mesh_handle: &Handle<CpuMesh>,
+    mat_handle: &Handle<CpuMaterial>,
+    start: Vec2,
+    end: Vec2,
+    thickness: f32,
+) {
+    let mut transform = Transform::default();
+    transform.scale.y = thickness;
+    set_2d_line_transform(&mut transform, start, end, 0.0);
+    render_frame.draw_object(Some(render_layer), mesh_handle, mat_handle, &transform);
 }

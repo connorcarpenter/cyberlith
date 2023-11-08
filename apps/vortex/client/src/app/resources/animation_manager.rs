@@ -996,8 +996,13 @@ impl AnimationManager {
                 ResMut<Assets<CpuMaterial>>,
                 Query<(&mut Camera, &mut Projection, &mut Transform)>,
             )> = SystemState::new(world);
-            let (mut render_frame, camera_manager, mut meshes, mut materials, mut camera_q) =
-                system_state.get_mut(world);
+            let (
+                mut render_frame,
+                camera_manager,
+                mut meshes,
+                mut materials,
+                mut camera_q
+            ) = system_state.get_mut(world);
 
             camera_manager.enable_cameras(&mut camera_q, true);
 

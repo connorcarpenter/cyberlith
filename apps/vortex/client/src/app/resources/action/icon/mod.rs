@@ -6,6 +6,10 @@ mod delete_vertex;
 mod icon_action;
 mod move_vertex;
 mod select_shape;
+mod delete_frame;
+mod insert_frame;
+mod move_frame;
+mod select_frame;
 
 pub use icon_action::*;
 pub use select_shape::*;

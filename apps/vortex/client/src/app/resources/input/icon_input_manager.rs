@@ -6,7 +6,7 @@ use bevy_ecs::{
 };
 use bevy_log::{info, warn};
 
-use naia_bevy_client::{Client, CommandsExt};
+use naia_bevy_client::{Client, CommandsExt, Instant};
 
 use input::{InputAction, Key, MouseButton};
 use math::Vec2;
@@ -28,6 +28,7 @@ use crate::app::{
         tab_manager::TabManager,
     },
 };
+use crate::app::resources::input::CardinalDirection;
 
 pub struct IconInputManager;
 
@@ -37,13 +38,27 @@ impl IconInputManager {
         icon_manager: &mut IconManager,
         input_actions: Vec<InputAction>,
     ) {
+        if icon_manager.is_meshing() {
+            Self::update_input_meshing(world, icon_manager, input_actions);
+        } else {
+            Self::update_input_framing(world, icon_manager, input_actions);
+        }
+    }
+
+    // Meshing
+
+    fn update_input_meshing(
+        world: &mut World,
+        icon_manager: &mut IconManager,
+        input_actions: Vec<InputAction>,
+    ) {
         for action in input_actions {
             match action {
                 InputAction::MouseClick(click_type, mouse_position) => {
-                    Self::handle_mouse_click(world, icon_manager, &mouse_position, click_type)
+                    Self::handle_mouse_click_meshing(world, icon_manager, &mouse_position, click_type)
                 }
                 InputAction::MouseDragged(click_type, mouse_position, delta) => {
-                    Self::handle_mouse_drag(world, icon_manager, mouse_position, delta, click_type)
+                    Self::handle_mouse_drag_meshing(world, icon_manager, mouse_position, delta, click_type)
                 }
                 InputAction::MiddleMouseScroll(scroll_y) => {
                     InputManager::handle_mouse_scroll_wheel(world, scroll_y)
@@ -59,10 +74,13 @@ impl IconInputManager {
                         icon_manager.handle_keypress_camera_controls(key);
                     }
                     Key::Delete => {
-                        Self::handle_delete_key_press(world, icon_manager);
+                        Self::handle_delete_key_press_meshing(world, icon_manager);
                     }
                     Key::Insert => {
-                        Self::handle_insert_key_press(world, icon_manager);
+                        Self::handle_insert_key_press_meshing(world, icon_manager);
+                    }
+                    Key::Escape => {
+                        icon_manager.set_framing();
                     }
                     _ => {}
                 },
@@ -71,7 +89,7 @@ impl IconInputManager {
         }
     }
 
-    pub(crate) fn handle_insert_key_press(world: &mut World, icon_manager: &mut IconManager) {
+    pub(crate) fn handle_insert_key_press_meshing(world: &mut World, icon_manager: &mut IconManager) {
         if icon_manager.selected_shape.is_some() {
             return;
         }
@@ -88,7 +106,7 @@ impl IconInputManager {
         })
     }
 
-    pub(crate) fn handle_delete_key_press(world: &mut World, icon_manager: &mut IconManager) {
+    pub(crate) fn handle_delete_key_press_meshing(world: &mut World, icon_manager: &mut IconManager) {
         match icon_manager.selected_shape {
             Some((vertex_entity, CanvasShape::Vertex)) => {
                 icon_manager.handle_delete_vertex_action(world, &vertex_entity)
@@ -164,7 +182,7 @@ impl IconInputManager {
         }
     }
 
-    pub(crate) fn handle_mouse_click(
+    pub(crate) fn handle_mouse_click_meshing(
         world: &mut World,
         icon_manager: &mut IconManager,
         mouse_position: &Vec2,
@@ -291,7 +309,7 @@ impl IconInputManager {
         }
     }
 
-    fn handle_mouse_drag(
+    fn handle_mouse_drag_meshing(
         world: &mut World,
         icon_manager: &mut IconManager,
         mouse_position: Vec2,
@@ -506,6 +524,236 @@ impl IconInputManager {
             }
 
             *is_hovering = *least_distance <= FaceIcon2d::DETECT_RADIUS;
+        }
+    }
+
+    // Framing
+
+    fn update_input_framing(
+        world: &mut World,
+        icon_manager: &mut IconManager,
+        input_actions: Vec<InputAction>,
+    ) {
+        for action in input_actions {
+            match action {
+                InputAction::MouseClick(click_type, mouse_position) => {
+                    Self::handle_mouse_click_framing(
+                        world,
+                        icon_manager,
+                        click_type,
+                        &mouse_position,
+                    )
+                }
+                InputAction::MouseDragged(click_type, _mouse_position, delta) => {
+                    Self::handle_mouse_drag_framing(world, icon_manager, click_type, delta)
+                }
+                InputAction::MiddleMouseScroll(scroll_y) => {
+                    Self::handle_mouse_scroll_framing(icon_manager, scroll_y)
+                }
+                InputAction::MouseMoved => {
+                    icon_manager.queue_resync_hover_ui();
+                }
+                InputAction::KeyPress(key) => match key {
+                    Key::Delete => Self::handle_delete_frame(world, icon_manager),
+                    Key::Insert => Self::handle_insert_frame(world, icon_manager),
+                    Key::Space => Self::handle_play_pause(world, icon_manager),
+                    Key::Enter => {
+                        icon_manager.set_meshing();
+                    }
+                    Key::ArrowLeft | Key::ArrowRight | Key::ArrowUp | Key::ArrowDown => {
+                        let dir = match key {
+                            Key::ArrowLeft => CardinalDirection::West,
+                            Key::ArrowRight => CardinalDirection::East,
+                            Key::ArrowUp => CardinalDirection::North,
+                            Key::ArrowDown => CardinalDirection::South,
+                            _ => panic!("Unexpected key: {:?}", key),
+                        };
+                        let current_file_entity = *world
+                            .get_resource::<TabManager>()
+                            .unwrap()
+                            .current_tab_entity()
+                            .unwrap();
+                        if let Some((prev_index, next_index)) =
+                            icon_manager.framing_navigate(&current_file_entity, dir)
+                        {
+                            world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                                tab_manager.current_tab_execute_icon_action(
+                                    world,
+                                    icon_manager,
+                                    IconAction::SelectFrame(
+                                        current_file_entity,
+                                        next_index,
+                                        prev_index,
+                                    ),
+                                );
+                            });
+                        }
+                    }
+                    _ => {}
+                },
+                _ => {}
+            }
+        }
+    }
+
+    fn handle_mouse_click_framing(
+        world: &mut World,
+        icon_manager: &mut IconManager,
+        click_type: MouseButton,
+        mouse_position: &Vec2,
+    ) {
+        if click_type != MouseButton::Left {
+            return;
+        }
+
+        // check if mouse position is outside of canvas
+        if !world
+            .get_resource::<Canvas>()
+            .unwrap()
+            .is_position_inside(*mouse_position)
+        {
+            return;
+        }
+
+        let current_frame_index = icon_manager.current_frame_index();
+        let frame_index_hover = icon_manager.frame_index_hover();
+
+        if frame_index_hover.is_some() {
+            let frame_index_hover = frame_index_hover.unwrap();
+
+            let double_clicked = frame_index_hover == icon_manager.last_frame_index_hover
+                && icon_manager.last_left_click_instant.elapsed().as_millis() < 500;
+            icon_manager.last_left_click_instant = Instant::now();
+            icon_manager.last_frame_index_hover = frame_index_hover;
+
+            if frame_index_hover == 0 {
+                // clicked preview frame .. do nothing!
+            } else {
+                if current_frame_index != frame_index_hover - 1 {
+                    world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                        let current_file_entity = *tab_manager.current_tab_entity().unwrap();
+                        tab_manager.current_tab_execute_icon_action(
+                            world,
+                            icon_manager,
+                            IconAction::SelectFrame(
+                                current_file_entity,
+                                frame_index_hover - 1,
+                                current_frame_index,
+                            ),
+                        );
+                    });
+                }
+
+                if double_clicked {
+                    icon_manager.set_meshing();
+                }
+            }
+        }
+    }
+
+    fn handle_mouse_drag_framing(world: &mut World, icon_manager: &mut IconManager, click_type: MouseButton, delta: Vec2) {
+        if !world.get_resource::<TabManager>().unwrap().has_focus() {
+            return;
+        }
+
+        if click_type != MouseButton::Left {
+            return;
+        }
+
+        icon_manager.handle_mouse_drag_framing(delta.y);
+    }
+
+    fn handle_mouse_scroll_framing(icon_manager: &mut IconManager, scroll_y: f32) {
+        icon_manager.framing_handle_mouse_wheel(scroll_y);
+    }
+
+    pub(crate) fn handle_insert_frame(world: &mut World, icon_manager: &mut IconManager) {
+        world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+            let current_file_entity = *tab_manager.current_tab_entity().unwrap();
+            let current_frame_index = icon_manager.current_frame_index();
+
+            // copy all shapes from current frame
+            let mut copied_shapes = Vec::new();
+            let current_frame_entity = icon_manager
+                .current_frame_entity(&current_file_entity)
+                .unwrap();
+
+            // TODO! implement this!
+            // let rotation_entities: Vec<Entity> = icon_manager
+            //     .get_frame_rotations(&current_file_entity, &current_frame_entity)
+            //     .unwrap()
+            //     .iter()
+            //     .copied()
+            //     .collect();
+            // let mut rot_q = world.query::<&AnimRotation>();
+            // for rotation_entity in rotation_entities.iter() {
+            //     let Ok(rot) = rot_q.get(world, *rotation_entity) else {
+            //         continue;
+            //     };
+            //     let name: String = (*rot.vertex_name).clone();
+            //     let quat = rot.get_rotation();
+            //     copied_shapes.push((name, quat));
+            // }
+
+            // execute insertion
+            tab_manager.current_tab_execute_icon_action(
+                world,
+                icon_manager,
+                IconAction::InsertFrame(
+                    current_file_entity,
+                    current_frame_index + 1,
+                    Some(copied_shapes),
+                ),
+            );
+        });
+    }
+
+    pub(crate) fn handle_delete_frame(world: &mut World, icon_manager: &mut IconManager) {
+        let Some(current_file_entity) = world.get_resource::<TabManager>().unwrap().current_tab_entity() else {
+            return;
+        };
+        let current_file_entity = *current_file_entity;
+
+        let mut system_state: SystemState<(Commands, Client)> =
+            SystemState::new(world);
+        let (mut commands, client) = system_state.get_mut(world);
+
+        // delete vertex
+        let Some(current_frame_entity) = icon_manager.current_frame_entity(&current_file_entity) else {
+            return;
+        };
+
+        // check whether we can delete vertex
+        let auth_status = commands
+            .entity(current_frame_entity)
+            .authority(&client)
+            .unwrap();
+        if !auth_status.is_granted() && !auth_status.is_available() {
+            // do nothing, file is not available
+            // TODO: queue for deletion? check before this?
+            warn!(
+                "Frame `{:?}` is not available for deletion!",
+                current_frame_entity
+            );
+            return;
+        }
+
+        let current_frame_index = icon_manager.current_frame_index();
+
+        world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+            tab_manager.current_tab_execute_icon_action(
+                world,
+                icon_manager,
+                IconAction::DeleteFrame(current_file_entity, current_frame_index),
+            );
+        });
+    }
+
+    fn handle_play_pause(world: &mut World, icon_manager: &mut IconManager) {
+        if icon_manager.preview_is_playing() {
+            icon_manager.preview_pause();
+        } else {
+            icon_manager.preview_play();
         }
     }
 }

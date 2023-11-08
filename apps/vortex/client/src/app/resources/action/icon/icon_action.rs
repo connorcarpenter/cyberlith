@@ -16,6 +16,7 @@ use crate::app::{
         shape_data::CanvasShape,
     },
 };
+use crate::app::resources::action::icon::{delete_frame, insert_frame, move_frame, select_frame};
 
 #[derive(Clone)]
 pub enum IconAction {
@@ -39,6 +40,16 @@ pub enum IconAction {
     DeleteEdge(Entity, Option<(Entity, CanvasShape)>),
     // Delete Face (face entity)
     DeleteFace(Entity),
+
+    // framing
+    // file entity, next frame index, last frame index
+    SelectFrame(Entity, usize, usize),
+    // file entity, frame index, ... todo
+    InsertFrame(Entity, usize, Option<Vec<()>>),
+    // file entity, frame index
+    DeleteFrame(Entity, usize),
+    // file entity, frame index, last frame index
+    MoveFrame(Entity, usize, usize),
 }
 
 pub enum IconActionType {
@@ -49,6 +60,10 @@ pub enum IconActionType {
     CreateEdge,
     DeleteEdge,
     DeleteFace,
+    SelectFrame,
+    InsertFrame,
+    DeleteFrame,
+    MoveFrame,
 }
 
 impl IconAction {
@@ -61,6 +76,10 @@ impl IconAction {
             Self::CreateEdge(_, _, _, _, _) => IconActionType::CreateEdge,
             Self::DeleteEdge(_, _) => IconActionType::DeleteEdge,
             Self::DeleteFace(_) => IconActionType::DeleteFace,
+            Self::SelectFrame(_, _, _) => IconActionType::SelectFrame,
+            Self::InsertFrame(_, _, _) => IconActionType::InsertFrame,
+            Self::DeleteFrame(_, _) => IconActionType::DeleteFrame,
+            Self::MoveFrame(_, _, _) => IconActionType::MoveFrame,
         }
     }
 
@@ -80,6 +99,10 @@ impl IconAction {
             IconActionType::CreateEdge => create_edge::execute(world, icon_manager, action_stack, tab_file_entity, self),
             IconActionType::DeleteEdge => delete_edge::execute(world, icon_manager, self),
             IconActionType::DeleteFace => delete_face::execute(world, icon_manager, self),
+            IconActionType::SelectFrame => select_frame::execute(world, icon_manager, self),
+            IconActionType::InsertFrame => insert_frame::execute(world, icon_manager, self),
+            IconActionType::DeleteFrame => delete_frame::execute(world, icon_manager, self),
+            IconActionType::MoveFrame => move_frame::execute(world, icon_manager, self),
         }
     }
 

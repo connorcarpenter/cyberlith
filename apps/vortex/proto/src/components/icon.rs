@@ -1,6 +1,6 @@
 use bevy_ecs::component::Component;
 
-use naia_bevy_shared::{EntityProperty, Property, Protocol, ProtocolPlugin, Replicate};
+use naia_bevy_shared::{EntityProperty, Property, Protocol, ProtocolPlugin, Replicate, UnsignedVariableInteger};
 
 use math::Vec2;
 
@@ -13,13 +13,15 @@ impl ProtocolPlugin for IconComponentsPlugin {
         protocol
             .add_component::<IconVertex>()
             .add_component::<IconEdge>()
-            .add_component::<IconFace>();
+            .add_component::<IconFace>()
+            .add_component::<IconFrame>();
     }
 }
 
 // IconVertex
 #[derive(Component, Replicate)]
 pub struct IconVertex {
+    pub frame_entity: EntityProperty,
     x: Property<VertexSerdeInt>,
     y: Property<VertexSerdeInt>,
 }
@@ -62,6 +64,7 @@ impl IconVertex {
 // IconEdge
 #[derive(Component, Replicate)]
 pub struct IconEdge {
+    pub frame_entity: EntityProperty,
     pub start: EntityProperty,
     pub end: EntityProperty,
 }
@@ -75,6 +78,7 @@ impl IconEdge {
 // IconFace
 #[derive(Component, Replicate)]
 pub struct IconFace {
+    pub frame_entity: EntityProperty,
     pub vertex_a: EntityProperty,
     pub vertex_b: EntityProperty,
     pub vertex_c: EntityProperty,
@@ -86,5 +90,26 @@ pub struct IconFace {
 impl IconFace {
     pub fn new() -> Self {
         Self::new_complete()
+    }
+}
+
+// IconFrame
+#[derive(Component, Replicate)]
+pub struct IconFrame {
+    pub file_entity: EntityProperty,
+    order: Property<UnsignedVariableInteger<4>>,
+}
+
+impl IconFrame {
+    pub fn new(order: u8) -> Self {
+        Self::new_complete(order.into())
+    }
+
+    pub fn get_order(&self) -> u8 {
+        self.order.to()
+    }
+
+    pub fn set_order(&mut self, order: u8) {
+        *self.order = order.into();
     }
 }
