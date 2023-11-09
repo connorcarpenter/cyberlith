@@ -168,215 +168,219 @@ impl IconManager {
     }
 
     fn draw_meshing(&self, world: &mut World, current_file_entity: &Entity) {
-        {
-            let mut system_state: SystemState<(
-                ResMut<RenderFrame>,
-                Res<Canvas>,
-                Res<TabManager>,
-                Res<Input>,
-                Query<(Entity, &IconVertex, &OwnedByFileLocal)>,
-                Query<&IconLocalFace>,
-                Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>)>,
-                Query<&mut Transform>,
-            )> = SystemState::new(world);
-            let (
-                mut render_frame,
-                canvas,
-                tab_manager,
-                input,
-                vertex_q,
-                face_q,
-                object_q,
-                mut transform_q
-            ) = system_state.get_mut(world);
 
-            // camera
-            let camera_state = tab_manager.current_tab_camera_state().unwrap();
-            let Ok(mut camera_transform) = transform_q.get_mut(self.camera_entity) else {
+        let current_frame_entity = self.current_frame_entity(current_file_entity).unwrap();
+
+        let mut system_state: SystemState<(
+            ResMut<RenderFrame>,
+            Res<Canvas>,
+            Res<TabManager>,
+            Res<Input>,
+            Query<(Entity, &IconVertex, &OwnedByFileLocal)>,
+            Query<&IconLocalFace>,
+            Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>)>,
+            Query<&mut Transform>,
+        )> = SystemState::new(world);
+        let (
+            mut render_frame,
+            canvas,
+            tab_manager,
+            input,
+            vertex_q,
+            face_q,
+            object_q,
+            mut transform_q
+        ) = system_state.get_mut(world);
+
+        // camera
+        let camera_state = tab_manager.current_tab_camera_state().unwrap();
+        let Ok(mut camera_transform) = transform_q.get_mut(self.camera_entity) else {
+            return;
+        };
+        camera_transform.translation.x = 0.0 - camera_state.camera_3d_offset().x;
+        camera_transform.translation.y = 0.0 - camera_state.camera_3d_offset().y;
+        camera_transform.translation.z = 1.0;
+        let camera_scale = 1.0 / camera_state.camera_3d_scale();
+        camera_transform.scale = Vec3::new(camera_scale, camera_scale, 1.0);
+        let camera_transform = *camera_transform;
+
+        let mut edge_entities = HashSet::new();
+        let mut face_keys = HashSet::new();
+
+        // draw vertices, collect edges
+        for (vertex_entity, vertex, owned_by_file) in vertex_q.iter() {
+            if owned_by_file.file_entity != *current_file_entity {
+                continue;
+            }
+
+            // draw vertex
+            let Some(data) = self.get_vertex_data(&vertex_entity) else {
+                continue;
+            };
+            if data.frame_entity_opt.unwrap() != current_frame_entity {
+                continue;
+            }
+
+            let (mesh_handle, mat_handle) =
+                object_q.get(vertex_entity).unwrap();
+            let mut transform = transform_q.get_mut(vertex_entity).unwrap();
+
+            transform.translation.x = vertex.x() as f32;
+            transform.translation.y = vertex.y() as f32;
+
+            render_frame.draw_object(Some(&self.render_layer), mesh_handle, mat_handle, &transform);
+
+            for edge_entity in data.edges.iter() {
+                edge_entities.insert(*edge_entity);
+            }
+            for face_key in data.faces.iter() {
+                face_keys.insert(*face_key);
+            }
+        }
+
+        // draw edges
+        for edge_entity in edge_entities.iter() {
+
+            let (start, end) = self.edge_get_endpoints(edge_entity);
+
+            // sync
+            let Ok(start_transform) = transform_q.get(start) else {
+                warn!(
+                    "Edge start entity {:?} has no transform",
+                    start,
+                );
+                continue;
+            };
+
+            let start_pos = start_transform.translation.truncate();
+
+            let Ok(end_transform) = transform_q.get(end) else {
+                warn!(
+                    "2d Edge end entity {:?} has no transform",
+                    end,
+                );
+                continue;
+            };
+
+            let end_pos = end_transform.translation.truncate();
+            let depth = (start_transform.translation.z + end_transform.translation.z) / 2.0;
+
+            let Ok(mut edge_transform) = transform_q.get_mut(*edge_entity) else {
+                warn!("2d Edge entity {:?} has no transform", edge_entity);
                 return;
             };
-            camera_transform.translation.x = 0.0 - camera_state.camera_3d_offset().x;
-            camera_transform.translation.y = 0.0 - camera_state.camera_3d_offset().y;
-            camera_transform.translation.z = 1.0;
-            let camera_scale = 1.0 / camera_state.camera_3d_scale();
-            camera_transform.scale = Vec3::new(camera_scale, camera_scale, 1.0);
-            let camera_transform = *camera_transform;
 
-            let mut edge_entities = HashSet::new();
-            let mut face_keys = HashSet::new();
+            set_2d_line_transform(&mut edge_transform, start_pos, end_pos, depth);
 
-            // draw vertices, collect edges
-            for (vertex_entity, vertex, owned_by_file) in vertex_q.iter() {
-                if owned_by_file.file_entity != *current_file_entity {
-                    continue;
-                }
+            // draw
 
-                // draw vertex
-                let Some(data) = self.get_vertex_data(&vertex_entity) else {
-                    continue;
-                };
+            let (mesh_handle, mat_handle) =
+                object_q.get(*edge_entity).unwrap();
+            render_frame.draw_object(Some(&self.render_layer), mesh_handle, mat_handle, &edge_transform);
+        }
 
-                let (mesh_handle, mat_handle) =
-                    object_q.get(vertex_entity).unwrap();
-                let mut transform = transform_q.get_mut(vertex_entity).unwrap();
+        // draw local faces
+        for face_key in face_keys.iter() {
+            let face_entity = self.local_face_entity_from_face_key(face_key).unwrap();
 
-                transform.translation.x = vertex.x() as f32;
-                transform.translation.y = vertex.y() as f32;
+            let Ok(face_icon) = face_q.get(face_entity) else {
+                warn!("Face entity {:?} has no face icon", face_entity);
+                continue;
+            };
 
-                render_frame.draw_object(Some(&self.render_layer), mesh_handle, mat_handle, &transform);
+            let Ok(vertex_a_transform) = transform_q.get(face_icon.vertex_a()) else {
+                warn!("Face entity {:?}'s vertex_a has no transform", face_entity);
+                continue;
+            };
+            let Ok(vertex_b_transform) = transform_q.get(face_icon.vertex_b()) else {
+                warn!("Face entity {:?}'s vertex_b has no transform", face_entity);
+                continue;
+            };
+            let Ok(vertex_c_transform) = transform_q.get(face_icon.vertex_c()) else {
+                warn!("Face entity {:?}'s vertex_c has no transform", face_entity);
+                continue;
+            };
 
-                for edge_entity in data.edges.iter() {
-                    edge_entities.insert(*edge_entity);
-                }
-                for face_key in data.faces.iter() {
-                    face_keys.insert(*face_key);
-                }
-            }
+            let center_translation = Vec3::new(
+                (vertex_a_transform.translation.x
+                    + vertex_b_transform.translation.x
+                    + vertex_c_transform.translation.x)
+                    / 3.0,
+                (vertex_a_transform.translation.y
+                    + vertex_b_transform.translation.y
+                    + vertex_c_transform.translation.y)
+                    / 3.0,
+                (vertex_a_transform.translation.z
+                    + vertex_b_transform.translation.z
+                    + vertex_c_transform.translation.z)
+                    / 3.0,
+            );
 
-            // draw edges
-            for edge_entity in edge_entities.iter() {
+            let (mesh_handle, mat_handle) =
+                object_q.get(face_entity).unwrap();
+            let mut face_transform = transform_q.get_mut(face_entity).unwrap();
+            face_transform.translation = center_translation;
 
-                let (start, end) = self.edge_get_endpoints(edge_entity);
+            render_frame.draw_object(Some(&self.render_layer), mesh_handle, mat_handle, &face_transform);
+        }
 
-                // sync
-                let Ok(start_transform) = transform_q.get(start) else {
-                    warn!(
-                        "Edge start entity {:?} has no transform",
-                        start,
-                    );
-                    continue;
-                };
+        // draw select line & circle
+        match self.selected_shape() {
+            Some((vertex_entity, CanvasShape::Vertex)) => {
 
-                let start_pos = start_transform.translation.truncate();
-
-                let Ok(end_transform) = transform_q.get(end) else {
-                    warn!(
-                        "2d Edge end entity {:?} has no transform",
-                        end,
-                    );
-                    continue;
-                };
-
-                let end_pos = end_transform.translation.truncate();
-                let depth = (start_transform.translation.z + end_transform.translation.z) / 2.0;
-
-                let Ok(mut edge_transform) = transform_q.get_mut(*edge_entity) else {
-                    warn!("2d Edge entity {:?} has no transform", edge_entity);
-                    return;
-                };
-
-                set_2d_line_transform(&mut edge_transform, start_pos, end_pos, depth);
-
-                // draw
+                // draw select circle
+                let vertex_translation = transform_q.get(vertex_entity).unwrap().translation;
 
                 let (mesh_handle, mat_handle) =
-                    object_q.get(*edge_entity).unwrap();
-                render_frame.draw_object(Some(&self.render_layer), mesh_handle, mat_handle, &edge_transform);
-            }
+                    object_q.get(self.select_circle_entity).unwrap();
+                let mut transform = transform_q.get_mut(self.select_circle_entity).unwrap();
+                transform.translation = vertex_translation;
 
-            // draw local faces
-            for face_key in face_keys.iter() {
-                let face_entity = self.local_face_entity_from_face_key(face_key).unwrap();
+                render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle, &transform);
 
-                let Ok(face_icon) = face_q.get(face_entity) else {
-                    warn!("Face entity {:?} has no face icon", face_entity);
-                    continue;
-                };
-
-                let Ok(vertex_a_transform) = transform_q.get(face_icon.vertex_a()) else {
-                    warn!("Face entity {:?}'s vertex_a has no transform", face_entity);
-                    continue;
-                };
-                let Ok(vertex_b_transform) = transform_q.get(face_icon.vertex_b()) else {
-                    warn!("Face entity {:?}'s vertex_b has no transform", face_entity);
-                    continue;
-                };
-                let Ok(vertex_c_transform) = transform_q.get(face_icon.vertex_c()) else {
-                    warn!("Face entity {:?}'s vertex_c has no transform", face_entity);
-                    continue;
-                };
-
-                let center_translation = Vec3::new(
-                    (vertex_a_transform.translation.x
-                        + vertex_b_transform.translation.x
-                        + vertex_c_transform.translation.x)
-                        / 3.0,
-                    (vertex_a_transform.translation.y
-                        + vertex_b_transform.translation.y
-                        + vertex_c_transform.translation.y)
-                        / 3.0,
-                    (vertex_a_transform.translation.z
-                        + vertex_b_transform.translation.z
-                        + vertex_c_transform.translation.z)
-                        / 3.0,
-                );
-
+                // draw select line
+                let screen_mouse_position = input.mouse_position();
+                let view_mouse_position = Self::screen_to_view(&canvas, &camera_transform, screen_mouse_position);
                 let (mesh_handle, mat_handle) =
-                    object_q.get(face_entity).unwrap();
-                let mut face_transform = transform_q.get_mut(face_entity).unwrap();
-                face_transform.translation = center_translation;
+                    object_q.get(self.select_line_entity).unwrap();
 
-                render_frame.draw_object(Some(&self.render_layer), mesh_handle, mat_handle, &face_transform);
+                let mut transform = transform_q.get_mut(self.select_line_entity).unwrap();
+                set_2d_line_transform(&mut transform, vertex_translation.truncate(), view_mouse_position, vertex_translation.z + 1.0);
+
+                render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle, &transform);
             }
+            Some((edge_entity, CanvasShape::Edge)) => {
 
-            // draw select line & circle
-            match self.selected_shape() {
-                Some((vertex_entity, CanvasShape::Vertex)) => {
+                let edge_transform = *transform_q.get(edge_entity).unwrap();
 
-                    // draw select circle
-                    let vertex_translation = transform_q.get(vertex_entity).unwrap().translation;
+                // draw select line
+                let (mesh_handle, mat_handle) =
+                    object_q.get(self.select_line_entity).unwrap();
 
-                    let (mesh_handle, mat_handle) =
-                        object_q.get(self.select_circle_entity).unwrap();
-                    let mut transform = transform_q.get_mut(self.select_circle_entity).unwrap();
-                    transform.translation = vertex_translation;
+                let mut transform = transform_q.get_mut(self.select_line_entity).unwrap();
+                transform.translation.x = edge_transform.translation.x;
+                transform.translation.y = edge_transform.translation.y;
+                transform.translation.z = edge_transform.translation.z + 1.0;
+                transform.rotation = edge_transform.rotation;
+                transform.scale.x = edge_transform.scale.x;
+                transform.scale.y = edge_transform.scale.y + 2.0;
 
-                    render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle, &transform);
-
-                    // draw select line
-                    let screen_mouse_position = input.mouse_position();
-                    let view_mouse_position = Self::screen_to_view(&canvas, &camera_transform, screen_mouse_position);
-                    let (mesh_handle, mat_handle) =
-                        object_q.get(self.select_line_entity).unwrap();
-
-                    let mut transform = transform_q.get_mut(self.select_line_entity).unwrap();
-                    set_2d_line_transform(&mut transform, vertex_translation.truncate(), view_mouse_position, vertex_translation.z + 1.0);
-
-                    render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle, &transform);
-                }
-                Some((edge_entity, CanvasShape::Edge)) => {
-
-                    let edge_transform = *transform_q.get(edge_entity).unwrap();
-
-                    // draw select line
-                    let (mesh_handle, mat_handle) =
-                        object_q.get(self.select_line_entity).unwrap();
-
-                    let mut transform = transform_q.get_mut(self.select_line_entity).unwrap();
-                    transform.translation.x = edge_transform.translation.x;
-                    transform.translation.y = edge_transform.translation.y;
-                    transform.translation.z = edge_transform.translation.z + 1.0;
-                    transform.rotation = edge_transform.rotation;
-                    transform.scale.x = edge_transform.scale.x;
-                    transform.scale.y = edge_transform.scale.y + 2.0;
-
-                    render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle, &transform);
-                }
-                Some((face_entity, CanvasShape::Face)) => {
-
-                    let face_translation = transform_q.get(face_entity).unwrap().translation;
-
-                    // draw select triangle
-                    let (mesh_handle, mat_handle) =
-                        object_q.get(self.select_triangle_entity).unwrap();
-
-                    let mut transform = transform_q.get_mut(self.select_triangle_entity).unwrap();
-                    transform.translation = face_translation;
-
-                    render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle, &transform);
-                }
-                _ => {}
+                render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle, &transform);
             }
+            Some((face_entity, CanvasShape::Face)) => {
+
+                let face_translation = transform_q.get(face_entity).unwrap().translation;
+
+                // draw select triangle
+                let (mesh_handle, mat_handle) =
+                    object_q.get(self.select_triangle_entity).unwrap();
+
+                let mut transform = transform_q.get_mut(self.select_triangle_entity).unwrap();
+                transform.translation = face_translation;
+
+                render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle, &transform);
+            }
+            _ => {}
         }
     }
 
@@ -2118,6 +2122,8 @@ impl IconManager {
 
         let mut edge_entities = HashSet::new();
 
+        let size_ratio = self.frame_size / 100.0;
+
         // draw vertices, collect edges
         for (vertex_entity, vertex) in vertex_q.iter() {
             let Ok(owned_by_file) = owned_by_file_q.get(vertex_entity) else {
@@ -2136,7 +2142,10 @@ impl IconManager {
                 continue;
             };
 
-            let vertex_pos = *frame_pos + vertex.as_vec2();
+            let mut vertex_pos = vertex.as_vec2();
+            vertex_pos.x *= size_ratio.x;
+            vertex_pos.y *= size_ratio.y;
+            let vertex_pos = *frame_pos + vertex_pos;
             let transform = Transform::from_translation_2d(vertex_pos);
             render_frame.draw_object(Some(&self.render_layer), point_mesh_handle, mat_handle_green, &transform);
 
@@ -2153,11 +2162,18 @@ impl IconManager {
             // sync
             let (_, start_vertex) = vertex_q.get(start).unwrap();
 
-            let start_pos = *frame_pos + start_vertex.as_vec2();
+            let mut start_pos = start_vertex.as_vec2();
+            start_pos.x *= size_ratio.x;
+            start_pos.y *= size_ratio.y;
+            let start_pos = *frame_pos + start_pos;
 
             let (_, end_vertex) = vertex_q.get(end).unwrap();
 
-            let end_pos = *frame_pos + end_vertex.as_vec2();
+            let mut end_pos = end_vertex.as_vec2();
+            end_pos.x *= size_ratio.x;
+            end_pos.y *= size_ratio.y;
+            let end_pos = *frame_pos + end_pos;
+
             let mut edge_transform = Transform::default();
             set_2d_line_transform(&mut edge_transform, start_pos, end_pos, 1.0);
 
