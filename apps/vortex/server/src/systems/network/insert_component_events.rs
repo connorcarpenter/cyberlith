@@ -15,11 +15,10 @@ use vortex_proto::{
         AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency,
         FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, IconEdge,
         IconFace, IconVertex, NetTransform, OwnedByFile, PaletteColor, ShapeName,
-        SkinOrSceneEntity, Vertex3d, VertexRoot,
+        SkinOrSceneEntity, Vertex3d, VertexRoot, IconFrame
     },
     resources::FileKey,
 };
-use vortex_proto::components::IconFrame;
 
 use crate::{
     events::InsertComponentEvent,
@@ -70,6 +69,7 @@ pub fn insert_component_events(world: &mut World) {
         insert_component_event::<IconVertex>(world, &events);
         insert_component_event::<IconEdge>(world, &events);
         insert_component_event::<IconFace>(world, &events);
+        insert_component_event::<IconFrame>(world, &events);
 
         insert_component_event::<FileType>(world, &events);
         insert_component_event::<OwnedByFile>(world, &events);

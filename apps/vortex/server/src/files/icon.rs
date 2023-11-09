@@ -326,6 +326,7 @@ impl IconWriter {
         let mut frame_index = 0;
 
         while frame_map.contains_key(&frame_index) {
+            info!("adding IconAction::Frame({})", frame_index);
             let frame_action_data = frame_map.remove(&frame_index).unwrap();
             actions.push(IconAction::Frame(frame_action_data.frame_actions));
             frame_index += 1;
@@ -358,9 +359,10 @@ impl IconWriter {
 
                     let mut test_face_index = 0;
 
-                    for (frame_action_id, frame_action) in frame_actions.iter().enumerate() {
+                    IconActionType::Frame.ser(&mut bit_writer);
+                    info!("writing frame. action_id: {}", action_id);
 
-                        IconActionType::Frame.ser(&mut bit_writer);
+                    for (frame_action_id, frame_action) in frame_actions.iter().enumerate() {
 
                         match frame_action {
                             IconFrameAction::Vertex(x, y) => {
@@ -525,6 +527,8 @@ impl IconReader {
                     }
 
                     output.push(IconAction::Frame(frame_output));
+
+                    info!("reading to IconAction::Frame");
                 }
             }
         }
@@ -589,6 +593,7 @@ impl IconReader {
                         .configure_replication(ReplicationConfig::Delegated)
                         .insert(component)
                         .id();
+                    info!("spawning icon frame entity. index: {:?}, entity: `{:?}`", frame_index, frame_entity);
 
                     output.push((frame_entity, ContentEntityTypeData::Frame));
 
