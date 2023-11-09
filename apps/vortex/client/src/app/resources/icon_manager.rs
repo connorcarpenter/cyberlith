@@ -160,13 +160,145 @@ impl IconManager {
 
     pub fn draw(&mut self, world: &mut World, current_file_entity: &Entity) {
         if self.meshing {
-            self.draw_meshing(world, current_file_entity);
+            if self.wireframe {
+                self.draw_meshing_wire(world, current_file_entity);
+            } else {
+                self.draw_meshing_solid(world, current_file_entity);
+            }
         } else {
             self.draw_framing(world);
         }
     }
 
-    fn draw_meshing(&self, world: &mut World, current_file_entity: &Entity) {
+    fn draw_meshing_solid(&self, world: &mut World, current_file_entity: &Entity) {
+
+        let current_frame_entity = self.current_frame_entity(current_file_entity).unwrap();
+
+        let mut system_state: SystemState<(
+            ResMut<RenderFrame>,
+            Res<Canvas>,
+            Res<TabManager>,
+            Res<Input>,
+            ResMut<Assets<CpuMaterial>>,
+            Query<(Entity, &OwnedByFileLocal), With<IconVertex>>,
+            Query<(Entity, &OwnedByFileLocal), With<IconFace>>,
+            Query<&IconVertex>,
+            Query<&IconLocalFace>,
+            Query<&Handle<CpuMesh>>,
+            Query<&Handle<CpuMaterial>>,
+            Query<&LocalShape>,
+            Query<&mut Transform>,
+        )> = SystemState::new(world);
+        let (
+            mut render_frame,
+            canvas,
+            tab_manager,
+            input,
+            mut materials,
+            owned_vertex_q,
+            owned_face_q,
+            vertex_q,
+            face_q,
+            mesh_q,
+            mat_q,
+            local_shape_q,
+            mut transform_q
+        ) = system_state.get_mut(world);
+
+        // camera
+        let camera_state = tab_manager.current_tab_camera_state().unwrap();
+        let Ok(mut camera_transform) = transform_q.get_mut(self.camera_entity) else {
+            return;
+        };
+        camera_transform.translation.x = 0.0 - camera_state.camera_3d_offset().x;
+        camera_transform.translation.y = 0.0 - camera_state.camera_3d_offset().y;
+        camera_transform.translation.z = 1.0;
+        let camera_scale = 1.0 / camera_state.camera_3d_scale();
+        camera_transform.scale = Vec3::new(camera_scale, camera_scale, 1.0);
+
+        let mut edge_entities = HashSet::new();
+
+        // material
+        let mat_handle_light_gray = materials.add(Color::LIGHT_GRAY);
+        let mat_handle_gray = materials.add(Color::GRAY);
+
+        // collect grid vertices
+        for vertex_entity in self.grid_vertices.iter() {
+            let vertex = vertex_q.get(*vertex_entity).unwrap();
+            let data = self.get_vertex_data(&vertex_entity).unwrap();
+
+            let mut transform = transform_q.get_mut(*vertex_entity).unwrap();
+
+            for edge_entity in data.edges.iter() {
+                edge_entities.insert(*edge_entity);
+            }
+
+            transform.translation.x = vertex.x() as f32;
+            transform.translation.y = vertex.y() as f32;
+        }
+
+        // draw edges
+        for edge_entity in edge_entities.iter() {
+
+            let (start, end) = self.edge_get_endpoints(edge_entity);
+
+            // sync
+            let Ok(start_transform) = transform_q.get(start) else {
+                warn!(
+                    "Edge start entity {:?} has no transform",
+                    start,
+                );
+                continue;
+            };
+
+            let start_pos = start_transform.translation.truncate();
+
+            let Ok(end_transform) = transform_q.get(end) else {
+                warn!(
+                    "2d Edge end entity {:?} has no transform",
+                    end,
+                );
+                continue;
+            };
+
+            let end_pos = end_transform.translation.truncate();
+            let depth = (start_transform.translation.z + end_transform.translation.z) / 2.0;
+
+            let Ok(mut edge_transform) = transform_q.get_mut(*edge_entity) else {
+                warn!("2d Edge entity {:?} has no transform", edge_entity);
+                return;
+            };
+
+            set_2d_line_transform(&mut edge_transform, start_pos, end_pos, depth);
+
+            // draw
+            let mesh_handle = mesh_q.get(*edge_entity).unwrap();
+            render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle_gray, &edge_transform);
+        }
+
+        // draw faces
+        for (face_entity, owned_by_file) in owned_face_q.iter() {
+            if owned_by_file.file_entity != *current_file_entity {
+                continue;
+            }
+
+            // draw face
+            let Some(data) = self.get_face_data(&face_entity) else {
+                continue;
+            };
+            if data.frame_entity != current_frame_entity {
+                continue;
+            }
+
+            // draw face
+            let mesh_handle = mesh_q.get(face_entity).unwrap();
+            let mat_handle = mat_q.get(face_entity).unwrap();
+            let transform = transform_q.get(face_entity).unwrap();
+            render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle, &transform);
+        }
+    }
+
+    fn draw_meshing_wire(&self, world: &mut World, current_file_entity: &Entity) {
 
         let current_frame_entity = self.current_frame_entity(current_file_entity).unwrap();
 
@@ -1135,6 +1267,11 @@ impl IconManager {
 
     fn get_vertex_data(&self, entity: &Entity) -> Option<&IconVertexData> {
         self.vertices.get(entity)
+    }
+
+    fn get_face_data(&self, net_face_entity: &Entity) -> Option<&IconFaceData> {
+        let face_key = self.net_faces.get(net_face_entity)?;
+        self.face_keys.get(face_key)?.as_ref()
     }
 
     fn get_connected_vertices(&self, vertex_entity: Entity) -> HashSet<Entity> {
@@ -2285,6 +2422,39 @@ impl IconManager {
         line_mesh_handle: &Handle<CpuMesh>,
         mat_handle_gray: &Handle<CpuMaterial>,
     ) {
+        if self.wireframe {
+            self.draw_frame_contents_wire(
+                world,
+                file_entity,
+                frame_entity,
+                frame_pos,
+                point_mesh_handle,
+                line_mesh_handle,
+                mat_handle_gray,
+            );
+        } else {
+            self.draw_frame_contents_solid(
+                world,
+                file_entity,
+                frame_entity,
+                frame_pos,
+                point_mesh_handle,
+                line_mesh_handle,
+                mat_handle_gray,
+            );
+        }
+    }
+
+    fn draw_frame_contents_wire(
+        &self,
+        world: &mut World,
+        file_entity: &Entity,
+        frame_entity: &Entity,
+        frame_pos: &Vec2,
+        point_mesh_handle: &Handle<CpuMesh>,
+        line_mesh_handle: &Handle<CpuMesh>,
+        mat_handle_gray: &Handle<CpuMaterial>,
+    ) {
         let mut system_state: SystemState<(
             Client,
             ResMut<RenderFrame>,
@@ -2357,6 +2527,71 @@ impl IconManager {
 
             // draw
             render_frame.draw_object(Some(&self.render_layer), line_mesh_handle, mat_handle_gray, &edge_transform);
+        }
+    }
+
+    fn draw_frame_contents_solid(
+        &self,
+        world: &mut World,
+        file_entity: &Entity,
+        frame_entity: &Entity,
+        frame_pos: &Vec2,
+        point_mesh_handle: &Handle<CpuMesh>,
+        line_mesh_handle: &Handle<CpuMesh>,
+        mat_handle_gray: &Handle<CpuMaterial>,
+    ) {
+        let mut system_state: SystemState<(
+            Client,
+            ResMut<RenderFrame>,
+            Query<(Entity, &OwnedByFileLocal), With<IconFace>>,
+            Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>, &Transform)>
+        )> = SystemState::new(world);
+        let (
+            client,
+            mut render_frame,
+            owned_face_q,
+            object_q,
+        ) = system_state.get_mut(world);
+
+        let size_ratio = (self.frame_size * 0.5) / 100.0;
+
+        for (face_entity, owned_by_file) in owned_face_q.iter() {
+            if owned_by_file.file_entity != *file_entity {
+                continue;
+            }
+
+            // draw face
+            let Some(data) = self.get_face_data(&face_entity) else {
+                continue;
+            };
+            if data.frame_entity != *frame_entity {
+                continue;
+            }
+
+            //
+
+            //     let mut vertex_pos = vertex.as_vec2();
+            //     vertex_pos.x *= size_ratio.x;
+            //     vertex_pos.y *= size_ratio.y;
+            //     let vertex_pos = *frame_pos + vertex_pos;
+            //     let transform = Transform::from_translation_2d(vertex_pos);
+            //     render_frame.draw_object(Some(&self.render_layer), point_mesh_handle, mat_handle_gray, &transform);
+
+            // draw face
+            let (mesh_handle, mat_handle, transform) = object_q.get(face_entity).unwrap();
+
+            let mut translation = transform.translation.truncate();
+            translation.x *= size_ratio.x;
+            translation.y *= size_ratio.y;
+            let translation = *frame_pos + translation;
+
+            let mut scale = transform.scale;
+            scale.x *= size_ratio.x;
+            scale.y *= size_ratio.y;
+
+            let transform = Transform::from_translation_2d(translation).with_scale(scale);
+
+            render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle, &transform);
         }
     }
 

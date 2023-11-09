@@ -600,6 +600,9 @@ impl IconInputManager {
                     Key::Enter => {
                         icon_manager.set_meshing();
                     }
+                    Key::S | Key::W => {
+                        icon_manager.handle_keypress_camera_controls(key);
+                    }
                     Key::ArrowLeft | Key::ArrowRight | Key::ArrowUp | Key::ArrowDown => {
                         let dir = match key {
                             Key::ArrowLeft => CardinalDirection::West,
