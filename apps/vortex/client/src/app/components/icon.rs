@@ -3,16 +3,19 @@ use bevy_ecs::{component::Component, entity::Entity};
 // IconVertexData
 #[derive(Clone)]
 pub struct IconVertexActionData {
+    pub(crate) frame_entity: Entity,
     pub(crate) connected_vertices: Vec<(Entity, Option<Entity>)>,
     pub(crate) face_data: Vec<(Entity, Entity, Entity, bool)>,
 }
 
 impl IconVertexActionData {
     pub fn new(
+        frame_entity: Entity,
         connected_vertices: Vec<(Entity, Option<Entity>)>,
         face_data: Vec<(Entity, Entity, Entity, bool)>,
     ) -> Self {
         Self {
+            frame_entity,
             connected_vertices,
             face_data,
         }

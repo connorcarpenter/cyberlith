@@ -86,13 +86,14 @@ pub(crate) fn execute(
         ));
     }
 
-    let rev_vertex_type_data =
-        IconVertexActionData::new(connected_vertices_entities, connected_face_vertex_entities);
-
     let Ok((_, vertex)) = vertex_q.get(vertex_entity) else {
         panic!("Failed to get IconVertex for vertex entity {:?}!", vertex_entity);
     };
+    let frame_entity = vertex.frame_entity.get(&client).unwrap();
     let vertex_position = vertex.as_vec2();
+
+    let rev_vertex_type_data =
+        IconVertexActionData::new(frame_entity, connected_vertices_entities, connected_face_vertex_entities);
 
     handle_vertex_despawn(
         &mut commands,

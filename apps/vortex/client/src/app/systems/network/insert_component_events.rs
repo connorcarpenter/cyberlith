@@ -448,20 +448,8 @@ pub fn insert_face_events(
             warn!("Face3d component of entity: `{:?}` has no entity", face_entity);
             continue;
         };
-        let Some(edge_a_entity) = face_3d.edge_a.get(&client) else {
-            warn!("Face3d component of entity: `{:?}` has no entity", face_entity);
-            continue;
-        };
-        let Some(edge_b_entity) = face_3d.edge_b.get(&client) else {
-            warn!("Face3d component of entity: `{:?}` has no entity", face_entity);
-            continue;
-        };
-        let Some(edge_c_entity) = face_3d.edge_c.get(&client) else {
-            warn!("Face3d component of entity: `{:?}` has no entity", face_entity);
-            continue;
-        };
 
-        component_waitlist.process_insert(
+        component_waitlist.process_inserts(
             &mut commands,
             &mut meshes,
             &mut materials,
@@ -475,30 +463,11 @@ pub fn insert_face_events(
             Some(&vertex_3d_q),
             None,
             &face_entity,
-            ComponentWaitlistInsert::Face(
+            &[ComponentWaitlistInsert::Face(
                 vertex_a_entity,
                 vertex_b_entity,
                 vertex_c_entity,
-                edge_a_entity,
-                edge_b_entity,
-                edge_c_entity,
-            ),
-        );
-        component_waitlist.process_insert(
-            &mut commands,
-            &mut meshes,
-            &mut materials,
-            &mut camera_manager,
-            &mut canvas,
-            &mut Some(&mut vertex_manager),
-            &mut Some(&mut edge_manager),
-            &mut Some(&mut face_manager),
-            &mut None,
-            &mut None,
-            Some(&vertex_3d_q),
-            None,
-            &face_entity,
-            ComponentWaitlistInsert::FileType(FileExtension::Mesh),
+            ), ComponentWaitlistInsert::FileType(FileExtension::Mesh)],
         );
     }
 }
@@ -529,7 +498,9 @@ pub fn insert_icon_events(
 
         info!("entity: {:?} - inserted IconVertex", entity);
 
-        component_waitlist.process_insert(
+        let frame_entity = vertex_q.get(entity).unwrap().frame_entity.get(&client).unwrap();
+
+        component_waitlist.process_inserts(
             &mut commands,
             &mut meshes,
             &mut materials,
@@ -543,23 +514,7 @@ pub fn insert_icon_events(
             None,
             None,
             &entity,
-            ComponentWaitlistInsert::Vertex,
-        );
-        component_waitlist.process_insert(
-            &mut commands,
-            &mut meshes,
-            &mut materials,
-            &mut camera_manager,
-            &mut canvas,
-            &mut None,
-            &mut None,
-            &mut None,
-            &mut None,
-            &mut Some(&mut icon_manager),
-            None,
-            None,
-            &entity,
-            ComponentWaitlistInsert::FileType(FileExtension::Icon),
+            &[ComponentWaitlistInsert::Vertex, ComponentWaitlistInsert::FileType(FileExtension::Icon), ComponentWaitlistInsert::FrameEntity(frame_entity)],
         );
     }
 
@@ -570,6 +525,7 @@ pub fn insert_icon_events(
         info!("entity: {:?} - inserted IconEdge", edge_entity);
 
         let edge = edge_q.get(edge_entity).unwrap();
+        let frame_entity = edge.frame_entity.get(&client).unwrap();
         let Some(start_entity) = edge.start.get(&client) else {
             warn!("IconEdge component of entity: `{:?}` has no start entity", edge_entity);
             continue;
@@ -579,7 +535,7 @@ pub fn insert_icon_events(
             continue;
         };
 
-        component_waitlist.process_insert(
+        component_waitlist.process_inserts(
             &mut commands,
             &mut meshes,
             &mut materials,
@@ -593,23 +549,7 @@ pub fn insert_icon_events(
             None,
             None,
             &edge_entity,
-            ComponentWaitlistInsert::Edge(start_entity, end_entity),
-        );
-        component_waitlist.process_insert(
-            &mut commands,
-            &mut meshes,
-            &mut materials,
-            &mut camera_manager,
-            &mut canvas,
-            &mut None,
-            &mut None,
-            &mut None,
-            &mut None,
-            &mut Some(&mut icon_manager),
-            None,
-            None,
-            &edge_entity,
-            ComponentWaitlistInsert::FileType(FileExtension::Icon),
+            &[ComponentWaitlistInsert::Edge(start_entity, end_entity), ComponentWaitlistInsert::FileType(FileExtension::Icon), ComponentWaitlistInsert::FrameEntity(frame_entity)],
         );
     }
 
@@ -621,6 +561,7 @@ pub fn insert_icon_events(
         info!("entity: {:?} - inserted IconFace", face_entity);
 
         let face = face_q.get(face_entity).unwrap();
+        let frame_entity = face.frame_entity.get(&client).unwrap();
         let Some(vertex_a_entity) = face.vertex_a.get(&client) else {
             warn!("IconFace component of entity: `{:?}` has no entity", face_entity);
             continue;
@@ -633,20 +574,8 @@ pub fn insert_icon_events(
             warn!("IconFace component of entity: `{:?}` has no entity", face_entity);
             continue;
         };
-        let Some(edge_a_entity) = face.edge_a.get(&client) else {
-            warn!("IconFace component of entity: `{:?}` has no entity", face_entity);
-            continue;
-        };
-        let Some(edge_b_entity) = face.edge_b.get(&client) else {
-            warn!("IconFace component of entity: `{:?}` has no entity", face_entity);
-            continue;
-        };
-        let Some(edge_c_entity) = face.edge_c.get(&client) else {
-            warn!("IconFace component of entity: `{:?}` has no entity", face_entity);
-            continue;
-        };
 
-        component_waitlist.process_insert(
+        component_waitlist.process_inserts(
             &mut commands,
             &mut meshes,
             &mut materials,
@@ -660,30 +589,15 @@ pub fn insert_icon_events(
             None,
             Some(&vertex_q),
             &face_entity,
-            ComponentWaitlistInsert::Face(
-                vertex_a_entity,
-                vertex_b_entity,
-                vertex_c_entity,
-                edge_a_entity,
-                edge_b_entity,
-                edge_c_entity,
-            ),
-        );
-        component_waitlist.process_insert(
-            &mut commands,
-            &mut meshes,
-            &mut materials,
-            &mut camera_manager,
-            &mut canvas,
-            &mut None,
-            &mut None,
-            &mut None,
-            &mut None,
-            &mut Some(&mut icon_manager),
-            None,
-            Some(&vertex_q),
-            &face_entity,
-            ComponentWaitlistInsert::FileType(FileExtension::Icon),
+            &[
+                ComponentWaitlistInsert::Face(
+                    vertex_a_entity,
+                    vertex_b_entity,
+                    vertex_c_entity,
+                    ),
+                ComponentWaitlistInsert::FileType(FileExtension::Icon),
+                ComponentWaitlistInsert::FrameEntity(frame_entity),
+            ],
         );
     }
 

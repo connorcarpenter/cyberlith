@@ -32,6 +32,7 @@ pub(crate) fn execute(
     let (mut commands, mut client, edge_q) = system_state.get_mut(world);
 
     let edge = edge_q.get(edge_entity).unwrap();
+    let frame_entity = edge.frame_entity.get(&client).unwrap();
     let vertex_start = edge.start.get(&client).unwrap();
     let vertex_end = edge.end.get(&client).unwrap();
 
@@ -84,6 +85,7 @@ pub(crate) fn execute(
     system_state.apply(world);
 
     return vec![IconAction::CreateEdge(
+        frame_entity,
         vertex_start,
         vertex_end,
         (edge_entity, CanvasShape::Edge),

@@ -27,17 +27,19 @@ use crate::app::{
     },
 };
 
+#[derive(Clone)]
 pub enum ComponentWaitlistInsert {
     FileType(FileExtension),
     OwnedByFile(Entity),
     Vertex,
     VertexRoot,
     Edge(Entity, Entity),
-    Face(Entity, Entity, Entity, Entity, Entity, Entity),
+    Face(Entity, Entity, Entity),
     EdgeAngle(f32),
     NetTransform,
     SkinOrSceneEntity(Entity, NetTransformEntityType),
     ShapeName(String),
+    FrameEntity(Entity),
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -52,9 +54,12 @@ enum ComponentData {
     //parent_3d_entity_opt
     Vertex(Option<Entity>),
     Edge(Entity, Entity, Option<f32>),
-    Face(Entity, Entity, Entity, Entity, Entity, Entity),
+    Face(Entity, Entity, Entity),
     // SkinOrSceneEntity, Option<ShapeName>
     NetTransform(Option<String>),
+    IconVertex(Entity),
+    IconEdge(Entity, Entity, Entity),
+    IconFace(Entity, Entity, Entity, Entity),
 }
 
 impl ComponentData {
@@ -62,8 +67,11 @@ impl ComponentData {
         match self {
             ComponentData::Vertex(_) => ComponentType::Vertex,
             ComponentData::Edge(_, _, _) => ComponentType::Edge,
-            ComponentData::Face(_, _, _, _, _, _) => ComponentType::Face,
+            ComponentData::Face(_, _, _) => ComponentType::Face,
             ComponentData::NetTransform(_) => ComponentType::NetTransform,
+            ComponentData::IconVertex(_) => ComponentType::Vertex,
+            ComponentData::IconEdge(_, _, _) => ComponentType::Edge,
+            ComponentData::IconFace(_, _, _, _) => ComponentType::Face,
         }
     }
 }
@@ -77,11 +85,12 @@ pub struct ComponentWaitlistEntry {
     vertex_parent: Option<Option<Entity>>,
     edge_entities: Option<(Entity, Entity)>,
     edge_angle: Option<f32>,
-    // Option<vertex a, vertex b, vertex c, edge a, edge b, edge c>
-    face_entities: Option<(Entity, Entity, Entity, Entity, Entity, Entity)>,
+    // Option<vertex a, vertex b, vertex c>
+    face_entities: Option<(Entity, Entity, Entity)>,
 
     skin_or_scene_entity: Option<(Entity, NetTransformEntityType)>,
     shape_name: Option<String>,
+    icon_frame_entity: Option<Entity>,
 }
 
 impl ComponentWaitlistEntry {
@@ -96,6 +105,7 @@ impl ComponentWaitlistEntry {
             edge_angle: None,
             skin_or_scene_entity: None,
             shape_name: None,
+            icon_frame_entity: None,
         }
     }
 
@@ -104,28 +114,28 @@ impl ComponentWaitlistEntry {
             (Some(FileExtension::Skel), Some(ComponentType::Vertex)) => {
                 return self.file_entity.is_some() && self.vertex_parent.is_some();
             }
-            (Some(FileExtension::Mesh), Some(ComponentType::Vertex)) => {
-                return self.file_entity.is_some();
-            }
-            (Some(FileExtension::Icon), Some(ComponentType::Vertex)) => {
-                return self.file_entity.is_some();
-            }
             (Some(FileExtension::Skel), Some(ComponentType::Edge)) => {
                 return self.file_entity.is_some()
                     && self.edge_entities.is_some()
                     && self.edge_angle.is_some();
             }
-            (Some(FileExtension::Mesh), Some(ComponentType::Edge)) => {
-                return self.file_entity.is_some() && self.edge_entities.is_some();
+            (Some(FileExtension::Mesh), Some(ComponentType::Vertex)) => {
+                return self.file_entity.is_some();
             }
-            (Some(FileExtension::Icon), Some(ComponentType::Edge)) => {
+            (Some(FileExtension::Mesh), Some(ComponentType::Edge)) => {
                 return self.file_entity.is_some() && self.edge_entities.is_some();
             }
             (Some(FileExtension::Mesh), Some(ComponentType::Face)) => {
                 self.file_entity.is_some() && self.face_entities.is_some()
             }
+            (Some(FileExtension::Icon), Some(ComponentType::Vertex)) => {
+                return self.file_entity.is_some() && self.icon_frame_entity.is_some();
+            }
+            (Some(FileExtension::Icon), Some(ComponentType::Edge)) => {
+                return self.file_entity.is_some() && self.edge_entities.is_some() && self.icon_frame_entity.is_some();
+            }
             (Some(FileExtension::Icon), Some(ComponentType::Face)) => {
-                self.file_entity.is_some() && self.face_entities.is_some()
+                self.file_entity.is_some() && self.face_entities.is_some() && self.icon_frame_entity.is_some()
             }
             (Some(FileExtension::Model), Some(ComponentType::NetTransform)) => {
                 return self.file_entity.is_some()
@@ -181,12 +191,9 @@ impl ComponentWaitlistEntry {
         vertex_a: Entity,
         vertex_b: Entity,
         vertex_c: Entity,
-        edge_a: Entity,
-        edge_b: Entity,
-        edge_c: Entity,
     ) {
         self.component_type = Some(ComponentType::Face);
-        self.face_entities = Some((vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c));
+        self.face_entities = Some((vertex_a, vertex_b, vertex_c));
     }
 
     fn set_transform(&mut self) {
@@ -201,6 +208,10 @@ impl ComponentWaitlistEntry {
         self.shape_name = Some(shape_name);
     }
 
+    fn set_frame_entity(&mut self, frame_entity: Entity) {
+        self.icon_frame_entity = Some(frame_entity);
+    }
+
     fn decompose(self) -> (ComponentData, Entity, FileExtension) {
         let shape = self.component_type.unwrap();
         let file_type = self.file_type.unwrap();
@@ -209,28 +220,40 @@ impl ComponentWaitlistEntry {
             (FileExtension::Skel, ComponentType::Vertex) => {
                 ComponentData::Vertex(self.vertex_parent.unwrap())
             }
-            (FileExtension::Mesh | FileExtension::Icon, ComponentType::Vertex) => {
-                ComponentData::Vertex(None)
-            }
-            (FileExtension::Mesh | FileExtension::Icon, ComponentType::Edge) => {
-                let entities = self.edge_entities.unwrap();
-                ComponentData::Edge(entities.0, entities.1, None)
-            }
             (FileExtension::Skel, ComponentType::Edge) => {
                 let entities = self.edge_entities.unwrap();
                 let edge_angle = self.edge_angle.unwrap();
                 ComponentData::Edge(entities.0, entities.1, Some(edge_angle))
             }
-            (FileExtension::Mesh | FileExtension::Icon, ComponentType::Face) => {
-                let (vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c) =
+            (FileExtension::Mesh, ComponentType::Vertex) => {
+                ComponentData::Vertex(None)
+            }
+            (FileExtension::Mesh, ComponentType::Edge) => {
+                let entities = self.edge_entities.unwrap();
+                ComponentData::Edge(entities.0, entities.1, None)
+            }
+            (FileExtension::Mesh, ComponentType::Face) => {
+                let (vertex_a, vertex_b, vertex_c) =
                     self.face_entities.unwrap();
-                ComponentData::Face(vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c)
+                ComponentData::Face(vertex_a, vertex_b, vertex_c)
             }
             (FileExtension::Model, ComponentType::NetTransform) => {
                 ComponentData::NetTransform(Some(self.shape_name.unwrap()))
             }
             (FileExtension::Scene, ComponentType::NetTransform) => {
                 ComponentData::NetTransform(None)
+            }
+            (FileExtension::Icon, ComponentType::Vertex) => {
+                ComponentData::IconVertex(self.icon_frame_entity.unwrap())
+            }
+            (FileExtension::Icon, ComponentType::Edge) => {
+                let entities = self.edge_entities.unwrap();
+                ComponentData::IconEdge(self.icon_frame_entity.unwrap(), entities.0, entities.1)
+            }
+            (FileExtension::Icon, ComponentType::Face) => {
+                let (vertex_a, vertex_b, vertex_c) =
+                    self.face_entities.unwrap();
+                ComponentData::IconFace(self.icon_frame_entity.unwrap(), vertex_a, vertex_b, vertex_c)
             }
             (_, _) => {
                 panic!("");
@@ -257,6 +280,44 @@ impl Default for ComponentWaitlist {
 }
 
 impl ComponentWaitlist {
+
+    pub fn process_inserts(
+        &mut self,
+        commands: &mut Commands,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+        camera_manager: &mut CameraManager,
+        canvas: &mut Canvas,
+        vertex_manager_opt: &mut Option<&mut VertexManager>,
+        edge_manager_opt: &mut Option<&mut EdgeManager>,
+        face_manager_opt: &mut Option<&mut FaceManager>,
+        model_manager_opt: &mut Option<&mut ModelManager>,
+        icon_manager_opt: &mut Option<&mut IconManager>,
+        vertex_3d_q_opt: Option<&Query<&Vertex3d>>,
+        icon_vertex_q_opt: Option<&Query<&IconVertex>>,
+        entity: &Entity,
+        inserts: &[ComponentWaitlistInsert],
+    ) {
+        for insert in inserts {
+            self.process_insert(
+                commands,
+                meshes,
+                materials,
+                camera_manager,
+                canvas,
+                vertex_manager_opt,
+                edge_manager_opt,
+                face_manager_opt,
+                model_manager_opt,
+                icon_manager_opt,
+                vertex_3d_q_opt,
+                icon_vertex_q_opt,
+                entity,
+                insert.clone(),
+            );
+        }
+    }
+
     pub fn process_insert(
         &mut self,
         commands: &mut Commands,
@@ -321,10 +382,10 @@ impl ComponentWaitlist {
             ComponentWaitlistInsert::EdgeAngle(angle) => {
                 self.get_mut(&entity).unwrap().set_edge_angle(angle);
             }
-            ComponentWaitlistInsert::Face(vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c) => {
+            ComponentWaitlistInsert::Face(vertex_a, vertex_b, vertex_c) => {
                 self.get_mut(&entity)
                     .unwrap()
-                    .set_face(vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c);
+                    .set_face(vertex_a, vertex_b, vertex_c);
             }
             ComponentWaitlistInsert::SkinOrSceneEntity(
                 skin_or_scene_entity,
@@ -339,6 +400,9 @@ impl ComponentWaitlist {
             }
             ComponentWaitlistInsert::NetTransform => {
                 self.get_mut(&entity).unwrap().set_transform();
+            }
+            ComponentWaitlistInsert::FrameEntity(frame_entity) => {
+                self.get_mut(&entity).unwrap().set_frame_entity(frame_entity);
             }
         }
 
@@ -433,16 +497,17 @@ impl ComponentWaitlist {
                         }
                     }
 
-                    for edge_3d_entity in [&entities.3, &entities.4, &entities.5] {
-                        if !edge_manager.has_edge_entity_3d(edge_3d_entity) {
-                            // need to put in parent waitlist
-                            info!(
-                                "face entity {:?} requires parent edge {:?}. putting in parent waitlist",
-                                entity, edge_3d_entity
-                            );
-                            dependencies.push(*edge_3d_entity);
-                        }
-                    }
+                    // TODO: should we bring this back?
+                    // for edge_3d_entity in [&entities.3, &entities.4, &entities.5] {
+                    //     if !edge_manager.has_edge_entity_3d(edge_3d_entity) {
+                    //         // need to put in parent waitlist
+                    //         info!(
+                    //             "face entity {:?} requires parent edge {:?}. putting in parent waitlist",
+                    //             entity, edge_3d_entity
+                    //         );
+                    //         dependencies.push(*edge_3d_entity);
+                    //     }
+                    // }
 
                     if !dependencies.is_empty() {
                         self.dependency_map.insert_waiting_dependencies(
@@ -497,17 +562,6 @@ impl ComponentWaitlist {
                                 entity, vertex_entity
                             );
                             dependencies.push(*vertex_entity);
-                        }
-                    }
-
-                    for edge_entity in [&entities.3, &entities.4, &entities.5] {
-                        if !icon_manager.has_edge_entity(edge_entity) {
-                            // need to put in parent waitlist
-                            info!(
-                                "face entity {:?} requires parent edge {:?}. putting in parent waitlist",
-                                entity, edge_entity
-                            );
-                            dependencies.push(*edge_entity);
                         }
                     }
 
@@ -673,7 +727,7 @@ impl ComponentWaitlist {
             }
             (
                 FileExtension::Mesh,
-                ComponentData::Face(vertex_a, vertex_b, vertex_c, _edge_a, _edge_b, _edge_c),
+                ComponentData::Face(vertex_a, vertex_b, vertex_c),
             ) => {
                 let Some(vertex_manager) = vertex_manager_opt else {
                     panic!("vertex manager not available");
@@ -718,7 +772,7 @@ impl ComponentWaitlist {
                     positions,
                 );
             }
-            (FileExtension::Icon, ComponentData::Vertex(None)) => {
+            (FileExtension::Icon, ComponentData::IconVertex(frame_entity)) => {
                 let Some(icon_manager) = icon_manager_opt else {
                     panic!("icon manager not available");
                 };
@@ -729,12 +783,13 @@ impl ComponentWaitlist {
                     commands,
                     meshes,
                     materials,
-                    entity,
                     Some(file_entity),
+                    Some(frame_entity),
+                    entity,
                     color,
                 );
             }
-            (FileExtension::Icon, ComponentData::Edge(start, end, None)) => {
+            (FileExtension::Icon, ComponentData::IconEdge(frame_entity, start, end)) => {
                 let Some(icon_manager) = icon_manager_opt else {
                     panic!("icon manager not available");
                 };
@@ -742,16 +797,17 @@ impl ComponentWaitlist {
                     commands,
                     meshes,
                     materials,
+                    Some(file_entity),
+                    Some(frame_entity),
                     entity,
                     start,
                     end,
-                    Some(file_entity),
                     Vertex2d::ENABLED_COLOR,
                 );
             }
             (
                 FileExtension::Icon,
-                ComponentData::Face(vertex_a, vertex_b, vertex_c, _edge_a, _edge_b, _edge_c),
+                ComponentData::IconFace(frame_entity, vertex_a, vertex_b, vertex_c),
             ) => {
                 let Some(icon_manager) = icon_manager_opt else {
                     panic!("icon manager not available");
@@ -773,7 +829,8 @@ impl ComponentWaitlist {
                         commands,
                         meshes,
                         materials,
-                        file_entity,
+                        &file_entity,
+                        &frame_entity,
                         &face_key,
                     );
                 }

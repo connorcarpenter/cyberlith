@@ -26,10 +26,11 @@ pub(crate) fn execute(
     world: &mut World,
     icon_manager: &mut IconManager,
     action_stack: &mut ActionStack<IconAction>,
-    tab_file_entity: Entity,
+    current_file_entity: Entity,
     action: IconAction,
 ) -> Vec<IconAction> {
     let IconAction::CreateEdge(
+        frame_entity,
         vertex_entity_a,
         vertex_entity_b,
         shape_to_select,
@@ -59,7 +60,12 @@ pub(crate) fn execute(
             ResMut<Assets<CpuMesh>>,
             ResMut<Assets<CpuMaterial>>,
         )> = SystemState::new(world);
-        let (mut commands, mut client, mut meshes, mut materials) = system_state.get_mut(world);
+        let (
+            mut commands,
+            mut client,
+            mut meshes,
+            mut materials
+        ) = system_state.get_mut(world);
 
         // deselect all selected vertices
         let deselected_shape_entity = deselect_selected_shape(icon_manager);
@@ -77,9 +83,10 @@ pub(crate) fn execute(
             &mut client,
             &mut meshes,
             &mut materials,
-            vertex_entity_a,
-            vertex_entity_b,
-            tab_file_entity,
+            &vertex_entity_a,
+            &vertex_entity_b,
+            &current_file_entity,
+            &frame_entity,
             &mut entities_to_release,
         );
         created_edge_entity = new_edge_entity;
@@ -142,7 +149,8 @@ pub(crate) fn execute(
                     &mut commands,
                     &mut meshes,
                     &mut materials,
-                    tab_file_entity,
+                    &current_file_entity,
+                    &frame_entity,
                     &face_key,
                 );
                 action_stack.migrate_face_entities(old_local_face_entity, new_face_entity);
@@ -155,7 +163,8 @@ pub(crate) fn execute(
                         &transform_q,
                         &face_key,
                         [edge_entities[0], edge_entities[1], edge_entities[2]],
-                        tab_file_entity,
+                        &current_file_entity,
+                        &frame_entity,
                     );
                 }
             }

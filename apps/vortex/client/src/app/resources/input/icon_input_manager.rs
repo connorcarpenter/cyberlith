@@ -35,11 +35,12 @@ pub struct IconInputManager;
 impl IconInputManager {
     pub fn update_input(
         world: &mut World,
+        current_file_entity: &Entity,
         icon_manager: &mut IconManager,
         input_actions: Vec<InputAction>,
     ) {
         if icon_manager.is_meshing() {
-            Self::update_input_meshing(world, icon_manager, input_actions);
+            Self::update_input_meshing(world, current_file_entity, icon_manager, input_actions);
         } else {
             Self::update_input_framing(world, icon_manager, input_actions);
         }
@@ -49,13 +50,14 @@ impl IconInputManager {
 
     fn update_input_meshing(
         world: &mut World,
+        current_file_entity: &Entity,
         icon_manager: &mut IconManager,
         input_actions: Vec<InputAction>,
     ) {
         for action in input_actions {
             match action {
                 InputAction::MouseClick(click_type, mouse_position) => {
-                    Self::handle_mouse_click_meshing(world, icon_manager, &mouse_position, click_type)
+                    Self::handle_mouse_click_meshing(world, current_file_entity, icon_manager, &mouse_position, click_type)
                 }
                 InputAction::MouseDragged(click_type, mouse_position, delta) => {
                     Self::handle_mouse_drag_meshing(world, icon_manager, mouse_position, delta, click_type)
@@ -77,7 +79,7 @@ impl IconInputManager {
                         Self::handle_delete_key_press_meshing(world, icon_manager);
                     }
                     Key::Insert => {
-                        Self::handle_insert_key_press_meshing(world, icon_manager);
+                        Self::handle_insert_key_press_meshing(world, current_file_entity, icon_manager);
                     }
                     Key::Escape => {
                         icon_manager.set_framing();
@@ -89,16 +91,17 @@ impl IconInputManager {
         }
     }
 
-    pub(crate) fn handle_insert_key_press_meshing(world: &mut World, icon_manager: &mut IconManager) {
+    pub(crate) fn handle_insert_key_press_meshing(world: &mut World, current_file_entity: &Entity, icon_manager: &mut IconManager) {
         if icon_manager.selected_shape.is_some() {
             return;
         }
+        let current_frame_entity = icon_manager.current_frame_entity(current_file_entity).unwrap();
         world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
             tab_manager.current_tab_execute_icon_action(
                 world,
                 icon_manager,
                 IconAction::CreateVertex(
-                    IconVertexActionData::new(Vec::new(), Vec::new()),
+                    IconVertexActionData::new(current_frame_entity, Vec::new(), Vec::new()),
                     Vec2::ZERO,
                     None,
                 ),
@@ -184,6 +187,7 @@ impl IconInputManager {
 
     pub(crate) fn handle_mouse_click_meshing(
         world: &mut World,
+        current_file_entity: &Entity,
         icon_manager: &mut IconManager,
         mouse_position: &Vec2,
         click_type: MouseButton,
@@ -203,13 +207,14 @@ impl IconInputManager {
         // click_type, selected_shape, hovered_shape
         match (click_type, selected_shape, hovered_shape) {
             (MouseButton::Left, Some(CanvasShape::Vertex), Some(CanvasShape::Vertex)) => {
-                Self::link_vertices(world, icon_manager);
+                Self::link_vertices(world, current_file_entity, icon_manager);
             }
             (MouseButton::Left, Some(CanvasShape::Vertex), None) => {
                 // create new vertex
+                let frame_entity = icon_manager.current_frame_entity(current_file_entity).unwrap();
                 let (vertex_entity, _) = icon_manager.selected_shape.unwrap();
                 let vertex_type_data =
-                    IconVertexActionData::new(vec![(vertex_entity, None)], Vec::new());
+                    IconVertexActionData::new(frame_entity, vec![(vertex_entity, None)], Vec::new());
 
                 // convert screen mouse to view mouse
                 let mut system_state: SystemState<(Res<Canvas>, Query<&Transform>)> =
@@ -270,13 +275,15 @@ impl IconInputManager {
         });
     }
 
-    fn link_vertices(world: &mut World, icon_manager: &mut IconManager) {
+    fn link_vertices(world: &mut World, current_file_entity: &Entity, icon_manager: &mut IconManager) {
         // link vertices together
         let (vertex_entity_a, _) = icon_manager.selected_shape.unwrap();
         let (vertex_entity_b, _) = icon_manager.hovered_entity.unwrap();
         if vertex_entity_a == vertex_entity_b {
             return;
         }
+
+        let frame_entity = icon_manager.current_frame_entity(current_file_entity).unwrap();
 
         // check if edge already exists
         if icon_manager
@@ -298,6 +305,7 @@ impl IconInputManager {
                     world,
                     icon_manager,
                     IconAction::CreateEdge(
+                        frame_entity,
                         vertex_entity_a,
                         vertex_entity_b,
                         (vertex_entity_b, CanvasShape::Vertex),

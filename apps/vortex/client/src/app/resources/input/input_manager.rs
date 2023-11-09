@@ -96,10 +96,11 @@ impl InputManager {
             .current_tab_entity() else {
             return;
         };
+        let current_file_entity = *current_file_entity;
         let current_file_type = world
             .get_resource::<FileManager>()
             .unwrap()
-            .get_file_type(current_file_entity);
+            .get_file_type(&current_file_entity);
         match current_file_type {
             FileExtension::Skel => SkelInputManager::update_input(world, self, input_actions),
             FileExtension::Mesh => MeshInputManager::update_input(world, self, input_actions),
@@ -110,7 +111,7 @@ impl InputManager {
             }
             FileExtension::Icon => {
                 world.resource_scope(|world, mut icon_manager: Mut<IconManager>| {
-                    IconInputManager::update_input(world, &mut icon_manager, input_actions);
+                    IconInputManager::update_input(world, &current_file_entity, &mut icon_manager, input_actions);
                 });
             }
             _ => {}

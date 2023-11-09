@@ -1079,7 +1079,6 @@ impl AnimationManager {
 
         let camera_viewport = camera.viewport.unwrap();
         let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
-        let camera_viewport = camera_viewport.size_vec2();
 
         let mut camera_transform = Transform::default();
         set_camera_transform(&mut camera_transform, Vec2::ZERO, 4.0, Vec2::ZERO);
@@ -1121,7 +1120,6 @@ impl AnimationManager {
                                 &point_mesh_handle,
                                 &line_mesh_handle,
                                 &mat_handle_green,
-                                &camera_viewport,
                                 &view_matrix,
                                 &projection_matrix,
                             );
@@ -1151,7 +1149,6 @@ impl AnimationManager {
                     &point_mesh_handle,
                     &line_mesh_handle,
                     &mat_handle_green,
-                    &camera_viewport,
                     &view_matrix,
                     &projection_matrix,
                 );
@@ -1239,7 +1236,6 @@ impl AnimationManager {
         point_mesh_handle: &Handle<CpuMesh>,
         line_mesh_handle: &Handle<CpuMesh>,
         mat_handle_green: &Handle<CpuMaterial>,
-        camera_viewport: &Vec2,
         view_matrix: &Mat4,
         projection_matrix: &Mat4,
     ) {
@@ -1264,7 +1260,6 @@ impl AnimationManager {
             point_mesh_handle,
             line_mesh_handle,
             mat_handle_green,
-            camera_viewport,
             view_matrix,
             projection_matrix,
         );
@@ -1275,13 +1270,12 @@ impl AnimationManager {
         world: &mut World,
         vertex_manager: &VertexManager,
         root_3d_vertex: Entity,
-        root_transform: &Vec2,
+        root_pos: &Vec2,
         frame_pos: &Vec2,
         render_layer: &RenderLayer,
         point_mesh_handle: &Handle<CpuMesh>,
         line_mesh_handle: &Handle<CpuMesh>,
         mat_handle_green: &Handle<CpuMaterial>,
-        camera_viewport: &Vec2,
         view_matrix: &Mat4,
         projection_matrix: &Mat4,
     ) {
@@ -1298,12 +1292,11 @@ impl AnimationManager {
             &mut render_frame,
             &transform_q,
             root_3d_vertex,
-            root_transform,
+            root_pos,
             render_layer,
             point_mesh_handle,
             line_mesh_handle,
             mat_handle_green,
-            camera_viewport,
             view_matrix,
             projection_matrix,
             frame_pos,
@@ -1317,12 +1310,11 @@ impl AnimationManager {
         render_frame: &mut RenderFrame,
         transform_q: &Query<&Transform>,
         parent_vertex_3d_entity: Entity,
-        parent_position: &Vec2,
+        parent_pos: &Vec2,
         render_layer: &RenderLayer,
         point_mesh_handle: &Handle<CpuMesh>,
         line_mesh_handle: &Handle<CpuMesh>,
         mat_handle_green: &Handle<CpuMaterial>,
-        camera_viewport: &Vec2,
         view_matrix: &Mat4,
         projection_matrix: &Mat4,
         frame_pos: &Vec2,
@@ -1361,7 +1353,7 @@ impl AnimationManager {
 
             // draw edge 2d
             let mut line_transform = Transform::default();
-            set_2d_line_transform(&mut line_transform, *parent_position, child_position, 0.0);
+            set_2d_line_transform(&mut line_transform, *parent_pos, child_position, 0.0);
             render_frame.draw_object(
                 Some(render_layer),
                 line_mesh_handle,
@@ -1381,7 +1373,6 @@ impl AnimationManager {
                 point_mesh_handle,
                 line_mesh_handle,
                 mat_handle_green,
-                camera_viewport,
                 view_matrix,
                 projection_matrix,
                 frame_pos,

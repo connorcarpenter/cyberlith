@@ -26,12 +26,13 @@ pub(crate) fn execute(
     world: &mut World,
     icon_manager: &mut IconManager,
     action_stack: &mut ActionStack<IconAction>,
-    tab_file_entity: Entity,
+    current_file_entity: Entity,
     action: IconAction,
 ) -> Vec<IconAction> {
     let IconAction::CreateVertex(icon_vertex_data, position, old_vertex_entities_opt) = action else {
         panic!("Expected CreateVertex");
     };
+    let frame_entity = icon_vertex_data.frame_entity;
 
     info!("CreateVertex");
 
@@ -63,7 +64,8 @@ pub(crate) fn execute(
         &mut client,
         &mut meshes,
         &mut materials,
-        tab_file_entity,
+        &current_file_entity,
+        &frame_entity,
         position,
         &mut entities_to_release,
     );
@@ -82,8 +84,13 @@ pub(crate) fn execute(
         ResMut<Assets<CpuMaterial>>,
         Query<&Transform>,
     )> = SystemState::new(world);
-    let (mut commands, mut client, mut meshes, mut materials, transform_q) =
-        system_state.get_mut(world);
+    let (
+        mut commands,
+        mut client,
+        mut meshes,
+        mut materials,
+        transform_q
+    ) = system_state.get_mut(world);
 
     let mut edge_entities = Vec::new();
     for (connected_vertex_entity, old_edge_opt) in icon_vertex_data.connected_vertices {
@@ -92,9 +99,10 @@ pub(crate) fn execute(
             &mut client,
             &mut meshes,
             &mut materials,
-            connected_vertex_entity,
-            new_vertex_entity,
-            tab_file_entity,
+            &connected_vertex_entity,
+            &new_vertex_entity,
+            &current_file_entity,
+            &frame_entity,
             &mut entities_to_release,
         );
         edge_entities.push(new_edge_entity);
@@ -120,7 +128,8 @@ pub(crate) fn execute(
             &mut commands,
             &mut meshes,
             &mut materials,
-            tab_file_entity,
+            &current_file_entity,
+            &frame_entity,
             &face_key,
         );
         action_stack.migrate_face_entities(old_local_face_entity, new_face_entity);
@@ -133,7 +142,8 @@ pub(crate) fn execute(
                 &transform_q,
                 &face_key,
                 [edge_entities[0], edge_entities[1], edge_entities[2]],
-                tab_file_entity,
+                &current_file_entity,
+                &frame_entity,
             );
         }
     }

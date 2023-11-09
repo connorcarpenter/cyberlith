@@ -3,13 +3,15 @@ use std::collections::HashSet;
 use bevy_ecs::entity::Entity;
 
 pub struct IconVertexData {
+    pub(crate) frame_entity_opt: Option<Entity>,
     pub(crate) edges: HashSet<Entity>,
     pub(crate) faces: HashSet<IconFaceKey>,
 }
 
 impl IconVertexData {
-    pub fn new() -> Self {
+    pub fn new(frame_entity_opt: Option<Entity>,) -> Self {
         Self {
+            frame_entity_opt,
             edges: HashSet::new(),
             faces: HashSet::new(),
         }
@@ -33,14 +35,16 @@ impl IconVertexData {
 }
 
 pub struct IconEdgeData {
+    pub(crate) frame_entity_opt: Option<Entity>,
     pub(crate) vertex_entity_a: Entity,
     pub(crate) vertex_entity_b: Entity,
     pub(crate) faces: HashSet<IconFaceKey>,
 }
 
 impl IconEdgeData {
-    pub fn new(vertex_entity_a: Entity, vertex_entity_b: Entity) -> Self {
+    pub fn new(frame_entity_opt: Option<Entity>, vertex_entity_a: Entity, vertex_entity_b: Entity) -> Self {
         Self {
+            frame_entity_opt,
             vertex_entity_a,
             vertex_entity_b,
             faces: HashSet::new(),
@@ -71,6 +75,7 @@ impl IconFaceKey {
 
 pub struct IconFaceData {
     pub(crate) file_entity: Entity,
+    pub(crate) frame_entity: Entity,
 
     pub(crate) local_entity: Entity,
     pub(crate) net_entity: Option<Entity>,
@@ -83,15 +88,16 @@ pub struct IconFaceData {
 impl IconFaceData {
     pub fn new(
         file_entity: Entity,
-        wire_entity: Entity,
+        frame_entity: Entity,
+        local_entity: Entity,
         edge_a: Entity,
         edge_b: Entity,
         edge_c: Entity,
     ) -> Self {
         Self {
             file_entity,
-
-            local_entity: wire_entity,
+            frame_entity,
+            local_entity,
             net_entity: None,
 
             edge_a,

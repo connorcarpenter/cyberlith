@@ -28,8 +28,9 @@ pub enum IconAction {
     DeleteVertex(Entity, Option<(Entity, CanvasShape)>),
     // Move Vertex (vertex Entity, Old Position, New Position)
     MoveVertex(Entity, Vec2, Vec2, bool),
-    // Create Edge (vertex start entity, vertex end entity, shape to select, Option<Vec<(other vertex entity to make a face with, old local face entity it was associated with)>>, Option<(older edge entity)>)
+    // Create Edge (frame entity, vertex start entity, vertex end entity, shape to select, Option<Vec<(other vertex entity to make a face with, old local face entity it was associated with)>>, Option<(older edge entity)>)
     CreateEdge(
+        Entity,
         Entity,
         Entity,
         (Entity, CanvasShape),
@@ -73,7 +74,7 @@ impl IconAction {
             Self::CreateVertex(_, _, _) => IconActionType::CreateVertex,
             Self::DeleteVertex(_, _) => IconActionType::DeleteVertex,
             Self::MoveVertex(_, _, _, _) => IconActionType::MoveVertex,
-            Self::CreateEdge(_, _, _, _, _) => IconActionType::CreateEdge,
+            Self::CreateEdge(_, _, _, _, _, _) => IconActionType::CreateEdge,
             Self::DeleteEdge(_, _) => IconActionType::DeleteEdge,
             Self::DeleteFace(_) => IconActionType::DeleteFace,
             Self::SelectFrame(_, _, _) => IconActionType::SelectFrame,
@@ -144,12 +145,12 @@ impl IconAction {
                     *entity = new_vertex_entity;
                 }
             }
-            Self::CreateEdge(entity_a, entity_b, shape_to_select, face_to_create_opt, _) => {
-                if *entity_a == old_vertex_entity {
-                    *entity_a = new_vertex_entity;
+            Self::CreateEdge(_, vertex_entity_a, vertex_entity_b, shape_to_select, face_to_create_opt, _) => {
+                if *vertex_entity_a == old_vertex_entity {
+                    *vertex_entity_a = new_vertex_entity;
                 }
-                if *entity_b == old_vertex_entity {
-                    *entity_b = new_vertex_entity;
+                if *vertex_entity_b == old_vertex_entity {
+                    *vertex_entity_b = new_vertex_entity;
                 }
                 if let (entity, CanvasShape::Vertex) = shape_to_select {
                     if *entity == old_vertex_entity {
@@ -190,7 +191,7 @@ impl IconAction {
             Self::CreateVertex(vertex_type_data, _, _) => {
                 vertex_type_data.migrate_edge_entities(old_edge_entity, new_edge_entity);
             }
-            Self::CreateEdge(_, _, shape_to_select, _, Some(edge_entity)) => {
+            Self::CreateEdge(_, _, _, shape_to_select, _, Some(edge_entity)) => {
                 if *edge_entity == old_edge_entity {
                     *edge_entity = new_edge_entity;
                 }
@@ -226,7 +227,7 @@ impl IconAction {
             Self::CreateVertex(vertex_type_data, _, _) => {
                 vertex_type_data.migrate_face_entities(old_face_entity, new_face_entity);
             }
-            Self::CreateEdge(_, _, _, faces_to_create_opt, _) => {
+            Self::CreateEdge(_, _, _, _, faces_to_create_opt, _) => {
                 if let Some(entities) = faces_to_create_opt {
                     for (_, face_entity, _) in entities {
                         if *face_entity == old_face_entity {
