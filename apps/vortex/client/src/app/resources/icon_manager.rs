@@ -1889,16 +1889,33 @@ impl IconManager {
     }
 
     fn draw_framing(&mut self, world: &mut World) {
+
+        let mut system_state: SystemState<(
+            Res<TabManager>,
+            Query<&mut Transform>,
+        )> = SystemState::new(world);
+        let (
+            mut tab_manager,
+            mut transform_q,
+        ) = system_state.get_mut(world);
+
         // get current file
-        let Some(current_file_entity) = world.get_resource::<TabManager>().unwrap().current_tab_entity() else {
+        let Some(current_file_entity) = tab_manager.current_tab_entity() else {
             return;
         };
         let current_file_entity = *current_file_entity;
 
+        // camera
+        let Ok(mut camera_transform) = transform_q.get_mut(self.camera_entity) else {
+            return;
+        };
+        camera_transform.translation = Vec3::new(0.0, 0.0, 1.0);
+        camera_transform.scale = Vec3::new(1.0, 1.0, 1.0);
+
+        // frames
         let Some(file_frame_data) = self.file_frame_data.get(&current_file_entity) else {
             return;
         };
-
         let frame_count = file_frame_data.count();
         let canvas_size = world.get_resource::<Canvas>().unwrap().texture_size();
         let frame_rects = self.get_frame_positions(&canvas_size, frame_count);
