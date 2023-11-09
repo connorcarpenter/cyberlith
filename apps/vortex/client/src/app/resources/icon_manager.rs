@@ -2200,28 +2200,17 @@ impl IconManager {
             if let Some(Some(preview_current_frame_entity)) =
                 file_frame_data.frame_list.get(self.preview_frame_index)
             {
+                let frame_pos = frame_rects[frame_index] + (self.frame_size * 0.5);
 
-                let frame_pos = frame_rects[frame_index];
-
-                // TODO!!!
-                // self.draw_pose(
-                //     world,
-                //     &vertex_manager,
-                //     *preview_current_frame_entity,
-                //     Some((
-                //         preview_next_frame_entity,
-                //         self.preview_elapsed_ms / frame_duration,
-                //     )),
-                //     root_3d_vertex,
-                //     &frame_pos,
-                //     &render_layer,
-                //     &point_mesh_handle,
-                //     &line_mesh_handle,
-                //     &mat_handle_green,
-                //     &camera_viewport,
-                //     &view_matrix,
-                //     &projection_matrix,
-                // );
+                self.draw_frame_contents(
+                    world,
+                    &current_file_entity,
+                    &preview_current_frame_entity,
+                    &frame_pos,
+                    &point_mesh_handle,
+                    &line_mesh_handle,
+                    &mat_handle_green,
+                );
             }
 
             frame_index += 1;
@@ -2358,25 +2347,16 @@ impl IconManager {
         let frame_count = frame_positions.len();
 
         let mut start: Vec2;
-        if complete < 0.5 {
-            let mut preview_frame_index = self.preview_frame_index + 1;
-            if preview_frame_index >= frame_count {
-                preview_frame_index -= frame_count - 1;
-            }
 
-            start = frame_positions[preview_frame_index];
-
-            start.x += frame_width * complete;
-        } else {
-            let mut next_frame_index = self.preview_frame_index + 2;
-            if next_frame_index >= frame_count {
-                next_frame_index -= frame_count - 1;
-            }
-            start = frame_positions[next_frame_index];
-            start.x -= frame_width * (1.0 - complete);
+        let mut preview_frame_index = self.preview_frame_index + 1;
+        if preview_frame_index >= frame_count {
+            preview_frame_index -= frame_count - 1;
         }
 
-        start.x += self.frame_size.x * 0.5;
+        start = frame_positions[preview_frame_index];
+
+        start.x += frame_width * complete;
+
         start.y -= self.frame_buffer.y;
 
         let mut end = start;
