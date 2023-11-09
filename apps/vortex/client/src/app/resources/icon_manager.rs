@@ -77,7 +77,6 @@ pub struct IconManager {
     last_preview_instant: Instant,
     preview_elapsed_ms: f32,
     preview_frame_index: usize,
-    preview_frame_selected: bool,
 
     //doubleclick
     pub(crate) last_left_click_instant: Instant,
@@ -135,7 +134,6 @@ impl Default for IconManager {
             last_preview_instant: Instant::now(),
             preview_elapsed_ms: 0.0,
             preview_frame_index: 0,
-            preview_frame_selected: false,
 
             last_left_click_instant: Instant::now(),
             last_frame_index_hover: 0,
@@ -541,13 +539,20 @@ impl IconManager {
         }
         self.resync_hover = false;
 
+        let mut system_state: SystemState<(Res<Canvas>, Query<&Transform>)> =
+            SystemState::new(world);
+        let (canvas, transform_q) = system_state.get_mut(world);
+
+        let canvas_size = canvas.texture_size();
+        let Ok(camera_transform) = transform_q.get(self.camera_entity) else {
+            return;
+        };
+        let view_mouse_position = Self::screen_to_view(&canvas, camera_transform, screen_mouse_position);
+
         if self.meshing {
-            self.sync_mouse_hover_ui_meshing(world, current_file_entity, screen_mouse_position);
+            self.sync_mouse_hover_ui_meshing(world, current_file_entity, &view_mouse_position);
         } else {
-            let mut system_state: SystemState<Res<Canvas>> = SystemState::new(world);
-            let canvas = system_state.get_mut(world);
-            let canvas_size = canvas.texture_size();
-            self.sync_mouse_hover_ui_framing(current_file_entity, canvas_size, screen_mouse_position);
+            self.sync_mouse_hover_ui_framing(current_file_entity, &canvas_size, &view_mouse_position);
         }
     }
 
@@ -555,19 +560,10 @@ impl IconManager {
         &mut self,
         world: &mut World,
         current_file_entity: &Entity,
-        screen_mouse_position: &Vec2,
+        view_mouse_position: &Vec2,
     ) {
-        let mut system_state: SystemState<(Res<Canvas>, Query<&Transform>)> =
-            SystemState::new(world);
-        let (canvas, transform_q) = system_state.get_mut(world);
-
-        let Ok(camera_transform) = transform_q.get(self.camera_entity) else {
-            return;
-        };
-        let view_mouse_position = Self::screen_to_view(&canvas, camera_transform, screen_mouse_position);
-
         // sync to hover
-        let new_hover_entity = IconInputManager::sync_mouse_hover_ui(world, current_file_entity, &view_mouse_position);
+        let new_hover_entity = IconInputManager::sync_mouse_hover_ui(world, current_file_entity, view_mouse_position);
         if new_hover_entity == self.hovered_entity {
             return;
         }
@@ -1582,14 +1578,6 @@ impl IconManager {
         self.preview_playing = false;
     }
 
-    pub fn preview_frame_index(&self) -> usize {
-        self.preview_frame_index
-    }
-
-    pub fn preview_elapsed_ms(&self) -> f32 {
-        self.preview_elapsed_ms
-    }
-
     pub fn frame_index_hover(&self) -> Option<usize> {
         self.frame_hover
     }
@@ -1608,15 +1596,6 @@ impl IconManager {
 
     pub fn set_framing(&mut self) {
         self.meshing = false;
-        self.preview_frame_selected = false;
-    }
-
-    pub fn set_preview_frame_selected(&mut self) {
-        self.preview_frame_selected = true;
-    }
-
-    pub fn preview_frame_selected(&self) -> bool {
-        self.preview_frame_selected
     }
 
     pub fn get_frame_entity(&self, file_entity: &Entity, frame_index: usize) -> Option<Entity> {
@@ -1673,22 +1652,23 @@ impl IconManager {
         // the current tab file entity is the same as the file entity here?
     }
 
-    fn get_frame_positions(&mut self, canvas_size: Vec2, frame_count: usize) -> Vec<Vec2> {
+    fn get_frame_positions(&mut self, canvas_size: &Vec2, frame_count: usize) -> Vec<Vec2> {
+        let canvas_size = *canvas_size * 0.5;
         let mut positions = Vec::new();
-        let mut start_position = self.frame_buffer;
+        let mut cursor_position = self.frame_buffer - canvas_size;
 
         for _ in 0..=frame_count {
-            positions.push(start_position);
-            let next_x = start_position.x + self.frame_size.x + self.frame_buffer.x;
+            positions.push(cursor_position);
+            let next_x = cursor_position.x + self.frame_size.x + self.frame_buffer.x;
             if next_x + self.frame_size.x > canvas_size.x {
-                start_position.x = self.frame_buffer.x;
-                start_position.y += self.frame_size.y + self.frame_buffer.y;
+                cursor_position.x = self.frame_buffer.x - canvas_size.x;
+                cursor_position.y += self.frame_size.y + self.frame_buffer.y;
             } else {
-                start_position.x = next_x;
+                cursor_position.x = next_x;
             }
         }
 
-        let last_y = start_position.y + self.frame_size.y + self.frame_buffer.y;
+        let last_y = cursor_position.y + self.frame_size.y + self.frame_buffer.y;
         let y_diff = last_y - canvas_size.y;
         if y_diff <= 0.0 {
             self.framing_y = 0.0;
@@ -1792,6 +1772,33 @@ impl IconManager {
         self.register_frame(file_entity, frame_entity);
     }
 
+    pub(crate) fn preview_update(
+        &mut self,
+        current_file_entity: &Entity,
+    ) {
+        if !self.preview_playing {
+            return;
+        }
+
+        let ms_elapsed = self.last_preview_instant.elapsed().as_millis() as f32;
+        self.last_preview_instant = Instant::now();
+
+        let Some(preview_frame_count) = self.get_frame_count(current_file_entity) else {
+            return;
+        };
+
+        const FRAME_DURATION: f32 = 40.0; // TODO: move this somewhere more sensible ... or have variable animation speed ..
+
+        self.preview_elapsed_ms += ms_elapsed / 10.0; // change this back to 1 for real speeds! maybe should be configurable..
+        while self.preview_elapsed_ms > FRAME_DURATION {
+            self.preview_elapsed_ms -= FRAME_DURATION;
+            self.preview_frame_index += 1;
+            if self.preview_frame_index >= preview_frame_count {
+                self.preview_frame_index = 0;
+            }
+        }
+    }
+
     pub(crate) fn handle_mouse_drag_framing(&mut self, delta_y: f32) {
         self.framing_y += delta_y;
     }
@@ -1854,8 +1861,8 @@ impl IconManager {
     fn sync_mouse_hover_ui_framing(
         &mut self,
         current_file_entity: &Entity,
-        canvas_size: Vec2,
-        mouse_position: &Vec2,
+        canvas_size: &Vec2,
+        view_mouse_position: &Vec2,
     ) {
         let Some(file_frame_data) = self.file_frame_data.get(current_file_entity) else {
             return;
@@ -1868,11 +1875,11 @@ impl IconManager {
         self.frame_hover = None;
         for (index, frame_position) in frame_positions.iter().enumerate() {
             // assign hover frame
-            if mouse_position.x >= frame_position.x
-                && mouse_position.x <= frame_position.x + self.frame_size.x
+            if view_mouse_position.x >= frame_position.x
+                && view_mouse_position.x <= frame_position.x + self.frame_size.x
             {
-                if mouse_position.y >= frame_position.y
-                    && mouse_position.y <= frame_position.y + self.frame_size.y
+                if view_mouse_position.y >= frame_position.y
+                    && view_mouse_position.y <= frame_position.y + self.frame_size.y
                 {
                     self.frame_hover = Some(index);
                     return;
@@ -1894,7 +1901,7 @@ impl IconManager {
 
         let frame_count = file_frame_data.count();
         let canvas_size = world.get_resource::<Canvas>().unwrap().texture_size();
-        let frame_rects = self.get_frame_positions(canvas_size, frame_count);
+        let frame_rects = self.get_frame_positions(&canvas_size, frame_count);
 
         let file_frame_data = self.file_frame_data.get(&current_file_entity).unwrap();
 
@@ -1985,7 +1992,7 @@ impl IconManager {
 
                 let frame_pos = frame_rects[frame_index];
 
-                todo!();
+                // TODO!!!
                 // self.draw_pose(
                 //     world,
                 //     &vertex_manager,
@@ -2017,7 +2024,7 @@ impl IconManager {
 
             let frame_pos = frame_rects[frame_index];
 
-            todo!();
+            // TODO!!!
             // self.draw_pose(
             //     world,
             //     &vertex_manager,
@@ -2039,6 +2046,7 @@ impl IconManager {
 
         self.draw_preview_time_line(
             world,
+            &current_file_entity,
             &line_mesh_handle,
             &mat_handle_white,
             &frame_rects,
@@ -2048,10 +2056,14 @@ impl IconManager {
     fn draw_preview_time_line(
         &self,
         world: &mut World,
+        current_file_entity: &Entity,
         line_mesh_handle: &Handle<CpuMesh>,
         mat_handle_white: &Handle<CpuMaterial>,
         frame_positions: &Vec<Vec2>,
     ) {
+        let Some(_frame_entity) = self.get_frame_entity(current_file_entity, self.preview_frame_index) else {
+            return;
+        };
         let complete = self.preview_elapsed_ms / self.frame_duration_ms;
         let frame_width = self.frame_size.x + self.frame_buffer.x;
         let frame_count = frame_positions.len();

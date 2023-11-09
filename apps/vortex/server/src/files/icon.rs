@@ -23,6 +23,7 @@ use crate::{
 enum ContentEntityTypeData {
     Dependency(FileKey),
     BackgroundColor(Option<u8>),
+    Frame,
     Vertex,
     Edge(Entity, Entity),
     Face(usize, Entity, Entity, Entity),
@@ -547,6 +548,7 @@ impl IconReader {
         let (mut commands, mut server, mut icon_manager) = system_state.get_mut(world);
 
         let mut output = Vec::new();
+        let mut frame_index = 0;
 
         for action in actions {
             match action {
@@ -583,17 +585,41 @@ impl IconReader {
                 }
                 IconAction::Frame(frame_actions) => {
 
+                    // make frame entity
+                    let mut component = IconFrame::new(frame_index);
+                    component.file_entity.set(&server, file_entity);
+                    let frame_entity = commands
+                        .spawn_empty()
+                        .enable_replication(&mut server)
+                        .configure_replication(ReplicationConfig::Delegated)
+                        .insert(component)
+                        .id();
+
+                    output.push((frame_entity, ContentEntityTypeData::Frame));
+
+                    icon_manager.on_create_frame(
+                        &file_entity,
+                        &frame_entity,
+                        frame_index as usize,
+                        None,
+                    );
+
+                    frame_index += 1;
+
+                    // make frame contents
                     let mut vertices = Vec::new();
                     let mut edges = Vec::new();
 
                     for frame_action in frame_actions {
                         match frame_action {
                             IconFrameAction::Vertex(x, y) => {
+                                let mut component = IconVertex::new(x, y);
+                                component.frame_entity.set(&server, &frame_entity);
                                 let entity_id = commands
                                     .spawn_empty()
                                     .enable_replication(&mut server)
                                     .configure_replication(ReplicationConfig::Delegated)
-                                    .insert(IconVertex::new(x, y))
+                                    .insert(component)
                                     .id();
                                 info!("spawning icon vertex entity {:?}", entity_id);
                                 vertices.push(entity_id);
@@ -608,6 +634,7 @@ impl IconReader {
                                 };
 
                                 let mut edge_component = IconEdge::new();
+                                edge_component.frame_entity.set(&server, &frame_entity);
                                 edge_component.start.set(&server, vertex_a_entity);
                                 edge_component.end.set(&server, vertex_b_entity);
 
@@ -643,6 +670,7 @@ impl IconReader {
                                 let edge_c_entity = *edges.get(edge_c_index as usize).unwrap();
 
                                 let mut face_component = IconFace::new();
+                                face_component.frame_entity.set(&server, &frame_entity);
                                 face_component.vertex_a.set(&server, &vertex_a_entity);
                                 face_component.vertex_b.set(&server, &vertex_b_entity);
                                 face_component.vertex_c.set(&server, &vertex_c_entity);
@@ -707,6 +735,8 @@ impl IconReader {
 }
 
 impl IconReader {
+
+    // TODO: move this into the main read functions
     fn post_process_entities(
         icon_manager: &mut IconManager,
         file_entity: &Entity,
@@ -717,6 +747,24 @@ impl IconReader {
         for (entity, content_entity_type_data) in shape_entities {
 
             match content_entity_type_data {
+                ContentEntityTypeData::Dependency(file_key) => {
+                    new_content_entities.insert(
+                        entity,
+                        ContentEntityData::new_dependency(file_key),
+                    );
+                }
+                ContentEntityTypeData::BackgroundColor(index) => {
+                    new_content_entities.insert(
+                        entity,
+                        ContentEntityData::new_background_color(index),
+                    );
+                }
+                ContentEntityTypeData::Frame => {
+                    new_content_entities.insert(
+                        entity,
+                        ContentEntityData::new_frame(),
+                    );
+                }
                 ContentEntityTypeData::Vertex => {
                     icon_manager.on_create_vertex(entity);
 
@@ -746,18 +794,6 @@ impl IconReader {
                     new_content_entities.insert(
                         entity,
                         ContentEntityData::new_icon_shape(ShapeType::Face),
-                    );
-                }
-                ContentEntityTypeData::Dependency(file_key) => {
-                    new_content_entities.insert(
-                        entity,
-                        ContentEntityData::new_dependency(file_key),
-                    );
-                }
-                ContentEntityTypeData::BackgroundColor(index) => {
-                    new_content_entities.insert(
-                        entity,
-                        ContentEntityData::new_background_color(index),
                     );
                 }
             }

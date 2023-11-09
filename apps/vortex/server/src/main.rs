@@ -25,6 +25,7 @@ use vortex_proto::{
     },
     protocol,
 };
+use vortex_proto::components::IconFrame;
 
 use crate::{
     config::{AppConfig, ConfigPlugin},
@@ -112,6 +113,7 @@ fn main() {
         .add_event::<InsertComponentEvent<IconVertex>>()
         .add_event::<InsertComponentEvent<IconEdge>>()
         .add_event::<InsertComponentEvent<IconFace>>()
+        .add_event::<InsertComponentEvent<IconFrame>>()
         .add_event::<InsertComponentEvent<FileType>>()
         .add_event::<InsertComponentEvent<OwnedByFile>>()
         .add_event::<InsertComponentEvent<ShapeName>>()
