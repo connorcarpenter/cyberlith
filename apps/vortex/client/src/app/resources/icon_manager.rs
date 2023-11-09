@@ -516,28 +516,28 @@ impl IconManager {
             commands,
             meshes,
             materials,
-            Vec2::new(grid_size * -1.0, grid_size * -1.0),
+            Vec2::new(neg_grid_size, neg_grid_size),
             Color::LIGHT_GRAY,
         );
         let vertex_entity_b = self.new_local_vertex(
             commands,
             meshes,
             materials,
-            Vec2::new(grid_size * 1.0, grid_size * -1.0),
+            Vec2::new(grid_size, neg_grid_size),
             Color::LIGHT_GRAY,
         );
         let vertex_entity_c = self.new_local_vertex(
             commands,
             meshes,
             materials,
-            Vec2::new(grid_size * 1.0, grid_size * 1.0),
+            Vec2::new(grid_size, grid_size),
             Color::LIGHT_GRAY,
         );
         let vertex_entity_d = self.new_local_vertex(
             commands,
             meshes,
             materials,
-            Vec2::new(grid_size * -1.0, grid_size * 1.0),
+            Vec2::new(neg_grid_size, grid_size),
             Color::LIGHT_GRAY,
         );
         self.grid_vertices.push(vertex_entity_a);
@@ -727,8 +727,10 @@ impl IconManager {
         current_file_entity: &Entity,
         view_mouse_position: &Vec2,
     ) {
+        let frame_entity = self.current_frame_entity(current_file_entity).unwrap();
+
         // sync to hover
-        let new_hover_entity = IconInputManager::sync_mouse_hover_ui(world, current_file_entity, view_mouse_position);
+        let new_hover_entity = IconInputManager::sync_mouse_hover_ui(self, world, current_file_entity, &frame_entity, view_mouse_position);
         if new_hover_entity == self.hovered_entity {
             return;
         }
@@ -804,6 +806,20 @@ impl IconManager {
 
     pub fn selected_shape(&self) -> Option<(Entity, CanvasShape)> {
         self.selected_shape
+    }
+
+    pub(crate) fn vertex_get_frame_entity(&self, vertex_entity: &Entity) -> Option<Entity> {
+        self.vertices.get(vertex_entity).map(|data| data.frame_entity_opt.unwrap())
+    }
+
+    pub(crate) fn edge_get_frame_entity(&self, edge_entity: &Entity) -> Option<Entity> {
+        self.edges.get(edge_entity).map(|data| data.frame_entity_opt.unwrap())
+    }
+
+    pub(crate) fn face_get_frame_entity(&self, local_face_entity: &Entity) -> Option<Entity> {
+        let face_key = self.local_faces.get(local_face_entity)?;
+        let face_data_opt = self.face_keys.get(face_key)?;
+        face_data_opt.as_ref().map(|data| data.frame_entity)
     }
 
     // Vertices

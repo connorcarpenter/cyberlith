@@ -233,8 +233,8 @@ impl IconInputManager {
                     vertex_type_data,
                 );
             }
-            (MouseButton::Left, before, after) => {
-                if before != after {
+            (MouseButton::Left, _, _) => {
+                if icon_manager.selected_shape != icon_manager.hovered_entity {
                     // select hovered shape (or None if there is no hovered shape)
                     world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
                         tab_manager.current_tab_execute_icon_action(
@@ -393,8 +393,10 @@ impl IconInputManager {
     }
 
     pub(crate) fn sync_mouse_hover_ui(
+        icon_manager: &IconManager,
         world: &mut World,
         current_file_entity: &Entity,
+        frame_entity: &Entity,
         mouse_position: &Vec2,
     ) -> Option<(Entity, CanvasShape)> {
         let mut system_state: SystemState<(
@@ -410,9 +412,11 @@ impl IconInputManager {
         let mut is_hovering = false;
 
         Self::handle_vertex_hover(
+            icon_manager,
             &transform_q,
             &vertex_q,
             current_file_entity,
+            frame_entity,
             mouse_position,
             &mut least_distance,
             &mut least_entity,
@@ -420,9 +424,11 @@ impl IconInputManager {
         );
 
         Self::handle_edge_hover(
+            icon_manager,
             &transform_q,
             &edge_q,
             current_file_entity,
+            frame_entity,
             mouse_position,
             &mut least_distance,
             &mut least_entity,
@@ -430,9 +436,11 @@ impl IconInputManager {
         );
 
         Self::handle_face_hover(
+            icon_manager,
             &transform_q,
             &face_q,
             current_file_entity,
+            frame_entity,
             mouse_position,
             &mut least_distance,
             &mut least_entity,
@@ -447,9 +455,11 @@ impl IconInputManager {
     }
 
     fn handle_vertex_hover(
+        icon_manager: &IconManager,
         transform_q: &Query<&Transform>,
         vertex_q: &Query<(Entity, &OwnedByFileLocal), With<IconVertex>>,
         current_file_entity: &Entity,
+        frame_entity: &Entity,
         mouse_position: &Vec2,
         least_distance: &mut f32,
         least_entity: &mut Option<(Entity, CanvasShape)>,
@@ -463,6 +473,10 @@ impl IconInputManager {
             let Ok(vertex_transform) = transform_q.get(vertex_entity) else {
                 continue;
             };
+            let vertex_frame_entity = icon_manager.vertex_get_frame_entity(&vertex_entity).unwrap();
+            if vertex_frame_entity != *frame_entity {
+                continue;
+            }
             let vertex_position = vertex_transform.translation.truncate();
             let distance = vertex_position.distance(*mouse_position);
             if distance < *least_distance {
@@ -475,9 +489,11 @@ impl IconInputManager {
     }
 
     fn handle_edge_hover(
+        icon_manager: &IconManager,
         transform_q: &Query<&Transform>,
         edge_q: &Query<(Entity, &OwnedByFileLocal), With<IconEdgeLocal>>,
         current_file_entity: &Entity,
+        frame_entity: &Entity,
         mouse_position: &Vec2,
         least_distance: &mut f32,
         least_entity: &mut Option<(Entity, CanvasShape)>,
@@ -487,6 +503,10 @@ impl IconInputManager {
         if !*is_hovering {
             for (edge_entity, owned_by_file) in edge_q.iter() {
                 if owned_by_file.file_entity != *current_file_entity {
+                    continue;
+                }
+                let edge_frame_entity = icon_manager.edge_get_frame_entity(&edge_entity).unwrap();
+                if edge_frame_entity != *frame_entity {
                     continue;
                 }
 
@@ -506,9 +526,11 @@ impl IconInputManager {
     }
 
     fn handle_face_hover(
+        icon_manager: &IconManager,
         transform_q: &Query<&Transform>,
         face_q: &Query<(Entity, &OwnedByFileLocal), With<IconLocalFace>>,
         current_file_entity: &Entity,
+        frame_entity: &Entity,
         mouse_position: &Vec2,
         least_distance: &mut f32,
         least_entity: &mut Option<(Entity, CanvasShape)>,
@@ -518,6 +540,10 @@ impl IconInputManager {
         if !*is_hovering {
             for (face_entity, owned_by_file) in face_q.iter() {
                 if owned_by_file.file_entity != *current_file_entity {
+                    continue;
+                }
+                let face_frame_entity = icon_manager.face_get_frame_entity(&face_entity).unwrap();
+                if face_frame_entity != *frame_entity {
                     continue;
                 }
 
