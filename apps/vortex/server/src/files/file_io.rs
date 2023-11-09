@@ -64,7 +64,7 @@ impl FileReader for FileExtension {
             FileExtension::Skin => SkinReader.read(world, project, file_key, file_entity, bytes),
             FileExtension::Model => ModelReader.read(world, project, file_key, file_entity, bytes),
             FileExtension::Scene => SceneReader.read(world, project, file_key, file_entity, bytes),
-            FileExtension::Icon => IconReader.read(world, file_entity, bytes),
+            FileExtension::Icon => IconReader.read(world, project, file_key, file_entity, bytes),
             _ => panic!("File extension {:?} not implemented", self),
         }
     }
@@ -275,7 +275,7 @@ pub fn despawn_file_content_entities(
             ContentEntityData::PaletteColor => {
                 palette_manager.deregister_color(entity, None);
             }
-            ContentEntityData::BackgroundSkinColor(_) => {
+            ContentEntityData::BackgroundColor(_) => {
                 // deregister with skin_manager?
             }
             ContentEntityData::FaceColor(_) => {

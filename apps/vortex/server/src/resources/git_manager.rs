@@ -163,7 +163,7 @@ impl GitManager {
 
         for (entity, data) in content_entities {
             match data {
-                ContentEntityData::BackgroundSkinColor(file_data_opt) => {
+                ContentEntityData::BackgroundColor(file_data_opt) => {
                     let Some(palette_index) = file_data_opt else {
                         panic!("Could not find file data for entity: {:?}", entity);
                     };

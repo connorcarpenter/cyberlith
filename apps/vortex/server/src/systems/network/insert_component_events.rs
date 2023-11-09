@@ -710,7 +710,7 @@ pub fn insert_skin_component_events(
             .unwrap();
         let file_key = key_q.get(skin_file_entity).unwrap().clone();
 
-        let content_entity_data = ContentEntityData::new_background_skin_color(None);
+        let content_entity_data = ContentEntityData::new_background_color(None);
         git_manager.on_insert_content_entity(
             &mut server,
             &project_key,

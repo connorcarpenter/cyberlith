@@ -77,7 +77,7 @@ impl SkinWriter {
                         }
                     }
                 }
-                ContentEntityData::BackgroundSkinColor(_) => {
+                ContentEntityData::BackgroundColor(_) => {
                     bckg_color_entity = Some(*content_entity);
                 }
                 ContentEntityData::FaceColor(_) => {
@@ -303,7 +303,7 @@ impl SkinReader {
                     info!("spawning background skin color entity {:?}", entity_id);
                     output.insert(
                         entity_id,
-                        ContentEntityData::new_background_skin_color(Some(palette_index)),
+                        ContentEntityData::new_background_color(Some(palette_index)),
                     );
                 }
                 SkinAction::SkinColor(face_index, palette_index) => {

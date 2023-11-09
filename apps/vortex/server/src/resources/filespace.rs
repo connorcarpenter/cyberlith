@@ -20,7 +20,7 @@ pub enum ContentEntityData {
     Rotation,
     PaletteColor,
     FaceColor(Option<(u16, u8)>),
-    BackgroundSkinColor(Option<u8>),
+    BackgroundColor(Option<u8>),
     NetTransform,
 }
 
@@ -53,8 +53,8 @@ impl ContentEntityData {
         Self::FaceColor(file_data_opt)
     }
 
-    pub fn new_background_skin_color(file_data_opt: Option<u8>) -> Self {
-        Self::BackgroundSkinColor(file_data_opt)
+    pub fn new_background_color(file_data_opt: Option<u8>) -> Self {
+        Self::BackgroundColor(file_data_opt)
     }
 
     pub fn new_net_transform() -> Self {

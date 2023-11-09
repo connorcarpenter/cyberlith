@@ -14,7 +14,8 @@ impl ProtocolPlugin for IconComponentsPlugin {
             .add_component::<IconVertex>()
             .add_component::<IconEdge>()
             .add_component::<IconFace>()
-            .add_component::<IconFrame>();
+            .add_component::<IconFrame>()
+            .add_component::<IconBackgroundColor>();
     }
 }
 
@@ -111,5 +112,18 @@ impl IconFrame {
 
     pub fn set_order(&mut self, order: u8) {
         *self.order = order.into();
+    }
+}
+
+// IconBackgroundColor
+#[derive(Component, Replicate)]
+pub struct IconBackgroundColor {
+    pub owning_file_entity: EntityProperty,
+    pub palette_color_entity: EntityProperty,
+}
+
+impl IconBackgroundColor {
+    pub fn new() -> Self {
+        Self::new_complete()
     }
 }
