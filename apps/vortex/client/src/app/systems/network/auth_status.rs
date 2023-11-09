@@ -11,10 +11,7 @@ use naia_bevy_client::{
     Client,
 };
 
-use vortex_proto::components::{
-    AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency,
-    FileSystemEntry, NetTransform, OwnedByFile, PaletteColor, Vertex3d,
-};
+use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency, FileSystemEntry, IconEdge, IconFace, IconFrame, IconVertex, NetTransform, OwnedByFile, PaletteColor, Vertex3d};
 
 use crate::app::{
     components::OwnedByFileLocal,
@@ -96,6 +93,12 @@ pub fn auth_events(world: &mut World) {
             Option<&NetTransform>,
             Option<&OwnedByFile>,
         )>,
+        Query<(
+            Option<&IconVertex>,
+            Option<&IconEdge>,
+            Option<&IconFace>,
+            Option<&IconFrame>,
+        )>,
         Query<&OwnedByFileLocal>,
         Query<&AnimFrame>,
     )> = SystemState::new(world);
@@ -108,8 +111,9 @@ pub fn auth_events(world: &mut World) {
         face_manager,
         animation_manager,
         big_q,
+        big_q2,
         owned_by_q,
-        frame_q,
+        anim_frame_q,
     ) = system_state.get_mut(world);
 
     for (entities, msg) in [
@@ -131,8 +135,9 @@ pub fn auth_events(world: &mut World) {
                 &face_manager,
                 &animation_manager,
                 &big_q,
+                &big_q2,
                 &owned_by_q,
-                &frame_q,
+                &anim_frame_q,
                 &entity,
                 msg,
             );
@@ -162,30 +167,42 @@ fn process_entity_auth_status(
         Option<&NetTransform>,
         Option<&OwnedByFile>,
     )>,
+    big_q2: &Query<(
+        Option<&IconVertex>,
+        Option<&IconEdge>,
+        Option<&IconFace>,
+        Option<&IconFrame>,
+    )>,
     owned_by_q: &Query<&OwnedByFileLocal>,
-    frame_q: &Query<&AnimFrame>,
+    anim_frame_q: &Query<&AnimFrame>,
     entity: &Entity,
     status: &str,
 ) {
     let Ok(
         (
-           fs_entry_opt,
-           dep_opt,
-           vertex_opt,
-           edge_opt,
-           face_opt,
-           frame_opt,
-           rot_opt,
-           palette_opt,
-           face_color_opt,
-           bckg_color_opt,
-           net_transform_opt,
-           owned_by_file_opt,
+            fs_entry_opt,
+            dep_opt,
+            vertex_opt,
+            edge_opt,
+            face_opt,
+            frame_opt,
+            rot_opt,
+            palette_opt,
+            face_color_opt,
+            bckg_color_opt,
+            net_transform_opt,
+            owned_by_file_opt,
         )
     ) = big_q.get(*entity) else {
         warn!("process_entity_auth_status() for non-existent entity!: {:?}", entity);
         return;
     };
+
+    let Ok((icon_vertex_opt, icon_edge_opt, icon_face_opt, icon_frame_opt)) = big_q2.get(*entity) else {
+        warn!("process_entity_auth_status() for non-existent entity!: {:?}", entity);
+        return;
+    };
+
     if vertex_opt.is_some() || edge_opt.is_some() || face_opt.is_some() {
         info!(
             "auth processing for shape entity `{:?}`: `{:?}`",
@@ -248,7 +265,7 @@ fn process_entity_auth_status(
         let frame_entity = animation_manager
             .get_rotations_frame_entity(entity)
             .unwrap();
-        let Ok(frame_component) = frame_q.get(frame_entity) else {
+        let Ok(frame_component) = anim_frame_q.get(frame_entity) else {
             panic!("component for rotation entity `{:?}` not found", frame_entity);
         };
         let owning_file_entity = frame_component.file_entity.get(client).unwrap();
@@ -308,6 +325,25 @@ fn process_entity_auth_status(
                 "no tab state found for file entity: {:?}",
                 owning_file_entity
             );
+        }
+    } else if icon_vertex_opt.is_some() || icon_edge_opt.is_some() || icon_face_opt.is_some() || icon_frame_opt.is_some() {
+        info!(
+            "auth processing for shape entity `{:?}`: `{:?}`",
+            entity, status
+        );
+        if let Ok(owning_file_entity) = owned_by_q.get(*entity) {
+            if let Some(tab_state) = tab_manager.tab_state_mut(&owning_file_entity.file_entity) {
+                tab_state
+                    .action_stack
+                    .entity_update_auth_status(&entity);
+            } else {
+                warn!(
+                    "no tab state found for file entity: {:?}",
+                    owning_file_entity.file_entity
+                );
+            }
+        } else {
+            warn!("no owning file entity found for shape entity: {:?}", entity);
         }
     } else {
         warn!("unhandled auth status: entity `{:?}`: {:?}", entity, status);
