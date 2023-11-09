@@ -473,7 +473,9 @@ impl IconInputManager {
             let Ok(vertex_transform) = transform_q.get(vertex_entity) else {
                 continue;
             };
-            let vertex_frame_entity = icon_manager.vertex_get_frame_entity(&vertex_entity).unwrap();
+            let Some(vertex_frame_entity) = icon_manager.vertex_get_frame_entity(&vertex_entity) else {
+                continue;
+            };
             if vertex_frame_entity != *frame_entity {
                 continue;
             }
@@ -505,7 +507,9 @@ impl IconInputManager {
                 if owned_by_file.file_entity != *current_file_entity {
                     continue;
                 }
-                let edge_frame_entity = icon_manager.edge_get_frame_entity(&edge_entity).unwrap();
+                let Some(edge_frame_entity) = icon_manager.edge_get_frame_entity(&edge_entity) else {
+                    continue;
+                };
                 if edge_frame_entity != *frame_entity {
                     continue;
                 }
@@ -542,7 +546,9 @@ impl IconInputManager {
                 if owned_by_file.file_entity != *current_file_entity {
                     continue;
                 }
-                let face_frame_entity = icon_manager.face_get_frame_entity(&face_entity).unwrap();
+                let Some(face_frame_entity) = icon_manager.face_get_frame_entity(&face_entity) else {
+                    continue;
+                };
                 if face_frame_entity != *frame_entity {
                     continue;
                 }

@@ -248,23 +248,21 @@ impl IconManager {
             let mesh_handle = mesh_q.get(vertex_entity).unwrap();
             let mut transform = transform_q.get_mut(vertex_entity).unwrap();
 
-            let mat_handle = if local_shape_q.get(vertex_entity).is_ok() {
-                &mat_handle_gray
-            } else {
-                &mat_handle_light_gray
-            };
-
-            transform.translation.x = vertex.x() as f32;
-            transform.translation.y = vertex.y() as f32;
-
-            render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle, &transform);
-
             for edge_entity in data.edges.iter() {
                 edge_entities.insert(*edge_entity);
             }
             for face_key in data.faces.iter() {
                 face_keys.insert(*face_key);
             }
+
+            transform.translation.x = vertex.x() as f32;
+            transform.translation.y = vertex.y() as f32;
+
+            if local_shape_q.get(vertex_entity).is_ok() {
+                continue;
+            }
+
+            render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle_light_gray, &transform);
         }
 
         // draw edges
