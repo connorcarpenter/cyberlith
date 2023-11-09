@@ -168,6 +168,8 @@ impl IconWriter {
         let mut vertex_entities = Vec::new();
         let mut edge_entities = Vec::new();
         let mut face_entities = Vec::new();
+        let mut frame_map: HashMap<u16, IconFrameActionData> = HashMap::new();
+        let mut frame_index = 0;
 
         for (content_entity, content_data) in content_entities {
             match content_data {
@@ -194,6 +196,10 @@ impl IconWriter {
                 }
                 ContentEntityData::IconShape(ShapeType::Face) => {
                     face_entities.push(*content_entity);
+                }
+                ContentEntityData::Frame => {
+                    frame_map.insert(frame_index, IconFrameActionData::new());
+                    frame_index += 1;
                 }
                 _ => {
                     panic!("icon should not have this content entity type");
@@ -229,8 +235,6 @@ impl IconWriter {
             actions.push(IconAction::BackgroundColor(palette_color_index));
         }
 
-        let mut frame_map: HashMap<u16, IconFrameActionData> = HashMap::new();
-
         let mut system_state: SystemState<(
             Server,
             Res<IconManager>,
@@ -260,10 +264,7 @@ impl IconWriter {
             };
             let frame_index = frame.get_order() as u16;
 
-            if !frame_map.contains_key(&frame_index) {
-                frame_map.insert(frame_index, IconFrameActionData::new());
-            }
-            let frame_action_data = frame_map.get_mut(&frame_index).unwrap();
+            let frame_action_data = frame_map.get_mut(&frame_index).expect("should have initialized this already");
             frame_action_data.add_vertex(vertex_entity, vertex.x(), vertex.y());
         }
 
@@ -280,10 +281,7 @@ impl IconWriter {
             };
             let frame_index = frame.get_order() as u16;
 
-            if !frame_map.contains_key(&frame_index) {
-                frame_map.insert(frame_index, IconFrameActionData::new());
-            }
-            let frame_action_data = frame_map.get_mut(&frame_index).unwrap();
+            let frame_action_data = frame_map.get_mut(&frame_index).expect("should have initialized this already");
 
             let vertex_a_entity = edge.start.get(&server).unwrap();
             let vertex_b_entity = edge.end.get(&server).unwrap();
@@ -304,10 +302,7 @@ impl IconWriter {
             };
             let frame_index = frame.get_order() as u16;
 
-            if !frame_map.contains_key(&frame_index) {
-                frame_map.insert(frame_index, IconFrameActionData::new());
-            }
-            let frame_action_data = frame_map.get_mut(&frame_index).unwrap();
+            let frame_action_data = frame_map.get_mut(&frame_index).expect("should have initialized this already");
 
             let Some(face_index) = icon_manager.get_face_index(&face_entity) else {
                 panic!("face entity {:?} does not have an index!", face_entity);

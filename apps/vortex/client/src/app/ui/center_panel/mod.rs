@@ -164,6 +164,20 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
 
                         render_tool_bar(ui, world, &current_file_entity, current_file_type);
                     }
+                    FileExtension::Icon => {
+                        // Palette Dependency
+                        if !render_simple_bind(
+                            world,
+                            ui,
+                            &current_file_entity,
+                            FileExtension::Palette,
+                        ) {
+                            return;
+                        }
+
+                        // Toolbar
+                        render_tool_bar(ui, world, &current_file_entity, current_file_type);
+                    }
                     _ => {}
                 }
             }
