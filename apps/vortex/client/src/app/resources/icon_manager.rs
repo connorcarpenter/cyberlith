@@ -175,10 +175,12 @@ impl IconManager {
             Res<Canvas>,
             Res<TabManager>,
             Res<Input>,
+            ResMut<Assets<CpuMaterial>>,
             Query<(Entity, &OwnedByFileLocal), With<IconVertex>>,
             Query<&IconVertex>,
             Query<&IconLocalFace>,
-            Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>)>,
+            Query<&Handle<CpuMesh>>,
+            Query<&LocalShape>,
             Query<&mut Transform>,
         )> = SystemState::new(world);
         let (
@@ -186,10 +188,12 @@ impl IconManager {
             canvas,
             tab_manager,
             input,
-            mesh_vertex_q,
+            mut materials,
+            owned_vertex_q,
             vertex_q,
             face_q,
-            object_q,
+            mesh_q,
+            local_shape_q,
             mut transform_q
         ) = system_state.get_mut(world);
 
@@ -209,13 +213,18 @@ impl IconManager {
         let mut edge_entities = HashSet::new();
         let mut face_keys = HashSet::new();
 
+        // material
+        let mat_handle_white = materials.add(Color::WHITE);
+        let mat_handle_light_gray = materials.add(Color::LIGHT_GRAY);
+        let mat_handle_gray = materials.add(Color::GRAY);
+
         // collect grid vertices
         for vertex_entity in self.grid_vertices.iter() {
             vertex_entities.push(*vertex_entity);
         }
 
         // collect mesh vertices
-        for (vertex_entity, owned_by_file) in mesh_vertex_q.iter() {
+        for (vertex_entity, owned_by_file) in owned_vertex_q.iter() {
             if owned_by_file.file_entity != *current_file_entity {
                 continue;
             }
@@ -236,14 +245,19 @@ impl IconManager {
             let vertex = vertex_q.get(vertex_entity).unwrap();
             let data = self.get_vertex_data(&vertex_entity).unwrap();
 
-            let (mesh_handle, mat_handle) =
-                object_q.get(vertex_entity).unwrap();
+            let mesh_handle = mesh_q.get(vertex_entity).unwrap();
             let mut transform = transform_q.get_mut(vertex_entity).unwrap();
+
+            let mat_handle = if local_shape_q.get(vertex_entity).is_ok() {
+                &mat_handle_gray
+            } else {
+                &mat_handle_light_gray
+            };
 
             transform.translation.x = vertex.x() as f32;
             transform.translation.y = vertex.y() as f32;
 
-            render_frame.draw_object(Some(&self.render_layer), mesh_handle, mat_handle, &transform);
+            render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle, &transform);
 
             for edge_entity in data.edges.iter() {
                 edge_entities.insert(*edge_entity);
@@ -289,9 +303,15 @@ impl IconManager {
 
             // draw
 
-            let (mesh_handle, mat_handle) =
-                object_q.get(*edge_entity).unwrap();
-            render_frame.draw_object(Some(&self.render_layer), mesh_handle, mat_handle, &edge_transform);
+            let mesh_handle = mesh_q.get(*edge_entity).unwrap();
+
+            let mat_handle = if local_shape_q.get(*edge_entity).is_ok() {
+                &mat_handle_gray
+            } else {
+                &mat_handle_light_gray
+            };
+
+            render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle, &edge_transform);
         }
 
         // draw local faces
@@ -331,12 +351,11 @@ impl IconManager {
                     / 3.0,
             );
 
-            let (mesh_handle, mat_handle) =
-                object_q.get(face_entity).unwrap();
+            let mesh_handle = mesh_q.get(face_entity).unwrap();
             let mut face_transform = transform_q.get_mut(face_entity).unwrap();
             face_transform.translation = center_translation;
 
-            render_frame.draw_object(Some(&self.render_layer), mesh_handle, mat_handle, &face_transform);
+            render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle_light_gray, &face_transform);
         }
 
         // draw select line & circle
@@ -346,31 +365,28 @@ impl IconManager {
                 // draw select circle
                 let vertex_translation = transform_q.get(vertex_entity).unwrap().translation;
 
-                let (mesh_handle, mat_handle) =
-                    object_q.get(self.select_circle_entity).unwrap();
+                let mesh_handle = mesh_q.get(self.select_circle_entity).unwrap();
                 let mut transform = transform_q.get_mut(self.select_circle_entity).unwrap();
                 transform.translation = vertex_translation;
 
-                render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle, &transform);
+                render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle_white, &transform);
 
                 // draw select line
                 let screen_mouse_position = input.mouse_position();
                 let view_mouse_position = Self::screen_to_view(&canvas, &camera_transform, screen_mouse_position);
-                let (mesh_handle, mat_handle) =
-                    object_q.get(self.select_line_entity).unwrap();
+                let mesh_handle = mesh_q.get(self.select_line_entity).unwrap();
 
                 let mut transform = transform_q.get_mut(self.select_line_entity).unwrap();
                 set_2d_line_transform(&mut transform, vertex_translation.truncate(), view_mouse_position, vertex_translation.z + 1.0);
 
-                render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle, &transform);
+                render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle_white, &transform);
             }
             Some((edge_entity, CanvasShape::Edge)) => {
 
                 let edge_transform = *transform_q.get(edge_entity).unwrap();
 
                 // draw select line
-                let (mesh_handle, mat_handle) =
-                    object_q.get(self.select_line_entity).unwrap();
+                let mesh_handle = mesh_q.get(self.select_line_entity).unwrap();
 
                 let mut transform = transform_q.get_mut(self.select_line_entity).unwrap();
                 transform.translation.x = edge_transform.translation.x;
@@ -380,20 +396,19 @@ impl IconManager {
                 transform.scale.x = edge_transform.scale.x;
                 transform.scale.y = edge_transform.scale.y + 2.0;
 
-                render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle, &transform);
+                render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle_white, &transform);
             }
             Some((face_entity, CanvasShape::Face)) => {
 
                 let face_translation = transform_q.get(face_entity).unwrap().translation;
 
                 // draw select triangle
-                let (mesh_handle, mat_handle) =
-                    object_q.get(self.select_triangle_entity).unwrap();
+                let mesh_handle = mesh_q.get(self.select_triangle_entity).unwrap();
 
                 let mut transform = transform_q.get_mut(self.select_triangle_entity).unwrap();
                 transform.translation = face_translation;
 
-                render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle, &transform);
+                render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle_white, &transform);
             }
             _ => {}
         }
@@ -2137,7 +2152,7 @@ impl IconManager {
             point_mesh_handle,
             line_mesh_handle,
             mat_handle_white,
-            mat_handle_green,
+            mat_handle_light_gray,
         ) = {
             // draw
             let mut system_state: SystemState<(
@@ -2157,7 +2172,7 @@ impl IconManager {
             let mat_handle_white = materials.add(Color::WHITE);
             let mat_handle_gray = materials.add(Color::GRAY);
             let mat_handle_dark_gray = materials.add(Color::DARK_GRAY);
-            let mat_handle_green = materials.add(Color::GREEN);
+            let mat_handle_light_gray = materials.add(Color::LIGHT_GRAY);
 
             for (frame_index, frame_pos) in frame_rects.iter().enumerate() {
                 // frame_index 0 is preview frame
@@ -2205,7 +2220,7 @@ impl IconManager {
                 point_mesh_handle,
                 line_mesh_handle,
                 mat_handle_white,
-                mat_handle_green,
+                mat_handle_light_gray,
             )
         };
 
@@ -2225,7 +2240,7 @@ impl IconManager {
                     &frame_pos,
                     &point_mesh_handle,
                     &line_mesh_handle,
-                    &mat_handle_green,
+                    &mat_handle_light_gray,
                 );
             }
 
@@ -2247,7 +2262,7 @@ impl IconManager {
                 &frame_pos,
                 &point_mesh_handle,
                 &line_mesh_handle,
-                &mat_handle_green,
+                &mat_handle_light_gray,
             );
 
             frame_index += 1;
@@ -2270,7 +2285,7 @@ impl IconManager {
         frame_pos: &Vec2,
         point_mesh_handle: &Handle<CpuMesh>,
         line_mesh_handle: &Handle<CpuMesh>,
-        mat_handle_green: &Handle<CpuMaterial>,
+        mat_handle_gray: &Handle<CpuMaterial>,
     ) {
         let mut system_state: SystemState<(
             Client,
@@ -2312,7 +2327,7 @@ impl IconManager {
             vertex_pos.y *= size_ratio.y;
             let vertex_pos = *frame_pos + vertex_pos;
             let transform = Transform::from_translation_2d(vertex_pos);
-            render_frame.draw_object(Some(&self.render_layer), point_mesh_handle, mat_handle_green, &transform);
+            render_frame.draw_object(Some(&self.render_layer), point_mesh_handle, mat_handle_gray, &transform);
 
             for edge_entity in data.edges.iter() {
                 edge_entities.insert(*edge_entity);
@@ -2343,7 +2358,7 @@ impl IconManager {
             set_2d_line_transform(&mut edge_transform, start_pos, end_pos, 1.0);
 
             // draw
-            render_frame.draw_object(Some(&self.render_layer), line_mesh_handle, mat_handle_green, &edge_transform);
+            render_frame.draw_object(Some(&self.render_layer), line_mesh_handle, mat_handle_gray, &edge_transform);
         }
     }
 

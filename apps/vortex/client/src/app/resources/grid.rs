@@ -139,7 +139,7 @@ impl Grid {
             materials,
             None,
             Vec3::new(grid_size * xf, (grid_size * yf) + grid_size, grid_size * zf),
-            Color::LIGHT_GRAY,
+            Color::GRAY,
             None,
         );
         self.grid_vertices_3d.push(root_vertex_3d_entity);
@@ -207,7 +207,7 @@ impl Grid {
             materials,
             Some(parent_vertex_2d_entity),
             position,
-            Color::LIGHT_GRAY,
+            Color::GRAY,
             None,
         );
         self.grid_vertices_3d.push(vertex_3d_entity);
