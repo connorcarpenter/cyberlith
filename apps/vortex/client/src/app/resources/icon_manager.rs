@@ -1892,10 +1892,12 @@ impl IconManager {
 
         let mut system_state: SystemState<(
             Res<TabManager>,
+            Res<Canvas>,
             Query<&mut Transform>,
         )> = SystemState::new(world);
         let (
             mut tab_manager,
+            canvas,
             mut transform_q,
         ) = system_state.get_mut(world);
 
@@ -1917,7 +1919,7 @@ impl IconManager {
             return;
         };
         let frame_count = file_frame_data.count();
-        let canvas_size = world.get_resource::<Canvas>().unwrap().texture_size();
+        let canvas_size = canvas.texture_size();
         let frame_rects = self.get_frame_positions(&canvas_size, frame_count);
 
         let file_frame_data = self.file_frame_data.get(&current_file_entity).unwrap();
