@@ -211,6 +211,7 @@ fn post_process_loaded_networked_entities(
 pub fn despawn_file_content_entities(
     world: &mut World,
     project: &mut Project,
+    file_ext: &FileExtension,
     file_key: &FileKey,
     content_entities: &HashMap<Entity, ContentEntityData>,
 ) {
@@ -240,49 +241,51 @@ pub fn despawn_file_content_entities(
             .take_authority(&mut server)
             .despawn();
 
-        match entity_data {
-            ContentEntityData::Shape(shape_type) => match shape_type {
-                ShapeType::Vertex => {
-                    shape_manager.deregister_vertex(entity);
-                }
-                ShapeType::Edge => {
-                    shape_manager.deregister_edge(entity);
-                }
-                ShapeType::Face => {
-                    shape_manager.deregister_face(entity);
-                }
-            },
-            ContentEntityData::IconShape(shape_type) => match shape_type {
-                ShapeType::Vertex => {
-                    icon_manager.deregister_vertex(entity);
-                }
-                ShapeType::Edge => {
-                    icon_manager.deregister_edge(entity);
-                }
-                ShapeType::Face => {
-                    icon_manager.deregister_face(entity);
-                }
-            },
-            ContentEntityData::Dependency(dependency_key) => {
+        match (file_ext, entity_data) {
+            (_, ContentEntityData::Dependency(dependency_key)) => {
                 project.file_remove_dependency(&file_key, &dependency_key);
             }
-            ContentEntityData::Frame => {
+            (_, ContentEntityData::Shape(ShapeType::Vertex)) => {
+                shape_manager.deregister_vertex(entity);
+            },
+            (_, ContentEntityData::Shape(ShapeType::Edge)) => {
+                shape_manager.deregister_edge(entity);
+            },
+            (_, ContentEntityData::Shape(ShapeType::Face)) => {
+                shape_manager.deregister_face(entity);
+            },
+            (FileExtension::Icon, ContentEntityData::IconShape(ShapeType::Vertex)) => {
+                icon_manager.deregister_vertex(entity);
+            },
+            (FileExtension::Icon, ContentEntityData::IconShape(ShapeType::Edge)) => {
+                icon_manager.deregister_edge(entity);
+            },
+            (FileExtension::Icon, ContentEntityData::IconShape(ShapeType::Face)) => {
+                icon_manager.deregister_face(entity);
+            },
+            (FileExtension::Icon, ContentEntityData::Frame) => {
+                icon_manager.deregister_frame(entity, None);
+            }
+            (FileExtension::Anim, ContentEntityData::Frame) => {
                 animation_manager.deregister_frame(entity, None);
             }
-            ContentEntityData::Rotation => {
+            (FileExtension::Anim, ContentEntityData::Rotation) => {
                 animation_manager.deregister_rotation(entity);
             }
-            ContentEntityData::PaletteColor => {
+            (FileExtension::Palette, ContentEntityData::PaletteColor) => {
                 palette_manager.deregister_color(entity, None);
             }
-            ContentEntityData::BackgroundColor(_) => {
+            (FileExtension::Skin, ContentEntityData::BackgroundColor(_)) => {
                 // deregister with skin_manager?
             }
-            ContentEntityData::FaceColor(_) => {
+            (FileExtension::Skin, ContentEntityData::FaceColor(_)) => {
                 skin_manager.deregister_face_color(entity);
             }
-            ContentEntityData::NetTransform => {
+            (FileExtension::Model | FileExtension::Scene, ContentEntityData::NetTransform) => {
                 // deregister with model_manager?
+            }
+            (_, _) => {
+                panic!("unknown content entity type! file ext: {:?}, data: {:?}", file_ext, entity_data);
             }
         }
     }

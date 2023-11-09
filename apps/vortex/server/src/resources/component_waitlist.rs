@@ -15,6 +15,7 @@ use crate::{
     resources::{project::ProjectKey, ContentEntityData, GitManager, IconManager, ShapeManager},
 };
 
+#[derive(Clone)]
 pub enum ComponentWaitlistInsert {
     //// filetype
     FileType(FileExtension),
@@ -260,6 +261,27 @@ impl Default for ComponentWaitlist {
 }
 
 impl ComponentWaitlist {
+    pub fn process_inserts(
+        &mut self,
+        server: &mut Server,
+        git_manager: &mut GitManager,
+        shape_manager_opt: &mut Option<&mut ShapeManager>,
+        icon_manager_opt: &mut Option<&mut IconManager>,
+        entity: &Entity,
+        inserts: &[ComponentWaitlistInsert],
+    ) {
+        for insert in inserts {
+            self.process_insert(
+                server,
+                git_manager,
+                shape_manager_opt,
+                icon_manager_opt,
+                entity,
+                insert.clone(),
+            );
+        }
+    }
+
     pub fn process_insert(
         &mut self,
         server: &mut Server,
@@ -271,6 +293,8 @@ impl ComponentWaitlist {
     ) {
         let mut possibly_ready_entities = Vec::new();
 
+        possibly_ready_entities.push(*entity);
+
         match insert {
             ComponentWaitlistInsert::Vertex => {
                 if !self.contains_key(entity) {
@@ -279,7 +303,6 @@ impl ComponentWaitlist {
                 self.get_mut(entity)
                     .unwrap()
                     .set_component_type(ComponentType::Vertex);
-                possibly_ready_entities.push(*entity);
             }
             ComponentWaitlistInsert::VertexRoot => {
                 if !self.contains_key(entity) {
@@ -288,7 +311,6 @@ impl ComponentWaitlist {
                 let entry = self.get_mut(entity).unwrap();
                 entry.set_edge_and_parent(None);
                 entry.set_component_type(ComponentType::Vertex);
-                possibly_ready_entities.push(*entity);
             }
             ComponentWaitlistInsert::Edge(parent_entity, vertex_entity) => {
                 {
@@ -312,7 +334,6 @@ impl ComponentWaitlist {
                     let edge_entry = self.get_mut(entity).unwrap();
                     edge_entry.set_component_type(ComponentType::Edge);
                     edge_entry.set_edge_entities(parent_entity, vertex_entity);
-                    possibly_ready_entities.push(*entity);
                 }
 
                 // info!(
@@ -327,14 +348,12 @@ impl ComponentWaitlist {
                 let entry = self.get_mut(entity).unwrap();
                 entry.set_component_type(ComponentType::Face);
                 entry.set_face_entities(vertex_a, vertex_b, vertex_c);
-                possibly_ready_entities.push(*entity);
             }
             ComponentWaitlistInsert::FileType(file_type) => {
                 if !self.contains_key(entity) {
                     self.insert_incomplete(*entity, ComponentWaitlistEntry::new());
                 }
                 self.get_mut(entity).unwrap().set_file_type(file_type);
-                possibly_ready_entities.push(*entity);
             }
             ComponentWaitlistInsert::OwnedByFile(project_key, file_key) => {
                 if !self.contains_key(entity) {
@@ -343,19 +362,15 @@ impl ComponentWaitlist {
                 self.get_mut(entity)
                     .unwrap()
                     .set_owned_by_file(project_key, file_key);
-                possibly_ready_entities.push(*entity);
             }
             ComponentWaitlistInsert::SkinOrSceneEntity => {
                 self.get_mut(entity).unwrap().set_skin_or_scene_entity();
-                possibly_ready_entities.push(*entity);
             }
             ComponentWaitlistInsert::ShapeName => {
                 self.get_mut(entity).unwrap().set_shape_name();
-                possibly_ready_entities.push(*entity);
             }
             ComponentWaitlistInsert::NetTransform => {
                 self.get_mut(entity).unwrap().set_transform();
-                possibly_ready_entities.push(*entity);
             }
         }
 
@@ -514,30 +529,30 @@ impl ComponentWaitlist {
 
         let data = entry.decompose();
 
-        let (project_key, file_key, component_type) = match data {
+        let (project_key, file_key, content_entity_data) = match data {
             ComponentData::SkelVertex(project_key, file_key, edge_and_parent_opt) => {
                 let Some(shape_manager) = shape_manager_opt else {
                     panic!("shape manager not available");
                 };
                 shape_manager.on_create_skel_vertex(entity, edge_and_parent_opt);
-                (project_key, file_key, ComponentType::Vertex)
+                (project_key, file_key, ContentEntityData::new_shape(ShapeType::Vertex))
             }
             ComponentData::SkelEdge(project_key, file_key) => {
-                (project_key, file_key, ComponentType::Edge)
+                (project_key, file_key, ContentEntityData::new_shape(ShapeType::Edge))
             }
             ComponentData::MeshVertex(project_key, file_key) => {
                 let Some(shape_manager) = shape_manager_opt else {
                     panic!("shape manager not available");
                 };
                 shape_manager.on_create_mesh_vertex(entity);
-                (project_key, file_key, ComponentType::Vertex)
+                (project_key, file_key, ContentEntityData::new_shape(ShapeType::Vertex))
             }
             ComponentData::MeshEdge(project_key, file_key, start, end) => {
                 let Some(shape_manager) = shape_manager_opt else {
                     panic!("shape manager not available");
                 };
                 shape_manager.on_create_mesh_edge(start, entity, end);
-                (project_key, file_key, ComponentType::Vertex)
+                (project_key, file_key, ContentEntityData::new_shape(ShapeType::Edge))
             }
             ComponentData::MeshFace(project_key, file_key, vertex_a, vertex_b, vertex_c) => {
                 let Some(shape_manager) = shape_manager_opt else {
@@ -552,21 +567,21 @@ impl ComponentWaitlist {
                     vertex_b,
                     vertex_c,
                 );
-                (project_key, file_key, ComponentType::Face)
+                (project_key, file_key, ContentEntityData::new_shape(ShapeType::Face))
             }
             ComponentData::IconVertex(project_key, file_key) => {
                 let Some(icon_manager) = icon_manager_opt else {
                     panic!("icon manager not available");
                 };
                 icon_manager.on_create_vertex(entity);
-                (project_key, file_key, ComponentType::Vertex)
+                (project_key, file_key, ContentEntityData::new_icon_shape(ShapeType::Vertex))
             }
             ComponentData::IconEdge(project_key, file_key, start, end) => {
                 let Some(icon_manager) = icon_manager_opt else {
                     panic!("icon manager not available");
                 };
                 icon_manager.on_create_edge(start, entity, end);
-                (project_key, file_key, ComponentType::Vertex)
+                (project_key, file_key, ContentEntityData::new_icon_shape(ShapeType::Edge))
             }
             ComponentData::IconFace(project_key, file_key, vertex_a, vertex_b, vertex_c) => {
                 let Some(icon_manager) = icon_manager_opt else {
@@ -581,22 +596,16 @@ impl ComponentWaitlist {
                     vertex_b,
                     vertex_c,
                 );
-                (project_key, file_key, ComponentType::Face)
+                (project_key, file_key, ContentEntityData::new_icon_shape(ShapeType::Face))
             }
             ComponentData::ModelTransform(project_key, file_key) => {
-                (project_key, file_key, ComponentType::NetTransform)
+                (project_key, file_key, ContentEntityData::new_net_transform())
             }
             ComponentData::SceneTransform(project_key, file_key) => {
-                (project_key, file_key, ComponentType::NetTransform)
+                (project_key, file_key, ContentEntityData::new_net_transform())
             }
         };
 
-        let content_entity_data = match component_type {
-            ComponentType::Vertex => ContentEntityData::new_shape(ShapeType::Vertex),
-            ComponentType::Edge => ContentEntityData::new_shape(ShapeType::Edge),
-            ComponentType::Face => ContentEntityData::new_shape(ShapeType::Face),
-            ComponentType::NetTransform => ContentEntityData::new_net_transform(),
-        };
         git_manager.on_insert_content_entity(
             server,
             &project_key,

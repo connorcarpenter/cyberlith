@@ -89,6 +89,7 @@ impl IconFrameActionData {
 
     fn add_vertex(&mut self, vertex_entity: Entity, x: i16, y: i16) {
         // entity is a vertex
+        //info!("add_vertex - {}: `{:?}`", self.vertex_count, vertex_entity);
         self.vertex_map.insert(vertex_entity, self.vertex_count);
         let vertex_info = IconFrameAction::Vertex(x, y);
         self.frame_actions.push(vertex_info);
@@ -97,6 +98,7 @@ impl IconFrameActionData {
 
     fn add_edge(&mut self, edge_entity: Entity, vertex_a_entity: Entity, vertex_b_entity: Entity) {
         // entity is an edge
+        //info!("add_edge - {}: `{:?}` .. vertex a: `{:?}` -> vertex_b: `{:?}`", self.edge_count, edge_entity,vertex_a_entity, vertex_b_entity);
         self.edge_map.insert(edge_entity, self.edge_count);
 
         let vertex_a_id = *self.vertex_map.get(&vertex_a_entity).unwrap();
@@ -202,7 +204,7 @@ impl IconWriter {
                     frame_index += 1;
                 }
                 _ => {
-                    panic!("icon should not have this content entity type");
+                    panic!("icon should not have this content entity type: {:?}", content_data);
                 }
             }
         }

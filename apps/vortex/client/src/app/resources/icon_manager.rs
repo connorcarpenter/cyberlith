@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{
+    query::With,
     entity::Entity,
     system::{Commands, Query, Res, ResMut, Resource, SystemState},
     world::{Mut, World},
@@ -8,7 +9,7 @@ use bevy_ecs::{
 use bevy_log::{info, warn};
 
 use input::{Input, Key};
-use naia_bevy_client::{Client, CommandsExt, Instant, ReplicationConfig};
+use naia_bevy_client::{Client, CommandsExt, Instant, Replicate, ReplicationConfig};
 
 use math::{Vec2, Vec3};
 
@@ -19,31 +20,27 @@ use render_api::{
         RenderLayers, RenderObjectBundle, RenderTarget, Transform, Viewport,
     },
     resources::RenderFrame,
-    shapes::{set_2d_line_transform, HollowTriangle, Triangle},
+    shapes::{set_2d_line_transform, Circle, HollowTriangle, Triangle},
     Assets, Handle,
 };
-use render_api::shapes::Circle;
 
 use vortex_proto::components::{IconEdge, IconFace, IconFrame, IconVertex, OwnedByFile};
 
 use crate::app::{
     components::{
         DefaultDraw, Edge2dLocal, Face3dLocal, FaceIcon2d, IconEdgeLocal, IconLocalFace,
-        OwnedByFileLocal, SelectCircle, SelectLine, SelectTriangle, Vertex2d,
+        OwnedByFileLocal, SelectCircle, SelectLine, SelectTriangle, Vertex2d, LocalShape,
     },
     resources::{
         action::icon::IconAction,
         canvas::Canvas,
-        icon_data::IconEdgeData,
-        icon_data::{IconFaceData, IconFaceKey, IconVertexData},
-        input::IconInputManager,
+        icon_data::{IconFaceData, IconEdgeData, IconFaceKey, IconVertexData},
+        input::{IconInputManager, CardinalDirection},
         shape_data::CanvasShape,
         tab_manager::TabManager,
     },
-    shapes::create_2d_edge_line,
+    shapes::{create_2d_edge_line, Line2d},
 };
-use crate::app::resources::input::CardinalDirection;
-use crate::app::shapes::Line2d;
 
 #[derive(Resource)]
 pub struct IconManager {
@@ -57,6 +54,7 @@ pub struct IconManager {
     select_circle_entity: Entity,
     select_triangle_entity: Entity,
     select_line_entity: Entity,
+    grid_vertices: Vec<Entity>,
 
     // framing
     meshing: bool,
@@ -116,6 +114,7 @@ impl Default for IconManager {
             select_circle_entity: Entity::PLACEHOLDER,
             select_triangle_entity: Entity::PLACEHOLDER,
             select_line_entity: Entity::PLACEHOLDER,
+            grid_vertices: Vec::new(),
 
             // framing
             meshing: false,
@@ -176,7 +175,8 @@ impl IconManager {
             Res<Canvas>,
             Res<TabManager>,
             Res<Input>,
-            Query<(Entity, &IconVertex, &OwnedByFileLocal)>,
+            Query<(Entity, &OwnedByFileLocal), With<IconVertex>>,
+            Query<&IconVertex>,
             Query<&IconLocalFace>,
             Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>)>,
             Query<&mut Transform>,
@@ -186,6 +186,7 @@ impl IconManager {
             canvas,
             tab_manager,
             input,
+            mesh_vertex_q,
             vertex_q,
             face_q,
             object_q,
@@ -204,11 +205,17 @@ impl IconManager {
         camera_transform.scale = Vec3::new(camera_scale, camera_scale, 1.0);
         let camera_transform = *camera_transform;
 
+        let mut vertex_entities = Vec::new();
         let mut edge_entities = HashSet::new();
         let mut face_keys = HashSet::new();
 
-        // draw vertices, collect edges
-        for (vertex_entity, vertex, owned_by_file) in vertex_q.iter() {
+        // collect grid vertices
+        for vertex_entity in self.grid_vertices.iter() {
+            vertex_entities.push(*vertex_entity);
+        }
+
+        // collect mesh vertices
+        for (vertex_entity, owned_by_file) in mesh_vertex_q.iter() {
             if owned_by_file.file_entity != *current_file_entity {
                 continue;
             }
@@ -220,6 +227,14 @@ impl IconManager {
             if data.frame_entity_opt.unwrap() != current_frame_entity {
                 continue;
             }
+
+            vertex_entities.push(vertex_entity);
+        }
+
+        // draw vertices, collect edges
+        for vertex_entity in vertex_entities {
+            let vertex = vertex_q.get(vertex_entity).unwrap();
+            let data = self.get_vertex_data(&vertex_entity).unwrap();
 
             let (mesh_handle, mat_handle) =
                 object_q.get(vertex_entity).unwrap();
@@ -477,6 +492,152 @@ impl IconManager {
                 .id();
             self.select_line_entity = select_line_entity;
         }
+
+        // grid
+        {
+            self.setup_grid(
+                commands,
+                meshes,
+                materials,
+            );
+        }
+    }
+
+    fn setup_grid(
+        &mut self,
+        commands: &mut Commands,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+    ) {
+        let grid_size: f32 = 100.0;
+        let neg_grid_size: f32 = -grid_size;
+
+        let vertex_entity_a = self.new_local_vertex(
+            commands,
+            meshes,
+            materials,
+            Vec2::new(grid_size * -1.0, grid_size * -1.0),
+            Color::LIGHT_GRAY,
+        );
+        let vertex_entity_b = self.new_local_vertex(
+            commands,
+            meshes,
+            materials,
+            Vec2::new(grid_size * 1.0, grid_size * -1.0),
+            Color::LIGHT_GRAY,
+        );
+        let vertex_entity_c = self.new_local_vertex(
+            commands,
+            meshes,
+            materials,
+            Vec2::new(grid_size * 1.0, grid_size * 1.0),
+            Color::LIGHT_GRAY,
+        );
+        let vertex_entity_d = self.new_local_vertex(
+            commands,
+            meshes,
+            materials,
+            Vec2::new(grid_size * -1.0, grid_size * 1.0),
+            Color::LIGHT_GRAY,
+        );
+        self.grid_vertices.push(vertex_entity_a);
+        self.grid_vertices.push(vertex_entity_b);
+        self.grid_vertices.push(vertex_entity_c);
+        self.grid_vertices.push(vertex_entity_d);
+
+        let edge_entity_a = self.new_local_edge(
+            commands,
+            meshes,
+            materials,
+            vertex_entity_a,
+            vertex_entity_b,
+            Color::LIGHT_GRAY,
+        );
+        let edge_entity_b = self.new_local_edge(
+            commands,
+            meshes,
+            materials,
+            vertex_entity_b,
+            vertex_entity_c,
+            Color::LIGHT_GRAY,
+        );
+        let edge_entity_c = self.new_local_edge(
+            commands,
+            meshes,
+            materials,
+            vertex_entity_c,
+            vertex_entity_d,
+            Color::LIGHT_GRAY,
+        );
+        let edge_entity_d = self.new_local_edge(
+            commands,
+            meshes,
+            materials,
+            vertex_entity_d,
+            vertex_entity_a,
+            Color::LIGHT_GRAY,
+        );
+    }
+
+    fn new_local_vertex(
+        &mut self,
+        commands: &mut Commands,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+        position: Vec2,
+        color: Color,
+    ) -> Entity {
+
+        // vertex
+        let mut vertex_component = IconVertex::new(0, 0);
+        vertex_component.localize();
+        vertex_component.set_vec2(&position);
+        let new_vertex_entity = commands.spawn_empty().insert(vertex_component).id();
+
+        self.vertex_postprocess(
+            commands,
+            meshes,
+            materials,
+            None,
+            None,
+            new_vertex_entity,
+            color,
+        );
+
+        commands.entity(new_vertex_entity).insert(LocalShape);
+
+        return new_vertex_entity;
+    }
+
+    fn new_local_edge(
+        &mut self,
+        commands: &mut Commands,
+        meshes: &mut Assets<CpuMesh>,
+        materials: &mut Assets<CpuMaterial>,
+        vertex_entity_a: Entity,
+        vertex_entity_b: Entity,
+        color: Color,
+    ) -> Entity {
+
+        let new_edge_entity = commands
+            .spawn_empty()
+            .id();
+
+        self.edge_postprocess(
+            commands,
+            meshes,
+            materials,
+            None,
+            None,
+            new_edge_entity,
+            vertex_entity_a,
+            vertex_entity_b,
+            color,
+        );
+
+        commands.entity(new_edge_entity).insert(LocalShape);
+
+        new_edge_entity
     }
 
     pub fn update_camera_viewport(
@@ -1270,7 +1431,6 @@ impl IconManager {
 
         new_entity
     }
-
 
     pub fn create_networked_face_from_world(
         &mut self,
@@ -2122,7 +2282,7 @@ impl IconManager {
 
         let mut edge_entities = HashSet::new();
 
-        let size_ratio = self.frame_size / 100.0;
+        let size_ratio = (self.frame_size * 0.5) / 100.0;
 
         // draw vertices, collect edges
         for (vertex_entity, vertex) in vertex_q.iter() {

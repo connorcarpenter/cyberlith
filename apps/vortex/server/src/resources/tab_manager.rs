@@ -214,8 +214,10 @@ impl TabManager {
                     if let Some(content_entities) = content_entities_opt {
                         let project = git_manager.project_mut(project_key).unwrap();
 
+                        let file_ext = project.file_extension(file_key).unwrap();
+
                         // handle despawns
-                        despawn_file_content_entities(world, project, file_key, content_entities);
+                        despawn_file_content_entities(world, project, &file_ext, file_key, content_entities);
 
                         // deregister
                         git_manager.deregister_content_entities(world, content_entities);
