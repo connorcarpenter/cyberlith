@@ -54,10 +54,13 @@ impl IconInputManager {
         icon_manager: &mut IconManager,
         input_actions: Vec<InputAction>,
     ) {
+        let wired = icon_manager.is_wired();
         for action in input_actions {
             match action {
                 InputAction::MouseClick(click_type, mouse_position) => {
-                    Self::handle_mouse_click_meshing(world, current_file_entity, icon_manager, &mouse_position, click_type)
+                    if wired {
+                        Self::handle_mouse_click_meshing(world, current_file_entity, icon_manager, &mouse_position, click_type)
+                    }
                 }
                 InputAction::MouseDragged(click_type, mouse_position, delta) => {
                     Self::handle_mouse_drag_meshing(world, icon_manager, mouse_position, delta, click_type)
@@ -66,20 +69,28 @@ impl IconInputManager {
                     InputManager::handle_mouse_scroll_wheel(world, scroll_y)
                 }
                 InputAction::MouseMoved => {
-                    icon_manager.queue_resync_hover_ui();
+                    if wired {
+                        icon_manager.queue_resync_hover_ui();
+                    }
                 }
                 InputAction::MouseRelease(MouseButton::Left) => {
-                    icon_manager.reset_last_dragged_vertex(world)
+                    if wired {
+                        icon_manager.reset_last_dragged_vertex(world)
+                    }
                 }
                 InputAction::KeyPress(key) => match key {
                     Key::S | Key::W => {
                         icon_manager.handle_keypress_camera_controls(key);
                     }
                     Key::Delete => {
-                        Self::handle_delete_key_press_meshing(world, icon_manager);
+                        if wired {
+                            Self::handle_delete_key_press_meshing(world, icon_manager);
+                        }
                     }
                     Key::Insert => {
-                        Self::handle_insert_key_press_meshing(world, current_file_entity, icon_manager);
+                        if wired {
+                            Self::handle_insert_key_press_meshing(world, current_file_entity, icon_manager);
+                        }
                     }
                     Key::Escape => {
                         icon_manager.set_framing();

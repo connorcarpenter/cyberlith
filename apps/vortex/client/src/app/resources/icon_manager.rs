@@ -1948,6 +1948,10 @@ impl IconManager {
         !self.meshing
     }
 
+    pub fn is_wired(&self) -> bool {
+        self.wireframe
+    }
+
     pub fn set_meshing(&mut self) {
         self.meshing = true;
     }
