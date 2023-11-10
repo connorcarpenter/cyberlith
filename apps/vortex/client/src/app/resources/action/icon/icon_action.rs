@@ -51,6 +51,12 @@ pub enum IconAction {
     DeleteFrame(Entity, usize),
     // file entity, frame index, last frame index
     MoveFrame(Entity, usize, usize),
+
+    // colors
+    // 2D face entity, new palette color entity (or None to destroy)
+    EditColor(Entity, Option<Entity>),
+    // new palette color entity (or None to destroy)
+    EditBckgColor(Entity),
 }
 
 pub enum IconActionType {
@@ -65,6 +71,8 @@ pub enum IconActionType {
     InsertFrame,
     DeleteFrame,
     MoveFrame,
+    EditColor,
+    EditBckgColor,
 }
 
 impl IconAction {
@@ -81,6 +89,8 @@ impl IconAction {
             Self::InsertFrame(_, _, _) => IconActionType::InsertFrame,
             Self::DeleteFrame(_, _) => IconActionType::DeleteFrame,
             Self::MoveFrame(_, _, _) => IconActionType::MoveFrame,
+            Self::EditColor(_, _) => IconActionType::EditColor,
+            Self::EditBckgColor(_) => IconActionType::EditBckgColor,
         }
     }
 
@@ -104,6 +114,8 @@ impl IconAction {
             IconActionType::InsertFrame => insert_frame::execute(world, icon_manager, self),
             IconActionType::DeleteFrame => delete_frame::execute(world, icon_manager, self),
             IconActionType::MoveFrame => move_frame::execute(world, icon_manager, self),
+            IconActionType::EditColor => todo!(),
+            IconActionType::EditBckgColor => todo!(),
         }
     }
 

@@ -22,6 +22,7 @@ use crate::app::{
         },
     },
 };
+use crate::app::resources::toolbar::{IconToolbar, SkinToolbar};
 
 pub fn center_panel(context: &egui::Context, world: &mut World) {
     egui::CentralPanel::default()
@@ -74,25 +75,7 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                             return;
                         }
 
-                        // Toolbar
-                        let mut some_action = None;
-                        world.resource_scope(|world, mut skin_manager: Mut<SkinManager>| {
-                            some_action =
-                                skin_manager.render_sidebar(ui, world, &current_file_entity);
-                        });
-                        if let Some(skin_action) = some_action {
-                            world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                                world.resource_scope(
-                                    |world, mut input_manager: Mut<InputManager>| {
-                                        tab_manager.current_tab_execute_skin_action(
-                                            world,
-                                            &mut input_manager,
-                                            skin_action,
-                                        );
-                                    },
-                                );
-                            });
-                        }
+                        SkinToolbar::render(world, ui, &current_file_entity);
                     }
                     FileExtension::Model => {
                         if !render_simple_bind(world, ui, &current_file_entity, FileExtension::Skel)
@@ -176,7 +159,7 @@ pub fn center_panel(context: &egui::Context, world: &mut World) {
                         }
 
                         // Toolbar
-                        render_tool_bar(ui, world, &current_file_entity, current_file_type);
+                        IconToolbar::render(ui, world, &current_file_entity);
                     }
                     _ => {}
                 }

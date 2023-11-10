@@ -6,6 +6,7 @@ use bevy_ecs::{
     system::{Commands, Query, Res, ResMut, Resource, SystemState},
     world::{Mut, World},
 };
+use bevy_ecs::event::EventWriter;
 use bevy_log::{info, warn};
 
 use input::{Input, Key};
@@ -24,7 +25,7 @@ use render_api::{
     Assets, Handle,
 };
 
-use vortex_proto::components::{IconEdge, IconFace, IconFrame, IconVertex, OwnedByFile};
+use vortex_proto::components::{FileExtension, IconBackgroundColor, IconEdge, IconFace, IconFrame, IconVertex, OwnedByFile, PaletteColor};
 
 use crate::app::{
     components::{
@@ -41,6 +42,9 @@ use crate::app::{
     },
     shapes::{create_2d_edge_line, Line2d},
 };
+use crate::app::events::ShapeColorResyncEvent;
+use crate::app::resources::file_manager::FileManager;
+use crate::app::resources::palette_manager::PaletteManager;
 
 #[derive(Resource)]
 pub struct IconManager {
@@ -99,6 +103,13 @@ pub struct IconManager {
     local_faces: HashMap<Entity, IconFaceKey>,
     // queue of new faces to process (FaceKey, File Entity, Frame Entity)
     new_face_keys: Vec<(IconFaceKey, Entity, Entity)>,
+
+    // colorz!
+    selected_color_index: usize,
+    // skin file entity -> bckg color entity
+    file_to_bckg_entity: HashMap<Entity, Entity>,
+    // bckg color entity -> skin file entity
+    bckg_to_file_entity: HashMap<Entity, Entity>,
 }
 
 impl Default for IconManager {
@@ -152,6 +163,11 @@ impl Default for IconManager {
             face_keys: HashMap::new(),
             local_faces: HashMap::new(),
             net_faces: HashMap::new(),
+
+            // colorz
+            selected_color_index: 0,
+            file_to_bckg_entity: HashMap::new(),
+            bckg_to_file_entity: HashMap::new(),
         }
     }
 }
@@ -2640,6 +2656,109 @@ impl IconManager {
             end,
             2.0,
         );
+    }
+
+    // Colorz!
+    pub(crate) fn selected_color_index(&self) -> usize {
+        self.selected_color_index
+    }
+
+    pub(crate) fn set_selected_color_index(&mut self, index: usize) {
+        self.selected_color_index = index;
+    }
+
+    pub(crate) fn background_color_index(
+        &self,
+        client: &Client,
+        file_entity: &Entity,
+        bck_color_q: &Query<&IconBackgroundColor>,
+        palette_q: &Query<&PaletteColor>,
+    ) -> usize {
+        if let Some(bckg_color_entity) = self.file_to_bckg_entity.get(file_entity) {
+            if let Ok(bck_color) = bck_color_q.get(*bckg_color_entity) {
+                if let Some(palette_color_entity) = bck_color.palette_color_entity.get(client) {
+                    if let Ok(palette_color) = palette_q.get(palette_color_entity) {
+                        return *palette_color.index as usize;
+                    }
+                }
+            }
+        }
+
+        0
+    }
+
+    pub(crate) fn file_to_bckg_entity(&self, file_entity: &Entity) -> Option<&Entity> {
+        self.file_to_bckg_entity.get(file_entity)
+    }
+
+    pub fn init_background_color(&mut self, world: &mut World, current_file_entity: &Entity) {
+        let mut system_state: SystemState<(
+            Commands,
+            Client,
+            Res<FileManager>,
+            Res<PaletteManager>,
+            EventWriter<ShapeColorResyncEvent>,
+        )> = SystemState::new(world);
+        let (
+            mut commands,
+            mut client,
+            file_manager,
+            palette_manager,
+            mut shape_color_resync_events,
+        ) = system_state.get_mut(world);
+
+        // get Palette File Dependency
+        let Some(palette_file_entity) = file_manager.file_get_dependency(
+            current_file_entity,
+            FileExtension::Palette,
+        ) else {
+            return;
+        };
+        let Some(palette_color_entity) = palette_manager.get_color_entity(&palette_file_entity, 0) else {
+            return;
+        };
+
+        // spawn background color entity
+        let mut component = IconBackgroundColor::new();
+        component
+            .owning_file_entity
+            .set(&client, &current_file_entity);
+        component
+            .palette_color_entity
+            .set(&client, &palette_color_entity);
+        let bck_color_entity = commands
+            .spawn_empty()
+            .enable_replication(&mut client)
+            .configure_replication(ReplicationConfig::Delegated)
+            .insert(component)
+            .id();
+
+        self.bckg_color_postprocess(
+            *current_file_entity,
+            bck_color_entity,
+            &mut shape_color_resync_events,
+        );
+
+        system_state.apply(world);
+    }
+
+    pub(crate) fn bckg_color_postprocess(
+        &mut self,
+        file_entity: Entity,
+        bckg_color_entity: Entity,
+        shape_color_resync_events: &mut EventWriter<ShapeColorResyncEvent>,
+    ) {
+        shape_color_resync_events.send(ShapeColorResyncEvent);
+
+        // register
+        self.register_bckg_color(file_entity, bckg_color_entity);
+    }
+
+    pub(crate) fn register_bckg_color(&mut self, file_entity: Entity, bckg_color_entity: Entity) {
+        self.file_to_bckg_entity
+            .insert(file_entity, bckg_color_entity);
+        self.bckg_to_file_entity
+            .insert(bckg_color_entity, file_entity);
     }
 }
 

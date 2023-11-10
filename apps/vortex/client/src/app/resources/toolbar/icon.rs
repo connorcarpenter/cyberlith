@@ -1,6 +1,10 @@
-use bevy_ecs::world::{Mut, World};
+use bevy_ecs::{entity::Entity, system::{Query, Res, SystemState}, world::{Mut, World}};
 
-use render_egui::egui::Ui;
+use naia_bevy_client::Client;
+
+use render_egui::{egui::{PointerButton, Vec2, Align, Color32, Frame, Layout, Margin, Sense, Ui}, egui};
+
+use vortex_proto::components::{FileExtension, IconBackgroundColor, PaletteColor};
 
 use crate::app::resources::{
     action::icon::IconAction,
@@ -8,18 +12,43 @@ use crate::app::resources::{
     tab_manager::TabManager,
     toolbar::Toolbar,
     icon_manager::IconManager,
+    file_manager::FileManager,
+    palette_manager::PaletteManager,
+    shape_data::CanvasShape,
 };
 
 pub struct IconToolbar;
 
 impl IconToolbar {
-    pub(crate) fn render(ui: &mut Ui, world: &mut World) {
+    pub(crate) fn render(ui: &mut Ui, world: &mut World, current_file_entity: &Entity) {
         let icon_manager = world.get_resource::<IconManager>().unwrap();
         let is_framing = icon_manager.is_framing();
         if is_framing {
-            Self::framing_render(ui, world);
+            egui::SidePanel::right("right_panel")
+                .frame(Frame::side_top_panel(ui.style()).inner_margin(Margin {
+                    left: 3.0,
+                    right: 1.0,
+                    top: 2.0,
+                    bottom: 2.0,
+                }))
+                .resizable(false)
+                .default_width(26.0)
+                .show_inside(ui, |ui| {
+                    ui.style_mut().override_text_style = Some(egui::TextStyle::Heading);
+                    ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
+
+                        //
+                        Self::framing_render(ui, world);
+                        //
+
+                        ui.allocate_space(ui.available_size());
+                    });
+                    ui.allocate_space(ui.available_size());
+                });
         } else {
-            Self::posing_render(ui, world);
+            world.resource_scope(|world, mut icon_manager: Mut<IconManager>| {
+                Self::posing_render_sidebar(ui, world, &mut icon_manager, current_file_entity);
+            });
         }
     }
 
@@ -95,7 +124,7 @@ impl IconToolbar {
         }
     }
 
-    fn posing_render(ui: &mut Ui, world: &mut World) {
+    fn posing_render_old(ui: &mut Ui, world: &mut World) {
         // back to framing (up arrow for icon)
         if Toolbar::button(ui, "⬆", "Back to framing", true).clicked() {
             let mut icon_manager = world.get_resource_mut::<IconManager>().unwrap();
@@ -107,6 +136,165 @@ impl IconToolbar {
 
         // delete selected
         let _response = Toolbar::button(ui, "🗑", "Delete selected shape", true);
+    }
+
+    fn posing_render_sidebar(
+        ui: &mut Ui,
+        world: &mut World,
+        icon_manager: &mut IconManager,
+        current_file_entity: &Entity,
+    ) -> Option<IconAction> {
+        if icon_manager.file_to_bckg_entity(current_file_entity).is_none() {
+            icon_manager.init_background_color(world, current_file_entity);
+        }
+
+        let mut color_index_picked = None;
+
+        let mut system_state: SystemState<(
+            Client,
+            Res<FileManager>,
+            Res<PaletteManager>,
+            Query<&IconBackgroundColor>,
+            Query<&PaletteColor>,
+        )> = SystemState::new(world);
+        let (client, file_manager, palette_manager, bckg_color_q, palette_color_q) =
+            system_state.get_mut(world);
+
+        let Some(palette_file_entity) = file_manager.file_get_dependency(
+            current_file_entity,
+            FileExtension::Palette,
+        ) else {
+            panic!("Expected palette file dependency");
+        };
+        let Some(colors) = palette_manager.get_file_colors(&palette_file_entity) else {
+            return None;
+        };
+        let bckg_color_index = icon_manager.background_color_index(
+            &client,
+            current_file_entity,
+            &bckg_color_q,
+            &palette_color_q,
+        );
+
+        egui::SidePanel::right("icon_right_panel")
+            .exact_width(8.0*2.0 + 48.0*2.0 + 2.0 + 10.0*2.0)
+            .resizable(false)
+            .show_inside(ui, |ui| {
+
+                let size = Vec2::new(48.0, 48.0);
+
+                ui.horizontal_top(|ui| {
+                    Frame::none().inner_margin(8.0).show(ui, |ui| {
+                        ui.spacing_mut().item_spacing = Vec2::new(10.0, 10.0);
+
+                        for color_index in [icon_manager.selected_color_index(), bckg_color_index].iter() {
+                            let color_entity_opt = colors.get(*color_index).unwrap();
+                            let Some(color_entity) = color_entity_opt else {
+                                continue;
+                            };
+                            let Ok(color_component) = palette_color_q.get(*color_entity) else {
+                                continue;
+                            };
+                            let r = *color_component.r;
+                            let g = *color_component.g;
+                            let b = *color_component.b;
+                            let color = Color32::from_rgb(r, g, b);
+
+                            let (mut rect, _response) =
+                                ui.allocate_exact_size(size, Sense::click());
+
+                            if ui.is_rect_visible(rect) {
+                                ui.painter().rect_filled(rect, 0.0, color);
+                                rect = rect.expand(2.0);
+                                ui.painter().rect_stroke(rect, 0.0, (2.0, Color32::WHITE));
+                            }
+                        }
+                    });
+                });
+
+                ui.separator();
+
+                let size = Vec2::new(16.0, 16.0);
+
+                ui.with_layout(
+                    Layout::left_to_right(Align::Min).with_main_wrap(true),
+                    |ui| {
+                        Frame::none().inner_margin(8.0).show(ui, |ui| {
+                            ui.spacing_mut().item_spacing = Vec2::new(10.0, 10.0);
+                            for (color_index, color_entity_opt) in colors.iter().enumerate() {
+                                let Some(palette_color_entity) = color_entity_opt else {
+                                    continue;
+                                };
+                                let Ok(color_component) = palette_color_q.get(*palette_color_entity) else {
+                                    continue;
+                                };
+                                let r = *color_component.r;
+                                let g = *color_component.g;
+                                let b = *color_component.b;
+                                let color = Color32::from_rgb(r, g, b);
+
+                                let (mut rect, response) =
+                                    ui.allocate_exact_size(size, Sense::click());
+                                if response.hovered() {
+                                    rect = rect.expand(2.0);
+                                }
+
+                                if ui.is_rect_visible(rect) {
+                                    ui.painter().rect_filled(rect, 0.0, color);
+                                    if color_index == icon_manager.selected_color_index() {
+                                        rect = rect.expand(2.0);
+                                        ui.painter().rect_stroke(rect, 0.0, (2.0, Color32::WHITE));
+                                    } else if response.clicked_by(PointerButton::Primary) {
+                                        color_index_picked = Some((color_index, *palette_color_entity, PointerButton::Primary));
+                                    }
+                                    if response.clicked_by(PointerButton::Secondary) {
+                                        color_index_picked = Some((color_index, *palette_color_entity, PointerButton::Secondary));
+                                    }
+                                }
+                            }
+                        });
+                    });
+                return;
+            });
+
+        let Some((color_index_picked, palette_color_entity, click_type)) = color_index_picked else {
+            return None;
+        };
+        match click_type {
+            PointerButton::Primary => {
+                if color_index_picked == icon_manager.selected_color_index() {
+                    return None;
+                }
+                icon_manager.set_selected_color_index(color_index_picked);
+
+                let selected_shape = icon_manager.selected_shape();
+                if selected_shape.is_some() {
+                    let Some((face_entity, CanvasShape::Face)) = selected_shape else {
+                        panic!("expected face entity");
+                    };
+                    return Some(IconAction::EditColor(
+                        face_entity,
+                        Some(palette_color_entity),
+                    ));
+                }
+            }
+            PointerButton::Secondary => {
+                if color_index_picked == bckg_color_index {
+                    return None;
+                }
+
+                let palette_color_entity = world
+                    .get_resource::<PaletteManager>()
+                    .unwrap()
+                    .get_color_entity(&palette_file_entity, color_index_picked)
+                    .unwrap();
+
+                return Some(IconAction::EditBckgColor(palette_color_entity));
+            }
+            _ => {}
+        }
+
+        return None;
     }
 }
 

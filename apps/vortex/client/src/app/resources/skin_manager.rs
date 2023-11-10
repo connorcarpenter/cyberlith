@@ -132,6 +132,13 @@ impl SkinManager {
         self.register_bckg_color(file_entity, bckg_color_entity);
     }
 
+    pub(crate) fn register_bckg_color(&mut self, file_entity: Entity, bckg_color_entity: Entity) {
+        self.file_to_bckg_entity
+            .insert(file_entity, bckg_color_entity);
+        self.bckg_to_file_entity
+            .insert(bckg_color_entity, file_entity);
+    }
+
     pub(crate) fn face_color_postprocess(
         &mut self,
         face_3d_entity: Entity,
@@ -142,13 +149,6 @@ impl SkinManager {
 
         // register
         self.register_face_color(face_3d_entity, face_color_entity);
-    }
-
-    pub(crate) fn register_bckg_color(&mut self, file_entity: Entity, bckg_color_entity: Entity) {
-        self.file_to_bckg_entity
-            .insert(file_entity, bckg_color_entity);
-        self.bckg_to_file_entity
-            .insert(bckg_color_entity, file_entity);
     }
 
     pub(crate) fn register_face_color(

@@ -5,6 +5,10 @@ mod scene;
 mod shared_buttons;
 mod skel;
 mod icon;
+mod skin;
+
+pub use skin::SkinToolbar;
+pub use icon::IconToolbar;
 
 use bevy_ecs::{entity::Entity, world::World};
 
@@ -17,7 +21,7 @@ use vortex_proto::components::FileExtension;
 
 use crate::app::resources::toolbar::{
     anim::AnimationToolbar, mesh::MeshToolbar, model::ModelToolbar, scene::SceneToolbar,
-    skel::SkeletonToolbar, icon::IconToolbar,
+    skel::SkeletonToolbar,
 };
 
 pub struct Toolbar;
@@ -46,7 +50,7 @@ impl Toolbar {
                 SceneToolbar::render(ui, world, file_entity);
             }
             FileExtension::Icon => {
-                IconToolbar::render(ui, world);
+                IconToolbar::render(ui, world, file_entity);
             }
             _ => {}
         }
