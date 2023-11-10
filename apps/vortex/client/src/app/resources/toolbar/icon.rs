@@ -1,10 +1,8 @@
 use bevy_ecs::{entity::Entity, system::{Query, Res, SystemState}, world::{Mut, World}};
 
-use naia_bevy_client::Client;
-
 use render_egui::{egui::{PointerButton, Vec2, Align, Color32, Frame, Layout, Margin, Sense, Ui}, egui};
 
-use vortex_proto::components::{FileExtension, IconBackgroundColor, PaletteColor};
+use vortex_proto::components::{FileExtension, PaletteColor};
 
 use crate::app::resources::{
     action::icon::IconAction,
@@ -124,6 +122,7 @@ impl IconToolbar {
         }
     }
 
+    // TODO: put this into posing_render_sidebar
     fn posing_render_old(ui: &mut Ui, world: &mut World) {
         // back to framing (up arrow for icon)
         if Toolbar::button(ui, "⬆", "Back to framing", true).clicked() {
@@ -144,20 +143,15 @@ impl IconToolbar {
         icon_manager: &mut IconManager,
         current_file_entity: &Entity,
     ) -> Option<IconAction> {
-        if icon_manager.file_to_bckg_entity(current_file_entity).is_none() {
-            icon_manager.init_background_color(world, current_file_entity);
-        }
 
         let mut color_index_picked = None;
 
         let mut system_state: SystemState<(
-            Client,
             Res<FileManager>,
             Res<PaletteManager>,
-            Query<&IconBackgroundColor>,
             Query<&PaletteColor>,
         )> = SystemState::new(world);
-        let (client, file_manager, palette_manager, bckg_color_q, palette_color_q) =
+        let (file_manager, palette_manager, palette_color_q) =
             system_state.get_mut(world);
 
         let Some(palette_file_entity) = file_manager.file_get_dependency(
@@ -169,12 +163,6 @@ impl IconToolbar {
         let Some(colors) = palette_manager.get_file_colors(&palette_file_entity) else {
             return None;
         };
-        let bckg_color_index = icon_manager.background_color_index(
-            &client,
-            current_file_entity,
-            &bckg_color_q,
-            &palette_color_q,
-        );
 
         egui::SidePanel::right("icon_right_panel")
             .exact_width(8.0*2.0 + 48.0*2.0 + 2.0 + 10.0*2.0)
@@ -187,27 +175,26 @@ impl IconToolbar {
                     Frame::none().inner_margin(8.0).show(ui, |ui| {
                         ui.spacing_mut().item_spacing = Vec2::new(10.0, 10.0);
 
-                        for color_index in [icon_manager.selected_color_index(), bckg_color_index].iter() {
-                            let color_entity_opt = colors.get(*color_index).unwrap();
-                            let Some(color_entity) = color_entity_opt else {
-                                continue;
-                            };
-                            let Ok(color_component) = palette_color_q.get(*color_entity) else {
-                                continue;
-                            };
-                            let r = *color_component.r;
-                            let g = *color_component.g;
-                            let b = *color_component.b;
-                            let color = Color32::from_rgb(r, g, b);
+                        let color_index = icon_manager.selected_color_index();
+                        let color_entity_opt = colors.get(color_index).unwrap();
+                        let Some(color_entity) = color_entity_opt else {
+                            return;
+                        };
+                        let Ok(color_component) = palette_color_q.get(*color_entity) else {
+                            return;
+                        };
+                        let r = *color_component.r;
+                        let g = *color_component.g;
+                        let b = *color_component.b;
+                        let color = Color32::from_rgb(r, g, b);
 
-                            let (mut rect, _response) =
-                                ui.allocate_exact_size(size, Sense::click());
+                        let (mut rect, _response) =
+                            ui.allocate_exact_size(size, Sense::click());
 
-                            if ui.is_rect_visible(rect) {
-                                ui.painter().rect_filled(rect, 0.0, color);
-                                rect = rect.expand(2.0);
-                                ui.painter().rect_stroke(rect, 0.0, (2.0, Color32::WHITE));
-                            }
+                        if ui.is_rect_visible(rect) {
+                            ui.painter().rect_filled(rect, 0.0, color);
+                            rect = rect.expand(2.0);
+                            ui.painter().rect_stroke(rect, 0.0, (2.0, Color32::WHITE));
                         }
                     });
                 });
@@ -277,19 +264,6 @@ impl IconToolbar {
                         Some(palette_color_entity),
                     ));
                 }
-            }
-            PointerButton::Secondary => {
-                if color_index_picked == bckg_color_index {
-                    return None;
-                }
-
-                let palette_color_entity = world
-                    .get_resource::<PaletteManager>()
-                    .unwrap()
-                    .get_color_entity(&palette_file_entity, color_index_picked)
-                    .unwrap();
-
-                return Some(IconAction::EditBckgColor(palette_color_entity));
             }
             _ => {}
         }

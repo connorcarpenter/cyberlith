@@ -154,7 +154,7 @@ pub(crate) fn execute(
                     &face_key,
                 );
                 action_stack.migrate_face_entities(old_local_face_entity, new_face_entity);
-                if create_net_face {
+                if let Some(palette_color_entity) = create_net_face {
                     icon_manager.create_networked_face(
                         &mut commands,
                         &mut client,
@@ -165,6 +165,7 @@ pub(crate) fn execute(
                         [edge_entities[0], edge_entities[1], edge_entities[2]],
                         &current_file_entity,
                         &frame_entity,
+                        &palette_color_entity,
                     );
                 }
             }

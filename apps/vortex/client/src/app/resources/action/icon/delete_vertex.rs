@@ -6,7 +6,7 @@ use bevy_log::info;
 
 use naia_bevy_client::Client;
 
-use vortex_proto::components::{IconEdge, IconVertex};
+use vortex_proto::components::{IconEdge, IconFace, IconVertex};
 
 use crate::app::{
     components::IconVertexActionData,
@@ -37,8 +37,9 @@ pub(crate) fn execute(
         Client,
         Query<(Entity, &IconVertex)>,
         Query<&IconEdge>,
+        Query<&IconFace>,
     )> = SystemState::new(world);
-    let (mut commands, mut client, vertex_q, edge_q) = system_state.get_mut(world);
+    let (mut commands, mut client, vertex_q, edge_q, face_q) = system_state.get_mut(world);
 
     let mut connected_vertices_entities = Vec::new();
     let mut connected_face_vertex_entities = Vec::new();
@@ -67,9 +68,17 @@ pub(crate) fn execute(
     };
     let connected_faces: Vec<IconFaceKey> = connected_faces.iter().map(|face| *face).collect();
     for face_key in connected_faces {
-        let face_net_entity_exists = icon_manager
-            .net_face_entity_from_face_key(&face_key)
-            .is_some();
+        let net_face_color_opt = if let Some(net_entity) = icon_manager
+            .net_face_entity_from_face_key(&face_key) {
+            let face = face_q.get(net_entity).unwrap();
+            if let Some(palette_entity) = face.palette_color_entity.get(&client) {
+                Some(palette_entity)
+            } else {
+                None
+            }
+        } else {
+            None
+        };
 
         let mut vertices = vec![face_key.vertex_a, face_key.vertex_b, face_key.vertex_c];
         vertices.retain(|vertex| *vertex != vertex_entity);
@@ -82,7 +91,7 @@ pub(crate) fn execute(
             vertices[0],
             vertices[1],
             face_local_entity,
-            face_net_entity_exists,
+            net_face_color_opt,
         ));
     }
 

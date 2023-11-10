@@ -31,7 +31,7 @@ pub use ownership::{FileExtension, FileType, OwnedByFile};
 
 mod icon;
 use icon::IconComponentsPlugin;
-pub use icon::{IconEdge, IconFace, IconVertex, IconFrame, IconBackgroundColor};
+pub use icon::{IconEdge, IconFace, IconVertex, IconFrame};
 
 // Plugin
 pub struct ComponentsPlugin;

@@ -6,14 +6,12 @@ use bevy_ecs::{
     system::{Commands, Query, Res, ResMut, Resource, SystemState},
     world::{Mut, World},
 };
-use bevy_ecs::event::EventWriter;
 use bevy_log::{info, warn};
 
-use input::{Input, Key};
 use naia_bevy_client::{Client, CommandsExt, Instant, Replicate, ReplicationConfig};
 
+use input::{Input, Key};
 use math::{Vec2, Vec3};
-
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh, CpuTexture2D},
     components::{
@@ -25,7 +23,7 @@ use render_api::{
     Assets, Handle,
 };
 
-use vortex_proto::components::{FileExtension, IconBackgroundColor, IconEdge, IconFace, IconFrame, IconVertex, OwnedByFile, PaletteColor};
+use vortex_proto::components::{IconEdge, IconFace, IconFrame, IconVertex, OwnedByFile};
 
 use crate::app::{
     components::{
@@ -42,9 +40,6 @@ use crate::app::{
     },
     shapes::{create_2d_edge_line, Line2d},
 };
-use crate::app::events::ShapeColorResyncEvent;
-use crate::app::resources::file_manager::FileManager;
-use crate::app::resources::palette_manager::PaletteManager;
 
 #[derive(Resource)]
 pub struct IconManager {
@@ -106,10 +101,6 @@ pub struct IconManager {
 
     // colorz!
     selected_color_index: usize,
-    // skin file entity -> bckg color entity
-    file_to_bckg_entity: HashMap<Entity, Entity>,
-    // bckg color entity -> skin file entity
-    bckg_to_file_entity: HashMap<Entity, Entity>,
 }
 
 impl Default for IconManager {
@@ -166,8 +157,6 @@ impl Default for IconManager {
 
             // colorz
             selected_color_index: 0,
-            file_to_bckg_entity: HashMap::new(),
-            bckg_to_file_entity: HashMap::new(),
         }
     }
 }
@@ -182,7 +171,7 @@ impl IconManager {
                 self.draw_meshing_solid(world, current_file_entity);
             }
         } else {
-            self.draw_framing(world);
+            self.draw_framing(world, current_file_entity);
         }
     }
 
@@ -192,32 +181,22 @@ impl IconManager {
 
         let mut system_state: SystemState<(
             ResMut<RenderFrame>,
-            Res<Canvas>,
             Res<TabManager>,
-            Res<Input>,
             ResMut<Assets<CpuMaterial>>,
-            Query<(Entity, &OwnedByFileLocal), With<IconVertex>>,
             Query<(Entity, &OwnedByFileLocal), With<IconFace>>,
             Query<&IconVertex>,
-            Query<&IconLocalFace>,
             Query<&Handle<CpuMesh>>,
             Query<&Handle<CpuMaterial>>,
-            Query<&LocalShape>,
             Query<&mut Transform>,
         )> = SystemState::new(world);
         let (
             mut render_frame,
-            canvas,
             tab_manager,
-            input,
             mut materials,
-            owned_vertex_q,
             owned_face_q,
             vertex_q,
-            face_q,
             mesh_q,
             mat_q,
-            local_shape_q,
             mut transform_q
         ) = system_state.get_mut(world);
 
@@ -235,7 +214,6 @@ impl IconManager {
         let mut edge_entities = HashSet::new();
 
         // material
-        let mat_handle_light_gray = materials.add(Color::LIGHT_GRAY);
         let mat_handle_gray = materials.add(Color::GRAY);
 
         // collect grid vertices
@@ -1618,6 +1596,7 @@ impl IconManager {
         &mut self,
         world: &mut World,
         local_face_entity: Entity,
+        palette_color_entity: Entity,
     ) {
         let Some(face_key) = self.face_key_from_local_entity(&local_face_entity) else {
             panic!(
@@ -1665,6 +1644,7 @@ impl IconManager {
             [edge_entity_a, edge_entity_b, edge_entity_c],
             &file_entity,
             &frame_entity,
+            &palette_color_entity,
         );
 
         system_state.apply(world);
@@ -1681,6 +1661,7 @@ impl IconManager {
         edge_entities: [Entity; 3],
         file_entity: &Entity,
         frame_entity: &Entity,
+        palette_color_entity: &Entity,
     ) {
         info!("creating networked face");
 
@@ -1710,6 +1691,7 @@ impl IconManager {
         // set up networked face component
         let mut face_component = IconFace::new();
         face_component.frame_entity.set(client, frame_entity);
+        face_component.palette_color_entity.set(client, palette_color_entity);
         face_component.vertex_a.set(client, &vertex_entities[0]);
         face_component.vertex_b.set(client, &vertex_entities[1]);
         face_component.vertex_c.set(client, &vertex_entities[2]);
@@ -2266,23 +2248,17 @@ impl IconManager {
         }
     }
 
-    fn draw_framing(&mut self, world: &mut World) {
+    fn draw_framing(&mut self, world: &mut World, current_file_entity: &Entity) {
 
         let mut system_state: SystemState<(
-            Res<TabManager>,
             Res<Canvas>,
             Query<&mut Transform>,
         )> = SystemState::new(world);
         let (
-            mut tab_manager,
             canvas,
             mut transform_q,
         ) = system_state.get_mut(world);
 
-        // get current file
-        let Some(current_file_entity) = tab_manager.current_tab_entity() else {
-            return;
-        };
         let current_file_entity = *current_file_entity;
 
         // camera
@@ -2458,9 +2434,6 @@ impl IconManager {
                 file_entity,
                 frame_entity,
                 frame_pos,
-                point_mesh_handle,
-                line_mesh_handle,
-                mat_handle_gray,
             );
         }
     }
@@ -2556,18 +2529,13 @@ impl IconManager {
         file_entity: &Entity,
         frame_entity: &Entity,
         frame_pos: &Vec2,
-        point_mesh_handle: &Handle<CpuMesh>,
-        line_mesh_handle: &Handle<CpuMesh>,
-        mat_handle_gray: &Handle<CpuMaterial>,
     ) {
         let mut system_state: SystemState<(
-            Client,
             ResMut<RenderFrame>,
             Query<(Entity, &OwnedByFileLocal), With<IconFace>>,
             Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>, &Transform)>
         )> = SystemState::new(world);
         let (
-            client,
             mut render_frame,
             owned_face_q,
             object_q,
@@ -2587,15 +2555,6 @@ impl IconManager {
             if data.frame_entity != *frame_entity {
                 continue;
             }
-
-            //
-
-            //     let mut vertex_pos = vertex.as_vec2();
-            //     vertex_pos.x *= size_ratio.x;
-            //     vertex_pos.y *= size_ratio.y;
-            //     let vertex_pos = *frame_pos + vertex_pos;
-            //     let transform = Transform::from_translation_2d(vertex_pos);
-            //     render_frame.draw_object(Some(&self.render_layer), point_mesh_handle, mat_handle_gray, &transform);
 
             // draw face
             let (mesh_handle, mat_handle, transform) = object_q.get(face_entity).unwrap();
@@ -2665,100 +2624,6 @@ impl IconManager {
 
     pub(crate) fn set_selected_color_index(&mut self, index: usize) {
         self.selected_color_index = index;
-    }
-
-    pub(crate) fn background_color_index(
-        &self,
-        client: &Client,
-        file_entity: &Entity,
-        bck_color_q: &Query<&IconBackgroundColor>,
-        palette_q: &Query<&PaletteColor>,
-    ) -> usize {
-        if let Some(bckg_color_entity) = self.file_to_bckg_entity.get(file_entity) {
-            if let Ok(bck_color) = bck_color_q.get(*bckg_color_entity) {
-                if let Some(palette_color_entity) = bck_color.palette_color_entity.get(client) {
-                    if let Ok(palette_color) = palette_q.get(palette_color_entity) {
-                        return *palette_color.index as usize;
-                    }
-                }
-            }
-        }
-
-        0
-    }
-
-    pub(crate) fn file_to_bckg_entity(&self, file_entity: &Entity) -> Option<&Entity> {
-        self.file_to_bckg_entity.get(file_entity)
-    }
-
-    pub fn init_background_color(&mut self, world: &mut World, current_file_entity: &Entity) {
-        let mut system_state: SystemState<(
-            Commands,
-            Client,
-            Res<FileManager>,
-            Res<PaletteManager>,
-            EventWriter<ShapeColorResyncEvent>,
-        )> = SystemState::new(world);
-        let (
-            mut commands,
-            mut client,
-            file_manager,
-            palette_manager,
-            mut shape_color_resync_events,
-        ) = system_state.get_mut(world);
-
-        // get Palette File Dependency
-        let Some(palette_file_entity) = file_manager.file_get_dependency(
-            current_file_entity,
-            FileExtension::Palette,
-        ) else {
-            return;
-        };
-        let Some(palette_color_entity) = palette_manager.get_color_entity(&palette_file_entity, 0) else {
-            return;
-        };
-
-        // spawn background color entity
-        let mut component = IconBackgroundColor::new();
-        component
-            .owning_file_entity
-            .set(&client, &current_file_entity);
-        component
-            .palette_color_entity
-            .set(&client, &palette_color_entity);
-        let bck_color_entity = commands
-            .spawn_empty()
-            .enable_replication(&mut client)
-            .configure_replication(ReplicationConfig::Delegated)
-            .insert(component)
-            .id();
-
-        self.bckg_color_postprocess(
-            *current_file_entity,
-            bck_color_entity,
-            &mut shape_color_resync_events,
-        );
-
-        system_state.apply(world);
-    }
-
-    pub(crate) fn bckg_color_postprocess(
-        &mut self,
-        file_entity: Entity,
-        bckg_color_entity: Entity,
-        shape_color_resync_events: &mut EventWriter<ShapeColorResyncEvent>,
-    ) {
-        shape_color_resync_events.send(ShapeColorResyncEvent);
-
-        // register
-        self.register_bckg_color(file_entity, bckg_color_entity);
-    }
-
-    pub(crate) fn register_bckg_color(&mut self, file_entity: Entity, bckg_color_entity: Entity) {
-        self.file_to_bckg_entity
-            .insert(file_entity, bckg_color_entity);
-        self.bckg_to_file_entity
-            .insert(bckg_color_entity, file_entity);
     }
 }
 

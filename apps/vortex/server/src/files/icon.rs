@@ -673,6 +673,7 @@ impl IconReader {
 
                                 let mut face_component = IconFace::new();
                                 face_component.frame_entity.set(&server, &frame_entity);
+                                face_component.palette_color_entity.set(&server);
                                 face_component.vertex_a.set(&server, &vertex_a_entity);
                                 face_component.vertex_b.set(&server, &vertex_b_entity);
                                 face_component.vertex_c.set(&server, &vertex_c_entity);

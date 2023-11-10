@@ -1,18 +1,21 @@
 use bevy_ecs::{
     prelude::{Commands, Entity, World},
-    system::SystemState,
+    system::{Query, SystemState, Res},
 };
 use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt};
 
+use vortex_proto::components::{FileExtension, IconFace};
+
 use crate::app::resources::{
-    action::icon::IconAction, icon_manager::IconManager, shape_data::CanvasShape,
+    action::icon::IconAction, icon_manager::IconManager, shape_data::CanvasShape, file_manager::FileManager, palette_manager::PaletteManager
 };
 
 pub(crate) fn execute(
     world: &mut World,
     icon_manager: &mut IconManager,
+    current_file_entity: Entity,
     action: IconAction,
 ) -> Vec<IconAction> {
     let IconAction::SelectShape(shape_entity_opt) = action else {
@@ -37,13 +40,64 @@ pub(crate) fn execute(
 
     system_state.apply(world);
 
-    // create net face if necessary
-    if let Some((face_entity, CanvasShape::Face)) = shape_entity_opt {
-        if entity_to_request.is_none() {
-            icon_manager.create_networked_face_from_world(world, face_entity);
+
+    if let Some((local_face_entity, CanvasShape::Face)) = shape_entity_opt {
+
+        let mut system_state: SystemState<(
+            Res<FileManager>,
+            Res<PaletteManager>,
+        )> = SystemState::new(world);
+        let (
+            file_manager,
+            palette_manager,
+        ) = system_state.get_mut(world);
+
+        // create new face, assign color
+        let palette_color_index = icon_manager.selected_color_index();
+        let Some(palette_file_entity) = file_manager.file_get_dependency(
+            &current_file_entity,
+            FileExtension::Palette,
+        ) else {
+            panic!("Expected palette file dependency");
+        };
+        let next_palette_color_entity = palette_manager
+            .get_color_entity(&palette_file_entity, palette_color_index)
+            .unwrap();
+
+        if let Some(net_face_entity) = icon_manager.face_entity_local_to_net(&local_face_entity) {
+
+            let mut system_state: SystemState<(
+                Client,
+                Query<&mut IconFace>,
+            )> = SystemState::new(world);
+            let (
+                client,
+                mut face_q,
+            ) = system_state.get_mut(world);
+
+            // edit face color
+
+            let Ok(mut face_component) = face_q.get_mut(net_face_entity) else {
+                panic!("Failed to get FaceColor for face entity {:?}!", net_face_entity);
+            };
+
+            let prev_palette_entity = face_component.palette_color_entity.get(&client).unwrap();
+
+            face_component
+                .palette_color_entity
+                .set(&client, &next_palette_color_entity);
+
             return vec![
                 IconAction::SelectShape(deselected_entity),
-                IconAction::DeleteFace(face_entity),
+                IconAction::EditColor(local_face_entity, Some(prev_palette_entity)),
+            ];
+        } else {
+
+            icon_manager.create_networked_face_from_world(world, local_face_entity, next_palette_color_entity);
+
+            return vec![
+                IconAction::SelectShape(deselected_entity),
+                IconAction::DeleteFace(local_face_entity),
             ];
         }
     }

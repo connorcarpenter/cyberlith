@@ -5,14 +5,14 @@ use bevy_ecs::{component::Component, entity::Entity};
 pub struct IconVertexActionData {
     pub(crate) frame_entity: Entity,
     pub(crate) connected_vertices: Vec<(Entity, Option<Entity>)>,
-    pub(crate) face_data: Vec<(Entity, Entity, Entity, bool)>,
+    pub(crate) face_data: Vec<(Entity, Entity, Entity, Option<Entity>)>,
 }
 
 impl IconVertexActionData {
     pub fn new(
         frame_entity: Entity,
         connected_vertices: Vec<(Entity, Option<Entity>)>,
-        face_data: Vec<(Entity, Entity, Entity, bool)>,
+        face_data: Vec<(Entity, Entity, Entity, Option<Entity>)>,
     ) -> Self {
         Self {
             frame_entity,

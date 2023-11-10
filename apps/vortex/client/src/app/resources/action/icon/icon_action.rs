@@ -16,7 +16,7 @@ use crate::app::{
         shape_data::CanvasShape,
     },
 };
-use crate::app::resources::action::icon::{delete_frame, insert_frame, move_frame, select_frame};
+use crate::app::resources::action::icon::{delete_frame, edit_color, insert_frame, move_frame, select_frame};
 
 #[derive(Clone)]
 pub enum IconAction {
@@ -28,13 +28,19 @@ pub enum IconAction {
     DeleteVertex(Entity, Option<(Entity, CanvasShape)>),
     // Move Vertex (vertex Entity, Old Position, New Position)
     MoveVertex(Entity, Vec2, Vec2, bool),
-    // Create Edge (frame entity, vertex start entity, vertex end entity, shape to select, Option<Vec<(other vertex entity to make a face with, old local face entity it was associated with)>>, Option<(older edge entity)>)
+    // Create Edge
     CreateEdge(
+        // frame entity
         Entity,
+        // vertex start entity
         Entity,
+        // vertex end entity
         Entity,
+        // shape to select
         (Entity, CanvasShape),
-        Option<Vec<(Entity, Entity, bool)>>,
+        //Option<Vec<(other vertex entity to make a face with, old local face entity it was associated with, old palette color entity for face)>>>
+        Option<Vec<(Entity, Entity, Option<Entity>)>>,
+        //Option<older edge entity>
         Option<Entity>,
     ),
     // Delete Edge (edge entity, optional vertex entity to select after delete)
@@ -55,8 +61,6 @@ pub enum IconAction {
     // colors
     // 2D face entity, new palette color entity (or None to destroy)
     EditColor(Entity, Option<Entity>),
-    // new palette color entity (or None to destroy)
-    EditBckgColor(Entity),
 }
 
 pub enum IconActionType {
@@ -72,7 +76,6 @@ pub enum IconActionType {
     DeleteFrame,
     MoveFrame,
     EditColor,
-    EditBckgColor,
 }
 
 impl IconAction {
@@ -90,7 +93,6 @@ impl IconAction {
             Self::DeleteFrame(_, _) => IconActionType::DeleteFrame,
             Self::MoveFrame(_, _, _) => IconActionType::MoveFrame,
             Self::EditColor(_, _) => IconActionType::EditColor,
-            Self::EditBckgColor(_) => IconActionType::EditBckgColor,
         }
     }
 
@@ -98,24 +100,23 @@ impl IconAction {
         self,
         world: &mut World,
         icon_manager: &mut IconManager,
-        tab_file_entity: Entity,
+        current_file_entity: Entity,
         action_stack: &mut ActionStack<Self>,
     ) -> Vec<Self> {
         let action_type = self.get_type();
         match action_type {
-            IconActionType::SelectShape => select_shape::execute(world, icon_manager, self),
-            IconActionType::CreateVertex => create_vertex::execute(world, icon_manager, action_stack, tab_file_entity, self),
+            IconActionType::SelectShape => select_shape::execute(world, icon_manager, current_file_entity, self),
+            IconActionType::CreateVertex => create_vertex::execute(world, icon_manager, action_stack, current_file_entity, self),
             IconActionType::DeleteVertex => delete_vertex::execute(world, icon_manager, self),
             IconActionType::MoveVertex => move_vertex::execute(world, icon_manager, self),
-            IconActionType::CreateEdge => create_edge::execute(world, icon_manager, action_stack, tab_file_entity, self),
+            IconActionType::CreateEdge => create_edge::execute(world, icon_manager, action_stack, current_file_entity, self),
             IconActionType::DeleteEdge => delete_edge::execute(world, icon_manager, self),
             IconActionType::DeleteFace => delete_face::execute(world, icon_manager, self),
             IconActionType::SelectFrame => select_frame::execute(world, icon_manager, self),
             IconActionType::InsertFrame => insert_frame::execute(world, icon_manager, self),
             IconActionType::DeleteFrame => delete_frame::execute(world, icon_manager, self),
             IconActionType::MoveFrame => move_frame::execute(world, icon_manager, self),
-            IconActionType::EditColor => todo!(),
-            IconActionType::EditBckgColor => todo!(),
+            IconActionType::EditColor => edit_color::execute(world, icon_manager, self),
         }
     }
 

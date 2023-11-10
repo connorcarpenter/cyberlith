@@ -10,6 +10,7 @@ mod delete_frame;
 mod insert_frame;
 mod move_frame;
 mod select_frame;
+mod edit_color;
 
 pub use icon_action::*;
 pub use select_shape::*;
