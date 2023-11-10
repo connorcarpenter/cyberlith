@@ -45,7 +45,15 @@ impl IconToolbar {
                 });
         } else {
             world.resource_scope(|world, mut icon_manager: Mut<IconManager>| {
-                Self::posing_render_sidebar(ui, world, &mut icon_manager, current_file_entity);
+                if let Some(icon_action) = Self::meshing_render_sidebar(ui, world, &mut icon_manager, current_file_entity) {
+                    world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                        tab_manager.current_tab_execute_icon_action(
+                            world,
+                            &mut icon_manager,
+                            icon_action,
+                        );
+                    });
+                }
             });
         }
     }
@@ -137,7 +145,7 @@ impl IconToolbar {
         let _response = Toolbar::button(ui, "🗑", "Delete selected shape", true);
     }
 
-    fn posing_render_sidebar(
+    fn meshing_render_sidebar(
         ui: &mut Ui,
         world: &mut World,
         icon_manager: &mut IconManager,
@@ -233,9 +241,6 @@ impl IconToolbar {
                                         ui.painter().rect_stroke(rect, 0.0, (2.0, Color32::WHITE));
                                     } else if response.clicked_by(PointerButton::Primary) {
                                         color_index_picked = Some((color_index, *palette_color_entity, PointerButton::Primary));
-                                    }
-                                    if response.clicked_by(PointerButton::Secondary) {
-                                        color_index_picked = Some((color_index, *palette_color_entity, PointerButton::Secondary));
                                     }
                                 }
                             }

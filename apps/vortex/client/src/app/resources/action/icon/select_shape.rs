@@ -1,6 +1,7 @@
 use bevy_ecs::{
     prelude::{Commands, Entity, World},
     system::{Query, SystemState, Res},
+    event::EventWriter,
 };
 use bevy_log::info;
 
@@ -8,9 +9,9 @@ use naia_bevy_client::{Client, CommandsExt};
 
 use vortex_proto::components::{FileExtension, IconFace};
 
-use crate::app::resources::{
+use crate::app::{events::ShapeColorResyncEvent, resources::{
     action::icon::IconAction, icon_manager::IconManager, shape_data::CanvasShape, file_manager::FileManager, palette_manager::PaletteManager
-};
+}};
 
 pub(crate) fn execute(
     world: &mut World,
@@ -69,10 +70,12 @@ pub(crate) fn execute(
             let mut system_state: SystemState<(
                 Client,
                 Query<&mut IconFace>,
+                EventWriter<ShapeColorResyncEvent>,
             )> = SystemState::new(world);
             let (
                 client,
                 mut face_q,
+                mut shape_color_resync_event_writer,
             ) = system_state.get_mut(world);
 
             // edit face color
@@ -86,6 +89,8 @@ pub(crate) fn execute(
             face_component
                 .palette_color_entity
                 .set(&client, &next_palette_color_entity);
+
+            shape_color_resync_event_writer.send(ShapeColorResyncEvent);
 
             return vec![
                 IconAction::SelectShape(deselected_entity),
