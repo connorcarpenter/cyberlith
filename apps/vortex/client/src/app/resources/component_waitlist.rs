@@ -35,6 +35,7 @@ pub enum ComponentWaitlistInsert {
     VertexRoot,
     Edge(Entity, Entity),
     Face(Entity, Entity, Entity),
+    IconFace(Entity, Entity, Entity, Entity),
     EdgeAngle(f32),
     NetTransform,
     SkinOrSceneEntity(Entity, NetTransformEntityType),
@@ -59,7 +60,8 @@ enum ComponentData {
     NetTransform(Option<String>),
     IconVertex(Entity),
     IconEdge(Entity, Entity, Entity),
-    IconFace(Entity, Entity, Entity, Entity),
+    // frame entity, color entity, vertex a, vertex b, vertex c
+    IconFace(Entity, Entity, Entity, Entity, Entity),
 }
 
 impl ComponentData {
@@ -71,7 +73,7 @@ impl ComponentData {
             ComponentData::NetTransform(_) => ComponentType::NetTransform,
             ComponentData::IconVertex(_) => ComponentType::Vertex,
             ComponentData::IconEdge(_, _, _) => ComponentType::Edge,
-            ComponentData::IconFace(_, _, _, _) => ComponentType::Face,
+            ComponentData::IconFace(_, _, _, _, _) => ComponentType::Face,
         }
     }
 }
@@ -91,6 +93,7 @@ pub struct ComponentWaitlistEntry {
     skin_or_scene_entity: Option<(Entity, NetTransformEntityType)>,
     shape_name: Option<String>,
     icon_frame_entity: Option<Entity>,
+    icon_color_entity: Option<Entity>,
 }
 
 impl ComponentWaitlistEntry {
@@ -106,6 +109,7 @@ impl ComponentWaitlistEntry {
             skin_or_scene_entity: None,
             shape_name: None,
             icon_frame_entity: None,
+            icon_color_entity: None,
         }
     }
 
@@ -135,7 +139,13 @@ impl ComponentWaitlistEntry {
                 return self.file_entity.is_some() && self.edge_entities.is_some() && self.icon_frame_entity.is_some();
             }
             (Some(FileExtension::Icon), Some(ComponentType::Face)) => {
-                self.file_entity.is_some() && self.face_entities.is_some() && self.icon_frame_entity.is_some()
+                info!("checking icon face. file_entity: {:?}, face_entities: {:?}, icon_frame_entity: {:?}, icon_color_entity: {:?}",
+                    self.file_entity,
+                    self.face_entities,
+                    self.icon_frame_entity,
+                    self.icon_color_entity,
+                );
+                self.file_entity.is_some() && self.face_entities.is_some() && self.icon_frame_entity.is_some() && self.icon_color_entity.is_some()
             }
             (Some(FileExtension::Model), Some(ComponentType::NetTransform)) => {
                 return self.file_entity.is_some()
@@ -196,6 +206,18 @@ impl ComponentWaitlistEntry {
         self.face_entities = Some((vertex_a, vertex_b, vertex_c));
     }
 
+    fn set_icon_face(
+        &mut self,
+        color_entity: Entity,
+        vertex_a: Entity,
+        vertex_b: Entity,
+        vertex_c: Entity,
+    ) {
+        self.component_type = Some(ComponentType::Face);
+        self.face_entities = Some((vertex_a, vertex_b, vertex_c));
+        self.icon_color_entity = Some(color_entity);
+    }
+
     fn set_transform(&mut self) {
         self.component_type = Some(ComponentType::NetTransform);
     }
@@ -253,7 +275,7 @@ impl ComponentWaitlistEntry {
             (FileExtension::Icon, ComponentType::Face) => {
                 let (vertex_a, vertex_b, vertex_c) =
                     self.face_entities.unwrap();
-                ComponentData::IconFace(self.icon_frame_entity.unwrap(), vertex_a, vertex_b, vertex_c)
+                ComponentData::IconFace(self.icon_frame_entity.unwrap(), self.icon_color_entity.unwrap(), vertex_a, vertex_b, vertex_c)
             }
             (_, _) => {
                 panic!("");
@@ -386,6 +408,11 @@ impl ComponentWaitlist {
                 self.get_mut(&entity)
                     .unwrap()
                     .set_face(vertex_a, vertex_b, vertex_c);
+            }
+            ComponentWaitlistInsert::IconFace(color_entity, vertex_a, vertex_b, vertex_c) => {
+                self.get_mut(&entity)
+                    .unwrap()
+                    .set_icon_face(color_entity, vertex_a, vertex_b, vertex_c);
             }
             ComponentWaitlistInsert::SkinOrSceneEntity(
                 skin_or_scene_entity,
@@ -807,7 +834,7 @@ impl ComponentWaitlist {
             }
             (
                 FileExtension::Icon,
-                ComponentData::IconFace(frame_entity, vertex_a, vertex_b, vertex_c),
+                ComponentData::IconFace(frame_entity, color_entity, vertex_a, vertex_b, vertex_c),
             ) => {
                 let Some(icon_manager) = icon_manager_opt else {
                     panic!("icon manager not available");

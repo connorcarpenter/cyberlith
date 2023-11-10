@@ -25,7 +25,8 @@ enum ContentEntityTypeData {
     Frame,
     Vertex,
     Edge(Entity, Entity),
-    Face(usize, u8, Entity, Entity, Entity),
+    // face index, palette index, frame entity, vertex a, vertex b, vertex c
+    Face(usize, u8, Entity, Entity, Entity, Entity),
 }
 
 #[derive(Debug, Clone)]
@@ -140,6 +141,9 @@ impl IconFrameActionData {
 
     fn complete_faces(&mut self) {
         let face_list = std::mem::take(&mut self.face_list);
+
+        info!("writing face list: {:?}", face_list);
+
         for face_info_opt in face_list {
             let Some(face_info) = face_info_opt else {
                 panic!("face_list contains None");
@@ -666,6 +670,7 @@ impl IconReader {
                                     ContentEntityTypeData::Face(
                                         face_index as usize,
                                         palette_color_index,
+                                        frame_entity,
                                         vertex_a_entity,
                                         vertex_b_entity,
                                         vertex_c_entity,
@@ -748,9 +753,10 @@ impl IconReader {
                         ContentEntityData::new_icon_shape(ShapeType::Edge),
                     );
                 }
-                ContentEntityTypeData::Face(index, palette_index, vert_a, vert_b, vert_c) => {
+                ContentEntityTypeData::Face(index, palette_index, frame_entity, vert_a, vert_b, vert_c) => {
                     icon_manager.on_create_face(
                         file_entity,
+                        &frame_entity,
                         Some(index),
                         entity,
                         vert_a,

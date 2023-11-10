@@ -58,6 +58,7 @@ impl IconEdgeData {
 
 pub struct IconFaceData {
     file_entity: Entity,
+    frame_entity: Entity,
     face_index: usize,
     vertex_a: Entity,
     vertex_b: Entity,
@@ -67,6 +68,7 @@ pub struct IconFaceData {
 impl IconFaceData {
     pub fn new(
         file_entity: Entity,
+        frame_entity: Entity,
         face_index: usize,
         vertex_a: Entity,
         vertex_b: Entity,
@@ -74,6 +76,7 @@ impl IconFaceData {
     ) -> Self {
         Self {
             file_entity,
+            frame_entity,
             face_index,
             vertex_a,
             vertex_b,
@@ -184,8 +187,8 @@ pub struct IconManager {
     edges: HashMap<Entity, IconEdgeData>,
     // face entity -> connected vertices
     faces: HashMap<Entity, IconFaceData>,
-    // file entity -> face entity list
-    file_face_indices: HashMap<Entity, Vec<Entity>>,
+    // frame entity -> face entity list
+    frame_face_indices: HashMap<Entity, Vec<Entity>>,
     // file entity -> file frame data
     file_frame_data: HashMap<Entity, FileFrameData>,
     // frame_entity -> file_entity
@@ -198,7 +201,7 @@ impl Default for IconManager {
             vertices: HashMap::new(),
             edges: HashMap::new(),
             faces: HashMap::new(),
-            file_face_indices: HashMap::new(),
+            frame_face_indices: HashMap::new(),
             file_frame_data: HashMap::new(),
             frames: HashMap::new(),
         }
@@ -260,6 +263,7 @@ impl IconManager {
     pub fn on_create_face(
         &mut self,
         file_entity: &Entity,
+        frame_entity: &Entity,
         old_index_opt: Option<usize>,
         face_entity: Entity,
         vertex_a: Entity,
@@ -267,11 +271,11 @@ impl IconManager {
         vertex_c: Entity,
     ) {
         // assign index
-        let face_index = self.assign_index_to_new_face(file_entity, old_index_opt, &face_entity);
+        let face_index = self.assign_index_to_new_face(frame_entity, old_index_opt, &face_entity);
 
         self.faces.insert(
             face_entity,
-            IconFaceData::new(*file_entity, face_index, vertex_a, vertex_b, vertex_c),
+            IconFaceData::new(*file_entity, *frame_entity, face_index, vertex_a, vertex_b, vertex_c),
         );
 
         // add faces to vertices
@@ -332,20 +336,20 @@ impl IconManager {
 
     fn assign_index_to_new_face(
         &mut self,
-        file_entity: &Entity,
+        frame_entity: &Entity,
         old_index_opt: Option<usize>,
-        face_3d_entity: &Entity,
+        net_face_entity: &Entity,
     ) -> usize {
         info!(
             "assign_index_to_new_face(entity: `{:?}`, index: {:?})",
-            face_3d_entity, old_index_opt
+            net_face_entity, old_index_opt
         );
-        if !self.file_face_indices.contains_key(file_entity) {
-            self.file_face_indices.insert(*file_entity, Vec::new());
+        if !self.frame_face_indices.contains_key(frame_entity) {
+            self.frame_face_indices.insert(*frame_entity, Vec::new());
         }
-        let file_face_indices = self.file_face_indices.get_mut(file_entity).unwrap();
+        let frame_face_indices = self.frame_face_indices.get_mut(frame_entity).unwrap();
 
-        let new_index = file_face_indices.len();
+        let new_index = frame_face_indices.len();
 
         if let Some(old_index) = old_index_opt {
             if new_index != old_index {
@@ -356,7 +360,7 @@ impl IconManager {
             }
         }
 
-        file_face_indices.push(*face_3d_entity);
+        frame_face_indices.push(*net_face_entity);
 
         new_index
     }
@@ -375,12 +379,12 @@ impl IconManager {
         };
 
         // remove face from file face list
-        let file_entity = face_data.file_entity;
+        let frame_entity = face_data.frame_entity;
         let face_index = face_data.face_index;
-        let file_face_indices = self.file_face_indices.get_mut(&file_entity).unwrap();
-        file_face_indices.remove(face_index);
-        for i in face_index..file_face_indices.len() {
-            let face_entity = file_face_indices[i];
+        let frame_face_indices = self.frame_face_indices.get_mut(&frame_entity).unwrap();
+        frame_face_indices.remove(face_index);
+        for i in face_index..frame_face_indices.len() {
+            let face_entity = frame_face_indices[i];
             let face_data = self.faces.get_mut(&face_entity).unwrap();
             face_data.face_index = i;
         }

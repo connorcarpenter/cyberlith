@@ -27,8 +27,8 @@ pub enum ComponentWaitlistInsert {
     VertexRoot,
     //// parent, child
     Edge(Entity, Entity),
-    //// (vertex_a, vertex_b, vertex_c)
-    Face(Entity, Entity, Entity),
+    //// (option<FrameEntity>, vertex_a, vertex_b, vertex_c)
+    Face(Option<Entity>, Entity, Entity, Entity),
     ////
     NetTransform,
     ////
@@ -60,8 +60,8 @@ enum ComponentData {
     IconVertex(ProjectKey, FileKey),
     // (ProjectKey, FileKey, Start, End)
     IconEdge(ProjectKey, FileKey, Entity, Entity),
-    // (ProjectKey, FileKey, VertexA, VertexB, VertexC, EdgeA, EdgeB, EdgeC)
-    IconFace(ProjectKey, FileKey, Entity, Entity, Entity),
+    // (ProjectKey, FileKey, FrameEntity, VertexA, VertexB, VertexC, EdgeA, EdgeB, EdgeC)
+    IconFace(ProjectKey, FileKey, Entity, Entity, Entity, Entity),
     //
     ModelTransform(ProjectKey, FileKey),
     //
@@ -76,7 +76,8 @@ pub struct ComponentWaitlistEntry {
 
     edge_and_parent_opt: Option<Option<(Entity, Entity)>>,
     edge_entities: Option<(Entity, Entity)>,
-    face_entities: Option<(Entity, Entity, Entity)>,
+    // Option<(Option<frame entity>, vertex a entity, vertex b entity, vertex c entity)
+    face_entities: Option<(Option<Entity>, Entity, Entity, Entity)>,
 
     skin_or_scene_entity: bool,
     shape_name: bool,
@@ -155,8 +156,8 @@ impl ComponentWaitlistEntry {
         self.edge_entities = Some((start, end));
     }
 
-    fn set_face_entities(&mut self, vertex_a: Entity, vertex_b: Entity, vertex_c: Entity) {
-        self.face_entities = Some((vertex_a, vertex_b, vertex_c));
+    fn set_face_entities(&mut self, frame_entity: Option<Entity>, vertex_a: Entity, vertex_b: Entity, vertex_c: Entity) {
+        self.face_entities = Some((frame_entity, vertex_a, vertex_b, vertex_c));
     }
 
     fn set_component_type(&mut self, component_type: ComponentType) {
@@ -205,7 +206,9 @@ impl ComponentWaitlistEntry {
                 return ComponentData::MeshEdge(project_key, file_key, start, end);
             }
             (Some(FileExtension::Mesh), Some(ComponentType::Face)) => {
-                let (vertex_a, vertex_b, vertex_c) = self.face_entities.unwrap();
+                let (None, vertex_a, vertex_b, vertex_c) = self.face_entities.unwrap() else {
+                    panic!("invalid");
+                };
                 return ComponentData::MeshFace(
                     project_key,
                     file_key,
@@ -228,10 +231,13 @@ impl ComponentWaitlistEntry {
                 return ComponentData::IconEdge(project_key, file_key, start, end);
             }
             (Some(FileExtension::Icon), Some(ComponentType::Face)) => {
-                let (vertex_a, vertex_b, vertex_c) = self.face_entities.unwrap();
+                let (Some(frame_entity), vertex_a, vertex_b, vertex_c) = self.face_entities.unwrap() else {
+                    panic!("invalid");
+                };
                 return ComponentData::IconFace(
                     project_key,
                     file_key,
+                    frame_entity,
                     vertex_a,
                     vertex_b,
                     vertex_c,
@@ -341,13 +347,13 @@ impl ComponentWaitlist {
                 //     possibly_ready_entities
                 // );
             }
-            ComponentWaitlistInsert::Face(vertex_a, vertex_b, vertex_c) => {
+            ComponentWaitlistInsert::Face(frame_entity_opt, vertex_a, vertex_b, vertex_c) => {
                 if !self.contains_key(entity) {
                     self.insert_incomplete(*entity, ComponentWaitlistEntry::new());
                 }
                 let entry = self.get_mut(entity).unwrap();
                 entry.set_component_type(ComponentType::Face);
-                entry.set_face_entities(vertex_a, vertex_b, vertex_c);
+                entry.set_face_entities(frame_entity_opt, vertex_a, vertex_b, vertex_c);
             }
             ComponentWaitlistInsert::FileType(file_type) => {
                 if !self.contains_key(entity) {
@@ -583,13 +589,14 @@ impl ComponentWaitlist {
                 icon_manager.on_create_edge(start, entity, end);
                 (project_key, file_key, ContentEntityData::new_icon_shape(ShapeType::Edge))
             }
-            ComponentData::IconFace(project_key, file_key, vertex_a, vertex_b, vertex_c) => {
+            ComponentData::IconFace(project_key, file_key, frame_entity, vertex_a, vertex_b, vertex_c) => {
                 let Some(icon_manager) = icon_manager_opt else {
                     panic!("icon manager not available");
                 };
                 let file_entity = git_manager.file_entity(&project_key, &file_key).unwrap();
                 icon_manager.on_create_face(
                     &file_entity,
+                    &frame_entity,
                     None,
                     entity,
                     vertex_a,

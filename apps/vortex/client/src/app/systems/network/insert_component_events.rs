@@ -472,13 +472,10 @@ pub fn insert_face_events(
     }
 }
 
-pub fn insert_icon_events(
+pub fn insert_icon_vertex_events(
     mut commands: Commands,
     client: Client,
     mut vertex_events: EventReader<InsertComponentEvent<IconVertex>>,
-    mut edge_events: EventReader<InsertComponentEvent<IconEdge>>,
-    mut face_events: EventReader<InsertComponentEvent<IconFace>>,
-    mut frame_events: EventReader<InsertComponentEvent<IconFrame>>,
 
     mut camera_manager: ResMut<CameraManager>,
     mut canvas: ResMut<Canvas>,
@@ -488,9 +485,6 @@ pub fn insert_icon_events(
     mut component_waitlist: ResMut<ComponentWaitlist>,
 
     vertex_q: Query<&IconVertex>,
-    edge_q: Query<&IconEdge>,
-    face_q: Query<&IconFace>,
-    frame_q: Query<&IconFrame>,
 ) {
     // on Vertex Insert Event
     for event in vertex_events.iter() {
@@ -517,7 +511,22 @@ pub fn insert_icon_events(
             &[ComponentWaitlistInsert::Vertex, ComponentWaitlistInsert::FileType(FileExtension::Icon), ComponentWaitlistInsert::FrameEntity(frame_entity)],
         );
     }
+}
 
+pub fn insert_icon_edge_events(
+    mut commands: Commands,
+    client: Client,
+    mut edge_events: EventReader<InsertComponentEvent<IconEdge>>,
+
+    mut camera_manager: ResMut<CameraManager>,
+    mut canvas: ResMut<Canvas>,
+    mut icon_manager: ResMut<IconManager>,
+    mut meshes: ResMut<Assets<CpuMesh>>,
+    mut materials: ResMut<Assets<CpuMaterial>>,
+    mut component_waitlist: ResMut<ComponentWaitlist>,
+
+    edge_q: Query<&IconEdge>,
+) {
     // on Edge Insert Event
     for event in edge_events.iter() {
         let edge_entity = event.entity;
@@ -552,7 +561,24 @@ pub fn insert_icon_events(
             &[ComponentWaitlistInsert::Edge(start_entity, end_entity), ComponentWaitlistInsert::FileType(FileExtension::Icon), ComponentWaitlistInsert::FrameEntity(frame_entity)],
         );
     }
+}
 
+pub fn insert_icon_face_events(
+    mut commands: Commands,
+    client: Client,
+    mut face_events: EventReader<InsertComponentEvent<IconFace>>,
+
+    mut camera_manager: ResMut<CameraManager>,
+    mut canvas: ResMut<Canvas>,
+    mut icon_manager: ResMut<IconManager>,
+    mut meshes: ResMut<Assets<CpuMesh>>,
+    mut materials: ResMut<Assets<CpuMaterial>>,
+    mut component_waitlist: ResMut<ComponentWaitlist>,
+    mut shape_color_resync_events: EventWriter<ShapeColorResyncEvent>,
+
+    vertex_q: Query<&IconVertex>,
+    face_q: Query<&IconFace>,
+) {
     // on Face Insert Event
     for event in face_events.iter() {
         // handle face
@@ -562,6 +588,7 @@ pub fn insert_icon_events(
 
         let face = face_q.get(face_entity).unwrap();
         let frame_entity = face.frame_entity.get(&client).unwrap();
+        let palette_color_entity = face.palette_color_entity.get(&client).unwrap();
         let Some(vertex_a_entity) = face.vertex_a.get(&client) else {
             warn!("IconFace component of entity: `{:?}` has no entity", face_entity);
             continue;
@@ -590,17 +617,28 @@ pub fn insert_icon_events(
             Some(&vertex_q),
             &face_entity,
             &[
-                ComponentWaitlistInsert::Face(
+                ComponentWaitlistInsert::IconFace(
+                    palette_color_entity,
                     vertex_a_entity,
                     vertex_b_entity,
                     vertex_c_entity,
-                    ),
+                ),
                 ComponentWaitlistInsert::FileType(FileExtension::Icon),
                 ComponentWaitlistInsert::FrameEntity(frame_entity),
             ],
         );
-    }
 
+        shape_color_resync_events.send(ShapeColorResyncEvent);
+    }
+}
+
+pub fn insert_icon_frame_events(
+    client: Client,
+    mut frame_events: EventReader<InsertComponentEvent<IconFrame>>,
+    mut icon_manager: ResMut<IconManager>,
+
+    frame_q: Query<&IconFrame>,
+) {
     // on IconFrame Insert Event
     for event in frame_events.iter() {
         let frame_entity = event.entity;

@@ -310,7 +310,7 @@ pub fn insert_face_component_events(
             &mut Some(&mut shape_manager),
             &mut None,
             &entity,
-            &[ComponentWaitlistInsert::Face(vertex_a, vertex_b, vertex_c), ComponentWaitlistInsert::FileType(FileExtension::Mesh)],
+            &[ComponentWaitlistInsert::Face(None, vertex_a, vertex_b, vertex_c), ComponentWaitlistInsert::FileType(FileExtension::Mesh)],
         );
     }
 }
@@ -465,6 +465,7 @@ pub fn insert_icon_component_events(
         let entity = event.entity;
         let face = face_q.get(entity).unwrap();
 
+        let frame_entity = face.frame_entity.get(&server).unwrap();
         let vertex_a = face.vertex_a.get(&server).unwrap();
         let vertex_b = face.vertex_b.get(&server).unwrap();
         let vertex_c = face.vertex_c.get(&server).unwrap();
@@ -480,7 +481,7 @@ pub fn insert_icon_component_events(
             &mut None,
             &mut Some(&mut icon_manager),
             &entity,
-            &[ComponentWaitlistInsert::Face(vertex_a, vertex_b, vertex_c), ComponentWaitlistInsert::FileType(FileExtension::Icon)],
+            &[ComponentWaitlistInsert::Face(Some(frame_entity),vertex_a, vertex_b, vertex_c), ComponentWaitlistInsert::FileType(FileExtension::Icon)],
         );
     }
 

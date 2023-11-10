@@ -195,7 +195,7 @@ fn post_process_loaded_networked_entities(
                     _ => panic!("File extension {:?} not implemented", file_extension),
                 }
             }
-            ContentEntityData::IconShape(_) => {
+            ContentEntityData::IconShape(_) | ContentEntityData::IconFace(_) => {
                 // add file ownership
                 let mut file_ownership_component = OwnedByFile::new();
                 file_ownership_component
@@ -263,7 +263,7 @@ pub fn despawn_file_content_entities(
             (FileExtension::Icon, ContentEntityData::IconShape(ShapeType::Face)) => {
                 panic!("incorrect data type");
             },
-            (FileExtension::Icon, ContentEntityData::IconFace(palette_color_opt)) => {
+            (FileExtension::Icon, ContentEntityData::IconFace(_palette_color_opt)) => {
                 icon_manager.deregister_face(entity);
             },
             (FileExtension::Icon, ContentEntityData::Frame) => {

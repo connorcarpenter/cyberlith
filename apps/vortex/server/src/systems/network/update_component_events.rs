@@ -6,7 +6,7 @@ use bevy_log::info;
 
 use naia_bevy_server::{events::UpdateComponentEvents, CommandsExt, EntityAuthStatus, Server};
 
-use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, EdgeAngle, FaceColor, FileSystemChild, FileSystemEntry, IconFrame, IconVertex, NetTransform, PaletteColor, ShapeName, Vertex3d};
+use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, EdgeAngle, FaceColor, FileSystemChild, FileSystemEntry, IconFace, IconFrame, IconVertex, NetTransform, PaletteColor, ShapeName, Vertex3d};
 
 use crate::resources::{GitManager, UserManager};
 
@@ -41,6 +41,10 @@ pub fn update_component_events(
         }
         // on IconVertex Update Event
         for (_, entity) in events.read::<IconVertex>() {
+            modified_content_entities.push(entity);
+        }
+        // on IconFace Update Event
+        for (_, entity) in events.read::<IconFace>() {
             modified_content_entities.push(entity);
         }
         // on IconFrame Update Event
