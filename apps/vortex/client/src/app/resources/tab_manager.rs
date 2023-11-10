@@ -867,29 +867,23 @@ fn file_ext_specific_sync_tabs_shape_colors(
                 Res<FileManager>,
                 Res<IconManager>,
                 Res<PaletteManager>,
-                Res<SkinManager>,
                 ResMut<Assets<CpuMaterial>>,
                 Query<&mut Handle<CpuMaterial>, (With<IconLocalFace>, Without<IconFace>)>,
                 Query<
-                    (Entity, &mut Handle<CpuMaterial>, &OwnedByFileLocal),
-                    (With<IconFace>, Without<IconLocalFace>),
+                    (Entity, &IconFace, &mut Handle<CpuMaterial>, &OwnedByFileLocal),
+                    Without<IconLocalFace>,
                 >,
                 Query<&PaletteColor>,
-                Query<&BackgroundSkinColor>,
-                Query<&FaceColor>,
             )> = SystemState::new(world);
             let (
                 client,
                 file_manager,
                 icon_manager,
                 palette_manager,
-                skin_manager,
                 mut materials,
                 mut local_face_q,
                 mut net_face_q,
                 palette_color_q,
-                bckg_color_q,
-                face_color_q,
             ) = system_state.get_mut(world);
 
             set_icon_face_colors(
@@ -897,12 +891,9 @@ fn file_ext_specific_sync_tabs_shape_colors(
                 &client,
                 &file_manager,
                 &palette_manager,
-                &skin_manager,
                 &mut materials,
                 &mut net_face_q,
                 &palette_color_q,
-                &bckg_color_q,
-                &face_color_q,
                 &mut Some((&icon_manager, &mut local_face_q)),
             );
         }
@@ -1021,63 +1012,38 @@ fn set_icon_face_colors(
     client: &Client,
     file_manager: &FileManager,
     palette_manager: &PaletteManager,
-    skin_manager: &SkinManager,
     materials: &mut Assets<CpuMaterial>,
     net_face_q: &mut Query<
-        (Entity, &mut Handle<CpuMaterial>, &OwnedByFileLocal),
-        (With<IconFace>, Without<IconLocalFace>),
+        (Entity, &IconFace, &mut Handle<CpuMaterial>, &OwnedByFileLocal),
+        Without<IconLocalFace>,
     >,
     palette_color_q: &Query<&PaletteColor>,
-    bckg_color_q: &Query<&BackgroundSkinColor>,
-    face_color_q: &Query<&FaceColor>,
     local_face_opt: &mut Option<(
         &IconManager,
         &mut Query<&mut Handle<CpuMaterial>, (With<IconLocalFace>, Without<IconFace>)>,
     )>,
 ) {
-    // get background color
-    let background_index = skin_manager.background_color_index(
-        client,
-        icon_file_entity,
-        bckg_color_q,
-        palette_color_q,
-    );
     let Some(palette_file_entity) = file_manager.file_get_dependency(icon_file_entity, FileExtension::Palette) else {
         return;
     };
     let Some(colors) = palette_manager.get_file_colors(&palette_file_entity) else {
         panic!("no colors for given file");
     };
-    let Some(background_color_entity) = colors.get(background_index).unwrap() else {
-        return;
-    };
-    let background_color = palette_color_q.get(*background_color_entity).unwrap();
-    let bckg_mat_handle = materials.add(Color::new_opaque(
-        *background_color.r,
-        *background_color.g,
-        *background_color.b,
-    ));
 
-    for (net_face_entity, mut net_face_material, owned_by_file) in net_face_q.iter_mut() {
+    for (net_face_entity, icon_face, mut net_face_material, owned_by_file) in net_face_q.iter_mut() {
         if owned_by_file.file_entity != *icon_file_entity {
             continue;
         }
 
         let new_mat_handle;
-        if let Some(face_color_entity) = skin_manager.face_to_color_entity(&net_face_entity) {
-            // use face color
-            let face_color = face_color_q.get(*face_color_entity).unwrap();
-            let palette_color_entity = face_color.palette_color_entity.get(client).unwrap();
-            let palette_color = palette_color_q.get(palette_color_entity).unwrap();
-            new_mat_handle = materials.add(Color::new_opaque(
-                *palette_color.r,
-                *palette_color.g,
-                *palette_color.b,
-            ));
-        } else {
-            // use background color
-            new_mat_handle = bckg_mat_handle;
-        }
+
+        let palette_color_entity = icon_face.palette_color_entity.get(client).unwrap();
+        let palette_color = palette_color_q.get(palette_color_entity).unwrap();
+        new_mat_handle = materials.add(Color::new_opaque(
+            *palette_color.r,
+            *palette_color.g,
+            *palette_color.b,
+        ));
 
         *net_face_material = new_mat_handle;
 

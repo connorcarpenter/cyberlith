@@ -5,6 +5,7 @@ use bevy_ecs::{
     entity::Entity,
     system::{Commands, Query, Res, ResMut, Resource, SystemState},
     world::{Mut, World},
+    event::EventWriter,
 };
 use bevy_log::{info, warn};
 
@@ -39,6 +40,7 @@ use crate::app::{
         tab_manager::TabManager,
     },
     shapes::{create_2d_edge_line, Line2d},
+    events::ShapeColorResyncEvent,
 };
 
 #[derive(Resource)]
@@ -306,6 +308,7 @@ impl IconManager {
             Query<&IconVertex>,
             Query<&IconLocalFace>,
             Query<&Handle<CpuMesh>>,
+            Query<&Handle<CpuMaterial>>,
             Query<&LocalShape>,
             Query<&mut Transform>,
         )> = SystemState::new(world);
@@ -319,6 +322,7 @@ impl IconManager {
             vertex_q,
             face_q,
             mesh_q,
+            mat_q,
             local_shape_q,
             mut transform_q
         ) = system_state.get_mut(world);
@@ -476,10 +480,11 @@ impl IconManager {
             );
 
             let mesh_handle = mesh_q.get(face_entity).unwrap();
+            let mat_handle = mat_q.get(face_entity).unwrap();
             let mut face_transform = transform_q.get_mut(face_entity).unwrap();
             face_transform.translation = center_translation;
 
-            render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle_light_gray, &face_transform);
+            render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle, &face_transform);
         }
 
         // draw select line & circle
@@ -1528,7 +1533,7 @@ impl IconManager {
                 materials,
                 Vec2::ZERO,
                 FaceIcon2d::SIZE,
-                FaceIcon2d::COLOR,
+                Color::GRAY,
                 Some(1),
             ))
             .insert(self.render_layer)
@@ -1625,13 +1630,15 @@ impl IconManager {
             ResMut<Assets<CpuMesh>>,
             ResMut<Assets<CpuMaterial>>,
             Query<&Transform>,
+            EventWriter<ShapeColorResyncEvent>,
         )> = SystemState::new(world);
         let (
             mut commands,
             mut client,
             mut meshes,
             mut materials,
-            transform_q
+            transform_q,
+            mut shape_color_resync_event_writer,
         ) = system_state.get_mut(world);
 
         self.create_networked_face(
@@ -1646,6 +1653,8 @@ impl IconManager {
             &frame_entity,
             &palette_color_entity,
         );
+
+        shape_color_resync_event_writer.send(ShapeColorResyncEvent);
 
         system_state.apply(world);
     }
