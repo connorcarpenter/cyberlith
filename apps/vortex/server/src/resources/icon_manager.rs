@@ -230,18 +230,6 @@ impl IconManager {
         }
     }
 
-    pub fn face_entity_from_index(
-        &self,
-        file_entity: &Entity,
-        face_index: usize,
-    ) -> Option<Entity> {
-        if let Some(file_face_indices) = self.file_face_indices.get(file_entity) {
-            Some(file_face_indices[face_index])
-        } else {
-            None
-        }
-    }
-
     pub fn on_create_vertex(&mut self, vertex_entity: Entity) {
         // info!("on_create_vertex: {:?} {:?}", entity, parent_opt);
 

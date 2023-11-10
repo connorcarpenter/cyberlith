@@ -261,6 +261,9 @@ pub fn despawn_file_content_entities(
                 icon_manager.deregister_edge(entity);
             },
             (FileExtension::Icon, ContentEntityData::IconShape(ShapeType::Face)) => {
+                panic!("incorrect data type");
+            },
+            (FileExtension::Icon, ContentEntityData::IconFace(palette_color_opt)) => {
                 icon_manager.deregister_face(entity);
             },
             (FileExtension::Icon, ContentEntityData::Frame) => {

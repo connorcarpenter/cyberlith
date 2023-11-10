@@ -17,7 +17,7 @@ use naia_bevy_server::{BigMap, CommandsExt, ReplicationConfig, RoomKey, Server, 
 use vortex_proto::{
     components::{
         BackgroundSkinColor, EntryKind, FaceColor, FileExtension, FileSystemChild, FileSystemEntry,
-        FileSystemRootChild,
+        FileSystemRootChild, IconFace,
     },
     messages::ChangelistMessage,
     resources::FileKey,
@@ -26,7 +26,7 @@ use vortex_proto::{
 use crate::{
     config::GitConfig,
     resources::{
-        project::Project, project::ProjectKey, ContentEntityData, FileEntryValue, IconManager,
+        project::Project, project::ProjectKey, ContentEntityData, FileEntryValue,
         PaletteManager, RollbackResult, ShapeManager, SkinManager, UserManager,
     },
 };
@@ -145,20 +145,20 @@ impl GitManager {
         let mut system_state: SystemState<(
             Server,
             Res<ShapeManager>,
-            Res<IconManager>,
             Res<PaletteManager>,
             ResMut<SkinManager>,
             Query<&mut BackgroundSkinColor>,
             Query<&mut FaceColor>,
+            Query<&mut IconFace>,
         )> = SystemState::new(world);
         let (
             server,
             shape_manager,
-            icon_manager,
             palette_manager,
             mut skin_manager,
             mut bckg_color_q,
             mut face_color_q,
+            mut icon_face_q,
         ) = system_state.get_mut(world);
 
         for (entity, data) in content_entities {
@@ -209,14 +209,6 @@ impl GitManager {
                                 .face_entity_from_index(&mesh_file_entity, face_index as usize)
                                 .unwrap();
                         }
-                        FileExtension::Icon => {
-                            let icon_file_entity = self.file_entity(project_key, file_key).unwrap();
-
-                            // find face_entity from face_index
-                            face_entity = icon_manager
-                                .face_entity_from_index(&icon_file_entity, face_index as usize)
-                                .unwrap();
-                        }
                         _ => panic!("invalid"),
                     }
 
@@ -236,6 +228,28 @@ impl GitManager {
 
                     // register with skin manager
                     skin_manager.on_create_face_color(&face_entity, &entity);
+                }
+                ContentEntityData::IconFace(file_data_opt) => {
+                    let Some(palette_index) = file_data_opt else {
+                        panic!("Could not find file data for entity: {:?}", entity);
+                    };
+
+                    let palette_file_entity = self
+                        .file_find_dependency(project_key, file_key, FileExtension::Palette)
+                        .unwrap();
+
+                    // find palette_color_entity from palette_index
+                    let palette_color_entity = palette_manager
+                        .color_entity_from_index(&palette_file_entity, palette_index as usize)
+                        .unwrap();
+
+                    // set palette_color_entity into IconFace component
+                    let Ok(mut icon_face) = icon_face_q.get_mut(entity) else {
+                        panic!("Could not find face for entity: {:?}", entity);
+                    };
+                    icon_face
+                        .palette_color_entity
+                        .set(&server, &palette_color_entity);
                 }
                 _ => {}
             }

@@ -12,7 +12,7 @@ use naia_bevy_server::{
     UnsignedVariableInteger,
 };
 
-use vortex_proto::{resources::FileKey, components::{FileExtension, IconBackgroundColor, IconEdge, IconFace, IconFrame, IconVertex, PaletteColor, VertexSerdeInt}};
+use vortex_proto::{resources::FileKey, components::{FileExtension, IconEdge, IconFace, IconFrame, IconVertex, PaletteColor, VertexSerdeInt}};
 
 use crate::{
     files::{add_file_dependency,FileWriter, ShapeType},
@@ -22,11 +22,10 @@ use crate::{
 #[derive(Clone)]
 enum ContentEntityTypeData {
     Dependency(FileKey),
-    BackgroundColor(Option<u8>),
     Frame,
     Vertex,
     Edge(Entity, Entity),
-    Face(usize, Entity, Entity, Entity),
+    Face(usize, u8, Entity, Entity, Entity),
 }
 
 #[derive(Debug, Clone)]
@@ -35,8 +34,8 @@ enum IconFrameAction {
     Vertex(i16, i16),
     //// vertex id1, vertex id2 //
     Edge(u16, u16),
-    //// order_index, id1, id2, id3 // (vertex ids) // id4, id5, id6 (edge ids) // TODO: remove order_index?
-    Face(u16, u16, u16, u16, u16, u16, u16),
+    //// order_index, palette color index, id1, id2, id3 // (vertex ids) // id4, id5, id6 (edge ids) // TODO: remove order_index?
+    Face(u16, u8, u16, u16, u16, u16, u16, u16),
 }
 
 #[derive(Serde, Clone, PartialEq)]
@@ -52,8 +51,6 @@ enum IconFrameActionType {
 enum IconAction {
     // path, file_name
     PaletteFile(String, String),
-    // palette color index
-    BackgroundColor(u8),
     // frame
     Frame(Vec<IconFrameAction>),
 }
@@ -62,7 +59,6 @@ enum IconAction {
 enum IconActionType {
     None,
     PaletteFile,
-    BackgroundColor,
     Frame,
 }
 
@@ -111,6 +107,7 @@ impl IconFrameActionData {
     fn add_face(
         &mut self,
         face_index: u16,
+        palette_color_index: u8,
         vertex_a_entity: Entity,
         vertex_b_entity: Entity,
         vertex_c_entity: Entity,
@@ -127,6 +124,7 @@ impl IconFrameActionData {
 
         let face_info = IconFrameAction::Face(
             face_index,
+            palette_color_index,
             vertex_a_id as u16,
             vertex_b_id as u16,
             vertex_c_id as u16,
@@ -166,7 +164,6 @@ impl IconWriter {
         let mut actions = Vec::new();
 
         let mut palette_dependency_key_opt = None;
-        let mut bckg_color_entity = None;
         let mut vertex_entities = Vec::new();
         let mut edge_entities = Vec::new();
         let mut face_entities = Vec::new();
@@ -187,9 +184,6 @@ impl IconWriter {
                         }
                     }
                 }
-                ContentEntityData::BackgroundColor(_) => {
-                    bckg_color_entity = Some(*content_entity);
-                }
                 ContentEntityData::IconShape(ShapeType::Vertex) => {
                     vertex_entities.push(*content_entity);
                 }
@@ -197,6 +191,9 @@ impl IconWriter {
                     edge_entities.push(*content_entity);
                 }
                 ContentEntityData::IconShape(ShapeType::Face) => {
+                    panic!("invalid type");
+                }
+                ContentEntityData::IconFace(_) => {
                     face_entities.push(*content_entity);
                 }
                 ContentEntityData::Frame => {
@@ -218,28 +215,10 @@ impl IconWriter {
             ));
         }
 
-        // Write Background Color
-        if let Some(bckg_entity) = bckg_color_entity {
-            info!("writing background color");
-            let mut system_state: SystemState<(
-                Server,
-                Query<&PaletteColor>,
-                Query<&IconBackgroundColor>,
-            )> = SystemState::new(world);
-            let (server, palette_color_q, bckg_color_q) = system_state.get_mut(world);
-
-            let bckg_color = bckg_color_q.get(bckg_entity).unwrap();
-
-            let palette_entity = bckg_color.palette_color_entity.get(&server).unwrap();
-            let palette_color = palette_color_q.get(palette_entity).unwrap();
-            let palette_color_index = *palette_color.index;
-
-            actions.push(IconAction::BackgroundColor(palette_color_index));
-        }
-
         let mut system_state: SystemState<(
             Server,
             Res<IconManager>,
+            Query<&PaletteColor>,
             Query<&IconVertex>,
             Query<&IconEdge>,
             Query<&IconFace>,
@@ -248,6 +227,7 @@ impl IconWriter {
         let (
             server,
             icon_manager,
+            palette_color_q,
             vertex_q,
             edge_q,
             face_q,
@@ -299,6 +279,7 @@ impl IconWriter {
             };
 
             let frame_entity = face.frame_entity.get(&server).unwrap();
+            let palette_color_entity = face.palette_color_entity.get(&server).unwrap();
             let Ok(frame) = frame_q.get(frame_entity) else {
                 panic!("");
             };
@@ -309,6 +290,8 @@ impl IconWriter {
             let Some(face_index) = icon_manager.get_face_index(&face_entity) else {
                 panic!("face entity {:?} does not have an index!", face_entity);
             };
+            let palette_color = palette_color_q.get(palette_color_entity).unwrap();
+            let palette_color_index = *palette_color.index;
 
             let vertex_a_entity = face.vertex_a.get(&server).unwrap();
             let vertex_b_entity = face.vertex_b.get(&server).unwrap();
@@ -317,7 +300,16 @@ impl IconWriter {
             let edge_b_entity = face.edge_b.get(&server).unwrap();
             let edge_c_entity = face.edge_c.get(&server).unwrap();
 
-            frame_action_data.add_face(face_index as u16, vertex_a_entity, vertex_b_entity, vertex_c_entity, edge_a_entity, edge_b_entity, edge_c_entity);
+            frame_action_data.add_face(
+                face_index as u16,
+                palette_color_index,
+                vertex_a_entity,
+                vertex_b_entity,
+                vertex_c_entity,
+                edge_a_entity,
+                edge_b_entity,
+                edge_c_entity
+            );
         }
 
         for (_, value) in frame_map.iter_mut() {
@@ -351,12 +343,6 @@ impl IconWriter {
                     path.ser(&mut bit_writer);
                     file_name.ser(&mut bit_writer);
                 }
-                IconAction::BackgroundColor(palette_color_index) => {
-                    IconActionType::BackgroundColor.ser(&mut bit_writer);
-
-                    // TODO: could optimize these a bit more .. unlikely to use all these bits
-                    palette_color_index.ser(&mut bit_writer);
-                }
                 IconAction::Frame(frame_actions) => {
 
                     let mut test_face_index = 0;
@@ -388,6 +374,7 @@ impl IconWriter {
                             }
                             IconFrameAction::Face(
                                 face_index,
+                                palette_color_index,
                                 vertex_a,
                                 vertex_b,
                                 vertex_c,
@@ -404,6 +391,8 @@ impl IconWriter {
 
                                 // continue bit
                                 IconFrameActionType::Face.ser(&mut bit_writer);
+
+                                palette_color_index.ser(&mut bit_writer);
 
                                 UnsignedVariableInteger::<6>::from(*vertex_a).ser(&mut bit_writer);
                                 UnsignedVariableInteger::<6>::from(*vertex_b).ser(&mut bit_writer);
@@ -482,10 +471,6 @@ impl IconReader {
                     let file_name = String::de(bit_reader)?;
                     output.push(IconAction::PaletteFile(path, file_name));
                 }
-                IconActionType::BackgroundColor => {
-                    let palette_color_index = u8::de(bit_reader)?;
-                    output.push(IconAction::BackgroundColor(palette_color_index));
-                }
                 IconActionType::Frame => {
 
                     let mut face_index = 0;
@@ -511,6 +496,8 @@ impl IconReader {
                                 frame_output.push(IconFrameAction::Edge(vertex_a, vertex_b));
                             }
                             IconFrameActionType::Face => {
+                                let palette_color_index = u8::de(bit_reader)?;
+
                                 let vertex_a: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
                                 let vertex_b: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
                                 let vertex_c: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
@@ -520,7 +507,7 @@ impl IconReader {
                                 let edge_c: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
 
                                 frame_output.push(IconFrameAction::Face(
-                                    face_index, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c,
+                                    face_index, palette_color_index, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c,
                                 ));
 
                                 face_index += 1;
@@ -565,24 +552,6 @@ impl IconReader {
                         &palette_file_name,
                     );
                     output.push((new_entity, ContentEntityTypeData::Dependency(new_file_key)));
-                }
-                IconAction::BackgroundColor(palette_index) => {
-                    let mut background_color_component = IconBackgroundColor::new();
-                    background_color_component
-                        .owning_file_entity
-                        .set(&server, file_entity);
-
-                    let entity_id = commands
-                        .spawn_empty()
-                        .enable_replication(&mut server)
-                        .configure_replication(ReplicationConfig::Delegated)
-                        .insert(background_color_component)
-                        .id();
-                    info!("spawning background skin color entity {:?}", entity_id);
-                    output.push((
-                        entity_id,
-                        ContentEntityTypeData::BackgroundColor(Some(palette_index)),
-                    ));
                 }
                 IconAction::Frame(frame_actions) => {
 
@@ -656,6 +625,7 @@ impl IconReader {
                             }
                             IconFrameAction::Face(
                                 face_index,
+                                palette_color_index,
                                 vertex_a_index,
                                 vertex_b_index,
                                 vertex_c_index,
@@ -673,7 +643,6 @@ impl IconReader {
 
                                 let mut face_component = IconFace::new();
                                 face_component.frame_entity.set(&server, &frame_entity);
-                                face_component.palette_color_entity.set(&server);
                                 face_component.vertex_a.set(&server, &vertex_a_entity);
                                 face_component.vertex_b.set(&server, &vertex_b_entity);
                                 face_component.vertex_c.set(&server, &vertex_c_entity);
@@ -696,6 +665,7 @@ impl IconReader {
                                     entity_id,
                                     ContentEntityTypeData::Face(
                                         face_index as usize,
+                                        palette_color_index,
                                         vertex_a_entity,
                                         vertex_b_entity,
                                         vertex_c_entity,
@@ -756,12 +726,6 @@ impl IconReader {
                         ContentEntityData::new_dependency(file_key),
                     );
                 }
-                ContentEntityTypeData::BackgroundColor(index) => {
-                    new_content_entities.insert(
-                        entity,
-                        ContentEntityData::new_background_color(index),
-                    );
-                }
                 ContentEntityTypeData::Frame => {
                     new_content_entities.insert(
                         entity,
@@ -784,7 +748,7 @@ impl IconReader {
                         ContentEntityData::new_icon_shape(ShapeType::Edge),
                     );
                 }
-                ContentEntityTypeData::Face(index, vert_a, vert_b, vert_c) => {
+                ContentEntityTypeData::Face(index, palette_index, vert_a, vert_b, vert_c) => {
                     icon_manager.on_create_face(
                         file_entity,
                         Some(index),
@@ -796,7 +760,7 @@ impl IconReader {
 
                     new_content_entities.insert(
                         entity,
-                        ContentEntityData::new_icon_shape(ShapeType::Face),
+                        ContentEntityData::new_icon_face(Some(palette_index)),
                     );
                 }
             }

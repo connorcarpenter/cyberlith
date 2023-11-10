@@ -596,7 +596,7 @@ impl ComponentWaitlist {
                     vertex_b,
                     vertex_c,
                 );
-                (project_key, file_key, ContentEntityData::new_icon_shape(ShapeType::Face))
+                (project_key, file_key, ContentEntityData::new_icon_face(None))
             }
             ComponentData::ModelTransform(project_key, file_key) => {
                 (project_key, file_key, ContentEntityData::new_net_transform())
