@@ -1,4 +1,4 @@
-use naia_serde::{BitReader, BitWrite, ConstBitLength, SerdeErr, SerdeInternal as Serde, SignedInteger, SignedVariableInteger, UnsignedInteger};
+use naia_serde::{BitReader, BitWrite, ConstBitLength, SerdeErr, SerdeInternal as Serde, SignedInteger, SignedVariableInteger, UnsignedInteger, UnsignedVariableInteger};
 
 // NetTransformEntityType
 #[derive(Serde, Copy, Clone, PartialEq, Debug)]
@@ -9,6 +9,8 @@ pub enum NetTransformEntityType {
 }
 
 pub type VertexSerdeInt = SignedVariableInteger<4>;
+pub type TranslationSerdeInt = SignedVariableInteger<4>;
+pub type ScaleSerdeInt = UnsignedVariableInteger<4>;
 
 #[derive(Serde, Copy, Clone, PartialEq, Debug)]
 pub struct SerdeRotation {

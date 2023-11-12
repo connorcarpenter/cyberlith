@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Build Filetypes" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-    <option name="command" value="build" />
+    <option name="command" value="build --features &quot;read, write&quot;" />
     <option name="workingDirectory" value="file://$PROJECT_DIR$/crates/filetypes" />
     <option name="emulateTerminal" value="false" />
     <option name="channel" value="DEFAULT" />

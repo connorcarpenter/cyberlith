@@ -3,5 +3,11 @@ name = "filetypes"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+read = []
+write = []
+
 [dependencies]
 naia-serde = { path = "../../../naia/shared/serde" }
+cfg-if = { version = "1.0" }
+log = { version = "0.4" }
