@@ -1399,84 +1399,91 @@ impl ModelManager {
                 let Ok((net_transform, skin_or_scene_entity)) = net_transform_q.get(*net_transform_entity) else {
                     continue;
                 };
-                let NetTransformEntityType::Skin = *skin_or_scene_entity.value_type else {
-                    panic!("not possible ... yet");
-                };
-                let skin_file_entity = skin_or_scene_entity.value.get(&client).unwrap();
-                let Some(mesh_file_entity) = file_manager.file_get_dependency(&skin_file_entity, FileExtension::Mesh) else {
-                    continue;
-                };
-                let net_transform_data = self.transform_entities.get(net_transform_entity).unwrap();
-
-                let bone_transform_opt = match file_ext {
-                    FileExtension::Model => {
-                        let Some(bone_transform) = net_transform_data.get_bone_transform(
-                            &vertex_3d_q,
-                            &edge_angle_q,
-                        ) else {
+                match *skin_or_scene_entity.value_type {
+                    NetTransformEntityType::Skin => {
+                        let skin_file_entity = skin_or_scene_entity.value.get(&client).unwrap();
+                        let Some(mesh_file_entity) = file_manager.file_get_dependency(&skin_file_entity, FileExtension::Mesh) else {
                             continue;
                         };
-                        Some(bone_transform)
-                    }
-                    FileExtension::Scene => None,
-                    _ => panic!("invalid"),
-                };
-                let mut net_transform = NetTransformLocal::to_transform(net_transform);
-                net_transform.rotation = net_transform.rotation * corrective_rot;
+                        let net_transform_data = self.transform_entities.get(net_transform_entity).unwrap();
 
-                if let Some(bone_transform) = bone_transform_opt {
-                    // apply bone transform to net_transform
-                    net_transform = net_transform.multiply(&bone_transform);
-                }
-
-                let net_transform_matrix = net_transform.compute_matrix();
-
-                for (owned_by_file, edge_3d_local) in edge_q.iter() {
-                    if owned_by_file.file_entity != mesh_file_entity {
-                        continue;
-                    }
-
-                    let mut vertices = [Vec3::ZERO, Vec3::ZERO];
-                    for (index, vertex_3d_entity) in
-                        [edge_3d_local.start, edge_3d_local.end].iter().enumerate()
-                    {
-                        let Ok(vertex_3d) = vertex_3d_q.get(*vertex_3d_entity) else {
-                            continue;
+                        let bone_transform_opt = match file_ext {
+                            FileExtension::Model => {
+                                let Some(bone_transform) = net_transform_data.get_bone_transform(
+                                    &vertex_3d_q,
+                                    &edge_angle_q,
+                                ) else {
+                                    continue;
+                                };
+                                Some(bone_transform)
+                            }
+                            FileExtension::Scene => None,
+                            _ => panic!("invalid"),
                         };
-                        let point = vertex_3d.as_vec3();
+                        let mut net_transform = NetTransformLocal::to_transform(net_transform);
+                        net_transform.rotation = net_transform.rotation * corrective_rot;
 
-                        // transform by net_transform
-                        let point = matrix_transform_point(&net_transform_matrix, &point);
+                        if let Some(bone_transform) = bone_transform_opt {
+                            // apply bone transform to net_transform
+                            net_transform = net_transform.multiply(&bone_transform);
+                        }
 
-                        // transform to 2D
-                        let (coords, depth) = convert_3d_to_2d(
-                            &view_matrix,
-                            &projection_matrix,
-                            &camera_viewport.size_vec2(),
-                            &point,
-                        );
+                        let net_transform_matrix = net_transform.compute_matrix();
 
-                        let point = Vec3::new(coords.x, coords.y, depth);
+                        for (owned_by_file, edge_3d_local) in edge_q.iter() {
+                            if owned_by_file.file_entity != mesh_file_entity {
+                                continue;
+                            }
 
-                        // load into output
-                        vertices[index] = point;
+                            let mut vertices = [Vec3::ZERO, Vec3::ZERO];
+                            for (index, vertex_3d_entity) in
+                            [edge_3d_local.start, edge_3d_local.end].iter().enumerate()
+                            {
+                                let Ok(vertex_3d) = vertex_3d_q.get(*vertex_3d_entity) else {
+                                    continue;
+                                };
+                                let point = vertex_3d.as_vec3();
+
+                                // transform by net_transform
+                                let point = matrix_transform_point(&net_transform_matrix, &point);
+
+                                // transform to 2D
+                                let (coords, depth) = convert_3d_to_2d(
+                                    &view_matrix,
+                                    &projection_matrix,
+                                    &camera_viewport.size_vec2(),
+                                    &point,
+                                );
+
+                                let point = Vec3::new(coords.x, coords.y, depth);
+
+                                // load into output
+                                vertices[index] = point;
+                            }
+
+                            // get edge transform between both 2d vertex transforms
+                            let mut line_transform = Transform::default();
+                            let start = vertices[0].truncate();
+                            let end = vertices[1].truncate();
+                            let depth = (vertices[0].z + vertices[1].z) / 2.0;
+                            set_2d_line_transform(&mut line_transform, start, end, depth);
+
+                            // draw edge
+                            render_frame.draw_object(
+                                Some(&render_layer),
+                                &line_mesh,
+                                &line_mat,
+                                &line_transform,
+                            );
+                        }
                     }
-
-                    // get edge transform between both 2d vertex transforms
-                    let mut line_transform = Transform::default();
-                    let start = vertices[0].truncate();
-                    let end = vertices[1].truncate();
-                    let depth = (vertices[0].z + vertices[1].z) / 2.0;
-                    set_2d_line_transform(&mut line_transform, start, end, depth);
-
-                    // draw edge
-                    render_frame.draw_object(
-                        Some(&render_layer),
-                        &line_mesh,
-                        &line_mat,
-                        &line_transform,
-                    );
-                }
+                    NetTransformEntityType::Scene => {
+                        todo!();
+                    }
+                    _ => {
+                        panic!("invalid");
+                    }
+                };
             }
         }
     }
