@@ -6,7 +6,7 @@ use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt};
 
-use crate::app::resources::{action::icon::IconAction, icon_manager::IconManager};
+use crate::app::resources::{input::IconInputManager, action::icon::IconAction, icon_manager::IconManager};
 
 pub fn execute(world: &mut World, icon_manager: &mut IconManager, action: IconAction) -> Vec<IconAction> {
     let IconAction::DeleteFrame(file_entity, frame_index) = action else {
@@ -19,7 +19,7 @@ pub fn execute(world: &mut World, icon_manager: &mut IconManager, action: IconAc
         Commands,
         Client,
     )> = SystemState::new(world);
-    let (mut commands, mut client) = system_state.get_mut(world);
+    let (mut commands, client) = system_state.get_mut(world);
 
     let frame_entity = icon_manager
         .get_frame_entity(&file_entity, frame_index)
@@ -36,21 +36,13 @@ pub fn execute(world: &mut World, icon_manager: &mut IconManager, action: IconAc
     }
 
     // copy rotations to store in undo/redo
-    let mut shapes = Vec::new();
+    let copied_shapes = IconInputManager::pack_shape_data(world, icon_manager, &file_entity);
 
-    // TODO: implement equivalent!
-    // let Some(rotation_entities) = icon_manager.get_frame_rotations(&file_entity, &frame_entity) else {
-    //     panic!("Expected frame rotations");
-    // };
-    //
-    // for rotation_entity in rotation_entities {
-    //     let Ok(rot) = rot_q.get(*rotation_entity) else {
-    //         panic!("Expected rotation");
-    //     };
-    //     let name = (*rot.vertex_name).clone();
-    //     let quat = rot.get_rotation();
-    //     shapes.push((name, quat));
-    // }
+    let mut system_state: SystemState<(
+        Commands,
+        Client,
+    )> = SystemState::new(world);
+    let (mut commands, mut client) = system_state.get_mut(world);
 
     // despawn
     commands.entity(frame_entity).despawn();
@@ -75,6 +67,6 @@ pub fn execute(world: &mut World, icon_manager: &mut IconManager, action: IconAc
     return vec![IconAction::InsertFrame(
         file_entity,
         frame_index,
-        Some(shapes),
+        Some(copied_shapes),
     )];
 }
