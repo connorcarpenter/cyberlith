@@ -488,7 +488,7 @@ impl IconReader {
             }
         }
 
-        let output = IconReader::post_process_entities(&mut icon_manager, file_entity, output);
+        let output = IconReader::post_process_entities(&mut icon_manager, output);
 
         system_state.apply(world);
 
@@ -522,7 +522,6 @@ impl IconReader {
     // TODO: move this into the main read functions
     fn post_process_entities(
         icon_manager: &mut IconManager,
-        file_entity: &Entity,
         shape_entities: Vec<(Entity, ContentEntityTypeData)>,
     ) -> HashMap<Entity, ContentEntityData> {
         let mut new_content_entities = HashMap::new();
@@ -560,7 +559,6 @@ impl IconReader {
                 }
                 ContentEntityTypeData::Face(index, palette_index, frame_entity, vert_a, vert_b, vert_c) => {
                     icon_manager.on_create_face(
-                        file_entity,
                         &frame_entity,
                         Some(index),
                         entity,

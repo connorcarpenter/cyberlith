@@ -63,8 +63,8 @@ enum ComponentData {
     NetTransform(Option<String>),
     IconVertex(Entity),
     IconEdge(Entity, Entity, Entity),
-    // frame entity, color entity, vertex a, vertex b, vertex c
-    IconFace(Entity, Entity, Entity, Entity, Entity),
+    // frame entity, vertex a, vertex b, vertex c
+    IconFace(Entity, Entity, Entity, Entity),
 }
 
 impl ComponentData {
@@ -76,7 +76,7 @@ impl ComponentData {
             ComponentData::NetTransform(_) => ComponentType::NetTransform,
             ComponentData::IconVertex(_) => ComponentType::Vertex,
             ComponentData::IconEdge(_, _, _) => ComponentType::Edge,
-            ComponentData::IconFace(_, _, _, _, _) => ComponentType::Face,
+            ComponentData::IconFace(_, _, _, _) => ComponentType::Face,
         }
     }
 }
@@ -284,7 +284,7 @@ impl ComponentWaitlistEntry {
             (FileExtension::Icon, ComponentType::Face) => {
                 let (vertex_a, vertex_b, vertex_c, _, _, _) =
                     self.face_entities.unwrap();
-                ComponentData::IconFace(self.icon_frame_entity.unwrap(), self.icon_color_entity.unwrap(), vertex_a, vertex_b, vertex_c)
+                ComponentData::IconFace(self.icon_frame_entity.unwrap(), vertex_a, vertex_b, vertex_c)
             }
             (_, _) => {
                 panic!("");
@@ -853,7 +853,7 @@ impl ComponentWaitlist {
             }
             (
                 FileExtension::Icon,
-                ComponentData::IconFace(frame_entity, color_entity, vertex_a, vertex_b, vertex_c),
+                ComponentData::IconFace(frame_entity, vertex_a, vertex_b, vertex_c),
             ) => {
                 let Some(icon_manager) = icon_manager_opt else {
                     panic!("icon manager not available");

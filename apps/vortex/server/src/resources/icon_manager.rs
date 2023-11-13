@@ -57,7 +57,6 @@ impl IconEdgeData {
 }
 
 pub struct IconFaceData {
-    file_entity: Entity,
     frame_entity: Entity,
     face_index: usize,
     vertex_a: Entity,
@@ -67,7 +66,6 @@ pub struct IconFaceData {
 
 impl IconFaceData {
     pub fn new(
-        file_entity: Entity,
         frame_entity: Entity,
         face_index: usize,
         vertex_a: Entity,
@@ -75,7 +73,6 @@ impl IconFaceData {
         vertex_c: Entity,
     ) -> Self {
         Self {
-            file_entity,
             frame_entity,
             face_index,
             vertex_a,
@@ -262,7 +259,6 @@ impl IconManager {
 
     pub fn on_create_face(
         &mut self,
-        file_entity: &Entity,
         frame_entity: &Entity,
         old_index_opt: Option<usize>,
         face_entity: Entity,
@@ -275,7 +271,7 @@ impl IconManager {
 
         self.faces.insert(
             face_entity,
-            IconFaceData::new(*file_entity, *frame_entity, face_index, vertex_a, vertex_b, vertex_c),
+            IconFaceData::new(*frame_entity, face_index, vertex_a, vertex_b, vertex_c),
         );
 
         // add faces to vertices

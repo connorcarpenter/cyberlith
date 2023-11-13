@@ -699,7 +699,7 @@ impl IconManager {
         self.grid_vertices.push(vertex_entity_c);
         self.grid_vertices.push(vertex_entity_d);
 
-        let edge_entity_a = self.new_local_edge(
+        self.new_local_edge(
             commands,
             meshes,
             materials,
@@ -707,7 +707,7 @@ impl IconManager {
             vertex_entity_b,
             Color::LIGHT_GRAY,
         );
-        let edge_entity_b = self.new_local_edge(
+        self.new_local_edge(
             commands,
             meshes,
             materials,
@@ -715,7 +715,7 @@ impl IconManager {
             vertex_entity_c,
             Color::LIGHT_GRAY,
         );
-        let edge_entity_c = self.new_local_edge(
+        self.new_local_edge(
             commands,
             meshes,
             materials,
@@ -723,7 +723,7 @@ impl IconManager {
             vertex_entity_d,
             Color::LIGHT_GRAY,
         );
-        let edge_entity_d = self.new_local_edge(
+        self.new_local_edge(
             commands,
             meshes,
             materials,

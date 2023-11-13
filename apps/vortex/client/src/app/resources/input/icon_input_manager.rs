@@ -608,7 +608,7 @@ impl IconInputManager {
                 InputAction::KeyPress(key) => match key {
                     Key::Delete => Self::handle_delete_frame(world, icon_manager),
                     Key::Insert => Self::handle_insert_frame(world, icon_manager),
-                    Key::Space => Self::handle_play_pause(world, icon_manager),
+                    Key::Space => Self::handle_play_pause(icon_manager),
                     Key::Enter => {
                         icon_manager.set_meshing();
                     }
@@ -869,7 +869,7 @@ impl IconInputManager {
         });
     }
 
-    fn handle_play_pause(world: &mut World, icon_manager: &mut IconManager) {
+    fn handle_play_pause(icon_manager: &mut IconManager) {
         if icon_manager.preview_is_playing() {
             icon_manager.preview_pause();
         } else {

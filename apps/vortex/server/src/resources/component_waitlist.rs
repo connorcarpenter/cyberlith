@@ -663,9 +663,7 @@ impl ComponentWaitlist {
                 let Some(icon_manager) = icon_manager_opt else {
                     panic!("icon manager not available");
                 };
-                let file_entity = git_manager.file_entity(&project_key, &file_key).unwrap();
                 icon_manager.on_create_face(
-                    &file_entity,
                     &frame_entity,
                     None,
                     entity,

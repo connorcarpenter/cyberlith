@@ -76,6 +76,10 @@ impl PaletteManager {
         self.selected_color_index
     }
 
+    pub fn has_file_colors(&self, file_entity: &Entity) -> bool {
+        self.file_colors.contains_key(file_entity)
+    }
+
     pub fn get_file_colors(&self, file_entity: &Entity) -> Option<&Vec<Option<Entity>>> {
         self.file_colors.get(file_entity)
     }

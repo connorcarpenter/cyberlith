@@ -1026,7 +1026,7 @@ fn set_icon_face_colors(
     let Some(palette_file_entity) = file_manager.file_get_dependency(icon_file_entity, FileExtension::Palette) else {
         return;
     };
-    let Some(colors) = palette_manager.get_file_colors(&palette_file_entity) else {
+    if !palette_manager.has_file_colors(&palette_file_entity) {
         panic!("no colors for given file");
     };
 
