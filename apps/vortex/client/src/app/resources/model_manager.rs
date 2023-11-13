@@ -1615,50 +1615,57 @@ impl ModelManager {
                 let Ok((net_transform, skin_or_scene_entity)) = net_transform_q.get(*net_transform_entity) else {
                     continue;
                 };
-                let NetTransformEntityType::Skin = *skin_or_scene_entity.value_type else {
-                    panic!("not possible ... yet");
-                };
-                let skin_file_entity = skin_or_scene_entity.value.get(&client).unwrap();
-                let Some(mesh_file_entity) = file_manager
-                    .file_get_dependency(&skin_file_entity, FileExtension::Mesh) else {
-                    continue;
-                };
-                let net_transform_data = self.transform_entities.get(net_transform_entity).unwrap();
-                let mut net_transform = NetTransformLocal::to_transform(net_transform);
-                net_transform.rotation = net_transform.rotation * corrective_rot;
-
-                match file_ext {
-                    FileExtension::Model => {
-                        // apply bone transform to net_transform
-                        let Some(bone_transform) = net_transform_data.get_bone_transform(
-                            &vertex_3d_q,
-                            &edge_angle_q,
-                        ) else {
+                match *skin_or_scene_entity.value_type {
+                    NetTransformEntityType::Skin => {
+                        let skin_file_entity = skin_or_scene_entity.value.get(&client).unwrap();
+                        let Some(mesh_file_entity) = file_manager
+                            .file_get_dependency(&skin_file_entity, FileExtension::Mesh) else {
                             continue;
                         };
-                        net_transform = net_transform.multiply(&bone_transform);
+                        let net_transform_data = self.transform_entities.get(net_transform_entity).unwrap();
+                        let mut net_transform = NetTransformLocal::to_transform(net_transform);
+                        net_transform.rotation = net_transform.rotation * corrective_rot;
+
+                        match file_ext {
+                            FileExtension::Model => {
+                                // apply bone transform to net_transform
+                                let Some(bone_transform) = net_transform_data.get_bone_transform(
+                                    &vertex_3d_q,
+                                    &edge_angle_q,
+                                ) else {
+                                    continue;
+                                };
+                                net_transform = net_transform.multiply(&bone_transform);
+                            }
+                            FileExtension::Scene => {}
+                            _ => panic!("invalid"),
+                        }
+
+                        for (face_3d_entity, owned_by_file) in face_q.iter() {
+                            if owned_by_file.file_entity != mesh_file_entity {
+                                continue;
+                            }
+
+                            let (mesh_handle, mat_handle, face_transform) =
+                                object_q.get(face_3d_entity).unwrap();
+
+                            let face_transform = face_transform.multiply(&net_transform);
+
+                            // draw face
+                            render_frame.draw_object(
+                                Some(&render_layer),
+                                mesh_handle,
+                                mat_handle,
+                                &face_transform,
+                            );
+                        }
                     }
-                    FileExtension::Scene => {}
-                    _ => panic!("invalid"),
-                }
-
-                for (face_3d_entity, owned_by_file) in face_q.iter() {
-                    if owned_by_file.file_entity != mesh_file_entity {
-                        continue;
+                    NetTransformEntityType::Scene => {
+                        todo!();
                     }
-
-                    let (mesh_handle, mat_handle, face_transform) =
-                        object_q.get(face_3d_entity).unwrap();
-
-                    let face_transform = face_transform.multiply(&net_transform);
-
-                    // draw face
-                    render_frame.draw_object(
-                        Some(&render_layer),
-                        mesh_handle,
-                        mat_handle,
-                        &face_transform,
-                    );
+                    _ => {
+                        panic!("invalid");
+                    }
                 }
             }
         }
