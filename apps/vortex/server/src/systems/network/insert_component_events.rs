@@ -298,10 +298,13 @@ pub fn insert_face_component_events(
         let vertex_a = face_3d.vertex_a.get(&server).unwrap();
         let vertex_b = face_3d.vertex_b.get(&server).unwrap();
         let vertex_c = face_3d.vertex_c.get(&server).unwrap();
+        let edge_a = face_3d.edge_a.get(&server).unwrap();
+        let edge_b = face_3d.edge_b.get(&server).unwrap();
+        let edge_c = face_3d.edge_c.get(&server).unwrap();
 
         info!(
-            "entity: `{:?}`, inserted Face3d(vertices({:?}, {:?}, {:?}))",
-            entity, vertex_a, vertex_b, vertex_c
+            "entity: `{:?}`, inserted Face3d(vertices({:?}, {:?}, {:?}), edges({:?}, {:?}. {:?}))",
+            entity, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c
         );
 
         component_waitlist.process_inserts(
@@ -310,7 +313,7 @@ pub fn insert_face_component_events(
             &mut Some(&mut shape_manager),
             &mut None,
             &entity,
-            &[ComponentWaitlistInsert::Face(None, vertex_a, vertex_b, vertex_c), ComponentWaitlistInsert::FileType(FileExtension::Mesh)],
+            &[ComponentWaitlistInsert::Face(None, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c), ComponentWaitlistInsert::FileType(FileExtension::Mesh)],
         );
     }
 }
@@ -469,10 +472,13 @@ pub fn insert_icon_component_events(
         let vertex_a = face.vertex_a.get(&server).unwrap();
         let vertex_b = face.vertex_b.get(&server).unwrap();
         let vertex_c = face.vertex_c.get(&server).unwrap();
+        let edge_a = face.edge_a.get(&server).unwrap();
+        let edge_b = face.edge_b.get(&server).unwrap();
+        let edge_c = face.edge_c.get(&server).unwrap();
 
         info!(
-            "entity: `{:?}`, inserted IconFace(vertices({:?}, {:?}, {:?}))",
-            entity, vertex_a, vertex_b, vertex_c
+            "entity: `{:?}`, inserted IconFace(vertices({:?}, {:?}, {:?}), edges({:?}, {:?}. {:?}))",
+            entity, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c
         );
 
         component_waitlist.process_inserts(
@@ -481,7 +487,7 @@ pub fn insert_icon_component_events(
             &mut None,
             &mut Some(&mut icon_manager),
             &entity,
-            &[ComponentWaitlistInsert::Face(Some(frame_entity),vertex_a, vertex_b, vertex_c), ComponentWaitlistInsert::FileType(FileExtension::Icon)],
+            &[ComponentWaitlistInsert::Face(Some(frame_entity),vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c), ComponentWaitlistInsert::FileType(FileExtension::Icon)],
         );
     }
 

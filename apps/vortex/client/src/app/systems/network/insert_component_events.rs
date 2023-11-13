@@ -437,15 +437,27 @@ pub fn insert_face_events(
 
         let face_3d = face_3d_q.get(face_entity).unwrap();
         let Some(vertex_a_entity) = face_3d.vertex_a.get(&client) else {
-            warn!("Face3d component of entity: `{:?}` has no entity", face_entity);
+            warn!("Face3d component of entity: `{:?}` has no vertex a entity", face_entity);
             continue;
         };
         let Some(vertex_b_entity) = face_3d.vertex_b.get(&client) else {
-            warn!("Face3d component of entity: `{:?}` has no entity", face_entity);
+            warn!("Face3d component of entity: `{:?}` has no vertex b entity", face_entity);
             continue;
         };
         let Some(vertex_c_entity) = face_3d.vertex_c.get(&client) else {
-            warn!("Face3d component of entity: `{:?}` has no entity", face_entity);
+            warn!("Face3d component of entity: `{:?}` has no vertex c entity", face_entity);
+            continue;
+        };
+        let Some(edge_a_entity) = face_3d.edge_a.get(&client) else {
+            warn!("Face3d component of entity: `{:?}` has no edge a entity", face_entity);
+            continue;
+        };
+        let Some(edge_b_entity) = face_3d.edge_b.get(&client) else {
+            warn!("Face3d component of entity: `{:?}` has no edge b entity", face_entity);
+            continue;
+        };
+        let Some(edge_c_entity) = face_3d.edge_c.get(&client) else {
+            warn!("Face3d component of entity: `{:?}` has no edge c entity", face_entity);
             continue;
         };
 
@@ -467,6 +479,9 @@ pub fn insert_face_events(
                 vertex_a_entity,
                 vertex_b_entity,
                 vertex_c_entity,
+                edge_a_entity,
+                edge_b_entity,
+                edge_c_entity,
             ), ComponentWaitlistInsert::FileType(FileExtension::Mesh)],
         );
     }
@@ -506,7 +521,7 @@ pub fn insert_icon_vertex_events(
             &mut None,
             &mut Some(&mut icon_manager),
             None,
-            None,
+            Some(&vertex_q),
             &entity,
             &[ComponentWaitlistInsert::Vertex, ComponentWaitlistInsert::FileType(FileExtension::Icon), ComponentWaitlistInsert::FrameEntity(frame_entity)],
         );
@@ -525,6 +540,7 @@ pub fn insert_icon_edge_events(
     mut materials: ResMut<Assets<CpuMaterial>>,
     mut component_waitlist: ResMut<ComponentWaitlist>,
 
+    vertex_q: Query<&IconVertex>,
     edge_q: Query<&IconEdge>,
 ) {
     // on Edge Insert Event
@@ -556,7 +572,7 @@ pub fn insert_icon_edge_events(
             &mut None,
             &mut Some(&mut icon_manager),
             None,
-            None,
+            Some(&vertex_q),
             &edge_entity,
             &[ComponentWaitlistInsert::Edge(start_entity, end_entity), ComponentWaitlistInsert::FileType(FileExtension::Icon), ComponentWaitlistInsert::FrameEntity(frame_entity)],
         );
@@ -590,15 +606,27 @@ pub fn insert_icon_face_events(
         let frame_entity = face.frame_entity.get(&client).unwrap();
         let palette_color_entity = face.palette_color_entity.get(&client).unwrap();
         let Some(vertex_a_entity) = face.vertex_a.get(&client) else {
-            warn!("IconFace component of entity: `{:?}` has no entity", face_entity);
+            warn!("IconFace component of entity: `{:?}` has no vertex a entity", face_entity);
             continue;
         };
         let Some(vertex_b_entity) = face.vertex_b.get(&client) else {
-            warn!("IconFace component of entity: `{:?}` has no entity", face_entity);
+            warn!("IconFace component of entity: `{:?}` has no vertex b entity", face_entity);
             continue;
         };
         let Some(vertex_c_entity) = face.vertex_c.get(&client) else {
-            warn!("IconFace component of entity: `{:?}` has no entity", face_entity);
+            warn!("IconFace component of entity: `{:?}` has no vertex c entity", face_entity);
+            continue;
+        };
+        let Some(edge_a_entity) = face.edge_a.get(&client) else {
+            warn!("IconFace component of entity: `{:?}` has no edge a entity", face_entity);
+            continue;
+        };
+        let Some(edge_b_entity) = face.edge_b.get(&client) else {
+            warn!("IconFace component of entity: `{:?}` has no edge b entity", face_entity);
+            continue;
+        };
+        let Some(edge_c_entity) = face.edge_c.get(&client) else {
+            warn!("IconFace component of entity: `{:?}` has no edge c entity", face_entity);
             continue;
         };
 
@@ -622,6 +650,9 @@ pub fn insert_icon_face_events(
                     vertex_a_entity,
                     vertex_b_entity,
                     vertex_c_entity,
+                    edge_a_entity,
+                    edge_b_entity,
+                    edge_c_entity,
                 ),
                 ComponentWaitlistInsert::FileType(FileExtension::Icon),
                 ComponentWaitlistInsert::FrameEntity(frame_entity),

@@ -27,8 +27,8 @@ pub enum ComponentWaitlistInsert {
     VertexRoot,
     //// parent, child
     Edge(Entity, Entity),
-    //// (option<FrameEntity>, vertex_a, vertex_b, vertex_c)
-    Face(Option<Entity>, Entity, Entity, Entity),
+    //// (option<FrameEntity>, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c)
+    Face(Option<Entity>, Entity, Entity, Entity, Entity, Entity, Entity),
     ////
     NetTransform,
     ////
@@ -76,8 +76,8 @@ pub struct ComponentWaitlistEntry {
 
     edge_and_parent_opt: Option<Option<(Entity, Entity)>>,
     edge_entities: Option<(Entity, Entity)>,
-    // Option<(Option<frame entity>, vertex a entity, vertex b entity, vertex c entity)
-    face_entities: Option<(Option<Entity>, Entity, Entity, Entity)>,
+    // Option<(Option<frame entity>, vertex a entity, vertex b entity, vertex c entity, edge a entity, edge b entity, edge c entity)
+    face_entities: Option<(Option<Entity>, Entity, Entity, Entity, Entity, Entity, Entity)>,
 
     skin_or_scene_entity: bool,
     shape_name: bool,
@@ -156,8 +156,8 @@ impl ComponentWaitlistEntry {
         self.edge_entities = Some((start, end));
     }
 
-    fn set_face_entities(&mut self, frame_entity: Option<Entity>, vertex_a: Entity, vertex_b: Entity, vertex_c: Entity) {
-        self.face_entities = Some((frame_entity, vertex_a, vertex_b, vertex_c));
+    fn set_face_entities(&mut self, frame_entity: Option<Entity>, vertex_a: Entity, vertex_b: Entity, vertex_c: Entity, edge_a: Entity, edge_b: Entity, edge_c: Entity) {
+        self.face_entities = Some((frame_entity, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c));
     }
 
     fn set_component_type(&mut self, component_type: ComponentType) {
@@ -206,7 +206,7 @@ impl ComponentWaitlistEntry {
                 return ComponentData::MeshEdge(project_key, file_key, start, end);
             }
             (Some(FileExtension::Mesh), Some(ComponentType::Face)) => {
-                let (None, vertex_a, vertex_b, vertex_c) = self.face_entities.unwrap() else {
+                let (None, vertex_a, vertex_b, vertex_c, _, _, _) = self.face_entities.unwrap() else {
                     panic!("invalid");
                 };
                 return ComponentData::MeshFace(
@@ -231,7 +231,7 @@ impl ComponentWaitlistEntry {
                 return ComponentData::IconEdge(project_key, file_key, start, end);
             }
             (Some(FileExtension::Icon), Some(ComponentType::Face)) => {
-                let (Some(frame_entity), vertex_a, vertex_b, vertex_c) = self.face_entities.unwrap() else {
+                let (Some(frame_entity), vertex_a, vertex_b, vertex_c, _, _, _) = self.face_entities.unwrap() else {
                     panic!("invalid");
                 };
                 return ComponentData::IconFace(
@@ -347,13 +347,13 @@ impl ComponentWaitlist {
                 //     possibly_ready_entities
                 // );
             }
-            ComponentWaitlistInsert::Face(frame_entity_opt, vertex_a, vertex_b, vertex_c) => {
+            ComponentWaitlistInsert::Face(frame_entity_opt, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c) => {
                 if !self.contains_key(entity) {
                     self.insert_incomplete(*entity, ComponentWaitlistEntry::new());
                 }
                 let entry = self.get_mut(entity).unwrap();
                 entry.set_component_type(ComponentType::Face);
-                entry.set_face_entities(frame_entity_opt, vertex_a, vertex_b, vertex_c);
+                entry.set_face_entities(frame_entity_opt, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c);
             }
             ComponentWaitlistInsert::FileType(file_type) => {
                 if !self.contains_key(entity) {
@@ -450,7 +450,42 @@ impl ComponentWaitlist {
                         }
                     }
                     (FileExtension::Mesh, ComponentType::Face) => {
-                        info!("`{:?}` Mesh Face complete!", entity);
+                        let face_entities = entry.face_entities.unwrap();
+                        let mut dependencies = Vec::new();
+                        let Some(shape_manager) = shape_manager_opt else {
+                            panic!("shape manager not available");
+                        };
+
+                        for vertex_entity in [&face_entities.1, &face_entities.2, &face_entities.3] {
+                            if !shape_manager.has_vertex(vertex_entity) {
+                                // need to put in parent waitlist
+                                info!(
+                                    "face entity {:?} requires parent vertex {:?}. putting in parent waitlist",
+                                    entity, vertex_entity
+                                );
+                                dependencies.push(*vertex_entity);
+                            }
+                        }
+
+                        for edge_entity in [&face_entities.4, &face_entities.5, &face_entities.6] {
+                            if !shape_manager.has_edge(edge_entity) {
+                                // need to put in parent waitlist
+                                info!(
+                                    "face entity {:?} requires parent edge {:?}. putting in parent waitlist",
+                                    entity, edge_entity
+                                );
+                                dependencies.push(*edge_entity);
+                            }
+                        }
+
+                        if !dependencies.is_empty() {
+                            self.dependency_map.insert_waiting_dependencies(
+                                dependencies,
+                                entity,
+                                entry,
+                            );
+                            continue;
+                        }
                     }
                     (FileExtension::Icon, ComponentType::Vertex) => {
                         info!("`{:?}` Icon Vertex complete!", entity);
@@ -483,7 +518,42 @@ impl ComponentWaitlist {
                         }
                     }
                     (FileExtension::Icon, ComponentType::Face) => {
-                        info!("`{:?}` Icon Face complete!", entity);
+                        let face_entities = entry.face_entities.unwrap();
+                        let mut dependencies = Vec::new();
+                        let Some(icon_manager) = icon_manager_opt else {
+                            panic!("icon manager not available");
+                        };
+
+                        for vertex_entity in [&face_entities.1, &face_entities.2, &face_entities.3] {
+                            if !icon_manager.has_vertex(vertex_entity) {
+                                // need to put in parent waitlist
+                                info!(
+                                    "face entity {:?} requires parent vertex {:?}. putting in parent waitlist",
+                                    entity, vertex_entity
+                                );
+                                dependencies.push(*vertex_entity);
+                            }
+                        }
+
+                        for edge_entity in [&face_entities.4, &face_entities.5, &face_entities.6] {
+                            if !icon_manager.has_edge(edge_entity) {
+                                // need to put in parent waitlist
+                                info!(
+                                    "face entity {:?} requires parent edge {:?}. putting in parent waitlist",
+                                    entity, edge_entity
+                                );
+                                dependencies.push(*edge_entity);
+                            }
+                        }
+
+                        if !dependencies.is_empty() {
+                            self.dependency_map.insert_waiting_dependencies(
+                                dependencies,
+                                entity,
+                                entry,
+                            );
+                            continue;
+                        }
                     }
                     (FileExtension::Skel, ComponentType::Face) => {
                         panic!("not possible");
