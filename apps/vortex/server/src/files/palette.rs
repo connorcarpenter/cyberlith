@@ -8,8 +8,10 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_server::{
-    BitReader, CommandsExt, FileBitWriter, ReplicationConfig, Serde, SerdeErr, Server,
+    BitReader, CommandsExt, ReplicationConfig, Server,
 };
+
+use filetypes::PaletteAction;
 
 use vortex_proto::components::PaletteColor;
 
@@ -17,19 +19,6 @@ use crate::{
     files::FileWriter,
     resources::{ContentEntityData, PaletteManager, Project},
 };
-
-// Actions
-#[derive(Clone)]
-enum PaletteAction {
-    // red, green, blue
-    Color(u8, u8, u8),
-}
-
-#[derive(Serde, Clone, PartialEq)]
-enum PaletteActionType {
-    Color,
-    None,
-}
 
 // Writer
 pub struct PaletteWriter;
@@ -56,27 +45,6 @@ impl PaletteWriter {
 
         actions
     }
-
-    fn write_from_actions(&self, actions: Vec<Option<PaletteAction>>) -> Box<[u8]> {
-        let mut bit_writer = FileBitWriter::new();
-
-        for action_opt in actions {
-            let action = action_opt.unwrap(); // missing some color is an error
-            match action {
-                PaletteAction::Color(r, g, b) => {
-                    PaletteActionType::Color.ser(&mut bit_writer);
-                    r.ser(&mut bit_writer);
-                    g.ser(&mut bit_writer);
-                    b.ser(&mut bit_writer);
-                }
-            }
-        }
-
-        // continue bit
-        PaletteActionType::None.ser(&mut bit_writer);
-
-        bit_writer.to_bytes()
-    }
 }
 
 impl FileWriter for PaletteWriter {
@@ -87,22 +55,29 @@ impl FileWriter for PaletteWriter {
         _content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]> {
         let actions = self.world_to_actions(world);
-        self.write_from_actions(actions)
+        let mut output_actions = Vec::new();
+        for action_opt in actions {
+            let Some(action) = action_opt else {
+                panic!("Palette action is missing!");
+            };
+            output_actions.push(action);
+        }
+        PaletteAction::write(output_actions)
     }
 
     fn write_new_default(&self) -> Box<[u8]> {
         let mut actions = Vec::new();
 
-        actions.push(Some(PaletteAction::Color(255, 255, 255))); // white
-        actions.push(Some(PaletteAction::Color(0, 0, 0))); // black
-        actions.push(Some(PaletteAction::Color(255, 0, 0))); // red
-        actions.push(Some(PaletteAction::Color(0, 255, 0))); // green
-        actions.push(Some(PaletteAction::Color(0, 0, 255))); // blue
-        actions.push(Some(PaletteAction::Color(255, 255, 0))); // yellow
-        actions.push(Some(PaletteAction::Color(0, 255, 255))); // cyan
-        actions.push(Some(PaletteAction::Color(255, 0, 255))); // magenta
+        actions.push(PaletteAction::Color(255, 255, 255)); // white
+        actions.push(PaletteAction::Color(0, 0, 0)); // black
+        actions.push(PaletteAction::Color(255, 0, 0)); // red
+        actions.push(PaletteAction::Color(0, 255, 0)); // green
+        actions.push(PaletteAction::Color(0, 0, 255)); // blue
+        actions.push(PaletteAction::Color(255, 255, 0)); // yellow
+        actions.push(PaletteAction::Color(0, 255, 255)); // cyan
+        actions.push(PaletteAction::Color(255, 0, 255)); // magenta
 
-        self.write_from_actions(actions)
+        PaletteAction::write(actions)
     }
 }
 
@@ -110,27 +85,6 @@ impl FileWriter for PaletteWriter {
 pub struct PaletteReader;
 
 impl PaletteReader {
-    fn read_to_actions(bit_reader: &mut BitReader) -> Result<Vec<PaletteAction>, SerdeErr> {
-        let mut actions = Vec::new();
-
-        loop {
-            let action_type = PaletteActionType::de(bit_reader)?;
-
-            match action_type {
-                PaletteActionType::Color => {
-                    let r = u8::de(bit_reader)?;
-                    let g = u8::de(bit_reader)?;
-                    let b = u8::de(bit_reader)?;
-                    actions.push(PaletteAction::Color(r, g, b));
-                }
-                PaletteActionType::None => {
-                    break;
-                }
-            }
-        }
-
-        Ok(actions)
-    }
 
     fn actions_to_world(
         world: &mut World,
@@ -183,7 +137,7 @@ impl PaletteReader {
     ) -> HashMap<Entity, ContentEntityData> {
         let mut bit_reader = BitReader::new(bytes);
 
-        let Ok(actions) = Self::read_to_actions(&mut bit_reader) else {
+        let Ok(actions) = PaletteAction::read(&mut bit_reader) else {
             panic!("Error reading .palette file");
         };
 

@@ -17,14 +17,14 @@ cfg_if! {
 
 use naia_serde::{SerdeInternal as Serde};
 
-use crate::common::{NetTransformEntityType, SerdeQuat};
+use crate::common::{FileTransformEntityType, SerdeQuat};
 
 // Actions
 #[derive(Clone)]
 pub enum ModelAction {
     // path, file_name
     SkelFile(String, String),
-    SkinOrSceneFile(String, String, NetTransformEntityType),
+    SkinOrSceneFile(String, String, FileTransformEntityType),
     NetTransform(u16, String, i16, i16, i16, f32, f32, f32, SerdeQuat),
 }
 

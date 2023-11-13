@@ -1,6 +1,6 @@
 use naia_serde::{BitReader, SerdeInternal as Serde, SerdeErr, UnsignedVariableInteger};
 
-use crate::{model::ModelActionType, ModelAction, common::{ScaleSerdeInt, SerdeQuat, TranslationSerdeInt, NetTransformEntityType}};
+use crate::{model::ModelActionType, ModelAction, common::{ScaleSerdeInt, SerdeQuat, TranslationSerdeInt, FileTransformEntityType}};
 
 impl ModelAction {
     pub fn read(bit_reader: &mut BitReader) -> Result<Vec<Self>, SerdeErr> {
@@ -18,7 +18,7 @@ impl ModelAction {
                 ModelActionType::SkinFile => {
                     let path = String::de(bit_reader)?;
                     let file_name = String::de(bit_reader)?;
-                    let file_type = NetTransformEntityType::de(bit_reader)?;
+                    let file_type = FileTransformEntityType::de(bit_reader)?;
                     actions.push(ModelAction::SkinOrSceneFile(path, file_name, file_type));
                 }
                 ModelActionType::NetTransform => {

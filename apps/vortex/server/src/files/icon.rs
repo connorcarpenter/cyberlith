@@ -8,11 +8,12 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_server::{
-    BitReader, CommandsExt, FileBitWriter, ReplicationConfig, Serde, SerdeErr, Server,
-    UnsignedVariableInteger,
+    BitReader, CommandsExt, ReplicationConfig, Server,
 };
 
-use vortex_proto::{resources::FileKey, components::{FileExtension, IconEdge, IconFace, IconFrame, IconVertex, PaletteColor, VertexSerdeInt}};
+use filetypes::{IconAction, IconFrameAction};
+
+use vortex_proto::{resources::FileKey, components::{FileExtension, IconEdge, IconFace, IconFrame, IconVertex, PaletteColor}};
 
 use crate::{
     files::{add_file_dependency,FileWriter, ShapeType},
@@ -27,40 +28,6 @@ enum ContentEntityTypeData {
     Edge(Entity, Entity),
     // face index, palette index, frame entity, vertex a, vertex b, vertex c
     Face(usize, u8, Entity, Entity, Entity, Entity),
-}
-
-#[derive(Debug, Clone)]
-enum IconFrameAction {
-    //////// x, y//
-    Vertex(i16, i16),
-    //// vertex id1, vertex id2 //
-    Edge(u16, u16),
-    //// order_index, palette color index, id1, id2, id3 // (vertex ids) // id4, id5, id6 (edge ids) // TODO: remove order_index?
-    Face(u16, u8, u16, u16, u16, u16, u16, u16),
-}
-
-#[derive(Serde, Clone, PartialEq)]
-enum IconFrameActionType {
-    None,
-    Vertex,
-    Edge,
-    Face,
-}
-
-// Actions
-#[derive(Debug, Clone)]
-enum IconAction {
-    // path, file_name
-    PaletteFile(String, String),
-    // frame
-    Frame(Vec<IconFrameAction>),
-}
-
-#[derive(Serde, Clone, PartialEq)]
-enum IconActionType {
-    None,
-    PaletteFile,
-    Frame,
 }
 
 struct IconFrameActionData {
@@ -336,97 +303,6 @@ impl IconWriter {
 
         actions
     }
-
-    fn write_from_actions(&self, actions: Vec<IconAction>) -> Box<[u8]> {
-        let mut bit_writer = FileBitWriter::new();
-
-        for (action_id, action) in actions.iter().enumerate() {
-            match action {
-                IconAction::PaletteFile(path, file_name) => {
-                    IconActionType::PaletteFile.ser(&mut bit_writer);
-                    path.ser(&mut bit_writer);
-                    file_name.ser(&mut bit_writer);
-                }
-                IconAction::Frame(frame_actions) => {
-
-                    let mut test_face_index = 0;
-
-                    IconActionType::Frame.ser(&mut bit_writer);
-                    info!("writing frame. action_id: {}", action_id);
-
-                    for (frame_action_id, frame_action) in frame_actions.iter().enumerate() {
-
-                        match frame_action {
-                            IconFrameAction::Vertex(x, y) => {
-                                // continue bit
-                                IconFrameActionType::Vertex.ser(&mut bit_writer);
-
-                                // encode X, Y
-                                VertexSerdeInt::from(*x).ser(&mut bit_writer);
-                                VertexSerdeInt::from(*y).ser(&mut bit_writer);
-
-                                info!("writing vertex {}-{} : ({}, {})", action_id, frame_action_id, x, y);
-                            }
-                            IconFrameAction::Edge(vertex_a, vertex_b) => {
-                                // continue bit
-                                IconFrameActionType::Edge.ser(&mut bit_writer);
-
-                                UnsignedVariableInteger::<6>::from(*vertex_a).ser(&mut bit_writer);
-                                UnsignedVariableInteger::<6>::from(*vertex_b).ser(&mut bit_writer);
-
-                                info!("writing edge {}-{} : ({}, {})", action_id, frame_action_id, vertex_a, vertex_b);
-                            }
-                            IconFrameAction::Face(
-                                face_index,
-                                palette_color_index,
-                                vertex_a,
-                                vertex_b,
-                                vertex_c,
-                                edge_a,
-                                edge_b,
-                                edge_c,
-                            ) => {
-                                if *face_index != test_face_index {
-                                    panic!(
-                                        "face_index {:?} does not match test_face_index {:?}",
-                                        face_index, test_face_index
-                                    );
-                                }
-
-                                // continue bit
-                                IconFrameActionType::Face.ser(&mut bit_writer);
-
-                                palette_color_index.ser(&mut bit_writer);
-
-                                UnsignedVariableInteger::<6>::from(*vertex_a).ser(&mut bit_writer);
-                                UnsignedVariableInteger::<6>::from(*vertex_b).ser(&mut bit_writer);
-                                UnsignedVariableInteger::<6>::from(*vertex_c).ser(&mut bit_writer);
-
-                                UnsignedVariableInteger::<6>::from(*edge_a).ser(&mut bit_writer);
-                                UnsignedVariableInteger::<6>::from(*edge_b).ser(&mut bit_writer);
-                                UnsignedVariableInteger::<6>::from(*edge_c).ser(&mut bit_writer);
-
-                                info!(
-                                    "writing face : ({}, {}, {}, {}, {}, {})",
-                                    vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c
-                                );
-
-                                test_face_index += 1;
-                            }
-                        }
-                    }
-
-                    IconFrameActionType::None.ser(&mut bit_writer);
-                }
-
-            }
-        }
-
-        // continue bit
-        IconActionType::None.ser(&mut bit_writer);
-
-        bit_writer.to_bytes()
-    }
 }
 
 impl FileWriter for IconWriter {
@@ -437,7 +313,7 @@ impl FileWriter for IconWriter {
         content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]> {
         let actions = self.world_to_actions(world, project, content_entities);
-        self.write_from_actions(actions)
+        IconAction::write(actions)
     }
 
     fn write_new_default(&self) -> Box<[u8]> {
@@ -448,7 +324,7 @@ impl FileWriter for IconWriter {
 
         default_actions.push(IconAction::Frame(frame_actions));
 
-        self.write_from_actions(default_actions)
+        IconAction::write(default_actions)
     }
 }
 
@@ -456,77 +332,6 @@ impl FileWriter for IconWriter {
 pub struct IconReader;
 
 impl IconReader {
-    fn read_to_actions(bit_reader: &mut BitReader) -> Result<Vec<IconAction>, SerdeErr> {
-        let mut output = Vec::new();
-
-        // handle empty file
-        if bit_reader.bytes_len() == 0 {
-            return Ok(output);
-        }
-
-        // read loop
-        'outer: loop {
-            let action_type = IconActionType::de(bit_reader)?;
-
-            match action_type {
-                IconActionType::None => break 'outer,
-                IconActionType::PaletteFile => {
-                    let path = String::de(bit_reader)?;
-                    let file_name = String::de(bit_reader)?;
-                    output.push(IconAction::PaletteFile(path, file_name));
-                }
-                IconActionType::Frame => {
-
-                    let mut face_index = 0;
-
-                    let mut frame_output = Vec::new();
-
-                    'inner: loop {
-                        let frame_action_type = IconFrameActionType::de(bit_reader)?;
-
-                        match frame_action_type {
-                            IconFrameActionType::None => break 'inner,
-                            IconFrameActionType::Vertex => {
-                                // read X, Y
-                                let x = VertexSerdeInt::de(bit_reader)?.to();
-                                let y = VertexSerdeInt::de(bit_reader)?.to();
-
-                                frame_output.push(IconFrameAction::Vertex(x, y));
-                            }
-                            IconFrameActionType::Edge => {
-                                let vertex_a: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-                                let vertex_b: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-
-                                frame_output.push(IconFrameAction::Edge(vertex_a, vertex_b));
-                            }
-                            IconFrameActionType::Face => {
-                                let palette_color_index = u8::de(bit_reader)?;
-
-                                let vertex_a: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-                                let vertex_b: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-                                let vertex_c: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-
-                                let edge_a: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-                                let edge_b: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-                                let edge_c: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-
-                                frame_output.push(IconFrameAction::Face(
-                                    face_index, palette_color_index, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c,
-                                ));
-
-                                face_index += 1;
-                            }
-                        }
-                    }
-
-                    output.push(IconAction::Frame(frame_output));
-
-                    info!("reading to IconAction::Frame");
-                }
-            }
-        }
-        Ok(output)
-    }
 
     fn actions_to_world(
         world: &mut World,
@@ -702,7 +507,7 @@ impl IconReader {
     ) -> HashMap<Entity, ContentEntityData> {
         let mut bit_reader = BitReader::new(bytes);
 
-        let Ok(actions) = Self::read_to_actions(&mut bit_reader) else {
+        let Ok(actions) = IconAction::read(&mut bit_reader) else {
             panic!("Error reading .icon file");
         };
 

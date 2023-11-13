@@ -14,7 +14,7 @@ pub fn quat_look_to(direction: Vec3, up: Vec3) -> Quat {
 
 // SerdeQuat
 #[derive(Clone, Copy, PartialEq)]
-pub struct SerdeQuat(Quat);
+pub struct SerdeQuat(pub Quat);
 
 impl From<Quat> for SerdeQuat {
     fn from(quat: Quat) -> Self {

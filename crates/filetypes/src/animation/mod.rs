@@ -28,6 +28,20 @@ pub struct Transition {
     //pub easing: Easing,
 }
 
+impl Transition {
+    pub fn new(duration_ms: u16) -> Self {
+        let duration_5ms = duration_ms / 5;
+        Self {
+            duration_5ms: duration_5ms.into(),
+        }
+    }
+
+    pub fn get_duration_ms(&self) -> u16 {
+        let duration_5ms: u16 = self.duration_5ms.to();
+        duration_5ms * 5
+    }
+}
+
 // Actions
 pub enum AnimAction {
     // path, file_name

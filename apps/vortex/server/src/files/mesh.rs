@@ -8,35 +8,17 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_server::{
-    BitReader, CommandsExt, FileBitWriter, ReplicationConfig, Serde, SerdeErr, Server,
-    UnsignedVariableInteger,
+    BitReader, CommandsExt, ReplicationConfig, Server,
 };
 
-use vortex_proto::components::{Edge3d, Face3d, FileExtension, FileType, Vertex3d, VertexSerdeInt};
+use filetypes::MeshAction;
+
+use vortex_proto::components::{Edge3d, Face3d, FileExtension, FileType, Vertex3d};
 
 use crate::{
     files::{FileWriter, ShapeTypeData},
     resources::{ContentEntityData, Project, ShapeManager},
 };
-
-// Actions
-#[derive(Debug, Clone)]
-enum MeshAction {
-    //////// x,   y,   z //
-    Vertex(i16, i16, i16),
-    //// id1, id2 // (vertex ids)
-    Edge(u16, u16),
-    //// order_index, id1, id2, id3 // (vertex ids) // id4, id5, id6 (edge ids)
-    Face(u16, u16, u16, u16, u16, u16, u16),
-}
-
-#[derive(Serde, Clone, PartialEq)]
-enum MeshActionType {
-    None,
-    Vertex,
-    Edge,
-    Face,
-}
 
 // Writer
 pub struct MeshWriter;
@@ -162,75 +144,6 @@ impl MeshWriter {
 
         output
     }
-
-    fn write_from_actions(&self, actions: Vec<MeshAction>) -> Box<[u8]> {
-        let mut bit_writer = FileBitWriter::new();
-
-        let mut test_face_index = 0;
-        for (action_id, action) in actions.iter().enumerate() {
-            match action {
-                MeshAction::Vertex(x, y, z) => {
-                    // continue bit
-                    MeshActionType::Vertex.ser(&mut bit_writer);
-
-                    // encode X, Y, Z
-                    VertexSerdeInt::from(*x).ser(&mut bit_writer);
-                    VertexSerdeInt::from(*y).ser(&mut bit_writer);
-                    VertexSerdeInt::from(*z).ser(&mut bit_writer);
-
-                    info!("writing vertex {} : ({}, {}, {})", action_id, x, y, z);
-                }
-                MeshAction::Edge(vertex_a, vertex_b) => {
-                    // continue bit
-                    MeshActionType::Edge.ser(&mut bit_writer);
-
-                    UnsignedVariableInteger::<6>::from(*vertex_a).ser(&mut bit_writer);
-                    UnsignedVariableInteger::<6>::from(*vertex_b).ser(&mut bit_writer);
-
-                    info!("writing edge : ({}, {})", vertex_a, vertex_b);
-                }
-                MeshAction::Face(
-                    face_index,
-                    vertex_a,
-                    vertex_b,
-                    vertex_c,
-                    edge_a,
-                    edge_b,
-                    edge_c,
-                ) => {
-                    if *face_index != test_face_index {
-                        panic!(
-                            "face_index {:?} does not match test_face_index {:?}",
-                            face_index, test_face_index
-                        );
-                    }
-
-                    // continue bit
-                    MeshActionType::Face.ser(&mut bit_writer);
-
-                    UnsignedVariableInteger::<6>::from(*vertex_a).ser(&mut bit_writer);
-                    UnsignedVariableInteger::<6>::from(*vertex_b).ser(&mut bit_writer);
-                    UnsignedVariableInteger::<6>::from(*vertex_c).ser(&mut bit_writer);
-
-                    UnsignedVariableInteger::<6>::from(*edge_a).ser(&mut bit_writer);
-                    UnsignedVariableInteger::<6>::from(*edge_b).ser(&mut bit_writer);
-                    UnsignedVariableInteger::<6>::from(*edge_c).ser(&mut bit_writer);
-
-                    info!(
-                        "writing face : ({}, {}, {}, {}, {}, {})",
-                        vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c
-                    );
-
-                    test_face_index += 1;
-                }
-            }
-        }
-
-        // continue bit
-        MeshActionType::None.ser(&mut bit_writer);
-
-        bit_writer.to_bytes()
-    }
 }
 
 fn check_for_mesh_file_type(file_type_q: &Query<&FileType>, entity: &Entity) {
@@ -253,7 +166,7 @@ impl FileWriter for MeshWriter {
         content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]> {
         let actions = self.world_to_actions(world, content_entities);
-        self.write_from_actions(actions)
+        MeshAction::write(actions)
     }
 
     fn write_new_default(&self) -> Box<[u8]> {
@@ -261,7 +174,7 @@ impl FileWriter for MeshWriter {
 
         default_actions.push(MeshAction::Vertex(0, 0, 0));
 
-        self.write_from_actions(default_actions)
+        MeshAction::write(default_actions)
     }
 }
 
@@ -269,55 +182,6 @@ impl FileWriter for MeshWriter {
 pub struct MeshReader;
 
 impl MeshReader {
-    fn read_to_actions(bit_reader: &mut BitReader) -> Result<Vec<MeshAction>, SerdeErr> {
-        let mut output = Vec::new();
-
-        // handle empty file
-        if bit_reader.bytes_len() == 0 {
-            return Ok(output);
-        }
-
-        let mut face_index = 0;
-
-        // read loop
-        loop {
-            let continue_type = MeshActionType::de(bit_reader)?;
-
-            match continue_type {
-                MeshActionType::None => break,
-                MeshActionType::Vertex => {
-                    // read X, Y, Z
-                    let x = VertexSerdeInt::de(bit_reader)?.to();
-                    let y = VertexSerdeInt::de(bit_reader)?.to();
-                    let z = VertexSerdeInt::de(bit_reader)?.to();
-
-                    output.push(MeshAction::Vertex(x, y, z));
-                }
-                MeshActionType::Edge => {
-                    let vertex_a: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-                    let vertex_b: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-
-                    output.push(MeshAction::Edge(vertex_a, vertex_b));
-                }
-                MeshActionType::Face => {
-                    let vertex_a: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-                    let vertex_b: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-                    let vertex_c: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-
-                    let edge_a: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-                    let edge_b: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-                    let edge_c: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-
-                    output.push(MeshAction::Face(
-                        face_index, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c,
-                    ));
-
-                    face_index += 1;
-                }
-            }
-        }
-        Ok(output)
-    }
 
     fn actions_to_world(
         world: &mut World,
@@ -437,7 +301,7 @@ impl MeshReader {
     ) -> HashMap<Entity, ContentEntityData> {
         let mut bit_reader = BitReader::new(bytes);
 
-        let Ok(actions) = Self::read_to_actions(&mut bit_reader) else {
+        let Ok(actions) = MeshAction::read(&mut bit_reader) else {
             panic!("Error reading .mesh file");
         };
 

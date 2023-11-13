@@ -8,9 +8,10 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_server::{
-    BitReader, CommandsExt, FileBitWriter, ReplicationConfig, Serde, SerdeErr, Server,
-    SignedVariableInteger, UnsignedVariableInteger,
+    BitReader, CommandsExt, ReplicationConfig, Server,
 };
+
+use filetypes::{FileTransformEntityType, SceneAction};
 
 use vortex_proto::{
     components::{
@@ -18,30 +19,13 @@ use vortex_proto::{
         SkinOrSceneEntity,
     },
     resources::FileKey,
-    SerdeQuat,
 };
 
 use crate::{
     files::{add_file_dependency, FileWriter},
     resources::{ContentEntityData, Project},
 };
-
-// Actions
-#[derive(Clone)]
-enum SceneAction {
-    SkinOrSceneFile(String, String, NetTransformEntityType),
-    NetTransform(u16, i16, i16, i16, f32, f32, f32, SerdeQuat),
-}
-
-#[derive(Serde, Clone, PartialEq)]
-enum SceneActionType {
-    SkinOrSceneFile,
-    NetTransform,
-    None,
-}
-
-pub type TranslationSerdeInt = SignedVariableInteger<4>;
-pub type ScaleSerdeInt = UnsignedVariableInteger<4>;
+use crate::files::{convert_from_quat, convert_from_transform_type, convert_into_quat, convert_into_transform_type};
 
 // Writer
 pub struct SceneWriter;
@@ -105,7 +89,7 @@ impl SceneWriter {
             actions.push(SceneAction::SkinOrSceneFile(
                 dependency_key.path().to_string(),
                 dependency_key.name().to_string(),
-                dependency_type,
+                convert_into_transform_type(dependency_type),
             ));
         }
 
@@ -148,63 +132,11 @@ impl SceneWriter {
                 scale_x,
                 scale_y,
                 scale_z,
-                rotation,
+                convert_into_quat(rotation),
             ));
         }
 
         actions
-    }
-
-    fn write_from_actions(&self, actions: Vec<SceneAction>) -> Box<[u8]> {
-        let mut bit_writer = FileBitWriter::new();
-
-        for action in actions {
-            match action {
-                SceneAction::SkinOrSceneFile(path, file_name, file_type) => {
-                    SceneActionType::SkinOrSceneFile.ser(&mut bit_writer);
-                    path.ser(&mut bit_writer);
-                    file_name.ser(&mut bit_writer);
-                    file_type.ser(&mut bit_writer);
-                }
-                SceneAction::NetTransform(
-                    skin_index,
-                    translation_x,
-                    translation_y,
-                    translation_z,
-                    scale_x,
-                    scale_y,
-                    scale_z,
-                    rotation,
-                ) => {
-                    SceneActionType::NetTransform.ser(&mut bit_writer);
-
-                    UnsignedVariableInteger::<6>::new(skin_index).ser(&mut bit_writer);
-
-                    let translation_x = TranslationSerdeInt::new(translation_x);
-                    let translation_y = TranslationSerdeInt::new(translation_y);
-                    let translation_z = TranslationSerdeInt::new(translation_z);
-
-                    translation_x.ser(&mut bit_writer);
-                    translation_y.ser(&mut bit_writer);
-                    translation_z.ser(&mut bit_writer);
-
-                    let scale_x = ScaleSerdeInt::new((scale_x * 100.0) as u32);
-                    let scale_y = ScaleSerdeInt::new((scale_y * 100.0) as u32);
-                    let scale_z = ScaleSerdeInt::new((scale_z * 100.0) as u32);
-
-                    scale_x.ser(&mut bit_writer);
-                    scale_y.ser(&mut bit_writer);
-                    scale_z.ser(&mut bit_writer);
-
-                    rotation.ser(&mut bit_writer);
-                }
-            }
-        }
-
-        // continue bit
-        SceneActionType::None.ser(&mut bit_writer);
-
-        bit_writer.to_bytes()
     }
 }
 
@@ -216,13 +148,13 @@ impl FileWriter for SceneWriter {
         content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]> {
         let actions = self.world_to_actions(world, project, content_entities);
-        self.write_from_actions(actions)
+        SceneAction::write(actions)
     }
 
     fn write_new_default(&self) -> Box<[u8]> {
         let actions = Vec::new();
 
-        self.write_from_actions(actions)
+        SceneAction::write(actions)
     }
 }
 
@@ -230,56 +162,6 @@ impl FileWriter for SceneWriter {
 pub struct SceneReader;
 
 impl SceneReader {
-    fn read_to_actions(bit_reader: &mut BitReader) -> Result<Vec<SceneAction>, SerdeErr> {
-        let mut actions = Vec::new();
-
-        loop {
-            let action_type = SceneActionType::de(bit_reader)?;
-
-            match action_type {
-                SceneActionType::SkinOrSceneFile => {
-                    let path = String::de(bit_reader)?;
-                    let file_name = String::de(bit_reader)?;
-                    let file_type = NetTransformEntityType::de(bit_reader)?;
-                    actions.push(SceneAction::SkinOrSceneFile(path, file_name, file_type));
-                }
-                SceneActionType::NetTransform => {
-                    let skin_index: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-
-                    let translation_x = TranslationSerdeInt::de(bit_reader)?.to();
-                    let translation_y = TranslationSerdeInt::de(bit_reader)?.to();
-                    let translation_z = TranslationSerdeInt::de(bit_reader)?.to();
-
-                    let scale_x: u32 = ScaleSerdeInt::de(bit_reader)?.to();
-                    let scale_y: u32 = ScaleSerdeInt::de(bit_reader)?.to();
-                    let scale_z: u32 = ScaleSerdeInt::de(bit_reader)?.to();
-                    let scale_x = (scale_x as f32) / 100.0;
-                    let scale_y = (scale_y as f32) / 100.0;
-                    let scale_z = (scale_z as f32) / 100.0;
-
-                    let rotation = SerdeQuat::de(bit_reader)?;
-
-                    info!("reading net transform into action",);
-
-                    actions.push(SceneAction::NetTransform(
-                        skin_index,
-                        translation_x,
-                        translation_y,
-                        translation_z,
-                        scale_x,
-                        scale_y,
-                        scale_z,
-                        rotation,
-                    ));
-                }
-                SceneActionType::None => {
-                    break;
-                }
-            }
-        }
-
-        Ok(actions)
-    }
 
     fn actions_to_world(
         world: &mut World,
@@ -299,9 +181,8 @@ impl SceneReader {
             match action {
                 SceneAction::SkinOrSceneFile(path, file_name, file_type) => {
                     let dependency_file_ext = match file_type {
-                        NetTransformEntityType::Uninit => panic!("shouldn't happen"),
-                        NetTransformEntityType::Skin => FileExtension::Skin,
-                        NetTransformEntityType::Scene => FileExtension::Scene,
+                        FileTransformEntityType::Skin => FileExtension::Skin,
+                        FileTransformEntityType::Scene => FileExtension::Scene,
                     };
                     let (new_dependency_entity, dependency_file_entity, dependency_file_key) =
                         add_file_dependency(
@@ -339,7 +220,7 @@ impl SceneReader {
                     let Some((skin_or_scene_type, skin_or_scene_entity)) = skin_files.get(skin_index as usize) else {
                         panic!("skin index out of bounds");
                     };
-                    let mut skin_or_scene_component = SkinOrSceneEntity::new(*skin_or_scene_type);
+                    let mut skin_or_scene_component = SkinOrSceneEntity::new(convert_from_transform_type(*skin_or_scene_type));
                     skin_or_scene_component
                         .value
                         .set(&server, skin_or_scene_entity);
@@ -358,7 +239,7 @@ impl SceneReader {
                         .enable_replication(&mut server)
                         .configure_replication(ReplicationConfig::Delegated)
                         .insert(NetTransform::new(
-                            rotation,
+                            convert_from_quat(rotation),
                             translation_x as f32,
                             translation_y as f32,
                             translation_z as f32,
@@ -391,7 +272,7 @@ impl SceneReader {
     ) -> HashMap<Entity, ContentEntityData> {
         let mut bit_reader = BitReader::new(bytes);
 
-        let Ok(actions) = Self::read_to_actions(&mut bit_reader) else {
+        let Ok(actions) = SceneAction::read(&mut bit_reader) else {
             panic!("Error reading .scene file");
         };
 

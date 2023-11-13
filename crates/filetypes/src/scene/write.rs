@@ -3,7 +3,7 @@ use naia_serde::{FileBitWriter, SerdeInternal as Serde, UnsignedVariableInteger}
 use crate::{scene::{SceneActionType}, SceneAction, common::{ScaleSerdeInt, TranslationSerdeInt}};
 
 impl SceneAction {
-    pub fn write(&self, actions: Vec<Self>) -> Box<[u8]> {
+    pub fn write(actions: Vec<Self>) -> Box<[u8]> {
         let mut bit_writer = FileBitWriter::new();
 
         for action in actions {

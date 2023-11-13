@@ -3,7 +3,7 @@ use naia_serde::{FileBitWriter, Serde, UnsignedVariableInteger};
 use crate::{model::{ModelActionType}, ModelAction, common::{ScaleSerdeInt, TranslationSerdeInt}};
 
 impl ModelAction {
-    pub fn write(&self, actions: Vec<Self>) -> Box<[u8]> {
+    pub fn write(actions: Vec<Self>) -> Box<[u8]> {
         let mut bit_writer = FileBitWriter::new();
 
         for action in actions {

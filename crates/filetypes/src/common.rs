@@ -1,9 +1,8 @@
 use naia_serde::{BitReader, BitWrite, ConstBitLength, SerdeErr, SerdeInternal as Serde, SignedInteger, SignedVariableInteger, UnsignedInteger, UnsignedVariableInteger};
 
-// NetTransformEntityType
+// FileTransformEntityType
 #[derive(Serde, Copy, Clone, PartialEq, Debug)]
-pub enum NetTransformEntityType {
-    Uninit,
+pub enum FileTransformEntityType {
     Skin,
     Scene,
 }
@@ -63,17 +62,17 @@ impl SerdeRotation {
 // SerdeQuat
 #[derive(Clone, Copy, PartialEq)]
 pub struct SerdeQuat {
-    x: f32,
-    y: f32,
-    z: f32,
-    w: f32,
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+    pub w: f32,
 }
 
 impl SerdeQuat {
     const BITS: u8 = 5;
     const MAX_SIZE: f32 = 32.0;
 
-    fn from_xyzw(x: f32, y: f32, z: f32, w: f32) -> Self {
+    pub fn from_xyzw(x: f32, y: f32, z: f32, w: f32) -> Self {
         Self { x, y, z, w }
     }
 }

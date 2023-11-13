@@ -1,7 +1,7 @@
 
 use naia_serde::{BitReader, SerdeInternal as Serde, SerdeErr, UnsignedVariableInteger};
 
-use crate::{scene::{SceneActionType}, SceneAction, common::{ScaleSerdeInt, TranslationSerdeInt, NetTransformEntityType, SerdeQuat}};
+use crate::{scene::{SceneActionType}, SceneAction, common::{ScaleSerdeInt, TranslationSerdeInt, FileTransformEntityType, SerdeQuat}};
 
 impl SceneAction {
     pub fn read(bit_reader: &mut BitReader) -> Result<Vec<Self>, SerdeErr> {
@@ -14,7 +14,7 @@ impl SceneAction {
                 SceneActionType::SkinOrSceneFile => {
                     let path = String::de(bit_reader)?;
                     let file_name = String::de(bit_reader)?;
-                    let file_type = NetTransformEntityType::de(bit_reader)?;
+                    let file_type = FileTransformEntityType::de(bit_reader)?;
                     actions.push(Self::SkinOrSceneFile(path, file_name, file_type));
                 }
                 SceneActionType::NetTransform => {

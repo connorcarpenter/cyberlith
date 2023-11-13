@@ -1,10 +1,11 @@
 mod common;
+pub use common::{FileTransformEntityType, SerdeQuat, SerdeRotation};
 
 mod animation;
-pub use animation::AnimAction;
+pub use animation::{AnimAction, Transition};
 
 mod icon;
-pub use icon::IconAction;
+pub use icon::{IconAction, IconFrameAction};
 
 mod mesh;
 pub use mesh::MeshAction;

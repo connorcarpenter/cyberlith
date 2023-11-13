@@ -3,7 +3,7 @@ use naia_serde::{FileBitWriter, SerdeInternal as Serde, UnsignedVariableInteger}
 use crate::{common::VertexSerdeInt, SkelAction};
 
 impl SkelAction {
-    pub fn write(&self, actions: Vec<Self>) -> Box<[u8]> {
+    pub fn write(actions: Vec<Self>) -> Box<[u8]> {
         let mut bit_writer = FileBitWriter::new();
 
         for action in actions {

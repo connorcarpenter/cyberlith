@@ -8,9 +8,10 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_server::{
-    BitReader, CommandsExt, FileBitWriter, ReplicationConfig, Serde, SerdeErr, Server,
-    UnsignedVariableInteger,
+    BitReader, CommandsExt, ReplicationConfig, Server,
 };
+
+use filetypes::AnimAction;
 
 use vortex_proto::{
     components::{AnimFrame, AnimRotation, FileExtension, Transition},
@@ -22,24 +23,7 @@ use crate::{
     files::{add_file_dependency, FileWriter},
     resources::{AnimationManager, ContentEntityData, Project},
 };
-
-// Actions
-enum AnimAction {
-    // path, file_name
-    SkelFile(String, String),
-    // shape name -> shape_index
-    ShapeIndex(String),
-    // shape_index -> rotation
-    Frame(HashMap<u16, SerdeQuat>, Transition),
-}
-
-#[derive(Serde, Clone, PartialEq)]
-enum AnimActionType {
-    SkelFile,
-    ShapeIndex,
-    Frame,
-    None,
-}
+use crate::files::{convert_from_quat, convert_from_transition, convert_into_quat_map, convert_into_transition};
 
 // Writer
 pub struct AnimWriter;
@@ -160,48 +144,11 @@ impl AnimWriter {
                     HashMap::new()
                 };
                 info!("push frame action: {}", order);
-                actions.push(AnimAction::Frame(poses, transition));
+                actions.push(AnimAction::Frame(convert_into_quat_map(poses), convert_into_transition(transition)));
             }
         }
 
         actions
-    }
-
-    fn write_from_actions(&self, actions: Vec<AnimAction>) -> Box<[u8]> {
-        let mut bit_writer = FileBitWriter::new();
-
-        for action in actions {
-            match action {
-                AnimAction::SkelFile(path, file_name) => {
-                    AnimActionType::SkelFile.ser(&mut bit_writer);
-                    path.ser(&mut bit_writer);
-                    file_name.ser(&mut bit_writer);
-                }
-                AnimAction::ShapeIndex(name) => {
-                    AnimActionType::ShapeIndex.ser(&mut bit_writer);
-                    name.ser(&mut bit_writer);
-                }
-                AnimAction::Frame(poses, transition) => {
-                    info!("write AnimActionType::Frame");
-                    AnimActionType::Frame.ser(&mut bit_writer);
-                    transition.ser(&mut bit_writer);
-                    for (shape_index, pose_quat) in poses {
-                        // continue bit
-                        true.ser(&mut bit_writer);
-
-                        UnsignedVariableInteger::<5>::from(shape_index).ser(&mut bit_writer);
-                        pose_quat.ser(&mut bit_writer);
-                    }
-                    // continue bit
-                    false.ser(&mut bit_writer);
-                }
-            }
-        }
-
-        // continue bit
-        AnimActionType::None.ser(&mut bit_writer);
-
-        bit_writer.to_bytes()
     }
 }
 
@@ -213,16 +160,16 @@ impl FileWriter for AnimWriter {
         content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]> {
         let actions = self.world_to_actions(world, project, content_entities);
-        self.write_from_actions(actions)
+        AnimAction::write(actions)
     }
 
     fn write_new_default(&self) -> Box<[u8]> {
         info!("anim write new default");
         let mut actions = Vec::new();
 
-        actions.push(AnimAction::Frame(HashMap::new(), Transition::new(100)));
+        actions.push(AnimAction::Frame(HashMap::new(), convert_into_transition(Transition::new(100))));
 
-        self.write_from_actions(actions)
+        AnimAction::write(actions)
     }
 }
 
@@ -230,45 +177,6 @@ impl FileWriter for AnimWriter {
 pub struct AnimReader;
 
 impl AnimReader {
-    fn read_to_actions(bit_reader: &mut BitReader) -> Result<Vec<AnimAction>, SerdeErr> {
-        let mut actions = Vec::new();
-
-        loop {
-            let action_type = AnimActionType::de(bit_reader)?;
-
-            match action_type {
-                AnimActionType::SkelFile => {
-                    let path = String::de(bit_reader)?;
-                    let file_name = String::de(bit_reader)?;
-                    actions.push(AnimAction::SkelFile(path, file_name));
-                }
-                AnimActionType::ShapeIndex => {
-                    let name = String::de(bit_reader)?;
-                    actions.push(AnimAction::ShapeIndex(name));
-                }
-                AnimActionType::Frame => {
-                    let transition = Transition::de(bit_reader)?;
-                    let mut poses = HashMap::new();
-                    loop {
-                        let continue_bit = bool::de(bit_reader)?;
-                        if !continue_bit {
-                            break;
-                        }
-
-                        let shape_index: u16 = UnsignedVariableInteger::<5>::de(bit_reader)?.to();
-                        let pose_quat = SerdeQuat::de(bit_reader)?;
-                        poses.insert(shape_index, pose_quat);
-                    }
-                    actions.push(AnimAction::Frame(poses, transition));
-                }
-                AnimActionType::None => {
-                    break;
-                }
-            }
-        }
-
-        Ok(actions)
-    }
 
     fn actions_to_world(
         world: &mut World,
@@ -308,7 +216,7 @@ impl AnimReader {
                 AnimAction::Frame(poses, transition) => {
                     info!("read frame action!");
 
-                    let mut component = AnimFrame::new(frame_index, transition);
+                    let mut component = AnimFrame::new(frame_index, convert_from_transition(transition));
                     component.file_entity.set(&server, file_entity);
                     let frame_entity = commands
                         .spawn_empty()
@@ -329,7 +237,7 @@ impl AnimReader {
                     for (shape_index, rotation) in poses {
                         let shape_name = shape_name_map.get(&shape_index).unwrap();
 
-                        let mut component = AnimRotation::new(shape_name.clone(), rotation);
+                        let mut component = AnimRotation::new(shape_name.clone(), convert_from_quat(rotation));
                         component.frame_entity.set(&server, &frame_entity);
 
                         let rotation_entity = commands
@@ -364,7 +272,7 @@ impl AnimReader {
     ) -> HashMap<Entity, ContentEntityData> {
         let mut bit_reader = BitReader::new(bytes);
 
-        let Ok(actions) = Self::read_to_actions(&mut bit_reader) else {
+        let Ok(actions) = AnimAction::read(&mut bit_reader) else {
             panic!("Error reading .anim file");
         };
 

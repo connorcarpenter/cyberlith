@@ -8,9 +8,10 @@ use bevy_ecs::{
 use bevy_log::info;
 
 use naia_bevy_server::{
-    BitReader, CommandsExt, FileBitWriter, ReplicationConfig, Serde, SerdeErr, Server,
-    SignedVariableInteger, UnsignedVariableInteger,
+    BitReader, CommandsExt, ReplicationConfig, Server,
 };
+
+use filetypes::{ModelAction, FileTransformEntityType};
 
 use vortex_proto::{
     components::{
@@ -18,33 +19,13 @@ use vortex_proto::{
         SkinOrSceneEntity,
     },
     resources::FileKey,
-    SerdeQuat,
 };
 
 use crate::{
     files::{add_file_dependency, FileWriter},
     resources::{ContentEntityData, Project},
 };
-
-// Actions
-#[derive(Clone)]
-enum ModelAction {
-    // path, file_name
-    SkelFile(String, String),
-    SkinOrSceneFile(String, String, NetTransformEntityType),
-    NetTransform(u16, String, i16, i16, i16, f32, f32, f32, SerdeQuat),
-}
-
-#[derive(Serde, Clone, PartialEq)]
-enum ModelActionType {
-    SkelFile,
-    SkinFile,
-    NetTransform,
-    None,
-}
-
-pub type TranslationSerdeInt = SignedVariableInteger<4>;
-pub type ScaleSerdeInt = UnsignedVariableInteger<4>;
+use crate::files::{convert_from_quat, convert_from_transform_type, convert_into_quat, convert_into_transform_type};
 
 // Writer
 pub struct ModelWriter;
@@ -121,7 +102,7 @@ impl ModelWriter {
             actions.push(ModelAction::SkinOrSceneFile(
                 dependency_key.path().to_string(),
                 dependency_key.name().to_string(),
-                dependency_type,
+                convert_into_transform_type(dependency_type),
             ));
         }
 
@@ -166,72 +147,11 @@ impl ModelWriter {
                 scale_x,
                 scale_y,
                 scale_z,
-                rotation,
+                convert_into_quat(rotation),
             ));
         }
 
         actions
-    }
-
-    fn write_from_actions(&self, actions: Vec<ModelAction>) -> Box<[u8]> {
-        let mut bit_writer = FileBitWriter::new();
-
-        for action in actions {
-            match action {
-                ModelAction::SkelFile(path, file_name) => {
-                    ModelActionType::SkelFile.ser(&mut bit_writer);
-                    path.ser(&mut bit_writer);
-                    file_name.ser(&mut bit_writer);
-                }
-                ModelAction::SkinOrSceneFile(path, file_name, file_type) => {
-                    ModelActionType::SkinFile.ser(&mut bit_writer);
-                    path.ser(&mut bit_writer);
-                    file_name.ser(&mut bit_writer);
-                    file_type.ser(&mut bit_writer);
-                }
-                ModelAction::NetTransform(
-                    skin_index,
-                    vertex_name,
-                    translation_x,
-                    translation_y,
-                    translation_z,
-                    scale_x,
-                    scale_y,
-                    scale_z,
-                    rotation,
-                ) => {
-                    info!("writing net transform for bone: `{}`", vertex_name);
-                    ModelActionType::NetTransform.ser(&mut bit_writer);
-
-                    UnsignedVariableInteger::<6>::new(skin_index).ser(&mut bit_writer);
-
-                    vertex_name.ser(&mut bit_writer);
-
-                    let translation_x = TranslationSerdeInt::new(translation_x);
-                    let translation_y = TranslationSerdeInt::new(translation_y);
-                    let translation_z = TranslationSerdeInt::new(translation_z);
-
-                    translation_x.ser(&mut bit_writer);
-                    translation_y.ser(&mut bit_writer);
-                    translation_z.ser(&mut bit_writer);
-
-                    let scale_x = ScaleSerdeInt::new((scale_x * 100.0) as u32);
-                    let scale_y = ScaleSerdeInt::new((scale_y * 100.0) as u32);
-                    let scale_z = ScaleSerdeInt::new((scale_z * 100.0) as u32);
-
-                    scale_x.ser(&mut bit_writer);
-                    scale_y.ser(&mut bit_writer);
-                    scale_z.ser(&mut bit_writer);
-
-                    rotation.ser(&mut bit_writer);
-                }
-            }
-        }
-
-        // continue bit
-        ModelActionType::None.ser(&mut bit_writer);
-
-        bit_writer.to_bytes()
     }
 }
 
@@ -243,13 +163,13 @@ impl FileWriter for ModelWriter {
         content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]> {
         let actions = self.world_to_actions(world, project, content_entities);
-        self.write_from_actions(actions)
+        ModelAction::write(actions)
     }
 
     fn write_new_default(&self) -> Box<[u8]> {
         let actions = Vec::new();
 
-        self.write_from_actions(actions)
+        ModelAction::write(actions)
     }
 }
 
@@ -257,67 +177,6 @@ impl FileWriter for ModelWriter {
 pub struct ModelReader;
 
 impl ModelReader {
-    fn read_to_actions(bit_reader: &mut BitReader) -> Result<Vec<ModelAction>, SerdeErr> {
-        let mut actions = Vec::new();
-
-        loop {
-            let action_type = ModelActionType::de(bit_reader)?;
-
-            match action_type {
-                ModelActionType::SkelFile => {
-                    let path = String::de(bit_reader)?;
-                    let file_name = String::de(bit_reader)?;
-                    actions.push(ModelAction::SkelFile(path, file_name));
-                }
-                ModelActionType::SkinFile => {
-                    let path = String::de(bit_reader)?;
-                    let file_name = String::de(bit_reader)?;
-                    let file_type = NetTransformEntityType::de(bit_reader)?;
-                    actions.push(ModelAction::SkinOrSceneFile(path, file_name, file_type));
-                }
-                ModelActionType::NetTransform => {
-                    let skin_index: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-
-                    let vertex_name = String::de(bit_reader)?;
-
-                    let translation_x = TranslationSerdeInt::de(bit_reader)?.to();
-                    let translation_y = TranslationSerdeInt::de(bit_reader)?.to();
-                    let translation_z = TranslationSerdeInt::de(bit_reader)?.to();
-
-                    let scale_x: u32 = ScaleSerdeInt::de(bit_reader)?.to();
-                    let scale_y: u32 = ScaleSerdeInt::de(bit_reader)?.to();
-                    let scale_z: u32 = ScaleSerdeInt::de(bit_reader)?.to();
-                    let scale_x = (scale_x as f32) / 100.0;
-                    let scale_y = (scale_y as f32) / 100.0;
-                    let scale_z = (scale_z as f32) / 100.0;
-
-                    let rotation = SerdeQuat::de(bit_reader)?;
-
-                    info!(
-                        "reading net transform for bone: `{}`, into action",
-                        vertex_name
-                    );
-
-                    actions.push(ModelAction::NetTransform(
-                        skin_index,
-                        vertex_name,
-                        translation_x,
-                        translation_y,
-                        translation_z,
-                        scale_x,
-                        scale_y,
-                        scale_z,
-                        rotation,
-                    ));
-                }
-                ModelActionType::None => {
-                    break;
-                }
-            }
-        }
-
-        Ok(actions)
-    }
 
     fn actions_to_world(
         world: &mut World,
@@ -354,9 +213,8 @@ impl ModelReader {
                 }
                 ModelAction::SkinOrSceneFile(path, file_name, file_type) => {
                     let dependency_file_ext = match file_type {
-                        NetTransformEntityType::Uninit => panic!("shouldn't happen"),
-                        NetTransformEntityType::Skin => FileExtension::Skin,
-                        NetTransformEntityType::Scene => FileExtension::Scene,
+                        FileTransformEntityType::Skin => FileExtension::Skin,
+                        FileTransformEntityType::Scene => FileExtension::Scene,
                     };
                     let (new_dependency_entity, dependency_file_entity, dependency_file_key) =
                         add_file_dependency(
@@ -395,7 +253,7 @@ impl ModelReader {
                     let Some((skin_or_scene_type, skin_or_scene_entity)) = skin_files.get(skin_index as usize) else {
                         panic!("skin index out of bounds");
                     };
-                    let mut skin_or_scene_component = SkinOrSceneEntity::new(*skin_or_scene_type);
+                    let mut skin_or_scene_component = SkinOrSceneEntity::new(convert_from_transform_type(*skin_or_scene_type));
                     skin_or_scene_component
                         .value
                         .set(&server, skin_or_scene_entity);
@@ -414,7 +272,7 @@ impl ModelReader {
                         .enable_replication(&mut server)
                         .configure_replication(ReplicationConfig::Delegated)
                         .insert(NetTransform::new(
-                            rotation,
+                            convert_from_quat(rotation),
                             translation_x as f32,
                             translation_y as f32,
                             translation_z as f32,
@@ -448,7 +306,7 @@ impl ModelReader {
     ) -> HashMap<Entity, ContentEntityData> {
         let mut bit_reader = BitReader::new(bytes);
 
-        let Ok(actions) = Self::read_to_actions(&mut bit_reader) else {
+        let Ok(actions) = ModelAction::read(&mut bit_reader) else {
             panic!("Error reading .model file");
         };
 
