@@ -842,23 +842,30 @@ fn file_ext_specific_sync_tabs_shape_colors(
                 let Ok(skin_or_scene_entity) = skin_or_scene_q.get(net_transform_entity) else {
                     continue;
                 };
-                if NetTransformEntityType::Skin != *skin_or_scene_entity.value_type {
-                    todo!("support scene entity type");
+                match *skin_or_scene_entity.value_type {
+                    NetTransformEntityType::Skin => {
+                        let skin_file_entity: Entity = skin_or_scene_entity.value.get(&client).unwrap();
+                        set_face_3d_colors(
+                            &skin_file_entity,
+                            &client,
+                            &file_manager,
+                            &palette_manager,
+                            &skin_manager,
+                            &mut materials,
+                            &mut face_3d_q,
+                            &palette_color_q,
+                            &bckg_color_q,
+                            &face_color_q,
+                            &mut None,
+                        );
+                    }
+                    NetTransformEntityType::Scene => {
+                        todo!();
+                    }
+                    _ => {
+                        panic!("invalid");
+                    }
                 }
-                let skin_file_entity: Entity = skin_or_scene_entity.value.get(&client).unwrap();
-                set_face_3d_colors(
-                    &skin_file_entity,
-                    &client,
-                    &file_manager,
-                    &palette_manager,
-                    &skin_manager,
-                    &mut materials,
-                    &mut face_3d_q,
-                    &palette_color_q,
-                    &bckg_color_q,
-                    &face_color_q,
-                    &mut None,
-                );
             }
         }
         FileExtension::Icon => {
