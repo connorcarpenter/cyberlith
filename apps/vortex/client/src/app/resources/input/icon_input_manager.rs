@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use bevy_ecs::{
     entity::Entity,
     query::With,
@@ -15,7 +17,7 @@ use render_api::{
     shapes::{distance_to_2d_line, get_2d_line_transform_endpoint},
 };
 
-use vortex_proto::components::IconVertex;
+use vortex_proto::components::{IconEdge, IconFace, IconVertex};
 
 use crate::app::{
     components::{
@@ -24,11 +26,10 @@ use crate::app::{
     },
     resources::{
         action::icon::IconAction, camera_manager::CameraManager, canvas::Canvas,
-        icon_manager::IconManager, input::InputManager, shape_data::CanvasShape,
+        icon_manager::{IconManager, IconShapeData}, input::{InputManager, CardinalDirection}, shape_data::CanvasShape,
         tab_manager::TabManager,
     },
 };
-use crate::app::resources::input::CardinalDirection;
 
 pub struct IconInputManager;
 
@@ -732,22 +733,73 @@ impl IconInputManager {
                 .current_frame_entity(&current_file_entity)
                 .unwrap();
 
-            // TODO! implement this!
-            // let rotation_entities: Vec<Entity> = icon_manager
-            //     .get_frame_rotations(&current_file_entity, &current_frame_entity)
-            //     .unwrap()
-            //     .iter()
-            //     .copied()
-            //     .collect();
-            // let mut rot_q = world.query::<&AnimRotation>();
-            // for rotation_entity in rotation_entities.iter() {
-            //     let Ok(rot) = rot_q.get(world, *rotation_entity) else {
-            //         continue;
-            //     };
-            //     let name: String = (*rot.vertex_name).clone();
-            //     let quat = rot.get_rotation();
-            //     copied_shapes.push((name, quat));
-            // }
+            let mut system_state: SystemState<(Client, Query<(Entity, &IconVertex)>, Query<(Entity, &IconEdge)>, Query<&IconFace>)> =
+                SystemState::new(world);
+            let (client, vertex_q, edge_q, face_q) = system_state.get_mut(world);
+
+            // vertices
+            let mut vertex_map = HashMap::new();
+            let mut vertex_index: usize = 0;
+
+            for (vertex_entity, vertex) in vertex_q.iter() {
+                if vertex.frame_entity.get(&client).unwrap() == current_frame_entity {
+                    copied_shapes.push(IconShapeData::Vertex(vertex.x(), vertex.y()));
+                    vertex_map.insert(vertex_entity, vertex_index);
+                    vertex_index += 1;
+                }
+            }
+
+            // edges
+            let mut edge_map = HashMap::new();
+            let mut edge_index: usize = 0;
+
+            for (edge_entity, edge) in edge_q.iter() {
+                if edge.frame_entity.get(&client).unwrap() != current_frame_entity {
+                    continue;
+                }
+
+                let vertex_a_entity = edge.start.get(&client).unwrap();
+                let vertex_b_entity = edge.end.get(&client).unwrap();
+                let vertex_a_index = *vertex_map.get(&vertex_a_entity).unwrap();
+                let vertex_b_index = *vertex_map.get(&vertex_b_entity).unwrap();
+
+                copied_shapes.push(IconShapeData::Edge(vertex_a_index, vertex_b_index));
+                edge_map.insert(edge_entity, edge_index);
+                edge_index += 1;
+            }
+
+            // faces
+            for face in face_q.iter() {
+                if face.frame_entity.get(&client).unwrap() != current_frame_entity {
+                    continue;
+                }
+
+                let palette_color_entity = face.palette_color_entity.get(&client).unwrap();
+
+                let vertex_a_entity = face.vertex_a.get(&client).unwrap();
+                let vertex_b_entity = face.vertex_b.get(&client).unwrap();
+                let vertex_c_entity = face.vertex_c.get(&client).unwrap();
+                let vertex_a_index = *vertex_map.get(&vertex_a_entity).unwrap();
+                let vertex_b_index = *vertex_map.get(&vertex_b_entity).unwrap();
+                let vertex_c_index = *vertex_map.get(&vertex_c_entity).unwrap();
+
+                let edge_a_entity = face.edge_a.get(&client).unwrap();
+                let edge_b_entity = face.edge_b.get(&client).unwrap();
+                let edge_c_entity = face.edge_c.get(&client).unwrap();
+                let edge_a_index = *edge_map.get(&edge_a_entity).unwrap();
+                let edge_b_index = *edge_map.get(&edge_b_entity).unwrap();
+                let edge_c_index = *edge_map.get(&edge_c_entity).unwrap();
+
+                copied_shapes.push(IconShapeData::Face(
+                    palette_color_entity,
+                    vertex_a_index,
+                    vertex_b_index,
+                    vertex_c_index,
+                    edge_a_index,
+                    edge_b_index,
+                    edge_c_index,
+                ));
+            }
 
             // execute insertion
             tab_manager.current_tab_execute_icon_action(

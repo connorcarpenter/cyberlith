@@ -8,15 +8,14 @@ use crate::app::{
         action::{
             icon::{
                 create_edge, create_vertex, delete_edge, delete_face, delete_vertex, move_vertex,
-                select_shape,
+                select_shape, delete_frame, edit_color, insert_frame, move_frame, select_frame
             },
             Action, ActionStack,
         },
-        icon_manager::IconManager,
+        icon_manager::{IconManager, IconShapeData},
         shape_data::CanvasShape,
     },
 };
-use crate::app::resources::action::icon::{delete_frame, edit_color, insert_frame, move_frame, select_frame};
 
 #[derive(Clone)]
 pub enum IconAction {
@@ -51,8 +50,8 @@ pub enum IconAction {
     // framing
     // file entity, next frame index, last frame index
     SelectFrame(Entity, usize, usize),
-    // file entity, frame index, ... todo
-    InsertFrame(Entity, usize, Option<Vec<()>>),
+    // file entity, frame index, copied shape data
+    InsertFrame(Entity, usize, Option<Vec<IconShapeData>>),
     // file entity, frame index
     DeleteFrame(Entity, usize),
     // file entity, frame index, last frame index
@@ -113,7 +112,7 @@ impl IconAction {
             IconActionType::DeleteEdge => delete_edge::execute(world, icon_manager, self),
             IconActionType::DeleteFace => delete_face::execute(world, icon_manager, self),
             IconActionType::SelectFrame => select_frame::execute(world, icon_manager, self),
-            IconActionType::InsertFrame => insert_frame::execute(world, icon_manager, self),
+            IconActionType::InsertFrame => insert_frame::execute(world, icon_manager, current_file_entity, self),
             IconActionType::DeleteFrame => delete_frame::execute(world, icon_manager, self),
             IconActionType::MoveFrame => move_frame::execute(world, icon_manager, self),
             IconActionType::EditColor => edit_color::execute(world, icon_manager, self),

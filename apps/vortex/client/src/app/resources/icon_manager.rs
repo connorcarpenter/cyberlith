@@ -163,6 +163,16 @@ impl Default for IconManager {
     }
 }
 
+#[derive(Clone, Debug)]
+pub enum IconShapeData {
+    // x, y,
+    Vertex(i16, i16),
+    // vertex a index, vertex b index
+    Edge(usize, usize),
+    // palette_color_entity, vertex a index, vertex b index, vertex c index, edge a index, edge b index, edge c index
+    Face(Entity, usize, usize, usize, usize, usize, usize),
+}
+
 impl IconManager {
 
     pub fn draw(&mut self, world: &mut World, current_file_entity: &Entity) {
@@ -1671,7 +1681,7 @@ impl IconManager {
         file_entity: &Entity,
         frame_entity: &Entity,
         palette_color_entity: &Entity,
-    ) {
+    ) -> Entity {
         info!("creating networked face");
 
         // get vertex entities & positions
@@ -1733,6 +1743,8 @@ impl IconManager {
             face_net_entity,
             positions,
         );
+
+        face_net_entity
     }
 
     pub fn net_face_postprocess(
