@@ -1,7 +1,7 @@
 use bevy_ecs::{
-    prelude::{Commands, Entity, World},
-    system::{Query, SystemState, Res},
     event::EventWriter,
+    prelude::{Commands, Entity, World},
+    system::{Query, Res, SystemState},
 };
 use bevy_log::info;
 
@@ -9,9 +9,13 @@ use naia_bevy_client::{Client, CommandsExt};
 
 use vortex_proto::components::{FileExtension, IconFace};
 
-use crate::app::{events::ShapeColorResyncEvent, resources::{
-    action::icon::IconAction, icon_manager::IconManager, shape_data::CanvasShape, file_manager::FileManager, palette_manager::PaletteManager
-}};
+use crate::app::{
+    events::ShapeColorResyncEvent,
+    resources::{
+        action::icon::IconAction, file_manager::FileManager, icon_manager::IconManager,
+        palette_manager::PaletteManager, shape_data::CanvasShape,
+    },
+};
 
 pub(crate) fn execute(
     world: &mut World,
@@ -41,17 +45,10 @@ pub(crate) fn execute(
 
     system_state.apply(world);
 
-
     if let Some((local_face_entity, CanvasShape::Face)) = shape_entity_opt {
-
-        let mut system_state: SystemState<(
-            Res<FileManager>,
-            Res<PaletteManager>,
-        )> = SystemState::new(world);
-        let (
-            file_manager,
-            palette_manager,
-        ) = system_state.get_mut(world);
+        let mut system_state: SystemState<(Res<FileManager>, Res<PaletteManager>)> =
+            SystemState::new(world);
+        let (file_manager, palette_manager) = system_state.get_mut(world);
 
         // create new face, assign color
         let palette_color_index = icon_manager.selected_color_index();
@@ -66,17 +63,13 @@ pub(crate) fn execute(
             .unwrap();
 
         if let Some(net_face_entity) = icon_manager.face_entity_local_to_net(&local_face_entity) {
-
             let mut system_state: SystemState<(
                 Client,
                 Query<&mut IconFace>,
                 EventWriter<ShapeColorResyncEvent>,
             )> = SystemState::new(world);
-            let (
-                client,
-                mut face_q,
-                mut shape_color_resync_event_writer,
-            ) = system_state.get_mut(world);
+            let (client, mut face_q, mut shape_color_resync_event_writer) =
+                system_state.get_mut(world);
 
             // edit face color
 
@@ -97,8 +90,11 @@ pub(crate) fn execute(
                 IconAction::EditColor(local_face_entity, Some(prev_palette_entity)),
             ];
         } else {
-
-            icon_manager.create_networked_face_from_world(world, local_face_entity, next_palette_color_entity);
+            icon_manager.create_networked_face_from_world(
+                world,
+                local_face_entity,
+                next_palette_color_entity,
+            );
 
             return vec![
                 IconAction::SelectShape(deselected_entity),

@@ -870,7 +870,12 @@ fn file_ext_specific_sync_tabs_shape_colors(
                 ResMut<Assets<CpuMaterial>>,
                 Query<&mut Handle<CpuMaterial>, (With<IconLocalFace>, Without<IconFace>)>,
                 Query<
-                    (Entity, &IconFace, &mut Handle<CpuMaterial>, &OwnedByFileLocal),
+                    (
+                        Entity,
+                        &IconFace,
+                        &mut Handle<CpuMaterial>,
+                        &OwnedByFileLocal,
+                    ),
                     Without<IconLocalFace>,
                 >,
                 Query<&PaletteColor>,
@@ -1014,7 +1019,12 @@ fn set_icon_face_colors(
     palette_manager: &PaletteManager,
     materials: &mut Assets<CpuMaterial>,
     net_face_q: &mut Query<
-        (Entity, &IconFace, &mut Handle<CpuMaterial>, &OwnedByFileLocal),
+        (
+            Entity,
+            &IconFace,
+            &mut Handle<CpuMaterial>,
+            &OwnedByFileLocal,
+        ),
         Without<IconLocalFace>,
     >,
     palette_color_q: &Query<&PaletteColor>,
@@ -1030,7 +1040,8 @@ fn set_icon_face_colors(
         panic!("no colors for given file");
     };
 
-    for (net_face_entity, icon_face, mut net_face_material, owned_by_file) in net_face_q.iter_mut() {
+    for (net_face_entity, icon_face, mut net_face_material, owned_by_file) in net_face_q.iter_mut()
+    {
         if owned_by_file.file_entity != *icon_file_entity {
             continue;
         }

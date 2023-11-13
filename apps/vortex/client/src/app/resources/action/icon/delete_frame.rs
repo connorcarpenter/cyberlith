@@ -6,19 +6,22 @@ use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt};
 
-use crate::app::resources::{input::IconInputManager, action::icon::IconAction, icon_manager::IconManager};
+use crate::app::resources::{
+    action::icon::IconAction, icon_manager::IconManager, input::IconInputManager,
+};
 
-pub fn execute(world: &mut World, icon_manager: &mut IconManager, action: IconAction) -> Vec<IconAction> {
+pub fn execute(
+    world: &mut World,
+    icon_manager: &mut IconManager,
+    action: IconAction,
+) -> Vec<IconAction> {
     let IconAction::DeleteFrame(file_entity, frame_index) = action else {
         panic!("Expected DeleteFrame");
     };
 
     info!("DeleteFrame({:?}, {:?})", file_entity, frame_index);
 
-    let mut system_state: SystemState<(
-        Commands,
-        Client,
-    )> = SystemState::new(world);
+    let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
     let (mut commands, client) = system_state.get_mut(world);
 
     let frame_entity = icon_manager
@@ -38,10 +41,7 @@ pub fn execute(world: &mut World, icon_manager: &mut IconManager, action: IconAc
     // copy rotations to store in undo/redo
     let copied_shapes = IconInputManager::pack_shape_data(world, icon_manager, &file_entity);
 
-    let mut system_state: SystemState<(
-        Commands,
-        Client,
-    )> = SystemState::new(world);
+    let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
     let (mut commands, mut client) = system_state.get_mut(world);
 
     // despawn

@@ -1,4 +1,7 @@
-use naia_serde::{BitReader, BitWrite, ConstBitLength, SerdeErr, SerdeInternal as Serde, SignedInteger, SignedVariableInteger, UnsignedInteger, UnsignedVariableInteger};
+use naia_serde::{
+    BitReader, BitWrite, ConstBitLength, SerdeErr, SerdeInternal as Serde, SignedInteger,
+    SignedVariableInteger, UnsignedInteger, UnsignedVariableInteger,
+};
 
 // FileTransformEntityType
 #[derive(Serde, Copy, Clone, PartialEq, Debug)]
@@ -93,7 +96,6 @@ impl ConstBitLength for SkipComponent {
 
 impl Serde for SerdeQuat {
     fn ser(&self, writer: &mut dyn BitWrite) {
-
         let components = [self.x, self.y, self.z, self.w];
         let mut biggest_value = f32::MIN;
         let mut biggest_index: usize = 4;

@@ -249,25 +249,25 @@ pub fn despawn_file_content_entities(
             }
             (_, ContentEntityData::Shape(ShapeType::Vertex)) => {
                 shape_manager.deregister_vertex(entity);
-            },
+            }
             (_, ContentEntityData::Shape(ShapeType::Edge)) => {
                 shape_manager.deregister_edge(entity);
-            },
+            }
             (_, ContentEntityData::Shape(ShapeType::Face)) => {
                 shape_manager.deregister_face(entity);
-            },
+            }
             (FileExtension::Icon, ContentEntityData::IconShape(ShapeType::Vertex)) => {
                 icon_manager.deregister_vertex(entity);
-            },
+            }
             (FileExtension::Icon, ContentEntityData::IconShape(ShapeType::Edge)) => {
                 icon_manager.deregister_edge(entity);
-            },
+            }
             (FileExtension::Icon, ContentEntityData::IconShape(ShapeType::Face)) => {
                 panic!("incorrect data type");
-            },
+            }
             (FileExtension::Icon, ContentEntityData::IconFace(_palette_color_opt)) => {
                 icon_manager.deregister_face(entity);
-            },
+            }
             (FileExtension::Icon, ContentEntityData::Frame) => {
                 icon_manager.deregister_frame(entity, None);
             }
@@ -290,7 +290,10 @@ pub fn despawn_file_content_entities(
                 // deregister with model_manager?
             }
             (_, _) => {
-                panic!("unknown content entity type! file ext: {:?}, data: {:?}", file_ext, entity_data);
+                panic!(
+                    "unknown content entity type! file ext: {:?}, data: {:?}",
+                    file_ext, entity_data
+                );
             }
         }
     }
@@ -346,7 +349,9 @@ pub fn add_file_dependency(
 // conversion
 
 // quat map
-pub fn convert_into_quat_map(input: HashMap<u16, vortex_proto::SerdeQuat>) -> HashMap<u16, filetypes::SerdeQuat> {
+pub fn convert_into_quat_map(
+    input: HashMap<u16, vortex_proto::SerdeQuat>,
+) -> HashMap<u16, filetypes::SerdeQuat> {
     let mut output = HashMap::new();
     for (key, value) in input.iter() {
         let value = filetypes::SerdeQuat::from_xyzw(value.0.x, value.0.y, value.0.z, value.0.w);
@@ -356,12 +361,16 @@ pub fn convert_into_quat_map(input: HashMap<u16, vortex_proto::SerdeQuat>) -> Ha
 }
 
 // transition
-pub fn convert_into_transition(input: vortex_proto::components::Transition) -> filetypes::Transition {
+pub fn convert_into_transition(
+    input: vortex_proto::components::Transition,
+) -> filetypes::Transition {
     let duration_ms = input.get_duration_ms();
     filetypes::Transition::new(duration_ms)
 }
 
-pub fn convert_from_transition(input: filetypes::Transition) -> vortex_proto::components::Transition {
+pub fn convert_from_transition(
+    input: filetypes::Transition,
+) -> vortex_proto::components::Transition {
     let duration_ms = input.get_duration_ms();
     vortex_proto::components::Transition::new(duration_ms)
 }
@@ -378,30 +387,46 @@ pub fn convert_from_quat(input: filetypes::SerdeQuat) -> vortex_proto::SerdeQuat
 }
 
 // rotation
-pub fn convert_into_rotation(input: vortex_proto::components::SerdeRotation) -> filetypes::SerdeRotation {
+pub fn convert_into_rotation(
+    input: vortex_proto::components::SerdeRotation,
+) -> filetypes::SerdeRotation {
     let radians = input.get_radians();
     filetypes::SerdeRotation::from_radians(radians)
 }
 
-pub fn convert_from_rotation(input: filetypes::SerdeRotation) -> vortex_proto::components::SerdeRotation {
+pub fn convert_from_rotation(
+    input: filetypes::SerdeRotation,
+) -> vortex_proto::components::SerdeRotation {
     let radians = input.get_radians();
     vortex_proto::components::SerdeRotation::from_radians(radians)
 }
 
 // transform type
-pub fn convert_into_transform_type(input: vortex_proto::components::NetTransformEntityType) -> filetypes::FileTransformEntityType {
+pub fn convert_into_transform_type(
+    input: vortex_proto::components::NetTransformEntityType,
+) -> filetypes::FileTransformEntityType {
     match input {
-        vortex_proto::components::NetTransformEntityType::Skin => filetypes::FileTransformEntityType::Skin,
-        vortex_proto::components::NetTransformEntityType::Scene => filetypes::FileTransformEntityType::Scene,
+        vortex_proto::components::NetTransformEntityType::Skin => {
+            filetypes::FileTransformEntityType::Skin
+        }
+        vortex_proto::components::NetTransformEntityType::Scene => {
+            filetypes::FileTransformEntityType::Scene
+        }
         _ => {
             panic!("unsupported");
         }
     }
 }
 
-pub fn convert_from_transform_type(input: filetypes::FileTransformEntityType) -> vortex_proto::components::NetTransformEntityType {
+pub fn convert_from_transform_type(
+    input: filetypes::FileTransformEntityType,
+) -> vortex_proto::components::NetTransformEntityType {
     match input {
-        filetypes::FileTransformEntityType::Skin => vortex_proto::components::NetTransformEntityType::Skin,
-        filetypes::FileTransformEntityType::Scene => vortex_proto::components::NetTransformEntityType::Scene,
+        filetypes::FileTransformEntityType::Skin => {
+            vortex_proto::components::NetTransformEntityType::Skin
+        }
+        filetypes::FileTransformEntityType::Scene => {
+            vortex_proto::components::NetTransformEntityType::Scene
+        }
     }
 }

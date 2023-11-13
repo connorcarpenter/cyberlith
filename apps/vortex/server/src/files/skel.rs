@@ -7,9 +7,7 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use naia_bevy_server::{
-    BitReader, CommandsExt, ReplicationConfig, Server,
-};
+use naia_bevy_server::{BitReader, CommandsExt, ReplicationConfig, Server};
 
 use filetypes::SkelAction;
 
@@ -18,7 +16,10 @@ use vortex_proto::components::{
 };
 
 use crate::{
-    files::{convert_from_rotation, convert_into_rotation, file_io::ShapeType, FileWriter, SkelFileWaitlist, SkelWaitlistInsert},
+    files::{
+        convert_from_rotation, convert_into_rotation, file_io::ShapeType, FileWriter,
+        SkelFileWaitlist, SkelWaitlistInsert,
+    },
     resources::{ContentEntityData, Project, ShapeManager},
 };
 
@@ -187,7 +188,6 @@ impl FileWriter for SkelWriter {
 pub struct SkelReader;
 
 impl SkelReader {
-
     fn actions_to_world(
         world: &mut World,
         actions: Vec<SkelAction>,

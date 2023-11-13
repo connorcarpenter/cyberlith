@@ -1,4 +1,3 @@
-
 use cfg_if::cfg_if;
 
 cfg_if! {
@@ -15,7 +14,7 @@ cfg_if! {
     } else {}
 }
 
-use naia_serde::{SerdeInternal as Serde};
+use naia_serde::SerdeInternal as Serde;
 
 #[derive(Debug, Clone)]
 pub enum IconFrameAction {

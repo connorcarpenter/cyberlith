@@ -9,19 +9,22 @@ use naia_bevy_client::{events::RemoveComponentEvents, Client, Replicate};
 
 use render_api::{base::CpuMesh, Assets};
 
-use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d, Face3d, FaceColor, FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild, IconEdge, IconFace, IconFrame, IconVertex, NetTransform, PaletteColor, ShapeName, Vertex3d};
+use vortex_proto::components::{
+    AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d,
+    Face3d, FaceColor, FileDependency, FileSystemChild, FileSystemEntry, FileSystemRootChild,
+    IconEdge, IconFace, IconFrame, IconVertex, NetTransform, PaletteColor, ShapeName, Vertex3d,
+};
 
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},
     events::RemoveComponentEvent,
     resources::{
         animation_manager::AnimationManager, canvas::Canvas, edge_manager::EdgeManager,
-        face_manager::FaceManager, file_manager::FileManager, input::InputManager,
-        model_manager::ModelManager, palette_manager::PaletteManager, skin_manager::SkinManager,
-        tab_manager::TabManager, vertex_manager::VertexManager,
+        face_manager::FaceManager, file_manager::FileManager, icon_manager::IconManager,
+        input::InputManager, model_manager::ModelManager, palette_manager::PaletteManager,
+        skin_manager::SkinManager, tab_manager::TabManager, vertex_manager::VertexManager,
     },
 };
-use crate::app::resources::icon_manager::IconManager;
 
 #[derive(Resource)]
 struct CachedRemoveComponentEventsState {
@@ -226,18 +229,13 @@ pub fn remove_icon_component_events(
         let entity = event.entity;
         info!("entity: `{:?}`, removed IconVertex", entity);
 
-        icon_manager.cleanup_deleted_vertex(
-            &entity,
-        );
+        icon_manager.cleanup_deleted_vertex(&entity);
     }
     for event in edge_events.iter() {
         let entity = event.entity;
         info!("entity: `{:?}`, removed IconEdge", entity);
 
-        icon_manager.cleanup_deleted_edge(
-            &mut commands,
-            &entity,
-        );
+        icon_manager.cleanup_deleted_edge(&mut commands, &entity);
     }
     for event in face_events.iter() {
         let entity = event.entity;

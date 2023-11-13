@@ -2,7 +2,10 @@ use std::collections::HashMap;
 
 use naia_serde::{BitReader, Serde, SerdeErr, UnsignedVariableInteger};
 
-use crate::{animation::{AnimAction, AnimActionType, Transition}, common::SerdeQuat};
+use crate::{
+    animation::{AnimAction, AnimActionType, Transition},
+    common::SerdeQuat,
+};
 
 impl AnimAction {
     pub fn read(bit_reader: &mut BitReader) -> Result<Vec<Self>, SerdeErr> {

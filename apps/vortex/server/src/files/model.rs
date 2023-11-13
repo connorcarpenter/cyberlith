@@ -7,11 +7,9 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use naia_bevy_server::{
-    BitReader, CommandsExt, ReplicationConfig, Server,
-};
+use naia_bevy_server::{BitReader, CommandsExt, ReplicationConfig, Server};
 
-use filetypes::{ModelAction, FileTransformEntityType};
+use filetypes::{FileTransformEntityType, ModelAction};
 
 use vortex_proto::{
     components::{
@@ -22,10 +20,12 @@ use vortex_proto::{
 };
 
 use crate::{
-    files::{add_file_dependency, FileWriter},
+    files::{
+        add_file_dependency, convert_from_quat, convert_from_transform_type, convert_into_quat,
+        convert_into_transform_type, FileWriter,
+    },
     resources::{ContentEntityData, Project},
 };
-use crate::files::{convert_from_quat, convert_from_transform_type, convert_into_quat, convert_into_transform_type};
 
 // Writer
 pub struct ModelWriter;
@@ -177,7 +177,6 @@ impl FileWriter for ModelWriter {
 pub struct ModelReader;
 
 impl ModelReader {
-
     fn actions_to_world(
         world: &mut World,
         project: &mut Project,
@@ -253,7 +252,8 @@ impl ModelReader {
                     let Some((skin_or_scene_type, skin_or_scene_entity)) = skin_files.get(skin_index as usize) else {
                         panic!("skin index out of bounds");
                     };
-                    let mut skin_or_scene_component = SkinOrSceneEntity::new(convert_from_transform_type(*skin_or_scene_type));
+                    let mut skin_or_scene_component =
+                        SkinOrSceneEntity::new(convert_from_transform_type(*skin_or_scene_type));
                     skin_or_scene_component
                         .value
                         .set(&server, skin_or_scene_entity);

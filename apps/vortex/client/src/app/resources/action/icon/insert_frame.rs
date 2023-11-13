@@ -2,20 +2,34 @@ use std::collections::HashMap;
 
 use bevy_ecs::{
     entity::Entity,
-    prelude::World,
-    system::{Commands, SystemState, Query, ResMut},
     event::EventWriter,
+    prelude::World,
+    system::{Commands, Query, ResMut, SystemState},
 };
 use bevy_log::info;
 
 use naia_bevy_client::{Client, CommandsExt};
 
 use math::Vec2;
-use render_api::{Assets, base::{CpuMaterial, CpuMesh}, components::Transform};
+use render_api::{
+    base::{CpuMaterial, CpuMesh},
+    components::Transform,
+    Assets,
+};
 
-use crate::app::{resources::{icon_manager::IconShapeData, icon_data::IconFaceKey, action::icon::IconAction, icon_manager::IconManager}, events::ShapeColorResyncEvent};
+use crate::app::{
+    events::ShapeColorResyncEvent,
+    resources::{
+        action::icon::IconAction, icon_data::IconFaceKey, icon_manager::IconManager,
+        icon_manager::IconShapeData,
+    },
+};
 
-pub fn execute(world: &mut World, icon_manager: &mut IconManager, action: IconAction) -> Vec<IconAction> {
+pub fn execute(
+    world: &mut World,
+    icon_manager: &mut IconManager,
+    action: IconAction,
+) -> Vec<IconAction> {
     let IconAction::InsertFrame(file_entity, frame_index, content_opt) = action else {
         panic!("Expected InsertFrame");
     };
@@ -30,14 +44,8 @@ pub fn execute(world: &mut World, icon_manager: &mut IconManager, action: IconAc
     let mut entities_to_release = Vec::new();
 
     {
-        let mut system_state: SystemState<(
-            Commands,
-            Client,
-        )> = SystemState::new(world);
-        let (
-            mut commands,
-            mut client,
-        ) = system_state.get_mut(world);
+        let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
+        let (mut commands, mut client) = system_state.get_mut(world);
 
         last_frame_index = icon_manager.current_frame_index();
         info!("current frame index: {}", last_frame_index);
@@ -49,29 +57,19 @@ pub fn execute(world: &mut World, icon_manager: &mut IconManager, action: IconAc
             .entity(last_frame_entity)
             .release_authority(&mut client);
 
-        new_frame_entity = icon_manager.framing_insert_frame(
-            &mut commands,
-            &mut client,
-            file_entity,
-            frame_index,
-        );
+        new_frame_entity =
+            icon_manager.framing_insert_frame(&mut commands, &mut client, file_entity, frame_index);
 
         system_state.apply(world);
 
         if let Some(content) = content_opt {
-
             let mut system_state: SystemState<(
                 Commands,
                 Client,
                 ResMut<Assets<CpuMesh>>,
                 ResMut<Assets<CpuMaterial>>,
             )> = SystemState::new(world);
-            let (
-                mut commands,
-                mut client,
-                mut meshes,
-                mut materials,
-            ) = system_state.get_mut(world);
+            let (mut commands, mut client, mut meshes, mut materials) = system_state.get_mut(world);
 
             let mut vertices = Vec::new();
             let mut edges = Vec::new();
@@ -85,8 +83,24 @@ pub fn execute(world: &mut World, icon_manager: &mut IconManager, action: IconAc
                     IconShapeData::Edge(vertex_a_index, vertex_b_index) => {
                         edges.push((vertex_a_index, vertex_b_index));
                     }
-                    IconShapeData::Face(palette_color_entity, vertex_a_index, vertex_b_index, vertex_c_index, edge_a_index, edge_b_index, edge_c_index) => {
-                        faces.push((palette_color_entity, vertex_a_index, vertex_b_index, vertex_c_index, edge_a_index, edge_b_index, edge_c_index));
+                    IconShapeData::Face(
+                        palette_color_entity,
+                        vertex_a_index,
+                        vertex_b_index,
+                        vertex_c_index,
+                        edge_a_index,
+                        edge_b_index,
+                        edge_c_index,
+                    ) => {
+                        faces.push((
+                            palette_color_entity,
+                            vertex_a_index,
+                            vertex_b_index,
+                            vertex_c_index,
+                            edge_a_index,
+                            edge_b_index,
+                            edge_c_index,
+                        ));
                     }
                 }
             }
@@ -106,8 +120,9 @@ pub fn execute(world: &mut World, icon_manager: &mut IconManager, action: IconAc
                     vertex_translation,
                     &mut entities_to_release,
                 );
-                commands.entity(new_vertex_entity).insert(Transform::from_translation_2d(vertex_translation));
-
+                commands
+                    .entity(new_vertex_entity)
+                    .insert(Transform::from_translation_2d(vertex_translation));
 
                 vertex_map.insert(vertex_count, new_vertex_entity);
                 vertex_count += 1;
@@ -154,7 +169,16 @@ pub fn execute(world: &mut World, icon_manager: &mut IconManager, action: IconAc
                 edge_count += 1;
             }
 
-            for (palette_color_entity, vertex_a_index, vertex_b_index, vertex_c_index, edge_a_index, edge_b_index, edge_c_index) in faces {
+            for (
+                palette_color_entity,
+                vertex_a_index,
+                vertex_b_index,
+                vertex_c_index,
+                edge_a_index,
+                edge_b_index,
+                edge_c_index,
+            ) in faces
+            {
                 let vertex_a_entity = *vertex_map.get(&vertex_a_index).unwrap();
                 let vertex_b_entity = *vertex_map.get(&vertex_b_index).unwrap();
                 let vertex_c_entity = *vertex_map.get(&vertex_c_index).unwrap();

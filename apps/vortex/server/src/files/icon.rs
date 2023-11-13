@@ -7,16 +7,17 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use naia_bevy_server::{
-    BitReader, CommandsExt, ReplicationConfig, Server,
-};
+use naia_bevy_server::{BitReader, CommandsExt, ReplicationConfig, Server};
 
 use filetypes::{IconAction, IconFrameAction};
 
-use vortex_proto::{resources::FileKey, components::{FileExtension, IconEdge, IconFace, IconFrame, IconVertex, PaletteColor}};
+use vortex_proto::{
+    components::{FileExtension, IconEdge, IconFace, IconFrame, IconVertex, PaletteColor},
+    resources::FileKey,
+};
 
 use crate::{
-    files::{add_file_dependency,FileWriter, ShapeType},
+    files::{add_file_dependency, FileWriter, ShapeType},
     resources::{ContentEntityData, IconManager, Project},
 };
 
@@ -172,7 +173,10 @@ impl IconWriter {
                     frame_index += 1;
                 }
                 _ => {
-                    panic!("icon should not have this content entity type: {:?}", content_data);
+                    panic!(
+                        "icon should not have this content entity type: {:?}",
+                        content_data
+                    );
                 }
             }
         }
@@ -195,15 +199,8 @@ impl IconWriter {
             Query<&IconFace>,
             Query<&IconFrame>,
         )> = SystemState::new(world);
-        let (
-            server,
-            icon_manager,
-            palette_color_q,
-            vertex_q,
-            edge_q,
-            face_q,
-            frame_q,
-        ) = system_state.get_mut(world);
+        let (server, icon_manager, palette_color_q, vertex_q, edge_q, face_q, frame_q) =
+            system_state.get_mut(world);
 
         // Write Vertices
         for vertex_entity in vertex_entities {
@@ -217,13 +214,14 @@ impl IconWriter {
             };
             let frame_index = frame.get_order() as u16;
 
-            let frame_action_data = frame_map.get_mut(&frame_index).expect("should have initialized this already");
+            let frame_action_data = frame_map
+                .get_mut(&frame_index)
+                .expect("should have initialized this already");
             frame_action_data.add_vertex(vertex_entity, vertex.x(), vertex.y());
         }
 
         // Write Edges
         for edge_entity in edge_entities {
-
             let Ok(edge) = edge_q.get(edge_entity) else {
                 panic!("");
             };
@@ -234,7 +232,9 @@ impl IconWriter {
             };
             let frame_index = frame.get_order() as u16;
 
-            let frame_action_data = frame_map.get_mut(&frame_index).expect("should have initialized this already");
+            let frame_action_data = frame_map
+                .get_mut(&frame_index)
+                .expect("should have initialized this already");
 
             let vertex_a_entity = edge.start.get(&server).unwrap();
             let vertex_b_entity = edge.end.get(&server).unwrap();
@@ -244,7 +244,6 @@ impl IconWriter {
 
         // Write Faces
         for face_entity in face_entities {
-
             let Ok(face) = face_q.get(face_entity) else {
                 panic!("");
             };
@@ -256,7 +255,9 @@ impl IconWriter {
             };
             let frame_index = frame.get_order() as u16;
 
-            let frame_action_data = frame_map.get_mut(&frame_index).expect("should have initialized this already");
+            let frame_action_data = frame_map
+                .get_mut(&frame_index)
+                .expect("should have initialized this already");
 
             let Some(face_index) = icon_manager.get_face_index(&face_entity) else {
                 panic!("face entity {:?} does not have an index!", face_entity);
@@ -279,7 +280,7 @@ impl IconWriter {
                 vertex_c_entity,
                 edge_a_entity,
                 edge_b_entity,
-                edge_c_entity
+                edge_c_entity,
             );
         }
 
@@ -332,7 +333,6 @@ impl FileWriter for IconWriter {
 pub struct IconReader;
 
 impl IconReader {
-
     fn actions_to_world(
         world: &mut World,
         project: &mut Project,
@@ -363,7 +363,6 @@ impl IconReader {
                     output.push((new_entity, ContentEntityTypeData::Dependency(new_file_key)));
                 }
                 IconAction::Frame(frame_actions) => {
-
                     // make frame entity
                     let mut component = IconFrame::new(frame_index);
                     component.file_entity.set(&server, file_entity);
@@ -373,7 +372,10 @@ impl IconReader {
                         .configure_replication(ReplicationConfig::Delegated)
                         .insert(component)
                         .id();
-                    info!("spawning icon frame entity. index: {:?}, entity: `{:?}`", frame_index, frame_entity);
+                    info!(
+                        "spawning icon frame entity. index: {:?}, entity: `{:?}`",
+                        frame_index, frame_entity
+                    );
 
                     output.push((frame_entity, ContentEntityTypeData::Frame));
 
@@ -442,9 +444,12 @@ impl IconReader {
                                 edge_b_index,
                                 edge_c_index,
                             ) => {
-                                let vertex_a_entity = *vertices.get(vertex_a_index as usize).unwrap();
-                                let vertex_b_entity = *vertices.get(vertex_b_index as usize).unwrap();
-                                let vertex_c_entity = *vertices.get(vertex_c_index as usize).unwrap();
+                                let vertex_a_entity =
+                                    *vertices.get(vertex_a_index as usize).unwrap();
+                                let vertex_b_entity =
+                                    *vertices.get(vertex_b_index as usize).unwrap();
+                                let vertex_c_entity =
+                                    *vertices.get(vertex_c_index as usize).unwrap();
 
                                 let edge_a_entity = *edges.get(edge_a_index as usize).unwrap();
                                 let edge_b_entity = *edges.get(edge_b_index as usize).unwrap();
@@ -518,7 +523,6 @@ impl IconReader {
 }
 
 impl IconReader {
-
     // TODO: move this into the main read functions
     fn post_process_entities(
         icon_manager: &mut IconManager,
@@ -527,37 +531,34 @@ impl IconReader {
         let mut new_content_entities = HashMap::new();
 
         for (entity, content_entity_type_data) in shape_entities {
-
             match content_entity_type_data {
                 ContentEntityTypeData::Dependency(file_key) => {
-                    new_content_entities.insert(
-                        entity,
-                        ContentEntityData::new_dependency(file_key),
-                    );
+                    new_content_entities
+                        .insert(entity, ContentEntityData::new_dependency(file_key));
                 }
                 ContentEntityTypeData::Frame => {
-                    new_content_entities.insert(
-                        entity,
-                        ContentEntityData::new_frame(),
-                    );
+                    new_content_entities.insert(entity, ContentEntityData::new_frame());
                 }
                 ContentEntityTypeData::Vertex => {
                     icon_manager.on_create_vertex(entity);
 
-                    new_content_entities.insert(
-                        entity,
-                        ContentEntityData::new_icon_shape(ShapeType::Vertex),
-                    );
+                    new_content_entities
+                        .insert(entity, ContentEntityData::new_icon_shape(ShapeType::Vertex));
                 }
                 ContentEntityTypeData::Edge(start, end) => {
                     icon_manager.on_create_edge(start, entity, end);
 
-                    new_content_entities.insert(
-                        entity,
-                        ContentEntityData::new_icon_shape(ShapeType::Edge),
-                    );
+                    new_content_entities
+                        .insert(entity, ContentEntityData::new_icon_shape(ShapeType::Edge));
                 }
-                ContentEntityTypeData::Face(index, palette_index, frame_entity, vert_a, vert_b, vert_c) => {
+                ContentEntityTypeData::Face(
+                    index,
+                    palette_index,
+                    frame_entity,
+                    vert_a,
+                    vert_b,
+                    vert_c,
+                ) => {
                     icon_manager.on_create_face(
                         &frame_entity,
                         Some(index),

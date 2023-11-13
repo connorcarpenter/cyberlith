@@ -26,8 +26,8 @@ use vortex_proto::{
 use crate::{
     config::GitConfig,
     resources::{
-        project::Project, project::ProjectKey, ContentEntityData, FileEntryValue,
-        PaletteManager, RollbackResult, ShapeManager, SkinManager, UserManager,
+        project::Project, project::ProjectKey, ContentEntityData, FileEntryValue, PaletteManager,
+        RollbackResult, ShapeManager, SkinManager, UserManager,
     },
 };
 

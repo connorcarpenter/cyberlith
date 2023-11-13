@@ -7,9 +7,7 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use naia_bevy_server::{
-    BitReader, CommandsExt, ReplicationConfig, Server,
-};
+use naia_bevy_server::{BitReader, CommandsExt, ReplicationConfig, Server};
 
 use filetypes::SkinAction;
 
@@ -156,7 +154,6 @@ impl FileWriter for SkinWriter {
 pub struct SkinReader;
 
 impl SkinReader {
-
     fn actions_to_world(
         world: &mut World,
         project: &mut Project,

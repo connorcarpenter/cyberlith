@@ -60,12 +60,7 @@ pub(crate) fn execute(
             ResMut<Assets<CpuMesh>>,
             ResMut<Assets<CpuMaterial>>,
         )> = SystemState::new(world);
-        let (
-            mut commands,
-            mut client,
-            mut meshes,
-            mut materials
-        ) = system_state.get_mut(world);
+        let (mut commands, mut client, mut meshes, mut materials) = system_state.get_mut(world);
 
         // deselect all selected vertices
         let deselected_shape_entity = deselect_selected_shape(icon_manager);

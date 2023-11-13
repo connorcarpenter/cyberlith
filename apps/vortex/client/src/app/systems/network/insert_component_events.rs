@@ -15,7 +15,12 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d, EdgeAngle, EntryKind, Face3d, FaceColor, FileDependency, FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, IconEdge, IconFace, IconFrame, IconVertex, NetTransform, OwnedByFile, PaletteColor, ShapeName, SkinOrSceneEntity, Vertex3d, VertexRoot};
+use vortex_proto::components::{
+    AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, ChangelistStatus, Edge3d,
+    EdgeAngle, EntryKind, Face3d, FaceColor, FileDependency, FileExtension, FileSystemChild,
+    FileSystemEntry, FileSystemRootChild, FileType, IconEdge, IconFace, IconFrame, IconVertex,
+    NetTransform, OwnedByFile, PaletteColor, ShapeName, SkinOrSceneEntity, Vertex3d, VertexRoot,
+};
 
 use crate::app::{
     components::file_system::{
@@ -475,14 +480,17 @@ pub fn insert_face_events(
             Some(&vertex_3d_q),
             None,
             &face_entity,
-            &[ComponentWaitlistInsert::Face(
-                vertex_a_entity,
-                vertex_b_entity,
-                vertex_c_entity,
-                edge_a_entity,
-                edge_b_entity,
-                edge_c_entity,
-            ), ComponentWaitlistInsert::FileType(FileExtension::Mesh)],
+            &[
+                ComponentWaitlistInsert::Face(
+                    vertex_a_entity,
+                    vertex_b_entity,
+                    vertex_c_entity,
+                    edge_a_entity,
+                    edge_b_entity,
+                    edge_c_entity,
+                ),
+                ComponentWaitlistInsert::FileType(FileExtension::Mesh),
+            ],
         );
     }
 }
@@ -507,7 +515,12 @@ pub fn insert_icon_vertex_events(
 
         info!("entity: {:?} - inserted IconVertex", entity);
 
-        let frame_entity = vertex_q.get(entity).unwrap().frame_entity.get(&client).unwrap();
+        let frame_entity = vertex_q
+            .get(entity)
+            .unwrap()
+            .frame_entity
+            .get(&client)
+            .unwrap();
 
         component_waitlist.process_inserts(
             &mut commands,
@@ -523,7 +536,11 @@ pub fn insert_icon_vertex_events(
             None,
             Some(&vertex_q),
             &entity,
-            &[ComponentWaitlistInsert::Vertex, ComponentWaitlistInsert::FileType(FileExtension::Icon), ComponentWaitlistInsert::FrameEntity(frame_entity)],
+            &[
+                ComponentWaitlistInsert::Vertex,
+                ComponentWaitlistInsert::FileType(FileExtension::Icon),
+                ComponentWaitlistInsert::FrameEntity(frame_entity),
+            ],
         );
     }
 }
@@ -574,7 +591,11 @@ pub fn insert_icon_edge_events(
             None,
             Some(&vertex_q),
             &edge_entity,
-            &[ComponentWaitlistInsert::Edge(start_entity, end_entity), ComponentWaitlistInsert::FileType(FileExtension::Icon), ComponentWaitlistInsert::FrameEntity(frame_entity)],
+            &[
+                ComponentWaitlistInsert::Edge(start_entity, end_entity),
+                ComponentWaitlistInsert::FileType(FileExtension::Icon),
+                ComponentWaitlistInsert::FrameEntity(frame_entity),
+            ],
         );
     }
 }

@@ -25,15 +25,7 @@ impl MeshAction {
                     UnsignedVariableInteger::<6>::from(*vertex_a).ser(&mut bit_writer);
                     UnsignedVariableInteger::<6>::from(*vertex_b).ser(&mut bit_writer);
                 }
-                Self::Face(
-                    face_index,
-                    vertex_a,
-                    vertex_b,
-                    vertex_c,
-                    edge_a,
-                    edge_b,
-                    edge_c,
-                ) => {
+                Self::Face(face_index, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c) => {
                     if *face_index != test_face_index {
                         panic!(
                             "face_index {:?} does not match test_face_index {:?}",

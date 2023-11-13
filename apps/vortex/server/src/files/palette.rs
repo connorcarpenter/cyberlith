@@ -7,9 +7,7 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use naia_bevy_server::{
-    BitReader, CommandsExt, ReplicationConfig, Server,
-};
+use naia_bevy_server::{BitReader, CommandsExt, ReplicationConfig, Server};
 
 use filetypes::PaletteAction;
 
@@ -85,7 +83,6 @@ impl FileWriter for PaletteWriter {
 pub struct PaletteReader;
 
 impl PaletteReader {
-
     fn actions_to_world(
         world: &mut World,
         file_entity: &Entity,

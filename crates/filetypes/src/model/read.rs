@@ -1,6 +1,10 @@
-use naia_serde::{BitReader, SerdeInternal as Serde, SerdeErr, UnsignedVariableInteger};
+use naia_serde::{BitReader, SerdeErr, SerdeInternal as Serde, UnsignedVariableInteger};
 
-use crate::{model::ModelActionType, ModelAction, common::{ScaleSerdeInt, SerdeQuat, TranslationSerdeInt, FileTransformEntityType}};
+use crate::{
+    common::{FileTransformEntityType, ScaleSerdeInt, SerdeQuat, TranslationSerdeInt},
+    model::ModelActionType,
+    ModelAction,
+};
 
 impl ModelAction {
     pub fn read(bit_reader: &mut BitReader) -> Result<Vec<Self>, SerdeErr> {

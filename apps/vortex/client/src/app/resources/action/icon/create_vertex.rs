@@ -84,13 +84,8 @@ pub(crate) fn execute(
         ResMut<Assets<CpuMaterial>>,
         Query<&Transform>,
     )> = SystemState::new(world);
-    let (
-        mut commands,
-        mut client,
-        mut meshes,
-        mut materials,
-        transform_q
-    ) = system_state.get_mut(world);
+    let (mut commands, mut client, mut meshes, mut materials, transform_q) =
+        system_state.get_mut(world);
 
     let mut edge_entities = Vec::new();
     for (connected_vertex_entity, old_edge_opt) in icon_vertex_data.connected_vertices {

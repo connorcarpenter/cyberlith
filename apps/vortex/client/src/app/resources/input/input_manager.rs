@@ -111,7 +111,12 @@ impl InputManager {
             }
             FileExtension::Icon => {
                 world.resource_scope(|world, mut icon_manager: Mut<IconManager>| {
-                    IconInputManager::update_input(world, &current_file_entity, &mut icon_manager, input_actions);
+                    IconInputManager::update_input(
+                        world,
+                        &current_file_entity,
+                        &mut icon_manager,
+                        input_actions,
+                    );
                 });
             }
             _ => {}

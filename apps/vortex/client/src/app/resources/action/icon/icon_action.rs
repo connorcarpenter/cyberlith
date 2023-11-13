@@ -7,8 +7,8 @@ use crate::app::{
     resources::{
         action::{
             icon::{
-                create_edge, create_vertex, delete_edge, delete_face, delete_vertex, move_vertex,
-                select_shape, delete_frame, edit_color, insert_frame, move_frame, select_frame
+                create_edge, create_vertex, delete_edge, delete_face, delete_frame, delete_vertex,
+                edit_color, insert_frame, move_frame, move_vertex, select_frame, select_shape,
             },
             Action, ActionStack,
         },
@@ -104,11 +104,17 @@ impl IconAction {
     ) -> Vec<Self> {
         let action_type = self.get_type();
         match action_type {
-            IconActionType::SelectShape => select_shape::execute(world, icon_manager, current_file_entity, self),
-            IconActionType::CreateVertex => create_vertex::execute(world, icon_manager, action_stack, current_file_entity, self),
+            IconActionType::SelectShape => {
+                select_shape::execute(world, icon_manager, current_file_entity, self)
+            }
+            IconActionType::CreateVertex => {
+                create_vertex::execute(world, icon_manager, action_stack, current_file_entity, self)
+            }
             IconActionType::DeleteVertex => delete_vertex::execute(world, icon_manager, self),
             IconActionType::MoveVertex => move_vertex::execute(world, icon_manager, self),
-            IconActionType::CreateEdge => create_edge::execute(world, icon_manager, action_stack, current_file_entity, self),
+            IconActionType::CreateEdge => {
+                create_edge::execute(world, icon_manager, action_stack, current_file_entity, self)
+            }
             IconActionType::DeleteEdge => delete_edge::execute(world, icon_manager, self),
             IconActionType::DeleteFace => delete_face::execute(world, icon_manager, self),
             IconActionType::SelectFrame => select_frame::execute(world, icon_manager, self),
@@ -157,7 +163,14 @@ impl IconAction {
                     *entity = new_vertex_entity;
                 }
             }
-            Self::CreateEdge(_, vertex_entity_a, vertex_entity_b, shape_to_select, face_to_create_opt, _) => {
+            Self::CreateEdge(
+                _,
+                vertex_entity_a,
+                vertex_entity_b,
+                shape_to_select,
+                face_to_create_opt,
+                _,
+            ) => {
                 if *vertex_entity_a == old_vertex_entity {
                     *vertex_entity_a = new_vertex_entity;
                 }

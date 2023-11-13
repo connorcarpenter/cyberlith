@@ -1,11 +1,11 @@
 use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{
-    query::With,
     entity::Entity,
+    event::EventWriter,
+    query::With,
     system::{Commands, Query, Res, ResMut, Resource, SystemState},
     world::{Mut, World},
-    event::EventWriter,
 };
 use bevy_log::{info, warn};
 
@@ -29,18 +29,18 @@ use vortex_proto::components::{IconEdge, IconFace, IconFrame, IconVertex, OwnedB
 use crate::app::{
     components::{
         DefaultDraw, Edge2dLocal, Face3dLocal, FaceIcon2d, IconEdgeLocal, IconLocalFace,
-        OwnedByFileLocal, SelectCircle, SelectLine, SelectTriangle, Vertex2d, LocalShape,
+        LocalShape, OwnedByFileLocal, SelectCircle, SelectLine, SelectTriangle, Vertex2d,
     },
+    events::ShapeColorResyncEvent,
     resources::{
         action::icon::IconAction,
         canvas::Canvas,
-        icon_data::{IconFaceData, IconEdgeData, IconFaceKey, IconVertexData},
-        input::{IconInputManager, CardinalDirection},
+        icon_data::{IconEdgeData, IconFaceData, IconFaceKey, IconVertexData},
+        input::{CardinalDirection, IconInputManager},
         shape_data::CanvasShape,
         tab_manager::TabManager,
     },
     shapes::{create_2d_edge_line, Line2d},
-    events::ShapeColorResyncEvent,
 };
 
 #[derive(Resource)]
@@ -174,7 +174,6 @@ pub enum IconShapeData {
 }
 
 impl IconManager {
-
     pub fn draw(&mut self, world: &mut World, current_file_entity: &Entity) {
         if self.meshing {
             if self.wireframe {
@@ -188,7 +187,6 @@ impl IconManager {
     }
 
     fn draw_meshing_solid(&self, world: &mut World, current_file_entity: &Entity) {
-
         let current_frame_entity = self.current_frame_entity(current_file_entity).unwrap();
 
         let mut system_state: SystemState<(
@@ -209,7 +207,7 @@ impl IconManager {
             vertex_q,
             mesh_q,
             mat_q,
-            mut transform_q
+            mut transform_q,
         ) = system_state.get_mut(world);
 
         // camera
@@ -245,7 +243,6 @@ impl IconManager {
 
         // draw edges
         for edge_entity in edge_entities.iter() {
-
             let (start, end) = self.edge_get_endpoints(edge_entity);
 
             // sync
@@ -279,7 +276,12 @@ impl IconManager {
 
             // draw
             let mesh_handle = mesh_q.get(*edge_entity).unwrap();
-            render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle_gray, &edge_transform);
+            render_frame.draw_object(
+                Some(&self.render_layer),
+                mesh_handle,
+                &mat_handle_gray,
+                &edge_transform,
+            );
         }
 
         // draw faces
@@ -300,12 +302,16 @@ impl IconManager {
             let mesh_handle = mesh_q.get(face_entity).unwrap();
             let mat_handle = mat_q.get(face_entity).unwrap();
             let transform = transform_q.get(face_entity).unwrap();
-            render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle, &transform);
+            render_frame.draw_object(
+                Some(&self.render_layer),
+                mesh_handle,
+                &mat_handle,
+                &transform,
+            );
         }
     }
 
     fn draw_meshing_wire(&self, world: &mut World, current_file_entity: &Entity) {
-
         let current_frame_entity = self.current_frame_entity(current_file_entity).unwrap();
 
         let mut system_state: SystemState<(
@@ -334,7 +340,7 @@ impl IconManager {
             mesh_q,
             mat_q,
             local_shape_q,
-            mut transform_q
+            mut transform_q,
         ) = system_state.get_mut(world);
 
         // camera
@@ -402,12 +408,16 @@ impl IconManager {
                 continue;
             }
 
-            render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle_light_gray, &transform);
+            render_frame.draw_object(
+                Some(&self.render_layer),
+                mesh_handle,
+                &mat_handle_light_gray,
+                &transform,
+            );
         }
 
         // draw edges
         for edge_entity in edge_entities.iter() {
-
             let (start, end) = self.edge_get_endpoints(edge_entity);
 
             // sync
@@ -449,7 +459,12 @@ impl IconManager {
                 &mat_handle_light_gray
             };
 
-            render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle, &edge_transform);
+            render_frame.draw_object(
+                Some(&self.render_layer),
+                mesh_handle,
+                &mat_handle,
+                &edge_transform,
+            );
         }
 
         // draw local faces
@@ -494,13 +509,17 @@ impl IconManager {
             let mut face_transform = transform_q.get_mut(face_entity).unwrap();
             face_transform.translation = center_translation;
 
-            render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle, &face_transform);
+            render_frame.draw_object(
+                Some(&self.render_layer),
+                mesh_handle,
+                &mat_handle,
+                &face_transform,
+            );
         }
 
         // draw select line & circle
         match self.selected_shape() {
             Some((vertex_entity, CanvasShape::Vertex)) => {
-
                 // draw select circle
                 let vertex_translation = transform_q.get(vertex_entity).unwrap().translation;
 
@@ -508,20 +527,35 @@ impl IconManager {
                 let mut transform = transform_q.get_mut(self.select_circle_entity).unwrap();
                 transform.translation = vertex_translation;
 
-                render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle_white, &transform);
+                render_frame.draw_object(
+                    Some(&self.render_layer),
+                    mesh_handle,
+                    &mat_handle_white,
+                    &transform,
+                );
 
                 // draw select line
                 let screen_mouse_position = input.mouse_position();
-                let view_mouse_position = Self::screen_to_view(&canvas, &camera_transform, screen_mouse_position);
+                let view_mouse_position =
+                    Self::screen_to_view(&canvas, &camera_transform, screen_mouse_position);
                 let mesh_handle = mesh_q.get(self.select_line_entity).unwrap();
 
                 let mut transform = transform_q.get_mut(self.select_line_entity).unwrap();
-                set_2d_line_transform(&mut transform, vertex_translation.truncate(), view_mouse_position, vertex_translation.z + 1.0);
+                set_2d_line_transform(
+                    &mut transform,
+                    vertex_translation.truncate(),
+                    view_mouse_position,
+                    vertex_translation.z + 1.0,
+                );
 
-                render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle_white, &transform);
+                render_frame.draw_object(
+                    Some(&self.render_layer),
+                    mesh_handle,
+                    &mat_handle_white,
+                    &transform,
+                );
             }
             Some((edge_entity, CanvasShape::Edge)) => {
-
                 let edge_transform = *transform_q.get(edge_entity).unwrap();
 
                 // draw select line
@@ -535,10 +569,14 @@ impl IconManager {
                 transform.scale.x = edge_transform.scale.x;
                 transform.scale.y = edge_transform.scale.y + 2.0;
 
-                render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle_white, &transform);
+                render_frame.draw_object(
+                    Some(&self.render_layer),
+                    mesh_handle,
+                    &mat_handle_white,
+                    &transform,
+                );
             }
             Some((face_entity, CanvasShape::Face)) => {
-
                 let face_translation = transform_q.get(face_entity).unwrap().translation;
 
                 // draw select triangle
@@ -547,7 +585,12 @@ impl IconManager {
                 let mut transform = transform_q.get_mut(self.select_triangle_entity).unwrap();
                 transform.translation = face_translation;
 
-                render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle_white, &transform);
+                render_frame.draw_object(
+                    Some(&self.render_layer),
+                    mesh_handle,
+                    &mat_handle_white,
+                    &transform,
+                );
             }
             _ => {}
         }
@@ -649,11 +692,7 @@ impl IconManager {
 
         // grid
         {
-            self.setup_grid(
-                commands,
-                meshes,
-                materials,
-            );
+            self.setup_grid(commands, meshes, materials);
         }
     }
 
@@ -741,7 +780,6 @@ impl IconManager {
         position: Vec2,
         color: Color,
     ) -> Entity {
-
         // vertex
         let mut vertex_component = IconVertex::new(0, 0);
         vertex_component.localize();
@@ -772,10 +810,7 @@ impl IconManager {
         vertex_entity_b: Entity,
         color: Color,
     ) -> Entity {
-
-        let new_edge_entity = commands
-            .spawn_empty()
-            .id();
+        let new_edge_entity = commands.spawn_empty().id();
 
         self.edge_postprocess(
             commands,
@@ -866,12 +901,17 @@ impl IconManager {
         let Ok(camera_transform) = transform_q.get(self.camera_entity) else {
             return;
         };
-        let view_mouse_position = Self::screen_to_view(&canvas, camera_transform, screen_mouse_position);
+        let view_mouse_position =
+            Self::screen_to_view(&canvas, camera_transform, screen_mouse_position);
 
         if self.meshing {
             self.sync_mouse_hover_ui_meshing(world, current_file_entity, &view_mouse_position);
         } else {
-            self.sync_mouse_hover_ui_framing(current_file_entity, &canvas_size, &view_mouse_position);
+            self.sync_mouse_hover_ui_framing(
+                current_file_entity,
+                &canvas_size,
+                &view_mouse_position,
+            );
         }
     }
 
@@ -884,7 +924,13 @@ impl IconManager {
         let frame_entity = self.current_frame_entity(current_file_entity).unwrap();
 
         // sync to hover
-        let new_hover_entity = IconInputManager::sync_mouse_hover_ui(self, world, current_file_entity, &frame_entity, view_mouse_position);
+        let new_hover_entity = IconInputManager::sync_mouse_hover_ui(
+            self,
+            world,
+            current_file_entity,
+            &frame_entity,
+            view_mouse_position,
+        );
         if new_hover_entity == self.hovered_entity {
             return;
         }
@@ -905,40 +951,52 @@ impl IconManager {
     }
 
     pub fn screen_to_view(canvas: &Canvas, camera_transform: &Transform, pos: &Vec2) -> Vec2 {
-
         // get canvas size
         let canvas_size = canvas.texture_size();
 
-        let vx = (((pos.x / canvas_size.x) - 0.5)
-            * camera_transform.scale.x
-            * canvas_size.x)
+        let vx = (((pos.x / canvas_size.x) - 0.5) * camera_transform.scale.x * canvas_size.x)
             + camera_transform.translation.x;
-        let vy = (((pos.y / canvas_size.y) - 0.5)
-            * camera_transform.scale.y
-            * canvas_size.y)
+        let vy = (((pos.y / canvas_size.y) - 0.5) * camera_transform.scale.y * canvas_size.y)
             + camera_transform.translation.y;
         Vec2::new(vx, vy)
     }
 
-    fn sync_hover_shape_scale(&mut self, world: &mut World, hover_entity: Entity, hover_shape: CanvasShape, hovering: bool) {
-
+    fn sync_hover_shape_scale(
+        &mut self,
+        world: &mut World,
+        hover_entity: Entity,
+        hover_shape: CanvasShape,
+        hovering: bool,
+    ) {
         let mut system_state: SystemState<Query<&mut Transform>> = SystemState::new(world);
         let mut transform_q = system_state.get_mut(world);
 
         match hover_shape {
             CanvasShape::Vertex => {
-                let scale = if hovering { Vertex2d::HOVER_RADIUS } else { Vertex2d::RADIUS };
+                let scale = if hovering {
+                    Vertex2d::HOVER_RADIUS
+                } else {
+                    Vertex2d::RADIUS
+                };
                 let mut hover_vert_transform = transform_q.get_mut(hover_entity).unwrap();
                 hover_vert_transform.scale.x = scale;
                 hover_vert_transform.scale.y = scale;
             }
             CanvasShape::Edge => {
-                let scale = if hovering { Edge2dLocal::HOVER_THICKNESS } else { Edge2dLocal::NORMAL_THICKNESS };
+                let scale = if hovering {
+                    Edge2dLocal::HOVER_THICKNESS
+                } else {
+                    Edge2dLocal::NORMAL_THICKNESS
+                };
                 let mut hover_edge_transform = transform_q.get_mut(hover_entity).unwrap();
                 hover_edge_transform.scale.y = scale;
             }
             CanvasShape::Face => {
-                let scale = if hovering { FaceIcon2d::HOVER_SIZE } else { FaceIcon2d::SIZE };
+                let scale = if hovering {
+                    FaceIcon2d::HOVER_SIZE
+                } else {
+                    FaceIcon2d::SIZE
+                };
                 let mut hover_face_transform = transform_q.get_mut(hover_entity).unwrap();
                 hover_face_transform.scale.x = scale;
                 hover_face_transform.scale.y = scale;
@@ -963,11 +1021,15 @@ impl IconManager {
     }
 
     pub(crate) fn vertex_get_frame_entity(&self, vertex_entity: &Entity) -> Option<Entity> {
-        self.vertices.get(vertex_entity).map(|data| data.frame_entity_opt.unwrap())
+        self.vertices
+            .get(vertex_entity)
+            .map(|data| data.frame_entity_opt.unwrap())
     }
 
     pub(crate) fn edge_get_frame_entity(&self, edge_entity: &Entity) -> Option<Entity> {
-        self.edges.get(edge_entity).map(|data| data.frame_entity_opt.unwrap())
+        self.edges
+            .get(edge_entity)
+            .map(|data| data.frame_entity_opt.unwrap())
     }
 
     pub(crate) fn face_get_frame_entity(&self, local_face_entity: &Entity) -> Option<Entity> {
@@ -1113,9 +1175,7 @@ impl IconManager {
     ) -> Entity {
         // create new vertex
         let mut owned_by_file_component = OwnedByFile::new();
-        owned_by_file_component
-            .file_entity
-            .set(client, file_entity);
+        owned_by_file_component.file_entity.set(client, file_entity);
         let mut vertex_component = IconVertex::from_vec2(position);
         vertex_component.frame_entity.set(client, frame_entity);
         let new_vertex_entity = commands
@@ -1175,7 +1235,8 @@ impl IconManager {
     }
 
     fn register_vertex(&mut self, frame_entity_opt: Option<Entity>, vertex_entity: Entity) {
-        self.vertices.insert(vertex_entity, IconVertexData::new(frame_entity_opt));
+        self.vertices
+            .insert(vertex_entity, IconVertexData::new(frame_entity_opt));
     }
 
     pub fn on_vertex_moved(
@@ -1322,9 +1383,7 @@ impl IconManager {
         new_edge_component.start.set(client, vertex_entity_a);
         new_edge_component.end.set(client, vertex_entity_b);
         let mut owned_by_file_component = OwnedByFile::new();
-        owned_by_file_component
-            .file_entity
-            .set(client, file_entity);
+        owned_by_file_component.file_entity.set(client, file_entity);
         let new_edge_entity = commands
             .spawn_empty()
             .enable_replication(client)
@@ -1385,7 +1444,13 @@ impl IconManager {
         }
 
         // register edge
-        self.register_edge(file_entity_opt, frame_entity_opt, edge_entity, vertex_entity_a, vertex_entity_b);
+        self.register_edge(
+            file_entity_opt,
+            frame_entity_opt,
+            edge_entity,
+            vertex_entity_a,
+            vertex_entity_b,
+        );
     }
 
     fn register_edge(
@@ -1511,7 +1576,14 @@ impl IconManager {
 
         let keys = std::mem::take(&mut self.new_face_keys);
         for (face_key, file_entity, frame_entity) in keys {
-            self.process_new_local_face(commands, meshes, materials, &file_entity, &frame_entity, &face_key);
+            self.process_new_local_face(
+                commands,
+                meshes,
+                materials,
+                &file_entity,
+                &frame_entity,
+                &face_key,
+            );
         }
     }
 
@@ -1710,7 +1782,9 @@ impl IconManager {
         // set up networked face component
         let mut face_component = IconFace::new();
         face_component.frame_entity.set(client, frame_entity);
-        face_component.palette_color_entity.set(client, palette_color_entity);
+        face_component
+            .palette_color_entity
+            .set(client, palette_color_entity);
         face_component.vertex_a.set(client, &vertex_entities[0]);
         face_component.vertex_b.set(client, &vertex_entities[1]);
         face_component.vertex_c.set(client, &vertex_entities[2]);
@@ -1720,9 +1794,7 @@ impl IconManager {
 
         // get owned_by_file component
         let mut owned_by_file_component = OwnedByFile::new();
-        owned_by_file_component
-            .file_entity
-            .set(client, file_entity);
+        owned_by_file_component.file_entity.set(client, file_entity);
 
         // set up net entity
         let face_net_entity = commands
@@ -1927,7 +1999,8 @@ impl IconManager {
             let face_key = IconFaceKey::new(vertex_entity_a, vertex_entity_b, *common_vertex);
             if !self.face_keys.contains_key(&face_key) {
                 self.face_keys.insert(face_key, None);
-                self.new_face_keys.push((face_key, file_entity, frame_entity));
+                self.new_face_keys
+                    .push((face_key, file_entity, frame_entity));
             }
         }
     }
@@ -2003,7 +2076,8 @@ impl IconManager {
 
     pub(crate) fn register_frame(&mut self, file_entity: Entity, frame_entity: Entity) {
         if !self.file_frame_data.contains_key(&file_entity) {
-            self.file_frame_data.insert(file_entity, FileFrameData::new());
+            self.file_frame_data
+                .insert(file_entity, FileFrameData::new());
         }
         let frame_data = self.file_frame_data.get_mut(&file_entity).unwrap();
         frame_data.register_frame(frame_entity);
@@ -2153,10 +2227,7 @@ impl IconManager {
         self.register_frame(file_entity, frame_entity);
     }
 
-    pub(crate) fn preview_update(
-        &mut self,
-        current_file_entity: &Entity,
-    ) {
+    pub(crate) fn preview_update(&mut self, current_file_entity: &Entity) {
         if !self.preview_playing {
             return;
         }
@@ -2270,15 +2341,9 @@ impl IconManager {
     }
 
     fn draw_framing(&mut self, world: &mut World, current_file_entity: &Entity) {
-
-        let mut system_state: SystemState<(
-            Res<Canvas>,
-            Query<&mut Transform>,
-        )> = SystemState::new(world);
-        let (
-            canvas,
-            mut transform_q,
-        ) = system_state.get_mut(world);
+        let mut system_state: SystemState<(Res<Canvas>, Query<&mut Transform>)> =
+            SystemState::new(world);
+        let (canvas, mut transform_q) = system_state.get_mut(world);
 
         let current_file_entity = *current_file_entity;
 
@@ -2312,11 +2377,7 @@ impl IconManager {
                 ResMut<Assets<CpuMesh>>,
                 ResMut<Assets<CpuMaterial>>,
             )> = SystemState::new(world);
-            let (
-                mut render_frame,
-                mut meshes,
-                mut materials,
-            ) = system_state.get_mut(world);
+            let (mut render_frame, mut meshes, mut materials) = system_state.get_mut(world);
 
             let render_layer = self.render_layer;
             let point_mesh_handle = meshes.add(Circle::new(Vertex2d::SUBDIVISIONS));
@@ -2450,12 +2511,7 @@ impl IconManager {
                 mat_handle_gray,
             );
         } else {
-            self.draw_frame_contents_solid(
-                world,
-                file_entity,
-                frame_entity,
-                frame_pos,
-            );
+            self.draw_frame_contents_solid(world, file_entity, frame_entity, frame_pos);
         }
     }
 
@@ -2475,12 +2531,7 @@ impl IconManager {
             Query<(Entity, &IconVertex)>,
             Query<&OwnedByFileLocal>,
         )> = SystemState::new(world);
-        let (
-            client,
-            mut render_frame,
-            vertex_q,
-            owned_by_file_q,
-        ) = system_state.get_mut(world);
+        let (client, mut render_frame, vertex_q, owned_by_file_q) = system_state.get_mut(world);
 
         let mut edge_entities = HashSet::new();
 
@@ -2509,7 +2560,12 @@ impl IconManager {
             vertex_pos.y *= size_ratio.y;
             let vertex_pos = *frame_pos + vertex_pos;
             let transform = Transform::from_translation_2d(vertex_pos);
-            render_frame.draw_object(Some(&self.render_layer), point_mesh_handle, mat_handle_gray, &transform);
+            render_frame.draw_object(
+                Some(&self.render_layer),
+                point_mesh_handle,
+                mat_handle_gray,
+                &transform,
+            );
 
             for edge_entity in data.edges.iter() {
                 edge_entities.insert(*edge_entity);
@@ -2518,7 +2574,6 @@ impl IconManager {
 
         // draw edges
         for edge_entity in edge_entities.iter() {
-
             let (start, end) = self.edge_get_endpoints(edge_entity);
 
             // sync
@@ -2540,7 +2595,12 @@ impl IconManager {
             set_2d_line_transform(&mut edge_transform, start_pos, end_pos, 1.0);
 
             // draw
-            render_frame.draw_object(Some(&self.render_layer), line_mesh_handle, mat_handle_gray, &edge_transform);
+            render_frame.draw_object(
+                Some(&self.render_layer),
+                line_mesh_handle,
+                mat_handle_gray,
+                &edge_transform,
+            );
         }
     }
 
@@ -2554,13 +2614,9 @@ impl IconManager {
         let mut system_state: SystemState<(
             ResMut<RenderFrame>,
             Query<(Entity, &OwnedByFileLocal), With<IconFace>>,
-            Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>, &Transform)>
+            Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>, &Transform)>,
         )> = SystemState::new(world);
-        let (
-            mut render_frame,
-            owned_face_q,
-            object_q,
-        ) = system_state.get_mut(world);
+        let (mut render_frame, owned_face_q, object_q) = system_state.get_mut(world);
 
         let size_ratio = (self.frame_size * 0.5) / 100.0;
 
@@ -2591,7 +2647,12 @@ impl IconManager {
 
             let transform = Transform::from_translation_2d(translation).with_scale(scale);
 
-            render_frame.draw_object(Some(&self.render_layer), mesh_handle, &mat_handle, &transform);
+            render_frame.draw_object(
+                Some(&self.render_layer),
+                mesh_handle,
+                &mat_handle,
+                &transform,
+            );
         }
     }
 

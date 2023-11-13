@@ -9,7 +9,7 @@ pub struct IconVertexData {
 }
 
 impl IconVertexData {
-    pub fn new(frame_entity_opt: Option<Entity>,) -> Self {
+    pub fn new(frame_entity_opt: Option<Entity>) -> Self {
         Self {
             frame_entity_opt,
             edges: HashSet::new(),
@@ -42,7 +42,11 @@ pub struct IconEdgeData {
 }
 
 impl IconEdgeData {
-    pub fn new(frame_entity_opt: Option<Entity>, vertex_entity_a: Entity, vertex_entity_b: Entity) -> Self {
+    pub fn new(
+        frame_entity_opt: Option<Entity>,
+        vertex_entity_a: Entity,
+        vertex_entity_b: Entity,
+    ) -> Self {
         Self {
             frame_entity_opt,
             vertex_entity_a,

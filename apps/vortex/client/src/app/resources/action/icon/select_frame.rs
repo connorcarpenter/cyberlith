@@ -8,7 +8,11 @@ use naia_bevy_client::{Client, CommandsExt};
 
 use crate::app::resources::{action::icon::IconAction, icon_manager::IconManager};
 
-pub fn execute(world: &mut World, icon_manager: &mut IconManager, action: IconAction) -> Vec<IconAction> {
+pub fn execute(
+    world: &mut World,
+    icon_manager: &mut IconManager,
+    action: IconAction,
+) -> Vec<IconAction> {
     let IconAction::SelectFrame(file_entity, next_frame_index, last_frame_index) = action else {
         panic!("Expected SelectFrame");
     };
@@ -18,8 +22,7 @@ pub fn execute(world: &mut World, icon_manager: &mut IconManager, action: IconAc
         file_entity, last_frame_index, next_frame_index
     );
 
-    let mut system_state: SystemState<(Commands, Client)> =
-        SystemState::new(world);
+    let mut system_state: SystemState<(Commands, Client)> = SystemState::new(world);
     let (mut commands, mut client) = system_state.get_mut(world);
 
     // release the last frame entity

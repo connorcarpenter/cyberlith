@@ -10,7 +10,11 @@ use vortex_proto::components::IconFrame;
 
 use crate::app::resources::{action::icon::IconAction, icon_manager::IconManager};
 
-pub fn execute(world: &mut World, icon_manager: &mut IconManager, action: IconAction) -> Vec<IconAction> {
+pub fn execute(
+    world: &mut World,
+    icon_manager: &mut IconManager,
+    action: IconAction,
+) -> Vec<IconAction> {
     let IconAction::MoveFrame(file_entity, current_frame_index, next_frame_index) = action else {
         panic!("Expected MoveFrame");
     };
@@ -20,13 +24,9 @@ pub fn execute(world: &mut World, icon_manager: &mut IconManager, action: IconAc
         file_entity, current_frame_index, next_frame_index
     );
 
-    let mut system_state: SystemState<(
-        Commands,
-        Client,
-        Query<&mut IconFrame>,
-    )> = SystemState::new(world);
-    let (mut commands, mut client, mut frame_q) =
-        system_state.get_mut(world);
+    let mut system_state: SystemState<(Commands, Client, Query<&mut IconFrame>)> =
+        SystemState::new(world);
+    let (mut commands, mut client, mut frame_q) = system_state.get_mut(world);
 
     let Some(current_frame_entity) = icon_manager.get_frame_entity(&file_entity, current_frame_index) else {
         warn!("Failed to get frame entity for file `{:?}` and frame index `{:?}`!",file_entity, current_frame_index);

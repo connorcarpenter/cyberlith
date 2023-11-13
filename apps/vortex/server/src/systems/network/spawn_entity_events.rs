@@ -163,10 +163,7 @@ pub fn despawn_entity_events(
                 // frame
                 info!("entity: `{:?}` (which is an IconFrame), despawned", entity);
 
-                icon_manager.on_despawn_frame(
-                    entity,
-                    Some(&mut icon_frame_q),
-                );
+                icon_manager.on_despawn_frame(entity, Some(&mut icon_frame_q));
                 despawned_entities.push(entity);
             }
             Some(DespawnType::AnimFrame) => {

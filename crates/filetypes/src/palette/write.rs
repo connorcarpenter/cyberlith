@@ -1,6 +1,6 @@
 use naia_serde::{FileBitWriter, SerdeInternal as Serde};
 
-use crate::{PaletteAction, palette::PaletteActionType};
+use crate::{palette::PaletteActionType, PaletteAction};
 
 impl PaletteAction {
     pub fn write(actions: Vec<Self>) -> Box<[u8]> {

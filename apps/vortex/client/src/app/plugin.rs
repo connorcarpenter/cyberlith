@@ -9,12 +9,11 @@ use vortex_proto::{
     components::{
         AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, Edge3d, EdgeAngle,
         EntryKind, Face3d, FaceColor, FileDependency, FileSystemChild, FileSystemEntry,
-        FileSystemRootChild, FileType, IconEdge, IconFace, IconVertex, NetTransform, OwnedByFile,
-        PaletteColor, ShapeName, SkinOrSceneEntity, Vertex3d, VertexRoot,
+        FileSystemRootChild, FileType, IconEdge, IconFace, IconFrame, IconVertex, NetTransform,
+        OwnedByFile, PaletteColor, ShapeName, SkinOrSceneEntity, Vertex3d, VertexRoot,
     },
     protocol,
 };
-use vortex_proto::components::IconFrame;
 
 use crate::app::{
     components::file_system::{FileSystemParent, FileSystemUiState},

@@ -15,7 +15,9 @@ use render_api::{
     Assets,
 };
 
-use vortex_proto::components::{AnimFrame, EdgeAngle, FileExtension, IconFrame, PaletteColor, Vertex3d};
+use vortex_proto::components::{
+    AnimFrame, EdgeAngle, FileExtension, IconFrame, PaletteColor, Vertex3d,
+};
 
 use crate::app::{
     components::{Edge2dLocal, Edge3dLocal, FaceIcon2d, LocalShape},

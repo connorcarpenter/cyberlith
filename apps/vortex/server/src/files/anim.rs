@@ -7,9 +7,7 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use naia_bevy_server::{
-    BitReader, CommandsExt, ReplicationConfig, Server,
-};
+use naia_bevy_server::{BitReader, CommandsExt, ReplicationConfig, Server};
 
 use filetypes::AnimAction;
 
@@ -20,10 +18,12 @@ use vortex_proto::{
 };
 
 use crate::{
-    files::{add_file_dependency, FileWriter},
+    files::{
+        add_file_dependency, convert_from_quat, convert_from_transition, convert_into_quat_map,
+        convert_into_transition, FileWriter,
+    },
     resources::{AnimationManager, ContentEntityData, Project},
 };
-use crate::files::{convert_from_quat, convert_from_transition, convert_into_quat_map, convert_into_transition};
 
 // Writer
 pub struct AnimWriter;
@@ -144,7 +144,10 @@ impl AnimWriter {
                     HashMap::new()
                 };
                 info!("push frame action: {}", order);
-                actions.push(AnimAction::Frame(convert_into_quat_map(poses), convert_into_transition(transition)));
+                actions.push(AnimAction::Frame(
+                    convert_into_quat_map(poses),
+                    convert_into_transition(transition),
+                ));
             }
         }
 
@@ -167,7 +170,10 @@ impl FileWriter for AnimWriter {
         info!("anim write new default");
         let mut actions = Vec::new();
 
-        actions.push(AnimAction::Frame(HashMap::new(), convert_into_transition(Transition::new(100))));
+        actions.push(AnimAction::Frame(
+            HashMap::new(),
+            convert_into_transition(Transition::new(100)),
+        ));
 
         AnimAction::write(actions)
     }
@@ -177,7 +183,6 @@ impl FileWriter for AnimWriter {
 pub struct AnimReader;
 
 impl AnimReader {
-
     fn actions_to_world(
         world: &mut World,
         project: &mut Project,
@@ -216,7 +221,8 @@ impl AnimReader {
                 AnimAction::Frame(poses, transition) => {
                     info!("read frame action!");
 
-                    let mut component = AnimFrame::new(frame_index, convert_from_transition(transition));
+                    let mut component =
+                        AnimFrame::new(frame_index, convert_from_transition(transition));
                     component.file_entity.set(&server, file_entity);
                     let frame_entity = commands
                         .spawn_empty()
@@ -237,7 +243,8 @@ impl AnimReader {
                     for (shape_index, rotation) in poses {
                         let shape_name = shape_name_map.get(&shape_index).unwrap();
 
-                        let mut component = AnimRotation::new(shape_name.clone(), convert_from_quat(rotation));
+                        let mut component =
+                            AnimRotation::new(shape_name.clone(), convert_from_quat(rotation));
                         component.frame_entity.set(&server, &frame_entity);
 
                         let rotation_entity = commands

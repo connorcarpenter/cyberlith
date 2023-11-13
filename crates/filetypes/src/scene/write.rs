@@ -1,6 +1,10 @@
 use naia_serde::{FileBitWriter, SerdeInternal as Serde, UnsignedVariableInteger};
 
-use crate::{scene::{SceneActionType}, SceneAction, common::{ScaleSerdeInt, TranslationSerdeInt}};
+use crate::{
+    common::{ScaleSerdeInt, TranslationSerdeInt},
+    scene::SceneActionType,
+    SceneAction,
+};
 
 impl SceneAction {
     pub fn write(actions: Vec<Self>) -> Box<[u8]> {

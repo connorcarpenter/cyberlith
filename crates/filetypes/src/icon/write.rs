@@ -1,6 +1,10 @@
 use naia_serde::{FileBitWriter, SerdeInternal as Serde, UnsignedVariableInteger};
 
-use crate::{icon::{IconFrameAction, IconActionType, IconFrameActionType}, IconAction, common::VertexSerdeInt};
+use crate::{
+    common::VertexSerdeInt,
+    icon::{IconActionType, IconFrameAction, IconFrameActionType},
+    IconAction,
+};
 
 impl IconAction {
     pub fn write(actions: Vec<Self>) -> Box<[u8]> {

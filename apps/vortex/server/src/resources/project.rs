@@ -660,7 +660,13 @@ impl Project {
 
         // despawn all previous entities
         let old_content_entities = self.file_content_entities(file_key).unwrap().clone();
-        despawn_file_content_entities(world, self, &file_extension, file_key, &old_content_entities);
+        despawn_file_content_entities(
+            world,
+            self,
+            &file_extension,
+            file_key,
+            &old_content_entities,
+        );
 
         // respawn all entities
         let new_content_entities =

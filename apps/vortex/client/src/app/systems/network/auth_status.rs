@@ -11,7 +11,11 @@ use naia_bevy_client::{
     Client,
 };
 
-use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency, FileSystemEntry, IconEdge, IconFace, IconFrame, IconVertex, NetTransform, OwnedByFile, PaletteColor, Vertex3d};
+use vortex_proto::components::{
+    AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency,
+    FileSystemEntry, IconEdge, IconFace, IconFrame, IconVertex, NetTransform, OwnedByFile,
+    PaletteColor, Vertex3d,
+};
 
 use crate::app::{
     components::OwnedByFileLocal,
@@ -326,16 +330,18 @@ fn process_entity_auth_status(
                 owning_file_entity
             );
         }
-    } else if icon_vertex_opt.is_some() || icon_edge_opt.is_some() || icon_face_opt.is_some() || icon_frame_opt.is_some() {
+    } else if icon_vertex_opt.is_some()
+        || icon_edge_opt.is_some()
+        || icon_face_opt.is_some()
+        || icon_frame_opt.is_some()
+    {
         info!(
             "auth processing for shape entity `{:?}`: `{:?}`",
             entity, status
         );
         if let Ok(owning_file_entity) = owned_by_q.get(*entity) {
             if let Some(tab_state) = tab_manager.tab_state_mut(&owning_file_entity.file_entity) {
-                tab_state
-                    .action_stack
-                    .entity_update_auth_status(&entity);
+                tab_state.action_stack.entity_update_auth_status(&entity);
             } else {
                 warn!(
                     "no tab state found for file entity: {:?}",

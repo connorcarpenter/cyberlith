@@ -2,12 +2,12 @@ use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{
     entity::Entity,
-    system::{Commands, Resource},
+    system::{Commands, Query, Resource},
 };
-use bevy_ecs::system::Query;
 use bevy_log::{info, warn};
 
 use naia_bevy_server::{CommandsExt, Server};
+
 use vortex_proto::components::IconFrame;
 
 pub struct IconVertexData {

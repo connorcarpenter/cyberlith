@@ -1,14 +1,14 @@
 mod anim;
+mod icon;
 mod mesh;
 mod model;
 mod scene;
 mod shared_buttons;
 mod skel;
-mod icon;
 mod skin;
 
-pub use skin::SkinToolbar;
 pub use icon::IconToolbar;
+pub use skin::SkinToolbar;
 
 use bevy_ecs::{entity::Entity, world::World};
 

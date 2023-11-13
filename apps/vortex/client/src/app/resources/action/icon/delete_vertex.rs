@@ -68,17 +68,17 @@ pub(crate) fn execute(
     };
     let connected_faces: Vec<IconFaceKey> = connected_faces.iter().map(|face| *face).collect();
     for face_key in connected_faces {
-        let net_face_color_opt = if let Some(net_entity) = icon_manager
-            .net_face_entity_from_face_key(&face_key) {
-            let face = face_q.get(net_entity).unwrap();
-            if let Some(palette_entity) = face.palette_color_entity.get(&client) {
-                Some(palette_entity)
+        let net_face_color_opt =
+            if let Some(net_entity) = icon_manager.net_face_entity_from_face_key(&face_key) {
+                let face = face_q.get(net_entity).unwrap();
+                if let Some(palette_entity) = face.palette_color_entity.get(&client) {
+                    Some(palette_entity)
+                } else {
+                    None
+                }
             } else {
                 None
-            }
-        } else {
-            None
-        };
+            };
 
         let mut vertices = vec![face_key.vertex_a, face_key.vertex_b, face_key.vertex_c];
         vertices.retain(|vertex| *vertex != vertex_entity);
@@ -101,8 +101,11 @@ pub(crate) fn execute(
     let frame_entity = vertex.frame_entity.get(&client).unwrap();
     let vertex_position = vertex.as_vec2();
 
-    let rev_vertex_type_data =
-        IconVertexActionData::new(frame_entity, connected_vertices_entities, connected_face_vertex_entities);
+    let rev_vertex_type_data = IconVertexActionData::new(
+        frame_entity,
+        connected_vertices_entities,
+        connected_face_vertex_entities,
+    );
 
     handle_vertex_despawn(
         &mut commands,

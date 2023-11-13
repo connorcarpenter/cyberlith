@@ -1,7 +1,10 @@
+use naia_serde::{BitReader, SerdeErr, SerdeInternal as Serde, UnsignedVariableInteger};
 
-use naia_serde::{BitReader, SerdeInternal as Serde, SerdeErr, UnsignedVariableInteger};
-
-use crate::{scene::{SceneActionType}, SceneAction, common::{ScaleSerdeInt, TranslationSerdeInt, FileTransformEntityType, SerdeQuat}};
+use crate::{
+    common::{FileTransformEntityType, ScaleSerdeInt, SerdeQuat, TranslationSerdeInt},
+    scene::SceneActionType,
+    SceneAction,
+};
 
 impl SceneAction {
     pub fn read(bit_reader: &mut BitReader) -> Result<Vec<Self>, SerdeErr> {

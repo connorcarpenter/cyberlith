@@ -47,17 +47,17 @@ pub(crate) fn execute(
                 .local_face_entity_from_face_key(&face_key)
                 .unwrap();
 
-            let net_face_color_opt = if let Some(net_entity) = icon_manager
-                .net_face_entity_from_face_key(&face_key) {
-                let face = face_q.get(net_entity).unwrap();
-                if let Some(palette_entity) = face.palette_color_entity.get(&client) {
-                    Some(palette_entity)
+            let net_face_color_opt =
+                if let Some(net_entity) = icon_manager.net_face_entity_from_face_key(&face_key) {
+                    let face = face_q.get(net_entity).unwrap();
+                    if let Some(palette_entity) = face.palette_color_entity.get(&client) {
+                        Some(palette_entity)
+                    } else {
+                        None
+                    }
                 } else {
                     None
-                }
-            } else {
-                None
-            };
+                };
 
             let mut vertices = vec![face_key.vertex_a, face_key.vertex_b, face_key.vertex_c];
             vertices.retain(|vertex| *vertex != vertex_start && *vertex != vertex_end);
@@ -66,11 +66,7 @@ pub(crate) fn execute(
             }
             let face_vertex = vertices[0];
 
-            deleted_face_vertex_entities.push((
-                face_vertex,
-                local_face_entity,
-                net_face_color_opt,
-            ));
+            deleted_face_vertex_entities.push((face_vertex, local_face_entity, net_face_color_opt));
         }
     }
     let deleted_face_vertex_entities_opt = if deleted_face_vertex_entities.len() > 0 {

@@ -1,18 +1,20 @@
-use bevy_ecs::{entity::Entity, system::{Query, Res, SystemState}, world::{Mut, World}};
+use bevy_ecs::{
+    entity::Entity,
+    system::{Query, Res, SystemState},
+    world::{Mut, World},
+};
 
-use render_egui::{egui::{PointerButton, Vec2, Align, Color32, Frame, Layout, Margin, Sense, Ui}, egui};
+use render_egui::{
+    egui,
+    egui::{Align, Color32, Frame, Layout, Margin, PointerButton, Sense, Ui, Vec2},
+};
 
 use vortex_proto::components::{FileExtension, PaletteColor};
 
 use crate::app::resources::{
-    action::icon::IconAction,
-    input::IconInputManager,
-    tab_manager::TabManager,
-    toolbar::Toolbar,
-    icon_manager::IconManager,
-    file_manager::FileManager,
-    palette_manager::PaletteManager,
-    shape_data::CanvasShape,
+    action::icon::IconAction, file_manager::FileManager, icon_manager::IconManager,
+    input::IconInputManager, palette_manager::PaletteManager, shape_data::CanvasShape,
+    tab_manager::TabManager, toolbar::Toolbar,
 };
 
 pub struct IconToolbar;
@@ -34,7 +36,6 @@ impl IconToolbar {
                 .show_inside(ui, |ui| {
                     ui.style_mut().override_text_style = Some(egui::TextStyle::Heading);
                     ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
-
                         //
                         Self::framing_render(ui, world);
                         //
@@ -45,7 +46,9 @@ impl IconToolbar {
                 });
         } else {
             world.resource_scope(|world, mut icon_manager: Mut<IconManager>| {
-                if let Some(icon_action) = Self::meshing_render_sidebar(ui, world, &mut icon_manager, current_file_entity) {
+                if let Some(icon_action) =
+                    Self::meshing_render_sidebar(ui, world, &mut icon_manager, current_file_entity)
+                {
                     world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
                         tab_manager.current_tab_execute_icon_action(
                             world,
@@ -136,7 +139,6 @@ impl IconToolbar {
         icon_manager: &mut IconManager,
         current_file_entity: &Entity,
     ) -> Option<IconAction> {
-
         let mut color_index_picked = None;
 
         let mut system_state: SystemState<(
@@ -144,8 +146,7 @@ impl IconToolbar {
             Res<PaletteManager>,
             Query<&PaletteColor>,
         )> = SystemState::new(world);
-        let (file_manager, palette_manager, palette_color_q) =
-            system_state.get_mut(world);
+        let (file_manager, palette_manager, palette_color_q) = system_state.get_mut(world);
 
         let Some(palette_file_entity) = file_manager.file_get_dependency(
             current_file_entity,

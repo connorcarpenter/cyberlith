@@ -1,6 +1,6 @@
-use naia_serde::{BitReader, SerdeInternal as Serde, SerdeErr, UnsignedVariableInteger};
+use naia_serde::{BitReader, SerdeErr, SerdeInternal as Serde, UnsignedVariableInteger};
 
-use crate::{mesh::MeshActionType, MeshAction, common::VertexSerdeInt};
+use crate::{common::VertexSerdeInt, mesh::MeshActionType, MeshAction};
 
 impl MeshAction {
     pub fn read(bit_reader: &mut BitReader) -> Result<Vec<Self>, SerdeErr> {

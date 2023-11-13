@@ -7,9 +7,7 @@ use bevy_ecs::{
 };
 use bevy_log::info;
 
-use naia_bevy_server::{
-    BitReader, CommandsExt, ReplicationConfig, Server,
-};
+use naia_bevy_server::{BitReader, CommandsExt, ReplicationConfig, Server};
 
 use filetypes::MeshAction;
 
@@ -182,7 +180,6 @@ impl FileWriter for MeshWriter {
 pub struct MeshReader;
 
 impl MeshReader {
-
     fn actions_to_world(
         world: &mut World,
         file_entity: &Entity,

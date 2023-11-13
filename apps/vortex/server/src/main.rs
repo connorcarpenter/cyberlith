@@ -20,12 +20,11 @@ use vortex_proto::{
     components::{
         AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency,
         FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, IconEdge, IconFace,
-        IconVertex, NetTransform, OwnedByFile, PaletteColor, ShapeName, SkinOrSceneEntity,
-        Vertex3d, VertexRoot,
+        IconFrame, IconVertex, NetTransform, OwnedByFile, PaletteColor, ShapeName,
+        SkinOrSceneEntity, Vertex3d, VertexRoot,
     },
     protocol,
 };
-use vortex_proto::components::IconFrame;
 
 use crate::{
     config::{AppConfig, ConfigPlugin},

@@ -1,6 +1,10 @@
-use naia_serde::{BitReader, SerdeInternal as Serde, SerdeErr, UnsignedVariableInteger};
+use naia_serde::{BitReader, SerdeErr, SerdeInternal as Serde, UnsignedVariableInteger};
 
-use crate::{icon::{IconFrameAction, IconActionType, IconFrameActionType}, IconAction, common::VertexSerdeInt};
+use crate::{
+    common::VertexSerdeInt,
+    icon::{IconActionType, IconFrameAction, IconFrameActionType},
+    IconAction,
+};
 
 impl IconAction {
     pub fn read(bit_reader: &mut BitReader) -> Result<Vec<Self>, SerdeErr> {
@@ -40,24 +44,39 @@ impl IconAction {
                                 frame_output.push(IconFrameAction::Vertex(x, y));
                             }
                             IconFrameActionType::Edge => {
-                                let vertex_a: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-                                let vertex_b: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
+                                let vertex_a: u16 =
+                                    UnsignedVariableInteger::<6>::de(bit_reader)?.to();
+                                let vertex_b: u16 =
+                                    UnsignedVariableInteger::<6>::de(bit_reader)?.to();
 
                                 frame_output.push(IconFrameAction::Edge(vertex_a, vertex_b));
                             }
                             IconFrameActionType::Face => {
                                 let palette_color_index = u8::de(bit_reader)?;
 
-                                let vertex_a: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-                                let vertex_b: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-                                let vertex_c: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
+                                let vertex_a: u16 =
+                                    UnsignedVariableInteger::<6>::de(bit_reader)?.to();
+                                let vertex_b: u16 =
+                                    UnsignedVariableInteger::<6>::de(bit_reader)?.to();
+                                let vertex_c: u16 =
+                                    UnsignedVariableInteger::<6>::de(bit_reader)?.to();
 
-                                let edge_a: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-                                let edge_b: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
-                                let edge_c: u16 = UnsignedVariableInteger::<6>::de(bit_reader)?.to();
+                                let edge_a: u16 =
+                                    UnsignedVariableInteger::<6>::de(bit_reader)?.to();
+                                let edge_b: u16 =
+                                    UnsignedVariableInteger::<6>::de(bit_reader)?.to();
+                                let edge_c: u16 =
+                                    UnsignedVariableInteger::<6>::de(bit_reader)?.to();
 
                                 frame_output.push(IconFrameAction::Face(
-                                    face_index, palette_color_index, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c,
+                                    face_index,
+                                    palette_color_index,
+                                    vertex_a,
+                                    vertex_b,
+                                    vertex_c,
+                                    edge_a,
+                                    edge_b,
+                                    edge_c,
                                 ));
 
                                 face_index += 1;

@@ -1,4 +1,4 @@
-use naia_serde::{BitReader, SerdeInternal as Serde, SerdeErr};
+use naia_serde::{BitReader, SerdeErr, SerdeInternal as Serde};
 
 use crate::{skin::SkinActionType, SkinAction};
 

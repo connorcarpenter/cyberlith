@@ -1,6 +1,9 @@
 use naia_serde::{BitReader, Serde, SerdeErr, UnsignedVariableInteger};
 
-use crate::{common::{SerdeRotation, VertexSerdeInt}, SkelAction};
+use crate::{
+    common::{SerdeRotation, VertexSerdeInt},
+    SkelAction,
+};
 
 impl SkelAction {
     pub fn read(bit_reader: &mut BitReader) -> Result<Vec<Self>, SerdeErr> {

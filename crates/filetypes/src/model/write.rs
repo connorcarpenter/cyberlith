@@ -1,6 +1,10 @@
 use naia_serde::{FileBitWriter, Serde, UnsignedVariableInteger};
 
-use crate::{model::{ModelActionType}, ModelAction, common::{ScaleSerdeInt, TranslationSerdeInt}};
+use crate::{
+    common::{ScaleSerdeInt, TranslationSerdeInt},
+    model::ModelActionType,
+    ModelAction,
+};
 
 impl ModelAction {
     pub fn write(actions: Vec<Self>) -> Box<[u8]> {

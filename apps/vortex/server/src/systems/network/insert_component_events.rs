@@ -14,8 +14,8 @@ use vortex_proto::{
     components::{
         AnimFrame, AnimRotation, BackgroundSkinColor, Edge3d, Face3d, FaceColor, FileDependency,
         FileExtension, FileSystemChild, FileSystemEntry, FileSystemRootChild, FileType, IconEdge,
-        IconFace, IconVertex, NetTransform, OwnedByFile, PaletteColor, ShapeName,
-        SkinOrSceneEntity, Vertex3d, VertexRoot, IconFrame
+        IconFace, IconFrame, IconVertex, NetTransform, OwnedByFile, PaletteColor, ShapeName,
+        SkinOrSceneEntity, Vertex3d, VertexRoot,
     },
     resources::FileKey,
 };
@@ -313,7 +313,12 @@ pub fn insert_face_component_events(
             &mut Some(&mut shape_manager),
             &mut None,
             &entity,
-            &[ComponentWaitlistInsert::Face(None, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c), ComponentWaitlistInsert::FileType(FileExtension::Mesh)],
+            &[
+                ComponentWaitlistInsert::Face(
+                    None, vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c,
+                ),
+                ComponentWaitlistInsert::FileType(FileExtension::Mesh),
+            ],
         );
     }
 }
@@ -437,7 +442,10 @@ pub fn insert_icon_component_events(
             &mut None,
             &mut Some(&mut icon_manager),
             &entity,
-            &[ComponentWaitlistInsert::Vertex, ComponentWaitlistInsert::FileType(FileExtension::Icon)],
+            &[
+                ComponentWaitlistInsert::Vertex,
+                ComponentWaitlistInsert::FileType(FileExtension::Icon),
+            ],
         );
     }
 
@@ -459,7 +467,10 @@ pub fn insert_icon_component_events(
             &mut None,
             &mut Some(&mut icon_manager),
             &entity,
-            &[ComponentWaitlistInsert::Edge(start_entity, end_entity), ComponentWaitlistInsert::FileType(FileExtension::Icon)],
+            &[
+                ComponentWaitlistInsert::Edge(start_entity, end_entity),
+                ComponentWaitlistInsert::FileType(FileExtension::Icon),
+            ],
         );
     }
 
@@ -487,7 +498,18 @@ pub fn insert_icon_component_events(
             &mut None,
             &mut Some(&mut icon_manager),
             &entity,
-            &[ComponentWaitlistInsert::Face(Some(frame_entity),vertex_a, vertex_b, vertex_c, edge_a, edge_b, edge_c), ComponentWaitlistInsert::FileType(FileExtension::Icon)],
+            &[
+                ComponentWaitlistInsert::Face(
+                    Some(frame_entity),
+                    vertex_a,
+                    vertex_b,
+                    vertex_c,
+                    edge_a,
+                    edge_b,
+                    edge_c,
+                ),
+                ComponentWaitlistInsert::FileType(FileExtension::Icon),
+            ],
         );
     }
 
@@ -508,12 +530,7 @@ pub fn insert_icon_component_events(
             .unwrap();
         let file_key = key_q.get(file_entity).unwrap().clone();
 
-        icon_manager.on_create_frame(
-            &file_entity,
-            &frame_entity,
-            frame_index,
-            Some(&mut frame_q),
-        );
+        icon_manager.on_create_frame(&file_entity, &frame_entity, frame_index, Some(&mut frame_q));
 
         let content_entity_data = ContentEntityData::new_frame();
         git_manager.on_insert_content_entity(

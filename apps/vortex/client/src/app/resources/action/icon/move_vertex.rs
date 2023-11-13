@@ -12,7 +12,11 @@ use vortex_proto::components::{IconFace, IconVertex};
 
 use crate::app::resources::{action::icon::IconAction, canvas::Canvas, icon_manager::IconManager};
 
-pub(crate) fn execute(world: &mut World, icon_manager: &mut IconManager, action: IconAction) -> Vec<IconAction> {
+pub(crate) fn execute(
+    world: &mut World,
+    icon_manager: &mut IconManager,
+    action: IconAction,
+) -> Vec<IconAction> {
     let IconAction::MoveVertex(vertex_entity, old_position, new_position, already_moved) = action else {
         panic!("Expected MoveVertex");
     };
@@ -27,15 +31,8 @@ pub(crate) fn execute(world: &mut World, icon_manager: &mut IconManager, action:
         Query<&mut Transform>,
         Query<&mut IconVertex>,
     )> = SystemState::new(world);
-    let (
-        client,
-        mut canvas,
-        mut meshes,
-        mesh_handle_q,
-        face_q,
-        mut transform_q,
-        mut vertex_q,
-    ) = system_state.get_mut(world);
+    let (client, mut canvas, mut meshes, mesh_handle_q, face_q, mut transform_q, mut vertex_q) =
+        system_state.get_mut(world);
 
     if !already_moved {
         // MoveVertex action happens after the vertex has already been moved, so we wouldn't need to do anything here ..
