@@ -130,21 +130,6 @@ impl IconToolbar {
         }
     }
 
-    // TODO: put this into posing_render_sidebar
-    fn posing_render_old(ui: &mut Ui, world: &mut World) {
-        // back to framing (up arrow for icon)
-        if Toolbar::button(ui, "⬆", "Back to framing", true).clicked() {
-            let mut icon_manager = world.get_resource_mut::<IconManager>().unwrap();
-            icon_manager.set_framing();
-        }
-
-        // insert vertex
-        let _response = Toolbar::button(ui, "🔼", "Insert vertex", true);
-
-        // delete selected
-        let _response = Toolbar::button(ui, "🗑", "Delete selected shape", true);
-    }
-
     fn meshing_render_sidebar(
         ui: &mut Ui,
         world: &mut World,
@@ -177,11 +162,29 @@ impl IconToolbar {
             .resizable(false)
             .show_inside(ui, |ui| {
 
-                let size = Vec2::new(48.0, 48.0);
-
                 ui.horizontal_top(|ui| {
                     Frame::none().inner_margin(8.0).show(ui, |ui| {
-                        ui.spacing_mut().item_spacing = Vec2::new(10.0, 10.0);
+                        ui.style_mut().override_text_style = Some(egui::TextStyle::Heading);
+
+                        // insert vertex
+                        let _response = Toolbar::button(ui, "➕", "Insert vertex", true);
+
+                        // delete selected
+                        let _response = Toolbar::button(ui, "-", "Delete selected shape", true);
+
+                        // back to framing (up arrow for icon)
+                        if Toolbar::button(ui, "⬆", "Back to framing", true).clicked() {
+                            icon_manager.set_framing();
+                        }
+                    });
+                });
+
+                ui.separator();
+
+                ui.vertical_centered(|ui| {
+                    Frame::none().inner_margin(8.0).show(ui, |ui| {
+
+                        let size = Vec2::new(48.0, 48.0);
 
                         let color_index = icon_manager.selected_color_index();
                         let color_entity_opt = colors.get(color_index).unwrap();
