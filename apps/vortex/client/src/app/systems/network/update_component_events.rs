@@ -10,10 +10,7 @@ use naia_bevy_client::{events::UpdateComponentEvents, Client};
 
 use render_api::{base::CpuMesh, components::Transform, Assets, Handle};
 
-use vortex_proto::components::{
-    AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, EdgeAngle, Face3d, FaceColor,
-    FileSystemChild, FileSystemEntry, FileSystemRootChild, PaletteColor, ShapeName, Vertex3d,
-};
+use vortex_proto::components::{AnimFrame, AnimRotation, BackgroundSkinColor, ChangelistEntry, EdgeAngle, Face3d, FaceColor, FileSystemChild, FileSystemEntry, FileSystemRootChild, IconFrame, PaletteColor, ShapeName, Vertex3d};
 
 use crate::app::{
     components::file_system::{ChangelistUiState, FileSystemEntryLocal},
@@ -25,6 +22,7 @@ use crate::app::{
         file_manager::{get_full_path, FileManager},
         palette_manager::PaletteManager,
         vertex_manager::VertexManager,
+        icon_manager::IconManager,
     },
 };
 
@@ -120,10 +118,12 @@ pub fn update_component_events(world: &mut World) {
             ResMut<Canvas>,
             Res<VertexManager>,
             Res<FaceManager>,
+            ResMut<IconManager>,
             ResMut<AnimationManager>,
             ResMut<PaletteManager>,
             ResMut<Assets<CpuMesh>>,
             Query<&AnimFrame>,
+            Query<&IconFrame>,
             Query<&PaletteColor>,
             Query<&Handle<CpuMesh>>,
             Query<&Face3d>,
@@ -135,10 +135,12 @@ pub fn update_component_events(world: &mut World) {
             mut canvas,
             vertex_manager,
             face_manager,
+            mut icon_manager,
             mut animation_manager,
             mut palette_manager,
             mut meshes,
-            frame_q,
+            anim_frame_q,
+            icon_frame_q,
             color_q,
             mesh_handle_q,
             face_3d_q,
@@ -174,8 +176,8 @@ pub fn update_component_events(world: &mut World) {
             // what to do here? update some caches?
         }
         for (_tick, frame_entity) in events.read::<AnimFrame>() {
-            let Ok(frame) = frame_q.get(frame_entity) else {
-                panic!("frame component not found for entity `{:?}`", frame_entity);
+            let Ok(frame) = anim_frame_q.get(frame_entity) else {
+                panic!("AnimFrame component not found for entity `{:?}`", frame_entity);
             };
             let file_entity = frame.file_entity.get(&client).unwrap();
             // check that index has changed
@@ -184,6 +186,19 @@ pub fn update_component_events(world: &mut World) {
                 animation_manager.get_frame_entity(&file_entity, frame_index);
             if existing_frame_entity != Some(frame_entity) {
                 animation_manager.framing_queue_resync_frame_order(&file_entity);
+            }
+        }
+        for (_tick, frame_entity) in events.read::<IconFrame>() {
+            let Ok(frame) = icon_frame_q.get(frame_entity) else {
+                panic!("IconFrame component not found for entity `{:?}`", frame_entity);
+            };
+            let file_entity = frame.file_entity.get(&client).unwrap();
+            // check that index has changed
+            let frame_index = frame.get_order() as usize;
+            let existing_frame_entity =
+                icon_manager.get_frame_entity(&file_entity, frame_index);
+            if existing_frame_entity != Some(frame_entity) {
+                icon_manager.framing_queue_resync_frame_order(&file_entity);
             }
         }
         for (_tick, color_entity) in events.read::<PaletteColor>() {

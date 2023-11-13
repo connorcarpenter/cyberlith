@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use bevy_ecs::{
     entity::Entity,
-    query::With,
+    query::{With, Without},
     system::{Res, Commands, Query, ResMut, SystemState},
     world::{Mut, World},
 };
@@ -22,7 +22,7 @@ use vortex_proto::components::{IconEdge, IconFace, IconVertex};
 use crate::app::{
     components::{
         Edge2dLocal, FaceIcon2d, IconEdgeLocal, IconLocalFace, IconVertexActionData,
-        OwnedByFileLocal, Vertex2d,
+        OwnedByFileLocal, Vertex2d, LocalShape
     },
     resources::{
         action::icon::IconAction, camera_manager::CameraManager, canvas::Canvas,
@@ -733,9 +733,18 @@ impl IconInputManager {
                 .current_frame_entity(&current_file_entity)
                 .unwrap();
 
-            let mut system_state: SystemState<(Client, Query<(Entity, &IconVertex)>, Query<(Entity, &IconEdge)>, Query<&IconFace>)> =
-                SystemState::new(world);
-            let (client, vertex_q, edge_q, face_q) = system_state.get_mut(world);
+            let mut system_state: SystemState<(
+                Client,
+                Query<(Entity, &IconVertex), Without<LocalShape>>,
+                Query<(Entity, &IconEdge), Without<LocalShape>>,
+                Query<&IconFace>
+            )> = SystemState::new(world);
+            let (
+                client,
+                vertex_q,
+                edge_q,
+                face_q
+            ) = system_state.get_mut(world);
 
             // vertices
             let mut vertex_map = HashMap::new();

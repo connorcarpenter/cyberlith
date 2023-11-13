@@ -112,7 +112,7 @@ impl IconAction {
             IconActionType::DeleteEdge => delete_edge::execute(world, icon_manager, self),
             IconActionType::DeleteFace => delete_face::execute(world, icon_manager, self),
             IconActionType::SelectFrame => select_frame::execute(world, icon_manager, self),
-            IconActionType::InsertFrame => insert_frame::execute(world, icon_manager, current_file_entity, self),
+            IconActionType::InsertFrame => insert_frame::execute(world, icon_manager, self),
             IconActionType::DeleteFrame => delete_frame::execute(world, icon_manager, self),
             IconActionType::MoveFrame => move_frame::execute(world, icon_manager, self),
             IconActionType::EditColor => edit_color::execute(world, icon_manager, self),
