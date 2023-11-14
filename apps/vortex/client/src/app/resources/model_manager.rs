@@ -1471,7 +1471,7 @@ impl ModelManager {
                 corrective_rot,
                 parent_transform_opt,
                 net_transform_entity,
-                bone_transform_opt
+                bone_transform_opt.as_ref()
             );
         }
     }
@@ -1494,7 +1494,7 @@ impl ModelManager {
         corrective_rot: &Quat,
         parent_transform_opt: Option<&Transform>,
         net_transform_entity: &Entity,
-        bone_transform_opt: Option<Transform>
+        bone_transform_opt: Option<&Transform>
     ) {
         let Ok((net_transform, skin_or_scene_entity)) = net_transform_q.get(*net_transform_entity) else {
             warn!("net_transform_entity {:?} has no NetTransform", net_transform_entity);
@@ -1769,7 +1769,7 @@ impl ModelManager {
         net_transform_q: &Query<(&NetTransform, &SkinOrSceneEntity)>,
         object_q: &Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>, &Transform)>,
         parent_transform_opt: Option<&Transform>,
-        bone_transform_opt: Option<Transform>,
+        bone_transform_opt: Option<&Transform>,
     ) {
         let Some(net_transform_entities) = self.file_to_transform_entities.get(file_entity) else {
             return;
@@ -1795,6 +1795,12 @@ impl ModelManager {
                 } else {
                     None
                 }
+            } else {
+                None
+            };
+
+            let new_bone_transform_opt_ref = if file_is_model {
+                new_bone_transform_opt.as_ref()
             } else {
                 bone_transform_opt
             };
@@ -1852,7 +1858,7 @@ impl ModelManager {
                         net_transform_q,
                         object_q,
                         Some(&net_transform),
-                        new_bone_transform_opt,
+                        new_bone_transform_opt_ref,
                     );
                 }
                 _ => {
