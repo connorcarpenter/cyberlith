@@ -246,7 +246,7 @@ impl TabManager {
                 .get_resource::<FileManager>()
                 .unwrap()
                 .get_file_type(&current_file_entity);
-            file_ext_specific_sync_tabs_shape_colors(file_ext, &current_file_entity, world);
+            file_ext_specific_sync_tabs_shape_colors(&file_ext, &current_file_entity, world);
         }
     }
 
@@ -744,7 +744,7 @@ pub fn render_tab_bar(ui: &mut Ui, world: &mut World) {
 }
 
 fn file_ext_specific_sync_tabs_shape_colors(
-    file_ext: FileExtension,
+    file_ext: &FileExtension,
     current_file_entity: &Entity,
     world: &mut World,
 ) {
@@ -835,38 +835,20 @@ fn file_ext_specific_sync_tabs_shape_colors(
                 skin_or_scene_q,
             ) = system_state.get_mut(world);
 
-            let Some(net_transform_entities) = model_manager.model_file_transform_entities(current_file_entity) else {
-                return;
-            };
-            for net_transform_entity in net_transform_entities {
-                let Ok(skin_or_scene_entity) = skin_or_scene_q.get(net_transform_entity) else {
-                    continue;
-                };
-                match *skin_or_scene_entity.value_type {
-                    NetTransformEntityType::Skin => {
-                        let skin_file_entity: Entity = skin_or_scene_entity.value.get(&client).unwrap();
-                        set_face_3d_colors(
-                            &skin_file_entity,
-                            &client,
-                            &file_manager,
-                            &palette_manager,
-                            &skin_manager,
-                            &mut materials,
-                            &mut face_3d_q,
-                            &palette_color_q,
-                            &bckg_color_q,
-                            &face_color_q,
-                            &mut None,
-                        );
-                    }
-                    NetTransformEntityType::Scene => {
-                        todo!();
-                    }
-                    _ => {
-                        panic!("invalid");
-                    }
-                }
-            }
+            set_face_3d_colors_recursive(
+                current_file_entity,
+                &client,
+                &file_manager,
+                &palette_manager,
+                &skin_manager,
+                &model_manager,
+                &mut materials,
+                &mut face_3d_q,
+                &palette_color_q,
+                &bckg_color_q,
+                &face_color_q,
+                &skin_or_scene_q
+            );
         }
         FileExtension::Icon => {
             let mut system_state: SystemState<(
@@ -935,6 +917,68 @@ fn file_ext_specific_sync_tabs_shape_colors(
             }
             for (_, mut mat_handle) in face_3d_q.iter_mut() {
                 *mat_handle = enabled_mat_handle;
+            }
+        }
+    }
+}
+
+fn set_face_3d_colors_recursive(
+    current_file_entity: &Entity,
+    client: &Client,
+    file_manager: &FileManager,
+    palette_manager: &PaletteManager,
+    skin_manager: &SkinManager,
+    model_manager: &ModelManager,
+    materials: &mut Assets<CpuMaterial>,
+    face_3d_q: &mut Query<(Entity, &mut Handle<CpuMaterial>, &OwnedByFileLocal), (With<Face3dLocal>, Without<Edge2dLocal>, Without<FaceIcon2d>)>,
+    palette_color_q: &Query<&PaletteColor>,
+    bckg_color_q: &Query<&BackgroundSkinColor>,
+    face_color_q: &Query<&FaceColor>,
+    skin_or_scene_q: &Query<&SkinOrSceneEntity>
+) {
+    let Some(net_transform_entities) = model_manager.file_transform_entities(current_file_entity) else {
+        return;
+    };
+    for net_transform_entity in net_transform_entities {
+        let Ok(skin_or_scene_entity) = skin_or_scene_q.get(net_transform_entity) else {
+            continue;
+        };
+        match *skin_or_scene_entity.value_type {
+            NetTransformEntityType::Skin => {
+                let skin_file_entity: Entity = skin_or_scene_entity.value.get(client).unwrap();
+                set_face_3d_colors(
+                    &skin_file_entity,
+                    client,
+                    file_manager,
+                    palette_manager,
+                    skin_manager,
+                    materials,
+                    face_3d_q,
+                    palette_color_q,
+                    bckg_color_q,
+                    face_color_q,
+                    &mut None,
+                );
+            }
+            NetTransformEntityType::Scene => {
+                let scene_file_entity = skin_or_scene_entity.value.get(client).unwrap();
+                set_face_3d_colors_recursive(
+                    &scene_file_entity,
+                    client,
+                    file_manager,
+                    palette_manager,
+                    skin_manager,
+                    model_manager,
+                    materials,
+                    face_3d_q,
+                    palette_color_q,
+                    bckg_color_q,
+                    face_color_q,
+                    skin_or_scene_q
+                );
+            }
+            _ => {
+                panic!("invalid");
             }
         }
     }
