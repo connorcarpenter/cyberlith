@@ -11,7 +11,7 @@ use bevy_log::warn;
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
-use math::{convert_3d_to_2d, Mat4, matrix_transform_point, Quat, SerdeQuat, Vec3};
+use math::{Affine3A, convert_3d_to_2d, Mat4, Quat, SerdeQuat, Vec3};
 
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
@@ -1430,7 +1430,7 @@ impl ModelManager {
         render_layer: &RenderLayer,
         line_mesh: &Handle<CpuMesh>,
         line_mat: &Handle<CpuMaterial>,
-        parent_transform_opt: Option<&Transform>,
+        parent_affine_opt: Option<&Affine3A>,
     ) {
         let Some(net_transform_entities) = self.file_to_transform_entities.get(file_entity) else {
             //warn!("current_file_entity {:?} has no net_transform_entities", current_file_entity);
@@ -1439,18 +1439,30 @@ impl ModelManager {
 
         for net_transform_entity in net_transform_entities {
 
-            let net_transform_data = self.transform_entities.get(net_transform_entity).unwrap();
+            let new_parent_affine_opt: Option<Affine3A> = if file_is_model {
+                if parent_affine_opt.is_some() {
+                    panic!("not possible");
+                }
+                let net_transform_data = self.transform_entities.get(net_transform_entity).unwrap();
 
-            let bone_transform_opt = if file_is_model {
-                let Some(bone_transform) = net_transform_data.get_bone_transform(
+                // get bone transform
+                if let Some(bone_transform) = net_transform_data.get_bone_transform(
                     &vertex_3d_q,
                     &edge_angle_q,
-                ) else {
-                    warn!("net_transform_entity {:?} has no bone_transform", net_transform_entity);
-                    continue;
-                };
-                Some(bone_transform)
-            } else { None };
+                ) {
+                    Some(bone_transform.compute_affine())
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+
+            let new_parent_affine_opt_ref = if file_is_model {
+                new_parent_affine_opt.as_ref()
+            } else {
+                parent_affine_opt
+            };
 
             self.render_2d_skins_super_recursive(
                 render_frame,
@@ -1466,9 +1478,8 @@ impl ModelManager {
                 &render_layer,
                 &line_mesh,
                 &line_mat,
-                parent_transform_opt,
+                new_parent_affine_opt_ref,
                 net_transform_entity,
-                bone_transform_opt.as_ref()
             );
         }
     }
@@ -1488,13 +1499,20 @@ impl ModelManager {
         render_layer: &RenderLayer,
         line_mesh: &Handle<CpuMesh>,
         line_mat: &Handle<CpuMaterial>,
-        parent_transform_opt: Option<&Transform>,
+        parent_affine_opt: Option<&Affine3A>,
         net_transform_entity: &Entity,
-        bone_transform_opt: Option<&Transform>
     ) {
         let Ok((net_transform, skin_or_scene_entity)) = net_transform_q.get(*net_transform_entity) else {
             warn!("net_transform_entity {:?} has no NetTransform", net_transform_entity);
             return;
+        };
+
+        let local_transform = NetTransformLocal::to_transform(net_transform);
+
+        let current_affine = if let Some(parent_affine) = parent_affine_opt {
+            *parent_affine * local_transform.compute_affine()
+        } else {
+            local_transform.compute_affine()
         };
 
         match *skin_or_scene_entity.value_type {
@@ -1504,19 +1522,6 @@ impl ModelManager {
                     warn!("skin_file_entity {:?} has no mesh_file_entity", skin_file_entity);
                     return;
                 };
-
-                let mut net_transform = NetTransformLocal::to_transform(net_transform);
-
-                if let Some(parent_transform) = parent_transform_opt {
-                    net_transform = net_transform.multiply(parent_transform);
-                }
-
-                if let Some(bone_transform) = bone_transform_opt {
-                    // apply bone transform to net_transform
-                    net_transform = net_transform.multiply(&bone_transform);
-                }
-
-                let net_transform_matrix = net_transform.compute_matrix();
 
                 for (owned_by_file, edge_3d_local) in edge_q.iter() {
                     if owned_by_file.file_entity != mesh_file_entity {
@@ -1534,7 +1539,7 @@ impl ModelManager {
                         let point = vertex_3d.as_vec3();
 
                         // transform by net_transform
-                        let point = matrix_transform_point(&net_transform_matrix, &point);
+                        let point = current_affine.transform_point3(point);
 
                         // transform to 2D
                         let (coords, depth) = convert_3d_to_2d(
@@ -1569,17 +1574,6 @@ impl ModelManager {
             NetTransformEntityType::Scene => {
                 let scene_file_entity = skin_or_scene_entity.value.get(client).unwrap();
 
-                let mut net_transform = NetTransformLocal::to_transform(net_transform);
-
-                if let Some(parent_transform) = parent_transform_opt {
-                    net_transform = net_transform.multiply(parent_transform);
-                }
-
-                if let Some(bone_transform) = bone_transform_opt {
-                    // apply bone transform to net_transform
-                    net_transform = net_transform.multiply(&bone_transform);
-                }
-
                 self.render_2d_skins_recursive(
                     &scene_file_entity,
                     false,
@@ -1596,7 +1590,7 @@ impl ModelManager {
                     render_layer,
                     line_mesh,
                     line_mat,
-                    Some(&net_transform),
+                    Some(&current_affine),
                 );
             }
             _ => {
@@ -1739,7 +1733,6 @@ impl ModelManager {
                 &net_transform_q,
                 &object_q,
                 None,
-                None,
             );
         }
     }
@@ -1758,8 +1751,7 @@ impl ModelManager {
         face_q: &Query<(Entity, &OwnedByFileLocal), With<Face3d>>,
         net_transform_q: &Query<(&NetTransform, &SkinOrSceneEntity)>,
         object_q: &Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>, &Transform)>,
-        parent_transform_opt: Option<&Transform>,
-        bone_transform_opt: Option<&Transform>,
+        parent_affine_opt: Option<&Affine3A>,
     ) {
         let Some(net_transform_entities) = self.file_to_transform_entities.get(file_entity) else {
             return;
@@ -1770,8 +1762,8 @@ impl ModelManager {
                 continue;
             };
 
-            let new_bone_transform_opt: Option<Transform> = if file_is_model {
-                if bone_transform_opt.is_some() {
+            let new_parent_affine_opt: Option<Affine3A> = if file_is_model {
+                if parent_affine_opt.is_some() {
                     panic!("not possible");
                 }
                 let net_transform_data = self.transform_entities.get(net_transform_entity).unwrap();
@@ -1781,7 +1773,7 @@ impl ModelManager {
                     &vertex_3d_q,
                     &edge_angle_q,
                 ) {
-                    Some(bone_transform)
+                    Some(bone_transform.compute_affine())
                 } else {
                     None
                 }
@@ -1789,10 +1781,17 @@ impl ModelManager {
                 None
             };
 
-            let new_bone_transform_opt_ref = if file_is_model {
-                new_bone_transform_opt.as_ref()
+            let new_parent_affine_opt_ref = if file_is_model {
+                new_parent_affine_opt.as_ref()
             } else {
-                bone_transform_opt
+                parent_affine_opt
+            };
+
+            let local_transform = NetTransformLocal::to_transform(net_transform);
+            let current_affine = if let Some(parent_affine) = new_parent_affine_opt_ref {
+                *parent_affine * local_transform.compute_affine()
+            } else {
+                local_transform.compute_affine()
             };
 
             match *skin_or_scene_entity.value_type {
@@ -1803,33 +1802,17 @@ impl ModelManager {
                         continue;
                     };
 
-                    let mut net_transform = NetTransformLocal::to_transform(net_transform);
-
-                    if let Some(parent_transform) = parent_transform_opt {
-                        net_transform = net_transform.multiply(parent_transform);
-                    }
-
-                    if let Some(bone_transform) = new_bone_transform_opt {
-                        net_transform = net_transform.multiply(&bone_transform);
-                    }
-
                     Self::render_3d_faces(
                         render_frame,
                         face_q,
                         object_q,
                         render_layer,
                         &mesh_file_entity,
-                        net_transform,
+                        &current_affine,
                     );
                 }
                 NetTransformEntityType::Scene => {
                     let scene_file_entity = skin_or_scene_entity.value.get(client).unwrap();
-
-                    let mut net_transform = NetTransformLocal::to_transform(net_transform);
-
-                    if let Some(parent_transform) = parent_transform_opt {
-                        net_transform = net_transform.multiply(parent_transform);
-                    }
 
                     self.render_3d_faces_recursive(
                         &scene_file_entity,
@@ -1844,8 +1827,7 @@ impl ModelManager {
                         face_q,
                         net_transform_q,
                         object_q,
-                        Some(&net_transform),
-                        new_bone_transform_opt_ref,
+                        Some(&current_affine),
                     );
                 }
                 _ => {
@@ -1861,7 +1843,7 @@ impl ModelManager {
         object_q: &Query<(&Handle<CpuMesh>, &Handle<CpuMaterial>, &Transform)>,
         render_layer: &RenderLayer,
         mesh_file_entity: &Entity,
-        net_transform: Transform,
+        parent_affine: &Affine3A,
     ) {
         for (face_3d_entity, owned_by_file) in face_q.iter() {
             if owned_by_file.file_entity != *mesh_file_entity {
@@ -1871,7 +1853,8 @@ impl ModelManager {
             let (mesh_handle, mat_handle, face_transform) =
                 object_q.get(face_3d_entity).unwrap();
 
-            let face_transform = face_transform.multiply(&net_transform);
+            let face_affine = *parent_affine * face_transform.compute_affine();
+            let face_transform = Transform::from(face_affine);
 
             // draw face
             render_frame.draw_object(

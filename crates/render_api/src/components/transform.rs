@@ -2,7 +2,7 @@ use std::default::Default;
 
 use bevy_ecs::component::Component;
 
-use math::{matrix_transform_point, Mat4, Quat, Vec2, Vec3};
+use math::{matrix_transform_point, Mat4, Quat, Vec2, Vec3, Affine3A};
 
 #[derive(Clone, Component, Copy)]
 pub struct Transform {
@@ -86,6 +86,10 @@ impl Transform {
 
     pub fn compute_matrix(&self) -> Mat4 {
         Mat4::from_scale_rotation_translation(self.scale, self.rotation, self.translation)
+    }
+
+    pub fn compute_affine(&self) -> Affine3A {
+        Affine3A::from_scale_rotation_translation(self.scale, self.rotation, self.translation)
     }
 
     pub fn orbit_rotate(&mut self, delta: Vec2) {
@@ -178,5 +182,12 @@ impl Transform {
 impl Default for Transform {
     fn default() -> Self {
         Self::IDENTITY
+    }
+}
+
+impl From<Affine3A> for Transform {
+    fn from(value: Affine3A) -> Self {
+        let (scale, rotation, translation) = value.to_scale_rotation_translation();
+        Transform::from_translation(translation).with_scale(scale).with_rotation(rotation)
     }
 }
