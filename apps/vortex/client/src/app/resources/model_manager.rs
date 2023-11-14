@@ -1389,7 +1389,7 @@ impl ModelManager {
             let render_layer = camera_manager.layer_2d;
             let line_mesh = meshes.add(shapes::Line);
             let line_mat = vertex_manager.mat_disabled_vertex;
-            let corrective_rot = Quat::from_rotation_x(f32::to_radians(90.0));
+            //let corrective_rot = Quat::from_rotation_x(f32::to_radians(90.0));
             let file_is_model = *file_ext == FileExtension::Model;
 
             self.render_2d_skins_recursive(
@@ -1408,7 +1408,6 @@ impl ModelManager {
                 &render_layer,
                 &line_mesh,
                 &line_mat,
-                &corrective_rot,
                 None,
             );
         }
@@ -1431,7 +1430,6 @@ impl ModelManager {
         render_layer: &RenderLayer,
         line_mesh: &Handle<CpuMesh>,
         line_mat: &Handle<CpuMaterial>,
-        corrective_rot: &Quat,
         parent_transform_opt: Option<&Transform>,
     ) {
         let Some(net_transform_entities) = self.file_to_transform_entities.get(file_entity) else {
@@ -1468,7 +1466,6 @@ impl ModelManager {
                 &render_layer,
                 &line_mesh,
                 &line_mat,
-                corrective_rot,
                 parent_transform_opt,
                 net_transform_entity,
                 bone_transform_opt.as_ref()
@@ -1491,7 +1488,6 @@ impl ModelManager {
         render_layer: &RenderLayer,
         line_mesh: &Handle<CpuMesh>,
         line_mat: &Handle<CpuMaterial>,
-        corrective_rot: &Quat,
         parent_transform_opt: Option<&Transform>,
         net_transform_entity: &Entity,
         bone_transform_opt: Option<&Transform>
@@ -1510,7 +1506,6 @@ impl ModelManager {
                 };
 
                 let mut net_transform = NetTransformLocal::to_transform(net_transform);
-                net_transform.rotation = net_transform.rotation * *corrective_rot;
 
                 if let Some(parent_transform) = parent_transform_opt {
                     net_transform = net_transform.multiply(parent_transform);
@@ -1575,7 +1570,6 @@ impl ModelManager {
                 let scene_file_entity = skin_or_scene_entity.value.get(client).unwrap();
 
                 let mut net_transform = NetTransformLocal::to_transform(net_transform);
-                net_transform.rotation = net_transform.rotation * *corrective_rot;
 
                 if let Some(parent_transform) = parent_transform_opt {
                     net_transform = net_transform.multiply(parent_transform);
@@ -1602,7 +1596,6 @@ impl ModelManager {
                     render_layer,
                     line_mesh,
                     line_mat,
-                    corrective_rot,
                     Some(&net_transform),
                 );
             }
@@ -1730,7 +1723,6 @@ impl ModelManager {
             ) = system_state.get_mut(world);
 
             let render_layer = camera_manager.layer_3d;
-            let corrective_rot = Quat::from_rotation_x(f32::to_radians(90.0));
             let file_is_model = *file_ext == FileExtension::Model;
 
             self.render_3d_faces_recursive(
@@ -1738,7 +1730,6 @@ impl ModelManager {
                 file_is_model,
                 &mut render_frame,
                 &render_layer,
-                &corrective_rot,
                 &client,
                 &file_manager,
                 &camera_manager,
@@ -1759,7 +1750,6 @@ impl ModelManager {
         file_is_model: bool,
         render_frame: &mut RenderFrame,
         render_layer: &RenderLayer,
-        corrective_rot: &Quat,
         client: &Client,
         file_manager: &FileManager,
         camera_manager: &CameraManager,
@@ -1814,7 +1804,6 @@ impl ModelManager {
                     };
 
                     let mut net_transform = NetTransformLocal::to_transform(net_transform);
-                    net_transform.rotation = net_transform.rotation * *corrective_rot;
 
                     if let Some(parent_transform) = parent_transform_opt {
                         net_transform = net_transform.multiply(parent_transform);
@@ -1837,7 +1826,6 @@ impl ModelManager {
                     let scene_file_entity = skin_or_scene_entity.value.get(client).unwrap();
 
                     let mut net_transform = NetTransformLocal::to_transform(net_transform);
-                    net_transform.rotation = net_transform.rotation * *corrective_rot;
 
                     if let Some(parent_transform) = parent_transform_opt {
                         net_transform = net_transform.multiply(parent_transform);
@@ -1848,7 +1836,6 @@ impl ModelManager {
                         false,
                         render_frame,
                         render_layer,
-                        corrective_rot,
                         client,
                         file_manager,
                         camera_manager,
