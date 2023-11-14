@@ -2,7 +2,7 @@ use std::default::Default;
 
 use bevy_ecs::component::Component;
 
-use math::{matrix_transform_point, Mat4, Quat, Vec2, Vec3, Affine3A};
+use math::{matrix_transform_point, Affine3A, Mat4, Quat, Vec2, Vec3};
 
 #[derive(Clone, Component, Copy)]
 pub struct Transform {
@@ -188,6 +188,8 @@ impl Default for Transform {
 impl From<Affine3A> for Transform {
     fn from(value: Affine3A) -> Self {
         let (scale, rotation, translation) = value.to_scale_rotation_translation();
-        Transform::from_translation(translation).with_scale(scale).with_rotation(rotation)
+        Transform::from_translation(translation)
+            .with_scale(scale)
+            .with_rotation(rotation)
     }
 }

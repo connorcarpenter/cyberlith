@@ -847,7 +847,7 @@ fn file_ext_specific_sync_tabs_shape_colors(
                 &palette_color_q,
                 &bckg_color_q,
                 &face_color_q,
-                &skin_or_scene_q
+                &skin_or_scene_q,
             );
         }
         FileExtension::Icon => {
@@ -930,11 +930,14 @@ fn set_face_3d_colors_recursive(
     skin_manager: &SkinManager,
     model_manager: &ModelManager,
     materials: &mut Assets<CpuMaterial>,
-    face_3d_q: &mut Query<(Entity, &mut Handle<CpuMaterial>, &OwnedByFileLocal), (With<Face3dLocal>, Without<Edge2dLocal>, Without<FaceIcon2d>)>,
+    face_3d_q: &mut Query<
+        (Entity, &mut Handle<CpuMaterial>, &OwnedByFileLocal),
+        (With<Face3dLocal>, Without<Edge2dLocal>, Without<FaceIcon2d>),
+    >,
     palette_color_q: &Query<&PaletteColor>,
     bckg_color_q: &Query<&BackgroundSkinColor>,
     face_color_q: &Query<&FaceColor>,
-    skin_or_scene_q: &Query<&SkinOrSceneEntity>
+    skin_or_scene_q: &Query<&SkinOrSceneEntity>,
 ) {
     let Some(net_transform_entities) = model_manager.file_transform_entities(current_file_entity) else {
         return;
@@ -974,7 +977,7 @@ fn set_face_3d_colors_recursive(
                     palette_color_q,
                     bckg_color_q,
                     face_color_q,
-                    skin_or_scene_q
+                    skin_or_scene_q,
                 );
             }
             _ => {

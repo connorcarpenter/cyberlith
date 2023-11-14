@@ -11,11 +11,13 @@ use bevy_log::warn;
 
 use naia_bevy_client::{Client, CommandsExt, ReplicationConfig};
 
-use math::{Affine3A, convert_3d_to_2d, Mat4, Quat, SerdeQuat, Vec3};
+use math::{convert_3d_to_2d, Affine3A, Mat4, Quat, SerdeQuat, Vec3};
 
 use render_api::{
     base::{Color, CpuMaterial, CpuMesh},
-    components::{Viewport, Camera, CameraProjection, Projection, RenderLayer, Transform, Visibility},
+    components::{
+        Camera, CameraProjection, Projection, RenderLayer, Transform, Viewport, Visibility,
+    },
     resources::RenderFrame,
     shapes,
     shapes::set_2d_line_transform,
@@ -1438,7 +1440,6 @@ impl ModelManager {
         };
 
         for net_transform_entity in net_transform_entities {
-
             let new_parent_affine_opt: Option<Affine3A> = if file_is_model {
                 if parent_affine_opt.is_some() {
                     panic!("not possible");
@@ -1446,10 +1447,9 @@ impl ModelManager {
                 let net_transform_data = self.transform_entities.get(net_transform_entity).unwrap();
 
                 // get bone transform
-                if let Some(bone_transform) = net_transform_data.get_bone_transform(
-                    &vertex_3d_q,
-                    &edge_angle_q,
-                ) {
+                if let Some(bone_transform) =
+                    net_transform_data.get_bone_transform(&vertex_3d_q, &edge_angle_q)
+                {
                     Some(bone_transform.compute_affine())
                 } else {
                     None
@@ -1530,7 +1530,7 @@ impl ModelManager {
 
                     let mut vertices = [Vec3::ZERO, Vec3::ZERO];
                     for (index, vertex_3d_entity) in
-                    [edge_3d_local.start, edge_3d_local.end].iter().enumerate()
+                        [edge_3d_local.start, edge_3d_local.end].iter().enumerate()
                     {
                         let Ok(vertex_3d) = vertex_3d_q.get(*vertex_3d_entity) else {
                             warn!("Vertex3d entity {:?} has no Transform", vertex_3d_entity);
@@ -1769,10 +1769,9 @@ impl ModelManager {
                 let net_transform_data = self.transform_entities.get(net_transform_entity).unwrap();
 
                 // apply bone transform to net_transform
-                if let Some(bone_transform) = net_transform_data.get_bone_transform(
-                    &vertex_3d_q,
-                    &edge_angle_q,
-                ) {
+                if let Some(bone_transform) =
+                    net_transform_data.get_bone_transform(&vertex_3d_q, &edge_angle_q)
+                {
                     Some(bone_transform.compute_affine())
                 } else {
                     None
@@ -1850,8 +1849,7 @@ impl ModelManager {
                 continue;
             }
 
-            let (mesh_handle, mat_handle, face_transform) =
-                object_q.get(face_3d_entity).unwrap();
+            let (mesh_handle, mat_handle, face_transform) = object_q.get(face_3d_entity).unwrap();
 
             let face_affine = *parent_affine * face_transform.compute_affine();
             let face_transform = Transform::from(face_affine);
@@ -1977,8 +1975,7 @@ impl ModelManager {
 
     fn net_transform_3d_vertices(&self, file_entity: &Entity) -> Vec<Entity> {
         let mut vertices = Vec::new();
-        if let Some(net_transform_entities) = self.file_to_transform_entities.get(file_entity)
-        {
+        if let Some(net_transform_entities) = self.file_to_transform_entities.get(file_entity) {
             for net_transform_entity in net_transform_entities.iter() {
                 let data = self.transform_entities.get(net_transform_entity).unwrap();
                 vertices.push(data.translation_entity_3d);
@@ -1993,8 +1990,7 @@ impl ModelManager {
 
     pub fn net_transform_2d_vertices(&self, file_entity: &Entity) -> Vec<Entity> {
         let mut vertices = Vec::new();
-        if let Some(net_transform_entities) = self.file_to_transform_entities.get(file_entity)
-        {
+        if let Some(net_transform_entities) = self.file_to_transform_entities.get(file_entity) {
             for net_transform_entity in net_transform_entities.iter() {
                 let data = self.transform_entities.get(net_transform_entity).unwrap();
                 vertices.push(data.translation_entity_2d);
@@ -2009,8 +2005,7 @@ impl ModelManager {
 
     fn net_transform_rotation_edge_3d_entities(&self, file_entity: &Entity) -> Vec<Entity> {
         let mut output = Vec::new();
-        if let Some(net_transform_entities) = self.file_to_transform_entities.get(file_entity)
-        {
+        if let Some(net_transform_entities) = self.file_to_transform_entities.get(file_entity) {
             for net_transform_entity in net_transform_entities.iter() {
                 let data = self.transform_entities.get(net_transform_entity).unwrap();
                 output.push(data.rotation_entity_edge_3d);
@@ -2024,8 +2019,7 @@ impl ModelManager {
         file_entity: &Entity,
     ) -> Vec<Entity> {
         let mut output = Vec::new();
-        if let Some(net_transform_entities) = self.file_to_transform_entities.get(file_entity)
-        {
+        if let Some(net_transform_entities) = self.file_to_transform_entities.get(file_entity) {
             for net_transform_entity in net_transform_entities.iter() {
                 let data = self.transform_entities.get(net_transform_entity).unwrap();
                 output.push(data.rotation_entity_edge_2d);
