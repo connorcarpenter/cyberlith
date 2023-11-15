@@ -6,13 +6,23 @@ use render_api::components::{Camera, CameraProjection, Projection, Transform};
 
 pub fn set_3d_line_transform(transform: &mut Transform, start: Vec3, end: Vec3, spin: f32) {
     transform.translation = start;
-    let translation_diff = end - start;
-    let target_direction = translation_diff.normalize();
 
-    if translation_diff.x == 0.0 && translation_diff.y == 0.0 {
-        transform.look_to(translation_diff, Vec3::Y);
+    if start.x == end.x && start.y == end.y {
+
+        // why (start - end) here??
+        // a line mesh by default goes from Vec3(0.0, 0.0, 0.0) -> Vec3(0.0, 0.0, 1.0)
+        // since start and end has the same X & Y values,
+        // direction is essentially the same as Vec3(0.0, 0.0, start.z) -> Vec3(0.0, 0.0, end.z)
+        // so direction is either Vec3(0.0, 0.0, 1.0) or Vec3(0.0, 0.0, -1.0)
+        // and that's where my understanding stops...
+        // a transform with a rotation of Quat::IDENTITY should have the line going from Vec3::ZERO -> Vec3::Z
+        // and the reverse should be Vec3::ZERO -> Vec3::NEG_Z
+        // which rotation does look_to(start - end, Vec3::Y) return?
+
+        let direction = start - end;
+        transform.look_to(direction, Vec3::Y);
     } else {
-        let rotation_angle = quat_from_spin_direction(spin, Vec3::Z, target_direction);
+        let rotation_angle = quat_from_spin_direction(spin, Vec3::Z, end - start);
         transform.rotation = rotation_angle;
     }
 

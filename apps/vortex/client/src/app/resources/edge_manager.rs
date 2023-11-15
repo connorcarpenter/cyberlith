@@ -470,7 +470,7 @@ impl EdgeManager {
                 meshes,
                 materials,
                 Vec3::ZERO,
-                Vec3::X,
+                Vec3::Z,
                 color,
                 Edge3dLocal::NORMAL_THICKNESS,
             )
@@ -479,7 +479,7 @@ impl EdgeManager {
                 meshes,
                 materials,
                 Vec3::ZERO,
-                Vec3::X,
+                Vec3::Z,
                 color,
                 Edge3dLocal::NORMAL_THICKNESS,
             )

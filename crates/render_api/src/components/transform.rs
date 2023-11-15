@@ -147,6 +147,12 @@ impl Transform {
             .unwrap_or_else(|| up.any_orthonormal_vector());
         let up = back.cross(right);
         self.rotation = Quat::from_mat3(&Mat3::from_cols(right, up, back));
+
+        // legacy:
+        // let forward = direction.normalize();
+        // let right = up.cross(forward).normalize();
+        // let up = forward.cross(right);
+        // self.rotation = Quat::from_mat3(&Mat3::from_cols(right, up, forward));
     }
 
     pub fn view_matrix(&self) -> Mat4 {

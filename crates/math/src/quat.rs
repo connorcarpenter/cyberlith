@@ -263,6 +263,9 @@ mod tests {
 
 // spin is in radians
 pub fn quat_from_spin_direction(spin: f32, base_direction: Vec3, target_direction: Vec3) -> Quat {
+    let base_direction = base_direction.normalize();
+    let target_direction = target_direction.normalize();
+
     let base_quat = Quat::from_axis_angle(
         base_direction.cross(target_direction).normalize(),
         base_direction.angle_between(target_direction),
