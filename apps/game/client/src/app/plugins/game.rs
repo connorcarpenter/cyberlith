@@ -5,18 +5,15 @@ use bevy_ecs::{
     system::{Commands, Local, Query, Res, ResMut},
 };
 
-use math::Vec3;
+use math::{Quat, Vec3};
 
-use render_api::{
-    base::{Color, CpuMaterial, CpuMesh},
-    components::{
-        AmbientLight, Camera, CameraBundle, ClearOperation, DirectionalLight,
-        OrthographicProjection, Projection, RenderLayers, RenderObjectBundle, RenderTarget,
-        Transform, Viewport,
-    },
-    resources::WindowSettings,
-    shapes, Assets, Window,
-};
+use render_api::{base::{Color, CpuMaterial, CpuMesh}, components::{
+    AmbientLight, Camera, CameraBundle, ClearOperation, DirectionalLight,
+    OrthographicProjection, Projection, RenderLayers, RenderObjectBundle, RenderTarget,
+    Transform, Viewport,
+}, resources::WindowSettings, shapes, Assets, Window, Handle};
+use render_api::components::{PointLight, RenderLayer, Visibility};
+use render_api::resources::RenderFrame;
 
 #[derive(Component)]
 pub struct CubeMarker;
@@ -51,55 +48,52 @@ impl Plugin for GamePlugin {
             //         .in_set(ReceiveEvents),
             // )
             .add_systems(Update, step)
-            .add_systems(Update, rotate);
+            .add_systems(Update, rotate)
+            .add_systems(Update, draw);
     }
 }
 
 fn setup(
     mut commands: Commands,
-    window: Res<Window>,
     mut meshes: ResMut<Assets<CpuMesh>>,
     mut materials: ResMut<Assets<CpuMaterial>>,
+    mut ambient_lights: ResMut<Assets<AmbientLight>>,
+    mut dir_lights: ResMut<Assets<DirectionalLight>>,
 ) {
     let layer = RenderLayers::layer(0);
 
     // plane
-    // commands.spawn(RenderObjectBundle {
-    //     mesh: meshes.add(shapes::Square),
-    //     material: materials.add(Color::from_rgb_f32(0.3, 0.5, 0.3)),
-    //     transform: Transform::from_scale(Vec3::new(100.0, 1.0, 100.0)),
-    //     ..Default::default()
-    // });
+    commands.spawn(RenderObjectBundle {
+        mesh: meshes.add(shapes::Square),
+        material: materials.add(Color::from_rgb_f32(0.3, 0.5, 0.3)),
+        transform: Transform::from_scale(Vec3::new(500.0, 500.0, 1.0))
+            .with_rotation(
+                Quat::from_axis_angle(Vec3::X, f32::to_radians(-90.0))
+            )
+        ,
+        ..Default::default()
+    })
+        //.insert(CubeMarker)
+        .insert(layer);
     // cube
     commands
         .spawn(RenderObjectBundle {
             mesh: meshes.add(shapes::Cube),
             material: materials.add(Color::from_rgb_f32(0.8, 0.7, 0.6)),
-            transform: Transform::from_xyz(0.0, 0.0, 0.0).with_scale(Vec3::splat(50.0)),
+            transform: Transform::from_scale(Vec3::splat(50.0)).with_translation(Vec3::new(0.0, 70.0, 0.0)),
             ..Default::default()
         })
         .insert(CubeMarker)
         .insert(layer);
-    // light
+    // ambient light
     commands
-        .spawn(AmbientLight {
-            intensity: 0.1,
-            color: Color::WHITE,
-            ..Default::default()
-        })
+        .spawn(ambient_lights.add(AmbientLight::new(0.1, Color::WHITE)))
         .insert(layer);
-    // commands.spawn(PointLight {
-    //     position: Vec3::new(50.0, 50.0, 50.0),
-    //     intensity: 5.0,
-    //     color: Color::RED,
-    //     ..Default::default()
-    // }).insert(layer);
+    // directional light
+    let light_source = Vec3::new(200.0, 100.0, 100.0);
+    let light_target = Vec3::ZERO;
     commands
-        .spawn(DirectionalLight {
-            direction: Vec3::new(12.0, 45.0, 91.0),
-            intensity: 2.0,
-            color: Color::WHITE,
-        })
+        .spawn(dir_lights.add(DirectionalLight::new(2.0, Color::WHITE, light_target - light_source)))
         .insert(layer);
     // camera
     commands
@@ -111,7 +105,7 @@ fn setup(
                 target: RenderTarget::Screen,
                 ..Default::default()
             },
-            transform: Transform::from_xyz(100.0, 100.0, 0.0).looking_at(Vec3::ZERO, Vec3::Y),
+            transform: Transform::from_xyz(100.0, 100.0, 100.0).looking_at(Vec3::ZERO, Vec3::Y),
             projection: Projection::Orthographic(
                 OrthographicProjection {
                     height: 720.0,
@@ -142,16 +136,67 @@ fn step(mut cube_q: Query<&mut Transform, With<CubeMarker>>, mut rotation: Local
     let x = f32::to_radians(*rotation).cos() * 100.0;
     let z = f32::to_radians(*rotation).sin() * 100.0;
 
-    let mut transform = cube_q.single_mut();
-
-    transform.translation.x = x;
-    transform.translation.z = z;
+    for mut transform in cube_q.iter_mut() {
+        transform.translation.x = x;
+        transform.translation.z = z;
+    }
 }
 
 fn rotate(mut query: Query<&mut Transform, With<CubeMarker>>) {
     for mut transform in &mut query {
-        transform.rotate_x(0.015);
-        transform.rotate_z(0.013);
-        transform.rotate_y(0.011);
+        transform.rotate_x(0.01);
+        //transform.rotate_z(0.023);
+        //transform.rotate_y(0.011);
+    }
+}
+
+pub fn draw(
+    mut render_frame: ResMut<RenderFrame>,
+    // Cameras
+    cameras_q: Query<(&Camera, &Transform, &Projection, Option<&RenderLayer>)>,
+    // Objects
+    objects_q: Query<
+        (
+            &Handle<CpuMesh>,
+            &Handle<CpuMaterial>,
+            &Transform,
+            &Visibility,
+            Option<&RenderLayer>,
+        )
+    >,
+    // Lights
+    ambient_lights_q: Query<(&Handle<AmbientLight>, Option<&RenderLayer>)>,
+    point_lights_q: Query<(&PointLight, Option<&RenderLayer>)>,
+    directional_lights_q: Query<(&Handle<DirectionalLight>, Option<&RenderLayer>)>,
+) {
+    // Aggregate Cameras
+    for (camera, transform, projection, render_layer_opt) in cameras_q.iter() {
+        if !camera.is_active {
+            continue;
+        }
+        render_frame.draw_camera(render_layer_opt, camera, transform, projection);
+    }
+
+    // Aggregate Point Lights
+    for (point_light, render_layer_opt) in point_lights_q.iter() {
+        render_frame.draw_point_light(render_layer_opt, point_light);
+    }
+
+    // Aggregate Directional Lights
+    for (handle, render_layer_opt) in directional_lights_q.iter() {
+        render_frame.draw_directional_light(render_layer_opt, handle);
+    }
+
+    // Aggregate Ambient Lights
+    for (handle, render_layer_opt) in ambient_lights_q.iter() {
+        render_frame.draw_ambient_light(render_layer_opt, handle);
+    }
+
+    // Aggregate RenderObjects
+    for (mesh_handle, mat_handle, transform, visibility, render_layer_opt) in objects_q.iter() {
+        if !visibility.visible {
+            continue;
+        }
+        render_frame.draw_object(render_layer_opt, mesh_handle, mat_handle, transform);
     }
 }

@@ -1,7 +1,9 @@
 use std::default::Default;
+use std::hash::{Hash, Hasher};
 
 use math::Vec3;
 
+use crate::AssetHash;
 use crate::base::Color;
 
 ///
@@ -18,13 +20,25 @@ pub struct DirectionalLight {
     pub direction: Vec3,
 }
 
+impl Hash for DirectionalLight {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.intensity.to_bits().hash(state);
+        self.color.hash(state);
+        self.direction.x.to_bits().hash(state);
+        self.direction.y.to_bits().hash(state);
+        self.direction.z.to_bits().hash(state);
+    }
+}
+
+impl AssetHash<DirectionalLight> for DirectionalLight {}
+
 impl DirectionalLight {
     /// Creates a new directional light.
-    pub fn new(intensity: f32, color: Color, direction: &Vec3) -> DirectionalLight {
+    pub fn new(intensity: f32, color: Color, direction: Vec3) -> DirectionalLight {
         DirectionalLight {
             intensity,
             color,
-            direction: *direction,
+            direction,
         }
     }
 

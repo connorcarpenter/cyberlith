@@ -2,7 +2,7 @@ use std::default::Default;
 
 use bevy_ecs::component::Component;
 
-use math::{matrix_transform_point, Affine3A, Mat4, Quat, Vec2, Vec3};
+use math::{matrix_transform_point, Affine3A, Mat4, Quat, Vec2, Vec3, Mat3};
 
 #[derive(Clone, Component, Copy)]
 pub struct Transform {
@@ -131,8 +131,22 @@ impl Transform {
         self.look_to(target - self.translation, up);
     }
 
+    /// Rotates this [`Transform`] so that [`Transform::forward`] points in the given `direction`
+    /// and [`Transform::up`] points towards `up`.
+    ///
+    /// In some cases it's not possible to construct a rotation. Another axis will be picked in those cases:
+    /// * if `direction` is zero, `Vec3::NEG_Z` is used instead
+    /// * if `up` is zero, `Vec3::Y` is used instead
+    /// * if `direction` is parallel with `up`, an orthogonal vector is used as the "right" direction
     pub fn look_to(&mut self, direction: Vec3, up: Vec3) {
-        self.rotation = math::quat_look_to(direction, up);
+        let back = -direction.try_normalize().unwrap_or(Vec3::NEG_Z);
+        let up = up.try_normalize().unwrap_or(Vec3::Y);
+        let right = up
+            .cross(back)
+            .try_normalize()
+            .unwrap_or_else(|| up.any_orthonormal_vector());
+        let up = back.cross(right);
+        self.rotation = Quat::from_mat3(&Mat3::from_cols(right, up, back));
     }
 
     pub fn view_matrix(&self) -> Mat4 {

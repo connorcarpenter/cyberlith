@@ -4,14 +4,6 @@ use naia_serde::{
     BitReader, BitWrite, ConstBitLength, SerdeErr, SerdeInternal as Serde, SignedInteger,
 };
 
-// Quat
-pub fn quat_look_to(direction: Vec3, up: Vec3) -> Quat {
-    let forward = direction.normalize();
-    let right = up.cross(forward).normalize();
-    let up = forward.cross(right);
-    Quat::from_mat3(&Mat3::from_cols(right, up, forward))
-}
-
 // SerdeQuat
 #[derive(Clone, Copy, PartialEq)]
 pub struct SerdeQuat(pub Quat);
