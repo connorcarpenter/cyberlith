@@ -1,4 +1,4 @@
-use glam::{Mat3, Mat4, Quat, Vec3};
+use glam::{ Mat4, Quat, Vec3};
 
 use naia_serde::{
     BitReader, BitWrite, ConstBitLength, SerdeErr, SerdeInternal as Serde, SignedInteger,

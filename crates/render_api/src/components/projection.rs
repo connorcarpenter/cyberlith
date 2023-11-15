@@ -70,6 +70,8 @@ pub struct PerspectiveProjection {
     /// Objects closer to the camera than this value will not be visible.
     ///
     /// Defaults to a value of `0.1`.
+    ///
+    /// NOTE: perspective projection does not seem to work with near value < 0.1 !
     pub near: f32,
 
     /// The distance from the camera in world units of the viewing frustum's far plane.
@@ -106,7 +108,7 @@ impl Default for PerspectiveProjection {
 
 #[derive(Clone, Copy)]
 pub struct OrthographicProjection {
-    pub height: f32,
+
     /// The distance of the near clipping plane in world units.
     ///
     /// Objects closer than this will not be rendered.
@@ -123,14 +125,14 @@ pub struct OrthographicProjection {
 
 impl CameraProjection for OrthographicProjection {
     fn projection_matrix(&self, viewport: &Viewport) -> Mat4 {
-        let aspect_ratio = viewport.aspect();
-        let width = self.height * aspect_ratio;
-        let height = self.height;
+        //let aspect_ratio = viewport.aspect();
+        let width = viewport.width as f32;
+        let height = viewport.height as f32;
         Mat4::orthographic_rh(
-            -0.5 * width as f32,
-            0.5 * width as f32,
-            -0.5 * height as f32,
-            0.5 * height as f32,
+            -0.5 * width,
+            0.5 * width,
+            -0.5 * height,
+            0.5 * height,
             self.near,
             self.far,
         )
@@ -148,7 +150,6 @@ impl CameraProjection for OrthographicProjection {
 impl Default for OrthographicProjection {
     fn default() -> Self {
         OrthographicProjection {
-            height: 720.0,
             near: 0.0,
             far: 1000.0,
         }
@@ -156,7 +157,7 @@ impl Default for OrthographicProjection {
 }
 
 impl OrthographicProjection {
-    pub fn new(height: f32, near: f32, far: f32) -> Self {
-        Self { height, near, far }
+    pub fn new(near: f32, far: f32) -> Self {
+        Self { near, far }
     }
 }

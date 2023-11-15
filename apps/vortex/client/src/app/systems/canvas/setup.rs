@@ -229,7 +229,6 @@ fn setup_3d_scene(
             transform: Transform::from_xyz(50.0, 0.0, 0.0) // from front
                 .looking_at(Vec3::ZERO, Vec3::Y),
             projection: Projection::Orthographic(OrthographicProjection::new(
-                texture_size.y,
                 0.0,
                 1000.0,
             )),

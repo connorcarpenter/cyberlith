@@ -246,7 +246,7 @@ impl CameraManager {
         *transform = Transform::from_xyz(center.x, center.y, 1.0)
             .looking_at(Vec3::new(center.x, center.y, 0.0), Vec3::NEG_Y);
         *projection =
-            Projection::Orthographic(OrthographicProjection::new(texture_size.y, 0.0, 10.0));
+            Projection::Orthographic(OrthographicProjection::new(0.0, 10.0));
     }
 
     fn update_3d_camera_viewport(
@@ -267,7 +267,7 @@ impl CameraManager {
         ));
 
         *projection =
-            Projection::Orthographic(OrthographicProjection::new(texture_size.y, 0.0, 1000.0));
+            Projection::Orthographic(OrthographicProjection::new(0.0, 1000.0));
     }
 
     pub fn update_visibility(

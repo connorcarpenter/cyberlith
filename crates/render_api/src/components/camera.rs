@@ -37,7 +37,6 @@ impl CameraBundle {
                 Vec3::NEG_Y,
             ),
             projection: Projection::Orthographic(OrthographicProjection {
-                height: viewport.height as f32,
                 near: 0.0,
                 far: 10.0,
             }),

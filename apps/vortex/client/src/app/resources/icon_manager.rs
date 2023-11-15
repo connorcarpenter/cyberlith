@@ -843,7 +843,7 @@ impl IconManager {
         ));
 
         *projection =
-            Projection::Orthographic(OrthographicProjection::new(texture_size.y, 0.0, 10.0));
+            Projection::Orthographic(OrthographicProjection::new(0.0, 10.0));
     }
 
     pub fn enable_camera(

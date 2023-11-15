@@ -11,7 +11,7 @@ use render_api::{base::{Color, CpuMaterial, CpuMesh}, components::{
     AmbientLight, Camera, CameraBundle, ClearOperation, DirectionalLight,
     OrthographicProjection, Projection, RenderLayers, RenderObjectBundle, RenderTarget,
     Transform, Viewport,
-}, resources::WindowSettings, shapes, Assets, Window, Handle};
+}, resources::WindowSettings, shapes, Assets, Handle};
 use render_api::components::{PointLight, RenderLayer, Visibility};
 use render_api::resources::RenderFrame;
 
@@ -66,7 +66,7 @@ fn setup(
     commands.spawn(RenderObjectBundle {
         mesh: meshes.add(shapes::Square),
         material: materials.add(Color::from_rgb_f32(0.3, 0.5, 0.3)),
-        transform: Transform::from_scale(Vec3::new(500.0, 500.0, 1.0))
+        transform: Transform::from_scale(Vec3::new(300.0, 300.0, 1.0))
             .with_rotation(
                 Quat::from_axis_angle(Vec3::X, f32::to_radians(-90.0))
             )
@@ -105,19 +105,18 @@ fn setup(
                 target: RenderTarget::Screen,
                 ..Default::default()
             },
-            transform: Transform::from_xyz(100.0, 100.0, 100.0).looking_at(Vec3::ZERO, Vec3::Y),
+            transform: Transform::from_xyz(500.0, 500.0, 500.0).looking_at(Vec3::ZERO, Vec3::Y),
             projection: Projection::Orthographic(
                 OrthographicProjection {
-                    height: 720.0,
-                    near: -1000.0,
-                    far: 1000.0,
+                    near: 0.1,
+                    far: 10000.0,
                     ..Default::default()
-                }, //  projection: Projection::Perspective(PerspectiveProjection {
-                   //              fov: 45.0,
-                   //              near: 0.0,
-                   //              far: 500.0,
-                   //              ..Default::default()
-                   //          }
+                },
+            //      projection: Projection::Perspective(PerspectiveProjection {
+            //                  fov: std::f32::consts::PI / 4.0,
+            //                  near: 0.1,
+            //                  far: 10000.0,
+            //                 }
             ),
         })
         .insert(layer);
@@ -145,7 +144,7 @@ fn step(mut cube_q: Query<&mut Transform, With<CubeMarker>>, mut rotation: Local
 fn rotate(mut query: Query<&mut Transform, With<CubeMarker>>) {
     for mut transform in &mut query {
         transform.rotate_x(0.01);
-        //transform.rotate_z(0.023);
+        transform.rotate_z(0.02);
         //transform.rotate_y(0.011);
     }
 }
