@@ -52,13 +52,15 @@ impl FileWriter for PaletteWriter {
         _project: &Project,
         _content_entities: &HashMap<Entity, ContentEntityData>,
     ) -> Box<[u8]> {
+        let mut action_index = 0;
         let actions = self.world_to_actions(world);
         let mut output_actions = Vec::new();
         for action_opt in actions {
             let Some(action) = action_opt else {
-                panic!("Palette action is missing!");
+                panic!("Palette action is missing! index: {}", action_index);
             };
             output_actions.push(action);
+            action_index += 1;
         }
         PaletteAction::write(output_actions)
     }
