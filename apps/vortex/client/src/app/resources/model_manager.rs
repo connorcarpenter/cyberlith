@@ -1042,8 +1042,8 @@ impl ModelManager {
             );
             if local_edge_3d_entities.contains(edge_3d_entity) {
                 let mut transform = transform_q.get_mut(*edge_3d_entity).unwrap();
-                transform.scale.x = local_edge_3d_scale;
                 transform.scale.y = local_edge_3d_scale;
+                transform.scale.z = local_edge_3d_scale;
             }
         }
         Some((

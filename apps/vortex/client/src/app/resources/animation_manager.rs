@@ -134,6 +134,8 @@ pub struct AnimationManager {
     preview_elapsed_ms: f32,
     preview_frame_index: usize,
     preview_frame_selected: bool,
+
+    framing_rotation: Vec2,
 }
 
 impl Default for AnimationManager {
@@ -159,6 +161,8 @@ impl Default for AnimationManager {
             preview_elapsed_ms: 0.0,
             preview_frame_index: 0,
             preview_frame_selected: false,
+
+            framing_rotation: Vec2::new(180.0, 0.0),
         }
     }
 }
@@ -773,7 +777,7 @@ impl AnimationManager {
 
                 edge_3d_transform.translation = rotated_parent_pos;
                 edge_3d_transform.rotation = rotation * edge_quat;
-                edge_3d_transform.scale.z = scale;
+                edge_3d_transform.scale.x = scale;
 
                 // update edge angle 2d representation
                 sync_edge_angle(
@@ -1076,7 +1080,7 @@ impl AnimationManager {
         let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
 
         let mut camera_transform = Transform::default();
-        set_camera_transform(&mut camera_transform, Vec2::ZERO, 4.0, Vec2::ZERO);
+        set_camera_transform(&mut camera_transform, self.framing_rotation, 4.0, Vec2::ZERO);
         let view_matrix = camera_transform.view_matrix();
 
         world.resource_scope(|world, vertex_manager: Mut<VertexManager>| {
@@ -1715,7 +1719,7 @@ fn get_3d_line_rotation_and_scale(start: Vec3, end: Vec3, spin: f32) -> (Quat, f
     let target_direction = translation_diff.normalize();
 
     (
-        quat_from_spin_direction(spin, Vec3::Z, target_direction),
+        quat_from_spin_direction(spin, Vec3::X, target_direction),
         start.distance(end),
     )
 }

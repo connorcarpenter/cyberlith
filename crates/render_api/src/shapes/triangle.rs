@@ -54,7 +54,9 @@ impl From<Triangle> for CpuMesh {
         outer_c -= center;
 
         let positions = vec![outer_a, outer_b, outer_c];
-        let indices: Indices = Indices(Some(vec![0u16, 1, 2]));
+
+        let indices: Indices = Indices(Some(vec![0u16, 2, 1]));
+
         let normals = vec![Vec3::Z, Vec3::Z, Vec3::Z];
 
         // info!("Triangle Positions: {:?}", positions);
@@ -138,7 +140,12 @@ impl From<HollowTriangle> for CpuMesh {
         let normals = vec![Vec3::Z, Vec3::Z, Vec3::Z, Vec3::Z, Vec3::Z, Vec3::Z];
 
         let indices: Indices = Indices(Some(vec![
-            0u16, 1, 4, 0, 4, 3, 1, 2, 5, 1, 5, 4, 2, 0, 3, 2, 3, 5,
+            0u16, 4, 1,
+            0, 3, 4,
+            1, 5, 2,
+            1, 4, 5,
+            2, 3, 0,
+            2, 5, 3,
         ]));
 
         CpuMesh {

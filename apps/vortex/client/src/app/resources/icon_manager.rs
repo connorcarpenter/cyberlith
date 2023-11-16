@@ -525,6 +525,7 @@ impl IconManager {
                 let mesh_handle = mesh_q.get(self.select_circle_entity).unwrap();
                 let mut transform = transform_q.get_mut(self.select_circle_entity).unwrap();
                 transform.translation = vertex_translation;
+                transform.translation.z += 1.0;
 
                 render_frame.draw_object(
                     Some(&self.render_layer),
@@ -563,7 +564,7 @@ impl IconManager {
                 let mut transform = transform_q.get_mut(self.select_line_entity).unwrap();
                 transform.translation.x = edge_transform.translation.x;
                 transform.translation.y = edge_transform.translation.y;
-                transform.translation.z = edge_transform.translation.z + 1.0;
+                transform.translation.z = edge_transform.translation.z - 1.0;
                 transform.rotation = edge_transform.rotation;
                 transform.scale.x = edge_transform.scale.x;
                 transform.scale.y = edge_transform.scale.y + 2.0;
@@ -583,6 +584,7 @@ impl IconManager {
 
                 let mut transform = transform_q.get_mut(self.select_triangle_entity).unwrap();
                 transform.translation = face_translation;
+                transform.translation.z += 1.0;
 
                 render_frame.draw_object(
                     Some(&self.render_layer),
