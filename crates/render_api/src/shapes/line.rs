@@ -97,7 +97,8 @@ impl From<Line> for CpuMesh {
             Vec3::new(0.0, 0.5, 0.0),
         ];
 
-        let indices: Indices = Indices(Some(vec![0u16, 1, 2, 2, 3, 0]));
+        //let indices: Indices = Indices(Some(vec![0u16, 1, 2, 2, 3, 0]));
+        let indices: Indices = Indices(Some(vec![0u16, 2, 1, 2, 0, 3]));
 
         let normals = vec![Vec3::Z; 4];
 

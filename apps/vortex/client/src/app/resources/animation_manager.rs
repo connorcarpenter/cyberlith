@@ -26,6 +26,7 @@ use render_api::{
     },
     Assets, Handle,
 };
+use render_api::shapes::Line;
 
 use vortex_proto::components::{
     AnimFrame, AnimRotation, EdgeAngle, FileExtension, ShapeName, Transition, Vertex3d, VertexRoot,
@@ -42,7 +43,6 @@ use crate::app::{
         tab_manager::TabManager,
         vertex_manager::VertexManager,
     },
-    shapes::Line2d,
 };
 
 struct FrameData {
@@ -1004,7 +1004,7 @@ impl AnimationManager {
             let render_layer = camera_manager.layer_2d;
             let camera_3d_entity = camera_manager.camera_3d_entity().unwrap();
             let point_mesh_handle = meshes.add(Circle::new(Vertex2d::SUBDIVISIONS));
-            let line_mesh_handle = meshes.add(Line2d);
+            let line_mesh_handle = meshes.add(Line);
             let mat_handle_white = materials.add(Color::WHITE);
             let mat_handle_gray = materials.add(Color::GRAY);
             let mat_handle_dark_gray = materials.add(Color::DARK_GRAY);

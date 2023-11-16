@@ -22,8 +22,8 @@ pub fn convert_3d_to_2d(
 
     // Convert the normalized device coordinate to screen space coordinate
     let screen_space_x = (normalized_device_coordinate.x + 1.0) * 0.5 * viewport_width;
-    let screen_space_y = (normalized_device_coordinate.y + 1.0) * 0.5 * viewport_height;
-    let screen_space_d = normalized_device_coordinate.z; // -1.0 -> 1.0 (near -> far)
+    let screen_space_y = (1.0 - normalized_device_coordinate.y) * 0.5 * viewport_height;
+    let screen_space_d = -1.0 * normalized_device_coordinate.z; // -1.0 -> 1.0 (near -> far)
 
     // The resulting screen space coordinates
     (Vec2::new(screen_space_x, screen_space_y), screen_space_d)
@@ -42,8 +42,8 @@ pub fn convert_2d_to_3d(
     // Convert the screen space coordinate to normalized device coordinate (NDC)
     let normalized_device_coordinate = Vec3::new(
         (2.0 * point_2d.x) / viewport_width - 1.0,
-        (2.0 * point_2d.y) / viewport_height - 1.0,
-        point_depth,
+        1.0 - (2.0 * point_2d.y) / viewport_height,
+        -1.0 * point_depth,
     );
 
     // Convert NDC to clip space
