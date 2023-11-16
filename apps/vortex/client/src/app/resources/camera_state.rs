@@ -14,7 +14,8 @@ impl Default for CameraState {
         Self {
             is_2d: true,
             camera_3d_offset: Vec2::new(0.0, 0.0),
-            camera_3d_rotation: Vec2::ZERO,
+            // this faces the camera towards the front of the model
+            camera_3d_rotation: Vec2::new(180.0, 0.0),
             camera_3d_scale: 1.0,
         }
     }

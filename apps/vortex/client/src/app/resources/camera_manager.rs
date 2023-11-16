@@ -87,6 +87,27 @@ impl CameraManager {
         return true;
     }
 
+    fn update_3d_camera_viewport(
+        &self,
+        texture_size: Vec2,
+        camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>,
+    ) {
+        let Some(camera_entity) = self.camera_3d else {
+            return;
+        };
+        let Ok((mut camera, _, mut projection)) = camera_query.get_mut(camera_entity) else {
+            return;
+        };
+
+        camera.viewport = Some(Viewport::new_at_origin(
+            texture_size.x as u32,
+            texture_size.y as u32,
+        ));
+
+        *projection =
+            Projection::Orthographic(OrthographicProjection::new(0.0, 1000.0));
+    }
+
     pub fn set_camera_angle_ingame(&mut self, camera_state: &mut CameraState, game_index: u8) {
         let angle = match game_index {
             1 => 30.0,  // seems to be 2:1 diablo isometric angle ?
@@ -247,27 +268,6 @@ impl CameraManager {
             .looking_at(Vec3::new(center.x, center.y, 0.0), Vec3::NEG_Y);
         *projection =
             Projection::Orthographic(OrthographicProjection::new(0.0, 2000.0));
-    }
-
-    fn update_3d_camera_viewport(
-        &self,
-        texture_size: Vec2,
-        camera_query: &mut Query<(&mut Camera, &mut Transform, &mut Projection)>,
-    ) {
-        let Some(camera_entity) = self.camera_3d else {
-            return;
-        };
-        let Ok((mut camera, _, mut projection)) = camera_query.get_mut(camera_entity) else {
-            return;
-        };
-
-        camera.viewport = Some(Viewport::new_at_origin(
-            texture_size.x as u32,
-            texture_size.y as u32,
-        ));
-
-        *projection =
-            Projection::Orthographic(OrthographicProjection::new(0.0, 1000.0));
     }
 
     pub fn update_visibility(

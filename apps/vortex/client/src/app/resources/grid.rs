@@ -66,6 +66,21 @@ impl Grid {
         meshes: &mut Assets<CpuMesh>,
         materials: &mut Assets<CpuMaterial>,
     ) {
+        // forward point
+        let (_, fwd_vertex_3d_entity, _, _) = vertex_manager.new_local_vertex(
+            commands,
+            camera_manager,
+            edge_manager,
+            meshes,
+            materials,
+            None,
+            Vec3::new(100.0, 0.0, 0.0),
+            Color::RED,
+            None,
+        );
+        self.grid_vertices_3d.push(fwd_vertex_3d_entity);
+
+        // grid
         self.new_grid_corner(
             commands,
             camera_manager,

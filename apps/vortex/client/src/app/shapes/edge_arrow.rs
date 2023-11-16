@@ -69,11 +69,11 @@ impl From<Arrow2d> for CpuMesh {
         ];
 
         let indices: Indices = Indices(Some(vec![
-            0u16, 1, 2,
-            2, 3, 0,
-            4, 2, 1,
-            4, 1, 5,
-            4, 6, 2
+            0u16, 2, 1,
+            2, 0, 3,
+            4, 1, 2,
+            4, 5, 1,
+            4, 2, 6
         ]));
 
         let normals = vec![Vec3::Z; 7];
