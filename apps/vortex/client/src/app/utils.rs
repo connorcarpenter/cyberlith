@@ -1,45 +1,43 @@
 use crate::app::resources::camera_manager::CameraManager;
 use bevy_ecs::entity::Entity;
 use bevy_ecs::system::Query;
-use math::{convert_2d_to_3d, quat_from_spin_direction, Vec2, Vec3};
+use bevy_log::info;
+use math::{convert_2d_to_3d, Quat, quat_from_spin_direction, Vec2, Vec3};
 use render_api::components::{Camera, CameraProjection, Projection, Transform};
 
 pub fn set_3d_line_transform(transform: &mut Transform, start: Vec3, end: Vec3, spin: f32) {
+
     transform.translation = start;
 
-    if start.x == end.x && start.y == end.y {
+    if start == end {
+        transform.scale.x = 0.0;
+        return;
+    }
 
-        // why (start - end) here??
-        // a line mesh by default goes from Vec3(0.0, 0.0, 0.0) -> Vec3(0.0, 0.0, 1.0)
-        // since start and end has the same X & Y values,
-        // direction is essentially the same as Vec3(0.0, 0.0, start.z) -> Vec3(0.0, 0.0, end.z)
-        // so direction is either Vec3(0.0, 0.0, 1.0) or Vec3(0.0, 0.0, -1.0)
-        // and that's where my understanding stops...
-        // a transform with a rotation of Quat::IDENTITY should have the line going from Vec3::ZERO -> Vec3::Z
-        // and the reverse should be Vec3::ZERO -> Vec3::NEG_Z
-        // which rotation does look_to(start - end, Vec3::Y) return?
-
-        let direction = start - end;
-        transform.look_to(direction, Vec3::Y);
+    if start.y == end.y && start.z == end.z {
+        let forward = end.x - start.x;
+        if forward > 0.0 {
+            transform.rotation = Quat::IDENTITY;
+        } else {
+            transform.rotation = Quat::from_rotation_z(f32::to_radians(180.0));
+        }
     } else {
-        let rotation_angle = quat_from_spin_direction(spin, Vec3::Z, end - start);
+        let rotation_angle = quat_from_spin_direction(spin, Vec3::X, end - start);
         transform.rotation = rotation_angle;
     }
 
-    transform.scale.z = start.distance(end);
+    transform.scale.x = start.distance(end);
 }
 
 // spin is in radians
 pub fn transform_from_endpoints_and_spin(start: Vec3, end: Vec3, spin: f32) -> Transform {
     let mut output = Transform::default();
     output.translation = start;
-    let translation_diff = end - start;
-    let target_direction = translation_diff.normalize();
 
-    if translation_diff.x == 0.0 && translation_diff.y == 0.0 {
-        output.look_to(translation_diff, Vec3::Y);
+    if start.y == end.y && start.z == end.z {
+        output.look_to(end - start, Vec3::Z);
     } else {
-        let rotation_angle = quat_from_spin_direction(spin, Vec3::Z, target_direction);
+        let rotation_angle = quat_from_spin_direction(spin, Vec3::X, end - start);
         output.rotation = rotation_angle;
     }
 

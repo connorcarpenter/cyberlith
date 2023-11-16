@@ -226,8 +226,8 @@ fn setup_3d_scene(
                 target: RenderTarget::Image(canvas_texture_handle),
                 ..Default::default()
             },
-            transform: Transform::from_xyz(50.0, 0.0, 0.0) // from front
-                .looking_at(Vec3::ZERO, Vec3::Y),
+            transform: Transform::from_xyz(-100.0, 0.0, 0.0) // from front
+                .looking_at(Vec3::ZERO, Vec3::Z),
             projection: Projection::Orthographic(OrthographicProjection::new(
                 0.0,
                 1000.0,

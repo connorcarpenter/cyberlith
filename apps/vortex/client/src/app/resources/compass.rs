@@ -87,8 +87,8 @@ impl Compass {
             return;
         };
 
-        let right = camera_transform.right_direction();
-        let up = right.cross(camera_transform.view_direction());
+        let right = camera_transform.right();
+        let up = camera_transform.up();
 
         let unit_length = 1.0 / camera_state.camera_3d_scale();
         let compass_length = unit_length * 25.0;

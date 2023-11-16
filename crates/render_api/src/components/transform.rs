@@ -146,9 +146,11 @@ impl Transform {
         // let up = back.cross(right);
         // self.rotation = Quat::from_mat3(&Mat3::from_cols(right, up, back));
 
-        let forward = direction.try_normalize().unwrap();
+        let Some(forward) = direction.try_normalize() else {
+            panic!("invalid direction: {:?}", direction);
+        };
         let up = up.try_normalize().unwrap();
-        let right = up.cross(forward).try_normalize().unwrap_or_else(|| up.any_orthonormal_vector());
+        let right = up.cross(forward).try_normalize().unwrap();
         let up = forward.cross(right).normalize();
 
         self.rotation = Quat::from_mat3(&Mat3::from_cols(right, up, forward));
@@ -179,16 +181,48 @@ impl Transform {
         matrix_transform_point(&matrix, point)
     }
 
-    pub fn up_direction(&self) -> Vec3 {
-        self.rotation.mul_vec3(Vec3::Y).normalize()
+    pub fn local_x(&self) -> Vec3 {
+        self.rotation * Vec3::X
     }
 
-    pub fn view_direction(&self) -> Vec3 {
-        self.rotation.mul_vec3(Vec3::Z).normalize()
+    pub fn local_y(&self) -> Vec3 {
+        self.rotation * Vec3::Y
     }
 
-    pub fn right_direction(&self) -> Vec3 {
-        self.view_direction().cross(self.up_direction())
+    pub fn local_z(&self) -> Vec3 {
+        self.rotation * Vec3::Z
+    }
+
+    pub fn view_right(&self) -> Vec3 {
+        self.left().cross(self.up())
+    }
+
+    pub fn view_down(&self) -> Vec3 {
+        self.view_right().cross(self.up())
+    }
+
+    pub fn right(&self) -> Vec3 {
+        self.local_y()
+    }
+
+    pub fn left(&self) -> Vec3 {
+        -self.local_y()
+    }
+
+    pub fn up(&self) -> Vec3 {
+        self.local_z()
+    }
+
+    pub fn down(&self) -> Vec3 {
+        -self.local_z()
+    }
+
+    pub fn forward(&self) -> Vec3 {
+        self.local_x()
+    }
+
+    pub fn back(&self) -> Vec3 {
+        -self.local_x()
     }
 
     pub fn mirror(&mut self, other: &Self) {

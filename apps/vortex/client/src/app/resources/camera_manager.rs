@@ -2,7 +2,7 @@ use bevy_ecs::{
     entity::Entity,
     system::{Query, Resource},
 };
-use bevy_log::warn;
+use bevy_log::{info, warn};
 
 use math::{EulerRot, Quat, Vec2, Vec3};
 use render_api::components::{
@@ -149,18 +149,18 @@ impl CameraManager {
     pub fn camera_orbit(&mut self, camera_state: &mut CameraState, delta: Vec2) {
         let mut camera_3d_rotation = camera_state.camera_3d_rotation();
 
-        camera_3d_rotation.x += delta.x * -0.5;
+        camera_3d_rotation.x += delta.x;
         if camera_3d_rotation.x > 360.0 {
             camera_3d_rotation.x -= 360.0;
         } else if camera_3d_rotation.x < 0.0 {
             camera_3d_rotation.x += 360.0;
         }
 
-        camera_3d_rotation.y += delta.y * -0.5;
-        if camera_3d_rotation.y > 0.0 {
+        camera_3d_rotation.y += delta.y;
+        if camera_3d_rotation.y < 0.0 {
             camera_3d_rotation.y = 0.0;
-        } else if camera_3d_rotation.y < -90.0 {
-            camera_3d_rotation.y = -90.0;
+        } else if camera_3d_rotation.y > 90.0 {
+            camera_3d_rotation.y = 90.0;
         }
 
         camera_state.set_camera_3d_rotation(camera_3d_rotation);
@@ -294,19 +294,28 @@ pub fn set_camera_transform(
     camera_3d_scale: f32,
     camera_3d_offset: Vec2,
 ) {
-    camera_transform.rotation = Quat::from_euler(
-        EulerRot::YXZ,
+    camera_transform.look_to(Vec3::X, Vec3::Z);
+
+    let rotate_by = Quat::from_euler(
+        EulerRot::ZYX,
         f32::to_radians(camera_3d_rotation.x),
         f32::to_radians(camera_3d_rotation.y),
         0.0,
     );
+    camera_transform.rotation = rotate_by * camera_transform.rotation;
+
     camera_transform.scale = Vec3::splat(1.0 / camera_3d_scale);
 
-    let right = camera_transform.right_direction();
-    let up = right.cross(camera_transform.view_direction());
+    info!("rotation: {:?}, offset: {:?}", camera_3d_rotation, camera_3d_offset);
 
-    camera_transform.translation = camera_transform.view_direction() * -100.0; // 100 units away from where looking
+    let view_right_dir = camera_transform.view_right();
+    let view_down_dir = camera_transform.view_down();
+
+    info!("view_right_dir: {:?}, view_up_dir: {:?}", view_right_dir, view_down_dir);
+
+    camera_transform.translation = camera_transform.forward() * -100.0; // 100 units away from where looking
+
     let rounded_offset = camera_3d_offset.round();
-    camera_transform.translation += right * rounded_offset.x;
-    camera_transform.translation += up * rounded_offset.y;
+    camera_transform.translation += view_right_dir * rounded_offset.x;
+    camera_transform.translation += view_down_dir * rounded_offset.y;
 }

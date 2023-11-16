@@ -350,8 +350,8 @@ impl EdgeManager {
             let mut edge_transform = transform_q.get_mut(edge_3d_entity).unwrap();
             set_3d_line_transform(&mut edge_transform, start_pos, end_pos, 0.0);
 
-            edge_transform.scale.x = local_shape_edge_3d_scale;
             edge_transform.scale.y = local_shape_edge_3d_scale;
+            edge_transform.scale.z = local_shape_edge_3d_scale;
         }
     }
 
@@ -470,7 +470,7 @@ impl EdgeManager {
                 meshes,
                 materials,
                 Vec3::ZERO,
-                Vec3::Z,
+                Vec3::X,
                 color,
                 Edge3dLocal::NORMAL_THICKNESS,
             )
@@ -479,7 +479,7 @@ impl EdgeManager {
                 meshes,
                 materials,
                 Vec3::ZERO,
-                Vec3::Z,
+                Vec3::X,
                 color,
                 Edge3dLocal::NORMAL_THICKNESS,
             )

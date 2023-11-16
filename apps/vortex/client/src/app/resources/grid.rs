@@ -138,7 +138,7 @@ impl Grid {
             meshes,
             materials,
             None,
-            Vec3::new(grid_size * xf, (grid_size * yf) + grid_size, grid_size * zf),
+            Vec3::new(grid_size * xf, grid_size * yf, (grid_size * zf)  + grid_size),
             Color::GRAY,
             None,
         );
@@ -154,8 +154,8 @@ impl Grid {
             root_vertex_2d_entity,
             Vec3::new(
                 neg_grid_size * xf,
-                (grid_size * yf) + grid_size,
-                grid_size * zf,
+                grid_size * yf,
+                (grid_size * zf) + grid_size,
             ),
         );
         self.new_grid_vertex(
@@ -168,8 +168,8 @@ impl Grid {
             root_vertex_2d_entity,
             Vec3::new(
                 grid_size * xf,
-                (neg_grid_size * yf) + grid_size,
-                grid_size * zf,
+                neg_grid_size * yf,
+                (grid_size * zf) + grid_size,
             ),
         );
         self.new_grid_vertex(
@@ -182,8 +182,8 @@ impl Grid {
             root_vertex_2d_entity,
             Vec3::new(
                 grid_size * xf,
-                (grid_size * yf) + grid_size,
-                neg_grid_size * zf,
+                grid_size * yf,
+                (neg_grid_size * zf) + grid_size,
             ),
         );
     }
