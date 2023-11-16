@@ -334,19 +334,17 @@ impl ComponentWaitlist {
 
         possibly_ready_entities.push(*entity);
 
+        if !self.contains_key(entity) {
+            self.insert_incomplete(*entity, ComponentWaitlistEntry::new());
+        }
+
         match insert {
             ComponentWaitlistInsert::Vertex => {
-                if !self.contains_key(entity) {
-                    self.insert_incomplete(*entity, ComponentWaitlistEntry::new());
-                }
                 self.get_mut(entity)
                     .unwrap()
                     .set_component_type(ComponentType::Vertex);
             }
             ComponentWaitlistInsert::VertexRoot => {
-                if !self.contains_key(entity) {
-                    self.insert_incomplete(*entity, ComponentWaitlistEntry::new());
-                }
                 let entry = self.get_mut(entity).unwrap();
                 entry.set_edge_and_parent(None);
                 entry.set_component_type(ComponentType::Vertex);
@@ -367,9 +365,6 @@ impl ComponentWaitlist {
                 }
 
                 {
-                    if !self.contains_key(entity) {
-                        self.insert_incomplete(*entity, ComponentWaitlistEntry::new());
-                    }
                     let edge_entry = self.get_mut(entity).unwrap();
                     edge_entry.set_component_type(ComponentType::Edge);
                     edge_entry.set_edge_entities(parent_entity, vertex_entity);
@@ -389,9 +384,6 @@ impl ComponentWaitlist {
                 edge_b,
                 edge_c,
             ) => {
-                if !self.contains_key(entity) {
-                    self.insert_incomplete(*entity, ComponentWaitlistEntry::new());
-                }
                 let entry = self.get_mut(entity).unwrap();
                 entry.set_component_type(ComponentType::Face);
                 entry.set_face_entities(
@@ -405,15 +397,9 @@ impl ComponentWaitlist {
                 );
             }
             ComponentWaitlistInsert::FileType(file_type) => {
-                if !self.contains_key(entity) {
-                    self.insert_incomplete(*entity, ComponentWaitlistEntry::new());
-                }
                 self.get_mut(entity).unwrap().set_file_type(file_type);
             }
             ComponentWaitlistInsert::OwnedByFile(project_key, file_key) => {
-                if !self.contains_key(entity) {
-                    self.insert_incomplete(*entity, ComponentWaitlistEntry::new());
-                }
                 self.get_mut(entity)
                     .unwrap()
                     .set_owned_by_file(project_key, file_key);

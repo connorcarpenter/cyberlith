@@ -516,7 +516,7 @@ impl InputManager {
     pub(crate) fn handle_create_new_vertex(
         world: &mut World,
         input_manager: &mut InputManager,
-        mouse_position: &&Vec2,
+        mouse_position: &Vec2,
         vertex_2d_entity: Entity,
         vertex_type_data: VertexTypeData,
     ) {
@@ -533,7 +533,7 @@ impl InputManager {
             &camera_manager,
             &camera_q,
             &transform_q,
-            &mouse_position,
+            mouse_position,
             &vertex_2d_entity,
         );
 
@@ -599,7 +599,7 @@ impl InputManager {
                         &mut select_line_transform,
                         vertex_transform.translation.truncate(),
                         *mouse_position,
-                        0.0,
+                        -1.0,
                     );
                     select_line_transform.scale.y = camera_3d_scale;
                 }

@@ -35,8 +35,8 @@ impl From<Circle> for CpuMesh {
 
         for j in 0..angle_subdivisions {
             indices.push(0);
-            indices.push((j + 1) % angle_subdivisions);
             indices.push(j);
+            indices.push((j + 1) % angle_subdivisions);
         }
         CpuMesh {
             indices: Indices(Some(indices)),
@@ -103,12 +103,12 @@ impl From<HollowCircle> for CpuMesh {
             let d = next_j * 2 + 1;
 
             indices.push(a);
-            indices.push(c);
             indices.push(b);
+            indices.push(c);
 
             indices.push(c);
-            indices.push(d);
             indices.push(b);
+            indices.push(d);
         }
         CpuMesh {
             indices: Indices(Some(indices)),
@@ -118,9 +118,3 @@ impl From<HollowCircle> for CpuMesh {
         }
     }
 }
-
-// HollowCircle
-/*
-
-
-*/

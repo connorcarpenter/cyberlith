@@ -352,7 +352,7 @@ impl FaceManager {
         // possibly reorder vertices to be counter-clockwise with respect to camera
         let camera_3d_entity = camera_manager.camera_3d_entity().unwrap();
         let camera_transform = transform_q.get(camera_3d_entity).unwrap();
-        if math::reorder_triangle_winding(&mut positions, camera_transform.translation, true) {
+        if math::reorder_triangle_winding(&mut positions, camera_transform.translation, false) {
             vertex_3d_entities.swap(1, 2);
         }
 

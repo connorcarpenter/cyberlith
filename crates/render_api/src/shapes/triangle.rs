@@ -31,8 +31,8 @@ impl Triangle {
     pub fn new_2d_equilateral() -> Self {
         Self::new_2d(
             Vec2::new(0.0, -1.0),
-            Vec2::new(-1.0, 1.0),
             Vec2::new(1.0, 1.0),
+            Vec2::new(-1.0, 1.0),
         )
     }
 }
@@ -94,8 +94,8 @@ impl HollowTriangle {
     pub fn new_2d_equilateral() -> Self {
         Self::new_2d(
             Vec2::new(0.0, -1.0),
-            Vec2::new(-1.0, 1.0),
             Vec2::new(1.0, 1.0),
+            Vec2::new(-1.0, 1.0),
         )
     }
 }

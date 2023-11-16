@@ -26,7 +26,7 @@ impl CameraBundle {
             transform: Transform::from_xyz(
                 viewport.width as f32 * 0.5,
                 viewport.height as f32 * 0.5,
-                1.0,
+                -1000.0,
             )
             .looking_at(
                 Vec3::new(
@@ -38,7 +38,7 @@ impl CameraBundle {
             ),
             projection: Projection::Orthographic(OrthographicProjection {
                 near: 0.0,
-                far: 10.0,
+                far: 2000.0,
             }),
         }
     }

@@ -243,10 +243,10 @@ impl CameraManager {
 
         let center = texture_size * 0.5;
 
-        *transform = Transform::from_xyz(center.x, center.y, 1.0)
+        *transform = Transform::from_xyz(center.x, center.y, -1000.0)
             .looking_at(Vec3::new(center.x, center.y, 0.0), Vec3::NEG_Y);
         *projection =
-            Projection::Orthographic(OrthographicProjection::new(0.0, 10.0));
+            Projection::Orthographic(OrthographicProjection::new(0.0, 2000.0));
     }
 
     fn update_3d_camera_viewport(

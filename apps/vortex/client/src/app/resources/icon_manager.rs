@@ -217,7 +217,6 @@ impl IconManager {
         };
         camera_transform.translation.x = 0.0 - camera_state.camera_3d_offset().x;
         camera_transform.translation.y = 0.0 - camera_state.camera_3d_offset().y;
-        camera_transform.translation.z = 1.0;
         let camera_scale = 1.0 / camera_state.camera_3d_scale();
         camera_transform.scale = Vec3::new(camera_scale, camera_scale, 1.0);
 
@@ -350,7 +349,6 @@ impl IconManager {
         };
         camera_transform.translation.x = 0.0 - camera_state.camera_3d_offset().x;
         camera_transform.translation.y = 0.0 - camera_state.camera_3d_offset().y;
-        camera_transform.translation.z = 1.0;
         let camera_scale = 1.0 / camera_state.camera_3d_scale();
         camera_transform.scale = Vec3::new(camera_scale, camera_scale, 1.0);
         let camera_transform = *camera_transform;
@@ -623,8 +621,8 @@ impl IconManager {
             camera_bundle.camera.target = RenderTarget::Image(canvas_texture_handle);
             camera_bundle.camera.is_active = false;
             camera_bundle.camera.order = 2;
-            camera_bundle.transform = Transform::from_xyz(0.0, 0.0, 1.0)
-                .looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::NEG_Y);
+            camera_bundle.transform.translation.x = 0.0;
+            camera_bundle.transform.translation.y = 0.0;
             self.camera_entity = commands.spawn(camera_bundle).insert(self.render_layer).id();
         }
 
@@ -2351,7 +2349,7 @@ impl IconManager {
         let Ok(mut camera_transform) = transform_q.get_mut(self.camera_entity) else {
             return;
         };
-        camera_transform.translation = Vec3::new(0.0, 0.0, 1.0);
+        camera_transform.translation = Vec3::new(0.0, 0.0, -1.0);
         camera_transform.scale = Vec3::new(1.0, 1.0, 1.0);
 
         // frames

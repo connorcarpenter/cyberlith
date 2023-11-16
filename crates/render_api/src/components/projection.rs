@@ -131,8 +131,8 @@ impl CameraProjection for OrthographicProjection {
         Mat4::orthographic_rh(
             -0.5 * width,
             0.5 * width,
-            -0.5 * height,
             0.5 * height,
+            -0.5 * height,
             self.near,
             self.far,
         )

@@ -16,6 +16,9 @@ pub struct Input {
     keys: HashSet<Key>,
     outgoing_actions: Vec<InputAction>,
     enabled: bool,
+    canvas_size: Vec2,
+    has_canvas_props: bool,
+    mouse_delta: Vec2,
 }
 
 impl Input {
@@ -29,12 +32,21 @@ impl Input {
             keys: HashSet::new(),
             outgoing_actions: Vec::new(),
             enabled: false,
+            has_canvas_props: false,
+            canvas_size: Vec2::ZERO,
+            mouse_delta: Vec2::ZERO,
         }
     }
 
-    pub fn set_mouse_offset(&mut self, x: f32, y: f32) {
-        self.mouse_offset.x = x;
-        self.mouse_offset.y = y;
+    pub fn has_canvas_properties(&self) -> bool {
+        self.has_canvas_props
+    }
+
+    pub fn update_canvas_properties(&mut self, canvas_size: Vec2, offset_x: f32, offset_y: f32) {
+        self.canvas_size = canvas_size;
+        self.mouse_offset.x = offset_x;
+        self.mouse_offset.y = offset_y;
+        self.has_canvas_props = true;
     }
 
     pub fn mouse_position(&self) -> &Vec2 {
@@ -71,11 +83,9 @@ impl Input {
                         continue;
                     }
                     if !self.mouse_buttons.contains(button) {
-                        let mouse_coords_x = (position.0 as f32) - self.mouse_offset.x;
-                        let mouse_coords_y = (position.1 as f32) - self.mouse_offset.y;
-                        let mouse_coords = Vec2::new(mouse_coords_x, mouse_coords_y);
+                        self.set_mouse_coords(position);
                         self.outgoing_actions
-                            .push(InputAction::MouseClick(*button, mouse_coords));
+                            .push(InputAction::MouseClick(*button, self.mouse_coords));
                         self.mouse_buttons.insert(*button);
                     }
                 }
@@ -97,21 +107,20 @@ impl Input {
                     if *handled {
                         continue;
                     }
-                    self.mouse_coords.x = (position.0 as f32) - self.mouse_offset.x;
-                    self.mouse_coords.y = (position.1 as f32) - self.mouse_offset.y;
+                    self.set_mouse_coords(position);
 
                     if self.mouse_coords.x as i16 != self.last_mouse_position.x as i16
                         || self.mouse_coords.y as i16 != self.last_mouse_position.y as i16
                     {
                         // mouse moved!
-                        let delta = self.mouse_coords - self.last_mouse_position;
+                        self.set_mouse_delta(self.last_mouse_position, self.mouse_coords);
                         self.last_mouse_position = self.mouse_coords;
 
                         for mouse_button in self.mouse_buttons.iter() {
                             self.outgoing_actions.push(InputAction::MouseDragged(
                                 *mouse_button,
                                 self.mouse_coords,
-                                delta,
+                                self.mouse_delta,
                             ));
                         }
 
@@ -154,6 +163,15 @@ impl Input {
                 IncomingEvent::UserEvent(_) => {}
             }
         }
+    }
+
+    fn set_mouse_coords(&mut self, position: &(f64, f64)) {
+        self.mouse_coords.x = (position.0 as f32) - self.mouse_offset.x;
+        self.mouse_coords.y = (position.1 as f32) - self.mouse_offset.y;
+    }
+
+    fn set_mouse_delta(&mut self, last_mouse_position: Vec2, mouse_position: Vec2) {
+        self.mouse_delta = mouse_position - last_mouse_position;
     }
 
     pub fn take_actions(&mut self) -> Vec<InputAction> {

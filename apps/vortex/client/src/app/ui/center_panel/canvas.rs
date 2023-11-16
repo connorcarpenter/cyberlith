@@ -83,9 +83,15 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
                     let mut texture_size = ui.available_size();
                     texture_size.y -= 3.0;
 
+                    if !input.has_canvas_properties() {
+                        let native_texture_size = Vec2::new(texture_size.x, texture_size.y);
+                        input.update_canvas_properties(native_texture_size, top_left.x + 1.0, top_left.y + 1.0);
+                    }
                     if did_resize {
+                        let native_texture_size = Vec2::new(texture_size.x, texture_size.y);
+
                         ui_state.canvas_coords = Some(top_left);
-                        input.set_mouse_offset(top_left.x + 1.0, top_left.y + 1.0);
+                        input.update_canvas_properties(native_texture_size, top_left.x + 1.0, top_left.y + 1.0);
 
                         // This is the texture that will be rendered to.
                         let texture_width = texture_size.x as u32;
@@ -96,7 +102,6 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
                         user_textures.mark_texture_changed(&texture_handle);
 
                         // Update the camera to match the new texture size.
-                        let native_texture_size = Vec2::new(texture_size.x, texture_size.y);
                         canvas.update_texture_size(native_texture_size);
                         camera_manager
                             .update_camera_viewports(native_texture_size, &mut camera_query);
@@ -105,7 +110,7 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
 
                     if canvas.is_visible() {
                         let image = Image::new(texture_id, texture_size)
-                            .uv(Rect::from_min_max(pos2(0.0, 1.0), pos2(1.0, 0.0)))
+                            .uv(Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)))
                             .sense(egui::Sense::click_and_drag());
                         let canvas_response = ui.add_enabled(true, image);
 

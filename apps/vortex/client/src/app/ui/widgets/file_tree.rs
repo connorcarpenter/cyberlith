@@ -65,9 +65,11 @@ impl FileTreeUiWidget {
         let parent = world.entity(*entity).get::<FileSystemParent>().unwrap();
 
         for child_entity in parent.get_children() {
-            if let Some(entry) = world.entity(child_entity).get::<FileSystemEntry>() {
-                let child_name = entry.name.clone();
-                Self::render(ui, world, &child_entity, &full_path, &child_name, depth + 1);
+            if let Some(entity_ref) = world.get_entity(child_entity) {
+                if let Some(entry) = entity_ref.get::<FileSystemEntry>() {
+                    let child_name = entry.name.clone();
+                    Self::render(ui, world, &child_entity, &full_path, &child_name, depth + 1);
+                }
             }
         }
     }
