@@ -134,7 +134,7 @@ impl Light for DirectionalLightImpl {
         
                     vec3 calculate_lighting{}(vec3 surface_color, vec3 position, vec3 normal, vec3 view_direction, float metallic, float roughness, float occlusion)
                     {{
-                        return calculate_light(color{}, -direction{}, surface_color, view_direction, normal, metallic, roughness) 
+                        return calculate_light(color{}, direction{}, surface_color, view_direction, normal, metallic, roughness)
                             * calculate_shadow(shadowMap{}, shadowMVP{}, position);
                     }}
                 
@@ -147,7 +147,7 @@ impl Light for DirectionalLightImpl {
         
                     vec3 calculate_lighting{}(vec3 surface_color, vec3 position, vec3 normal, vec3 view_direction, float metallic, float roughness, float occlusion)
                     {{
-                        return calculate_light(color{}, -direction{}, surface_color, view_direction, normal, metallic, roughness);
+                        return calculate_light(color{}, direction{}, surface_color, view_direction, normal, metallic, roughness);
                     }}
                 
                 ", i, i, i, i, i)

@@ -21,7 +21,8 @@ impl From<Square> for CpuMesh {
         let half_size = 1.0;
         let neg_half_size = -1.0;
 
-        let indices: Indices = Indices(Some(vec![0u16, 1, 2, 2, 3, 0]));
+        let indices: Indices = Indices(Some(vec![0u16, 2, 1, 2, 0, 3]));
+
         let positions = vec![
             Vec3::new(neg_half_size, neg_half_size, 0.0),
             Vec3::new(half_size, neg_half_size, 0.0),

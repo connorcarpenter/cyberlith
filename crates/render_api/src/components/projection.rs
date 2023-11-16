@@ -84,7 +84,7 @@ pub struct PerspectiveProjection {
 
 impl CameraProjection for PerspectiveProjection {
     fn projection_matrix(&self, viewport: &Viewport) -> Mat4 {
-        Mat4::perspective_rh(self.fov, viewport.aspect(), self.near, self.far)
+        Mat4::perspective_lh(self.fov, viewport.aspect(), self.near, self.far)
     }
 
     fn near(&self) -> f32 {
@@ -128,11 +128,11 @@ impl CameraProjection for OrthographicProjection {
         //let aspect_ratio = viewport.aspect();
         let width = viewport.width as f32;
         let height = viewport.height as f32;
-        Mat4::orthographic_rh(
+        Mat4::orthographic_lh(
             -0.5 * width,
             0.5 * width,
-            0.5 * height,
             -0.5 * height,
+            0.5 * height,
             self.near,
             self.far,
         )
