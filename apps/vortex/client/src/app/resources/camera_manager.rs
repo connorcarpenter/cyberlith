@@ -294,6 +294,8 @@ pub fn set_camera_transform(
     camera_3d_scale: f32,
     camera_3d_offset: Vec2,
 ) {
+    // Rotation
+
     camera_transform.look_to(Vec3::X, Vec3::Z);
 
     let rotate_by = Quat::from_euler(
@@ -304,18 +306,25 @@ pub fn set_camera_transform(
     );
     camera_transform.rotation = rotate_by * camera_transform.rotation;
 
+    // Scale
+
     camera_transform.scale = Vec3::splat(1.0 / camera_3d_scale);
 
-    info!("rotation: {:?}, offset: {:?}", camera_3d_rotation, camera_3d_offset);
+    // Translation
+
+    //info!("rotation: {:?}, offset: {:?}", camera_3d_rotation, camera_3d_offset);
 
     let view_right_dir = camera_transform.view_right();
     let view_down_dir = camera_transform.view_down();
+    let view_forward_dir = camera_transform.view_forward();
 
-    info!("view_right_dir: {:?}, view_up_dir: {:?}", view_right_dir, view_down_dir);
-
-    camera_transform.translation = camera_transform.forward() * -100.0; // 100 units away from where looking
+    //info!("view_right_dir: {:?}, view_up_dir: {:?}", view_right_dir, view_down_dir);
 
     let rounded_offset = camera_3d_offset.round();
-    camera_transform.translation += view_right_dir * rounded_offset.x;
-    camera_transform.translation += view_down_dir * rounded_offset.y;
+
+    // we subtract here because we want to move the camera in the opposite direction
+    camera_transform.translation = Vec3::ZERO;
+    camera_transform.translation -= view_forward_dir * 100.0; // 100.0 away from camera target
+    camera_transform.translation -= view_right_dir * rounded_offset.x;
+    camera_transform.translation -= view_down_dir * rounded_offset.y;
 }

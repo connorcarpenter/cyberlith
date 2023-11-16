@@ -194,11 +194,15 @@ impl Transform {
     }
 
     pub fn view_right(&self) -> Vec3 {
-        self.left().cross(self.up())
+        self.right().cross(self.up())
     }
 
     pub fn view_down(&self) -> Vec3 {
         self.view_right().cross(self.up())
+    }
+
+    pub fn view_forward(&self) -> Vec3 {
+        self.left().cross(self.forward())
     }
 
     pub fn right(&self) -> Vec3 {

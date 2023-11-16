@@ -87,23 +87,29 @@ impl Compass {
             return;
         };
 
-        let right = camera_transform.right();
-        let up = camera_transform.up();
+        let right = camera_transform.view_right();
+        let down = camera_transform.view_down();
 
         let unit_length = 1.0 / camera_state.camera_3d_scale();
-        let compass_length = unit_length * 25.0;
-        let mut compass_pos = canvas.texture_size() * 0.5;
+
+        let canvas_size = canvas.texture_size() * 0.5;
+        let mut compass_pos = Vec2::new(canvas_size.x, -canvas_size.y);
         compass_pos.x -= 32.0;
-        compass_pos.y -= 32.0;
-        let offset_2d = camera_state.camera_3d_offset().round()
-            + Vec2::new(
-                unit_length * -1.0 * compass_pos.x,
-                unit_length * compass_pos.y,
-            );
-        let offset_3d = (right * offset_2d.x) + (up * offset_2d.y);
+        compass_pos.y += 32.0;
+
+        let mut offset_2d = compass_pos * unit_length;
+        offset_2d.x -= camera_state.camera_3d_offset().round().x;
+        offset_2d.y -= camera_state.camera_3d_offset().round().y;
+
+        let offset_3d = (right * offset_2d.x) + (down * offset_2d.y);
+        let offset_3d = offset_3d.round();
 
         let vert_offset_3d = Vec3::ZERO + offset_3d;
         vertex_3d.set_vec3(&vert_offset_3d);
+
+        //info!("right: {:?}, down: {:?}. offset_2d: {:?}", right, down, offset_2d);
+
+        let compass_length = unit_length * 25.0;
 
         let vert_offset_3d = Vec3::new(compass_length, 0.0, 0.0) + offset_3d;
         let (_, mut vertex_3d) = vertex_3d_q.get_mut(self.compass_vertices_3d[1]).unwrap();

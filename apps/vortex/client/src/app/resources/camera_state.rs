@@ -13,9 +13,9 @@ impl Default for CameraState {
     fn default() -> Self {
         Self {
             is_2d: true,
-            camera_3d_offset: Vec2::new(0.0, 100.0),
+            camera_3d_offset: Vec2::new(0.0, 0.0),
             camera_3d_rotation: Vec2::ZERO,
-            camera_3d_scale: 2.5,
+            camera_3d_scale: 1.0,
         }
     }
 }
