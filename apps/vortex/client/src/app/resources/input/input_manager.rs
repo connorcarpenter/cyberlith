@@ -599,7 +599,7 @@ impl InputManager {
                         &mut select_line_transform,
                         vertex_transform.translation.truncate(),
                         *mouse_position,
-                        -1.0,
+                        1.0,
                     );
                     select_line_transform.scale.y = camera_3d_scale;
                 }
@@ -613,6 +613,7 @@ impl InputManager {
                     select_circle_transform.translation = vertex_transform.translation;
                     select_circle_transform.scale =
                         Vec3::splat(SelectCircle::RADIUS * camera_3d_scale);
+                    select_circle_transform.translation.z += 1.0;
                 }
 
                 let current_file_entity = tab_manager.current_tab_entity().unwrap();
@@ -622,7 +623,6 @@ impl InputManager {
                 select_shape_visibilities[1].visible = false; // no select triangle visible
                 select_shape_visibilities[2].visible =
                     current_file_type != FileExtension::Anim && tab_manager.has_focus();
-                // select line is visible
             }
             Some((selected_edge_entity, CanvasShape::Edge)) => {
                 let selected_edge_transform = {
@@ -641,7 +641,7 @@ impl InputManager {
                     select_line_transform.mirror(&selected_edge_transform);
 
                     select_line_transform.scale.y = 3.0 * camera_3d_scale;
-                    select_line_transform.translation.z += 1.0;
+                    select_line_transform.translation.z -= 1.0;
                 }
 
                 select_shape_visibilities[0].visible = false; // no select circle visible

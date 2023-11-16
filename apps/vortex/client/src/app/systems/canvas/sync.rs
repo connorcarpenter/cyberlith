@@ -548,7 +548,7 @@ pub fn process_faces(
     icon_manager.process_new_local_faces(&mut commands, &mut meshes, &mut materials);
 }
 
-pub fn update_select_line(
+pub fn update_selection_ui(
     canvas: Res<Canvas>,
     file_manager: Res<FileManager>,
     tab_manager: Res<TabManager>,

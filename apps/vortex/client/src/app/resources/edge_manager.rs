@@ -231,7 +231,7 @@ impl EdgeManager {
         };
 
         let edge_angle_drawn = base_angle + edge_angle + FRAC_PI_2;
-        let edge_depth_drawn = edge_depth - 1.0;
+        let edge_depth_drawn = edge_depth + 1.0;
         set_2d_line_transform_from_angle(
             &mut angle_transform,
             middle_pos,
