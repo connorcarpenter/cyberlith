@@ -119,18 +119,18 @@ fn setup(
                 target: RenderTarget::Screen,
                 ..Default::default()
             },
-            transform: Transform::from_xyz(250.0, 500.0, 500.0).looking_at(Vec3::ZERO, Vec3::Z),
-            // projection: Projection::Orthographic(
-            //     OrthographicProjection {
-            //         near: 0.1,
-            //         far: 10000.0,
-            //         ..Default::default()
-            //     },
-                 projection: Projection::Perspective(PerspectiveProjection {
-                             fov: std::f32::consts::PI / 4.0,
-                             near: 0.1,
-                             far: 10000.0,
-                            }
+            transform: Transform::from_xyz(0.0, 500.0, 500.0).looking_at(Vec3::ZERO, Vec3::Z),
+            projection: Projection::Orthographic(
+                OrthographicProjection {
+                    near: 0.1,
+                    far: 10000.0,
+                    ..Default::default()
+                },
+                 // projection: Projection::Perspective(PerspectiveProjection {
+                 //             fov: std::f32::consts::PI / 4.0,
+                 //             near: 0.1,
+                 //             far: 10000.0,
+                 //            }
             ),
         })
         .insert(layer);
