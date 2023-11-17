@@ -724,17 +724,19 @@ impl AnimationManager {
                     }
                 }
                 if let Some((interp_frame_entity, interp_amount)) = interp_opt {
-                    if let Some(rotation_entity) =
+                    let interp_rotation = if let Some(rotation_entity) =
                         self.vertex_names.get(&(interp_frame_entity, name))
                     {
-                        let interp_rotation =
-                            if let Ok((anim_rotation, _)) = rotation_q.get(*rotation_entity) {
-                                anim_rotation.get_rotation()
-                            } else {
-                                Quat::IDENTITY
-                            };
-                        rotation = rotation.slerp(interp_rotation, interp_amount);
-                    }
+                        if let Ok((anim_rotation, _)) = rotation_q.get(*rotation_entity) {
+                            anim_rotation.get_rotation()
+                        } else {
+                            Quat::IDENTITY
+                        }
+                    } else {
+                        Quat::IDENTITY
+                    };
+
+                    rotation = rotation.slerp(interp_rotation, interp_amount);
                 }
             }
 
@@ -1109,13 +1111,15 @@ impl AnimationManager {
                         {
                             let frame_duration =
                                 frame_component.transition.get_duration_ms() as f32;
+                            let interp_amount = self.preview_elapsed_ms / frame_duration;
+
                             self.draw_pose(
                                 world,
                                 &vertex_manager,
                                 *preview_current_frame_entity,
                                 Some((
                                     preview_next_frame_entity,
-                                    self.preview_elapsed_ms / frame_duration,
+                                    interp_amount,
                                 )),
                                 root_3d_vertex,
                                 &frame_pos,
