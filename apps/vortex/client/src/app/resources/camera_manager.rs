@@ -151,11 +151,11 @@ impl CameraManager {
     }
 
     pub fn set_camera_angle_front(&mut self, camera_state: &mut CameraState) {
-        self.set_camera_angle(camera_state, Vec2::new(0.0, 0.0));
+        self.set_camera_angle(camera_state, Vec2::new(180.0, 0.0));
     }
 
     pub fn set_camera_angle_top(&mut self, camera_state: &mut CameraState) {
-        self.set_camera_angle(camera_state, Vec2::new(0.0, -90.0));
+        self.set_camera_angle(camera_state, Vec2::new(180.0, 90.0));
     }
 
     pub fn camera_pan(&mut self, camera_state: &mut CameraState, delta: Vec2) {
