@@ -109,11 +109,11 @@ impl CameraManager {
 
     pub fn set_camera_angle_ingame(&mut self, camera_state: &mut CameraState, game_index: u8) {
         let angle = match game_index {
-            1 => 30.0,  // seems to be 2:1 diablo isometric angle ?
-            2 => 63.43, // 90 - arctan(1/2)
-            3 => 69.91,
-            4 => 76.39, // seems to be 4:3 warcraft angle ?
-            5 => 82.87, // 90 - arctan(1/8)
+            1 => 30.0, // seems to be 2:1 diablo isometric angle ?
+            2 => 45.0, // 63.43, // 90 - arctan(1/2)
+            3 => 60.0, // 69.91,
+            4 => 75.0, // 76.39, // seems to be 4:3 warcraft angle ? <-- I think I like this the best
+            5 => 85.0, // 82.87, // 90 - arctan(1/8)
             _ => {
                 warn!("Invalid game index: {}", game_index);
                 return;
@@ -121,7 +121,7 @@ impl CameraManager {
         };
 
         let mut rotation = camera_state.camera_3d_rotation();
-        rotation.y = angle * -1.0;
+        rotation.y = angle;
         self.set_camera_angle(camera_state, rotation);
     }
 
