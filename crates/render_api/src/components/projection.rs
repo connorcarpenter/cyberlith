@@ -108,7 +108,6 @@ impl Default for PerspectiveProjection {
 
 #[derive(Clone, Copy)]
 pub struct OrthographicProjection {
-
     /// The distance of the near clipping plane in world units.
     ///
     /// Objects closer than this will not be rendered.

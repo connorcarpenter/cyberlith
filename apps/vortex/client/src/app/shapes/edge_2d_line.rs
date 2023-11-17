@@ -1,11 +1,10 @@
-use math::{Vec2, Vec3};
+use math::Vec2;
 use render_api::{
-    base::{Color, CpuMaterial, CpuMesh, Indices, Positions},
+    base::{Color, CpuMaterial, CpuMesh},
     components::{RenderObjectBundle, Transform},
-    shapes::set_2d_line_transform,
-    AssetHash, Assets,
+    shapes::{set_2d_line_transform, Line},
+    Assets,
 };
-use render_api::shapes::Line;
 
 pub fn create_2d_edge_line(
     meshes: &mut Assets<CpuMesh>,

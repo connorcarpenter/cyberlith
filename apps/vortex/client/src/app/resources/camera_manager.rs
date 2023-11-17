@@ -2,7 +2,7 @@ use bevy_ecs::{
     entity::Entity,
     system::{Query, Resource},
 };
-use bevy_log::{info, warn};
+use bevy_log::warn;
 
 use math::{EulerRot, Quat, Vec2, Vec3};
 use render_api::components::{
@@ -104,8 +104,7 @@ impl CameraManager {
             texture_size.y as u32,
         ));
 
-        *projection =
-            Projection::Orthographic(OrthographicProjection::new(0.0, 1000.0));
+        *projection = Projection::Orthographic(OrthographicProjection::new(0.0, 1000.0));
     }
 
     pub fn set_camera_angle_ingame(&mut self, camera_state: &mut CameraState, game_index: u8) {
@@ -266,8 +265,7 @@ impl CameraManager {
 
         *transform = Transform::from_xyz(center.x, center.y, 1000.0)
             .looking_at(Vec3::new(center.x, center.y, 0.0), Vec3::NEG_Y);
-        *projection =
-            Projection::Orthographic(OrthographicProjection::new(0.0, 2000.0));
+        *projection = Projection::Orthographic(OrthographicProjection::new(0.0, 2000.0));
     }
 
     pub fn update_visibility(

@@ -1,10 +1,11 @@
-use std::default::Default;
-use std::hash::{Hash, Hasher};
+use std::{
+    default::Default,
+    hash::{Hash, Hasher},
+};
 
 use math::Vec3;
 
-use crate::AssetHash;
-use crate::base::Color;
+use crate::{base::Color, AssetHash};
 
 ///
 /// A light which shines in the given direction.

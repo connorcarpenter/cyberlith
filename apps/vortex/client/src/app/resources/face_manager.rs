@@ -94,7 +94,14 @@ impl FaceManager {
             }
             match file_ext {
                 FileExtension::Skin => {
-                    let face_key = self.face_key_from_2d_entity(&face_2d_entity).unwrap();
+                    let Some(face_key) = self.face_key_from_2d_entity(&face_2d_entity) else {
+                        // possibly face has been deregistered
+                        warn!(
+                            "Face2d entity: `{:?}` has no corresponding FaceKey",
+                            face_2d_entity
+                        );
+                        continue;
+                    };
                     let Some(Some(face_data)) = self.face_keys.get(&face_key) else {
                         panic!("FaceKey: `{:?}` has not been registered", face_key);
                     };

@@ -140,12 +140,7 @@ impl From<HollowTriangle> for CpuMesh {
         let normals = vec![Vec3::Z, Vec3::Z, Vec3::Z, Vec3::Z, Vec3::Z, Vec3::Z];
 
         let indices: Indices = Indices(Some(vec![
-            0u16, 4, 1,
-            0, 3, 4,
-            1, 5, 2,
-            1, 4, 5,
-            2, 3, 0,
-            2, 5, 3,
+            0u16, 4, 1, 0, 3, 4, 1, 5, 2, 1, 4, 5, 2, 3, 0, 2, 5, 3,
         ]));
 
         CpuMesh {

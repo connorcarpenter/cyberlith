@@ -153,7 +153,7 @@ impl Grid {
             meshes,
             materials,
             None,
-            Vec3::new(grid_size * xf, grid_size * yf, (grid_size * zf)  + grid_size),
+            Vec3::new(grid_size * xf, grid_size * yf, (grid_size * zf) + grid_size),
             Color::GRAY,
             None,
         );

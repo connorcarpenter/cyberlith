@@ -6,7 +6,6 @@ pub fn reorder_triangle_winding(
     external_point: Vec3,
     set_to_clockwise: bool,
 ) -> bool {
-
     let currently_clockwise = !triangle_is_ccw_toward_point(*vertices, external_point);
 
     if currently_clockwise == set_to_clockwise {
@@ -19,10 +18,7 @@ pub fn reorder_triangle_winding(
 }
 
 // returns whether last two vertices were swapped
-pub fn triangle_is_ccw_toward_point(
-    vertices: [Vec3; 3],
-    external_point: Vec3,
-) -> bool {
+pub fn triangle_is_ccw_toward_point(vertices: [Vec3; 3], external_point: Vec3) -> bool {
     let a = vertices[0];
     let b = vertices[1];
     let c = vertices[2];
@@ -43,5 +39,5 @@ pub fn triangle_is_ccw_toward_point(
         true
     } else {
         panic!("coplanar!");
-    }
+    };
 }

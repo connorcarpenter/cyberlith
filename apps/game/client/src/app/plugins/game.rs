@@ -2,18 +2,21 @@ use bevy_app::{App, Plugin, Startup, Update};
 use bevy_ecs::{
     component::Component,
     query::With,
-    system::{Commands, Local, Query, Res, ResMut},
+    system::{Commands, Local, Query, ResMut},
 };
 
-use math::{Quat, Vec3};
+use math::Vec3;
 
-use render_api::{base::{Color, CpuMaterial, CpuMesh}, components::{
-    AmbientLight, Camera, CameraBundle, ClearOperation, DirectionalLight,
-    OrthographicProjection, Projection, RenderLayers, RenderObjectBundle, RenderTarget,
-    Transform, Viewport,
-}, resources::WindowSettings, shapes, Assets, Handle};
-use render_api::components::{PerspectiveProjection, PointLight, RenderLayer, Visibility};
-use render_api::resources::RenderFrame;
+use render_api::{
+    base::{Color, CpuMaterial, CpuMesh},
+    components::{
+        AmbientLight, Camera, CameraBundle, ClearOperation, DirectionalLight,
+        OrthographicProjection, PointLight, Projection, RenderLayer, RenderLayers,
+        RenderObjectBundle, RenderTarget, Transform, Viewport, Visibility,
+    },
+    resources::{RenderFrame, WindowSettings},
+    shapes, Assets, Handle,
+};
 
 #[derive(Component)]
 pub struct CubeMarker;
@@ -63,12 +66,14 @@ fn setup(
     let layer = RenderLayers::layer(0);
 
     // plane
-    commands.spawn(RenderObjectBundle {
-        mesh: meshes.add(shapes::Square),
-        material: materials.add(Color::from_rgb_f32(0.5, 0.5, 0.5)),
-        transform: Transform::from_scale(Vec3::new(300.0, 300.0, 1.0)).with_translation(Vec3::new(0.0, 0.0, 0.0)),
-        ..Default::default()
-    })
+    commands
+        .spawn(RenderObjectBundle {
+            mesh: meshes.add(shapes::Square),
+            material: materials.add(Color::from_rgb_f32(0.5, 0.5, 0.5)),
+            transform: Transform::from_scale(Vec3::new(300.0, 300.0, 1.0))
+                .with_translation(Vec3::new(0.0, 0.0, 0.0)),
+            ..Default::default()
+        })
         //.insert(CubeMarker)
         .insert(layer);
     // top left cube (RED)
@@ -76,7 +81,8 @@ fn setup(
         .spawn(RenderObjectBundle {
             mesh: meshes.add(shapes::Cube),
             material: materials.add(Color::from_rgb_f32(1.0, 0.0, 0.0)),
-            transform: Transform::from_scale(Vec3::splat(50.0)).with_translation(Vec3::new(-70.0, -70.0, 70.0)),
+            transform: Transform::from_scale(Vec3::splat(50.0))
+                .with_translation(Vec3::new(-70.0, -70.0, 70.0)),
             ..Default::default()
         })
         .insert(CubeMarker)
@@ -107,7 +113,11 @@ fn setup(
     let light_source = Vec3::new(500.0, 250.0, 1000.0);
     let light_target = Vec3::ZERO;
     commands
-        .spawn(dir_lights.add(DirectionalLight::new(2.0, Color::WHITE, light_target - light_source)))
+        .spawn(dir_lights.add(DirectionalLight::new(
+            2.0,
+            Color::WHITE,
+            light_target - light_source,
+        )))
         .insert(layer);
     // camera
     commands
@@ -126,11 +136,11 @@ fn setup(
                     far: 10000.0,
                     ..Default::default()
                 },
-                 // projection: Projection::Perspective(PerspectiveProjection {
-                 //             fov: std::f32::consts::PI / 4.0,
-                 //             near: 0.1,
-                 //             far: 10000.0,
-                 //            }
+                // projection: Projection::Perspective(PerspectiveProjection {
+                //             fov: std::f32::consts::PI / 4.0,
+                //             near: 0.1,
+                //             far: 10000.0,
+                //            }
             ),
         })
         .insert(layer);
@@ -168,15 +178,13 @@ pub fn draw(
     // Cameras
     cameras_q: Query<(&Camera, &Transform, &Projection, Option<&RenderLayer>)>,
     // Objects
-    objects_q: Query<
-        (
-            &Handle<CpuMesh>,
-            &Handle<CpuMaterial>,
-            &Transform,
-            &Visibility,
-            Option<&RenderLayer>,
-        )
-    >,
+    objects_q: Query<(
+        &Handle<CpuMesh>,
+        &Handle<CpuMaterial>,
+        &Transform,
+        &Visibility,
+        Option<&RenderLayer>,
+    )>,
     // Lights
     ambient_lights_q: Query<(&Handle<AmbientLight>, Option<&RenderLayer>)>,
     point_lights_q: Query<(&PointLight, Option<&RenderLayer>)>,

@@ -228,10 +228,7 @@ fn setup_3d_scene(
             },
             transform: Transform::from_xyz(500.0, 0.0, 0.0) // from front
                 .looking_at(Vec3::ZERO, Vec3::Z),
-            projection: Projection::Orthographic(OrthographicProjection::new(
-                0.0,
-                1000.0,
-            )),
+            projection: Projection::Orthographic(OrthographicProjection::new(0.0, 1000.0)),
         })
         .insert(camera_manager.layer_3d)
         .id();

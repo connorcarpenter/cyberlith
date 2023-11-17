@@ -324,6 +324,7 @@ pub fn insert_face_component_events(
 }
 
 pub fn insert_shape_component_events(
+    mut commands: Commands,
     mut server: Server,
     user_manager: Res<UserManager>,
     mut git_manager: ResMut<GitManager>,
@@ -333,7 +334,7 @@ pub fn insert_shape_component_events(
     mut file_type_events: EventReader<InsertComponentEvent<FileType>>,
     mut owned_by_file_events: EventReader<InsertComponentEvent<OwnedByFile>>,
     mut shape_name_events: EventReader<InsertComponentEvent<ShapeName>>,
-    entry_key_q: Query<&FileKey>,
+    key_q: Query<&FileKey>,
     file_type_q: Query<&FileType>,
     owned_by_file_q: Query<&OwnedByFile>,
     shape_name_q: Query<&ShapeName>,
@@ -369,7 +370,7 @@ pub fn insert_shape_component_events(
             .file_entity
             .get(&server)
             .unwrap();
-        let file_key = entry_key_q.get(file_entity).unwrap();
+        let file_key = key_q.get(file_entity).unwrap();
         let project_key = user_manager
             .user_session_data(&user_key)
             .unwrap()
@@ -409,6 +410,24 @@ pub fn insert_shape_component_events(
             &entity,
             ComponentWaitlistInsert::ShapeName,
         );
+
+        //
+
+        if let Ok(owned_by_file) = owned_by_file_q.get(entity) {
+            // entity is a SkelVertex?
+
+            let user_key = event.user_key;
+            let file_entity = owned_by_file.file_entity.get(&server).unwrap();
+
+            let project_key = user_manager
+                .user_session_data(&user_key)
+                .unwrap()
+                .project_key()
+                .unwrap();
+            let file_key = key_q.get(file_entity).unwrap().clone();
+
+            git_manager.on_client_modify_file(&mut commands, &mut server, &project_key, &file_key);
+        }
     }
 }
 

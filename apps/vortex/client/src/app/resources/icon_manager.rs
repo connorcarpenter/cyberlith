@@ -20,10 +20,9 @@ use render_api::{
         RenderLayers, RenderObjectBundle, RenderTarget, Transform, Viewport,
     },
     resources::RenderFrame,
-    shapes::{set_2d_line_transform, Circle, HollowTriangle, Triangle},
+    shapes::{set_2d_line_transform, Circle, HollowTriangle, Line, Triangle},
     Assets, Handle,
 };
-use render_api::shapes::Line;
 
 use vortex_proto::components::{IconEdge, IconFace, IconFrame, IconVertex, OwnedByFile};
 
@@ -41,7 +40,7 @@ use crate::app::{
         shape_data::CanvasShape,
         tab_manager::TabManager,
     },
-    shapes::{create_2d_edge_line},
+    shapes::create_2d_edge_line,
 };
 
 #[derive(Resource)]
@@ -843,8 +842,7 @@ impl IconManager {
             texture_size.y as u32,
         ));
 
-        *projection =
-            Projection::Orthographic(OrthographicProjection::new(0.0, 10.0));
+        *projection = Projection::Orthographic(OrthographicProjection::new(0.0, 10.0));
     }
 
     pub fn enable_camera(

@@ -85,13 +85,21 @@ pub fn render_canvas(ui: &mut Ui, world: &mut World) {
 
                     if !input.has_canvas_properties() {
                         let native_texture_size = Vec2::new(texture_size.x, texture_size.y);
-                        input.update_canvas_properties(native_texture_size, top_left.x + 1.0, top_left.y + 1.0);
+                        input.update_canvas_properties(
+                            native_texture_size,
+                            top_left.x + 1.0,
+                            top_left.y + 1.0,
+                        );
                     }
                     if did_resize {
                         let native_texture_size = Vec2::new(texture_size.x, texture_size.y);
 
                         ui_state.canvas_coords = Some(top_left);
-                        input.update_canvas_properties(native_texture_size, top_left.x + 1.0, top_left.y + 1.0);
+                        input.update_canvas_properties(
+                            native_texture_size,
+                            top_left.x + 1.0,
+                            top_left.y + 1.0,
+                        );
 
                         // This is the texture that will be rendered to.
                         let texture_width = texture_size.x as u32;

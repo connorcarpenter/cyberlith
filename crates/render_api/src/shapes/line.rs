@@ -89,7 +89,6 @@ impl AssetHash<CpuMesh> for Line {}
 
 impl From<Line> for CpuMesh {
     fn from(_line: Line) -> Self {
-
         let positions = vec![
             Vec3::new(0.0, -0.5, 0.0),
             Vec3::new(1.0, -0.5, 0.0),

@@ -22,11 +22,10 @@ use render_api::{
     resources::RenderFrame,
     shapes::{
         angle_between, get_2d_line_transform_endpoint, rotation_diff, set_2d_line_transform,
-        set_2d_line_transform_from_angle, Circle,
+        set_2d_line_transform_from_angle, Circle, Line,
     },
     Assets, Handle,
 };
-use render_api::shapes::Line;
 
 use vortex_proto::components::{
     AnimFrame, AnimRotation, EdgeAngle, FileExtension, ShapeName, Transition, Vertex3d, VertexRoot,
@@ -1080,7 +1079,12 @@ impl AnimationManager {
         let projection_matrix = camera_projection.projection_matrix(&camera_viewport);
 
         let mut camera_transform = Transform::default();
-        set_camera_transform(&mut camera_transform, self.framing_rotation, 4.0, Vec2::ZERO);
+        set_camera_transform(
+            &mut camera_transform,
+            self.framing_rotation,
+            4.0,
+            Vec2::ZERO,
+        );
         let view_matrix = camera_transform.view_matrix();
 
         world.resource_scope(|world, vertex_manager: Mut<VertexManager>| {
