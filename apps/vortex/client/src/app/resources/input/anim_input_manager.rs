@@ -81,40 +81,45 @@ impl AnimInputManager {
                         animation_manager.set_posing(&mut canvas);
                     }
                     Key::ArrowLeft | Key::ArrowRight | Key::ArrowUp | Key::ArrowDown => {
-                        let dir = match key {
-                            Key::ArrowLeft => CardinalDirection::West,
-                            Key::ArrowRight => CardinalDirection::East,
-                            Key::ArrowUp => CardinalDirection::North,
-                            Key::ArrowDown => CardinalDirection::South,
-                            _ => panic!("Unexpected key: {:?}", key),
-                        };
-                        let current_file_entity = *world
-                            .get_resource::<TabManager>()
-                            .unwrap()
-                            .current_tab_entity()
-                            .unwrap();
-                        let mut animation_manager =
-                            world.get_resource_mut::<AnimationManager>().unwrap();
-                        if let Some((prev_index, next_index)) =
-                            animation_manager.framing_navigate(&current_file_entity, dir)
-                        {
-                            world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
-                                tab_manager.current_tab_execute_anim_action(
-                                    world,
-                                    input_manager,
-                                    AnimAction::SelectFrame(
-                                        current_file_entity,
-                                        next_index,
-                                        prev_index,
-                                    ),
-                                );
-                            });
-                        }
+                        Self::handle_arrow_keys(world, input_manager, key);
                     }
                     _ => {}
                 },
                 _ => {}
             }
+        }
+    }
+
+    fn handle_arrow_keys(world: &mut World, input_manager: &mut InputManager, key: Key) {
+        let dir = match key {
+            Key::ArrowLeft => CardinalDirection::West,
+            Key::ArrowRight => CardinalDirection::East,
+            Key::ArrowUp => CardinalDirection::North,
+            Key::ArrowDown => CardinalDirection::South,
+            _ => panic!("Unexpected key: {:?}", key),
+        };
+        let current_file_entity = *world
+            .get_resource::<TabManager>()
+            .unwrap()
+            .current_tab_entity()
+            .unwrap();
+        let mut animation_manager =
+            world.get_resource_mut::<AnimationManager>().unwrap();
+        if let Some((prev_index, next_index)) =
+            animation_manager.framing_navigate(&current_file_entity, dir)
+        {
+            world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                tab_manager.current_tab_execute_anim_action(
+                    world,
+                    input_manager,
+                    AnimAction::SelectFrame(
+                        current_file_entity,
+                        next_index,
+                        prev_index,
+                    ),
+                );
+            });
+            world.get_resource_mut::<Canvas>().unwrap().queue_resync_shapes();
         }
     }
 
@@ -179,6 +184,9 @@ impl AnimInputManager {
                         let mut animation_manager =
                             world.get_resource_mut::<AnimationManager>().unwrap();
                         animation_manager.set_framing();
+                    }
+                    Key::ArrowLeft | Key::ArrowRight | Key::ArrowUp | Key::ArrowDown => {
+                        Self::handle_arrow_keys(world, input_manager, key);
                     }
                     _ => {}
                 },
