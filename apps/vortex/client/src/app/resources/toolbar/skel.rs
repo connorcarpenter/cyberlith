@@ -38,6 +38,19 @@ impl SkeletonToolbar {
             let _response = Toolbar::button(ui, "🗑", "Delete vertex", button_enabled);
         }
 
+        {
+            // toggle vertex dragging
+            let dragging_is_enabled = world.get_resource::<InputManager>().unwrap().dragging_is_enabled();
+            let response = if dragging_is_enabled {
+                Toolbar::button(ui, "🔓", "Disable dragging", true)
+            } else {
+                Toolbar::button(ui, "🔒", "Enable dragging", true)
+            };
+            if response.clicked() {
+                world.get_resource_mut::<InputManager>().unwrap().toggle_dragging_is_enabled();
+            }
+        }
+
         button_toggle_edge_angle_visibility(ui, world);
     }
 }

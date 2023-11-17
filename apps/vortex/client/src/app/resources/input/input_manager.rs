@@ -67,6 +67,8 @@ pub struct InputManager {
     //doubleclick
     pub(crate) last_left_click_instant: Instant,
     pub(crate) last_frame_index_hover: usize, //TODO: move this to AnimInputManager?
+
+    vertex_dragging_enabled: bool,
 }
 
 impl Default for InputManager {
@@ -84,11 +86,22 @@ impl Default for InputManager {
 
             last_left_click_instant: Instant::now(),
             last_frame_index_hover: 0,
+
+            vertex_dragging_enabled: true,
         }
     }
 }
 
 impl InputManager {
+
+    pub fn dragging_is_enabled(&self) -> bool {
+        self.vertex_dragging_enabled
+    }
+
+    pub fn toggle_dragging_is_enabled(&mut self) {
+        self.vertex_dragging_enabled = !self.vertex_dragging_enabled;
+    }
+
     pub fn update_input(&mut self, input_actions: Vec<InputAction>, world: &mut World) {
         let Some(current_file_entity) = world
             .get_resource::<TabManager>()
@@ -621,8 +634,17 @@ impl InputManager {
 
                 select_shape_visibilities[0].visible = true; // select circle is visible
                 select_shape_visibilities[1].visible = false; // no select triangle visible
-                select_shape_visibilities[2].visible =
-                    current_file_type != FileExtension::Anim && tab_manager.has_focus();
+                select_shape_visibilities[2].visible = match current_file_type {
+                    FileExtension::Anim => {
+                        false
+                    },
+                    FileExtension::Skel => {
+                        tab_manager.has_focus() && self.vertex_dragging_enabled
+                    }
+                    _ => {
+                        tab_manager.has_focus()
+                    }
+                };
             }
             Some((selected_edge_entity, CanvasShape::Edge)) => {
                 let selected_edge_transform = {

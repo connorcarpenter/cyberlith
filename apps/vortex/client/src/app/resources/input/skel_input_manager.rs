@@ -125,16 +125,27 @@ impl SkelInputManager {
         // click_type, selected_shape, hovered_shape
         match (click_type, selected_shape, hovered_shape) {
             (MouseButton::Left, Some(CanvasShape::Vertex | CanvasShape::RootVertex), None) => {
-                // create new vertex
-                let (vertex_2d_entity, _) = input_manager.selected_shape.unwrap();
-                let vertex_type_data = VertexTypeData::Skel(vertex_2d_entity, 0.0, None);
-                InputManager::handle_create_new_vertex(
-                    world,
-                    input_manager,
-                    &mouse_position,
-                    vertex_2d_entity,
-                    vertex_type_data,
-                );
+                if input_manager.dragging_is_enabled() {
+                    // create new vertex
+                    let (vertex_2d_entity, _) = input_manager.selected_shape.unwrap();
+                    let vertex_type_data = VertexTypeData::Skel(vertex_2d_entity, 0.0, None);
+                    InputManager::handle_create_new_vertex(
+                        world,
+                        input_manager,
+                        &mouse_position,
+                        vertex_2d_entity,
+                        vertex_type_data,
+                    );
+                } else {
+                    // deselect vertex
+                    world.resource_scope(|world, mut tab_manager: Mut<TabManager>| {
+                        tab_manager.current_tab_execute_shape_action(
+                            world,
+                            input_manager,
+                            ShapeAction::SelectShape(None),
+                        );
+                    });
+                }
             }
             (MouseButton::Left, _, _) => {
                 // select hovered shape (or None if there is no hovered shape)
@@ -173,9 +184,15 @@ impl SkelInputManager {
 
         match (click_type, input_manager.selected_shape) {
             (MouseButton::Left, Some((vertex_2d_entity, CanvasShape::Vertex))) => {
+                if !input_manager.dragging_is_enabled() {
+                    return;
+                }
                 InputManager::handle_vertex_drag(world, &vertex_2d_entity, &mouse_position)
             }
             (MouseButton::Left, Some((edge_2d_entity, CanvasShape::Edge))) => {
+                if !input_manager.dragging_is_enabled() {
+                    return;
+                }
                 let edge_3d_entity = world
                     .get_resource::<EdgeManager>()
                     .unwrap()
