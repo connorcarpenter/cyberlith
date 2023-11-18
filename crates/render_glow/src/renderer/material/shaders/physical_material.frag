@@ -7,13 +7,12 @@ uniform vec4 emissive;
 
 in vec3 pos;
 in vec3 nor;
-in vec4 col;
 
 layout (location = 0) out vec4 outColor;
 
 void main()
 {
-    vec4 surface_color = albedo * col;
+    vec4 surface_color = albedo;
     float metallic_factor = metallic;
     float roughness_factor = roughness;
 

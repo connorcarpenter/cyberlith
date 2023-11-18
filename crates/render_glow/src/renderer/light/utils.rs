@@ -11,7 +11,7 @@ use crate::renderer::Light;
 /// ```
 ///
 pub fn lights_shader_source(lights: &[&dyn Light]) -> String {
-    let mut shader_source = lighting_model_shader().to_string();
+    let mut shader_source = String::new();
     shader_source.push_str(include_str!("../../core/shared.frag"));
     shader_source.push_str(include_str!("../light/shaders/light_shared.frag"));
     let mut dir_fun = String::new();
@@ -57,7 +57,3 @@ pub fn lights_shader_source(lights: &[&dyn Light]) -> String {
 //         (Vec3::X.cross(direction)).normalize()
 //     }
 // }
-
-pub(crate) fn lighting_model_shader() -> &'static str {
-    "#define PHONG"
-}

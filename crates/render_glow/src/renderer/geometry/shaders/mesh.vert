@@ -16,8 +16,6 @@ in vec3 normal;
 out vec3 nor;
 #endif
 
-out vec4 col;
-
 void main()
 {
     // *** POSITION ***
@@ -48,7 +46,4 @@ void main()
     nor = normalize(normalMat * normal);
 
     #endif
-
-    // *** COLOR ***
-    col = vec4(1.0);
 }

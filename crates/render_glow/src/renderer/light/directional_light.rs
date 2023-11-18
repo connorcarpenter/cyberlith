@@ -3,7 +3,8 @@ use bevy_ecs::component::Component;
 use math::Mat4;
 use render_api::components::DirectionalLight;
 
-use crate::{core::*, renderer::*};
+use crate::core::{GpuDepthTexture2D, Program};
+use crate::renderer::{Light, RenderObject};
 
 ///
 /// A light which shines in the given direction.
