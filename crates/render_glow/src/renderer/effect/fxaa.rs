@@ -1,7 +1,7 @@
 use math::*;
 use render_api::components::Viewport;
 
-use crate::core::{apply_effect, Cull, DepthTest, GpuColorTexture, RenderStates, WriteMask};
+use crate::core::{apply_effect, Cull, DepthTest, GpuTexture2D, RenderStates, WriteMask};
 
 /// Connor: we're keeping this around to see if it can be used to implement other post-processing effects
 
@@ -17,7 +17,7 @@ impl FxaaEffect {
     /// Applies the FXAA effect to the given color texture.
     /// Must be called in the callback given as input to a [RenderTarget], [ColorTarget] or [DepthTarget] write method.
     ///
-    pub fn apply(&self, color_texture: GpuColorTexture) {
+    pub fn apply(&self, color_texture: GpuTexture2D) {
         apply_effect(
             &format!(
                 "{}\n{}",

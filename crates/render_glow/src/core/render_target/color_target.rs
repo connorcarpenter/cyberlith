@@ -4,7 +4,7 @@ use render_api::components::Viewport;
 
 use crate::{
     core::{
-        ClearState, Context, GpuColorTexture, GpuTexture2D, RenderTarget, TextureDataType,
+        ClearState, Context, GpuTexture2D, RenderTarget, TextureDataType,
         WriteMask,
     },
     renderer::RenderTargetExt,
@@ -20,7 +20,7 @@ use crate::{
 ///
 #[derive(Clone)]
 pub struct ColorTarget<'a> {
-    target: GpuColorTexture<'a>,
+    target: &'a GpuTexture2D,
 }
 
 impl<'a> RenderTargetExt for ColorTarget<'a> {
@@ -50,7 +50,7 @@ impl<'a> RenderTargetExt for ColorTarget<'a> {
 impl<'a> ColorTarget<'a> {
     pub(in crate::core) fn new_texture2d(texture: &'a GpuTexture2D) -> Self {
         ColorTarget {
-            target: GpuColorTexture::new(texture),
+            target: texture,
         }
     }
 
@@ -81,7 +81,7 @@ impl<'a> ColorTarget<'a> {
     ///
     pub fn copy_from(
         &self,
-        color_texture: GpuColorTexture,
+        color_texture: GpuTexture2D,
         viewport: Viewport,
         write_mask: WriteMask,
     ) -> &Self {

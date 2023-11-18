@@ -144,7 +144,7 @@ impl<'a> RenderTarget<'a> {
     ///
     pub fn copy_from(
         &self,
-        color_texture: GpuColorTexture,
+        color_texture: GpuTexture2D,
         depth_texture: GpuDepthTexture,
         viewport: Viewport,
         write_mask: WriteMask,
@@ -184,7 +184,7 @@ impl<'a> RenderTarget<'a> {
     ///
     pub fn copy_from_color(
         &self,
-        color_texture: GpuColorTexture,
+        color_texture: GpuTexture2D,
         viewport: Viewport,
         write_mask: WriteMask,
     ) -> &Self {
