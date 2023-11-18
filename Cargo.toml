@@ -13,7 +13,8 @@ members = [
     "crates/render_egui",
     "crates/math",
     "crates/input",
-    "crates/filetypes"
+    "crates/filetypes",
+    "crates/asset",
 ]
 # any crates with conflicting dependencies / feature flags cannot be put here
 default-members = [

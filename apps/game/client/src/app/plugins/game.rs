@@ -4,6 +4,7 @@ use bevy_ecs::{
     query::With,
     system::{Commands, Local, Query, ResMut},
 };
+use asset::MeshFile;
 
 use math::Vec3;
 
@@ -65,6 +66,10 @@ fn setup(
 ) {
     let layer = RenderLayers::layer(0);
 
+    // load assets
+    let file_cube_mesh = MeshFile::load("cube.mesh");
+    let file_cube_mesh_handle = meshes.add(file_cube_mesh);
+
     // plane
     commands
         .spawn(RenderObjectBundle {
@@ -79,9 +84,9 @@ fn setup(
     // top left cube (RED)
     commands
         .spawn(RenderObjectBundle {
-            mesh: meshes.add(shapes::Cube),
+            mesh: file_cube_mesh_handle,
             material: materials.add(Color::from_rgb_f32(1.0, 0.0, 0.0)),
-            transform: Transform::from_scale(Vec3::splat(50.0))
+            transform: Transform::from_scale(Vec3::splat(1.0))
                 .with_translation(Vec3::new(-70.0, -70.0, 70.0)),
             ..Default::default()
         })

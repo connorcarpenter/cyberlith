@@ -1,0 +1,15 @@
+[package]
+name = "asset"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# should never include "render_glow" or "render_wgpu" here!
+
+filetypes = { path = "../filetypes", features = ["read"] }
+render_api = { path = "../render_api" }
+math = { path = "../math" }
+
+bevy_app = { version = "0.11", default-features = false }
+
+naia-serde = { path = "../../../naia/shared/serde" }
