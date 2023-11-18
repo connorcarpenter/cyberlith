@@ -1,6 +1,6 @@
 use math::Vec3;
 use render_api::{
-    base::{Color, CpuMaterial, CpuMesh, Vertices},
+    base::{Color, CpuMaterial, CpuMesh},
     components::{RenderObjectBundle, Transform},
     AssetHash, Assets,
 };
@@ -57,13 +57,6 @@ impl From<Diamond3d> for CpuMesh {
             0, 2, 1, 0, 1, 3, 0, 3, 2, 4, 1, 2, 4, 3, 1, 4, 2, 3,
         ];
 
-        let mut mesh = CpuMesh {
-            vertices: Vertices::from_indices(&positions, &indices),
-            ..Default::default()
-        };
-
-        mesh.compute_normals();
-
-        mesh
+        CpuMesh::from_indices(&positions, &indices)
     }
 }

@@ -1,6 +1,6 @@
 use math::{Vec2, Vec3};
 use render_api::{
-    base::{Color, CpuMaterial, CpuMesh, Vertices},
+    base::{Color, CpuMaterial, CpuMesh},
     components::{RenderObjectBundle, Transform},
     shapes::set_2d_line_transform,
     AssetHash, Assets,
@@ -70,9 +70,6 @@ impl From<Arrow2d> for CpuMesh {
 
         let indices =vec![0, 2, 1, 2, 0, 3, 4, 1, 2, 4, 5, 1, 4, 2, 6];
 
-        Self {
-            vertices: Vertices::from_indices(&positions, &indices),
-            ..Default::default()
-        }
+        Self::from_indices(&positions, &indices)
     }
 }
