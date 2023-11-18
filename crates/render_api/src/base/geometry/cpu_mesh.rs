@@ -14,21 +14,14 @@ pub struct CpuMesh {
     pub indices: Indices,
     /// The normals of the vertices.
     pub normals: Option<Vec<Vec3>>,
-    /// The uv coordinates of the vertices.
-    pub uvs: Option<Vec<Vec2>>,
-    /// The colors of the vertices.
-    /// The colors are assumed to be in linear space.
-    pub colors: Option<Vec<Color>>,
 }
 
-impl std::default::Default for CpuMesh {
+impl Default for CpuMesh {
     fn default() -> Self {
         Self {
             positions: Positions::default(),
             indices: Indices::default(),
             normals: None,
-            uvs: None,
-            colors: None,
         }
     }
 }
@@ -39,8 +32,6 @@ impl std::fmt::Debug for CpuMesh {
         d.field("positions", &self.positions.len());
         d.field("indices", &self.indices);
         d.field("normals", &self.normals.as_ref().map(|v| v.len()));
-        d.field("uvs", &self.uvs.as_ref().map(|v| v.len()));
-        d.field("colors", &self.colors.as_ref().map(|v| v.len()));
         d.finish()
     }
 }
@@ -142,28 +133,7 @@ impl CpuMesh {
 
         buffer_check(Some(self.positions.len()), "position")?;
         buffer_check(self.normals.as_ref().map(|b| b.len()), "normal")?;
-        buffer_check(self.colors.as_ref().map(|b| b.len()), "color")?;
-        buffer_check(self.uvs.as_ref().map(|b| b.len()), "uv coordinate")?;
 
         Ok(())
-    }
-
-    ///
-    /// Transforms the mesh by the given transformation.
-    ///
-    pub fn transform(&mut self, transform: &Mat4) {
-        for pos in self.positions.0.iter_mut() {
-            *pos = (*transform * pos.extend(1.0)).truncate();
-        }
-
-        if self.normals.is_some() {
-            let normal_transform = transform.inverse().transpose();
-
-            if let Some(ref mut normals) = self.normals {
-                for n in normals.iter_mut() {
-                    *n = (normal_transform * n.extend(1.0)).truncate();
-                }
-            }
-        }
     }
 }

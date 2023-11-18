@@ -8,10 +8,6 @@ pub struct FragmentAttributes {
     pub position: bool,
     /// Normal: `in vec3 nor;`,
     pub normal: bool,
-    /// UV coordinates: `in vec2 uvs;`
-    pub uv: bool,
-    /// Color: `in vec4 col;`
-    pub color: bool,
 }
 
 impl FragmentAttributes {
@@ -19,14 +15,10 @@ impl FragmentAttributes {
     pub const ALL: Self = Self {
         position: true,
         normal: true,
-        uv: true,
-        color: true,
     };
     /// No attributes
     pub const NONE: Self = Self {
         position: false,
         normal: false,
-        uv: false,
-        color: false,
     };
 }

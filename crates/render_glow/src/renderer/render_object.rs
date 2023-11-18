@@ -154,19 +154,9 @@ impl RenderObjectSingle {
 
     fn vertex_shader_source(mesh: &GpuMesh, required_attributes: FragmentAttributes) -> String {
         format!(
-            "{}{}{}{}{}",
+            "{}{}{}",
             if required_attributes.normal {
                 "#define USE_NORMALS\n"
-            } else {
-                ""
-            },
-            if required_attributes.uv {
-                "#define USE_UVS\n"
-            } else {
-                ""
-            },
-            if mesh.colors.is_some() {
-                "#define USE_VERTEX_COLORS\n"
             } else {
                 ""
             },
@@ -258,24 +248,15 @@ impl RenderObjectInstanced {
         instance_buffers: &HashMap<String, InstanceBuffer>,
     ) -> String {
         format!(
-            "{}{}{}{}{}{}{}",
+            "{}{}{}{}{}{}",
             "#define USE_INSTANCE_TRANSFORMS\n",
             if required_attributes.normal {
                 "#define USE_NORMALS\n"
             } else {
                 ""
             },
-            if required_attributes.uv {
-                "#define USE_UVS\n"
-            } else {
-                ""
-            },
-            if instance_buffers.contains_key("instance_color") && mesh.colors.is_some() {
-                "#define USE_VERTEX_COLORS\n#define USE_INSTANCE_COLORS\n"
-            } else if instance_buffers.contains_key("instance_color") {
+            if instance_buffers.contains_key("instance_color") {
                 "#define USE_INSTANCE_COLORS\n"
-            } else if mesh.colors.is_some() {
-                "#define USE_VERTEX_COLORS\n"
             } else {
                 ""
             },

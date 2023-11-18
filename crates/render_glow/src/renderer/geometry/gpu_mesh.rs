@@ -1,4 +1,4 @@
-use math::*;
+
 use render_api::{base::*, components::Camera};
 
 use crate::{core::*, renderer::*};
@@ -7,8 +7,6 @@ pub struct GpuMesh {
     indices: Option<ElementBuffer>,
     positions: VertexBuffer,
     normals: Option<VertexBuffer>,
-    uvs: Option<VertexBuffer>,
-    pub(crate) colors: Option<VertexBuffer>,
     pub(crate) aabb: AxisAlignedBoundingBox,
 }
 
@@ -28,18 +26,6 @@ impl GpuMesh {
             positions: VertexBuffer::new_with_data(&cpu_mesh.positions.to_f32()),
             normals: cpu_mesh
                 .normals
-                .as_ref()
-                .map(|data| VertexBuffer::new_with_data(data)),
-            uvs: cpu_mesh.uvs.as_ref().map(|data| {
-                VertexBuffer::new_with_data(
-                    &data
-                        .iter()
-                        .map(|uv| Vec2::new(uv.x, 1.0 - uv.y))
-                        .collect::<Vec<_>>(),
-                )
-            }),
-            colors: cpu_mesh
-                .colors
                 .as_ref()
                 .map(|data| VertexBuffer::new_with_data(data)),
         }
@@ -103,21 +89,6 @@ impl GpuMesh {
                     )
                 }),
             );
-        }
-
-        if attributes.uv {
-            program.use_vertex_attribute(
-                "uv_coordinates",
-                self.uvs.as_ref().unwrap_or_else(|| {
-                    panic!(
-                        "the material requires uv coordinate attributes but the geometry did not provide it"
-                    )
-                }),
-            );
-        }
-
-        if let Some(colors) = &self.colors {
-            program.use_vertex_attribute("color", colors);
         }
     }
 }

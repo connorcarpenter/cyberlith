@@ -127,7 +127,6 @@ impl Material for PbrMaterial {
         let mut attributes = FragmentAttributes {
             position: true,
             normal: true,
-            color: true,
             ..FragmentAttributes::NONE
         };
         let mut output = lights_shader_source(lights, self.lighting_model);
@@ -136,7 +135,6 @@ impl Material for PbrMaterial {
             || self.occlusion_texture.is_some()
             || self.emissive_texture.is_some()
         {
-            attributes.uv = true;
             output.push_str("in vec2 uvs;\n");
             if self.albedo_texture.is_some() {
                 output.push_str("#define USE_ALBEDO_TEXTURE;\n");

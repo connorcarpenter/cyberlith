@@ -30,17 +30,10 @@ impl From<Square> for CpuMesh {
             Vec3::new(neg_half_size, half_size, 0.0),
         ];
         let normals = vec![Vec3::Z; 4];
-        let uvs = vec![
-            Vec2::new(0.0, 1.0),
-            Vec2::new(1.0, 1.0),
-            Vec2::new(1.0, 0.0),
-            Vec2::new(0.0, 0.0),
-        ];
         CpuMesh {
             indices,
             positions: Positions(positions),
             normals: Some(normals),
-            uvs: Some(uvs),
             ..Default::default()
         }
     }
