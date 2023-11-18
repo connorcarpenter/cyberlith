@@ -227,8 +227,6 @@ impl RenderObjectInstanced {
             "row1",
             "row2",
             "row3",
-            "tex_transform_row1",
-            "tex_transform_row2",
             "instance_color",
         ] {
             if program.requires_attribute(attribute_name) {
@@ -247,7 +245,7 @@ impl RenderObjectInstanced {
         instance_buffers: &HashMap<String, InstanceBuffer>,
     ) -> String {
         format!(
-            "{}{}{}{}{}{}",
+            "{}{}{}{}{}",
             "#define USE_INSTANCE_TRANSFORMS\n",
             if required_attributes.normal {
                 "#define USE_NORMALS\n"
@@ -256,11 +254,6 @@ impl RenderObjectInstanced {
             },
             if instance_buffers.contains_key("instance_color") {
                 "#define USE_INSTANCE_COLORS\n"
-            } else {
-                ""
-            },
-            if instance_buffers.contains_key("tex_transform_row1") {
-                "#define USE_INSTANCE_TEXTURE_TRANSFORMATION\n"
             } else {
                 ""
             },
