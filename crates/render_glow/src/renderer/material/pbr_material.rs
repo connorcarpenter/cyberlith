@@ -1,4 +1,4 @@
-use render_api::base::{Color, CpuMaterial, LightingModel};
+use render_api::base::{Color, CpuMaterial};
 
 use crate::{core::*, renderer::*};
 
@@ -20,8 +20,6 @@ pub struct PbrMaterial {
     pub render_states: RenderStates,
     /// Color of light shining from an object.
     pub emissive: Color,
-    /// The lighting model used when rendering this material
-    pub lighting_model: LightingModel,
 }
 
 impl PbrMaterial {
@@ -69,7 +67,6 @@ impl PbrMaterial {
                 }
             },
             emissive: cpu_material.emissive,
-            lighting_model: cpu_material.lighting_model,
         }
     }
 }
@@ -87,7 +84,7 @@ impl Material for PbrMaterial {
             normal: true,
             ..FragmentAttributes::NONE
         };
-        let mut output = lights_shader_source(lights, self.lighting_model);
+        let mut output = lights_shader_source(lights);
         output.push_str(include_str!("shaders/physical_material.frag"));
         FragmentShader {
             source: output,
@@ -122,7 +119,6 @@ impl Default for PbrMaterial {
             roughness: 1.0,
             render_states: RenderStates::default(),
             emissive: Color::BLACK,
-            lighting_model: LightingModel::Blinn,
         }
     }
 }

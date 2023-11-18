@@ -99,6 +99,9 @@ vec3 cooktorrance_specular(in float NdL, in float NdV, in float NdH, in vec3 spe
     return specular_fresnel * G * D / (4.0 * NdV * NdL);
 }
 
+// L - light_direction
+// V - view direction
+// N - normal
 vec3 calculate_light(vec3 light_color, vec3 L, vec3 surface_color, vec3 V, vec3 N, float metallic, float roughness)
 {
     // compute material reflectance

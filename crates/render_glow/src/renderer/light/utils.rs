@@ -1,4 +1,3 @@
-use render_api::base::{LightingModel, NormalDistributionFunction};
 
 use crate::renderer::Light;
 
@@ -11,8 +10,8 @@ use crate::renderer::Light;
 /// vec3 calculate_lighting(vec3 camera_position, vec3 surface_color, vec3 position, vec3 normal, float metallic, float roughness, float occlusion)
 /// ```
 ///
-pub fn lights_shader_source(lights: &[&dyn Light], lighting_model: LightingModel) -> String {
-    let mut shader_source = lighting_model_shader(lighting_model).to_string();
+pub fn lights_shader_source(lights: &[&dyn Light]) -> String {
+    let mut shader_source = lighting_model_shader().to_string();
     shader_source.push_str(include_str!("../../core/shared.frag"));
     shader_source.push_str(include_str!("../light/shaders/light_shared.frag"));
     let mut dir_fun = String::new();
@@ -59,14 +58,6 @@ pub fn lights_shader_source(lights: &[&dyn Light], lighting_model: LightingModel
 //     }
 // }
 
-pub(crate) fn lighting_model_shader(lighting_model: LightingModel) -> &'static str {
-    match lighting_model {
-        LightingModel::Phong => "#define PHONG",
-        LightingModel::Blinn => "#define BLINN",
-        LightingModel::Cook(normal, _) => match normal {
-            NormalDistributionFunction::Blinn => "#define COOK\n#define COOK_BLINN\n",
-            NormalDistributionFunction::Beckmann => "#define COOK\n#define COOK_BECKMANN\n",
-            NormalDistributionFunction::TrowbridgeReitzGGX => "#define COOK\n#define COOK_GGX\n",
-        },
-    }
+pub(crate) fn lighting_model_shader() -> &'static str {
+    "#define PHONG"
 }

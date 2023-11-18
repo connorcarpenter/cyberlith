@@ -3,13 +3,6 @@ uniform mat4 viewProjection;
 uniform mat4 modelMatrix;
 in vec3 position;
 
-#ifdef PARTICLES
-in vec3 start_position;
-in vec3 start_velocity;
-uniform vec3 acceleration;
-uniform float time;
-#endif
-
 // Rename these values to indicate that this is instance-level transforms here
 in vec4 row1;
 in vec4 row2;
@@ -23,18 +16,6 @@ in vec3 normal;
 out vec3 nor;
 #endif
 
-#ifdef USE_UVS
-#ifdef USE_INSTANCE_TEXTURE_TRANSFORMATION
-in vec3 tex_transform_row1;
-in vec3 tex_transform_row2;
-#endif
-in vec2 uv_coordinates;
-out vec2 uvs;
-#endif
-
-#ifdef USE_VERTEX_COLORS
-in vec4 color;
-#endif
 #ifdef USE_INSTANCE_COLORS
 in vec4 instance_color;
 #endif
@@ -57,9 +38,6 @@ void main()
 
     vec4 worldPosition = local2World * vec4(position, 1.);
     worldPosition /= worldPosition.w;
-    #ifdef PARTICLES
-    worldPosition.xyz += start_position + start_velocity * time + 0.5 * acceleration * time * time;
-    #endif
     gl_Position = viewProjection * worldPosition;
 
     pos = worldPosition.xyz;
@@ -75,24 +53,8 @@ void main()
 
     #endif
 
-    // *** UV ***
-    #ifdef USE_UVS
-    #ifdef USE_INSTANCE_TEXTURE_TRANSFORMATION
-    mat3 texTransform;
-    texTransform[0] = vec3(tex_transform_row1.x, tex_transform_row2.x, 0.0);
-    texTransform[1] = vec3(tex_transform_row1.y, tex_transform_row2.y, 0.0);
-    texTransform[2] = vec3(tex_transform_row1.z, tex_transform_row2.z, 1.0);
-    uvs = (texTransform * vec3(uv_coordinates, 1.0)).xy;
-    #else
-    uvs = uv_coordinates;
-    #endif
-    #endif
-
     // *** COLOR ***
     col = vec4(1.0);
-    #ifdef USE_VERTEX_COLORS
-    col *= color / 255.0;
-    #endif
     #ifdef USE_INSTANCE_COLORS
     col *= instance_color / 255.0;
     #endif
