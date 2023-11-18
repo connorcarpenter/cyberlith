@@ -4,7 +4,7 @@ use math::{Quat, Vec2, Vec3};
 
 use crate::{
     assets::AssetHash,
-    base::{CpuMesh, Vertices},
+    base::CpuMesh,
     components::Transform,
 };
 
@@ -99,9 +99,6 @@ impl From<Line> for CpuMesh {
         //let indices = vec![0, 1, 2, 2, 3, 0];
         let indices = vec![0, 2, 1, 2, 0, 3];
 
-        Self {
-            vertices: Vertices::from_indices(&positions, &indices),
-            ..Default::default()
-        }
+        CpuMesh::from_indices(&positions, &indices)
     }
 }

@@ -4,7 +4,7 @@ use naia_serde::BitReader;
 
 use math::Vec3;
 use render_api::{
-    base::{CpuMesh, Vertices},
+    base::CpuMesh,
     AssetHash,
 };
 
@@ -68,8 +68,6 @@ impl From<MeshFile> for CpuMesh {
             }
         }
 
-        CpuMesh {
-            vertices: Vertices(positions),
-        }
+        CpuMesh::from_vertices(positions)
     }
 }

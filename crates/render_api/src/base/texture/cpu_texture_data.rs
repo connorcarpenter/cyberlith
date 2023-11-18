@@ -1,6 +1,6 @@
 use std::hash::{Hash, Hasher};
 
-use half::*;
+use half::f16;
 
 ///
 /// Possible modes of interpolation which determines the texture output between texture pixels.

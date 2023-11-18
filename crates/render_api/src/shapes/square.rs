@@ -2,7 +2,7 @@ use math::Vec3;
 
 use crate::{
     assets::AssetHash,
-    base::{CpuMesh, Vertices},
+    base::CpuMesh,
 };
 
 #[derive(Hash)]
@@ -30,10 +30,7 @@ impl From<Square> for CpuMesh {
 
         let indices = vec![0, 2, 1, 2, 0, 3];
 
-        CpuMesh {
-            vertices: Vertices::from_indices(&positions, &indices),
-            ..Default::default()
-        }
+        CpuMesh::from_indices(&positions, &indices)
     }
 }
 
@@ -102,8 +99,6 @@ impl From<HollowRectangle> for CpuMesh {
             indices.push(d as usize);
         }
 
-        CpuMesh {
-            vertices: Vertices::from_indices(&positions, &indices),
-        }
+        CpuMesh::from_indices(&positions, &indices)
     }
 }

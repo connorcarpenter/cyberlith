@@ -2,7 +2,7 @@ use bevy_log::info;
 
 use math::Vec3;
 
-use crate::base::{AxisAlignedBoundingBox, Error, Vertices, Result};
+use crate::base::{AxisAlignedBoundingBox, Error, Result};
 
 ///
 /// A CPU-side version of a triangle mesh.
@@ -11,13 +11,13 @@ use crate::base::{AxisAlignedBoundingBox, Error, Vertices, Result};
 pub struct CpuMesh {
     /// The positions of the vertices.
     /// If there is no indices associated with this mesh, three contiguous positions defines a triangle, in that case, the length must be divisable by 3.
-    pub vertices: Vertices,
+    vertices: Vec<Vec3>,
 }
 
 impl Default for CpuMesh {
     fn default() -> Self {
         Self {
-            vertices: Vertices::default(),
+            vertices: Vec::new(),
         }
     }
 }
@@ -31,6 +31,23 @@ impl std::fmt::Debug for CpuMesh {
 }
 
 impl CpuMesh {
+
+    pub fn from_vertices(vertices: Vec<Vec3>) -> Self {
+        Self { vertices }
+    }
+
+    pub fn from_indices(vertices: &[Vec3], indices: &[usize]) -> Self {
+        let mut new_vertices = Vec::new();
+        for index in indices {
+            new_vertices.push(vertices[*index]);
+        }
+        Self::from_vertices(new_vertices)
+    }
+
+    pub fn to_vertices(&self) -> Vec<Vec3> {
+        self.vertices.clone()
+    }
+
     /// Returns the number of vertices in this mesh.
     pub fn vertex_count(&self) -> usize {
         self.vertices.len()
@@ -48,11 +65,10 @@ impl CpuMesh {
     pub fn compute_normals(&self) -> Vec<Vec3> {
         let mut normals = vec![Vec3::ZERO; self.vertices.len()];
         self.for_each_triangle(|i0, i1, i2| {
-            let Vertices(ref positions) = self.vertices;
             let normal = {
-                let p0 = positions[i0];
-                let p1 = positions[i1];
-                let p2 = positions[i2];
+                let p0 = self.vertices[i0];
+                let p1 = self.vertices[i1];
+                let p2 = self.vertices[i2];
                 (p1 - p0).cross(p2 - p0)
             };
             normals[i0] += normal;
@@ -80,7 +96,7 @@ impl CpuMesh {
     /// Computes the [AxisAlignedBoundingBox] for this triangle mesh.
     ///
     pub fn compute_aabb(&self) -> AxisAlignedBoundingBox {
-        self.vertices.compute_aabb()
+        AxisAlignedBoundingBox::new_with_positions(&self.vertices)
     }
 
     ///

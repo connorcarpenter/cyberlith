@@ -2,7 +2,7 @@ use math::Vec3;
 
 use crate::{
     assets::AssetHash,
-    base::{CpuMesh, Vertices},
+    base::CpuMesh,
 };
 
 // Circle
@@ -38,10 +38,7 @@ impl From<Circle> for CpuMesh {
             indices.push(j as usize);
         }
 
-        CpuMesh {
-            vertices: Vertices::from_indices(&positions, &indices),
-            ..Default::default()
-        }
+        CpuMesh::from_indices(&positions, &indices)
     }
 }
 
@@ -108,9 +105,6 @@ impl From<HollowCircle> for CpuMesh {
             indices.push(d as usize);
             indices.push(b as usize);
         }
-        CpuMesh {
-            vertices: Vertices::from_indices(&positions, &indices),
-            ..Default::default()
-        }
+        CpuMesh::from_indices(&positions, &indices)
     }
 }

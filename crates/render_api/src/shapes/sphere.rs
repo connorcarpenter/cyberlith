@@ -1,6 +1,6 @@
 use math::Vec3;
 
-use crate::{assets::AssetHash, base::{CpuMesh, Vertices}};
+use crate::{assets::AssetHash, base::CpuMesh};
 
 #[derive(Hash)]
 pub struct Sphere {
@@ -70,9 +70,6 @@ impl From<Sphere> for CpuMesh {
             indices.push((i + j1) as usize);
         }
 
-        CpuMesh {
-            vertices: Vertices::from_indices(&positions, &indices),
-            ..Default::default()
-        }
+        CpuMesh::from_indices(&positions, &indices)
     }
 }

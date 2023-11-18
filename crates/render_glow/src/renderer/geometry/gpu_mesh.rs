@@ -17,7 +17,7 @@ impl GpuMesh {
 
         Self {
             aabb,
-            positions: VertexBuffer::new_with_data(&cpu_mesh.vertices.to_f32()),
+            positions: VertexBuffer::new_with_data(&cpu_mesh.to_vertices()),
             normals: VertexBuffer::new_with_data(&cpu_mesh.compute_normals()),
         }
     }

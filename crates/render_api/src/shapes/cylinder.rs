@@ -1,6 +1,6 @@
 use math::Vec3;
 
-use crate::base::{CpuMesh, Vertices};
+use crate::base::CpuMesh;
 
 pub struct Cylinder {
     pub angle_subdivisions: u32,
@@ -37,9 +37,6 @@ impl From<Cylinder> for CpuMesh {
                 indices.push(((i + 1) * angle_subdivisions + j) as usize);
             }
         }
-        Self {
-            vertices: Vertices::from_indices(&positions, &indices),
-            ..Default::default()
-        }
+        CpuMesh::from_indices(&positions, &indices)
     }
 }

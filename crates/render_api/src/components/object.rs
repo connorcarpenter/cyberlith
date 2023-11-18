@@ -6,7 +6,7 @@ use math::{Vec2, Vec3};
 
 use crate::{
     assets::Handle,
-    base::{Color, CpuMaterial, CpuMesh, Vertices},
+    base::{Color, CpuMaterial, CpuMesh},
     components::Visibility,
     shapes,
     shapes::set_2d_line_transform,
@@ -183,10 +183,7 @@ impl RenderObjectBundle {
         let positions = vec![outer_a, outer_b, outer_c];
         let indices = vec![0, 1, 2];
 
-        let mesh = CpuMesh {
-            vertices: Vertices::from_indices(&positions, &indices),
-            ..Default::default()
-        };
+        let mesh = CpuMesh::from_indices(&positions, &indices);
 
         (mesh, center)
     }
