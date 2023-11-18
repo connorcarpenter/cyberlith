@@ -20,19 +20,12 @@ impl GpuDepthTexture2D {
     pub fn new<T: DepthTextureDataType>(
         width: u32,
         height: u32,
-        wrap_s: Wrapping,
-        wrap_t: Wrapping,
     ) -> Self {
         let id = generate();
         let texture = Self { id, width, height };
         texture.bind();
         set_parameters(
             glow::TEXTURE_2D,
-            Interpolation::Nearest,
-            Interpolation::Nearest,
-            wrap_s,
-            wrap_t,
-            None,
         );
         unsafe {
             Context::get().tex_storage_2d(
@@ -88,8 +81,6 @@ impl From<&CpuTexture2D> for GpuDepthTexture2D {
         Self::new::<f32>(
             cpu_data.width(),
             cpu_data.height(),
-            cpu_data.wrap_s(),
-            cpu_data.wrap_t(),
         )
     }
 }

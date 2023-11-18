@@ -1,9 +1,8 @@
 use glow::HasContext;
-use half::f16;
 
-use render_api::base::{CpuTexture2D, CpuTextureData, CpuTextureDataType, Interpolation, Wrapping};
+use render_api::base::{CpuTexture2D, CpuTextureData, CpuTextureDataType};
 
-use crate::core::{flip_y, format_from_data_type, texture::*, to_byte_slice, ColorTarget, Context};
+use crate::core::{flip_y, format_from_data_type, to_byte_slice, ColorTarget, Context, TextureDataType, generate, set_parameters, check_data_length};
 
 ///
 /// A 2D texture, basically an image that is transferred to the GPU.
@@ -26,14 +25,6 @@ impl GpuTexture2D {
             Some(CpuTextureData::RgU8(ref data)) => Self::new_with_data(cpu_texture, data),
             Some(CpuTextureData::RgbU8(ref data)) => Self::new_with_data(cpu_texture, data),
             Some(CpuTextureData::RgbaU8(ref data)) => Self::new_with_data(cpu_texture, data),
-            Some(CpuTextureData::RF16(ref data)) => Self::new_with_data(cpu_texture, data),
-            Some(CpuTextureData::RgF16(ref data)) => Self::new_with_data(cpu_texture, data),
-            Some(CpuTextureData::RgbF16(ref data)) => Self::new_with_data(cpu_texture, data),
-            Some(CpuTextureData::RgbaF16(ref data)) => Self::new_with_data(cpu_texture, data),
-            Some(CpuTextureData::RF32(ref data)) => Self::new_with_data(cpu_texture, data),
-            Some(CpuTextureData::RgF32(ref data)) => Self::new_with_data(cpu_texture, data),
-            Some(CpuTextureData::RgbF32(ref data)) => Self::new_with_data(cpu_texture, data),
-            Some(CpuTextureData::RgbaF32(ref data)) => Self::new_with_data(cpu_texture, data),
             None => Self::new_empty_from_cpu(cpu_texture),
         }
     }
@@ -42,10 +33,6 @@ impl GpuTexture2D {
         let mut texture = Self::new_empty::<T>(
             cpu_texture.width(),
             cpu_texture.height(),
-            cpu_texture.min_filter(),
-            cpu_texture.mag_filter(),
-            cpu_texture.wrap_s(),
-            cpu_texture.wrap_t(),
         );
         texture.fill(data);
         texture
@@ -57,14 +44,6 @@ impl GpuTexture2D {
             CpuTextureDataType::RgU8 => Self::new_empty_from_cpu_typed::<[u8; 2]>(cpu_texture),
             CpuTextureDataType::RgbU8 => Self::new_empty_from_cpu_typed::<[u8; 3]>(cpu_texture),
             CpuTextureDataType::RgbaU8 => Self::new_empty_from_cpu_typed::<[u8; 4]>(cpu_texture),
-            CpuTextureDataType::RF16 => Self::new_empty_from_cpu_typed::<f16>(cpu_texture),
-            CpuTextureDataType::RgF16 => Self::new_empty_from_cpu_typed::<[f16; 2]>(cpu_texture),
-            CpuTextureDataType::RgbF16 => Self::new_empty_from_cpu_typed::<[f16; 3]>(cpu_texture),
-            CpuTextureDataType::RgbaF16 => Self::new_empty_from_cpu_typed::<[f16; 4]>(cpu_texture),
-            CpuTextureDataType::RF32 => Self::new_empty_from_cpu_typed::<f32>(cpu_texture),
-            CpuTextureDataType::RgF32 => Self::new_empty_from_cpu_typed::<[f32; 2]>(cpu_texture),
-            CpuTextureDataType::RgbF32 => Self::new_empty_from_cpu_typed::<[f32; 3]>(cpu_texture),
-            CpuTextureDataType::RgbaF32 => Self::new_empty_from_cpu_typed::<[f32; 4]>(cpu_texture),
         }
     }
 
@@ -72,10 +51,6 @@ impl GpuTexture2D {
         Self::new_empty::<T>(
             cpu_texture.width(),
             cpu_texture.height(),
-            cpu_texture.min_filter(),
-            cpu_texture.mag_filter(),
-            cpu_texture.wrap_s(),
-            cpu_texture.wrap_t(),
         )
     }
 
@@ -87,10 +62,6 @@ impl GpuTexture2D {
     pub fn new_empty<T: TextureDataType>(
         width: u32,
         height: u32,
-        min_filter: Interpolation,
-        mag_filter: Interpolation,
-        wrap_s: Wrapping,
-        wrap_t: Wrapping,
     ) -> Self {
         let id = generate();
         let texture = Self {
@@ -102,11 +73,6 @@ impl GpuTexture2D {
         texture.bind();
         set_parameters(
             glow::TEXTURE_2D,
-            min_filter,
-            mag_filter,
-            wrap_s,
-            wrap_t,
-            None,
         );
         unsafe {
             Context::get().tex_storage_2d(

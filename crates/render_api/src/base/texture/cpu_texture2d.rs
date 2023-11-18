@@ -1,7 +1,6 @@
-use crate::assets::AssetHash;
-use crate::base::CpuTextureDataType;
+use crate::{assets::AssetHash, base::CpuTextureDataType};
 
-use super::{CpuTextureData, Interpolation, Wrapping};
+use super::CpuTextureData;
 
 ///
 /// A CPU-side version of a 2D texture.
@@ -18,14 +17,6 @@ pub struct CpuTexture2D {
     width: u32,
     /// The height of the image
     height: u32,
-    /// The way the pixel data is interpolated when the texture is far away
-    min_filter: Interpolation,
-    /// The way the pixel data is interpolated when the texture is close
-    mag_filter: Interpolation,
-    /// Determines how the texture is sampled outside the [0..1] s coordinate range (the first value of the uv coordinates).
-    wrap_s: Wrapping,
-    /// Determines how the texture is sampled outside the [0..1] t coordinate range (the second value of the uv coordinates).
-    wrap_t: Wrapping,
 }
 
 impl AssetHash<CpuTexture2D> for CpuTexture2D {}
@@ -53,22 +44,6 @@ impl CpuTexture2D {
     pub fn height(&self) -> u32 {
         self.height
     }
-
-    pub fn min_filter(&self) -> Interpolation {
-        self.min_filter
-    }
-
-    pub fn mag_filter(&self) -> Interpolation {
-        self.mag_filter
-    }
-
-    pub fn wrap_s(&self) -> Wrapping {
-        self.wrap_s
-    }
-
-    pub fn wrap_t(&self) -> Wrapping {
-        self.wrap_t
-    }
 }
 
 impl Default for CpuTexture2D {
@@ -79,10 +54,6 @@ impl Default for CpuTexture2D {
             data_type: CpuTextureDataType::RgbaU8,
             width: 1,
             height: 1,
-            min_filter: Interpolation::Linear,
-            mag_filter: Interpolation::Linear,
-            wrap_s: Wrapping::Repeat,
-            wrap_t: Wrapping::Repeat,
         }
     }
 }

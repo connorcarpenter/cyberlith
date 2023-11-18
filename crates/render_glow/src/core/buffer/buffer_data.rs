@@ -1,4 +1,3 @@
-use half::f16;
 
 use math::*;
 use render_api::base::Color;
@@ -13,7 +12,6 @@ impl BufferDataType for u32 {}
 impl BufferDataType for i8 {}
 impl BufferDataType for i16 {}
 impl BufferDataType for i32 {}
-impl BufferDataType for f16 {}
 impl BufferDataType for f32 {}
 
 impl BufferDataType for Vec2 {}

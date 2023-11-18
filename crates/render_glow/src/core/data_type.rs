@@ -1,5 +1,4 @@
 use glow::{HasContext, UniformLocation};
-use half::*;
 
 use math::*;
 use render_api::base::*;
@@ -133,22 +132,7 @@ impl PrimitiveDataType for i32 {
         }
     }
 }
-impl PrimitiveDataType for f16 {
-    fn internal_format_with_size(size: u32) -> u32 {
-        match size {
-            1 => glow::R16F,
-            2 => glow::RG16F,
-            3 => glow::RGB16F,
-            4 => glow::RGBA16F,
-            _ => unreachable!(),
-        }
-    }
 
-    fn send_uniform_with_type(location: &UniformLocation, data: &[Self], type_: UniformType) {
-        let data = data.iter().map(|v| v.to_f32()).collect::<Vec<_>>();
-        f32::send_uniform_with_type(location, &data, type_)
-    }
-}
 impl PrimitiveDataType for f32 {
     fn internal_format_with_size(size: u32) -> u32 {
         match size {
@@ -285,23 +269,6 @@ impl DataType for i32 {
 
     fn data_type() -> u32 {
         glow::INT
-    }
-
-    fn size() -> u32 {
-        1
-    }
-
-    fn send_uniform(location: &UniformLocation, data: &[Self]) {
-        Self::send_uniform_with_type(location, data, UniformType::Value)
-    }
-}
-
-impl DataType for f16 {
-    fn internal_format() -> u32 {
-        Self::internal_format_with_size(1)
-    }
-    fn data_type() -> u32 {
-        glow::HALF_FLOAT
     }
 
     fn size() -> u32 {
@@ -581,16 +548,6 @@ pub trait DepthDataType {
     fn internal_format() -> u32;
 }
 
-impl DepthDataType for f16 {
-    fn internal_format() -> u32 {
-        glow::DEPTH_COMPONENT16
-    }
-}
-impl DepthDataType for f24 {
-    fn internal_format() -> u32 {
-        glow::DEPTH_COMPONENT24
-    }
-}
 impl DepthDataType for f32 {
     fn internal_format() -> u32 {
         glow::DEPTH_COMPONENT32F

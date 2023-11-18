@@ -1,36 +1,5 @@
 use std::hash::{Hash, Hasher};
 
-use half::f16;
-
-///
-/// Possible modes of interpolation which determines the texture output between texture pixels.
-///
-#[allow(missing_docs)]
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
-pub enum Interpolation {
-    Nearest,
-    Linear,
-    CubicSpline,
-}
-
-impl Default for Interpolation {
-    fn default() -> Self {
-        Self::Linear
-    }
-}
-
-///
-/// Possible wrapping modes for a texture which determines how the texture is applied outside of the
-/// [0..1] uv coordinate range.
-///
-#[allow(missing_docs)]
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
-pub enum Wrapping {
-    Repeat,
-    MirroredRepeat,
-    ClampToEdge,
-}
-
 ///
 /// The pixel/texel data for a [Texture2D] or [Texture3D].
 ///
@@ -66,24 +35,6 @@ pub enum CpuTextureData {
     RgbU8(Vec<[u8; 3]>),
     /// One byte in the red, green, blue and alpha channel.
     RgbaU8(Vec<[u8; 4]>),
-
-    /// 16-bit float in the red channel.
-    RF16(Vec<f16>),
-    /// 16-bit float in the red and green channel.
-    RgF16(Vec<[f16; 2]>),
-    /// 16-bit float in the red, green and blue channel.
-    RgbF16(Vec<[f16; 3]>),
-    /// 16-bit float in the red, green, blue and alpha channel.
-    RgbaF16(Vec<[f16; 4]>),
-
-    /// 32-bit float in the red channel.
-    RF32(Vec<f32>),
-    /// 32-bit float in the red and green channel.
-    RgF32(Vec<[f32; 2]>),
-    /// 32-bit float in the red, green and blue channel.
-    RgbF32(Vec<[f32; 3]>),
-    /// 32-bit float in the red, green, blue and alpha channel.
-    RgbaF32(Vec<[f32; 4]>),
 }
 
 impl Hash for CpuTextureData {
@@ -103,14 +54,6 @@ impl std::fmt::Debug for CpuTextureData {
             Self::RgU8(values) => write!(f, "RG u8 ({:?})", values.len()),
             Self::RgbU8(values) => write!(f, "RGB u8 ({:?})", values.len()),
             Self::RgbaU8(values) => write!(f, "RGBA u8 ({:?})", values.len()),
-            Self::RF16(values) => write!(f, "R f16 ({:?})", values.len()),
-            Self::RgF16(values) => write!(f, "RG f16 ({:?})", values.len()),
-            Self::RgbF16(values) => write!(f, "RGB f16 ({:?})", values.len()),
-            Self::RgbaF16(values) => write!(f, "RGBA f16 ({:?})", values.len()),
-            Self::RF32(values) => write!(f, "R f32 ({:?})", values.len()),
-            Self::RgF32(values) => write!(f, "RG f32 ({:?})", values.len()),
-            Self::RgbF32(values) => write!(f, "RGB f32 ({:?})", values.len()),
-            Self::RgbaF32(values) => write!(f, "RGBA f32 ({:?})", values.len()),
         }
     }
 }
@@ -125,22 +68,4 @@ pub enum CpuTextureDataType {
     RgbU8,
     /// One byte in the red, green, blue and alpha channel.
     RgbaU8,
-
-    /// 16-bit float in the red channel.
-    RF16,
-    /// 16-bit float in the red and green channel.
-    RgF16,
-    /// 16-bit float in the red, green and blue channel.
-    RgbF16,
-    /// 16-bit float in the red, green, blue and alpha channel.
-    RgbaF16,
-
-    /// 32-bit float in the red channel.
-    RF32,
-    /// 32-bit float in the red and green channel.
-    RgF32,
-    /// 32-bit float in the red, green and blue channel.
-    RgbF32,
-    /// 32-bit float in the red, green, blue and alpha channel.
-    RgbaF32,
 }

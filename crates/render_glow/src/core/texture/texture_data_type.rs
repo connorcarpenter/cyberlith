@@ -1,6 +1,5 @@
-use half::*;
 
-use math::*;
+use math::{Quat, Vec2, Vec3, Vec4};
 use render_api::base::Color;
 
 use crate::core::{DataType, PrimitiveDataType};
@@ -8,7 +7,6 @@ use crate::core::{DataType, PrimitiveDataType};
 /// The basic data type used for each channel of each pixel in a texture.
 pub trait TextureDataType: DataType {}
 impl TextureDataType for u8 {}
-impl TextureDataType for f16 {}
 impl TextureDataType for f32 {}
 
 impl TextureDataType for Vec2 {}
