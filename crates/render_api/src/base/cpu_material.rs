@@ -2,7 +2,7 @@
 //! Contain material asset definitions.
 //!
 
-use crate::base::*;
+use crate::base::Color;
 
 /// Lighting models which specify how the lighting is computed when rendering a material.
 /// This is a trade-off between how fast the computations are versus how physically correct they look.
@@ -44,40 +44,18 @@ pub struct CpuMaterial {
     pub name: String,
     /// Albedo base color, also called diffuse color. Assumed to be in linear color space.
     pub albedo: Color,
-    /// Texture with albedo base colors, also called diffuse color. Assumed to be in sRGB with or without an alpha channel.
-    pub albedo_texture: Option<CpuTexture2D>,
     /// A value in the range `[0..1]` specifying how metallic the material is.
     pub metallic: f32,
     /// A value in the range `[0..1]` specifying how rough the material surface is.
     pub roughness: f32,
-    /// Texture containing the occlusion, metallic and roughness parameters.
-    /// The occlusion values are sampled from the red channel, metallic from the blue channel and the roughness from the green channel.
-    /// Is sometimes in two textures, see [Self::occlusion_texture] and [Self::metallic_roughness_texture].
-    pub occlusion_metallic_roughness_texture: Option<CpuTexture2D>,
-    /// Texture containing the metallic and roughness parameters which are multiplied with the [Self::metallic] and [Self::roughness] to get the final parameter.
-    /// The metallic values are sampled from the blue channel and the roughness from the green channel.
-    /// Can be combined with occlusion into one texture, see [Self::occlusion_metallic_roughness_texture].
-    pub metallic_roughness_texture: Option<CpuTexture2D>,
-    /// A scalar multiplier controlling the amount of occlusion applied from the [Self::occlusion_texture]. A value of 0.0 means no occlusion. A value of 1.0 means full occlusion.
-    pub occlusion_strength: f32,
-    /// An occlusion map. Higher values indicate areas that should receive full indirect lighting and lower values indicate no indirect lighting.
-    /// The occlusion values are sampled from the red channel.
-    /// Can be combined with metallic and roughness into one texture, see [Self::occlusion_metallic_roughness_texture].
-    pub occlusion_texture: Option<CpuTexture2D>,
     /// Color of light shining from an object.
     pub emissive: Color,
-    /// Texture with color of light shining from an object.
-    pub emissive_texture: Option<CpuTexture2D>,
-    /// Alpha cutout value for transparency in deferred rendering pipeline.
-    pub alpha_cutout: Option<f32>,
     /// The lighting model used when rendering this material
     pub lighting_model: LightingModel,
     /// The index of refraction for this material
     pub index_of_refraction: f32,
     /// A value in the range `[0..1]` specifying how transmissive the material surface is.
     pub transmission: f32,
-    /// Texture containing the transmission parameter which are multiplied with the [Self::transmission] to get the final parameter.
-    pub transmission_texture: Option<CpuTexture2D>,
 }
 
 impl Default for CpuMaterial {
@@ -85,20 +63,12 @@ impl Default for CpuMaterial {
         Self {
             name: "default".to_string(),
             albedo: Color::WHITE,
-            albedo_texture: None,
-            occlusion_metallic_roughness_texture: None,
-            metallic_roughness_texture: None,
-            occlusion_texture: None,
             metallic: 0.0,
             roughness: 1.0,
-            occlusion_strength: 1.0,
             emissive: Color::BLACK,
-            emissive_texture: None,
             index_of_refraction: 1.5,
             transmission: 0.0,
-            transmission_texture: None,
-            alpha_cutout: None,
-            lighting_model: LightingModel::Blinn,
+            lighting_model: LightingModel::Phong,
         }
     }
 }

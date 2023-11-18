@@ -12,26 +12,14 @@ pub struct PbrMaterial {
     pub name: String,
     /// Albedo base color, also called diffuse color. Assumed to be in linear color space.
     pub albedo: Color,
-    /// Texture with albedo base colors, also called diffuse color. Assumed to be in sRGB with or without an alpha channel.
-    pub albedo_texture: Option<GpuTexture2D>,
     /// A value in the range `[0..1]` specifying how metallic the surface is.
     pub metallic: f32,
     /// A value in the range `[0..1]` specifying how rough the surface is.
     pub roughness: f32,
-    /// Texture containing the metallic and roughness parameters which are multiplied with the [Self::metallic] and [Self::roughness] values in the shader.
-    /// The metallic values are sampled from the blue channel and the roughness from the green channel.
-    pub metallic_roughness_texture: Option<GpuTexture2D>,
-    /// A scalar multiplier controlling the amount of occlusion applied from the [Self::occlusion_texture]. A value of 0.0 means no occlusion. A value of 1.0 means full occlusion.
-    pub occlusion_strength: f32,
-    /// An occlusion map. Higher values indicate areas that should receive full indirect lighting and lower values indicate no indirect lighting.
-    /// The occlusion values are sampled from the red channel.
-    pub occlusion_texture: Option<GpuTexture2D>,
     /// Render states.
     pub render_states: RenderStates,
     /// Color of light shining from an object.
     pub emissive: Color,
-    /// Texture with color of light shining from an object.
-    pub emissive_texture: Option<GpuTexture2D>,
     /// The lighting model used when rendering this material
     pub lighting_model: LightingModel,
 }
@@ -63,40 +51,11 @@ impl PbrMaterial {
     }
 
     fn new_internal(cpu_material: &CpuMaterial, is_transparent: bool) -> Self {
-        let albedo_texture = cpu_material
-            .albedo_texture
-            .as_ref()
-            .map(|cpu_texture| GpuTexture2D::new(cpu_texture).into());
-        let metallic_roughness_texture =
-            if let Some(ref cpu_texture) = cpu_material.occlusion_metallic_roughness_texture {
-                Some(cpu_texture.into())
-            } else {
-                cpu_material
-                    .metallic_roughness_texture
-                    .as_ref()
-                    .map(|cpu_texture| GpuTexture2D::new(cpu_texture).into())
-            };
-        let occlusion_texture = if cpu_material.occlusion_metallic_roughness_texture.is_some() {
-            metallic_roughness_texture.clone()
-        } else {
-            cpu_material
-                .occlusion_texture
-                .as_ref()
-                .map(|cpu_texture| GpuTexture2D::new(cpu_texture).into())
-        };
-        let emissive_texture = cpu_material
-            .emissive_texture
-            .as_ref()
-            .map(|cpu_texture| GpuTexture2D::new(cpu_texture).into());
         Self {
             name: cpu_material.name.clone(),
             albedo: cpu_material.albedo,
-            albedo_texture,
             metallic: cpu_material.metallic,
             roughness: cpu_material.roughness,
-            metallic_roughness_texture,
-            occlusion_texture,
-            occlusion_strength: cpu_material.occlusion_strength,
             render_states: if is_transparent {
                 RenderStates {
                     write_mask: WriteMask::COLOR,
@@ -110,7 +69,6 @@ impl PbrMaterial {
                 }
             },
             emissive: cpu_material.emissive,
-            emissive_texture,
             lighting_model: cpu_material.lighting_model,
         }
     }
@@ -130,25 +88,6 @@ impl Material for PbrMaterial {
             ..FragmentAttributes::NONE
         };
         let mut output = lights_shader_source(lights, self.lighting_model);
-        if self.albedo_texture.is_some()
-            || self.metallic_roughness_texture.is_some()
-            || self.occlusion_texture.is_some()
-            || self.emissive_texture.is_some()
-        {
-            output.push_str("in vec2 uvs;\n");
-            if self.albedo_texture.is_some() {
-                output.push_str("#define USE_ALBEDO_TEXTURE;\n");
-            }
-            if self.metallic_roughness_texture.is_some() {
-                output.push_str("#define USE_METALLIC_ROUGHNESS_TEXTURE;\n");
-            }
-            if self.occlusion_texture.is_some() {
-                output.push_str("#define USE_OCCLUSION_TEXTURE;\n");
-            }
-            if self.emissive_texture.is_some() {
-                output.push_str("#define USE_EMISSIVE_TEXTURE;\n");
-            }
-        }
         output.push_str(include_str!("shaders/physical_material.frag"));
         FragmentShader {
             source: output,
@@ -164,30 +103,9 @@ impl Material for PbrMaterial {
             }
             program.use_uniform("metallic", self.metallic);
             program.use_uniform_if_required("roughness", self.roughness);
-            if program.requires_uniform("albedoTexture") {
-                if let Some(ref texture) = self.albedo_texture {
-                    program.use_texture("albedoTexture", texture);
-                }
-            }
-            if program.requires_uniform("metallicRoughnessTexture") {
-                if let Some(ref texture) = self.metallic_roughness_texture {
-                    program.use_texture("metallicRoughnessTexture", texture);
-                }
-            }
-            if program.requires_uniform("occlusionTexture") {
-                if let Some(ref texture) = self.occlusion_texture {
-                    program.use_uniform("occlusionStrength", self.occlusion_strength);
-                    program.use_texture("occlusionTexture", texture);
-                }
-            }
         }
         program.use_uniform("albedo", self.albedo);
         program.use_uniform("emissive", self.emissive);
-        if program.requires_uniform("emissiveTexture") {
-            if let Some(ref texture) = self.emissive_texture {
-                program.use_texture("emissiveTexture", texture);
-            }
-        }
     }
 
     fn render_states(&self) -> RenderStates {
@@ -200,15 +118,10 @@ impl Default for PbrMaterial {
         Self {
             name: "default".to_string(),
             albedo: Color::WHITE,
-            albedo_texture: None,
             metallic: 0.0,
             roughness: 1.0,
-            metallic_roughness_texture: None,
-            occlusion_texture: None,
-            occlusion_strength: 1.0,
             render_states: RenderStates::default(),
             emissive: Color::BLACK,
-            emissive_texture: None,
             lighting_model: LightingModel::Blinn,
         }
     }
