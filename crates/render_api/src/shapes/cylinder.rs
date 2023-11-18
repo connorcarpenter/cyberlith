@@ -1,6 +1,6 @@
 use math::Vec3;
 
-use crate::base::{CpuMesh, Indices, Positions};
+use crate::base::{CpuMesh, Positions};
 
 pub struct Cylinder {
     pub angle_subdivisions: u32,
@@ -28,18 +28,17 @@ impl From<Cylinder> for CpuMesh {
         }
         for i in 0..length_subdivisions {
             for j in 0..angle_subdivisions {
-                indices.push((i * angle_subdivisions + j) as u16);
-                indices.push((i * angle_subdivisions + (j + 1) % angle_subdivisions) as u16);
-                indices.push(((i + 1) * angle_subdivisions + (j + 1) % angle_subdivisions) as u16);
+                indices.push((i * angle_subdivisions + j) as usize);
+                indices.push((i * angle_subdivisions + (j + 1) % angle_subdivisions) as usize);
+                indices.push(((i + 1) * angle_subdivisions + (j + 1) % angle_subdivisions) as usize);
 
-                indices.push((i * angle_subdivisions + j) as u16);
-                indices.push(((i + 1) * angle_subdivisions + (j + 1) % angle_subdivisions) as u16);
-                indices.push(((i + 1) * angle_subdivisions + j) as u16);
+                indices.push((i * angle_subdivisions + j) as usize);
+                indices.push(((i + 1) * angle_subdivisions + (j + 1) % angle_subdivisions) as usize);
+                indices.push(((i + 1) * angle_subdivisions + j) as usize);
             }
         }
         let mut mesh = Self {
-            positions: Positions(positions),
-            indices: Indices(Some(indices)),
+            positions: Positions::from_indices(&positions, &indices),
             ..Default::default()
         };
         mesh.compute_normals();

@@ -1,7 +1,6 @@
 use math::Vec3;
 
-use crate::assets::AssetHash;
-use crate::base::{CpuMesh, Indices, Positions};
+use crate::{assets::AssetHash, base::{CpuMesh, Positions}};
 
 #[derive(Hash)]
 pub struct Sphere {
@@ -29,9 +28,9 @@ impl From<Sphere> for CpuMesh {
 
         for j in 0..angle_subdivisions * 2 {
             let j1 = (j + 1) % (angle_subdivisions * 2);
-            indices.push(0);
-            indices.push(1 + j);
-            indices.push(1 + j1);
+            indices.push(0 as usize);
+            indices.push((1 + j) as usize);
+            indices.push((1 + j1) as usize);
         }
 
         for i in 0..angle_subdivisions - 1 {
@@ -51,12 +50,12 @@ impl From<Sphere> for CpuMesh {
 
                 if i != angle_subdivisions - 2 {
                     let j1 = (j + 1) % (angle_subdivisions * 2);
-                    indices.push(i0 + j);
-                    indices.push(i1 + j1);
-                    indices.push(i0 + j1);
-                    indices.push(i1 + j1);
-                    indices.push(i0 + j);
-                    indices.push(i1 + j);
+                    indices.push((i0 + j) as usize);
+                    indices.push((i1 + j1) as usize);
+                    indices.push((i0 + j1) as usize);
+                    indices.push((i1 + j1) as usize);
+                    indices.push((i0 + j) as usize);
+                    indices.push((i1 + j) as usize);
                 }
             }
         }
@@ -66,14 +65,13 @@ impl From<Sphere> for CpuMesh {
         let i = 1 + (angle_subdivisions - 2) * angle_subdivisions * 2;
         for j in 0..angle_subdivisions * 2 {
             let j1 = (j + 1) % (angle_subdivisions * 2);
-            indices.push(i + j);
-            indices.push((angle_subdivisions - 1) * angle_subdivisions * 2 + 1);
-            indices.push(i + j1);
+            indices.push((i + j) as usize);
+            indices.push(((angle_subdivisions - 1) * angle_subdivisions * 2 + 1) as usize);
+            indices.push((i + j1) as usize);
         }
 
         CpuMesh {
-            indices: Indices(Some(indices)),
-            positions: Positions(positions),
+            positions: Positions::from_indices(&positions, &indices),
             normals: Some(normals),
             ..Default::default()
         }

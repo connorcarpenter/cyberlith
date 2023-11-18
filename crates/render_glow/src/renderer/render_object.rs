@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use math::{Mat4, Vec3};
+use math::Mat4;
 use render_api::{
     base::{AxisAlignedBoundingBox, Color},
     components::{CameraProjection, Transform},
@@ -296,30 +296,6 @@ impl RenderObjectInstanced {
             instance_buffers.insert("row3".to_string(), InstanceBuffer::new_with_data(&row3));
         }
 
-        if let Some(texture_transforms) = &instances.texture_transformations {
-            let mut instance_tex_transform1 = Vec::new();
-            let mut instance_tex_transform2 = Vec::new();
-            for texture_transform in indices.iter().map(|i| texture_transforms[*i]) {
-                instance_tex_transform1.push(Vec3::new(
-                    texture_transform.x_axis.x,
-                    texture_transform.y_axis.x,
-                    texture_transform.z_axis.x,
-                ));
-                instance_tex_transform2.push(Vec3::new(
-                    texture_transform.x_axis.y,
-                    texture_transform.y_axis.y,
-                    texture_transform.z_axis.y,
-                ));
-            }
-            instance_buffers.insert(
-                "tex_transform_row1".to_string(),
-                InstanceBuffer::new_with_data(&instance_tex_transform1),
-            );
-            instance_buffers.insert(
-                "tex_transform_row2".to_string(),
-                InstanceBuffer::new_with_data(&instance_tex_transform2),
-            );
-        }
         if let Some(instance_colors) = &instances.colors {
             // Create the re-ordered color buffer by depth.
             let ordered_instance_colors = indices

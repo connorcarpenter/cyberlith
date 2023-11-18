@@ -1,7 +1,7 @@
-use math::{Mat3, Mat4};
+use math::Mat4;
 use render_api::base::Color;
 
-use crate::renderer::*;
+use crate::renderer::{RendererError};
 
 ///
 /// Defines the attributes for the instances of the model defined in [InstancedMesh] or [InstancedModel].
@@ -14,8 +14,6 @@ use crate::renderer::*;
 pub struct Instances {
     /// The transformations applied to each instance.
     pub transformations: Vec<Mat4>,
-    /// The texture transform applied to the uv coordinates of each instance.
-    pub texture_transformations: Option<Vec<Mat3>>,
     /// Colors multiplied onto the base color of each instance.
     pub colors: Option<Vec<Color>>,
 }
@@ -24,7 +22,6 @@ impl Instances {
     pub fn new(transforms: Vec<Mat4>) -> Self {
         Self {
             transformations: transforms,
-            texture_transformations: None,
             colors: None,
         }
     }
@@ -47,10 +44,6 @@ impl Instances {
             Ok(())
         };
 
-        buffer_check(
-            self.texture_transformations.as_ref().map(|b| b.len()),
-            "texture transformations",
-        )?;
         buffer_check(Some(self.transformations.len()), "transformations")?;
         buffer_check(self.colors.as_ref().map(|b| b.len()), "colors")?;
 

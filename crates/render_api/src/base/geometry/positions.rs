@@ -9,6 +9,15 @@ use crate::base::AxisAlignedBoundingBox;
 pub struct Positions(pub Vec<Vec3>);
 
 impl Positions {
+
+    pub fn from_indices(positions: &[Vec3], indices: &[usize]) -> Self {
+        let mut new_positions = Vec::new();
+        for index in indices {
+            new_positions.push(positions[*index]);
+        }
+        Self(new_positions)
+    }
+
     ///
     /// Converts and returns all the positions as `f32` data type.
     ///

@@ -2,7 +2,7 @@ use math::Vec3;
 
 use crate::{
     assets::AssetHash,
-    base::{CpuMesh, Indices, Positions},
+    base::{CpuMesh, Positions},
 };
 
 #[derive(Hash)]
@@ -21,18 +21,19 @@ impl From<Square> for CpuMesh {
         let half_size = 1.0;
         let neg_half_size = -1.0;
 
-        let indices: Indices = Indices(Some(vec![0u16, 2, 1, 2, 0, 3]));
-
         let positions = vec![
             Vec3::new(neg_half_size, neg_half_size, 0.0),
             Vec3::new(half_size, neg_half_size, 0.0),
             Vec3::new(half_size, half_size, 0.0),
             Vec3::new(neg_half_size, half_size, 0.0),
         ];
+
+        let indices = vec![0, 2, 1, 2, 0, 3];
+
         let normals = vec![Vec3::Z; 4];
+
         CpuMesh {
-            indices,
-            positions: Positions(positions),
+            positions: Positions::from_indices(&positions, &indices),
             normals: Some(normals),
             ..Default::default()
         }
@@ -95,20 +96,19 @@ impl From<HollowRectangle> for CpuMesh {
             let c = i * 2;
             let d = i * 2 + 1;
 
-            indices.push(a);
-            indices.push(b);
-            indices.push(c);
+            indices.push(a as usize);
+            indices.push(b as usize);
+            indices.push(c as usize);
 
-            indices.push(c);
-            indices.push(b);
-            indices.push(d);
+            indices.push(c as usize);
+            indices.push(b as usize);
+            indices.push(d as usize);
         }
 
         let normals = vec![Vec3::Z; 8];
 
         CpuMesh {
-            indices: Indices(Some(indices)),
-            positions: Positions(positions),
+            positions: Positions::from_indices(&positions, &indices),
             normals: Some(normals),
             ..Default::default()
         }

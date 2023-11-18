@@ -254,7 +254,7 @@ impl Program {
 
     ///
     /// Uses the given [VertexBuffer] data in this shader program and associates it with the given named variable.
-    /// Each value in the buffer is used when rendering one vertex using the [Program::draw_arrays] or [Program::draw_elements] methods.
+    /// Each value in the buffer is used when rendering one vertex using the [Program::draw_arrays] methods.
     /// Therefore the buffer must contain the same number of values as the number of vertices specified in those draw calls.
     ///
     /// # Panic
@@ -306,7 +306,7 @@ impl Program {
 
     ///
     /// Uses the given [InstanceBuffer] data in this shader program and associates it with the given named variable.
-    /// Each value in the buffer is used when rendering one instance using the [Program::draw_arrays_instanced] or [Program::draw_elements_instanced] methods.
+    /// Each value in the buffer is used when rendering one instance using the [Program::draw_arrays_instanced] methods.
     /// Therefore the buffer must contain the same number of values as the number of instances specified in those draw calls.
     ///
     /// # Panic
@@ -354,7 +354,6 @@ impl Program {
     /// Draws `count` number of triangles with the given render states and viewport using this shader program.
     /// Requires that all attributes and uniforms have been defined using the use_attribute and use_uniform methods.
     /// Assumes that the data for the three vertices in a triangle is defined contiguous in each vertex buffer.
-    /// If you want to use an [ElementBuffer], see [Program::draw_elements].
     ///
     pub fn draw_arrays(&self, render_states: RenderStates, viewport: Viewport, count: u32) {
         let context = Context::get();
@@ -393,127 +392,6 @@ impl Program {
         self.use_program();
         unsafe {
             context.draw_arrays_instanced(glow::TRIANGLES, 0, count as i32, instance_count as i32);
-            context.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, None);
-            for location in self.attributes.values() {
-                context.disable_vertex_attrib_array(*location);
-            }
-            context.bind_vertex_array(None);
-        }
-        self.unuse_program();
-
-        #[cfg(debug_assertions)]
-        context
-            .error_check()
-            .expect("Unexpected rendering error occured")
-    }
-
-    ///
-    /// Draws the triangles defined by the given [ElementBuffer] with the given render states and viewport using this shader program.
-    /// Requires that all attributes and uniforms have been defined using the use_attribute and use_uniform methods.
-    /// If you do not want to use an [ElementBuffer], see [Program::draw_arrays]. If you only want to draw a subset of the triangles in the given [ElementBuffer], see [Program::draw_subset_of_elements].
-    ///
-    pub fn draw_elements(
-        &self,
-        render_states: RenderStates,
-        viewport: Viewport,
-        element_buffer: &ElementBuffer,
-    ) {
-        self.draw_subset_of_elements(
-            render_states,
-            viewport,
-            element_buffer,
-            0,
-            element_buffer.count() as u32,
-        )
-    }
-
-    ///
-    /// Draws a subset of the triangles defined by the given [ElementBuffer] with the given render states and viewport using this shader program.
-    /// Requires that all attributes and uniforms have been defined using the use_attribute and use_uniform methods.
-    /// If you do not want to use an [ElementBuffer], see [Program::draw_arrays].
-    ///
-    pub fn draw_subset_of_elements(
-        &self,
-        render_states: RenderStates,
-        viewport: Viewport,
-        element_buffer: &ElementBuffer,
-        first: u32,
-        count: u32,
-    ) {
-        let context = Context::get();
-        context.set_viewport(viewport);
-        context.set_render_states(render_states);
-        self.use_program();
-        element_buffer.bind();
-        unsafe {
-            context.draw_elements(
-                glow::TRIANGLES,
-                count as i32,
-                element_buffer.data_type(),
-                first as i32,
-            );
-            context.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, None);
-
-            for location in self.attributes.values() {
-                context.disable_vertex_attrib_array(*location);
-            }
-            context.bind_vertex_array(None);
-        }
-        self.unuse_program();
-
-        #[cfg(debug_assertions)]
-        context
-            .error_check()
-            .expect("Unexpected rendering error occured")
-    }
-
-    ///
-    /// Same as [Program::draw_elements] except it renders 'instance_count' instances of the same set of triangles.
-    /// Use the [Program::use_instance_attribute] method to send unique data for each instance to the shader.
-    ///
-    pub fn draw_elements_instanced(
-        &self,
-        render_states: RenderStates,
-        viewport: Viewport,
-        element_buffer: &ElementBuffer,
-        instance_count: u32,
-    ) {
-        self.draw_subset_of_elements_instanced(
-            render_states,
-            viewport,
-            element_buffer,
-            0,
-            element_buffer.count() as u32,
-            instance_count,
-        )
-    }
-
-    ///
-    /// Same as [Program::draw_subset_of_elements] except it renders 'instance_count' instances of the same set of triangles.
-    /// Use the [Program::use_instance_attribute] method to send unique data for each instance to the shader.
-    ///
-    pub fn draw_subset_of_elements_instanced(
-        &self,
-        render_states: RenderStates,
-        viewport: Viewport,
-        element_buffer: &ElementBuffer,
-        first: u32,
-        count: u32,
-        instance_count: u32,
-    ) {
-        let context = Context::get();
-        context.set_viewport(viewport);
-        context.set_render_states(render_states);
-        self.use_program();
-        element_buffer.bind();
-        unsafe {
-            context.draw_elements_instanced(
-                glow::TRIANGLES,
-                count as i32,
-                element_buffer.data_type(),
-                first as i32,
-                instance_count as i32,
-            );
             context.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, None);
             for location in self.attributes.values() {
                 context.disable_vertex_attrib_array(*location);
