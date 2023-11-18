@@ -2,7 +2,7 @@ use math::{triangle_is_ccw_toward_point, Vec3};
 
 use crate::{
     assets::AssetHash,
-    base::{CpuMesh, Positions},
+    base::{CpuMesh, Vertices},
 };
 
 #[derive(Hash)]
@@ -93,12 +93,9 @@ impl From<Cube> for CpuMesh {
             left_bottom_front,
         );
 
-        let mut mesh = CpuMesh {
-            positions: Positions(positions),
-            ..Default::default()
-        };
-        mesh.compute_normals();
-        mesh
+        CpuMesh {
+            vertices: Vertices(positions),
+        }
     }
 }
 

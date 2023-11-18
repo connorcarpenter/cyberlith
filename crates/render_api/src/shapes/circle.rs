@@ -2,7 +2,7 @@ use math::Vec3;
 
 use crate::{
     assets::AssetHash,
-    base::{CpuMesh, Positions},
+    base::{CpuMesh, Vertices},
 };
 
 // Circle
@@ -25,12 +25,11 @@ impl From<Circle> for CpuMesh {
 
         let mut positions = Vec::new();
         let mut indices = Vec::new();
-        let mut normals = Vec::new();
+
         for j in 0..angle_subdivisions {
             let angle = 2.0 * std::f32::consts::PI * j as f32 / angle_subdivisions as f32;
 
             positions.push(Vec3::new(angle.cos(), angle.sin(), 0.0));
-            normals.push(Vec3::Z);
         }
 
         for j in 0..angle_subdivisions {
@@ -40,8 +39,7 @@ impl From<Circle> for CpuMesh {
         }
 
         CpuMesh {
-            positions: Positions::from_indices(&positions, &indices),
-            normals: Some(normals),
+            vertices: Vertices::from_indices(&positions, &indices),
             ..Default::default()
         }
     }
@@ -111,8 +109,7 @@ impl From<HollowCircle> for CpuMesh {
             indices.push(b as usize);
         }
         CpuMesh {
-            positions: Positions::from_indices(&positions, &indices),
-            normals: Some(normals),
+            vertices: Vertices::from_indices(&positions, &indices),
             ..Default::default()
         }
     }

@@ -1,6 +1,8 @@
+use bevy_log::info;
+
 use math::Vec3;
 
-use crate::base::{AxisAlignedBoundingBox, Error, Positions, Result};
+use crate::base::{AxisAlignedBoundingBox, Error, Vertices, Result};
 
 ///
 /// A CPU-side version of a triangle mesh.
@@ -9,25 +11,21 @@ use crate::base::{AxisAlignedBoundingBox, Error, Positions, Result};
 pub struct CpuMesh {
     /// The positions of the vertices.
     /// If there is no indices associated with this mesh, three contiguous positions defines a triangle, in that case, the length must be divisable by 3.
-    pub positions: Positions,
-    /// The normals of the vertices.
-    pub normals: Option<Vec<Vec3>>,
+    pub vertices: Vertices,
 }
 
 impl Default for CpuMesh {
     fn default() -> Self {
         Self {
-            positions: Positions::default(),
-            normals: None,
+            vertices: Vertices::default(),
         }
     }
 }
 
 impl std::fmt::Debug for CpuMesh {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut d = f.debug_struct("Mesh");
-        d.field("positions", &self.positions.len());
-        d.field("normals", &self.normals.as_ref().map(|v| v.len()));
+        let mut d = f.debug_struct("CpuMesh");
+        d.field("vertices", &self.vertices.len());
         d.finish()
     }
 }
@@ -35,22 +33,22 @@ impl std::fmt::Debug for CpuMesh {
 impl CpuMesh {
     /// Returns the number of vertices in this mesh.
     pub fn vertex_count(&self) -> usize {
-        self.positions.len()
+        self.vertices.len()
     }
 
     /// Returns the number of triangles in this mesh.
     pub fn triangle_count(&self) -> usize {
-        self.positions.len() / 3
+        self.vertices.len() / 3
     }
 
     ///
     /// Computes the per vertex normals and updates the normals of the mesh.
     /// It will override the current normals if they already exist.
     ///
-    pub fn compute_normals(&mut self) {
-        let mut normals = vec![Vec3::ZERO; self.positions.len()];
+    pub fn compute_normals(&self) -> Vec<Vec3> {
+        let mut normals = vec![Vec3::ZERO; self.vertices.len()];
         self.for_each_triangle(|i0, i1, i2| {
-            let Positions(ref positions) = self.positions;
+            let Vertices(ref positions) = self.vertices;
             let normal = {
                 let p0 = positions[i0];
                 let p1 = positions[i1];
@@ -65,7 +63,8 @@ impl CpuMesh {
         for n in normals.iter_mut() {
             *n = n.normalize();
         }
-        self.normals = Some(normals);
+
+        normals
     }
 
     ///
@@ -81,7 +80,7 @@ impl CpuMesh {
     /// Computes the [AxisAlignedBoundingBox] for this triangle mesh.
     ///
     pub fn compute_aabb(&self) -> AxisAlignedBoundingBox {
-        self.positions.compute_aabb()
+        self.vertices.compute_aabb()
     }
 
     ///
@@ -89,6 +88,8 @@ impl CpuMesh {
     ///
     pub fn validate(&self) -> Result<()> {
         let vertex_count = self.vertex_count();
+        let positions = self.vertices.len();
+        info!("validating mesh with {} vertices and {} positions", vertex_count, positions);
         let buffer_check = |length: Option<usize>, name: &str| -> Result<()> {
             if let Some(length) = length {
                 if length < vertex_count {
@@ -102,8 +103,7 @@ impl CpuMesh {
             Ok(())
         };
 
-        buffer_check(Some(self.positions.len()), "position")?;
-        buffer_check(self.normals.as_ref().map(|b| b.len()), "normal")?;
+        buffer_check(Some(self.vertices.len()), "position")?;
 
         Ok(())
     }

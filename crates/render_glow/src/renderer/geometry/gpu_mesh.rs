@@ -4,7 +4,7 @@ use crate::{core::*, renderer::*};
 
 pub struct GpuMesh {
     positions: VertexBuffer,
-    normals: Option<VertexBuffer>,
+    normals: VertexBuffer,
     pub(crate) aabb: AxisAlignedBoundingBox,
 }
 
@@ -17,11 +17,8 @@ impl GpuMesh {
 
         Self {
             aabb,
-            positions: VertexBuffer::new_with_data(&cpu_mesh.positions.to_f32()),
-            normals: cpu_mesh
-                .normals
-                .as_ref()
-                .map(|data| VertexBuffer::new_with_data(data)),
+            positions: VertexBuffer::new_with_data(&cpu_mesh.vertices.to_f32()),
+            normals: VertexBuffer::new_with_data(&cpu_mesh.compute_normals()),
         }
     }
 
@@ -64,11 +61,7 @@ impl GpuMesh {
         if attributes.normal {
             program.use_vertex_attribute_if_required(
                 "normal",
-                self.normals.as_ref().unwrap_or_else(|| {
-                    panic!(
-                        "the material requires normal attributes but the geometry did not provide it"
-                    )
-                }),
+                &self.normals
             );
         }
     }

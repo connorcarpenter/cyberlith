@@ -1,6 +1,6 @@
 use math::Vec3;
 
-use crate::base::{CpuMesh, Positions};
+use crate::base::{CpuMesh, Vertices};
 
 pub struct Cone {
     pub angle_subdivisions: u32,
@@ -43,11 +43,9 @@ impl From<Cone> for CpuMesh {
                 indices.push(((i + 1) * angle_subdivisions + j) as usize);
             }
         }
-        let mut mesh = Self {
-            positions: Positions::from_indices(&positions, &indices),
+        Self {
+            vertices: Vertices::from_indices(&positions, &indices),
             ..Default::default()
-        };
-        mesh.compute_normals();
-        mesh
+        }
     }
 }

@@ -1,6 +1,6 @@
 use math::Vec3;
 use render_api::{
-    base::{Color, CpuMaterial, CpuMesh, Indices, Positions},
+    base::{Color, CpuMaterial, CpuMesh, Vertices},
     components::{RenderObjectBundle, Transform},
     AssetHash, Assets,
 };
@@ -53,9 +53,9 @@ impl From<Line3d> for CpuMesh {
             Vec3::new(1.0, cy, cz),
         ];
 
-        let indices: Indices = Indices(Some(vec![
-            0u16, 2, 1, 3, 5, 4, 0, 1, 3, 3, 1, 4, 1, 2, 4, 4, 2, 5, 2, 0, 5, 5, 0, 3,
-        ]));
+        let indices =vec![
+            0, 2, 1, 3, 5, 4, 0, 1, 3, 3, 1, 4, 1, 2, 4, 4, 2, 5, 2, 0, 5, 5, 0, 3,
+        ];
 
         // or
         //         let indices: Indices = Indices(Some(vec![
@@ -70,8 +70,7 @@ impl From<Line3d> for CpuMesh {
         //         ]));
 
         let mut mesh = CpuMesh {
-            indices,
-            positions: Positions(positions),
+            vertices: Vertices::from_indices(&positions, &indices),
             ..Default::default()
         };
 

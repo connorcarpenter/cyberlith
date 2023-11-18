@@ -4,7 +4,7 @@ use naia_serde::BitReader;
 
 use math::Vec3;
 use render_api::{
-    base::{CpuMesh, Positions},
+    base::{CpuMesh, Vertices},
     AssetHash,
 };
 
@@ -68,12 +68,8 @@ impl From<MeshFile> for CpuMesh {
             }
         }
 
-        let mut mesh = CpuMesh {
-            positions: Positions(positions),
-            ..Default::default()
-        };
-
-        mesh.compute_normals();
-        mesh
+        CpuMesh {
+            vertices: Vertices(positions),
+        }
     }
 }

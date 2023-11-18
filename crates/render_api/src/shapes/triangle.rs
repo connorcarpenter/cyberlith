@@ -2,7 +2,7 @@ use math::{Vec2, Vec3};
 
 use crate::{
     assets::AssetHash,
-    base::{CpuMesh, Positions},
+    base::{CpuMesh, Vertices},
 };
 
 // Triangle
@@ -55,14 +55,10 @@ impl From<Triangle> for CpuMesh {
 
         let positions = vec![outer_a, outer_b, outer_c];
 
-        let normals = vec![Vec3::Z, Vec3::Z, Vec3::Z];
-
         // info!("Triangle Positions: {:?}", positions);
 
         CpuMesh {
-            positions: Positions(positions),
-            normals: Some(normals),
-            ..Default::default()
+            vertices: Vertices(positions),
         }
     }
 }
@@ -134,13 +130,10 @@ impl From<HollowTriangle> for CpuMesh {
 
         let positions = vec![outer_a, outer_b, outer_c, inner_a, inner_b, inner_c];
 
-        let normals = vec![Vec3::Z, Vec3::Z, Vec3::Z, Vec3::Z, Vec3::Z, Vec3::Z];
-
         let indices = vec![0, 4, 1, 0, 3, 4, 1, 5, 2, 1, 4, 5, 2, 3, 0, 2, 5, 3];
 
         CpuMesh {
-            positions: Positions::from_indices(&positions, &indices),
-            normals: Some(normals),
+            vertices: Vertices::from_indices(&positions, &indices),
             ..Default::default()
         }
     }

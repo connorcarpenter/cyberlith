@@ -1,4 +1,4 @@
-use math::*;
+use math::Vec3;
 
 use crate::base::AxisAlignedBoundingBox;
 
@@ -6,14 +6,14 @@ use crate::base::AxisAlignedBoundingBox;
 /// An array of positions
 ///
 #[derive(Clone)]
-pub struct Positions(pub Vec<Vec3>);
+pub struct Vertices(pub Vec<Vec3>);
 
-impl Positions {
+impl Vertices {
 
-    pub fn from_indices(positions: &[Vec3], indices: &[usize]) -> Self {
+    pub fn from_indices(vertices: &[Vec3], indices: &[usize]) -> Self {
         let mut new_positions = Vec::new();
         for index in indices {
-            new_positions.push(positions[*index]);
+            new_positions.push(vertices[*index]);
         }
         Self(new_positions)
     }
@@ -55,15 +55,15 @@ impl Positions {
     }
 }
 
-impl std::default::Default for Positions {
+impl Default for Vertices {
     fn default() -> Self {
         Self(Vec::new())
     }
 }
 
-impl std::fmt::Debug for Positions {
+impl std::fmt::Debug for Vertices {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut d = f.debug_struct("Positions");
+        let mut d = f.debug_struct("Vertices");
         d.field("f32", &self.0.len());
         d.finish()
     }

@@ -3,7 +3,7 @@
 //!
 
 pub use cpu_mesh::*;
-pub use positions::*;
+pub use vertices::*;
 
 mod cpu_mesh;
-mod positions;
+mod vertices;
