@@ -21,18 +21,14 @@ impl<'a> RenderTargetExt for DepthTarget<'a> {
     /// Returns the width of the depth target in texels, which is simply the width of the underlying texture.
     ///
     fn width(&self) -> u32 {
-        match &self.target {
-            GpuDepthTexture::Single(texture) => texture.width(),
-        }
+        self.target.width()
     }
 
     ///
     /// Returns the height of the depth target in texels, which is simply the height of the underlying texture.
     ///
     fn height(&self) -> u32 {
-        match &self.target {
-            GpuDepthTexture::Single(texture) => texture.height(),
-        }
+        self.target.height()
     }
     ///
     /// Writes whatever rendered in the `render` closure into this depth target.
@@ -46,7 +42,7 @@ impl<'a> RenderTargetExt for DepthTarget<'a> {
 impl<'a> DepthTarget<'a> {
     pub(in crate::core) fn new_texture2d(texture: &'a GpuDepthTexture2D) -> Self {
         Self {
-            target: GpuDepthTexture::Single(texture),
+            target: GpuDepthTexture::new(texture),
         }
     }
 
@@ -84,10 +80,6 @@ impl<'a> DepthTarget<'a> {
     }
 
     pub(super) fn bind(&self) {
-        match &self.target {
-            GpuDepthTexture::Single(texture) => {
-                texture.bind_as_depth_target();
-            }
-        }
+        self.target.bind_as_depth_target();
     }
 }

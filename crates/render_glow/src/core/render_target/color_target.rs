@@ -23,22 +23,16 @@ pub struct ColorTarget<'a> {
 impl<'a> RenderTargetExt for ColorTarget<'a> {
     ///
     /// Returns the width of the color target in texels.
-    /// If using the zero mip level of the underlying texture, then this is simply the width of that texture, otherwise it is the width of the given mip level.
     ///
     fn width(&self) -> u32 {
-        match self.target {
-            GpuColorTexture::Single(texture) => texture.width(),
-        }
+        self.target.width()
     }
 
     ///
     /// Returns the height of the color target in texels.
-    /// If using the zero mip level of the underlying texture, then this is simply the height of that texture, otherwise it is the height of the given mip level.
     ///
     fn height(&self) -> u32 {
-        match self.target {
-            GpuColorTexture::Single(texture) => texture.height(),
-        }
+        self.target.height()
     }
 
     ///
@@ -53,7 +47,7 @@ impl<'a> RenderTargetExt for ColorTarget<'a> {
 impl<'a> ColorTarget<'a> {
     pub(in crate::core) fn new_texture2d(texture: &'a GpuTexture2D) -> Self {
         ColorTarget {
-            target: GpuColorTexture::Single(texture),
+            target: GpuColorTexture::new(texture),
         }
     }
 
@@ -99,11 +93,9 @@ impl<'a> ColorTarget<'a> {
 
     pub(super) fn bind(&self) {
         let context = Context::get();
-        match self.target {
-            GpuColorTexture::Single(texture) => unsafe {
-                context.draw_buffers(&[glow::COLOR_ATTACHMENT0]);
-                texture.bind_as_color_target(0, 0);
-            },
+        unsafe {
+            context.draw_buffers(&[glow::COLOR_ATTACHMENT0]);
+            self.target.bind_as_color_target(0, 0);
         }
     }
 }

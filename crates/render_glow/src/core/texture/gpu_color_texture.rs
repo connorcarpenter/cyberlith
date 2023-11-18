@@ -6,60 +6,61 @@ use crate::core::{GpuTexture2D, Program};
 ///
 #[derive(Clone, Copy)]
 #[allow(missing_docs)]
-pub enum GpuColorTexture<'a> {
+pub struct GpuColorTexture<'a> {
     /// A single 2D texture.
-    Single(&'a GpuTexture2D),
+    inner: &'a GpuTexture2D,
 }
 
-impl GpuColorTexture<'_> {
+impl<'a> GpuColorTexture<'a> {
+
+    pub fn new(inner: &'a GpuTexture2D) -> Self {
+        Self {
+            inner
+        }
+    }
+
     ///
     /// Returns the width of the color texture in texels.
     ///
     pub fn width(&self) -> u32 {
-        match self {
-            GpuColorTexture::Single(texture) => texture.width(),
-        }
+        self.inner.width()
     }
 
     ///
     /// Returns the height of the color texture in texels.
     ///
     pub fn height(&self) -> u32 {
-        match self {
-            GpuColorTexture::Single(texture) => texture.height(),
-        }
+        self.inner.height()
     }
 
     ///
     /// Returns the fragment shader source for using this texture in a shader.
     ///
     pub fn fragment_shader_source(&self) -> String {
-        match self {
-            Self::Single(_) => "
-                uniform sampler2D colorMap;
-                vec4 sample_color(vec2 uv)
-                {
-                    return texture(colorMap, uv);
-                }"
-            .to_owned(),
-        }
+        "
+            uniform sampler2D colorMap;
+            vec4 sample_color(vec2 uv)
+            {
+                return texture(colorMap, uv);
+            }"
+        .to_owned()
     }
 
     ///
     /// Sends the uniform data needed for this texture to the fragment shader.
     ///
     pub fn use_uniforms(&self, program: &Program) {
-        match self {
-            Self::Single(texture) => program.use_texture("colorMap", texture),
-        }
+        program.use_texture("colorMap", self.inner)
     }
 
     ///
     /// The resolution of the underlying texture if there is any.
     ///
     pub fn resolution(&self) -> (u32, u32) {
-        match self {
-            Self::Single(texture) => (texture.width(), texture.height()),
-        }
+        (self.inner.width(), self.inner.height())
+    }
+
+    pub fn bind_as_color_target(&self, channel: u32, mip_level: u32) {
+        self.inner.bind_as_color_target(channel, mip_level);
     }
 }
