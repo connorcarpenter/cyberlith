@@ -1,5 +1,4 @@
 use math::Mat4;
-use render_api::base::Color;
 
 use crate::renderer::{RendererError};
 
@@ -14,15 +13,12 @@ use crate::renderer::{RendererError};
 pub struct Instances {
     /// The transformations applied to each instance.
     pub transformations: Vec<Mat4>,
-    /// Colors multiplied onto the base color of each instance.
-    pub colors: Option<Vec<Color>>,
 }
 
 impl Instances {
     pub fn new(transforms: Vec<Mat4>) -> Self {
         Self {
             transformations: transforms,
-            colors: None,
         }
     }
 
@@ -45,7 +41,6 @@ impl Instances {
         };
 
         buffer_check(Some(self.transformations.len()), "transformations")?;
-        buffer_check(self.colors.as_ref().map(|b| b.len()), "colors")?;
 
         Ok(())
     }

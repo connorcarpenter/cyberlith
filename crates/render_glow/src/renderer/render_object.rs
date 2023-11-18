@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use math::Mat4;
 use render_api::{
-    base::{AxisAlignedBoundingBox, Color},
+    base::AxisAlignedBoundingBox,
     components::{CameraProjection, Transform},
 };
 
@@ -185,7 +185,7 @@ impl RenderObjectInstanced {
 
         let fragment_shader = material.fragment_shader(lights);
         let vertex_shader_source =
-            Self::vertex_shader_source(fragment_shader.attributes, &instance_buffers);
+            Self::vertex_shader_source(fragment_shader.attributes);
         Context::get()
             .program(vertex_shader_source, fragment_shader.source, |program| {
                 material.use_uniforms(program, render_camera, lights);
@@ -227,7 +227,6 @@ impl RenderObjectInstanced {
             "row1",
             "row2",
             "row3",
-            "instance_color",
         ] {
             if program.requires_attribute(attribute_name) {
                 program.use_instance_attribute(
@@ -242,18 +241,12 @@ impl RenderObjectInstanced {
 
     fn vertex_shader_source(
         required_attributes: FragmentAttributes,
-        instance_buffers: &HashMap<String, InstanceBuffer>,
     ) -> String {
         format!(
-            "{}{}{}{}{}",
+            "{}{}{}{}",
             "#define USE_INSTANCE_TRANSFORMS\n",
             if required_attributes.normal {
                 "#define USE_NORMALS\n"
-            } else {
-                ""
-            },
-            if instance_buffers.contains_key("instance_color") {
-                "#define USE_INSTANCE_COLORS\n"
             } else {
                 ""
             },
@@ -289,17 +282,6 @@ impl RenderObjectInstanced {
             instance_buffers.insert("row3".to_string(), InstanceBuffer::new_with_data(&row3));
         }
 
-        if let Some(instance_colors) = &instances.colors {
-            // Create the re-ordered color buffer by depth.
-            let ordered_instance_colors = indices
-                .iter()
-                .map(|i| instance_colors[*i])
-                .collect::<Vec<Color>>();
-            instance_buffers.insert(
-                "instance_color".to_string(),
-                InstanceBuffer::new_with_data(&ordered_instance_colors),
-            );
-        }
         instance_buffers
     }
 }

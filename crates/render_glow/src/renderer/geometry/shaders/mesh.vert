@@ -16,10 +16,6 @@ in vec3 normal;
 out vec3 nor;
 #endif
 
-#ifdef USE_INSTANCE_COLORS
-in vec4 instance_color;
-#endif
-
 out vec4 col;
 
 void main()
@@ -55,7 +51,4 @@ void main()
 
     // *** COLOR ***
     col = vec4(1.0);
-    #ifdef USE_INSTANCE_COLORS
-    col *= instance_color / 255.0;
-    #endif
 }
